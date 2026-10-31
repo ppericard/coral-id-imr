@@ -19,21 +19,6 @@
 .hcta .chip{background:transparent;color:#fff;border-color:#fff8}
 .hprog{margin:14px 0 0}
 .hprog a{display:inline-block;background:var(--good-bg);color:var(--good);border-radius:999px;padding:6px 14px;text-decoration:none}
-.hpath ol{list-style:none;padding:0;margin:8px 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;counter-reset:hp}
-.hpath li{counter-increment:hp;display:flex;flex-direction:column;gap:3px;padding:12px 14px 12px 50px;position:relative;background:var(--surface);border:1px solid var(--line);border-radius:10px}
-.hpath li::before{content:counter(hp);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--bg);display:grid;place-items:center;font-family:var(--display);font-weight:700}
-.hpath li p{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0}
-.hpath li p a{font-size:.85rem;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--ink);text-decoration:none;background:var(--bg)}
-.hpath li p a:hover{border-color:var(--accent);color:var(--accent)}
-/* Modules still in the Lab: a dashed amber outline on the path chips, a Beta tag on the section cards. */
-.home-page{--beta:#c0841a}
-:root[data-theme="dark"] .home-page{--beta:#e0b25a}
-.hpath li p a.beta,.betakey{border:1.5px dashed var(--beta)}
-.betakey{border-radius:999px;padding:0 8px;white-space:nowrap}
-.betatag{font-style:normal;font-family:var(--body);font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:var(--plate);color:var(--band-ink);border-radius:4px;padding:1px 6px;vertical-align:2px}
-.htool.beta .hpv img{opacity:.85}
-.htool:hover{border-color:var(--accent)}
-.hpath li > span{font-size:.88rem;color:var(--muted)}
 .htools{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:8px}
 .htool{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;color:var(--ink);text-decoration:none}
 .htool b{font-family:var(--display);font-size:1.12rem;padding:8px 12px 0}
@@ -42,13 +27,11 @@
 .hpv.two{grid-template-columns:1fr 1fr;gap:2px}
 .hpv img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s,filter .6s}
 .htool:hover .hpv img{transform:scale(1.06)}
-@media (max-width:900px){.hpath ol{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:560px){
   .hmosaic{grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(7,1fr)}
   .hhero{min-height:420px}
   .hintro{margin:12px;padding:14px 16px}
   .hintro h2{font-size:1.5rem}
-  .hpath ol{grid-template-columns:minmax(0,1fr)}
   .htools{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (prefers-reduced-motion:reduce){.hmosaic a{animation:none}}
@@ -76,3 +59,16 @@
 /* Dark theme: the drawings keep their light palette (dark versions were unreadable), slightly dimmed. */
 :root[data-theme="dark"] .hpv.art{--surface-2:#e9eff1;--surface:#fff;--ink:#14262d;--muted:#5a6d74;--line:#d6e0e3;--accent:#0d6f7d;--accent-ink:#fff;
   --branch:#cfe8b8;--meander:#c4e2f2;--massive:#ecc7e3;--plate:#f8d9ad;--solo:#b9e7ea;--good:#2f7d3a;--good-bg:#dcefd9;--bad:#b23a2a;filter:brightness(.88)}
+/* The 3-step strip under the hero: Learn, Practice, Identify. */
+.hpath ol{list-style:none;padding:0;margin:14px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;counter-reset:hp}
+.hpath li{counter-increment:hp}
+.hpath a{display:flex;align-items:center;gap:12px;height:100%;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);color:var(--ink);text-decoration:none}
+.hpath a:hover{border-color:var(--accent)}
+.hpath img{width:64px;height:64px;border-radius:50%;object-fit:cover;flex:none}
+.hpath b{display:block;font-family:var(--display);font-size:1.3rem}
+.hpath b::before{content:counter(hp) " ";color:var(--accent)}
+.hpath small{display:block;color:var(--muted);font-size:.9rem;line-height:1.3}
+@media (max-width:760px){.hpath ol{grid-template-columns:minmax(0,1fr)}}
+.betatag{font-style:normal;font-family:var(--body);font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:var(--plate);color:var(--band-ink);border-radius:4px;padding:1px 6px;vertical-align:2px}
+.htool.beta .hpv img{opacity:.85}
+.htool:hover{border-color:var(--accent)}
