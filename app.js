@@ -131,37 +131,75 @@ function viewGenus(name){
         <h3>Coral Finder features</h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
         ${g.check ? `<p class="note check"><b>To check with an IMR trainer:</b> ${esc(g.check)}</p>` : ''}
         ${g.info ? `<div class="note osrc"><b>Other sources:</b><ul class="srcs">${g.info.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
-        <h3>Don't confuse with</h3><div class="chips">${g.look.map(n => `<a class="chip" href="#cmp-${esc(name)}|${esc(n)}" title="Side-by-side comparison">${esc(n)}</a>`).join('')}</div>
+        <h3>Don't confuse with</h3><div class="chips">${lookOf(name).map(n => `<a class="chip" href="#cmp-${esc(name)}|${esc(n)}" title="Side-by-side comparison">${esc(n)}</a>`).join('')}</div>
         <h3>In the key <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3><div class="kpick">${paths.map(({k, l}) => `<a class="c-${k.color}" href="#l-${l.id}">${esc(k.name)} › ${esc(leafLabel(l))}</a>`).join('')}</div>
         <p class="note refs"><b>References:</b> ${g.imr.length ? 'IMR Lecture 6 · ' : ''}Coral Finder 2022 (R. Kelley) p. ${g.pages.join(', ')} · <a href="https://www.marinespecies.org/aphia.php?p=taxlist&amp;tName=${encodeURIComponent(name)}" target="_blank" rel="noopener">WoRMS</a> · <a href="https://www.inaturalist.org/taxa/search?q=${encodeURIComponent(name)}" target="_blank" rel="noopener">iNaturalist</a></p>
       </div>
     </div>
     ${rows}
+    <section class="hubsec">${lookHub(name)}</section>
   </article>`;
   $v.querySelectorAll('[data-z]').forEach(b => b.onclick = () => zoom(flat, Number(b.dataset.z)));
   $v.querySelectorAll('[data-cmp]').forEach(b => b.onclick = () => go('cmp-' + name + '|' + b.dataset.cmp));
   bindGo();
+  const hub = $v.querySelector('.hubsec'), redraw = () => { hub.innerHTML = lookHub(name); bindViewSeg(redraw); };
+  bindViewSeg(redraw);
   $v.querySelector('[data-back]').onclick = () => history.length > 1 ? history.back() : go('genera');
 }
 
 /* ---------- compare ---------- */
+// Look-alikes of a genus, whichever genus listed the other (the Coral Finder lists are not symmetric).
+const lookOf = n => Object.keys(DATA.gen).filter(b => b !== n && (DATA.gen[n].look.includes(b) || DATA.gen[b].look.includes(n)));
+// Confusion families, by what you see first (as when starting the Coral Finder from colony form).
+// A genus can sit in two families. Draft by Claude, to be checked by Pierre.
+const LOOK_FAMILIES = [
+  ['Branches with small corallites', 'Branching or finger-like colonies; the difference is in the corallites on the branches.', ['Acropora', 'Anacropora', 'Montipora', 'Pocillopora', 'Stylophora', 'Seriatopora']],
+  ['Massive, surface of tiny pores', 'Domes, columns or crusts covered in very small corallites or polyps.', ['Porites', 'Goniopora', 'Alveopora', 'Astreopora', 'Montipora', 'Cyphastrea']],
+  ['Large cups and tubes', 'Big, well-spaced corallites standing out like tubes or cups.', ['Tubastraea', 'Duncanopsammia', 'Turbinaria', 'Galaxea']],
+  ['Ridges, plates and leaves', 'Plates, leaves or rough surfaces where ridges or hills matter more than single corallites.', ['Pavona', 'Pachyseris', 'Mycedium', 'Pectinia', 'Merulina', 'Hydnophora', 'Echinopora']],
+  ['Meandering valleys', 'Brain-like colonies: corallites joined in valleys.', ['Platygyra', 'Leptoria', 'Goniastrea', 'Lobophyllia', 'Plerogyra']],
+  ['Round corallites on massive colonies', 'Domes covered in round or polygonal corallites, a few mm to a cm across.', ['Dipsastraea', 'Favites', 'Astrea', 'Diploastrea', 'Goniastrea', 'Cyphastrea']],
+  ['Mushroom corals', 'Free-living discs and slippers on sand or rubble.', ['Fungia', 'Lithophyllon', 'Danafungia', 'Ctenactis', 'Lobactis', 'Herpolitha', 'Halomitra', 'Heliofungia']],
+  ['Long polyps out by day', 'The skeleton is hidden under extended polyps or bubbles.', ['Goniopora', 'Alveopora', 'Heliofungia', 'Plerogyra', 'Duncanopsammia']]
+];
+// Photo of a genus in a given view, falling back to the close-up then the cover.
+function viewShot(n, v){ const g = DATA.gen[n], L = g.views[v] && g.views[v].length ? g.views[v] : g.views.macro && g.views.macro.length ? g.views.macro : null, p = L ? L[0] : cover(g);
+  return p ? `<img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(n)}" loading="lazy">` : '<span class="none">no photo</span>'; }
+const mixedUp = (a, b) => ((P[a] && P[a].conf && P[a].conf[b]) || 0) + ((P[b] && P[b].conf && P[b].conf[a]) || 0);
+let cmpView = store.get('imr-coral-cmpview', 'medium');
+const viewSeg = () => `<div class="seg" role="group" aria-label="View">${VIEWS.map(([v, t]) => `<button type="button" data-cv="${v}" aria-pressed="${cmpView === v}">${t}</button>`).join('')}</div>`;
+const bindViewSeg = redraw => $v.querySelectorAll('[data-cv]').forEach(b => b.onclick = () => { cmpView = b.dataset.cv; store.set('imr-coral-cmpview', cmpView); redraw(); });
+// Bottom of a genus sheet: the genus and each of its look-alikes at the same size and in the same view,
+// each with its deciding feature and a link to the side-by-side comparison.
+function lookHub(name){
+  const L = lookOf(name).sort((a, b) => mixedUp(name, b) - mixedUp(name, a));
+  return `<h3>Don't confuse with</h3>
+    <div class="seg-row"><span class="label">Show</span>${viewSeg()}</div>
+    <div class="lrow"><div class="lt self">${viewShot(name, cmpView)}<span><i>${esc(name)}</i><small>this genus</small><span class="psum">${esc(DATA.gen[name].sum)}</span></span></div>
+    ${L.map(n => { const m = mixedUp(name, n); return `<a class="lt" href="#cmp-${esc(name)}|${esc(n)}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(DATA.gen[n].sum)}</span><b class="cmpgo">Compare side by side →</b></span></a>`; }).join('')}</div>`;
+}
 function pairs(){
   const seen = new Set(), out = [];
   Object.keys(DATA.gen).forEach(a => DATA.gen[a].look.forEach(b => { const k = [a, b].sort().join('|'); if (DATA.gen[b] && !seen.has(k)) { seen.add(k); out.push(k.split('|')); } }));
   return out;
 }
+// Look-alikes page: one panel per confusion family, every genus of the family side by side at the same size
+// and in the same view, with its deciding feature; below, the known confusions inside the family as links
+// to the side-by-side comparison, the reader's own quiz mix-ups in red.
 function viewCompareList(){
-  // One block per genus in slate order: the genus, then the genera it is confused with, as photo cards.
-  const thumb = (n, cls) => { const g = DATA.gen[n], p = cover(g); return p ? `<img class="${cls}" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(n)}" loading="lazy">` : `<span class="${cls} none">no photo</span>`; };
-  const tag = g => g.n ? 'No. ' + g.n : '<b class="star">★</b>';
-  const blocks = Object.keys(DATA.gen).filter(n => DATA.gen[n].look.some(b => DATA.gen[b])).map(n => {
-    const g = DATA.gen[n];
-    const cards = g.look.filter(b => DATA.gen[b]).map(b => { const B = DATA.gen[b]; return `<a class="card" href="#cmp-${esc(n)}|${esc(b)}">${thumb(b, 'ph')}<span class="cap"><small>vs</small><i>${esc(b)}</i><small>${tag(B)} · ${esc(B.fam)}</small><p>${esc(B.sum)}</p></span></a>`; }).join('');
-    return `<section class="lablock"><a class="lahead" href="#g-${esc(n)}">${thumb(n, 'laph')}<span><i>${esc(n)}</i><small>${tag(g)} · ${esc(g.fam)}</small><span class="lacrit">${esc(g.sum)}</span></span></a><div class="grid">${cards}</div></section>`;
-  }).join('');
+  const G = DATA.gen, tag = g => g.n ? 'No. ' + g.n : '★';
+  const fam = ([t, d, L]) => {
+    const pr = []; L.forEach((a, i) => L.slice(i + 1).forEach(b => { if (lookOf(a).includes(b)) pr.push([a, b]); }));
+    pr.sort((x, y) => mixedUp(...y) - mixedUp(...x));
+    const mine = L.reduce((s, a) => s + L.reduce((t, b) => t + (a < b ? mixedUp(a, b) : 0), 0), 0);
+    return `<section class="lfam"><h3>${esc(t)}<small>${L.length} genera${mine ? ` · <b class="bad">you mixed some up ×${mine}</b>` : ''}</small></h3><p class="note">${esc(d)}</p>
+      <div class="lrow">${L.map(n => `<a class="lt" href="#g-${esc(n)}">${viewShot(n, cmpView)}<span><i>${esc(n)}</i><small>${tag(G[n])} · ${esc(G[n].fam)}</small><span class="psum">${esc(G[n].sum)}</span></span></a>`).join('')}</div>
+      ${pr.length ? `<p class="lpairs"><span class="label">Compare</span>${pr.map(([a, b]) => { const m = mixedUp(a, b); return `<a class="chip${m ? ' mix' : ''}" href="#cmp-${esc(a)}|${esc(b)}"><i>${esc(a)}</i>&nbsp;vs&nbsp;<i>${esc(b)}</i>${m ? ` ×${m}` : ''}</a>`; }).join('')}</p>` : ''}</section>`; };
   $v.innerHTML = `<h2>Look-alikes</h2>
-  <p class="lede">For each genus, in slate order, the genera it is most often confused with. Open a pair to compare them view by view.</p>${blocks}`;
-  bindGo();
+  <p class="lede">Genera that look alike at first sight, grouped by what you see first. Within a family, compare them in the same view and read what sets each apart; open a pair to compare all three views. Each genus sheet also lists its own look-alikes.</p>
+  <div class="seg-row"><span class="label">Show</span>${viewSeg()}</div>
+  ${LOOK_FAMILIES.map(fam).join('')}`;
+  bindViewSeg(viewCompareList);
 }
 function viewCompare(a, b){
   const A = DATA.gen[a], B = DATA.gen[b];
