@@ -78,7 +78,7 @@ function setF(f, v){
   DRAFT.form[f] = fNorm(v);
   saveDraft();
 }
-const fSeg = p => { const v = fOf(p.f), un = !fSet(p.f) && FUNSURE.has(p.f); return `<span class="adm-qseg adm-fseg${fSet(p.f) ? '' : ' auto'}${un ? ' unsure' : ''}" role="group" aria-label="Growth form" title="Growth form${fSet(p.f) ? ' (set by you)' : un ? ' (Claude unsure: please check)' : ' (dashed: Claude\'s first guess)'}">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v === c}" title="${esc(fName(c))}${c === 'x' ? '' : ' (one form per photo: the main one)'}">${c === 'x' ? '∅' : c}</button>`).join('')}</span>`; };
+const fSeg = p => { const v = fOf(p.f), un = !fSet(p.f) && FUNSURE.has(p.f); return `<span class="adm-qseg adm-fseg${fSet(p.f) ? '' : ' auto'}${un ? ' unsure' : ''}" role="group" aria-label="Growth form" title="Growth form">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v === c}" title="${esc(fName(c))}">${c === 'x' ? '∅' : c}</button>`).join('')}</span>`; };
 
 /* ---------- Token vault: AES-GCM key derived from the password (PBKDF2) ---------- */
 const b64 = u => btoa(String.fromCharCode(...new Uint8Array(u))), unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -252,18 +252,18 @@ function tile(n, p, v, st){
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${st.cls === 'is-hidden' ? '' : GRIP + XBTN}
     ${st.num ? `<span class="adm-num${st.auto ? ' auto' : ''}" title="${st.auto ? 'Featured automatically' : 'Featured by you'}">${st.num}</span>` : ''}
     ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
-    <figcaption>${p.from ? `<span class="adm-src new" title="Taken out of ${esc(p.from)} (change it there)">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">new</span>' : ''}${srcTag(p)}${p.multi ? '<span class="adm-src multi" title="Several corals in frame: never used in games">several corals</span>' : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
+    <figcaption>${p.from ? `<span class="adm-src new" title="From ${esc(p.from)}">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">new</span>' : ''}${srcTag(p)}${p.multi ? '<span class="adm-src multi" title="Several corals">several corals</span>' : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}${fSeg(p)}
       ${st.cls === 'is-hidden' ? `<button type="button" data-act="hide" class="on">Show again</button>` : `
-      <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Use as the genus photo (cards, sheet hero)">★ Cover</button>
-      <button type="button" data-act="feat" class="${st.num && !st.auto ? 'on' : ''}" title="Show in the main strip of this view">${st.num ? 'Featured' : 'Feature'}</button>
-      ${p.cand ? '<button type="button" data-act="hide" title="Back to the candidates">Remove</button>' : '<button type="button" data-act="hide" title="Keep the photo but don\'t show it on the site for this genus; Show again brings it back">Hide</button>'}
+      <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Cover">★ Cover</button>
+      <button type="button" data-act="feat" class="${st.num && !st.auto ? 'on' : ''}" title="Feature">${st.num ? 'Featured' : 'Feature'}</button>
+      ${p.cand ? '<button type="button" data-act="hide" title="Back to the candidates">Remove</button>' : '<button type="button" data-act="hide" title="Hide">Hide</button>'}
       <span class="adm-qseg adm-vseg" role="group" aria-label="View">${moves}</span>
       ${p.from || p.cand ? '' : `<select data-act="out" aria-label="Take out of this genus"><option value="">Not this genus…</option><option value="cmp">Look-alike comparison</option><optgroup label="It shows another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`}`}
     </div></figure>`;
 }
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
-const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Exclude this photo for good (from every genus and game)" aria-label="Exclude for good">×</button>';
+const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Exclude" aria-label="Exclude for good">×</button>';
 function status(){
   const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : '', flChanged() ? 'triage flags' : '', sgChanged() ? 'triage suggestions' : ''].filter(Boolean);
   const bs = $('booksw'); if (bs) { bs.setAttribute('aria-pressed', String(bookOn(DRAFT))); bs.textContent = `CF book: ${bookOn(DRAFT) ? 'on' : 'off'}`; }
@@ -290,7 +290,7 @@ function render(){
   $('preview').href = `./?draft#g-${encodeURIComponent(n)}`;
   const side = names.map(m => { const c = coverOf(m), e = DRAFT.genera[m] || {}, dirty = ch.includes(m), h = (e.hide || []).length;
     return `<a href="#${esc(m)}" class="adm-g${m === n ? ' cur' : ''}"${m === n ? ' aria-current="true"' : ''}>${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
-      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : '★'}${c && c.view === 'macro' && DATA.gen[m].levels !== 2 ? ' · <b class="warnc" title="The cover is a corallite close-up">macro cover</b>' : ''}${h ? ` · ${h} hidden` : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}${missing(m).length ? ' · <b class="warnc" title="Some choices name a photo no longer in the data">⚠ check</b>' : ''}</small></span>${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : Object.keys(e).length ? '<b class="dot done" title="Curated">✓</b>' : ''}</a>`; }).join('');
+      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : '★'}${c && c.view === 'macro' && DATA.gen[m].levels !== 2 ? ' · <b class="warnc" title="Cover is a close-up">macro cover</b>' : ''}${h ? ` · ${h} hidden` : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}${missing(m).length ? ' · <b class="warnc" title="Missing photos">⚠ check</b>' : ''}</small></span>${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : Object.keys(e).length ? '<b class="dot done" title="Curated">✓</b>' : ''}</a>`; }).join('');
   const body = rows(n).map(([v]) => { const r = rowOf(n, v), out = [...r.feat, ...r.rest, ...r.hid].filter(p => !shown(p)).length;
     return `<section class="adm-row"><h3>${label(n, v)} <small>${r.feat.length} featured${r.auto ? ' (automatic)' : ''} · ${r.rest.length} more${r.hid.length ? ` · ${r.hid.length} hidden` : ''}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
       <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: r.auto, last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${r.rest.filter(shown).map(p => tile(n, p, v, {})).join('')}${r.hid.filter(shown).map(p => tile(n, p, v, {cls: 'is-hidden'})).join('')}</div>
@@ -306,7 +306,7 @@ function render(){
       <figcaption>${srcTag(p)}<span class="adm-t">${outs(n)[p.f] === 'cmp' ? 'look-alike comparison' : '→ ' + esc(outs(n)[p.f])}</span></figcaption>
       <div class="adm-acts"><button type="button" data-act="out" data-to="back">Put back</button></div></figure>`).join('')}</div></section>` : '';
   const cnt = o => [...photos(n), ...P].filter(p => origin(p) === o).length;
-  const filter = `<div class="adm-filter adm-sticky" role="group" aria-label="Show photos from">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && g.levels !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover (${cv.picked ? 'your pick' : 'automatic'}, ${label(n, cv.view).toLowerCase()} view)"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Open the genus sheet (with your draft)" aria-label="Open the sheet">↗</a><span class="label">Show</span>${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">Show all</button>' : ''}</div>`;
+  const filter = `<div class="adm-filter adm-sticky" role="group" aria-label="Show photos from">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && g.levels !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="label">Show</span>${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">Show all</button>' : ''}</div>`;
   $v.innerHTML = `<div class="adm">
     <nav class="adm-side" aria-label="Genera"><select id="gsel" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><div class="adm-list">${side}</div></nav>
     <section class="adm-main">
