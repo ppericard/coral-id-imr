@@ -424,28 +424,41 @@ function syncSummary(){
     review: n.filter(x => genera[x] === 'weak'), genera};
 }
 const syncGet = () => fetch(`${SYNC_URL}?name=${encodeURIComponent(SYNC.name)}&pin=${encodeURIComponent(SYNC.pin)}`).then(r => r.json());
-// Two devices on one account: per genus, keep whichever record has more answers, so an older
-// device never wipes newer results when it sends. A reset (imr-coral-reset, a time) wins over older progress.
+// Two devices on one account: three-way merge against SYNC.base, the progress as last sent or received.
+// Answers taken on this device since then are added on top of the saved record, so neither side's answers
+// are lost. A reset (imr-coral-reset, a time) wins over older progress.
+const copy = o => JSON.parse(JSON.stringify(o));
 function mergeSaved(j){
   const d = j.data || {}; let R = {}; try { R = JSON.parse(d['imr-coral-progress'] || '{}') || {}; } catch (e) {}
   const rr = JSON.parse(d['imr-coral-reset'] || '""'), lr = store.get('imr-coral-reset', '');
   if (lr > rr) return;
-  if (rr > lr) { P = R; store.set('imr-coral-reset', rr); store.set('imr-coral-progress', P); showProg(); return; }
-  const n = r => r ? (r.ok || 0) + (r.ko || 0) : -1;
-  let changed = false;
-  Object.keys(R).forEach(g => { if (n(R[g]) > n(P[g])) { P[g] = R[g]; changed = true; } });
-  if (changed) { store.set('imr-coral-progress', P); showProg(); }
+  if (rr > lr) { P = R; SYNC.base = copy(R); store.set('imr-coral-reset', rr); store.set('imr-coral-progress', P); showProg(); return; }
+  const B = SYNC.base || {}, Z = {ok: 0, ko: 0, streak: 0};
+  new Set([...Object.keys(R), ...Object.keys(P)]).forEach(g => {
+    const b = B[g] || Z, l = P[g] || Z, r = R[g] || Z, out = {...r};
+    out.ok = Math.max(0, (r.ok || 0) + (l.ok || 0) - (b.ok || 0));
+    out.ko = Math.max(0, (r.ko || 0) + (l.ko || 0) - (b.ko || 0));
+    const mine = (l.ok || 0) + (l.ko || 0) !== (b.ok || 0) + (b.ko || 0);
+    out.streak = mine ? l.streak || 0 : r.streak || 0;
+    const conf = {...(r.conf || {})};
+    Object.keys(l.conf || {}).forEach(k => { const v = (conf[k] || 0) + l.conf[k] - ((b.conf || {})[k] || 0); if (v > 0) conf[k] = v; else delete conf[k]; });
+    if (Object.keys(conf).length) out.conf = conf; else delete out.conf;
+    if (out.ok + out.ko) P[g] = out; else delete P[g];
+  });
+  store.set('imr-coral-progress', P); showProg();
 }
-// Pull, merge, then send. A failed send stays marked (SYNC.dirty) and is retried on start-up and when back online.
+// Pull, merge, then send. Every change bumps SYNC.rev; a send clears SYNC.dirty only if nothing changed
+// meanwhile. Unsent progress is retried on start-up and when back online.
 function syncPush(){
   if (!SYNC_URL || !SYNC || !DATA) return Promise.resolve(null);
-  const me = SYNC;
+  const me = SYNC; let rev, sent;
   return syncGet().then(j => { if (!j.ok) return j; if (j.found) mergeSaved(j);
+    rev = me.rev; sent = copy(P);
     return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({name: me.name, pin: me.pin, data: progData(), summary: syncSummary()})}).then(r => r.json()); })
-    .then(j => { if (j.ok && SYNC === me) { SYNC.last = new Date().toISOString(); delete SYNC.dirty; store.set('imr-coral-sync', SYNC); } return j; })
+    .then(j => { if (j.ok && SYNC === me) { me.last = new Date().toISOString(); me.base = sent; if (me.rev === rev) delete me.dirty; store.set('imr-coral-sync', me); } return j; })
     .catch(() => null);
 }
-const syncSoon = () => { if (!SYNC_URL || !SYNC) return; SYNC.dirty = true; store.set('imr-coral-sync', SYNC); clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 3000); };
+const syncSoon = () => { if (!SYNC_URL || !SYNC) return; SYNC.dirty = true; SYNC.rev = (SYNC.rev || 0) + 1; store.set('imr-coral-sync', SYNC); clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 3000); };
 const syncRetry = () => { if (SYNC && SYNC.dirty) syncPush(); };
 window.addEventListener('online', syncRetry);
 function bindSync(){
@@ -468,7 +481,7 @@ function bindSync(){
     msg('Connecting…');
     fetch(`${SYNC_URL}?name=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}`).then(r => r.json()).then(j => {
       if (!j.ok) return msg(j.error === 'pin' ? 'This name already exists with another code.' : 'Check the name and the 4-digit code.');
-      SYNC = {name, pin}; store.set('imr-coral-sync', SYNC);
+      SYNC = {name, pin}; if (j.found) { try { SYNC.base = JSON.parse(j.data['imr-coral-progress'] || '{}') || {}; } catch (err) { SYNC.base = {}; } } store.set('imr-coral-sync', SYNC);
       // A known account replaces whatever this device holds (another RA may have used it); a new name keeps it.
       if (j.found) { Object.keys(progData()).forEach(k => localStorage.removeItem(k)); loadData(j.data); try { sessionStorage.setItem('imr-coral-loaded', 'the IMR sheet'); } catch (err) {} location.reload(); }
       else syncPush().then(() => bindSync());
