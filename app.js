@@ -287,7 +287,7 @@ function viewGenera(){
   const jump = azOrder === 'lecture' ? `<div class="chips tipgr gjump"><span class="label">IMR group</span>${DATA.imrg.map(x => `<button type="button" class="chip gchip" style="--g:${groupHue(x.n)}" data-jump="${x.n}" title="${esc(x.t)}">${x.n}</button>`).join('')}</div>` : '';
   $v.innerHTML = `<h2>The 39 genera on the IMR slate</h2>
   <p class="lede">34 surveyed genera plus 5 starred ones (★) to recognise and rule out. Colours mark the confusion groups from the IMR lecture: genera in the same group are the ones to tell apart. Switch to <b>ID tips</b> for the 4 questions to ask and the lecturers' short cues for each genus.</p>
-  <div class="tools"><input id="q" type="search" placeholder="Search a genus or a feature" value="${esc(azQ)}" aria-label="Search">
+  <div class="tools"><input id="q" type="search" placeholder="Search a genus or a feature" value="${esc(azQ)}" aria-label="Search" title="Shortcut: / from any page, Enter opens the first genus">
     ${viewSeg}${phone ? `<details class="gfilt"${gfOpen ? ' open' : ''}><summary>Filter${azFam ? ' <span class="fdn">1</span>' : ''}</summary>${famSel}${orderSeg}${jump}</details>` : famSel + orderSeg}</div>
   ${azView === 'tips' ? tipsHead() : ''}${phone ? '' : jump}<div class="${azView === 'tips' ? 'tiplist' : 'grid'}" id="azgrid"></div>`;
   const draw = () => {
@@ -313,6 +313,11 @@ function viewGenera(){
   };
   const qi = document.getElementById('q');
   qi.oninput = () => { azQ = qi.value; draw(); };
+  // Enter opens the first genus that matches (with the / shortcut: /, a few letters, Enter = the sheet).
+  qi.onkeydown = e => { if (e.key !== 'Enter') return; const q = qi.value.trim().toLowerCase(), L = [...document.querySelectorAll('#azgrid a[href^="#g-"]')];
+    const name = a => decodeURIComponent(a.getAttribute('href').slice(3)).toLowerCase();
+    const a = L.find(x => name(x).startsWith(q)) || L.find(x => name(x).includes(q)) || L[0]; if (a) { e.preventDefault(); location.hash = a.getAttribute('href'); } };
+  if (wantSearch) { wantSearch = false; qi.focus(); qi.select(); }
   const gf = $v.querySelector('.gfilt'); if (gf) gf.ontoggle = () => { gfOpen = gf.open; };
   document.getElementById('fam').onchange = e => { azFam = e.target.value || null; draw(); };
   $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { azOrder = b.dataset.o; try { localStorage.setItem('imr-coral-order', azOrder); } catch (e) {} viewGenera(); });
@@ -1126,6 +1131,16 @@ new MutationObserver(pageHelp).observe($v, {childList: true, subtree: true});
 const $setb = document.getElementById('setb'), $set = document.getElementById('settings');
 $setb.onclick = e => { e.stopPropagation(); const open = $set.hidden; $set.hidden = !open; $setb.setAttribute('aria-expanded', String(open)); };
 document.addEventListener('click', e => { if (!$set.hidden && !e.target.closest('#settings, #setb')) { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); } });
+// "/" from any page: open Genera with the search box focused, to jump to a genus by typing (Pierre, 2026-10-31).
+let wantSearch = false;
+document.addEventListener('keydown', e => {
+  if (e.key !== '/' || e.altKey || e.ctrlKey || e.metaKey || !lb.hidden) return;
+  if (e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return;
+  e.preventDefault();
+  const q = document.getElementById('q');
+  if (q && location.hash.slice(1) === 'genera') { q.focus(); q.select(); return; }
+  wantSearch = true; go('genera');
+});
 // Desktop: ← / → go to the previous / next genus on a sheet (the arrows of the page bar), without reaching for the mouse.
 document.addEventListener('keydown', e => {
   if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || !lb.hidden) return;
