@@ -64,7 +64,9 @@
         "stylophora-cand-467756924": "wide",
         "stylophora-cand-745205098": "wide",
         "stylophora-cand-467756956": "medium",
-        "stylophora-cand-745205066": "medium"
+        "stylophora-cand-745205066": "medium",
+        "stylophora-cand-269736110": "wide",
+        "stylophora-cand-606690291": "wide"
       }
     },
     "Anacropora": {
@@ -101,7 +103,9 @@
         "echinopora-cand-745205487": "wide",
         "echinopora-cand-745205427": "medium",
         "echinopora-cand-745205409": "medium",
-        "echinopora-cand-745205382": "medium"
+        "echinopora-cand-745205382": "medium",
+        "echinopora-cand-596513005": "wide",
+        "echinopora-cand-39510850": "wide"
       }
     },
     "Astreopora": {
@@ -124,7 +128,9 @@
         "turbinaria-cand-745205883": "medium",
         "turbinaria-cand-745205896": "wide",
         "turbinaria-cand-745205864": "medium",
-        "turbinaria-cand-745205856": "macro"
+        "turbinaria-cand-745205856": "macro",
+        "turbinaria-cand-388550872": "medium",
+        "turbinaria-cand-129398811": "wide"
       }
     },
     "Mycedium": {
@@ -143,7 +149,8 @@
       "add": {
         "pavona-cand-746234999": "macro",
         "pavona-cand-746234948": "macro",
-        "pavona-cand-345338610": "medium"
+        "pavona-cand-345338610": "medium",
+        "pavona-cand-488110860": "macro"
       }
     },
     "Pachyseris": {
@@ -177,7 +184,8 @@
       "add": {
         "goniopora-cand-745205553": "medium",
         "goniopora-cand-745205672": "macro",
-        "goniopora-cand-412013633": "wide"
+        "goniopora-cand-412013633": "wide",
+        "goniopora-cand-620837643": "macro"
       }
     },
     "Plerogyra": {
@@ -250,7 +258,8 @@
       "add": {
         "dipsastraea-cand-746236837": "medium",
         "dipsastraea-cand-746238014": "macro",
-        "dipsastraea-cand-745205496": "macro"
+        "dipsastraea-cand-745205496": "macro",
+        "dipsastraea-cand-606648842": "wide"
       }
     },
     "Astrea": {
@@ -301,7 +310,9 @@
         "merulina-cf-12-04": "medium",
         "merulina-cand-745204556": "medium",
         "merulina-cand-746236344": "wide",
-        "merulina-cand-746236232": "medium"
+        "merulina-cand-746236232": "medium",
+        "merulina-cand-585933870": "wide",
+        "merulina-cand-488110982": "medium"
       }
     },
     "Cyphastrea": {
@@ -325,17 +336,25 @@
     },
     "Leptoseris": {
       "add": {
-        "leptoseris-cand-488111105": "wide"
+        "leptoseris-cand-488111105": "wide",
+        "leptoseris-cand-269476587": "wide"
       }
     },
     "Polyphyllia": {
       "add": {
-        "polyphyllia-cand-269728429": "wide"
+        "polyphyllia-cand-269728429": "wide",
+        "polyphyllia-cand-269735553": "wide"
+      }
+    },
+    "Pleuractis": {
+      "add": {
+        "pleuractis-cand-269735766": "wide"
       }
     },
     "Oxypora": {
       "add": {
-        "oxypora-cand-488110908": "medium"
+        "oxypora-cand-488110908": "medium",
+        "oxypora-cand-269726454": "medium"
       }
     },
     "Cynarina": {
@@ -395,7 +414,9 @@
     "porites-cand-269475353": 3,
     "porites-cand-596708040": 3,
     "seriatopora-cand-746236532": 2,
+    "stylophora-cand-606690291": 2,
     "stylophora-cand-745205098": 3,
+    "turbinaria-cand-388550872": 2,
     "turbinaria-cand-745205883": 2
   },
   "gf": {
@@ -424,11 +445,14 @@
     "cand:alveopora-cf-71-00": 1,
     "cand:anacropora-cand-331486202": 1,
     "cand:astreopora-cf-46-00": 1,
+    "cand:cycloseris-cand-611814405": 1,
     "cand:danafungia-cf-63-10": 1,
     "cand:dipsastraea-cf-24-00": 1,
     "cand:echinopora-cf-9-00": 1,
+    "cand:euphyllia-cand-269516691": 1,
     "cand:favites-cand-579366404": 1,
     "cand:favites-cf-24-20": 1,
+    "cand:fimbriaphyllia-x-596086012": 1,
     "cand:fungia-cand-385444592": 1,
     "cand:fungia-cf-63-00": 1,
     "cand:galaxea-cand-606651528": 1,
@@ -484,11 +508,29 @@
       0.867,
       0.994
     ],
+    "leptoseris-cand-269476587": [
+      0,
+      0,
+      0.889,
+      0.981
+    ],
     "stylocoeniella-x-752350384": [
       0,
       0.176,
       0.908,
       1
+    ],
+    "stylophora-cand-606690291": [
+      0.175,
+      0,
+      0.856,
+      1
+    ],
+    "turbinaria-cand-129398811": [
+      0,
+      0.394,
+      0.911,
+      0.938
     ]
   }
 }
