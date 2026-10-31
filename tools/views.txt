@@ -1,0 +1,39 @@
+Acropora W 0 11 15 | M 6 10 17 | X 12 9
+Pocillopora W 6 14 13 | M 0 12 10 | X 1 3 4
+Stylophora W 0 4 13 | M 1 7 3 | X 9 10 2
+Anacropora W 11 10 | M 13 14 0 | X 15 5 6
+Seriatopora W 0 13 16 | M 9 1 8 | X 3 5
+Porites W 5 4 1 | M 0 6 9 | X 11 12 7
+Tubastraea W 0 13 12 | M 7 8 14 | X 4 3 6
+Echinopora W 7 15 1 | M 6 9 0 | X 11 16 5
+Astreopora W 0 10 6 | M 1 13 11 | X 2 16
+Galaxea W 1 9 12 | M 0 5 10 | X 16 2 4
+Turbinaria W 0 11 14 | M 1 2 16 | X 3 15
+Mycedium W 1 9 17 | M 0 8 2 | X 5 11 3
+Lobophyllia W 3 10 7 | M 0 4 11 | X 14 2 16
+Pavona W 10 1 16 | M 0 6 3 | X 12 8 7
+Pachyseris W 0 7 9 | M 1 2 4 | X 6 3
+Pectinia W 1 5 16 | M 0 4 9 | X 8 12 7
+Platygyra W 4 10 14 | M 3 7 6 | X 8 9 5
+Leptoria W 1 14 6 | M 9 0 16 | X 12 5 4
+Goniopora W 0 8 15 | M 9 10 1 | X 12 3 16
+Plerogyra W 2 7 14 | M 8 17 9 | X 1 4 15
+Montipora W 1 0 9 | M 2 7 14 | X 5 6 3
+Hydnophora W 6 1 0 | M 2 10 9 | X 12 4 8
+Fungia W 14 0 11 | M 3 2 6 | X 4 1 5
+Lithophyllon W 4 0 15 | M 5 9 | X 2 6 3
+Danafungia W 0 9 12 | M 5 13 6 | X 7 2 1
+Ctenactis W 0 2 9 | M 1 3 7 | X 4 5 8
+Lobactis W 10 11 9 | M 0 1 13 | X 12 17 7
+Herpolitha W 3 14 6 | M 0 7 16 | X 1 2
+Heliofungia W 6 10 13 | M 7 12 1 | X 9 3
+Dipsastraea W 9 16 3 | M 6 14 4 | X 5 8 11
+Astrea W 3 5 9 | M 1 2 13 | X 10 12 8
+Diploastrea W 1 7 10 | M 0 6 2 | X 8 9 4
+Goniastrea W 1 6 15 | M 0 2 8 | X 9 3 10
+Favites W 7 10 0 | M 2 9 15 | X 6 8 4
+Duncanopsammia W 3 4 16 | M 6 8 15 | X 2 12 14
+Alveopora W 3 16 4 | M 0 9 10 | X 1 13 14
+Merulina W 0 9 16 | M 2 8 6 | X 11 5 3
+Cyphastrea W 1 16 12 | M 6 7 13 | X 17 4 0
+Halomitra W 16 0 7 | M 15 6 9 | X 3 2 10
