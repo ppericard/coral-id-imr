@@ -16,7 +16,7 @@ const img = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 
-let FB0, FU0, PICKS = {}, PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
+let SUG = {}, FB0, FU0, PICKS = {}, PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
 // (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
 const QUAL = [[3, 'Good'], [2, 'Fair'], [1, 'Poor']];
@@ -37,6 +37,10 @@ const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
 // "Bad photo" flags Pierre raised on the site (flag.js, localStorage 'imr-photo-flags'): curation.json "flag"
 // {f: {genus, view, where, at}}. Triage lists them; "Done" removes one (one at a time, never in bulk).
 const flChanged = () => !same(DRAFT.flag || {}, SAVED.flag || {});
+// Suggestions from the outside judging agent (suggest.json, tools/judging_import.py): Triage lists them one at a time.
+// Accept runs the normal action (move, Not this genus, exclude, hide, add); "Several corals" keeps the photo off games
+// (curation.json "use" {f: 'ref'}); Dismiss is remembered in curation.json "seen" {kind:f: 1} so it never comes back.
+const sgChanged = () => !same(DRAFT.seen || {}, SAVED.seen || {}) || !same(DRAFT.use || {}, SAVED.use || {});
 function importFlags(){
   const L = store.get('imr-photo-flags', []); if (!L || !L.length) return 0;
   DRAFT.flag = {...(DRAFT.flag || {})}; let n = 0;
@@ -261,9 +265,9 @@ function tile(n, p, v, st){
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
 const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Exclude this photo for good (from every genus and game)" aria-label="Exclude for good">×</button>';
 function status(){
-  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : '', flChanged() ? 'triage flags' : ''].filter(Boolean);
+  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : '', flChanged() ? 'triage flags' : '', sgChanged() ? 'triage suggestions' : ''].filter(Boolean);
   const bs = $('booksw'); if (bs) { bs.setAttribute('aria-pressed', String(bookOn(DRAFT))); bs.textContent = `CF book: ${bookOn(DRAFT) ? 'on' : 'off'}`; }
-  const tn = Object.keys(DRAFT.flag || {}).length, ta = document.querySelector('[data-mode="triage"]'); if (ta) ta.textContent = `Triage${tn ? ` (${tn})` : ''}`;
+  const tn = Object.keys(DRAFT.flag || {}).length + sugCount(), ta = document.querySelector('[data-mode="triage"]'); if (ta) ta.textContent = `Triage${tn ? ` (${tn})` : ''}`;
   const xn = Object.keys(DRAFT.exclude || {}).length, xa = document.querySelector('[data-mode="excluded"]'); if (xa) xa.textContent = `Excluded${xn ? ` (${xn})` : ''}`;
   const t = draftAt ? ` (saved ${draftAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})})` : '';
   $('status').textContent = parts.length ? '● Not published' : TOKEN ? '✓ Published' : 'Read-only';
@@ -463,7 +467,7 @@ const HELP = {
     <p>They pick the photos of the growth-form tiles in the Coral Finder; ∅ photos are never used there. Dashed letters are Claude's first guess from the image, solid ones are yours and always win.</p>
     <p>Click the letters, drag a photo to another row, or hover it and press B M S P F L C, or X for not visible. Coral Finder book photos are left out.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
-  triage: `<p>Only what needs your eye. On the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor, and the views whose Featured photos you haven't picked yet (the site uses its own pick meanwhile: IMR and your photos first, by quality).</p>`,
+  triage: `<p>Only what needs your eye. On the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor, and the views whose Featured photos you haven't picked yet (the site uses its own pick meanwhile: IMR and your photos first, by quality).</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
 };
 function toggleHelp(){
@@ -559,13 +563,62 @@ function renderTriage(){
     ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
     <div class="adm-qhead"><h2>Featured not picked yet <small>${todo.length} genera</small></h2></div>
     ${todo.length ? `<p class="adm-tchips">${todo.map(([n, L]) => `<a class="chip" href="#${esc(n)}"><i>${esc(n)}</i>&nbsp;<small>${L.join(', ')}</small></a>`).join(' ')}</p>` : '<p class="note">All picked.</p>'}
+    ${sugHtml(tile)}
   </section>`;
+  bindSug();
   const done = f => { DRAFT.flag = {...(DRAFT.flag || {})}; delete DRAFT.flag[f]; };
   $v.querySelectorAll('[data-act="tdone"]').forEach(b => b.onclick = () => { done(b.closest('[data-f]').dataset.f); saveDraft(); renderTriage(); });
   $v.querySelectorAll('[data-act="tpoor"]').forEach(b => b.onclick = () => { const f = b.closest('[data-f]').dataset.f; DRAFT.quality = {...(DRAFT.quality || {}), [f]: 1}; done(f); saveDraft(); renderTriage(); });
   $v.querySelectorAll('[data-act="thide"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'), n = t.dataset.g, f = t.dataset.f; if (!DATA.gen[n]) return;
     done(f); if (!(entry(n).hide || []).includes(f)) ACT.hide(n, f); else { saveDraft(); renderTriage(); } });
   $v.querySelectorAll('[data-act="zoomx"]').forEach(b => b.onclick = () => { const p = PHOTOS[b.closest('[data-f]').dataset.f]; if (p) zoomOne(p); });
+}
+/* ---------- Triage: the judging agent's suggestions (suggest.json) ---------- */
+const seen = k => !!(DRAFT.seen || {})[k];
+const vName = (n, v) => DATA.gen[n] ? label(n, v) : v;
+// Pending suggestions only: once accepted (the curation now says the same) or dismissed, an item disappears.
+function sugItems(){
+  const S = SUG || {}, P = S.photo || {}, out = {genus: [], view: [], multi: [], dup: [], add: []};
+  const live = (n, f) => photos(n).find(p => p.f === f && !p.from);
+  Object.entries(P).forEach(([f, s]) => {
+    const n = s.from; if (!DATA.gen[n] || excl(f)) return;
+    const p = live(n, f), un = s.unsure || [];
+    if (s.genus === 'exclude') { if (!seen('genus:' + f) && (p || cands(n).some(x => x.f === f))) out.genus.push({...(PHOTOS[f] || {}), f, genus: n, s, un}); }
+    else if (s.genus && p && !outs(n)[f] && !seen('genus:' + f)) out.genus.push({...p, genus: n, s, un});
+    if (s.view && p && !outs(n)[f] && !hidden(n, p) && viewOf(n, p) !== s.view && !seen('view:' + f)) out.view.push({...p, genus: n, s, un});
+    if (s.multi && p && !hidden(n, p) && !(DRAFT.use || {})[f] && !seen('multi:' + f)) out.multi.push({...p, genus: n, s, un});
+  });
+  (S.dup || []).forEach(d => { const n = d.genus; if (!DATA.gen[n] || seen('dup:' + d.keep) || excl(d.keep) || !live(n, d.keep)) return;
+    const left = d.f.filter(f => !excl(f) && live(n, f) && !hidden(n, live(n, f)));
+    if (left.length) out.dup.push({...d, left}); });
+  Object.entries(S.add || {}).forEach(([n, A]) => { if (!DATA.gen[n]) return; const added = entry(n).add || {};
+    Object.entries(A).forEach(([f, v]) => { const p = pending(n).find(x => x.f === f); if (p && !added[f] && !seen('add:' + f)) out.add.push({...p, genus: n, to: v}); }); });
+  return out;
+}
+const sugCount = () => { if (!DATA || !DRAFT || !SUG || !Object.keys(SUG).length) return 0; const o = sugItems(); return o.genus.length + o.view.length + o.multi.length + o.dup.length + o.add.length; };
+function sugHtml(tile){
+  if (!SUG || !Object.keys(SUG).length) return '';
+  const o = sugItems(), dis = k => `<button type="button" data-sg="dismiss" data-k="${esc(k)}">Dismiss</button>`;
+  const why = p => `${p.un && p.un.length ? '<span class="adm-src multi" title="The judge is not sure">unsure</span>' : ''}${p.s && p.s.note ? `<small class="adm-where">${esc(p.s.note)}</small>` : ''}`;
+  const sec = (title, L, body) => L.length ? `<div class="adm-qhead"><h2>${title} <small>${L.length}</small></h2></div>${body}` : '';
+  const grid = (L, fn) => `<div class="adm-grid adm-qgrid">${L.map(fn).join('')}</div>`;
+  const gName = g => g === 'cmp' ? 'Look-alike comparison' : g === 'exclude' ? 'Exclude for good' : g;
+  return sec('Suggested: not this genus', o.genus, grid(o.genus, p => tile(p, `<button type="button" data-sg="genus" data-to="${esc(p.s.genus)}">${p.s.genus === 'exclude' ? 'Exclude' : 'Accept'}</button>${dis('genus:' + p.f)}`,
+      `<span class="adm-src new">→ ${esc(gName(p.s.genus))}</span>${why(p)}`)))
+    + sec('Suggested: move to another view', o.view, grid(o.view, p => tile(p, `<button type="button" data-sg="view" data-to="${esc(p.s.view)}">Move to ${esc(vName(p.genus, p.s.view))}</button>${dis('view:' + p.f)}`,
+      `<span class="adm-src view">${esc(vName(p.genus, viewOf(p.genus, p)))} → ${esc(vName(p.genus, p.s.view))}</span>${why(p)}`)))
+    + sec('Suggested: several corals (keep off games)', o.multi, grid(o.multi, p => tile(p, `<button type="button" data-sg="multi">Keep off games</button>${dis('multi:' + p.f)}`, why(p))))
+    + sec('Suggested: near-duplicates', o.dup, o.dup.map(d => `<div class="adm-grid adm-qgrid adm-dup">${tile({...PHOTOS[d.keep], f: d.keep, genus: d.genus}, dis('dup:' + d.keep), `<span class="adm-src new">Keep</span>${d.note ? `<small class="adm-where">${esc(d.note)}</small>` : ''}`)}${d.left.map(f => tile({...PHOTOS[f], f, genus: d.genus}, `<button type="button" data-sg="hide">Hide in ${esc(d.genus)}</button>`, '<span class="adm-src multi">Duplicate</span>')).join('')}</div>`).join(''))
+    + sec('Suggested: candidates to add', o.add, grid(o.add, p => tile(p, `<button type="button" data-sg="add" data-to="${esc(p.to)}">Add to ${esc(vName(p.genus, p.to))}</button>${dis('add:' + p.f)}`, srcTag(p))));
+}
+function bindSug(){
+  const on = (a, fn) => $v.querySelectorAll(`[data-sg="${a}"]`).forEach(b => b.onclick = () => { const t = b.closest('[data-f]'), n = t.dataset.g; if (DATA.gen[n]) fn(n, t.dataset.f, b.dataset.to); });
+  on('genus', (n, f, to) => to === 'exclude' ? ACT.exclude(n, f) : ACT.out(n, f, null, to));
+  on('view', (n, f, to) => ACT.move(n, f, null, to));
+  on('hide', (n, f) => ACT.hide(n, f));
+  on('add', (n, f, to) => ACT.addc(n, f, null, to));
+  on('multi', (n, f) => { DRAFT.use = {...(DRAFT.use || {}), [f]: 'ref'}; saveDraft(); renderTriage(); });
+  $v.querySelectorAll('[data-sg="dismiss"]').forEach(b => b.onclick = () => { DRAFT.seen = {...(DRAFT.seen || {}), [b.dataset.k]: 1}; saveDraft(); renderTriage(); });
 }
 function zoomOne(p){
   const lb = $('lightbox'), close = () => { lb.hidden = true; lb.innerHTML = ''; document.removeEventListener('keydown', key); }, key = e => { if (e.key === 'Escape') close(); };
@@ -579,13 +632,15 @@ const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAF
   const exclude = {}; Object.keys(DRAFT.exclude || {}).sort().forEach(f => { exclude[f] = DRAFT.exclude[f]; });
   const form = {}; Object.keys(DRAFT.form || {}).sort().forEach(f => { form[f] = DRAFT.form[f]; });
   const flag = {}; Object.keys(DRAFT.flag || {}).sort().forEach(f => { flag[f] = DRAFT.flag[f]; });
-  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {}), ...(Object.keys(flag).length ? {flag} : {})}; };
+  const use = {}; Object.keys(DRAFT.use || {}).sort().forEach(f => { use[f] = DRAFT.use[f]; });
+  const seen = {}; Object.keys(DRAFT.seen || {}).sort().forEach(k => { seen[k] = DRAFT.seen[k]; });
+  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {}), ...(Object.keys(flag).length ? {flag} : {}), ...(Object.keys(use).length ? {use} : {}), ...(Object.keys(seen).length ? {seen} : {})}; };
 async function save(){
-  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(); if (!(ch.length || q || x || bk || fm || fl) || !TOKEN) return;
+  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(), sg = sgChanged(); if (!(ch.length || q || x || bk || fm || fl || sg) || !TOKEN) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
   try {
     const out = output(), text = JSON.stringify(out, null, 2) + '\n';
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const r = await gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg, content: toB64(text), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})});
     SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); saveDraft();
     toast('Published. The public site shows it within a minute or two.');
@@ -602,7 +657,7 @@ async function start(){
   const hd = document.querySelector('header'); if (hd && window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--hdr-h', hd.offsetHeight + 'px')).observe(hd);
   $v.innerHTML = '<p class="note">Loading photos…</p>';
   const side = (u, k) => fetch(u, {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).then(j => j[k] || {}).catch(() => ({}));
-  try { [DATA, AUTOQ, AUTOF, FB0, FU0, PICKS] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), side('quality.json', 'q'), side('forms.json', 'form'), side('forms.json', 'batch'), side('forms.json', 'unsure'), side('picks.json', 'feat'), loadSaved()]); }
+  try { [DATA, AUTOQ, AUTOF, FB0, FU0, PICKS, SUG] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), side('quality.json', 'q'), side('forms.json', 'form'), side('forms.json', 'batch'), side('forms.json', 'unsure'), side('picks.json', 'feat'), fetch('suggest.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})), loadSaved()]); }
   catch (x) { $v.innerHTML = `<p class="warn">Could not load: ${esc(x.message)}</p>`; return; }
   FBATCH = new Set(Array.isArray(FB0) ? FB0 : []); FUNSURE = new Set(Array.isArray(FU0) ? FU0 : []);
   // Every photo of data.json by name, with its genus, for the Excluded view.
@@ -625,7 +680,7 @@ async function start(){
     if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); } else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); } });
   cur = decodeURIComponent(location.hash.slice(1)) || Object.keys(DATA.gen)[0];
   window.onhashchange = () => { cur = decodeURIComponent(location.hash.slice(1)); const h = $('admhelp'); if (h) h.remove(); render(); window.scrollTo({top: 0}); };
-  window.onbeforeunload = e => { if (TOKEN && (changed().length || qChanged() || fChanged() || xChanged() || flChanged())) { e.preventDefault(); e.returnValue = ''; } };
+  window.onbeforeunload = e => { if (TOKEN && (changed().length || qChanged() || fChanged() || xChanged() || flChanged() || sgChanged())) { e.preventDefault(); e.returnValue = ''; } };
   render();
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.

@@ -38,5 +38,7 @@ score = {f: .45 * sharp[f] + .2 * contrast[f] + .2 * cast[f] + .15 * dark[f] - (
 order = sorted(files, key=lambda f: score[f])
 n = len(order)
 Q = {f: 1 if i < .2 * n else 2 if i < .55 * n else 3 for i, f in enumerate(order)}
+# Ratings from the outside judging agent (suggest.json "quality", tools/judging_import.py) replace the measured ones.
+if os.path.exists('suggest.json'): Q.update({f: q for f, q in json.load(open('suggest.json')).get('quality', {}).items() if f in Q})
 json.dump({'v': 1, 'q': Q}, open('quality.json', 'w'), separators=(',', ':'), sort_keys=True)
 print({k: sum(1 for v in Q.values() if v == k) for k in (1, 2, 3)})
