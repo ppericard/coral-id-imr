@@ -677,8 +677,6 @@ async function start(){
   catch (x) { $v.innerHTML = `<p class="warn">Could not load: ${esc(x.message)}</p>`; return; }
   FBATCH = new Set(Array.isArray(FB0) ? FB0 : []); FUNSURE = new Set(Array.isArray(FU0) ? FU0 : []);
   [FDEF, LEGACY] = await Promise.all([side('forms.json', 'forms'), side('forms.json', 'form')]); if (!Array.isArray(FDEF)) FDEF = [];
-  // Pierre's clicks in the old Coral Finder letters (curation.json "form") stay as they are, shown as the hint.
-  Object.assign(LEGACY, SAVED.form || {}, DRAFT.form || {});
   // Every photo of data.json by name, with its genus, for the Excluded view.
   PHOTOS = {}; Object.entries(DATA.gen).forEach(([n, g]) => [...Object.values(g.views || {}), ...Object.values(g.more || {}), (DATA.course || {})[n] || [], (DATA.cand || {})[n] || [], g.book || []].flat().forEach(p => { PHOTOS[p.f] = {...p, genus: n}; }));
   // Every photo name in data.json (field, extra, lecture, candidates), to spot choices left pointing nowhere.
@@ -686,6 +684,8 @@ async function start(){
   // Unsaved edits from an earlier visit are kept, on top of what is saved.
   const old = store.get('imr-curation-draft', null);
   DRAFT = old && old.genera ? old : clone(SAVED); snap = JSON.stringify(DRAFT);
+  // Pierre's clicks in the old Coral Finder letters (curation.json "form") stay as they are, shown as the hint.
+  Object.assign(LEGACY, SAVED.form || {}, DRAFT.form || {});
   const nf = importFlags(); if (nf) setTimeout(() => toast(`${nf} new photo${nf > 1 ? 's' : ''} flagged on the site: see Triage.`), 50);
   addEventListener('storage', e => { if (e.key === 'imr-photo-flags' && e.newValue && importFlags()) render(); });
   const keep = changed().length; if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? "genera" : "genus"} not published yet.`);
