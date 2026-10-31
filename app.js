@@ -432,7 +432,8 @@ const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 let P = store.get('imr-coral-progress', {}) || {};
 const save = () => { store.set('imr-coral-progress', P); showProg(); syncSoon(); };
 const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
-const Q = Object.assign({view: 'any', level: 'medium'}, store.get('imr-coral-quiz', {}), {stars: true});  // starred genera are always asked (Pierre)
+const Q = Object.assign({view: 'any', level: 'auto'}, store.get('imr-coral-quiz', {}), {stars: true});  // starred genera are always asked (Pierre)
+if (Q.lvv !== 2) { Q.level = 'auto'; Q.lvv = 2; }  // Auto became the default (Pierre, 2026-10-31)
 const saveQ = () => store.set('imr-coral-quiz', Q);
 let session = {ok: 0, n: 0}, last = null, duelPair = null;
 const pool = () => Object.keys(DATA.gen).filter(n => (Q.stars || DATA.gen[n].n) && photoSet(n).shown.length);
@@ -443,7 +444,11 @@ function photoSet(n){
   const g = DATA.gen[n], two = g.levels === 2, need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
   const obs = {};
   // The Colony slot never gets a photo whose growth form is "x" (too close to see it): that is a close-up.
-  const pics = v => gamePics(n, v, Q.level).filter(p => v !== 'wide' || p.form !== 'x');
+  const ok = v => p => v !== 'wide' || p.form !== 'x';
+  const pics = v => { if (Q.level !== 'auto') return gamePics(n, v, Q.level).filter(ok(v));
+    // Auto: the photos of the genus's own level first, then the easier ones, then any.
+    const k = LEVELS[autoLvl(n)][0], s = (DATA.gen[n].sl || {})[v], own = s ? (s[k] || []).filter(ok(v)) : [];
+    return own.length ? own : gamePics(n, v, k).filter(ok(v)).length ? gamePics(n, v, k).filter(ok(v)) : gamePics(n, v, 'hard').filter(ok(v)); };
   need.forEach(v => pics(v).forEach(p => { const k = p.o || p.f; (obs[k] = obs[k] || {})[v] = (obs[k][v] || []).concat([p]); }));
   const groups = Object.values(obs), cov = o => need.filter(v => o[v]).length, best = Math.max(0, ...groups.map(cov));
   const o = best ? pick(groups.filter(x => cov(x) === best)) : {};
@@ -456,35 +461,61 @@ function photoSet(n){
 const weight = n => { const s = P[n]; if (!s) return 3; return (1 + 2 * s.ko) / (1 + s.ok) * (s.streak >= 3 ? 0.3 : 1) + 0.15; };
 function weighted(list){ const w = list.map(weight), t = w.reduce((a, b) => a + b, 0); let r = Math.random() * t; for (let i = 0; i < list.length; i++) { r -= w[i]; if (r <= 0) return list[i]; } return list[list.length - 1]; }
 function nextTarget(list){ let n, k = 0; do { n = weighted(list); } while (n === last && list.length > 1 && ++k < 10); last = n; return n; }
-// Status from the last RECENT answers (Pierre: no time criteria, reachable in one sitting), plus two milestones.
-// Learned: at most 1 mistake in the last 5, last answer right, once right with the corallites in view,
-// once right in a look-alike duel (when the genus has look-alikes). Review: 2+ mistakes in the last 5, or last answer wrong.
-const RECENT = 5;
+// Adaptive photo level and "learned" (Pierre, 2026-10-31; no time criteria, reachable in one sitting).
+// Each genus has its own photo level (s.lv: 0 Easy, 1 Medium, 2 Hard), used by the Auto photo set. It starts at Easy;
+// 2 right answers in a row at that level or above move it up one level; a mistake moves it down one (naming the genus
+// wrongly counts as a mistake for it too). A right answer counts at the level of the photos actually shown (the
+// hardest of them), so forced sets count as well. s.hr = right answers in a row on the genus's hardest photos (its top level: Hard, or Medium when it has no Hard photos).
+// Learned (provisional): 3 right in a row on Hard photos, plus two milestones: once right with the corallites in view,
+// once right in a look-alike duel (when the genus has look-alikes). Confirmed: also at most 1 mistake in the last 10.
+// Review: 2+ mistakes in the last 5 results.
+const RECENT = 10, HARD_RUN = 3, UP_RUN = 2;
 const recent = n => { const s = P[n] || {}; return s.h ? s.h.slice(-RECENT) : ''; };
 const misses = h => [...h].filter(x => x === '0').length;
 const hasDuel = n => DATA.gen[n].look.some(b => DATA.gen[b]);
+// Top level of a genus: its hardest game set that has photos (some genera have no Hard photos: then Medium is the top).
+const topLvl = n => { const sl = DATA.gen[n].sl || {}; let m = 0; Object.keys(sl).forEach(v => [1, 2].forEach(i => { if ((sl[v][LEVELS[i][0]] || []).length) m = Math.max(m, i); })); return m; };
+const autoLvl = n => Math.min(topLvl(n), Math.max(0, (P[n] || {}).lv || 0));
+// Level of a game photo of genus n: the game set (Easy/Medium/Hard) it belongs to; lecture or unlisted photos = Easy.
+function photoLvl(n, p){ const sl = DATA.gen[n].sl || {}; for (const v of Object.keys(sl)) for (let i = 2; i >= 0; i--) if ((sl[v][LEVELS[i][0]] || []).some(x => x.f === p.f)) return i; return 0; }
+function stepLvl(n, s, good, qlv){
+  const top = topLvl(n);
+  if (good) { if (qlv >= Math.min(s.lv || 0, top)) { s.run = (s.run || 0) + 1; if (s.run >= UP_RUN && (s.lv || 0) < top) { s.lv = (s.lv || 0) + 1; s.run = 0; } }
+    if (qlv >= top) s.hr = (s.hr || 0) + 1; }
+  else { s.lv = Math.max(0, (s.lv || 0) - 1); s.run = 0; s.hr = 0; }
+}
 function missing(n){
-  const s = P[n] || {}, h = recent(n), m = [];
-  if (h.length < RECENT) m.push(`${RECENT - h.length} more answer${RECENT - h.length > 1 ? 's' : ''}`);
+  const s = P[n] || {}, m = [], lv = autoLvl(n);
+  if (lv < topLvl(n)) m.push(`reach the hardest photos (now ${LEVELS[lv][1].toLowerCase()})`);
+  if ((s.hr || 0) < HARD_RUN) m.push(`${HARD_RUN - (s.hr || 0)} more right in a row on the hardest photos`);
   if (!s.cor) m.push('right once with the corallites photo open');
   if (hasDuel(n) && !s.du) m.push('right once in a look-alike duel');
   return m;
 }
+// Partial progress of a genus, 0 to 1 (so progress moves before a genus is learned): the steps towards Learned
+// done so far (photo levels climbed, right answers in a row on the hardest photos, the two milestones).
+function genScore(n){
+  if (level(n)[0] === 'ok') return 1;
+  const s = P[n]; if (!s) return 0;
+  const top = topLvl(n), duel = hasDuel(n) ? 1 : 0;
+  return (Math.min(s.lv || 0, top) + Math.min(s.hr || 0, HARD_RUN) + (s.cor ? 1 : 0) + (duel && s.du ? 1 : 0)) / (top + HARD_RUN + 1 + duel);
+}
+const progPct = (L = Object.keys(DATA.gen)) => Math.round(100 * L.reduce((t, n) => t + genScore(n), 0) / L.length);
+const confirmed = n => { const h = recent(n); return h.length >= RECENT && misses(h) <= 1; };
 function level(n){
   const s = P[n]; if (!s || (s.ok + s.ko === 0 && !s.h)) return ['new', 'Not seen'];
   const h = recent(n);
-  if (!h) return s.streak === 0 ? ['weak', 'Review'] : ['mid', 'Learning'];  // progress saved before this rule
-  if (h.slice(-1) === '0' || misses(h) >= 2) return ['weak', 'Review'];
-  if (!missing(n).length) return ['ok', 'Learned'];
+  if (misses(h.slice(-5)) >= 2) return ['weak', 'Review'];
+  if (!missing(n).length) return ['ok', confirmed(n) ? 'Learned' : 'Learned (provisional)'];
   return ['mid', 'Learning'];
 }
 function quizNav(){ return ''; }
 function bindQuizNav(){ bindGo(); }
 // What each photo set holds (shown under the level buttons) and the game rules (behind the ? button).
-const LVLNOTE = {easy: 'The photos on the genus sheets.', medium: 'Adds other good photos.', hard: 'Adds harder photos: less typical, less sharp or farther away.', lecture: 'Only the photos from the IMR lecture.'};
+const LVLNOTE = {auto: 'Photos adapt to each genus: easy first, harder as you get it right.', easy: 'The photos on the genus sheets.', medium: 'Adds other good photos.', hard: 'Adds harder photos: less typical, less sharp or farther away.', lecture: 'Only the photos from the IMR lecture.'};
 const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused: say which one is in the photos.' : 'Name the genus in the photos: one colony view and one closer view of the same coral.'}
   Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? <b>Show the corallites</b> adds a close-up. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on. Every answer counts in <a href="#progress">My progress</a>.</p>
-  <p class="lede"><b>Photo sets</b> (each adds to the one before). <b>Easy</b>: the photos on the genus sheets. <b>Medium</b>: adds other good photos. <b>Hard</b>: adds less typical, less sharp or more distant photos.${cur === 'quiz' ? ' <b>Lecture</b>: only the photos from the IMR lecture.' : ''}</p>`;
+  <p class="lede"><b>Auto</b> (default): each genus starts with easy photos; 2 right answers in a row move it to harder photos, a mistake moves it back. A genus is learned once you get it right 3 times in a row on hard photos. Or force a set: <b>Easy</b>: the photos on the genus sheets. <b>Medium</b>: adds other good photos. <b>Hard</b>: adds less typical, less sharp or more distant photos (each set adds to the one before).${cur === 'quiz' ? ' <b>Lecture</b>: only the photos from the IMR lecture.' : ''}</p>`;
 function question(cur, target, choices, prompt, set){
   const ph = set.shown, lab = VIEW_LABEL;
   let answered = false, hintShown = false;
@@ -493,8 +524,8 @@ function question(cur, target, choices, prompt, set){
   $v.innerHTML = `${gameHelp(cur)}<div class="q">
     <div class="qstage">${ph.map(fig).join('')}</div>
     <aside class="qside">
-      <div class="seg qlvl" role="group" aria-label="Photo set">${(cur === 'quiz' ? [...LEVELS, ['lecture', 'Lecture']] : LEVELS).map(([k, t]) => `<button type="button" data-lvl="${k}" aria-pressed="${cur === 'quiz' && Q.course ? k === 'lecture' : Q.level === k}" title="${LVLNOTE[k]}">${t}</button>`).join('')}</div>
-      <p class="lvlnote">${LVLNOTE[cur === 'quiz' && Q.course ? 'lecture' : Q.level]}</p>
+      <div class="seg qlvl" role="group" aria-label="Photo set">${(cur === 'quiz' ? [['auto', 'Auto'], ...LEVELS, ['lecture', 'Lecture']] : [['auto', 'Auto'], ...LEVELS]).map(([k, t]) => `<button type="button" data-lvl="${k}" aria-pressed="${cur === 'quiz' && Q.course ? k === 'lecture' : Q.level === k}" title="${LVLNOTE[k]}">${t}</button>`).join('')}</div>
+      <p class="lvlnote">${cur === 'quiz' && Q.course ? LVLNOTE.lecture : Q.level === 'auto' ? `Photos adapt to each genus. These are ${LEVELS[Math.max(...ph.map(p => photoLvl(target, p)), 0)][1].toLowerCase()}.` : LVLNOTE[Q.level]}</p>
       <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">${session.ok}/${session.n}</span>${quizNav(cur)}</div>
       <div class="ans">${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
@@ -559,7 +590,9 @@ function answer(cur, c, target, ph, cor){
   session.n++; if (good) { session.ok++; s.ok++; s.streak++; } else { s.ko++; s.streak = 0; s.conf = s.conf || {}; s.conf[c] = (s.conf[c] || 0) + 1; }
   s.h = ((s.h || '') + (good ? 1 : 0)).slice(-10);  // recent results, newest last
   // Pierre's rule: a wrong answer also shows the genus given is not mastered, so it counts as a miss for it too.
-  if (!good && DATA.gen[c]) { const w = st(c); w.h = ((w.h || '') + '0').slice(-10); w.streak = 0; }
+  if (!good && DATA.gen[c]) { const w = st(c); w.h = ((w.h || '') + '0').slice(-10); w.streak = 0; stepLvl(c, w, false, 0); }
+  // Adaptive level: the question counts at the level of the hardest photo shown (lecture photos count as Easy).
+  stepLvl(target, s, good, cur === 'quiz' && Q.course ? 0 : Math.max(0, ...ph.map(p => photoLvl(target, p))));
   if (good && cor) s.cor = 1;  // milestone: right with the corallites photo in view
   if (good && cur.startsWith('quiz-duel')) s.du = 1;  // milestone: won a look-alike duel
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
@@ -616,10 +649,10 @@ function quizBoard(){
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
   let deg = 0; const ring = LV.map(([k]) => { const d = 360 * count(k) / list.length, c = `var(--${k === 'ok' ? 'good' : k === 'mid' ? 'accent' : k === 'weak' ? 'bad' : 'line'}) ${deg}deg ${deg + d}deg`; deg += d; return c; }).join(',');
   const tile = n => { const g = DATA.gen[n], p = cover(g), s = P[n] || {ok: 0, ko: 0}, [cl, lb] = lv[n];
-    return `<a class="pw ${cl}" href="#g-${esc(n)}" title="${tip(n)}">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<span><i>${esc(n)}</i>${g.n ? '' : ' ★'}</span></a>`; };
+    return `<a class="pw ${cl}" href="#g-${esc(n)}" title="${tip(n)}">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<span><i>${esc(n)}</i>${g.n ? '' : ' ★'}</span>${cl !== 'new' && cl !== 'ok' ? `<b class="pbar" style="--p:${genScore(n).toFixed(2)}"></b>` : ''}</a>`; };
   const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
   // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
-  const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right)` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
+  const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right)` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
   const gi = n => shownGroup(n) || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
   const VIEWS = {
     photos: () => `<div class="pgrid pwall">${list.map(tile).join('')}</div>`,
@@ -629,13 +662,13 @@ function quizBoard(){
         <span class="pseg">${L.map(n => `<a class="${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i></a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
   };
   let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
-  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. Green: learned. Teal: learning. Red: to review (comes up more often in the quiz). Grey: not seen yet. Status comes from your last 5 answers for each genus (any quiz, duels included); naming a genus when the photo shows another one counts as a mistake for both. Learned: at most 1 mistake in the last 5, the last answer right, and two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5, or the last answer wrong. Click a genus to open its sheet.</p>
+  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. Green: learned. Teal: learning. Red: to review (comes up more often in the quiz). Grey: not seen yet. Each genus has its own photo level: it starts with easy photos, 2 right answers in a row move it to harder ones, a mistake moves it back (naming a genus when the photo shows another one counts as a mistake for both). Learned (provisional): 3 right in a row on hard photos, plus two milestones: right once with the corallites photo open, and right once in a look-alike duel. Learned (confirmed): also at most 1 mistake in the last 10 answers. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5 answers. Click a genus to open its sheet.</p>
   <div class="pgame pboard"><div class="pgwrap"></div>
   <aside class="gside">
     <div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['slate', 'Slate'], ['groups', 'Groups']].map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`).join('')}</div>
-    <div class="pring" style="background:conic-gradient(${ring})"><span><b>${count('ok')}</b>/${list.length}<small>learned</small></span></div>
+    <div class="pring" style="background:conic-gradient(${ring})"><span><b>${progPct(list)}%</b><small>${count('ok')}/${list.length} learned</small></span></div>
     <p class="plegend">${LV.map(([k, t]) => `<span class="lvl ${k}">${t} ${count(k)}</span>`).join(' ')}</p>
-    <p class="pnote">Learned = at most 1 mistake in your last 5 answers on this genus (naming it wrongly counts too), the last one right, and right once with the corallites and once in a duel.</p>
+    <p class="pnote">Learned = 3 right in a row on hard photos (photos get harder as you get a genus right), plus once with the corallites and once in a duel. Confirmed after 10 answers with at most 1 mistake. Naming a genus wrongly counts as a mistake for it. The % counts every step done on the way.</p>
     ${weak.length ? `<div><h3 class="label">Review first</h3><p class="chips">${weak.slice(0, 4).map(n => `<a class="chip" href="#g-${esc(n)}"><i>${esc(n)}</i></a>`).join('')}</p></div>` : ''}
     ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> / <i>${esc(o)}</i> ×${k}</a>`).join('')}</p></div>` : ''}
     <p><a class="next go" href="#quiz">Practise now</a></p>
@@ -657,7 +690,7 @@ function quizBoard(){
 
 // Header progress pill: genera learned, always in view; the page itself is #progress.
 const $prog = document.getElementById('prog');
-function showProg(){ if (!DATA) return; const n = Object.keys(DATA.gen); const pt = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length}`; document.getElementById('progn').textContent = pt; const p2 = document.getElementById('progn2'); if (p2) p2.textContent = pt;
+function showProg(){ if (!DATA) return; const n = Object.keys(DATA.gen); const pt = `${progPct(n)}%`, lt = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length} genera learned`; document.getElementById('progn').textContent = pt; $prog.title = `Your progress: ${pt} (${lt})`; const p2 = document.getElementById('progn2'); if (p2) p2.textContent = pt;
   // Not signed in: the pill says so, so RAs find where to save their progress.
   const pill = document.getElementById('prog'), out = !!SYNC_URL && !SYNC;
   pill.classList.toggle('nosync', out || !!syncTrouble()); pill.querySelector('.pl').textContent = out ? 'Sign in · progress' : 'My progress';
@@ -711,14 +744,15 @@ function mergeSaved(j){
     const b = B[g] || Z, l = P[g] || Z, r = R[g] || Z, out = {...r};
     out.ok = Math.max(0, (r.ok || 0) + (l.ok || 0) - (b.ok || 0));
     out.ko = Math.max(0, (r.ko || 0) + (l.ko || 0) - (b.ko || 0));
-    const mine = (l.ok || 0) + (l.ko || 0) !== (b.ok || 0) + (b.ko || 0);
+    const mine = (l.ok || 0) + (l.ko || 0) !== (b.ok || 0) + (b.ko || 0) || (l.h || '') !== (b.h || '');
     out.streak = mine ? l.streak || 0 : r.streak || 0;
     if (mine && l.h) out.h = l.h;
+    if (mine) ['lv', 'run', 'hr'].forEach(k => { if (l[k] !== undefined) out[k] = l[k]; else delete out[k]; });
     if (l.cor || r.cor) out.cor = 1; if (l.du || r.du) out.du = 1;
     const conf = {...(r.conf || {})};
     Object.keys(l.conf || {}).forEach(k => { const v = (conf[k] || 0) + l.conf[k] - ((b.conf || {})[k] || 0); if (v > 0) conf[k] = v; else delete conf[k]; });
     if (Object.keys(conf).length) out.conf = conf; else delete out.conf;
-    if (out.ok + out.ko) P[g] = out; else delete P[g];
+    if (out.ok + out.ko || out.h) P[g] = out; else delete P[g];
   });
   // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
   SYNC.base = copy(R); store.set('imr-coral-sync', SYNC);
