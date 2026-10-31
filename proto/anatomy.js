@@ -208,7 +208,7 @@
       } else if (mode === 'con') {
         const cur = CON.find(x => x.id === a[1]) || CON[0];
         root.innerHTML = `${tabs}<div class="a2lay"><nav class="a2side a2side-t" aria-label="Concepts">${CON.map(x => `<a href="#lab-anatomy|con|${x.id}${sfx}"${x === cur ? ' aria-current="true"' : ''}><span><b>${esc(x.name)}</b><small>${esc(x.q)}</small></span></a>`).join('')}</nav>
-          <div class="a2main"><section class="a2con"><div class="a2minis">${cur.minis.map(([s, l]) => `<figure>${flat(s, l, cur.box)}<figcaption>${esc(l)}</figcaption></figure>`).join('')}</div>
+          <div class="a2main"><section class="a2con"><div class="a2minis" data-n="${cur.minis.length}" style="--n:${cur.minis.length}">${cur.minis.map(([s, l]) => `<figure>${flat(s, l, cur.box)}<figcaption>${esc(l)}</figcaption></figure>`).join('')}<p class="a2key"><i aria-hidden="true"></i>${esc(cur.name)}${cur.shots.some(x => x[2]) ? ', ringed in the same colour on the photos' : ''}</p></div>
           <div><h3>${esc(cur.name)}</h3><p class="a2q">${esc(cur.q)}</p><p>${esc(cur.def)}</p></div></section>
           <div class="a2shots">${cur.shots.map(([f, g, r, note], k) => { list.push(photoOf(f, g)); return ringed(f, g, r, note, k, edit); }).join('')}</div></div></div>`;
       } else {
