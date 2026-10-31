@@ -255,7 +255,7 @@ function viewTraits(){
 /* ---------- quiz ---------- */
 // Progress per genus {ok, ko, streak, conf}, kept in this browser only.
 let P = store.get('imr-coral-progress', {}) || {};
-const save = () => store.set('imr-coral-progress', P);
+const save = () => { store.set('imr-coral-progress', P); showProg(); };
 const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
 const Q = Object.assign({stars: true, view: 'any'}, store.get('imr-coral-quiz', {}));
 const saveQ = () => store.set('imr-coral-quiz', Q);
@@ -358,23 +358,62 @@ function quizDuel(a, b){
   const t = pick(pair);
   question(a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t));
 }
+// Progress board: one photo tile per genus, coloured by status, grouped by IMR lecture group so
+// weak spots show up as a pattern; the genus most often given instead is linked to the side-by-side comparison.
 function quizBoard(){
-  const order = {weak: 0, mid: 1, new: 2, ok: 3};
-  const list = Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n).sort((a, b) => order[level(a)[0]] - order[level(b)[0]] || weight(b) - weight(a) || slateIdx(a) - slateIdx(b));
-  const seen = list.filter(n => P[n] && P[n].ok + P[n].ko).length, acq = list.filter(n => level(n)[0] === 'ok').length;
-  $v.innerHTML = `${quizNav('quiz-board')}<h2>${acq} of ${list.length} genera learned</h2>
-  <p class="note">${seen} genera seen so far. Learned means at least 3 correct answers in a row and 75% success. Genera marked Review come up more often. Progress is stored in this browser only.</p>
-  <div class="tablewrap"><table><thead><tr><th>Genus</th><th>Status</th><th>Success</th><th>Confused with</th></tr></thead><tbody>
-  ${list.map(n => { const s = P[n] || {ok: 0, ko: 0}, tot = s.ok + s.ko, [cl, lb] = level(n);
-    const conf = s.conf ? Object.entries(s.conf).sort((x, y) => y[1] - x[1]).slice(0, 2).map(([k, v]) => `<a class="linkish" href="#cmp-${esc(n)}|${esc(k)}"><i>${esc(k)}</i></a> ×${v}`).join(', ') : '';
-    return `<tr><td><a class="linkish" href="#g-${esc(n)}"><i>${esc(n)}</i></a>${DATA.gen[n].n ? '' : ' ★'}</td><td><span class="lvl ${cl}">${lb}</span></td>
-      <td>${tot ? `<div class="bar" title="${s.ok}/${tot}"><span style="width:${Math.round(100 * s.ok / tot)}%"></span></div><small>${s.ok}/${tot}</small>` : '<small>—</small>'}</td><td>${conf}</td></tr>`; }).join('')}
-  </tbody></table></div>
+  const list = Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n);
+  const lv = Object.fromEntries(list.map(n => [n, level(n)]));
+  const count = k => list.filter(n => lv[n][0] === k).length, seen = list.length - count('new');
+  const LV = [['ok', 'Learned'], ['mid', 'Learning'], ['weak', 'Review'], ['new', 'Not seen']];
+  const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
+  const tile = n => { const g = DATA.gen[n], p = cover(g), s = P[n] || {ok: 0, ko: 0}, tot = s.ok + s.ko, [cl, lb] = lv[n];
+    const top = s.conf ? Object.entries(s.conf).sort((x, y) => y[1] - x[1])[0] : null;
+    return `<figure class="pt ${cl}"><a href="#g-${esc(n)}">${p ? `<img src="${img(p, 's')}" alt="" loading="lazy">` : ''}<figcaption><i>${esc(n)}</i>${g.n ? '' : ' ★'}<span class="lvl ${cl}">${lb}</span></figcaption>${tot ? `<span class="pbar" title="${s.ok} right of ${tot}"><span style="width:${Math.round(100 * s.ok / tot)}%"></span></span>` : ''}</a>
+      ${top ? `<a class="pconf" href="#cmp-${esc(n)}|${esc(top[0])}" title="Compare side by side">mixed up with <i>${esc(top[0])}</i> ×${top[1]}</a>` : ''}</figure>`; };
+  const gi = n => DATA.gen[n].ig || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
+  $v.innerHTML = `${quizNav('quiz-board')}<h2>${count('ok')} of ${list.length} genera learned</h2>
+  <div class="pstack" role="img" aria-label="${LV.map(([k, t]) => count(k) + ' ' + t.toLowerCase()).join(', ')}">${LV.map(([k]) => count(k) ? `<span class="${k}" style="flex:${count(k)}"></span>` : '').join('')}</div>
+  <p class="plegend">${LV.map(([k, t]) => `<span class="lvl ${k}">${t} ${count(k)}</span>`).join(' ')}</p>
+  <p class="note">${seen} genera seen so far. Learned means at least 3 correct answers in a row and 75% success. Genera marked Review come up more often in the quiz.</p>
+  ${weak.length ? `<section class="pfocus"><h3>Review first</h3><div class="pgrid">${weak.slice(0, 8).map(tile).join('')}</div><p><a class="chip" href="#quiz">Practise now</a></p></section>` : ''}
+  ${groups.map(k => { const gr = DATA.imrg.find(x => x.n === k), L = list.filter(n => gi(n) === k).sort((a, b) => slateIdx(a) - slateIdx(b));
+    const done = L.filter(n => lv[n][0] === 'ok').length;
+    return `<h3 class="gdiv" style="--g:${gr ? (gr.n * 137) % 360 : 200}"><span class="gn">${gr ? gr.n : '★'}</span>${gr ? esc(gr.t) : 'Not covered in the lecture'}<small class="pdone">${done}/${L.length}</small></h3><div class="pgrid">${L.map(tile).join('')}</div>`; }).join('')}
+  <div class="saveprog"><p class="note">Progress is saved in this browser, on this device. Save it to a file to keep a backup or move it to another phone or computer.</p>
+    <button class="chip" type="button" id="pexp">Save progress to a file</button> <button class="chip" type="button" id="pload">Load a progress file</button><input type="file" id="pimp" accept=".json,application/json" hidden> <span class="note" id="pmsg" role="status"></span></div>
   <p><button class="reset" type="button" id="reset">Reset progress</button></p>`;
-  bindQuizNav('quiz-board'); bindCards();
+  bindQuizNav('quiz-board');
+  bindProgFile();
   const rb = document.getElementById('reset');
   rb.onclick = () => { if (rb.dataset.armed) { P = {}; save(); quizBoard(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } };
 }
+
+// Header progress pill: genera learned, always in view; the page itself is #progress.
+const $prog = document.getElementById('prog');
+function showProg(){ if (!DATA) return; const n = Object.keys(DATA.gen); document.getElementById('progn').textContent = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length}`; }
+// Progress files: every imr-coral-* key in localStorage (quiz progress, settings, Lab scores), as JSON.
+function bindProgFile(){
+  const msg = t => document.getElementById('pmsg').textContent = t;
+  document.getElementById('pexp').onclick = () => {
+    const out = {app: 'imr-coral-id', saved: new Date().toISOString(), data: {}};
+    try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('imr-coral')) out.data[k] = localStorage.getItem(k); } } catch (e) {}
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 1)], {type: 'application/json'}));
+    a.download = `imr-coral-progress-${out.saved.slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(a.href);
+    msg('Saved. Keep the file somewhere safe (Drive, email to yourself).');
+  };
+  const pick = document.getElementById('pimp');
+  document.getElementById('pload').onclick = () => pick.click();
+  try { const done = sessionStorage.getItem('imr-coral-loaded'); if (done) { sessionStorage.removeItem('imr-coral-loaded'); msg('Progress loaded from ' + done + '.'); } } catch (e) {}
+  pick.onchange = e => { const f = e.target.files[0]; if (!f) return;
+    f.text().then(t => { const j = JSON.parse(t); if (j.app !== 'imr-coral-id' || !j.data) throw 0;
+      Object.entries(j.data).forEach(([k, v]) => k.startsWith('imr-coral') && localStorage.setItem(k, v));
+      // Reload so every setting held in memory (quiz options, list order, Lab state) picks up the file.
+      try { sessionStorage.setItem('imr-coral-loaded', f.name); } catch (e) {} location.reload(); })
+      .catch(() => msg('This file is not an IMR Coral ID progress file.')); };
+}
+// Ask the browser not to evict saved progress when storage runs low.
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
 /* ---------- routing ---------- */
 function go(h){ if (decodeURIComponent(location.hash.slice(1)) === h) route(); else location.hash = h; }
@@ -400,7 +439,7 @@ showTheme();
 const MODES = {
   learn: [['genera', 'Genera', 'The 39 genus sheets'], ['cmp', 'Look-alikes', 'Confused pairs side by side']],
   identify: [['key-imr', 'IMR lecture groups', 'The 11 groups from the lecture'], ['key', 'By colony form', 'Start from the overall shape'], ['key-tr', 'By corallites', 'Filter on skeletal details']],
-  practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['quiz-course', 'Lecture photos', 'Photos from the IMR course'], ['quiz-board', 'To work on', 'Your progress per genus'], ['pairs', 'Memory', 'Match colony and corallites'], ['reveal', 'Blur reveal', 'Name it before it sharpens']]
+  practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['quiz-course', 'Lecture photos', 'Photos from the IMR course'], ['pairs', 'Memory', 'Match colony and corallites'], ['reveal', 'Blur reveal', 'Name it before it sharpens']]
 };
 const MODE_LABEL = {learn: 'Learn tools', identify: 'Ways to identify', practice: 'Practice modes'};
 // Which tab of MODES a hash belongs to: key leaves and groups count as the key, genus sheets as Genera, pairs as Look-alikes.
@@ -408,6 +447,7 @@ function modeOf(h){ return /^[kl]-/.test(h) ? 'key' : h.startsWith('g-') ? 'gene
 function sectionOf(h){
   if (!h || h === 'home') return 'home';
   if (h.startsWith('lab')) return 'lab';
+  if (h === 'progress' || h === 'quiz-board') return 'progress';
   const m = modeOf(h);
   return Object.keys(MODES).find(t => MODES[t].some(x => x[0] === m)) || 'learn';
 }
@@ -423,6 +463,7 @@ function route(){
   applySize();
   const h = decodeURIComponent(location.hash.slice(1));
   const tab = sectionOf(h);
+  showProg(); tab === 'progress' ? $prog.setAttribute('aria-current', 'page') : $prog.removeAttribute('aria-current');
   document.querySelectorAll('nav [data-tab]').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   showModes(tab, h);
   if (h === 'key') viewKey();
@@ -435,7 +476,7 @@ function route(){
   else if (h.startsWith('cmp-')) viewCompare(...h.slice(4).split('|'));
   else if (h === 'quiz') quizPhoto();
   else if (h === 'quiz-course') quizCourse();
-  else if (h === 'quiz-board') quizBoard();
+  else if (h === 'progress' || h === 'quiz-board') quizBoard();
   else if (h.startsWith('quiz-duel')) { const [, a, b] = h.split('|'); quizDuel(a, b); }
   else if (h.startsWith('lab') && window.viewLab) viewLab(h);
   else if (window.labTool && labTool(h)) {}

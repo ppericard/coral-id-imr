@@ -48,9 +48,15 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .hdr-tools{display:flex;gap:8px;align-items:center}
 
 /* ---------- Controls: one pill system for nav, chips, segmented control and icon buttons ---------- */
-.sections a,.chip,.theme,.seg,#size{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);box-shadow:var(--shadow)}
+.sections a,.chip,.theme,.seg,#size,.prog{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);box-shadow:var(--shadow)}
 .sections a,.chip{display:inline-flex;align-items:center;min-height:var(--ctl-h);padding:0 14px;text-decoration:none;white-space:nowrap;cursor:pointer;font-size:.92rem;transition:background .12s,border-color .12s,color .12s}
-.sections a:hover,.chip:hover,.theme:hover{border-color:var(--accent)}
+.sections a:hover,.chip:hover,.theme:hover,.prog:hover{border-color:var(--accent)}
+.prog{display:inline-flex;align-items:center;gap:6px;height:var(--ctl-h);padding:0 12px;text-decoration:none;font-size:.86rem;white-space:nowrap}
+.prog b{color:var(--good);font-variant-numeric:tabular-nums}
+.prog[aria-current="page"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.prog[aria-current="page"] b{color:inherit}
+.saveprog{margin:12px 0 18px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.saveprog p{flex:1 0 100%;margin:0}
 .sections a[aria-current="page"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
 .chip{min-height:32px;padding:0 12px;font-size:.86rem;box-shadow:none}
@@ -253,6 +259,7 @@ td i{font-weight:600}
   .brand small{display:none}
   .brand .home{font-size:1.5rem}
   .hdr-tools{grid-area:tools}
+  .prog .pl{display:none}
   header{grid-template-areas:"title tools" "nav nav" "modes modes"}
   .sections{grid-area:nav;margin-left:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px}
   .modes{grid-area:modes;padding:3px;overflow-x:auto;scrollbar-width:none;min-width:0}
@@ -267,3 +274,25 @@ td i{font-weight:600}
   :root[data-size="l"] .qset.two{grid-template-columns:1fr}
   :root[data-size="l"] .qset.two .qph{aspect-ratio:4/3}
 }
+
+/* ---------- Progress board ---------- */
+.pstack{display:flex;height:14px;border-radius:var(--pill);overflow:hidden;background:var(--surface-2);margin:10px 0 8px;max-width:640px}
+.pstack .ok{background:var(--good)}.pstack .mid{background:var(--accent)}.pstack .weak{background:var(--bad)}.pstack .new{background:var(--line)}
+.plegend{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:10px 0 6px}
+:root[data-size="s"] .pgrid{grid-template-columns:repeat(auto-fill,minmax(115px,1fr))}
+:root[data-size="l"] .pgrid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.pt{margin:0;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.pt.ok{border-top-color:var(--good)}.pt.mid{border-top-color:var(--accent)}.pt.weak{border-top-color:var(--bad)}
+.pt.new img{filter:grayscale(.85) opacity(.75)}
+.pt>a:first-child{color:inherit;text-decoration:none;display:block}
+.pt>a:first-child:hover img{filter:none}
+.pt img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.pt figcaption{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px;padding:6px 8px 4px;font-size:.92rem}
+.pt .pbar{display:block;height:5px;margin:0 8px 8px;border-radius:var(--pill);background:var(--surface-2);overflow:hidden}
+.pt .pbar span{display:block;height:100%;background:var(--good)}
+.pt.weak .pbar span{background:var(--bad)}
+.pconf{display:block;padding:0 8px 8px;font-size:.8rem;color:var(--bad)}
+.pfocus{background:var(--bad-bg);border-radius:var(--r);padding:12px 14px;margin:14px 0}
+.pfocus h3{margin:0;font-size:1rem;color:var(--bad)}
+.pdone{margin-left:auto;font-weight:400;color:var(--muted);font-size:.85rem}

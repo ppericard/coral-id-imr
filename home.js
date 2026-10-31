@@ -38,7 +38,7 @@
           <p class="hcta"><a class="next" href="#genera">Browse the genera</a> <a class="chip" href="#quiz">Test yourself</a></p>
         </div>
       </section>
-      ${seen.length ? `<p class="hprog"><a href="#quiz-board">Your progress: <b>${seen.length}</b> of ${names.length} genera practised, <b>${solid.length}</b> solid (3 right in a row).</a></p>` : ''}
+      ${seen.length ? `<p class="hprog"><a href="#progress">Your progress: <b>${seen.length}</b> of ${names.length} genera practised, <b>${solid.length}</b> solid (3 right in a row).</a></p>` : ''}
       <section class="hpath"><h3>The learning path</h3><p class="note">From vocabulary to reflexes. Modules with a <span class="betakey">dashed outline</span> are still being worked on in the Lab.</p><ol>
         <li><b>Read a corallite</b><span>Walls, septa, size: the features every ID rests on.</span><p>${link('lab-anatomy', 'Corallite anatomy', 1)}${link('lab-size', 'Size ruler', 1)}${link('lab-gallery', 'Feature gallery', 1)}</p></li>
         <li><b>Meet the genera</b><span>Colony, closer view and corallites for each one, and who looks like whom.</span><p>${link('genera', 'Genera')}${link('cmp', 'Look-alikes')}${link('lab-map', 'Mind map', 1)}${link('lab-web', 'Look-alike web', 1)}</p></li>
