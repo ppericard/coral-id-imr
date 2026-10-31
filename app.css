@@ -221,7 +221,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 /* ---------- Quiz: one screen, photos left (sized to the window), choices and feedback right ---------- */
 .q{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,320px);gap:16px;height:var(--qh,70vh);margin-top:12px}
 .qstage{display:grid;gap:8px;min-height:0;align-content:center}
-body:has(.q){padding-bottom:0}
+body:has(.q),body:has(.pgrid),body:has(.rvstage){padding-bottom:0}
 body:has(.q) footer,body:has(.pgrid) footer,body:has(.rvstage) footer{display:none}
 .qph{position:relative;margin:0;overflow:hidden;border-radius:var(--r);background:#000;min-height:0;height:100%}
 .qph img{width:100%;height:100%;object-fit:contain;display:block}
