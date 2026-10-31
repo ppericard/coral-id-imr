@@ -363,3 +363,5 @@ body.adm-cmode .adm-toast{bottom:auto;top:calc(var(--hdr-h,64px) + 56px);pointer
   .adm-grid .adm-acts .adm-vseg button{font-size:.68rem;padding:0 1px}
   .adm-grid .adm-acts>button,.adm-grid .adm-acts select{font-size:.74rem;padding-left:6px;padding-right:6px}
 }
+/* Triage, flagged photos: Done closes the flag once fixed with the tile's tools. */
+.adm-flagged .adm-tdone{flex:1 1 100%;font-weight:700}

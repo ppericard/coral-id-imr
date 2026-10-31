@@ -298,6 +298,7 @@ const ACT = {
 /* ---------- Rendering ---------- */
 const notThis = n => `<select data-act="out" aria-label="Not this genus"><option value="">Not this</option><option value="cmp">Look-alike comparison</option><optgroup label="Another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`;
 const changed = () => [...new Set([...Object.keys(DRAFT.genera), ...Object.keys(SAVED.genera)])].filter(n => !same(DRAFT.genera[n], SAVED.genera[n]));
+const tile0 = (...a) => tile(...a);
 function tile(n, p, v, st){
   // The cover shown in the header (his pick, else the automatic one) is marked on its photo either way.
   const k = entry(n), isCover = (k.cover || SHOWN_COVER) === p.f, two = lv(n) === 2;
@@ -313,7 +314,8 @@ function tile(n, p, v, st){
       <span class="adm-qseg adm-vseg" role="group" aria-label="View">${moves}</span>
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Cover">★ Cover</button>
       <button type="button" data-act="hide" title="Remove">Remove</button>
-      ${p.from ? '' : notThis(n)}`}
+      ${p.src ? `<button type="button" data-act="crop" class="${crOf(p.f) ? 'on' : ''}" aria-pressed="${!!crOf(p.f)}">Crop</button>` : ''}
+      ${p.from ? '' : notThis(n)}`}${st.extra || ''}
     </div></figure>`;
 }
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
@@ -381,17 +383,23 @@ function render(){
   $('gsel').onchange = e => { location.hash = e.target.value; };
   const g2 = $v.querySelector('.adm-gsel2'); if (g2) g2.onchange = e => { location.hash = e.target.value; };
   const cd = $v.querySelector('.adm-cands'); if (cd) cd.ontoggle = () => store.set('imr-admin-cands', cd.open);
-  $v.querySelectorAll('[data-act]').forEach(el => {
-    const t = el.closest('[data-f]'), f = t && t.dataset.f, v = t && t.dataset.v, a = el.dataset.act;
+  bindTiles($v, () => n);
+  const c = $v.querySelector('.adm-g.cur'); if (c) c.scrollIntoView({block: 'nearest'});
+  bindQ(); bindF($v); bindDrag(n);
+}
+// Actions of the genus photo tiles (genus page, and flagged photos in Triage): g(tile) gives the tile's genus.
+function bindTiles(scope, g){
+  scope.querySelectorAll('[data-act]').forEach(el => {
+    const t = el.closest('[data-f]'), f = t && t.dataset.f, v = t && t.dataset.v, a = el.dataset.act, n = t && g(t);
+    if (!t || !DATA.gen[n] || !ACT[a] && !['exclude', 'out', 'addc', 'move', 'zoom', 'zoomcover', 'crop'].includes(a)) return;
     if (a === 'exclude') el.onclick = e => { e.stopPropagation(); ACT.exclude(n, f); };
+    else if (a === 'crop') el.onclick = () => { const p = [...photos(n), ...pending(n)].find(x => x.f === f); if (p) cropEditor(p); };
     else if (a === 'out') { if (el.tagName === 'SELECT') el.onchange = () => el.value && ACT.out(n, f, v, el.value); else el.onclick = () => ACT.out(n, f, v, 'back'); }
     else if (a === 'addc') el.onclick = () => ACT.addc(n, f, null, el.dataset.to);
     else if (a === 'move') el.onclick = () => el.dataset.to !== v && ACT.move(n, f, v, el.dataset.to);
     else if (a === 'zoom' || a === 'zoomcover') el.onclick = () => zoom(n, f);
     else el.onclick = () => ACT[a](n, f, v);
   });
-  const c = $v.querySelector('.adm-g.cur'); if (c) c.scrollIntoView({block: 'nearest'});
-  bindQ(); bindF($v); bindDrag(n);
 }
 // Drag a photo onto a featured photo (left or right half: before or after it) to feature it at that place,
 // onto any other photo or the empty part of a view to put it there unfeatured. Works across views and from the candidates.
@@ -630,17 +638,23 @@ function renderTriage(){
   const tile = (p, acts, cap) => `<figure class="adm-tile" data-f="${esc(p.f)}" data-g="${esc(p.genus)}">
       <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge">${PHOTOS[p.f] ? `<img src="${img(p, 1)}" alt="" loading="lazy">` : '<span class="none">missing</span>'}</button>
       <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a>${cap}</figcaption><div class="adm-acts">${acts}</div></figure>`;
+  // A flagged photo still on a genus page gets every tool of that page (Pierre: often flagged for its zoom level), plus Done.
+  const flagTile = p => { const n = p.genus, q = DATA.gen[n] && [...photos(n), ...pending(n)].find(x => x.f === p.f), where = `<small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`;
+    if (!q) return tile(p, `<button type="button" data-act="tpoor">Poor</button><button type="button" data-act="tdone">Done</button>`, `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fl.view) || [, p.fl.view || ''])[1])}</span>${where}`);
+    const cv = coverOf(n); SHOWN_COVER = cv && cv.f;
+    return tile0(n, q, viewOf(n, q), {cls: hidden(n, q) ? 'is-hidden' : '', extra: `<button type="button" class="adm-tdone" data-tdone>✓ Done</button>`})
+      .replace('<figure class="adm-tile', `<figure data-g="${esc(n)}" class="adm-tile`).replace(GRIP, '').replace('<figcaption>', `<figcaption><a class="adm-gen" href="#${esc(n)}"><i>${esc(n)}</i></a>${where}`); };
   const poor = []; Object.entries(DRAFT.genera).forEach(([n, k]) => Object.entries(k.feat || {}).forEach(([v, L]) => L.forEach(f => { if (PHOTOS[f] && qOf(f) === 1) poor.push({...PHOTOS[f], f, genus: n, fv: v}); })));
   $v.innerHTML = `<section class="adm-quality">
     <div class="adm-qhead"><h2>Flagged on the site <small>${flagged.length}</small></h2></div>
-    ${flagged.length ? `<div class="adm-grid adm-qgrid">${flagged.map(p => tile(p, `<button type="button" data-act="thide">Hide in ${esc(p.genus)}</button><button type="button" data-act="tpoor">Poor</button><button type="button" data-act="tdone">Done</button>`,
-      `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fl.view) || [, p.fl.view || ''])[1])}</span><small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`)).join('')}</div>` : '<p class="note">Nothing flagged.</p>'}
+    ${flagged.length ? `<div class="adm-grid adm-qgrid adm-flagged">${flagged.map(flagTile).join('')}</div>` : '<p class="note">Nothing flagged.</p>'}
     ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
     ${sugHtml(tile)}
   </section>`;
   bindSug();
   const done = f => { DRAFT.flag = {...(DRAFT.flag || {})}; delete DRAFT.flag[f]; };
-  $v.querySelectorAll('[data-act="tdone"]').forEach(b => b.onclick = () => { done(b.closest('[data-f]').dataset.f); saveDraft(); renderTriage(); });
+  $v.querySelectorAll('[data-act="tdone"],[data-tdone]').forEach(b => b.onclick = () => { done(b.closest('[data-f]').dataset.f); saveDraft(); renderTriage(); });
+  const FL = $v.querySelector('.adm-flagged'); if (FL) { bindTiles(FL, t => t.dataset.g); bindF(FL); bindQ(); }
   $v.querySelectorAll('[data-act="tpoor"]').forEach(b => b.onclick = () => { const f = b.closest('[data-f]').dataset.f; DRAFT.quality = {...(DRAFT.quality || {}), [f]: 1}; done(f); saveDraft(); renderTriage(); });
   $v.querySelectorAll('[data-act="thide"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'), n = t.dataset.g, f = t.dataset.f; if (!DATA.gen[n]) return;
     done(f); if (!(entry(n).hide || []).includes(f)) ACT.hide(n, f); else { saveDraft(); renderTriage(); } });

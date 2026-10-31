@@ -2,6 +2,7 @@
 # (data.json cand entries with r: 1, shown straight from iNaturalist until then), as img/{f}.webp (1600 px) and
 # img/{f}-s.webp (480 px), then drops their r flag. Pierre's crop (curation.json "crop" {f: [l, t, r, b]} fractions)
 # is applied on the way, from the original; a photo already downloaded is redone when its crop changes (data.json "cr").
+# Site photos (not candidates) are recropped from their original the same way when Pierre crops them (Triage, genus page).
 # Run from the repo root; the GitHub Action .github/workflows/approved-photos.yml runs it after every curation.json
 # publish and commits the result. Option --all-remote-unused deletes the local files of candidates nobody added.
 import json, os, sys, urllib.request, concurrent.futures as cf
@@ -13,6 +14,9 @@ added = {f for g in (cur.get('genera') or {}).values() for f in (g.get('add') or
 excl = set(cur.get('exclude') or {})
 CROP = cur.get('crop') or {}
 todo = [p for L in (d.get('cand') or {}).values() for p in L if p['f'] in added and p['f'] not in excl and p.get('src') and (p.get('r') or p.get('cr') != CROP.get(p['f']))]
+# Site photos (genus views and "more") get Pierre's crop too, redone from their original when it changes.
+todo += [p for g in [*d['gen'].values(), *((d.get('x') or {}).get('gen') or {}).values()] for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L
+         if p['f'] not in excl and p.get('src') and p.get('cr') != CROP.get(p['f'])]
 def get(p):
     im = Image.open(urllib.request.urlopen(urllib.request.Request(p['src'], headers=UA), timeout=120)).convert('RGB')
     c = CROP.get(p['f'])
