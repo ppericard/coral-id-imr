@@ -469,7 +469,6 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
   .fdrow,.fdsheet{grid-template-columns:minmax(0,1fr)}
   .fdall{grid-template-columns:repeat(auto-fill,minmax(64px,1fr))}
   .fdgrid,:root[data-size] .fdgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-  .fdtile .fdinfo p{display:none}
   .fdopts.th{grid-template-columns:minmax(0,1fr)}
 }
 .fdgrp{display:flex;align-items:baseline;gap:8px}
@@ -562,3 +561,35 @@ button.fdname[aria-expanded="true"]::after{content:" ▾"}
 @media (max-width:700px){.fdforms.boxes{grid-template-columns:repeat(2,minmax(0,1fr))}.fdgcs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .fdand{align-self:flex-start;margin-top:2px}
 .fdfacet .fdand{margin:6px 0 2px}
+
+/* Finder on phones (Pierre, 2026-10-31: used beside ReefCloud). Fewer scrolls: compact form chips once a form is
+   picked, a "Show the N genera" bar in thumb reach, the clue panel folded on the results page, ID tips highlighted. */
+.fdtip{background:color-mix(in srgb,var(--accent) 9%,var(--surface));border-left:4px solid var(--accent);border-radius:6px;padding:4px 8px;color:var(--ink)!important}
+.fdbig{scroll-margin-top:calc(var(--hdr-h,100px) + 8px)}
+button.fdgc{font:inherit;padding:0;text-align:left;cursor:pointer}
+.fdoff{margin-top:14px}
+.fdoff > summary{cursor:pointer;font-family:var(--display);font-size:1.1rem;font-weight:600;margin-bottom:8px}
+.fdfold{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:0 10px;margin-bottom:6px}
+.fdfold > summary{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;font-family:var(--display);font-size:1.1rem;font-weight:600;list-style:none}
+.fdfold > summary::-webkit-details-marker{display:none}
+.fdfoldh{margin-left:auto;font-family:var(--body);font-size:.85rem;font-weight:600;color:var(--accent)}
+.fdfold[open]{padding-bottom:8px}
+@media (max-width:700px){
+  .fdforms.mini{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .fdforms.mini .fdtileb{flex-direction:row;align-items:center;border-width:1px}
+  .fdforms.mini .fdtileb[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
+  .fdforms.mini .fdtq{width:52px;height:52px;flex:none;aspect-ratio:auto}
+  .fdforms.mini .fdtt{border-top:0;border-left:4px solid var(--c,var(--line));align-self:stretch;justify-content:center;padding:4px 6px 4px 8px;min-width:0}
+  .fdforms.mini .fdtt b{font-size:.9rem}
+  .fdforms.mini .fdtt small{display:none}
+  .fdforms.mini .fdc{top:auto;bottom:3px;right:auto;left:3px;font-size:.7rem;padding:0 5px}
+  .fdstart.used{padding-bottom:64px}
+  .fdstart.used .fdshow{position:fixed;left:16px;right:16px;width:auto;bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px) + 8px);z-index:15;text-align:center;box-shadow:var(--shadow-hover,0 6px 18px rgba(0,0,0,.25))}
+  .fdfold .fdjump{display:none}
+  .fdsegs .seg[aria-label="Layout"]{display:none}
+  .fdtop{gap:6px}
+  .fdcount{font-size:1.1rem}.fdcount b{font-size:1.7rem}
+  .fdnext{margin:6px 0 10px}
+  .fdnext .label{display:none}
+  .fdinfo > small:not(.fdmiss){display:none}
+}
