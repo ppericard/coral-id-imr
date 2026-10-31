@@ -1,0 +1,47 @@
+/* Home page. Uses the tokens from app.css only. */
+.home-page h3{font-family:var(--display);font-size:1.35rem;margin:28px 0 4px}
+.home-page h3 a{color:var(--ink);text-decoration:none}
+.home-page h3 a::after{content:" ›";color:var(--accent)}
+.hhero{position:relative;border-radius:14px;overflow:hidden;margin-top:14px;min-height:360px;display:grid;background:#0b1a1f}
+.hmosaic{position:absolute;inset:0;display:grid;grid-template-columns:repeat(14,1fr);grid-template-rows:repeat(3,1fr);gap:2px;opacity:.75}
+.hmosaic a{position:relative;display:block;overflow:hidden;animation:hfade .8s both;animation-delay:calc(var(--i) * 25ms)}
+.hmosaic img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
+.hmosaic span{position:absolute;left:4px;bottom:3px;font-size:.7rem;font-style:italic;color:#fff;text-shadow:0 1px 3px #000;opacity:0;transition:opacity .3s}
+.hmosaic a:hover img{transform:scale(1.12)}
+.hmosaic a:hover span{opacity:1}
+@keyframes hfade{from{opacity:0}to{opacity:1}}
+.hintro{position:relative;align-self:end;margin:28px;max-width:560px;padding:20px 24px;border-radius:12px;background:color-mix(in srgb,#0b1a1f 82%,transparent);color:#eef6f7;backdrop-filter:blur(3px)}
+.hintro h2{color:#fff;font-size:2rem;margin:0 0 6px}
+.hintro p{margin:6px 0}
+.hstats{display:flex;flex-wrap:wrap;gap:6px 18px;color:#b9cfd3}
+.hstats b{font-family:var(--display);font-size:1.4rem;color:#fff;margin-right:4px}
+.hcta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px!important}
+.hcta .chip{background:transparent;color:#fff;border-color:#fff8}
+.hprog{margin:14px 0 0}
+.hprog a{display:inline-block;background:var(--good-bg);color:var(--good);border-radius:999px;padding:6px 14px;text-decoration:none}
+.hpath ol{list-style:none;padding:0;margin:8px 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;counter-reset:hp}
+.hpath li{counter-increment:hp}
+.hpath a{display:flex;flex-direction:column;gap:3px;height:100%;padding:12px 14px 12px 50px;position:relative;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--ink);text-decoration:none}
+.hpath a::before{content:counter(hp);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--bg);display:grid;place-items:center;font-family:var(--display);font-weight:700}
+.hpath a:hover,.htool:hover{border-color:var(--accent)}
+.hpath span{font-size:.88rem;color:var(--muted)}
+.htools{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:8px}
+.htool{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;color:var(--ink);text-decoration:none}
+.htool b{font-family:var(--display);font-size:1.12rem;padding:8px 12px 0}
+.htool small{color:var(--muted);padding:0 12px 10px;font-size:.85rem}
+.hpv{display:grid;aspect-ratio:16/9;overflow:hidden;background:var(--line)}
+.hpv.two{grid-template-columns:1fr 1fr;gap:2px}
+.hpv img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s,filter .6s}
+.htool:hover .hpv img{transform:scale(1.06)}
+.blurpv .hpv img{filter:blur(6px)}
+.blurpv:hover .hpv img{filter:none}
+@media (max-width:900px){.hpath ol{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){
+  .hmosaic{grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(7,1fr)}
+  .hhero{min-height:420px}
+  .hintro{margin:12px;padding:14px 16px}
+  .hintro h2{font-size:1.5rem}
+  .hpath ol{grid-template-columns:minmax(0,1fr)}
+  .htools{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:reduce){.hmosaic a{animation:none}}

@@ -1,7 +1,8 @@
 // Lab: a playground of visual, interactive prototypes. Each prototype lives in its own proto/<id>.js
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
+// A prototype that graduates moves to a site section (see GRADUATED) and gets a plain hash: #<id>, #<id>|<arg>.
 // Bump with every Lab change so browsers never mix new and old files (same ?v scheme as app.js).
-const LAB_V = 2;
+const LAB_V = 3;
 const LAB = {
   list: [],
   files: ['map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'],
@@ -9,11 +10,15 @@ const LAB = {
   pending: 0,
   add(p){ this.list.push(p); }
 };
+// Graduated prototypes and the section of MODES (app.js) they now live in.
+const GRADUATED = {anatomy: 'learn', size: 'learn', gallery: 'learn', elim: 'identify', pairs: 'practice', reveal: 'practice', zoom: 'practice', spot: 'practice'};
+const SECTION_NAME = {learn: 'Learn', identify: 'Identify', practice: 'Practice'};
+const isLabHash = h => h.startsWith('lab') || h.split('|')[0] in GRADUATED;
 // Load every prototype; once all are in, redraw if the reader opened a Lab page directly.
 LAB.files.forEach(f => {
   const s = document.createElement('script');
   s.src = `proto/${f}.js?v=${LAB_V}`; s.async = false; LAB.pending++;
-  s.onload = s.onerror = () => { if (--LAB.pending === 0 && DATA && location.hash.startsWith('#lab')) route(); };
+  s.onload = s.onerror = () => { const h = decodeURIComponent(location.hash.slice(1)); if (--LAB.pending === 0 && DATA && (isLabHash(h) || !h || h === 'home')) route(); };
   document.head.appendChild(s);
 });
 
@@ -51,6 +56,8 @@ function viewLab(h){
   if (LAB.pending) { $v.innerHTML = '<p class="note">Loading the Lab…</p>'; return; }
   const [id, ...args] = h.slice(4).split('|');
   const p = LAB.list.find(x => x.id === id);
+  // Old Lab links to a graduated tool go to its new home.
+  if (p && GRADUATED[id]) { location.replace('#' + [id, ...args].join('|')); return; }
   if (p) {
     $v.innerHTML = `<div class="lab">${labHead(p.title, p.lede)}<div id="labroot"></div></div>`;
     const stop = p.render(document.getElementById('labroot'), ...args);
@@ -58,7 +65,8 @@ function viewLab(h){
     return;
   }
   const votes = labVotes();
-  const order = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(Boolean);
+  const order = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && !GRADUATED[p.id]);
+  const grad = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && GRADUATED[p.id]);
   $v.innerHTML = `<div class="lab"><h2>Lab</h2>
   <p class="lede">Experiments to learn, remember and identify the 39 genera through pictures and play. Try them, then mark each one keep or trim: your marks stay in this browser and tell us what to develop further.</p>
   <div class="labhub">${order.map(p => `<article class="labtile">
@@ -66,7 +74,9 @@ function viewLab(h){
     <div class="labvote" role="group" aria-label="Keep or trim ${esc(p.title)}">
       <button type="button" data-vote="${p.id}|keep" aria-pressed="${votes[p.id] === 'keep'}">Keep</button>
       <button type="button" data-vote="${p.id}|trim" aria-pressed="${votes[p.id] === 'trim'}">Trim</button>
-    </div></article>`).join('')}</div></div>`;
+    </div></article>`).join('')}</div>
+  <h3>Graduated from the Lab</h3><p class="note">These experiments are now part of the site.</p>
+  <div class="labgrad">${grad.map(p => `<a href="#${p.id}"><span class="labicon" aria-hidden="true">${p.icon || ''}</span><b>${esc(p.title)}</b><small>${SECTION_NAME[GRADUATED[p.id]]}</small></a>`).join('')}</div></div>`;
   $v.querySelectorAll('[data-vote]').forEach(b => b.onclick = () => {
     const [id, v] = b.dataset.vote.split('|'), all = labVotes();
     all[id] = all[id] === v ? undefined : v;
@@ -74,9 +84,23 @@ function viewLab(h){
     b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.vote === id + '|' + all[id])));
   });
 }
+// A graduated tool, shown as a page of its section: no Lab crumbs, the section's tab bar gives the context.
+function labTool(h){
+  const [id, ...args] = h.split('|');
+  if (!GRADUATED[id]) return false;
+  document.documentElement.dataset.page = 'lab';
+  if (LAB.stop) { try { LAB.stop(); } catch (e) {} LAB.stop = null; }
+  const p = LAB.list.find(x => x.id === id);
+  if (!p) { $v.innerHTML = '<p class="note">Loading…</p>'; return true; }
+  $v.innerHTML = `<div class="lab"><h2>${esc(p.title)}</h2>${p.lede ? `<p class="lede">${p.lede}</p>` : ''}<div id="labroot"></div></div>`;
+  const stop = p.render(document.getElementById('labroot'), ...args);
+  if (typeof stop === 'function') LAB.stop = stop;
+  return true;
+}
 // Leaving the Lab stops any running animation or timer.
 addEventListener('hashchange', () => {
-  if (decodeURIComponent(location.hash.slice(1)).startsWith('lab')) return;
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (isLabHash(h) || !h || h === 'home') return;
   delete document.documentElement.dataset.page;
   if (LAB.stop) { try { LAB.stop(); } catch (e) {} LAB.stop = null; }
 });

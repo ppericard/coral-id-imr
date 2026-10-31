@@ -384,22 +384,34 @@ function showTheme(){ const d = isDark(); $theme.textContent = d ? '☀' : '☾'
 $theme.onclick = () => { const t = isDark() ? 'light' : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.setItem('imr-coral-theme', t); } catch (e) {} showTheme(); };
 showTheme();
 
-// Modes of the Identify and Quiz sections: a tab bar in the sticky header, so they stay in view.
+// Tools of the Learn, Identify and Practice sections: a tab bar in the sticky header, so they stay in view.
+// Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).
 const MODES = {
-  key: [['key-imr', 'IMR lecture groups', 'The 11 groups from the lecture'], ['key', 'By colony form', 'Start from the overall shape'], ['key-tr', 'By corallites', 'Filter on skeletal details']],
-  quiz: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['quiz-course', 'Lecture photos', 'Photos from the IMR course'], ['quiz-board', 'To work on', 'Your progress per genus']]
+  learn: [['genera', 'Genera', 'The 39 genus sheets'], ['cmp', 'Look-alikes', 'Confused pairs side by side'], ['anatomy', 'Anatomy', 'Parts of a corallite, wall types'], ['size', 'Size ruler', 'Corallite size per genus'], ['gallery', 'Feature gallery', 'One feature, every genus']],
+  identify: [['key-imr', 'IMR lecture groups', 'The 11 groups from the lecture'], ['key', 'By colony form', 'Start from the overall shape'], ['key-tr', 'By corallites', 'Filter on skeletal details'], ['elim', 'Elimination board', 'Tick features, watch genera fade']],
+  practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['quiz-course', 'Lecture photos', 'Photos from the IMR course'], ['quiz-board', 'To work on', 'Your progress per genus'], ['pairs', 'Memory', 'Match colony and corallites'], ['reveal', 'Blur reveal', 'Name it before it sharpens'], ['zoom', 'Zoom ladder', 'Guess while zooming in'], ['spot', 'Spot the feature', 'Read the corallites first']]
 };
+const MODE_LABEL = {learn: 'Learn tools', identify: 'Ways to identify', practice: 'Practice modes'};
+// Which tab of MODES a hash belongs to: key leaves and groups count as the key, genus sheets as Genera, pairs as Look-alikes.
+function modeOf(h){ return /^[kl]-/.test(h) ? 'key' : h.startsWith('g-') ? 'genera' : h.startsWith('cmp') ? 'cmp' : h.split('|')[0]; }
+function sectionOf(h){
+  if (!h || h === 'home') return 'home';
+  if (h.startsWith('lab')) return 'lab';
+  const m = modeOf(h);
+  return Object.keys(MODES).find(t => MODES[t].some(x => x[0] === m)) || 'learn';
+}
 const $modes = document.getElementById('modes');
 function showModes(tab, h){
   const L = MODES[tab]; $modes.hidden = !L; if (!L) { $modes.innerHTML = ''; return; }
-  const cur = /^[kl]-/.test(h) ? 'key' : h.split('|')[0];
-  $modes.setAttribute('aria-label', tab === 'key' ? 'Ways to identify' : 'Quiz modes');
+  const cur = modeOf(h);
+  $modes.setAttribute('aria-label', MODE_LABEL[tab]);
   $modes.innerHTML = L.map(([k, t, d]) => `<a href="#${k}"${k === cur ? ' aria-current="page"' : ''}><b>${t}</b><small>${d}</small></a>`).join('');
+  const on = $modes.querySelector('[aria-current]'); if (on && $modes.scrollWidth > $modes.clientWidth) $modes.scrollLeft = on.offsetLeft - ($modes.clientWidth - on.offsetWidth) / 2;
 }
 function route(){
   applySize();
   const h = decodeURIComponent(location.hash.slice(1));
-  const tab = h.startsWith('lab') ? 'lab' : h.startsWith('quiz') ? 'quiz' : h.startsWith('cmp') ? 'cmp' : (h.startsWith('key') || /^[kl]-/.test(h)) ? 'key' : 'genera';
+  const tab = sectionOf(h);
   document.querySelectorAll('nav [data-tab]').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   showModes(tab, h);
   if (h === 'key') viewKey();
@@ -415,6 +427,8 @@ function route(){
   else if (h === 'quiz-board') quizBoard();
   else if (h.startsWith('quiz-duel')) { const [, a, b] = h.split('|'); quizDuel(a, b); }
   else if (h.startsWith('lab') && window.viewLab) viewLab(h);
+  else if (window.labTool && labTool(h)) {}
+  else if ((!h || h === 'home') && window.viewHome) viewHome();
   else viewGenera();
   window.scrollTo(0, 0);
 }

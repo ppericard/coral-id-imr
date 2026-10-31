@@ -57,7 +57,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .chip[aria-pressed="true"],.chip[aria-current="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .opts{margin:16px 0 4px}
 /* Section modes: a segmented tab bar, second row of the sticky header. */
-.modes{flex:1 0 100%;display:flex;gap:4px;margin:0;padding:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r)}
+.modes{flex:1 0 100%;display:flex;overflow-x:auto;gap:4px;margin:0;padding:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r)}
 .modes[hidden]{display:none}
 .modes a{flex:1 1 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:44px;padding:5px 10px;border-radius:var(--r-sm);text-decoration:none;color:var(--muted);text-align:center;line-height:1.15;transition:background .12s,color .12s}
 .modes a b{font-weight:600;font-size:.95rem;color:var(--ink)}
@@ -250,7 +250,8 @@ td i{font-weight:600}
   .hdr-tools{grid-area:tools}
   header{grid-template-areas:"title tools" "nav nav" "modes modes"}
   .sections{grid-area:nav;margin-left:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px}
-  .modes{grid-area:modes;padding:3px}
+  .modes{grid-area:modes;padding:3px;overflow-x:auto;scrollbar-width:none;min-width:0}
+  .modes a{flex:1 0 auto}
   .modes a{min-height:38px;padding:4px 6px}
   .modes a b{font-size:.8rem}
   .modes a small{display:none}
