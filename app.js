@@ -437,6 +437,8 @@ function answer(cur, c, target, ph, cor){
   s.h = ((s.h || '') + (good ? 1 : 0)).slice(-10);  // recent results, newest last
   if (good && cor) s.cor = 1;  // milestone: right with the corallites photo in view
   if (good && cur.startsWith('quiz-duel')) s.du = 1;  // milestone: won a look-alike duel
+  // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
+  if (SYNC) SYNC.log = [...(SYNC.log || []), {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur, ph: ph.map(p => p.f).join(' ')}].slice(-500);
   save();
   $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', inatTag(ph[k])));
   $v.querySelectorAll('[data-c]').forEach(b => { b.disabled = true; if (b.dataset.c === target) b.classList.add('ok'); else if (b.dataset.c === c) b.classList.add('ko'); });
@@ -605,12 +607,12 @@ function syncPush(){
   return syncing;
 }
 function syncOnce(){
-  const me = SYNC; let rev, sent;
+  const me = SYNC; let rev, sent, log;
   // If the device is disconnected or switched to another account meanwhile, drop this sync.
   return syncGet(me).then(j => { if (SYNC !== me) return null; if (!j.ok) return j; if (j.found) mergeSaved(j);
-    rev = me.rev; sent = copy(P); me.pending = progData()['imr-coral-progress'] || ''; store.set('imr-coral-sync', me);
-    return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({name: me.name, pin: me.pin, data: progData(), summary: syncSummary()})}).then(r => r.json()); })
-    .then(j => { if (j && j.ok && SYNC === me) { me.last = new Date().toISOString(); me.base = sent; delete me.pending; if (me.rev === rev) delete me.dirty; store.set('imr-coral-sync', me); } return j; })
+    rev = me.rev; sent = copy(P); log = me.log || []; me.pending = progData()['imr-coral-progress'] || ''; store.set('imr-coral-sync', me);
+    return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({name: me.name, pin: me.pin, data: progData(), summary: syncSummary(), answers: log})}).then(r => r.json()); })
+    .then(j => { if (j && j.ok && SYNC === me) { me.last = new Date().toISOString(); me.base = sent; delete me.pending; if (j.log) { const done = new Set(log.map(x => x.id)); me.log = (me.log || []).filter(x => !done.has(x.id)); } if (me.rev === rev) delete me.dirty; store.set('imr-coral-sync', me); } return j; })
     .catch(() => null);
 }
 const syncSoon = () => { if (!SYNC_URL || !SYNC) return; SYNC.dirty = true; SYNC.rev = (SYNC.rev || 0) + 1; store.set('imr-coral-sync', SYNC); clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 3000); };
