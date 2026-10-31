@@ -489,13 +489,15 @@ function viewLookalikes(a, b){
   const L = classics().map(p => montage(...p)).filter(Boolean), mix = m => mixedUp(m.A, m.B);
   L.sort((x, y) => (mix(y) > 0) - (mix(x) > 0) || mix(y) - mix(x));
   if (!L.length) { $v.innerHTML = '<p class="note">No photos yet.</p>'; return; }
-  let i = Math.max(0, a && b ? L.findIndex(m => m.k === pairKey(a, b)) : 0);
+  let i = Math.max(0, a && b ? L.findIndex(m => m.k === pairKey(a, b)) : 0), drawn = false;
   const draw = () => {
     const m = L[i], gA = DATA.gen[m.A], gB = DATA.gen[m.B], x = mix(m);
     const half = (n, p, k) => `<figure class="lkph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${VIEW_LABEL[m.v].toLowerCase()} view"></button><figcaption><i>${esc(n)}</i></figcaption></figure>`;
     const tip = (n, g) => `<div class="lktip"><a href="#g-${esc(n)}"><i>${esc(n)}</i></a> ${esc(tipsText(g))}</div>`;
     const deck = L.map((d, k) => `<a class="lkd${k === i ? ' on' : ''}${mix(d) ? ' mix' : ''}" href="#cmp|${esc(d.A)}|${esc(d.B)}" title="${esc(d.A)} or ${esc(d.B)}"><span><img src="${img(d.pa, 's')}" alt="" loading="lazy"><img src="${img(d.pb, 's')}" alt="" loading="lazy"></span><small>${esc(d.A)} / ${esc(d.B)}</small></a>`).join('');
-    $v.innerHTML = `<p class="lede">The look-alikes the IMR lecture or the Coral Finder compare directly, one pair per screen: one photo of each genus in the same view, with the ID tips that tell them apart. Pairs you mixed up in the quiz come first, in red. The other look-alikes of a genus are at the bottom of its sheet.</p>
+    // The intro goes behind ? (pageHelp) only on the first draw: re-adding it on each step pushed the deck down while the
+    // montage was being sized, and it came out squashed once the intro left (Pierre, phone).
+    $v.innerHTML = `${drawn ? '' : `<p class="lede">The look-alikes the IMR lecture or the Coral Finder compare directly, one pair per screen: one photo of each genus in the same view, with the ID tips that tell them apart. Pairs you mixed up in the quiz come first, in red. The other look-alikes of a genus are at the bottom of its sheet.</p>`}
     <div class="lk">
       <div class="lkmain">
         <div class="lkhead"><h3><i>${esc(m.A)}</i> or <i>${esc(m.B)}</i>?</h3><small class="lksrc">${srcTag(m.src)}</small>${x ? `<span class="pmix">you mixed them up ×${x}</span>` : ''}</div>
@@ -506,7 +508,7 @@ function viewLookalikes(a, b){
       </div>
       <aside class="lkdeck" aria-label="Classic look-alikes">${deck}</aside>
     </div>`;
-    fitLk();
+    drawn = true; fitLk(); requestAnimationFrame(fitLk);
     const cur = $v.querySelector('.lkd.on'); if (cur) cur.parentNode.scrollTop = cur.offsetTop - cur.parentNode.offsetTop - 8;
     $v.querySelectorAll('[data-lstep]').forEach(btn => btn.onclick = () => stepTo(i + Number(btn.dataset.lstep)));
     $v.querySelectorAll('[data-lz]').forEach(z => z.onclick = () => zoom([{...m.pa, genus: m.A, view: m.v}, {...m.pb, genus: m.B, view: m.v}], Number(z.dataset.lz)));
