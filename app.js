@@ -423,12 +423,28 @@ function syncSummary(){
   return {learned: n.filter(x => genera[x] === 'ok').length, seen: n.filter(x => genera[x] !== 'new').length, total: n.length,
     review: n.filter(x => genera[x] === 'weak'), genera};
 }
+const syncGet = () => fetch(`${SYNC_URL}?name=${encodeURIComponent(SYNC.name)}&pin=${encodeURIComponent(SYNC.pin)}`).then(r => r.json());
+// Two devices on one account: per genus, keep whichever record has more answers, so an older
+// device never wipes newer results when it sends.
+function mergeSaved(j){
+  let R = {}; try { R = JSON.parse((j.data || {})['imr-coral-progress'] || '{}') || {}; } catch (e) {}
+  const n = r => r ? (r.ok || 0) + (r.ko || 0) : -1;
+  let changed = false;
+  Object.keys(R).forEach(g => { if (n(R[g]) > n(P[g])) { P[g] = R[g]; changed = true; } });
+  if (changed) { store.set('imr-coral-progress', P); showProg(); }
+}
+// Pull, merge, then send. A failed send stays marked (SYNC.dirty) and is retried on start-up and when back online.
 function syncPush(){
   if (!SYNC_URL || !SYNC || !DATA) return Promise.resolve(null);
-  return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({name: SYNC.name, pin: SYNC.pin, data: progData(), summary: syncSummary()})})
-    .then(r => r.json()).then(j => { if (j.ok) { SYNC.last = new Date().toISOString(); store.set('imr-coral-sync', SYNC); } return j; }).catch(() => null);
+  const me = SYNC;
+  return syncGet().then(j => { if (!j.ok) return j; if (j.found) mergeSaved(j);
+    return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({name: me.name, pin: me.pin, data: progData(), summary: syncSummary()})}).then(r => r.json()); })
+    .then(j => { if (j.ok && SYNC === me) { SYNC.last = new Date().toISOString(); delete SYNC.dirty; store.set('imr-coral-sync', SYNC); } return j; })
+    .catch(() => null);
 }
-const syncSoon = () => { if (!SYNC_URL || !SYNC) return; clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 3000); };
+const syncSoon = () => { if (!SYNC_URL || !SYNC) return; SYNC.dirty = true; store.set('imr-coral-sync', SYNC); clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 3000); };
+const syncRetry = () => { if (SYNC && SYNC.dirty) syncPush(); };
+window.addEventListener('online', syncRetry);
 function bindSync(){
   const box = document.getElementById('sync'); if (!box) return;
   const msg = t => box.querySelector('[role=status]').textContent = t;
@@ -450,8 +466,8 @@ function bindSync(){
     fetch(`${SYNC_URL}?name=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}`).then(r => r.json()).then(j => {
       if (!j.ok) return msg(j.error === 'pin' ? 'This name already exists with another code.' : 'Check the name and the 4-digit code.');
       SYNC = {name, pin}; store.set('imr-coral-sync', SYNC);
-      // Saved progress wins on a fresh device; otherwise this device's progress becomes the saved one.
-      if (j.found && Object.keys(j.data).length) { loadData(j.data); try { sessionStorage.setItem('imr-coral-loaded', 'the IMR sheet'); } catch (err) {} location.reload(); }
+      // A known account replaces whatever this device holds (another RA may have used it); a new name keeps it.
+      if (j.found) { Object.keys(progData()).forEach(k => localStorage.removeItem(k)); loadData(j.data); try { sessionStorage.setItem('imr-coral-loaded', 'the IMR sheet'); } catch (err) {} location.reload(); }
       else syncPush().then(() => bindSync());
     }).catch(() => msg('Could not reach the sheet. Check your connection.')); };
 }
@@ -528,5 +544,5 @@ function route(){
   window.scrollTo(0, 0);
 }
 addEventListener('hashchange', route);
-fetch('data.json?v=8').then(r => r.json()).then(d => { DATA = d; route(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+fetch('data.json?v=8').then(r => r.json()).then(d => { DATA = d; route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
