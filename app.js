@@ -616,7 +616,7 @@ function syncOnce(){
     .catch(() => null);
 }
 const syncSoon = () => { if (!SYNC_URL || !SYNC) return; SYNC.dirty = true; SYNC.rev = (SYNC.rev || 0) + 1; store.set('imr-coral-sync', SYNC); clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 3000); };
-const syncRetry = () => { if (SYNC && SYNC.dirty) syncPush(); };
+const syncRetry = () => { if (SYNC && (SYNC.dirty || (SYNC.log || []).length)) syncPush(); };
 window.addEventListener('online', syncRetry);
 function bindSync(){
   showProg();

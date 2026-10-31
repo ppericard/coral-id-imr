@@ -65,13 +65,13 @@ function doPost(e){
   } finally { lock.releaseLock(); }
 }
 
-// Appends new answers to the Answers tab, skipping ids already there (a resend after a lost reply).
+// Appends new answers to the Answers tab, skipping ids already anywhere in it (a resend after a lost reply).
 function logAnswers_(name, answers){
   if (!Array.isArray(answers) || !answers.length) return;
   const sh = sheet_('Answers', LOG);
   if (!SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Activity')) sheet_('Activity').getRange(1, 1).setFormula(ACTIVITY);
-  const n = sh.getLastRow() - 1, from = Math.max(2, n - 3000 + 2);
-  const seen = new Set(n > 0 ? sh.getRange(from, 8, sh.getLastRow() - from + 1, 1).getValues().map(r => String(r[0])) : []);
+  const n = sh.getLastRow() - 1;
+  const seen = new Set(n > 0 ? sh.getRange(2, 8, n, 1).getValues().map(r => String(r[0])) : []);
   const rows = answers.filter(a => a && a.id && !seen.has(String(a.id))).slice(0, 500)
     .map(a => [name, new Date(a.t), String(a.g || ''), String(a.a || ''), a.ok ? 1 : 0, String(a.m || ''), String(a.ph || ''), String(a.id)]);
   if (rows.length) sh.getRange(sh.getLastRow() + 1, 1, rows.length, LOG.length).setValues(rows);
