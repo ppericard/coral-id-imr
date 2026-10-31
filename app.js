@@ -132,9 +132,9 @@ function viewTips(){
   const sel = location.hash.split('|')[1] || '';
   $v.innerHTML = `<h2>ID tips</h2>
   <p class="lede">What the IMR lecturers point out for each genus, in their own words: slide text, review slides and presenter's notes from Lecture 6.</p>
-  <h3 class="label">IMR Lecture 6: questions to ask</h3><ol class="tips">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
-  <details class="gloss"><summary>Coral anatomy terms</summary><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details>
-  <div class="chips tipgr"><a class="chip" href="#tips" aria-pressed="${!sel}">All groups</a>${gr.map(x => `<a class="chip" href="#tips|${x.n}" aria-pressed="${sel == x.n}">${x.n}. ${esc(x.t)}</a>`).join('')}</div>
+  <div class="tiphead"><ol class="qtiles" aria-label="IMR Lecture 6: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
+  <details class="gloss"><summary>Coral anatomy terms</summary><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>
+  <div class="chips tipgr"><span class="label">IMR group</span><a class="chip" href="#tips" aria-pressed="${!sel}">All</a>${gr.map(x => `<a class="chip" href="#tips|${x.n}" aria-pressed="${sel == x.n}" title="${esc(x.t)}">${x.n}</a>`).join('')}</div>
   ${gr.filter(x => !sel || sel == x.n).map(x => `<section class="tipsec"><h3 class="gdiv" style="--g:${(x.n * 137) % 360}"><span class="gn">${x.n}</span>${esc(x.t)}</h3>
     ${x.L.map(n => { const g = DATA.gen[n], p = cover(g); return `<article class="tipg"><a href="#g-${esc(n)}" class="tipph">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<i>${esc(n)}</i></a><div>${tipsList(g)}${lookOf(n).length ? `<p class="note">Don't confuse with ${lookOf(n).map(b => `<a href="#cmp-${esc(n)}|${esc(b)}"><i>${esc(b)}</i></a>`).join(', ')}</p>` : ''}</div></article>`; }).join('')}</section>`).join('')}`;
 }

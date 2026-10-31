@@ -14,7 +14,7 @@
     ['identify', 'Identify', 'Work out the genus of the coral in front of you.']
   ];
   // Few entry points per step on the home page; the section tabs still list everything.
-  const HOME = {learn: ['genera', 'cmp'], practice: ['quiz', 'quiz-duel', 'pairs', 'reveal'], identify: ['finder']};
+  const HOME = {learn: ['genera', 'tips', 'cmp'], practice: ['quiz', 'quiz-duel', 'pairs', 'reveal'], identify: ['finder']};
   // Reference visualisations: useful on the side, not steps of the path.
   const TOOLS = ['map', 'web', 'size', 'gallery', 'matrix', 'elim', 'anatomy'];
   const ph = (n, v) => { const g = DATA.gen[n]; if (!g) return ''; const p = (g.views[v] || [])[0] || (g.views.macro || [])[0] || cover(g); return p ? img(p, 's') : ''; };
