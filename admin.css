@@ -263,3 +263,4 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 .adm-mth .adm-src{position:absolute;left:2px;bottom:2px;font-size:.6rem}
 .adm-mth.on{border-color:var(--accent)}
 @media (max-width:760px){.adm-mbody{grid-template-columns:minmax(0,1fr)}}
+.adm-warn{color:#b26a00;font-weight:600}
