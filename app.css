@@ -365,3 +365,9 @@ a.lt:hover{border-color:var(--accent)}
 .bad{color:var(--bad)}
 .hubsec{border-top:1px solid var(--line);margin-top:22px;padding-top:4px}
 @media (max-width:600px){.lrow,:root[data-size] .lrow{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.lt .psum{font-size:.78rem}.lt > span:last-child{padding:6px 8px 8px}}
+
+/* Sign-in box at the top of My progress; the header pill flags a device that isn't signed in. */
+.sync h3{margin:0 0 4px;font-size:1.05rem}
+.sync{margin:0 0 18px;border-color:var(--accent)}
+.prog.nosync{border-color:var(--accent)}
+.prog.nosync::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);margin-left:6px;display:inline-block}
