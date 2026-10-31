@@ -413,7 +413,10 @@ a.lt:hover{border-color:var(--accent)}
 .pboard .gside p{margin:0}
 .pboard .sync{margin:0;padding:10px 12px;font-size:.92rem}
 .pboard details.saveprog{display:block;margin:0}
-.pboard details.saveprog summary{cursor:pointer;color:var(--muted);font-size:.9rem}
+.pboard details.saveprog summary{cursor:pointer;font-size:.88rem;display:inline-block;padding:4px 10px;border:1px solid var(--line);border-radius:999px;color:var(--ink);background:var(--surface)}
+.pboard details.saveprog summary::-webkit-details-marker{display:none}
+.pboard details.saveprog summary::before{content:"\25B8  ";color:var(--muted)}
+.pboard details.saveprog[open] summary::before{content:"\25BE  "}
 .pboard details.saveprog[open]>*{margin-top:8px}
 .sync.on{border:0;background:none;padding:0;box-shadow:none}
 .sync.on summary{cursor:pointer;font-size:.9rem;color:var(--muted);list-style:none}
@@ -484,3 +487,9 @@ a.lt:hover{border-color:var(--accent)}
 :root[data-size="l"] .tipg{grid-template-columns:300px minmax(0,1fr)}
 :root[data-size="s"] .cmprow{max-width:640px}
 :root[data-size="m"] .cmprow{max-width:960px}
+
+/* Sync status: quiet line when saved, a box that stands out when answers are not saved. */
+.sync .sline{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:0;font-size:.9rem;color:var(--muted)}
+.sync .sline .linkish{font-size:.85rem}
+.sync.warn{border:1px solid #d98b2b;background:color-mix(in srgb,#d98b2b 12%,var(--surface));padding:10px 12px}
+.sync.warn p{margin:0 0 6px}
