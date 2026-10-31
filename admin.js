@@ -333,7 +333,7 @@ function status(){
   $('save').disabled = !TOKEN || !parts.length;
   if (cur[0] !== '~') lastGenus = cur;
   $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
-  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff', '~mont': 'mont', '~cand': 'cand'}[cur] || 'genus'))));
+  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff', '~mont': 'mont', '~cand': 'cand', '~cov': 'cov'}[cur] || 'genus'))));
   const ms = $('modesel'); if (ms) { ms.innerHTML = [...document.querySelectorAll('#modes [data-mode]')].map(a => `<option value="${esc(a.getAttribute('href'))}"${a.getAttribute('aria-current') === 'true' ? ' selected' : ''}>${esc(a.textContent)}</option>`).join(''); ms.hidden = false; }
 }
 function render(){
@@ -345,6 +345,7 @@ function render(){
   if (cur === '~diff') return renderDiff();
   if (cur === '~mont') return renderMont();
   if (cur === '~cand') return renderCand();
+  if (cur === '~cov') return renderCov();
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
   const ch = changed(), n = cur, g = DATA.gen[n], cv = coverOf(n), k = entry(n); SHOWN_COVER = cv && cv.f;
   status();
@@ -532,6 +533,7 @@ function renderQuality(){
 
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
+  cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field photos only (no lecture slide, no Coral Finder book, no multi-coral, hidden, sheet-only or Poor photo; Colony leaves out photos where the form is not visible). Big number = photos, small = distinct colonies when fewer. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Click a row to open the genus.</p>`,
   diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers. Few answers = rough. The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it sits in the wrong game set.</p>`,
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time.</p>
     <p>The first 3 photos of each view are its featured photos (Easy level, top of the sheet, Coral Finder). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. Hidden photos disappear everywhere, games included; × excludes a photo for good.</p>
@@ -547,7 +549,7 @@ const HELP = {
 };
 function toggleHelp(){
   let h = $('admhelp'); if (h) { h.remove(); return; }
-  const m = ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
+  const m = ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff', '~mont': 'mont', '~cand': 'cand', '~cov': 'cov'})[cur] || 'genus';
   h = document.createElement('div'); h.id = 'admhelp'; h.className = 'adm-help'; h.setAttribute('role', 'dialog'); h.setAttribute('aria-label', 'Help');
   h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button>${HELP[m]}`;
   h.querySelector('button').onclick = () => h.remove(); $('tools').append(h);
@@ -755,13 +757,13 @@ const CSRCS = [['own', 'Pierre'], ['dauin', 'Dauin'], ['ph', 'PH'], ['book', 'CF
 let CSRC = store.get('imr-admin-csrc2', 'dauin'), CSKIP = new Set();
 const srcOk = (p, s) => s === 'all' || origin(p) === s;
 // Order (Pierre): random, but genus x view cells with few photos come up more often, so the gaps for the games fill
-// first. Each candidate's weight is 1 / (1 + photos the genus already has in its view): its guessed view (vg, Claude's
+// first. Each candidate's weight is 1 / (1 + game colonies the genus already has in its view, covOf as on the Coverage page): its guessed view (vg, Claude's
 // guess from the photo), else the genus's emptiest view. Weighted random draw (key -ln(u) / w, u fixed per photo
 // and per device), then no two of the same genus in a row when it can be avoided.
 const cseed = () => { let s = store.get('imr-admin-cseed', 0); if (!s) { s = 1 + Math.floor(Math.random() * 2147483645); store.set('imr-admin-cseed', s); } return s; };
 const uOf = f => { let h = cseed() ^ 2166136261; for (let i = 0; i < f.length; i++) h = Math.imul(h ^ f.charCodeAt(i), 16777619); return ((h >>> 0) + .5) / 4294967296; };
 function candQueue(src){
-  const N = {}, cnt = (n, w) => { const k = n + '|' + w; if (!(k in N)) { const r = rowOf(n, w); N[k] = r.feat.length + r.rest.length; } return N[k]; };
+  const N = {}, cnt = (n, w) => { const k = n + '|' + w; if (!(k in N)) N[k] = covOf(n, w).obs; return N[k]; };
   const weight = (n, p) => { const vs = VIEWS.map(x => x[0]).filter(w => !(lv(n) === 2 && w === 'medium')); let v = p.vg || p.view; if (v === 'medium' && lv(n) === 2) v = 'wide';
     return 1 / (1 + (vs.includes(v) ? cnt(n, v) : Math.min(...vs.map(w => cnt(n, w))))); };
   const L = [];
@@ -946,4 +948,45 @@ function renderDiff(){
   $v.querySelectorAll('[data-do]').forEach(b => b.onclick = () => { DIFF_ORDER = b.dataset.do; store.set('imr-admin-diff', DIFF_ORDER); renderDiff(); });
   $v.querySelectorAll('[data-act="zoom"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'); zoom(t.dataset.g, t.dataset.f); });
   bindQ();
+}
+
+/* ---------- Photo coverage ---------- */
+// Game photos of genus n in view v, as the games can draw them (applySlots in app.js): field photos only, so no lecture
+// slide, no Coral Finder book photo, no multi-coral, hidden or "sheet only" photo; Poor photos are left out too, and the
+// Colony slot never takes a photo whose growth form is not visible (photoSet in app.js). Diversity = distinct colonies
+// (iNat observations), so 5 shots of one colony count once. Shared by the Coverage page and the Candidates queue.
+const COV = [1, 3, 5, 8];  // colonies per genus x view from which a cell reaches level 1, 2, 3, 4
+let COURSE = null;
+function gamePool(n, v){
+  COURSE = COURSE || new Set(Object.values(DATA.course || {}).flat().map(p => p.f));
+  const use = DRAFT.use || {};
+  return photos(n).filter(p => viewOf(n, p) === v && !hidden(n, p) && !p.multi && !p.extra && !p.cf && !COURSE.has(p.f) && use[p.f] !== 'ref' && qOf(p.f) !== 1 && !(v === 'wide' && fOf(p.f) === 'x'));
+}
+function covOf(n, v){ const L = gamePool(n, v); return {n: L.length, obs: new Set(L.map(p => p.o || p.f)).size, L}; }
+// 0 none, 1 thin (1-2 colonies), 2 short (3-4), 3 fair (5-7), 4 well covered (8+). Thin = level 0 or 1.
+const covLvl = c => COV.filter(k => c.obs >= k).length;
+// Views a genus has in games: 2-level genera have no Closer view.
+const covViews = n => VIEWS.filter(([v]) => !(lv(n) === 2 && v === 'medium'));
+let COV_ORDER = store.get('imr-admin-covorder', 'lecture');
+function renderCov(){
+  status();
+  const R = Object.keys(DATA.gen).filter(n => !DATA.gen[n].x).map((n, i) => {
+    const cells = VIEWS.map(([v]) => covViews(n).some(x => x[0] === v) ? covOf(n, v) : null), live = cells.filter(Boolean);
+    return {n, i, cells, min: Math.min(...live.map(c => c.obs)), all: live.flatMap(c => c.L), cand: pending(n).filter(p => !p.cf).length};
+  });
+  const by = {lecture: (a, b) => a.i - b.i, slate: (a, b) => (DATA.gen[a.n].n || 99) - (DATA.gen[b.n].n || 99) || a.i - b.i, thin: (a, b) => a.min - b.min || a.all.length - b.all.length || a.i - b.i};
+  R.sort(by[COV_ORDER] || by.lecture);
+  const max = Math.max(1, ...R.map(r => r.all.length)), thin = R.reduce((s, r) => s + r.cells.filter(c => c && covLvl(c) < 2).length, 0);
+  const cell = (r, c, v) => c ? `<td class="cov-c cov-${covLvl(c)}" title="${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}"><b>${c.n}</b>${c.obs < c.n ? `<small>${c.obs}</small>` : ''}</td>` : '<td class="cov-c cov-na">–</td>';
+  const bar = r => ORIGINS.filter(o => o[0] !== 'book').map(([o, t]) => { const k = r.all.filter(p => origin(p) === o).length; return k ? `<i class="o-${o}" style="width:${(100 * k / max).toFixed(1)}%" title="${t}: ${k}"></i>` : ''; }).join('');
+  const seg = [['lecture', 'Lecture'], ['slate', 'Slate'], ['thin', 'Thinnest']];
+  $v.innerHTML = `<section class="adm-cov">
+    <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Order">${seg.map(([k, t]) => `<button type="button" data-co="${k}" aria-pressed="${COV_ORDER === k}">${t}</button>`).join('')}</span>
+      <span class="cov-key" aria-label="Colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
+      <b class="${thin ? 'warnc' : ''}">${thin} thin</b></div>
+    <table class="cov-t"><thead><tr><th></th>${VIEWS.map(([, t]) => `<th>${t}</th>`).join('')}<th class="cov-srch">Sources</th><th title="Candidates">+</th></tr></thead>
+    <tbody>${R.map(r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
+      <td class="cov-src"><span class="cov-bar">${bar(r)}</span><small>${r.all.length}</small></td><td class="cov-cand">${r.cand ? `+${r.cand}` : ''}</td></tr>`).join('')}</tbody></table></section>`;
+  $v.querySelectorAll('[data-co]').forEach(b => b.onclick = () => { COV_ORDER = b.dataset.co; store.set('imr-admin-covorder', COV_ORDER); renderCov(); });
+  $v.querySelectorAll('tbody tr').forEach(tr => tr.onclick = e => { if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g); });
 }
