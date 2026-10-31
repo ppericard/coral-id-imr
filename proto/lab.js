@@ -2,7 +2,7 @@
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
 // A prototype that graduates moves to a site section (see GRADUATED) and gets a plain hash: #<id>, #<id>|<arg>.
 // Bump with every Lab change so browsers never mix new and old files (same ?v scheme as app.js).
-const LAB_V = 31;
+const LAB_V = 32;
 const LAB = {
   list: [],
   files: ['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'],
@@ -70,13 +70,13 @@ function viewLab(h){
   const order = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && !GRADUATED[p.id]);
   const grad = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && GRADUATED[p.id]);
   $v.innerHTML = `<div class="lab"><h2>Lab</h2>
-  <p class="lede">Experiments to learn, remember and identify the 39 genera through pictures and play. Try them, then mark each one keep or trim: your marks stay in this browser and tell us what to develop further.</p>
+  <p class="lede">Experiments to learn, remember and identify the 39 genera through pictures and play. Try them${IS_ADMIN ? ', then mark each one keep or trim: your marks stay in this browser and tell us what to develop further' : ''}.</p>
   <div class="labhub">${order.map(p => `<article class="labtile">
     <a class="labopen" href="#lab-${p.id}"><span class="labicon" aria-hidden="true">${p.icon || ''}</span><b>${esc(p.title)}</b><span>${esc(p.blurb)}</span></a>
-    <div class="labvote" role="group" aria-label="Keep or trim ${esc(p.title)}">
+    ${!IS_ADMIN ? '' : `<div class="labvote" role="group" aria-label="Keep or trim ${esc(p.title)}">
       <button type="button" data-vote="${p.id}|keep" aria-pressed="${votes[p.id] === 'keep'}">Keep</button>
       <button type="button" data-vote="${p.id}|trim" aria-pressed="${votes[p.id] === 'trim'}">Trim</button>
-    </div></article>`).join('')}</div>
+    </div>`}</article>`).join('')}</div>
   <h3>Graduated from the Lab</h3>
   <div class="labgrad">${grad.map(p => `<a href="#${p.id}"><span class="labicon" aria-hidden="true">${p.icon || ''}</span><b>${esc(p.title)}</b><small>${SECTION_NAME[GRADUATED[p.id]]}</small></a>`).join('')}</div></div>`;
   $v.querySelectorAll('[data-vote]').forEach(b => b.onclick = () => {

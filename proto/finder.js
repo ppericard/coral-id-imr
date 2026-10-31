@@ -38,8 +38,8 @@ LAB.add({
       if (FIDS.includes(k)) L.forEach(x => S[k].add(x)); else if (k === 'out') L.forEach(x => G[x] && S.out.add(x)); else if (k === 'q') S.q = L.join(','); });
     // Start screen (one screen, a few clues, then the shortlist) unless the link already carries clues.
     if (FIDS.some(f => S[f].size) || S.q || S.out.size) S.home = false;
-    // Three start-screen proposals for Pierre to try; the pick is remembered per browser.
-    let startV = store.get('imr-finder-start', 'a');
+    // Three start-screen proposals for Pierre to try (admin browser only); the pick is remembered per browser. RAs get A.
+    let startV = IS_ADMIN ? store.get('imr-finder-start', 'a') : 'a';
     const base = location.hash.startsWith('#lab-') ? '#lab-finder' : '#finder';
     const saveHash = () => {
       const parts = FIDS.filter(f => S[f].size).map(f => f + '=' + [...S[f]].join(','));
@@ -189,7 +189,7 @@ LAB.add({
       const row = id => { const f = fam(id); return f ? `<div class="fdsrow"><h3 title="${esc(f.note || '')}">${esc(f.name)}</h3><div class="fdsopts">${f.opts.map(o => optBtn(f, o, S[id].has(o.id), cnt(f, o))).join('')}</div></div>` : ''; };
       const forms = f => `<div class="fdforms">${f.opts.map(o => formTile(o, S.form.has(o.id), cnt(f, o))).join('')}</div>`;
       const show = `<button type="button" class="next fdshow" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera`} →</button>`;
-      const switcher = `<span class="seg fdsv" role="group" aria-label="Start screen proposal">${[['a', 'A · One board'], ['b', 'B · Step by step'], ['c', 'C · Coral Finder path']].map(([v, t]) => `<button type="button" data-sv="${v}" aria-pressed="${startV === v}">${t}</button>`).join('')}</span>`;
+      const switcher = !IS_ADMIN ? '' : `<span class="seg fdsv" role="group" aria-label="Start screen proposal">${[['a', 'A · One board'], ['b', 'B · Step by step'], ['c', 'C · Coral Finder path']].map(([v, t]) => `<button type="button" data-sv="${v}" aria-pressed="${startV === v}">${t}</button>`).join('')}</span>`;
       let body;
       if (startV === 'b') {
         // One question at a time; "Not sure" skips it. Answers stay as chips to go back.
