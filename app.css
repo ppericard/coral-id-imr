@@ -954,3 +954,5 @@ a.lt:hover{border-color:var(--accent)}
 @media (min-width:1024px){
   .prog .pl{display:revert}
 }
+.setlink{display:inline-flex;align-items:center;min-height:32px;padding:0 14px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--accent);font-weight:600;text-decoration:none}
+@media (pointer:coarse){.setlink{min-height:44px}}
