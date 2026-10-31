@@ -10,11 +10,17 @@ LAB.add({
   blurb: 'Start from whatever you can see, in any order: growth form, corallites or IMR lecture group. The shortlist updates at once, with all local photos.',
   lede: 'Tap the clues you can see on your photo, in any order. Genera are ranked by how well they fit: one wrong or misjudged clue only moves a genus down, it never hides it. Made to stay open beside ReefCloud.',
   render(root, arg){
-    const names = labNames(), G = DATA.gen;
+    // Genera not on the IMR list but in the Coral Finder book and present at Dauin (data.json "x"): on by default, switch in ⚙.
+    // They join the ranking after the IMR genera of the same rank, with their own boxes (book A-Z index) and tag.
+    const XG = XON && DATA.x ? DATA.x.gen : {}, notIMR = n => !DATA.gen[n];
+    const names = [...labNames(), ...Object.keys(XG)], G = {...DATA.gen, ...XG};
+    const addX = k => ({...k, leaves: k.leaves.map(l => ({...l, g: [...l.g, ...(XON && DATA.x ? DATA.x.leaf[l.id] || [] : [])]}))});
+    const KEY = [...DATA.key, ...(XON && DATA.x ? DATA.x.groups : [])].map(addX);
+    const xtag = n => G[n].x.nonscl ? 'Not on IMR list · not a hard coral' : 'Not on IMR list';
     const uniq = L => [...new Set(L)];
     const withTr = id => names.filter(n => G[n].tr.includes(id));
     // Facets: id, title, options {id, t, g (genera)}. Within a facet picks mean either/or; facets combine.
-    const CFF = DATA.key.map(k => ({id: k.id, t: k.name, s: k.sub, g: uniq(k.leaves.flatMap(l => l.g)), color: k.color}));
+    const CFF = KEY.map(k => ({id: k.id, t: k.name, s: k.sub, g: uniq(k.leaves.flatMap(l => l.g)), color: k.color}));
     // IMR Lecture 6 growth forms (forms.json "forms"). The lecture says form is plastic: like every clue it only ranks.
     const IMRCOL = {B: 'branch', E: 'plate', T: 'meander', U: 'solo', M: 'massive', S: 'column', F: 'polyp'};
     // Display order (Pierre: more logical than the lecture's numbering): branching then tables (secondary branching),
@@ -35,7 +41,7 @@ LAB.add({
         ...(cf ? [cfF, imrF] : [imrF, cfF]),
         ...(forms.length ? [{id: 'box', name: forms.map(f => f.t).join(' / ') + ' ›', note: 'Coral Finder, second step: the boxes of the growth form picked above.',
           // Titled by its form, as on the genus sheet's key path (Pierre: "Coral Finder box" said nothing to RAs).
-          opts: forms.flatMap(f => DATA.key.find(k => k.id === f.id).leaves.filter(l => l.g.length && (f.id !== 'L' && f.id !== 'C')).map(l => ({id: l.id, t: leafLabel(l), g: l.g, pg: pg(l)})))}] : []),
+          opts: forms.flatMap(f => KEY.find(k => k.id === f.id).leaves.filter(l => l.g.length && (f.id !== 'L' && f.id !== 'C')).map(l => ({id: l.id, t: leafLabel(l), g: l.g, pg: pg(l)})))}] : []),
         ...DATA.traits.map(c => ({id: c.id, name: c.name, note: c.note, opts: c.opts.map(o => ({id: o.id, t: o.t, s: o.src, g: withTr(o.id)}))})),
         {id: 'ig', name: 'IMR lecture group', note: 'The 11 corallite groups of Lecture 6.', thumbs: true,
           opts: DATA.imrg.map(gr => ({id: 'g' + gr.n, t: gr.n + '. ' + gr.t, g: names.filter(n => G[n].ig === gr.n)}))}
@@ -85,6 +91,8 @@ LAB.add({
       [...CFF].sort((a, b) => a.g.length - b.g.length).forEach(f => {
         const L = bySlate(f.g), order = [...L.filter(x => !seen.has(x)), ...L.filter(x => seen.has(x))], per = order.map(x => formPhotos(x, f.id)), pick = [];
         for (let i = 0; pick.length < 4 && per.some(P => P[i]); i++) per.forEach((P, k) => { if (P[i] && pick.length < 4) { pick.push(P[i]); seen.add(order[k]); } });
+        // A form with no classified photo (the book's non-hard-coral group): the genera's cover photos.
+        if (!pick.length) L.slice(0, 4).forEach(x => { const p = cover(G[x]); if (p) pick.push(p); });
         out[f.id] = pick; });
       return out; })();
 
@@ -140,10 +148,10 @@ LAB.add({
     function drawMain(F, left, close, rest){
       const flat = [], mode = lay === 'auto' ? (left.length <= 12 ? 'mosaic' : 'cover') : lay;
       const ph = (n, p, v) => { flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom fdph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 50vw, 360px" alt="${esc(n)}, ${esc(VIEW_LABEL[v] || v)}" loading="lazy"></button>`; };
-      const tools = n => `<span class="fdtools"><button type="button" class="chip" data-out="${esc(n)}" title="Rule out ${esc(n)}">Rule out</button><button type="button" class="chip" data-cmpk="${esc(n)}" aria-pressed="${S.cmp.includes(n)}">Compare</button></span>`;
+      const tools = n => `<span class="fdtools"><button type="button" class="chip" data-out="${esc(n)}" title="Rule out ${esc(n)}">Rule out</button>${notIMR(n) ? '' : `<button type="button" class="chip" data-cmpk="${esc(n)}" aria-pressed="${S.cmp.includes(n)}">Compare</button>`}</span>`;
       // Clicking a genus name opens it in place (all its photos, bigger, with the ID cues); the sheet is a small link.
       const isX = n => S.open.has('x:' + n);
-      const head = n => `<span class="fdhead"><button type="button" class="fdname" data-x="${esc(n)}" aria-expanded="${isX(n)}"><i>${esc(n)}</i></button><a class="fdsheetl" href="${genLink(n)}" title="Open the ${esc(n)} sheet">Sheet ↗</a></span><small>${tag(n)} · ${esc(G[n].fam)}${G[n].ig ? ' · IMR group ' + G[n].ig : ''}</small>`;
+      const head = n => `<span class="fdhead"><button type="button" class="fdname" data-x="${esc(n)}" aria-expanded="${isX(n)}"><i>${esc(n)}</i></button>${notIMR(n) ? '' : `<a class="fdsheetl" href="${genLink(n)}" title="Open the ${esc(n)} sheet">Sheet ↗</a>`}</span><small>${notIMR(n) ? `<b class="fdxtag">${xtag(n)}</b>` : tag(n)} · ${esc(G[n].fam)}${G[n].ig ? ' · IMR group ' + G[n].ig : ''}</small>`;
       // Many varied examples at a glance, as on the paper Coral Finder's pages: cover first, then round-robin over
       // colony / closer / corallites (featured photos lead each view), a different observation each time when possible.
       // With one view picked, only that view's photos (all views when the genus has none of it).
@@ -165,7 +173,7 @@ LAB.add({
       // Coral Finder features.
       const big = (n, off) => { const g = G[n];
         return `<article class="fdbig${off ? ' off' : ''}"><div class="fdinfo fdbigside">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}
-          <p class="fdcue fdtip">${esc(tipsText(g))}</p><details class="fdcrit"><summary>Coral Finder</summary><ul>${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details>${tools(n)}</div>
+          <p class="fdcue fdtip">${esc(tipsText(g))}</p><details class="fdcrit"${notIMR(n) ? ' open' : ''}><summary>Coral Finder${notIMR(n) ? ` <small>p. ${g.pages.join(', ')}</small>` : ''}</summary><ul>${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details>${tools(n)}</div>
           <div class="fdbigph">${varied(g, 99).map(p => ph(n, p, p.view)).join('')}</div></article>`; };
       // Contact sheet: one line per genus with all its photos, small, to scan the whole shortlist line by line.
       const sheet = n => isX(n) ? big(n) : `<article class="fdsheet"><div class="fdinfo">${head(n)}</div><div class="fdall">${varied(G[n], 99).map(p => ph(n, p, p.view)).join('')}</div></article>`;
@@ -179,13 +187,13 @@ LAB.add({
       // Phones: with genera fitting every clue, "One clue off" starts folded (one tap opens it) so the best fits are not buried.
       const foldOff = left.length && isPhone() && !S.open.has('off');
       const any = used(F).length;
-      const hd = `<div class="fdhd"><h3 class="fdgrp">${any ? 'Fits every clue' : 'IMR genera'} <span class="fdn">${left.length}</span></h3><span class="fdsegs"><span class="seg" role="group" aria-label="Layout">${[['auto', 'Auto', 'Mosaic up to 12 genera, Cards beyond'], ['cover', 'Cards', 'One photo and the key features per genus'], ['mosaic', 'Mosaic', '8 varied photos per genus'], ['sheet', 'Contact sheet', 'Every photo of each genus']].map(([v, t, h]) => `<button type="button" data-lay="${v}" aria-pressed="${lay === v}" title="${h}">${t}${v === 'auto' && lay === 'auto' ? ` <small>(${mode === 'mosaic' ? 'Mosaic' : 'Cards'})</small>` : ''}</button>`).join('')}</span>
+      const hd = `<div class="fdhd"><h3 class="fdgrp">${any ? 'Fits every clue' : XON ? 'Genera' : 'IMR genera'} <span class="fdn">${left.length}</span></h3><span class="fdsegs"><span class="seg" role="group" aria-label="Layout">${[['auto', 'Auto', 'Mosaic up to 12 genera, Cards beyond'], ['cover', 'Cards', 'One photo and the key features per genus'], ['mosaic', 'Mosaic', '8 varied photos per genus'], ['sheet', 'Contact sheet', 'Every photo of each genus']].map(([v, t, h]) => `<button type="button" data-lay="${v}" aria-pressed="${lay === v}" title="${h}">${t}${v === 'auto' && lay === 'auto' ? ` <small>(${mode === 'mosaic' ? 'Mosaic' : 'Cards'})</small>` : ''}</button>`).join('')}</span>
         <span class="seg" role="group" aria-label="Photos">${[['mix', 'Mix'], ...VIEWS].map(([v, t]) => `<button type="button" data-pv="${v}" aria-pressed="${pv === v}">${t}</button>`).join('')}</span></span></div>`;
       $main.innerHTML = `<div class="fdbar">${chosen.map(({f, o}) => `<button type="button" class="chip" data-o="${f.id}|${o.id}" title="Remove">${esc(o.t)} ×</button>`).join('')}${S.q ? `<button type="button" class="chip" data-clearq>“${esc(S.q)}” ×</button>` : ''}${isPhone() ? `<button type="button" class="chip fdadd" data-side aria-pressed="${S.open.has('side')}">${S.open.has('side') ? 'Hide clues' : '+ Clue'}</button>` : ''}${chosen.length || S.q || S.out.size ? `<button type="button" class="next fdreset2" data-reset>↺ Start over</button>` : ''}</div>
         ${any ? nextChecks(F, left.length ? left : close) : ''}
-        ${left.length ? `${hd}<div class="${mode === 'mosaic' ? 'fdrows' : mode === 'sheet' ? 'fdsheets' : 'fdgrid'}">${left.map(n => isX(n) && mode === 'mosaic' ? big(n) : mode === 'mosaic' ? mosaic(n) : mode === 'sheet' ? sheet(n) : tile(n)).join('')}</div>` : `<p class="note">No IMR genus fits every clue: one of them may be wrong. Check the closest genera below.</p>`}
+        ${left.length ? `${hd}<div class="${mode === 'mosaic' ? 'fdrows' : mode === 'sheet' ? 'fdsheets' : 'fdgrid'}">${left.map(n => isX(n) && mode === 'mosaic' ? big(n) : mode === 'mosaic' ? mosaic(n) : mode === 'sheet' ? sheet(n) : tile(n)).join('')}</div>` : `<p class="note">No ${XON ? '' : 'IMR '}genus fits every clue: one of them may be wrong. Check the closest genera below.</p>`}
         ${close.length ? (foldOff ? `<details class="fdoff"><summary class="fdgrp">${close.length} genera one clue off <small>in case a clue was misjudged</small></summary><div class="fdgrid">${close.map(n => tile(n, true)).join('')}</div></details>` : `<h3 class="fdgrp">One clue off <span class="fdn">${close.length}</span> <small>in case a clue was misjudged</small></h3><div class="fdgrid">${close.map(n => tile(n, true)).join('')}</div>`) : ''}
-        ${rest.length ? `<details class="fdrest"><summary>${rest.length} other genera <small>two clues off or more</small></summary><p class="fdchosen">${rest.map(n => `<a class="chip" href="${genLink(n)}"><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p></details>` : ''}
+        ${rest.length ? `<details class="fdrest"><summary>${rest.length} other genera <small>two clues off or more</small></summary><p class="fdchosen">${rest.map(n => notIMR(n) ? `<span class="chip" title="${xtag(n)}"><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></span>` : `<a class="chip" href="${genLink(n)}"><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p></details>` : ''}
         ${near.length ? `<p class="fdnear"><span class="label">Also check these look-alikes</span>${near.map(n => `<a class="chip" href="#cmp-${esc(left[0])}|${esc(n)}"${(G[left[0]].lsrc || {})[n] ? ` title="${esc(G[left[0]].lsrc[n])}"` : ''}><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p>` : ''}
         ${S.out.size ? `<p class="fdouts"><span class="label">Ruled out</span>${[...S.out].map(n => `<button type="button" class="chip" data-back="${esc(n)}" title="Bring back"><i>${esc(n)}</i> ↺</button>`).join('')}</p>` : ''}`;
       $main.querySelectorAll('[data-z]').forEach(b => b.onclick = () => zoom(flat, Number(b.dataset.z)));

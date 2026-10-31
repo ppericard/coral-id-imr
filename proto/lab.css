@@ -569,7 +569,7 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .fdopt .fdc{font-size:.78rem;font-weight:600;min-width:1.6em;text-align:right;color:var(--muted)}
 .fdopt[aria-pressed="true"] .fdc{color:inherit}
 .fdopt[class*=" c-"]:not([aria-pressed="true"]){border-left:5px solid var(--c,var(--line))}
-.fdopt.c-branch{--c:var(--branch)}.fdopt.c-meander{--c:var(--meander)}.fdopt.c-massive{--c:var(--massive)}.fdopt.c-plate{--c:var(--plate)}.fdopt.c-solo{--c:var(--solo)}.fdopt.c-polyp{--c:var(--polyp)}.fdopt.c-column{--c:var(--column)}
+.fdopt.c-branch{--c:var(--branch)}.fdopt.c-meander{--c:var(--meander)}.fdopt.c-massive{--c:var(--massive)}.fdopt.c-plate{--c:var(--plate)}.fdopt.c-solo{--c:var(--solo)}.fdopt.c-polyp{--c:var(--polyp)}.fdopt.c-column{--c:var(--column)}.fdopt.c-other{--c:var(--other)}
 .fdth{display:flex;flex:0 0 auto}
 .fdth img{width:30px;height:30px;object-fit:cover;border-radius:5px;border:1px solid var(--surface)}
 .fdth img+img{margin-left:-10px}
@@ -691,6 +691,7 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 button.fdname{font:inherit;font-family:var(--display);font-size:1.35rem;font-weight:700;background:none;border:0;padding:0;cursor:pointer;color:var(--ink);text-align:left}
 button.fdname::after{content:" ▸";font-size:.8em;color:var(--muted)}
 button.fdname[aria-expanded="true"]::after{content:" ▾"}
+.fdxtag{font-weight:700;color:var(--muted);background:var(--other);border-radius:var(--pill);padding:0 6px}
 .fdsheetl{font-size:.78rem;color:var(--muted)!important}
 .fdbig{grid-column:1 / -1;background:var(--surface);border:2px solid var(--accent);border-radius:var(--r);padding:10px 12px;box-shadow:var(--shadow)}
 .fdbig.off{border-style:dashed}
@@ -767,7 +768,7 @@ button.fdname[aria-expanded="true"]::after{content:" ▾"}
   .fdstop .fdshow{width:revert}
 }
 
-.fdtileb.c-branch{--c:var(--branch)}.fdtileb.c-meander{--c:var(--meander)}.fdtileb.c-massive{--c:var(--massive)}.fdtileb.c-plate{--c:var(--plate)}.fdtileb.c-solo{--c:var(--solo)}.fdtileb.c-polyp{--c:var(--polyp)}.fdtileb.c-column{--c:var(--column)}
+.fdtileb.c-branch{--c:var(--branch)}.fdtileb.c-meander{--c:var(--meander)}.fdtileb.c-massive{--c:var(--massive)}.fdtileb.c-plate{--c:var(--plate)}.fdtileb.c-solo{--c:var(--solo)}.fdtileb.c-polyp{--c:var(--polyp)}.fdtileb.c-column{--c:var(--column)}.fdtileb.c-other{--c:var(--other)}
 .fdtileb[class*=" c-"]{background:var(--surface)}
 .fdstart[hidden],.fdlayout[hidden],.fdside[hidden]{display:none}
 /* Finder start screen: live shortlist under the clues (fits every clue, then one clue off, dimmed). */
