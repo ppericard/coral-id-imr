@@ -1,0 +1,16 @@
+M = {
+'p007':{0:'Acropora'},'p008':{0:'Acropora'},'p009':{0:'Acropora'},'p010':{0:'Seriatopora'},
+'p011':{0:'Pocillopora'},'p012':{0:'Porites',1:'Montipora'},'p013':{0:'Anacropora',1:'Cyphastrea'},
+'p014':{0:'Echinopora'},'p015':{0:'Tubastraea'},'p016':{0:'Galaxea',1:'Hydnophora'},'p017':{0:'Pectinia'},
+'p018':{1:'Plerogyra'},'p019':{0:'Lobophyllia'},'p020':{1:'Pachyseris'},
+'p022':{0:'Goniastrea',2:'Leptoria',3:'Merulina'},'p023':{0:'Platygyra'},'p024':{0:'Lobophyllia'},
+'p025':{0:'Lobophyllia'},'p026':{0:'Pectinia'},'p028':{0:'Astrea',1:'Goniastrea'},
+'p029':{0:'Dipsastraea',2:'Favites'},'p030':{0:'Cyphastrea'},'p032':{0:'Dipsastraea'},'p033':{0:'Favites'},
+'p035':{0:'Pavona'},'p036':{0:'Porites'},'p037':{0:'Favites',1:'Goniastrea'},'p043':{0:'Favites'},
+'p044':{0:'Lobophyllia'},'p045':{0:'Favites'},'p046':{0:'Hydnophora',1:'Pachyseris'},'p047':{0:'Porites'},
+'p048':{0:'Montipora'},'p050':{0:'Porites'},'p051':{0:'Astreopora'},'p053':{0:'Acropora'},'p054':{0:'Montipora'},
+'p055':{0:'Astreopora'},'p056':{0:'Merulina'},'p058':{0:'Echinopora'},'p064':{1:'Pavona',2:'Lithophyllon'},
+'p066':{0:'Porites'},'p067':{1:'Echinopora'},'p068':{0:'Fungia',1:'Danafungia'},'p069':{0:'Lithophyllon'},
+'p070':{0:'Ctenactis',1:'Herpolitha'},'p071':{1:'Halomitra'},'p076':{0:'Alveopora'},'p078':{0:'Heliofungia'},
+'p079':{1:'Duncanopsammia'},'p080':{0:'Merulina'},
+}
