@@ -303,11 +303,11 @@ function status(){
   const tn = Object.keys(DRAFT.flag || {}).length + sugCount(), ta = document.querySelector('[data-mode="triage"]'); if (ta) ta.textContent = `Triage${tn ? ` (${tn})` : ''}`;
   const xn = Object.keys(DRAFT.exclude || {}).length, xa = document.querySelector('[data-mode="excluded"]'); if (xa) xa.textContent = `Excluded${xn ? ` (${xn})` : ''}`;
   const t = draftAt ? ` (saved ${draftAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})})` : '';
-  $('status').textContent = parts.length ? '● Not published' : TOKEN ? '✓ Published' : 'Read-only';
-  $('status').title = parts.length ? `Draft${t}: ${parts.join(' + ')} not published yet` : TOKEN ? 'Everything is published' : 'Read-only: download only';
-  $('status').classList.toggle('dirty', !!parts.length);
+  // Publish carries the status (no separate status text): "● Publish" with a draft, "Published" when clean.
+  const sv = $('save'); if (sv.textContent !== 'Publishing…') sv.textContent = !TOKEN ? 'Read-only' : parts.length ? '● Publish' : 'Published';
+  sv.title = parts.length ? `Draft${t}: ${parts.join(' + ')}` : 'Publish';
   $('undo').disabled = !HIST.length; $('redo').disabled = !FUT.length;
-  $('save').disabled = !TOKEN || !parts.length; $('save').title = TOKEN ? 'Send your draft to the public site' : 'Unlock with a token to publish';
+  $('save').disabled = !TOKEN || !parts.length;
   if (cur[0] !== '~') lastGenus = cur;
   $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || '');
   document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff'}[cur] || 'genus'))));
@@ -691,7 +691,7 @@ async function save(){
     SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); saveDraft();
     toast('Published. The public site shows it within a minute or two.');
   } catch (x) { toast(/does not match|sha/i.test(x.message) ? 'The site was published from elsewhere in the meantime: reload the page, your draft is kept.' : 'Not published (your draft is kept): ' + x.message); }
-  b.textContent = 'Publish'; render();
+  b.textContent = ''; render();
 }
 function download(){
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(output(), null, 2) + '\n'], {type: 'application/json'}));
@@ -720,6 +720,7 @@ async function start(){
   addEventListener('storage', e => { if (e.key === 'imr-photo-flags' && e.newValue && importFlags()) render(); });
   const keep = changed().length; if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? "genera" : "genus"} not published yet.`);
   $('tools').hidden = false; $('save').onclick = save; $('download').onclick = download;
+  const mo = document.querySelector('.adm-more'); if (mo) { mo.querySelector('.adm-menu').addEventListener('click', () => { mo.open = false; }); document.addEventListener('click', e => { if (!mo.contains(e.target)) mo.open = false; }); }
   const so = $('signout'); if (so) { so.hidden = !TOKEN; so.onclick = signOut; }
   $('undo').onclick = undo;
   $('help').onclick = toggleHelp;
