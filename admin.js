@@ -287,13 +287,14 @@ function status(){
   $('save').disabled = !TOKEN || !parts.length; $('save').title = TOKEN ? 'Send your draft to the public site' : 'Unlock with a token to publish';
   if (cur[0] !== '~') lastGenus = cur;
   $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || '');
-  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage'}[cur] || 'genus'))));
+  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff'}[cur] || 'genus'))));
 }
 function render(){
   if (cur === '~quality') return renderQuality();
   if (cur === '~form') return renderForm();
   if (cur === '~excluded') return renderExcluded();
   if (cur === '~triage') return renderTriage();
+  if (cur === '~diff') return renderDiff();
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
   const ch = changed(), n = cur, g = DATA.gen[n], cv = coverOf(n), k = entry(n);
   status();
@@ -470,6 +471,7 @@ function renderQuality(){
 
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
+  diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers. Few answers = rough. The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it sits in the wrong game set.</p>`,
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time.</p>
     <p>Drag a photo onto a featured photo to feature it there, to another view to move it, or from the candidates to add it. Hidden photos disappear everywhere, games included; × excludes a photo for good.</p>
     <p>The letters on each photo are its growth form (see Growth form).</p>`,
@@ -482,7 +484,7 @@ const HELP = {
 };
 function toggleHelp(){
   let h = $('admhelp'); if (h) { h.remove(); return; }
-  const m = ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage'})[cur] || 'genus';
+  const m = ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff'})[cur] || 'genus';
   h = document.createElement('div'); h.id = 'admhelp'; h.className = 'adm-help'; h.setAttribute('role', 'dialog'); h.setAttribute('aria-label', 'Help');
   h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button>${HELP[m]}`;
   h.querySelector('button').onclick = () => h.remove(); $('tools').append(h);
@@ -725,3 +727,24 @@ function signOut(){ store.set(SESSION, null); TOKEN = null; location.reload(); }
   document.querySelectorAll('#size button').forEach(b => b.onclick = () => { const p = get(); p.admin = b.dataset.size; try { localStorage.setItem('imr-coral-size', JSON.stringify(p)); } catch (e) {} apply(); });
   apply();
 })();
+
+// Photo difficulty from the sync sheet (?stats=1, tools/sync/Code.gs stats_): [difficulty, answers, right] per photo.
+const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
+let STATS = null, DIFF_ORDER = store.get('imr-admin-diff', 'hard');
+function renderDiff(){
+  status();
+  if (!STATS) { $v.innerHTML = '<p class="note">Loading…</p>'; fetch(SYNC_URL + '?stats=1').then(r => r.json()).then(j => { STATS = j && j.ok ? j.photos || {} : {}; if (cur === '~diff') renderDiff(); }).catch(() => { STATS = {}; if (cur === '~diff') renderDiff(); }); return; }
+  const vl = v => v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1];
+  const L = allPhotos().filter(p => STATS[p.f]).sort((a, b) => (DIFF_ORDER === 'hard' ? -1 : 1) * (STATS[a.f][0] - STATS[b.f][0]));
+  const card = p => { const [d, n, r] = STATS[p.f];
+    return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
+    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>
+    <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}<span class="adm-src" title="Difficulty">${d > 0 ? '+' : ''}${d.toFixed(1)} · ${r}/${n}</span></figcaption>
+    <div class="adm-acts">${qSeg(p)}</div></figure>`; };
+  $v.innerHTML = `<section class="adm-quality"><div class="adm-qhead"><h2>Photo difficulty</h2></div>
+    <div class="adm-filter"><button type="button" class="adm-fchip plain" data-do="hard" aria-pressed="${DIFF_ORDER === 'hard'}">Hardest</button><button type="button" class="adm-fchip plain" data-do="easy" aria-pressed="${DIFF_ORDER === 'easy'}">Easiest</button></div>
+    ${L.length ? `<div class="adm-grid adm-qgrid">${L.map(card).join('')}</div>` : '<p class="note">No answers yet.</p>'}</section>`;
+  $v.querySelectorAll('[data-do]').forEach(b => b.onclick = () => { DIFF_ORDER = b.dataset.do; store.set('imr-admin-diff', DIFF_ORDER); renderDiff(); });
+  $v.querySelectorAll('[data-act="zoom"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'); zoom(t.dataset.g, t.dataset.f); });
+  bindQ();
+}
