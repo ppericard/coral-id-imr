@@ -486,3 +486,11 @@ async function start(){
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.
 if (/[?&]readonly\b/.test(location.search)) start(); else lockScreen();
+
+// Photo size S/M/L: same control and same per-page store as the site (localStorage imr-coral-size, key "admin").
+(() => {
+  const get = () => { try { return JSON.parse(localStorage.getItem('imr-coral-size')) || {}; } catch (e) { return {}; } };
+  const apply = () => { const s = get().admin || 'm'; document.documentElement.dataset.size = s; document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); };
+  document.querySelectorAll('#size button').forEach(b => b.onclick = () => { const p = get(); p.admin = b.dataset.size; try { localStorage.setItem('imr-coral-size', JSON.stringify(p)); } catch (e) {} apply(); });
+  apply();
+})();
