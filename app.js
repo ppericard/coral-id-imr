@@ -652,14 +652,17 @@ if (navigator.storage && navigator.storage.persist) navigator.storage.persist().
 /* ---------- routing ---------- */
 function go(h){ if (decodeURIComponent(location.hash.slice(1)) === h) route(); else location.hash = h; }
 
-// Photo size (small / medium / large), remembered per page.
-const PAGE_DEFAULT = {genera: 'm', key: 'm', genus: 'm', cmp: 'm', quiz: 'm'};
-function pageKey(){ const h = decodeURIComponent(location.hash.slice(1)); return h.startsWith('g-') ? 'genus' : h.startsWith('cmp') ? 'cmp' : h.startsWith('quiz') ? 'quiz' : (h.startsWith('key') || h.startsWith('finder') || /^[kl]-/.test(h)) ? 'key' : 'genera'; }
+// Photo size (small / medium / large), remembered per page in localStorage (key imr-coral-size).
+// Each page reads :root[data-size] in its own CSS; pages where it means nothing (games that fill the screen,
+// home, progress) hide the S/M/L buttons, keeping their room so the header never changes size.
+const SIZE_PAGES = ['genera', 'tips', 'cmp', 'genus', 'pair', 'finder', 'lab-gallery', 'lab-elim'];
+function pageKey(){ const h = decodeURIComponent(location.hash.slice(1)); return h.startsWith('g-') ? 'genus' : h.startsWith('cmp-') ? 'pair' : h.split('|')[0] || 'home'; }
 function sizePrefs(){ try { return JSON.parse(localStorage.getItem('imr-coral-size')) || {}; } catch (e) { return {}; } }
-function photoSize(){ return sizePrefs()[pageKey()] || PAGE_DEFAULT[pageKey()]; }
+function photoSize(){ return sizePrefs()[pageKey()] || 'm'; }
 const SIZES = {card: {s: '240px', m: '360px', l: '520px'}, strip: {s: '(max-width:700px) 46vw, 260px', m: '(max-width:700px) 92vw, 420px', l: '(max-width:700px) 92vw, 640px'}};
 const sizesFor = kind => SIZES[kind][photoSize()];
-function applySize(){ const s = photoSize(); document.documentElement.dataset.size = s; document.querySelectorAll('img[data-sz]').forEach(i => i.sizes = sizesFor(i.dataset.sz)); document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); }
+function applySize(){ const s = photoSize(), on = SIZE_PAGES.includes(pageKey()); document.documentElement.dataset.size = s;
+  const sz = document.getElementById('size'); sz.style.visibility = on ? '' : 'hidden'; sz.setAttribute('aria-hidden', String(!on)); document.querySelectorAll('img[data-sz]').forEach(i => i.sizes = sizesFor(i.dataset.sz)); document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); }
 function showOrigin(){ document.querySelectorAll('#origin button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.origin === origin))); }
 // On phones each group shows only its current button: tapping it moves to the next one.
 const phone = () => matchMedia('(max-width:640px)').matches;
