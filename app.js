@@ -432,7 +432,7 @@ function mergeSaved(j){
   const d = j.data || {}; let R = {}; try { R = JSON.parse(d['imr-coral-progress'] || '{}') || {}; } catch (e) {}
   const rr = JSON.parse(d['imr-coral-reset'] || '""'), lr = store.get('imr-coral-reset', '');
   if (lr > rr) return;
-  if (rr > lr) { P = R; SYNC.base = copy(R); store.set('imr-coral-reset', rr); store.set('imr-coral-progress', P); showProg(); return; }
+  if (rr > lr) { P = R; SYNC.base = copy(R); store.set('imr-coral-sync', SYNC); store.set('imr-coral-reset', rr); store.set('imr-coral-progress', P); showProg(); return; }
   const B = SYNC.base || {}, Z = {ok: 0, ko: 0, streak: 0};
   new Set([...Object.keys(R), ...Object.keys(P)]).forEach(g => {
     const b = B[g] || Z, l = P[g] || Z, r = R[g] || Z, out = {...r};
@@ -445,6 +445,8 @@ function mergeSaved(j){
     if (Object.keys(conf).length) out.conf = conf; else delete out.conf;
     if (out.ok + out.ko) P[g] = out; else delete P[g];
   });
+  // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
+  SYNC.base = copy(R); store.set('imr-coral-sync', SYNC);
   store.set('imr-coral-progress', P); showProg();
 }
 // Pull, merge, then send. Every change bumps SYNC.rev; a send clears SYNC.dirty only if nothing changed
