@@ -147,11 +147,11 @@
     },
     "Pavona": {
       "add": {
-        "pavona-cand-746234999": "macro",
-        "pavona-cand-746234948": "macro",
+        "pavona-cand-746234948": "medium",
         "pavona-cand-345338610": "medium",
         "pavona-cand-488110860": "macro"
-      }
+      },
+      "cover": "pavona-medium-746235960"
     },
     "Pachyseris": {
       "add": {
@@ -435,6 +435,7 @@
     "duncanopsammia-cand-611582046": "excluded",
     "imrl-p10_i7": "excluded",
     "lithophyllon-macro-746237709": "excluded",
+    "pavona-cand-746234999": "excluded",
     "pocillopora-cand-175099231": "excluded",
     "pocillopora-cand-269469068": "excluded",
     "pocillopora-macro-745206187": "excluded",
