@@ -19,7 +19,7 @@
   const link = (id, title, beta) => `<a href="#${id}"${beta ? ' class="beta" title="Still in the Lab"' : ''}>${esc(title)}</a>`;
   const tile = ([id, title, desc, beta]) => {
     const pv = PREVIEW[id.replace(/^lab-/, '')] || [];
-    return `<a class="htool${id === 'reveal' ? ' blurpv' : ''}${beta ? ' beta' : ''}" href="#${id}"${beta ? ' title="Still in the Lab"' : ''}><span class="hpv${pv.length > 1 ? ' two' : ''}">${pv.map(([n, v]) => `<img src="${ph(n, v)}" alt="" loading="lazy">`).join('')}</span><b>${esc(title)}${beta ? ' <em class="betatag">Beta</em>' : ''}</b><small>${esc(desc)}</small></a>`;
+    return `<a class="htool${beta ? ' beta' : ''}" href="#${id}"${beta ? ' title="Still in the Lab"' : ''}>${(window.homeArt && homeArt(id.replace(/^lab-/, ''))) ? `<span class="hpv art">${homeArt(id.replace(/^lab-/, ''))}</span>` : `<span class="hpv${pv.length > 1 ? ' two' : ''}">${pv.map(([n, v]) => `<img src="${ph(n, v)}" alt="" loading="lazy">`).join('')}</span>`}<b>${esc(title)}${beta ? ' <em class="betatag">Beta</em>' : ''}</b><small>${esc(desc)}</small></a>`;
   };
   window.viewHome = function(){
     document.documentElement.dataset.page = 'lab';  // full width, like the Lab (lab.css)
