@@ -604,7 +604,7 @@ function showModes(tab, h){
   const L = MODES[tab]; $modes.hidden = !L; if (!L) { $modes.innerHTML = ''; return; }
   const cur = modeOf(h);
   $modes.setAttribute('aria-label', MODE_LABEL[tab]);
-  $modes.innerHTML = L.map(([k, t, d]) => `<a href="#${k}"${k === cur ? ' aria-current="page"' : ''}><b>${t}</b><small>${d}</small></a>`).join('');
+  $modes.innerHTML = L.map(([k, t, d]) => `<a href="#${k}" title="${esc(d)}"${k === cur ? ' aria-current="page"' : ''}><b>${t}</b></a>`).join('');
   const on = $modes.querySelector('[aria-current]'); if (on && $modes.scrollWidth > $modes.clientWidth) $modes.scrollLeft = on.offsetLeft - ($modes.clientWidth - on.offsetWidth) / 2;
 }
 function route(){
@@ -631,7 +631,17 @@ function route(){
   else if ((!h || h === 'home') && window.viewHome) viewHome();
   else viewGenera();
   window.scrollTo(0, 0);
+  hdrMetrics();
 }
 addEventListener('hashchange', route);
+// Header metrics for CSS: --hdr-h (sticky offset for the cover photo) and, on phones, --hdr-hide:
+// how far the header scrolls up so that only the section bar stays pinned (all of it when there is none).
+const $hdr = document.querySelector('header');
+function hdrMetrics(){
+  const r = document.documentElement.style, h = $hdr.offsetHeight;
+  const hide = matchMedia('(max-width:640px)').matches ? ($modes.hidden ? h : $modes.offsetTop - 4) : 0;
+  r.setProperty('--hdr-h', (h - hide) + 'px'); r.setProperty('--hdr-hide', hide + 'px');
+}
+if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else addEventListener('resize', hdrMetrics);
 fetch('data.json?v=8').then(r => r.json()).then(d => { DATA = d; route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
