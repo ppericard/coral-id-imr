@@ -42,8 +42,6 @@
 .hpv.two{grid-template-columns:1fr 1fr;gap:2px}
 .hpv img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s,filter .6s}
 .htool:hover .hpv img{transform:scale(1.06)}
-.blurpv .hpv img{filter:blur(6px)}
-.blurpv:hover .hpv img{filter:none}
 @media (max-width:900px){.hpath ol{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:560px){
   .hmosaic{grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(7,1fr)}
@@ -54,3 +52,24 @@
   .htools{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (prefers-reduced-motion:reduce){.hmosaic a{animation:none}}
+/* Schematic previews (home-art.js): flat shapes in theme colours. */
+.hpv.art{background:var(--surface-2)}
+.hpv.art svg{width:100%;height:100%;display:block;transition:transform .4s}
+.htool:hover .hpv.art svg{transform:scale(1.04)}
+.hpv.art text{font-family:var(--body);font-size:7px}
+.hpv.art .k{fill:var(--ink)} .hpv.art .ki{fill:var(--accent-ink);font-weight:600}
+.hpv.art .big{font-size:22px;font-weight:700;fill:var(--accent)} .hpv.art .big2{font-size:13px;font-weight:700;fill:var(--ink)}
+.hpv.art .a{fill:var(--accent)} .hpv.art .l{fill:var(--line)} .hpv.art .m{fill:var(--muted)} .hpv.art .w{fill:var(--surface)}
+.hpv.art .o{stroke:var(--line);stroke-width:1}
+.hpv.art .f1{fill:var(--plate)} .hpv.art .f2{fill:var(--massive)} .hpv.art .f3{fill:var(--meander)} .hpv.art .f4{fill:var(--branch)} .hpv.art .f5{fill:var(--solo)}
+.hpv.art .cr{fill:none;stroke:var(--ink);stroke-opacity:.35;stroke-width:.8}
+.hpv.art .s{stroke:var(--muted);stroke-width:1} .hpv.art .sw{stroke:var(--ink);stroke-width:2.5;fill:none;stroke-linecap:round}
+.hpv.art .sep{stroke:var(--ink);stroke-opacity:.55;stroke-width:1.2} .hpv.art .wall{fill:none;stroke:var(--ink);stroke-width:2.5}
+.hpv.art .dim{opacity:.2} .hpv.art .hl{fill:var(--accent);fill-opacity:.12}
+.hpv.art .ok{fill:var(--good)} .hpv.art .okb{fill:var(--good-bg);stroke:var(--good)}
+.hpv.art .mark{stroke:var(--bad);stroke-width:1.5;stroke-dasharray:3 2}
+.hpv.art .back{fill:var(--accent);fill-opacity:.75}
+.hpv.art .link{fill:none;stroke:var(--good);stroke-width:1.5;stroke-dasharray:3 2}
+.hpv.art .cr2{fill:none;stroke:var(--line);stroke-width:3} .hpv.art .arc{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round}
+.hpv.art .frame{fill:none;stroke:var(--accent);stroke-width:2}
+.hpv.art .target{fill:var(--accent);fill-opacity:.15;stroke:var(--accent);stroke-width:2}
