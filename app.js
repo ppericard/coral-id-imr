@@ -214,7 +214,7 @@ function lookHub(name){
   return `<h3>Don't confuse with</h3>
     <div class="seg-row"><span class="label">Show</span>${viewSeg()}</div>
     <div class="lrow"><div class="lt self">${viewShot(name, cmpView)}<span><i>${esc(name)}</i><small>this genus</small><span class="psum">${esc(DATA.gen[name].sum)}</span></span></div>
-    ${L.map(n => { const m = mixedUp(name, n); return `<a class="lt" href="#cmp-${esc(name)}|${esc(n)}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(DATA.gen[n].sum)}</span><b class="cmpgo">Compare side by side →</b></span></a>`; }).join('')}</div>`;
+    ${L.map(n => { const m = mixedUp(name, n); return `<a class="lt" href="#cmp-${esc(name)}|${esc(n)}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(DATA.gen[n].sum)}</span>${(DATA.gen[name].lsrc || {})[n] ? `<small class="lsrc">${esc(DATA.gen[name].lsrc[n])}</small>` : ''}<b class="cmpgo">Compare side by side →</b></span></a>`; }).join('')}</div>`;
 }
 function pairs(){
   const seen = new Set(), out = [];
@@ -646,5 +646,5 @@ if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else ad
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
 const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
-Promise.all([fetch('data.json?v=11').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=12').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
