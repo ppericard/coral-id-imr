@@ -16,6 +16,7 @@ LAB.add({
     // Facets: id, title, options {id, t, g (genera)}. Within a facet picks mean either/or; facets combine.
     const FORMS = DATA.key.map(k => ({id: k.id, t: k.name, s: k.sub, g: uniq(k.leaves.flatMap(l => l.g)), color: k.color}));
     const facets = () => {
+      // Each family's note shows as a tooltip on its title (Pierre: no explanatory text on the page).
       const forms = FORMS.filter(f => S.form.has(f.id));
       return [
         {id: 'form', name: 'Growth form', note: 'The Coral Finder\'s front page. Many genera take several forms.', thumbs: true, opts: FORMS},
@@ -62,10 +63,10 @@ LAB.add({
     // On phones the panel sits above the shortlist: only growth form and the families in use start open.
     function drawSide(F, left){
       const narrow = matchMedia('(max-width:900px)').matches;
-      $side.innerHTML = `<h3 class="fdclues">Clues you can see</h3><div class="fdsearch"><input type="search" id="fdq" placeholder="Genus name…" value="${esc(S.q)}" aria-label="Filter by genus name"><button type="button" class="chip" id="fdreset"${!used(F).length && !S.q && !S.out.size ? ' disabled' : ''}>Start over</button></div>
+      $side.innerHTML = `<div class="fdsearch"><input type="search" id="fdq" placeholder="Genus name…" value="${esc(S.q)}" aria-label="Filter by genus name"><button type="button" class="chip" id="fdreset"${!used(F).length && !S.q && !S.out.size ? ' disabled' : ''}>Start over</button></div>
       ${F.map(f => {
         const picked = S[f.id].size, open = picked || S.open.has(f.id) || (narrow ? f.id === 'form' : !f.closed);
-        return `<details class="fdfacet" data-f="${f.id}"${open ? ' open' : ''}><summary>${esc(f.name)}${picked ? ` <span class="fdn">${picked}</span>` : ''}</summary>${f.note ? `<p class="note">${esc(f.note)}</p>` : ''}
+        return `<details class="fdfacet" data-f="${f.id}"${open ? ' open' : ''}><summary${f.note ? ` title="${esc(f.note)}"` : ''}>${esc(f.name)}${picked ? ` <span class="fdn">${picked}</span>` : ''}</summary>
         <div class="fdopts${f.thumbs ? ' th' : ''}">${f.opts.map(o => {
           const on = S[f.id].has(o.id), n = names.filter(x => !S.out.has(x) && fits(x, F, f.id) && o.g.includes(x)).length;
           const pv = f.thumbs ? `<span class="fdth">${bySlate(o.g).slice(0, 3).map(x => `<img src="${thumb(x, f.id === 'form' ? 'wide' : 'medium')}" alt="" loading="lazy">`).join('')}</span>` : '';
@@ -122,7 +123,7 @@ LAB.add({
       const chosen = F.flatMap(f => f.opts.filter(o => S[f.id].has(o.id)).map(o => ({f, o})));
       $main.innerHTML = `<div class="fdtop"><p class="fdcount"><b>${left.length}</b> ${used(F).length ? (left.length === 1 ? 'genus fits' : 'genera fit') + ' every clue' + (close.length ? `, ${close.length} more one clue off` : '') : 'IMR genera'}</p>
         <div class="seg" role="group" aria-label="Photos">${[['auto', 'Auto'], ['rows', 'All views'], ...VIEWS].map(([v, t]) => `<button type="button" data-view="${v}" aria-pressed="${view === v}">${t}</button>`).join('')}</div></div>
-        ${chosen.length || S.q ? `<p class="fdchosen">${chosen.map(({f, o}) => `<button type="button" class="chip" data-o="${f.id}|${o.id}" title="Remove">${esc(o.t)} ×</button>`).join('')}${S.q ? `<button type="button" class="chip" data-clearq>“${esc(S.q)}” ×</button>` : ''}</p>` : `<p class="note">All 39 IMR genera. Start with whatever is clearest on your photo.</p>`}
+        ${chosen.length || S.q ? `<p class="fdchosen">${chosen.map(({f, o}) => `<button type="button" class="chip" data-o="${f.id}|${o.id}" title="Remove">${esc(o.t)} ×</button>`).join('')}${S.q ? `<button type="button" class="chip" data-clearq>“${esc(S.q)}” ×</button>` : ''}</p>` : ''}
         ${nextChecks(F, left.length ? left : close)}
         ${left.length ? `${close.length || rest.length ? '<h3 class="fdgrp">Fits every clue</h3>' : ''}<div class="${mode === 'rows' ? 'fdrows' : 'fdgrid'}">${left.map(n => mode === 'rows' ? row(n) : tile(n)).join('')}</div>` : `<p class="note">No IMR genus fits every clue: one of them may be wrong. Check the closest genera below.</p>`}
         ${close.length ? `<h3 class="fdgrp">One clue off <small>in case a clue was misjudged</small></h3><div class="fdgrid">${close.map(n => tile(n, true)).join('')}</div>` : ''}
