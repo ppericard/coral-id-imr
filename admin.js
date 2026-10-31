@@ -216,6 +216,15 @@ function coverOf(n){
   const p = (k.cover && all.find(x => x.f === k.cover)) || ri || all.find(x => x.f === g.cover && !x.extra) || med.find(x => F.includes(x.f)) || med[0] || all.find(x => !x.imr && !x.extra);
   return p && {...p, view: viewOf(n, p), picked: !!k.cover};
 }
+// Status (Pierre): ✓ only when the genus has everything the site needs AND he validated it (curation ok: true).
+// Needs: 3 featured photos per view, no non-IMR Poor photo among them, a cover that is not a close-up (3 levels), no broken choice.
+function needs(n){
+  const out = [], c = coverOf(n);
+  rows(n).forEach(([v]) => { const f = rowOf(n, v).feat; if (f.length < FEAT) out.push(`${label(n, v)} ${f.length}/${FEAT}`); else if (f.some(p => !p.imr && qOf(p.f) === 1)) out.push(`${label(n, v)}: Poor`); });
+  if (!c) out.push('No cover'); else if (c.view === 'macro' && lv(n) !== 2) out.push('Macro cover');
+  if (missing(n).length) out.push('⚠ check');
+  return out;
+}
 const rows = n => VIEWS.filter(([v]) => !(lv(n) === 2 && v === 'medium' && !photos(n).some(p => viewOf(n, p) === 'medium')));
 const label = (n, v) => lv(n) === 2 && v === 'macro' ? 'Close-up' : VIEWS.find(x => x[0] === v)[1];
 // Photo origin: IMR lecture, Pierre's own iNaturalist photos, or other iNaturalist observers split by place
@@ -315,7 +324,7 @@ function render(){
   $('preview').href = `./?draft#g-${encodeURIComponent(n)}`;
   const side = names.map(m => { const c = coverOf(m), e = DRAFT.genera[m] || {}, dirty = ch.includes(m), h = (e.hide || []).length;
     return `<a href="#${esc(m)}" class="adm-g${m === n ? ' cur' : ''}"${m === n ? ' aria-current="true"' : ''}>${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
-      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : '★'}${c && c.view === 'macro' && lv(m) !== 2 ? ' · <b class="warnc" title="Cover is a close-up">macro cover</b>' : ''}${h ? ` · ${h} hidden` : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}${missing(m).length ? ' · <b class="warnc" title="Missing photos">⚠ check</b>' : ''}</small></span>${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : Object.keys(e).length ? '<b class="dot done" title="Curated">✓</b>' : ''}</a>`; }).join('');
+      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : '★'}${c && c.view === 'macro' && lv(m) !== 2 ? ' · <b class="warnc" title="Cover is a close-up">macro cover</b>' : ''}${h ? ` · ${h} hidden` : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}${missing(m).length ? ' · <b class="warnc" title="Missing photos">⚠ check</b>' : ''}</small></span>${e.ok ? (needs(m).length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</a>`; }).join('');
   const body = rows(n).map(([v]) => { const r = rowOf(n, v), out = [...r.feat, ...r.rest, ...r.hid].filter(p => !shown(p)).length;
     return `<section class="adm-row"><h3>${label(n, v)} <small>${r.feat.length + r.rest.length} photo${r.feat.length + r.rest.length === 1 ? '' : 's'}${r.hid.length ? ` · ${r.hid.length} hidden` : ''}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
       <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: !r.pinned.includes(p.f), last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${r.rest.filter(shown).map(p => tile(n, p, v, {})).join('')}${r.hid.filter(shown).map(p => tile(n, p, v, {cls: 'is-hidden'})).join('')}</div>
@@ -332,7 +341,7 @@ function render(){
       <figcaption>${srcTag(p)}<span class="adm-t">${outs(n)[p.f] === 'cmp' ? 'look-alike comparison' : '→ ' + esc(outs(n)[p.f])}</span></figcaption>
       <div class="adm-acts"><button type="button" data-act="out" data-to="back">Put back</button></div></figure>`).join('')}</div></section>` : '';
   const cnt = o => [...photos(n), ...P].filter(p => origin(p) === o).length;
-  const filter = `<div class="adm-filter adm-sticky" role="group" aria-label="Show photos from">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zoom levels" title="Zoom levels">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} levels</button>`).join('')}</span><span class="label">Show</span>${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">Show all</button>' : ''}</div>`;
+  const filter = `<div class="adm-filter adm-sticky" role="group" aria-label="Show photos from">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zoom levels" title="Zoom levels">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} levels</button>`).join('')}</span>${(nd => `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!k.ok}" title="Validated">✓ Validated</button>${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}`)(needs(n))}<span class="label">Show</span>${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">Show all</button>' : ''}</div>`;
   $v.innerHTML = `<div class="adm">
     <nav class="adm-side" aria-label="Genera"><select id="gsel" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><div class="adm-list">${side}</div></nav>
     <section class="adm-main">
@@ -342,6 +351,7 @@ function render(){
   $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { const o = b.dataset.o;
     if (o === 'all') SHOW = new Set(ORIGINS.map(x => x[0])); else SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
     store.set('imr-admin-origins', [...SHOW]); render(); });
+  const okb = $v.querySelector('[data-ok]'); if (okb) okb.onclick = () => { const nd = needs(n); if (!k.ok && nd.length) { toast('Not ready: ' + nd.join(' · ')); return; } edit(n, k => { if (k.ok) delete k.ok; else k.ok = true; }); };
   $v.querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { const x = Number(b.dataset.lv); edit(n, k => { if (x === (DATA.gen[n].levels === 2 ? 2 : 3)) delete k.lv; else k.lv = x; }); });
   $('gsel').onchange = e => { location.hash = e.target.value; };
   const cd = $v.querySelector('.adm-cands'); if (cd) cd.ontoggle = () => store.set('imr-admin-cands', cd.open);
