@@ -3,7 +3,7 @@
 // genus, where it was seen (page, game level, view) and when, in localStorage 'imr-photo-flags'. The admin page
 // picks these up into its draft (curation.json "flag") and lists them in Triage. Nothing is sent from here.
 (() => {
-  let admin = false; try { admin = !!localStorage.getItem('imr-admin-vault'); } catch (e) {}
+  let admin = false; try { admin = !!localStorage.getItem('imr-admin-vault') && localStorage.getItem('imr-admin-view') !== 'user'; } catch (e) {}
   if (!admin) return;
   const KEY = 'imr-photo-flags';
   const read = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } };

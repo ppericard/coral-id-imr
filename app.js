@@ -6,7 +6,10 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 // Pierre-only controls (Lab keep/trim, finder start-screen switch, ⚑ flag) show only in the browser where the
 // admin page holds his token, the same test flag.js uses. RAs never see them.
-const IS_ADMIN = (() => { try { return !!localStorage.getItem('imr-admin-vault'); } catch (e) { return false; } })();
+// Pierre's browser holds the admin token (imr-admin-vault). ⚙ View: Admin | User (imr-admin-view) hides every
+// admin-only control without touching the token, so he sees the site exactly as RAs do.
+const HAS_ADMIN_TOKEN = (() => { try { return !!localStorage.getItem('imr-admin-vault'); } catch (e) { return false; } })();
+const IS_ADMIN = HAS_ADMIN_TOKEN && (() => { try { return localStorage.getItem('imr-admin-view') !== 'user'; } catch (e) { return true; } })();
 const store = {
   get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
@@ -924,6 +927,13 @@ const $setb = document.getElementById('setb'), $set = document.getElementById('s
 $setb.onclick = e => { e.stopPropagation(); const open = $set.hidden; $set.hidden = !open; $setb.setAttribute('aria-expanded', String(open)); };
 document.addEventListener('click', e => { if (!$set.hidden && !e.target.closest('#settings, #setb')) { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); } });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$set.hidden) { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); $setb.focus(); } });
+// Admin | User view switch: only in the browser holding the admin token; a switch reloads so every module follows.
+const $viewrow = document.getElementById('viewrow');
+if (HAS_ADMIN_TOKEN) {
+  $viewrow.hidden = false;
+  $viewrow.querySelectorAll('button').forEach(b => { b.setAttribute('aria-pressed', String((b.dataset.view === 'admin') === IS_ADMIN));
+    b.onclick = () => { if ((b.dataset.view === 'admin') === IS_ADMIN) return; try { localStorage.setItem('imr-admin-view', b.dataset.view); } catch (e) {} location.reload(); }; });
+}
 $help.onclick = () => { const open = $helpbox.hidden; $helpbox.hidden = !open; $help.setAttribute('aria-expanded', String(open)); hdrMetrics(); };
 // The brand link goes home without reloading the page (href="./" still works without JS).
 document.querySelector('.brand .home').onclick = e => {
