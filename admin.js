@@ -58,8 +58,8 @@ function setQ(f, q){
   DRAFT.quality[f] = q;
   saveDraft();
 }
-// Growth form of each photo: the Coral Finder front-page forms (data.json key: B, M, S, P, F, L, C), several when
-// several show, or x = form not visible (too close). First guesses come from forms.json (Claude, from the image);
+// Growth form of each photo: ONE of the Coral Finder front-page forms (data.json key: B, M, S, P, F, L, C), the main
+// one when several show (Pierre), or x = form not visible (too close). First guesses come from forms.json (Claude, from the image);
 // Pierre's choices live in curation.json "form" {f: 'B' | 'FL' | 'x'} and always win. The site's growth-form
 // tiles only use photos tagged with that form.
 const FORM_ORDER = 'BMSPFLC', fOf = f => (DRAFT.form || {})[f] || AUTOF[f] || '', fSet = f => !!(DRAFT.form || {})[f];
@@ -72,7 +72,7 @@ function setF(f, v){
   DRAFT.form[f] = fNorm(v);
   saveDraft();
 }
-const fSeg = p => { const v = fOf(p.f); return `<span class="adm-qseg adm-fseg${fSet(p.f) ? '' : ' auto'}" role="group" aria-label="Growth form" title="Growth form${fSet(p.f) ? ' (set by you)' : ' (dashed: Claude\'s first guess)'}">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v.includes(c)}" title="${esc(fName(c))}${c === 'x' ? '' : ' (click again to remove; several allowed)'}">${c === 'x' ? '∅' : c}</button>`).join('')}</span>`; };
+const fSeg = p => { const v = fOf(p.f); return `<span class="adm-qseg adm-fseg${fSet(p.f) ? '' : ' auto'}" role="group" aria-label="Growth form" title="Growth form${fSet(p.f) ? ' (set by you)' : ' (dashed: Claude\'s first guess)'}">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v === c}" title="${esc(fName(c))}${c === 'x' ? '' : ' (one form per photo: the main one)'}">${c === 'x' ? '∅' : c}</button>`).join('')}</span>`; };
 
 /* ---------- Token vault: AES-GCM key derived from the password (PBKDF2) ---------- */
 const b64 = u => btoa(String.fromCharCode(...new Uint8Array(u))), unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -473,8 +473,8 @@ function toggleHelp(){
 }
 
 /* ---------- Growth form ---------- */
-// One row per growth form (photos showing several forms have their own row), then "Form not visible" and photos
-// without a guess. Click the letters on a photo (several allowed; ∅ = form not visible), drag it to another row,
+// One row per growth form (old multi-form values, if any, have their own row to fix), then "Form not visible" and
+// photos without a guess. Click a letter on a photo (one form per photo; ∅ = form not visible), drag it to another row,
 // or hover it and press the letter (b m s p f l c, x or 0 for not visible). The tile stays put until a filter changes.
 const FF = Object.assign({view: 'all', genus: '', todo: false}, store.get('imr-admin-ffilter', {}));
 function formTile(t, v){
@@ -482,7 +482,8 @@ function formTile(t, v){
   t.querySelector('.adm-fseg').outerHTML = fSeg(p);
   if (cur === '~form') t.classList.add('rated'); bindF(t); status();
 }
-const toggleF = (f, c) => { const v = fOf(f); return c === 'x' ? 'x' : v.includes(c) ? v.replace(c, '') || 'x' : v.replace('x', '') + c; };
+// One form per photo (Pierre): a click picks that form and replaces the previous one; when in doubt, the main form.
+const toggleF = (f, c) => c;
 function bindF(scope){ scope.querySelectorAll('.adm-fseg [data-fm]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.closest('[data-f]'); formTile(t, toggleF(t.dataset.f, b.dataset.fm)); }); }
 function renderForm(){
   status();
