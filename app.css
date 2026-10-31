@@ -296,6 +296,8 @@ td i{font-weight:600}
 .pfocus{background:var(--bad-bg);border-radius:var(--r);padding:12px 14px;margin:14px 0}
 .pfocus h3{margin:0;font-size:1rem;color:var(--bad)}
 .pdone{margin-left:auto;font-weight:400;color:var(--muted);font-size:.85rem}
+.srcs{margin:.2rem 0 0;padding-left:1.1rem}.srcs li{margin:.15rem 0}.refs{margin-top:.8rem}
+.osrc{margin-top:.9rem}
 .sync{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin:18px 0 0}
 .sync p{margin:0 0 8px}
 .sform{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}

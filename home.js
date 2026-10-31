@@ -10,16 +10,19 @@
   };
   const SECTIONS = [
     ['learn', 'Learn', 'Get to know the genera and the features that separate them.'],
-    ['identify', 'Identify', 'Work out the genus of the coral in front of you.'],
-    ['practice', 'Practice', 'Train your eye until it becomes automatic.']
+    ['practice', 'Practice', 'Train your eye until it becomes automatic.'],
+    ['identify', 'Identify', 'Work out the genus of the coral in front of you.']
   ];
+  // Few entry points per step on the home page; the section tabs still list everything.
+  const HOME = {learn: ['genera', 'cmp'], practice: ['quiz', 'quiz-duel', 'pairs', 'reveal'], identify: ['key-imr', 'key']};
+  // Reference visualisations: useful on the side, not steps of the path.
+  const TOOLS = ['map', 'web', 'size', 'gallery', 'matrix', 'elim', 'anatomy'];
   const ph = (n, v) => { const g = DATA.gen[n]; if (!g) return ''; const p = (g.views[v] || [])[0] || (g.views.macro || [])[0] || cover(g); return p ? img(p, 's') : ''; };
   // Lab prototypes not yet graduated, as [hash, title, description, beta] for the section they are planned for.
   const betas = sec => (typeof LAB !== 'undefined' ? LAB.list : []).filter(p => PLANNED[p.id] === sec && !GRADUATED[p.id]).map(p => ['lab-' + p.id, p.title, p.blurb.split(/[.:]/)[0], true]);
-  const link = (id, title, beta) => `<a href="#${id}"${beta ? ' class="beta" title="Still in the Lab"' : ''}>${esc(title)}</a>`;
-  const tile = ([id, title, desc, beta]) => {
+    const tile = ([id, title, desc, beta]) => {
     const pv = PREVIEW[id.replace(/^lab-/, '')] || [];
-    return `<a class="htool${id === 'reveal' ? ' blurpv' : ''}${beta ? ' beta' : ''}" href="#${id}"${beta ? ' title="Still in the Lab"' : ''}><span class="hpv${pv.length > 1 ? ' two' : ''}">${pv.map(([n, v]) => `<img src="${ph(n, v)}" alt="" loading="lazy">`).join('')}</span><b>${esc(title)}${beta ? ' <em class="betatag">Beta</em>' : ''}</b><small>${esc(desc)}</small></a>`;
+    return `<a class="htool${beta ? ' beta' : ''}" href="#${id}"${beta ? ' title="Still in the Lab"' : ''}>${(window.homeArt && homeArt(id.replace(/^lab-/, ''))) ? `<span class="hpv art">${homeArt(id.replace(/^lab-/, ''))}</span>` : `<span class="hpv${pv.length > 1 ? ' two' : ''}">${pv.map(([n, v]) => `<img src="${ph(n, v)}" alt="" loading="lazy">`).join('')}</span>`}<b>${esc(title)}${beta ? ' <em class="betatag">Beta</em>' : ''}</b><small>${esc(desc)}</small></a>`;
   };
   window.viewHome = function(){
     document.documentElement.dataset.page = 'lab';  // full width, like the Lab (lab.css)
@@ -39,15 +42,12 @@
         </div>
       </section>
       ${seen.length ? `<p class="hprog"><a href="#progress">Your progress: <b>${seen.length}</b> of ${names.length} genera practised, <b>${solid.length}</b> solid (3 right in a row).</a></p>` : ''}
-      <section class="hpath"><h3>The learning path</h3><p class="note">From vocabulary to reflexes. Modules with a <span class="betakey">dashed outline</span> are still being worked on in the Lab; their cards below are tagged <em class="betatag">Beta</em>.</p><ol>
-        <li><b>Read a corallite</b><span>Walls, septa, size: the features every ID rests on.</span><p>${link('lab-anatomy', 'Corallite anatomy', 1)}${link('lab-size', 'Size ruler', 1)}${link('lab-gallery', 'Feature gallery', 1)}</p></li>
-        <li><b>Meet the genera</b><span>Colony, closer view and corallites for each one, and who looks like whom.</span><p>${link('genera', 'Genera')}${link('cmp', 'Look-alikes')}${link('lab-map', 'Mind map', 1)}${link('lab-web', 'Look-alike web', 1)}</p></li>
-        <li><b>Identify step by step</b><span>Lecture groups, colony form or corallite details.</span><p>${link('key-imr', 'Lecture groups')}${link('key', 'Colony form')}${link('key-tr', 'Corallites')}${link('lab-elim', 'Elimination board', 1)}${link('lab-matrix', 'Feature matrix', 1)}</p></li>
-        <li><b>Practise</b><span>Quiz, duels and games until it becomes automatic.</span><p>${link('quiz', 'Quiz')}${link('quiz-duel', 'Duels')}${link('pairs', 'Memory')}${link('reveal', 'Blur reveal')}${link('lab-zoom', 'Zoom ladder', 1)}${link('lab-spot', 'Spot the feature', 1)}</p></li>
-      </ol></section>
-      ${SECTIONS.map(([id, t, d]) => `<section class="hsec"><h3><a href="${'#' + MODES[id][0][0]}">${t}</a></h3><p class="note">${d}</p><div class="htools">${[...MODES[id], ...betas(id)].map(tile).join('')}</div></section>`).join('')}
+      <nav class="hpath" aria-label="How to use the app"><ol>${[['genera', 'Learn', 'Get to know the 39 genera', 'Acropora', 'medium'], ['quiz', 'Practice', 'Name the genus from photos until it comes without thinking', 'Platygyra', 'macro'], ['key-imr', 'Identify', 'Name a coral on a real photo: growth form first, then compare the candidates', 'Pocillopora', 'wide']]
+        .map(([h, t, d, n, v]) => `<li><a href="#${h}"><img src="${ph(n, v)}" alt="" loading="lazy"><span><b>${t}</b><small>${d}</small></span></a></li>`).join('')}</ol></nav>
+      ${SECTIONS.map(([id, t, d]) => `<section class="hsec"><h3><a href="${'#' + MODES[id][0][0]}">${t}</a></h3><p class="note">${d}</p><div class="htools">${MODES[id].filter(m => HOME[id].includes(m[0])).map(tile).join('')}</div></section>`).join('')}
+      <section class="hsec"><h3>Tools</h3><p class="note">Visual references to explore the genera and their features.</p><div class="htools small">${TOOLS.map(t => (typeof LAB !== 'undefined' && LAB.list.find(p => p.id === t))).filter(Boolean).map(p => tile(['lab-' + p.id, p.title, '', !GRADUATED[p.id]])).join('')}</div></section>
       <section class="hsec hlab"><h3><a href="#lab">Lab</a></h3><p class="note">Where new ideas are tried out. Beta modules graduate into their section once they are ready.</p>
-        <div class="labgrad">${lab.filter(p => !PLANNED[p.id]).map(p => `<a href="#lab-${p.id}"><span class="labicon" aria-hidden="true">${p.icon || ''}</span><b>${esc(p.title)}</b></a>`).join('')}<a href="#lab"><b>All experiments ›</b></a></div></section>
+        <div class="labgrad">${lab.filter(p => !TOOLS.includes(p.id)).map(p => `<a href="#lab-${p.id}"><span class="labicon" aria-hidden="true">${p.icon || ''}</span><b>${esc(p.title)}</b></a>`).join('')}<a href="#lab"><b>All experiments ›</b></a></div></section>
     </div>`;
   };
 })();

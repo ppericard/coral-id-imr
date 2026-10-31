@@ -30,12 +30,49 @@ for f in os.listdir(B+'v3/site/img'):
 terms=[['Septa','Radial skeletal elements projecting inward from the corallite wall towards its centre; usually thin plates, in some genera only rows of spines.'],['Costae','Radial skeletal ribs outside the corallite wall, often continuing the septa.'],['Wall (theca)','Skeletal boundary around a corallite; separate or shared with neighbouring corallites.'],['Coenosteum','Porous skeleton between corallites; in some taxa it also builds their walls.'],['Corallite','The skeleton produced by one polyp.'],['Oral disc','Soft tissue around the mouth, inside the ring of tentacles.'],['Paliform lobes','Upright projections from the inner edges of the septa; may form a crown around the columella (central skeletal structure).'],['Mouth','Opening at the centre of the oral disc, leading to the digestive cavity.']]
 tips=['Find the polyp mouth: is it raised or embedded?','Read the wall structure: shared, separate, or indistinguishable.','No visible walls? Look at the skeletal ornament: beads, spines, parallel striations.','Check the scale: corallites in mm or in cm?']
 # Points where the IMR lecture and Coral Finder disagree, or the lecture slides are silent: to check with an IMR instructor.
-checks={'Plerogyra':'Family: the IMR lecture puts Plerogyra in Euphylliidae, its older placement; Coral Finder and current taxonomy (WoRMS) place it in Plerogyridae.',
- 'Herpolitha':'The IMR lecture calls Herpolitha solitary; Coral Finder treats it as colonial (several mouths along the central furrow).',
+checks={'Herpolitha':'The IMR lecture calls Herpolitha solitary; Coral Finder (p. 65) treats it as colonial (several mouths along the central furrow).',
  'Merulina':'Not on the lecture slides: the criteria here come from Coral Finder only. It may have been covered orally.',
  'Cyphastrea':'Not on the lecture slides: the criteria here come from Coral Finder only. It may have been covered orally.',
  'Halomitra':'Not on the lecture slides: the criteria here come from Coral Finder only. It may have been covered orally.'}
 for g,t in checks.items(): gen[g]['check']=t
+# Other sources, shown discreetly with their date; the IMR lecture's own wording and families stay as taught.
+info={
+"Pachyseris": [
+"WoRMS places Pachyseris in its own family, Pachyseridae, since 2023 (Quek et al. 2023, Molecular Phylogenetics and Evolution)."
+],
+"Plerogyra": [
+"Coral Finder (2022, p. 10) and WoRMS list Plerogyra in its own family, Plerogyridae (Rowlett 2020).",
+"Coral Finder (p. 10) describes it as a stalked branching colony."
+],
+"Platygyra": [
+"The name comes from Greek platys (flat) and gyros (circle)."
+],
+"Acropora": [
+"The name comes from Greek akros (tip) and poros (pore): the pore at the branch tip, i.e. the axial corallite."
+],
+"Pocillopora": [
+"Coral Finder (p. 6): corallites sit on and among the verrucae."
+],
+"Goniastrea": [
+"Corals of the World glossary: paliform lobes are upright skeletal lobes at the inner margin of the septa."
+],
+"Dipsastraea": [
+"Indo-Pacific Favia species were moved to Dipsastraea in 2012 (Budd et al. 2012, Zoological Journal of the Linnean Society)."
+],
+"Astrea": [
+"The genus Astrea was revived in 2014 for former Montastraea curta and relatives (Huang et al. 2014, Zoological Journal of the Linnean Society)."
+],
+"Lobophyllia": [
+"Symphyllia was merged into Lobophyllia in 2016 (Huang et al. 2016, Zoological Journal of the Linnean Society)."
+],
+"Fungia": [
+"The mushroom corals were revised in 2011: Danafungia, Lobactis and other genera were split from Fungia (Gittenberger, Reijnen & Hoeksema 2011, Contributions to Zoology)."
+],
+"Alveopora": [
+"WoRMS lists Alveopora in Acroporidae (formerly Poritidae) after molecular studies (Kitano et al. 2014)."
+]
+}
+for g,t in info.items(): gen[g]['info']=t
 for g in gen:
     gen[g]['sum']=SUM[g]
     if g in CV['covers']: gen[g]['cover']=CV['covers'][g]

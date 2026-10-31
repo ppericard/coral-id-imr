@@ -130,8 +130,10 @@ function viewGenus(name){
         ${g.imr.length ? `<h3>IMR lecture · group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</h3><ul class="crit">${g.imr.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}${g.mn ? `<p class="note"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}
         <h3>Coral Finder features</h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
         ${g.check ? `<p class="note check"><b>To check with an IMR trainer:</b> ${esc(g.check)}</p>` : ''}
+        ${g.info ? `<div class="note osrc"><b>Other sources:</b><ul class="srcs">${g.info.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
         <h3>Don't confuse with</h3><div class="chips">${g.look.map(n => `<a class="chip" href="#cmp-${esc(name)}|${esc(n)}" title="Side-by-side comparison">${esc(n)}</a>`).join('')}</div>
         <h3>In the key <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3><div class="kpick">${paths.map(({k, l}) => `<a class="c-${k.color}" href="#l-${l.id}">${esc(k.name)} › ${esc(leafLabel(l))}</a>`).join('')}</div>
+        <p class="note refs"><b>References:</b> ${g.imr.length ? 'IMR Lecture 6 · ' : ''}Coral Finder 2022 (R. Kelley) p. ${g.pages.join(', ')} · <a href="https://www.marinespecies.org/aphia.php?p=taxlist&amp;tName=${encodeURIComponent(name)}" target="_blank" rel="noopener">WoRMS</a> · <a href="https://www.inaturalist.org/taxa/search?q=${encodeURIComponent(name)}" target="_blank" rel="noopener">iNaturalist</a></p>
       </div>
     </div>
     ${rows}
@@ -525,7 +527,7 @@ showTheme();
 // Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).
 const MODES = {
   learn: [['genera', 'Genera', 'The 39 genus sheets'], ['cmp', 'Look-alikes', 'Confused pairs side by side']],
-  identify: [['key-imr', 'IMR lecture groups', 'The 11 groups from the lecture'], ['key', 'By colony form', 'Start from the overall shape'], ['key-tr', 'By corallites', 'Filter on skeletal details']],
+  identify: [['key-imr', 'IMR lecture groups', 'The 11 groups from the lecture'], ['key', 'Coral Finder', 'Growth form first, then compare candidates'], ['key-tr', 'By corallites', 'Filter on skeletal details']],
   practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['quiz-course', 'Lecture photos', 'Photos from the IMR course'], ['pairs', 'Memory', 'Match colony and corallites'], ['reveal', 'Blur reveal', 'Name it before it sharpens']]
 };
 const MODE_LABEL = {learn: 'Learn tools', identify: 'Ways to identify', practice: 'Practice modes'};
