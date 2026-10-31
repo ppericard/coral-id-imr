@@ -757,13 +757,13 @@ const CSRCS = [['own', 'Pierre'], ['dauin', 'Dauin'], ['ph', 'PH'], ['book', 'CF
 let CSRC = store.get('imr-admin-csrc2', 'dauin'), CSKIP = new Set();
 const srcOk = (p, s) => s === 'all' || origin(p) === s;
 // Order (Pierre): random, but genus x view cells with few photos come up more often, so the gaps for the games fill
-// first. Each candidate's weight is 1 / (1 + photos the genus already has in its view): its guessed view (vg, Claude's
+// first. Each candidate's weight is 1 / (1 + game colonies the genus already has in its view, covOf as on the Coverage page): its guessed view (vg, Claude's
 // guess from the photo), else the genus's emptiest view. Weighted random draw (key -ln(u) / w, u fixed per photo
 // and per device), then no two of the same genus in a row when it can be avoided.
 const cseed = () => { let s = store.get('imr-admin-cseed', 0); if (!s) { s = 1 + Math.floor(Math.random() * 2147483645); store.set('imr-admin-cseed', s); } return s; };
 const uOf = f => { let h = cseed() ^ 2166136261; for (let i = 0; i < f.length; i++) h = Math.imul(h ^ f.charCodeAt(i), 16777619); return ((h >>> 0) + .5) / 4294967296; };
 function candQueue(src){
-  const N = {}, cnt = (n, w) => { const k = n + '|' + w; if (!(k in N)) { const r = rowOf(n, w); N[k] = r.feat.length + r.rest.length; } return N[k]; };
+  const N = {}, cnt = (n, w) => { const k = n + '|' + w; if (!(k in N)) N[k] = covOf(n, w).obs; return N[k]; };
   const weight = (n, p) => { const vs = VIEWS.map(x => x[0]).filter(w => !(lv(n) === 2 && w === 'medium')); let v = p.vg || p.view; if (v === 'medium' && lv(n) === 2) v = 'wide';
     return 1 / (1 + (vs.includes(v) ? cnt(n, v) : Math.min(...vs.map(w => cnt(n, w))))); };
   const L = [];
