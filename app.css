@@ -544,3 +544,11 @@ a.lt:hover{border-color:var(--accent)}
 
 /* One muted line under the quiz level buttons: what the chosen photo set holds. */
 .lvlnote{margin:4px 2px 0;font-size:.82rem;color:var(--muted);line-height:1.3}
+
+/* Genus sheet: the ID tips (what RAs must retain) stand out in a tinted box; the lecture notes below are secondary. */
+.tipbox{background:color-mix(in srgb,var(--accent) 9%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);border-left:5px solid var(--accent);border-radius:var(--r);padding:10px 16px 12px;margin-top:4px}
+.sheet .tipbox h3{margin:0 0 8px;color:var(--accent)}
+.idbox .tipbox .crit{font-size:1.15rem;font-weight:600;gap:8px}
+.tipbox .mn{margin:10px 0 0;font-size:.95rem}
+.lnotes .crit{font-size:.88rem!important;color:var(--muted);gap:3px}
+.sheet .lnotes h3{margin-top:20px}

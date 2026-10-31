@@ -324,8 +324,8 @@ function viewGenus(name){
     <div class="hero">
       ${cv ? `<button type="button" class="zoom hero-ph" data-z="${ci}"><img src="${img(cv)}" alt="${esc(name)}"></button>` : ''}
       <div class="idbox">
-        ${g.imr.length ? `<h3>ID tips (IMR) <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span></h3>${tipsList(g)}` : ''}${g.mn ? `<p class="note"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}
-        ${g.imr.length ? `<h3>IMR lecture notes</h3>${notesList(g)}` : ''}
+        ${g.imr.length || g.mn ? `<div class="tipbox">${g.imr.length ? `<h3>ID tips (IMR) <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span></h3>${tipsList(g)}` : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>` : ''}
+        ${g.imr.length ? `<div class="lnotes"><h3>IMR lecture notes</h3>${notesList(g)}</div>` : ''}
         ${g.imr.length ? '' : cfList}
         <details class="more sheetmore"><summary>More details</summary>
         ${g.imr.length ? cfList : ''}
