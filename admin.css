@@ -82,15 +82,22 @@ body.admin .hdr-tools[hidden]{display:none}
 .adm-acts button,.adm-acts select{font:inherit;font-size:.78rem;min-height:28px;padding:0 9px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--ink);cursor:pointer}
 .adm-acts select{padding:0 4px;max-width:96px}
 .adm-acts select[data-act="out"]{max-width:132px}
+.adm-acts select.adm-view{max-width:none;font-weight:600;background:var(--surface-2)}
 .adm-acts button:hover:not(:disabled),.adm-acts select:hover{border-color:var(--accent)}
 .adm-acts button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .adm-acts [data-act="cover"].on{background:#e0a526;border-color:#e0a526;color:#1f1500}
 .adm-acts button:disabled{opacity:.35;cursor:default}
 
-.adm-tile[draggable]{cursor:grab}
+.adm-tile[data-drag] .adm-ph{cursor:grab}
+.adm-grip{display:none}
+.adm-tile[data-drag] .adm-grip{display:grid;place-items:center;position:absolute;top:8px;right:8px;left:auto;bottom:auto;width:34px;height:34px;border-radius:8px;background:color-mix(in srgb,var(--surface) 88%,transparent);color:var(--ink);font-size:1.2rem;line-height:1;box-shadow:0 1px 4px #0004;cursor:grab;touch-action:none;user-select:none;opacity:.85}
+.adm-tile[data-drag]:hover .adm-grip{opacity:1}
+.adm-tile.is-cover .adm-grip{top:40px}
+.adm-ghost{position:fixed;left:0;top:0;width:140px;height:105px;object-fit:cover;border-radius:8px;box-shadow:0 8px 24px #0006;pointer-events:none;z-index:70;opacity:.92}
+body.adm-dragging,body.adm-dragging *{cursor:grabbing!important;user-select:none}
 .adm-tile.dragging{opacity:.35}
-.adm-tile.drop-before{box-shadow:-5px 0 0 var(--accent)}
-.adm-tile.drop-after{box-shadow:5px 0 0 var(--accent)}
+.adm-tile.drop-before{box-shadow:-6px 0 0 var(--accent)}
+.adm-tile.drop-after{box-shadow:6px 0 0 var(--accent)}
 .adm-grid.drop-row{outline:2px dashed var(--accent);outline-offset:6px;border-radius:var(--r)}
 .adm-grid{min-height:80px}
 .adm-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:60;margin:0;padding:10px 16px;border-radius:var(--r);background:var(--ink);color:var(--bg);box-shadow:var(--shadow-hover);font-size:.9rem;max-width:calc(100% - 32px)}
