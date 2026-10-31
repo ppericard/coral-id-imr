@@ -1,5 +1,13 @@
 /* IMR Coral ID: one app for the key, genus sheets with three photo views, look-alike comparisons and the quiz.
-   Sections: tokens · base · header · controls · cards · genus sheet · key · look-alikes · quiz · lightbox · responsive. */
+   Sections: tokens · base · header · controls · cards · genus sheet · key · look-alikes · quiz · lightbox · responsive.
+
+   Responsive rules: ONE code base, three window size classes (Material 3 window size classes, adapted so that a desktop
+   window snapped to half a 1366-1920 px screen counts as a tablet). Only these widths are used, here and in app.js (MQ):
+     phone    max-width:599.98px    one column, bottom tab bar, header scrolls away (M3 "compact")
+     tablet   600-1023.98px         top nav like desktop; games and side panels stack (max-width:1023.98px)
+     desktop  min-width:1024px      side columns, wide views; .bleed opens up past the 1280 px page from 1340 px
+   Input, not width, decides touch vs mouse: (hover:none),(pointer:coarse) = touch -> bigger targets, no hover-only info,
+   no keyboard hints; (hover:hover) and (pointer:fine) = mouse -> hover effects, kbd hints. */
 
 /* ---------- Tokens ---------- */
 :root{
@@ -53,7 +61,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .sections{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
 .sections a.tabonly{display:none}
 :root{--tabbar-h:0px}
-@media (max-width:640px){:root{--tabbar-h:58px}}
+@media (max-width:599.98px){:root{--tabbar-h:58px}}
 .hdr-tools{display:flex;gap:8px;align-items:center;position:relative}
 /* Settings panel behind ⚙: photo source, photo size, theme. */
 .setpop{position:absolute;right:0;top:calc(100% + 8px);z-index:30;display:grid;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);min-width:240px}
@@ -136,7 +144,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .gpack>.gblk[data-n="1"]>.gdiv{font-size:.92rem}
 .gpack>.gblk>.gdiv .gn{flex:none}
 .tiplist.gpack>.gblk{column-gap:28px}
-@media (max-width:640px){.gpack>.gblk{display:contents}.gpack>.gblk>.gdiv{margin-top:14px;align-items:center}.gpack>.gblk:first-child>.gdiv{margin-top:0}}
+@media (max-width:599.98px){.gpack>.gblk{display:contents}.gpack>.gblk>.gdiv{margin-top:14px;align-items:center}.gpack>.gblk:first-child>.gdiv{margin-top:0}}
 .gdiv .gn{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 6px;border-radius:var(--pill);background:hsl(var(--g,200) 55% 52%);color:#fff;font-size:.85rem}
 .seg-row{display:flex;align-items:center;gap:10px;margin:0 0 12px}
 .seg{display:inline-flex;padding:3px;gap:2px;background:var(--surface-2);border-radius:var(--pill);box-shadow:none}
@@ -156,7 +164,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .strip figcaption,.credit{font-size:.75rem;color:var(--muted);margin-top:4px}
 .strip figcaption a,.credit a{color:var(--muted)}
 .zoom{display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in;border-radius:var(--r)}
-@media (prefers-reduced-motion:no-preference){
+@media (prefers-reduced-motion:no-preference) and (hover:hover){
   .card,.group,.leaf,.lahead .laph{transition:transform .14s ease,box-shadow .14s ease}
   .card:hover,.group:hover,a.leaf:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}}
 
@@ -182,7 +190,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .more summary{cursor:pointer;color:var(--accent);font-size:.9rem;font-weight:600;padding:4px 0;list-style-position:inside}
 .more[open] summary{margin-bottom:8px}
 .lect{color:var(--accent);font-weight:600}
-@media (max-width:700px){.hero{grid-template-columns:minmax(0,1fr)}.hero-ph{position:static}}
+@media (max-width:599.98px){.hero{grid-template-columns:minmax(0,1fr)}.hero-ph{position:static}}
 .cols{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:28px;margin-top:8px}
 .crit{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:6px;max-width:65ch}
 .paths{display:flex;flex-direction:column;gap:6px}
@@ -273,7 +281,7 @@ kbd{font:600 .7rem/1 var(--body);font-style:normal;color:var(--muted);border:1px
 .fb .vs{margin:8px 0 0;font-size:.9rem;color:var(--muted)}
 #next{align-self:stretch;text-align:center}
 #next kbd{color:inherit;background:transparent;border-color:currentColor;opacity:.7;margin-left:6px}
-@media (max-width:760px){
+@media (max-width:1023.98px){
   .q{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(160px,1fr) auto;height:auto;min-height:var(--qh,70vh)}
   .qstage{height:calc(var(--qh,60vh) - 240px);min-height:180px}
   .q{gap:10px}
@@ -281,7 +289,6 @@ kbd{font:600 .7rem/1 var(--body);font-style:normal;color:var(--muted);border:1px
   .q.done #after{position:fixed;left:0;right:0;bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px));z-index:25;max-height:62vh;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:10px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));background:var(--bg);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(0,0,0,.18)}
   .ans{display:grid;grid-template-columns:1fr 1fr}
   .ans button{justify-content:center;padding:12px 8px}
-  .ans kbd{display:none}
 }
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.95rem}
 th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
@@ -307,9 +314,9 @@ td i{font-weight:600}
 .lb-nav button{font:inherit;background:#fff2;color:#fff;border:1px solid #fff4;border-radius:var(--pill);padding:6px 14px;cursor:pointer}
 
 /* ---------- Responsive ---------- */
-@media (max-width:700px){.cols{grid-template-columns:minmax(0,1fr)}}
-@media (max-width:520px){.gloss dl{grid-template-columns:minmax(0,1fr)}.gloss dd{margin-bottom:6px}}
-@media (max-width:640px){
+@media (max-width:599.98px){.cols{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:599.98px){.gloss dl{grid-template-columns:minmax(0,1fr)}.gloss dd{margin-bottom:6px}}
+@media (max-width:599.98px){
   header{display:grid;grid-template-columns:1fr auto;grid-template-areas:"title tools" "nav nav";gap:8px;padding-block:8px}
   .brand{grid-area:title}
   .brand .home{font-size:1.3rem;white-space:nowrap;gap:7px}
@@ -409,7 +416,7 @@ a.lt:hover{border-color:var(--accent)}
 .chip.mix{border-color:var(--bad);color:var(--bad);background:var(--bad-bg)}
 .bad{color:var(--bad)}
 .hubsec{border-top:1px solid var(--line);margin-top:22px;padding-top:4px}
-@media (max-width:600px){.lrow,:root[data-size] .lrow{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.lt .psum{font-size:.78rem}.lt > span:last-child{padding:6px 8px 8px}}
+@media (max-width:599.98px){.lrow,:root[data-size] .lrow{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.lt .psum{font-size:.78rem}.lt > span:last-child{padding:6px 8px 8px}}
 .lcmps{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 12px}
 .lcmp{margin:0;width:260px}
 .lcmp img{width:100%;display:block;border-radius:var(--r);background:var(--surface-2)}
@@ -469,7 +476,7 @@ a.lt:hover{border-color:var(--accent)}
 .pslate .ps b{min-width:2.2em;font-variant-numeric:tabular-nums;flex:none}
 .pslate .ps i{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pslate .ps:hover,.pseg a:hover{filter:brightness(1.06)}
-@media (max-width:640px){.pslate{gap:4px 6px}.pslate .ps{padding:0 6px;gap:4px;font-size:.84rem}.pslate .ps b{min-width:1.7em}}
+@media (max-width:599.98px){.pslate{gap:4px 6px}.pslate .ps{padding:0 6px;gap:4px;font-size:.84rem}.pslate .ps b{min-width:1.7em}}
 /* Learning level, same on Slate and Groups: grey = not seen; learning = a teal fill rising from the left to the
    genus's progress (--p); red fill and border = to review; solid green = learned. */
 .pslate .ps,.pseg a{background:linear-gradient(90deg,var(--lvf) var(--p,0%),var(--surface-2) var(--p,0%));--lvf:color-mix(in srgb,var(--accent) 38%,var(--surface))}
@@ -486,7 +493,7 @@ a.lt:hover{border-color:var(--accent)}
 .pseg{display:flex;gap:3px;height:100%;max-height:56px}
 .pseg a{flex:1;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:.82rem;overflow:hidden;padding:0 4px}
 .pseg a i{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media (max-width:760px){.pgr{grid-template-columns:28px minmax(0,1fr) 36px}.pgt{display:none}}
+@media (max-width:599.98px){.pgr{grid-template-columns:28px minmax(0,1fr) 36px}.pgt{display:none}}
 /* IMR ID tips: the lecturers' cues, verbatim, with their source */
 .tref{margin:2px 0 10px;font-size:.76rem;color:var(--muted)}
 .cmpcol h4{margin:12px 0 4px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
@@ -498,7 +505,7 @@ a.lt:hover{border-color:var(--accent)}
 .tipg .idtips{margin:0;max-width:70ch}
 .tipph{display:flex;flex-direction:column;gap:4px;text-decoration:none;color:var(--ink)}
 .tipph img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px}
-@media (max-width:600px){.tipg{grid-template-columns:96px minmax(0,1fr);gap:10px}}
+@media (max-width:599.98px){.tipg{grid-template-columns:96px minmax(0,1fr);gap:10px}}
 .inat{position:absolute;right:6px;bottom:6px;z-index:2;font-size:.72rem;line-height:1;padding:3px 6px;border-radius:var(--pill);background:rgba(0,0,0,.45);color:#fff;text-decoration:none;opacity:.7}
 .inat:hover,.inat:focus-visible{opacity:1;background:rgba(0,0,0,.7)}
 /* ID tips: the 4 lecture questions as one row of tiles, then the glossary and a one-line group filter. */
@@ -509,7 +516,7 @@ a.lt:hover{border-color:var(--accent)}
 .tiphead .gloss{margin:0}
 .tipgr{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .tipgr .chip{min-width:34px;text-align:center}
-@media (max-width:760px){.qtiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:599.98px){.qtiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* Group chips carry their IMR group colour (groupHue in app.js). */
 .gchip{border-color:hsl(var(--g) 55% 52%);background:hsl(var(--g) 55% 52% / .14)}
 .fdopt.gchip{background:var(--surface);box-shadow:inset 3px 0 0 hsl(var(--g) 55% 52%)}
@@ -519,8 +526,8 @@ a.lt:hover{border-color:var(--accent)}
 .tipsec,.tiplist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;align-items:start}
 .tipsec>h3,.tiplist>h3,.tiplist>.note{grid-column:1/-1}
 .tipg{grid-template-columns:190px minmax(0,1fr)}
-@media (max-width:900px){.tipsec,.tiplist{grid-template-columns:minmax(0,1fr)}}
-@media (max-width:600px){.tipg{grid-template-columns:110px minmax(0,1fr)}}
+@media (max-width:1023.98px){.tipsec,.tiplist{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:599.98px){.tipg{grid-template-columns:110px minmax(0,1fr)}}
 /* S/M/L on the remaining pages. ID tips: photo size, and one genus per row in L. Look-alike pair: photo width. */
 :root[data-size="s"] .tipg{grid-template-columns:130px minmax(0,1fr)}
 :root[data-size="l"] .tipsec,:root[data-size="l"] .tiplist{grid-template-columns:minmax(0,1fr)}
@@ -530,7 +537,7 @@ a.lt:hover{border-color:var(--accent)}
 /* Genus sheet cover: S/M/L sets its share of the row (phones: its width, centred). */
 :root[data-size="s"] .hero{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
 :root[data-size="l"] .hero{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}
-@media (max-width:700px){:root[data-size] .hero{grid-template-columns:minmax(0,1fr)}:root[data-size="s"] .hero-ph{width:60%;justify-self:center}:root[data-size="m"] .hero-ph{width:85%;justify-self:center}}
+@media (max-width:599.98px){:root[data-size] .hero{grid-template-columns:minmax(0,1fr)}:root[data-size="s"] .hero-ph{width:60%;justify-self:center}:root[data-size="m"] .hero-ph{width:85%;justify-self:center}}
 
 /* Sync status: quiet line when saved, a box that stands out when answers are not saved. */
 .sync .sline{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:0;font-size:.9rem;color:var(--muted)}
@@ -601,7 +608,7 @@ a.lt:hover{border-color:var(--accent)}
 .lkd:hover{border-color:var(--accent)}
 .lkd.on{outline:2px solid var(--accent);outline-offset:0}
 .lkd.mix small{color:var(--bad);font-weight:600}
-@media (max-width:760px){
+@media (max-width:1023.98px){
   .lk{grid-template-columns:minmax(0,1fr);margin-top:4px}
   .lkdeck{display:none}
   .lkm{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr 1fr}
@@ -616,7 +623,7 @@ a.lt:hover{border-color:var(--accent)}
 .qstage.qvs .qph.qok figcaption{background:var(--good);color:#fff}
 .qstage.qvs .qph.qko figcaption{background:var(--bad);color:#fff}
 .qstage.qvs .qph small{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);white-space:nowrap;background:rgb(0 0 0 / .65);color:#fff;font-size:clamp(.9rem,1.25vw,1.3rem);font-weight:600;padding:.2em .8em;border-radius:var(--pill);pointer-events:none}
-@media (max-width:760px){.q .qstage.qvs .qph .zoom::after{display:none}.q .qstage.qvs .qph figcaption{top:8px;font-size:clamp(1.05rem,5vw,1.4rem)}.q .qstage.qvs .qph small{bottom:8px;font-size:.8rem;padding:.15em .6em}}
+@media (max-width:1023.98px){.q .qstage.qvs .qph .zoom::after{display:none}.q .qstage.qvs .qph figcaption{top:8px;font-size:clamp(1.05rem,5vw,1.4rem)}.q .qstage.qvs .qph small{bottom:8px;font-size:.8rem;padding:.15em .6em}}
 
 /* My progress wall, "rising tide": colour fills the photo from the bottom up to the genus's partial mastery (--p),
    with a slowly drifting wavy waterline (red when the genus needs review). */
@@ -648,7 +655,7 @@ a.lt:hover{border-color:var(--accent)}
 #tour .tnav .next{padding:8px 18px}
 #tour .tskip{font-size:.85rem;color:var(--muted)}
 .htour{margin-top:8px}
-@media (max-width:640px){
+@media (max-width:599.98px){
   #tour .tbub{left:8px;right:8px;width:auto;bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px) + 8px);top:auto;transition:none}
   #tour .tbub.up{top:calc(env(safe-area-inset-top,0px) + 8px);bottom:auto}
 }
@@ -657,7 +664,7 @@ a.lt:hover{border-color:var(--accent)}
    wall starts on the first screen. */
 .sfold > summary{cursor:pointer;font-weight:600;color:var(--accent);list-style-position:inside}
 .sfold[open] > summary{margin-bottom:6px}
-@media (max-width:760px){
+@media (max-width:1023.98px){
   .pboard .gside{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;align-items:center}
   .pboard .gside > *{grid-column:1 / -1}
   .pboard .gside > .pring{grid-column:1;width:84px;height:84px;margin:0}
@@ -674,7 +681,7 @@ a.lt:hover{border-color:var(--accent)}
 .gfilt .gjump{margin:0}
 /* Phones, every page (Pierre, 2026-10-31: win space above and below the content): slimmer header, section tabs,
    bottom tab bar and answer sheet. */
-@media (max-width:640px){
+@media (max-width:599.98px){
   :root{--tabbar-h:48px}
   header{padding-block:4px;gap:4px}
   .modes{margin-top:2px}
@@ -684,7 +691,7 @@ a.lt:hover{border-color:var(--accent)}
   .sections a{min-height:38px}
   .q{margin-top:4px}
 }
-@media (max-width:760px){
+@media (max-width:1023.98px){
   .q.done #after{padding:6px max(10px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));gap:6px}
   .q.done #after .fb{padding:8px 12px}
   .q.done #after .fb .label{display:none}
@@ -693,7 +700,7 @@ a.lt:hover{border-color:var(--accent)}
 }
 /* Genus sheet, desktop (S and M): the views are columns (colony | closer | corallites), so all three scales show side by
    side on the first screen; each column keeps its featured photos and its "more" fold. L keeps one row per view. */
-@media (min-width:900px){
+@media (min-width:600px){
   :root:not([data-size="l"]) .vrows{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px;align-items:start}
   :root:not([data-size="l"]) .vrows .vrow h3{margin-top:4px}
   :root[data-size="m"] .vrows .strip{grid-template-columns:minmax(0,1fr);gap:10px}
@@ -704,3 +711,23 @@ a.lt:hover{border-color:var(--accent)}
 .qstage>.qcell{min-height:0;min-width:0;display:flex;flex-direction:column;gap:8px}
 .qstage>.qcell .fb{flex:0 1 auto;min-height:0;overflow:auto}
 .qstage>.qcell .next{align-self:flex-start;flex:none}
+
+/* ---------- Input: touch vs mouse (not width) ---------- */
+/* Keyboard hints only where there is a keyboard and a mouse; hover-only information is always shown on touch screens. */
+@media (hover:none),(pointer:coarse){
+  kbd{display:none}
+  .pwall .pw span{opacity:1}
+}
+/* Touch targets (WCAG 2.2 2.5.8: at least 24 x 24 px; Apple HIG 44 pt, Material 48 dp as the aim): the stand-alone text
+   buttons that were 20-23 px tall get vertical padding on touch screens only, so mouse layouts do not change. */
+@media (pointer:coarse){
+  #hintb,.fdsv{padding-block:10px}
+  .sfold>summary{padding-block:10px}
+  .lktip a{display:inline-block;padding-block:4px}
+}
+
+/* ---------- Tablet (600-1023 px: tablets, half-screen desktop windows) ---------- */
+/* The header keeps ONE line like desktop: the progress pill drops its text label (as on phones), the count stays. */
+@media (min-width:600px) and (max-width:1023.98px){
+  .prog .pl{display:none}
+}
