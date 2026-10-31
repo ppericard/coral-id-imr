@@ -217,7 +217,7 @@ function lookHub(name){
   return `<h3>Don't confuse with</h3>
     <div class="seg-row"><span class="label">Show</span>${viewSeg()}</div>
     <div class="lrow"><div class="lt self">${viewShot(name, cmpView)}<span><i>${esc(name)}</i><small>this genus</small><span class="psum">${esc(DATA.gen[name].sum)}</span></span></div>
-    ${L.map(n => { const m = mixedUp(name, n); return `<a class="lt" href="#cmp-${esc(name)}|${esc(n)}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(DATA.gen[n].sum)}</span><b class="cmpgo">Compare side by side →</b></span></a>`; }).join('')}</div>
+    ${L.map(n => { const m = mixedUp(name, n); return `<a class="lt" href="#cmp-${esc(name)}|${esc(n)}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(DATA.gen[n].sum)}</span>${(DATA.gen[name].lsrc || {})[n] ? `<small class="lsrc">${esc(DATA.gen[name].lsrc[n])}</small>` : ''}<b class="cmpgo">Compare side by side →</b></span></a>`; }).join('')}</div>
     ${cmpShots([name])}`;
 }
 function pairs(){
@@ -399,7 +399,7 @@ function quizBoard(){
     return `<figure class="pt ${cl}"><a href="#g-${esc(n)}">${p ? `<img src="${img(p, 's')}" alt="" loading="lazy">` : ''}<figcaption><i>${esc(n)}</i>${g.n ? '' : ' ★'}<span class="lvl ${cl}">${lb}</span></figcaption>${tot ? `<span class="pbar" title="${s.ok} right of ${tot}"><span style="width:${Math.round(100 * s.ok / tot)}%"></span></span>` : ''}</a>
       ${top ? `<a class="pconf" href="#cmp-${esc(n)}|${esc(top[0])}" title="Compare side by side">mixed up with <i>${esc(top[0])}</i> ×${top[1]}</a>` : ''}</figure>`; };
   const gi = n => DATA.gen[n].ig || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
-  $v.innerHTML = `${quizNav('quiz-board')}<h2>${count('ok')} of ${list.length} genera learned</h2>
+  $v.innerHTML = `${quizNav('quiz-board')}${SYNC_URL ? '<section class="sync" id="sync"></section>' : ''}<h2>${count('ok')} of ${list.length} genera learned</h2>
   <div class="pstack" role="img" aria-label="${LV.map(([k, t]) => count(k) + ' ' + t.toLowerCase()).join(', ')}">${LV.map(([k]) => count(k) ? `<span class="${k}" style="flex:${count(k)}"></span>` : '').join('')}</div>
   <p class="plegend">${LV.map(([k, t]) => `<span class="lvl ${k}">${t} ${count(k)}</span>`).join(' ')}</p>
   <p class="note">${seen} genera seen so far. Learned means at least 3 correct answers in a row and 75% success. Genera marked Review come up more often in the quiz.</p>
@@ -407,7 +407,6 @@ function quizBoard(){
   ${groups.map(k => { const gr = DATA.imrg.find(x => x.n === k), L = list.filter(n => gi(n) === k).sort((a, b) => slateIdx(a) - slateIdx(b));
     const done = L.filter(n => lv[n][0] === 'ok').length;
     return `<h3 class="gdiv" style="--g:${gr ? (gr.n * 137) % 360 : 200}"><span class="gn">${gr ? gr.n : '★'}</span>${gr ? esc(gr.t) : 'Not covered in the lecture'}<small class="pdone">${done}/${L.length}</small></h3><div class="pgrid">${L.map(tile).join('')}</div>`; }).join('')}
-  ${SYNC_URL ? '<section class="sync" id="sync"></section>' : ''}
   <div class="saveprog"><p class="note">Progress is saved in this browser, on this device. Save it to a file to keep a backup or move it to another phone or computer.</p>
     <button class="chip" type="button" id="pexp">Save progress to a file</button> <button class="chip" type="button" id="pload">Load a progress file</button><input type="file" id="pimp" accept=".json,application/json" hidden> <span class="note" id="pmsg" role="status"></span></div>
   <p><button class="reset" type="button" id="reset">Reset progress</button></p>`;
@@ -419,7 +418,11 @@ function quizBoard(){
 
 // Header progress pill: genera learned, always in view; the page itself is #progress.
 const $prog = document.getElementById('prog');
-function showProg(){ if (!DATA) return; const n = Object.keys(DATA.gen); document.getElementById('progn').textContent = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length}`; }
+function showProg(){ if (!DATA) return; const n = Object.keys(DATA.gen); document.getElementById('progn').textContent = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length}`;
+  // Not signed in: the pill says so, so RAs find where to save their progress.
+  const pill = document.getElementById('prog'), out = !!SYNC_URL && !SYNC;
+  pill.classList.toggle('nosync', out); pill.querySelector('.pl').textContent = out ? 'Sign in · progress' : 'My progress';
+  pill.title = SYNC ? `Signed in as ${SYNC.name}: your progress per genus` : out ? 'Sign in to save your progress' : 'Your progress per genus'; }
 // Progress files: every imr-coral-* key in localStorage (quiz progress, settings, Lab scores), as JSON.
 const progData = () => { const d = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('imr-coral') && k !== 'imr-coral-sync') d[k] = localStorage.getItem(k); } } catch (e) {} return d; };
 const loadData = d => Object.entries(d || {}).forEach(([k, v]) => k.startsWith('imr-coral') && k !== 'imr-coral-sync' && localStorage.setItem(k, v));
@@ -503,6 +506,7 @@ const syncSoon = () => { if (!SYNC_URL || !SYNC) return; SYNC.dirty = true; SYNC
 const syncRetry = () => { if (SYNC && SYNC.dirty) syncPush(); };
 window.addEventListener('online', syncRetry);
 function bindSync(){
+  showProg();
   const box = document.getElementById('sync'); if (!box) return;
   const msg = t => box.querySelector('[role=status]').textContent = t;
   if (SYNC) {
@@ -512,10 +516,10 @@ function bindSync(){
     box.querySelector('#soff').onclick = () => { SYNC = null; try { localStorage.removeItem('imr-coral-sync'); } catch (e) {} bindSync(); };
     return;
   }
-  box.innerHTML = `<p>Training at IMR? Connect to save your progress for your trainer and get it back on any device.</p>
+  box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device.</p>
     <form class="sform"><label>Your name <input name="n" required maxlength="40" autocomplete="name"></label>
     <label>4-digit code <input name="p" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"></label>
-    <button class="chip" type="submit">Connect</button> <span class="note" role="status"></span></form>
+    <button class="chip go" type="submit">Sign in</button> <span class="note" role="status"></span></form>
     <p class="note">New name: pick any code and remember it. Same name and code later: your saved progress comes back.</p>`;
   box.querySelector('form').onsubmit = e => { e.preventDefault();
     const f = e.target, name = f.n.value.trim(), pin = f.p.value.trim();
@@ -651,5 +655,5 @@ if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else ad
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
 const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
-Promise.all([fetch('data.json?v=12').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=13').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
