@@ -24,7 +24,7 @@ const bySlate = L => Object.keys(DATA.gen).filter(n => L.includes(n));
 function card(name, group){
   const g = DATA.gen[name], p = cover(g), ig = (group === true || group === 'stripe') && g.ig ? DATA.imrg.find(x => x.n === g.ig) : null;
   const im = p ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(name)}" loading="lazy">` : `<span class="ph none">no photo</span>`;
-  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${(ig.n * 137) % 360}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.n ? 'No. ' + g.n + ' · ' : '<b class="star">★ not surveyed</b> · '}${esc(g.fam)}</small><p>${esc(g.crit[0])}</p></span></a>`;
+  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${(ig.n * 137) % 360}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.n ? 'No. ' + g.n + ' · ' : '<b class="star">★ not surveyed</b> · '}${esc(g.fam)}</small><p>${esc(g.sum)}</p></span></a>`;
 }
 function bindCards(root = $v){ root.querySelectorAll('[data-g]').forEach(b => b.onclick = () => go('g-' + b.dataset.g)); }
 function bindGo(root = $v){ root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go)); }
@@ -113,6 +113,7 @@ function viewGenus(name){
   <article class="sheet">
     <span class="fam">${g.n ? 'No. ' + g.n + ' on the slate · ' : ''}${esc(g.fam)}</span>
     <h2>${esc(name)}</h2>
+    <p class="lede keyid">${esc(g.sum)}</p>
     ${g.n ? '' : `<p class="warn"><b>★ Not surveyed by IMR.</b> It is on the slate so you don't mistake it for ${g.look.filter(n => DATA.gen[n].n).map(n => '<i>' + esc(n) + '</i>').join(', ')}, so you need to recognise it and set it aside.</p>`}
     <div class="hero">
       ${cv ? `<button type="button" class="zoom hero-ph" data-z="${ci}"><img src="${img(cv)}" alt="${esc(name)}"></button>` : ''}
@@ -144,8 +145,8 @@ function viewCompareList(){
   const tag = g => g.n ? 'No. ' + g.n : '<b class="star">★</b>';
   const blocks = Object.keys(DATA.gen).filter(n => DATA.gen[n].look.some(b => DATA.gen[b])).map(n => {
     const g = DATA.gen[n];
-    const cards = g.look.filter(b => DATA.gen[b]).map(b => { const B = DATA.gen[b]; return `<a class="card" href="#cmp-${esc(n)}|${esc(b)}">${thumb(b, 'ph')}<span class="cap"><small>vs</small><i>${esc(b)}</i><small>${tag(B)} · ${esc(B.fam)}</small><p>${esc(B.crit[0])}</p></span></a>`; }).join('');
-    return `<section class="lablock"><a class="lahead" href="#g-${esc(n)}">${thumb(n, 'laph')}<span><i>${esc(n)}</i><small>${tag(g)} · ${esc(g.fam)}</small><span class="lacrit">${esc(g.crit[0])}</span></span></a><div class="grid">${cards}</div></section>`;
+    const cards = g.look.filter(b => DATA.gen[b]).map(b => { const B = DATA.gen[b]; return `<a class="card" href="#cmp-${esc(n)}|${esc(b)}">${thumb(b, 'ph')}<span class="cap"><small>vs</small><i>${esc(b)}</i><small>${tag(B)} · ${esc(B.fam)}</small><p>${esc(B.sum)}</p></span></a>`; }).join('');
+    return `<section class="lablock"><a class="lahead" href="#g-${esc(n)}">${thumb(n, 'laph')}<span><i>${esc(n)}</i><small>${tag(g)} · ${esc(g.fam)}</small><span class="lacrit">${esc(g.sum)}</span></span></a><div class="grid">${cards}</div></section>`;
   }).join('');
   $v.innerHTML = `<h2>Look-alikes</h2>
   <p class="lede">For each genus, in slate order, the genera it is most often confused with. Open a pair to compare them view by view.</p>${blocks}`;
@@ -311,9 +312,10 @@ function answer(cur, c, target, ph){
   save();
   $v.querySelectorAll('[data-c]').forEach(b => { b.disabled = true; if (b.dataset.c === target) b.classList.add('ok'); else if (b.dataset.c === c) b.classList.add('ko'); });
     const g = DATA.gen[target];
-  const vs = !good && DATA.gen[c] ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(DATA.gen[c].crit[0])} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>` : '';
+  const vs = !good && DATA.gen[c] ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(DATA.gen[c].sum)} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>` : '';
   document.getElementById('after').innerHTML = `<div class="fb">
     <h3 class="${good ? 'ok' : 'ko'}">${good ? 'Yes' : 'No'}, it's <i>${esc(target)}</i>${g.n ? '' : ' (★ not surveyed)'}</h3>
+    <p class="keyid"><b>Deciding features:</b> ${esc(g.sum)}</p>
     <ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${g.imr.length ? `<p class="vs"><b>IMR lecture:</b> ${g.imr.map(esc).join(' ')}</p>` : ''}${g.mn ? `<p class="vs"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}${vs}</div>
     <p class="credit">${ph.map(credit).join('<br>')}</p>
     <button class="next" type="button" id="next">Next</button>`;
@@ -433,5 +435,5 @@ function route(){
   window.scrollTo(0, 0);
 }
 addEventListener('hashchange', route);
-fetch('data.json?v=5').then(r => r.json()).then(d => { DATA = d; route(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+fetch('data.json?v=6').then(r => r.json()).then(d => { DATA = d; route(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});

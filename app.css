@@ -105,7 +105,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .card .cap{padding:9px 12px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .card i{font-weight:600;font-size:1.06rem}
 .card small{color:var(--muted);font-size:.8rem}
-.card p{margin:4px 0 0;font-size:.86rem;color:var(--ink);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card p{margin:4px 0 0;font-size:.86rem;color:var(--ink);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 .strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px;margin:6px 0 12px}
 :root[data-size="s"] .strip{grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr))}
 :root[data-size="l"] .strip{grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr))}
@@ -119,6 +119,8 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
   .card:hover,.group:hover,a.leaf:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}}
 
 /* ---------- Genus sheet ---------- */
+.keyid{color:var(--ink);font-size:1.02rem;max-width:70ch}
+.sheet .keyid{margin:-2px 0 14px}
 .sheet h2{font-size:2.3rem;font-style:italic;font-family:var(--body);font-weight:600;margin-top:4px}
 .fam{display:inline-block;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .sheet h3{margin:18px 0 6px}
