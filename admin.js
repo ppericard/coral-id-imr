@@ -482,7 +482,7 @@ const HELP = {
     <p>The Coral Finder growth-form tiles use them: Branching = Br + Ta, Thin plates and crusts = En + Fo, Massive or thick = Ma + Sm, Columns = Sm, Solitary = Mu, Meandering = any form of the genera it lists. Dashed = a first guess, solid = yours (always wins); a red ? = a guess to double-check.</p>
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
-  triage: `<p>Only what needs your eye. On the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor, and the views whose Featured photos you haven't picked yet (the site uses its own pick meanwhile: IMR and your photos first, by quality).</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
+  triage: `<p>Only what needs your eye. On the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
 };
 function toggleHelp(){
@@ -570,8 +570,7 @@ function renderExcluded(){
   $v.querySelectorAll('[data-act="zoomx"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'), p = PHOTOS[t.dataset.f]; if (p) zoomOne(p); });
 }
 // Triage: only what needs Pierre's eye. 1) photos he flagged on the site, with where they were seen;
-// 2) Featured photos rated Poor; 3) views whose Featured photos he hasn't picked yet (the site then shows its own
-// pick: best quality, mixed sources), to review genus by genus.
+// 2) Featured photos rated Poor. Views without his own Featured pick are not a task (Pierre): the automatic pick is fine.
 function renderTriage(){
   status();
   const F = DRAFT.flag || {}, flagged = Object.keys(F).map(f => ({...(PHOTOS[f] || {genus: F[f].genus || '?'}), f, fl: F[f]}));
@@ -580,14 +579,11 @@ function renderTriage(){
       <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge">${PHOTOS[p.f] ? `<img src="${img(p, 1)}" alt="" loading="lazy">` : '<span class="none">missing</span>'}</button>
       <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a>${cap}</figcaption><div class="adm-acts">${acts}</div></figure>`;
   const poor = []; Object.entries(DRAFT.genera).forEach(([n, k]) => Object.entries(k.feat || {}).forEach(([v, L]) => L.forEach(f => { if (PHOTOS[f] && qOf(f) === 1) poor.push({...PHOTOS[f], f, genus: n, fv: v}); })));
-  const todo = Object.keys(DATA.gen).map(n => [n, VIEWS.filter(([v]) => !((entry(n).feat || {})[v] || []).length && ((DATA.gen[n].views || {})[v] || []).length).map(x => x[1])]).filter(x => x[1].length);
   $v.innerHTML = `<section class="adm-quality">
     <div class="adm-qhead"><h2>Flagged on the site <small>${flagged.length}</small></h2></div>
     ${flagged.length ? `<div class="adm-grid adm-qgrid">${flagged.map(p => tile(p, `<button type="button" data-act="thide">Hide in ${esc(p.genus)}</button><button type="button" data-act="tpoor">Poor</button><button type="button" data-act="tdone">Done</button>`,
       `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fl.view) || [, p.fl.view || ''])[1])}</span><small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`)).join('')}</div>` : '<p class="note">Nothing flagged.</p>'}
     ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
-    <div class="adm-qhead"><h2>Featured not picked yet <small>${todo.length} genera</small></h2></div>
-    ${todo.length ? `<p class="adm-tchips">${todo.map(([n, L]) => `<a class="chip" href="#${esc(n)}"><i>${esc(n)}</i>&nbsp;<small>${L.join(', ')}</small></a>`).join(' ')}</p>` : '<p class="note">All picked.</p>'}
     ${sugHtml(tile)}
   </section>`;
   bindSug();
