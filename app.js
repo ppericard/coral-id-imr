@@ -574,25 +574,42 @@ const saveQ = () => store.set('imr-coral-quiz', Q);
 let session = {ok: 0, n: 0}, last = null, duelPair = null;
 const pool = () => Object.keys(DATA.gen).filter(n => (Q.stars || DATA.gen[n].n) && photoSet(n).shown.length);
 // A quiz question always shows one colony view and one closer view; the corallites come as a hint.
-// Quiz views come from one observation (same colony) whenever possible: pick at random among
-// the observations covering the most views, and fill any missing view from another observation.
+// Continuous difficulty (Pierre, 2026-10-31; Elo as in Pelánek 2016 / Duolingo Birdbrain, no time criteria): every
+// question draws from ALL the game photos of the genus, weighted by how close each photo's difficulty (photoDiff) is to
+// the target for this player on this genus (ability(n) - TARGET_OFF, about 80% right in a 4-choice question). On top:
+// photos never seen get a bonus (bigger when the player is doing well; IMR and Pierre's photos first), photos already
+// answered right twice weigh less (they may be memorised), the colony of the last 2 questions on the genus is held back,
+// and at least 3 colonies stay in rotation (VARIETY) whatever the level, so a struggling player still sees new photos.
+// Views come from one observation (same colony) whenever possible; a missing view is filled from another observation.
+const PICKD = {TARGET_OFF: 1.0, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05};
 function photoSet(n){
   const g = DATA.gen[n], two = g.levels === 2, need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
-  const obs = {};
+  const shownV = two ? ['wide', 'macro'] : ['wide', 'medium'];
   // The Colony slot never gets a photo whose growth form is "x" (too close to see it): that is a close-up.
   const ok = v => p => v !== 'wide' || p.form !== 'x';
-  const pics = v => { if (Q.level !== 'auto') return gamePics(n, v, Q.level).filter(ok(v));
-    // Auto: the photos of the genus's own level first, then the easier ones, then any.
-    const k = LEVELS[autoLvl(n)][0], s = (DATA.gen[n].sl || {})[v], own = s ? (s[k] || []).filter(ok(v)) : [];
-    return own.length ? own : gamePics(n, v, k).filter(ok(v)).length ? gamePics(n, v, k).filter(ok(v)) : gamePics(n, v, 'hard').filter(ok(v)); };
+  const pics = v => gamePics(n, v, 'hard').filter(ok(v));
+  const s = P[n] || {}, seen = s.ps || {}, ro = s.ro || [], tgt = ability(n) - PICKD.TARGET_OFF;
+  const h = [...recent(n).slice(-5)], hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
+  const w = p => { const x = (photoDiff(n, p) - tgt) / PICKD.SIGMA, k = seen[p.f]; let r = Math.exp(-x * x / 2);
+    if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1); else if (k[1] >= 2) r *= 0.6; return r; };
+  const obs = {};
   need.forEach(v => pics(v).forEach(p => { const k = p.o || p.f; (obs[k] = obs[k] || {})[v] = (obs[k][v] || []).concat([p]); }));
-  const groups = Object.values(obs), cov = o => need.filter(v => o[v]).length, best = Math.max(0, ...groups.map(cov));
-  const o = best ? pick(groups.filter(x => cov(x) === best)) : {};
-  const one = v => { const L = o[v] || pics(v); return L.length ? {...pick(L), view: v} : null; };
+  const keys = Object.keys(obs);
+  const score = k => { const o = obs[k], vs = shownV.filter(v => o[v]); if (!vs.length) return 0;
+    const m = vs.reduce((t, v) => t + Math.max(...o[v].map(w)), 0) / vs.length, cov = need.filter(v => o[v]).length / need.length;
+    return m * cov * cov * (ro.includes(k) ? 0.15 : 1); };
+  const sc = Object.fromEntries(keys.map(k => [k, score(k)])), top = Math.max(0, ...Object.values(sc));
+  keys.filter(k => sc[k] > 0).sort((a, b) => sc[b] - sc[a]).slice(0, PICKD.VARIETY).forEach(k => { if (!ro.includes(k)) sc[k] = Math.max(sc[k], 0.5 * top); });
+  keys.forEach(k => { if (sc[k] > 0) sc[k] = Math.max(sc[k], PICKD.FLOOR * top); });
+  const o = top ? obs[wpick(keys, k => sc[k])] : {};
+  const one = v => { const L = o[v] || pics(v); return L.length ? {...wpick(L, w), view: v} : null; };
   // Two-level genera (e.g. Plerogyra, mushroom corals) show colony + close-up, with no hint.
   if (two) { const m = one('macro'); return {shown: [one('wide'), m && {...m, view: 'close'}].filter(Boolean), hint: null}; }
   return {shown: [one('wide'), one('medium')].filter(Boolean), hint: one('macro')};
 }
+// Weighted random pick (weights from f).
+function wpick(L, f){ const ws = L.map(x => Math.max(0, f(x))), t = ws.reduce((a, b) => a + b, 0); if (!t) return pick(L);
+  let r = Math.random() * t; for (let i = 0; i < L.length; i++) { r -= ws[i]; if (r <= 0) return L[i]; } return L[L.length - 1]; }
 // Which genus to ask next (Pierre: spread the work, target what is not seen or not mastered yet, keep some chance).
 // Weight by status and by how unsure the knowledge model still is (BKT, 1 - L): review 3-5, learning 1-4,
 // learned 0.25 (unseen 10, so every genus comes up early). A genus asked in the last 4 questions is mostly held back so the work spreads across genera.
@@ -600,24 +617,24 @@ let lastQs = [];
 const weight = n => { const lv = level(n)[0], u = 1 - knownP(n), w = lv === 'new' ? 10 : lv === 'ok' ? 0.25 : lv === 'weak' ? 3 + 2 * u : 1 + 3 * u; return lastQs.includes(n) ? w * 0.1 : w; };
 function weighted(list){ const w = list.map(weight), t = w.reduce((a, b) => a + b, 0); let r = Math.random() * t; for (let i = 0; i < list.length; i++) { r -= w[i]; if (r <= 0) return list[i]; } return list[list.length - 1]; }
 function nextTarget(list){ let n, k = 0; do { n = weighted(list); } while (n === last && list.length > 1 && ++k < 10); last = n; lastQs = [...lastQs, n].slice(-4); return n; }
-// Adaptive photo level (Pierre, 2026-10-31; no time criteria, reachable in one sitting). Each genus has its own photo
-// level (s.lv: 0 Easy, 1 Medium, 2 Hard), used by the Auto photo set. It starts at Easy; 2 right answers in a row at
-// that level or above move it up one level; a mistake moves it down one (naming the genus wrongly counts as a mistake
-// for it too). A right answer counts at the level of the hardest photo shown, so forced sets count as well.
-const RECENT = 10, UP_RUN = 2;
+// Player ability per genus (s.th), on the same scale as photo difficulty (0 = average photo). Elo update after each
+// answer, as in the sync sheet (Code.gs stats_): P(right) = g + (1 - g) * sigmoid(ability - difficulty), g = 1/choices;
+// ability moves by K * (result - P(right)), K shrinking as answers build up (Pelánek 2016) but never below 0.25 so a
+// genus that starts going wrong eases off quickly. Starts at 0 (target = the featured photos); no time criteria.
+const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3};
+const RECENT = 10;
 const recent = n => { const s = P[n] || {}; return s.h ? s.h.slice(-RECENT) : ''; };
 const misses = h => [...h].filter(x => x === '0').length;
 const hasDuel = n => DATA.gen[n].look.some(b => DATA.gen[b]);
-// Top level of a genus: its hardest game set that has photos (some genera have no Hard photos: then Medium is the top).
-const topLvl = n => { const sl = DATA.gen[n].sl || {}; let m = 0; Object.keys(sl).forEach(v => [1, 2].forEach(i => { if ((sl[v][LEVELS[i][0]] || []).length) m = Math.max(m, i); })); return m; };
-const autoLvl = n => Math.min(topLvl(n), Math.max(0, (P[n] || {}).lv || 0));
-// Level of a game photo of genus n: the game set (Easy/Medium/Hard) it belongs to; lecture or unlisted photos = Easy.
-function photoLvl(n, p){ const sl = DATA.gen[n].sl || {}; for (const v of Object.keys(sl)) for (let i = 2; i >= 0; i--) if ((sl[v][LEVELS[i][0]] || []).some(x => x.f === p.f)) return i; return 0; }
-function stepLvl(n, s, good, qlv){
-  const top = topLvl(n);
-  if (good) { if (qlv >= Math.min(s.lv || 0, top)) { s.run = (s.run || 0) + 1; if (s.run >= UP_RUN && (s.lv || 0) < top) { s.lv = (s.lv || 0) + 1; s.run = 0; } } }
-  else { s.lv = Math.max(0, (s.lv || 0) - 1); s.run = 0; }
+// Progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability.
+const ability = n => { const s = P[n] || {}; return typeof s.th === 'number' ? s.th : ELO.th0 + Math.min(2, s.lv || 0); };
+function abilityStep(n, s, good, d, k){
+  const th = ability(n), g = 1 / k, e = g + (1 - g) * sig(th - d), m = (s.ok || 0) + (s.ko || 0);
+  const K = Math.max(ELO.kmin, ELO.kmax / (1 + m / ELO.n));
+  s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * 100) / 100; delete s.lv; delete s.run;
 }
+// Game set (Easy/Medium/Hard) of a photo of genus n, the prior of its difficulty; lecture or unlisted photos = Easy.
+function photoLvl(n, p){ const sl = DATA.gen[n].sl || {}; for (const v of Object.keys(sl)) for (let i = 2; i >= 0; i--) if ((sl[v][LEVELS[i][0]] || []).some(x => x.f === p.f)) return i; return 0; }
 // Photo difficulty (Elo): every RA's answers, rated by the sync sheet (?stats=1, tools/sync/Code.gs stats_). 0 = average
 // photo, +1 = clearly harder. Few answers: pulled towards the photo's game set (Easy -1, Medium 0, Hard +1).
 let PSTAT = (store.get('imr-photo-stats', {}) || {}).photos || {};
@@ -664,7 +681,7 @@ function bindQuizNav(){ bindGo(); }
 // The game rules (behind the ? button).
 const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused: say which one is in the photos.' : 'Name the genus in the photos: one colony view and one closer view of the same coral.'}
   Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? <b>Show the corallites</b> adds a close-up. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on. Every answer counts in <a href="#progress">My progress</a>.</p>
-  <p class="lede"><b>Photos</b>: each genus starts with easy photos; 2 right answers in a row move it to harder photos, a mistake moves it back. A genus is learned once your answers make it 95% sure you know it: right answers on harder photos count more.</p>`;
+  <p class="lede"><b>Photos</b>: each genus starts with its best photos and new ones keep coming in; the more you get a genus right, the harder its photos get, and a mistake eases them off. A genus is learned once your answers make it 95% sure you know it: right answers on harder photos count more.</p>`;
 function question(cur, target, choices, prompt, set){
   const ph = set.shown, lab = VIEW_LABEL;
   let answered = false, hintShown = false;
@@ -745,12 +762,17 @@ function answer(cur, c, target, ph, cor){
   session.n++; if (good) { session.ok++; s.ok++; s.streak++; } else { s.ko++; s.streak = 0; s.conf = s.conf || {}; s.conf[c] = (s.conf[c] || 0) + 1; }
   // Knowledge (BKT) with the difficulty of the photos shown (before the result joins s.h, which BKT replays for old progress).
   const k = $v.querySelectorAll('[data-c]').length || 4;
-  bktObs(target, s, good, ph.reduce((t, p) => t + photoDiff(target, p), 0) / Math.max(1, ph.length), k);
+  // A photo seen for the first time is the best evidence (Kellman: novel instances); one already answered right twice
+  // may be memorised, so it counts as an easier photo (a right answer then looks more like a guess).
+  const ps = s.ps = s.ps || {}, d0 = ph.reduce((t, p) => t + photoDiff(target, p), 0) / Math.max(1, ph.length);
+  const bk = ph.reduce((t, p) => t + photoDiff(target, p) + (!ps[p.f] ? 0.5 : ps[p.f][1] >= 2 ? -1 : 0), 0) / Math.max(1, ph.length);
+  bktObs(target, s, good, bk, k);
+  abilityStep(target, s, good, d0, k);
+  ph.forEach(p => { const x = ps[p.f] = ps[p.f] || [0, 0]; x[0]++; if (good) x[1]++; });
+  if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
   s.h = ((s.h || '') + (good ? 1 : 0)).slice(-10);  // recent results, newest last
   // Pierre's rule: a wrong answer also shows the genus given is not mastered, so it counts as a miss for it too.
-  if (!good && DATA.gen[c]) { const w = st(c); bktObs(c, w, false, 0, k); w.h = ((w.h || '') + '0').slice(-10); w.streak = 0; stepLvl(c, w, false, 0); }
-  // Adaptive level: at the level of the hardest photo shown.
-  stepLvl(target, s, good, Math.max(0, ...ph.map(p => photoLvl(target, p))));
+  if (!good && DATA.gen[c]) { const w = st(c); bktObs(c, w, false, 0, k); w.h = ((w.h || '') + '0').slice(-10); w.streak = 0; abilityStep(c, w, false, 0, k); }
   if (good && cor) s.cor = 1;  // milestone: right with the corallites photo in view
   if (good && cur.startsWith('quiz-duel')) s.du = 1;  // milestone: won a look-alike duel
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
@@ -853,7 +875,7 @@ function quizBoard(){
         <span class="pseg">${L.map(n => `<a class="${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i></a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
   };
   let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
-  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. On the photos: full colour = learned; colour rising from the bottom = learning (the higher the waterline, the closer to learned); red waterline = to review (comes up more often in the quiz); grey = not seen yet. On the Slate and Groups views: grey = not seen; a teal fill rising from the left = learning (the fuller, the closer to learned); red fill and border = to review; solid green = learned. Each genus has its own photo level: it starts with easy photos, 2 right answers in a row move it to harder ones, a mistake moves it back (naming a genus when the photo shows another one counts as a mistake for both). Learned: your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5 answers. Click a genus to open its sheet.</p>
+  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. On the photos: full colour = learned; colour rising from the bottom = learning (the higher the waterline, the closer to learned); red waterline = to review (comes up more often in the quiz); grey = not seen yet. On the Slate and Groups views: grey = not seen; a teal fill rising from the left = learning (the fuller, the closer to learned); red fill and border = to review; solid green = learned. Each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level (naming a genus when the photo shows another one counts as a mistake for both). Learned: your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5 answers. Click a genus to open its sheet.</p>
   <div class="pgame pboard"><div class="pgwrap"></div>
   <aside class="gside">
     <div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['slate', 'Slate'], ['groups', 'Groups']].map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`).join('')}</div>
