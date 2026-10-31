@@ -12,8 +12,8 @@
    no keyboard hints; (hover:hover) and (pointer:fine) = mouse -> hover effects, kbd hints. */
 
 /* ---------- Tokens ---------- */
-:root{--bg:#f2f5f6;--surface:#ffffff;--surface-2:#e9eff1;--ink:#14262d;--muted:#5a6d74;--line:#d6e0e3;--accent:#0d6f7d;--accent-ink:#ffffff;--branch:#cfe8b8;--meander:#c4e2f2;--massive:#ecc7e3;--plate:#f8d9ad;--solo:#b9e7ea;--polyp:#f6c8b8;--column:#f3eba2;--band-ink:#14262d;--good:#2f7d3a;--good-bg:#dcefd9;--bad:#b23a2a;--bad-bg:#f7dcd6;--shadow:0 1px 2px rgb(20 38 45 / .06),0 2px 8px rgb(20 38 45 / .06);--shadow-hover:0 4px 16px rgb(20 38 45 / .14);--r:10px;--r-sm:6px;--pill:999px;--ctl-h:36px;--display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;--body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif}
-:root[data-theme="dark"]{--bg:#0d181c;--surface:#15242a;--surface-2:#1c2e35;--ink:#e3eef0;--muted:#94a9af;--line:#283c43;--accent:#5cc6d3;--accent-ink:#06262b;--branch:#34502a;--meander:#24465a;--massive:#57304d;--plate:#5e4320;--solo:#1f5256;--polyp:#5c3328;--column:#4f4a1c;--band-ink:#eef6f7;--good:#8fd49a;--good-bg:#1f3a24;--bad:#f19a8b;--bad-bg:#45231d;--shadow:0 1px 2px rgb(0 0 0 / .3);--shadow-hover:0 4px 16px rgb(0 0 0 / .45);color-scheme:dark}
+:root{--bg:#f2f5f6;--surface:#ffffff;--surface-2:#e9eff1;--ink:#14262d;--muted:#5a6d74;--line:#d6e0e3;--accent:#0d6f7d;--accent-ink:#ffffff;--branch:#cfe8b8;--meander:#c4e2f2;--massive:#ecc7e3;--plate:#f8d9ad;--solo:#b9e7ea;--polyp:#f6c8b8;--column:#f3eba2;--other:#cdd6ea;--band-ink:#14262d;--good:#2f7d3a;--good-bg:#dcefd9;--bad:#b23a2a;--bad-bg:#f7dcd6;--shadow:0 1px 2px rgb(20 38 45 / .06),0 2px 8px rgb(20 38 45 / .06);--shadow-hover:0 4px 16px rgb(20 38 45 / .14);--r:10px;--r-sm:6px;--pill:999px;--ctl-h:36px;--display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;--body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif}
+:root[data-theme="dark"]{--bg:#0d181c;--surface:#15242a;--surface-2:#1c2e35;--ink:#e3eef0;--muted:#94a9af;--line:#283c43;--accent:#5cc6d3;--accent-ink:#06262b;--branch:#34502a;--meander:#24465a;--massive:#57304d;--plate:#5e4320;--solo:#1f5256;--polyp:#5c3328;--column:#4f4a1c;--other:#2f3a55;--band-ink:#eef6f7;--good:#8fd49a;--good-bg:#1f3a24;--bad:#f19a8b;--bad-bg:#45231d;--shadow:0 1px 2px rgb(0 0 0 / .3);--shadow-hover:0 4px 16px rgb(0 0 0 / .45);color-scheme:dark}
 
 /* ---------- Base ---------- */
 *{box-sizing:border-box}
@@ -80,7 +80,7 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 @media (min-width:600px){.hdr-tools .labgo{display:none}}
 
 /* ---------- Controls: one pill system for nav, chips, segmented control and icon buttons ---------- */
-.sections a,.chip,.theme,.seg,#size,#origin,#adminview,.prog{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);box-shadow:var(--shadow)}
+.sections a,.chip,.theme,.seg,#size,#origin,#adminview,#xgen,.prog{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);box-shadow:var(--shadow)}
 .sections a,.chip{display:inline-flex;align-items:center;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .12s,border-color .12s,color .12s}.chip{min-height:var(--ctl-h)}.sections a{min-height:38px}.chip{font-size:.92rem}.sections a{font-size:.82rem}.chip{padding:0 14px}.sections a{padding:0 4px}
 @media (min-width:600px){
   .sections a{padding:0 14px;font-size:.92rem;min-height:var(--ctl-h)}
@@ -134,13 +134,13 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 .modes.ctx .up{gap:4px}
 .modes.ctx .pn{flex:none;display:flex;gap:2px;padding-left:6px;border-left:1px solid var(--line)}
 .modes.ctx .pn a{width:34px;padding:0;font-size:1.3rem;line-height:1}
-#size,#origin,#adminview{display:flex;overflow:hidden;height:var(--ctl-h)}
-#origin button,#adminview button{background:none;border:0;color:var(--muted);font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}#adminview button{padding:0 9px}#origin button{padding:0 7px}
+#size,#origin,#adminview,#xgen{display:flex;overflow:hidden;height:var(--ctl-h)}
+#origin button,#adminview button,#xgen button{background:none;border:0;color:var(--muted);font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}#adminview button,#xgen button{padding:0 9px}#origin button{padding:0 7px}
 @media (min-width:600px){
   #origin button{padding:0 9px}
 }
-#origin button+button,#adminview button+button{border-left:1px solid var(--line)}
-#origin button[aria-pressed="true"],#adminview button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+#origin button+button,#adminview button+button,#xgen button+button{border-left:1px solid var(--line)}
+#origin button[aria-pressed="true"],#adminview button[aria-pressed="true"],#xgen button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 #size button{background:none;border:0;color:var(--muted);font:inherit;font-size:.8rem;font-weight:700;width:34px;cursor:pointer}
 #size button+button{border-left:1px solid var(--line)}
 #size button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
@@ -258,7 +258,7 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 .group b{font-family:var(--display);font-size:1.35rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;line-height:1.1}
 .group span{font-size:.92rem;opacity:.85}
 .group em{font-style:normal;font-size:.82rem;margin-top:auto;padding-top:6px;opacity:.75}
-.c-branch{background:var(--branch)}.c-meander{background:var(--meander)}.c-massive{background:var(--massive)}.c-plate{background:var(--plate)}.c-solo{background:var(--solo)}.c-polyp{background:var(--polyp)}.c-column{background:var(--column)}
+.c-branch{background:var(--branch)}.c-meander{background:var(--meander)}.c-massive{background:var(--massive)}.c-plate{background:var(--plate)}.c-solo{background:var(--solo)}.c-polyp{background:var(--polyp)}.c-column{background:var(--column)}.c-other{background:var(--other)}
 .leaves{display:flex;flex-direction:column;gap:8px}
 .leaf{display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px 12px;text-align:left;font:inherit;color:var(--band-ink);border:0;border-radius:var(--r);padding:12px 16px;cursor:pointer}
 .leaf .t{font-weight:600}

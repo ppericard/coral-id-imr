@@ -120,7 +120,15 @@ function filterOrigin(d){
   });
 }
 let RAW, CUR, FORMS = {gf: {}, form: {}, cf: {}}, AUTOQ = {}, PICKS = {};
-function build(){ const d = structuredClone(RAW); applyCuration(d, CUR); filterOrigin(d); applyForms(d, CUR); applySlots(d, CUR); DATA = d; }
+// Genera not on the IMR slate but in the Coral Finder book and present at Dauin (data.json "x", tools/build_extra.py):
+// Identify > Coral Finder only (Pierre, 2026-10-31), on by default, switch in ⚙ on that page. Same photo pipeline,
+// kept out of DATA.gen so games, quizzes, progress and the Genera pages never see them.
+let XON = store.get('imr-finder-x', true);
+function build(){ const d = structuredClone(RAW); applyCuration(d, CUR); filterOrigin(d); applyForms(d, CUR); applySlots(d, CUR);
+  if (d.x) { const x = {gen: d.x.gen, course: {}, cand: {}}; applyCuration(x, CUR); filterOrigin(x); applyForms(x, CUR); applySlots(x, CUR); }
+  DATA = d; }
+// A genus of the list or of the extra genera.
+const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n];
 // Photos per context (applySlots). Pierre's rule: every IMR photo and every photo of his own is used, with no cap;
 // photos from other iNat observers and approved Coral Finder book photos only fill a set that is short. Per genus
 // and view: sheet = 3 featured + the other IMR/own photos (filled up to 6 in all); games = Easy (the featured),
@@ -187,26 +195,26 @@ function applyForms(d, c){
 // Photos of genus n that can illustrate Coral Finder front-page box id (e.g. 'B'): those whose IMR form maps to it
 // (forms.json "cf": Branching = Branching + Tabulate, ...; L = polyps extended), else the old letter. Colony views
 // first, then closer views. Never a "form not visible" photo, a multi-coral photo or a Coral Finder book photo.
-const formPhotos = (n, id) => { const g = DATA.gen[n], ok = CFMAP[id] || '';
+const formPhotos = (n, id) => { const g = GX(n), ok = CFMAP[id] || '';
   return [...(g.views.wide || []), ...(g.views.medium || []), ...(DATA.course[n] || []).filter(p => p.v !== 'macro')].filter(p => !p.multi && (ok === 'p' ? p.polyps : p.form ? p.form !== 'x' && ok.includes(p.form) : p.cf === id)); };
 
 // Photos of genus n whose IMR growth form (p.form) is id, colony views first; never multi-coral or book photos.
-const imrFormPhotos = (n, id) => { const g = DATA.gen[n];
+const imrFormPhotos = (n, id) => { const g = GX(n);
   return [...(g.views.wide || []), ...(g.views.medium || []), ...(DATA.course[n] || []).filter(p => p.v !== 'macro')].filter(p => !p.multi && p.form === id); };
 // IMR growth forms a genus takes (IMR Lecture 6 forms, forms.json "forms"): those seen on its classified photos (one
 // photo Pierre or the first guess is sure of, or two unsure ones), plus those the Coral Finder front page gives it
 // (forms.json "cf" maps each front-page box to IMR forms; Meandering, which maps to every form, is left out).
-const imrFormsOf = n => { const g = DATA.gen[n], cnt = {}, sure = {};
+const imrFormsOf = n => { const g = GX(n), cnt = {}, sure = {};
   [...Object.values(g.views).flat(), ...(DATA.course[n] || [])].forEach(p => { if (!p.form || p.form === 'x' || p.multi) return; cnt[p.form] = (cnt[p.form] || 0) + 1; if (!(FORMS.gunsure || {})[p.f]) sure[p.form] = 1; });
   const seen = Object.keys(cnt).filter(k => sure[k] || cnt[k] >= 2);
   // A box that maps to several forms (Branching = Branching or Tabulate) only counts for a genus with no classified photo.
-  const cf = DATA.key.filter(k => k.id !== 'M' && k.leaves.some(l => l.g.includes(n))).map(k => (CFMAP[k.id] || '').replace('p', '')).filter(m => m.length === 1 || !seen.length).flatMap(m => [...m]);
+  const cf = [...DATA.key, ...(DATA.gen[n] ? [] : (DATA.x || {}).groups || [])].filter(k => k.id !== 'M' && k.leaves.some(l => l.g.includes(n) || ((DATA.x || {}).leaf[l.id] || []).includes(n))).map(k => (CFMAP[k.id] || '').replace('p', '')).filter(m => m.length === 1 || !seen.length).flatMap(m => [...m]);
   return [...new Set([...seen, ...cf])]; };
 
 /* ---------- shared bits ---------- */
 // Genera in IMR slate order (data.json lists them that way, starred genera last).
 const slateIdx = n => Object.keys(DATA.gen).indexOf(n);
-const bySlate = L => Object.keys(DATA.gen).filter(n => L.includes(n));
+const bySlate = L => [...Object.keys(DATA.gen), ...Object.keys((DATA.x || {}).gen || {})].filter(n => L.includes(n));
 // group=true marks the card with its IMR confusion group (strip and tag); 'stripe' draws the strip only.
 function card(name, group){
   const g = DATA.gen[name], p = cover(g), ig = (group === true || group === 'stripe') && g.ig ? DATA.imrg.find(x => x.n === g.ig) : null;
@@ -406,7 +414,7 @@ function viewGenus(name){
 
 /* ---------- compare ---------- */
 // Look-alikes of a genus, whichever genus listed the other (the Coral Finder lists are not symmetric).
-const lookOf = n => Object.keys(DATA.gen).filter(b => b !== n && (DATA.gen[n].look.includes(b) || DATA.gen[b].look.includes(n)));
+const lookOf = n => !DATA.gen[n] ? [] : Object.keys(DATA.gen).filter(b => b !== n && (DATA.gen[n].look.includes(b) || DATA.gen[b].look.includes(n)));
 // Photo of a genus in a given view, falling back to the close-up then the cover.
 function viewShot(n, v){ const g = DATA.gen[n], L = g.views[v] && g.views[v].length ? g.views[v] : g.views.macro && g.views.macro.length ? g.views.macro : null, p = L ? L[0] : cover(g);
   return p ? `<img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(n)}" loading="lazy">` : '<span class="none">no photo</span>'; }
@@ -1030,12 +1038,15 @@ function photoSize(){ return sizePrefs()[pageKey()] || (pageKey() === 'genera' ?
 const SIZES = {card: {s: '240px', m: '360px', l: '520px'}, strip: {s: '(max-width:599.98px) 46vw, 260px', m: '(max-width:599.98px) 92vw, 420px', l: '(max-width:599.98px) 92vw, 640px'}};
 const sizesFor = kind => SIZES[kind][photoSize()];
 function applySize(){ const s = photoSize(), on = SIZE_PAGES.includes(pageKey()); document.documentElement.dataset.size = s;
-  const sz = document.getElementById('size'); document.getElementById('sizerow').hidden = !on; document.querySelectorAll('img[data-sz]').forEach(i => i.sizes = sizesFor(i.dataset.sz)); document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); }
+  const sz = document.getElementById('size'); document.getElementById('sizerow').hidden = !on; document.getElementById('xrow').hidden = !/^(lab-)?finder$/.test(pageKey()); document.querySelectorAll('img[data-sz]').forEach(i => i.sizes = sizesFor(i.dataset.sz)); document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); }
 function showOrigin(){ document.querySelectorAll('#origin button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.origin === origin))); }
 const phone = isPhone;
 const cycle = b => b;  // all choices are visible in the settings panel
 document.querySelectorAll('#origin button').forEach(b => b.onclick = () => { b = cycle(b); origin = b.dataset.origin; store.set('imr-coral-origin', origin); showOrigin(); if (RAW) { build(); route(); } });
 showOrigin();
+const showX = () => document.querySelectorAll('#xgen button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.x === '1') === XON)));
+document.querySelectorAll('#xgen button').forEach(b => b.onclick = () => { XON = b.dataset.x === '1'; store.set('imr-finder-x', XON); showX(); if (RAW) route(); });
+showX();
 document.querySelectorAll('#size button').forEach(b => b.onclick = () => { b = cycle(b); const p = sizePrefs(); p[pageKey()] = b.dataset.size; try { localStorage.setItem('imr-coral-size', JSON.stringify(p)); } catch (e) {} applySize(); });
 // Light / dark theme switch; follows the system until the reader picks one.
 const $theme = document.getElementById('theme');
@@ -1199,5 +1210,5 @@ const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
 const forms = () => fetch('forms.json?v=7').then(r => r.ok ? r.json() : {}).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}));
-Promise.all([fetch('data.json?v=21').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); loadStats(); if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=22').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); loadStats(); if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
