@@ -657,7 +657,7 @@ function quizDuel(a, b){
   question(a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t));
 }
 // Progress board, one screen: a wall of the 39 cover photos in slate order (colour = learned, grey = not seen,
-// red ring = review) beside a side column with the overall ring, what to review first, sign-in and backup.
+// colour rising from the bottom = partial mastery, red waterline = review) beside a side column with the overall ring, what to review first, sign-in and backup.
 function quizBoard(){
   const list = Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n).sort((a, b) => slateIdx(a) - slateIdx(b));
   const lv = Object.fromEntries(list.map(n => [n, level(n)]));
@@ -666,7 +666,9 @@ function quizBoard(){
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
   let deg = 0; const ring = LV.map(([k]) => { const d = 360 * count(k) / list.length, c = `var(--${k === 'ok' ? 'good' : k === 'mid' ? 'accent' : k === 'weak' ? 'bad' : 'line'}) ${deg}deg ${deg + d}deg`; deg += d; return c; }).join(',');
   const tile = n => { const g = DATA.gen[n], p = cover(g), s = P[n] || {ok: 0, ko: 0}, [cl, lb] = lv[n];
-    return `<a class="pw ${cl}" href="#g-${esc(n)}" title="${tip(n)}">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<span><i>${esc(n)}</i>${g.n ? '' : ' ★'}</span>${cl !== 'new' && cl !== 'ok' ? `<b class="pbar" style="--p:${genScore(n).toFixed(2)}"></b>` : ''}</a>`; };
+    const tide = cl === 'mid' || cl === 'weak';
+    // Rising tide: colour fills the photo from the bottom up to the genus's partial mastery, with a wavy waterline.
+    return `<a class="pw ${cl}" href="#g-${esc(n)}" title="${tip(n)}"${tide ? ` style="--p:${genScore(n).toFixed(2)}"` : ''}>${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">${tide ? `<img class="col" src="${img(p, 's')}" alt="" loading="lazy"><b class="wave"></b>` : ''}` : ''}<span><i>${esc(n)}</i>${g.n ? '' : ' ★'}</span></a>`; };
   const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
   // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
   const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right)` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
@@ -679,7 +681,7 @@ function quizBoard(){
         <span class="pseg">${L.map(n => `<a class="${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i></a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
   };
   let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
-  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. Green: learned. Teal: learning. Red: to review (comes up more often in the quiz). Grey: not seen yet. Each genus has its own photo level: it starts with easy photos, 2 right answers in a row move it to harder ones, a mistake moves it back (naming a genus when the photo shows another one counts as a mistake for both). Learned: your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5 answers. Click a genus to open its sheet.</p>
+  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. On the photos: full colour = learned; colour rising from the bottom = learning (the higher the waterline, the closer to learned); red waterline = to review (comes up more often in the quiz); grey = not seen yet. On the other views: green = learned, teal = learning, red = to review. Each genus has its own photo level: it starts with easy photos, 2 right answers in a row move it to harder ones, a mistake moves it back (naming a genus when the photo shows another one counts as a mistake for both). Learned: your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5 answers. Click a genus to open its sheet.</p>
   <div class="pgame pboard"><div class="pgwrap"></div>
   <aside class="gside">
     <div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['slate', 'Slate'], ['groups', 'Groups']].map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`).join('')}</div>
