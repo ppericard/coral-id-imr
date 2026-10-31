@@ -435,9 +435,21 @@ function quizBoard(){
   const tile = n => { const g = DATA.gen[n], p = cover(g), s = P[n] || {ok: 0, ko: 0}, [cl, lb] = lv[n];
     return `<a class="pw ${cl}" href="#g-${esc(n)}" title="${esc(n)}: ${lb}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right)` : ''}">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<span><i>${esc(n)}</i>${g.n ? '' : ' ★'}</span></a>`; };
   const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
-  $v.innerHTML = `<p class="lede">Each photo is one genus of the IMR slate, in slate order. Colour: learned. Grey: not seen yet. Orange ring: learning. Red ring: to review (comes up more often in the quiz). Learned means at least 3 correct answers in a row and 75% success. Click a photo to open its sheet.</p>
-  <div class="pgame pboard"><div class="pgwrap"><div class="pgrid pwall">${list.map(tile).join('')}</div></div>
+  // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
+  const tip = n => { const s = P[n] || {ok: 0, ko: 0}; return `${esc(n)}: ${lv[n][1]}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right)` : ''}`; };
+  const gi = n => DATA.gen[n].ig || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
+  const VIEWS = {
+    photos: () => `<div class="pgrid pwall">${list.map(tile).join('')}</div>`,
+    slate: () => `<div class="pgrid pslate">${list.map(n => `<a class="ps ${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"><b>${DATA.gen[n].n || '★'}</b><i>${esc(n)}</i></a>`).join('')}</div>`,
+    groups: () => `<div class="pgroups">${groups.map(k => { const gr = DATA.imrg.find(x => x.n === k), L = list.filter(n => gi(n) === k);
+      return `<div class="pgr" style="--g:${gr ? (gr.n * 137) % 360 : 200}"><span class="gn" title="${gr ? esc(gr.t) : 'Not covered in the lecture'}">${gr ? gr.n : '★'}</span><span class="pgt">${gr ? esc(gr.t) : 'Not covered in the lecture'}</span>
+        <span class="pseg">${L.map(n => `<a class="${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i></a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
+  };
+  let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
+  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. Green: learned. Teal: learning. Red: to review (comes up more often in the quiz). Grey: not seen yet. Learned means at least 3 correct answers in a row and 75% success. Click a genus to open its sheet.</p>
+  <div class="pgame pboard"><div class="pgwrap"></div>
   <aside class="gside">
+    <div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['slate', 'Slate'], ['groups', 'Groups']].map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`).join('')}</div>
     <div class="pring" style="background:conic-gradient(${ring})"><span><b>${count('ok')}</b>/${list.length}<small>learned</small></span></div>
     <p class="plegend">${LV.map(([k, t]) => `<span class="lvl ${k}">${t} ${count(k)}</span>`).join(' ')}</p>
     ${weak.length ? `<div><h3 class="label">Review first</h3><p class="chips">${weak.slice(0, 4).map(n => `<a class="chip" href="#g-${esc(n)}"><i>${esc(n)}</i></a>`).join('')}</p></div>` : ''}
@@ -452,7 +464,11 @@ function quizBoard(){
   bindProgFile(); bindSync();
   const rb = document.getElementById('reset');
   rb.onclick = () => { if (rb.dataset.armed) { P = {}; store.set('imr-coral-reset', new Date().toISOString()); save(); route(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } };
-  requestAnimationFrame(() => fitTiles($v.querySelector('.pwall'), 6));
+  const wrap = $v.querySelector('.pboard .pgwrap');
+  const show = () => { wrap.innerHTML = VIEWS[pv](); $v.querySelectorAll('[data-pv]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pv === pv));
+    requestAnimationFrame(() => { const g = wrap.firstChild; if (g.classList.contains('pgrid')) fitTiles(g, pv === 'slate' ? 8 : 6); else g.style.height = Math.max(320, innerHeight - g.getBoundingClientRect().top - window.scrollY - 16) + 'px'; }); };
+  $v.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { pv = b.dataset.pv; store.set('imr-coral-pview', pv); show(); });
+  show();
 }
 
 // Header progress pill: genera learned, always in view; the page itself is #progress.
