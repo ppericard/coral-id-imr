@@ -490,3 +490,4 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .rvstage{max-height:calc(100vh - 128px)}
 @media (max-width:760px){.pgame{grid-template-columns:minmax(0,1fr)}.pgame .gside{order:-1}}
 
+.fdsegs{display:flex;flex-wrap:wrap;gap:6px}
