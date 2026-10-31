@@ -1,0 +1,7 @@
+# Second-pass crops to isolate the target colony in multi-coral photos (pixels of the 1600 px WebP: l t r b).
+# Output is written as <file>c.webp so cached copies of the old framing are never reused.
+hydnophora-wide-745205831 0 380 1520 1120
+hydnophora-wide-745676475 400 200 1440 1000
+hydnophora-wide-745676422 300 0 1600 1280
+echinopora-wide-745206686 0 440 1060 1200
+echinopora-wide-746236094 280 140 1600 960

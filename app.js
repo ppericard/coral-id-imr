@@ -103,7 +103,8 @@ function viewGenus(name){
   const inView = v => { const all = [...(g.views[v] || []), ...course.filter(p => p.view === v)];
     const src = [all.filter(p => p.imr), all.filter(p => !p.imr && !p.own), all.filter(p => p.own)], out = [];
     while (src.some(L => L.length)) src.forEach(L => L.length && out.push(L.shift()));
-    return out; };
+    // Photos with several corals in frame (data: more[v], course[].multi) come last, never featured first.
+    return [...out.filter(p => !p.multi), ...out.filter(p => p.multi), ...((g.more || {})[v] || []).map(p => ({...p, multi: true}))]; };
   const FEAT = 3;
   const flat = VIEWS.flatMap(([v]) => inView(v).map(p => ({...p, genus: name, view: g.levels === 2 && v === 'macro' ? 'close' : v})));
   const cv = cover(g), ci = cv ? flat.findIndex(x => x.f === cv.f) : -1;
@@ -112,8 +113,9 @@ function viewGenus(name){
     if (g.levels === 2 && v === 'macro') label = 'Close-up';
     const fig = p => { const i = flat.findIndex(x => x.f === p.f);
       return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${esc(name)}, ${p.imr ? 'IMR lecture photo' : label.toLowerCase() + ' view'}" loading="lazy"></button><figcaption>${p.imr ? '<b class="lect">IMR lecture</b> ' : ''}${credit(p)}</figcaption></figure>`; };
-    const more = list.slice(FEAT);
-    return `<section class="vrow"><h3>${label}${list.length ? '' : ' <span class="gap">missing</span>'}</h3>${list.length ? `<div class="strip">${list.slice(0, FEAT).map(fig).join('')}</div>` : '<p class="note">No good photo yet for this view.</p>'}
+    // Multi-coral photos never make the featured strip, even when fewer than FEAT clean photos exist.
+    const feat = list.filter(p => !p.multi).slice(0, FEAT), more = list.filter(p => !feat.includes(p));
+    return `<section class="vrow"><h3>${label}${feat.length ? '' : ' <span class="gap">missing</span>'}</h3>${feat.length ? `<div class="strip">${feat.map(fig).join('')}</div>` : '<p class="note">No good photo yet for this view.</p>'}
       ${more.length ? `<details class="more"><summary>${more.length} more ${label.toLowerCase()} photo${more.length > 1 ? 's' : ''}</summary><div class="strip">${more.map(fig).join('')}</div></details>` : ''}</section>`;
   }).join('');
   $v.innerHTML = `<div class="crumbs"><button type="button" data-back>‹ Back</button></div>
@@ -340,9 +342,9 @@ function quizPhoto(){
   question('quiz', t, shuffle([t, ...distractors(t, list)]), 'Which genus?', photoSet(t));
 }
 function quizCourse(){
-  const list = pool(), C = DATA.course, names = Object.keys(C).filter(n => list.includes(n));
+  const list = pool(), C = DATA.course, names = Object.keys(C).filter(n => list.includes(n) && C[n].some(p => !p.multi));
   const t = nextTarget(names);
-  question('quiz-course', t, shuffle([t, ...distractors(t, list)]), 'Which genus? <span class="note">(photo from the IMR lecture)</span>', {shown: [pick(C[t])], hint: null});
+  question('quiz-course', t, shuffle([t, ...distractors(t, list)]), 'Which genus? <span class="note">(photo from the IMR lecture)</span>', {shown: [pick(C[t].filter(p => !p.multi))], hint: null});
 }
 function quizDuel(a, b){
   const list = pool();
@@ -442,5 +444,5 @@ function route(){
   window.scrollTo(0, 0);
 }
 addEventListener('hashchange', route);
-fetch('data.json?v=7').then(r => r.json()).then(d => { DATA = d; route(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+fetch('data.json?v=8').then(r => r.json()).then(d => { DATA = d; route(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
