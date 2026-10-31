@@ -13,7 +13,7 @@
     {h: 'finder', sel: '.fdforms, #labroot', t: 'Identify a coral on your photos', d: 'Start from its growth form, then compare the candidate genera side by side.'},
     {h: 'progress', sel: '.pwall, .pgrid', t: 'Your progress', d: 'A genus turns green once learned: right answers on harder photos, once with the corallites, once in a look-alike duel.'},
     {h: 'progress', sel: '#sync', t: 'Sign in', d: 'Your name and a 4-digit code: your progress is saved for your trainer and follows you on any device.', live: true},
-    {h: '', sel: '#help', t: 'Help on every page', d: 'Tap ? for what a page does. ⚙ sets photo source, size and theme. Replay this tour from ?.', alt: '#setb'}
+    {h: '', sel: '#help', t: 'Help on every page', d: 'Tap ? for what a page does. ⚙ sets photo source, size and theme. Replay this tour from ?.', also: '#setb'}
   ];
   let root = null, step = 0, token = 0, target = null, tick = null;
   const vis = el => { if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
@@ -57,10 +57,15 @@
   function place(){
     if (!root) return;
     if (target && !target.isConnected) target = find(STEPS[step]);  // the page re-rendered under the tour
-    const W = innerWidth, H = innerHeight, svg = root.querySelector('svg'), b = root.querySelector('.tbub'), blk = root.querySelector('.tblk');
+    // The visible area without scrollbars: the SVG is sized to it, so its viewBox must match (no stretch offset).
+    const W = document.documentElement.clientWidth, H = document.documentElement.clientHeight, svg = root.querySelector('svg'), b = root.querySelector('.tbub'), blk = root.querySelector('.tblk');
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     let hole = '';
-    const r = target && vis(target) ? target.getBoundingClientRect() : null, pad = 6;
+    // The target's box, joined with a second element when the step names one (? and ⚙ together).
+    const two = STEPS[step].also && [...document.querySelectorAll(STEPS[step].also)].find(vis);
+    const r = target && vis(target) ? [target, two].filter(Boolean).map(e => e.getBoundingClientRect())
+      .reduce((a, q) => ({left: Math.min(a.left, q.left), top: Math.min(a.top, q.top), right: Math.max(a.right, q.right), bottom: Math.max(a.bottom, q.bottom)})) : null, pad = 6;
+    if (r) { r.width = r.right - r.left; r.height = r.bottom - r.top; }
     if (r) {
       const x = Math.max(2, r.left - pad), y = Math.max(2, r.top - pad), w = Math.min(W - 2, r.right + pad) - x, h = Math.max(24, Math.min(H - 2, r.bottom + pad) - y), k = Math.min(10, w / 2, h / 2);
       hole = ` M${x + k},${y} h${w - 2 * k} a${k},${k} 0 0 1 ${k},${k} v${h - 2 * k} a${k},${k} 0 0 1 -${k},${k} h-${w - 2 * k} a${k},${k} 0 0 1 -${k},-${k} v-${h - 2 * k} a${k},${k} 0 0 1 ${k},-${k} z`;
