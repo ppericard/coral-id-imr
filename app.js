@@ -731,9 +731,9 @@ function answer(cur, c, target, ph, cor){
     const tp = order.find(p => (V[p.view] || []).length);
     if (tp) {
       const [, cp] = photoPair([tp], V[tp.view], tp), st0 = $v.querySelector('.qstage'), lab = VIEW_LABEL[tp.view] || '';
-      const fig = (p, n, cls, note) => `<figure class="qph ${cls}" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${lab.toLowerCase()} view"></button><figcaption>${esc(n)}</figcaption><small>${note}</small></figure>`;
+      const fig = (p, n, cls, note) => `<figure class="qph ${cls}" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${lab.toLowerCase()} view"></button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> <i>${esc(n)}</i></figcaption><small>${note}</small></figure>`;
       st0.classList.add('qvs');
-      st0.innerHTML = fig(tp, target, 'qok', 'the photo shown') + fig(cp, c, 'qko', `your answer, ${lab.toLowerCase()} view too`);
+      st0.innerHTML = fig(tp, target, 'qok', 'The photo shown') + fig(cp, c, 'qko', 'Your answer, same view');
       st0.querySelectorAll('[data-vs]').forEach(z => z.onclick = e => { e.stopPropagation(); zoom([{...tp, genus: target}, {...cp, genus: c}], z.dataset.vs === 'qok' ? 0 : 1); });
       fitStage();
     }
