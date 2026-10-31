@@ -82,6 +82,7 @@ body.admin .hdr-tools[hidden]{display:none}
 .adm-acts button,.adm-acts select{font:inherit;font-size:.78rem;min-height:28px;padding:0 9px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--ink);cursor:pointer}
 .adm-acts select{padding:0 4px;max-width:96px}
 .adm-acts select[data-act="out"]{max-width:132px}
+.adm-acts select.adm-view{max-width:none;font-weight:600;background:var(--surface-2)}
 .adm-acts button:hover:not(:disabled),.adm-acts select:hover{border-color:var(--accent)}
 .adm-acts button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .adm-acts [data-act="cover"].on{background:#e0a526;border-color:#e0a526;color:#1f1500}
