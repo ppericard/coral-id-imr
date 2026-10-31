@@ -29,13 +29,17 @@ LAB.add({
     };
     const FIDS = ['form', 'box', ...DATA.traits.map(c => c.id), 'ig'];
     // State, read from and written back to the hash.
-    const S = {out: new Set(), cmp: [], q: '', open: new Set()};
+    const S = {out: new Set(), cmp: [], q: '', open: new Set(), home: true};
     FIDS.forEach(f => S[f] = new Set());
     // Two display controls that combine: layout (Auto = Mosaic up to 12 genera, Cards beyond; Cards = one photo per genus; Mosaic;
     // Contact sheet) and which photos (Mix of colony / closer / corallites, or one view only).
     let lay = store.get('imr-finder-lay', 'auto'), pv = store.get('imr-finder-pv', 'mix');
     (arg || '').split(';').forEach(kv => { const [k, v] = kv.split('='); if (!v) return; const L = decodeURIComponent(v).split(',');
       if (FIDS.includes(k)) L.forEach(x => S[k].add(x)); else if (k === 'out') L.forEach(x => G[x] && S.out.add(x)); else if (k === 'q') S.q = L.join(','); });
+    // Start screen (one screen, a few clues, then the shortlist) unless the link already carries clues.
+    if (FIDS.some(f => S[f].size) || S.q || S.out.size) S.home = false;
+    // Three start-screen proposals for Pierre to try; the pick is remembered per browser.
+    let startV = store.get('imr-finder-start', 'a');
     const base = location.hash.startsWith('#lab-') ? '#lab-finder' : '#finder';
     const saveHash = () => {
       const parts = FIDS.filter(f => S[f].size).map(f => f + '=' + [...S[f]].join(','));
@@ -59,13 +63,14 @@ LAB.add({
     const fits = (n, F, skip) => fitsQ(n) && pen(n, F, skip) === 0;
     const thumb = (n, v = 'medium') => { const p = (G[n].views[v] || [])[0] || cover(G[n]); return p ? img(p, 's') : ''; };
 
-    root.innerHTML = `<div class="fdlayout"><aside class="fdside" id="fdside"></aside><section class="fdmain" id="fdmain"></section></div><div class="fdcmp" id="fdcmp" hidden></div>`;
+    root.innerHTML = `<section class="fdstart" id="fdstart" hidden></section><div class="fdlayout"><aside class="fdside" id="fdside"></aside><section class="fdmain" id="fdmain"></section></div><div class="fdcmp" id="fdcmp" hidden></div>`;
+    const $start = root.querySelector('#fdstart'), $lay = root.querySelector('.fdlayout');
     const $side = root.querySelector('#fdside'), $main = root.querySelector('#fdmain'), $cmp = root.querySelector('#fdcmp');
 
     // On phones the panel sits above the shortlist: only growth form and the families in use start open.
     function drawSide(F, left){
       const narrow = matchMedia('(max-width:900px)').matches;
-      $side.innerHTML = `<div class="fdsearch"><input type="search" id="fdq" placeholder="Genus name…" value="${esc(S.q)}" aria-label="Filter by genus name"><button type="button" class="chip" id="fdreset"${!used(F).length && !S.q && !S.out.size ? ' disabled' : ''}>Start over</button></div>
+      $side.innerHTML = `<div class="fdsearch"><input type="search" id="fdq" placeholder="Genus name…" value="${esc(S.q)}" aria-label="Filter by genus name"><button type="button" class="chip" id="fdreset">Start over</button></div>
       ${F.map(f => {
         const picked = S[f.id].size, open = picked || S.open.has(f.id) || (narrow ? f.id === 'form' : !f.closed);
         return `<details class="fdfacet" data-f="${f.id}"${open ? ' open' : ''}><summary${f.note ? ` title="${esc(f.note)}"` : ''}>${esc(f.name)}${picked ? ` <span class="fdn">${picked}</span>` : ''}</summary>
@@ -78,7 +83,7 @@ LAB.add({
       const jump = $side.querySelector('.fdjump'); if (jump) jump.onclick = e => { e.preventDefault(); $main.scrollIntoView({behavior: 'smooth'}); };
       const q = $side.querySelector('#fdq');
       q.oninput = () => { S.q = q.value.trim(); draw(true); };
-      $side.querySelector('#fdreset').onclick = () => { FIDS.forEach(f => S[f].clear()); S.out.clear(); S.cmp = []; S.q = ''; draw(); };
+      $side.querySelector('#fdreset').onclick = () => { FIDS.forEach(f => S[f].clear()); S.out.clear(); S.cmp = []; S.q = ''; S.home = true; draw(); };
       $side.querySelectorAll('details').forEach(d => d.ontoggle = () => d.open ? S.open.add(d.dataset.f) : S.open.delete(d.dataset.f));
       $side.querySelectorAll('[data-o]').forEach(b => b.onclick = () => {
         const [f, id] = b.dataset.o.split('|');
@@ -141,7 +146,7 @@ LAB.add({
         <span class="fdsegs"><span class="seg" role="group" aria-label="Layout">${[['auto', 'Auto', 'Mosaic up to 12 genera, Cards beyond'], ['cover', 'Cards', 'One photo and the key features per genus'], ['mosaic', 'Mosaic', '8 varied photos per genus'], ['sheet', 'Contact sheet', 'Every photo of each genus']].map(([v, t, h]) => `<button type="button" data-lay="${v}" aria-pressed="${lay === v}" title="${h}">${t}${v === 'auto' && lay === 'auto' ? ` <small>(${mode === 'mosaic' ? 'Mosaic' : 'Cards'})</small>` : ''}</button>`).join('')}</span>
         <span class="seg" role="group" aria-label="Photos">${[['mix', 'Mix'], ...VIEWS].map(([v, t]) => `<button type="button" data-pv="${v}" aria-pressed="${pv === v}">${t}</button>`).join('')}</span></span></div>
         ${chosen.length || S.q ? `<p class="fdchosen">${chosen.map(({f, o}) => `<button type="button" class="chip" data-o="${f.id}|${o.id}" title="Remove">${esc(o.t)} ×</button>`).join('')}${S.q ? `<button type="button" class="chip" data-clearq>“${esc(S.q)}” ×</button>` : ''}</p>` : ''}
-        ${nextChecks(F, left.length ? left : close)}
+        ${used(F).length ? nextChecks(F, left.length ? left : close) : ''}
         ${left.length ? `${close.length || rest.length ? '<h3 class="fdgrp">Fits every clue</h3>' : ''}<div class="${mode === 'mosaic' ? 'fdrows' : mode === 'sheet' ? 'fdsheets' : 'fdgrid'}">${left.map(n => isX(n) && mode === 'mosaic' ? big(n) : mode === 'mosaic' ? mosaic(n) : mode === 'sheet' ? sheet(n) : tile(n)).join('')}</div>` : `<p class="note">No IMR genus fits every clue: one of them may be wrong. Check the closest genera below.</p>`}
         ${close.length ? `<h3 class="fdgrp">One clue off <small>in case a clue was misjudged</small></h3><div class="fdgrid">${close.map(n => tile(n, true)).join('')}</div>` : ''}
         ${rest.length ? `<details class="fdrest"><summary>${rest.length} other genera <small>two clues off or more</small></summary><p class="fdchosen">${rest.map(n => `<a class="chip" href="${genLink(n)}"><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p></details>` : ''}
@@ -158,6 +163,58 @@ LAB.add({
       $main.querySelectorAll('[data-cmpk]').forEach(b => b.onclick = () => { const n = b.dataset.cmpk; S.cmp = S.cmp.includes(n) ? S.cmp.filter(x => x !== n) : [...S.cmp, n].slice(-2); draw(); });
     }
 
+    // Start screen: the clues people actually start from (growth form first, as on the paper Coral Finder, then
+    // corallite size and walls), on one screen, before any list of genera. Three proposals:
+    // a = one board (form tiles + size + walls, then Show), b = one question at a time, c = form then Coral Finder box.
+    // Each growth-form tile shows 4 genera of that form, a different genus on each tile where possible.
+    const tilePics = (() => { const seen = new Set(), out = {};
+      [...FORMS].sort((a, b) => a.g.length - b.g.length).forEach(f => { const L = bySlate(f.g), fresh = L.filter(x => !seen.has(x)), pick = [...fresh, ...L.filter(x => seen.has(x))].slice(0, 4); pick.forEach(x => seen.add(x)); out[f.id] = pick; });
+      return out; })();
+    const formTile = (o, on, n) => `<button type="button" class="fdtileb c-${o.color}" data-o="form|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''}>
+      <span class="fdtq">${tilePics[o.id].map(x => `<img src="${thumb(x, 'wide')}" alt="" loading="lazy">`).join('')}</span>
+      <span class="fdtt"><b>${esc(o.t)}</b><small>${esc(o.s || '')}</small></span><span class="fdc">${n}</span></button>`;
+    const optBtn = (f, o, on, n) => `<button type="button" class="fdbigopt" data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}"><span>${esc(o.t)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="fdc">${n}</span></button>`;
+    function drawStart(F){
+      const pool = names.filter(n => !S.out.has(n)), left = pool.filter(n => pen(n, F) === 0);
+      const cnt = (f, o) => pool.filter(n => fits(n, F, f.id) && o.g.includes(n)).length;
+      const fam = id => F.find(f => f.id === id);
+      const row = id => { const f = fam(id); return f ? `<div class="fdsrow"><h3 title="${esc(f.note || '')}">${esc(f.name)}</h3><div class="fdsopts">${f.opts.map(o => optBtn(f, o, S[id].has(o.id), cnt(f, o))).join('')}</div></div>` : ''; };
+      const forms = f => `<div class="fdforms">${f.opts.map(o => formTile(o, S.form.has(o.id), cnt(f, o))).join('')}</div>`;
+      const show = `<button type="button" class="next fdshow" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera`} →</button>`;
+      const switcher = `<span class="seg fdsv" role="group" aria-label="Start screen proposal">${[['a', 'A · One board'], ['b', 'B · Step by step'], ['c', 'C · Coral Finder path']].map(([v, t]) => `<button type="button" data-sv="${v}" aria-pressed="${startV === v}">${t}</button>`).join('')}</span>`;
+      let body;
+      if (startV === 'b') {
+        // One question at a time; "Not sure" skips it. Answers stay as chips to go back.
+        const steps = ['form', 'size', 'wall'], done = S.step || 0, id = steps[Math.min(done, 2)], f = fam(id);
+        const crumbs = steps.slice(0, done).map(x => { const ff = fam(x), picked = ff.opts.filter(o => S[x].has(o.id)); return `<button type="button" class="chip" data-step="${steps.indexOf(x)}">${esc(ff.name)}: ${picked.length ? picked.map(o => esc(o.t)).join(', ') : 'not sure'}</button>`; }).join('');
+        body = done >= 3 ? '' : `<div class="fdstep"><p class="fdcrumbs">${crumbs}<span class="fdstepn">${done + 1} / 3</span></p><h2>${esc(f.name)}?</h2>
+          ${id === 'form' ? forms(f) : `<div class="fdsopts big">${f.opts.map(o => optBtn(f, o, S[id].has(o.id), cnt(f, o))).join('')}</div>`}
+          <p class="fdstepnav"><button type="button" class="chip" data-skip>Not sure, skip</button></p></div>`;
+        if (done >= 3) { S.home = false; S.step = 0; return draw(); }
+      } else if (startV === 'c') {
+        // The paper Coral Finder's own path: growth form, then the box of that form, then the shortlist.
+        const fb = fam('box');
+        body = `${forms(fam('form'))}${fb ? `<div class="fdsrow"><h3 title="${esc(fb.note)}">${esc(fb.name)}</h3><div class="fdsopts boxes">${fb.opts.map(o => `<button type="button" class="fdboxb" data-o="box|${o.id}" aria-pressed="${S.box.has(o.id)}"><span class="fdtq s">${bySlate(o.g).slice(0, 4).map(x => `<img src="${thumb(x, 'macro')}" alt="" loading="lazy">`).join('')}</span><span>${esc(o.t)} <small>${o.pg || ''}</small></span><span class="fdc">${cnt(fb, o)}</span></button>`).join('')}</div></div>` : ''}`;
+      } else {
+        body = `${forms(fam('form'))}${row('size')}${row('wall')}`;
+      }
+      $start.innerHTML = `<div class="fdstop"><input type="search" id="fdsq" placeholder="Genus name…" aria-label="Find a genus by name">${switcher}${startV === 'b' ? '' : show}</div>${body}`;
+      $start.querySelectorAll('[data-sv]').forEach(b => b.onclick = () => { startV = b.dataset.sv; store.set('imr-finder-start', startV); S.step = 0; FIDS.forEach(f => S[f].clear()); draw(); });
+      $start.querySelector('#fdsq').oninput = e => { S.q = e.target.value.trim(); if (S.q) { S.home = false; draw(); const q = $side.querySelector('#fdq'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); } };
+      const sh = $start.querySelector('[data-show]'); if (sh) sh.onclick = () => { S.home = false; draw(); window.scrollTo(0, 0); };
+      $start.querySelectorAll('[data-o]').forEach(b => b.onclick = () => {
+        const [f, id] = b.dataset.o.split('|');
+        S[f].has(id) ? S[f].delete(id) : S[f].add(id);
+        if (f === 'form') [...S.box].forEach(x => { if (!S.form.has(x[0])) S.box.delete(x); });
+        if (startV === 'b') S.step = (S.step || 0) + 1;
+        // C: picking a box is the last step of the paper key.
+        if (startV === 'c' && f === 'box' && S.box.size) S.home = false;
+        draw(); if (!S.home) window.scrollTo(0, 0);
+      });
+      const sk = $start.querySelector('[data-skip]'); if (sk) sk.onclick = () => { S.step = (S.step || 0) + 1; draw(); };
+      $start.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { const i = Number(b.dataset.step); ['form', 'size', 'wall'].slice(i).forEach(x => S[x].clear()); S.step = i; draw(); });
+    }
+
     function drawCmp(){
       $cmp.hidden = !S.cmp.length;
       $cmp.innerHTML = S.cmp.length === 2 ? `<a class="next" href="#cmp-${esc(S.cmp[0])}|${esc(S.cmp[1])}">Compare <i>${esc(S.cmp[0])}</i> and <i>${esc(S.cmp[1])}</i> side by side →</a><button type="button" class="chip" data-cx>Clear</button>`
@@ -168,6 +225,8 @@ LAB.add({
     // keepFocus: typing in the name box redraws the panel without losing the caret.
     function draw(keepFocus){
       const F = facets(), pool = names.filter(n => !S.out.has(n) && fitsQ(n));
+      $start.hidden = !S.home; $lay.hidden = S.home; $cmp.hidden = S.home || !S.cmp.length;
+      if (S.home) { drawStart(F); saveHash(); return; }
       const left = pool.filter(n => pen(n, F) === 0), close = pool.filter(n => pen(n, F) > 0 && pen(n, F) <= 1), rest = pool.filter(n => pen(n, F) > 1);
       if (keepFocus) { const q = $side.querySelector('#fdq'), pos = q.selectionStart; drawSide(F, left); const q2 = $side.querySelector('#fdq'); q2.focus(); q2.setSelectionRange(pos, pos); }
       else drawSide(F, left);
