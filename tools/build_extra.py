@@ -44,9 +44,33 @@ X = {
  'Psammocora': ([8, 15, 29, 60, 61, 76], ['s1', 'none'], ['Sub-massive, thick crusts, sheets, columns or nodules.', 'Shallow valleys of ornamental ridges hold groups of small corallites (1-4 mm) without walls.', 'Granular septo-costae form petaloid "flower" shapes; dimpled surface.'], ['Tiny wall-less corallites in groups', 'Petal-like granular septo-costae']),
 }
 NONSCL = {'Heliopora', 'Millepora', 'Tubipora'}
+# Look-alikes the book itself names on the genus's page (shown under "Don't confuse with" on its sheet).
+LOOK = {
+ 'Euphyllia': {'Fimbriaphyllia': 'Coral Finder p. 72: Fimbriaphyllia has more complex tentacle tips'},
+ 'Fimbriaphyllia': {'Euphyllia': 'Coral Finder p. 72: Euphyllia has simple tubular tentacles'},
+ 'Catalaphyllia': {'Euphyllia': 'Coral Finder p. 72: see also Catalaphyllia', 'Fimbriaphyllia': 'Coral Finder p. 72: see also Catalaphyllia'},
+ 'Isopora': {'Acropora': 'Coral Finder p. 10: closely related to Acropora; weak axial corallites'},
+ 'Leptoseris': {'Pavona': 'Coral Finder p. 57: Pavona cactus has corallites on both sides of the fronds'},
+ 'Zoopilus': {'Halomitra': 'Coral Finder p. 66: Halomitra has a heavier skeleton and obvious corallites', 'Sandalolitha': 'Coral Finder p. 66: Sandalolitha has a heavier skeleton and obvious corallites'},
+ 'Sandalolitha': {'Halomitra': 'Coral Finder p. 66: more heavily built than Halomitra, closer corallites'},
+ 'Pleuractis': {'Lobactis': 'Coral Finder p. 64: Lobactis is similar but oval, with more prominent tentacular lobes'},
+ 'Oxypora': {'Echinopora': 'Coral Finder p. 46: sparser, less regular corallites than Echinopora', 'Echinophyllia': 'Coral Finder p. 46: smaller corallites than Echinophyllia'},
+ 'Echinophyllia': {'Oxypora': 'Coral Finder p. 46: corallites larger, taller than Oxypora', 'Echinopora': 'Coral Finder p. 46: corallites larger, taller than Echinopora'},
+ 'Physogyra': {'Plerogyra': 'Coral Finder p. 74: Plerogyra has separate walls and larger vesicles'},
+ 'Trachyphyllia': {'Lobophyllia': 'Coral Finder p. 13: less spiky septal teeth than Lobophyllia'},
+ 'Caulastraea': {'Lobophyllia': 'Coral Finder p. 13: less spiky than small Lobophyllia'},
+ 'Gardineroseris': {'Pavona': 'Coral Finder p. 33: superficially resembles Pavona varians & venosa'},
+ 'Oulophyllia': {'Platygyra': 'Coral Finder p. 22: valleys larger and wider than Platygyra', 'Pectinia': 'Coral Finder p. 22: walls lower and more tapering than Pectinia'},
+ 'Plesiastrea': {'Cyphastrea': 'Coral Finder p. 26: corallites larger than Cyphastrea, no beads / spinules', 'Astreopora': 'Coral Finder p. 26: corallites larger than Astreopora, no beads / spinules'},
+ 'Podabacia': {'Leptoseris': 'Coral Finder p. 60: like Leptoseris but more corallites and coarser textures', 'Halomitra': 'Coral Finder p. 60: see also Halomitra, domed and free-living'},
+ 'Stylocoeniella': {'Porites': 'Coral Finder p. 31: superficially like Porites, which has no spines'},
+ 'Millepora': {'Porites': 'Coral Finder p. 31, 78: massive colonies with Porites-like nodules'},
+ 'Cycloseris': {'Fungia': 'Coral Finder p. 67: can be mistaken for young Fungia', 'Lithophyllon': 'Coral Finder p. 67: can be mistaken for young Lithophyllon'},
+}
 
 d = json.load(open('data.json'))
 key = d['key']
+OLD = (d.get('x') or {}).get('gen') or {}
 def leaves_for(pages):
     out = []
     for p in pages:
@@ -90,7 +114,11 @@ for g, (pages, tr, crit, qt) in X.items():
         time.sleep(0.5)
     L = leaves_for(pages)
     for l in L: leaf.setdefault(l, []).append(g)
-    out[g] = dict(fam=fam, pages=pages, tr=tr, crit=crit, qt=qt, sum=crit[0], look=[], views=views, x={'rg': rg, 'two': two, 'nonscl': g in NONSCL})
+    lk = LOOK.get(g, {})
+    out[g] = dict(fam=fam, pages=pages, tr=tr, crit=crit, qt=qt, sum=crit[0], look=list(lk), lsrc=lk, views=views, x={'rg': rg, 'two': two, 'nonscl': g in NONSCL})
+    # A re-run keeps the photo selection already made (views, cover, levels): only new genera get fresh photos.
+    for k in ('views', 'cover', 'levels'):
+        if k in OLD.get(g, {}): out[g][k] = OLD[g][k]
     print(g, fam, L, 'rg', rg, 'two', two, 'photos', sum(map(len, views.values())))
     time.sleep(0.5)
 # Coral Finder front page: the last group (book p. 77-78) is not in the IMR key, so it is added here.
