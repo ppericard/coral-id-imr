@@ -74,10 +74,10 @@ LAB.add({
       return `<ellipse cx="80" cy="60" rx="56" ry="46" class="w"/>${s}<ellipse cx="80" cy="60" rx="9" ry="4" class="dot"/>`;
     };
     root.innerHTML = `<div class="anatgrid"><figure>${top}<figcaption>From above</figcaption></figure>
-      <figure>${side}<figcaption>Cut in half, from the side · <label><input type="checkbox" id="polyp"> show the living polyp</label></figcaption></figure></div>
-      <div class="chips" id="parts">${PARTS.map(p => `<button class="chip" type="button" data-part="${p[0]}">${esc(p[1])}</button>`).join('')}</div>
+      <figure>${side}<figcaption>Cut in half, from the side · <label><input type="checkbox" id="polyp"> show the living polyp</label></figcaption></figure>
+      <div class="anatpanel"><div class="chips" id="parts">${PARTS.map(p => `<button class="chip" type="button" data-part="${p[0]}">${esc(p[1])}</button>`).join('')}</div>
       <p class="anatdef" id="anatdef">Pick a part to highlight it.</p>
-      <p><button type="button" class="next" id="anatq">Drill: name the highlighted part</button> <span class="note" id="anatscore"></span></p>
+      <p><button type="button" class="next" id="anatq">Drill: name the highlighted part</button> <span class="note" id="anatscore"></span></p></div></div>
       <h3>The five wall types</h3><p class="note">The wall is the first thing to read on the corallites. Tap a type to see the genera that show it.</p>
       <div class="walls">${WALLS.map(([id, t, d]) => `<button type="button" class="wall" data-w="${id}"><svg viewBox="0 0 160 120" aria-hidden="true">${wallSvg(id)}</svg><b>${esc(t)}</b><span>${esc(d)}</span></button>`).join('')}</div>
       <div id="wallg"></div>`;

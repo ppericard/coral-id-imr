@@ -10,15 +10,16 @@ LAB.add({
     const REFS = [[1, 'pen tip ≈ 1 mm'], [3, 'match head ≈ 3 mm'], [6, 'pencil eraser ≈ 6 mm'], [10, 'little-finger nail ≈ 10 mm'], [20, 'thumb width ≈ 20 mm']];
     const span = n => { const s = DATA.gen[n].tr.filter(t => CLS[t]).map(t => CLS[t]); return s.length ? [Math.min(...s.map(x => x[0])), Math.max(...s.map(x => x[1]))] : null; };
     const rows = labNames().filter(span).sort((a, b) => span(a)[0] - span(b)[0] || span(a)[1] - span(b)[1]);
-    root.innerHTML = `<div class="ruler">
+    root.innerHTML = `<div class="sizelayout">
+<div class="sizeside"><p class="rreflist note">${REFS.map(([, t], i) => `<span><i>${i + 1}</i> ${esc(t)}</span>`).join('')}</p>
+    <label class="rlabel">I measured <input type="range" id="rr" min="0" max="1000" value="380" aria-label="Measured corallite size"> <b id="rval"></b></label>
+    <p id="rfit"></p></div><div class="ruler">
       <div class="rrow rhead"><span></span><div class="rtrack">${[0.5, 1, 2, 5, 10, 20, 50].map(v => `<span class="rtick${[1, 20].includes(v) ? ' minor' : ''}" style="left:${X(v)}">${v} mm</span>`).join('')}${['s1', 's2', 's3', 's4'].map(s => `<span class="rcls" style="left:${X(CLS[s][0])};width:calc(${X(CLS[s][1])} - ${X(CLS[s][0])})">${esc(trName(s))}</span>`).join('')}</div></div>
       <div class="rrow rrefs"><span class="note">For scale</span><div class="rtrack">${REFS.map(([v, t], i) => `<span class="rref${v > 15 ? ' end' : ''}" style="left:${X(v)};--row:${i % 2}"><i>${i + 1}</i><em>${esc(t)}</em></span>`).join('')}</div></div>
       ${rows.map(n => { const [a, b] = span(n); return `<a class="rrow rgen" href="${genLink(n)}" data-n="${esc(n)}" data-a="${a}" data-b="${b}"><span class="rname"><img src="${thumbSrc(n)}" alt="" loading="lazy"><i>${esc(n)}</i></span><div class="rtrack"><span class="rbar" style="left:${X(a)};width:calc(${X(b)} - ${X(a)});background:${famColor(DATA.gen[n].fam)}"></span></div></a>`; }).join('')}
       <div class="rcursor" id="rcur"><span id="rcurl"></span></div>
     </div>
-    <p class="rreflist note">${REFS.map(([, t], i) => `<span><i>${i + 1}</i> ${esc(t)}</span>`).join('')}</p>
-    <label class="rlabel">I measured <input type="range" id="rr" min="0" max="1000" value="380" aria-label="Measured corallite size"> <b id="rval"></b></label>
-    <p class="note" id="rfit"></p>`;
+</div>`;
     const r = root.querySelector('#rr'), cur = root.querySelector('#rcur');
     const set = () => {
       const mm = MIN * Math.pow(MAX / MIN, r.value / 1000), lbl = mm < 10 ? mm.toFixed(1) : Math.round(mm);
@@ -27,7 +28,7 @@ LAB.add({
       cur.style.setProperty('--k', Math.log(mm / MIN) / Math.log(MAX / MIN));
       const fit = [];
       root.querySelectorAll('.rgen').forEach(e => { const ok = mm >= Number(e.dataset.a) && mm <= Number(e.dataset.b); e.classList.toggle('fit', ok); if (ok) fit.push(e.dataset.n); });
-      root.querySelector('#rfit').innerHTML = `${fit.length} genera fit: ${fit.map(n => `<i>${esc(n)}</i>`).join(', ')}.`;
+      root.querySelector('#rfit').innerHTML = `<b>${fit.length} genera fit</b><span class="rfitlist">${fit.map(n => `<a href="${genLink(n)}"><img src="${thumbSrc(n)}" alt="" loading="lazy"><i>${esc(n)}</i></a>`).join('')}</span>`;
     };
     r.oninput = set; set();
     // Dragging anywhere on the ruler moves the cursor too.

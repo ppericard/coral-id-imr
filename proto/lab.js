@@ -1,7 +1,7 @@
 // Lab: a playground of visual, interactive prototypes. Each prototype lives in its own proto/<id>.js
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
 // Bump with every Lab change so browsers never mix new and old files (same ?v scheme as app.js).
-const LAB_V = 1;
+const LAB_V = 2;
 const LAB = {
   list: [],
   files: ['map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'],
@@ -45,6 +45,8 @@ const labHead = (title, lede) => `<div class="crumbs"><a href="#lab">Lab</a> ›
 const labVotes = () => store.get('imr-lab-votes', {}) || {};
 
 function viewLab(h){
+  // Lab pages use the full window width (see lab.css).
+  document.documentElement.dataset.page = 'lab';
   if (LAB.stop) { try { LAB.stop(); } catch (e) {} LAB.stop = null; }
   if (LAB.pending) { $v.innerHTML = '<p class="note">Loading the Lab…</p>'; return; }
   const [id, ...args] = h.slice(4).split('|');
@@ -73,4 +75,8 @@ function viewLab(h){
   });
 }
 // Leaving the Lab stops any running animation or timer.
-addEventListener('hashchange', () => { if (!decodeURIComponent(location.hash.slice(1)).startsWith('lab') && LAB.stop) { try { LAB.stop(); } catch (e) {} LAB.stop = null; } });
+addEventListener('hashchange', () => {
+  if (decodeURIComponent(location.hash.slice(1)).startsWith('lab')) return;
+  delete document.documentElement.dataset.page;
+  if (LAB.stop) { try { LAB.stop(); } catch (e) {} LAB.stop = null; }
+});

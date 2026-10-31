@@ -6,13 +6,13 @@ LAB.add({
   lede: 'Same logic as Identify › By corallites, made visual. Several ticks in one section mean either/or; sections combine. "Mystery photo" gives you a coral to work out.',
   render(root){
     const sel = new Set(); let mystery = null;
-    root.innerHTML = `<div class="elimtop"><div id="elimmyst"></div><div class="elimctl">
+    root.innerHTML = `<div class="elimlayout"><aside class="elimside"><div class="elimtop"><div id="elimmyst"></div><div class="elimctl">
         <p class="elimcount" id="elimcount"></p>
         <p><button type="button" class="chip" id="elimm">Mystery photo</button> <button type="button" class="chip" id="elimr">Clear ticks</button></p>
         <p class="note" id="elimhint"></p></div></div>
-      ${DATA.traits.map(c => `<fieldset class="trset"><legend>${esc(c.name)}</legend><div class="chips">${c.opts.map(o => `<button class="chip" type="button" data-t="${o.id}">${esc(o.t)}</button>`).join('')}</div></fieldset>`).join('')}
-      <div class="elimgrid" id="elimgrid">${labNames().map(n => `<a class="etile" href="${genLink(n)}" data-n="${esc(n)}"><img src="${thumbSrc(n)}" alt="${esc(n)} corallites" loading="lazy"><span><i>${esc(n)}</i>${DATA.gen[n].n ? '' : ' ★'}</span></a>`).join('')}</div>
-      <div id="elimres"></div>`;
+      ${DATA.traits.map(c => `<fieldset class="trset"><legend>${esc(c.name)}</legend><div class="chips">${c.opts.map(o => `<button class="chip" type="button" data-t="${o.id}">${esc(o.t)}</button>`).join('')}</div></fieldset>`).join('')}</aside>
+      <div><div class="elimgrid" id="elimgrid">${labNames().map(n => `<a class="etile" href="${genLink(n)}" data-n="${esc(n)}"><img src="${thumbSrc(n)}" alt="${esc(n)} corallites" loading="lazy"><span><i>${esc(n)}</i>${DATA.gen[n].n ? '' : ' ★'}</span></a>`).join('')}</div>
+      <div id="elimres"></div></div></div>`;
     const fits = n => DATA.traits.every(c => { const picked = c.opts.filter(o => sel.has(o.id)).map(o => o.id); return !picked.length || picked.some(id => DATA.gen[n].tr.includes(id)); });
     const draw = () => {
       const left = labNames().filter(fits);

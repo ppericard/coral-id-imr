@@ -25,10 +25,11 @@ LAB.add({
     };
     const explore = () => {
       game = null; steps = stepsFor(genus);
-      body.innerHTML = `<label class="zpick">Genus <select id="zsel">${labNames().map(n => `<option ${n === genus ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
-        <button type="button" class="chip" id="zalt">Other photos</button> <a class="chip" href="${genLink(genus)}">Genus sheet</a>
-        ${stage(genus)}<input type="range" id="zr" min="0" max="${steps.length - 1}" step="0.01" value="0" aria-label="Zoom level, colony to corallites">
-        <div class="zticks">${steps.map(s => `<span>${s[1]}</span>`).join('')}</div><p class="note" id="ztip"></p>`;
+      body.innerHTML = `<div class="zlayout"><div>${stage(genus)}<input type="range" id="zr" min="0" max="${steps.length - 1}" step="0.01" value="0" aria-label="Zoom level, colony to corallites">
+        <div class="zticks">${steps.map(s => `<span>${s[1]}</span>`).join('')}</div></div>
+        <div class="zside"><label class="zpick">Genus <select id="zsel">${labNames().map(n => `<option ${n === genus ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
+        <p><button type="button" class="chip" id="zalt">Other photos</button> <a class="chip" href="${genLink(genus)}">Genus sheet</a></p>
+        <p class="ztipbox" id="ztip"></p><ol class="zsteps">${steps.map(s => `<li><b>${s[1]}</b> <span class="note">${s[2]}</span><br>${esc(s[3])}</li>`).join('')}</ol></div></div>`;
       const r = body.querySelector('#zr');
       r.oninput = () => paint(Number(r.value));
       body.querySelector('#zsel').onchange = e => { genus = e.target.value; alt = 0; explore(); };
@@ -39,9 +40,9 @@ LAB.add({
     const play = () => {
       const t = pick(labNames()); genus = t; alt = Math.floor(Math.random() * 3); steps = stepsFor(t);
       game = {t, step: 0, choices: labChoices(t, 6)};
-      body.innerHTML = `${stage(t)}<p class="note" id="ztip"></p>
-        <div class="choices" id="zch">${game.choices.map(n => `<button type="button" class="choice" data-c="${esc(n)}">${esc(n)}</button>`).join('')}</div>
-        <p><button type="button" class="next" id="zin">Zoom in (−1 point)</button> <span class="note">Score ${score.pts} pts over ${score.n} corals</span></p><div id="zres"></div>`;
+      body.innerHTML = `<div class="zlayout"><div>${stage(t)}</div><div class="zside"><p class="ztipbox" id="ztip"></p>
+        <div class="choices col" id="zch">${game.choices.map(n => `<button type="button" class="choice" data-c="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+        <p><button type="button" class="next" id="zin">Zoom in (−1 point)</button> <span class="note">Score ${score.pts} pts over ${score.n} corals</span></p><div id="zres"></div></div></div>`;
       const animate = (from, to) => { const t0 = performance.now(); const f = now => { const k = Math.min(1, (now - t0) / 600); if (!body.isConnected) return; paint(from + (to - from) * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); };
       paint(0);
       const zin = body.querySelector('#zin');
