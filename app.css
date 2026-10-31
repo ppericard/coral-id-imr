@@ -86,7 +86,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 
 /* ---------- Cards and photo grids ---------- */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:14px}
-:root[data-size="m"] .grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr))}
+:root[data-size="m"] .grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
 :root[data-size="l"] .grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))}
 .card{display:flex;flex-direction:column;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;cursor:pointer;padding:0;text-decoration:none;box-shadow:var(--shadow)}
 .card{position:relative}
