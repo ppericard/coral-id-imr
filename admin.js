@@ -179,7 +179,8 @@ const outOf = n => own(n).filter(p => outs(n)[p.f]);
 // New candidate photos from data.json cand, not used by the site until approved here.
 // Coral Finder book photos (data: gen[].book) are candidates too; once added they show on the site but never in games.
 const cands = n => [...((DATA.cand || {})[n] || []), ...(DATA.gen[n].book || [])].filter(p => !excl(p.f));
-const pending = n => { const add = entry(n).add || {}; return cands(n).filter(p => !add[p.f]); };
+// Same order as the Show source chips (ORIGINS), CF book last.
+const pending = n => { const add = entry(n).add || {}, oi = p => ORIGINS.findIndex(o => o[0] === origin(p)); return cands(n).filter(p => !add[p.f]).sort((a, b) => oi(a) - oi(b)); };
 const entry = n => DRAFT.genera[n] || {};
 const viewOf = (n, p) => (entry(n).move || {})[p.f] || p.base;
 const hidden = (n, p) => (entry(n).hide || []).includes(p.f);
