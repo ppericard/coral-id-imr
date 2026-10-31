@@ -14,7 +14,7 @@ def excluded(f=None, photo_id=None):
 def drop_excluded(d):
     """Removes excluded photos from every photo list in data.json (views, more, course, cand, cmp)."""
     keep = lambda L: [p for p in L if not excluded(p.get('f'))]
-    for g in d.get('gen', {}).values():
+    for g in [*d.get('gen', {}).values(), *((d.get('x') or {}).get('gen') or {}).values()]:
         for k in ('views', 'more'):
             for v, L in (g.get(k) or {}).items(): g[k][v] = keep(L)
     for k in ('course', 'cand'):

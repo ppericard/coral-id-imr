@@ -125,7 +125,7 @@ let RAW, CUR, FORMS = {gf: {}, form: {}, cf: {}}, AUTOQ = {}, PICKS = {};
 // kept out of DATA.gen so games, quizzes, progress and the Genera pages never see them.
 let XON = store.get('imr-finder-x', true);
 function build(){ const d = structuredClone(RAW); applyCuration(d, CUR); filterOrigin(d); applyForms(d, CUR); applySlots(d, CUR);
-  if (d.x) { const x = {gen: d.x.gen, course: {}, cand: {}}; applyCuration(x, CUR); filterOrigin(x); applyForms(x, CUR); applySlots(x, CUR); }
+  if (d.x) { const x = {gen: d.x.gen, course: {}, cand: d.cand}; applyCuration(x, CUR); filterOrigin(x); applyForms(x, CUR); applySlots(x, CUR); }
   DATA = d; }
 // A genus of the list or of the extra genera.
 const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n];
@@ -217,9 +217,9 @@ const slateIdx = n => Object.keys(DATA.gen).indexOf(n);
 const bySlate = L => [...Object.keys(DATA.gen), ...Object.keys((DATA.x || {}).gen || {})].filter(n => L.includes(n));
 // group=true marks the card with its IMR confusion group (strip and tag); 'stripe' draws the strip only.
 function card(name, group){
-  const g = DATA.gen[name], p = cover(g), ig = (group === true || group === 'stripe') && g.ig ? DATA.imrg.find(x => x.n === g.ig) : null;
+  const g = GX(name), p = cover(g), ig = (group === true || group === 'stripe') && g.ig ? DATA.imrg.find(x => x.n === g.ig) : null;
   const im = p ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(name)}" loading="lazy">` : `<span class="ph none">no photo</span>`;
-  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${esc(tipsText(g))}</p></span></a>`;
+  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="fdxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${esc(tipsText(g))}</p></span></a>`;
 }
 function bindCards(root = $v){ root.querySelectorAll('[data-g]').forEach(b => b.onclick = () => go('g-' + b.dataset.g)); }
 function bindGo(root = $v){ root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go)); }
@@ -295,7 +295,7 @@ const tipsHead = () => `<div class="tiphead"><ol class="qtiles" aria-label="IMR 
 const tipCard = n => { const g = DATA.gen[n], p = cover(g); return `<article class="tipg"><a href="#g-${esc(n)}" class="tipph">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<i>${esc(n)}</i></a><div>${tipsList(g)}${lookOf(n).length ? `<p class="note">Don't confuse with ${lookOf(n).map(b => `<a href="#cmp-${esc(n)}|${esc(b)}"><i>${esc(b)}</i></a>`).join(', ')}</p>` : ''}</div></article>`; };
 
 /* ---------- genera ---------- */
-let azFam = null, azQ = '';
+let azFam = null, azQ = '', xOpen = false;
 // Genera order: 'lecture' (IMR Lecture 6 groups, default) or 'slate' (numbers on the IMR slate).
 let azOrder = (() => { try { return localStorage.getItem('imr-coral-order') || 'lecture'; } catch (e) { return 'lecture'; } })();
 // Genera view: 'photos' (cards) or 'tips' (the ID tips list, formerly its own page).
@@ -330,7 +330,11 @@ function viewGenera(){
         return `<section class="gblk" data-n="${L.length}">${head}${L.map(n => tips ? tipCard(n) : card(n, 'stripe')).join('')}</section>`; }).join('');
     } else html = names.map(n => tips ? tipCard(n) : card(n, true)).join('');
     const grid = document.getElementById('azgrid');
-    grid.innerHTML = html || '<p class="note">No genus matches.</p>';
+    // The Coral Finder's extra genera (not on the IMR list, seen at Dauin): one folded line under the 39 (Pierre).
+    const X = Object.keys((DATA.x || {}).gen || {}).filter(n => !q || (n + ' ' + GX(n).crit.join(' ')).toLowerCase().includes(q));
+    const xs = !azFam && X.length ? `<details class="xgen"${xOpen ? ' open' : ''}><summary>${X.length} other genera seen at Dauin <small>not on the IMR list</small></summary><div class="grid">${X.map(n => card(n)).join('')}</div></details>` : '';
+    grid.innerHTML = (html || '<p class="note">No genus matches.</p>') + xs;
+    const xd = grid.querySelector('.xgen'); if (xd) xd.ontoggle = () => { xOpen = xd.open; };
     grid.classList.toggle('gpack', azOrder === 'lecture' && !!html);
     packGroups(grid);
     bindCards();
@@ -364,9 +368,10 @@ function packGroups(grid){
 addEventListener('resize', () => packGroups(document.getElementById('azgrid')));
 
 function viewGenus(name){
-  const g = DATA.gen[name];
+  const g = GX(name);
   if (!g) return viewGenera();
-  const paths = DATA.key.flatMap(k => k.leaves.filter(l => l.g.includes(name)).map(l => ({k, l})));
+  const XL = (DATA.x || {}).leaf || {}, paths = [...DATA.key, ...(g.x ? DATA.x.groups : [])].flatMap(k => k.leaves.filter(l => l.g.includes(name) || (XL[l.id] || []).includes(name)).map(l => ({k, l})));
+  const imr = g.imr || [];
   // Each view row shows the sheet set (applySlots): 3 featured, then the other IMR and Pierre's photos behind a fold.
   const inView = v => { const s = (g.sl || {})[v]; return s ? [...s.feat, ...s.more] : []; };
   const flat = VIEWS.flatMap(([v]) => inView(v).map(p => ({...p, genus: name, view: g.levels === 2 && v === 'macro' ? 'close' : v})));
@@ -385,20 +390,21 @@ function viewGenus(name){
   const cfList = `<h3>Coral Finder features</h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`;
   // Name, slate number and family sit in the sticky header bar (ctxBar), not here.
   $v.innerHTML = `<article class="sheet">
-    ${g.imr.length ? '' : `<p class="lede keyid">${esc(g.sum)}</p>`}
-    ${g.n ? '' : `<p class="warn"><b>★ Not surveyed by IMR.</b> It is on the slate so you don't mistake it for ${g.look.filter(n => DATA.gen[n].n).map(n => '<i>' + esc(n) + '</i>').join(', ')}, so you need to recognise it and set it aside.</p>`}
+    ${imr.length || g.x ? '' : `<p class="lede keyid">${esc(g.sum)}</p>`}
+    ${g.x ? `<p class="warn"><b>Not on the IMR list.</b> A rarer genus seen at Dauin${g.x.nonscl ? ', and not a true hard coral' : ''}.</p>` : g.n ? '' : `<p class="warn"><b>★ Not surveyed by IMR.</b> It is on the slate so you don't mistake it for ${g.look.filter(n => DATA.gen[n].n).map(n => '<i>' + esc(n) + '</i>').join(', ')}, so you need to recognise it and set it aside.</p>`}
     <div class="hero">
       ${cv ? `<button type="button" class="zoom hero-ph" data-z="${ci}"><img src="${img(cv)}" alt="${esc(name)}"></button>` : ''}
       <div class="idbox">
-        ${g.imr.length || g.mn ? `<div class="tipbox">${g.imr.length ? `<h3>ID tips (IMR) <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span></h3>${tipsList(g)}` : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>` : ''}
-        ${g.imr.length ? `<div class="lnotes"><h3>IMR lecture notes</h3>${notesList(g)}</div>` : ''}
-        ${g.imr.length ? '' : cfList}
+        ${g.x ? `<div class="tipbox"><h3>ID tips <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3>${tipsList(g)}</div>` : ''}
+        ${imr.length || g.mn ? `<div class="tipbox">${imr.length ? `<h3>ID tips (IMR) <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span></h3>${tipsList(g)}` : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>` : ''}
+        ${imr.length ? `<div class="lnotes"><h3>IMR lecture notes</h3>${notesList(g)}</div>` : ''}
+        ${imr.length ? '' : cfList}
         <details class="more sheetmore"><summary>More details</summary>
-        ${g.imr.length ? cfList : ''}
+        ${imr.length ? cfList : ''}
         ${g.check ? `<p class="note check"><b>To check with an IMR trainer:</b> ${esc(g.check)}</p>` : ''}
         ${g.info ? `<div class="note osrc"><b>Other sources:</b><ul class="srcs">${g.info.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
-        <h3>In the key <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3><div class="kpick">${paths.map(({k, l}) => `<a class="c-${k.color}" href="#l-${l.id}">${esc(k.name)} › ${esc(leafLabel(l))}</a>`).join('')}</div>
-        <p class="note refs"><b>References:</b> ${g.imr.length ? 'IMR Lecture 6 · ' : ''}Coral Finder 2022 (R. Kelley) p. ${g.pages.join(', ')} · <a href="https://www.marinespecies.org/aphia.php?p=taxlist&amp;tName=${encodeURIComponent(name)}" target="_blank" rel="noopener">WoRMS</a> · <a href="https://www.inaturalist.org/taxa/search?q=${encodeURIComponent(name)}" target="_blank" rel="noopener">iNaturalist</a></p>
+        <h3>In the key <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3><div class="kpick">${paths.map(({k, l}) => `<a class="c-${k.color}" href="#finder|form=${l.id[0]};box=${l.id}">${esc(k.name)} › ${esc(leafLabel(l))}</a>`).join('')}</div>
+        <p class="note refs"><b>References:</b> ${imr.length ? 'IMR Lecture 6 · ' : ''}Coral Finder 2022 (R. Kelley) p. ${g.pages.join(', ')} · <a href="https://www.marinespecies.org/aphia.php?p=taxlist&amp;tName=${encodeURIComponent(name)}" target="_blank" rel="noopener">WoRMS</a> · <a href="https://www.inaturalist.org/taxa/search?q=${encodeURIComponent(name)}" target="_blank" rel="noopener">iNaturalist</a></p>
         </details>
       </div>
     </div>
@@ -414,9 +420,9 @@ function viewGenus(name){
 
 /* ---------- compare ---------- */
 // Look-alikes of a genus, whichever genus listed the other (the Coral Finder lists are not symmetric).
-const lookOf = n => !DATA.gen[n] ? [] : Object.keys(DATA.gen).filter(b => b !== n && (DATA.gen[n].look.includes(b) || DATA.gen[b].look.includes(n)));
+const lookOf = n => !DATA.gen[n] ? (GX(n) ? GX(n).look.filter(GX) : []) : Object.keys(DATA.gen).filter(b => b !== n && (DATA.gen[n].look.includes(b) || DATA.gen[b].look.includes(n)));
 // Photo of a genus in a given view, falling back to the close-up then the cover.
-function viewShot(n, v){ const g = DATA.gen[n], L = g.views[v] && g.views[v].length ? g.views[v] : g.views.macro && g.views.macro.length ? g.views.macro : null, p = L ? L[0] : cover(g);
+function viewShot(n, v){ const g = GX(n), L = g.views[v] && g.views[v].length ? g.views[v] : g.views.macro && g.views.macro.length ? g.views.macro : null, p = L ? L[0] : cover(g);
   return p ? `<img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(n)}" loading="lazy">` : '<span class="none">no photo</span>'; }
 const mixedUp = (a, b) => ((P[a] && P[a].conf && P[a].conf[b]) || 0) + ((P[b] && P[b].conf && P[b].conf[a]) || 0);
 let cmpView = store.get('imr-coral-cmpview', 'medium');
@@ -433,8 +439,8 @@ function lookHub(name){
   const L = lookOf(name).sort((a, b) => mixedUp(name, b) - mixedUp(name, a));
   return `<h3>Don't confuse with</h3>
     <div class="seg-row"><span class="label">Show</span>${viewSeg()}</div>
-    <div class="lrow"><div class="lt self">${viewShot(name, cmpView)}<span><i>${esc(name)}</i><small>this genus</small><span class="psum">${esc(tipsText(DATA.gen[name]))}</span></span></div>
-    ${L.map(n => { const m = mixedUp(name, n); return `<a class="lt" href="#cmp-${esc(name)}|${esc(n)}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(tipsText(DATA.gen[n]))}</span>${(DATA.gen[name].lsrc || {})[n] ? `<small class="lsrc">${esc(DATA.gen[name].lsrc[n])}</small>` : ''}<b class="cmpgo">Compare side by side →</b></span></a>`; }).join('')}</div>
+    <div class="lrow"><div class="lt self">${viewShot(name, cmpView)}<span><i>${esc(name)}</i><small>this genus</small><span class="psum">${esc(tipsText(GX(name)))}</span></span></div>
+    ${L.map(n => { const m = mixedUp(name, n), side = DATA.gen[name] && DATA.gen[n]; return `<a class="lt" href="${side ? `#cmp-${esc(name)}|${esc(n)}` : `#g-${esc(n)}`}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(tipsText(GX(n)))}</span>${(GX(name).lsrc || {})[n] ? `<small class="lsrc">${esc(GX(name).lsrc[n])}</small>` : ''}<b class="cmpgo">${side ? 'Compare side by side →' : 'Open the sheet →'}</b></span></a>`; }).join('')}</div>
     ${cmpShots([name])}`;
 }
 // Starred genera are on the slate as look-alikes of surveyed genera. Those the lecture doesn't group are shown
@@ -1083,10 +1089,10 @@ function generaOrder(){
 // On a genus sheet or a pair, the header bar names the page instead of listing the section's tools.
 function ctxBar(h){
   const back = `<button type="button" class="up" data-back aria-label="Back">‹<span>Back</span></button>`;
-  if (h.startsWith('g-') && DATA.gen[h.slice(2)]) {
-    const n = h.slice(2), g = DATA.gen[n], L = generaOrder(), i = L.indexOf(n);
+  if (h.startsWith('g-') && GX(h.slice(2))) {
+    const n = h.slice(2), g = GX(n), L = g.x ? Object.keys(DATA.x.gen) : generaOrder(), i = L.indexOf(n);
     const prev = L[(i - 1 + L.length) % L.length], next = L[(i + 1) % L.length];
-    return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(g.fam)}</small></h2>
+    return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${g.x ? 'Not on IMR list' : g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(g.fam)}</small></h2>
       <span class="pn"><a href="#g-${esc(prev)}" title="Previous: ${esc(prev)} (←)" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="#g-${esc(next)}" title="Next: ${esc(next)} (→)" aria-label="Next genus: ${esc(next)}">›</a></span>`;
   }
   const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
@@ -1212,5 +1218,5 @@ const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
 const forms = () => fetch('forms.json?v=7').then(r => r.ok ? r.json() : {}).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}));
-Promise.all([fetch('data.json?v=22').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); loadStats(); if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=23').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); loadStats(); if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
