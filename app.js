@@ -19,6 +19,13 @@ const cover = g => g.coverP || allPhotos(g).find(p => p.f === g.cover) || (g.vie
 // per view (in order), hidden photos and photos moved to another view. Hidden photos leave games too.
 // Candidates (data.json cand, not shown until approved) join a view when listed in add {photo: view}.
 function applyCuration(d, c){
+  // Excluded photos (exclude: {f: reason}) leave every list first: genera, lecture photos, candidates, comparisons.
+  const X = (c && c.exclude) || {}, keep = L => (L || []).filter(p => !X[p.f]);
+  if (Object.keys(X).length) {
+    Object.values(d.gen).forEach(g => ['views', 'more'].forEach(s => Object.keys(g[s] || {}).forEach(v => { g[s][v] = keep(g[s][v]); })));
+    ['course', 'cand'].forEach(s => Object.keys(d[s] || {}).forEach(n => { d[s][n] = keep(d[s][n]); }));
+    if (d.cmp) d.cmp = keep(d.cmp);
+  }
   // "Not this genus" (out: {f: 'cmp' | genus}) runs first for every genus, so a photo given to another genus
   // can be featured or picked as cover there; 'cmp' sends it to the look-alike comparison images (d.cmp).
   Object.entries((c && c.genera) || {}).forEach(([n, k]) => { const g = d.gen[n]; if (!g) return;
