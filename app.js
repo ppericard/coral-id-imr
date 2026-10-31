@@ -380,7 +380,7 @@ function quizBoard(){
     const done = L.filter(n => lv[n][0] === 'ok').length;
     return `<h3 class="gdiv" style="--g:${gr ? (gr.n * 137) % 360 : 200}"><span class="gn">${gr ? gr.n : '★'}</span>${gr ? esc(gr.t) : 'Not covered in the lecture'}<small class="pdone">${done}/${L.length}</small></h3><div class="pgrid">${L.map(tile).join('')}</div>`; }).join('')}
   <div class="saveprog"><p class="note">Progress is saved in this browser, on this device. Save it to a file to keep a backup or move it to another phone or computer.</p>
-    <button class="chip" type="button" id="pexp">Save progress to a file</button> <label class="chip">Load a progress file<input type="file" id="pimp" accept=".json,application/json" hidden></label> <span class="note" id="pmsg" role="status"></span></div>
+    <button class="chip" type="button" id="pexp">Save progress to a file</button> <button class="chip" type="button" id="pload">Load a progress file</button><input type="file" id="pimp" accept=".json,application/json" hidden> <span class="note" id="pmsg" role="status"></span></div>
   <p><button class="reset" type="button" id="reset">Reset progress</button></p>`;
   bindQuizNav('quiz-board');
   bindProgFile();
@@ -402,10 +402,14 @@ function bindProgFile(){
     a.download = `imr-coral-progress-${out.saved.slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(a.href);
     msg('Saved. Keep the file somewhere safe (Drive, email to yourself).');
   };
-  document.getElementById('pimp').onchange = e => { const f = e.target.files[0]; if (!f) return;
+  const pick = document.getElementById('pimp');
+  document.getElementById('pload').onclick = () => pick.click();
+  try { const done = sessionStorage.getItem('imr-coral-loaded'); if (done) { sessionStorage.removeItem('imr-coral-loaded'); msg('Progress loaded from ' + done + '.'); } } catch (e) {}
+  pick.onchange = e => { const f = e.target.files[0]; if (!f) return;
     f.text().then(t => { const j = JSON.parse(t); if (j.app !== 'imr-coral-id' || !j.data) throw 0;
       Object.entries(j.data).forEach(([k, v]) => k.startsWith('imr-coral') && localStorage.setItem(k, v));
-      P = store.get('imr-coral-progress', {}) || {}; quizBoard(); msg('Progress loaded from ' + f.name + '.'); })
+      // Reload so every setting held in memory (quiz options, list order, Lab state) picks up the file.
+      try { sessionStorage.setItem('imr-coral-loaded', f.name); } catch (e) {} location.reload(); })
       .catch(() => msg('This file is not an IMR Coral ID progress file.')); };
 }
 // Ask the browser not to evict saved progress when storage runs low.
