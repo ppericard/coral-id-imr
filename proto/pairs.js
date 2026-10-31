@@ -30,6 +30,7 @@ LAB.add({
         const [a, b] = open; open = [];
         if (cards[a].n === cards[b].n) {
           found++; els[a].classList.add('done'); els[b].classList.add('done');
+          const fn = cards[a].n; root.querySelector('#pres').innerHTML = `<p><a href="${genLink(fn)}"><i>${esc(fn)}</i></a>: ${esc(tipsText(DATA.gen[fn]))}</p>`;
           if (found === gens.length) root.querySelector('#pres').innerHTML = `<p class="ok"><b>All ${gens.length} pairs in ${moves} moves.</b> A perfect game takes ${gens.length}; ${moves <= gens.length * 1.6 ? 'excellent memory.' : 'play again to beat it.'}</p>`;
         } else { lock = true; setTimeout(() => { [a, b].forEach(k => { els[k].classList.remove('up'); els[k].setAttribute('aria-label', 'Hidden card'); }); lock = false; }, 1100); }
       });

@@ -1,4 +1,4 @@
-# Adds the IMR Lecture 6 review slides (slides 63-71) to each genus's lecture cues, verbatim,
+# Adds the IMR Lecture 6 review slides (slides 56-60 and 67-71) to each genus's lecture cues, verbatim,
 # and restores the lecture's own wording for Goniastrea's bleached look. Run once: python3 tools/apply_review_slides.py
 import json
 P='data.json'; d=json.load(open(P)); G=d['gen']
