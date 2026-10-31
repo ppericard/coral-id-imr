@@ -127,7 +127,7 @@
     {id: 'nowall', name: 'No walls', tech: 'septo-costae', draw: () => nowall(), see: ['No wall at all around the centres.', 'Septo-costae run from one centre on to the next.', 'Judge by ornament: ribs, ridges, rows.'],
       genera: ['Pavona', 'Pachyseris', 'Pectinia'], notes: {Pavona: 'star-like centres, ridges with a sharp top', Pachyseris: 'parallel ridges, fine ribs at right angles', Pectinia: 'large, sparse centres between steep flutes'}},
     {id: 'solitary', name: 'Solitary disc', tech: 'solitary / free-living', draw: () => solitary(), see: ['One large polyp, free on the bottom.', 'Septa from the disc edge to the mouth.', 'One central mouth, or a furrow with several.'],
-      genera: ['Fungia', 'Lithophyllon', 'Danafungia', 'Lobactis', 'Heliofungia', 'Ctenactis', 'Herpolitha', 'Halomitra'], notes: {Ctenactis: 'several mouths in a long furrow', Herpolitha: 'several mouths in a long furrow', Halomitra: 'dome with many mouths', Heliofungia: 'long tentacles out by day'}}
+      genera: ['Fungia', 'Lithophyllon', 'Danafungia', 'Lobactis', 'Heliofungia', 'Ctenactis', 'Herpolitha', 'Halomitra'], notes: {Ctenactis: 'one or more mouths in a long furrow, no secondary mouths', Herpolitha: 'long furrow plus secondary mouths over the surface', Halomitra: 'dome with many mouths', Heliofungia: 'long tentacles out by day'}}
   ];
   const PROFKIND = {flabello: 'flabello', hydno: 'hydno', nowall: 'nowall'};
   const arrOf = n => ARR.filter(a => a.genera.includes(n) || (a.small || []).includes(n));
@@ -145,12 +145,12 @@
         ['dipsastraea-macro-746236818', 'Dipsastraea', [46, 58, 12], 'The ring sits on its own wall; pale coenosteum outside.'],
         ['porites-macro-745675630', 'Porites', [44, 44, 5], 'Shared walls: one wall between two neighbours.'],
         ['platygyra-macro-745204310', 'Platygyra', [58, 45, 7], 'A wall running as a ridge between two valleys.']]},
-    {id: 'septa', name: 'Septa', q: 'Equal or alternating? Plain or toothed?', def: 'Vertical blades inside the corallite, running from the wall to the centre. Count, size and teeth separate look-alikes.',
+    {id: 'septa', name: 'Septa', q: 'Equal or alternating? Plain or toothed?', def: 'Radial partitions inside the corallite, from the wall towards the centre. Usually thin plates, but only rows of spines in some genera (Astreopora, Montipora); minor septa stop short of the centre. Count, size and teeth separate look-alikes.',
       minis: [[cup(100, 100, 70, 'septa'), 'Septa inside one corallite']], box: '0 0 200 200', shots: [
         ['galaxea-macro-100103379', 'Galaxea', [31, 45, 8], 'Tall blade-like septa, star-shaped.'],
         ['diploastrea-macro-745205009', 'Diploastrea', [50, 62, 10], 'Many even septa on a low cone.'],
         ['fungia-macro-746236363', 'Fungia', [50, 60, 10], 'Long septa of a solitary disc.']]},
-    {id: 'costae', name: 'Costae', q: 'Do the septa continue outside the wall?', def: 'Septa that cross the wall and run on outside it. Present with separate walls, absent with shared walls.',
+    {id: 'costae', name: 'Costae', q: 'Do the septa continue outside the wall?', def: 'Ribs outside the corallite wall, usually continuing the septa. Only possible with separate walls (none with shared walls), and even then some genera lack them (Tubastraea, Turbinaria).',
       minis: [[cup(100, 100, 52, 'costae'), 'Costae outside the wall']], shots: [
         ['dipsastraea-macro-746236818', 'Dipsastraea', [60, 68, 4.5], 'Septa running over the rim into the pale coenosteum.']]},
     {id: 'coenosteum', name: 'Coenosteum', q: 'What is between the corallites?', def: 'Skeleton between corallites with separate walls. Smooth, spiny, beaded or ridged: the ornament is often the clue.',
@@ -165,7 +165,7 @@
       minis: [[cup(100, 100, 70, 'pali'), 'Crown of paliform lobes']], shots: [
         ['goniastrea-macro-746236750', 'Goniastrea', null, 'Look for the paler knobs in a ring near each centre. Ring not placed yet.'],
         ['goniastrea-macro-746236709', 'Goniastrea', null, 'Same genus, another colony.']]},
-    {id: 'sc', name: 'Septo-costae', q: 'No wall: what do the ribs do?', def: 'With no wall, septa and costae are one: lines that flow from one centre straight on to the next.',
+    {id: 'sc', name: 'Septo-costae', q: 'No wall: what do the ribs do?', def: 'Septa and costae joined into one element crossing the wall. Where the wall is faint or absent (Pavona, Pachyseris), they flow from one centre straight on to the next.',
       minis: [[nowall('sc'), 'Septo-costae between centres']], shots: [
         ['pavona-macro-745204888', 'Pavona', [62, 83, 10], 'Star-like centre, lines flowing to the neighbours.'],
         ['pachyseris-macro-745204769', 'Pachyseris', [45, 50, 8], 'Ridge lined with fine ribs at right angles.']]},
