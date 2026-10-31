@@ -405,3 +405,26 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .a2fb{min-height:3em;max-width:65ch}
 .a2xy{font-size:.85rem}
 @media (max-width:700px){.a2detail,.a2con{grid-template-columns:1fr}.a2arrs{grid-template-columns:repeat(2,1fr)}.a2gs{grid-template-columns:repeat(2,1fr)}}
+
+/* anatomy v2 layout: a compact picker on the left, the drawing and photos get the room */
+.lab .a2tabs{margin:0 0 10px}
+.a2lay{display:grid;grid-template-columns:230px minmax(0,1fr);gap:14px;align-items:start}
+.a2side{display:flex;flex-direction:column;gap:4px;position:sticky;top:110px}
+.a2side a{display:flex;align-items:center;gap:8px;padding:4px 8px 4px 4px;border:1px solid transparent;border-radius:8px;color:var(--ink)!important;text-decoration:none;line-height:1.1}
+.a2side a:hover{background:var(--surface);border-color:var(--line)}
+.a2side a[aria-current="true"]{background:var(--surface);border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.a2side .blk{width:72px;flex:0 0 72px}
+.a2side span{display:flex;flex-direction:column;min-width:0}
+.a2side b{font-family:var(--display);font-size:1.05rem}
+.a2side small{color:var(--muted);font-size:.78rem}
+.a2side-t a{padding:6px 10px}
+.a2main{min-width:0;display:flex;flex-direction:column;gap:12px}
+.a2main .a2detail,.a2main .a2con{padding:10px 14px;gap:14px}
+.a2main .a2detail{grid-template-columns:minmax(0,340px) minmax(0,1fr)}
+.a2main h3{margin:0 0 4px}
+.a2main .a2detail ul{margin:4px 0 0}
+.a2main .a2gs{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.a2main .a2shots{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.a2h{margin:4px 0 -4px;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.a2main .a2minis figure{width:170px}
+@media (max-width:820px){.a2lay{grid-template-columns:1fr}.a2side{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.a2side .blk{width:52px;flex-basis:52px}.a2side small{display:none}.a2main .a2detail{grid-template-columns:1fr}.a2main .a2gs{grid-template-columns:repeat(2,1fr)}}
