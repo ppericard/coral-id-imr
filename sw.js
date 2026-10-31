@@ -1,8 +1,8 @@
 // Offline cache: app shell first, then photos as they are viewed.
-const V = 'imr-coral-id-v13';
-const SHELL = ['./', 'index.html', 'app.css?v=8', 'app.js?v=9', 'data.json?v=7', 'icon.svg', 'manifest.webmanifest', 'proto/lab.js?v=5', 'proto/lab.css?v=5', 'home.js?v=3', 'home.css?v=3',
+const V = 'imr-coral-id-v14';
+const SHELL = ['./', 'index.html', 'app.css?v=8', 'app.js?v=9', 'data.json?v=7', 'icon.svg', 'manifest.webmanifest', 'proto/lab.js?v=6', 'proto/lab.css?v=6', 'home.js?v=3', 'home.css?v=3',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
-  ...['map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'].map(f => `proto/${f}.js?v=5`)];
+  ...['map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'].map(f => `proto/${f}.js?v=6`)];
 self.addEventListener('install', e => e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('imr-coral-id-') && k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', e => {

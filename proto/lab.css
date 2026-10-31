@@ -109,6 +109,12 @@ svg.dim .mleaf.on,svg.dim .mgroup.on{opacity:1}
 .emyst img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block}
 .emyst figcaption{font-size:.85rem;color:var(--muted)}
 .lab .chip.best{box-shadow:0 0 0 2px var(--accent) inset}
+.enext{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.ebest{display:flex;flex-direction:column;gap:4px;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+.ebest:hover{border-color:var(--accent)}
+.esplit{display:flex;flex-wrap:wrap;align-items:center;gap:3px}
+.esplit small{min-width:4.5em;color:var(--muted)}
+.esplit img{width:30px;height:30px;object-fit:cover;border-radius:4px}
 .elimgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;margin-top:12px}
 :root[data-size="m"] .elimgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 :root[data-size="l"] .elimgrid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
@@ -256,6 +262,14 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .zlayout,.rvlayout{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:18px;align-items:start}
 .zlayout .zstage,.rvstage{margin-top:0}
 .zside{position:sticky;top:110px}
+.znav{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}
+.znav h3{margin:0;min-width:9em;text-align:center;font-size:1.5rem}
+.znav h3 a{color:var(--ink);text-decoration:none}
+.znav [data-go]{font-size:1.3rem;line-height:1;padding:4px 14px}
+.zthumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:4px}
+.zthumbs button{padding:0;border:2px solid transparent;border-radius:6px;overflow:hidden;background:none;cursor:pointer;aspect-ratio:1}
+.zthumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.zthumbs button:hover,.zthumbs [aria-current]{border-color:var(--accent)}
 .ztipbox{background:var(--surface);border-left:3px solid var(--accent);padding:8px 12px;border-radius:0 6px 6px 0;min-height:2.6em}
 .zsteps{padding-left:1.2em;font-size:.9rem;display:flex;flex-direction:column;gap:8px}
 .elimlayout{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:18px;align-items:start}

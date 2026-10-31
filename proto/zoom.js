@@ -7,7 +7,8 @@ LAB.add({
     const STEPS = [['wide', 'Colony', '≈ 0.5–2 m', 'Growth form and colour only: a hint, never the answer.'],
       ['medium', 'Closer', '≈ 10–30 cm', 'Branch tips, verrucae, valleys, plate surface.'],
       ['macro', 'Corallites', '≈ 1–3 cm', 'Wall type, size, septa, columella: this is where you decide.']];
-    let genus = DATA.gen[start] ? start : labNames()[0], alt = 0, game = null, score = {pts: 0, n: 0}, steps = STEPS;
+    // No genus in the link: start on a random one, so every visit shows something new.
+    let genus = DATA.gen[start] ? start : pick(labNames()), alt = 0, game = null, score = {pts: 0, n: 0}, steps = STEPS;
     // Some genera only have a colony and a close-up photo level: skip the missing step.
     const stepsFor = n => STEPS.filter(([v]) => (DATA.gen[n].views[v] || []).length).map(s => s[0] === 'macro' && DATA.gen[n].levels === 2 ? [s[0], 'Close-up', s[2], s[3]] : s);
     root.innerHTML = `<div class="chips"><button class="chip" type="button" id="zmexplore" aria-pressed="true">Explore</button><button class="chip" type="button" id="zmgame" aria-pressed="false">Guess while zooming</button></div>
@@ -23,19 +24,32 @@ LAB.add({
       root.querySelector('#zbadge').innerHTML = `<b>${s[1]}</b> ${s[2]}`;
       const tip = root.querySelector('#ztip'); if (tip) tip.textContent = s[3];
     };
+    const names = labNames(), go = d => { const i = names.indexOf(genus); setGenus(names[(i + d + names.length) % names.length]); };
+    const setGenus = n => { genus = n; alt = 0; history.replaceState(null, '', '#lab-zoom|' + encodeURIComponent(n)); explore(); };
     const explore = () => {
       game = null; steps = stepsFor(genus);
-      body.innerHTML = `<div class="zlayout"><div>${stage(genus)}<input type="range" id="zr" min="0" max="${steps.length - 1}" step="0.01" value="0" aria-label="Zoom level, colony to corallites">
+      body.innerHTML = `<div class="zlayout"><div><div class="znav"><button type="button" class="chip" data-go="-1" aria-label="Previous genus">‹</button>
+        <h3><a href="${genLink(genus)}"><i>${esc(genus)}</i></a></h3><button type="button" class="chip" data-go="1" aria-label="Next genus">›</button>
+        <button type="button" class="next" id="zrand">Random genus</button> <span class="note">← → keys</span></div>
+        ${stage(genus)}<input type="range" id="zr" min="0" max="${steps.length - 1}" step="0.01" value="0" aria-label="Zoom level, colony to corallites">
         <div class="zticks">${steps.map(s => `<span>${s[1]}</span>`).join('')}</div></div>
-        <div class="zside"><label class="zpick">Genus <select id="zsel">${labNames().map(n => `<option ${n === genus ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
-        <p><button type="button" class="chip" id="zalt">Other photos</button> <a class="chip" href="${genLink(genus)}">Genus sheet</a></p>
-        <p class="ztipbox" id="ztip"></p><ol class="zsteps">${steps.map(s => `<li><b>${s[1]}</b> <span class="note">${s[2]}</span><br>${esc(s[3])}</li>`).join('')}</ol></div></div>`;
+        <div class="zside"><p><button type="button" class="chip" id="zalt">Other photos</button> <a class="chip" href="${genLink(genus)}">Genus sheet</a></p>
+        <p class="ztipbox" id="ztip"></p><ol class="zsteps">${steps.map(s => `<li><b>${s[1]}</b> <span class="note">${s[2]}</span><br>${esc(s[3])}</li>`).join('')}</ol>
+        <p class="note">Or pick a genus:</p><div class="zthumbs">${names.map(n => `<button type="button" data-g="${esc(n)}" title="${esc(n)}"${n === genus ? ' aria-current="true"' : ''}><img src="${thumbSrc(n, 'macro')}" alt="${esc(n)}" loading="lazy"></button>`).join('')}</div></div></div>`;
       const r = body.querySelector('#zr');
       r.oninput = () => paint(Number(r.value));
-      body.querySelector('#zsel').onchange = e => { genus = e.target.value; alt = 0; explore(); };
+      body.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(Number(b.dataset.go)));
+      body.querySelector('#zrand').onclick = () => setGenus(pick(names.filter(n => n !== genus)));
+      body.querySelectorAll('[data-g]').forEach(b => b.onclick = () => setGenus(b.dataset.g));
       body.querySelector('#zalt').onclick = () => { alt++; const v = r.value; explore(); body.querySelector('#zr').value = v; paint(Number(v)); };
       paint(0);
     };
+    // Left/right arrows change genus in Explore (not while the zoom slider or a field has focus).
+    const onKey = e => {
+      if (game || !body.isConnected || e.altKey || e.ctrlKey || e.metaKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); go(e.key === 'ArrowRight' ? 1 : -1); }
+    };
+    document.addEventListener('keydown', onKey);
     // Game: the slider is locked; each "zoom in" costs a point. 3 points at colony level, 1 at the corallites.
     const play = () => {
       const t = pick(labNames()); genus = t; alt = Math.floor(Math.random() * 3); steps = stepsFor(t);
@@ -63,5 +77,6 @@ LAB.add({
     root.querySelector('#zmexplore').onclick = () => { modeBtn(false); explore(); };
     root.querySelector('#zmgame').onclick = () => { modeBtn(true); play(); };
     explore();
+    return () => document.removeEventListener('keydown', onKey);
   }
 });
