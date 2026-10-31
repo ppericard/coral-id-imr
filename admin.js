@@ -533,7 +533,7 @@ const HELP = {
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. On the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one montage each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first).</p>`,
-  cand: `<p>Every new candidate, one at a time, genera taking turns. Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←, or swipe left), Skip (→, or swipe right) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p>`,
+  cand: `<p>Every new candidate, one at a time, genera taking turns. Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
 };
 function toggleHelp(){
@@ -784,7 +784,6 @@ function renderCand(){
     const sel = S.querySelector('select[data-act="out"]'); if (sel) sel.onchange = () => { if (!sel.value) return; const to = sel.value; ACT.out(n, f, null, to); toast(to === 'cmp' ? 'Kept for the look-alike comparison.' : `Sent to ${to}.`); };
     S.querySelector('[data-zoom]').onclick = () => zoomOne({...p, genus: n});
     S.querySelector('[data-crop]').onclick = () => cropEditor(p);
-    swipe(S.querySelector('.adm-swcard'), d => (d < 0 ? S.querySelector('[data-rej]') : S.querySelector('[data-skip]')).click());
     bindQ(); bindF(S);
   }
   $v.querySelectorAll('[data-src]').forEach(b => b.onclick = () => { CSRC = b.dataset.src; store.set('imr-admin-csrc2', CSRC); render(); });
@@ -818,19 +817,6 @@ function cropEditor(p){
     if (a === 'save') { const v = c.map(x => Math.round(x * 1000) / 1000), full = v[0] <= 0 && v[1] <= 0 && v[2] >= 1 && v[3] >= 1;
       DRAFT.crop = {...(DRAFT.crop || {})}; if (full) delete DRAFT.crop[p.f]; else DRAFT.crop[p.f] = v; saveDraft(); }
     close(); render(); });
-}
-// Swipe the photo: left = reject, right = skip. A tap without moving still enlarges it.
-function swipe(el, done){
-  let x0 = null, y0 = 0, dx = 0, moved = false;
-  el.addEventListener('pointerdown', e => { if (e.target.closest('a,.adm-swx') || (e.pointerType === 'mouse' && e.button)) return; x0 = e.clientX; y0 = e.clientY; dx = 0; moved = false; });
-  el.addEventListener('pointermove', e => { if (x0 === null) return; dx = e.clientX - x0;
-    if (!moved && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(e.clientY - y0)) { moved = true; el.setPointerCapture(e.pointerId); }
-    if (moved) { el.style.transform = `translateX(${dx}px) rotate(${dx / 40}deg)`; el.dataset.dir = dx < -60 ? 'rej' : dx > 60 ? 'skip' : ''; } });
-  const end = () => { if (x0 === null) return; x0 = null; if (!moved) return;
-    const far = Math.abs(dx) > Math.min(110, el.offsetWidth / 4); el.style.transform = ''; el.dataset.dir = '';
-    el.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); }, {capture: true, once: true});
-    if (far) done(dx); };
-  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', () => { x0 = null; el.style.transform = ''; el.dataset.dir = ''; });
 }
 
 /* ---------- Save / download ---------- */
