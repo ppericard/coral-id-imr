@@ -643,5 +643,5 @@ function hdrMetrics(){
   r.setProperty('--hdr-h', (h - hide) + 'px'); r.setProperty('--hdr-hide', hide + 'px');
 }
 if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else addEventListener('resize', hdrMetrics);
-fetch('data.json?v=8').then(r => r.json()).then(d => { DATA = d; route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+fetch('data.json?v=9').then(r => r.json()).then(d => { DATA = d; route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
