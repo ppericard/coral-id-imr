@@ -13,14 +13,15 @@ const img = (p, size) => `img/${p.f}${size === 's' ? '-s' : ''}.webp`;
 const srcset = p => `img/${p.f}-s.webp 480w, img/${p.f}.webp 1600w`;
 const credit = p => p.imr ? `IMR Lecture 6, slide ${p.slide}` : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(p.o)}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
-const cover = g => (g.views.wide && g.views.wide[0]) || allPhotos(g)[0];
+// Card photo: the one picked per genus in data.json, else the first closer view.
+const cover = g => allPhotos(g).find(p => p.f === g.cover) || (g.views.medium || [])[0] || allPhotos(g)[0];
 
 /* ---------- shared bits ---------- */
 // Genera in IMR slate order (data.json lists them that way, starred genera last).
 const slateIdx = n => Object.keys(DATA.gen).indexOf(n);
 const bySlate = L => Object.keys(DATA.gen).filter(n => L.includes(n));
 function card(name){
-  const g = DATA.gen[name], p = (g.views.macro && g.views.macro[0]) || cover(g);
+  const g = DATA.gen[name], p = cover(g);
   const im = p ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(name)}" loading="lazy">` : `<span class="ph none">no photo</span>`;
   return `<a class="card" href="#g-${esc(name)}">${im}<span class="cap"><i>${esc(name)}</i><small>${g.n ? 'No. ' + g.n + ' · ' : '<b class="star">★ not surveyed</b> · '}${esc(g.fam)}</small><p>${esc(g.crit[0])}</p></span></a>`;
 }
@@ -71,8 +72,9 @@ function viewGenus(name){
   const paths = DATA.key.flatMap(k => k.leaves.filter(l => l.g.includes(name)).map(l => ({k, l})));
   const flat = allPhotos(g).map(p => ({...p, genus: name}));
   const course = (DATA.course[name] || []).map(p => ({...p, genus: name}));
-  const rows = VIEWS.map(([v, label]) => {
+  const rows = VIEWS.filter(([v]) => !(g.levels === 2 && !(g.views[v] || []).length)).map(([v, label]) => {
     const list = g.views[v] || [];
+    if (g.levels === 2 && v === 'macro') label = 'Close-up';
     return `<section class="vrow"><h3>${label}${list.length ? '' : ' <span class="gap">missing</span>'}</h3>${list.length ? `<div class="strip">${list.map(p => {
       const i = flat.findIndex(x => x.f === p.f);
       return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${esc(name)}, ${label.toLowerCase()} view" loading="lazy"></button><figcaption>${credit(p)}</figcaption></figure>`; }).join('')}</div>` : '<p class="note">No good photo yet for this view.</p>'}</section>`;
@@ -108,7 +110,7 @@ function pairs(){
 }
 function viewCompareList(){
   // One block per genus in slate order: the genus, then the genera it is confused with, as photo cards.
-  const thumb = (n, cls) => { const g = DATA.gen[n], p = (g.views.macro && g.views.macro[0]) || cover(g); return p ? `<img class="${cls}" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(n)}" loading="lazy">` : `<span class="${cls} none">no photo</span>`; };
+  const thumb = (n, cls) => { const g = DATA.gen[n], p = cover(g); return p ? `<img class="${cls}" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(n)}" loading="lazy">` : `<span class="${cls} none">no photo</span>`; };
   const tag = g => g.n ? 'No. ' + g.n : '<b class="star">★</b>';
   const blocks = Object.keys(DATA.gen).filter(n => DATA.gen[n].look.some(b => DATA.gen[b])).map(n => {
     const g = DATA.gen[n];
@@ -125,12 +127,12 @@ function viewCompare(a, b){
   const col = (n, g) => `<div class="cmpcol"><h3><a class="linkish" href="#g-${esc(n)}"><i>${esc(n)}</i></a>${g.n ? '' : ' ★'}</h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>`;
   const flat = [];
   const row = ([v, label]) => {
-    const cell = (n, g) => { const p = (g.views[v] || [])[0]; if (!p) return '<div class="cmpph none">no photo</div>'; flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom cmpph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 46vw, 460px" alt="${esc(n)}, ${label.toLowerCase()}" loading="lazy"></button>`; };
+    const cell = (n, g) => { const p = (g.views[v] || [])[0]; if (!p) return `<div class="cmpph none">${g.levels === 2 ? 'no separate level' : 'no photo'}</div>`; flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom cmpph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 46vw, 460px" alt="${esc(n)}, ${label.toLowerCase()}" loading="lazy"></button>`; };
     return `<h3 class="cmplab">${label}</h3><div class="cmprow">${cell(a, A)}${cell(b, B)}</div>`;
   };
   $v.innerHTML = `<div class="crumbs"><a href="#cmp">All pairs</a> › <i>${esc(a)}</i> vs <i>${esc(b)}</i></div>
   <h2><i>${esc(a)}</i> or <i>${esc(b)}</i>?</h2>
-  ${VIEWS.map(row).join('')}
+  ${VIEWS.filter(([v]) => (A.views[v] || []).length || (B.views[v] || []).length).map(row).join('')}
   <div class="cmprow text">${col(a, A)}${col(b, B)}</div>
   <p><a class="next" href="#quiz-duel|${esc(a)}|${esc(b)}">Drill this pair</a></p>`;
   $v.querySelectorAll('[data-z]').forEach(x => x.onclick = () => zoom(flat, Number(x.dataset.z)));
@@ -206,7 +208,10 @@ const saveQ = () => store.set('imr-coral-quiz', Q);
 let session = {ok: 0, n: 0}, last = null, duelPair = null;
 const pool = () => Object.keys(DATA.gen).filter(n => (Q.stars || DATA.gen[n].n) && photoSet(n).shown.length);
 // A quiz question always shows one colony view and one closer view; the corallites come as a hint.
-function photoSet(n){ const g = DATA.gen[n], one = v => { const L = g.views[v] || []; return L.length ? {...pick(L), view: v} : null; }; return {shown: [one('wide'), one('medium')].filter(Boolean), hint: one('macro')}; }
+function photoSet(n){ const g = DATA.gen[n], one = v => { const L = g.views[v] || []; return L.length ? {...pick(L), view: v} : null; };
+  // Two-level genera (e.g. Plerogyra, mushroom corals) show colony + close-up, with no hint.
+  if (g.levels === 2) return {shown: [one('wide'), one('macro') && {...one('macro'), view: 'close'}].filter(Boolean), hint: null};
+  return {shown: [one('wide'), one('medium')].filter(Boolean), hint: one('macro')}; }
 // Unseen and often-missed genera come back more; a streak of 3+ makes a genus rare.
 const weight = n => { const s = P[n]; if (!s) return 3; return (1 + 2 * s.ko) / (1 + s.ok) * (s.streak >= 3 ? 0.3 : 1) + 0.15; };
 function weighted(list){ const w = list.map(weight), t = w.reduce((a, b) => a + b, 0); let r = Math.random() * t; for (let i = 0; i < list.length; i++) { r -= w[i]; if (r <= 0) return list[i]; } return list[list.length - 1]; }
@@ -229,7 +234,7 @@ function bindQuizNav(cur){
   qs.onclick = () => { Q.stars = !Q.stars; saveQ(); route(); };
 }
 function question(cur, target, choices, prompt, set){
-  const ph = set.shown, lab = {wide: 'Colony', medium: 'Closer', macro: 'Corallites'};
+  const ph = set.shown, lab = {wide: 'Colony', medium: 'Closer', macro: 'Corallites', close: 'Close-up'};
   const fig = p => `<figure class="qph"><img src="${img(p)}" alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}">${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
   $v.innerHTML = `${quizNav(cur)}<div class="q">
     <div class="score">This session: <b>${session.ok}/${session.n}</b></div>
@@ -344,5 +349,5 @@ function route(){
   window.scrollTo(0, 0);
 }
 addEventListener('hashchange', route);
-fetch('data.json').then(r => r.json()).then(d => { DATA = d; route(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+fetch('data.json?v=4').then(r => r.json()).then(d => { DATA = d; route(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
