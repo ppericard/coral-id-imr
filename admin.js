@@ -16,7 +16,7 @@ const img = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 
-let PICKS = {}, PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
+let FB0, FU0, PICKS = {}, PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
 // (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
 const QUAL = [[3, 'Good'], [2, 'Fair'], [1, 'Poor']];
@@ -62,6 +62,8 @@ function setQ(f, q){
 // one when several show (Pierre), or x = form not visible (too close). First guesses come from forms.json (Claude, from the image);
 // Pierre's choices live in curation.json "form" {f: 'B' | 'FL' | 'x'} and always win. The site's growth-form
 // tiles only use photos tagged with that form.
+// Claude's test batch and the guesses it is unsure about (forms.json batch, unsure): a "?" until you click.
+let FBATCH = new Set(), FUNSURE = new Set();
 const FORM_ORDER = 'BMSPFLC', fOf = f => (DRAFT.form || {})[f] || AUTOF[f] || '', fSet = f => !!(DRAFT.form || {})[f];
 const fChanged = () => !same(DRAFT.form || {}, SAVED.form || {});
 const fName = id => id === 'x' ? 'Form not visible' : (DATA.key.find(k => k.id === id) || {}).name || id;
@@ -72,7 +74,7 @@ function setF(f, v){
   DRAFT.form[f] = fNorm(v);
   saveDraft();
 }
-const fSeg = p => { const v = fOf(p.f); return `<span class="adm-qseg adm-fseg${fSet(p.f) ? '' : ' auto'}" role="group" aria-label="Growth form" title="Growth form${fSet(p.f) ? ' (set by you)' : ' (dashed: Claude\'s first guess)'}">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v === c}" title="${esc(fName(c))}${c === 'x' ? '' : ' (one form per photo: the main one)'}">${c === 'x' ? '∅' : c}</button>`).join('')}</span>`; };
+const fSeg = p => { const v = fOf(p.f), un = !fSet(p.f) && FUNSURE.has(p.f); return `<span class="adm-qseg adm-fseg${fSet(p.f) ? '' : ' auto'}${un ? ' unsure' : ''}" role="group" aria-label="Growth form" title="Growth form${fSet(p.f) ? ' (set by you)' : un ? ' (Claude unsure: please check)' : ' (dashed: Claude\'s first guess)'}">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v === c}" title="${esc(fName(c))}${c === 'x' ? '' : ' (one form per photo: the main one)'}">${c === 'x' ? '∅' : c}</button>`).join('')}</span>`; };
 
 /* ---------- Token vault: AES-GCM key derived from the password (PBKDF2) ---------- */
 const b64 = u => btoa(String.fromCharCode(...new Uint8Array(u))), unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -489,7 +491,7 @@ function renderForm(){
   status();
   const names = Object.keys(DATA.gen), vl = v => v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1];
   // Coral Finder book photos are left out: they never go on the growth-form tiles.
-  const all = allPhotos().filter(p => !p.cf && shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus) && (!FF.todo || !fSet(p.f)));
+  const all = allPhotos().filter(p => !p.cf && shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus) && (!FF.todo || !fSet(p.f)) && (!FF.batch || FBATCH.has(p.f)));
   const card = p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
     <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}</figcaption>
@@ -504,13 +506,14 @@ function renderForm(){
     <div class="adm-filter"><span class="label">Show</span>${ORIGINS.filter(([o]) => o !== 'book').map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`).join('')}</div>
     <div class="adm-filter"><span class="label">View</span>${opt('all', 'All', FF.view)}${VIEWS.map(([v, t]) => opt(v, t, FF.view)).join('')}${opt('cand', 'Candidates', FF.view)}
       <select id="fgen" aria-label="Genus"><option value="">All genera</option>${names.map(m => `<option${m === FF.genus ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>
-      <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label></div>
+      <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label>${FBATCH.size ? `<label class="adm-todo"><input type="checkbox" id="fbatch"${FF.batch ? ' checked' : ''}> Test batch (${[...FBATCH].filter(f => fSet(f)).length}/${FBATCH.size} checked)</label>` : ''}</div>
     ${rows.map(sec).join('')}</section>`;
   const saveFF = () => { store.set('imr-admin-ffilter', FF); renderForm(); };
   $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { const o = b.dataset.o; SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o); store.set('imr-admin-origins', [...SHOW]); renderForm(); });
   $v.querySelectorAll('[data-fv]').forEach(b => b.onclick = () => { FF.view = b.dataset.fv; saveFF(); });
   $('fgen').onchange = e => { FF.genus = e.target.value; saveFF(); };
   $('ftodo').onchange = e => { FF.todo = e.target.checked; saveFF(); };
+  if ($('fbatch')) $('fbatch').onchange = e => { FF.batch = e.target.checked; saveFF(); };
   $v.querySelectorAll('[data-act="zoom"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'); zoom(t.dataset.g, t.dataset.f); });
   $v.querySelectorAll('[data-act="exclude"]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.closest('[data-f]'); ACT.exclude(t.dataset.g, t.dataset.f); });
   bindF($v);
@@ -555,7 +558,7 @@ function renderTriage(){
       `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fl.view) || [, p.fl.view || ''])[1])}</span><small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`)).join('')}</div>` : '<p class="note">Nothing flagged.</p>'}
     ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
     <div class="adm-qhead"><h2>Featured not picked yet <small>${todo.length} genera</small></h2></div>
-    ${todo.length ? `<p class="adm-todo">${todo.map(([n, L]) => `<a class="chip" href="#${esc(n)}"><i>${esc(n)}</i>&nbsp;<small>${L.join(', ')}</small></a>`).join(' ')}</p>` : '<p class="note">All picked.</p>'}
+    ${todo.length ? `<p class="adm-tchips">${todo.map(([n, L]) => `<a class="chip" href="#${esc(n)}"><i>${esc(n)}</i>&nbsp;<small>${L.join(', ')}</small></a>`).join(' ')}</p>` : '<p class="note">All picked.</p>'}
   </section>`;
   const done = f => { DRAFT.flag = {...(DRAFT.flag || {})}; delete DRAFT.flag[f]; };
   $v.querySelectorAll('[data-act="tdone"]').forEach(b => b.onclick = () => { done(b.closest('[data-f]').dataset.f); saveDraft(); renderTriage(); });
@@ -599,8 +602,9 @@ async function start(){
   const hd = document.querySelector('header'); if (hd && window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--hdr-h', hd.offsetHeight + 'px')).observe(hd);
   $v.innerHTML = '<p class="note">Loading photos…</p>';
   const side = (u, k) => fetch(u, {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).then(j => j[k] || {}).catch(() => ({}));
-  try { [DATA, AUTOQ, AUTOF, PICKS] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), side('quality.json', 'q'), side('forms.json', 'form'), side('picks.json', 'feat'), loadSaved()]); }
+  try { [DATA, AUTOQ, AUTOF, FB0, FU0, PICKS] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), side('quality.json', 'q'), side('forms.json', 'form'), side('forms.json', 'batch'), side('forms.json', 'unsure'), side('picks.json', 'feat'), loadSaved()]); }
   catch (x) { $v.innerHTML = `<p class="warn">Could not load: ${esc(x.message)}</p>`; return; }
+  FBATCH = new Set(Array.isArray(FB0) ? FB0 : []); FUNSURE = new Set(Array.isArray(FU0) ? FU0 : []);
   // Every photo of data.json by name, with its genus, for the Excluded view.
   PHOTOS = {}; Object.entries(DATA.gen).forEach(([n, g]) => [...Object.values(g.views || {}), ...Object.values(g.more || {}), (DATA.course || {})[n] || [], (DATA.cand || {})[n] || [], g.book || []].flat().forEach(p => { PHOTOS[p.f] = {...p, genus: n}; }));
   // Every photo name in data.json (field, extra, lecture, candidates), to spot choices left pointing nowhere.
