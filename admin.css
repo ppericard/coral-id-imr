@@ -180,8 +180,8 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 .adm-sname{font-size:1.05rem;margin-right:10px;white-space:nowrap}
 .adm-gacts{align-items:center}
 .adm-acts .adm-vseg button[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);font-weight:700}
-.adm-acts .adm-vseg{margin:2px 0 0}
-.adm-acts select[data-act="out"]{flex:1 0 100%;max-width:none}
+.adm-acts .adm-vseg{margin:0 0 2px}
+.adm-acts select[data-act="out"]{flex:1 1 0;min-width:0;max-width:none}
 /* Growth form not checked yet: Claude's guess shows dashed until a click confirms or changes it. */
 .adm-acts .adm-fseg.auto button[aria-pressed="true"]{background:transparent;color:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent)}
 /* Help: the "?" in the header opens a small panel with the explanations of the current page. */
