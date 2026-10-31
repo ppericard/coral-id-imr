@@ -10,31 +10,32 @@
 <meta name="theme-color" content="#0d6f7d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
-<link rel="stylesheet" href="app.css?v=4">
+<link rel="stylesheet" href="app.css?v=5">
 <link rel="stylesheet" href="proto/lab.css?v=1">
 </head>
 <body>
 <script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <div class="wrap">
   <header>
-    <h1><a class="home" href="#genera">IMR Coral ID</a> <small>34 surveyed genera + 5 ★ · Dauin</small></h1>
-    <nav aria-label="Sections">
+    <h1 class="brand"><a class="home" href="#genera"><img src="icon.svg" alt="" width="30" height="30"><span>IMR Coral ID</span></a> <small>34 surveyed genera + 5 ★ · Dauin</small></h1>
+    <nav class="sections" aria-label="Sections">
       <a data-tab="genera" href="#genera">Genera</a>
       <a data-tab="key" href="#key-imr">Identify</a>
       <a data-tab="cmp" href="#cmp">Look-alikes</a>
       <a data-tab="quiz" href="#quiz">Quiz</a>
       <a data-tab="lab" href="#lab">Lab</a>
     </nav>
-    <div class="tools">
+    <div class="hdr-tools">
       <div id="size" role="group" aria-label="Photo size"><button type="button" data-size="s" title="Small photos">S</button><button type="button" data-size="m" title="Medium photos">M</button><button type="button" data-size="l" title="Large photos">L</button></div>
       <button type="button" class="theme" id="theme" aria-label="Switch to dark theme">☾</button>
     </div>
+    <nav id="modes" class="modes" hidden></nav>
   </header>
   <main id="view"><p class="note">Loading…</p></main>
   <footer>IMR groups, lecture notes and lecture photos from IMR Lecture 6 (Indo-Pacific Coral ID). Key and criteria based on the Coral Finder 2022 (R. Kelley, BYOGUIDES), narrowed to the 39 genera on the IMR list; page numbers refer to the book. Other photos: Pierre Pericard's iNaturalist observations from Dauin and Creative Commons iNaturalist photos, credited under each photo. For training at IMR.</footer>
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
-<script src="app.js?v=4"></script>
+<script src="app.js?v=5"></script>
 <script src="proto/lab.js?v=1"></script>
 </body>
 </html>
