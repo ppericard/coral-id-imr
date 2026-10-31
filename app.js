@@ -188,18 +188,6 @@ function viewGenus(name){
 /* ---------- compare ---------- */
 // Look-alikes of a genus, whichever genus listed the other (the Coral Finder lists are not symmetric).
 const lookOf = n => Object.keys(DATA.gen).filter(b => b !== n && (DATA.gen[n].look.includes(b) || DATA.gen[b].look.includes(n)));
-// Confusion families, by what you see first (as when starting the Coral Finder from colony form).
-// A genus can sit in two families. Draft by Claude, to be checked by Pierre.
-const LOOK_FAMILIES = [
-  ['Branches with small corallites', 'Branching or finger-like colonies; the difference is in the corallites on the branches.', ['Acropora', 'Anacropora', 'Montipora', 'Pocillopora', 'Stylophora', 'Seriatopora']],
-  ['Massive, surface of tiny pores', 'Domes, columns or crusts covered in very small corallites or polyps.', ['Porites', 'Goniopora', 'Alveopora', 'Astreopora', 'Montipora', 'Cyphastrea']],
-  ['Large cups and tubes', 'Big, well-spaced corallites standing out like tubes or cups.', ['Tubastraea', 'Duncanopsammia', 'Turbinaria', 'Galaxea']],
-  ['Ridges, plates and leaves', 'Plates, leaves or rough surfaces where ridges or hills matter more than single corallites.', ['Pavona', 'Pachyseris', 'Mycedium', 'Pectinia', 'Merulina', 'Hydnophora', 'Echinopora']],
-  ['Meandering valleys', 'Brain-like colonies: corallites joined in valleys.', ['Platygyra', 'Leptoria', 'Goniastrea', 'Lobophyllia', 'Plerogyra']],
-  ['Round corallites on massive colonies', 'Domes covered in round or polygonal corallites, a few mm to a cm across.', ['Dipsastraea', 'Favites', 'Astrea', 'Diploastrea', 'Goniastrea', 'Cyphastrea']],
-  ['Mushroom corals', 'Free-living discs and slippers on sand or rubble.', ['Fungia', 'Lithophyllon', 'Danafungia', 'Ctenactis', 'Lobactis', 'Herpolitha', 'Halomitra', 'Heliofungia']],
-  ['Long polyps out by day', 'The skeleton is hidden under extended polyps or bubbles.', ['Goniopora', 'Alveopora', 'Heliofungia', 'Plerogyra', 'Duncanopsammia']]
-];
 // Photo of a genus in a given view, falling back to the close-up then the cover.
 function viewShot(n, v){ const g = DATA.gen[n], L = g.views[v] && g.views[v].length ? g.views[v] : g.views.macro && g.views.macro.length ? g.views.macro : null, p = L ? L[0] : cover(g);
   return p ? `<img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(n)}" loading="lazy">` : '<span class="none">no photo</span>'; }
@@ -221,22 +209,28 @@ function pairs(){
   Object.keys(DATA.gen).forEach(a => DATA.gen[a].look.forEach(b => { const k = [a, b].sort().join('|'); if (DATA.gen[b] && !seen.has(k)) { seen.add(k); out.push(k.split('|')); } }));
   return out;
 }
-// Look-alikes page: one panel per confusion family, every genus of the family side by side at the same size
-// and in the same view, with its deciding feature; below, the known confusions inside the family as links
-// to the side-by-side comparison, the reader's own quiz mix-ups in red.
+// Look-alikes page: one panel per IMR lecture group (genera not in the lecture last), every genus side by
+// side at the same size and in the same view, with its deciding feature. Below, the Coral Finder look-alike
+// pairs: inside the group, then with genera of other groups. The reader's quiz mix-ups come first, in red.
 function viewCompareList(){
   const G = DATA.gen, tag = g => g.n ? 'No. ' + g.n : '★';
-  const fam = ([t, d, L]) => {
-    const pr = []; L.forEach((a, i) => L.slice(i + 1).forEach(b => { if (lookOf(a).includes(b)) pr.push([a, b]); }));
-    pr.sort((x, y) => mixedUp(...y) - mixedUp(...x));
-    const mine = L.reduce((s, a) => s + L.reduce((t, b) => t + (a < b ? mixedUp(a, b) : 0), 0), 0);
-    return `<section class="lfam"><h3>${esc(t)}<small>${L.length} genera${mine ? ` · <b class="bad">you mixed some up ×${mine}</b>` : ''}</small></h3><p class="note">${esc(d)}</p>
+  const chip = ([a, b]) => { const m = mixedUp(a, b); return `<a class="chip${m ? ' mix' : ''}" href="#cmp-${esc(a)}|${esc(b)}"><i>${esc(a)}</i>&nbsp;vs&nbsp;<i>${esc(b)}</i>${m ? ` ×${m}` : ''}</a>`; };
+  const byMix = (x, y) => mixedUp(...y) - mixedUp(...x);
+  const grp = (t, L) => {
+    const inside = [], outside = [];
+    L.forEach((a, i) => lookOf(a).forEach(b => { if (!L.includes(b)) outside.push([a, b]); else if (L.indexOf(b) > i) inside.push([a, b]); }));
+    inside.sort(byMix); outside.sort(byMix);
+    const mine = [...inside, ...outside].reduce((s, p) => s + mixedUp(...p), 0);
+    return `<section class="lfam"><h3>${t}<small>${L.length} ${L.length > 1 ? "genera" : "genus"}${mine ? ` · <b class="bad">you mixed some up ×${mine}</b>` : ''}</small></h3>
       <div class="lrow">${L.map(n => `<a class="lt" href="#g-${esc(n)}">${viewShot(n, cmpView)}<span><i>${esc(n)}</i><small>${tag(G[n])} · ${esc(G[n].fam)}</small><span class="psum">${esc(G[n].sum)}</span></span></a>`).join('')}</div>
-      ${pr.length ? `<p class="lpairs"><span class="label">Compare</span>${pr.map(([a, b]) => { const m = mixedUp(a, b); return `<a class="chip${m ? ' mix' : ''}" href="#cmp-${esc(a)}|${esc(b)}"><i>${esc(a)}</i>&nbsp;vs&nbsp;<i>${esc(b)}</i>${m ? ` ×${m}` : ''}</a>`; }).join('')}</p>` : ''}</section>`; };
+      ${inside.length ? `<p class="lpairs"><span class="label">Compare</span>${inside.map(chip).join('')}</p>` : ''}
+      ${outside.length ? `<p class="lpairs"><span class="label">Other groups</span>${outside.map(chip).join('')}</p>` : ''}</section>`; };
+  const none = bySlate(Object.keys(G).filter(n => !G[n].ig));
   $v.innerHTML = `<h2>Look-alikes</h2>
-  <p class="lede">Genera that look alike at first sight, grouped by what you see first. Within a family, compare them in the same view and read what sets each apart; open a pair to compare all three views. Each genus sheet also lists its own look-alikes.</p>
+  <p class="lede">Genera by IMR lecture group, compared in the same view with what sets each apart. The pairs to compare are the Coral Finder look-alikes; open one to see all three views side by side. Each genus sheet also lists its own look-alikes.</p>
   <div class="seg-row"><span class="label">Show</span>${viewSeg()}</div>
-  ${LOOK_FAMILIES.map(fam).join('')}`;
+  ${DATA.imrg.map(x => grp(`<span class="gn">${x.n}</span> ${esc(x.t)}`, bySlate(Object.keys(G).filter(n => G[n].ig === x.n)))).join('')}
+  ${none.length ? grp('<span class="gn">★</span> Not covered in the lecture', none) : ''}`;
   bindViewSeg(viewCompareList);
 }
 function viewCompare(a, b){
