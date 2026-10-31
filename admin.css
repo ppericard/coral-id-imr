@@ -171,6 +171,8 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 .adm-acts .adm-fseg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .adm-acts .adm-fseg button[data-fm="x"][aria-pressed="true"]{background:var(--surface-2);color:var(--ink)}
 .adm-fl{display:inline-grid;place-items:center;min-width:1.6em;height:1.6em;border-radius:6px;background:var(--accent);color:var(--accent-ink);font-size:.85rem}
+.adm-fok{margin-left:.6em;font:inherit;font-size:.8rem;padding:.15em .6em;border:1px solid var(--accent);border-radius:999px;background:transparent;color:var(--accent);cursor:pointer;vertical-align:middle}
+.adm-fok:hover{background:var(--accent);color:var(--accent-ink)}
 
 /* Genus name + origin filter stay in view while scrolling */
 .adm-sticky{margin-top:0;border-top:0;position:sticky;top:var(--hdr-h,64px);z-index:3;background:var(--bg);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
