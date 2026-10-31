@@ -449,7 +449,6 @@ a.lt:hover{border-color:var(--accent)}
 .pseg a.weak{background:var(--bad);border-color:var(--bad);color:#fff}
 @media (max-width:760px){.pgr{grid-template-columns:28px minmax(0,1fr) 36px}.pgt{display:none}}
 /* IMR ID tips: the lecturers' cues, verbatim, with their source */
-.idtips .tsrc{font-size:.72rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--accent);margin-right:2px}
 .tref{margin:2px 0 10px;font-size:.76rem;color:var(--muted)}
 .cmpcol h4{margin:12px 0 4px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .tipgr{margin:14px 0 6px}

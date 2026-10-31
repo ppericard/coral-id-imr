@@ -201,9 +201,10 @@ function zoom(list, i, opts = {}){
 // everywhere a tip appears (quiz, cards, ID tips page, comparisons, genus sheet). Lecture notes (g.imr): the
 // lecturers' full cues (slide text, review slides, presenter's notes), only on the genus sheet.
 const slideRef = (k, L) => L && L.length ? `${k} ${L.join(', ')}` : k;
-const tipSrc = (g, x) => x.startsWith('Review slide: ') ? [slideRef('Review slide', g.rsl), x.slice(14)] : x.startsWith("Instructor's notes: ") ? ["Presenter's notes", x.slice(20)] : ['', x];
-// Full lecture notes for the genus sheet, each with its source.
-const notesList = (g, cls = '') => g.imr.length ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${g.imr.map(x => { const [k, t] = tipSrc(g, x); return `<li>${k ? `<b class="tsrc">${esc(k)}</b> ` : ''}${esc(t)}</li>`; }).join('')}</ul><p class="tref">IMR Lecture 6${g.sl && g.sl.length ? ', ' + slideRef(g.sl.length > 1 ? 'slides' : 'slide', g.sl) : ''}</p>` : `<p class="note">Not on the lecture slides: see the Coral Finder below.</p>`;
+// Content only: the "Review slide: " / "Instructor's notes: " prefixes in data.json are not shown.
+const noteText = x => x.replace(/^(Review slide|Instructor's notes): /, '');
+// Full lecture notes for the genus sheet.
+const notesList = (g, cls = '') => g.imr.length ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${g.imr.map(x => `<li>${esc(noteText(x))}</li>`).join('')}</ul><p class="tref">IMR Lecture 6${g.sl && g.sl.length ? ', ' + slideRef(g.sl.length > 1 ? 'slides' : 'slide', g.sl) : ''}</p>` : `<p class="note">Not on the lecture slides: see the Coral Finder below.</p>`;
 // Short ID tips; genera the lecture skips fall back to the Coral Finder summary.
 const tipsList = (g, cls = '') => g.qt ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${g.qt.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : `<p class="keyid">${esc(g.sum)}</p>`;
 const tipsText = g => g.qt ? g.qt.join(' · ') : g.sum;
@@ -887,5 +888,5 @@ const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
 const forms = () => fetch('forms.json?v=5').then(r => r.ok ? r.json() : {}).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}})).catch(() => ({gf: {}, form: {}, cf: {}}));
 const json = u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}));
-Promise.all([fetch('data.json?v=18').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=19').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
