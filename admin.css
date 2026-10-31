@@ -344,3 +344,22 @@ body.adm-cmode .adm-toast{bottom:auto;top:calc(var(--hdr-h,64px) + 56px);pointer
 .adm-swrow .adm-swcrop.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .adm-csrc button{white-space:nowrap;padding:0 2px}
 @media (max-width:599px){.adm-csrc button{font-size:.78rem}}
+/* Genera view on phones: genus picker inside the sticky bar, compact source chips on one row, form letters on two rows. */
+.adm-gsel2{display:none}
+@media (max-width:599px){
+  .adm-side{display:none}
+  .adm-filter.adm-sticky{gap:6px;padding:6px 0 8px}
+  .adm-sname{display:none}
+  .adm-gsel2{display:block;flex:1 1 140px;min-width:0;font:italic 700 1.1rem var(--display);min-height:40px;padding:0 8px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);color:var(--ink)}
+  .adm-lvseg{margin:0}
+  .adm-lvseg button,.adm-okbtn{min-height:34px;font-size:.78rem}
+  .adm-needs{font-size:.72rem}
+  .adm-shows{margin-left:0;width:100%;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+  .adm-shows .adm-fchip{min-height:34px;padding:0 2px;font-size:.72rem;justify-content:center;gap:3px;min-width:0}
+  .adm-shows .adm-fchip[aria-pressed="true"]::before{content:none}
+  .adm-shows .adm-link{grid-column:1/-1}
+  .adm-grid .adm-acts .adm-fseg{display:grid;grid-template-columns:repeat(auto-fit,minmax(32px,1fr));gap:3px;border:0;border-radius:0;overflow:visible}
+  .adm-grid .adm-acts .adm-fseg button,.adm-grid .adm-acts .adm-fseg button+button{border:1px solid var(--line);border-radius:6px;min-height:28px;padding:0}
+  .adm-grid .adm-acts .adm-vseg button{font-size:.68rem;padding:0 1px}
+  .adm-grid .adm-acts>button,.adm-grid .adm-acts select{font-size:.74rem;padding-left:6px;padding-right:6px}
+}
