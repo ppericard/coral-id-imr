@@ -106,7 +106,9 @@ LAB.add({
       const flat = [], mode = lay === 'auto' ? (left.length <= 12 ? 'mosaic' : 'cover') : lay;
       const ph = (n, p, v) => { flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom fdph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 50vw, 360px" alt="${esc(n)}, ${esc(VIEW_LABEL[v] || v)}" loading="lazy"></button>`; };
       const tools = n => `<span class="fdtools"><button type="button" class="chip" data-out="${esc(n)}" title="Rule out ${esc(n)}">Rule out</button><button type="button" class="chip" data-cmpk="${esc(n)}" aria-pressed="${S.cmp.includes(n)}">Compare</button></span>`;
-      const head = n => `<a class="fdname" href="${genLink(n)}"><i>${esc(n)}</i></a><small>${tag(n)} · ${esc(G[n].fam)}${G[n].ig ? ' · IMR group ' + G[n].ig : ''}</small>`;
+      // Clicking a genus name opens it in place (all its photos, bigger, with the ID cues); the sheet is a small link.
+      const isX = n => S.open.has('x:' + n);
+      const head = n => `<span class="fdhead"><button type="button" class="fdname" data-x="${esc(n)}" aria-expanded="${isX(n)}"><i>${esc(n)}</i></button><a class="fdsheetl" href="${genLink(n)}" title="Open the ${esc(n)} sheet">Sheet ↗</a></span><small>${tag(n)} · ${esc(G[n].fam)}${G[n].ig ? ' · IMR group ' + G[n].ig : ''}</small>`;
       // Many varied examples at a glance, as on the paper Coral Finder's pages: cover first, then round-robin over
       // colony / closer / corallites (featured photos lead each view), a different observation each time when possible.
       // With one view picked, only that view's photos (all views when the genus has none of it).
@@ -116,15 +118,20 @@ LAB.add({
         while (out.length < k && L.some(x => x.length)) { const Q = L[i++ % L.length]; if (!Q.length) continue; const j = Q.findIndex(p => !used.has(p.o)); const p = Q.splice(j >= 0 ? j : 0, 1)[0]; used.add(p.o); out.push(p); }
         return out; };
       const more = n => { const all = allPhotos(G[n]), own = all.filter(p => src(p) === 'dauin').length;
-        return all.length > 8 ? `<button type="button" class="linkish fdmore" data-more="${esc(n)}">${S.open.has('p:' + n) ? 'Fewer photos' : `All ${all.length} photos${own ? ` (${own} from Dauin)` : ''}`}</button>` : ''; };
-      const mosaic = n => { const g = G[n], open = S.open.has('p:' + n);
+        return all.length > 8 ? `<button type="button" class="linkish fdmore" data-x="${esc(n)}">All ${all.length} photos${own ? ` (${own} from Dauin)` : ''}</button>` : ''; };
+      const mosaic = n => { const g = G[n];
         return `<article class="fdrow"><div class="fdinfo">${head(n)}<p>${esc(tipsText(g))}</p>${tools(n)}${more(n)}</div>
-          <div class="fdmos">${varied(g, open ? 99 : 8).map(p => ph(n, p, p.view)).join('')}</div></article>`; };
+          <div class="fdmos">${varied(g, 8).map(p => ph(n, p, p.view)).join('')}</div></article>`; };
+      // Opened genus: full width, every photo (of the picked view, or the mix) at a larger size, ID cues and Coral Finder features.
+      const big = (n, off) => { const g = G[n];
+        return `<article class="fdbig${off ? ' off' : ''}"><div class="fdbighd"><div class="fdinfo">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}</div>${tools(n)}</div>
+          <div class="fdbigtx"><p>${esc(tipsText(g))}</p><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>
+          <div class="fdbigph">${varied(g, 99).map(p => ph(n, p, p.view)).join('')}</div></article>`; };
       // Contact sheet: one line per genus with all its photos, small, to scan the whole shortlist line by line.
-      const sheet = n => `<article class="fdsheet"><div class="fdinfo">${head(n)}</div><div class="fdall">${varied(G[n], 99).map(p => ph(n, p, p.view)).join('')}</div></article>`;
+      const sheet = n => isX(n) ? big(n) : `<article class="fdsheet"><div class="fdinfo">${head(n)}</div><div class="fdall">${varied(G[n], 99).map(p => ph(n, p, p.view)).join('')}</div></article>`;
       // Photos follow the admin's curation (applied to DATA in app.js): hidden ones are gone, featured ones lead each
       // view, and Auto and "One clue off" tiles show the genus cover. The header's origin filter applies too.
-      const tile = (n, off) => { const g = G[n], v = pv === 'mix' ? null : pv, p = v ? (g.views[v] || [])[0] || cover(g) : cover(g);
+      const tile = (n, off) => { if (isX(n)) return big(n, off); const g = G[n], v = pv === 'mix' ? null : pv, p = v ? (g.views[v] || [])[0] || cover(g) : cover(g);
         return `<article class="fdtile${off ? ' off' : ''}">${p ? ph(n, p, v && (g.views[v] || [])[0] ? v : p.view || 'medium') : '<span class="none">no photo</span>'}<div class="fdinfo">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}<p>${esc(tipsText(g))}</p>${tools(n)}</div></article>`; };
       // Look-alikes outside the shortlist: worth a glance before deciding.
       const near = left.length && left.length <= 3 ? uniq(left.flatMap(n => lookOf(n))).filter(n => !left.includes(n) && !close.includes(n)) : [];
@@ -134,7 +141,7 @@ LAB.add({
         <span class="seg" role="group" aria-label="Photos">${[['mix', 'Mix'], ...VIEWS].map(([v, t]) => `<button type="button" data-pv="${v}" aria-pressed="${pv === v}">${t}</button>`).join('')}</span></span></div>
         ${chosen.length || S.q ? `<p class="fdchosen">${chosen.map(({f, o}) => `<button type="button" class="chip" data-o="${f.id}|${o.id}" title="Remove">${esc(o.t)} ×</button>`).join('')}${S.q ? `<button type="button" class="chip" data-clearq>“${esc(S.q)}” ×</button>` : ''}</p>` : ''}
         ${nextChecks(F, left.length ? left : close)}
-        ${left.length ? `${close.length || rest.length ? '<h3 class="fdgrp">Fits every clue</h3>' : ''}<div class="${mode === 'mosaic' ? 'fdrows' : mode === 'sheet' ? 'fdsheets' : 'fdgrid'}">${left.map(n => mode === 'mosaic' ? mosaic(n) : mode === 'sheet' ? sheet(n) : tile(n)).join('')}</div>` : `<p class="note">No IMR genus fits every clue: one of them may be wrong. Check the closest genera below.</p>`}
+        ${left.length ? `${close.length || rest.length ? '<h3 class="fdgrp">Fits every clue</h3>' : ''}<div class="${mode === 'mosaic' ? 'fdrows' : mode === 'sheet' ? 'fdsheets' : 'fdgrid'}">${left.map(n => isX(n) && mode === 'mosaic' ? big(n) : mode === 'mosaic' ? mosaic(n) : mode === 'sheet' ? sheet(n) : tile(n)).join('')}</div>` : `<p class="note">No IMR genus fits every clue: one of them may be wrong. Check the closest genera below.</p>`}
         ${close.length ? `<h3 class="fdgrp">One clue off <small>in case a clue was misjudged</small></h3><div class="fdgrid">${close.map(n => tile(n, true)).join('')}</div>` : ''}
         ${rest.length ? `<details class="fdrest"><summary>${rest.length} other genera <small>two clues off or more</small></summary><p class="fdchosen">${rest.map(n => `<a class="chip" href="${genLink(n)}"><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p></details>` : ''}
         ${near.length ? `<p class="fdnear"><span class="label">Also check these look-alikes</span>${near.map(n => `<a class="chip" href="#cmp-${esc(left[0])}|${esc(n)}"${(G[left[0]].lsrc || {})[n] ? ` title="${esc(G[left[0]].lsrc[n])}"` : ''}><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p>` : ''}
@@ -146,7 +153,7 @@ LAB.add({
       const cq = $main.querySelector('[data-clearq]'); if (cq) cq.onclick = () => { S.q = ''; draw(); };
       $main.querySelectorAll('[data-out]').forEach(b => b.onclick = () => { S.out.add(b.dataset.out); S.cmp = S.cmp.filter(x => x !== b.dataset.out); draw(); });
       $main.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { S.out.delete(b.dataset.back); draw(); });
-      $main.querySelectorAll('[data-more]').forEach(b => b.onclick = () => { const k = 'p:' + b.dataset.more; S.open.has(k) ? S.open.delete(k) : S.open.add(k); draw(); });
+      $main.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { const k = 'x:' + b.dataset.x; S.open.has(k) ? S.open.delete(k) : S.open.add(k); draw(); const a = $main.querySelector(`[data-x="${CSS.escape(b.dataset.x)}"]`); if (a && S.open.has(k)) a.closest('article').scrollIntoView({block: 'nearest', behavior: 'smooth'}); });
       $main.querySelectorAll('[data-cmpk]').forEach(b => b.onclick = () => { const n = b.dataset.cmpk; S.cmp = S.cmp.includes(n) ? S.cmp.filter(x => x !== n) : [...S.cmp, n].slice(-2); draw(); });
     }
 
