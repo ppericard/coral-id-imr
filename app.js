@@ -416,7 +416,7 @@ function bindProgFile(){
 }
 // RA sync: progress goes to Pierre's Google Sheet (Apps Script web app, tools/sync/Code.gs) under a name
 // and a 4-digit code; the same name and code bring it back on another device. Off while SYNC_URL is empty.
-const SYNC_URL = '';
+const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
 let SYNC = store.get('imr-coral-sync', null), syncTimer = null;
 function syncSummary(){
   const n = Object.keys(DATA.gen), genera = Object.fromEntries(n.map(x => [x, level(x)[0]]));
