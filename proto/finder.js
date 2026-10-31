@@ -101,7 +101,7 @@ LAB.add({
     function drawSide(F, left){
       const narrow = isPhone(), phone = narrow;  // one size system (app.js MQ): the clue panel stacks on phones only
       const nUsed = F.reduce((t, f) => t + S[f.id].size, 0);
-      $side.innerHTML = `${phone ? `<details class="fdfold"${S.open.has('side') ? ' open' : ''}><summary><span>Clues</span>${nUsed ? ` <span class="fdn">${nUsed}</span>` : ''}<span class="fdfoldh">${S.open.has('side') ? 'Hide' : 'Edit'}</span></summary>` : ''}<div class="fdsearch"><input type="search" id="fdq" placeholder="Genus name…" value="${esc(S.q)}" aria-label="Filter by genus name"></div>
+      $side.innerHTML = `${phone ? `<details class="fdfold"${S.open.has('side') ? ' open' : ''}><summary><span>Clues</span>${nUsed ? ` <span class="fdn">${nUsed}</span>` : ''}<span class="fdfoldh">${S.open.has('side') ? 'Hide' : 'Edit'}</span></summary>` : ''}
       ${F.map(f => {
         const picked = S[f.id].size, open = picked || S.open.has(f.id) || (narrow ? f.id === (startV === 'c' ? 'form' : 'imrf') : !f.closed);
         return `<details class="fdfacet" data-f="${f.id}"${open ? ' open' : ''}><summary${f.note ? ` title="${esc(f.note)}"` : ''}>${esc(f.name)}${picked ? ` <span class="fdn">${picked}</span>` : ''}</summary>
@@ -114,8 +114,6 @@ LAB.add({
       const fold = $side.querySelector('.fdfold'); if (fold) fold.ontoggle = () => { fold.open ? S.open.add('side') : S.open.delete('side'); fold.querySelector('.fdfoldh').textContent = fold.open ? 'Hide' : 'Edit'; };
       andWire($side);
       const jump = $side.querySelector('.fdjump'); if (jump) jump.onclick = e => { e.preventDefault(); $main.scrollIntoView({behavior: 'smooth'}); };
-      const q = $side.querySelector('#fdq');
-      q.oninput = () => { S.q = q.value.trim(); draw(true); };
       $side.querySelectorAll('details.fdfacet').forEach(d => d.ontoggle = () => d.open ? S.open.add(d.dataset.f) : S.open.delete(d.dataset.f));
       $side.querySelectorAll('[data-o]').forEach(b => b.onclick = () => {
         const [f, id] = b.dataset.o.split('|');
@@ -227,7 +225,7 @@ LAB.add({
       // Once a form is picked, the form tiles shrink to compact chips so the next clues and the shortlist move up (phones and desktop).
       const forms = f => `<div class="fdforms${S[f.id].size ? ' mini' : ''}">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>${andSw(f.id)}`;
       const show = `<button type="button" class="next fdshow" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera`} →</button>`;
-      // Two entry points for everyone: IMR forms (default) or the paper Coral Finder's path, as a discreet link.
+      // Two entry points: the paper Coral Finder's path (default) or the IMR forms, as a discreet link at the bottom (Pierre: it took room for nothing).
       const switcher = `<button type="button" class="linkish fdsv" data-sv="${startV === 'c' ? 'a' : 'c'}">${startV === 'c' ? '← IMR growth forms' : 'Coral Finder path →'}</button>`;
       let body;
       if (startV === 'c') {
@@ -245,10 +243,9 @@ LAB.add({
       const live = !used(F).length ? '' : `<div class="fdlive"><h3 class="fdgrp">${left.length} ${left.length === 1 ? 'genus fits' : 'genera fit'} every clue${close.length ? ` <small>${close.length} more one clue off</small>` : ''}</h3>
         <div class="fdgcs">${left.map(genCard).join('')}</div></div>`;
       $start.classList.toggle('used', !!used(F).length);
-      $start.innerHTML = `<div class="fdstop"><input type="search" id="fdsq" placeholder="Genus name…" aria-label="Find a genus by name">${switcher}${show}</div>${body}${live}`;
+      $start.innerHTML = `<div class="fdstop">${show}</div>${body}${live}<p class="fdsvrow">${switcher}</p>`;
       andWire($start);
       $start.querySelectorAll('[data-sv]').forEach(b => b.onclick = () => { startV = b.dataset.sv; store.set('imr-finder-start2', startV); FIDS.forEach(f => S[f].clear()); draw(); });
-      $start.querySelector('#fdsq').oninput = e => { S.q = e.target.value.trim(); if (S.q) { S.home = false; draw(); const q = $side.querySelector('#fdq'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); } };
       $start.querySelectorAll('[data-gx]').forEach(b => b.onclick = () => { const n = b.dataset.gx; S.home = false; S.open.add('x:' + n); draw();
         const a = $main.querySelector(`[data-x="${CSS.escape(n)}"]`); a ? a.closest('article').scrollIntoView({block: 'start'}) : window.scrollTo(0, 0); });
       const sh = $start.querySelector('[data-show]'); if (sh) sh.onclick = () => { S.home = false; draw(); window.scrollTo(0, 0); };
@@ -269,23 +266,20 @@ LAB.add({
       const x = $cmp.querySelector('[data-cx]'); if (x) x.onclick = () => { S.cmp = []; draw(); };
     }
 
-    // keepFocus: typing in the name box redraws the panel without losing the caret.
-    function draw(keepFocus){
+    function draw(){
       const F = facets(), pool = names.filter(n => !S.out.has(n) && fitsQ(n));
       $start.hidden = !S.home; $lay.hidden = S.home; $cmp.hidden = S.home || !S.cmp.length;
       if (S.home) { drawStart(F); saveHash(); return; }
       const left = pool.filter(n => pen(n, F) === 0), close = pool.filter(n => pen(n, F) > 0 && pen(n, F) <= 1), rest = pool.filter(n => pen(n, F) > 1);
-      if (keepFocus) { const q = $side.querySelector('#fdq'), pos = q.selectionStart; drawSide(F, left); const q2 = $side.querySelector('#fdq'); q2.focus(); q2.setSelectionRange(pos, pos); }
-      else drawSide(F, left);
+      drawSide(F, left);
       drawMain(F, left, close, rest); drawCmp(); saveHash();
       $main.querySelectorAll('.fdnext [data-o]').forEach(b => b.onclick = () => { const [f, id] = b.dataset.o.split('|'); S[f].add(id); draw(); });
     }
-    // "/" jumps to the name box; Escape (outside the photo viewer and the name box) starts over.
+    // No genus-name box: the Coral Finder is for corals you don't know yet (Pierre). Escape (outside the photo viewer) starts over.
     const key = e => {
       if (!document.body.contains(root)) return document.removeEventListener('keydown', key);
       if (!lb.hidden || e.target.closest && e.target.closest('input,textarea')) return;
-      if (e.key === '/') { e.preventDefault(); $side.querySelector('#fdq').focus(); }
-      else if (e.key === 'Escape') reset();
+      if (e.key === 'Escape') reset();
     };
     document.addEventListener('keydown', key);
     draw();

@@ -683,12 +683,12 @@ button.fdname[aria-expanded="true"]::after{content:" ▾"}
 /* Coral Finder start screen (three proposals: board, step by step, Coral Finder path) */
 .fdstart{display:flex;flex-direction:column;gap:14px}
 .fdstop{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.fdstop input{flex:0 1 240px;font:inherit;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink)}
 .fdstop .fdshow{margin-left:0}
 @media (min-width:600px){
   .fdstop .fdshow{margin-left:auto}
 }
 .fdsv{font-size:.88rem;color:var(--muted)}
+.fdsvrow{margin:0;text-align:center}
 .fdforms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media (min-width:600px){
   .fdforms{grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
@@ -782,6 +782,7 @@ button.fdgc{font:inherit;padding:0;text-align:left;cursor:pointer}
 .fdfold[open]{padding-bottom:8px}
 /* Phone base (mobile-first); larger screens restore below. */
 body:has(.fdstart:not([hidden])) footer{padding-bottom:72px}
+.fdstop{margin-bottom:-14px}
 .fdstart .fdshow{position:fixed;left:16px;right:16px;width:auto;bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px) + 8px);z-index:15;text-align:center;box-shadow:var(--shadow-hover,0 6px 18px rgba(0,0,0,.25))}
 .fdfold .fdjump{display:none}
 .fdsegs .seg[aria-label="Layout"]{display:none}
@@ -790,6 +791,7 @@ body:has(.fdstart:not([hidden])) footer{padding-bottom:72px}
 
 @media (min-width:600px){
   body:has(.fdstart:not([hidden])) footer{padding-bottom:10px}
+  .fdstop{margin-bottom:0}
   .fdstart .fdshow{position:revert;left:revert;right:revert;width:revert;bottom:revert;z-index:revert;text-align:revert;box-shadow:var(--shadow)}
   .fdfold .fdjump{display:inline-block}
   .fdsegs .seg[aria-label="Layout"]{display:inline-flex}
