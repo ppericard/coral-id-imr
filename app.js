@@ -646,6 +646,9 @@ function bindSync(){
     box.innerHTML = bad
       ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'pin' ? 'The sheet refused the code for this name. Sign out and sign in again with the right code.' : 'Your answers are kept on this device and sent as soon as the sheet can be reached.'}${when ? ` Last saved ${when}.` : ''}</p>
         <button class="chip go" type="button" id="snow">Try again</button> <button class="reset" type="button" id="soff">Sign out</button> <span class="note" role="status"></span>`
+      : (SYNC.dirty || (SYNC.log || []).length)  // answers not confirmed yet, no error so far: say so, quietly
+      ? `<p class="sline"><span class="sdot wait"></span><span>Saving for IMR as <b>${esc(SYNC.name)}</b>…</span>
+        <button class="linkish" type="button" id="snow">Send now</button><button class="linkish" type="button" id="soff">Sign out</button></p><span class="note" role="status"></span>`
       : `<p class="sline"><span class="sdot"></span><span>Saved for IMR as <b>${esc(SYNC.name)}</b>${when ? ` · ${when}` : ''}</span>
         <button class="linkish" type="button" id="snow">Send now</button><button class="linkish" type="button" id="soff">Sign out</button></p><span class="note" role="status"></span>`;
     box.querySelector('#snow').onclick = () => { msg('Sending…'); syncPush().then(j => { if (!(j && j.ok)) msg(j && j.error === 'pin' ? 'The sheet refused the code for this name.' : 'Could not reach the sheet. Check your connection.'); }); };

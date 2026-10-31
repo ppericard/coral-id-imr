@@ -493,3 +493,4 @@ a.lt:hover{border-color:var(--accent)}
 .sync .sline .linkish{font-size:.85rem}
 .sync.warn{border:1px solid #d98b2b;background:color-mix(in srgb,#d98b2b 12%,var(--surface));padding:10px 12px}
 .sync.warn p{margin:0 0 6px}
+.sync.on .sdot.wait{background:var(--muted)}
