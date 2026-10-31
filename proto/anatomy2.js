@@ -192,7 +192,7 @@
   LAB.add({
     id: 'anatomy2', icon: '⬡', title: 'Anatomy v2',
     blurb: 'One arrangement or one concept at a time: a clean drawing for each, ringed on real macro photos, then a photo drill.',
-    lede: 'Learn how corallites sit together (arrangements) and what their parts are (concepts), always checked on real photos.',
+    lede: '',
     render(root, ...args){
       const edit = args.includes('edit'), a = args.filter(x => x !== 'edit'), mode = ['con', 'drill'].includes(a[0]) ? a[0] : 'arr', sfx = edit ? '|edit' : '';
       const tabs = `<nav class="a2tabs" aria-label="Anatomy views">${[['arr', 'Arrangements'], ['con', 'Concepts'], ['drill', 'Photo drill']].map(([k, t]) => `<a href="#lab-anatomy2|${k}${sfx}"${mode === k ? ' aria-current="page"' : ''}>${t}</a>`).join('')}</nav>`;
@@ -200,19 +200,17 @@
       if (mode === 'arr') {
         const cur = ARR.find(x => x.id === a[1]) || ARR[0];
         const kind = cur.id === 'phaceloid' ? 'phaceloid' : PROFKIND[cur.id] || cur.id;
-        root.innerHTML = `${tabs}<p class="note">The first question on any corallite photo: how do the corallites sit together? Several genera show more than one arrangement.</p>
-          <div class="a2arrs">${ARR.map(x => `<a href="#lab-anatomy2|arr|${x.id}${sfx}"${x === cur ? ' aria-current="true"' : ''}>${block(x.id === 'phaceloid' ? 'phaceloid' : PROFKIND[x.id] || x.id, x.draw ? x.draw() : '', x.name)}<b>${esc(x.name)}</b><small>${esc(x.tech)}</small></a>`).join('')}</div>
-          <section class="a2detail"><div class="a2big">${block(kind, cur.draw ? cur.draw() : '', cur.name + ', seen at an angle with a cut face')}</div>
-          <div><h3>${esc(cur.name)} <small>${esc(cur.tech)}</small></h3><ul>${cur.see.map(s => `<li>${esc(s)}</li>`).join('')}</ul>
-          <p class="note">Drawing not to scale. The front face is a cut through the colony surface.</p></div></section>
-          ${cur.small ? `<h3>Small corallites, under 2 mm</h3><div class="a2gs">${cur.small.map(n => gthumb(n, list, cur.notes[n], cur)).join('')}</div><h3>Large corallites, 2 mm and up</h3>` : '<h3>IMR genera</h3>'}
-          <div class="a2gs">${cur.genera.map(n => gthumb(n, list, cur.notes[n], cur)).join('')}</div>`;
+        root.innerHTML = `${tabs}<div class="a2lay"><nav class="a2side" aria-label="Arrangements">${ARR.map(x => `<a href="#lab-anatomy2|arr|${x.id}${sfx}"${x === cur ? ' aria-current="true"' : ''}>${block(x.id === 'phaceloid' ? 'phaceloid' : PROFKIND[x.id] || x.id, x.draw ? x.draw() : '', x.name)}<span><b>${esc(x.name)}</b><small>${esc(x.tech)}</small></span></a>`).join('')}</nav>
+          <div class="a2main"><section class="a2detail"><div class="a2big">${block(kind, cur.draw ? cur.draw() : '', cur.name + ', seen at an angle with a cut face')}</div>
+          <div><h3>${esc(cur.name)} <small>${esc(cur.tech)}</small></h3><ul>${cur.see.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div></section>
+          ${cur.small ? `<h4 class="a2h">Small corallites, under 2 mm</h4><div class="a2gs">${cur.small.map(n => gthumb(n, list, cur.notes[n], cur)).join('')}</div><h4 class="a2h">Large corallites, 2 mm and up</h4>` : ''}
+          <div class="a2gs">${cur.genera.map(n => gthumb(n, list, cur.notes[n], cur)).join('')}</div></div></div>`;
       } else if (mode === 'con') {
         const cur = CON.find(x => x.id === a[1]) || CON[0];
-        root.innerHTML = `${tabs}<div class="chips a2chips">${CON.map(x => `<a class="chip" href="#lab-anatomy2|con|${x.id}${sfx}"${x === cur ? ' aria-current="true"' : ''}>${esc(x.name)}</a>`).join('')}</div>
-          <section class="a2con"><div class="a2minis">${cur.minis.map(([s, l]) => `<figure>${flat(s, l, cur.box)}<figcaption>${esc(l)}</figcaption></figure>`).join('')}</div>
+        root.innerHTML = `${tabs}<div class="a2lay"><nav class="a2side a2side-t" aria-label="Concepts">${CON.map(x => `<a href="#lab-anatomy2|con|${x.id}${sfx}"${x === cur ? ' aria-current="true"' : ''}><span><b>${esc(x.name)}</b><small>${esc(x.q)}</small></span></a>`).join('')}</nav>
+          <div class="a2main"><section class="a2con"><div class="a2minis">${cur.minis.map(([s, l]) => `<figure>${flat(s, l, cur.box)}<figcaption>${esc(l)}</figcaption></figure>`).join('')}</div>
           <div><h3>${esc(cur.name)}</h3><p class="a2q">${esc(cur.q)}</p><p>${esc(cur.def)}</p></div></section>
-          <h3>On real corallites</h3><div class="a2shots">${cur.shots.map(([f, g, r, note], k) => { list.push(photoOf(f, g)); return ringed(f, g, r, note, k, edit); }).join('')}</div>`;
+          <div class="a2shots">${cur.shots.map(([f, g, r, note], k) => { list.push(photoOf(f, g)); return ringed(f, g, r, note, k, edit); }).join('')}</div></div></div>`;
       } else {
         root.innerHTML = `${tabs}<div class="seg" role="group" aria-label="Drill type"><button type="button" data-t="con" aria-pressed="true">What is ringed?</button><button type="button" data-t="arr" aria-pressed="false">Which arrangement?</button></div>
           <div id="a2q"></div><p><button type="button" class="next" id="a2next">Next photo</button> <span class="note" id="a2score"></span></p>`;
