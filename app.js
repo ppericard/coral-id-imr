@@ -250,53 +250,12 @@ function viewCompare(a, b){
   bindCards(); bindGo();
 }
 
-/* ---------- key (Coral Finder + IMR groups + traits) ---------- */
+/* ---------- key helpers (Coral Finder boxes, used by genus sheets and the Coral Finder) + IMR groups ---------- */
 const groupOf = id => DATA.key.find(g => g.id === id[0]);
 const leafOf = id => groupOf(id)?.leaves.find(l => l.id === id);
 const pg = l => l.a === l.b ? 'p.' + l.a : 'p.' + l.a + '-' + l.b;
 const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 
-// Colony-form key: every level stays on screen. Chosen levels shrink to a row of links,
-// so going back or switching to a sibling is one click (and a real link).
-const kThumbs = (L, max = 6) => `<span class="kthumbs">${bySlate(L).slice(0, max).map(n => { const p = cover(DATA.gen[n]); return p ? `<img src="${img(p, 's')}" alt="" loading="lazy">` : ''; }).join('')}${L.length > max ? `<span class="more">+${L.length - max}</span>` : ''}</span>`;
-const kLevel = (n, title, body, done) => `<section class="klevel${done ? ' done' : ''}"><h3 class="klab"><span class="kn">${n}</span>${title}</h3>${body}</section>`;
-function keyPath(g, l){
-  const forms = g
-    ? `<div class="kpick">${DATA.key.map(x => `<a class="c-${x.color}" href="#k-${x.id}"${x === g ? ' aria-current="step"' : ''}>${esc(x.name)}</a>`).join('')}</div>`
-    : `<div class="groups">${DATA.key.map(x => { const L = [...new Set(x.leaves.flatMap(y => y.g))];
-        return `<a class="group c-${x.color}" href="#k-${x.id}"><b>${esc(x.name)}</b><span>${esc(x.sub)}</span>${kThumbs(L)}<em>${L.length} IMR ${L.length > 1 ? 'genera' : 'genus'}</em></a>`; }).join('')}</div>`;
-  let out = kLevel(1, 'Colony shape', forms, !!g);
-  if (g && g.leaves.length > 1) {
-    const body = l
-      ? `<div class="kpick">${g.leaves.map(y => y.g.length ? `<a class="c-${g.color}" href="#l-${y.id}"${y === l ? ' aria-current="step"' : ''}>${esc(leafLabel(y))} <small>${y.g.length}</small></a>` : '').join('')}</div>`
-      : `<div class="leaves">${g.leaves.map(y => { const inner = `<span class="t">${esc(y.t)}</span><span class="s">${esc(y.s || '')}</span>
-          <span class="n">${y.g.length ? y.g.length + (y.g.length > 1 ? ' genera' : ' genus') + ': ' + bySlate(y.g).map(esc).join(', ') : 'No IMR genus here'} · ${pg(y)}</span>${y.g.length ? kThumbs(y.g, 8) : ''}`;
-          return y.g.length ? `<a class="leaf c-${g.color}" href="#l-${y.id}">${inner}</a>` : `<span class="leaf c-${g.color}" aria-disabled="true">${inner}</span>`; }).join('')}</div>`;
-    out += kLevel(2, `${esc(g.name)}: corallites`, body, !!l);
-  }
-  return out;
-}
-function viewKey(){
-  $v.innerHTML = `<h2>What shape is the colony?</h2>
-  <p class="lede">Pick the growth form, then the corallite size or type. The key follows the Coral Finder's front page and only shows genera on the IMR list.</p>
-  <p class="warn"><b>Growth form is only a starting point.</b> Many genera take several forms, sometimes within a single colony: <i>Porites</i> shows up in 3 groups and 8 boxes of this key. Each genus is listed everywhere the Coral Finder shows it. To decide, look at the corallites.</p>
-  ${keyPath(null)}`;
-  bindGo();
-}
-function viewGroup(id){
-  const g = groupOf(id);
-  if (g.leaves.length === 1) return viewLeaf(g.leaves[0].id, true);
-  $v.innerHTML = `<h2>${esc(g.name)}: what next?</h2><p class="lede">${esc(g.sub)}. Now look at the corallites.</p>${keyPath(g)}`;
-  bindGo();
-}
-function viewLeaf(id, single){
-  const g = groupOf(id), l = leafOf(id), n = single ? 2 : 3;
-  $v.innerHTML = `<h2>${l.g.length} candidate${l.g.length > 1 ? 's' : ''}</h2>
-  <p class="lede">${esc(g.name)} · ${esc(leafLabel(l))}. Coral Finder ${pg(l)}, which also shows genera outside the IMR list.</p>
-  ${keyPath(g, single ? null : l)}
-  ${kLevel(n, 'Candidates: check the corallites', `<div class="grid">${bySlate(l.g).map(x => card(x)).join('')}</div>`)}`;
-  bindCards(); bindGo();
-}
 function viewIMR(){
   $v.innerHTML = `<h2>IMR lecture groups</h2>
   <p class="lede">IMR Lecture 6 sorts the surveyed genera by corallite type, not by colony shape. Run through the four questions, then pick the matching group.</p>
@@ -307,22 +266,6 @@ function viewIMR(){
   <section class="imrg"><h3><span class="gn">★</span> Not covered in the lecture</h3><p class="note">The starred genera on the slate, to rule out look-alikes.</p><div class="grid">${Object.keys(DATA.gen).filter(n => !DATA.gen[n].ig).map(card).join('')}</div></section>`;
   bindCards(); bindGo();
 }
-let trSel = new Set();
-function viewTraits(){
-  $v.innerHTML = `<h2>What do the corallites show?</h2>
-  <p class="lede">Tick what you see, ignoring the colony's shape. Several picks within one section mean either/or; sections combine.</p>
-  ${DATA.traits.map(c => `<fieldset class="trset"><legend>${esc(c.name)}</legend><div class="chips">${c.opts.map(o => `<button class="chip" type="button" data-t="${o.id}" aria-pressed="${trSel.has(o.id)}">${esc(o.t)}</button>`).join('')}</div></fieldset>`).join('')}
-  <div class="count" id="trcount"></div><div class="grid" id="trgrid"></div>`;
-  const draw = () => {
-    const names = Object.keys(DATA.gen).filter(n => DATA.traits.every(c => { const picked = c.opts.filter(o => trSel.has(o.id)).map(o => o.id); return !picked.length || picked.some(id => DATA.gen[n].tr.includes(id)); }));
-    document.getElementById('trcount').textContent = trSel.size ? names.length + (names.length > 1 ? ' possible genera' : ' possible genus') : 'All 39 genera';
-    document.getElementById('trgrid').innerHTML = names.map(card).join('') || '<p class="note">No IMR genus matches all of these. Remove a filter.</p>';
-    bindCards();
-  };
-  $v.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { trSel.has(b.dataset.t) ? trSel.delete(b.dataset.t) : trSel.add(b.dataset.t); b.setAttribute('aria-pressed', String(trSel.has(b.dataset.t))); draw(); });
-  bindGo(); draw();
-}
-
 /* ---------- quiz ---------- */
 // Progress per genus {ok, ko, streak, conf}, kept in this browser only.
 let P = store.get('imr-coral-progress', {}) || {};
@@ -577,7 +520,7 @@ function go(h){ if (decodeURIComponent(location.hash.slice(1)) === h) route(); e
 
 // Photo size (small / medium / large), remembered per page.
 const PAGE_DEFAULT = {genera: 'm', key: 'm', genus: 'm', cmp: 'm', quiz: 'm'};
-function pageKey(){ const h = decodeURIComponent(location.hash.slice(1)); return h.startsWith('g-') ? 'genus' : h.startsWith('cmp') ? 'cmp' : h.startsWith('quiz') ? 'quiz' : (h.startsWith('key') || /^[kl]-/.test(h)) ? 'key' : 'genera'; }
+function pageKey(){ const h = decodeURIComponent(location.hash.slice(1)); return h.startsWith('g-') ? 'genus' : h.startsWith('cmp') ? 'cmp' : h.startsWith('quiz') ? 'quiz' : (h.startsWith('key') || h.startsWith('finder') || /^[kl]-/.test(h)) ? 'key' : 'genera'; }
 function sizePrefs(){ try { return JSON.parse(localStorage.getItem('imr-coral-size')) || {}; } catch (e) { return {}; } }
 function photoSize(){ return sizePrefs()[pageKey()] || PAGE_DEFAULT[pageKey()]; }
 const SIZES = {card: {s: '240px', m: '360px', l: '520px'}, strip: {s: '(max-width:700px) 46vw, 260px', m: '(max-width:700px) 92vw, 420px', l: '(max-width:700px) 92vw, 640px'}};
@@ -599,11 +542,11 @@ showTheme();
 const MODES = {
   learn: [['genera', 'Genera', 'The 39 genus sheets'], ['cmp', 'Look-alikes', 'Confused pairs side by side']],
   practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['quiz-course', 'Lecture photos', 'Photos from the IMR course'], ['pairs', 'Memory', 'Match colony and corallites'], ['reveal', 'Blur reveal', 'Name it before it sharpens']],
-  identify: [['key-imr', 'IMR lecture groups', 'The 11 groups from the lecture'], ['key', 'Coral Finder', 'Growth form first, then compare candidates'], ['key-tr', 'By corallites', 'Filter on skeletal details']]
+  identify: [['finder', 'Coral Finder', 'Tap the clues you see, get a ranked shortlist'], ['key-imr', 'IMR lecture groups', 'The 11 groups from the lecture']]
 };
 const MODE_LABEL = {learn: 'Learn tools', identify: 'Ways to identify', practice: 'Practice modes'};
 // Which tab of MODES a hash belongs to: key leaves and groups count as the key, genus sheets as Genera, pairs as Look-alikes.
-function modeOf(h){ return /^[kl]-/.test(h) ? 'key' : h.startsWith('g-') ? 'genera' : h.startsWith('cmp') ? 'cmp' : h.split('|')[0]; }
+function modeOf(h){ return /^[kl]-/.test(h) ? 'finder' : h.startsWith('g-') ? 'genera' : h.startsWith('cmp') ? 'cmp' : h.split('|')[0]; }
 function sectionOf(h){
   if (!h || h === 'home') return 'home';
   if (h.startsWith('lab')) return 'lab';
@@ -651,11 +594,11 @@ function route(){
   showProg(); tab === 'progress' ? $prog.setAttribute('aria-current', 'page') : $prog.removeAttribute('aria-current');
   document.querySelectorAll('nav [data-tab]').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   showModes(tab, h);
-  if (h === 'key') viewKey();
+  // The old growth-form key and corallite filters live on in the Coral Finder: their links open it with the same clues ticked.
+  if (h === 'key' || h === 'key-tr') location.replace('#finder');
+  else if (h.startsWith('k-') && groupOf(h.slice(2))) location.replace('#finder|form=' + h.slice(2));
+  else if (h.startsWith('l-') && leafOf(h.slice(2))) { const l = h.slice(2), one = groupOf(l).leaves.length === 1; location.replace('#finder|form=' + l[0] + (one ? '' : ';box=' + l)); }
   else if (h === 'key-imr') viewIMR();
-  else if (h === 'key-tr') viewTraits();
-  else if (h.startsWith('k-') && groupOf(h.slice(2))) viewGroup(h.slice(2));
-  else if (h.startsWith('l-') && leafOf(h.slice(2))) viewLeaf(h.slice(2), groupOf(h.slice(2)).leaves.length === 1);
   else if (h.startsWith('g-')) viewGenus(h.slice(2));
   else if (h === 'cmp') viewCompareList();
   else if (h.startsWith('cmp-')) viewCompare(...h.slice(4).split('|'));
