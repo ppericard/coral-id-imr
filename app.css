@@ -300,7 +300,6 @@ td i{font-weight:600}
 /* ---------- Responsive ---------- */
 @media (max-width:700px){.cols{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:520px){.gloss dl{grid-template-columns:minmax(0,1fr)}.gloss dd{margin-bottom:6px}}
-@media (max-width:480px){.brand .home span{display:none}}
 @media (max-width:640px){
   header{display:grid;grid-template-columns:1fr auto;grid-template-areas:"title tools" "nav nav";gap:8px;padding-block:8px}
   .brand{grid-area:title}
