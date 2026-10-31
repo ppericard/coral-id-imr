@@ -73,3 +73,7 @@
 .htools.small b{font-size:1rem;padding-bottom:8px}
 .htools:not(.small) .htool b{font-size:1.3rem}
 .htools:not(.small) .htool small{font-size:.95rem}
+/* One discreet link to the Lab under the path. */
+.hlablink{margin:18px 0 0;font-size:.9rem}
+.hlablink a{color:var(--muted);text-decoration:none}
+.hlablink a:hover{color:var(--accent);text-decoration:underline}
