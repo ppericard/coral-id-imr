@@ -163,3 +163,9 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 :root[data-size="l"] .adm-grid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
 :root[data-size="s"] .adm-qgrid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
 :root[data-size="l"] .adm-qgrid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+/* Growth form: tag (dashed = Claude's first guess), letter toggles (several allowed, ∅ = form not visible) */
+.adm-ftag{background:var(--surface-2);color:var(--ink)}
+.adm-acts .adm-fseg button{font-weight:700;letter-spacing:.02em}
+.adm-acts .adm-fseg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.adm-acts .adm-fseg button[data-fm="x"][aria-pressed="true"]{background:var(--surface-2);color:var(--ink)}
+.adm-fl{display:inline-grid;place-items:center;min-width:1.6em;height:1.6em;border-radius:6px;background:var(--accent);color:var(--accent-ink);font-size:.85rem}
