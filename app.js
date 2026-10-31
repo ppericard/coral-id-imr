@@ -118,10 +118,8 @@ function viewGenus(name){
     return `<section class="vrow"><h3>${label}${feat.length ? '' : ' <span class="gap">missing</span>'}</h3>${feat.length ? `<div class="strip">${feat.map(fig).join('')}</div>` : '<p class="note">No good photo yet for this view.</p>'}
       ${more.length ? `<details class="more"><summary>${more.length} more ${label.toLowerCase()} photo${more.length > 1 ? 's' : ''}</summary><div class="strip">${more.map(fig).join('')}</div></details>` : ''}</section>`;
   }).join('');
-  $v.innerHTML = `<div class="crumbs"><button type="button" data-back>‹ Back</button></div>
-  <article class="sheet">
-    <span class="fam">${g.n ? 'No. ' + g.n + ' on the slate · ' : ''}${esc(g.fam)}</span>
-    <h2>${esc(name)}</h2>
+  // Name, slate number and family sit in the sticky header bar (ctxBar), not here.
+  $v.innerHTML = `<article class="sheet">
     <p class="lede keyid">${esc(g.sum)}</p>
     ${g.n ? '' : `<p class="warn"><b>★ Not surveyed by IMR.</b> It is on the slate so you don't mistake it for ${g.look.filter(n => DATA.gen[n].n).map(n => '<i>' + esc(n) + '</i>').join(', ')}, so you need to recognise it and set it aside.</p>`}
     <div class="hero">
@@ -144,7 +142,6 @@ function viewGenus(name){
   bindGo();
   const hub = $v.querySelector('.hubsec'), redraw = () => { hub.innerHTML = lookHub(name); bindViewSeg(redraw); };
   bindViewSeg(redraw);
-  $v.querySelector('[data-back]').onclick = () => history.length > 1 ? history.back() : go('genera');
 }
 
 /* ---------- compare ---------- */
@@ -210,9 +207,7 @@ function viewCompare(a, b){
     const cell = (n, g) => { const p = (g.views[v] || [])[0]; if (!p) return `<div class="cmpph none">${g.levels === 2 ? 'no separate level' : 'no photo'}</div>`; flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom cmpph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 46vw, 460px" alt="${esc(n)}, ${label.toLowerCase()}" loading="lazy"></button>`; };
     return `<h3 class="cmplab">${label}</h3><div class="cmprow">${cell(a, A)}${cell(b, B)}</div>`;
   };
-  $v.innerHTML = `<div class="crumbs"><a href="#cmp">All pairs</a> › <i>${esc(a)}</i> vs <i>${esc(b)}</i></div>
-  <h2><i>${esc(a)}</i> or <i>${esc(b)}</i>?</h2>
-  ${VIEWS.filter(([v]) => (A.views[v] || []).length || (B.views[v] || []).length).map(row).join('')}
+  $v.innerHTML = `${VIEWS.filter(([v]) => (A.views[v] || []).length || (B.views[v] || []).length).map(row).join('')}
   <div class="cmprow text">${col(a, A)}${col(b, B)}</div>
   <p><a class="next" href="#quiz-duel|${esc(a)}|${esc(b)}">Drill this pair</a></p>`;
   $v.querySelectorAll('[data-z]').forEach(x => x.onclick = () => zoom(flat, Number(x.dataset.z)));
@@ -580,7 +575,32 @@ function sectionOf(h){
   return Object.keys(MODES).find(t => MODES[t].some(x => x[0] === m)) || 'learn';
 }
 const $modes = document.getElementById('modes');
+// Genera in the order of the Genera page (lecture groups or slate), for previous / next on a sheet.
+function generaOrder(){
+  const names = Object.keys(DATA.gen), gi = n => DATA.gen[n].ig || 99;
+  return azOrder === 'lecture' ? names.sort((a, b) => gi(a) - gi(b) || slateIdx(a) - slateIdx(b)) : names;
+}
+// On a genus sheet or a pair, the header bar names the page instead of listing the section's tools.
+function ctxBar(h){
+  const back = `<button type="button" class="up" data-back aria-label="Back">‹<span>Back</span></button>`;
+  if (h.startsWith('g-') && DATA.gen[h.slice(2)]) {
+    const n = h.slice(2), g = DATA.gen[n], L = generaOrder(), i = L.indexOf(n);
+    const prev = L[(i - 1 + L.length) % L.length], next = L[(i + 1) % L.length];
+    return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(g.fam)}</small></h2>
+      <span class="pn"><a href="#g-${esc(prev)}" title="Previous: ${esc(prev)}" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="#g-${esc(next)}" title="Next: ${esc(next)}" aria-label="Next genus: ${esc(next)}">›</a></span>`;
+  }
+  const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
+  if (a && DATA.gen[a] && DATA.gen[b]) return `${back}<h2 class="ctx-t"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="#cmp">All pairs</a>`;
+  return '';
+}
 function showModes(tab, h){
+  const ctx = ctxBar(h);
+  $modes.classList.toggle('ctx', !!ctx);
+  if (ctx) {
+    $modes.hidden = false; $modes.setAttribute('aria-label', 'Page'); $modes.innerHTML = ctx;
+    $modes.querySelector('[data-back]').onclick = () => history.length > 1 ? history.back() : go(h.startsWith('g-') ? 'genera' : 'cmp');
+    return;
+  }
   const L = MODES[tab]; $modes.hidden = !L; if (!L) { $modes.innerHTML = ''; return; }
   const cur = modeOf(h);
   $modes.setAttribute('aria-label', MODE_LABEL[tab]);
