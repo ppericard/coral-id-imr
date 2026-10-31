@@ -9,7 +9,7 @@ LAB.add({
     root.innerHTML = `<div class="elimlayout"><aside class="elimside"><div class="elimtop"><div id="elimmyst"></div><div class="elimctl">
         <p class="elimcount" id="elimcount"></p>
         <p><button type="button" class="chip" id="elimm">Mystery photo</button> <button type="button" class="chip" id="elimr">Clear ticks</button></p>
-        <p class="note" id="elimhint"></p></div></div>
+        <div class="note" id="elimhint"></div></div></div>
       ${DATA.traits.map(c => `<fieldset class="trset"><legend>${esc(c.name)}</legend><div class="chips">${c.opts.map(o => `<button class="chip" type="button" data-t="${o.id}">${esc(o.t)}</button>`).join('')}</div></fieldset>`).join('')}</aside>
       <div><div class="elimgrid" id="elimgrid">${labNames().map(n => `<a class="etile" href="${genLink(n)}" data-n="${esc(n)}"><img src="${thumbSrc(n)}" alt="${esc(n)} corallites" loading="lazy"><span><i>${esc(n)}</i>${DATA.gen[n].n ? '' : ' ★'}</span></a>`).join('')}</div>
       <div id="elimres"></div></div></div>`;
@@ -20,9 +20,14 @@ LAB.add({
       root.querySelectorAll('[data-t]').forEach(b => { b.setAttribute('aria-pressed', String(sel.has(b.dataset.t))); b.classList.remove('best'); });
       root.querySelector('#elimcount').innerHTML = `<b>${left.length}</b> ${left.length === 1 ? 'genus left' : 'genera left'}`;
       // Best next check: the unticked feature that splits the remaining genera most evenly.
-      const cands = DATA.traits.flatMap(c => c.opts).filter(o => !sel.has(o.id)).map(o => { const k = left.filter(n => DATA.gen[n].tr.includes(o.id)).length; return {o, k, s: Math.min(k, left.length - k)}; }).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 3);
+      const cands = DATA.traits.flatMap(c => c.opts.map(o => ({o, c}))).filter(({o}) => !sel.has(o.id)).map(({o, c}) => { const yes = left.filter(n => DATA.gen[n].tr.includes(o.id)); return {o, c, yes, no: left.filter(n => !yes.includes(n)), s: Math.min(yes.length, left.length - yes.length)}; }).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 3);
       cands.forEach(x => root.querySelector(`[data-t="${x.o.id}"]`).classList.add('best'));
-      root.querySelector('#elimhint').innerHTML = left.length > 1 && cands.length ? `Most useful to check next: ${cands.map(x => `<b>${esc(x.o.t.toLowerCase())}</b> (${x.k} of ${left.length})`).join(', ')}.` : left.length === 1 ? 'Only one genus fits. Check it against its sheet.' : left.length ? 'These genera share every feature listed here: compare them side by side.' : 'Nothing fits: untick something.';
+      // Each suggestion shows which of the remaining genera have the feature and which don't (thumbnails while few are left).
+      const side = (L, label) => `<span class="esplit"><small>${label} · ${L.length}</small>${left.length <= 12 ? L.map(n => `<img src="${thumbSrc(n)}" alt="${esc(n)}" title="${esc(n)}">`).join('') : ''}</span>`;
+      root.querySelector('#elimhint').innerHTML = left.length > 1 && cands.length ? `<b>Next question to ask</b>: the features below cut the ${left.length} remaining genera most evenly, so whatever the answer, you rule out the most. Look for it on your coral and tap it.
+        <span class="enext">${cands.map(x => `<button type="button" class="ebest" data-pick="${x.o.id}"><span><span class="note">${esc(x.c.name)}:</span> <b>${esc(x.o.t)}</b>?</span>${side(x.yes, 'Yes')}${side(x.no, 'No')}</button>`).join('')}</span>`
+        : left.length === 1 ? 'Only one genus fits. Check it against its sheet.' : left.length ? 'These genera share every feature listed here: compare them side by side.' : 'Nothing fits: untick something.';
+      root.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { sel.add(b.dataset.pick); draw(); });
     };
     root.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { sel.has(b.dataset.t) ? sel.delete(b.dataset.t) : sel.add(b.dataset.t); draw(); });
     root.querySelector('#elimr').onclick = () => { sel.clear(); draw(); };
