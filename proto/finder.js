@@ -43,7 +43,7 @@ LAB.add({
     // Start screen (one screen, a few clues, then the shortlist) unless the link already carries clues.
     if (FIDS.some(f => S[f].size) || S.q || S.out.size) S.home = false;
     // Three start-screen proposals for Pierre to try (admin browser only); the pick is remembered per browser. RAs get A.
-    let startV = IS_ADMIN ? store.get('imr-finder-start', 'a') : 'a'; if (startV === 'b') startV = 'a';
+    let startV = store.get('imr-finder-start', 'a'); if (startV !== 'c') startV = 'a';
     const base = location.hash.startsWith('#lab-') ? '#lab-finder' : '#finder';
     const saveHash = () => {
       const parts = FIDS.filter(f => S[f].size).map(f => f + '=' + [...S[f]].join(','));
@@ -186,7 +186,7 @@ LAB.add({
 
     // Start screen: the clues people actually start from, on one screen, before any list of genera.
     // A (default) = IMR growth forms, polyps out, corallite size, walls; C = the paper Coral Finder's path (front-page
-    // form, then the box of that form). Pierre's choice (2026-10-31); C is reached from the admin switch only.
+    // form, then the box of that form). Pierre's choice (2026-10-31); C is a discreet link for everyone.
     const formTile = (fid, o, on, n) => { const P = tilePics[fid === 'imrf' ? 'imrf:' + o.id : o.id] || [];
       return `<button type="button" class="fdtileb c-${o.color}" data-o="${fid}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || '')}">
       <span class="fdtq n${P.length}">${P.map(p => `<img src="${img(p, 's')}" alt="" loading="lazy">`).join('')}</span>
@@ -199,7 +199,8 @@ LAB.add({
       const row = id => { const f = fam(id); return f ? `<div class="fdsrow"><h3 title="${esc(f.note || '')}">${esc(f.name)}</h3><div class="fdsopts">${f.opts.map(o => optBtn(f, o, S[id].has(o.id), cnt(f, o))).join('')}</div></div>` : ''; };
       const forms = f => `<div class="fdforms">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>`;
       const show = `<button type="button" class="next fdshow" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera`} →</button>`;
-      const switcher = !IS_ADMIN ? '' : `<span class="seg fdsv" role="group" aria-label="Start screen">${[['a', 'IMR forms'], ['c', 'Coral Finder path']].map(([v, t]) => `<button type="button" data-sv="${v}" aria-pressed="${startV === v}">${t}</button>`).join('')}</span>`;
+      // Two entry points for everyone: IMR forms (default) or the paper Coral Finder's path, as a discreet link.
+      const switcher = `<button type="button" class="linkish fdsv" data-sv="${startV === 'c' ? 'a' : 'c'}">${startV === 'c' ? '← IMR growth forms' : 'Coral Finder path →'}</button>`;
       let body;
       if (startV === 'c') {
         // The paper Coral Finder's own path: growth form, then the box of that form, then the shortlist.
