@@ -671,3 +671,22 @@ a.lt:hover{border-color:var(--accent)}
 .gfilt[open]{display:flex;flex-direction:column;gap:8px;padding-bottom:10px}
 .gfilt select{width:100%}
 .gfilt .gjump{margin:0}
+/* Phones, every page (Pierre, 2026-10-31: win space above and below the content): slimmer header, section tabs,
+   bottom tab bar and answer sheet. */
+@media (max-width:640px){
+  :root{--tabbar-h:48px}
+  header{padding-block:4px;gap:4px}
+  .modes{margin-top:2px}
+  .modes a{min-height:30px;padding:2px 9px}
+  .modes.ctx a,.modes.ctx .up{min-height:32px}
+  .sections{padding-top:4px;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
+  .sections a{min-height:38px}
+  .q{margin-top:4px}
+}
+@media (max-width:760px){
+  .q.done #after{padding:6px max(10px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));gap:6px}
+  .q.done #after .fb{padding:8px 12px}
+  .q.done #after .fb .label{display:none}
+  .q.done #after .fb h3{margin-bottom:2px}
+  .q.done #after #next{padding:8px 18px}
+}

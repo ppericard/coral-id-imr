@@ -665,7 +665,10 @@ function fitStage(){
   q.style.setProperty('--qh', Math.max(260, innerHeight - q.getBoundingClientRect().top - window.scrollY - 16 - tab) + 'px');
   const st = q.querySelector('.qstage');
   // Phones (one column): the photo takes all the height the question and answers leave, so no gap is left under it.
-  if (matchMedia('(max-width:760px)').matches) { const side = q.querySelector('.qside'); st.style.height = Math.max(180, parseFloat(q.style.getPropertyValue('--qh')) - (side ? side.offsetHeight : 240) - 10) + 'px'; }
+  // After an answer the feedback is a bottom sheet over the page: the photo shrinks to the space left above it, so it stays in view.
+  if (matchMedia('(max-width:760px)').matches) { const side = q.querySelector('.qside'), aft = q.classList.contains('done') && document.getElementById('after');
+    st.style.height = aft && getComputedStyle(aft).position === 'fixed' ? Math.max(120, aft.getBoundingClientRect().top - st.getBoundingClientRect().top - 8) + 'px'
+      : Math.max(180, parseFloat(q.style.getPropertyValue('--qh')) - (side ? side.offsetHeight : 240) - 10) + 'px'; }
   else st.style.height = '';
   const n = st.children.length, W = st.clientWidth, H = st.clientHeight;
   let best = [n, 1, 0];
@@ -741,6 +744,7 @@ function answer(cur, c, target, ph, cor){
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
   // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
   const qq = $v.querySelector('.q'); if (qq) qq.classList.add('done');
+  if (matchMedia('(max-width:760px)').matches) { window.scrollTo(0, 0); fitStage(); const mo = document.querySelector('#after details'); if (mo) mo.ontoggle = fitStage; }
   bindGo(document.getElementById('after'));
   const nb = document.getElementById('next'); nb.focus({preventScroll: true}); nb.onclick = route;
 }
