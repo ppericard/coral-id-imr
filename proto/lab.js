@@ -2,7 +2,7 @@
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
 // A prototype that graduates moves to a site section (see GRADUATED) and gets a plain hash: #<id>, #<id>|<arg>.
 // Bump with every Lab change so browsers never mix new and old files (same ?v scheme as app.js).
-const LAB_V = 4;
+const LAB_V = 5;
 const LAB = {
   list: [],
   files: ['map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'],
@@ -11,7 +11,9 @@ const LAB = {
   add(p){ this.list.push(p); }
 };
 // Graduated prototypes and the section of MODES (app.js) they now live in.
-const GRADUATED = {size: 'learn', gallery: 'learn', elim: 'identify', pairs: 'practice', reveal: 'practice', zoom: 'practice', spot: 'practice'};
+const GRADUATED = {pairs: 'practice', reveal: 'practice'};
+// Where each Lab prototype is meant to go once it is ready; the home page already shows it there, marked Beta.
+const PLANNED = {anatomy: 'learn', size: 'learn', gallery: 'learn', map: 'learn', web: 'learn', matrix: 'identify', elim: 'identify', zoom: 'practice', spot: 'practice'};
 const SECTION_NAME = {learn: 'Learn', identify: 'Identify', practice: 'Practice'};
 const isLabHash = h => h.startsWith('lab') || h.split('|')[0] in GRADUATED;
 // Load every prototype; once all are in, redraw if the reader opened a Lab page directly.
