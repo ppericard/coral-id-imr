@@ -25,10 +25,11 @@
 .hpath li p{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0}
 .hpath li p a{font-size:.85rem;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--ink);text-decoration:none;background:var(--bg)}
 .hpath li p a:hover{border-color:var(--accent);color:var(--accent)}
-.hpath li p a.beta{border-style:dashed;color:var(--muted)}
-.hpath li p a.beta::after{content:" β";color:var(--accent)}
-.betatag{font-style:normal;font-family:var(--body);font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:var(--plate);color:var(--band-ink);border-radius:4px;padding:1px 6px;vertical-align:2px}
-.htool.beta{border-style:dashed}
+/* One marker for modules still in the Lab, everywhere on the page: a dashed amber outline. */
+.home-page{--beta:#c0841a}
+:root[data-theme="dark"] .home-page{--beta:#e0b25a}
+.hpath li p a.beta,.htool.beta,.betakey{border:1.5px dashed var(--beta)}
+.betakey{border-radius:999px;padding:0 8px;white-space:nowrap}
 .htool.beta .hpv img{opacity:.85}
 .htool:hover{border-color:var(--accent)}
 .hpath li > span{font-size:.88rem;color:var(--muted)}
