@@ -62,23 +62,33 @@ function setQ(f, q){
   DRAFT.quality[f] = q;
   saveDraft();
 }
-// Growth form of each photo: ONE of the Coral Finder front-page forms (data.json key: B, M, S, P, F, L, C), the main
-// one when several show (Pierre), or x = form not visible (too close). First guesses come from forms.json (Claude, from the image);
-// Pierre's choices live in curation.json "form" {f: 'B' | 'FL' | 'x'} and always win. The site's growth-form
-// tiles only use photos tagged with that form.
-// Claude's test batch and the guesses it is unsure about (forms.json batch, unsure): a "?" until you click.
-let FBATCH = new Set(), FUNSURE = new Set();
-const FORM_ORDER = 'BMSPFLC', fOf = f => (DRAFT.form || {})[f] || AUTOF[f] || '', fSet = f => !!(DRAFT.form || {})[f];
-const fChanged = () => !same(DRAFT.form || {}, SAVED.form || {});
-const fName = id => id === 'x' ? 'Form not visible' : (DATA.key.find(k => k.id === id) || {}).name || id;
-const fNorm = v => v.includes('x') || !v ? 'x' : [...FORM_ORDER].filter(c => v.includes(c)).join('');
-function setF(f, v){
-  DRAFT.form = DRAFT.form || {};
+// Growth form of each photo: ONE of the 7 IMR Lecture 6 growth forms (forms.json "forms": B Branching, E Encrusting,
+// T Tabulate, U Mushroom, M Massive, S Submassive, F Foliose/Plating), the main one visible (Pierre), or x = form not
+// visible (too close); plus a polyps flag ("p" yes, "n" no) for polyps or vesicles extended by day, which is not a form
+// (Coral Finder "Large daytime polyps"). First guesses come from forms.json "gf"; Pierre's choices live in curation.json
+// "gf" {f: 'M' | 'Mp' | 'xn' | 'p'} and always win, form and flag each on their own. The old Coral Finder letters
+// (forms.json "form") are only a hint for the photos still to classify.
+// Guesses to double-check (forms.json gunsure): a "?" until you click.
+let FBATCH = new Set(), FUNSURE = new Set(), FDEF = [], LEGACY = {};
+const FORM_ORDER = 'BETUMSF', FABBR = {B: 'Br', E: 'En', T: 'Ta', U: 'Mu', M: 'Ma', S: 'Sm', F: 'Fo', x: '∅'};
+const fL = v => (v || '').replace(/[pn]/g, ''), fP = v => (v || '').includes('p') ? true : (v || '').includes('n') ? false : null;
+const mineF = f => (DRAFT.gf || {})[f] || '';
+const fOf = f => fL(mineF(f)) || fL(AUTOF[f]), fSet = f => !!fL(mineF(f));
+const pOf = f => { const m = fP(mineF(f)); return m === null ? fP(AUTOF[f]) === true : m; }, pSet = f => fP(mineF(f)) !== null;
+const fChanged = () => !same(DRAFT.gf || {}, SAVED.gf || {});
+const fName = id => id === 'x' ? 'Form not visible' : (FDEF.find(k => k.id === id) || {}).name || id;
+const cfName = id => (DATA.key.find(k => k.id === id) || {}).name || id;
+function putF(f, letter, pol){
+  DRAFT.gf = DRAFT.gf || {};
   // Always recorded, even when it matches the first guess, so a new forms.json can never change it.
-  DRAFT.form[f] = fNorm(v);
+  const v = letter + (pol === true ? 'p' : pol === false ? 'n' : '');
+  if (v) DRAFT.gf[f] = v; else delete DRAFT.gf[f];
   saveDraft();
 }
-const fSeg = p => { const v = fOf(p.f), un = !fSet(p.f) && FUNSURE.has(p.f); return `<span class="adm-qseg adm-fseg${fSet(p.f) ? '' : ' auto'}${un ? ' unsure' : ''}" role="group" aria-label="Growth form" title="Growth form">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v === c}" title="${esc(fName(c))}">${c === 'x' ? '∅' : c}</button>`).join('')}</span>`; };
+const setF = (f, c) => putF(f, c, fP(mineF(f)));
+const setP = (f, on) => putF(f, fL(mineF(f)), on);
+const fSeg = p => { const v = fOf(p.f), un = !fSet(p.f) && FUNSURE.has(p.f), po = pOf(p.f);
+  return `<span class="adm-qseg adm-fseg${fSet(p.f) ? '' : ' auto'}${un ? ' unsure' : ''}" role="group" aria-label="Growth form" title="Growth form">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v === c}" title="${esc(fName(c))}">${FABBR[c]}</button>`).join('')}<button type="button" class="adm-pol${pSet(p.f) ? '' : ' auto'}" data-pol aria-pressed="${po}" title="Polyps or vesicles extended">✿</button></span>`; };
 
 /* ---------- Token vault: AES-GCM key derived from the password (PBKDF2) ---------- */
 const b64 = u => btoa(String.fromCharCode(...new Uint8Array(u))), unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -463,9 +473,9 @@ const HELP = {
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time.</p>
     <p>Drag a photo onto a featured photo to feature it there, to another view to move it, or from the candidates to add it. Hidden photos disappear everywhere, games included; × excludes a photo for good.</p>
     <p>The letters on each photo are its growth form (see Growth form).</p>`,
-  form: `<p>The Coral Finder growth forms each photo shows: <b>B</b> Branching, <b>M</b> Meandering, <b>S</b> Massive or thick, <b>P</b> Thin plates and crusts, <b>F</b> Solitary or free-living, <b>L</b> Large daytime polyps, <b>C</b> Columns; <b>∅</b> = form not visible (too close). Several letters allowed.</p>
-    <p>They pick the photos of the growth-form tiles in the Coral Finder; ∅ photos are never used there. Dashed letters are Claude's first guess from the image, solid ones are yours and always win.</p>
-    <p>Click the letters, drag a photo to another row, or hover it and press B M S P F L C, or X for not visible. Coral Finder book photos are left out.</p>`,
+  form: `<p>The 7 IMR growth forms (Lecture 6, slides 3-10), one per photo, the main form visible: <b>Br</b> Branching, <b>En</b> Encrusting, <b>Ta</b> Tabulate, <b>Mu</b> Mushroom, <b>Ma</b> Massive, <b>Sm</b> Submassive, <b>Fo</b> Foliose/Plating; <b>∅</b> = form not visible (too close). <b>✿</b> = polyps or vesicles extended (not a form; it fills the Coral Finder "Large daytime polyps" tile).</p>
+    <p>The Coral Finder growth-form tiles use them: Branching = Br + Ta, Thin plates and crusts = En + Fo, Massive or thick = Ma + Sm, Columns = Sm, Solitary = Mu, Meandering = any form of the genera it lists. Dashed = a first guess, solid = yours (always wins); a red ? = a guess to double-check.</p>
+    <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. On the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor, and the views whose Featured photos you haven't picked yet (the site uses its own pick meanwhile: IMR and your photos first, by quality).</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
@@ -479,10 +489,9 @@ function toggleHelp(){
 }
 
 /* ---------- Growth form ---------- */
-// One row per growth form (old multi-form values, if any, have their own row to fix), then "Form not visible" and
-// photos without a guess. Click a letter on a photo (one form per photo; ∅ = form not visible), drag it to another row,
-// or hover it and press the letter (b m s p f l c, x or 0 for not visible). The tile stays put until a filter changes.
-const FF = Object.assign({view: 'all', genus: '', todo: false}, store.get('imr-admin-ffilter', {}));
+// One row per IMR growth form, then "Form not visible" and the photos still to classify (by old Coral Finder letter). Click a letter on a photo (one form per photo; ∅ = form not visible), drag it to another row,
+// or hover it and press the key (b e t u m s f, x or 0 for not visible, p for polyps). The tile stays put until a filter changes.
+const FF = Object.assign({view: 'all', genus: '', todo: false, pol: false}, store.get('imr-admin-ffilter', {}));
 function formTile(t, v){
   setF(t.dataset.f, v); const p = {f: t.dataset.f};
   t.querySelector('.adm-fseg').outerHTML = fSeg(p);
@@ -490,19 +499,23 @@ function formTile(t, v){
 }
 // One form per photo (Pierre): a click picks that form and replaces the previous one; when in doubt, the main form.
 const toggleF = (f, c) => c;
-function bindF(scope){ scope.querySelectorAll('.adm-fseg [data-fm]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.closest('[data-f]'); formTile(t, toggleF(t.dataset.f, b.dataset.fm)); }); }
+function polTile(t){ setP(t.dataset.f, !pOf(t.dataset.f)); t.querySelector('.adm-fseg').outerHTML = fSeg({f: t.dataset.f}); bindF(t); status(); }
+function bindF(scope){ scope.querySelectorAll('.adm-fseg [data-fm]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.closest('[data-f]'); formTile(t, toggleF(t.dataset.f, b.dataset.fm)); });
+  scope.querySelectorAll('.adm-fseg [data-pol]').forEach(b => b.onclick = e => { e.stopPropagation(); polTile(b.closest('[data-f]')); }); }
 function renderForm(){
   status();
   const names = Object.keys(DATA.gen), vl = v => v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1];
   // Coral Finder book photos are left out: they never go on the growth-form tiles.
-  const all = allPhotos().filter(p => !p.cf && shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus) && (!FF.todo || !fSet(p.f)) && (!FF.batch || FBATCH.has(p.f)));
+  const all = allPhotos().filter(p => !p.cf && shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus) && (!FF.todo || !fSet(p.f)) && (!FF.pol || pOf(p.f)) && (!FF.batch || FBATCH.has(p.f)));
   const card = p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
     <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}</figcaption>
     <div class="adm-acts">${fSeg(p)}</div></figure>`;
-  const rows = [...[...FORM_ORDER].map(c => [c, fName(c), p => fOf(p.f) === c]), ['multi', 'Several forms', p => fOf(p.f).length > 1], ['x', 'Form not visible', p => fOf(p.f) === 'x'], ['', 'No guess yet', p => !fOf(p.f)]];
-  const sec = ([id, t, test]) => { const L = all.filter(test); if (!L.length && (id === '' || id === 'multi')) return '';
-    return `<section class="adm-row adm-qrow"><h3>${id && id !== 'multi' ? `<b class="adm-fl">${id === 'x' ? '∅' : id}</b> ` : ''}${esc(t)} <small>${L.length} photo${L.length === 1 ? '' : 's'}${id === 'x' ? ' · never used on the growth-form tiles' : ''}</small></h3>
+  // Still to classify: grouped by the old Coral Finder letter, as a hint.
+  const rows = [...[...FORM_ORDER].map(c => [c, fName(c), p => fOf(p.f) === c]), ['x', 'Form not visible', p => fOf(p.f) === 'x'],
+    ...[...'BMSPFLC', ''].map(c => ['', `To classify${c ? ` · was Coral Finder ${cfName(c)}` : ''}`, p => !fOf(p.f) && (LEGACY[p.f] || '') === c])];
+  const sec = ([id, t, test]) => { const L = all.filter(test); if (!L.length && id === '') return '';
+    return `<section class="adm-row adm-qrow"><h3>${id ? `<b class="adm-fl">${FABBR[id]}</b> ` : ''}${esc(t)} <small>${L.length} photo${L.length === 1 ? '' : 's'}${id === 'x' ? ' · never used on the growth-form tiles' : ''}</small></h3>
       <div class="adm-grid adm-qgrid" data-fdrop="${id}">${L.map(card).join('')}</div></section>`; };
   const opt = (v, t, cur) => `<button type="button" class="adm-fchip plain" data-fv="${v}" aria-pressed="${cur === v}">${t}</button>`;
   $v.innerHTML = `<section class="adm-quality">
@@ -510,13 +523,14 @@ function renderForm(){
     <div class="adm-filter"><span class="label">Show</span>${ORIGINS.filter(([o]) => o !== 'book').map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`).join('')}</div>
     <div class="adm-filter"><span class="label">View</span>${opt('all', 'All', FF.view)}${VIEWS.map(([v, t]) => opt(v, t, FF.view)).join('')}${opt('cand', 'Candidates', FF.view)}
       <select id="fgen" aria-label="Genus"><option value="">All genera</option>${names.map(m => `<option${m === FF.genus ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>
-      <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label>${FBATCH.size ? `<label class="adm-todo"><input type="checkbox" id="fbatch"${FF.batch ? ' checked' : ''}> Test batch (${[...FBATCH].filter(f => fSet(f)).length}/${FBATCH.size} checked)</label>` : ''}</div>
+      <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label><label class="adm-todo"><input type="checkbox" id="fpol"${FF.pol ? ' checked' : ''}> ✿ Polyps out</label>${FBATCH.size ? `<label class="adm-todo"><input type="checkbox" id="fbatch"${FF.batch ? ' checked' : ''}> Test batch (${[...FBATCH].filter(f => fSet(f)).length}/${FBATCH.size} checked)</label>` : ''}</div>
     ${rows.map(sec).join('')}</section>`;
   const saveFF = () => { store.set('imr-admin-ffilter', FF); renderForm(); };
   $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { const o = b.dataset.o; SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o); store.set('imr-admin-origins', [...SHOW]); renderForm(); });
   $v.querySelectorAll('[data-fv]').forEach(b => b.onclick = () => { FF.view = b.dataset.fv; saveFF(); });
   $('fgen').onchange = e => { FF.genus = e.target.value; saveFF(); };
   $('ftodo').onchange = e => { FF.todo = e.target.checked; saveFF(); };
+  $('fpol').onchange = e => { FF.pol = e.target.checked; saveFF(); };
   if ($('fbatch')) $('fbatch').onchange = e => { FF.batch = e.target.checked; saveFF(); };
   $v.querySelectorAll('[data-act="zoom"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'); zoom(t.dataset.g, t.dataset.f); });
   $v.querySelectorAll('[data-act="exclude"]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.closest('[data-f]'); ACT.exclude(t.dataset.g, t.dataset.f); });
@@ -524,11 +538,12 @@ function renderForm(){
   let over = null;
   $v.querySelectorAll('.adm-qt').forEach(t => { t.onmouseenter = t.onfocus = () => { over = t; }; t.onmouseleave = () => { if (over === t) over = null; }; });
   document.onkeydown = e => { if (cur !== '~form' || !over || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input,select,textarea')) return;
-    const k = e.key.toUpperCase(), c = k === '0' ? 'x' : k === 'X' ? 'x' : FORM_ORDER.includes(k) ? k : null; if (c) { e.preventDefault(); formTile(over, toggleF(over.dataset.f, c)); } };
-  // Drag a photo onto another row: it gets that single form (Several forms: kept as it is).
+    const k = e.key.toUpperCase(); if (k === 'P') { e.preventDefault(); polTile(over); return; }
+    const c = k === '0' ? 'x' : k === 'X' ? 'x' : FORM_ORDER.includes(k) ? k : null; if (c) { e.preventDefault(); formTile(over, toggleF(over.dataset.f, c)); } };
+  // Drag a photo onto another row: it gets that form (not onto the To classify rows).
   const clearF = () => $v.querySelectorAll('.drop-row').forEach(x => x.classList.remove('drop-row'));
-  pointerDrag($v.querySelectorAll('.adm-qt'), el => { clearF(); const g = el && el.closest('[data-fdrop]'); if (g && g.dataset.fdrop && g.dataset.fdrop !== 'multi') g.classList.add('drop-row'); },
-    (t, el) => { clearF(); const g = el && el.closest('[data-fdrop]'); if (g && g.dataset.fdrop && g.dataset.fdrop !== 'multi') { formTile(t, g.dataset.fdrop); g.prepend(t); } }, clearF);
+  pointerDrag($v.querySelectorAll('.adm-qt'), el => { clearF(); const g = el && el.closest('[data-fdrop]'); if (g && g.dataset.fdrop) g.classList.add('drop-row'); },
+    (t, el) => { clearF(); const g = el && el.closest('[data-fdrop]'); if (g && g.dataset.fdrop) { formTile(t, g.dataset.fdrop); g.prepend(t); } }, clearF);
 }
 
 /* ---------- Excluded ---------- */
@@ -631,10 +646,11 @@ const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAF
   const quality = {}; Object.keys(DRAFT.quality || {}).sort().forEach(f => { quality[f] = DRAFT.quality[f]; });
   const exclude = {}; Object.keys(DRAFT.exclude || {}).sort().forEach(f => { exclude[f] = DRAFT.exclude[f]; });
   const form = {}; Object.keys(DRAFT.form || {}).sort().forEach(f => { form[f] = DRAFT.form[f]; });
+  const gf = {}; Object.keys(DRAFT.gf || {}).sort().forEach(f => { gf[f] = DRAFT.gf[f]; });
   const flag = {}; Object.keys(DRAFT.flag || {}).sort().forEach(f => { flag[f] = DRAFT.flag[f]; });
   const use = {}; Object.keys(DRAFT.use || {}).sort().forEach(f => { use[f] = DRAFT.use[f]; });
   const seen = {}; Object.keys(DRAFT.seen || {}).sort().forEach(k => { seen[k] = DRAFT.seen[k]; });
-  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {}), ...(Object.keys(flag).length ? {flag} : {}), ...(Object.keys(use).length ? {use} : {}), ...(Object.keys(seen).length ? {seen} : {})}; };
+  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(gf).length ? {gf} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {}), ...(Object.keys(flag).length ? {flag} : {}), ...(Object.keys(use).length ? {use} : {}), ...(Object.keys(seen).length ? {seen} : {})}; };
 async function save(){
   const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(), sg = sgChanged(); if (!(ch.length || q || x || bk || fm || fl || sg) || !TOKEN) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
@@ -657,9 +673,12 @@ async function start(){
   const hd = document.querySelector('header'); if (hd && window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--hdr-h', hd.offsetHeight + 'px')).observe(hd);
   $v.innerHTML = '<p class="note">Loading photos…</p>';
   const side = (u, k) => fetch(u, {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).then(j => j[k] || {}).catch(() => ({}));
-  try { [DATA, AUTOQ, AUTOF, FB0, FU0, PICKS, SUG] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), side('quality.json', 'q'), side('forms.json', 'form'), side('forms.json', 'batch'), side('forms.json', 'unsure'), side('picks.json', 'feat'), fetch('suggest.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})), loadSaved()]); }
+  try { [DATA, AUTOQ, AUTOF, FB0, FU0, PICKS, SUG] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), side('quality.json', 'q'), side('forms.json', 'gf'), side('forms.json', 'batch'), side('forms.json', 'gunsure'), side('picks.json', 'feat'), fetch('suggest.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})), loadSaved()]); }
   catch (x) { $v.innerHTML = `<p class="warn">Could not load: ${esc(x.message)}</p>`; return; }
   FBATCH = new Set(Array.isArray(FB0) ? FB0 : []); FUNSURE = new Set(Array.isArray(FU0) ? FU0 : []);
+  [FDEF, LEGACY] = await Promise.all([side('forms.json', 'forms'), side('forms.json', 'form')]); if (!Array.isArray(FDEF)) FDEF = [];
+  // Pierre's clicks in the old Coral Finder letters (curation.json "form") stay as they are, shown as the hint.
+  Object.assign(LEGACY, SAVED.form || {}, DRAFT.form || {});
   // Every photo of data.json by name, with its genus, for the Excluded view.
   PHOTOS = {}; Object.entries(DATA.gen).forEach(([n, g]) => [...Object.values(g.views || {}), ...Object.values(g.more || {}), (DATA.course || {})[n] || [], (DATA.cand || {})[n] || [], g.book || []].flat().forEach(p => { PHOTOS[p.f] = {...p, genus: n}; }));
   // Every photo name in data.json (field, extra, lecture, candidates), to spot choices left pointing nowhere.
