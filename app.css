@@ -135,6 +135,9 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .idbox .kpick a{opacity:1;border-color:transparent;box-shadow:none;font-weight:500;font-size:.85rem}
 .idbox .pg{text-transform:none;letter-spacing:0;font-weight:400;margin-left:6px}
 .check{border-left:3px solid var(--accent);padding-left:10px}
+.more{margin-top:8px}
+.more summary{cursor:pointer;color:var(--accent);font-size:.9rem;font-weight:600;padding:4px 0;list-style-position:inside}
+.more[open] summary{margin-bottom:8px}
 .lect{color:var(--accent);font-weight:600}
 @media (max-width:700px){.hero{grid-template-columns:minmax(0,1fr)}.hero-ph{position:static}}
 .cols{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:28px;margin-top:8px}

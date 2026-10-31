@@ -99,15 +99,22 @@ function viewGenus(name){
   const paths = DATA.key.flatMap(k => k.leaves.filter(l => l.g.includes(name)).map(l => ({k, l})));
   // Lecture photos sit in the view row they belong to (data: course[].v), after the field photos.
   const course = (DATA.course[name] || []).map(p => ({...p, view: p.v === 'medium' && g.levels === 2 ? 'macro' : p.v}));
-  const inView = v => [...(g.views[v] || []), ...course.filter(p => p.view === v)];
+  // Each view mixes sources, round-robin: IMR lecture, other iNaturalist observers, Pierre's own.
+  const inView = v => { const all = [...(g.views[v] || []), ...course.filter(p => p.view === v)];
+    const src = [all.filter(p => p.imr), all.filter(p => !p.imr && !p.own), all.filter(p => p.own)], out = [];
+    while (src.some(L => L.length)) src.forEach(L => L.length && out.push(L.shift()));
+    return out; };
+  const FEAT = 3;
   const flat = VIEWS.flatMap(([v]) => inView(v).map(p => ({...p, genus: name, view: g.levels === 2 && v === 'macro' ? 'close' : v})));
   const cv = cover(g), ci = cv ? flat.findIndex(x => x.f === cv.f) : -1;
   const rows = VIEWS.filter(([v]) => !(g.levels === 2 && !inView(v).length)).map(([v, label]) => {
     const list = inView(v);
     if (g.levels === 2 && v === 'macro') label = 'Close-up';
-    return `<section class="vrow"><h3>${label}${list.length ? '' : ' <span class="gap">missing</span>'}</h3>${list.length ? `<div class="strip">${list.map(p => {
-      const i = flat.findIndex(x => x.f === p.f);
-      return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${esc(name)}, ${p.imr ? 'IMR lecture photo' : label.toLowerCase() + ' view'}" loading="lazy"></button><figcaption>${p.imr ? '<b class="lect">IMR lecture</b> ' : ''}${credit(p)}</figcaption></figure>`; }).join('')}</div>` : '<p class="note">No good photo yet for this view.</p>'}</section>`;
+    const fig = p => { const i = flat.findIndex(x => x.f === p.f);
+      return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${esc(name)}, ${p.imr ? 'IMR lecture photo' : label.toLowerCase() + ' view'}" loading="lazy"></button><figcaption>${p.imr ? '<b class="lect">IMR lecture</b> ' : ''}${credit(p)}</figcaption></figure>`; };
+    const more = list.slice(FEAT);
+    return `<section class="vrow"><h3>${label}${list.length ? '' : ' <span class="gap">missing</span>'}</h3>${list.length ? `<div class="strip">${list.slice(0, FEAT).map(fig).join('')}</div>` : '<p class="note">No good photo yet for this view.</p>'}
+      ${more.length ? `<details class="more"><summary>${more.length} more ${label.toLowerCase()} photo${more.length > 1 ? 's' : ''}</summary><div class="strip">${more.map(fig).join('')}</div></details>` : ''}</section>`;
   }).join('');
   $v.innerHTML = `<div class="crumbs"><button type="button" data-back>‹ Back</button></div>
   <article class="sheet">
