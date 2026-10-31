@@ -233,3 +233,16 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 .adm-okbtn{flex:none;font:inherit;font-size:.8rem;min-height:28px;padding:0 10px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--muted);cursor:pointer}
 .adm-okbtn[aria-pressed="true"]{background:var(--good-bg);color:var(--good);border-color:var(--good);font-weight:700}
 .adm-needs{flex:none;font-size:.78rem;margin-right:4px}
+/* Header never wraps: Publish and the status keep a fixed width whatever their text ("Publishing…", "● Not published"). */
+.chip.adm-save{min-width:7.2em;justify-content:center}
+.adm-status{display:inline-block;min-width:8.4em;text-align:right}
+@media (min-width:821px){ body.admin header{flex-wrap:nowrap} body.admin .adm-modes{min-width:0;overflow:hidden} }
+/* ⋯ menu: the rarely used header actions. */
+.adm-more{position:relative}
+.adm-more summary{list-style:none;cursor:pointer}
+.adm-more summary::-webkit-details-marker{display:none}
+.adm-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;display:flex;flex-direction:column;min-width:170px;padding:6px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:var(--shadow)}
+.adm-menu a,.adm-menu button{font:inherit;font-size:.88rem;text-align:left;padding:7px 10px;border:0;border-radius:6px;background:none;color:var(--ink);text-decoration:none;cursor:pointer}
+.adm-menu a:hover,.adm-menu button:hover{background:var(--surface-2)}
+.adm-menu [hidden]{display:none}
+.adm-modes a{white-space:nowrap}
