@@ -2,7 +2,7 @@
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
 // A prototype that graduates moves to a site section (see GRADUATED) and gets a plain hash: #<id>, #<id>|<arg>.
 // Bump with every Lab change so browsers never mix new and old files (same ?v scheme as app.js).
-const LAB_V = 16;
+const LAB_V = 17;
 const LAB = {
   list: [],
   files: ['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'],
@@ -77,7 +77,7 @@ function viewLab(h){
       <button type="button" data-vote="${p.id}|keep" aria-pressed="${votes[p.id] === 'keep'}">Keep</button>
       <button type="button" data-vote="${p.id}|trim" aria-pressed="${votes[p.id] === 'trim'}">Trim</button>
     </div></article>`).join('')}</div>
-  <h3>Graduated from the Lab</h3><p class="note">These experiments are now part of the site.</p>
+  <h3>Graduated from the Lab</h3>
   <div class="labgrad">${grad.map(p => `<a href="#${p.id}"><span class="labicon" aria-hidden="true">${p.icon || ''}</span><b>${esc(p.title)}</b><small>${SECTION_NAME[GRADUATED[p.id]]}</small></a>`).join('')}</div></div>`;
   $v.querySelectorAll('[data-vote]').forEach(b => b.onclick = () => {
     const [id, v] = b.dataset.vote.split('|'), all = labVotes();
