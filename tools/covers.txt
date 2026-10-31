@@ -1,0 +1,13 @@
+# Cover photo overrides (genus photo-id). The cover is the representative photo on cards and at the top
+# of a genus sheet: an intermediate view of the colony, never a macro close-up (Pierre, 2026-10-31).
+# Applied by tools/apply_covers.py after make_site.py and apply_multi.py.
+Hydnophora hydnophora-medium-745676377
+Tubastraea tubastraea-medium-47422722
+Galaxea galaxea-wide-385445623
+Heliofungia heliofungia-wide-746234784
+Duncanopsammia duncanopsammia-medium-595463427
+Astrea astrea-wide-102598396
+Dipsastraea dipsastraea-wide-698280703
+Lithophyllon lithophyllon-wide-746237737
+Astreopora astreopora-medium-270754765
+Lobophyllia lobophyllia-wide-745206189
