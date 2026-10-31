@@ -25,20 +25,22 @@ const qOf = f => (DRAFT.quality || {})[f] || AUTOQ[f] || 2, qSet = f => !!(DRAFT
 // Publish sends the draft to the public site.
 let draftAt = null;
 // No button ever clears several choices at once: Undo (or Ctrl+Z) steps back one click at a time, within this visit.
-let HIST = [], snap = null;
-function saveDraft(){ if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); snap = JSON.stringify(DRAFT); store.set('imr-curation-draft', DRAFT); draftAt = new Date(); }
-function undo(){
-  if (!HIST.length) return toast('Nothing to undo.');
-  snap = HIST.pop(); DRAFT = JSON.parse(snap); store.set('imr-curation-draft', DRAFT); draftAt = new Date(); render(); toast('Last change undone.');
+// Redo (or Ctrl+Shift+Z / Ctrl+Y) steps forward again; a new click clears the redo steps.
+let HIST = [], FUT = [], snap = null;
+function saveDraft(){ if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); FUT = []; snap = JSON.stringify(DRAFT); store.set('imr-curation-draft', DRAFT); draftAt = new Date(); }
+function step(from, to, msg){
+  if (!from.length) return toast(msg[0]);
+  to.push(snap); snap = from.pop(); DRAFT = JSON.parse(snap); store.set('imr-curation-draft', DRAFT); draftAt = new Date(); render(); toast(msg[1]);
 }
+const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']), redo = () => step(FUT, HIST, ['Nothing to redo.', 'Redone.']);
 const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
 // Excluded photos (curation.json "exclude" {f: reason}): unusable for good (a person, a drawing, AI…). Unlike Hide,
 // which is a per-genus editorial choice, exclusion removes the photo from every genus, game and candidate list,
 // and import scripts skip it so it never comes back. The Excluded view lists them, to restore one.
-const REASONS = [['person', 'Person in the photo'], ['drawing', 'Drawing or diagram'], ['ai', 'AI-generated'], ['wrong', 'Wrong or unusable'], ['other', 'Other']];
 const excl = f => (DRAFT.exclude || {})[f];
 const xChanged = () => !same(DRAFT.exclude || {}, SAVED.exclude || {});
-const reasonLabel = r => (REASONS.find(x => x[0] === r) || [0, r])[1];
+// Coral Finder book photos on the site (curation.json "book": false switches every one of them off at once).
+const bookOn = o => o.book !== false, bChanged = () => bookOn(DRAFT) !== bookOn(SAVED);
 const qTag = p => { const q = qOf(p.f); return `<span class="adm-q q${q}${qSet(p.f) ? '' : ' auto'}" title="${qSet(p.f) ? 'Quality set by you' : 'Automatic first guess'}">${QUAL.find(x => x[0] === q)[1]}</span>`; };
 const qSeg = p => `<span class="adm-qseg" role="group" aria-label="Quality">${QUAL.map(([q, t]) => `<button type="button" data-q="${q}" aria-pressed="${qOf(p.f) === q}" class="q${q}">${t}</button>`).join('')}</span>`;
 function setQ(f, q){
@@ -159,8 +161,8 @@ const rows = n => VIEWS.filter(([v]) => !(DATA.gen[n].levels === 2 && v === 'med
 const label = (n, v) => DATA.gen[n].levels === 2 && v === 'macro' ? 'Close-up' : VIEWS.find(x => x[0] === v)[1];
 // Photo origin: IMR lecture, Pierre's own iNaturalist photos, or other iNaturalist observers split by place
 // (data.json p.loc: dauin, ph or world). The filter is kept across genera and visits.
-const ORIGINS = [['imr', 'IMR lecture'], ['own', 'Pierre'], ['dauin', 'iNat Dauin'], ['ph', 'iNat Philippines'], ['world', 'iNat elsewhere']];
-const origin = p => p.imr ? 'imr' : p.own ? 'own' : ({dauin: 'dauin', ph: 'ph'})[p.loc] || 'world';
+const ORIGINS = [['book', 'CF book'], ['imr', 'IMR lecture'], ['own', 'Pierre'], ['dauin', 'iNat Dauin'], ['ph', 'iNat Philippines'], ['world', 'iNat elsewhere']];
+const origin = p => p.cf ? 'book' : p.imr ? 'imr' : p.own ? 'own' : ({dauin: 'dauin', ph: 'ph'})[p.loc] || 'world';
 let SHOW = new Set(store.get('imr-admin-origins', ORIGINS.map(o => o[0])));
 const shown = p => SHOW.has(origin(p));
 const srcTag = p => { const o = origin(p); return `<span class="adm-src o-${o}">${ORIGINS.find(x => x[0] === o)[1]}</span>`; };
@@ -181,9 +183,9 @@ const ACT = {
     if (L.includes(f)) { L.splice(L.indexOf(f), 1); if (!L.length) { toast('A view needs at least one featured photo: back to the automatic pick.'); delete k.feat[v]; } }
     else if (L.length >= FEAT) toast(`Already ${FEAT} featured: remove one first.`); else L.push(f); }),
   addc: (n, f, v, to) => edit(n, k => { k.add = k.add || {}; k.add[f] = to; }),
-  exclude: (n, f, v, why) => { DRAFT.exclude = DRAFT.exclude || {}; DRAFT.exclude[f] = why;
+  exclude: (n, f) => { DRAFT.exclude = DRAFT.exclude || {}; DRAFT.exclude[f] = 'excluded';
     edit(n, k => { dropFeat(k, f); if (k.cover === f) delete k.cover; if (k.add) delete k.add[f]; });
-    toast('Excluded for good. The Excluded view (top) lists it if you want it back.'); },
+    toast('Excluded. Undo (Ctrl+Z) or the Excluded view brings it back.'); },
   out: (n, f, v, to) => edit(n, k => { k.out = k.out || {}; if (to === 'back') delete k.out[f]; else { k.out[f] = to; dropFeat(k, f); if (k.cover === f) delete k.cover; if (k.move) delete k.move[f]; } }),
   hide: (n, f) => edit(n, k => { if (k.add && k.add[f]) { delete k.add[f]; dropFeat(k, f); if (k.cover === f) delete k.cover; return; } k.hide = k.hide || []; if (k.hide.includes(f)) k.hide = k.hide.filter(x => x !== f); else { k.hide.push(f); dropFeat(k, f); if (k.cover === f) delete k.cover; } }),
   move: (n, f, v, to) => edit(n, k => { const p = photos(n).find(x => x.f === f); if (p.cand) { k.add[f] = to; dropFeat(k, f); return; } k.move = k.move || {}; if (to === p.base) delete k.move[f]; else k.move[f] = to; dropFeat(k, f); }),
@@ -208,7 +210,7 @@ function tile(n, p, v, st){
   // The view select shows the photo's current view; picking another one moves it there.
   const moves = VIEWS.filter(([w]) => w === v || !(two && w === 'medium')).map(([w]) => `<option value="${w}"${w === v ? ' selected' : ''}>${label(n, w)}</option>`).join('');
   return `<figure class="adm-tile ${st.cls || ''}${isCover ? ' is-cover' : ''}" data-f="${esc(p.f)}" data-v="${v}"${st.cls === 'is-hidden' ? '' : ` data-drag${st.num ? ` data-pos="${st.num - 1}"` : ''}`}>
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${st.cls === 'is-hidden' ? '' : GRIP}
+    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${st.cls === 'is-hidden' ? '' : GRIP + XBTN}
     ${st.num ? `<span class="adm-num${st.auto ? ' auto' : ''}" title="${st.auto ? 'Featured automatically' : 'Featured by you'}">${st.num}</span>` : ''}
     ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
     <figcaption>${p.from ? `<span class="adm-src new" title="Taken out of ${esc(p.from)} (change it there)">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">new</span>' : ''}${srcTag(p)}${p.multi ? '<span class="adm-src multi" title="Several corals in frame: never used in games">several corals</span>' : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
@@ -218,18 +220,19 @@ function tile(n, p, v, st){
       <button type="button" data-act="feat" class="${st.num && !st.auto ? 'on' : ''}" title="Show in the main strip of this view">${st.num ? 'Featured' : 'Feature'}</button>
       ${p.cand ? '<button type="button" data-act="hide" title="Back to the candidates">Remove</button>' : '<button type="button" data-act="hide" title="Keep the photo but don\'t show it on the site for this genus; Show again brings it back">Hide</button>'}
       <select data-act="move" class="adm-view" aria-label="View (pick another to move it)" title="View: pick another to move the photo">${moves}</select>
-      ${p.from || p.cand ? '' : `<select data-act="out" aria-label="Take out of this genus"><option value="">Not this genus…</option><option value="cmp">Look-alike comparison</option><optgroup label="It shows another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`}
-      ${XSEL}`}
+      ${p.from || p.cand ? '' : `<select data-act="out" aria-label="Take out of this genus"><option value="">Not this genus…</option><option value="cmp">Look-alike comparison</option><optgroup label="It shows another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`}`}
     </div></figure>`;
 }
-const XSEL = `<select data-act="exclude" class="adm-excl" aria-label="Exclude for good" title="Remove this photo for good, from every genus and game"><option value="">Exclude…</option>${REASONS.map(([r, t]) => `<option value="${r}">${t}</option>`).join('')}</select>`;
+// Small × on each photo: exclude it for good (a person, a drawing, AI…).
+const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Exclude this photo for good (from every genus and game)" aria-label="Exclude for good">×</button>';
 function status(){
-  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', x ? 'exclusions' : ''].filter(Boolean);
+  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : ''].filter(Boolean);
+  const bs = $('booksw'); if (bs) { bs.setAttribute('aria-pressed', String(bookOn(DRAFT))); bs.textContent = `Coral Finder book photos: ${bookOn(DRAFT) ? 'on' : 'off'}`; }
   const xn = Object.keys(DRAFT.exclude || {}).length, xa = document.querySelector('[data-mode="excluded"]'); if (xa) xa.textContent = `Excluded${xn ? ` (${xn})` : ''}`;
   const t = draftAt ? ` (saved ${draftAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})})` : '';
   $('status').textContent = parts.length ? `Draft${t}: ${parts.join(' + ')} not published yet` : TOKEN ? 'Everything is published' : 'Read-only: download only';
   $('status').classList.toggle('dirty', !!parts.length);
-  $('undo').disabled = !HIST.length;
+  $('undo').disabled = !HIST.length; $('redo').disabled = !FUT.length;
   $('save').disabled = !TOKEN || !parts.length; $('save').title = TOKEN ? 'Send your draft to the public site' : 'Unlock with a token to publish';
   if (cur[0] !== '~') lastGenus = cur;
   $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || '');
@@ -250,7 +253,7 @@ function render(){
       <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: r.auto, last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${r.rest.filter(shown).map(p => tile(n, p, v, {})).join('')}${r.hid.filter(shown).map(p => tile(n, p, v, {cls: 'is-hidden'})).join('')}</div>
       ${r.feat.length + r.rest.length ? '' : '<p class="note">No photo in this view.</p>'}</section>`; }).join('');
   const P = pending(n), Ps = P.filter(shown), two = g.levels === 2;
-  const candTile = p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}
+  const candTile = p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
     <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}<span class="adm-addl">Add to</span>${VIEWS.filter(([w]) => !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="addc" data-to="${w}">${label(n, w)}</button>`).join('')}</div></figure>`;
   const candRow = P.length ? `<section class="adm-row adm-cands"><h3>Candidates <small>${P.length} new photo${P.length > 1 ? 's' : ''} not on the site yet${P.length - Ps.length ? ` · <b>${P.length - Ps.length} filtered out</b>` : ''}. Add one to a view to use it.</small></h3>
@@ -281,7 +284,7 @@ function render(){
   $('gsel').onchange = e => { location.hash = e.target.value; };
   $v.querySelectorAll('[data-act]').forEach(el => {
     const t = el.closest('[data-f]'), f = t && t.dataset.f, v = t && t.dataset.v, a = el.dataset.act;
-    if (a === 'exclude') el.onchange = () => el.value && ACT.exclude(n, f, v, el.value);
+    if (a === 'exclude') el.onclick = e => { e.stopPropagation(); ACT.exclude(n, f); };
     else if (a === 'out') { if (el.tagName === 'SELECT') el.onchange = () => el.value && ACT.out(n, f, v, el.value); else el.onclick = () => ACT.out(n, f, v, 'back'); }
     else if (a === 'addc') el.onclick = () => ACT.addc(n, f, null, el.dataset.to);
     else if (a === 'move') el.onchange = () => el.value !== v && ACT.move(n, f, v, el.value);
@@ -388,7 +391,7 @@ function renderQuality(){
   const names = Object.keys(DATA.gen), vl = v => v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1];
   const all = allPhotos().filter(p => shown(p) && (QF.view === 'all' || p.view === QF.view) && (!QF.genus || p.genus === QF.genus) && (!QF.todo || !qSet(p.f)));
   const card = p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" data-drag tabindex="0">
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}
+    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
     <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}${p.multi ? '<span class="adm-src multi" title="Several corals in frame">several</span>' : ''}${qTag(p)}</figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
   const sec = ([q, t]) => { const L = all.filter(p => qOf(p.f) === q);
@@ -408,6 +411,7 @@ function renderQuality(){
   $('qgen').onchange = e => { QF.genus = e.target.value; saveQF(); };
   $('qtodo').onchange = e => { QF.todo = e.target.checked; saveQF(); };
   $v.querySelectorAll('[data-act="zoom"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'); zoom(t.dataset.g, t.dataset.f); });
+  $v.querySelectorAll('[data-act="exclude"]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.closest('[data-f]'); ACT.exclude(t.dataset.g, t.dataset.f); });
   bindQ();
   // Hover (or focus) a photo and press 1, 2 or 3.
   let over = null;
@@ -427,9 +431,8 @@ function renderExcluded(){
     ${list.length ? `<div class="adm-grid adm-qgrid">${list.map(p => `<figure class="adm-tile" data-f="${esc(p.f)}" data-g="${esc(p.genus)}">
       <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge">${p.genus === '?' ? '<span class="none">missing</span>' : `<img src="${img(p, 1)}" alt="" loading="lazy">`}</button>
       <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a>${p.genus === '?' ? '' : srcTag(p)}</figcaption>
-      <div class="adm-acts"><select data-act="why" aria-label="Reason">${REASONS.map(([r, t]) => `<option value="${r}"${X[p.f] === r ? ' selected' : ''}>${t}</option>`).join('')}</select><button type="button" data-act="restore">Restore</button></div></figure>`).join('')}</div>` : '<p class="note">No excluded photo.</p>'}</section>`;
+      <div class="adm-acts"><button type="button" data-act="restore">Restore</button></div></figure>`).join('')}</div>` : '<p class="note">No excluded photo.</p>'}</section>`;
   const set = (f, r) => { DRAFT.exclude = {...(DRAFT.exclude || {})}; if (r) DRAFT.exclude[f] = r; else delete DRAFT.exclude[f]; saveDraft(); renderExcluded(); };
-  $v.querySelectorAll('[data-act="why"]').forEach(s => s.onchange = () => set(s.closest('[data-f]').dataset.f, s.value));
   $v.querySelectorAll('[data-act="restore"]').forEach(b => b.onclick = () => set(b.closest('[data-f]').dataset.f, null));
   $v.querySelectorAll('[data-act="zoomx"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'), p = PHOTOS[t.dataset.f]; if (p) zoomOne(p); });
 }
@@ -443,13 +446,13 @@ function zoomOne(p){
 const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAFT.genera[n]).forEach(n => { genera[n] = DRAFT.genera[n]; });
   const quality = {}; Object.keys(DRAFT.quality || {}).sort().forEach(f => { quality[f] = DRAFT.quality[f]; });
   const exclude = {}; Object.keys(DRAFT.exclude || {}).sort().forEach(f => { exclude[f] = DRAFT.exclude[f]; });
-  return {v: 1, genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(exclude).length ? {exclude} : {})}; };
+  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(exclude).length ? {exclude} : {})}; };
 async function save(){
-  const ch = changed(), q = qChanged(), x = xChanged(); if (!(ch.length || q || x) || !TOKEN) return;
+  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(); if (!(ch.length || q || x || bk) || !TOKEN) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
   try {
     const out = output(), text = JSON.stringify(out, null, 2) + '\n';
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(x ? ['exclusions'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(x ? ['exclusions'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const r = await gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg, content: toB64(text), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})});
     SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); saveDraft();
     toast('Published. The public site shows it within a minute or two.');
@@ -467,7 +470,7 @@ async function start(){
   try { [DATA, AUTOQ] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), fetch('quality.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).then(j => j.q || {}).catch(() => ({})), loadSaved()]); }
   catch (x) { $v.innerHTML = `<p class="warn">Could not load: ${esc(x.message)}</p>`; return; }
   // Every photo of data.json by name, with its genus, for the Excluded view.
-  PHOTOS = {}; Object.entries(DATA.gen).forEach(([n, g]) => [...Object.values(g.views || {}), ...Object.values(g.more || {}), (DATA.course || {})[n] || [], (DATA.cand || {})[n] || []].flat().forEach(p => { PHOTOS[p.f] = {...p, genus: n}; }));
+  PHOTOS = {}; Object.entries(DATA.gen).forEach(([n, g]) => [...Object.values(g.views || {}), ...Object.values(g.more || {}), (DATA.course || {})[n] || [], (DATA.cand || {})[n] || [], g.book || []].flat().forEach(p => { PHOTOS[p.f] = {...p, genus: n}; }));
   // Every photo name in data.json (field, extra, lecture, candidates), to spot choices left pointing nowhere.
   KNOWN = new Set([...Object.values(DATA.gen).flatMap(g => [...Object.values(g.views || {}), ...Object.values(g.more || {})].flat()), ...Object.values(DATA.course || {}).flat(), ...Object.values(DATA.cand || {}).flat(), ...(DATA.cmp || [])].map(p => p.f));
   // Unsaved edits from an earlier visit are kept, on top of what is saved.
@@ -476,7 +479,10 @@ async function start(){
   const keep = changed().length; if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? "genera" : "genus"} not published yet.`);
   $('tools').hidden = false; $('save').onclick = save; $('download').onclick = download;
   $('undo').onclick = undo;
-  addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && !e.target.closest('input,textarea')) { e.preventDefault(); undo(); } });
+  $('booksw').onclick = () => { if (bookOn(DRAFT)) DRAFT.book = false; else delete DRAFT.book; saveDraft(); render(); };
+  $('redo').onclick = redo;
+  addEventListener('keydown', e => { if (!(e.ctrlKey || e.metaKey) || e.target.closest('input,textarea')) return; const k = e.key.toLowerCase();
+    if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); } else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); } });
   cur = decodeURIComponent(location.hash.slice(1)) || Object.keys(DATA.gen)[0];
   window.onhashchange = () => { cur = decodeURIComponent(location.hash.slice(1)); render(); window.scrollTo({top: 0}); };
   window.onbeforeunload = e => { if (TOKEN && (changed().length || qChanged() || xChanged())) { e.preventDefault(); e.returnValue = ''; } };
@@ -484,3 +490,11 @@ async function start(){
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.
 if (/[?&]readonly\b/.test(location.search)) start(); else lockScreen();
+
+// Photo size S/M/L: same control and same per-page store as the site (localStorage imr-coral-size, key "admin").
+(() => {
+  const get = () => { try { return JSON.parse(localStorage.getItem('imr-coral-size')) || {}; } catch (e) { return {}; } };
+  const apply = () => { const s = get().admin || 'm'; document.documentElement.dataset.size = s; document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); };
+  document.querySelectorAll('#size button').forEach(b => b.onclick = () => { const p = get(); p.admin = b.dataset.size; try { localStorage.setItem('imr-coral-size', JSON.stringify(p)); } catch (e) {} apply(); });
+  apply();
+})();

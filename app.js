@@ -15,7 +15,7 @@ const srcset = p => `img/${p.f}-s.webp 480w, img/${p.f}.webp 1600w`;
 const inatTag = p => p && p.o && p.o.includes('inaturalist.org') ? `<a class="inat" href="${esc(p.o)}" target="_blank" rel="noopener" title="Open the iNaturalist observation">iNat ↗</a>` : '';
 // One colour per IMR lecture group, used everywhere a group appears (style="--g:…", CSS hsl(var(--g) …)).
 const groupHue = n => (n * 137) % 360;
-const credit = p => p.imr ? `IMR Lecture 6, slide ${p.slide}` : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(p.o)}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
+const credit = p => p.cf ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${p.pg}` : p.imr ? `IMR Lecture 6, slide ${p.slide}` : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(p.o)}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
 // Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick, else the first closer view.
 const cover = g => g.coverP || allPhotos(g).find(p => p.f === g.cover) || (g.views.medium || [])[0] || allPhotos(g)[0];
@@ -23,6 +23,10 @@ const cover = g => g.coverP || allPhotos(g).find(p => p.f === g.cover) || (g.vie
 // per view (in order), hidden photos and photos moved to another view. Hidden photos leave games too.
 // Candidates (data.json cand, not shown until approved) join a view when listed in add {photo: view}.
 function applyCuration(d, c){
+  // Coral Finder book photos (data: gen[].book, cropped from the 2022 book) can be switched off site-wide from the
+  // admin (curation.json "book": false). Kept apart from the views so games and quizzes never use them (captions).
+  if (c && c.book === false) Object.values(d.gen).forEach(g => { delete g.book; });
+  const X0 = (c && c.exclude) || {}; Object.values(d.gen).forEach(g => { if (g.book) g.book = g.book.filter(p => !X0[p.f]); });
   // Excluded photos (exclude: {f: reason}) leave every list first: genera, lecture photos, candidates, comparisons.
   const X = (c && c.exclude) || {}, keep = L => (L || []).filter(p => !X[p.f]);
   if (Object.keys(X).length) {
@@ -64,6 +68,8 @@ const ORIGIN_OK = {dauin: ['dauin'], ph: ['dauin', 'ph']};
 let origin = store.get('imr-coral-origin', 'all');
 function filterOrigin(d){
   const ok = ORIGIN_OK[origin]; if (!ok) return;
+  // Book photos are not from Dauin or the Philippines.
+  Object.values(d.gen).forEach(g => { delete g.book; });
   // A genus with no field photo from the chosen area keeps the nearest ones (Philippines, then everywhere),
   // so games and tools always have a photo to show.
   Object.values(d.gen).forEach(g => {
@@ -187,7 +193,7 @@ function viewGenus(name){
     const src = [all.filter(p => p.imr), all.filter(p => !p.imr && !p.own), all.filter(p => p.own)], out = [];
     while (src.some(L => L.length)) src.forEach(L => L.length && out.push(L.shift()));
     // Photos with several corals in frame (data: more[v], course[].multi) come last, never featured first.
-    return [...out.filter(p => !p.multi), ...out.filter(p => p.multi), ...((g.more || {})[v] || []).map(p => ({...p, multi: true}))]; };
+    return [...out.filter(p => !p.multi), ...out.filter(p => p.multi), ...((g.more || {})[v] || []).map(p => ({...p, multi: true})), ...(g.book || []).filter(p => p.view === v && !(g.levels === 2 && v === 'macro')).map(p => ({...p, multi: true}))]; };
   const FEAT = 3;
   const flat = VIEWS.flatMap(([v]) => inView(v).map(p => ({...p, genus: name, view: g.levels === 2 && v === 'macro' ? 'close' : v})));
   const cv = cover(g), ci = cv ? flat.findIndex(x => x.f === cv.f) : -1;
@@ -654,14 +660,17 @@ if (navigator.storage && navigator.storage.persist) navigator.storage.persist().
 /* ---------- routing ---------- */
 function go(h){ if (decodeURIComponent(location.hash.slice(1)) === h) route(); else location.hash = h; }
 
-// Photo size (small / medium / large), remembered per page.
-const PAGE_DEFAULT = {genera: 'm', key: 'm', genus: 'm', cmp: 'm', quiz: 'm'};
-function pageKey(){ const h = decodeURIComponent(location.hash.slice(1)); return h.startsWith('g-') ? 'genus' : h.startsWith('cmp') ? 'cmp' : h.startsWith('quiz') ? 'quiz' : (h.startsWith('key') || h.startsWith('finder') || /^[kl]-/.test(h)) ? 'key' : 'genera'; }
+// Photo size (small / medium / large), remembered per page in localStorage (key imr-coral-size).
+// Each page reads :root[data-size] in its own CSS; pages where it means nothing (games that fill the screen,
+// home, progress) hide the S/M/L buttons, keeping their room so the header never changes size.
+const SIZE_PAGES = ['genera', 'tips', 'cmp', 'genus', 'pair', 'finder', 'lab-gallery', 'lab-elim'];
+function pageKey(){ const h = decodeURIComponent(location.hash.slice(1)); return h.startsWith('g-') ? 'genus' : h.startsWith('cmp-') ? 'pair' : h.split('|')[0] || 'home'; }
 function sizePrefs(){ try { return JSON.parse(localStorage.getItem('imr-coral-size')) || {}; } catch (e) { return {}; } }
-function photoSize(){ return sizePrefs()[pageKey()] || PAGE_DEFAULT[pageKey()]; }
+function photoSize(){ return sizePrefs()[pageKey()] || 'm'; }
 const SIZES = {card: {s: '240px', m: '360px', l: '520px'}, strip: {s: '(max-width:700px) 46vw, 260px', m: '(max-width:700px) 92vw, 420px', l: '(max-width:700px) 92vw, 640px'}};
 const sizesFor = kind => SIZES[kind][photoSize()];
-function applySize(){ const s = photoSize(); document.documentElement.dataset.size = s; document.querySelectorAll('img[data-sz]').forEach(i => i.sizes = sizesFor(i.dataset.sz)); document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); }
+function applySize(){ const s = photoSize(), on = SIZE_PAGES.includes(pageKey()); document.documentElement.dataset.size = s;
+  const sz = document.getElementById('size'); sz.style.visibility = on ? '' : 'hidden'; sz.setAttribute('aria-hidden', String(!on)); document.querySelectorAll('img[data-sz]').forEach(i => i.sizes = sizesFor(i.dataset.sz)); document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); }
 function showOrigin(){ document.querySelectorAll('#origin button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.origin === origin))); }
 // On phones each group shows only its current button: tapping it moves to the next one.
 const phone = () => matchMedia('(max-width:640px)').matches;
@@ -794,5 +803,5 @@ if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else ad
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
 const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
-Promise.all([fetch('data.json?v=16').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=17').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});

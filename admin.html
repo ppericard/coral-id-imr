@@ -8,8 +8,8 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
-<link rel="stylesheet" href="app.css?v=15">
-<link rel="stylesheet" href="admin.css?v=7">
+<link rel="stylesheet" href="app.css?v=31">
+<link rel="stylesheet" href="admin.css?v=9">
 </head>
 <body class="admin">
 <script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
@@ -20,7 +20,10 @@
     <div class="hdr-tools" id="tools" hidden>
       <span class="adm-status" id="status" role="status"></span>
       <a class="chip" id="preview" href="./?draft" target="_blank" rel="noopener">Preview on site</a>
+      <button type="button" class="chip" id="booksw" aria-pressed="true" title="Show or hide every photo cropped from the Coral Finder 2022 book, on the whole site">Coral Finder book photos: on</button>
       <button type="button" class="chip" id="undo" title="Undo your last click (Ctrl+Z)" disabled>↶ Undo</button>
+      <button type="button" class="chip" id="redo" title="Redo (Ctrl+Shift+Z)" disabled>↷ Redo</button>
+      <div id="size" role="group" aria-label="Photo size"><button type="button" data-size="s" title="Small photos">S</button><button type="button" data-size="m" title="Medium photos">M</button><button type="button" data-size="l" title="Large photos">L</button></div>
       <button type="button" class="chip" id="download">Download JSON</button>
       <button type="button" class="chip adm-save" id="save" disabled>Publish</button>
     </div>
@@ -28,6 +31,6 @@
   <main id="view"><p class="note">Loading…</p></main>
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
-<script src="admin.js?v=11"></script>
+<script src="admin.js?v=13"></script>
 </body>
 </html>

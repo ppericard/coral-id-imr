@@ -9,9 +9,9 @@
     pairs: [['Turbinaria', 'wide'], ['Turbinaria', 'macro']], anatomy: [['Favites', 'macro']], map: [['Lobophyllia', 'macro'], ['Pavona', 'macro']], web: [['Goniopora', 'macro'], ['Alveopora', 'macro']], matrix: [['Cyphastrea', 'macro'], ['Astrea', 'macro']], reveal: [['Fungia', 'macro']], zoom: [['Echinopora', 'wide'], ['Echinopora', 'macro']], spot: [['Astreopora', 'macro']]
   };
   const SECTIONS = [
-    ['learn', 'Learn', 'Get to know the genera and the features that separate them.'],
-    ['practice', 'Practice', 'Train your eye until it becomes automatic.'],
-    ['identify', 'Identify', 'Work out the genus of the coral in front of you.']
+    ['learn', 'Learn', 'The 39 genera and what sets them apart.'],
+    ['practice', 'Practice', 'Games to train your eye.'],
+    ['identify', 'Identify', 'Find the genus of a coral on a photo.']
   ];
   // Few entry points per step on the home page; the section tabs still list everything.
   const HOME = {learn: ['genera', 'tips', 'cmp'], practice: ['quiz', 'quiz-duel', 'pairs', 'reveal'], identify: ['finder']};
@@ -37,7 +37,7 @@
           <p class="hcta"><a class="next" href="#genera">Browse the genera</a> <a class="chip" href="#quiz">Test yourself</a></p>
         </div>
       </section>
-      <nav class="hpath" aria-label="How to use the app"><ol>${[['genera', 'Learn', 'Get to know the 39 genera', 'Acropora', 'medium'], ['quiz', 'Practice', 'Name the genus from photos until it comes without thinking', 'Platygyra', 'macro'], ['finder', 'Identify', 'Name a coral on a real photo: growth form first, then compare the candidates', 'Pocillopora', 'wide']]
+      <nav class="hpath" aria-label="How to use the app"><ol>${[['genera', 'Learn', 'Discover the 39 genera', 'Acropora', 'medium'], ['quiz', 'Practice', 'Train your eye with games', 'Platygyra', 'macro'], ['finder', 'Identify', 'Name a coral on your photos', 'Pocillopora', 'wide']]
         .map(([h, t, d, n, v]) => `<li><a href="#${h}"><img src="${ph(n, v)}" alt="" loading="lazy"><span><b>${t}</b><small>${d}</small></span></a></li>`).join('')}</ol></nav>
       ${SECTIONS.map(([id, t, d]) => `<section class="hsec"><h3><a href="${'#' + MODES[id][0][0]}">${t}</a></h3><p class="note">${d}</p><div class="htools">${MODES[id].filter(m => HOME[id].includes(m[0])).map(tile).join('')}</div></section>`).join('')}
       <section class="hsec"><h3>Tools</h3><p class="note">Visual references to explore the genera and their features.</p><div class="htools small">${TOOLS.map(t => (typeof LAB !== 'undefined' && LAB.list.find(p => p.id === t))).filter(Boolean).map(p => tile(['lab-' + p.id, p.title, '', !GRADUATED[p.id]])).join('')}</div></section>
