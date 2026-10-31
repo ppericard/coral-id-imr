@@ -16,7 +16,7 @@ const img = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 
-let SUG = {}, DUPS = [], FU0, PICKS = {}, PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
+let SHOWN_COVER = null, SUG = {}, DUPS = [], FU0, PICKS = {}, PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
 // (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
 const QUAL = [[3, 'Good'], [2, 'Fair'], [1, 'Poor']];
@@ -282,7 +282,8 @@ const ACT = {
 /* ---------- Rendering ---------- */
 const changed = () => [...new Set([...Object.keys(DRAFT.genera), ...Object.keys(SAVED.genera)])].filter(n => !same(DRAFT.genera[n], SAVED.genera[n]));
 function tile(n, p, v, st){
-  const k = entry(n), isCover = k.cover === p.f, two = lv(n) === 2;
+  // The cover shown in the header (his pick, else the automatic one) is marked on its photo either way.
+  const k = entry(n), isCover = (k.cover || SHOWN_COVER) === p.f, two = lv(n) === 2;
   // View buttons: the current view is pressed; one click on another moves the photo there.
   const moves = VIEWS.filter(([w]) => w === v || !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="move" data-to="${w}" aria-pressed="${w === v}">${label(n, w)}</button>`).join('');
   return `<figure class="adm-tile ${st.cls || ''}${isCover ? ' is-cover' : ''}" data-f="${esc(p.f)}" data-v="${v}"${st.cls === 'is-hidden' ? '' : ` data-drag${st.num ? ` data-pos="${st.num - 1}"` : ''}`}>
@@ -323,7 +324,7 @@ function render(){
   if (cur === '~diff') return renderDiff();
   if (cur === '~mont') return renderMont();
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
-  const ch = changed(), n = cur, g = DATA.gen[n], cv = coverOf(n), k = entry(n);
+  const ch = changed(), n = cur, g = DATA.gen[n], cv = coverOf(n), k = entry(n); SHOWN_COVER = cv && cv.f;
   status();
   $('preview').href = `./?draft#g-${encodeURIComponent(n)}`;
   const side = names.map(m => { const c = coverOf(m), e = DRAFT.genera[m] || {}, dirty = ch.includes(m), h = (e.hide || []).length;
