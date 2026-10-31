@@ -773,7 +773,8 @@ function answer(cur, c, target, ph, cor){
   const bk = ph.reduce((t, p) => t + photoDiff(target, p) + (!ps[p.f] ? 0.5 : ps[p.f][1] >= 2 ? -1 : 0), 0) / Math.max(1, ph.length);
   bktObs(target, s, good, bk, k);
   abilityStep(target, s, good, d0, k);
-  ph.forEach(p => { const x = ps[p.f] = ps[p.f] || [0, 0]; x[0]++; if (good) x[1]++; });
+  // The corallites hint is revealed after the answer when it was not opened: seen, but not recognised.
+  ph.forEach(p => { const x = ps[p.f] = ps[p.f] || [0, 0]; x[0]++; if (good && (cor || p.view !== 'macro')) x[1]++; });
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
   s.h = ((s.h || '') + (good ? 1 : 0)).slice(-10);  // recent results, newest last
   // Pierre's rule: a wrong answer also shows the genus given is not mastered, so it counts as a miss for it too.
