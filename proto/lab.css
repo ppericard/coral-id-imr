@@ -109,6 +109,12 @@ svg.dim .mleaf.on,svg.dim .mgroup.on{opacity:1}
 .emyst img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block}
 .emyst figcaption{font-size:.85rem;color:var(--muted)}
 .lab .chip.best{box-shadow:0 0 0 2px var(--accent) inset}
+.enext{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.ebest{display:flex;flex-direction:column;gap:4px;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+.ebest:hover{border-color:var(--accent)}
+.esplit{display:flex;flex-wrap:wrap;align-items:center;gap:3px}
+.esplit small{min-width:4.5em;color:var(--muted)}
+.esplit img{width:30px;height:30px;object-fit:cover;border-radius:4px}
 .elimgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;margin-top:12px}
 :root[data-size="m"] .elimgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 :root[data-size="l"] .elimgrid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
