@@ -173,6 +173,7 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 /* memory pairs */
 .pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:720px}
 .pcard{aspect-ratio:1;padding:0;border:0;background:none;cursor:pointer;perspective:800px}
+.pgrid.fit .pcard{aspect-ratio:auto;height:100%}
 .pin{position:relative;display:block;width:100%;height:100%;transition:transform .45s;transform-style:preserve-3d}
 .pcard.up .pin{transform:rotateY(180deg)}
 .pback,.pfront{position:absolute;inset:0;border-radius:10px;backface-visibility:hidden;overflow:hidden}
@@ -483,3 +484,12 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .fdrest summary{cursor:pointer;font-family:var(--display);font-size:1.1rem;font-weight:600}
 .fdrest .chip img{width:22px;height:22px;border-radius:50%;object-fit:cover;margin:0 6px 0 -6px}
 .fdcmp[hidden]{display:none}
+
+/* Game layout shared by Practice games: play area left, controls in a side column (like the quiz). */
+.pgame{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,300px);gap:16px;align-items:start;margin-top:12px}
+.gside{display:flex;flex-direction:column;gap:10px}
+.gside .chips{margin:0}
+.gside .note{margin:0}
+.rvlayout{grid-template-columns:minmax(0,1fr) minmax(240px,300px);margin-top:12px}
+.rvstage{max-height:calc(100vh - 128px)}
+@media (max-width:760px){.pgame{grid-template-columns:minmax(0,1fr)}.pgame .gside{order:-1}}
