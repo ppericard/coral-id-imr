@@ -297,13 +297,18 @@ function viewGenera(){
     if (azOrder === 'lecture') {
       const gi = n => shownGroup(n) || 99;
       names.sort((a, b) => gi(a) - gi(b) || slateIdx(a) - slateIdx(b));
-      html = names.map((n, i) => { const k = shownGroup(n), gr = DATA.imrg.find(x => x.n === k);
-        const head = i && gi(names[i - 1]) === gi(n) ? '' : gr
-          ? `<h3 class="gdiv" id="grp-${gr.n}" style="--g:${groupHue(gr.n)}"><span class="gn">${gr.n}</span>${esc(gr.t)}</h3>`
+      // Desktop: each lecture group is a block, and small groups sit side by side (packGroups) instead of one row each.
+      const blocks = [];
+      names.forEach((n, i) => { if (!i || gi(names[i - 1]) !== gi(n)) blocks.push([]); blocks[blocks.length - 1].push(n); });
+      html = blocks.map(L => { const gr = DATA.imrg.find(x => x.n === shownGroup(L[0]));
+        const head = gr ? `<h3 class="gdiv" id="grp-${gr.n}" style="--g:${groupHue(gr.n)}"><span class="gn">${gr.n}</span>${esc(gr.t)}</h3>`
           : '<h3 class="gdiv"><span class="gn">★</span>Not covered in the lecture</h3>';
-        return head + (tips ? tipCard(n) : card(n, 'stripe')); }).join('');
+        return `<section class="gblk" data-n="${L.length}">${head}${L.map(n => tips ? tipCard(n) : card(n, 'stripe')).join('')}</section>`; }).join('');
     } else html = names.map(n => tips ? tipCard(n) : card(n, true)).join('');
-    document.getElementById('azgrid').innerHTML = html || '<p class="note">No genus matches.</p>';
+    const grid = document.getElementById('azgrid');
+    grid.innerHTML = html || '<p class="note">No genus matches.</p>';
+    grid.classList.toggle('gpack', azOrder === 'lecture' && !!html);
+    packGroups(grid);
     bindCards();
   };
   const qi = document.getElementById('q');
@@ -316,6 +321,18 @@ function viewGenera(){
   $v.querySelectorAll('[data-gv]').forEach(b => b.onclick = () => { azView = b.dataset.gv; try { localStorage.setItem('imr-coral-gview', azView); } catch (e) {} viewGenera(); pageHelp(); });
   draw();
 }
+
+// Lecture groups as blocks on one grid: a block spans as many columns as it has genera (up to the row), so a
+// group of 1-3 genera shares its row with the next ones. Phones keep one group per row (blocks display:contents).
+function packGroups(grid){
+  if (!grid || !grid.classList.contains('gpack')) return;
+  const B = [...grid.querySelectorAll(':scope > .gblk')];
+  B.forEach(b => { b.style.gridColumn = ''; b.style.gridRow = ''; });
+  if (getComputedStyle(B[0] || grid).display === 'contents') return;
+  const C = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length || 1;
+  B.forEach(b => { const n = +b.dataset.n, c = Math.min(n, C); b.style.gridColumn = `span ${c}`; b.style.gridRow = `span ${1 + Math.ceil(n / c)}`; });
+}
+addEventListener('resize', () => packGroups(document.getElementById('azgrid')));
 
 function viewGenus(name){
   const g = DATA.gen[name];
@@ -554,7 +571,7 @@ function question(cur, target, choices, prompt, set){
   let answered = false, hintShown = false;
   const fig = (p, k) => `<figure class="qph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${img(p)}" alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
   // One screen, no scrolling: the photos fill the stage (sized to the window), choices and feedback sit beside them.
-  $v.innerHTML = `${gameHelp(cur)}<div class="q">
+  $v.innerHTML = `${gameHelp(cur)}<div class="q bleed">
     <div class="qstage">${ph.map(fig).join('')}</div>
     <aside class="qside">
       <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">${session.ok}/${session.n}</span>${quizNav(cur)}</div>
@@ -936,7 +953,7 @@ function ctxBar(h){
     const n = h.slice(2), g = DATA.gen[n], L = generaOrder(), i = L.indexOf(n);
     const prev = L[(i - 1 + L.length) % L.length], next = L[(i + 1) % L.length];
     return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(g.fam)}</small></h2>
-      <span class="pn"><a href="#g-${esc(prev)}" title="Previous: ${esc(prev)}" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="#g-${esc(next)}" title="Next: ${esc(next)}" aria-label="Next genus: ${esc(next)}">›</a></span>`;
+      <span class="pn"><a href="#g-${esc(prev)}" title="Previous: ${esc(prev)} (←)" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="#g-${esc(next)}" title="Next: ${esc(next)} (→)" aria-label="Next genus: ${esc(next)}">›</a></span>`;
   }
   const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
   if (a && DATA.gen[a] && DATA.gen[b]) return `${back}<h2 class="ctx-t"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="#cmp">All pairs</a>`;
@@ -990,6 +1007,8 @@ function route(){
   hdrMetrics();
   // The intro moved behind ? only now, so the quiz stage is resized to the space it really has (phones gained ~280 px).
   fitStage();
+  // Same for card games (Memory): their grid was sized before the intro left, so it is refitted to the room it now has.
+  document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g));
 }
 addEventListener('hashchange', route);
 // Pages open straight on their content: the title is dropped where the header already names the page
@@ -1011,6 +1030,13 @@ new MutationObserver(pageHelp).observe($v, {childList: true, subtree: true});
 const $setb = document.getElementById('setb'), $set = document.getElementById('settings');
 $setb.onclick = e => { e.stopPropagation(); const open = $set.hidden; $set.hidden = !open; $setb.setAttribute('aria-expanded', String(open)); };
 document.addEventListener('click', e => { if (!$set.hidden && !e.target.closest('#settings, #setb')) { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); } });
+// Desktop: ← / → go to the previous / next genus on a sheet (the arrows of the page bar), without reaching for the mouse.
+document.addEventListener('keydown', e => {
+  if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || !lb.hidden) return;
+  if (e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return;
+  const a = $modes.querySelectorAll('.pn a'); if (a.length !== 2) return;
+  e.preventDefault(); a[e.key === 'ArrowLeft' ? 0 : 1].click();
+});
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$set.hidden) { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); $setb.focus(); } });
 // Admin | User view switch: only in the browser holding the admin token; a switch reloads so every module follows.
 const $viewrow = document.getElementById('viewrow');

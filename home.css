@@ -75,3 +75,5 @@
   .hdacts{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}.hdbtn{padding:9px 12px}.hdbtn b{font-size:1.2rem}.hdbtn small{display:none}}
 .hdart.rc>img{object-position:50% 50%}
 @media (max-width:560px){.hdart.rc{aspect-ratio:4/1}}
+/* Desktop: the art grows with the window height (up to a near 3:2 band), so the doors fill the first screen instead of leaving its lower half empty. */
+@media (min-width:861px){.hdart{aspect-ratio:auto;height:clamp(250px,calc(100dvh - 470px),400px)}}
