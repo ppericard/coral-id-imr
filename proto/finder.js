@@ -98,13 +98,11 @@ LAB.add({
       return `<div class="fdnext"><span class="label">Check next</span>${cands.map(x => `<button type="button" class="fdq" data-o="${x.f.id}|${x.o.id}"><span><small>${esc(x.f.name)}</small><b>${esc(x.o.t)}?</b></span><span class="fdsplit"><small>yes ${x.yes.length}</small>${side(x.yes)}</span><span class="fdsplit no"><small>no ${x.no.length}</small>${side(x.no)}</span></button>`).join('')}</div>`;
     }
 
-    // Where each photo comes from, on every photo (same split as the admin's origin tags): IMR lecture, Dauin
-    // (Pierre's own or other iNaturalist observers there), elsewhere in the Philippines, or elsewhere.
-    const SRC = {imr: 'IMR lecture', dauin: 'Dauin', ph: 'Philippines', world: 'Elsewhere'};
+    // Where a photo comes from (same split as the admin's origin tags), for the Dauin count; the credit itself is in the lightbox.
     const src = p => p.imr ? 'imr' : p.own || p.loc === 'dauin' ? 'dauin' : p.loc === 'ph' ? 'ph' : 'world';
     function drawMain(F, left, close, rest){
       const flat = [], mode = view === 'auto' ? (left.length <= 12 ? 'mosaic' : 'cover') : view === 'rows' ? 'mosaic' : view;
-      const ph = (n, p, v) => { flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom fdph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 50vw, 360px" alt="${esc(n)}, ${esc(VIEW_LABEL[v] || v)}" loading="lazy"><em class="fdsrc s-${src(p)}">${SRC[src(p)]}</em></button>`; };
+      const ph = (n, p, v) => { flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom fdph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 50vw, 360px" alt="${esc(n)}, ${esc(VIEW_LABEL[v] || v)}" loading="lazy"></button>`; };
       const tools = n => `<span class="fdtools"><button type="button" class="chip" data-out="${esc(n)}" title="Rule out ${esc(n)}">Rule out</button><button type="button" class="chip" data-cmpk="${esc(n)}" aria-pressed="${S.cmp.includes(n)}">Compare</button></span>`;
       const head = n => `<a class="fdname" href="${genLink(n)}"><i>${esc(n)}</i></a><small>${tag(n)} · ${esc(G[n].fam)}${G[n].ig ? ' · IMR group ' + G[n].ig : ''}</small>`;
       // Many varied examples at a glance, as on the paper Coral Finder's pages: cover first, then round-robin over
