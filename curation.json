@@ -45,7 +45,8 @@
       "move": {
         "pocillopora-medium-745206581": "wide",
         "pocillopora-wide-374959119": "medium"
-      }
+      },
+      "ok": true
     }
   },
   "quality": {
@@ -69,7 +70,14 @@
     "imrl-p8_i9": "x"
   },
   "exclude": {
+    "ctenactis-cand-269392275": "excluded",
+    "duncanopsammia-cand-611582033": "excluded",
+    "duncanopsammia-cand-611582046": "excluded",
+    "imrl-p10_i7": "excluded",
+    "lithophyllon-macro-746237709": "excluded",
     "pocillopora-cand-175099231": "excluded",
-    "pocillopora-macro-745206187": "excluded"
+    "pocillopora-cand-269469068": "excluded",
+    "pocillopora-macro-745206187": "excluded",
+    "tubastraea-cand-580500321": "excluded"
   }
 }
