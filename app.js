@@ -191,19 +191,21 @@ function zoom(list, i, opts = {}){
 }
 
 /* ---------- IMR ID tips ---------- */
-// The lecturers' own cues (IMR Lecture 6: slide text, review slides, presenter's notes), verbatim. They lead
-// wherever a genus is taught or tested; Coral Finder criteria come after.
+// Two levels. ID tips (g.qt, tools/id_tips.txt): 2-3 short cues per genus condensed from the lecture, shown
+// everywhere a tip appears (quiz, cards, ID tips page, comparisons, genus sheet). Lecture notes (g.imr): the
+// lecturers' full cues (slide text, review slides, presenter's notes), only on the genus sheet.
 const slideRef = (k, L) => L && L.length ? `${k} ${L.join(', ')}` : k;
 const tipSrc = (g, x) => x.startsWith('Review slide: ') ? [slideRef('Review slide', g.rsl), x.slice(14)] : x.startsWith("Instructor's notes: ") ? ["Presenter's notes", x.slice(20)] : ['', x];
-// Full list: slide cues, then the review slide and the presenter's notes, each with its source.
-const tipsList = (g, cls = '') => g.imr.length ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${g.imr.map(x => { const [k, t] = tipSrc(g, x); return `<li>${k ? `<b class="tsrc">${esc(k)}</b> ` : ''}${esc(t)}</li>`; }).join('')}</ul><p class="tref">IMR Lecture 6${g.sl ? ', ' + slideRef(g.sl.length > 1 ? 'slides' : 'slide', g.sl) : ''}</p>` : `<p class="note">Not on the lecture slides: see the Coral Finder below.</p>`;
-// One line for cards and tiles: the slide cues only; genera the lecture skips fall back to the Coral Finder summary.
-const tipsText = g => g.imr.length ? g.imr.filter(x => !/^(Review slide|Instructor's notes): /.test(x)).join(' ') : g.sum;
+// Full lecture notes for the genus sheet, each with its source.
+const notesList = (g, cls = '') => g.imr.length ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${g.imr.map(x => { const [k, t] = tipSrc(g, x); return `<li>${k ? `<b class="tsrc">${esc(k)}</b> ` : ''}${esc(t)}</li>`; }).join('')}</ul><p class="tref">IMR Lecture 6${g.sl && g.sl.length ? ', ' + slideRef(g.sl.length > 1 ? 'slides' : 'slide', g.sl) : ''}</p>` : `<p class="note">Not on the lecture slides: see the Coral Finder below.</p>`;
+// Short ID tips; genera the lecture skips fall back to the Coral Finder summary.
+const tipsList = (g, cls = '') => g.qt ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${g.qt.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : `<p class="keyid">${esc(g.sum)}</p>`;
+const tipsText = g => g.qt ? g.qt.join(' · ') : g.sum;
 function viewTips(){
   const gr = DATA.imrg.map(x => ({...x, L: Object.keys(DATA.gen).filter(n => DATA.gen[n].ig === x.n)})).filter(x => x.L.length);
   const sel = location.hash.split('|')[1] || '';
   $v.innerHTML = `<h2>ID tips</h2>
-  <p class="lede">What the IMR lecturers point out for each genus, in their own words: slide text, review slides and presenter's notes from Lecture 6.</p>
+  <p class="lede">The few cues that identify each genus, condensed from IMR Lecture 6. The full lecture notes are on each genus sheet.</p>
   <div class="tiphead"><ol class="qtiles" aria-label="IMR Lecture 6: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
   <details class="gloss"><summary>Coral anatomy terms</summary><a class="glink" href="#lab-anatomy"><span class="hpv art">${window.homeArt ? homeArt('anatomy') : ''}</span><span><b>Corallite anatomy</b><small>Explore the parts of a corallite on a diagram ›</small></span></a><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>
   <div class="chips tipgr"><span class="label">IMR group</span><a class="chip" href="#tips" aria-pressed="${!sel}">All</a>${gr.map(x => `<a class="chip gchip" style="--g:${groupHue(x.n)}" href="#tips|${x.n}" aria-pressed="${sel == x.n}" title="${esc(x.t)}">${x.n}</a>`).join('')}</div>
@@ -271,6 +273,7 @@ function viewGenus(name){
       ${cv ? `<button type="button" class="zoom hero-ph" data-z="${ci}"><img src="${img(cv)}" alt="${esc(name)}"></button>` : ''}
       <div class="idbox">
         ${g.imr.length ? `<h3>ID tips (IMR) <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span></h3>${tipsList(g)}` : ''}${g.mn ? `<p class="note"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}
+        ${g.imr.length ? `<h3>IMR lecture notes</h3>${notesList(g)}` : ''}
         <h3>Coral Finder features</h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
         ${g.check ? `<p class="note check"><b>To check with an IMR trainer:</b> ${esc(g.check)}</p>` : ''}
         ${g.info ? `<div class="note osrc"><b>Other sources:</b><ul class="srcs">${g.info.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
@@ -508,7 +511,7 @@ function answer(cur, c, target, ph, cor){
   const vs = !good && DATA.gen[c] ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(tipsText(DATA.gen[c]))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>` : '';
   document.getElementById('after').innerHTML = `<div class="fb">
     <h3 class="${good ? 'ok' : 'ko'}">${good ? 'Yes' : 'No'}, it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.n ? '' : ' (★ not surveyed)'}</h3>
-    ${g.imr.length ? `<p class="label">ID tips (IMR)</p>${tipsList(g, 'imrfb')}` : `<p class="keyid">${esc(g.sum)}</p>`}${g.mn ? `<p class="vs"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}${vs}
+    ${g.qt ? `<p class="label">ID tips (IMR)</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="vs"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}${vs}
     <details class="more"><summary>Coral Finder</summary>${g.imr.length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details></div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
   bindGo(document.getElementById('after'));
@@ -878,5 +881,5 @@ const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
 const forms = () => fetch('forms.json?v=3').then(r => r.ok ? r.json() : {}).then(j => j.form || {}).catch(() => ({}));
 const json = u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}));
-Promise.all([fetch('data.json?v=17').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=18').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});

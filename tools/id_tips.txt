@@ -1,0 +1,39 @@
+# ID tips: 2-3 short cues per genus, condensed from the IMR Lecture 6 cues in data.json "imr"
+# (slide text, review slides, presenter's notes). Used everywhere tips are shown; the genus sheet also keeps the full lecture notes.
+# Format: Genus<TAB>tip | tip | tip   (applied by tools/apply_id_tips.py)
+Acropora	Axial corallite at branch tips | Cup-shaped radial corallites
+Pocillopora	Branches covered in verrucae (warts) | Corallites immersed on the verrucae
+Stylophora	Blunt branch tips | Hooded corallites (facing down) | Smooth skeleton from afar
+Anacropora	No axial corallite | Corallites look empty; smooth surface
+Seriatopora	Thin, tangled branches | Black corallites in rows | No hooded corallites
+Porites	Small corallites, shared walls | Honeycomb pattern
+Tubastraea	Dark green to black | Round tubular corallite at each branch end
+Echinopora	Untidy branching tangles | Whole colony made of small beads | Spines between large corallites
+Astreopora	Massive | Cylindrical corallites standing out | Corallites look like holes
+Galaxea	Spiky, star-like corallites | Blade-like septa
+Turbinaria	Thin plates, regular colony | Smooth coenosteum between corallites | Corallites 2-3 mm
+Mycedium	Large nose-shaped corallites | Facing out towards the colony edge
+Lobophyllia	Large, fleshy corallites that look isolated | Large spiky septal teeth
+Pavona	Smooth, star-like septo-costae between corallites | Corallites on both sides (club-like or leafy)
+Pachyseris	Valleys with parallel ridges | Finely ribbed septa | Leafy, laminar growth
+Pectinia	Towering small plates of equal height | Maze of hedge-like walls
+Platygyra	Brain coral | Septa alternate in size or position (ragged) | Smooth valleys, no paliform lobes
+Leptoria	Equal, zipper-like septa | Valleys so narrow you see only the ridges
+Goniopora	Long polyps out by day | 24 tentacles (Alveopora: 12) | Tentacles pulse
+Plerogyra	Bubble coral: grape-like vesicles
+Montipora	Tiniest corallites, look empty | Bumps on the coenosteum are NOT corallites
+Hydnophora	Coenosteum covered in conical mounds (monticules) | Corallites in the valleys between them
+Fungia	Round free-living disc | Saw-like septal teeth | Pale tentacular lobes
+Lithophyllon	Round disc, flat or weakly domed | Fine regular septal teeth: smooth look
+Danafungia	Round disc with a central dome or arch | Large septal teeth
+Ctenactis	Oval disc with a long mouth furrow | Large saw-like septal teeth
+Lobactis	Oval disc | Tall, pale tentacular lobes | Regular septal teeth
+Herpolitha	Elongated disc, furrow along its whole length | Can form X or Y shapes
+Heliofungia	Long anemone-like tentacles by day | White tentacle tips
+Dipsastraea	Separate walls, oval corallites | Intra-tentacular budding | Colony not crowded
+Astrea	Separate walls, round crowded corallites | Extra-tentacular budding | Septa alternate in size
+Diploastrea	Polygonal, thick-walled corallites bunched together
+Goniastrea	Paliform lobes | Shared walls, sub-angular corallites | Wall often looks bleached
+Favites	Shared or separate walls; crowded, sub-rounded corallites | Extra-tentacular budding | Uneven colony surface
+Duncanopsammia	Like Turbinaria, but corallites about 6 mm | Thicker plates, less regular colony
+Alveopora	12 tentacles (Goniopora: 24) | Less dense skeleton than Goniopora
