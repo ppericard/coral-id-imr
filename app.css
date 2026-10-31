@@ -478,3 +478,9 @@ a.lt:hover{border-color:var(--accent)}
 .tipg{grid-template-columns:190px minmax(0,1fr)}
 @media (max-width:900px){.tipsec{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:600px){.tipg{grid-template-columns:110px minmax(0,1fr)}}
+/* S/M/L on the remaining pages. ID tips: photo size, and one genus per row in L. Look-alike pair: photo width. */
+:root[data-size="s"] .tipg{grid-template-columns:130px minmax(0,1fr)}
+:root[data-size="l"] .tipsec{grid-template-columns:minmax(0,1fr)}
+:root[data-size="l"] .tipg{grid-template-columns:300px minmax(0,1fr)}
+:root[data-size="s"] .cmprow{max-width:640px}
+:root[data-size="m"] .cmprow{max-width:960px}
