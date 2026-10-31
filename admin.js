@@ -332,7 +332,7 @@ function status(){
   $('undo').disabled = !HIST.length; $('redo').disabled = !FUT.length;
   $('save').disabled = !TOKEN || !parts.length;
   if (cur[0] !== '~') lastGenus = cur;
-  $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || '');
+  $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
   document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff', '~mont': 'mont', '~cand': 'cand'}[cur] || 'genus'))));
   const ms = $('modesel'); if (ms) { ms.innerHTML = [...document.querySelectorAll('#modes [data-mode]')].map(a => `<option value="${esc(a.getAttribute('href'))}"${a.getAttribute('aria-current') === 'true' ? ' selected' : ''}>${esc(a.textContent)}</option>`).join(''); ms.hidden = false; }
 }
