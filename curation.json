@@ -8,7 +8,21 @@
           "imrl-p8_g36",
           "imrl-p8_i7",
           "imrl-p8_g37"
+        ],
+        "medium": [
+          "imr-p15_i4",
+          "acropora-medium-745206337"
+        ],
+        "macro": [
+          "acropora-medium-745206076",
+          "acropora-macro-745206285",
+          "imrl-p8_i6"
         ]
+      },
+      "move": {
+        "acropora-medium-745206076": "macro",
+        "imrl-p8_i9": "macro",
+        "imrl-p8_i6": "macro"
       }
     },
     "Pocillopora": {
@@ -34,5 +48,8 @@
     "acropora-wide-580859207": "T",
     "acropora-wide-745206089": "B",
     "imr-p12_i8": "S"
+  },
+  "exclude": {
+    "pocillopora-cand-175099231": "excluded"
   }
 }
