@@ -1,41 +1,41 @@
-// Home page: a slim hero (Start practising first), the 3-step learning path, one look-alike pair to compare
-// (photos + IMR ID tips, another pair on demand) and one discreet link to the Tools page (#lab).
-// The section tabs list every tool; the Lab page lists the prototypes.
+// Home page: two entry doors, nothing else.
+//  1. Learn & practise: the learning phase (Learn the genera, then Practice on photos).
+//  2. Identify: the tool for naming a coral under a ReefCloud point (the Coral Finder).
+// The section tabs and the Tools page (#lab) list every other tool.
 (function(){
   const ph = (n, v) => { const g = DATA.gen[n]; if (!g) return ''; const p = (g.views[v] || [])[0] || (g.views.macro || [])[0] || cover(g); return p ? img(p, 's') : ''; };
   window.viewHome = function(){
     document.documentElement.dataset.page = 'lab';  // full width, like the Lab (lab.css)
     const names = Object.keys(DATA.gen);
-    // Home = hero (Practice first: RAs go to Practice almost at once) + the 3-step path + one discreet link to the Tools page (#lab).
-    // The hero: one slim band of corallite tiles (16 genera, 8 on phones) behind a title and two buttons.
-    $v.innerHTML = `<p class="lede">Learn the genera, train your eye in Practice, then name corals on your own photos with Identify.</p><div class="home-page">
-      <section class="hhero">
-        <div class="hmosaic" aria-hidden="true">${shuffle(names).slice(0, 16).map((n, i) => `<a href="#g-${encodeURIComponent(n)}" tabindex="-1" style="--i:${i}"><img src="${ph(n, 'macro')}" alt="" loading="lazy"><span>${esc(n)}</span></a>`).join('')}</div>
-        <div class="hintro">
-          <h2>The 39 coral genera of the IMR slate</h2>
-          <p class="hcta"><a class="next" href="#quiz">Start practising</a> <a class="chip" href="#genera">Browse the genera</a></p>
-        </div>
-      </section>
-      <nav class="hpath" aria-label="How to use the app"><ol>${[['genera', 'Learn', 'Discover the 39 genera', 'Acropora', 'medium'], ['quiz', 'Practice', 'Train your eye with games', 'Platygyra', 'macro'], ['finder', 'Identify', 'Name a coral on your photos', 'Pocillopora', 'wide']]
-        .map(([h, t, d, n, v]) => `<li><a href="#${h}"><img src="${ph(n, v)}" alt="" loading="lazy"><span><b>${t}</b><small>${d}</small></span></a></li>`).join('')}</ol></nav>
-      <section class="hpair" id="hpair"></section>
-      <p class="hlablink"><a href="#lab">More tools ›</a></p>
+    // Door 1 art: a band of corallite close-ups. Door 2 art: one colony photo with ReefCloud-style points.
+    const tiles = shuffle(names).slice(0, 12).map(g => `<img src="${ph(g, 'macro')}" alt="" loading="lazy">`).join('');
+    const pts = [[22, 30], [50, 24], [78, 34], [30, 68], [58, 62], [84, 72]];
+    $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the genera; Identify when you need to name a coral on a ReefCloud photo.</p><div class="home-page">
+      <div class="hdoors">
+        <section class="hdoor learn">
+          <a class="hdart" href="#quiz" tabindex="-1" aria-hidden="true"><span class="hdtiles">${tiles}</span></a>
+          <div class="hdbody">
+            <p class="hdwhen">Learning phase · before ReefCloud</p>
+            <h3>Learn &amp; practise</h3>
+            <p class="hddesc">Get to know the genera, then train your eye on photos until you recognise each one at a glance. Your progress is saved as you go.</p>
+            <div class="hdacts">
+              <a class="hdbtn" href="#genera"><b><em>1</em> Learn</b><small>One sheet per genus: photos at 3 scales, IMR ID tips, look-alikes</small></a>
+              <a class="hdbtn main" href="#quiz"><b><em>2</em> Practice</b><small>Name the genus from photos, look-alike duels, memory</small></a>
+            </div>
+          </div>
+        </section>
+        <section class="hdoor identify">
+          <a class="hdart" href="#finder" tabindex="-1" aria-hidden="true"><img src="${ph('Pocillopora', 'wide')}" alt="" loading="lazy">${pts.map(([x, y], i) => `<i class="hdpt${i === 4 ? ' on' : ''}" style="left:${x}%;top:${y}%"></i>`).join('')}</a>
+          <div class="hdbody">
+            <p class="hdwhen">On ReefCloud · when a point stumps you</p>
+            <h3>Identify a coral</h3>
+            <p class="hddesc">Start from the growth form, add the clues you can see, then compare the candidate genera side by side to name the one under the point.</p>
+            <div class="hdacts">
+              <a class="hdbtn main" href="#finder"><b>Open the Coral Finder</b><small>Growth form, clues, then a visual comparison</small></a>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>`;
-    pairBlock();
   };
-  // One look-alike pair (from the genera's own look-alike lists), both sides equal: 2 photos + the short ID tips.
-  const pairs = () => { const out = []; for (const a of Object.keys(DATA.gen)) for (const b of lookOf(a)) if (a < b) out.push([a, b]); return out; };
-  let last = '';
-  function pairBlock(){
-    const box = document.getElementById('hpair'); if (!box) return;
-    const all = pairs(); if (!all.length) { box.remove(); return; }
-    let pr; do { pr = all[Math.floor(Math.random() * all.length)]; } while (all.length > 1 && pr.join('|') === last);
-    last = pr.join('|');
-    const side = n => { const g = DATA.gen[n], c = cover(g), m = (g.views.macro || [])[0];
-      return `<div class="hpside"><a class="hpph" href="#g-${encodeURIComponent(n)}">${[c, m].filter(Boolean).map(p => `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">`).join('')}</a>
-        <h4><a href="#g-${encodeURIComponent(n)}"><i>${esc(n)}</i></a></h4>${tipsList(g)}</div>`; };
-    box.innerHTML = `<div class="hphead"><h3>Don't confuse</h3><span><a class="chip" href="#cmp-${esc(pr[0])}|${esc(pr[1])}">Compare in detail</a> <button type="button" class="chip" id="hpnext">Another pair ↻</button></span></div>
-      <div class="hpgrid">${side(pr[0])}<b class="hpvs">vs</b>${side(pr[1])}</div>`;
-    box.querySelector('#hpnext').onclick = pairBlock;
-  }
 })();
