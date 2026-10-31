@@ -282,17 +282,11 @@ function render(){
       <figcaption>${srcTag(p)}<span class="adm-t">${outs(n)[p.f] === 'cmp' ? 'look-alike comparison' : '→ ' + esc(outs(n)[p.f])}</span></figcaption>
       <div class="adm-acts"><button type="button" data-act="out" data-to="back">Put back</button></div></figure>`).join('')}</div></section>` : '';
   const cnt = o => [...photos(n), ...P].filter(p => origin(p) === o).length;
-  const filter = `<div class="adm-filter adm-sticky" role="group" aria-label="Show photos from"><b class="adm-sname"><i>${esc(n)}</i></b><span class="label">Show</span>${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">Show all</button>' : ''}</div>`;
+  const filter = `<div class="adm-filter adm-sticky" role="group" aria-label="Show photos from">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && g.levels !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover (${cv.picked ? 'your pick' : 'automatic'}, ${label(n, cv.view).toLowerCase()} view)"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Open the genus sheet (with your draft)" aria-label="Open the sheet">↗</a><span class="label">Show</span>${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">Show all</button>' : ''}</div>`;
   $v.innerHTML = `<div class="adm">
     <nav class="adm-side" aria-label="Genera"><select id="gsel" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><div class="adm-list">${side}</div></nav>
     <section class="adm-main">
-      <div class="adm-head">
-        ${cv ? `<button type="button" class="adm-cover" data-f="${esc(cv.f)}" data-act="zoomcover"><img src="${img(cv)}" alt="${esc(n)} cover"></button>` : ''}
-        <div>${missing(n).length ? `<p class="warn"><b>${missing(n).length} of your choices name a photo that is no longer in the data</b> (renamed or removed by a rebuild): ${missing(n).map(f => `<code>${esc(f)}</code>`).join(', ')}. They are kept but no longer apply; tell Claude so they can be remapped.</p>` : ''}<h2><i>${esc(n)}</i></h2><p class="note">${g.n ? 'No. ' + g.n : '★ not surveyed'} · ${esc(g.fam)}</p>
-          <p class="note"><b>Cover:</b> ${cv ? `${cv.picked ? 'your pick' : 'automatic'} · ${label(n, cv.view).toLowerCase()} view${cv.view === 'macro' && g.levels !== 2 ? ' <b class="warnc">(a corallite close-up: pick a colony or closer view)</b>' : ''}` : 'none'}</p>
-          <div class="adm-gacts"><a class="chip" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener">Open the sheet</a></div>
-        </div>
-      </div>
+      ${missing(n).length ? `<p class="warn"><b>${missing(n).length} of your choices name a photo that is no longer in the data</b>: ${missing(n).map(f => `<code>${esc(f)}</code>`).join(', ')}. Kept but no longer applied; tell Claude to remap them.</p>` : ''}
       ${filter}${body}${candRow}${outRow}
     </section></div>`;
   $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { const o = b.dataset.o;
