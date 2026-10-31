@@ -3,9 +3,10 @@
 // that can be used in any order; the shortlist updates at once and shows every candidate with its local photos.
 // Clues rank, they never eliminate: a clue can be wrong or misjudged (size, shape), so a genus that misses one
 // clue stays in view under "One clue off", and a size one class away counts as half a match.
-// State lives in the hash (#lab-finder|<state>), so a reload or a shared link keeps the shortlist.
+// It replaced the growth-form key and the corallite filters in Identify (#key, #key-tr, #k-, #l- redirect here).
+// State lives in the hash (#finder|<state>), so a reload or a shared link keeps the shortlist.
 LAB.add({
-  id: 'finder', icon: '⌕', title: 'Coral Finder+',
+  id: 'finder', icon: '⌕', title: 'Coral Finder',
   blurb: 'Start from whatever you can see, in any order: shape, first impression, corallites or lecture group. The shortlist updates at once, with all local photos.',
   lede: 'Tap the clues you can see on your photo, in any order. Genera are ranked by how well they fit: one wrong or misjudged clue only moves a genus down, it never hides it. Made to stay open beside ReefCloud.',
   render(root, arg){
