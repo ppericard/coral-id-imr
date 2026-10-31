@@ -333,19 +333,22 @@ function status(){
   $('save').disabled = !TOKEN || !parts.length;
   if (cur[0] !== '~') lastGenus = cur;
   $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
-  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff', '~mont': 'mont', '~cand': 'cand', '~cov': 'cov'}[cur] || 'genus'))));
+  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === modeKey())));
   const ms = $('modesel'); if (ms) { ms.innerHTML = [...document.querySelectorAll('#modes [data-mode]')].map(a => `<option value="${esc(a.getAttribute('href'))}"${a.getAttribute('aria-current') === 'true' ? ' selected' : ''}>${esc(a.textContent)}</option>`).join(''); ms.hidden = false; }
 }
+// Which header tab the page belongs to: the Stats tab holds players, photos, the photo list and coverage.
+const modeKey = () => cur.startsWith('~stats') || cur === '~diff' || cur === '~cov' ? 'stats' : ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
 function render(){
   document.body.classList.toggle('adm-cmode', cur === '~cand');
   if (cur === '~quality') return renderQuality();
   if (cur === '~form') return renderForm();
   if (cur === '~excluded') return renderExcluded();
   if (cur === '~triage') return renderTriage();
-  if (cur === '~diff') return renderDiff();
+  if (cur === '~diff') { renderDiff(); return withSwitch(); }
+  if (cur.startsWith('~stats')) return renderStats();
   if (cur === '~mont') return renderMont();
   if (cur === '~cand') return renderCand();
-  if (cur === '~cov') return renderCov();
+  if (cur === '~cov') { renderCov(); return withSwitch(); }
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
   const ch = changed(), n = cur, g = DATA.gen[n], cv = coverOf(n), k = entry(n); SHOWN_COVER = cv && cv.f;
   status();
@@ -534,6 +537,10 @@ function renderQuality(){
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
   cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field photos only (no lecture slide, no Coral Finder book, no multi-coral, hidden, sheet-only or Poor photo; Colony leaves out photos where the form is not visible). Big number = photos, small = distinct colonies when fewer. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Click a row to open the genus.</p>`,
+  stats: `<p>Every quiz and duel answer synced to the sheet. Players are anonymous: a number, ranked by level; "you" marks the name synced in this browser (All / Others / Me). Level is on the same scale as photo difficulty. Last 20 = right answers among the player's last 20. Learned = genera learned on their last sync. Days = days with answers.</p>
+    <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
+  statsph: `<p>Photo difficulty (Elo) from every answer: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers; few answers = rough. Click a dot to see the photo.</p>
+    <p>The quiz shows the colony, closer and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers. Few answers = rough. The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it sits in the wrong game set.</p>`,
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time.</p>
     <p>The first 3 photos of each view are its featured photos (Easy level, top of the sheet, Coral Finder). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. Hidden photos disappear everywhere, games included; × excludes a photo for good.</p>
@@ -549,7 +556,7 @@ const HELP = {
 };
 function toggleHelp(){
   let h = $('admhelp'); if (h) { h.remove(); return; }
-  const m = ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff', '~mont': 'mont', '~cand': 'cand', '~cov': 'cov'})[cur] || 'genus';
+  const m = cur === '~stats-photos' ? 'statsph' : modeKey() === 'stats' ? ({'~diff': 'diff', '~cov': 'cov'}[cur] || 'stats') : modeKey();
   h = document.createElement('div'); h.id = 'admhelp'; h.className = 'adm-help'; h.setAttribute('role', 'dialog'); h.setAttribute('aria-label', 'Help');
   h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button>${HELP[m]}`;
   h.querySelector('button').onclick = () => h.remove(); $('tools').append(h);
@@ -934,7 +941,7 @@ const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbs
 let STATS = null, DIFF_ORDER = store.get('imr-admin-diff', 'hard');
 function renderDiff(){
   status();
-  if (!STATS) { $v.innerHTML = '<p class="note">Loading…</p>'; fetch(SYNC_URL + '?stats=1').then(r => r.json()).then(j => { STATS = j && j.ok ? j.photos || {} : {}; if (cur === '~diff') renderDiff(); }).catch(() => { STATS = {}; if (cur === '~diff') renderDiff(); }); return; }
+  if (!STATS) { $v.innerHTML = '<p class="note">Loading…</p>'; loadStats().then(() => { if (cur === '~diff') render(); }); return; }
   const vl = v => v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1];
   const L = allPhotos().filter(p => STATS[p.f]).sort((a, b) => (DIFF_ORDER === 'hard' ? -1 : 1) * (STATS[a.f][0] - STATS[b.f][0]));
   const card = p => { const [d, n, r] = STATS[p.f];
@@ -987,6 +994,112 @@ function renderCov(){
     <table class="cov-t"><thead><tr><th></th>${VIEWS.map(([, t]) => `<th>${t}</th>`).join('')}<th class="cov-srch">Sources</th><th title="Candidates">+</th></tr></thead>
     <tbody>${R.map(r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="cov-src"><span class="cov-bar">${bar(r)}</span><small>${r.all.length}</small></td><td class="cov-cand">${r.cand ? `+${r.cand}` : ''}</td></tr>`).join('')}</tbody></table></section>`;
-  $v.querySelectorAll('[data-co]').forEach(b => b.onclick = () => { COV_ORDER = b.dataset.co; store.set('imr-admin-covorder', COV_ORDER); renderCov(); });
+  $v.querySelectorAll('[data-co]').forEach(b => b.onclick = () => { COV_ORDER = b.dataset.co; store.set('imr-admin-covorder', COV_ORDER); render(); });
   $v.querySelectorAll('tbody tr').forEach(tr => tr.onclick = e => { if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g); });
+}
+
+/* ---------- Stats: players (anonymous) and photo difficulty, from the sync sheet ---------- */
+// ?answers=1 (sheet script v4): every answer, RA replaced by an anonymous id; ?stats=1: Elo difficulty per photo and
+// level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
+// The Stats tab holds the sub-views of STAT_TABS; Coverage (renderCov) and the photo list (renderDiff) live there too.
+const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~diff', 'Photo list'], ['~cov', 'Coverage']];
+let ANS = null, RAS = {}, MEID = null, SF = Object.assign({who: 'all', min: 1}, store.get('imr-admin-stats', {}));
+const statSwitch = () => `<nav class="adm-filter adm-stabs" aria-label="Stats">${STAT_TABS.filter(([h]) => h !== '~cov' || typeof renderCov === 'function')
+  .map(([h, t]) => `<a class="adm-fchip plain" href="#${h}" aria-pressed="${cur === h}">${t}</a>`).join('')}</nav>`;
+// Puts the switch above a view rendered by another function (photo list, coverage).
+const withSwitch = () => { if (!$v.querySelector('.adm-stabs')) $v.insertAdjacentHTML('afterbegin', statSwitch()); };
+function loadStats(){
+  const me = (store.get('imr-coral-sync', null) || {}).name;
+  const digest = me ? crypto.subtle.digest('SHA-256', new TextEncoder().encode(`imr-coral-id|anon|${me.trim().toLowerCase()}`))
+    .then(b => { MEID = btoa(String.fromCharCode(...new Uint8Array(b))).slice(0, 8); }).catch(() => {}) : Promise.resolve();
+  const get = q => fetch(SYNC_URL + q).then(r => r.json()).catch(() => ({}));
+  return Promise.all([get('?answers=1'), STATS ? null : get('?stats=1'), digest]).then(([a, s]) => {
+    ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, rows: [], players: {}};
+    if (s) { STATS = s.ok ? s.photos || {} : {}; RAS = s.ok ? s.ras || {} : {}; }
+  });
+}
+const pct = (r, n) => n ? Math.round(100 * r / n) + '%' : '–';
+const sgn = d => (d > 0 ? '+' : '') + d.toFixed(2);
+const days = t => { const d = Math.floor((Date.now() - t) / 864e5); return d < 1 ? 'today' : d < 2 ? 'yesterday' : d + ' d ago'; };
+const segBtns = (k, L) => `<span class="adm-qseg adm-sseg" role="group">${L.map(([v, t]) => `<button type="button" data-sf="${k}" data-v="${v}" aria-pressed="${String(SF[k]) === String(v)}">${t}</button>`).join('')}</span>`;
+const kpis = L => `<div class="adm-kpis">${L.map(([t, v]) => `<div><b>${v}</b><span>${t}</span></div>`).join('')}</div>`;
+const sbar = (v, max, cls = '') => `<span class="adm-bar${cls ? ' ' + cls : ''}"><i style="width:${max ? Math.max(0, Math.min(100, 100 * v / max)) : 0}%"></i></span>`;
+function bindStats(){
+  $v.querySelectorAll('[data-sf]').forEach(b => b.onclick = () => { const k = b.dataset.sf; SF[k] = k === 'min' ? Number(b.dataset.v) : b.dataset.v; store.set('imr-admin-stats', SF); render(); });
+  $v.querySelectorAll('[data-zf]').forEach(b => b.onclick = () => zoom(b.dataset.g, b.dataset.zf));
+}
+function renderStats(){
+  status();
+  if (!ANS) { $v.innerHTML = statSwitch() + '<p class="note">Loading…</p>'; loadStats().then(() => { if (cur.startsWith('~stats')) render(); }); return; }
+  return cur === '~stats-photos' ? statsPhotos() : statsPlayers();
+}
+// Rows kept by the player filter (all, others than this browser's synced name, or only it).
+const statRows = () => ANS.rows.filter(r => SF.who === 'all' || !MEID || (SF.who === 'me') === (r[0] === MEID));
+function statsPlayers(){
+  const head = `${statSwitch()}<div class="adm-shead"><h2>Players</h2>${MEID ? segBtns('who', [['all', 'All'], ['others', 'Others'], ['me', 'Me']]) : ''}</div>`;
+  if (ANS.old) { $v.innerHTML = head + `<p class="warn">Sheet script v${esc(ANS.v || '?')}: needs v4. <a href="https://raw.githubusercontent.com/${REPO}/main/tools/sync/Code.gs" target="_blank" rel="noopener">Code.gs</a></p>`; bindStats(); return; }
+  const R = statRows(), P = {};
+  R.forEach(r => { const p = P[r[0]] = P[r[0]] || {id: r[0], L: [], d: new Set()}; p.L.push(r); p.d.add(new Date(r[1]).toDateString()); });
+  const ps = Object.values(P).map(p => { p.L.sort((a, b) => a[1] - b[1]); const ok = p.L.filter(r => r[4]).length, last = p.L.slice(-20);
+    return {...p, n: p.L.length, ok, last: last.filter(r => r[4]).length / last.length, lv: (RAS[p.id] || [])[0], sum: ANS.players[p.id], at: p.L[p.L.length - 1][1]}; })
+    .sort((a, b) => (b.lv ?? -9) - (a.lv ?? -9) || b.n - a.n);
+  const ok = R.filter(r => r[4]).length, wk = ps.filter(p => Date.now() - p.at < 7 * 864e5).length;
+  // Learning curve: accuracy of each player's k-th answer, pooled in blocks.
+  const mx = Math.max(0, ...ps.map(p => p.n)), blk = mx > 400 ? 50 : mx > 150 ? 20 : 10, cv = [];
+  ps.forEach(p => p.L.forEach((r, k) => { const b = cv[Math.floor(k / blk)] = cv[Math.floor(k / blk)] || [0, 0]; b[0] += r[4]; b[1]++; }));
+  // Genera shown, and how often each was given wrongly (Pierre's rule: that genus is not mastered either).
+  const G = {}; const gg = n => G[n] = G[n] || {n, s: 0, ok: 0, w: 0};
+  R.forEach(r => { const g = gg(r[2]); g.s++; g.ok += r[4]; if (!r[4] && r[3]) gg(r[3]).w++; });
+  const gl = Object.values(G).filter(g => g.s).sort((a, b) => a.ok / a.s - b.ok / b.s || b.s - a.s);
+  const M = {}; R.filter(r => !r[4] && r[3]).forEach(r => { const k = r[2] + '|' + r[3]; M[k] = (M[k] || 0) + 1; });
+  const ml = Object.entries(M).sort((a, b) => b[1] - a[1]).slice(0, 15), mm = ml.length ? ml[0][1] : 1;
+  const cond = [['Quiz', r => !r[5].startsWith('quiz-duel')], ['Duel', r => r[5].startsWith('quiz-duel')], ['With corallites', r => /-macro-/.test(r[6])], ['Without corallites', r => !/-macro-/.test(r[6])]]
+    .map(([t, f]) => { const L = R.filter(f); return [t, L.length, L.filter(r => r[4]).length]; }).filter(c => c[1]);
+  const total = DATA ? Object.keys(DATA.gen).length : 0;
+  $v.innerHTML = head + kpis([['Players', ps.length], ['Answers', R.length], ['Right', pct(ok, R.length)], ['Active 7 d', wk]]) + (!R.length ? '<p class="note">No answers yet.</p>' : `
+    <div class="adm-sgrid">
+    <section class="adm-scard wide"><h3>Players</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>#</th><th>Level</th><th>Answers</th><th>Right</th><th>Last 20</th><th>Learned</th><th>Days</th><th>Last</th></tr></thead><tbody>
+      ${ps.map((p, i) => `<tr${p.id === MEID ? ' class="me"' : ''}><td>${i + 1}${p.id === MEID ? ' <small>you</small>' : ''}</td><td>${p.lv == null ? '–' : sgn(p.lv)}</td><td>${p.n}</td><td>${pct(p.ok, p.n)}</td><td>${Math.round(100 * p.last)}%</td>
+        <td>${p.sum ? `${p.sum[0]}/${p.sum[2] || total}` : '–'}</td><td>${p.d.size}</td><td>${days(p.at)}</td></tr>`).join('')}</tbody></table></div></section>
+    <section class="adm-scard"><h3>Learning curve</h3><div class="adm-cols">${cv.map((b, k) => `<div title="Answers ${k * blk + 1}-${(k + 1) * blk}: ${b[0]}/${b[1]}"${b[1] < 10 ? ' class="few"' : ''}><i style="height:${Math.round(100 * b[0] / b[1])}%"></i><small>${Math.round(100 * b[0] / b[1])}</small></div>`).join('')}</div>
+      <p class="adm-axis"><span>Answer 1</span><span>${blk} per bar</span><span>${cv.length * blk}</span></p></section>
+    <section class="adm-scard"><h3>Conditions</h3><table class="adm-tbl">${cond.map(([t, n, r]) => `<tr><td>${t}</td><td>${pct(r, n)}</td><td>${sbar(r, n)}</td><td class="n">${n}</td></tr>`).join('')}</table></section>
+    <section class="adm-scard"><h3>Genera</h3><div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Shown</th><th>Right</th><th></th><th>n</th><th title="Given wrongly">Given ✗</th></tr></thead><tbody>
+      ${gl.map(g => `<tr><td><a class="adm-gen" href="#${esc(g.n)}"><i>${esc(g.n)}</i></a></td><td>${pct(g.ok, g.s)}</td><td>${sbar(g.ok, g.s, g.ok / g.s < .5 ? 'bad' : '')}</td><td class="n">${g.s}</td><td class="n">${g.w || ''}</td></tr>`).join('')}</tbody></table></div></section>
+    <section class="adm-scard"><h3>Mix-ups</h3>${ml.length ? `<table class="adm-tbl"><thead><tr><th>Shown</th><th>Answered</th><th></th><th>n</th></tr></thead><tbody>
+      ${ml.map(([k, n]) => { const [a, b] = k.split('|'); return `<tr><td><i>${esc(a)}</i></td><td><a class="adm-gen" href="./#cmp-${encodeURIComponent(a)}|${encodeURIComponent(b)}" target="_blank" rel="noopener"><i>${esc(b)}</i></a></td><td>${sbar(n, mm, 'bad')}</td><td class="n">${n}</td></tr>`; }).join('')}</tbody></table>` : '<p class="note">None.</p>'}</section>
+    </div>`);
+  bindStats();
+}
+const VIEW_T = {wide: 'Colony', medium: 'Closer', macro: 'Corallites', cand: 'Candidate'};
+const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philippines', world: 'iNat world', book: 'CF book'};
+function statsPhotos(){
+  const L = allPhotos().filter(p => STATS[p.f] && STATS[p.f][1] >= SF.min).map(p => ({...p, d: STATS[p.f][0], n: STATS[p.f][1], ok: STATS[p.f][2]}));
+  const head = `${statSwitch()}<div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [[1, '≥1'], [3, '≥3'], [10, '≥10']])}<span class="note">answers</span></div>`;
+  if (!L.length) { $v.innerHTML = head + '<p class="note">No answers yet.</p>'; bindStats(); return; }
+  const ds = L.map(p => p.d).sort((a, b) => a - b), mean = a => a.reduce((t, x) => t + x, 0) / a.length;
+  const med = ds[Math.floor(ds.length / 2)], sd = Math.sqrt(mean(ds.map(x => (x - mean(ds)) ** 2)));
+  // Histogram, 0.1 wide bins, stacked by view.
+  const lo = Math.floor(ds[0] * 10), hi = Math.floor(ds[ds.length - 1] * 10), H = [];
+  for (let b = lo; b <= hi; b++) H.push({b, v: {}});
+  L.forEach(p => { const h = H[Math.floor(p.d * 10) - lo]; h.v[p.view] = (h.v[p.view] || 0) + 1; });
+  const hm = Math.max(...H.map(h => Object.values(h.v).reduce((t, x) => t + x, 0)));
+  const group = key => { const O = {}; L.forEach(p => (O[key(p)] = O[key(p)] || []).push(p)); return O; };
+  const rowsOf = (O, T) => Object.entries(O).map(([k, a]) => ({k, t: T ? T[k] || k : k, a, m: mean(a.map(p => p.d)), n: a.reduce((t, p) => t + p.n, 0), ok: a.reduce((t, p) => t + p.ok, 0)})).sort((a, b) => b.m - a.m);
+  const V = rowsOf(group(p => p.view), VIEW_T), S = rowsOf(group(origin), ORIGIN_T), GN = rowsOf(group(p => p.genus));
+  // Dot strip scale: the spread of the photos shown, at least -1..+1.
+  const x0 = Math.min(-1, Math.floor(ds[0] * 2) / 2), x1 = Math.max(1, Math.ceil(ds[ds.length - 1] * 2) / 2), X = d => (100 * (d - x0) / (x1 - x0)).toFixed(1) + '%';
+  const strip = a => `<span class="adm-strip"><b style="left:${X(0)}"></b>${a.map(p => `<button type="button" class="v-${p.view}" style="left:${X(p.d)};top:calc(50% + ${({wide: -4, macro: 4})[p.view] || 0}px)" data-zf="${esc(p.f)}" data-g="${esc(p.genus)}" title="${esc(VIEW_T[p.view] || p.view)} ${sgn(p.d)} · ${p.ok}/${p.n}"></button>`).join('')}</span>`;
+  const table = (Rw, first) => `<table class="adm-tbl"><thead><tr><th>${first}</th><th>Photos</th><th>Mean</th><th>Right</th></tr></thead><tbody>${Rw.map(r => `<tr><td>${esc(r.t)}</td><td class="n">${r.a.length}</td><td>${sgn(r.m)}</td><td>${pct(r.ok, r.n)}</td></tr>`).join('')}</tbody></table>`;
+  const legend = `<p class="adm-legend">${Object.keys(VIEW_T).filter(v => L.some(p => p.view === v)).map(v => `<span><i class="v-${v}"></i>${VIEW_T[v]}</span>`).join('')}</p>`;
+  $v.innerHTML = head + kpis([['Photos rated', L.length], ['Median', sgn(med)], ['Spread (SD)', sd.toFixed(2)], ['Hardest genus', `<i>${esc(GN[0].k)}</i>`]]) + `
+    <div class="adm-sgrid">
+    <section class="adm-scard"><h3>Distribution</h3><div class="adm-cols stack">${H.map(h => `<div title="${(h.b / 10).toFixed(1)} to ${((h.b + 1) / 10).toFixed(1)}">${Object.keys(VIEW_T).filter(v => h.v[v]).map(v => `<i class="v-${v}" style="height:${100 * h.v[v] / hm}%"></i>`).join('')}</div>`).join('')}</div>
+      <p class="adm-axis"><span>${sgn(lo / 10)}</span><span>easier · harder</span><span>${sgn((hi + 1) / 10)}</span></p>${legend}</section>
+    <section class="adm-scard"><h3>Views</h3>${table(V, 'View')}</section>
+    <section class="adm-scard"><h3>Sources</h3>${table(S, 'Source')}</section>
+    <section class="adm-scard wide"><h3>Genera</h3>${legend}<div class="adm-gstrips">${GN.map(r => `<div><a class="adm-gen" href="#${esc(r.k)}"><i>${esc(r.k)}</i></a><span class="n">${sgn(r.m)}</span>${strip(r.a)}</div>`).join('')}</div>
+      <p class="adm-axis strip"><span>${sgn(x0)}</span><span>easier · harder</span><span>${sgn(x1)}</span></p></section>
+    </div>`;
+  bindStats();
 }

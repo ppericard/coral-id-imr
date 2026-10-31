@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 3 (2026-10-31: photo difficulty stats, ?stats=1)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 4 (2026-11-01: anonymous answers for the admin Stats page, ?answers=1)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -20,7 +20,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 3;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 4;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -30,9 +30,11 @@ function find_(sh, name){
 function clean_(p){ return {name: String(p.name || '').trim().slice(0, 40), pin: String(p.pin || '').trim()}; }
 
 // GET ?stats=1 → photo difficulty learned from every answer (Elo, see stats_), cached 10 minutes.
+// GET ?answers=1 → every answer with the RA replaced by an anonymous id (see answers_), for the admin Stats page.
 // GET ?name=…&pin=… → the saved progress for that RA, if the code matches.
 function doGet(e){
   if (e.parameter.stats) return json_(stats_());
+  if (e.parameter.answers) return json_(answers_());
   const {name, pin} = clean_(e.parameter);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const sh = sheet_('RAs', HEAD), r = find_(sh, name);
@@ -83,12 +85,27 @@ function logAnswers_(name, answers){
   sh.getRange(at, 1, rows.length, LOG.length).setValues(rows);
 }
 
+// Anonymous id of an RA: the same for the same name, no name in it. The admin page computes it for its own name only.
+function aid_(name){
+  return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|anon|' + String(name).trim().toLowerCase(), Utilities.Charset.UTF_8)).slice(0, 8);
+}
+
+// {ok, rows: [[id, time ms, genus shown, answered, right 0|1, mode, photos]], players: {id: [learned, seen, total]}}.
+function answers_(){
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName('Answers'), ra = ss.getSheetByName('RAs'), out = {ok: true, rows: [], players: {}};
+  if (sh && sh.getLastRow() > 1) out.rows = sh.getRange(2, 1, sh.getLastRow() - 1, 7).getValues().filter(r => r[0])
+    .map(r => [aid_(r[0]), new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6])]);
+  if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, 5).getValues().filter(r => r[0])
+    .forEach(r => out.players[aid_(r[0])] = [Number(r[2]) || 0, Number(r[3]) || 0, Number(r[4]) || 0]);
+  return out;
+}
+
 // Elo over the Answers tab, oldest first. Each answer: P(right) = g + (1 - g) * sigmoid(ability - difficulty), with
 // g = 1/choices (4 in the quiz, 2 in a duel), ability = the RA's, difficulty = mean of the photos shown. Ratings move
 // by K * (result - P(right)), K shrinking as a photo or an RA gathers answers. Returns {ok, photos: {file: [difficulty,
-// answers, right]}, ras: {name: [ability, answers]}}. Difficulty 0 = average photo; +1 = clearly harder.
+// answers, right]}, ras: {anonymous id: [ability, answers]}}. Difficulty 0 = average photo; +1 = clearly harder.
 function stats_(){
-  const cache = CacheService.getScriptCache(), hit = cache.get('stats3');
+  const cache = CacheService.getScriptCache(), hit = cache.get('stats4');
   if (hit) return JSON.parse(hit);
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: {}, ras: {}};
   if (!sh || sh.getLastRow() < 2) return out;
@@ -104,7 +121,7 @@ function stats_(){
     ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * d; p[2]++; p[1] += ok; });
   });
   Object.keys(P).forEach(f => out.photos[f] = [Math.round(P[f][0] * 100) / 100, P[f][2], P[f][1]]);
-  Object.keys(R).forEach(n => out.ras[n] = [Math.round(R[n][0] * 100) / 100, R[n][1]]);
-  try { cache.put('stats3', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
+  Object.keys(R).forEach(n => out.ras[aid_(n)] = [Math.round(R[n][0] * 100) / 100, R[n][1]]);
+  try { cache.put('stats4', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
   return out;
 }
