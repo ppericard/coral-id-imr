@@ -52,7 +52,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .hdr-tools{display:flex;gap:8px;align-items:center}
 
 /* ---------- Controls: one pill system for nav, chips, segmented control and icon buttons ---------- */
-.sections a,.chip,.theme,.seg,#size,.prog{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);box-shadow:var(--shadow)}
+.sections a,.chip,.theme,.seg,#size,#origin,.prog{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);box-shadow:var(--shadow)}
 .sections a,.chip{display:inline-flex;align-items:center;min-height:var(--ctl-h);padding:0 14px;text-decoration:none;white-space:nowrap;cursor:pointer;font-size:.92rem;transition:background .12s,border-color .12s,color .12s}
 .sections a:hover,.chip:hover,.theme:hover,.prog:hover{border-color:var(--accent)}
 .prog{display:inline-flex;align-items:center;gap:6px;height:var(--ctl-h);padding:0 12px;text-decoration:none;font-size:.86rem;white-space:nowrap}
@@ -85,7 +85,10 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .modes.ctx .up{gap:4px}
 .modes.ctx .pn{flex:none;display:flex;gap:2px;padding-left:6px;border-left:1px solid var(--line)}
 .modes.ctx .pn a{width:34px;padding:0;font-size:1.3rem;line-height:1}
-#size{display:flex;overflow:hidden;height:var(--ctl-h)}
+#size,#origin{display:flex;overflow:hidden;height:var(--ctl-h)}
+#origin button{background:none;border:0;color:var(--muted);font:inherit;font-size:.78rem;font-weight:700;padding:0 9px;cursor:pointer}
+#origin button+button{border-left:1px solid var(--line)}
+#origin button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 #size button{background:none;border:0;color:var(--muted);font:inherit;font-size:.8rem;font-weight:700;width:34px;cursor:pointer}
 #size button+button{border-left:1px solid var(--line)}
 #size button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
@@ -271,6 +274,7 @@ td i{font-weight:600}
 /* ---------- Responsive ---------- */
 @media (max-width:700px){.cols{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:520px){.gloss dl{grid-template-columns:minmax(0,1fr)}.gloss dd{margin-bottom:6px}}
+@media (max-width:480px){.brand .home span{display:none}}
 @media (max-width:640px){
   header{display:grid;grid-template-columns:1fr auto;grid-template-areas:"title tools" "nav nav";gap:8px;padding-block:8px}
   .brand{grid-area:title}
@@ -279,6 +283,8 @@ td i{font-weight:600}
   header{top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0px))}
   .hdr-tools{grid-area:tools}
   .prog .pl{display:none}
+  .hdr-tools{gap:6px}
+  #origin button{padding:0 7px}
   header{grid-template-areas:"title tools" "nav nav" "modes modes"}
   .sections{grid-area:nav;margin-left:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px}
   .modes{grid-area:modes;padding:3px;overflow-x:auto;scrollbar-width:none;min-width:0}
