@@ -63,7 +63,7 @@ function lockScreen(msg){
       <button class="adm-btn" type="submit">${has ? 'Unlock' : 'Save and unlock'}</button>
       ${msg ? `<p class="adm-err" role="alert">${esc(msg)}</p>` : ''}
     </form>
-    <p class="note">${has ? '<button type="button" class="adm-link" id="forget">Forget this device</button> (removes the stored token) · ' : ''}<button type="button" class="adm-link" id="ro">Look around without saving</button> (you can still download the JSON)</p>
+    ${has ? '<p class="note"><button type="button" class="adm-link" id="forget">Forget this device</button> (removes the stored token)</p>' : ''}
   </section>`;
   $('pw').focus();
   $('lockf').onsubmit = async e => {
@@ -76,7 +76,6 @@ function lockScreen(msg){
       start();
     } catch (x) { TOKEN = null; lockScreen(x.message); }
   };
-  $('ro').onclick = () => start();
   if (has) $('forget').onclick = () => { if (confirm('Remove the stored token from this browser?')) { store.set('imr-admin-vault', null); lockScreen(); } };
 }
 
@@ -239,4 +238,5 @@ async function start(){
   window.onbeforeunload = e => { if (TOKEN && changed().length) { e.preventDefault(); e.returnValue = ''; } };
   render();
 }
-lockScreen();
+// Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.
+if (/[?&]readonly\b/.test(location.search)) start(); else lockScreen();
