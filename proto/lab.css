@@ -323,3 +323,85 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .labgrad a{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 14px 6px 10px;color:var(--ink);text-decoration:none}
 .labgrad .labicon{font-size:1.1rem}
 .labgrad small{color:var(--muted)}
+
+/* anatomy v2: arrangement blocks, concept cards, ringed photos */
+.a2tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.a2tabs a{padding:7px 16px;border-radius:var(--pill);border:1px solid var(--line);background:var(--surface);color:var(--ink)!important;text-decoration:none;font-weight:600}
+.a2tabs a[aria-current="page"]{background:var(--ink);border-color:var(--ink);color:var(--bg)!important}
+.a2arrs{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;margin:10px 0 16px}
+.a2arrs a{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px;color:var(--ink)!important;text-decoration:none;line-height:1.15}
+.a2arrs a:hover{border-color:var(--accent)}
+.a2arrs a[aria-current="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.a2arrs b{font-family:var(--display);font-size:1.1rem;margin-top:4px}
+.a2arrs small{color:var(--muted);font-size:.8rem}
+.a2detail{display:grid;grid-template-columns:minmax(0,520px) minmax(0,1fr);gap:18px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.a2detail h3{margin-top:0}
+.a2detail h3 small,.a2con h3 small{font-family:var(--body);font-size:.85rem;color:var(--muted);font-weight:400}
+.a2detail ul{margin:6px 0;padding-left:20px}
+.a2gs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.a2g{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.a2g button{display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in}
+.a2g img{display:block;width:100%;aspect-ratio:1;object-fit:cover}
+.a2g figcaption{padding:6px 8px;font-size:.9rem;display:flex;flex-direction:column;gap:2px}
+.a2g small{color:var(--muted);font-size:.8rem;line-height:1.25}
+.a2g small.also{color:var(--accent)}
+.blk,.mini{width:100%;height:auto;display:block}
+:where(.blk,.mini) path{fill:none;stroke-linecap:round}
+.blk .edge{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:1;vector-effect:non-scaling-stroke}
+.blk .cut{fill:color-mix(in srgb,var(--plate) 30%,var(--surface))}
+.blk .cutskel{fill:color-mix(in srgb,var(--plate) 70%,var(--surface));stroke:none}
+.blk .cutline{stroke:var(--ink);stroke-width:1.6}
+.blk g .septa,.blk g .costae,.blk g .sc,.blk g path.wallc{vector-effect:non-scaling-stroke}
+.blk .base{fill:color-mix(in srgb,var(--ink) 18%,var(--surface))}
+.blk .tubeside{fill:color-mix(in srgb,var(--plate) 75%,var(--surface));stroke:var(--ink);stroke-width:1.2}
+.blk .tubetop{fill:color-mix(in srgb,var(--plate) 35%,var(--surface));stroke:var(--ink);stroke-width:1.6}
+.blk .tube .septa{stroke:var(--ink);stroke-width:.9}
+.coen,.skel{fill:color-mix(in srgb,var(--plate) 45%,var(--surface))}
+.pores{fill:url(#none)}
+.sand{fill:color-mix(in srgb,var(--muted) 14%,var(--surface))}
+.disc{fill:color-mix(in srgb,var(--plate) 45%,var(--surface));stroke:var(--ink);stroke-width:1.6}
+.valley{fill:color-mix(in srgb,var(--plate) 20%,var(--surface));stroke:none}
+.cup .wallc,path.wallc{fill:none;stroke:var(--ink);stroke-width:2.6}
+.cup .wallc{fill:color-mix(in srgb,var(--plate) 22%,var(--surface))}
+.septa,.costae,.sc{stroke:var(--ink);stroke-width:1.1;stroke-opacity:.85}
+.costae{stroke-opacity:.55}
+.sc{stroke-width:1;stroke-opacity:.7}
+.colu{fill:var(--ink);fill-opacity:.7}
+.mouth{fill:var(--ink);fill-opacity:.75}
+.furrow{stroke:var(--ink);stroke-width:1.4;stroke-dasharray:3 3}
+.cone{fill:color-mix(in srgb,var(--plate) 70%,var(--surface));stroke:var(--ink);stroke-width:1.2}
+.peak{fill:color-mix(in srgb,var(--plate) 30%,var(--surface));stroke:var(--ink);stroke-width:1}
+.blade{fill:color-mix(in srgb,var(--plate) 70%,var(--surface));stroke:none}
+.teethline{stroke:var(--ink);stroke-width:2;stroke-linejoin:round}
+.branch{fill:color-mix(in srgb,var(--plate) 70%,var(--surface));stroke:var(--ink);stroke-width:1.6}
+.axial{fill:color-mix(in srgb,var(--plate) 30%,var(--surface));stroke:var(--ink);stroke-width:2}
+.radial{fill:color-mix(in srgb,var(--plate) 35%,var(--surface));stroke:var(--ink);stroke-width:1.4;stroke-linejoin:round}
+/* the highlighted part of a concept drawing */
+.mini .hl,.mini .hl .wallc,.mini .hl path{stroke:var(--accent)!important;stroke-opacity:1!important}
+.mini .septa.hl,.mini .costae.hl,.mini .sc.hl{stroke-width:2.2}
+.mini path.wallc.hl,.mini circle.wallc.hl{stroke-width:4.5}
+.mini .coen.hl,.mini .valley.hl{fill:color-mix(in srgb,var(--accent) 18%,var(--surface))}
+.mini .colu.hl,.mini .pali.hl,.mini .mouth.hl{fill:var(--accent);fill-opacity:1;stroke:none!important}
+.mini .cup.hl .wallc{fill:color-mix(in srgb,var(--accent) 22%,var(--surface))}
+.mini .axial.hl{fill:color-mix(in srgb,var(--accent) 35%,var(--surface))}
+.a2chips .chip{text-decoration:none;color:var(--ink)}
+.a2chips .chip[aria-current="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.a2con{display:grid;grid-template-columns:minmax(0,max-content) minmax(0,1fr);gap:18px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.a2con h3{margin-top:0}
+.a2minis{display:flex;flex-wrap:wrap;gap:10px}
+.a2minis figure{margin:0;width:210px;max-width:100%}
+.a2minis .mini{border-radius:8px;border:1px solid var(--line);max-width:260px}
+.a2minis figcaption{font-size:.85rem;color:var(--muted);margin-top:4px}
+.a2q{font-family:var(--display);font-size:1.25rem;font-weight:600;margin:4px 0}
+.a2shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.ringed{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ringed figcaption{padding:8px 10px;font-size:.92rem}
+.rphoto{position:relative;display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in;overflow:hidden}
+.rphoto img{display:block;width:100%;height:auto}
+.ring{position:absolute;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px rgb(0 0 0 / .55),inset 0 0 0 2px rgb(0 0 0 / .35);pointer-events:none;animation:a2ring 1.6s ease-out 1}
+@keyframes a2ring{from{transform:translate(-50%,-50%) scale(1.8);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.ring{animation:none}}
+.a2drill{max-width:560px}
+.a2fb{min-height:3em;max-width:65ch}
+.a2xy{font-size:.85rem}
+@media (max-width:700px){.a2detail,.a2con{grid-template-columns:1fr}.a2arrs{grid-template-columns:repeat(2,1fr)}.a2gs{grid-template-columns:repeat(2,1fr)}}
