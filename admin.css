@@ -2,7 +2,7 @@
 body.admin .wrap{max-width:1400px}
 body.admin header{max-width:none}
 .adm-tag{font-family:var(--display);font-weight:600;font-size:1.05rem;color:var(--muted);letter-spacing:.02em}
-body.admin header{flex-wrap:nowrap;gap:8px 14px}
+body.admin header{flex-wrap:wrap;gap:8px 14px}
 body.admin .brand{flex:none}
 body.admin .hdr-tools{margin-left:auto;flex-wrap:nowrap;gap:6px;white-space:nowrap}
 body.admin .hdr-tools .chip{padding-inline:11px}
