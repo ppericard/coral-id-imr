@@ -11,7 +11,7 @@ LAB.add({
     const body = root.querySelector('#rvbody');
     const round = () => {
       cancelAnimationFrame(raf);
-      const t = pick(labNames()), v = view === 'any' ? pick(['wide', 'medium', 'macro']) : view, L = DATA.gen[t].views[v] || [], p = L.length ? pick(L) : viewPhoto(t, v);
+      const t = pick(labNames()), v = view === 'any' ? pick(['wide', 'medium', 'macro']) : view, L = gamePics(t, v), p = L.length ? pick(L) : viewPhoto(t, v);
       body.innerHTML = `<div class="rvlayout"><div class="rvstage"><img id="rvimg" src="${img(p)}" alt="Coral to identify"><div class="rvbar"><i id="rvfill"></i></div></div>
         <div class="gside">${chips()}<div class="choices col">${labChoices(t, 4).map(n => `<button type="button" class="choice" data-c="${esc(n)}">${esc(n)}</button>`).join('')}</div>
         <p class="note">Score ${score.pts} pts · ${score.n} corals · streak ${score.streak}</p><div id="rvres"></div></div></div>`;
