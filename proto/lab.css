@@ -57,40 +57,6 @@ svg.dim .mleaf.on,svg.dim .mgroup.on{opacity:1}
 .mapthumbs button,.mapthumbs a{font:inherit;font-size:.78rem;background:none;border:0;padding:0;cursor:pointer;color:var(--ink);text-align:center;text-decoration:none}
 .mapthumbs img{border-radius:6px}
 
-/* anatomy */
-.anatgrid{display:grid;grid-template-columns:1fr 1.15fr;gap:14px;align-items:start}
-.anatgrid figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px}
-.anatgrid figcaption{font-size:.88rem;color:var(--muted);margin-top:6px}
-.anat{width:100%;height:auto;display:block}
-.anat .pt{cursor:pointer;transition:opacity .25s}
-.anat .coenbg{fill:color-mix(in srgb,var(--plate) 55%,var(--surface))}
-.anat .coendots,.walls .coendots{fill:url(#pore)}
-.anat pattern circle,.walls pattern circle{fill:var(--muted);opacity:.5}
-.anat .outline{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:6 6;opacity:.6}
-.anat .wall,.anat .wallr{fill:none;stroke:var(--ink);stroke-width:9}
-.anat .wallr{fill:var(--ink);stroke:none}
-.anat .lines path{stroke:var(--ink);stroke-width:3.2;stroke-linecap:round;fill:none}
-.anat .blobs ellipse,.anat .blobs path{fill:var(--ink)}
-.anat .col{fill:var(--ink)} .anat .colh{fill:var(--surface)}
-.anat .tent path{fill:none;stroke:hsl(25 70% 55%);stroke-width:6;stroke-linecap:round}
-.anat .disc{fill:hsl(25 70% 60%)} .anat .mouth{fill:hsl(350 50% 35%)}
-.anat.dim .pt{opacity:.18}
-.anat.dim .pt.on{opacity:1}
-.anat .pt.on .lines path,.anat .pt.on.lines path{stroke:var(--accent)}
-.anat .pt.on .wall{stroke:var(--accent)} .anat .pt.on .wallr,.anat .pt.on .col,.anat .pt.on ellipse,.anat .pt.on.blobs path,.anat .pt.on.blobs ellipse{fill:var(--accent)}
-.anat .pt.on .outline{opacity:1;stroke-width:4}
-.anatdef{min-height:3em;max-width:65ch}
-.walls{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
-.wall{display:flex;flex-direction:column;gap:3px;text-align:left;font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer}
-.wall[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
-.wall svg{width:100%;height:auto;background:color-mix(in srgb,var(--plate) 40%,var(--surface));border-radius:6px}
-.wall svg path{stroke:var(--ink);stroke-width:1.6;fill:none}
-.wall svg .w{fill:color-mix(in srgb,var(--surface) 70%,transparent);stroke:var(--ink);stroke-width:2.6}
-.wall svg path.w{fill:none}
-.wall svg .dot{fill:var(--ink)}
-.wall b{font-family:var(--display);font-size:1.1rem}
-.wall span{font-size:.85rem;color:var(--muted)}
-
 /* zoom ladder */
 .zstage{position:relative;overflow:hidden;border-radius:10px;aspect-ratio:4/3;max-height:62vh;width:100%;background:#000;margin:10px 0}
 .zstage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:none;will-change:opacity,transform}
@@ -324,7 +290,7 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .labgrad .labicon{font-size:1.1rem}
 .labgrad small{color:var(--muted)}
 
-/* anatomy v2: arrangement blocks, concept cards, ringed photos */
+/* corallite anatomy: arrangement blocks, concept cards, ringed photos */
 .a2tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
 .a2tabs a{padding:7px 16px;border-radius:var(--pill);border:1px solid var(--line);background:var(--surface);color:var(--ink)!important;text-decoration:none;font-weight:600}
 .a2tabs a[aria-current="page"]{background:var(--ink);border-color:var(--ink);color:var(--bg)!important}
@@ -406,7 +372,7 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .a2xy{font-size:.85rem}
 @media (max-width:700px){.a2detail,.a2con{grid-template-columns:1fr}.a2arrs{grid-template-columns:repeat(2,1fr)}.a2gs{grid-template-columns:repeat(2,1fr)}}
 
-/* anatomy v2 layout: a compact picker on the left, the drawing and photos get the room */
+/* corallite anatomy layout: a compact picker on the left, the drawing and photos get the room */
 .lab .a2tabs{margin:0 0 10px}
 .a2lay{display:grid;grid-template-columns:230px minmax(0,1fr);gap:14px;align-items:start}
 .a2side{display:flex;flex-direction:column;gap:4px;position:sticky;top:110px}
