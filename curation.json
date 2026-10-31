@@ -24,5 +24,10 @@
         ]
       }
     }
+  },
+  "quality": {
+    "acropora-wide-745675208": 2,
+    "imrl-p8_g36": 2,
+    "imrl-p8_g37": 3
   }
 }
