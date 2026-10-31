@@ -114,14 +114,14 @@ LAB.add({
       const more = n => { const all = allPhotos(G[n]), own = all.filter(p => src(p) === 'dauin').length;
         return all.length > 8 ? `<button type="button" class="linkish fdmore" data-more="${esc(n)}">${S.open.has('p:' + n) ? 'Fewer photos' : `All ${all.length} photos${own ? ` (${own} from Dauin)` : ''}`}</button>` : ''; };
       const mosaic = n => { const g = G[n], open = S.open.has('p:' + n);
-        return `<article class="fdrow"><div class="fdinfo">${head(n)}<p>${esc(g.sum)}</p>${tools(n)}${more(n)}</div>
+        return `<article class="fdrow"><div class="fdinfo">${head(n)}<p>${esc(tipsText(g))}</p>${tools(n)}${more(n)}</div>
           <div class="fdmos">${varied(g, open ? 99 : 8).map(p => ph(n, p, p.view)).join('')}</div></article>`; };
       // Contact sheet: one line per genus with all its photos, small, to scan the whole shortlist line by line.
       const sheet = n => `<article class="fdsheet"><div class="fdinfo">${head(n)}</div><div class="fdall">${varied(G[n], 99).map(p => ph(n, p, p.view)).join('')}</div></article>`;
       // Photos follow the admin's curation (applied to DATA in app.js): hidden ones are gone, featured ones lead each
       // view, and Auto and "One clue off" tiles show the genus cover. The header's origin filter applies too.
       const tile = (n, off) => { const g = G[n], v = off || mode === 'cover' ? null : mode, p = v ? (g.views[v] || [])[0] || cover(g) : cover(g);
-        return `<article class="fdtile${off ? ' off' : ''}">${p ? ph(n, p, v && (g.views[v] || [])[0] ? v : p.view || 'medium') : '<span class="none">no photo</span>'}<div class="fdinfo">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}<p>${esc(g.sum)}</p>${tools(n)}</div></article>`; };
+        return `<article class="fdtile${off ? ' off' : ''}">${p ? ph(n, p, v && (g.views[v] || [])[0] ? v : p.view || 'medium') : '<span class="none">no photo</span>'}<div class="fdinfo">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}<p>${esc(tipsText(g))}</p>${tools(n)}</div></article>`; };
       // Look-alikes outside the shortlist: worth a glance before deciding.
       const near = left.length && left.length <= 3 ? uniq(left.flatMap(n => lookOf(n))).filter(n => !left.includes(n) && !close.includes(n)) : [];
       const chosen = F.flatMap(f => f.opts.filter(o => S[f.id].has(o.id)).map(o => ({f, o})));

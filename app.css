@@ -445,3 +445,15 @@ a.lt:hover{border-color:var(--accent)}
 .pseg a.mid{background:var(--accent);border-color:var(--accent);color:#fff}
 .pseg a.weak{background:var(--bad);border-color:var(--bad);color:#fff}
 @media (max-width:760px){.pgr{grid-template-columns:28px minmax(0,1fr) 36px}.pgt{display:none}}
+/* IMR ID tips: the lecturers' cues, verbatim, with their source */
+.idtips .tsrc{font-size:.72rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--accent);margin-right:2px}
+.tref{margin:2px 0 10px;font-size:.76rem;color:var(--muted)}
+.cmpcol h4{margin:12px 0 4px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.tipgr{margin:14px 0 6px}
+.tipsec{margin-top:18px}
+.tipg{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;padding:12px 0;border-top:1px solid var(--line)}
+.tipg .idtips{margin:0;max-width:70ch}
+.tipph{display:flex;flex-direction:column;gap:4px;text-decoration:none;color:var(--ink)}
+.tipph img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px}
+@media (max-width:600px){.tipg{grid-template-columns:96px minmax(0,1fr);gap:10px}}
+.tipintro h3{margin:4px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}

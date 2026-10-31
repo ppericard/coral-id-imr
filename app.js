@@ -82,7 +82,7 @@ const bySlate = L => Object.keys(DATA.gen).filter(n => L.includes(n));
 function card(name, group){
   const g = DATA.gen[name], p = cover(g), ig = (group === true || group === 'stripe') && g.ig ? DATA.imrg.find(x => x.n === g.ig) : null;
   const im = p ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(name)}" loading="lazy">` : `<span class="ph none">no photo</span>`;
-  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${(ig.n * 137) % 360}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${esc(g.sum)}</p></span></a>`;
+  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${(ig.n * 137) % 360}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${esc(tipsText(g))}</p></span></a>`;
 }
 function bindCards(root = $v){ root.querySelectorAll('[data-g]').forEach(b => b.onclick = () => go('g-' + b.dataset.g)); }
 function bindGo(root = $v){ root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go)); }
@@ -116,6 +116,29 @@ function zoom(list, i, opts = {}){
   show();
 }
 
+/* ---------- IMR ID tips ---------- */
+// The lecturers' own cues (IMR Lecture 6: slide text, review slides, presenter's notes), verbatim. They lead
+// wherever a genus is taught or tested; Coral Finder criteria come after.
+const slideRef = (k, L) => L && L.length ? `${k} ${L.join(', ')}` : k;
+const tipSrc = (g, x) => x.startsWith('Review slide: ') ? [slideRef('Review slide', g.rsl), x.slice(14)] : x.startsWith("Instructor's notes: ") ? ["Presenter's notes", x.slice(20)] : ['', x];
+// Full list: slide cues, then the review slide and the presenter's notes, each with its source.
+const tipsList = (g, cls = '') => g.imr.length ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${g.imr.map(x => { const [k, t] = tipSrc(g, x); return `<li>${k ? `<b class="tsrc">${esc(k)}</b> ` : ''}${esc(t)}</li>`; }).join('')}</ul><p class="tref">IMR Lecture 6${g.sl ? ', ' + slideRef(g.sl.length > 1 ? 'slides' : 'slide', g.sl) : ''}</p>` : `<p class="note">Not on the lecture slides: see the Coral Finder below.</p>`;
+// One line for cards and tiles: the slide cues only; genera the lecture skips fall back to the Coral Finder summary.
+const tipsText = g => g.imr.length ? g.imr.filter(x => !/^(Review slide|Instructor's notes): /.test(x)).join(' ') : g.sum;
+function viewTips(){
+  const gr = DATA.imrg.map(x => ({...x, L: Object.keys(DATA.gen).filter(n => DATA.gen[n].ig === x.n)})).filter(x => x.L.length);
+  const sel = location.hash.split('|')[1] || '';
+  $v.innerHTML = `<h2>ID tips</h2>
+  <p class="lede">What the IMR lecturers point out for each genus, in their own words: slide text, review slides and presenter's notes from Lecture 6.</p>
+  <section class="tipintro">
+  <h3>IMR Lecture 6: questions to ask</h3><ol class="tips">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
+  <details class="gloss"><summary>Coral anatomy terms</summary><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details>
+  </section>
+  <div class="chips tipgr"><a class="chip" href="#tips" aria-pressed="${!sel}">All groups</a>${gr.map(x => `<a class="chip" href="#tips|${x.n}" aria-pressed="${sel == x.n}">${x.n}. ${esc(x.t)}</a>`).join('')}</div>
+  ${gr.filter(x => !sel || sel == x.n).map(x => `<section class="tipsec"><h3 class="gdiv" style="--g:${(x.n * 137) % 360}"><span class="gn">${x.n}</span>${esc(x.t)}</h3>
+    ${x.L.map(n => { const g = DATA.gen[n], p = cover(g); return `<article class="tipg"><a href="#g-${esc(n)}" class="tipph">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<i>${esc(n)}</i></a><div>${tipsList(g)}${lookOf(n).length ? `<p class="note">Don't confuse with ${lookOf(n).map(b => `<a href="#cmp-${esc(n)}|${esc(b)}"><i>${esc(b)}</i></a>`).join(', ')}</p>` : ''}</div></article>`; }).join('')}</section>`).join('')}`;
+}
+
 /* ---------- genera ---------- */
 let azFam = null, azQ = '';
 // Genera order: 'lecture' (IMR Lecture 6 groups, default) or 'slate' (numbers on the IMR slate).
@@ -123,9 +146,7 @@ let azOrder = (() => { try { return localStorage.getItem('imr-coral-order') || '
 function viewGenera(){
   const fams = [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
   $v.innerHTML = `<h2>The 39 genera on the IMR slate</h2>
-  <p class="lede">34 surveyed genera plus 5 starred ones (★) to recognise and rule out. Colours mark the confusion groups from the IMR lecture: genera in the same group are the ones to tell apart.</p>
-  <h3 class="label">IMR Lecture 6: questions to ask</h3><ol class="tips">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
-  <details class="gloss"><summary>Coral anatomy terms</summary><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details>
+  <p class="lede">34 surveyed genera plus 5 starred ones (★) to recognise and rule out. Colours mark the confusion groups from the IMR lecture: genera in the same group are the ones to tell apart. The lecturers' cues for each genus are under <a href="#tips">ID tips</a>.</p>
   <div class="tools"><input id="q" type="search" placeholder="Search a genus or a feature" value="${esc(azQ)}" aria-label="Search">
     <select id="fam" aria-label="Family"><option value="">All families</option><option value="★"${azFam === '★' ? ' selected' : ''}>★ Not surveyed</option>${fams.map(f => `<option${azFam === f ? ' selected' : ''}>${esc(f)}</option>`).join('')}</select>
     <div class="seg" role="group" aria-label="Order">${[['lecture', 'Lecture', ' groups'], ['slate', 'Slate', ' numbers']].map(([k, t, x]) => `<button type="button" data-o="${k}" aria-pressed="${azOrder === k}">${t}<span class="wide">${x}</span></button>`).join('')}</div></div>
@@ -182,12 +203,12 @@ function viewGenus(name){
   }).join('');
   // Name, slate number and family sit in the sticky header bar (ctxBar), not here.
   $v.innerHTML = `<article class="sheet">
-    <p class="lede keyid">${esc(g.sum)}</p>
+    ${g.imr.length ? '' : `<p class="lede keyid">${esc(g.sum)}</p>`}
     ${g.n ? '' : `<p class="warn"><b>★ Not surveyed by IMR.</b> It is on the slate so you don't mistake it for ${g.look.filter(n => DATA.gen[n].n).map(n => '<i>' + esc(n) + '</i>').join(', ')}, so you need to recognise it and set it aside.</p>`}
     <div class="hero">
       ${cv ? `<button type="button" class="zoom hero-ph" data-z="${ci}"><img src="${img(cv)}" alt="${esc(name)}"></button>` : ''}
       <div class="idbox">
-        ${g.imr.length ? `<h3>IMR lecture · group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</h3><ul class="crit">${g.imr.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}${g.mn ? `<p class="note"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}
+        ${g.imr.length ? `<h3>ID tips (IMR) <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span></h3>${tipsList(g)}` : ''}${g.mn ? `<p class="note"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}
         <h3>Coral Finder features</h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
         ${g.check ? `<p class="note check"><b>To check with an IMR trainer:</b> ${esc(g.check)}</p>` : ''}
         ${g.info ? `<div class="note osrc"><b>Other sources:</b><ul class="srcs">${g.info.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
@@ -227,8 +248,8 @@ function lookHub(name){
   const L = lookOf(name).sort((a, b) => mixedUp(name, b) - mixedUp(name, a));
   return `<h3>Don't confuse with</h3>
     <div class="seg-row"><span class="label">Show</span>${viewSeg()}</div>
-    <div class="lrow"><div class="lt self">${viewShot(name, cmpView)}<span><i>${esc(name)}</i><small>this genus</small><span class="psum">${esc(DATA.gen[name].sum)}</span></span></div>
-    ${L.map(n => { const m = mixedUp(name, n); return `<a class="lt" href="#cmp-${esc(name)}|${esc(n)}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(DATA.gen[n].sum)}</span>${(DATA.gen[name].lsrc || {})[n] ? `<small class="lsrc">${esc(DATA.gen[name].lsrc[n])}</small>` : ''}<b class="cmpgo">Compare side by side →</b></span></a>`; }).join('')}</div>
+    <div class="lrow"><div class="lt self">${viewShot(name, cmpView)}<span><i>${esc(name)}</i><small>this genus</small><span class="psum">${esc(tipsText(DATA.gen[name]))}</span></span></div>
+    ${L.map(n => { const m = mixedUp(name, n); return `<a class="lt" href="#cmp-${esc(name)}|${esc(n)}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(tipsText(DATA.gen[n]))}</span>${(DATA.gen[name].lsrc || {})[n] ? `<small class="lsrc">${esc(DATA.gen[name].lsrc[n])}</small>` : ''}<b class="cmpgo">Compare side by side →</b></span></a>`; }).join('')}</div>
     ${cmpShots([name])}`;
 }
 // Starred genera are on the slate as look-alikes of surveyed genera. Those the lecture doesn't group are shown
@@ -259,7 +280,7 @@ function viewCompareList(){
     inside.sort(byMix); outside.sort(byMix);
     const mine = [...inside, ...outside].reduce((s, p) => s + mixedUp(...p), 0);
     return `<section class="lfam"><h3>${t}<small>${L.length} ${L.length > 1 ? "genera" : "genus"}${mine ? ` · <b class="bad">you mixed some up ×${mine}</b>` : ''}</small></h3>
-      <div class="lrow">${L.map(n => `<a class="lt" href="#g-${esc(n)}">${viewShot(n, cmpView)}<span><i>${esc(n)}</i><small>${G[n].n || G[n].ig ? tag(G[n]) : starNote(n)} · ${esc(G[n].fam)}</small><span class="psum">${esc(G[n].sum)}</span></span></a>`).join('')}</div>
+      <div class="lrow">${L.map(n => `<a class="lt" href="#g-${esc(n)}">${viewShot(n, cmpView)}<span><i>${esc(n)}</i><small>${G[n].n || G[n].ig ? tag(G[n]) : starNote(n)} · ${esc(G[n].fam)}</small><span class="psum">${esc(tipsText(G[n]))}</span></span></a>`).join('')}</div>
       ${inside.length ? `<p class="lpairs"><span class="label">Compare</span>${inside.map(chip).join('')}</p>` : ''}
       ${outside.length ? `<p class="lpairs"><span class="label">Other groups</span>${outside.map(chip).join('')}</p>` : ''}
       ${cmpShots(L)}</section>`; };
@@ -274,7 +295,7 @@ function viewCompareList(){
 function viewCompare(a, b){
   const A = DATA.gen[a], B = DATA.gen[b];
   if (!A || !B) return viewCompareList();
-  const col = (n, g) => `<div class="cmpcol"><h3><a class="linkish" href="#g-${esc(n)}"><i>${esc(n)}</i></a>${g.n ? '' : ' ★'}</h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>`;
+  const col = (n, g) => `<div class="cmpcol"><h3><a class="linkish" href="#g-${esc(n)}"><i>${esc(n)}</i></a>${g.n ? '' : ' ★'}</h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p>${g.imr.length ? `<h4>ID tips (IMR)</h4>${tipsList(g)}` : ''}<h4>Coral Finder</h4><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>`;
   const flat = [];
   const row = ([v, label]) => {
     const cell = (n, g) => { const p = (g.views[v] || [])[0]; if (!p) return `<div class="cmpph none">${g.levels === 2 ? 'no separate level' : 'no photo'}</div>`; flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom cmpph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 46vw, 460px" alt="${esc(n)}, ${label.toLowerCase()}" loading="lazy"></button>`; };
@@ -417,11 +438,11 @@ function answer(cur, c, target, ph, cor){
   save();
   $v.querySelectorAll('[data-c]').forEach(b => { b.disabled = true; if (b.dataset.c === target) b.classList.add('ok'); else if (b.dataset.c === c) b.classList.add('ko'); });
     const g = DATA.gen[target];
-  const vs = !good && DATA.gen[c] ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(DATA.gen[c].sum)} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>` : '';
+  const vs = !good && DATA.gen[c] ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(tipsText(DATA.gen[c]))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>` : '';
   document.getElementById('after').innerHTML = `<div class="fb">
     <h3 class="${good ? 'ok' : 'ko'}">${good ? 'Yes' : 'No'}, it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.n ? '' : ' (★ not surveyed)'}</h3>
-    <p class="keyid">${esc(g.sum)}</p>${g.imr.length ? `<p class="label">IMR lecture</p><ul class="crit imrfb">${g.imr.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}${g.mn ? `<p class="vs"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}${vs}
-    <details class="more"><summary>Coral Finder</summary><ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details></div>
+    ${g.imr.length ? `<p class="label">ID tips (IMR)</p>${tipsList(g, 'imrfb')}` : `<p class="keyid">${esc(g.sum)}</p>`}${g.mn ? `<p class="vs"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}${vs}
+    <details class="more"><summary>Coral Finder</summary>${g.imr.length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details></div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
   bindGo(document.getElementById('after'));
   const nb = document.getElementById('next'); nb.focus({preventScroll: true}); nb.onclick = route;
@@ -653,7 +674,7 @@ showTheme();
 // Tools of the Learn, Practice and Identify sections (the learning path order): a tab bar in the sticky header, so they stay in view.
 // Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).
 const MODES = {
-  learn: [['genera', 'Genera', 'The 39 genus sheets'], ['cmp', 'Look-alikes', 'Confused pairs side by side']],
+  learn: [['genera', 'Genera', 'The 39 genus sheets'], ['tips', 'ID tips', 'What the IMR lecturers point out'], ['cmp', 'Look-alikes', 'Confused pairs side by side']],
   practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['quiz-course', 'Lecture photos', 'Photos from the IMR course'], ['pairs', 'Memory', 'Match colony and corallites'], ['reveal', 'Blur reveal', 'Name it before it sharpens']],
   identify: [['finder', 'Coral Finder', 'Tap the clues you see, get a ranked shortlist']]
 };
@@ -716,6 +737,7 @@ function route(){
   else if (h.startsWith('l-') && leafOf(h.slice(2))) { const l = h.slice(2), one = groupOf(l).leaves.length === 1; location.replace('#finder|form=' + l[0] + (one ? '' : ';box=' + l)); }
   else if (h === 'key-imr') { azOrder = 'lecture'; location.replace('#genera'); }
   else if (h.startsWith('g-')) viewGenus(h.slice(2));
+  else if (h === 'tips' || h.startsWith('tips|')) viewTips();
   else if (h === 'cmp') viewCompareList();
   else if (h.startsWith('cmp-')) viewCompare(...h.slice(4).split('|'));
   else if (h === 'quiz') quizPhoto();
@@ -764,5 +786,5 @@ if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else ad
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
 const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
-Promise.all([fetch('data.json?v=15').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=16').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
