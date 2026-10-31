@@ -199,7 +199,8 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 .adm-where{display:block;width:100%;color:var(--muted,#667);font-size:.75rem}
 .adm-tchips{display:flex;flex-wrap:wrap;gap:6px}
 /* Growth form guess Claude is unsure about */
-.adm-fseg.unsure{position:relative}.adm-fseg.unsure::after{content:"?";position:absolute;right:-6px;top:-8px;width:16px;height:16px;border-radius:50%;background:var(--bad,#c0392b);color:#fff;font:700 .7rem/16px var(--body);text-align:center}
+/* Unsure first guess: the suggested form itself reads "Br?" in red (a corner badge got clipped and looked like a mark on ✿). */
+.adm-acts .adm-fseg.unsure button[data-fm][aria-pressed="true"]{color:var(--bad,#c0392b);box-shadow:inset 0 0 0 1.5px var(--bad,#c0392b)}.adm-fseg.unsure button[data-fm][aria-pressed="true"]::after{content:"?"}
 /* Triage: one near-duplicate set per box (the photo to keep first) */
 .adm-dup{padding:8px;border:1px dashed var(--line);border-radius:10px;margin-bottom:10px}
 /* Polyps flag (✿) after the IMR growth-form letters: separate from the form, on or off. */
