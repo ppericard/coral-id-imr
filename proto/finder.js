@@ -127,13 +127,14 @@ LAB.add({
       // With one view picked, only that view's photos (all views when the genus has none of it).
       const varied = (g, k) => { const one = pv !== 'mix' && (g.views[pv] || []).length, c = one ? null : cover(g);
         // Coral Finder book photos (g.book) alternate with the field photos of the same view.
-        const mix = v => { const A = (g.views[v] || []).filter(p => !c || p.f !== c.f).map(p => ({...p, view: v})), B = (g.book || []).filter(p => p.view === v), o = [];
+        // Capped set per view (applySlots in app.js): featured photos, then up to 3 approved book photos.
+        const mix = v => { const F = ((g.sl || {})[v] || {}).finder || [], A = F.filter(p => !p.cf && (!c || p.f !== c.f)).map(p => ({...p, view: v})), B = F.filter(p => p.cf), o = [];
           while (A.length || B.length) { if (A.length) o.push(A.shift()); if (B.length) o.push(B.shift()); } return o; };
         const L = (one ? [[pv]] : VIEWS).map(([v]) => mix(v));
         const out = c ? [c] : [], used = new Set(c ? [c.o] : []); let i = 0;
         while (out.length < k && L.some(x => x.length)) { const Q = L[i++ % L.length]; if (!Q.length) continue; const j = Q.findIndex(p => !used.has(p.o)); const p = Q.splice(j >= 0 ? j : 0, 1)[0]; used.add(p.o); out.push(p); }
         return out; };
-      const more = n => { const all = [...allPhotos(G[n]), ...(G[n].book || [])], own = all.filter(p => src(p) === 'dauin').length;
+      const more = n => { const all = VIEWS.flatMap(([v]) => ((G[n].sl || {})[v] || {}).finder || []), own = all.filter(p => src(p) === 'dauin').length;
         return all.length > 8 ? `<button type="button" class="linkish fdmore" data-x="${esc(n)}">All ${all.length} photos${own ? ` (${own} from Dauin)` : ''}</button>` : ''; };
       const mosaic = n => { const g = G[n];
         return `<article class="fdrow"><div class="fdinfo">${head(n)}<p>${esc(tipsText(g))}</p>${tools(n)}${more(n)}</div>
