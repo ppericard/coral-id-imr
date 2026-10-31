@@ -752,23 +752,25 @@ function zoomOne(p){
 // in a shuffled order kept in this browser; within a genus, Pierre's photos first, then Dauin, Philippines, CF book.
 const CK = f => 'cand:' + f, rejected = f => !!(DRAFT.seen || {})[CK(f)];
 const CSRCS = [['own', 'Pierre'], ['dauin', 'Dauin'], ['ph', 'PH'], ['book', 'CF'], ['all', 'All']];
-let CSRC = store.get('imr-admin-csrc2', 'dauin'), CSKIP = new Set(), CORDER = null;
+let CSRC = store.get('imr-admin-csrc2', 'dauin'), CSKIP = new Set();
 const srcOk = (p, s) => s === 'all' || origin(p) === s;
-function candOrder(){
-  let s = store.get('imr-admin-cseed', 0); if (!s) { s = 1 + Math.floor(Math.random() * 2147483645); store.set('imr-admin-cseed', s); }
-  const rnd = () => (s = s * 16807 % 2147483647) / 2147483647, L = Object.keys(DATA.gen);
-  for (let i = L.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [L[i], L[j]] = [L[j], L[i]]; }
-  return L;
-}
+// Order (Pierre): random, but genus x view cells with few photos come up more often, so the gaps for the games fill
+// first. Each candidate's weight is 1 / (1 + photos the genus already has in its view): its guessed view (vg, Claude's
+// guess from the photo), else the genus's emptiest view. Weighted random draw (key -ln(u) / w, u fixed per photo
+// and per device), then no two of the same genus in a row when it can be avoided.
+const cseed = () => { let s = store.get('imr-admin-cseed', 0); if (!s) { s = 1 + Math.floor(Math.random() * 2147483645); store.set('imr-admin-cseed', s); } return s; };
+const uOf = f => { let h = cseed() ^ 2166136261; for (let i = 0; i < f.length; i++) h = Math.imul(h ^ f.charCodeAt(i), 16777619); return ((h >>> 0) + .5) / 4294967296; };
 function candQueue(src){
-  CORDER = CORDER || candOrder();
-  // Each photo's turn is fixed by its place among all the genus's candidates (decided ones included), so deciding
-  // one never brings the same genus straight back.
-  const out = [], at = {};
-  CORDER.forEach(m => rawCands(m).filter(p => srcOk(p, src)).sort((a, b) => oIdx(a) - oIdx(b)).forEach((p, i) => { at[p.f] = i; }));
-  CORDER.forEach((n, gi) => { const add = entry(n).add || {};
-    cands(n).forEach(p => { if (srcOk(p, src) && !add[p.f] && !rejected(p.f)) out.push({p, n, r: (at[p.f] || 0) * 1000 + gi}); }); });
-  return out.sort((a, b) => a.r - b.r);
+  const N = {}, cnt = (n, w) => { const k = n + '|' + w; if (!(k in N)) { const r = rowOf(n, w); N[k] = r.feat.length + r.rest.length; } return N[k]; };
+  const weight = (n, p) => { const vs = VIEWS.map(x => x[0]).filter(w => !(lv(n) === 2 && w === 'medium')); let v = p.vg || p.view; if (v === 'medium' && lv(n) === 2) v = 'wide';
+    return 1 / (1 + (vs.includes(v) ? cnt(n, v) : Math.min(...vs.map(w => cnt(n, w))))); };
+  const L = [];
+  Object.keys(DATA.gen).forEach(n => { const add = entry(n).add || {};
+    cands(n).forEach(p => { if (srcOk(p, src) && !add[p.f] && !rejected(p.f)) L.push({p, n, r: -Math.log(uOf(p.f)) / weight(n, p)}); }); });
+  L.sort((a, b) => a.r - b.r);
+  const out = [];
+  while (L.length) { const last = out.length && out[out.length - 1].n, i = L.slice(0, 6).findIndex(x => x.n !== last); out.push(L.splice(i < 0 ? 0 : i, 1)[0]); }
+  return out;
 }
 let candKey = null;
 function renderCand(){
@@ -788,7 +790,7 @@ function renderCand(){
         <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
       </figure>
       <div class="adm-acts adm-swacts">${qSeg(p)}${fSeg(p)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOf(p.f) ? ' on' : ''}" data-crop aria-pressed="${!!crOf(p.f)}">Crop</button><button type="button" data-skip>Skip</button></div></div>
-      <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${p.view === w ? ' sug' : ''}" data-add="${w}" title="Add (${i + 1})">✓ ${label(n, w)}</button>`).join('')}</div>
+      <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${(p.vg || p.view) === w ? ' sug' : ''}" data-add="${w}" title="Add (${i + 1})">✓ ${label(n, w)}</button>`).join('')}</div>
     </section>`;
     if (nx) new Image().src = img(nx.p);
     const S = $v.querySelector('.adm-sw'), f = p.f, go = () => { CSKIP.delete(f); };
