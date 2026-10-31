@@ -17,9 +17,11 @@ const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p
 const cover = g => g.coverP || allPhotos(g).find(p => p.f === g.cover) || (g.views.medium || [])[0] || allPhotos(g)[0];
 // Editorial curation from curation.json (edited in admin.html): per genus, cover photo, featured photos
 // per view (in order), hidden photos and photos moved to another view. Hidden photos leave games too.
+// Candidates (data.json cand, not shown until approved) join a view when listed in add {photo: view}.
 function applyCuration(d, c){
   Object.entries((c && c.genera) || {}).forEach(([n, k]) => {
     const g = d.gen[n]; if (!g) return;
+    Object.entries(k.add || {}).forEach(([f, v]) => { const p = ((d.cand || {})[n] || []).find(x => x.f === f); if (p && VIEWS.some(([w]) => w === v)) (g.views[v] = g.views[v] || []).push(p); });
     const hide = new Set(k.hide || []), mv = k.move || {}, feat = k.feat || {};
     const regroup = src => { const out = {}; VIEWS.forEach(([v]) => ((src || {})[v] || []).forEach(p => { if (hide.has(p.f)) return; const w = mv[p.f] || v; (out[w] = out[w] || []).push(p); })); return out; };
     const all = [...allPhotos(g), ...VIEWS.flatMap(([v]) => (g.more || {})[v] || []), ...(d.course[n] || [])];
@@ -32,6 +34,26 @@ function applyCuration(d, c){
     if (cv) g.coverP = cv;
   });
 }
+
+// Photo origin filter, set in the header: Dauin only, the Philippines, or everywhere (data: p.loc, set on
+// iNaturalist photos; IMR lecture photos have none and always show).
+const ORIGIN_OK = {dauin: ['dauin'], ph: ['dauin', 'ph']};
+let origin = store.get('imr-coral-origin', 'all');
+function filterOrigin(d){
+  const ok = ORIGIN_OK[origin]; if (!ok) return;
+  // A genus with no field photo from the chosen area keeps the nearest ones (Philippines, then everywhere),
+  // so games and tools always have a photo to show.
+  Object.values(d.gen).forEach(g => {
+    const field = Object.values(g.views).flat();
+    const area = [ok, ORIGIN_OK.ph, null].find(a => !a || field.some(p => !p.loc || a.includes(p.loc)));
+    if (!area) return;
+    const keep = p => !p.loc || area.includes(p.loc);
+    ['views', 'more'].forEach(k => Object.keys(g[k] || {}).forEach(v => { g[k][v] = g[k][v].filter(keep); }));
+    if (g.coverP && !keep(g.coverP)) delete g.coverP;
+  });
+}
+let RAW, CUR;
+function build(){ const d = structuredClone(RAW); applyCuration(d, CUR); filterOrigin(d); DATA = d; }
 
 /* ---------- shared bits ---------- */
 // Genera in IMR slate order (data.json lists them that way, starred genera last).
@@ -503,6 +525,9 @@ function photoSize(){ return sizePrefs()[pageKey()] || PAGE_DEFAULT[pageKey()]; 
 const SIZES = {card: {s: '240px', m: '360px', l: '520px'}, strip: {s: '(max-width:700px) 46vw, 260px', m: '(max-width:700px) 92vw, 420px', l: '(max-width:700px) 92vw, 640px'}};
 const sizesFor = kind => SIZES[kind][photoSize()];
 function applySize(){ const s = photoSize(); document.documentElement.dataset.size = s; document.querySelectorAll('img[data-sz]').forEach(i => i.sizes = sizesFor(i.dataset.sz)); document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); }
+function showOrigin(){ document.querySelectorAll('#origin button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.origin === origin))); }
+document.querySelectorAll('#origin button').forEach(b => b.onclick = () => { origin = b.dataset.origin; store.set('imr-coral-origin', origin); showOrigin(); if (RAW) { build(); route(); } });
+showOrigin();
 document.querySelectorAll('#size button').forEach(b => b.onclick = () => { const p = sizePrefs(); p[pageKey()] = b.dataset.size; try { localStorage.setItem('imr-coral-size', JSON.stringify(p)); } catch (e) {} applySize(); });
 // Light / dark theme switch; follows the system until the reader picks one.
 const $theme = document.getElementById('theme');
@@ -600,5 +625,5 @@ if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else ad
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
 const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
-Promise.all([fetch('data.json?v=9').then(r => r.json()), curation()]).then(([d, c]) => { applyCuration(d, c); DATA = d; route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=10').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
