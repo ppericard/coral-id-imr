@@ -157,6 +157,19 @@ function applyForms(d, c){
 const formPhotos = (n, id) => { const g = DATA.gen[n], ok = CFMAP[id] || '';
   return [...(g.views.wide || []), ...(g.views.medium || []), ...(DATA.course[n] || []).filter(p => p.v !== 'macro')].filter(p => !p.multi && (ok === 'p' ? p.polyps : p.form ? p.form !== 'x' && ok.includes(p.form) : p.cf === id)); };
 
+// Photos of genus n whose IMR growth form (p.form) is id, colony views first; never multi-coral or book photos.
+const imrFormPhotos = (n, id) => { const g = DATA.gen[n];
+  return [...(g.views.wide || []), ...(g.views.medium || []), ...(DATA.course[n] || []).filter(p => p.v !== 'macro')].filter(p => !p.multi && p.form === id); };
+// IMR growth forms a genus takes (IMR Lecture 6 forms, forms.json "forms"): those seen on its classified photos (one
+// photo Pierre or the first guess is sure of, or two unsure ones), plus those the Coral Finder front page gives it
+// (forms.json "cf" maps each front-page box to IMR forms; Meandering, which maps to every form, is left out).
+const imrFormsOf = n => { const g = DATA.gen[n], cnt = {}, sure = {};
+  [...Object.values(g.views).flat(), ...(DATA.course[n] || [])].forEach(p => { if (!p.form || p.form === 'x' || p.multi) return; cnt[p.form] = (cnt[p.form] || 0) + 1; if (!(FORMS.gunsure || {})[p.f]) sure[p.form] = 1; });
+  const seen = Object.keys(cnt).filter(k => sure[k] || cnt[k] >= 2);
+  // A box that maps to several forms (Branching = Branching or Tabulate) only counts for a genus with no classified photo.
+  const cf = DATA.key.filter(k => k.id !== 'M' && k.leaves.some(l => l.g.includes(n))).map(k => (CFMAP[k.id] || '').replace('p', '')).filter(m => m.length === 1 || !seen.length).flatMap(m => [...m]);
+  return [...new Set([...seen, ...cf])]; };
+
 /* ---------- shared bits ---------- */
 // Genera in IMR slate order (data.json lists them that way, starred genera last).
 const slateIdx = n => Object.keys(DATA.gen).indexOf(n);
@@ -930,7 +943,7 @@ if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else ad
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
 const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
-const forms = () => fetch('forms.json?v=5').then(r => r.ok ? r.json() : {}).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}})).catch(() => ({gf: {}, form: {}, cf: {}}));
+const forms = () => fetch('forms.json?v=5').then(r => r.ok ? r.json() : {}).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}));
 Promise.all([fetch('data.json?v=20').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
