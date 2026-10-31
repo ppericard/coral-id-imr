@@ -143,7 +143,7 @@ body.adm-dragging,body.adm-dragging *{cursor:grabbing!important;user-select:none
 .adm-qhead{margin-top:16px}
 .adm-qhead .note{max-width:90ch}
 .adm-qrow h3 .adm-q{font-size:.8rem;letter-spacing:.04em}
-.adm-qgrid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.adm-qgrid{grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:10px}
 .adm-qt figcaption{gap:3px}
 .adm-qt.rated{outline:2px solid var(--accent);outline-offset:-2px}
 .adm-gen{color:var(--ink);font-size:.78rem;text-decoration:none;margin-right:2px}
@@ -164,8 +164,8 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 /* S/M/L photo size (header #size). */
 :root[data-size="s"] .adm-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 :root[data-size="l"] .adm-grid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
-:root[data-size="s"] .adm-qgrid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
-:root[data-size="l"] .adm-qgrid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+:root[data-size="s"] .adm-qgrid{grid-template-columns:repeat(auto-fill,minmax(min(170px,100%),1fr))}
+:root[data-size="l"] .adm-qgrid{grid-template-columns:repeat(auto-fill,minmax(min(360px,100%),1fr))}
 /* Growth form: tag (dashed = Claude's first guess), letter toggles (several allowed, ∅ = form not visible) */
 .adm-ftag{background:var(--surface-2);color:var(--ink)}
 .adm-acts .adm-fseg button{font-weight:700;letter-spacing:.02em}
