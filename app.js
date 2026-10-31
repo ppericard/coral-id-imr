@@ -117,6 +117,8 @@ function viewGenera(){
   const fams = [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
   $v.innerHTML = `<h2>The 39 genera on the IMR slate</h2>
   <p class="lede">34 surveyed genera plus 5 starred ones (★) to recognise and rule out. Colours mark the confusion groups from the IMR lecture: genera in the same group are the ones to tell apart.</p>
+  <h3 class="label">IMR Lecture 6: questions to ask</h3><ol class="tips">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
+  <details class="gloss"><summary>Coral anatomy terms</summary><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details>
   <div class="tools"><input id="q" type="search" placeholder="Search a genus or a feature" value="${esc(azQ)}" aria-label="Search">
     <select id="fam" aria-label="Family"><option value="">All families</option><option value="★"${azFam === '★' ? ' selected' : ''}>★ Not surveyed</option>${fams.map(f => `<option${azFam === f ? ' selected' : ''}>${esc(f)}</option>`).join('')}</select>
     <div class="seg" role="group" aria-label="Order">${[['lecture', 'Lecture', ' groups'], ['slate', 'Slate', ' numbers']].map(([k, t, x]) => `<button type="button" data-o="${k}" aria-pressed="${azOrder === k}">${t}<span class="wide">${x}</span></button>`).join('')}</div></div>
@@ -272,16 +274,6 @@ const leafOf = id => groupOf(id)?.leaves.find(l => l.id === id);
 const pg = l => l.a === l.b ? 'p.' + l.a : 'p.' + l.a + '-' + l.b;
 const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 
-function viewIMR(){
-  $v.innerHTML = `<h2>IMR lecture groups</h2>
-  <p class="lede">IMR Lecture 6 sorts the surveyed genera by corallite type, not by colony shape. Run through the four questions, then pick the matching group.</p>
-  <ol class="tips">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
-  <details class="gloss"><summary>Coral anatomy terms</summary><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details>
-  ${DATA.imrg.map(gr => { const names = Object.keys(DATA.gen).filter(n => DATA.gen[n].ig === gr.n);
-    return `<section class="imrg"><h3 class="gdiv" style="--g:${(gr.n * 137) % 360}"><span class="gn">${gr.n}</span>${esc(gr.t)}</h3><div class="grid">${names.map(n => card(n, 'stripe')).join('')}</div></section>`; }).join('')}
-  <section class="imrg"><h3><span class="gn">★</span> Not covered in the lecture</h3><p class="note">The starred genera on the slate, to rule out look-alikes.</p><div class="grid">${Object.keys(DATA.gen).filter(n => !DATA.gen[n].ig).map(card).join('')}</div></section>`;
-  bindCards(); bindGo();
-}
 /* ---------- quiz ---------- */
 // Progress per genus {ok, ko, streak, conf}, kept in this browser only.
 let P = store.get('imr-coral-progress', {}) || {};
@@ -547,9 +539,12 @@ const SIZES = {card: {s: '240px', m: '360px', l: '520px'}, strip: {s: '(max-widt
 const sizesFor = kind => SIZES[kind][photoSize()];
 function applySize(){ const s = photoSize(); document.documentElement.dataset.size = s; document.querySelectorAll('img[data-sz]').forEach(i => i.sizes = sizesFor(i.dataset.sz)); document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); }
 function showOrigin(){ document.querySelectorAll('#origin button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.origin === origin))); }
-document.querySelectorAll('#origin button').forEach(b => b.onclick = () => { origin = b.dataset.origin; store.set('imr-coral-origin', origin); showOrigin(); if (RAW) { build(); route(); } });
+// On phones each group shows only its current button: tapping it moves to the next one.
+const phone = () => matchMedia('(max-width:640px)').matches;
+const cycle = b => phone() && b.getAttribute('aria-pressed') === 'true' ? (b.nextElementSibling || b.parentNode.firstElementChild) : b;
+document.querySelectorAll('#origin button').forEach(b => b.onclick = () => { b = cycle(b); origin = b.dataset.origin; store.set('imr-coral-origin', origin); showOrigin(); if (RAW) { build(); route(); } });
 showOrigin();
-document.querySelectorAll('#size button').forEach(b => b.onclick = () => { const p = sizePrefs(); p[pageKey()] = b.dataset.size; try { localStorage.setItem('imr-coral-size', JSON.stringify(p)); } catch (e) {} applySize(); });
+document.querySelectorAll('#size button').forEach(b => b.onclick = () => { b = cycle(b); const p = sizePrefs(); p[pageKey()] = b.dataset.size; try { localStorage.setItem('imr-coral-size', JSON.stringify(p)); } catch (e) {} applySize(); });
 // Light / dark theme switch; follows the system until the reader picks one.
 const $theme = document.getElementById('theme');
 function isDark(){ return document.documentElement.dataset.theme === 'dark'; }
@@ -562,7 +557,7 @@ showTheme();
 const MODES = {
   learn: [['genera', 'Genera', 'The 39 genus sheets'], ['cmp', 'Look-alikes', 'Confused pairs side by side']],
   practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['quiz-course', 'Lecture photos', 'Photos from the IMR course'], ['pairs', 'Memory', 'Match colony and corallites'], ['reveal', 'Blur reveal', 'Name it before it sharpens']],
-  identify: [['finder', 'Coral Finder', 'Tap the clues you see, get a ranked shortlist'], ['key-imr', 'IMR lecture groups', 'The 11 groups from the lecture']]
+  identify: [['finder', 'Coral Finder', 'Tap the clues you see, get a ranked shortlist']]
 };
 const MODE_LABEL = {learn: 'Learn tools', identify: 'Ways to identify', practice: 'Practice modes'};
 // Which tab of MODES a hash belongs to: key leaves and groups count as the key, genus sheets as Genera, pairs as Look-alikes.
@@ -601,7 +596,8 @@ function showModes(tab, h){
     $modes.querySelector('[data-back]').onclick = () => history.length > 1 ? history.back() : go(h.startsWith('g-') ? 'genera' : 'cmp');
     return;
   }
-  const L = MODES[tab]; $modes.hidden = !L; if (!L) { $modes.innerHTML = ''; return; }
+  // A section with a single tool needs no tab bar.
+  const L = MODES[tab] && MODES[tab].length > 1 ? MODES[tab] : null; $modes.hidden = !L; if (!L) { $modes.innerHTML = ''; return; }
   const cur = modeOf(h);
   $modes.setAttribute('aria-label', MODE_LABEL[tab]);
   $modes.innerHTML = L.map(([k, t, d]) => `<a href="#${k}" title="${esc(d)}"${k === cur ? ' aria-current="page"' : ''}><b>${t}</b></a>`).join('');
@@ -620,7 +616,7 @@ function route(){
   if (h === 'key' || h === 'key-tr') location.replace('#finder');
   else if (h.startsWith('k-') && groupOf(h.slice(2))) location.replace('#finder|form=' + h.slice(2));
   else if (h.startsWith('l-') && leafOf(h.slice(2))) { const l = h.slice(2), one = groupOf(l).leaves.length === 1; location.replace('#finder|form=' + l[0] + (one ? '' : ';box=' + l)); }
-  else if (h === 'key-imr') viewIMR();
+  else if (h === 'key-imr') { azOrder = 'lecture'; location.replace('#genera'); }
   else if (h.startsWith('g-')) viewGenus(h.slice(2));
   else if (h === 'cmp') viewCompareList();
   else if (h.startsWith('cmp-')) viewCompare(...h.slice(4).split('|'));
@@ -633,9 +629,24 @@ function route(){
   else if ((!h || h === 'home') && window.viewHome) viewHome();
   else viewGenera();
   window.scrollTo(0, 0);
+  pageHelp(tab);
   hdrMetrics();
 }
 addEventListener('hashchange', route);
+// Pages open straight on their content: the title is dropped where the header already names the page
+// (section tab, page bar or Lab crumbs), and the intro text moves behind the ? button.
+const $help = document.getElementById('help'), $helpbox = document.getElementById('helpbox');
+function pageHelp(tab){
+  const root = $v.querySelector(':scope > .lab') || $v;
+  const h2 = root.querySelector(':scope > h2'), intro = [...root.querySelectorAll(':scope > .lede, :scope > .tips, :scope > h3.label, :scope > .gloss')];
+  const title = h2 ? h2.textContent : '';
+  if (h2 && tab !== 'progress' && tab !== 'home') h2.remove();
+  $helpbox.hidden = true; $help.setAttribute('aria-expanded', 'false');
+  $help.hidden = !intro.length;
+  $helpbox.innerHTML = intro.length ? (title ? `<h3>${esc(title)}</h3>` : '') + intro.map(x => x.outerHTML).join('') : '';
+  intro.forEach(x => x.remove());
+}
+$help.onclick = () => { const open = $helpbox.hidden; $helpbox.hidden = !open; $help.setAttribute('aria-expanded', String(open)); hdrMetrics(); };
 // The brand link goes home without reloading the page (href="./" still works without JS).
 document.querySelector('.brand .home').onclick = e => {
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
@@ -643,12 +654,12 @@ document.querySelector('.brand .home').onclick = e => {
   if (location.hash) history.pushState(null, '', location.pathname + location.search);
   route();
 };
-// Header metrics for CSS: --hdr-h (sticky offset for the cover photo) and, on phones, --hdr-hide:
-// how far the header scrolls up so that only the section bar stays pinned (all of it when there is none).
+// Header metrics for CSS: --hdr-h (what stays pinned: sticky offset for the page bar, cover photo, side panels)
+// and --hdr-hide (phones: the whole header scrolls away; only a page bar stays pinned).
 const $hdr = document.querySelector('header');
 function hdrMetrics(){
   const r = document.documentElement.style, h = $hdr.offsetHeight;
-  const hide = matchMedia('(max-width:640px)').matches ? ($modes.hidden ? h : $modes.offsetTop - 4) : 0;
+  const hide = phone() ? h : 0;
   r.setProperty('--hdr-h', (h - hide) + 'px'); r.setProperty('--hdr-hide', hide + 'px');
 }
 if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else addEventListener('resize', hdrMetrics);
