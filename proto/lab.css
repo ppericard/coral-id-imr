@@ -234,9 +234,75 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
   .rreflist{display:flex}
   .rtick.minor{display:none}
   .rtick{font-size:.68rem}
-  .pgrid{grid-template-columns:repeat(3,1fr)}
+  .pgrid,:root[data-size] .pgrid{grid-template-columns:repeat(2,1fr)}
+  :root[data-size="s"] .pgrid{grid-template-columns:repeat(3,1fr)}
 }
 @media (prefers-reduced-motion:reduce){.mleaf{animation:none}.pin,.etile,.rbar{transition:none}}
-.maplegend .chip{font-size:.82rem;min-height:30px;padding:4px 10px}
+.maplegend .chip{white-space:normal;max-width:100%;text-align:left;font-size:.82rem;min-height:30px;padding:4px 10px}
 .maplegend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
 .maplegend small{color:var(--muted);margin-left:4px}
+
+/* ---------- full-width layouts (Pierre: use the whole page, sections side by side) ---------- */
+:root[data-page="lab"] .wrap{max-width:min(1680px,100%)}
+.lab .note{max-width:none}
+.labhub{grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+#mapsvg{max-height:86vh}
+#websvg{max-height:80vh}
+.mapwrap,.webwrap{grid-template-columns:minmax(0,1fr) 300px}
+.anatgrid{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) minmax(240px,.8fr)}
+.anatpanel{align-self:start;position:sticky;top:110px}
+.anatpanel .chips{margin-top:0}
+.walls{grid-template-columns:repeat(5,minmax(0,1fr))}
+.zlayout,.rvlayout{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:18px;align-items:start}
+.zlayout .zstage,.rvstage{margin-top:0}
+.zside{position:sticky;top:110px}
+.ztipbox{background:var(--surface);border-left:3px solid var(--accent);padding:8px 12px;border-radius:0 6px 6px 0;min-height:2.6em}
+.zsteps{padding-left:1.2em;font-size:.9rem;display:flex;flex-direction:column;gap:8px}
+.elimlayout{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:18px;align-items:start}
+.elimside{position:sticky;top:110px;max-height:calc(100vh - 120px);overflow:auto;padding-right:4px}
+.elimside .elimtop{flex-direction:column}
+.elimside .emyst{width:100%}
+.elimlayout .elimgrid{margin-top:0}
+.mxlayout{display:grid;grid-template-columns:minmax(0,auto) minmax(280px,1fr);gap:18px;align-items:start}
+.mxinfo{position:sticky;top:110px}
+.mxinfo h3{margin-top:0}
+.mxinfo .mxcards{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.trcols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 18px}
+.trcols .trset:last-child{grid-column:span 1}
+.galcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+.sizelayout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;align-items:start}
+.sizeside{position:sticky;top:110px}
+.sizeside .rreflist{display:flex;flex-direction:column}
+.sizeside .rlabel{margin-top:0;font-weight:600}
+.sizeside .rreflist{order:3}
+.sizeside{display:flex;flex-direction:column}
+.rfitlist{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.rfitlist a{font-size:.78rem;text-align:center;color:var(--ink);text-decoration:none}
+.rfitlist img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px}
+.pgrid{max-width:none;grid-template-columns:repeat(4,1fr);gap:10px}
+:root[data-size="s"] .pgrid{grid-template-columns:repeat(6,1fr)}
+:root[data-size="l"] .pgrid{grid-template-columns:repeat(3,1fr)}
+.pgrid .pcard{max-height:calc((100vh - 200px) / 3 * 1.4)}
+.spot{grid-template-columns:minmax(0,1.4fr) minmax(280px,1fr)}
+.spotph img{max-height:80vh}
+@media (max-width:1200px){
+  .anatgrid{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)}
+  .anatpanel{grid-column:1 / -1;position:static}
+  .walls{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+  .mxlayout{grid-template-columns:minmax(0,1fr)}
+  .mxinfo{position:static}
+  .trcols{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:900px){
+  .zlayout,.rvlayout,.elimlayout,.sizelayout,.galcols{grid-template-columns:minmax(0,1fr)}
+  .zside,.elimside{position:static;max-height:none}
+  .sizeside{top:105px;z-index:3;background:var(--bg);padding-bottom:6px}
+  .rfitlist{display:flex;overflow-x:auto;gap:6px}
+  .rfitlist a{flex:0 0 64px}
+  .pgrid,:root[data-size] .pgrid{grid-template-columns:repeat(3,1fr)}
+}
+@media (max-width:760px){
+  .anatgrid{grid-template-columns:1fr}
+  .pgrid,:root[data-size] .pgrid{grid-template-columns:repeat(2,1fr)}
+  :root[data-size="s"] .pgrid{grid-template-columns:repeat(3,1fr)}
+}
