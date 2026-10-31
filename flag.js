@@ -24,7 +24,7 @@
   // Where the photo was seen: the page (hash), plus the game level on Practice pages.
   const where = () => { const h = decodeURIComponent(location.hash.slice(1)) || 'home', open = !document.getElementById('lightbox').hidden;
     const game = /^(quiz|pairs|reveal|lab-reveal|lab-pairs)/.test(h);
-    return `${h}${game && typeof Q !== 'undefined' && !h.startsWith('quiz-course') ? ' · level ' + Q.level : ''}${open ? ' · lightbox' : ''}`; };
+    return `${h}${game && typeof Q !== 'undefined' && !(h === 'quiz' && Q.course) ? ' · level ' + Q.level : ''}${open ? ' · lightbox' : ''}`; };
   const btn = document.createElement('button');
   btn.type = 'button'; btn.className = 'pflag'; btn.hidden = true; btn.textContent = '⚑';
   btn.title = 'Bad photo: send it to Triage in the admin';
