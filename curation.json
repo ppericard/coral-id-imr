@@ -23,6 +23,10 @@
         "acropora-medium-745206076": "macro",
         "imrl-p8_i9": "macro",
         "imrl-p8_i6": "macro"
+      },
+      "add": {
+        "acropora-cand-339004335": "medium",
+        "acropora-cand-269472875": "wide"
       }
     },
     "Pocillopora": {
@@ -40,6 +44,10 @@
     }
   },
   "quality": {
+    "acropora-cand-269472418": 3,
+    "acropora-cand-269472875": 3,
+    "acropora-macro-745206285": 3,
+    "acropora-medium-693917250": 2,
     "acropora-wide-745675208": 2,
     "imrl-p8_g36": 2,
     "imrl-p8_g37": 3
