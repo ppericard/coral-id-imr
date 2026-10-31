@@ -16,7 +16,7 @@ const img = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 
-let SUG = {}, FU0, PICKS = {}, PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
+let SUG = {}, DUPS = [], FU0, PICKS = {}, PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
 // (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
 const QUAL = [[3, 'Good'], [2, 'Fair'], [1, 'Poor']];
@@ -633,16 +633,18 @@ function sugItems(){
     if (s.view && p && !outs(n)[f] && !hidden(n, p) && viewOf(n, p) !== s.view && !seen('view:' + f)) out.view.push({...p, genus: n, s, un});
     if (s.multi && p && !hidden(n, p) && !(DRAFT.use || {})[f] && !seen('multi:' + f)) out.multi.push({...p, genus: n, s, un});
   });
-  (S.dup || []).forEach(d => { const n = d.genus; if (!DATA.gen[n] || seen('dup:' + d.keep) || excl(d.keep) || !live(n, d.keep)) return;
-    const left = d.f.filter(f => !excl(f) && live(n, f) && !hidden(n, live(n, f)));
+  // Near-duplicates: the judging agent's and tools/find_dups.py's (dups.json), candidates included.
+  const any = (n, f) => live(n, f) || pending(n).find(p => p.f === f);
+  [...(S.dup || []), ...DUPS].forEach(d => { const n = d.genus; if (!DATA.gen[n] || seen('dup:' + d.keep) || excl(d.keep) || !any(n, d.keep)) return;
+    const left = d.f.filter(f => !excl(f) && any(n, f) && !(live(n, f) && hidden(n, live(n, f))));
     if (left.length) out.dup.push({...d, left}); });
   Object.entries(S.add || {}).forEach(([n, A]) => { if (!DATA.gen[n]) return; const added = entry(n).add || {};
     Object.entries(A).forEach(([f, v]) => { const p = pending(n).find(x => x.f === f); if (p && !added[f] && !seen('add:' + f)) out.add.push({...p, genus: n, to: v}); }); });
   return out;
 }
-const sugCount = () => { if (!DATA || !DRAFT || !SUG || !Object.keys(SUG).length) return 0; const o = sugItems(); return o.genus.length + o.view.length + o.multi.length + o.dup.length + o.add.length; };
+const sugCount = () => { if (!DATA || !DRAFT || (!Object.keys(SUG || {}).length && !DUPS.length)) return 0; const o = sugItems(); return o.genus.length + o.view.length + o.multi.length + o.dup.length + o.add.length; };
 function sugHtml(tile){
-  if (!SUG || !Object.keys(SUG).length) return '';
+  if (!Object.keys(SUG || {}).length && !DUPS.length) return '';
   const o = sugItems(), dis = k => `<button type="button" data-sg="dismiss" data-k="${esc(k)}">Dismiss</button>`;
   const why = p => `${p.un && p.un.length ? '<span class="adm-src multi" title="The judge is not sure">unsure</span>' : ''}${p.s && p.s.note ? `<small class="adm-where">${esc(p.s.note)}</small>` : ''}`;
   const sec = (title, L, body) => L.length ? `<div class="adm-qhead"><h2>${title} <small>${L.length}</small></h2></div>${body}` : '';
@@ -653,7 +655,7 @@ function sugHtml(tile){
     + sec('Suggested: move to another view', o.view, grid(o.view, p => tile(p, `<button type="button" data-sg="view" data-to="${esc(p.s.view)}">Move to ${esc(vName(p.genus, p.s.view))}</button>${dis('view:' + p.f)}`,
       `<span class="adm-src view">${esc(vName(p.genus, viewOf(p.genus, p)))} → ${esc(vName(p.genus, p.s.view))}</span>${why(p)}`)))
     + sec('Suggested: several corals (keep off games)', o.multi, grid(o.multi, p => tile(p, `<button type="button" data-sg="multi">Keep off games</button>${dis('multi:' + p.f)}`, why(p))))
-    + sec('Suggested: near-duplicates', o.dup, o.dup.map(d => `<div class="adm-grid adm-qgrid adm-dup">${tile({...PHOTOS[d.keep], f: d.keep, genus: d.genus}, dis('dup:' + d.keep), `<span class="adm-src new">Keep</span>${d.note ? `<small class="adm-where">${esc(d.note)}</small>` : ''}`)}${d.left.map(f => tile({...PHOTOS[f], f, genus: d.genus}, `<button type="button" data-sg="hide">Hide in ${esc(d.genus)}</button>`, '<span class="adm-src multi">Duplicate</span>')).join('')}</div>`).join(''))
+    + sec('Suggested: near-duplicates', o.dup, o.dup.map(d => `<div class="adm-grid adm-qgrid adm-dup">${tile({...PHOTOS[d.keep], f: d.keep, genus: d.genus}, dis('dup:' + d.keep), `<span class="adm-src new">Keep</span>${d.note ? `<small class="adm-where">${esc(d.note)}</small>` : ''}`)}${d.left.map(f => tile({...PHOTOS[f], f, genus: d.genus}, `<button type="button" data-sg="genus" data-to="exclude">Exclude</button>`, '<span class="adm-src multi">Duplicate</span>')).join('')}</div>`).join(''))
     + sec('Suggested: candidates to add', o.add, grid(o.add, p => tile(p, `<button type="button" data-sg="add" data-to="${esc(p.to)}">Add to ${esc(vName(p.genus, p.to))}</button>${dis('add:' + p.f)}`, srcTag(p))));
 }
 function bindSug(){
@@ -703,7 +705,8 @@ async function start(){
   const hd = document.querySelector('header'); if (hd && window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--hdr-h', hd.offsetHeight + 'px')).observe(hd);
   $v.innerHTML = '<p class="note">Loading photos…</p>';
   const side = (u, k) => fetch(u, {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).then(j => j[k] || {}).catch(() => ({}));
-  try { [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), side('quality.json', 'q'), side('forms.json', 'gf'), side('forms.json', 'gunsure'), side('picks.json', 'feat'), fetch('suggest.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})), loadSaved()]); }
+  try { [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), side('quality.json', 'q'), side('forms.json', 'gf'), side('forms.json', 'gunsure'), side('picks.json', 'feat'), fetch('suggest.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})), loadSaved()]);
+    DUPS = await side('dups.json', 'dup').then(x => Array.isArray(x) ? x : []); }
   catch (x) { $v.innerHTML = `<p class="warn">Could not load: ${esc(x.message)}</p>`; return; }
   FUNSURE = new Set(Array.isArray(FU0) ? FU0 : []);
   [FDEF, LEGACY] = await Promise.all([side('forms.json', 'forms'), side('forms.json', 'form')]); if (!Array.isArray(FDEF)) FDEF = [];
