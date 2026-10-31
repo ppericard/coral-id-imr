@@ -320,7 +320,7 @@ function render(){
   const P = pending(n), Ps = P.filter(shown), two = g.levels === 2;
   const candTile = p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
     <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span></figcaption>
-    <div class="adm-acts">${qSeg(p)}${fSeg(p)}<div class="adm-addrow">${VIEWS.filter(([w]) => !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="addc" data-to="${w}" title="Add to ${label(n, w)}">+ ${label(n, w)}</button>`).join('')}</div></div></figure>`;
+    <div class="adm-acts">${qSeg(p)}${fSeg(p)}<span class="adm-qseg adm-vseg" role="group" aria-label="View">${VIEWS.filter(([w]) => !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="addc" data-to="${w}" title="Add to ${label(n, w)}">${label(n, w)}</button>`).join('')}</span></div></figure>`;
   // Candidates: set apart from the views and folded by default (Pierre); open or closed is remembered.
   const candRow = P.length ? `<details class="adm-row adm-cands"${store.get('imr-admin-cands', false) ? ' open' : ''}><summary><h3>Candidates <small>${P.length} new photo${P.length > 1 ? 's' : ''} not on the site yet${P.length - Ps.length ? ` · <b>${P.length - Ps.length} filtered out</b>` : ''}</small></h3></summary>
     <div class="adm-grid">${Ps.map(candTile).join('')}</div></details>` : '';
