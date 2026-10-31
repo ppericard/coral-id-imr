@@ -20,7 +20,9 @@ let SUG = {}, FU0, PICKS = {}, PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v:
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
 // (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
 const QUAL = [[3, 'Good'], [2, 'Fair'], [1, 'Poor']];
-const qOf = f => (DRAFT.quality || {})[f] || AUTOQ[f] || 2, qSet = f => !!(DRAFT.quality || {})[f];
+// Automatic rating: never Poor for an IMR lecture photo (as autoQ in app.js); only Pierre's own rating can say Poor.
+const autoQ = f => { const a = AUTOQ[f] || 2; return a === 1 && /^imrl?-/.test(f) ? 2 : a; };
+const qOf = f => (DRAFT.quality || {})[f] || autoQ(f), qSet = f => !!(DRAFT.quality || {})[f];
 // Every click is saved at once as a draft in this browser (it survives a reload or closing the tab);
 // Publish sends the draft to the public site.
 let draftAt = null;
@@ -196,10 +198,12 @@ function rowOf(n, v){
   const pin = (entry(n).feat || {})[v];
   // No pick of yours: Claude's suggestion (picks.json) first, then the automatic order, as on the site.
   const sug = ((PICKS[n] || {})[v] || []).map(f => live.find(p => p.f === f && !p.multi && !p.extra)).filter(Boolean);
-  const cand = [...sug, ...order.filter(p => !p.multi)], good = takeObs(cand.filter(p => qOf(p.f) !== 1), FEAT);
-  // Never a Poor photo in the automatic pick while better ones exist (as on the site).
-  const feat = pin ? pin.map(f => live.find(p => p.f === f)).filter(Boolean) : [...good, ...takeObs(cand.filter(p => !good.includes(p)), FEAT - good.length)];
-  return {feat, auto: !pin, rest: order.filter(p => !feat.includes(p)), hid: photos(n).filter(p => viewOf(n, p) === v && hidden(n, p))};
+  // Featured = always the first FEAT photos (Pierre): his pinned ones in his order, the rest filled automatically,
+  // never with a Poor photo while better ones exist, except IMR lecture photos (as on the site).
+  const pinned = (pin || []).map(f => live.find(p => p.f === f)).filter(Boolean).slice(0, FEAT);
+  const cand = [...sug, ...order.filter(p => !p.multi && !p.extra)].filter(p => !pinned.includes(p)), k = FEAT - pinned.length;
+  const good = takeObs(cand.filter(p => p.imr || qOf(p.f) !== 1), k), feat = [...pinned, ...good, ...takeObs(cand.filter(p => !good.includes(p)), k - good.length)];
+  return {feat, pinned: pinned.map(p => p.f), auto: !pinned.length, rest: order.filter(p => !feat.includes(p)), hid: photos(n).filter(p => viewOf(n, p) === v && hidden(n, p))};
 }
 function coverOf(n){
   const g = DATA.gen[n], all = photos(n).filter(p => !hidden(n, p)), k = entry(n);
@@ -247,12 +251,15 @@ const ACT = {
   // Covers moving between views, approving a candidate, featuring, reordering and unfeaturing in one step.
   drop: (n, f, to, at) => edit(n, k => {
     const p = [...photos(n), ...pending(n)].find(x => x.f === f), was = viewOf(n, p) === to && !pending(n).includes(p);
-    const cur = rowOf(n, to).feat.map(x => x.f), inFeat = was && cur.includes(f), L = cur.filter(x => x !== f);
+    const r = rowOf(n, to), cur = r.feat.map(x => x.f), inFeat = was && cur.includes(f), L = cur.filter(x => x !== f);
     if (p.cand || pending(n).includes(p)) { k.add = k.add || {}; k.add[f] = to; }
     else if (!was) { k.move = k.move || {}; if (to === p.base) delete k.move[f]; else k.move[f] = to; }
     dropFeat(k, f);
-    if (at !== null) { L.splice(Math.min(at, L.length), 0, f); k.feat = k.feat || {}; k.feat[to] = L.slice(0, FEAT); }
-    else if (inFeat) { k.feat = k.feat || {}; if (L.length) k.feat[to] = L; else delete k.feat[to]; }
+    // Dropped after the last of 3 featured photos: it takes the last place (it used to fall off the end).
+    if (at !== null) { L.splice(Math.min(at, L.length, FEAT - 1), 0, f); k.feat = k.feat || {}; k.feat[to] = L.slice(0, FEAT); }
+    // Dragged out of the first places: the next photo moves up, and the set is pinned so it can't come straight back.
+    else if (inFeat) { const nx = r.rest.find(x => x.f !== f && !x.multi && !x.extra && (x.imr || qOf(x.f) !== 1)) || r.rest.find(x => x.f !== f && !x.multi && !x.extra);
+      if (nx) L.push(nx.f); k.feat = k.feat || {}; if (L.length) k.feat[to] = L; else delete k.feat[to]; }
   }),
 
 };
@@ -270,11 +277,10 @@ function tile(n, p, v, st){
     <figcaption>${p.from ? `<span class="adm-src new" title="From ${esc(p.from)}">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">new</span>' : ''}${srcTag(p)}${p.multi ? '<span class="adm-src multi" title="Several corals">several corals</span>' : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}${fSeg(p)}
       ${st.cls === 'is-hidden' ? `<button type="button" data-act="hide" class="on">Show again</button>` : `
-      <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Cover">★ Cover</button>
-      <button type="button" data-act="feat" class="${st.num && !st.auto ? 'on' : ''}" title="Feature">${st.num ? 'Featured' : 'Feature'}</button>
-      ${p.cand ? '<button type="button" data-act="hide" title="Back to the candidates">Remove</button>' : '<button type="button" data-act="hide" title="Hide">Hide</button>'}
       <span class="adm-qseg adm-vseg" role="group" aria-label="View">${moves}</span>
-      ${p.from || p.cand ? '' : `<select data-act="out" aria-label="Take out of this genus"><option value="">Not this genus…</option><option value="cmp">Look-alike comparison</option><optgroup label="It shows another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`}`}
+      <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Cover">★ Cover</button>
+      ${p.cand ? '<button type="button" data-act="hide" title="Back to the candidates">Remove</button>' : '<button type="button" data-act="hide" title="Hide">Hide</button>'}
+      ${p.from || p.cand ? '' : `<select data-act="out" aria-label="Take out of this genus"><option value="">Not this…</option><option value="cmp">Look-alike comparison</option><optgroup label="It shows another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`}`}
     </div></figure>`;
 }
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
@@ -309,7 +315,7 @@ function render(){
       <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : '★'}${c && c.view === 'macro' && DATA.gen[m].levels !== 2 ? ' · <b class="warnc" title="Cover is a close-up">macro cover</b>' : ''}${h ? ` · ${h} hidden` : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}${missing(m).length ? ' · <b class="warnc" title="Missing photos">⚠ check</b>' : ''}</small></span>${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : Object.keys(e).length ? '<b class="dot done" title="Curated">✓</b>' : ''}</a>`; }).join('');
   const body = rows(n).map(([v]) => { const r = rowOf(n, v), out = [...r.feat, ...r.rest, ...r.hid].filter(p => !shown(p)).length;
     return `<section class="adm-row"><h3>${label(n, v)} <small>${r.feat.length} featured${r.auto ? ' (automatic)' : ''} · ${r.rest.length} more${r.hid.length ? ` · ${r.hid.length} hidden` : ''}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
-      <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: r.auto, last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${r.rest.filter(shown).map(p => tile(n, p, v, {})).join('')}${r.hid.filter(shown).map(p => tile(n, p, v, {cls: 'is-hidden'})).join('')}</div>
+      <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: !r.pinned.includes(p.f), last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${r.rest.filter(shown).map(p => tile(n, p, v, {})).join('')}${r.hid.filter(shown).map(p => tile(n, p, v, {cls: 'is-hidden'})).join('')}</div>
       ${r.feat.length + r.rest.length ? '' : '<p class="note">No photo in this view.</p>'}</section>`; }).join('');
   const P = pending(n), Ps = P.filter(shown), two = g.levels === 2;
   const candTile = p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
@@ -478,7 +484,7 @@ function renderQuality(){
 const HELP = {
   diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers. Few answers = rough. The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it sits in the wrong game set.</p>`,
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time.</p>
-    <p>Drag a photo onto a featured photo to feature it there, to another view to move it, or from the candidates to add it. Hidden photos disappear everywhere, games included; × excludes a photo for good.</p>
+    <p>The first 3 photos of each view are its featured photos (Easy level, top of the sheet, Coral Finder). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. Hidden photos disappear everywhere, games included; × excludes a photo for good.</p>
     <p>The letters on each photo are its growth form (see Growth form).</p>`,
   form: `<p>The 7 IMR growth forms (Lecture 6, slides 3-10), one per photo, the main form visible: <b>Br</b> Branching, <b>En</b> Encrusting, <b>Ta</b> Tabulate, <b>Mu</b> Mushroom, <b>Ma</b> Massive, <b>Sm</b> Submassive, <b>Fo</b> Foliose/Plating; <b>∅</b> = form not visible (too close). <b>✿</b> = polyps or vesicles extended (not a form; it fills the Coral Finder "Large daytime polyps" tile).</p>
     <p>The Coral Finder growth-form tiles use them: Branching = Br + Ta, Thin plates and crusts = En + Fo, Massive or thick = Ma + Sm, Columns = Sm, Solitary = Mu, Meandering = any form of the genera it lists. Dashed = a first guess, solid = yours (always wins); a red ? = a guess to double-check.</p>

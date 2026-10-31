@@ -105,7 +105,9 @@ function build(){ const d = structuredClone(RAW); applyCuration(d, CUR); filterO
 // (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'} keeps a photo on the sheet only
 // or in games only. Nothing is written back: photos left out simply stay unused.
 const CAP = {feat: 3, sheet: 6, medium: 4, hard: 4, inat: 2, book: 3};
-const qualOf = (c, f) => ((c && c.quality) || {})[f] || AUTOQ[f] || 2;
+// The automatic rating never calls an IMR lecture photo Poor (Pierre: it misjudges slide images); only his own rating can.
+const autoQ = f => { const a = AUTOQ[f] || 2; return a === 1 && /^imrl?-/.test(f) ? 2 : a; };
+const qualOf = (c, f) => ((c && c.quality) || {})[f] || autoQ(f);
 const isCore = p => !!(p.imr || p.own);
 function applySlots(d, c){
   const use = (c && c.use) || {}, sug = PICKS.feat || {};
@@ -124,8 +126,10 @@ function applySlots(d, c){
       const ranked = [...rr, ...others].sort((a, b) => (q(a) === 1) - (q(b) === 1));
       const find = f => all.find(p => p.f === f);
       const pin = ((g.feat || {})[v] || []).map(find).filter(Boolean), hint = ((sug[n] || {})[v] || []).map(find).filter(Boolean);
-      // Automatic Featured: never a Poor photo while better ones exist (distinct observations come second to that).
-      const feat = pin.length ? pin : fill(take([...hint, ...ranked].filter(p => q(p) !== 1), CAP.feat), [...hint, ...ranked], CAP.feat);
+      // Never a Poor photo while better ones exist, except IMR lecture photos (Pierre).
+      // Featured = always the first 3 (Pierre): his pinned photos, then the best remaining ones.
+      const pool = [...hint, ...ranked].filter(p => !pin.includes(p)), k = CAP.feat - Math.min(pin.length, CAP.feat);
+      const feat = [...pin.slice(0, CAP.feat), ...fill(take(pool.filter(p => p.imr || q(p) !== 1), k), pool, k)];
       const more = fill(ranked.filter(p => isCore(p) && !feat.includes(p)), ranked.filter(p => !feat.includes(p)), CAP.sheet - feat.length);
       // Games: field photos only (lecture photos have their own quiz), never multi-coral or book photos.
       const gm = byQ(field.filter(p => use[p.f] !== 'ref')), core = gm.filter(isCore), rest = gm.filter(p => !isCore(p));
