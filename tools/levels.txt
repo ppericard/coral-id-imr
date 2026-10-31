@@ -1,0 +1,87 @@
+# genus view index action   (actions: drop | towide | tomedium | tomacro)
+# DERIVE genus view fromview index l t r b   (new photo cropped from another view's original)
+# LEVELS2 genus mergeview   (two levels only: the medium photos join wide or macro, medium row hidden)
+Pocillopora medium 1 towide
+Pocillopora medium 2 towide
+DERIVE Pocillopora medium wide 2 0.3 0.25 0.7 0.65
+Stylophora macro 1 drop
+Seriatopora medium 0 towide
+Porites medium 2 towide
+Echinopora medium 0 drop
+Astreopora medium 2 towide
+LEVELS2 Galaxea macro
+Lobophyllia medium 1 drop
+Lobophyllia medium 2 drop
+Lobophyllia macro 1 tomedium
+DERIVE Lobophyllia medium medium 0 0.25 0.2 0.75 0.7
+Pavona medium 1 drop
+Pectinia medium 0 drop
+Pectinia medium 1 drop
+DERIVE Pectinia medium wide 1 0.3 0.2 0.75 0.6
+Platygyra medium 1 drop
+Leptoria medium 1 drop
+Goniopora medium 0 drop
+Goniopora medium 2 drop
+DERIVE Goniopora medium wide 1 0.3 0.25 0.7 0.65
+LEVELS2 Plerogyra wide
+Montipora medium 1 drop
+Montipora medium 2 drop
+DERIVE Montipora medium wide 1 0.3 0.3 0.7 0.7
+Montipora macro 1 drop
+LEVELS2 Fungia wide
+LEVELS2 Lithophyllon wide
+LEVELS2 Danafungia wide
+LEVELS2 Ctenactis wide
+LEVELS2 Lobactis wide
+# COVER genus view index   (photo used on cards; indices refer to the views before any move)
+COVER Acropora medium 1
+COVER Pocillopora medium 0
+COVER Stylophora medium 1
+COVER Anacropora medium 1
+COVER Seriatopora medium 1
+COVER Porites medium 1
+COVER Tubastraea macro 2
+COVER Echinopora medium 1
+COVER Astreopora medium 0
+COVER Galaxea macro 0
+COVER Turbinaria medium 1
+COVER Mycedium medium 0
+COVER Lobophyllia macro 1
+COVER Pavona medium 2
+COVER Pachyseris medium 2
+COVER Pectinia medium 2
+COVER Platygyra medium 2
+COVER Leptoria medium 2
+COVER Goniopora medium 1
+COVER Plerogyra medium 0
+COVER Montipora medium 0
+COVER Hydnophora macro 0
+COVER Fungia medium 0
+COVER Lithophyllon medium 0
+COVER Danafungia medium 0
+COVER Ctenactis medium 0
+COVER Lobactis medium 2
+LEVELS2 Herpolitha wide
+COVER Herpolitha medium 0
+COVER Heliofungia medium 0
+DERIVE Dipsastraea medium medium 0 0.3 0.3 0.7 0.7
+Dipsastraea medium 0 drop
+Dipsastraea medium 1 drop
+COVER Dipsastraea medium 2
+Astrea medium 0 drop
+COVER Astrea medium 2
+Diploastrea medium 0 drop
+COVER Diploastrea medium 2
+Goniastrea medium 0 drop
+COVER Goniastrea medium 2
+COVER Favites medium 0
+Duncanopsammia medium 1 drop
+Duncanopsammia medium 2 drop
+COVER Duncanopsammia macro 1
+Alveopora medium 1 drop
+COVER Alveopora medium 0
+Merulina medium 1 drop
+COVER Merulina medium 0
+COVER Cyphastrea medium 0
+LEVELS2 Halomitra wide
+COVER Halomitra medium 0
