@@ -80,7 +80,8 @@ function lockScreen(msg){
 }
 
 /* ---------- Photos of a genus, as the genus sheet orders them ---------- */
-function photos(n){
+// Photos data.json gives the genus (plus approved candidates), before any "Not this genus".
+function own(n){
   const g = DATA.gen[n], two = g.levels === 2, L = [];
   VIEWS.forEach(([v]) => { (g.views[v] || []).forEach(p => L.push({...p, base: v})); ((g.more || {})[v] || []).forEach(p => L.push({...p, base: v, multi: true, extra: true})); });
   (DATA.course[n] || []).forEach(p => L.push({...p, base: p.v === 'medium' && two ? 'macro' : p.v}));
@@ -89,6 +90,15 @@ function photos(n){
   cands(n).filter(p => add[p.f]).forEach(p => L.push({...p, base: add[p.f], cand: true}));
   return L;
 }
+// "Not this genus" (curation out: {f: 'cmp' | other genus}): the photo leaves the genus; given to another genus,
+// it joins that genus in the same view (tagged with where it came from); 'cmp' keeps it for the Look-alikes section.
+const outs = n => entry(n).out || {};
+function photos(n){
+  const L = own(n).filter(p => !outs(n)[p.f]);
+  Object.keys(DATA.gen).filter(m => m !== n).forEach(m => own(m).filter(p => outs(m)[p.f] === n).forEach(p => L.push({...p, from: m})));
+  return L;
+}
+const outOf = n => own(n).filter(p => outs(n)[p.f]);
 // New candidate photos from data.json cand, not used by the site until approved here.
 const cands = n => ((DATA.cand || {})[n] || []);
 const pending = n => { const add = entry(n).add || {}; return cands(n).filter(p => !add[p.f]); };
@@ -127,7 +137,7 @@ const srcTag = p => { const o = origin(p); return `<span class="adm-src o-${o}">
 /* ---------- Edits ---------- */
 function edit(n, fn){
   const k = clone(entry(n)); fn(k);
-  ['feat', 'move', 'add'].forEach(x => { if (k[x] && !Object.keys(k[x]).length) delete k[x]; });
+  ['feat', 'move', 'add', 'out'].forEach(x => { if (k[x] && !Object.keys(k[x]).length) delete k[x]; });
   if (k.hide && !k.hide.length) delete k.hide;
   if (Object.keys(k).length) DRAFT.genera[n] = k; else delete DRAFT.genera[n];
   store.set('imr-curation-draft', DRAFT); render();
@@ -142,6 +152,7 @@ const ACT = {
   left: (n, f, v) => edit(n, k => { const L = ensureFeat(k, n, v), i = L.indexOf(f); if (i > 0) [L[i - 1], L[i]] = [L[i], L[i - 1]]; }),
   right: (n, f, v) => edit(n, k => { const L = ensureFeat(k, n, v), i = L.indexOf(f); if (i >= 0 && i < L.length - 1) [L[i + 1], L[i]] = [L[i], L[i + 1]]; }),
   addc: (n, f, v, to) => edit(n, k => { k.add = k.add || {}; k.add[f] = to; }),
+  out: (n, f, v, to) => edit(n, k => { k.out = k.out || {}; if (to === 'back') delete k.out[f]; else { k.out[f] = to; dropFeat(k, f); if (k.cover === f) delete k.cover; if (k.move) delete k.move[f]; } }),
   hide: (n, f) => edit(n, k => { if (k.add && k.add[f]) { delete k.add[f]; dropFeat(k, f); if (k.cover === f) delete k.cover; return; } k.hide = k.hide || []; if (k.hide.includes(f)) k.hide = k.hide.filter(x => x !== f); else { k.hide.push(f); dropFeat(k, f); if (k.cover === f) delete k.cover; } }),
   move: (n, f, v, to) => edit(n, k => { const p = photos(n).find(x => x.f === f); if (p.cand) { k.add[f] = to; dropFeat(k, f); return; } k.move = k.move || {}; if (to === p.base) delete k.move[f]; else k.move[f] = to; dropFeat(k, f); }),
   // Drag and drop: photo f dropped in view `to`, at featured position `at` (null: not featured).
@@ -168,14 +179,15 @@ function tile(n, p, v, st){
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>
     ${st.num ? `<span class="adm-num${st.auto ? ' auto' : ''}" title="${st.auto ? 'Featured automatically' : 'Featured by you'}">${st.num}</span>` : ''}
     ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
-    <figcaption>${p.cand ? '<span class="adm-src new" title="Candidate you added">new</span>' : ''}${srcTag(p)}${p.multi ? '<span class="adm-src multi" title="Several corals in frame: never used in games">several corals</span>' : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
+    <figcaption>${p.from ? `<span class="adm-src new" title="Taken out of ${esc(p.from)} (change it there)">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">new</span>' : ''}${srcTag(p)}${p.multi ? '<span class="adm-src multi" title="Several corals in frame: never used in games">several corals</span>' : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
     <div class="adm-acts">
       ${st.cls === 'is-hidden' ? `<button type="button" data-act="hide" class="on">Show again</button>` : `
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Use as the genus photo (cards, sheet hero)">★ Cover</button>
       <button type="button" data-act="feat" class="${st.num && !st.auto ? 'on' : ''}" title="Show in the main strip of this view">${st.num ? 'Featured' : 'Feature'}</button>
       ${st.num && !st.auto ? `<button type="button" data-act="left" aria-label="Move earlier" ${st.num === 1 ? 'disabled' : ''}>‹</button><button type="button" data-act="right" aria-label="Move later" ${st.last ? 'disabled' : ''}>›</button>` : ''}
       ${p.cand ? '<button type="button" data-act="hide" title="Back to the candidates">Remove</button>' : '<button type="button" data-act="hide" title="Hide everywhere (sheets, cards, games)">Hide</button>'}
-      <select data-act="move" aria-label="Move to another view"><option value="">Move to…</option>${moves}</select>`}
+      <select data-act="move" aria-label="Move to another view"><option value="">Move to…</option>${moves}</select>
+      ${p.from || p.cand ? '' : `<select data-act="out" aria-label="Take out of this genus"><option value="">Not this genus…</option><option value="cmp">Look-alike comparison</option><optgroup label="It shows another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`}`}
     </div></figure>`;
 }
 function render(){
@@ -198,6 +210,10 @@ function render(){
     <div class="adm-acts"><span class="adm-addl">Add to</span>${VIEWS.filter(([w]) => !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="addc" data-to="${w}">${label(n, w)}</button>`).join('')}</div></figure>`;
   const candRow = P.length ? `<section class="adm-row adm-cands"><h3>Candidates <small>${P.length} new photo${P.length > 1 ? 's' : ''} not on the site yet${P.length - Ps.length ? ` · <b>${P.length - Ps.length} filtered out</b>` : ''}. Add one to a view to use it.</small></h3>
     <div class="adm-grid">${Ps.map(candTile).join('')}</div></section>` : '';
+  const O = outOf(n), outRow = O.length ? `<section class="adm-row adm-out"><h3>Not this genus <small>${O.length} photo${O.length > 1 ? 's' : ''} taken out of <i>${esc(n)}</i></small></h3>
+    <div class="adm-grid">${O.map(p => `<figure class="adm-tile is-hidden" data-f="${esc(p.f)}"><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button>
+      <figcaption>${srcTag(p)}<span class="adm-t">${outs(n)[p.f] === 'cmp' ? 'look-alike comparison' : '→ ' + esc(outs(n)[p.f])}</span></figcaption>
+      <div class="adm-acts"><button type="button" data-act="out" data-to="back">Put back</button></div></figure>`).join('')}</div></section>` : '';
   const cnt = o => [...photos(n), ...P].filter(p => origin(p) === o).length;
   const filter = `<div class="adm-filter" role="group" aria-label="Show photos from"><span class="label">Show</span>${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">Show all</button>' : ''}</div>`;
   $v.innerHTML = `<div class="adm">
@@ -212,7 +228,7 @@ function render(){
           <p class="adm-gacts">${ch.includes(n) ? '<button type="button" class="chip" data-act="revert">Undo unsaved changes</button>' : ''}${Object.keys(k).length ? '<button type="button" class="chip" data-act="reset">Back to automatic</button>' : ''}<a class="chip" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener">Open the sheet</a></p>
         </div>
       </div>
-      ${filter}${body}${candRow}
+      ${filter}${body}${candRow}${outRow}
     </section></div>`;
   $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { const o = b.dataset.o;
     if (o === 'all') SHOW = new Set(ORIGINS.map(x => x[0])); else SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
@@ -220,7 +236,8 @@ function render(){
   $('gsel').onchange = e => { location.hash = e.target.value; };
   $v.querySelectorAll('[data-act]').forEach(el => {
     const t = el.closest('[data-f]'), f = t && t.dataset.f, v = t && t.dataset.v, a = el.dataset.act;
-    if (a === 'addc') el.onclick = () => ACT.addc(n, f, null, el.dataset.to);
+    if (a === 'out') { if (el.tagName === 'SELECT') el.onchange = () => el.value && ACT.out(n, f, v, el.value); else el.onclick = () => ACT.out(n, f, v, 'back'); }
+    else if (a === 'addc') el.onclick = () => ACT.addc(n, f, null, el.dataset.to);
     else if (a === 'move') el.onchange = () => el.value && ACT.move(n, f, v, el.value);
     else if (a === 'zoom' || a === 'zoomcover') el.onclick = () => zoom(n, f);
     else el.onclick = () => ACT[a](n, f, v);
@@ -252,8 +269,8 @@ function bindDrag(n){
   });
 }
 function zoom(n, f){
-  const lb = $('lightbox'), L = [...photos(n), ...pending(n).map(p => ({...p, base: 'cand'}))], i0 = L.findIndex(p => p.f === f); let i = i0;
-  const show = () => { const p = L[i]; lb.innerHTML = `<div class="lb-in"><img src="${img(p)}" alt=""><p class="lb-cap"><i>${esc(n)}</i> · ${p.base === 'cand' ? 'Candidate' : label(n, viewOf(n, p))} · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p>
+  const lb = $('lightbox'), L = [...photos(n), ...pending(n).map(p => ({...p, base: 'cand'})), ...outOf(n).map(p => ({...p, base: 'out'}))], i0 = L.findIndex(p => p.f === f); let i = i0;
+  const show = () => { const p = L[i]; lb.innerHTML = `<div class="lb-in"><img src="${img(p)}" alt=""><p class="lb-cap"><i>${esc(n)}</i> · ${p.base === 'cand' ? 'Candidate' : p.base === 'out' ? 'Not this genus' : label(n, viewOf(n, p))} · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p>
     <div class="lb-nav"><button type="button" data-d="-1" aria-label="Previous">‹</button><span>${i + 1} / ${L.length}</span><button type="button" data-d="1" aria-label="Next">›</button><button type="button" data-x>Close</button></div></div>`;
     lb.querySelectorAll('[data-d]').forEach(b => b.onclick = e => { e.stopPropagation(); i = (i + Number(b.dataset.d) + L.length) % L.length; show(); });
     lb.querySelector('[data-x]').onclick = close; };
