@@ -187,7 +187,7 @@ function tile(n, p, v, st){
       ${st.num && !st.auto ? `<button type="button" data-act="left" aria-label="Move earlier" ${st.num === 1 ? 'disabled' : ''}>‹</button><button type="button" data-act="right" aria-label="Move later" ${st.last ? 'disabled' : ''}>›</button>` : ''}
       ${p.cand ? '<button type="button" data-act="hide" title="Back to the candidates">Remove</button>' : '<button type="button" data-act="hide" title="Hide everywhere (sheets, cards, games)">Hide</button>'}
       <select data-act="move" aria-label="Move to another view"><option value="">Move to…</option>${moves}</select>
-      ${p.from ? '' : `<select data-act="out" aria-label="Take out of this genus"><option value="">Not this genus…</option><option value="cmp">Look-alike comparison</option><optgroup label="It shows another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`}`}
+      ${p.from || p.cand ? '' : `<select data-act="out" aria-label="Take out of this genus"><option value="">Not this genus…</option><option value="cmp">Look-alike comparison</option><optgroup label="It shows another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`}`}
     </div></figure>`;
 }
 function render(){

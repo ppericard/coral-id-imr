@@ -19,6 +19,18 @@ const cover = g => g.coverP || allPhotos(g).find(p => p.f === g.cover) || (g.vie
 // per view (in order), hidden photos and photos moved to another view. Hidden photos leave games too.
 // Candidates (data.json cand, not shown until approved) join a view when listed in add {photo: view}.
 function applyCuration(d, c){
+  // "Not this genus" (out: {f: 'cmp' | genus}) runs first for every genus, so a photo given to another genus
+  // can be featured or picked as cover there; 'cmp' sends it to the look-alike comparison images (d.cmp).
+  Object.entries((c && c.genera) || {}).forEach(([n, k]) => { const g = d.gen[n]; if (!g) return;
+    Object.entries(k.out || {}).forEach(([f, to]) => {
+      let p = null, at = null;
+      VIEWS.forEach(([v]) => ['views', 'more'].forEach(s => { const L = (g[s] || {})[v] || [], i = L.findIndex(x => x.f === f); if (i >= 0) { p = L.splice(i, 1)[0]; at = [s, v]; } }));
+      const ci = (d.course[n] || []).findIndex(x => x.f === f); if (ci >= 0) { p = d.course[n].splice(ci, 1)[0]; at = ['course']; }
+      if (!p) return;
+      if (to === 'cmp') (d.cmp = d.cmp || []).push({...p, g: [n]});
+      else if (d.gen[to] && at[0] === 'course') (d.course[to] = d.course[to] || []).push(p);
+      else if (d.gen[to]) { const G = d.gen[to], S = G[at[0]] = G[at[0]] || {}; (S[at[1]] = S[at[1]] || []).push(p); }
+    }); });
   Object.entries((c && c.genera) || {}).forEach(([n, k]) => {
     const g = d.gen[n]; if (!g) return;
     Object.entries(k.add || {}).forEach(([f, v]) => { const p = ((d.cand || {})[n] || []).find(x => x.f === f); if (p && VIEWS.some(([w]) => w === v)) (g.views[v] = g.views[v] || []).push(p); });
