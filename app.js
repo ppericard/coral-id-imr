@@ -487,15 +487,21 @@ function level(n){
 }
 function quizNav(){ return ''; }
 function bindQuizNav(){ bindGo(); }
+// What each photo set holds (shown under the level buttons) and the game rules (behind the ? button).
+const LVLNOTE = {easy: 'The photos on the genus sheets.', medium: 'Adds other good photos.', hard: 'Adds harder photos: less typical, less sharp or farther away.', lecture: 'Only the photos from the IMR lecture.'};
+const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused: say which one is in the photos.' : 'Name the genus in the photos: one colony view and one closer view of the same coral.'}
+  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? <b>Show the corallites</b> adds a close-up. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on. Every answer counts in <a href="#progress">My progress</a>.</p>
+  <p class="lede"><b>Photo sets</b> (each adds to the one before). <b>Easy</b>: the photos on the genus sheets. <b>Medium</b>: adds other good photos. <b>Hard</b>: adds less typical, less sharp or more distant photos.${cur === 'quiz' ? ' <b>Lecture</b>: only the photos from the IMR lecture.' : ''}</p>`;
 function question(cur, target, choices, prompt, set){
   const ph = set.shown, lab = VIEW_LABEL;
   let answered = false, hintShown = false;
   const fig = (p, k) => `<figure class="qph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${img(p)}" alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
   // One screen, no scrolling: the photos fill the stage (sized to the window), choices and feedback sit beside them.
-  $v.innerHTML = `<div class="q">
+  $v.innerHTML = `${gameHelp(cur)}<div class="q">
     <div class="qstage">${ph.map(fig).join('')}</div>
     <aside class="qside">
-      <div class="seg qlvl" role="group" aria-label="Photo set">${(cur === 'quiz' ? [...LEVELS, ['lecture', 'Lecture']] : LEVELS).map(([k, t]) => `<button type="button" data-lvl="${k}" aria-pressed="${cur === 'quiz' && Q.course ? k === 'lecture' : Q.level === k}" title="${k === 'easy' ? 'The photos on the genus sheets' : k === 'medium' ? 'Adds other good photos' : k === 'hard' ? 'Adds harder photos' : 'Photos from the IMR lecture'}">${t}</button>`).join('')}</div>
+      <div class="seg qlvl" role="group" aria-label="Photo set">${(cur === 'quiz' ? [...LEVELS, ['lecture', 'Lecture']] : LEVELS).map(([k, t]) => `<button type="button" data-lvl="${k}" aria-pressed="${cur === 'quiz' && Q.course ? k === 'lecture' : Q.level === k}" title="${LVLNOTE[k]}">${t}</button>`).join('')}</div>
+      <p class="lvlnote">${LVLNOTE[cur === 'quiz' && Q.course ? 'lecture' : Q.level]}</p>
       <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">${session.ok}/${session.n}</span>${quizNav(cur)}</div>
       <div class="ans">${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
