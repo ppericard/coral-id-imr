@@ -501,3 +501,7 @@ a.lt:hover{border-color:var(--accent)}
 .glink span{display:flex;flex-direction:column}
 .glink small{color:var(--muted)}
 .glink:hover{border-color:var(--accent)}
+/* Pierre-only "bad photo" flag (flag.js) */
+.pflag{position:fixed;z-index:60;padding:2px 8px;border:0;border-radius:var(--pill);background:rgb(0 0 0 / .6);color:#fff;font-size:.8rem;cursor:pointer;opacity:.75}
+.pflag:hover{opacity:1}.pflag.on{background:#c0392b;opacity:1}
+.qlvl{margin-bottom:6px}

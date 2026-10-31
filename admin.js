@@ -16,7 +16,7 @@ const img = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 
-let PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
+let PICKS = {}, PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
 // (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
 const QUAL = [[3, 'Good'], [2, 'Fair'], [1, 'Poor']];
@@ -34,6 +34,15 @@ function step(from, to, msg){
 }
 const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']), redo = () => step(FUT, HIST, ['Nothing to redo.', 'Redone.']);
 const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
+// "Bad photo" flags Pierre raised on the site (flag.js, localStorage 'imr-photo-flags'): curation.json "flag"
+// {f: {genus, view, where, at}}. Triage lists them; "Done" removes one (one at a time, never in bulk).
+const flChanged = () => !same(DRAFT.flag || {}, SAVED.flag || {});
+function importFlags(){
+  const L = store.get('imr-photo-flags', []); if (!L || !L.length) return 0;
+  DRAFT.flag = {...(DRAFT.flag || {})}; let n = 0;
+  L.forEach(x => { if (x && x.f && !DRAFT.flag[x.f]) { const {f, ...rest} = x; DRAFT.flag[f] = rest; n++; } });
+  store.set('imr-photo-flags', null); if (n) saveDraft(); return n;
+}
 // Excluded photos (curation.json "exclude" {f: reason}): unusable for good (a person, a drawing, AI…). Unlike Hide,
 // which is a per-genus editorial choice, exclusion removes the photo from every genus, game and candidate list,
 // and import scripts skip it so it never comes back. The Excluded view lists them, to restore one.
@@ -155,16 +164,24 @@ const pending = n => { const add = entry(n).add || {}; return cands(n).filter(p 
 const entry = n => DRAFT.genera[n] || {};
 const viewOf = (n, p) => (entry(n).move || {})[p.f] || p.base;
 const hidden = (n, p) => (entry(n).hide || []).includes(p.f);
-// Same order as viewGenus in app.js: round-robin IMR lecture / other observers / Pierre, multi-coral photos last.
+// Same order as applySlots in app.js: IMR lecture and Pierre's photos alternating, each by quality, then other observers,
+// Poor photos and multi-coral photos last.
 function autoOrder(L){
-  const main = L.filter(p => !p.extra), src = [main.filter(p => p.imr), main.filter(p => !p.imr && !p.own), main.filter(p => p.own)], out = [];
+  const byQ = x => x.slice().sort((a, b) => qOf(b.f) - qOf(a.f));
+  const main = L.filter(p => !p.extra), src = [main.filter(p => p.imr), main.filter(p => !p.imr && p.own)].map(byQ), out = [];
   while (src.some(x => x.length)) src.forEach(x => x.length && out.push(x.shift()));
-  return [...out.filter(p => !p.multi), ...out.filter(p => p.multi), ...L.filter(p => p.extra)];
+  out.push(...byQ(main.filter(p => !p.imr && !p.own)));
+  const ok = out.filter(p => !p.multi);
+  return [...ok.filter(p => qOf(p.f) > 1), ...ok.filter(p => qOf(p.f) === 1), ...out.filter(p => p.multi), ...L.filter(p => p.extra)];
 }
+// k photos from L in order, a different observation each time when possible (as take() in app.js).
+const takeObs = (L, k) => { const out = [], seen = new Set(); [true, false].forEach(fresh => L.forEach(p => { if (out.length < k && !out.includes(p) && (!fresh || !seen.has(p.o || p.f))) { out.push(p); seen.add(p.o || p.f); } })); return out; };
 function rowOf(n, v){
   const live = photos(n).filter(p => viewOf(n, p) === v && !hidden(n, p)), order = autoOrder(live);
   const pin = (entry(n).feat || {})[v];
-  const feat = pin ? pin.map(f => live.find(p => p.f === f)).filter(Boolean) : order.filter(p => !p.multi).slice(0, FEAT);
+  // No pick of yours: Claude's suggestion (picks.json) first, then the automatic order, as on the site.
+  const sug = ((PICKS[n] || {})[v] || []).map(f => live.find(p => p.f === f && !p.multi && !p.extra)).filter(Boolean);
+  const feat = pin ? pin.map(f => live.find(p => p.f === f)).filter(Boolean) : takeObs([...sug, ...order.filter(p => !p.multi)], FEAT);
   return {feat, auto: !pin, rest: order.filter(p => !feat.includes(p)), hid: photos(n).filter(p => viewOf(n, p) === v && hidden(n, p))};
 }
 function coverOf(n){
@@ -243,8 +260,9 @@ function tile(n, p, v, st){
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
 const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Exclude this photo for good (from every genus and game)" aria-label="Exclude for good">×</button>';
 function status(){
-  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : ''].filter(Boolean);
+  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : '', flChanged() ? 'triage flags' : ''].filter(Boolean);
   const bs = $('booksw'); if (bs) { bs.setAttribute('aria-pressed', String(bookOn(DRAFT))); bs.textContent = `CF book: ${bookOn(DRAFT) ? 'on' : 'off'}`; }
+  const tn = Object.keys(DRAFT.flag || {}).length, ta = document.querySelector('[data-mode="triage"]'); if (ta) ta.textContent = `Triage${tn ? ` (${tn})` : ''}`;
   const xn = Object.keys(DRAFT.exclude || {}).length, xa = document.querySelector('[data-mode="excluded"]'); if (xa) xa.textContent = `Excluded${xn ? ` (${xn})` : ''}`;
   const t = draftAt ? ` (saved ${draftAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})})` : '';
   $('status').textContent = parts.length ? '● Not published' : TOKEN ? '✓ Published' : 'Read-only';
@@ -254,12 +272,13 @@ function status(){
   $('save').disabled = !TOKEN || !parts.length; $('save').title = TOKEN ? 'Send your draft to the public site' : 'Unlock with a token to publish';
   if (cur[0] !== '~') lastGenus = cur;
   $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || '');
-  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded'}[cur] || 'genus'))));
+  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage'}[cur] || 'genus'))));
 }
 function render(){
   if (cur === '~quality') return renderQuality();
   if (cur === '~form') return renderForm();
   if (cur === '~excluded') return renderExcluded();
+  if (cur === '~triage') return renderTriage();
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
   const ch = changed(), n = cur, g = DATA.gen[n], cv = coverOf(n), k = entry(n);
   status();
@@ -443,11 +462,12 @@ const HELP = {
     <p>They pick the photos of the growth-form tiles in the Coral Finder; ∅ photos are never used there. Dashed letters are Claude's first guess from the image, solid ones are yours and always win.</p>
     <p>Click the letters, drag a photo to another row, or hover it and press B M S P F L C, or X for not visible. Coral Finder book photos are left out.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
+  triage: `<p>Only what needs your eye. On the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor, and the views whose Featured photos you haven't picked yet (the site uses its own pick meanwhile: IMR and your photos first, by quality).</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
 };
 function toggleHelp(){
   let h = $('admhelp'); if (h) { h.remove(); return; }
-  const m = ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded'})[cur] || 'genus';
+  const m = ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage'})[cur] || 'genus';
   h = document.createElement('div'); h.id = 'admhelp'; h.className = 'adm-help'; h.setAttribute('role', 'dialog'); h.setAttribute('aria-label', 'Help');
   h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button>${HELP[m]}`;
   h.querySelector('button').onclick = () => h.remove(); $('tools').append(h);
@@ -517,6 +537,33 @@ function renderExcluded(){
   $v.querySelectorAll('[data-act="restore"]').forEach(b => b.onclick = () => set(b.closest('[data-f]').dataset.f, null));
   $v.querySelectorAll('[data-act="zoomx"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'), p = PHOTOS[t.dataset.f]; if (p) zoomOne(p); });
 }
+// Triage: only what needs Pierre's eye. 1) photos he flagged on the site, with where they were seen;
+// 2) Featured photos rated Poor; 3) views whose Featured photos he hasn't picked yet (the site then shows its own
+// pick: best quality, mixed sources), to review genus by genus.
+function renderTriage(){
+  status();
+  const F = DRAFT.flag || {}, flagged = Object.keys(F).map(f => ({...(PHOTOS[f] || {genus: F[f].genus || '?'}), f, fl: F[f]}));
+  const when = t => { try { return new Date(t).toLocaleString([], {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}); } catch (e) { return ''; } };
+  const tile = (p, acts, cap) => `<figure class="adm-tile" data-f="${esc(p.f)}" data-g="${esc(p.genus)}">
+      <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge">${PHOTOS[p.f] ? `<img src="${img(p, 1)}" alt="" loading="lazy">` : '<span class="none">missing</span>'}</button>
+      <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a>${cap}</figcaption><div class="adm-acts">${acts}</div></figure>`;
+  const poor = []; Object.entries(DRAFT.genera).forEach(([n, k]) => Object.entries(k.feat || {}).forEach(([v, L]) => L.forEach(f => { if (PHOTOS[f] && qOf(f) === 1) poor.push({...PHOTOS[f], f, genus: n, fv: v}); })));
+  const todo = Object.keys(DATA.gen).map(n => [n, VIEWS.filter(([v]) => !((entry(n).feat || {})[v] || []).length && ((DATA.gen[n].views || {})[v] || []).length).map(x => x[1])]).filter(x => x[1].length);
+  $v.innerHTML = `<section class="adm-quality">
+    <div class="adm-qhead"><h2>Flagged on the site <small>${flagged.length}</small></h2></div>
+    ${flagged.length ? `<div class="adm-grid adm-qgrid">${flagged.map(p => tile(p, `<button type="button" data-act="thide">Hide in ${esc(p.genus)}</button><button type="button" data-act="tpoor">Poor</button><button type="button" data-act="tdone">Done</button>`,
+      `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fl.view) || [, p.fl.view || ''])[1])}</span><small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`)).join('')}</div>` : '<p class="note">Nothing flagged.</p>'}
+    ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
+    <div class="adm-qhead"><h2>Featured not picked yet <small>${todo.length} genera</small></h2></div>
+    ${todo.length ? `<p class="adm-todo">${todo.map(([n, L]) => `<a class="chip" href="#${esc(n)}"><i>${esc(n)}</i>&nbsp;<small>${L.join(', ')}</small></a>`).join(' ')}</p>` : '<p class="note">All picked.</p>'}
+  </section>`;
+  const done = f => { DRAFT.flag = {...(DRAFT.flag || {})}; delete DRAFT.flag[f]; };
+  $v.querySelectorAll('[data-act="tdone"]').forEach(b => b.onclick = () => { done(b.closest('[data-f]').dataset.f); saveDraft(); renderTriage(); });
+  $v.querySelectorAll('[data-act="tpoor"]').forEach(b => b.onclick = () => { const f = b.closest('[data-f]').dataset.f; DRAFT.quality = {...(DRAFT.quality || {}), [f]: 1}; done(f); saveDraft(); renderTriage(); });
+  $v.querySelectorAll('[data-act="thide"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'), n = t.dataset.g, f = t.dataset.f; if (!DATA.gen[n]) return;
+    done(f); if (!(entry(n).hide || []).includes(f)) ACT.hide(n, f); else { saveDraft(); renderTriage(); } });
+  $v.querySelectorAll('[data-act="zoomx"]').forEach(b => b.onclick = () => { const p = PHOTOS[b.closest('[data-f]').dataset.f]; if (p) zoomOne(p); });
+}
 function zoomOne(p){
   const lb = $('lightbox'), close = () => { lb.hidden = true; lb.innerHTML = ''; document.removeEventListener('keydown', key); }, key = e => { if (e.key === 'Escape') close(); };
   lb.innerHTML = `<div class="lb-in"><img src="${img(p)}" alt=""><p class="lb-cap"><i>${esc(p.genus)}</i> · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p><div class="lb-nav"><button type="button" data-x>Close</button></div></div>`;
@@ -528,13 +575,14 @@ const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAF
   const quality = {}; Object.keys(DRAFT.quality || {}).sort().forEach(f => { quality[f] = DRAFT.quality[f]; });
   const exclude = {}; Object.keys(DRAFT.exclude || {}).sort().forEach(f => { exclude[f] = DRAFT.exclude[f]; });
   const form = {}; Object.keys(DRAFT.form || {}).sort().forEach(f => { form[f] = DRAFT.form[f]; });
-  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {})}; };
+  const flag = {}; Object.keys(DRAFT.flag || {}).sort().forEach(f => { flag[f] = DRAFT.flag[f]; });
+  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {}), ...(Object.keys(flag).length ? {flag} : {})}; };
 async function save(){
-  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(); if (!(ch.length || q || x || bk || fm) || !TOKEN) return;
+  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(); if (!(ch.length || q || x || bk || fm || fl) || !TOKEN) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
   try {
     const out = output(), text = JSON.stringify(out, null, 2) + '\n';
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const r = await gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg, content: toB64(text), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})});
     SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); saveDraft();
     toast('Published. The public site shows it within a minute or two.');
@@ -551,7 +599,7 @@ async function start(){
   const hd = document.querySelector('header'); if (hd && window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--hdr-h', hd.offsetHeight + 'px')).observe(hd);
   $v.innerHTML = '<p class="note">Loading photos…</p>';
   const side = (u, k) => fetch(u, {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).then(j => j[k] || {}).catch(() => ({}));
-  try { [DATA, AUTOQ, AUTOF] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), side('quality.json', 'q'), side('forms.json', 'form'), loadSaved()]); }
+  try { [DATA, AUTOQ, AUTOF, PICKS] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), side('quality.json', 'q'), side('forms.json', 'form'), side('picks.json', 'feat'), loadSaved()]); }
   catch (x) { $v.innerHTML = `<p class="warn">Could not load: ${esc(x.message)}</p>`; return; }
   // Every photo of data.json by name, with its genus, for the Excluded view.
   PHOTOS = {}; Object.entries(DATA.gen).forEach(([n, g]) => [...Object.values(g.views || {}), ...Object.values(g.more || {}), (DATA.course || {})[n] || [], (DATA.cand || {})[n] || [], g.book || []].flat().forEach(p => { PHOTOS[p.f] = {...p, genus: n}; }));
@@ -560,6 +608,8 @@ async function start(){
   // Unsaved edits from an earlier visit are kept, on top of what is saved.
   const old = store.get('imr-curation-draft', null);
   DRAFT = old && old.genera ? old : clone(SAVED); snap = JSON.stringify(DRAFT);
+  const nf = importFlags(); if (nf) setTimeout(() => toast(`${nf} new photo${nf > 1 ? 's' : ''} flagged on the site: see Triage.`), 50);
+  addEventListener('storage', e => { if (e.key === 'imr-photo-flags' && e.newValue && importFlags()) render(); });
   const keep = changed().length; if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? "genera" : "genus"} not published yet.`);
   $('tools').hidden = false; $('save').onclick = save; $('download').onclick = download;
   const so = $('signout'); if (so) { so.hidden = !TOKEN; so.onclick = signOut; }
@@ -571,7 +621,7 @@ async function start(){
     if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); } else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); } });
   cur = decodeURIComponent(location.hash.slice(1)) || Object.keys(DATA.gen)[0];
   window.onhashchange = () => { cur = decodeURIComponent(location.hash.slice(1)); const h = $('admhelp'); if (h) h.remove(); render(); window.scrollTo({top: 0}); };
-  window.onbeforeunload = e => { if (TOKEN && (changed().length || qChanged() || fChanged() || xChanged())) { e.preventDefault(); e.returnValue = ''; } };
+  window.onbeforeunload = e => { if (TOKEN && (changed().length || qChanged() || fChanged() || xChanged() || flChanged())) { e.preventDefault(); e.returnValue = ''; } };
   render();
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.

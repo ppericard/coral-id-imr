@@ -88,8 +88,54 @@ function filterOrigin(d){
     if (g.coverP && !keep(g.coverP)) delete g.coverP;
   });
 }
-let RAW, CUR, FORMS = {};
-function build(){ const d = structuredClone(RAW); applyCuration(d, CUR); filterOrigin(d); applyForms(d, CUR); DATA = d; }
+let RAW, CUR, FORMS = {}, AUTOQ = {}, PICKS = {};
+function build(){ const d = structuredClone(RAW); applyCuration(d, CUR); filterOrigin(d); applyForms(d, CUR); applySlots(d, CUR); DATA = d; }
+// Photos per context (applySlots). Pierre's rule: every IMR photo and every photo of his own is used, with no cap;
+// photos from other iNat observers and approved Coral Finder book photos only fill a set that is short. Per genus
+// and view: sheet = 3 featured + the other IMR/own photos (filled up to 6 in all); games = Easy (the featured),
+// Medium (other good IMR/own photos, filled up to 4), Hard (poor ones, filled up to 4), levels adding up; Coral
+// Finder (needs variety) = featured + 2 photos from other iNat observers + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
+// (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'} keeps a photo on the sheet only
+// or in games only. Nothing is written back: photos left out simply stay unused.
+const CAP = {feat: 3, sheet: 6, medium: 4, hard: 4, inat: 2, book: 3};
+const qualOf = (c, f) => ((c && c.quality) || {})[f] || AUTOQ[f] || 2;
+const isCore = p => !!(p.imr || p.own);
+function applySlots(d, c){
+  const use = (c && c.use) || {}, sug = PICKS.feat || {};
+  // k photos from L in order, a different observation each time when possible.
+  const take = (L, k) => { const out = [], seen = new Set(); [true, false].forEach(fresh => L.forEach(p => { if (out.length < k && !out.includes(p) && (!fresh || !seen.has(p.o || p.f))) { out.push(p); seen.add(p.o || p.f); } })); return out; };
+  const fill = (L, extra, k) => L.length >= k ? L : [...L, ...take(extra.filter(p => !L.includes(p)), k - L.length)];
+  Object.entries(d.gen).forEach(([n, g]) => {
+    const course = (d.course[n] || []).map(p => ({...p, view: p.v === 'medium' && g.levels === 2 ? 'macro' : p.v}));
+    g.sl = {};
+    VIEWS.forEach(([v]) => {
+      const field = (g.views[v] || []).filter(p => !p.multi), q = p => qualOf(c, p.f), byQ = L => L.slice().sort((a, b) => q(b) - q(a));
+      const all = [...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'game');
+      // Sheet order: IMR and Pierre's photos alternating, each by quality, then other observers; Poor photos last.
+      const imr = byQ(all.filter(p => p.imr)), own = byQ(all.filter(p => !p.imr && p.own)), rr = [];
+      while (imr.length || own.length) [imr, own].forEach(L => L.length && rr.push(L.shift()));
+      const others = byQ(all.filter(p => !isCore(p)));
+      const ranked = [...rr, ...others].sort((a, b) => (q(a) === 1) - (q(b) === 1));
+      const find = f => all.find(p => p.f === f);
+      const pin = ((g.feat || {})[v] || []).map(find).filter(Boolean), hint = ((sug[n] || {})[v] || []).map(find).filter(Boolean);
+      const feat = pin.length ? pin : take([...hint, ...ranked], CAP.feat);
+      const more = fill(ranked.filter(p => isCore(p) && !feat.includes(p)), ranked.filter(p => !feat.includes(p)), CAP.sheet - feat.length);
+      // Games: field photos only (lecture photos have their own quiz), never multi-coral or book photos.
+      const gm = byQ(field.filter(p => use[p.f] !== 'ref')), core = gm.filter(isCore), rest = gm.filter(p => !isCore(p));
+      const easy = feat.filter(p => gm.includes(p)), left = p => !easy.includes(p);
+      const medium = fill(core.filter(p => left(p) && q(p) >= 2), rest.filter(p => left(p) && q(p) >= 2), CAP.medium);
+      const hard = fill(core.filter(p => left(p) && !medium.includes(p)), rest.filter(p => left(p) && !medium.includes(p)).reverse(), CAP.hard);
+      const book = (g.book || []).filter(p => p.view === v).slice(0, CAP.book);
+      g.sl[v] = {feat, more, easy: easy.length ? easy : take(gm, 3), medium, hard, finder: [...feat, ...take(others.filter(p => !feat.includes(p) && !p.imr), CAP.inat), ...book]};
+      // Featured photos lead their view, so every "first photo of the view" (Look-alikes, Compare, Lab, home) uses them.
+      if (g.views[v]) g.views[v] = [...feat.filter(p => g.views[v].includes(p)), ...g.views[v].filter(p => !feat.includes(p))];
+    });
+  });
+}
+// Game photos of genus n in view v at a level (levels add up: Medium = Easy + Medium photos).
+const LEVELS = [['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']];
+const gamePics = (n, v, lvl = 'hard') => { const s = (DATA.gen[n].sl || {})[v]; if (!s) return DATA.gen[n].views[v] || [];
+  return LEVELS.slice(0, LEVELS.findIndex(([k]) => k === lvl) + 1).flatMap(([k]) => s[k]); };
 // Growth form of each photo (Coral Finder front-page form ids, "x" = form not visible): Pierre's choice in
 // curation.json "form" wins over the first guess in forms.json. Stored on each photo as p.form (a string of ids).
 function applyForms(d, c){
@@ -204,15 +250,8 @@ function viewGenus(name){
   const g = DATA.gen[name];
   if (!g) return viewGenera();
   const paths = DATA.key.flatMap(k => k.leaves.filter(l => l.g.includes(name)).map(l => ({k, l})));
-  // Lecture photos sit in the view row they belong to (data: course[].v), after the field photos.
-  const course = (DATA.course[name] || []).map(p => ({...p, view: p.v === 'medium' && g.levels === 2 ? 'macro' : p.v}));
-  // Each view mixes sources, round-robin: IMR lecture, other iNaturalist observers, Pierre's own.
-  const inView = v => { const all = [...(g.views[v] || []), ...course.filter(p => p.view === v)];
-    const src = [all.filter(p => p.imr), all.filter(p => !p.imr && !p.own), all.filter(p => p.own)], out = [];
-    while (src.some(L => L.length)) src.forEach(L => L.length && out.push(L.shift()));
-    // Photos with several corals in frame (data: more[v], course[].multi) come last, never featured first.
-    return [...out.filter(p => !p.multi), ...out.filter(p => p.multi), ...((g.more || {})[v] || []).map(p => ({...p, multi: true})), ...(g.book || []).filter(p => p.view === v && !(g.levels === 2 && v === 'macro')).map(p => ({...p, multi: true}))]; };
-  const FEAT = 3;
+  // Each view row shows the sheet set (applySlots): 3 featured, then the other IMR and Pierre's photos behind a fold.
+  const inView = v => { const s = (g.sl || {})[v]; return s ? [...s.feat, ...s.more] : []; };
   const flat = VIEWS.flatMap(([v]) => inView(v).map(p => ({...p, genus: name, view: g.levels === 2 && v === 'macro' ? 'close' : v})));
   const cv = cover(g), ci = cv ? flat.findIndex(x => x.f === cv.f) : -1;
   const rows = VIEWS.filter(([v]) => !(g.levels === 2 && !inView(v).length)).map(([v, label]) => {
@@ -220,10 +259,7 @@ function viewGenus(name){
     if (g.levels === 2 && v === 'macro') label = 'Close-up';
     const fig = p => { const i = flat.findIndex(x => x.f === p.f);
       return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${esc(name)}, ${p.imr ? 'IMR lecture photo' : label.toLowerCase() + ' view'}" loading="lazy"></button><figcaption>${p.imr ? '<b class="lect">IMR lecture</b> ' : ''}${credit(p)}</figcaption></figure>`; };
-    // Multi-coral photos never make the featured strip, even when fewer than FEAT clean photos exist.
-    // Featured photos picked in curation.json win; otherwise the first clean photos of the round-robin.
-    const pin = ((g.feat || {})[v] || []).map(f => list.find(p => p.f === f)).filter(Boolean);
-    const feat = pin.length ? pin : list.filter(p => !p.multi).slice(0, FEAT), more = list.filter(p => !feat.includes(p));
+    const feat = g.sl[v].feat, more = g.sl[v].more;
     return `<section class="vrow"><h3>${label}${feat.length ? '' : ' <span class="gap">missing</span>'}</h3>${feat.length ? `<div class="strip">${feat.map(fig).join('')}</div>` : '<p class="note">No good photo yet for this view.</p>'}
       ${more.length ? `<details class="more"><summary>${more.length} more ${label.toLowerCase()} photo${more.length > 1 ? 's' : ''}</summary><div class="strip">${more.map(fig).join('')}</div></details>` : ''}</section>`;
   }).join('');
@@ -345,7 +381,7 @@ const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 let P = store.get('imr-coral-progress', {}) || {};
 const save = () => { store.set('imr-coral-progress', P); showProg(); syncSoon(); };
 const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
-const Q = Object.assign({view: 'any'}, store.get('imr-coral-quiz', {}), {stars: true});  // starred genera are always asked (Pierre)
+const Q = Object.assign({view: 'any', level: 'medium'}, store.get('imr-coral-quiz', {}), {stars: true});  // starred genera are always asked (Pierre)
 const saveQ = () => store.set('imr-coral-quiz', Q);
 let session = {ok: 0, n: 0}, last = null, duelPair = null;
 const pool = () => Object.keys(DATA.gen).filter(n => (Q.stars || DATA.gen[n].n) && photoSet(n).shown.length);
@@ -355,10 +391,10 @@ const pool = () => Object.keys(DATA.gen).filter(n => (Q.stars || DATA.gen[n].n) 
 function photoSet(n){
   const g = DATA.gen[n], two = g.levels === 2, need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
   const obs = {};
-  need.forEach(v => (g.views[v] || []).forEach(p => { const k = p.o || p.f; (obs[k] = obs[k] || {})[v] = (obs[k][v] || []).concat([p]); }));
+  need.forEach(v => gamePics(n, v, Q.level).forEach(p => { const k = p.o || p.f; (obs[k] = obs[k] || {})[v] = (obs[k][v] || []).concat([p]); }));
   const groups = Object.values(obs), cov = o => need.filter(v => o[v]).length, best = Math.max(0, ...groups.map(cov));
   const o = best ? pick(groups.filter(x => cov(x) === best)) : {};
-  const one = v => { const L = o[v] || g.views[v] || []; return L.length ? {...pick(L), view: v} : null; };
+  const one = v => { const L = o[v] || gamePics(n, v, Q.level); return L.length ? {...pick(L), view: v} : null; };
   // Two-level genera (e.g. Plerogyra, mushroom corals) show colony + close-up, with no hint.
   if (two) { const m = one('macro'); return {shown: [one('wide'), m && {...m, view: 'close'}].filter(Boolean), hint: null}; }
   return {shown: [one('wide'), one('medium')].filter(Boolean), hint: one('macro')};
@@ -399,12 +435,14 @@ function question(cur, target, choices, prompt, set){
   $v.innerHTML = `<div class="q">
     <div class="qstage">${ph.map(fig).join('')}</div>
     <aside class="qside">
+      ${cur.startsWith('quiz-course') ? '' : `<div class="seg qlvl" role="group" aria-label="Photo set">${LEVELS.map(([k, t]) => `<button type="button" data-lvl="${k}" aria-pressed="${Q.level === k}" title="${k === 'easy' ? 'The photos on the genus sheets' : k === 'medium' ? 'Adds other good photos' : 'Adds harder photos'}">${t}</button>`).join('')}</div>`}
       <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">${session.ok}/${session.n}</span>${quizNav(cur)}</div>
       <div class="ans">${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
     </aside></div>`;
   bindQuizNav(cur);
+  $v.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => { Q.level = b.dataset.lvl; saveQ(); route(); });
   fitStage();
   const hb = document.getElementById('hintb');
   const showHint = () => { if (hintShown || !set.hint) return; hintShown = true; const st = $v.querySelector('.qstage');
@@ -839,5 +877,6 @@ if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else ad
 const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
 const forms = () => fetch('forms.json?v=1').then(r => r.ok ? r.json() : {}).then(j => j.form || {}).catch(() => ({}));
-Promise.all([fetch('data.json?v=17').then(r => r.json()), curation(), forms()]).then(([d, c, f]) => { RAW = d; CUR = c; FORMS = f; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+const json = u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+Promise.all([fetch('data.json?v=17').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});

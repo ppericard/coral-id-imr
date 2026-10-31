@@ -193,3 +193,6 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 .adm-sheet{flex:none;margin:0 12px 0 -4px;text-decoration:none;color:var(--muted);font-size:1.05rem}
 .adm-sheet:hover{color:var(--accent)}
 .adm-sname{margin-right:8px}
+/* Triage */
+.adm-where{display:block;width:100%;color:var(--muted,#667);font-size:.75rem}
+.adm-todo{display:flex;flex-wrap:wrap;gap:6px}
