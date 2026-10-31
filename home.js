@@ -29,7 +29,6 @@
     const names = Object.keys(DATA.gen);
     // The hero mosaic: 42 tiles (39 genera + 3 repeats) fill a 14 × 3 grid, or 6 × 7 on phones.
     const nPhotos = names.reduce((a, n) => a + Object.values(DATA.gen[n].views).reduce((b, L) => b + L.length, 0), 0);
-    const seen = names.filter(n => P[n] && (P[n].ok + P[n].ko)), solid = seen.filter(n => P[n].streak >= 3);
     const lab = (typeof LAB !== 'undefined' && LAB.list.filter(p => !GRADUATED[p.id])) || [];
     $v.innerHTML = `<div class="home-page">
       <section class="hhero">
@@ -41,7 +40,6 @@
           <p class="hcta"><a class="next" href="#genera">Browse the genera</a> <a class="chip" href="#quiz">Test yourself</a></p>
         </div>
       </section>
-      ${seen.length ? `<p class="hprog"><a href="#progress">Your progress: <b>${seen.length}</b> of ${names.length} genera practised, <b>${solid.length}</b> solid (3 right in a row).</a></p>` : ''}
       <nav class="hpath" aria-label="How to use the app"><ol>${[['genera', 'Learn', 'Get to know the 39 genera', 'Acropora', 'medium'], ['quiz', 'Practice', 'Name the genus from photos until it comes without thinking', 'Platygyra', 'macro'], ['key-imr', 'Identify', 'Name a coral on a real photo: growth form first, then compare the candidates', 'Pocillopora', 'wide']]
         .map(([h, t, d, n, v]) => `<li><a href="#${h}"><img src="${ph(n, v)}" alt="" loading="lazy"><span><b>${t}</b><small>${d}</small></span></a></li>`).join('')}</ol></nav>
       ${SECTIONS.map(([id, t, d]) => `<section class="hsec"><h3><a href="${'#' + MODES[id][0][0]}">${t}</a></h3><p class="note">${d}</p><div class="htools">${MODES[id].filter(m => HOME[id].includes(m[0])).map(tile).join('')}</div></section>`).join('')}

@@ -17,8 +17,6 @@
 .hstats b{font-family:var(--display);font-size:1.4rem;color:#fff;margin-right:4px}
 .hcta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px!important}
 .hcta .chip{background:transparent;color:#fff;border-color:#fff8}
-.hprog{margin:14px 0 0}
-.hprog a{display:inline-block;background:var(--good-bg);color:var(--good);border-radius:999px;padding:6px 14px;text-decoration:none}
 .htools{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin-top:8px}
 .htool{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;color:var(--ink);text-decoration:none}
 .htool b{font-family:var(--display);font-size:1.12rem;padding:8px 12px 0}
