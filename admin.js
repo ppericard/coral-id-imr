@@ -43,7 +43,10 @@ const flChanged = () => !same(DRAFT.flag || {}, SAVED.flag || {});
 // Suggestions from the outside judging agent (suggest.json, tools/judging_import.py): Triage lists them one at a time.
 // Accept runs the normal action (move, Not this genus, exclude, hide, add); "Several corals" keeps the photo off games
 // (curation.json "use" {f: 'ref'}); Dismiss is remembered in curation.json "seen" {kind:f: 1} so it never comes back.
-const sgChanged = () => !same(DRAFT.seen || {}, SAVED.seen || {}) || !same(DRAFT.use || {}, SAVED.use || {});
+const seenOf = (o, cand) => Object.fromEntries(Object.entries(o.seen || {}).filter(([k]) => k.startsWith('cand:') === cand));
+const sgChanged = () => !same(seenOf(DRAFT, false), seenOf(SAVED, false)) || !same(DRAFT.use || {}, SAVED.use || {});
+// Candidates rejected in the Candidates view: curation.json "seen" {'cand:f': 1}. Only a "reviewed" mark: the photo stays a candidate.
+const cdChanged = () => !same(seenOf(DRAFT, true), seenOf(SAVED, true));
 function importFlags(){
   const L = store.get('imr-photo-flags', []); if (!L || !L.length) return 0;
   DRAFT.flag = {...(DRAFT.flag || {})}; let n = 0;
@@ -311,7 +314,7 @@ function tile(n, p, v, st){
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
 const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Exclude" aria-label="Exclude for good">×</button>';
 function status(){
-  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : '', flChanged() ? 'triage flags' : '', sgChanged() ? 'triage suggestions' : '', mtChanged() ? 'look-alike montages' : ''].filter(Boolean);
+  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : '', flChanged() ? 'triage flags' : '', sgChanged() ? 'triage suggestions' : '', cdChanged() ? 'candidate reviews' : '', mtChanged() ? 'look-alike montages' : ''].filter(Boolean);
   const bs = $('booksw'); if (bs) { bs.setAttribute('aria-pressed', String(bookOn(DRAFT))); bs.textContent = `CF book: ${bookOn(DRAFT) ? 'on' : 'off'}`; }
   const tn = Object.keys(DRAFT.flag || {}).length + sugCount(), ta = document.querySelector('[data-mode="triage"]'); if (ta) ta.textContent = `Triage${tn ? ` (${tn})` : ''}`;
   const xn = Object.keys(DRAFT.exclude || {}).length, xa = document.querySelector('[data-mode="excluded"]'); if (xa) xa.textContent = `Excluded${xn ? ` (${xn})` : ''}`;
@@ -323,15 +326,18 @@ function status(){
   $('save').disabled = !TOKEN || !parts.length;
   if (cur[0] !== '~') lastGenus = cur;
   $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || '');
-  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff', '~mont': 'mont'}[cur] || 'genus'))));
+  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff', '~mont': 'mont', '~cand': 'cand'}[cur] || 'genus'))));
+  const ms = $('modesel'); if (ms) { ms.innerHTML = [...document.querySelectorAll('#modes [data-mode]')].map(a => `<option value="${esc(a.getAttribute('href'))}"${a.getAttribute('aria-current') === 'true' ? ' selected' : ''}>${esc(a.textContent)}</option>`).join(''); ms.hidden = false; }
 }
 function render(){
+  document.body.classList.toggle('adm-cmode', cur === '~cand');
   if (cur === '~quality') return renderQuality();
   if (cur === '~form') return renderForm();
   if (cur === '~excluded') return renderExcluded();
   if (cur === '~triage') return renderTriage();
   if (cur === '~diff') return renderDiff();
   if (cur === '~mont') return renderMont();
+  if (cur === '~cand') return renderCand();
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
   const ch = changed(), n = cur, g = DATA.gen[n], cv = coverOf(n), k = entry(n); SHOWN_COVER = cv && cv.f;
   status();
@@ -345,7 +351,7 @@ function render(){
       ${r.feat.length + r.rest.length ? '' : '<p class="note">No photo in this view.</p>'}</section>`; }).join('');
   const P = unused(n), Ps = P.filter(shown), two = lv(n) === 2;
   const candTile = p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
-    <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span></figcaption>
+    <figcaption>${srcTag(p)}${rejected(p.f) ? '<span class="adm-src rej" title="Rejected">rejected</span>' : ''}<span class="adm-t">${esc(p.t || '')}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}${fSeg(p)}<span class="adm-qseg adm-vseg" role="group" aria-label="View">${VIEWS.filter(([w]) => !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="addc" data-to="${w}" title="Add to ${label(n, w)}">${label(n, w)}</button>`).join('')}</span>${p.from ? '' : notThis(n)}</div></figure>`;
   // Candidates: set apart from the views and folded by default (Pierre); open or closed is remembered.
   const candRow = P.length ? `<details class="adm-row adm-cands"${store.get('imr-admin-cands', false) ? ' open' : ''}><summary><h3>Candidates <small>${P.length} photo${P.length > 1 ? 's' : ''} not on the site${P.length - Ps.length ? ` · <b>${P.length - Ps.length} filtered out</b>` : ''}</small></h3></summary>
@@ -522,11 +528,12 @@ const HELP = {
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. On the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one montage each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first).</p>`,
+  cand: `<p>Every new candidate, one at a time, genera taking turns. Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←, or swipe left), Skip (→, or swipe right) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
 };
 function toggleHelp(){
   let h = $('admhelp'); if (h) { h.remove(); return; }
-  const m = ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff', '~mont': 'mont'})[cur] || 'genus';
+  const m = ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
   h = document.createElement('div'); h.id = 'admhelp'; h.className = 'adm-help'; h.setAttribute('role', 'dialog'); h.setAttribute('aria-label', 'Help');
   h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button>${HELP[m]}`;
   h.querySelector('button').onclick = () => h.remove(); $('tools').append(h);
@@ -718,6 +725,84 @@ function zoomOne(p){
   lb.querySelector('[data-x]').onclick = close; lb.hidden = false; lb.onclick = e => { if (e.target === lb) close(); }; document.addEventListener('keydown', key);
 }
 
+/* ---------- Candidates, one per screen (made for the phone) ---------- */
+// Every new candidate of every genus, one at a time: set its quality and growth form, then add it to a view,
+// reject it, send it to another genus ("Not this") or skip it. Reject is only a "reviewed" mark (curation.json
+// "seen" {'cand:f': 1}): the photo stays a candidate on its genus page, nothing is deleted. Genera take turns,
+// in a shuffled order kept in this browser; within a genus, Pierre's photos first, then Dauin, Philippines, CF book.
+const CK = f => 'cand:' + f, rejected = f => !!(DRAFT.seen || {})[CK(f)];
+const CSRCS = [['inat', 'iNat'], ['book', 'CF book'], ['all', 'All']];
+let CSRC = store.get('imr-admin-csrc', 'inat'), CSKIP = new Set(), CORDER = null;
+const srcOk = (p, s) => s === 'all' || (s === 'book') === (origin(p) === 'book');
+function candOrder(){
+  let s = store.get('imr-admin-cseed', 0); if (!s) { s = 1 + Math.floor(Math.random() * 2147483645); store.set('imr-admin-cseed', s); }
+  const rnd = () => (s = s * 16807 % 2147483647) / 2147483647, L = Object.keys(DATA.gen);
+  for (let i = L.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [L[i], L[j]] = [L[j], L[i]]; }
+  return L;
+}
+function candQueue(src){
+  CORDER = CORDER || candOrder();
+  // Each photo's turn is fixed by its place among all the genus's candidates (decided ones included), so deciding
+  // one never brings the same genus straight back.
+  const out = [], at = {};
+  CORDER.forEach(m => rawCands(m).filter(p => srcOk(p, src)).sort((a, b) => oIdx(a) - oIdx(b)).forEach((p, i) => { at[p.f] = i; }));
+  CORDER.forEach((n, gi) => { const add = entry(n).add || {};
+    cands(n).forEach(p => { if (srcOk(p, src) && !add[p.f] && !rejected(p.f)) out.push({p, n, r: (at[p.f] || 0) * 1000 + gi}); }); });
+  return out.sort((a, b) => a.r - b.r);
+}
+let candKey = null;
+function renderCand(){
+  status();
+  const Q = candQueue(CSRC), live = Q.filter(x => !CSKIP.has(x.p.f)), c = live[0], nx = live[1];
+  const seg = `<span class="adm-qseg adm-csrc" role="group" aria-label="Source">${CSRCS.map(([s, t]) => `<button type="button" data-src="${s}" aria-pressed="${s === CSRC}">${t} <b>${s === CSRC ? live.length : candQueue(s).filter(x => !CSKIP.has(x.p.f)).length}</b></button>`).join('')}</span>`;
+  if (!c) {
+    $v.innerHTML = `<section class="adm-sw adm-swempty">${seg}<p class="note">${Q.length ? `${Q.length} skipped.` : 'No candidate left.'}</p>${Q.length ? '<button type="button" class="adm-btn" data-again>Show the skipped ones</button>' : ''}</section>`;
+  } else {
+    const {p, n} = c, views = VIEWS.filter(([w]) => !(lv(n) === 2 && w === 'medium'));
+    const link = /^https?:/.test(p.o || '') ? `<a class="adm-swlink" href="${esc(p.o)}" target="_blank" rel="noopener" title="iNaturalist">iNat ↗</a>` : p.pg ? `<span class="adm-swlink">p. ${esc(p.pg)}</span>` : '';
+    $v.innerHTML = `<section class="adm-sw" data-f="${esc(p.f)}" data-g="${esc(n)}">${seg}
+      <figure class="adm-swcard">
+        <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img src="${img(p)}" alt=""></button>
+        <a class="adm-swg" href="#${encodeURIComponent(n)}" title="Genus page"><i>${esc(n)}</i>${p.from ? `<small>from ${esc(p.from)}</small>` : ''}</a>
+        <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
+        <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
+      </figure>
+      <div class="adm-acts adm-swacts">${qSeg(p)}${fSeg(p)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" data-skip>Skip</button></div></div>
+      <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${p.view === w ? ' sug' : ''}" data-add="${w}" title="Add (${i + 1})">✓ ${label(n, w)}</button>`).join('')}</div>
+    </section>`;
+    if (nx) new Image().src = img(nx.p);
+    const S = $v.querySelector('.adm-sw'), f = p.f, go = () => { CSKIP.delete(f); };
+    S.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { go(); ACT.addc(n, f, null, b.dataset.add); toast(`Added: ${n}, ${label(n, b.dataset.add)}.`); });
+    S.querySelector('[data-rej]').onclick = () => { go(); DRAFT.seen = {...(DRAFT.seen || {}), [CK(f)]: 1}; saveDraft(); render(); };
+    S.querySelector('[data-skip]').onclick = () => { CSKIP.add(f); render(); };
+    S.querySelector('[data-x]').onclick = () => { go(); ACT.exclude(n, f); };
+    const sel = S.querySelector('select[data-act="out"]'); if (sel) sel.onchange = () => { if (!sel.value) return; const to = sel.value; ACT.out(n, f, null, to); toast(to === 'cmp' ? 'Kept for the look-alike comparison.' : `Sent to ${to}.`); };
+    S.querySelector('[data-zoom]').onclick = () => zoomOne({...p, genus: n});
+    swipe(S.querySelector('.adm-swcard'), d => (d < 0 ? S.querySelector('[data-rej]') : S.querySelector('[data-skip]')).click());
+    bindQ(); bindF(S);
+  }
+  $v.querySelectorAll('[data-src]').forEach(b => b.onclick = () => { CSRC = b.dataset.src; store.set('imr-admin-csrc', CSRC); render(); });
+  const ag = $v.querySelector('[data-again]'); if (ag) ag.onclick = () => { CSKIP.clear(); render(); };
+  if (!candKey) { candKey = e => { if (cur !== '~cand' || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input,textarea,select') || !$('lightbox').hidden) return;
+    const S = $v.querySelector('.adm-sw[data-f]'); if (!S) return;
+    const b = e.key === 'ArrowLeft' ? S.querySelector('[data-rej]') : e.key === 'ArrowRight' ? S.querySelector('[data-skip]') : /^[1-3]$/.test(e.key) ? S.querySelectorAll('[data-add]')[e.key - 1] : null;
+    if (b) { e.preventDefault(); b.click(); } };
+    addEventListener('keydown', candKey); }
+}
+// Swipe the photo: left = reject, right = skip. A tap without moving still enlarges it.
+function swipe(el, done){
+  let x0 = null, y0 = 0, dx = 0, moved = false;
+  el.addEventListener('pointerdown', e => { if (e.target.closest('a,.adm-swx') || (e.pointerType === 'mouse' && e.button)) return; x0 = e.clientX; y0 = e.clientY; dx = 0; moved = false; });
+  el.addEventListener('pointermove', e => { if (x0 === null) return; dx = e.clientX - x0;
+    if (!moved && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(e.clientY - y0)) { moved = true; el.setPointerCapture(e.pointerId); }
+    if (moved) { el.style.transform = `translateX(${dx}px) rotate(${dx / 40}deg)`; el.dataset.dir = dx < -60 ? 'rej' : dx > 60 ? 'skip' : ''; } });
+  const end = () => { if (x0 === null) return; x0 = null; if (!moved) return;
+    const far = Math.abs(dx) > Math.min(110, el.offsetWidth / 4); el.style.transform = ''; el.dataset.dir = '';
+    el.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); }, {capture: true, once: true});
+    if (far) done(dx); };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', () => { x0 = null; el.style.transform = ''; el.dataset.dir = ''; });
+}
+
 /* ---------- Save / download ---------- */
 const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAFT.genera[n]).forEach(n => { genera[n] = DRAFT.genera[n]; });
   const quality = {}; Object.keys(DRAFT.quality || {}).sort().forEach(f => { quality[f] = DRAFT.quality[f]; });
@@ -730,11 +815,11 @@ const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAF
   const mont = {}; Object.keys(DRAFT.mont || {}).sort().forEach(k => { mont[k] = DRAFT.mont[k]; });
   return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(gf).length ? {gf} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {}), ...(Object.keys(flag).length ? {flag} : {}), ...(Object.keys(use).length ? {use} : {}), ...(Object.keys(seen).length ? {seen} : {}), ...(Object.keys(mont).length ? {mont} : {})}; };
 async function save(){
-  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(), sg = sgChanged(), mt = mtChanged(); if (!(ch.length || q || x || bk || fm || fl || sg || mt) || !TOKEN) return;
+  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(), sg = sgChanged(), cd = cdChanged(), mt = mtChanged(); if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt) || !TOKEN) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
   try {
     const out = output(), text = JSON.stringify(out, null, 2) + '\n';
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(mt ? ['look-alike montages'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const r = await gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg, content: toB64(text), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})});
     SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); saveDraft();
     toast('Published. The public site shows it within a minute or two.');
@@ -775,9 +860,12 @@ async function start(){
   $('help').onclick = toggleHelp;
   $('booksw').onclick = () => { if (bookOn(DRAFT)) DRAFT.book = false; else delete DRAFT.book; saveDraft(); render(); };
   $('redo').onclick = redo;
+  $('redo2').onclick = redo; $('help2').onclick = toggleHelp;
+  $('modesel').onchange = e => { location.hash = e.target.value.replace(/^#/, ''); };
   addEventListener('keydown', e => { if (!(e.ctrlKey || e.metaKey) || e.target.closest('input,textarea')) return; const k = e.key.toLowerCase();
     if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); } else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); } });
-  cur = decodeURIComponent(location.hash.slice(1)) || Object.keys(DATA.gen)[0];
+  // On a phone the page opens on the candidates, one per screen.
+  cur = decodeURIComponent(location.hash.slice(1)) || (matchMedia('(max-width: 599px)').matches ? '~cand' : Object.keys(DATA.gen)[0]);
   window.onhashchange = () => { cur = decodeURIComponent(location.hash.slice(1)); const h = $('admhelp'); if (h) h.remove(); render(); window.scrollTo({top: 0}); };
   // Every click is kept in this browser's draft, so leaving or reloading loses nothing: warn only if that save failed.
   window.onbeforeunload = e => { if (draftLost) { e.preventDefault(); e.returnValue = ''; } };
