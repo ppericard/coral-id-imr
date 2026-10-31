@@ -633,6 +633,10 @@ function abilityStep(n, s, good, d, k){
   const K = Math.max(ELO.kmin, ELO.kmax / (1 + m / ELO.n));
   s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * 100) / 100; delete s.lv; delete s.run;
 }
+// For My progress: where the genus's photo difficulty stands, and how many of its game photos the player has seen.
+const photoBand = n => { const t = ability(n) - PICKD.TARGET_OFF; return t < -0.5 ? 'easy' : t < 0.5 ? 'medium' : 'hard'; };
+const seenOf = n => { const all = new Set(VIEWS.flatMap(([v]) => gamePics(n, v, 'hard').map(p => p.f))), ps = (P[n] || {}).ps || {};
+  return `${[...all].filter(f => ps[f]).length} of ${all.size} seen`; };
 // Game set (Easy/Medium/Hard) of a photo of genus n, the prior of its difficulty; lecture or unlisted photos = Easy.
 function photoLvl(n, p){ const sl = DATA.gen[n].sl || {}; for (const v of Object.keys(sl)) for (let i = 2; i >= 0; i--) if ((sl[v][LEVELS[i][0]] || []).some(x => x.f === p.f)) return i; return 0; }
 // Photo difficulty (Elo): every RA's answers, rated by the sync sheet (?stats=1, tools/sync/Code.gs stats_). 0 = average
@@ -764,6 +768,7 @@ function answer(cur, c, target, ph, cor){
   const k = $v.querySelectorAll('[data-c]').length || 4;
   // A photo seen for the first time is the best evidence (Kellman: novel instances); one already answered right twice
   // may be memorised, so it counts as an easier photo (a right answer then looks more like a guess).
+  const th0 = ability(target), nw = ph.filter(p => !(s.ps || {})[p.f]).length;
   const ps = s.ps = s.ps || {}, d0 = ph.reduce((t, p) => t + photoDiff(target, p), 0) / Math.max(1, ph.length);
   const bk = ph.reduce((t, p) => t + photoDiff(target, p) + (!ps[p.f] ? 0.5 : ps[p.f][1] >= 2 ? -1 : 0), 0) / Math.max(1, ph.length);
   bktObs(target, s, good, bk, k);
@@ -776,7 +781,7 @@ function answer(cur, c, target, ph, cor){
   if (good && cor) s.cor = 1;  // milestone: right with the corallites photo in view
   if (good && cur.startsWith('quiz-duel')) s.du = 1;  // milestone: won a look-alike duel
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
-  if (SYNC) SYNC.log = [...(SYNC.log || []), {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur, ph: ph.map(p => p.f).join(' ')}].slice(-500);
+  if (SYNC) SYNC.log = [...(SYNC.log || []), {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur, ph: ph.map(p => p.f).join(' '), e: Math.round(100 * (1 / k + (1 - 1 / k) * sig(th0 - d0))) / 100, th: th0, nw}].slice(-500);
   save();
   $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', inatTag(ph[k])));
   // A mix-up: the stage becomes a montage, the photo shown (corallites if they were shown) next to a photo of the
@@ -860,7 +865,7 @@ function quizBoard(){
     return `<a class="pw ${cl}" href="#g-${esc(n)}" title="${tip(n)}"${tide ? ` style="--p:${genScore(n).toFixed(2)}"` : ''}>${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">${tide ? `<img class="col" src="${img(p, 's')}" alt="" loading="lazy"><b class="wave"></b>` : ''}` : ''}<span><i>${esc(n)}</i>${g.n ? '' : ' ★'}</span></a>`; };
   const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
   // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
-  const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right)` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
+  const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
   // Learning level as a fill gauge: the tile fills from the left as the genus gets closer to learned.
   const fill = n => lv[n][0] === 'mid' || lv[n][0] === 'weak' ? ` style="--p:${(100 * genScore(n)).toFixed(0)}%"` : '';
   const gi = n => shownGroup(n) || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
@@ -969,11 +974,15 @@ function mergeSaved(j){
     const mine = (l.ok || 0) + (l.ko || 0) !== (b.ok || 0) + (b.ko || 0) || (l.h || '') !== (b.h || '');
     out.streak = mine ? l.streak || 0 : r.streak || 0;
     if (mine && l.h) out.h = l.h;
-    if (mine) ['lv', 'run', 'L'].forEach(k => { if (l[k] !== undefined) out[k] = l[k]; else delete out[k]; });
+    if (mine) ['lv', 'run', 'L', 'th', 'ro'].forEach(k => { if (l[k] !== undefined) out[k] = l[k]; else delete out[k]; });
     if (l.cor || r.cor) out.cor = 1; if (l.du || r.du) out.du = 1;
     const conf = {...(r.conf || {})};
     Object.keys(l.conf || {}).forEach(k => { const v = (conf[k] || 0) + l.conf[k] - ((b.conf || {})[k] || 0); if (v > 0) conf[k] = v; else delete conf[k]; });
     if (Object.keys(conf).length) out.conf = conf; else delete out.conf;
+    // Photos seen [shown, right]: added up like the mix-ups, so two devices never lose or double-count a photo.
+    const ps = {...(r.ps || {})};
+    Object.keys(l.ps || {}).forEach(f => { const x = ps[f] || [0, 0], y = l.ps[f], z = (b.ps || {})[f] || [0, 0]; ps[f] = [0, 1].map(i => Math.max(0, x[i] + y[i] - z[i])); });
+    if (Object.keys(ps).length) out.ps = ps; else delete out.ps;
     if (out.ok + out.ko || out.h) P[g] = out; else delete P[g];
   });
   // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.

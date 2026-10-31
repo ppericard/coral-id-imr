@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 4 (2026-11-01: anonymous answers for the admin Stats page, ?answers=1)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 5 (2026-11-01: continuous difficulty, answers carry expected success, ability and new photos)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -8,7 +8,7 @@ const HEAD = ['Name', 'Updated', 'Learned', 'Seen', 'Total', 'Review first', 'Co
 const COLORS = {ok: '#dcefd9', mid: '#e3f1f3', weak: '#f7dcd6', new: '#f2f2f2'};
 const LABELS = {ok: 'Learned', mid: 'Learning', weak: 'Review', new: ''};
 // One row per quiz answer: the history behind each RA's progress. Activity sums it up per RA.
-const LOG = ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id'];
+const LOG = ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability', 'New photos'];
 const ACTIVITY = '=QUERY(Answers!A:E, "select A, count(E), sum(E), max(B) where A is not null group by A order by max(B) desc label count(E) \'Answers\', sum(E) \'Right\', max(B) \'Last answer\'", 1)';
 
 function sheet_(name, head){
@@ -20,7 +20,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 4;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 5;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -45,7 +45,7 @@ function doGet(e){
 }
 
 // POST {name, pin, data, summary: {learned, seen, total, review: [], genera: {Genus: 'ok'|'mid'|'weak'|'new'}},
-//   answers: [{id, t, g, a, ok, m, ph}]} → {ok, log: true}; log tells the app its answers are saved.
+//   answers: [{id, t, g, a, ok, m, ph, e, th, nw}]} → {ok, log: true}; log tells the app its answers are saved.
 function doPost(e){
   const p = JSON.parse(e.postData.contents), {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
@@ -74,29 +74,39 @@ function doPost(e){
 function logAnswers_(name, answers){
   if (!Array.isArray(answers) || !answers.length) return;
   const sh = sheet_('Answers', LOG);
+  if (sh.getRange(1, LOG.length).getValue() !== LOG[LOG.length - 1]) sh.getRange(1, 1, 1, LOG.length).setValues([LOG]).setFontWeight('bold');  // tab made before v5
   if (!SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Activity')) sheet_('Activity').getRange(1, 1).setFormula(ACTIVITY);
   const n = sh.getLastRow() - 1;
   const seen = new Set(n > 0 ? sh.getRange(2, 8, n, 1).getValues().map(r => String(r[0])) : []);
   const rows = answers.filter(a => a && a.id && !seen.has(String(a.id))).slice(0, 500)
-    .map(a => [name, new Date(a.t), String(a.g || ''), String(a.a || ''), a.ok ? 1 : 0, String(a.m || ''), String(a.ph || ''), String(a.id)]);
+    .map(a => [name, new Date(a.t), String(a.g || ''), String(a.a || ''), a.ok ? 1 : 0, String(a.m || ''), String(a.ph || ''), String(a.id), num_(a.e), num_(a.th), num_(a.nw)]);
   if (!rows.length) return;
   const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
   if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
   sh.getRange(at, 1, rows.length, LOG.length).setValues(rows);
 }
+const num_ = x => typeof x === 'number' && isFinite(x) ? x : '';
 
 // Anonymous id of an RA: the same for the same name, no name in it. The admin page computes it for its own name only.
 function aid_(name){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|anon|' + String(name).trim().toLowerCase(), Utilities.Charset.UTF_8)).slice(0, 8);
 }
 
-// {ok, rows: [[id, time ms, genus shown, answered, right 0|1, mode, photos]], players: {id: [learned, seen, total]}}.
+// {ok, rows: [[id, time ms, genus shown, answered, right 0|1, mode, photos, expected, ability, new photos]],
+//   players: {id: [learned, seen, total, {genus: ability}]}}. Expected/ability/new photos are null on answers before v5.
 function answers_(){
   const ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName('Answers'), ra = ss.getSheetByName('RAs'), out = {ok: true, rows: [], players: {}};
-  if (sh && sh.getLastRow() > 1) out.rows = sh.getRange(2, 1, sh.getLastRow() - 1, 7).getValues().filter(r => r[0])
-    .map(r => [aid_(r[0]), new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6])]);
-  if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, 5).getValues().filter(r => r[0])
-    .forEach(r => out.players[aid_(r[0])] = [Number(r[2]) || 0, Number(r[3]) || 0, Number(r[4]) || 0]);
+  if (sh && sh.getLastRow() > 1) out.rows = sh.getRange(2, 1, sh.getLastRow() - 1, 11).getValues().filter(r => r[0])
+    .map(r => [aid_(r[0]), new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6])]
+      .concat([8, 9, 10].map(i => r[i] === '' ? null : Number(r[i]))));
+  if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, 8).getValues().filter(r => r[0])
+    .forEach(r => out.players[aid_(r[0])] = [Number(r[2]) || 0, Number(r[3]) || 0, Number(r[4]) || 0, abilities_(r[7])]);
+  return out;
+}
+// Per-genus ability (th) from an RA's saved progress, nothing else from it.
+function abilities_(data){
+  const out = {};
+  try { const P = JSON.parse(JSON.parse(data || '{}')['imr-coral-progress'] || '{}'); Object.keys(P).forEach(g => { if (typeof P[g].th === 'number') out[g] = P[g].th; }); } catch (e) {}
   return out;
 }
 
