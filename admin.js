@@ -279,7 +279,7 @@ function tile(n, p, v, st){
     ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
     <figcaption>${p.from ? `<span class="adm-src new" title="From ${esc(p.from)}">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">new</span>' : ''}${srcTag(p)}${p.multi ? '<span class="adm-src multi" title="Several corals">several corals</span>' : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}${fSeg(p)}
-      ${st.cls === 'is-hidden' ? `<button type="button" data-act="hide" class="on">Show again</button>` : `
+      ${st.cls === 'is-hidden' ? `<button type="button" data-act="hide" class="on">Show again</button><button type="button" data-act="exclude" title="Delete">Delete</button>` : `
       <span class="adm-qseg adm-vseg" role="group" aria-label="View">${moves}</span>
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Cover">★ Cover</button>
       ${p.cand ? '<button type="button" data-act="hide" title="Back to the candidates">Remove</button>' : '<button type="button" data-act="hide" title="Hide">Hide</button>'}
