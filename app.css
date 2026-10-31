@@ -512,6 +512,10 @@ a.lt:hover{border-color:var(--accent)}
 :root[data-size="l"] .tipg{grid-template-columns:300px minmax(0,1fr)}
 :root[data-size="s"] .cmprow{max-width:640px}
 :root[data-size="m"] .cmprow{max-width:960px}
+/* Genus sheet cover: S/M/L sets its share of the row (phones: its width, centred). */
+:root[data-size="s"] .hero{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
+:root[data-size="l"] .hero{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}
+@media (max-width:700px){:root[data-size] .hero{grid-template-columns:minmax(0,1fr)}:root[data-size="s"] .hero-ph{width:60%;justify-self:center}:root[data-size="m"] .hero-ph{width:85%;justify-self:center}}
 
 /* Sync status: quiet line when saved, a box that stands out when answers are not saved. */
 .sync .sline{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:0;font-size:.9rem;color:var(--muted)}
