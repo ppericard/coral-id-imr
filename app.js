@@ -152,7 +152,8 @@ function applySlots(d, c){
       // Featured = always the first 3 (Pierre): his pinned photos, then the best remaining ones.
       const pool = [...hint, ...ranked].filter(p => !pin.includes(p)), k = CAP.feat - Math.min(pin.length, CAP.feat);
       const feat = [...pin.slice(0, CAP.feat), ...fill(take(pool.filter(p => p.imr || q(p) !== 1), k), pool, k)];
-      const more = fill(ranked.filter(p => isCore(p) && !feat.includes(p)), ranked.filter(p => !feat.includes(p)), CAP.sheet - feat.length);
+      // Sheet (Pierre): strictly the first 6 per view in the admin order, the 3 featured then the next 3 (games still use them all).
+      const more = ranked.filter(p => !feat.includes(p)).slice(0, CAP.sheet - feat.length);
       // Games: field photos only (lecture photos have their own quiz), never multi-coral or book photos.
       const gm = byQ(field.filter(p => use[p.f] !== 'ref')), core = gm.filter(isCore), rest = gm.filter(p => !isCore(p));
       const easy = feat.filter(p => gm.includes(p)), left = p => !easy.includes(p);
