@@ -198,3 +198,5 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 .adm-tchips{display:flex;flex-wrap:wrap;gap:6px}
 /* Growth form guess Claude is unsure about */
 .adm-fseg.unsure{position:relative}.adm-fseg.unsure::after{content:"?";position:absolute;right:-6px;top:-8px;width:16px;height:16px;border-radius:50%;background:var(--bad,#c0392b);color:#fff;font:700 .7rem/16px var(--body);text-align:center}
+/* Triage: one near-duplicate set per box (the photo to keep first) */
+.adm-dup{padding:8px;border:1px dashed var(--line);border-radius:10px;margin-bottom:10px}
