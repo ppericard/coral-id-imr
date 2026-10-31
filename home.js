@@ -10,9 +10,13 @@
   };
   const SECTIONS = [
     ['learn', 'Learn', 'Get to know the genera and the features that separate them.'],
-    ['identify', 'Identify', 'Work out the genus of the coral in front of you.'],
-    ['practice', 'Practice', 'Train your eye until it becomes automatic.']
+    ['practice', 'Practice', 'Train your eye until it becomes automatic.'],
+    ['identify', 'Identify', 'Work out the genus of the coral in front of you.']
   ];
+  // Few entry points per step on the home page; the section tabs still list everything.
+  const HOME = {learn: ['genera', 'cmp'], practice: ['quiz', 'quiz-duel', 'pairs', 'reveal'], identify: ['key-imr', 'key']};
+  // Reference visualisations: useful on the side, not steps of the path.
+  const TOOLS = ['map', 'web', 'size', 'gallery', 'matrix', 'elim', 'anatomy'];
   const ph = (n, v) => { const g = DATA.gen[n]; if (!g) return ''; const p = (g.views[v] || [])[0] || (g.views.macro || [])[0] || cover(g); return p ? img(p, 's') : ''; };
   // Lab prototypes not yet graduated, as [hash, title, description, beta] for the section they are planned for.
   const betas = sec => (typeof LAB !== 'undefined' ? LAB.list : []).filter(p => PLANNED[p.id] === sec && !GRADUATED[p.id]).map(p => ['lab-' + p.id, p.title, p.blurb.split(/[.:]/)[0], true]);
@@ -40,9 +44,10 @@
       ${seen.length ? `<p class="hprog"><a href="#progress">Your progress: <b>${seen.length}</b> of ${names.length} genera practised, <b>${solid.length}</b> solid (3 right in a row).</a></p>` : ''}
       <nav class="hpath" aria-label="How to use the app"><ol>${[['genera', 'Learn', 'Get to know the 39 genera', 'Acropora', 'medium'], ['quiz', 'Practice', 'Name the genus from photos until it comes without thinking', 'Platygyra', 'macro'], ['key-imr', 'Identify', 'Name a coral on a real photo: growth form first, then compare the candidates', 'Pocillopora', 'wide']]
         .map(([h, t, d, n, v]) => `<li><a href="#${h}"><img src="${ph(n, v)}" alt="" loading="lazy"><span><b>${t}</b><small>${d}</small></span></a></li>`).join('')}</ol></nav>
-      ${SECTIONS.map(([id, t, d]) => `<section class="hsec"><h3><a href="${'#' + MODES[id][0][0]}">${t}</a></h3><p class="note">${d}</p><div class="htools">${[...MODES[id], ...betas(id)].map(tile).join('')}</div></section>`).join('')}
+      ${SECTIONS.map(([id, t, d]) => `<section class="hsec"><h3><a href="${'#' + MODES[id][0][0]}">${t}</a></h3><p class="note">${d}</p><div class="htools">${MODES[id].filter(m => HOME[id].includes(m[0])).map(tile).join('')}</div></section>`).join('')}
+      <section class="hsec"><h3>Tools</h3><p class="note">Visual references to explore the genera and their features.</p><div class="htools small">${TOOLS.map(t => (typeof LAB !== 'undefined' && LAB.list.find(p => p.id === t))).filter(Boolean).map(p => tile(['lab-' + p.id, p.title, '', !GRADUATED[p.id]])).join('')}</div></section>
       <section class="hsec hlab"><h3><a href="#lab">Lab</a></h3><p class="note">Where new ideas are tried out. Beta modules graduate into their section once they are ready.</p>
-        <div class="labgrad">${lab.filter(p => !PLANNED[p.id]).map(p => `<a href="#lab-${p.id}"><span class="labicon" aria-hidden="true">${p.icon || ''}</span><b>${esc(p.title)}</b></a>`).join('')}<a href="#lab"><b>All experiments ›</b></a></div></section>
+        <div class="labgrad">${lab.filter(p => !TOOLS.includes(p.id)).map(p => `<a href="#lab-${p.id}"><span class="labicon" aria-hidden="true">${p.icon || ''}</span><b>${esc(p.title)}</b></a>`).join('')}<a href="#lab"><b>All experiments ›</b></a></div></section>
     </div>`;
   };
 })();

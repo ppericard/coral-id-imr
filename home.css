@@ -19,7 +19,7 @@
 .hcta .chip{background:transparent;color:#fff;border-color:#fff8}
 .hprog{margin:14px 0 0}
 .hprog a{display:inline-block;background:var(--good-bg);color:var(--good);border-radius:999px;padding:6px 14px;text-decoration:none}
-.htools{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:8px}
+.htools{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin-top:8px}
 .htool{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;color:var(--ink);text-decoration:none}
 .htool b{font-family:var(--display);font-size:1.12rem;padding:8px 12px 0}
 .htool small{color:var(--muted);padding:0 12px 10px;font-size:.85rem}
@@ -72,3 +72,8 @@
 .betatag{font-style:normal;font-family:var(--body);font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:var(--plate);color:var(--band-ink);border-radius:4px;padding:1px 6px;vertical-align:2px}
 .htool.beta .hpv img{opacity:.85}
 .htool:hover{border-color:var(--accent)}
+.htools.small{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+.htools.small small{display:none}
+.htools.small b{font-size:1rem;padding-bottom:8px}
+.htools:not(.small) .htool b{font-size:1.3rem}
+.htools:not(.small) .htool small{font-size:.95rem}
