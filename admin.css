@@ -246,3 +246,20 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 .adm-menu a:hover,.adm-menu button:hover{background:var(--surface-2)}
 .adm-menu [hidden]{display:none}
 .adm-modes a{white-space:nowrap}
+/* Montages: one row per classic look-alike pair; the montage preview, then each genus's photos of that view to pick from. */
+.adm-mont{display:flex;flex-direction:column;gap:14px}
+.adm-mrow{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+.adm-mrow.set{border-color:var(--accent)}
+.adm-mhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.adm-mhead small{color:var(--muted)}
+.adm-mbody{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:12px}
+.adm-mprev{display:grid;grid-template-columns:1fr 1fr;gap:3px;background:#000;border-radius:var(--r-sm);overflow:hidden;align-self:start}
+.adm-mprev img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.adm-msides{display:flex;flex-direction:column;gap:6px;min-width:0}
+.adm-msides i{font-family:var(--display);font-weight:700}
+.adm-mstrip{display:flex;flex-wrap:wrap;gap:4px}
+.adm-mth{position:relative;padding:0;border:2px solid transparent;border-radius:6px;overflow:hidden;width:96px;background:none;cursor:pointer}
+.adm-mth img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.adm-mth .adm-src{position:absolute;left:2px;bottom:2px;font-size:.6rem}
+.adm-mth.on{border-color:var(--accent)}
+@media (max-width:760px){.adm-mbody{grid-template-columns:minmax(0,1fr)}}
