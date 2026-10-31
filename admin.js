@@ -736,9 +736,9 @@ function zoomOne(p){
 // "seen" {'cand:f': 1}): the photo stays a candidate on its genus page, nothing is deleted. Genera take turns,
 // in a shuffled order kept in this browser; within a genus, Pierre's photos first, then Dauin, Philippines, CF book.
 const CK = f => 'cand:' + f, rejected = f => !!(DRAFT.seen || {})[CK(f)];
-const CSRCS = [['inat', 'iNat'], ['book', 'CF book'], ['all', 'All']];
-let CSRC = store.get('imr-admin-csrc', 'inat'), CSKIP = new Set(), CORDER = null;
-const srcOk = (p, s) => s === 'all' || (s === 'book') === (origin(p) === 'book');
+const CSRCS = [['own', 'Pierre'], ['dauin', 'Dauin'], ['ph', 'PH'], ['book', 'CF'], ['all', 'All']];
+let CSRC = store.get('imr-admin-csrc2', 'dauin'), CSKIP = new Set(), CORDER = null;
+const srcOk = (p, s) => s === 'all' || origin(p) === s;
 function candOrder(){
   let s = store.get('imr-admin-cseed', 0); if (!s) { s = 1 + Math.floor(Math.random() * 2147483645); store.set('imr-admin-cseed', s); }
   const rnd = () => (s = s * 16807 % 2147483647) / 2147483647, L = Object.keys(DATA.gen);
@@ -787,7 +787,7 @@ function renderCand(){
     swipe(S.querySelector('.adm-swcard'), d => (d < 0 ? S.querySelector('[data-rej]') : S.querySelector('[data-skip]')).click());
     bindQ(); bindF(S);
   }
-  $v.querySelectorAll('[data-src]').forEach(b => b.onclick = () => { CSRC = b.dataset.src; store.set('imr-admin-csrc', CSRC); render(); });
+  $v.querySelectorAll('[data-src]').forEach(b => b.onclick = () => { CSRC = b.dataset.src; store.set('imr-admin-csrc2', CSRC); render(); });
   const ag = $v.querySelector('[data-again]'); if (ag) ag.onclick = () => { CSKIP.clear(); render(); };
   if (!candKey) { candKey = e => { if (cur !== '~cand' || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input,textarea,select') || !$('lightbox').hidden) return;
     const S = $v.querySelector('.adm-sw[data-f]'); if (!S) return;

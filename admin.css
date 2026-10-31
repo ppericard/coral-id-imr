@@ -345,3 +345,5 @@ body.adm-cmode .adm-toast{bottom:auto;top:calc(var(--hdr-h,64px) + 56px);pointer
 .adm-cropbar button{flex:1;font:inherit;font-weight:600;min-height:48px;border:1px solid #fff6;border-radius:var(--r-sm);background:#222;color:#fff;cursor:pointer}
 .adm-cropbar .ok{background:var(--good-bg);color:var(--good);border-color:var(--good)}
 .adm-swrow .adm-swcrop.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.adm-csrc button{white-space:nowrap;padding:0 2px}
+@media (max-width:599px){.adm-csrc button{font-size:.78rem}}
