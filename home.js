@@ -27,20 +27,17 @@
   window.viewHome = function(){
     document.documentElement.dataset.page = 'lab';  // full width, like the Lab (lab.css)
     const names = Object.keys(DATA.gen);
-    // The hero mosaic: 42 tiles (39 genera + 3 repeats) fill a 14 × 3 grid, or 6 × 7 on phones.
-    const nPhotos = names.reduce((a, n) => a + Object.values(DATA.gen[n].views).reduce((b, L) => b + L.length, 0), 0);
+    // The hero: one slim band of corallite tiles (16 genera, 8 on phones) behind a title and two buttons.
     const lab = (typeof LAB !== 'undefined' && LAB.list.filter(p => !GRADUATED[p.id])) || [];
     $v.innerHTML = `<div class="home-page">
       <section class="hhero">
-        <div class="hmosaic" aria-hidden="true">${(m => [...m, ...m.slice(0, 3)])(shuffle(names)).map((n, i) => `<a href="#g-${encodeURIComponent(n)}" tabindex="-1" style="--i:${i}"><img src="${ph(n, 'macro')}" alt="" loading="lazy"><span>${esc(n)}</span></a>`).join('')}</div>
+        <div class="hmosaic" aria-hidden="true">${shuffle(names).slice(0, 16).map((n, i) => `<a href="#g-${encodeURIComponent(n)}" tabindex="-1" style="--i:${i}"><img src="${ph(n, 'macro')}" alt="" loading="lazy"><span>${esc(n)}</span></a>`).join('')}</div>
         <div class="hintro">
-          <h2>Learn the 39 coral genera of the IMR slate</h2>
-          <p>From the colony to the corallites: genus sheets, keys and games built on IMR Lecture 6 and the Coral Finder, with photos from Dauin.</p>
-          <p class="hstats"><span><b>${names.length}</b> genera</span><span><b>${DATA.imrg.length}</b> IMR groups</span><span><b>${nPhotos}</b> photos</span></p>
+          <h2>The 39 coral genera of the IMR slate</h2>
           <p class="hcta"><a class="next" href="#genera">Browse the genera</a> <a class="chip" href="#quiz">Test yourself</a></p>
         </div>
       </section>
-      <nav class="hpath" aria-label="How to use the app"><ol>${[['genera', 'Learn', 'Get to know the 39 genera', 'Acropora', 'medium'], ['quiz', 'Practice', 'Name the genus from photos until it comes without thinking', 'Platygyra', 'macro'], ['key-imr', 'Identify', 'Name a coral on a real photo: growth form first, then compare the candidates', 'Pocillopora', 'wide']]
+      <nav class="hpath" aria-label="How to use the app"><ol>${[['genera', 'Learn', 'Get to know the 39 genera', 'Acropora', 'medium'], ['quiz', 'Practice', 'Name the genus from photos until it comes without thinking', 'Platygyra', 'macro'], ['finder', 'Identify', 'Name a coral on a real photo: growth form first, then compare the candidates', 'Pocillopora', 'wide']]
         .map(([h, t, d, n, v]) => `<li><a href="#${h}"><img src="${ph(n, v)}" alt="" loading="lazy"><span><b>${t}</b><small>${d}</small></span></a></li>`).join('')}</ol></nav>
       ${SECTIONS.map(([id, t, d]) => `<section class="hsec"><h3><a href="${'#' + MODES[id][0][0]}">${t}</a></h3><p class="note">${d}</p><div class="htools">${MODES[id].filter(m => HOME[id].includes(m[0])).map(tile).join('')}</div></section>`).join('')}
       <section class="hsec"><h3>Tools</h3><p class="note">Visual references to explore the genera and their features.</p><div class="htools small">${TOOLS.map(t => (typeof LAB !== 'undefined' && LAB.list.find(p => p.id === t))).filter(Boolean).map(p => tile(['lab-' + p.id, p.title, '', !GRADUATED[p.id]])).join('')}</div></section>

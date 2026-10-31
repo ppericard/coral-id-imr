@@ -82,7 +82,7 @@ const bySlate = L => Object.keys(DATA.gen).filter(n => L.includes(n));
 function card(name, group){
   const g = DATA.gen[name], p = cover(g), ig = (group === true || group === 'stripe') && g.ig ? DATA.imrg.find(x => x.n === g.ig) : null;
   const im = p ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(name)}" loading="lazy">` : `<span class="ph none">no photo</span>`;
-  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${(ig.n * 137) % 360}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.n ? 'No. ' + g.n + ' · ' : '<b class="star">★ not surveyed</b> · '}${esc(g.fam)}</small><p>${esc(g.sum)}</p></span></a>`;
+  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${(ig.n * 137) % 360}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${esc(g.sum)}</p></span></a>`;
 }
 function bindCards(root = $v){ root.querySelectorAll('[data-g]').forEach(b => b.onclick = () => go('g-' + b.dataset.g)); }
 function bindGo(root = $v){ root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go)); }
@@ -135,10 +135,10 @@ function viewGenera(){
     const names = Object.keys(DATA.gen).filter(n => (!azFam || DATA.gen[n].fam === azFam || (azFam === '★' && !DATA.gen[n].n)) && (!q || (n + ' ' + DATA.gen[n].crit.join(' ') + ' ' + DATA.gen[n].imr.join(' ')).toLowerCase().includes(q)));
     let html;
     if (azOrder === 'lecture') {
-      const gi = n => DATA.gen[n].ig || 99;
+      const gi = n => shownGroup(n) || 99;
       names.sort((a, b) => gi(a) - gi(b) || slateIdx(a) - slateIdx(b));
-      html = names.map((n, i) => { const k = DATA.gen[n].ig, gr = DATA.imrg.find(x => x.n === k);
-        const head = i && (DATA.gen[names[i - 1]].ig || 99) === gi(n) ? '' : gr
+      html = names.map((n, i) => { const k = shownGroup(n), gr = DATA.imrg.find(x => x.n === k);
+        const head = i && gi(names[i - 1]) === gi(n) ? '' : gr
           ? `<h3 class="gdiv" style="--g:${(gr.n * 137) % 360}"><span class="gn">${gr.n}</span>${esc(gr.t)}</h3>`
           : '<h3 class="gdiv"><span class="gn">★</span>Not covered in the lecture</h3>';
         return head + card(n, 'stripe'); }).join('');
@@ -217,8 +217,10 @@ let cmpView = store.get('imr-coral-cmpview', 'medium');
 const viewSeg = () => `<div class="seg" role="group" aria-label="View">${VIEWS.map(([v, t]) => `<button type="button" data-cv="${v}" aria-pressed="${cmpView === v}">${t}</button>`).join('')}</div>`;
 const bindViewSeg = redraw => $v.querySelectorAll('[data-cv]').forEach(b => b.onclick = () => { cmpView = b.dataset.cv; store.set('imr-coral-cmpview', cmpView); redraw(); });
 // IMR lecture images that compare look-alikes side by side (data.json cmp), for the given genera.
-const cmpShots = L => (DATA.cmp || []).filter(c => c.g.some(n => L.includes(n))).map(c =>
-  `<figure class="lcmp"><a href="${img(c)}" target="_blank" rel="noopener"><img src="${img(c, 's')}" srcset="${srcset(c)}" sizes="(max-width:700px) 100vw, 640px" alt="Look-alike comparison: ${esc(c.g.join(', '))}" loading="lazy"></a><figcaption>${c.imr ? `<b class="lect">IMR lecture</b>${c.slide ? ` slide ${c.slide}` : ''}` : credit(c)}${c.cap ? ': ' + esc(c.cap) : ''}</figcaption></figure>`).join('');
+// Course comparison images: small thumbnails that open the shared viewer.
+const cmpShots = L => { const C = (DATA.cmp || []).filter(c => c.g.some(n => L.includes(n))); return C.length ? `<div class="lcmps">${C.map(c =>
+  `<figure class="lcmp"><a href="${img(c)}" data-cmp="${DATA.cmp.indexOf(c)}"><img src="${img(c, 's')}" alt="Look-alike comparison: ${esc(c.g.join(', '))}" loading="lazy"></a><figcaption>${c.imr ? `<b class="lect">IMR lecture</b>${c.slide ? ` slide ${c.slide}` : ''}` : credit(c)}${c.cap ? ': ' + esc(c.cap) : ''}</figcaption></figure>`).join('')}</div>` : ''; };
+document.addEventListener('click', e => { const a = e.target.closest('[data-cmp]'); if (!a) return; e.preventDefault(); zoom([DATA.cmp[+a.dataset.cmp]], 0); });
 // Bottom of a genus sheet: the genus and each of its look-alikes at the same size and in the same view,
 // each with its deciding feature and a link to the side-by-side comparison.
 function lookHub(name){
@@ -229,6 +231,16 @@ function lookHub(name){
     ${L.map(n => { const m = mixedUp(name, n); return `<a class="lt" href="#cmp-${esc(name)}|${esc(n)}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(DATA.gen[n].sum)}</span>${(DATA.gen[name].lsrc || {})[n] ? `<small class="lsrc">${esc(DATA.gen[name].lsrc[n])}</small>` : ''}<b class="cmpgo">Compare side by side →</b></span></a>`; }).join('')}</div>
     ${cmpShots([name])}`;
 }
+// Starred genera are on the slate as look-alikes of surveyed genera. Those the lecture doesn't group are shown
+// in the lecture group most of their Coral Finder look-alikes belong to (ties: the first listed look-alike).
+function shownGroup(n){
+  const g = DATA.gen[n]; if (g.ig) return g.ig;
+  const L = g.look.filter(b => DATA.gen[b] && DATA.gen[b].ig), c = {};
+  L.forEach(b => c[DATA.gen[b].ig] = (c[DATA.gen[b].ig] || 0) + 1);
+  return L.reduce((best, b) => c[DATA.gen[b].ig] > c[best] ? DATA.gen[b].ig : best, L.length ? DATA.gen[L[0]].ig : 0) || 0;
+}
+const starNote = n => { const g = DATA.gen[n]; if (g.n) return ''; const k = shownGroup(n), L = g.look.filter(b => DATA.gen[b] && DATA.gen[b].ig === k);
+  return L.length ? `★ look-alike of ${L.map(b => `<i>${esc(b)}</i>`).join(', ')}` : ''; };
 function pairs(){
   const seen = new Set(), out = [];
   Object.keys(DATA.gen).forEach(a => DATA.gen[a].look.forEach(b => { const k = [a, b].sort().join('|'); if (DATA.gen[b] && !seen.has(k)) { seen.add(k); out.push(k.split('|')); } }));
@@ -247,17 +259,17 @@ function viewCompareList(){
     inside.sort(byMix); outside.sort(byMix);
     const mine = [...inside, ...outside].reduce((s, p) => s + mixedUp(...p), 0);
     return `<section class="lfam"><h3>${t}<small>${L.length} ${L.length > 1 ? "genera" : "genus"}${mine ? ` · <b class="bad">you mixed some up ×${mine}</b>` : ''}</small></h3>
-      <div class="lrow">${L.map(n => `<a class="lt" href="#g-${esc(n)}">${viewShot(n, cmpView)}<span><i>${esc(n)}</i><small>${tag(G[n])} · ${esc(G[n].fam)}</small><span class="psum">${esc(G[n].sum)}</span></span></a>`).join('')}</div>
+      <div class="lrow">${L.map(n => `<a class="lt" href="#g-${esc(n)}">${viewShot(n, cmpView)}<span><i>${esc(n)}</i><small>${G[n].n || G[n].ig ? tag(G[n]) : starNote(n)} · ${esc(G[n].fam)}</small><span class="psum">${esc(G[n].sum)}</span></span></a>`).join('')}</div>
       ${inside.length ? `<p class="lpairs"><span class="label">Compare</span>${inside.map(chip).join('')}</p>` : ''}
       ${outside.length ? `<p class="lpairs"><span class="label">Other groups</span>${outside.map(chip).join('')}</p>` : ''}
       ${cmpShots(L)}</section>`; };
-  const none = bySlate(Object.keys(G).filter(n => !G[n].ig));
+  const none = bySlate(Object.keys(G).filter(n => !shownGroup(n)));
   $v.innerHTML = `<h2>Look-alikes</h2>
   <p class="lede">Genera by IMR lecture group, compared in the same view with what sets each apart. The pairs to compare are the Coral Finder look-alikes; open one to see all three views side by side. Each genus sheet also lists its own look-alikes.</p>
   <div class="seg-row"><span class="label">Show</span>${viewSeg()}</div>
-  ${DATA.imrg.map(x => grp(`<span class="gn">${x.n}</span> ${esc(x.t)}`, bySlate(Object.keys(G).filter(n => G[n].ig === x.n)))).join('')}
+  ${DATA.imrg.map(x => grp(`<span class="gn">${x.n}</span> ${esc(x.t)}`, bySlate(Object.keys(G).filter(n => shownGroup(n) === x.n)))).join('')}
   ${none.length ? grp('<span class="gn">★</span> Not covered in the lecture', none) : ''}`;
-  bindViewSeg(viewCompareList);
+  bindViewSeg(() => { const y = window.scrollY; viewCompareList(); pageHelp('cmp'); window.scrollTo(0, y); });
 }
 function viewCompare(a, b){
   const A = DATA.gen[a], B = DATA.gen[b];
@@ -455,7 +467,7 @@ function quizBoard(){
   const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
   // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
   const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right)` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
-  const gi = n => DATA.gen[n].ig || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
+  const gi = n => shownGroup(n) || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
   const VIEWS = {
     photos: () => `<div class="pgrid pwall">${list.map(tile).join('')}</div>`,
     slate: () => `<div class="pgrid pslate">${list.map(n => `<a class="ps ${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"><b>${DATA.gen[n].n || '★'}</b><i>${esc(n)}</i></a>`).join('')}</div>`,
@@ -658,7 +670,7 @@ function sectionOf(h){
 const $modes = document.getElementById('modes');
 // Genera in the order of the Genera page (lecture groups or slate), for previous / next on a sheet.
 function generaOrder(){
-  const names = Object.keys(DATA.gen), gi = n => DATA.gen[n].ig || 99;
+  const names = Object.keys(DATA.gen), gi = n => shownGroup(n) || 99;
   return azOrder === 'lecture' ? names.sort((a, b) => gi(a) - gi(b) || slateIdx(a) - slateIdx(b)) : names;
 }
 // On a genus sheet or a pair, the header bar names the page instead of listing the section's tools.
