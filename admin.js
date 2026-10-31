@@ -63,8 +63,7 @@ function setF(f, v){
   DRAFT.form[f] = fNorm(v);
   saveDraft();
 }
-const fTag = p => { const v = fOf(p.f); return v ? `<span class="adm-q adm-ftag${fSet(p.f) ? '' : ' auto'}" title="${fSet(p.f) ? 'Form set by you' : 'First guess by Claude'}: ${esc([...v].map(fName).join(' + '))}">${v === 'x' ? 'not visible' : esc([...v].map(c => fName(c).split(' ')[0]).join(' + '))}</span>` : '<span class="adm-q adm-ftag auto">no guess</span>'; };
-const fSeg = p => { const v = fOf(p.f); return `<span class="adm-qseg adm-fseg" role="group" aria-label="Growth form">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v.includes(c)}" title="${esc(fName(c))}${c === 'x' ? '' : ' (click again to remove; several allowed)'}">${c === 'x' ? '∅' : c}</button>`).join('')}</span>`; };
+const fSeg = p => { const v = fOf(p.f); return `<span class="adm-qseg adm-fseg${fSet(p.f) ? '' : ' auto'}" role="group" aria-label="Growth form" title="Growth form${fSet(p.f) ? ' (set by you)' : ' (dashed: Claude\'s first guess)'}">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v.includes(c)}" title="${esc(fName(c))}${c === 'x' ? '' : ' (click again to remove; several allowed)'}">${c === 'x' ? '∅' : c}</button>`).join('')}</span>`; };
 
 /* ---------- Token vault: AES-GCM key derived from the password (PBKDF2) ---------- */
 const b64 = u => btoa(String.fromCharCode(...new Uint8Array(u))), unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -232,7 +231,7 @@ function tile(n, p, v, st){
     ${st.num ? `<span class="adm-num${st.auto ? ' auto' : ''}" title="${st.auto ? 'Featured automatically' : 'Featured by you'}">${st.num}</span>` : ''}
     ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
     <figcaption>${p.from ? `<span class="adm-src new" title="Taken out of ${esc(p.from)} (change it there)">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">new</span>' : ''}${srcTag(p)}${p.multi ? '<span class="adm-src multi" title="Several corals in frame: never used in games">several corals</span>' : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
-    <div class="adm-acts">${qSeg(p)}
+    <div class="adm-acts">${qSeg(p)}${fSeg(p)}
       ${st.cls === 'is-hidden' ? `<button type="button" data-act="hide" class="on">Show again</button>` : `
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Use as the genus photo (cards, sheet hero)">★ Cover</button>
       <button type="button" data-act="feat" class="${st.num && !st.auto ? 'on' : ''}" title="Show in the main strip of this view">${st.num ? 'Featured' : 'Feature'}</button>
@@ -275,7 +274,7 @@ function render(){
   const P = pending(n), Ps = P.filter(shown), two = g.levels === 2;
   const candTile = p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
     <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span></figcaption>
-    <div class="adm-acts">${qSeg(p)}<div class="adm-addrow">${VIEWS.filter(([w]) => !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="addc" data-to="${w}" title="Add to ${label(n, w)}">+ ${label(n, w)}</button>`).join('')}</div></div></figure>`;
+    <div class="adm-acts">${qSeg(p)}${fSeg(p)}<div class="adm-addrow">${VIEWS.filter(([w]) => !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="addc" data-to="${w}" title="Add to ${label(n, w)}">+ ${label(n, w)}</button>`).join('')}</div></div></figure>`;
   const candRow = P.length ? `<section class="adm-row adm-cands"><h3>Candidates <small>${P.length} new photo${P.length > 1 ? 's' : ''} not on the site yet${P.length - Ps.length ? ` · <b>${P.length - Ps.length} filtered out</b>` : ''}</small></h3>
     <div class="adm-grid">${Ps.map(candTile).join('')}</div></section>` : '';
   const O = outOf(n), outRow = O.length ? `<section class="adm-row adm-out"><h3>Not this genus <small>${O.length} photo${O.length > 1 ? 's' : ''} taken out of <i>${esc(n)}</i></small></h3>
@@ -310,7 +309,7 @@ function render(){
     else el.onclick = () => ACT[a](n, f, v);
   });
   const c = $v.querySelector('.adm-g.cur'); if (c) c.scrollIntoView({block: 'nearest'});
-  bindQ(); bindDrag(n);
+  bindQ(); bindF($v); bindDrag(n);
 }
 // Drag a photo onto a featured photo (left or right half: before or after it) to feature it at that place,
 // onto any other photo or the empty part of a view to put it there unfeatured. Works across views and from the candidates.
@@ -441,6 +440,25 @@ function renderQuality(){
     (t, el) => { clearQ(); const g = el && el.closest('[data-qdrop]'); if (g) { rateTile(t, Number(g.dataset.qdrop)); g.prepend(t); } }, clearQ);
 }
 
+/* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
+const HELP = {
+  genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time.</p>
+    <p>Drag a photo onto a featured photo to feature it there, to another view to move it, or from the candidates to add it. Hidden photos disappear everywhere, games included; × excludes a photo for good.</p>
+    <p>The letters on each photo are its growth form (see Growth form).</p>`,
+  form: `<p>The Coral Finder growth forms each photo shows: <b>B</b> Branching, <b>M</b> Meandering, <b>S</b> Massive or thick, <b>P</b> Thin plates and crusts, <b>F</b> Solitary or free-living, <b>L</b> Large daytime polyps, <b>C</b> Columns; <b>∅</b> = form not visible (too close). Several letters allowed.</p>
+    <p>They pick the photos of the growth-form tiles in the Coral Finder; ∅ photos are never used there. Dashed letters are Claude's first guess from the image, solid ones are yours and always win.</p>
+    <p>Click the letters, drag a photo to another row, or hover it and press B M S P F L C, or X for not visible. Coral Finder book photos are left out.</p>`,
+  quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
+  excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
+};
+function toggleHelp(){
+  let h = $('admhelp'); if (h) { h.remove(); return; }
+  const m = ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded'})[cur] || 'genus';
+  h = document.createElement('div'); h.id = 'admhelp'; h.className = 'adm-help'; h.setAttribute('role', 'dialog'); h.setAttribute('aria-label', 'Help');
+  h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button>${HELP[m]}`;
+  h.querySelector('button').onclick = () => h.remove(); $('tools').append(h);
+}
+
 /* ---------- Growth form ---------- */
 // One row per growth form (photos showing several forms have their own row), then "Form not visible" and photos
 // without a guess. Click the letters on a photo (several allowed; ∅ = form not visible), drag it to another row,
@@ -448,8 +466,8 @@ function renderQuality(){
 const FF = Object.assign({view: 'all', genus: '', todo: false}, store.get('imr-admin-ffilter', {}));
 function formTile(t, v){
   setF(t.dataset.f, v); const p = {f: t.dataset.f};
-  t.querySelector('.adm-fseg').outerHTML = fSeg(p); t.querySelector('.adm-ftag').outerHTML = fTag(p);
-  t.classList.add('rated'); bindF(t); status();
+  t.querySelector('.adm-fseg').outerHTML = fSeg(p);
+  if (cur === '~form') t.classList.add('rated'); bindF(t); status();
 }
 const toggleF = (f, c) => { const v = fOf(f); return c === 'x' ? 'x' : v.includes(c) ? v.replace(c, '') || 'x' : v.replace('x', '') + c; };
 function bindF(scope){ scope.querySelectorAll('.adm-fseg [data-fm]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.closest('[data-f]'); formTile(t, toggleF(t.dataset.f, b.dataset.fm)); }); }
@@ -460,17 +478,16 @@ function renderForm(){
   const all = allPhotos().filter(p => !p.cf && shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus) && (!FF.todo || !fSet(p.f)));
   const card = p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
-    <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}${fTag(p)}</figcaption>
+    <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}</figcaption>
     <div class="adm-acts">${fSeg(p)}</div></figure>`;
   const rows = [...[...FORM_ORDER].map(c => [c, fName(c), p => fOf(p.f) === c]), ['multi', 'Several forms', p => fOf(p.f).length > 1], ['x', 'Form not visible', p => fOf(p.f) === 'x'], ['', 'No guess yet', p => !fOf(p.f)]];
   const sec = ([id, t, test]) => { const L = all.filter(test); if (!L.length && (id === '' || id === 'multi')) return '';
     return `<section class="adm-row adm-qrow"><h3>${id && id !== 'multi' ? `<b class="adm-fl">${id === 'x' ? '∅' : id}</b> ` : ''}${esc(t)} <small>${L.length} photo${L.length === 1 ? '' : 's'}${id === 'x' ? ' · never used on the growth-form tiles' : ''}</small></h3>
       <div class="adm-grid adm-qgrid" data-fdrop="${id}">${L.map(card).join('')}</div></section>`; };
   const opt = (v, t, cur) => `<button type="button" class="adm-fchip plain" data-fv="${v}" aria-pressed="${cur === v}">${t}</button>`;
-  const todo = allPhotos().filter(p => !p.cf && !fSet(p.f)).length;
   $v.innerHTML = `<section class="adm-quality">
-    <div class="adm-qhead"><h2>Growth form</h2><p class="note">The Coral Finder growth forms each photo shows, used to pick the photos of the growth-form tiles. Dashed tags are Claude's first guess from the image; ${todo} photo${todo === 1 ? '' : 's'} not checked yet. Click the letters (several allowed, ∅ = form not visible), drag a photo to another row, or hover it and press <kbd>B</kbd> <kbd>M</kbd> <kbd>S</kbd> <kbd>P</kbd> <kbd>F</kbd> <kbd>L</kbd> <kbd>C</kbd>, or <kbd>X</kbd> for not visible.</p></div>
-    <div class="adm-filter"><span class="label">Show</span>${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`).join('')}</div>
+    <div class="adm-qhead"><h2>Growth form</h2></div>
+    <div class="adm-filter"><span class="label">Show</span>${ORIGINS.filter(([o]) => o !== 'book').map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`).join('')}</div>
     <div class="adm-filter"><span class="label">View</span>${opt('all', 'All', FF.view)}${VIEWS.map(([v, t]) => opt(v, t, FF.view)).join('')}${opt('cand', 'Candidates', FF.view)}
       <select id="fgen" aria-label="Genus"><option value="">All genera</option>${names.map(m => `<option${m === FF.genus ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>
       <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label></div>
@@ -553,12 +570,13 @@ async function start(){
   $('tools').hidden = false; $('save').onclick = save; $('download').onclick = download;
   const so = $('signout'); if (so) { so.hidden = !TOKEN; so.onclick = signOut; }
   $('undo').onclick = undo;
+  $('help').onclick = toggleHelp;
   $('booksw').onclick = () => { if (bookOn(DRAFT)) DRAFT.book = false; else delete DRAFT.book; saveDraft(); render(); };
   $('redo').onclick = redo;
   addEventListener('keydown', e => { if (!(e.ctrlKey || e.metaKey) || e.target.closest('input,textarea')) return; const k = e.key.toLowerCase();
     if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); } else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); } });
   cur = decodeURIComponent(location.hash.slice(1)) || Object.keys(DATA.gen)[0];
-  window.onhashchange = () => { cur = decodeURIComponent(location.hash.slice(1)); render(); window.scrollTo({top: 0}); };
+  window.onhashchange = () => { cur = decodeURIComponent(location.hash.slice(1)); const h = $('admhelp'); if (h) h.remove(); render(); window.scrollTo({top: 0}); };
   window.onbeforeunload = e => { if (TOKEN && (changed().length || qChanged() || fChanged() || xChanged())) { e.preventDefault(); e.returnValue = ''; } };
   render();
 }
