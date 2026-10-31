@@ -1,8 +1,7 @@
-// Look-alike web: a live force-directed graph. Genera often confused with each other pull together;
-// clusters show the families of confusion to learn as a set.
+// Look-alike web: a live force-directed graph of the look-alikes listed on each genus sheet.
 LAB.add({
   id: 'web', icon: '⌘', title: 'Look-alike web',
-  blurb: 'A living network of who gets confused with whom. Drag the corals around; clusters are the sets to learn together.',
+  blurb: 'A living network of the look-alikes listed on the genus sheets. Drag the corals around.',
   lede: 'Each line joins two genera that are easily confused. Drag a node, tap one to see its look-alikes and jump to a side-by-side comparison.',
   render(root){
     const names = labNames(), W = 900, H = 640;

@@ -1,5 +1,5 @@
 // Coral Finder: one page to keep open beside ReefCloud. It only cross-references existing sources (no categories of
-// its own): Coral Finder growth form and box, corallite size, walls, decisive detail, IMR lecture group, name) is a filter
+// its own): Coral Finder growth form and box, corallite size, walls, other features, IMR lecture group, name) is a filter
 // that can be used in any order; the shortlist updates at once and shows every candidate with its local photos.
 // Clues rank, they never eliminate: a clue can be wrong or misjudged (size, shape), so a genus that misses one
 // clue stays in view under "One clue off", and a size one class away counts as half a match.
@@ -21,7 +21,7 @@ LAB.add({
         {id: 'form', name: 'Growth form', note: 'The Coral Finder\'s front page. Many genera take several forms.', thumbs: true, opts: FORMS},
         ...(forms.length ? [{id: 'box', name: 'Coral Finder box', note: 'Second step of the Coral Finder, for the growth form picked above.',
           opts: forms.flatMap(f => DATA.key.find(k => k.id === f.id).leaves.filter(l => l.g.length && (f.id !== 'L' && f.id !== 'C')).map(l => ({id: l.id, t: leafLabel(l), g: l.g, pg: pg(l)})))}] : []),
-        ...DATA.traits.map(c => ({id: c.id, name: c.name, opts: c.opts.map(o => ({id: o.id, t: o.t, g: withTr(o.id)}))})),
+        ...DATA.traits.map(c => ({id: c.id, name: c.name, note: c.note, opts: c.opts.map(o => ({id: o.id, t: o.t, s: o.src, g: withTr(o.id)}))})),
         {id: 'ig', name: 'IMR lecture group', note: 'The 11 corallite groups of Lecture 6.', thumbs: true,
           opts: DATA.imrg.map(gr => ({id: 'g' + gr.n, t: gr.n + '. ' + gr.t, g: names.filter(n => G[n].ig === gr.n)}))}
       ].filter(f => f.opts.length);
