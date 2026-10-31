@@ -1,8 +1,13 @@
+/* MOBILE-FIRST, like app.css: rules outside media queries are the phone style; tablet (min-width:600px) and
+   desktop (min-width:1024px) are added right after the rule they change. */
 /* Home page. Uses the tokens from app.css only. */
 .home-page h3{font-family:var(--display);font-size:1.35rem;margin:28px 0 4px}
 .home-page h3 a{color:var(--ink);text-decoration:none}
 .home-page h3 a::after{content:" ›";color:var(--accent)}
-.htools{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin-top:8px}
+.htools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}
+@media (min-width:600px){
+  .htools{grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+}
 .htool{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;color:var(--ink);text-decoration:none}
 .htool b{font-family:var(--display);font-size:1.12rem;padding:8px 12px 0}
 .htool small{color:var(--muted);padding:0 12px 10px;font-size:.85rem}
@@ -10,7 +15,7 @@
 .hpv.two{grid-template-columns:1fr 1fr;gap:2px}
 .hpv img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s,filter .6s}
 .htool:hover .hpv img{transform:scale(1.06)}
-@media (max-width:599.98px){.htools{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 /* Schematic previews (home-art.js): flat shapes in theme colours. */
 .hpv.art{background:var(--surface-2)}
 .hpv.art svg{width:100%;height:100%;display:block;transition:transform .4s}
@@ -33,8 +38,7 @@
 .hpv.art .frame{fill:none;stroke:var(--accent);stroke-width:2}
 .hpv.art .target{fill:var(--accent);fill-opacity:.15;stroke:var(--accent);stroke-width:2}
 /* Dark theme: the drawings keep their light palette (dark versions were unreadable), slightly dimmed. */
-:root[data-theme="dark"] .hpv.art{--surface-2:#e9eff1;--surface:#fff;--ink:#14262d;--muted:#5a6d74;--line:#d6e0e3;--accent:#0d6f7d;--accent-ink:#fff;
-  --branch:#cfe8b8;--meander:#c4e2f2;--massive:#ecc7e3;--plate:#f8d9ad;--solo:#b9e7ea;--good:#2f7d3a;--good-bg:#dcefd9;--bad:#b23a2a;filter:brightness(.88)}
+:root[data-theme="dark"] .hpv.art{--surface-2:#e9eff1;--surface:#fff;--ink:#14262d;--muted:#5a6d74;--line:#d6e0e3;--accent:#0d6f7d;--accent-ink:#fff;--branch:#cfe8b8;--meander:#c4e2f2;--massive:#ecc7e3;--plate:#f8d9ad;--solo:#b9e7ea;--good:#2f7d3a;--good-bg:#dcefd9;--bad:#b23a2a;filter:brightness(.88)}
 .betatag{font-style:normal;font-family:var(--body);font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:var(--plate);color:var(--band-ink);border-radius:4px;padding:1px 6px;vertical-align:2px}
 .htool.beta .hpv img{opacity:.85}
 .htool:hover{border-color:var(--accent)}
@@ -45,35 +49,78 @@
 .htools:not(.small) .htool small{font-size:.95rem}
 
 /* Home: two entry doors (Learn & practise, Identify), side by side, stacked on narrow screens. */
-.hdoors{margin-top:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.hdoors{margin-top:10px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:600px){
+  .hdoors{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:18px;gap:18px}
+}
 .hdoor{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
-.hdart{position:relative;display:block;aspect-ratio:21/9;overflow:hidden;background:#0b1a1f}
+.hdart{position:relative;display:block;aspect-ratio:6/1;overflow:hidden;background:#0b1a1f}
+@media (min-width:600px){
+  .hdart{aspect-ratio:21/9}
+}
 .hdart>img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
 .hdoor:hover .hdart>img{transform:scale(1.04)}
-.hdtiles{position:absolute;inset:0;display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(2,1fr);gap:2px}
+.hdtiles{position:absolute;inset:0;display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:1fr;gap:2px}
+@media (min-width:600px){
+  .hdtiles{grid-template-rows:repeat(2,1fr)}
+}
 .hdtiles img{width:100%;height:100%;object-fit:cover;display:block}
 .hdpt{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #0008}
 .hdpt.on{width:26px;height:26px;margin:-13px 0 0 -13px;border-color:#ffd54a;box-shadow:0 0 0 2px #0009,0 0 0 9px #ffd54a40}
-.hdbody{display:flex;flex-direction:column;flex:1;padding:18px 22px 22px}
+.hdbody{display:flex;flex-direction:column;flex:1;padding:10px 14px 14px}
+@media (min-width:600px){
+  .hdbody{padding:18px 22px 22px}
+}
 .hdwhen{margin:0;font-size:.82rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
-.hdoor h3{font-family:var(--display);font-size:2.1rem;line-height:1.1;margin:4px 0 6px}
-.hddesc{margin:0 0 16px;color:var(--muted);font-size:1.05rem;line-height:1.45;max-width:60ch}
-.hdacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:auto}
-.hdbtn{display:block;padding:12px 16px;border:1.5px solid var(--accent);border-radius:var(--r);color:var(--ink);text-decoration:none;transition:background .2s,box-shadow .2s}
-.hdbtn b{display:block;font-family:var(--display);font-size:1.4rem;color:var(--accent)}
+.hdoor h3{font-family:var(--display);font-size:1.55rem;line-height:1.1;margin:2px 0 4px}
+@media (min-width:600px){
+  .hdoor h3{font-size:2.1rem;margin:4px 0 6px}
+}
+.hddesc{margin:0 0 16px;color:var(--muted);font-size:.95rem;line-height:1.35;max-width:60ch}
+@media (min-width:600px){
+  .hddesc{font-size:1.05rem;line-height:1.45}
+}
+.hdacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;margin-top:auto}
+@media (min-width:600px){
+  .hdacts{gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+}
+.hdbtn{display:block;padding:9px 12px;border:1.5px solid var(--accent);border-radius:var(--r);color:var(--ink);text-decoration:none;transition:background .2s,box-shadow .2s}
+@media (min-width:600px){
+  .hdbtn{padding:12px 16px}
+}
+.hdbtn b{display:block;font-family:var(--display);font-size:1.2rem;color:var(--accent)}
+@media (min-width:600px){
+  .hdbtn b{font-size:1.4rem}
+}
 .hdbtn b em{font-style:normal;opacity:.6;margin-right:2px}
-.hdbtn small{display:block;color:var(--muted);font-size:.9rem;line-height:1.3;margin-top:2px}
+.hdbtn small{display:none;color:var(--muted);font-size:.9rem;line-height:1.3;margin-top:2px}
+@media (min-width:600px){
+  .hdbtn small{display:block}
+}
 .hdbtn:hover{box-shadow:var(--shadow-hover)}
 .hdbtn.main{background:var(--accent);border-color:var(--accent)}
 .hdbtn.main b,.hdbtn.main small{color:var(--accent-ink)}
 .hdbtn.main small{opacity:.85}
 .hdbtn.main b em{opacity:.7}
-@media (max-width:599.98px){.hdoors{grid-template-columns:minmax(0,1fr)}.hdart{aspect-ratio:3/1}}
-@media (max-width:599.98px){.hdoors{margin-top:10px}.hdoor h3{font-size:1.75rem}.hdbody{padding:14px 16px 16px}.hdart{aspect-ratio:4/1}.hdtiles{grid-template-columns:repeat(6,1fr);grid-template-rows:1fr}.hdtiles img:nth-child(n+7){display:none}.hddesc{font-size:1rem;margin-bottom:12px}.hdacts{gap:8px}}
+
+/* Phone base (mobile-first); larger screens restore below. */
+.hdtiles img:nth-child(n+7){display:none}
+.hddesc{margin-bottom:10px}
+
+@media (min-width:600px){
+  .hdtiles img:nth-child(n+7){display:block}
+  .hddesc{margin-bottom:16px}
+}
+
 /* Phones: both doors on the first screen (Pierre, 2026-10-31): thinner art band, buttons side by side without their subtitles. */
-@media (max-width:599.98px){.hdoors{gap:12px}.hdart{aspect-ratio:6/1}.hdoor h3{font-size:1.55rem;margin:2px 0 4px}.hdbody{padding:10px 14px 14px}.hddesc{font-size:.95rem;line-height:1.35;margin-bottom:10px}
-  .hdacts{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}.hdbtn{padding:9px 12px}.hdbtn b{font-size:1.2rem}.hdbtn small{display:none}}
+
 .hdart.rc>img{object-position:50% 50%}
-@media (max-width:599.98px){.hdart.rc{aspect-ratio:4/1}}
+/* Phone base (mobile-first); larger screens restore below. */
+.hdart.rc{aspect-ratio:4/1}
+
+@media (min-width:600px){
+  .hdart.rc{aspect-ratio:auto}
+}
+
 /* Desktop: the art grows with the window height (up to a near 3:2 band), so the doors fill the first screen instead of leaving its lower half empty. */
 @media (min-width:600px){.hdart{aspect-ratio:auto;height:clamp(250px,calc(100dvh - 470px),400px)}}
