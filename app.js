@@ -124,7 +124,8 @@ function applySlots(d, c){
       const ranked = [...rr, ...others].sort((a, b) => (q(a) === 1) - (q(b) === 1));
       const find = f => all.find(p => p.f === f);
       const pin = ((g.feat || {})[v] || []).map(find).filter(Boolean), hint = ((sug[n] || {})[v] || []).map(find).filter(Boolean);
-      const feat = pin.length ? pin : take([...hint, ...ranked], CAP.feat);
+      // Automatic Featured: never a Poor photo while better ones exist (distinct observations come second to that).
+      const feat = pin.length ? pin : fill(take([...hint, ...ranked].filter(p => q(p) !== 1), CAP.feat), [...hint, ...ranked], CAP.feat);
       const more = fill(ranked.filter(p => isCore(p) && !feat.includes(p)), ranked.filter(p => !feat.includes(p)), CAP.sheet - feat.length);
       // Games: field photos only (lecture photos have their own quiz), never multi-coral or book photos.
       const gm = byQ(field.filter(p => use[p.f] !== 'ref')), core = gm.filter(isCore), rest = gm.filter(p => !isCore(p));
