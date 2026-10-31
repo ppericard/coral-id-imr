@@ -47,5 +47,12 @@ d['terms']=[['Septa','Vertical blades inside the coral’s cup-like corallite.',
  ['Septo-costae','Where there is no clear wall structure; colonies are then identified by their skeletal ornaments.','IMR Lecture 6, slide 14'],
  ['Corallite','The skeleton of one polyp.','Corals of the World glossary'],
  ['Paliform lobes','Upright skeletal lobes at the inner margin of the septa.','Corals of the World glossary'],
- ['Mouth','Identify the mouth of the coral polyp: is it raised or embedded?','IMR Lecture 6, slide 15']]
+ ['Mouth','Identify the mouth of the coral polyp: is it raised or embedded?','IMR Lecture 6, slide 15'],
+ ["Axial corallite", "End polyp at branch tips, differentiated from the other corallites in both size and form.", "IMR Lecture 6, slide 16"],
+ ["Verrucae", "Skeletal bumps on the branches, purely ornamental; larger than the polyp (sometimes composed of several corallites).", "IMR Lecture 6, slide 17"],
+ ["Hooded corallites", "Corallites that face downwards.", "IMR Lecture 6, slide 18"],
+ ["Extra-tentacular budding", "Daughter corallites grow from the outside wall of parent corallites.", "Corals of the World glossary"],
+ ["Intra-tentacular budding", "Daughter corallites grow from the inside wall of parent corallites, usually by division of the parent corallite.", "Corals of the World glossary"],
+ ["Monticules", "Conical sections of common wall between corallites, which have a secondary radial symmetry.", "Corals of the World glossary"],
+ ["Vesicles", "Large grape-like sacs that are expanded during the day in some Euphyllidae.", "Corals of the World glossary"]]
 json.dump(d,open(P,'w'),ensure_ascii=False,separators=(',',':'))

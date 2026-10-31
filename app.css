@@ -222,7 +222,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .cmpph{aspect-ratio:4/3;border-radius:var(--r);overflow:hidden;background:var(--surface-2)}
 .cmpph img{width:100%;height:100%;object-fit:cover;display:block}
 .cmplab{margin:18px 0 6px}
-.cmprow.text{margin-top:18px}.cmpcol h3{margin:0;font-size:1.2rem}.cmpcol .crit{font-size:.92rem}
+.cmprow.text{margin:8px 0 6px}.cmpcol h3{margin:0;font-size:1.2rem}.cmpcol .crit{font-size:.92rem}
 
 /* ---------- Quiz: one screen, photos left (sized to the window), choices and feedback right ---------- */
 .q{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,320px);gap:16px;height:var(--qh,70vh);margin-top:12px}
@@ -231,7 +231,9 @@ body:has(.q),body:has(.pgrid),body:has(.rvstage),body:has(.pgroups){padding-bott
 body:has(.q) footer,body:has(.pgrid) footer,body:has(.rvstage) footer,body:has(.pgroups) footer{display:none}
 .qph{position:relative;margin:0;overflow:hidden;border-radius:var(--r);background:#000;min-height:0;height:100%}
 .qph img{width:100%;height:100%;object-fit:contain;display:block}
-.qph .zoom{height:100%;border-radius:0}
+.qph .zoom{height:100%;border-radius:0;position:relative;background:none}
+/* No black bars: a blurred copy of the photo fills the frame around it. */
+.qph::before{content:"";position:absolute;inset:-30px;background:var(--qbg,#000) center/cover;filter:blur(22px) brightness(.55)}
 .qph .zoom::after{content:"⤢";position:absolute;right:8px;bottom:8px;width:30px;height:30px;display:grid;place-items:center;border-radius:var(--pill);background:rgb(0 0 0 / .55);color:#fff;font-size:1rem;opacity:.8;pointer-events:none}
 .qph figcaption{position:absolute;left:8px;top:8px;background:rgb(0 0 0 / .6);color:#fff;font-size:.75rem;padding:2px 9px;border-radius:var(--pill)}
 .qside{display:flex;flex-direction:column;gap:10px;min-height:0;overflow:auto;padding-right:2px}
@@ -455,6 +457,8 @@ a.lt:hover{border-color:var(--accent)}
 .tref{margin:2px 0 10px;font-size:.76rem;color:var(--muted)}
 .cmpcol h4{margin:12px 0 4px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .tipgr{margin:14px 0 6px}
+.gjump{margin:0 0 4px}
+.gdiv[id]{scroll-margin-top:calc(var(--hdr-h,64px) + 12px)}
 .tipsec{margin-top:18px}
 .tipg{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;padding:12px 0;border-top:1px solid var(--line)}
 .tipg .idtips{margin:0;max-width:70ch}
@@ -507,3 +511,10 @@ a.lt:hover{border-color:var(--accent)}
 .pflag{position:fixed;z-index:60;padding:2px 8px;border:0;border-radius:var(--pill);background:rgb(0 0 0 / .6);color:#fff;font-size:.8rem;cursor:pointer;opacity:.75}
 .pflag:hover{opacity:1}.pflag.on{background:#c0392b;opacity:1}
 .qlvl{margin-bottom:6px}
+
+/* Glossary terms: dotted underline, tap for the definition (gloss() in app.js). */
+.gt{text-decoration:underline dotted;text-decoration-thickness:1.5px;text-underline-offset:3px;cursor:help;border-radius:3px}
+.gt:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.gpop{position:fixed;z-index:60;padding:10px 12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);font-size:.88rem;line-height:1.4}
+.gpop[hidden]{display:none}
+.gpop small{display:block;margin-top:4px;color:var(--muted);font-size:.76rem}
