@@ -32,7 +32,6 @@ Never settle these in the app; keep the lecture's version.
 
 | Item | Source | Status |
 |---|---|---|
-| **Coverage "Needs" section** in admin: per genus × view, recommend where more photos are needed from game signals (ability ceiling/floor, photo repetition, mix-ups). | thread "Make game difficulty more progressive", after PR #197 | Next (in progress there) |
 | **Calibrated, medium-size game photo sets**: draw game photos by Elo band per genus × view rather than at random; maybe cap set size while keeping a real difficulty spread and enough photos to learn the genus, not the photos. Never shrink sets automatically: suggest, Pierre confirms. Needs enough answers first. Whether to cap at all is still open. | thread "Analyse player levels and photo Elo" | Next / Open question |
 | Growth form + quality guesses for auto-refilled candidates (they arrive without guesses; Claude classified PR #181's batch by eye in PR #182). Do it when Pierre asks. | thread "Review photo candidates on phone" | Next (on request) |
 | Near-duplicate / redundancy suggestions among IMR + Pierre photos in Triage, and a visual pre-pick of Featured into `picks.json`. Partly done (`find_dups.py`, PR #149); re-run after adding photos. | thread "Design photo usage per context" | Next |
@@ -74,4 +73,4 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 
 ## Done recently (for context)
 
-- PR #197 continuous difficulty; #195 admin Stats; #194 Coverage; #193 Candidates order; #184/#188 extra Dauin genera in the Coral Finder; #159 look-alike montage deck; #150 two-door Home; #168/#172 responsive system, mobile-first; #132 guided tour.
+- PR #198 admin Stats "Needs" tab (where to look for more photos); #197 continuous difficulty; #195 admin Stats; #194 Coverage; #193 Candidates order; #184/#188 extra Dauin genera in the Coral Finder; #159 look-alike montage deck; #150 two-door Home; #168/#172 responsive system, mobile-first; #132 guided tour.

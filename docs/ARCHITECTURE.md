@@ -84,10 +84,11 @@ Precedence: `curation.json` > suggestion files > `data.json` defaults.
 
 ## Admin back-office (`admin.html`)
 
-For Pierre only (not linked except from ⚙ for token holders). Modes by hash: genus pages (default), `#~cand` Candidates swiper (default on phones), `#~triage` (flags, suggestions, duplicates), `#~form` growth forms, `#~quality`, `#~excluded`, `#~mont` look-alike montages, `#~stats` (Players / Photos / Photo list / Coverage; `#~cov`, `#~diff` are sub-views).
+For Pierre only (not linked except from ⚙ for token holders). Modes by hash: genus pages (default), `#~cand` Candidates swiper (default on phones), `#~triage` (flags, suggestions, duplicates), `#~form` growth forms, `#~quality`, `#~excluded`, `#~mont` look-alike montages, `#~stats` (Players / Photos / Photo list / Coverage / Needs; `#~cov`, `#~diff` are sub-views).
 
 - Every click is a local draft (Undo/Redo, Ctrl+Z). **Publish** commits `curation.json` to `main` through the GitHub Contents API with a fine-grained token (this repo only, Contents read/write), stored encrypted in the browser with the admin password. `admin.html?readonly` works without a token (download JSON). `index.html?draft` previews unpublished choices.
 - Genus status: `needs()` lists what is missing (3 featured per view, non-macro cover…); ✓ Validated is Pierre's button.
+- Needs (PR #198): per genus × view, why the game pool falls short (few colonies, few good ones, too easy for players' level, repeated photos, mix-ups), ranked.
 - Coverage (`renderCov`, `covOf`, `gamePool`): game-usable photos per genus × view, coloured by distinct colonies (0 / 1-2 / 3-4 / 5-7 / 8+).
 
 ## Progress sync (Google Sheet)
