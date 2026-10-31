@@ -2,7 +2,7 @@
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
 // A prototype that graduates moves to a site section (see GRADUATED) and gets a plain hash: #<id>, #<id>|<arg>.
 // Bump with every Lab change so browsers never mix new and old files (same ?v scheme as app.js).
-const LAB_V = 27;
+const LAB_V = 28;
 const LAB = {
   list: [],
   files: ['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'],
@@ -31,7 +31,7 @@ const genLink = n => `#g-${encodeURIComponent(n)}`;
 const labFams = () => [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
 // Mid-tone hues read on both light and dark backgrounds.
 const famColor = f => `hsl(${Math.round(labFams().indexOf(f) * 360 / labFams().length + 190) % 360} 58% 50%)`;
-const igColor = n => n ? `hsl(${Math.round((n - 1) * 360 / 11 + 15) % 360} 60% 50%)` : 'hsl(0 0% 55%)';
+const igColor = n => n ? `hsl(${groupHue(n)} 55% 52%)` : 'hsl(0 0% 55%)';  // same colours as the rest of the app
 const viewPhoto = (n, v) => { const g = DATA.gen[n]; return (g.views[v] || [])[0] || (g.views.macro || [])[0] || cover(g); };
 const thumbSrc = (n, v = 'macro', size = 's') => img(viewPhoto(n, v), size);
 const trOpt = id => DATA.traits.flatMap(t => t.opts).find(o => o.id === id);
