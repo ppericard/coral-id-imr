@@ -39,6 +39,8 @@ const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
 // and import scripts skip it so it never comes back. The Excluded view lists them, to restore one.
 const excl = f => (DRAFT.exclude || {})[f];
 const xChanged = () => !same(DRAFT.exclude || {}, SAVED.exclude || {});
+// Coral Finder book photos on the site (curation.json "book": false switches every one of them off at once).
+const bookOn = o => o.book !== false, bChanged = () => bookOn(DRAFT) !== bookOn(SAVED);
 const qTag = p => { const q = qOf(p.f); return `<span class="adm-q q${q}${qSet(p.f) ? '' : ' auto'}" title="${qSet(p.f) ? 'Quality set by you' : 'Automatic first guess'}">${QUAL.find(x => x[0] === q)[1]}</span>`; };
 const qSeg = p => `<span class="adm-qseg" role="group" aria-label="Quality">${QUAL.map(([q, t]) => `<button type="button" data-q="${q}" aria-pressed="${qOf(p.f) === q}" class="q${q}">${t}</button>`).join('')}</span>`;
 function setQ(f, q){
@@ -159,8 +161,8 @@ const rows = n => VIEWS.filter(([v]) => !(DATA.gen[n].levels === 2 && v === 'med
 const label = (n, v) => DATA.gen[n].levels === 2 && v === 'macro' ? 'Close-up' : VIEWS.find(x => x[0] === v)[1];
 // Photo origin: IMR lecture, Pierre's own iNaturalist photos, or other iNaturalist observers split by place
 // (data.json p.loc: dauin, ph or world). The filter is kept across genera and visits.
-const ORIGINS = [['imr', 'IMR lecture'], ['own', 'Pierre'], ['dauin', 'iNat Dauin'], ['ph', 'iNat Philippines'], ['world', 'iNat elsewhere']];
-const origin = p => p.imr ? 'imr' : p.own ? 'own' : ({dauin: 'dauin', ph: 'ph'})[p.loc] || 'world';
+const ORIGINS = [['book', 'CF book'], ['imr', 'IMR lecture'], ['own', 'Pierre'], ['dauin', 'iNat Dauin'], ['ph', 'iNat Philippines'], ['world', 'iNat elsewhere']];
+const origin = p => p.cf ? 'book' : p.imr ? 'imr' : p.own ? 'own' : ({dauin: 'dauin', ph: 'ph'})[p.loc] || 'world';
 let SHOW = new Set(store.get('imr-admin-origins', ORIGINS.map(o => o[0])));
 const shown = p => SHOW.has(origin(p));
 const srcTag = p => { const o = origin(p); return `<span class="adm-src o-${o}">${ORIGINS.find(x => x[0] === o)[1]}</span>`; };
@@ -224,7 +226,8 @@ function tile(n, p, v, st){
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
 const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Exclude this photo for good (from every genus and game)" aria-label="Exclude for good">×</button>';
 function status(){
-  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', x ? 'exclusions' : ''].filter(Boolean);
+  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : ''].filter(Boolean);
+  const bs = $('booksw'); if (bs) { bs.setAttribute('aria-pressed', String(bookOn(DRAFT))); bs.textContent = `Coral Finder book photos: ${bookOn(DRAFT) ? 'on' : 'off'}`; }
   const xn = Object.keys(DRAFT.exclude || {}).length, xa = document.querySelector('[data-mode="excluded"]'); if (xa) xa.textContent = `Excluded${xn ? ` (${xn})` : ''}`;
   const t = draftAt ? ` (saved ${draftAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})})` : '';
   $('status').textContent = parts.length ? `Draft${t}: ${parts.join(' + ')} not published yet` : TOKEN ? 'Everything is published' : 'Read-only: download only';
@@ -443,13 +446,13 @@ function zoomOne(p){
 const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAFT.genera[n]).forEach(n => { genera[n] = DRAFT.genera[n]; });
   const quality = {}; Object.keys(DRAFT.quality || {}).sort().forEach(f => { quality[f] = DRAFT.quality[f]; });
   const exclude = {}; Object.keys(DRAFT.exclude || {}).sort().forEach(f => { exclude[f] = DRAFT.exclude[f]; });
-  return {v: 1, genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(exclude).length ? {exclude} : {})}; };
+  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(exclude).length ? {exclude} : {})}; };
 async function save(){
-  const ch = changed(), q = qChanged(), x = xChanged(); if (!(ch.length || q || x) || !TOKEN) return;
+  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(); if (!(ch.length || q || x || bk) || !TOKEN) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
   try {
     const out = output(), text = JSON.stringify(out, null, 2) + '\n';
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(x ? ['exclusions'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(x ? ['exclusions'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const r = await gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg, content: toB64(text), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})});
     SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); saveDraft();
     toast('Published. The public site shows it within a minute or two.');
@@ -467,7 +470,7 @@ async function start(){
   try { [DATA, AUTOQ] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), fetch('quality.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).then(j => j.q || {}).catch(() => ({})), loadSaved()]); }
   catch (x) { $v.innerHTML = `<p class="warn">Could not load: ${esc(x.message)}</p>`; return; }
   // Every photo of data.json by name, with its genus, for the Excluded view.
-  PHOTOS = {}; Object.entries(DATA.gen).forEach(([n, g]) => [...Object.values(g.views || {}), ...Object.values(g.more || {}), (DATA.course || {})[n] || [], (DATA.cand || {})[n] || []].flat().forEach(p => { PHOTOS[p.f] = {...p, genus: n}; }));
+  PHOTOS = {}; Object.entries(DATA.gen).forEach(([n, g]) => [...Object.values(g.views || {}), ...Object.values(g.more || {}), (DATA.course || {})[n] || [], (DATA.cand || {})[n] || [], g.book || []].flat().forEach(p => { PHOTOS[p.f] = {...p, genus: n}; }));
   // Every photo name in data.json (field, extra, lecture, candidates), to spot choices left pointing nowhere.
   KNOWN = new Set([...Object.values(DATA.gen).flatMap(g => [...Object.values(g.views || {}), ...Object.values(g.more || {})].flat()), ...Object.values(DATA.course || {}).flat(), ...Object.values(DATA.cand || {}).flat(), ...(DATA.cmp || [])].map(p => p.f));
   // Unsaved edits from an earlier visit are kept, on top of what is saved.
@@ -476,6 +479,7 @@ async function start(){
   const keep = changed().length; if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? "genera" : "genus"} not published yet.`);
   $('tools').hidden = false; $('save').onclick = save; $('download').onclick = download;
   $('undo').onclick = undo;
+  $('booksw').onclick = () => { if (bookOn(DRAFT)) DRAFT.book = false; else delete DRAFT.book; saveDraft(); render(); };
   $('redo').onclick = redo;
   addEventListener('keydown', e => { if (!(e.ctrlKey || e.metaKey) || e.target.closest('input,textarea')) return; const k = e.key.toLowerCase();
     if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); } else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); } });
