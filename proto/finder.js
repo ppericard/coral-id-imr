@@ -97,20 +97,26 @@ LAB.add({
       return `<div class="fdnext"><span class="label">Check next</span>${cands.map(x => `<button type="button" class="fdq" data-o="${x.f.id}|${x.o.id}"><span><small>${esc(x.f.name)}</small><b>${esc(x.o.t)}?</b></span><span class="fdsplit"><small>yes ${x.yes.length}</small>${side(x.yes)}</span><span class="fdsplit no"><small>no ${x.no.length}</small>${side(x.no)}</span></button>`).join('')}</div>`;
     }
 
+    // Where each photo comes from, on every photo (same split as the admin's origin tags): IMR lecture, Dauin
+    // (Pierre's own or other iNaturalist observers there), elsewhere in the Philippines, or elsewhere.
+    const SRC = {imr: 'IMR lecture', dauin: 'Dauin', ph: 'Philippines', world: 'Elsewhere'};
+    const src = p => p.imr ? 'imr' : p.own || p.loc === 'dauin' ? 'dauin' : p.loc === 'ph' ? 'ph' : 'world';
     function drawMain(F, left, close, rest){
-      const flat = [], mode = view === 'auto' ? (left.length <= 8 ? 'rows' : 'medium') : view;
-      const ph = (n, p, v) => { flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom fdph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 50vw, 360px" alt="${esc(n)}, ${esc(VIEW_LABEL[v] || v)}" loading="lazy">${p.own ? '<em class="own">Dauin</em>' : ''}</button>`; };
+      const flat = [], mode = view === 'auto' ? (left.length <= 8 ? 'rows' : 'cover') : view;
+      const ph = (n, p, v) => { flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom fdph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 50vw, 360px" alt="${esc(n)}, ${esc(VIEW_LABEL[v] || v)}" loading="lazy"><em class="fdsrc s-${src(p)}">${SRC[src(p)]}</em></button>`; };
       const tools = n => `<span class="fdtools"><button type="button" class="chip" data-out="${esc(n)}" title="Rule out ${esc(n)}">Rule out</button><button type="button" class="chip" data-cmpk="${esc(n)}" aria-pressed="${S.cmp.includes(n)}">Compare</button></span>`;
       const head = n => `<a class="fdname" href="${genLink(n)}"><i>${esc(n)}</i></a><small>${tag(n)} · ${esc(G[n].fam)}${G[n].ig ? ' · IMR group ' + G[n].ig : ''}</small>`;
       const row = n => {
-        const g = G[n], all = allPhotos(g), own = all.filter(p => p.own).length;
+        const g = G[n], all = allPhotos(g), own = all.filter(p => src(p) === 'dauin').length;
         return `<article class="fdrow"><div class="fdinfo">${head(n)}<p>${esc(g.sum)}</p>${tools(n)}
           <button type="button" class="linkish fdmore" data-more="${esc(n)}">${S.open.has('p:' + n) ? 'Fewer photos' : `All ${all.length} photos${own ? ` (${own} from Dauin)` : ''}`}</button></div>
           <div class="fdviews">${VIEWS.map(([v, l]) => { const p = (g.views[v] || [])[0]; return p ? `<figure>${ph(n, p, v)}<figcaption>${l}</figcaption></figure>` : ''; }).join('')}</div>
           ${S.open.has('p:' + n) ? `<div class="fdall">${all.map(p => ph(n, p, p.view)).join('')}</div>` : ''}</article>`;
       };
-      const tile = (n, off) => { const g = G[n], v = off ? 'medium' : mode, p = (g.views[v] || [])[0] || cover(g);
-        return `<article class="fdtile${off ? ' off' : ''}">${p ? ph(n, p, (g.views[v] || [])[0] ? v : 'medium') : '<span class="none">no photo</span>'}<div class="fdinfo">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}<p>${esc(g.sum)}</p>${tools(n)}</div></article>`; };
+      // Photos follow the admin's curation (applied to DATA in app.js): hidden ones are gone, featured ones lead each
+      // view, and Auto and "One clue off" tiles show the genus cover. The header's origin filter applies too.
+      const tile = (n, off) => { const g = G[n], v = off || mode === 'cover' ? null : mode, p = v ? (g.views[v] || [])[0] || cover(g) : cover(g);
+        return `<article class="fdtile${off ? ' off' : ''}">${p ? ph(n, p, v && (g.views[v] || [])[0] ? v : p.view || 'medium') : '<span class="none">no photo</span>'}<div class="fdinfo">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}<p>${esc(g.sum)}</p>${tools(n)}</div></article>`; };
       // Look-alikes outside the shortlist: worth a glance before deciding.
       const near = left.length && left.length <= 3 ? uniq(left.flatMap(n => lookOf(n))).filter(n => !left.includes(n) && !close.includes(n)) : [];
       const chosen = F.flatMap(f => f.opts.filter(o => S[f.id].has(o.id)).map(o => ({f, o})));
