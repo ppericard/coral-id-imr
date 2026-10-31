@@ -176,12 +176,17 @@ function photos(n){
   Object.keys(DATA.gen).filter(m => m !== n).forEach(m => own(m).filter(p => outs(m)[p.f] === n).forEach(p => L.push({...p, from: m})));
   return L;
 }
-const outOf = n => own(n).filter(p => outs(n)[p.f]);
+const outOf = n => [...own(n).filter(p => outs(n)[p.f]), ...rawCands(n).filter(p => outs(n)[p.f] && !(entry(n).add || {})[p.f])];
 // New candidate photos from data.json cand, not used by the site until approved here.
 // Coral Finder book photos (data: gen[].book) are candidates too; once added they show on the site but never in games.
-const cands = n => [...((DATA.cand || {})[n] || []), ...(DATA.gen[n].book || [])].filter(p => !excl(p.f));
+const rawCands = n => [...((DATA.cand || {})[n] || []), ...(DATA.gen[n].book || [])].filter(p => !excl(p.f));
+// A candidate sent to another genus ("Not this") becomes a candidate there, tagged with where it came from.
+const cands = n => [...rawCands(n).filter(p => !outs(n)[p.f]), ...Object.keys(DATA.gen).filter(m => m !== n).flatMap(m => rawCands(m).filter(p => outs(m)[p.f] === n).map(p => ({...p, from: m})))];
 // Same order as the Show source chips (ORIGINS), CF book last.
-const pending = n => { const add = entry(n).add || {}, oi = p => ORIGINS.findIndex(o => o[0] === origin(p)); return cands(n).filter(p => !add[p.f]).sort((a, b) => oi(a) - oi(b)); };
+const oIdx = p => ORIGINS.findIndex(o => o[0] === origin(p));
+const pending = n => { const add = entry(n).add || {}; return cands(n).filter(p => !add[p.f]).sort((a, b) => oIdx(a) - oIdx(b)); };
+// Candidates section (Pierre: one "Remove" everywhere sends a photo back there): new candidates plus removed (hidden) photos.
+const unused = n => [...pending(n), ...photos(n).filter(p => hidden(n, p)).map(p => ({...p, wasHidden: true}))].sort((a, b) => oIdx(a) - oIdx(b));
 const entry = n => DRAFT.genera[n] || {};
 // Zoom levels (curation lv, header switch): 2 levels = Closer photos join Colony (as applyCuration in app.js).
 const lv = n => entry(n).lv || (DATA.gen[n].levels === 2 ? 2 : 3);
@@ -257,16 +262,17 @@ const ACT = {
     if (auto && L.includes(f)) return;
     if (L.includes(f)) { L.splice(L.indexOf(f), 1); if (!L.length) { toast('A view needs at least one featured photo: back to the automatic pick.'); delete k.feat[v]; } }
     else if (L.length >= FEAT) toast(`Already ${FEAT} featured: remove one first.`); else L.push(f); }),
-  addc: (n, f, v, to) => edit(n, k => { k.add = k.add || {}; k.add[f] = to; }),
+  addc: (n, f, v, to) => edit(n, k => { if ((k.hide || []).includes(f)) { const p = photos(n).find(x => x.f === f); k.hide = k.hide.filter(x => x !== f); k.move = k.move || {}; if (to === p.base) delete k.move[f]; else k.move[f] = to; return; } k.add = k.add || {}; k.add[f] = to; }),
   exclude: (n, f) => { DRAFT.exclude = DRAFT.exclude || {}; DRAFT.exclude[f] = 'excluded';
     edit(n, k => { dropFeat(k, f); if (k.cover === f) delete k.cover; if (k.add) delete k.add[f]; });
     toast('Excluded. Undo (Ctrl+Z) or the Excluded view brings it back.'); },
-  out: (n, f, v, to) => edit(n, k => { k.out = k.out || {}; if (to === 'back') delete k.out[f]; else { k.out[f] = to; dropFeat(k, f); if (k.cover === f) delete k.cover; if (k.move) delete k.move[f]; } }),
+  out: (n, f, v, to) => edit(n, k => { k.out = k.out || {}; if (to === 'back') delete k.out[f]; else { k.out[f] = to; dropFeat(k, f); if (k.cover === f) delete k.cover; if (k.move) delete k.move[f]; if (k.add) delete k.add[f]; } }),
   hide: (n, f) => edit(n, k => { if (k.add && k.add[f]) { delete k.add[f]; dropFeat(k, f); if (k.cover === f) delete k.cover; return; } k.hide = k.hide || []; if (k.hide.includes(f)) k.hide = k.hide.filter(x => x !== f); else { k.hide.push(f); dropFeat(k, f); if (k.cover === f) delete k.cover; } }),
   move: (n, f, v, to) => edit(n, k => { const p = photos(n).find(x => x.f === f); if (p.cand) { k.add[f] = to; dropFeat(k, f); return; } k.move = k.move || {}; if (to === p.base) delete k.move[f]; else k.move[f] = to; dropFeat(k, f); }),
   // Drag and drop: photo f dropped in view `to`, at featured position `at` (null: not featured).
   // Covers moving between views, approving a candidate, featuring, reordering and unfeaturing in one step.
   drop: (n, f, to, at) => edit(n, k => {
+    if ((k.hide || []).includes(f)) k.hide = k.hide.filter(x => x !== f);   // a removed photo dragged back from the candidates
     const p = [...photos(n), ...pending(n)].find(x => x.f === f), was = viewOf(n, p) === to && !pending(n).includes(p);
     const r = rowOf(n, to), cur = r.feat.map(x => x.f), inFeat = was && cur.includes(f), L = cur.filter(x => x !== f);
     if (p.cand || pending(n).includes(p)) { k.add = k.add || {}; k.add[f] = to; }
@@ -282,6 +288,7 @@ const ACT = {
 };
 
 /* ---------- Rendering ---------- */
+const notThis = n => `<select data-act="out" aria-label="Not this genus"><option value="">Not this</option><option value="cmp">Look-alike comparison</option><optgroup label="Another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`;
 const changed = () => [...new Set([...Object.keys(DRAFT.genera), ...Object.keys(SAVED.genera)])].filter(n => !same(DRAFT.genera[n], SAVED.genera[n]));
 function tile(n, p, v, st){
   // The cover shown in the header (his pick, else the automatic one) is marked on its photo either way.
@@ -297,8 +304,8 @@ function tile(n, p, v, st){
       ${st.cls === 'is-hidden' ? `<button type="button" data-act="hide" class="on">Show again</button>` : `
       <span class="adm-qseg adm-vseg" role="group" aria-label="View">${moves}</span>
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Cover">★ Cover</button>
-      ${p.cand ? '<button type="button" data-act="hide" title="Back to the candidates">Remove</button>' : '<button type="button" data-act="hide" title="Hide">Hide</button>'}
-      ${p.from || p.cand ? '' : `<select data-act="out" aria-label="Take out of this genus"><option value="">Not this</option><option value="cmp">Look-alike comparison</option><optgroup label="It shows another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`}`}
+      <button type="button" data-act="hide" title="Remove">Remove</button>
+      ${p.from ? '' : notThis(n)}`}
     </div></figure>`;
 }
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
@@ -331,17 +338,17 @@ function render(){
   $('preview').href = `./?draft#g-${encodeURIComponent(n)}`;
   const side = names.map(m => { const c = coverOf(m), e = DRAFT.genera[m] || {}, dirty = ch.includes(m), h = (e.hide || []).length;
     return `<a href="#${esc(m)}" class="adm-g${m === n ? ' cur' : ''}"${m === n ? ' aria-current="true"' : ''}>${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
-      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : '★'}${c && c.view === 'macro' && lv(m) !== 2 ? ' · <b class="warnc" title="Cover is a close-up">macro cover</b>' : ''}${h ? ` · ${h} hidden` : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}${missing(m).length ? ' · <b class="warnc" title="Missing photos">⚠ check</b>' : ''}</small></span><span class="dots">${e.ok ? (needs(m).length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></a>`; }).join('');
-  const body = rows(n).map(([v]) => { const r = rowOf(n, v), out = [...r.feat, ...r.rest, ...r.hid].filter(p => !shown(p)).length;
-    return `<section class="adm-row"><h3>${label(n, v)} <small>${r.feat.length + r.rest.length} photo${r.feat.length + r.rest.length === 1 ? '' : 's'}${r.hid.length ? ` · ${r.hid.length} hidden` : ''}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
-      <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: !r.pinned.includes(p.f), last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${r.rest.filter(shown).map(p => tile(n, p, v, {})).join('')}${r.hid.filter(shown).map(p => tile(n, p, v, {cls: 'is-hidden'})).join('')}</div>
+      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : '★'}${c && c.view === 'macro' && lv(m) !== 2 ? ' · <b class="warnc" title="Cover is a close-up">macro cover</b>' : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}${missing(m).length ? ' · <b class="warnc" title="Missing photos">⚠ check</b>' : ''}</small></span><span class="dots">${e.ok ? (needs(m).length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></a>`; }).join('');
+  const body = rows(n).map(([v]) => { const r = rowOf(n, v), out = [...r.feat, ...r.rest].filter(p => !shown(p)).length;
+    return `<section class="adm-row"><h3>${label(n, v)} <small>${r.feat.length + r.rest.length} photo${r.feat.length + r.rest.length === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
+      <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: !r.pinned.includes(p.f), last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${r.rest.filter(shown).map(p => tile(n, p, v, {})).join('')}</div>
       ${r.feat.length + r.rest.length ? '' : '<p class="note">No photo in this view.</p>'}</section>`; }).join('');
-  const P = pending(n), Ps = P.filter(shown), two = lv(n) === 2;
+  const P = unused(n), Ps = P.filter(shown), two = lv(n) === 2;
   const candTile = p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
     <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span></figcaption>
-    <div class="adm-acts">${qSeg(p)}${fSeg(p)}<span class="adm-qseg adm-vseg" role="group" aria-label="View">${VIEWS.filter(([w]) => !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="addc" data-to="${w}" title="Add to ${label(n, w)}">${label(n, w)}</button>`).join('')}</span></div></figure>`;
+    <div class="adm-acts">${qSeg(p)}${fSeg(p)}<span class="adm-qseg adm-vseg" role="group" aria-label="View">${VIEWS.filter(([w]) => !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="addc" data-to="${w}" title="Add to ${label(n, w)}">${label(n, w)}</button>`).join('')}</span>${p.from ? '' : notThis(n)}</div></figure>`;
   // Candidates: set apart from the views and folded by default (Pierre); open or closed is remembered.
-  const candRow = P.length ? `<details class="adm-row adm-cands"${store.get('imr-admin-cands', false) ? ' open' : ''}><summary><h3>Candidates <small>${P.length} new photo${P.length > 1 ? 's' : ''} not on the site yet${P.length - Ps.length ? ` · <b>${P.length - Ps.length} filtered out</b>` : ''}</small></h3></summary>
+  const candRow = P.length ? `<details class="adm-row adm-cands"${store.get('imr-admin-cands', false) ? ' open' : ''}><summary><h3>Candidates <small>${P.length} photo${P.length > 1 ? 's' : ''} not on the site${P.length - Ps.length ? ` · <b>${P.length - Ps.length} filtered out</b>` : ''}</small></h3></summary>
     <div class="adm-grid">${Ps.map(candTile).join('')}</div></details>` : '';
   const O = outOf(n), outRow = O.length ? `<section class="adm-row adm-out"><h3>Not this genus <small>${O.length} photo${O.length > 1 ? 's' : ''} taken out of <i>${esc(n)}</i></small></h3>
     <div class="adm-grid">${O.map(p => `<figure class="adm-tile is-hidden" data-f="${esc(p.f)}"><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button>

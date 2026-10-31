@@ -40,8 +40,10 @@ function applyCuration(d, c){
   if (c && c.book === false) Object.values(d.gen).forEach(g => { delete g.book; });
   // Book photos are candidates: only those Pierre approved in the admin (genera[n].add {f: view}) show, in that view.
   const X0 = (c && c.exclude) || {};
-  Object.entries(d.gen).forEach(([n, g]) => { if (!g.book) return; const A = (((c && c.genera) || {})[n] || {}).add || {};
-    g.book = g.book.filter(p => !X0[p.f] && A[p.f]).map(p => ({...p, view: A[p.f]})); });
+  // Book photos sent to another genus ("Not this", out) are kept here until the out step moves them, then filtered there.
+  const G0 = (c && c.genera) || {};
+  Object.entries(d.gen).forEach(([n, g]) => { if (!g.book) return; const A = (G0[n] || {}).add || {}, O = (G0[n] || {}).out || {};
+    g.book = g.book.filter(p => !X0[p.f] && (A[p.f] || O[p.f])).map(p => A[p.f] && !O[p.f] ? {...p, view: A[p.f]} : p); });
   // Excluded photos (exclude: {f: reason}) leave every list first: genera, lecture photos, candidates, comparisons.
   const X = (c && c.exclude) || {}, keep = L => (L || []).filter(p => !X[p.f]);
   if (Object.keys(X).length) {
@@ -57,12 +59,18 @@ function applyCuration(d, c){
       VIEWS.forEach(([v]) => ['views', 'more'].forEach(s => { const L = (g[s] || {})[v] || [], i = L.findIndex(x => x.f === f); if (i >= 0) { p = L.splice(i, 1)[0]; at = [s, v]; } }));
       const ci = (d.course[n] || []).findIndex(x => x.f === f); if (ci >= 0) { p = d.course[n].splice(ci, 1)[0]; at = ['course']; }
       const bi = (g.book || []).findIndex(x => x.f === f); if (bi >= 0) { p = g.book.splice(bi, 1)[0]; at = ['book']; }
+      // A candidate sent to another genus becomes a candidate there (shown once added in that genus).
+      const ki = ((d.cand || {})[n] || []).findIndex(x => x.f === f); if (ki >= 0) { p = d.cand[n].splice(ki, 1)[0]; at = ['cand']; }
       if (!p) return;
       if (to === 'cmp') (d.cmp = d.cmp || []).push({...p, g: [n]});
       else if (d.gen[to] && at[0] === 'book') (d.gen[to].book = d.gen[to].book || []).push({...p, t: to});
       else if (d.gen[to] && at[0] === 'course') (d.course[to] = d.course[to] || []).push(p);
+      else if (d.gen[to] && at[0] === 'cand') ((d.cand = d.cand || {})[to] = d.cand[to] || []).push(p);
       else if (d.gen[to]) { const G = d.gen[to], S = G[at[0]] = G[at[0]] || {}; (S[at[1]] = S[at[1]] || []).push(p); }
     }); });
+  // Book photos moved in from another genus show only once added here (add {f: view}).
+  Object.entries(d.gen).forEach(([n, g]) => { if (!g.book) return; const A = (G0[n] || {}).add || {};
+    g.book = g.book.filter(p => p.view || A[p.f]).map(p => p.view ? p : {...p, view: A[p.f]}); });
   Object.entries((c && c.genera) || {}).forEach(([n, k]) => {
     const g = d.gen[n]; if (!g) return;
     Object.entries(k.add || {}).forEach(([f, v]) => { const p = ((d.cand || {})[n] || []).find(x => x.f === f); if (p && VIEWS.some(([w]) => w === v)) (g.views[v] = g.views[v] || []).push(p); });
