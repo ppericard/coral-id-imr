@@ -537,7 +537,7 @@ function renderQuality(){
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
   cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field photos only (no lecture slide, no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible). Big number = photos, small = distinct colonies when fewer. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Click a row to open the genus.</p>`,
-  stats: `<p>Every quiz and duel answer synced to the sheet. Players are anonymous: a number, ranked by level; "you" marks the name synced in this browser (All / Others / Me). Level is on the same scale as photo difficulty. Last 20 = right answers among the player's last 20. Learned = genera learned on their last sync. Days = days with answers.</p>
+  stats: `<p>Every quiz and duel answer synced to the sheet. Players are anonymous: a number, ranked by level; "you" marks the name synced in this browser (All / Others / Me). Level is on the same scale as photo difficulty. Last 20 = right answers among the player's last 20. Learned = genera learned on their last sync. Days = days with answers. Photos = different photos answered (more = more variety). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsph: `<p>Photo difficulty (Elo) from every answer: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers; few answers = rough. Click a dot to see the photo.</p>
     <p>The quiz shows the colony, closer and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
@@ -1037,11 +1037,11 @@ function renderStats(){
 const statRows = () => ANS.rows.filter(r => SF.who === 'all' || !MEID || (SF.who === 'me') === (r[0] === MEID));
 function statsPlayers(){
   const head = `${statSwitch()}<div class="adm-shead"><h2>Players</h2>${MEID ? segBtns('who', [['all', 'All'], ['others', 'Others'], ['me', 'Me']]) : ''}</div>`;
-  if (ANS.old) { $v.innerHTML = head + `<p class="warn">Sheet script v${esc(ANS.v || '?')}: needs v4. <a href="https://raw.githubusercontent.com/${REPO}/main/tools/sync/Code.gs" target="_blank" rel="noopener">Code.gs</a></p>`; bindStats(); return; }
+  if (ANS.old) { $v.innerHTML = head + `<p class="warn">Sheet script v${esc(ANS.v || '?')}: needs v4 (v5 for calibration and variety). <a href="https://raw.githubusercontent.com/${REPO}/main/tools/sync/Code.gs" target="_blank" rel="noopener">Code.gs</a></p>`; bindStats(); return; }
   const R = statRows(), P = {};
   R.forEach(r => { const p = P[r[0]] = P[r[0]] || {id: r[0], L: [], d: new Set()}; p.L.push(r); p.d.add(new Date(r[1]).toDateString()); });
   const ps = Object.values(P).map(p => { p.L.sort((a, b) => a[1] - b[1]); const ok = p.L.filter(r => r[4]).length, last = p.L.slice(-20);
-    return {...p, n: p.L.length, ok, last: last.filter(r => r[4]).length / last.length, lv: (RAS[p.id] || [])[0], sum: ANS.players[p.id], at: p.L[p.L.length - 1][1]}; })
+    return {...p, n: p.L.length, ok, last: last.filter(r => r[4]).length / last.length, lv: (RAS[p.id] || [])[0], sum: ANS.players[p.id], at: p.L[p.L.length - 1][1], ph: new Set(p.L.flatMap(r => r[6].split(' ').filter(Boolean))).size}; })
     .sort((a, b) => (b.lv ?? -9) - (a.lv ?? -9) || b.n - a.n);
   const ok = R.filter(r => r[4]).length, wk = ps.filter(p => Date.now() - p.at < 7 * 864e5).length;
   // Learning curve: accuracy of each player's k-th answer, pooled in blocks.
@@ -1050,6 +1050,13 @@ function statsPlayers(){
   // Genera shown, and how often each was given wrongly (Pierre's rule: that genus is not mastered either).
   const G = {}; const gg = n => G[n] = G[n] || {n, s: 0, ok: 0, w: 0};
   R.forEach(r => { const g = gg(r[2]); g.s++; g.ok += r[4]; if (!r[4] && r[3]) gg(r[3]).w++; });
+  // Ability per genus (continuous difficulty, sheet v5): the median over players, from their last sync.
+  const med = a => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.floor(b.length / 2)] : null; };
+  const GT = {}; ps.forEach(p => Object.entries((p.sum || [])[3] || {}).forEach(([g, t]) => (GT[g] = GT[g] || []).push(t)));
+  // Calibration: expected success of each answer (sheet v5) against the actual result, by band of expected success.
+  const E = R.filter(r => r[7] != null), BANDS = [[0, .6], [.6, .75], [.75, .85], [.85, 1.01]];
+  const cal = BANDS.map(([a, b]) => { const L = E.filter(r => r[7] >= a && r[7] < b); return [a, b, L.length, L.reduce((t, r) => t + r[7], 0), L.filter(r => r[4]).length]; }).filter(c => c[2]);
+  const eMean = E.length ? E.reduce((t, r) => t + r[7], 0) / E.length : 0, eOk = E.filter(r => r[4]).length, NW = E.filter(r => r[9] > 0).length;
   const gl = Object.values(G).filter(g => g.s).sort((a, b) => a.ok / a.s - b.ok / b.s || b.s - a.s);
   const M = {}; R.filter(r => !r[4] && r[3]).forEach(r => { const k = r[2] + '|' + r[3]; M[k] = (M[k] || 0) + 1; });
   const ml = Object.entries(M).sort((a, b) => b[1] - a[1]).slice(0, 15), mm = ml.length ? ml[0][1] : 1;
@@ -1058,14 +1065,16 @@ function statsPlayers(){
   const total = DATA ? Object.keys(DATA.gen).length : 0;
   $v.innerHTML = head + kpis([['Players', ps.length], ['Answers', R.length], ['Right', pct(ok, R.length)], ['Active 7 d', wk]]) + (!R.length ? '<p class="note">No answers yet.</p>' : `
     <div class="adm-sgrid">
-    <section class="adm-scard wide"><h3>Players</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>#</th><th>Level</th><th>Answers</th><th>Right</th><th>Last 20</th><th>Learned</th><th>Days</th><th>Last</th></tr></thead><tbody>
-      ${ps.map((p, i) => `<tr${p.id === MEID ? ' class="me"' : ''}><td>${i + 1}${p.id === MEID ? ' <small>you</small>' : ''}</td><td>${p.lv == null ? '–' : sgn(p.lv)}</td><td>${p.n}</td><td>${pct(p.ok, p.n)}</td><td>${Math.round(100 * p.last)}%</td>
+    <section class="adm-scard wide"><h3>Players</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>#</th><th>Level</th><th>Answers</th><th>Right</th><th>Last 20</th><th title="Different photos answered">Photos</th><th>Learned</th><th>Days</th><th>Last</th></tr></thead><tbody>
+      ${ps.map((p, i) => `<tr${p.id === MEID ? ' class="me"' : ''}><td>${i + 1}${p.id === MEID ? ' <small>you</small>' : ''}</td><td>${p.lv == null ? '–' : sgn(p.lv)}</td><td>${p.n}</td><td>${pct(p.ok, p.n)}</td><td>${Math.round(100 * p.last)}%</td><td class="n">${p.ph}</td>
         <td>${p.sum ? `${p.sum[0]}/${p.sum[2] || total}` : '–'}</td><td>${p.d.size}</td><td>${days(p.at)}</td></tr>`).join('')}</tbody></table></div></section>
     <section class="adm-scard"><h3>Learning curve</h3><div class="adm-cols">${cv.map((b, k) => `<div title="Answers ${k * blk + 1}-${(k + 1) * blk}: ${b[0]}/${b[1]}"${b[1] < 10 ? ' class="few"' : ''}><i style="height:${Math.round(100 * b[0] / b[1])}%"></i><small>${Math.round(100 * b[0] / b[1])}</small></div>`).join('')}</div>
       <p class="adm-axis"><span>Answer 1</span><span>${blk} per bar</span><span>${cv.length * blk}</span></p></section>
+    <section class="adm-scard"><h3>Calibration</h3>${E.length ? `${kpis([['Expected', pct(eMean * E.length, E.length)], ['Actual', pct(eOk, E.length)], ['Target', '80%'], ['New photo', pct(NW, E.length)]])}
+      <table class="adm-tbl"><thead><tr><th>Expected</th><th>Actual</th><th></th><th>n</th></tr></thead><tbody>${cal.map(([a, b, n, se, ok]) => `<tr><td>${pct(se, n)}</td><td>${pct(ok, n)}</td><td>${sbar(ok, n, ok / n < se / n - .15 ? 'bad' : '')}</td><td class="n">${n}</td></tr>`).join('')}</tbody></table>` : `<p class="note">Needs answers logged by sheet script v5${ANS.v >= 5 ? '' : ` (now v${esc(ANS.v || '?')})`}.</p>`}</section>
     <section class="adm-scard"><h3>Conditions</h3><table class="adm-tbl">${cond.map(([t, n, r]) => `<tr><td>${t}</td><td>${pct(r, n)}</td><td>${sbar(r, n)}</td><td class="n">${n}</td></tr>`).join('')}</table></section>
-    <section class="adm-scard"><h3>Genera</h3><div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Shown</th><th>Right</th><th></th><th>n</th><th title="Given wrongly">Given ✗</th></tr></thead><tbody>
-      ${gl.map(g => `<tr><td><a class="adm-gen" href="#${esc(g.n)}"><i>${esc(g.n)}</i></a></td><td>${pct(g.ok, g.s)}</td><td>${sbar(g.ok, g.s, g.ok / g.s < .5 ? 'bad' : '')}</td><td class="n">${g.s}</td><td class="n">${g.w || ''}</td></tr>`).join('')}</tbody></table></div></section>
+    <section class="adm-scard"><h3>Genera</h3><div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Shown</th><th>Right</th><th></th><th>n</th><th title="Given wrongly">Given ✗</th><th title="Median player ability on the genus">Level</th></tr></thead><tbody>
+      ${gl.map(g => `<tr><td><a class="adm-gen" href="#${esc(g.n)}"><i>${esc(g.n)}</i></a></td><td>${pct(g.ok, g.s)}</td><td>${sbar(g.ok, g.s, g.ok / g.s < .5 ? 'bad' : '')}</td><td class="n">${g.s}</td><td class="n">${g.w || ''}</td><td class="n">${GT[g.n] ? sgn(med(GT[g.n])) : ''}</td></tr>`).join('')}</tbody></table></div></section>
     <section class="adm-scard"><h3>Mix-ups</h3>${ml.length ? `<table class="adm-tbl"><thead><tr><th>Shown</th><th>Answered</th><th></th><th>n</th></tr></thead><tbody>
       ${ml.map(([k, n]) => { const [a, b] = k.split('|'); return `<tr><td><i>${esc(a)}</i></td><td><a class="adm-gen" href="./#cmp-${encodeURIComponent(a)}|${encodeURIComponent(b)}" target="_blank" rel="noopener"><i>${esc(b)}</i></a></td><td>${sbar(n, mm, 'bad')}</td><td class="n">${n}</td></tr>`; }).join('')}</tbody></table>` : '<p class="note">None.</p>'}</section>
     </div>`);
