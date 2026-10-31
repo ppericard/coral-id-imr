@@ -1,0 +1,40 @@
+# Card summary per genus: the deciding features first (vs look-alikes), growth form last. Facts from Coral Finder + IMR lecture.
+Acropora	Axial corallite at every branch tip, larger than the cup-like radial corallites around it.
+Pocillopora	Branches covered in verrucae (bumps larger than a polyp), with corallites immersed on and between them.
+Stylophora	Tiny hooded corallites (~1 mm) give a scaly look; blunt, slightly flattened branch tips.
+Anacropora	No axial corallite; small, widely spaced, empty-looking corallites on thin branches with rounded ends.
+Seriatopora	Corallites (~1 mm) in rows along very fine branches, no hoods; compact tangled bushes.
+Porites	Very small corallites (0.8-1.5 mm) with well-formed shared walls: a pitted honeycomb surface.
+Tubastraea	No symbiotic algae: tubular corallites with high thin walls, no costae, smooth coenosteum; shaded overhangs.
+Echinopora	No axial corallite; rounded corallites (3-6 mm) with rows of fine spines between them, rough beaded surface.
+Astreopora	Cylindrical corallites (1.5-3 mm) lined with ragged spinules, pointing different ways; septa weak, like holes.
+Galaxea	Tubular, star-like corallites with protruding blade-like septa; tentacles sit outside the septa.
+Turbinaria	Well-spaced corallites (2-5 mm) on an always smooth, unornamented surface; plates, vases or cups.
+Mycedium	Large nose-like corallites (6-8 mm) inclined towards the colony margin, on one side of leafy plates.
+Lobophyllia	Large fleshy corallites or wide valleys (10-40 mm) with big spiky septal teeth under carpet-like tissue.
+Pavona	Wall-less corallites (2-4 mm) linked by smooth septo-costae, between sharp ridges; often on both sides of fronds.
+Pachyseris	Parallel valleys crossed by fine regular ribs at right angles, like a fingerprint; leafy plates.
+Pectinia	Large wall-less corallites at the bottom of deep valleys between tall, thin, fluted blades and spires.
+Platygyra	Brain coral with ragged walls and alternating septa, NO paliform lobes; valleys 4-10 mm.
+Leptoria	Brain coral with very narrow valleys and equal, evenly spaced septa like a zipper; no paliform lobes.
+Goniopora	24 tentacles per polyp (Alveopora 12); long fleshy polyps extended day and night, often pulsing.
+Plerogyra	Large translucent grape-like vesicles inflated by day, hiding stalks with costae.
+Montipora	Smallest corallites of all (0.5-1 mm), poorly defined, among bumps, ridges and spines that are not corallites.
+Hydnophora	Monticules: conical skeletal bumps with the corallites in the hollows between them.
+Fungia	Free-living round disc with a central mouth and regular saw-like septal teeth (~1 mm).
+Lithophyllon	Free-living round disc with fine, regular septal teeth (<1 mm) giving a neat, smooth look.
+Danafungia	Free-living round disc, domed in the centre, with large irregular septal teeth (>1 mm).
+Ctenactis	Free-living elongate disc, one long axial furrow with mouths but no secondary mouths; large saw-like teeth.
+Lobactis	Free-living oval disc (to 17 cm) with tall pale tentacular lobes raised on the major septa.
+Herpolitha	Free-living elongate colony: long axial furrow plus secondary mouths across the surface; can be X or Y shaped.
+Heliofungia	Free-living disc hidden by long anemone-like tentacles with white tips, extended by day.
+Dipsastraea	Separate-walled oval corallites that divide in two (intra-tentacular budding); colony not crowded.
+Astrea	Crowded round corallites with separate walls; small ones bud between large ones (extra-tentacular); alternating septa.
+Diploastrea	Low cone-shaped corallites (8-10 mm) with broad walls in a regular polygonal pattern; large domes.
+Goniastrea	Crown of paliform lobes always present; neat, angular corallites with thin shared walls.
+Favites	Mostly shared walls (3-8 mm), sometimes separate with a shadow between; extra-tentacular budding, paliform lobes rare.
+Duncanopsammia	Like Turbinaria but corallites about 6 mm, raised and rounded, with large polyps; thicker, less regular plates.
+Alveopora	12 tentacles per polyp (Goniopora 24); fleshy flower-like polyps on a light, porous skeleton.
+Merulina	Short valleys that divide and fan out towards the margin, with herringbone septa; thin tiered plates.
+Cyphastrea	Small round cone corallites (1-2 mm) with separate walls, beads and spinules between; neater than Astreopora.
+Halomitra	Free-living round dome (to 50 cm) with widely spaced corallites inclined to the margin; margin often purple.
