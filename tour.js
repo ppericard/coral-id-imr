@@ -1,95 +1,112 @@
-// Welcome tour: four short cards for a first visit (what the app is for, the Learn > Practice > Identify path,
-// how Practice adapts and what "learned" means, signing in, where help lives). Shown once per browser
-// (localStorage imr-tour, outside the imr-coral-* progress keys so backups and resets leave it alone), never on its
-// own for the admin browser, and replayable from the ? help of any page (or ?tour in the URL).
+// Guided tour: walks a new RA through the real pages (Home path, Learn, Practice, Identify, My progress, help),
+// spotlighting one element per step with a short bubble. Shown once per browser (localStorage imr-tour, outside the
+// imr-coral-* progress keys so backups and resets leave it alone), never on its own for the admin browser, and
+// replayable from the ? help of any page (or ?tour in the URL). The sign-in step lets the RA type in the real form.
 (function(){
   const KEY = 'imr-tour';
-  let box = null, step = 0, back = null;
-  // The first photo of a game set not already used (sets can share photos).
-  const pick = (n, v, lv, not = []) => { const g = DATA.gen[n]; if (!g) return null; const s = (g.sl || {})[v] || {};
-    return (s[lv] || []).find(p => !not.some(q => q.f === p.f || (q.o && q.o === p.o))) || null; };
-  const pic = (p, alt = '') => p ? `<img src="${img(p, 's')}" alt="${esc(alt)}" loading="lazy">` : '';
-  // A genus with an easy, a medium and a hard mid-distance photo, for the "photos get harder" strip.
-  function ladder(){
-    for (const n of ['Acropora', 'Pocillopora', 'Porites', ...shuffle(Object.keys(DATA.gen))]) for (const v of ['wide', 'medium']) {
-      const ph = []; for (const l of ['easy', 'medium', 'hard']) { const p = pick(n, v, l, ph); if (!p) break; ph.push(p); }
-      if (ph.length === 3) return {n, ph};
-    }
-    return null;
+  const STEPS = [
+    {h: '', sel: '.hpath', t: 'Three steps', d: 'Learn the genera, practise on photos, then identify corals on your own photos.'},
+    {h: 'genera', sel: '#azgrid a.card', t: 'Learn: one card per genus', d: 'The card shows the deciding features. Tap it for the genus sheet: photos at 3 scales, IMR ID tips, look-alikes.'},
+    {h: 'quiz', sel: '.qstage', t: 'Practice: name the genus', d: 'Two photos of the same coral: the colony, then a closer view.'},
+    {h: 'quiz', sel: '.ans', t: 'Pick an answer', d: 'Wrong? You see why, with the IMR ID tips of both genera. Photos get harder as you get a genus right.'},
+    {h: 'quiz', sel: '#hintb', t: 'Stuck? Look at the corallites', d: 'You need one right answer with the corallites open to learn a genus.'},
+    {h: 'finder', sel: '.fdforms, #labroot', t: 'Identify a coral on your photos', d: 'Start from its growth form, then compare the candidate genera side by side.'},
+    {h: 'progress', sel: '.pwall, .pgrid', t: 'Your progress', d: 'A genus turns green once learned: right answers on harder photos, once with the corallites, once in a look-alike duel.'},
+    {h: 'progress', sel: '#sync', t: 'Sign in', d: 'Your name and a 4-digit code: your progress is saved for your trainer and follows you on any device.', live: true},
+    {h: '', sel: '#help', t: 'Help on every page', d: 'Tap ? for what a page does. ⚙ sets photo source, size and theme. Replay this tour from ?.', alt: '#setb'}
+  ];
+  let root = null, step = 0, token = 0, target = null, tick = null;
+  const vis = el => { if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+  const find = s => [...document.querySelectorAll(s.sel)].find(vis) || (s.alt && [...document.querySelectorAll(s.alt)].find(vis)) || null;
+  const here = h => decodeURIComponent(location.hash.slice(1)) === h;
+  function nav(h){
+    if (here(h)) return;
+    if (!h) { history.pushState(null, '', location.pathname + location.search); route(); }
+    else location.hash = h;
   }
-  const PATH = [['Learn', 'See each genus', 'Acropora', 'medium'], ['Practice', 'Train your eye', 'Platygyra', 'macro'], ['Identify', 'Name corals on your photos', 'Pocillopora', 'wide']];
-  const viewPic = (n, v) => { const g = DATA.gen[n]; return g ? (g.views[v] || [])[0] || cover(g) : null; };
-  function slides(){
-    const L = ladder(), ph = phone();
-    return [
-      `<h2>Welcome to IMR Coral ID</h2>
-       <p>Learn to recognise the 39 coral genera of the IMR slate on photos.</p>
-       <ol class="tpath">${PATH.map(([t, d, n, v]) => `<li>${pic(viewPic(n, v))}<b>${t}</b><small>${d}</small></li>`).join('')}</ol>`,
-      `<h2>Practice adapts to you</h2>
-       <p>Each genus starts with easy photos. Get it right and the photos get harder.</p>
-       ${L ? `<div class="tladder">${L.ph.map((p, i) => `<figure>${pic(p, L.n)}<figcaption>${['Easy', 'Medium', 'Hard'][i]}</figcaption></figure>`).join('<span aria-hidden="true">›</span>')}</div>` : ''}
-       <p class="tlv"><span class="lvl new">Not seen</span> <span class="lvl mid">Learning</span> <span class="lvl weak">Review</span> <span class="lvl ok">Learned</span></p>
-       <p class="note"><b>Learned</b> = many right answers (hard photos count more), once with the corallites shown and once in a look-alike duel.</p>`,
-      `<h2>Save your progress</h2>
-       <section class="sync tsync"></section>`,
-      `<h2>Help is one tap away</h2>
-       <ul class="ttools">
-         <li><b class="tkey">?</b><span>Help for the page you are on</span></li>
-         <li><b class="tkey">⚙</b><span>Photo source, size and theme</span></li>
-         <li><b class="tkey tprog">${ph ? 'Progress' : 'My progress'}</b><span>Your progress per genus</span></li>
-       </ul>
-       <p class="note">Replay this tour from <b>?</b> on any page.</p>`
-    ];
-  }
+  // Wait for the page to render the step's element (a route can take a frame or two), then spotlight it.
   function show(i){
-    const S = slides(); step = Math.max(0, Math.min(S.length - 1, i));
-    const last = step === S.length - 1;
-    box.querySelector('.tbody').innerHTML = S[step];
-    box.querySelector('.tdots').innerHTML = S.map((_, k) => `<button type="button" aria-label="Card ${k + 1}"${k === step ? ' aria-current="step"' : ''}></button>`).join('');
-    box.querySelectorAll('.tdots button').forEach((b, k) => b.onclick = () => show(k));
-    box.querySelector('.tback').hidden = step === 0;
-    const nx = box.querySelector('.tnext'); nx.textContent = last ? 'Start practising' : 'Next';
-    const sk = box.querySelector('.tskip'); sk.hidden = last;
-    const sy = box.querySelector('.tsync'); if (sy) bindSync(sy);
+    step = Math.max(0, Math.min(STEPS.length - 1, i));
     try { sessionStorage.setItem(KEY, String(step)); } catch (e) {}  // a sign-in reloads the page: the tour comes back here
-    box.querySelector('.tcard').focus({preventScroll: true});
+    const s = STEPS[step], my = ++token;
+    nav(s.h);
+    const t0 = Date.now();
+    (function wait(){
+      if (my !== token || !root) return;
+      const el = find(s);
+      if (!el && Date.now() - t0 < 4000) return setTimeout(wait, 80);
+      target = el;
+      if (el) { if (s.h === '' && s.sel === '#help') window.scrollTo(0, 0); else el.scrollIntoView({block: phone() ? 'start' : 'center', inline: 'nearest'}); }
+      if (el && phone() && s.sel !== '#help') window.scrollBy(0, -12);
+      bubble(); place();
+    })();
+  }
+  function bubble(){
+    const s = STEPS[step], last = step === STEPS.length - 1, b = root.querySelector('.tbub');
+    b.innerHTML = `<p class="tstep">${step + 1} / ${STEPS.length}</p><h3>${esc(s.t)}</h3><p>${esc(s.d)}</p>
+      <div class="tnav"><button type="button" class="linkish tskip">${last ? 'Close' : 'Skip tour'}</button><span>
+      ${step ? '<button type="button" class="chip tback">Back</button>' : ''}<button type="button" class="next tnext">${last ? 'Start practising' : 'Next'}</button></span></div>`;
+    b.querySelector('.tskip').onclick = () => close();
+    if (step) b.querySelector('.tback').onclick = () => show(step - 1);
+    b.querySelector('.tnext').onclick = () => last ? close('quiz') : show(step + 1);
+    root.classList.toggle('live', !!s.live);
+    b.focus({preventScroll: true});
+  }
+  // Dim everything but the target: an SVG path with a hole. A transparent block covers the hole, except on
+  // "live" steps (sign-in), where the RA can use the page through it.
+  function place(){
+    if (!root) return;
+    if (target && !target.isConnected) target = find(STEPS[step]);  // the page re-rendered under the tour
+    const W = innerWidth, H = innerHeight, svg = root.querySelector('svg'), b = root.querySelector('.tbub'), blk = root.querySelector('.tblk');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    let hole = '';
+    const r = target && vis(target) ? target.getBoundingClientRect() : null, pad = 6;
+    if (r) {
+      const x = Math.max(2, r.left - pad), y = Math.max(2, r.top - pad), w = Math.min(W - 2, r.right + pad) - x, h = Math.max(24, Math.min(H - 2, r.bottom + pad) - y), k = Math.min(10, w / 2, h / 2);
+      hole = ` M${x + k},${y} h${w - 2 * k} a${k},${k} 0 0 1 ${k},${k} v${h - 2 * k} a${k},${k} 0 0 1 -${k},${k} h-${w - 2 * k} a${k},${k} 0 0 1 -${k},-${k} v-${h - 2 * k} a${k},${k} 0 0 1 ${k},-${k} z`;
+      Object.assign(blk.style, {left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', display: ''});
+      root.querySelector('.tring').setAttribute('d', hole.trim());
+    } else { blk.style.display = 'none'; root.querySelector('.tring').setAttribute('d', ''); }
+    root.querySelector('.tdim').setAttribute('d', `M0,0 H${W} V${H} H0 Z` + hole);
+    // The bubble: phones keep it at the bottom (CSS); wider screens put it below, above or beside the target.
+    // Phones: a sheet at the bottom, or at the top when the target sits in the lower half (it can't always scroll up).
+    if (phone()) { b.style.left = b.style.top = ''; b.classList.toggle('up', !!r && r.top + Math.min(r.height, H / 2) / 2 > H / 2); return; }
+    const bw = b.offsetWidth, bh = b.offsetHeight, m = 14;
+    let left, top;
+    if (!r) { left = (W - bw) / 2; top = (H - bh) / 2; }
+    else if (H - r.bottom - pad > bh + m) { top = r.bottom + pad + m; left = r.left; }
+    else if (r.top - pad > bh + m) { top = r.top - pad - m - bh; left = r.left; }
+    else if (W - r.right > bw + m) { left = r.right + pad + m; top = r.top; }
+    else if (r.left > bw + m) { left = r.left - pad - m - bw; top = r.top; }
+    else { left = W - bw - m; top = H - bh - m; }  // a target filling the screen: bottom-right corner
+    b.style.left = Math.max(m, Math.min(W - bw - m, left)) + 'px';
+    b.style.top = Math.max(m, Math.min(H - bh - m, top)) + 'px';
   }
   function close(to){
-    if (!box) return;
+    if (!root) return;
+    token++;
     try { sessionStorage.removeItem(KEY); } catch (e) {}
-    box.remove(); box = null; document.removeEventListener('keydown', onKey); removeEventListener('hashchange', onNav); document.documentElement.classList.remove('touring');
-    bindSync();  // the page's own sign-in box (My progress) follows a sign-in made in the tour
-    if (to) go(to); else if (back && back.focus) back.focus({preventScroll: true});
+    clearInterval(tick); root.remove(); root = null; target = null;
+    document.removeEventListener('keydown', onKey); removeEventListener('resize', place); removeEventListener('scroll', place);
+    if (to) go(to);
   }
-  const onNav = () => close();  // a tab bar tap (phones) leaves the tour
   function onKey(e){
-    if (e.target.closest && e.target.closest('input')) { if (e.key === 'Escape') close(); return; }
-    if (e.key === 'Escape') close();
-    else if (e.key === 'ArrowRight') show(step + 1);
-    else if (e.key === 'ArrowLeft') show(step - 1);
+    if (e.key === 'Escape') return close();
+    if (e.target.closest && e.target.closest('input, textarea, select')) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); show(step + 1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); show(step - 1); }
   }
   window.tour = function(at = 0){
-    if (box || typeof DATA === 'undefined' || !DATA) return;
+    if (root || typeof DATA === 'undefined' || !DATA) return;
     try { localStorage.setItem(KEY, '1'); } catch (e) {}
-    back = document.activeElement;
-    box = document.createElement('div');
-    box.id = 'tour'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', 'Welcome tour');
-    box.innerHTML = `<div class="tcard" tabindex="-1">
-      <button type="button" class="tskip">Skip</button>
-      <div class="tbody"></div>
-      <div class="tnav"><button type="button" class="chip tback">Back</button><span class="tdots"></span><button type="button" class="next tnext">Next</button></div>
-    </div>`;
-    document.body.appendChild(box); document.documentElement.classList.add('touring');
-    box.querySelector('.tskip').onclick = () => close();
-    box.querySelector('.tback').onclick = () => show(step - 1);
-    box.querySelector('.tnext').onclick = () => step === slides().length - 1 ? close('quiz') : show(step + 1);
-    box.addEventListener('click', e => { if (e.target === box) close(); });
-    // Phones: swipe between cards.
-    let x0 = null;
-    box.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, {passive: true});
-    box.addEventListener('touchend', e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null;
-      if (Math.abs(dx) > 50 && !e.target.closest('input')) show(step + (dx < 0 ? 1 : -1)); });
-    document.addEventListener('keydown', onKey); addEventListener('hashchange', onNav);
+    $helpbox.hidden = true; $help.setAttribute('aria-expanded', 'false');
+    root = document.createElement('div');
+    root.id = 'tour'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'Guided tour');
+    root.innerHTML = `<svg aria-hidden="true" preserveAspectRatio="none"><path class="tdim" fill-rule="evenodd"/><path class="tring"/></svg>
+      <div class="tblk"></div><div class="tbub" tabindex="-1" aria-live="polite"></div>`;
+    document.body.appendChild(root);
+    document.addEventListener('keydown', onKey); addEventListener('resize', place); addEventListener('scroll', place, {passive: true});
+    tick = setInterval(place, 400);  // photos loading move things without a scroll or resize
     show(at);
   };
   // First visit: once the data is in (app.js calls this after the first route).
