@@ -122,10 +122,11 @@ LAB.add({
       const mosaic = n => { const g = G[n];
         return `<article class="fdrow"><div class="fdinfo">${head(n)}<p>${esc(tipsText(g))}</p>${tools(n)}${more(n)}</div>
           <div class="fdmos">${varied(g, 8).map(p => ph(n, p, p.view)).join('')}</div></article>`; };
-      // Opened genus: full width, every photo (of the picked view, or the mix) at a larger size, ID cues and Coral Finder features.
+      // Opened genus: photos dominate; a narrow side column holds the name, the IMR cue, the tools and (folded) the
+      // Coral Finder features.
       const big = (n, off) => { const g = G[n];
-        return `<article class="fdbig${off ? ' off' : ''}"><div class="fdbighd"><div class="fdinfo">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}</div>${tools(n)}</div>
-          <div class="fdbigtx"><p>${esc(tipsText(g))}</p><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>
+        return `<article class="fdbig${off ? ' off' : ''}"><div class="fdinfo fdbigside">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}
+          <p class="fdcue">${esc(tipsText(g))}</p><details class="fdcrit"><summary>Coral Finder</summary><ul>${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details>${tools(n)}</div>
           <div class="fdbigph">${varied(g, 99).map(p => ph(n, p, p.view)).join('')}</div></article>`; };
       // Contact sheet: one line per genus with all its photos, small, to scan the whole shortlist line by line.
       const sheet = n => isX(n) ? big(n) : `<article class="fdsheet"><div class="fdinfo">${head(n)}</div><div class="fdall">${varied(G[n], 99).map(p => ph(n, p, p.view)).join('')}</div></article>`;
