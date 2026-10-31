@@ -82,6 +82,10 @@ body.admin .hdr-tools[hidden]{display:none}
 .adm-addrow{display:flex;gap:4px;width:100%}
 .adm-acts .adm-addrow button{flex:1;min-width:0;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm-cands h3{color:var(--accent)}
+.adm-cands{margin-top:28px;padding-top:16px;border-top:3px double var(--line,#ccc)}
+.adm-cands>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px}.adm-cands>summary::-webkit-details-marker{display:none}
+.adm-cands>summary::before{content:"▸";color:var(--accent);font-size:1.1rem}.adm-cands[open]>summary::before{content:"▾"}
+.adm-cands>summary h3{margin:0}
 .adm-src.multi{background:var(--bad-bg);color:var(--bad)}
 .adm-acts{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px 8px;margin-top:auto}
 .adm-acts button,.adm-acts select{font:inherit;font-size:.78rem;min-height:28px;padding:0 9px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--ink);cursor:pointer}
