@@ -228,7 +228,9 @@ const ensureFeat = (k, n, v) => { k.feat = k.feat || {}; if (!k.feat[v]) k.feat[
 const dropFeat = (k, f) => Object.keys(k.feat || {}).forEach(v => { k.feat[v] = k.feat[v].filter(x => x !== f); if (!k.feat[v].length) delete k.feat[v]; });
 const ACT = {
   cover: (n, f) => edit(n, k => { if (k.cover === f) delete k.cover; else k.cover = f; }),
-  feat: (n, f, v) => edit(n, k => { const L = ensureFeat(k, n, v);
+  // On an automatic pick, a click on a photo already featured confirms the whole pick as yours (it never drops it).
+  feat: (n, f, v) => edit(n, k => { const auto = !(k.feat || {})[v], L = ensureFeat(k, n, v);
+    if (auto && L.includes(f)) return;
     if (L.includes(f)) { L.splice(L.indexOf(f), 1); if (!L.length) { toast('A view needs at least one featured photo: back to the automatic pick.'); delete k.feat[v]; } }
     else if (L.length >= FEAT) toast(`Already ${FEAT} featured: remove one first.`); else L.push(f); }),
   addc: (n, f, v, to) => edit(n, k => { k.add = k.add || {}; k.add[f] = to; }),
