@@ -1061,7 +1061,7 @@ function statsPlayers(){
   const gl = Object.values(G).filter(g => g.s).sort((a, b) => a.ok / a.s - b.ok / b.s || b.s - a.s);
   const M = {}; R.filter(r => !r[4] && r[3]).forEach(r => { const k = r[2] + '|' + r[3]; M[k] = (M[k] || 0) + 1; });
   const ml = Object.entries(M).sort((a, b) => b[1] - a[1]).slice(0, 15), mm = ml.length ? ml[0][1] : 1;
-  const cond = [['Quiz', r => !r[5].startsWith('quiz-duel')], ['Duel', r => r[5].startsWith('quiz-duel')], ['With corallites', r => /-macro-/.test(r[6])], ['Without corallites', r => !/-macro-/.test(r[6])]]
+  const cond = [['Quiz', r => !r[5].startsWith('quiz-duel')], ['Duel', r => r[5].startsWith('quiz-duel')], ['Single view', r => r[6].split(' ').filter(Boolean).length === 1], ['All views', r => r[6].split(' ').filter(Boolean).length > 1], ['With corallites', r => /-macro-/.test(r[6])], ['Without corallites', r => !/-macro-/.test(r[6])]]
     .map(([t, f]) => { const L = R.filter(f); return [t, L.length, L.filter(r => r[4]).length]; }).filter(c => c[1]);
   const total = DATA ? Object.keys(DATA.gen).length : 0;
   $v.innerHTML = head + kpis([['Players', ps.length], ['Answers', R.length], ['Right', pct(ok, R.length)], ['Active 7 d', wk]]) + (!R.length ? '<p class="note">No answers yet.</p>' : `
