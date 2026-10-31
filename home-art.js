@@ -31,5 +31,6 @@
     zoom: photo(6, 8, 64, 74, 7, 'f5') + R(52, 30, 18, 18, 'frame', 1) + L(70, 30, 92, 14, 's') + L(70, 48, 92, 82, 's') + photo(92, 14, 62, 68, 2.4, 'f5') + T(38, 88, 'colony', 'k') + T(123, 88, 'corallites', 'k'),
     spot: photo(8, 8, 90, 74, 4.5, 'f3') + C(60, 38, 11, 'target') + R(104, 14, 50, 14, 'w o', 4) + T(129, 24, 'walls?', 'k') + [0, 1, 2].map(i => R(104, 36 + i * 15, 50, 11, i === 0 ? 'a' : 'l', 4)).join('')
   };
+  ART.finder = ART.key;
   window.homeArt = id => ART[id] ? `<svg viewBox="0 0 160 90" role="img" aria-hidden="true"><defs><filter id="hblur"><feGaussianBlur stdDeviation="3"/></filter></defs>${ART[id]}</svg>` : '';
 })();

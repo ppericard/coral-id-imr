@@ -3,7 +3,7 @@
 LAB.add({
   id: 'elim', icon: '▦', title: 'Elimination board',
   blurb: 'All 39 genera on one board. Tick what you see and watch the impossible ones fade out, with a hint on what to check next.',
-  lede: 'Same logic as Identify › By corallites, made visual. Several ticks in one section mean either/or; sections combine. "Mystery photo" gives you a coral to work out.',
+  lede: 'The corallite clues of Identify › Coral Finder as a strict elimination board. Several ticks in one section mean either/or; sections combine. "Mystery photo" gives you a coral to work out.',
   render(root){
     const sel = new Set(); let mystery = null;
     root.innerHTML = `<div class="elimlayout"><aside class="elimside"><div class="elimtop"><div id="elimmyst"></div><div class="elimctl">
