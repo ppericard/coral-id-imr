@@ -405,3 +405,57 @@ td.cov-c small::before{content:"·";margin-right:3px}
   .cov-src small{display:none}
   .cov-bar{width:100%;min-width:30px}
 }
+
+/* ---------- Stats (players, photo difficulty) ---------- */
+:root{--v-wide:#0d6f7d;--v-medium:#c27c0e;--v-macro:#8a4fb3;--v-cand:#8a979c}
+:root[data-theme="dark"]{--v-wide:#5cc6d3;--v-medium:#f0b04a;--v-macro:#c49be0;--v-cand:#6f8188}
+.adm-stabs{border-top:0;padding-top:10px;margin-top:4px}
+.adm-stabs a{text-decoration:none}
+.adm-shead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:6px 0 10px}
+.adm-shead h2{margin:0}
+.adm-sseg.adm-qseg{flex:0 0 auto;margin:0}
+.adm-sseg button{font:inherit;font-size:.82rem;border:0;min-height:30px;padding:0 12px;background:var(--surface);color:var(--muted);cursor:pointer}
+.adm-sseg button+button{border-left:1px solid var(--line)}
+.adm-sseg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.adm-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.adm-kpis div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px 12px;display:flex;flex-direction:column}
+.adm-kpis b{font-family:var(--display);font-size:1.6rem;line-height:1.1}
+.adm-kpis span{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.adm-sgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.adm-scard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;min-width:0}
+.adm-scard h3{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.adm-tscroll{overflow-x:auto}
+.adm-tscroll.tall{max-height:420px;overflow-y:auto}
+.adm-tbl{width:100%;border-collapse:collapse;font-size:.88rem;font-variant-numeric:tabular-nums}
+.adm-tbl th{text-align:left;padding:3px 6px;font-size:.68rem;position:sticky;top:0;background:var(--surface)}
+.adm-tbl td{padding:3px 6px;border-top:1px solid var(--line);white-space:nowrap}
+.adm-tbl td.n{color:var(--muted);text-align:right}
+.adm-tbl tr.me td{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.adm-tbl small{color:var(--accent);font-weight:600}
+.adm-bar{display:inline-block;width:90px;height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;vertical-align:middle}
+.adm-bar i{display:block;height:100%;background:var(--accent)}
+.adm-bar.bad i{background:var(--bad)}
+.adm-cols{display:flex;align-items:flex-end;gap:3px;height:140px;border-bottom:1px solid var(--line)}
+.adm-cols>div{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;position:relative;min-width:4px}
+.adm-cols>div>i{display:block;background:var(--accent);border-radius:2px 2px 0 0}
+.adm-cols.stack>div>i{border-radius:0}
+.adm-cols small{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:.66rem;color:var(--accent-ink)}
+.adm-axis{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin:3px 0 0}
+.adm-axis.strip{padding-left:156px}
+.adm-legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.75rem;color:var(--muted);margin:6px 0}
+.adm-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.v-wide{background:var(--v-wide)!important}.v-medium{background:var(--v-medium)!important}.v-macro{background:var(--v-macro)!important}.v-cand{background:var(--v-cand)!important}
+.adm-gstrips>div{display:grid;grid-template-columns:100px 44px minmax(0,1fr);align-items:center;gap:6px;min-height:22px;border-top:1px solid var(--line)}
+.adm-gstrips .n{font-size:.78rem;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.adm-strip{position:relative;height:18px}
+.adm-strip b{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.adm-strip button{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;border:1px solid var(--surface);padding:0;cursor:zoom-in;opacity:.85}
+.adm-strip button:hover{opacity:1;transform:scale(1.4);z-index:1}
+@media (min-width:600px){
+  .adm-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .adm-sgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .adm-scard.wide{grid-column:1/-1}
+}
+@media (min-width:1024px){
+  .adm-sgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
