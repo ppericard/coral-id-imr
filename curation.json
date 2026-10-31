@@ -27,7 +27,8 @@
       "add": {
         "acropora-cand-339004335": "medium",
         "acropora-cand-269472875": "wide"
-      }
+      },
+      "ok": true
     },
     "Pocillopora": {
       "hide": [
@@ -59,10 +60,12 @@
     "pocillopora-wide-374959119": 1
   },
   "gf": {
+    "acropora-cand-339004335": "B",
     "acropora-wide-580859207": "T",
     "acropora-wide-745206089": "B",
     "imr-p12_i8": "S",
-    "imr-p16_i6": "S"
+    "imr-p16_i6": "S",
+    "imrl-p8_i9": "x"
   },
   "exclude": {
     "pocillopora-cand-175099231": "excluded",
