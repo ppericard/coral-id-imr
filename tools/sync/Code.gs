@@ -74,5 +74,8 @@ function logAnswers_(name, answers){
   const seen = new Set(n > 0 ? sh.getRange(2, 8, n, 1).getValues().map(r => String(r[0])) : []);
   const rows = answers.filter(a => a && a.id && !seen.has(String(a.id))).slice(0, 500)
     .map(a => [name, new Date(a.t), String(a.g || ''), String(a.a || ''), a.ok ? 1 : 0, String(a.m || ''), String(a.ph || ''), String(a.id)]);
-  if (rows.length) sh.getRange(sh.getLastRow() + 1, 1, rows.length, LOG.length).setValues(rows);
+  if (!rows.length) return;
+  const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
+  if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
+  sh.getRange(at, 1, rows.length, LOG.length).setValues(rows);
 }
