@@ -2,20 +2,18 @@
 .home-page h3{font-family:var(--display);font-size:1.35rem;margin:28px 0 4px}
 .home-page h3 a{color:var(--ink);text-decoration:none}
 .home-page h3 a::after{content:" ›";color:var(--accent)}
-.hhero{position:relative;border-radius:14px;overflow:hidden;margin-top:14px;min-height:360px;display:grid;background:#0b1a1f}
-.hmosaic{position:absolute;inset:0;display:grid;grid-template-columns:repeat(14,1fr);grid-template-rows:repeat(3,1fr);gap:2px;opacity:.75}
+.hhero{position:relative;border-radius:14px;overflow:hidden;margin-top:14px;min-height:150px;display:grid;background:#0b1a1f}
+.hmosaic{position:absolute;inset:0;display:grid;grid-template-columns:repeat(16,1fr);grid-template-rows:1fr;gap:2px;opacity:.75}
 .hmosaic a{position:relative;display:block;overflow:hidden;animation:hfade .8s both;animation-delay:calc(var(--i) * 25ms)}
 .hmosaic img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
 .hmosaic span{position:absolute;left:4px;bottom:3px;font-size:.7rem;font-style:italic;color:#fff;text-shadow:0 1px 3px #000;opacity:0;transition:opacity .3s}
 .hmosaic a:hover img{transform:scale(1.12)}
 .hmosaic a:hover span{opacity:1}
 @keyframes hfade{from{opacity:0}to{opacity:1}}
-.hintro{position:relative;align-self:end;margin:28px;max-width:560px;padding:20px 24px;border-radius:12px;background:color-mix(in srgb,#0b1a1f 82%,transparent);color:#eef6f7;backdrop-filter:blur(3px)}
-.hintro h2{color:#fff;font-size:2rem;margin:0 0 6px}
+.hintro{position:relative;align-self:center;display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px;margin:20px;max-width:none;justify-self:start;padding:14px 20px;border-radius:12px;background:color-mix(in srgb,#0b1a1f 82%,transparent);color:#eef6f7;backdrop-filter:blur(3px)}
+.hintro h2{color:#fff;font-size:1.6rem;margin:0}
 .hintro p{margin:6px 0}
-.hstats{display:flex;flex-wrap:wrap;gap:6px 18px;color:#b9cfd3}
-.hstats b{font-family:var(--display);font-size:1.4rem;color:#fff;margin-right:4px}
-.hcta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px!important}
+.hcta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0!important}
 .hcta .chip{background:transparent;color:#fff;border-color:#fff8}
 .htools{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin-top:8px}
 .htool{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;color:var(--ink);text-decoration:none}
@@ -26,8 +24,8 @@
 .hpv img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s,filter .6s}
 .htool:hover .hpv img{transform:scale(1.06)}
 @media (max-width:560px){
-  .hmosaic{grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(7,1fr)}
-  .hhero{min-height:420px}
+  .hmosaic{grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(2,1fr)}
+  .hhero{min-height:170px}
   .hintro{margin:12px;padding:14px 16px}
   .hintro h2{font-size:1.5rem}
   .htools{grid-template-columns:repeat(2,minmax(0,1fr))}
