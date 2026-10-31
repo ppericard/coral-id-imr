@@ -241,9 +241,9 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 /* ---------- Quiz: one screen, photos left (sized to the window), choices and feedback right ---------- */
 .q{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,320px);gap:16px;height:var(--qh,70vh);margin-top:12px}
 .qstage{display:grid;gap:8px;min-height:0;align-content:center}
-body:has(.q),body:has(.pgrid),body:has(.rvstage),body:has(.pgroups),body:has(.pslate){padding-bottom:0}
-body:has(.q) footer,body:has(.pgrid) footer,body:has(.rvstage) footer,body:has(.pgroups) footer,body:has(.pslate) footer{display:none}
-body:has(.q) main,body:has(.pgrid) main,body:has(.rvstage) main,body:has(.pgroups) main,body:has(.pslate) main{margin-bottom:0}
+body:has(.q),body:has(.pgrid),body:has(.rvstage),body:has(.pgroups),body:has(.pslate),body:has(.lk){padding-bottom:0}
+body:has(.q) footer,body:has(.pgrid) footer,body:has(.rvstage) footer,body:has(.pgroups) footer,body:has(.pslate) footer,body:has(.lk) footer{display:none}
+body:has(.q) main,body:has(.pgrid) main,body:has(.rvstage) main,body:has(.pgroups) main,body:has(.pslate) main,body:has(.lk) main{margin-bottom:0}
 .qph{position:relative;margin:0;overflow:hidden;border-radius:var(--r);background:#000;min-height:0;height:100%}
 .qph img{width:100%;height:100%;object-fit:contain;display:block}
 .qph .zoom{height:100%;border-radius:0;position:relative;background:none}
@@ -348,6 +348,9 @@ td i{font-weight:600}
   .q .qstage::-webkit-scrollbar{display:none}
   .q .qstage>.qph{flex:0 0 86%;scroll-snap-align:center}
   .q .qstage>.qph:only-child{flex-basis:100%}
+  .q .qstage.qvs{display:grid!important;grid-template-columns:1fr 1fr!important;grid-template-rows:minmax(0,1fr)!important;gap:4px;overflow:hidden}
+  .q .qstage.qvs .qph img{object-fit:cover}
+  .q .qstage.qvs .qph small{display:none}
   .wide{display:none}
 }
 
@@ -569,20 +572,50 @@ a.lt:hover{border-color:var(--accent)}
 .pnote{margin:0;font-size:.8rem;color:var(--muted);line-height:1.35}
 
 /* Look-alikes page: one card per pair, both genera at the same size. */
-.lpgrp{margin:0 0 18px}
-.lpairs2{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:12px}
-:root[data-size="s"] .lpairs2{grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr))}
-:root[data-size="l"] .lpairs2{grid-template-columns:repeat(auto-fill,minmax(min(100%,560px),1fr))}
-.lpair{position:relative;display:block;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px;color:var(--ink);text-decoration:none}
-.lpair:hover{border-color:var(--accent)}
-.lpair.mix{border-color:var(--bad)}
-.lpsides{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.lpside{display:flex;flex-direction:column;min-width:0}
-.lpside img,.lpside .none{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r-sm);display:block;background:var(--surface-2)}
-.lpside i{font-family:var(--display);font-weight:700;font-size:1.08rem;margin:6px 0 2px}
-.lpside .psum{font-size:.85rem;color:var(--muted);line-height:1.3}
-.lplect{display:block;margin-top:6px;font-size:.78rem;color:var(--muted)}
-.lpair .pmix{position:absolute;top:12px;left:12px;z-index:1}
+/* Learn > Look-alikes: one classic pair per screen (montage + ID tips), the deck of pairs in a right column. */
+.lk{display:grid;grid-template-columns:minmax(0,1fr) 260px;grid-template-rows:minmax(0,1fr);gap:16px;margin-top:10px;min-height:0}
+.lkmain{display:flex;flex-direction:column;gap:10px;min-height:0;min-width:0}
+.lkhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.lkhead h3{font-family:var(--display);font-size:1.45rem;margin:0}
+.lksrc{color:var(--muted);font-size:.85rem}
+.lect.cf{color:#8a5a14}
+:root[data-theme="dark"] .lect.cf{color:#d9a75c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lect.cf{color:#d9a75c}}
+.lkm{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:4px;border-radius:var(--r);overflow:hidden;background:#000}
+.lkph{position:relative;margin:0;overflow:hidden;min-height:0;background:#000}
+.lkph::before{content:"";position:absolute;inset:-30px;background:var(--qbg,#000) center/cover;filter:blur(22px) brightness(.55)}
+.lkph .zoom{position:relative;display:block;width:100%;height:100%;padding:0;border:0;background:none;border-radius:0;cursor:zoom-in}
+.lkph img{width:100%;height:100%;object-fit:cover;display:block}
+.lkph figcaption{position:absolute;left:10px;top:10px;background:rgb(0 0 0 / .62);color:#fff;padding:2px 10px;border-radius:var(--r-sm);font-family:var(--display);font-weight:700;font-size:1.25rem;pointer-events:none}
+.lktips{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lktip{background:color-mix(in srgb,var(--accent) 9%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);border-left:5px solid var(--accent);border-radius:var(--r-sm);padding:7px 12px;font-size:.98rem;line-height:1.35}
+.lktip a{font-family:var(--display);font-weight:700;font-size:1.12rem;color:var(--ink);text-decoration:none;margin-right:4px}
+.lknav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lknav .next{margin:0 0 0 auto}
+.lkn{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem;min-width:4.5em;text-align:center}
+.lkall{font-size:.9rem}
+.lkdeck{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;gap:6px;overflow:auto;min-height:0;padding:2px}
+.lkd{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--surface);color:var(--ink);text-decoration:none}
+.lkd span{display:grid;grid-template-columns:1fr 1fr;gap:1px;height:48px}
+.lkd img{width:100%;height:100%;object-fit:cover;display:block}
+.lkd small{padding:2px 6px;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lkd:hover{border-color:var(--accent)}
+.lkd.on{outline:2px solid var(--accent);outline-offset:0}
+.lkd.mix small{color:var(--bad);font-weight:600}
+@media (max-width:760px){
+  .lk{grid-template-columns:minmax(0,1fr);margin-top:4px}
+  .lkdeck{display:none}
+  .lkm{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr 1fr}
+  .lktips{grid-template-columns:minmax(0,1fr);gap:6px}
+  .lktip{font-size:.9rem;padding:5px 10px}
+  .lkhead h3{font-size:1.2rem}
+  .lkall{display:none}
+}
+/* Quiz feedback after a mix-up: the photo shown next to the genus answered, same view (stacked on phones). */
+.qstage.qvs .qph figcaption{font-size:.95rem;font-weight:700;font-style:italic}
+.qstage.qvs .qph.qok figcaption{background:var(--good);color:#fff}
+.qstage.qvs .qph.qko figcaption{background:var(--bad);color:#fff}
+.qstage.qvs .qph small{position:absolute;left:8px;bottom:8px;background:rgb(0 0 0 / .6);color:#fff;font-size:.75rem;padding:1px 8px;border-radius:var(--pill);pointer-events:none}
 
 /* My progress wall, "rising tide": colour fills the photo from the bottom up to the genus's partial mastery (--p),
    with a slowly drifting wavy waterline (red when the genus needs review). */

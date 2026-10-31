@@ -423,26 +423,88 @@ function pairs(){
   Object.keys(DATA.gen).forEach(a => DATA.gen[a].look.forEach(b => { const k = [a, b].sort().join('|'); if (DATA.gen[b] && !seen.has(k)) { seen.add(k); out.push(k.split('|')); } }));
   return out;
 }
-// Look-alikes page: the list of look-alike pairs (Coral Finder look-alikes), nothing else. Each pair is one card:
-// the two genera at the same size and in the same view, with their short ID tips, opening the side-by-side page.
-// Pairs sit under the lowest IMR lecture group of their two genera; the reader's quiz mix-ups come first.
-function viewCompareList(){
-  const G = DATA.gen, gi = n => shownGroup(n) || 99, all = pairs().map(p => bySlate(p));
-  const card = ([a, b]) => { const m = mixedUp(a, b), lect = (DATA.cmp || []).find(c => c.imr && c.g.includes(a) && c.g.includes(b));
-    const side = n => `<div class="lpside">${viewShot(n, cmpView)}<i>${esc(n)}</i><span class="psum">${esc(tipsText(G[n]))}</span></div>`;
-    return `<a class="lpair${m ? ' mix' : ''}" href="#cmp-${esc(a)}|${esc(b)}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}<div class="lpsides">${side(a)}${side(b)}</div>${lect ? `<small class="lplect"><b class="lect">IMR lecture</b> slide ${lect.slide}: comparison on the side-by-side page</small>` : ''}</a>`; };
-  const order = (x, y) => mixedUp(...y) - mixedUp(...x) || (gi(x[0]) === gi(x[1]) ? 0 : 1) - (gi(y[0]) === gi(y[1]) ? 0 : 1);
-  const groups = [...new Set(all.map(p => Math.min(gi(p[0]), gi(p[1]))))].sort((a, b) => a - b);
-  $v.innerHTML = `<h2>Look-alikes</h2>
-  <p class="lede">Every pair of genera that are easy to confuse (the Coral Finder look-alikes), in the same view and at the same size, with the IMR ID tips that tell them apart. Open a pair to compare all three views side by side. Pairs you mixed up in the quiz come first.</p>
-  <div class="seg-row"><span class="label">Show</span>${viewSeg()}</div>
-  ${groups.map(k => { const gr = DATA.imrg.find(x => x.n === k), L = all.filter(p => Math.min(gi(p[0]), gi(p[1])) === k).sort(order);
-    return `<section class="lpgrp"><h3 class="gdiv" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn">${gr ? gr.n : '★'}</span> ${gr ? esc(gr.t) : 'Not covered in the lecture'}</h3><div class="lpairs2">${L.map(card).join('')}</div></section>`; }).join('')}`;
-  bindViewSeg(() => { const y = window.scrollY; viewCompareList(); window.scrollTo(0, y); });
+// Classic look-alikes (Pierre, 2026-10-31): only the pairs a source compares in so many words, the IMR lecture
+// (lsrc "IMR Lecture 6...") or the Coral Finder text ("Coral Finder p. ..."). Pairs that only share a Coral Finder box
+// or an IMR group stay on the genus sheets and in duels. IMR pairs first, then by slate order.
+const pairKey = (a, b) => [a, b].sort().join('|');
+const lsrcOf = (a, b) => (DATA.gen[a].lsrc || {})[b] || (DATA.gen[b].lsrc || {})[a] || '';
+const isClassic = (a, b) => /^(IMR|Coral Finder p)/.test(lsrcOf(a, b));
+function classics(){
+  const tier = ([a, b]) => /^IMR/.test(lsrcOf(a, b)) ? 0 : 1;
+  return pairs().filter(([a, b]) => isClassic(a, b)).map(p => p.slice().sort())
+    .sort((x, y) => tier(x) - tier(y) || Math.min(slateIdx(x[0]), slateIdx(x[1])) - Math.min(slateIdx(y[0]), slateIdx(y[1])));
 }
+// One montage per pair, like an IMR comparison slide: one photo of each genus in the same view. Pierre's pick
+// (curation.json "mont" {"A|B": {v, a, b}}, set in admin) wins; otherwise the view the comparison is about (most pairs
+// are told apart on the corallites; these on the closer view) and, in that view, the two photos that come first
+// (IMR, then Pierre's) with the same growth form.
+const MONT_V = {'Pocillopora|Stylophora': 'medium', 'Acropora|Anacropora': 'medium', 'Acropora|Cyphastrea': 'medium', 'Acropora|Echinopora': 'medium', 'Goniopora|Porites': 'medium', 'Danafungia|Fungia': 'medium', 'Fungia|Lithophyllon': 'medium', 'Danafungia|Lithophyllon': 'medium'};
+// The two photos of two genera that make the best side by side in a view: same growth form, nearest the front.
+function photoPair(LA, LB, fa, fb){
+  let best = null; const A = fa ? [fa] : LA.slice(0, 6), B = fb ? [fb] : LB.slice(0, 6);
+  A.forEach((x, i) => B.forEach((y, j) => { const sc = i + j + (x.form && x.form === y.form ? 0 : 8); if (!best || sc < best[0]) best = [sc, x, y]; }));
+  return best ? [best[1], best[2]] : [];
+}
+function montage(a, b){
+  const k = pairKey(a, b), [A, B] = k.split('|'), m = ((CUR || {}).mont || {})[k] || {}, V = n => DATA.gen[n].views;
+  const has = (n, v) => (V(n)[v] || []).length > 0, ok = v => v && has(A, v) && has(B, v);
+  const v = ok(m.v) ? m.v : [MONT_V[k] || 'macro', 'macro', 'medium', 'wide'].find(ok); if (!v) return null;
+  const mine = m.v === v, fa = mine && V(A)[v].find(p => p.f === m.a), fb = mine && V(B)[v].find(p => p.f === m.b);
+  const [pa, pb] = photoPair(V(A)[v], V(B)[v], fa, fb);
+  return {k, A, B, v, pa, pb, src: lsrcOf(A, B)};
+}
+const srcTag = src => /^IMR/.test(src) ? `<b class="lect">IMR lecture</b> ${esc(src.replace(/^IMR Lecture 6:?\s*/, ''))}` : `<b class="lect cf">Coral Finder</b> ${esc(src.replace(/^Coral Finder /, ''))}`;
+// Learn > Look-alikes: a deck of the classic pairs, one montage per screen, the reader's mix-ups first.
+// #cmp opens the first one, #cmp|A|B a given pair; arrows, keys and swipes go through the deck.
+function viewLookalikes(a, b){
+  const L = classics().map(p => montage(...p)).filter(Boolean), mix = m => mixedUp(m.A, m.B);
+  L.sort((x, y) => (mix(y) > 0) - (mix(x) > 0) || mix(y) - mix(x));
+  if (!L.length) { $v.innerHTML = '<p class="note">No photos yet.</p>'; return; }
+  let i = Math.max(0, a && b ? L.findIndex(m => m.k === pairKey(a, b)) : 0);
+  const draw = () => {
+    const m = L[i], gA = DATA.gen[m.A], gB = DATA.gen[m.B], x = mix(m);
+    const half = (n, p, k) => `<figure class="lkph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${VIEW_LABEL[m.v].toLowerCase()} view"></button><figcaption><i>${esc(n)}</i></figcaption></figure>`;
+    const tip = (n, g) => `<div class="lktip"><a href="#g-${esc(n)}"><i>${esc(n)}</i></a> ${esc(tipsText(g))}</div>`;
+    const deck = L.map((d, k) => `<a class="lkd${k === i ? ' on' : ''}${mix(d) ? ' mix' : ''}" href="#cmp|${esc(d.A)}|${esc(d.B)}" title="${esc(d.A)} or ${esc(d.B)}"><span><img src="${img(d.pa, 's')}" alt="" loading="lazy"><img src="${img(d.pb, 's')}" alt="" loading="lazy"></span><small>${esc(d.A)} / ${esc(d.B)}</small></a>`).join('');
+    $v.innerHTML = `<p class="lede">The look-alikes the IMR lecture or the Coral Finder compare directly, one pair per screen: one photo of each genus in the same view, with the ID tips that tell them apart. Pairs you mixed up in the quiz come first, in red. The other look-alikes of a genus are at the bottom of its sheet.</p>
+    <div class="lk">
+      <div class="lkmain">
+        <div class="lkhead"><h3><i>${esc(m.A)}</i> or <i>${esc(m.B)}</i>?</h3><small class="lksrc">${srcTag(m.src)}</small>${x ? `<span class="pmix">you mixed them up ×${x}</span>` : ''}</div>
+        <div class="lkm">${half(m.A, m.pa, 0)}${half(m.B, m.pb, 1)}</div>
+        <div class="lktips">${tip(m.A, gA)}${tip(m.B, gB)}</div>
+        <div class="lknav"><button type="button" class="chip" data-lstep="-1" aria-label="Previous pair">←</button><span class="lkn">${i + 1} / ${L.length}</span><button type="button" class="chip" data-lstep="1" aria-label="Next pair">→</button>
+          <a class="linkish lkall" href="#cmp-${esc(m.A)}|${esc(m.B)}">All views</a><a class="next" href="#quiz-duel|${esc(m.A)}|${esc(m.B)}">Drill this pair</a></div>
+      </div>
+      <aside class="lkdeck" aria-label="Classic look-alikes">${deck}</aside>
+    </div>`;
+    fitLk();
+    const cur = $v.querySelector('.lkd.on'); if (cur) cur.parentNode.scrollTop = cur.offsetTop - cur.parentNode.offsetTop - 8;
+    $v.querySelectorAll('[data-lstep]').forEach(btn => btn.onclick = () => stepTo(i + Number(btn.dataset.lstep)));
+    $v.querySelectorAll('[data-lz]').forEach(z => z.onclick = () => zoom([{...m.pa, genus: m.A, view: m.v}, {...m.pb, genus: m.B, view: m.v}], Number(z.dataset.lz)));
+    $v.querySelectorAll('.lkd').forEach((d, k) => d.onclick = e => { e.preventDefault(); stepTo(k); });
+    // Swipe left / right on the montage (phones).
+    const mt = $v.querySelector('.lkm'); let x0 = null;
+    mt.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, {passive: true});
+    mt.addEventListener('touchend', e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) stepTo(i + (dx < 0 ? 1 : -1)); });
+  };
+  // The address follows the pair shown (no new history entry), so a pair can be linked and survives a reload.
+  const stepTo = k => { i = (k + L.length) % L.length; history.replaceState(null, '', `#cmp|${L[i].A}|${L[i].B}`); draw(); };
+  const keys = e => { if (!$v.querySelector('.lk') || !lb.hidden) return document.removeEventListener('keydown', keys);
+    if (e.target.closest('input, textarea, select')) return;
+    if (e.key === 'ArrowRight') stepTo(i + 1); else if (e.key === 'ArrowLeft') stepTo(i - 1); };
+  document.addEventListener('keydown', keys);
+  draw();
+}
+// The deck fills the window below the header: the montage takes the height the title, tips and buttons leave.
+function fitLk(){
+  const k = $v.querySelector('.lk'); if (!k) return;
+  const tab = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tabbar-h')) || 0;
+  k.style.height = Math.max(360, innerHeight - k.getBoundingClientRect().top - window.scrollY - 14 - tab) + 'px';
+}
+addEventListener('resize', fitLk);
 function viewCompare(a, b){
   const A = DATA.gen[a], B = DATA.gen[b];
-  if (!A || !B) return viewCompareList();
+  if (!A || !B) return viewLookalikes();
   const col = (n, g) => `<div class="cmpcol"><h3><a class="linkish" href="#g-${esc(n)}"><i>${esc(n)}</i></a>${g.n ? '' : ' ★'}</h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p>${g.qt ? '<h4>ID tips (IMR)</h4>' : ''}${tipsList(g)}<details class="more"><summary>Coral Finder</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>`;
   const flat = [];
   const row = ([v, label]) => {
@@ -652,9 +714,26 @@ function answer(cur, c, target, ph, cor){
   if (SYNC) SYNC.log = [...(SYNC.log || []), {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur, ph: ph.map(p => p.f).join(' ')}].slice(-500);
   save();
   $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', inatTag(ph[k])));
+  // A mix-up: the stage becomes a montage, the photo shown (corallites if they were shown) next to a photo of the
+  // genus answered in the same view, so the difference is seen at the moment of the mistake. The pair then comes back
+  // as a duel in the photo quiz a couple of questions later.
+  let again = false;
+  if (!good && DATA.gen[c]) {
+    const order = [...ph].sort((x, y) => (y.view === 'macro') - (x.view === 'macro')), V = DATA.gen[c].views;
+    const tp = order.find(p => (V[p.view] || []).length);
+    if (tp) {
+      const [, cp] = photoPair([tp], V[tp.view], tp), st0 = $v.querySelector('.qstage'), lab = VIEW_LABEL[tp.view] || '';
+      const fig = (p, n, cls, note) => `<figure class="qph ${cls}" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${lab.toLowerCase()} view"></button><figcaption>${esc(n)}</figcaption><small>${note}</small></figure>`;
+      st0.classList.add('qvs');
+      st0.innerHTML = fig(tp, target, 'qok', 'the photo shown') + fig(cp, c, 'qko', `your answer, ${lab.toLowerCase()} view too`);
+      st0.querySelectorAll('[data-vs]').forEach(z => z.onclick = e => { e.stopPropagation(); zoom([{...tp, genus: target}, {...cp, genus: c}], z.dataset.vs === 'qok' ? 0 : 1); });
+      fitStage();
+    }
+    if (cur === 'quiz') { rematch = {pair: [target, c], wait: 1}; again = true; }
+  }
   $v.querySelectorAll('[data-c]').forEach(b => { b.disabled = true; if (b.dataset.c === target) b.classList.add('ok'); else if (b.dataset.c === c) b.classList.add('ko'); });
     const g = DATA.gen[target];
-  const vs = !good && DATA.gen[c] ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(tipsText(DATA.gen[c]))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>` : '';
+  const vs = !good && DATA.gen[c] ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(tipsText(DATA.gen[c]))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>${again ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}` : '';
   document.getElementById('after').innerHTML = `<div class="fb">
     <h3 class="${good ? 'ok' : 'ko'}">${good ? 'Yes' : 'No'}, it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.n ? '' : ' (★ not surveyed)'}</h3>
     ${g.qt ? `<p class="label">ID tips (IMR)</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="vs"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}${vs}
@@ -671,8 +750,13 @@ function distractors(t, list){
   const rest = shuffle(list.filter(n => n !== t && !look.includes(n) && !fam.includes(n)));
   return [...shuffle(look), ...shuffle(fam), ...rest].slice(0, 3);
 }
+// A mix-up in the photo quiz comes back once as a duel of the two genera, one question later.
+let rematch = null;
 function quizPhoto(){
-  const list = pool(), t = nextTarget(list);
+  const list = pool();
+  if (rematch && rematch.wait-- <= 0) { const pair = rematch.pair; rematch = null;
+    if (pair.every(n => list.includes(n))) { const t = pick(pair); return question('quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)); } }
+  const t = nextTarget(list);
   question('quiz', t, shuffle([t, ...distractors(t, list)]), 'Which genus?', photoSet(t));
 }
 function quizDuel(a, b){
@@ -680,7 +764,8 @@ function quizDuel(a, b){
   let pair = a && b ? [a, b] : null;
   if (!pair) {
     const ps = pairs().filter(([x, y]) => list.includes(x) && list.includes(y));
-    const w = ps.map(([x, y]) => weight(x) + weight(y)), t0 = w.reduce((p, q) => p + q, 0);
+    // Your mix-ups come up most, then the classic look-alikes (compared in the IMR lecture or the Coral Finder text).
+    const w = ps.map(([x, y]) => (weight(x) + weight(y)) * (mixedUp(x, y) ? 3 : isClassic(x, y) ? 2 : 1)), t0 = w.reduce((p, q) => p + q, 0);
     let r = Math.random() * t0; pair = ps[0];
     for (let i = 0; i < ps.length; i++) { r -= w[i]; if (r <= 0) { pair = ps[i]; break; } }
   }
@@ -900,7 +985,7 @@ function go(h){ if (decodeURIComponent(location.hash.slice(1)) === h) route(); e
 // Photo size (small / medium / large), remembered per page in localStorage (key imr-coral-size).
 // Each page reads :root[data-size] in its own CSS; pages where it means nothing (games that fill the screen,
 // home, progress) hide the S/M/L buttons, keeping their room so the header never changes size.
-const SIZE_PAGES = ['genera', 'tips', 'cmp', 'genus', 'pair', 'finder', 'lab-gallery', 'lab-elim'];
+const SIZE_PAGES = ['genera', 'tips', 'genus', 'pair', 'finder', 'lab-gallery', 'lab-elim'];
 function pageKey(){ const h = decodeURIComponent(location.hash.slice(1)); return h.startsWith('g-') ? 'genus' : h.startsWith('cmp-') ? 'pair' : h.split('|')[0] || 'home'; }
 function sizePrefs(){ try { return JSON.parse(localStorage.getItem('imr-coral-size')) || {}; } catch (e) { return {}; } }
 // Default M, except Genera (S: more genera per screen, groups easier to compare).
@@ -926,7 +1011,7 @@ showTheme();
 // Tools of the Learn, Practice and Identify sections (the learning path order): a tab bar in the sticky header, so they stay in view.
 // Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).
 const MODES = {
-  learn: [['genera', 'Genera', 'The 39 genera, as photos or ID tips'], ['cmp', 'Look-alikes', 'Confused pairs side by side']],
+  learn: [['genera', 'Genera', 'The 39 genera, as photos or ID tips'], ['cmp', 'Look-alikes', 'Classic look-alikes, one pair per screen']],
   practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['pairs', 'Memory', 'Match colony and corallites']],
   identify: [['finder', 'Coral Finder', 'Tap the clues you see, get a ranked shortlist']]
 };
@@ -956,7 +1041,7 @@ function ctxBar(h){
       <span class="pn"><a href="#g-${esc(prev)}" title="Previous: ${esc(prev)} (←)" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="#g-${esc(next)}" title="Next: ${esc(next)} (→)" aria-label="Next genus: ${esc(next)}">›</a></span>`;
   }
   const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
-  if (a && DATA.gen[a] && DATA.gen[b]) return `${back}<h2 class="ctx-t"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="#cmp">All pairs</a>`;
+  if (a && DATA.gen[a] && DATA.gen[b]) return `${back}<h2 class="ctx-t"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="#cmp">Look-alikes</a>`;
   return '';
 }
 function showModes(tab, h){
@@ -991,7 +1076,7 @@ function route(){
   else if (h === 'key-imr') { azOrder = 'lecture'; location.replace('#genera'); }
   else if (h.startsWith('g-')) viewGenus(h.slice(2));
   else if (h === 'tips' || h.startsWith('tips|')) { azView = 'tips'; location.replace('#genera'); }
-  else if (h === 'cmp') viewCompareList();
+  else if (h === 'cmp' || h.startsWith('cmp|')) { const [, a, b] = h.split('|'); viewLookalikes(a, b); }
   else if (h.startsWith('cmp-')) viewCompare(...h.slice(4).split('|'));
   else if (h === 'quiz') quizPhoto();
   // Lecture photos are now a photo set of Photo -> genus.
@@ -1006,7 +1091,7 @@ function route(){
   pageHelp();
   hdrMetrics();
   // The intro moved behind ? only now, so the quiz stage is resized to the space it really has (phones gained ~280 px).
-  fitStage();
+  fitStage(); fitLk();
   // Same for card games (Memory): their grid was sized before the intro left, so it is refitted to the room it now has.
   document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g));
 }
