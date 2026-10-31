@@ -47,6 +47,14 @@
         "pocillopora-wide-374959119": "medium"
       },
       "ok": true
+    },
+    "Stylophora": {
+      "move": {
+        "imr-p12_i8": "medium"
+      },
+      "add": {
+        "stylophora-cand-691350128": "medium"
+      }
     }
   },
   "quality": {
