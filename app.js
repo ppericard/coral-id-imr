@@ -308,11 +308,26 @@ function photoSet(n){
 const weight = n => { const s = P[n]; if (!s) return 3; return (1 + 2 * s.ko) / (1 + s.ok) * (s.streak >= 3 ? 0.3 : 1) + 0.15; };
 function weighted(list){ const w = list.map(weight), t = w.reduce((a, b) => a + b, 0); let r = Math.random() * t; for (let i = 0; i < list.length; i++) { r -= w[i]; if (r <= 0) return list[i]; } return list[list.length - 1]; }
 function nextTarget(list){ let n, k = 0; do { n = weighted(list); } while (n === last && list.length > 1 && ++k < 10); last = n; return n; }
+// Status from the last RECENT answers (Pierre: no time criteria, reachable in one sitting), plus two milestones.
+// Learned: at most 1 mistake in the last 5, last answer right, once right with the corallites in view,
+// once right in a look-alike duel (when the genus has look-alikes). Review: 2+ mistakes in the last 5, or last answer wrong.
+const RECENT = 5;
+const recent = n => { const s = P[n] || {}; return s.h ? s.h.slice(-RECENT) : ''; };
+const misses = h => [...h].filter(x => x === '0').length;
+const hasDuel = n => DATA.gen[n].look.some(b => DATA.gen[b]);
+function missing(n){
+  const s = P[n] || {}, h = recent(n), m = [];
+  if (h.length < RECENT) m.push(`${RECENT - h.length} more answer${RECENT - h.length > 1 ? 's' : ''}`);
+  if (!s.cor) m.push('right once with the corallites photo open');
+  if (hasDuel(n) && !s.du) m.push('right once in a look-alike duel');
+  return m;
+}
 function level(n){
   const s = P[n]; if (!s || s.ok + s.ko === 0) return ['new', 'Not seen'];
-  const r = s.ok / (s.ok + s.ko);
-  if (s.streak >= 3 && r >= .75) return ['ok', 'Learned'];
-  if (r < .5 || s.streak === 0) return ['weak', 'Review'];
+  const h = recent(n);
+  if (!h) return s.streak === 0 ? ['weak', 'Review'] : ['mid', 'Learning'];  // progress saved before this rule
+  if (h.slice(-1) === '0' || misses(h) >= 2) return ['weak', 'Review'];
+  if (!missing(n).length) return ['ok', 'Learned'];
   return ['mid', 'Learning'];
 }
 function quizNav(){ return ''; }
@@ -344,7 +359,7 @@ function question(cur, target, choices, prompt, set){
   $v.querySelector('.q').addEventListener('click', e => { const z = e.target.closest('[data-q]'); if (!z) return;
     const list = hintShown ? [...ph, set.hint] : ph;
     zoom(list.map(p => ({...p, genus: target})), Number(z.dataset.q), {blind: () => !answered}); });
-  $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { showHint(); answered = true; answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph); });
+  $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'); showHint(); answered = true; answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor); });
 }
 // The quiz stage fills the window below the header, so photos, choices and feedback fit without scrolling.
 // The photos then take the grid (columns x rows) that shows them largest at 4:3.
@@ -381,9 +396,12 @@ function fitTiles(grid, gap, dims){
   grid.classList.add('fit');
 }
 addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
-function answer(cur, c, target, ph){
+function answer(cur, c, target, ph, cor){
   const good = c === target, s = st(target);
   session.n++; if (good) { session.ok++; s.ok++; s.streak++; } else { s.ko++; s.streak = 0; s.conf = s.conf || {}; s.conf[c] = (s.conf[c] || 0) + 1; }
+  s.h = ((s.h || '') + (good ? 1 : 0)).slice(-10);  // recent results, newest last
+  if (good && cor) s.cor = 1;  // milestone: right with the corallites photo in view
+  if (good && cur.startsWith('quiz-duel')) s.du = 1;  // milestone: won a look-alike duel
   save();
   $v.querySelectorAll('[data-c]').forEach(b => { b.disabled = true; if (b.dataset.c === target) b.classList.add('ok'); else if (b.dataset.c === c) b.classList.add('ko'); });
     const g = DATA.gen[target];
@@ -433,10 +451,10 @@ function quizBoard(){
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
   let deg = 0; const ring = LV.map(([k]) => { const d = 360 * count(k) / list.length, c = `var(--${k === 'ok' ? 'good' : k === 'mid' ? 'accent' : k === 'weak' ? 'bad' : 'line'}) ${deg}deg ${deg + d}deg`; deg += d; return c; }).join(',');
   const tile = n => { const g = DATA.gen[n], p = cover(g), s = P[n] || {ok: 0, ko: 0}, [cl, lb] = lv[n];
-    return `<a class="pw ${cl}" href="#g-${esc(n)}" title="${esc(n)}: ${lb}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right)` : ''}">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<span><i>${esc(n)}</i>${g.n ? '' : ' ★'}</span></a>`; };
+    return `<a class="pw ${cl}" href="#g-${esc(n)}" title="${tip(n)}">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<span><i>${esc(n)}</i>${g.n ? '' : ' ★'}</span></a>`; };
   const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
   // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
-  const tip = n => { const s = P[n] || {ok: 0, ko: 0}; return `${esc(n)}: ${lv[n][1]}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right)` : ''}`; };
+  const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right)` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
   const gi = n => DATA.gen[n].ig || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
   const VIEWS = {
     photos: () => `<div class="pgrid pwall">${list.map(tile).join('')}</div>`,
@@ -446,7 +464,7 @@ function quizBoard(){
         <span class="pseg">${L.map(n => `<a class="${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i></a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
   };
   let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
-  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. Green: learned. Teal: learning. Red: to review (comes up more often in the quiz). Grey: not seen yet. Learned means at least 3 correct answers in a row and 75% success. Click a genus to open its sheet.</p>
+  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. Green: learned. Teal: learning. Red: to review (comes up more often in the quiz). Grey: not seen yet. Status comes from your last 5 answers for each genus (any quiz, duels included). Learned: at most 1 mistake in the last 5, the last answer right, and two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5, or the last answer wrong. Click a genus to open its sheet.</p>
   <div class="pgame pboard"><div class="pgwrap"></div>
   <aside class="gside">
     <div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['slate', 'Slate'], ['groups', 'Groups']].map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`).join('')}</div>
@@ -529,6 +547,8 @@ function mergeSaved(j){
     out.ko = Math.max(0, (r.ko || 0) + (l.ko || 0) - (b.ko || 0));
     const mine = (l.ok || 0) + (l.ko || 0) !== (b.ok || 0) + (b.ko || 0);
     out.streak = mine ? l.streak || 0 : r.streak || 0;
+    if (mine && l.h) out.h = l.h;
+    if (l.cor || r.cor) out.cor = 1; if (l.du || r.du) out.du = 1;
     const conf = {...(r.conf || {})};
     Object.keys(l.conf || {}).forEach(k => { const v = (conf[k] || 0) + l.conf[k] - ((b.conf || {})[k] || 0); if (v > 0) conf[k] = v; else delete conf[k]; });
     if (Object.keys(conf).length) out.conf = conf; else delete out.conf;
