@@ -41,8 +41,13 @@ const ORIGIN_OK = {dauin: ['dauin'], ph: ['dauin', 'ph']};
 let origin = store.get('imr-coral-origin', 'all');
 function filterOrigin(d){
   const ok = ORIGIN_OK[origin]; if (!ok) return;
-  const keep = p => !p.loc || ok.includes(p.loc);
+  // A genus with no field photo from the chosen area keeps the nearest ones (Philippines, then everywhere),
+  // so games and tools always have a photo to show.
   Object.values(d.gen).forEach(g => {
+    const field = Object.values(g.views).flat();
+    const area = [ok, ORIGIN_OK.ph, null].find(a => !a || field.some(p => !p.loc || a.includes(p.loc)));
+    if (!area) return;
+    const keep = p => !p.loc || area.includes(p.loc);
     ['views', 'more'].forEach(k => Object.keys(g[k] || {}).forEach(v => { g[k][v] = g[k][v].filter(keep); }));
     if (g.coverP && !keep(g.coverP)) delete g.coverP;
   });
