@@ -65,10 +65,10 @@ let azOrder = (() => { try { return localStorage.getItem('imr-coral-order') || '
 function viewGenera(){
   const fams = [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
   $v.innerHTML = `<h2>The 39 genera on the IMR slate</h2>
-  <p class="lede">34 surveyed genera plus 5 starred ones that IMR does not survey but that you need to rule out. Each sheet shows the colony, a closer view and the corallites. Colours mark IMR's confusion groups from the lecture: genera in the same group are the ones to tell apart.</p>
-  <div class="seg-row"><span class="label">Order</span><div class="seg" role="group" aria-label="Order">${[['lecture', 'Lecture groups'], ['slate', 'Slate numbers']].map(([k, t]) => `<button type="button" data-o="${k}" aria-pressed="${azOrder === k}">${t}</button>`).join('')}</div></div>
-  <div class="tools"><input id="q" type="search" placeholder="Search a genus or a feature" value="${esc(azQ)}" aria-label="Search"></div>
-  <div class="chips"><button class="chip" type="button" data-f="" aria-pressed="${!azFam}">All families</button><button class="chip" type="button" data-f="★" aria-pressed="${azFam === '★'}">★ Not surveyed</button>${fams.map(f => `<button class="chip" type="button" data-f="${f}" aria-pressed="${azFam === f}">${f}</button>`).join('')}</div>
+  <p class="lede">34 surveyed genera plus 5 starred ones (★) to recognise and rule out. Colours mark the confusion groups from the IMR lecture: genera in the same group are the ones to tell apart.</p>
+  <div class="tools"><input id="q" type="search" placeholder="Search a genus or a feature" value="${esc(azQ)}" aria-label="Search">
+    <select id="fam" aria-label="Family"><option value="">All families</option><option value="★"${azFam === '★' ? ' selected' : ''}>★ Not surveyed</option>${fams.map(f => `<option${azFam === f ? ' selected' : ''}>${esc(f)}</option>`).join('')}</select>
+    <div class="seg" role="group" aria-label="Order">${[['lecture', 'Lecture', ' groups'], ['slate', 'Slate', ' numbers']].map(([k, t, x]) => `<button type="button" data-o="${k}" aria-pressed="${azOrder === k}">${t}<span class="wide">${x}</span></button>`).join('')}</div></div>
   <div class="grid" id="azgrid"></div>`;
   const draw = () => {
     const q = azQ.toLowerCase();
@@ -88,7 +88,7 @@ function viewGenera(){
   };
   const qi = document.getElementById('q');
   qi.oninput = () => { azQ = qi.value; draw(); };
-  $v.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { azFam = b.dataset.f || null; viewGenera(); });
+  document.getElementById('fam').onchange = e => { azFam = e.target.value || null; draw(); };
   $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { azOrder = b.dataset.o; try { localStorage.setItem('imr-coral-order', azOrder); } catch (e) {} viewGenera(); });
   draw();
 }
@@ -322,8 +322,7 @@ function level(n){
   return ['mid', 'Learning'];
 }
 function quizNav(cur){
-  return `${cur === 'quiz-board' ? '' : `<div class="opts">
-    <button class="chip" type="button" id="qstars" aria-pressed="${Q.stars}">Include ★ genera</button></div>`}`;
+  return cur === 'quiz-board' ? '' : `<button class="chip" type="button" id="qstars" aria-pressed="${Q.stars}" title="Also ask the 5 starred genera IMR does not survey">Include ★</button>`;
 }
 function bindQuizNav(cur){
   bindGo();
@@ -334,9 +333,8 @@ function question(cur, target, choices, prompt, set){
   const ph = set.shown, lab = VIEW_LABEL;
   let answered = false, hintShown = false;
   const fig = (p, k) => `<figure class="qph"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${img(p)}" alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
-  $v.innerHTML = `${quizNav(cur)}<div class="q">
-    <div class="score">This session: <b>${session.ok}/${session.n}</b></div>
-    <p class="prompt">${prompt}</p>
+  $v.innerHTML = `<div class="q">
+    <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">Session <b>${session.ok}/${session.n}</b></span>${quizNav(cur)}</div>
     <div class="qset${ph.length > 1 ? ' two' : ''}">${ph.map(fig).join('')}</div>
     ${set.hint ? '<div id="hint"><button type="button" class="linkish" id="hintb">Show the corallites (hint)</button></div>' : ''}
     <div class="ans">${choices.map(c => `<button type="button" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>

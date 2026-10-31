@@ -99,6 +99,8 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .tools{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
 .tools input,.opts select{font:inherit;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--ink)}
 .tools input{flex:1 1 240px;min-width:0;min-height:40px;padding:0 16px;box-shadow:var(--shadow)}
+.tools select{font:inherit;font-size:.9rem;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.tools .seg{align-self:center}
 .opts{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}
 .opts label{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted)}
 .opts select{font-size:.85rem;padding:4px 10px}
@@ -216,13 +218,16 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 
 /* ---------- Quiz ---------- */
 .q{display:flex;flex-direction:column;gap:12px}
+.qtop{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:12px}
+.qtop .prompt{margin:0 auto 0 0}
 .prompt{font-family:var(--display);font-weight:700;font-size:1.45rem;margin:4px 0 0}
 .score{display:flex;gap:16px;font-size:.9rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .score b{color:var(--ink)}
 .qset{display:grid;gap:12px;margin:4px 0}
 .qset.two{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
-:root[data-size="s"] .qset{max-width:640px}
-:root[data-size="m"] .qset{max-width:960px}
+/* The whole question (photos, answers, feedback) shares one width per photo size. */
+:root[data-size="s"] .q{max-width:640px}
+:root[data-size="m"] .q{max-width:960px}
 .qph{position:relative;margin:0;overflow:hidden;border-radius:var(--r);background:#000;aspect-ratio:4/3}
 .qph img{width:100%;height:100%;object-fit:contain;display:block}
 .qph .zoom{height:100%;border-radius:0}
@@ -288,6 +293,9 @@ td i{font-weight:600}
   .modes.ctx .ctx-l{padding:0 8px;font-size:.82rem}
   .sections a{justify-content:center;padding:0 4px;font-size:.82rem;min-width:0}
   .qset.two{grid-template-columns:1fr 1fr;gap:6px}
+  .tools input{flex-basis:100%}
+  .tools select{flex:1 1 0;min-width:0}
+  .wide{display:none}
   .qset.two .qph{aspect-ratio:1}
   .qset.two .qph img{object-fit:cover}
   :root[data-size="l"] .qset.two{grid-template-columns:1fr}
