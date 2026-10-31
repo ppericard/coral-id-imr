@@ -350,7 +350,6 @@ td i{font-weight:600}
   .q .qstage>.qph:only-child{flex-basis:100%}
   .q .qstage.qvs{display:grid!important;grid-template-columns:1fr 1fr!important;grid-template-rows:minmax(0,1fr)!important;gap:4px;overflow:hidden}
   .q .qstage.qvs .qph img{object-fit:cover}
-  .q .qstage.qvs .qph small{display:none}
   .wide{display:none}
 }
 
@@ -612,10 +611,12 @@ a.lt:hover{border-color:var(--accent)}
   .lkall{display:none}
 }
 /* Quiz feedback after a mix-up: the photo shown next to the genus answered, same view (stacked on phones). */
-.qstage.qvs .qph figcaption{font-size:.95rem;font-weight:700;font-style:italic}
+/* Names big and centred, sized to the screen (Pierre): the point of this view is which photo is which genus. */
+.qstage.qvs .qph figcaption{left:50%;top:12px;transform:translateX(-50%);max-width:calc(100% - 24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--display);font-weight:700;font-size:clamp(1.25rem,2.4vw,2.4rem);line-height:1.1;padding:.15em .6em;border-radius:var(--r);box-shadow:0 2px 10px rgb(0 0 0 / .35);pointer-events:none}
 .qstage.qvs .qph.qok figcaption{background:var(--good);color:#fff}
 .qstage.qvs .qph.qko figcaption{background:var(--bad);color:#fff}
-.qstage.qvs .qph small{position:absolute;left:8px;bottom:8px;background:rgb(0 0 0 / .6);color:#fff;font-size:.75rem;padding:1px 8px;border-radius:var(--pill);pointer-events:none}
+.qstage.qvs .qph small{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);white-space:nowrap;background:rgb(0 0 0 / .65);color:#fff;font-size:clamp(.9rem,1.25vw,1.3rem);font-weight:600;padding:.2em .8em;border-radius:var(--pill);pointer-events:none}
+@media (max-width:760px){.q .qstage.qvs .qph .zoom::after{display:none}.q .qstage.qvs .qph figcaption{top:8px;font-size:clamp(1.05rem,5vw,1.4rem)}.q .qstage.qvs .qph small{bottom:8px;font-size:.8rem;padding:.15em .6em}}
 
 /* My progress wall, "rising tide": colour fills the photo from the bottom up to the genus's partial mastery (--p),
    with a slowly drifting wavy waterline (red when the genus needs review). */
