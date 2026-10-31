@@ -61,7 +61,10 @@
       "add": {
         "stylophora-cand-691350128": "medium",
         "stylophora-cand-745205028": "macro",
-        "stylophora-cand-467756924": "wide"
+        "stylophora-cand-467756924": "wide",
+        "stylophora-cand-745205098": "wide",
+        "stylophora-cand-467756956": "medium",
+        "stylophora-cand-745205066": "medium"
       }
     },
     "Anacropora": {
@@ -95,7 +98,10 @@
       "add": {
         "echinopora-cand-745205426": "medium",
         "echinopora-cand-745205445": "medium",
-        "echinopora-cand-745205487": "wide"
+        "echinopora-cand-745205487": "wide",
+        "echinopora-cand-745205427": "medium",
+        "echinopora-cand-745205409": "medium",
+        "echinopora-cand-745205382": "medium"
       }
     },
     "Astreopora": {
@@ -116,7 +122,9 @@
         "turbinaria-cand-745205837": "macro",
         "turbinaria-cf-45-012": "medium",
         "turbinaria-cand-745205883": "medium",
-        "turbinaria-cand-745205896": "wide"
+        "turbinaria-cand-745205896": "wide",
+        "turbinaria-cand-745205864": "medium",
+        "turbinaria-cand-745205856": "macro"
       }
     },
     "Mycedium": {
@@ -261,7 +269,9 @@
     "Goniastrea": {
       "add": {
         "goniastrea-cand-746237419": "medium",
-        "goniastrea-cand-746237370": "macro"
+        "goniastrea-cand-746237370": "macro",
+        "goniastrea-cand-746237358": "macro",
+        "goniastrea-cand-746236792": "wide"
       }
     },
     "Favites": {
@@ -290,7 +300,8 @@
         "merulina-cand-745204594": "medium",
         "merulina-cf-12-04": "medium",
         "merulina-cand-745204556": "medium",
-        "merulina-cand-746236344": "wide"
+        "merulina-cand-746236344": "wide",
+        "merulina-cand-746236232": "medium"
       }
     },
     "Cyphastrea": {
@@ -367,6 +378,7 @@
     "duncanopsammia-cf-50-014": 1,
     "echinopora-cand-745205445": 2,
     "echinopora-cand-745205487": 2,
+    "goniastrea-cand-746237358": 2,
     "goniastrea-cand-746237419": 3,
     "goniopora-cand-745205553": 2,
     "halomitra-cand-269460672": 2,
@@ -375,6 +387,7 @@
     "imrl-p8_g37": 3,
     "lithophyllon-cand-269391063": 3,
     "lithophyllon-cf-59-20": 2,
+    "merulina-cand-746236232": 2,
     "pachyseris-cf-15-10": 1,
     "platygyra-cf-18-01": 2,
     "pocillopora-medium-306893648": 2,
@@ -382,6 +395,7 @@
     "porites-cand-269475353": 3,
     "porites-cand-596708040": 3,
     "seriatopora-cand-746236532": 2,
+    "stylophora-cand-745205098": 3,
     "turbinaria-cand-745205883": 2
   },
   "gf": {
