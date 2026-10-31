@@ -594,12 +594,12 @@ function showTheme(){ const d = isDark(); $theme.textContent = d ? '☀' : '☾'
 $theme.onclick = () => { const t = isDark() ? 'light' : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.setItem('imr-coral-theme', t); } catch (e) {} showTheme(); };
 showTheme();
 
-// Tools of the Learn, Identify and Practice sections: a tab bar in the sticky header, so they stay in view.
+// Tools of the Learn, Practice and Identify sections (the learning path order): a tab bar in the sticky header, so they stay in view.
 // Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).
 const MODES = {
   learn: [['genera', 'Genera', 'The 39 genus sheets'], ['cmp', 'Look-alikes', 'Confused pairs side by side']],
-  identify: [['key-imr', 'IMR lecture groups', 'The 11 groups from the lecture'], ['key', 'Coral Finder', 'Growth form first, then compare candidates'], ['key-tr', 'By corallites', 'Filter on skeletal details']],
-  practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['quiz-course', 'Lecture photos', 'Photos from the IMR course'], ['pairs', 'Memory', 'Match colony and corallites'], ['reveal', 'Blur reveal', 'Name it before it sharpens']]
+  practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['quiz-course', 'Lecture photos', 'Photos from the IMR course'], ['pairs', 'Memory', 'Match colony and corallites'], ['reveal', 'Blur reveal', 'Name it before it sharpens']],
+  identify: [['key-imr', 'IMR lecture groups', 'The 11 groups from the lecture'], ['key', 'Coral Finder', 'Growth form first, then compare candidates'], ['key-tr', 'By corallites', 'Filter on skeletal details']]
 };
 const MODE_LABEL = {learn: 'Learn tools', identify: 'Ways to identify', practice: 'Practice modes'};
 // Which tab of MODES a hash belongs to: key leaves and groups count as the key, genus sheets as Genera, pairs as Look-alikes.
