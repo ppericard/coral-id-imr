@@ -433,7 +433,7 @@ let P = store.get('imr-coral-progress', {}) || {};
 const save = () => { store.set('imr-coral-progress', P); showProg(); syncSoon(); };
 const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
 const Q = Object.assign({view: 'any', level: 'auto'}, store.get('imr-coral-quiz', {}), {stars: true});  // starred genera are always asked (Pierre)
-if (Q.lvv !== 2) { Q.level = 'auto'; Q.lvv = 2; }  // Auto became the default (Pierre, 2026-10-31)
+if (Q.lvv !== 3) { Q.level = 'auto'; Q.course = false; Q.lvv = 3; }  // Auto only: no level selector, no Lecture set (Pierre, 2026-10-31)
 const saveQ = () => store.set('imr-coral-quiz', Q);
 let session = {ok: 0, n: 0}, last = null, duelPair = null;
 const pool = () => Object.keys(DATA.gen).filter(n => (Q.stars || DATA.gen[n].n) && photoSet(n).shown.length);
@@ -525,11 +525,10 @@ function level(n){
 }
 function quizNav(){ return ''; }
 function bindQuizNav(){ bindGo(); }
-// What each photo set holds (shown under the level buttons) and the game rules (behind the ? button).
-const LVLNOTE = {auto: 'Photos adapt to each genus: easy first, harder as you get it right.', easy: 'The photos on the genus sheets.', medium: 'Adds other good photos.', hard: 'Adds harder photos: less typical, less sharp or farther away.', lecture: 'Only the photos from the IMR lecture.'};
+// The game rules (behind the ? button).
 const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused: say which one is in the photos.' : 'Name the genus in the photos: one colony view and one closer view of the same coral.'}
   Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? <b>Show the corallites</b> adds a close-up. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on. Every answer counts in <a href="#progress">My progress</a>.</p>
-  <p class="lede"><b>Auto</b> (default): each genus starts with easy photos; 2 right answers in a row move it to harder photos, a mistake moves it back. A genus is learned once your answers make it 95% sure you know it: right answers on harder photos count more. Or force a set: <b>Easy</b>: the photos on the genus sheets. <b>Medium</b>: adds other good photos. <b>Hard</b>: adds less typical, less sharp or more distant photos (each set adds to the one before).${cur === 'quiz' ? ' <b>Lecture</b>: only the photos from the IMR lecture.' : ''}</p>`;
+  <p class="lede"><b>Photos</b>: each genus starts with easy photos; 2 right answers in a row move it to harder photos, a mistake moves it back. A genus is learned once your answers make it 95% sure you know it: right answers on harder photos count more.</p>`;
 function question(cur, target, choices, prompt, set){
   const ph = set.shown, lab = VIEW_LABEL;
   let answered = false, hintShown = false;
@@ -538,16 +537,13 @@ function question(cur, target, choices, prompt, set){
   $v.innerHTML = `${gameHelp(cur)}<div class="q">
     <div class="qstage">${ph.map(fig).join('')}</div>
     <aside class="qside">
-      <div class="seg qlvl" role="group" aria-label="Photo set">${(cur === 'quiz' ? [['auto', 'Auto'], ...LEVELS, ['lecture', 'Lecture']] : [['auto', 'Auto'], ...LEVELS]).map(([k, t]) => `<button type="button" data-lvl="${k}" aria-pressed="${cur === 'quiz' && Q.course ? k === 'lecture' : Q.level === k}" title="${LVLNOTE[k]}">${t}</button>`).join('')}</div>
-      <p class="lvlnote">${cur === 'quiz' && Q.course ? LVLNOTE.lecture : Q.level === 'auto' ? `Photos adapt to each genus. These are ${LEVELS[Math.max(...ph.map(p => photoLvl(target, p)), 0)][1].toLowerCase()}.` : LVLNOTE[Q.level]}</p>
+      <p class="lvlnote">Photos adapt to each genus. These are ${LEVELS[Math.max(...ph.map(p => photoLvl(target, p)), 0)][1].toLowerCase()}.</p>
       <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">${session.ok}/${session.n}</span>${quizNav(cur)}</div>
       <div class="ans">${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
     </aside></div>`;
   bindQuizNav(cur);
-  // "Lecture" (Photo -> genus only) switches to the IMR lecture photos; Easy/Medium/Hard switch back.
-  $v.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => { const k = b.dataset.lvl; if (k === 'lecture') Q.course = true; else { Q.level = k; Q.course = false; } saveQ(); route(); });
   fitStage();
   const hb = document.getElementById('hintb');
   const showHint = () => { if (hintShown || !set.hint) return; hintShown = true; const st = $v.querySelector('.qstage');
@@ -609,7 +605,7 @@ function answer(cur, c, target, ph, cor){
   // Pierre's rule: a wrong answer also shows the genus given is not mastered, so it counts as a miss for it too.
   if (!good && DATA.gen[c]) { const w = st(c); bktObs(c, w, false, 0, k); w.h = ((w.h || '') + '0').slice(-10); w.streak = 0; stepLvl(c, w, false, 0); }
   // Adaptive level: at the level of the hardest photo shown.
-  stepLvl(target, s, good, cur === 'quiz' && Q.course ? 0 : Math.max(0, ...ph.map(p => photoLvl(target, p))));
+  stepLvl(target, s, good, Math.max(0, ...ph.map(p => photoLvl(target, p))));
   if (good && cor) s.cor = 1;  // milestone: right with the corallites photo in view
   if (good && cur.startsWith('quiz-duel')) s.du = 1;  // milestone: won a look-alike duel
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
@@ -638,11 +634,6 @@ function distractors(t, list){
 function quizPhoto(){
   const list = pool(), t = nextTarget(list);
   question('quiz', t, shuffle([t, ...distractors(t, list)]), 'Which genus?', photoSet(t));
-}
-function quizCourse(){
-  const list = pool(), C = DATA.course, names = Object.keys(C).filter(n => list.includes(n) && C[n].some(p => !p.multi));
-  const t = nextTarget(names);
-  question('quiz', t, shuffle([t, ...distractors(t, list)]), 'Which genus?', {shown: [pick(C[t].filter(p => !p.multi))], hint: null});
 }
 function quizDuel(a, b){
   const list = pool();
@@ -951,9 +942,9 @@ function route(){
   else if (h === 'tips' || h.startsWith('tips|')) { azView = 'tips'; location.replace('#genera'); }
   else if (h === 'cmp') viewCompareList();
   else if (h.startsWith('cmp-')) viewCompare(...h.slice(4).split('|'));
-  else if (h === 'quiz') Q.course ? quizCourse() : quizPhoto();
+  else if (h === 'quiz') quizPhoto();
   // Lecture photos are now a photo set of Photo -> genus.
-  else if (h === 'quiz-course') { Q.course = true; saveQ(); location.replace('#quiz'); }
+  else if (h === 'quiz-course') location.replace('#quiz');  // the Lecture photo set was removed (Pierre, 2026-10-31)
   else if (h === 'progress' || h === 'quiz-board') quizBoard();
   else if (h.startsWith('quiz-duel')) { const [, a, b] = h.split('|'); quizDuel(a, b); }
   else if (h.startsWith('lab') && window.viewLab) viewLab(h);
