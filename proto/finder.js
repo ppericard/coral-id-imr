@@ -95,12 +95,13 @@ LAB.add({
     root.innerHTML = `<section class="fdstart" id="fdstart" hidden></section><div class="fdlayout"><aside class="fdside" id="fdside"></aside><section class="fdmain" id="fdmain"></section></div><div class="fdcmp" id="fdcmp" hidden></div>`;
     const $start = root.querySelector('#fdstart'), $lay = root.querySelector('.fdlayout');
     const $side = root.querySelector('#fdside'), $main = root.querySelector('#fdmain'), $cmp = root.querySelector('#fdcmp');
-
+    // One Start over only: the prominent button beside the chosen clues (Pierre, 2026-10-31). Escape does the same.
+    const reset = () => { FIDS.forEach(f => S[f].clear()); S.out.clear(); S.all.clear(); S.cmp = []; S.q = ''; S.home = true; draw(); };
     // On phones the panel sits above the shortlist: only growth form and the families in use start open.
     function drawSide(F, left){
       const narrow = matchMedia('(max-width:900px)').matches, phone = matchMedia('(max-width:700px)').matches;
       const nUsed = F.reduce((t, f) => t + S[f.id].size, 0);
-      $side.innerHTML = `${phone ? `<details class="fdfold"${S.open.has('side') ? ' open' : ''}><summary><span>Clues</span>${nUsed ? ` <span class="fdn">${nUsed}</span>` : ''}<span class="fdfoldh">${S.open.has('side') ? 'Hide' : 'Edit'}</span></summary>` : ''}<div class="fdsearch"><input type="search" id="fdq" placeholder="Genus name…" value="${esc(S.q)}" aria-label="Filter by genus name"><button type="button" class="chip" id="fdreset">Start over</button></div>
+      $side.innerHTML = `${phone ? `<details class="fdfold"${S.open.has('side') ? ' open' : ''}><summary><span>Clues</span>${nUsed ? ` <span class="fdn">${nUsed}</span>` : ''}<span class="fdfoldh">${S.open.has('side') ? 'Hide' : 'Edit'}</span></summary>` : ''}<div class="fdsearch"><input type="search" id="fdq" placeholder="Genus name…" value="${esc(S.q)}" aria-label="Filter by genus name"></div>
       ${F.map(f => {
         const picked = S[f.id].size, open = picked || S.open.has(f.id) || (narrow ? f.id === (startV === 'c' ? 'form' : 'imrf') : !f.closed);
         return `<details class="fdfacet" data-f="${f.id}"${open ? ' open' : ''}><summary${f.note ? ` title="${esc(f.note)}"` : ''}>${esc(f.name)}${picked ? ` <span class="fdn">${picked}</span>` : ''}</summary>
@@ -115,7 +116,6 @@ LAB.add({
       const jump = $side.querySelector('.fdjump'); if (jump) jump.onclick = e => { e.preventDefault(); $main.scrollIntoView({behavior: 'smooth'}); };
       const q = $side.querySelector('#fdq');
       q.oninput = () => { S.q = q.value.trim(); draw(true); };
-      $side.querySelector('#fdreset').onclick = () => { FIDS.forEach(f => S[f].clear()); S.out.clear(); S.all.clear(); S.cmp = []; S.q = ''; S.home = true; draw(); };
       $side.querySelectorAll('details.fdfacet').forEach(d => d.ontoggle = () => d.open ? S.open.add(d.dataset.f) : S.open.delete(d.dataset.f));
       $side.querySelectorAll('[data-o]').forEach(b => b.onclick = () => {
         const [f, id] = b.dataset.o.split('|');
@@ -196,7 +196,7 @@ LAB.add({
       $main.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { pv = b.dataset.pv; store.set('imr-finder-pv', pv); draw(); });
       $main.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { const [f, id] = b.dataset.o.split('|'); S[f].has(id) ? S[f].delete(id) : S[f].add(id); if (f === 'form') [...S.box].forEach(x => { if (!S.form.has(x[0])) S.box.delete(x); }); draw(); });
       // A prominent Start over beside the chosen clues (Pierre, 2026-10-31): one tap for the next colony, at every width.
-      const rs = $main.querySelector('[data-reset]'); if (rs) rs.onclick = () => $side.querySelector('#fdreset').click();
+      const rs = $main.querySelector('[data-reset]'); if (rs) rs.onclick = reset;
       const cq = $main.querySelector('[data-clearq]'); if (cq) cq.onclick = () => { S.q = ''; draw(); };
       $main.querySelectorAll('[data-out]').forEach(b => b.onclick = () => { S.out.add(b.dataset.out); S.cmp = S.cmp.filter(x => x !== b.dataset.out); draw(); });
       $main.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { S.out.delete(b.dataset.back); draw(); });
@@ -285,7 +285,7 @@ LAB.add({
       if (!document.body.contains(root)) return document.removeEventListener('keydown', key);
       if (!lb.hidden || e.target.closest && e.target.closest('input,textarea')) return;
       if (e.key === '/') { e.preventDefault(); $side.querySelector('#fdq').focus(); }
-      else if (e.key === 'Escape') $side.querySelector('#fdreset').click();
+      else if (e.key === 'Escape') reset();
     };
     document.addEventListener('keydown', key);
     draw();
