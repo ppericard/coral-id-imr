@@ -520,7 +520,8 @@ function question(cur, target, choices, prompt, set){
 // The photos then take the grid (columns x rows) that shows them largest at 4:3.
 function fitStage(){
   const q = $v.querySelector('.q'); if (!q) return;
-  q.style.setProperty('--qh', Math.max(260, innerHeight - q.getBoundingClientRect().top - window.scrollY - 16) + 'px');
+  const tab = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tabbar-h')) || 0;  // phone tab bar
+  q.style.setProperty('--qh', Math.max(260, innerHeight - q.getBoundingClientRect().top - window.scrollY - 16 - tab) + 'px');
   const st = q.querySelector('.qstage'), n = st.children.length, W = st.clientWidth, H = st.clientHeight;
   let best = [n, 1, 0];
   for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c), w = Math.min((W - 8 * (c - 1)) / c, (H - 8 * (r - 1)) / r * 4 / 3); if (w > best[2]) best = [c, r, w]; }
@@ -651,7 +652,7 @@ function quizBoard(){
 
 // Header progress pill: genera learned, always in view; the page itself is #progress.
 const $prog = document.getElementById('prog');
-function showProg(){ if (!DATA) return; const n = Object.keys(DATA.gen); document.getElementById('progn').textContent = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length}`;
+function showProg(){ if (!DATA) return; const n = Object.keys(DATA.gen); const pt = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length}`; document.getElementById('progn').textContent = pt; const p2 = document.getElementById('progn2'); if (p2) p2.textContent = pt;
   // Not signed in: the pill says so, so RAs find where to save their progress.
   const pill = document.getElementById('prog'), out = !!SYNC_URL && !SYNC;
   pill.classList.toggle('nosync', out || !!syncTrouble()); pill.querySelector('.pl').textContent = out ? 'Sign in · progress' : 'My progress';
