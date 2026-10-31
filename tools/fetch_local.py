@@ -3,6 +3,7 @@
 # The app ignores "cand"; Pierre approves candidates in admin.html. Run from the repo root.
 import json, os, re, time, urllib.request, concurrent.futures as cf
 from PIL import Image
+from excluded import excluded, drop_excluded
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 LIC = 'cc-by,cc-by-nc,cc0,cc-by-sa,cc-by-nc-sa'
 SCLERACTINIA = 47532  # iNaturalist taxon for stony corals; guards against homonym genera (e.g. Astrea snails)
@@ -30,7 +31,7 @@ for g in d['gen']:
             url = f'https://www.inaturalist.org/observations/{o["id"]}'
             for ph in o['photos']:
                 if len(out) >= cap: break
-                if str(ph['id']) in usedp or not ph.get('license_code'): continue
+                if str(ph['id']) in usedp or not ph.get('license_code') or excluded(photo_id=ph['id']): continue
                 usedp.add(str(ph['id']))
                 f = f'{g.lower()}-cand-{ph["id"]}'
                 out.append(dict(f=f, a=ph['attribution'], lic=ph['license_code'], o=url, t=o['taxon']['name'], own=o['user']['login'] == 'ppericard', loc='dauin' if where == DAUIN else 'ph', src=ph['url'].replace('square', 'original')))
@@ -46,5 +47,6 @@ def do(j):
         t = im.copy(); t.thumbnail((w, w)); t.save(f'img/{f}{suf}.webp', 'WEBP', quality=q, method=5)
 with cf.ThreadPoolExecutor(8) as ex: list(ex.map(do, jobs))
 d['cand'] = cand
+drop_excluded(d)
 json.dump(d, open('data.json', 'w'), ensure_ascii=False, separators=(',', ':'))
 print('total', sum(map(len, cand.values())))
