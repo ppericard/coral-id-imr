@@ -78,6 +78,8 @@ for g in gen:
     if g in CV['covers']: gen[g]['cover']=CV['covers'][g]
     if g in CV['levels']: gen[g]['levels']=2
 out=dict(gen=gen,key=d['key'],imrg=d['imrg'],traits=d['traits'],course=course,terms=terms,tips=tips)
+import sys; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from excluded import drop_excluded; drop_excluded(out)
 json.dump(out,open(B+'v3/site/data.json','w'),ensure_ascii=False,separators=(',',':'))
 gaps={g:[v for v in ('wide','medium','macro') if len(gen[g]['views'][v])<2] for g in gen}
 print({g:x for g,x in gaps.items() if x})
