@@ -17,7 +17,10 @@ LAB.add({
     const CFF = DATA.key.map(k => ({id: k.id, t: k.name, s: k.sub, g: uniq(k.leaves.flatMap(l => l.g)), color: k.color}));
     // IMR Lecture 6 growth forms (forms.json "forms"). The lecture says form is plastic: like every clue it only ranks.
     const IMRCOL = {B: 'branch', E: 'plate', T: 'meander', U: 'solo', M: 'massive', S: 'column', F: 'polyp'};
-    const IMRF = (FORMS.forms || []).map(f => ({id: f.id, t: f.name, s: f.def, g: names.filter(n => imrFormsOf(n).includes(f.id)), color: IMRCOL[f.id] || 'massive'}));
+    // Display order (Pierre: more logical than the lecture's numbering): branching then tables (secondary branching),
+    // then the lumps from columns to domes, then the flat forms, then the solitary mushrooms.
+    const IMRORD = 'BTSMEFU';
+    const IMRF = [...(FORMS.forms || [])].sort((a, b) => (IMRORD.indexOf(a.id) + 99) % 99 - (IMRORD.indexOf(b.id) + 99) % 99).map(f => ({id: f.id, t: f.name, s: f.def, g: names.filter(n => imrFormsOf(n).includes(f.id)), color: IMRCOL[f.id] || 'massive'}));
     const facets = () => {
       // Each family's note shows as a tooltip on its title (Pierre: no explanatory text on the page).
       const forms = CFF.filter(f => S.form.has(f.id));
@@ -33,13 +36,13 @@ LAB.add({
     };
     const FIDS = ['imrf', 'form', 'box', ...DATA.traits.map(c => c.id), 'ig'];
     // State, read from and written back to the hash.
-    const S = {out: new Set(), cmp: [], q: '', open: new Set(), home: true};
+    const S = {out: new Set(), cmp: [], q: '', open: new Set(), home: true, all: new Set()};
     FIDS.forEach(f => S[f] = new Set());
     // Two display controls that combine: layout (Auto = Mosaic up to 12 genera, Cards beyond; Cards = one photo per genus; Mosaic;
     // Contact sheet) and which photos (Mix of colony / closer / corallites, or one view only).
     let lay = store.get('imr-finder-lay', 'auto'), pv = store.get('imr-finder-pv', 'mix');
     (arg || '').split(';').forEach(kv => { const [k, v] = kv.split('='); if (!v) return; const L = decodeURIComponent(v).split(',');
-      if (FIDS.includes(k)) L.forEach(x => S[k].add(x)); else if (k === 'out') L.forEach(x => G[x] && S.out.add(x)); else if (k === 'q') S.q = L.join(','); });
+      if (FIDS.includes(k)) L.forEach(x => S[k].add(x)); else if (k === 'out') L.forEach(x => G[x] && S.out.add(x)); else if (k === 'all') L.forEach(x => S.all.add(x)); else if (k === 'q') S.q = L.join(','); });
     // Start screen (one screen, a few clues, then the shortlist) unless the link already carries clues.
     if (FIDS.some(f => S[f].size) || S.q || S.out.size) S.home = false;
     // Three start-screen proposals for Pierre to try (admin browser only); the pick is remembered per browser. RAs get A.
@@ -48,13 +51,18 @@ LAB.add({
     const saveHash = () => {
       const parts = FIDS.filter(f => S[f].size).map(f => f + '=' + [...S[f]].join(','));
       if (S.out.size) parts.push('out=' + [...S.out].join(','));
+      const all = [...S.all].filter(f => S[f] && S[f].size > 1); if (all.length) parts.push('all=' + all.join(','));
       if (S.q) parts.push('q=' + encodeURIComponent(S.q));
       history.replaceState(null, '', base + (parts.length ? '|' + parts.join(';') : ''));
     };
     // How well a genus fits one clue family: 1 if one of its picks lists the genus, 0.5 for a corallite size
     // one class away (sizes are easy to misjudge on a photo), else 0. Unused families don't count.
     const SIZES = DATA.traits.find(c => c.id === 'size').opts.map(o => o.id);
+    // Several growth forms picked on one colony: "Not sure" (default) = any of them fits; "Both" = the genus must take
+    // them all (a genus taking only some of them is half a miss, so it is one clue off rather than gone).
+    const ANDF = ['imrf', 'form'], isAll = id => ANDF.includes(id) && S.all.has(id) && S[id].size > 1;
     const hit = (n, f) => {
+      if (isAll(f.id)) { const P = f.opts.filter(o => S[f.id].has(o.id)), k = P.filter(o => o.g.includes(n)).length; return k === P.length ? 1 : k ? .5 : 0; }
       if (f.opts.some(o => S[f.id].has(o.id) && o.g.includes(n))) return 1;
       if (f.id === 'size' && [...S.size].some(id => { const i = SIZES.indexOf(id); return [SIZES[i - 1], SIZES[i + 1]].some(x => x && G[n].tr.includes(x)); })) return .5;
       return 0;
@@ -95,12 +103,13 @@ LAB.add({
           const on = S[f.id].has(o.id), n = names.filter(x => !S.out.has(x) && fits(x, F, f.id) && o.g.includes(x)).length;
           const pv = f.thumbs ? `<span class="fdth">${(f.id === 'form' || f.id === 'imrf' ? (tilePics[f.id === 'imrf' ? 'imrf:' + o.id : o.id] || []).slice(0, 3).map(p => img(p, 's')) : bySlate(o.g).slice(0, 3).map(x => thumb(x, 'medium'))).map(u => `<img src="${u}" alt="" loading="lazy">`).join('')}</span>` : '';
           return `<button type="button" class="fdopt${f.id === 'form' || f.id === 'imrf' ? ' c-' + o.color : ''}${f.id === 'ig' ? ' gchip' : ''}"${f.id === 'ig' ? ` style="--g:${groupHue(+o.id.slice(1))}"` : ''} data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}">${pv}<span class="fdt">${esc(o.t)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="fdc">${n}</span></button>`;
-        }).join('')}</div></details>`;
+        }).join('')}</div>${ANDF.includes(f.id) ? andSw(f.id) : ''}</details>`;
       }).join('')}${narrow ? `<p><a class="next fdjump" href="#fdmain">See the ${left.length} best ${left.length === 1 ? 'fit' : 'fits'} ↓</a></p>` : ''}`;
+      andWire($side);
       const jump = $side.querySelector('.fdjump'); if (jump) jump.onclick = e => { e.preventDefault(); $main.scrollIntoView({behavior: 'smooth'}); };
       const q = $side.querySelector('#fdq');
       q.oninput = () => { S.q = q.value.trim(); draw(true); };
-      $side.querySelector('#fdreset').onclick = () => { FIDS.forEach(f => S[f].clear()); S.out.clear(); S.cmp = []; S.q = ''; S.home = true; draw(); };
+      $side.querySelector('#fdreset').onclick = () => { FIDS.forEach(f => S[f].clear()); S.out.clear(); S.all.clear(); S.cmp = []; S.q = ''; S.home = true; draw(); };
       $side.querySelectorAll('details').forEach(d => d.ontoggle = () => d.open ? S.open.add(d.dataset.f) : S.open.delete(d.dataset.f));
       $side.querySelectorAll('[data-o]').forEach(b => b.onclick = () => {
         const [f, id] = b.dataset.o.split('|');
@@ -191,13 +200,20 @@ LAB.add({
       return `<button type="button" class="fdtileb c-${o.color}" data-o="${fid}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || '')}">
       <span class="fdtq n${P.length}">${P.map(p => `<img src="${img(p, 's')}" alt="" loading="lazy">`).join('')}</span>
       <span class="fdtt"><b>${esc(o.t)}</b>${fid === 'form' ? `<small>${esc(o.s || '')}</small>` : ''}</span><span class="fdc">${n}</span></button>`; };
+    // Shown once two or more forms are picked: what two forms mean on the one colony being identified.
+    const andSw = fid => S[fid].size < 2 ? '' : `<div class="seg fdand" role="group" aria-label="Several forms"><button type="button" data-and="${fid}|0" aria-pressed="${!S.all.has(fid)}">Not sure which form</button><button type="button" data-and="${fid}|1" aria-pressed="${S.all.has(fid)}">Both on this colony</button></div>`;
+    const andWire = el => el.querySelectorAll('[data-and]').forEach(b => b.onclick = () => { const [f, v] = b.dataset.and.split('|'); v === '1' ? S.all.add(f) : S.all.delete(f); draw(); });
     const optBtn = (f, o, on, n) => `<button type="button" class="fdbigopt" data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}"><span>${esc(o.t)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="fdc">${n}</span></button>`;
+    // Up to 4 photos for a Coral Finder box: the corallites of each genus first, then their closer views to fill the slots.
+    const boxPics = g => { const L = bySlate(g), P = L.map(x => thumb(x, 'macro')); for (const x of L) { if (P.length >= 4) break; P.push(thumb(x, 'medium')); } return P.filter(Boolean).slice(0, 4); };
+    // Shortlist card: closer view and corallites side by side, big enough to compare at a glance.
+    const genCard = n => `<a class="fdgc" href="${genLink(n)}"><span class="fdgp"><img src="${thumb(n, 'medium')}" alt="" loading="lazy"><img src="${thumb(n, 'macro')}" alt="" loading="lazy"></span><i>${esc(n)}</i></a>`;
     function drawStart(F){
       const pool = names.filter(n => !S.out.has(n)), left = pool.filter(n => pen(n, F) === 0);
       const cnt = (f, o) => pool.filter(n => fits(n, F, f.id) && o.g.includes(n)).length;
       const fam = id => F.find(f => f.id === id);
       const row = id => { const f = fam(id); return f ? `<div class="fdsrow"><h3 title="${esc(f.note || '')}">${esc(f.name)}</h3><div class="fdsopts">${f.opts.map(o => optBtn(f, o, S[id].has(o.id), cnt(f, o))).join('')}</div></div>` : ''; };
-      const forms = f => `<div class="fdforms">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>`;
+      const forms = f => `<div class="fdforms">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>${andSw(f.id)}`;
       const show = `<button type="button" class="next fdshow" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera`} →</button>`;
       // Two entry points for everyone: IMR forms (default) or the paper Coral Finder's path, as a discreet link.
       const switcher = `<button type="button" class="linkish fdsv" data-sv="${startV === 'c' ? 'a' : 'c'}">${startV === 'c' ? '← IMR growth forms' : 'Coral Finder path →'}</button>`;
@@ -205,7 +221,7 @@ LAB.add({
       if (startV === 'c') {
         // The paper Coral Finder's own path: growth form, then the box of that form, then the shortlist.
         const fb = fam('box');
-        body = `${forms(fam('form'))}${fb ? `<div class="fdsrow"><h3 title="${esc(fb.note)}">${esc(fb.name)}</h3><div class="fdsopts boxes">${fb.opts.map(o => `<button type="button" class="fdboxb" data-o="box|${o.id}" aria-pressed="${S.box.has(o.id)}"><span class="fdtq s">${bySlate(o.g).slice(0, 4).map(x => `<img src="${thumb(x, 'macro')}" alt="" loading="lazy">`).join('')}</span><span>${esc(o.t)} <small>${o.pg || ''}</small></span><span class="fdc">${cnt(fb, o)}</span></button>`).join('')}</div></div>` : ''}`;
+        body = `${forms(fam('form'))}${fb ? `<div class="fdsrow"><h3 title="${esc(fb.note)}">${esc(fb.name)}</h3><div class="fdforms boxes">${fb.opts.map(o => { const P = boxPics(o.g); return `<button type="button" class="fdtileb fdboxt" data-o="box|${o.id}" aria-pressed="${S.box.has(o.id)}"${!cnt(fb, o) && !S.box.has(o.id) ? ' data-zero' : ''}><span class="fdtq n${P.length}">${P.map(u => `<img src="${u}" alt="" loading="lazy">`).join('')}</span><span class="fdtt"><b>${esc(o.t)}</b>${o.pg ? `<small>${o.pg}</small>` : ''}</span><span class="fdc">${cnt(fb, o)}</span></button>`; }).join('')}</div></div>` : ''}`;
       } else {
         // Polyps out by day is its own clue (IMR lecture group 6), taken from Other features.
         const ft = fam('feat'), po = ft && ft.opts.find(o => o.id === 'polyp');
@@ -215,8 +231,9 @@ LAB.add({
       // only counted; the full results page lists them).
       const close = pool.filter(n => pen(n, F) === 1);
       const live = !used(F).length ? '' : `<div class="fdlive"><h3 class="fdgrp">${left.length} ${left.length === 1 ? 'genus fits' : 'genera fit'} every clue${close.length ? ` <small>${close.length} more one clue off</small>` : ''}</h3>
-        <p class="fdchosen">${left.map(n => `<a class="chip" href="${genLink(n)}"><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p></div>`;
+        <div class="fdgcs">${left.map(genCard).join('')}</div></div>`;
       $start.innerHTML = `<div class="fdstop"><input type="search" id="fdsq" placeholder="Genus name…" aria-label="Find a genus by name">${switcher}${show}</div>${body}${live}`;
+      andWire($start);
       $start.querySelectorAll('[data-sv]').forEach(b => b.onclick = () => { startV = b.dataset.sv; store.set('imr-finder-start', startV); FIDS.forEach(f => S[f].clear()); draw(); });
       $start.querySelector('#fdsq').oninput = e => { S.q = e.target.value.trim(); if (S.q) { S.home = false; draw(); const q = $side.querySelector('#fdq'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); } };
       const sh = $start.querySelector('[data-show]'); if (sh) sh.onclick = () => { S.home = false; draw(); window.scrollTo(0, 0); };
