@@ -73,6 +73,15 @@ function applyCuration(d, c){
     if (Object.keys(feat).length) g.feat = feat;
     const cv = k.cover && !hide.has(k.cover) && all.find(p => p.f === k.cover);
     if (cv) g.coverP = cv;
+    // Zoom levels per genus (curation lv: 2 | 3, admin switch). 2 levels: the Closer photos join Colony, the Closer
+    // view disappears; his Closer picks stay in curation.json, so switching back to 3 restores them.
+    if (k.lv === 3) delete g.levels;
+    if (k.lv === 2 && g.levels !== 2) {
+      g.levels = 2;
+      ['views', 'more'].forEach(s => { const S = g[s] || {}; if ((S.medium || []).length) S.wide = [...(S.wide || []), ...S.medium]; delete S.medium; });
+      if (d.course[n]) d.course[n] = d.course[n].map(p => p.v === 'medium' ? {...p, v: 'wide'} : p);
+      if (g.book) g.book = g.book.map(p => p.view === 'medium' ? {...p, view: 'wide'} : p);
+    }
   });
 }
 
