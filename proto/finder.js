@@ -21,12 +21,18 @@ LAB.add({
     // then the lumps from columns to domes, then the flat forms, then the solitary mushrooms.
     const IMRORD = 'BTSMEFU';
     const IMRF = [...(FORMS.forms || [])].sort((a, b) => (IMRORD.indexOf(a.id) + 99) % 99 - (IMRORD.indexOf(b.id) + 99) % 99).map(f => ({id: f.id, t: f.name, s: f.def, g: names.filter(n => imrFormsOf(n).includes(f.id)), color: IMRCOL[f.id] || 'massive'}));
+    // Two entry points: the paper Coral Finder's path (default: Pierre, 2026-10-31, it is the reference for ReefCloud)
+    // or the IMR Lecture 6 growth forms. New key so the new default reaches browsers that stored the old one.
+    let startV = store.get('imr-finder-start2', 'c'); if (startV !== 'a') startV = 'c';
     const facets = () => {
       // Each family's note shows as a tooltip on its title (Pierre: no explanatory text on the page).
       const forms = CFF.filter(f => S.form.has(f.id));
+      // The growth-form system picked on the start screen leads, open; the other one follows, folded.
+      const cf = startV === 'c';
+      const imrF = {id: 'imrf', name: cf ? 'IMR growth form' : 'Growth form', note: 'The 7 growth forms of IMR Lecture 6, as seen on each genus\'s photos and in the Coral Finder. Form is plastic: it ranks, never rules out.', thumbs: true, closed: cf, opts: IMRF};
+      const cfF = {id: 'form', name: 'Coral Finder growth form', note: 'The Coral Finder\'s front page. Many genera take several forms.', thumbs: true, closed: !cf, opts: CFF};
       return [
-        {id: 'imrf', name: 'Growth form', note: 'The 7 growth forms of IMR Lecture 6, as seen on each genus\'s photos and in the Coral Finder. Form is plastic: it ranks, never rules out.', thumbs: true, opts: IMRF},
-        {id: 'form', name: 'Coral Finder growth form', note: 'The Coral Finder\'s front page. Many genera take several forms.', thumbs: true, closed: true, opts: CFF},
+        ...(cf ? [cfF, imrF] : [imrF, cfF]),
         ...(forms.length ? [{id: 'box', name: 'Coral Finder box', note: 'Second step of the Coral Finder, for the growth form picked above.',
           opts: forms.flatMap(f => DATA.key.find(k => k.id === f.id).leaves.filter(l => l.g.length && (f.id !== 'L' && f.id !== 'C')).map(l => ({id: l.id, t: leafLabel(l), g: l.g, pg: pg(l)})))}] : []),
         ...DATA.traits.map(c => ({id: c.id, name: c.name, note: c.note, opts: c.opts.map(o => ({id: o.id, t: o.t, s: o.src, g: withTr(o.id)}))})),
@@ -45,8 +51,6 @@ LAB.add({
       if (FIDS.includes(k)) L.forEach(x => S[k].add(x)); else if (k === 'out') L.forEach(x => G[x] && S.out.add(x)); else if (k === 'all') L.forEach(x => S.all.add(x)); else if (k === 'q') S.q = L.join(','); });
     // Start screen (one screen, a few clues, then the shortlist) unless the link already carries clues.
     if (FIDS.some(f => S[f].size) || S.q || S.out.size) S.home = false;
-    // Three start-screen proposals for Pierre to try (admin browser only); the pick is remembered per browser. RAs get A.
-    let startV = store.get('imr-finder-start', 'a'); if (startV !== 'c') startV = 'a';
     const base = location.hash.startsWith('#lab-') ? '#lab-finder' : '#finder';
     const saveHash = () => {
       const parts = FIDS.filter(f => S[f].size).map(f => f + '=' + [...S[f]].join(','));
@@ -98,7 +102,7 @@ LAB.add({
       const nUsed = F.reduce((t, f) => t + S[f.id].size, 0);
       $side.innerHTML = `${phone ? `<details class="fdfold"${S.open.has('side') ? ' open' : ''}><summary><span>Clues</span>${nUsed ? ` <span class="fdn">${nUsed}</span>` : ''}<span class="fdfoldh">${S.open.has('side') ? 'Hide' : 'Edit'}</span></summary>` : ''}<div class="fdsearch"><input type="search" id="fdq" placeholder="Genus name…" value="${esc(S.q)}" aria-label="Filter by genus name"><button type="button" class="chip" id="fdreset">Start over</button></div>
       ${F.map(f => {
-        const picked = S[f.id].size, open = picked || S.open.has(f.id) || (narrow ? f.id === 'imrf' : !f.closed);
+        const picked = S[f.id].size, open = picked || S.open.has(f.id) || (narrow ? f.id === (startV === 'c' ? 'form' : 'imrf') : !f.closed);
         return `<details class="fdfacet" data-f="${f.id}"${open ? ' open' : ''}><summary${f.note ? ` title="${esc(f.note)}"` : ''}>${esc(f.name)}${picked ? ` <span class="fdn">${picked}</span>` : ''}</summary>
         <div class="fdopts${f.thumbs ? ' th' : ''}">${f.opts.map(o => {
           const on = S[f.id].has(o.id), n = names.filter(x => !S.out.has(x) && fits(x, F, f.id) && o.g.includes(x)).length;
@@ -125,7 +129,7 @@ LAB.add({
     // Best next checks: unpicked options that split the shortlist most evenly, with who is on each side.
     function nextChecks(F, left){
       if (left.length < 2) return '';
-      const cands = F.filter(f => f.id !== 'ig' && !(f.id === 'form' && S.form.size)).flatMap(f => f.opts.filter(o => !S[f.id].has(o.id)).map(o => {
+      const cands = F.filter(f => f.id !== 'ig' && !(f.id === 'form' && S.form.size) && !(startV === 'c' && f.id === 'imrf')).flatMap(f => f.opts.filter(o => !S[f.id].has(o.id)).map(o => {
         const yes = left.filter(n => o.g.includes(n)); return {f, o, yes, no: left.filter(n => !yes.includes(n)), s: Math.min(yes.length, left.length - yes.length)};
       })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 2);
       if (!cands.length) return `<p class="note fdhint">The Coral Finder criteria cannot split these any further: compare the photos below.</p>`;
@@ -201,8 +205,8 @@ LAB.add({
     }
 
     // Start screen: the clues people actually start from, on one screen, before any list of genera.
-    // A (default) = IMR growth forms, polyps out, corallite size, walls; C = the paper Coral Finder's path (front-page
-    // form, then the box of that form). Pierre's choice (2026-10-31); C is a discreet link for everyone.
+    // C (default, Pierre 2026-10-31: the Coral Finder is the reference for ReefCloud) = the paper Coral Finder's path
+    // (front-page form, then the box of that form); A = IMR growth forms, polyps out, corallite size, walls, as a discreet link.
     const formTile = (fid, o, on, n) => { const P = tilePics[fid === 'imrf' ? 'imrf:' + o.id : o.id] || [];
       return `<button type="button" class="fdtileb c-${o.color}" data-o="${fid}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || '')}">
       <span class="fdtq n${P.length}">${P.map(p => `<img src="${img(p, 's')}" alt="" loading="lazy">`).join('')}</span>
@@ -243,7 +247,7 @@ LAB.add({
       $start.classList.toggle('used', !!used(F).length);
       $start.innerHTML = `<div class="fdstop"><input type="search" id="fdsq" placeholder="Genus name…" aria-label="Find a genus by name">${switcher}${show}</div>${body}${live}`;
       andWire($start);
-      $start.querySelectorAll('[data-sv]').forEach(b => b.onclick = () => { startV = b.dataset.sv; store.set('imr-finder-start', startV); FIDS.forEach(f => S[f].clear()); draw(); });
+      $start.querySelectorAll('[data-sv]').forEach(b => b.onclick = () => { startV = b.dataset.sv; store.set('imr-finder-start2', startV); FIDS.forEach(f => S[f].clear()); draw(); });
       $start.querySelector('#fdsq').oninput = e => { S.q = e.target.value.trim(); if (S.q) { S.home = false; draw(); const q = $side.querySelector('#fdq'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); } };
       $start.querySelectorAll('[data-gx]').forEach(b => b.onclick = () => { const n = b.dataset.gx; S.home = false; S.open.add('x:' + n); draw();
         const a = $main.querySelector(`[data-x="${CSS.escape(n)}"]`); a ? a.closest('article').scrollIntoView({block: 'start'}) : window.scrollTo(0, 0); });
