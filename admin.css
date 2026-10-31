@@ -195,4 +195,6 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 .adm-sname{margin-right:8px}
 /* Triage */
 .adm-where{display:block;width:100%;color:var(--muted,#667);font-size:.75rem}
-.adm-todo{display:flex;flex-wrap:wrap;gap:6px}
+.adm-tchips{display:flex;flex-wrap:wrap;gap:6px}
+/* Growth form guess Claude is unsure about */
+.adm-fseg.unsure{position:relative}.adm-fseg.unsure::after{content:"?";position:absolute;right:-6px;top:-8px;width:16px;height:16px;border-radius:50%;background:var(--bad,#c0392b);color:#fff;font:700 .7rem/16px var(--body);text-align:center}
