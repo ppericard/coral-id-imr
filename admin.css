@@ -437,6 +437,7 @@ td.cov-c small::before{content:"·";margin-right:3px}
 .adm-bar.bad i{background:var(--bad)}
 .adm-cols{display:flex;align-items:flex-end;gap:3px;height:140px;border-bottom:1px solid var(--line)}
 .adm-cols>div{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;position:relative;min-width:4px}
+.adm-cols>div.few{opacity:.45}
 .adm-cols>div>i{display:block;background:var(--accent);border-radius:2px 2px 0 0}
 .adm-cols.stack>div>i{border-radius:0}
 .adm-cols small{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:.66rem;color:var(--accent-ink)}

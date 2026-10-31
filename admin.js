@@ -1061,7 +1061,7 @@ function statsPlayers(){
     <section class="adm-scard wide"><h3>Players</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>#</th><th>Level</th><th>Answers</th><th>Right</th><th>Last 20</th><th>Learned</th><th>Days</th><th>Last</th></tr></thead><tbody>
       ${ps.map((p, i) => `<tr${p.id === MEID ? ' class="me"' : ''}><td>${i + 1}${p.id === MEID ? ' <small>you</small>' : ''}</td><td>${p.lv == null ? '–' : sgn(p.lv)}</td><td>${p.n}</td><td>${pct(p.ok, p.n)}</td><td>${Math.round(100 * p.last)}%</td>
         <td>${p.sum ? `${p.sum[0]}/${p.sum[2] || total}` : '–'}</td><td>${p.d.size}</td><td>${days(p.at)}</td></tr>`).join('')}</tbody></table></div></section>
-    <section class="adm-scard"><h3>Learning curve</h3><div class="adm-cols">${cv.map((b, k) => `<div title="Answers ${k * blk + 1}-${(k + 1) * blk}: ${b[0]}/${b[1]}"><i style="height:${Math.round(100 * b[0] / b[1])}%"></i><small>${Math.round(100 * b[0] / b[1])}</small></div>`).join('')}</div>
+    <section class="adm-scard"><h3>Learning curve</h3><div class="adm-cols">${cv.map((b, k) => `<div title="Answers ${k * blk + 1}-${(k + 1) * blk}: ${b[0]}/${b[1]}"${b[1] < 10 ? ' class="few"' : ''}><i style="height:${Math.round(100 * b[0] / b[1])}%"></i><small>${Math.round(100 * b[0] / b[1])}</small></div>`).join('')}</div>
       <p class="adm-axis"><span>Answer 1</span><span>${blk} per bar</span><span>${cv.length * blk}</span></p></section>
     <section class="adm-scard"><h3>Conditions</h3><table class="adm-tbl">${cond.map(([t, n, r]) => `<tr><td>${t}</td><td>${pct(r, n)}</td><td>${sbar(r, n)}</td><td class="n">${n}</td></tr>`).join('')}</table></section>
     <section class="adm-scard"><h3>Genera</h3><div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Shown</th><th>Right</th><th></th><th>n</th><th title="Given wrongly">Given ✗</th></tr></thead><tbody>
@@ -1089,7 +1089,7 @@ function statsPhotos(){
   const V = rowsOf(group(p => p.view), VIEW_T), S = rowsOf(group(origin), ORIGIN_T), GN = rowsOf(group(p => p.genus));
   // Dot strip scale: the spread of the photos shown, at least -1..+1.
   const x0 = Math.min(-1, Math.floor(ds[0] * 2) / 2), x1 = Math.max(1, Math.ceil(ds[ds.length - 1] * 2) / 2), X = d => (100 * (d - x0) / (x1 - x0)).toFixed(1) + '%';
-  const strip = a => `<span class="adm-strip"><b style="left:${X(0)}"></b>${a.map(p => `<button type="button" class="v-${p.view}" style="left:${X(p.d)}" data-zf="${esc(p.f)}" data-g="${esc(p.genus)}" title="${esc(VIEW_T[p.view] || p.view)} ${sgn(p.d)} · ${p.ok}/${p.n}"></button>`).join('')}</span>`;
+  const strip = a => `<span class="adm-strip"><b style="left:${X(0)}"></b>${a.map(p => `<button type="button" class="v-${p.view}" style="left:${X(p.d)};top:calc(50% + ${({wide: -4, macro: 4})[p.view] || 0}px)" data-zf="${esc(p.f)}" data-g="${esc(p.genus)}" title="${esc(VIEW_T[p.view] || p.view)} ${sgn(p.d)} · ${p.ok}/${p.n}"></button>`).join('')}</span>`;
   const table = (Rw, first) => `<table class="adm-tbl"><thead><tr><th>${first}</th><th>Photos</th><th>Mean</th><th>Right</th></tr></thead><tbody>${Rw.map(r => `<tr><td>${esc(r.t)}</td><td class="n">${r.a.length}</td><td>${sgn(r.m)}</td><td>${pct(r.ok, r.n)}</td></tr>`).join('')}</tbody></table>`;
   const legend = `<p class="adm-legend">${Object.keys(VIEW_T).filter(v => L.some(p => p.view === v)).map(v => `<span><i class="v-${v}"></i>${VIEW_T[v]}</span>`).join('')}</p>`;
   $v.innerHTML = head + kpis([['Photos rated', L.length], ['Median', sgn(med)], ['Spread (SD)', sd.toFixed(2)], ['Hardest genus', `<i>${esc(GN[0].k)}</i>`]]) + `
