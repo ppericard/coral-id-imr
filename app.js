@@ -386,29 +386,21 @@ function pairs(){
   Object.keys(DATA.gen).forEach(a => DATA.gen[a].look.forEach(b => { const k = [a, b].sort().join('|'); if (DATA.gen[b] && !seen.has(k)) { seen.add(k); out.push(k.split('|')); } }));
   return out;
 }
-// Look-alikes page: one panel per IMR lecture group (genera not in the lecture last), every genus side by
-// side at the same size and in the same view, with its deciding feature. Below, the Coral Finder look-alike
-// pairs: inside the group, then with genera of other groups. The reader's quiz mix-ups come first, in red.
+// Look-alikes page: the list of look-alike pairs (Coral Finder look-alikes), nothing else. Each pair is one card:
+// the two genera at the same size and in the same view, with their short ID tips, opening the side-by-side page.
+// Pairs sit under the lowest IMR lecture group of their two genera; the reader's quiz mix-ups come first.
 function viewCompareList(){
-  const G = DATA.gen, tag = g => g.n ? 'No. ' + g.n : '★';
-  const chip = ([a, b]) => { const m = mixedUp(a, b); return `<a class="chip${m ? ' mix' : ''}" href="#cmp-${esc(a)}|${esc(b)}"><i>${esc(a)}</i>&nbsp;vs&nbsp;<i>${esc(b)}</i>${m ? ` ×${m}` : ''}</a>`; };
-  const byMix = (x, y) => mixedUp(...y) - mixedUp(...x);
-  const grp = (t, L) => {
-    const inside = [], outside = [];
-    L.forEach((a, i) => lookOf(a).forEach(b => { if (!L.includes(b)) outside.push([a, b]); else if (L.indexOf(b) > i) inside.push([a, b]); }));
-    inside.sort(byMix); outside.sort(byMix);
-    const mine = [...inside, ...outside].reduce((s, p) => s + mixedUp(...p), 0);
-    return `<section class="lfam"><h3>${t}<small>${L.length} ${L.length > 1 ? "genera" : "genus"}${mine ? ` · <b class="bad">you mixed some up ×${mine}</b>` : ''}</small></h3>
-      <div class="lrow">${L.map(n => `<a class="lt" href="#g-${esc(n)}">${viewShot(n, cmpView)}<span><i>${esc(n)}</i><small>${G[n].n || G[n].ig ? tag(G[n]) : starNote(n)} · ${esc(G[n].fam)}</small><span class="psum">${esc(tipsText(G[n]))}</span></span></a>`).join('')}</div>
-      ${inside.length ? `<p class="lpairs"><span class="label">Compare</span>${inside.map(chip).join('')}</p>` : ''}
-      ${outside.length ? `<p class="lpairs"><span class="label">Other groups</span>${outside.map(chip).join('')}</p>` : ''}
-      ${cmpShots(L)}</section>`; };
-  const none = bySlate(Object.keys(G).filter(n => !shownGroup(n)));
+  const G = DATA.gen, gi = n => shownGroup(n) || 99, all = pairs().map(p => bySlate(p));
+  const card = ([a, b]) => { const m = mixedUp(a, b), lect = (DATA.cmp || []).find(c => c.imr && c.g.includes(a) && c.g.includes(b));
+    const side = n => `<div class="lpside">${viewShot(n, cmpView)}<i>${esc(n)}</i><span class="psum">${esc(tipsText(G[n]))}</span></div>`;
+    return `<a class="lpair${m ? ' mix' : ''}" href="#cmp-${esc(a)}|${esc(b)}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}<div class="lpsides">${side(a)}${side(b)}</div>${lect ? `<small class="lplect"><b class="lect">IMR lecture</b> slide ${lect.slide}: comparison on the side-by-side page</small>` : ''}</a>`; };
+  const order = (x, y) => mixedUp(...y) - mixedUp(...x) || (gi(x[0]) === gi(x[1]) ? 0 : 1) - (gi(y[0]) === gi(y[1]) ? 0 : 1);
+  const groups = [...new Set(all.map(p => Math.min(gi(p[0]), gi(p[1]))))].sort((a, b) => a - b);
   $v.innerHTML = `<h2>Look-alikes</h2>
-  <p class="lede">Genera by IMR lecture group, compared in the same view with what sets each apart. The pairs to compare are the Coral Finder look-alikes; open one to see all three views side by side. Each genus sheet also lists its own look-alikes.</p>
+  <p class="lede">Every pair of genera that are easy to confuse (the Coral Finder look-alikes), in the same view and at the same size, with the IMR ID tips that tell them apart. Open a pair to compare all three views side by side. Pairs you mixed up in the quiz come first.</p>
   <div class="seg-row"><span class="label">Show</span>${viewSeg()}</div>
-  ${DATA.imrg.map(x => grp(`<span class="gn">${x.n}</span> ${esc(x.t)}`, bySlate(Object.keys(G).filter(n => shownGroup(n) === x.n)))).join('')}
-  ${none.length ? grp('<span class="gn">★</span> Not covered in the lecture', none) : ''}`;
+  ${groups.map(k => { const gr = DATA.imrg.find(x => x.n === k), L = all.filter(p => Math.min(gi(p[0]), gi(p[1])) === k).sort(order);
+    return `<section class="lpgrp"><h3 class="gdiv" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn">${gr ? gr.n : '★'}</span> ${gr ? esc(gr.t) : 'Not covered in the lecture'}</h3><div class="lpairs2">${L.map(card).join('')}</div></section>`; }).join('')}`;
   bindViewSeg(() => { const y = window.scrollY; viewCompareList(); window.scrollTo(0, y); });
 }
 function viewCompare(a, b){
@@ -423,6 +415,7 @@ function viewCompare(a, b){
   // The cues sit above the photos, each under its genus, so they can be read while comparing.
   $v.innerHTML = `<div class="cmprow text">${col(a, A)}${col(b, B)}</div>
   ${VIEWS.filter(([v]) => (A.views[v] || []).length || (B.views[v] || []).length).map(row).join('')}
+  ${(DATA.cmp || []).some(c => c.imr && c.g.includes(a) && c.g.includes(b)) ? `<h3 class="cmplab">IMR lecture</h3>${cmpShots([a, b])}` : ''}
   <p><a class="next" href="#quiz-duel|${esc(a)}|${esc(b)}">Drill this pair</a></p>`;
   $v.querySelectorAll('[data-z]').forEach(x => x.onclick = () => zoom(flat, Number(x.dataset.z)));
   bindCards(); bindGo();
@@ -478,7 +471,7 @@ function missing(n){
   return m;
 }
 function level(n){
-  const s = P[n]; if (!s || s.ok + s.ko === 0) return ['new', 'Not seen'];
+  const s = P[n]; if (!s || (s.ok + s.ko === 0 && !s.h)) return ['new', 'Not seen'];
   const h = recent(n);
   if (!h) return s.streak === 0 ? ['weak', 'Review'] : ['mid', 'Learning'];  // progress saved before this rule
   if (h.slice(-1) === '0' || misses(h) >= 2) return ['weak', 'Review'];
@@ -565,6 +558,8 @@ function answer(cur, c, target, ph, cor){
   const good = c === target, s = st(target);
   session.n++; if (good) { session.ok++; s.ok++; s.streak++; } else { s.ko++; s.streak = 0; s.conf = s.conf || {}; s.conf[c] = (s.conf[c] || 0) + 1; }
   s.h = ((s.h || '') + (good ? 1 : 0)).slice(-10);  // recent results, newest last
+  // Pierre's rule: a wrong answer also shows the genus given is not mastered, so it counts as a miss for it too.
+  if (!good && DATA.gen[c]) { const w = st(c); w.h = ((w.h || '') + '0').slice(-10); w.streak = 0; }
   if (good && cor) s.cor = 1;  // milestone: right with the corallites photo in view
   if (good && cur.startsWith('quiz-duel')) s.du = 1;  // milestone: won a look-alike duel
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
@@ -634,15 +629,16 @@ function quizBoard(){
         <span class="pseg">${L.map(n => `<a class="${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i></a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
   };
   let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
-  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. Green: learned. Teal: learning. Red: to review (comes up more often in the quiz). Grey: not seen yet. Status comes from your last 5 answers for each genus (any quiz, duels included). Learned: at most 1 mistake in the last 5, the last answer right, and two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5, or the last answer wrong. Click a genus to open its sheet.</p>
+  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. Green: learned. Teal: learning. Red: to review (comes up more often in the quiz). Grey: not seen yet. Status comes from your last 5 answers for each genus (any quiz, duels included); naming a genus when the photo shows another one counts as a mistake for both. Learned: at most 1 mistake in the last 5, the last answer right, and two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5, or the last answer wrong. Click a genus to open its sheet.</p>
   <div class="pgame pboard"><div class="pgwrap"></div>
   <aside class="gside">
     <div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['slate', 'Slate'], ['groups', 'Groups']].map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`).join('')}</div>
     <div class="pring" style="background:conic-gradient(${ring})"><span><b>${count('ok')}</b>/${list.length}<small>learned</small></span></div>
     <p class="plegend">${LV.map(([k, t]) => `<span class="lvl ${k}">${t} ${count(k)}</span>`).join(' ')}</p>
+    <p class="pnote">Learned = at most 1 mistake in your last 5 answers on this genus (naming it wrongly counts too), the last one right, and right once with the corallites and once in a duel.</p>
     ${weak.length ? `<div><h3 class="label">Review first</h3><p class="chips">${weak.slice(0, 4).map(n => `<a class="chip" href="#g-${esc(n)}"><i>${esc(n)}</i></a>`).join('')}</p></div>` : ''}
     ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> / <i>${esc(o)}</i> ×${k}</a>`).join('')}</p></div>` : ''}
-    <p><a class="chip go" href="#quiz">Practise now</a></p>
+    <p><a class="next go" href="#quiz">Practise now</a></p>
     ${SYNC_URL ? '<section class="sync" id="sync"></section>' : ''}
     <details class="saveprog"><summary>Backup or reset progress</summary><p class="note">Progress is saved in this browser, on this device. Save it to a file to keep a backup or move it to another device.</p>
       <button class="chip" type="button" id="pexp">Save to a file</button> <button class="chip" type="button" id="pload">Load a file</button><input type="file" id="pimp" accept=".json,application/json" hidden> <span class="note" id="pmsg" role="status"></span>
