@@ -523,6 +523,8 @@ button.fdname[aria-expanded="true"]::after{content:" ▾"}
 .fdtileb[data-zero],.fdbigopt[data-zero]{opacity:.4}
 .fdtq{display:grid;grid-template-columns:1fr 1fr;gap:1px;aspect-ratio:4/3;background:var(--line)}
 .fdtq img{width:100%;height:100%;object-fit:cover;display:block}
+/* Fewer than 4 photos of that growth form: the first one takes the free space. */
+.fdtq.n3 img:first-child{grid-row:span 2}.fdtq.n2 img{grid-row:span 2}.fdtq.n1 img{grid-column:span 2;grid-row:span 2}
 .fdtq.s{aspect-ratio:auto;width:84px;height:63px;flex:none;border-radius:6px;overflow:hidden}
 .fdtt{display:flex;flex-direction:column;padding:6px 8px 8px;border-top:4px solid var(--c,var(--line))}
 .fdtt b{font-size:.92rem;line-height:1.2}

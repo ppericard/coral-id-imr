@@ -85,8 +85,19 @@ function filterOrigin(d){
     if (g.coverP && !keep(g.coverP)) delete g.coverP;
   });
 }
-let RAW, CUR;
-function build(){ const d = structuredClone(RAW); applyCuration(d, CUR); filterOrigin(d); DATA = d; }
+let RAW, CUR, FORMS = {};
+function build(){ const d = structuredClone(RAW); applyCuration(d, CUR); filterOrigin(d); applyForms(d, CUR); DATA = d; }
+// Growth form of each photo (Coral Finder front-page form ids, "x" = form not visible): Pierre's choice in
+// curation.json "form" wins over the first guess in forms.json. Stored on each photo as p.form (a string of ids).
+function applyForms(d, c){
+  const mine = (c && c.form) || {};
+  const set = p => { const v = mine[p.f] || FORMS[p.f]; if (v) p.form = v; };
+  Object.values(d.gen).forEach(g => ['views', 'more'].forEach(k => Object.values(g[k] || {}).forEach(L => L.forEach(set))));
+  Object.values(d.course || {}).forEach(L => L.forEach(set));
+}
+// Photos of genus n that show growth form id (e.g. 'M'): colony views first, then closer views. Never a "form not
+// visible" photo, a multi-coral photo or a Coral Finder book photo (they are not in views).
+const formPhotos = (n, id) => { const g = DATA.gen[n]; return [...(g.views.wide || []), ...(g.views.medium || []), ...(DATA.course[n] || []).filter(p => p.v !== 'macro')].filter(p => !p.multi && (p.form || '').includes(id)); };
 
 /* ---------- shared bits ---------- */
 // Genera in IMR slate order (data.json lists them that way, starred genera last).
@@ -824,5 +835,6 @@ if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else ad
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
 const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
-Promise.all([fetch('data.json?v=17').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+const forms = () => fetch('forms.json?v=1').then(r => r.ok ? r.json() : {}).then(j => j.form || {}).catch(() => ({}));
+Promise.all([fetch('data.json?v=17').then(r => r.json()), curation(), forms()]).then(([d, c, f]) => { RAW = d; CUR = c; FORMS = f; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});

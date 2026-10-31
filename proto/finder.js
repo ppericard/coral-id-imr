@@ -62,6 +62,14 @@ LAB.add({
     const fitsQ = n => !S.q || n.toLowerCase().includes(S.q.toLowerCase());
     const fits = (n, F, skip) => fitsQ(n) && pen(n, F, skip) === 0;
     const thumb = (n, v = 'medium') => { const p = (G[n].views[v] || [])[0] || cover(G[n]); return p ? img(p, 's') : ''; };
+    // Each growth-form tile shows 4 photos tagged with that form (photo growth form, checked in admin), one genus per
+    // photo and a different genus on each tile where possible; a genus only comes back when its form has too few.
+    const tilePics = (() => { const seen = new Set(), out = {};
+      [...FORMS].sort((a, b) => a.g.length - b.g.length).forEach(f => {
+        const L = bySlate(f.g), order = [...L.filter(x => !seen.has(x)), ...L.filter(x => seen.has(x))], per = order.map(x => formPhotos(x, f.id)), pick = [];
+        for (let i = 0; pick.length < 4 && per.some(P => P[i]); i++) per.forEach((P, k) => { if (P[i] && pick.length < 4) { pick.push(P[i]); seen.add(order[k]); } });
+        out[f.id] = pick; });
+      return out; })();
 
     root.innerHTML = `<section class="fdstart" id="fdstart" hidden></section><div class="fdlayout"><aside class="fdside" id="fdside"></aside><section class="fdmain" id="fdmain"></section></div><div class="fdcmp" id="fdcmp" hidden></div>`;
     const $start = root.querySelector('#fdstart'), $lay = root.querySelector('.fdlayout');
@@ -76,7 +84,7 @@ LAB.add({
         return `<details class="fdfacet" data-f="${f.id}"${open ? ' open' : ''}><summary${f.note ? ` title="${esc(f.note)}"` : ''}>${esc(f.name)}${picked ? ` <span class="fdn">${picked}</span>` : ''}</summary>
         <div class="fdopts${f.thumbs ? ' th' : ''}">${f.opts.map(o => {
           const on = S[f.id].has(o.id), n = names.filter(x => !S.out.has(x) && fits(x, F, f.id) && o.g.includes(x)).length;
-          const pv = f.thumbs ? `<span class="fdth">${bySlate(o.g).slice(0, 3).map(x => `<img src="${thumb(x, f.id === 'form' ? 'wide' : 'medium')}" alt="" loading="lazy">`).join('')}</span>` : '';
+          const pv = f.thumbs ? `<span class="fdth">${(f.id === 'form' ? tilePics[o.id].slice(0, 3).map(p => img(p, 's')) : bySlate(o.g).slice(0, 3).map(x => thumb(x, 'medium'))).map(u => `<img src="${u}" alt="" loading="lazy">`).join('')}</span>` : '';
           return `<button type="button" class="fdopt${f.id === 'form' ? ' c-' + o.color : ''}${f.id === 'ig' ? ' gchip' : ''}"${f.id === 'ig' ? ` style="--g:${groupHue(+o.id.slice(1))}"` : ''} data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}">${pv}<span class="fdt">${esc(o.t)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="fdc">${n}</span></button>`;
         }).join('')}</div></details>`;
       }).join('')}${narrow ? `<p><a class="next fdjump" href="#fdmain">See the ${left.length} best ${left.length === 1 ? 'fit' : 'fits'} ↓</a></p>` : ''}`;
@@ -169,12 +177,8 @@ LAB.add({
     // Start screen: the clues people actually start from (growth form first, as on the paper Coral Finder, then
     // corallite size and walls), on one screen, before any list of genera. Three proposals:
     // a = one board (form tiles + size + walls, then Show), b = one question at a time, c = form then Coral Finder box.
-    // Each growth-form tile shows 4 genera of that form, a different genus on each tile where possible.
-    const tilePics = (() => { const seen = new Set(), out = {};
-      [...FORMS].sort((a, b) => a.g.length - b.g.length).forEach(f => { const L = bySlate(f.g), fresh = L.filter(x => !seen.has(x)), pick = [...fresh, ...L.filter(x => seen.has(x))].slice(0, 4); pick.forEach(x => seen.add(x)); out[f.id] = pick; });
-      return out; })();
     const formTile = (o, on, n) => `<button type="button" class="fdtileb c-${o.color}" data-o="form|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''}>
-      <span class="fdtq">${tilePics[o.id].map(x => `<img src="${thumb(x, 'wide')}" alt="" loading="lazy">`).join('')}</span>
+      <span class="fdtq n${tilePics[o.id].length}">${tilePics[o.id].map(p => `<img src="${img(p, 's')}" alt="" loading="lazy">`).join('')}</span>
       <span class="fdtt"><b>${esc(o.t)}</b><small>${esc(o.s || '')}</small></span><span class="fdc">${n}</span></button>`;
     const optBtn = (f, o, on, n) => `<button type="button" class="fdbigopt" data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}"><span>${esc(o.t)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="fdc">${n}</span></button>`;
     function drawStart(F){
