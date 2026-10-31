@@ -10,6 +10,19 @@
           "imrl-p8_g37"
         ]
       }
+    },
+    "Pocillopora": {
+      "hide": [
+        "pocillopora-macro-745206187"
+      ],
+      "cover": "imr-p12_i9",
+      "feat": {
+        "wide": [
+          "pocillopora-wide-2237523",
+          "pocillopora-wide-307546702",
+          "imr-p12_i9"
+        ]
+      }
     }
   }
 }
