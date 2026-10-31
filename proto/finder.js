@@ -1,5 +1,5 @@
-// Coral Finder+: one page to keep open beside ReefCloud. Every way into the 39 genera (first impression,
-// Coral Finder growth form and box, corallite size, walls, decisive detail, IMR lecture group, name) is a filter
+// Coral Finder: one page to keep open beside ReefCloud. It only cross-references existing sources (no categories of
+// its own): Coral Finder growth form and box, corallite size, walls, decisive detail, IMR lecture group, name) is a filter
 // that can be used in any order; the shortlist updates at once and shows every candidate with its local photos.
 // Clues rank, they never eliminate: a clue can be wrong or misjudged (size, shape), so a genus that misses one
 // clue stays in view under "One clue off", and a size one class away counts as half a match.
@@ -7,7 +7,7 @@
 // State lives in the hash (#finder|<state>), so a reload or a shared link keeps the shortlist.
 LAB.add({
   id: 'finder', icon: '⌕', title: 'Coral Finder',
-  blurb: 'Start from whatever you can see, in any order: shape, first impression, corallites or lecture group. The shortlist updates at once, with all local photos.',
+  blurb: 'Start from whatever you can see, in any order: growth form, corallites or IMR lecture group. The shortlist updates at once, with all local photos.',
   lede: 'Tap the clues you can see on your photo, in any order. Genera are ranked by how well they fit: one wrong or misjudged clue only moves a genus down, it never hides it. Made to stay open beside ReefCloud.',
   render(root, arg){
     const names = labNames(), G = DATA.gen;
@@ -18,17 +18,15 @@ LAB.add({
     const facets = () => {
       const forms = FORMS.filter(f => S.form.has(f.id));
       return [
-        {id: 'look', name: 'First impression', note: 'What it looks like at a glance (look-alike families).', thumbs: true,
-          opts: LOOK_FAMILIES.map(([t, , g], i) => ({id: 'l' + i, t, g}))},
         {id: 'form', name: 'Growth form', note: 'The Coral Finder\'s front page. Many genera take several forms.', thumbs: true, opts: FORMS},
         ...(forms.length ? [{id: 'box', name: 'Coral Finder box', note: 'Second step of the Coral Finder, for the growth form picked above.',
           opts: forms.flatMap(f => DATA.key.find(k => k.id === f.id).leaves.filter(l => l.g.length && (f.id !== 'L' && f.id !== 'C')).map(l => ({id: l.id, t: leafLabel(l), g: l.g, pg: pg(l)})))}] : []),
         ...DATA.traits.map(c => ({id: c.id, name: c.name, opts: c.opts.map(o => ({id: o.id, t: o.t, g: withTr(o.id)}))})),
-        {id: 'ig', name: 'IMR lecture group', note: 'The 11 corallite groups of Lecture 6.', closed: true,
+        {id: 'ig', name: 'IMR lecture group', note: 'The 11 corallite groups of Lecture 6.', thumbs: true,
           opts: DATA.imrg.map(gr => ({id: 'g' + gr.n, t: gr.n + '. ' + gr.t, g: names.filter(n => G[n].ig === gr.n)}))}
       ].filter(f => f.opts.length);
     };
-    const FIDS = ['look', 'form', 'box', ...DATA.traits.map(c => c.id), 'ig'];
+    const FIDS = ['form', 'box', ...DATA.traits.map(c => c.id), 'ig'];
     // State, read from and written back to the hash.
     const S = {out: new Set(), cmp: [], q: '', open: new Set()};
     FIDS.forEach(f => S[f] = new Set());
@@ -91,7 +89,7 @@ LAB.add({
     // Best next checks: unpicked options that split the shortlist most evenly, with who is on each side.
     function nextChecks(F, left){
       if (left.length < 2) return '';
-      const cands = F.filter(f => f.id !== 'look' && f.id !== 'ig' && !(f.id === 'form' && S.form.size)).flatMap(f => f.opts.filter(o => !S[f.id].has(o.id)).map(o => {
+      const cands = F.filter(f => f.id !== 'ig' && !(f.id === 'form' && S.form.size)).flatMap(f => f.opts.filter(o => !S[f.id].has(o.id)).map(o => {
         const yes = left.filter(n => o.g.includes(n)); return {f, o, yes, no: left.filter(n => !yes.includes(n)), s: Math.min(yes.length, left.length - yes.length)};
       })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 2);
       if (!cands.length) return `<p class="note fdhint">The Coral Finder criteria cannot split these any further: compare the photos below.</p>`;
