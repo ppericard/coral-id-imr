@@ -448,7 +448,9 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .fdviews figcaption{font-size:.74rem;color:var(--muted);margin-top:2px}
 .fdph{position:relative;display:block;width:100%;padding:0;border:0;background:var(--surface-2);border-radius:var(--r-sm);overflow:hidden;cursor:zoom-in;aspect-ratio:4/3}
 .fdph img{display:block;width:100%;height:100%;object-fit:cover}
-.fdph .own{position:absolute;left:5px;bottom:5px;margin:0;background:rgb(0 0 0 / .55);color:#fff;font-style:normal;padding:1px 6px;border-radius:var(--pill)}
+.fdph .fdsrc{position:absolute;left:5px;bottom:5px;font-size:.7rem;font-weight:600;background:rgb(0 0 0 / .55);color:#fff;font-style:normal;padding:1px 7px;border-radius:var(--pill)}
+.fdph .fdsrc.s-dauin{background:rgb(13 111 125 / .9)}
+.fdph .fdsrc.s-imr{background:rgb(120 60 20 / .85)}
 .fdall{grid-column:1 / -1;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}
 .fdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
 :root[data-size="s"] .fdgrid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
