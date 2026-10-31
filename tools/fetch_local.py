@@ -7,7 +7,7 @@
 # The app ignores "cand"; Pierre approves candidates in admin.html. Run from the repo root.
 # New candidates are NOT downloaded (r: 1 = shown straight from iNaturalist, from src): only the ones Pierre adds are,
 # by tools/fetch_approved.py (GitHub Action on each curation.json publish), so the repo never stores rejected photos.
-import json, re, time, urllib.request
+import json, re, sys, time, urllib.request
 from collections import Counter
 from excluded import excluded, drop_excluded
 UA = {'User-Agent': 'coral-id-imr/1.0'}
@@ -19,8 +19,13 @@ PHILIPPINES = 'place_id=6873'
 POOR = 15  # fewer Dauin photos (site + candidates) than this: also fetch Philippines candidates
 get = lambda u: json.load(urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60))
 d = json.load(open('data.json'))
-used = {p.get('o') for g in d['gen'].values() for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L}
-usedp = {re.sub(r'\D', '', p['f'].split('-')[-1]) for g in d['gen'].values() for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L}
+# The Coral Finder's extra genera (data.json x, tools/build_extra.py) get candidates too; the three that are not
+# stony corals (fire, blue, organ pipe coral) are matched as animals instead of under Scleractinia.
+GEN = {**d['gen'], **((d.get('x') or {}).get('gen') or {})}
+NONSCL = {n for n, g in GEN.items() if (g.get('x') or {}).get('nonscl')}
+ONLY = set(sys.argv[1:])
+used = {p.get('o') for g in GEN.values() for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L}
+usedp = {re.sub(r'\D', '', p['f'].split('-')[-1]) for g in GEN.values() for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L}
 cand = d.get("cand") or {}
 usedp |= {p['f'].split('-')[-1] for L in cand.values() for p in L}
 # Needs ID observation whose community taxon is this genus or below it, with most identifications agreeing.
@@ -34,10 +39,11 @@ GONE = {f for k in (CUR.get('genera') or {}).values() for f in (k.get('out') or 
 # Candidates still waiting for Pierre: the caps count only these, so each run refills what he has sorted.
 waiting = lambda p: p['f'] not in ADDED and p['f'] not in GONE and not excluded(p['f'])
 def dauin_n(g):
-    x = d['gen'][g]
+    x = GEN[g]
     return sum(p.get('loc') == 'dauin' or p.get('own') for L in x['views'].values() for p in L) + sum(p.get('loc') == 'dauin' and p['f'] not in GONE and not excluded(p['f']) for p in cand.get(g, []))
-for g in d['gen']:
-    T = [t for t in get(f'https://api.inaturalist.org/v1/taxa?q={g}&rank=genus&per_page=10')['results'] if t['name'] == g and SCLERACTINIA in t.get('ancestor_ids', [])]
+for g in GEN:
+    if ONLY and g not in ONLY: continue
+    T = [t for t in get(f'https://api.inaturalist.org/v1/taxa?q={g}&rank=genus&per_page=10')['results'] if t['name'] == g and (SCLERACTINIA in t.get('ancestor_ids', []) or (g in NONSCL and t.get('iconic_taxon_name') == 'Animalia'))]
     if not T: print('no taxon', g); continue
     for where in (DAUIN, PHILIPPINES):
         if where == PHILIPPINES and dauin_n(g) >= POOR: continue
