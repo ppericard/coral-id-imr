@@ -575,6 +575,14 @@ a.lt:hover{border-color:var(--accent)}
 .lplect{display:block;margin-top:6px;font-size:.78rem;color:var(--muted)}
 .lpair .pmix{position:absolute;top:12px;left:12px;z-index:1}
 
-/* My progress wall: a thin bar per genus showing its partial progress towards Learned. */
-.pwall .pw .pbar{position:absolute;left:3px;bottom:3px;height:6px;width:calc((100% - 6px) * var(--p));background:var(--accent);border-radius:0 3px 3px 0;box-shadow:0 0 0 1px #fff8}
-.pwall .pw.weak .pbar{background:var(--bad)}
+/* My progress wall, "rising tide": colour fills the photo from the bottom up to the genus's partial mastery (--p),
+   with a slowly drifting wavy waterline (red when the genus needs review). */
+.pwall .pw.mid img,.pwall .pw.weak img{filter:grayscale(1) opacity(.45)}
+.pwall .pw img.col{position:absolute;inset:0;filter:none;clip-path:inset(calc((1 - var(--p)) * 100%) 0 0 0);transition:clip-path 1.2s ease}
+.pwall .pw .wave{position:absolute;left:0;right:0;height:8px;bottom:calc(var(--p) * 100% - 4px);pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='8'%3E%3Cpath d='M0 4 Q10 0 20 4 T40 4' fill='none' stroke='white' stroke-width='1.6' opacity='.9'/%3E%3C/svg%3E") repeat-x;background-size:40px 8px;animation:pwdrift 4s linear infinite}
+.pwall .pw.weak .wave{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='8'%3E%3Cpath d='M0 4 Q10 0 20 4 T40 4' fill='none' stroke='%23ff6b5e' stroke-width='2.2'/%3E%3C/svg%3E")}
+.pwall .pw.mid,.pwall .pw.weak{outline-color:transparent}
+.pwall .pw:hover img.col{clip-path:inset(0)}
+@keyframes pwdrift{to{background-position:40px 0}}
+@media (prefers-reduced-motion:reduce){.pwall .pw .wave{animation:none}.pwall .pw img.col{transition:none}}
