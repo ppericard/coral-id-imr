@@ -30,12 +30,16 @@ for f in os.listdir(B+'v3/site/img'):
 terms=[['Septa','Radial skeletal elements projecting inward from the corallite wall towards its centre; usually thin plates, in some genera only rows of spines.'],['Costae','Radial skeletal ribs outside the corallite wall, often continuing the septa.'],['Wall (theca)','Skeletal boundary around a corallite; separate or shared with neighbouring corallites.'],['Coenosteum','Porous skeleton between corallites; in some taxa it also builds their walls.'],['Corallite','The skeleton produced by one polyp.'],['Oral disc','Soft tissue around the mouth, inside the ring of tentacles.'],['Paliform lobes','Upright projections from the inner edges of the septa; may form a crown around the columella (central skeletal structure).'],['Mouth','Opening at the centre of the oral disc, leading to the digestive cavity.']]
 tips=['Find the polyp mouth: is it raised or embedded?','Read the wall structure: shared, separate, or indistinguishable.','No visible walls? Look at the skeletal ornament: beads, spines, parallel striations.','Check the scale: corallites in mm or in cm?']
 # Points where the IMR lecture and Coral Finder disagree, or the lecture slides are silent: to check with an IMR instructor.
-checks={'Plerogyra':'Family: the IMR lecture puts Plerogyra in Euphylliidae, its older placement; Coral Finder and current taxonomy (WoRMS) place it in Plerogyridae.',
- 'Herpolitha':'The IMR lecture calls Herpolitha solitary; Coral Finder treats it as colonial (several mouths along the central furrow).',
+checks={'Herpolitha':'The IMR lecture calls Herpolitha solitary; Coral Finder treats it as colonial (several mouths along the central furrow).',
  'Merulina':'Not on the lecture slides: the criteria here come from Coral Finder only. It may have been covered orally.',
  'Cyphastrea':'Not on the lecture slides: the criteria here come from Coral Finder only. It may have been covered orally.',
  'Halomitra':'Not on the lecture slides: the criteria here come from Coral Finder only. It may have been covered orally.'}
 for g,t in checks.items(): gen[g]['check']=t
+# Other sources, shown discreetly; the IMR lecture's own wording and families stay as taught.
+info={'Pachyseris':'Since 2023, WoRMS places Pachyseris in its own family, Pachyseridae.',
+ 'Plerogyra':'Coral Finder and WoRMS list Plerogyra in its own family, Plerogyridae.',
+ 'Platygyra':'The name comes from Greek platys (flat) and gyros (circle).'}
+for g,t in info.items(): gen[g]['info']=t
 for g in gen:
     gen[g]['sum']=SUM[g]
     if g in CV['covers']: gen[g]['cover']=CV['covers'][g]
