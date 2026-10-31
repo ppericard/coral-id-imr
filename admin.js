@@ -178,7 +178,7 @@ const ACT = {
     if (at !== null) { L.splice(Math.min(at, L.length), 0, f); k.feat = k.feat || {}; k.feat[to] = L.slice(0, FEAT); }
     else if (inFeat) { k.feat = k.feat || {}; if (L.length) k.feat[to] = L; else delete k.feat[to]; }
   }),
-  reset: n => { if (confirm(`Undo every choice for ${n} (back to the automatic photos)?`)) edit(n, k => Object.keys(k).forEach(x => delete k[x])); },
+  reset: n => { if (confirm(`Reset ${n}? This removes your cover, featured photos, hidden, moved, added and "Not this genus" choices for this genus, back to the default photos. Quality ratings are kept.`)) edit(n, k => Object.keys(k).forEach(x => delete k[x])); },
   revert: n => { DRAFT.genera[n] = clone(SAVED.genera[n]); if (!DRAFT.genera[n]) delete DRAFT.genera[n]; store.set('imr-curation-draft', DRAFT); render(); }
 };
 
@@ -245,7 +245,7 @@ function render(){
           <p class="note"><b>Cover:</b> ${cv ? `${cv.picked ? 'your pick' : 'automatic'} · ${label(n, cv.view).toLowerCase()} view${cv.view === 'macro' && g.levels !== 2 ? ' <b class="warnc">(a corallite close-up: pick a colony or closer view)</b>' : ''}` : 'none'}</p>
           <p class="note">Featured photos fill the main strip of each view on the genus sheet (up to ${FEAT}); the others stay under “more photos”. Hidden photos disappear everywhere, games included.</p>
           <p class="note"><b>Drag and drop:</b> drop a photo on a featured one to feature it there (left or right half: before or after), on another photo to unfeature it; across views to move it, or from the candidates to add it.</p>
-          <p class="adm-gacts">${ch.includes(n) ? '<button type="button" class="chip" data-act="revert">Undo unsaved changes</button>' : ''}${Object.keys(k).length ? '<button type="button" class="chip" data-act="reset">Back to automatic</button>' : ''}<a class="chip" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener">Open the sheet</a></p>
+          <p class="adm-gacts">${ch.includes(n) ? '<button type="button" class="chip" data-act="revert">Undo unsaved changes</button>' : ''}${Object.keys(k).length ? '<button type="button" class="chip" data-act="reset" title="Remove all your choices for this genus (cover, featured, hidden, moved, added, Not this genus). Quality ratings are kept.">Reset this genus</button>' : ''}<a class="chip" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener">Open the sheet</a></p>
         </div>
       </div>
       ${filter}${body}${candRow}${outRow}
