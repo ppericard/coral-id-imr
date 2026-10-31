@@ -2,19 +2,6 @@
 .home-page h3{font-family:var(--display);font-size:1.35rem;margin:28px 0 4px}
 .home-page h3 a{color:var(--ink);text-decoration:none}
 .home-page h3 a::after{content:" ›";color:var(--accent)}
-.hhero{position:relative;border-radius:14px;overflow:hidden;margin-top:14px;min-height:150px;display:grid;background:#0b1a1f}
-.hmosaic{position:absolute;inset:0;display:grid;grid-template-columns:repeat(16,1fr);grid-template-rows:1fr;gap:2px;opacity:.75}
-.hmosaic a{position:relative;display:block;overflow:hidden;animation:hfade .8s both;animation-delay:calc(var(--i) * 25ms)}
-.hmosaic img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
-.hmosaic span{position:absolute;left:4px;bottom:3px;font-size:.7rem;font-style:italic;color:#fff;text-shadow:0 1px 3px #000;opacity:0;transition:opacity .3s}
-.hmosaic a:hover img{transform:scale(1.12)}
-.hmosaic a:hover span{opacity:1}
-@keyframes hfade{from{opacity:0}to{opacity:1}}
-.hintro{position:relative;align-self:center;display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px;margin:20px;max-width:none;justify-self:start;padding:14px 20px;border-radius:12px;background:color-mix(in srgb,#0b1a1f 82%,transparent);color:#eef6f7;backdrop-filter:blur(3px)}
-.hintro h2{color:#fff;font-size:1.6rem;margin:0}
-.hintro p{margin:6px 0}
-.hcta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0!important}
-.hcta .chip{background:transparent;color:#fff;border-color:#fff8}
 .htools{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin-top:8px}
 .htool{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;color:var(--ink);text-decoration:none}
 .htool b{font-family:var(--display);font-size:1.12rem;padding:8px 12px 0}
@@ -23,14 +10,7 @@
 .hpv.two{grid-template-columns:1fr 1fr;gap:2px}
 .hpv img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s,filter .6s}
 .htool:hover .hpv img{transform:scale(1.06)}
-@media (max-width:560px){
-  .hmosaic{grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(2,1fr)}
-  .hhero{min-height:170px}
-  .hintro{margin:12px;padding:14px 16px}
-  .hintro h2{font-size:1.5rem}
-  .htools{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-@media (prefers-reduced-motion:reduce){.hmosaic a{animation:none}}
+@media (max-width:560px){.htools{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* Schematic previews (home-art.js): flat shapes in theme colours. */
 .hpv.art{background:var(--surface-2)}
 .hpv.art svg{width:100%;height:100%;display:block;transition:transform .4s}
@@ -55,16 +35,6 @@
 /* Dark theme: the drawings keep their light palette (dark versions were unreadable), slightly dimmed. */
 :root[data-theme="dark"] .hpv.art{--surface-2:#e9eff1;--surface:#fff;--ink:#14262d;--muted:#5a6d74;--line:#d6e0e3;--accent:#0d6f7d;--accent-ink:#fff;
   --branch:#cfe8b8;--meander:#c4e2f2;--massive:#ecc7e3;--plate:#f8d9ad;--solo:#b9e7ea;--good:#2f7d3a;--good-bg:#dcefd9;--bad:#b23a2a;filter:brightness(.88)}
-/* The 3-step strip under the hero: Learn, Practice, Identify. */
-.hpath ol{list-style:none;padding:0;margin:14px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;counter-reset:hp}
-.hpath li{counter-increment:hp}
-.hpath a{display:flex;align-items:center;gap:12px;height:100%;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);color:var(--ink);text-decoration:none}
-.hpath a:hover{border-color:var(--accent)}
-.hpath img{width:64px;height:64px;border-radius:50%;object-fit:cover;flex:none}
-.hpath b{display:block;font-family:var(--display);font-size:1.3rem}
-.hpath b::before{content:counter(hp) " ";color:var(--accent)}
-.hpath small{display:block;color:var(--muted);font-size:.9rem;line-height:1.3}
-@media (max-width:760px){.hpath ol{grid-template-columns:minmax(0,1fr)}}
 .betatag{font-style:normal;font-family:var(--body);font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:var(--plate);color:var(--band-ink);border-radius:4px;padding:1px 6px;vertical-align:2px}
 .htool.beta .hpv img{opacity:.85}
 .htool:hover{border-color:var(--accent)}
@@ -73,21 +43,30 @@
 .htools.small b{font-size:1rem;padding-bottom:8px}
 .htools:not(.small) .htool b{font-size:1.3rem}
 .htools:not(.small) .htool small{font-size:.95rem}
-/* One discreet link to the Lab under the path. */
-.hlablink{margin:18px 0 0;font-size:.9rem}
-.hlablink a{color:var(--muted);text-decoration:none}
-.hlablink a:hover{color:var(--accent);text-decoration:underline}
 
-/* One look-alike pair under the path: two equal sides (2 photos + ID tips). */
-.hpair{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px 14px}
-.hphead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
-.hphead h3{margin:0!important}
-.hphead span{display:flex;gap:8px;flex-wrap:wrap}
-.hpgrid{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:16px;margin-top:10px;align-items:start}
-.hpvs{align-self:center;font-family:var(--display);color:var(--muted);font-size:1.2rem}
-.hpph{display:grid;grid-template-columns:1fr 1fr;gap:4px}
-.hpph img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;display:block}
-.hpside h4{font-family:var(--display);font-size:1.25rem;margin:8px 0 2px}
-.hpside h4 a{color:var(--ink);text-decoration:none}
-.hpside .idtips{margin:4px 0 0}
-@media (max-width:640px){.hpgrid{grid-template-columns:minmax(0,1fr)}.hpvs{justify-self:center}}
+/* Home: two entry doors (Learn & practise, Identify), side by side, stacked on narrow screens. */
+.hdoors{margin-top:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.hdoor{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.hdart{position:relative;display:block;aspect-ratio:21/9;overflow:hidden;background:#0b1a1f}
+.hdart>img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
+.hdoor:hover .hdart>img{transform:scale(1.04)}
+.hdtiles{position:absolute;inset:0;display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(2,1fr);gap:2px}
+.hdtiles img{width:100%;height:100%;object-fit:cover;display:block}
+.hdpt{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #0008}
+.hdpt.on{width:26px;height:26px;margin:-13px 0 0 -13px;border-color:#ffd54a;box-shadow:0 0 0 2px #0009,0 0 0 9px #ffd54a40}
+.hdbody{display:flex;flex-direction:column;flex:1;padding:18px 22px 22px}
+.hdwhen{margin:0;font-size:.82rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.hdoor h3{font-family:var(--display);font-size:2.1rem;line-height:1.1;margin:4px 0 6px}
+.hddesc{margin:0 0 16px;color:var(--muted);font-size:1.05rem;line-height:1.45;max-width:60ch}
+.hdacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:auto}
+.hdbtn{display:block;padding:12px 16px;border:1.5px solid var(--accent);border-radius:var(--r);color:var(--ink);text-decoration:none;transition:background .2s,box-shadow .2s}
+.hdbtn b{display:block;font-family:var(--display);font-size:1.4rem;color:var(--accent)}
+.hdbtn b em{font-style:normal;opacity:.6;margin-right:2px}
+.hdbtn small{display:block;color:var(--muted);font-size:.9rem;line-height:1.3;margin-top:2px}
+.hdbtn:hover{box-shadow:var(--shadow-hover)}
+.hdbtn.main{background:var(--accent);border-color:var(--accent)}
+.hdbtn.main b,.hdbtn.main small{color:var(--accent-ink)}
+.hdbtn.main small{opacity:.85}
+.hdbtn.main b em{opacity:.7}
+@media (max-width:860px){.hdoors{grid-template-columns:minmax(0,1fr)}.hdart{aspect-ratio:3/1}}
+@media (max-width:560px){.hdoors{margin-top:10px}.hdoor h3{font-size:1.75rem}.hdbody{padding:14px 16px 16px}.hdart{aspect-ratio:4/1}.hdtiles{grid-template-columns:repeat(6,1fr);grid-template-rows:1fr}.hdtiles img:nth-child(n+7){display:none}.hddesc{font-size:1rem;margin-bottom:12px}.hdacts{gap:8px}}

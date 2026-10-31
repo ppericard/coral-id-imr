@@ -1,11 +1,11 @@
-// Guided tour: walks a new RA through the real pages (Home path, Learn, Practice, Identify, My progress, help),
+// Guided tour: walks a new RA through the real pages (Home doors, Learn, Practice, Identify, My progress, help),
 // spotlighting one element per step with a short bubble. Shown once per browser (localStorage imr-tour, outside the
 // imr-coral-* progress keys so backups and resets leave it alone), never on its own for the admin browser, and
 // replayable from the ? help of any page (or ?tour in the URL). The sign-in step lets the RA type in the real form.
 (function(){
   const KEY = 'imr-tour';
   const STEPS = [
-    {h: '', sel: '.hpath', t: 'Three steps', d: 'Learn the genera, practise on photos, then identify corals on your own photos.'},
+    {h: '', sel: '.hdoors', t: 'Two ways in', d: 'Learn & practise while you learn the genera. Identify when you need to name a coral on a ReefCloud photo.'},
     {h: 'genera', sel: '#azgrid a.card', t: 'Learn: one card per genus', d: 'The card shows the deciding features. Tap it for the genus sheet: photos at 3 scales, IMR ID tips, look-alikes.'},
     {h: 'quiz', sel: '.qstage', t: 'Practice: name the genus', d: 'Two photos of the same coral: the colony, then a closer view.'},
     {h: 'quiz', sel: '.ans', t: 'Pick an answer', d: 'Wrong? You see why, with the IMR ID tips of both genera. Photos get harder as you get a genus right.'},
