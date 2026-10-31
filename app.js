@@ -331,7 +331,7 @@ showTheme();
 function route(){
   applySize();
   const h = decodeURIComponent(location.hash.slice(1));
-  const tab = h.startsWith('quiz') ? 'quiz' : h.startsWith('cmp') ? 'cmp' : (h.startsWith('key') || /^[kl]-/.test(h)) ? 'key' : 'genera';
+  const tab = h.startsWith('lab') ? 'lab' : h.startsWith('quiz') ? 'quiz' : h.startsWith('cmp') ? 'cmp' : (h.startsWith('key') || /^[kl]-/.test(h)) ? 'key' : 'genera';
   document.querySelectorAll('nav [data-tab]').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   if (h === 'key') viewKey();
   else if (h === 'key-imr') viewIMR();
@@ -345,6 +345,7 @@ function route(){
   else if (h === 'quiz-course') quizCourse();
   else if (h === 'quiz-board') quizBoard();
   else if (h.startsWith('quiz-duel')) { const [, a, b] = h.split('|'); quizDuel(a, b); }
+  else if (h.startsWith('lab') && window.viewLab) viewLab(h);
   else viewGenera();
   window.scrollTo(0, 0);
 }
