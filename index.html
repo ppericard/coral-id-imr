@@ -13,15 +13,20 @@
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
+<script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <div class="wrap">
   <header>
-    <h1>IMR Coral ID <small>34 surveyed genera + 5 ★ · Dauin</small></h1>
+    <h1><a class="home" href="#genera">IMR Coral ID</a> <small>34 surveyed genera + 5 ★ · Dauin</small></h1>
     <nav aria-label="Sections">
-      <button type="button" data-tab="genera">Genera</button>
-      <button type="button" data-tab="key">Identify</button>
-      <button type="button" data-tab="cmp">Look-alikes</button>
-      <button type="button" data-tab="quiz">Quiz</button>
+      <a data-tab="genera" href="#genera">Genera</a>
+      <a data-tab="key" href="#key-imr">Identify</a>
+      <a data-tab="cmp" href="#cmp">Look-alikes</a>
+      <a data-tab="quiz" href="#quiz">Quiz</a>
     </nav>
+    <div class="tools">
+      <div id="size" role="group" aria-label="Photo size"><button type="button" data-size="s" title="Small photos">S</button><button type="button" data-size="m" title="Medium photos">M</button><button type="button" data-size="l" title="Large photos">L</button></div>
+      <button type="button" class="theme" id="theme" aria-label="Switch to dark theme">☾</button>
+    </div>
   </header>
   <main id="view"><p class="note">Loading…</p></main>
   <footer>IMR groups, lecture notes and lecture photos from IMR Lecture 6 (Indo-Pacific Coral ID). Key and criteria based on the Coral Finder 2022 (R. Kelley, BYOGUIDES), narrowed to the 39 genera on the IMR list; page numbers refer to the book. Other photos: Pierre Pericard's iNaturalist observations from Dauin and Creative Commons iNaturalist photos, credited under each photo. For training at IMR.</footer>
