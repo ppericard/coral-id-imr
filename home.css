@@ -73,3 +73,6 @@
 .hpv.art .cr2{fill:none;stroke:var(--line);stroke-width:3} .hpv.art .arc{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round}
 .hpv.art .frame{fill:none;stroke:var(--accent);stroke-width:2}
 .hpv.art .target{fill:var(--accent);fill-opacity:.15;stroke:var(--accent);stroke-width:2}
+/* Dark theme: the drawings keep their light palette (dark versions were unreadable), slightly dimmed. */
+:root[data-theme="dark"] .hpv.art{--surface-2:#e9eff1;--surface:#fff;--ink:#14262d;--muted:#5a6d74;--line:#d6e0e3;--accent:#0d6f7d;--accent-ink:#fff;
+  --branch:#cfe8b8;--meander:#c4e2f2;--massive:#ecc7e3;--plate:#f8d9ad;--solo:#b9e7ea;--good:#2f7d3a;--good-bg:#dcefd9;--bad:#b23a2a;filter:brightness(.88)}
