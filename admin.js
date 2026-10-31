@@ -84,8 +84,14 @@ function photos(n){
   const g = DATA.gen[n], two = g.levels === 2, L = [];
   VIEWS.forEach(([v]) => { (g.views[v] || []).forEach(p => L.push({...p, base: v})); ((g.more || {})[v] || []).forEach(p => L.push({...p, base: v, multi: true, extra: true})); });
   (DATA.course[n] || []).forEach(p => L.push({...p, base: p.v === 'medium' && two ? 'macro' : p.v}));
+  // Candidates Pierre approved (curation add: {f: view}) join their view as normal photos (app.js applyCuration).
+  const add = entry(n).add || {};
+  cands(n).filter(p => add[p.f]).forEach(p => L.push({...p, base: add[p.f], cand: true}));
   return L;
 }
+// New candidate photos from data.json cand, not used by the site until approved here.
+const cands = n => ((DATA.cand || {})[n] || []);
+const pending = n => { const add = entry(n).add || {}; return cands(n).filter(p => !add[p.f]); };
 const entry = n => DRAFT.genera[n] || {};
 const viewOf = (n, p) => (entry(n).move || {})[p.f] || p.base;
 const hidden = (n, p) => (entry(n).hide || []).includes(p.f);
@@ -110,12 +116,18 @@ function coverOf(n){
 }
 const rows = n => VIEWS.filter(([v]) => !(DATA.gen[n].levels === 2 && v === 'medium' && !photos(n).some(p => viewOf(n, p) === 'medium')));
 const label = (n, v) => DATA.gen[n].levels === 2 && v === 'macro' ? 'Close-up' : VIEWS.find(x => x[0] === v)[1];
-const srcTag = p => p.imr ? '<span class="adm-src imr">IMR lecture</span>' : p.own ? '<span class="adm-src own">Pierre</span>' : '<span class="adm-src inat">iNaturalist</span>';
+// Photo origin: IMR lecture, Pierre's own iNaturalist photos, or other iNaturalist observers split by place
+// (data.json p.loc: dauin, ph or world). The filter is kept across genera and visits.
+const ORIGINS = [['imr', 'IMR lecture'], ['own', 'Pierre'], ['dauin', 'iNat Dauin'], ['ph', 'iNat Philippines'], ['world', 'iNat elsewhere']];
+const origin = p => p.imr ? 'imr' : p.own ? 'own' : ({dauin: 'dauin', ph: 'ph'})[p.loc] || 'world';
+let SHOW = new Set(store.get('imr-admin-origins', ORIGINS.map(o => o[0])));
+const shown = p => SHOW.has(origin(p));
+const srcTag = p => { const o = origin(p); return `<span class="adm-src o-${o}">${ORIGINS.find(x => x[0] === o)[1]}</span>`; };
 
 /* ---------- Edits ---------- */
 function edit(n, fn){
   const k = clone(entry(n)); fn(k);
-  ['feat', 'move'].forEach(x => { if (k[x] && !Object.keys(k[x]).length) delete k[x]; });
+  ['feat', 'move', 'add'].forEach(x => { if (k[x] && !Object.keys(k[x]).length) delete k[x]; });
   if (k.hide && !k.hide.length) delete k.hide;
   if (Object.keys(k).length) DRAFT.genera[n] = k; else delete DRAFT.genera[n];
   store.set('imr-curation-draft', DRAFT); render();
@@ -129,8 +141,9 @@ const ACT = {
     else if (L.length >= FEAT) toast(`Already ${FEAT} featured: remove one first.`); else L.push(f); }),
   left: (n, f, v) => edit(n, k => { const L = ensureFeat(k, n, v), i = L.indexOf(f); if (i > 0) [L[i - 1], L[i]] = [L[i], L[i - 1]]; }),
   right: (n, f, v) => edit(n, k => { const L = ensureFeat(k, n, v), i = L.indexOf(f); if (i >= 0 && i < L.length - 1) [L[i + 1], L[i]] = [L[i], L[i + 1]]; }),
-  hide: (n, f) => edit(n, k => { k.hide = k.hide || []; if (k.hide.includes(f)) k.hide = k.hide.filter(x => x !== f); else { k.hide.push(f); dropFeat(k, f); if (k.cover === f) delete k.cover; } }),
-  move: (n, f, v, to) => edit(n, k => { const p = photos(n).find(x => x.f === f); k.move = k.move || {}; if (to === p.base) delete k.move[f]; else k.move[f] = to; dropFeat(k, f); }),
+  addc: (n, f, v, to) => edit(n, k => { k.add = k.add || {}; k.add[f] = to; }),
+  hide: (n, f) => edit(n, k => { if (k.add && k.add[f]) { delete k.add[f]; dropFeat(k, f); if (k.cover === f) delete k.cover; return; } k.hide = k.hide || []; if (k.hide.includes(f)) k.hide = k.hide.filter(x => x !== f); else { k.hide.push(f); dropFeat(k, f); if (k.cover === f) delete k.cover; } }),
+  move: (n, f, v, to) => edit(n, k => { const p = photos(n).find(x => x.f === f); if (p.cand) { k.add[f] = to; dropFeat(k, f); return; } k.move = k.move || {}; if (to === p.base) delete k.move[f]; else k.move[f] = to; dropFeat(k, f); }),
   reset: n => { if (confirm(`Undo every choice for ${n} (back to the automatic photos)?`)) edit(n, k => Object.keys(k).forEach(x => delete k[x])); },
   revert: n => { DRAFT.genera[n] = clone(SAVED.genera[n]); if (!DRAFT.genera[n]) delete DRAFT.genera[n]; store.set('imr-curation-draft', DRAFT); render(); }
 };
@@ -144,13 +157,13 @@ function tile(n, p, v, st){
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button>
     ${st.num ? `<span class="adm-num${st.auto ? ' auto' : ''}" title="${st.auto ? 'Featured automatically' : 'Featured by you'}">${st.num}</span>` : ''}
     ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
-    <figcaption>${srcTag(p)}${p.multi ? '<span class="adm-src multi" title="Several corals in frame: never used in games">several corals</span>' : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
+    <figcaption>${p.cand ? '<span class="adm-src new" title="Candidate you added">new</span>' : ''}${srcTag(p)}${p.multi ? '<span class="adm-src multi" title="Several corals in frame: never used in games">several corals</span>' : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
     <div class="adm-acts">
       ${st.cls === 'is-hidden' ? `<button type="button" data-act="hide" class="on">Show again</button>` : `
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Use as the genus photo (cards, sheet hero)">★ Cover</button>
       <button type="button" data-act="feat" class="${st.num && !st.auto ? 'on' : ''}" title="Show in the main strip of this view">${st.num ? 'Featured' : 'Feature'}</button>
       ${st.num && !st.auto ? `<button type="button" data-act="left" aria-label="Move earlier" ${st.num === 1 ? 'disabled' : ''}>‹</button><button type="button" data-act="right" aria-label="Move later" ${st.last ? 'disabled' : ''}>›</button>` : ''}
-      <button type="button" data-act="hide" title="Hide everywhere (sheets, cards, games)">Hide</button>
+      ${p.cand ? '<button type="button" data-act="hide" title="Back to the candidates">Remove</button>' : '<button type="button" data-act="hide" title="Hide everywhere (sheets, cards, games)">Hide</button>'}
       <select data-act="move" aria-label="Move to another view"><option value="">Move to…</option>${moves}</select>`}
     </div></figure>`;
 }
@@ -163,11 +176,19 @@ function render(){
   $('preview').href = `./?draft#g-${encodeURIComponent(n)}`;
   const side = names.map(m => { const c = coverOf(m), e = DRAFT.genera[m] || {}, dirty = ch.includes(m), h = (e.hide || []).length;
     return `<a href="#${esc(m)}" class="adm-g${m === n ? ' cur' : ''}"${m === n ? ' aria-current="true"' : ''}>${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
-      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : '★'}${c && c.view === 'macro' && DATA.gen[m].levels !== 2 ? ' · <b class="warnc" title="The cover is a corallite close-up">macro cover</b>' : ''}${h ? ` · ${h} hidden` : ''}</small></span>${dirty ? '<b class="dot" title="Not saved">●</b>' : Object.keys(e).length ? '<b class="dot done" title="Curated">✓</b>' : ''}</a>`; }).join('');
-  const body = rows(n).map(([v]) => { const r = rowOf(n, v);
-    return `<section class="adm-row"><h3>${label(n, v)} <small>${r.feat.length} featured${r.auto ? ' (automatic)' : ''} · ${r.rest.length} more${r.hid.length ? ` · ${r.hid.length} hidden` : ''}</small></h3>
-      <div class="adm-grid">${r.feat.map((p, i) => tile(n, p, v, {num: i + 1, auto: r.auto, last: i === r.feat.length - 1, cls: 'is-feat'})).join('')}${r.rest.map(p => tile(n, p, v, {})).join('')}${r.hid.map(p => tile(n, p, v, {cls: 'is-hidden'})).join('')}</div>
+      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : '★'}${c && c.view === 'macro' && DATA.gen[m].levels !== 2 ? ' · <b class="warnc" title="The cover is a corallite close-up">macro cover</b>' : ''}${h ? ` · ${h} hidden` : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}</small></span>${dirty ? '<b class="dot" title="Not saved">●</b>' : Object.keys(e).length ? '<b class="dot done" title="Curated">✓</b>' : ''}</a>`; }).join('');
+  const body = rows(n).map(([v]) => { const r = rowOf(n, v), out = [...r.feat, ...r.rest, ...r.hid].filter(p => !shown(p)).length;
+    return `<section class="adm-row"><h3>${label(n, v)} <small>${r.feat.length} featured${r.auto ? ' (automatic)' : ''} · ${r.rest.length} more${r.hid.length ? ` · ${r.hid.length} hidden` : ''}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
+      <div class="adm-grid">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: r.auto, last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${r.rest.filter(shown).map(p => tile(n, p, v, {})).join('')}${r.hid.filter(shown).map(p => tile(n, p, v, {cls: 'is-hidden'})).join('')}</div>
       ${r.feat.length + r.rest.length ? '' : '<p class="note">No photo in this view.</p>'}</section>`; }).join('');
+  const P = pending(n), Ps = P.filter(shown), two = g.levels === 2;
+  const candTile = p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}"><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button>
+    <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span></figcaption>
+    <div class="adm-acts"><span class="adm-addl">Add to</span>${VIEWS.filter(([w]) => !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="addc" data-to="${w}">${label(n, w)}</button>`).join('')}</div></figure>`;
+  const candRow = P.length ? `<section class="adm-row adm-cands"><h3>Candidates <small>${P.length} new photo${P.length > 1 ? 's' : ''} not on the site yet${P.length - Ps.length ? ` · <b>${P.length - Ps.length} filtered out</b>` : ''}. Add one to a view to use it.</small></h3>
+    <div class="adm-grid">${Ps.map(candTile).join('')}</div></section>` : '';
+  const cnt = o => [...photos(n), ...P].filter(p => origin(p) === o).length;
+  const filter = `<div class="adm-filter" role="group" aria-label="Show photos from"><span class="label">Show</span>${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">Show all</button>' : ''}</div>`;
   $v.innerHTML = `<div class="adm">
     <nav class="adm-side" aria-label="Genera"><select id="gsel" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><div class="adm-list">${side}</div></nav>
     <section class="adm-main">
@@ -179,20 +200,24 @@ function render(){
           <p class="adm-gacts">${ch.includes(n) ? '<button type="button" class="chip" data-act="revert">Undo unsaved changes</button>' : ''}${Object.keys(k).length ? '<button type="button" class="chip" data-act="reset">Back to automatic</button>' : ''}<a class="chip" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener">Open the sheet</a></p>
         </div>
       </div>
-      ${body}
+      ${filter}${body}${candRow}
     </section></div>`;
+  $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { const o = b.dataset.o;
+    if (o === 'all') SHOW = new Set(ORIGINS.map(x => x[0])); else SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
+    store.set('imr-admin-origins', [...SHOW]); render(); });
   $('gsel').onchange = e => { location.hash = e.target.value; };
   $v.querySelectorAll('[data-act]').forEach(el => {
     const t = el.closest('[data-f]'), f = t && t.dataset.f, v = t && t.dataset.v, a = el.dataset.act;
-    if (a === 'move') el.onchange = () => el.value && ACT.move(n, f, v, el.value);
+    if (a === 'addc') el.onclick = () => ACT.addc(n, f, null, el.dataset.to);
+    else if (a === 'move') el.onchange = () => el.value && ACT.move(n, f, v, el.value);
     else if (a === 'zoom' || a === 'zoomcover') el.onclick = () => zoom(n, f);
     else el.onclick = () => ACT[a](n, f, v);
   });
   const c = $v.querySelector('.adm-g.cur'); if (c) c.scrollIntoView({block: 'nearest'});
 }
 function zoom(n, f){
-  const lb = $('lightbox'), L = photos(n), i0 = L.findIndex(p => p.f === f); let i = i0;
-  const show = () => { const p = L[i]; lb.innerHTML = `<div class="lb-in"><img src="${img(p)}" alt=""><p class="lb-cap"><i>${esc(n)}</i> · ${label(n, viewOf(n, p))} · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p>
+  const lb = $('lightbox'), L = [...photos(n), ...pending(n).map(p => ({...p, base: 'cand'}))], i0 = L.findIndex(p => p.f === f); let i = i0;
+  const show = () => { const p = L[i]; lb.innerHTML = `<div class="lb-in"><img src="${img(p)}" alt=""><p class="lb-cap"><i>${esc(n)}</i> · ${p.base === 'cand' ? 'Candidate' : label(n, viewOf(n, p))} · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p>
     <div class="lb-nav"><button type="button" data-d="-1" aria-label="Previous">‹</button><span>${i + 1} / ${L.length}</span><button type="button" data-d="1" aria-label="Next">›</button><button type="button" data-x>Close</button></div></div>`;
     lb.querySelectorAll('[data-d]').forEach(b => b.onclick = e => { e.stopPropagation(); i = (i + Number(b.dataset.d) + L.length) % L.length; show(); });
     lb.querySelector('[data-x]').onclick = close; };

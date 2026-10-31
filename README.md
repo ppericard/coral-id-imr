@@ -29,6 +29,6 @@ The app is plain HTML/CSS/JS with no build step. `data.json` holds all genus dat
 
 ## Photo curation
 
-`admin.html` (not linked from the app) is a back-office to pick, per genus, the cover photo, the featured photos of each view (up to 3, in order), photos to hide everywhere (games included) and photos to move to another view. It writes `curation.json`, which `app.js` applies on top of `data.json` (`applyCuration`), so rebuilding `data.json` never loses these choices.
+`admin.html` (not linked from the app) is a back-office to pick, per genus, the cover photo, the featured photos of each view (up to 3, in order), photos to hide everywhere (games included) and photos to move to another view, and new candidate photos (`data.json` `cand`) to add to a view (`add`). Each photo is tagged by origin (IMR lecture, Pierre, iNaturalist Dauin / Philippines / elsewhere, from `p.loc`) with a filter. It writes `curation.json`, which `app.js` applies on top of `data.json` (`applyCuration`), so rebuilding `data.json` never loses these choices.
 
 Saving commits `curation.json` to `main` through the GitHub API with a fine-grained token (this repository only, Contents read and write). The token is stored in the browser, encrypted with the admin password; the password only unlocks the token, the token is what allows writing. Without a token, `admin.html?readonly` opens the page to download the JSON. `index.html?draft` previews unsaved choices in the same browser.

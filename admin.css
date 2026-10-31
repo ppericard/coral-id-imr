@@ -62,9 +62,21 @@ body.admin .hdr-tools[hidden]{display:none}
 .adm-tile figcaption{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:6px 8px 0;font-size:.75rem;color:var(--muted);min-width:0}
 .adm-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1 1 60px;font-style:italic}
 .adm-src{padding:1px 7px;border-radius:var(--pill);font-weight:600;font-size:.7rem;white-space:nowrap}
-.adm-src.imr{background:var(--meander);color:var(--band-ink)}
-.adm-src.own{background:var(--branch);color:var(--band-ink)}
-.adm-src.inat{background:var(--surface-2);color:var(--ink)}
+/* Origin colours, shared by photo tags and filter chips */
+.o-imr{--o:var(--meander)}.o-own{--o:var(--branch)}.o-dauin{--o:var(--plate)}.o-ph{--o:var(--column)}.o-world{--o:var(--surface-2)}
+.adm-src[class*="o-"]{background:var(--o);color:var(--band-ink)}
+.adm-filter{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:14px 0 0;padding:10px 0;border-top:1px solid var(--line)}
+.adm-filter .label{margin-right:4px}
+.adm-fchip{font:inherit;font-size:.84rem;min-height:30px;padding:0 12px;border-radius:var(--pill);border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.adm-fchip::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--o);border:1px solid color-mix(in srgb,var(--ink) 25%,transparent)}
+.adm-fchip[aria-pressed="true"]{background:var(--o);color:var(--band-ink);border-color:color-mix(in srgb,var(--ink) 25%,transparent)}
+.adm-fchip[aria-pressed="true"]::before{display:none}
+.adm-fchip b{font-weight:600;opacity:.7}
+.adm-fchip:hover{border-color:var(--accent)}
+.adm-src.new{background:var(--accent);color:var(--accent-ink)}
+.adm-tile.is-cand{border-style:dashed}
+.adm-addl{font-size:.75rem;color:var(--muted);align-self:center;margin-right:2px}
+.adm-cands h3{color:var(--accent)}
 .adm-src.multi{background:var(--bad-bg);color:var(--bad)}
 .adm-acts{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px 8px;margin-top:auto}
 .adm-acts button,.adm-acts select{font:inherit;font-size:.78rem;min-height:28px;padding:0 9px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--ink);cursor:pointer}
