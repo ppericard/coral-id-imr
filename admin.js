@@ -16,19 +16,30 @@ const img = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 
-let KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, lastGenus = null;
+let PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, lastGenus = null;
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
 // (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
 const QUAL = [[3, 'Good'], [2, 'Fair'], [1, 'Poor']];
 const qOf = f => (DRAFT.quality || {})[f] || AUTOQ[f] || 2, qSet = f => !!(DRAFT.quality || {})[f];
+// Every click is saved at once as a draft in this browser (it survives a reload or closing the tab);
+// Publish sends the draft to the public site.
+let draftAt = null;
+function saveDraft(){ store.set('imr-curation-draft', DRAFT); draftAt = new Date(); }
 const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
+// Excluded photos (curation.json "exclude" {f: reason}): unusable for good (a person, a drawing, AI…). Unlike Hide,
+// which is a per-genus editorial choice, exclusion removes the photo from every genus, game and candidate list,
+// and import scripts skip it so it never comes back. The Excluded view lists them, to restore one.
+const REASONS = [['person', 'Person in the photo'], ['drawing', 'Drawing or diagram'], ['ai', 'AI-generated'], ['wrong', 'Wrong or unusable'], ['other', 'Other']];
+const excl = f => (DRAFT.exclude || {})[f];
+const xChanged = () => !same(DRAFT.exclude || {}, SAVED.exclude || {});
+const reasonLabel = r => (REASONS.find(x => x[0] === r) || [0, r])[1];
 const qTag = p => { const q = qOf(p.f); return `<span class="adm-q q${q}${qSet(p.f) ? '' : ' auto'}" title="${qSet(p.f) ? 'Quality set by you' : 'Automatic first guess'}">${QUAL.find(x => x[0] === q)[1]}</span>`; };
 const qSeg = p => `<span class="adm-qseg" role="group" aria-label="Quality">${QUAL.map(([q, t]) => `<button type="button" data-q="${q}" aria-pressed="${qOf(p.f) === q}" class="q${q}">${t}</button>`).join('')}</span>`;
 function setQ(f, q){
   DRAFT.quality = DRAFT.quality || {};
   // Always recorded, even when it matches the automatic guess: a later re-run of photo_quality.py must never change it.
   DRAFT.quality[f] = q;
-  store.set('imr-curation-draft', DRAFT);
+  saveDraft();
 }
 
 /* ---------- Token vault: AES-GCM key derived from the password (PBKDF2) ---------- */
@@ -98,6 +109,7 @@ function own(n){
   const g = DATA.gen[n], two = g.levels === 2, L = [];
   VIEWS.forEach(([v]) => { (g.views[v] || []).forEach(p => L.push({...p, base: v})); ((g.more || {})[v] || []).forEach(p => L.push({...p, base: v, multi: true, extra: true})); });
   (DATA.course[n] || []).forEach(p => L.push({...p, base: p.v === 'medium' && two ? 'macro' : p.v}));
+  for (let i = L.length - 1; i >= 0; i--) if (excl(L[i].f)) L.splice(i, 1);
   // Candidates Pierre approved (curation add: {f: view}) join their view as normal photos (app.js applyCuration).
   const add = entry(n).add || {};
   cands(n).filter(p => add[p.f]).forEach(p => L.push({...p, base: add[p.f], cand: true}));
@@ -113,7 +125,7 @@ function photos(n){
 }
 const outOf = n => own(n).filter(p => outs(n)[p.f]);
 // New candidate photos from data.json cand, not used by the site until approved here.
-const cands = n => ((DATA.cand || {})[n] || []);
+const cands = n => ((DATA.cand || {})[n] || []).filter(p => !excl(p.f));
 const pending = n => { const add = entry(n).add || {}; return cands(n).filter(p => !add[p.f]); };
 const entry = n => DRAFT.genera[n] || {};
 const viewOf = (n, p) => (entry(n).move || {})[p.f] || p.base;
@@ -153,7 +165,7 @@ function edit(n, fn){
   ['feat', 'move', 'add', 'out'].forEach(x => { if (k[x] && !Object.keys(k[x]).length) delete k[x]; });
   if (k.hide && !k.hide.length) delete k.hide;
   if (Object.keys(k).length) DRAFT.genera[n] = k; else delete DRAFT.genera[n];
-  store.set('imr-curation-draft', DRAFT); render();
+  saveDraft(); render();
 }
 const ensureFeat = (k, n, v) => { k.feat = k.feat || {}; if (!k.feat[v]) k.feat[v] = rowOf(n, v).feat.map(p => p.f); return k.feat[v]; };
 const dropFeat = (k, f) => Object.keys(k.feat || {}).forEach(v => { k.feat[v] = k.feat[v].filter(x => x !== f); if (!k.feat[v].length) delete k.feat[v]; });
@@ -163,6 +175,9 @@ const ACT = {
     if (L.includes(f)) { L.splice(L.indexOf(f), 1); if (!L.length) { toast('A view needs at least one featured photo: back to the automatic pick.'); delete k.feat[v]; } }
     else if (L.length >= FEAT) toast(`Already ${FEAT} featured: remove one first.`); else L.push(f); }),
   addc: (n, f, v, to) => edit(n, k => { k.add = k.add || {}; k.add[f] = to; }),
+  exclude: (n, f, v, why) => { DRAFT.exclude = DRAFT.exclude || {}; DRAFT.exclude[f] = why;
+    edit(n, k => { dropFeat(k, f); if (k.cover === f) delete k.cover; if (k.add) delete k.add[f]; });
+    toast('Excluded for good. The Excluded view (top) lists it if you want it back.'); },
   out: (n, f, v, to) => edit(n, k => { k.out = k.out || {}; if (to === 'back') delete k.out[f]; else { k.out[f] = to; dropFeat(k, f); if (k.cover === f) delete k.cover; if (k.move) delete k.move[f]; } }),
   hide: (n, f) => edit(n, k => { if (k.add && k.add[f]) { delete k.add[f]; dropFeat(k, f); if (k.cover === f) delete k.cover; return; } k.hide = k.hide || []; if (k.hide.includes(f)) k.hide = k.hide.filter(x => x !== f); else { k.hide.push(f); dropFeat(k, f); if (k.cover === f) delete k.cover; } }),
   move: (n, f, v, to) => edit(n, k => { const p = photos(n).find(x => x.f === f); if (p.cand) { k.add[f] = to; dropFeat(k, f); return; } k.move = k.move || {}; if (to === p.base) delete k.move[f]; else k.move[f] = to; dropFeat(k, f); }),
@@ -178,7 +193,7 @@ const ACT = {
     else if (inFeat) { k.feat = k.feat || {}; if (L.length) k.feat[to] = L; else delete k.feat[to]; }
   }),
   reset: n => { if (confirm(`Reset ${n}? This removes your cover, featured photos, hidden, moved, added and "Not this genus" choices for this genus, back to the default photos. Quality ratings are kept.`)) edit(n, k => Object.keys(k).forEach(x => delete k[x])); },
-  revert: n => { DRAFT.genera[n] = clone(SAVED.genera[n]); if (!DRAFT.genera[n]) delete DRAFT.genera[n]; store.set('imr-curation-draft', DRAFT); render(); }
+  revert: n => { DRAFT.genera[n] = clone(SAVED.genera[n]); if (!DRAFT.genera[n]) delete DRAFT.genera[n]; saveDraft(); render(); }
 };
 
 /* ---------- Rendering ---------- */
@@ -196,29 +211,34 @@ function tile(n, p, v, st){
       ${st.cls === 'is-hidden' ? `<button type="button" data-act="hide" class="on">Show again</button>` : `
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Use as the genus photo (cards, sheet hero)">★ Cover</button>
       <button type="button" data-act="feat" class="${st.num && !st.auto ? 'on' : ''}" title="Show in the main strip of this view">${st.num ? 'Featured' : 'Feature'}</button>
-      ${p.cand ? '<button type="button" data-act="hide" title="Back to the candidates">Remove</button>' : '<button type="button" data-act="hide" title="Hide everywhere (sheets, cards, games)">Hide</button>'}
+      ${p.cand ? '<button type="button" data-act="hide" title="Back to the candidates">Remove</button>' : '<button type="button" data-act="hide" title="Keep the photo but don\'t show it on the site for this genus; Show again brings it back">Hide</button>'}
       <select data-act="move" class="adm-view" aria-label="View (pick another to move it)" title="View: pick another to move the photo">${moves}</select>
-      ${p.from || p.cand ? '' : `<select data-act="out" aria-label="Take out of this genus"><option value="">Not this genus…</option><option value="cmp">Look-alike comparison</option><optgroup label="It shows another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`}`}
+      ${p.from || p.cand ? '' : `<select data-act="out" aria-label="Take out of this genus"><option value="">Not this genus…</option><option value="cmp">Look-alike comparison</option><optgroup label="It shows another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`}
+      ${XSEL}`}
     </div></figure>`;
 }
+const XSEL = `<select data-act="exclude" class="adm-excl" aria-label="Exclude for good" title="Remove this photo for good, from every genus and game"><option value="">Exclude…</option>${REASONS.map(([r, t]) => `<option value="${r}">${t}</option>`).join('')}</select>`;
 function status(){
-  const ch = changed(), q = qChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : ''].filter(Boolean);
-  $('status').textContent = parts.length ? `${parts.join(' + ')} not saved` : TOKEN ? 'All saved' : 'Download only';
+  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', x ? 'exclusions' : ''].filter(Boolean);
+  const xn = Object.keys(DRAFT.exclude || {}).length, xa = document.querySelector('[data-mode="excluded"]'); if (xa) xa.textContent = `Excluded${xn ? ` (${xn})` : ''}`;
+  const t = draftAt ? ` (saved ${draftAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})})` : '';
+  $('status').textContent = parts.length ? `Draft${t}: ${parts.join(' + ')} not published yet` : TOKEN ? 'Everything is published' : 'Read-only: download only';
   $('status').classList.toggle('dirty', !!parts.length);
-  $('save').disabled = !TOKEN || !parts.length; $('save').title = TOKEN ? '' : 'Unlock with a token to save';
-  if (cur !== '~quality') lastGenus = cur;
+  $('save').disabled = !TOKEN || !parts.length; $('save').title = TOKEN ? 'Send your draft to the public site' : 'Unlock with a token to publish';
+  if (cur[0] !== '~') lastGenus = cur;
   $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || '');
-  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === (cur === '~quality' ? 'quality' : 'genus'))));
+  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === (cur === '~quality' ? 'quality' : cur === '~excluded' ? 'excluded' : 'genus'))));
 }
 function render(){
   if (cur === '~quality') return renderQuality();
+  if (cur === '~excluded') return renderExcluded();
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
   const ch = changed(), n = cur, g = DATA.gen[n], cv = coverOf(n), k = entry(n);
   status();
   $('preview').href = `./?draft#g-${encodeURIComponent(n)}`;
   const side = names.map(m => { const c = coverOf(m), e = DRAFT.genera[m] || {}, dirty = ch.includes(m), h = (e.hide || []).length;
     return `<a href="#${esc(m)}" class="adm-g${m === n ? ' cur' : ''}"${m === n ? ' aria-current="true"' : ''}>${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
-      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : '★'}${c && c.view === 'macro' && DATA.gen[m].levels !== 2 ? ' · <b class="warnc" title="The cover is a corallite close-up">macro cover</b>' : ''}${h ? ` · ${h} hidden` : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}${missing(m).length ? ' · <b class="warnc" title="Some choices name a photo no longer in the data">⚠ check</b>' : ''}</small></span>${dirty ? '<b class="dot" title="Not saved">●</b>' : Object.keys(e).length ? '<b class="dot done" title="Curated">✓</b>' : ''}</a>`; }).join('');
+      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : '★'}${c && c.view === 'macro' && DATA.gen[m].levels !== 2 ? ' · <b class="warnc" title="The cover is a corallite close-up">macro cover</b>' : ''}${h ? ` · ${h} hidden` : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}${missing(m).length ? ' · <b class="warnc" title="Some choices name a photo no longer in the data">⚠ check</b>' : ''}</small></span>${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : Object.keys(e).length ? '<b class="dot done" title="Curated">✓</b>' : ''}</a>`; }).join('');
   const body = rows(n).map(([v]) => { const r = rowOf(n, v), out = [...r.feat, ...r.rest, ...r.hid].filter(p => !shown(p)).length;
     return `<section class="adm-row"><h3>${label(n, v)} <small>${r.feat.length} featured${r.auto ? ' (automatic)' : ''} · ${r.rest.length} more${r.hid.length ? ` · ${r.hid.length} hidden` : ''}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
       <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: r.auto, last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${r.rest.filter(shown).map(p => tile(n, p, v, {})).join('')}${r.hid.filter(shown).map(p => tile(n, p, v, {cls: 'is-hidden'})).join('')}</div>
@@ -244,7 +264,7 @@ function render(){
           <p class="note"><b>Cover:</b> ${cv ? `${cv.picked ? 'your pick' : 'automatic'} · ${label(n, cv.view).toLowerCase()} view${cv.view === 'macro' && g.levels !== 2 ? ' <b class="warnc">(a corallite close-up: pick a colony or closer view)</b>' : ''}` : 'none'}</p>
           <p class="note">Featured photos fill the main strip of each view on the genus sheet (up to ${FEAT}); the others stay under “more photos”. Hidden photos disappear everywhere, games included.</p>
           <p class="note"><b>Drag the photos</b> (by the photo, or the ⠿ handle on a phone): onto a featured photo to feature it there (left or right half: before or after it), onto another photo to unfeature it; to another view to move it, or from the candidates to add it.</p>
-          <p class="adm-gacts">${ch.includes(n) ? '<button type="button" class="chip" data-act="revert">Undo unsaved changes</button>' : ''}${Object.keys(k).length ? '<button type="button" class="chip" data-act="reset" title="Remove all your choices for this genus (cover, featured, hidden, moved, added, Not this genus). Quality ratings are kept.">Reset this genus</button>' : ''}<a class="chip" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener">Open the sheet</a></p>
+          <p class="adm-gacts">${ch.includes(n) ? '<button type="button" class="chip" data-act="revert" title="Go back to what is published for this genus">Undo unpublished changes</button>' : ''}${Object.keys(k).length ? '<button type="button" class="chip" data-act="reset" title="Remove all your choices for this genus (cover, featured, hidden, moved, added, Not this genus). Quality ratings are kept.">Reset this genus</button>' : ''}<a class="chip" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener">Open the sheet</a></p>
         </div>
       </div>
       ${filter}${body}${candRow}${outRow}
@@ -255,7 +275,8 @@ function render(){
   $('gsel').onchange = e => { location.hash = e.target.value; };
   $v.querySelectorAll('[data-act]').forEach(el => {
     const t = el.closest('[data-f]'), f = t && t.dataset.f, v = t && t.dataset.v, a = el.dataset.act;
-    if (a === 'out') { if (el.tagName === 'SELECT') el.onchange = () => el.value && ACT.out(n, f, v, el.value); else el.onclick = () => ACT.out(n, f, v, 'back'); }
+    if (a === 'exclude') el.onchange = () => el.value && ACT.exclude(n, f, v, el.value);
+    else if (a === 'out') { if (el.tagName === 'SELECT') el.onchange = () => el.value && ACT.out(n, f, v, el.value); else el.onclick = () => ACT.out(n, f, v, 'back'); }
     else if (a === 'addc') el.onclick = () => ACT.addc(n, f, null, el.dataset.to);
     else if (a === 'move') el.onchange = () => el.value !== v && ACT.move(n, f, v, el.value);
     else if (a === 'zoom' || a === 'zoomcover') el.onclick = () => zoom(n, f);
@@ -392,21 +413,42 @@ function renderQuality(){
     (t, el) => { clearQ(); const g = el && el.closest('[data-qdrop]'); if (g) { rateTile(t, Number(g.dataset.qdrop)); g.prepend(t); } }, clearQ);
 }
 
+/* ---------- Excluded ---------- */
+function renderExcluded(){
+  status();
+  const X = DRAFT.exclude || {}, list = Object.keys(X).map(f => PHOTOS[f] ? {...PHOTOS[f], f} : {f, genus: '?'});
+  $v.innerHTML = `<section class="adm-quality"><div class="adm-qhead"><h2>Excluded photos</h2><p class="note">Removed for good: from every genus, game and candidate list, and new imports skip them. Use Hide on a genus instead when a photo is fine but you don't want it shown there. Restore puts a photo back where it was.</p></div>
+    ${list.length ? `<div class="adm-grid adm-qgrid">${list.map(p => `<figure class="adm-tile" data-f="${esc(p.f)}" data-g="${esc(p.genus)}">
+      <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge">${p.genus === '?' ? '<span class="none">missing</span>' : `<img src="${img(p, 1)}" alt="" loading="lazy">`}</button>
+      <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a>${p.genus === '?' ? '' : srcTag(p)}</figcaption>
+      <div class="adm-acts"><select data-act="why" aria-label="Reason">${REASONS.map(([r, t]) => `<option value="${r}"${X[p.f] === r ? ' selected' : ''}>${t}</option>`).join('')}</select><button type="button" data-act="restore">Restore</button></div></figure>`).join('')}</div>` : '<p class="note">No excluded photo.</p>'}</section>`;
+  const set = (f, r) => { DRAFT.exclude = {...(DRAFT.exclude || {})}; if (r) DRAFT.exclude[f] = r; else delete DRAFT.exclude[f]; saveDraft(); renderExcluded(); };
+  $v.querySelectorAll('[data-act="why"]').forEach(s => s.onchange = () => set(s.closest('[data-f]').dataset.f, s.value));
+  $v.querySelectorAll('[data-act="restore"]').forEach(b => b.onclick = () => set(b.closest('[data-f]').dataset.f, null));
+  $v.querySelectorAll('[data-act="zoomx"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'), p = PHOTOS[t.dataset.f]; if (p) zoomOne(p); });
+}
+function zoomOne(p){
+  const lb = $('lightbox'), close = () => { lb.hidden = true; lb.innerHTML = ''; document.removeEventListener('keydown', key); }, key = e => { if (e.key === 'Escape') close(); };
+  lb.innerHTML = `<div class="lb-in"><img src="${img(p)}" alt=""><p class="lb-cap"><i>${esc(p.genus)}</i> · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p><div class="lb-nav"><button type="button" data-x>Close</button></div></div>`;
+  lb.querySelector('[data-x]').onclick = close; lb.hidden = false; lb.onclick = e => { if (e.target === lb) close(); }; document.addEventListener('keydown', key);
+}
+
 /* ---------- Save / download ---------- */
 const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAFT.genera[n]).forEach(n => { genera[n] = DRAFT.genera[n]; });
   const quality = {}; Object.keys(DRAFT.quality || {}).sort().forEach(f => { quality[f] = DRAFT.quality[f]; });
-  return {v: 1, genera, ...(Object.keys(quality).length ? {quality} : {})}; };
+  const exclude = {}; Object.keys(DRAFT.exclude || {}).sort().forEach(f => { exclude[f] = DRAFT.exclude[f]; });
+  return {v: 1, genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(exclude).length ? {exclude} : {})}; };
 async function save(){
-  const ch = changed(), q = qChanged(); if (!(ch.length || q) || !TOKEN) return;
-  const b = $('save'); b.disabled = true; b.textContent = 'Saving…';
+  const ch = changed(), q = qChanged(), x = xChanged(); if (!(ch.length || q || x) || !TOKEN) return;
+  const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
   try {
     const out = output(), text = JSON.stringify(out, null, 2) + '\n';
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(x ? ['exclusions'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const r = await gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg, content: toB64(text), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})});
-    SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); store.set('imr-curation-draft', DRAFT);
-    toast('Saved. The site shows it within a minute or two.');
-  } catch (x) { toast(/does not match|sha/i.test(x.message) ? 'Someone saved in the meantime: reload the page, your changes are kept.' : 'Not saved: ' + x.message); }
-  b.textContent = 'Save to site'; render();
+    SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); saveDraft();
+    toast('Published. The public site shows it within a minute or two.');
+  } catch (x) { toast(/does not match|sha/i.test(x.message) ? 'The site was published from elsewhere in the meantime: reload the page, your draft is kept.' : 'Not published (your draft is kept): ' + x.message); }
+  b.textContent = 'Publish'; render();
 }
 function download(){
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(output(), null, 2) + '\n'], {type: 'application/json'}));
@@ -418,16 +460,18 @@ async function start(){
   $v.innerHTML = '<p class="note">Loading photos…</p>';
   try { [DATA, AUTOQ] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), fetch('quality.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).then(j => j.q || {}).catch(() => ({})), loadSaved()]); }
   catch (x) { $v.innerHTML = `<p class="warn">Could not load: ${esc(x.message)}</p>`; return; }
+  // Every photo of data.json by name, with its genus, for the Excluded view.
+  PHOTOS = {}; Object.entries(DATA.gen).forEach(([n, g]) => [...Object.values(g.views || {}), ...Object.values(g.more || {}), (DATA.course || {})[n] || [], (DATA.cand || {})[n] || []].flat().forEach(p => { PHOTOS[p.f] = {...p, genus: n}; }));
   // Every photo name in data.json (field, extra, lecture, candidates), to spot choices left pointing nowhere.
   KNOWN = new Set([...Object.values(DATA.gen).flatMap(g => [...Object.values(g.views || {}), ...Object.values(g.more || {})].flat()), ...Object.values(DATA.course || {}).flat(), ...Object.values(DATA.cand || {}).flat(), ...(DATA.cmp || [])].map(p => p.f));
   // Unsaved edits from an earlier visit are kept, on top of what is saved.
   const old = store.get('imr-curation-draft', null);
   DRAFT = old && old.genera ? old : clone(SAVED);
-  const keep = changed().length; if (keep) toast(`Unsaved changes for ${keep} ${keep > 1 ? 'genera' : 'genus'} from your last visit are kept.`);
+  const keep = changed().length; if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? "genera" : "genus"} not published yet.`);
   $('tools').hidden = false; $('save').onclick = save; $('download').onclick = download;
   cur = decodeURIComponent(location.hash.slice(1)) || Object.keys(DATA.gen)[0];
   window.onhashchange = () => { cur = decodeURIComponent(location.hash.slice(1)); render(); window.scrollTo({top: 0}); };
-  window.onbeforeunload = e => { if (TOKEN && (changed().length || qChanged())) { e.preventDefault(); e.returnValue = ''; } };
+  window.onbeforeunload = e => { if (TOKEN && (changed().length || qChanged() || xChanged())) { e.preventDefault(); e.returnValue = ''; } };
   render();
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.

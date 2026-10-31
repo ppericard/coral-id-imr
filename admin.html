@@ -9,24 +9,24 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
 <link rel="stylesheet" href="app.css?v=15">
-<link rel="stylesheet" href="admin.css?v=5">
+<link rel="stylesheet" href="admin.css?v=7">
 </head>
 <body class="admin">
 <script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <div class="wrap">
   <header>
     <h1 class="brand"><a class="home" href="./"><img src="icon.svg" alt="" width="30" height="30"><span>IMR Coral ID</span></a><span class="adm-tag">Photo curation</span></h1>
-    <nav class="adm-modes" id="modes" aria-label="Entry point" hidden><a data-mode="genus" href="#">By genus</a><a data-mode="quality" href="#~quality">By quality</a></nav>
+    <nav class="adm-modes" id="modes" aria-label="Entry point" hidden><a data-mode="genus" href="#">By genus</a><a data-mode="quality" href="#~quality">By quality</a><a data-mode="excluded" href="#~excluded">Excluded</a></nav>
     <div class="hdr-tools" id="tools" hidden>
       <span class="adm-status" id="status" role="status"></span>
       <a class="chip" id="preview" href="./?draft" target="_blank" rel="noopener">Preview on site</a>
       <button type="button" class="chip" id="download">Download JSON</button>
-      <button type="button" class="chip adm-save" id="save" disabled>Save to site</button>
+      <button type="button" class="chip adm-save" id="save" disabled>Publish</button>
     </div>
   </header>
   <main id="view"><p class="note">Loading…</p></main>
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
-<script src="admin.js?v=8"></script>
+<script src="admin.js?v=10"></script>
 </body>
 </html>
