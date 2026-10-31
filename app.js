@@ -386,7 +386,7 @@ function quizBoard(){
   bindQuizNav('quiz-board');
   bindProgFile(); bindSync();
   const rb = document.getElementById('reset');
-  rb.onclick = () => { if (rb.dataset.armed) { P = {}; save(); quizBoard(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } };
+  rb.onclick = () => { if (rb.dataset.armed) { P = {}; store.set('imr-coral-reset', new Date().toISOString()); save(); quizBoard(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } };
 }
 
 // Header progress pill: genera learned, always in view; the page itself is #progress.
@@ -425,9 +425,12 @@ function syncSummary(){
 }
 const syncGet = () => fetch(`${SYNC_URL}?name=${encodeURIComponent(SYNC.name)}&pin=${encodeURIComponent(SYNC.pin)}`).then(r => r.json());
 // Two devices on one account: per genus, keep whichever record has more answers, so an older
-// device never wipes newer results when it sends.
+// device never wipes newer results when it sends. A reset (imr-coral-reset, a time) wins over older progress.
 function mergeSaved(j){
-  let R = {}; try { R = JSON.parse((j.data || {})['imr-coral-progress'] || '{}') || {}; } catch (e) {}
+  const d = j.data || {}; let R = {}; try { R = JSON.parse(d['imr-coral-progress'] || '{}') || {}; } catch (e) {}
+  const rr = JSON.parse(d['imr-coral-reset'] || '""'), lr = store.get('imr-coral-reset', '');
+  if (lr > rr) return;
+  if (rr > lr) { P = R; store.set('imr-coral-reset', rr); store.set('imr-coral-progress', P); showProg(); return; }
   const n = r => r ? (r.ok || 0) + (r.ko || 0) : -1;
   let changed = false;
   Object.keys(R).forEach(g => { if (n(R[g]) > n(P[g])) { P[g] = R[g]; changed = true; } });
