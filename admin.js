@@ -541,6 +541,7 @@ const HELP = {
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsph: `<p>Photo difficulty (Elo) from every answer: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers; few answers = rough. Click a dot to see the photo.</p>
     <p>The quiz shows the colony, closer and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
+  statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (players' level on the genus is above what the hardest photo of the view can challenge: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a row to open the genus.</p>`,
   diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers. Few answers = rough. The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it sits in the wrong game set.</p>`,
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time.</p>
     <p>The first 3 photos of each view are its featured photos (Easy level, top of the sheet, Coral Finder). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. Hidden photos disappear everywhere, games included; × excludes a photo for good.</p>
@@ -556,7 +557,7 @@ const HELP = {
 };
 function toggleHelp(){
   let h = $('admhelp'); if (h) { h.remove(); return; }
-  const m = cur === '~stats-photos' ? 'statsph' : modeKey() === 'stats' ? ({'~diff': 'diff', '~cov': 'cov'}[cur] || 'stats') : modeKey();
+  const m = cur === '~stats-photos' ? 'statsph' : cur === '~stats-needs' ? 'statsneeds' : modeKey() === 'stats' ? ({'~diff': 'diff', '~cov': 'cov'}[cur] || 'stats') : modeKey();
   h = document.createElement('div'); h.id = 'admhelp'; h.className = 'adm-help'; h.setAttribute('role', 'dialog'); h.setAttribute('aria-label', 'Help');
   h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button>${HELP[m]}`;
   h.querySelector('button').onclick = () => h.remove(); $('tools').append(h);
@@ -1002,7 +1003,7 @@ function renderCov(){
 // ?answers=1 (sheet script v4): every answer, RA replaced by an anonymous id; ?stats=1: Elo difficulty per photo and
 // level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
 // The Stats tab holds the sub-views of STAT_TABS; Coverage (renderCov) and the photo list (renderDiff) live there too.
-const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~diff', 'Photo list'], ['~cov', 'Coverage']];
+const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~diff', 'Photo list'], ['~cov', 'Coverage'], ['~stats-needs', 'Needs']];
 let ANS = null, RAS = {}, MEID = null, SF = Object.assign({who: 'all', min: 1}, store.get('imr-admin-stats', {}));
 const statSwitch = () => `<nav class="adm-filter adm-stabs" aria-label="Stats">${STAT_TABS.filter(([h]) => h !== '~cov' || typeof renderCov === 'function')
   .map(([h, t]) => `<a class="adm-fchip plain" href="#${h}" aria-pressed="${cur === h}">${t}</a>`).join('')}</nav>`;
@@ -1031,7 +1032,7 @@ function bindStats(){
 function renderStats(){
   status();
   if (!ANS) { $v.innerHTML = statSwitch() + '<p class="note">Loading…</p>'; loadStats().then(() => { if (cur.startsWith('~stats')) render(); }); return; }
-  return cur === '~stats-photos' ? statsPhotos() : statsPlayers();
+  return cur === '~stats-photos' ? statsPhotos() : cur === '~stats-needs' ? statsNeeds() : statsPlayers();
 }
 // Rows kept by the player filter (all, others than this browser's synced name, or only it).
 const statRows = () => ANS.rows.filter(r => SF.who === 'all' || !MEID || (SF.who === 'me') === (r[0] === MEID));
@@ -1078,6 +1079,41 @@ function statsPlayers(){
     <section class="adm-scard"><h3>Mix-ups</h3>${ml.length ? `<table class="adm-tbl"><thead><tr><th>Shown</th><th>Answered</th><th></th><th>n</th></tr></thead><tbody>
       ${ml.map(([k, n]) => { const [a, b] = k.split('|'); return `<tr><td><i>${esc(a)}</i></td><td><a class="adm-gen" href="./#cmp-${encodeURIComponent(a)}|${encodeURIComponent(b)}" target="_blank" rel="noopener"><i>${esc(b)}</i></a></td><td>${sbar(n, mm, 'bad')}</td><td class="n">${n}</td></tr>`; }).join('')}</tbody></table>` : '<p class="note">None.</p>'}</section>
     </div>`);
+  bindStats();
+}
+// Where to look for more photos (Pierre, 2026-10-31): per genus x view, the reasons the game pool falls short, from
+// coverage (covOf), photo quality and difficulty (STATS Elo), players' levels per genus (sheet v5) and their answers.
+function statsNeeds(){
+  const head = `${statSwitch()}<div class="adm-shead"><h2>Where to look for photos</h2></div>`, R = ANS.rows || [], OFF = 1.0;
+  const TH = {}; Object.values(ANS.players || {}).forEach(p => Object.entries(p[3] || {}).forEach(([g, t]) => (TH[g] = TH[g] || []).push(t)));
+  const SEEN = {}; R.forEach(r => r[6].split(' ').filter(Boolean).forEach(f => { const k = r[0] + '|' + f; SEEN[k] = (SEEN[k] || 0) + 1; }));
+  const ids = [...new Set(R.map(r => r[0]))], MX = {};
+  R.filter(r => !r[4] && r[3]).forEach(r => { const m = MX[r[2]] = MX[r[2]] || {}; m[r[3]] = (m[r[3]] || 0) + 1; });
+  const q3 = a => { const b = a.slice().sort((x, y) => x - y); return b[Math.floor(0.75 * (b.length - 1))]; };
+  const out = [];
+  Object.keys(DATA.gen).filter(n => !DATA.gen[n].x).forEach(n => covViews(n).forEach(([v, vt]) => {
+    const c = covOf(n, v), why = []; let sc = 0;
+    if (c.obs < 3) { why.push(['few', `${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}`]); sc += 4 - c.obs; }
+    const good = new Set(c.L.filter(p => qOf(p.f) >= 2).map(p => p.o || p.f)).size;
+    if (c.obs >= 3 && good < 3) { why.push(['good', `${good} good colon${good === 1 ? 'y' : 'ies'}`]); sc += 1; }
+    if ((TH[n] || []).length) { const rated = c.L.filter(p => STATS[p.f] && STATS[p.f][1] >= 3).map(p => STATS[p.f][0]);
+      const hard = rated.length ? Math.max(...rated) : c.L.some(p => qOf(p.f) === 1) ? 1 : 0, top = q3(TH[n]);
+      if (top - OFF > hard + 0.3) { why.push(['easy', `players ${sgn(top)} vs hardest ${sgn(hard)}`]); sc += 1.5; } }
+    const rep = ids.map(id => { const k = c.L.map(p => SEEN[id + '|' + p.f] || 0).filter(Boolean); return k.length ? k.reduce((a, b) => a + b, 0) / k.length : 0; }).filter(Boolean);
+    const rp = rep.length ? rep.reduce((a, b) => a + b, 0) / rep.length : 0;
+    if (rp >= 4) { why.push(['rep', `each photo ×${rp.toFixed(1)} per player`]); sc += 1; }
+    const mx = Object.entries(MX[n] || {}).sort((a, b) => b[1] - a[1])[0];
+    if (v === 'macro' && mx && mx[1] >= 3 && c.obs < 5) { why.push(['mix', `taken for ${mx[0]} ×${mx[1]}`]); sc += 1; }
+    if (why.length) out.push({n, v, vt, c, why, sc});
+  }));
+  out.sort((a, b) => b.sc - a.sc || a.c.obs - b.c.obs);
+  const T = {few: 'Few colonies', good: 'Few good colonies', easy: 'Too easy', rep: 'Repeats', mix: 'Mix-ups'};
+  const cnt = k => out.filter(o => o.why.some(w => w[0] === k)).length;
+  $v.innerHTML = head + kpis(Object.keys(T).map(k => [T[k], cnt(k)])) + (!Object.keys(ANS.players || {}).some(id => Object.keys((ANS.players[id] || [])[3] || {}).length) ? `<p class="note">"Too easy" needs answers logged by sheet script v5.</p>` : '') + `
+    <div class="adm-tscroll"><table class="adm-tbl adm-needs"><thead><tr><th>Genus</th><th>View</th><th>Colonies</th><th>Why</th></tr></thead><tbody>
+    ${out.map(o => `<tr data-g="${esc(o.n)}"><td><a class="adm-gen" href="#${esc(o.n)}"><i>${esc(o.n)}</i></a></td><td>${esc(o.vt)}</td><td class="n">${o.c.obs}</td>
+      <td>${o.why.map(([k, t]) => `<span class="adm-why w-${k}" title="${T[k]}">${esc(t)}</span>`).join(' ')}</td></tr>`).join('')}</tbody></table></div>`;
+  $v.querySelectorAll('.adm-needs tbody tr').forEach(tr => tr.onclick = e => { if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g); });
   bindStats();
 }
 const VIEW_T = {wide: 'Colony', medium: 'Closer', macro: 'Corallites', cand: 'Candidate'};
