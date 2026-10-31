@@ -72,6 +72,16 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .modes a:hover b{color:var(--accent)}
 .modes a[aria-current="page"]{background:var(--surface);box-shadow:var(--shadow);color:var(--muted)}
 .modes a[aria-current="page"] b{color:var(--accent)}
+/* Page bar: on a genus sheet or a pair, the same row shows back, the page name and previous / next. */
+.modes.ctx{align-items:center;gap:8px;padding:3px 4px;overflow:hidden}
+.modes.ctx .up,.modes.ctx .pn a,.modes.ctx .ctx-l{flex:none;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border-radius:var(--r-sm);font:inherit;font-size:.9rem;color:var(--accent);background:none;border:0;cursor:pointer;text-decoration:none}
+.modes.ctx .up:hover,.modes.ctx .pn a:hover,.modes.ctx .ctx-l:hover{background:var(--surface)}
+.modes.ctx .ctx-t{flex:1 1 auto;min-width:0;margin:0;display:flex;align-items:baseline;gap:10px;font-family:var(--body);font-weight:600;font-size:1.35rem;line-height:1.2;white-space:nowrap;overflow:hidden}
+.modes.ctx .ctx-t > *{overflow:hidden;text-overflow:ellipsis}
+.modes.ctx .ctx-t small{font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.modes.ctx .up{gap:4px}
+.modes.ctx .pn{flex:none;display:flex;gap:2px;padding-left:6px;border-left:1px solid var(--line)}
+.modes.ctx .pn a{width:36px;padding:0;font-size:1.3rem;line-height:1}
 #size{display:flex;overflow:hidden;height:var(--ctl-h)}
 #size button{background:none;border:0;color:var(--muted);font:inherit;font-size:.8rem;font-weight:700;width:34px;cursor:pointer}
 #size button+button{border-left:1px solid var(--line)}
@@ -126,7 +136,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 
 /* ---------- Genus sheet ---------- */
 .keyid{color:var(--ink);font-size:1.02rem;max-width:70ch}
-.sheet .keyid{margin:-2px 0 14px}
+.sheet .keyid{margin:14px 0}
 .sheet h2{font-size:2.3rem;font-style:italic;font-family:var(--body);font-weight:600;margin-top:4px}
 .fam{display:inline-block;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .sheet h3{margin:18px 0 6px}
@@ -267,6 +277,11 @@ td i{font-weight:600}
   .modes a{min-height:38px;padding:4px 6px}
   .modes a b{font-size:.8rem}
   .modes a small{display:none}
+  .modes.ctx a{flex:none;min-height:36px}
+  .modes.ctx .up{padding:0 8px;font-size:.85rem}
+  .modes.ctx .ctx-t{font-size:1.15rem;flex-direction:column;gap:0}
+  .modes.ctx .ctx-t small{font-size:.68rem}
+  .modes.ctx .ctx-l{padding:0 8px;font-size:.82rem}
   .sections a{justify-content:center;padding:0 4px;font-size:.82rem;min-width:0}
   .qset.two{grid-template-columns:1fr 1fr;gap:6px}
   .qset.two .qph{aspect-ratio:1}
