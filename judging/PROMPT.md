@@ -2,7 +2,17 @@
 
 Open the agent on a clone of `ppericard/coral-id-imr` (repository root), then paste one of these.
 
-## 1. Test batch (start here)
+## 0. Growth forms first (IMR forms, about 570 photos)
+
+```text
+Read judging/AGENTS.md and follow it exactly. Do the growth-form pass only ("scope": "forms"): for every genus
+that has photos flagged form_todo in judging/manifest.json, look at each of those photos yourself and write
+judging/out/<Genus>.json with "scope": "forms", then run python3 tools/judging_import.py --check <Genus> until
+it passes. Then run python3 tools/judging_import.py, commit judging/out/, suggest.json and forms.json on a new
+branch, open a pull request and report how many you marked unsure. Do not merge.
+```
+
+## 1. Test batch of the full judging
 
 ```text
 Read judging/AGENTS.md and follow it exactly. Do a test batch only: Acropora, Porites, Fungia and Goniastrea.
@@ -22,6 +32,6 @@ to the same branch. At the end, open (or update) the pull request and report. Do
 
 ## After the agent's pull request is merged
 
-Open `admin.html`: the forms and quality ratings appear as dashed guesses (one click confirms or corrects), the
+Open `admin.html`: the growth forms (IMR forms, polyps flag) and quality ratings appear as dashed guesses (one click confirms or corrects), the
 Featured suggestions fill the views you haven't picked, and **Triage** lists the rest (move to another view, not
 this genus, several corals, near-duplicates, candidates to add), each with Accept or Dismiss.

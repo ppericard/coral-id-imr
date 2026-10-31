@@ -32,15 +32,16 @@ changes the site by itself.
 ## Inputs
 
 - `judging/manifest.json`: regenerate it first with `python3 tools/judging_manifest.py`.
-  - `forms`, `views`: the allowed categories (from the Coral Finder key and the app).
+  - `forms`: the IMR growth forms (IMR Lecture 6, slides 4-10): `id` (the letter), `name`, `def` (the lecture's
+    wording), `slide`. `views`: the photo views of the app.
   - `genera`: per genus, `imr_cues` (IMR lecture, verbatim), `coral_finder` (criteria), `look_alikes`,
-    `coral_finder_forms` (the forms under which the Coral Finder key lists the genus), `views` (two-view genera
+    `views` (two-view genera
     have no Closer view), `starred` (not surveyed, look-alikes of surveyed genera).
   - `photos`: one entry per photo, ordered by genus. `genus` and `view` are where the photo sits today;
     `source` is `imr` (IMR lecture), `pierre` (Pierre's own), `inat-dauin`, `inat-philippines`,
     `inat-elsewhere` (other iNaturalist observers) or `book` (cropped from the Coral Finder 2022 book);
     `status` is `live` (on the site), `candidate` (not shown until Pierre adds it), `hidden` or `comparison`;
-    `multi` = already known to show several corals; `inat_label` = the observer's iNaturalist identification,
+    `multi` = already known to show several corals; `form_todo` = growth form still to (re)guess; `inat_label` = the observer's iNaturalist identification,
     a hint only; `caption` = IMR slide caption.
 - Image files: `img/<f>.webp` (1600 px) and `img/<f>-s.webp` (480 px).
 
@@ -48,26 +49,18 @@ changes the site by itself.
 
 Judge every photo whose manifest `genus` is the genus of the file, candidates and book photos included.
 
-### `form`: exactly one growth form
+### `form`: exactly one IMR growth form
 
-The Coral Finder front-page growth forms. **One letter per photo: the dominant form visible in this photo.**
-Judge the shape the photo shows, not where the Coral Finder key places the genus. Pierre's call: tables and
-plates are `P`, tabular Acropora included, even though the key's Branching sub-title mentions plates of branchlets.
+The growth forms taught in the IMR course (manifest `forms`: letter, name and the lecture's definition; read them
+before you start). **One letter per photo: the dominant form visible in this photo.** Judge the shape the photo
+shows, not what the genus usually does. `x` = form not visible (the photo is too close to tell the colony's form).
+There is no list of forms allowed per genus: do not make one up. Coral Finder book photos (`source: "book"`) may
+omit `form`.
 
-| Letter | Coral Finder form | Sub-title in the key |
-|---|---|---|
-| `B` | Branching | Branches or plates of branchlets |
-| `M` | Meandering | Meandering ridges and valleys |
-| `S` | Massive or thick | Excluding meandering corallites |
-| `P` | Thin plates and crusts | Vases, tiers, fronds, leafy, encrusting |
-| `F` | Solitary or free-living | Mushroom corals and isolated polyps |
-| `L` | Large daytime polyps | Tentacles or vesicles extended by day |
-| `C` | Columns | Colonies of upright pillars |
-| `x` | Form not visible | The photo is too close to tell the colony's form |
+### `polyps`: polyps or vesicles extended (omit when false)
 
-When the form you see is not in the genus's
-`coral_finder_forms`, look again; if you keep it, the check script will ask you to confirm (or mark it unsure).
-Coral Finder book photos (`source: "book"`) may omit `form`.
+`true` when extended polyps, tentacles or vesicles cover the coral in this photo (e.g. Goniopora, Plerogyra by
+day). It is not a growth form: give the form as well (`x` if it cannot be seen).
 
 ### `quality`: 3 Good, 2 Fair, 1 Poor
 
@@ -106,6 +99,13 @@ Never for IMR lecture photos, except `exclude`. A `note` is required.
 
 `unsure`: the fields you are not confident about, e.g. `["form"]`. `note`: at most 140 characters, plain words,
 required when `genus` is set or `unsure` is not empty.
+
+### Growth-form pass (`"scope": "forms"`)
+
+When asked for the growth-form pass only, write `{"genus": ..., "scope": "forms", "photos": {...}}` with just
+`form`, `polyps`, `unsure` and `note`, for the photos flagged `form_todo` in the manifest (no IMR form guess yet,
+or a guess flagged for a second look). The import then writes only the growth forms. A later full pass replaces
+the file.
 
 ## Per genus
 

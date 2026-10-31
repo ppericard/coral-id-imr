@@ -4,24 +4,53 @@
   "title": "Photo judgments for one genus (judging/out/<Genus>.json)",
   "description": "Written by the judging agent, checked and imported by tools/judging_import.py. Suggestions only: Pierre accepts or rejects them in admin.html. See judging/AGENTS.md for the meaning of each value.",
   "type": "object",
-  "required": ["genus", "photos"],
+  "required": [
+    "genus",
+    "photos"
+  ],
   "additionalProperties": false,
   "properties": {
-    "genus": {"type": "string", "description": "Genus name exactly as in manifest.json genera (the file name without .json)."},
+    "genus": {
+      "type": "string",
+      "description": "Genus name exactly as in manifest.json genera (the file name without .json)."
+    },
+    "scope": {
+      "const": "forms",
+      "description": "Growth-form pass only: photos hold just form, polyps, unsure and note, for the photos flagged form_todo."
+    },
     "photos": {
       "type": "object",
       "description": "One entry per photo whose manifest genus is this genus. Key = photo id (manifest f).",
-      "additionalProperties": {"$ref": "#/$defs/photo"}
+      "additionalProperties": {
+        "$ref": "#/$defs/photo"
+      }
     },
     "duplicates": {
       "type": "array",
       "description": "Near-identical or redundant photos (same colony, same framing). keep = the one to keep.",
       "items": {
-        "type": "object", "required": ["keep", "drop"], "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "keep",
+          "drop"
+        ],
+        "additionalProperties": false,
         "properties": {
-          "keep": {"type": "string"},
-          "drop": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true},
-          "note": {"type": "string", "maxLength": 140}
+          "keep": {
+            "type": "string"
+          },
+          "drop": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 140
+          }
         }
       }
     },
@@ -30,30 +59,97 @@
       "description": "Up to 3 suggested featured photos per view, best first.",
       "additionalProperties": false,
       "properties": {
-        "wide": {"$ref": "#/$defs/feat"}, "medium": {"$ref": "#/$defs/feat"}, "macro": {"$ref": "#/$defs/feat"}
+        "wide": {
+          "$ref": "#/$defs/feat"
+        },
+        "medium": {
+          "$ref": "#/$defs/feat"
+        },
+        "macro": {
+          "$ref": "#/$defs/feat"
+        }
       }
     },
     "add": {
       "type": "array",
       "description": "Candidate photos (manifest status 'candidate') worth approving, in the view given in photos[f].view.",
-      "items": {"type": "string"}, "uniqueItems": true
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
     }
   },
   "$defs": {
-    "feat": {"type": "array", "maxItems": 3, "items": {"type": "string"}, "uniqueItems": true},
+    "feat": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
     "photo": {
       "type": "object",
-      "required": ["quality", "view"],
+      "required": [
+        "quality",
+        "view"
+      ],
       "additionalProperties": false,
       "properties": {
-        "form": {"enum": ["B", "M", "S", "P", "F", "L", "C", "x"], "description": "Exactly one growth form, the dominant one visible in this photo; x = form not visible. Required except for book photos."},
-        "quality": {"enum": [1, 2, 3], "description": "3 Good, 2 Fair, 1 Poor."},
-        "view": {"enum": ["wide", "medium", "macro"], "description": "Colony, Closer, Corallites. Two-view genera: wide or macro only."},
-        "genus": {"type": "string", "description": "Omit when the photo shows this genus. Otherwise another genus from manifest genera, 'cmp' (look-alike comparison, two genera) or 'exclude' (unusable for good)."},
-        "multi": {"const": true, "description": "Another coral takes a large part of the frame or could be the answer. Omit when false."},
-        "unsure": {"type": "array", "items": {"enum": ["form", "quality", "view", "genus", "multi"]}, "uniqueItems": true},
-        "note": {"type": "string", "maxLength": 140, "description": "Required when genus is set or unsure is not empty."}
-      }
+        "form": {
+          "type": "string",
+          "pattern": "^[A-Zx]$",
+          "description": "Exactly one IMR growth form letter from manifest.json forms (the dominant one visible in this photo), or x = form not visible. Required except for book photos."
+        },
+        "polyps": {
+          "const": true,
+          "description": "Polyps, tentacles or vesicles extended in this photo. Not a growth form. Omit when false."
+        },
+        "quality": {
+          "enum": [
+            1,
+            2,
+            3
+          ],
+          "description": "3 Good, 2 Fair, 1 Poor."
+        },
+        "view": {
+          "enum": [
+            "wide",
+            "medium",
+            "macro"
+          ],
+          "description": "Colony, Closer, Corallites. Two-view genera: wide or macro only."
+        },
+        "genus": {
+          "type": "string",
+          "description": "Omit when the photo shows this genus. Otherwise another genus from manifest genera, 'cmp' (look-alike comparison, two genera) or 'exclude' (unusable for good)."
+        },
+        "multi": {
+          "const": true,
+          "description": "Another coral takes a large part of the frame or could be the answer. Omit when false."
+        },
+        "unsure": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "form",
+              "polyps",
+              "quality",
+              "view",
+              "genus",
+              "multi"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 140,
+          "description": "Required when genus is set or unsure is not empty."
+        }
+      },
+      "description": "Full pass: quality and view required. Growth-form pass (scope forms): only form, polyps, unsure, note."
     }
   }
 }
