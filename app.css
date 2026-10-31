@@ -956,3 +956,6 @@ a.lt:hover{border-color:var(--accent)}
 }
 .setlink{display:inline-flex;align-items:center;min-height:32px;padding:0 14px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--accent);font-weight:600;text-decoration:none}
 @media (pointer:coarse){.setlink{min-height:44px}}
+
+/* Genera page: the Coral Finder's extra genera, folded under the 39 */
+.xgen{grid-column:1/-1;margin-top:24px;border-top:1px solid var(--line);padding-top:12px}.xgen>summary{cursor:pointer;font-weight:700;color:var(--muted)}.xgen>summary small{font-weight:400}.xgen>.grid{margin-top:12px}
