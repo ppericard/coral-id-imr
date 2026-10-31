@@ -229,3 +229,7 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 .adm-lvseg button{font:inherit;font-size:.8rem;border:0;min-height:28px;padding:0 10px;background:var(--surface);color:var(--muted);cursor:pointer}
 .adm-lvseg button+button{border-left:1px solid var(--line)}
 .adm-lvseg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.adm-g .dot.warn{color:#c77700;font-weight:800}
+.adm-okbtn{flex:none;font:inherit;font-size:.8rem;min-height:28px;padding:0 10px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--muted);cursor:pointer}
+.adm-okbtn[aria-pressed="true"]{background:var(--good-bg);color:var(--good);border-color:var(--good);font-weight:700}
+.adm-needs{flex:none;font-size:.78rem;margin-right:4px}
