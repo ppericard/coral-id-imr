@@ -9,22 +9,22 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
 <link rel="stylesheet" href="app.css?v=31">
-<link rel="stylesheet" href="admin.css?v=11">
+<link rel="stylesheet" href="admin.css?v=14">
 </head>
 <body class="admin">
 <script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <div class="wrap">
   <header>
-    <h1 class="brand"><a class="home" href="./"><img src="icon.svg" alt="" width="30" height="30"><span>IMR Coral ID</span></a><span class="adm-tag">Photo curation</span></h1>
+    <h1 class="brand"><a class="home" href="./"><img src="icon.svg" alt="" width="30" height="30"><span>IMR Coral ID</span></a></h1>
     <nav class="adm-modes" id="modes" aria-label="Entry point" hidden><a data-mode="genus" href="#">By genus</a><a data-mode="quality" href="#~quality">By quality</a><a data-mode="form" href="#~form">By form</a><a data-mode="excluded" href="#~excluded">Excluded</a></nav>
     <div class="hdr-tools" id="tools" hidden>
       <span class="adm-status" id="status" role="status"></span>
-      <a class="chip" id="preview" href="./?draft" target="_blank" rel="noopener">Preview on site</a>
-      <button type="button" class="chip" id="booksw" aria-pressed="true" title="Show or hide every photo cropped from the Coral Finder 2022 book, on the whole site">Coral Finder book photos: on</button>
-      <button type="button" class="chip" id="undo" title="Undo your last click (Ctrl+Z)" disabled>↶ Undo</button>
-      <button type="button" class="chip" id="redo" title="Redo (Ctrl+Shift+Z)" disabled>↷ Redo</button>
+      <a class="chip" id="preview" href="./?draft" target="_blank" rel="noopener" title="Preview your draft on the site">Preview</a>
+      <button type="button" class="chip" id="booksw" aria-pressed="true" title="Coral Finder book photos on the whole site (click to switch)">CF book: on</button>
+      <button type="button" class="chip adm-ico" id="undo" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↶</button>
+      <button type="button" class="chip adm-ico" id="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled>↷</button>
       <div id="size" role="group" aria-label="Photo size"><button type="button" data-size="s" title="Small photos">S</button><button type="button" data-size="m" title="Medium photos">M</button><button type="button" data-size="l" title="Large photos">L</button></div>
-      <button type="button" class="chip" id="download">Download JSON</button>
+      <button type="button" class="chip" id="download" title="Download curation.json">JSON</button>
       <button type="button" class="chip adm-save" id="save" disabled>Publish</button>
     </div>
   </header>
