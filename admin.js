@@ -16,7 +16,7 @@ const img = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 
-let DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, lastGenus = null;
+let KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, lastGenus = null;
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
 // (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
 const QUAL = [[3, 'Good'], [2, 'Fair'], [1, 'Poor']];
@@ -26,7 +26,8 @@ const qTag = p => { const q = qOf(p.f); return `<span class="adm-q q${q}${qSet(p
 const qSeg = p => `<span class="adm-qseg" role="group" aria-label="Quality">${QUAL.map(([q, t]) => `<button type="button" data-q="${q}" aria-pressed="${qOf(p.f) === q}" class="q${q}">${t}</button>`).join('')}</span>`;
 function setQ(f, q){
   DRAFT.quality = DRAFT.quality || {};
-  if (AUTOQ[f] === q && !(SAVED.quality || {})[f]) delete DRAFT.quality[f]; else DRAFT.quality[f] = q;
+  // Always recorded, even when it matches the automatic guess: a later re-run of photo_quality.py must never change it.
+  DRAFT.quality[f] = q;
   store.set('imr-curation-draft', DRAFT);
 }
 
@@ -161,8 +162,6 @@ const ACT = {
   feat: (n, f, v) => edit(n, k => { const L = ensureFeat(k, n, v);
     if (L.includes(f)) { L.splice(L.indexOf(f), 1); if (!L.length) { toast('A view needs at least one featured photo: back to the automatic pick.'); delete k.feat[v]; } }
     else if (L.length >= FEAT) toast(`Already ${FEAT} featured: remove one first.`); else L.push(f); }),
-  left: (n, f, v) => edit(n, k => { const L = ensureFeat(k, n, v), i = L.indexOf(f); if (i > 0) [L[i - 1], L[i]] = [L[i], L[i - 1]]; }),
-  right: (n, f, v) => edit(n, k => { const L = ensureFeat(k, n, v), i = L.indexOf(f); if (i >= 0 && i < L.length - 1) [L[i + 1], L[i]] = [L[i], L[i + 1]]; }),
   addc: (n, f, v, to) => edit(n, k => { k.add = k.add || {}; k.add[f] = to; }),
   out: (n, f, v, to) => edit(n, k => { k.out = k.out || {}; if (to === 'back') delete k.out[f]; else { k.out[f] = to; dropFeat(k, f); if (k.cover === f) delete k.cover; if (k.move) delete k.move[f]; } }),
   hide: (n, f) => edit(n, k => { if (k.add && k.add[f]) { delete k.add[f]; dropFeat(k, f); if (k.cover === f) delete k.cover; return; } k.hide = k.hide || []; if (k.hide.includes(f)) k.hide = k.hide.filter(x => x !== f); else { k.hide.push(f); dropFeat(k, f); if (k.cover === f) delete k.cover; } }),
@@ -187,8 +186,8 @@ const changed = () => [...new Set([...Object.keys(DRAFT.genera), ...Object.keys(
 function tile(n, p, v, st){
   const k = entry(n), isCover = k.cover === p.f, two = DATA.gen[n].levels === 2;
   const moves = VIEWS.filter(([w]) => w !== v && !(two && w === 'medium')).map(([w]) => `<option value="${w}">${label(n, w)}</option>`).join('');
-  return `<figure class="adm-tile ${st.cls || ''}${isCover ? ' is-cover' : ''}" data-f="${esc(p.f)}" data-v="${v}"${st.cls === 'is-hidden' ? '' : ` draggable="true"${st.num ? ` data-pos="${st.num - 1}"` : ''}`}>
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>
+  return `<figure class="adm-tile ${st.cls || ''}${isCover ? ' is-cover' : ''}" data-f="${esc(p.f)}" data-v="${v}"${st.cls === 'is-hidden' ? '' : ` data-drag${st.num ? ` data-pos="${st.num - 1}"` : ''}`}>
+    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${st.cls === 'is-hidden' ? '' : GRIP}
     ${st.num ? `<span class="adm-num${st.auto ? ' auto' : ''}" title="${st.auto ? 'Featured automatically' : 'Featured by you'}">${st.num}</span>` : ''}
     ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
     <figcaption>${p.from ? `<span class="adm-src new" title="Taken out of ${esc(p.from)} (change it there)">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">new</span>' : ''}${srcTag(p)}${p.multi ? '<span class="adm-src multi" title="Several corals in frame: never used in games">several corals</span>' : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
@@ -196,7 +195,6 @@ function tile(n, p, v, st){
       ${st.cls === 'is-hidden' ? `<button type="button" data-act="hide" class="on">Show again</button>` : `
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Use as the genus photo (cards, sheet hero)">★ Cover</button>
       <button type="button" data-act="feat" class="${st.num && !st.auto ? 'on' : ''}" title="Show in the main strip of this view">${st.num ? 'Featured' : 'Feature'}</button>
-      ${st.num && !st.auto ? `<button type="button" data-act="left" aria-label="Move earlier" ${st.num === 1 ? 'disabled' : ''}>‹</button><button type="button" data-act="right" aria-label="Move later" ${st.last ? 'disabled' : ''}>›</button>` : ''}
       ${p.cand ? '<button type="button" data-act="hide" title="Back to the candidates">Remove</button>' : '<button type="button" data-act="hide" title="Hide everywhere (sheets, cards, games)">Hide</button>'}
       <select data-act="move" aria-label="Move to another view"><option value="">Move to…</option>${moves}</select>
       ${p.from || p.cand ? '' : `<select data-act="out" aria-label="Take out of this genus"><option value="">Not this genus…</option><option value="cmp">Look-alike comparison</option><optgroup label="It shows another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`}`}
@@ -219,13 +217,13 @@ function render(){
   $('preview').href = `./?draft#g-${encodeURIComponent(n)}`;
   const side = names.map(m => { const c = coverOf(m), e = DRAFT.genera[m] || {}, dirty = ch.includes(m), h = (e.hide || []).length;
     return `<a href="#${esc(m)}" class="adm-g${m === n ? ' cur' : ''}"${m === n ? ' aria-current="true"' : ''}>${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
-      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : '★'}${c && c.view === 'macro' && DATA.gen[m].levels !== 2 ? ' · <b class="warnc" title="The cover is a corallite close-up">macro cover</b>' : ''}${h ? ` · ${h} hidden` : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}</small></span>${dirty ? '<b class="dot" title="Not saved">●</b>' : Object.keys(e).length ? '<b class="dot done" title="Curated">✓</b>' : ''}</a>`; }).join('');
+      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : '★'}${c && c.view === 'macro' && DATA.gen[m].levels !== 2 ? ' · <b class="warnc" title="The cover is a corallite close-up">macro cover</b>' : ''}${h ? ` · ${h} hidden` : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}${missing(m).length ? ' · <b class="warnc" title="Some choices name a photo no longer in the data">⚠ check</b>' : ''}</small></span>${dirty ? '<b class="dot" title="Not saved">●</b>' : Object.keys(e).length ? '<b class="dot done" title="Curated">✓</b>' : ''}</a>`; }).join('');
   const body = rows(n).map(([v]) => { const r = rowOf(n, v), out = [...r.feat, ...r.rest, ...r.hid].filter(p => !shown(p)).length;
     return `<section class="adm-row"><h3>${label(n, v)} <small>${r.feat.length} featured${r.auto ? ' (automatic)' : ''} · ${r.rest.length} more${r.hid.length ? ` · ${r.hid.length} hidden` : ''}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
       <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: r.auto, last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${r.rest.filter(shown).map(p => tile(n, p, v, {})).join('')}${r.hid.filter(shown).map(p => tile(n, p, v, {cls: 'is-hidden'})).join('')}</div>
       ${r.feat.length + r.rest.length ? '' : '<p class="note">No photo in this view.</p>'}</section>`; }).join('');
   const P = pending(n), Ps = P.filter(shown), two = g.levels === 2;
-  const candTile = p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" draggable="true"><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>
+  const candTile = p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}
     <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}<span class="adm-addl">Add to</span>${VIEWS.filter(([w]) => !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="addc" data-to="${w}">${label(n, w)}</button>`).join('')}</div></figure>`;
   const candRow = P.length ? `<section class="adm-row adm-cands"><h3>Candidates <small>${P.length} new photo${P.length > 1 ? 's' : ''} not on the site yet${P.length - Ps.length ? ` · <b>${P.length - Ps.length} filtered out</b>` : ''}. Add one to a view to use it.</small></h3>
@@ -241,10 +239,10 @@ function render(){
     <section class="adm-main">
       <div class="adm-head">
         ${cv ? `<button type="button" class="adm-cover" data-f="${esc(cv.f)}" data-act="zoomcover"><img src="${img(cv)}" alt="${esc(n)} cover"></button>` : ''}
-        <div><h2><i>${esc(n)}</i></h2><p class="note">${g.n ? 'No. ' + g.n : '★ not surveyed'} · ${esc(g.fam)}</p>
+        <div>${missing(n).length ? `<p class="warn"><b>${missing(n).length} of your choices name a photo that is no longer in the data</b> (renamed or removed by a rebuild): ${missing(n).map(f => `<code>${esc(f)}</code>`).join(', ')}. They are kept but no longer apply; tell Claude so they can be remapped.</p>` : ''}<h2><i>${esc(n)}</i></h2><p class="note">${g.n ? 'No. ' + g.n : '★ not surveyed'} · ${esc(g.fam)}</p>
           <p class="note"><b>Cover:</b> ${cv ? `${cv.picked ? 'your pick' : 'automatic'} · ${label(n, cv.view).toLowerCase()} view${cv.view === 'macro' && g.levels !== 2 ? ' <b class="warnc">(a corallite close-up: pick a colony or closer view)</b>' : ''}` : 'none'}</p>
           <p class="note">Featured photos fill the main strip of each view on the genus sheet (up to ${FEAT}); the others stay under “more photos”. Hidden photos disappear everywhere, games included.</p>
-          <p class="note"><b>Drag and drop:</b> drop a photo on a featured one to feature it there (left or right half: before or after), on another photo to unfeature it; across views to move it, or from the candidates to add it.</p>
+          <p class="note"><b>Drag the photos</b> (by the photo, or the ⠿ handle on a phone): onto a featured photo to feature it there (left or right half: before or after it), onto another photo to unfeature it; to another view to move it, or from the candidates to add it.</p>
           <p class="adm-gacts">${ch.includes(n) ? '<button type="button" class="chip" data-act="revert">Undo unsaved changes</button>' : ''}${Object.keys(k).length ? '<button type="button" class="chip" data-act="reset" title="Remove all your choices for this genus (cover, featured, hidden, moved, added, Not this genus). Quality ratings are kept.">Reset this genus</button>' : ''}<a class="chip" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener">Open the sheet</a></p>
         </div>
       </div>
@@ -268,24 +266,49 @@ function render(){
 // Drag a photo onto a featured photo (left or right half: before or after it) to feature it at that place,
 // onto any other photo or the empty part of a view to put it there unfeatured. Works across views and from the candidates.
 function bindDrag(n){
-  let dragF = null;
   const clear = () => $v.querySelectorAll('.drop-before,.drop-after,.drop-row').forEach(e => e.classList.remove('drop-before', 'drop-after', 'drop-row'));
   // Where a drop at the pointer lands: target view and featured position (null: not featured).
-  const target = e => { const grid = e.target.closest('[data-drop]'); if (!grid) return null;
-    const t = e.target.closest('.adm-tile[data-pos]'), r = t && t.getBoundingClientRect(), after = t && e.clientX > r.left + r.width / 2;
+  const target = (el, x) => { const grid = el && el.closest('[data-drop]'); if (!grid) return null;
+    const t = el.closest('.adm-tile[data-pos]'), r = t && t.getBoundingClientRect(), after = t && x > r.left + r.width / 2;
     const last = grid.querySelectorAll('.adm-tile[data-pos]').length;
     // Just after the last featured photo also features (while there is room).
-    const firstRest = !t && e.target.closest('.adm-tile:not([data-pos])'), fr = firstRest && firstRest === grid.querySelector('.adm-tile:not([data-pos])') && last < FEAT && e.clientX < firstRest.getBoundingClientRect().left + firstRest.getBoundingClientRect().width / 2;
+    const firstRest = !t && el.closest('.adm-tile:not([data-pos])'), fr = firstRest && firstRest === grid.querySelector('.adm-tile:not([data-pos])') && last < FEAT && x < firstRest.getBoundingClientRect().left + firstRest.getBoundingClientRect().width / 2;
     return {grid, tile: t || (fr ? firstRest : null), after, at: t ? Number(t.dataset.pos) + (after ? 1 : 0) : fr ? last : null}; };
-  $v.querySelectorAll('.adm-tile[draggable]').forEach(t => {
-    t.ondragstart = e => { dragF = t.dataset.f; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragF); requestAnimationFrame(() => t.classList.add('dragging')); };
-    t.ondragend = () => { t.classList.remove('dragging'); clear(); dragF = null; };
-  });
-  $v.querySelectorAll('[data-drop]').forEach(g => {
-    g.ondragover = e => { if (!dragF) return; e.preventDefault(); const d = target(e); clear(); if (!d) return;
-      if (d.at !== null) d.tile.classList.add(d.after ? 'drop-after' : 'drop-before'); else d.grid.classList.add('drop-row'); };
-    g.ondragleave = e => { if (!g.contains(e.relatedTarget)) clear(); };
-    g.ondrop = e => { e.preventDefault(); const d = target(e), f = dragF; clear(); if (d && f) ACT.drop(n, f, g.dataset.drop, d.at); };
+  pointerDrag($v.querySelectorAll('.adm-tile[data-drag]'),
+    (el, x) => { clear(); const d = target(el, x); if (!d) return; if (d.at !== null) d.tile.classList.add(d.after ? 'drop-after' : 'drop-before'); else d.grid.classList.add('drop-row'); },
+    (t, el, x) => { clear(); const d = target(el, x); if (d) ACT.drop(n, t.dataset.f, d.grid.dataset.drop, d.at); }, clear);
+}
+// Pointer-based drag and drop, so it works the same with a mouse, a pen or a finger in every browser.
+// With a mouse the whole photo drags (a click without moving still enlarges it); on touch screens the ⠿ handle
+// drags, so swiping the photos still scrolls the page. The page scrolls when dragging near the top or bottom.
+const GRIP = '<span class="adm-grip" title="Drag" aria-hidden="true">⠿</span>';
+function pointerDrag(tiles, hover, drop, cancel){
+  tiles.forEach(t => {
+    const ph = t.querySelector('.adm-ph'), grip = t.querySelector('.adm-grip');
+    ph.addEventListener('click', e => { if (t.dataset.dragged) { delete t.dataset.dragged; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    const start = e => {
+      if (e.button || (e.currentTarget === ph && e.pointerType === 'touch')) return;
+      const x0 = e.clientX, y0 = e.clientY; let ghost = null, last = e, raf = 0;
+      const at = ev => document.elementFromPoint(ev.clientX, ev.clientY);
+      const edge = () => { const dy = last.clientY < 70 ? -14 : last.clientY > innerHeight - 70 ? 14 : 0; if (dy) { scrollBy(0, dy); hover(at(last), last.clientX); } raf = ghost ? requestAnimationFrame(edge) : 0; };
+      const move = ev => {
+        last = ev;
+        if (!ghost) { if (Math.hypot(ev.clientX - x0, ev.clientY - y0) < 6) return;
+          ghost = ph.querySelector('img').cloneNode(); ghost.className = 'adm-ghost'; document.body.append(ghost); t.classList.add('dragging'); document.body.classList.add('adm-dragging'); raf = requestAnimationFrame(edge); }
+        ev.preventDefault();
+        ghost.style.transform = `translate(${ev.clientX - 70}px, ${ev.clientY - 52}px)`;
+        hover(at(ev), ev.clientX);
+      };
+      const end = ev => {
+        removeEventListener('pointermove', move); removeEventListener('pointerup', end); removeEventListener('pointercancel', end);
+        if (!ghost) return;
+        cancelAnimationFrame(raf); ghost.remove(); ghost = null; t.classList.remove('dragging'); document.body.classList.remove('adm-dragging'); t.dataset.dragged = 1;
+        setTimeout(() => { delete t.dataset.dragged; }, 0);
+        if (ev.type === 'pointerup') drop(t, at(ev), ev.clientX); else cancel();
+      };
+      addEventListener('pointermove', move, {passive: false}); addEventListener('pointerup', end); addEventListener('pointercancel', end);
+    };
+    ph.onpointerdown = start; if (grip) grip.onpointerdown = e => { e.preventDefault(); start(e); };
   });
 }
 function zoom(n, f){
@@ -301,6 +324,15 @@ function zoom(n, f){
 let toastT;
 function toast(msg){ let t = document.querySelector('.adm-toast'); if (!t) { t = document.createElement('p'); t.className = 'adm-toast'; t.setAttribute('role', 'status'); document.body.append(t); }
   t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3500); }
+
+/* ---------- Choices that point to a photo no longer in data.json ---------- */
+// Nothing automatic ever edits curation.json. If a data rebuild renames or drops a photo, the choices that name it
+// stop applying on the site: they are kept, and listed here so nothing is lost silently.
+function missing(n){
+  const k = entry(n);
+  const refs = [k.cover, ...Object.values(k.feat || {}).flat(), ...(k.hide || []), ...Object.keys(k.move || {}), ...Object.keys(k.add || {}), ...Object.keys(k.out || {})].filter(Boolean);
+  return [...new Set(refs.filter(f => !KNOWN.has(f)))];
+}
 
 /* ---------- Quality ---------- */
 function bindQ(){
@@ -327,8 +359,8 @@ function renderQuality(){
   status();
   const names = Object.keys(DATA.gen), vl = v => v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1];
   const all = allPhotos().filter(p => shown(p) && (QF.view === 'all' || p.view === QF.view) && (!QF.genus || p.genus === QF.genus) && (!QF.todo || !qSet(p.f)));
-  const card = p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" draggable="true" tabindex="0">
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>
+  const card = p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" data-drag tabindex="0">
+    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}
     <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}${p.multi ? '<span class="adm-src multi" title="Several corals in frame">several</span>' : ''}${qTag(p)}</figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
   const sec = ([q, t]) => { const L = all.filter(p => qOf(p.f) === q);
@@ -354,13 +386,9 @@ function renderQuality(){
   $v.querySelectorAll('.adm-qt').forEach(t => { t.onmouseenter = t.onfocus = () => { over = t; }; t.onmouseleave = () => { if (over === t) over = null; }; });
   document.onkeydown = e => { if (cur !== '~quality' || !over || e.target.closest('input,select,textarea')) return; const q = {'1': 1, '2': 2, '3': 3}[e.key]; if (q) { e.preventDefault(); rateTile(over, q); } };
   // Drag a photo onto another level.
-  let dragT = null;
-  $v.querySelectorAll('.adm-qt').forEach(t => { t.ondragstart = e => { dragT = t; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', t.dataset.f); requestAnimationFrame(() => t.classList.add('dragging')); }; t.ondragend = () => { t.classList.remove('dragging'); dragT = null; $v.querySelectorAll('.drop-row').forEach(x => x.classList.remove('drop-row')); }; });
-  $v.querySelectorAll('[data-qdrop]').forEach(g => {
-    g.ondragover = e => { if (!dragT) return; e.preventDefault(); g.classList.add('drop-row'); };
-    g.ondragleave = e => { if (!g.contains(e.relatedTarget)) g.classList.remove('drop-row'); };
-    g.ondrop = e => { e.preventDefault(); g.classList.remove('drop-row'); if (!dragT) return; rateTile(dragT, Number(g.dataset.qdrop)); g.prepend(dragT); };
-  });
+  const clearQ = () => $v.querySelectorAll('.drop-row').forEach(x => x.classList.remove('drop-row'));
+  pointerDrag($v.querySelectorAll('.adm-qt'), el => { clearQ(); const g = el && el.closest('[data-qdrop]'); if (g) g.classList.add('drop-row'); },
+    (t, el) => { clearQ(); const g = el && el.closest('[data-qdrop]'); if (g) { rateTile(t, Number(g.dataset.qdrop)); g.prepend(t); } }, clearQ);
 }
 
 /* ---------- Save / download ---------- */
@@ -389,6 +417,8 @@ async function start(){
   $v.innerHTML = '<p class="note">Loading photos…</p>';
   try { [DATA, AUTOQ] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), fetch('quality.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).then(j => j.q || {}).catch(() => ({})), loadSaved()]); }
   catch (x) { $v.innerHTML = `<p class="warn">Could not load: ${esc(x.message)}</p>`; return; }
+  // Every photo name in data.json (field, extra, lecture, candidates), to spot choices left pointing nowhere.
+  KNOWN = new Set([...Object.values(DATA.gen).flatMap(g => [...Object.values(g.views || {}), ...Object.values(g.more || {})].flat()), ...Object.values(DATA.course || {}).flat(), ...Object.values(DATA.cand || {}).flat(), ...(DATA.cmp || [])].map(p => p.f));
   // Unsaved edits from an earlier visit are kept, on top of what is saved.
   const old = store.get('imr-curation-draft', null);
   DRAFT = old && old.genera ? old : clone(SAVED);
