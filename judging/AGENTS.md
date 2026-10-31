@@ -41,7 +41,7 @@ changes the site by itself.
     `source` is `imr` (IMR lecture), `pierre` (Pierre's own), `inat-dauin`, `inat-philippines`,
     `inat-elsewhere` (other iNaturalist observers) or `book` (cropped from the Coral Finder 2022 book);
     `status` is `live` (on the site), `candidate` (not shown until Pierre adds it), `hidden` or `comparison`;
-    `multi` = already known to show several corals; `inat_label` = the observer's iNaturalist identification,
+    `multi` = already known to show several corals; `form_todo` = growth form still to (re)guess; `inat_label` = the observer's iNaturalist identification,
     a hint only; `caption` = IMR slide caption.
 - Image files: `img/<f>.webp` (1600 px) and `img/<f>-s.webp` (480 px).
 
@@ -99,6 +99,13 @@ Never for IMR lecture photos, except `exclude`. A `note` is required.
 
 `unsure`: the fields you are not confident about, e.g. `["form"]`. `note`: at most 140 characters, plain words,
 required when `genus` is set or `unsure` is not empty.
+
+### Growth-form pass (`"scope": "forms"`)
+
+When asked for the growth-form pass only, write `{"genus": ..., "scope": "forms", "photos": {...}}` with just
+`form`, `polyps`, `unsure` and `note`, for the photos flagged `form_todo` in the manifest (no IMR form guess yet,
+or a guess flagged for a second look). The import then writes only the growth forms. A later full pass replaces
+the file.
 
 ## Per genus
 

@@ -14,6 +14,10 @@
       "type": "string",
       "description": "Genus name exactly as in manifest.json genera (the file name without .json)."
     },
+    "scope": {
+      "const": "forms",
+      "description": "Growth-form pass only: photos hold just form, polyps, unsure and note, for the photos flagged form_todo."
+    },
     "photos": {
       "type": "object",
       "description": "One entry per photo whose manifest genus is this genus. Key = photo id (manifest f).",
@@ -144,7 +148,8 @@
           "maxLength": 140,
           "description": "Required when genus is set or unsure is not empty."
         }
-      }
+      },
+      "description": "Full pass: quality and view required. Growth-form pass (scope forms): only form, polyps, unsure, note."
     }
   }
 }

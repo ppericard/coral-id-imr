@@ -10,6 +10,8 @@ J = lambda p: json.load(open(os.path.join(ROOT, p)))
 d, c = J('data.json'), J('curation.json')
 VIEWS = ['wide', 'medium', 'macro']
 X = c.get('exclude', {})
+FJ = J('forms.json')
+GF, GUN = FJ.get('gf', {}), set(FJ.get('gunsure', []))
 G = c.get('genera', {})
 
 def source(p):
@@ -30,7 +32,9 @@ def put(n, p, view, status, extra=False):
     if status == 'live': view = (k.get('move') or {}).get(f, view)
     if f in (k.get('hide') or []): status = 'hidden'
     mine = {}
-    if f in c.get('gf', {}): mine['form'] = c['gf'][f]
+    gf = c.get('gf', {}).get(f, '')
+    if gf.replace('p', '').replace('n', ''): mine['form'] = gf.replace('p', '').replace('n', '')
+    if 'p' in gf or 'n' in gf: mine['polyps'] = 'p' in gf
     if f in c.get('quality', {}): mine['quality'] = c['quality'][f]
     if out: mine['genus'] = out
     if status == 'hidden': mine['hidden'] = True
@@ -43,6 +47,8 @@ def put(n, p, view, status, extra=False):
     if p.get('multi') or extra: e['multi'] = True
     if p.get('cap'): e['caption'] = p['cap']
     if mine: e['pierre'] = mine
+    # Growth form still to (re)guess: no IMR form guess yet, or a guess flagged for a second look (forms.json gunsure).
+    if p.get('cf') is None and 'form' not in mine and (not GF.get(f, '').replace('p', '') or f in GUN): e['form_todo'] = True
     if not os.path.exists(os.path.join(ROOT, e['image'])): e['missing_image'] = True
     photos[f] = e
 

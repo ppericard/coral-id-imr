@@ -6,7 +6,7 @@
 #   suggest.json   quality ratings (kept so tools/photo_quality.py re-runs keep them); per photo: view / genus / multi suggestions; near-duplicates; candidates worth adding
 #                  (listed one at a time in admin.html Triage: Accept runs the normal admin action, Dismiss is kept)
 #   forms.json     "gf" {f: IMR growth form letter, + 'p' when polyps are extended} (dashed first guess in the admin);
-#                  unsure forms also go to "unsure". The legacy Coral Finder key "form" is left untouched.
+#                  unsure ones also go to "gunsure". The legacy keys "form" and "unsure" are left untouched.
 #   quality.json   "q" {f: 1-3} (dashed first guess in the admin)
 #   picks.json     "feat" {genus: {view: [f]}} (used only where Pierre has not picked Featured photos)
 # Re-importing a genus replaces that genus's previous suggestions; other genera are kept.
@@ -34,10 +34,13 @@ def check(n):
     j = load(f'judging/out/{n}.json')
     if j is None: return [f'{n}: no judging/out/{n}.json'], W, None
     if not isinstance(j, dict): return [f'{n}: the file must hold one JSON object'], W, None
-    extra = set(j) - {'genus', 'photos', 'duplicates', 'featured', 'add'}
+    # "scope": "forms" = growth-form pass only: form (and polyps) for the photos flagged form_todo in the manifest.
+    fo = j.get('scope') == 'forms'
+    if 'scope' in j and not fo: E.append(f'{n}: "scope" is "forms" or omitted')
+    extra = set(j) - ({'genus', 'scope', 'photos'} if fo else {'genus', 'photos', 'duplicates', 'featured', 'add'})
     if extra: E.append(f'{n}: unknown top-level keys {sorted(extra)}')
     if j.get('genus') != n: E.append(f'{n}: "genus" must be "{n}" (the file name)')
-    mine = [f for f, p in PH.items() if p['genus'] == n]
+    mine = [f for f, p in PH.items() if p['genus'] == n and (not fo or p.get('form_todo'))]
     J = j.get('photos') or {}
     if not isinstance(J, dict): return E + [f'{n}: "photos" must be an object {{photo id: judgment}}'], W, None
     views = GEN[n]['views']
@@ -46,13 +49,15 @@ def check(n):
         if not p: E.append(f'{at}: not in the manifest (typo, or an excluded photo)'); continue
         if p['genus'] != n: E.append(f'{at}: belongs to {p["genus"]} in the manifest; judge it in that file'); continue
         if not isinstance(x, dict): E.append(f'{at}: must be an object'); continue
-        bad = set(x) - FIELDS
+        bad = set(x) - ({'form', 'polyps', 'unsure', 'note'} if fo else FIELDS)
+        if fo and not p.get('form_todo'): W.append(f'{at}: not flagged form_todo; imported anyway')
         if bad: E.append(f'{at}: unknown fields {sorted(bad)}')
         if 'form' in x and x['form'] not in FORMS: E.append(f'{at}: form must be ONE of {" ".join(FORMS)}, not {x["form"]!r}')
         if 'polyps' in x and x['polyps'] is not True: E.append(f'{at}: polyps is true or omitted')
         if 'form' not in x and p['source'] != 'book' and 'form' not in p.get('pierre', {}): E.append(f'{at}: form missing')
-        if x.get('quality') not in (1, 2, 3) and 'quality' not in p.get('pierre', {}): E.append(f'{at}: quality must be 1, 2 or 3')
-        if x.get('view') not in views: E.append(f'{at}: view must be one of {views}' + (' (two-view genus: no medium)' if len(views) == 2 and x.get('view') == 'medium' else ''))
+        if fo: pass
+        elif x.get('quality') not in (1, 2, 3) and 'quality' not in p.get('pierre', {}): E.append(f'{at}: quality must be 1, 2 or 3')
+        if not fo and x.get('view') not in views: E.append(f'{at}: view must be one of {views}' + (' (two-view genus: no medium)' if len(views) == 2 and x.get('view') == 'medium' else ''))
         g = x.get('genus')
         if g is not None:
             if g == n: E.append(f'{at}: omit "genus" when the photo shows {n}')
@@ -125,9 +130,16 @@ def imp(ok, by):
          'by': S.get('by', {}), 'photo': S.get('photo', {}), 'quality': S.get('quality', {}), 'dup': S.get('dup', []), 'add': S.get('add', {})}
     F = load('forms.json', {}); Q = load('quality.json', {}); K = load('picks.json', {'v': 1, 'feat': {}})
     F.setdefault('gf', {}); Q.setdefault('q', {}); K.setdefault('feat', {})
-    unsure = set(F.get('unsure', []))
+    unsure = set(F.get('gunsure', []))
     stamp = datetime.date.today().isoformat()
     for n, j in ok.items():
+        if j.get('scope') == 'forms':
+            for f, x in j['photos'].items():
+                if 'form' in x:
+                    F['gf'][f] = x['form'] + ('p' if x.get('polyps') else '')
+                    (unsure.add if set(x.get('unsure', [])) & {'form', 'polyps'} else unsure.discard)(f)
+            S['by'].setdefault(n, {})['forms'] = {'by': by, 'at': stamp}
+            continue
         mine = {f for f, p in PH.items() if p['genus'] == n}
         for k in ('photo', 'quality'):
             for f in list(S[k]):
@@ -136,9 +148,10 @@ def imp(ok, by):
         S['add'].pop(n, None)
         for f, x in j['photos'].items():
             p, me, u = PH[f], PH[f].get('pierre', {}), set(x.get('unsure', []))
-            if 'form' in x and 'form' not in me:
+            if 'form' in x:
+                # Pierre's own form or polyps choice (curation.json gf) wins in the admin and the app, part by part.
                 F['gf'][f] = x['form'] + ('p' if x.get('polyps') else '')
-                (unsure.add if 'form' in u else unsure.discard)(f)
+                (unsure.add if u & {'form', 'polyps'} else unsure.discard)(f)
             if 'quality' in x and 'quality' not in me: Q['q'][f] = S['quality'][f] = x['quality']
             s = {}
             if x['view'] != p['view'] and p['status'] == 'live': s['view'] = x['view']
@@ -156,10 +169,9 @@ def imp(ok, by):
         feat = {v: L for v, L in (j.get('featured') or {}).items() if L}
         if feat: K['feat'][n] = feat
         else: K['feat'].pop(n, None)
-        S['by'][n] = {'by': by, 'at': stamp}
+        S['by'][n] = {**S['by'].get(n, {}), 'by': by, 'at': stamp}
     S['photo'] = dict(sorted(S['photo'].items())); S['quality'] = dict(sorted(S['quality'].items()))
-    if unsure: F['unsure'] = sorted(unsure)
-    else: F.pop('unsure', None)
+    F['gunsure'] = sorted(unsure)
     F['gf'] = dict(sorted(F['gf'].items())); Q['q'] = dict(sorted(Q['q'].items()))
     dump('suggest.json', S, 1); dump('quality.json', Q); dump('picks.json', K)
     # forms.json: big {photo: value} maps one entry per line (readable diffs), every other key on one line.
