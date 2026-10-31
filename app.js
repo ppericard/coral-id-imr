@@ -677,16 +677,21 @@ function quizBoard(){
   const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
   // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
   const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right)` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
+  // Learning level as a fill gauge: the tile fills from the left as the genus gets closer to learned.
+  const fill = n => lv[n][0] === 'mid' || lv[n][0] === 'weak' ? ` style="--p:${(100 * genScore(n)).toFixed(0)}%"` : '';
   const gi = n => shownGroup(n) || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
   const VIEWS = {
     photos: () => `<div class="pgrid pwall">${list.map(tile).join('')}</div>`,
-    slate: () => `<div class="pgrid pslate">${list.map(n => `<a class="ps ${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"><b>${DATA.gen[n].n || '★'}</b><i>${esc(n)}</i></a>`).join('')}</div>`,
+    // Laid out like the physical IMR slate: 1-20 down the left column, 21-34 down the right, starred genera under them.
+    slate: () => { const num = list.filter(n => DATA.gen[n].n), L = num.filter(n => DATA.gen[n].n <= 20), R = num.filter(n => DATA.gen[n].n > 20), S = list.filter(n => !DATA.gen[n].n);
+      const ps = n => `<a class="ps ${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><b>${DATA.gen[n].n ? DATA.gen[n].n + '.' : '★'}</b><i>${esc(n)}</i></a>`;
+      return `<div class="pslate" style="--rows:${Math.max(L.length, R.length + (S.length ? S.length + 1 : 0))}">${L.map(ps).join('')}${R.map(ps).join('')}${S.length ? '<span class="psgap"></span>' : ''}${S.map(ps).join('')}</div>`; },
     groups: () => `<div class="pgroups">${groups.map(k => { const gr = DATA.imrg.find(x => x.n === k), L = list.filter(n => gi(n) === k);
       return `<div class="pgr" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn" title="${gr ? esc(gr.t) : 'Not covered in the lecture'}">${gr ? gr.n : '★'}</span><span class="pgt">${gr ? esc(gr.t) : 'Not covered in the lecture'}</span>
-        <span class="pseg">${L.map(n => `<a class="${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i></a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
+        <span class="pseg">${L.map(n => `<a class="${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i></a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
   };
   let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
-  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. On the photos: full colour = learned; colour rising from the bottom = learning (the higher the waterline, the closer to learned); red waterline = to review (comes up more often in the quiz); grey = not seen yet. On the other views: green = learned, teal = learning, red = to review. Each genus has its own photo level: it starts with easy photos, 2 right answers in a row move it to harder ones, a mistake moves it back (naming a genus when the photo shows another one counts as a mistake for both). Learned: your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5 answers. Click a genus to open its sheet.</p>
+  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. On the photos: full colour = learned; colour rising from the bottom = learning (the higher the waterline, the closer to learned); red waterline = to review (comes up more often in the quiz); grey = not seen yet. On the Slate and Groups views: grey = not seen; a teal fill rising from the left = learning (the fuller, the closer to learned); red fill and border = to review; solid green = learned. Each genus has its own photo level: it starts with easy photos, 2 right answers in a row move it to harder ones, a mistake moves it back (naming a genus when the photo shows another one counts as a mistake for both). Learned: your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5 answers. Click a genus to open its sheet.</p>
   <div class="pgame pboard"><div class="pgwrap"></div>
   <aside class="gside">
     <div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['slate', 'Slate'], ['groups', 'Groups']].map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`).join('')}</div>
@@ -707,7 +712,7 @@ function quizBoard(){
   rb.onclick = () => { if (rb.dataset.armed) { P = {}; store.set('imr-coral-reset', new Date().toISOString()); save(); route(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } };
   const wrap = $v.querySelector('.pboard .pgwrap');
   const show = () => { wrap.innerHTML = VIEWS[pv](); $v.querySelectorAll('[data-pv]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pv === pv));
-    requestAnimationFrame(() => { const g = wrap.firstChild; if (g.classList.contains('pgrid')) fitTiles(g, pv === 'slate' ? 8 : 6); else g.style.height = Math.max(320, innerHeight - g.getBoundingClientRect().top - window.scrollY - 16) + 'px'; }); };
+    requestAnimationFrame(() => { const g = wrap.firstChild; if (g.classList.contains('pgrid')) fitTiles(g, 6); else g.style[pv === 'slate' ? 'minHeight' : 'height'] = Math.max(320, innerHeight - g.getBoundingClientRect().top - window.scrollY - 16) + 'px'; }); };
   $v.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { pv = b.dataset.pv; store.set('imr-coral-pview', pv); show(); });
   show();
 }
