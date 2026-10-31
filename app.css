@@ -49,6 +49,9 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .brand .home{display:inline-flex;align-items:center;gap:9px;color:inherit;text-decoration:none;font-family:var(--display);font-weight:700;font-size:1.75rem;letter-spacing:.01em}
 .brand .home img{border-radius:8px;display:block}
 .sections{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.sections a.tabonly{display:none}
+:root{--tabbar-h:0px}
+@media (max-width:640px){:root{--tabbar-h:58px}}
 .hdr-tools{display:flex;gap:8px;align-items:center;position:relative}
 /* Settings panel behind ⚙: photo source, photo size, theme. */
 .setpop{position:absolute;right:0;top:calc(100% + 8px);z-index:30;display:grid;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);min-width:240px}
@@ -263,7 +266,7 @@ kbd{font:600 .7rem/1 var(--body);font-style:normal;color:var(--muted);border:1px
   .qstage{height:calc(var(--qh,60vh) - 240px);min-height:180px}
   .q{gap:10px}
   .qside{overflow:visible}
-  .q.done #after{position:fixed;left:0;right:0;bottom:0;z-index:25;max-height:62vh;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:10px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));background:var(--bg);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(0,0,0,.18)}
+  .q.done #after{position:fixed;left:0;right:0;bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px));z-index:25;max-height:62vh;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:10px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));background:var(--bg);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(0,0,0,.18)}
   .ans{display:grid;grid-template-columns:1fr 1fr}
   .ans button{justify-content:center;padding:12px 8px}
   .ans kbd{display:none}
@@ -305,9 +308,20 @@ td i{font-weight:600}
   .prog .pl{display:none}
   .hdr-tools{gap:6px}
   #origin button{padding:0 7px}
-  header{grid-template-areas:"title tools" "nav nav" "help help"}
+  header{grid-template-areas:"title tools" "help help"}
   .helpbox{grid-area:help}
-  .sections{grid-area:nav;margin-left:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px}
+  /* Phones: the sections become a tab bar at the bottom, in thumb reach; Lab stays off the phone nav, progress joins it. */
+  .sections{position:fixed;left:0;right:0;bottom:0;z-index:20;margin:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;
+    padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));
+    background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+  header{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg)}  /* a filter would trap the fixed tab bar inside the header */
+  .sections a[data-tab="lab"]{display:none}
+  .sections a.tabonly{display:inline-flex}
+  .tabn{font-weight:700;font-size:.72rem;margin-left:3px;color:var(--good)}
+  .sections a[aria-current="page"] .tabn{color:inherit}
+  .hdr-tools .prog{display:none}
+  body{padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px))}
+  footer{padding-bottom:12px}
   .modes a{padding:4px 9px}
   .modes a b{font-size:.86rem}
   .modes.ctx a{flex:none;min-height:36px}
@@ -318,6 +332,11 @@ td i{font-weight:600}
   .sections a{justify-content:center;padding:0 4px;font-size:.82rem;min-width:0}
   .tools input{flex-basis:100%}
   .tools select{flex:1 1 100%;min-width:0}
+  /* Quiz on phones: one big photo at a time; swipe to the next (the next one peeks in). */
+  .q .qstage{display:flex!important;overflow-x:auto;scroll-snap-type:x mandatory;gap:8px;align-content:stretch;scrollbar-width:none;overscroll-behavior-x:contain}
+  .q .qstage::-webkit-scrollbar{display:none}
+  .q .qstage>.qph{flex:0 0 86%;scroll-snap-align:center}
+  .q .qstage>.qph:only-child{flex-basis:100%}
   .wide{display:none}
 }
 
