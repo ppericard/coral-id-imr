@@ -75,6 +75,9 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 .setpop[hidden]{display:none}
 .setrow{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:.88rem;color:var(--muted)}
 .setrow[hidden]{display:none}
+/* Phones: Tools are off the tab bar, so a hammer in the header opens them; tablet/desktop have the Tools tab. */
+.labgo{text-decoration:none;color:inherit}
+@media (min-width:600px){.hdr-tools .labgo{display:none}}
 
 /* ---------- Controls: one pill system for nav, chips, segmented control and icon buttons ---------- */
 .sections a,.chip,.theme,.seg,#size,#origin,#adminview,.prog{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);box-shadow:var(--shadow)}
