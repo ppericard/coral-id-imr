@@ -225,8 +225,8 @@ const ACT = {
 const changed = () => [...new Set([...Object.keys(DRAFT.genera), ...Object.keys(SAVED.genera)])].filter(n => !same(DRAFT.genera[n], SAVED.genera[n]));
 function tile(n, p, v, st){
   const k = entry(n), isCover = k.cover === p.f, two = DATA.gen[n].levels === 2;
-  // The view select shows the photo's current view; picking another one moves it there.
-  const moves = VIEWS.filter(([w]) => w === v || !(two && w === 'medium')).map(([w]) => `<option value="${w}"${w === v ? ' selected' : ''}>${label(n, w)}</option>`).join('');
+  // View buttons: the current view is pressed; one click on another moves the photo there.
+  const moves = VIEWS.filter(([w]) => w === v || !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="move" data-to="${w}" aria-pressed="${w === v}">${label(n, w)}</button>`).join('');
   return `<figure class="adm-tile ${st.cls || ''}${isCover ? ' is-cover' : ''}" data-f="${esc(p.f)}" data-v="${v}"${st.cls === 'is-hidden' ? '' : ` data-drag${st.num ? ` data-pos="${st.num - 1}"` : ''}`}>
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${st.cls === 'is-hidden' ? '' : GRIP + XBTN}
     ${st.num ? `<span class="adm-num${st.auto ? ' auto' : ''}" title="${st.auto ? 'Featured automatically' : 'Featured by you'}">${st.num}</span>` : ''}
@@ -237,7 +237,7 @@ function tile(n, p, v, st){
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Use as the genus photo (cards, sheet hero)">★ Cover</button>
       <button type="button" data-act="feat" class="${st.num && !st.auto ? 'on' : ''}" title="Show in the main strip of this view">${st.num ? 'Featured' : 'Feature'}</button>
       ${p.cand ? '<button type="button" data-act="hide" title="Back to the candidates">Remove</button>' : '<button type="button" data-act="hide" title="Keep the photo but don\'t show it on the site for this genus; Show again brings it back">Hide</button>'}
-      <select data-act="move" class="adm-view" aria-label="View (pick another to move it)" title="View: pick another to move the photo">${moves}</select>
+      <span class="adm-qseg adm-vseg" role="group" aria-label="View">${moves}</span>
       ${p.from || p.cand ? '' : `<select data-act="out" aria-label="Take out of this genus"><option value="">Not this genus…</option><option value="cmp">Look-alike comparison</option><optgroup label="It shows another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`}`}
     </div></figure>`;
 }
@@ -305,7 +305,7 @@ function render(){
     if (a === 'exclude') el.onclick = e => { e.stopPropagation(); ACT.exclude(n, f); };
     else if (a === 'out') { if (el.tagName === 'SELECT') el.onchange = () => el.value && ACT.out(n, f, v, el.value); else el.onclick = () => ACT.out(n, f, v, 'back'); }
     else if (a === 'addc') el.onclick = () => ACT.addc(n, f, null, el.dataset.to);
-    else if (a === 'move') el.onchange = () => el.value !== v && ACT.move(n, f, v, el.value);
+    else if (a === 'move') el.onclick = () => el.dataset.to !== v && ACT.move(n, f, v, el.dataset.to);
     else if (a === 'zoom' || a === 'zoomcover') el.onclick = () => zoom(n, f);
     else el.onclick = () => ACT[a](n, f, v);
   });
