@@ -16,7 +16,19 @@ const img = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 
-let DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null;
+let DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, lastGenus = null;
+// Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
+// (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
+const QUAL = [[3, 'Good'], [2, 'Fair'], [1, 'Poor']];
+const qOf = f => (DRAFT.quality || {})[f] || AUTOQ[f] || 2, qSet = f => !!(DRAFT.quality || {})[f];
+const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
+const qTag = p => { const q = qOf(p.f); return `<span class="adm-q q${q}${qSet(p.f) ? '' : ' auto'}" title="${qSet(p.f) ? 'Quality set by you' : 'Automatic first guess'}">${QUAL.find(x => x[0] === q)[1]}</span>`; };
+const qSeg = p => `<span class="adm-qseg" role="group" aria-label="Quality">${QUAL.map(([q, t]) => `<button type="button" data-q="${q}" aria-pressed="${qOf(p.f) === q}" class="q${q}">${t}</button>`).join('')}</span>`;
+function setQ(f, q){
+  DRAFT.quality = DRAFT.quality || {};
+  if (AUTOQ[f] === q && !(SAVED.quality || {})[f]) delete DRAFT.quality[f]; else DRAFT.quality[f] = q;
+  store.set('imr-curation-draft', DRAFT);
+}
 
 /* ---------- Token vault: AES-GCM key derived from the password (PBKDF2) ---------- */
 const b64 = u => btoa(String.fromCharCode(...new Uint8Array(u))), unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -180,7 +192,7 @@ function tile(n, p, v, st){
     ${st.num ? `<span class="adm-num${st.auto ? ' auto' : ''}" title="${st.auto ? 'Featured automatically' : 'Featured by you'}">${st.num}</span>` : ''}
     ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
     <figcaption>${p.from ? `<span class="adm-src new" title="Taken out of ${esc(p.from)} (change it there)">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">new</span>' : ''}${srcTag(p)}${p.multi ? '<span class="adm-src multi" title="Several corals in frame: never used in games">several corals</span>' : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
-    <div class="adm-acts">
+    <div class="adm-acts">${qSeg(p)}
       ${st.cls === 'is-hidden' ? `<button type="button" data-act="hide" class="on">Show again</button>` : `
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Use as the genus photo (cards, sheet hero)">★ Cover</button>
       <button type="button" data-act="feat" class="${st.num && !st.auto ? 'on' : ''}" title="Show in the main strip of this view">${st.num ? 'Featured' : 'Feature'}</button>
@@ -190,12 +202,20 @@ function tile(n, p, v, st){
       ${p.from || p.cand ? '' : `<select data-act="out" aria-label="Take out of this genus"><option value="">Not this genus…</option><option value="cmp">Look-alike comparison</option><optgroup label="It shows another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`}`}
     </div></figure>`;
 }
+function status(){
+  const ch = changed(), q = qChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : ''].filter(Boolean);
+  $('status').textContent = parts.length ? `${parts.join(' + ')} not saved` : TOKEN ? 'All saved' : 'Download only';
+  $('status').classList.toggle('dirty', !!parts.length);
+  $('save').disabled = !TOKEN || !parts.length; $('save').title = TOKEN ? '' : 'Unlock with a token to save';
+  if (cur !== '~quality') lastGenus = cur;
+  $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || '');
+  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === (cur === '~quality' ? 'quality' : 'genus'))));
+}
 function render(){
+  if (cur === '~quality') return renderQuality();
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
   const ch = changed(), n = cur, g = DATA.gen[n], cv = coverOf(n), k = entry(n);
-  $('status').textContent = ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'} not saved` : TOKEN ? 'All saved' : 'Download only';
-  $('status').classList.toggle('dirty', !!ch.length);
-  $('save').disabled = !TOKEN || !ch.length; $('save').title = TOKEN ? '' : 'Unlock with a token to save';
+  status();
   $('preview').href = `./?draft#g-${encodeURIComponent(n)}`;
   const side = names.map(m => { const c = coverOf(m), e = DRAFT.genera[m] || {}, dirty = ch.includes(m), h = (e.hide || []).length;
     return `<a href="#${esc(m)}" class="adm-g${m === n ? ' cur' : ''}"${m === n ? ' aria-current="true"' : ''}>${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
@@ -207,7 +227,7 @@ function render(){
   const P = pending(n), Ps = P.filter(shown), two = g.levels === 2;
   const candTile = p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" draggable="true"><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>
     <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span></figcaption>
-    <div class="adm-acts"><span class="adm-addl">Add to</span>${VIEWS.filter(([w]) => !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="addc" data-to="${w}">${label(n, w)}</button>`).join('')}</div></figure>`;
+    <div class="adm-acts">${qSeg(p)}<span class="adm-addl">Add to</span>${VIEWS.filter(([w]) => !(two && w === 'medium')).map(([w]) => `<button type="button" data-act="addc" data-to="${w}">${label(n, w)}</button>`).join('')}</div></figure>`;
   const candRow = P.length ? `<section class="adm-row adm-cands"><h3>Candidates <small>${P.length} new photo${P.length > 1 ? 's' : ''} not on the site yet${P.length - Ps.length ? ` · <b>${P.length - Ps.length} filtered out</b>` : ''}. Add one to a view to use it.</small></h3>
     <div class="adm-grid">${Ps.map(candTile).join('')}</div></section>` : '';
   const O = outOf(n), outRow = O.length ? `<section class="adm-row adm-out"><h3>Not this genus <small>${O.length} photo${O.length > 1 ? 's' : ''} taken out of <i>${esc(n)}</i></small></h3>
@@ -243,7 +263,7 @@ function render(){
     else el.onclick = () => ACT[a](n, f, v);
   });
   const c = $v.querySelector('.adm-g.cur'); if (c) c.scrollIntoView({block: 'nearest'});
-  bindDrag(n);
+  bindQ(); bindDrag(n);
 }
 // Drag a photo onto a featured photo (left or right half: before or after it) to feature it at that place,
 // onto any other photo or the empty part of a view to put it there unfeatured. Works across views and from the candidates.
@@ -282,14 +302,77 @@ let toastT;
 function toast(msg){ let t = document.querySelector('.adm-toast'); if (!t) { t = document.createElement('p'); t.className = 'adm-toast'; t.setAttribute('role', 'status'); document.body.append(t); }
   t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3500); }
 
+/* ---------- Quality ---------- */
+function bindQ(){
+  $v.querySelectorAll('.adm-qseg [data-q]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.closest('[data-f]'); rateTile(t, Number(b.dataset.q)); });
+}
+// Rating updates the tile in place (it stays where it is until the next filter change), so rating many is fast.
+function rateTile(t, q){
+  const f = t.dataset.f; setQ(f, q);
+  t.querySelectorAll('.adm-qseg [data-q]').forEach(x => x.setAttribute('aria-pressed', String(Number(x.dataset.q) === q)));
+  const tag = t.querySelector('.adm-q'); if (tag) tag.outerHTML = qTag({f});
+  t.dataset.q = q; t.classList.add('rated'); status();
+}
+// Every photo of every genus (approved, hidden, given to another genus and candidates), with genus and view.
+function allPhotos(){
+  const L = [];
+  Object.keys(DATA.gen).forEach(n => {
+    photos(n).forEach(p => L.push({...p, genus: n, view: viewOf(n, p), hid: hidden(n, p)}));
+    pending(n).forEach(p => L.push({...p, genus: n, view: 'cand'}));
+  });
+  return L;
+}
+const QF = Object.assign({view: 'all', genus: '', todo: false}, store.get('imr-admin-qfilter', {}));
+function renderQuality(){
+  status();
+  const names = Object.keys(DATA.gen), vl = v => v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1];
+  const all = allPhotos().filter(p => shown(p) && (QF.view === 'all' || p.view === QF.view) && (!QF.genus || p.genus === QF.genus) && (!QF.todo || !qSet(p.f)));
+  const card = p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" draggable="true" tabindex="0">
+    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>
+    <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}${p.multi ? '<span class="adm-src multi" title="Several corals in frame">several</span>' : ''}${qTag(p)}</figcaption>
+    <div class="adm-acts">${qSeg(p)}</div></figure>`;
+  const sec = ([q, t]) => { const L = all.filter(p => qOf(p.f) === q);
+    return `<section class="adm-row adm-qrow"><h3><span class="adm-q q${q}">${t}</span> <small>${L.length} photo${L.length === 1 ? '' : 's'}${q === 3 ? ' · for covers and featured photos' : q === 1 ? ' · for a realistic mode' : ''}</small></h3>
+      <div class="adm-grid adm-qgrid" data-qdrop="${q}">${L.map(card).join('')}</div></section>`; };
+  const opt = (v, t, cur) => `<button type="button" class="adm-fchip plain" data-qv="${v}" aria-pressed="${cur === v}">${t}</button>`;
+  $v.innerHTML = `<section class="adm-quality">
+    <div class="adm-qhead"><h2>Photo quality</h2><p class="note">First ratings are an automatic guess (dashed tags): sharpness, contrast, colour cast and size. Correct them with the buttons, by dragging a photo to another level, or by hovering a photo and pressing <kbd>3</kbd> good, <kbd>2</kbd> fair, <kbd>1</kbd> poor. Good photos are for covers and featured photos; poor ones can feed a realistic exercise mode.</p></div>
+    <div class="adm-filter"><span class="label">Show</span>${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`).join('')}</div>
+    <div class="adm-filter"><span class="label">View</span>${opt('all', 'All', QF.view)}${VIEWS.map(([v, t]) => opt(v, t, QF.view)).join('')}${opt('cand', 'Candidates', QF.view)}
+      <select id="qgen" aria-label="Genus"><option value="">All genera</option>${names.map(m => `<option${m === QF.genus ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>
+      <label class="adm-todo"><input type="checkbox" id="qtodo"${QF.todo ? ' checked' : ''}> Not checked yet</label></div>
+    ${QUAL.map(sec).join('')}</section>`;
+  const saveQF = () => { store.set('imr-admin-qfilter', QF); renderQuality(); };
+  $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { const o = b.dataset.o; SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o); store.set('imr-admin-origins', [...SHOW]); renderQuality(); });
+  $v.querySelectorAll('[data-qv]').forEach(b => b.onclick = () => { QF.view = b.dataset.qv; saveQF(); });
+  $('qgen').onchange = e => { QF.genus = e.target.value; saveQF(); };
+  $('qtodo').onchange = e => { QF.todo = e.target.checked; saveQF(); };
+  $v.querySelectorAll('[data-act="zoom"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'); zoom(t.dataset.g, t.dataset.f); });
+  bindQ();
+  // Hover (or focus) a photo and press 1, 2 or 3.
+  let over = null;
+  $v.querySelectorAll('.adm-qt').forEach(t => { t.onmouseenter = t.onfocus = () => { over = t; }; t.onmouseleave = () => { if (over === t) over = null; }; });
+  document.onkeydown = e => { if (cur !== '~quality' || !over || e.target.closest('input,select,textarea')) return; const q = {'1': 1, '2': 2, '3': 3}[e.key]; if (q) { e.preventDefault(); rateTile(over, q); } };
+  // Drag a photo onto another level.
+  let dragT = null;
+  $v.querySelectorAll('.adm-qt').forEach(t => { t.ondragstart = e => { dragT = t; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', t.dataset.f); requestAnimationFrame(() => t.classList.add('dragging')); }; t.ondragend = () => { t.classList.remove('dragging'); dragT = null; $v.querySelectorAll('.drop-row').forEach(x => x.classList.remove('drop-row')); }; });
+  $v.querySelectorAll('[data-qdrop]').forEach(g => {
+    g.ondragover = e => { if (!dragT) return; e.preventDefault(); g.classList.add('drop-row'); };
+    g.ondragleave = e => { if (!g.contains(e.relatedTarget)) g.classList.remove('drop-row'); };
+    g.ondrop = e => { e.preventDefault(); g.classList.remove('drop-row'); if (!dragT) return; rateTile(dragT, Number(g.dataset.qdrop)); g.prepend(dragT); };
+  });
+}
+
 /* ---------- Save / download ---------- */
-const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAFT.genera[n]).forEach(n => { genera[n] = DRAFT.genera[n]; }); return {v: 1, genera}; };
+const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAFT.genera[n]).forEach(n => { genera[n] = DRAFT.genera[n]; });
+  const quality = {}; Object.keys(DRAFT.quality || {}).sort().forEach(f => { quality[f] = DRAFT.quality[f]; });
+  return {v: 1, genera, ...(Object.keys(quality).length ? {quality} : {})}; };
 async function save(){
-  const ch = changed(); if (!ch.length || !TOKEN) return;
+  const ch = changed(), q = qChanged(); if (!(ch.length || q) || !TOKEN) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Saving…';
   try {
     const out = output(), text = JSON.stringify(out, null, 2) + '\n';
-    const msg = `Photo curation: ${ch.slice(0, 6).join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const r = await gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg, content: toB64(text), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})});
     SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); store.set('imr-curation-draft', DRAFT);
     toast('Saved. The site shows it within a minute or two.');
@@ -304,7 +387,7 @@ function download(){
 /* ---------- Start ---------- */
 async function start(){
   $v.innerHTML = '<p class="note">Loading photos…</p>';
-  try { [DATA] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), loadSaved()]); }
+  try { [DATA, AUTOQ] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), fetch('quality.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).then(j => j.q || {}).catch(() => ({})), loadSaved()]); }
   catch (x) { $v.innerHTML = `<p class="warn">Could not load: ${esc(x.message)}</p>`; return; }
   // Unsaved edits from an earlier visit are kept, on top of what is saved.
   const old = store.get('imr-curation-draft', null);
@@ -313,7 +396,7 @@ async function start(){
   $('tools').hidden = false; $('save').onclick = save; $('download').onclick = download;
   cur = decodeURIComponent(location.hash.slice(1)) || Object.keys(DATA.gen)[0];
   window.onhashchange = () => { cur = decodeURIComponent(location.hash.slice(1)); render(); window.scrollTo({top: 0}); };
-  window.onbeforeunload = e => { if (TOKEN && changed().length) { e.preventDefault(); e.returnValue = ''; } };
+  window.onbeforeunload = e => { if (TOKEN && (changed().length || qChanged())) { e.preventDefault(); e.returnValue = ''; } };
   render();
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.

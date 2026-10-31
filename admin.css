@@ -81,6 +81,7 @@ body.admin .hdr-tools[hidden]{display:none}
 .adm-acts{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px 8px;margin-top:auto}
 .adm-acts button,.adm-acts select{font:inherit;font-size:.78rem;min-height:28px;padding:0 9px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--ink);cursor:pointer}
 .adm-acts select{padding:0 4px;max-width:96px}
+.adm-acts select[data-act="out"]{max-width:132px}
 .adm-acts button:hover:not(:disabled),.adm-acts select:hover{border-color:var(--accent)}
 .adm-acts button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .adm-acts [data-act="cover"].on{background:#e0a526;border-color:#e0a526;color:#1f1500}
@@ -108,3 +109,36 @@ body.admin .hdr-tools[hidden]{display:none}
   .adm-head{grid-template-columns:minmax(0,1fr)}
   .adm-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
 }
+
+/* Entry points: by genus / by quality */
+.adm-modes{display:inline-flex;padding:3px;gap:2px;background:var(--surface-2);border-radius:var(--pill)}
+.adm-modes[hidden]{display:none}
+.adm-modes a{font-size:.88rem;color:var(--muted);text-decoration:none;padding:5px 14px;border-radius:var(--pill)}
+.adm-modes a[aria-current="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:var(--shadow)}
+
+/* Quality: tag (dashed = automatic guess) and three-way control */
+.adm-q{padding:1px 8px;border-radius:var(--pill);font-size:.7rem;font-weight:700;white-space:nowrap;border:1.5px solid transparent}
+.adm-q.q3{background:var(--good-bg);color:var(--good)}
+.adm-q.q2{background:var(--surface-2);color:var(--ink)}
+.adm-q.q1{background:var(--bad-bg);color:var(--bad)}
+.adm-q.auto{background:transparent;border-style:dashed;border-color:currentColor}
+.adm-qseg{display:inline-flex;flex:1 0 100%;border:1px solid var(--line);border-radius:var(--pill);overflow:hidden;margin-bottom:2px}
+.adm-acts .adm-qseg button{flex:1;border:0;border-radius:0;min-height:26px;font-size:.74rem;padding:0 4px;color:var(--muted);background:var(--surface)}
+.adm-acts .adm-qseg button+button{border-left:1px solid var(--line)}
+.adm-acts .adm-qseg button.q3[aria-pressed="true"]{background:var(--good-bg);color:var(--good);font-weight:700}
+.adm-acts .adm-qseg button.q2[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);font-weight:700}
+.adm-acts .adm-qseg button.q1[aria-pressed="true"]{background:var(--bad-bg);color:var(--bad);font-weight:700}
+.adm-qhead{margin-top:16px}
+.adm-qhead .note{max-width:90ch}
+.adm-qrow h3 .adm-q{font-size:.8rem;letter-spacing:.04em}
+.adm-qgrid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.adm-qt figcaption{gap:3px}
+.adm-qt.rated{outline:2px solid var(--accent);outline-offset:-2px}
+.adm-gen{color:var(--ink);font-size:.78rem;text-decoration:none;margin-right:2px}
+.adm-gen:hover{text-decoration:underline}
+.adm-src.view{background:var(--surface-2);color:var(--muted);font-weight:600}
+.adm-fchip.plain{--o:var(--surface-2)}
+.adm-fchip.plain::before{display:none}
+.adm-filter select{font:inherit;font-size:.84rem;min-height:30px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--ink);padding:0 8px}
+.adm-todo{font-size:.84rem;display:inline-flex;gap:5px;align-items:center;margin-left:6px}
+kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--surface)}
