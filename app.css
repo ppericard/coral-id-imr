@@ -690,3 +690,16 @@ a.lt:hover{border-color:var(--accent)}
   .q.done #after .fb h3{margin-bottom:2px}
   .q.done #after #next{padding:8px 18px}
 }
+/* Genus sheet, desktop (S and M): the views are columns (colony | closer | corallites), so all three scales show side by
+   side on the first screen; each column keeps its featured photos and its "more" fold. L keeps one row per view. */
+@media (min-width:900px){
+  :root:not([data-size="l"]) .vrows{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px;align-items:start}
+  :root:not([data-size="l"]) .vrows .vrow h3{margin-top:4px}
+  :root[data-size="m"] .vrows .strip{grid-template-columns:minmax(0,1fr);gap:10px}
+  :root[data-size="s"] .vrows .strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  :root[data-size="m"] .hero{grid-template-columns:minmax(0,4fr) minmax(0,6fr)}
+}
+/* Quiz, desktop: the feedback fills the empty 4th cell of a 2x2 photo stage (answer() moves #after there). */
+.qstage>.qcell{min-height:0;min-width:0;display:flex;flex-direction:column;gap:8px}
+.qstage>.qcell .fb{flex:0 1 auto;min-height:0;overflow:auto}
+.qstage>.qcell .next{align-self:flex-start;flex:none}

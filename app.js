@@ -373,7 +373,7 @@ function viewGenus(name){
         </details>
       </div>
     </div>
-    ${rows}
+    <div class="vrows">${rows}</div>
     <section class="hubsec">${lookHub(name)}</section>
   </article>`;
   $v.querySelectorAll('[data-z]').forEach(b => b.onclick = () => zoom(flat, Number(b.dataset.z)));
@@ -745,6 +745,13 @@ function answer(cur, c, target, ph, cor){
   // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
   const qq = $v.querySelector('.q'); if (qq) qq.classList.add('done');
   if (matchMedia('(max-width:760px)').matches) { window.scrollTo(0, 0); fitStage(); const mo = document.querySelector('#after details'); if (mo) mo.ontoggle = fitStage; }
+  // Desktop: 3 photos leave the 4th cell of the 2x2 stage empty, so the feedback moves into it, next to the photos it
+  // describes (Pierre, 2026-10-31). fitStage then lays out 4 cells. A mix-up montage (2 photos) keeps it in the side column.
+  const st1 = $v.querySelector('.qstage');
+  if (st1 && !matchMedia('(max-width:760px)').matches && !st1.classList.contains('qvs') && st1.children.length === 3) {
+    const af = document.getElementById('after'); af.classList.add('qcell'); st1.appendChild(af); fitStage();
+    if (st1.style.gridTemplateColumns.indexOf('repeat(2') !== 0) { af.classList.remove('qcell'); $v.querySelector('.qside').appendChild(af); fitStage(); }
+  }
   bindGo(document.getElementById('after'));
   const nb = document.getElementById('next'); nb.focus({preventScroll: true}); nb.onclick = route;
 }
