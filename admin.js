@@ -24,7 +24,13 @@ const qOf = f => (DRAFT.quality || {})[f] || AUTOQ[f] || 2, qSet = f => !!(DRAFT
 // Every click is saved at once as a draft in this browser (it survives a reload or closing the tab);
 // Publish sends the draft to the public site.
 let draftAt = null;
-function saveDraft(){ store.set('imr-curation-draft', DRAFT); draftAt = new Date(); }
+// No button ever clears several choices at once: Undo (or Ctrl+Z) steps back one click at a time, within this visit.
+let HIST = [], snap = null;
+function saveDraft(){ if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); snap = JSON.stringify(DRAFT); store.set('imr-curation-draft', DRAFT); draftAt = new Date(); }
+function undo(){
+  if (!HIST.length) return toast('Nothing to undo.');
+  snap = HIST.pop(); DRAFT = JSON.parse(snap); store.set('imr-curation-draft', DRAFT); draftAt = new Date(); render(); toast('Last change undone.');
+}
 const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
 // Excluded photos (curation.json "exclude" {f: reason}): unusable for good (a person, a drawing, AI…). Unlike Hide,
 // which is a per-genus editorial choice, exclusion removes the photo from every genus, game and candidate list,
@@ -192,8 +198,7 @@ const ACT = {
     if (at !== null) { L.splice(Math.min(at, L.length), 0, f); k.feat = k.feat || {}; k.feat[to] = L.slice(0, FEAT); }
     else if (inFeat) { k.feat = k.feat || {}; if (L.length) k.feat[to] = L; else delete k.feat[to]; }
   }),
-  reset: n => { if (confirm(`Reset ${n}? This removes your cover, featured photos, hidden, moved, added and "Not this genus" choices for this genus, back to the default photos. Quality ratings are kept.`)) edit(n, k => Object.keys(k).forEach(x => delete k[x])); },
-  revert: n => { DRAFT.genera[n] = clone(SAVED.genera[n]); if (!DRAFT.genera[n]) delete DRAFT.genera[n]; saveDraft(); render(); }
+
 };
 
 /* ---------- Rendering ---------- */
@@ -224,6 +229,7 @@ function status(){
   const t = draftAt ? ` (saved ${draftAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})})` : '';
   $('status').textContent = parts.length ? `Draft${t}: ${parts.join(' + ')} not published yet` : TOKEN ? 'Everything is published' : 'Read-only: download only';
   $('status').classList.toggle('dirty', !!parts.length);
+  $('undo').disabled = !HIST.length;
   $('save').disabled = !TOKEN || !parts.length; $('save').title = TOKEN ? 'Send your draft to the public site' : 'Unlock with a token to publish';
   if (cur[0] !== '~') lastGenus = cur;
   $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || '');
@@ -264,7 +270,7 @@ function render(){
           <p class="note"><b>Cover:</b> ${cv ? `${cv.picked ? 'your pick' : 'automatic'} · ${label(n, cv.view).toLowerCase()} view${cv.view === 'macro' && g.levels !== 2 ? ' <b class="warnc">(a corallite close-up: pick a colony or closer view)</b>' : ''}` : 'none'}</p>
           <p class="note">Featured photos fill the main strip of each view on the genus sheet (up to ${FEAT}); the others stay under “more photos”. Hidden photos disappear everywhere, games included.</p>
           <p class="note"><b>Drag the photos</b> (by the photo, or the ⠿ handle on a phone): onto a featured photo to feature it there (left or right half: before or after it), onto another photo to unfeature it; to another view to move it, or from the candidates to add it.</p>
-          <p class="adm-gacts">${ch.includes(n) ? '<button type="button" class="chip" data-act="revert" title="Go back to what is published for this genus">Undo unpublished changes</button>' : ''}${Object.keys(k).length ? '<button type="button" class="chip" data-act="reset" title="Remove all your choices for this genus (cover, featured, hidden, moved, added, Not this genus). Quality ratings are kept.">Reset this genus</button>' : ''}<a class="chip" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener">Open the sheet</a></p>
+          <p class="adm-gacts"><a class="chip" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener">Open the sheet</a></p>
         </div>
       </div>
       ${filter}${body}${candRow}${outRow}
@@ -466,9 +472,11 @@ async function start(){
   KNOWN = new Set([...Object.values(DATA.gen).flatMap(g => [...Object.values(g.views || {}), ...Object.values(g.more || {})].flat()), ...Object.values(DATA.course || {}).flat(), ...Object.values(DATA.cand || {}).flat(), ...(DATA.cmp || [])].map(p => p.f));
   // Unsaved edits from an earlier visit are kept, on top of what is saved.
   const old = store.get('imr-curation-draft', null);
-  DRAFT = old && old.genera ? old : clone(SAVED);
+  DRAFT = old && old.genera ? old : clone(SAVED); snap = JSON.stringify(DRAFT);
   const keep = changed().length; if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? "genera" : "genus"} not published yet.`);
   $('tools').hidden = false; $('save').onclick = save; $('download').onclick = download;
+  $('undo').onclick = undo;
+  addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && !e.target.closest('input,textarea')) { e.preventDefault(); undo(); } });
   cur = decodeURIComponent(location.hash.slice(1)) || Object.keys(DATA.gen)[0];
   window.onhashchange = () => { cur = decodeURIComponent(location.hash.slice(1)); render(); window.scrollTo({top: 0}); };
   window.onbeforeunload = e => { if (TOKEN && (changed().length || qChanged() || xChanged())) { e.preventDefault(); e.returnValue = ''; } };
