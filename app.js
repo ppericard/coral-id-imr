@@ -41,8 +41,10 @@ function applyCuration(d, c){
       let p = null, at = null;
       VIEWS.forEach(([v]) => ['views', 'more'].forEach(s => { const L = (g[s] || {})[v] || [], i = L.findIndex(x => x.f === f); if (i >= 0) { p = L.splice(i, 1)[0]; at = [s, v]; } }));
       const ci = (d.course[n] || []).findIndex(x => x.f === f); if (ci >= 0) { p = d.course[n].splice(ci, 1)[0]; at = ['course']; }
+      const bi = (g.book || []).findIndex(x => x.f === f); if (bi >= 0) { p = g.book.splice(bi, 1)[0]; at = ['book']; }
       if (!p) return;
       if (to === 'cmp') (d.cmp = d.cmp || []).push({...p, g: [n]});
+      else if (d.gen[to] && at[0] === 'book') (d.gen[to].book = d.gen[to].book || []).push({...p, t: to});
       else if (d.gen[to] && at[0] === 'course') (d.course[to] = d.course[to] || []).push(p);
       else if (d.gen[to]) { const G = d.gen[to], S = G[at[0]] = G[at[0]] || {}; (S[at[1]] = S[at[1]] || []).push(p); }
     }); });
@@ -51,7 +53,9 @@ function applyCuration(d, c){
     Object.entries(k.add || {}).forEach(([f, v]) => { const p = ((d.cand || {})[n] || []).find(x => x.f === f); if (p && VIEWS.some(([w]) => w === v)) (g.views[v] = g.views[v] || []).push(p); });
     const hide = new Set(k.hide || []), mv = k.move || {}, feat = k.feat || {};
     const regroup = src => { const out = {}; VIEWS.forEach(([v]) => ((src || {})[v] || []).forEach(p => { if (hide.has(p.f)) return; const w = mv[p.f] || v; (out[w] = out[w] || []).push(p); })); return out; };
-    const all = [...allPhotos(g), ...VIEWS.flatMap(([v]) => (g.more || {})[v] || []), ...(d.course[n] || [])];
+    const all = [...allPhotos(g), ...VIEWS.flatMap(([v]) => (g.more || {})[v] || []), ...(d.course[n] || []), ...(g.book || [])];
+    // Book photos follow Hide and view moves too (they stay out of g.views, so out of games).
+    if (g.book) g.book = g.book.filter(p => !hide.has(p.f)).map(p => mv[p.f] ? {...p, view: mv[p.f]} : p);
     g.views = regroup(g.views); g.more = regroup(g.more);
     // Featured photos lead their view, so quick picks (comparisons, first photo of a view) use them too.
     Object.entries(g.views).forEach(([v, L]) => { const F = feat[v] || []; g.views[v] = [...F.map(f => L.find(p => p.f === f)).filter(Boolean), ...L.filter(p => !F.includes(p.f))]; });
