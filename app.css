@@ -23,11 +23,11 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
-.wrap{max-width:1040px;margin:0 auto}
-/* Page width: one fixed max width (--page). The header never changes size; a page that needs room
-   (e.g. a Lab tool) may widen .wrap, but the header and footer stay at --page. */
-:root{--page:1040px}
-header,footer{max-width:var(--page);margin-inline:auto}
+/* Page width: one max width (--page) on every page, so the header never changes size and content lines up
+   with it. Text keeps its own measure (65-75ch). A module that needs more room adds .bleed (wide screens only). */
+:root{--page:1280px}
+.wrap{max-width:var(--page);margin:0 auto}
+@media (min-width:1340px){.bleed{width:min(1680px,calc(100vw - 48px));margin-left:calc(50% - min(840px,50vw - 24px))}}
 a{color:var(--accent)}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 h2{font-family:var(--display);font-weight:700;font-size:1.6rem;margin:12px 0 4px;text-wrap:balance;line-height:1.1}
@@ -105,8 +105,8 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 
 /* ---------- Cards and photo grids ---------- */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:14px}
-:root[data-size="m"] .grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
-:root[data-size="l"] .grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))}
+:root[data-size="m"] .grid{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,300px),calc((100% - 28px) / 3)),1fr))}
+:root[data-size="l"] .grid{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,340px),calc((100% - 14px) / 2)),1fr))}
 .card{display:flex;flex-direction:column;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;cursor:pointer;padding:0;text-decoration:none;box-shadow:var(--shadow)}
 .card{position:relative}
 .card.grp{border-top:4px solid hsl(var(--g) 55% 52%)}
@@ -125,9 +125,9 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .card i{font-weight:600;font-size:1.06rem}
 .card small{color:var(--muted);font-size:.8rem}
 .card p{margin:4px 0 0;font-size:.86rem;color:var(--ink);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px;margin:6px 0 12px}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(max(min(100%,260px),calc((100% - 24px) / 3)),1fr));gap:12px;margin:6px 0 12px}
 :root[data-size="s"] .strip{grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr))}
-:root[data-size="l"] .strip{grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr))}
+:root[data-size="l"] .strip{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,420px),calc((100% - 12px) / 2)),1fr))}
 .strip figure{margin:0;min-width:0}
 .strip img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r);display:block;background:var(--surface-2)}
 .strip figcaption,.credit{font-size:.75rem;color:var(--muted);margin-top:4px}

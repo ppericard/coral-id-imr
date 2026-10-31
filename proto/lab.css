@@ -215,7 +215,6 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .maplegend small{color:var(--muted);margin-left:4px}
 
 /* ---------- full-width layouts (Pierre: use the whole page, sections side by side) ---------- */
-:root[data-page="lab"] .wrap{max-width:min(1680px,100%)}
 .lab .note{max-width:none}
 .labhub{grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
 #mapsvg{max-height:86vh}
