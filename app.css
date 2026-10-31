@@ -24,6 +24,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 .wrap{max-width:1040px;margin:0 auto}
+/* Page width: one fixed max width (--page). The header never changes size; a page that needs room
+   (e.g. a Lab tool) may widen .wrap, but the header and footer stay at --page. */
+:root{--page:1040px}
+header,footer{max-width:var(--page);margin-inline:auto}
 a{color:var(--accent)}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 h2{font-family:var(--display);font-weight:700;font-size:1.6rem;margin:12px 0 4px;text-wrap:balance;line-height:1.1}
@@ -33,17 +37,17 @@ h2{font-family:var(--display);font-weight:700;font-size:1.6rem;margin:12px 0 4px
 .star{color:var(--accent);font-weight:600}
 .own{display:inline-block;font-size:.7rem;font-weight:600;color:var(--accent);margin-left:4px}
 .count{font-family:var(--display);font-weight:700;font-size:1.3rem;margin:4px 0 12px}
-footer{margin-top:40px;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;max-width:65ch}
+footer{margin-top:40px;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+footer p{max-width:75ch;margin:0}
 /* small uppercase section label, shared by sheets, compare and fieldsets */
 .label,.sheet h3,.cmplab,.trset legend,th{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
 
 /* ---------- Header ---------- */
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  padding-block:12px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+  padding-block:8px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px}
 .brand{margin:0;display:flex;align-items:baseline;gap:10px;line-height:1}
 .brand .home{display:inline-flex;align-items:center;gap:9px;color:inherit;text-decoration:none;font-family:var(--display);font-weight:700;font-size:1.75rem;letter-spacing:.01em}
 .brand .home img{border-radius:8px;display:block}
-.brand small{font-family:var(--body);font-weight:400;font-size:.85rem;color:var(--muted)}
 .sections{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
 .hdr-tools{display:flex;gap:8px;align-items:center}
 
@@ -63,25 +67,24 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .chip[aria-pressed="true"],.chip[aria-current="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .opts{margin:16px 0 4px}
 /* Section modes: a segmented tab bar, second row of the sticky header. */
-.modes{flex:1 0 100%;display:flex;overflow-x:auto;gap:4px;margin:0;padding:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r)}
+.modes{flex:1 0 100%;display:flex;overflow-x:auto;gap:4px;margin:0;padding:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r)}
 .modes[hidden]{display:none}
-.modes a{flex:1 1 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:44px;padding:5px 10px;border-radius:var(--r-sm);text-decoration:none;color:var(--muted);text-align:center;line-height:1.15;transition:background .12s,color .12s}
+.modes a{flex:1 1 0;display:flex;align-items:center;justify-content:center;min-height:34px;padding:4px 10px;border-radius:var(--r-sm);text-decoration:none;color:var(--muted);text-align:center;line-height:1.15;transition:background .12s,color .12s}
 .modes a b{font-weight:600;font-size:.95rem;color:var(--ink)}
-.modes a small{font-size:.75rem}
 .modes a:hover{background:color-mix(in srgb,var(--surface) 60%,transparent)}
 .modes a:hover b{color:var(--accent)}
 .modes a[aria-current="page"]{background:var(--surface);box-shadow:var(--shadow);color:var(--muted)}
 .modes a[aria-current="page"] b{color:var(--accent)}
 /* Page bar: on a genus sheet or a pair, the same row shows back, the page name and previous / next. */
 .modes.ctx{align-items:center;gap:8px;padding:3px 4px;overflow:hidden}
-.modes.ctx .up,.modes.ctx .pn a,.modes.ctx .ctx-l{flex:none;display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border-radius:var(--r-sm);font:inherit;font-size:.9rem;color:var(--accent);background:none;border:0;cursor:pointer;text-decoration:none}
+.modes.ctx .up,.modes.ctx .pn a,.modes.ctx .ctx-l{flex:none;display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 12px;border-radius:var(--r-sm);font:inherit;font-size:.9rem;color:var(--accent);background:none;border:0;cursor:pointer;text-decoration:none}
 .modes.ctx .up:hover,.modes.ctx .pn a:hover,.modes.ctx .ctx-l:hover{background:var(--surface)}
-.modes.ctx .ctx-t{flex:1 1 auto;min-width:0;margin:0;display:flex;align-items:baseline;gap:10px;font-family:var(--body);font-weight:600;font-size:1.35rem;line-height:1.2;white-space:nowrap;overflow:hidden}
+.modes.ctx .ctx-t{flex:1 1 auto;min-width:0;margin:0;display:flex;align-items:baseline;gap:10px;font-family:var(--body);font-weight:600;font-size:1.25rem;line-height:1.2;white-space:nowrap;overflow:hidden}
 .modes.ctx .ctx-t > *{overflow:hidden;text-overflow:ellipsis}
 .modes.ctx .ctx-t small{font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .modes.ctx .up{gap:4px}
 .modes.ctx .pn{flex:none;display:flex;gap:2px;padding-left:6px;border-left:1px solid var(--line)}
-.modes.ctx .pn a{width:36px;padding:0;font-size:1.3rem;line-height:1}
+.modes.ctx .pn a{width:34px;padding:0;font-size:1.3rem;line-height:1}
 #size{display:flex;overflow:hidden;height:var(--ctl-h)}
 #size button{background:none;border:0;color:var(--muted);font:inherit;font-size:.8rem;font-weight:700;width:34px;cursor:pointer}
 #size button+button{border-left:1px solid var(--line)}
@@ -143,7 +146,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .vrow h3{margin-top:16px}
 .gap{font-size:.7rem;background:var(--bad-bg);color:var(--bad);padding:1px 7px;border-radius:var(--pill);letter-spacing:0;text-transform:none}
 .hero{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:24px;align-items:start;margin:8px 0 12px}
-.hero-ph{position:sticky;top:90px;overflow:hidden;box-shadow:var(--shadow)}
+.hero-ph{position:sticky;top:calc(var(--hdr-h,110px) + 12px);overflow:hidden;box-shadow:var(--shadow)}
 .hero-ph img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border-radius:var(--r)}
 .idbox h3:first-child{margin-top:0}
 .idbox .crit{font-size:.95rem}
@@ -266,15 +269,16 @@ td i{font-weight:600}
 @media (max-width:640px){
   header{display:grid;grid-template-columns:1fr auto;grid-template-areas:"title tools" "nav nav";gap:8px;padding-block:8px}
   .brand{grid-area:title}
-  .brand small{display:none}
-  .brand .home{font-size:1.5rem}
+  .brand .home{font-size:1.3rem;white-space:nowrap;gap:7px}
+  .brand .home img{width:26px;height:26px}
+  header{top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0px))}
   .hdr-tools{grid-area:tools}
   .prog .pl{display:none}
   header{grid-template-areas:"title tools" "nav nav" "modes modes"}
   .sections{grid-area:nav;margin-left:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px}
   .modes{grid-area:modes;padding:3px;overflow-x:auto;scrollbar-width:none;min-width:0}
   .modes a{flex:1 0 auto}
-  .modes a{min-height:38px;padding:4px 6px}
+  .modes a{min-height:34px;padding:4px 8px}
   .modes a b{font-size:.8rem}
   .modes a small{display:none}
   .modes.ctx a{flex:none;min-height:36px}
