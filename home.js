@@ -8,7 +8,7 @@
     const names = Object.keys(DATA.gen);
     // Home = hero (Practice first: RAs go to Practice almost at once) + the 3-step path + one discreet link to the Tools page (#lab).
     // The hero: one slim band of corallite tiles (16 genera, 8 on phones) behind a title and two buttons.
-    $v.innerHTML = `<div class="home-page">
+    $v.innerHTML = `<p class="lede">Learn the genera, train your eye in Practice, then name corals on your own photos with Identify.</p><div class="home-page">
       <section class="hhero">
         <div class="hmosaic" aria-hidden="true">${shuffle(names).slice(0, 16).map((n, i) => `<a href="#g-${encodeURIComponent(n)}" tabindex="-1" style="--i:${i}"><img src="${ph(n, 'macro')}" alt="" loading="lazy"><span>${esc(n)}</span></a>`).join('')}</div>
         <div class="hintro">

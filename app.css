@@ -586,3 +586,52 @@ a.lt:hover{border-color:var(--accent)}
 .pwall .pw:hover img.col{clip-path:inset(0)}
 @keyframes pwdrift{to{background-position:40px 0}}
 @media (prefers-reduced-motion:reduce){.pwall .pw .wave{animation:none}.pwall .pw img.col{transition:none}}
+
+/* ---------- Welcome tour (tour.js) ---------- */
+#tour{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgb(8 20 24 / .55);
+  padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom))}
+.touring body{overflow:hidden}
+#tour .tcard{position:relative;width:min(560px,100%);max-height:100%;overflow:auto;background:var(--surface);color:var(--ink);border-radius:14px;
+  box-shadow:0 12px 40px rgb(0 0 0 / .3);padding:22px 22px 16px;display:flex;flex-direction:column;gap:6px}
+#tour h2{margin:0 0 2px;font-size:1.7rem;padding-right:52px}
+#tour .tbody > p{margin:0 0 10px}
+#tour .tbody{min-height:300px}
+#tour .tskip{position:absolute;top:14px;right:14px;font:inherit;font-size:.9rem;background:none;border:0;color:var(--muted);cursor:pointer;padding:4px 6px}
+#tour .tskip:hover{color:var(--ink)}
+#tour img{display:block;width:100%;object-fit:cover;border-radius:var(--r-sm);background:var(--surface-2)}
+.tpath{list-style:none;padding:0;margin:14px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;counter-reset:tp}
+.tpath li{counter-increment:tp;display:flex;flex-direction:column;gap:2px}
+.tpath img{aspect-ratio:4/3}
+.tpath b{font-family:var(--display);font-size:1.25rem;margin-top:4px}
+.tpath b::before{content:counter(tp) ". ";color:var(--accent)}
+.tpath small{color:var(--muted);font-size:.85rem;line-height:1.25}
+.tladder{display:flex;align-items:center;gap:6px;margin:4px 0 12px}
+.tladder figure{margin:0;flex:1;min-width:0}
+.tladder img{aspect-ratio:1}
+.tladder figcaption{text-align:center;font-size:.82rem;color:var(--muted);margin-top:3px}
+.tladder > span{color:var(--muted);font-size:1.4rem}
+.tlv{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+#tour .note{margin:4px 0 0}
+.tsync h3{display:none}
+.tsync .sform{margin-top:8px}
+.ttools{list-style:none;padding:0;margin:14px 0 6px;display:flex;flex-direction:column;gap:12px}
+.ttools li{display:flex;align-items:center;gap:12px}
+.tkey{display:inline-flex;align-items:center;justify-content:center;min-width:var(--ctl-h);height:var(--ctl-h);padding:0 10px;border:1px solid var(--line);
+  border-radius:var(--pill);background:var(--surface-2);font-weight:700;flex:none}
+.tnav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+.tnav .tback[hidden]{display:inline-flex;visibility:hidden}
+.tdots{display:flex;gap:7px}
+.tdots button{width:9px;height:9px;padding:0;border-radius:50%;border:0;background:var(--line);cursor:pointer}
+.tdots button[aria-current]{background:var(--accent)}
+.htour{margin-top:8px}
+@media (max-width:640px){
+  #tour{align-items:flex-end;padding:0}
+  #tour .tcard{width:100%;border-radius:14px 14px 0 0;padding:18px 16px calc(14px + env(safe-area-inset-bottom,0px));max-height:92dvh}
+  #tour .tbody{min-height:0}
+  #tour h2{font-size:1.45rem}
+  .tpath{gap:7px}.tpath b{font-size:1.05rem}.tpath small{font-size:.78rem}
+  .tladder > span{display:none}
+}
+#tour .tcard:focus{outline:none}
+/* Phones: the tour sits above the bottom tab bar, which stays visible (the last card points at Progress). */
+@media (max-width:640px){#tour{bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px))}#tour .tcard{border-radius:14px 14px 0 0;padding-bottom:14px}}
