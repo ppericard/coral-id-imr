@@ -36,6 +36,7 @@ body.admin .hdr-tools[hidden]{display:none}
 .adm-g.cur{background:var(--surface);box-shadow:var(--shadow);outline:1px solid var(--accent)}
 .adm-g img,.adm-g .none{width:44px;height:33px;object-fit:cover;border-radius:4px;display:block;background:var(--surface-2)}
 .adm-g small{display:block;font-size:.72rem;color:var(--muted)}
+.adm-g .dots{display:flex;align-items:center;gap:4px}.adm-g .dots:empty{display:none}
 .adm-g .dot{color:var(--bad);font-size:.8rem}
 .adm-g .dot.done{color:var(--good)}
 .warnc{color:var(--bad);font-weight:600}
@@ -193,8 +194,10 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 .adm-fok:hover{background:var(--accent);color:var(--accent-ink)}
 
 /* Genus name + origin filter stay in view while scrolling */
-.adm-sticky{margin-top:0;border-top:0;position:sticky;top:var(--hdr-h,64px);z-index:3;background:var(--bg);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.adm-sticky{margin-top:0;border-top:0;position:sticky;top:var(--hdr-h,64px);z-index:3;background:var(--bg);flex-wrap:wrap}
 .adm-sticky .adm-fchip,.adm-sticky .adm-link{flex:none}
+/* Genus bar: identity + state on the left, source filters as one block on the right; on a narrow window the block wraps whole. */
+.adm-shows{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto;justify-content:flex-end}
 .adm-sname{font-size:1.05rem;margin-right:10px;white-space:nowrap}
 .adm-gacts{align-items:center}
 .adm-acts .adm-vseg button[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);font-weight:700}

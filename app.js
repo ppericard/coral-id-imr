@@ -2,6 +2,11 @@
 let DATA;
 const $v = document.getElementById('view');
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// Window size classes, the same values as the media queries in app.css (one source of truth, see its header):
+// phone < 600 px · tablet 600-1023 px (tablets, and a desktop window snapped to half a screen) · desktop >= 1024 px.
+const MQ = {phone: '(max-width:599.98px)', stack: '(max-width:1023.98px)', touch: '(hover:none), (pointer:coarse)'};
+const isPhone = () => matchMedia(MQ.phone).matches;
+const isStacked = () => matchMedia(MQ.stack).matches;  // phone + tablet: games and side panels go to one column
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 // Pierre-only controls (Lab keep/trim, finder start-screen switch, ⚑ flag) show only in the browser where the
@@ -280,7 +285,7 @@ let gfOpen = false;  // phone Filter fold on Genera, kept open across redraws
 function viewGenera(){
   const fams = [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
   // Phones: family, order and the group index fold behind one Filter line, so the genera start near the top.
-  const phone = matchMedia('(max-width:640px)').matches;
+  const phone = isPhone();
   const famSel = `<select id="fam" aria-label="Family"><option value="">All families</option><option value="★"${azFam === '★' ? ' selected' : ''}>★ Not surveyed</option>${fams.map(f => `<option${azFam === f ? ' selected' : ''}>${esc(f)}</option>`).join('')}</select>`;
   const viewSeg = `<div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['tips', 'ID tips']].map(([k, t]) => `<button type="button" data-gv="${k}" aria-pressed="${azView === k}">${t}</button>`).join('')}</div>`;
   const orderSeg = `<div class="seg" role="group" aria-label="Order">${[['lecture', 'Lecture', ' groups'], ['slate', 'Slate', ' numbers']].map(([k, t, x]) => `<button type="button" data-o="${k}" aria-pressed="${azOrder === k}">${t}<span class="wide">${x}</span></button>`).join('')}</div>`;
@@ -513,7 +518,7 @@ function viewCompare(a, b){
   const col = (n, g) => `<div class="cmpcol"><h3><a class="linkish" href="#g-${esc(n)}"><i>${esc(n)}</i></a>${g.n ? '' : ' ★'}</h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p>${g.qt ? '<h4>ID tips (IMR)</h4>' : ''}${tipsList(g)}<details class="more"><summary>Coral Finder</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>`;
   const flat = [];
   const row = ([v, label]) => {
-    const cell = (n, g) => { const p = (g.views[v] || [])[0]; if (!p) return `<div class="cmpph none">${g.levels === 2 ? 'no separate level' : 'no photo'}</div>`; flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom cmpph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 46vw, 460px" alt="${esc(n)}, ${label.toLowerCase()}" loading="lazy"></button>`; };
+    const cell = (n, g) => { const p = (g.views[v] || [])[0]; if (!p) return `<div class="cmpph none">${g.levels === 2 ? 'no separate level' : 'no photo'}</div>`; flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom cmpph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:599.98px) 46vw, 460px" alt="${esc(n)}, ${label.toLowerCase()}" loading="lazy"></button>`; };
     return `<h3 class="cmplab">${label}</h3><div class="cmprow">${cell(a, A)}${cell(b, B)}</div>`;
   };
   // The cues sit above the photos, each under its genus, so they can be read while comparing.
@@ -671,7 +676,7 @@ function fitStage(){
   const st = q.querySelector('.qstage');
   // Phones (one column): the photo takes all the height the question and answers leave, so no gap is left under it.
   // After an answer the feedback is a bottom sheet over the page: the photo shrinks to the space left above it, so it stays in view.
-  if (matchMedia('(max-width:760px)').matches) { const side = q.querySelector('.qside'), aft = q.classList.contains('done') && document.getElementById('after');
+  if (isStacked()) { const side = q.querySelector('.qside'), aft = q.classList.contains('done') && document.getElementById('after');
     st.style.height = aft && getComputedStyle(aft).position === 'fixed' ? Math.max(120, aft.getBoundingClientRect().top - st.getBoundingClientRect().top - 8) + 'px'
       : Math.max(180, parseFloat(q.style.getPropertyValue('--qh')) - (side ? side.offsetHeight : 240) - 10) + 'px'; }
   else st.style.height = '';
@@ -749,11 +754,11 @@ function answer(cur, c, target, ph, cor){
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
   // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
   const qq = $v.querySelector('.q'); if (qq) qq.classList.add('done');
-  if (matchMedia('(max-width:760px)').matches) { window.scrollTo(0, 0); fitStage(); const mo = document.querySelector('#after details'); if (mo) mo.ontoggle = fitStage; }
+  if (isStacked()) { window.scrollTo(0, 0); fitStage(); const mo = document.querySelector('#after details'); if (mo) mo.ontoggle = fitStage; }
   // Desktop: 3 photos leave the 4th cell of the 2x2 stage empty, so the feedback moves into it, next to the photos it
   // describes (Pierre, 2026-10-31). fitStage then lays out 4 cells. A mix-up montage (2 photos) keeps it in the side column.
   const st1 = $v.querySelector('.qstage');
-  if (st1 && !matchMedia('(max-width:760px)').matches && !st1.classList.contains('qvs') && st1.children.length === 3) {
+  if (st1 && !isStacked() && !st1.classList.contains('qvs') && st1.children.length === 3) {
     const af = document.getElementById('after'); af.classList.add('qcell'); st1.appendChild(af); fitStage();
     if (st1.style.gridTemplateColumns.indexOf('repeat(2') !== 0) { af.classList.remove('qcell'); $v.querySelector('.qside').appendChild(af); fitStage(); }
   }
@@ -1006,13 +1011,12 @@ function pageKey(){ const h = decodeURIComponent(location.hash.slice(1)); return
 function sizePrefs(){ try { return JSON.parse(localStorage.getItem('imr-coral-size')) || {}; } catch (e) { return {}; } }
 // Default M, except Genera (S: more genera per screen, groups easier to compare).
 function photoSize(){ return sizePrefs()[pageKey()] || (pageKey() === 'genera' ? 's' : 'm'); }
-const SIZES = {card: {s: '240px', m: '360px', l: '520px'}, strip: {s: '(max-width:700px) 46vw, 260px', m: '(max-width:700px) 92vw, 420px', l: '(max-width:700px) 92vw, 640px'}};
+const SIZES = {card: {s: '240px', m: '360px', l: '520px'}, strip: {s: '(max-width:599.98px) 46vw, 260px', m: '(max-width:599.98px) 92vw, 420px', l: '(max-width:599.98px) 92vw, 640px'}};
 const sizesFor = kind => SIZES[kind][photoSize()];
 function applySize(){ const s = photoSize(), on = SIZE_PAGES.includes(pageKey()); document.documentElement.dataset.size = s;
   const sz = document.getElementById('size'); document.getElementById('sizerow').hidden = !on; document.querySelectorAll('img[data-sz]').forEach(i => i.sizes = sizesFor(i.dataset.sz)); document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); }
 function showOrigin(){ document.querySelectorAll('#origin button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.origin === origin))); }
-// On phones each group shows only its current button: tapping it moves to the next one.
-const phone = () => matchMedia('(max-width:640px)').matches;
+const phone = isPhone;
 const cycle = b => b;  // all choices are visible in the settings panel
 document.querySelectorAll('#origin button').forEach(b => b.onclick = () => { b = cycle(b); origin = b.dataset.origin; store.set('imr-coral-origin', origin); showOrigin(); if (RAW) { build(); route(); } });
 showOrigin();

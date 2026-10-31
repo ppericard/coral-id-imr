@@ -99,7 +99,7 @@ LAB.add({
     const reset = () => { FIDS.forEach(f => S[f].clear()); S.out.clear(); S.all.clear(); S.cmp = []; S.q = ''; S.home = true; draw(); };
     // On phones the panel sits above the shortlist: only growth form and the families in use start open.
     function drawSide(F, left){
-      const narrow = matchMedia('(max-width:900px)').matches, phone = matchMedia('(max-width:700px)').matches;
+      const narrow = isPhone(), phone = narrow;  // one size system (app.js MQ): the clue panel stacks on phones only
       const nUsed = F.reduce((t, f) => t + S[f.id].size, 0);
       $side.innerHTML = `${phone ? `<details class="fdfold"${S.open.has('side') ? ' open' : ''}><summary><span>Clues</span>${nUsed ? ` <span class="fdn">${nUsed}</span>` : ''}<span class="fdfoldh">${S.open.has('side') ? 'Hide' : 'Edit'}</span></summary>` : ''}<div class="fdsearch"><input type="search" id="fdq" placeholder="Genus name…" value="${esc(S.q)}" aria-label="Filter by genus name"></div>
       ${F.map(f => {
@@ -179,7 +179,7 @@ LAB.add({
       const near = left.length && left.length <= 3 ? uniq(left.flatMap(n => lookOf(n))).filter(n => !left.includes(n) && !close.includes(n)) : [];
       const chosen = F.flatMap(f => f.opts.filter(o => S[f.id].has(o.id)).map(o => ({f, o})));
       // Phones: with genera fitting every clue, "One clue off" starts folded (one tap opens it) so the best fits are not buried.
-      const foldOff = left.length && matchMedia('(max-width:700px)').matches && !S.open.has('off');
+      const foldOff = left.length && isPhone() && !S.open.has('off');
       $main.innerHTML = `<div class="fdtop"><p class="fdcount"><b>${left.length}</b> ${used(F).length ? (left.length === 1 ? 'genus fits' : 'genera fit') + ' every clue' + (close.length ? `, ${close.length} more one clue off` : '') : 'IMR genera'}</p>
         <span class="fdsegs"><span class="seg" role="group" aria-label="Layout">${[['auto', 'Auto', 'Mosaic up to 12 genera, Cards beyond'], ['cover', 'Cards', 'One photo and the key features per genus'], ['mosaic', 'Mosaic', '8 varied photos per genus'], ['sheet', 'Contact sheet', 'Every photo of each genus']].map(([v, t, h]) => `<button type="button" data-lay="${v}" aria-pressed="${lay === v}" title="${h}">${t}${v === 'auto' && lay === 'auto' ? ` <small>(${mode === 'mosaic' ? 'Mosaic' : 'Cards'})</small>` : ''}</button>`).join('')}</span>
         <span class="seg" role="group" aria-label="Photos">${[['mix', 'Mix'], ...VIEWS].map(([v, t]) => `<button type="button" data-pv="${v}" aria-pressed="${pv === v}">${t}</button>`).join('')}</span></span></div>
