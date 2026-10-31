@@ -67,16 +67,15 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .chip[aria-pressed="true"],.chip[aria-current="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .opts{margin:16px 0 4px}
 /* Section modes: a segmented tab bar, second row of the sticky header. */
-.modes{flex:1 0 100%;display:flex;overflow-x:auto;gap:4px;margin:0;padding:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r)}
+/* Section modes: slim text tabs under the header. They scroll with the page; only the page bar (.ctx) sticks. */
+.modes{display:flex;gap:2px;margin:6px 0 0;overflow-x:auto;scrollbar-width:none}
 .modes[hidden]{display:none}
-.modes a{flex:1 1 0;display:flex;align-items:center;justify-content:center;min-height:34px;padding:4px 10px;border-radius:var(--r-sm);text-decoration:none;color:var(--muted);text-align:center;line-height:1.15;transition:background .12s,color .12s}
-.modes a b{font-weight:600;font-size:.95rem;color:var(--ink)}
-.modes a:hover{background:color-mix(in srgb,var(--surface) 60%,transparent)}
-.modes a:hover b{color:var(--accent)}
-.modes a[aria-current="page"]{background:var(--surface);box-shadow:var(--shadow);color:var(--muted)}
-.modes a[aria-current="page"] b{color:var(--accent)}
-/* Page bar: on a genus sheet or a pair, the same row shows back, the page name and previous / next. */
-.modes.ctx{align-items:center;gap:8px;padding:3px 4px;overflow:hidden}
+.modes a{flex:none;display:flex;align-items:center;min-height:34px;padding:4px 12px;border-bottom:2px solid transparent;text-decoration:none;color:var(--muted);white-space:nowrap}
+.modes a b{font-weight:600;font-size:.92rem;color:inherit}
+.modes a:hover{color:var(--accent)}
+.modes a[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent)}
+.modes.ctx{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--hdr-h,56px));z-index:4;align-items:center;gap:8px;margin-top:8px;padding:3px 4px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r)}
+.modes.ctx a{border-bottom:0;min-height:34px}
 .modes.ctx .up,.modes.ctx .pn a,.modes.ctx .ctx-l{flex:none;display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 12px;border-radius:var(--r-sm);font:inherit;font-size:.9rem;color:var(--accent);background:none;border:0;cursor:pointer;text-decoration:none}
 .modes.ctx .up:hover,.modes.ctx .pn a:hover,.modes.ctx .ctx-l:hover{background:var(--surface)}
 .modes.ctx .ctx-t{flex:1 1 auto;min-width:0;margin:0;display:flex;align-items:baseline;gap:10px;font-family:var(--body);font-weight:600;font-size:1.25rem;line-height:1.2;white-space:nowrap;overflow:hidden}
@@ -151,7 +150,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .vrow h3{margin-top:16px}
 .gap{font-size:.7rem;background:var(--bad-bg);color:var(--bad);padding:1px 7px;border-radius:var(--pill);letter-spacing:0;text-transform:none}
 .hero{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:24px;align-items:start;margin:8px 0 12px}
-.hero-ph{position:sticky;top:calc(var(--hdr-h,110px) + 12px);overflow:hidden;box-shadow:var(--shadow)}
+.hero-ph{position:sticky;top:calc(var(--hdr-h,56px) + 60px);overflow:hidden;box-shadow:var(--shadow)}
 .hero-ph img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border-radius:var(--r)}
 .idbox h3:first-child{margin-top:0}
 .idbox .crit{font-size:.95rem}
@@ -285,13 +284,14 @@ td i{font-weight:600}
   .prog .pl{display:none}
   .hdr-tools{gap:6px}
   #origin button{padding:0 7px}
-  header{grid-template-areas:"title tools" "nav nav" "modes modes"}
+  header{grid-template-areas:"title tools" "nav nav" "help help"}
+  .helpbox{grid-area:help}
+  /* one button per group on phones: tap to cycle */
+  #size button:not([aria-pressed="true"]),#origin button:not([aria-pressed="true"]){display:none}
+  #size button,#origin button{border:0!important}
   .sections{grid-area:nav;margin-left:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px}
-  .modes{grid-area:modes;padding:3px;overflow-x:auto;scrollbar-width:none;min-width:0}
-  .modes a{flex:1 0 auto}
-  .modes a{min-height:34px;padding:4px 8px}
-  .modes a b{font-size:.8rem}
-  .modes a small{display:none}
+  .modes a{padding:4px 9px}
+  .modes a b{font-size:.86rem}
   .modes.ctx a{flex:none;min-height:36px}
   .modes.ctx .up{padding:0 8px;font-size:.85rem}
   .modes.ctx .ctx-t{font-size:1.15rem;flex-direction:column;gap:0}
@@ -374,3 +374,12 @@ a.lt:hover{border-color:var(--accent)}
 .sync{margin:0 0 18px;border-color:var(--accent)}
 .prog.nosync{border-color:var(--accent)}
 .prog.nosync::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);margin-left:6px;display:inline-block}
+
+/* Help: a discreet ? in the header holds the page's explanations, so pages open straight on the content. */
+.helpbox{flex:1 0 100%;margin:0;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);font-size:.92rem;max-height:50vh;overflow:auto}
+.helpbox[hidden]{display:none}
+.helpbox > *{max-width:75ch;margin:0 0 6px}
+.helpbox > :last-child{margin-bottom:0}
+.helpbox h3{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+#help[aria-expanded="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+#help{font-weight:700;font-size:.95rem}
