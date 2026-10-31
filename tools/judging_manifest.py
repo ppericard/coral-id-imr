@@ -41,7 +41,7 @@ def put(n, p, view, status, extra=False):
     if any(f in (L or []) for L in (k.get('feat') or {}).values()): mine['featured'] = True
     if k.get('cover') == f: mine['cover'] = True
     e = {'f': f, 'genus': genus, 'view': view, 'source': source(p), 'status': status,
-         'image': f'img/{f}.webp', 'thumb': f'img/{f}-s.webp'}
+         'image': p['src'].replace('/original.', '/large.') if p.get('r') else f'img/{f}.webp', 'thumb': p['src'].replace('/original.', '/medium.') if p.get('r') else f'img/{f}-s.webp'}
     if p.get('t') and p.get('t') != genus: e['inat_label'] = p['t']
     if p.get('imr'): e['slide'] = p.get('slide')
     if p.get('multi') or extra: e['multi'] = True
