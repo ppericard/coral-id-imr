@@ -10,7 +10,7 @@ const $v = document.getElementById('view'), $ = id => document.getElementById(id
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const store = {
   get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
-  set(k, v){ try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  set(k, v){ try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 };
 const img = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp`;
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -27,7 +27,8 @@ let draftAt = null;
 // No button ever clears several choices at once: Undo (or Ctrl+Z) steps back one click at a time, within this visit.
 // Redo (or Ctrl+Shift+Z / Ctrl+Y) steps forward again; a new click clears the redo steps.
 let HIST = [], FUT = [], snap = null;
-function saveDraft(){ if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); FUT = []; snap = JSON.stringify(DRAFT); store.set('imr-curation-draft', DRAFT); draftAt = new Date(); }
+function saveDraft(){ if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); FUT = []; snap = JSON.stringify(DRAFT); draftLost = !store.set('imr-curation-draft', DRAFT); draftAt = new Date(); }
+let draftLost = false;
 function step(from, to, msg){
   if (!from.length) return toast(msg[0]);
   to.push(snap); snap = from.pop(); DRAFT = JSON.parse(snap); store.set('imr-curation-draft', DRAFT); draftAt = new Date(); render(); toast(msg[1]);
@@ -708,7 +709,8 @@ async function start(){
     if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); } else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); } });
   cur = decodeURIComponent(location.hash.slice(1)) || Object.keys(DATA.gen)[0];
   window.onhashchange = () => { cur = decodeURIComponent(location.hash.slice(1)); const h = $('admhelp'); if (h) h.remove(); render(); window.scrollTo({top: 0}); };
-  window.onbeforeunload = e => { if (TOKEN && (changed().length || qChanged() || fChanged() || xChanged() || flChanged() || sgChanged())) { e.preventDefault(); e.returnValue = ''; } };
+  // Every click is kept in this browser's draft, so leaving or reloading loses nothing: warn only if that save failed.
+  window.onbeforeunload = e => { if (draftLost) { e.preventDefault(); e.returnValue = ''; } };
   render();
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.
