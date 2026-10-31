@@ -330,3 +330,18 @@ body.adm-cmode main{margin-bottom:0}
 .adm-sw .adm-swacts{padding:0}
 .adm-sw .adm-acts .adm-fseg button{flex:1 1 0;min-width:0}
 body.adm-cmode .adm-toast{bottom:auto;top:calc(var(--hdr-h,64px) + 56px);pointer-events:none}
+/* Crop editor (Candidates view). */
+.adm-crop{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
+.adm-cropbox{position:relative;touch-action:none;user-select:none}
+.adm-cropbox img{width:100%;height:100%;display:block;pointer-events:none}
+.adm-cropfr{position:absolute;box-shadow:0 0 0 9999px #000a;outline:2px solid #fff;cursor:move}
+.adm-cropbox{overflow:hidden}
+.adm-cropfr i{position:absolute;width:36px;height:36px;border:4px solid #fff;border-radius:4px}
+.adm-cropfr i[data-h="lt"]{left:0;top:0;border-right:0;border-bottom:0}
+.adm-cropfr i[data-h="rt"]{right:0;top:0;border-left:0;border-bottom:0}
+.adm-cropfr i[data-h="lb"]{left:0;bottom:0;border-right:0;border-top:0}
+.adm-cropfr i[data-h="rb"]{right:0;bottom:0;border-left:0;border-top:0}
+.adm-cropbar{display:flex;gap:8px;width:100%;max-width:520px}
+.adm-cropbar button{flex:1;font:inherit;font-weight:600;min-height:48px;border:1px solid #fff6;border-radius:var(--r-sm);background:#222;color:#fff;cursor:pointer}
+.adm-cropbar .ok{background:var(--good-bg);color:var(--good);border-color:var(--good)}
+.adm-swrow .adm-swcrop.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
