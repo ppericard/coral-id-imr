@@ -440,6 +440,14 @@
     "pocillopora-macro-745206187": "excluded",
     "tubastraea-cand-580500321": "excluded"
   },
+  "flag": {
+    "diploastrea-cand-269731161": {
+      "genus": "Diploastrea",
+      "view": "medium",
+      "where": "quiz · level auto",
+      "at": "2026-10-31T16:14:28.590Z"
+    }
+  },
   "seen": {
     "cand:acropora-cf-2-00": 1,
     "cand:alveopora-cf-71-00": 1,
