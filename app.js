@@ -13,8 +13,25 @@ const img = (p, size) => `img/${p.f}${size === 's' ? '-s' : ''}.webp`;
 const srcset = p => `img/${p.f}-s.webp 480w, img/${p.f}.webp 1600w`;
 const credit = p => p.imr ? `IMR Lecture 6, slide ${p.slide}` : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(p.o)}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
-// Card photo: the one picked per genus in data.json, else the first closer view.
-const cover = g => allPhotos(g).find(p => p.f === g.cover) || (g.views.medium || [])[0] || allPhotos(g)[0];
+// Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick, else the first closer view.
+const cover = g => g.coverP || allPhotos(g).find(p => p.f === g.cover) || (g.views.medium || [])[0] || allPhotos(g)[0];
+// Editorial curation from curation.json (edited in admin.html): per genus, cover photo, featured photos
+// per view (in order), hidden photos and photos moved to another view. Hidden photos leave games too.
+function applyCuration(d, c){
+  Object.entries((c && c.genera) || {}).forEach(([n, k]) => {
+    const g = d.gen[n]; if (!g) return;
+    const hide = new Set(k.hide || []), mv = k.move || {}, feat = k.feat || {};
+    const regroup = src => { const out = {}; VIEWS.forEach(([v]) => ((src || {})[v] || []).forEach(p => { if (hide.has(p.f)) return; const w = mv[p.f] || v; (out[w] = out[w] || []).push(p); })); return out; };
+    const all = [...allPhotos(g), ...VIEWS.flatMap(([v]) => (g.more || {})[v] || []), ...(d.course[n] || [])];
+    g.views = regroup(g.views); g.more = regroup(g.more);
+    // Featured photos lead their view, so quick picks (comparisons, first photo of a view) use them too.
+    Object.entries(g.views).forEach(([v, L]) => { const F = feat[v] || []; g.views[v] = [...F.map(f => L.find(p => p.f === f)).filter(Boolean), ...L.filter(p => !F.includes(p.f))]; });
+    if (d.course[n]) d.course[n] = d.course[n].filter(p => !hide.has(p.f)).map(p => mv[p.f] ? {...p, v: mv[p.f]} : p);
+    if (Object.keys(feat).length) g.feat = feat;
+    const cv = k.cover && !hide.has(k.cover) && all.find(p => p.f === k.cover);
+    if (cv) g.coverP = cv;
+  });
+}
 
 /* ---------- shared bits ---------- */
 // Genera in IMR slate order (data.json lists them that way, starred genera last).
@@ -114,7 +131,9 @@ function viewGenus(name){
     const fig = p => { const i = flat.findIndex(x => x.f === p.f);
       return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${esc(name)}, ${p.imr ? 'IMR lecture photo' : label.toLowerCase() + ' view'}" loading="lazy"></button><figcaption>${p.imr ? '<b class="lect">IMR lecture</b> ' : ''}${credit(p)}</figcaption></figure>`; };
     // Multi-coral photos never make the featured strip, even when fewer than FEAT clean photos exist.
-    const feat = list.filter(p => !p.multi).slice(0, FEAT), more = list.filter(p => !feat.includes(p));
+    // Featured photos picked in curation.json win; otherwise the first clean photos of the round-robin.
+    const pin = ((g.feat || {})[v] || []).map(f => list.find(p => p.f === f)).filter(Boolean);
+    const feat = pin.length ? pin : list.filter(p => !p.multi).slice(0, FEAT), more = list.filter(p => !feat.includes(p));
     return `<section class="vrow"><h3>${label}${feat.length ? '' : ' <span class="gap">missing</span>'}</h3>${feat.length ? `<div class="strip">${feat.map(fig).join('')}</div>` : '<p class="note">No good photo yet for this view.</p>'}
       ${more.length ? `<details class="more"><summary>${more.length} more ${label.toLowerCase()} photo${more.length > 1 ? 's' : ''}</summary><div class="strip">${more.map(fig).join('')}</div></details>` : ''}</section>`;
   }).join('');
@@ -641,5 +660,8 @@ function hdrMetrics(){
   r.setProperty('--hdr-h', (h - hide) + 'px'); r.setProperty('--hdr-hide', hide + 'px');
 }
 if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else addEventListener('resize', hdrMetrics);
-fetch('data.json?v=9').then(r => r.json()).then(d => { DATA = d; route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+// ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
+const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
+  return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
+Promise.all([fetch('data.json?v=9').then(r => r.json()), curation()]).then(([d, c]) => { applyCuration(d, c); DATA = d; route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
