@@ -97,33 +97,36 @@ function viewGenus(name){
   const g = DATA.gen[name];
   if (!g) return viewGenera();
   const paths = DATA.key.flatMap(k => k.leaves.filter(l => l.g.includes(name)).map(l => ({k, l})));
-  const flat = allPhotos(g).map(p => ({...p, genus: name}));
-  const course = (DATA.course[name] || []).map(p => ({...p, genus: name}));
-  const rows = VIEWS.filter(([v]) => !(g.levels === 2 && !(g.views[v] || []).length)).map(([v, label]) => {
-    const list = g.views[v] || [];
+  // Lecture photos sit in the view row they belong to (data: course[].v), after the field photos.
+  const course = (DATA.course[name] || []).map(p => ({...p, view: p.v === 'medium' && g.levels === 2 ? 'macro' : p.v}));
+  const inView = v => [...(g.views[v] || []), ...course.filter(p => p.view === v)];
+  const flat = VIEWS.flatMap(([v]) => inView(v).map(p => ({...p, genus: name, view: g.levels === 2 && v === 'macro' ? 'close' : v})));
+  const cv = cover(g), ci = cv ? flat.findIndex(x => x.f === cv.f) : -1;
+  const rows = VIEWS.filter(([v]) => !(g.levels === 2 && !inView(v).length)).map(([v, label]) => {
+    const list = inView(v);
     if (g.levels === 2 && v === 'macro') label = 'Close-up';
     return `<section class="vrow"><h3>${label}${list.length ? '' : ' <span class="gap">missing</span>'}</h3>${list.length ? `<div class="strip">${list.map(p => {
       const i = flat.findIndex(x => x.f === p.f);
-      return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${esc(name)}, ${label.toLowerCase()} view" loading="lazy"></button><figcaption>${credit(p)}</figcaption></figure>`; }).join('')}</div>` : '<p class="note">No good photo yet for this view.</p>'}</section>`;
+      return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${esc(name)}, ${p.imr ? 'IMR lecture photo' : label.toLowerCase() + ' view'}" loading="lazy"></button><figcaption>${p.imr ? '<b class="lect">IMR lecture</b> ' : ''}${credit(p)}</figcaption></figure>`; }).join('')}</div>` : '<p class="note">No good photo yet for this view.</p>'}</section>`;
   }).join('');
   $v.innerHTML = `<div class="crumbs"><button type="button" data-back>‹ Back</button></div>
   <article class="sheet">
     <span class="fam">${g.n ? 'No. ' + g.n + ' on the slate · ' : ''}${esc(g.fam)}</span>
     <h2>${esc(name)}</h2>
     ${g.n ? '' : `<p class="warn"><b>★ Not surveyed by IMR.</b> It is on the slate so you don't mistake it for ${g.look.filter(n => DATA.gen[n].n).map(n => '<i>' + esc(n) + '</i>').join(', ')}, so you need to recognise it and set it aside.</p>`}
-    ${rows}
-    ${course.length ? `<section class="vrow"><h3>From the IMR lecture</h3><div class="strip">${course.map((p, i) => `<figure><button type="button" class="zoom" data-c="${i}"><img src="${img(p, 's')}" alt="${esc(name)}, lecture photo" loading="lazy"></button><figcaption>${credit(p)}</figcaption></figure>`).join('')}</div></section>` : ''}
-    <div class="cols">
-      <div>${g.imr.length ? `<h3>IMR lecture · group ${g.ig}</h3><p class="note">${esc(DATA.imrg[g.ig - 1].t)}</p><ul class="crit">${g.imr.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}${g.mn ? `<p class="note"><b>Lecture mnemonic:</b> ${esc(g.mn)}</p>` : ''}
+    <div class="hero">
+      ${cv ? `<button type="button" class="zoom hero-ph" data-z="${ci}"><img src="${img(cv)}" alt="${esc(name)}"></button>` : ''}
+      <div class="idbox">
+        ${g.imr.length ? `<h3>IMR lecture · group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</h3><ul class="crit">${g.imr.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}${g.mn ? `<p class="note"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}
         <h3>Coral Finder features</h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
-        <h3>Don't confuse with</h3><div class="chips">${g.look.map(n => `<a class="chip" href="#cmp-${esc(name)}|${esc(n)}">${esc(n)}</a>`).join('')}</div><p class="note">Opens a side-by-side comparison.</p></div>
-      <div><h3>Possible growth forms (${new Set(paths.map(x => x.k.id)).size})</h3><div class="paths">${[...new Set(paths.map(x => x.k))].map(k => `<span class="note">${esc(k.name)}</span>`).join(' · ')}</div>
-        <h3>Where it is in the key</h3><div class="paths">${paths.map(({k, l}) => `<a class="c-${k.color}" href="#l-${l.id}">${esc(k.name)} › ${esc(leafLabel(l))}</a>`).join('')}</div>
-        <h3>Coral Finder</h3><p class="note">Pages ${g.pages.join(', ')}</p></div>
+        ${g.check ? `<p class="note check"><b>To check with an IMR trainer:</b> ${esc(g.check)}</p>` : ''}
+        <h3>Don't confuse with</h3><div class="chips">${g.look.map(n => `<a class="chip" href="#cmp-${esc(name)}|${esc(n)}" title="Side-by-side comparison">${esc(n)}</a>`).join('')}</div>
+        <h3>In the key <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3><div class="kpick">${paths.map(({k, l}) => `<a class="c-${k.color}" href="#l-${l.id}">${esc(k.name)} › ${esc(leafLabel(l))}</a>`).join('')}</div>
+      </div>
     </div>
+    ${rows}
   </article>`;
   $v.querySelectorAll('[data-z]').forEach(b => b.onclick = () => zoom(flat, Number(b.dataset.z)));
-  $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => zoom(course, Number(b.dataset.c)));
   $v.querySelectorAll('[data-cmp]').forEach(b => b.onclick = () => go('cmp-' + name + '|' + b.dataset.cmp));
   bindGo();
   $v.querySelector('[data-back]').onclick = () => history.length > 1 ? history.back() : go('genera');
