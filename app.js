@@ -11,6 +11,8 @@ const store = {
 const VIEWS = [['wide', 'Colony'], ['medium', 'Closer'], ['macro', 'Corallites']];
 const img = (p, size) => `img/${p.f}${size === 's' ? '-s' : ''}.webp`;
 const srcset = p => `img/${p.f}-s.webp 480w, img/${p.f}.webp 1600w`;
+// Discreet link to a photo's iNaturalist observation; games show it only once the answer is out.
+const inatTag = p => p && p.o && p.o.includes('inaturalist.org') ? `<a class="inat" href="${esc(p.o)}" target="_blank" rel="noopener" title="Open the iNaturalist observation">iNat ↗</a>` : '';
 const credit = p => p.imr ? `IMR Lecture 6, slide ${p.slide}` : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(p.o)}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
 // Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick, else the first closer view.
@@ -130,10 +132,8 @@ function viewTips(){
   const sel = location.hash.split('|')[1] || '';
   $v.innerHTML = `<h2>ID tips</h2>
   <p class="lede">What the IMR lecturers point out for each genus, in their own words: slide text, review slides and presenter's notes from Lecture 6.</p>
-  <section class="tipintro">
-  <h3>IMR Lecture 6: questions to ask</h3><ol class="tips">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
+  <h3 class="label">IMR Lecture 6: questions to ask</h3><ol class="tips">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
   <details class="gloss"><summary>Coral anatomy terms</summary><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details>
-  </section>
   <div class="chips tipgr"><a class="chip" href="#tips" aria-pressed="${!sel}">All groups</a>${gr.map(x => `<a class="chip" href="#tips|${x.n}" aria-pressed="${sel == x.n}">${x.n}. ${esc(x.t)}</a>`).join('')}</div>
   ${gr.filter(x => !sel || sel == x.n).map(x => `<section class="tipsec"><h3 class="gdiv" style="--g:${(x.n * 137) % 360}"><span class="gn">${x.n}</span>${esc(x.t)}</h3>
     ${x.L.map(n => { const g = DATA.gen[n], p = cover(g); return `<article class="tipg"><a href="#g-${esc(n)}" class="tipph">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<i>${esc(n)}</i></a><div>${tipsList(g)}${lookOf(n).length ? `<p class="note">Don't confuse with ${lookOf(n).map(b => `<a href="#cmp-${esc(n)}|${esc(b)}"><i>${esc(b)}</i></a>`).join(', ')}</p>` : ''}</div></article>`; }).join('')}</section>`).join('')}`;
@@ -290,7 +290,7 @@ function viewCompareList(){
   <div class="seg-row"><span class="label">Show</span>${viewSeg()}</div>
   ${DATA.imrg.map(x => grp(`<span class="gn">${x.n}</span> ${esc(x.t)}`, bySlate(Object.keys(G).filter(n => shownGroup(n) === x.n)))).join('')}
   ${none.length ? grp('<span class="gn">★</span> Not covered in the lecture', none) : ''}`;
-  bindViewSeg(() => { const y = window.scrollY; viewCompareList(); pageHelp('cmp'); window.scrollTo(0, y); });
+  bindViewSeg(() => { const y = window.scrollY; viewCompareList(); window.scrollTo(0, y); });
 }
 function viewCompare(a, b){
   const A = DATA.gen[a], B = DATA.gen[b];
@@ -436,6 +436,7 @@ function answer(cur, c, target, ph, cor){
   if (good && cor) s.cor = 1;  // milestone: right with the corallites photo in view
   if (good && cur.startsWith('quiz-duel')) s.du = 1;  // milestone: won a look-alike duel
   save();
+  $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', inatTag(ph[k])));
   $v.querySelectorAll('[data-c]').forEach(b => { b.disabled = true; if (b.dataset.c === target) b.classList.add('ok'); else if (b.dataset.c === c) b.classList.add('ko'); });
     const g = DATA.gen[target];
   const vs = !good && DATA.gen[c] ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(tipsText(DATA.gen[c]))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>` : '';
@@ -728,6 +729,7 @@ function route(){
   // Home lives at the clean URL; an old #home link is rewritten to it.
   if (h === 'home') history.replaceState(null, '', location.pathname + location.search);
   const tab = sectionOf(h);
+  resetHelp();
   showProg(); tab === 'progress' ? $prog.setAttribute('aria-current', 'page') : $prog.removeAttribute('aria-current');
   document.querySelectorAll('nav [data-tab]').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   showModes(tab, h);
@@ -749,23 +751,25 @@ function route(){
   else if ((!h || h === 'home') && window.viewHome) viewHome();
   else viewGenera();
   window.scrollTo(0, 0);
-  pageHelp(tab);
+  pageHelp();
   hdrMetrics();
 }
 addEventListener('hashchange', route);
 // Pages open straight on their content: the title is dropped where the header already names the page
 // (section tab, page bar or Lab crumbs), and the intro text moves behind the ? button.
 const $help = document.getElementById('help'), $helpbox = document.getElementById('helpbox');
-function pageHelp(tab){
+// One rule for every page and every render path (route, tabs, toggles, Lab tools): whenever the view gets a
+// top-level title or intro, the title is dropped and the intro moves behind ? . route() only resets the help box.
+function pageHelp(){
   const root = $v.querySelector(':scope > .lab') || $v;
-  const h2 = root.querySelector(':scope > h2'), intro = [...root.querySelectorAll(':scope > .lede, :scope > .tips, :scope > h3.label, :scope > .gloss')];
-  const title = h2 ? h2.textContent : '';
-  if (h2 && tab !== 'progress' && tab !== 'home') h2.remove();
-  $helpbox.hidden = true; $help.setAttribute('aria-expanded', 'false');
-  $help.hidden = !intro.length;
-  $helpbox.innerHTML = intro.length ? (title ? `<h3>${esc(title)}</h3>` : '') + intro.map(x => x.outerHTML).join('') : '';
-  intro.forEach(x => x.remove());
+  const found = [...root.querySelectorAll(':scope > h2, :scope > .lede, :scope > .tips, :scope > h3.label, :scope > .gloss')];
+  if (!found.length) return;
+  const h2 = found.find(x => x.tagName === 'H2'), intro = found.filter(x => x !== h2);
+  if (intro.length) { $helpbox.innerHTML = (h2 ? `<h3>${esc(h2.textContent)}</h3>` : '') + intro.map(x => x.outerHTML).join(''); $help.hidden = false; }
+  found.forEach(x => x.remove());
 }
+function resetHelp(){ $helpbox.hidden = true; $helpbox.innerHTML = ''; $help.hidden = true; $help.setAttribute('aria-expanded', 'false'); }
+new MutationObserver(pageHelp).observe($v, {childList: true, subtree: true});
 $help.onclick = () => { const open = $helpbox.hidden; $helpbox.hidden = !open; $help.setAttribute('aria-expanded', String(open)); hdrMetrics(); };
 // The brand link goes home without reloading the page (href="./" still works without JS).
 document.querySelector('.brand .home').onclick = e => {

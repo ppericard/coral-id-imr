@@ -456,4 +456,5 @@ a.lt:hover{border-color:var(--accent)}
 .tipph{display:flex;flex-direction:column;gap:4px;text-decoration:none;color:var(--ink)}
 .tipph img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px}
 @media (max-width:600px){.tipg{grid-template-columns:96px minmax(0,1fr);gap:10px}}
-.tipintro h3{margin:4px 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.inat{position:absolute;right:6px;bottom:6px;z-index:2;font-size:.72rem;line-height:1;padding:3px 6px;border-radius:var(--pill);background:rgba(0,0,0,.45);color:#fff;text-decoration:none;opacity:.7}
+.inat:hover,.inat:focus-visible{opacity:1;background:rgba(0,0,0,.7)}
