@@ -298,3 +298,9 @@ td i{font-weight:600}
 .pdone{margin-left:auto;font-weight:400;color:var(--muted);font-size:.85rem}
 .srcs{margin:.2rem 0 0;padding-left:1.1rem}.srcs li{margin:.15rem 0}.refs{margin-top:.8rem}
 .osrc{margin-top:.9rem}
+.sync{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin:18px 0 0}
+.sync p{margin:0 0 8px}
+.sform{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.sform label{display:flex;flex-direction:column;gap:3px;font-size:.85rem;color:var(--muted)}
+.sform input{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--bg);color:var(--ink);min-width:0;width:12em}
+.sform input[name=p]{width:6em;letter-spacing:.2em}

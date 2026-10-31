@@ -257,7 +257,7 @@ function viewTraits(){
 /* ---------- quiz ---------- */
 // Progress per genus {ok, ko, streak, conf}, kept in this browser only.
 let P = store.get('imr-coral-progress', {}) || {};
-const save = () => { store.set('imr-coral-progress', P); showProg(); };
+const save = () => { store.set('imr-coral-progress', P); showProg(); syncSoon(); };
 const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
 const Q = Object.assign({stars: true, view: 'any'}, store.get('imr-coral-quiz', {}));
 const saveQ = () => store.set('imr-coral-quiz', Q);
@@ -381,24 +381,26 @@ function quizBoard(){
   ${groups.map(k => { const gr = DATA.imrg.find(x => x.n === k), L = list.filter(n => gi(n) === k).sort((a, b) => slateIdx(a) - slateIdx(b));
     const done = L.filter(n => lv[n][0] === 'ok').length;
     return `<h3 class="gdiv" style="--g:${gr ? (gr.n * 137) % 360 : 200}"><span class="gn">${gr ? gr.n : '★'}</span>${gr ? esc(gr.t) : 'Not covered in the lecture'}<small class="pdone">${done}/${L.length}</small></h3><div class="pgrid">${L.map(tile).join('')}</div>`; }).join('')}
+  ${SYNC_URL ? '<section class="sync" id="sync"></section>' : ''}
   <div class="saveprog"><p class="note">Progress is saved in this browser, on this device. Save it to a file to keep a backup or move it to another phone or computer.</p>
     <button class="chip" type="button" id="pexp">Save progress to a file</button> <button class="chip" type="button" id="pload">Load a progress file</button><input type="file" id="pimp" accept=".json,application/json" hidden> <span class="note" id="pmsg" role="status"></span></div>
   <p><button class="reset" type="button" id="reset">Reset progress</button></p>`;
   bindQuizNav('quiz-board');
-  bindProgFile();
+  bindProgFile(); bindSync();
   const rb = document.getElementById('reset');
-  rb.onclick = () => { if (rb.dataset.armed) { P = {}; save(); quizBoard(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } };
+  rb.onclick = () => { if (rb.dataset.armed) { P = {}; store.set('imr-coral-reset', new Date().toISOString()); save(); quizBoard(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } };
 }
 
 // Header progress pill: genera learned, always in view; the page itself is #progress.
 const $prog = document.getElementById('prog');
 function showProg(){ if (!DATA) return; const n = Object.keys(DATA.gen); document.getElementById('progn').textContent = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length}`; }
 // Progress files: every imr-coral-* key in localStorage (quiz progress, settings, Lab scores), as JSON.
+const progData = () => { const d = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('imr-coral') && k !== 'imr-coral-sync') d[k] = localStorage.getItem(k); } } catch (e) {} return d; };
+const loadData = d => Object.entries(d || {}).forEach(([k, v]) => k.startsWith('imr-coral') && k !== 'imr-coral-sync' && localStorage.setItem(k, v));
 function bindProgFile(){
   const msg = t => document.getElementById('pmsg').textContent = t;
   document.getElementById('pexp').onclick = () => {
-    const out = {app: 'imr-coral-id', saved: new Date().toISOString(), data: {}};
-    try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('imr-coral')) out.data[k] = localStorage.getItem(k); } } catch (e) {}
+    const out = {app: 'imr-coral-id', saved: new Date().toISOString(), data: progData()};
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 1)], {type: 'application/json'}));
     a.download = `imr-coral-progress-${out.saved.slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(a.href);
@@ -409,10 +411,96 @@ function bindProgFile(){
   try { const done = sessionStorage.getItem('imr-coral-loaded'); if (done) { sessionStorage.removeItem('imr-coral-loaded'); msg('Progress loaded from ' + done + '.'); } } catch (e) {}
   pick.onchange = e => { const f = e.target.files[0]; if (!f) return;
     f.text().then(t => { const j = JSON.parse(t); if (j.app !== 'imr-coral-id' || !j.data) throw 0;
-      Object.entries(j.data).forEach(([k, v]) => k.startsWith('imr-coral') && localStorage.setItem(k, v));
+      loadData(j.data);
       // Reload so every setting held in memory (quiz options, list order, Lab state) picks up the file.
       try { sessionStorage.setItem('imr-coral-loaded', f.name); } catch (e) {} location.reload(); })
       .catch(() => msg('This file is not an IMR Coral ID progress file.')); };
+}
+// RA sync: progress goes to Pierre's Google Sheet (Apps Script web app, tools/sync/Code.gs) under a name
+// and a 4-digit code; the same name and code bring it back on another device. Off while SYNC_URL is empty.
+const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
+let SYNC = store.get('imr-coral-sync', null), syncTimer = null;
+function syncSummary(){
+  const n = Object.keys(DATA.gen), genera = Object.fromEntries(n.map(x => [x, level(x)[0]]));
+  return {learned: n.filter(x => genera[x] === 'ok').length, seen: n.filter(x => genera[x] !== 'new').length, total: n.length,
+    review: n.filter(x => genera[x] === 'weak'), genera};
+}
+const syncGet = (a = SYNC) => fetch(`${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}`).then(r => r.json());
+// Two devices on one account: three-way merge against SYNC.base, the progress as last sent or received.
+// Answers taken on this device since then are added on top of the saved record, so neither side's answers
+// are lost. A reset (imr-coral-reset, a time) wins over older progress.
+const copy = o => JSON.parse(JSON.stringify(o));
+function mergeSaved(j){
+  const d = j.data || {}; let R = {}; try { R = JSON.parse(d['imr-coral-progress'] || '{}') || {}; } catch (e) {}
+  const rr = JSON.parse(d['imr-coral-reset'] || '""'), lr = store.get('imr-coral-reset', '');
+  // A send whose reply was lost but which did reach the sheet: the saved record is exactly what was sent.
+  if (SYNC.pending && d['imr-coral-progress'] === SYNC.pending) SYNC.base = R;
+  delete SYNC.pending;
+  if (lr > rr) return;
+  if (rr > lr) { P = R; SYNC.base = copy(R); store.set('imr-coral-sync', SYNC); store.set('imr-coral-reset', rr); store.set('imr-coral-progress', P); showProg(); return; }
+  const B = SYNC.base || {}, Z = {ok: 0, ko: 0, streak: 0};
+  new Set([...Object.keys(R), ...Object.keys(P)]).forEach(g => {
+    const b = B[g] || Z, l = P[g] || Z, r = R[g] || Z, out = {...r};
+    out.ok = Math.max(0, (r.ok || 0) + (l.ok || 0) - (b.ok || 0));
+    out.ko = Math.max(0, (r.ko || 0) + (l.ko || 0) - (b.ko || 0));
+    const mine = (l.ok || 0) + (l.ko || 0) !== (b.ok || 0) + (b.ko || 0);
+    out.streak = mine ? l.streak || 0 : r.streak || 0;
+    const conf = {...(r.conf || {})};
+    Object.keys(l.conf || {}).forEach(k => { const v = (conf[k] || 0) + l.conf[k] - ((b.conf || {})[k] || 0); if (v > 0) conf[k] = v; else delete conf[k]; });
+    if (Object.keys(conf).length) out.conf = conf; else delete out.conf;
+    if (out.ok + out.ko) P[g] = out; else delete P[g];
+  });
+  // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
+  SYNC.base = copy(R); store.set('imr-coral-sync', SYNC);
+  store.set('imr-coral-progress', P); showProg();
+}
+// Pull, merge, then send. Every change bumps SYNC.rev; a send clears SYNC.dirty only if nothing changed
+// meanwhile. Unsent progress is retried on start-up and when back online.
+// One sync at a time: a request made while one runs is queued and runs once it ends.
+let syncing = null, syncAgain = false;
+function syncPush(){
+  if (!SYNC_URL || !SYNC || !DATA) return Promise.resolve(null);
+  if (syncing) { syncAgain = true; return syncing; }
+  syncing = syncOnce().finally(() => { syncing = null; if (syncAgain) { syncAgain = false; syncPush(); } });
+  return syncing;
+}
+function syncOnce(){
+  const me = SYNC; let rev, sent;
+  // If the device is disconnected or switched to another account meanwhile, drop this sync.
+  return syncGet(me).then(j => { if (SYNC !== me) return null; if (!j.ok) return j; if (j.found) mergeSaved(j);
+    rev = me.rev; sent = copy(P); me.pending = progData()['imr-coral-progress'] || ''; store.set('imr-coral-sync', me);
+    return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({name: me.name, pin: me.pin, data: progData(), summary: syncSummary()})}).then(r => r.json()); })
+    .then(j => { if (j && j.ok && SYNC === me) { me.last = new Date().toISOString(); me.base = sent; delete me.pending; if (me.rev === rev) delete me.dirty; store.set('imr-coral-sync', me); } return j; })
+    .catch(() => null);
+}
+const syncSoon = () => { if (!SYNC_URL || !SYNC) return; SYNC.dirty = true; SYNC.rev = (SYNC.rev || 0) + 1; store.set('imr-coral-sync', SYNC); clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 3000); };
+const syncRetry = () => { if (SYNC && SYNC.dirty) syncPush(); };
+window.addEventListener('online', syncRetry);
+function bindSync(){
+  const box = document.getElementById('sync'); if (!box) return;
+  const msg = t => box.querySelector('[role=status]').textContent = t;
+  if (SYNC) {
+    box.innerHTML = `<p>Synced with IMR as <b>${esc(SYNC.name)}</b>${SYNC.last ? ` · last sent ${new Date(SYNC.last).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'})}` : ''}. Your progress is sent after each answer; on another device, connect with the same name and code.</p>
+      <button class="chip" type="button" id="snow">Send now</button> <button class="reset" type="button" id="soff">Disconnect this device</button> <span class="note" role="status"></span>`;
+    box.querySelector('#snow').onclick = () => { msg('Sending…'); syncPush().then(j => { if (j && j.ok) bindSync(); else msg(j && j.error === 'pin' ? 'The sheet refused the code for this name.' : 'Could not reach the sheet. Check your connection.'); }); };
+    box.querySelector('#soff').onclick = () => { SYNC = null; try { localStorage.removeItem('imr-coral-sync'); } catch (e) {} bindSync(); };
+    return;
+  }
+  box.innerHTML = `<p>Training at IMR? Connect to save your progress for your trainer and get it back on any device.</p>
+    <form class="sform"><label>Your name <input name="n" required maxlength="40" autocomplete="name"></label>
+    <label>4-digit code <input name="p" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"></label>
+    <button class="chip" type="submit">Connect</button> <span class="note" role="status"></span></form>
+    <p class="note">New name: pick any code and remember it. Same name and code later: your saved progress comes back.</p>`;
+  box.querySelector('form').onsubmit = e => { e.preventDefault();
+    const f = e.target, name = f.n.value.trim(), pin = f.p.value.trim();
+    msg('Connecting…');
+    fetch(`${SYNC_URL}?name=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}`).then(r => r.json()).then(j => {
+      if (!j.ok) return msg(j.error === 'pin' ? 'This name already exists with another code.' : 'Check the name and the 4-digit code.');
+      SYNC = {name, pin}; if (j.found) { try { SYNC.base = JSON.parse(j.data['imr-coral-progress'] || '{}') || {}; } catch (err) { SYNC.base = {}; } } store.set('imr-coral-sync', SYNC);
+      // A known account replaces whatever this device holds (another RA may have used it); a new name keeps it.
+      if (j.found) { Object.keys(progData()).forEach(k => localStorage.removeItem(k)); loadData(j.data); try { sessionStorage.setItem('imr-coral-loaded', 'the IMR sheet'); } catch (err) {} location.reload(); }
+      else { SYNC.dirty = true; store.set('imr-coral-sync', SYNC); syncPush().then(() => bindSync()); }
+    }).catch(() => msg('Could not reach the sheet. Check your connection.')); };
 }
 // Ask the browser not to evict saved progress when storage runs low.
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
@@ -487,5 +575,5 @@ function route(){
   window.scrollTo(0, 0);
 }
 addEventListener('hashchange', route);
-fetch('data.json?v=8').then(r => r.json()).then(d => { DATA = d; route(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+fetch('data.json?v=8').then(r => r.json()).then(d => { DATA = d; route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
