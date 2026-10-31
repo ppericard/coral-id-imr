@@ -597,3 +597,5 @@ button.fdgc{font:inherit;padding:0;text-align:left;cursor:pointer}
   .fdnext .label{display:none}
   .fdinfo > small:not(.fdmiss){display:none}
 }
+/* Tools hub: the same gap under the header as the other pages (it has no tab bar above it). */
+.lab>.labhub:first-child,.lab>.lede+.labhub{margin-top:18px}
