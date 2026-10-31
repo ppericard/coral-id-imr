@@ -20,11 +20,11 @@ const cover = g => allPhotos(g).find(p => p.f === g.cover) || (g.views.medium ||
 // Genera in IMR slate order (data.json lists them that way, starred genera last).
 const slateIdx = n => Object.keys(DATA.gen).indexOf(n);
 const bySlate = L => Object.keys(DATA.gen).filter(n => L.includes(n));
-// group=true tags the card with its IMR confusion group (Genera page).
+// group=true marks the card with its IMR confusion group (strip and tag); 'stripe' draws the strip only.
 function card(name, group){
-  const g = DATA.gen[name], p = cover(g), ig = group === true && g.ig ? DATA.imrg.find(x => x.n === g.ig) : null;
+  const g = DATA.gen[name], p = cover(g), ig = (group === true || group === 'stripe') && g.ig ? DATA.imrg.find(x => x.n === g.ig) : null;
   const im = p ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(name)}" loading="lazy">` : `<span class="ph none">no photo</span>`;
-  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${(ig.n * 137) % 360}"` : ''}>${im}${ig ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.n ? 'No. ' + g.n + ' · ' : '<b class="star">★ not surveyed</b> · '}${esc(g.fam)}</small><p>${esc(g.crit[0])}</p></span></a>`;
+  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${(ig.n * 137) % 360}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.n ? 'No. ' + g.n + ' · ' : '<b class="star">★ not surveyed</b> · '}${esc(g.fam)}</small><p>${esc(g.crit[0])}</p></span></a>`;
 }
 function bindCards(root = $v){ root.querySelectorAll('[data-g]').forEach(b => b.onclick = () => go('g-' + b.dataset.g)); }
 function bindGo(root = $v){ root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go)); }
@@ -60,22 +60,36 @@ function zoom(list, i, opts = {}){
 
 /* ---------- genera ---------- */
 let azFam = null, azQ = '';
+// Genera order: 'lecture' (IMR Lecture 6 groups, default) or 'slate' (numbers on the IMR slate).
+let azOrder = (() => { try { return localStorage.getItem('imr-coral-order') || 'lecture'; } catch (e) { return 'lecture'; } })();
 function viewGenera(){
   const fams = [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
   $v.innerHTML = `<h2>The 39 genera on the IMR slate</h2>
-  <p class="lede">34 surveyed genera plus 5 starred ones that IMR does not survey but that you need to rule out. Each sheet shows the colony, a closer view and the corallites. The coloured strip and tag mark IMR's confusion groups: genera in the same group are the ones to tell apart.</p>
+  <p class="lede">34 surveyed genera plus 5 starred ones that IMR does not survey but that you need to rule out. Each sheet shows the colony, a closer view and the corallites. Colours mark IMR's confusion groups from the lecture: genera in the same group are the ones to tell apart.</p>
+  <div class="seg-row"><span class="label">Order</span><div class="seg" role="group" aria-label="Order">${[['lecture', 'Lecture groups'], ['slate', 'Slate numbers']].map(([k, t]) => `<button type="button" data-o="${k}" aria-pressed="${azOrder === k}">${t}</button>`).join('')}</div></div>
   <div class="tools"><input id="q" type="search" placeholder="Search a genus or a feature" value="${esc(azQ)}" aria-label="Search"></div>
   <div class="chips"><button class="chip" type="button" data-f="" aria-pressed="${!azFam}">All families</button><button class="chip" type="button" data-f="★" aria-pressed="${azFam === '★'}">★ Not surveyed</button>${fams.map(f => `<button class="chip" type="button" data-f="${f}" aria-pressed="${azFam === f}">${f}</button>`).join('')}</div>
   <div class="grid" id="azgrid"></div>`;
   const draw = () => {
     const q = azQ.toLowerCase();
     const names = Object.keys(DATA.gen).filter(n => (!azFam || DATA.gen[n].fam === azFam || (azFam === '★' && !DATA.gen[n].n)) && (!q || (n + ' ' + DATA.gen[n].crit.join(' ') + ' ' + DATA.gen[n].imr.join(' ')).toLowerCase().includes(q)));
-    document.getElementById('azgrid').innerHTML = names.map(n => card(n, true)).join('') || '<p class="note">No genus matches.</p>';
+    let html;
+    if (azOrder === 'lecture') {
+      const gi = n => DATA.gen[n].ig || 99;
+      names.sort((a, b) => gi(a) - gi(b) || slateIdx(a) - slateIdx(b));
+      html = names.map((n, i) => { const k = DATA.gen[n].ig, gr = DATA.imrg.find(x => x.n === k);
+        const head = i && (DATA.gen[names[i - 1]].ig || 99) === gi(n) ? '' : gr
+          ? `<h3 class="gdiv" style="--g:${(gr.n * 137) % 360}"><span class="gn">${gr.n}</span>${esc(gr.t)}</h3>`
+          : '<h3 class="gdiv"><span class="gn">★</span>Not covered in the lecture</h3>';
+        return head + card(n, 'stripe'); }).join('');
+    } else html = names.map(n => card(n, true)).join('');
+    document.getElementById('azgrid').innerHTML = html || '<p class="note">No genus matches.</p>';
     bindCards();
   };
   const qi = document.getElementById('q');
   qi.oninput = () => { azQ = qi.value; draw(); };
   $v.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { azFam = b.dataset.f || null; viewGenera(); });
+  $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { azOrder = b.dataset.o; try { localStorage.setItem('imr-coral-order', azOrder); } catch (e) {} viewGenera(); });
   draw();
 }
 
@@ -158,30 +172,45 @@ const leafOf = id => groupOf(id)?.leaves.find(l => l.id === id);
 const pg = l => l.a === l.b ? 'p.' + l.a : 'p.' + l.a + '-' + l.b;
 const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 
+// Colony-form key: every level stays on screen. Chosen levels shrink to a row of links,
+// so going back or switching to a sibling is one click (and a real link).
+const kThumbs = (L, max = 6) => `<span class="kthumbs">${bySlate(L).slice(0, max).map(n => { const p = cover(DATA.gen[n]); return p ? `<img src="${img(p, 's')}" alt="" loading="lazy">` : ''; }).join('')}${L.length > max ? `<span class="more">+${L.length - max}</span>` : ''}</span>`;
+const kLevel = (n, title, body, done) => `<section class="klevel${done ? ' done' : ''}"><h3 class="klab"><span class="kn">${n}</span>${title}</h3>${body}</section>`;
+function keyPath(g, l){
+  const forms = g
+    ? `<div class="kpick">${DATA.key.map(x => `<a class="c-${x.color}" href="#k-${x.id}"${x === g ? ' aria-current="step"' : ''}>${esc(x.name)}</a>`).join('')}</div>`
+    : `<div class="groups">${DATA.key.map(x => { const L = [...new Set(x.leaves.flatMap(y => y.g))];
+        return `<a class="group c-${x.color}" href="#k-${x.id}"><b>${esc(x.name)}</b><span>${esc(x.sub)}</span>${kThumbs(L)}<em>${L.length} IMR ${L.length > 1 ? 'genera' : 'genus'}</em></a>`; }).join('')}</div>`;
+  let out = kLevel(1, 'Colony shape', forms, !!g);
+  if (g && g.leaves.length > 1) {
+    const body = l
+      ? `<div class="kpick">${g.leaves.map(y => y.g.length ? `<a class="c-${g.color}" href="#l-${y.id}"${y === l ? ' aria-current="step"' : ''}>${esc(leafLabel(y))} <small>${y.g.length}</small></a>` : '').join('')}</div>`
+      : `<div class="leaves">${g.leaves.map(y => { const inner = `<span class="t">${esc(y.t)}</span><span class="s">${esc(y.s || '')}</span>
+          <span class="n">${y.g.length ? y.g.length + (y.g.length > 1 ? ' genera' : ' genus') + ': ' + bySlate(y.g).map(esc).join(', ') : 'No IMR genus here'} · ${pg(y)}</span>${y.g.length ? kThumbs(y.g, 8) : ''}`;
+          return y.g.length ? `<a class="leaf c-${g.color}" href="#l-${y.id}">${inner}</a>` : `<span class="leaf c-${g.color}" aria-disabled="true">${inner}</span>`; }).join('')}</div>`;
+    out += kLevel(2, `${esc(g.name)}: corallites`, body, !!l);
+  }
+  return out;
+}
 function viewKey(){
   $v.innerHTML = `<h2>What shape is the colony?</h2>
   <p class="lede">Pick the growth form, then the corallite size or type. The key follows the Coral Finder's front page and only shows genera on the IMR list.</p>
   <p class="warn"><b>Growth form is only a starting point.</b> Many genera take several forms, sometimes within a single colony: <i>Porites</i> shows up in 3 groups and 8 boxes of this key. Each genus is listed everywhere the Coral Finder shows it. To decide, look at the corallites.</p>
-  <div class="groups">${DATA.key.map(g => { const n = new Set(g.leaves.flatMap(l => l.g)).size;
-    return `<a class="group c-${g.color}" href="#k-${g.id}"><b>${esc(g.name)}</b><span>${esc(g.sub)}</span><em>${n} IMR ${n > 1 ? 'genera' : 'genus'}</em></a>`; }).join('')}</div>`;
+  ${keyPath(null)}`;
   bindGo();
 }
 function viewGroup(id){
   const g = groupOf(id);
   if (g.leaves.length === 1) return viewLeaf(g.leaves[0].id, true);
-  $v.innerHTML = `<div class="crumbs"><a href="#key">Key</a> › ${esc(g.name)}</div>
-  <h2>${esc(g.name)}: what next?</h2><p class="lede">${esc(g.sub)}.</p>
-  <div class="leaves">${g.leaves.map(l => `<button class="leaf c-${g.color}" type="button" data-go="l-${l.id}" ${l.g.length ? '' : 'disabled'}>
-    <span class="t">${esc(l.t)}</span><span class="s">${esc(l.s || '')}</span>
-    <span class="n">${l.g.length ? l.g.length + (l.g.length > 1 ? ' genera' : ' genus') + ': ' + bySlate(l.g).map(esc).join(', ') : 'No IMR genus here'} · ${pg(l)}</span></button>`).join('')}</div>`;
+  $v.innerHTML = `<h2>${esc(g.name)}: what next?</h2><p class="lede">${esc(g.sub)}. Now look at the corallites.</p>${keyPath(g)}`;
   bindGo();
 }
 function viewLeaf(id, single){
-  const g = groupOf(id), l = leafOf(id);
-  $v.innerHTML = `<div class="crumbs"><a href="#key">Key</a> › ${single ? esc(g.name) : `<a href="#k-${g.id}">${esc(g.name)}</a> › ${esc(leafLabel(l))}`}</div>
-  <h2>${l.g.length} candidate${l.g.length > 1 ? 's' : ''}</h2>
+  const g = groupOf(id), l = leafOf(id), n = single ? 2 : 3;
+  $v.innerHTML = `<h2>${l.g.length} candidate${l.g.length > 1 ? 's' : ''}</h2>
   <p class="lede">${esc(g.name)} · ${esc(leafLabel(l))}. Coral Finder ${pg(l)}, which also shows genera outside the IMR list.</p>
-  <div class="grid">${bySlate(l.g).map(card).join('')}</div>`;
+  ${keyPath(g, single ? null : l)}
+  ${kLevel(n, 'Candidates: check the corallites', `<div class="grid">${bySlate(l.g).map(x => card(x)).join('')}</div>`)}`;
   bindCards(); bindGo();
 }
 function viewIMR(){
@@ -190,7 +219,7 @@ function viewIMR(){
   <ol class="tips">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
   <details class="gloss"><summary>Coral anatomy terms</summary><dl>${DATA.terms.map(([t, d]) => `<dt>${esc(t)}</dt><dd>${esc(d)}</dd>`).join('')}</dl><p class="note">The oral disc and mouth belong to the living polyp; the other terms describe its skeleton. Sources: <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>, <a href="https://cdhc.noaa.gov/coral-biology/coral-skeleton/" target="_blank" rel="noopener">NOAA</a>.</p></details>
   ${DATA.imrg.map(gr => { const names = Object.keys(DATA.gen).filter(n => DATA.gen[n].ig === gr.n);
-    return `<section class="imrg"><h3><span class="gn">${gr.n}</span> ${esc(gr.t)}</h3><div class="grid">${names.map(card).join('')}</div></section>`; }).join('')}
+    return `<section class="imrg"><h3 class="gdiv" style="--g:${(gr.n * 137) % 360}"><span class="gn">${gr.n}</span>${esc(gr.t)}</h3><div class="grid">${names.map(n => card(n, 'stripe')).join('')}</div></section>`; }).join('')}
   <section class="imrg"><h3><span class="gn">★</span> Not covered in the lecture</h3><p class="note">The starred genera on the slate, to rule out look-alikes.</p><div class="grid">${Object.keys(DATA.gen).filter(n => !DATA.gen[n].ig).map(card).join('')}</div></section>`;
   bindCards(); bindGo();
 }
