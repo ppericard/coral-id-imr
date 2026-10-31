@@ -731,7 +731,12 @@ function bindProgFile(){
 // and a 4-digit code; the same name and code bring it back on another device. Off while SYNC_URL is empty.
 // Photo difficulty from the sheet (Elo over every RA's answers), kept for offline use. An older sheet script without
 // stats simply answers with an error, and the game-set priors are used.
-function loadStats(){ if (!SYNC_URL) return; fetch(SYNC_URL + '?stats=1').then(r => r.json()).then(j => { if (j && j.ok && j.photos) { PSTAT = j.photos; store.set('imr-photo-stats', {t: Date.now(), photos: j.photos}); } }).catch(() => {}); }
+// Refreshed every 10 minutes while the page is open (the sheet caches it for 10 minutes too), and on coming back to a
+// tab left open longer than that.
+let statsAt = 0;
+setInterval(() => { if (document.visibilityState === 'visible') loadStats(); }, 600000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - statsAt > 600000) loadStats(); });
+function loadStats(){ if (!SYNC_URL || !DATA) return; statsAt = Date.now(); fetch(SYNC_URL + '?stats=1').then(r => r.json()).then(j => { if (j && j.ok && j.photos) { PSTAT = j.photos; store.set('imr-photo-stats', {t: Date.now(), photos: j.photos}); } }).catch(() => {}); }
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
 let SYNC = store.get('imr-coral-sync', null), syncTimer = null;
 function syncSummary(){
