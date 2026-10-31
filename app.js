@@ -279,7 +279,7 @@ const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 let P = store.get('imr-coral-progress', {}) || {};
 const save = () => { store.set('imr-coral-progress', P); showProg(); syncSoon(); };
 const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
-const Q = Object.assign({stars: true, view: 'any'}, store.get('imr-coral-quiz', {}));
+const Q = Object.assign({view: 'any'}, store.get('imr-coral-quiz', {}), {stars: true});  // starred genera are always asked (Pierre)
 const saveQ = () => store.set('imr-coral-quiz', Q);
 let session = {ok: 0, n: 0}, last = null, duelPair = null;
 const pool = () => Object.keys(DATA.gen).filter(n => (Q.stars || DATA.gen[n].n) && photoSet(n).shown.length);
@@ -308,14 +308,8 @@ function level(n){
   if (r < .5 || s.streak === 0) return ['weak', 'Review'];
   return ['mid', 'Learning'];
 }
-function quizNav(cur){
-  return cur === 'quiz-board' ? '' : `<button class="chip" type="button" id="qstars" aria-pressed="${Q.stars}" title="Also ask the 5 starred genera IMR does not survey">Include ★</button>`;
-}
-function bindQuizNav(cur){
-  bindGo();
-  const qs = document.getElementById('qstars'); if (!qs) return;
-  qs.onclick = () => { Q.stars = !Q.stars; saveQ(); route(); };
-}
+function quizNav(){ return ''; }
+function bindQuizNav(){ bindGo(); }
 function question(cur, target, choices, prompt, set){
   const ph = set.shown, lab = VIEW_LABEL;
   let answered = false, hintShown = false;
@@ -356,16 +350,30 @@ function fitStage(){
   st.style.gridTemplateColumns = `repeat(${best[0]}, minmax(0, 1fr))`; st.style.gridTemplateRows = `repeat(${best[1]}, minmax(0, 1fr))`;
 }
 addEventListener('resize', fitStage);
-// Games with a grid of square cards (Memory): pick the column count that shows the cards largest without scrolling.
-function fitTiles(grid, gap = 10){
+// Games with a grid of cards (Memory): fill the free area. Try every column count; cards may be square up to
+// 4:3 landscape (the photos' shape); keep the layout with the largest cards.
+function fitTiles(grid, gap, dims){
+  // Sizes a card grid to the space left on screen. With dims [a, b] the grid is a x b (either orientation)
+  // and cards stretch to fill it, within sane aspect ratios; without, picks the best column count.
+  if (gap === undefined) { gap = +grid.dataset.gap || 10; dims = grid.dataset.dims && grid.dataset.dims.split('x').map(Number); }
+  grid.dataset.gap = gap; if (dims) grid.dataset.dims = dims.join('x');
   const n = grid.children.length, W = grid.parentNode.clientWidth;
-  const H = Math.max(240, innerHeight - grid.getBoundingClientRect().top - window.scrollY - 56);  // room for the end-of-game line
-  let best = [n, 0];
-  for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c), s = Math.min((W - gap * (c - 1)) / c, (H - gap * (r - 1)) / r); if (s > best[1]) best = [c, s]; }
-  grid.style.gridTemplateColumns = `repeat(${best[0]}, ${Math.floor(best[1])}px)`;
+  const H = Math.max(240, innerHeight - grid.getBoundingClientRect().top - window.scrollY - 16);
+  const opts = dims ? [[dims[1], dims[0]], [dims[0], dims[1]]] : Array.from({length: n}, (_, i) => [i + 1, Math.ceil(n / (i + 1))]);
+  let best = null;
+  for (const [c, r] of opts) {
+    const cw = (W - gap * (c - 1)) / c, ch = (H - gap * (r - 1)) / r;
+    const h = Math.min(ch, cw * (dims ? 1.25 : 1)), w = Math.min(cw, h * (dims ? 1.8 : 4 / 3));
+    const score = dims ? Math.min(w, h) : w * h;
+    if (!best || score > best.score) best = {c, w, h, score};
+  }
+  grid.style.gridTemplateColumns = `repeat(${best.c}, ${Math.floor(best.w)}px)`;
+  grid.style.gridAutoRows = Math.floor(best.h) + 'px';
+  grid.style.gap = gap + 'px';
   grid.style.justifyContent = 'center';
+  grid.classList.add('fit');
 }
-addEventListener('resize', () => document.querySelectorAll('.pgrid').forEach(g => fitTiles(g)));
+addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
 function answer(cur, c, target, ph){
   const good = c === target, s = st(target);
   session.n++; if (good) { session.ok++; s.ok++; s.streak++; } else { s.ko++; s.streak = 0; s.conf = s.conf || {}; s.conf[c] = (s.conf[c] || 0) + 1; }

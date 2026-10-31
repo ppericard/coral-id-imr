@@ -5,13 +5,15 @@ LAB.add({
   lede: 'The photo sharpens over 12 seconds; points = seconds left. Choices are mostly look-alikes.',
   render(root){
     const DUR = 12000; let raf = 0, score = {pts: 0, n: 0, streak: 0}, view = 'any';
-    root.innerHTML = `<div class="chips">${[['any', 'Any view'], ['wide', 'Colony'], ['medium', 'Closer'], ['macro', 'Corallites']].map(([v, t]) => `<button class="chip" type="button" data-v="${v}" aria-pressed="${v === view}">${t}</button>`).join('')}</div><div id="rvbody"></div>`;
+    // Game layout: stage left, every control (views, choices, score, feedback) in the side column.
+    const chips = () => `<div class="chips">${[['any', 'Any view'], ['wide', 'Colony'], ['medium', 'Closer'], ['macro', 'Corallites']].map(([v, t]) => `<button class="chip" type="button" data-v="${v}" aria-pressed="${v === view}">${t}</button>`).join('')}</div>`;
+    root.innerHTML = `<div id="rvbody"></div>`;
     const body = root.querySelector('#rvbody');
     const round = () => {
       cancelAnimationFrame(raf);
       const t = pick(labNames()), v = view === 'any' ? pick(['wide', 'medium', 'macro']) : view, L = DATA.gen[t].views[v] || [], p = L.length ? pick(L) : viewPhoto(t, v);
       body.innerHTML = `<div class="rvlayout"><div class="rvstage"><img id="rvimg" src="${img(p)}" alt="Coral to identify"><div class="rvbar"><i id="rvfill"></i></div></div>
-        <div><div class="choices col">${labChoices(t, 4).map(n => `<button type="button" class="choice" data-c="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+        <div class="gside">${chips()}<div class="choices col">${labChoices(t, 4).map(n => `<button type="button" class="choice" data-c="${esc(n)}">${esc(n)}</button>`).join('')}</div>
         <p class="note">Score ${score.pts} pts · ${score.n} corals · streak ${score.streak}</p><div id="rvres"></div></div></div>`;
       const im = body.querySelector('#rvimg'), fill = body.querySelector('#rvfill');
       let t0 = null, done = false;
@@ -37,8 +39,8 @@ LAB.add({
         body.querySelector('#rvres').innerHTML = `<p class="${ok ? 'ok' : 'ko'}"><b>${ok ? '+' + pts + ' pts' : 'Missed'}</b>: <a href="${genLink(t)}"><i>${esc(t)}</i></a>. ${whyLine(t)}</p><p class="credit">${credit(p)}</p><button type="button" class="next" id="rvnext">Next</button>`;
         body.querySelector('#rvnext').onclick = round;
       });
+      body.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { view = b.dataset.v; round(); });
     };
-    root.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { view = b.dataset.v; root.querySelectorAll('[data-v]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); round(); });
     round();
     return () => cancelAnimationFrame(raf);
   }
