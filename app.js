@@ -425,7 +425,7 @@ function syncSummary(){
   return {learned: n.filter(x => genera[x] === 'ok').length, seen: n.filter(x => genera[x] !== 'new').length, total: n.length,
     review: n.filter(x => genera[x] === 'weak'), genera};
 }
-const syncGet = () => fetch(`${SYNC_URL}?name=${encodeURIComponent(SYNC.name)}&pin=${encodeURIComponent(SYNC.pin)}`).then(r => r.json());
+const syncGet = (a = SYNC) => fetch(`${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}`).then(r => r.json());
 // Two devices on one account: three-way merge against SYNC.base, the progress as last sent or received.
 // Answers taken on this device since then are added on top of the saved record, so neither side's answers
 // are lost. A reset (imr-coral-reset, a time) wins over older progress.
@@ -466,10 +466,11 @@ function syncPush(){
 }
 function syncOnce(){
   const me = SYNC; let rev, sent;
-  return syncGet().then(j => { if (!j.ok) return j; if (j.found) mergeSaved(j);
+  // If the device is disconnected or switched to another account meanwhile, drop this sync.
+  return syncGet(me).then(j => { if (SYNC !== me) return null; if (!j.ok) return j; if (j.found) mergeSaved(j);
     rev = me.rev; sent = copy(P); me.pending = progData()['imr-coral-progress'] || ''; store.set('imr-coral-sync', me);
     return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({name: me.name, pin: me.pin, data: progData(), summary: syncSummary()})}).then(r => r.json()); })
-    .then(j => { if (j.ok && SYNC === me) { me.last = new Date().toISOString(); me.base = sent; delete me.pending; if (me.rev === rev) delete me.dirty; store.set('imr-coral-sync', me); } return j; })
+    .then(j => { if (j && j.ok && SYNC === me) { me.last = new Date().toISOString(); me.base = sent; delete me.pending; if (me.rev === rev) delete me.dirty; store.set('imr-coral-sync', me); } return j; })
     .catch(() => null);
 }
 const syncSoon = () => { if (!SYNC_URL || !SYNC) return; SYNC.dirty = true; SYNC.rev = (SYNC.rev || 0) + 1; store.set('imr-coral-sync', SYNC); clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 3000); };
