@@ -72,3 +72,6 @@
 .betatag{font-style:normal;font-family:var(--body);font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:var(--plate);color:var(--band-ink);border-radius:4px;padding:1px 6px;vertical-align:2px}
 .htool.beta .hpv img{opacity:.85}
 .htool:hover{border-color:var(--accent)}
+.htools.small{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.htools.small small{display:none}
+.htools.small b{font-size:1rem;padding-bottom:8px}
