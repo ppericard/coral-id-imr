@@ -19,7 +19,7 @@
   const link = (id, title, beta) => `<a href="#${id}"${beta ? ' class="beta" title="Still in the Lab"' : ''}>${esc(title)}</a>`;
   const tile = ([id, title, desc, beta]) => {
     const pv = PREVIEW[id.replace(/^lab-/, '')] || [];
-    return `<a class="htool${id === 'reveal' ? ' blurpv' : ''}${beta ? ' beta' : ''}" href="#${id}"${beta ? ' title="Still in the Lab"' : ''}><span class="hpv${pv.length > 1 ? ' two' : ''}">${pv.map(([n, v]) => `<img src="${ph(n, v)}" alt="" loading="lazy">`).join('')}</span><b>${esc(title)}</b><small>${esc(desc)}</small></a>`;
+    return `<a class="htool${id === 'reveal' ? ' blurpv' : ''}${beta ? ' beta' : ''}" href="#${id}"${beta ? ' title="Still in the Lab"' : ''}><span class="hpv${pv.length > 1 ? ' two' : ''}">${pv.map(([n, v]) => `<img src="${ph(n, v)}" alt="" loading="lazy">`).join('')}</span><b>${esc(title)}${beta ? ' <em class="betatag">Beta</em>' : ''}</b><small>${esc(desc)}</small></a>`;
   };
   window.viewHome = function(){
     document.documentElement.dataset.page = 'lab';  // full width, like the Lab (lab.css)
@@ -39,7 +39,7 @@
         </div>
       </section>
       ${seen.length ? `<p class="hprog"><a href="#progress">Your progress: <b>${seen.length}</b> of ${names.length} genera practised, <b>${solid.length}</b> solid (3 right in a row).</a></p>` : ''}
-      <section class="hpath"><h3>The learning path</h3><p class="note">From vocabulary to reflexes. Modules with a <span class="betakey">dashed outline</span> are still being worked on in the Lab.</p><ol>
+      <section class="hpath"><h3>The learning path</h3><p class="note">From vocabulary to reflexes. Modules with a <span class="betakey">dashed outline</span> are still being worked on in the Lab; their cards below are tagged <em class="betatag">Beta</em>.</p><ol>
         <li><b>Read a corallite</b><span>Walls, septa, size: the features every ID rests on.</span><p>${link('lab-anatomy', 'Corallite anatomy', 1)}${link('lab-size', 'Size ruler', 1)}${link('lab-gallery', 'Feature gallery', 1)}</p></li>
         <li><b>Meet the genera</b><span>Colony, closer view and corallites for each one, and who looks like whom.</span><p>${link('genera', 'Genera')}${link('cmp', 'Look-alikes')}${link('lab-map', 'Mind map', 1)}${link('lab-web', 'Look-alike web', 1)}</p></li>
         <li><b>Identify step by step</b><span>Lecture groups, colony form or corallite details.</span><p>${link('key-imr', 'Lecture groups')}${link('key', 'Colony form')}${link('key-tr', 'Corallites')}${link('lab-elim', 'Elimination board', 1)}${link('lab-matrix', 'Feature matrix', 1)}</p></li>
