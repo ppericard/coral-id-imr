@@ -431,6 +431,9 @@ const copy = o => JSON.parse(JSON.stringify(o));
 function mergeSaved(j){
   const d = j.data || {}; let R = {}; try { R = JSON.parse(d['imr-coral-progress'] || '{}') || {}; } catch (e) {}
   const rr = JSON.parse(d['imr-coral-reset'] || '""'), lr = store.get('imr-coral-reset', '');
+  // A send whose reply was lost but which did reach the sheet: the saved record is exactly what was sent.
+  if (SYNC.pending && d['imr-coral-progress'] === SYNC.pending) SYNC.base = R;
+  delete SYNC.pending;
   if (lr > rr) return;
   if (rr > lr) { P = R; SYNC.base = copy(R); store.set('imr-coral-sync', SYNC); store.set('imr-coral-reset', rr); store.set('imr-coral-progress', P); showProg(); return; }
   const B = SYNC.base || {}, Z = {ok: 0, ko: 0, streak: 0};
@@ -451,13 +454,20 @@ function mergeSaved(j){
 }
 // Pull, merge, then send. Every change bumps SYNC.rev; a send clears SYNC.dirty only if nothing changed
 // meanwhile. Unsent progress is retried on start-up and when back online.
+// One sync at a time: a request made while one runs is queued and runs once it ends.
+let syncing = null, syncAgain = false;
 function syncPush(){
   if (!SYNC_URL || !SYNC || !DATA) return Promise.resolve(null);
+  if (syncing) { syncAgain = true; return syncing; }
+  syncing = syncOnce().finally(() => { syncing = null; if (syncAgain) { syncAgain = false; syncPush(); } });
+  return syncing;
+}
+function syncOnce(){
   const me = SYNC; let rev, sent;
   return syncGet().then(j => { if (!j.ok) return j; if (j.found) mergeSaved(j);
-    rev = me.rev; sent = copy(P);
+    rev = me.rev; sent = copy(P); me.pending = progData()['imr-coral-progress'] || ''; store.set('imr-coral-sync', me);
     return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({name: me.name, pin: me.pin, data: progData(), summary: syncSummary()})}).then(r => r.json()); })
-    .then(j => { if (j.ok && SYNC === me) { me.last = new Date().toISOString(); me.base = sent; if (me.rev === rev) delete me.dirty; store.set('imr-coral-sync', me); } return j; })
+    .then(j => { if (j.ok && SYNC === me) { me.last = new Date().toISOString(); me.base = sent; delete me.pending; if (me.rev === rev) delete me.dirty; store.set('imr-coral-sync', me); } return j; })
     .catch(() => null);
 }
 const syncSoon = () => { if (!SYNC_URL || !SYNC) return; SYNC.dirty = true; SYNC.rev = (SYNC.rev || 0) + 1; store.set('imr-coral-sync', SYNC); clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 3000); };
@@ -486,7 +496,7 @@ function bindSync(){
       SYNC = {name, pin}; if (j.found) { try { SYNC.base = JSON.parse(j.data['imr-coral-progress'] || '{}') || {}; } catch (err) { SYNC.base = {}; } } store.set('imr-coral-sync', SYNC);
       // A known account replaces whatever this device holds (another RA may have used it); a new name keeps it.
       if (j.found) { Object.keys(progData()).forEach(k => localStorage.removeItem(k)); loadData(j.data); try { sessionStorage.setItem('imr-coral-loaded', 'the IMR sheet'); } catch (err) {} location.reload(); }
-      else syncPush().then(() => bindSync());
+      else { SYNC.dirty = true; store.set('imr-coral-sync', SYNC); syncPush().then(() => bindSync()); }
     }).catch(() => msg('Could not reach the sheet. Check your connection.')); };
 }
 // Ask the browser not to evict saved progress when storage runs low.
