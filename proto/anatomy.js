@@ -111,22 +111,22 @@
   /* ---------- content ---------- */
   // Arrangements: how corallites sit together. A genus can show more than one.
   const ARR = [
-    {id: 'plocoid', name: 'Separate walls', tech: 'plocoid', draw: () => plocoid(), see: ['Each corallite has its own round wall.', 'Coenosteum (plain or ornamented skeleton) between corallites.', 'Septa often cross the wall and continue as costae.'],
+    {id: 'plocoid', name: 'Separate walls', tech: 'plocoid', draw: () => plocoid(), see: ['Neighbouring corallites do not share a common wall (IMR Lecture 6).', 'Corallites made up of septa + costae; they tend to look rounded (IMR).', 'Coenosteum between the separate walls (IMR).'],
       small: ['Acropora', 'Anacropora', 'Pocillopora', 'Stylophora', 'Seriatopora', 'Montipora', 'Cyphastrea', 'Astreopora'], genera: ['Echinopora', 'Galaxea', 'Turbinaria', 'Mycedium', 'Dipsastraea', 'Astrea', 'Diploastrea', 'Favites'],
       notes: {Favites: 'mostly shared walls; some species separate', Mycedium: 'corallites lean towards the plate edge', Diploastrea: 'very thick walls, packed tight', Montipora: 'walls barely formed, tiny pits'}},
-    {id: 'cerioid', name: 'Shared walls', tech: 'cerioid', draw: () => cerioid(), see: ['Neighbours share one wall: polygons, like a honeycomb.', 'No coenosteum between corallites.', 'No costae.'],
+    {id: 'cerioid', name: 'Shared walls', tech: 'cerioid', draw: () => cerioid(), see: ['Neighbouring corallites share a common wall (IMR Lecture 6).', 'Costae absent (IMR).', 'Corallites tend to look polygonal (IMR).'],
       genera: ['Porites', 'Goniopora', 'Alveopora', 'Favites', 'Goniastrea', 'Lobophyllia'], notes: {Goniastrea: 'also in valleys; look for paliform lobes', Lobophyllia: 'former Symphyllia: shared walls with a groove on top'}},
-    {id: 'phaceloid', name: 'Tubes on stalks', tech: 'phaceloid / dendroid', see: ['Corallites are tall tubes, each standing free.', 'Tubes rise from a common base or branch.', 'Wall high and thin; septa at the tube mouth.'],
+    {id: 'phaceloid', name: 'Phaceloid', tech: 'Coral Finder term', see: ['Corallites are tall tubes, each standing free.', 'Tubes rise from a common base or branch.', 'Wall high and thin; septa at the tube mouth.'],
       genera: ['Tubastraea', 'Duncanopsammia', 'Lobophyllia'], notes: {Lobophyllia: 'stalks hidden under a fleshy dome', Tubastraea: 'no zooxanthellae: often orange or black, in shade'}},
-    {id: 'meandroid', name: 'Valleys', tech: 'meandroid', draw: () => meandroid(), see: ['Several mouths share one valley.', 'Walls run as ridges (collines) between valleys.', 'Septa run across the valley, wall to wall.'],
+    {id: 'meandroid', name: 'Meandering ridges / valleys', tech: 'IMR group 5 · meandroid', draw: () => meandroid(), see: ['Several mouths share one valley.', 'Walls run as ridges (collines) between valleys.', 'Septa run across the valley, wall to wall.'],
       genera: ['Platygyra', 'Leptoria', 'Goniastrea', 'Merulina', 'Lobophyllia'], notes: {Platygyra: 'ragged, alternating septa, no paliform lobes', Leptoria: 'equal septa like a zipper', Goniastrea: 'neat, with paliform lobes', Merulina: 'short valleys fanning out to the edge'}},
-    {id: 'flabello', name: 'Valleys with own walls', tech: 'flabello-meandroid', draw: () => meandroid('', true), see: ['Each valley has its own walls.', 'A groove separates neighbouring valleys.', 'Often big and fleshy.'],
+    {id: 'flabello', name: 'Flabello-meandroid', tech: 'Coral Finder term', draw: () => meandroid('', true), see: ['Each valley has its own walls.', 'A groove separates neighbouring valleys.', 'Often big and fleshy.'],
       genera: ['Plerogyra', 'Lobophyllia'], notes: {Plerogyra: 'grape-like vesicles by day', Lobophyllia: 'big spiky septal teeth under the tissue'}},
-    {id: 'hydno', name: 'Cones between centres', tech: 'hydnophoroid', draw: () => hydno(), see: ['Wall pieces form small cones (monticules).', 'Corallite centres sit in the low ground between cones.', 'Cones lined with costae.'],
+    {id: 'hydno', name: 'Hydnophoroid', tech: 'Coral Finder term · IMR: conical mounds', draw: () => hydno(), see: ['Wall pieces form small cones (monticules).', 'Corallite centres sit in the low ground between cones.', 'Cones lined with costae.'],
       genera: ['Hydnophora'], notes: {}},
-    {id: 'nowall', name: 'No walls', tech: 'septo-costae', draw: () => nowall(), see: ['No wall at all around the centres.', 'Septo-costae run from one centre on to the next.', 'Judge by ornament: ribs, ridges, rows.'],
+    {id: 'nowall', name: 'Indistinguishable walls', tech: 'septo-costae', draw: () => nowall(), see: ['No clear wall structure (IMR Lecture 6).', 'Septo-costae run from one centre on to the next.', 'Colonies identified based on skeletal ornaments (IMR).'],
       genera: ['Pavona', 'Pachyseris', 'Pectinia'], notes: {Pavona: 'star-like centres, ridges with a sharp top', Pachyseris: 'parallel ridges, fine ribs at right angles', Pectinia: 'large, sparse centres between steep flutes'}},
-    {id: 'solitary', name: 'Solitary disc', tech: 'solitary / free-living', draw: () => solitary(), see: ['One large polyp, free on the bottom.', 'Septa from the disc edge to the mouth.', 'One central mouth, or a furrow with several.'],
+    {id: 'solitary', name: 'Solitary', tech: 'IMR group 8 · free-living', draw: () => solitary(), see: ['One large polyp, free on the bottom.', 'Septa from the disc edge to the mouth.', 'One central mouth, or a furrow with several.'],
       genera: ['Fungia', 'Lithophyllon', 'Danafungia', 'Lobactis', 'Heliofungia', 'Ctenactis', 'Herpolitha', 'Halomitra'], notes: {Ctenactis: 'one or more mouths in a long furrow, no secondary mouths', Herpolitha: 'long furrow plus secondary mouths over the surface', Halomitra: 'dome with many mouths', Heliofungia: 'long tentacles out by day'}}
   ];
   const PROFKIND = {flabello: 'flabello', hydno: 'hydno', nowall: 'nowall'};
@@ -134,26 +134,26 @@
 
   // Concepts: one idea each, a small drawing, rings on real macro photos [file, genus, [x %, y %, r % of width], note].
   const CON = [
-    {id: 'corallite', name: 'Corallite', q: 'Where is one polyp?', def: 'The skeleton cup of one polyp. Find one before anything else: its size and shape start every ID.',
+    {id: 'corallite', name: 'Corallite', q: 'Where is one polyp?', def: 'The skeleton of one polyp (Corals of the World glossary). IMR tip: check its scale, mm or cm?',
       minis: [[plocoid('corallite'), 'Separate walls']], shots: [
         ['dipsastraea-macro-746236818', 'Dipsastraea', [46, 58, 12], 'One oval corallite, about 1 cm.'],
         ['diploastrea-macro-745205009', 'Diploastrea', [50, 62, 10], 'Low cone with a broad wall.'],
         ['goniastrea-macro-746237401', 'Goniastrea', [40, 53, 8], 'Polygonal cup in a shared-wall colony.'],
         ['acropora-macro-745206072', 'Acropora', [46, 59, 5], 'A small radial corallite, about 2 mm.']]},
-    {id: 'wall', name: 'Wall', q: 'Separate, shared, or none?', def: 'The rim around a corallite. It separates septa (inside) from costae (outside). Its arrangement is the first ID question.',
+    {id: 'wall', name: 'Wall', q: 'Shared, separate, or indistinguishable?', def: 'The corallite wall separates septa from costae, and corallite from corallite (IMR Lecture 6). Recognising its structure is one of the IMR ID tips.',
       minis: [[plocoid('wall'), 'Separate walls'], [cerioid('wall'), 'Shared walls'], [meandroid('wall'), 'Walls as ridges between valleys']], shots: [
         ['dipsastraea-macro-746236818', 'Dipsastraea', [46, 58, 12], 'The ring sits on its own wall; pale coenosteum outside.'],
         ['porites-macro-745675630', 'Porites', [44, 44, 5], 'Shared walls: one wall between two neighbours.'],
         ['platygyra-macro-745204310', 'Platygyra', [58, 45, 7], 'A wall running as a ridge between two valleys.']]},
-    {id: 'septa', name: 'Septa', q: 'Equal or alternating? Plain or toothed?', def: 'Radial partitions inside the corallite, from the wall towards the centre. Usually thin plates, but only rows of spines in some genera (Astreopora, Montipora); minor septa stop short of the centre. Count, size and teeth separate look-alikes.',
+    {id: 'septa', name: 'Septa', q: 'Equal or alternating? Plain or toothed?', def: 'Vertical blades inside the coral’s cup-like corallite (IMR Lecture 6).',
       minis: [[cup(100, 100, 70, 'septa'), 'Septa inside one corallite']], box: '0 0 200 200', shots: [
         ['galaxea-macro-100103379', 'Galaxea', [31, 45, 8], 'Tall blade-like septa, star-shaped.'],
         ['diploastrea-macro-745205009', 'Diploastrea', [50, 62, 10], 'Many even septa on a low cone.'],
         ['fungia-macro-746236363', 'Fungia', [50, 60, 10], 'Long septa of a solitary disc.']]},
-    {id: 'costae', name: 'Costae', q: 'Do the septa continue outside the wall?', def: 'Ribs outside the corallite wall, usually continuing the septa. Only possible with separate walls (none with shared walls), and even then some genera lack them (Tubastraea, Turbinaria).',
+    {id: 'costae', name: 'Costae', q: 'Do the septa continue outside the wall?', def: 'When septa cross the wall of the corallite they become costae (IMR Lecture 6). Absent with shared walls (IMR).',
       minis: [[cup(100, 100, 52, 'costae'), 'Costae outside the wall']], shots: [
         ['dipsastraea-macro-746236818', 'Dipsastraea', [60, 68, 4.5], 'Septa running over the rim into the pale coenosteum.']]},
-    {id: 'coenosteum', name: 'Coenosteum', q: 'What is between the corallites?', def: 'Skeleton between corallites with separate walls. Smooth, spiny, beaded or ridged: the ornament is often the clue.',
+    {id: 'coenosteum', name: 'Coenosteum', q: 'What is between the corallites?', def: 'Space between separate walls (IMR Lecture 6). With indistinguishable walls, look at the skeletal ornaments: beads, spines, parallel striations (IMR tips).',
       minis: [[plocoid('coenosteum'), 'Coenosteum between corallites']], shots: [
         ['dipsastraea-macro-746236818', 'Dipsastraea', [47, 15, 5], 'Pale tissue over coenosteum between corallites.'],
         ['turbinaria-macro-745206251', 'Turbinaria', [55, 25, 8], 'Always smooth between the cups.'],
@@ -165,7 +165,7 @@
       minis: [[cup(100, 100, 70, 'pali'), 'Crown of paliform lobes']], shots: [
         ['goniastrea-macro-746236750', 'Goniastrea', null, 'Look for the paler knobs in a ring near each centre. Ring not placed yet.'],
         ['goniastrea-macro-746236709', 'Goniastrea', null, 'Same genus, another colony.']]},
-    {id: 'sc', name: 'Septo-costae', q: 'No wall: what do the ribs do?', def: 'Septa and costae joined into one element crossing the wall. Where the wall is faint or absent (Pavona, Pachyseris), they flow from one centre straight on to the next.',
+    {id: 'sc', name: 'Septo-costae', q: 'No wall: what do the ribs do?', def: 'No clear wall structure: septo-costae run between corallites, and colonies are identified by their skeletal ornaments (IMR Lecture 6).',
       minis: [[nowall('sc'), 'Septo-costae between centres']], shots: [
         ['pavona-macro-745204888', 'Pavona', [62, 83, 10], 'Star-like centre, lines flowing to the neighbours.'],
         ['pachyseris-macro-745204769', 'Pachyseris', [45, 50, 8], 'Ridge lined with fine ribs at right angles.']]},
