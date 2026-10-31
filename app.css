@@ -494,3 +494,10 @@ a.lt:hover{border-color:var(--accent)}
 .sync.warn{border:1px solid #d98b2b;background:color-mix(in srgb,#d98b2b 12%,var(--surface));padding:10px 12px}
 .sync.warn p{margin:0 0 6px}
 .sync.on .sdot.wait{background:var(--muted)}
+/* Link from the anatomy glossary to the Corallite anatomy module, with its home schematic as thumbnail. */
+.glink{display:flex;align-items:center;gap:12px;margin:10px 0;padding:8px 12px;max-width:420px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2);color:var(--ink);text-decoration:none}
+.glink .hpv{width:96px;height:54px;flex:none;aspect-ratio:auto;border-radius:6px;overflow:hidden}
+.glink svg{width:100%;height:100%}
+.glink span{display:flex;flex-direction:column}
+.glink small{color:var(--muted)}
+.glink:hover{border-color:var(--accent)}
