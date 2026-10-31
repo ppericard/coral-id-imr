@@ -574,7 +574,7 @@ button.fdname[aria-expanded="true"]::after{content:" ▾"}
 .fdsrow.stack{grid-template-columns:minmax(0,1fr)}
 .fdchosen .fdreset2{margin-left:auto;padding:7px 18px;font-size:.95rem}
 /* Finder on phones (Pierre, 2026-10-31: used beside ReefCloud). Fewer scrolls: compact form chips once a form is
-   picked, a "Show the N genera" bar in thumb reach, the clue panel folded on the results page, ID tips highlighted. */
+   picked, the "Show the N genera" bar pinned in thumb reach from the start (Pierre: it must not move), the clue panel folded on the results page, ID tips highlighted. */
 .fdtip{background:color-mix(in srgb,var(--accent) 9%,var(--surface));border-left:4px solid var(--accent);border-radius:6px;padding:4px 8px;color:var(--ink)!important}
 .fdbig{scroll-margin-top:calc(var(--hdr-h,100px) + 8px)}
 button.fdgc{font:inherit;padding:0;text-align:left;cursor:pointer}
@@ -587,8 +587,8 @@ button.fdgc{font:inherit;padding:0;text-align:left;cursor:pointer}
 .fdfold[open]{padding-bottom:8px}
 @media (max-width:700px){
   .fdforms.mini{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .fdstart.used{padding-bottom:64px}
-  .fdstart.used .fdshow{position:fixed;left:16px;right:16px;width:auto;bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px) + 8px);z-index:15;text-align:center;box-shadow:var(--shadow-hover,0 6px 18px rgba(0,0,0,.25))}
+  body:has(.fdstart:not([hidden])) footer{padding-bottom:72px}
+  .fdstart .fdshow{position:fixed;left:16px;right:16px;width:auto;bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px) + 8px);z-index:15;text-align:center;box-shadow:var(--shadow-hover,0 6px 18px rgba(0,0,0,.25))}
   .fdfold .fdjump{display:none}
   .fdsegs .seg[aria-label="Layout"]{display:none}
   .fdtop{gap:6px}
