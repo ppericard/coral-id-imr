@@ -15,7 +15,7 @@ const srcset = p => `img/${p.f}-s.webp 480w, img/${p.f}.webp 1600w`;
 const inatTag = p => p && p.o && p.o.includes('inaturalist.org') ? `<a class="inat" href="${esc(p.o)}" target="_blank" rel="noopener" title="Open the iNaturalist observation">iNat ↗</a>` : '';
 // One colour per IMR lecture group, used everywhere a group appears (style="--g:…", CSS hsl(var(--g) …)).
 const groupHue = n => (n * 137) % 360;
-const credit = p => p.imr ? `IMR Lecture 6, slide ${p.slide}` : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(p.o)}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
+const credit = p => p.cf ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${p.pg}` : p.imr ? `IMR Lecture 6, slide ${p.slide}` : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(p.o)}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
 // Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick, else the first closer view.
 const cover = g => g.coverP || allPhotos(g).find(p => p.f === g.cover) || (g.views.medium || [])[0] || allPhotos(g)[0];
@@ -23,6 +23,10 @@ const cover = g => g.coverP || allPhotos(g).find(p => p.f === g.cover) || (g.vie
 // per view (in order), hidden photos and photos moved to another view. Hidden photos leave games too.
 // Candidates (data.json cand, not shown until approved) join a view when listed in add {photo: view}.
 function applyCuration(d, c){
+  // Coral Finder book photos (data: gen[].book, cropped from the 2022 book) can be switched off site-wide from the
+  // admin (curation.json "book": false). Kept apart from the views so games and quizzes never use them (captions).
+  if (c && c.book === false) Object.values(d.gen).forEach(g => { delete g.book; });
+  const X0 = (c && c.exclude) || {}; Object.values(d.gen).forEach(g => { if (g.book) g.book = g.book.filter(p => !X0[p.f]); });
   // Excluded photos (exclude: {f: reason}) leave every list first: genera, lecture photos, candidates, comparisons.
   const X = (c && c.exclude) || {}, keep = L => (L || []).filter(p => !X[p.f]);
   if (Object.keys(X).length) {
@@ -64,6 +68,8 @@ const ORIGIN_OK = {dauin: ['dauin'], ph: ['dauin', 'ph']};
 let origin = store.get('imr-coral-origin', 'all');
 function filterOrigin(d){
   const ok = ORIGIN_OK[origin]; if (!ok) return;
+  // Book photos are not from Dauin or the Philippines.
+  Object.values(d.gen).forEach(g => { delete g.book; });
   // A genus with no field photo from the chosen area keeps the nearest ones (Philippines, then everywhere),
   // so games and tools always have a photo to show.
   Object.values(d.gen).forEach(g => {
@@ -187,7 +193,7 @@ function viewGenus(name){
     const src = [all.filter(p => p.imr), all.filter(p => !p.imr && !p.own), all.filter(p => p.own)], out = [];
     while (src.some(L => L.length)) src.forEach(L => L.length && out.push(L.shift()));
     // Photos with several corals in frame (data: more[v], course[].multi) come last, never featured first.
-    return [...out.filter(p => !p.multi), ...out.filter(p => p.multi), ...((g.more || {})[v] || []).map(p => ({...p, multi: true}))]; };
+    return [...out.filter(p => !p.multi), ...out.filter(p => p.multi), ...((g.more || {})[v] || []).map(p => ({...p, multi: true})), ...(g.book || []).filter(p => p.view === v && !(g.levels === 2 && v === 'macro')).map(p => ({...p, multi: true}))]; };
   const FEAT = 3;
   const flat = VIEWS.flatMap(([v]) => inView(v).map(p => ({...p, genus: name, view: g.levels === 2 && v === 'macro' ? 'close' : v})));
   const cv = cover(g), ci = cv ? flat.findIndex(x => x.f === cv.f) : -1;
@@ -795,5 +801,5 @@ if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else ad
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
 const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
-Promise.all([fetch('data.json?v=16').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=17').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
