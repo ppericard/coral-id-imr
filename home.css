@@ -73,4 +73,5 @@
 /* Phones: both doors on the first screen (Pierre, 2026-10-31): thinner art band, buttons side by side without their subtitles. */
 @media (max-width:560px){.hdoors{gap:12px}.hdart{aspect-ratio:6/1}.hdoor h3{font-size:1.55rem;margin:2px 0 4px}.hdbody{padding:10px 14px 14px}.hddesc{font-size:.95rem;line-height:1.35;margin-bottom:10px}
   .hdacts{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}.hdbtn{padding:9px 12px}.hdbtn b{font-size:1.2rem}.hdbtn small{display:none}}
-.hdart.rc>img{object-position:49% 52%}
+.hdart.rc>img{object-position:50% 50%}
+@media (max-width:560px){.hdart.rc{aspect-ratio:4/1}}
