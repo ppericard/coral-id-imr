@@ -134,8 +134,6 @@ function own(n){
   const g = DATA.gen[n], two = g.levels === 2, L = [];
   VIEWS.forEach(([v]) => { (g.views[v] || []).forEach(p => L.push({...p, base: v})); ((g.more || {})[v] || []).forEach(p => L.push({...p, base: v, multi: true, extra: true})); });
   (DATA.course[n] || []).forEach(p => L.push({...p, base: p.v === 'medium' && two ? 'macro' : p.v}));
-  // Coral Finder book photos (data: gen[].book): curated like the others; the site keeps them out of games.
-  (g.book || []).forEach(p => L.push({...p, base: p.view}));
   for (let i = L.length - 1; i >= 0; i--) if (excl(L[i].f)) L.splice(i, 1);
   // Candidates Pierre approved (curation add: {f: view}) join their view as normal photos (app.js applyCuration).
   const add = entry(n).add || {};
@@ -152,7 +150,8 @@ function photos(n){
 }
 const outOf = n => own(n).filter(p => outs(n)[p.f]);
 // New candidate photos from data.json cand, not used by the site until approved here.
-const cands = n => ((DATA.cand || {})[n] || []).filter(p => !excl(p.f));
+// Coral Finder book photos (data: gen[].book) are candidates too; once added they show on the site but never in games.
+const cands = n => [...((DATA.cand || {})[n] || []), ...(DATA.gen[n].book || [])].filter(p => !excl(p.f));
 const pending = n => { const add = entry(n).add || {}; return cands(n).filter(p => !add[p.f]); };
 const entry = n => DRAFT.genera[n] || {};
 const viewOf = (n, p) => (entry(n).move || {})[p.f] || p.base;
