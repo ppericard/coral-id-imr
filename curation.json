@@ -1,4 +1,15 @@
 {
   "v": 1,
-  "genera": {}
+  "genera": {
+    "Acropora": {
+      "cover": "imr-p15_i4",
+      "feat": {
+        "wide": [
+          "imrl-p8_g36",
+          "imrl-p8_i7",
+          "imrl-p8_g37"
+        ]
+      }
+    }
+  }
 }
