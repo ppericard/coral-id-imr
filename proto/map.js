@@ -14,7 +14,7 @@ LAB.add({
     ];
     let cur = MODES.find(m => m[0] === mode) || MODES[0], sel = null;
     root.innerHTML = `<div class="chips">${MODES.map(m => `<button class="chip" type="button" data-m="${m[0]}">${m[1]}</button>`).join('')}</div>
-      <div class="mapwrap"><svg id="mapsvg" viewBox="-610 -610 1220 1220" role="img" aria-label="Radial mind map of the genera"></svg>
+      <div class="mapwrap bleed"><svg id="mapsvg" viewBox="-610 -610 1220 1220" role="img" aria-label="Radial mind map of the genera"></svg>
       <aside class="mapside" id="mapside"><p class="note">Tap a genus to see its corallites, or a branch to list its genera.</p></aside></div>
       <div class="chips maplegend" id="maplegend"></div>`;
     const svg = root.querySelector('#mapsvg'), side = root.querySelector('#mapside'), legend = root.querySelector('#maplegend');

@@ -12,7 +12,7 @@ LAB.add({
     const N = names.map((n, i) => ({n, x: W / 2 + 260 * Math.cos(i * 2.4), y: H / 2 + 220 * Math.sin(i * 2.4), vx: 0, vy: 0}));
     const byName = Object.fromEntries(N.map(o => [o.n, o]));
     root.innerHTML = `<div class="chips"><button class="chip" type="button" data-c="fam">Colour by family</button><button class="chip" type="button" data-c="ig">Colour by IMR group</button><button class="chip" type="button" id="wshake">Shake</button></div>
-      <div class="webwrap"><svg id="websvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Network of look-alike genera">
+      <div class="webwrap bleed"><svg id="websvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Network of look-alike genera">
         <defs><clipPath id="wclip"><circle r="20"/></clipPath></defs>
         <g class="wedges">${edges.map(e => `<line data-a="${esc(e.a)}" data-b="${esc(e.b)}" stroke-width="${e.w * 1.6}"/>`).join('')}</g>
         <g class="wnodes">${N.map(o => `<g class="wnode" data-n="${esc(o.n)}" tabindex="0" role="button" aria-label="${esc(o.n)}"><circle r="24" class="wring"/><image href="${thumbSrc(o.n)}" x="-20" y="-20" width="40" height="40" preserveAspectRatio="xMidYMid slice" clip-path="url(#wclip)"/><text y="38">${esc(o.n)}${DATA.gen[o.n].n ? '' : ' ★'}</text></g>`).join('')}</g>
