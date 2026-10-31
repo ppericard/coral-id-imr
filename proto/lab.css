@@ -507,3 +507,4 @@ button.fdname[aria-expanded="true"]::after{content:" ▾"}
 :root[data-size="l"] .fdbigph{grid-template-columns:repeat(auto-fill,minmax(360px,1fr))}
 :root[data-size="s"] .fdbigph{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
 @media (max-width:600px){.fdbigph{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pfront .inat{top:6px;bottom:auto}
