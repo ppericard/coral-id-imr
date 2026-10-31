@@ -1,5 +1,7 @@
 // Lab: a playground of visual, interactive prototypes. Each prototype lives in its own proto/<id>.js
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
+// Bump with every Lab change so browsers never mix new and old files (same ?v scheme as app.js).
+const LAB_V = 1;
 const LAB = {
   list: [],
   files: ['map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'],
@@ -10,7 +12,7 @@ const LAB = {
 // Load every prototype; once all are in, redraw if the reader opened a Lab page directly.
 LAB.files.forEach(f => {
   const s = document.createElement('script');
-  s.src = `proto/${f}.js`; s.async = false; LAB.pending++;
+  s.src = `proto/${f}.js?v=${LAB_V}`; s.async = false; LAB.pending++;
   s.onload = s.onerror = () => { if (--LAB.pending === 0 && DATA && location.hash.startsWith('#lab')) route(); };
   document.head.appendChild(s);
 });
