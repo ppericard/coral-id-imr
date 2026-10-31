@@ -457,7 +457,8 @@ function bindF(scope){ scope.querySelectorAll('.adm-fseg [data-fm]').forEach(b =
 function renderForm(){
   status();
   const names = Object.keys(DATA.gen), vl = v => v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1];
-  const all = allPhotos().filter(p => shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus) && (!FF.todo || !fSet(p.f)));
+  // Coral Finder book photos are left out: they never go on the growth-form tiles.
+  const all = allPhotos().filter(p => !p.cf && shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus) && (!FF.todo || !fSet(p.f)));
   const card = p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
     <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}${fTag(p)}</figcaption>
@@ -467,7 +468,7 @@ function renderForm(){
     return `<section class="adm-row adm-qrow"><h3>${id && id !== 'multi' ? `<b class="adm-fl">${id === 'x' ? '∅' : id}</b> ` : ''}${esc(t)} <small>${L.length} photo${L.length === 1 ? '' : 's'}${id === 'x' ? ' · never used on the growth-form tiles' : ''}</small></h3>
       <div class="adm-grid adm-qgrid" data-fdrop="${id}">${L.map(card).join('')}</div></section>`; };
   const opt = (v, t, cur) => `<button type="button" class="adm-fchip plain" data-fv="${v}" aria-pressed="${cur === v}">${t}</button>`;
-  const todo = allPhotos().filter(p => !fSet(p.f)).length;
+  const todo = allPhotos().filter(p => !p.cf && !fSet(p.f)).length;
   $v.innerHTML = `<section class="adm-quality">
     <div class="adm-qhead"><h2>Growth form</h2><p class="note">The Coral Finder growth forms each photo shows, used to pick the photos of the growth-form tiles. Dashed tags are Claude's first guess from the image; ${todo} photo${todo === 1 ? '' : 's'} not checked yet. Click the letters (several allowed, ∅ = form not visible), drag a photo to another row, or hover it and press <kbd>B</kbd> <kbd>M</kbd> <kbd>S</kbd> <kbd>P</kbd> <kbd>F</kbd> <kbd>L</kbd> <kbd>C</kbd>, or <kbd>X</kbd> for not visible.</p></div>
     <div class="adm-filter"><span class="label">Show</span>${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`).join('')}</div>
