@@ -8,8 +8,8 @@ LAB.add({
     const cols = DATA.traits.flatMap(c => c.opts.map(o => ({...o, c: c.id})));
     let sortBy = null, focus = null;
     const uniq = id => labNames().filter(n => DATA.gen[n].tr.includes(id)).length;
-    root.innerHTML = `<div class="tablewrap mxwrap"><table class="mx"><thead><tr><th class="mxg">Genus</th>${cols.map((o, i) => `<th class="mxc c-${o.c}${i && cols[i - 1].c !== o.c ? ' sep' : ''}"><button type="button" data-col="${o.id}" title="${esc(o.t)}"><span>${esc(o.t)}</span><small>${uniq(o.id)}</small></button></th>`).join('')}</tr></thead><tbody id="mxb"></tbody></table></div>
-      <div class="mxpeek" id="mxpeek" hidden></div><div id="mxinfo"></div>`;
+    root.innerHTML = `<div class="mxlayout"><div class="tablewrap mxwrap"><table class="mx"><thead><tr><th class="mxg">Genus</th>${cols.map((o, i) => `<th class="mxc c-${o.c}${i && cols[i - 1].c !== o.c ? ' sep' : ''}"><button type="button" data-col="${o.id}" title="${esc(o.t)}"><span>${esc(o.t)}</span><small>${uniq(o.id)}</small></button></th>`).join('')}</tr></thead><tbody id="mxb"></tbody></table></div>
+      <div id="mxinfo" class="mxinfo"><p class="note">Tap a genus name to see what separates it from its look-alikes.</p></div></div><div class="mxpeek" id="mxpeek" hidden></div>`;
     const peek = root.querySelector('#mxpeek');
     const draw = () => {
       let rows = labNames();
@@ -31,7 +31,7 @@ LAB.add({
     };
     const info = () => {
       const el = root.querySelector('#mxinfo');
-      if (!focus) { el.innerHTML = ''; return; }
+      if (!focus) { el.innerHTML = '<p class="note">Tap a genus name to see what separates it from its look-alikes.</p>'; return; }
       const F = DATA.gen[focus];
       el.innerHTML = `<h3><a href="${genLink(focus)}"><i>${esc(focus)}</i></a> vs its look-alikes</h3><div class="mxcards">${lookAlikes(focus).map(n => {
         const only = F.tr.filter(t => !DATA.gen[n].tr.includes(t)).map(trName), other = DATA.gen[n].tr.filter(t => !F.tr.includes(t)).map(trName);

@@ -10,22 +10,23 @@ LAB.add({
     const round = () => {
       cancelAnimationFrame(raf);
       const t = pick(labNames()), v = view === 'any' ? pick(['wide', 'medium', 'macro']) : view, L = DATA.gen[t].views[v] || [], p = L.length ? pick(L) : viewPhoto(t, v);
-      body.innerHTML = `<div class="rvstage"><img id="rvimg" src="${img(p)}" alt="Coral to identify"><div class="rvbar"><i id="rvfill"></i></div></div>
-        <div class="choices">${labChoices(t, 4).map(n => `<button type="button" class="choice" data-c="${esc(n)}">${esc(n)}</button>`).join('')}</div>
-        <p class="note">Score ${score.pts} pts · ${score.n} corals · streak ${score.streak}</p><div id="rvres"></div>`;
+      body.innerHTML = `<div class="rvlayout"><div class="rvstage"><img id="rvimg" src="${img(p)}" alt="Coral to identify"><div class="rvbar"><i id="rvfill"></i></div></div>
+        <div><div class="choices col">${labChoices(t, 4).map(n => `<button type="button" class="choice" data-c="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+        <p class="note">Score ${score.pts} pts · ${score.n} corals · streak ${score.streak}</p><div id="rvres"></div></div></div>`;
       const im = body.querySelector('#rvimg'), fill = body.querySelector('#rvfill');
       let t0 = null, done = false;
       const frame = now => {
         if (!im.isConnected || done) return;
         if (t0 === null) t0 = now;
         const k = Math.min(1, (now - t0) / DUR);
-        im.style.filter = `blur(${(1 - k) * (1 - k) * 28}px) saturate(${0.4 + k * 0.6})`;
+        // Shapes show from the start; the skeleton detail sharpens over the first half.
+        im.style.filter = `blur(${14 * Math.pow(1 - k, 3)}px) saturate(${0.6 + k * 0.4})`;
         fill.style.width = (100 - k * 100) + '%';
         if (k < 1) raf = requestAnimationFrame(frame);
       };
       // Start the clock only once the photo is in.
       const start = () => { raf = requestAnimationFrame(frame); };
-      im.style.filter = 'blur(28px) saturate(.4)';
+      im.style.filter = 'blur(14px) saturate(.6)';
       if (im.complete) start(); else im.onload = start;
       body.querySelectorAll('[data-c]').forEach(b => b.onclick = () => {
         if (done) return; done = true; cancelAnimationFrame(raf);
