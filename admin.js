@@ -121,10 +121,11 @@ function lockScreen(msg){
       else { if ($('pw').value !== $('pw2').value) throw new Error('The two passwords differ.'); TOKEN = $('tok').value.trim(); }
       await checkToken();
       if (!has) await lockToken($('pw').value, TOKEN);
+      store.set(SESSION, TOKEN);
       start();
     } catch (x) { TOKEN = null; lockScreen(x.message); }
   };
-  if (has) $('forget').onclick = () => { if (confirm('Remove the stored token from this browser?')) { store.set('imr-admin-vault', null); lockScreen(); } };
+  if (has) $('forget').onclick = () => { if (confirm('Remove the stored token from this browser?')) { store.set('imr-admin-vault', null); store.set(SESSION, null); lockScreen(); } };
 }
 
 /* ---------- Photos of a genus, as the genus sheet orders them ---------- */
@@ -551,6 +552,7 @@ async function start(){
   DRAFT = old && old.genera ? old : clone(SAVED); snap = JSON.stringify(DRAFT);
   const keep = changed().length; if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? "genera" : "genus"} not published yet.`);
   $('tools').hidden = false; $('save').onclick = save; $('download').onclick = download;
+  const so = $('signout'); if (so) { so.hidden = !TOKEN; so.onclick = signOut; }
   $('undo').onclick = undo;
   $('booksw').onclick = () => { if (bookOn(DRAFT)) DRAFT.book = false; else delete DRAFT.book; saveDraft(); render(); };
   $('redo').onclick = redo;
@@ -562,7 +564,15 @@ async function start(){
   render();
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.
-if (/[?&]readonly\b/.test(location.search)) start(); else lockScreen();
+// Stay signed in on this browser after unlocking (survives reloads) until "Sign out".
+const SESSION = 'imr-admin-session';
+function signOut(){ store.set(SESSION, null); TOKEN = null; location.reload(); }
+(async () => {
+  if (/[?&]readonly\b/.test(location.search)) return start();
+  const t = store.get(SESSION, null);
+  if (t) { TOKEN = t; try { await checkToken(); return start(); } catch (x) { TOKEN = null; if (/credentials|cannot write|401/i.test(x.message)) store.set(SESSION, null); return lockScreen(x.message); } }
+  lockScreen();
+})();
 
 // Photo size S/M/L: same control and same per-page store as the site (localStorage imr-coral-size, key "admin").
 (() => {
