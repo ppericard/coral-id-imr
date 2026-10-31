@@ -82,6 +82,10 @@ body.admin .hdr-tools[hidden]{display:none}
 .adm-addrow{display:flex;gap:4px;width:100%}
 .adm-acts .adm-addrow button{flex:1;min-width:0;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm-cands h3{color:var(--accent)}
+.adm-cands{margin-top:28px;padding-top:16px;border-top:3px double var(--line,#ccc)}
+.adm-cands>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px}.adm-cands>summary::-webkit-details-marker{display:none}
+.adm-cands>summary::before{content:"▸";color:var(--accent);font-size:1.1rem}.adm-cands[open]>summary::before{content:"▾"}
+.adm-cands>summary h3{margin:0}
 .adm-src.multi{background:var(--bad-bg);color:var(--bad)}
 .adm-acts{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px 8px;margin-top:auto}
 .adm-acts button,.adm-acts select{font:inherit;font-size:.78rem;min-height:28px;padding:0 9px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--ink);cursor:pointer}
@@ -162,8 +166,20 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 @media (hover:hover) and (pointer:fine){.adm-x{opacity:0}.adm-tile:hover .adm-x,.adm-x:focus-visible{opacity:.85}.adm-tile:hover .adm-x:hover{opacity:1}}
 
 /* S/M/L photo size (header #size). */
-:root[data-size="s"] .adm-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
-:root[data-size="l"] .adm-grid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+/* By genus: S = 6 per row (3 featured + 3), M = 4, L = 3 (Pierre); phones keep the automatic fill. */
+@media (min-width:900px){
+  :root[data-size="s"] .adm-grid:not(.adm-qgrid){grid-template-columns:repeat(6,minmax(0,1fr))}
+  :root:not([data-size="s"]):not([data-size="l"]) .adm-grid:not(.adm-qgrid){grid-template-columns:repeat(4,minmax(0,1fr))}
+  :root[data-size="l"] .adm-grid:not(.adm-qgrid){grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:899px){:root[data-size="s"] .adm-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
+/* Segmented controls shrink instead of clipping their last buttons on small tiles. */
+.adm-acts .adm-qseg button{min-width:0;overflow:hidden;text-overflow:clip}
+:root[data-size="s"] .adm-acts .adm-qseg button{font-size:.68rem;padding:0 1px;letter-spacing:0}
+:root[data-size="s"] .adm-acts .adm-fseg button.adm-pol{padding:0 3px}
+:root[data-size="s"] .adm-acts>button{font-size:.72rem;padding-left:5px;padding-right:5px}
+:root[data-size="s"] .adm-acts select{font-size:.68rem;padding-left:3px;padding-right:0}
+@media (max-width:899px){:root[data-size="l"] .adm-grid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}}
 :root[data-size="s"] .adm-qgrid{grid-template-columns:repeat(auto-fill,minmax(min(170px,100%),1fr))}
 :root[data-size="l"] .adm-qgrid{grid-template-columns:repeat(auto-fill,minmax(min(360px,100%),1fr))}
 /* Growth form: tag (dashed = Claude's first guess), letter toggles (several allowed, ∅ = form not visible) */
