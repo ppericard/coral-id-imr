@@ -547,7 +547,6 @@ a.lt:hover{border-color:var(--accent)}
 .gpop small{display:block;margin-top:4px;color:var(--muted);font-size:.76rem}
 
 /* One muted line under the quiz level buttons: what the chosen photo set holds. */
-.lvlnote{margin:4px 2px 0;font-size:.82rem;color:var(--muted);line-height:1.3}
 
 /* Genus sheet: the ID tips (what RAs must retain) stand out in a tinted box; the lecture notes below are secondary. */
 .tipbox{background:color-mix(in srgb,var(--accent) 9%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);border-left:5px solid var(--accent);border-radius:var(--r);padding:10px 16px 12px;margin-top:4px}
@@ -610,3 +609,23 @@ a.lt:hover{border-color:var(--accent)}
   #tour .tbub{left:8px;right:8px;width:auto;bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px) + 8px);top:auto;transition:none}
   #tour .tbub.up{top:calc(env(safe-area-inset-top,0px) + 8px);bottom:auto}
 }
+
+/* My progress, signed out: sign-in is one line that opens the form. Phones: smaller ring beside the legend so the
+   wall starts on the first screen. */
+.sfold > summary{cursor:pointer;font-weight:600;color:var(--accent);list-style-position:inside}
+.sfold[open] > summary{margin-bottom:6px}
+@media (max-width:760px){
+  .pboard .gside{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;align-items:center}
+  .pboard .gside > *{grid-column:1 / -1}
+  .pboard .gside > .pring{grid-column:1;width:84px;height:84px;margin:0}
+  .pboard .gside > .pring > span{width:64px;height:64px;font-size:.8rem}
+  .pboard .gside > .pring b{font-size:1.3rem}
+  .pboard .gside > .pring small{font-size:.62rem;text-align:center;line-height:1.1}
+  .pboard .gside > .plegend{grid-column:2;justify-content:flex-start}
+}
+/* Genera on phones: family, order and group index behind one Filter line. */
+.gfilt{flex:1 1 100%;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:0 10px}
+.gfilt > summary{cursor:pointer;min-height:40px;display:flex;align-items:center;gap:6px;font-weight:600;list-style-position:inside}
+.gfilt[open]{display:flex;flex-direction:column;gap:8px;padding-bottom:10px}
+.gfilt select{width:100%}
+.gfilt .gjump{margin:0}

@@ -70,3 +70,6 @@
 .hdbtn.main b em{opacity:.7}
 @media (max-width:860px){.hdoors{grid-template-columns:minmax(0,1fr)}.hdart{aspect-ratio:3/1}}
 @media (max-width:560px){.hdoors{margin-top:10px}.hdoor h3{font-size:1.75rem}.hdbody{padding:14px 16px 16px}.hdart{aspect-ratio:4/1}.hdtiles{grid-template-columns:repeat(6,1fr);grid-template-rows:1fr}.hdtiles img:nth-child(n+7){display:none}.hddesc{font-size:1rem;margin-bottom:12px}.hdacts{gap:8px}}
+/* Phones: both doors on the first screen (Pierre, 2026-10-31): thinner art band, buttons side by side without their subtitles. */
+@media (max-width:560px){.hdoors{gap:12px}.hdart{aspect-ratio:6/1}.hdoor h3{font-size:1.55rem;margin:2px 0 4px}.hdbody{padding:10px 14px 14px}.hddesc{font-size:.95rem;line-height:1.35;margin-bottom:10px}
+  .hdacts{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}.hdbtn{padding:9px 12px}.hdbtn b{font-size:1.2rem}.hdbtn small{display:none}}

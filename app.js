@@ -276,15 +276,20 @@ let azFam = null, azQ = '';
 let azOrder = (() => { try { return localStorage.getItem('imr-coral-order') || 'lecture'; } catch (e) { return 'lecture'; } })();
 // Genera view: 'photos' (cards) or 'tips' (the ID tips list, formerly its own page).
 let azView = (() => { try { return localStorage.getItem('imr-coral-gview') || 'photos'; } catch (e) { return 'photos'; } })();
+let gfOpen = false;  // phone Filter fold on Genera, kept open across redraws
 function viewGenera(){
   const fams = [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
+  // Phones: family, order and the group index fold behind one Filter line, so the genera start near the top.
+  const phone = matchMedia('(max-width:640px)').matches;
+  const famSel = `<select id="fam" aria-label="Family"><option value="">All families</option><option value="★"${azFam === '★' ? ' selected' : ''}>★ Not surveyed</option>${fams.map(f => `<option${azFam === f ? ' selected' : ''}>${esc(f)}</option>`).join('')}</select>`;
+  const viewSeg = `<div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['tips', 'ID tips']].map(([k, t]) => `<button type="button" data-gv="${k}" aria-pressed="${azView === k}">${t}</button>`).join('')}</div>`;
+  const orderSeg = `<div class="seg" role="group" aria-label="Order">${[['lecture', 'Lecture', ' groups'], ['slate', 'Slate', ' numbers']].map(([k, t, x]) => `<button type="button" data-o="${k}" aria-pressed="${azOrder === k}">${t}<span class="wide">${x}</span></button>`).join('')}</div>`;
+  const jump = azOrder === 'lecture' ? `<div class="chips tipgr gjump"><span class="label">IMR group</span>${DATA.imrg.map(x => `<button type="button" class="chip gchip" style="--g:${groupHue(x.n)}" data-jump="${x.n}" title="${esc(x.t)}">${x.n}</button>`).join('')}</div>` : '';
   $v.innerHTML = `<h2>The 39 genera on the IMR slate</h2>
   <p class="lede">34 surveyed genera plus 5 starred ones (★) to recognise and rule out. Colours mark the confusion groups from the IMR lecture: genera in the same group are the ones to tell apart. Switch to <b>ID tips</b> for the 4 questions to ask and the lecturers' short cues for each genus.</p>
   <div class="tools"><input id="q" type="search" placeholder="Search a genus or a feature" value="${esc(azQ)}" aria-label="Search">
-    <select id="fam" aria-label="Family"><option value="">All families</option><option value="★"${azFam === '★' ? ' selected' : ''}>★ Not surveyed</option>${fams.map(f => `<option${azFam === f ? ' selected' : ''}>${esc(f)}</option>`).join('')}</select>
-    <div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['tips', 'ID tips']].map(([k, t]) => `<button type="button" data-gv="${k}" aria-pressed="${azView === k}">${t}</button>`).join('')}</div>
-    <div class="seg" role="group" aria-label="Order">${[['lecture', 'Lecture', ' groups'], ['slate', 'Slate', ' numbers']].map(([k, t, x]) => `<button type="button" data-o="${k}" aria-pressed="${azOrder === k}">${t}<span class="wide">${x}</span></button>`).join('')}</div></div>
-  ${azView === 'tips' ? tipsHead() : ''}${azOrder === 'lecture' ? `<div class="chips tipgr gjump"><span class="label">IMR group</span>${DATA.imrg.map(x => `<button type="button" class="chip gchip" style="--g:${groupHue(x.n)}" data-jump="${x.n}" title="${esc(x.t)}">${x.n}</button>`).join('')}</div>` : ''}<div class="${azView === 'tips' ? 'tiplist' : 'grid'}" id="azgrid"></div>`;
+    ${viewSeg}${phone ? `<details class="gfilt"${gfOpen ? ' open' : ''}><summary>Filter${azFam ? ' <span class="fdn">1</span>' : ''}</summary>${famSel}${orderSeg}${jump}</details>` : famSel + orderSeg}</div>
+  ${azView === 'tips' ? tipsHead() : ''}${phone ? '' : jump}<div class="${azView === 'tips' ? 'tiplist' : 'grid'}" id="azgrid"></div>`;
   const draw = () => {
     const q = azQ.toLowerCase(), tips = azView === 'tips';
     const names = Object.keys(DATA.gen).filter(n => (!azFam || DATA.gen[n].fam === azFam || (azFam === '★' && !DATA.gen[n].n)) && (!q || (n + ' ' + DATA.gen[n].crit.join(' ') + ' ' + DATA.gen[n].imr.join(' ')).toLowerCase().includes(q)));
@@ -303,6 +308,7 @@ function viewGenera(){
   };
   const qi = document.getElementById('q');
   qi.oninput = () => { azQ = qi.value; draw(); };
+  const gf = $v.querySelector('.gfilt'); if (gf) gf.ontoggle = () => { gfOpen = gf.open; };
   document.getElementById('fam').onchange = e => { azFam = e.target.value || null; draw(); };
   $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { azOrder = b.dataset.o; try { localStorage.setItem('imr-coral-order', azOrder); } catch (e) {} viewGenera(); });
   // Group index: jump to a lecture group (a button, not a link: the hash is the page route).
@@ -551,7 +557,6 @@ function question(cur, target, choices, prompt, set){
   $v.innerHTML = `${gameHelp(cur)}<div class="q">
     <div class="qstage">${ph.map(fig).join('')}</div>
     <aside class="qside">
-      <p class="lvlnote">Photos adapt to each genus. These are ${LEVELS[Math.max(...ph.map(p => photoLvl(target, p)), 0)][1].toLowerCase()}.</p>
       <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">${session.ok}/${session.n}</span>${quizNav(cur)}</div>
       <div class="ans">${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
@@ -701,7 +706,6 @@ function quizBoard(){
     <div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['slate', 'Slate'], ['groups', 'Groups']].map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`).join('')}</div>
     <div class="pring" style="background:conic-gradient(${ring})"><span><b>${progPct(list)}%</b><small>${count('ok')}/${list.length} learned</small></span></div>
     <p class="plegend">${LV.map(([k, t]) => `<span class="lvl ${k}">${t} ${count(k)}</span>`).join(' ')}</p>
-    <p class="pnote">Learned = your answers make it 95% sure you know the genus (right answers on harder photos count more), plus once right with the corallites and once in a duel. Naming a genus wrongly counts as a mistake for it. The % counts every step on the way.</p>
     ${weak.length ? `<div><h3 class="label">Review first</h3><p class="chips">${weak.slice(0, 4).map(n => `<a class="chip" href="#g-${esc(n)}"><i>${esc(n)}</i></a>`).join('')}</p></div>` : ''}
     ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> / <i>${esc(o)}</i> ×${k}</a>`).join('')}</p></div>` : ''}
     <p><a class="next go" href="#quiz">Practise now</a></p>
@@ -853,11 +857,12 @@ function bindSync(box = document.querySelector('#tour .tsync') || document.getEl
     box.querySelector('#soff').onclick = () => { SYNC = null; try { localStorage.removeItem('imr-coral-sync'); } catch (e) {} bindSync(); };
     return;
   }
-  box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device.</p>
+  const fold = box.id === 'sync';
+  box.innerHTML = `${fold ? '<details class="sfold"><summary>Sign in to save your progress</summary>' : '<h3>Sign in to save your progress</h3>'}<p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device.</p>
     <form class="sform"><label>Your name <input name="n" required maxlength="40" autocomplete="name"></label>
     <label>4-digit code <input name="p" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"></label>
     <button class="chip go" type="submit">Sign in</button> <span class="note" role="status"></span></form>
-    <p class="note">New name: pick any code and remember it. Same name and code later: your saved progress comes back.</p>`;
+    <p class="note">New name: pick any code and remember it. Same name and code later: your saved progress comes back.</p>${fold ? '</details>' : ''}`;
   box.querySelector('form').onsubmit = e => { e.preventDefault();
     const f = e.target, name = f.n.value.trim(), pin = f.p.value.trim();
     msg('Connecting…');
