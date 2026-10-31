@@ -16,7 +16,7 @@ const img = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 
-let SUG = {}, FB0, FU0, PICKS = {}, PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
+let SUG = {}, FU0, PICKS = {}, PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
 // (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
 const QUAL = [[3, 'Good'], [2, 'Fair'], [1, 'Poor']];
@@ -69,7 +69,7 @@ function setQ(f, q){
 // "gf" {f: 'M' | 'Mp' | 'xn' | 'p'} and always win, form and flag each on their own. The old Coral Finder letters
 // (forms.json "form") are only a hint for the photos still to classify.
 // Guesses to double-check (forms.json gunsure): a "?" until you click.
-let FBATCH = new Set(), FUNSURE = new Set(), FDEF = [], LEGACY = {};
+let FUNSURE = new Set(), FDEF = [], LEGACY = {};
 const FORM_ORDER = 'BETUMSF', FABBR = {B: 'Br', E: 'En', T: 'Ta', U: 'Mu', M: 'Ma', S: 'Sm', F: 'Fo', x: '∅'};
 const fL = v => (v || '').replace(/[pn]/g, ''), fP = v => (v || '').includes('p') ? true : (v || '').includes('n') ? false : null;
 const mineF = f => (DRAFT.gf || {})[f] || '';
@@ -506,7 +506,7 @@ function renderForm(){
   status();
   const names = Object.keys(DATA.gen), vl = v => v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1];
   // Coral Finder book photos are left out: they never go on the growth-form tiles.
-  const all = allPhotos().filter(p => !p.cf && shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus) && (!FF.todo || !fSet(p.f)) && (!FF.pol || pOf(p.f)) && (!FF.batch || FBATCH.has(p.f)));
+  const all = allPhotos().filter(p => !p.cf && shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus) && (!FF.todo || !fSet(p.f)) && (!FF.pol || pOf(p.f)));
   const card = p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
     <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}</figcaption>
@@ -515,7 +515,8 @@ function renderForm(){
   const rows = [...[...FORM_ORDER].map(c => [c, fName(c), p => fOf(p.f) === c]), ['x', 'Form not visible', p => fOf(p.f) === 'x'],
     ...[...'BMSPFLC', ''].map(c => ['', `To classify${c ? ` · was Coral Finder ${cfName(c)}` : ''}`, p => !fOf(p.f) && (LEGACY[p.f] || '') === c])];
   const sec = ([id, t, test]) => { const L = all.filter(test); if (!L.length && id === '') return '';
-    return `<section class="adm-row adm-qrow"><h3>${id ? `<b class="adm-fl">${FABBR[id]}</b> ` : ''}${esc(t)} <small>${L.length} photo${L.length === 1 ? '' : 's'}${id === 'x' ? ' · never used on the growth-form tiles' : ''}</small></h3>
+    const todo = id ? L.filter(p => !fSet(p.f)).length : 0;
+    return `<section class="adm-row adm-qrow"><h3>${id ? `<b class="adm-fl">${FABBR[id]}</b> ` : ''}${esc(t)} <small>${L.length} photo${L.length === 1 ? '' : 's'}${id === 'x' ? ' · never used on the growth-form tiles' : ''}</small>${todo ? ` <button type="button" class="adm-fok" data-fok="${id}" title="Validate">✓ Validate ${todo}</button>` : ''}</h3>
       <div class="adm-grid adm-qgrid" data-fdrop="${id}">${L.map(card).join('')}</div></section>`; };
   const opt = (v, t, cur) => `<button type="button" class="adm-fchip plain" data-fv="${v}" aria-pressed="${cur === v}">${t}</button>`;
   $v.innerHTML = `<section class="adm-quality">
@@ -523,7 +524,7 @@ function renderForm(){
     <div class="adm-filter"><span class="label">Show</span>${ORIGINS.filter(([o]) => o !== 'book').map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`).join('')}</div>
     <div class="adm-filter"><span class="label">View</span>${opt('all', 'All', FF.view)}${VIEWS.map(([v, t]) => opt(v, t, FF.view)).join('')}${opt('cand', 'Candidates', FF.view)}
       <select id="fgen" aria-label="Genus"><option value="">All genera</option>${names.map(m => `<option${m === FF.genus ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>
-      <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label><label class="adm-todo"><input type="checkbox" id="fpol"${FF.pol ? ' checked' : ''}> ✿ Polyps out</label>${FBATCH.size ? `<label class="adm-todo"><input type="checkbox" id="fbatch"${FF.batch ? ' checked' : ''}> Test batch (${[...FBATCH].filter(f => fSet(f)).length}/${FBATCH.size} checked)</label>` : ''}</div>
+      <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label><label class="adm-todo"><input type="checkbox" id="fpol"${FF.pol ? ' checked' : ''}> ✿ Polyps out</label></div>
     ${rows.map(sec).join('')}</section>`;
   const saveFF = () => { store.set('imr-admin-ffilter', FF); renderForm(); };
   $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { const o = b.dataset.o; SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o); store.set('imr-admin-origins', [...SHOW]); renderForm(); });
@@ -531,9 +532,13 @@ function renderForm(){
   $('fgen').onchange = e => { FF.genus = e.target.value; saveFF(); };
   $('ftodo').onchange = e => { FF.todo = e.target.checked; saveFF(); };
   $('fpol').onchange = e => { FF.pol = e.target.checked; saveFF(); };
-  if ($('fbatch')) $('fbatch').onchange = e => { FF.batch = e.target.checked; saveFF(); };
   $v.querySelectorAll('[data-act="zoom"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'); zoom(t.dataset.g, t.dataset.f); });
   $v.querySelectorAll('[data-act="exclude"]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.closest('[data-f]'); ACT.exclude(t.dataset.g, t.dataset.f); });
+  // Validate a whole row: every first guess still shown in it (with the filters on) becomes Pierre's own choice, in one undo step.
+  $v.querySelectorAll('[data-fok]').forEach(b => b.onclick = () => { const c = b.dataset.fok; DRAFT.gf = {...(DRAFT.gf || {})};
+    all.filter(p => fOf(p.f) === c && !fSet(p.f)).forEach(p => { const m = fP(mineF(p.f)), pol = m === null ? fP(AUTOF[p.f]) === true : m;
+      DRAFT.gf[p.f] = c + (m === false ? 'n' : pol ? 'p' : ''); });
+    saveDraft(); renderForm(); });
   bindF($v);
   let over = null;
   $v.querySelectorAll('.adm-qt').forEach(t => { t.onmouseenter = t.onfocus = () => { over = t; }; t.onmouseleave = () => { if (over === t) over = null; }; });
@@ -673,9 +678,9 @@ async function start(){
   const hd = document.querySelector('header'); if (hd && window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--hdr-h', hd.offsetHeight + 'px')).observe(hd);
   $v.innerHTML = '<p class="note">Loading photos…</p>';
   const side = (u, k) => fetch(u, {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).then(j => j[k] || {}).catch(() => ({}));
-  try { [DATA, AUTOQ, AUTOF, FB0, FU0, PICKS, SUG] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), side('quality.json', 'q'), side('forms.json', 'gf'), side('forms.json', 'batch'), side('forms.json', 'gunsure'), side('picks.json', 'feat'), fetch('suggest.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})), loadSaved()]); }
+  try { [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), side('quality.json', 'q'), side('forms.json', 'gf'), side('forms.json', 'gunsure'), side('picks.json', 'feat'), fetch('suggest.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})), loadSaved()]); }
   catch (x) { $v.innerHTML = `<p class="warn">Could not load: ${esc(x.message)}</p>`; return; }
-  FBATCH = new Set(Array.isArray(FB0) ? FB0 : []); FUNSURE = new Set(Array.isArray(FU0) ? FU0 : []);
+  FUNSURE = new Set(Array.isArray(FU0) ? FU0 : []);
   [FDEF, LEGACY] = await Promise.all([side('forms.json', 'forms'), side('forms.json', 'form')]); if (!Array.isArray(FDEF)) FDEF = [];
   // Every photo of data.json by name, with its genus, for the Excluded view.
   PHOTOS = {}; Object.entries(DATA.gen).forEach(([n, g]) => [...Object.values(g.views || {}), ...Object.values(g.more || {}), (DATA.course || {})[n] || [], (DATA.cand || {})[n] || [], g.book || []].flat().forEach(p => { PHOTOS[p.f] = {...p, genus: n}; }));
