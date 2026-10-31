@@ -86,13 +86,15 @@
     },
     "Tubastraea": {
       "add": {
-        "tubastraea-cand-588018797": "wide"
+        "tubastraea-cand-588018797": "wide",
+        "tubastraea-cand-580500308": "wide"
       }
     },
     "Echinopora": {
       "add": {
         "echinopora-cand-745205426": "medium",
-        "echinopora-cand-745205445": "medium"
+        "echinopora-cand-745205445": "medium",
+        "echinopora-cand-745205487": "wide"
       }
     },
     "Astreopora": {
@@ -111,7 +113,8 @@
       "add": {
         "turbinaria-cand-745205837": "macro",
         "turbinaria-cf-45-012": "medium",
-        "turbinaria-cand-745205883": "medium"
+        "turbinaria-cand-745205883": "medium",
+        "turbinaria-cand-745205896": "wide"
       }
     },
     "Mycedium": {
@@ -121,7 +124,8 @@
     },
     "Lobophyllia": {
       "add": {
-        "lobophyllia-cand-311685350": "wide"
+        "lobophyllia-cand-311685350": "wide",
+        "lobophyllia-cand-588674234": "wide"
       }
     },
     "Pavona": {
@@ -159,7 +163,8 @@
     "Goniopora": {
       "add": {
         "goniopora-cand-745205553": "medium",
-        "goniopora-cand-745205672": "macro"
+        "goniopora-cand-745205672": "macro",
+        "goniopora-cand-412013633": "wide"
       }
     },
     "Plerogyra": {
@@ -177,7 +182,8 @@
     "Hydnophora": {
       "add": {
         "hydnophora-cand-745205270": "macro",
-        "hydnophora-cand-596688805": "wide"
+        "hydnophora-cand-596688805": "wide",
+        "hydnophora-cand-586960457": "wide"
       }
     },
     "Fungia": {
@@ -194,7 +200,8 @@
     "Danafungia": {
       "add": {
         "danafungia-cand-269393406": "wide",
-        "danafungia-cand-337150277": "wide"
+        "danafungia-cand-337150277": "wide",
+        "danafungia-cand-242601544": "wide"
       }
     },
     "Ctenactis": {
@@ -213,12 +220,14 @@
     "Herpolitha": {
       "add": {
         "herpolitha-cand-311983422": "wide",
-        "herpolitha-cand-466162070": "wide"
+        "herpolitha-cand-466162070": "wide",
+        "herpolitha-cand-743295509": "wide"
       }
     },
     "Heliofungia": {
       "add": {
-        "heliofungia-cand-746234858": "macro"
+        "heliofungia-cand-746234858": "macro",
+        "heliofungia-cand-269732379": "wide"
       }
     },
     "Dipsastraea": {
@@ -247,7 +256,8 @@
     },
     "Favites": {
       "add": {
-        "favites-cand-579366431": "medium"
+        "favites-cand-579366431": "medium",
+        "favites-cand-579366436": "medium"
       }
     },
     "Duncanopsammia": {
@@ -274,7 +284,8 @@
       "add": {
         "cyphastrea-cand-484996119": "wide",
         "cyphastrea-cf-8-10": "wide",
-        "cyphastrea-cand-484996141": "macro"
+        "cyphastrea-cand-484996141": "macro",
+        "cyphastrea-cand-269511974": "wide"
       }
     },
     "Halomitra": {
@@ -296,6 +307,7 @@
     "dipsastraea-cand-746238014": 3,
     "duncanopsammia-cf-50-014": 1,
     "echinopora-cand-745205445": 2,
+    "echinopora-cand-745205487": 2,
     "goniastrea-cand-746237419": 3,
     "goniopora-cand-745205553": 2,
     "halomitra-cand-269460672": 2,
@@ -370,6 +382,12 @@
     "cand:tubastraea-cf-10-00": 1
   },
   "crop": {
+    "danafungia-cand-242601544": [
+      0.084,
+      0.186,
+      0.617,
+      0.889
+    ],
     "danafungia-cand-337150277": [
       0.535,
       0,
