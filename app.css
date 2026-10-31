@@ -317,7 +317,8 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 @media (min-width:1024px){
   .qstage{min-height:0}
 }
-body:has(.q),body:has(.pgrid),body:has(.rvstage),body:has(.pgroups),body:has(.pslate),body:has(.lk){padding-bottom:0}
+/* Screen-fitting pages: no footer, but still room for the phone tab bar (0 on wider screens). */
+body:has(.q),body:has(.pgrid),body:has(.rvstage),body:has(.pgroups),body:has(.pslate),body:has(.lk){padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px))}
 body:has(.q) footer,body:has(.pgrid) footer,body:has(.rvstage) footer,body:has(.pgroups) footer,body:has(.pslate) footer,body:has(.lk) footer{display:none}
 body:has(.q) main,body:has(.pgrid) main,body:has(.rvstage) main,body:has(.pgroups) main,body:has(.pslate) main,body:has(.lk) main{margin-bottom:0}
 .qph{position:relative;margin:0;overflow:hidden;border-radius:var(--r);background:#000;min-height:0;height:100%}
@@ -594,6 +595,8 @@ a.lt:hover{border-color:var(--accent)}
 .pboard .sync h3+p{display:none}
 .pboard .gside .seg{align-self:stretch;display:flex}
 .pboard .gside .seg button{flex:1}
+.seg.pvpin{position:sticky;top:0;z-index:4;display:flex;margin:4px 0 0;box-shadow:0 4px 10px rgba(0,0,0,.08)}
+.seg.pvpin button{flex:1}
 /* Slate view: laid out like the physical IMR slate (two columns, numbers down each column, starred genera last). */
 .pslate{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(var(--rows,20),minmax(30px,1fr));grid-auto-flow:column;gap:4px 6px}
 @media (min-width:600px){

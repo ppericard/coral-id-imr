@@ -517,7 +517,7 @@ function viewLookalikes(a, b){
 // The deck fills the window below the header: the montage takes the height the title, tips and buttons leave.
 function fitLk(){
   const k = $v.querySelector('.lk'); if (!k) return;
-  const tab = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tabbar-h')) || 0;
+  const tab = tabH();
   k.style.height = Math.max(360, innerHeight - k.getBoundingClientRect().top - window.scrollY - 14 - tab) + 'px';
 }
 addEventListener('resize', fitLk);
@@ -680,7 +680,7 @@ function question(cur, target, choices, prompt, set){
 // The photos then take the grid (columns x rows) that shows them largest at 4:3.
 function fitStage(){
   const q = $v.querySelector('.q'); if (!q) return;
-  const tab = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tabbar-h')) || 0;  // phone tab bar
+  const tab = tabH();
   q.style.setProperty('--qh', Math.max(260, innerHeight - q.getBoundingClientRect().top - window.scrollY - 16 - tab) + 'px');
   const st = q.querySelector('.qstage');
   // Phones (one column): the photo takes all the height the question and answers leave, so no gap is left under it.
@@ -697,13 +697,16 @@ function fitStage(){
 addEventListener('resize', fitStage);
 // Games with a grid of cards (Memory): fill the free area. Try every column count; cards may be square up to
 // 4:3 landscape (the photos' shape); keep the layout with the largest cards.
+// Height of the phone bottom tab bar (0 on wider screens): every screen-fitting layout leaves room for it.
+const tabH = () => { const t = document.querySelector('.sections');
+  return t && getComputedStyle(t).position === 'fixed' ? Math.max(0, innerHeight - t.getBoundingClientRect().top) : 0; };
 function fitTiles(grid, gap, dims){
   // Sizes a card grid to the space left on screen. With dims [a, b] the grid is a x b (either orientation)
   // and cards stretch to fill it, within sane aspect ratios; without, picks the best column count.
   if (gap === undefined) { gap = +grid.dataset.gap || 10; dims = grid.dataset.dims && grid.dataset.dims.split('x').map(Number); }
   grid.dataset.gap = gap; if (dims) grid.dataset.dims = dims.join('x');
   const n = grid.children.length, W = grid.parentNode.clientWidth;
-  const H = Math.max(240, innerHeight - grid.getBoundingClientRect().top - window.scrollY - 16);
+  const H = Math.max(240, innerHeight - grid.getBoundingClientRect().top - window.scrollY - 16 - tabH());
   const opts = dims ? [[dims[1], dims[0]], [dims[0], dims[1]]] : Array.from({length: n}, (_, i) => [i + 1, Math.ceil(n / (i + 1))]);
   let best = null;
   for (const [c, r] of opts) {
@@ -848,11 +851,13 @@ function quizBoard(){
   </aside></div>`;
   bindQuizNav('quiz-board');
   bindProgFile(); bindSync();
+  // Phones: the Photos/Slate/Groups switch sits above the board and stays pinned while the page scrolls (Pierre, 2026-10-31).
+  if (matchMedia(MQ.phone).matches) { const sg = $v.querySelector('.pboard .gside .seg'); sg.classList.add('pvpin'); $v.querySelector('.pboard').before(sg); }
   const rb = document.getElementById('reset');
   rb.onclick = () => { if (rb.dataset.armed) { P = {}; store.set('imr-coral-reset', new Date().toISOString()); save(); route(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } };
   const wrap = $v.querySelector('.pboard .pgwrap');
   const show = () => { wrap.innerHTML = VIEWS[pv](); $v.querySelectorAll('[data-pv]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pv === pv));
-    requestAnimationFrame(() => { const g = wrap.firstChild; if (g.classList.contains('pgrid')) fitTiles(g, 6); else g.style[pv === 'slate' ? 'minHeight' : 'height'] = Math.max(320, innerHeight - g.getBoundingClientRect().top - window.scrollY - 16) + 'px'; }); };
+    requestAnimationFrame(() => { const g = wrap.firstChild; if (g.classList.contains('pgrid')) fitTiles(g, 6); else g.style[pv === 'slate' ? 'minHeight' : 'height'] = Math.max(320, innerHeight - g.getBoundingClientRect().top - window.scrollY - 16 - tabH()) + 'px'; }); };
   $v.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { pv = b.dataset.pv; store.set('imr-coral-pview', pv); show(); });
   show();
 }
