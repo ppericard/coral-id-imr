@@ -16,7 +16,7 @@ const img = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 
-let PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, lastGenus = null;
+let PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
 // (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
 const QUAL = [[3, 'Good'], [2, 'Fair'], [1, 'Poor']];
@@ -49,6 +49,22 @@ function setQ(f, q){
   DRAFT.quality[f] = q;
   saveDraft();
 }
+// Growth form of each photo: the Coral Finder front-page forms (data.json key: B, M, S, P, F, L, C), several when
+// several show, or x = form not visible (too close). First guesses come from forms.json (Claude, from the image);
+// Pierre's choices live in curation.json "form" {f: 'B' | 'FL' | 'x'} and always win. The site's growth-form
+// tiles only use photos tagged with that form.
+const FORM_ORDER = 'BMSPFLC', fOf = f => (DRAFT.form || {})[f] || AUTOF[f] || '', fSet = f => !!(DRAFT.form || {})[f];
+const fChanged = () => !same(DRAFT.form || {}, SAVED.form || {});
+const fName = id => id === 'x' ? 'Form not visible' : (DATA.key.find(k => k.id === id) || {}).name || id;
+const fNorm = v => v.includes('x') || !v ? 'x' : [...FORM_ORDER].filter(c => v.includes(c)).join('');
+function setF(f, v){
+  DRAFT.form = DRAFT.form || {};
+  // Always recorded, even when it matches the first guess, so a new forms.json can never change it.
+  DRAFT.form[f] = fNorm(v);
+  saveDraft();
+}
+const fTag = p => { const v = fOf(p.f); return v ? `<span class="adm-q adm-ftag${fSet(p.f) ? '' : ' auto'}" title="${fSet(p.f) ? 'Form set by you' : 'First guess by Claude'}: ${esc([...v].map(fName).join(' + '))}">${v === 'x' ? 'not visible' : esc([...v].map(c => fName(c).split(' ')[0]).join(' + '))}</span>` : '<span class="adm-q adm-ftag auto">no guess</span>'; };
+const fSeg = p => { const v = fOf(p.f); return `<span class="adm-qseg adm-fseg" role="group" aria-label="Growth form">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v.includes(c)}" title="${esc(fName(c))}${c === 'x' ? '' : ' (click again to remove; several allowed)'}">${c === 'x' ? '∅' : c}</button>`).join('')}</span>`; };
 
 /* ---------- Token vault: AES-GCM key derived from the password (PBKDF2) ---------- */
 const b64 = u => btoa(String.fromCharCode(...new Uint8Array(u))), unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -228,7 +244,7 @@ function tile(n, p, v, st){
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
 const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Exclude this photo for good (from every genus and game)" aria-label="Exclude for good">×</button>';
 function status(){
-  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : ''].filter(Boolean);
+  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : ''].filter(Boolean);
   const bs = $('booksw'); if (bs) { bs.setAttribute('aria-pressed', String(bookOn(DRAFT))); bs.textContent = `Coral Finder book photos: ${bookOn(DRAFT) ? 'on' : 'off'}`; }
   const xn = Object.keys(DRAFT.exclude || {}).length, xa = document.querySelector('[data-mode="excluded"]'); if (xa) xa.textContent = `Excluded${xn ? ` (${xn})` : ''}`;
   const t = draftAt ? ` (saved ${draftAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})})` : '';
@@ -238,10 +254,11 @@ function status(){
   $('save').disabled = !TOKEN || !parts.length; $('save').title = TOKEN ? 'Send your draft to the public site' : 'Unlock with a token to publish';
   if (cur[0] !== '~') lastGenus = cur;
   $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || '');
-  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === (cur === '~quality' ? 'quality' : cur === '~excluded' ? 'excluded' : 'genus'))));
+  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded'}[cur] || 'genus'))));
 }
 function render(){
   if (cur === '~quality') return renderQuality();
+  if (cur === '~form') return renderForm();
   if (cur === '~excluded') return renderExcluded();
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
   const ch = changed(), n = cur, g = DATA.gen[n], cv = coverOf(n), k = entry(n);
@@ -425,6 +442,58 @@ function renderQuality(){
     (t, el) => { clearQ(); const g = el && el.closest('[data-qdrop]'); if (g) { rateTile(t, Number(g.dataset.qdrop)); g.prepend(t); } }, clearQ);
 }
 
+/* ---------- Growth form ---------- */
+// One row per growth form (photos showing several forms have their own row), then "Form not visible" and photos
+// without a guess. Click the letters on a photo (several allowed; ∅ = form not visible), drag it to another row,
+// or hover it and press the letter (b m s p f l c, x or 0 for not visible). The tile stays put until a filter changes.
+const FF = Object.assign({view: 'all', genus: '', todo: false}, store.get('imr-admin-ffilter', {}));
+function formTile(t, v){
+  setF(t.dataset.f, v); const p = {f: t.dataset.f};
+  t.querySelector('.adm-fseg').outerHTML = fSeg(p); t.querySelector('.adm-ftag').outerHTML = fTag(p);
+  t.classList.add('rated'); bindF(t); status();
+}
+const toggleF = (f, c) => { const v = fOf(f); return c === 'x' ? 'x' : v.includes(c) ? v.replace(c, '') || 'x' : v.replace('x', '') + c; };
+function bindF(scope){ scope.querySelectorAll('.adm-fseg [data-fm]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.closest('[data-f]'); formTile(t, toggleF(t.dataset.f, b.dataset.fm)); }); }
+function renderForm(){
+  status();
+  const names = Object.keys(DATA.gen), vl = v => v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1];
+  // Coral Finder book photos are left out: they never go on the growth-form tiles.
+  const all = allPhotos().filter(p => !p.cf && shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus) && (!FF.todo || !fSet(p.f)));
+  const card = p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
+    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
+    <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}${fTag(p)}</figcaption>
+    <div class="adm-acts">${fSeg(p)}</div></figure>`;
+  const rows = [...[...FORM_ORDER].map(c => [c, fName(c), p => fOf(p.f) === c]), ['multi', 'Several forms', p => fOf(p.f).length > 1], ['x', 'Form not visible', p => fOf(p.f) === 'x'], ['', 'No guess yet', p => !fOf(p.f)]];
+  const sec = ([id, t, test]) => { const L = all.filter(test); if (!L.length && (id === '' || id === 'multi')) return '';
+    return `<section class="adm-row adm-qrow"><h3>${id && id !== 'multi' ? `<b class="adm-fl">${id === 'x' ? '∅' : id}</b> ` : ''}${esc(t)} <small>${L.length} photo${L.length === 1 ? '' : 's'}${id === 'x' ? ' · never used on the growth-form tiles' : ''}</small></h3>
+      <div class="adm-grid adm-qgrid" data-fdrop="${id}">${L.map(card).join('')}</div></section>`; };
+  const opt = (v, t, cur) => `<button type="button" class="adm-fchip plain" data-fv="${v}" aria-pressed="${cur === v}">${t}</button>`;
+  const todo = allPhotos().filter(p => !p.cf && !fSet(p.f)).length;
+  $v.innerHTML = `<section class="adm-quality">
+    <div class="adm-qhead"><h2>Growth form</h2><p class="note">The Coral Finder growth forms each photo shows, used to pick the photos of the growth-form tiles. Dashed tags are Claude's first guess from the image; ${todo} photo${todo === 1 ? '' : 's'} not checked yet. Click the letters (several allowed, ∅ = form not visible), drag a photo to another row, or hover it and press <kbd>B</kbd> <kbd>M</kbd> <kbd>S</kbd> <kbd>P</kbd> <kbd>F</kbd> <kbd>L</kbd> <kbd>C</kbd>, or <kbd>X</kbd> for not visible.</p></div>
+    <div class="adm-filter"><span class="label">Show</span>${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`).join('')}</div>
+    <div class="adm-filter"><span class="label">View</span>${opt('all', 'All', FF.view)}${VIEWS.map(([v, t]) => opt(v, t, FF.view)).join('')}${opt('cand', 'Candidates', FF.view)}
+      <select id="fgen" aria-label="Genus"><option value="">All genera</option>${names.map(m => `<option${m === FF.genus ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>
+      <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label></div>
+    ${rows.map(sec).join('')}</section>`;
+  const saveFF = () => { store.set('imr-admin-ffilter', FF); renderForm(); };
+  $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { const o = b.dataset.o; SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o); store.set('imr-admin-origins', [...SHOW]); renderForm(); });
+  $v.querySelectorAll('[data-fv]').forEach(b => b.onclick = () => { FF.view = b.dataset.fv; saveFF(); });
+  $('fgen').onchange = e => { FF.genus = e.target.value; saveFF(); };
+  $('ftodo').onchange = e => { FF.todo = e.target.checked; saveFF(); };
+  $v.querySelectorAll('[data-act="zoom"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'); zoom(t.dataset.g, t.dataset.f); });
+  $v.querySelectorAll('[data-act="exclude"]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.closest('[data-f]'); ACT.exclude(t.dataset.g, t.dataset.f); });
+  bindF($v);
+  let over = null;
+  $v.querySelectorAll('.adm-qt').forEach(t => { t.onmouseenter = t.onfocus = () => { over = t; }; t.onmouseleave = () => { if (over === t) over = null; }; });
+  document.onkeydown = e => { if (cur !== '~form' || !over || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input,select,textarea')) return;
+    const k = e.key.toUpperCase(), c = k === '0' ? 'x' : k === 'X' ? 'x' : FORM_ORDER.includes(k) ? k : null; if (c) { e.preventDefault(); formTile(over, toggleF(over.dataset.f, c)); } };
+  // Drag a photo onto another row: it gets that single form (Several forms: kept as it is).
+  const clearF = () => $v.querySelectorAll('.drop-row').forEach(x => x.classList.remove('drop-row'));
+  pointerDrag($v.querySelectorAll('.adm-qt'), el => { clearF(); const g = el && el.closest('[data-fdrop]'); if (g && g.dataset.fdrop && g.dataset.fdrop !== 'multi') g.classList.add('drop-row'); },
+    (t, el) => { clearF(); const g = el && el.closest('[data-fdrop]'); if (g && g.dataset.fdrop && g.dataset.fdrop !== 'multi') { formTile(t, g.dataset.fdrop); g.prepend(t); } }, clearF);
+}
+
 /* ---------- Excluded ---------- */
 function renderExcluded(){
   status();
@@ -448,13 +517,14 @@ function zoomOne(p){
 const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAFT.genera[n]).forEach(n => { genera[n] = DRAFT.genera[n]; });
   const quality = {}; Object.keys(DRAFT.quality || {}).sort().forEach(f => { quality[f] = DRAFT.quality[f]; });
   const exclude = {}; Object.keys(DRAFT.exclude || {}).sort().forEach(f => { exclude[f] = DRAFT.exclude[f]; });
-  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(exclude).length ? {exclude} : {})}; };
+  const form = {}; Object.keys(DRAFT.form || {}).sort().forEach(f => { form[f] = DRAFT.form[f]; });
+  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {})}; };
 async function save(){
-  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(); if (!(ch.length || q || x || bk) || !TOKEN) return;
+  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(); if (!(ch.length || q || x || bk || fm) || !TOKEN) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
   try {
     const out = output(), text = JSON.stringify(out, null, 2) + '\n';
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(x ? ['exclusions'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const r = await gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg, content: toB64(text), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})});
     SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); saveDraft();
     toast('Published. The public site shows it within a minute or two.');
@@ -469,7 +539,8 @@ function download(){
 /* ---------- Start ---------- */
 async function start(){
   $v.innerHTML = '<p class="note">Loading photos…</p>';
-  try { [DATA, AUTOQ] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), fetch('quality.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).then(j => j.q || {}).catch(() => ({})), loadSaved()]); }
+  const side = (u, k) => fetch(u, {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).then(j => j[k] || {}).catch(() => ({}));
+  try { [DATA, AUTOQ, AUTOF] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), side('quality.json', 'q'), side('forms.json', 'form'), loadSaved()]); }
   catch (x) { $v.innerHTML = `<p class="warn">Could not load: ${esc(x.message)}</p>`; return; }
   // Every photo of data.json by name, with its genus, for the Excluded view.
   PHOTOS = {}; Object.entries(DATA.gen).forEach(([n, g]) => [...Object.values(g.views || {}), ...Object.values(g.more || {}), (DATA.course || {})[n] || [], (DATA.cand || {})[n] || [], g.book || []].flat().forEach(p => { PHOTOS[p.f] = {...p, genus: n}; }));
@@ -487,7 +558,7 @@ async function start(){
     if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); } else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); } });
   cur = decodeURIComponent(location.hash.slice(1)) || Object.keys(DATA.gen)[0];
   window.onhashchange = () => { cur = decodeURIComponent(location.hash.slice(1)); render(); window.scrollTo({top: 0}); };
-  window.onbeforeunload = e => { if (TOKEN && (changed().length || qChanged() || xChanged())) { e.preventDefault(); e.returnValue = ''; } };
+  window.onbeforeunload = e => { if (TOKEN && (changed().length || qChanged() || fChanged() || xChanged())) { e.preventDefault(); e.returnValue = ''; } };
   render();
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.
