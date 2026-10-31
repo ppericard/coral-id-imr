@@ -224,8 +224,8 @@ LAB.add({
       const cnt = (f, o) => pool.filter(n => fits(n, F, f.id) && o.g.includes(n)).length;
       const fam = id => F.find(f => f.id === id);
       const row = id => { const f = fam(id); return f ? `<div class="fdsrow"><h3 title="${esc(f.note || '')}">${esc(f.name)}</h3><div class="fdsopts">${f.opts.map(o => optBtn(f, o, S[id].has(o.id), cnt(f, o))).join('')}</div></div>` : ''; };
-      // Phones: once a form is picked, the form tiles shrink to compact chips so the next clues and the shortlist move up.
-      const forms = f => `<div class="fdforms${S[f.id].size && matchMedia('(max-width:700px)').matches ? ' mini' : ''}">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>${andSw(f.id)}`;
+      // Once a form is picked, the form tiles shrink to compact chips so the next clues and the shortlist move up (phones and desktop).
+      const forms = f => `<div class="fdforms${S[f.id].size ? ' mini' : ''}">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>${andSw(f.id)}`;
       const show = `<button type="button" class="next fdshow" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera`} →</button>`;
       // Two entry points for everyone: IMR forms (default) or the paper Coral Finder's path, as a discreet link.
       const switcher = `<button type="button" class="linkish fdsv" data-sv="${startV === 'c' ? 'a' : 'c'}">${startV === 'c' ? '← IMR growth forms' : 'Coral Finder path →'}</button>`;
@@ -233,7 +233,7 @@ LAB.add({
       if (startV === 'c') {
         // The paper Coral Finder's own path: growth form, then the box of that form, then the shortlist.
         const fb = fam('box');
-        body = `${forms(fam('form'))}${fb ? `<div class="fdsrow"><h3 title="${esc(fb.note)}">${esc(fb.name)}</h3><div class="fdforms boxes">${fb.opts.map(o => { const P = boxPics(o.g); return `<button type="button" class="fdtileb fdboxt" data-o="box|${o.id}" aria-pressed="${S.box.has(o.id)}"${!cnt(fb, o) && !S.box.has(o.id) ? ' data-zero' : ''}><span class="fdtq n${P.length}">${P.map(u => `<img src="${u}" alt="" loading="lazy">`).join('')}</span><span class="fdtt"><b>${esc(o.t)}</b>${o.pg ? `<small>${o.pg}</small>` : ''}</span><span class="fdc">${cnt(fb, o)}</span></button>`; }).join('')}</div></div>` : ''}`;
+        body = `${forms(fam('form'))}${fb ? `<div class="fdsrow stack"><h3 title="${esc(fb.note)}">${esc(fb.name)}</h3><div class="fdforms boxes">${fb.opts.map(o => { const P = boxPics(o.g); return `<button type="button" class="fdtileb fdboxt" data-o="box|${o.id}" aria-pressed="${S.box.has(o.id)}"${!cnt(fb, o) && !S.box.has(o.id) ? ' data-zero' : ''}><span class="fdtq n${P.length}">${P.map(u => `<img src="${u}" alt="" loading="lazy">`).join('')}</span><span class="fdtt"><b>${esc(o.t)}</b>${o.pg ? `<small>${o.pg}</small>` : ''}</span><span class="fdc">${cnt(fb, o)}</span></button>`; }).join('')}</div></div>` : ''}`;
       } else {
         // Polyps out by day is its own clue (IMR lecture group 6), taken from Other features.
         const ft = fam('feat'), po = ft && ft.opts.find(o => o.id === 'polyp');
