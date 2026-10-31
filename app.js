@@ -20,8 +20,10 @@ const store = {
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
 const VIEWS = [['wide', 'Colony'], ['medium', 'Closer'], ['macro', 'Corallites']];
-const img = (p, size) => `img/${p.f}${size === 's' ? '-s' : ''}.webp`;
-const srcset = p => `img/${p.f}-s.webp 480w, img/${p.f}.webp 1600w`;
+// A candidate just added in the admin (r: 1) shows from iNaturalist until tools/fetch_approved.py has downloaded it.
+const inat = (p, sz) => p.src.replace('/original.', `/${sz}.`);
+const img = (p, size) => p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : `img/${p.f}${size === 's' ? '-s' : ''}.webp`;
+const srcset = p => p.r && p.src ? `${inat(p, 'medium')} 500w, ${inat(p, 'large')} 1024w` : `img/${p.f}-s.webp 480w, img/${p.f}.webp 1600w`;
 // Discreet link to a photo's iNaturalist observation; games show it only once the answer is out.
 const inatTag = p => p && p.o && p.o.includes('inaturalist.org') ? `<a class="inat" href="${esc(p.o)}" target="_blank" rel="noopener" title="Open the iNaturalist observation">iNat ↗</a>` : '';
 // One colour per IMR lecture group, used everywhere a group appears (style="--g:…", CSS hsl(var(--g) …)).
@@ -1169,8 +1171,9 @@ document.addEventListener('keydown', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$set.hidden) { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); $setb.focus(); } });
 // Admin | User view switch: only in the browser holding the admin token; a switch reloads so every module follows.
 const $viewrow = document.getElementById('viewrow');
+// Link to the admin page (Pierre, on his phone), in either view.
 if (HAS_ADMIN_TOKEN) {
-  $viewrow.hidden = false;
+  $viewrow.hidden = false; document.getElementById('admrow').hidden = false;
   $viewrow.querySelectorAll('button').forEach(b => { b.setAttribute('aria-pressed', String((b.dataset.view === 'admin') === IS_ADMIN));
     b.onclick = () => { if ((b.dataset.view === 'admin') === IS_ADMIN) return; try { localStorage.setItem('imr-admin-view', b.dataset.view); } catch (e) {} location.reload(); }; });
 }
@@ -1196,5 +1199,5 @@ const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
 const forms = () => fetch('forms.json?v=7').then(r => r.ok ? r.json() : {}).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}));
-Promise.all([fetch('data.json?v=20').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); loadStats(); if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=21').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); loadStats(); if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});

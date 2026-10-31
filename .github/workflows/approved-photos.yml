@@ -1,0 +1,34 @@
+# After each photo-curation publish (curation.json pushed from admin.html): download the candidates Pierre added
+# (tools/fetch_approved.py), then refill the candidate lists up to their caps (tools/fetch_local.py), and commit.
+name: Candidate photos
+on:
+  push:
+    branches: [main]
+    paths: [curation.json]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: candidate-photos
+  cancel-in-progress: false
+jobs:
+  photos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow
+      - run: python tools/fetch_approved.py
+      - run: python tools/fetch_local.py
+        working-directory: .
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data.json img
+          git diff --cached --quiet && exit 0
+          git commit -m "Candidate photos: download added ones, refill the lists"
+          git pull --rebase origin main
+          git push origin HEAD:main
