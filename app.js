@@ -605,6 +605,8 @@ function showModes(tab, h){
 function route(){
   applySize();
   const h = decodeURIComponent(location.hash.slice(1));
+  // Home lives at the clean URL; an old #home link is rewritten to it.
+  if (h === 'home') history.replaceState(null, '', location.pathname + location.search);
   const tab = sectionOf(h);
   showProg(); tab === 'progress' ? $prog.setAttribute('aria-current', 'page') : $prog.removeAttribute('aria-current');
   document.querySelectorAll('nav [data-tab]').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
@@ -629,6 +631,13 @@ function route(){
   hdrMetrics();
 }
 addEventListener('hashchange', route);
+// The brand link goes home without reloading the page (href="./" still works without JS).
+document.querySelector('.brand .home').onclick = e => {
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+  e.preventDefault();
+  if (location.hash) history.pushState(null, '', location.pathname + location.search);
+  route();
+};
 // Header metrics for CSS: --hdr-h (sticky offset for the cover photo) and, on phones, --hdr-hide:
 // how far the header scrolls up so that only the section bar stays pinned (all of it when there is none).
 const $hdr = document.querySelector('header');
