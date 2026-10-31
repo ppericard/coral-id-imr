@@ -217,7 +217,7 @@ const rows = n => VIEWS.filter(([v]) => !(DATA.gen[n].levels === 2 && v === 'med
 const label = (n, v) => DATA.gen[n].levels === 2 && v === 'macro' ? 'Close-up' : VIEWS.find(x => x[0] === v)[1];
 // Photo origin: IMR lecture, Pierre's own iNaturalist photos, or other iNaturalist observers split by place
 // (data.json p.loc: dauin, ph or world). The filter is kept across genera and visits.
-const ORIGINS = [['book', 'CF book'], ['imr', 'IMR lecture'], ['own', 'Pierre'], ['dauin', 'iNat Dauin'], ['ph', 'iNat Philippines'], ['world', 'iNat elsewhere']];
+const ORIGINS = [['imr', 'IMR lecture'], ['own', 'Pierre'], ['dauin', 'iNat Dauin'], ['ph', 'iNat Philippines'], ['world', 'iNat elsewhere'], ['book', 'CF book']];
 const origin = p => p.cf ? 'book' : p.imr ? 'imr' : p.own ? 'own' : ({dauin: 'dauin', ph: 'ph'})[p.loc] || 'world';
 let SHOW = new Set(store.get('imr-admin-origins', ORIGINS.map(o => o[0])));
 const shown = p => SHOW.has(origin(p));
