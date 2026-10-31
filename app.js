@@ -320,21 +320,52 @@ function question(cur, target, choices, prompt, set){
   const ph = set.shown, lab = VIEW_LABEL;
   let answered = false, hintShown = false;
   const fig = (p, k) => `<figure class="qph"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${img(p)}" alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
+  // One screen, no scrolling: the photos fill the stage (sized to the window), choices and feedback sit beside them.
   $v.innerHTML = `<div class="q">
-    <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">Session <b>${session.ok}/${session.n}</b></span>${quizNav(cur)}</div>
-    <div class="qset${ph.length > 1 ? ' two' : ''}">${ph.map(fig).join('')}</div>
-    ${set.hint ? '<div id="hint"><button type="button" class="linkish" id="hintb">Show the corallites (hint)</button></div>' : ''}
-    <div class="ans">${choices.map(c => `<button type="button" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
-    <div id="after"></div></div>`;
+    <div class="qstage">${ph.map(fig).join('')}</div>
+    <aside class="qside">
+      <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">${session.ok}/${session.n}</span>${quizNav(cur)}</div>
+      <div class="ans">${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
+      ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
+      <div id="after"></div>
+    </aside></div>`;
   bindQuizNav(cur);
+  fitStage();
   const hb = document.getElementById('hintb');
-  const showHint = () => { const h = document.getElementById('hint'); if (h && hb && h.contains(hb)) { h.innerHTML = `<div class="qset">${fig(set.hint, ph.length)}</div>`; hintShown = true; } };
+  const showHint = () => { if (hintShown || !set.hint) return; hintShown = true; const st = $v.querySelector('.qstage');
+    st.insertAdjacentHTML('beforeend', fig(set.hint, ph.length)); if (hb) hb.remove(); fitStage(); };
   if (hb) hb.onclick = showHint;
+  // Keys: 1-4 answer, Enter goes to the next question.
+  const keys = e => { if (!document.body.contains($v.querySelector('.q')) || !lb.hidden) return document.removeEventListener('keydown', keys);
+    if (e.target.closest('input, textarea, select')) return;
+    const b = !answered && $v.querySelectorAll('[data-c]')[Number(e.key) - 1]; if (b) { e.preventDefault(); b.click(); } };
+  document.addEventListener('keydown', keys);
   $v.querySelector('.q').addEventListener('click', e => { const z = e.target.closest('[data-q]'); if (!z) return;
     const list = hintShown ? [...ph, set.hint] : ph;
     zoom(list.map(p => ({...p, genus: target})), Number(z.dataset.q), {blind: () => !answered}); });
   $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { showHint(); answered = true; answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph); });
 }
+// The quiz stage fills the window below the header, so photos, choices and feedback fit without scrolling.
+// The photos then take the grid (columns x rows) that shows them largest at 4:3.
+function fitStage(){
+  const q = $v.querySelector('.q'); if (!q) return;
+  q.style.setProperty('--qh', Math.max(260, innerHeight - q.getBoundingClientRect().top - window.scrollY - 16) + 'px');
+  const st = q.querySelector('.qstage'), n = st.children.length, W = st.clientWidth, H = st.clientHeight;
+  let best = [n, 1, 0];
+  for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c), w = Math.min((W - 8 * (c - 1)) / c, (H - 8 * (r - 1)) / r * 4 / 3); if (w > best[2]) best = [c, r, w]; }
+  st.style.gridTemplateColumns = `repeat(${best[0]}, minmax(0, 1fr))`; st.style.gridTemplateRows = `repeat(${best[1]}, minmax(0, 1fr))`;
+}
+addEventListener('resize', fitStage);
+// Games with a grid of square cards (Memory): pick the column count that shows the cards largest without scrolling.
+function fitTiles(grid, gap = 10){
+  const n = grid.children.length, W = grid.parentNode.clientWidth;
+  const H = Math.max(240, innerHeight - grid.getBoundingClientRect().top - window.scrollY - 56);  // room for the end-of-game line
+  let best = [n, 0];
+  for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c), s = Math.min((W - gap * (c - 1)) / c, (H - gap * (r - 1)) / r); if (s > best[1]) best = [c, s]; }
+  grid.style.gridTemplateColumns = `repeat(${best[0]}, ${Math.floor(best[1])}px)`;
+  grid.style.justifyContent = 'center';
+}
+addEventListener('resize', () => document.querySelectorAll('.pgrid').forEach(g => fitTiles(g)));
 function answer(cur, c, target, ph){
   const good = c === target, s = st(target);
   session.n++; if (good) { session.ok++; s.ok++; s.streak++; } else { s.ko++; s.streak = 0; s.conf = s.conf || {}; s.conf[c] = (s.conf[c] || 0) + 1; }
@@ -343,11 +374,10 @@ function answer(cur, c, target, ph){
     const g = DATA.gen[target];
   const vs = !good && DATA.gen[c] ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(DATA.gen[c].sum)} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>` : '';
   document.getElementById('after').innerHTML = `<div class="fb">
-    <h3 class="${good ? 'ok' : 'ko'}">${good ? 'Yes' : 'No'}, it's <i>${esc(target)}</i>${g.n ? '' : ' (★ not surveyed)'}</h3>
-    <p class="keyid"><b>Deciding features:</b> ${esc(g.sum)}</p>
-    <ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${g.imr.length ? `<p class="vs"><b>IMR lecture:</b> ${g.imr.map(esc).join(' ')}</p>` : ''}${g.mn ? `<p class="vs"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}${vs}</div>
-    <p class="credit">${ph.map(credit).join('<br>')}</p>
-    <button class="next" type="button" id="next">Next</button>`;
+    <h3 class="${good ? 'ok' : 'ko'}">${good ? 'Yes' : 'No'}, it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.n ? '' : ' (★ not surveyed)'}</h3>
+    <p class="keyid">${esc(g.sum)}</p>${g.mn ? `<p class="vs"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}${vs}
+    <details class="more"><summary>All features</summary><ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${g.imr.length ? `<p class="vs"><b>IMR lecture:</b> ${g.imr.map(esc).join(' ')}</p>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details></div>
+    <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
   bindGo(document.getElementById('after'));
   const nb = document.getElementById('next'); nb.focus({preventScroll: true}); nb.onclick = route;
 }
@@ -364,7 +394,7 @@ function quizPhoto(){
 function quizCourse(){
   const list = pool(), C = DATA.course, names = Object.keys(C).filter(n => list.includes(n) && C[n].some(p => !p.multi));
   const t = nextTarget(names);
-  question('quiz-course', t, shuffle([t, ...distractors(t, list)]), 'Which genus? <span class="note">(photo from the IMR lecture)</span>', {shown: [pick(C[t].filter(p => !p.multi))], hint: null});
+  question('quiz-course', t, shuffle([t, ...distractors(t, list)]), 'Which genus?', {shown: [pick(C[t].filter(p => !p.multi))], hint: null});
 }
 function quizDuel(a, b){
   const list = pool();

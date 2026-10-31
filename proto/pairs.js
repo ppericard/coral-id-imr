@@ -15,6 +15,7 @@ LAB.add({
         <div class="pgrid">${cards.map((c, i) => `<button type="button" class="pcard" data-i="${i}" aria-label="Hidden card"><span class="pin"><span class="pback"></span><span class="pfront"><img src="${thumbSrc(c.n, c.v, document.documentElement.dataset.size === 'l' ? 'l' : 's')}" alt="${esc(c.n)}, ${c.v === 'wide' ? 'colony' : 'corallites'}"><small>${c.v === 'wide' ? 'Colony' : DATA.gen[c.n].levels === 2 ? 'Close-up' : 'Corallites'}</small><b><i>${esc(c.n)}</i></b></span></span></button>`).join('')}</div><div id="pres"></div>`;
       root.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { mode = b.dataset.m; setup(); });
       root.querySelector('#pnew').onclick = setup;
+      window.fitTiles && fitTiles(root.querySelector('.pgrid'));
       const els = [...root.querySelectorAll('.pcard')];
       els.forEach((e, i) => e.onclick = () => {
         if (lock || e.classList.contains('up')) return;
