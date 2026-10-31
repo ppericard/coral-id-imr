@@ -471,7 +471,6 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
   .fdtile .fdinfo p{display:none}
   .fdopts.th{grid-template-columns:minmax(0,1fr)}
 }
-.fdclues{margin:0 0 8px!important}
 .fdgrp{display:flex;align-items:baseline;gap:8px}
 .fdgrp small,.fdrest summary small{font-family:var(--body);font-size:.8rem;font-weight:400;color:var(--muted)}
 .fdtile.off{opacity:.85;border-style:dashed}
