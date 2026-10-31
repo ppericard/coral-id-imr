@@ -26,7 +26,10 @@ function applyCuration(d, c){
   // Coral Finder book photos (data: gen[].book, cropped from the 2022 book) can be switched off site-wide from the
   // admin (curation.json "book": false). Kept apart from the views so games and quizzes never use them (captions).
   if (c && c.book === false) Object.values(d.gen).forEach(g => { delete g.book; });
-  const X0 = (c && c.exclude) || {}; Object.values(d.gen).forEach(g => { if (g.book) g.book = g.book.filter(p => !X0[p.f]); });
+  // Book photos are candidates: only those Pierre approved in the admin (genera[n].add {f: view}) show, in that view.
+  const X0 = (c && c.exclude) || {};
+  Object.entries(d.gen).forEach(([n, g]) => { if (!g.book) return; const A = (((c && c.genera) || {})[n] || {}).add || {};
+    g.book = g.book.filter(p => !X0[p.f] && A[p.f]).map(p => ({...p, view: A[p.f]})); });
   // Excluded photos (exclude: {f: reason}) leave every list first: genera, lecture photos, candidates, comparisons.
   const X = (c && c.exclude) || {}, keep = L => (L || []).filter(p => !X[p.f]);
   if (Object.keys(X).length) {
