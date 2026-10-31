@@ -304,3 +304,30 @@ td i{font-weight:600}
 .sform label{display:flex;flex-direction:column;gap:3px;font-size:.85rem;color:var(--muted)}
 .sform input{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--bg);color:var(--ink);min-width:0;width:12em}
 .sform input[name=p]{width:6em;letter-spacing:.2em}
+/* Look-alikes: families (Look-alikes page) and the "Don't confuse with" section of a genus sheet.
+   Every genus at the same size and in the same view, so they can be compared at a glance. */
+.lfam{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px 6px;margin:0 0 16px;box-shadow:var(--shadow)}
+.lfam h3{margin:0 0 2px;font-size:1.08rem;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.lfam h3 small{font-size:.8rem;font-weight:400;color:var(--muted)}
+.lfam > .note{margin:0 0 10px}
+.lrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px;margin:0 0 12px}
+:root[data-size="s"] .lrow{grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr))}
+:root[data-size="l"] .lrow{grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))}
+.lt{position:relative;display:flex;flex-direction:column;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;color:var(--ink);text-decoration:none}
+a.lt:hover{border-color:var(--accent)}
+.lt img,.lt .none{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:var(--surface-2)}
+.lt .none{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.85rem}
+.lt > span:last-child{padding:8px 11px 11px;display:flex;flex-direction:column;gap:2px}
+.lt i{font-weight:600;font-size:1.02rem}
+.lt small{color:var(--muted);font-size:.78rem}
+.psum{font-size:.84rem;line-height:1.35;margin-top:3px}
+.lt.self{border:2px solid var(--accent)}
+.lt.self small{color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:.7rem}
+.cmpgo{margin-top:6px;font-size:.82rem;color:var(--accent);font-weight:600}
+.pmix{position:absolute;top:8px;left:8px;z-index:1;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:var(--pill);background:var(--bad-bg);color:var(--bad)}
+.lpairs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 12px}
+.lpairs .label{margin-right:4px}
+.chip.mix{border-color:var(--bad);color:var(--bad);background:var(--bad-bg)}
+.bad{color:var(--bad)}
+.hubsec{border-top:1px solid var(--line);margin-top:22px;padding-top:4px}
+@media (max-width:600px){.lrow,:root[data-size] .lrow{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.lt .psum{font-size:.78rem}.lt > span:last-child{padding:6px 8px 8px}}
