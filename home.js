@@ -2,7 +2,7 @@
 (function(){
   // Preview photo for each tool: [genus, view]; two entries make a split preview.
   const PREVIEW = {
-    genera: [['Acropora', 'wide']], cmp: [['Favites', 'macro'], ['Dipsastraea', 'macro']], anatomy: [['Favites', 'macro']], size: [['Porites', 'macro']], gallery: [['Stylophora', 'macro']],
+    genera: [['Acropora', 'wide']], cmp: [['Favites', 'macro'], ['Dipsastraea', 'macro']], size: [['Porites', 'macro']], gallery: [['Stylophora', 'macro']],
     'key-imr': [['Galaxea', 'macro']], key: [['Pocillopora', 'wide']], 'key-tr': [['Goniastrea', 'macro']], elim: [['Montipora', 'macro'], ['Porites', 'macro']],
     quiz: [['Platygyra', 'wide']], 'quiz-duel': [['Leptoria', 'macro'], ['Platygyra', 'macro']], 'quiz-course': [['Lobophyllia', 'macro']], 'quiz-board': [['Pavona', 'macro']],
     pairs: [['Turbinaria', 'wide'], ['Turbinaria', 'macro']], reveal: [['Fungia', 'macro']], zoom: [['Echinopora', 'wide'], ['Echinopora', 'macro']], spot: [['Astreopora', 'macro']]
@@ -36,7 +36,6 @@
       </section>
       ${seen.length ? `<p class="hprog"><a href="#quiz-board">Your progress: <b>${seen.length}</b> of ${names.length} genera practised, <b>${solid.length}</b> solid (3 right in a row).</a></p>` : ''}
       <section class="hpath"><h3>A suggested path</h3><ol>
-        <li><a href="#anatomy"><b>Read a corallite</b><span>Septa, walls, columella: the vocabulary of every ID.</span></a></li>
         <li><a href="#genera"><b>Meet the genera</b><span>Colony, closer view and corallites for each one.</span></a></li>
         <li><a href="#key-imr"><b>Identify step by step</b><span>Lecture groups, colony form or corallite details.</span></a></li>
         <li><a href="#quiz"><b>Practise</b><span>Quiz, duels and games until it sticks.</span></a></li>

@@ -2,7 +2,7 @@
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
 // A prototype that graduates moves to a site section (see GRADUATED) and gets a plain hash: #<id>, #<id>|<arg>.
 // Bump with every Lab change so browsers never mix new and old files (same ?v scheme as app.js).
-const LAB_V = 3;
+const LAB_V = 4;
 const LAB = {
   list: [],
   files: ['map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'],
@@ -11,7 +11,7 @@ const LAB = {
   add(p){ this.list.push(p); }
 };
 // Graduated prototypes and the section of MODES (app.js) they now live in.
-const GRADUATED = {anatomy: 'learn', size: 'learn', gallery: 'learn', elim: 'identify', pairs: 'practice', reveal: 'practice', zoom: 'practice', spot: 'practice'};
+const GRADUATED = {size: 'learn', gallery: 'learn', elim: 'identify', pairs: 'practice', reveal: 'practice', zoom: 'practice', spot: 'practice'};
 const SECTION_NAME = {learn: 'Learn', identify: 'Identify', practice: 'Practice'};
 const isLabHash = h => h.startsWith('lab') || h.split('|')[0] in GRADUATED;
 // Load every prototype; once all are in, redraw if the reader opened a Lab page directly.
@@ -87,7 +87,8 @@ function viewLab(h){
 // A graduated tool, shown as a page of its section: no Lab crumbs, the section's tab bar gives the context.
 function labTool(h){
   const [id, ...args] = h.split('|');
-  if (!GRADUATED[id]) return false;
+  // A tool sent back to the Lab keeps working from its old link.
+  if (!GRADUATED[id]) { if (LAB.files.includes(id)) { location.replace('#lab-' + h); return true; } return false; }
   document.documentElement.dataset.page = 'lab';
   if (LAB.stop) { try { LAB.stop(); } catch (e) {} LAB.stop = null; }
   const p = LAB.list.find(x => x.id === id);
