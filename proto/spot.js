@@ -1,11 +1,11 @@
-// Spot the feature: read the corallites on a photo (wall type, size, decisive detail) before naming the genus.
+// Spot the feature: read the corallites on a photo (wall type, size, other features) before naming the genus.
 LAB.add({
   id: 'spot', icon: '◉', title: 'Spot the feature',
-  blurb: 'Read a corallite photo like an expert: walls, size, decisive detail. The genus name comes last.',
+  blurb: 'Read a corallite photo like an expert: walls, size, other features. The genus name comes last.',
   lede: 'Answers come from the genus traits used in the key, so a single photo may not show every feature clearly. Tap the photo to enlarge it.',
   render(root){
     const score = {wall: [0, 0], size: [0, 0], feat: [0, 0]};
-    const Q = {wall: 'What kind of corallite walls?', size: 'Roughly how wide are the corallites?', feat: 'Which decisive detail does this genus show?'};
+    const Q = {wall: 'What kind of corallite walls?', size: 'Roughly how wide are the corallites?', feat: 'Which feature (IMR lecture or Coral Finder) does this genus show?'};
     const round = () => {
       const t = pick(labNames()), g = DATA.gen[t], L = g.views.macro && g.views.macro.length ? g.views.macro : (g.views.medium || []), p = pick(L.length ? L : [viewPhoto(t, 'macro')]);
       const feats = g.tr.filter(x => trSet('feat').includes(x));

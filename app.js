@@ -209,7 +209,7 @@ const viewSeg = () => `<div class="seg" role="group" aria-label="View">${VIEWS.m
 const bindViewSeg = redraw => $v.querySelectorAll('[data-cv]').forEach(b => b.onclick = () => { cmpView = b.dataset.cv; store.set('imr-coral-cmpview', cmpView); redraw(); });
 // IMR lecture images that compare look-alikes side by side (data.json cmp), for the given genera.
 const cmpShots = L => (DATA.cmp || []).filter(c => c.g.some(n => L.includes(n))).map(c =>
-  `<figure class="lcmp"><a href="${img(c)}" target="_blank" rel="noopener"><img src="${img(c, 's')}" srcset="${srcset(c)}" sizes="(max-width:700px) 100vw, 640px" alt="IMR lecture comparison: ${esc(c.g.join(', '))}" loading="lazy"></a><figcaption><b class="lect">IMR lecture</b>${c.slide ? ` slide ${c.slide}` : ''}${c.cap ? ': ' + esc(c.cap) : ''}</figcaption></figure>`).join('');
+  `<figure class="lcmp"><a href="${img(c)}" target="_blank" rel="noopener"><img src="${img(c, 's')}" srcset="${srcset(c)}" sizes="(max-width:700px) 100vw, 640px" alt="Look-alike comparison: ${esc(c.g.join(', '))}" loading="lazy"></a><figcaption>${c.imr ? `<b class="lect">IMR lecture</b>${c.slide ? ` slide ${c.slide}` : ''}` : credit(c)}${c.cap ? ': ' + esc(c.cap) : ''}</figcaption></figure>`).join('');
 // Bottom of a genus sheet: the genus and each of its look-alikes at the same size and in the same view,
 // each with its deciding feature and a link to the side-by-side comparison.
 function lookHub(name){
@@ -276,7 +276,7 @@ function viewIMR(){
   $v.innerHTML = `<h2>IMR lecture groups</h2>
   <p class="lede">IMR Lecture 6 sorts the surveyed genera by corallite type, not by colony shape. Run through the four questions, then pick the matching group.</p>
   <ol class="tips">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
-  <details class="gloss"><summary>Coral anatomy terms</summary><dl>${DATA.terms.map(([t, d]) => `<dt>${esc(t)}</dt><dd>${esc(d)}</dd>`).join('')}</dl><p class="note">The oral disc and mouth belong to the living polyp; the other terms describe its skeleton. Sources: <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>, <a href="https://cdhc.noaa.gov/coral-biology/coral-skeleton/" target="_blank" rel="noopener">NOAA</a>.</p></details>
+  <details class="gloss"><summary>Coral anatomy terms</summary><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details>
   ${DATA.imrg.map(gr => { const names = Object.keys(DATA.gen).filter(n => DATA.gen[n].ig === gr.n);
     return `<section class="imrg"><h3 class="gdiv" style="--g:${(gr.n * 137) % 360}"><span class="gn">${gr.n}</span>${esc(gr.t)}</h3><div class="grid">${names.map(n => card(n, 'stripe')).join('')}</div></section>`; }).join('')}
   <section class="imrg"><h3><span class="gn">★</span> Not covered in the lecture</h3><p class="note">The starred genera on the slate, to rule out look-alikes.</p><div class="grid">${Object.keys(DATA.gen).filter(n => !DATA.gen[n].ig).map(card).join('')}</div></section>`;
@@ -606,6 +606,8 @@ function showModes(tab, h){
 function route(){
   applySize();
   const h = decodeURIComponent(location.hash.slice(1));
+  // Home lives at the clean URL; an old #home link is rewritten to it.
+  if (h === 'home') history.replaceState(null, '', location.pathname + location.search);
   const tab = sectionOf(h);
   showProg(); tab === 'progress' ? $prog.setAttribute('aria-current', 'page') : $prog.removeAttribute('aria-current');
   document.querySelectorAll('nav [data-tab]').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
@@ -630,6 +632,13 @@ function route(){
   hdrMetrics();
 }
 addEventListener('hashchange', route);
+// The brand link goes home without reloading the page (href="./" still works without JS).
+document.querySelector('.brand .home').onclick = e => {
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+  e.preventDefault();
+  if (location.hash) history.pushState(null, '', location.pathname + location.search);
+  route();
+};
 // Header metrics for CSS: --hdr-h (sticky offset for the cover photo) and, on phones, --hdr-hide:
 // how far the header scrolls up so that only the section bar stays pinned (all of it when there is none).
 const $hdr = document.querySelector('header');
@@ -642,5 +651,5 @@ if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else ad
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
 const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
-Promise.all([fetch('data.json?v=11').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=12').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
