@@ -94,8 +94,9 @@ LAB.add({
 
     // On phones the panel sits above the shortlist: only growth form and the families in use start open.
     function drawSide(F, left){
-      const narrow = matchMedia('(max-width:900px)').matches;
-      $side.innerHTML = `<div class="fdsearch"><input type="search" id="fdq" placeholder="Genus name…" value="${esc(S.q)}" aria-label="Filter by genus name"><button type="button" class="chip" id="fdreset">Start over</button></div>
+      const narrow = matchMedia('(max-width:900px)').matches, phone = matchMedia('(max-width:700px)').matches;
+      const nUsed = F.reduce((t, f) => t + S[f.id].size, 0);
+      $side.innerHTML = `${phone ? `<details class="fdfold"${S.open.has('side') ? ' open' : ''}><summary><span>Clues</span>${nUsed ? ` <span class="fdn">${nUsed}</span>` : ''}<span class="fdfoldh">${S.open.has('side') ? 'Hide' : 'Edit'}</span></summary>` : ''}<div class="fdsearch"><input type="search" id="fdq" placeholder="Genus name…" value="${esc(S.q)}" aria-label="Filter by genus name"><button type="button" class="chip" id="fdreset">Start over</button></div>
       ${F.map(f => {
         const picked = S[f.id].size, open = picked || S.open.has(f.id) || (narrow ? f.id === 'imrf' : !f.closed);
         return `<details class="fdfacet" data-f="${f.id}"${open ? ' open' : ''}><summary${f.note ? ` title="${esc(f.note)}"` : ''}>${esc(f.name)}${picked ? ` <span class="fdn">${picked}</span>` : ''}</summary>
@@ -104,13 +105,14 @@ LAB.add({
           const pv = f.thumbs ? `<span class="fdth">${(f.id === 'form' || f.id === 'imrf' ? (tilePics[f.id === 'imrf' ? 'imrf:' + o.id : o.id] || []).slice(0, 3).map(p => img(p, 's')) : bySlate(o.g).slice(0, 3).map(x => thumb(x, 'medium'))).map(u => `<img src="${u}" alt="" loading="lazy">`).join('')}</span>` : '';
           return `<button type="button" class="fdopt${f.id === 'form' || f.id === 'imrf' ? ' c-' + o.color : ''}${f.id === 'ig' ? ' gchip' : ''}"${f.id === 'ig' ? ` style="--g:${groupHue(+o.id.slice(1))}"` : ''} data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}">${pv}<span class="fdt">${esc(o.t)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="fdc">${n}</span></button>`;
         }).join('')}</div>${ANDF.includes(f.id) ? andSw(f.id) : ''}</details>`;
-      }).join('')}${narrow ? `<p><a class="next fdjump" href="#fdmain">See the ${left.length} best ${left.length === 1 ? 'fit' : 'fits'} ↓</a></p>` : ''}`;
+      }).join('')}${narrow ? `<p><a class="next fdjump" href="#fdmain">See the ${left.length} best ${left.length === 1 ? 'fit' : 'fits'} ↓</a></p>` : ''}${phone ? '</details>' : ''}`;
+      const fold = $side.querySelector('.fdfold'); if (fold) fold.ontoggle = () => { fold.open ? S.open.add('side') : S.open.delete('side'); fold.querySelector('.fdfoldh').textContent = fold.open ? 'Hide' : 'Edit'; };
       andWire($side);
       const jump = $side.querySelector('.fdjump'); if (jump) jump.onclick = e => { e.preventDefault(); $main.scrollIntoView({behavior: 'smooth'}); };
       const q = $side.querySelector('#fdq');
       q.oninput = () => { S.q = q.value.trim(); draw(true); };
       $side.querySelector('#fdreset').onclick = () => { FIDS.forEach(f => S[f].clear()); S.out.clear(); S.all.clear(); S.cmp = []; S.q = ''; S.home = true; draw(); };
-      $side.querySelectorAll('details').forEach(d => d.ontoggle = () => d.open ? S.open.add(d.dataset.f) : S.open.delete(d.dataset.f));
+      $side.querySelectorAll('details.fdfacet').forEach(d => d.ontoggle = () => d.open ? S.open.add(d.dataset.f) : S.open.delete(d.dataset.f));
       $side.querySelectorAll('[data-o]').forEach(b => b.onclick = () => {
         const [f, id] = b.dataset.o.split('|');
         S[f].has(id) ? S[f].delete(id) : S[f].add(id);
@@ -155,34 +157,37 @@ LAB.add({
       const more = n => { const all = VIEWS.flatMap(([v]) => ((G[n].sl || {})[v] || {}).finder || []), own = all.filter(p => src(p) === 'dauin').length;
         return all.length > 8 ? `<button type="button" class="linkish fdmore" data-x="${esc(n)}">All ${all.length} photos${own ? ` (${own} from Dauin)` : ''}</button>` : ''; };
       const mosaic = n => { const g = G[n];
-        return `<article class="fdrow"><div class="fdinfo">${head(n)}<p>${esc(tipsText(g))}</p>${tools(n)}${more(n)}</div>
+        return `<article class="fdrow"><div class="fdinfo">${head(n)}<p class="fdtip">${esc(tipsText(g))}</p>${tools(n)}${more(n)}</div>
           <div class="fdmos">${varied(g, 8).map(p => ph(n, p, p.view)).join('')}</div></article>`; };
       // Opened genus: photos dominate; a narrow side column holds the name, the IMR cue, the tools and (folded) the
       // Coral Finder features.
       const big = (n, off) => { const g = G[n];
         return `<article class="fdbig${off ? ' off' : ''}"><div class="fdinfo fdbigside">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}
-          <p class="fdcue">${esc(tipsText(g))}</p><details class="fdcrit"><summary>Coral Finder</summary><ul>${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details>${tools(n)}</div>
+          <p class="fdcue fdtip">${esc(tipsText(g))}</p><details class="fdcrit"><summary>Coral Finder</summary><ul>${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details>${tools(n)}</div>
           <div class="fdbigph">${varied(g, 99).map(p => ph(n, p, p.view)).join('')}</div></article>`; };
       // Contact sheet: one line per genus with all its photos, small, to scan the whole shortlist line by line.
       const sheet = n => isX(n) ? big(n) : `<article class="fdsheet"><div class="fdinfo">${head(n)}</div><div class="fdall">${varied(G[n], 99).map(p => ph(n, p, p.view)).join('')}</div></article>`;
       // Photos follow the admin's curation (applied to DATA in app.js): hidden ones are gone, featured ones lead each
       // view, and Auto and "One clue off" tiles show the genus cover. The header's origin filter applies too.
       const tile = (n, off) => { if (isX(n)) return big(n, off); const g = G[n], v = pv === 'mix' ? null : pv, p = v ? (g.views[v] || [])[0] || cover(g) : cover(g);
-        return `<article class="fdtile${off ? ' off' : ''}">${p ? ph(n, p, v && (g.views[v] || [])[0] ? v : p.view || 'medium') : '<span class="none">no photo</span>'}<div class="fdinfo">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}<p>${esc(tipsText(g))}</p>${tools(n)}</div></article>`; };
+        return `<article class="fdtile${off ? ' off' : ''}">${p ? ph(n, p, v && (g.views[v] || [])[0] ? v : p.view || 'medium') : '<span class="none">no photo</span>'}<div class="fdinfo">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}<p class="fdtip">${esc(tipsText(g))}</p>${tools(n)}</div></article>`; };
       // Look-alikes outside the shortlist: worth a glance before deciding.
       const near = left.length && left.length <= 3 ? uniq(left.flatMap(n => lookOf(n))).filter(n => !left.includes(n) && !close.includes(n)) : [];
       const chosen = F.flatMap(f => f.opts.filter(o => S[f.id].has(o.id)).map(o => ({f, o})));
+      // Phones: with genera fitting every clue, "One clue off" starts folded (one tap opens it) so the best fits are not buried.
+      const foldOff = left.length && matchMedia('(max-width:700px)').matches && !S.open.has('off');
       $main.innerHTML = `<div class="fdtop"><p class="fdcount"><b>${left.length}</b> ${used(F).length ? (left.length === 1 ? 'genus fits' : 'genera fit') + ' every clue' + (close.length ? `, ${close.length} more one clue off` : '') : 'IMR genera'}</p>
         <span class="fdsegs"><span class="seg" role="group" aria-label="Layout">${[['auto', 'Auto', 'Mosaic up to 12 genera, Cards beyond'], ['cover', 'Cards', 'One photo and the key features per genus'], ['mosaic', 'Mosaic', '8 varied photos per genus'], ['sheet', 'Contact sheet', 'Every photo of each genus']].map(([v, t, h]) => `<button type="button" data-lay="${v}" aria-pressed="${lay === v}" title="${h}">${t}${v === 'auto' && lay === 'auto' ? ` <small>(${mode === 'mosaic' ? 'Mosaic' : 'Cards'})</small>` : ''}</button>`).join('')}</span>
         <span class="seg" role="group" aria-label="Photos">${[['mix', 'Mix'], ...VIEWS].map(([v, t]) => `<button type="button" data-pv="${v}" aria-pressed="${pv === v}">${t}</button>`).join('')}</span></span></div>
         ${chosen.length || S.q ? `<p class="fdchosen">${chosen.map(({f, o}) => `<button type="button" class="chip" data-o="${f.id}|${o.id}" title="Remove">${esc(o.t)} ×</button>`).join('')}${S.q ? `<button type="button" class="chip" data-clearq>“${esc(S.q)}” ×</button>` : ''}</p>` : ''}
         ${used(F).length ? nextChecks(F, left.length ? left : close) : ''}
         ${left.length ? `${close.length || rest.length ? '<h3 class="fdgrp">Fits every clue</h3>' : ''}<div class="${mode === 'mosaic' ? 'fdrows' : mode === 'sheet' ? 'fdsheets' : 'fdgrid'}">${left.map(n => isX(n) && mode === 'mosaic' ? big(n) : mode === 'mosaic' ? mosaic(n) : mode === 'sheet' ? sheet(n) : tile(n)).join('')}</div>` : `<p class="note">No IMR genus fits every clue: one of them may be wrong. Check the closest genera below.</p>`}
-        ${close.length ? `<h3 class="fdgrp">One clue off <small>in case a clue was misjudged</small></h3><div class="fdgrid">${close.map(n => tile(n, true)).join('')}</div>` : ''}
+        ${close.length ? (foldOff ? `<details class="fdoff"><summary class="fdgrp">${close.length} genera one clue off <small>in case a clue was misjudged</small></summary><div class="fdgrid">${close.map(n => tile(n, true)).join('')}</div></details>` : `<h3 class="fdgrp">One clue off <small>in case a clue was misjudged</small></h3><div class="fdgrid">${close.map(n => tile(n, true)).join('')}</div>`) : ''}
         ${rest.length ? `<details class="fdrest"><summary>${rest.length} other genera <small>two clues off or more</small></summary><p class="fdchosen">${rest.map(n => `<a class="chip" href="${genLink(n)}"><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p></details>` : ''}
         ${near.length ? `<p class="fdnear"><span class="label">Also check these look-alikes</span>${near.map(n => `<a class="chip" href="#cmp-${esc(left[0])}|${esc(n)}"${(G[left[0]].lsrc || {})[n] ? ` title="${esc(G[left[0]].lsrc[n])}"` : ''}><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p>` : ''}
         ${S.out.size ? `<p class="fdouts"><span class="label">Ruled out</span>${[...S.out].map(n => `<button type="button" class="chip" data-back="${esc(n)}" title="Bring back"><i>${esc(n)}</i> ↺</button>`).join('')}</p>` : ''}`;
       $main.querySelectorAll('[data-z]').forEach(b => b.onclick = () => zoom(flat, Number(b.dataset.z)));
+      const off = $main.querySelector('.fdoff'); if (off) off.ontoggle = () => off.open ? S.open.add('off') : S.open.delete('off');
       $main.querySelectorAll('[data-lay]').forEach(b => b.onclick = () => { lay = b.dataset.lay; store.set('imr-finder-lay', lay); draw(); });
       $main.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { pv = b.dataset.pv; store.set('imr-finder-pv', pv); draw(); });
       $main.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { const [f, id] = b.dataset.o.split('|'); S[f].has(id) ? S[f].delete(id) : S[f].add(id); if (f === 'form') [...S.box].forEach(x => { if (!S.form.has(x[0])) S.box.delete(x); }); draw(); });
@@ -207,13 +212,14 @@ LAB.add({
     // Up to 4 photos for a Coral Finder box: the corallites of each genus first, then their closer views to fill the slots.
     const boxPics = g => { const L = bySlate(g), P = L.map(x => thumb(x, 'macro')); for (const x of L) { if (P.length >= 4) break; P.push(thumb(x, 'medium')); } return P.filter(Boolean).slice(0, 4); };
     // Shortlist card: closer view and corallites side by side, big enough to compare at a glance.
-    const genCard = n => `<a class="fdgc" href="${genLink(n)}"><span class="fdgp"><img src="${thumb(n, 'medium')}" alt="" loading="lazy"><img src="${thumb(n, 'macro')}" alt="" loading="lazy"></span><i>${esc(n)}</i></a>`;
+    const genCard = n => `<button type="button" class="fdgc" data-gx="${esc(n)}"><span class="fdgp"><img src="${thumb(n, 'medium')}" alt="" loading="lazy"><img src="${thumb(n, 'macro')}" alt="" loading="lazy"></span><i>${esc(n)}</i></button>`;
     function drawStart(F){
       const pool = names.filter(n => !S.out.has(n)), left = pool.filter(n => pen(n, F) === 0);
       const cnt = (f, o) => pool.filter(n => fits(n, F, f.id) && o.g.includes(n)).length;
       const fam = id => F.find(f => f.id === id);
       const row = id => { const f = fam(id); return f ? `<div class="fdsrow"><h3 title="${esc(f.note || '')}">${esc(f.name)}</h3><div class="fdsopts">${f.opts.map(o => optBtn(f, o, S[id].has(o.id), cnt(f, o))).join('')}</div></div>` : ''; };
-      const forms = f => `<div class="fdforms">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>${andSw(f.id)}`;
+      // Phones: once a form is picked, the form tiles shrink to compact chips so the next clues and the shortlist move up.
+      const forms = f => `<div class="fdforms${S[f.id].size && matchMedia('(max-width:700px)').matches ? ' mini' : ''}">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>${andSw(f.id)}`;
       const show = `<button type="button" class="next fdshow" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera`} →</button>`;
       // Two entry points for everyone: IMR forms (default) or the paper Coral Finder's path, as a discreet link.
       const switcher = `<button type="button" class="linkish fdsv" data-sv="${startV === 'c' ? 'a' : 'c'}">${startV === 'c' ? '← IMR growth forms' : 'Coral Finder path →'}</button>`;
@@ -232,10 +238,13 @@ LAB.add({
       const close = pool.filter(n => pen(n, F) === 1);
       const live = !used(F).length ? '' : `<div class="fdlive"><h3 class="fdgrp">${left.length} ${left.length === 1 ? 'genus fits' : 'genera fit'} every clue${close.length ? ` <small>${close.length} more one clue off</small>` : ''}</h3>
         <div class="fdgcs">${left.map(genCard).join('')}</div></div>`;
+      $start.classList.toggle('used', !!used(F).length);
       $start.innerHTML = `<div class="fdstop"><input type="search" id="fdsq" placeholder="Genus name…" aria-label="Find a genus by name">${switcher}${show}</div>${body}${live}`;
       andWire($start);
       $start.querySelectorAll('[data-sv]').forEach(b => b.onclick = () => { startV = b.dataset.sv; store.set('imr-finder-start', startV); FIDS.forEach(f => S[f].clear()); draw(); });
       $start.querySelector('#fdsq').oninput = e => { S.q = e.target.value.trim(); if (S.q) { S.home = false; draw(); const q = $side.querySelector('#fdq'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); } };
+      $start.querySelectorAll('[data-gx]').forEach(b => b.onclick = () => { const n = b.dataset.gx; S.home = false; S.open.add('x:' + n); draw();
+        const a = $main.querySelector(`[data-x="${CSS.escape(n)}"]`); a ? a.closest('article').scrollIntoView({block: 'start'}) : window.scrollTo(0, 0); });
       const sh = $start.querySelector('[data-show]'); if (sh) sh.onclick = () => { S.home = false; draw(); window.scrollTo(0, 0); };
       $start.querySelectorAll('[data-o]').forEach(b => b.onclick = () => {
         const [f, id] = b.dataset.o.split('|');

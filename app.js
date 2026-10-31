@@ -579,7 +579,11 @@ function fitStage(){
   const q = $v.querySelector('.q'); if (!q) return;
   const tab = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tabbar-h')) || 0;  // phone tab bar
   q.style.setProperty('--qh', Math.max(260, innerHeight - q.getBoundingClientRect().top - window.scrollY - 16 - tab) + 'px');
-  const st = q.querySelector('.qstage'), n = st.children.length, W = st.clientWidth, H = st.clientHeight;
+  const st = q.querySelector('.qstage');
+  // Phones (one column): the photo takes all the height the question and answers leave, so no gap is left under it.
+  if (matchMedia('(max-width:760px)').matches) { const side = q.querySelector('.qside'); st.style.height = Math.max(180, parseFloat(q.style.getPropertyValue('--qh')) - (side ? side.offsetHeight : 240) - 10) + 'px'; }
+  else st.style.height = '';
+  const n = st.children.length, W = st.clientWidth, H = st.clientHeight;
   let best = [n, 1, 0];
   for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c), w = Math.min((W - 8 * (c - 1)) / c, (H - 8 * (r - 1)) / r * 4 / 3); if (w > best[2]) best = [c, r, w]; }
   st.style.gridTemplateColumns = `repeat(${best[0]}, minmax(0, 1fr))`; st.style.gridTemplateRows = `repeat(${best[1]}, minmax(0, 1fr))`;
@@ -979,6 +983,8 @@ function route(){
   window.scrollTo(0, 0);
   pageHelp();
   hdrMetrics();
+  // The intro moved behind ? only now, so the quiz stage is resized to the space it really has (phones gained ~280 px).
+  fitStage();
 }
 addEventListener('hashchange', route);
 // Pages open straight on their content: the title is dropped where the header already names the page
