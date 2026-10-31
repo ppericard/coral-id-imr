@@ -18,7 +18,8 @@ const groupHue = n => (n * 137) % 360;
 const credit = p => p.cf ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${p.pg}` : p.imr ? `IMR Lecture 6, slide ${p.slide}` : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(p.o)}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
 // Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick, else the first closer view.
-const cover = g => g.coverP || allPhotos(g).find(p => p.f === g.cover) || (g.views.medium || [])[0] || allPhotos(g)[0];
+// Default (Pierre): an IMR photo first, the first IMR featured Closer photo, before data.json's pick.
+const cover = g => g.coverP || (((g.sl || {}).medium || {}).feat || []).find(p => p.imr) || allPhotos(g).find(p => p.f === g.cover) || (g.views.medium || [])[0] || allPhotos(g)[0];
 // Editorial curation from curation.json (edited in admin.html): per genus, cover photo, featured photos
 // per view (in order), hidden photos and photos moved to another view. Hidden photos leave games too.
 // Candidates (data.json cand, not shown until approved) join a view when listed in add {photo: view}.
@@ -111,9 +112,8 @@ function applySlots(d, c){
     VIEWS.forEach(([v]) => {
       const field = (g.views[v] || []).filter(p => !p.multi), q = p => qualOf(c, p.f), byQ = L => L.slice().sort((a, b) => q(b) - q(a));
       const all = [...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'game');
-      // Sheet order: IMR and Pierre's photos alternating, each by quality, then other observers; Poor photos last.
-      const imr = byQ(all.filter(p => p.imr)), own = byQ(all.filter(p => !p.imr && p.own)), rr = [];
-      while (imr.length || own.length) [imr, own].forEach(L => L.length && rr.push(L.shift()));
+      // Sheet order (Pierre): IMR photos first, then his own, then other observers, each by quality; Poor photos last.
+      const rr = [...byQ(all.filter(p => p.imr)), ...byQ(all.filter(p => !p.imr && p.own))];
       const others = byQ(all.filter(p => !isCore(p)));
       const ranked = [...rr, ...others].sort((a, b) => (q(a) === 1) - (q(b) === 1));
       const find = f => all.find(p => p.f === f);

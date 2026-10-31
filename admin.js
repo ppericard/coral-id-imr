@@ -164,13 +164,11 @@ const pending = n => { const add = entry(n).add || {}; return cands(n).filter(p 
 const entry = n => DRAFT.genera[n] || {};
 const viewOf = (n, p) => (entry(n).move || {})[p.f] || p.base;
 const hidden = (n, p) => (entry(n).hide || []).includes(p.f);
-// Same order as applySlots in app.js: IMR lecture and Pierre's photos alternating, each by quality, then other observers,
+// Same order as applySlots in app.js: IMR photos, then Pierre's, then other observers, each by quality,
 // Poor photos and multi-coral photos last.
 function autoOrder(L){
   const byQ = x => x.slice().sort((a, b) => qOf(b.f) - qOf(a.f));
-  const main = L.filter(p => !p.extra), src = [main.filter(p => p.imr), main.filter(p => !p.imr && p.own)].map(byQ), out = [];
-  while (src.some(x => x.length)) src.forEach(x => x.length && out.push(x.shift()));
-  out.push(...byQ(main.filter(p => !p.imr && !p.own)));
+  const main = L.filter(p => !p.extra), out = [...byQ(main.filter(p => p.imr)), ...byQ(main.filter(p => !p.imr && p.own)), ...byQ(main.filter(p => !p.imr && !p.own))];
   const ok = out.filter(p => !p.multi);
   return [...ok.filter(p => qOf(p.f) > 1), ...ok.filter(p => qOf(p.f) === 1), ...out.filter(p => p.multi), ...L.filter(p => p.extra)];
 }
@@ -186,9 +184,10 @@ function rowOf(n, v){
 }
 function coverOf(n){
   const g = DATA.gen[n], all = photos(n).filter(p => !hidden(n, p)), k = entry(n);
-  // Same fallbacks as cover() in app.js: your pick, data.json's pick, the first closer field photo (featured first).
+  // Same fallbacks as cover() in app.js: your pick, the first IMR featured Closer photo, data.json's pick, the first closer field photo (featured first).
   const F = (k.feat || {}).medium || [], med = all.filter(x => viewOf(n, x) === 'medium' && !x.imr && !x.extra);
-  const p = (k.cover && all.find(x => x.f === k.cover)) || all.find(x => x.f === g.cover && !x.extra) || med.find(x => F.includes(x.f)) || med[0] || all.find(x => !x.imr && !x.extra);
+  const ri = rowOf(n, 'medium').feat.find(x => x.imr);
+  const p = (k.cover && all.find(x => x.f === k.cover)) || ri || all.find(x => x.f === g.cover && !x.extra) || med.find(x => F.includes(x.f)) || med[0] || all.find(x => !x.imr && !x.extra);
   return p && {...p, view: viewOf(n, p), picked: !!k.cover};
 }
 const rows = n => VIEWS.filter(([v]) => !(DATA.gen[n].levels === 2 && v === 'medium' && !photos(n).some(p => viewOf(n, p) === 'medium')));
