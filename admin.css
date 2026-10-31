@@ -75,7 +75,8 @@ body.admin .hdr-tools[hidden]{display:none}
 .adm-fchip:hover{border-color:var(--accent)}
 .adm-src.new{background:var(--accent);color:var(--accent-ink)}
 .adm-tile.is-cand{border-style:dashed}
-.adm-addl{font-size:.75rem;color:var(--muted);align-self:center;margin-right:2px}
+.adm-addrow{display:flex;gap:4px;width:100%}
+.adm-acts .adm-addrow button{flex:1;min-width:0;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm-cands h3{color:var(--accent)}
 .adm-src.multi{background:var(--bad-bg);color:var(--bad)}
 .adm-acts{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px 8px;margin-top:auto}
