@@ -12,6 +12,7 @@ for g,v in d['gen'].items():
     gen[g]['views']={view:[{k:p[k] for k in ('f','a','lic','o','t','own','src')} for p in V[g][view]] for view in ('wide','medium','macro')}
 FULL=json.load(open(B+'course_fullres.json'))
 UNMATCHED={'p35_i9','p35_i12','p48_i9','p50_i8','p51_i7','p52_i8','p63_g188'}
+SUM=dict(l.rstrip('\n').split('\t') for l in open(B+'v3/summaries.txt') if l.strip() and not l.startswith('#'))
 LV=dict(l.split() for l in open(B+'v3/course_views.txt') if l.strip() and not l.startswith('#'))
 course={}
 for g,L in course_src.items():
@@ -22,6 +23,8 @@ for g,L in course_src.items():
         for w,suf in ((1600,''),(480,'-s')):
             t=src.copy(); t.thumbnail((w,w)); t.save(B+f'v3/site/img/{base}{suf}.webp','WEBP',quality=80)
         course.setdefault(g,[]).append({'f':base,'imr':True,'slide':p['s'],'v':LV.get(base,'wide')})
+# Extra lecture photos (build_lecture_more.py).
+for g,L in json.load(open(B+'v3/lecture_more.json')).items(): course.setdefault(g,[]).extend(L)
 for f in os.listdir(B+'v3/site/img'):
     if f.endswith('.jpg'): os.remove(B+'v3/site/img/'+f)
 terms=[['Septa','Radial skeletal plates projecting inward from the corallite wall towards its centre.'],['Costae','Radial skeletal ribs outside the corallite wall, often continuing the septa.'],['Wall (theca)','Skeletal boundary around a corallite; separate or shared with neighbouring corallites.'],['Coenosteum','Porous skeleton between corallites; in some taxa it also builds their walls.'],['Corallite','The skeleton produced by one polyp.'],['Oral disc','Soft tissue around the mouth, inside the ring of tentacles.'],['Paliform lobes','Upright projections from the inner edges of the septa; may form a crown around the columella (central skeletal structure).'],['Mouth','Opening at the centre of the oral disc, leading to the digestive cavity.']]
@@ -34,6 +37,7 @@ checks={'Plerogyra':'Family: the IMR lecture puts Plerogyra in Euphylliidae; Cor
  'Halomitra':'Not on the lecture slides: the criteria here come from Coral Finder only. It may have been covered orally.'}
 for g,t in checks.items(): gen[g]['check']=t
 for g in gen:
+    gen[g]['sum']=SUM[g]
     if g in CV['covers']: gen[g]['cover']=CV['covers'][g]
     if g in CV['levels']: gen[g]['levels']=2
 out=dict(gen=gen,key=d['key'],imrg=d['imrg'],traits=d['traits'],course=course,terms=terms,tips=tips)
