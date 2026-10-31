@@ -2,14 +2,17 @@
 
 A static web app for learning the 39 coral genera on the IMR (Institute for Marine Research, Dauin, Philippines) survey slate: 34 surveyed genera plus 5 starred look-alikes.
 
+Live: <https://ppericard.github.io/coral-id-imr/> · Built for the Research Assistants trained at IMR, whose first task is genus-level labelling of benthic photos in ReefCloud.
+
+**Docs:** [AGENTS.md](AGENTS.md) (handover and standing rules for any agent or developer) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (files, data, admin, sync, deploy) · [docs/ROADMAP.md](docs/ROADMAP.md) (ideas not built yet, open questions).
+
 ## What's inside
 
-- **Genera**: each genus with three photo views (colony, closer, corallites), IMR lecture photos and notes, a mnemonic, Coral Finder features and look-alikes.
-- **Identify**: the IMR key, the Coral Finder key and a trait-based browser.
-- **Look-alikes**: side-by-side comparison of confusable pairs, view by view.
-- **Quiz**: photo to genus, look-alike duels, lecture photos, and a "to work on" board. Progress is saved in the browser.
-
-Growth form is only an entry point. Identification relies on corallite and skeletal features. Photo growth forms use the 7 IMR Lecture 6 forms (Branching, Encrusting, Tabulate, Mushroom, Massive, Submassive, Foliose/Plating; defined once in `forms.json` "forms") plus a "polyps extended" flag; the Coral Finder front-page boxes are filled from them through `forms.json` "cf" (see `tools/apply_imr_forms.py`).
+- **Learn**: the Genera page (photos or short ID tips, in IMR lecture-group or slate order); a genus sheet per genus with three photo views (colony, closer, corallites), the IMR lecture notes, a mnemonic, Coral Finder features and "Don't confuse with"; Look-alikes, a deck of classic pair montages.
+- **Practice**: Photo → genus (adaptive difficulty), look-alike duels and Memory (colony ↔ corallites).
+- **Identify**: the Coral Finder, a clue-based ranking that follows the Coral Finder 2022 book (growth form, then box, then corallite clues), also listing 27 non-IMR genera seen at Dauin.
+- **My progress**: learned / learning / review per genus, synced to a Google Sheet when an RA signs in.
+- **Tools**: prototypes (mind map, corallite anatomy, look-alike web…) that graduate to the main app only once Pierre approves.
 
 ## Running locally
 
