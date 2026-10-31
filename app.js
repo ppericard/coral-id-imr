@@ -207,6 +207,9 @@ const mixedUp = (a, b) => ((P[a] && P[a].conf && P[a].conf[b]) || 0) + ((P[b] &&
 let cmpView = store.get('imr-coral-cmpview', 'medium');
 const viewSeg = () => `<div class="seg" role="group" aria-label="View">${VIEWS.map(([v, t]) => `<button type="button" data-cv="${v}" aria-pressed="${cmpView === v}">${t}</button>`).join('')}</div>`;
 const bindViewSeg = redraw => $v.querySelectorAll('[data-cv]').forEach(b => b.onclick = () => { cmpView = b.dataset.cv; store.set('imr-coral-cmpview', cmpView); redraw(); });
+// IMR lecture images that compare look-alikes side by side (data.json cmp), for the given genera.
+const cmpShots = L => (DATA.cmp || []).filter(c => c.g.some(n => L.includes(n))).map(c =>
+  `<figure class="lcmp"><a href="${img(c)}" target="_blank" rel="noopener"><img src="${img(c, 's')}" srcset="${srcset(c)}" sizes="(max-width:700px) 100vw, 640px" alt="Look-alike comparison: ${esc(c.g.join(', '))}" loading="lazy"></a><figcaption>${c.imr ? `<b class="lect">IMR lecture</b>${c.slide ? ` slide ${c.slide}` : ''}` : credit(c)}${c.cap ? ': ' + esc(c.cap) : ''}</figcaption></figure>`).join('');
 // Bottom of a genus sheet: the genus and each of its look-alikes at the same size and in the same view,
 // each with its deciding feature and a link to the side-by-side comparison.
 function lookHub(name){
@@ -214,7 +217,8 @@ function lookHub(name){
   return `<h3>Don't confuse with</h3>
     <div class="seg-row"><span class="label">Show</span>${viewSeg()}</div>
     <div class="lrow"><div class="lt self">${viewShot(name, cmpView)}<span><i>${esc(name)}</i><small>this genus</small><span class="psum">${esc(DATA.gen[name].sum)}</span></span></div>
-    ${L.map(n => { const m = mixedUp(name, n); return `<a class="lt" href="#cmp-${esc(name)}|${esc(n)}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(DATA.gen[n].sum)}</span>${(DATA.gen[name].lsrc || {})[n] ? `<small class="lsrc">${esc(DATA.gen[name].lsrc[n])}</small>` : ''}<b class="cmpgo">Compare side by side →</b></span></a>`; }).join('')}</div>`;
+    ${L.map(n => { const m = mixedUp(name, n); return `<a class="lt" href="#cmp-${esc(name)}|${esc(n)}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(DATA.gen[n].sum)}</span>${(DATA.gen[name].lsrc || {})[n] ? `<small class="lsrc">${esc(DATA.gen[name].lsrc[n])}</small>` : ''}<b class="cmpgo">Compare side by side →</b></span></a>`; }).join('')}</div>
+    ${cmpShots([name])}`;
 }
 function pairs(){
   const seen = new Set(), out = [];
@@ -236,7 +240,8 @@ function viewCompareList(){
     return `<section class="lfam"><h3>${t}<small>${L.length} ${L.length > 1 ? "genera" : "genus"}${mine ? ` · <b class="bad">you mixed some up ×${mine}</b>` : ''}</small></h3>
       <div class="lrow">${L.map(n => `<a class="lt" href="#g-${esc(n)}">${viewShot(n, cmpView)}<span><i>${esc(n)}</i><small>${tag(G[n])} · ${esc(G[n].fam)}</small><span class="psum">${esc(G[n].sum)}</span></span></a>`).join('')}</div>
       ${inside.length ? `<p class="lpairs"><span class="label">Compare</span>${inside.map(chip).join('')}</p>` : ''}
-      ${outside.length ? `<p class="lpairs"><span class="label">Other groups</span>${outside.map(chip).join('')}</p>` : ''}</section>`; };
+      ${outside.length ? `<p class="lpairs"><span class="label">Other groups</span>${outside.map(chip).join('')}</p>` : ''}
+      ${cmpShots(L)}</section>`; };
   const none = bySlate(Object.keys(G).filter(n => !G[n].ig));
   $v.innerHTML = `<h2>Look-alikes</h2>
   <p class="lede">Genera by IMR lecture group, compared in the same view with what sets each apart. The pairs to compare are the Coral Finder look-alikes; open one to see all three views side by side. Each genus sheet also lists its own look-alikes.</p>
@@ -650,5 +655,5 @@ if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else ad
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
 const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
-Promise.all([fetch('data.json?v=12').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=13').then(r => r.json()), curation()]).then(([d, c]) => { RAW = d; CUR = c; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
