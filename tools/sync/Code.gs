@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 5 (2026-11-01: continuous difficulty, answers carry expected success, ability and new photos)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 5 (2026-11-01: continuous difficulty, answers carry expected success, ability and new photos; single-view answers)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -111,7 +111,8 @@ function abilities_(data){
 }
 
 // Elo over the Answers tab, oldest first. Each answer: P(right) = g + (1 - g) * sigmoid(ability - difficulty), with
-// g = 1/choices (4 in the quiz, 2 in a duel), ability = the RA's, difficulty = mean of the photos shown. Ratings move
+// g = 1/choices (4 in the quiz, 2 in a duel), ability = the RA's, difficulty = mean of the photos shown, +0.5 when a
+// single view was shown alone (harder than the same photo with the other views). Ratings move
 // by K * (result - P(right)), K shrinking as a photo or an RA gathers answers. Returns {ok, photos: {file: [difficulty,
 // answers, right]}, ras: {anonymous id: [ability, answers]}}. Difficulty 0 = average photo; +1 = clearly harder.
 function stats_(){
@@ -125,7 +126,7 @@ function stats_(){
     const who = String(r[0]), ok = Number(r[4]) ? 1 : 0, mode = String(r[5]), fs = String(r[6]).split(/\s+/).filter(Boolean);
     if (!who || !fs.length) return;
     const g = mode.indexOf('quiz-duel') === 0 ? 0.5 : 0.25, ra = R[who] = R[who] || [0, 0];
-    const ph = fs.map(f => P[f] = P[f] || [0, 0, 0]), b = ph.reduce((t, p) => t + p[0], 0) / ph.length;
+    const ph = fs.map(f => P[f] = P[f] || [0, 0, 0]), b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);  // one view alone is harder (app.js PICKD.SINGLE)
     const e = g + (1 - g) * sig(ra[0] - b), d = ok - e;
     ra[0] += 0.6 / (1 + ra[1] / 40) * d; ra[1]++;
     ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * d; p[2]++; p[1] += ok; });

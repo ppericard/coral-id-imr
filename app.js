@@ -581,14 +581,19 @@ const pool = () => Object.keys(DATA.gen).filter(n => (Q.stars || DATA.gen[n].n) 
 // answered right twice weigh less (they may be memorised), the colony of the last 2 questions on the genus is held back,
 // and at least 3 colonies stay in rotation (VARIETY) whatever the level, so a struggling player still sees new photos.
 // Views come from one observation (same colony) whenever possible; a missing view is filled from another observation.
-const PICKD = {TARGET_OFF: 1.0, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05};
+const PICKD = {TARGET_OFF: 1.0, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
+// One zoom level per question (Pierre, 2026-10-31): beginners get every view of the colony (lots of information); as
+// the player's level on the genus rises, more and more questions show a single view (colony, closer or corallites
+// alone), up to 85% of them, so each view is learned on its own and each photo's difficulty is measured on its own.
+// A single view counts as harder (SINGLE), so easier photos are picked for it. The other views show after the answer.
+const singleP = n => Math.min(0.85, Math.max(0, (ability(n) - 0.5) / 1.5));
 function photoSet(n){
   const g = DATA.gen[n], two = g.levels === 2, need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
   const shownV = two ? ['wide', 'macro'] : ['wide', 'medium'];
   // The Colony slot never gets a photo whose growth form is "x" (too close to see it): that is a close-up.
   const ok = v => p => v !== 'wide' || p.form !== 'x';
   const pics = v => gamePics(n, v, 'hard').filter(ok(v));
-  const s = P[n] || {}, seen = s.ps || {}, ro = s.ro || [], tgt = ability(n) - PICKD.TARGET_OFF;
+  const single = Math.random() < singleP(n), s = P[n] || {}, seen = s.ps || {}, ro = s.ro || [], tgt = ability(n) - PICKD.TARGET_OFF - (single ? PICKD.SINGLE : 0);
   const h = [...recent(n).slice(-5)], hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
   const w = p => { const x = (photoDiff(n, p) - tgt) / PICKD.SIGMA, k = seen[p.f]; let r = Math.exp(-x * x / 2);
     if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1); else if (k[1] >= 2) r *= 0.6; return r; };
@@ -603,6 +608,9 @@ function photoSet(n){
   keys.forEach(k => { if (sc[k] > 0) sc[k] = Math.max(sc[k], PICKD.FLOOR * top); });
   const o = top ? obs[wpick(keys, k => sc[k])] : {};
   const one = v => { const L = o[v] || pics(v); return L.length ? {...wpick(L, w), view: v} : null; };
+  const lab = v => two && v === 'macro' ? 'close' : v;
+  if (single) { const vs = need.filter(v => (o[v] || pics(v)).length), v = vs.length ? pick(vs) : null;
+    if (v) { const p = one(v); return {shown: [{...p, view: lab(v)}], hint: null, reveal: need.filter(x => x !== v && o[x]).map(x => ({...pick(o[x]), view: lab(x)}))}; } }
   // Two-level genera (e.g. Plerogyra, mushroom corals) show colony + close-up, with no hint.
   if (two) { const m = one('macro'); return {shown: [one('wide'), m && {...m, view: 'close'}].filter(Boolean), hint: null}; }
   return {shown: [one('wide'), one('medium')].filter(Boolean), hint: one('macro')};
@@ -685,7 +693,7 @@ function bindQuizNav(){ bindGo(); }
 // The game rules (behind the ? button).
 const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused: say which one is in the photos.' : 'Name the genus in the photos: one colony view and one closer view of the same coral.'}
   Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? <b>Show the corallites</b> adds a close-up. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on. Every answer counts in <a href="#progress">My progress</a>.</p>
-  <p class="lede"><b>Photos</b>: each genus starts with its best photos and new ones keep coming in; the more you get a genus right, the harder its photos get, and a mistake eases them off. A genus is learned once your answers make it 95% sure you know it: right answers on harder photos count more.</p>`;
+  <p class="lede"><b>Photos</b>: each genus starts with its best photos, all views of the same colony together, and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, closer or corallites), and a mistake eases them off. A genus is learned once your answers make it 95% sure you know it: right answers on harder photos count more.</p>`;
 function question(cur, target, choices, prompt, set){
   const ph = set.shown, lab = VIEW_LABEL;
   let answered = false, hintShown = false;
@@ -711,9 +719,12 @@ function question(cur, target, choices, prompt, set){
     const b = !answered && $v.querySelectorAll('[data-c]')[Number(e.key) - 1]; if (b) { e.preventDefault(); b.click(); } };
   document.addEventListener('keydown', keys);
   $v.querySelector('.q').addEventListener('click', e => { const z = e.target.closest('[data-q]'); if (!z) return;
-    const list = hintShown ? [...ph, set.hint] : ph;
+    const list = hintShown ? [...ph, set.hint] : answered && set.reveal ? [...ph, ...set.reveal] : ph;
     zoom(list.map(p => ({...p, genus: target})), Number(z.dataset.q), {blind: () => !answered}); });
-  $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'); showHint(); answered = true; answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor); });
+  // A single-view question shows the other views of the same colony once answered (seen, not part of the answer).
+  const reveal = () => { const R = set.reveal || [], st = $v.querySelector('.qstage'); if (!R.length || !st) return;
+    st.insertAdjacentHTML('beforeend', R.map((p, k) => fig(p, ph.length + k)).join('')); fitStage(); };
+  $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'); showHint(); reveal(); answered = true; answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor); });
 }
 // The quiz stage fills the window below the header, so photos, choices and feedback fit without scrolling.
 // The photos then take the grid (columns x rows) that shows them largest at 4:3.
@@ -769,8 +780,9 @@ function answer(cur, c, target, ph, cor){
   // A photo seen for the first time is the best evidence (Kellman: novel instances); one already answered right twice
   // may be memorised, so it counts as an easier photo (a right answer then looks more like a guess).
   const th0 = ability(target), nw = ph.filter(p => !(s.ps || {})[p.f]).length;
-  const ps = s.ps = s.ps || {}, d0 = ph.reduce((t, p) => t + photoDiff(target, p), 0) / Math.max(1, ph.length);
-  const bk = ph.reduce((t, p) => t + photoDiff(target, p) + (!ps[p.f] ? 0.5 : ps[p.f][1] >= 2 ? -1 : 0), 0) / Math.max(1, ph.length);
+  const solo = ph.length === 1 ? PICKD.SINGLE : 0;  // one view alone is harder than the same photo with the others
+  const ps = s.ps = s.ps || {}, d0 = solo + ph.reduce((t, p) => t + photoDiff(target, p), 0) / Math.max(1, ph.length);
+  const bk = solo + ph.reduce((t, p) => t + photoDiff(target, p) + (!ps[p.f] ? 0.5 : ps[p.f][1] >= 2 ? -1 : 0), 0) / Math.max(1, ph.length);
   bktObs(target, s, good, bk, k);
   abilityStep(target, s, good, d0, k);
   // The corallites hint is revealed after the answer when it was not opened: seen, but not recognised.
