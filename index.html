@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0d6f7d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
-<link rel="stylesheet" href="app.css?v=39">
+<link rel="stylesheet" href="app.css?v=40">
 <link rel="stylesheet" href="proto/lab.css?v=24">
 <link rel="stylesheet" href="home.css?v=10">
 </head>
@@ -24,7 +24,6 @@
       <a data-tab="practice" href="#quiz">Practice</a>
       <a data-tab="identify" href="#finder">Identify</a>
       <a data-tab="lab" href="#lab">Lab</a>
-      <a data-tab="progress" class="tabonly" href="#progress">Progress <b class="tabn" id="progn2"></b></a>
     </nav>
     <div class="hdr-tools">
       <a class="prog" id="prog" href="#progress" title="Your progress per genus" aria-label="My progress"><span class="pl">My progress</span> <b id="progn">0/39</b></a>
@@ -33,6 +32,7 @@
       <div id="settings" class="setpop" hidden>
         <div class="setrow"><span>Photos from</span><div id="origin" role="group" aria-label="Photos from"><button type="button" data-origin="dauin" title="Only photos taken around Dauin (and IMR lecture photos)">Dauin</button><button type="button" data-origin="ph" title="Photos from the Philippines">PH</button><button type="button" data-origin="all" title="Photos from everywhere">All</button></div></div>
         <div class="setrow" id="sizerow"><span>Photo size</span><div id="size" role="group" aria-label="Photo size"><button type="button" data-size="s" title="Small photos">S</button><button type="button" data-size="m" title="Medium photos">M</button><button type="button" data-size="l" title="Large photos">L</button></div></div>
+        <div class="setrow" id="viewrow" hidden><span>View</span><div id="adminview" role="group" aria-label="View"><button type="button" data-view="admin" title="Admin">Admin</button><button type="button" data-view="user" title="User">User</button></div></div>
         <div class="setrow"><span>Theme</span><button type="button" class="theme" id="theme" aria-label="Switch to dark theme">☾</button></div>
       </div>
     </div>
@@ -43,8 +43,8 @@
   <footer><p>IMR groups, lecture notes and lecture photos from IMR Lecture 6 (Indo-Pacific Coral ID). Key and criteria based on the Coral Finder 2022 (R. Kelley, BYOGUIDES), narrowed to the 39 genera on the IMR list; page numbers refer to the book. Other photos: Pierre Pericard's iNaturalist observations from Dauin and Creative Commons iNaturalist photos, credited under each photo. For training at IMR.</p></footer>
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
-<script src="app.js?v=62"></script>
-<script src="flag.js?v=2"></script>
+<script src="app.js?v=63"></script>
+<script src="flag.js?v=3"></script>
 <script src="proto/lab.js?v=36"></script>
 <script src="home-art.js?v=3"></script>
 <script src="home.js?v=16"></script>
