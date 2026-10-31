@@ -49,7 +49,12 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:col
 .brand .home{display:inline-flex;align-items:center;gap:9px;color:inherit;text-decoration:none;font-family:var(--display);font-weight:700;font-size:1.75rem;letter-spacing:.01em}
 .brand .home img{border-radius:8px;display:block}
 .sections{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
-.hdr-tools{display:flex;gap:8px;align-items:center}
+.hdr-tools{display:flex;gap:8px;align-items:center;position:relative}
+/* Settings panel behind ⚙: photo source, photo size, theme. */
+.setpop{position:absolute;right:0;top:calc(100% + 8px);z-index:30;display:grid;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);min-width:240px}
+.setpop[hidden]{display:none}
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:.88rem;color:var(--muted)}
+.setrow[hidden]{display:none}
 
 /* ---------- Controls: one pill system for nav, chips, segmented control and icon buttons ---------- */
 .sections a,.chip,.theme,.seg,#size,#origin,.prog{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);box-shadow:var(--shadow)}
@@ -256,6 +261,7 @@ kbd{font:600 .7rem/1 var(--body);font-style:normal;color:var(--muted);border:1px
   .qstage{height:calc(var(--qh,60vh) - 240px);min-height:180px}
   .q{gap:10px}
   .qside{overflow:visible}
+  .q.done #after{position:fixed;left:0;right:0;bottom:0;z-index:25;max-height:62vh;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:10px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));background:var(--bg);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(0,0,0,.18)}
   .ans{display:grid;grid-template-columns:1fr 1fr}
   .ans button{justify-content:center;padding:12px 8px}
   .ans kbd{display:none}
@@ -299,9 +305,6 @@ td i{font-weight:600}
   #origin button{padding:0 7px}
   header{grid-template-areas:"title tools" "nav nav" "help help"}
   .helpbox{grid-area:help}
-  /* one button per group on phones: tap to cycle */
-  #size button:not([aria-pressed="true"]),#origin button:not([aria-pressed="true"]){display:none}
-  #size button,#origin button{border:0!important}
   .sections{grid-area:nav;margin-left:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px}
   .modes a{padding:4px 9px}
   .modes a b{font-size:.86rem}
@@ -312,7 +315,7 @@ td i{font-weight:600}
   .modes.ctx .ctx-l{padding:0 8px;font-size:.82rem}
   .sections a{justify-content:center;padding:0 4px;font-size:.82rem;min-width:0}
   .tools input{flex-basis:100%}
-  .tools select{flex:1 1 0;min-width:0}
+  .tools select{flex:1 1 100%;min-width:0}
   .wide{display:none}
 }
 
@@ -475,14 +478,14 @@ a.lt:hover{border-color:var(--accent)}
 .gchip[aria-pressed="true"]{background:hsl(var(--g) 55% 52%);border-color:hsl(var(--g) 55% 52%);color:#fff}
 .fdopt.gchip[aria-pressed="true"]{color:inherit;background:hsl(var(--g) 55% 52% / .16)}
 /* ID tips: two genera per row (one on phones), larger photos. */
-.tipsec{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;align-items:start}
-.tipsec>h3{grid-column:1/-1}
+.tipsec,.tiplist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;align-items:start}
+.tipsec>h3,.tiplist>h3,.tiplist>.note{grid-column:1/-1}
 .tipg{grid-template-columns:190px minmax(0,1fr)}
-@media (max-width:900px){.tipsec{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:900px){.tipsec,.tiplist{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:600px){.tipg{grid-template-columns:110px minmax(0,1fr)}}
 /* S/M/L on the remaining pages. ID tips: photo size, and one genus per row in L. Look-alike pair: photo width. */
 :root[data-size="s"] .tipg{grid-template-columns:130px minmax(0,1fr)}
-:root[data-size="l"] .tipsec{grid-template-columns:minmax(0,1fr)}
+:root[data-size="l"] .tipsec,:root[data-size="l"] .tiplist{grid-template-columns:minmax(0,1fr)}
 :root[data-size="l"] .tipg{grid-template-columns:300px minmax(0,1fr)}
 :root[data-size="s"] .cmprow{max-width:640px}
 :root[data-size="m"] .cmprow{max-width:960px}

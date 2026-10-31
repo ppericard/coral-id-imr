@@ -211,32 +211,28 @@ const notesList = (g, cls = '') => g.imr.length ? `<ul class="crit idtips${cls ?
 // Short ID tips; genera the lecture skips fall back to the Coral Finder summary.
 const tipsList = (g, cls = '') => g.qt ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${g.qt.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : `<p class="keyid">${esc(g.sum)}</p>`;
 const tipsText = g => g.qt ? g.qt.join(' · ') : g.sum;
-function viewTips(){
-  const gr = DATA.imrg.map(x => ({...x, L: Object.keys(DATA.gen).filter(n => DATA.gen[n].ig === x.n)})).filter(x => x.L.length);
-  const sel = location.hash.split('|')[1] || '';
-  $v.innerHTML = `<h2>ID tips</h2>
-  <p class="lede">The few cues that identify each genus, condensed from IMR Lecture 6. The full lecture notes are on each genus sheet.</p>
-  <div class="tiphead"><ol class="qtiles" aria-label="IMR Lecture 6: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
-  <details class="gloss"><summary>Coral anatomy terms</summary><a class="glink" href="#lab-anatomy"><span class="hpv art">${window.homeArt ? homeArt('anatomy') : ''}</span><span><b>Corallite anatomy</b><small>Explore the parts of a corallite on a diagram ›</small></span></a><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>
-  <div class="chips tipgr"><span class="label">IMR group</span><a class="chip" href="#tips" aria-pressed="${!sel}">All</a>${gr.map(x => `<a class="chip gchip" style="--g:${groupHue(x.n)}" href="#tips|${x.n}" aria-pressed="${sel == x.n}" title="${esc(x.t)}">${x.n}</a>`).join('')}</div>
-  ${gr.filter(x => !sel || sel == x.n).map(x => `<section class="tipsec"><h3 class="gdiv" style="--g:${groupHue(x.n)}"><span class="gn">${x.n}</span>${esc(x.t)}</h3>
-    ${x.L.map(n => { const g = DATA.gen[n], p = cover(g); return `<article class="tipg"><a href="#g-${esc(n)}" class="tipph">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<i>${esc(n)}</i></a><div>${tipsList(g)}${lookOf(n).length ? `<p class="note">Don't confuse with ${lookOf(n).map(b => `<a href="#cmp-${esc(n)}|${esc(b)}"><i>${esc(b)}</i></a>`).join(', ')}</p>` : ''}</div></article>`; }).join('')}</section>`).join('')}`;
-}
+// The ID tips view of the Genera page: the 4 lecture questions and the glossary on top, then 2-3 short cues per genus.
+const tipsHead = () => `<div class="tiphead"><ol class="qtiles" aria-label="IMR Lecture 6: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
+  <details class="gloss"><summary>Coral anatomy terms</summary><a class="glink" href="#lab-anatomy"><span class="hpv art">${window.homeArt ? homeArt('anatomy') : ''}</span><span><b>Corallite anatomy</b><small>Explore the parts of a corallite on a diagram ›</small></span></a><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>`;
+const tipCard = n => { const g = DATA.gen[n], p = cover(g); return `<article class="tipg"><a href="#g-${esc(n)}" class="tipph">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<i>${esc(n)}</i></a><div>${tipsList(g)}${lookOf(n).length ? `<p class="note">Don't confuse with ${lookOf(n).map(b => `<a href="#cmp-${esc(n)}|${esc(b)}"><i>${esc(b)}</i></a>`).join(', ')}</p>` : ''}</div></article>`; };
 
 /* ---------- genera ---------- */
 let azFam = null, azQ = '';
 // Genera order: 'lecture' (IMR Lecture 6 groups, default) or 'slate' (numbers on the IMR slate).
 let azOrder = (() => { try { return localStorage.getItem('imr-coral-order') || 'lecture'; } catch (e) { return 'lecture'; } })();
+// Genera view: 'photos' (cards) or 'tips' (the ID tips list, formerly its own page).
+let azView = (() => { try { return localStorage.getItem('imr-coral-gview') || 'photos'; } catch (e) { return 'photos'; } })();
 function viewGenera(){
   const fams = [...new Set(Object.values(DATA.gen).map(g => g.fam))].sort();
   $v.innerHTML = `<h2>The 39 genera on the IMR slate</h2>
-  <p class="lede">34 surveyed genera plus 5 starred ones (★) to recognise and rule out. Colours mark the confusion groups from the IMR lecture: genera in the same group are the ones to tell apart. The lecturers' cues for each genus are under <a href="#tips">ID tips</a>.</p>
+  <p class="lede">34 surveyed genera plus 5 starred ones (★) to recognise and rule out. Colours mark the confusion groups from the IMR lecture: genera in the same group are the ones to tell apart. Switch to <b>ID tips</b> for the 4 questions to ask and the lecturers' short cues for each genus.</p>
   <div class="tools"><input id="q" type="search" placeholder="Search a genus or a feature" value="${esc(azQ)}" aria-label="Search">
     <select id="fam" aria-label="Family"><option value="">All families</option><option value="★"${azFam === '★' ? ' selected' : ''}>★ Not surveyed</option>${fams.map(f => `<option${azFam === f ? ' selected' : ''}>${esc(f)}</option>`).join('')}</select>
+    <div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['tips', 'ID tips']].map(([k, t]) => `<button type="button" data-gv="${k}" aria-pressed="${azView === k}">${t}</button>`).join('')}</div>
     <div class="seg" role="group" aria-label="Order">${[['lecture', 'Lecture', ' groups'], ['slate', 'Slate', ' numbers']].map(([k, t, x]) => `<button type="button" data-o="${k}" aria-pressed="${azOrder === k}">${t}<span class="wide">${x}</span></button>`).join('')}</div></div>
-  <div class="grid" id="azgrid"></div>`;
+  ${azView === 'tips' ? tipsHead() : ''}<div class="${azView === 'tips' ? 'tiplist' : 'grid'}" id="azgrid"></div>`;
   const draw = () => {
-    const q = azQ.toLowerCase();
+    const q = azQ.toLowerCase(), tips = azView === 'tips';
     const names = Object.keys(DATA.gen).filter(n => (!azFam || DATA.gen[n].fam === azFam || (azFam === '★' && !DATA.gen[n].n)) && (!q || (n + ' ' + DATA.gen[n].crit.join(' ') + ' ' + DATA.gen[n].imr.join(' ')).toLowerCase().includes(q)));
     let html;
     if (azOrder === 'lecture') {
@@ -246,8 +242,8 @@ function viewGenera(){
         const head = i && gi(names[i - 1]) === gi(n) ? '' : gr
           ? `<h3 class="gdiv" style="--g:${groupHue(gr.n)}"><span class="gn">${gr.n}</span>${esc(gr.t)}</h3>`
           : '<h3 class="gdiv"><span class="gn">★</span>Not covered in the lecture</h3>';
-        return head + card(n, 'stripe'); }).join('');
-    } else html = names.map(n => card(n, true)).join('');
+        return head + (tips ? tipCard(n) : card(n, 'stripe')); }).join('');
+    } else html = names.map(n => tips ? tipCard(n) : card(n, true)).join('');
     document.getElementById('azgrid').innerHTML = html || '<p class="note">No genus matches.</p>';
     bindCards();
   };
@@ -255,6 +251,7 @@ function viewGenera(){
   qi.oninput = () => { azQ = qi.value; draw(); };
   document.getElementById('fam').onchange = e => { azFam = e.target.value || null; draw(); };
   $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { azOrder = b.dataset.o; try { localStorage.setItem('imr-coral-order', azOrder); } catch (e) {} viewGenera(); });
+  $v.querySelectorAll('[data-gv]').forEach(b => b.onclick = () => { azView = b.dataset.gv; try { localStorage.setItem('imr-coral-gview', azView); } catch (e) {} viewGenera(); pageHelp(); });
   draw();
 }
 
@@ -271,10 +268,13 @@ function viewGenus(name){
     if (g.levels === 2 && v === 'macro') label = 'Close-up';
     const fig = p => { const i = flat.findIndex(x => x.f === p.f);
       return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${esc(name)}, ${p.imr ? 'IMR lecture photo' : label.toLowerCase() + ' view'}" loading="lazy"></button><figcaption>${p.imr ? '<b class="lect">IMR lecture</b> ' : ''}${credit(p)}</figcaption></figure>`; };
-    const feat = g.sl[v].feat, more = g.sl[v].more;
+    // The cover is already shown at the top: not repeated in its row when the row has other featured photos.
+    const feat0 = g.sl[v].feat, feat = cv && feat0.length > 1 ? feat0.filter(p => p.f !== cv.f) : feat0, more = g.sl[v].more;
     return `<section class="vrow"><h3>${label}${feat.length ? '' : ' <span class="gap">missing</span>'}</h3>${feat.length ? `<div class="strip">${feat.map(fig).join('')}</div>` : '<p class="note">No good photo yet for this view.</p>'}
       ${more.length ? `<details class="more"><summary>${more.length} more ${label.toLowerCase()} photo${more.length > 1 ? 's' : ''}</summary><div class="strip">${more.map(fig).join('')}</div></details>` : ''}</section>`;
   }).join('');
+  // Coral Finder text: visible for genera the lecture skips, otherwise folded under "More details" with sources and key.
+  const cfList = `<h3>Coral Finder features</h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`;
   // Name, slate number and family sit in the sticky header bar (ctxBar), not here.
   $v.innerHTML = `<article class="sheet">
     ${g.imr.length ? '' : `<p class="lede keyid">${esc(g.sum)}</p>`}
@@ -284,12 +284,14 @@ function viewGenus(name){
       <div class="idbox">
         ${g.imr.length ? `<h3>ID tips (IMR) <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span></h3>${tipsList(g)}` : ''}${g.mn ? `<p class="note"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}
         ${g.imr.length ? `<h3>IMR lecture notes</h3>${notesList(g)}` : ''}
-        <h3>Coral Finder features</h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+        ${g.imr.length ? '' : cfList}
+        <details class="more sheetmore"><summary>More details</summary>
+        ${g.imr.length ? cfList : ''}
         ${g.check ? `<p class="note check"><b>To check with an IMR trainer:</b> ${esc(g.check)}</p>` : ''}
         ${g.info ? `<div class="note osrc"><b>Other sources:</b><ul class="srcs">${g.info.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
-        <h3>Don't confuse with</h3><div class="chips">${lookOf(name).map(n => `<a class="chip" href="#cmp-${esc(name)}|${esc(n)}" title="Side-by-side comparison">${esc(n)}</a>`).join('')}</div>
         <h3>In the key <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3><div class="kpick">${paths.map(({k, l}) => `<a class="c-${k.color}" href="#l-${l.id}">${esc(k.name)} › ${esc(leafLabel(l))}</a>`).join('')}</div>
         <p class="note refs"><b>References:</b> ${g.imr.length ? 'IMR Lecture 6 · ' : ''}Coral Finder 2022 (R. Kelley) p. ${g.pages.join(', ')} · <a href="https://www.marinespecies.org/aphia.php?p=taxlist&amp;tName=${encodeURIComponent(name)}" target="_blank" rel="noopener">WoRMS</a> · <a href="https://www.inaturalist.org/taxa/search?q=${encodeURIComponent(name)}" target="_blank" rel="noopener">iNaturalist</a></p>
+        </details>
       </div>
     </div>
     ${rows}
@@ -448,14 +450,15 @@ function question(cur, target, choices, prompt, set){
   $v.innerHTML = `<div class="q">
     <div class="qstage">${ph.map(fig).join('')}</div>
     <aside class="qside">
-      ${cur.startsWith('quiz-course') ? '' : `<div class="seg qlvl" role="group" aria-label="Photo set">${LEVELS.map(([k, t]) => `<button type="button" data-lvl="${k}" aria-pressed="${Q.level === k}" title="${k === 'easy' ? 'The photos on the genus sheets' : k === 'medium' ? 'Adds other good photos' : 'Adds harder photos'}">${t}</button>`).join('')}</div>`}
+      <div class="seg qlvl" role="group" aria-label="Photo set">${(cur === 'quiz' ? [...LEVELS, ['lecture', 'Lecture']] : LEVELS).map(([k, t]) => `<button type="button" data-lvl="${k}" aria-pressed="${cur === 'quiz' && Q.course ? k === 'lecture' : Q.level === k}" title="${k === 'easy' ? 'The photos on the genus sheets' : k === 'medium' ? 'Adds other good photos' : k === 'hard' ? 'Adds harder photos' : 'Photos from the IMR lecture'}">${t}</button>`).join('')}</div>
       <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">${session.ok}/${session.n}</span>${quizNav(cur)}</div>
       <div class="ans">${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
     </aside></div>`;
   bindQuizNav(cur);
-  $v.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => { Q.level = b.dataset.lvl; saveQ(); route(); });
+  // "Lecture" (Photo -> genus only) switches to the IMR lecture photos; Easy/Medium/Hard switch back.
+  $v.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => { const k = b.dataset.lvl; if (k === 'lecture') Q.course = true; else { Q.level = k; Q.course = false; } saveQ(); route(); });
   fitStage();
   const hb = document.getElementById('hintb');
   const showHint = () => { if (hintShown || !set.hint) return; hintShown = true; const st = $v.querySelector('.qstage');
@@ -524,6 +527,8 @@ function answer(cur, c, target, ph, cor){
     ${g.qt ? `<p class="label">ID tips (IMR)</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="vs"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}${vs}
     <details class="more"><summary>Coral Finder</summary>${g.imr.length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details></div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
+  // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
+  const qq = $v.querySelector('.q'); if (qq) qq.classList.add('done');
   bindGo(document.getElementById('after'));
   const nb = document.getElementById('next'); nb.focus({preventScroll: true}); nb.onclick = route;
 }
@@ -540,7 +545,7 @@ function quizPhoto(){
 function quizCourse(){
   const list = pool(), C = DATA.course, names = Object.keys(C).filter(n => list.includes(n) && C[n].some(p => !p.multi));
   const t = nextTarget(names);
-  question('quiz-course', t, shuffle([t, ...distractors(t, list)]), 'Which genus?', {shown: [pick(C[t].filter(p => !p.multi))], hint: null});
+  question('quiz', t, shuffle([t, ...distractors(t, list)]), 'Which genus?', {shown: [pick(C[t].filter(p => !p.multi))], hint: null});
 }
 function quizDuel(a, b){
   const list = pool();
@@ -756,11 +761,11 @@ function photoSize(){ return sizePrefs()[pageKey()] || 'm'; }
 const SIZES = {card: {s: '240px', m: '360px', l: '520px'}, strip: {s: '(max-width:700px) 46vw, 260px', m: '(max-width:700px) 92vw, 420px', l: '(max-width:700px) 92vw, 640px'}};
 const sizesFor = kind => SIZES[kind][photoSize()];
 function applySize(){ const s = photoSize(), on = SIZE_PAGES.includes(pageKey()); document.documentElement.dataset.size = s;
-  const sz = document.getElementById('size'); sz.style.visibility = on ? '' : 'hidden'; sz.setAttribute('aria-hidden', String(!on)); document.querySelectorAll('img[data-sz]').forEach(i => i.sizes = sizesFor(i.dataset.sz)); document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); }
+  const sz = document.getElementById('size'); document.getElementById('sizerow').hidden = !on; document.querySelectorAll('img[data-sz]').forEach(i => i.sizes = sizesFor(i.dataset.sz)); document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); }
 function showOrigin(){ document.querySelectorAll('#origin button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.origin === origin))); }
 // On phones each group shows only its current button: tapping it moves to the next one.
 const phone = () => matchMedia('(max-width:640px)').matches;
-const cycle = b => phone() && b.getAttribute('aria-pressed') === 'true' ? (b.nextElementSibling || b.parentNode.firstElementChild) : b;
+const cycle = b => b;  // all choices are visible in the settings panel
 document.querySelectorAll('#origin button').forEach(b => b.onclick = () => { b = cycle(b); origin = b.dataset.origin; store.set('imr-coral-origin', origin); showOrigin(); if (RAW) { build(); route(); } });
 showOrigin();
 document.querySelectorAll('#size button').forEach(b => b.onclick = () => { b = cycle(b); const p = sizePrefs(); p[pageKey()] = b.dataset.size; try { localStorage.setItem('imr-coral-size', JSON.stringify(p)); } catch (e) {} applySize(); });
@@ -774,8 +779,8 @@ showTheme();
 // Tools of the Learn, Practice and Identify sections (the learning path order): a tab bar in the sticky header, so they stay in view.
 // Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).
 const MODES = {
-  learn: [['genera', 'Genera', 'The 39 genus sheets'], ['tips', 'ID tips', 'What the IMR lecturers point out'], ['cmp', 'Look-alikes', 'Confused pairs side by side']],
-  practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['quiz-course', 'Lecture photos', 'Photos from the IMR course'], ['pairs', 'Memory', 'Match colony and corallites'], ['reveal', 'Blur reveal', 'Name it before it sharpens']],
+  learn: [['genera', 'Genera', 'The 39 genera, as photos or ID tips'], ['cmp', 'Look-alikes', 'Confused pairs side by side']],
+  practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['pairs', 'Memory', 'Match colony and corallites']],
   identify: [['finder', 'Coral Finder', 'Tap the clues you see, get a ranked shortlist']]
 };
 const MODE_LABEL = {learn: 'Learn tools', identify: 'Ways to identify', practice: 'Practice modes'};
@@ -838,11 +843,12 @@ function route(){
   else if (h.startsWith('l-') && leafOf(h.slice(2))) { const l = h.slice(2), one = groupOf(l).leaves.length === 1; location.replace('#finder|form=' + l[0] + (one ? '' : ';box=' + l)); }
   else if (h === 'key-imr') { azOrder = 'lecture'; location.replace('#genera'); }
   else if (h.startsWith('g-')) viewGenus(h.slice(2));
-  else if (h === 'tips' || h.startsWith('tips|')) viewTips();
+  else if (h === 'tips' || h.startsWith('tips|')) { azView = 'tips'; location.replace('#genera'); }
   else if (h === 'cmp') viewCompareList();
   else if (h.startsWith('cmp-')) viewCompare(...h.slice(4).split('|'));
-  else if (h === 'quiz') quizPhoto();
-  else if (h === 'quiz-course') quizCourse();
+  else if (h === 'quiz') Q.course ? quizCourse() : quizPhoto();
+  // Lecture photos are now a photo set of Photo -> genus.
+  else if (h === 'quiz-course') { Q.course = true; saveQ(); location.replace('#quiz'); }
   else if (h === 'progress' || h === 'quiz-board') quizBoard();
   else if (h.startsWith('quiz-duel')) { const [, a, b] = h.split('|'); quizDuel(a, b); }
   else if (h.startsWith('lab') && window.viewLab) viewLab(h);
@@ -869,6 +875,11 @@ function pageHelp(){
 }
 function resetHelp(){ $helpbox.hidden = true; $helpbox.innerHTML = ''; $help.hidden = true; $help.setAttribute('aria-expanded', 'false'); }
 new MutationObserver(pageHelp).observe($v, {childList: true, subtree: true});
+// Settings (photo source, photo size, theme) live in one small panel behind ⚙.
+const $setb = document.getElementById('setb'), $set = document.getElementById('settings');
+$setb.onclick = e => { e.stopPropagation(); const open = $set.hidden; $set.hidden = !open; $setb.setAttribute('aria-expanded', String(open)); };
+document.addEventListener('click', e => { if (!$set.hidden && !e.target.closest('#settings, #setb')) { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$set.hidden) { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); $setb.focus(); } });
 $help.onclick = () => { const open = $helpbox.hidden; $helpbox.hidden = !open; $help.setAttribute('aria-expanded', String(open)); hdrMetrics(); };
 // The brand link goes home without reloading the page (href="./" still works without JS).
 document.querySelector('.brand .home').onclick = e => {
