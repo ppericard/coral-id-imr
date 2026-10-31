@@ -12,7 +12,7 @@ LAB.add({
       const cards = shuffle(gens.flatMap(n => [{n, v: 'wide'}, {n, v: 'macro'}]));
       let open = [], found = 0, moves = 0, lock = false;
       root.innerHTML = `<div class="chips"><button class="chip" type="button" data-m="random" aria-pressed="${mode === 'random'}">Random genera</button><button class="chip" type="button" data-m="look" aria-pressed="${mode === 'look'}">Look-alike set</button><button class="chip" type="button" id="pnew">New game</button> <span class="note" id="pstat">0 moves</span></div>
-        <div class="pgrid">${cards.map((c, i) => `<button type="button" class="pcard" data-i="${i}" aria-label="Hidden card"><span class="pin"><span class="pback"></span><span class="pfront"><img src="${thumbSrc(c.n, c.v)}" alt="${esc(c.n)}, ${c.v === 'wide' ? 'colony' : 'corallites'}"><small>${c.v === 'wide' ? 'Colony' : 'Corallites'}</small><b><i>${esc(c.n)}</i></b></span></span></button>`).join('')}</div><div id="pres"></div>`;
+        <div class="pgrid">${cards.map((c, i) => `<button type="button" class="pcard" data-i="${i}" aria-label="Hidden card"><span class="pin"><span class="pback"></span><span class="pfront"><img src="${thumbSrc(c.n, c.v)}" alt="${esc(c.n)}, ${c.v === 'wide' ? 'colony' : 'corallites'}"><small>${c.v === 'wide' ? 'Colony' : DATA.gen[c.n].levels === 2 ? 'Close-up' : 'Corallites'}</small><b><i>${esc(c.n)}</i></b></span></span></button>`).join('')}</div><div id="pres"></div>`;
       root.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { mode = b.dataset.m; setup(); });
       root.querySelector('#pnew').onclick = setup;
       const els = [...root.querySelectorAll('.pcard')];
