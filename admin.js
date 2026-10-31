@@ -196,7 +196,9 @@ function rowOf(n, v){
   const pin = (entry(n).feat || {})[v];
   // No pick of yours: Claude's suggestion (picks.json) first, then the automatic order, as on the site.
   const sug = ((PICKS[n] || {})[v] || []).map(f => live.find(p => p.f === f && !p.multi && !p.extra)).filter(Boolean);
-  const feat = pin ? pin.map(f => live.find(p => p.f === f)).filter(Boolean) : takeObs([...sug, ...order.filter(p => !p.multi)], FEAT);
+  const cand = [...sug, ...order.filter(p => !p.multi)], good = takeObs(cand.filter(p => qOf(p.f) !== 1), FEAT);
+  // Never a Poor photo in the automatic pick while better ones exist (as on the site).
+  const feat = pin ? pin.map(f => live.find(p => p.f === f)).filter(Boolean) : [...good, ...takeObs(cand.filter(p => !good.includes(p)), FEAT - good.length)];
   return {feat, auto: !pin, rest: order.filter(p => !feat.includes(p)), hid: photos(n).filter(p => viewOf(n, p) === v && hidden(n, p))};
 }
 function coverOf(n){
