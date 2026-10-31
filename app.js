@@ -518,7 +518,7 @@ function quizBoard(){
     ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> / <i>${esc(o)}</i> ×${k}</a>`).join('')}</p></div>` : ''}
     <p><a class="chip go" href="#quiz">Practise now</a></p>
     ${SYNC_URL ? '<section class="sync" id="sync"></section>' : ''}
-    <details class="saveprog"><summary>Backup and reset</summary><p class="note">Progress is saved in this browser, on this device. Save it to a file to keep a backup or move it to another device.</p>
+    <details class="saveprog"><summary>Backup or reset progress</summary><p class="note">Progress is saved in this browser, on this device. Save it to a file to keep a backup or move it to another device.</p>
       <button class="chip" type="button" id="pexp">Save to a file</button> <button class="chip" type="button" id="pload">Load a file</button><input type="file" id="pimp" accept=".json,application/json" hidden> <span class="note" id="pmsg" role="status"></span>
       <p><button class="reset" type="button" id="reset">Reset progress</button></p></details>
   </aside></div>`;
@@ -538,7 +538,7 @@ const $prog = document.getElementById('prog');
 function showProg(){ if (!DATA) return; const n = Object.keys(DATA.gen); document.getElementById('progn').textContent = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length}`;
   // Not signed in: the pill says so, so RAs find where to save their progress.
   const pill = document.getElementById('prog'), out = !!SYNC_URL && !SYNC;
-  pill.classList.toggle('nosync', out); pill.querySelector('.pl').textContent = out ? 'Sign in · progress' : 'My progress';
+  pill.classList.toggle('nosync', out || !!syncTrouble()); pill.querySelector('.pl').textContent = out ? 'Sign in · progress' : 'My progress';
   pill.title = SYNC ? `Signed in as ${SYNC.name}: your progress per genus` : out ? 'Sign in to save your progress' : 'Your progress per genus'; }
 // Progress files: every imr-coral-* key in localStorage (quiz progress, settings, Lab scores), as JSON.
 const progData = () => { const d = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('imr-coral') && k !== 'imr-coral-sync') d[k] = localStorage.getItem(k); } } catch (e) {} return d; };
@@ -618,23 +618,40 @@ function syncOnce(){
   return syncGet(me).then(j => { if (SYNC !== me) return null; if (!j.ok) return j; if (j.found) mergeSaved(j);
     rev = me.rev; sent = copy(P); log = me.log || []; me.pending = progData()['imr-coral-progress'] || ''; store.set('imr-coral-sync', me);
     return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({name: me.name, pin: me.pin, data: progData(), summary: syncSummary(), answers: log})}).then(r => r.json()); })
-    .then(j => { if (j && j.ok && SYNC === me) { me.last = new Date().toISOString(); me.base = sent; delete me.pending; if (j.log) { const done = new Set(log.map(x => x.id)); me.log = (me.log || []).filter(x => !done.has(x.id)); } if (me.rev === rev) delete me.dirty; store.set('imr-coral-sync', me); } return j; })
-    .catch(() => null);
+    .then(j => { if (j && j.ok && SYNC === me) { me.last = new Date().toISOString(); me.base = sent; delete me.pending; delete me.err; if (!j.log && log.length) me.err = 'net'; if (j.log) { const done = new Set(log.map(x => x.id)); me.log = (me.log || []).filter(x => !done.has(x.id)); } if (me.rev === rev) delete me.dirty; store.set('imr-coral-sync', me); }
+      else if (j && SYNC === me) { me.err = j.error === 'pin' ? 'pin' : 'net'; store.set('imr-coral-sync', me); } return j; })
+    .catch(() => { if (SYNC === me) { me.err = 'net'; store.set('imr-coral-sync', me); } return null; })
+    .finally(() => { if (SYNC === me) bindSync(); });
 }
 const syncSoon = () => { if (!SYNC_URL || !SYNC) return; SYNC.dirty = true; SYNC.rev = (SYNC.rev || 0) + 1; store.set('imr-coral-sync', SYNC); clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 3000); };
 const syncRetry = () => { if (SYNC && (SYNC.dirty || (SYNC.log || []).length)) syncPush(); };
 window.addEventListener('online', syncRetry);
+// What is wrong with the sync, in words, or '' when everything is saved.
+function syncTrouble(){
+  if (!SYNC_URL || !SYNC) return '';
+  if (SYNC.err === 'pin') return 'Not saved: code refused';
+  const n = (SYNC.log || []).length;
+  if (SYNC.err) return n ? `Not saved yet: ${n} answer${n > 1 ? 's' : ''} waiting` : 'Not saved yet: could not reach the sheet';
+  return '';
+}
 function bindSync(){
   showProg();
   const box = document.getElementById('sync'); if (!box) return;
-  box.classList.remove('on');
+  box.classList.remove('on', 'warn');
   const msg = t => box.querySelector('[role=status]').textContent = t;
   if (SYNC) {
-    // Signed in: one discreet line; actions stay folded away.
-    box.classList.add('on');
-    box.innerHTML = `<details><summary><span class="sdot"></span>Synced as <b>${esc(SYNC.name)}</b></summary><p class="note">${SYNC.last ? `Last sent ${new Date(SYNC.last).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'})}. ` : ''}Sent after each answer. On another device, sign in with the same name and code.</p>
-      <button class="chip" type="button" id="snow">Send now</button> <button class="reset" type="button" id="soff">Disconnect</button> <span class="note" role="status"></span></details>`;
-    box.querySelector('#snow').onclick = () => { msg('Sending…'); syncPush().then(j => { if (j && j.ok) bindSync(); else msg(j && j.error === 'pin' ? 'The sheet refused the code for this name.' : 'Could not reach the sheet. Check your connection.'); }); };
+    // Signed in and saved: one quiet line, actions in view. Trouble (unsent answers, refused code): a box that stands out.
+    const bad = syncTrouble(), when = SYNC.last ? new Date(SYNC.last).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'}) : '';
+    box.classList.add(bad ? 'warn' : 'on');
+    box.innerHTML = bad
+      ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'pin' ? 'The sheet refused the code for this name. Sign out and sign in again with the right code.' : 'Your answers are kept on this device and sent as soon as the sheet can be reached.'}${when ? ` Last saved ${when}.` : ''}</p>
+        <button class="chip go" type="button" id="snow">Try again</button> <button class="reset" type="button" id="soff">Sign out</button> <span class="note" role="status"></span>`
+      : (SYNC.dirty || (SYNC.log || []).length)  // answers not confirmed yet, no error so far: say so, quietly
+      ? `<p class="sline"><span class="sdot wait"></span><span>Saving for IMR as <b>${esc(SYNC.name)}</b>…</span>
+        <button class="linkish" type="button" id="snow">Send now</button><button class="linkish" type="button" id="soff">Sign out</button></p><span class="note" role="status"></span>`
+      : `<p class="sline"><span class="sdot"></span><span>Saved for IMR as <b>${esc(SYNC.name)}</b>${when ? ` · ${when}` : ''}</span>
+        <button class="linkish" type="button" id="snow">Send now</button><button class="linkish" type="button" id="soff">Sign out</button></p><span class="note" role="status"></span>`;
+    box.querySelector('#snow').onclick = () => { msg('Sending…'); syncPush().then(j => { if (!(j && j.ok)) msg(j && j.error === 'pin' ? 'The sheet refused the code for this name.' : 'Could not reach the sheet. Check your connection.'); }); };
     box.querySelector('#soff').onclick = () => { SYNC = null; try { localStorage.removeItem('imr-coral-sync'); } catch (e) {} bindSync(); };
     return;
   }
