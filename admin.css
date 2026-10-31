@@ -295,9 +295,9 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 .adm-swacts{display:flex;flex-direction:column;gap:6px}
 .adm-sw .adm-acts .adm-qseg{margin:0}
 .adm-sw .adm-acts .adm-qseg button{min-height:44px;font-size:.9rem;padding:0 2px}
-.adm-swrow{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr);gap:6px}
+.adm-swrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .adm-swrow select,.adm-swrow button{font:inherit;font-size:.9rem;min-height:44px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--ink);padding:0 12px}
-.adm-swrow select{min-width:0}
+.adm-swrow select{min-width:0;padding:0 8px}
 .adm-swrow button{min-width:0;padding:0 6px;cursor:pointer}
 .adm-swbar{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
 .adm-swbar button{font:inherit;font-weight:600;font-size:.92rem;min-height:52px;padding:0 4px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);color:var(--ink);cursor:pointer}
