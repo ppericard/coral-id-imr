@@ -812,9 +812,10 @@ function syncTrouble(){
   if (SYNC.err) return n ? `Not saved yet: ${n} answer${n > 1 ? 's' : ''} waiting` : 'Not saved yet: could not reach the sheet';
   return '';
 }
-function bindSync(){
+// The sign-in box: My progress (#sync), or the welcome tour's card while it is open.
+function bindSync(box = document.querySelector('#tour .tsync') || document.getElementById('sync')){
   showProg();
-  const box = document.getElementById('sync'); if (!box) return;
+  if (!box) return;
   box.classList.remove('on', 'warn');
   const msg = t => box.querySelector('[role=status]').textContent = t;
   if (SYNC) {
@@ -975,7 +976,7 @@ function pageHelp(){
   const found = [...root.querySelectorAll(':scope > h2, :scope > .lede, :scope > .tips, :scope > h3.label, :scope > .gloss')];
   if (!found.length) return;
   const h2 = found.find(x => x.tagName === 'H2'), intro = found.filter(x => x !== h2);
-  if (intro.length) { $helpbox.innerHTML = (h2 ? `<h3>${esc(h2.textContent)}</h3>` : '') + intro.map(x => x.outerHTML).join(''); $help.hidden = false; }
+  if (intro.length) { $helpbox.innerHTML = (h2 ? `<h3>${esc(h2.textContent)}</h3>` : '') + intro.map(x => x.outerHTML).join('') + (window.tour ? '<p class="note htour"><button type="button" class="linkish" data-tour>Replay the welcome tour</button></p>' : ''); $help.hidden = false; }
   found.forEach(x => x.remove());
 }
 function resetHelp(){ $helpbox.hidden = true; $helpbox.innerHTML = ''; $help.hidden = true; $help.setAttribute('aria-expanded', 'false'); }
@@ -1014,5 +1015,5 @@ const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
 const forms = () => fetch('forms.json?v=7').then(r => r.ok ? r.json() : {}).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}));
-Promise.all([fetch('data.json?v=20').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); loadStats(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=20').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); loadStats(); if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
