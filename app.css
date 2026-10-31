@@ -390,3 +390,32 @@ a.lt:hover{border-color:var(--accent)}
 .helpbox h3{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
 #help[aria-expanded="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 #help{font-weight:700;font-size:.95rem}
+
+/* My progress: photo wall + side column, one screen (quizBoard). */
+.pwall .pw{position:relative;display:block;border-radius:8px;overflow:hidden;background:var(--surface-2);outline:3px solid transparent;outline-offset:-3px}
+.pwall .pw img{width:100%;height:100%;object-fit:cover;display:block}
+.pwall .pw.new img{filter:grayscale(1) opacity(.45)}
+.pwall .pw.mid{outline-color:var(--accent)}
+.pwall .pw.weak{outline-color:var(--bad)}
+.pwall .pw.ok{outline-color:var(--good)}
+.pwall .pw span{position:absolute;left:0;right:0;bottom:0;padding:10px 6px 3px;font-size:.78rem;line-height:1.1;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65));opacity:0;transition:opacity .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pwall .pw:hover span,.pwall .pw:focus-visible span{opacity:1}
+.pwall .pw:hover img{filter:none}
+.pring{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;margin:0 auto}
+.pring>span{width:112px;height:112px;border-radius:50%;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:1.1rem;color:var(--muted)}
+.pring b{font-size:2.2rem;line-height:1;color:var(--ink)}
+.pring small{font-size:.8rem}
+.pboard .plegend{justify-content:center;margin:0}
+.pboard .gside .label{margin:0 0 6px}
+.pboard .gside .chips{margin:0;display:flex;flex-wrap:wrap;gap:6px}
+.pboard .gside p{margin:0}
+.pboard .sync{margin:0;padding:10px 12px;font-size:.92rem}
+.pboard details.saveprog{display:block;margin:0}
+.pboard details.saveprog summary{cursor:pointer;color:var(--muted);font-size:.9rem}
+.pboard details.saveprog[open]>*{margin-top:8px}
+.sync.on{border:0;background:none;padding:0;box-shadow:none}
+.sync.on summary{cursor:pointer;font-size:.9rem;color:var(--muted);list-style:none}
+.sync.on summary::-webkit-details-marker{display:none}
+.sync.on .sdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--good);margin-right:6px}
+.sync.on details[open]>*{margin-top:8px}
+.pboard .sync h3+p{display:none}

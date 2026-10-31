@@ -416,34 +416,36 @@ function quizDuel(a, b){
   const t = pick(pair);
   question(a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t));
 }
-// Progress board: one photo tile per genus, coloured by status, grouped by IMR lecture group so
-// weak spots show up as a pattern; the genus most often given instead is linked to the side-by-side comparison.
+// Progress board, one screen: a wall of the 39 cover photos in slate order (colour = learned, grey = not seen,
+// red ring = review) beside a side column with the overall ring, what to review first, sign-in and backup.
 function quizBoard(){
-  const list = Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n);
+  const list = Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n).sort((a, b) => slateIdx(a) - slateIdx(b));
   const lv = Object.fromEntries(list.map(n => [n, level(n)]));
-  const count = k => list.filter(n => lv[n][0] === k).length, seen = list.length - count('new');
+  const count = k => list.filter(n => lv[n][0] === k).length;
   const LV = [['ok', 'Learned'], ['mid', 'Learning'], ['weak', 'Review'], ['new', 'Not seen']];
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
-  const tile = n => { const g = DATA.gen[n], p = cover(g), s = P[n] || {ok: 0, ko: 0}, tot = s.ok + s.ko, [cl, lb] = lv[n];
-    const top = s.conf ? Object.entries(s.conf).sort((x, y) => y[1] - x[1])[0] : null;
-    return `<figure class="pt ${cl}"><a href="#g-${esc(n)}">${p ? `<img src="${img(p, 's')}" alt="" loading="lazy">` : ''}<figcaption><i>${esc(n)}</i>${g.n ? '' : ' ★'}<span class="lvl ${cl}">${lb}</span></figcaption>${tot ? `<span class="pbar" title="${s.ok} right of ${tot}"><span style="width:${Math.round(100 * s.ok / tot)}%"></span></span>` : ''}</a>
-      ${top ? `<a class="pconf" href="#cmp-${esc(n)}|${esc(top[0])}" title="Compare side by side">mixed up with <i>${esc(top[0])}</i> ×${top[1]}</a>` : ''}</figure>`; };
-  const gi = n => DATA.gen[n].ig || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
-  $v.innerHTML = `${quizNav('quiz-board')}${SYNC_URL ? '<section class="sync" id="sync"></section>' : ''}<h2>${count('ok')} of ${list.length} genera learned</h2>
-  <div class="pstack" role="img" aria-label="${LV.map(([k, t]) => count(k) + ' ' + t.toLowerCase()).join(', ')}">${LV.map(([k]) => count(k) ? `<span class="${k}" style="flex:${count(k)}"></span>` : '').join('')}</div>
-  <p class="plegend">${LV.map(([k, t]) => `<span class="lvl ${k}">${t} ${count(k)}</span>`).join(' ')}</p>
-  <p class="note">${seen} genera seen so far. Learned means at least 3 correct answers in a row and 75% success. Genera marked Review come up more often in the quiz.</p>
-  ${weak.length ? `<section class="pfocus"><h3>Review first</h3><div class="pgrid">${weak.slice(0, 8).map(tile).join('')}</div><p><a class="chip" href="#quiz">Practise now</a></p></section>` : ''}
-  ${groups.map(k => { const gr = DATA.imrg.find(x => x.n === k), L = list.filter(n => gi(n) === k).sort((a, b) => slateIdx(a) - slateIdx(b));
-    const done = L.filter(n => lv[n][0] === 'ok').length;
-    return `<h3 class="gdiv" style="--g:${gr ? (gr.n * 137) % 360 : 200}"><span class="gn">${gr ? gr.n : '★'}</span>${gr ? esc(gr.t) : 'Not covered in the lecture'}<small class="pdone">${done}/${L.length}</small></h3><div class="pgrid">${L.map(tile).join('')}</div>`; }).join('')}
-  <div class="saveprog"><p class="note">Progress is saved in this browser, on this device. Save it to a file to keep a backup or move it to another phone or computer.</p>
-    <button class="chip" type="button" id="pexp">Save progress to a file</button> <button class="chip" type="button" id="pload">Load a progress file</button><input type="file" id="pimp" accept=".json,application/json" hidden> <span class="note" id="pmsg" role="status"></span></div>
-  <p><button class="reset" type="button" id="reset">Reset progress</button></p>`;
+  let deg = 0; const ring = LV.map(([k]) => { const d = 360 * count(k) / list.length, c = `var(--${k === 'ok' ? 'good' : k === 'mid' ? 'accent' : k === 'weak' ? 'bad' : 'line'}) ${deg}deg ${deg + d}deg`; deg += d; return c; }).join(',');
+  const tile = n => { const g = DATA.gen[n], p = cover(g), s = P[n] || {ok: 0, ko: 0}, [cl, lb] = lv[n];
+    return `<a class="pw ${cl}" href="#g-${esc(n)}" title="${esc(n)}: ${lb}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right)` : ''}">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<span><i>${esc(n)}</i>${g.n ? '' : ' ★'}</span></a>`; };
+  const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
+  $v.innerHTML = `<p class="lede">Each photo is one genus of the IMR slate, in slate order. Colour: learned. Grey: not seen yet. Orange ring: learning. Red ring: to review (comes up more often in the quiz). Learned means at least 3 correct answers in a row and 75% success. Click a photo to open its sheet.</p>
+  <div class="pgame pboard"><div class="pgwrap"><div class="pgrid pwall">${list.map(tile).join('')}</div></div>
+  <aside class="gside">
+    <div class="pring" style="background:conic-gradient(${ring})"><span><b>${count('ok')}</b>/${list.length}<small>learned</small></span></div>
+    <p class="plegend">${LV.map(([k, t]) => `<span class="lvl ${k}">${t} ${count(k)}</span>`).join(' ')}</p>
+    ${weak.length ? `<div><h3 class="label">Review first</h3><p class="chips">${weak.slice(0, 4).map(n => `<a class="chip" href="#g-${esc(n)}"><i>${esc(n)}</i></a>`).join('')}</p></div>` : ''}
+    ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> / <i>${esc(o)}</i> ×${k}</a>`).join('')}</p></div>` : ''}
+    <p><a class="chip go" href="#quiz">Practise now</a></p>
+    ${SYNC_URL ? '<section class="sync" id="sync"></section>' : ''}
+    <details class="saveprog"><summary>Backup and reset</summary><p class="note">Progress is saved in this browser, on this device. Save it to a file to keep a backup or move it to another device.</p>
+      <button class="chip" type="button" id="pexp">Save to a file</button> <button class="chip" type="button" id="pload">Load a file</button><input type="file" id="pimp" accept=".json,application/json" hidden> <span class="note" id="pmsg" role="status"></span>
+      <p><button class="reset" type="button" id="reset">Reset progress</button></p></details>
+  </aside></div>`;
   bindQuizNav('quiz-board');
   bindProgFile(); bindSync();
   const rb = document.getElementById('reset');
-  rb.onclick = () => { if (rb.dataset.armed) { P = {}; store.set('imr-coral-reset', new Date().toISOString()); save(); quizBoard(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } };
+  rb.onclick = () => { if (rb.dataset.armed) { P = {}; store.set('imr-coral-reset', new Date().toISOString()); save(); route(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } };
+  requestAnimationFrame(() => fitTiles($v.querySelector('.pwall'), 6));
 }
 
 // Header progress pill: genera learned, always in view; the page itself is #progress.
@@ -538,10 +540,13 @@ window.addEventListener('online', syncRetry);
 function bindSync(){
   showProg();
   const box = document.getElementById('sync'); if (!box) return;
+  box.classList.remove('on');
   const msg = t => box.querySelector('[role=status]').textContent = t;
   if (SYNC) {
-    box.innerHTML = `<p>Synced with IMR as <b>${esc(SYNC.name)}</b>${SYNC.last ? ` · last sent ${new Date(SYNC.last).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'})}` : ''}. Your progress is sent after each answer; on another device, connect with the same name and code.</p>
-      <button class="chip" type="button" id="snow">Send now</button> <button class="reset" type="button" id="soff">Disconnect this device</button> <span class="note" role="status"></span>`;
+    // Signed in: one discreet line; actions stay folded away.
+    box.classList.add('on');
+    box.innerHTML = `<details><summary><span class="sdot"></span>Synced as <b>${esc(SYNC.name)}</b></summary><p class="note">${SYNC.last ? `Last sent ${new Date(SYNC.last).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'})}. ` : ''}Sent after each answer. On another device, sign in with the same name and code.</p>
+      <button class="chip" type="button" id="snow">Send now</button> <button class="reset" type="button" id="soff">Disconnect</button> <span class="note" role="status"></span></details>`;
     box.querySelector('#snow').onclick = () => { msg('Sending…'); syncPush().then(j => { if (j && j.ok) bindSync(); else msg(j && j.error === 'pin' ? 'The sheet refused the code for this name.' : 'Could not reach the sheet. Check your connection.'); }); };
     box.querySelector('#soff').onclick = () => { SYNC = null; try { localStorage.removeItem('imr-coral-sync'); } catch (e) {} bindSync(); };
     return;
