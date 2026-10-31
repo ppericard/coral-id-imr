@@ -1,6 +1,6 @@
 // Offline cache: app shell first, then photos as they are viewed.
-const V = 'imr-coral-id-v67';
-const SHELL = ['./', 'index.html', 'app.css?v=29', 'app.js?v=41', 'data.json?v=16', 'icon.svg', 'manifest.webmanifest', 'proto/lab.js?v=27', 'proto/lab.css?v=22', 'home-art.js?v=3', 'home.js?v=14', 'home.css?v=10',
+const V = 'imr-coral-id-v68';
+const SHELL = ['./', 'index.html', 'app.css?v=30', 'app.js?v=42', 'data.json?v=16', 'icon.svg', 'manifest.webmanifest', 'proto/lab.js?v=28', 'proto/lab.css?v=22', 'home-art.js?v=3', 'home.js?v=14', 'home.css?v=10',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'].map(f => `proto/${f}.js?v=27`)];
 self.addEventListener('install', e => e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));

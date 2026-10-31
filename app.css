@@ -467,3 +467,14 @@ a.lt:hover{border-color:var(--accent)}
 .tipgr{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .tipgr .chip{min-width:34px;text-align:center}
 @media (max-width:760px){.qtiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Group chips carry their IMR group colour (groupHue in app.js). */
+.gchip{border-color:hsl(var(--g) 55% 52%);background:hsl(var(--g) 55% 52% / .14)}
+.fdopt.gchip{background:var(--surface);box-shadow:inset 3px 0 0 hsl(var(--g) 55% 52%)}
+.gchip[aria-pressed="true"]{background:hsl(var(--g) 55% 52%);border-color:hsl(var(--g) 55% 52%);color:#fff}
+.fdopt.gchip[aria-pressed="true"]{color:inherit;background:hsl(var(--g) 55% 52% / .16)}
+/* ID tips: two genera per row (one on phones), larger photos. */
+.tipsec{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;align-items:start}
+.tipsec>h3{grid-column:1/-1}
+.tipg{grid-template-columns:190px minmax(0,1fr)}
+@media (max-width:900px){.tipsec{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:600px){.tipg{grid-template-columns:110px minmax(0,1fr)}}

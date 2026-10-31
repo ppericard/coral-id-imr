@@ -77,7 +77,7 @@ LAB.add({
         <div class="fdopts${f.thumbs ? ' th' : ''}">${f.opts.map(o => {
           const on = S[f.id].has(o.id), n = names.filter(x => !S.out.has(x) && fits(x, F, f.id) && o.g.includes(x)).length;
           const pv = f.thumbs ? `<span class="fdth">${bySlate(o.g).slice(0, 3).map(x => `<img src="${thumb(x, f.id === 'form' ? 'wide' : 'medium')}" alt="" loading="lazy">`).join('')}</span>` : '';
-          return `<button type="button" class="fdopt${f.id === 'form' ? ' c-' + o.color : ''}" data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}">${pv}<span class="fdt">${esc(o.t)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="fdc">${n}</span></button>`;
+          return `<button type="button" class="fdopt${f.id === 'form' ? ' c-' + o.color : ''}${f.id === 'ig' ? ' gchip' : ''}"${f.id === 'ig' ? ` style="--g:${groupHue(+o.id.slice(1))}"` : ''} data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}">${pv}<span class="fdt">${esc(o.t)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="fdc">${n}</span></button>`;
         }).join('')}</div></details>`;
       }).join('')}${narrow ? `<p><a class="next fdjump" href="#fdmain">See the ${left.length} best ${left.length === 1 ? 'fit' : 'fits'} ↓</a></p>` : ''}`;
       const jump = $side.querySelector('.fdjump'); if (jump) jump.onclick = e => { e.preventDefault(); $main.scrollIntoView({behavior: 'smooth'}); };

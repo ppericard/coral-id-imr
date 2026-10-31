@@ -13,6 +13,8 @@ const img = (p, size) => `img/${p.f}${size === 's' ? '-s' : ''}.webp`;
 const srcset = p => `img/${p.f}-s.webp 480w, img/${p.f}.webp 1600w`;
 // Discreet link to a photo's iNaturalist observation; games show it only once the answer is out.
 const inatTag = p => p && p.o && p.o.includes('inaturalist.org') ? `<a class="inat" href="${esc(p.o)}" target="_blank" rel="noopener" title="Open the iNaturalist observation">iNat ↗</a>` : '';
+// One colour per IMR lecture group, used everywhere a group appears (style="--g:…", CSS hsl(var(--g) …)).
+const groupHue = n => (n * 137) % 360;
 const credit = p => p.imr ? `IMR Lecture 6, slide ${p.slide}` : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(p.o)}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
 // Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick, else the first closer view.
@@ -84,7 +86,7 @@ const bySlate = L => Object.keys(DATA.gen).filter(n => L.includes(n));
 function card(name, group){
   const g = DATA.gen[name], p = cover(g), ig = (group === true || group === 'stripe') && g.ig ? DATA.imrg.find(x => x.n === g.ig) : null;
   const im = p ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(name)}" loading="lazy">` : `<span class="ph none">no photo</span>`;
-  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${(ig.n * 137) % 360}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${esc(tipsText(g))}</p></span></a>`;
+  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${esc(tipsText(g))}</p></span></a>`;
 }
 function bindCards(root = $v){ root.querySelectorAll('[data-g]').forEach(b => b.onclick = () => go('g-' + b.dataset.g)); }
 function bindGo(root = $v){ root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go)); }
@@ -134,8 +136,8 @@ function viewTips(){
   <p class="lede">What the IMR lecturers point out for each genus, in their own words: slide text, review slides and presenter's notes from Lecture 6.</p>
   <div class="tiphead"><ol class="qtiles" aria-label="IMR Lecture 6: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
   <details class="gloss"><summary>Coral anatomy terms</summary><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>
-  <div class="chips tipgr"><span class="label">IMR group</span><a class="chip" href="#tips" aria-pressed="${!sel}">All</a>${gr.map(x => `<a class="chip" href="#tips|${x.n}" aria-pressed="${sel == x.n}" title="${esc(x.t)}">${x.n}</a>`).join('')}</div>
-  ${gr.filter(x => !sel || sel == x.n).map(x => `<section class="tipsec"><h3 class="gdiv" style="--g:${(x.n * 137) % 360}"><span class="gn">${x.n}</span>${esc(x.t)}</h3>
+  <div class="chips tipgr"><span class="label">IMR group</span><a class="chip" href="#tips" aria-pressed="${!sel}">All</a>${gr.map(x => `<a class="chip gchip" style="--g:${groupHue(x.n)}" href="#tips|${x.n}" aria-pressed="${sel == x.n}" title="${esc(x.t)}">${x.n}</a>`).join('')}</div>
+  ${gr.filter(x => !sel || sel == x.n).map(x => `<section class="tipsec"><h3 class="gdiv" style="--g:${groupHue(x.n)}"><span class="gn">${x.n}</span>${esc(x.t)}</h3>
     ${x.L.map(n => { const g = DATA.gen[n], p = cover(g); return `<article class="tipg"><a href="#g-${esc(n)}" class="tipph">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<i>${esc(n)}</i></a><div>${tipsList(g)}${lookOf(n).length ? `<p class="note">Don't confuse with ${lookOf(n).map(b => `<a href="#cmp-${esc(n)}|${esc(b)}"><i>${esc(b)}</i></a>`).join(', ')}</p>` : ''}</div></article>`; }).join('')}</section>`).join('')}`;
 }
 
@@ -160,7 +162,7 @@ function viewGenera(){
       names.sort((a, b) => gi(a) - gi(b) || slateIdx(a) - slateIdx(b));
       html = names.map((n, i) => { const k = shownGroup(n), gr = DATA.imrg.find(x => x.n === k);
         const head = i && gi(names[i - 1]) === gi(n) ? '' : gr
-          ? `<h3 class="gdiv" style="--g:${(gr.n * 137) % 360}"><span class="gn">${gr.n}</span>${esc(gr.t)}</h3>`
+          ? `<h3 class="gdiv" style="--g:${groupHue(gr.n)}"><span class="gn">${gr.n}</span>${esc(gr.t)}</h3>`
           : '<h3 class="gdiv"><span class="gn">★</span>Not covered in the lecture</h3>';
         return head + card(n, 'stripe'); }).join('');
     } else html = names.map(n => card(n, true)).join('');
@@ -494,7 +496,7 @@ function quizBoard(){
     photos: () => `<div class="pgrid pwall">${list.map(tile).join('')}</div>`,
     slate: () => `<div class="pgrid pslate">${list.map(n => `<a class="ps ${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"><b>${DATA.gen[n].n || '★'}</b><i>${esc(n)}</i></a>`).join('')}</div>`,
     groups: () => `<div class="pgroups">${groups.map(k => { const gr = DATA.imrg.find(x => x.n === k), L = list.filter(n => gi(n) === k);
-      return `<div class="pgr" style="--g:${gr ? (gr.n * 137) % 360 : 200}"><span class="gn" title="${gr ? esc(gr.t) : 'Not covered in the lecture'}">${gr ? gr.n : '★'}</span><span class="pgt">${gr ? esc(gr.t) : 'Not covered in the lecture'}</span>
+      return `<div class="pgr" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn" title="${gr ? esc(gr.t) : 'Not covered in the lecture'}">${gr ? gr.n : '★'}</span><span class="pgt">${gr ? esc(gr.t) : 'Not covered in the lecture'}</span>
         <span class="pseg">${L.map(n => `<a class="${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i></a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
   };
   let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
