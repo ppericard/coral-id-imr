@@ -406,43 +406,63 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .a2g small.also{color:var(--accent)}
 .blk,.mini{width:100%;height:auto;display:block}
 :where(.blk,.mini) path{fill:none;stroke-linecap:round}
-.blk .edge{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:1;vector-effect:non-scaling-stroke}
+.blk .edge{fill:none;stroke:var(--dk);stroke-opacity:.45;stroke-width:1;vector-effect:non-scaling-stroke}
 .blk .cut{fill:color-mix(in srgb,var(--plate) 30%,var(--surface))}
 .blk .cutskel{fill:color-mix(in srgb,var(--plate) 70%,var(--surface));stroke:none}
-.blk .cutline{stroke:var(--ink);stroke-width:1.6}
+.blk .cutline{stroke:var(--dk);stroke-width:1.6}
 .blk g .septa,.blk g .costae,.blk g .sc,.blk g path.wallc{vector-effect:non-scaling-stroke}
-.blk .base{fill:color-mix(in srgb,var(--ink) 18%,var(--surface))}
-.blk .tubeside{fill:color-mix(in srgb,var(--plate) 75%,var(--surface));stroke:var(--ink);stroke-width:1.2}
-.blk .tubetop{fill:color-mix(in srgb,var(--plate) 35%,var(--surface));stroke:var(--ink);stroke-width:1.6}
-.blk .tube .septa{stroke:var(--ink);stroke-width:.9}
+.blk .base{fill:color-mix(in srgb,var(--dk) 18%,var(--surface))}
+.blk .tubeside{fill:color-mix(in srgb,var(--plate) 75%,var(--surface));stroke:var(--dk);stroke-width:1.2}
+.blk .tubetop{fill:color-mix(in srgb,var(--plate) 35%,var(--surface));stroke:var(--dk);stroke-width:1.6}
+.blk .tube .septa{stroke:var(--dk);stroke-width:.9}
 .coen,.skel{fill:color-mix(in srgb,var(--plate) 45%,var(--surface))}
 .pores{fill:url(#none)}
 .sand{fill:color-mix(in srgb,var(--muted) 14%,var(--surface))}
-.disc{fill:color-mix(in srgb,var(--plate) 45%,var(--surface));stroke:var(--ink);stroke-width:1.6}
+.disc{fill:color-mix(in srgb,var(--plate) 45%,var(--surface));stroke:var(--dk);stroke-width:1.6}
 .valley{fill:color-mix(in srgb,var(--plate) 20%,var(--surface));stroke:none}
-.cup .wallc,path.wallc{fill:none;stroke:var(--ink);stroke-width:2.6}
+.cup .wallc,path.wallc{fill:none;stroke:var(--dk);stroke-width:2.6}
 .cup .wallc{fill:color-mix(in srgb,var(--plate) 22%,var(--surface))}
-.septa,.costae,.sc{stroke:var(--ink);stroke-width:1.1;stroke-opacity:.85}
+.septa,.costae,.sc{stroke:var(--dk);stroke-width:1.1;stroke-opacity:.85}
 .costae{stroke-opacity:.55}
 .sc{stroke-width:1;stroke-opacity:.7}
-.colu{fill:var(--ink);fill-opacity:.7}
-.mouth{fill:var(--ink);fill-opacity:.75}
-.furrow{stroke:var(--ink);stroke-width:1.4;stroke-dasharray:3 3}
-.cone{fill:color-mix(in srgb,var(--plate) 70%,var(--surface));stroke:var(--ink);stroke-width:1.2}
-.peak{fill:color-mix(in srgb,var(--plate) 30%,var(--surface));stroke:var(--ink);stroke-width:1}
+.colu{fill:var(--dk);fill-opacity:.7}
+.mouth{fill:var(--dk);fill-opacity:.75}
+.furrow{stroke:var(--dk);stroke-width:1.4;stroke-dasharray:3 3}
+.cone{fill:color-mix(in srgb,var(--plate) 70%,var(--surface));stroke:var(--dk);stroke-width:1.2}
+.peak{fill:color-mix(in srgb,var(--plate) 30%,var(--surface));stroke:var(--dk);stroke-width:1}
 .blade{fill:color-mix(in srgb,var(--plate) 70%,var(--surface));stroke:none}
-.teethline{stroke:var(--ink);stroke-width:2;stroke-linejoin:round}
-.branch{fill:color-mix(in srgb,var(--plate) 70%,var(--surface));stroke:var(--ink);stroke-width:1.6}
-.axial{fill:color-mix(in srgb,var(--plate) 30%,var(--surface));stroke:var(--ink);stroke-width:2}
-.radial{fill:color-mix(in srgb,var(--plate) 35%,var(--surface));stroke:var(--ink);stroke-width:1.4;stroke-linejoin:round}
-/* the highlighted part of a concept drawing */
-.mini .hl,.mini .hl .wallc,.mini .hl path{stroke:var(--accent)!important;stroke-opacity:1!important}
-.mini .septa.hl,.mini .costae.hl,.mini .sc.hl{stroke-width:2.2}
-.mini path.wallc.hl,.mini circle.wallc.hl{stroke-width:4.5}
-.mini .coen.hl,.mini .valley.hl{fill:color-mix(in srgb,var(--accent) 18%,var(--surface))}
-.mini .colu.hl,.mini .pali.hl,.mini .mouth.hl{fill:var(--accent);fill-opacity:1;stroke:none!important}
-.mini .cup.hl .wallc{fill:color-mix(in srgb,var(--accent) 22%,var(--surface))}
-.mini .axial.hl{fill:color-mix(in srgb,var(--accent) 35%,var(--surface))}
+.teethline{stroke:var(--dk);stroke-width:2;stroke-linejoin:round}
+.branch{fill:color-mix(in srgb,var(--plate) 70%,var(--surface));stroke:var(--dk);stroke-width:1.6}
+.axial{fill:color-mix(in srgb,var(--plate) 30%,var(--surface));stroke:var(--dk);stroke-width:2}
+.radial{fill:color-mix(in srgb,var(--plate) 35%,var(--surface));stroke:var(--dk);stroke-width:1.4;stroke-linejoin:round}
+/* Concept drawings: the part being explained is drawn in --hl (a vivid colour used nowhere else in the drawings,
+   and also for the photo rings); everything else fades to a quiet grey so the highlighted part is the only thing that pops. */
+.lab,.a2lay{--hl:#d1006b;--hl-soft:color-mix(in srgb,var(--hl) 34%,var(--surface))}
+:root[data-theme="dark"] :is(.lab,.a2lay){--hl:#ff5cab;--hl-soft:color-mix(in srgb,var(--hl) 55%,var(--surface))}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) :is(.lab,.a2lay){--hl:#ff5cab;--hl-soft:color-mix(in srgb,var(--hl) 55%,var(--surface))}}
+.blk{--dk:var(--ink)}
+.mini{--dk:color-mix(in srgb,var(--muted) 62%,var(--surface))}
+.mini .blade{fill:color-mix(in srgb,var(--muted) 32%,var(--surface))}
+.mini .coen,.mini .skel,.mini .disc,.mini .cone,.mini .branch{fill:color-mix(in srgb,var(--muted) 12%,var(--surface))}
+.mini .sand{fill:var(--surface)}
+.mini .valley{fill:color-mix(in srgb,var(--muted) 6%,var(--surface))}
+.mini .cup .wallc,.mini .axial,.mini .radial,.mini .peak{fill:var(--surface)}
+.mini .septa,.mini .costae,.mini .sc{stroke-opacity:1}
+.mini .colu,.mini .mouth{fill-opacity:1}
+.mini .hl,.mini .hl .wallc,.mini .hl path{stroke:var(--hl)!important;stroke-opacity:1!important}
+.mini .septa.hl,.mini .costae.hl,.mini .sc.hl{stroke-width:2.8}
+.mini path.wallc.hl,.mini circle.wallc.hl{stroke-width:5}
+.mini .hl .wallc{stroke-width:4}
+.mini .coen.hl,.mini .valley.hl{fill:var(--hl-soft);stroke:none!important}
+.mini .colu.hl,.mini .pali.hl,.mini .mouth.hl{fill:var(--hl);stroke:var(--surface)!important;stroke-width:1.5;paint-order:stroke}
+.mini .colu.hl{transform-box:fill-box;transform-origin:center;transform:scale(1.5)}
+.mini .mouth.hl{transform-box:fill-box;transform-origin:center;transform:scale(1.6)}
+.mini .cup.hl .wallc,.mini .axial.hl{fill:var(--hl-soft)}
+.mini .monti.hl .cone{fill:var(--hl-soft)}
+.mini .teethline.hl{stroke-width:4}
+.mini .axial.hl{stroke-width:3}
+.a2key{grid-column:1/-1;width:0;min-width:100%;margin:0;font-size:.9rem;display:flex;align-items:center;gap:8px}
+.a2key i{width:22px;height:6px;border-radius:3px;background:var(--hl);flex:0 0 auto}
 .a2chips .chip{text-decoration:none;color:var(--ink)}
 .a2chips .chip[aria-current="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .a2con{display:grid;grid-template-columns:1fr;gap:18px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
@@ -450,8 +470,12 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
   .a2con{grid-template-columns:minmax(0,max-content) minmax(0,1fr)}
 }
 .a2con h3{margin-top:0}
-.a2minis{display:flex;flex-wrap:wrap;gap:10px}
-.a2minis figure{margin:0;width:210px;max-width:100%}
+.a2minis{display:grid;grid-template-columns:repeat(var(--n,1),minmax(0,1fr));gap:10px}
+.a2minis[data-n="1"]{grid-template-columns:minmax(0,260px)}
+@media (min-width:600px){
+  .a2minis,.a2minis[data-n="1"]{grid-template-columns:repeat(var(--n,1),200px)}
+}
+.a2minis figure{margin:0;min-width:0}
 .a2minis .mini{border-radius:8px;border:1px solid var(--line);max-width:260px}
 .a2minis figcaption{font-size:.85rem;color:var(--muted);margin-top:4px}
 .a2q{font-family:var(--display);font-size:1.25rem;font-weight:600;margin:4px 0}
@@ -460,7 +484,7 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .ringed figcaption{padding:8px 10px;font-size:.92rem}
 .rphoto{position:relative;display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in;overflow:hidden}
 .rphoto img{display:block;width:100%;height:auto}
-.ring{position:absolute;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px rgb(0 0 0 / .55),inset 0 0 0 2px rgb(0 0 0 / .35);pointer-events:none;animation:a2ring 1.6s ease-out 1}
+.ring{position:absolute;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:3px solid var(--hl);box-shadow:0 0 0 2px #fff,0 0 0 4px rgb(0 0 0 / .45),0 0 0 9999px rgb(0 0 0 / .38);pointer-events:none;animation:a2ring 1.6s ease-out 1}
 @keyframes a2ring{from{transform:translate(-50%,-50%) scale(1.8);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
 @media (prefers-reduced-motion:reduce){.ring{animation:none}}
 .a2drill{max-width:560px}
@@ -506,7 +530,7 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 }
 .a2main .a2shots{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
 .a2h{margin:4px 0 -4px;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
-.a2main .a2minis figure{width:170px}
+
 /* Phone base (mobile-first); larger screens restore below. */
 .a2side{grid-template-columns:repeat(2,minmax(0,1fr))}
 .a2side .blk{flex-basis:52px}
