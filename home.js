@@ -4,7 +4,7 @@
   // Preview photo for each tool: [genus, view]; two entries make a split preview.
   const PREVIEW = {
     genera: [['Acropora', 'wide']], cmp: [['Favites', 'macro'], ['Dipsastraea', 'macro']], size: [['Porites', 'macro']], gallery: [['Stylophora', 'macro']],
-    'key-imr': [['Galaxea', 'macro']], key: [['Pocillopora', 'wide']], 'key-tr': [['Goniastrea', 'macro']], elim: [['Montipora', 'macro'], ['Porites', 'macro']],
+    'key-imr': [['Galaxea', 'macro']], key: [['Pocillopora', 'wide']], finder: [['Pocillopora', 'wide']], 'key-tr': [['Goniastrea', 'macro']], elim: [['Montipora', 'macro'], ['Porites', 'macro']],
     quiz: [['Platygyra', 'wide']], 'quiz-duel': [['Leptoria', 'macro'], ['Platygyra', 'macro']], 'quiz-course': [['Lobophyllia', 'macro']], 'quiz-board': [['Pavona', 'macro']],
     pairs: [['Turbinaria', 'wide'], ['Turbinaria', 'macro']], anatomy: [['Favites', 'macro']], map: [['Lobophyllia', 'macro'], ['Pavona', 'macro']], web: [['Goniopora', 'macro'], ['Alveopora', 'macro']], matrix: [['Cyphastrea', 'macro'], ['Astrea', 'macro']], reveal: [['Fungia', 'macro']], zoom: [['Echinopora', 'wide'], ['Echinopora', 'macro']], spot: [['Astreopora', 'macro']]
   };
@@ -14,7 +14,7 @@
     ['identify', 'Identify', 'Work out the genus of the coral in front of you.']
   ];
   // Few entry points per step on the home page; the section tabs still list everything.
-  const HOME = {learn: ['genera', 'cmp'], practice: ['quiz', 'quiz-duel', 'pairs', 'reveal'], identify: ['key-imr', 'key']};
+  const HOME = {learn: ['genera', 'cmp'], practice: ['quiz', 'quiz-duel', 'pairs', 'reveal'], identify: ['finder', 'key-imr']};
   // Reference visualisations: useful on the side, not steps of the path.
   const TOOLS = ['map', 'web', 'size', 'gallery', 'matrix', 'elim', 'anatomy'];
   const ph = (n, v) => { const g = DATA.gen[n]; if (!g) return ''; const p = (g.views[v] || [])[0] || (g.views.macro || [])[0] || cover(g); return p ? img(p, 's') : ''; };
