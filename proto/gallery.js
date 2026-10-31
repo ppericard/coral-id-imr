@@ -6,7 +6,7 @@ LAB.add({
   render(root, start){
     const all = DATA.traits.flatMap(c => c.opts.map(o => ({...o, c: c.name})));
     let cur = all.find(o => o.id === start) || all.find(o => o.id === 'hood');
-    root.innerHTML = `<div class="trcols">${DATA.traits.map(c => `<fieldset class="trset"><legend>${esc(c.name)}</legend><div class="chips">${c.opts.map(o => `<a class="chip" href="#gallery|${o.id}" data-f="${o.id}">${esc(o.t)}</a>`).join('')}</div></fieldset>`).join('')}</div><div id="galbody"></div>`;
+    root.innerHTML = `<div class="trcols">${DATA.traits.map(c => `<fieldset class="trset"><legend>${esc(c.name)}</legend><div class="chips">${c.opts.map(o => `<a class="chip" href="#${GRADUATED.gallery ? '' : 'lab-'}gallery|${o.id}" data-f="${o.id}">${esc(o.t)}</a>`).join('')}</div></fieldset>`).join('')}</div><div id="galbody"></div>`;
     root.querySelectorAll('[data-f]').forEach(a => a.setAttribute('aria-current', String(a.dataset.f === cur.id)));
     const yes = labNames().filter(n => DATA.gen[n].tr.includes(cur.id));
     const no = [...new Set(yes.flatMap(lookAlikes))].filter(n => !yes.includes(n));

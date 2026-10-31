@@ -396,9 +396,9 @@ showTheme();
 // Tools of the Learn, Identify and Practice sections: a tab bar in the sticky header, so they stay in view.
 // Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).
 const MODES = {
-  learn: [['genera', 'Genera', 'The 39 genus sheets'], ['cmp', 'Look-alikes', 'Confused pairs side by side'], ['size', 'Size ruler', 'Corallite size per genus'], ['gallery', 'Feature gallery', 'One feature, every genus']],
-  identify: [['key-imr', 'IMR lecture groups', 'The 11 groups from the lecture'], ['key', 'By colony form', 'Start from the overall shape'], ['key-tr', 'By corallites', 'Filter on skeletal details'], ['elim', 'Elimination board', 'Tick features, watch genera fade']],
-  practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['quiz-course', 'Lecture photos', 'Photos from the IMR course'], ['quiz-board', 'To work on', 'Your progress per genus'], ['pairs', 'Memory', 'Match colony and corallites'], ['reveal', 'Blur reveal', 'Name it before it sharpens'], ['zoom', 'Zoom ladder', 'Guess while zooming in'], ['spot', 'Spot the feature', 'Read the corallites first']]
+  learn: [['genera', 'Genera', 'The 39 genus sheets'], ['cmp', 'Look-alikes', 'Confused pairs side by side']],
+  identify: [['key-imr', 'IMR lecture groups', 'The 11 groups from the lecture'], ['key', 'By colony form', 'Start from the overall shape'], ['key-tr', 'By corallites', 'Filter on skeletal details']],
+  practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['quiz-course', 'Lecture photos', 'Photos from the IMR course'], ['quiz-board', 'To work on', 'Your progress per genus'], ['pairs', 'Memory', 'Match colony and corallites'], ['reveal', 'Blur reveal', 'Name it before it sharpens']]
 };
 const MODE_LABEL = {learn: 'Learn tools', identify: 'Ways to identify', practice: 'Practice modes'};
 // Which tab of MODES a hash belongs to: key leaves and groups count as the key, genus sheets as Genera, pairs as Look-alikes.
