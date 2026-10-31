@@ -16,10 +16,13 @@ const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p
 const cover = g => (g.views.wide && g.views.wide[0]) || allPhotos(g)[0];
 
 /* ---------- shared bits ---------- */
+// Genera in IMR slate order (data.json lists them that way, starred genera last).
+const slateIdx = n => Object.keys(DATA.gen).indexOf(n);
+const bySlate = L => Object.keys(DATA.gen).filter(n => L.includes(n));
 function card(name){
   const g = DATA.gen[name], p = (g.views.macro && g.views.macro[0]) || cover(g);
-  const im = p ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" sizes="${({s:'240px',m:'360px',l:'520px'})[photoSize()]}" alt="${esc(name)}" loading="lazy">` : `<span class="ph none">no photo</span>`;
-  return `<button class="card" type="button" data-g="${esc(name)}">${im}<span class="cap"><i>${esc(name)}</i><small>${g.n ? 'No. ' + g.n + ' · ' : '<b class="star">★ not surveyed</b> · '}${esc(g.fam)}</small><p>${esc(g.crit[0])}</p></span></button>`;
+  const im = p ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(name)}" loading="lazy">` : `<span class="ph none">no photo</span>`;
+  return `<a class="card" href="#g-${esc(name)}">${im}<span class="cap"><i>${esc(name)}</i><small>${g.n ? 'No. ' + g.n + ' · ' : '<b class="star">★ not surveyed</b> · '}${esc(g.fam)}</small><p>${esc(g.crit[0])}</p></span></a>`;
 }
 function bindCards(root = $v){ root.querySelectorAll('[data-g]').forEach(b => b.onclick = () => go('g-' + b.dataset.g)); }
 function bindGo(root = $v){ root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go)); }
@@ -72,7 +75,7 @@ function viewGenus(name){
     const list = g.views[v] || [];
     return `<section class="vrow"><h3>${label}${list.length ? '' : ' <span class="gap">missing</span>'}</h3>${list.length ? `<div class="strip">${list.map(p => {
       const i = flat.findIndex(x => x.f === p.f);
-      return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 92vw, ${({s:'260px',m:'420px',l:'640px'})[photoSize()]}" alt="${esc(name)}, ${label.toLowerCase()} view" loading="lazy"></button><figcaption>${credit(p)}</figcaption></figure>`; }).join('')}</div>` : '<p class="note">No good photo yet for this view.</p>'}</section>`;
+      return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${esc(name)}, ${label.toLowerCase()} view" loading="lazy"></button><figcaption>${credit(p)}</figcaption></figure>`; }).join('')}</div>` : '<p class="note">No good photo yet for this view.</p>'}</section>`;
   }).join('');
   $v.innerHTML = `<div class="crumbs"><button type="button" data-back>‹ Back</button></div>
   <article class="sheet">
@@ -84,9 +87,9 @@ function viewGenus(name){
     <div class="cols">
       <div>${g.imr.length ? `<h3>IMR lecture · group ${g.ig}</h3><p class="note">${esc(DATA.imrg[g.ig - 1].t)}</p><ul class="crit">${g.imr.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}${g.mn ? `<p class="note"><b>Lecture mnemonic:</b> ${esc(g.mn)}</p>` : ''}
         <h3>Coral Finder features</h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
-        <h3>Don't confuse with</h3><div class="chips">${g.look.map(n => `<button class="chip" type="button" data-cmp="${esc(n)}">${esc(n)}</button>`).join('')}</div><p class="note">Opens a side-by-side comparison.</p></div>
+        <h3>Don't confuse with</h3><div class="chips">${g.look.map(n => `<a class="chip" href="#cmp-${esc(name)}|${esc(n)}">${esc(n)}</a>`).join('')}</div><p class="note">Opens a side-by-side comparison.</p></div>
       <div><h3>Possible growth forms (${new Set(paths.map(x => x.k.id)).size})</h3><div class="paths">${[...new Set(paths.map(x => x.k))].map(k => `<span class="note">${esc(k.name)}</span>`).join(' · ')}</div>
-        <h3>Where it is in the key</h3><div class="paths">${paths.map(({k, l}) => `<button class="c-${k.color}" type="button" data-go="l-${l.id}">${esc(k.name)} › ${esc(leafLabel(l))}</button>`).join('')}</div>
+        <h3>Where it is in the key</h3><div class="paths">${paths.map(({k, l}) => `<a class="c-${k.color}" href="#l-${l.id}">${esc(k.name)} › ${esc(leafLabel(l))}</a>`).join('')}</div>
         <h3>Coral Finder</h3><p class="note">Pages ${g.pages.join(', ')}</p></div>
     </div>
   </article>`;
@@ -105,12 +108,12 @@ function pairs(){
 }
 function viewCompareList(){
   // One block per genus in slate order: the genus, then the genera it is confused with, as photo cards.
-  const thumb = (n, cls) => { const g = DATA.gen[n], p = (g.views.macro && g.views.macro[0]) || cover(g); return p ? `<img class="${cls}" src="${img(p, 's')}" srcset="${srcset(p)}" sizes="${({s:'240px',m:'360px',l:'520px'})[photoSize()]}" alt="${esc(n)}" loading="lazy">` : `<span class="${cls} none">no photo</span>`; };
+  const thumb = (n, cls) => { const g = DATA.gen[n], p = (g.views.macro && g.views.macro[0]) || cover(g); return p ? `<img class="${cls}" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(n)}" loading="lazy">` : `<span class="${cls} none">no photo</span>`; };
   const tag = g => g.n ? 'No. ' + g.n : '<b class="star">★</b>';
   const blocks = Object.keys(DATA.gen).filter(n => DATA.gen[n].look.some(b => DATA.gen[b])).map(n => {
     const g = DATA.gen[n];
-    const cards = g.look.filter(b => DATA.gen[b]).map(b => { const B = DATA.gen[b]; return `<button class="card" type="button" data-go="cmp-${esc(n)}|${esc(b)}">${thumb(b, 'ph')}<span class="cap"><small>vs</small><i>${esc(b)}</i><small>${tag(B)} · ${esc(B.fam)}</small><p>${esc(B.crit[0])}</p></span></button>`; }).join('');
-    return `<section class="lablock"><button type="button" class="lahead" data-g="${esc(n)}">${thumb(n, 'laph')}<span><i>${esc(n)}</i><small>${tag(g)} · ${esc(g.fam)}</small><span class="lacrit">${esc(g.crit[0])}</span></span></button><div class="grid">${cards}</div></section>`;
+    const cards = g.look.filter(b => DATA.gen[b]).map(b => { const B = DATA.gen[b]; return `<a class="card" href="#cmp-${esc(n)}|${esc(b)}">${thumb(b, 'ph')}<span class="cap"><small>vs</small><i>${esc(b)}</i><small>${tag(B)} · ${esc(B.fam)}</small><p>${esc(B.crit[0])}</p></span></a>`; }).join('');
+    return `<section class="lablock"><a class="lahead" href="#g-${esc(n)}">${thumb(n, 'laph')}<span><i>${esc(n)}</i><small>${tag(g)} · ${esc(g.fam)}</small><span class="lacrit">${esc(g.crit[0])}</span></span></a><div class="grid">${cards}</div></section>`;
   }).join('');
   $v.innerHTML = `<h2>Look-alikes</h2>
   <p class="lede">For each genus, in slate order, the genera it is most often confused with. Open a pair to compare them view by view.</p>${blocks}`;
@@ -119,17 +122,17 @@ function viewCompareList(){
 function viewCompare(a, b){
   const A = DATA.gen[a], B = DATA.gen[b];
   if (!A || !B) return viewCompareList();
-  const col = (n, g) => `<div class="cmpcol"><h3><button type="button" class="linkish" data-g="${esc(n)}"><i>${esc(n)}</i></button>${g.n ? '' : ' ★'}</h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>`;
+  const col = (n, g) => `<div class="cmpcol"><h3><a class="linkish" href="#g-${esc(n)}"><i>${esc(n)}</i></a>${g.n ? '' : ' ★'}</h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>`;
   const flat = [];
   const row = ([v, label]) => {
     const cell = (n, g) => { const p = (g.views[v] || [])[0]; if (!p) return '<div class="cmpph none">no photo</div>'; flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom cmpph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:700px) 46vw, 460px" alt="${esc(n)}, ${label.toLowerCase()}" loading="lazy"></button>`; };
     return `<h3 class="cmplab">${label}</h3><div class="cmprow">${cell(a, A)}${cell(b, B)}</div>`;
   };
-  $v.innerHTML = `<div class="crumbs"><button type="button" data-go="cmp">All pairs</button> › <i>${esc(a)}</i> vs <i>${esc(b)}</i></div>
+  $v.innerHTML = `<div class="crumbs"><a href="#cmp">All pairs</a> › <i>${esc(a)}</i> vs <i>${esc(b)}</i></div>
   <h2><i>${esc(a)}</i> or <i>${esc(b)}</i>?</h2>
   ${VIEWS.map(row).join('')}
   <div class="cmprow text">${col(a, A)}${col(b, B)}</div>
-  <p><button type="button" class="next" data-go="quiz-duel|${esc(a)}|${esc(b)}">Drill this pair</button></p>`;
+  <p><a class="next" href="#quiz-duel|${esc(a)}|${esc(b)}">Drill this pair</a></p>`;
   $v.querySelectorAll('[data-z]').forEach(x => x.onclick = () => zoom(flat, Number(x.dataset.z)));
   bindCards(); bindGo();
 }
@@ -139,32 +142,32 @@ const groupOf = id => DATA.key.find(g => g.id === id[0]);
 const leafOf = id => groupOf(id)?.leaves.find(l => l.id === id);
 const pg = l => l.a === l.b ? 'p.' + l.a : 'p.' + l.a + '-' + l.b;
 const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
-const subnav = cur => `<div class="chips sub">${[['key-imr', 'IMR lecture groups'], ['key', 'By colony form'], ['key-tr', 'By corallites']].map(([h, t]) => `<button class="chip" type="button" data-go="${h}" aria-pressed="${h === cur}">${t}</button>`).join('')}</div>`;
+const subnav = cur => `<div class="chips sub">${[['key-imr', 'IMR lecture groups'], ['key', 'By colony form'], ['key-tr', 'By corallites']].map(([h, t]) => `<a class="chip" aria-current="${h === cur}" href="#${h}">${t}</a>`).join('')}</div>`;
 
 function viewKey(){
   $v.innerHTML = `${subnav('key')}<h2>What shape is the colony?</h2>
   <p class="lede">Pick the growth form, then the corallite size or type. The key follows the Coral Finder's front page and only shows genera on the IMR list.</p>
   <p class="warn"><b>Growth form is only a starting point.</b> Many genera take several forms, sometimes within a single colony: <i>Porites</i> shows up in 3 groups and 8 boxes of this key. Each genus is listed everywhere the Coral Finder shows it. To decide, look at the corallites.</p>
   <div class="groups">${DATA.key.map(g => { const n = new Set(g.leaves.flatMap(l => l.g)).size;
-    return `<button class="group c-${g.color}" type="button" data-go="k-${g.id}"><b>${esc(g.name)}</b><span>${esc(g.sub)}</span><em>${n} IMR ${n > 1 ? 'genera' : 'genus'}</em></button>`; }).join('')}</div>`;
+    return `<a class="group c-${g.color}" href="#k-${g.id}"><b>${esc(g.name)}</b><span>${esc(g.sub)}</span><em>${n} IMR ${n > 1 ? 'genera' : 'genus'}</em></a>`; }).join('')}</div>`;
   bindGo();
 }
 function viewGroup(id){
   const g = groupOf(id);
   if (g.leaves.length === 1) return viewLeaf(g.leaves[0].id, true);
-  $v.innerHTML = `<div class="crumbs"><button type="button" data-go="key">Key</button> › ${esc(g.name)}</div>
+  $v.innerHTML = `<div class="crumbs"><a href="#key">Key</a> › ${esc(g.name)}</div>
   <h2>${esc(g.name)}: what next?</h2><p class="lede">${esc(g.sub)}.</p>
   <div class="leaves">${g.leaves.map(l => `<button class="leaf c-${g.color}" type="button" data-go="l-${l.id}" ${l.g.length ? '' : 'disabled'}>
     <span class="t">${esc(l.t)}</span><span class="s">${esc(l.s || '')}</span>
-    <span class="n">${l.g.length ? l.g.length + (l.g.length > 1 ? ' genera' : ' genus') + ': ' + l.g.map(esc).join(', ') : 'No IMR genus here'} · ${pg(l)}</span></button>`).join('')}</div>`;
+    <span class="n">${l.g.length ? l.g.length + (l.g.length > 1 ? ' genera' : ' genus') + ': ' + bySlate(l.g).map(esc).join(', ') : 'No IMR genus here'} · ${pg(l)}</span></button>`).join('')}</div>`;
   bindGo();
 }
 function viewLeaf(id, single){
   const g = groupOf(id), l = leafOf(id);
-  $v.innerHTML = `<div class="crumbs"><button type="button" data-go="key">Key</button> › ${single ? esc(g.name) : `<button type="button" data-go="k-${g.id}">${esc(g.name)}</button> › ${esc(leafLabel(l))}`}</div>
+  $v.innerHTML = `<div class="crumbs"><a href="#key">Key</a> › ${single ? esc(g.name) : `<a href="#k-${g.id}">${esc(g.name)}</a> › ${esc(leafLabel(l))}`}</div>
   <h2>${l.g.length} candidate${l.g.length > 1 ? 's' : ''}</h2>
   <p class="lede">${esc(g.name)} · ${esc(leafLabel(l))}. Coral Finder ${pg(l)}, which also shows genera outside the IMR list.</p>
-  <div class="grid">${l.g.map(card).join('')}</div>`;
+  <div class="grid">${bySlate(l.g).map(card).join('')}</div>`;
   bindCards(); bindGo();
 }
 function viewIMR(){
@@ -216,7 +219,7 @@ function level(n){
   return ['mid', 'Learning'];
 }
 function quizNav(cur){
-  return `<div class="chips sub">${[['quiz', 'Photo → genus'], ['quiz-duel', 'Look-alike duels'], ['quiz-course', 'Lecture photos'], ['quiz-board', 'To work on']].map(([h, t]) => `<button class="chip" type="button" data-go="${h}" aria-pressed="${h === cur}">${t}</button>`).join('')}</div>
+  return `<div class="chips sub">${[['quiz', 'Photo → genus'], ['quiz-duel', 'Look-alike duels'], ['quiz-course', 'Lecture photos'], ['quiz-board', 'To work on']].map(([h, t]) => `<a class="chip" aria-current="${h === cur}" href="#${h}">${t}</a>`).join('')}</div>
   ${cur === 'quiz-board' ? '' : `<div class="opts">
     <button class="chip" type="button" id="qstars" aria-pressed="${Q.stars}">Include ★ genera</button></div>`}`;
 }
@@ -247,7 +250,7 @@ function answer(cur, c, target, ph){
   save();
   $v.querySelectorAll('[data-c]').forEach(b => { b.disabled = true; if (b.dataset.c === target) b.classList.add('ok'); else if (b.dataset.c === c) b.classList.add('ko'); });
     const g = DATA.gen[target];
-  const vs = !good && DATA.gen[c] ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(DATA.gen[c].crit[0])} <button type="button" class="linkish" data-go="cmp-${esc(target)}|${esc(c)}">Compare them</button></p>` : '';
+  const vs = !good && DATA.gen[c] ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(DATA.gen[c].crit[0])} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>` : '';
   document.getElementById('after').innerHTML = `<div class="fb">
     <h3 class="${good ? 'ok' : 'ko'}">${good ? 'Yes' : 'No'}, it's <i>${esc(target)}</i>${g.n ? '' : ' (★ not surveyed)'}</h3>
     <ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${g.imr.length ? `<p class="vs"><b>IMR lecture:</b> ${g.imr.map(esc).join(' ')}</p>` : ''}${g.mn ? `<p class="vs"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}${vs}</div>
@@ -285,14 +288,14 @@ function quizDuel(a, b){
 }
 function quizBoard(){
   const order = {weak: 0, mid: 1, new: 2, ok: 3};
-  const list = Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n).sort((a, b) => order[level(a)[0]] - order[level(b)[0]] || weight(b) - weight(a) || a.localeCompare(b));
+  const list = Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n).sort((a, b) => order[level(a)[0]] - order[level(b)[0]] || weight(b) - weight(a) || slateIdx(a) - slateIdx(b));
   const seen = list.filter(n => P[n] && P[n].ok + P[n].ko).length, acq = list.filter(n => level(n)[0] === 'ok').length;
   $v.innerHTML = `${quizNav('quiz-board')}<h2>${acq} of ${list.length} genera learned</h2>
   <p class="note">${seen} genera seen so far. Learned means at least 3 correct answers in a row and 75% success. Genera marked Review come up more often. Progress is stored in this browser only.</p>
   <div class="tablewrap"><table><thead><tr><th>Genus</th><th>Status</th><th>Success</th><th>Confused with</th></tr></thead><tbody>
   ${list.map(n => { const s = P[n] || {ok: 0, ko: 0}, tot = s.ok + s.ko, [cl, lb] = level(n);
-    const conf = s.conf ? Object.entries(s.conf).sort((x, y) => y[1] - x[1]).slice(0, 2).map(([k, v]) => `<button type="button" class="linkish" data-go="cmp-${esc(n)}|${esc(k)}"><i>${esc(k)}</i></button> ×${v}`).join(', ') : '';
-    return `<tr><td><button type="button" class="linkish" data-g="${esc(n)}"><i>${esc(n)}</i></button>${DATA.gen[n].n ? '' : ' ★'}</td><td><span class="lvl ${cl}">${lb}</span></td>
+    const conf = s.conf ? Object.entries(s.conf).sort((x, y) => y[1] - x[1]).slice(0, 2).map(([k, v]) => `<a class="linkish" href="#cmp-${esc(n)}|${esc(k)}"><i>${esc(k)}</i></a> ×${v}`).join(', ') : '';
+    return `<tr><td><a class="linkish" href="#g-${esc(n)}"><i>${esc(n)}</i></a>${DATA.gen[n].n ? '' : ' ★'}</td><td><span class="lvl ${cl}">${lb}</span></td>
       <td>${tot ? `<div class="bar" title="${s.ok}/${tot}"><span style="width:${Math.round(100 * s.ok / tot)}%"></span></div><small>${s.ok}/${tot}</small>` : '<small>—</small>'}</td><td>${conf}</td></tr>`; }).join('')}
   </tbody></table></div>
   <p><button class="reset" type="button" id="reset">Reset progress</button></p>`;
@@ -309,8 +312,10 @@ const PAGE_DEFAULT = {genera: 's', key: 's', genus: 'm', cmp: 's', quiz: 'm'};
 function pageKey(){ const h = decodeURIComponent(location.hash.slice(1)); return h.startsWith('g-') ? 'genus' : h.startsWith('cmp') ? 'cmp' : h.startsWith('quiz') ? 'quiz' : (h.startsWith('key') || /^[kl]-/.test(h)) ? 'key' : 'genera'; }
 function sizePrefs(){ try { return JSON.parse(localStorage.getItem('imr-coral-size')) || {}; } catch (e) { return {}; } }
 function photoSize(){ return sizePrefs()[pageKey()] || PAGE_DEFAULT[pageKey()]; }
-function applySize(){ const s = photoSize(); document.documentElement.dataset.size = s; document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); }
-document.querySelectorAll('#size button').forEach(b => b.onclick = () => { const p = sizePrefs(); p[pageKey()] = b.dataset.size; try { localStorage.setItem('imr-coral-size', JSON.stringify(p)); } catch (e) {} applySize(); const y = scrollY; route(); scrollTo(0, y); });
+const SIZES = {card: {s: '240px', m: '360px', l: '520px'}, strip: {s: '(max-width:700px) 46vw, 260px', m: '(max-width:700px) 92vw, 420px', l: '(max-width:700px) 92vw, 640px'}};
+const sizesFor = kind => SIZES[kind][photoSize()];
+function applySize(){ const s = photoSize(); document.documentElement.dataset.size = s; document.querySelectorAll('img[data-sz]').forEach(i => i.sizes = sizesFor(i.dataset.sz)); document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); }
+document.querySelectorAll('#size button').forEach(b => b.onclick = () => { const p = sizePrefs(); p[pageKey()] = b.dataset.size; try { localStorage.setItem('imr-coral-size', JSON.stringify(p)); } catch (e) {} applySize(); });
 // Light / dark theme switch; follows the system until the reader picks one.
 const $theme = document.getElementById('theme');
 function isDark(){ const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; }
@@ -322,7 +327,7 @@ function route(){
   applySize();
   const h = decodeURIComponent(location.hash.slice(1));
   const tab = h.startsWith('quiz') ? 'quiz' : h.startsWith('cmp') ? 'cmp' : (h.startsWith('key') || /^[kl]-/.test(h)) ? 'key' : 'genera';
-  document.querySelectorAll('nav [data-tab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === tab)));
+  document.querySelectorAll('nav [data-tab]').forEach(b => b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   if (h === 'key') viewKey();
   else if (h === 'key-imr') viewIMR();
   else if (h === 'key-tr') viewTraits();
@@ -338,7 +343,6 @@ function route(){
   else viewGenera();
   window.scrollTo(0, 0);
 }
-document.querySelectorAll('nav [data-tab]').forEach(b => b.onclick = () => go(b.dataset.tab === 'genera' ? 'genera' : b.dataset.tab === 'key' ? 'key-imr' : b.dataset.tab));
 addEventListener('hashchange', route);
 fetch('data.json').then(r => r.json()).then(d => { DATA = d; route(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
