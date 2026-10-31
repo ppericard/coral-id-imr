@@ -9,7 +9,7 @@ A static web app for learning the 39 coral genera on the IMR (Institute for Mari
 - **Look-alikes**: side-by-side comparison of confusable pairs, view by view.
 - **Quiz**: photo to genus, look-alike duels, lecture photos, and a "to work on" board. Progress is saved in the browser.
 
-Growth form is only an entry point. Identification relies on corallite and skeletal features.
+Growth form is only an entry point. Identification relies on corallite and skeletal features. Photo growth forms use the 7 IMR Lecture 6 forms (Branching, Encrusting, Tabulate, Mushroom, Massive, Submassive, Foliose/Plating; defined once in `forms.json` "forms") plus a "polyps extended" flag; the Coral Finder front-page boxes are filled from them through `forms.json` "cf" (see `tools/apply_imr_forms.py`).
 
 ## Running locally
 

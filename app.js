@@ -89,7 +89,7 @@ function filterOrigin(d){
     if (g.coverP && !keep(g.coverP)) delete g.coverP;
   });
 }
-let RAW, CUR, FORMS = {}, AUTOQ = {}, PICKS = {};
+let RAW, CUR, FORMS = {gf: {}, form: {}, cf: {}}, AUTOQ = {}, PICKS = {};
 function build(){ const d = structuredClone(RAW); applyCuration(d, CUR); filterOrigin(d); applyForms(d, CUR); applySlots(d, CUR); DATA = d; }
 // Photos per context (applySlots). Pierre's rule: every IMR photo and every photo of his own is used, with no cap;
 // photos from other iNat observers and approved Coral Finder book photos only fill a set that is short. Per genus
@@ -136,17 +136,23 @@ function applySlots(d, c){
 const LEVELS = [['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']];
 const gamePics = (n, v, lvl = 'hard') => { const s = (DATA.gen[n].sl || {})[v]; if (!s) return DATA.gen[n].views[v] || [];
   return LEVELS.slice(0, LEVELS.findIndex(([k]) => k === lvl) + 1).flatMap(([k]) => s[k]); };
-// Growth form of each photo (Coral Finder front-page form ids, "x" = form not visible): Pierre's choice in
-// curation.json "form" wins over the first guess in forms.json. Stored on each photo as p.form (a string of ids).
+// Growth form of each photo: one of the 7 IMR growth forms (forms.json "forms"; x = form not visible) as p.form, and
+// p.polyps when polyps or vesicles are extended. Pierre's choice in curation.json "gf" wins over the first guess in
+// forms.json "gf", form and polyps flag each on their own ("p" yes, "n" no). Photos not classified yet keep their old
+// Coral Finder letter (forms.json / curation.json "form") as p.cf.
+let CFMAP = {};
 function applyForms(d, c){
-  const mine = (c && c.form) || {};
-  const set = p => { const v = mine[p.f] || FORMS[p.f]; if (v) p.form = v; };
+  const mine = (c && c.gf) || {}, old = (c && c.form) || {}, L = v => (v || '').replace(/[pn]/g, ''), P = v => (v || '').includes('p') ? true : (v || '').includes('n') ? false : null;
+  const set = p => { const m = mine[p.f], g = FORMS.gf[p.f], l = L(m) || L(g), po = P(m) ?? P(g);
+    if (l) p.form = l; if (po) p.polyps = true; if (!l && !po) { const o = old[p.f] || FORMS.form[p.f]; if (o) p.cf = o; } };
   Object.values(d.gen).forEach(g => ['views', 'more'].forEach(k => Object.values(g[k] || {}).forEach(L => L.forEach(set))));
   Object.values(d.course || {}).forEach(L => L.forEach(set));
 }
-// Photos of genus n that show growth form id (e.g. 'M'): colony views first, then closer views. Never a "form not
-// visible" photo, a multi-coral photo or a Coral Finder book photo (they are not in views).
-const formPhotos = (n, id) => { const g = DATA.gen[n]; return [...(g.views.wide || []), ...(g.views.medium || []), ...(DATA.course[n] || []).filter(p => p.v !== 'macro')].filter(p => !p.multi && (p.form || '').includes(id)); };
+// Photos of genus n that can illustrate Coral Finder front-page box id (e.g. 'B'): those whose IMR form maps to it
+// (forms.json "cf": Branching = Branching + Tabulate, ...; L = polyps extended), else the old letter. Colony views
+// first, then closer views. Never a "form not visible" photo, a multi-coral photo or a Coral Finder book photo.
+const formPhotos = (n, id) => { const g = DATA.gen[n], ok = CFMAP[id] || '';
+  return [...(g.views.wide || []), ...(g.views.medium || []), ...(DATA.course[n] || []).filter(p => p.v !== 'macro')].filter(p => !p.multi && (ok === 'p' ? p.polyps : p.form ? p.form !== 'x' && ok.includes(p.form) : p.cf === id)); };
 
 /* ---------- shared bits ---------- */
 // Genera in IMR slate order (data.json lists them that way, starred genera last).
@@ -879,7 +885,7 @@ if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else ad
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
 const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
-const forms = () => fetch('forms.json?v=3').then(r => r.ok ? r.json() : {}).then(j => j.form || {}).catch(() => ({}));
+const forms = () => fetch('forms.json?v=4').then(r => r.ok ? r.json() : {}).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}})).catch(() => ({gf: {}, form: {}, cf: {}}));
 const json = u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}));
-Promise.all([fetch('data.json?v=18').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=18').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
