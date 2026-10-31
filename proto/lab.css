@@ -550,3 +550,7 @@ button.fdname[aria-expanded="true"]::after{content:" ▾"}
 .fdtileb.c-branch{--c:var(--branch)}.fdtileb.c-meander{--c:var(--meander)}.fdtileb.c-massive{--c:var(--massive)}.fdtileb.c-plate{--c:var(--plate)}.fdtileb.c-solo{--c:var(--solo)}.fdtileb.c-polyp{--c:var(--polyp)}.fdtileb.c-column{--c:var(--column)}
 .fdtileb[class*=" c-"]{background:var(--surface)}
 .fdstart[hidden],.fdlayout[hidden]{display:none}
+/* Finder start screen: live shortlist under the clues (fits every clue, then one clue off, dimmed). */
+.fdlive{margin-top:14px;border-top:1px solid var(--line);padding-top:8px}
+.fdlive .chip{padding-top:3px;padding-bottom:3px}
+.fdlive .chip img{width:40px;height:40px;border-radius:50%;object-fit:cover;margin:0 8px 0 -8px}

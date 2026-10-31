@@ -211,7 +211,12 @@ LAB.add({
         const ft = fam('feat'), po = ft && ft.opts.find(o => o.id === 'polyp');
         body = `${forms(fam('imrf'))}${po ? `<div class="fdsrow"><h3>Polyps</h3><div class="fdsopts">${optBtn(ft, po, S.feat.has('polyp'), cnt(ft, po))}</div></div>` : ''}${row('size')}${row('wall')}`;
       }
-      $start.innerHTML = `<div class="fdstop"><input type="search" id="fdsq" placeholder="Genus name…" aria-label="Find a genus by name">${switcher}${show}</div>${body}`;
+      // Live shortlist under the clues from the first ticked clue: the genera that fit every clue (those one clue off are
+      // only counted; the full results page lists them).
+      const close = pool.filter(n => pen(n, F) === 1);
+      const live = !used(F).length ? '' : `<div class="fdlive"><h3 class="fdgrp">${left.length} ${left.length === 1 ? 'genus fits' : 'genera fit'} every clue${close.length ? ` <small>${close.length} more one clue off</small>` : ''}</h3>
+        <p class="fdchosen">${left.map(n => `<a class="chip" href="${genLink(n)}"><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p></div>`;
+      $start.innerHTML = `<div class="fdstop"><input type="search" id="fdsq" placeholder="Genus name…" aria-label="Find a genus by name">${switcher}${show}</div>${body}${live}`;
       $start.querySelectorAll('[data-sv]').forEach(b => b.onclick = () => { startV = b.dataset.sv; store.set('imr-finder-start', startV); FIDS.forEach(f => S[f].clear()); draw(); });
       $start.querySelector('#fdsq').oninput = e => { S.q = e.target.value.trim(); if (S.q) { S.home = false; draw(); const q = $side.querySelector('#fdq'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); } };
       const sh = $start.querySelector('[data-show]'); if (sh) sh.onclick = () => { S.home = false; draw(); window.scrollTo(0, 0); };

@@ -1,12 +1,12 @@
 // Home page: a slim hero (Start practising first), the 3-step learning path, one look-alike pair to compare
-// (photos + IMR ID tips, another pair on demand) and one discreet Lab link.
+// (photos + IMR ID tips, another pair on demand) and one discreet link to the Tools page (#lab).
 // The section tabs list every tool; the Lab page lists the prototypes.
 (function(){
   const ph = (n, v) => { const g = DATA.gen[n]; if (!g) return ''; const p = (g.views[v] || [])[0] || (g.views.macro || [])[0] || cover(g); return p ? img(p, 's') : ''; };
   window.viewHome = function(){
     document.documentElement.dataset.page = 'lab';  // full width, like the Lab (lab.css)
     const names = Object.keys(DATA.gen);
-    // Home = hero (Practice first: RAs go to Practice almost at once) + the 3-step path + one discreet Lab link.
+    // Home = hero (Practice first: RAs go to Practice almost at once) + the 3-step path + one discreet link to the Tools page (#lab).
     // The hero: one slim band of corallite tiles (16 genera, 8 on phones) behind a title and two buttons.
     $v.innerHTML = `<div class="home-page">
       <section class="hhero">
@@ -19,7 +19,7 @@
       <nav class="hpath" aria-label="How to use the app"><ol>${[['genera', 'Learn', 'Discover the 39 genera', 'Acropora', 'medium'], ['quiz', 'Practice', 'Train your eye with games', 'Platygyra', 'macro'], ['finder', 'Identify', 'Name a coral on your photos', 'Pocillopora', 'wide']]
         .map(([h, t, d, n, v]) => `<li><a href="#${h}"><img src="${ph(n, v)}" alt="" loading="lazy"><span><b>${t}</b><small>${d}</small></span></a></li>`).join('')}</ol></nav>
       <section class="hpair" id="hpair"></section>
-      <p class="hlablink"><a href="#lab">Lab: experiments in progress ›</a></p>
+      <p class="hlablink"><a href="#lab">More tools ›</a></p>
     </div>`;
     pairBlock();
   };
