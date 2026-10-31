@@ -56,6 +56,7 @@ function importFlags(){
 const excl = f => (DRAFT.exclude || {})[f];
 const xChanged = () => !same(DRAFT.exclude || {}, SAVED.exclude || {});
 // Coral Finder book photos on the site (curation.json "book": false switches every one of them off at once).
+const mtChanged = () => !same(DRAFT.mont || {}, SAVED.mont || {});
 const bookOn = o => o.book !== false, bChanged = () => bookOn(DRAFT) !== bookOn(SAVED);
 const qTag = p => { const q = qOf(p.f); return `<span class="adm-q q${q}${qSet(p.f) ? '' : ' auto'}" title="${qSet(p.f) ? 'Quality set by you' : 'Automatic first guess'}">${QUAL.find(x => x[0] === q)[1]}</span>`; };
 const qSeg = p => `<span class="adm-qseg" role="group" aria-label="Quality">${QUAL.map(([q, t]) => `<button type="button" data-q="${q}" aria-pressed="${qOf(p.f) === q}" class="q${q}">${t}</button>`).join('')}</span>`;
@@ -298,7 +299,7 @@ function tile(n, p, v, st){
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
 const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Exclude" aria-label="Exclude for good">×</button>';
 function status(){
-  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : '', flChanged() ? 'triage flags' : '', sgChanged() ? 'triage suggestions' : ''].filter(Boolean);
+  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : '', flChanged() ? 'triage flags' : '', sgChanged() ? 'triage suggestions' : '', mtChanged() ? 'look-alike montages' : ''].filter(Boolean);
   const bs = $('booksw'); if (bs) { bs.setAttribute('aria-pressed', String(bookOn(DRAFT))); bs.textContent = `CF book: ${bookOn(DRAFT) ? 'on' : 'off'}`; }
   const tn = Object.keys(DRAFT.flag || {}).length + sugCount(), ta = document.querySelector('[data-mode="triage"]'); if (ta) ta.textContent = `Triage${tn ? ` (${tn})` : ''}`;
   const xn = Object.keys(DRAFT.exclude || {}).length, xa = document.querySelector('[data-mode="excluded"]'); if (xa) xa.textContent = `Excluded${xn ? ` (${xn})` : ''}`;
@@ -310,7 +311,7 @@ function status(){
   $('save').disabled = !TOKEN || !parts.length;
   if (cur[0] !== '~') lastGenus = cur;
   $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || '');
-  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff'}[cur] || 'genus'))));
+  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff', '~mont': 'mont'}[cur] || 'genus'))));
 }
 function render(){
   if (cur === '~quality') return renderQuality();
@@ -318,6 +319,7 @@ function render(){
   if (cur === '~excluded') return renderExcluded();
   if (cur === '~triage') return renderTriage();
   if (cur === '~diff') return renderDiff();
+  if (cur === '~mont') return renderMont();
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
   const ch = changed(), n = cur, g = DATA.gen[n], cv = coverOf(n), k = entry(n);
   status();
@@ -507,11 +509,12 @@ const HELP = {
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. On the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
+  mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one montage each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first).</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
 };
 function toggleHelp(){
   let h = $('admhelp'); if (h) { h.remove(); return; }
-  const m = ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff'})[cur] || 'genus';
+  const m = ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~diff': 'diff', '~mont': 'mont'})[cur] || 'genus';
   h = document.createElement('div'); h.id = 'admhelp'; h.className = 'adm-help'; h.setAttribute('role', 'dialog'); h.setAttribute('aria-label', 'Help');
   h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button>${HELP[m]}`;
   h.querySelector('button').onclick = () => h.remove(); $('tools').append(h);
@@ -618,6 +621,36 @@ function renderTriage(){
     done(f); if (!(entry(n).hide || []).includes(f)) ACT.hide(n, f); else { saveDraft(); renderTriage(); } });
   $v.querySelectorAll('[data-act="zoomx"]').forEach(b => b.onclick = () => { const p = PHOTOS[b.closest('[data-f]').dataset.f]; if (p) zoomOne(p); });
 }
+/* ---------- Montages: one photo pair per classic look-alike pair (curation.json "mont" {"A|B": {v, a, b}}) ---------- */
+// Same pairs, order and automatic pick as the site (app.js classics / montage): pairs a source compares in so many words.
+const MONT_V = {'Pocillopora|Stylophora': 'medium', 'Acropora|Anacropora': 'medium', 'Acropora|Cyphastrea': 'medium', 'Acropora|Echinopora': 'medium', 'Goniopora|Porites': 'medium', 'Danafungia|Fungia': 'medium', 'Fungia|Lithophyllon': 'medium', 'Danafungia|Lithophyllon': 'medium'};
+function classicPairs(){
+  const G = DATA.gen, src = (a, b) => (G[a].lsrc || {})[b] || (G[b].lsrc || {})[a] || '', idx = n => Object.keys(G).indexOf(n), seen = new Set(), out = [];
+  Object.keys(G).forEach(a => G[a].look.forEach(b => { const k = [a, b].sort().join('|'); if (G[b] && !seen.has(k) && /^(IMR|Coral Finder p)/.test(src(a, b))) { seen.add(k); out.push({k, A: k.split('|')[0], B: k.split('|')[1], src: src(a, b)}); } }));
+  const tier = p => /^IMR/.test(p.src) ? 0 : 1;
+  return out.sort((x, y) => tier(x) - tier(y) || Math.min(idx(x.A), idx(x.B)) - Math.min(idx(y.A), idx(y.B)));
+}
+const montList = (n, v) => { const r = rowOf(n, v); return [...r.feat, ...r.rest]; };
+function montPick(p){
+  const m = (DRAFT.mont || {})[p.k] || {}, ok = v => v && montList(p.A, v).length && montList(p.B, v).length;
+  const v = ok(m.v) ? m.v : [MONT_V[p.k] || 'macro', 'macro', 'medium', 'wide'].find(ok); if (!v) return {v: null};
+  const LA = montList(p.A, v), LB = montList(p.B, v), mine = m.v === v, fa = mine && LA.find(x => x.f === m.a), fb = mine && LB.find(x => x.f === m.b);
+  let best = null; (fa ? [fa] : LA.slice(0, 6)).forEach((x, i) => (fb ? [fb] : LB.slice(0, 6)).forEach((y, j) => { const sc = i + j + (fOf(x.f) && fOf(x.f) === fOf(y.f) ? 0 : 8); if (!best || sc < best[0]) best = [sc, x, y]; }));
+  return {v, a: best[1], b: best[2], set: !!(DRAFT.mont || {})[p.k], LA, LB};
+}
+function renderMont(){
+  status();
+  const L = classicPairs();
+  const strip = (p, side, list, chosen) => `<div class="adm-mstrip">${list.map(x => `<button type="button" class="adm-mth${x.f === chosen.f ? ' on' : ''}" data-k="${esc(p.k)}" data-side="${side}" data-f="${esc(x.f)}" title="${esc(x.t || '')}"><img src="${img(x, 1)}" alt="" loading="lazy">${srcTag(x)}</button>`).join('')}</div>`;
+  $v.innerHTML = `<section class="adm-quality adm-mont">${L.map(p => { const m = montPick(p);
+    return `<article class="adm-mrow${m.set ? ' set' : ''}"><div class="adm-mhead"><b><i>${esc(p.A)}</i> / <i>${esc(p.B)}</i></b><small>${esc(p.src)}</small>
+      <span class="adm-qseg adm-lvseg" role="group" aria-label="View">${VIEWS.map(([w, t]) => `<button type="button" data-k="${esc(p.k)}" data-mv="${w}" aria-pressed="${m.v === w}"${montList(p.A, w).length && montList(p.B, w).length ? '' : ' disabled'}>${t}</button>`).join('')}</span>${m.set ? '<b class="dot done" title="Your pick">✓</b>' : '<small class="note">auto</small>'}</div>
+      ${m.v ? `<div class="adm-mbody"><div class="adm-mprev"><img src="${img(m.a)}" alt="${esc(p.A)}"><img src="${img(m.b)}" alt="${esc(p.B)}"></div>
+        <div class="adm-msides"><div><i>${esc(p.A)}</i>${strip(p, 'a', m.LA, m.a)}</div><div><i>${esc(p.B)}</i>${strip(p, 'b', m.LB, m.b)}</div></div></div>` : '<p class="note">No view with photos of both.</p>'}</article>`; }).join('')}</section>`;
+  const put = (k, fn) => { const p = L.find(x => x.k === k), m = montPick(p), e = {v: m.v, a: m.a && m.a.f, b: m.b && m.b.f}; fn(e); DRAFT.mont = {...(DRAFT.mont || {}), [k]: e}; saveDraft(); renderMont(); };
+  $v.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => { const y = window.scrollY; const k = b.dataset.k, w = b.dataset.mv; DRAFT.mont = {...(DRAFT.mont || {}), [k]: {v: w}}; saveDraft(); renderMont(); window.scrollTo(0, y); });
+  $v.querySelectorAll('.adm-mth').forEach(b => b.onclick = () => { const y = window.scrollY; put(b.dataset.k, e => { e[b.dataset.side] = b.dataset.f; }); window.scrollTo(0, y); });
+}
 /* ---------- Triage: the judging agent's suggestions (suggest.json) ---------- */
 const seen = k => !!(DRAFT.seen || {})[k];
 const vName = (n, v) => DATA.gen[n] ? label(n, v) : v;
@@ -682,13 +715,14 @@ const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAF
   const flag = {}; Object.keys(DRAFT.flag || {}).sort().forEach(f => { flag[f] = DRAFT.flag[f]; });
   const use = {}; Object.keys(DRAFT.use || {}).sort().forEach(f => { use[f] = DRAFT.use[f]; });
   const seen = {}; Object.keys(DRAFT.seen || {}).sort().forEach(k => { seen[k] = DRAFT.seen[k]; });
-  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(gf).length ? {gf} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {}), ...(Object.keys(flag).length ? {flag} : {}), ...(Object.keys(use).length ? {use} : {}), ...(Object.keys(seen).length ? {seen} : {})}; };
+  const mont = {}; Object.keys(DRAFT.mont || {}).sort().forEach(k => { mont[k] = DRAFT.mont[k]; });
+  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(gf).length ? {gf} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {}), ...(Object.keys(flag).length ? {flag} : {}), ...(Object.keys(use).length ? {use} : {}), ...(Object.keys(seen).length ? {seen} : {}), ...(Object.keys(mont).length ? {mont} : {})}; };
 async function save(){
-  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(), sg = sgChanged(); if (!(ch.length || q || x || bk || fm || fl || sg) || !TOKEN) return;
+  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(), sg = sgChanged(), mt = mtChanged(); if (!(ch.length || q || x || bk || fm || fl || sg || mt) || !TOKEN) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
   try {
     const out = output(), text = JSON.stringify(out, null, 2) + '\n';
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(mt ? ['look-alike montages'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const r = await gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg, content: toB64(text), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})});
     SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); saveDraft();
     toast('Published. The public site shows it within a minute or two.');

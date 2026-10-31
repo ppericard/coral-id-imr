@@ -9,14 +9,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
 <link rel="stylesheet" href="app.css?v=31">
-<link rel="stylesheet" href="admin.css?v=34">
+<link rel="stylesheet" href="admin.css?v=35">
 </head>
 <body class="admin">
 <script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <div class="wrap">
   <header>
     <h1 class="brand"><a class="home" href="./"><img src="icon.svg" alt="" width="30" height="30"></a></h1>
-    <nav class="adm-modes" id="modes" aria-label="Entry point" hidden><a data-mode="genus" href="#">Genera</a><a data-mode="form" href="#~form">Forms</a><a data-mode="quality" href="#~quality">Quality</a><a data-mode="triage" href="#~triage">Triage</a><a data-mode="diff" href="#~diff">Difficulty</a><a data-mode="excluded" href="#~excluded">Excluded</a></nav>
+    <nav class="adm-modes" id="modes" aria-label="Entry point" hidden><a data-mode="genus" href="#">Genera</a><a data-mode="form" href="#~form">Forms</a><a data-mode="quality" href="#~quality">Quality</a><a data-mode="triage" href="#~triage">Triage</a><a data-mode="diff" href="#~diff">Difficulty</a><a data-mode="mont" href="#~mont">Montages</a><a data-mode="excluded" href="#~excluded">Excluded</a></nav>
     <div class="hdr-tools" id="tools" hidden>
       <button type="button" class="chip adm-ico" id="undo" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↶</button>
       <button type="button" class="chip adm-ico" id="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled>↷</button>
@@ -34,6 +34,6 @@
   <main id="view"><p class="note">Loading…</p></main>
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
-<script src="admin.js?v=47"></script>
+<script src="admin.js?v=48"></script>
 </body>
 </html>
