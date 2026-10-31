@@ -1,7 +1,7 @@
 // Lab: a playground of visual, interactive prototypes. Each prototype lives in its own proto/<id>.js
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
 // Bump with every Lab change so browsers never mix new and old files (same ?v scheme as app.js).
-const LAB_V = 1;
+const LAB_V = 2;
 const LAB = {
   list: [],
   files: ['map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'],

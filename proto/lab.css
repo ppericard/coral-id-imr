@@ -282,7 +282,6 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .pgrid{max-width:none;grid-template-columns:repeat(4,1fr);gap:10px}
 :root[data-size="s"] .pgrid{grid-template-columns:repeat(6,1fr)}
 :root[data-size="l"] .pgrid{grid-template-columns:repeat(3,1fr)}
-.pgrid .pcard{max-height:calc((100vh - 200px) / 3 * 1.4)}
 .spot{grid-template-columns:minmax(0,1.4fr) minmax(280px,1fr)}
 .spotph img{max-height:80vh}
 @media (max-width:1200px){
