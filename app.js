@@ -880,8 +880,8 @@ function quizDuel(a, b){
   const t = pick(pair);
   question(a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t));
 }
-// Progress board, one screen: a wall of the 39 cover photos in slate order (colour = learned, grey = not seen,
-// colour rising from the bottom = partial mastery, red waterline = review) beside a side column with the overall ring, what to review first, sign-in and backup.
+// Progress board, one screen: a wall of the 39 cover photos in slate order (name band in the level colour, grey photo =
+// not seen, red border = review) beside a side column with the overall ring, what to review first, sign-in and backup.
 function quizBoard(){
   const list = Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n).sort((a, b) => slateIdx(a) - slateIdx(b));
   const lv = Object.fromEntries(list.map(n => [n, level(n)]));
@@ -892,10 +892,10 @@ function quizBoard(){
   const st = Object.fromEntries(list.map(n => [n, lvStep(n)])), nst = k => list.filter(n => st[n] === k).length;
   let deg = 0; const ring = [5, 4, 3, 2, 1, 0].map(k => { const d = 360 * nst(k) / list.length, c = `${k ? `var(--lv${k})` : 'var(--line)'} ${deg}deg ${deg + d}deg`; deg += d; return c; }).join(',');
   const STEPS = [[0, 'Not seen'], [1, '< 25%'], [2, '25-50%'], [3, '50-75%'], [4, '75%+'], [5, 'Learned']];
-  const tile = n => { const g = DATA.gen[n], p = cover(g), s = P[n] || {ok: 0, ko: 0}, [cl, lb] = lv[n];
-    const tide = cl === 'mid' || cl === 'weak';
-    // Rising tide: colour fills the photo from the bottom up to the genus's partial mastery, with a wavy waterline.
-    return `<a class="pw ${cl} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${tide ? ` style="--p:${genScore(n).toFixed(2)}"` : ''}>${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">${tide ? `<img class="col" src="${img(p, 's')}" alt="" loading="lazy"><b class="wave"></b>` : ''}` : ''}<span><i>${esc(n)}</i>${g.n ? '' : ' ★'}</span></a>`; };
+  // Photo wall: the cover in full colour (grey = not seen) with a name band coloured by the genus's step on the scale,
+  // holding the mini ring + % like the Slate and Groups tiles; review = red border and "!".
+  const tile = n => { const g = DATA.gen[n], p = cover(g), [cl] = lv[n];
+    return `<a class="pw ${cl} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<span class="pwb"><i>${esc(n)}${g.n ? '' : ' ★'}</i>${pct(n)}</span></a>`; };
   const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
   // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
   const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}% of the way)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
@@ -915,7 +915,7 @@ function quizBoard(){
         <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
   };
   let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
-  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. On the photos: full colour = learned; colour rising from the bottom = learning (the higher the waterline, the closer to learned); red waterline = to review (comes up more often in the quiz); grey = not seen yet. On the Slate and Groups views the colour is the learning level, from white with a dashed border (not seen) through pale to deep teal (each step = a quarter of the way to learned) to dark green with a tick (learned); a thin line along the bottom of a tile shows exactly how far it has got. A red border and a red ! = to review, whatever the level. The scale under the ring counts the genera at each step. Each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level (naming a genus when the photo shows another one counts as a mistake for both). Learned: your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5 answers. Click a genus to open its sheet.</p>
+  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. On all three views the colour (on the photos: the name band) is the learning level, from white with a dashed border (not seen) through pale to deep teal (each step = a quarter of the way to learned) to dark green with a tick (learned); a thin line along the bottom of a tile shows exactly how far it has got. A red border and a red ! = to review, whatever the level. The scale under the ring counts the genera at each step. Each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level (naming a genus when the photo shows another one counts as a mistake for both). Learned: your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5 answers. Click a genus to open its sheet.</p>
   <div class="pgame pboard"><div class="pgwrap"></div>
   <aside class="gside">
     <div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['slate', 'Slate'], ['groups', 'Groups']].map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`).join('')}</div>
