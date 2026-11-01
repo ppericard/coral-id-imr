@@ -1090,6 +1090,7 @@ function syncPush(){
 function syncOnce(tries = 0){
   const me = SYNC; let rev, sent, log;
   // If the device is disconnected or switched to another account meanwhile, drop this sync.
+  // Script v11: a name the admin removed or merged answers 'gone' (with the name it joined): recorded below, no send.
   return syncGet(me).then(j => { if (SYNC !== me) return null; if (!j.ok) return j; if (j.found) mergeSaved(j);
     rev = me.rev; sent = copy(P); log = me.log || []; me.pending = progData()['imr-coral-progress'] || ''; store.set('imr-coral-sync', me);
     const pd = (progData()['imr-coral-progress'] || '').length; if (pd > 40000) console.warn(`Progress is ${pd} characters (sheet script v6 stores any size; v5 stops at 50,000).`);
@@ -1101,7 +1102,7 @@ function syncOnce(tries = 0){
       if (j.error === 'stale' && tries < 2) { delete me.pending; return syncOnce(tries + 1).then(r => { throw {retried: r}; }); }
       return j; })
     .then(j => { if (j && j.ok && SYNC === me) { me.last = new Date().toISOString(); me.base = sent; if (typeof j.rev === 'number') me.srv = j.rev; delete me.pending; delete me.err; if (!j.log && log.length) me.err = 'net'; if (j.log) { const done = new Set(log.map(x => x.id)); me.log = (me.log || []).filter(x => !done.has(x.id)); } if (me.rev === rev) delete me.dirty; store.set('imr-coral-sync', me); }
-      else if (j && SYNC === me) { me.err = j.error === 'pin' || j.error === 'wait' ? j.error : 'net'; store.set('imr-coral-sync', me); } return j; })
+      else if (j && SYNC === me) { me.err = j.error === 'pin' || j.error === 'wait' || j.error === 'gone' ? j.error : 'net'; if (j.error === 'gone') me.into = j.into || ''; store.set('imr-coral-sync', me); } return j; })
     .catch(x => { if (x && 'retried' in x) return x.retried; if (SYNC === me) { me.err = 'net'; store.set('imr-coral-sync', me); } return null; })
     .finally(() => { if (SYNC === me) bindSync(); });
 }
@@ -1116,7 +1117,7 @@ function syncPull(){
   if (syncing) return syncing;
   const me = SYNC, before = JSON.stringify(P); pulledAt = Date.now();
   syncing = syncGet(me).then(j => { if (SYNC !== me) return null;
-      if (!j.ok) { if (j.error === 'pin' || j.error === 'wait') { me.err = j.error; store.set('imr-coral-sync', me); } return j; }
+      if (!j.ok) { if (j.error === 'pin' || j.error === 'wait' || j.error === 'gone') { me.err = j.error; if (j.error === 'gone') me.into = j.into || ''; store.set('imr-coral-sync', me); } return j; }
       if (j.found) mergeSaved(j);
       delete me.err; me.last = new Date().toISOString(); store.set('imr-coral-sync', me);
       if (JSON.stringify(P) !== before && /^#(progress|quiz-board)$/.test(location.hash)) route();
@@ -1203,6 +1204,7 @@ function reportDialog(c, btn){
 function syncTrouble(){
   if (!SYNC_URL || !SYNC) return '';
   if (SYNC.err === 'pin') return 'Not saved: code refused';
+  if (SYNC.err === 'gone') return SYNC.into ? `Not saved: this account was merged into ${SYNC.into}` : 'Not saved: this account was removed';
   // Too many wrong codes for this name (anyone can cause it): say so rather than "could not reach the sheet" (code re-review L3).
   if (SYNC.err === 'wait') return 'Not saved yet: too many wrong codes for this name, try again in 10 minutes';
   const n = (SYNC.log || []).length;
@@ -1268,7 +1270,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
     const bad = syncTrouble(), when = SYNC.last ? new Date(SYNC.last).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'}) : '';
     box.classList.add(bad ? 'warn' : 'on');
     box.innerHTML = bad
-      ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'pin' ? 'The sheet refused the code for this name. Sign out and sign in again with the right code.' : SYNC.err === 'wait' ? 'Someone typed wrong codes for this name several times, so the sheet waits 10 minutes. Your answers are kept on this device.' : 'Your answers are kept on this device and sent as soon as the sheet can be reached.'}${when ? ` Last saved ${when}.` : ''}</p>
+      ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'gone' ? (SYNC.into ? `Your trainer merged this name into <b>${esc(SYNC.into)}</b> (the same person). Your answers now count there: sign out, then sign in as ${esc(SYNC.into)} with that name's code.` : 'Your trainer removed this account. Sign out, then sign in again to start a new one.') : SYNC.err === 'pin' ? 'The sheet refused the code for this name. Sign out and sign in again with the right code.' : SYNC.err === 'wait' ? 'Someone typed wrong codes for this name several times, so the sheet waits 10 minutes. Your answers are kept on this device.' : 'Your answers are kept on this device and sent as soon as the sheet can be reached.'}${when ? ` Last saved ${when}.` : ''}</p>
         <button class="chip go" type="button" id="snow">Try again</button> <button class="reset" type="button" id="soff">Sign out</button> <span class="note" role="status"></span>`
       : (SYNC.dirty || (SYNC.log || []).length)  // answers not confirmed yet, no error so far: say so, quietly
       ? `<p class="sline"><span class="sdot wait"></span><span>Saving for IMR as <b>${esc(SYNC.name)}</b>…</span>
@@ -1302,7 +1304,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
     const f = e.target, name = f.n.value.trim(), pin = f.p.value.trim();
     msg('Connecting…');
     fetch(`${SYNC_URL}?name=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}`).then(r => r.json()).then(j => {
-      if (!j.ok) return msg(j.error === 'pin' ? 'This name already exists with another code.' : j.error === 'wait' ? 'Too many wrong codes for this name: try again in 10 minutes.' : 'Check the name and the 4-digit code.');
+      if (!j.ok) return msg(j.error === 'gone' ? (j.into ? `This name was merged into ${j.into}: sign in as ${j.into}.` : 'This name and code were removed: pick another code to start again.') : j.error === 'pin' ? 'This name already exists with another code.' : j.error === 'wait' ? 'Too many wrong codes for this name: try again in 10 minutes.' : 'Check the name and the 4-digit code.');
       signIn(name, pin, j);
       if (!j.found) syncPush().then(() => bindSync());
     }).catch(() => msg('Could not reach the sheet. Check your connection.')); };

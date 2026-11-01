@@ -13,12 +13,13 @@ function makeSheet(name){
     getLastColumn: () => Math.max(0, ...rows.map(r => { let n = (r || []).length; while (n && (r[n - 1] === '' || r[n - 1] === undefined)) n--; return n; })),
     getMaxRows: () => Math.max(1000, rows.length),
     appendRow(vals){ rows[sheet.getLastRow()] = vals.slice(); },
-    insertRowsAfter(){}, setFrozenRows(){}, setFrozenColumns(){}, hideColumns(){},
+    insertRowsAfter(){}, deleteRow(r){ rows.splice(r - 1, 1); }, setFrozenRows(){}, setFrozenColumns(){}, hideColumns(){},
     getRange(r, c, nr = 1, nc = 1){
       if (nr < 1 || nc < 1) throw new Error('The number of rows in the range must be at least 1.');
       const range = {
         getValues: () => Array.from({length: nr}, (_, i) => Array.from({length: nc}, (_, j) => { const v = cell(r + i, c + j); return v && v.formula ? '#FORMULA' : v; })),
         getValue: () => range.getValues()[0][0],
+        setValue: v => range.setValues([[v]]),
         setValues(vals){
           if (vals.length !== nr || vals.some(x => x.length !== nc)) throw new Error('The number of columns in the data does not match the range.');
           vals.forEach((row, i) => row.forEach((v, j) => {
