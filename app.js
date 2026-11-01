@@ -900,9 +900,9 @@ function quizBoard(){
   // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
   const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}% of the way)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
   // Learning level: the tile's colour is its step on the scale, and a thin line along its bottom shows the exact progress.
-  const fill = n => st[n] > 0 && st[n] < 5 ? ` style="--p:${(100 * genScore(n)).toFixed(0)}%"` : '';
-  // The same progress as a number, so the bar never needs explaining (hidden on tiles too narrow for it).
-  const pct = n => st[n] > 0 && st[n] < 5 ? `<small class="pct">${Math.round(100 * genScore(n))}%</small>` : '';
+  const fill = () => '';
+  // The same progress as a mini ring + number (ring alone on narrow tiles, nothing on the narrowest).
+  const pct = n => st[n] > 0 && st[n] < 5 ? `<small class="pct" style="--p:${Math.round(100 * genScore(n))}%">${Math.round(100 * genScore(n))}%</small>` : '';
   const gi = n => shownGroup(n) || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
   const VIEWS = {
     photos: () => `<div class="pgrid pwall">${list.map(tile).join('')}</div>`,
@@ -921,7 +921,7 @@ function quizBoard(){
     <div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['slate', 'Slate'], ['groups', 'Groups']].map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`).join('')}</div>
     <div class="pring" style="background:conic-gradient(${ring})"><span><b>${progPct(list)}%</b><small>${count('ok')}/${list.length} learned</small></span></div>
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera"><b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
-    <p class="plvlnote"><span class="pbar"></span> and % = how close each genus is to Learned</p>
+    <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Learned</p>
     ${weak.length ? `<div><h3 class="label">Review first</h3><p class="chips">${weak.slice(0, 4).map(n => `<a class="chip" href="#g-${esc(n)}"><i>${esc(n)}</i></a>`).join('')}</p></div>` : ''}
     ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> / <i>${esc(o)}</i> ×${k}</a>`).join('')}</p></div>` : ''}
     <p><a class="next go" href="#quiz">Practise now</a></p>
