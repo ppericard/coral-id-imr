@@ -19,7 +19,7 @@ The order the previous agents would follow; Pierre may reorder. Details of each 
 7. **Code formatting + modules** (L1). The handover is a good moment: a single agent, no parallel branches.
 8. Game photo sets by Elo band, photo Elo without Pierre's answers: once RAs have played (~10 answers per game photo).
 9. ~~User management page~~: done (admin Stats > Users, Code.gs v11; Pierre must redeploy the script).
-10. Content and curation helpers: growth-form/quality guesses for new candidates (on request), near-duplicates re-run, ~~admin toggle for `use`~~ (done), branching *Cyphastrea* photos, paliform-lobe rings in Corallite anatomy.
+10. Content and curation helpers: growth-form/quality guesses for new candidates (on request), near-duplicates re-run, admin toggle for `use` (declined), branching *Cyphastrea* photos, paliform-lobe rings in Corallite anatomy.
 11. Everything else under "Parked" stays parked until Pierre brings it up.
 
 ## Waiting on Pierre
@@ -96,6 +96,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 - The 4 static welcome cards (replaced by the guided tour).
 - Git history rewrite to shrink the repo (~97 of 253 MB): Pierre chose to wait; raise again only if size becomes a problem.
 - Asking for ReefCloud images (see Parked).
+- An admin button to reserve a photo for the sheet or the games (`use`): added in PR #303, removed at Pierre's request (2026-11-01, "pour l'instant"); the field stays in `core.js`, unused.
 - A text label under the phone hammer icon (Tools): Pierre, 2026-11-01: Tools is not what he wants to put forward at first.
 - The public "Photos from Dauin / Philippines / All" filter (removed in PR #230: redundant with the IMR/own-first photo rule).
 - The Reef colour theme (dropped in PR #219); Lagoon as default (Depth chosen, PR #218).
@@ -104,7 +105,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 
 ## Done recently (for context)
 - 2026-11-01: admin user management (Pierre: beta testers coming; was Parked, now first): Stats > Users lists every signed-in player by name with their numbers (answers, right, last 50, days, learned, seen, reports; per player: games, mix-ups, genera to review), and Merge into / Delete (both confirm, permanent). Code.gs v11 (redeploy by Pierre): admin-token endpoints, `Removed` tab, `gone` error for removed names; duel-on-a-pair mode kept. App: a device signed in with a removed name says so and asks to sign out.
-- 2026-11-01: admin genus page: Both / Sheet / Game on each photo sets `curation.json` `use` (sheet only / games only); the field existed since PR #96 without a button.
+- 2026-11-01: admin Both / Sheet / Game per photo (`curation.json` `use`, PR #303) added, then removed the same day at Pierre's request: the field came from PR #96 as an agent's option, never used (0 entries), and nobody had asked for a button.
 - 2026-11-01: link preview image (Pierre asked, WhatsApp showed text only): Open Graph meta tags + `og.jpg` (tools/og/make_og.js).
 - 2026-11-01: personal learning path from confusions (Pierre approved): each answer counts the wrong choices offered (`P[g].off`), and the pooled confusion score becomes the prior for the player's own record on the pair (`pairConf`, weight offers / (offers + 8)): a pair a player keeps mixing up becomes their trap and comes back in duels; one they now tell apart fades. My progress "Often mixed up" ranks the pairs by that score.
 - 2026-11-01: `data.json` one genus per line (code re-review M5): every writer (`tools/*.py`, including the Candidate photos Action's `fetch_approved.py`, `fetch_local.py`, `apply_ratios.py`) goes through the shared `tools/datajson.py`; one top-level key per line and one genus per line in `gen`, `course`, `cand`, `x`, `x.gen` (181 lines instead of one 560 KB line), so edits to different genera merge cleanly. The PR check fails on any other layout (`python3 tools/datajson.py --check`).
