@@ -16,10 +16,10 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      - name: Formatting (Prettier 3.6.2; .prettierrc.json, .prettierignore)
+          node-version: '26'
+      - name: Formatting (Prettier 3.9.10; .prettierrc.json, .prettierignore)
         run: |
-          npx --yes prettier@3.6.2 --check "*.js" "*.css" "proto/*.js" "proto/*.css" "tests/*.js"
+          npx --yes prettier@3.9.10 --check "*.js" "*.css" "proto/*.js" "proto/*.css" "tests/*.js"
       - name: JS syntax
         run: |
           for f in *.js proto/*.js tests/*.js; do node --check "$f" || exit 1; done
@@ -44,11 +44,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '26'
       - name: Install Playwright (temporary folder, nothing added to the repo)
         run: |
           mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
-          npm install --no-save --no-audit --no-fund playwright@1.63.0
+          npm install --no-save --no-audit --no-fund playwright@1.64.1
           npx playwright install --with-deps chromium
       - name: Page smoke test (main routes and admin, 390 and 1280 px, fails on any page error)
         run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/pages.smoke.js
