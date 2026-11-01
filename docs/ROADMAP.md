@@ -10,7 +10,6 @@ Sources: "thread X" = a Claude project thread with Pierre; dates are 2026. Desig
 
 | Item | Source | Status |
 |---|---|---|
-| Redeploy the sheet script as **VERSION 5** (includes v4): copy `tools/sync/Code.gs`, Manage deployments > Edit > New version. Without it, admin Stats "Players" and "Calibration" stay empty. | PRs #195, #197 (2026-11-01) | Waiting on Pierre |
 | Review ~10 debatable lecture points (left verbatim): Pocillopora "verrucae purely ornamental", Goniastrea "paliform lobes on the oral disc", Montipora "smallest corallites of all", Tubastraea "dark green to black", Mycedium "no tentacles", Plerogyra "looks solitary", Herpolitha "solitary"; better mnemonics proposed (Acropora = pore at the tip, Pavona = peacock). Any change becomes a discreet note, never a correction. | thread "Fact-check all coral content on the site", PR #22 | Waiting on Pierre |
 | Stylophora wording: Pierre remembered "like Pocillopora but fuzzy"; presenter notes say "smooth from afar, unlike Pocillopora" and "chicken popcorn" (Pierre remembered "chicken nuggets" for Pocillopora). App keeps the written wording. Pierre reviews the course on Mon 2026-11-02 and corrects it himself. | project chat, 2026-10-31 | Waiting on Pierre |
 | Merulina placement: shown with Hydnophora (lecture group 7); group 5 is the alternative. | thread "Declutter the UI across the app", PR #66 | Waiting on Pierre |
