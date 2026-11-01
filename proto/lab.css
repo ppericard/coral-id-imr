@@ -214,6 +214,7 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .pfront b{position:absolute;left:0;right:0;bottom:0;background:#000b;color:#fff;font-weight:400;font-size:var(--fs-xs);padding:3px;opacity:0;transition:opacity .3s}
 .pcard.done .pfront b{opacity:1}
 .pcard.done .pfront{box-shadow:inset 0 0 0 3px var(--good)}
+.pfront .psrc{left:auto;right:4px;top:4px;bottom:auto;color:#fff;max-width:calc(100% - 90px);padding:1px 6px} /* credit top right: the genus name owns the bottom band */
 
 /* feature gallery */
 .galh{display:flex;align-items:center;gap:8px}
@@ -688,9 +689,26 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .rvstage{max-height:calc(100vh - 128px)}
 /* Phone base (mobile-first); larger screens restore below. */
 .pgame .gside{order:-1}
-
 @media (min-width:1024px){
   .pgame .gside{order:revert}
+}
+/* Memory on phones and tablets: controls in one compact row (levels, set, ↻) and a short status line, so the grid
+   keeps nearly all the height (Pierre, phone screenshot 2026-11-01). Desktop keeps the side column. */
+.pmem .pnew{align-self:flex-start}
+.pmem .pstatus{display:flex;flex-direction:column;gap:10px}
+@media (max-width:1023.98px){
+  .pmem{gap:8px;margin-top:6px}
+  .pmem .gside{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px}
+  .pmem .gside .seg{align-self:auto;flex:1 1 auto;font-size:var(--fs-s)}
+  .pmem .gside .seg button{padding:5px 6px;min-height:36px;white-space:nowrap}
+  .pmem .gside .seg small,.pmem .pnew .pnl{display:none}
+  .pmem .pnew{margin:0;padding:0;width:40px;height:40px;min-height:0;font-size:1.25rem;line-height:1;flex:none}
+  .pmem .pstatus{flex-basis:100%;flex-direction:row;align-items:baseline;gap:8px;min-width:0;font-size:var(--fs-s);line-height:1.35;min-height:2.7em} /* two lines kept free: the ID tip after a match is never cut (DESIGN.md) */
+  .pmem .pstatus #pstat{flex:none}
+  .pmem #pres{min-width:0;display:flex;align-items:baseline;gap:6px}
+  .pmem #pres p{margin:0;min-width:0}
+  .pmem #pres .rep{flex:none;white-space:nowrap}
+  .pmem .rep .pnl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 }
 
 

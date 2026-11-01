@@ -870,6 +870,25 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 @media (min-width:1024px){
   .lkm{grid-template-columns:1fr 1fr}
 }
+/* Pair navigation on the photos themselves: big round arrows at the sides (Pierre: the small arrows under the tips were
+   easy to miss on a phone), a swipe anywhere on the pair, and a one-time "Swipe" hint on touch screens. */
+.lkm{position:relative}
+.lkarr{position:absolute;top:50%;z-index:2;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:0;padding:0 0 3px;background:rgb(0 0 0 / .55);color:#fff;font-size:2rem;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgb(0 0 0 / .35)}
+.lkarr:hover,.lkarr:focus-visible{background:var(--accent)}
+.lkarr.prev{left:8px}
+.lkarr.nxt{right:8px}
+@media (min-width:1024px){
+  .lkarr{width:52px;height:52px}
+}
+.lkhint{position:absolute;left:50%;bottom:12px;z-index:2;transform:translateX(-50%);background:rgb(0 0 0 / .65);color:#fff;padding:4px 12px;border-radius:999px;font-size:var(--fs-s);white-space:nowrap;pointer-events:none;animation:lkhint 2.4s ease-in-out 3}
+@keyframes lkhint{0%,100%{transform:translateX(-50%)}50%{transform:translateX(calc(-50% - 14px))}}
+.lkm.inr .lkph{animation:lkinr .22s ease-out}
+.lkm.inl .lkph{animation:lkinl .22s ease-out}
+@keyframes lkinr{from{transform:translateX(40px);opacity:.3}}
+@keyframes lkinl{from{transform:translateX(-40px);opacity:.3}}
+@media (prefers-reduced-motion:reduce){
+  .lkhint,.lkm.inr .lkph,.lkm.inl .lkph{animation:none}
+}
 .lkph{position:relative;margin:0;overflow:hidden;min-height:0;background:#000}
 .lkph::before{content:"";position:absolute;inset:-30px;background:var(--qbg,#000) center/cover;filter:blur(22px) brightness(.55)}
 .lkph .zoom{position:relative;display:block;width:100%;height:100%;padding:0;border:0;background:none;border-radius:0;cursor:zoom-in}
