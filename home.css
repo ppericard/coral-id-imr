@@ -1,126 +1,507 @@
 /* MOBILE-FIRST, like app.css: rules outside media queries are the phone style; tablet (min-width:600px) and
    desktop (min-width:1024px) are added right after the rule they change. */
 /* Home page. Uses the tokens from app.css only. */
-.home-page h3{font-family:var(--display);font-size:var(--fs-l);margin:28px 0 4px}
-.home-page h3 a{color:var(--ink);text-decoration:none}
-.home-page h3 a::after{content:" ›";color:var(--accent)}
-.htools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}
-@media (min-width:600px){
-  .htools{grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+.home-page h3 {
+  font-family: var(--display);
+  font-size: var(--fs-l);
+  margin: 28px 0 4px;
 }
-.htool{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;color:var(--ink);text-decoration:none}
-.htool b{font-family:var(--display);font-size:var(--fs-m);padding:8px 12px 0}
-.htool small{color:var(--muted);padding:0 12px 10px;font-size:var(--fs-s)}
-.hpv{display:grid;aspect-ratio:16/9;overflow:hidden;background:var(--line)}
-.hpv.two{grid-template-columns:1fr 1fr;gap:2px}
-.hpv img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s,filter .6s}
-.htool:hover .hpv img{transform:scale(1.06)}
+.home-page h3 a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.home-page h3 a::after {
+  content: ' ›';
+  color: var(--accent);
+}
+.htools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+@media (min-width: 600px) {
+  .htools {
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  }
+}
+.htool {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  color: var(--ink);
+  text-decoration: none;
+}
+.htool b {
+  font-family: var(--display);
+  font-size: var(--fs-m);
+  padding: 8px 12px 0;
+}
+.htool small {
+  color: var(--muted);
+  padding: 0 12px 10px;
+  font-size: var(--fs-s);
+}
+.hpv {
+  display: grid;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  background: var(--line);
+}
+.hpv.two {
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+.hpv img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition:
+    transform 0.4s,
+    filter 0.6s;
+}
+.htool:hover .hpv img {
+  transform: scale(1.06);
+}
 
 /* Schematic previews (home-art.js): flat shapes in theme colours. */
-.hpv.art{background:var(--surface-2)}
-.hpv.art svg{width:100%;height:100%;display:block;transition:transform .4s}
-.htool:hover .hpv.art svg{transform:scale(1.04)}
-.hpv.art text{font-family:var(--body);font-size:7px}
-.hpv.art .k{fill:var(--ink)} .hpv.art .ki{fill:var(--accent-ink);font-weight:600}
-.hpv.art .big{font-size:22px;font-weight:700;fill:var(--accent)} .hpv.art .big2{font-size:13px;font-weight:700;fill:var(--ink)}
-.hpv.art .a{fill:var(--accent)} .hpv.art .l{fill:var(--line)} .hpv.art .m{fill:var(--muted)} .hpv.art .w{fill:var(--surface)}
-.hpv.art .o{stroke:var(--line);stroke-width:1}
-.hpv.art .f1{fill:var(--plate)} .hpv.art .f2{fill:var(--massive)} .hpv.art .f3{fill:var(--meander)} .hpv.art .f4{fill:var(--branch)} .hpv.art .f5{fill:var(--solo)}
-.hpv.art .cr{fill:none;stroke:var(--ink);stroke-opacity:.35;stroke-width:.8}
-.hpv.art .s{stroke:var(--muted);stroke-width:1} .hpv.art .sw{stroke:var(--ink);stroke-width:2.5;fill:none;stroke-linecap:round}
-.hpv.art .sep{stroke:var(--ink);stroke-opacity:.55;stroke-width:1.2} .hpv.art .wall{fill:none;stroke:var(--ink);stroke-width:2.5}
-.hpv.art .dim{opacity:.2} .hpv.art .hl{fill:var(--accent);fill-opacity:.12}
-.hpv.art .ok{fill:var(--good)} .hpv.art .okb{fill:var(--good-bg);stroke:var(--good)}
-.hpv.art .mark{stroke:var(--bad);stroke-width:1.5;stroke-dasharray:3 2}
-.hpv.art .back{fill:var(--accent);fill-opacity:.75}
-.hpv.art .link{fill:none;stroke:var(--good);stroke-width:1.5;stroke-dasharray:3 2}
-.hpv.art .cr2{fill:none;stroke:var(--line);stroke-width:3} .hpv.art .arc{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round}
-.hpv.art .frame{fill:none;stroke:var(--accent);stroke-width:2}
-.hpv.art .target{fill:var(--accent);fill-opacity:.15;stroke:var(--accent);stroke-width:2}
+.hpv.art {
+  background: var(--surface-2);
+}
+.hpv.art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: transform 0.4s;
+}
+.htool:hover .hpv.art svg {
+  transform: scale(1.04);
+}
+.hpv.art text {
+  font-family: var(--body);
+  font-size: 7px;
+}
+.hpv.art .k {
+  fill: var(--ink);
+}
+.hpv.art .ki {
+  fill: var(--accent-ink);
+  font-weight: 600;
+}
+.hpv.art .big {
+  font-size: 22px;
+  font-weight: 700;
+  fill: var(--accent);
+}
+.hpv.art .big2 {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+.hpv.art .a {
+  fill: var(--accent);
+}
+.hpv.art .l {
+  fill: var(--line);
+}
+.hpv.art .m {
+  fill: var(--muted);
+}
+.hpv.art .w {
+  fill: var(--surface);
+}
+.hpv.art .o {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.hpv.art .f1 {
+  fill: var(--plate);
+}
+.hpv.art .f2 {
+  fill: var(--massive);
+}
+.hpv.art .f3 {
+  fill: var(--meander);
+}
+.hpv.art .f4 {
+  fill: var(--branch);
+}
+.hpv.art .f5 {
+  fill: var(--solo);
+}
+.hpv.art .cr {
+  fill: none;
+  stroke: var(--ink);
+  stroke-opacity: 0.35;
+  stroke-width: 0.8;
+}
+.hpv.art .s {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+.hpv.art .sw {
+  stroke: var(--ink);
+  stroke-width: 2.5;
+  fill: none;
+  stroke-linecap: round;
+}
+.hpv.art .sep {
+  stroke: var(--ink);
+  stroke-opacity: 0.55;
+  stroke-width: 1.2;
+}
+.hpv.art .wall {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.5;
+}
+.hpv.art .dim {
+  opacity: 0.2;
+}
+.hpv.art .hl {
+  fill: var(--accent);
+  fill-opacity: 0.12;
+}
+.hpv.art .ok {
+  fill: var(--good);
+}
+.hpv.art .okb {
+  fill: var(--good-bg);
+  stroke: var(--good);
+}
+.hpv.art .mark {
+  stroke: var(--bad);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 2;
+}
+.hpv.art .back {
+  fill: var(--accent);
+  fill-opacity: 0.75;
+}
+.hpv.art .link {
+  fill: none;
+  stroke: var(--good);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 2;
+}
+.hpv.art .cr2 {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 3;
+}
+.hpv.art .arc {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.hpv.art .frame {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.hpv.art .target {
+  fill: var(--accent);
+  fill-opacity: 0.15;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
 /* Dark theme: the drawings keep their light palette (dark versions were unreadable), slightly dimmed. */
-:root[data-theme="dark"] .hpv.art{--surface-2:#e9eff1;--surface:#fff;--ink:#14262d;--muted:#5a6d74;--line:#d6e0e3;--accent:#0d6f7d;--accent-ink:#fff;--branch:#cfe8b8;--meander:#c4e2f2;--massive:#ecc7e3;--plate:#f8d9ad;--solo:#b9e7ea;--good:#2f7d3a;--good-bg:#dcefd9;--bad:#b23a2a;filter:brightness(.88)}
-.betatag{font-style:normal;font-family:var(--body);font-size:var(--fs-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:var(--plate);color:var(--band-ink);border-radius:var(--r-xs);padding:1px 6px;vertical-align:2px}
-.htool.beta .hpv img{opacity:.85}
-.htool:hover{border-color:var(--accent)}
-.htools.small{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
-.htools.small small{display:none}
-.htools.small b{font-size:var(--fs-m);padding-bottom:8px}
-.htools:not(.small) .htool b{font-size:var(--fs-l)}
-.htools:not(.small) .htool small{font-size:var(--fs-s)}
+:root[data-theme='dark'] .hpv.art {
+  --surface-2: #e9eff1;
+  --surface: #fff;
+  --ink: #14262d;
+  --muted: #5a6d74;
+  --line: #d6e0e3;
+  --accent: #0d6f7d;
+  --accent-ink: #fff;
+  --branch: #cfe8b8;
+  --meander: #c4e2f2;
+  --massive: #ecc7e3;
+  --plate: #f8d9ad;
+  --solo: #b9e7ea;
+  --good: #2f7d3a;
+  --good-bg: #dcefd9;
+  --bad: #b23a2a;
+  filter: brightness(0.88);
+}
+.betatag {
+  font-style: normal;
+  font-family: var(--body);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--plate);
+  color: var(--band-ink);
+  border-radius: var(--r-xs);
+  padding: 1px 6px;
+  vertical-align: 2px;
+}
+.htool.beta .hpv img {
+  opacity: 0.85;
+}
+.htool:hover {
+  border-color: var(--accent);
+}
+.htools.small {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+.htools.small small {
+  display: none;
+}
+.htools.small b {
+  font-size: var(--fs-m);
+  padding-bottom: 8px;
+}
+.htools:not(.small) .htool b {
+  font-size: var(--fs-l);
+}
+.htools:not(.small) .htool small {
+  font-size: var(--fs-s);
+}
 
 /* Home: two entry doors (Learn & practise, Identify), side by side, stacked on narrow screens. */
-.hdoors{margin-top:10px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
-@media (min-width:600px){
-  .hdoors{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:18px;gap:18px}
+.hdoors {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
 }
-.hdoor{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
-.hdart{position:relative;display:block;aspect-ratio:6/1;overflow:hidden;background:#0b1a1f}
-@media (min-width:600px){
-  .hdart{aspect-ratio:21/9}
+@media (min-width: 600px) {
+  .hdoors {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 18px;
+    gap: 18px;
+  }
 }
-.hdart>img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
-.hdoor:hover .hdart>img{transform:scale(1.04)}
-.hdtiles{position:absolute;inset:0;display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:1fr;gap:2px}
-@media (min-width:600px){
-  .hdtiles{grid-template-rows:repeat(2,1fr)}
+.hdoor {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  box-shadow: var(--shadow);
 }
-.hdtiles img{width:100%;height:100%;object-fit:cover;display:block}
-.hdpt{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #0008}
-.hdpt.on{width:26px;height:26px;margin:-13px 0 0 -13px;border-color:#ffd54a;box-shadow:0 0 0 2px #0009,0 0 0 9px #ffd54a40}
-.hdbody{display:flex;flex-direction:column;flex:1;padding:10px 14px 14px}
-@media (min-width:600px){
-  .hdbody{padding:18px 22px 22px}
+.hdart {
+  position: relative;
+  display: block;
+  aspect-ratio: 6/1;
+  overflow: hidden;
+  background: #0b1a1f;
 }
-.hdwhen{margin:0;font-size:var(--fs-s);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
-.hdoor h2{font-family:var(--display);font-size:var(--fs-xl);line-height:1.1;margin:2px 0 4px}
-@media (min-width:600px){
-  .hdoor h2{font-size:var(--fs-2xl);margin:4px 0 6px}
+@media (min-width: 600px) {
+  .hdart {
+    aspect-ratio: 21/9;
+  }
 }
-.hddesc{margin:0 0 16px;color:var(--muted);font-size:var(--fs-s);line-height:1.35;max-width:60ch}
-@media (min-width:600px){
-  .hddesc{font-size:var(--fs-m);line-height:1.45}
+.hdart > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s;
 }
-.hdacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;margin-top:auto}
-@media (min-width:600px){
-  .hdacts{gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.hdoor:hover .hdart > img {
+  transform: scale(1.04);
 }
-.hdbtn{display:block;padding:9px 12px;border:1.5px solid var(--accent);border-radius:var(--r);color:var(--ink);text-decoration:none;transition:background .2s,box-shadow .2s}
-@media (min-width:600px){
-  .hdbtn{padding:12px 16px}
+.hdtiles {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: 1fr;
+  gap: 2px;
 }
-.hdbtn b{display:block;font-family:var(--display);font-size:var(--fs-l);color:var(--accent)}
-@media (min-width:600px){
-  .hdbtn b{font-size:var(--fs-xl)}
+@media (min-width: 600px) {
+  .hdtiles {
+    grid-template-rows: repeat(2, 1fr);
+  }
 }
-.hdbtn b em{font-style:normal;opacity:.6;margin-right:2px}
-.hdbtn small{display:none;color:var(--muted);font-size:var(--fs-s);line-height:1.3;margin-top:2px}
-@media (min-width:600px){
-  .hdbtn small{display:block}
+.hdtiles img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
-.hdbtn:hover{box-shadow:var(--shadow-hover)}
-.hdbtn.main{background:var(--accent);border-color:var(--accent)}
-.hdbtn.main b,.hdbtn.main small{color:var(--accent-ink)}
-.hdbtn.main small{opacity:.85}
-.hdbtn.main b em{opacity:.7}
+.hdpt {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #0008;
+}
+.hdpt.on {
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-color: #ffd54a;
+  box-shadow:
+    0 0 0 2px #0009,
+    0 0 0 9px #ffd54a40;
+}
+.hdbody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 10px 14px 14px;
+}
+@media (min-width: 600px) {
+  .hdbody {
+    padding: 18px 22px 22px;
+  }
+}
+.hdwhen {
+  margin: 0;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+.hdoor h2 {
+  font-family: var(--display);
+  font-size: var(--fs-xl);
+  line-height: 1.1;
+  margin: 2px 0 4px;
+}
+@media (min-width: 600px) {
+  .hdoor h2 {
+    font-size: var(--fs-2xl);
+    margin: 4px 0 6px;
+  }
+}
+.hddesc {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: var(--fs-s);
+  line-height: 1.35;
+  max-width: 60ch;
+}
+@media (min-width: 600px) {
+  .hddesc {
+    font-size: var(--fs-m);
+    line-height: 1.45;
+  }
+}
+.hdacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: auto;
+}
+@media (min-width: 600px) {
+  .hdacts {
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+.hdbtn {
+  display: block;
+  padding: 9px 12px;
+  border: 1.5px solid var(--accent);
+  border-radius: var(--r);
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+@media (min-width: 600px) {
+  .hdbtn {
+    padding: 12px 16px;
+  }
+}
+.hdbtn b {
+  display: block;
+  font-family: var(--display);
+  font-size: var(--fs-l);
+  color: var(--accent);
+}
+@media (min-width: 600px) {
+  .hdbtn b {
+    font-size: var(--fs-xl);
+  }
+}
+.hdbtn b em {
+  font-style: normal;
+  opacity: 0.6;
+  margin-right: 2px;
+}
+.hdbtn small {
+  display: none;
+  color: var(--muted);
+  font-size: var(--fs-s);
+  line-height: 1.3;
+  margin-top: 2px;
+}
+@media (min-width: 600px) {
+  .hdbtn small {
+    display: block;
+  }
+}
+.hdbtn:hover {
+  box-shadow: var(--shadow-hover);
+}
+.hdbtn.main {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.hdbtn.main b,
+.hdbtn.main small {
+  color: var(--accent-ink);
+}
+.hdbtn.main small {
+  opacity: 0.85;
+}
+.hdbtn.main b em {
+  opacity: 0.7;
+}
 
 /* Phone base (mobile-first); larger screens restore below. */
-.hdtiles img:nth-child(n+7){display:none}
-.hddesc{margin-bottom:10px}
+.hdtiles img:nth-child(n + 7) {
+  display: none;
+}
+.hddesc {
+  margin-bottom: 10px;
+}
 
-@media (min-width:600px){
-  .hdtiles img:nth-child(n+7){display:block}
-  .hddesc{margin-bottom:16px}
+@media (min-width: 600px) {
+  .hdtiles img:nth-child(n + 7) {
+    display: block;
+  }
+  .hddesc {
+    margin-bottom: 16px;
+  }
 }
 
 /* Phones: both doors on the first screen (Pierre, 2026-10-31): thinner art band, buttons side by side without their subtitles. */
 
-.hdart.rc>img{object-position:50% 50%}
+.hdart.rc > img {
+  object-position: 50% 50%;
+}
 /* Phone base (mobile-first); larger screens restore below. */
-.hdart.rc{aspect-ratio:4/1}
+.hdart.rc {
+  aspect-ratio: 4/1;
+}
 
-@media (min-width:600px){
-  .hdart.rc{aspect-ratio:auto}
+@media (min-width: 600px) {
+  .hdart.rc {
+    aspect-ratio: auto;
+  }
 }
 
 /* Desktop: the art grows with the window height (up to a near 3:2 band), so the doors fill the first screen instead of leaving its lower half empty. */
-@media (min-width:600px){.hdart{aspect-ratio:auto;height:clamp(250px,calc(100dvh - 470px),400px)}}
+@media (min-width: 600px) {
+  .hdart {
+    aspect-ratio: auto;
+    height: clamp(250px, calc(100dvh - 470px), 400px);
+  }
+}
