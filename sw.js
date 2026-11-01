@@ -1,6 +1,6 @@
 // Offline cache: app shell first, then photos as they are viewed.
-const V = 'imr-coral-id-v161';
-const SHELL = ['./', 'index.html', 'app.css?v=73', 'app.js?v=109', 'flag.js?v=4', 'quality.json?v=3', 'data.json?v=25', 'forms.json?v=7', 'icon.svg', 'manifest.webmanifest', 'proto/lab.js?v=52', 'proto/lab.css?v=40', 'home-art.js?v=3', 'home.js?v=22', 'home.css?v=19', 'tour.js?v=4',
+const V = 'imr-coral-id-v163';
+const SHELL = ['./', 'index.html', 'app.css?v=75', 'app.js?v=110', 'flag.js?v=4', 'quality.json?v=3', 'data.json?v=25', 'forms.json?v=7', 'icon.svg', 'manifest.webmanifest', 'proto/lab.js?v=52', 'proto/lab.css?v=40', 'home-art.js?v=3', 'home.js?v=22', 'home.css?v=19', 'tour.js?v=4',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'].map(f => `proto/${f}.js?v=52`)];
 self.addEventListener('install', e => e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));

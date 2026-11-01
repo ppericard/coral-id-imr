@@ -573,12 +573,6 @@ a.lt:hover{border-color:var(--accent)}
 .pwall .pw{position:relative;display:block;border-radius:8px;overflow:hidden;background:var(--surface-2);outline:3px solid transparent;outline-offset:-3px}
 .pwall .pw img{width:100%;height:100%;object-fit:cover;display:block}
 .pwall .pw.new img{filter:grayscale(1) opacity(.45)}
-.pwall .pw.mid{outline-color:var(--accent)}
-.pwall .pw.weak{outline-color:var(--bad)}
-.pwall .pw.ok{outline-color:var(--good)}
-.pwall .pw span{position:absolute;left:0;right:0;bottom:0;padding:10px 6px 3px;font-size:.78rem;line-height:1.1;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65));opacity:0;transition:opacity .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pwall .pw:hover span,.pwall .pw:focus-visible span{opacity:1}
-.pwall .pw:hover img{filter:none}
 .pring{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;margin:0 auto}
 .pring>span{width:112px;height:112px;border-radius:50%;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:1.1rem;color:var(--muted)}
 .pring b{font-size:2.2rem;line-height:1;color:var(--ink)}
@@ -645,6 +639,8 @@ a.lt:hover{border-color:var(--accent)}
    Never colour alone: answers carry a tick or a cross, review carries "!". The level scale differs by lightness. */
 :root[data-cvd="1"]{--good:#08306b;--good-bg:#dbe6f4;--bad:#c45400;--bad-bg:#fbe3cf}
 :root[data-cvd="1"][data-theme="dark"]{--good:#b5dcff;--good-bg:#1a3047;--bad:#d6731a;--bad-bg:#45270f}
+/* Colour-blind mode: "to review" also changes shape (thick dashed border), not only colour. */
+:root[data-cvd="1"] :is(.pslate .ps.weak,.pseg a.weak,.pwall .pw.weak,.plvl .pl-rev){border-style:dashed;border-width:3px}
 .s1{--lvc:var(--lv1);--lvt:var(--lvt1)}.s2{--lvc:var(--lv2);--lvt:var(--lvt2)}.s3{--lvc:var(--lv3);--lvt:var(--lvt3)}.s4{--lvc:var(--lv4);--lvt:var(--lvt4)}.s5{--lvc:var(--lv5);--lvt:var(--lvt5)}
 .pslate .ps,.pseg a{position:relative;background:var(--lvc,var(--surface));container-type:inline-size;color:var(--lvt,var(--ink));border:1px solid var(--lvc,var(--line))}
 .pslate .ps.s0,.pseg a.s0{border-style:dashed;color:var(--muted)}
@@ -877,17 +873,16 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 }
 
 
-/* My progress wall, "rising tide": colour fills the photo from the bottom up to the genus's partial mastery (--p),
-   with a slowly drifting wavy waterline (red when the genus needs review). */
-.pwall .pw.mid img,.pwall .pw.weak img{filter:grayscale(1) opacity(.45)}
-.pwall .pw img.col{position:absolute;inset:0;filter:none;clip-path:inset(calc((1 - var(--p)) * 100%) 0 0 0);transition:clip-path 1.2s ease}
-.pwall .pw .wave{position:absolute;left:0;right:0;height:8px;bottom:calc(var(--p) * 100% - 4px);pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='8'%3E%3Cpath d='M0 4 Q10 0 20 4 T40 4' fill='none' stroke='white' stroke-width='1.6' opacity='.9'/%3E%3C/svg%3E") repeat-x;background-size:40px 8px;animation:pwdrift 4s linear infinite}
-.pwall .pw.weak .wave{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='8'%3E%3Cpath d='M0 4 Q10 0 20 4 T40 4' fill='none' stroke='%23ff6b5e' stroke-width='2.2'/%3E%3C/svg%3E")}
-.pwall .pw.mid,.pwall .pw.weak{outline-color:var(--lvc,transparent)}
-.pwall .pw.ok{outline-color:var(--lv5)}
-.pwall .pw:hover img.col{clip-path:inset(0)}
-@keyframes pwdrift{to{background-position:40px 0}}
-@media (prefers-reduced-motion:reduce){.pwall .pw .wave{animation:none}.pwall .pw img.col{transition:none}}
+/* My progress wall: full-colour covers (grey = not seen), each with a name band in its level colour (same scale, mini
+   ring and % as Slate/Groups); learned = tick; review = red border + "!". */
+.pwall .pw{outline:0;border:2px solid transparent}
+.pwall .pw.weak{border-color:var(--bad)}
+.pwall .pw.s0{border:1px dashed var(--line)}
+.pwall .pw .pwb{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:4px;padding:3px 6px;opacity:1;font-size:.78rem;line-height:1.2;background:var(--lvc,var(--surface));color:var(--lvt,var(--muted));container-type:inline-size;white-space:nowrap}
+.pwall .pw .pwb i{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pwall .pw .pwb .pct{display:inline-flex;align-items:center;gap:4px;margin-left:auto;font-size:.9em;font-weight:700;font-style:normal;font-variant-numeric:tabular-nums;flex:none}
+.pwall .pw.s5 .pwb i::after{content:" \2713";font-style:normal;font-weight:700}
+.pwall .pw:hover img{filter:none;transform:scale(1.03);transition:transform .2s}
 
 /* ---------- Guided tour (tour.js) ---------- */
 #tour{position:fixed;inset:0;z-index:60;pointer-events:none}
@@ -986,7 +981,6 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 /* Keyboard hints only where there is a keyboard and a mouse; hover-only information is always shown on touch screens. */
 @media (hover:none),(pointer:coarse){
   kbd{display:none}
-  .pwall .pw span{opacity:1}
 }
 /* Touch targets (WCAG 2.2 2.5.8: at least 24 x 24 px; Apple HIG 44 pt, Material 48 dp as the aim): the stand-alone text
    buttons that were 20-23 px tall get vertical padding on touch screens only, so mouse layouts do not change. */
