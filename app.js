@@ -958,7 +958,12 @@ function distractors(t, list, traps = trapsFor(t)){
   }
   const tf = imrFormsOf(t), apart = n => !imrFormsOf(n).some(f => tf.includes(f));
   const easy = left.filter(apart), far = easy.filter(n => GX(n).ig !== T.ig);
-  return [...out, ...shuffle(far), ...shuffle(easy.filter(n => !far.includes(n))), ...shuffle(left.filter(n => !easy.includes(n)))].slice(0, 3);
+  // Easy choices spread over different growth forms too: three mushroom corals beside a massive target would give the
+  // answer away as the odd one out.
+  const cand = [...shuffle(far), ...shuffle(easy.filter(n => !far.includes(n))), ...shuffle(left.filter(n => !easy.includes(n)))];
+  const used = new Set(out.flatMap(imrFormsOf)), res = [...out];
+  for (const n of cand) { if (res.length >= 3) break; if (!imrFormsOf(n).some(f => used.has(f))) { res.push(n); imrFormsOf(n).forEach(f => used.add(f)); } }
+  return [...res, ...cand.filter(n => !res.includes(n))].slice(0, 3);
 }
 // Elo and BKT count a guess as 1 in (target + the plausible wrong choices) while traps are few (0 or 1): easy choices from
 // other growth forms are not plausible, so such a question is scored as a 2- or 3-choice one (a right answer there proves
