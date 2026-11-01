@@ -285,6 +285,7 @@ function viewGenus(name){
   <article class="sheet">
     ${imr.length || g.x ? '' : `<p class="lede keyid">${esc(g.sum)}</p>`}
     ${g.x ? `<p class="warn"><b>Not on the IMR list.</b> A rarer genus seen at Dauin${g.x.nonscl ? ', and not a true hard coral' : ''}.</p>` : g.n ? '' : `<p class="warn"><b>★ Not surveyed by IMR.</b> It is on the slate so you don't mistake it for ${g.look.filter(n => DATA.gen[n].n).map(n => '<i>' + esc(n) + '</i>').join(', ')}, so you need to recognise it and set it aside.</p>`}
+    ${myProg(name)}
     <div class="hero">
       ${cv ? `<button type="button" class="zoom hero-ph" data-z="${ci}"><img src="${img(cv)}" alt="${esc(name)}"></button>` : ''}
       <div class="idbox">
@@ -310,6 +311,16 @@ function viewGenus(name){
   bindGo();
   const hub = $v.querySelector('.hubsec'), redraw = () => { hub.innerHTML = lookHub(name); bindViewSeg(redraw); };
   bindViewSeg(redraw);
+}
+
+// The player's own progress on this genus, at the top of its sheet (only once it has been seen): its level, how far it
+// has got and what it still needs. My progress only had this in a hover tooltip, invisible on touch screens (RA re-review
+// 2026-11-01); tapping a tile there opens this sheet.
+function myProg(n){
+  const [k, t] = level(n); if (k === 'new') return '';
+  const st = lvStep(n), pc = Math.round(100 * genScore(n)), m = k === 'ok' ? [] : missing(n);
+  return `<p class="myprog"><a class="mpl s${st}${k === 'weak' ? ' weak' : ''}" href="#progress" title="My progress">${t}${st > 0 && st < 5 ? ` <small class="pct" style="--p:${pc}%">${pc}%</small>` : st === 5 ? ' ✓' : ''}</a>`
+    + `<span>${k === 'weak' ? '2 or more mistakes in its last 5 answers. ' : ''}${m.length ? 'Still needed: ' + esc(m.join('; ')) + '.' : 'You know this genus.'}</span></p>`;
 }
 
 /* ---------- compare ---------- */
@@ -957,7 +968,7 @@ function quizBoard(){
   let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
   $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, get it right on harder and harder photos, once with the corallites in view, and once in a look-alike duel. A mistake sets it back, for the genus you missed and for the one you answered.</p>
   <p class="lede"><b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin and easily taken for a genus of the list (fire coral <i>Millepora</i> first). The first joins the photo quiz and the duels at ${BONUS_AT(0)}% progress, then one more every 5%. They don't count in your progress; their ID tips come from the Coral Finder. On this page they come after the list: a <b>?</b> tile is a bonus genus still locked, with the progress that unlocks it.</p>
-  <p class="lede"><b>Colours</b>: white with a dashed border = not seen; then from pale to dark, one step per quarter of the way; the darkest, with a tick = learned. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet${isPhone() ? '' : '; hover it to see what it still needs'}.</p>
+  <p class="lede"><b>Colours</b>: white with a dashed border = not seen; then from pale to dark, one step per quarter of the way; the darkest, with a tick = learned. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>
   <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. Learned means your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus the two milestones above.</p>
   <div class="pgame pboard"><div class="pgwrap"></div>
   <aside class="gside">
