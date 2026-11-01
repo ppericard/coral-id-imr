@@ -51,9 +51,10 @@ function mergeProgress(B, P, R){
     if (mine && l.h) out.h = l.h;
     if (mine) ['lv', 'run', 'L', 'th', 'ro'].forEach(k => { if (l[k] !== undefined) out[k] = l[k]; else delete out[k]; });
     if (l.cor || r.cor) out.cor = 1; if (l.du || r.du) out.du = 1;
-    const conf = {...(r.conf || {})};
-    Object.keys(l.conf || {}).forEach(k => { const v = (conf[k] || 0) + l.conf[k] - ((b.conf || {})[k] || 0); if (v > 0) conf[k] = v; else delete conf[k]; });
-    if (Object.keys(conf).length) out.conf = conf; else delete out.conf;
+    // Mix-ups (conf: genus answered instead) and offers (off: genus offered as a wrong choice) add up across devices.
+    ['conf', 'off'].forEach(f => { const c = {...(r[f] || {})};
+      Object.keys(l[f] || {}).forEach(k => { const v = (c[k] || 0) + l[f][k] - ((b[f] || {})[k] || 0); if (v > 0) c[k] = v; else delete c[k]; });
+      if (Object.keys(c).length) out[f] = c; else delete out[f]; });
     // Photos seen [shown, right]: added up like the mix-ups, so two devices never lose or double-count a photo.
     const ps = {...(r.ps || {})};
     Object.keys(l.ps || {}).forEach(f => { const x = ps[f] || [0, 0], y = l.ps[f], z = (b.ps || {})[f] || [0, 0]; ps[f] = [0, 1].map(i => Math.max(0, x[i] + y[i] - z[i])); });
@@ -98,6 +99,12 @@ function confusionOf(rows){
 // declared look-alikes of the IMR lecture and the Coral Finder start high), then following the players' real answers.
 const CONF = {W: 8, LOOK: 0.3, FAM: 0.12, FORM: 0.08, BASE: 0.03, TRAP: 0.2};
 const confScore = (c, prior) => ((c ? c[1] : 0) + CONF.W * prior) / ((c ? c[0] : 0) + CONF.W);
+// One player's own record on a pair (progress P): [times the two were offered together, times mixed up], both directions.
+// Offers are counted since 2026-11-01 (P[g].off); mix-ups logged before that count as offered at least once each.
+function pairConf(P, a, b){
+  const x = P[a] || {}, y = P[b] || {}, mix = ((x.conf || {})[b] || 0) + ((y.conf || {})[a] || 0);
+  return [Math.max(mix, ((x.off || {})[b] || 0) + ((y.off || {})[a] || 0)), mix];
+}
 
 // Two admin tabs in one browser share the stored draft. Each write carries _tab: {rev, seen}: its own revision and the
 // revision of the stored draft that tab had last seen. `revs` maps the revisions this tab wrote or took in to their drafts,
@@ -236,6 +243,6 @@ function applySlots(d, c, o = {}){
   });
 }
 
-const CORE = {applyCuration, applySlots, CAP, isObj, eq, canon, merge3, mergeTabs, takeTab, mergeOld, mergeProgress, eloOf, confusionOf, CONF, confScore};
+const CORE = {applyCuration, applySlots, CAP, isObj, eq, canon, merge3, mergeTabs, takeTab, mergeOld, mergeProgress, eloOf, confusionOf, CONF, confScore, pairConf};
 if (typeof module !== 'undefined' && module.exports) module.exports = CORE; else Object.assign(root, CORE);
 })(this);

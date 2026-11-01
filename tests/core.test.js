@@ -1,6 +1,6 @@
 // core.js: curation merge (admin Publish), progress merge (two devices), photo Elo (same as Code.gs stats_).
 const test = require('node:test'), assert = require('node:assert');
-const {merge3, mergeOld, mergeProgress, eloOf, confusionOf, confScore, CONF} = require('../core.js');
+const {merge3, mergeOld, mergeProgress, eloOf, confusionOf, confScore, CONF, pairConf} = require('../core.js');
 const {loadCodeGs} = require('./gas.js');
 
 test('merge3: my changes win, changes published elsewhere are kept', () => {
@@ -45,6 +45,25 @@ test('mergeProgress: answers from both devices add up, nothing counted twice', (
   assert.deepStrictEqual(M.Acropora.conf, {Porites: 2});
   assert.strictEqual(M.Acropora.th, 0.4, 'this device answered since B: its model wins');
   assert.deepStrictEqual(M.Porites, {ok: 1, ko: 0, streak: 0});
+});
+
+test('mergeProgress: offers per pair add up across devices like the mix-ups', () => {
+  const B = {Favites: {ok: 1, ko: 1, off: {Dipsastraea: 2}}};
+  const P = {Favites: {ok: 2, ko: 1, off: {Dipsastraea: 3, Goniastrea: 1}, h: '01'}};
+  const R = {Favites: {ok: 1, ko: 2, off: {Dipsastraea: 4}, h: '00'}};
+  assert.deepStrictEqual(mergeProgress(B, P, R).Favites.off, {Dipsastraea: 5, Goniastrea: 1});
+});
+
+test('pairConf: both directions; old mix-ups without offers count as offered', () => {
+  const P = {Favites: {conf: {Dipsastraea: 2}, off: {Dipsastraea: 6}}, Dipsastraea: {conf: {Favites: 1}, off: {Favites: 4}}};
+  assert.deepStrictEqual(pairConf(P, 'Favites', 'Dipsastraea'), [10, 3]);
+  assert.deepStrictEqual(pairConf(P, 'Dipsastraea', 'Favites'), [10, 3]);
+  assert.deepStrictEqual(pairConf({A: {conf: {B: 2}}}, 'A', 'B'), [2, 2]);
+  assert.deepStrictEqual(pairConf({}, 'A', 'B'), [0, 0]);
+  // The player's weight is offers / (offers + CONF.W): with no answers the pooled score stands, with many their own rate leads.
+  assert.strictEqual(confScore(pairConf({}, 'A', 'B'), 0.3), 0.3);
+  assert.ok(confScore([40, 0], 0.3) < CONF.TRAP, 'a pair told apart 40 times stops being a trap');
+  assert.ok(confScore([3, 3], CONF.BASE) >= CONF.TRAP, 'three mix-ups in three offers make any pair a trap');
 });
 
 test('mergeProgress: untouched locally, the pulled record wins', () => {
