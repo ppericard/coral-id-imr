@@ -51,7 +51,7 @@ function loadCodeGs(opts = {}){
       getUuid: () => crypto.randomUUID()
     },
     CacheService: {getScriptCache: () => ({get: k => cache[k] ?? null, put: (k, v) => { cache[k] = v; }})},
-    PropertiesService: {getScriptProperties: () => ({getProperty: k => props[k] ?? null, setProperty: (k, v) => { props[k] = v; }})},
+    PropertiesService: {getScriptProperties: () => ({getProperty: k => props[k] ?? null, setProperty: (k, v) => { props[k] = v; }, deleteProperty: k => { delete props[k]; }})},
     UrlFetchApp: {fetch: (url, o = {}) => { if (opts.fetch) { const r = opts.fetch(url, o); if (r) { fetched.push(url); return r; } }
       const t = (o.headers.Authorization || '').slice(7), w = t.startsWith('ghp_write'); fetched.push(url);
       return {getResponseCode: () => t.startsWith('ghp_') ? 200 : 401, getContentText: () => JSON.stringify({permissions: {pull: true, push: w}})}; }},

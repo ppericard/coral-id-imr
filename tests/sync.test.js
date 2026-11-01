@@ -228,3 +228,16 @@ test('autoUpdate: never installs a version that would stop the updates', () => {
   const g = fakeGoogle(next), s = loadCodeGs({fetch: g.fetch});
   assert.strictEqual(s.ctx.autoUpdate(), 'skipped'); assert.deepStrictEqual(g.calls, []);
 });
+
+test('autoUpdate: an interrupted update (code in place, deploy failed) is finished on the next run', () => {
+  const next = CODE.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + 1};`);
+  // First run: the code goes in, then /versions fails.
+  const g = fakeGoogle(next), f0 = g.fetch, s = loadCodeGs({fetch: (u, o) => /\/versions$/.test(u) ? resp(503, 'unavailable') : f0(u, o)});
+  assert.strictEqual(s.ctx.autoUpdate(), 'error');
+  assert.ok(s.props.AUTO_PENDING, 'the pending version is remembered');
+  // Next run, by the new code itself (same VERSION as GitHub): it finishes the deployment instead of saying "up to date".
+  const g2 = fakeGoogle(CODE), s2 = loadCodeGs({fetch: g2.fetch}); s2.props.AUTO_PENDING = s.props.AUTO_PENDING;
+  assert.match(s2.ctx.autoUpdate(), /^deployed v/);
+  assert.deepStrictEqual(g2.calls.map(c => c.split(' ').slice(0, 2).join(' ')), ['post /versions', 'get /deployments', 'put /deployments/WEB']);
+  assert.strictEqual(s2.props.AUTO_PENDING, undefined);
+});
