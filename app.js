@@ -24,8 +24,15 @@ const VIEWS = [['wide', 'Colony'], ['medium', 'Closer'], ['macro', 'Corallites']
 const inat = (p, sz) => p.src.replace('/original.', `/${sz}.`);
 const img = (p, size) => p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : `img/${p.f}${size === 's' ? '-s' : ''}.webp`;
 const srcset = p => p.r && p.src ? `${inat(p, 'medium')} 500w, ${inat(p, 'large')} 1024w` : `img/${p.f}-s.webp 480w, img/${p.f}.webp 1600w`;
-// Discreet link to a photo's iNaturalist observation; games show it only once the answer is out.
-const inatTag = p => p && p.o && p.o.includes('inaturalist.org') ? `<a class="inat" href="${esc(p.o)}" target="_blank" rel="noopener" title="Open the iNaturalist observation">iNat ↗</a>` : '';
+// Small source label on a game photo (Pierre, 2026-11-01: "sources en petit et cliquable sur chaque photo").
+// One shared component for every game. Shown only once the answer is out: an iNat link names the taxon and an IMR
+// slide number points to a genus. iNat photos (Pierre's and other observers') link to the observation; IMR lecture
+// and Coral Finder book photos have no public page, so they get a plain label. Hidden on phones (no room, Pierre): there the
+// enlarged view's caption already carries the clickable source.
+const author = p => (p.a || '').replace(/^\(c\)\s*/i, '').replace(/,\s*(some|all) rights.*$/i, '').trim();
+const photoSrc = p => !p ? '' : p.cf ? `<span class="psrc">Coral Finder p. ${esc(p.pg)}</span>`
+  : p.imr ? `<span class="psrc" title="IMR Lecture 6${p.slide ? ', slide ' + esc(p.slide) : ''}">IMR lecture</span>`
+  : p.o && p.o.includes('inaturalist.org') ? `<a class="psrc" href="${esc(p.o)}" target="_blank" rel="noopener" title="${esc(author(p) || 'iNaturalist')}: open the iNaturalist observation"><span class="pa">${esc(author(p))} · </span>iNat ↗</a>` : '';
 // One colour per IMR lecture group, used everywhere a group appears (style="--g:…", CSS hsl(var(--g) …)).
 const groupHue = n => (n * 137) % 360;
 const credit = p => p.cf ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${p.pg}` : p.imr ? `IMR Lecture 6, slide ${p.slide}` : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(p.o)}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
@@ -796,7 +803,7 @@ function answer(cur, c, target, ph, cor){
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   if (SYNC) SYNC.log = [...(SYNC.log || []), {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur, ph: ph.map(p => p.f).join(' '), e: Math.round(100 * (1 / k + (1 - 1 / k) * sig(th0 - d0))) / 100, th: th0, nw}].slice(-500);
   save();
-  $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', inatTag(ph[k])));
+  $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', photoSrc(ph[k])));
   // A mix-up: the stage becomes a montage, the photo shown (corallites if they were shown) next to a photo of the
   // genus answered in the same view, so the difference is seen at the moment of the mistake. The pair then comes back
   // as a duel in the photo quiz a couple of questions later.
@@ -806,7 +813,7 @@ function answer(cur, c, target, ph, cor){
     const tp = order.find(p => (V[p.view] || []).length);
     if (tp) {
       const [, cp] = photoPair([tp], V[tp.view], tp), st0 = $v.querySelector('.qstage'), lab = VIEW_LABEL[tp.view] || '';
-      const fig = (p, n, cls, note) => `<figure class="qph ${cls}" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${lab.toLowerCase()} view"></button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> <i>${esc(n)}</i></figcaption><small>${note}</small></figure>`;
+      const fig = (p, n, cls, note) => `<figure class="qph ${cls}" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${lab.toLowerCase()} view"></button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> <i>${esc(n)}</i></figcaption><small>${note}</small>${photoSrc(p)}</figure>`;
       st0.classList.add('qvs');
       st0.innerHTML = fig(tp, target, 'qok', 'The photo shown') + fig(cp, c, 'qko', 'Your answer, same view');
       st0.querySelectorAll('[data-vs]').forEach(z => z.onclick = e => { e.stopPropagation(); zoom([{...tp, genus: target}, {...cp, genus: c}], z.dataset.vs === 'qok' ? 0 : 1); });

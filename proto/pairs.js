@@ -24,14 +24,14 @@ LAB.add({
       const els = [...root.querySelectorAll('.pcard')];
       els.forEach(e => e.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); e.click(); } });
       els.forEach((e, i) => e.onclick = ev => {
-        if (ev && ev.target.closest && ev.target.closest('.inat')) return;
+        if (ev && ev.target.closest && ev.target.closest('.psrc')) return;
         if (lock || e.classList.contains('up')) return;
         e.classList.add('up'); e.setAttribute('aria-label', `${cards[i].n}, ${cards[i].v === 'wide' ? 'colony' : 'corallites'}`); open.push(i);
         if (open.length < 2) return;
         moves++; root.querySelector('#pstat').textContent = `${moves} move${moves > 1 ? "s" : ""} · ${found + (cards[open[0]].n === cards[open[1]].n ? 1 : 0)} of ${gens.length} pairs`;
         const [a, b] = open; open = [];
         if (cards[a].n === cards[b].n) {
-          found++; [a, b].forEach(k => { els[k].classList.add('done'); if (typeof inatTag === 'function') els[k].querySelector('.pfront').insertAdjacentHTML('beforeend', inatTag(viewPhoto(cards[k].n, cards[k].v))); });
+          found++; [a, b].forEach(k => { els[k].classList.add('done'); if (typeof photoSrc === 'function') els[k].querySelector('.pfront').insertAdjacentHTML('beforeend', photoSrc(viewPhoto(cards[k].n, cards[k].v))); });
           const fn = cards[a].n; root.querySelector('#pres').innerHTML = `<p><a href="${genLink(fn)}"><i>${esc(fn)}</i></a>: ${esc(tipsText(DATA.gen[fn]))}</p>`;
           if (found === gens.length) root.querySelector('#pres').innerHTML = `<p class="ok"><b>All ${gens.length} pairs in ${moves} moves.</b> A perfect game takes ${gens.length}; ${moves <= gens.length * 1.6 ? 'excellent memory.' : 'play again to beat it.'}</p>`;
         } else { lock = true; setTimeout(() => { [a, b].forEach(k => { els[k].classList.remove('up'); els[k].setAttribute('aria-label', 'Hidden card'); }); lock = false; }, 1100); }

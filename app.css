@@ -654,8 +654,15 @@ a.lt:hover{border-color:var(--accent)}
 .tipph{display:flex;flex-direction:column;gap:4px;text-decoration:none;color:var(--ink)}
 .tipph img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px}
 
-.inat{position:absolute;right:6px;bottom:6px;z-index:2;font-size:.72rem;line-height:1;padding:3px 6px;border-radius:var(--pill);background:rgba(0,0,0,.45);color:#fff;text-decoration:none;opacity:.7}
-.inat:hover,.inat:focus-visible{opacity:1;background:rgba(0,0,0,.7)}
+.psrc{position:absolute;left:8px;bottom:8px;z-index:2;display:none;max-width:calc(100% - 56px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem;line-height:1.2;padding:3px 8px;border-radius:var(--pill);background:rgb(0 0 0 / .5);color:#fff;text-decoration:none;opacity:.75}
+a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-decoration:underline}
+/* Game photo source: hidden on phones (Pierre: no room; the enlarged view has the clickable source). */
+@media (min-width:600px){.psrc{display:block}}
+/* Mix-up montage: the centred note sits at the bottom, so the source moves to the top-left corner. */
+.qstage.qvs .qph .psrc{bottom:auto;top:8px;max-width:30%}
+/* Tablet montage: too narrow for the observer's name next to the genus label; it stays in the tooltip and the enlarged view. */
+.qstage.qvs .qph .psrc .pa{display:none}
+@media (min-width:1024px){.qstage.qvs .qph .psrc .pa{display:revert}}
 /* ID tips: the 4 lecture questions as one row of tiles, then the glossary and a one-line group filter. */
 .tiphead{margin:0 0 10px}
 .qtiles{list-style:none;counter-reset:q;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 8px;padding:0}
