@@ -506,3 +506,7 @@ td.cov-c .cov-off{display:block;font-size:.62rem;font-weight:500;line-height:1.1
 .adm-swcard figcaption .adm-fid{flex:0 1 auto;color:#fffc;pointer-events:auto}
 @media (max-width:599px){.adm-fid{display:none}}
 .cov-head .cov-rich{color:var(--good);font-weight:600}
+.fcov-t .fcov-x{color:var(--muted);font-size:.7rem}
+.fcov-t td.fcov-f{white-space:normal;text-align:left}
+.fcov-t td.fcov-f .adm-why{font-size:.72rem;padding:0 6px}
+.fcov-t td.fcov-s{text-align:center;color:var(--muted)}
