@@ -1340,7 +1340,8 @@ const knownP = n => {
 function bktObs(n, s, good, b, k) {
   s.L = Math.round(bktStep(knownP(n), good, b, k) * 1e4) / 1e4;
 }
-// Silent mastery exam (Pierre, 2026-11-01: "an ultimate test to go from 95% to 100%"). Once a genus is 95% sure (L),
+// Silent mastery exam (Pierre, 2026-11-01: "an ultimate test to go from 95% to 100%"). Its count (2/5) is shown nowhere:
+// the genus's % creeping up from 95%, then falling back on a miss, keeps the mystery (Pierre). Once a genus is 95% sure (L),
 // EXAM.n questions on it are slipped into the photo quiz, unannounced (a test on one genus alone would give the answer
 // away), at least EXAM.gap other answers apart (recognition, not short-term memory; counted in answers, never time).
 // Each is as hard as the game gets: one photo alone, never answered right before (else the least seen), the hardest
@@ -1360,10 +1361,7 @@ function missing(n) {
     L = knownP(n);
   if (s.mx) return m;
   if (L < BKT.MASTER) m.push(`more right answers, harder photos count more (${Math.round(100 * L)}% sure now)`);
-  else
-    m.push(
-      `the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the photo quiz, all right (${(s.ex || {}).k || 0}/${EXAM.n} so far)`
-    );
+  else m.push(`the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the photo quiz, all right`);
   return m;
 }
 // Progress of a genus, 0 to 1: how far its knowledge probability has climbed towards 95% fills 95% of it, each exam
