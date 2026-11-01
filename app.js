@@ -3,7 +3,8 @@ let DATA;
 const $v = document.getElementById('view');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // Links built from data (photo sources): only https, anything else becomes '#' (code review 2026-11-01, L2).
-const safeUrl = u => /^https:\/\//i.test(String(u || '')) ? String(u) : '#';
+// An old http:// link (one iNat observation in data.json) is upgraded to https, not dropped.
+const safeUrl = u => { const s = String(u || '').replace(/^http:\/\//i, 'https://'); return /^https:\/\//i.test(s) ? s : '#'; };
 // Page keyboard handlers (quiz, look-alikes): each new question or pair aborts the previous handler instead of
 // stacking one more on document (code review 2026-11-01, L3).
 let keysAC = null;
@@ -1325,6 +1326,7 @@ new MutationObserver(pageHelp).observe($v, {childList: true, subtree: true});
 // Settings (photo source, photo size, theme) live in one small panel behind ⚙.
 const $setb = document.getElementById('setb'), $set = document.getElementById('settings');
 $setb.onclick = e => { e.stopPropagation(); const open = $set.hidden; $set.hidden = !open; $setb.setAttribute('aria-expanded', String(open)); };
+document.getElementById('setx').onclick = () => { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); $setb.focus(); };
 document.addEventListener('click', e => { if (!$set.hidden && !e.target.closest('#settings, #setb')) { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); } });
 // "/" from any page: open Genera with the search box focused, to jump to a genus by typing (Pierre, 2026-10-31).
 let wantSearch = false;
