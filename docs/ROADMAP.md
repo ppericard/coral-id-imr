@@ -84,6 +84,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 
 ## Done recently (for context)
 
+- 2026-11-01: code re-review fixes: `curation.json` kept offline after a deploy (it was lost with the old shell cache), 4 s cache fallback on slow links, malformed links no longer crash pages, "too many wrong codes" said plainly in the sync line, small escaping and listener fixes.
 - 2026-11-01: design review (lots 1-3): #254 fonts with real italics, muted group colours, 12 px floor, Coral Finder prompt, Light/Dark switch; #256 type/radius tokens, shared controls, one SVG icon set, docs/DESIGN.md; lot 3 (this PR) quiz stage fits the photo on phone/tablet, games aligned with the header, Progress pill with mini ring, phone tab bar icons, readable names on the phone progress wall.
 - 2026-11-01: players report a wrong answer (with the right genus), several corals, a bad photo or other from every game; reports and feedback also from enlarged photos, genus sheets and every page footer; the reporter's name in admin Triage for every admin (Code.gs v7, v8; PRs #260, #263).
 - 2026-11-01: bonus genera in the photo quiz and duels (Millepora first, unlocked from 10% slate progress, outside the slate score, #261); "?" tiles on My progress and an unlock card.

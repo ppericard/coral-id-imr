@@ -18,7 +18,7 @@
   let root = null, step = 0, token = 0, target = null, tick = null;
   const vis = el => { if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
   const find = s => [...document.querySelectorAll(s.sel)].find(vis) || (s.alt && [...document.querySelectorAll(s.alt)].find(vis)) || null;
-  const here = h => decodeURIComponent(location.hash.slice(1)) === h;
+  const here = h => hashNow() === h;
   function nav(h){
     if (here(h)) return;
     if (!h) { history.pushState(null, '', location.pathname + location.search); route(); }
