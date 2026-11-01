@@ -731,7 +731,7 @@ function question(cur, target, choices, prompt, set){
   // A single-view question shows the other views of the same colony once answered (seen, not part of the answer).
   const reveal = () => { const R = set.reveal || [], st = $v.querySelector('.qstage'); if (!R.length || !st) return;
     st.insertAdjacentHTML('beforeend', R.map((p, k) => fig(p, ph.length + k)).join('')); fitStage(); };
-  $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'); showHint(); reveal(); answered = true; answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor); });
+  $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'); showHint(); reveal(); answered = true; answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint); });
 }
 // The quiz stage fills the window below the header, so photos, choices and feedback fit without scrolling.
 // The photos then take the grid (columns x rows) that shows them largest at 4:3.
@@ -779,7 +779,7 @@ function fitTiles(grid, gap, dims){
   grid.classList.add('fit');
 }
 addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
-function answer(cur, c, target, ph, cor){
+function answer(cur, c, target, ph, cor, unseen){
   const good = c === target, s = st(target);
   session.n++; if (good) { session.ok++; s.ok++; s.streak++; } else { s.ko++; s.streak = 0; s.conf = s.conf || {}; s.conf[c] = (s.conf[c] || 0) + 1; }
   // Knowledge (BKT) with the difficulty of the photos shown (before the result joins s.h, which BKT replays for old progress).
@@ -809,7 +809,8 @@ function answer(cur, c, target, ph, cor){
   // as a duel in the photo quiz a couple of questions later.
   let again = false;
   if (!good && DATA.gen[c]) {
-    const order = [...ph].sort((x, y) => (y.view === 'macro') - (x.view === 'macro')), V = DATA.gen[c].views;
+    // Only photos the player saw during the question: a corallites hint left closed is not "the photo shown".
+    const order = ph.filter(p => p !== unseen).sort((x, y) => (y.view === 'macro') - (x.view === 'macro')), V = DATA.gen[c].views;
     const tp = order.find(p => (V[p.view] || []).length);
     if (tp) {
       const [, cp] = photoPair([tp], V[tp.view], tp), st0 = $v.querySelector('.qstage'), lab = VIEW_LABEL[tp.view] || '';
@@ -832,13 +833,8 @@ function answer(cur, c, target, ph, cor){
   // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
   const qq = $v.querySelector('.q'); if (qq) qq.classList.add('done');
   if (isStacked()) { window.scrollTo(0, 0); fitStage(); const mo = document.querySelector('#after details'); if (mo) mo.ontoggle = fitStage; }
-  // Desktop: 3 photos leave the 4th cell of the 2x2 stage empty, so the feedback moves into it, next to the photos it
-  // describes (Pierre, 2026-10-31). fitStage then lays out 4 cells. A mix-up montage (2 photos) keeps it in the side column.
-  const st1 = $v.querySelector('.qstage');
-  if (st1 && !isStacked() && !st1.classList.contains('qvs') && st1.children.length === 3) {
-    const af = document.getElementById('after'); af.classList.add('qcell'); st1.appendChild(af); fitStage();
-    if (st1.style.gridTemplateColumns.indexOf('repeat(2') !== 0) { af.classList.remove('qcell'); $v.querySelector('.qside').appendChild(af); fitStage(); }
-  }
+  // Tablet and desktop: the feedback always sits in the answer column, whatever the stage shows (3 views, one view,
+  // a mix-up montage or a duel), so it is in the same place after every answer (Pierre, 2026-11-01). Phones: bottom sheet.
   bindGo(document.getElementById('after'));
   const nb = document.getElementById('next'); nb.focus({preventScroll: true}); nb.onclick = route;
 }
