@@ -66,6 +66,7 @@ const mtChanged = () => !same(DRAFT.mont || {}, SAVED.mont || {});
 // Crops (curation.json "crop" {f: [left, top, right, bottom]} as fractions of the photo): set in the Candidates view;
 // tools/fetch_approved.py applies them when it downloads the photo (and redoes it if the crop changes).
 const crOf = f => (DRAFT.crop || {})[f], crChanged = () => !same(DRAFT.crop || {}, SAVED.crop || {});
+const snChanged = () => !same(DRAFT.single || {}, SAVED.single || {});
 const crStyle = f => { const c = crOf(f); return c ? ` style="object-view-box:inset(${+(c[1] * 100).toFixed(1)}% ${+((1 - c[2]) * 100).toFixed(1)}% ${+((1 - c[3]) * 100).toFixed(1)}% ${+(c[0] * 100).toFixed(1)}%)"` : ''; };
 const bookOn = o => o.book !== false, bChanged = () => bookOn(DRAFT) !== bookOn(SAVED);
 const qTag = p => { const q = qOf(p.f); return `<span class="adm-q q${q}${qSet(p.f) ? '' : ' auto'}" title="${qSet(p.f) ? 'Quality set by you' : 'Automatic first guess'}">${QUAL.find(x => x[0] === q)[1]}</span>`; };
@@ -172,11 +173,13 @@ function lockScreen(msg){
 let MEMO = {};
 const memoReset = () => { MEMO = {}; };
 const memo = (k, fn) => n => { const key = k + '|' + n; if (!(key in MEMO)) MEMO[key] = fn(n); return MEMO[key].slice(); };
+// "Several corals" photos (data.json more / course multi) Pierre marked as one coral (curation.json single {f: 1}) become normal photos.
+const one = f => !!(DRAFT.single || {})[f];
 // Photos data.json gives the genus (plus approved candidates), before any "Not this genus".
 const own = memo('own', n => {
   const g = DATA.gen[n], two = g.levels === 2, L = [];
-  VIEWS.forEach(([v]) => { (g.views[v] || []).forEach(p => L.push({...p, base: v})); ((g.more || {})[v] || []).forEach(p => L.push({...p, base: v, multi: true, extra: true})); });
-  (DATA.course[n] || []).forEach(p => L.push({...p, base: p.v === 'medium' && two ? 'macro' : p.v}));
+  VIEWS.forEach(([v]) => { (g.views[v] || []).forEach(p => L.push({...p, base: v})); ((g.more || {})[v] || []).forEach(p => L.push(one(p.f) ? {...p, base: v, wasMulti: true} : {...p, base: v, multi: true, extra: true})); });
+  (DATA.course[n] || []).forEach(p => L.push({...p, base: p.v === 'medium' && two ? 'macro' : p.v, ...(p.multi && one(p.f) ? {multi: false, wasMulti: true} : {})}));
   for (let i = L.length - 1; i >= 0; i--) if (excl(L[i].f)) L.splice(i, 1);
   // Candidates Pierre approved (curation add: {f: view}) join their view as normal photos (app.js applyCuration).
   const add = entry(n).add || {};
@@ -227,9 +230,11 @@ function rowOf(n, v){
   const sug = ((PICKS[n] || {})[v] || []).map(f => live.find(p => p.f === f && !p.multi && !offSlot(p))).filter(Boolean);
   // Featured = always the first FEAT photos (Pierre): his pinned ones in his order, the rest filled automatically,
   // never with a Poor photo while better ones exist, except IMR lecture photos (as on the site).
-  const pinned = (pin || []).map(f => live.find(p => p.f === f && !p.cf)).filter(Boolean).slice(0, FEAT);
+  // Coral Finder book photos (Pierre 2026-11-01): on the sheet when pinned, or to fill a gap after every field photo; never in games.
+  const pinned = (pin || []).map(f => live.find(p => p.f === f)).filter(Boolean).slice(0, FEAT);
   const cand = [...sug, ...order.filter(p => !p.multi && !offSlot(p))].filter(p => !pinned.includes(p)), k = FEAT - pinned.length;
-  const good = takeObs(cand.filter(p => p.imr || qOf(p.f) !== 1), k), feat = [...pinned, ...good, ...takeObs(cand.filter(p => !good.includes(p)), k - good.length)];
+  const good = takeObs(cand.filter(p => p.imr || qOf(p.f) !== 1), k), field = [...good, ...takeObs(cand.filter(p => !good.includes(p)), k - good.length)];
+  const feat = [...pinned, ...field, ...order.filter(p => p.cf && !pinned.includes(p)).slice(0, k - field.length)];
   return {feat, pinned: pinned.map(p => p.f), auto: !pinned.length, rest: order.filter(p => !feat.includes(p)), hid: photos(n).filter(p => viewOf(n, p) === v && hidden(n, p))};
 }
 function coverOf(n){
@@ -281,6 +286,7 @@ const ACT = {
     if (L.includes(f)) { L.splice(L.indexOf(f), 1); if (!L.length) { toast('A view needs at least one featured photo: back to the automatic pick.'); delete k.feat[v]; } }
     else if (L.length >= FEAT) toast(`Already ${FEAT} featured: remove one first.`); else L.push(f); }),
   addc: (n, f, v, to) => edit(n, k => { if ((k.hide || []).includes(f)) { const p = photos(n).find(x => x.f === f); k.hide = k.hide.filter(x => x !== f); k.move = k.move || {}; if (to === p.base) delete k.move[f]; else k.move[f] = to; return; } k.add = k.add || {}; k.add[f] = to; }),
+  multi: (n, f) => { const S = {...(DRAFT.single || {})}; if (S[f]) delete S[f]; else S[f] = 1; DRAFT.single = S; if (!Object.keys(S).length) delete DRAFT.single; saveDraft(); render(); },
   exclude: (n, f) => { DRAFT.exclude = DRAFT.exclude || {}; DRAFT.exclude[f] = 'excluded';
     edit(n, k => { dropFeat(k, f); if (k.cover === f) delete k.cover; if (k.add) delete k.add[f]; });
     toast('Excluded. Undo (Ctrl+Z) or the Excluded view brings it back.'); },
@@ -296,7 +302,6 @@ const ACT = {
     if (p.cand || pending(n).includes(p)) { k.add = k.add || {}; k.add[f] = to; }
     else if (!was) { k.move = k.move || {}; if (to === p.base) delete k.move[f]; else k.move[f] = to; }
     dropFeat(k, f);
-    if (p.cf) at = null;   // book photos never take a featured slot (the site keeps them for the Coral Finder only)
     // Dropped after the last of 3 featured photos: it takes the last place (it used to fall off the end).
     if (at !== null) { L.splice(Math.min(at, L.length, FEAT - 1), 0, f); k.feat = k.feat || {}; k.feat[to] = L.slice(0, FEAT); }
     // Dragged out of the first places: the next photo moves up, and the set is pinned so it can't come straight back.
@@ -319,7 +324,7 @@ function tile(n, p, v, st){
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"${crStyle(p.f)}></button>${st.cls === 'is-hidden' ? XBTN : GRIP + XBTN}
     ${st.num ? `<span class="adm-num${st.sheet ? ' sheet' : ''}"${st.sheet ? ' title="Genus sheet"' : ''}>${st.num}</span>` : ''}
     ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
-    <figcaption>${p.from ? `<span class="adm-src new" title="From ${esc(p.from)}">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">new</span>' : ''}${srcTag(p)}${p.multi ? '<span class="adm-src multi" title="Several corals">several corals</span>' : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
+    <figcaption>${p.from ? `<span class="adm-src new" title="From ${esc(p.from)}">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">new</span>' : ''}${srcTag(p)}${p.multi || p.wasMulti ? `<button type="button" class="adm-src multi${p.wasMulti ? ' off' : ''}" data-act="multi" title="Several corals" aria-pressed="${!p.wasMulti}">${p.wasMulti ? 'one coral' : 'several corals'}</button>` : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}${fSeg(p)}
       ${st.cls === 'is-hidden' ? `<button type="button" data-act="hide" class="on">Show again</button>` : `
       <span class="adm-qseg adm-vseg" role="group" aria-label="View">${moves}</span>
@@ -332,7 +337,7 @@ function tile(n, p, v, st){
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
 const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Exclude" aria-label="Exclude for good">×</button>';
 function status(){
-  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : '', flChanged() ? 'triage flags' : '', sgChanged() ? 'triage suggestions' : '', cdChanged() ? 'candidate reviews' : '', mtChanged() ? 'look-alike montages' : '', crChanged() ? 'crops' : ''].filter(Boolean);
+  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : '', flChanged() ? 'triage flags' : '', sgChanged() ? 'triage suggestions' : '', cdChanged() ? 'candidate reviews' : '', mtChanged() ? 'look-alike montages' : '', crChanged() ? 'crops' : '', snChanged() ? 'several corals' : ''].filter(Boolean);
   const bs = $('booksw'); if (bs) { bs.setAttribute('aria-pressed', String(bookOn(DRAFT))); bs.textContent = `CF book: ${bookOn(DRAFT) ? 'on' : 'off'}`; }
   const tn = Object.keys(DRAFT.flag || {}).length + sugCount(), ta = document.querySelector('[data-mode="triage"]'); if (ta) ta.textContent = `Triage${tn ? ` (${tn})` : ''}`;
   const xn = Object.keys(DRAFT.exclude || {}).length, xa = document.querySelector('[data-mode="excluded"]'); if (xa) xa.textContent = `Excluded${xn ? ` (${xn})` : ''}`;
@@ -369,7 +374,7 @@ function render(){
       <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : DATA.gen[m].x ? 'not IMR' : '★'}${c && c.view === 'macro' && lv(m) !== 2 ? ' · <b class="warnc" title="Cover is a close-up">macro cover</b>' : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}${missing(m).length ? ' · <b class="warnc" title="Missing photos">⚠ check</b>' : ''}</small></span><span class="dots">${e.ok ? (needs(m).length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></a>`; }).join('');
   const body = rows(n).map(([v]) => { const r = rowOf(n, v), out = [...r.feat, ...r.rest].filter(p => !shown(p)).length;
     return `<section class="adm-row"><h3>${label(n, v)} <small>${r.feat.length + r.rest.length} photo${r.feat.length + r.rest.length === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
-      <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: !r.pinned.includes(p.f), last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${(sh => r.rest.filter(shown).map(p => tile(n, p, v, sh.includes(p) ? {num: FEAT + 1 + sh.indexOf(p), sheet: true} : {})).join(''))(r.rest.filter(p => !p.multi && !offSlot(p)).slice(0, SHEET - r.feat.length))}</div>
+      <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: !r.pinned.includes(p.f), last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${(sh => r.rest.filter(shown).map(p => tile(n, p, v, sh.includes(p) ? {num: FEAT + 1 + sh.indexOf(p), sheet: true} : {})).join(''))(r.rest.filter(p => !p.multi && !p.extra).slice(0, SHEET - r.feat.length))}</div>
       ${r.feat.length + r.rest.length ? '' : '<p class="note">No photo in this view.</p>'}</section>`; }).join('');
   const P = unused(n), Ps = P.filter(shown), two = lv(n) === 2;
   const candTile = p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"${crStyle(p.f)}></button>${GRIP}${XBTN}
@@ -547,7 +552,7 @@ function renderQuality(){
 
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
-  cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field photos only (no lecture slide, no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible). Big number = photos, small = distinct colonies when fewer. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Click a row to open the genus.</p>`,
+  cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field photos only (no lecture slide, no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The line under it counts the photos of that view left out and why: IMR (lecture slide, own quiz), several (several corals), Ø (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Click a row to open the genus.</p>`,
   stats: `<p>Every quiz and duel answer synced to the sheet. Players are anonymous: a number, ranked by level; "you" marks the name synced in this browser (All / Others / Me). Level is on the same scale as photo difficulty. Last 20 = right answers among the player's last 20. Learned = genera learned on their last sync. Days = days with answers. Photos = different photos answered (more = more variety). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsph: `<p>Photo difficulty (Elo) from every answer: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers; few answers = rough. Click a dot to see the photo.</p>
@@ -873,13 +878,14 @@ const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAF
   const seen = {}; Object.keys(DRAFT.seen || {}).sort().forEach(k => { seen[k] = DRAFT.seen[k]; });
   const mont = {}; Object.keys(DRAFT.mont || {}).sort().forEach(k => { mont[k] = DRAFT.mont[k]; });
   const crop = {}; Object.keys(DRAFT.crop || {}).sort().forEach(k => { crop[k] = DRAFT.crop[k]; });
-  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(gf).length ? {gf} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {}), ...(Object.keys(flag).length ? {flag} : {}), ...(Object.keys(use).length ? {use} : {}), ...(Object.keys(seen).length ? {seen} : {}), ...(Object.keys(mont).length ? {mont} : {}), ...(Object.keys(crop).length ? {crop} : {})}; };
+  const single = {}; Object.keys(DRAFT.single || {}).sort().forEach(k => { single[k] = DRAFT.single[k]; });
+  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(gf).length ? {gf} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {}), ...(Object.keys(flag).length ? {flag} : {}), ...(Object.keys(use).length ? {use} : {}), ...(Object.keys(single).length ? {single} : {}), ...(Object.keys(seen).length ? {seen} : {}), ...(Object.keys(mont).length ? {mont} : {}), ...(Object.keys(crop).length ? {crop} : {})}; };
 async function save(){
-  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(), sg = sgChanged(), cd = cdChanged(), mt = mtChanged(), cr = crChanged(); if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr) || !TOKEN) return;
+  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(), sg = sgChanged(), cd = cdChanged(), mt = mtChanged(), cr = crChanged(), sn = snChanged(); if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn) || !TOKEN) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
   try {
     const out = output(), text = JSON.stringify(out, null, 2) + '\n';
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const r = await gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg, content: toB64(text), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})});
     SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); saveDraft();
     toast('Published. The public site shows it within a minute or two.');
@@ -984,9 +990,20 @@ let COURSE = null;
 function gamePool(n, v){
   COURSE = COURSE || new Set(Object.values(DATA.course || {}).flat().map(p => p.f));
   const use = DRAFT.use || {};
-  return photos(n).filter(p => viewOf(n, p) === v && !hidden(n, p) && !p.multi && !p.extra && !p.cf && !COURSE.has(p.f) && use[p.f] !== 'ref' && !(v === 'wide' && fOf(p.f) === 'x'));
+  // A genus with a single IMR growth form (Pierre): the form is no question, so a "form not visible" photo still counts.
+  const oneForm = v === 'wide' && new Set(photos(n).filter(p => !p.multi && !hidden(n, p)).map(p => fOf(p.f)).filter(x => x && x !== 'x' && x !== 'p')).size === 1;
+  return photos(n).filter(p => viewOf(n, p) === v && !hidden(n, p) && !p.multi && !p.extra && !p.cf && !COURSE.has(p.f) && use[p.f] !== 'ref' && !(v === 'wide' && fOf(p.f) === 'x' && !oneForm));
 }
 function covOf(n, v){ const L = gamePool(n, v); return {n: L.length, obs: new Set(L.map(p => p.o || p.f)).size, L}; }
+// Photos of a genus x view left out of the game pool, by reason (Pierre: show what isn't counted and why).
+const OFF = [['imr', 'IMR'], ['multi', 'several'], ['x', 'Ø'], ['ref', 'sheet only'], ['cf', 'CF'], ['hid', 'removed']];
+function covOff(n, v){
+  const pool = new Set(gamePool(n, v).map(p => p.f)), use = DRAFT.use || {}, out = {};
+  photos(n).filter(p => viewOf(n, p) === v && !pool.has(p.f)).forEach(p => {
+    const why = hidden(n, p) ? 'hid' : p.cf ? 'cf' : COURSE.has(p.f) ? 'imr' : p.multi ? 'multi' : use[p.f] === 'ref' ? 'ref' : v === 'wide' && fOf(p.f) === 'x' ? 'x' : null;
+    if (why) out[why] = (out[why] || 0) + 1; });
+  return OFF.filter(([k]) => out[k]).map(([k, t]) => `${t} ${out[k]}`).join(' · ');
+}
 // 0 none, 1 thin (1-2 colonies), 2 short (3-4), 3 fair (5-7), 4 well covered (8+). Thin = level 0 or 1.
 const covLvl = c => COV.filter(k => c.obs >= k).length;
 // Views a genus has in games: 2-level genera have no Closer view.
@@ -1006,7 +1023,7 @@ function renderCov(){
   const by = {lecture: (a, b) => lg(a.n) - lg(b.n) || a.i - b.i, thin: (a, b) => a.min - b.min || a.all.length - b.all.length || a.i - b.i};
   R.sort(by[COV_ORDER] || by.thin);
   const max = Math.max(1, ...R.map(r => r.all.length)), thin = R.reduce((s, r) => s + r.cells.filter(c => c && covLvl(c) < 2).length, 0);
-  const cell = (r, c, v) => c ? `<td class="cov-c cov-${covLvl(c)}" title="${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}"><b>${c.n}</b>${c.obs < c.n ? `<small>${c.obs}</small>` : ''}</td>` : '<td class="cov-c cov-na">–</td>';
+  const cell = (r, c, v) => c ? `<td class="cov-c cov-${covLvl(c)}" title="${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}"><b>${c.n}</b>${c.obs < c.n ? `<small>${c.obs}</small>` : ''}${(o => o ? `<span class="cov-off">${o}</span>` : '')(covOff(r.n, v))}</td>` : '<td class="cov-c cov-na">–</td>';
   const bar = r => ORIGINS.filter(o => o[0] !== 'book').map(([o, t]) => { const k = r.all.filter(p => origin(p) === o).length; return k ? `<i class="o-${o}" style="width:${(100 * k / max).toFixed(1)}%" title="${t}: ${k}"></i>` : ''; }).join('');
   const seg = [['thin', 'Thinnest', 'Least covered first'], ['lecture', 'Lecture', 'Lecture order']];
   $v.innerHTML = `<section class="adm-cov">
