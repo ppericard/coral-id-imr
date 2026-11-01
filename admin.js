@@ -1110,7 +1110,7 @@ function renderFcov(){
       return {n: L.length, obs: new Set(good.map(p => p.o || p.f)).size, cf: L.filter(p => p.cf).length, L}; })(pool.filter(p => viewOf(n, p) === v)) : null) : [];
     const live = cells.filter(Boolean), forms = [...new Set(pool.filter(p => viewOf(n, p) !== 'macro').map(p => fOf(p.f)).filter(f => f && FORM_ORDER.includes(f)))].sort((a, b) => FORM_ORDER.indexOf(a) - FORM_ORDER.indexOf(b));
     const sp = [...new Set(pool.map(p => p.t).filter(t => t && /\s/.test(t.trim())).map(t => t.trim().split(/\s+/).slice(0, 2).join(' ')))].sort();
-    return {n, i, x: isX(n), cells, min: live.length ? Math.min(...live.map(c => c.obs)) : 0, tot: pool.length, forms, sp};
+    return {n, i, x: isX(n), cand: pending(n).filter(p => !p.cf).length, cells, min: live.length ? Math.min(...live.map(c => c.obs)) : 0, tot: pool.length, forms, sp};
   });
   const by = {thin: (a, b) => a.min - b.min || a.tot - b.tot || a.i - b.i, thick: (a, b) => b.tot - a.tot || a.i - b.i, az: (a, b) => a.n.localeCompare(b.n)};
   R.sort(by[FCOV.order] || by.thin);
@@ -1121,10 +1121,10 @@ function renderFcov(){
     <div class="adm-filter cov-head">${seg('set', [['all', 'All'], ['imr', 'IMR list'], ['x', 'CF only']])}${seg('order', [['thin', 'Thinnest'], ['thick', 'Thickest'], ['az', 'A–Z']])}
       <span class="cov-key" aria-label="Good colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 good colonies">${thin} thin</b></div>
-    <table class="cov-t fcov-t"><thead><tr><th></th>${VIEWS.map(([, t]) => `<th>${t}</th>`).join('')}<th>Forms</th><th>Species</th></tr></thead>
+    <table class="cov-t fcov-t"><thead><tr><th></th>${VIEWS.map(([, t]) => `<th>${t}</th>`).join('')}<th>Forms</th><th>Species</th><th title="Candidates">+</th></tr></thead>
     <tbody>${R.map(r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${r.x ? ' <small class="fcov-x">CF only</small>' : ''}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="fcov-f">${r.forms.map(f => `<span class="adm-why" title="${esc(fName(f))}">${FABBR[f]}</span>`).join(' ') || '<span title="No growth form set on these photos yet">–</span>'}</td>
-      <td class="fcov-s" title="${esc(r.sp.join(', '))}">${r.sp.length || '–'}</td></tr>`).join('')}</tbody></table></section>`;
+      <td class="fcov-s" title="${esc(r.sp.join(', '))}">${r.sp.length || '–'}</td><td class="cov-cand">${r.cand ? `+${r.cand}` : ''}</td></tr>`).join('')}</tbody></table></section>`;
   $v.querySelectorAll('[data-fc]').forEach(b => b.onclick = () => { FCOV[b.dataset.fc] = b.dataset.v; store.set('imr-admin-fcov', FCOV); render(); });
   $v.querySelectorAll('tbody tr').forEach(tr => tr.onclick = e => { if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g); });
 }
