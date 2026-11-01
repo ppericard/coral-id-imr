@@ -638,7 +638,7 @@ function question(cur, target, choices, prompt, set){
   $v.innerHTML = `${gameHelp(cur)}<div class="q bleed">
     <div class="qstage">${ph.map(fig).join('')}</div>
     <aside class="qside">
-      <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">${session.n ? `${session.ok}/${session.n} right` : ''}</span>${quizNav(cur)}</div>
+      <div class="qtop"><p class="prompt">${prompt}</p>${quizNav(cur)}</div>
       <div class="ans">${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
@@ -657,11 +657,11 @@ function question(cur, target, choices, prompt, set){
   $v.querySelector('.q').addEventListener('click', e => { const z = e.target.closest('[data-q]'); if (!z) return;
     const list = hintShown ? [...ph, set.hint] : answered && set.reveal ? [...ph, ...set.reveal] : ph;
     zoom(list.map(p => ({...p, genus: target})), Number(z.dataset.q), {blind: () => !answered}); });
+  // No session score in the game header (Pierre, 2026-11-01: "3/3 right" looked out of place); progress lives on My progress.
   // A single-view question shows the other views of the same colony once answered (seen, not part of the answer).
   const reveal = () => { const R = set.reveal || [], st = $v.querySelector('.qstage'); if (!R.length || !st) return;
     st.insertAdjacentHTML('beforeend', R.map((p, k) => fig(p, ph.length + k)).join('')); fitStage(); };
-  $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'); showHint(); reveal(); answered = true; answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint);
-    const sc = $v.querySelector('.score'); if (sc) sc.textContent = `${session.ok}/${session.n} right`; });
+  $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'); showHint(); reveal(); answered = true; answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint); });
 }
 // The quiz stage fills the window below the header, so photos, choices and feedback fit without scrolling.
 // The photos then take the grid (columns x rows) that shows them largest at 4:3.
@@ -680,15 +680,13 @@ function fitStage(){
   let best = [n, 1, 0];
   for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c), w = Math.min((W - 8 * (c - 1)) / c, (H - 8 * (r - 1)) / r * 4 / 3); if (w > best[2]) best = [c, r, w]; }
   st.style.gridTemplateColumns = `repeat(${best[0]}, minmax(0, 1fr))`; st.style.gridTemplateRows = `repeat(${best[1]}, minmax(0, 1fr))`;
-  // Phones and tablets (design review 2026-11-01): a fixed tall stage left a landscape photo floating in blurred bars. With one
-  // row of photos the stage is a 4:3 box (the most common photo shape) at most, sized now, before any photo loads, so nothing
-  // moves while they load (Pierre, 2026-11-01). Each photo then fills its box (object-fit: cover, class .cov on its figure) when
-  // that crops at most ~23% of it; a photo of a very different shape is shown whole on its blurred background instead.
+  // Phones and tablets: the stage takes all the height the question and answers leave (computed above, before any photo
+  // loads, so nothing moves while they load). Each photo fills its box (object-fit: cover, class .cov on its figure) when that
+  // crops at most ~23% of it; a photo of another shape is shown whole on its blurred background. A 4:3 cap tried after the
+  // design review left a small photo over an empty bottom half (Pierre, 2026-11-01): the bigger photo wins.
   // The full frame is one tap away in the lightbox.
   if (isStacked() && !st.classList.contains('qvs') && best[1] === 1) {
-    const colW = st.children[0].getBoundingClientRect().width, h0 = st.getBoundingClientRect().height;
-    const h = Math.min(h0, Math.max(160, colW * 3 / 4));
-    if (h < h0) st.style.height = h + 'px';
+    const colW = st.children[0].getBoundingClientRect().width, h = st.getBoundingClientRect().height;
     const boxR = colW / h;
     st.querySelectorAll('.qph').forEach(f => { const i = f.querySelector('img'); if (!i) return;
       const set = () => { const r = i.naturalWidth / i.naturalHeight; f.classList.toggle('cov', !!r && Math.max(boxR / r, r / boxR) <= 1.3); };
