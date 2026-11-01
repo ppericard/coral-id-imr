@@ -13,7 +13,7 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 ## State of play (2026-11-01)
 
 - Live app: <https://ppericard.github.io/coral-id-imr/> (GitHub Pages from `main`). Admin: <https://ppericard.github.io/coral-id-imr/admin.html>.
-- About 290 pull requests merged in two days (2026-10-31 and 11-01). Every PR description explains a decision; `git log --oneline` is a good index (squash merges titled `… (#N)`).
+- About 287 pull requests merged in two days (2026-10-31 and 11-01). Every PR description explains a decision; `git log --oneline` is a good index (squash merges titled `… (#N)`).
 - No open pull requests at handover time.
 - Tests: `node --test tests/*.test.js` and `node tests/pages.smoke.js` (Playwright). CI: `.github/workflows/checks.yml`.
 - Progress sync script `tools/sync/Code.gs`: **v10 is live** (deployed by Pierre and verified 2026-11-01 08:10 UTC).
