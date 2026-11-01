@@ -25,6 +25,7 @@ const ROUTES = [
   'pairs',
   'finder',
   'progress',
+  'board',
   'lab',
   'quiz-duel|Foo|Bar',
   'g-%E0'

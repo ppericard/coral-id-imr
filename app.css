@@ -5306,3 +5306,105 @@ footer .rep:hover {
 .signnudge .ulcard {
   text-align: left;
 }
+
+/* ---------- Leaderboard (Pierre, 2026-11-01): 🏆 in the header, #board page, rank in My progress ---------- */
+.boardgo {
+  text-decoration: none;
+  color: inherit;
+  font-size: var(--fs-m);
+  line-height: 1;
+}
+.boardgo[aria-current='page'] {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.board {
+  max-width: 640px;
+}
+.blist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.blist li {
+  display: grid;
+  grid-template-columns: 2.4em 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-m);
+}
+.blist li:first-child {
+  border-top: 0;
+}
+.blist li.me {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+.brank {
+  text-align: center;
+  font-weight: 700;
+  color: var(--muted);
+}
+.bname {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bpct {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.belo {
+  color: var(--muted);
+  font-size: var(--fs-s);
+  font-variant-numeric: tabular-nums;
+}
+.pboardl {
+  display: block;
+  margin: 8px 0;
+  text-align: center;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: var(--fs-s);
+}
+.pboardl:hover {
+  text-decoration: underline;
+}
+.apptoast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  max-width: min(92vw, 520px);
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+  font-size: var(--fs-s);
+}
+.apptoast button {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.btitle {
+  margin: 4px 0 12px;
+  font-size: var(--fs-xl);
+}
+@media (max-width: 599.98px) {
+  .apptoast {
+    bottom: calc(76px + env(safe-area-inset-bottom)); /* above the tab bar */
+  }
+}

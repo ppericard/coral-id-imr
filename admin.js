@@ -3618,11 +3618,23 @@ function loadStats() {
     fetch(SYNC_URL + q)
       .then(r => r.json())
       .catch(() => ({}));
+  // Sheet v14: per-player numbers (the answer log, players' levels) only with this page's GitHub token, by POST; the
+  // caller's own name and code go as aname/apin (never name/pin, which an older script would take for a progress write).
+  // A script before v14 answers 'input' to those POSTs: fall back to its public GETs.
+  const post = b =>
+    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({...b, token: TOKEN})})
+      .then(r => r.json())
+      .catch(() => ({}));
   const who = me && sy.pin ? `&name=${encodeURIComponent(me)}&pin=${encodeURIComponent(sy.pin)}` : '';
-  return Promise.all([get('?answers=1' + who), STATS ? null : get('?stats=1'), digest]).then(([a, s]) => {
+  const old = (j, q) => (j && j.error === 'input' ? get(q) : j);
+  const ga = TOKEN
+      ? post({readAnswers: 1, ...(me && sy.pin ? {aname: me, apin: sy.pin} : {})}).then(j => old(j, '?answers=1' + who))
+      : Promise.resolve({ok: false, error: 'token'}),
+    gs = STATS ? null : TOKEN ? post({readStats: 1}).then(j => old(j, '?stats=1')) : get('?stats=1');
+  return Promise.all([ga, gs, digest]).then(([a, s]) => {
     ELO_NOME = null;
     if (a && a.me) MEID = a.me;
-    ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, rows: [], players: {}};
+    ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
     if (s) {
       STATS = s.ok ? s.photos || {} : {};
       RAS = s.ok ? s.ras || {} : {};
@@ -3958,7 +3970,7 @@ function statsPlayers() {
   if (ANS.old) {
     $v.innerHTML =
       head +
-      `<p class="warn">Sheet script v${esc(ANS.v || '?')}: needs v4 (v5 for calibration and variety). <a href="https://raw.githubusercontent.com/${REPO}/main/tools/sync/Code.gs" target="_blank" rel="noopener">Code.gs</a></p>`;
+      `<p class="warn">${ANS.err === 'token' ? "Needs this page's GitHub token: per-player answers are admin-only (sheet v14)." : `Sheet script v${esc(ANS.v || '?')}: needs v4 (v5 for calibration and variety).`} <a href="https://raw.githubusercontent.com/${REPO}/main/tools/sync/Code.gs" target="_blank" rel="noopener">Code.gs</a></p>`;
     bindStats();
     return;
   }
