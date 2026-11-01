@@ -945,18 +945,19 @@ const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbs
 let STATS = null, DIFF_ORDER = store.get('imr-admin-diff', 'hard');
 function renderDiff(){
   status();
-  if (!STATS) { $v.innerHTML = '<p class="note">Loading…</p>'; loadStats().then(() => { if (cur === '~diff') render(); }); return; }
-  const vl = v => v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1];
-  const L = allPhotos().filter(p => STATS[p.f]).sort((a, b) => (DIFF_ORDER === 'hard' ? -1 : 1) * (STATS[a.f][0] - STATS[b.f][0]));
-  const card = p => { const [d, n, r] = STATS[p.f];
+  if (!STATS || !ANS) { $v.innerHTML = '<p class="note">Loading…</p>'; loadStats().then(() => { if (cur === '~diff') render(); }); return; }
+  const vl = v => v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1], S = photoStats();
+  const L = allPhotos().filter(p => S[p.f]).sort((a, b) => (DIFF_ORDER === 'hard' ? -1 : 1) * (S[a.f][0] - S[b.f][0]));
+  const card = p => { const [d, n, r] = S[p.f];
     return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"${crStyle(p.f)}></button>
     <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}<span class="adm-src" title="Difficulty">${d > 0 ? '+' : ''}${d.toFixed(1)} · ${r}/${n}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`; };
   $v.innerHTML = `<section class="adm-quality"><div class="adm-qhead"><h2>Photo difficulty</h2></div>
-    <div class="adm-filter"><button type="button" class="adm-fchip plain" data-do="hard" aria-pressed="${DIFF_ORDER === 'hard'}">Hardest</button><button type="button" class="adm-fchip plain" data-do="easy" aria-pressed="${DIFF_ORDER === 'easy'}">Easiest</button></div>
+    <div class="adm-filter"><button type="button" class="adm-fchip plain" data-do="hard" aria-pressed="${DIFF_ORDER === 'hard'}">Hardest</button><button type="button" class="adm-fchip plain" data-do="easy" aria-pressed="${DIFF_ORDER === 'easy'}">Easiest</button>${eloSeg()}</div>
     ${L.length ? `<div class="adm-grid adm-qgrid">${L.map(card).join('')}</div>` : '<p class="note">No answers yet.</p>'}</section>`;
   $v.querySelectorAll('[data-do]').forEach(b => b.onclick = () => { DIFF_ORDER = b.dataset.do; store.set('imr-admin-diff', DIFF_ORDER); renderDiff(); });
+  bindStats();
   $v.querySelectorAll('[data-act="zoom"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'); zoom(t.dataset.g, t.dataset.f); });
   bindQ();
 }
@@ -1007,7 +1008,7 @@ function renderCov(){
 // level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
 // The Stats tab holds the sub-views of STAT_TABS; Coverage (renderCov) and the photo list (renderDiff) live there too.
 const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~diff', 'Photo list'], ['~cov', 'Coverage'], ['~stats-needs', 'Needs']];
-let ANS = null, RAS = {}, MEID = null, SF = Object.assign({who: 'all', min: 1}, store.get('imr-admin-stats', {}));
+let ANS = null, RAS = {}, MEID = null, SF = Object.assign({who: 'all', min: 1, elo: 'all'}, store.get('imr-admin-stats', {}));
 const statSwitch = () => `<nav class="adm-filter adm-stabs" aria-label="Stats">${STAT_TABS.filter(([h]) => h !== '~cov' || typeof renderCov === 'function')
   .map(([h, t]) => `<a class="adm-fchip plain" href="#${h}" aria-pressed="${cur === h}">${t}</a>`).join('')}</nav>`;
 // Puts the switch above a view rendered by another function (photo list, coverage).
@@ -1018,10 +1019,30 @@ function loadStats(){
     .then(b => { MEID = btoa(String.fromCharCode(...new Uint8Array(b))).slice(0, 8); }).catch(() => {}) : Promise.resolve();
   const get = q => fetch(SYNC_URL + q).then(r => r.json()).catch(() => ({}));
   return Promise.all([get('?answers=1'), STATS ? null : get('?stats=1'), digest]).then(([a, s]) => {
-    ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, rows: [], players: {}};
+    ELO_NOME = null; ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, rows: [], players: {}};
     if (s) { STATS = s.ok ? s.photos || {} : {}; RAS = s.ok ? s.ras || {} : {}; }
   });
 }
+// Photo Elo with or without this browser's own answers (Pierre, 2026-11-01: the author knows the photos, so his answers
+// bias their difficulty). "All" is the sheet's ?stats=1, the ratings the games use. "Without me" replays the same Elo
+// (eloOf, a copy of stats_ in tools/sync/Code.gs: keep the two in step) over the answer log minus MEID's answers.
+// Nothing is reset or stored: the log is kept, so any filter is a fresh replay.
+function eloOf(rows){
+  const P = {}, R = {}, sig = x => 1 / (1 + Math.exp(-x));
+  rows.slice().sort((a, b) => a[1] - b[1]).forEach(r => {
+    const fs = r[6].split(/\s+/).filter(Boolean); if (!r[0] || !fs.length) return;
+    const ok = r[4] ? 1 : 0, g = r[5].indexOf('quiz-duel') === 0 ? 0.5 : 0.25, ra = R[r[0]] = R[r[0]] || [0, 0];
+    const ph = fs.map(f => P[f] = P[f] || [0, 0, 0]), b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
+    const d = ok - (g + (1 - g) * sig(ra[0] - b));
+    ra[0] += 0.6 / (1 + ra[1] / 40) * d; ra[1]++;
+    ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * d; p[2]++; p[1] += ok; });
+  });
+  const out = {}; Object.keys(P).forEach(f => out[f] = [Math.round(P[f][0] * 100) / 100, P[f][2], P[f][1]]);
+  return out;
+}
+let ELO_NOME = null;
+const photoStats = () => SF.elo !== 'others' || !MEID || !ANS ? STATS : (ELO_NOME = ELO_NOME || eloOf(ANS.rows.filter(r => r[0] !== MEID)));
+const eloSeg = () => MEID ? segBtns('elo', [['all', 'All'], ['others', 'Without me']]) : '';
 const pct = (r, n) => n ? Math.round(100 * r / n) + '%' : '–';
 const sgn = d => (d > 0 ? '+' : '') + d.toFixed(2);
 const days = t => { const d = Math.floor((Date.now() - t) / 864e5); return d < 1 ? 'today' : d < 2 ? 'yesterday' : d + ' d ago'; };
@@ -1087,7 +1108,7 @@ function statsPlayers(){
 // Where to look for more photos (Pierre, 2026-10-31): per genus x view, the reasons the game pool falls short, from
 // coverage (covOf), photo quality and difficulty (STATS Elo), players' levels per genus (sheet v5) and their answers.
 function statsNeeds(){
-  const head = `${statSwitch()}<div class="adm-shead"><h2>Where to look for photos</h2></div>`, R = ANS.rows || [], OFF = 1.0;
+  const head = `${statSwitch()}<div class="adm-shead"><h2>Where to look for photos</h2>${eloSeg()}</div>`, R = ANS.rows || [], OFF = 1.0, PS = photoStats();
   const TH = {}; Object.values(ANS.players || {}).forEach(p => Object.entries(p[3] || {}).forEach(([g, t]) => (TH[g] = TH[g] || []).push(t)));
   const SEEN = {}; R.forEach(r => r[6].split(' ').filter(Boolean).forEach(f => { const k = r[0] + '|' + f; SEEN[k] = (SEEN[k] || 0) + 1; }));
   const ids = [...new Set(R.map(r => r[0]))], MX = {};
@@ -1099,7 +1120,7 @@ function statsNeeds(){
     if (c.obs < 3) { why.push(['few', `${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}`]); sc += 4 - c.obs; }
     const good = new Set(c.L.filter(p => qOf(p.f) >= 2).map(p => p.o || p.f)).size;
     if (c.obs >= 3 && good < 3) { why.push(['good', `${good} good colon${good === 1 ? 'y' : 'ies'}`]); sc += 1; }
-    if ((TH[n] || []).length) { const rated = c.L.filter(p => STATS[p.f] && STATS[p.f][1] >= 3).map(p => STATS[p.f][0]);
+    if ((TH[n] || []).length) { const rated = c.L.filter(p => PS[p.f] && PS[p.f][1] >= 3).map(p => PS[p.f][0]);
       const hard = rated.length ? Math.max(...rated) : c.L.some(p => qOf(p.f) === 1) ? 1 : 0, top = q3(TH[n]);
       if (top - OFF > hard + 0.3) { why.push(['easy', `players ${sgn(top)} vs hardest ${sgn(hard)}`]); sc += 1.5; } }
     const rep = ids.map(id => { const k = c.L.map(p => SEEN[id + '|' + p.f] || 0).filter(Boolean); return k.length ? k.reduce((a, b) => a + b, 0) / k.length : 0; }).filter(Boolean);
@@ -1122,8 +1143,8 @@ function statsNeeds(){
 const VIEW_T = {wide: 'Colony', medium: 'Closer', macro: 'Corallites', cand: 'Candidate'};
 const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philippines', world: 'iNat world', book: 'CF book'};
 function statsPhotos(){
-  const L = allPhotos().filter(p => STATS[p.f] && STATS[p.f][1] >= SF.min).map(p => ({...p, d: STATS[p.f][0], n: STATS[p.f][1], ok: STATS[p.f][2]}));
-  const head = `${statSwitch()}<div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [[1, '≥1'], [3, '≥3'], [10, '≥10']])}<span class="note">answers</span></div>`;
+  const PS = photoStats(), L = allPhotos().filter(p => PS[p.f] && PS[p.f][1] >= SF.min).map(p => ({...p, d: PS[p.f][0], n: PS[p.f][1], ok: PS[p.f][2]}));
+  const head = `${statSwitch()}<div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [[1, '≥1'], [3, '≥3'], [10, '≥10']])}<span class="note">answers</span>${eloSeg()}</div>`;
   if (!L.length) { $v.innerHTML = head + '<p class="note">No answers yet.</p>'; bindStats(); return; }
   const ds = L.map(p => p.d).sort((a, b) => a - b), mean = a => a.reduce((t, x) => t + x, 0) / a.length;
   const med = ds[Math.floor(ds.length / 2)], sd = Math.sqrt(mean(ds.map(x => (x - mean(ds)) ** 2)));
