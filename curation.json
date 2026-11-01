@@ -543,6 +543,11 @@
       "v": "macro",
       "a": "montipora-macro-745674855",
       "b": "porites-macro-745675630"
+    },
+    "Pocillopora|Stylophora": {
+      "v": "medium",
+      "a": "imr-p14_i6",
+      "b": "imrl-p10_i2"
     }
   },
   "crop": {
