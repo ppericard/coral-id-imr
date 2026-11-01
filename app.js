@@ -867,7 +867,7 @@ const confusable = (t, n) => confOf(t, n) >= CONF.TRAP;
 function distractors(t, list, traps = trapsFor(t)){
   const ranked = list.filter(n => n !== t).map(n => [n, confOf(t, n) * (0.8 + 0.4 * Math.random())]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
   const look = ranked.filter(n => confusable(t, n)), out = look.slice(0, traps), left = list.filter(n => n !== t && !look.includes(n));
-  if (traps >= 2) return [...out, ...ranked.filter(n => !out.includes(n))].slice(0, 3);
+  if (traps >= 2) return [...out, ...ranked.filter(n => !look.includes(n)), ...look.slice(traps)].slice(0, 3);  // exactly `traps` traps when others exist
   const T = GX(t);
   const tf = imrFormsOf(t), apart = n => !imrFormsOf(n).some(f => tf.includes(f));
   const easy = left.filter(apart), far = easy.filter(n => GX(n).ig !== T.ig);

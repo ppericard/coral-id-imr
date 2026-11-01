@@ -1482,9 +1482,12 @@ function statsConf(){
     return {a, b, off: c[0], mix: c[1], ab: (C.dir[a + '|' + b] || [0, 0])[1], ba: (C.dir[b + '|' + a] || [0, 0])[1], pt, sc: confScore(c, pv)}; }).sort((x, y) => y.sc - x.sc || y.mix - x.mix);
   const OLD = Object.entries(C.old).sort((x, y) => y[1] - x[1]).slice(0, 15);
   // Per photo, colony and species: answers where the photo was shown, the wrong ones, and what it was taken for most.
+  // Bonus genera's photos (DATA.x.gen) are played too once unlocked.
   const META = {}; allPhotos().forEach(p => META[p.f] = p);
-  const grp = key => { const O = {}; R.forEach(r => r[6].split(' ').filter(Boolean).forEach(f => { const p = META[f], k = p && key(p); if (!k) return;
-      const o = O[k] = O[k] || {k, g: p.genus, f, n: 0, w: 0, as: {}}; o.n++; if (!r[4]) { o.w++; if (r[3]) o.as[r[3]] = (o.as[r[3]] || 0) + 1; } }));
+  Object.entries((DATA.x || {}).gen || {}).forEach(([n, g]) => Object.entries(g.views || {}).forEach(([v, L]) => (L || []).forEach(p => { META[p.f] = META[p.f] || {...p, genus: n, view: v}; })));
+  // Each answer counts once per key: several views of one colony in a question are one answer for that colony.
+  const grp = key => { const O = {}; R.forEach(r => { const done = new Set(); r[6].split(' ').filter(Boolean).forEach(f => { const p = META[f], k = p && key(p); if (!k || done.has(k)) return; done.add(k);
+      const o = O[k] = O[k] || {k, g: p.genus, f, n: 0, w: 0, as: {}}; o.n++; if (!r[4]) { o.w++; if (r[3]) o.as[r[3]] = (o.as[r[3]] || 0) + 1; } }); });
     return Object.values(O).filter(o => o.n >= SF.min && o.w).sort((a, b) => b.w / b.n - a.w / a.n || b.w - a.w).slice(0, 30); };
   const top = o => { const e = Object.entries(o.as).sort((a, b) => b[1] - a[1])[0]; return e ? `<i>${esc(e[0])}</i> ×${e[1]}` : ''; };
   const tbl = (L, first, cell) => L.length ? `<div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>${first}</th><th>Wrong</th><th></th><th>n</th><th>Taken for</th></tr></thead><tbody>${L.map(o => `<tr><td>${cell(o)}</td><td>${pct(o.w, o.n)}</td><td>${sbar(o.w, o.n, 'bad')}</td><td class="n">${o.n}</td><td>${top(o)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="note">None.</p>';
