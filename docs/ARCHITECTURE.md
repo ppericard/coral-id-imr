@@ -14,6 +14,7 @@ admin.html ──(GitHub Contents API, Pierre's token)──> curation.json on m
 
 - Static site served by GitHub Pages from `main` via `pages.yml` (Actions source; migration and recovery in [PAGES.md](PAGES.md)). No framework, no bundler, no npm.
 - A service worker (`sw.js`) caches the app shell for offline use (versioned cache `V`, replaced on each deploy) and photos as they are viewed, in a separate cache `imr-photos-v1` that deploys never delete (capped at 2,500 entries, only good replies kept). `curation.json` is part of the shell, so the first offline launch after a deploy still has Pierre's choices; the app also keeps the last curation it read in `localStorage` (`imr-curation-last`) as a fallback. App files are revalidated with the server, but a file already cached is served after 4 s (`SLOW`) on a slow link while the network refreshes the cache in the background.
+- Link preview (Pierre, 2026-11-01): `index.html` carries Open Graph / Twitter meta tags pointing at `og.jpg` (1200 × 630, six of Pierre's own photos + the app name), made by `node tools/og/make_og.js` from `tools/og/og.html`. Absolute URLs (crawlers need them); WhatsApp caches a preview per URL, so an old share keeps its old card.
 - Everything runs in the browser. The only backend is a Google Apps Script web app that stores RA progress in a Google Sheet.
 
 ## Front end
