@@ -3165,7 +3165,7 @@ function viewBoard() {
         ? `<ol class="blist">${B.rows
             .map(
               (r, i) =>
-                `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span><span class="belo" title="${r[2] == null ? `Elo shows from ${ELO_MIN} answers` : 'Elo: level from all answers'}">${r[2] == null ? '' : `Elo ${eloScore(r[2])}`}</span></li>`
+                `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="belo" title="${r[2] == null ? `Elo shows from ${ELO_MIN} answers` : 'Elo: level from all answers'}">${r[2] == null ? '' : `Elo ${eloScore(r[2])}`}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
             )
             .join('')}</ol>`
         : '<p class="note">Nobody yet: be the first.</p>');
