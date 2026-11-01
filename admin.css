@@ -136,7 +136,7 @@ body.adm-dragging,body.adm-dragging *{cursor:grabbing!important;user-select:none
 /* Entry points: by genus / by quality */
 .adm-modes{display:inline-flex;padding:3px;gap:2px;background:var(--surface-2);border-radius:var(--pill)}
 .adm-modes[hidden]{display:none}
-.adm-modes a{font-size:.88rem;color:var(--muted);text-decoration:none;padding:5px 8px;border-radius:var(--pill)}
+.adm-modes a{font-size:.88rem;color:var(--muted);text-decoration:none;padding:5px 14px;border-radius:var(--pill)}
 .adm-modes a[aria-current="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:var(--shadow)}
 
 /* Quality: tag (dashed = automatic guess) and three-way control */
@@ -284,7 +284,7 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 /* Candidates, one per screen (made for the phone): photo fills what the controls leave; the decision bar sits under the thumb. */
 .adm-modesel{display:none}
 .adm-menu .adm-phone{display:none}
-.adm-sw{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:8px;height:calc(100dvh - var(--hdr-h,64px) - 20px);min-height:480px}
+.adm-sw{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:8px;height:calc(100dvh - var(--hdr-h,64px) - var(--sub-h,0px) - 20px);min-height:480px}
 .adm-swempty{height:auto;align-items:flex-start}
 .adm-sw .adm-csrc{flex:none;width:100%;margin:0}
 .adm-csrc button{flex:1;font:inherit;font-size:.86rem;min-height:40px;border:0;background:var(--surface);color:var(--muted);cursor:pointer}
@@ -333,7 +333,7 @@ body.admin.adm-narrow .adm-modesel:not([hidden]){display:block;flex:0 1 220px;mi
   body.admin .hdr-tools .adm-ico{min-width:44px;justify-content:center}
   .adm-menu .adm-phone{display:block}
   .adm-menu a,.adm-menu button{padding:12px 10px}
-  .adm-sw{height:calc(100dvh - var(--hdr-h,64px) - 12px);min-height:440px;gap:6px}
+  .adm-sw{height:calc(100dvh - var(--hdr-h,64px) - var(--sub-h,0px) - 12px);min-height:440px;gap:6px}
   .adm-sw .adm-fseg button{font-size:.8rem}
 }
 .adm-sw .adm-acts .adm-qseg{flex:none;width:100%}
@@ -440,6 +440,10 @@ td.cov-c .cov-off{display:block;font-size:.62rem;font-weight:500;line-height:1.1
 :root[data-theme="dark"]{--v-wide:#5cc6d3;--v-medium:#f0b04a;--v-macro:#c49be0;--v-cand:#6f8188}
 .adm-stabs{border-top:0;padding-top:10px;margin-top:4px}
 .adm-stabs a{text-decoration:none}
+/* The pages of the current header tab, under the header (navs() in admin.js); on phones the header menu lists them. */
+.adm-sub{margin:6px 0 0;padding:6px 0 10px;border-top:0;border-bottom:1px solid var(--line)}
+.adm-sub[hidden]{display:none}
+@media (max-width:599px){ body.admin .adm-sub{display:none} }
 .adm-shead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:6px 0 10px}
 .adm-shead h2{margin:0}
 .adm-sseg.adm-qseg{flex:0 0 auto;margin:0}

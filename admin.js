@@ -402,8 +402,7 @@ const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Excl
 function status(){
   const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : '', flChanged() ? 'triage flags' : '', sgChanged() ? 'triage suggestions' : '', cdChanged() ? 'candidate reviews' : '', mtChanged() ? 'look-alike montages' : '', crChanged() ? 'crops' : '', snChanged() ? 'several corals' : '', tlChanged() ? 'tile photos' : ''].filter(Boolean);
   const bs = $('booksw'); if (bs) { bs.setAttribute('aria-pressed', String(bookOn(DRAFT))); bs.textContent = `CF book: ${bookOn(DRAFT) ? 'on' : 'off'}`; }
-  const tn = Object.keys(DRAFT.flag || {}).length + sugCount() + repsOpen().length, ta = document.querySelector('[data-mode="triage"]'); if (ta) ta.textContent = `Triage${tn ? ` (${tn})` : ''}`;
-  const xn = Object.keys(DRAFT.exclude || {}).length, xa = document.querySelector('[data-mode="excluded"]'); if (xa) xa.textContent = `Excluded${xn ? ` (${xn})` : ''}`;
+  const tn = Object.keys(DRAFT.flag || {}).length + sugCount() + repsOpen().length, xn = Object.keys(DRAFT.exclude || {}).length;
   const t = draftAt ? ` (saved ${draftAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})})` : '';
   // Publish carries the status (no separate status text): "● Publish" with a draft, "Published" when clean.
   const sv = $('save'); if (sv.textContent !== 'Publishing…') sv.textContent = !TOKEN ? 'Read-only' : parts.length ? '● Publish' : 'Published';
@@ -411,16 +410,37 @@ function status(){
   $('undo').disabled = !HIST.length; $('redo').disabled = !FUT.length;
   $('save').disabled = !TOKEN || !parts.length;
   if (cur[0] !== '~') lastGenus = cur;
-  $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
-  document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === modeKey())));
-  const ms = $('modesel'); if (ms) { ms.innerHTML = [...document.querySelectorAll('#modes [data-mode]')].map(a => `<option value="${esc(a.getAttribute('href'))}"${a.getAttribute('aria-current') === 'true' ? ' selected' : ''}>${esc(a.textContent)}</option>`).join(''); ms.hidden = false; }
+  navs(tn, xn);
   fitModes();
 }
 // The header tabs must never be cut off: when they don't all fit on the line, the entry-point menu replaces them.
 function fitModes(){ const nav = $('modes'); if (!nav || nav.hidden) return; document.body.classList.remove('adm-narrow');
   if (nav.scrollWidth > nav.clientWidth + 1) document.body.classList.add('adm-narrow'); }
 addEventListener('resize', () => fitModes());
-// Which header tab the page belongs to: the Stats tab holds players, photos, the photo list and coverage.
+// Four header tabs, each with its pages in a row under the header (Pierre, 2026-11-01: "regroup the admin menus"):
+// To do (what needs his eye), Photos (curation), Players (people), Photo stats. Every old address still works; each tab
+// opens on the page last used in it (imr-admin-sub). Phones: one menu with every page, grouped by tab.
+const genusHash = () => '#' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
+const GROUPS = [
+  ['todo', 'To do', [['~triage', 'Triage'], ['~stats-needs', 'Where to look'], ['~cov', 'Game coverage'], ['~fcov', 'Sheet & Finder coverage']]],
+  ['photos', 'Photos', [['', 'Genera'], ['~cand', 'Candidates'], ['~form', 'Growth form'], ['~quality', 'Quality'], ['~look', 'Look-alikes'], ['~excluded', 'Excluded']]],
+  ['players', 'Players', [['~users', 'Users'], ['~stats', 'Activity'], ['~stats-conf', 'Confusions']]],
+  ['pstats', 'Photo stats', [['~stats-photos', 'Difficulty'], ['~diff', 'Photo list']]]];
+const pageOf = () => cur === '~mont' ? '~look' : cur[0] === '~' ? cur : '';  // '' = a genus page
+const groupKey = () => (GROUPS.find(g => g[2].some(([h]) => h === pageOf())) || GROUPS[1])[0];
+function navs(tn, xn){
+  const g = groupKey(), page = pageOf(), last = store.get('imr-admin-sub', {}) || {};
+  if (last[g] !== page) { last[g] = page; store.set('imr-admin-sub', last); }
+  const href = h => h ? '#' + h : genusHash(), cnt = h => h === '~triage' && tn ? ` (${tn})` : h === '~excluded' && xn ? ` (${xn})` : '';
+  $('modes').hidden = false;
+  document.querySelectorAll('#modes [data-mode]').forEach(a => { const G = GROUPS.find(x => x[0] === a.dataset.mode), h = G[2].some(([x]) => x === last[G[0]]) ? last[G[0]] : G[2][0][0];
+    a.href = href(h); a.textContent = G[1] + (G[0] === 'todo' && tn ? ` (${tn})` : ''); a.setAttribute('aria-current', String(G[0] === g)); });
+  const sub = $('subnav'), G = GROUPS.find(x => x[0] === g);
+  if (sub) { sub.innerHTML = G[2].map(([h, t]) => `<a class="adm-fchip plain" href="${href(h)}" aria-pressed="${h === page}">${t}${cnt(h)}</a>`).join(''); sub.hidden = false; }
+  const ms = $('modesel');
+  if (ms) { ms.innerHTML = GROUPS.map(([k, t, L]) => `<optgroup label="${t}">${L.map(([h, n]) => `<option value="${esc(href(h))}"${h === page ? ' selected' : ''}>${n}${cnt(h)}</option>`).join('')}</optgroup>`).join(''); ms.hidden = false; }
+}
+// Which kind of page this is (help text, the Stats-style views): not the header tab, see groupKey().
 const modeKey = () => NEED_TABS.some(([h]) => h === cur) ? 'needs' : cur.startsWith('~stats') || cur === '~diff' ? 'stats' : ({'~users': 'users', '~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~look': 'mont', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
 function render(){
   memoReset();
@@ -630,8 +650,8 @@ function renderQuality(){
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
-  start: `<p><b>Work in this order</b></p>
-    <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Needs looks better.</li><li><b>Forms</b> and <b>Quality</b>: check the growth form and quality guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Needs</b>: which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
+  start: `<p><b>Four tabs</b>: <b>To do</b> (players' reports, your flags, where photos are missing), <b>Photos</b> (Genera, Candidates, Growth form, Quality, Look-alikes, Excluded), <b>Players</b> (who plays, their numbers, merge or delete names) and <b>Photo stats</b> (how hard each photo is). The pages of a tab are in the row under the header; each tab reopens the page you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
+    <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Growth form</b> and <b>Quality</b>: check the growth form and quality guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>To do › Where to look</b>: which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
     <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
@@ -1091,6 +1111,7 @@ function download(){
 /* ---------- Start ---------- */
 async function start(){
   const hd = document.querySelector('header'); if (hd && window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--hdr-h', hd.offsetHeight + 'px')).observe(hd);
+  const sb = $('subnav'); if (sb && window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--sub-h', sb.offsetHeight ? sb.offsetHeight + 6 + 'px' : '0px')).observe(sb);
   $v.innerHTML = '<p class="note">Loading photos…</p>';
   const side = (u, k) => fetch(u, {cache: 'no-cache'}).then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))).then(j => j[k] || {}).catch(e => { console.warn(`${u} not loaded:`, e.message); return {}; });
   try { [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG] = await Promise.all([fetch('data.json', {cache: 'no-cache'}).then(r => r.json()), side('quality.json', 'q'), side('forms.json', 'gf'), side('forms.json', 'gunsure'), side('picks.json', 'feat'), fetch('suggest.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})), loadSaved()]);
@@ -1314,10 +1335,10 @@ function renderFcov(){
 const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~stats-conf', 'Confusions'], ['~diff', 'Photo list']];
 const NEED_TABS = [['~stats-needs', 'Where to look'], ['~cov', 'Game coverage'], ['~fcov', 'Sheet & Finder coverage']];
 let ANS = null, RAS = {}, MEID = null, SF = Object.assign({who: 'all', min: 1, elo: 'all', nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('imr-admin-stats', {}));
-const statSwitch = () => `<nav class="adm-filter adm-stabs" aria-label="${modeKey() === 'needs' ? 'Needs' : 'Stats'}">${(modeKey() === 'needs' ? NEED_TABS : STAT_TABS)
-  .map(([h, t]) => `<a class="adm-fchip plain" href="#${h}" aria-pressed="${cur === h}">${t}</a>`).join('')}</nav>`;
+// The pages of a tab are listed in #subnav under the header (navs()); the views no longer draw their own switch.
+const statSwitch = () => '';
 // Puts the switch above a view rendered by another function (photo list, coverage).
-const withSwitch = () => { if (!$v.querySelector('.adm-stabs')) $v.insertAdjacentHTML('afterbegin', statSwitch()); };
+const withSwitch = () => {};
 function loadStats(){
   // Script v6 keeps the anonymous-id salt secret and returns the caller's own id (me) for its name and code; the
   // local digest below only matches script v5 and older.
