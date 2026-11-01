@@ -201,7 +201,7 @@ function viewGenera(){
   const viewSeg = `<div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['tips', 'ID tips']].map(([k, t]) => `<button type="button" data-gv="${k}" aria-pressed="${azView === k}">${t}</button>`).join('')}</div>`;
   const orderSeg = `<div class="seg" role="group" aria-label="Order">${[['lecture', 'Lecture', ' groups'], ['slate', 'Slate', ' numbers']].map(([k, t, x]) => `<button type="button" data-o="${k}" aria-pressed="${azOrder === k}">${t}<span class="wide">${x}</span></button>`).join('')}</div>`;
   const jump = azOrder === 'lecture' ? `<div class="chips tipgr gjump"><span class="label">IMR group</span>${DATA.imrg.map(x => `<button type="button" class="chip gchip" style="--g:${groupHue(x.n)}" data-jump="${x.n}" title="${esc(x.t)}">${x.n}</button>`).join('')}</div>` : '';
-  $v.innerHTML = `<h2>The 39 genera on the IMR slate</h2>
+  $v.innerHTML = `<h2>The genera on the IMR slate</h2>
   <p class="lede">34 surveyed genera plus 5 starred ones (★) to recognise and rule out. Colours mark the confusion groups from the IMR lecture: genera in the same group are the ones to tell apart. The group names follow the lecture's ID questions: corallite size (small, large), mouth raised or embedded ("submerged"), and wall structure (separate walls, with coenosteum between them, or shared walls). Switch to <b>ID tips</b> for the 4 questions to ask and the lecturers' short cues for each genus.</p>
   <div class="tools"><input id="q" type="search" placeholder="Search a genus or a feature" value="${esc(azQ)}" aria-label="Search" title="Shortcut: / from any page, Enter opens the first genus">
     ${viewSeg}${phone ? `<details class="gfilt"${gfOpen ? ' open' : ''}><summary>Filter${azFam ? ' <span class="fdn">1</span>' : ''}</summary>${famSel}${orderSeg}${jump}</details>` : famSel + orderSeg}</div>
@@ -1317,7 +1317,7 @@ showCvd();
 // Tools of the Learn, Practice and Identify sections (the learning path order): a tab bar in the sticky header, so they stay in view.
 // Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).
 const MODES = {
-  learn: [['genera', 'Genera', 'The 39 genera, as photos or ID tips'], ['cmp', 'Look-alikes', 'Classic look-alikes, one pair per screen']],
+  learn: [['genera', 'Genera', 'Every genus, as photos or ID tips'], ['cmp', 'Look-alikes', 'Classic look-alikes, one pair per screen']],
   practice: [['quiz', 'Photo → genus', 'Name the genus'], ['quiz-duel', 'Look-alike duels', 'Two genera often confused'], ['pairs', 'Memory', 'Match colony and corallites']],
   identify: [['finder', 'Coral Finder', 'Tap the clues you see, get a ranked shortlist']]
 };
@@ -1489,7 +1489,10 @@ const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store
     .catch(e => { const last = store.get(CUR_LAST, null); return last ? last : softFail('curation.json (Pierre\'s photo choices)', {})(e); }); };
 const forms = () => fetch('forms.json?v=7').then(okJson).catch(softFail('forms.json', {})).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u => fetch(u).then(okJson).catch(softFail(u.replace(/\?.*/, ''), {}));
-Promise.all([fetch('data.json?v=27').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); window.APP_READY = true; if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+// The page's later scripts (home.js, tour.js...) must be in before the first route: a fast or cached data.json could
+// otherwise arrive first and open the Learn page instead of Home (seen under the welcome tour, 2026-11-01).
+const domReady = new Promise(r => document.readyState === 'loading' ? addEventListener('DOMContentLoaded', r, {once: true}) : r());
+Promise.all([fetch('data.json?v=28').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1'), domReady]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); window.APP_READY = true; if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 // A tab left open for days still follows Pierre's published curation (e.g. the CF book switch): when the tab comes back
 // into view (or every 30 min while visible), curation.json is read again; a change applies at the next screen (route),
 // never in the middle of a game.

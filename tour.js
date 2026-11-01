@@ -7,11 +7,14 @@
   // Five steps (Pierre, 2026-11-01: beta testers must sign in early and start playing fast): the two doors, signing in
   // (the form is in the bubble itself, same on phone and desktop), the three games, progress, help; the last button
   // starts the photo quiz. Details (genus sheets, answers, corallites, Coral Finder) are behind each page's ?.
+  // sel: the element to spotlight (alt: fallback when it is hidden); also: an element joined into the same frame (? and ⚙);
+  // plus: a second, separate spotlight (Practice in the menu, at the other end of a phone screen); tall: 'end' shows the
+  // bottom of a target too tall to fit beside the bubble (the doors' buttons), instead of its top.
   const STEPS = [
-    {h: '', sel: '.hdoors', t: 'Two ways in', d: 'Learn & practise while you learn the genera. Identify when you need to name a coral on a ReefCloud photo.'},
+    {h: '', sel: '.hdoors', tall: 'end', t: 'Two ways in', d: 'Learn & practise while you learn the genera. Identify when you need to name a coral on a ReefCloud photo.'},
     {h: '', signin: true},
-    {h: 'quiz', sel: '#modes', t: 'Three games', d: 'Photo → genus: name the genus from photos. Look-alike duels: two genera often confused. Memory: match colony and corallites. Switch games here at any time.'},
-    {h: 'quiz', sel: '#prog', alt: 'nav [data-tab=progress]', t: 'Your progress', d: 'Each genus fills up as you get it right on harder photos, once with the corallites in view and once in a duel. Tap to see all 39.'},
+    {h: 'quiz', sel: '#modes', plus: 'nav [data-tab=practice]', t: 'Three games', d: 'Practice in the menu opens the games. Photo → genus: name the genus from photos. Look-alike duels: two genera often confused. Memory: match colony and corallites. Switch games here at any time.'},
+    {h: 'quiz', sel: '#prog', alt: 'nav [data-tab=progress]', t: 'Your progress', d: 'Each genus fills up as you get it right on harder photos, once with the corallites in view and once in a duel. Tap to see every genus.'},
     {h: 'quiz', sel: '#help', t: 'Help on every page', d: 'Tap ? for what a page does. ⚙ sets the theme and colours. Replay this tour from ?.', also: '#setb'}
   ].filter(s => !s.signin || SYNC_URL);
   let root = null, step = 0, token = 0, target = null, tick = null;
@@ -35,11 +38,36 @@
       const el = find(s);
       if (!el && s.sel && Date.now() - t0 < 4000) return setTimeout(wait, 80);
       target = el;
-      if (!s.sel) window.scrollTo(0, 0);
-      if (el) { if (s.sel === '#help') window.scrollTo(0, 0); else el.scrollIntoView({block: phone() ? 'start' : 'center', inline: 'nearest'}); }
-      if (el && phone() && s.sel !== '#help') window.scrollBy(0, -12);
-      bubble(); place();
+      bubble(); frame(el, s); place();
     })();
+  }
+  // The bubble must never cover what it describes (Pierre, 2026-11-01). The free band is the screen between the pinned
+  // header (desktop and tablet; on phones it scrolls away) and the phone tab bar.
+  const GAP = 12;
+  const band = () => {
+    const H = document.documentElement.clientHeight, hd = document.querySelector('header').getBoundingClientRect();
+    const nav = phone() && [...document.querySelectorAll('nav.sections')].find(vis);
+    const nt = nav ? nav.getBoundingClientRect().top : H;
+    return {top: Math.max(0, hd.bottom), bottom: nt > H / 2 ? nt : H, H};
+  };
+  // Scroll once per step so the target and the bubble both fit: the target beside the bubble when there is room at a side
+  // (wide screens), else above or below it, with a wider, shorter bubble when that is what it takes. A target taller than
+  // the band shows its top (or its bottom with tall: 'end'); the rest scrolls off screen, never under the bubble.
+  function frame(el, s){
+    const b = root.querySelector('.tbub');
+    b.classList.remove('wide');
+    // Pinned targets (header, tab bar, the games bar) sit at the top of the page.
+    if (!el || el.closest('header, nav')) return window.scrollTo(0, 0);
+    const {top, bottom} = band(), room = bottom - top - 2 * GAP, W = document.documentElement.clientWidth;
+    let r = el.getBoundingClientRect(), bh = b.offsetHeight, y;
+    const side = !phone() && r.height <= room && Math.max(W - r.right, r.left) >= b.offsetWidth + 2 * GAP;
+    if (!phone() && !side && r.height + GAP + bh > room) { b.classList.add('wide'); bh = b.offsetHeight; }
+    if (side) y = top + GAP + Math.max(0, (room - r.height) / 2);
+    else if (r.height + GAP + bh <= room) {
+      const fits = r.top >= top + GAP && (r.bottom + GAP + bh <= bottom - GAP || r.top - GAP - bh >= top + GAP) && r.bottom <= bottom - GAP;
+      y = fits ? r.top : top + GAP;
+    } else y = s.tall === 'end' ? bottom - GAP - bh - GAP - r.height : top + GAP;
+    if (Math.abs(r.top - y) > 1) window.scrollBy({top: r.top - y, left: 0, behavior: 'instant'});
   }
   function bubble(){
     const s = STEPS[step], last = step === STEPS.length - 1, b = root.querySelector('.tbub');
@@ -54,38 +82,52 @@
     root.classList.toggle('live', !!s.live);
     b.focus({preventScroll: true});
   }
-  // Dim everything but the target: an SVG path with a hole. A transparent block covers the hole, except on
-  // "live" steps (sign-in), where the RA can use the page through it.
+  // Dim everything but the target(s): an SVG path with holes. Transparent blocks cover the holes, except on
+  // "live" steps (sign-in), where the RA can use the page through them.
   function place(){
     if (!root) return;
-    if (target && !target.isConnected) target = find(STEPS[step]);  // the page re-rendered under the tour
+    const s = STEPS[step];
+    if (target && !target.isConnected) target = find(s);  // the page re-rendered under the tour
     // The visible area without scrollbars: the SVG is sized to it, so its viewBox must match (no stretch offset).
-    const W = document.documentElement.clientWidth, H = document.documentElement.clientHeight, svg = root.querySelector('svg'), b = root.querySelector('.tbub'), blk = root.querySelector('.tblk');
+    const W = document.documentElement.clientWidth, H = document.documentElement.clientHeight, svg = root.querySelector('svg'), b = root.querySelector('.tbub');
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    let hole = '';
-    // The target's box, joined with a second element when the step names one (? and ⚙ together).
-    const two = STEPS[step].also && [...document.querySelectorAll(STEPS[step].also)].find(vis);
-    const r = target && vis(target) ? [target, two].filter(Boolean).map(e => e.getBoundingClientRect())
-      .reduce((a, q) => ({left: Math.min(a.left, q.left), top: Math.min(a.top, q.top), right: Math.max(a.right, q.right), bottom: Math.max(a.bottom, q.bottom)})) : null, pad = 6;
-    if (r) { r.width = r.right - r.left; r.height = r.bottom - r.top; }
-    if (r) {
-      const x = Math.max(2, r.left - pad), y = Math.max(2, r.top - pad), w = Math.min(W - 2, r.right + pad) - x, h = Math.max(24, Math.min(H - 2, r.bottom + pad) - y), k = Math.min(10, w / 2, h / 2);
-      hole = ` M${x + k},${y} h${w - 2 * k} a${k},${k} 0 0 1 ${k},${k} v${h - 2 * k} a${k},${k} 0 0 1 -${k},${k} h-${w - 2 * k} a${k},${k} 0 0 1 -${k},-${k} v-${h - 2 * k} a${k},${k} 0 0 1 ${k},-${k} z`;
+    const pad = 6, bd = band(), box = e => e.getBoundingClientRect();
+    // Each hole: the target's box (joined with `also`, ? and ⚙ together), then the separate `plus` element. A hole is
+    // clipped to the band below a pinned header, so a target scrolled up never opens a window onto the header.
+    const two = s.also && [...document.querySelectorAll(s.also)].find(vis), plus = s.plus && [...document.querySelectorAll(s.plus)].find(vis);
+    const join = (a, q) => ({left: Math.min(a.left, q.left), top: Math.min(a.top, q.top), right: Math.max(a.right, q.right), bottom: Math.max(a.bottom, q.bottom)});
+    const rects = [];
+    if (target && vis(target)) rects.push({...[target, two].filter(Boolean).map(e => box(e).toJSON()).reduce(join), clip: target.closest('header, nav') ? 2 : Math.max(2, bd.top)});
+    if (target && plus && plus !== target) rects.push({...box(plus).toJSON(), clip: 2});
+    let holes = '';
+    const blks = [...root.querySelectorAll('.tblk')];
+    rects.forEach((q, i) => {
+      const x = Math.max(2, q.left - pad), y = Math.max(q.clip, q.top - pad), w = Math.min(W - 2, q.right + pad) - x, h = Math.max(24, Math.min(H - 2, q.bottom + pad) - y), k = Math.min(10, w / 2, h / 2);
+      holes += ` M${x + k},${y} h${w - 2 * k} a${k},${k} 0 0 1 ${k},${k} v${h - 2 * k} a${k},${k} 0 0 1 -${k},${k} h-${w - 2 * k} a${k},${k} 0 0 1 -${k},-${k} v-${h - 2 * k} a${k},${k} 0 0 1 ${k},-${k} z`;
+      let blk = blks[i];
+      if (!blk) { blk = document.createElement('div'); blk.className = 'tblk'; root.insertBefore(blk, b); blks.push(blk); }
       Object.assign(blk.style, {left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', display: ''});
-      root.querySelector('.tring').setAttribute('d', hole.trim());
-    } else { blk.style.display = 'none'; root.querySelector('.tring').setAttribute('d', ''); }
-    root.querySelector('.tdim').setAttribute('d', `M0,0 H${W} V${H} H0 Z` + hole);
-    // The bubble: phones keep it at the bottom (CSS); wider screens put it below, above or beside the target.
-    // Phones: a sheet at the bottom, or at the top when the target sits in the lower half (it can't always scroll up).
-    if (phone()) { b.style.left = b.style.top = ''; b.classList.toggle('up', !r || r.top + Math.min(r.height, H / 2) / 2 > H / 2); return; }
-    const bw = b.offsetWidth, bh = b.offsetHeight, m = 14;
+    });
+    blks.slice(rects.length).forEach(e => e.style.display = 'none');
+    root.querySelector('.tring').setAttribute('d', holes.trim());
+    root.querySelector('.tdim').setAttribute('d', `M0,0 H${W} V${H} H0 Z` + holes);
+    // The bubble goes where the main target is not: phones keep a sheet above the tab bar, or at the top of the screen
+    // when the target is in the way there; wider screens put it below, above or beside the target.
+    const r = rects[0] || null, bh = b.offsetHeight;
+    if (phone()) {
+      const below = r ? bd.bottom - GAP - r.bottom - pad : H, above = r ? r.top - pad - GAP - 8 : 0;
+      b.style.left = b.style.top = '';
+      b.classList.toggle('up', !!r && below < bh + GAP && (above >= bh || above > below));
+      return;
+    }
+    const bw = b.offsetWidth, m = 14, mid = r ? r.left + (r.right - r.left - bw) / 2 : 0, wide = b.classList.contains('wide');
     let left, top;
     if (!r) { left = (W - bw) / 2; top = (H - bh) / 2; }
-    else if (H - r.bottom - pad > bh + m) { top = r.bottom + pad + m; left = r.left; }
-    else if (r.top - pad > bh + m) { top = r.top - pad - m - bh; left = r.left; }
+    else if (H - r.bottom - pad > bh + m) { top = r.bottom + pad + m; left = wide ? mid : r.left; }
+    else if (r.top - pad - bd.top > bh + m) { top = r.top - pad - m - bh; left = wide ? mid : r.left; }
     else if (W - r.right > bw + m) { left = r.right + pad + m; top = r.top; }
     else if (r.left > bw + m) { left = r.left - pad - m - bw; top = r.top; }
-    else { left = W - bw - m; top = H - bh - m; }  // a target filling the screen: bottom-right corner
+    else { left = mid; top = H - bh - m; }  // a target taller than the screen: at the bottom, over its scrolled-off part
     b.style.left = Math.max(m, Math.min(W - bw - m, left)) + 'px';
     b.style.top = Math.max(m, Math.min(H - bh - m, top)) + 'px';
   }
@@ -96,7 +138,7 @@
     const ask = skipped && !SYNC && SYNC_URL && STEPS.slice(step).some(s => s.signin);
     token++;
     try { sessionStorage.removeItem(KEY); } catch (e) {}
-    clearInterval(tick); root.remove(); root = null; target = null;
+    clearInterval(tick); root.remove(); root = null; target = null; document.documentElement.classList.remove('touring');
     document.removeEventListener('keydown', onKey); removeEventListener('resize', place); removeEventListener('scroll', place);
     if (to) go(to);
     if (ask && window.signinNudge) signinNudge(false);
@@ -116,6 +158,7 @@
     root.innerHTML = `<svg aria-hidden="true" preserveAspectRatio="none"><path class="tdim" fill-rule="evenodd"/><path class="tring"/></svg>
       <div class="tblk"></div><div class="tbub" tabindex="-1" aria-live="polite"></div>`;
     document.body.appendChild(root);
+    document.documentElement.classList.add('touring');  // room below the page, so the last element can scroll clear of the bubble
     document.addEventListener('keydown', onKey); addEventListener('resize', place); addEventListener('scroll', place, {passive: true});
     tick = setInterval(place, 400);  // photos loading move things without a scroll or resize
     show(at);

@@ -1,7 +1,7 @@
 // Radial mind map: the 39 genera grouped by family, IMR lecture group, wall type or corallite size.
 LAB.add({
   id: 'map', icon: '✺', title: 'Mind map',
-  blurb: 'A radial map of the 39 genera, regrouped live by family, IMR lecture group, wall type or corallite size.',
+  blurb: 'A radial map of the genera, regrouped live by family, IMR lecture group, wall type or corallite size.',
   lede: 'Switch the grouping and watch where each genus lands. A genus that shows up in several branches can take several forms of that feature.',
   render(root, mode = 'ig'){
     // [id, name, groups of a genus, long label, short label on the map, colour]
@@ -38,7 +38,7 @@ LAB.add({
       let h = `<defs>${pos.map((p, j) => { const [x, y] = xy(R2, p.a); return `<clipPath id="mc${j}"><circle r="${nodeR}" cx="${x}" cy="${y}"/></clipPath>`; }).join('')}</defs>`;
       h += `<g class="mlinks">${keys.map(k => { const [x, y] = xy(R1, ang[k]); return `<path d="M0 0 Q ${xy(R1 * .45, ang[k]).join(' ')} ${x} ${y}" stroke="${color(k, keys.indexOf(k))}" data-k="${esc(k)}"/>`; }).join('')}
         ${pos.map(p => { const [x1, y1] = xy(R1, ang[p.k]), [x2, y2] = xy(R2 - nodeR, p.a), [cx, cy] = xy((R1 + R2) / 2, p.a); return `<path d="M${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}" stroke="${color(p.k, keys.indexOf(p.k))}" data-k="${esc(p.k)}" data-n="${esc(p.n)}"/>`; }).join('')}</g>`;
-      h += `<circle class="mcenter" r="54"/><text class="mctext" y="-4">39 genera</text><text class="mctext sub" y="16">${esc(cur[1].toLowerCase())}</text>`;
+      h += `<circle class="mcenter" r="54"/><text class="mctext" y="-4">Genera</text><text class="mctext sub" y="16">${esc(cur[1].toLowerCase())}</text>`;
       h += pos.map((p, j) => {
         const [x, y] = xy(R2, p.a), deg = p.a * 180 / Math.PI, flip = Math.cos(p.a) < 0;
         const [lx, ly] = xy(R2 + nodeR + 8, p.a);

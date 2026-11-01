@@ -2,7 +2,7 @@
 // and the board suggests the most useful next thing to check.
 LAB.add({
   id: 'elim', icon: '▦', title: 'Elimination board',
-  blurb: 'All 39 genera on one board. Tick what you see and watch the impossible ones fade out, with a hint on what to check next.',
+  blurb: 'All the genera on one board. Tick what you see and watch the impossible ones fade out, with a hint on what to check next.',
   lede: 'The corallite clues of Identify › Coral Finder as a strict elimination board. Several ticks in one section mean either/or; sections combine. "Mystery photo" gives you a coral to work out.',
   render(root){
     const sel = new Set(); let mystery = null;
