@@ -15,7 +15,7 @@
           <a class="hdart" href="#quiz" tabindex="-1" aria-hidden="true"><span class="hdtiles">${tiles}</span></a>
           <div class="hdbody">
             <p class="hdwhen">Learning phase · before ReefCloud</p>
-            <h3>Learn &amp; practise</h3>
+            <h2>Learn &amp; practise</h2>
             <p class="hddesc">Get to know the genera, then train your eye on photos until you recognise each one at a glance. Your progress is saved as you go.</p>
             <div class="hdacts">
               <a class="hdbtn" href="#genera"><b><em>1</em> Learn</b><small>One sheet per genus: photos at 3 scales, IMR ID tips, look-alikes</small></a>
@@ -27,7 +27,7 @@
           <a class="hdart rc" href="#finder" tabindex="-1" aria-hidden="true"><img src="img/reefcloud-example.webp" alt="" loading="lazy"></a>
           <div class="hdbody">
             <p class="hdwhen">On ReefCloud · when a point stumps you</p>
-            <h3>Identify a coral</h3>
+            <h2>Identify a coral</h2>
             <p class="hddesc">Start from the growth form, add the clues you can see, then compare the candidate genera side by side to name the one under the point.</p>
             <div class="hdacts">
               <a class="hdbtn main" href="#finder"><b>Open the Coral Finder</b><small>Growth form, clues, then a visual comparison</small></a>

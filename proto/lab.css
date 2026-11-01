@@ -719,6 +719,7 @@ button.fdname[aria-expanded="true"]::after{content:" ▾"}
 /* Coral Finder start screen (three proposals: board, step by step, Coral Finder path) */
 .fdstart{display:flex;flex-direction:column;gap:14px}
 .fdstop{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.fdprompt{margin:0;font-family:var(--display);font-weight:700;font-size:1.25rem;line-height:1.2}
 .fdstop .fdshow{margin-left:0}
 @media (min-width:600px){
   .fdstop .fdshow{margin-left:auto}
@@ -833,3 +834,8 @@ body:has(.fdstart:not([hidden])) footer{padding-bottom:72px}
 
 /* Tools hub: the same gap under the header as the other pages (it has no tab bar above it). */
 .lab>.labhub:first-child,.lab>.lede+.labhub{margin-top:18px}
+/* Coral Finder start: "Show all" before any clue is the secondary (outlined) button; pinned on phones, so it keeps a lift shadow. */
+.fdstart .fdshow.sec{box-shadow:inset 0 0 0 1.5px var(--accent),var(--shadow-hover)}
+@media (min-width:600px){.fdstart .fdshow.sec{box-shadow:inset 0 0 0 1.5px var(--accent)}}
+.fdstart .fdprompt{margin:4px 0 16px}
+@media (min-width:600px){.fdstart .fdprompt{margin:0}}
