@@ -15,7 +15,7 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 - Live app: <https://ppericard.github.io/coral-id-imr/> (GitHub Pages from `main`). Admin: <https://ppericard.github.io/coral-id-imr/admin.html>.
 - About 287 pull requests merged in two days (2026-10-31 and 11-01). Every PR description explains a decision; `git log --oneline` is a good index (squash merges titled `… (#N)`).
 - No open pull requests at handover time.
-- Tests: `node --test tests/*.test.js`, `node tests/pages.smoke.js` and `node tests/draw.smoke.js` (Playwright). CI: `.github/workflows/checks.yml`.
+- Tests: `node --test tests/*.test.js`, `node tests/pages.smoke.js`, `node tests/draw.smoke.js` and `node tests/admin.smoke.js` (Playwright). CI: `.github/workflows/checks.yml`.
 - Progress sync script `tools/sync/Code.gs`: **v10 is live** (deployed by Pierre and verified 2026-11-01 08:10 UTC).
 - Users: Pierre, and soon beta testers: last month's Research Assistants (RAs) and his next 6 RAs. Most use phones.
 - A full docs-vs-code pass was done for this handover (previous one at PR #245).
@@ -45,8 +45,8 @@ Nothing needs rebuilding: the site is served by GitHub Pages from `main` through
 
 **Working copy (any machine or cloud container):**
 1. Clone `https://github.com/ppericard/coral-id-imr` (public). Python 3, Node 18+ and Chromium/Playwright are all you need.
-2. Serve: `python3 -m http.server 8000`, open <http://localhost:8000> (app) and <http://localhost:8000/admin.html?readonly> (admin without a token). Sync and photo Elo talk to the live Apps Script even locally (read-only unless you sign in).
-3. Check: `node --test tests/*.test.js`, `node tests/pages.smoke.js`, `node tests/draw.smoke.js` (Playwright; never add a `package.json`), `python3 tools/check_versions.py --base origin/main`.
+2. Serve: `python3 -m http.server 8000`, open <http://localhost:8000> (app) and <http://localhost:8000/admin.html?demo> (admin without a token, every page on made-up data, nothing sent; `?readonly` shows the real curation instead). Sync and photo Elo talk to the live Apps Script even locally (read-only unless you sign in).
+3. Check: `node --test tests/*.test.js`, `node tests/pages.smoke.js`, `node tests/draw.smoke.js`, `node tests/admin.smoke.js` (Playwright; never add a `package.json`), `python3 tools/check_versions.py --base origin/main`.
 4. Network: iNaturalist hosts (listed under "External resources") for photo scripts; GitHub for PRs. Python scripts need `pillow` (`pip install pillow`) for photo work.
 
 **Hosting settings (already in place; only if the repo ever moves):**
