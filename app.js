@@ -16,6 +16,8 @@ const softFail = (what, d) => e => { console.warn(`${what} not loaded:`, e && e.
 const MQ = {phone: '(max-width:599.98px)', stack: '(max-width:1023.98px)', touch: '(hover:none), (pointer:coarse)'};
 const isPhone = () => matchMedia(MQ.phone).matches;
 const isStacked = () => matchMedia(MQ.stack).matches;  // phone + tablet: games and side panels go to one column
+// The page hash, decoded; a malformed %-escape in a pasted link no longer crashes the page (code re-review L2).
+const hashNow = () => { const h = location.hash.slice(1); try { return decodeURIComponent(h); } catch (e) { return h; } };
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 // Pierre-only controls (Lab keep/trim, finder start-screen switch, ⚑ flag) show only in the browser where the
@@ -48,7 +50,7 @@ const photoSrc = p => !p ? '' : p.cf ? `<span class="psrc">Coral Finder p. ${esc
   : p.o && p.o.includes('inaturalist.org') ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p) || 'iNaturalist')}: open the iNaturalist observation"><span class="pa">${esc(author(p))} · </span>iNat ↗</a>` : '';
 // One colour per IMR lecture group, used everywhere a group appears (style="--g:…", CSS hsl(var(--g) …)).
 const groupHue = n => (n * 137) % 360;
-const credit = p => p.cf ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${p.pg}` : p.imr ? `IMR Lecture 6, slide ${p.slide}` : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
+const credit = p => p.cf ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${esc(p.pg)}` : p.imr ? `IMR Lecture 6, slide ${esc(p.slide)}` : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
 // Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick, else the first closer view.
 // Default (Pierre): an IMR photo first, the first IMR featured Closer photo, before data.json's pick.
@@ -239,7 +241,7 @@ function zoom(list, i, opts = {}){
   const blind = () => opts.blind ? opts.blind() : false;
   const show = () => {
     const p = list[i], hide = blind(), vl = p.view ? (VIEWS.find(v => v[0] === p.view) || [0, VIEW_LABEL[p.view]])[1] : '';
-    const cap = hide ? esc(vl || 'Photo') : `${p.genus ? `<b><i>${esc(p.genus)}</i></b> · ` : ''}${vl ? esc(vl) + ' · ' : ''}${credit(p)}${p.src ? ` · <a href="${esc(p.src)}" target="_blank" rel="noopener">original</a>` : ''}`;
+    const cap = hide ? esc(vl || 'Photo') : `${p.genus ? `<b><i>${esc(p.genus)}</i></b> · ` : ''}${vl ? esc(vl) + ' · ' : ''}${credit(p)}${p.src ? ` · <a href="${esc(safeUrl(p.src))}" target="_blank" rel="noopener">original</a>` : ''}`;
     lb.innerHTML = `<div class="lb-in"><img src="${img(p)}" alt="${hide ? 'Coral to identify' : esc(p.t || '')}" title="Click for actual size"><p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
       <div class="lb-nav">${list.length > 1 ? `<button type="button" data-d="-1" aria-label="Previous photo">‹</button><span>${i + 1} / ${list.length}</span><button type="button" data-d="1" aria-label="Next photo">›</button>` : ''}<button type="button" data-x aria-label="Close">Close</button></div></div>`;
     lb.classList.remove('full');
@@ -947,6 +949,8 @@ function quizPhoto(){
 }
 function quizDuel(a, b){
   const list = pool();
+  // A pair from a link (#quiz-duel|A|B) must name two genera with game photos; anything else gets a normal duel (code re-review L2).
+  if (a && b && !(a !== b && GX(a) && GX(b) && photoSet(a).shown.length && photoSet(b).shown.length)) a = b = undefined;
   let pair = a && b ? [a, b] : null;
   if (!pair) {
     // Unlocked bonus genera duel with the slate look-alike the Coral Finder names.
@@ -1127,7 +1131,7 @@ function syncOnce(tries = 0){
       if (j.error === 'stale' && tries < 2) { delete me.pending; return syncOnce(tries + 1).then(r => { throw {retried: r}; }); }
       return j; })
     .then(j => { if (j && j.ok && SYNC === me) { me.last = new Date().toISOString(); me.base = sent; if (typeof j.rev === 'number') me.srv = j.rev; delete me.pending; delete me.err; if (!j.log && log.length) me.err = 'net'; if (j.log) { const done = new Set(log.map(x => x.id)); me.log = (me.log || []).filter(x => !done.has(x.id)); } if (me.rev === rev) delete me.dirty; store.set('imr-coral-sync', me); }
-      else if (j && SYNC === me) { me.err = j.error === 'pin' ? 'pin' : 'net'; store.set('imr-coral-sync', me); } return j; })
+      else if (j && SYNC === me) { me.err = j.error === 'pin' || j.error === 'wait' ? j.error : 'net'; store.set('imr-coral-sync', me); } return j; })
     .catch(x => { if (x && 'retried' in x) return x.retried; if (SYNC === me) { me.err = 'net'; store.set('imr-coral-sync', me); } return null; })
     .finally(() => { if (SYNC === me) bindSync(); });
 }
@@ -1142,7 +1146,7 @@ function syncPull(){
   if (syncing) return syncing;
   const me = SYNC, before = JSON.stringify(P); pulledAt = Date.now();
   syncing = syncGet(me).then(j => { if (SYNC !== me) return null;
-      if (!j.ok) { if (j.error === 'pin') { me.err = 'pin'; store.set('imr-coral-sync', me); } return j; }
+      if (!j.ok) { if (j.error === 'pin' || j.error === 'wait') { me.err = j.error; store.set('imr-coral-sync', me); } return j; }
       if (j.found) mergeSaved(j);
       delete me.err; me.last = new Date().toISOString(); store.set('imr-coral-sync', me);
       if (JSON.stringify(P) !== before && /^#(progress|quiz-board)$/.test(location.hash)) route();
@@ -1196,7 +1200,7 @@ document.addEventListener('click', e => {
 function reportDialog(c, btn){
   let d = document.getElementById('repdlg'); if (d) d.remove();
   d = document.createElement('dialog'); d.id = 'repdlg'; d.className = 'repdlg';
-  const names = [...Object.keys(DATA.gen), ...bonusOpen()].sort(), kind = c.k || 'game', where = decodeURIComponent(location.hash.slice(1)) || 'home';
+  const names = [...Object.keys(DATA.gen), ...bonusOpen()].sort(), kind = c.k || 'game', where = hashNow() || 'home';
   d.innerHTML = `<form method="dialog">
     <h3>${kind === 'page' ? 'Send feedback' : 'Report a problem'}</h3>
     <div class="repwhy" role="radiogroup" aria-label="Problem">${REP_WHY[kind].map(([k, t], i) => `<label><input type="radio" name="why" value="${k}"${i ? '' : ' checked'}><span>${t}</span></label>`).join('')}</div>
@@ -1229,6 +1233,8 @@ function reportDialog(c, btn){
 function syncTrouble(){
   if (!SYNC_URL || !SYNC) return '';
   if (SYNC.err === 'pin') return 'Not saved: code refused';
+  // Too many wrong codes for this name (anyone can cause it): say so rather than "could not reach the sheet" (code re-review L3).
+  if (SYNC.err === 'wait') return 'Not saved yet: too many wrong codes for this name, try again in 10 minutes';
   const n = (SYNC.log || []).length;
   if (SYNC.err) return n ? `Not saved yet: ${n} answer${n > 1 ? 's' : ''} waiting` : 'Not saved yet: could not reach the sheet';
   return '';
@@ -1244,7 +1250,7 @@ function bindSync(box = document.querySelector('#tour .tsync') || document.getEl
     const bad = syncTrouble(), when = SYNC.last ? new Date(SYNC.last).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'}) : '';
     box.classList.add(bad ? 'warn' : 'on');
     box.innerHTML = bad
-      ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'pin' ? 'The sheet refused the code for this name. Sign out and sign in again with the right code.' : 'Your answers are kept on this device and sent as soon as the sheet can be reached.'}${when ? ` Last saved ${when}.` : ''}</p>
+      ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'pin' ? 'The sheet refused the code for this name. Sign out and sign in again with the right code.' : SYNC.err === 'wait' ? 'Someone typed wrong codes for this name several times, so the sheet waits 10 minutes. Your answers are kept on this device.' : 'Your answers are kept on this device and sent as soon as the sheet can be reached.'}${when ? ` Last saved ${when}.` : ''}</p>
         <button class="chip go" type="button" id="snow">Try again</button> <button class="reset" type="button" id="soff">Sign out</button> <span class="note" role="status"></span>`
       : (SYNC.dirty || (SYNC.log || []).length)  // answers not confirmed yet, no error so far: say so, quietly
       ? `<p class="sline"><span class="sdot wait"></span><span>Saving for IMR as <b>${esc(SYNC.name)}</b>…</span>
@@ -1276,13 +1282,13 @@ function bindSync(box = document.querySelector('#tour .tsync') || document.getEl
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
 /* ---------- routing ---------- */
-function go(h){ if (decodeURIComponent(location.hash.slice(1)) === h) route(); else location.hash = h; }
+function go(h){ if (hashNow() === h) route(); else location.hash = h; }
 
 // Photo size (small / medium / large), remembered per page in localStorage (key imr-coral-size).
 // Each page reads :root[data-size] in its own CSS; pages where it means nothing (games that fill the screen,
 // home, progress) hide the S/M/L buttons, keeping their room so the header never changes size.
 const SIZE_PAGES = ['genera', 'tips', 'genus', 'pair', 'finder', 'lab-gallery', 'lab-elim'];
-function pageKey(){ const h = decodeURIComponent(location.hash.slice(1)); return h.startsWith('g-') ? 'genus' : h.startsWith('cmp-') ? 'pair' : h.split('|')[0] || 'home'; }
+function pageKey(){ const h = hashNow(); return h.startsWith('g-') ? 'genus' : h.startsWith('cmp-') ? 'pair' : h.split('|')[0] || 'home'; }
 function sizePrefs(){ try { return JSON.parse(localStorage.getItem('imr-coral-size')) || {}; } catch (e) { return {}; } }
 // Default M, except Genera (S: more genera per screen, groups easier to compare).
 function photoSize(){ return sizePrefs()[pageKey()] || (pageKey() === 'genera' ? 's' : 'm'); }
@@ -1366,7 +1372,7 @@ function showModes(tab, h){
 function route(){
   if (CUR_NEW) { CUR = CUR_NEW; CUR_NEW = null; build(); }
   applySize();
-  const h = decodeURIComponent(location.hash.slice(1));
+  const h = hashNow();
   // Home lives at the clean URL; an old #home link is rewritten to it.
   if (h === 'home') history.replaceState(null, '', location.pathname + location.search);
   const tab = sectionOf(h);
@@ -1469,8 +1475,13 @@ if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else ad
 // A missing side file (404) counts as a failure, not as an empty file: softFail says so.
 const okJson = r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`));
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
+// Pierre's curation, also kept in localStorage (imr-curation-last): if curation.json can't be read (offline, and not in the
+// service worker cache), the app uses the last copy it saw instead of none, so excluded or moved photos never come back
+// into the games (code re-review 2026-11-01, H1).
+const CUR_LAST = 'imr-curation-last';
 const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
-  return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(okJson).catch(softFail('curation.json (Pierre\'s photo choices)', {})); };
+  return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(okJson).then(c => { store.set(CUR_LAST, c); return c; })
+    .catch(e => { const last = store.get(CUR_LAST, null); return last ? last : softFail('curation.json (Pierre\'s photo choices)', {})(e); }); };
 const forms = () => fetch('forms.json?v=7').then(okJson).catch(softFail('forms.json', {})).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u => fetch(u).then(okJson).catch(softFail(u.replace(/\?.*/, ''), {}));
 Promise.all([fetch('data.json?v=26').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); window.APP_READY = true; if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
@@ -1478,7 +1489,7 @@ Promise.all([fetch('data.json?v=26').then(r => r.json()), curation(), forms(), j
 // into view (or every 30 min while visible), curation.json is read again; a change applies at the next screen (route),
 // never in the middle of a game.
 function curRefresh(){ if (!RAW || /[?&]draft\b/.test(location.search)) return; curAt = Date.now();
-  fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : null).then(c => { if (c && JSON.stringify(c) !== JSON.stringify(CUR)) CUR_NEW = c; }).catch(() => {}); }
+  fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : null).then(c => { if (c) store.set(CUR_LAST, c); if (c && JSON.stringify(c) !== JSON.stringify(CUR)) CUR_NEW = c; }).catch(() => {}); }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - curAt > 300000) curRefresh(); });
 setInterval(() => { if (document.visibilityState === 'visible') curRefresh(); }, 1800000);
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
