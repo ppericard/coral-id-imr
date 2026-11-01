@@ -968,7 +968,11 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 #tour .tbub{position:absolute;pointer-events:auto;width:auto;background:var(--surface);color:var(--ink);border-radius:var(--r);box-shadow:0 10px 32px rgb(0 0 0 / .32);padding:14px 16px 12px;transition:none}
 @media (min-width:600px){
   #tour .tbub{width:min(360px,calc(100vw - 28px));transition:left .2s,top .2s}
+  /* A tall target with no free side: a wider, shorter bubble fits under it (tour.js frame). */
+  #tour .tbub.wide{width:min(640px,calc(100vw - 28px))}
 }
+/* Room below the page during the tour, so a target near the end can scroll clear of the bubble. */
+html.touring body::after{content:"";display:block;height:80vh}
 #tour .tbub:focus{outline:none}
 #tour .tbub h3{font-family:var(--display);font-size:var(--fs-l);margin:0 0 4px;line-height:1.15}
 #tour .tbub p{margin:0 0 10px;font-size:var(--fs-s)}
