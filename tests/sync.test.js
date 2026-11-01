@@ -7,7 +7,7 @@ const ans = (id, extra = {}) => ({id, t: '2026-11-01T00:00:00Z', g: 'Acropora', 
 
 test('new RA, save and load back, with revision', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 6});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 7});
   const r = s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}, answers: [ans('a1')]});
   assert.strictEqual(r.ok, true); assert.strictEqual(r.log, true); assert.strictEqual(r.rev, 1);
   const g = s.get({name: 'ana', pin: '1234'});
@@ -93,4 +93,33 @@ test('anonymous ids use a secret salt; the caller learns its own id with its cod
   assert.strictEqual(s.get({answers: '1', name: 'Ana', pin: '9999'}).me, undefined);
   assert.ok(a.players[id]);
   assert.ok(s.get({stats: '1'}).ras[id]);
+});
+
+const rep = (id, extra = {}) => ({id, t: '2026-11-01T00:00:00Z', why: 'wrong', g: 'Acropora', a: 'Montipora', fix: 'Montipora', note: 'corallites', m: 'quiz', ph: 'acropora-1 acropora-2', ...extra});
+
+test('reports: logged once, reporter verified by code, never mistaken for a progress write', () => {
+  const s = loadCodeGs();
+  s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}});
+  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 7});
+  s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1'), rep('r2', {why: 'multi', fix: ''})]});
+  s.post({rname: 'Bob', rpin: '', reports: [rep('r3', {why: 'bogus'}), rep('r4', {why: 'photo', note: '=HYPERLINK("x")'})]});
+  const R = s.sheets.Reports;
+  assert.strictEqual(R.getLastRow(), 4, 'r1 once, r2, r4; r3 has no valid reason');
+  assert.deepStrictEqual(R.getRange(2, 2, 1, 5).getValues()[0], ['Ana', 1, 'Wrong answer', 'Acropora', 'Montipora']);
+  assert.deepStrictEqual(R.getRange(4, 2, 1, 2).getValues()[0], ['Bob', 0]);
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).data, prog(3), 'progress untouched');
+});
+
+test('reports list: owner only, first verified caller claims it', () => {
+  const s = loadCodeGs();
+  s.post({name: 'Pierre', pin: '1111', data: prog(1), summary: {}});
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}});
+  s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1'), rep('r2', {why: 'other'})]});
+  assert.strictEqual(s.get({reports: '1'}).error, 'input');
+  assert.strictEqual(s.get({reports: '1', name: 'Pierre', pin: '0000'}).error, 'pin');
+  const a = s.get({reports: '1', name: 'Pierre', pin: '1111'});
+  assert.strictEqual(s.props.OWNER, 'Pierre');
+  assert.strictEqual(a.rows.length, 2); assert.strictEqual(a.rows[0][0], 'r2', 'newest first');
+  assert.deepStrictEqual(a.rows[1].slice(2, 9), ['Ana', 1, 'wrong', 'Acropora', 'Montipora', 'Montipora', 'corallites']);
+  assert.strictEqual(s.get({reports: '1', name: 'Ana', pin: '1234'}).error, 'owner');
 });

@@ -32,7 +32,7 @@ LAB.add({
         const [a, b] = open; open = [];
         if (cards[a].n === cards[b].n) {
           found++; [a, b].forEach(k => { els[k].classList.add('done'); if (typeof photoSrc === 'function') els[k].querySelector('.pfront').insertAdjacentHTML('beforeend', photoSrc(viewPhoto(cards[k].n, cards[k].v))); });
-          const fn = cards[a].n; root.querySelector('#pres').innerHTML = `<p><a href="${genLink(fn)}"><i>${esc(fn)}</i></a>: ${esc(tipsText(DATA.gen[fn]))}</p>`;
+          const fn = cards[a].n; root.querySelector('#pres').innerHTML = `<p><a href="${genLink(fn)}"><i>${esc(fn)}</i></a>: ${esc(tipsText(DATA.gen[fn]))}</p>${typeof repBtn === 'function' ? repBtn({g: fn, a: '', ph: [a, b].map(k => viewPhoto(fn, cards[k].v)).filter(Boolean).map(x => x.f), m: 'pairs'}) : ''}`;
           if (found === gens.length) root.querySelector('#pres').innerHTML = `<p class="ok"><b>All ${gens.length} pairs in ${moves} moves.</b> A perfect game takes ${gens.length}; ${moves <= gens.length * 1.6 ? 'excellent memory.' : 'play again to beat it.'}</p>`;
         } else { lock = true; setTimeout(() => { [a, b].forEach(k => { els[k].classList.remove('up'); els[k].setAttribute('aria-label', 'Hidden card'); }); lock = false; }, 1100); }
       });

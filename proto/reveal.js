@@ -36,7 +36,7 @@ LAB.add({
         score.pts += pts; score.n++; score.streak = ok ? score.streak + 1 : 0;
         im.style.transition = 'filter .5s'; im.style.filter = 'none'; im.insertAdjacentHTML('afterend', typeof photoSrc === 'function' ? photoSrc(p) : '');
         body.querySelectorAll('[data-c]').forEach(x => x.classList.add(x.dataset.c === t ? 'right' : x === b ? 'wrong' : 'off'));
-        body.querySelector('#rvres').innerHTML = `<p class="${ok ? 'ok' : 'ko'}"><b>${ok ? '+' + pts + ' pts' : 'Missed'}</b>: <a href="${genLink(t)}"><i>${esc(t)}</i></a>. ${esc(tipsText(DATA.gen[t]))}</p><p class="credit">${credit(p)}</p><button type="button" class="next" id="rvnext">Next</button>`;
+        body.querySelector('#rvres').innerHTML = `<p class="${ok ? 'ok' : 'ko'}"><b>${ok ? '+' + pts + ' pts' : 'Missed'}</b>: <a href="${genLink(t)}"><i>${esc(t)}</i></a>. ${esc(tipsText(DATA.gen[t]))}</p><p class="credit">${credit(p)}</p>${typeof repBtn === 'function' ? repBtn({g: t, a: b.dataset.c, ph: [p.f], m: 'reveal'}) : ''}<button type="button" class="next" id="rvnext">Next</button>`;
         body.querySelector('#rvnext').onclick = round;
       });
       body.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { view = b.dataset.v; round(); });

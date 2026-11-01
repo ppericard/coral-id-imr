@@ -357,7 +357,7 @@ const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Excl
 function status(){
   const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : '', flChanged() ? 'triage flags' : '', sgChanged() ? 'triage suggestions' : '', cdChanged() ? 'candidate reviews' : '', mtChanged() ? 'look-alike montages' : '', crChanged() ? 'crops' : '', snChanged() ? 'several corals' : ''].filter(Boolean);
   const bs = $('booksw'); if (bs) { bs.setAttribute('aria-pressed', String(bookOn(DRAFT))); bs.textContent = `CF book: ${bookOn(DRAFT) ? 'on' : 'off'}`; }
-  const tn = Object.keys(DRAFT.flag || {}).length + sugCount(), ta = document.querySelector('[data-mode="triage"]'); if (ta) ta.textContent = `Triage${tn ? ` (${tn})` : ''}`;
+  const tn = Object.keys(DRAFT.flag || {}).length + sugCount() + repsOpen().length, ta = document.querySelector('[data-mode="triage"]'); if (ta) ta.textContent = `Triage${tn ? ` (${tn})` : ''}`;
   const xn = Object.keys(DRAFT.exclude || {}).length, xa = document.querySelector('[data-mode="excluded"]'); if (xa) xa.textContent = `Excluded${xn ? ` (${xn})` : ''}`;
   const t = draftAt ? ` (saved ${draftAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})})` : '';
   // Publish carries the status (no separate status text): "● Publish" with a draft, "Published" when clean.
@@ -600,7 +600,7 @@ const HELP = {
     <p>The Coral Finder growth-form tiles use them: Branching = Br + Ta, Thin plates and crusts = En + Fo, Massive or thick = Ma + Sm, Columns = Sm, Solitary = Mu, Meandering = any form of the genera it lists. Dashed = a first guess, solid = yours (always wins); a red ? = a guess to double-check.</p>
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
-  triage: `<p>Only what needs your eye. On the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
+  triage: `<p>Only what needs your eye. First, what players reported after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), with who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v7); only the sheet owner (Script property OWNER, else the first account to open this) can read them, using this browser's sync name and code. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns. Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
@@ -703,6 +703,22 @@ function renderExcluded(){
   $v.querySelectorAll('[data-act="restore"]').forEach(b => b.onclick = () => set(b.closest('[data-f]').dataset.f, null));
   $v.querySelectorAll('[data-act="zoomx"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'), p = PHOTOS[t.dataset.f]; if (p) zoomOne(p); });
 }
+// Players' reports (sheet script v7, app.js reportDialog): wrong answer (+ the genus they suggest), several corals, bad
+// photo, other, with a note and WHO sent it (Pierre trusts some players more than others). ?reports=1 answers only the
+// sheet owner, with this browser's sync name and code (Script Properties OWNER). Done = curation.json "seen" {'rep:id': 1},
+// one report at a time; nothing is ever changed from a report by itself.
+let REPS = null, repsAt = 0;
+const REP_WHY = {wrong: 'Wrong answer', multi: 'Several corals', photo: 'Bad photo', other: 'Other'};
+function loadReports(force){
+  if (!force && REPS && Date.now() - repsAt < 300000) return Promise.resolve(REPS);
+  const sy = store.get('imr-coral-sync', null) || {};
+  if (!sy.name || !sy.pin) { REPS = {err: 'Sign in to the sync on the site'}; return Promise.resolve(REPS); }
+  return fetch(`${SYNC_URL}?reports=1&name=${encodeURIComponent(sy.name)}&pin=${encodeURIComponent(sy.pin)}`).then(r => r.json())
+    .then(j => { repsAt = Date.now();
+      REPS = j && j.ok && j.rows ? {rows: j.rows} : {err: !j || !j.v || j.v < 7 ? 'Sheet script v7 not deployed' : j.error === 'owner' ? 'Not the sheet owner (OWNER)' : j.error === 'pin' ? 'Sync code refused' : 'Not available'}; return REPS; })
+    .catch(() => (REPS = {err: 'Offline'}));
+}
+const repsOpen = () => REPS && REPS.rows ? REPS.rows.filter(r => !(DRAFT.seen || {})['rep:' + r[0]]) : [];
 // Triage: only what needs Pierre's eye. 1) photos he flagged on the site, with where they were seen;
 // 2) Featured photos rated Poor. Views without his own Featured pick are not a task (Pierre): the automatic pick is fine.
 function renderTriage(){
@@ -718,8 +734,21 @@ function renderTriage(){
     const cv = coverOf(n); SHOWN_COVER = cv && cv.f;
     return tile0(n, q, viewOf(n, q), {cls: hidden(n, q) ? 'is-hidden' : '', extra: `<button type="button" class="adm-tdone" data-tdone>✓ Done</button>`})
       .replace('<figure class="adm-tile', `<figure data-g="${esc(n)}" class="adm-tile`).replace(GRIP, '').replace('<figcaption>', `<figcaption><a class="adm-gen" href="#${esc(n)}"><i>${esc(n)}</i></a>${where}`); };
+  // A reported photo: every tool of its genus page, like a flagged one; Done is per report.
+  const repTile = (f, g0) => { const n = (PHOTOS[f] || {}).genus || g0, q = DATA.gen[n] && [...photos(n), ...pending(n)].find(x => x.f === f);
+    if (!q) return tile({...(PHOTOS[f] || {}), f, genus: n}, '', '');
+    const cv = coverOf(n); SHOWN_COVER = cv && cv.f;
+    return tile0(n, q, viewOf(n, q), {cls: hidden(n, q) ? 'is-hidden' : ''})
+      .replace('<figure class="adm-tile', `<figure data-g="${esc(n)}" class="adm-tile`).replace(GRIP, '').replace('<figcaption>', `<figcaption><a class="adm-gen" href="#${esc(n)}"><i>${esc(n)}</i></a>`); };
+  const reps = repsOpen(), repCard = r => { const [id, t, who, ok, why, g, a, fix, note, m, ph] = r;
+    return `<article class="adm-rep" data-rep="${esc(id)}"><div class="adm-rephead"><b class="adm-repwho${ok ? '' : ' unv'}" title="${ok ? 'Verified' : 'Not verified'}">${esc(who || 'Anonymous')}${ok ? '' : ' ?'}</b>
+      <span class="adm-repwhy">${esc(REP_WHY[why] || why)}</span><span><i>${esc(g)}</i>${a && a !== g ? ` · answered <i>${esc(a)}</i>` : ''}</span>${fix ? `<span class="adm-repfix">→ <i>${esc(fix)}</i></span>` : ''}
+      <small class="adm-where">${esc(m)} · ${esc(when(t))}</small><button type="button" class="adm-tdone" data-rdone="${esc(id)}">✓ Done</button></div>
+      ${note ? `<p class="adm-repnote">${esc(note)}</p>` : ''}<div class="adm-grid adm-qgrid adm-flagged">${ph.split(/\s+/).filter(Boolean).map(f => repTile(f, g)).join('')}</div></article>`; };
   const poor = []; Object.entries(DRAFT.genera).forEach(([n, k]) => Object.entries(k.feat || {}).forEach(([v, L]) => L.forEach(f => { if (PHOTOS[f] && !offSlot(PHOTOS[f]) && qOf(f) === 1) poor.push({...PHOTOS[f], f, genus: n, fv: v}); })));
   $v.innerHTML = `<section class="adm-quality">
+    <div class="adm-qhead"><h2>Reported by players <small>${REPS && REPS.rows ? reps.length : ''}</small></h2>${REPS && REPS.err ? `<small class="adm-where">${esc(REPS.err)}</small>` : ''}<button type="button" class="adm-fchip plain" data-rload title="Reload">↻</button></div>
+    ${reps.length ? reps.map(repCard).join('') : REPS && REPS.rows ? '<p class="note">Nothing reported.</p>' : ''}
     <div class="adm-qhead"><h2>Flagged on the site <small>${flagged.length}</small></h2></div>
     ${flagged.length ? `<div class="adm-grid adm-qgrid adm-flagged">${flagged.map(flagTile).join('')}</div>` : '<p class="note">Nothing flagged.</p>'}
     ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
@@ -728,7 +757,10 @@ function renderTriage(){
   bindSug();
   const done = f => { DRAFT.flag = {...(DRAFT.flag || {})}; delete DRAFT.flag[f]; };
   $v.querySelectorAll('[data-act="tdone"],[data-tdone]').forEach(b => b.onclick = () => { done(b.closest('[data-f]').dataset.f); saveDraft(); renderTriage(); });
-  const FL = $v.querySelector('.adm-flagged'); if (FL) { bindTiles(FL, t => t.dataset.g); bindF(FL); bindQ(); }
+  const FL = $v.querySelectorAll('.adm-flagged'); FL.forEach(x => { bindTiles(x, t => t.dataset.g); bindF(x); }); if (FL.length) bindQ();
+  $v.querySelectorAll('[data-rdone]').forEach(b => b.onclick = () => { DRAFT.seen = {...(DRAFT.seen || {}), ['rep:' + b.dataset.rdone]: 1}; saveDraft(); renderTriage(); });
+  const rl = $v.querySelector('[data-rload]'); if (rl) rl.onclick = () => loadReports(true).then(() => { if (cur === '~triage') renderTriage(); });
+  if (!REPS) loadReports().then(() => { if (cur === '~triage') renderTriage(); });
   $v.querySelectorAll('[data-act="tpoor"]').forEach(b => b.onclick = () => { const f = b.closest('[data-f]').dataset.f; DRAFT.quality = {...(DRAFT.quality || {}), [f]: 1}; done(f); saveDraft(); renderTriage(); });
   $v.querySelectorAll('[data-act="thide"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'), n = t.dataset.g, f = t.dataset.f; if (!DATA.gen[n]) return;
     done(f); if (!(entry(n).hide || []).includes(f)) ACT.hide(n, f); else { saveDraft(); renderTriage(); } });
