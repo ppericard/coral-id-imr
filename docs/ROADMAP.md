@@ -48,6 +48,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 
 | Idea | Source | Status |
 |---|---|---|
+| Bonus genera: more of them (Euphyllia / Fimbriaphyllia are the most observed at Dauin but only look like each other, not a slate genus), in Memory too, and an admin control of the list (now `BONUS` in `app.js` + `tools/apply_bonus.py`). | thread "Add bonus genera like Millepora to games" | Parked |
 | **ReefCloud point drills**: practice mode on top-down 50 cm benthic photos, label the coral under a point (like ReefCloud's 5 points per image), ideally from real IMR ReefCloud images + label export. | threads "Brainstorm better ways to learn coral ID", "Build one coral ID web app"; study <https://claude.ai/artifact/7wiyZLjhcoiRrDVL5xa9e6> | Parked. Pierre declined to provide ReefCloud images for now: don't ask again unless he brings it up. |
 | 4th "ReefCloud" view per genus, from crops of annotated points. | thread "Make the app usable on mobile" | Parked (same reason) |
 | **Realistic / degraded mode**: transect-like images (top-down, blue/green cast, blur, low resolution), as an advanced level after ideal photos. Poor-quality photos already feed the hard end of games. | threads "Build one coral ID web app", "Brainstorm…" | Parked |
@@ -84,5 +85,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 ## Done recently (for context)
 
 - 2026-11-01: players report a wrong answer (with the right genus), several corals, a bad photo or other from every game; reports with the reporter's name in admin Triage (Code.gs v7).
+- 2026-11-01: bonus genera in the photo quiz and duels (Millepora first, unlocked from 10% slate progress, outside the slate score).
+
 - 2026-11-01: #244 explain empty "Without me" views; #242/#243 admin "Game coverage" + "Sheet & Finder coverage", sortable by view; #241 Thickest order; #240 Publish merges key by key (and restored lost curation); #233/#236/#238 admin Look-alikes Hide / All / Auto|Manual, `#~look`; #231 curation re-read in long-open tabs; #230 "Photos from" setting removed; #229/#209 "Without me" photo Elo; #227 IMR lecture photos in games; #225/#222/#208 progress scale (6 steps, mini ring); #224/#220 book photos on sheets only when pinned or to fill gaps; #219/#226 colour-blind mode; #214/#218 colour themes, Depth default; #207 one colony per question; #203 sync pulls other devices on start-up; #201/#202 Code.gs v5 deployed; #200 single-view questions.
 - PR #198 admin Stats "Needs" tab (where to look for more photos); #197 continuous difficulty; #195 admin Stats; #194 Coverage; #193 Candidates order; #184/#188 extra Dauin genera in the Coral Finder; #159 look-alike montage deck; #150 two-door Home; #168/#172 responsive system, mobile-first; #132 guided tour.
