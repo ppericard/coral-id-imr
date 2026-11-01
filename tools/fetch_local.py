@@ -21,6 +21,14 @@ LIC = 'cc-by,cc-by-nc,cc0,cc-by-sa,cc-by-nc-sa'
 SCLERACTINIA = 47532  # iNaturalist taxon for stony corals; guards against homonym genera (e.g. Astrea snails)
 DAUIN = 'lat=9.19&lng=123.26&radius=40'
 DAUIN_CAP, PH_CAP, PER_OBS = 15, 6, 12
+# One-off backlog runs (Pierre, 2026-11-01: "fetch a good backlog quickly, mainly for the genera that lack photos"):
+#   python3 tools/fetch_local.py --dauin 30 --ph 20 --ph-all [Genus...]
+# --dauin / --ph raise the caps (observations waiting), --ph-all fetches Philippines candidates whatever the Dauin count.
+def flag(name, default):
+    a = sys.argv
+    return int(a[a.index(name) + 1]) if name in a else default
+DAUIN_CAP, PH_CAP = flag('--dauin', DAUIN_CAP), flag('--ph', PH_CAP)
+PH_ALL = '--ph-all' in sys.argv
 PHILIPPINES = 'place_id=6873'
 POOR = 15  # fewer Dauin photos (site + candidates) than this: also fetch Philippines candidates
 get = lambda u: json.load(urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60))
@@ -29,7 +37,7 @@ d = load_all()
 # stony corals (fire, blue, organ pipe coral) are matched as animals instead of under Scleractinia.
 GEN = {**d['gen'], **((d.get('x') or {}).get('gen') or {})}
 NONSCL = {n for n, g in GEN.items() if (g.get('x') or {}).get('nonscl')}
-ONLY = set(sys.argv[1:])
+ONLY = {a for i, a in enumerate(sys.argv[1:], 1) if not a.startswith('--') and sys.argv[i - 1] not in ('--dauin', '--ph')}
 used = {p.get('o') for g in GEN.values() for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L}
 usedp = {re.sub(r'\D', '', p['f'].split('-')[-1]) for g in GEN.values() for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L}
 cand = d.get("cand") or {}
@@ -52,7 +60,7 @@ for g in GEN:
     T = [t for t in get(f'https://api.inaturalist.org/v1/taxa?q={g}&rank=genus&per_page=10')['results'] if t['name'] == g and (SCLERACTINIA in t.get('ancestor_ids', []) or (g in NONSCL and t.get('iconic_taxon_name') == 'Animalia'))]
     if not T: print('no taxon', g); continue
     for where in (DAUIN, PHILIPPINES):
-        if where == PHILIPPINES and dauin_n(g) >= POOR: continue
+        if where == PHILIPPINES and dauin_n(g) >= POOR and not PH_ALL: continue
         loc = 'dauin' if where == DAUIN else 'ph'
         out = cand.setdefault(g, [])
         W = {p.get('o') for p in out if p.get('loc') == loc and waiting(p)}  # observations already waiting
