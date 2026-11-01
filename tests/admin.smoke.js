@@ -119,6 +119,43 @@ const server = http.createServer((req, res) => {
       if (!(await p.evaluate(() => Object.keys(DRAFT.seen || {}).some(k => k.startsWith('cand:')))))
         fails.push(`${w}px Candidates: Reject left no mark in the draft`);
     } else fails.push(`${w}px Candidates: no candidate to try Skip and Reject on`);
+    // Cap per genus x view: candidates of full cells are left out of the queue; adding one asks which colony it replaces,
+    // that colony's photos become sheet only, the candidate is added, and one Undo takes both back.
+    const cap = await p.evaluate(() => {
+      const cur = document.querySelector('.adm-sw[data-f]'),
+        Q = candQueue(CSRC),
+        x = candQueue('all').find(y => y.full);
+      if (!x) return {none: true};
+      if (candQueue('all').some(y => y.p.cf && y.full)) return {bookFull: true};
+      const shownFull = cur && (Q.find(y => y.p.f === cur.dataset.f) || {}).full;
+      CREPL = {n: x.n, f: x.p.f, w: cellView(x.n, x.p)};
+      render();
+      return {
+        shownFull,
+        n: x.n,
+        f: x.p.f,
+        w: CREPL.w,
+        tiles: document.querySelectorAll('[data-repl]').length,
+        refs: Object.values(DRAFT.use || {}).filter(v => v === 'ref').length
+      };
+    });
+    if (cap.bookFull) fails.push(`${w}px Cap: a Coral Finder book candidate (never in games) counted as full`);
+    else if (cap.none) fails.push(`${w}px Cap: no candidate waits in a full cell (expected with the real data)`);
+    else {
+      if (cap.shownFull) fails.push(`${w}px Cap: the swiper shows a candidate of a full cell`);
+      if (cap.tiles < 10) fails.push(`${w}px Cap: replace screen shows ${cap.tiles} colonies`);
+      await p.click('[data-repl]');
+      await settle();
+      const after = await p.evaluate(
+        c => ({added: (entry(c.n).add || {})[c.f], refs: Object.values(DRAFT.use || {}).filter(v => v === 'ref').length}),
+        cap
+      );
+      if (after.added !== cap.w || after.refs <= cap.refs)
+        fails.push(`${w}px Cap: replace did not add the photo and move a colony to sheet only`);
+      await p.click('#undo');
+      await settle();
+      if (await p.evaluate(c => (entry(c.n).add || {})[c.f], cap)) fails.push(`${w}px Cap: Undo did not take the replacement back`);
+    }
     errs.length = 0;
     if (await p.isEnabled('#save')) {
       await p.click('#save');
@@ -140,7 +177,7 @@ const server = http.createServer((req, res) => {
     console.error(`Admin demo: ${fails.length} problem(s)\n` + fails.join('\n'));
     process.exit(1);
   }
-  console.log('Admin demo OK: every page at 390 and 1280 px, merge, delete, triage, skip, reject, publish; nothing sent.');
+  console.log('Admin demo OK: every page at 390 and 1280 px, merge, delete, triage, skip, reject, cap, publish; nothing sent.');
 })().catch(e => {
   console.error(e);
   process.exit(1);
