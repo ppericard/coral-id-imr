@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 9 (2026-11-01: v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 10 (2026-11-01: v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -8,7 +8,7 @@ const HEAD = ['Name', 'Updated', 'Learned', 'Seen', 'Total', 'Review first', 'Co
 const COLORS = {ok: '#dcefd9', mid: '#e3f1f3', weak: '#f7dcd6', new: '#f2f2f2'};
 const LABELS = {ok: 'Learned', mid: 'Learning', weak: 'Review', new: ''};
 // One row per quiz answer: the history behind each RA's progress. Activity sums it up per RA.
-const LOG = ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability', 'New photos'];
+const LOG = ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability', 'New photos', 'Choices'];
 const ACTIVITY = '=QUERY(Answers!A:E, "select A, count(E), sum(E), max(B) where A is not null group by A order by max(B) desc label count(E) \'Answers\', sum(E) \'Right\', max(B) \'Last answer\'", 1)';
 
 function sheet_(name, head){
@@ -20,7 +20,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 9;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 10;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -122,9 +122,9 @@ function logAnswers_(name, answers){
   if (!SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Activity')) sheet_('Activity').getRange(1, 1).setFormula(ACTIVITY);
   const n = sh.getLastRow() - 1;
   const seen = new Set(n > 0 ? sh.getRange(2, 8, n, 1).getValues().map(r => String(r[0])) : []);
-  const G = /^[A-Za-z][A-Za-z -]*$/, M = /^[a-z0-9|-]*$/, PH = /^[A-Za-z0-9_. -]*$/, ID = /^[a-z0-9]+$/;
+  const G = /^[A-Za-z][A-Za-z -]*$/, M = /^[a-z0-9|-]*$/, PH = /^[A-Za-z0-9_. -]*$/, ID = /^[a-z0-9]+$/, CH = /^[A-Za-z ]*$/;
   const rows = answers.filter(a => a && a.id && ID.test(String(a.id)) && !seen.has(String(a.id))).slice(0, 2000)
-    .map(a => [safe_(name), new Date(a.t), word_(a.g, G, 40), word_(a.a, G, 40), a.ok ? 1 : 0, word_(a.m, M, 40), word_(a.ph, PH, 400), String(a.id).slice(0, 20), num_(a.e), num_(a.th), num_(a.nw)]);
+    .map(a => [safe_(name), new Date(a.t), word_(a.g, G, 40), word_(a.a, G, 40), a.ok ? 1 : 0, word_(a.m, M, 40), word_(a.ph, PH, 400), String(a.id).slice(0, 20), num_(a.e), num_(a.th), num_(a.nw), word_(a.ch, CH, 200)]);
   if (!rows.length) return;
   const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
   if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
@@ -143,8 +143,9 @@ function aid_(name, salt){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, (salt || anonSalt_()) + '|anon|' + String(name).trim().toLowerCase(), Utilities.Charset.UTF_8)).slice(0, 8);
 }
 
-// {ok, rows: [[id, time ms, genus shown, answered, right 0|1, mode, photos, expected, ability, new photos]],
-//   players: {id: [learned, seen, total, {genus: ability}]}}. Expected/ability/new photos are null on answers before v5.
+// {ok, rows: [[id, time ms, genus shown, answered, right 0|1, mode, photos, expected, ability, new photos, choices]],
+//   players: {id: [learned, seen, total, {genus: ability}]}}. Expected/ability/new photos are null on answers before v5;
+//   choices (the genera offered, space-separated) is '' on answers before v10.
 function answers_(q){
   const ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName('Answers'), ra = ss.getSheetByName('RAs'), out = {ok: true, rows: [], players: {}};
   const salt = anonSalt_(), ids = {}, id = n => ids[n] = ids[n] || aid_(n, salt);
@@ -153,9 +154,9 @@ function answers_(q){
   if (name && /^\d{4}$/.test(pin) && ra && !blocked_(name)) { const r = find_(ra, name); if (r && ra.getRange(r, 7).getValue() === hash_(name, pin)) out.me = id(name); else if (r) failed_(name); }
   const big = {}; const dt = ss.getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { big[String(r[0]).toLowerCase()] = r.slice(2).map(String).join(''); });
-  if (sh && sh.getLastRow() > 1) out.rows = sh.getRange(2, 1, sh.getLastRow() - 1, 11).getValues().filter(r => r[0])
+  if (sh && sh.getLastRow() > 1) out.rows = sh.getRange(2, 1, sh.getLastRow() - 1, 12).getValues().filter(r => r[0])
     .map(r => [id(r[0]), new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6])]
-      .concat([8, 9, 10].map(i => r[i] === '' ? null : Number(r[i]))));
+      .concat([8, 9, 10].map(i => r[i] === '' ? null : Number(r[i])), [String(r[11] || '')]));
   if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, 8).getValues().filter(r => r[0])
     .forEach(r => out.players[id(r[0])] = [Number(r[2]) || 0, Number(r[3]) || 0, Number(r[4]) || 0, abilities_(big[String(r[0]).toLowerCase()] || r[7])]);
   return out;
@@ -171,18 +172,24 @@ function abilities_(data){
 // g = 1/choices (4 in the quiz, 2 in a duel), ability = the RA's, difficulty = mean of the photos shown, +0.5 when a
 // single view was shown alone (harder than the same photo with the other views). Ratings move
 // by K * (result - P(right)), K shrinking as a photo or an RA gathers answers. Returns {ok, photos: {file: [difficulty,
-// answers, right]}, ras: {anonymous id: [ability, answers]}}. Difficulty 0 = average photo; +1 = clearly harder.
+// answers, right]}, ras: {anonymous id: [ability, answers]}, conf: {"A|B": [offered, mixed up]}}. Difficulty 0 = average
+// photo; +1 = clearly harder. conf (v10): per pair of genera (A before B alphabetically), how often one was shown with the
+// other among the choices, and how often the other was answered; only answers that logged their choices (v10) count.
+// The app turns it into confusion scores (core.js confScore) to pick the look-alike traps; core.js confusionOf counts the same.
 // admin.js eloOf replays the same rules in the browser (photo Elo with or without the author's answers): keep both in step.
 function stats_(){
-  const cache = CacheService.getScriptCache(), hit = cache.get('stats7');
+  const cache = CacheService.getScriptCache(), hit = cache.get('stats8');
   if (hit) return JSON.parse(hit);
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: {}, ras: {}};
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: {}, ras: {}, conf: {}};
   if (!sh || sh.getLastRow() < 2) return out;
-  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 7).getValues().sort((a, b) => new Date(a[1]) - new Date(b[1]));
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 12).getValues().sort((a, b) => new Date(a[1]) - new Date(b[1]));
   const P = {}, R = {}, sig = x => 1 / (1 + Math.exp(-x));
   rows.forEach(r => {
     const who = String(r[0]), ok = Number(r[4]) ? 1 : 0, mode = String(r[5]), fs = String(r[6]).split(/\s+/).filter(Boolean);
-    if (!who || !fs.length) return;
+    if (!who) return;
+    const sg = String(r[2]), sa = String(r[3]);
+    String(r[11] || '').split(/\s+/).filter(x => x && x !== sg).forEach(x => { const k = sg < x ? sg + '|' + x : x + '|' + sg, c = out.conf[k] = out.conf[k] || [0, 0]; c[0]++; if (!ok && sa === x) c[1]++; });
+    if (!fs.length) return;
     const kq = /\|k(\d)$/.exec(mode), g = kq ? 1 / Number(kq[1]) : mode.indexOf('quiz-duel') === 0 ? 0.5 : 0.25, ra = R[who] = R[who] || [0, 0];
     const ph = fs.map(f => P[f] = P[f] || [0, 0, 0]), b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);  // one view alone is harder (app.js PICKD.SINGLE)
     const e = g + (1 - g) * sig(ra[0] - b), d = ok - e;
@@ -192,7 +199,7 @@ function stats_(){
   Object.keys(P).forEach(f => out.photos[f] = [Math.round(P[f][0] * 100) / 100, P[f][2], P[f][1]]);
   const salt = anonSalt_();
   Object.keys(R).forEach(n => out.ras[aid_(n, salt)] = [Math.round(R[n][0] * 100) / 100, R[n][1]]);
-  try { cache.put('stats7', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
+  try { cache.put('stats8', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
   return out;
 }
 

@@ -633,6 +633,7 @@ const HELP = {
   cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   stats: `<p>Every quiz and duel answer synced to the sheet. Players are anonymous: a number, ranked by level; "you" marks the name synced in this browser (All / Others / Me). Level is on the same scale as photo difficulty. Last 20 = right answers among the player's last 20. Learned = genera learned on their last sync. Days = days with answers. Photos = different photos answered (more = more variety). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
+  statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
   statsph: `<p>Photo difficulty (Elo) from every answer: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers; few answers = rough. Click a dot to see the photo.</p>
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (players' level on the genus is above what the hardest photo of the view can challenge: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
@@ -654,7 +655,7 @@ const HELP = {
 };
 function toggleHelp(){
   let h = $('admhelp'); if (h) { h.remove(); return; }
-  const m = ({'~stats-photos': 'statsph', '~stats-needs': 'statsneeds', '~diff': 'diff', '~cov': 'cov', '~fcov': 'fcov'})[cur] || modeKey();
+  const m = ({'~stats-photos': 'statsph', '~stats-conf': 'statsconf', '~stats-needs': 'statsneeds', '~diff': 'diff', '~cov': 'cov', '~fcov': 'fcov'})[cur] || modeKey();
   h = document.createElement('div'); h.id = 'admhelp'; h.className = 'adm-help'; h.setAttribute('role', 'dialog'); h.setAttribute('aria-label', 'Help');
   // Two tabs: this page's help, and "Start here" (shown first until this browser has opened it once).
   let tab = store.get('imr-admin-started', false) ? 'page' : 'start';
@@ -1303,7 +1304,7 @@ function renderFcov(){
 // level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
 // The Stats tab holds the sub-views of STAT_TABS (incl. the photo list, renderDiff). The to-do lists (Needs and the two
 // coverage views) are their own "Needs" tab, NEED_TABS (Pierre, 2026-11-01, admin review rec. 6: work lists, not statistics).
-const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~diff', 'Photo list']];
+const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~stats-conf', 'Confusions'], ['~diff', 'Photo list']];
 const NEED_TABS = [['~stats-needs', 'Where to look'], ['~cov', 'Game coverage'], ['~fcov', 'Sheet & Finder coverage']];
 let ANS = null, RAS = {}, MEID = null, SF = Object.assign({who: 'all', min: 1, elo: 'all', nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('imr-admin-stats', {}));
 const statSwitch = () => `<nav class="adm-filter adm-stabs" aria-label="${modeKey() === 'needs' ? 'Needs' : 'Stats'}">${(modeKey() === 'needs' ? NEED_TABS : STAT_TABS)
@@ -1347,7 +1348,7 @@ function bindStats(){
 function renderStats(){
   status();
   if (!ANS) { $v.innerHTML = statSwitch() + '<p class="note">Loading…</p>'; loadStats().then(() => { if (cur.startsWith('~stats')) render(); }); return; }
-  return cur === '~stats-photos' ? statsPhotos() : cur === '~stats-needs' ? statsNeeds() : statsPlayers();
+  return cur === '~stats-photos' ? statsPhotos() : cur === '~stats-conf' ? statsConf() : cur === '~stats-needs' ? statsNeeds() : statsPlayers();
 }
 // Rows kept by the player filter (all, others than this browser's synced name, or only it).
 const statRows = () => ANS.rows.filter(r => SF.who === 'all' || !MEID || (SF.who === 'me') === (r[0] === MEID));
@@ -1464,6 +1465,42 @@ function needsBody(){
 }
 const VIEW_T = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites', cand: 'Candidate'};
 const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philippines', world: 'iNat world', book: 'CF book'};
+// Confusions (Pierre, 2026-11-01): which genera, photos, colonies (iNat observations) and species players mix up, from
+// the answer log. A pair's rate = mixed up / offered together (needs the choices, logged since sheet v10); its score starts
+// from a prior (declared look-alike, same family, other: core.js CONF) and follows the answers; the quiz picks its traps
+// by the same score (app.js confOf, which also gives a shared growth form a slightly higher start). Answers from before
+// v10 only add to "Before v10" (mix-ups without the choices offered).
+function statsConf(){
+  const noMe = SF.elo === 'others' && MEID, R = (ANS.rows || []).filter(r => !noMe || r[0] !== MEID), C = confusionOf(R);
+  const head = `${statSwitch()}<div class="adm-shead"><h2>Confusions</h2>${segBtns('min', [[1, '≥1'], [3, '≥3'], [10, '≥10']])}<span class="note">offered / shown</span>${eloSeg()}</div>`;
+  if (!R.length) { $v.innerHTML = head + `<p class="note">${noMe ? noneButMe() : 'No answers yet.'}</p>`; bindStats(); return; }
+  const gx = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || {look: []};
+  const look = (a, b) => (gx(a).look || []).includes(b) || (gx(b).look || []).includes(a);
+  const prior = (a, b) => look(a, b) ? ['Look-alike', CONF.LOOK] : gx(a).fam && gx(a).fam === gx(b).fam ? ['Family', CONF.FAM] : ['Other', CONF.BASE];
+  const cmp = (a, b) => `<a class="adm-gen" href="./#cmp-${encodeURIComponent(a)}|${encodeURIComponent(b)}" target="_blank" rel="noopener" title="Compare on the site"><i>${esc(a)}</i> · <i>${esc(b)}</i></a>`;
+  const PR = Object.entries(C.pair).filter(([, c]) => c[0] >= SF.min).map(([k, c]) => { const [a, b] = k.split('|'), [pt, pv] = prior(a, b);
+    return {a, b, off: c[0], mix: c[1], ab: (C.dir[a + '|' + b] || [0, 0])[1], ba: (C.dir[b + '|' + a] || [0, 0])[1], pt, sc: confScore(c, pv)}; }).sort((x, y) => y.sc - x.sc || y.mix - x.mix);
+  const OLD = Object.entries(C.old).sort((x, y) => y[1] - x[1]).slice(0, 15);
+  // Per photo, colony and species: answers where the photo was shown, the wrong ones, and what it was taken for most.
+  const META = {}; allPhotos().forEach(p => META[p.f] = p);
+  const grp = key => { const O = {}; R.forEach(r => r[6].split(' ').filter(Boolean).forEach(f => { const p = META[f], k = p && key(p); if (!k) return;
+      const o = O[k] = O[k] || {k, g: p.genus, f, n: 0, w: 0, as: {}}; o.n++; if (!r[4]) { o.w++; if (r[3]) o.as[r[3]] = (o.as[r[3]] || 0) + 1; } }));
+    return Object.values(O).filter(o => o.n >= SF.min && o.w).sort((a, b) => b.w / b.n - a.w / a.n || b.w - a.w).slice(0, 30); };
+  const top = o => { const e = Object.entries(o.as).sort((a, b) => b[1] - a[1])[0]; return e ? `<i>${esc(e[0])}</i> ×${e[1]}` : ''; };
+  const tbl = (L, first, cell) => L.length ? `<div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>${first}</th><th>Wrong</th><th></th><th>n</th><th>Taken for</th></tr></thead><tbody>${L.map(o => `<tr><td>${cell(o)}</td><td>${pct(o.w, o.n)}</td><td>${sbar(o.w, o.n, 'bad')}</td><td class="n">${o.n}</td><td>${top(o)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="note">None.</p>';
+  const PH = grp(p => p.f), OB = grp(p => p.o), SP = grp(p => p.t && p.t !== p.genus ? p.t : '');
+  const withCh = R.filter(r => r[10]).length, surprise = PR.filter(p => p.pt !== 'Look-alike' && p.sc >= CONF.TRAP).length;
+  $v.innerHTML = head + kpis([['Answers with choices', `${withCh}/${R.length}`], ['Pairs', PR.length], ['Traps (score ≥ ' + CONF.TRAP + ')', PR.filter(p => p.sc >= CONF.TRAP).length], ['Not declared', surprise]]) + `
+    <div class="adm-sgrid">
+    <section class="adm-scard wide"><h3>Pairs</h3>${PR.length ? `<div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Pair</th><th>Starts as</th><th title="Offered together">Offered</th><th title="Mixed up">Mixed</th><th>Rate</th><th></th><th title="Starts at the prior, follows the answers. Traps from ${CONF.TRAP}">Score</th><th title="First taken for the second">A→B</th><th title="Second taken for the first">B→A</th></tr></thead><tbody>
+      ${PR.slice(0, 60).map(p => `<tr><td>${cmp(p.a, p.b)}</td><td>${p.pt}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td>${pct(p.mix, p.off)}</td><td>${sbar(p.sc, 0.6, p.sc >= CONF.TRAP ? 'bad' : '')}</td><td class="n">${p.sc.toFixed(2)}</td><td class="n">${p.ab || ''}</td><td class="n">${p.ba || ''}</td></tr>`).join('')}</tbody></table></div>` : `<p class="note">No answer with its choices yet: sheet script v10 logs them${ANS.v >= 10 ? '' : ` (now v${esc(ANS.v || '?')})`}.</p>`}</section>
+    <section class="adm-scard"><h3>Photos</h3>${tbl(PH, 'Photo', o => `<button type="button" class="adm-link" data-zf="${esc(o.f)}" data-g="${esc(o.g)}"><i>${esc(o.g)}</i> ${esc(VIEW_T[META[o.f].view] || '')}</button>`)}</section>
+    <section class="adm-scard"><h3>Colonies</h3>${tbl(OB, 'Observation', o => `<a href="${esc(o.k)}" target="_blank" rel="noopener"><i>${esc(o.g)}</i> ${esc(o.k.replace(/^.*\//, '#'))}</a>`)}</section>
+    <section class="adm-scard"><h3>Species</h3>${tbl(SP, 'Species', o => `<i>${esc(o.k)}</i>`)}</section>
+    ${OLD.length ? `<section class="adm-scard"><h3>Before v10</h3><table class="adm-tbl"><thead><tr><th>Shown</th><th>Answered</th><th>n</th></tr></thead><tbody>${OLD.map(([k, n]) => { const [a, b] = k.split('|'); return `<tr><td><i>${esc(a)}</i></td><td><i>${esc(b)}</i></td><td class="n">${n}</td></tr>`; }).join('')}</tbody></table></section>` : ''}
+    </div>`;
+  bindStats();
+}
 function statsPhotos(){
   const PS = photoStats(), L = allPhotos().filter(p => PS[p.f] && PS[p.f][1] >= SF.min).map(p => ({...p, d: PS[p.f][0], n: PS[p.f][1], ok: PS[p.f][2]}));
   const head = `${statSwitch()}<div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [[1, '≥1'], [3, '≥3'], [10, '≥10']])}<span class="note">answers</span>${eloSeg()}</div>`;
