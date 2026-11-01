@@ -101,6 +101,44 @@ const inat = (p, sz) => p.src.replace('/original.', `/${sz}.`);
 const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '');
 const loc = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
 const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size === 's'));
+// Unstable connection (Pierre, 2026-11-01): a photo that fails is tried again twice (after 1 s, then 4 s); a game photo
+// then falls back to its small version (data-lo, 480 px), already behind it as a placeholder. If that fails too, the
+// question offers another one instead of a blank frame (nothing is counted).
+$v.addEventListener(
+  'error',
+  e => {
+    const i = e.target;
+    if (!(i instanceof HTMLImageElement)) return;
+    const n = Number(i.dataset.retry || 0),
+      u = i.getAttribute('src');
+    if (n < 2) {
+      i.dataset.retry = n + 1;
+      setTimeout(
+        () => {
+          if (i.isConnected && i.getAttribute('src') === u) i.src = u.replace(/#.*$/, '') + '#r' + (n + 1);
+        },
+        1000 * (n + 1) ** 2
+      );
+    } else if (i.dataset.lo && !i.dataset.low) {
+      i.dataset.low = 1;
+      i.dataset.retry = 2;
+      i.src = i.dataset.lo;
+    } else if (i.closest('.qstage') && !$v.querySelector('.q.done, #qfail')) {
+      const a = document.getElementById('after');
+      if (a) {
+        a.insertAdjacentHTML(
+          'afterbegin',
+          '<p class="note" id="qfail">A photo did not load (connection). <button type="button" class="linkish">Another question</button></p>'
+        );
+        a.querySelector('#qfail button').onclick = () => {
+          NEXTQ = null;
+          route();
+        };
+      }
+    }
+  },
+  true
+);
 // Each file's width as a 4:3 box drawn with object-fit: cover sees it (cards, sheet strips, pair cells, Coral Finder): the
 // files are 480 px (-s) and 1600 px (iNat: 500 and 1024) on their LONG side, so a portrait or panoramic photo has fewer
 // useful pixels than that. Declaring the long side made the browser pick the 480 px file and blow it up 1.3-1.9x in a
@@ -1419,7 +1457,7 @@ function question(cur, target, choices, prompt, set, kq) {
   let answered = false,
     hintShown = false;
   const fig = (p, k) =>
-    `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${img(p)}" alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
+    `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${img(p)}" data-lo="${img(p, 's')}" alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
   // One screen, no scrolling: the photos fill the stage (sized to the window), choices and feedback sit beside them.
   $v.innerHTML = `${gameHelp(cur)}<div class="q bleed">
     <div class="qstage">${ph.map(fig).join('')}</div>
@@ -1806,6 +1844,8 @@ function answer(cur, c, target, ph, cor, unseen) {
   const nb = document.getElementById('next');
   nb.focus({preventScroll: true});
   nb.onclick = route;
+  // Chosen now, photos fetched while the feedback is read (planNext). A fixed duel pair (#quiz-duel|A|B) is cheap anyway.
+  setTimeout(() => hashNow() === cur && planNext(cur), 50);
   if (nbo.length) unlockShow(nbo);
   else if (nudgeDue()) signinNudge();
 }
@@ -1931,23 +1971,56 @@ const plausibleK = (t, choices) => {
 };
 // A mix-up in the photo quiz comes back once as a duel of the two genera, one question later.
 let rematch = null;
+// The next question is chosen while the player reads the feedback (and once at start-up), and its photos are fetched
+// meanwhile, so Next shows it at once even on a slow connection (Pierre, 2026-11-01: "preload the photos"). Used only
+// if nothing changed since: same answers count and same genera in play (settings), else chosen afresh.
+let NEXTQ = null;
+const planKey = cur => `${cur}|${answersSoFar()}|${pool().join()}`;
+const preload = set => {
+  const L = [...(set.shown || []), ...(set.hint ? [set.hint] : []), ...(set.reveal || [])];
+  return L.flatMap(p => [img(p), img(p, 's')]).map(u => {
+    const i = new Image();
+    i.decoding = 'async';
+    i.src = u;
+    return i;
+  });
+};
+function planNext(cur) {
+  if (cur !== 'quiz' && cur !== 'quiz-duel') return;
+  const k = planKey(cur);
+  if (NEXTQ && NEXTQ.k === k) return;
+  const args = cur === 'quiz' ? planPhoto() : planDuel();
+  NEXTQ = {k, args, imgs: preload(args[4])};
+}
+const takePlan = cur => {
+  const q = NEXTQ && NEXTQ.k === planKey(cur) ? NEXTQ.args : null;
+  NEXTQ = null;
+  return q;
+};
 function quizPhoto() {
+  question(...(takePlan('quiz') || planPhoto()));
+}
+function planPhoto() {
   const list = pool();
   if (rematch && rematch.wait-- <= 0) {
     const pair = rematch.pair;
     rematch = null;
     if (pair.every(n => list.includes(n))) {
       const t = pick(pair);
-      return question('quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t));
+      return ['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)];
     }
   }
   const t = nextTarget(list),
     ex = examReady(t) && examSet(t),
     traps = ex ? 3 : trapsFor(t),
     ch = shuffle([t, ...distractors(t, list, traps)]);
-  question('quiz', t, ch, 'Which genus?', ex || photoSet(t), traps < 2 ? plausibleK(t, ch) : 0);
+  return ['quiz', t, ch, 'Which genus?', ex || photoSet(t), traps < 2 ? plausibleK(t, ch) : 0];
 }
 function quizDuel(a, b) {
+  const q = !a && !b && takePlan('quiz-duel');
+  question(...(q || planDuel(a, b)));
+}
+function planDuel(a, b) {
   const list = pool();
   // A pair from a link (#quiz-duel|A|B) must name two genera with game photos; anything else gets a normal duel (code re-review L2).
   if (a && b && !(a !== b && GX(a) && GX(b) && photoSet(a).shown.length && photoSet(b).shown.length)) a = b = undefined;
@@ -1979,7 +2052,7 @@ function quizDuel(a, b) {
     }
   }
   const t = pick(pair);
-  question(a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t));
+  return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)];
 }
 // Progress board, one screen: a wall of the 39 cover photos in slate order (name band in the level colour, grey photo =
 // not seen, red border = review) beside a side column with the overall ring, what to review first and the mix-ups. Signing in
@@ -2143,11 +2216,13 @@ function quizBoard() {
   bindQuizNav('quiz-board');
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page).
-  loadBoard().then(B => {
+  const rank = B => {
     const a = document.getElementById('pbrank'),
       i = B && B.rows ? boardMe(B.rows) : -1;
     if (a && i >= 0) a.innerHTML = `🏆 <b>#${i + 1}</b> · ${B.rows[i][2] == null ? eloLine(P[LEVEL]) : `Elo ${eloScore(B.rows[i][2])}`}`;
-  });
+  };
+  rank(boardCached());
+  loadBoard().then(rank);
   // Phones: the Photos/Slate/Groups switch sits above the board and stays pinned while the page scrolls (Pierre, 2026-10-31).
   if (matchMedia(MQ.phone).matches) {
     const sg = $v.querySelector('.pboard .gside .seg');
@@ -3127,15 +3202,33 @@ const eloLine = G => {
   const n = G ? (G.ok || 0) + (G.ko || 0) : 0;
   return n >= ELO_MIN && typeof G.th === 'number' ? `Elo ${eloScore(G.th)}` : `<small>Elo in ${ELO_MIN - n} answers</small>`;
 };
+// The sync script answers in 1-3 s (a Google Apps Script starting up), whatever its own cache: so the last board is kept
+// on this device (BOARD_C, not an imr-coral key: it never travels with the progress) and shown at once, then replaced
+// when the fresh one arrives (Pierre, 2026-11-01: "the leaderboard takes long to load"). It is also fetched a few seconds
+// after start-up, so the first visit to the page is usually instant too.
+const BOARD_C = 'imr-board-cache';
 let boardAt = 0,
   boardP = null;
+const ago = t => {
+  const m = Math.round((Date.now() - (t || 0)) / 60000);
+  return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 2880 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
+};
+const boardCached = () => {
+  const c = store.get(BOARD_C, null);
+  return c && Array.isArray(c.rows) ? c : null;
+};
 const loadBoard = () => {
   if (!boardP || Date.now() - boardAt > 60000) {
     boardAt = Date.now();
     boardP = fetch(SYNC_URL + '?board=1')
       .then(r => r.json())
       .then(j => (j && j.ok && Array.isArray(j.rows) ? j : {err: j && j.v < 14 ? 'old' : 'na'}))
-      .catch(() => ({err: 'offline'}));
+      .catch(() => ({err: 'offline'}))
+      .then(j => {
+        if (!j.err) store.set(BOARD_C, {rows: j.rows, t: Date.now()});
+        else boardAt = 0; // a failure is not kept for a minute: the next visit tries again
+        return j;
+      });
   }
   return boardP;
 };
@@ -3144,34 +3237,45 @@ function viewBoard() {
   // The title sits inside .board: pageHelp drops top-level titles where the header names the page, and here it doesn't.
   $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. The Elo shows from ${ELO_MIN} answers: before that it moves too much to mean anything. To leave the leaderboard, ⚙ Settings, Leaderboard: Off.</p>
   <div class="board">${boardTabs('board')}<div id="board"><p class="note">Loading…</p></div></div>`;
+  const C = boardCached();
+  if (C) paintBoard({...C, old: true});
   loadBoard().then(B => {
     const box = document.getElementById('board');
     if (!box || hashNow() !== 'board') return;
     if (!B || B.err) {
+      // Offline or failing: the last board stays, marked as such.
+      if (C) return paintBoard({...C, old: true, off: true});
       box.innerHTML = `<p class="note">${B && B.err === 'offline' ? 'The leaderboard needs a connection.' : 'The leaderboard is not available yet.'}</p>`;
       return;
     }
-    const me = boardMe(B.rows);
-    const note = !SYNC
-      ? '<p class="note">Sign in (⚙ Settings) to appear on the leaderboard.</p>'
-      : !boardOn()
-        ? '<p class="note">You are not on the leaderboard (⚙ Settings, Leaderboard: Off).</p>'
-        : me < 0
-          ? '<p class="note">You will appear here after your next answers are saved.</p>'
-          : '';
-    box.innerHTML =
-      note +
-      (B.rows.length
-        ? `<ol class="blist">${B.rows
-            .map(
-              (r, i) =>
-                `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="belo" title="${r[2] == null ? `Elo shows from ${ELO_MIN} answers` : 'Elo: level from all answers'}">${r[2] == null ? '' : `Elo ${eloScore(r[2])}`}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
-            )
-            .join('')}</ol>`
-        : '<p class="note">Nobody yet: be the first.</p>');
-    const m = box.querySelector('.me');
-    if (m && m.scrollIntoView && m.getBoundingClientRect().bottom > innerHeight) m.scrollIntoView({block: 'center'});
+    paintBoard(B);
   });
+}
+function paintBoard(B) {
+  const box = document.getElementById('board');
+  if (!box || hashNow() !== 'board') return;
+  const me = boardMe(B.rows);
+  const note = !SYNC
+    ? '<p class="note">Sign in (⚙ Settings) to appear on the leaderboard.</p>'
+    : !boardOn()
+      ? '<p class="note">You are not on the leaderboard (⚙ Settings, Leaderboard: Off).</p>'
+      : me < 0
+        ? '<p class="note">You will appear here after your next answers are saved.</p>'
+        : '';
+  const when = B.off ? `<p class="note">Offline: the leaderboard as seen ${ago(B.t)}.</p>` : '';
+  box.innerHTML =
+    when +
+    note +
+    (B.rows.length
+      ? `<ol class="blist">${B.rows
+          .map(
+            (r, i) =>
+              `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="belo" title="${r[2] == null ? `Elo shows from ${ELO_MIN} answers` : 'Elo: level from all answers'}">${r[2] == null ? '' : `Elo ${eloScore(r[2])}`}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
+          )
+          .join('')}</ol>`
+      : '<p class="note">Nobody yet: be the first.</p>');
+  const m = box.querySelector('.me');
+  if (m && m.scrollIntoView && m.getBoundingClientRect().bottom > innerHeight) m.scrollIntoView({block: 'center'});
 }
 // Achievements (core.js ACH, Pierre 2026-11-01): checked after every answer on a snapshot of the progress (achSnap);
 // each new one pops up (achPop, one after the other). Kept in imr-coral-ach ({id: time}, plus _run / _best for the run
@@ -3318,10 +3422,16 @@ let achsAt = 0,
 const loadAchs = () => {
   if (!achsP || Date.now() - achsAt > 300000) {
     achsAt = Date.now();
+    // Kept on this device like the leaderboard (BOARD_C): drawn at once, refreshed when the fresh counts arrive.
     achsP = fetch(SYNC_URL + '?achs=1')
       .then(r => r.json())
       .then(j => (j && j.ok && j.counts ? j : null))
-      .catch(() => null);
+      .catch(() => null)
+      .then(j => {
+        if (j) store.set('imr-achs-cache', {n: j.n, counts: j.counts});
+        else achsAt = 0;
+        return j;
+      });
   }
   return achsP;
 };
@@ -3343,7 +3453,7 @@ function viewAch() {
   <div class="board">${boardTabs('ach')}<h2 class="btitle">${got.length}/${ACH.length} earned</h2>
   <ul class="achl">${got.map(a => card(a, true)).join('')}${left.map(a => card(a, false)).join('')}</ul></div>`;
   };
-  draw(null);
+  draw(store.get('imr-achs-cache', null));
   loadAchs().then(S => {
     if (S && hashNow() === 'ach') draw(S);
   });
@@ -3612,8 +3722,17 @@ const okJson = r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status
 // service worker cache), the app uses the last copy it saw instead of none, so excluded or moved photos never come back
 // into the games (code re-review 2026-11-01, H1).
 const CUR_LAST = 'imr-curation-last';
+// Start-up never waits for it when a copy is kept (Pierre, 2026-11-01: fluid on poor connections; it was a round trip
+// before every first screen, up to the service worker's timeout): the kept copy is used, and curRefresh reads the
+// published one right after; a change applies at the next screen, as for a tab left open.
+let CUR_KEPT = false;
 const curation = () => {
-  const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
+  const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null),
+    kept = !dr && store.get(CUR_LAST, null);
+  if (kept && kept.genera) {
+    CUR_KEPT = true;
+    return Promise.resolve(kept);
+  }
   return dr
     ? Promise.resolve(dr)
     : fetch('curation.json', {cache: 'no-cache'})
@@ -3674,12 +3793,20 @@ Promise.all([
     achMigrate();
     achCheck(); // before the first page, so the badge on My progress counts them
     route();
+    if (CUR_KEPT) curRefresh();
     syncPull();
     sendAnon();
     loadStats();
     window.APP_READY = true;
     if (window.tourFirst) tourFirst();
     boardNotice();
+    // Fetched ahead once the start-up is over (Pierre, 2026-11-01): the leaderboard and the achievement shares, so their
+    // pages open at once, and the first quiz question with its photos.
+    setTimeout(() => {
+      loadBoard();
+      loadAchs();
+      if (hashNow() !== 'quiz') planNext('quiz');
+    }, 2500);
   })
   .catch(() => {
     $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>';
