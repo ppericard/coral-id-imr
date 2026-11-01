@@ -1003,25 +1003,8 @@ function mergeSaved(j){
   delete SYNC.pending;
   if (lr > rr) return;
   if (rr > lr) { P = R; SYNC.base = copy(R); store.set('imr-coral-sync', SYNC); store.set('imr-coral-reset', rr); store.set('imr-coral-progress', P); showProg(); return; }
-  const B = SYNC.base || {}, Z = {ok: 0, ko: 0, streak: 0};
-  new Set([...Object.keys(R), ...Object.keys(P)]).forEach(g => {
-    const b = B[g] || Z, l = P[g] || Z, r = R[g] || Z, out = {...r};
-    out.ok = Math.max(0, (r.ok || 0) + (l.ok || 0) - (b.ok || 0));
-    out.ko = Math.max(0, (r.ko || 0) + (l.ko || 0) - (b.ko || 0));
-    const mine = (l.ok || 0) + (l.ko || 0) !== (b.ok || 0) + (b.ko || 0) || (l.h || '') !== (b.h || '');
-    out.streak = mine ? l.streak || 0 : r.streak || 0;
-    if (mine && l.h) out.h = l.h;
-    if (mine) ['lv', 'run', 'L', 'th', 'ro'].forEach(k => { if (l[k] !== undefined) out[k] = l[k]; else delete out[k]; });
-    if (l.cor || r.cor) out.cor = 1; if (l.du || r.du) out.du = 1;
-    const conf = {...(r.conf || {})};
-    Object.keys(l.conf || {}).forEach(k => { const v = (conf[k] || 0) + l.conf[k] - ((b.conf || {})[k] || 0); if (v > 0) conf[k] = v; else delete conf[k]; });
-    if (Object.keys(conf).length) out.conf = conf; else delete out.conf;
-    // Photos seen [shown, right]: added up like the mix-ups, so two devices never lose or double-count a photo.
-    const ps = {...(r.ps || {})};
-    Object.keys(l.ps || {}).forEach(f => { const x = ps[f] || [0, 0], y = l.ps[f], z = (b.ps || {})[f] || [0, 0]; ps[f] = [0, 1].map(i => Math.max(0, x[i] + y[i] - z[i])); });
-    if (Object.keys(ps).length) out.ps = ps; else delete out.ps;
-    if (out.ok + out.ko || out.h) P[g] = out; else delete P[g];
-  });
+  // In place: other code holds P by name only, but keep the same object anyway.
+  const M = mergeProgress(SYNC.base || {}, P, R); Object.keys(P).forEach(g => delete P[g]); Object.assign(P, M);
   // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
   SYNC.base = copy(R); store.set('imr-coral-sync', SYNC);
   store.set('imr-coral-progress', P); showProg();
