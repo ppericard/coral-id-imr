@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Privacy notice (2026-11-01): what IMR Coral ID stores and where. Also the privacy policy link of the Google Cloud
+     project that lets the sync script update itself (docs/HANDOVER.md). No script on this page. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy · IMR Coral ID</title>
+<meta name="description" content="What IMR Coral ID stores about you, where, and how to have it deleted.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+  :root{--bg:#f2f5f6;--surface:#fff;--ink:#14262d;--muted:#5a6d74;--line:#d6e0e3;--accent:#0d6f7d}
+  @media (prefers-color-scheme:dark){:root{--bg:#0d181c;--surface:#15242a;--ink:#e3eef0;--muted:#94a9af;--line:#283c43;--accent:#5cc6d3}}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+  main{max-width:720px;margin:0 auto;padding:24px 16px 48px}
+  h1{font-size:1.6rem;margin:0 0 4px}
+  h2{font-size:1.1rem;margin:28px 0 6px}
+  p,li{color:var(--ink)}
+  .muted{color:var(--muted);font-size:.9rem}
+  a{color:var(--accent)}
+  ul{padding-left:1.2em}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px 18px 14px;margin-top:16px}
+</style>
+</head>
+<body>
+<main>
+  <p><a href="./">← IMR Coral ID</a></p>
+  <h1>Privacy</h1>
+  <p class="muted">IMR Coral ID, a training tool for coral identification at the Institute for Marine Research (IMR), Dauin, Philippines. Run by Pierre Pericard. Last updated 1 November 2026.</p>
+
+  <div class="card">
+  <h2>Without signing in</h2>
+  <p>Your progress and settings stay in your browser, on your device (local storage). Nothing is sent anywhere, except a problem report if you choose to send one (below).</p>
+
+  <h2>If you sign in</h2>
+  <p>You sign in with a name of your choice and a 4-digit code. The following is then saved in a Google Sheet owned by Pierre Pericard, through a Google Apps Script:</p>
+  <ul>
+    <li>your name, and your code in a scrambled form (a hash): the code itself is not stored;</li>
+    <li>your progress on each genus, and your settings in the app;</li>
+    <li>each answer you give in the games: the genus shown, your answer, the choices offered, the photos shown, the game and the time.</li>
+  </ul>
+  <p>This is used to save your progress across devices, to let IMR trainers follow the training, and to rate how hard each photo is. The photo ratings and the game statistics use anonymous ids, not names; only the app's administrators see names.</p>
+
+  <h2>Problem reports and feedback</h2>
+  <p>When you report a problem or send feedback, the report, your note and your name (if you give it or are signed in) are saved in the same Google Sheet, so the photos and texts can be fixed.</p>
+
+  <h2>What is not collected</h2>
+  <p>No advertising, no analytics or tracking scripts, no cookies, no e-mail address, no location. Nothing is sold or shared with anyone else.</p>
+
+  <h2>Other services the pages load from</h2>
+  <p>Like any website, these see your device's IP address when they serve a file: GitHub Pages (the app itself), Google Fonts (the fonts), iNaturalist (some coral photos) and Google (the sync script, when you are signed in or send a report).</p>
+
+  <h2>Deleting your data</h2>
+  <p>Sign out in ⚙ to clear the app from your device. To have your saved name, progress and answers deleted from the Sheet, ask Pierre Pericard at IMR, or open an issue at <a href="https://github.com/ppericard/coral-id-imr/issues">github.com/ppericard/coral-id-imr</a>.</p>
+  </div>
+</main>
+</body>
+</html>
