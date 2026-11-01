@@ -84,6 +84,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 - Publishing `curation.json` as a whole copy from the admin (lost curation on 2026-11-01; Publish merges key by key since PR #240).
 
 ## Done recently (for context)
+- 2026-11-01: Coral Finder suggested questions redesigned (Pierre: tiny hit areas, unclear what to tap, empty space): big full-width Yes / No buttons with the genera's photos on each side, a "No" that ranks (not clue), "Can't tell"; Start over shares the clue chips' first line on phones.
 - 2026-11-01: My progress decluttered (Pierre's phone feedback): board first on phones/tablets, no "Practise now"; sign-in is a filled "Sign in" button in the header while signed out ("Not saved" if saving fails), and once signed in the account line, Sign out and Backup/reset sit in ⚙.
 - 2026-11-01: page smoke test in CI (`tests/pages.smoke.js`, job `pages` in `checks.yml`): main routes, two malformed links and `admin.html?readonly` at 390 and 1280 px, fails on any page error (code re-review M5; Playwright installed with npm in a temporary folder, Pierre's OK).
 - 2026-11-01: Pierre deployed Code.gs v8 and granted it the external-request permission (needed for the admins' GitHub token check).

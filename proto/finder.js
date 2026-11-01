@@ -49,19 +49,22 @@ LAB.add({
     };
     const FIDS = ['imrf', 'form', 'box', ...DATA.traits.map(c => c.id), 'ig'];
     // State, read from and written back to the hash.
-    const S = {out: new Set(), cmp: [], q: '', open: new Set(), home: true, all: new Set()};
+    // not = "No" answers to the suggested questions ("f.id" keys): a genus WITH that feature counts one clue off (ranks, never
+    // hides). skip = questions answered "Can't tell" (this visit only), so the next best question shows instead.
+    const S = {out: new Set(), cmp: [], q: '', open: new Set(), home: true, all: new Set(), not: new Set(), skip: new Set()};
     FIDS.forEach(f => S[f] = new Set());
     // Two display controls that combine: layout (Auto = Mosaic up to 12 genera, Cards beyond; Cards = one photo per genus; Mosaic;
     // Contact sheet) and which photos (Mix of colony / closer / corallites, or one view only).
     let lay = store.get('imr-finder-lay', 'auto'), pv = store.get('imr-finder-pv', 'mix');
     (arg || '').split(';').forEach(kv => { const [k, v] = kv.split('='); if (!v) return; const L = decodeURIComponent(v).split(',');
-      if (FIDS.includes(k)) L.forEach(x => S[k].add(x)); else if (k === 'out') L.forEach(x => G[x] && S.out.add(x)); else if (k === 'all') L.forEach(x => S.all.add(x)); else if (k === 'q') S.q = L.join(','); });
+      if (FIDS.includes(k)) L.forEach(x => S[k].add(x)); else if (k === 'out') L.forEach(x => G[x] && S.out.add(x)); else if (k === 'all') L.forEach(x => S.all.add(x)); else if (k === 'not') L.forEach(x => { const [f, id] = x.split('.'); if (FIDS.includes(f) && id) S.not.add(x); }); else if (k === 'q') S.q = L.join(','); });
     // Start screen (one screen, a few clues, then the shortlist) unless the link already carries clues.
-    if (FIDS.some(f => S[f].size) || S.q || S.out.size) S.home = false;
+    if (FIDS.some(f => S[f].size) || S.q || S.out.size || S.not.size) S.home = false;
     const base = location.hash.startsWith('#lab-') ? '#lab-finder' : '#finder';
     const saveHash = () => {
       const parts = FIDS.filter(f => S[f].size).map(f => f + '=' + [...S[f]].join(','));
       if (S.out.size) parts.push('out=' + [...S.out].join(','));
+      if (S.not.size) parts.push('not=' + [...S.not].join(','));
       const all = [...S.all].filter(f => S[f] && S[f].size > 1); if (all.length) parts.push('all=' + all.join(','));
       if (S.q) parts.push('q=' + encodeURIComponent(S.q));
       history.replaceState(null, '', base + (parts.length ? '|' + parts.join(';') : ''));
@@ -80,8 +83,11 @@ LAB.add({
     };
     // Penalty: how many clues the genus misses (halves for near sizes); misses: the families it misses.
     const used = (F, skip) => F.filter(f => f.id !== skip && S[f.id].size);
-    const pen = (n, F, skip) => used(F, skip).reduce((t, f) => t + 1 - hit(n, f), 0);
-    const misses = (n, F) => used(F).filter(f => hit(n, f) < 1).map(f => f.name + (hit(n, f) ? ' (close)' : ''));
+    // A "No" answer: the genera that have the feature miss that clue.
+    const optOf = (F, k) => { const [fid, id] = k.split('.'), f = F.find(x => x.id === fid), o = f && f.opts.find(x => x.id === id); return o ? {f, o} : null; };
+    const nots = F => [...S.not].map(k => optOf(F, k)).filter(Boolean);
+    const pen = (n, F, skip) => used(F, skip).reduce((t, f) => t + 1 - hit(n, f), 0) + nots(F).filter(({o}) => o.g.includes(n)).length;
+    const misses = (n, F) => [...used(F).filter(f => hit(n, f) < 1).map(f => f.name + (hit(n, f) ? ' (close)' : '')), ...nots(F).filter(({o}) => o.g.includes(n)).map(({o}) => 'not ' + o.t)];
     const fitsQ = n => !S.q || n.toLowerCase().includes(S.q.toLowerCase());
     const fits = (n, F, skip) => fitsQ(n) && pen(n, F, skip) === 0;
     const thumb = (n, v = 'medium') => { const p = (G[n].views[v] || [])[0] || cover(G[n]); return p ? img(p, 's') : ''; };
@@ -105,7 +111,7 @@ LAB.add({
     const $start = root.querySelector('#fdstart'), $lay = root.querySelector('.fdlayout');
     const $side = root.querySelector('#fdside'), $main = root.querySelector('#fdmain'), $cmp = root.querySelector('#fdcmp');
     // One Start over only: the prominent button beside the chosen clues (Pierre, 2026-10-31). Escape does the same.
-    const reset = () => { FIDS.forEach(f => S[f].clear()); S.out.clear(); S.all.clear(); S.cmp = []; S.q = ''; S.home = true; draw(); };
+    const reset = () => { FIDS.forEach(f => S[f].clear()); S.out.clear(); S.not.clear(); S.skip.clear(); S.all.clear(); S.cmp = []; S.q = ''; S.home = true; draw(); };
     // On phones the panel sits above the shortlist: only growth form and the families in use start open.
     function drawSide(F, left){
       const narrow = isPhone(), phone = narrow;  // one size system (app.js MQ): the clue panel stacks on phones only
@@ -131,16 +137,23 @@ LAB.add({
       });
     }
 
-    // Best next checks: unpicked options that split the shortlist most evenly, with who is on each side.
+    // Best next checks: unpicked options that split the shortlist most evenly, asked as a question with two big answer
+    // buttons (Pierre, 2026-11-01: the old box had tiny targets, unclear what to tap, empty space). Each answer shows how
+    // many genera and which ones (photos) are on its side. Yes adds the clue; No adds a "not" clue (genera with the
+    // feature move one clue down, never hidden); Can't tell moves on to the next best question.
     function nextChecks(F, left){
       if (left.length < 2) return '';
-      const cands = F.filter(f => f.id !== 'ig' && !S[f.id].size && !(startV === 'c' && f.id === 'imrf')).flatMap(f => f.opts.filter(o => !S[f.id].has(o.id)).map(o => {
+      const cands = F.filter(f => f.id !== 'ig' && !S[f.id].size && !(startV === 'c' && f.id === 'imrf')).flatMap(f => f.opts.filter(o => !S.not.has(f.id + '.' + o.id) && !S.skip.has(f.id + '.' + o.id)).map(o => {
         const yes = left.filter(n => o.g.includes(n)); return {f, o, yes, no: left.filter(n => !yes.includes(n)), s: Math.min(yes.length, left.length - yes.length)};
       })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).filter((x, i, L) => L.findIndex(y => y.f === x.f) === i).slice(0, 2);  // one question per family
       if (!cands.length) return `<p class="note fdhint">The Coral Finder criteria cannot split these any further: compare the photos below.</p>`;
-      const side = L => left.length <= 12 ? L.map(n => `<img src="${thumb(n, 'macro')}" alt="${esc(n)}" title="${esc(n)}">`).join('') : '';
+      // Corallite clues show corallite photos; form and box clues the closer view. At most 8 cells: 7 photos and "+N" beyond.
+      const side = (L, x) => { const v = ['size', 'wall', 'feat'].includes(x.f.id) ? 'macro' : 'medium', k = L.length > 8 ? 7 : 8;
+        return L.slice(0, k).map(n => `<img src="${thumb(n, v)}" alt="${esc(n)}" title="${esc(n)}" loading="lazy">`).join('') + (L.length > k ? `<span class="fdplus">+${L.length - k}</span>` : ''); };
       const q = x => (x.f.id === 'size' ? 'Corallites ' : '') + x.o.t + '?';
-      return `<div class="fdnext">${cands.map(x => `<button type="button" class="fdq" data-o="${x.f.id}|${x.o.id}" title="Tap if yes"><b>${esc(q(x))}</b><span class="fdsplit"><small>Yes ${x.yes.length}</small>${side(x.yes)}</span><span class="fdsplit no"><small>No ${x.no.length}</small>${side(x.no)}</span></button>`).join('')}</div>`;
+      const ans = (x, yes) => { const L = yes ? x.yes : x.no;
+        return `<button type="button" class="fdans ${yes ? 'yes' : 'no'}" data-${yes ? 'yes' : 'no'}="${x.f.id}.${x.o.id}" aria-label="${yes ? 'Yes' : 'No'}: ${L.length} genera"><span class="fdal">${yes ? 'Yes' : 'No'} <span class="fdc">${L.length}</span></span><span class="fdat">${side(L, x)}</span></button>`; };
+      return `<div class="fdnext">${cands.map(x => `<div class="fdq"><div class="fdqh"><b${x.o.s ? ` title="${esc(x.o.s)}"` : ''}>${esc(q(x))}</b><button type="button" class="linkish fdskip" data-skip="${x.f.id}.${x.o.id}">Can't tell</button></div><div class="fdqa">${ans(x, true)}${ans(x, false)}</div></div>`).join('')}</div>`;
     }
 
     // Where a photo comes from (same split as the admin's origin tags), for the Dauin count; the credit itself is in the lightbox.
@@ -194,10 +207,11 @@ LAB.add({
       const chosen = F.flatMap(f => f.opts.filter(o => S[f.id].has(o.id)).map(o => ({f, o})));
       // Phones: with genera fitting every clue, "One clue off" starts folded (one tap opens it) so the best fits are not buried.
       const foldOff = left.length && isPhone() && !S.open.has('off');
-      const any = used(F).length;
+      const any = used(F).length + S.not.size;
       const hd = `<div class="fdhd"><h3 class="fdgrp">${any ? 'Fits every clue' : XON ? 'Genera' : 'IMR genera'} <span class="fdn">${left.length}</span></h3><span class="fdsegs"><span class="seg" role="group" aria-label="Layout">${[['auto', 'Auto', 'Mosaic up to 12 genera, Cards beyond'], ['cover', 'Cards', 'One photo and the key features per genus'], ['mosaic', 'Mosaic', '8 varied photos per genus'], ['sheet', 'Contact sheet', 'Every photo of each genus']].map(([v, t, h]) => `<button type="button" data-lay="${v}" aria-pressed="${lay === v}" title="${h}">${t}${v === 'auto' && lay === 'auto' ? ` <small>(${mode === 'mosaic' ? 'Mosaic' : 'Cards'})</small>` : ''}</button>`).join('')}</span>
         <span class="seg" role="group" aria-label="Photos">${[['mix', 'Mix'], ...VIEWS].map(([v, t]) => `<button type="button" data-pv="${v}" aria-pressed="${pv === v}">${t}</button>`).join('')}</span></span></div>`;
-      $main.innerHTML = `<div class="fdbar">${chosen.map(({f, o}) => `<button type="button" class="chip" data-o="${f.id}|${o.id}" title="Remove">${esc(o.t)} ×</button>`).join('')}${S.q ? `<button type="button" class="chip" data-clearq>“${esc(S.q)}” ×</button>` : ''}${isPhone() ? `<button type="button" class="chip fdadd" data-side aria-pressed="${S.open.has('side')}">${S.open.has('side') ? 'Hide clues' : '+ Clue'}</button>` : ''}${chosen.length || S.q || S.out.size ? `<button type="button" class="next fdreset2" data-reset>↺ Start over</button>` : ''}</div>
+      // Chips wrap on the left, Start over stays on their first line at the right (no row of its own on phones).
+      $main.innerHTML = `<div class="fdbar"><span class="fdchips">${chosen.map(({f, o}) => `<button type="button" class="chip" data-o="${f.id}|${o.id}" title="Remove">${esc(o.t)} ×</button>`).join('')}${nots(F).map(({f, o}) => `<button type="button" class="chip fdnot" data-unnot="${f.id}.${o.id}" title="Remove">No: ${esc((f.id === 'size' ? 'corallites ' : '') + o.t)} ×</button>`).join('')}${S.q ? `<button type="button" class="chip" data-clearq>“${esc(S.q)}” ×</button>` : ''}${isPhone() ? `<button type="button" class="chip fdadd" data-side aria-pressed="${S.open.has('side')}">${S.open.has('side') ? 'Hide clues' : '+ Clue'}</button>` : ''}</span>${chosen.length || S.q || S.out.size || S.not.size ? `<button type="button" class="next fdreset2" data-reset>↺ Start over</button>` : ''}</div>
         ${any ? nextChecks(F, left.length ? left : close) : ''}
         ${left.length ? `${hd}<div class="${mode === 'mosaic' ? 'fdrows' : mode === 'sheet' ? 'fdsheets' : 'fdgrid'}">${left.map(n => isX(n) && mode === 'mosaic' ? big(n) : mode === 'mosaic' ? mosaic(n) : mode === 'sheet' ? sheet(n) : tile(n)).join('')}</div>` : `<p class="note">No ${XON ? '' : 'IMR '}genus fits every clue: one of them may be wrong. Check the closest genera below.</p>`}
         ${close.length ? (foldOff ? `<details class="fdoff"><summary class="fdgrp">${close.length} genera one clue off <small>in case a clue was misjudged</small></summary><div class="fdgrid">${close.map(n => tile(n, true)).join('')}</div></details>` : `<h3 class="fdgrp">One clue off <span class="fdn">${close.length}</span> <small>in case a clue was misjudged</small></h3><div class="fdgrid">${close.map(n => tile(n, true)).join('')}</div>`) : ''}
@@ -307,13 +321,17 @@ LAB.add({
     }
 
     function draw(){
+      [...S.not].forEach(k => { const [f, id] = k.split('.'); if (S[f] && S[f].has(id)) S.not.delete(k); });
       const F = facets(), pool = names.filter(n => !S.out.has(n) && fitsQ(n));
       $start.hidden = !S.home; $lay.hidden = S.home; $cmp.hidden = S.home || !S.cmp.length;
       if (S.home) { drawStart(F); saveHash(); return; }
       const left = pool.filter(n => pen(n, F) === 0), close = pool.filter(n => pen(n, F) > 0 && pen(n, F) <= 1), rest = pool.filter(n => pen(n, F) > 1);
       drawSide(F, left);
       drawMain(F, left, close, rest); drawCmp(); saveHash();
-      $main.querySelectorAll('.fdnext [data-o]').forEach(b => b.onclick = () => { const [f, id] = b.dataset.o.split('|'); S[f].add(id); draw(); });
+      $main.querySelectorAll('[data-yes]').forEach(b => b.onclick = () => { const [f, id] = b.dataset.yes.split('.'); S[f].add(id); draw(); });
+      $main.querySelectorAll('[data-no]').forEach(b => b.onclick = () => { S.not.add(b.dataset.no); draw(); });
+      $main.querySelectorAll('[data-skip]').forEach(b => b.onclick = () => { S.skip.add(b.dataset.skip); draw(); });
+      $main.querySelectorAll('[data-unnot]').forEach(b => b.onclick = () => { S.not.delete(b.dataset.unnot); draw(); });
     }
     // No genus-name box: the Coral Finder is for corals you don't know yet (Pierre). Escape (outside the photo viewer) starts over.
     const key = e => {

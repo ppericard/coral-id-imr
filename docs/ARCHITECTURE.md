@@ -29,7 +29,7 @@ Hash routing in `route()`. Sections and their tabs are declared once in `MODES`:
 | Practice | `#quiz` | Photo → genus, adaptive. |
 | Practice | `#quiz-duel` | Look-alike duels. |
 | Practice | `#pairs` | Memory (colony ↔ corallites), from `proto/pairs.js`. |
-| Identify | `#finder` | Coral Finder (`proto/finder.js`): tolerant ranking by clues; state in the hash (`#finder|form=…;box=…`). |
+| Identify | `#finder` | Coral Finder (`proto/finder.js`): tolerant ranking by clues; state in the hash (`#finder|form=…;box=…;not=wall.plo`). Results page: one suggested question (two on tablet/desktop, `nextChecks()`) with big Yes / No answer buttons showing the count and photos of the genera on each side; Yes adds the clue, No adds a `not` clue (genera WITH the feature count one clue off, never hidden; removable chip "No: …"), Can't tell shows the next best question (not saved). |
 | My progress | `#progress` | One screen: Photos / Slate / Groups views, ring + level counts, Review first, Often mixed up (board first on phones/tablets). |
 | Tools (Lab) | `#lab`, `#lab-<id>` | Prototypes (`proto/lab.js` hub). Hidden on phones except via the header hammer icon. |
 
