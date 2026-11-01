@@ -30,8 +30,6 @@ The order the previous agents would follow; Pierre may reorder. Details of each 
 | Merulina placement: shown with Hydnophora (lecture group 7); group 5 is the alternative. | thread "Declutter the UI across the app", PR #66 | Waiting on Pierre |
 | Look-alikes page: Pierre will judge the montage deck in use; if it doesn't convince, drop the tab (pairs stay on sheets, Home, duels). | thread "Review the site as a new RA"; PR #159 | Open question |
 | Lab "Keep / Trim" votes are stored in Pierre's browser only; ask him which tools he marked before trimming the Lab. | thread "Prototype visual coral ID tabs" | Waiting on Pierre |
-| Pick the lead photo(s) of the Branching tile on the Coral Finder start (the automatic first one is mostly sand): admin > Growth form > View Colony > 📌 (PR #283). | design re-review p3 | Waiting on Pierre |
-| Goniastrea cover is a corallite close-up (cover must be a mid-distance view): change it in admin. | design re-review p6 | Waiting on Pierre |
 | Renew the admin GitHub token before its 90-day expiry (created ~2026-10-31). | security model | Waiting on Pierre (~late Jan 2027) |
 | IMR benthic deck (may cover fire coral / Millepora): Pierre will look for it. The "Substrate monitoring 2023" and "Intro to substrate" decks are MCP (Marine Conservation Philippines), not IMR; Pierre said not to mine them yet. | thread "Add Dauin genera to the Coral Finder" | Waiting on Pierre |
 

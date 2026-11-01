@@ -9,7 +9,7 @@ Every review and study was first written as a private Claude doc or artifact on 
 | [2026-11-01-code-re-review.md](2026-11-01-code-re-review.md) | Senior developer, second round (main @4f6df67) | `data.json` one genus per line, Prettier + modules, tests for `photoSet`/`distractors`, report rate limit if abused, repo size |
 | [2026-11-01-admin-re-review.md](2026-11-01-admin-re-review.md) | A new admin, second round | Second-admin token steps untested; three low items |
 | [2026-11-01-ra-re-review.md](2026-11-01-ra-re-review.md) | A first-time RA, second round | Phone hammer icon label, tablet name cut, red "!" on Review 0 (check), like-for-like wrong-answer photos |
-| [2026-11-01-design-re-review.md](2026-11-01-design-re-review.md) | Expert UI designer, second round | p2, p9, p10, m5, m11 to verify; Goniastrea cover (Pierre) |
+| [2026-11-01-design-re-review.md](2026-11-01-design-re-review.md) | Expert UI designer, second round | p2, p9, p10, m5, m11 to verify |
 | [../reference/genus-overview-2026-10-31.md](../reference/genus-overview-2026-10-31.md) | Pierre's first study doc on the 39 genera | Background only; `data.json` supersedes it |
 
 ## Summarised only (first rounds and studies, all closed or carried into ROADMAP)

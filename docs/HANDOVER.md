@@ -29,8 +29,6 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 
 | What | Where / how |
 |---|---|
-| Pick the lead photo of the **Branching** tile on the Coral Finder start (the first one shows mostly sand). | Admin > **Growth form** tab > View **Colony** > pick a genus (e.g. Acropora) > in the "Br Branching" row click 📌 under the photo (becomes 📌1; up to 3 per form, click again to unpin) > **Publish**. |
-| Change the **Goniastrea** cover (it is a corallite close-up; rule: cover = mid-distance view). | Admin > genus Goniastrea > set a colony or close-up photo as cover > Publish. |
 | Review the debatable lecture points and the Stylophora wording (he planned to review the course on Mon 2026-11-02). | ROADMAP "Waiting on Pierre". Any change becomes a discreet note, never a correction. |
 | Confirm Merulina's placement (shown with Hydnophora, lecture group 7; alternative group 5). | ROADMAP. |
 | Say which Lab tools he marked Keep / Trim (votes live only in his browser). | ROADMAP. |
