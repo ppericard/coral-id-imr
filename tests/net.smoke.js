@@ -38,7 +38,7 @@ const server = http.createServer((req, res) => {
 // 4. The leaderboard shows the copy kept on the device at once while the sync script is slow.
 // 5. Leaving a page drops its photos still loading.
 // 6. The service worker installs even when each app file fails once (retried at install).
-// 7. Photo sizes follow the box, the screen density and the Photo quality setting (Auto, Saver, Full).
+// 7. Photo sizes follow the box, the screen density and the Photo quality setting (Auto, Saver, Full); thumbnails 240 px.
 // Speed numbers are measured by tools/perf.js, not here. Locally: node tests/net.smoke.js
 (async () => {
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -187,6 +187,11 @@ const server = http.createServer((req, res) => {
     await run({width: 390, height: 800}, 2, tour, async (p, t) => {
       if (!t.length || t.some(x => x === 's')) fails.push(`Phone 2x quiz photos too small: ${t}`);
       if (t.some(x => x === 'full') && t.length === 1) fails.push(`Phone 2x single quiz photo took 1600 px: ${t}`);
+      // Home band thumbnails (~60 px on a phone): the 240 px files (Pierre: no big files for how they are shown).
+      await p.evaluate(() => (location.hash = 'home'));
+      await p.waitForTimeout(1500);
+      const h = await p.evaluate(() => [...document.querySelectorAll('.hdtiles img')].map(i => i.currentSrc).filter(Boolean)); // lazy: those in view
+      if (!h.length || h.some(u => !/-t\.webp/.test(u))) fails.push(`Home thumbnails on a 2x phone not 240 px: ${h.slice(0, 2)}`);
     });
     // Auto on a slow connection (Network Information API) = Saver: smaller files, enlarged view 960 then 1600 px.
     await run(

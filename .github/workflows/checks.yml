@@ -35,7 +35,7 @@ jobs:
       - name: Python tools compile
         run: |
           python3 -m py_compile tools/*.py
-      - name: Photo sizes (every photo in 1600, 960 and 480 px, tools/photos.py)
+      - name: Photo sizes (every photo in 1600, 960, 480 and 240 px, tools/photos.py)
         run: |
           python3 tools/photos.py --check
       - name: Cache-busting versions

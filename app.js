@@ -99,7 +99,7 @@ const inat = (p, sz) => p.src.replace('/original.', `/${sz}.`);
 // A recropped photo keeps its file name, so its URL carries the crop (cr) and rewrite count (iv): without it the
 // service worker (photos cache-first) and the browser kept the old file for some sizes (-s 480 px vs 1600 px).
 const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '');
-// Three files per photo (tools/photos.py): 480 px (size 's'), 960 px ('m') and 1600 px (none) on the long side.
+// Four files per photo (tools/photos.py): 240 ('t'), 480 ('s'), 960 ('m') and 1600 px (none) on the long side.
 // iNaturalist serves 500 (medium) and 1024 px (large).
 const loc = (p, s) => `img/${p.f}${s ? '-' + s : ''}.webp${ver(p)}`;
 const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size));
@@ -125,9 +125,9 @@ const fit = px => {
 const QBOX = {};
 const qsrc = (p, n = 1) => img(p, fit(QBOX[n] || Math.min(innerWidth, 900) / Math.sqrt(n)));
 // A shown site photo moved to another size: same name, -s / -m / no suffix (iNaturalist photos keep theirs).
-const resized = (u, size) => u.replace(/^(img\/.+?)(-[sm])?\.webp/, `$1${size ? '-' + size : ''}.webp`);
+const resized = (u, size) => u.replace(/^(img\/.+?)(-[tsm])?\.webp/, `$1${size ? '-' + size : ''}.webp`);
 const PXR = {s: 0, m: 1, '': 2}; // rank of each file size
-const tierOf = u => (/-s\.webp/.test(u) ? 's' : /-m\.webp/.test(u) ? 'm' : '');
+const tierOf = u => (/-[ts]\.webp/.test(u) ? 's' : /-m\.webp/.test(u) ? 'm' : '');
 // A photo shown bigger than its file was chosen for gets the bigger file (never a smaller one: it is already loaded); the
 // smaller one stays shown until the bigger is in. Not after the fallback to 480 px (data-low). Pages with big photos
 // (data-fit) call upsize after their layout.
@@ -186,6 +186,14 @@ $v.addEventListener(
 const coverW = (p, long) => {
   const a = p.ar || 4 / 3;
   return Math.round(Math.min(long * Math.min(1, a), (long * Math.min(1, 1 / a) * 4) / 3));
+};
+// Thumbnails (home band, progress tiles, look-alike pairs, tips): the 240 or 480 px file, picked by the browser from the
+// width the photo is drawn at (sizes, CSS px; with object-fit: cover a tall box draws it wider than the box) and the
+// screen density. Pierre, 2026-11-01: the home photos need no big files for how they are shown.
+const thumb = (p, sizes) => {
+  if (p.r && p.src) return `src="${img(p, 's')}"`;
+  const w = long => Math.round(long * Math.min(1, p.ar || 4 / 3));
+  return `src="${loc(p, 's')}" srcset="${loc(p, 't')} ${w(240)}w, ${loc(p, 's')} ${w(480)}w" sizes="${sizes}"`;
 };
 const srcset = p =>
   p.r && p.src
@@ -519,7 +527,7 @@ const tipsHead =
 const tipCard = n => {
   const g = DATA.gen[n],
     p = cover(g);
-  return `<article class="tipg"><a href="#g-${esc(n)}" class="tipph">${p ? `<img src="${img(p, 's')}" alt="" loading="lazy">` : ''}<i>${esc(n)}</i></a><div>${tipsList(g)}${
+  return `<article class="tipg"><a href="#g-${esc(n)}" class="tipph">${p ? `<img ${thumb(p, '130px')} alt="" loading="lazy">` : ''}<i>${esc(n)}</i></a><div>${tipsList(g)}${
     lookOf(n).length
       ? `<p class="note">Don't confuse with ${lookOf(n)
           .map(b => `<a href="#cmp-${esc(n)}|${esc(b)}"><i>${esc(b)}</i></a>`)
@@ -983,7 +991,7 @@ function viewLookalikes(a, b) {
     const tip = (n, g) => `<div class="lktip"><a href="#g-${esc(n)}"><i>${esc(n)}</i></a> ${esc(tipsText(g))}</div>`;
     const deck = L.map(
       (d, k) =>
-        `<a class="lkd${k === i ? ' on' : ''}${mix(d) ? ' mix' : ''}" href="#cmp|${esc(d.A)}|${esc(d.B)}" title="${esc(d.A)} or ${esc(d.B)}"><span><img src="${img(d.pa, 's')}" alt="" loading="lazy"><img src="${img(d.pb, 's')}" alt="" loading="lazy"></span><small>${esc(d.A)} / ${esc(d.B)}</small></a>`
+        `<a class="lkd${k === i ? ' on' : ''}${mix(d) ? ' mix' : ''}" href="#cmp|${esc(d.A)}|${esc(d.B)}" title="${esc(d.A)} or ${esc(d.B)}"><span><img ${thumb(d.pa, '64px')} alt="" loading="lazy"><img ${thumb(d.pb, '64px')} alt="" loading="lazy"></span><small>${esc(d.A)} / ${esc(d.B)}</small></a>`
     ).join('');
     // The intro goes behind ? (pageHelp) only on the first draw: re-adding it on each step pushed the deck down while the
     // montage was being sized, and it came out squashed once the intro left (Pierre, phone).
@@ -2181,7 +2189,7 @@ function quizBoard() {
     const g = GX(n),
       p = cover(g),
       [cl] = lv[n];
-    return `<a class="pw ${cl} s${st[n]}${g.x ? ' bonus' : ''}" href="#g-${esc(n)}" title="${g.x ? 'Bonus genus, not on the IMR list. ' : ''}${tip(n)}">${p ? `<img src="${img(p, 's')}" alt="" loading="lazy">` : ''}${g.x ? '<b class="pbtag">Bonus</b>' : ''}<span class="pwb"><i>${esc(n)}${g.n || g.x ? '' : ' ★'}</i>${pct(n)}</span></a>`;
+    return `<a class="pw ${cl} s${st[n]}${g.x ? ' bonus' : ''}" href="#g-${esc(n)}" title="${g.x ? 'Bonus genus, not on the IMR list. ' : ''}${tip(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 100px, 165px')} alt="" loading="lazy">` : ''}${g.x ? '<b class="pbtag">Bonus</b>' : ''}<span class="pwb"><i>${esc(n)}${g.n || g.x ? '' : ' ★'}</i>${pct(n)}</span></a>`;
   };
   // Locked bonus genera: ONE tile that says what they are and when the next one comes (six "?" tiles read as a puzzle;
   // designer re-review 2026-11-01, N6).
@@ -3074,7 +3082,8 @@ function photoSize() {
   return sizePrefs()[pageKey()] || (pageKey() === 'genera' ? 's' : 'm');
 }
 const SIZES = {
-  card: {s: '240px', m: '360px', l: '520px'},
+  // Measured 2026-11-01 (390 to 1920 px windows): S 170-194 px, M 356-415, L 356 on phones and 615-631 above.
+  card: {s: '(max-width:599.98px) 46vw, 200px', m: '(max-width:599.98px) 92vw, 420px', l: '(max-width:599.98px) 92vw, 640px'},
   strip: {s: '(max-width:599.98px) 46vw, 260px', m: '(max-width:599.98px) 92vw, 420px', l: '(max-width:599.98px) 92vw, 640px'}
 };
 const sizesFor = kind => SIZES[kind][photoSize()];
@@ -3581,7 +3590,11 @@ showBoardSet();
 function route() {
   // Photos of the page being left that are still loading are dropped, so a slow line gives its bandwidth to the new page
   // (tools/perf.js, slow 3G: the Home photos still downloading delayed the first quiz photo by seconds).
-  $v.querySelectorAll('img').forEach(i => !i.complete && i.removeAttribute('src'));
+  $v.querySelectorAll('img').forEach(i => {
+    if (i.complete) return;
+    i.removeAttribute('srcset'); // with a srcset, removing src alone keeps the download
+    i.removeAttribute('src');
+  });
   if (CUR_NEW) {
     CUR = CUR_NEW;
     CUR_NEW = null;

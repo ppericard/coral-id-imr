@@ -1,6 +1,6 @@
 # Downloads the candidate photos Pierre added in admin.html (curation.json genera[g].add) that are still remote
 # (data.json cand entries with r: 1, shown straight from iNaturalist until then), as img/{f}.webp (1600 px),
-# img/{f}-m.webp (960 px) and img/{f}-s.webp (480 px) (tools/photos.py), then drops their r flag. Pierre's crop (curation.json "crop" {f: [l, t, r, b]} fractions)
+# img/{f}-m.webp (960 px), img/{f}-s.webp (480 px) and img/{f}-t.webp (240 px) (tools/photos.py), then drops their r flag. Pierre's crop (curation.json "crop" {f: [l, t, r, b]} fractions)
 # is applied on the way, from the original; a photo already downloaded is redone when its crop changes (data.json "cr").
 # Site photos (not candidates) are recropped from their original the same way when Pierre crops them (Triage, genus page).
 # Run from the repo root; the GitHub Action .github/workflows/approved-photos.yml runs it after every curation.json

@@ -25,7 +25,7 @@ jobs:
         working-directory: .
       # Photo shapes for the quiz layout (designer re-review 2026-11-01): new photos get their `ar` too.
       - run: python tools/apply_ratios.py
-      # Every photo in its three sizes (1600, 960, 480 px): fills any 960 px file missing.
+      # Every photo in its four sizes (1600, 960, 480, 240 px): fills any smaller file missing.
       - run: python tools/photos.py
       - name: Commit
         run: |

@@ -1,5 +1,5 @@
 # Run after tools/archive/make_site.py (original build), from the repo root: python3 tools/apply_multi.py
-# 1. recrop.txt: crops img/<f>.webp to img/<f>c.webp (+ -m, -s: tools/photos.py) and points data.json at the crop.
+# 1. recrop.txt: crops img/<f>.webp to img/<f>c.webp (+ -m, -s, -t: tools/photos.py) and points data.json at the crop.
 # 2. multi.txt: moves multi-coral field photos from gen[g].views to gen[g].more (genus sheets only),
 #    and flags multi-coral lecture photos with multi:true (course quiz skips them).
 import json, os
