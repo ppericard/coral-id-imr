@@ -105,6 +105,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 - Publishing `curation.json` as a whole copy from the admin (lost curation on 2026-11-01; Publish merges key by key since PR #240).
 
 ## Done recently (for context)
+- 2026-11-01: `privacy.html` (what the app stores, where, how to have it deleted; linked from the footer): needed for the Google Cloud consent screen of the self-updating sync script, and useful now that beta testers sign in.
 - 2026-11-01: one Prettier pass (3.9.10, the latest stable, `.prettierrc.json`, print width 140) over the app, admin, Lab and test JS and the CSS; checked by comparing every file's syntax tree before and after (identical except one `a && (b && c)` → `a && b && c`) and by the tests; Prettier 3.3.3 (picked from memory, not the latest) dropped array elements in `proto/anatomy.js`; Pierre: always the latest stable version. CI moved to Node 26 (LTS) and Playwright 1.64.1 at the same time. PR check added. Module split still to do.
 - 2026-11-01: the sync script updates itself from GitHub (Pierre: "redeploy without me"): `autoUpdate` every 15 min installs a higher `VERSION` from `main` via the Apps Script API and repoints the web app; one-time setup by Pierre (Apps Script API on, manifest, `installAutoUpdate`, one last deploy).
 - 2026-11-01: small IMR lecture photos are no longer blown up on the big stages (Look-alikes, phone/tablet quiz): shown whole at their own size on the blurred background when filling would enlarge them more than 1.15x (Pierre chose this; sheet tiles keep filling).
