@@ -613,13 +613,26 @@ a.lt:hover{border-color:var(--accent)}
 .pslate .ps i{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pslate .ps:hover,.pseg a:hover{filter:brightness(1.06)}
 
-/* Learning level, same on Slate and Groups: grey = not seen; learning = a teal fill rising from the left to the
-   genus's progress (--p); red fill and border = to review; solid green = learned. */
-.pslate .ps,.pseg a{background:linear-gradient(90deg,var(--lvf) var(--p,0%),var(--surface-2) var(--p,0%));--lvf:color-mix(in srgb,var(--accent) 38%,var(--surface))}
-.pslate .ps.mid,.pseg a.mid{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
-.pslate .ps.weak,.pseg a.weak{--lvf:color-mix(in srgb,var(--bad) 38%,var(--surface));border:2px solid var(--bad)}
-.pslate .ps.ok,.pseg a.ok{background:var(--good);border-color:var(--good);color:#fff}
-.pslate .ps.new,.pseg a.new{color:var(--muted)}
+/* Learning level, same on Slate, Groups, the photo wall outline and the ring: one ordinal ramp, pale teal to dark green
+   (--lv1..--lv4 = quarters of the genus's progress, --lv5 = learned, with a tick). Not seen = white tile, dashed border.
+   A thin line along the bottom shows the exact progress (--p). Review = red border + red "!" badge, on top of the level.
+   Dark mode has its own steps (light = more learned there too). Contrast checked: text on every step >= 4.4:1. */
+:root{--lv1:#d3ebe7;--lv2:#a2d5cc;--lv3:#63b6a4;--lv4:#2a8770;--lv5:#1d5f34;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
+:root[data-theme="dark"]{--lv1:#1f4a4f;--lv2:#246861;--lv3:#36998a;--lv4:#66c7a5;--lv5:#9edda6;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#06262b;--lvt4:#06262b;--lvt5:#06262b}
+.s1{--lvc:var(--lv1);--lvt:var(--lvt1)}.s2{--lvc:var(--lv2);--lvt:var(--lvt2)}.s3{--lvc:var(--lv3);--lvt:var(--lvt3)}.s4{--lvc:var(--lv4);--lvt:var(--lvt4)}.s5{--lvc:var(--lv5);--lvt:var(--lvt5)}
+.pslate .ps,.pseg a{position:relative;background:var(--lvc,var(--surface)) linear-gradient(color-mix(in srgb,var(--lvt,var(--ink)) 55%,transparent),color-mix(in srgb,var(--lvt,var(--ink)) 55%,transparent)) left bottom / var(--p,0%) 3px no-repeat;color:var(--lvt,var(--ink));border:1px solid var(--lvc,var(--line))}
+.pslate .ps.s0,.pseg a.s0{border-style:dashed;color:var(--muted)}
+.pslate .ps.s5 i::after,.pseg a.s5 i::after{content:" \2713";font-style:normal;font-weight:700}
+.pslate .ps.weak,.pseg a.weak{border:2px solid var(--bad)}
+.pslate .ps.weak::after,.pseg a.weak::after,.pwall .pw.weak::after,.plvl .pl-rev::before{z-index:1;content:"!";position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;background:var(--bad);color:var(--surface);font:700 .62rem/14px var(--body);text-align:center;font-style:normal}
+/* Scale legend under the ring: one swatch per step with its count, then the review marker. */
+.plvl{display:flex;gap:3px;justify-content:center;flex-wrap:wrap}
+.plvl span{position:relative;flex:1 1 0;min-width:40px;max-width:64px;display:flex;flex-direction:column;align-items:center;padding:4px 2px;border-radius:6px;background:var(--lvc,var(--surface));color:var(--lvt,var(--ink));border:1px solid var(--lvc,var(--line));line-height:1.1}
+.plvl span.s0{border-style:dashed;color:var(--muted)}
+.plvl b{font-size:1rem;font-variant-numeric:tabular-nums}
+.plvl small{font-size:.66rem;white-space:nowrap}
+.plvl .pl-rev{border:2px solid var(--bad)}
+.plvl .pl-rev::before{top:-7px;right:-7px}
 /* Groups view: one bar per IMR lecture group, one segment per genus. */
 .pgroups{display:flex;flex-direction:column;gap:6px}
 .pgr{flex:1;display:grid;grid-template-columns:28px minmax(0,1fr) 36px;align-items:center;gap:10px;min-height:0}
@@ -630,7 +643,7 @@ a.lt:hover{border-color:var(--accent)}
 .pgt{font-size:.85rem;color:var(--muted);line-height:1.2}
 .pgr small{color:var(--muted);text-align:right}
 .pseg{display:flex;gap:3px;height:100%;max-height:56px}
-.pseg a{flex:1;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:.82rem;overflow:hidden;padding:0 4px}
+.pseg a{flex:1;display:flex;align-items:center;justify-content:center;border-radius:6px;text-decoration:none;font-size:.82rem;overflow:hidden;padding:0 4px}
 .pseg a i{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* Phone base (mobile-first); larger screens restore below. */
 .pgt{display:none}
@@ -834,7 +847,8 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .pwall .pw img.col{position:absolute;inset:0;filter:none;clip-path:inset(calc((1 - var(--p)) * 100%) 0 0 0);transition:clip-path 1.2s ease}
 .pwall .pw .wave{position:absolute;left:0;right:0;height:8px;bottom:calc(var(--p) * 100% - 4px);pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='8'%3E%3Cpath d='M0 4 Q10 0 20 4 T40 4' fill='none' stroke='white' stroke-width='1.6' opacity='.9'/%3E%3C/svg%3E") repeat-x;background-size:40px 8px;animation:pwdrift 4s linear infinite}
 .pwall .pw.weak .wave{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='8'%3E%3Cpath d='M0 4 Q10 0 20 4 T40 4' fill='none' stroke='%23ff6b5e' stroke-width='2.2'/%3E%3C/svg%3E")}
-.pwall .pw.mid,.pwall .pw.weak{outline-color:transparent}
+.pwall .pw.mid,.pwall .pw.weak{outline-color:var(--lvc,transparent)}
+.pwall .pw.ok{outline-color:var(--lv5)}
 .pwall .pw:hover img.col{clip-path:inset(0)}
 @keyframes pwdrift{to{background-position:40px 0}}
 @media (prefers-reduced-motion:reduce){.pwall .pw .wave{animation:none}.pwall .pw img.col{transition:none}}
@@ -880,7 +894,7 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .pboard .gside > .pring > span{width:64px;height:64px;font-size:.8rem}
 .pboard .gside > .pring b{font-size:1.3rem}
 .pboard .gside > .pring small{font-size:.62rem;text-align:center;line-height:1.1}
-.pboard .gside > .plegend{grid-column:2;justify-content:flex-start}
+.pboard .gside > .plvl{grid-column:2;justify-content:flex-start}
 
 @media (min-width:1024px){
   .pboard .gside{display:flex;grid-template-columns:revert;gap:10px;align-items:revert}
@@ -889,7 +903,7 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
   .pboard .gside > .pring > span{width:112px;height:112px;font-size:1.1rem}
   .pboard .gside > .pring b{font-size:2.2rem}
   .pboard .gside > .pring small{font-size:0.8rem;text-align:revert;line-height:revert}
-  .pboard .gside > .plegend{grid-column:revert;justify-content:center}
+  .pboard .gside > .plvl{grid-column:revert;justify-content:center}
 }
 
 /* Genera on phones: family, order and group index behind one Filter line. */
