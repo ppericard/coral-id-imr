@@ -23,7 +23,7 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 ### Last features before the handover
 
 - **Confusion scores** (PR #286, merged 2026-11-01): every quiz answer logs the choices offered (Code.gs v10, deployed and verified 2026-11-01); a confusion score per genus pair corrected for how often the pair was offered (official IMR / Coral Finder look-alikes only seed it; real player answers then decide); quiz traps picked by confusion score; admin "Confusions" view. Confusion data starts filling as soon as signed-in players answer; until there is enough, traps use the declared look-alikes.
-- **Personalised path** (approved by Pierre, NOT started): each player's own mix-ups bring those traps and duels back more often, with suggestions like "Review Favites vs Dipsastraea". Design in ROADMAP "Next"; it is backlog item 2.
+- **Personalised path** (approved by Pierre, built 2026-11-01 after the handover): each player's own mix-ups bring those traps and duels back more often; My progress "Often mixed up" ranks them. A suggestion on the Practice page is still open (ROADMAP).
 
 ## Pending actions for Pierre (things only he can do)
 
