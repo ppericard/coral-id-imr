@@ -569,11 +569,32 @@
     const v = START.W * (t / m) * (m / (m + START.N));
     return Math.round(Math.min(START.HI, Math.max(START.LO, v)) * 100) / 100;
   }
+  // The global record made at the first answer after this change: it starts from the player's history (every answer so
+  // far, the answer-weighted mean ability of the genera), so their earlier answers keep counting (code review, #320).
+  function levelSeed(P) {
+    let ok = 0,
+      ko = 0,
+      m = 0,
+      t = 0;
+    Object.keys(P || {}).forEach(g => {
+      const s = P[g] || {},
+        n = (s.ok || 0) + (s.ko || 0);
+      if (g === LEVEL) return;
+      ok += s.ok || 0;
+      ko += s.ko || 0;
+      if (typeof s.th === 'number' && n) {
+        m += n;
+        t += n * s.th;
+      }
+    });
+    return {ok, ko, th: m ? Math.round((t / m) * 100) / 100 : 0};
+  }
 
   const CORE = {
     LEVEL,
     START,
     playerStart,
+    levelSeed,
     applyCuration,
     applySlots,
     CAP,

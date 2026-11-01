@@ -1593,9 +1593,10 @@ function answer(cur, c, target, ph, cor, unseen) {
   bktObs(target, s, good, bk, k);
   abilityStep(target, s, good, d0, k);
   // Global level (core.js playerStart): the same Elo step over every answer, kept as the pseudo-genus LEVEL.
-  const gl = (P[LEVEL] = P[LEVEL] || {ok: 0, ko: 0});
-  gl[good ? 'ok' : 'ko']++;
-  abilityStep(LEVEL, gl, good, d0, k);
+  // Made at the first answer from the player's history (levelSeed), whose counts already include this answer.
+  if (P[LEVEL]) P[LEVEL][good ? 'ok' : 'ko']++;
+  else P[LEVEL] = levelSeed(P);
+  abilityStep(LEVEL, P[LEVEL], good, d0, k);
   // The corallites hint is revealed after the answer when it was not opened: seen, but not recognised.
   ph.forEach(p => {
     const x = (ps[p.f] = ps[p.f] || [0, 0]);

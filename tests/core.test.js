@@ -12,6 +12,7 @@ const {
   pairConf,
   mergeUsers,
   playerStart,
+  levelSeed,
   LEVEL,
   START
 } = require('../core.js');
@@ -259,4 +260,13 @@ test('playerStart: a new genus starts from the global level, shrunk while answer
   // The pseudo-genus merges across devices like a genus (answers add up, the latest ability).
   const m = mergeProgress({[LEVEL]: {ok: 2, ko: 0, th: 0.3}}, {[LEVEL]: {ok: 5, ko: 0, th: 0.9}}, {[LEVEL]: {ok: 4, ko: 1, th: 0.5}});
   assert.deepStrictEqual([m[LEVEL].ok, m[LEVEL].ko, m[LEVEL].th], [7, 1, 0.9]);
+});
+
+test('levelSeed: the global record starts from the history, so an existing expert keeps their head start', () => {
+  const old = {Porites: {ok: 60, ko: 0, th: 2}, Favites: {ok: 40, ko: 0, th: 2}};
+  const before = playerStart(old, 'Acropora');
+  const P = {...old, [LEVEL]: levelSeed(old)};
+  assert.deepStrictEqual(P[LEVEL], {ok: 100, ko: 0, th: 2});
+  assert.strictEqual(playerStart(P, 'Acropora'), before);
+  assert.deepStrictEqual(levelSeed({}), {ok: 0, ko: 0, th: 0});
 });
