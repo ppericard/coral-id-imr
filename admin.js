@@ -944,7 +944,7 @@ const GROUPS = [
     'players',
     'Players',
     [
-      ['~users', 'Users'],
+      ['~users', 'Players'],
       ['~stats', 'Activity'],
       ['~stats-conf', 'Confusions']
     ]
@@ -1551,8 +1551,8 @@ const HELP = {
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Game coverage). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name, most recently active first (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Last = last answer. Right = all their answers; Last 50 = their last 50. Days = days with answers. Learned and Seen = genera, from their last sync. Reports = problems they reported (Triage). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review.</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
-  stats: `<p>Every quiz and duel answer synced to the sheet. Players are anonymous: a number, ranked by level; "you" marks the name synced in this browser (All / Others / Me). Level is on the same scale as photo difficulty. Last 20 = right answers among the player's last 20. Learned = genera learned on their last sync. Days = days with answers. Photos = different photos answered (more = more variety). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Last = last answer. Right = all their answers; Last 50 = their last 50. Days = days with answers. Learned and Seen = genera, from their last sync. Reports = problems they reported (Triage). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id.</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
+  stats: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). All / Others / Me: everyone, everyone but the name synced in this browser, or only it. Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
   statsph: `<p>Photo difficulty (Elo) from every answer: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers; few answers = rough. Click a dot to see the photo.</p>
@@ -3618,12 +3618,29 @@ function loadUsers(force) {
     .catch(() => (USERS = {err: 'Offline'}));
 }
 const userPost = body => fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({...body, token: TOKEN})}).then(r => r.json());
+// Players page (Pierre, 2026-11-01: "one page, sort the players by name or by score, and act on them there"): the Users
+// list (names, from the token-guarded sheet call, v11) joined with the anonymous answer stats (?answers=1, ?stats=1) by
+// each player's anonymous id (users_ id, sheet v13). One row per signed-in player, sortable by any column; a row opens
+// their games, mix-ups, genera to review and Merge / Delete. Answers of devices that never signed in (and of deleted
+// accounts) have no name: they are counted apart, below. Activity keeps the class-wide charts.
+const UCOLS = [
+  ['name', 'Name', u => u.name.toLowerCase(), 1],
+  ['lv', 'Level', u => u.lv ?? -99, 0, 'Overall level, on the photo-difficulty scale (photo Elo, every answer)'],
+  ['answers', 'Answers', u => u.answers, 0],
+  ['right', 'Right', u => (u.answers ? u.right / u.answers : -1), 0],
+  ['recent', 'Last 50', u => (u.recent[0] ? u.recent[1] / u.recent[0] : -1), 0, 'Right among the last 50'],
+  ['days', 'Days', u => u.days, 0, 'Days with answers'],
+  ['learned', 'Learned', u => u.learned, 0],
+  ['seen', 'Seen', u => u.seen, 0, 'Genera seen'],
+  ['reports', 'Reports', u => u.reports || 0, 0, 'Reports sent'],
+  ['last', 'Last', u => u.last || u.updated || 0, 0, 'Last answer']
+];
 function renderUsers() {
   status();
-  const head = `<div class="adm-shead"><h2>Users</h2><button type="button" class="adm-fchip plain" data-uload title="Reload">↻</button></div>`;
-  if (!USERS) {
+  const head = `<div class="adm-shead"><h2>Players</h2><button type="button" class="adm-fchip plain" data-uload title="Reload">↻</button></div>`;
+  if (!USERS || !ANS) {
     $v.innerHTML = head + '<p class="note">Loading…</p>';
-    loadUsers().then(() => {
+    Promise.all([loadUsers(), ANS ? null : loadStats()]).then(() => {
       if (cur === '~users') render();
     });
     return;
@@ -3635,16 +3652,27 @@ function renderUsers() {
     bindUsers();
     return;
   }
-  const U = USERS.users.slice().sort((a, b) => (b.last || b.updated) - (a.last || a.updated)),
+  const col = UCOLS.find(c => c[0] === SF.us) || UCOLS[UCOLS.length - 1],
+    sk = col[0],
+    sd = SF.us === sk && SF.ud ? SF.ud : col[3] ? 'asc' : 'desc';
+  const U = USERS.users
+      .map(u => ({...u, lv: u.id && RAS[u.id] ? RAS[u.id][0] : null}))
+      .sort((a, b) => {
+        const x = col[2](a),
+          y = col[2](b);
+        return (x < y ? -1 : x > y ? 1 : 0) * (sd === 'asc' ? 1 : -1) || (b.last || 0) - (a.last || 0);
+      }),
     total = DATA ? Object.keys(DATA.gen).length : 0;
   const when = t => (t ? days(t) : '–'),
     date = t => (t ? new Date(t).toLocaleDateString([], {day: 'numeric', month: 'short'}) : '–');
   const opts = n =>
     U.filter(u => u.name !== n)
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
       .map(u => `<option>${esc(u.name)}</option>`)
       .join('');
   const MODE = {quiz: 'Photo quiz', 'quiz-duel': 'Duel', '?': 'Other'};
-  const detail = u => `<tr class="adm-udet"><td colspan="10"><div class="adm-sgrid">
+  const detail = u => `<tr class="adm-udet"><td colspan="${UCOLS.length + 1}"><div class="adm-sgrid">
       <section class="adm-scard"><h3>Games</h3><table class="adm-tbl">${
         Object.entries(u.modes)
           .sort((a, b) => b[1][0] - a[1][0])
@@ -3664,34 +3692,85 @@ function renderUsers() {
       <section class="adm-scard"><h3>Manage</h3>
         <p><label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label></p>
         <p><button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete</button></p></section></div></td></tr>`;
+  // Answers without a name: devices that never signed in (~anon) and deleted accounts, by anonymous id.
+  const named = new Set(U.map(u => u.id).filter(Boolean)),
+    A = {};
+  // Sheet v13 gives ids; an older one doesn't, and every answer would look anonymous. With v13 an empty list is fine.
+  if ((USERS.v || 0) >= 13)
+    (ANS.rows || []).forEach(r => {
+      if (named.has(r[0])) return;
+      const a = (A[r[0]] = A[r[0]] || {n: 0, ok: 0, last: 0});
+      a.n++;
+      a.ok += r[4];
+      if (r[1] > a.last) a.last = r[1];
+    });
+  const anon = Object.entries(A).sort((a, b) => b[1].last - a[1].last);
   const act = U.filter(u => u.last && Date.now() - u.last < 7 * 864e5).length,
     ans = U.reduce((t, u) => t + u.answers, 0);
+  const cell = (k, u) =>
+    ({
+      name: `<b>${esc(u.name)}</b>${u.id && u.id === MEID ? ' <small>you</small>' : ''}`,
+      lv: u.lv == null ? '–' : sgn(u.lv),
+      answers: u.answers,
+      right: pct(u.right, u.answers),
+      recent: pct(u.recent[1], u.recent[0]),
+      days: u.days,
+      learned: `${u.learned}/${u.total || total}`,
+      seen: u.seen,
+      reports: u.reports || '',
+      last: when(u.last || u.updated)
+    })[k];
   $v.innerHTML =
     head +
     kpis([
-      ['Users', U.length],
+      ['Players', U.length],
       ['Active 7 d', act],
       ['Answers', ans],
-      ['Removed', USERS.removed.length]
+      ['Not signed in', anon.length]
     ]) +
+    (U.some(u => !u.id) ? `<p class="note">Level shows once the sheet script v13 is live (it adds each player's anonymous id).</p>` : '') +
     (!U.length
       ? '<p class="note">Nobody has signed in yet.</p>'
       : `
-    <section class="adm-scard adm-ucard"><div class="adm-tscroll"><table class="adm-tbl adm-utbl"><thead><tr><th>Name</th><th>Last</th><th>Answers</th><th>Right</th><th title="Right among the last 50">Last 50</th><th>Days</th><th>Learned</th><th>Seen</th><th title="Reports sent">Reports</th><th></th></tr></thead><tbody>
+    <section class="adm-scard adm-ucard"><div class="adm-tscroll"><table class="adm-tbl adm-utbl"><thead><tr>${UCOLS.map(
+      ([k, t, , , tip]) =>
+        `<th${tip ? ` title="${esc(tip)}"` : ''}><button type="button" class="adm-usort" data-usort="${k}" aria-pressed="${k === sk}">${t}${k === sk ? (sd === 'asc' ? ' ▴' : ' ▾') : ''}</button></th>`
+    ).join('')}<th></th></tr></thead><tbody>
       ${U.map(
-        u => `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}" data-uopen="${esc(u.name)}"><td><b>${esc(u.name)}</b></td><td>${when(u.last || u.updated)}</td><td>${u.answers}</td><td>${pct(u.right, u.answers)}</td><td>${pct(u.recent[1], u.recent[0])}</td><td>${u.days}</td>
-        <td>${u.learned}/${u.total || total}</td><td>${u.seen}</td><td>${u.reports || ''}</td><td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
+        u =>
+          `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${u.id && u.id === MEID ? ' me' : ''}" data-uopen="${esc(u.name)}">${UCOLS.map(([k]) => `<td>${cell(k, u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
       ).join('')}</tbody></table></div></section>`) +
+    (anon.length
+      ? `<details class="adm-uremoved"><summary>Not signed in (${anon.length})</summary><p class="note">Devices that played without signing in, and accounts deleted with their answers kept: no name, so nothing to manage. Their answers count in Activity and photo difficulty.</p><table class="adm-tbl"><thead><tr><th>Id</th><th>Level</th><th>Answers</th><th>Right</th><th>Last</th></tr></thead><tbody>${anon
+          .map(
+            ([id, a]) =>
+              `<tr><td><code>${esc(id)}</code></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td><td>${days(a.last)}</td></tr>`
+          )
+          .join('')}</tbody></table></details>`
+      : '') +
     (USERS.removed.length
       ? `<details class="adm-uremoved"><summary>Removed (${USERS.removed.length})</summary><table class="adm-tbl">${USERS.removed.map(r => `<tr><td>${esc(r.name)}</td><td>${r.into ? `merged into <b>${esc(r.into)}</b>` : 'deleted'}</td><td>${date(r.time)}</td></tr>`).join('')}</table></details>`
       : '');
   bindUsers();
 }
 function bindUsers() {
+  $v.querySelectorAll('[data-usort]').forEach(
+    b =>
+      (b.onclick = () => {
+        const k = b.dataset.usort,
+          c = UCOLS.find(x => x[0] === k);
+        SF.ud = SF.us === k ? ((SF.ud || (c[3] ? 'asc' : 'desc')) === 'asc' ? 'desc' : 'asc') : c[3] ? 'asc' : 'desc';
+        SF.us = k;
+        store.set('imr-admin-stats', SF);
+        render();
+      })
+  );
   const rl = $v.querySelector('[data-uload]');
   if (rl)
     rl.onclick = () => {
       USERS = null;
+      ANS = null;
+      STATS = null; // levels (ras) too, not only the counts
       render();
     };
   $v.querySelectorAll('[data-uopen]').forEach(
@@ -3705,6 +3784,8 @@ function bindUsers() {
     if (j && j.ok) {
       toast(msg);
       USERS = null;
+      ANS = null; // answers moved to another name or deleted: the levels and counts change
+      STATS = null;
       uOpen = null;
       render();
     } else toast(j && j.error === 'stale' ? 'The player just synced: try again.' : `Not done (${(j && j.error) || 'offline'}).`);
@@ -3771,7 +3852,7 @@ function renderStats() {
 // Rows kept by the player filter (all, others than this browser's synced name, or only it).
 const statRows = () => ANS.rows.filter(r => SF.who === 'all' || !MEID || (SF.who === 'me') === (r[0] === MEID));
 function statsPlayers() {
-  const head = `${statSwitch()}<div class="adm-shead"><h2>Players</h2>${
+  const head = `${statSwitch()}<div class="adm-shead"><h2>Activity</h2>${
     MEID
       ? segBtns('who', [
           ['all', 'All'],
@@ -3893,16 +3974,6 @@ function statsPlayers() {
       ? `<p class="note">${SF.who === 'others' ? noneButMe() : 'No answers yet.'}</p>`
       : `
     <div class="adm-sgrid">
-    <section class="adm-scard wide"><h3>Players</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>#</th><th>Level</th><th>Answers</th><th>Right</th><th>Last 20</th><th title="Different photos answered">Photos</th><th>Learned</th><th>Days</th><th>Last</th></tr></thead><tbody>
-      ${ps
-        .map(
-          (
-            p,
-            i
-          ) => `<tr${p.id === MEID ? ' class="me"' : ''}><td>${i + 1}${p.id === MEID ? ' <small>you</small>' : ''}</td><td>${p.lv == null ? '–' : sgn(p.lv)}</td><td>${p.n}</td><td>${pct(p.ok, p.n)}</td><td>${Math.round(100 * p.last)}%</td><td>${p.ph}</td>
-        <td>${p.sum ? `${p.sum[0]}/${p.sum[2] || total}` : '–'}</td><td>${p.d.size}</td><td>${days(p.at)}</td></tr>`
-        )
-        .join('')}</tbody></table></div></section>
     <section class="adm-scard"><h3>Learning curve</h3><div class="adm-cols">${cv.map((b, k) => `<div title="Answers ${k * blk + 1}-${(k + 1) * blk}: ${b[0]}/${b[1]}"${b[1] < 10 ? ' class="few"' : ''}><i style="height:${Math.round((100 * b[0]) / b[1])}%"></i><small>${Math.round((100 * b[0]) / b[1])}</small></div>`).join('')}</div>
       <p class="adm-axis"><span>Answer 1</span><span>${blk} per bar</span><span>${cv.length * blk}</span></p></section>
     <section class="adm-scard"><h3>Calibration</h3>${

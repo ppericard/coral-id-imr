@@ -17,7 +17,7 @@ const ans = (id, extra = {}) => ({
 
 test('new RA, save and load back, with revision', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 12});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 13});
   const r = s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}, answers: [ans('a1')]});
   assert.strictEqual(r.ok, true);
   assert.strictEqual(r.log, true);
@@ -138,7 +138,7 @@ const rep = (id, extra = {}) => ({
 test('reports: logged once, reporter verified by code, never mistaken for a progress write', () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}});
-  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 12});
+  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 13});
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1'), rep('r2', {why: 'multi', fix: ''})]});
   s.post({rname: 'Bob', rpin: '', reports: [rep('r3', {why: 'bogus'}), rep('r4', {why: 'photo', note: '=HYPERLINK("x")'})]});
   const R = s.sheets.Reports;
@@ -198,8 +198,12 @@ test('users: admin token only; one row per player with their numbers', () => {
   assert.strictEqual(s.post({users: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
   const r = s.post({users: 1, token: TOK});
   assert.strictEqual(r.ok, true);
-  assert.strictEqual(r.v, 12);
+  assert.strictEqual(r.v, 13);
   const ana = r.users.find(u => u.name === 'Ana');
+  // v13: the anonymous id of ?answers=1, so the admin can put names on the anonymous stats.
+  const a = s.get({answers: 1});
+  assert.ok(ana.id && a.rows.some(x => x[0] === ana.id));
+  assert.notStrictEqual(ana.id, r.users.find(u => u.name === 'Ana B').id);
   assert.strictEqual(ana.answers, 2);
   assert.strictEqual(ana.right, 1);
   assert.strictEqual(ana.learned, 1);
@@ -228,7 +232,7 @@ test('userMerge: progress written to into, answers and reports relabelled, from 
     [['Ana B', 'Ana']]
   );
   // The old device of "Ana B": a pull and a send both get 'gone', and its new answers go to Ana.
-  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 12});
+  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 13});
   const w = s.post({name: 'Ana B', pin: '5678', data: prog(9), summary: {}, answers: [ans('b2')]});
   assert.strictEqual(w.error, 'gone');
   assert.strictEqual(w.log, true);
@@ -350,7 +354,7 @@ test('autoUpdate: an interrupted update (code in place, deploy failed) is finish
 // Anonymous answers (v12).
 test('anonymous answers are logged under ~anon <id>, then move to the name at sign-in', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: 12});
+  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: 13});
   assert.strictEqual(s.post({anon: 'Bad Id!', anonAnswers: [ans('z3')]}).error, 'input');
   assert.deepStrictEqual(
     s.sheets.Answers.rows.slice(1).map(r => r[0]),
