@@ -624,8 +624,8 @@ a.lt:hover{border-color:var(--accent)}
 :root{--lv1:#d3ebe7;--lv2:#a2d5cc;--lv3:#63b6a4;--lv4:#2a8770;--lv5:#1d5f34;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
 :root[data-theme="dark"]{--lv1:#1f4a4f;--lv2:#246861;--lv3:#36998a;--lv4:#66c7a5;--lv5:#9edda6;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#06262b;--lvt4:#06262b;--lvt5:#06262b}
 /* Colour themes (setting "Colours", :root[data-palette], localStorage imr-coral-palette): each one retints the chrome
-   (accent, background, lines) and the learning-level ramp, with its own light and dark steps. Lagoon = the defaults
-   above. Steps generated in OKLCH at fixed lightness (light .93/.84/.72/.58/.44, dark .38/.48/.61/.74/.86), so every
+   (accent, background, lines) and the learning-level ramp, with its own light and dark steps. Lagoon = the base colours
+   above; Depth is the default theme (set in index.html before first paint). Steps generated in OKLCH at fixed lightness (light .93/.84/.72/.58/.44, dark .38/.48/.61/.74/.86), so every
    theme keeps the same text contrast on each step. */
 :root[data-palette="reef"]{--bg:#faf3f0;--surface-2:#f4e8e4;--line:#e6d7d2;--accent:#a24019;--accent-ink:#ffffff;--lv1:#fee3c5;--lv2:#f7bd8f;--lv3:#e68a58;--lv4:#c25430;--lv5:#8c2e23;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
 :root[data-palette="reef"][data-theme="dark"]{--bg:#1a110e;--surface:#271b17;--surface-2:#332520;--line:#44342e;--accent:#f89c7c;--accent-ink:#2a140c;--lv1:#523e27;--lv2:#7f522b;--lv3:#bb6b40;--lv4:#f28a6a;--lv5:#febfb4;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
