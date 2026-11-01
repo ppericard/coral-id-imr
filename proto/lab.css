@@ -380,7 +380,7 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .labgrad{display:flex;flex-wrap:wrap;gap:8px}
 .labgrad a{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:var(--pill);padding:6px 14px 6px 10px;color:var(--ink);text-decoration:none}
 .labgrad .labicon{font-size:var(--fs-m)}
-.labgrad small{color:var(--muted)}
+.labgrad small{color:var(--muted);font-size:var(--fs-s)}
 
 /* corallite anatomy: arrangement blocks, concept cards, ringed photos */
 .a2tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
@@ -718,7 +718,7 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
   .pmem .gside .seg{align-self:auto;flex:1 1 auto;font-size:var(--fs-s)}
   .pmem .gside .seg button{padding:5px 6px;min-height:36px;white-space:nowrap}
   .pmem .gside .seg small,.pmem .pnew .pnl{display:none}
-  .pmem .pnew{margin:0;padding:0;width:40px;height:40px;min-height:0;font-size:1.25rem;line-height:1;flex:none}
+  .pmem .pnew{margin:0;padding:0;width:40px;height:40px;min-height:0;font-size:var(--fs-l);line-height:1;flex:none}
   .pmem .pstatus{flex-basis:100%;flex-direction:row;align-items:baseline;gap:8px;min-width:0;font-size:var(--fs-s);line-height:1.35;min-height:2.7em} /* two lines kept free: the ID tip after a match is never cut (DESIGN.md) */
   .pmem .pstatus #pstat{flex:none}
   .pmem #pres{min-width:0;display:flex;align-items:baseline;gap:6px}
@@ -731,7 +731,7 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .fdsegs{display:flex;flex-wrap:wrap;gap:6px}
 .fdhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 button.fdname{font:inherit;font-family:var(--display);font-size:var(--fs-l);font-weight:700;background:none;border:0;padding:0;cursor:pointer;color:var(--ink);text-align:left}
-button.fdname::after{content:" ▸";font-size:.8em;color:var(--muted)}
+button.fdname::after{content:" ▸";font-size:var(--fs-m);color:var(--muted)}
 button.fdname[aria-expanded="true"]::after{content:" ▾"}
 .fdxtag{font-weight:700;color:var(--muted);background:var(--other);border-radius:var(--pill);padding:0 6px}
 .fdsheetl{font-size:var(--fs-xs);color:var(--muted)!important}

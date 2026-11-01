@@ -12,15 +12,17 @@
    no keyboard hints; (hover:hover) and (pointer:fine) = mouse -> hover effects, kbd hints. */
 
 /* ---------- Tokens ---------- */
-:root{--bg:#f2f5f6;--surface:#ffffff;--surface-2:#e9eff1;--ink:#14262d;--muted:#5a6d74;--line:#d6e0e3;--accent:#0d6f7d;--accent-ink:#ffffff;--branch:#cfe8b8;--meander:#c4e2f2;--massive:#ecc7e3;--plate:#f8d9ad;--solo:#b9e7ea;--polyp:#f6c8b8;--column:#f3eba2;--other:#cdd6ea;--band-ink:#14262d;--good:#2f7d3a;--good-bg:#dcefd9;--bad:#b23a2a;--bad-bg:#f7dcd6;--warn:#d98b2b;--shadow:0 1px 2px rgb(20 38 45 / .06),0 2px 8px rgb(20 38 45 / .06);--shadow-hover:0 4px 16px rgb(20 38 45 / .14);--r:10px;--r-sm:6px;--r-xs:4px;--pill:999px;--ctl-h:36px;--fs-2xs:.6875rem;--fs-xs:.75rem;--fs-s:.875rem;--fs-m:1rem;--fs-l:1.25rem;--fs-xl:1.5rem;--fs-2xl:2.25rem;--display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;--body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif}
-:root[data-theme="dark"]{--bg:#0d181c;--surface:#15242a;--surface-2:#1c2e35;--ink:#e3eef0;--muted:#94a9af;--line:#283c43;--accent:#5cc6d3;--accent-ink:#06262b;--branch:#34502a;--meander:#24465a;--massive:#57304d;--plate:#5e4320;--solo:#1f5256;--polyp:#5c3328;--column:#4f4a1c;--other:#2f3a55;--band-ink:#eef6f7;--good:#8fd49a;--good-bg:#1f3a24;--bad:#f19a8b;--bad-bg:#45231d;--shadow:0 1px 2px rgb(0 0 0 / .3);--shadow-hover:0 4px 16px rgb(0 0 0 / .45);color-scheme:dark}
+:root{--bg:#f2f5f6;--surface:#ffffff;--surface-2:#e9eff1;--ink:#14262d;--muted:#5a6d74;--line:#d6e0e3;--accent:#0d6f7d;--accent-ink:#ffffff;--branch:#cfe8b8;--meander:#c4e2f2;--massive:#ecc7e3;--plate:#f8d9ad;--solo:#b9e7ea;--polyp:#f6c8b8;--column:#f3eba2;--other:#cdd6ea;--band-ink:#14262d;--good:#2f7d3a;--good-bg:#dcefd9;--bad:#b23a2a;--bad-bg:#f7dcd6;--warn:#d98b2b;--cf-ink:#8a5a14;--photo-bg:#000;--on-photo:#fff;--scrim:rgb(0 0 0 / .6);--shadow:0 1px 2px rgb(20 38 45 / .06),0 2px 8px rgb(20 38 45 / .06);--shadow-hover:0 4px 16px rgb(20 38 45 / .14);--r:10px;--r-sm:6px;--r-xs:4px;--pill:999px;--ctl-h:36px;--fs-2xs:.6875rem;--fs-xs:.75rem;--fs-s:.875rem;--fs-m:1rem;--fs-l:1.25rem;--fs-xl:1.5rem;--fs-2xl:2.25rem;--display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;--body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif}
+:root[data-theme="dark"]{--bg:#0d181c;--surface:#15242a;--surface-2:#1c2e35;--ink:#e3eef0;--muted:#94a9af;--line:#283c43;--accent:#5cc6d3;--accent-ink:#06262b;--branch:#34502a;--meander:#24465a;--massive:#57304d;--plate:#5e4320;--solo:#1f5256;--polyp:#5c3328;--column:#4f4a1c;--other:#2f3a55;--band-ink:#eef6f7;--good:#8fd49a;--good-bg:#1f3a24;--bad:#f19a8b;--bad-bg:#45231d;--cf-ink:#d9a75c;--shadow:0 1px 2px rgb(0 0 0 / .3);--shadow-hover:0 4px 16px rgb(0 0 0 / .45);color-scheme:dark}
 
 /* ---------- Base ---------- */
 /* Type scale (design review 2026-11-01): every font size is one of the --fs-* tokens in :root: 2xs 11 px (only glyphs in
    small badges), xs 12 px (floor for readable text), s 14, m 16, l 20, xl 24, 2xl 36. Never add a raw rem/px size. */
 *{box-sizing:border-box}
+/* <small> is 12 px unless a rule says otherwise (the browser default, .83em, falls between the steps of the scale). */
+small{font-size:var(--fs-xs)}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:var(--fs-m);line-height:1.45;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 /* Page width: one max width (--page) on every page, so the header never changes size and content lines up
    with it. Text keeps its own measure (65-75ch). A module that needs more room adds .bleed (wide screens only). */
@@ -55,7 +57,7 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 .brand{margin:0;display:flex;align-items:baseline;gap:10px;line-height:1}
 .brand .home{display:inline-flex;align-items:center;gap:7px;color:inherit;text-decoration:none;font-family:var(--display);font-weight:700;font-size:var(--fs-l);letter-spacing:.01em}
 @media (min-width:600px){
-  .brand .home{font-size:1.75rem;gap:9px} /* logotype: outside the text scale on purpose */
+  .brand .home{font-size:1.75rem;gap:9px} /* logotype: the one size outside the text scale, on purpose (DESIGN.md) */
 }
 .brand .home img{border-radius:var(--r);display:block}
 .sections{display:grid;flex-wrap:wrap;gap:4px;margin-left:auto}
@@ -366,17 +368,18 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 body:has(.q),body:has(.pgrid),body:has(.rvstage),body:has(.pgroups),body:has(.pslate),body:has(.lk){padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px))}
 body:has(.q) footer,body:has(.pgrid) footer,body:has(.rvstage) footer,body:has(.pgroups) footer,body:has(.pslate) footer,body:has(.lk) footer{display:none}
 body:has(.q) main,body:has(.pgrid) main,body:has(.rvstage) main,body:has(.pgroups) main,body:has(.pslate) main,body:has(.lk) main{margin-bottom:0}
-.qph{position:relative;margin:0;overflow:hidden;border-radius:var(--r);background:#000;min-height:0;height:100%}
+.qph{position:relative;margin:0;overflow:hidden;border-radius:var(--r);background:var(--photo-bg);min-height:0;height:100%}
 /* scale-down: like contain, but a low-resolution photo is never blown up past its own size (it would look pixelated). */
 .qph img{width:100%;height:100%;object-fit:scale-down;display:block}
 .qph .zoom{height:100%;border-radius:0;position:relative;background:none}
 /* No black bars: a blurred copy of the photo fills the frame around it. */
-.qph::before{content:"";position:absolute;inset:-30px;background:var(--qbg,#000) center/cover;filter:blur(22px) brightness(.55)}
-.qph .zoom::after{content:"⤢";position:absolute;right:8px;bottom:8px;width:30px;height:30px;display:grid;place-items:center;border-radius:var(--pill);background:rgb(0 0 0 / .55);color:#fff;font-size:var(--fs-m);opacity:.8;pointer-events:none}
-.qph figcaption{position:absolute;left:8px;top:8px;background:rgb(0 0 0 / .6);color:#fff;font-size:var(--fs-xs);padding:2px 9px;border-radius:var(--pill)}
+.qph::before{content:"";position:absolute;inset:-30px;background:var(--qbg,var(--photo-bg)) center/cover;filter:blur(22px) brightness(.55)}
+.qph .zoom::after{content:"⤢";position:absolute;right:8px;bottom:8px;width:30px;height:30px;display:grid;place-items:center;border-radius:var(--pill);background:var(--scrim);color:var(--on-photo);font-size:var(--fs-m);opacity:.8;pointer-events:none}
+.qph figcaption{position:absolute;left:8px;top:8px;background:var(--scrim);color:var(--on-photo);font-size:var(--fs-xs);padding:2px 9px;border-radius:var(--pill)}
 .qside{display:flex;flex-direction:column;gap:10px;min-height:0;overflow:visible;padding-right:2px}
 @media (min-width:1024px){
-  .qside{overflow:auto}
+  /* The column scrolls if it must; 5 px of room on the left (taken from the gap) keeps focus rings unclipped. */
+  .qside{overflow:auto;padding-left:5px;margin-left:-5px}
 }
 .qtop{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
 .qtop .prompt{margin:0 auto 0 0}
@@ -422,7 +425,13 @@ kbd{font:600 var(--fs-xs)/1 var(--body);font-style:normal;color:var(--muted);bor
 @media (min-width:1024px){
   .q{grid-template-rows:revert;min-height:revert;align-content:revert}
   .qstage{height:revert}
-  .q.done #after{position:revert;left:revert;right:revert;bottom:revert;z-index:revert;max-height:revert;overflow:revert;display:revert;flex-direction:revert;gap:revert;padding:revert;background:revert;border-top:revert;box-shadow:revert}
+  .q.done #after{position:revert;left:revert;right:revert;bottom:revert;z-index:revert;max-height:revert;overflow:revert;padding:revert;background:revert;border-top:revert;box-shadow:revert}
+  /* Next is pinned to the bottom of the side column (level with the bottom of the photos), so it stays in the same place
+     whatever the height of the feedback above it; when a long feedback makes the column scroll, Next stays in view and
+     the end of the feedback scrolls under it (design re-review p2). */
+  .q.done #after{flex:1 0 auto;gap:6px}
+  .q.done #after #next{margin-top:auto;position:sticky;bottom:0;box-shadow:var(--shadow-hover)}  /* full column width, as on phones */
+  .q.done #after #next:focus-visible{outline-color:var(--accent-ink);outline-offset:-5px}  /* inside the pill: the column would clip it */
   .ans{grid-template-columns:revert}
   .ans button{justify-content:revert}
 }
@@ -437,18 +446,19 @@ td i{font-weight:600}
 .lvl.new{background:var(--surface-2);color:var(--muted)}.lvl.weak{background:var(--bad-bg);color:var(--bad)}.lvl.mid{background:var(--surface);color:var(--ink);border:1px solid var(--line)}.lvl.ok{background:var(--good-bg);color:var(--good)}
 
 /* ---------- Lightbox ---------- */
-#lightbox{position:fixed;inset:0;z-index:50;background:#000e;display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}
+#lightbox{position:fixed;inset:0;z-index:50;background:color-mix(in srgb,var(--photo-bg) 93%,transparent);display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}
 #lightbox[hidden]{display:none}
 .lb-in{max-width:min(1600px,100%);max-height:100%;display:flex;flex-direction:column;gap:8px}
 .lb-in img{max-width:100%;max-height:calc(100vh - 120px);object-fit:contain;display:block;margin:0 auto}
-.lb-cap{color:#ddd;font-size:var(--fs-s);margin:0;text-align:center}.lb-cap a{color:#ddd}
+.lb-cap,.lb-cap a,.lb-nav{color:color-mix(in srgb,var(--on-photo) 87%,transparent)}
+.lb-cap{font-size:var(--fs-s);margin:0;text-align:center}
 .lb-in img{cursor:zoom-in}
 #lightbox.full{display:block;overflow:auto}
 #lightbox.full .lb-in{max-width:none;max-height:none;display:block}
 #lightbox.full .lb-in img{max-width:none;max-height:none;cursor:zoom-out}
 #lightbox.full .lb-cap,#lightbox.full .lb-nav{position:sticky;left:0}
-.lb-nav{display:flex;justify-content:center;align-items:center;gap:12px;color:#ddd}
-.lb-nav button{font:inherit;background:#fff2;color:#fff;border:1px solid #fff4;border-radius:var(--pill);padding:6px 14px;cursor:pointer}
+.lb-nav{display:flex;justify-content:center;align-items:center;gap:12px}
+.lb-nav button{font:inherit;background:color-mix(in srgb,var(--on-photo) 13%,transparent);color:var(--on-photo);border:1px solid color-mix(in srgb,var(--on-photo) 27%,transparent);border-radius:var(--pill);padding:6px 14px;cursor:pointer}
 
 /* ---------- Responsive ---------- */
 
@@ -601,11 +611,10 @@ a.lt:hover{border-color:var(--accent)}
 .lcmp img{width:100%;display:block;border-radius:var(--r);background:var(--surface-2)}
 .lcmp figcaption{font-size:var(--fs-xs);color:var(--muted);margin-top:4px}
 
-/* Sign-in box at the top of My progress; the header pill flags a device that isn't signed in. */
+/* Sign-in box (tour bubble, sign-in card). Saving trouble shows as the red "Not saved" pill in the header, never as a mark
+   on the Progress pill (design re-review p9). */
 .sync h3{margin:0 0 4px;font-size:var(--fs-m)}
 .sync{margin:0 0 18px;border-color:var(--accent)}
-.prog.nosync{border-color:var(--accent)}
-.prog.nosync::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);margin-left:6px;display:inline-block}
 
 /* Help: a discreet ? in the header holds the page's explanations, so pages open straight on the content. */
 .helpbox{flex:1 0 100%;margin:0;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);font-size:var(--fs-s);max-height:50vh;overflow:auto}
@@ -684,7 +693,7 @@ a.lt:hover{border-color:var(--accent)}
 /* Correct = pale fill + thick SOLID border, wrong = dashed: a solid dark fill read as a pressed button (re-review N3). */
 :root[data-cvd="1"] .ans button.ok{border-width:3px}
 :root[data-cvd="1"] .ans button.ko{border-style:dashed;border-width:2px}
-:root[data-cvd="1"] .ans button.ok::after,:root[data-cvd="1"] .ans button.ko::after{font-size:1.15em}
+:root[data-cvd="1"] .ans button.ok::after,:root[data-cvd="1"] .ans button.ko::after{font-size:var(--fs-l)}
 /* Colour-blind mode: "to review" also changes shape (thick dashed border), not only colour. */
 :root[data-cvd="1"] :is(.pslate .ps.weak,.pseg a.weak,.pwall .pw.weak,.plvl .pl-rev){border-style:dashed;border-width:3px}
 .s1{--lvc:var(--lv1);--lvt:var(--lvt1)}.s2{--lvc:var(--lv2);--lvt:var(--lvt2)}.s3{--lvc:var(--lv3);--lvt:var(--lvt3)}.s4{--lvc:var(--lv4);--lvt:var(--lvt4)}.s5{--lvc:var(--lv5);--lvt:var(--lvt5)}
@@ -706,7 +715,7 @@ a.lt:hover{border-color:var(--accent)}
 .plvl .pl-rev.zero{border-color:var(--line)}
 .plvl .pl-rev.zero::before{display:none}  /* nothing to review: the legend stays, without any "!" (a grey one still read as an alarm, RA re-review 2026-11-01) */
 /* Progress towards Learned as a number at the right of a tile (with the 5px bar along its bottom). */
-.pslate .ps .pct,.pseg a .pct{display:inline-flex;align-items:center;gap:4px;color:inherit;text-align:right;margin-left:auto;padding-left:6px;font-size:.78em;font-weight:700;font-variant-numeric:tabular-nums;font-style:normal;flex:none}
+.pslate .ps .pct,.pseg a .pct{display:inline-flex;align-items:center;gap:4px;color:inherit;text-align:right;margin-left:auto;padding-left:6px;font-size:var(--fs-xs);font-weight:700;font-variant-numeric:tabular-nums;font-style:normal;flex:none}
 .pseg a{justify-content:flex-start;gap:4px}.pseg a i{margin:0 auto}
 .pslate .ps.weak .pct,.pseg a.weak .pct{margin-right:12px}
 /* Mini ring: the genus's progress towards Learned, filling clockwise like the big ring (% beside it when there is room). */
@@ -749,8 +758,8 @@ a.lt:hover{border-color:var(--accent)}
 .tipph{display:flex;flex-direction:column;gap:4px;text-decoration:none;color:var(--ink)}
 .tipph img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r)}
 
-.psrc{position:absolute;left:8px;bottom:8px;z-index:2;display:none;max-width:calc(100% - 56px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-xs);line-height:1.2;padding:3px 8px;border-radius:var(--pill);background:rgb(0 0 0 / .5);color:#fff;text-decoration:none;opacity:.75}
-a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-decoration:underline}
+.psrc{position:absolute;left:8px;bottom:8px;z-index:2;display:none;max-width:calc(100% - 56px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-xs);line-height:1.2;padding:3px 8px;border-radius:var(--pill);background:var(--scrim);color:var(--on-photo);text-decoration:none;opacity:.75}
+a.psrc:hover,a.psrc:focus-visible{opacity:1;background:color-mix(in srgb,var(--photo-bg) 75%,transparent);text-decoration:underline}
 /* Game photo source: hidden on phones (Pierre: no room; the enlarged view has the clickable source). */
 @media (min-width:600px){.psrc{display:block}}
 /* Mix-up montage: the centred note sits at the bottom, so the source moves to the top-left corner. */
@@ -828,8 +837,8 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .glink small{color:var(--muted)}
 .glink:hover{border-color:var(--accent)}
 /* Pierre-only "bad photo" flag (flag.js) */
-.pflag{position:fixed;z-index:60;padding:2px 8px;border:0;border-radius:var(--pill);background:rgb(0 0 0 / .6);color:#fff;font-size:var(--fs-xs);cursor:pointer;opacity:.75}
-.pflag:hover{opacity:1}.pflag.on{background:#c0392b;opacity:1}
+.pflag{position:fixed;z-index:60;padding:2px 8px;border:0;border-radius:var(--pill);background:var(--scrim);color:var(--on-photo);font-size:var(--fs-xs);cursor:pointer;opacity:.75}
+.pflag:hover{opacity:1}.pflag.on{background:var(--bad);color:var(--surface);opacity:1}
 .qlvl{margin-bottom:6px}
 
 /* Glossary terms: dotted underline, tap for the definition (gloss() in app.js). */
@@ -870,24 +879,22 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
   .lkhead h3{font-size:var(--fs-xl)}
 }
 .lksrc{color:var(--muted);font-size:var(--fs-s)}
-.lect.cf{color:#8a5a14}
-:root[data-theme="dark"] .lect.cf{color:#d9a75c}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lect.cf{color:#d9a75c}}
-.lkm{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);gap:4px;border-radius:var(--r);overflow:hidden;background:#000}
+.lect.cf{color:var(--cf-ink)}
+.lkm{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);gap:4px;border-radius:var(--r);overflow:hidden;background:var(--photo-bg)}
 @media (min-width:1024px){
   .lkm{grid-template-columns:1fr 1fr}
 }
 /* Pair navigation on the photos themselves: big round arrows at the sides (Pierre: the small arrows under the tips were
    easy to miss on a phone), a swipe anywhere on the pair, and a one-time "Swipe" hint on touch screens. */
 .lkm{position:relative}
-.lkarr{position:absolute;top:50%;z-index:2;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:0;padding:0 0 3px;background:rgb(0 0 0 / .55);color:#fff;font-size:2rem;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgb(0 0 0 / .35)}
+.lkarr{position:absolute;top:50%;z-index:2;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:0;padding:0 0 3px;background:var(--scrim);color:var(--on-photo);font-size:var(--fs-2xl);line-height:1;cursor:pointer;box-shadow:0 2px 8px rgb(0 0 0 / .35)}
 .lkarr:hover,.lkarr:focus-visible{background:var(--accent)}
 .lkarr.prev{left:8px}
 .lkarr.nxt{right:8px}
 @media (min-width:1024px){
   .lkarr{width:52px;height:52px}
 }
-.lkhint{position:absolute;left:50%;bottom:12px;z-index:2;transform:translateX(-50%);background:rgb(0 0 0 / .65);color:#fff;padding:4px 12px;border-radius:999px;font-size:var(--fs-s);white-space:nowrap;pointer-events:none;animation:lkhint 2.4s ease-in-out 3}
+.lkhint{position:absolute;left:50%;bottom:12px;z-index:2;transform:translateX(-50%);background:var(--scrim);color:var(--on-photo);padding:4px 12px;border-radius:var(--pill);font-size:var(--fs-s);white-space:nowrap;pointer-events:none;animation:lkhint 2.4s ease-in-out 3}
 @keyframes lkhint{0%,100%{transform:translateX(-50%)}50%{transform:translateX(calc(-50% - 14px))}}
 .lkm.inr .lkph{animation:lkinr .22s ease-out}
 .lkm.inl .lkph{animation:lkinl .22s ease-out}
@@ -896,11 +903,11 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 @media (prefers-reduced-motion:reduce){
   .lkhint,.lkm.inr .lkph,.lkm.inl .lkph{animation:none}
 }
-.lkph{position:relative;margin:0;overflow:hidden;min-height:0;background:#000}
-.lkph::before{content:"";position:absolute;inset:-30px;background:var(--qbg,#000) center/cover;filter:blur(22px) brightness(.55)}
+.lkph{position:relative;margin:0;overflow:hidden;min-height:0;background:var(--photo-bg)}
+.lkph::before{content:"";position:absolute;inset:-30px;background:var(--qbg,var(--photo-bg)) center/cover;filter:blur(22px) brightness(.55)}
 .lkph .zoom{position:relative;display:block;width:100%;height:100%;padding:0;border:0;background:none;border-radius:0;cursor:zoom-in}
 .lkph img{width:100%;height:100%;object-fit:cover;display:block}
-.lkph figcaption{position:absolute;left:10px;top:10px;background:rgb(0 0 0 / .62);color:#fff;padding:2px 10px;border-radius:var(--r-sm);font-family:var(--display);font-weight:700;font-size:var(--fs-l);pointer-events:none}
+.lkph figcaption{position:absolute;left:10px;top:10px;background:var(--scrim);color:var(--on-photo);padding:2px 10px;border-radius:var(--r-sm);font-family:var(--display);font-weight:700;font-size:var(--fs-l);pointer-events:none}
 .lktips{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
 @media (min-width:1024px){
   .lktips{grid-template-columns:1fr 1fr;gap:10px}
@@ -935,20 +942,24 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 }
 
 /* Quiz feedback after a mix-up: the photo shown next to the genus answered, same view (stacked on phones). */
-/* Names big and centred, sized to the screen (Pierre): the point of this view is which photo is which genus. */
-.qstage.qvs .qph figcaption{left:50%;top:12px;transform:translateX(-50%);max-width:calc(100% - 24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--display);font-weight:700;font-size:clamp(1.25rem,2.4vw,2.4rem);line-height:1.1;padding:.15em .6em;border-radius:var(--r);box-shadow:0 2px 10px rgb(0 0 0 / .35);pointer-events:none}
-.qstage.qvs .qph.qok figcaption{background:var(--good);color:#fff}
-.qstage.qvs .qph.qko figcaption{background:var(--bad);color:#fff}
-.qstage.qvs .qph small{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);white-space:nowrap;background:rgb(0 0 0 / .65);color:#fff;font-size:clamp(.9rem,1.25vw,1.3rem);font-weight:600;padding:.2em .8em;border-radius:var(--pill);pointer-events:none}
+/* Names big and centred, sized to the screen (Pierre): the point of this view is which photo is which genus. One step of the
+   type scale per size class (phone 20, tablet 24, desktop 36 px) instead of a fluid size (design re-review p10). */
+.qstage.qvs .qph figcaption{left:50%;top:12px;transform:translateX(-50%);max-width:calc(100% - 24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--display);font-weight:700;font-size:var(--fs-xl);line-height:1.1;padding:.15em .6em;border-radius:var(--r);box-shadow:0 2px 10px rgb(0 0 0 / .35);pointer-events:none}
+.qstage.qvs .qph.qok figcaption{background:var(--good);color:var(--surface)}
+.qstage.qvs .qph.qko figcaption{background:var(--bad);color:var(--surface)}
+.qstage.qvs .qph small{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);white-space:nowrap;background:var(--scrim);color:var(--on-photo);font-size:var(--fs-m);font-weight:600;padding:.2em .8em;border-radius:var(--pill);pointer-events:none}
 /* Phone base (mobile-first); larger screens restore below. */
 .q .qstage.qvs .qph .zoom::after{display:none}
-.q .qstage.qvs .qph figcaption{top:8px;font-size:clamp(1.05rem,5vw,1.4rem)}
+.q .qstage.qvs .qph figcaption{top:8px;font-size:var(--fs-l)}
+@media (min-width:600px){
+  .q .qstage.qvs .qph figcaption{font-size:var(--fs-xl)}
+}
 .q .qstage.qvs .qph small{bottom:8px;font-size:var(--fs-xs);padding:.15em .6em}
 
 @media (min-width:1024px){
   .q .qstage.qvs .qph .zoom::after{display:grid}
-  .q .qstage.qvs .qph figcaption{top:12px;font-size:clamp(1.25rem, 2.4vw, 2.4rem)}
-  .q .qstage.qvs .qph small{bottom:12px;font-size:clamp(0.9rem, 1.25vw, 1.3rem);padding:0.2em 0.8em}
+  .q .qstage.qvs .qph figcaption{top:12px;font-size:var(--fs-2xl)}
+  .q .qstage.qvs .qph small{bottom:12px;font-size:var(--fs-m);padding:0.2em 0.8em}
 }
 
 
@@ -963,7 +974,7 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
    wraps (phones, design review 2026-11-01). */
 .pwall .pw .pwb i{flex:0 0 auto;max-width:100%;white-space:normal;overflow-wrap:break-word}
 @media (max-width:599.98px){.pwall .pw .pwb{padding:3px 5px}.pwall .pw .pwb i{flex:1 1 100%;line-height:1.15}.pwall .pw .pwb .pct{margin-left:0}}
-.pwall .pw .pwb .pct{display:inline-flex;align-items:center;gap:4px;margin-left:auto;font-size:.9em;font-weight:700;font-style:normal;font-variant-numeric:tabular-nums;flex:none}
+.pwall .pw .pwb .pct{display:inline-flex;align-items:center;gap:4px;margin-left:auto;font-size:var(--fs-xs);font-weight:700;font-style:normal;font-variant-numeric:tabular-nums;flex:none}
 .pwall .pw.s5 .pwb i::after{content:" \2713";font-style:normal;font-weight:700}
 .pwall .pw:hover img{filter:none;transform:scale(1.03);transition:transform .2s}
 
@@ -972,7 +983,7 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 #tour svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #tour .tdim{fill:rgb(8 20 24 / .58);pointer-events:auto}
 #tour .tring{fill:none;stroke:var(--accent);stroke-width:2.5}
-#tour .tarw{fill:var(--accent);stroke:#fff;stroke-width:2.5;stroke-linejoin:round;filter:drop-shadow(0 2px 6px rgb(0 0 0 / .45));animation:tbob 1.1s ease-in-out infinite}
+#tour .tarw{fill:var(--accent);stroke:var(--accent-ink);stroke-width:2.5;stroke-linejoin:round;filter:drop-shadow(0 2px 6px rgb(0 0 0 / .45));animation:tbob 1.1s ease-in-out infinite}
 @keyframes tbob{50%{transform:translateY(-8px)}}
 @media (prefers-reduced-motion:reduce){#tour .tarw{animation:none}}
 #tour .tbub.mid{bottom:auto}
@@ -1154,11 +1165,11 @@ html.touring body::after{content:"";display:block;height:80vh}
 .ulflip{position:relative;width:min(240px,70vw);aspect-ratio:4/3;margin:0 auto 14px;perspective:900px}
 .ulback,.ulfront{position:absolute;inset:0;border-radius:var(--r);backface-visibility:hidden;overflow:hidden;animation:.7s .35s ease-in-out both}
 .ulback{display:grid;place-items:center;border:2px dashed var(--line);background:var(--surface-2);color:var(--muted);animation-name:ulturnback}
-.ulback b{font:700 3.4rem/1 var(--body)}
+.ulback b{font:700 var(--fs-2xl)/1 var(--body)}
 .ulfront{animation-name:ulturnfront;box-shadow:0 0 0 3px var(--accent),0 0 24px var(--accent)}
 .ulfront img{width:100%;height:100%;object-fit:cover;display:block}
 .ulkick{margin:0;color:var(--accent);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:var(--fs-xs)}
-.ulcard h3{margin:2px 0 6px;font-size:1.6rem}
+.ulcard h3{margin:2px 0 6px;font-size:var(--fs-xl)}
 .ulnote{margin:0 0 10px;color:var(--muted);font-size:var(--fs-s)}
 .ultips{text-align:left;margin:0 0 12px}
 .ultips .label{margin:0 0 4px}
