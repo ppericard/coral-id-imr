@@ -193,3 +193,38 @@ test('a duel on a chosen pair keeps its mode (rated as 2 choices)', () => {
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('d1', {m: 'quiz-duel|Acropora|Montipora'})]});
   assert.strictEqual(s.sheets.Answers.getRange(2, 6).getValue(), 'quiz-duel|Acropora|Montipora');
 });
+
+// Self-update (v11): a higher VERSION on GitHub main replaces the code, makes a version and repoints the web app.
+const CODE = require('fs').readFileSync(require('path').join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8');
+const resp = (code, body) => ({getResponseCode: () => code, getContentText: () => typeof body === 'string' ? body : JSON.stringify(body)});
+function fakeGoogle(remote){
+  const calls = [];
+  return {calls, fetch: (url, o) => {
+    if (url.includes('raw.githubusercontent.com')) return url.includes('Code.gs') ? resp(200, remote) : resp(200, '{"timeZone":"Asia/Manila"}');
+    if (!url.includes('script.googleapis.com')) return null;
+    const m = (o.method || 'get').toLowerCase(), p = url.replace(/^.*\/projects\/SCRIPT_ID/, '');
+    calls.push(m + ' ' + p + (o.payload ? ' ' + o.payload.slice(0, 80) : ''));
+    if (m === 'get' && p === '/content') return resp(200, {files: [{name: 'appsscript', type: 'JSON', source: '{}'}, {name: 'Code', type: 'SERVER_JS', source: 'old'}]});
+    if (m === 'post' && p === '/versions') return resp(200, {versionNumber: 7});
+    if (m === 'get' && p === '/deployments') return resp(200, {deployments: [{deploymentId: 'HEAD', deploymentConfig: {}}, {deploymentId: 'WEB', deploymentConfig: {versionNumber: 6}, entryPoints: [{entryPointType: 'WEB_APP'}]}]});
+    return resp(200, {});
+  }};
+}
+test('autoUpdate: same version on GitHub does nothing', () => {
+  const g = fakeGoogle(CODE), s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^up to date/); assert.deepStrictEqual(g.calls, []);
+});
+test('autoUpdate: a higher version is installed and the web app deployment repointed', () => {
+  const next = CODE.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + 1};`);
+  const g = fakeGoogle(next), s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^deployed v/);
+  assert.deepStrictEqual(g.calls.map(c => c.split(' ').slice(0, 2).join(' ')), ['get /content', 'put /content', 'post /versions', 'get /deployments', 'put /deployments/WEB']);
+  assert.ok(g.calls[1].includes('"name":"appsscript"'));
+  assert.ok(g.calls[4].includes('"versionNumber":7'));
+  assert.match(String(s.sheets['Deploy log'].rows[1][1]), /^deployed v\d+ as version 7 \(1 web app deployment\)/);
+});
+test('autoUpdate: never installs a version that would stop the updates', () => {
+  const next = CODE.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + 1};`).replace(/function autoUpdate\(/g, 'function gone(');
+  const g = fakeGoogle(next), s = loadCodeGs({fetch: g.fetch});
+  assert.strictEqual(s.ctx.autoUpdate(), 'skipped'); assert.deepStrictEqual(g.calls, []);
+});
