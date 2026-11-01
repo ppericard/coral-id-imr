@@ -4659,6 +4659,14 @@ html.touring body::after {
   grid-column: 2;
   justify-content: flex-start;
 }
+/* With the player's badge (Pierre, 2026-11-01: "not great use of space"): ring and badge side by side, the legend under them. */
+.pboard .gside > .pbadge {
+  grid-column: 2;
+  margin: 0;
+}
+.pboard .gside > .pbadge ~ .plvl {
+  grid-column: 1 / -1;
+}
 .pboard .gside > .plvlnote {
   justify-content: flex-start;
 }
@@ -5599,5 +5607,15 @@ footer .rep:hover {
   }
   .confetti {
     display: none;
+  }
+}
+@media (max-width: 1023.98px) {
+  .pbadge {
+    padding: 8px 10px;
+  }
+  .pbav {
+    width: 36px;
+    height: 36px;
+    font-size: var(--fs-m);
   }
 }
