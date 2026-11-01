@@ -3822,6 +3822,13 @@ if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr);
 else addEventListener('resize', hdrMetrics);
 // A missing side file (404) counts as a failure, not as an empty file: softFail says so.
 const okJson = r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)));
+// Unstable connection (Pierre, 2026-11-01): a start-up file that fails is fetched again, up to 3 tries (1 s, then 2 s
+// apart); a 404 is final.
+const getR = (u, o, n = 3) =>
+  fetch(u, o).then(
+    r => (r.ok || r.status === 404 || n <= 1 ? r : new Promise(ok => setTimeout(ok, 1000 * (4 - n))).then(() => getR(u, o, n - 1))),
+    e => (n <= 1 ? Promise.reject(e) : new Promise(ok => setTimeout(ok, 1000 * (4 - n))).then(() => getR(u, o, n - 1)))
+  );
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
 // Pierre's curation, also kept in localStorage (imr-curation-last): if curation.json can't be read (offline, and not in the
 // service worker cache), the app uses the last copy it saw instead of none, so excluded or moved photos never come back
@@ -3840,7 +3847,7 @@ const curation = () => {
   }
   return dr
     ? Promise.resolve(dr)
-    : fetch('curation.json', {cache: 'no-cache'})
+    : getR('curation.json', {cache: 'no-cache'})
         .then(okJson)
         .then(c => {
           store.set(CUR_LAST, c);
@@ -3852,13 +3859,13 @@ const curation = () => {
         });
 };
 const forms = () =>
-  fetch('forms.json?v=7')
+  getR('forms.json?v=7')
     .then(okJson)
     .catch(softFail('forms.json', {}))
     .then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}}))
     .catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u =>
-  fetch(u)
+  getR(u)
     .then(okJson)
     .catch(softFail(u.replace(/\?.*/, ''), {}));
 // The page's later scripts (home.js, tour.js...) must be in before the first route: a fast or cached data.json could
@@ -3874,7 +3881,7 @@ const draftCand = () =>
         .catch(() => ({}))
     : Promise.resolve({});
 Promise.all([
-  fetch('data.json?v=30').then(r => r.json()),
+  getR('data.json?v=30').then(okJson),
   curation(),
   forms(),
   json('quality.json?v=3'),
@@ -3903,6 +3910,9 @@ Promise.all([
     sendAnon();
     loadStats();
     window.APP_READY = true;
+    try {
+      sessionStorage.removeItem('imr-reload'); // index.html: start-up reloads after a failed app file
+    } catch (e) {}
     if (window.tourFirst) tourFirst();
     boardNotice();
     // Fetched ahead once the start-up is over (Pierre, 2026-11-01): the leaderboard and the achievement shares, so their
@@ -3914,7 +3924,9 @@ Promise.all([
     }, 2500);
   })
   .catch(() => {
-    $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>';
+    $v.innerHTML =
+      '<p class="warn">Could not load the data. Check your connection. <button type="button" class="linkish" id="reload">Try again</button></p>';
+    document.getElementById('reload').onclick = () => location.reload();
   });
 // A tab left open for days still follows Pierre's published curation (e.g. the CF book switch): when the tab comes back
 // into view (or every 30 min while visible), curation.json is read again; a change applies at the next screen (route),

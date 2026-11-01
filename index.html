@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <!-- CSP (code review 2026-11-01, L2): scripts only from this site; the inline theme script is allowed by its hash, checked by tests/csp.test.js. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-X/v0Mr+YT/Fgy6ZPABgbzrjNdjq1Cp0y9h7WoVOuyDg='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://api.github.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-X/v0Mr+YT/Fgy6ZPABgbzrjNdjq1Cp0y9h7WoVOuyDg=' 'sha256-lYWkIgx2jo9bYzrh3AvqvVnIeRS+XvfZdWn/su9kGgs='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://api.github.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="author" content="Pierre Pericard">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>IMR Coral ID</title>
@@ -29,6 +29,8 @@
 <link rel="stylesheet" href="home.css?v=22">
 </head>
 <body>
+<!-- Unstable connection: an app file (script, stylesheet) that fails to load during start-up reloads the page, twice at most (sessionStorage imr-reload, cleared once the app is ready); files already in come from the cache. -->
+<script>addEventListener("error",function(e){var t=e.target;if(window.APP_READY||!t||!(t.tagName==="SCRIPT"||(t.tagName==="LINK"&&t.rel==="stylesheet")))return;try{var n=+(sessionStorage.getItem("imr-reload")||0);if(n<2){sessionStorage.setItem("imr-reload",n+1);setTimeout(function(){location.reload()},1500)}}catch(x){}},true)</script>
 <script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t;var p=localStorage.getItem("imr-coral-palette");document.documentElement.dataset.palette=p&&p!=="reef"?p:"depth";if(localStorage.getItem("imr-coral-cvd")==="1")document.documentElement.dataset.cvd="1"}catch(e){document.documentElement.dataset.palette="depth"}</script>
 <div class="wrap">
   <header>

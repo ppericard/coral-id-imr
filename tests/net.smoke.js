@@ -38,6 +38,7 @@ const server = http.createServer((req, res) => {
 // 4. The leaderboard shows the copy kept on the device at once while the sync script is slow.
 // 5. Leaving a page drops its photos still loading.
 // 6. The service worker installs even when each app file fails once (retried at install).
+// 8. Start-up recovers when app.js and data.json fail once (reload, retries).
 // 7. Photo sizes follow the box, the screen density and the Photo quality setting (Auto, Saver, Full); thumbnails 240 px.
 // Speed numbers are measured by tools/perf.js, not here. Locally: node tests/net.smoke.js
 (async () => {
@@ -228,6 +229,22 @@ const server = http.createServer((req, res) => {
       if (t.length === 1 && t[0] !== 'full') fails.push(`Big 2x screen single quiz photo not 1600 px: ${t}`);
     });
   }
+  // 8. Start-up on an unstable line: app.js and data.json fail once each, the app still starts (page reload, retry).
+  {
+    const {ctx, p, errs} = await ctxOf();
+    const seen = new Set();
+    await ctx.route(/\/(app\.js|data\.json)\?v=/, r => {
+      const u = r.request().url().replace(/\?.*/, '');
+      if (seen.has(u)) return r.fallback();
+      seen.add(u);
+      return r.abort('connectionreset');
+    });
+    await p.goto(base);
+    await p
+      .waitForFunction(() => window.APP_READY, null, {timeout: 20000})
+      .catch(() => fails.push('Start-up did not recover from app.js and data.json failing once'));
+    await ctx.close();
+  }
   // 6. Service worker install on an unstable line: every app file fails once, the install still completes.
   {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}});
@@ -265,7 +282,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries, photo sizes.'
+    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries, photo sizes, start-up retries.'
   );
 })().catch(e => {
   console.error(e);
