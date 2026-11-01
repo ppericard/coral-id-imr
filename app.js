@@ -1921,6 +1921,7 @@ function badge() {
     <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
     <a id="pbrank" href="#board">🏆 ${name ? '' : 'Leaderboard · '}Elo ${eloScore(G && typeof G.th === 'number' ? G.th : 0)}</a>
     <a href="#ach">🏅 <b>${got.length}</b>/${ACH.length} ${got
+      .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
       .slice(0, 3)
       .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
       .join('')}</a></div></div>`;
