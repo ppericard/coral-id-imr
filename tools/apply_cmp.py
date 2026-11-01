@@ -1,5 +1,6 @@
 # Moves the lecture comparison images listed in tools/lecture_cmp.tsv out of course/views/more into data.json "cmp".
 import json, os
+from datajson import dump  # the one data.json layout (one genus per line)
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 d = json.load(open(f'{R}/data.json'))
 cmp = {c['f']: c for c in d.get('cmp', [])}
@@ -16,5 +17,5 @@ for l in open(f'{R}/tools/lecture_cmp.tsv'):
     base = cmp.get(f) or {k: v for k, v in (found or {}).items() if k in ('f', 'imr', 'slide')} or {'f': f, 'imr': True}
     cmp[f] = {**base, 'g': gs.split(','), 'cap': cap}
 d['cmp'] = list(cmp.values())
-json.dump(d, open(f'{R}/data.json', 'w'), ensure_ascii=False, separators=(',', ':'))
+dump(d, f'{R}/data.json')
 print(d['cmp'])

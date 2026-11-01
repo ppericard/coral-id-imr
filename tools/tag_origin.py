@@ -2,6 +2,7 @@
 # ph (elsewhere in the Philippines) or world. Pierre's own photos are all from Dauin. IMR lecture photos
 # (course) are left untagged and shown in every mode. Run after the build scripts.
 import json, math, urllib.request
+from datajson import dump  # the one data.json layout (one genus per line)
 d = json.load(open('data.json'))
 P = [p for g in d['gen'].values() for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L]
 P += [p for L in (d.get('cand') or {}).values() for p in L]
@@ -18,5 +19,5 @@ def loc(p):
     if math.hypot((la - 9.19) * 111, (lo - 123.26) * 109.6) <= 40: return 'dauin'
     return 'ph' if 4.5 <= la <= 21.5 and 116 <= lo <= 127 else 'world'
 for p in P: p['loc'] = loc(p)
-json.dump(d, open('data.json', 'w'), ensure_ascii=False, separators=(',', ':'))
+dump(d, 'data.json')
 from collections import Counter; print(Counter(p['loc'] for p in P))

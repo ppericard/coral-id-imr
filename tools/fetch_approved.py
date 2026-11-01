@@ -6,6 +6,7 @@
 # Run from the repo root; the GitHub Action .github/workflows/approved-photos.yml runs it after every curation.json
 # publish and commits the result. Option --all-remote-unused deletes the local files of candidates nobody added.
 import json, os, sys, urllib.request, urllib.parse, concurrent.futures as cf
+from datajson import dump  # the one data.json layout (one genus per line)
 from PIL import Image
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 d = json.load(open('data.json'))
@@ -46,5 +47,5 @@ if '--all-remote-unused' in sys.argv:
             for suf in ('', '-s'):
                 if os.path.exists(f"img/{p['f']}{suf}.webp"): os.remove(f"img/{p['f']}{suf}.webp")
             p['r'] = 1; gone += 1
-if done or gone: json.dump(d, open('data.json', 'w'), ensure_ascii=False, separators=(',', ':'))
+if done or gone: dump(d, 'data.json')
 print(f'downloaded {done}, made remote {gone}')

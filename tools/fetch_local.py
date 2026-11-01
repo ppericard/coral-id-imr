@@ -8,6 +8,7 @@
 # New candidates are NOT downloaded (r: 1 = shown straight from iNaturalist, from src): only the ones Pierre adds are,
 # by tools/fetch_approved.py (GitHub Action on each curation.json publish), so the repo never stores rejected photos.
 import json, re, sys, time, urllib.request
+from datajson import dump  # the one data.json layout (one genus per line)
 from collections import Counter
 from excluded import excluded, drop_excluded
 UA = {'User-Agent': 'coral-id-imr/1.0'}
@@ -74,5 +75,5 @@ for g in GEN:
     print(g, len(cand.get(g, [])))
 d['cand'] = cand
 drop_excluded(d)
-json.dump(d, open('data.json', 'w'), ensure_ascii=False, separators=(',', ':'))
+dump(d, 'data.json')
 print('total', sum(map(len, cand.values())))
