@@ -108,6 +108,17 @@ const excl = f => (DRAFT.exclude || {})[f];
 const xChanged = () => !same(DRAFT.exclude || {}, SAVED.exclude || {});
 // Coral Finder book photos on the site (curation.json "book": false switches every one of them off at once).
 const mtChanged = () => !same(DRAFT.mont || {}, SAVED.mont || {});
+// Lead photos of the growth-form tiles on the Coral Finder start (curation.json "tile" {form letter: [f, ...]}, at most
+// 3, in click order): set with 📌 in the Growth form view. A pinned photo leads its IMR form's tile and the Coral Finder
+// tile that starts from that form (Br → Branching, En → Thin plates and crusts, Ma → Massive, Sm → Columns,
+// Mu → Solitary); the tile's other places stay automatic. One click pins or unpins; a 4th pin drops the oldest.
+const TILE_MAX = 3, tileOf = c => ((DRAFT.tile || {})[c] || []), tlChanged = () => !same(DRAFT.tile || {}, SAVED.tile || {});
+function togglePin(f, c){
+  const T = {...(DRAFT.tile || {})}, L = (T[c] || []).filter(x => x !== f);
+  if (L.length === (T[c] || []).length) { L.push(f); if (L.length > TILE_MAX) L.shift(); }
+  if (L.length) T[c] = L; else delete T[c];
+  DRAFT.tile = T; saveDraft();
+}
 // Crops (curation.json "crop" {f: [left, top, right, bottom]} as fractions of the photo): set in the Candidates view;
 // tools/fetch_approved.py applies them when it downloads the photo (and redoes it if the crop changes).
 const crOf = f => (DRAFT.crop || {})[f], crChanged = () => !same(DRAFT.crop || {}, SAVED.crop || {});
@@ -143,6 +154,9 @@ function putF(f, letter, pol){
   // Always recorded, even when it matches the first guess, so a new forms.json can never change it.
   const v = letter + (pol === true ? 'p' : pol === false ? 'n' : '');
   if (v) DRAFT.gf[f] = v; else delete DRAFT.gf[f];
+  // A photo given another form leaves the tile it was pinned to (in the same undo step).
+  // Compared with the form the photo has now (an automatic guess counts), so a polyps click never unpins it.
+  if (DRAFT.tile) { const now = fOf(f), T = {}; Object.entries(DRAFT.tile).forEach(([c, L]) => { const K = c === now ? L : L.filter(x => x !== f); if (K.length) T[c] = K; }); DRAFT.tile = T; }
   saveDraft();
 }
 const setF = (f, c) => putF(f, c, fP(mineF(f)));
@@ -386,7 +400,7 @@ function tile(n, p, v, st){
 // Small × on each photo: exclude it for good (a person, a drawing, AI…).
 const XBTN = '<button type="button" class="adm-x" data-act="exclude" title="Exclude" aria-label="Exclude for good">×</button>';
 function status(){
-  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : '', flChanged() ? 'triage flags' : '', sgChanged() ? 'triage suggestions' : '', cdChanged() ? 'candidate reviews' : '', mtChanged() ? 'look-alike montages' : '', crChanged() ? 'crops' : '', snChanged() ? 'several corals' : ''].filter(Boolean);
+  const ch = changed(), q = qChanged(), x = xChanged(), parts = [ch.length ? `${ch.length} ${ch.length > 1 ? 'genera' : 'genus'}` : '', q ? 'quality ratings' : '', fChanged() ? 'growth forms' : '', x ? 'exclusions' : '', bChanged() ? 'book photos switch' : '', flChanged() ? 'triage flags' : '', sgChanged() ? 'triage suggestions' : '', cdChanged() ? 'candidate reviews' : '', mtChanged() ? 'look-alike montages' : '', crChanged() ? 'crops' : '', snChanged() ? 'several corals' : '', tlChanged() ? 'tile photos' : ''].filter(Boolean);
   const bs = $('booksw'); if (bs) { bs.setAttribute('aria-pressed', String(bookOn(DRAFT))); bs.textContent = `CF book: ${bookOn(DRAFT) ? 'on' : 'off'}`; }
   const tn = Object.keys(DRAFT.flag || {}).length + sugCount() + repsOpen().length, ta = document.querySelector('[data-mode="triage"]'); if (ta) ta.textContent = `Triage${tn ? ` (${tn})` : ''}`;
   const xn = Object.keys(DRAFT.exclude || {}).length, xa = document.querySelector('[data-mode="excluded"]'); if (xa) xa.textContent = `Excluded${xn ? ` (${xn})` : ''}`;
@@ -630,6 +644,7 @@ const HELP = {
     <p><b>Symbols.</b> Genus list: <b>✓</b> validated and complete; <b>!</b> validated but something is missing again; <b>●</b> draft not published; <b>⚠ check</b> a choice names a photo no longer in the data; <b>N waiting</b> candidates not reviewed yet; <b>macro cover</b> the cover is a close-up. Photos: <b>filled number 1-3</b> featured; <b>outlined number 4-6</b> also on the genus sheet; <b>dashed frame</b> a candidate, not on the site yet; <b>faded dashed frame</b> removed (back with the candidates); <b>added</b> a candidate you added; <b>Cover</b> the cover photo. Dashed tags or buttons are guesses, solid ones are your choices. <b>3 zooms / 2 zooms</b>: with 2, Close-up photos join Colony.</p>`,
   form: `<p>The 7 IMR growth forms (Lecture 6, slides 3-10), one per photo, the main form visible: <b>Br</b> Branching, <b>En</b> Encrusting, <b>Ta</b> Tabulate, <b>Mu</b> Mushroom, <b>Ma</b> Massive, <b>Sm</b> Submassive, <b>Fo</b> Foliose/Plating; <b>∅</b> = form not visible (too close). <b>✿</b> = polyps or vesicles extended (not a form; it fills the Coral Finder "Large daytime polyps" tile).</p>
     <p>The Coral Finder growth-form tiles use them: Branching = Br + Ta, Thin plates and crusts = En + Fo, Massive or thick = Ma + Sm, Columns = Sm, Solitary = Mu, Meandering = any form of the genera it lists. Dashed = a first guess, solid = yours (always wins); a red ? = a guess to double-check.</p>
+    <p><b>📌</b> makes a photo a lead photo of its form's tile on the site's Coral Finder start (up to 3 per form, number = place; a 4th drops the oldest); the tile's other places stay automatic. Br leads Branching, En Thin plates and crusts, Ma Massive, Sm Columns, Mu Solitary.</p>
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" in the footer of any page (wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
@@ -654,14 +669,21 @@ function toggleHelp(){
 // One row per IMR growth form, then "Form not visible" and the photos still to classify (by old Coral Finder letter). Click a letter on a photo (one form per photo; ∅ = form not visible), drag it to another row,
 // or hover it and press the key (b e t u m s f, x or 0 for not visible, p for polyps). The tile stays put until a filter changes.
 const FF = Object.assign({view: 'all', genus: '', todo: false, pol: false}, store.get('imr-admin-ffilter', {}));
+// 📌 (Growth form view): only on photos the Coral Finder tiles can show (colony or close-up view, one coral, not a
+// book photo), so a pin always counts; the number is its place on the tile.
+const pinOK = p => (p.view === 'wide' || p.view === 'medium') && !p.multi && !p.cf;
+const pinBtn = f => { const c = fOf(f); if (!c || c === 'x') return ''; const k = tileOf(c).indexOf(f);
+  return `<button type="button" class="adm-pin" data-pin="${c}" aria-pressed="${k >= 0}" title="${k >= 0 ? `Tile photo ${k + 1} of ${fName(c)} on the Coral Finder start: click to unpin` : `Make it a lead photo of the ${fName(c)} tile on the Coral Finder start`}">📌${k >= 0 ? k + 1 : ''}</button>`; };
+// After a form or polyps click the pin follows the photo's current form (the form change already unpinned it if needed).
+const pinRefresh = t => { const w = t.querySelector('.adm-pinw'); if (w) w.innerHTML = pinBtn(t.dataset.f); };
 function formTile(t, v){
   setF(t.dataset.f, v); const p = {f: t.dataset.f};
-  t.querySelector('.adm-fseg').outerHTML = fSeg(p);
+  t.querySelector('.adm-fseg').outerHTML = fSeg(p); pinRefresh(t);
   if (cur === '~form') t.classList.add('rated'); bindF(t); status();
 }
 // One form per photo (Pierre): a click picks that form and replaces the previous one; when in doubt, the main form.
 const toggleF = (f, c) => c;
-function polTile(t){ setP(t.dataset.f, !pOf(t.dataset.f)); t.querySelector('.adm-fseg').outerHTML = fSeg({f: t.dataset.f}); bindF(t); status(); }
+function polTile(t){ setP(t.dataset.f, !pOf(t.dataset.f)); t.querySelector('.adm-fseg').outerHTML = fSeg({f: t.dataset.f}); pinRefresh(t); bindF(t); status(); }
 function bindF(scope){ scope.querySelectorAll('.adm-fseg [data-fm]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.closest('[data-f]'); formTile(t, toggleF(t.dataset.f, b.dataset.fm)); });
   scope.querySelectorAll('.adm-fseg [data-pol]').forEach(b => b.onclick = e => { e.stopPropagation(); polTile(b.closest('[data-f]')); }); }
 function renderForm(){
@@ -672,7 +694,7 @@ function renderForm(){
   const card = p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"${crStyle(p.f)}></button>${GRIP}${XBTN}
     <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}</figcaption>
-    <div class="adm-acts">${fSeg(p)}</div></figure>`;
+    <div class="adm-acts">${fSeg(p)}${pinOK(p) ? `<span class="adm-pinw">${pinBtn(p.f)}</span>` : ''}</div></figure>`;
   // Still to classify: grouped by the old Coral Finder letter, as a hint.
   const rows = [...[...FORM_ORDER].map(c => [c, fName(c), p => fOf(p.f) === c]), ['x', 'Form not visible', p => fOf(p.f) === 'x'],
     ...[...'BMSPFLC', ''].map(c => ['', `To classify${c ? ` · was Coral Finder ${cfName(c)}` : ''}`, p => !fOf(p.f) && (LEGACY[p.f] || '') === c])];
@@ -696,6 +718,7 @@ function renderForm(){
   $('fpol').onchange = e => { FF.pol = e.target.checked; saveFF(); };
   $v.querySelectorAll('[data-act="zoom"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'); zoom(t.dataset.g, t.dataset.f); });
   $v.querySelectorAll('[data-act="exclude"]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.closest('[data-f]'); ACT.exclude(t.dataset.g, t.dataset.f); });
+  $v.querySelectorAll('.adm-pinw').forEach(w => w.onclick = e => { const b = e.target.closest('[data-pin]'); if (!b) return; e.stopPropagation(); togglePin(b.closest('[data-f]').dataset.f, b.dataset.pin); renderForm(); });
   // Validate a whole row: every first guess still shown in it (with the filters on) becomes Pierre's own choice, in one undo step.
   $v.querySelectorAll('[data-fok]').forEach(b => b.onclick = () => { const c = b.dataset.fok, todo = all.filter(p => fOf(p.f) === c && !fSet(p.f));
     if (!confirm(`Validate ${todo.length} growth form${todo.length === 1 ? '' : 's'} as ${FABBR[c] || c}?`)) return;
@@ -1011,7 +1034,8 @@ const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAF
   const mont = {}; Object.keys(DRAFT.mont || {}).sort().forEach(k => { mont[k] = DRAFT.mont[k]; });
   const crop = {}; Object.keys(DRAFT.crop || {}).sort().forEach(k => { crop[k] = DRAFT.crop[k]; });
   const single = {}; Object.keys(DRAFT.single || {}).sort().forEach(k => { single[k] = DRAFT.single[k]; });
-  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(gf).length ? {gf} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {}), ...(Object.keys(flag).length ? {flag} : {}), ...(Object.keys(use).length ? {use} : {}), ...(Object.keys(single).length ? {single} : {}), ...(Object.keys(seen).length ? {seen} : {}), ...(Object.keys(mont).length ? {mont} : {}), ...(Object.keys(crop).length ? {crop} : {})}; };
+  const tile = {}; Object.keys(DRAFT.tile || {}).sort().forEach(k => { if ((DRAFT.tile[k] || []).length) tile[k] = DRAFT.tile[k]; });
+  return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(gf).length ? {gf} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {}), ...(Object.keys(flag).length ? {flag} : {}), ...(Object.keys(use).length ? {use} : {}), ...(Object.keys(single).length ? {single} : {}), ...(Object.keys(seen).length ? {seen} : {}), ...(Object.keys(mont).length ? {mont} : {}), ...(Object.keys(crop).length ? {crop} : {}), ...(Object.keys(tile).length ? {tile} : {})}; };
 // Who publishes, shown in the commit message (Pierre, 2026-11-01, admin review): the token's GitHub login, else the
 // name synced in this browser. Looked up once per page; a failure only leaves the name out.
 let AUTHOR;
@@ -1024,7 +1048,7 @@ function pubSummary(){
   const W = {feat: 'featured', cover: 'cover', hide: 'hidden', move: 'view moves', add: 'added photos', out: 'not this genus', lv: 'zooms', ok: 'validated'};
   const L = [[nDiff(DRAFT.quality, SAVED.quality), 'quality rating'], [nDiff(DRAFT.gf, SAVED.gf), 'growth form'], [nDiff(DRAFT.exclude, SAVED.exclude), 'exclusion'],
     [nDiff(seenOf(DRAFT, true), seenOf(SAVED, true)), 'candidate review'], [nDiff(seenOf(DRAFT, false), seenOf(SAVED, false)) + nDiff(DRAFT.use, SAVED.use), 'triage suggestion'],
-    [nDiff(DRAFT.flag, SAVED.flag), 'triage flag'], [nDiff(DRAFT.crop, SAVED.crop), 'crop'], [nDiff(DRAFT.single, SAVED.single), 'several-corals mark'], [nDiff(DRAFT.mont, SAVED.mont), 'look-alike pair']]
+    [nDiff(DRAFT.flag, SAVED.flag), 'triage flag'], [nDiff(DRAFT.crop, SAVED.crop), 'crop'], [nDiff(DRAFT.single, SAVED.single), 'several-corals mark'], [nDiff(DRAFT.mont, SAVED.mont), 'look-alike pair'], [nDiff(DRAFT.tile, SAVED.tile), 'growth-form tile']]
     .filter(([c]) => c).map(([c, t]) => `${c} ${t}${c > 1 ? 's' : ''}`);
   if (bChanged()) L.push(`Coral Finder book photos ${bookOn(DRAFT) ? 'ON' : 'OFF'} on the whole site`);
   const G = changed().map(n => { const a = DRAFT.genera[n] || {}, b = SAVED.genera[n] || {};
@@ -1032,7 +1056,7 @@ function pubSummary(){
   return [...L, ...(G.length ? [`${G.length} ${G.length > 1 ? 'genera' : 'genus'}:`, ...G.slice(0, 12).map(x => '  ' + x), ...(G.length > 12 ? [`  and ${G.length - 12} more`] : [])] : [])].join('\n');
 }
 async function save(){
-  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(), sg = sgChanged(), cd = cdChanged(), mt = mtChanged(), cr = crChanged(), sn = snChanged(); if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn) || !TOKEN) return;
+  const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(), sg = sgChanged(), cd = cdChanged(), mt = mtChanged(), cr = crChanged(), sn = snChanged(), tl = tlChanged(); if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn || tl) || !TOKEN) return;
   if (!confirm(`Publish to the public site?\n\n${pubSummary()}`)) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
   const conf = [];
@@ -1041,7 +1065,7 @@ async function save(){
     if (f && f.sha !== SHA) { conf.push(...rebase(JSON.parse(fromB64(f.content)))); SHA = f.sha; } };
   try {
     await fresh();
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const who = await author(), stale = x => /does not match|sha|409/i.test(x.message);
     // A publish from elsewhere between the read and the write: read again, merge, and try once more on our own.
     const put = () => { const out = output(); return gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg + (who ? ` (by ${who})` : ''), content: toB64(JSON.stringify(out, null, 2) + '\n'), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})}).then(r => [r, out]); };
