@@ -547,3 +547,14 @@ td.cov-c .cov-off{display:block;font-size:.62rem;font-weight:500;line-height:1.1
 .adm-acts button.adm-pin{padding:0 7px;opacity:.45;filter:grayscale(1)}
 .adm-acts button.adm-pin:hover,.adm-acts button.adm-pin:focus-visible{opacity:1}
 .adm-acts button.adm-pin[aria-pressed="true"]{opacity:1;filter:none;background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+
+/* Users (Stats > Users): one row per player, click for details; Delete in the danger colour, never a default button. */
+.adm-utbl .adm-urow{cursor:pointer}
+.adm-utbl .adm-urow:hover td,.adm-utbl .adm-urow.open td{background:var(--surface-2)}
+.adm-utbl .adm-udet > td{white-space:normal;padding:8px 0 12px;background:var(--bg)}
+.adm-utbl .adm-udet .adm-sgrid{margin:0;position:sticky;left:0;max-width:calc(100vw - 50px)}
+.adm-danger{font:inherit;font-size:.85rem;padding:5px 14px;border-radius:var(--pill);border:1px solid var(--bad);background:var(--surface);color:var(--bad);cursor:pointer}
+.adm-danger:hover{background:var(--bad-bg)}
+.adm-utbl select,.adm-scard select{font:inherit;font-size:.85rem;padding:4px 8px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--ink)}
+.adm-uremoved{margin-top:12px;color:var(--muted)}
+.adm-uremoved summary{cursor:pointer}

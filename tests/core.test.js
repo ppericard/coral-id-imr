@@ -1,6 +1,6 @@
 // core.js: curation merge (admin Publish), progress merge (two devices), photo Elo (same as Code.gs stats_).
 const test = require('node:test'), assert = require('node:assert');
-const {merge3, mergeOld, mergeProgress, eloOf, confusionOf, confScore, CONF, pairConf} = require('../core.js');
+const {merge3, mergeOld, mergeProgress, eloOf, confusionOf, confScore, CONF, pairConf, mergeUsers} = require('../core.js');
 const {loadCodeGs} = require('./gas.js');
 
 test('merge3: my changes win, changes published elsewhere are kept', () => {
@@ -147,4 +147,20 @@ test('a quiz question with easy wrong choices (quiz|k2) is rated with a 1/2 gues
   // Right on a 2-plausible-choice question proves less than on a 4-choice one: the photo looks less easy.
   assert.ok(eloOf([row('quiz|k2', 1)])['acropora-1'][0] > eloOf([row('quiz', 1)])['acropora-1'][0]);
   assert.strictEqual(eloOf([row('quiz|k2', 1)])['acropora-1'][0], eloOf([row('quiz-duel', 1)])['acropora-1'][0]);
+});
+
+test('mergeUsers: two accounts of one person add up; the busier account model wins per genus', () => {
+  const A = {'imr-coral-progress': JSON.stringify({Acropora: {ok: 8, ko: 2, th: 1.2, L: 0.8, h: '1101', cor: 1, conf: {Montipora: 1}, ps: {p1: [3, 2]}}, Porites: {ok: 1, ko: 0, th: 0.1}}),
+    'imr-coral-quiz': JSON.stringify({bu: 2})};
+  const B = {'imr-coral-progress': JSON.stringify({Acropora: {ok: 1, ko: 1, th: 0.2, L: 0.3, h: '10', du: 1, conf: {Montipora: 2}, off: {Montipora: 3}, ps: {p1: [1, 1], p2: [1, 0]}}}),
+    'imr-coral-quiz': JSON.stringify({bu: 1, view: 'any'}), 'imr-coral-theme': '"dark"'};
+  const M = mergeUsers(A, B), P = JSON.parse(M['imr-coral-progress']);
+  assert.strictEqual(P.Acropora.ok, 9); assert.strictEqual(P.Acropora.ko, 3);
+  assert.strictEqual(P.Acropora.th, 1.2, 'A answered Acropora more: its ability is kept');
+  assert.strictEqual(P.Acropora.cor, 1); assert.strictEqual(P.Acropora.du, 1);
+  assert.deepStrictEqual(P.Acropora.conf, {Montipora: 3}); assert.deepStrictEqual(P.Acropora.off, {Montipora: 3});
+  assert.deepStrictEqual(P.Acropora.ps, {p1: [4, 3], p2: [1, 0]});
+  assert.deepStrictEqual(P.Porites, {ok: 1, ko: 0, th: 0.1, streak: 0});
+  assert.deepStrictEqual(JSON.parse(M['imr-coral-quiz']), {bu: 2, view: 'any'});
+  assert.strictEqual(M['imr-coral-theme'], '"dark"');
 });
