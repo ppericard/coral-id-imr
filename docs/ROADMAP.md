@@ -35,6 +35,7 @@ Never settle these in the app; keep the lecture's version.
 | Growth form + quality guesses for auto-refilled candidates (they arrive without guesses; Claude classified PR #181's batch by eye in PR #182). Do it when Pierre asks. | thread "Review photo candidates on phone" | Next (on request) |
 | Near-duplicate / redundancy suggestions among IMR + Pierre photos in Triage, and a visual pre-pick of Featured into `picks.json`. Partly done (`find_dups.py`, PR #149); re-run after adding photos. | thread "Design photo usage per context" | Next |
 | Admin toggle for `curation.json` `use` (`ref` / `game`): the field exists, no button yet. | PR #96 | Next |
+| **Several-zoom colonies**: game questions now use one observation only (2026-11-01). 57 of Pierre's 79 game observations have 2+ zoom levels, but only 11 of 157 from other iNat observers; Anacropora, Tubastraea, Plerogyra and Halomitra have none, so their questions are all single-view. Idea: admin Stats "Needs" could list genera short of several-zoom colonies (Pierre shoots them on dives). | thread "Use zoom views from the same observation" | Idea |
 | Paliform-lobe photos in Corallite anatomy have no ring yet. | thread "Rethink the corallite anatomy explorer" | Next |
 
 ## Parked (medium term)
