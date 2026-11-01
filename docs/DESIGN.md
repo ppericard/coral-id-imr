@@ -5,7 +5,7 @@ The visual rules every page follows. They came out of the expert UI review of 20
 ## Type
 
 - Two families: **Barlow Condensed** (`--display`, headings, big labels) and **Source Sans 3** (`--body`). Both are loaded with their real italics (genus names are always italic): never rely on browser-faked italics or bold.
-- Sizes come only from the scale: `--fs-2xs` 11 px (only a glyph inside a small badge), `--fs-xs` 12 px (floor for any readable text), `--fs-s` 14, `--fs-m` 16 (body), `--fs-l` 20, `--fs-xl` 24, `--fs-2xl` 36. SVG schematics may use px inside their viewBox.
+- Sizes come only from the scale: `--fs-2xs` 11 px (only a glyph inside a small badge), `--fs-xs` 12 px (floor for any readable text), `--fs-s` 14, `--fs-m` 16 (body), `--fs-l` 20, `--fs-xl` 24, `--fs-2xl` 36. SVG schematics may use px inside their viewBox. The one exception is the header logotype (28 px from tablet up, 20 px on phones). A `<small>` is 12 px unless its rule says otherwise. No fluid (`vw`/`clamp`) or `em` font sizes: where text must grow with the screen, take one scale step per size class (e.g. the names on the quiz mix-up photos: 20 / 24 / 36 px).
 
 ## Shape
 
@@ -14,7 +14,8 @@ The visual rules every page follows. They came out of the expert UI review of 20
 
 ## Colour
 
-- Surfaces and text: `--bg`, `--surface`, `--surface-2`, `--ink`, `--muted`, `--line`; brand: `--accent` / `--accent-ink`; states: `--good`, `--bad`, `--warn` (+ `-bg`). Each palette (`:root[data-palette]`) and the dark theme redefine them; the colour-blind mode (`[data-cvd]`) redefines `--good` / `--bad`.
+- Surfaces and text: `--bg`, `--surface`, `--surface-2`, `--ink`, `--muted`, `--line`; brand: `--accent` / `--accent-ink`; states: `--good`, `--bad`, `--warn` (+ `-bg`). Each palette (`:root[data-palette]`) and the dark theme redefine them; the colour-blind mode (`[data-cvd]`) redefines `--good` / `--bad`. `--cf-ink` is the "Coral Finder" source tag (light and dark). Text on a `--good` / `--bad` fill is `--surface` (white in light, dark in dark), never a fixed white.
+- **No colour literals outside the token blocks** at the top of `app.css` (`:root`, dark theme, palettes, colour-blind). Over photos, which look the same in both themes: `--photo-bg` (black stage and lightbox behind a photo), `--on-photo` (white text and icons on a photo) and `--scrim` (the translucent dark pill behind them); lighter or darker variants are `color-mix()` of these.
 - **One meaning per hue on a screen.** Strong colour belongs to the learning-level scale (`--lv1`…`--lv5`, white or ink labels at ≥ 4.5:1). IMR lecture groups use muted tints of their hue with dark text (the number and title carry the group). Coral Finder boxes keep their pale tile colours.
 - Right/wrong never by colour alone: tick/cross, and in colour-blind mode a pale fill with a thick solid border (right) vs dashed (wrong); never a solid dark fill, which reads as a pressed button.
 - In feedback only "✓ Yes," / "✗ No," takes the right/wrong colour; the genus name to remember stays in ink.
@@ -45,11 +46,12 @@ One SVG set (24 px grid, 1.75 stroke, `currentColor`): see `LAB_ICONS` in `proto
 ## Screens
 
 - Phone tab bar: icon above label (same SVG set), the active tab gets the accent colour and a tinted pill behind its icon.
-- Header progress pill: "Progress" + a mini ring (`--pp`) + %.
+- Header progress pill: "Progress" + a mini ring (`--pp`) + %, nothing else (no status dot: sign-in and saving trouble are the "Sign in" / "Not saved" pill beside it).
 - Signing in: while signed out, a filled "Sign in" pill (`.next.signb`) sits in the header on every page and opens the sign-in card; once signed in it disappears and the account is one quiet line at the top of ⚙ (Send now, Sign out), with "Backup or reset progress" folded at the bottom of ⚙. If saving fails, the header pill comes back as an outlined red "Not saved" that opens ⚙. Never put the account on a content page.
 - My progress: the board (Photos / Slate / Groups) comes first on phones and tablets, then the ring, level counts, Review first and Often mixed up. No "Practise now" button (the nav already has Practice).
 - Quiz on phone/tablet: the stage takes all the height the question and answers leave (Pierre prefers the biggest photo to a tight 4:3 box), sized before the photos load: **nothing may move while a photo loads**. A photo close to that shape fills it (cover); a very different shape is shown whole on its blurred background. Full frame in the lightbox.
-- Quiz on desktop: the grid of views (side by side or stacked) is picked from each photo's known shape (data.json `ar`) to show the most photo; the stage keeps its full height (no photo above an empty half screen) and is laid out before the photos load.
+- Quiz on desktop: the grid of views (side by side or stacked) is picked from each photo's known shape (data.json `ar`) to show the most photo; the stage keeps its full height (no photo above an empty half screen) and is laid out before the photos load. After an answer, Next spans the side column and is pinned to its bottom, level with the bottom of the photos, so it never moves from one question to the next; a long feedback scrolls under it.
+- Photo files: `img/<f>.webp` is at most 1600 px and `-s` 480 px on the long side. Grids that crop photos to 4:3 (cards, sheet strips, pair cells) declare in `srcset` the width a 4:3 crop really gets from each file (`coverW()` in `app.js`), so a panorama or portrait photo loads the big file instead of a blown-up thumbnail.
 - Learn > Look-alikes: one pair per screen; move with the big round arrows on the photos, a sideways swipe anywhere on the pair, or the keyboard arrows. A one-time "Swipe for the next pair" hint shows on touch screens until the first swipe.
 - Memory on phones and tablets: the controls fit one compact row above the grid (Easy/Medium/Hard, Random/Look-alikes, ↻ new game) and the status one short line, so the grid gets the screen. The grid turns to the screen (more columns on a landscape screen, more rows on a portrait one). Desktop keeps the side column.
 - Games wider than the page (`.bleed`, ≥ 1340 px) start on the header's left edge and only grow to the right.

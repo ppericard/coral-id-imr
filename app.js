@@ -38,7 +38,12 @@ const inat = (p, sz) => p.src.replace('/original.', `/${sz}.`);
 const ver = p => p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '';
 const loc = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
 const img = (p, size) => p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size === 's');
-const srcset = p => p.r && p.src ? `${inat(p, 'medium')} 500w, ${inat(p, 'large')} 1024w` : `${loc(p, 1)} 480w, ${loc(p)} 1600w`;
+// Each file's width as a 4:3 box drawn with object-fit: cover sees it (cards, sheet strips, pair cells, Coral Finder): the
+// files are 480 px (-s) and 1600 px (iNat: 500 and 1024) on their LONG side, so a portrait or panoramic photo has fewer
+// useful pixels than that. Declaring the long side made the browser pick the 480 px file and blow it up 1.3-1.9x in a
+// 400-470 px box (design re-review m5).
+const coverW = (p, long) => { const a = p.ar || 4 / 3; return Math.round(Math.min(long * Math.min(1, a), long * Math.min(1, 1 / a) * 4 / 3)); };
+const srcset = p => p.r && p.src ? `${inat(p, 'medium')} ${coverW(p, 500)}w, ${inat(p, 'large')} ${coverW(p, 1024)}w` : `${loc(p, 1)} ${coverW(p, 480)}w, ${loc(p)} ${coverW(p, 1600)}w`;
 // Small source label on a game photo (Pierre, 2026-11-01: "sources en petit et cliquable sur chaque photo").
 // One shared component for every game. Shown only once the answer is out: an iNat link names the taxon and an IMR
 // slide number points to a genus. iNat photos (Pierre's and other observers') link to the observation; IMR lecture
@@ -1004,10 +1009,11 @@ function quizBoard(){
 // Header progress pill: genera learned, always in view; the page itself is #progress.
 const $prog = document.getElementById('prog');
 function showProg(){ if (!DATA) return; const n = Object.keys(DATA.gen); const pt = `${progPct(n)}%`, lt = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length} genera learned`; document.getElementById('progn').textContent = pt; $prog.title = `Your progress: ${pt} (${lt})`; const p2 = document.getElementById('progn2'); if (p2) p2.textContent = pt;
-  // Not signed in: the pill says so, so RAs find where to save their progress.
+  // Not signed in: the pill's tooltip says so, so RAs find where to save their progress.
   const pill = document.getElementById('prog'), out = !!SYNC_URL && !SYNC;
-  pill.classList.toggle('nosync', !!syncTrouble()); pill.querySelector('.pl').textContent = 'Progress'; pill.style.setProperty('--pp', progPct(n));
-  // Status only (design review 2026-11-01): the pill shows progress; signing in is an action on My progress. Not signed in = the dot.
+  pill.querySelector('.pl').textContent = 'Progress'; pill.style.setProperty('--pp', progPct(n));
+  // Status only (design review 2026-11-01): the pill shows progress and nothing else. Its dot (saving trouble) is gone: the
+  // "Not saved" pill beside it already says so in words (design re-review p9).
   pill.title = SYNC ? `Signed in as ${SYNC.name}: your progress per genus` : out ? 'Your progress (not saved online yet: Sign in, top right)' : 'Your progress per genus';
   // Signing in (Pierre, 2026-11-01): a filled "Sign in" button in the header on every page while signed out; once signed in
   // it disappears and the account (name, Send now, Sign out) is a quiet line at the top of ⚙. Trouble saving brings it
