@@ -1179,6 +1179,9 @@ function eloOf(rows){
 let ELO_NOME = null;
 const photoStats = () => SF.elo !== 'others' || !MEID || !ANS ? STATS : (ELO_NOME = ELO_NOME || eloOf(ANS.rows.filter(r => r[0] !== MEID)));
 const eloSeg = () => MEID ? segBtns('elo', [['all', 'All'], ['others', 'Without me']]) : '';
+// Empty view with "Without me" / "Others": say why (all the answers are this browser's) instead of "No answers yet".
+const noneButMe = () => { const n = ANS.rows.length, mine = ANS.rows.filter(r => r[0] === MEID).length;
+  return !n ? 'No answers yet.' : mine === n ? `All ${n} answers are yours: nothing to show without them yet. Switch to All.` : 'No answers from other players with enough answers yet.'; };
 const pct = (r, n) => n ? Math.round(100 * r / n) + '%' : '–';
 const sgn = d => (d > 0 ? '+' : '') + d.toFixed(2);
 const days = t => { const d = Math.floor((Date.now() - t) / 864e5); return d < 1 ? 'today' : d < 2 ? 'yesterday' : d + ' d ago'; };
@@ -1224,7 +1227,7 @@ function statsPlayers(){
   const cond = [['Quiz', r => !r[5].startsWith('quiz-duel')], ['Duel', r => r[5].startsWith('quiz-duel')], ['Single view', r => r[6].split(' ').filter(Boolean).length === 1], ['All views', r => r[6].split(' ').filter(Boolean).length > 1], ['With corallites', r => /-macro-/.test(r[6])], ['Without corallites', r => !/-macro-/.test(r[6])]]
     .map(([t, f]) => { const L = R.filter(f); return [t, L.length, L.filter(r => r[4]).length]; }).filter(c => c[1]);
   const total = DATA ? Object.keys(DATA.gen).length : 0;
-  $v.innerHTML = head + kpis([['Players', ps.length], ['Answers', R.length], ['Right', pct(ok, R.length)], ['Active 7 d', wk]]) + (!R.length ? '<p class="note">No answers yet.</p>' : `
+  $v.innerHTML = head + kpis([['Players', ps.length], ['Answers', R.length], ['Right', pct(ok, R.length)], ['Active 7 d', wk]]) + (!R.length ? `<p class="note">${SF.who === 'others' ? noneButMe() : 'No answers yet.'}</p>` : `
     <div class="adm-sgrid">
     <section class="adm-scard wide"><h3>Players</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>#</th><th>Level</th><th>Answers</th><th>Right</th><th>Last 20</th><th title="Different photos answered">Photos</th><th>Learned</th><th>Days</th><th>Last</th></tr></thead><tbody>
       ${ps.map((p, i) => `<tr${p.id === MEID ? ' class="me"' : ''}><td>${i + 1}${p.id === MEID ? ' <small>you</small>' : ''}</td><td>${p.lv == null ? '–' : sgn(p.lv)}</td><td>${p.n}</td><td>${pct(p.ok, p.n)}</td><td>${Math.round(100 * p.last)}%</td><td class="n">${p.ph}</td>
@@ -1312,7 +1315,7 @@ const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philipp
 function statsPhotos(){
   const PS = photoStats(), L = allPhotos().filter(p => PS[p.f] && PS[p.f][1] >= SF.min).map(p => ({...p, d: PS[p.f][0], n: PS[p.f][1], ok: PS[p.f][2]}));
   const head = `${statSwitch()}<div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [[1, '≥1'], [3, '≥3'], [10, '≥10']])}<span class="note">answers</span>${eloSeg()}</div>`;
-  if (!L.length) { $v.innerHTML = head + '<p class="note">No answers yet.</p>'; bindStats(); return; }
+  if (!L.length) { $v.innerHTML = head + `<p class="note">${SF.elo === 'others' ? noneButMe() : 'No answers yet.'}</p>`; bindStats(); return; }
   const ds = L.map(p => p.d).sort((a, b) => a - b), mean = a => a.reduce((t, x) => t + x, 0) / a.length;
   const med = ds[Math.floor(ds.length / 2)], sd = Math.sqrt(mean(ds.map(x => (x - mean(ds)) ** 2)));
   // Histogram, 0.1 wide bins, stacked by view.
