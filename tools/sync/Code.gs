@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 7 (2026-11-01: players report a wrong answer or a bad photo (Reports tab, read by admins with their GitHub token); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 8 (2026-11-01: reports read by every admin with their GitHub token (v7 had a single owner); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -20,7 +20,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 7;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 8;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -223,7 +223,7 @@ function logReports_(p){
     return {ok: true, rep: true};
   } finally { lock.releaseLock(); }
 }
-// POST {readReports: 1, token} → {ok, rows: [[id, time ms, reporter, verified 0|1, reason key, expected, answered,
+// POST {readReports: 1, token} (v8) → {ok, rows: [[id, time ms, reporter, verified 0|1, reason key, expected, answered,
 // suggested genus, note, mode, photos]]}, newest first. Names are shown, so only the app's admins get them: anyone whose
 // GitHub token can write to the repository (the admin page's token; Pierre, 2026-11-01: "all admins"). The token is
 // checked with GitHub once and remembered 10 minutes by its hash only; it is never stored. Sent by POST, so it stays
