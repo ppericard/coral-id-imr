@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 8 (2026-11-01: reports read by every admin with their GitHub token (v7 had a single owner); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 8 (2026-11-01: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -200,8 +200,9 @@ function stats_(){
 // which genus it is), the photo shows several corals, the photo is bad, or something else, with an optional note.
 // One row per report in the "Reports" tab. The reporter is the sync name when its code matches ("Verified" 1),
 // else the name typed or nothing ("Verified" 0). Nothing here changes the photos: Pierre decides in the admin Triage.
-const REP = ['Time', 'Reporter', 'Verified', 'Reason', 'Expected', 'Answered', 'Suggested genus', 'Note', 'Mode', 'Photos', 'Id'];
-const WHY = {wrong: 'Wrong answer', multi: 'Several corals', photo: 'Bad photo', other: 'Other'};
+// v8: also from an enlarged photo, a genus sheet or any page (feedback): Mode = game, photo, sheet or page; Where = the page.
+const REP = ['Time', 'Reporter', 'Verified', 'Reason', 'Expected', 'Answered', 'Suggested genus', 'Note', 'Mode', 'Photos', 'Where', 'Id'];
+const WHY = {wrong: 'Wrong answer', multi: 'Several corals', photo: 'Bad photo', info: 'Wrong information', bug: 'Bug', idea: 'Suggestion', other: 'Other'};
 const text_ = (x, n) => safe_(String(x == null ? '' : x).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, n));
 function logReports_(p){
   const L = p.reports.filter(r => r && /^[a-z0-9]{1,20}$/.test(String(r.id)) && WHY[r.why]).slice(0, 50);
@@ -216,7 +217,7 @@ function logReports_(p){
     const seen = new Set(n > 0 ? sh.getRange(2, REP.length, n, 1).getValues().map(r => String(r[0])) : []);
     const G = /^[A-Za-z][A-Za-z -]*$/, M = /^[a-z0-9|-]*$/, PH = /^[A-Za-z0-9_. -]*$/;
     const rows = L.filter(r => !seen.has(String(r.id))).map(r => [new Date(r.t || Date.now()), safe_(name), ok, WHY[r.why], word_(r.g, G, 40), word_(r.a, G, 40),
-      text_(r.fix, 60), text_(r.note, 500), word_(r.m, M, 40), word_(r.ph, PH, 400), String(r.id)]);
+      text_(r.fix, 60), text_(r.note, 1000), word_(r.m, M, 40), word_(r.ph, PH, 400), text_(r.w, 120), String(r.id)]);
     if (rows.length) { const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
       if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
       sh.getRange(at, 1, rows.length, REP.length).setValues(rows); }
@@ -224,7 +225,7 @@ function logReports_(p){
   } finally { lock.releaseLock(); }
 }
 // POST {readReports: 1, token} (v8) → {ok, rows: [[id, time ms, reporter, verified 0|1, reason key, expected, answered,
-// suggested genus, note, mode, photos]]}, newest first. Names are shown, so only the app's admins get them: anyone whose
+// suggested genus, note, mode, photos, where]]}, newest first. Names are shown, so only the app's admins get them: anyone whose
 // GitHub token can write to the repository (the admin page's token; Pierre, 2026-11-01: "all admins"). The token is
 // checked with GitHub once and remembered 10 minutes by its hash only; it is never stored. Sent by POST, so it stays
 // out of URLs and logs. Needs the script's "connect to an external service" permission (asked once on redeploy).
@@ -242,7 +243,7 @@ function reports_(token){
   if (!isAdmin_(String(token || ''))) return {ok: false, error: 'token'};
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Reports'), key = {}; Object.keys(WHY).forEach(k => key[WHY[k]] = k);
   if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
-  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, REP.length).getValues().filter(x => x[10])
-    .map(x => [String(x[10]), new Date(x[0]).getTime() || 0, String(x[1]), Number(x[2]) ? 1 : 0, key[x[3]] || 'other', String(x[4]), String(x[5]), String(x[6]), String(x[7]), String(x[8]), String(x[9])]);
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, REP.length).getValues().filter(x => x[11])
+    .map(x => [String(x[11]), new Date(x[0]).getTime() || 0, String(x[1]), Number(x[2]) ? 1 : 0, key[x[3]] || 'other', String(x[4]), String(x[5]), String(x[6]), String(x[7]), String(x[8]), String(x[9]), String(x[10])]);
   return {ok: true, rows: rows.reverse()};
 }

@@ -108,6 +108,8 @@ test('reports: logged once, reporter verified by code, never mistaken for a prog
   assert.deepStrictEqual(R.getRange(2, 2, 1, 5).getValues()[0], ['Ana', 1, 'Wrong answer', 'Acropora', 'Montipora']);
   assert.deepStrictEqual(R.getRange(4, 2, 1, 2).getValues()[0], ['Bob', 0]);
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).data, prog(3), 'progress untouched');
+  s.post({rname: 'Ana', rpin: '1234', reports: [rep('r5', {why: 'idea', g: '', a: '', fix: '', ph: '', m: 'page', w: 'finder|form=M'})]});
+  assert.deepStrictEqual(R.getRange(5, 4, 1, 8).getValues()[0].slice(0, 1).concat(R.getRange(5, 9, 1, 3).getValues()[0]), ['Suggestion', 'page', '', 'finder|form=M']);
 });
 
 test('reports list: only a GitHub token that can write to the repo, checked once', () => {
@@ -120,6 +122,7 @@ test('reports list: only a GitHub token that can write to the repo, checked once
   const a = s.post({readReports: 1, token: 'ghp_write000000000000000000'});
   assert.strictEqual(a.rows.length, 2); assert.strictEqual(a.rows[0][0], 'r2', 'newest first');
   assert.deepStrictEqual(a.rows[1].slice(2, 9), ['Ana', 1, 'wrong', 'Acropora', 'Montipora', 'Montipora', 'corallites']);
+  assert.strictEqual(a.rows[0][11], '', 'where (v8)');
   const n = s.fetched.length; s.post({readReports: 1, token: 'ghp_write000000000000000000'});
   assert.strictEqual(s.fetched.length, n, 'remembered for 10 minutes');
   assert.ok(!JSON.stringify(s.cache).includes('ghp_write'), 'the token itself is never stored');
