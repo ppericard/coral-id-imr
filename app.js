@@ -1266,6 +1266,7 @@ new MutationObserver(pageHelp).observe($v, {childList: true, subtree: true});
 // Settings (photo source, photo size, theme) live in one small panel behind ⚙.
 const $setb = document.getElementById('setb'), $set = document.getElementById('settings');
 $setb.onclick = e => { e.stopPropagation(); const open = $set.hidden; $set.hidden = !open; $setb.setAttribute('aria-expanded', String(open)); };
+document.getElementById('setx').onclick = () => { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); $setb.focus(); };
 document.addEventListener('click', e => { if (!$set.hidden && !e.target.closest('#settings, #setb')) { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); } });
 // "/" from any page: open Genera with the search box focused, to jump to a genus by typing (Pierre, 2026-10-31).
 let wantSearch = false;

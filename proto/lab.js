@@ -2,7 +2,24 @@
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
 // A prototype that graduates moves to a site section (see GRADUATED) and gets a plain hash: #<id>, #<id>|<arg>.
 // Bump with every Lab change so browsers never mix new and old files (same ?v scheme as app.js).
-const LAB_V = 55;
+const LAB_V = 56;
+// One SVG icon set for the Tools hub (design review 2026-11-01: the old Unicode glyphs had mixed weights and sizes).
+// 24 px grid, 1.75 stroke, currentColor; a tool without an entry falls back to its `icon` text.
+const LAB_ICONS = {
+  map: '<circle cx="12" cy="12" r="2.5"/><circle cx="4.5" cy="6" r="1.8"/><circle cx="19.5" cy="6" r="1.8"/><circle cx="4.5" cy="18" r="1.8"/><circle cx="19.5" cy="18" r="1.8"/><circle cx="12" cy="3" r="1.5"/><path d="M10 10.8 6 7.1M14 10.8l4-3.7M10 13.2l-4 3.7M14 13.2l4 3.7M12 9.5V4.5"/>',
+  anatomy: '<path d="M12 2.8 20 7.4v9.2L12 21.2 4 16.6V7.4z"/><circle cx="12" cy="12" r="3.2"/><path d="M12 5.5v3.3M12 15.2v3.3M6.4 8.8l2.8 1.6M14.8 13.6l2.8 1.6M6.4 15.2l2.8-1.6M14.8 10.4l2.8-1.6"/>',
+  zoom: '<circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.5-4.5M11 8v6M8 11h6"/>',
+  elim: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18M10.5 10.5l3 3M13.5 10.5l-3 3"/>',
+  matrix: '<g fill="currentColor" stroke="none"><circle cx="5" cy="5" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="19" cy="5" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="5" cy="19" r="1.6"/><circle cx="19" cy="19" r="1.6"/></g><circle cx="19" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/>',
+  web: '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="10" cy="18" r="2.5"/><path d="m8.5 6.4 7 1.2M16.4 10l-4.8 6M6.8 8.4l2.4 7.2"/>',
+  size: '<rect x="2" y="8" width="20" height="8" rx="1.5"/><path d="M6 8v3M10 8v4.5M14 8v3M18 8v4.5"/>',
+  reveal: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  spot: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/>',
+  gallery: '<rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/>',
+  finder: '<circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.5-4.5"/>',
+  pairs: '<rect x="3" y="6" width="10" height="14" rx="2"/><path d="M9 6V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6"/>'
+};
+const labIcon = p => LAB_ICONS[p.id] ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${LAB_ICONS[p.id]}</svg>` : (p.icon || '');
 const LAB = {
   list: [],
   files: ['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'],
@@ -72,13 +89,13 @@ function viewLab(h){
   $v.innerHTML = `<div class="lab"><h2>Tools</h2>
   <p class="lede">Optional extras, still being tested, to learn, remember and identify the 39 genera through pictures and play. Learn, Practice and Identify are all you need; try these when you want another angle${IS_ADMIN ? ', then mark each one keep or trim: your marks stay in this browser and tell us what to develop further' : ''}.</p>
   <div class="labhub">${order.map(p => `<article class="labtile">
-    <a class="labopen" href="#lab-${p.id}"><span class="labicon" aria-hidden="true">${p.icon || ''}</span><b>${esc(p.title)}</b><span>${esc(p.blurb)}</span></a>
+    <a class="labopen" href="#lab-${p.id}"><span class="labicon" aria-hidden="true">${labIcon(p)}</span><b>${esc(p.title)}</b><span>${esc(p.blurb)}</span></a>
     ${!IS_ADMIN ? '' : `<div class="labvote" role="group" aria-label="Keep or trim ${esc(p.title)}">
       <button type="button" data-vote="${p.id}|keep" aria-pressed="${votes[p.id] === 'keep'}">Keep</button>
       <button type="button" data-vote="${p.id}|trim" aria-pressed="${votes[p.id] === 'trim'}">Trim</button>
     </div>`}</article>`).join('')}</div>
   <h3>Now in the main sections</h3>
-  <div class="labgrad">${grad.map(p => `<a href="#${p.id}"><span class="labicon" aria-hidden="true">${p.icon || ''}</span><b>${esc(p.title)}</b><small>${SECTION_NAME[GRADUATED[p.id]]}</small></a>`).join('')}</div></div>`;
+  <div class="labgrad">${grad.map(p => `<a href="#${p.id}"><span class="labicon" aria-hidden="true">${labIcon(p)}</span><b>${esc(p.title)}</b><small>${SECTION_NAME[GRADUATED[p.id]]}</small></a>`).join('')}</div></div>`;
   $v.querySelectorAll('[data-vote]').forEach(b => b.onclick = () => {
     const [id, v] = b.dataset.vote.split('|'), all = labVotes();
     all[id] = all[id] === v ? undefined : v;
