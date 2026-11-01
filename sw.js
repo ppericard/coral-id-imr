@@ -1,5 +1,5 @@
 // Offline cache: app shell first, then photos as they are viewed.
-const V = 'imr-coral-id-v225';
+const V = 'imr-coral-id-v226';
 // Photos live in their own cache that no deploy deletes (code review 2026-11-01, H3): bumping V used to wipe every
 // offline photo. Capped at PH_MAX entries, oldest first out (cache keys keep insertion order).
 const PH = 'imr-photos-v1',
@@ -9,7 +9,7 @@ const SHELL = [
   'index.html',
   'app.css?v=104',
   'core.js?v=13',
-  'app.js?v=153',
+  'app.js?v=154',
   'flag.js?v=7',
   'quality.json?v=3',
   'picks.json?v=1',
@@ -32,11 +32,25 @@ const SHELL = [
     f => `proto/${f}.js?v=65`
   )
 ];
+const get = async (c, u, n = 3) => {
+  for (let i = 1; ; i++) {
+    try {
+      const r = await fetch(u);
+      if (!r.ok) throw new Error(`${u}: ${r.status}`);
+      return await c.put(u, r);
+    } catch (e) {
+      if (i >= n) throw e;
+      await new Promise(ok => setTimeout(ok, 1000 * i));
+    }
+  }
+};
 self.addEventListener('install', e =>
   e.waitUntil(
     caches
       .open(V)
-      .then(c => c.addAll(SHELL))
+      // Each file on its own, tried up to 3 times: with addAll, one file failing on an unstable line failed the whole
+      // install, so a phone on such a line never got the offline copy (tools/perf.js, 1 request in 5 failing).
+      .then(c => Promise.all(SHELL.map(u => get(c, u))))
       .then(() => self.skipWaiting())
   )
 );

@@ -108,7 +108,7 @@ $v.addEventListener(
   'error',
   e => {
     const i = e.target;
-    if (!(i instanceof HTMLImageElement)) return;
+    if (!(i instanceof HTMLImageElement) || !i.getAttribute('src')) return;
     const n = Number(i.dataset.retry || 0),
       u = i.getAttribute('src');
     if (n < 2) {
@@ -1977,14 +1977,26 @@ let rematch = null;
 // if nothing changed since: same answers count and same genera in play (settings), else chosen afresh.
 let NEXTQ = null;
 const planKey = cur => `${cur}|${answersSoFar()}|${pool().join()}`;
+// Fetched in order of need, two at a time: the photos shown first (small version, then full size), then the hint and
+// the other views shown after the answer. All at once they shared a slow line, and the first photo came later than with
+// no preloading at all (tools/perf.js, slow 3G: Next -> photo 11 s before preloading, 20 s with everything in parallel).
 const preload = set => {
-  const L = [...(set.shown || []), ...(set.hint ? [set.hint] : []), ...(set.reveal || [])];
-  return L.flatMap(p => [img(p), img(p, 's')]).map(u => {
-    const i = new Image();
-    i.decoding = 'async';
-    i.src = u;
-    return i;
-  });
+  const later = [...(set.hint ? [set.hint] : []), ...(set.reveal || [])],
+    Q = [...(set.shown || []).flatMap(p => [img(p, 's'), img(p)]), ...later.map(p => img(p, 's')), ...later.map(p => img(p))],
+    held = [];
+  let live = 0;
+  const go = () => {
+    while (live < 2 && Q.length) {
+      const i = new Image();
+      live++;
+      i.onload = i.onerror = () => (live--, go());
+      i.decoding = 'async';
+      i.src = Q.shift();
+      held.push(i);
+    }
+  };
+  go();
+  return held;
 };
 function planNext(cur) {
   if (cur !== 'quiz' && cur !== 'quiz-duel') return;
@@ -3497,6 +3509,9 @@ document.querySelectorAll('#boardset button').forEach(
 );
 showBoardSet();
 function route() {
+  // Photos of the page being left that are still loading are dropped, so a slow line gives its bandwidth to the new page
+  // (tools/perf.js, slow 3G: the Home photos still downloading delayed the first quiz photo by seconds).
+  $v.querySelectorAll('img').forEach(i => !i.complete && i.removeAttribute('src'));
   if (CUR_NEW) {
     CUR = CUR_NEW;
     CUR_NEW = null;
