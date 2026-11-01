@@ -995,7 +995,11 @@ function renderCov(){
     const cells = VIEWS.map(([v]) => covViews(n).some(x => x[0] === v) ? covOf(n, v) : null), live = cells.filter(Boolean);
     return {n, i, cells, min: Math.min(...live.map(c => c.obs)), all: live.flatMap(c => c.L), cand: pending(n).filter(p => !p.cf).length};
   });
-  const by = {lecture: (a, b) => a.i - b.i, slate: (a, b) => (DATA.gen[a.n].n || 99) - (DATA.gen[b.n].n || 99) || a.i - b.i, thin: (a, b) => a.min - b.min || a.all.length - b.all.length || a.i - b.i};
+  // Lecture order = the app's Genera list: IMR lecture group (★ genera in the group of their look-alikes, as shownGroup
+  // in app.js), then slate order inside a group; genera outside the lecture groups last.
+  const lg = n => { const g = DATA.gen[n]; if (g.ig) return g.ig; const L = (g.look || []).map(b => DATA.gen[b] && DATA.gen[b].ig).filter(Boolean);
+    if (!L.length) return 99; const c = {}; L.forEach(k => c[k] = (c[k] || 0) + 1); return L.reduce((b, k) => c[k] > c[b] ? k : b, L[0]); };
+  const by = {lecture: (a, b) => lg(a.n) - lg(b.n) || a.i - b.i, slate: (a, b) => (DATA.gen[a.n].n || 99) - (DATA.gen[b.n].n || 99) || a.i - b.i, thin: (a, b) => a.min - b.min || a.all.length - b.all.length || a.i - b.i};
   R.sort(by[COV_ORDER] || by.thin);
   const max = Math.max(1, ...R.map(r => r.all.length)), thin = R.reduce((s, r) => s + r.cells.filter(c => c && covLvl(c) < 2).length, 0);
   const cell = (r, c, v) => c ? `<td class="cov-c cov-${covLvl(c)}" title="${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}"><b>${c.n}</b>${c.obs < c.n ? `<small>${c.obs}</small>` : ''}</td>` : '<td class="cov-c cov-na">–</td>';
