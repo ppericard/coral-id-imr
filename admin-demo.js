@@ -29,8 +29,10 @@
   ];
   const ME = 'Ana Demo'; // "you" on the Stats pages (the caller's own id, ?answers=1 me)
   let S = null; // {names: [{name, pin hash...}], rows: [[name, t, shown, answered, ok, mode, photos, id, e, th, nw, choices]], reports, removed, data}
-  async function build() {
-    if (S) return S;
+  // One dataset for every request: concurrent first calls (answers and stats together) wait for the same build.
+  let BUILD = null;
+  const build = () => (BUILD = BUILD || make());
+  async function make() {
     const D = await real('data.json', {cache: 'no-cache'}).then(r => r.json());
     const gen = {...D.gen, ...((D.x && D.x.gen) || {})},
       list = Object.keys(D.gen),
