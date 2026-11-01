@@ -1,6 +1,6 @@
 # Downloads the candidate photos Pierre added in admin.html (curation.json genera[g].add) that are still remote
-# (data.json cand entries with r: 1, shown straight from iNaturalist until then), as img/{f}.webp (1600 px) and
-# img/{f}-s.webp (480 px), then drops their r flag. Pierre's crop (curation.json "crop" {f: [l, t, r, b]} fractions)
+# (data.json cand entries with r: 1, shown straight from iNaturalist until then), as img/{f}.webp (1600 px),
+# img/{f}-m.webp (960 px) and img/{f}-s.webp (480 px) (tools/photos.py), then drops their r flag. Pierre's crop (curation.json "crop" {f: [l, t, r, b]} fractions)
 # is applied on the way, from the original; a photo already downloaded is redone when its crop changes (data.json "cr").
 # Site photos (not candidates) are recropped from their original the same way when Pierre crops them (Triage, genus page).
 # Run from the repo root; the GitHub Action .github/workflows/approved-photos.yml runs it after every curation.json
@@ -8,6 +8,7 @@
 import json, os, sys, urllib.request, urllib.parse, concurrent.futures as cf
 from datajson import load_all, dump_all  # data.json + cand.json (candidates waiting live in cand.json)
 from PIL import Image
+import photos  # the three photo sizes
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 d = load_all()
 cur = json.load(open('curation.json'))
@@ -26,8 +27,7 @@ def get(p):
     im = Image.open(urllib.request.urlopen(urllib.request.Request(p['src'], headers=UA), timeout=120)).convert('RGB')
     c = CROP.get(p['f'])
     if c: W, H = im.size; im = im.crop((round(c[0] * W), round(c[1] * H), round(c[2] * W), round(c[3] * H)))
-    for w, q, suf in ((1600, 78, ''), (480, 72, '-s')):
-        t = im.copy(); t.thumbnail((w, w)); t.save(f"img/{p['f']}{suf}.webp", 'WEBP', quality=q, method=5)
+    photos.save(im, p['f'])
     return p
 done = 0
 with cf.ThreadPoolExecutor(6) as ex:
@@ -44,8 +44,7 @@ if '--all-remote-unused' in sys.argv:
     for L in (d.get('cand') or {}).values():
         for p in L:
             if p['f'] in added or p.get('r') or not p.get('src'): continue
-            for suf in ('', '-s'):
-                if os.path.exists(f"img/{p['f']}{suf}.webp"): os.remove(f"img/{p['f']}{suf}.webp")
+            photos.remove(p['f'])
             p['r'] = 1; gone += 1
 if done or gone: dump_all(d)
 print(f'downloaded {done}, made remote {gone}')

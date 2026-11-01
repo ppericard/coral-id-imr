@@ -38,6 +38,7 @@ const server = http.createServer((req, res) => {
 // 4. The leaderboard shows the copy kept on the device at once while the sync script is slow.
 // 5. Leaving a page drops its photos still loading.
 // 6. The service worker installs even when each app file fails once (retried at install).
+// 7. Photo sizes follow the box, the screen density and the Photo quality setting (Auto, Saver, Full).
 // Speed numbers are measured by tools/perf.js, not here. Locally: node tests/net.smoke.js
 (async () => {
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -45,7 +46,7 @@ const server = http.createServer((req, res) => {
   const b = await chromium.launch(),
     fails = [];
   const ctxOf = async (opts = {}) => {
-    const ctx = await b.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
+    const ctx = await b.newContext({viewport: {width: 390, height: 800}, deviceScaleFactor: opts.dpr || 1, serviceWorkers: 'block'});
     await ctx.addInitScript(() => {
       try {
         localStorage.setItem('imr-tour', '1');
@@ -87,10 +88,10 @@ const server = http.createServer((req, res) => {
       await p2
         .waitForFunction(() => typeof NEXTQ !== 'undefined' && NEXTQ && NEXTQ.args, null, {timeout: 5000})
         .catch(() => fails.push('No next question planned during the feedback'));
-      const want = await p2.evaluate(() => (NEXTQ && NEXTQ.args ? NEXTQ.args[4].shown.map(x => img(x)) : []));
+      const want = await p2.evaluate(() => (NEXTQ && NEXTQ.args ? NEXTQ.args[4].shown.map(x => resized(img(x), '')) : []));
       await p2.evaluate(() => document.querySelectorAll('.unlock .next, .achpop').forEach(x => x.click && x.click()));
       await p2.click('#next');
-      const got = await p2.evaluate(() => [...document.querySelectorAll('#view .qstage img')].map(i => i.getAttribute('src')));
+      const got = await p2.evaluate(() => [...document.querySelectorAll('#view .qstage img')].map(i => resized(i.getAttribute('src'), '')));
       if (!want.length || want.some((u, k) => got[k] !== u)) fails.push(`Next did not show the planned question (${want[0]} vs ${got[0]})`);
     }
     // A curation rebuild (Pierre published while the tab was open) drops the planned question: it could show a photo
@@ -100,9 +101,9 @@ const server = http.createServer((req, res) => {
     if (errs.length) fails.push('Plan: ' + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }
-  // 3a. Full size failing: falls back to the small version.
+  // 3a. The bigger file failing: falls back to the 480 px version.
   {
-    const {ctx, p, errs} = await ctxOf({failFull: true});
+    const {ctx, p, errs} = await ctxOf({failFull: true, dpr: 2}); // 2x: the 960 px file, not the 480 px one
     await p.goto(base + '#quiz');
     await ready(p);
     await p
@@ -159,6 +160,69 @@ const server = http.createServer((req, res) => {
     if (errs.length) fails.push('Drop: ' + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }
+  // 7. Photo sizes: the file fits the box at the screen's density (up to 2x); Saver (asked, or Auto on a slow connection)
+  // one size down, the enlarged view at 960 px then 1600 on a click; Full always 1600 px.
+  {
+    const tier = u => (/-s\.webp/.test(u) ? 's' : /-m\.webp/.test(u) ? 'm' : 'full');
+    const run = async (vp, dpr, init, check) => {
+      const ctx = await b.newContext({viewport: vp, deviceScaleFactor: dpr, serviceWorkers: 'block'});
+      await ctx.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await ctx.addInitScript(init);
+      const p = await ctx.newPage(),
+        errs = [];
+      p.on('pageerror', e => errs.push(e.message));
+      await p.goto(base + '#quiz');
+      await ready(p);
+      await p.waitForTimeout(300);
+      const T = await p.evaluate(() => [...document.querySelectorAll('#view .qstage img')].map(i => i.getAttribute('src')));
+      await check(p, T.map(tier));
+      if (errs.length) fails.push('Sizes: ' + errs.slice(0, 3).join(' | '));
+      await ctx.close();
+    };
+    const tour = () => localStorage.setItem('imr-tour', '1');
+    // Phone, 2x: one photo ~390 px wide -> 960 px file.
+    await run({width: 390, height: 800}, 2, tour, async (p, t) => {
+      if (!t.length || t.some(x => x === 's')) fails.push(`Phone 2x quiz photos too small: ${t}`);
+      if (t.some(x => x === 'full') && t.length === 1) fails.push(`Phone 2x single quiz photo took 1600 px: ${t}`);
+    });
+    // Auto on a slow connection (Network Information API) = Saver: smaller files, enlarged view 960 then 1600 px.
+    await run(
+      {width: 390, height: 800},
+      2,
+      () => {
+        localStorage.setItem('imr-tour', '1');
+        Object.defineProperty(navigator, 'connection', {value: {effectiveType: '3g', saveData: false}, configurable: true});
+      },
+      async (p, t) => {
+        if (t.some(x => x === 'full')) fails.push(`Auto on 3G still loaded 1600 px quiz photos: ${t}`);
+        await p.click('#view .qstage .zoom');
+        const lb1 = await p.getAttribute('#lightbox .lb-in img', 'src');
+        if (tier(lb1) !== 'm') fails.push(`Saver enlarged view did not start at 960 px: ${lb1}`);
+        await p.click('#lightbox .lb-in img');
+        const lb2 = await p.getAttribute('#lightbox .lb-in img', 'src');
+        if (tier(lb2) !== 'full') fails.push(`Saver enlarged view did not load 1600 px on a click: ${lb2}`);
+      }
+    );
+    // Full: 1600 px even on a small screen.
+    await run(
+      {width: 390, height: 800},
+      1,
+      () => {
+        localStorage.setItem('imr-tour', '1');
+        localStorage.setItem('imr-photo-q', JSON.stringify('full'));
+      },
+      async (p, t) => {
+        if (t.some(x => x !== 'full')) fails.push(`Full quality did not load 1600 px: ${t}`);
+      }
+    );
+    // Big dense screen: a box bigger than guessed gets the 1600 px file.
+    await run({width: 1440, height: 900}, 2, tour, async (p, t) => {
+      if (t.length === 1 && t[0] !== 'full') fails.push(`Big 2x screen single quiz photo not 1600 px: ${t}`);
+    });
+  }
   // 6. Service worker install on an unstable line: every app file fails once, the install still completes.
   {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}});
@@ -196,7 +260,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries.'
+    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries, photo sizes.'
   );
 })().catch(e => {
   console.error(e);

@@ -92,7 +92,7 @@ These came from Pierre's explicit feedback. When in doubt, follow them over your
 | `data.json` | All genus data and photo lists (the served source of truth). |
 | `curation.json` | Pierre's choices, applied on top of `data.json` at load. Pierre-owned. |
 | `forms.json`, `quality.json`, `picks.json`, `dups.json`, `suggest.json` | Machine suggestions (growth forms, quality, featured picks, duplicates, judging results). |
-| `img/` | WebP photos, 1600 px + 480 px `-s` thumbnails. No Git LFS. |
+| `img/` | WebP photos in three sizes: 1600 px, 960 px `-m`, 480 px `-s` (`tools/photos.py`; every tool that writes photos uses its `save()`, CI checks each photo has all three). No Git LFS. |
 | `tools/` | Python build/import scripts; `tools/sync/Code.gs` is the Google Apps Script for progress sync. |
 | `judging/` | Package for an outside photo-judging agent. |
 | `.github/workflows/pages.yml` | Single Pages deployer: main pushes, manual dispatch and Candidate photos completion; requires Actions source. Recovery: `docs/PAGES.md`. |

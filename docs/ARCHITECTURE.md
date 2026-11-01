@@ -18,7 +18,9 @@ admin.html ──(GitHub Contents API, Pierre's token)──> curation.json on m
   - Start-up never waits for `curation.json` when a kept copy exists (`CUR_KEPT`); `curRefresh` reads it right after, and a change applies at the next screen.
   - Quiz: the next question is chosen while the feedback is read, and its photos are fetched meanwhile (`planNext`, `NEXTQ`, keyed on the answers count and the genera in play). The photos come in order of need, two at a time (shown photos small then full size, then hint and other views): all at once they shared a slow line and the first photo came later than without preloading. The first question is planned 2.5 s after start-up.
   - Pages: leaving a page drops its photos still loading (`route()`), so a slow line goes to the new page.
-  - Each game photo shows its 480 px version (`data-lo`, also the blurred backdrop) as the image's background until the full one is in.
+  - Photo sizes (Pierre, 2026-11-01): each photo exists in 1600, 960 (`-m`) and 480 px (`-s`). A big photo (quiz, Look-alikes, sheet cover, lab tools) gets the smallest file that covers its box at the screen's density counted up to 2x (`fit`); the quiz guesses the box from the last question with as many photos (`QBOX`, so the preload fetches the right file), and a box bigger than guessed loads the bigger file (`upsizeImg`, `upsize`, never smaller). Cards and strips use `srcset` with the three files. The enlarged view loads the 1600 px file over the 480 px one.
+  - Photo quality setting (`imr-photo-q`): Auto (default), Saver, Full. Saver counts 1x (about one size down: 480 px for a phone quiz photo), drops the 1600 px file from `srcset`, and the enlarged view starts at 960 px (1600 on a click). Auto is Saver when the browser reports the data saver or a 2g/3g connection (Network Information API, Chrome on Android; elsewhere Auto sizes by box). Full always loads 1600 px for big photos.
+  - Each game photo shows its 480 px version (`data-lo`, also the blurred backdrop) as the image's background until the bigger one is in.
   - A failing photo is retried twice (after 1 s, then 4 s), then replaced by its 480 px version. If that fails too, the question offers another one, and nothing is counted.
   - The leaderboard and achievement shares are kept on the device (`imr-board-cache`, `imr-achs-cache`): drawn at once, then refreshed. They are fetched 2.5 s after start-up.
   - Fonts are served from `fonts/` (latin subset, SIL OFL), not Google Fonts.
@@ -109,7 +111,7 @@ Per genus and view, from field photos + IMR lecture photos (`data.json` `course`
 
 ## Photos
 
-- WebP, 1600 px long side + 480 px `img/<f>-s.webp`. ~2 300 files, ~185 MB (`.git` ~277 MB on 2026-11-01). No Git LFS.
+- WebP, three sizes on the long side: 1600 px `img/<f>.webp`, 960 px `img/<f>-m.webp`, 480 px `img/<f>-s.webp` (`tools/photos.py`: `save()` for every tool that writes photos, `python3 tools/photos.py` fills missing 960 px files, `--check` in CI). ~3 700 files, ~280 MB (the 960 px files added ~82 MB on 2026-11-01; mean 69 KB against 141 KB at 1600 px and 31 KB at 480 px). No Git LFS.
 - Sources: IMR Lecture 6 deck (internal use at IMR only), Pierre's iNaturalist observations, other iNaturalist observers (open licences, Research Grade or genus-level community ID), Coral Finder 2022 book crops (copyright R. Kelley/BYOGUIDES, candidates only, never in games).
 - New candidates are not stored: they are shown from iNaturalist until Pierre adds them. `.github/workflows/approved-photos.yml` runs on every `curation.json` push: `tools/fetch_approved.py` downloads added photos (applying Pierre's crop), `tools/fetch_local.py` refills candidate lists (caps per genus, counted in observations waiting: 15 near Dauin, 6 elsewhere in the Philippines while a genus has fewer than 15 Dauin photos; each observation brings all its photos (up to 12, a guard only) since 2026-11-01: Pierre takes at least the colony, a closer view and a macro, a game question shows the views of one colony, and the order of an observation's photos says nothing about their zoom, so sorting by view, quality and near-duplicates is the judging pass's job; before, 2 per observation, its first and last), then commits `data.json` + `img/`.
 - `tools/excluded.py` makes every import skip excluded photos (by file name and iNat photo id).
@@ -162,6 +164,7 @@ Python 3 scripts, run from the repo root. Many were one-off steps of the origina
 Still useful / re-runnable:
 | Script | Purpose |
 |---|---|
+| `photos.py` | The three photo sizes (`SIZES`, `save()`, `remove()`); fills missing 960 px files, `--check` (CI and the photo Action). |
 | `fetch_approved.py`, `fetch_local.py` | Candidate download/refill (run by the GitHub Action; `fetch_local.py <Genus…>` to limit). |
 | `photo_quality.py` | Automatic quality → `quality.json`. |
 | `find_dups.py` | Near-duplicates → `dups.json` (re-run after adding photos). |

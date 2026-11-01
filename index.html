@@ -24,7 +24,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#0d6f7d">
 <link rel="preload" href="fonts/source-sans-3-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="app.css?v=104">
+<link rel="stylesheet" href="app.css?v=105">
 <link rel="stylesheet" href="proto/lab.css?v=48">
 <link rel="stylesheet" href="home.css?v=22">
 </head>
@@ -51,6 +51,7 @@
         <div class="sethead"><b>Settings</b><button type="button" class="setx" id="setx" aria-label="Close settings">✕</button></div>
         <section class="sync setsync" id="sync" hidden></section>
         <div class="setrow" id="sizerow"><span>Photo size</span><div id="size" role="group" aria-label="Photo size"><button type="button" data-size="s" title="Small photos">S</button><button type="button" data-size="m" title="Medium photos">M</button><button type="button" data-size="l" title="Large photos">L</button></div></div>
+        <div class="setrow"><span title="Auto: lighter photos when the phone reports a slow connection or its data saver">Photo quality</span><div id="pq" role="group" aria-label="Photo quality"><button type="button" data-pq="auto" title="Lighter photos on a slow connection">Auto</button><button type="button" data-pq="saver" title="Lighter photos, less data">Saver</button><button type="button" data-pq="full" title="The sharpest photos, more data">Full</button></div></div>
         <div class="setrow" id="xrow" hidden><span title="Coral Finder: also rank the rarer genera seen at Dauin that are not on the IMR list">Non-IMR genera</span><div id="xgen" role="group" aria-label="Non-IMR genera"><button type="button" data-x="1">On</button><button type="button" data-x="0">Off</button></div></div>
         <div class="setrow" id="viewrow" hidden><span>View</span><div id="adminview" role="group" aria-label="View"><button type="button" data-view="admin" title="Admin">Admin</button><button type="button" data-view="user" title="User">User</button></div></div>
         <div class="setrow" id="admrow" hidden><span>Admin page</span><a class="setlink" href="admin.html">Open</a></div>
@@ -71,9 +72,9 @@
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
 <script src="core.js?v=13"></script>
-<script src="app.js?v=154"></script>
+<script src="app.js?v=155"></script>
 <script src="flag.js?v=7"></script>
-<script src="proto/lab.js?v=66"></script>
+<script src="proto/lab.js?v=67"></script>
 <script src="home-art.js?v=4"></script>
 <script src="home.js?v=24"></script>
 <script src="tour.js?v=12"></script>

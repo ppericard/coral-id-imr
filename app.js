@@ -99,8 +99,48 @@ const inat = (p, sz) => p.src.replace('/original.', `/${sz}.`);
 // A recropped photo keeps its file name, so its URL carries the crop (cr) and rewrite count (iv): without it the
 // service worker (photos cache-first) and the browser kept the old file for some sizes (-s 480 px vs 1600 px).
 const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '');
-const loc = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
-const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size === 's'));
+// Three files per photo (tools/photos.py): 480 px (size 's'), 960 px ('m') and 1600 px (none) on the long side.
+// iNaturalist serves 500 (medium) and 1024 px (large).
+const loc = (p, s) => `img/${p.f}${s ? '-' + s : ''}.webp${ver(p)}`;
+const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size));
+// Photo quality (Pierre, 2026-11-01: slow, unstable connections in the Philippines): a big photo (game, sheet cover)
+// gets the smallest file that covers its box at the screen's density, counted up to 2x (a 3x phone sees no difference).
+// Saver counts 1x, about one size down; Full always takes the 1600 px file. Auto is Saver when the browser reports
+// the data saver or a slow connection (Network Information API: Chrome on Android; elsewhere Auto works as Full-by-box).
+// The enlarged view always loads the 1600 px file (Saver: on a click).
+let PQ = store.get('imr-photo-q', 'auto');
+const saver = () => {
+  const c = navigator.connection;
+  return PQ === 'saver' || (PQ === 'auto' && !!c && (!!c.saveData || /2g|3g/.test(c.effectiveType || '')));
+};
+const fit = px => {
+  if (PQ === 'full') return '';
+  if (!(px > 0)) return 'm';
+  const need = px * (saver() ? 1 : Math.min(window.devicePixelRatio || 1, 2));
+  // A file is never blown up past LOWRES (1.15x): a photo enlarged more is shown whole at its own size (fitStage, fitLow).
+  return need <= 520 ? 's' : need <= 1100 ? 'm' : '';
+};
+// The last quiz photo box (CSS px, long side) for each number of photos on the stage: the next question's files are
+// chosen (and preloaded) before its layout exists.
+const QBOX = {};
+const qsrc = (p, n = 1) => img(p, fit(QBOX[n] || Math.min(innerWidth, 900) / Math.sqrt(n)));
+// A shown site photo moved to another size: same name, -s / -m / no suffix (iNaturalist photos keep theirs).
+const resized = (u, size) => u.replace(/^(img\/.+?)(-[sm])?\.webp/, `$1${size ? '-' + size : ''}.webp`);
+const PXR = {s: 0, m: 1, '': 2}; // rank of each file size
+const tierOf = u => (/-s\.webp/.test(u) ? 's' : /-m\.webp/.test(u) ? 'm' : '');
+// A photo shown bigger than its file was chosen for gets the bigger file (never a smaller one: it is already loaded); the
+// smaller one stays shown until the bigger is in. Not after the fallback to 480 px (data-low). Pages with big photos
+// (data-fit) call upsize after their layout.
+const upsizeImg = (i, px) => {
+  const u = i.getAttribute('src') || '',
+    want = fit(px);
+  if (px && !i.dataset.low && u.startsWith('img/') && PXR[want] > PXR[tierOf(u)]) i.src = resized(u, want);
+};
+const upsize = (root = $v) =>
+  root.querySelectorAll('img[data-fit]').forEach(i => {
+    const r = i.getBoundingClientRect();
+    upsizeImg(i, Math.max(r.width, r.height));
+  });
 // Unstable connection (Pierre, 2026-11-01): a photo that fails is tried again twice (after 1 s, then 4 s); a game photo
 // then falls back to its small version (data-lo, 480 px), already behind it as a placeholder. If that fails too, the
 // question offers another one instead of a blank frame (nothing is counted).
@@ -140,9 +180,9 @@ $v.addEventListener(
   true
 );
 // Each file's width as a 4:3 box drawn with object-fit: cover sees it (cards, sheet strips, pair cells, Coral Finder): the
-// files are 480 px (-s) and 1600 px (iNat: 500 and 1024) on their LONG side, so a portrait or panoramic photo has fewer
-// useful pixels than that. Declaring the long side made the browser pick the 480 px file and blow it up 1.3-1.9x in a
-// 400-470 px box (design re-review m5).
+// files are 480 (-s), 960 (-m) and 1600 px (iNat: 500 and 1024) on their LONG side (Saver: no 1600 px), so a portrait or
+// panoramic photo has fewer useful pixels than that. Declaring the long side made the browser pick the 480 px file and
+// blow it up 1.3-1.9x in a 400-470 px box (design re-review m5).
 const coverW = (p, long) => {
   const a = p.ar || 4 / 3;
   return Math.round(Math.min(long * Math.min(1, a), (long * Math.min(1, 1 / a) * 4) / 3));
@@ -150,7 +190,7 @@ const coverW = (p, long) => {
 const srcset = p =>
   p.r && p.src
     ? `${inat(p, 'medium')} ${coverW(p, 500)}w, ${inat(p, 'large')} ${coverW(p, 1024)}w`
-    : `${loc(p, 1)} ${coverW(p, 480)}w, ${loc(p)} ${coverW(p, 1600)}w`;
+    : `${loc(p, 's')} ${coverW(p, 480)}w, ${loc(p, 'm')} ${coverW(p, 960)}w${saver() ? '' : `, ${loc(p)} ${coverW(p, 1600)}w`}`;
 // Small source label on a game photo (Pierre, 2026-11-01: "sources en petit et cliquable sur chaque photo").
 // One shared component for every game. Shown only once the answer is out: an iNat link names the taxon and an IMR
 // slide number points to a genus. iNat photos (Pierre's and other observers') link to the observation; IMR lecture
@@ -326,12 +366,15 @@ function zoom(list, i, opts = {}) {
     const cap = hide
       ? esc(vl || 'Photo')
       : `${p.genus ? `<b><i>${esc(p.genus)}</i></b> · ` : ''}${vl ? esc(vl) + ' · ' : ''}${credit(p)}${p.src ? ` · <a href="${esc(safeUrl(p.src))}" target="_blank" rel="noopener">original</a>` : ''}`;
-    lb.innerHTML = `<div class="lb-in"><img src="${img(p)}" alt="${hide ? 'Coral to identify' : esc(p.t || '')}" title="Click for actual size"><p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
+    // The 1600 px file, over the 480 px one shown at once (usually already loaded). Saver: 960 px, 1600 on a click.
+    lb.innerHTML = `<div class="lb-in"><img src="${img(p, saver() ? 'm' : '')}" style="background:center / contain no-repeat url('${img(p, 's')}')" alt="${hide ? 'Coral to identify' : esc(p.t || '')}" title="Click for actual size"><p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
       <div class="lb-nav">${list.length > 1 ? `<button type="button" data-d="-1" aria-label="Previous photo">‹</button><span>${i + 1} / ${list.length}</span><button type="button" data-d="1" aria-label="Next photo">›</button>` : ''}<button type="button" data-x aria-label="Close">Close</button></div></div>`;
     lb.classList.remove('full');
     lb.querySelector('.lb-in img').onclick = e => {
       e.stopPropagation();
       lb.classList.toggle('full');
+      const u = e.target.getAttribute('src') || '';
+      if (u.startsWith('img/') && tierOf(u)) e.target.src = resized(u, '');
     };
     lb.querySelectorAll('[data-d]').forEach(
       b =>
@@ -710,7 +753,7 @@ function viewGenus(name) {
     }
     ${myProg(name)}
     <div class="hero">
-      ${cv ? `<button type="button" class="zoom hero-ph" data-z="${ci}"><img src="${img(cv)}" alt="${esc(name)}"></button>` : ''}
+      ${cv ? `<button type="button" class="zoom hero-ph" data-z="${ci}"><img src="${img(cv, fit(Math.min(innerWidth, 640)))}" data-fit alt="${esc(name)}"></button>` : ''}
       <div class="idbox">
         ${g.x ? `<div class="tipbox"><h3>ID tips <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3>${tipsList(g)}</div>` : ''}
         ${imr.length || g.mn ? `<div class="tipbox">${imr.length ? `<h3>ID tips (IMR) <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span></h3>${tipsList(g)}` : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>` : ''}
@@ -936,7 +979,7 @@ function viewLookalikes(a, b) {
       gB = DATA.gen[m.B],
       x = mix(m);
     const half = (n, p, k) =>
-      `<figure class="lkph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${VIEW_LABEL[p.view].toLowerCase()} view"></button><figcaption><i>${esc(n)}</i></figcaption></figure>`;
+      `<figure class="lkph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(n)}"><img src="${img(p, fit(innerWidth / 2))}" data-fit alt="${esc(n)}, ${VIEW_LABEL[p.view].toLowerCase()} view"></button><figcaption><i>${esc(n)}</i></figcaption></figure>`;
     const tip = (n, g) => `<div class="lktip"><a href="#g-${esc(n)}"><i>${esc(n)}</i></a> ${esc(tipsText(g))}</div>`;
     const deck = L.map(
       (d, k) =>
@@ -1027,6 +1070,7 @@ function fitLk() {
   k.style.height = Math.max(360, innerHeight - k.getBoundingClientRect().top - window.scrollY - 14 - tab) + 'px';
   // Whole or filled is decided again for the new size (a tablet turned, a window resized): see fitLow / LOWRES.
   k.querySelectorAll('.lkph').forEach(fitLow);
+  upsize(k);
 }
 addEventListener('resize', fitLk);
 function viewCompare(a, b) {
@@ -1457,11 +1501,11 @@ function question(cur, target, choices, prompt, set, kq) {
     lab = VIEW_LABEL;
   let answered = false,
     hintShown = false;
-  const fig = (p, k) =>
-    `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${img(p)}" data-lo="${img(p, 's')}" alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
+  const fig = (p, k, n = ph.length) =>
+    `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${qsrc(p, n)}" data-lo="${img(p, 's')}" alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
   // One screen, no scrolling: the photos fill the stage (sized to the window), choices and feedback sit beside them.
   $v.innerHTML = `${gameHelp(cur)}<div class="q bleed">
-    <div class="qstage">${ph.map(fig).join('')}</div>
+    <div class="qstage">${ph.map((p, k) => fig(p, k)).join('')}</div>
     <aside class="qside">
       <div class="qtop"><p class="prompt">${prompt}</p>${trail()}${quizNav(cur)}</div>
       <div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
@@ -1475,7 +1519,7 @@ function question(cur, target, choices, prompt, set, kq) {
     if (hintShown || !set.hint) return;
     hintShown = true;
     const st = $v.querySelector('.qstage');
-    st.insertAdjacentHTML('beforeend', fig(set.hint, ph.length));
+    st.insertAdjacentHTML('beforeend', fig(set.hint, ph.length, ph.length + 1));
     if (hb) hb.remove();
     fitStage();
   };
@@ -1506,7 +1550,7 @@ function question(cur, target, choices, prompt, set, kq) {
     const R = set.reveal || [],
       st = $v.querySelector('.qstage');
     if (!R.length || !st) return;
-    st.insertAdjacentHTML('beforeend', R.map((p, k) => fig(p, ph.length + k)).join(''));
+    st.insertAdjacentHTML('beforeend', R.map((p, k) => fig(p, ph.length + k, ph.length + R.length)).join(''));
     fitStage();
   };
   $v.querySelectorAll('[data-c]').forEach(
@@ -1582,6 +1626,13 @@ function fitStage() {
       else i.addEventListener('load', set, {once: true});
     });
   } else st.querySelectorAll('.qph.cov').forEach(f => f.classList.remove('cov'));
+  // Each photo's file for the box it got: a box bigger than guessed (qsrc) loads the bigger file (upsizeImg).
+  st.querySelectorAll('.qph img').forEach(i => {
+    const r = i.closest('.qph').getBoundingClientRect(),
+      px = Math.max(r.width, r.height);
+    if (px && !st.classList.contains('qvs')) QBOX[n] = px;
+    upsizeImg(i, px);
+  });
 }
 addEventListener('resize', fitStage);
 // Big photo stages (Look-alikes, quiz on phones and tablets): a photo that would be enlarged more than this to fill its
@@ -1785,7 +1836,7 @@ function answer(cur, c, target, ph, cor, unseen) {
         st0 = $v.querySelector('.qstage'),
         lab = VIEW_LABEL[tp.view] || '';
       const fig = (p, n, cls, note) =>
-        `<figure class="qph ${cls}"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${lab.toLowerCase()} view"></button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> <i>${esc(n)}</i></figcaption><small>${note}</small>${photoSrc(p)}</figure>`;
+        `<figure class="qph ${cls}"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(n)}"><img src="${qsrc(p, 2)}" alt="${esc(n)}, ${lab.toLowerCase()} view"></button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> <i>${esc(n)}</i></figcaption><small>${note}</small>${photoSrc(p)}</figure>`;
       st0.classList.add('qvs');
       st0.innerHTML = fig(tp, target, 'qok', 'The photo shown') + fig(cp, c, 'qko', 'Your answer, same view');
       st0.querySelectorAll('[data-vs]').forEach(
@@ -1982,7 +2033,12 @@ const planKey = cur => `${cur}|${answersSoFar()}|${pool().join()}`;
 // no preloading at all (tools/perf.js, slow 3G: Next -> photo 11 s before preloading, 20 s with everything in parallel).
 const preload = set => {
   const later = [...(set.hint ? [set.hint] : []), ...(set.reveal || [])],
-    Q = [...(set.shown || []).flatMap(p => [img(p, 's'), img(p)]), ...later.map(p => img(p, 's')), ...later.map(p => img(p))],
+    n = (set.shown || []).length,
+    Q = [
+      ...(set.shown || []).flatMap(p => [img(p, 's'), qsrc(p, n)]),
+      ...later.map(p => img(p, 's')),
+      ...later.map(p => qsrc(p, n + later.length))
+    ],
     held = [];
   let live = 0;
   const go = () => {
@@ -3046,6 +3102,20 @@ document.querySelectorAll('#xgen button').forEach(
     })
 );
 showX();
+// Photo quality (Auto / Saver / Full, see fit): the next photos follow it; a bigger choice also upgrades those shown.
+const showPQ = () => document.querySelectorAll('#pq button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pq === PQ)));
+document.querySelectorAll('#pq button').forEach(
+  b =>
+    (b.onclick = () => {
+      PQ = b.dataset.pq;
+      store.set('imr-photo-q', PQ);
+      NEXTQ = null;
+      showPQ();
+      fitStage();
+      upsize();
+    })
+);
+showPQ();
 document.querySelectorAll('#size button').forEach(
   b =>
     (b.onclick = () => {
@@ -3572,6 +3642,8 @@ function route() {
   fitLk();
   // Same for card games (Memory): their grid was sized before the intro left, so it is refitted to the room it now has.
   document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g));
+  // Big photos (sheet cover, lab tools) get the file for the box they got (the quiz and Look-alikes do it in their fit).
+  upsize();
 }
 addEventListener('hashchange', route);
 // Pages open straight on their content: the title is dropped where the header already names the page
