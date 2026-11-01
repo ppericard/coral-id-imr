@@ -126,6 +126,7 @@ const server = http.createServer((req, res) => {
         Q = candQueue(CSRC),
         x = candQueue('all').find(y => y.full);
       if (!x) return {none: true};
+      if (candQueue('all').some(y => y.p.cf && y.full)) return {bookFull: true};
       const shownFull = cur && (Q.find(y => y.p.f === cur.dataset.f) || {}).full;
       CREPL = {n: x.n, f: x.p.f, w: cellView(x.n, x.p)};
       render();
@@ -138,7 +139,8 @@ const server = http.createServer((req, res) => {
         refs: Object.values(DRAFT.use || {}).filter(v => v === 'ref').length
       };
     });
-    if (cap.none) fails.push(`${w}px Cap: no candidate waits in a full cell (expected with the real data)`);
+    if (cap.bookFull) fails.push(`${w}px Cap: a Coral Finder book candidate (never in games) counted as full`);
+    else if (cap.none) fails.push(`${w}px Cap: no candidate waits in a full cell (expected with the real data)`);
     else {
       if (cap.shownFull) fails.push(`${w}px Cap: the swiper shows a candidate of a full cell`);
       if (cap.tiles < 10) fails.push(`${w}px Cap: replace screen shows ${cap.tiles} colonies`);

@@ -2390,6 +2390,8 @@ const cellView = (n, p) => {
   const v = p.vg || p.view;
   return v === 'medium' && lv(n) === 2 ? 'wide' : v;
 };
+// Only photos that can enter the games count against the cap: a Coral Finder book photo or a several-corals one never does.
+const gameable = p => !p.cf && !p.multi;
 const cellFull = (n, w, o) => {
   const c = covOf(n, w);
   return c.obs >= CELL_MAX && !(o && c.L.some(q => q.o === o));
@@ -2439,7 +2441,7 @@ function candQueue(src) {
     cands(n).forEach(p => {
       if (!srcOk(p, src) || add[p.f] || rejected(p.f)) return;
       const v = cellView(n, p),
-        full = VIEWS.some(x => x[0] === v) && (cnt(n, v), N[n + '|' + v] >= CELL_MAX && !(p.o && O[n + '|' + v].has(p.o)));
+        full = gameable(p) && VIEWS.some(x => x[0] === v) && (cnt(n, v), N[n + '|' + v] >= CELL_MAX && !(p.o && O[n + '|' + v].has(p.o)));
       L.push({p, n, full, r: -Math.log(uOf(p.f)) / weight(n, p)});
     });
   });
@@ -2551,7 +2553,7 @@ function renderCand() {
       b =>
         (b.onclick = () => {
           const w = b.dataset.add;
-          if (cellFull(n, w, p.o)) {
+          if (gameable(p) && cellFull(n, w, p.o)) {
             CREPL = {n, f, w};
             return render();
           }
