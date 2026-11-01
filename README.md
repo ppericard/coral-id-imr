@@ -1,5 +1,7 @@
 # IMR Coral ID
 
+> **AI agent or new developer given only this repository's link? Start here.** Read [AGENTS.md](AGENTS.md) (standing rules, how to ship a change), then [docs/HANDOVER.md](docs/HANDOVER.md) (state of play, what the owner still has to do, how to work with him, how to rebuild everything from scratch, a ready-made first prompt), then [docs/ROADMAP.md](docs/ROADMAP.md) (prioritised backlog). Nothing outside this repository is needed to understand or continue the project.
+
 A static web app for learning the 39 coral genera on the IMR (Institute for Marine Research, Dauin, Philippines) survey slate: 34 surveyed genera plus 5 starred look-alikes.
 
 Live: <https://ppericard.github.io/coral-id-imr/> · Built for the Research Assistants trained at IMR, whose first task is genus-level labelling of benthic photos in ReefCloud.
