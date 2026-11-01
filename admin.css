@@ -538,3 +538,7 @@ td.cov-c .cov-off{display:block;font-size:.62rem;font-weight:500;line-height:1.1
 .adm-rep .adm-flagged{margin-top:6px}
 .adm-qhead:has([data-rload]){display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px}
 .adm-qhead:has([data-rload]) .adm-where{width:auto}
+/* 📌 lead photo of a growth-form tile (Growth form view): faint until pinned, then accent with its place number. */
+.adm-acts button.adm-pin{padding:0 7px;opacity:.45;filter:grayscale(1)}
+.adm-acts button.adm-pin:hover,.adm-acts button.adm-pin:focus-visible{opacity:1}
+.adm-acts button.adm-pin[aria-pressed="true"]{opacity:1;filter:none;background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}

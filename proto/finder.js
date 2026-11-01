@@ -93,10 +93,18 @@ LAB.add({
     const thumb = (n, v = 'medium') => { const p = (G[n].views[v] || [])[0] || cover(G[n]); return p ? img(p, 's') : ''; };
     // Each growth-form tile shows 3 photos (one large, two small: Pierre 2026-11-01) tagged with that form (photo growth form, checked in admin), one genus per
     // photo and a different genus on each tile where possible; a genus only comes back when its form has too few.
+    // Pierre's pinned photos lead (curation.json "tile" {IMR form letter: [f, ...]}, 📌 in admin > Growth form): on its
+    // IMR form's tile and on the Coral Finder tile that starts from that form (first letter of forms.json "cf"; never
+    // Meandering, which maps to every form). A pin no longer of that form, or of a genus off the tile, is skipped.
+    const PINS = (CUR && CUR.tile) || {}, pinLead = (c, per, order, seen) => { const byF = new Map();
+      per.forEach((P, k) => P.forEach(p => byF.has(p.f) || byF.set(p.f, [p, order[k]])));
+      return (c && PINS[c] || []).map(f => byF.get(f)).filter(Boolean).slice(0, 3).map(([p, n]) => { seen.add(n); return p; }); };
+    const fill = (pick, per, order, seen) => { for (let i = 0; pick.length < 3 && per.some(P => P[i]); i++) per.forEach((P, k) => { if (P[i] && pick.length < 3 && !pick.includes(P[i])) { pick.push(P[i]); seen.add(order[k]); } }); };
     const tilePics = (() => { const seen = new Set(), out = {};
       [...CFF].sort((a, b) => a.g.length - b.g.length).forEach(f => {
-        const L = bySlate(f.g), order = [...L.filter(x => !seen.has(x)), ...L.filter(x => seen.has(x))], per = order.map(x => formPhotos(x, f.id)), pick = [];
-        for (let i = 0; pick.length < 3 && per.some(P => P[i]); i++) per.forEach((P, k) => { if (P[i] && pick.length < 3) { pick.push(P[i]); seen.add(order[k]); } });
+        const L = bySlate(f.g), order = [...L.filter(x => !seen.has(x)), ...L.filter(x => seen.has(x))], per = order.map(x => formPhotos(x, f.id));
+        const pick = f.id === 'M' ? [] : pinLead((CFMAP[f.id] || '').replace('p', '')[0], per, order, seen);
+        fill(pick, per, order, seen);
         // A form with no classified photo (the book's non-hard-coral group): the genera's cover photos.
         if (!pick.length) L.slice(0, 3).forEach(x => { const p = cover(G[x]); if (p) pick.push(p); });
         out[f.id] = pick; });
@@ -104,8 +112,8 @@ LAB.add({
 
     (() => { const seen = new Set();
       [...IMRF].sort((a, b) => a.g.length - b.g.length).forEach(f => {
-        const L = bySlate(f.g), order = [...L.filter(x => !seen.has(x)), ...L.filter(x => seen.has(x))], per = order.map(x => imrFormPhotos(x, f.id)), pick = [];
-        for (let i = 0; pick.length < 3 && per.some(P => P[i]); i++) per.forEach((P, k) => { if (P[i] && pick.length < 3) { pick.push(P[i]); seen.add(order[k]); } });
+        const L = bySlate(f.g), order = [...L.filter(x => !seen.has(x)), ...L.filter(x => seen.has(x))], per = order.map(x => imrFormPhotos(x, f.id)), pick = pinLead(f.id, per, order, seen);
+        fill(pick, per, order, seen);
         tilePics['imrf:' + f.id] = pick; }); })();
     root.innerHTML = `<section class="fdstart" id="fdstart" hidden></section><div class="fdlayout"><aside class="fdside" id="fdside"></aside><section class="fdmain" id="fdmain"></section></div><div class="fdcmp" id="fdcmp" hidden></div>`;
     const $start = root.querySelector('#fdstart'), $lay = root.querySelector('.fdlayout');
