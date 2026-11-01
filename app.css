@@ -565,6 +565,7 @@ a.lt:hover{border-color:var(--accent)}
 .helpbox h3{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
 #help[aria-expanded="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 #help{font-weight:700;font-size:.95rem}
+#help[hidden]{display:none}  /* .theme sets display: without this, ? showed (and opened an empty box) on pages with no help */
 
 /* My progress: photo wall + side column, one screen (quizBoard). */
 .pwall .pw{position:relative;display:block;border-radius:8px;overflow:hidden;background:var(--surface-2);outline:3px solid transparent;outline-offset:-3px}
@@ -652,6 +653,8 @@ a.lt:hover{border-color:var(--accent)}
 .plvl small{font-size:.66rem;white-space:nowrap}
 .plvl .pl-rev{border:2px solid var(--bad)}
 .plvl .pl-rev::before{top:-7px;right:-7px}
+.plvl .pl-rev.zero{border-color:var(--line)}
+.plvl .pl-rev.zero::before{background:var(--muted)}  /* nothing to review: the legend stays, without the alarm */
 /* Progress towards Learned as a number at the right of a tile (with the 5px bar along its bottom). */
 .pslate .ps .pct,.pseg a .pct{display:inline-flex;align-items:center;gap:4px;color:inherit;text-align:right;margin-left:auto;padding-left:6px;font-size:.78em;font-weight:700;font-variant-numeric:tabular-nums;font-style:normal;flex:none}
 .pseg a{justify-content:flex-start;gap:4px}.pseg a i{margin:0 auto}

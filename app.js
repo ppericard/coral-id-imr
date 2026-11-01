@@ -309,7 +309,7 @@ function viewGenera(){
   const orderSeg = `<div class="seg" role="group" aria-label="Order">${[['lecture', 'Lecture', ' groups'], ['slate', 'Slate', ' numbers']].map(([k, t, x]) => `<button type="button" data-o="${k}" aria-pressed="${azOrder === k}">${t}<span class="wide">${x}</span></button>`).join('')}</div>`;
   const jump = azOrder === 'lecture' ? `<div class="chips tipgr gjump"><span class="label">IMR group</span>${DATA.imrg.map(x => `<button type="button" class="chip gchip" style="--g:${groupHue(x.n)}" data-jump="${x.n}" title="${esc(x.t)}">${x.n}</button>`).join('')}</div>` : '';
   $v.innerHTML = `<h2>The 39 genera on the IMR slate</h2>
-  <p class="lede">34 surveyed genera plus 5 starred ones (★) to recognise and rule out. Colours mark the confusion groups from the IMR lecture: genera in the same group are the ones to tell apart. Switch to <b>ID tips</b> for the 4 questions to ask and the lecturers' short cues for each genus.</p>
+  <p class="lede">34 surveyed genera plus 5 starred ones (★) to recognise and rule out. Colours mark the confusion groups from the IMR lecture: genera in the same group are the ones to tell apart. The group names follow the lecture's ID questions: corallite size (small, large), mouth raised or embedded ("submerged"), and wall structure (separate walls, with coenosteum between them, or shared walls). Switch to <b>ID tips</b> for the 4 questions to ask and the lecturers' short cues for each genus.</p>
   <div class="tools"><input id="q" type="search" placeholder="Search a genus or a feature" value="${esc(azQ)}" aria-label="Search" title="Shortcut: / from any page, Enter opens the first genus">
     ${viewSeg}${phone ? `<details class="gfilt"${gfOpen ? ' open' : ''}><summary>Filter${azFam ? ' <span class="fdn">1</span>' : ''}</summary>${famSel}${orderSeg}${jump}</details>` : famSel + orderSeg}</div>
   ${azView === 'tips' ? tipsHead() : ''}${phone ? '' : jump}<div class="${azView === 'tips' ? 'tiplist' : 'grid'}" id="azgrid"></div>`;
@@ -388,7 +388,8 @@ function viewGenus(name){
   // Coral Finder text: visible for genera the lecture skips, otherwise folded under "More details" with sources and key.
   const cfList = `<h3>Coral Finder features</h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`;
   // Name, slate number and family sit in the sticky header bar (ctxBar), not here.
-  $v.innerHTML = `<article class="sheet">
+  $v.innerHTML = `<p class="lede">One genus on one page. The highlighted <b>ID tips (IMR)</b> are what to remember; the <b>IMR lecture notes</b> give the full lecture cues. Its <b>IMR group</b> is the lecture's confusion group: genera in the same group are the ones to tell apart. Photos at three distances: <b>colony</b>, <b>closer</b> (10-30 cm) and <b>corallites</b> (macro); tap one to enlarge it. <b>Don't confuse with</b>, at the bottom, shows its look-alikes in the same view. Dotted words show their definition when tapped.${isPhone() ? '' : ' ← / → go to the previous / next genus.'}</p>
+  <article class="sheet">
     ${imr.length || g.x ? '' : `<p class="lede keyid">${esc(g.sum)}</p>`}
     ${g.x ? `<p class="warn"><b>Not on the IMR list.</b> A rarer genus seen at Dauin${g.x.nonscl ? ', and not a true hard coral' : ''}.</p>` : g.n ? '' : `<p class="warn"><b>★ Not surveyed by IMR.</b> It is on the slate so you don't mistake it for ${g.look.filter(n => DATA.gen[n].n).map(n => '<i>' + esc(n) + '</i>').join(', ')}, so you need to recognise it and set it aside.</p>`}
     <div class="hero">
@@ -684,7 +685,7 @@ function bktObs(n, s, good, b, k){ s.L = Math.round(bktStep(knownP(n), good, b, 
 function missing(n){
   const s = P[n] || {}, m = [], L = knownP(n);
   if (L < BKT.MASTER) m.push(`more right answers, harder photos count more (${Math.round(100 * L)}% sure now)`);
-  if (!s.cor) m.push('right once with the corallites photo open');
+  if (!s.cor) m.push('right once with the corallites in view (shown, or opened with the hint)');
   if (hasDuel(n) && !s.du) m.push('right once in a look-alike duel');
   return m;
 }
@@ -708,9 +709,9 @@ function level(n){
 function quizNav(){ return ''; }
 function bindQuizNav(){ bindGo(); }
 // The game rules (behind the ? button).
-const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused: say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
-  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? <b>Show the corallites</b> adds a close-up. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on. Every answer counts in <a href="#progress">My progress</a>.</p>
-  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, closer or corallites), and a mistake eases them off. A genus is learned once your answers make it 95% sure you know it: right answers on harder photos count more.</p>`;
+const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
+  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on. Every answer counts in <a href="#progress">My progress</a>.</p>
+  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, closer or corallites), and a mistake eases them off. A genus is learned once your answers make it 95% sure you know it (right answers on harder photos count more), plus one right answer with the corallites in view and one in a look-alike duel: see ? on <a href="#progress">My progress</a>.</p>`;
 function question(cur, target, choices, prompt, set){
   const ph = set.shown, lab = VIEW_LABEL;
   let answered = false, hintShown = false;
@@ -719,7 +720,7 @@ function question(cur, target, choices, prompt, set){
   $v.innerHTML = `${gameHelp(cur)}<div class="q bleed">
     <div class="qstage">${ph.map(fig).join('')}</div>
     <aside class="qside">
-      <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">${session.ok}/${session.n}</span>${quizNav(cur)}</div>
+      <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">${session.n ? `${session.ok}/${session.n} right` : ''}</span>${quizNav(cur)}</div>
       <div class="ans">${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
@@ -741,7 +742,8 @@ function question(cur, target, choices, prompt, set){
   // A single-view question shows the other views of the same colony once answered (seen, not part of the answer).
   const reveal = () => { const R = set.reveal || [], st = $v.querySelector('.qstage'); if (!R.length || !st) return;
     st.insertAdjacentHTML('beforeend', R.map((p, k) => fig(p, ph.length + k)).join('')); fitStage(); };
-  $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'); showHint(); reveal(); answered = true; answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint); });
+  $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'); showHint(); reveal(); answered = true; answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint);
+    const sc = $v.querySelector('.score'); if (sc) sc.textContent = `${session.ok}/${session.n} right`; });
 }
 // The quiz stage fills the window below the header, so photos, choices and feedback fit without scrolling.
 // The photos then take the grid (columns x rows) that shows them largest at 4:3.
@@ -911,12 +913,14 @@ function quizBoard(){
         <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
   };
   let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
-  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. On all three views the colour (on the photos: the name band) is the learning level, from white with a dashed border (not seen) through pale to deep teal (each step = a quarter of the way to learned) to dark green with a tick (learned); a thin line along the bottom of a tile shows exactly how far it has got. A red border and a red ! = to review, whatever the level. The scale under the ring counts the genera at each step. Each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level (naming a genus when the photo shows another one counts as a mistake for both). Learned: your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5 answers. Click a genus to open its sheet.</p>
+  $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, get it right on harder and harder photos, once with the corallites in view, and once in a look-alike duel. A mistake sets it back, for the genus you missed and for the one you answered.</p>
+  <p class="lede"><b>Colours</b>: white with a dashed border = not seen; then from pale to dark, one step per quarter of the way; the darkest, with a tick = learned. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet${isPhone() ? '' : '; hover it to see what it still needs'}.</p>
+  <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. Learned means your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus the two milestones above.</p>
   <div class="pgame pboard"><div class="pgwrap"></div>
   <aside class="gside">
     <div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['slate', 'Slate'], ['groups', 'Groups']].map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`).join('')}</div>
     <div class="pring" style="background:conic-gradient(${ring})"><span><b>${progPct(list)}%</b><small>${count('ok')}/${list.length} learned</small></span></div>
-    <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera"><b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
+    <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera"><b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Learned</p>
     ${weak.length ? `<div><h3 class="label">Review first</h3><p class="chips">${weak.slice(0, 4).map(n => `<a class="chip" href="#g-${esc(n)}"><i>${esc(n)}</i></a>`).join('')}</p></div>` : ''}
     ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> / <i>${esc(o)}</i> ×${k}</a>`).join('')}</p></div>` : ''}
@@ -1317,7 +1321,7 @@ const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
 const forms = () => fetch('forms.json?v=7').then(r => r.ok ? r.json() : {}).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}));
-Promise.all([fetch('data.json?v=25').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=25').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); window.APP_READY = true; if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 // A tab left open for days still follows Pierre's published curation (e.g. the CF book switch): when the tab comes back
 // into view (or every 30 min while visible), curation.json is read again; a change applies at the next screen (route),
 // never in the middle of a game.

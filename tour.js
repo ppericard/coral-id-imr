@@ -9,11 +9,11 @@
     {h: 'genera', sel: '#azgrid a.card', t: 'Learn: one card per genus', d: 'The card shows the deciding features. Tap it for the genus sheet: photos at 3 scales, IMR ID tips, look-alikes.'},
     {h: 'quiz', sel: '.qstage', t: 'Practice: name the genus', d: 'Two photos of the same coral: the colony, then a closer view.'},
     {h: 'quiz', sel: '.ans', t: 'Pick an answer', d: 'Wrong? You see why, with the IMR ID tips of both genera. Photos get harder as you get a genus right.'},
-    {h: 'quiz', sel: '#hintb', t: 'Stuck? Look at the corallites', d: 'You need one right answer with the corallites open to learn a genus.'},
+    {h: 'quiz', sel: '#hintb', t: 'Stuck? Look at the corallites', d: 'When no corallite photo is shown, this adds one. One right answer with the corallites in view is a step to learn a genus.'},
     {h: 'finder', sel: '.fdforms, #labroot', t: 'Identify a coral on your photos', d: 'Start from its growth form, then compare the candidate genera side by side.'},
-    {h: 'progress', sel: '.pwall, .pgrid', t: 'Your progress', d: 'A genus turns green once learned: right answers on harder photos, once with the corallites, once in a look-alike duel.'},
+    {h: 'progress', sel: '.pwall, .pgrid', t: 'Your progress', d: 'A genus turns darkest, with a tick, once learned: right answers on harder photos, once with the corallites in view, once in a look-alike duel.'},
     {h: 'progress', sel: '#sync', t: 'Sign in', d: 'Your name and a 4-digit code: your progress is saved for your trainer and follows you on any device.', live: true},
-    {h: '', sel: '#help', t: 'Help on every page', d: 'Tap ? for what a page does. ⚙ sets photo source, size and theme. Replay this tour from ?.', also: '#setb'}
+    {h: '', sel: '#help', t: 'Help on every page', d: 'Tap ? for what a page does. ⚙ sets photo size, theme and colours. Replay this tour from ?.', also: '#setb'}
   ];
   let root = null, step = 0, token = 0, target = null, tick = null;
   const vis = el => { if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
@@ -123,4 +123,6 @@
   };
   // Replay from the ? help of any page.
   document.getElementById('helpbox').addEventListener('click', e => { if (e.target.closest('[data-tour]')) { e.preventDefault(); tour(); } });
+  // The data can arrive before this file has loaded: app.js then found no tourFirst, so the first-visit tour starts here.
+  if (window.APP_READY) tourFirst();
 })();

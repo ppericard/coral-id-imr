@@ -253,7 +253,7 @@ LAB.add({
       const row = id => { const f = fam(id); return f ? `<div class="fdsrow"><h3 title="${esc(f.note || '')}">${esc(f.name)}</h3><div class="fdsopts">${f.opts.map(o => optBtn(f, o, S[id].has(o.id), cnt(f, o))).join('')}</div></div>` : ''; };
       // Once a form is picked, the form tiles shrink to compact chips so the next clues and the shortlist move up (phones and desktop).
       const forms = f => `<div class="fdforms${S[f.id].size ? ' mini' : ''}">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>${andSw(f.id)}`;
-      const show = `<button type="button" class="next fdshow" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera`} →</button>`;
+      const show = `<button type="button" class="next fdshow" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera${left.some(notIMR) ? ` (${left.filter(n => !notIMR(n)).length} on the slate)` : ''}`} →</button>`;
       // Two entry points: the paper Coral Finder's path (default) or the IMR forms, as a discreet link at the bottom (Pierre: it took room for nothing).
       const switcher = `<button type="button" class="linkish fdsv" data-sv="${startV === 'c' ? 'a' : 'c'}">${startV === 'c' ? '← IMR growth forms' : 'Coral Finder path →'}</button>`;
       let body;
