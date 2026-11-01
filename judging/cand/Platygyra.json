@@ -1,0 +1,307 @@
+{
+ "genus": "Platygyra",
+ "photos": {
+  "platygyra-cand-66798850": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "platygyra-cand-66798348": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Shallow; top of the colony dead"
+  },
+  "platygyra-cand-269396571": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "note": "Same colony with a damaged patch"
+  },
+  "platygyra-cand-269396350": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "platygyra-cand-311383810": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "platygyra-cand-345338523": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Cyan cast, soft; valleys look wide for Platygyra"
+  },
+  "platygyra-cand-345338511": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Small dark colony with wide valleys; Platygyra not certain"
+  },
+  "platygyra-cand-174425379": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Shot through rippled surface water"
+  },
+  "platygyra-cand-484995344": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Not Platygyra: frilly upright petal-like ridges (Pectinia or Merulina?)"
+  },
+  "platygyra-cand-484995338": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Not Platygyra: lobed colony with frilly upright ridges (Pectinia or Merulina?)"
+  },
+  "platygyra-cand-129413390": {
+   "view": "medium",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "platygyra-cand-339004020": {
+   "view": "medium",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Neat thick walls and wide valleys; ragged Platygyra walls not obvious. Logo watermark"
+  },
+  "platygyra-cand-578443218": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Strong blue colour"
+  },
+  "platygyra-cand-47519850": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "platygyra-cand-269471037": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best"
+  },
+  "platygyra-cand-588674933": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "platygyra-cand-589616815": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Lobed crust over rock; blue cast"
+  },
+  "platygyra-cand-269726615": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Plate with long radiating valleys; could be Leptoria or Oulophyllia"
+  },
+  "platygyra-cand-269467615": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "platygyra-cand-466227093": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Green tint, low contrast"
+  },
+  "platygyra-cand-358681868": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Mostly short valleys and closed corallites; could be Goniastrea or Favites"
+  },
+  "platygyra-cand-358681899": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "dup",
+   "multi": true,
+   "note": "Soft corals take much of the frame"
+  },
+  "platygyra-cand-174506265": {
+   "view": "medium",
+   "quality": 1,
+   "form": "x",
+   "keep": "best",
+   "note": "Heavy cyan cast, low contrast"
+  },
+  "platygyra-cand-260326927": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Fluorescent green; short valleys, could be Goniastrea or Favites"
+  },
+  "platygyra-cand-204923495": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "view"
+   ],
+   "note": "Several valleys fill the frame; between Closer and Corallites"
+  },
+  "platygyra-cand-268144394": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Dark, cast"
+  },
+  "platygyra-cand-682474934": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Short valleys, closed corallites; could be Goniastrea. Hazy"
+  },
+  "platygyra-cand-45034082": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Hazy, slightly soft"
+  },
+  "platygyra-cand-249559522": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "platygyra-cand-350565404": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "Crinoid and pipefish over part of the colony"
+  },
+  "platygyra-cand-476957179": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Mostly closed angular corallites: could be Favites or Goniastrea"
+  },
+  "platygyra-cand-195943488": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Cyan cast"
+  },
+  "platygyra-cand-195943932": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "platygyra-cand-46494799": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "platygyra-cand-722712905": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "platygyra-cand-692075320": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "platygyra-cand-175031598": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "platygyra-cand-248775465": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Green tint, shallow"
+  },
+  "platygyra-cand-437170003": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "platygyra-cand-437170004": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "dup"
+  }
+ }
+}

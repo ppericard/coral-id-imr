@@ -1,0 +1,221 @@
+{
+ "genus": "Oxypora",
+ "photos": {
+  "oxypora-cand-348957261": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "note": "Small young plate; watermark logo in a corner"
+  },
+  "oxypora-x-269668212": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "oxypora-cand-238072747": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Fleshy plate with bulbous tentacles out; could be Echinophyllia"
+  },
+  "oxypora-cand-576359886": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "oxypora-cand-576359904": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "oxypora-cand-260163062": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "polyps": true
+  },
+  "oxypora-cand-260162300": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "dup",
+   "polyps": true
+  },
+  "oxypora-cand-260162576": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "dup",
+   "polyps": true
+  },
+  "oxypora-cand-260162607": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "dup",
+   "polyps": true
+  },
+  "oxypora-cand-611193408": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Strong green cast"
+  },
+  "oxypora-cand-611193421": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Strong green cast"
+  },
+  "oxypora-cand-260151675": {
+   "view": "wide",
+   "quality": 3,
+   "form": "x",
+   "genus": "exclude",
+   "note": "Single large cup-shaped polyp, not Oxypora; maybe Trachyphyllia or a monocentric Lobophyllia"
+  },
+  "oxypora-cand-177342980": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Hazy; upright scroll-like plates with smooth margins could be Turbinaria"
+  },
+  "oxypora-cand-552620356": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "oxypora-cand-552620439": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "oxypora-cand-575526917": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Dark blue shot of a plate edge"
+  },
+  "oxypora-cand-177405864": {
+   "view": "wide",
+   "quality": 1,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Very hazy snorkel shot; plates small in frame; could be Turbinaria or Echinopora"
+  },
+  "oxypora-cand-270759696": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "oxypora-cand-270759880": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "dup"
+  },
+  "oxypora-cand-177405946": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Tiered thin plates among sea fans; could be Echinopora or Turbinaria"
+  },
+  "oxypora-cand-246484324": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Septo-costae fluoresce blue-white"
+  },
+  "oxypora-cand-270586126": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "oxypora-cand-270750175": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "oxypora-cand-270766362": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "oxypora-cand-270762323": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "oxypora-cand-270762648": {
+   "view": "medium",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "oxypora-cand-270751893": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "oxypora-cand-270587025": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "oxypora-cand-270603773": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Corallites hard to see"
+  },
+  "oxypora-cand-270767270": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "oxypora-cand-270767411": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "dup"
+  }
+ }
+}

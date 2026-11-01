@@ -1,0 +1,297 @@
+{
+ "genus": "Pocillopora",
+ "photos": {
+  "pocillopora-cand-588673292": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-600517079": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Washed-out blue colony on sand; knobby tips look like verrucae but Acropora radial corallites not excluded."
+  },
+  "pocillopora-cand-600517071": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "alt"
+  },
+  "pocillopora-cand-600517097": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "genus": "exclude",
+   "note": "Blurred thin spiky branches, seems a different coral (Seriatopora or Acropora?), not identifiable."
+  },
+  "pocillopora-cand-47520480": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-47520486": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-269293138": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-269472162": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-269471932": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "alt"
+  },
+  "pocillopora-cand-129413936": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true
+  },
+  "pocillopora-cand-269727977": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-174425388": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-175101514": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-100917718": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "note": "Reef scene; two pale branching colonies, the left one probably Pocillopora."
+  },
+  "pocillopora-cand-269728185": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-585934375": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-607126019": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-175110817": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-269468533": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-100930200": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-606689573": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-596708533": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-262218463": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Thin spreading branches on dark sand, verrucae not clear; Stylophora or Seriatopora are look-alikes."
+  },
+  "pocillopora-cand-713112109": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-713112100": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-713112086": {
+   "view": "macro",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "polyps": true
+  },
+  "pocillopora-cand-246489765": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "polyps": true
+  },
+  "pocillopora-cand-595777847": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-661955819": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "polyps": true
+  },
+  "pocillopora-cand-543961691": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-363068234": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-374947140": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true
+  },
+  "pocillopora-cand-227577853": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-307206147": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-174228876": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true
+  },
+  "pocillopora-cand-333535848": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "note": "Bleached and brown branching colonies side by side, cluttered."
+  },
+  "pocillopora-cand-36508900": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Strong green cast and blur; branching colony shape only, verrucae not visible."
+  },
+  "pocillopora-cand-463668796": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-74808985": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-509091469": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-46597174": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-57893634": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "pocillopora-cand-748240022": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Spreading flat branches with tentacles out; verrucae not clear, could be another branching genus."
+  },
+  "pocillopora-cand-336213085": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  }
+ }
+}

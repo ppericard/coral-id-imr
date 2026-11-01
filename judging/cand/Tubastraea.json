@@ -1,0 +1,269 @@
+{
+ "genus": "Tubastraea",
+ "photos": {
+  "tubastraea-cand-607125988": {
+   "view": "wide",
+   "quality": 1,
+   "form": "S",
+   "keep": "best",
+   "note": "Small dark tubes deep in a crevice, soft and dark"
+  },
+  "tubastraea-cand-532688969": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best"
+  },
+  "tubastraea-cand-269730222": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Dark green tree-like colony (T. micranthus type), dim"
+  },
+  "tubastraea-cand-278812097": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Only tentacles in view; corallite walls hidden"
+  },
+  "tubastraea-cand-34709276": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best"
+  },
+  "tubastraea-cand-62235948": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "alt"
+  },
+  "tubastraea-cand-254723905": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "polyps": true
+  },
+  "tubastraea-cand-47588259": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "polyps": true,
+   "note": "Photographer watermark at the bottom"
+  },
+  "tubastraea-cand-47588265": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "tubastraea-cand-47593376": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "polyps": true
+  },
+  "tubastraea-cand-47588690": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Polyps retracted, tubes visible; strong pink-purple colour"
+  },
+  "tubastraea-cand-61065917": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Polyps retracted; crinoids around the clump"
+  },
+  "tubastraea-cand-721148270": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "alt",
+   "polyps": true,
+   "note": "Separate patch with green-yellow polyps"
+  },
+  "tubastraea-cand-721148246": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "dup",
+   "polyps": true
+  },
+  "tubastraea-cand-721148279": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "tubastraea-cand-721148275": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "dup",
+   "polyps": true
+  },
+  "tubastraea-cand-721148301": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup",
+   "polyps": true
+  },
+  "tubastraea-cand-721148237": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "polyps": true,
+   "note": "Colonies on an underwater cross structure"
+  },
+  "tubastraea-cand-721148248": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "alt",
+   "polyps": true
+  },
+  "tubastraea-cand-362855076": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Few black tubes on sand"
+  },
+  "tubastraea-cand-267618191": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Very dark night shot"
+  },
+  "tubastraea-cand-267618172": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup",
+   "polyps": true
+  },
+  "tubastraea-cand-267618158": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "polyps": true
+  },
+  "tubastraea-cand-257180258": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "polyps": true
+  },
+  "tubastraea-cand-647469243": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Photo is rotated; dim blue"
+  },
+  "tubastraea-cand-352427885": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "A crinoid covers half the frame"
+  },
+  "tubastraea-cand-329661088": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Night shot, tentacles out, corallites hard to see"
+  },
+  "tubastraea-cand-452616290": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "polyps": true
+  },
+  "tubastraea-cand-262125467": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "polyps": true
+  },
+  "tubastraea-cand-245791824": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best"
+  },
+  "tubastraea-cand-479525030": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Hazy reef scene; clumps small in the frame"
+  },
+  "tubastraea-cand-66015515": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "tubastraea-cand-254850194": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best"
+  },
+  "tubastraea-cand-592094422": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "tubastraea-cand-604391779": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "polyps": true
+  },
+  "tubastraea-cand-574574882": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "tubastraea-cand-511776175": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best"
+  },
+  "tubastraea-cand-511776151": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "alt",
+   "note": "Hazy; crinoid over part of the clumps"
+  }
+ }
+}

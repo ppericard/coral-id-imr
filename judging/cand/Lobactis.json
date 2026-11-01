@@ -1,0 +1,29 @@
+{
+ "genus": "Lobactis",
+ "photos": {
+  "lobactis-cand-262215945": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Tentacles extended hide the disc; oval shape and lobes hard to confirm"
+  },
+  "lobactis-cand-270610410": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "lobactis-cand-270610582": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "alt",
+   "note": "Other side of the same disc"
+  }
+ }
+}

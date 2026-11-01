@@ -1,0 +1,193 @@
+{
+ "genus": "Herpolitha",
+ "photos": {
+  "herpolitha-cand-262213483": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "note": "V-shaped colony."
+  },
+  "herpolitha-cand-629161585": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "polyps": true,
+   "multi": true,
+   "unsure": [
+    "genus",
+    "polyps"
+   ],
+   "note": "Partly hidden among other corals; furrow not visible."
+  },
+  "herpolitha-cand-611198017": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Green cast; tentacles out by day hide the furrow, Polyphyllia possible."
+  },
+  "herpolitha-cand-611198028": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "dup",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Repeat of the best from further away."
+  },
+  "herpolitha-cand-355639138": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Soft; edge of the colony only."
+  },
+  "herpolitha-cand-625680247": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Small, low-resolution image."
+  },
+  "herpolitha-cand-600955465": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "herpolitha-cand-461398536": {
+   "view": "wide",
+   "quality": 1,
+   "form": "U",
+   "keep": "best",
+   "note": "Strong pink cast; half covered by sand."
+  },
+  "herpolitha-cand-460641873": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "note": "X-shaped colony, a clear example."
+  },
+  "herpolitha-cand-262212977": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "herpolitha-cand-190588837": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Green cast; tentacles out by day hide the furrow, Polyphyllia possible."
+  },
+  "herpolitha-cand-190589289": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Dim; tentacles out hide the furrow."
+  },
+  "herpolitha-cand-262213783": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "herpolitha-cand-595592341": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Snorkel shot; tentacles out hide the furrow, Polyphyllia possible."
+  },
+  "herpolitha-cand-57893731": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Soft, green cast."
+  },
+  "herpolitha-cand-59142468": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "herpolitha-cand-682475584": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Hazy."
+  },
+  "herpolitha-cand-270753533": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "polyps": true,
+   "note": "Night shot, tentacles out."
+  },
+  "herpolitha-cand-445317713": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Hazy."
+  },
+  "herpolitha-cand-445317718": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "alt",
+   "multi": true,
+   "note": "Other angle; a large massive coral fills the lower left."
+  },
+  "herpolitha-cand-190589591": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Short oval, no secondary mouths seen; may be Ctenactis."
+  },
+  "herpolitha-cand-489767286": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "note": "Same image as herpolitha-cand-262212977 (other observation), with watermark."
+  },
+  "herpolitha-cand-337139898": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Snorkel shot, soft."
+  }
+ }
+}

@@ -1,0 +1,112 @@
+{
+ "genus": "Sandalolitha",
+ "photos": {
+  "sandalolitha-cand-262216904": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "note": "Heavy dome with close corallites, other corals around the edges"
+  },
+  "sandalolitha-cand-611197927": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "polyps": true,
+   "note": "Green cast; tentacles partly out"
+  },
+  "sandalolitha-cand-611197936": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "alt",
+   "polyps": true,
+   "note": "Whole dome on sand from further away"
+  },
+  "sandalolitha-cand-262212725": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Oval dome with radiating septa from one axis; could be a large solitary fungiid"
+  },
+  "sandalolitha-cand-604391250": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Flat oval with few centres and long septa; may be Lithophyllon or Podabacia"
+  },
+  "sandalolitha-cand-262215615": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "sandalolitha-cand-262215542": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "dup"
+  },
+  "sandalolitha-cand-270751227": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Looks attached in a crevice; could be Lithophyllon or Podabacia"
+  },
+  "sandalolitha-cand-270751009": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "dup",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Same colony as the best"
+  },
+  "sandalolitha-cand-262212916": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "sandalolitha-cand-270761615": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "sandalolitha-cand-270761609": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "alt"
+  },
+  "sandalolitha-cand-270761377": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "dup"
+  },
+  "sandalolitha-cand-270761592": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "dup"
+  }
+ }
+}

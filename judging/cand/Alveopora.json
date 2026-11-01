@@ -1,0 +1,195 @@
+{
+ "genus": "Alveopora",
+ "photos": {
+  "alveopora-cand-262228951": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Long-stalked polyps, 12 tentacles visible"
+  },
+  "alveopora-cand-190591617": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Algae over the colony"
+  },
+  "alveopora-cand-190591342": {
+   "view": "macro",
+   "quality": 1,
+   "form": "x",
+   "keep": "alt",
+   "polyps": true,
+   "note": "Very strong blue cast"
+  },
+  "alveopora-cand-190591563": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "12 tentacles countable"
+  },
+  "alveopora-cand-268749996": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Soft; tentacles too small to count, could be Goniopora"
+  },
+  "alveopora-cand-600494665": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Soft, date stamp"
+  },
+  "alveopora-cand-600494648": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Soft, date stamp"
+  },
+  "alveopora-cand-577327013": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Small, dark"
+  },
+  "alveopora-cand-625302757": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Dark, soft focus"
+  },
+  "alveopora-cand-270604319": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Tentacles too small to count; plate-like encrusting colony"
+  },
+  "alveopora-cand-376513752": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Turbid; another polyp colony in the corner"
+  },
+  "alveopora-cand-256496381": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "alveopora-cand-297050842": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "12 tentacles clear"
+  },
+  "alveopora-cand-511477623": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "multi": true,
+   "note": "Reef scene with many polyp colonies, each small"
+  },
+  "alveopora-cand-245793919": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Blue cast"
+  },
+  "alveopora-cand-254862456": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "A green disc coral sits on the colony"
+  },
+  "alveopora-cand-239860266": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "alveopora-cand-559719320": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "alveopora-cand-98861198": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "alveopora-cand-270769424": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "polyps": true,
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Small polyps on a crust; a hammer-tentacle Euphylliid fills the right side"
+  },
+  "alveopora-cand-297050824": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "alveopora-cand-245795047": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Blue-green cast"
+  },
+  "alveopora-cand-246800660": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Cyan cast"
+  }
+ }
+}

@@ -1,0 +1,190 @@
+{
+ "genus": "Ctenactis",
+ "photos": {
+  "ctenactis-cand-269474432": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-234840439": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Small red oval disc with white tentacle tips; axial furrow not visible from this angle."
+  },
+  "ctenactis-cand-269733839": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-269473804": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-693783226": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "polyps": true
+  },
+  "ctenactis-cand-262218385": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-262218316": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "alt"
+  },
+  "ctenactis-cand-705252366": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "polyps": true
+  },
+  "ctenactis-cand-605666229": {
+   "view": "macro",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-262214861": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-713784333": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "polyps": true
+  },
+  "ctenactis-cand-713784329": {
+   "view": "macro",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "polyps": true
+  },
+  "ctenactis-cand-713784319": {
+   "view": "macro",
+   "quality": 3,
+   "form": "U",
+   "keep": "alt",
+   "polyps": true
+  },
+  "ctenactis-cand-227576694": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-39322638": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Fuzzy elongate disc with tentacles out among corallimorphs; Herpolitha and Polyphyllia are look-alikes."
+  },
+  "ctenactis-cand-153802900": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-452616005": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-580858994": {
+   "view": "wide",
+   "quality": 1,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-337152137": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-195908287": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Short oval disc with a short furrow; could be a Fungia-type mushroom instead."
+  },
+  "ctenactis-cand-625618209": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-174923058": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "note": "Several fungiids on a reef flat with drawn arrows; the Ctenactis is small in the frame."
+  },
+  "ctenactis-cand-479514570": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-175677960": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "note": "Elongate disc among many round Fungia discs."
+  },
+  "ctenactis-cand-682474709": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-337141165": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "ctenactis-cand-47820555": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  }
+ }
+}

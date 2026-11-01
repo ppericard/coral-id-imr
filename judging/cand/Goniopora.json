@@ -1,0 +1,450 @@
+{
+ "genus": "Goniopora",
+ "photos": {
+  "goniopora-cand-46494036": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-262228890": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-100632392": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "form"
+   ],
+   "note": "Small low colony on rock."
+  },
+  "goniopora-cand-246803307": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "form"
+   ],
+   "note": "Small low colony among algae."
+  },
+  "goniopora-cand-246748289": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Small colony on sand, polyps on long stalks hide the shape; dim."
+  },
+  "goniopora-cand-190519310": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-48750732": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-40645178": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "form"
+   ],
+   "note": "Small colony in a cluttered frame; shape hard to read."
+  },
+  "goniopora-cand-258834077": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "form"
+   ],
+   "note": "Low colony covering rock, partly hidden by algae."
+  },
+  "goniopora-cand-586123873": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Slightly soft, greenish."
+  },
+  "goniopora-cand-181668535": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "multi": true,
+   "note": "Goniopora patch ringed by a large purple coral that fills the frame edges."
+  },
+  "goniopora-cand-172888051": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-649125969": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Small subject in a cluttered frame with other corals; long stalked polyps suggest Goniopora."
+  },
+  "goniopora-cand-596697993": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-608897717": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Blue cast; colony shape hidden by long polyps."
+  },
+  "goniopora-cand-608897666": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Blue cast."
+  },
+  "goniopora-cand-235213200": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-100917915": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Green cast."
+  },
+  "goniopora-cand-596085769": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Reef scene; the long-tentacled subject could be an anemone; a large plate coral at lower left."
+  },
+  "goniopora-cand-269467969": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Columns with short polyps at night; Goniopora columna-like but Porites possible. Tunicates on top."
+  },
+  "goniopora-cand-269467835": {
+   "view": "medium",
+   "quality": 2,
+   "form": "S",
+   "keep": "dup",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Same columns as the best, wider framing."
+  },
+  "goniopora-cand-269467954": {
+   "view": "medium",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Columns with short polyps; Goniopora not certain at this polyp length."
+  },
+  "goniopora-cand-269467963": {
+   "view": "medium",
+   "quality": 2,
+   "form": "S",
+   "keep": "dup",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Same columns, tunicates in front."
+  },
+  "goniopora-cand-606656910": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-606656904": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-269515593": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "form"
+   ],
+   "note": "Algae over the top; dim."
+  },
+  "goniopora-cand-269731988": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-269734400": {
+   "view": "wide",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Colony shape hidden by long polyps."
+  },
+  "goniopora-cand-269734447": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup",
+   "polyps": true,
+   "note": "Darker repeat of the best."
+  },
+  "goniopora-cand-269734455": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup",
+   "polyps": true,
+   "note": "Repeat of the best."
+  },
+  "goniopora-cand-409196464": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Side view of polyps on long stalks."
+  },
+  "goniopora-cand-235213334": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-269733975": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Dark; colony shape hidden by polyps."
+  },
+  "goniopora-cand-269733899": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup",
+   "polyps": true,
+   "note": "Repeat of the best."
+  },
+  "goniopora-cand-620837646": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-745205522": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-606656903": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Hazy, soft."
+  },
+  "goniopora-cand-745205699": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "form"
+   ],
+   "note": "Two mounds on a wall; could read as encrusting."
+  },
+  "goniopora-cand-297051114": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Stalked polyps with brown discs; zoanthid look-alike, check the 24 tentacles."
+  },
+  "goniopora-cand-136801368": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-723807515": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-723807538": {
+   "view": "medium",
+   "quality": 3,
+   "form": "M",
+   "keep": "alt",
+   "polyps": true,
+   "unsure": [
+    "form"
+   ],
+   "note": "Side view of the colony edge."
+  },
+  "goniopora-cand-190264652": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "polyps": true
+  },
+  "goniopora-cand-693754521": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Green cast, soft, date stamp."
+  },
+  "goniopora-cand-487812568": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "polyps": true,
+   "note": "Long polyps; cyan cast and clutter at the bottom."
+  },
+  "goniopora-cand-487812523": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup",
+   "polyps": true,
+   "note": "Same polyps, less of the colony; cyan cast."
+  },
+  "goniopora-cand-270585095": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Dark; polyps retracted, Porites possible."
+  },
+  "goniopora-cand-270585223": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Other side of the same colony; dark, polyps retracted."
+  },
+  "goniopora-cand-337134835": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "multi": true,
+   "unsure": [
+    "form"
+   ],
+   "note": "Small colony next to a white colony with round corallites."
+  },
+  "goniopora-cand-454066558": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Bleached colony."
+  },
+  "goniopora-cand-454069189": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "dup",
+   "polyps": true,
+   "note": "Same image as the best."
+  }
+ }
+}

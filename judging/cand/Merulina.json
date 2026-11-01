@@ -1,0 +1,264 @@
+{
+ "genus": "Merulina",
+ "photos": {
+  "merulina-cand-488111018": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "merulina-cand-488111015": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-269469318": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-488110891": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Plate with faint radial ridges; valleys hard to see"
+  },
+  "merulina-cand-269466897": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-588432586": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Tiered plates with branching upgrowths"
+  },
+  "merulina-cand-588015497": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best"
+  },
+  "merulina-cand-269472276": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "multi": true,
+   "note": "Soft corals crowd the frame around the plate"
+  },
+  "merulina-cand-177256044": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "multi": true,
+   "note": "Tiered plates top left; many other corals in frame"
+  },
+  "merulina-cand-260007385": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-336614774": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "merulina-cand-385445363": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "alt"
+  },
+  "merulina-cand-385445372": {
+   "view": "medium",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-385445384": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-604391549": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "merulina-cand-604391543": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup",
+   "note": "Same framing as the best"
+  },
+  "merulina-cand-91232487": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "merulina-cand-662430524": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best"
+  },
+  "merulina-cand-662430617": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-336570577": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "merulina-cand-607269648": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "merulina-cand-607269689": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-260014103": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "alt"
+  },
+  "merulina-cand-260014330": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "merulina-cand-260014440": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "merulina-cand-260014521": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "merulina-cand-260014709": {
+   "view": "medium",
+   "quality": 3,
+   "form": "F",
+   "keep": "alt"
+  },
+  "merulina-cand-566697902": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-661956026": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Small cup-shaped plate with bumps but no clear valleys; juvenile, genus hard to confirm"
+  },
+  "merulina-cand-335951855": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "merulina-cand-607143562": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best"
+  },
+  "merulina-cand-607143567": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-260021817": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-260022005": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "dup",
+   "note": "Same colony, slightly wider framing"
+  },
+  "merulina-cand-684021118": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-335952469": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-260153979": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-662429079": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "merulina-cand-662429176": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "merulina-cand-260403003": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Crinoid crosses the colony"
+  }
+ }
+}

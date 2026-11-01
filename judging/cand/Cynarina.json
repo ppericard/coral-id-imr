@@ -1,0 +1,141 @@
+{
+ "genus": "Cynarina",
+ "photos": {
+  "cynarina-cand-270753115": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Large elongate polyp with one slit mouth; Cynarina likely, Lobophyllia possible"
+  },
+  "cynarina-cand-270752977": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "alt",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Side view of the same polyp"
+  },
+  "cynarina-cand-270753098": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "dup",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Same framing as the best, darker"
+  },
+  "cynarina-cand-204666699": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Solitary polyp; U chosen as closest IMR form"
+  },
+  "cynarina-cand-246910499": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "cynarina-cand-246910502": {
+   "view": "medium",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "note": "Closer on the bubbly tissue and centre"
+  },
+  "cynarina-cand-464355473": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "note": "Soft coral polyps fill the lower left corner"
+  },
+  "cynarina-cand-598236980": {
+   "view": "wide",
+   "quality": 1,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Blurred red bubbly polyp; Cynarina likely"
+  },
+  "cynarina-cand-110903717": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "cynarina-cand-39408192": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Blue-green cast"
+  },
+  "cynarina-cand-224931301": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Blue cast"
+  },
+  "cynarina-cand-661955859": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Dark"
+  },
+  "cynarina-cand-724951361": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Flat disc with long radiating lobes; could be a corallimorph rather than Cynarina"
+  },
+  "cynarina-cand-325219230": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "cynarina-cand-93255029": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "cynarina-cand-679502969": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Soft, murky"
+  },
+  "cynarina-cand-39407050": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  }
+ }
+}
