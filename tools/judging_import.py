@@ -127,7 +127,9 @@ def imp(ok, by):
     S = load('suggest.json', {}) or {}
     S = {'v': 1, 'note': 'Suggestions from an outside judging agent, imported by tools/judging_import.py. Shown in admin.html Triage; '
          'Pierre accepts (normal admin action) or dismisses (curation.json "seen"). Never edit by hand.',
-         'by': S.get('by', {}), 'photo': S.get('photo', {}), 'quality': S.get('quality', {}), 'dup': S.get('dup', []), 'add': S.get('add', {})}
+         'by': S.get('by', {}), 'photo': S.get('photo', {}), 'quality': S.get('quality', {}), 'dup': S.get('dup', []), 'add': S.get('add', {}),
+         # the candidate pass (tools/judging_cand.py) is kept as it is
+         **({'cand': S['cand']} if 'cand' in S else {})}
     F = load('forms.json', {}); Q = load('quality.json', {}); K = load('picks.json', {'v': 1, 'feat': {}})
     F.setdefault('gf', {}); Q.setdefault('q', {}); K.setdefault('feat', {})
     unsure = set(F.get('gunsure', []))
