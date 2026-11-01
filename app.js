@@ -745,9 +745,9 @@ function quizNav(){ return ''; }
 function bindQuizNav(){ bindGo(); }
 // The game rules (behind the ? button).
 const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
-  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on. Every answer counts in <a href="#progress">My progress</a>. From ${BONUS_AT(0)}% progress, <b>bonus genera</b> join in: corals off the IMR list that are common at Dauin and easily confused with it (fire coral <i>Millepora</i> first).</p>
+  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? '' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="#progress">My progress</a>. From ${BONUS_AT(0)}% progress, <b>bonus genera</b> join in: corals off the IMR list that are common at Dauin and easily confused with it (fire coral <i>Millepora</i> first).</p>
   <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus is learned once your answers make it 95% sure you know it (right answers on harder photos count more), plus one right answer with the corallites in view and one in a look-alike duel: see ? on <a href="#progress">My progress</a>.</p>`;
-function question(cur, target, choices, prompt, set){
+function question(cur, target, choices, prompt, set, kq){
   const ph = set.shown, lab = VIEW_LABEL;
   let answered = false, hintShown = false;
   const fig = (p, k) => `<figure class="qph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${img(p)}" alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
@@ -756,7 +756,7 @@ function question(cur, target, choices, prompt, set){
     <div class="qstage">${ph.map(fig).join('')}</div>
     <aside class="qside">
       <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">${session.n ? `${session.ok}/${session.n} right` : ''}</span>${quizNav(cur)}</div>
-      <div class="ans">${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
+      <div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
     </aside></div>`;
@@ -853,7 +853,7 @@ function answer(cur, c, target, ph, cor, unseen){
   const good = c === target, s = st(target);
   session.n++; if (good) { session.ok++; s.ok++; s.streak++; } else { s.ko++; s.streak = 0; s.conf = s.conf || {}; s.conf[c] = (s.conf[c] || 0) + 1; }
   // Knowledge (BKT) with the difficulty of the photos shown (before the result joins s.h, which BKT replays for old progress).
-  const k = $v.querySelectorAll('[data-c]').length || 4;
+  const nc = $v.querySelectorAll('[data-c]').length || 4, k = Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
   // A photo seen for the first time is the best evidence (Kellman: novel instances); one already answered right twice
   // may be memorised, so it counts as an easier photo (a right answer then looks more like a guess).
   const th0 = ability(target), nw = ph.filter(p => !(s.ps || {})[p.f]).length;
@@ -871,7 +871,7 @@ function answer(cur, c, target, ph, cor, unseen){
   if (good && cor) s.cor = 1;  // milestone: right with the corallites photo in view
   if (good && cur.startsWith('quiz-duel')) s.du = 1;  // milestone: won a look-alike duel
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
-  if (SYNC) SYNC.log = [...(SYNC.log || []), {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur, ph: ph.map(p => p.f).join(' '), e: Math.round(100 * (1 / k + (1 - 1 / k) * sig(th0 - d0))) / 100, th: th0, nw}].slice(-2000);
+  if (SYNC) SYNC.log = [...(SYNC.log || []), {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur + (k < nc ? '|k' + k : ''), ph: ph.map(p => p.f).join(' '), e: Math.round(100 * (1 / k + (1 - 1 / k) * sig(th0 - d0))) / 100, th: th0, nw}].slice(-2000);
   save();
   $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', photoSrc(ph[k])));
   // A mix-up: the stage becomes a montage, the photo shown (corallites if they were shown) next to a photo of the
@@ -932,20 +932,38 @@ function unlockShow(L){
   d.addEventListener('click', e => { if (e.target === d) close(); });
   setTimeout(() => { const b = d.querySelector('button'); if (b) b.focus({preventScroll: true}); }, 50);
 }
-function distractors(t, list){
-  const look = list.filter(n => n !== t && (GX(t).look.includes(n) || GX(n).look.includes(t)));
-  const fam = list.filter(n => n !== t && GX(n).fam === GX(t).fam && !look.includes(n));
-  const rest = shuffle(list.filter(n => n !== t && !look.includes(n) && !fam.includes(n)));
-  return [...shuffle(look), ...shuffle(fam), ...rest].slice(0, 3);
+// Wrong choices get harder as the player gets better at the target genus (Pierre, 2026-11-01: "at the very start it must
+// be simple", then traps appear little by little). TRAP gives how many of the 3 wrong choices are look-alikes of the
+// target (IMR lecture or Coral Finder pairs, `look` both ways), from the genus's Elo ability: none at the start (ability 0),
+// one from about 0.8, two from 1.3, all three from 1.8, rounded at random in between so the step is smooth. The other
+// wrong choices are easy ones while traps are few: genera sharing no IMR growth form with the target (imrFormsOf),
+// other IMR lecture groups first; once two traps are in, the last one is any genus (family first), as before.
+const TRAP = {start: 0.3, step: 0.5};
+const trapsFor = t => { const x = Math.min(3, Math.max(0, (ability(t) - TRAP.start) / TRAP.step)); return Math.floor(x) + (Math.random() < x % 1 ? 1 : 0); };
+function distractors(t, list, traps = trapsFor(t)){
+  const T = GX(t), look = list.filter(n => n !== t && (T.look.includes(n) || GX(n).look.includes(t)));
+  const out = shuffle(look).slice(0, traps), left = list.filter(n => n !== t && !look.includes(n));
+  if (traps >= 2) {
+    const fam = left.filter(n => GX(n).fam === T.fam);
+    return [...out, ...shuffle(fam), ...shuffle(left.filter(n => !fam.includes(n)))].slice(0, 3);
+  }
+  const tf = imrFormsOf(t), apart = n => !imrFormsOf(n).some(f => tf.includes(f));
+  const easy = left.filter(apart), far = easy.filter(n => GX(n).ig !== T.ig);
+  return [...out, ...shuffle(far), ...shuffle(easy.filter(n => !far.includes(n))), ...shuffle(left.filter(n => !easy.includes(n)))].slice(0, 3);
 }
+// Elo and BKT count a guess as 1 in (target + the plausible wrong choices) while traps are few (0 or 1): easy choices from
+// other growth forms are not plausible, so such a question is scored as a 2- or 3-choice one (a right answer there proves
+// less). From 2 traps on, every choice counts, as before.
+const plausibleK = (t, choices) => { const T = GX(t), tf = imrFormsOf(t);
+  return Math.max(2, choices.filter(n => n === t || T.look.includes(n) || GX(n).look.includes(t) || imrFormsOf(n).some(f => tf.includes(f))).length); };
 // A mix-up in the photo quiz comes back once as a duel of the two genera, one question later.
 let rematch = null;
 function quizPhoto(){
   const list = pool();
   if (rematch && rematch.wait-- <= 0) { const pair = rematch.pair; rematch = null;
     if (pair.every(n => list.includes(n))) { const t = pick(pair); return question('quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)); } }
-  const t = nextTarget(list);
-  question('quiz', t, shuffle([t, ...distractors(t, list)]), 'Which genus?', photoSet(t));
+  const t = nextTarget(list), traps = trapsFor(t), ch = shuffle([t, ...distractors(t, list, traps)]);
+  question('quiz', t, ch, 'Which genus?', photoSet(t), traps < 2 ? plausibleK(t, ch) : 0);
 }
 function quizDuel(a, b){
   const list = pool();

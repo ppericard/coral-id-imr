@@ -58,8 +58,15 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
   let n = 0;
   for (const who of ['Ana', 'Ben']) for (let i = 0; i < 40; i++) {
     const ph = [photos[i % 5], photos[(i * 3 + 1) % 5]].slice(0, 1 + (i % 2));
-    s.post({name: who, pin: '1234', data: {}, summary: {}, answers: [{id: 'a' + (n++), t: new Date(Date.UTC(2026, 10, 1, 0, 0, n)).toISOString(), g: 'Acropora', a: i % 3 ? 'Acropora' : 'Porites', ok: i % 3 ? 1 : 0, m: i % 4 ? 'quiz' : 'quiz-duel', ph: ph.join(' ')}]});
+    s.post({name: who, pin: '1234', data: {}, summary: {}, answers: [{id: 'a' + (n++), t: new Date(Date.UTC(2026, 10, 1, 0, 0, n)).toISOString(), g: 'Acropora', a: i % 3 ? 'Acropora' : 'Porites', ok: i % 3 ? 1 : 0, m: ['quiz-duel', 'quiz', 'quiz|k2', 'quiz|k3'][i % 4], ph: ph.join(' ')}]});
   }
   const rows = s.get({answers: '1'}).rows, sheet = s.get({stats: '1'}).photos;
   assert.deepStrictEqual(eloOf(rows), sheet);
+});
+
+test('a quiz question with easy wrong choices (quiz|k2) is rated with a 1/2 guess', () => {
+  const row = (m, ok) => ['Ana', 1, 'Acropora', 'Acropora', ok, m, 'acropora-1'];
+  // Right on a 2-plausible-choice question proves less than on a 4-choice one: the photo looks less easy.
+  assert.ok(eloOf([row('quiz|k2', 1)])['acropora-1'][0] > eloOf([row('quiz', 1)])['acropora-1'][0]);
+  assert.strictEqual(eloOf([row('quiz|k2', 1)])['acropora-1'][0], eloOf([row('quiz-duel', 1)])['acropora-1'][0]);
 });

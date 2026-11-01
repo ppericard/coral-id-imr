@@ -58,7 +58,7 @@ function eloOf(rows){
   const P = {}, R = {}, sig = x => 1 / (1 + Math.exp(-x));
   rows.slice().sort((a, b) => a[1] - b[1]).forEach(r => {
     const fs = r[6].split(/\s+/).filter(Boolean); if (!r[0] || !fs.length) return;
-    const ok = r[4] ? 1 : 0, g = r[5].indexOf('quiz-duel') === 0 ? 0.5 : 0.25, ra = R[r[0]] = R[r[0]] || [0, 0];
+    const ok = r[4] ? 1 : 0, kq = /\|k(\d)$/.exec(r[5]), g = kq ? 1 / Number(kq[1]) : r[5].indexOf('quiz-duel') === 0 ? 0.5 : 0.25, ra = R[r[0]] = R[r[0]] || [0, 0];
     const ph = fs.map(f => P[f] = P[f] || [0, 0, 0]), b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
     const d = ok - (g + (1 - g) * sig(ra[0] - b));
     ra[0] += 0.6 / (1 + ra[1] / 40) * d; ra[1]++;
