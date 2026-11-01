@@ -17,6 +17,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Formatting (Prettier 3.6.2; .prettierrc.json, .prettierignore)
+        run: |
+          npx --yes prettier@3.6.2 --check "*.js" "*.css" "proto/*.js" "proto/*.css" "tests/*.js"
       - name: JS syntax
         run: |
           for f in *.js proto/*.js tests/*.js; do node --check "$f" || exit 1; done

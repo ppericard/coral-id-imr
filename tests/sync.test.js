@@ -1,24 +1,40 @@
 // Sync script (tools/sync/Code.gs) against an in-memory sheet: node --test tests/
-const test = require('node:test'), assert = require('node:assert');
+const test = require('node:test'),
+  assert = require('node:assert');
 const {loadCodeGs} = require('./gas.js');
 
 const prog = n => ({'imr-coral-progress': JSON.stringify({Acropora: {ok: n, ko: 0}})});
-const ans = (id, extra = {}) => ({id, t: '2026-11-01T00:00:00Z', g: 'Acropora', a: 'Acropora', ok: 1, m: 'quiz', ph: 'acropora-1 acropora-2', ...extra});
+const ans = (id, extra = {}) => ({
+  id,
+  t: '2026-11-01T00:00:00Z',
+  g: 'Acropora',
+  a: 'Acropora',
+  ok: 1,
+  m: 'quiz',
+  ph: 'acropora-1 acropora-2',
+  ...extra
+});
 
 test('new RA, save and load back, with revision', () => {
   const s = loadCodeGs();
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 11});
   const r = s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}, answers: [ans('a1')]});
-  assert.strictEqual(r.ok, true); assert.strictEqual(r.log, true); assert.strictEqual(r.rev, 1);
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.log, true);
+  assert.strictEqual(r.rev, 1);
   const g = s.get({name: 'ana', pin: '1234'});
-  assert.strictEqual(g.found, true); assert.strictEqual(g.rev, 1); assert.deepStrictEqual(g.data, prog(3));
+  assert.strictEqual(g.found, true);
+  assert.strictEqual(g.rev, 1);
+  assert.deepStrictEqual(g.data, prog(3));
 });
 
 test('a stale write is refused but its answers are kept', () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: []});
   const r = s.post({name: 'Ana', pin: '1234', data: prog(2), summary: {}, answers: [ans('b1')], at: 0});
-  assert.strictEqual(r.error, 'stale'); assert.strictEqual(r.log, true); assert.strictEqual(r.rev, 1);
+  assert.strictEqual(r.error, 'stale');
+  assert.strictEqual(r.log, true);
+  assert.strictEqual(r.rev, 1);
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).data, prog(1));
   assert.strictEqual(s.sheets.Answers.getLastRow(), 2);
   assert.strictEqual(s.post({name: 'Ana', pin: '1234', data: prog(2), summary: {}, answers: [ans('b1')], at: 1}).rev, 2);
@@ -32,7 +48,8 @@ test('older apps (no at) are still accepted', () => {
 });
 
 test('progress over 50,000 characters is saved in chunks and read back whole', () => {
-  const s = loadCodeGs(), ps = {};
+  const s = loadCodeGs(),
+    ps = {};
   for (let i = 0; i < 4000; i++) ps['acropora-cand-' + (100000000 + i)] = [3, 2];
   const data = {'imr-coral-progress': JSON.stringify({Acropora: {ok: 1, ko: 0, ps}})};
   assert.ok(JSON.stringify(data).length > 120000);
@@ -49,16 +66,26 @@ test('rows written by v5 (JSON in RAs column H) are read and get revision 0', ()
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}});
   delete s.sheets['Progress data'];
   const g = s.get({name: 'Ana', pin: '1234'});
-  assert.strictEqual(g.rev, 0); assert.deepStrictEqual(g.data, prog(1));
+  assert.strictEqual(g.rev, 0);
+  assert.deepStrictEqual(g.data, prog(1));
 });
 
 test('names and answer fields never become formulas', () => {
   const s = loadCodeGs();
-  s.post({name: '=IMPORTDATA("x")', pin: '1234', data: prog(1), summary: {genera: {Acropora: 'ok'}}, answers: [ans('c1', {g: '=HYPERLINK("x")', m: '+bad', ph: '=x'})]});
+  s.post({
+    name: '=IMPORTDATA("x")',
+    pin: '1234',
+    data: prog(1),
+    summary: {genera: {Acropora: 'ok'}},
+    answers: [ans('c1', {g: '=HYPERLINK("x")', m: '+bad', ph: '=x'})]
+  });
   const all = Object.values(s.sheets).flatMap(sh => sh.rows.flat());
   assert.ok(!all.some(v => v && v.formula && !/^=QUERY/.test(v.formula)), 'no formula except the Activity QUERY');
   const row = s.sheets.Answers.getRange(2, 1, 1, 7).getValues()[0];
-  assert.strictEqual(row[0], '=IMPORTDATA("x")'); assert.strictEqual(row[2], ''); assert.strictEqual(row[5], ''); assert.strictEqual(row[6], '');
+  assert.strictEqual(row[0], '=IMPORTDATA("x")');
+  assert.strictEqual(row[2], '');
+  assert.strictEqual(row[5], '');
+  assert.strictEqual(row[6], '');
   assert.strictEqual(s.get({name: '=IMPORTDATA("x")', pin: '1234'}).found, true);
 });
 
@@ -95,7 +122,18 @@ test('anonymous ids use a secret salt; the caller learns its own id with its cod
   assert.ok(s.get({stats: '1'}).ras[id]);
 });
 
-const rep = (id, extra = {}) => ({id, t: '2026-11-01T00:00:00Z', why: 'wrong', g: 'Acropora', a: 'Montipora', fix: 'Montipora', note: 'corallites', m: 'quiz', ph: 'acropora-1 acropora-2', ...extra});
+const rep = (id, extra = {}) => ({
+  id,
+  t: '2026-11-01T00:00:00Z',
+  why: 'wrong',
+  g: 'Acropora',
+  a: 'Montipora',
+  fix: 'Montipora',
+  note: 'corallites',
+  m: 'quiz',
+  ph: 'acropora-1 acropora-2',
+  ...extra
+});
 
 test('reports: logged once, reporter verified by code, never mistaken for a progress write', () => {
   const s = loadCodeGs();
@@ -109,7 +147,13 @@ test('reports: logged once, reporter verified by code, never mistaken for a prog
   assert.deepStrictEqual(R.getRange(4, 2, 1, 2).getValues()[0], ['Bob', 0]);
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).data, prog(3), 'progress untouched');
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r5', {why: 'idea', g: '', a: '', fix: '', ph: '', m: 'page', w: 'finder|form=M'})]});
-  assert.deepStrictEqual(R.getRange(5, 4, 1, 8).getValues()[0].slice(0, 1).concat(R.getRange(5, 9, 1, 3).getValues()[0]), ['Suggestion', 'page', '', 'finder|form=M']);
+  assert.deepStrictEqual(
+    R.getRange(5, 4, 1, 8)
+      .getValues()[0]
+      .slice(0, 1)
+      .concat(R.getRange(5, 9, 1, 3).getValues()[0]),
+    ['Suggestion', 'page', '', 'finder|form=M']
+  );
 });
 
 test('reports list: only a GitHub token that can write to the repo, checked once', () => {
@@ -120,10 +164,12 @@ test('reports list: only a GitHub token that can write to the repo, checked once
   assert.strictEqual(s.post({readReports: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
   assert.strictEqual(s.post({readReports: 1, token: 'bad_token_0000000000000000'}).error, 'token');
   const a = s.post({readReports: 1, token: 'ghp_write000000000000000000'});
-  assert.strictEqual(a.rows.length, 2); assert.strictEqual(a.rows[0][0], 'r2', 'newest first');
+  assert.strictEqual(a.rows.length, 2);
+  assert.strictEqual(a.rows[0][0], 'r2', 'newest first');
   assert.deepStrictEqual(a.rows[1].slice(2, 9), ['Ana', 1, 'wrong', 'Acropora', 'Montipora', 'Montipora', 'corallites']);
   assert.strictEqual(a.rows[0][11], '', 'where (v8)');
-  const n = s.fetched.length; s.post({readReports: 1, token: 'ghp_write000000000000000000'});
+  const n = s.fetched.length;
+  s.post({readReports: 1, token: 'ghp_write000000000000000000'});
   assert.strictEqual(s.fetched.length, n, 'remembered for 10 minutes');
   assert.ok(!JSON.stringify(s.cache).includes('ghp_write'), 'the token itself is never stored');
   assert.strictEqual(s.get({reports: '1', name: 'Ana', pin: '1234'}).found, true, 'no GET for reports');
@@ -133,7 +179,13 @@ test('reports list: only a GitHub token that can write to the repo, checked once
 const TOK = 'ghp_write000000000000000000';
 const seed = () => {
   const s = loadCodeGs();
-  s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {learned: 1, seen: 2, total: 39}, answers: [ans('a1'), ans('a2', {ok: 0, a: 'Montipora', m: 'quiz-duel'})]});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: prog(3),
+    summary: {learned: 1, seen: 2, total: 39},
+    answers: [ans('a1'), ans('a2', {ok: 0, a: 'Montipora', m: 'quiz-duel'})]
+  });
   s.post({name: 'Ana B', pin: '5678', data: prog(2), summary: {learned: 0, seen: 1, total: 39}, answers: [ans('b1')]});
   s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {}, answers: [ans('c1')]});
   s.post({rname: 'Ana B', rpin: '5678', reports: [{id: 'r1', why: 'photo', t: '2026-11-01T00:00:00Z'}]});
@@ -145,9 +197,13 @@ test('users: admin token only; one row per player with their numbers', () => {
   assert.strictEqual(s.post({users: 1}).error, 'token');
   assert.strictEqual(s.post({users: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
   const r = s.post({users: 1, token: TOK});
-  assert.strictEqual(r.ok, true); assert.strictEqual(r.v, 11);
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.v, 11);
   const ana = r.users.find(u => u.name === 'Ana');
-  assert.strictEqual(ana.answers, 2); assert.strictEqual(ana.right, 1); assert.strictEqual(ana.learned, 1); assert.strictEqual(ana.days, 1);
+  assert.strictEqual(ana.answers, 2);
+  assert.strictEqual(ana.right, 1);
+  assert.strictEqual(ana.learned, 1);
+  assert.strictEqual(ana.days, 1);
   assert.deepStrictEqual(ana.modes, {quiz: [1, 1], 'quiz-duel': [1, 0]});
   assert.deepStrictEqual(ana.mix, [['Acropora', 'Montipora', 1]]);
   assert.strictEqual(r.users.find(u => u.name === 'Ana B').reports, 1);
@@ -159,16 +215,23 @@ test('userMerge: progress written to into, answers and reports relabelled, from 
   const merged = prog(5);
   assert.strictEqual(s.post({userMerge: {from: 'Ana B', into: 'Ana', data: merged, at: 0}, token: TOK}).error, 'stale');
   const r = s.post({userMerge: {from: 'Ana B', into: 'Ana', data: merged, at: 1}, token: TOK});
-  assert.strictEqual(r.ok, true); assert.strictEqual(r.answers, 1); assert.strictEqual(r.reports, 1); assert.strictEqual(r.rev, 2);
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.answers, 1);
+  assert.strictEqual(r.reports, 1);
+  assert.strictEqual(r.rev, 2);
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).data, merged);
   const u = s.post({users: 1, token: TOK});
   assert.deepStrictEqual(u.users.map(x => x.name).sort(), ['Ana', 'Ben']);
   assert.strictEqual(u.users.find(x => x.name === 'Ana').answers, 3);
-  assert.deepStrictEqual(u.removed.map(x => [x.name, x.into]), [['Ana B', 'Ana']]);
+  assert.deepStrictEqual(
+    u.removed.map(x => [x.name, x.into]),
+    [['Ana B', 'Ana']]
+  );
   // The old device of "Ana B": a pull and a send both get 'gone', and its new answers go to Ana.
   assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 11});
   const w = s.post({name: 'Ana B', pin: '5678', data: prog(9), summary: {}, answers: [ans('b2')]});
-  assert.strictEqual(w.error, 'gone'); assert.strictEqual(w.log, true);
+  assert.strictEqual(w.error, 'gone');
+  assert.strictEqual(w.log, true);
   assert.strictEqual(s.post({users: 1, token: TOK}).users.find(x => x.name === 'Ana').answers, 4);
   assert.strictEqual(s.sheets.RAs.getLastRow(), 3, 'no account re-created for Ana B');
   // Someone new may still take the name with another code.
@@ -178,8 +241,12 @@ test('userMerge: progress written to into, answers and reports relabelled, from 
 test('userDelete: rows gone; answers kept anonymously unless asked; the old code is refused', () => {
   const s = seed();
   const r = s.post({userDelete: 'Ben', token: TOK});
-  assert.strictEqual(r.ok, true); assert.strictEqual(r.answers, 1);
-  assert.ok(s.sheets.Answers.rows.some(x => /^~deleted /.test(x[0])), 'answers kept for photo difficulty, without the name');
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.answers, 1);
+  assert.ok(
+    s.sheets.Answers.rows.some(x => /^~deleted /.test(x[0])),
+    'answers kept for photo difficulty, without the name'
+  );
   assert.ok(!s.sheets.RAs.rows.some(x => x && x[0] === 'Ben'));
   assert.strictEqual(s.get({name: 'Ben', pin: '1111'}).error, 'gone');
   const d = s.post({userDelete: 'Ana B', answers: true, token: TOK});
@@ -196,48 +263,86 @@ test('a duel on a chosen pair keeps its mode (rated as 2 choices)', () => {
 
 // Self-update (v11): a higher VERSION on GitHub main replaces the code, makes a version and repoints the web app.
 const CODE = require('fs').readFileSync(require('path').join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8');
-const resp = (code, body) => ({getResponseCode: () => code, getContentText: () => typeof body === 'string' ? body : JSON.stringify(body)});
-function fakeGoogle(remote){
+const resp = (code, body) => ({
+  getResponseCode: () => code,
+  getContentText: () => (typeof body === 'string' ? body : JSON.stringify(body))
+});
+function fakeGoogle(remote) {
   const calls = [];
-  return {calls, fetch: (url, o) => {
-    if (url.includes('raw.githubusercontent.com')) return url.includes('Code.gs') ? resp(200, remote) : resp(200, '{"timeZone":"Asia/Manila"}');
-    if (!url.includes('script.googleapis.com')) return null;
-    const m = (o.method || 'get').toLowerCase(), p = url.replace(/^.*\/projects\/SCRIPT_ID/, '');
-    calls.push(m + ' ' + p + (o.payload ? ' ' + o.payload.slice(0, 80) : ''));
-    if (m === 'get' && p === '/content') return resp(200, {files: [{name: 'appsscript', type: 'JSON', source: '{}'}, {name: 'Code', type: 'SERVER_JS', source: 'old'}]});
-    if (m === 'post' && p === '/versions') return resp(200, {versionNumber: 7});
-    if (m === 'get' && p === '/deployments') return resp(200, {deployments: [{deploymentId: 'HEAD', deploymentConfig: {}}, {deploymentId: 'WEB', deploymentConfig: {versionNumber: 6}, entryPoints: [{entryPointType: 'WEB_APP'}]}]});
-    return resp(200, {});
-  }};
+  return {
+    calls,
+    fetch: (url, o) => {
+      if (url.includes('raw.githubusercontent.com'))
+        return url.includes('Code.gs') ? resp(200, remote) : resp(200, '{"timeZone":"Asia/Manila"}');
+      if (!url.includes('script.googleapis.com')) return null;
+      const m = (o.method || 'get').toLowerCase(),
+        p = url.replace(/^.*\/projects\/SCRIPT_ID/, '');
+      calls.push(m + ' ' + p + (o.payload ? ' ' + o.payload.slice(0, 80) : ''));
+      if (m === 'get' && p === '/content')
+        return resp(200, {
+          files: [
+            {name: 'appsscript', type: 'JSON', source: '{}'},
+            {name: 'Code', type: 'SERVER_JS', source: 'old'}
+          ]
+        });
+      if (m === 'post' && p === '/versions') return resp(200, {versionNumber: 7});
+      if (m === 'get' && p === '/deployments')
+        return resp(200, {
+          deployments: [
+            {deploymentId: 'HEAD', deploymentConfig: {}},
+            {deploymentId: 'WEB', deploymentConfig: {versionNumber: 6}, entryPoints: [{entryPointType: 'WEB_APP'}]}
+          ]
+        });
+      return resp(200, {});
+    }
+  };
 }
 test('autoUpdate: same version on GitHub does nothing', () => {
-  const g = fakeGoogle(CODE), s = loadCodeGs({fetch: g.fetch});
-  assert.match(s.ctx.autoUpdate(), /^up to date/); assert.deepStrictEqual(g.calls, []);
+  const g = fakeGoogle(CODE),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.deepStrictEqual(g.calls, []);
 });
 test('autoUpdate: a higher version is installed and the web app deployment repointed', () => {
   const next = CODE.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + 1};`);
-  const g = fakeGoogle(next), s = loadCodeGs({fetch: g.fetch});
+  const g = fakeGoogle(next),
+    s = loadCodeGs({fetch: g.fetch});
   assert.match(s.ctx.autoUpdate(), /^deployed v/);
-  assert.deepStrictEqual(g.calls.map(c => c.split(' ').slice(0, 2).join(' ')), ['get /content', 'put /content', 'post /versions', 'get /deployments', 'put /deployments/WEB']);
+  assert.deepStrictEqual(
+    g.calls.map(c => c.split(' ').slice(0, 2).join(' ')),
+    ['get /content', 'put /content', 'post /versions', 'get /deployments', 'put /deployments/WEB']
+  );
   assert.ok(g.calls[1].includes('"name":"appsscript"'));
   assert.ok(g.calls[4].includes('"versionNumber":7'));
   assert.match(String(s.sheets['Deploy log'].rows[1][1]), /^deployed v\d+ as version 7 \(1 web app deployment\)/);
 });
 test('autoUpdate: never installs a version that would stop the updates', () => {
-  const next = CODE.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + 1};`).replace(/function autoUpdate\(/g, 'function gone(');
-  const g = fakeGoogle(next), s = loadCodeGs({fetch: g.fetch});
-  assert.strictEqual(s.ctx.autoUpdate(), 'skipped'); assert.deepStrictEqual(g.calls, []);
+  const next = CODE.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + 1};`).replace(
+    /function autoUpdate\(/g,
+    'function gone('
+  );
+  const g = fakeGoogle(next),
+    s = loadCodeGs({fetch: g.fetch});
+  assert.strictEqual(s.ctx.autoUpdate(), 'skipped');
+  assert.deepStrictEqual(g.calls, []);
 });
 
 test('autoUpdate: an interrupted update (code in place, deploy failed) is finished on the next run', () => {
   const next = CODE.replace(/const VERSION = (\d+);/, (_, v) => `const VERSION = ${Number(v) + 1};`);
   // First run: the code goes in, then /versions fails.
-  const g = fakeGoogle(next), f0 = g.fetch, s = loadCodeGs({fetch: (u, o) => /\/versions$/.test(u) ? resp(503, 'unavailable') : f0(u, o)});
+  const g = fakeGoogle(next),
+    f0 = g.fetch,
+    s = loadCodeGs({fetch: (u, o) => (/\/versions$/.test(u) ? resp(503, 'unavailable') : f0(u, o))});
   assert.strictEqual(s.ctx.autoUpdate(), 'error');
   assert.ok(s.props.AUTO_PENDING, 'the pending version is remembered');
   // Next run, by the new code itself (same VERSION as GitHub): it finishes the deployment instead of saying "up to date".
-  const g2 = fakeGoogle(CODE), s2 = loadCodeGs({fetch: g2.fetch}); s2.props.AUTO_PENDING = s.props.AUTO_PENDING;
+  const g2 = fakeGoogle(CODE),
+    s2 = loadCodeGs({fetch: g2.fetch});
+  s2.props.AUTO_PENDING = s.props.AUTO_PENDING;
   assert.match(s2.ctx.autoUpdate(), /^deployed v/);
-  assert.deepStrictEqual(g2.calls.map(c => c.split(' ').slice(0, 2).join(' ')), ['post /versions', 'get /deployments', 'put /deployments/WEB']);
+  assert.deepStrictEqual(
+    g2.calls.map(c => c.split(' ').slice(0, 2).join(' ')),
+    ['post /versions', 'get /deployments', 'put /deployments/WEB']
+  );
   assert.strictEqual(s2.props.AUTO_PENDING, undefined);
 });

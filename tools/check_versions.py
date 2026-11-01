@@ -43,7 +43,7 @@ def state(rev=None):
     lab = read('proto/lab.js', rev)
     labv = int(re.search(r'const LAB_V = (\d+);', lab).group(1))
     files = re.findall(r"'(\w+)'", re.search(r'files: \[([^\]]*)\]', lab).group(1))
-    m = re.search(r"\.\.\.\[([^\]]*)\]\.map\(f => `proto/\$\{f\}\.js\?v=(\d+)`\)", shell)
+    m = re.search(r"\.\.\.\[([^\]]*)\]\.map\(\s*f => `proto/\$\{f\}\.js\?v=(\d+)`\s*\)", shell)  # any line breaks (Prettier)
     swlab = (re.findall(r"'(\w+)'", m.group(1)), int(m.group(2))) if m else ([], None)
     V = int(re.search(r"const V = 'imr-coral-id-v(\d+)';", sw).group(1))
     return refs, labv, files, swlab, V

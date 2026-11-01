@@ -2,13 +2,21 @@
 //  1. Learn & practise: the learning phase (Learn the genera, then Practice on photos).
 //  2. Identify: the tool for naming a coral under a ReefCloud point (the Coral Finder).
 // The section tabs and the Tools page (#lab) list every other tool.
-(function(){
-  const ph = (n, v) => { const g = DATA.gen[n]; if (!g) return ''; const p = (g.views[v] || [])[0] || (g.views.macro || [])[0] || cover(g); return p ? img(p, 's') : ''; };
-  window.viewHome = function(){
-    document.documentElement.dataset.page = 'lab';  // full width, like the Lab (lab.css)
+(function () {
+  const ph = (n, v) => {
+    const g = DATA.gen[n];
+    if (!g) return '';
+    const p = (g.views[v] || [])[0] || (g.views.macro || [])[0] || cover(g);
+    return p ? img(p, 's') : '';
+  };
+  window.viewHome = function () {
+    document.documentElement.dataset.page = 'lab'; // full width, like the Lab (lab.css)
     const names = Object.keys(DATA.gen);
     // Door 1 art: a band of corallite close-ups. Door 2 art: a real ReefCloud photo with its 5 points (Pierre's, 2026-10-31), centred on the active point.
-    const tiles = shuffle(names).slice(0, 12).map(g => `<img src="${ph(g, 'macro')}" alt="" loading="lazy">`).join('');
+    const tiles = shuffle(names)
+      .slice(0, 12)
+      .map(g => `<img src="${ph(g, 'macro')}" alt="" loading="lazy">`)
+      .join('');
     $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the genera; Identify when you need to name a coral on a ReefCloud photo.</p><div class="home-page">
       <div class="hdoors">
         <section class="hdoor learn">
