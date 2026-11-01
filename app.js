@@ -580,14 +580,14 @@ if (Q.lvv !== 3) { Q.level = 'auto'; Q.course = false; Q.lvv = 3; }  // Auto onl
 const saveQ = () => store.set('imr-coral-quiz', Q);
 let session = {ok: 0, n: 0}, last = null, duelPair = null;
 const pool = () => Object.keys(DATA.gen).filter(n => (Q.stars || DATA.gen[n].n) && photoSet(n).shown.length);
-// A quiz question always shows one colony view and one closer view; the corallites come as a hint.
+// A quiz question shows the views of ONE colony: colony and closer views, the corallites as a hint (or one view alone).
 // Continuous difficulty (Pierre, 2026-10-31; Elo as in Pelánek 2016 / Duolingo Birdbrain, no time criteria): every
 // question draws from ALL the game photos of the genus, weighted by how close each photo's difficulty (photoDiff) is to
 // the target for this player on this genus (ability(n) - TARGET_OFF, about 80% right in a 4-choice question). On top:
 // photos never seen get a bonus (bigger when the player is doing well; IMR and Pierre's photos first), photos already
 // answered right twice weigh less (they may be memorised), the colony of the last 2 questions on the genus is held back,
 // and at least 3 colonies stay in rotation (VARIETY) whatever the level, so a struggling player still sees new photos.
-// Views come from one observation (same colony) whenever possible; a missing view is filled from another observation.
+// Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
 const PICKD = {TARGET_OFF: 1.0, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
 // One zoom level per question (Pierre, 2026-10-31): beginners get every view of the colony (lots of information); as
 // the player's level on the genus rises, more and more questions show a single view (colony, closer or corallites
@@ -602,24 +602,32 @@ function photoSet(n){
   const pics = v => gamePics(n, v, 'hard').filter(ok(v));
   const single = Math.random() < singleP(n), s = P[n] || {}, seen = s.ps || {}, ro = s.ro || [], tgt = ability(n) - PICKD.TARGET_OFF - (single ? PICKD.SINGLE : 0);
   const h = [...recent(n).slice(-5)], hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
-  const w = p => { const x = (photoDiff(n, p) - tgt) / PICKD.SIGMA, k = seen[p.f]; let r = Math.exp(-x * x / 2);
+  // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
+  const w = (p, off = 0) => { const x = (photoDiff(n, p) + off - tgt) / PICKD.SIGMA, k = seen[p.f]; let r = Math.exp(-x * x / 2);
     if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1); else if (k[1] >= 2) r *= 0.6; return r; };
   const obs = {};
   need.forEach(v => pics(v).forEach(p => { const k = p.o || p.f; (obs[k] = obs[k] || {})[v] = (obs[k][v] || []).concat([p]); }));
   const keys = Object.keys(obs);
-  const score = k => { const o = obs[k], vs = shownV.filter(v => o[v]); if (!vs.length) return 0;
-    const m = vs.reduce((t, v) => t + Math.max(...o[v].map(w)), 0) / vs.length, cov = need.filter(v => o[v]).length / need.length;
-    return m * cov * cov * (ro.includes(k) ? 0.15 : 1); };
+  // All the photos of a question come from ONE observation (Pierre, 2026-11-01: zoom levels of different colonies shown
+  // together read as one coral and teach a wrong picture). Beginners (several views) favour colonies photographed at
+  // several zooms (cov squared); a colony with a single view becomes a single-view question, never topped up from another one.
+  const score = k => { const o = obs[k], vs = (single ? need : shownV).filter(v => o[v]); if (!vs.length) return 0;
+    const nv = need.filter(v => o[v]).length, off = !single && nv === 1 ? PICKD.SINGLE : 0, cov = nv / need.length;
+    const m = vs.reduce((t, v) => t + Math.max(...o[v].map(p => w(p, off))), 0) / vs.length;
+    return m * (single ? cov : cov * cov) * (ro.includes(k) ? 0.15 : 1); };
   const sc = Object.fromEntries(keys.map(k => [k, score(k)])), top = Math.max(0, ...Object.values(sc));
   keys.filter(k => sc[k] > 0).sort((a, b) => sc[b] - sc[a]).slice(0, PICKD.VARIETY).forEach(k => { if (!ro.includes(k)) sc[k] = Math.max(sc[k], 0.5 * top); });
   keys.forEach(k => { if (sc[k] > 0) sc[k] = Math.max(sc[k], PICKD.FLOOR * top); });
-  const o = top ? obs[wpick(keys, k => sc[k])] : {};
-  const one = v => { const L = o[v] || pics(v); return L.length ? {...wpick(L, w), view: v} : null; };
+  const o = top ? obs[wpick(keys, k => sc[k])] : keys.length ? obs[pick(keys)] : {};
+  const one = v => { const L = o[v] || []; return L.length ? {...wpick(L, w), view: v} : null; };
   const lab = v => two && v === 'macro' ? 'close' : v;
-  if (single) { const vs = need.filter(v => (o[v] || pics(v)).length), v = vs.length ? pick(vs) : null;
-    if (v) { const p = one(v); return {shown: [{...p, view: lab(v)}], hint: null, reveal: need.filter(x => x !== v && o[x]).map(x => ({...pick(o[x]), view: lab(x)}))}; } }
+  const has = need.filter(v => (o[v] || []).length);
+  if (single || has.length === 1) { const v = has.length ? pick(has) : null;
+    if (v) { const p = one(v); return {shown: [{...p, view: lab(v)}], hint: null, reveal: has.filter(x => x !== v).map(x => ({...pick(o[x]), view: lab(x)}))}; }
+    return {shown: [], hint: null}; }
   // Two-level genera (e.g. Plerogyra, mushroom corals) show colony + close-up, with no hint.
   if (two) { const m = one('macro'); return {shown: [one('wide'), m && {...m, view: 'close'}].filter(Boolean), hint: null}; }
+  // A colony with only closer + corallites shows the closer view, the corallites as the hint.
   return {shown: [one('wide'), one('medium')].filter(Boolean), hint: one('macro')};
 }
 // Weighted random pick (weights from f).
@@ -698,9 +706,9 @@ function level(n){
 function quizNav(){ return ''; }
 function bindQuizNav(){ bindGo(); }
 // The game rules (behind the ? button).
-const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused: say which one is in the photos.' : 'Name the genus in the photos: one colony view and one closer view of the same coral.'}
+const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused: say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
   Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? <b>Show the corallites</b> adds a close-up. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on. Every answer counts in <a href="#progress">My progress</a>.</p>
-  <p class="lede"><b>Photos</b>: each genus starts with its best photos, all views of the same colony together, and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, closer or corallites), and a mistake eases them off. A genus is learned once your answers make it 95% sure you know it: right answers on harder photos count more.</p>`;
+  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, closer or corallites), and a mistake eases them off. A genus is learned once your answers make it 95% sure you know it: right answers on harder photos count more.</p>`;
 function question(cur, target, choices, prompt, set){
   const ph = set.shown, lab = VIEW_LABEL;
   let answered = false, hintShown = false;

@@ -38,6 +38,7 @@ These came from Pierre's explicit feedback. When in doubt, follow them over your
 12. **Mastery never depends on time** (no spaced-repetition days, no decay, no "refresh"). It is a practical tool, not a retention or daily-habit app (no streaks, lessons, Duolingo-style units). Someone should be able to master everything in a few hours.
 13. **A wrong answer counts against both genera**: the correct one and the one wrongly given.
 14. Difficulty is adaptive and continuous (per-genus ability vs photo Elo, ~80% target success, guaranteed variety and new photos). No manual Easy/Medium/Hard selector. Starred genera are always included in Practice. Never split practice by lecture group.
+14b. **All photos of one game question come from ONE observation (same colony)** (Pierre, 2026-11-01). Never top up a missing zoom level with another colony: a colony with one view becomes a single-view question.
 15. Visual recognition and fast side-by-side comparison beat theory. The 5-question observation routine is only for the very first contact.
 
 ### UI and layout
