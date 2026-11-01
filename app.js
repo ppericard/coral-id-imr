@@ -116,6 +116,7 @@ function applyCuration(d, c){
   });
 }
 
+let CUR_NEW = null, curAt = Date.now();  // curation read again later (curRefresh)
 let RAW, CUR, FORMS = {gf: {}, form: {}, cf: {}}, AUTOQ = {}, PICKS = {};
 // Genera not on the IMR slate but in the Coral Finder book and present at Dauin (data.json "x", tools/build_extra.py):
 // Identify > Coral Finder only (Pierre, 2026-10-31), on by default, switch in ⚙ on that page. Same photo pipeline,
@@ -1195,6 +1196,7 @@ function showModes(tab, h){
   const on = $modes.querySelector('[aria-current]'); if (on && $modes.scrollWidth > $modes.clientWidth) $modes.scrollLeft = on.offsetLeft - ($modes.clientWidth - on.offsetWidth) / 2;
 }
 function route(){
+  if (CUR_NEW) { CUR = CUR_NEW; CUR_NEW = null; build(); }
   applySize();
   const h = decodeURIComponent(location.hash.slice(1));
   // Home lives at the clean URL; an old #home link is rewritten to it.
@@ -1299,4 +1301,11 @@ const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store
 const forms = () => fetch('forms.json?v=7').then(r => r.ok ? r.json() : {}).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}));
 Promise.all([fetch('data.json?v=25').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+// A tab left open for days still follows Pierre's published curation (e.g. the CF book switch): when the tab comes back
+// into view (or every 30 min while visible), curation.json is read again; a change applies at the next screen (route),
+// never in the middle of a game.
+function curRefresh(){ if (!RAW || /[?&]draft\b/.test(location.search)) return; curAt = Date.now();
+  fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : null).then(c => { if (c && JSON.stringify(c) !== JSON.stringify(CUR)) CUR_NEW = c; }).catch(() => {}); }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - curAt > 300000) curRefresh(); });
+setInterval(() => { if (document.visibilityState === 'visible') curRefresh(); }, 1800000);
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
