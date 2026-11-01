@@ -2475,7 +2475,7 @@ function renderRepl() {
   const QN = {1: 'Poor', 2: 'Fair', 3: 'Good'};
   $v.innerHTML = `<section class="adm-repl">
     <div class="adm-shead"><h2><i>${esc(n)}</i> · ${esc(label(n, w))} is full</h2></div>
-    <p class="note">${cols.length} colonies already in the games (cap ${CELL_MAX}). Pick the one this photo replaces: its photos of this view stay on the genus sheet and leave the games. Undo (Ctrl+Z) brings it back.</p>
+    <p class="note">${cols.length} colonies in the games (cap ${CELL_MAX}) · replace which one?</p>
     <figure class="adm-repl-new"><img src="${img(p)}" alt=""${crStyle(f)}><figcaption>New: ${esc(p.t || f)}</figcaption></figure>
     <div class="adm-repl-grid">${cols
       .map(
