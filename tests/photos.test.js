@@ -152,3 +152,23 @@ test('excluding or hiding a game photo removes it at once (synthetic curation)',
   G[n] = {...(G[n] || {}), hide: [...((G[n] || {}).hide || []), f]};
   gone(build({...CUR, genera: G}), 'hidden');
 });
+
+test('data.json keeps only the candidates curation.json uses; the ones waiting are in cand.json (players never load them)', () => {
+  const add = new Set(Object.values(CUR.genera || {}).flatMap(g => Object.keys(g.add || {})));
+  const named = JSON.stringify(CUR.genera || {});
+  const inData = Object.values(RAW.cand || {}).flat();
+  const stray = inData.filter(p => !add.has(p.f) && !named.includes(`"${p.f}"`));
+  assert.deepStrictEqual(
+    stray.map(p => p.f),
+    [],
+    'run python3 tools/datajson.py --split'
+  );
+  const waiting = Object.values(read('cand.json').cand || {}).flat();
+  assert.ok(waiting.length > 0, 'cand.json holds the candidates waiting');
+  const both = new Set(inData.map(p => p.f));
+  assert.deepStrictEqual(
+    waiting.filter(p => both.has(p.f)).map(p => p.f),
+    [],
+    'a candidate is in one file only'
+  );
+});

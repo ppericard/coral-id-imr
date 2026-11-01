@@ -13,7 +13,7 @@
 # New candidates are NOT downloaded (r: 1 = shown straight from iNaturalist, from src): only the ones Pierre adds are,
 # by tools/fetch_approved.py (GitHub Action on each curation.json publish), so the repo never stores rejected photos.
 import json, re, sys, time, urllib.request
-from datajson import dump  # the one data.json layout (one genus per line)
+from datajson import load_all, dump_all  # data.json + cand.json (candidates waiting live in cand.json)
 from collections import Counter
 from excluded import excluded, drop_excluded
 UA = {'User-Agent': 'coral-id-imr/1.0'}
@@ -24,7 +24,7 @@ DAUIN_CAP, PH_CAP, PER_OBS = 15, 6, 12
 PHILIPPINES = 'place_id=6873'
 POOR = 15  # fewer Dauin photos (site + candidates) than this: also fetch Philippines candidates
 get = lambda u: json.load(urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60))
-d = json.load(open('data.json'))
+d = load_all()
 # The Coral Finder's extra genera (data.json x, tools/build_extra.py) get candidates too; the three that are not
 # stony corals (fire, blue, organ pipe coral) are matched as animals instead of under Scleractinia.
 GEN = {**d['gen'], **((d.get('x') or {}).get('gen') or {})}
@@ -84,5 +84,5 @@ for g in GEN:
     print(g, len(cand.get(g, [])))
 d['cand'] = cand
 drop_excluded(d)
-dump(d, 'data.json')
+dump_all(d)
 print('total', sum(map(len, cand.values())))

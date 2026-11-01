@@ -29,7 +29,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data.json img
+          git add data.json cand.json img
           git diff --cached --quiet && exit 0
           git commit -m "Candidate photos: download added ones, refill the lists"
           git pull --rebase origin main

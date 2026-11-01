@@ -3640,8 +3640,30 @@ const json = u =>
 // The page's later scripts (home.js, tour.js...) must be in before the first route: a fast or cached data.json could
 // otherwise arrive first and open the Learn page instead of Home (seen under the welcome tour, 2026-11-01).
 const domReady = new Promise(r => (document.readyState === 'loading' ? addEventListener('DOMContentLoaded', r, {once: true}) : r()));
-Promise.all([fetch('data.json?v=29').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1'), domReady])
-  .then(([d, c, f, q, k]) => {
+// The preview of an unsaved draft (?draft) may add candidates still waiting: those live in cand.json, out of data.json
+// (tools/datajson.py; the players never need them), so the preview fetches them too.
+const draftCand = () =>
+  /[?&]draft\b/.test(location.search)
+    ? fetch('cand.json', {cache: 'no-cache'})
+        .then(okJson)
+        .then(j => j.cand || {})
+        .catch(() => ({}))
+    : Promise.resolve({});
+Promise.all([
+  fetch('data.json?v=30').then(r => r.json()),
+  curation(),
+  forms(),
+  json('quality.json?v=3'),
+  json('picks.json?v=1'),
+  draftCand(),
+  domReady
+])
+  .then(([d, c, f, q, k, dc]) => {
+    Object.entries(dc).forEach(([g, L]) => {
+      const C = (d.cand = d.cand || {}),
+        have = new Set((C[g] || []).map(p => p.f));
+      C[g] = [...(C[g] || []), ...L.filter(p => !have.has(p.f))];
+    });
     RAW = d;
     CUR = c;
     FORMS = f;
