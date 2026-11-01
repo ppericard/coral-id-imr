@@ -30,6 +30,7 @@ The visual rules every page follows. They came out of the expert UI review of 20
 | Exclusive choice (2-4 options) | `.seg` (and the ⚙ switches, Memory's level and genera set, styled the same) | Grey track, the chosen option is a white pill. Theme is Light / Dark here too. |
 | Filter or toggle in a list | `.chip` | `aria-pressed` for state. |
 | Section tabs | `.modes` | Slim underlined text tabs. |
+| Yes / No question that narrows a list | `.fdq` with two `.fdans` (Coral Finder) | Question on top, two big answer buttons side by side (≥ 72 px tall, full width), each with its count and photos of what is on that side; "Can't tell" as `.linkish`. Never small text links as answers. |
 | Disclosure | `<details>` with a muted `▸` summary | e.g. "Backup or reset progress" at the bottom of ⚙. |
 
 ## Icons
