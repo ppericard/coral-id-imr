@@ -1639,6 +1639,7 @@ function answer(cur, c, target, ph, cor, unseen) {
     anonSoon();
   }
   save();
+  achAfter(good, ph);
   $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', photoSrc(ph[k])));
   // A mix-up: the stage becomes a montage, the photo shown (corallites if they were shown) next to a photo of the
   // genus answered in the same view, so the difference is seen at the moment of the mistake. The pair then comes back
@@ -1892,6 +1893,22 @@ function quizDuel(a, b) {
 // Progress board, one screen: a wall of the 39 cover photos in slate order (name band in the level colour, grey photo =
 // not seen, red border = review) beside a side column with the overall ring, what to review first and the mix-ups. Signing in
 // and backup/reset live in the header and ⚙ (Pierre, 2026-11-01: the board comes first, nothing unrelated around it).
+// The player's badge on My progress (Pierre, 2026-11-01: "a badge, as in video games, that shows the player's
+// achievements"): name, place and Elo on the leaderboard (filled once it loads; the Elo from this device until then),
+// achievements earned with the last three. Each half links to its page.
+function badge() {
+  const A = store.get(ACHK, {}) || {},
+    got = ACH.filter(a => A[a.id]).sort((x, y) => A[y.id] - A[x.id]),
+    name = SYNC && SYNC.name ? SYNC.name : '',
+    G = P[LEVEL];
+  return `<div class="pbadge"><span class="pbav" aria-hidden="true">${name ? esc(name.trim()[0].toUpperCase()) : '🪸'}</span>
+    <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
+    <a id="pbrank" href="#board">🏆 ${name ? '' : 'Leaderboard · '}Elo ${eloScore(G && typeof G.th === 'number' ? G.th : 0)}</a>
+    <a href="#ach">🏅 <b>${got.length}</b>/${ACH.length} ${got
+      .slice(0, 3)
+      .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
+      .join('')}</a></div></div>`;
+}
 function quizBoard() {
   const list = Object.keys(DATA.gen)
     .filter(n => Q.stars || DATA.gen[n].n)
@@ -2018,7 +2035,7 @@ function quizBoard() {
       .map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`)
       .join('')}</div>
     <div class="pring" style="background:conic-gradient(${ring})"><span><b>${progPct(list)}%</b><small>${count('ok')}/${list.length} learned</small></span></div>
-    <a class="pboardl" id="pboardl" href="#board">🏆 Leaderboard</a>
+    ${badge()}
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera"><b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Learned</p>
     ${
@@ -2035,7 +2052,7 @@ function quizBoard() {
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page).
   loadBoard().then(B => {
-    const a = document.getElementById('pboardl'),
+    const a = document.getElementById('pbrank'),
       i = B && B.rows ? boardMe(B.rows) : -1;
     if (a && i >= 0) a.innerHTML = `🏆 <b>#${i + 1}</b> · Elo ${eloScore(B.rows[i][2])}`;
   });
@@ -2213,6 +2230,18 @@ function mergeSaved(j) {
     if (rb !== null && boardT(rb) > boardT(store.get(BOARD, null))) {
       store.set(BOARD, rb);
       showBoardSet();
+    }
+  } catch (e) {}
+  // Achievements earned on another device join this one's (earliest date kept, best run kept): never shown twice.
+  try {
+    const ra = JSON.parse(d[ACHK] || 'null');
+    if (ra && typeof ra === 'object') {
+      const A = store.get(ACHK, {}) || {};
+      Object.keys(ra).forEach(k => {
+        if (k === '_run') return;
+        A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] ? Math.min(A[k], ra[k]) : ra[k];
+      });
+      store.set(ACHK, A);
     }
   } catch (e) {}
   let R = {};
@@ -2935,6 +2964,7 @@ function sectionOf(h) {
   if (h.startsWith('lab')) return 'lab';
   if (h === 'progress' || h === 'quiz-board') return 'progress';
   if (h === 'board') return 'board';
+  if (h === 'ach') return 'progress';
   const m = modeOf(h);
   return Object.keys(MODES).find(t => MODES[t].some(x => x[0] === m)) || 'learn';
 }
@@ -3048,6 +3078,111 @@ function viewBoard() {
     if (m && m.scrollIntoView && m.getBoundingClientRect().bottom > innerHeight) m.scrollIntoView({block: 'center'});
   });
 }
+// Achievements (core.js ACH, Pierre 2026-11-01): checked after every answer on a snapshot of the progress (achSnap);
+// each new one pops up (achPop, one after the other). Kept in imr-coral-ach ({id: time}, plus _run / _best for the run
+// of right answers and _cor / _hard for one-off feats), an imr-coral key, so it travels with the progress. The first
+// check on a device with progress but no record yet (the feature arriving) grants what is already met in one recap.
+const ACHK = 'imr-coral-ach';
+const achList = () => Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n);
+function achSnap(A = store.get(ACHK, {}) || {}) {
+  const L = achList(),
+    st = L.map(lvStep),
+    G = P[LEVEL];
+  const groups = {};
+  L.forEach(n => (groups[shownGroup(n) || 0] = groups[shownGroup(n) || 0] || []).push(n));
+  return {
+    total: L.length,
+    met: st.filter(x => x >= 1).length,
+    q: [2, 3, 4].map(k => st.filter(x => x >= k).length),
+    learned: st.filter(x => x >= 5).length,
+    pct: progPct(L),
+    streak: A._best || 0,
+    duel: L.some(n => (P[n] || {}).du),
+    cor: !!A._cor,
+    hard: !!A._hard,
+    // The Elo moves a lot over the first answers (it starts fast on purpose): its achievements wait for 50 answers.
+    elo: G && typeof G.th === 'number' && (G.ok || 0) + (G.ko || 0) >= 50 ? eloScore(G.th) : 0,
+    group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lvStep(n) >= 5)),
+    bonus: bonusOpen().length
+  };
+}
+function achCheck(silent) {
+  const had = store.get(ACHK, null),
+    A = had || {},
+    ids = newAch(achSnap(A), A);
+  if (!ids.length) {
+    if (!had) store.set(ACHK, A);
+    return;
+  }
+  const t = Date.now();
+  ids.forEach(id => (A[id] = t));
+  store.set(ACHK, A);
+  if (silent || !had) achRecap(ids);
+  else ids.forEach(id => achPop(ACH.find(a => a.id === id)));
+}
+// After each answer: the run of right answers and the one-off feats, then the check.
+function achAfter(good, ph) {
+  if (!store.get(ACHK, null)) achCheck(true); // no record yet on this device: what is already met comes as one recap
+  const A = store.get(ACHK, {}) || {},
+    solo = ph.length === 1;
+  A._run = good ? (A._run || 0) + 1 : 0;
+  A._best = Math.max(A._best || 0, A._run);
+  if (good && solo && ph[0].view === 'macro') A._cor = 1;
+  // Hard by the players' own record: a photo shown alone that at most half of 5+ answers got right.
+  const o = solo && PSTAT[ph[0].f];
+  if (good && o && o[1] >= 5 && o[2] / o[1] <= 0.5) A._hard = 1;
+  store.set(ACHK, A);
+  achCheck();
+}
+const TIER = ['', '🥉', '🥈', '🥇'];
+let achQ = [],
+  achBusy = false;
+const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+function achPop(a) {
+  if (!a) return;
+  achQ.push(a);
+  if (!achBusy) achNext();
+}
+function achNext() {
+  const a = achQ.shift();
+  if (!a) return (achBusy = false);
+  achBusy = true;
+  const el = document.createElement('div');
+  el.className = 'achpop t' + a.tier + (calm() ? ' calm' : '');
+  el.setAttribute('role', 'status');
+  el.innerHTML = `<a href="#ach" class="achin"><span class="achic" aria-hidden="true">${a.icon}</span><span><small>Achievement unlocked ${TIER[a.tier]}</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
+  document.body.append(el);
+  const done = () => {
+    el.remove();
+    achNext();
+  };
+  el.querySelector('a').onclick = done;
+  setTimeout(done, 4200);
+}
+function achRecap(ids) {
+  if (!ids.length) return;
+  if (ids.length === 1) return achPop(ACH.find(a => a.id === ids[0]));
+  achPop({
+    tier: 2,
+    icon: '🏅',
+    title: `${ids.length} achievements`,
+    desc: ids
+      .map(id => (ACH.find(a => a.id === id) || {}).icon)
+      .slice(0, 8)
+      .join(' ')
+  });
+}
+// #ach: every achievement, earned ones first with their date, the others greyed with what earns them.
+function viewAch() {
+  const A = store.get(ACHK, {}) || {},
+    got = ACH.filter(a => A[a.id]).sort((x, y) => A[y.id] - A[x.id]),
+    left = ACH.filter(a => !A[a.id]);
+  const card = (a, on) =>
+    `<li class="achc${on ? ' on' : ''} t${a.tier}"><span class="achic" aria-hidden="true">${a.icon}</span><span><b>${esc(a.title)} ${on ? TIER[a.tier] : ''}</b><small>${esc(a.desc)}${on ? ` · ${new Date(A[a.id]).toLocaleDateString([], {day: 'numeric', month: 'short'})}` : ''}</small></span></li>`;
+  $v.innerHTML = `<p class="lede">Achievements mark milestones of your learning: genera met, a quarter, half, three quarters of the way to learned, learned, your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo. Never time spent.</p>
+  <div class="board"><h2 class="btitle">🏅 Achievements <small>${got.length}/${ACH.length}</small></h2>
+  <ul class="achl">${got.map(a => card(a, true)).join('')}${left.map(a => card(a, false)).join('')}</ul></div>`;
+}
 // Told once, when the leaderboard arrives, to players already signed in: their name now shows there.
 function boardNotice() {
   // Players signed in before the leaderboard: one sync writes their progress % (the sheet has none for them yet).
@@ -3126,6 +3261,7 @@ function route() {
     location.replace('#quiz'); // the Lecture photo set was removed (Pierre, 2026-10-31)
   else if (h === 'progress' || h === 'quiz-board') quizBoard();
   else if (h === 'board') viewBoard();
+  else if (h === 'ach') viewAch();
   else if (h.startsWith('quiz-duel')) {
     const [, a, b] = h.split('|');
     quizDuel(a, b);
@@ -3344,6 +3480,7 @@ Promise.all([fetch('data.json?v=29').then(r => r.json()), curation(), forms(), j
     AUTOQ = q.q || {};
     PICKS = k;
     build();
+    achCheck(!store.get(ACHK, null)); // before the first page, so the badge on My progress counts them
     route();
     syncPull();
     sendAnon();
