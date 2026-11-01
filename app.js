@@ -22,8 +22,12 @@ const store = {
 const VIEWS = [['wide', 'Colony'], ['medium', 'Closer'], ['macro', 'Corallites']];
 // A candidate just added in the admin (r: 1) shows from iNaturalist until tools/fetch_approved.py has downloaded it.
 const inat = (p, sz) => p.src.replace('/original.', `/${sz}.`);
-const img = (p, size) => p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : `img/${p.f}${size === 's' ? '-s' : ''}.webp`;
-const srcset = p => p.r && p.src ? `${inat(p, 'medium')} 500w, ${inat(p, 'large')} 1024w` : `img/${p.f}-s.webp 480w, img/${p.f}.webp 1600w`;
+// A recropped photo keeps its file name, so its URL carries the crop (cr) and rewrite count (iv): without it the
+// service worker (photos cache-first) and the browser kept the old file for some sizes (-s 480 px vs 1600 px).
+const ver = p => p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '';
+const loc = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
+const img = (p, size) => p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size === 's');
+const srcset = p => p.r && p.src ? `${inat(p, 'medium')} 500w, ${inat(p, 'large')} 1024w` : `${loc(p, 1)} 480w, ${loc(p)} 1600w`;
 // Small source label on a game photo (Pierre, 2026-11-01: "sources en petit et cliquable sur chaque photo").
 // One shared component for every game. Shown only once the answer is out: an iNat link names the taxon and an IMR
 // slide number points to a genus. iNat photos (Pierre's and other observers') link to the observation; IMR lecture

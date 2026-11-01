@@ -13,7 +13,9 @@ const store = {
   set(k, v){ try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 };
 // Candidates not downloaded yet (r: 1) show straight from iNaturalist; tools/fetch_approved.py downloads the ones added.
-const img = (p, s) => p.r && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : `img/${p.f}${s ? '-s' : ''}.webp`;
+// A recropped photo keeps its file name: its URL carries the crop (cr) and rewrite count (iv) so no cache serves the old file.
+const ver = p => p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '';
+const img = (p, s) => p.r && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : `img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 
@@ -830,9 +832,11 @@ function renderCand(){
     addEventListener('keydown', candKey); }
 }
 // Crop editor (full screen): drag the frame or its corners; Save keeps it in the draft, Full photo removes it.
+// The frame is in fractions of the ORIGINAL photo, so the editor always shows the original (iNat large), never the
+// local file, which is already cropped once a crop has been applied (re-editing used to compound the two crops).
 function cropEditor(p){
   const lb = $('lightbox'), c0 = crOf(p.f) || [0, 0, 1, 1]; let c = c0.slice();
-  lb.innerHTML = `<div class="adm-crop"><div class="adm-cropbox"><img src="${img(p)}" alt="" draggable="false"><div class="adm-cropfr"><i data-h="lt"></i><i data-h="rt"></i><i data-h="lb"></i><i data-h="rb"></i></div></div>
+  lb.innerHTML = `<div class="adm-crop"><div class="adm-cropbox"><img src="${p.src ? p.src.replace('/original.', '/large.') : img(p)}" alt="" draggable="false"><div class="adm-cropfr"><i data-h="lt"></i><i data-h="rt"></i><i data-h="lb"></i><i data-h="rb"></i></div></div>
     <div class="adm-cropbar"><button type="button" data-c="cancel">Cancel</button><button type="button" data-c="full">Full photo</button><button type="button" class="ok" data-c="save">Save</button></div></div>`;
   lb.hidden = false;
   const box = lb.querySelector('.adm-cropbox'), im = box.querySelector('img'), fr = box.querySelector('.adm-cropfr'), MIN = .08;

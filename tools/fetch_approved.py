@@ -28,7 +28,9 @@ done = 0
 with cf.ThreadPoolExecutor(6) as ex:
     for fut in cf.as_completed([ex.submit(get, p) for p in todo]):
         try:
-            p = fut.result(); p.pop('r', None); done += 1
+            p = fut.result(); done += 1
+            # A rewrite of a file already on the site (recrop, crop removed) bumps iv: the app puts it in the photo URL.
+            if not p.pop('r', None): p['iv'] = p.get('iv', 0) + 1
             if CROP.get(p['f']): p['cr'] = CROP[p['f']]
             else: p.pop('cr', None)
         except Exception as e: print('failed:', e)
