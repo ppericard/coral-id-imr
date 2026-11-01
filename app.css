@@ -352,6 +352,9 @@ kbd{font:600 .7rem/1 var(--body);font-style:normal;color:var(--muted);border:1px
 .ans button:not([disabled]):hover{border-color:var(--accent)}
 .ans button.ok{background:var(--good-bg);border-color:var(--good);color:var(--good)}
 .ans button.ko{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+/* Never colour alone: the right answer gets a tick, the wrong pick a cross. */
+.ans button.ok::after,.ans button.ko::after{margin-left:auto;padding-left:8px;font-style:normal;font-weight:700}
+.ans button.ok::after{content:"\2713"}.ans button.ko::after{content:"\2717"}
 .ans button[disabled]{cursor:default}
 #hintb{align-self:flex-start}
 .fb{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;box-shadow:var(--shadow)}
@@ -636,12 +639,14 @@ a.lt:hover{border-color:var(--accent)}
 :root[data-palette="depth"]{--bg:#eff6f9;--surface-2:#e2edf3;--line:#cfdde4;--accent:#066d90;--accent-ink:#ffffff;--lv1:#f4ed8b;--lv2:#9bdda8;--lv3:#4ab9b2;--lv4:#1785af;--lv5:#2e4d99;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
 :root[data-palette="depth"][data-theme="dark"]{--bg:#0c151a;--surface:#142026;--surface-2:#1c2b33;--line:#2a3b43;--accent:#75c3e8;--accent-ink:#031e29;--lv1:#494404;--lv2:#346c42;--lv3:#31948f;--lv4:#62b7dd;--lv5:#bcd1fd;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
 /* Colour-blind mode (setting "Colour-blind", :root[data-cvd], localStorage imr-coral-cvd): right/wrong and "to review"
-   move from green/red to blue/orange (Okabe-Ito), which stay apart under protanopia, deuteranopia and tritanopia; The level
-   scale needs no change: its steps differ by lightness, which colour-blind readers see. Works on top of any colour theme. */
-:root[data-cvd="1"]{--good:#0067a5;--good-bg:#dcebf6;--bad:#c45400;--bad-bg:#fbe5d3}
-:root[data-cvd="1"][data-theme="dark"]{--good:#7cbcf0;--good-bg:#1a3047;--bad:#f5a25d;--bad-bg:#4a2c14}
+   move from green/red to dark blue / orange. Hue alone is not enough (blue and orange of equal brightness merge for
+   monochromats and in grey), so the pair also differs in lightness: luminance ratio 2.8 light, 2.3 dark; simulated
+   (Machado 2009) OKLab distance >= 25 for protan, deutan, tritan and greyscale. Text contrast >= 4.5 on its surface.
+   Never colour alone: answers carry a tick or a cross, review carries "!". The level scale differs by lightness. */
+:root[data-cvd="1"]{--good:#08306b;--good-bg:#dbe6f4;--bad:#c45400;--bad-bg:#fbe3cf}
+:root[data-cvd="1"][data-theme="dark"]{--good:#b5dcff;--good-bg:#1a3047;--bad:#d6731a;--bad-bg:#45270f}
 .s1{--lvc:var(--lv1);--lvt:var(--lvt1)}.s2{--lvc:var(--lv2);--lvt:var(--lvt2)}.s3{--lvc:var(--lv3);--lvt:var(--lvt3)}.s4{--lvc:var(--lv4);--lvt:var(--lvt4)}.s5{--lvc:var(--lv5);--lvt:var(--lvt5)}
-.pslate .ps,.pseg a{position:relative;background:var(--lvc,var(--surface)) linear-gradient(color-mix(in srgb,var(--lvt,var(--ink)) 55%,transparent),color-mix(in srgb,var(--lvt,var(--ink)) 55%,transparent)) left bottom / var(--p,0%) 3px no-repeat;color:var(--lvt,var(--ink));border:1px solid var(--lvc,var(--line))}
+.pslate .ps,.pseg a{position:relative;background:var(--lvc,var(--surface));container-type:inline-size;color:var(--lvt,var(--ink));border:1px solid var(--lvc,var(--line))}
 .pslate .ps.s0,.pseg a.s0{border-style:dashed;color:var(--muted)}
 .pslate .ps.s5 i::after,.pseg a.s5 i::after{content:" \2713";font-style:normal;font-weight:700}
 .pslate .ps.weak,.pseg a.weak{border:2px solid var(--bad)}
@@ -654,6 +659,16 @@ a.lt:hover{border-color:var(--accent)}
 .plvl small{font-size:.66rem;white-space:nowrap}
 .plvl .pl-rev{border:2px solid var(--bad)}
 .plvl .pl-rev::before{top:-7px;right:-7px}
+/* Progress towards Learned as a number at the right of a tile (with the 5px bar along its bottom). */
+.pslate .ps .pct,.pseg a .pct{display:inline-flex;align-items:center;gap:4px;color:inherit;text-align:right;margin-left:auto;padding-left:6px;font-size:.78em;font-weight:700;font-variant-numeric:tabular-nums;font-style:normal;flex:none}
+.pseg a{justify-content:flex-start;gap:4px}.pseg a i{margin:0 auto}
+.pslate .ps.weak .pct,.pseg a.weak .pct{margin-right:12px}
+/* Mini ring: the genus's progress towards Learned, filling clockwise like the big ring (% beside it when there is room). */
+.pct::before{content:"";width:1.25em;height:1.25em;border-radius:50%;flex:none;background:radial-gradient(closest-side,var(--lvc) 58%,transparent 60%),conic-gradient(var(--lvt) var(--p),color-mix(in srgb,var(--lvt) 22%,transparent) 0)}
+@container (max-width:118px){.pct{font-size:0 !important;padding-left:2px !important}.pct::before{width:14px;height:14px}}
+@container (max-width:60px){.pct{display:none !important}}
+.plvlnote{margin:2px 0 0;font-size:.72rem;color:var(--muted);display:flex;align-items:center;gap:6px;justify-content:center}
+.plvlnote .pbar{display:inline-block;width:14px;height:14px;border-radius:50%;background:radial-gradient(closest-side,var(--bg) 58%,transparent 60%),conic-gradient(var(--ink) 65%,color-mix(in srgb,var(--ink) 22%,transparent) 0)}
 /* Groups view: one bar per IMR lecture group, one segment per genus. */
 .pgroups{display:flex;flex-direction:column;gap:6px}
 .pgr{flex:1;display:grid;grid-template-columns:28px minmax(0,1fr) 36px;align-items:center;gap:10px;min-height:0}
@@ -916,6 +931,7 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .pboard .gside > .pring b{font-size:1.3rem}
 .pboard .gside > .pring small{font-size:.62rem;text-align:center;line-height:1.1}
 .pboard .gside > .plvl{grid-column:2;justify-content:flex-start}
+.pboard .gside > .plvlnote{justify-content:flex-start}
 
 @media (min-width:1024px){
   .pboard .gside{display:flex;grid-template-columns:revert;gap:10px;align-items:revert}
