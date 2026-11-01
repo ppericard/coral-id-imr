@@ -253,7 +253,7 @@ LAB.add({
       const row = id => { const f = fam(id); return f ? `<div class="fdsrow"><h3 title="${esc(f.note || '')}">${esc(f.name)}</h3><div class="fdsopts">${f.opts.map(o => optBtn(f, o, S[id].has(o.id), cnt(f, o))).join('')}</div></div>` : ''; };
       // Once a form is picked, the form tiles shrink to compact chips so the next clues and the shortlist move up (phones and desktop).
       const forms = f => `<div class="fdforms${S[f.id].size ? ' mini' : ''}">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>${andSw(f.id)}`;
-      const show = `<button type="button" class="next fdshow" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera${left.some(notIMR) ? ` (${left.filter(n => !notIMR(n)).length} on the slate)` : ''}`} →</button>`;
+      const show = `<button type="button" class="next fdshow${used(F).length ? '' : ' sec'}" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera${left.some(notIMR) ? ` (${left.filter(n => !notIMR(n)).length} on the slate)` : ''}`} →</button>`;
       // Two entry points: the paper Coral Finder's path (default) or the IMR forms, as a discreet link at the bottom (Pierre: it took room for nothing).
       const switcher = `<button type="button" class="linkish fdsv" data-sv="${startV === 'c' ? 'a' : 'c'}">${startV === 'c' ? '← IMR growth forms' : 'Coral Finder path →'}</button>`;
       let body;
@@ -272,7 +272,10 @@ LAB.add({
       const live = !used(F).length ? '' : `<div class="fdlive"><h3 class="fdgrp">${left.length} ${left.length === 1 ? 'genus fits' : 'genera fit'} every clue${close.length ? ` <small>${close.length} more one clue off</small>` : ''}</h3>
         <div class="fdgcs">${left.map(genCard).join('')}</div></div>`;
       $start.classList.toggle('used', !!used(F).length);
-      $start.innerHTML = `<div class="fdstop">${show}</div>${body}${live}<p class="fdsvrow">${switcher}</p>`;
+      // One-line prompt (design review 2026-11-01, Pierre OK): the start screen says what to do; before any clue, "Show all" is a
+      // secondary way out, not the main action.
+      const prompt = used(F).length ? '' : `<p class="fdprompt">${startV === 'c' ? 'What growth form do you see?' : 'What do you see?'}</p>`;
+      $start.innerHTML = `<div class="fdstop">${prompt}${show}</div>${body}${live}<p class="fdsvrow">${switcher}</p>`;
       andWire($start);
       $start.querySelectorAll('[data-sv]').forEach(b => b.onclick = () => { startV = b.dataset.sv; store.set('imr-finder-start2', startV); FIDS.forEach(f => S[f].clear()); draw(); });
       $start.querySelectorAll('[data-gx]').forEach(b => b.onclick = () => { const n = b.dataset.gx; S.home = false; S.open.add('x:' + n); draw();
