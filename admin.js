@@ -13,7 +13,9 @@ const store = {
   set(k, v){ try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 };
 // Candidates not downloaded yet (r: 1) show straight from iNaturalist; tools/fetch_approved.py downloads the ones added.
-const img = (p, s) => p.r && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : `img/${p.f}${s ? '-s' : ''}.webp`;
+// A recropped photo keeps its file name: its URL carries the crop (cr) and rewrite count (iv) so no cache serves the old file.
+const ver = p => p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '';
+const img = (p, s) => p.r && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : `img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 
@@ -30,11 +32,11 @@ let draftAt = null;
 // No button ever clears several choices at once: Undo (or Ctrl+Z) steps back one click at a time, within this visit.
 // Redo (or Ctrl+Shift+Z / Ctrl+Y) steps forward again; a new click clears the redo steps.
 let HIST = [], FUT = [], snap = null;
-function saveDraft(){ if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); FUT = []; snap = JSON.stringify(DRAFT); draftLost = !store.set('imr-curation-draft', DRAFT); draftAt = new Date(); }
+function saveDraft(){ memoReset(); if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); FUT = []; snap = JSON.stringify(DRAFT); draftLost = !store.set('imr-curation-draft', DRAFT); draftAt = new Date(); }
 let draftLost = false;
 function step(from, to, msg){
   if (!from.length) return toast(msg[0]);
-  to.push(snap); snap = from.pop(); DRAFT = JSON.parse(snap); store.set('imr-curation-draft', DRAFT); draftAt = new Date(); render(); toast(msg[1]);
+  to.push(snap); snap = from.pop(); DRAFT = JSON.parse(snap); memoReset(); store.set('imr-curation-draft', DRAFT); draftAt = new Date(); render(); toast(msg[1]);
 }
 const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']), redo = () => step(FUT, HIST, ['Nothing to redo.', 'Redone.']);
 const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
@@ -165,8 +167,13 @@ function lockScreen(msg){
 }
 
 /* ---------- Photos of a genus, as the genus sheet orders them ---------- */
+// own/photos/cands of one genus each walk every genus, and the Candidates queue and Coverage need them for every genus:
+// computed once per draft state (cleared by every edit, undo/redo and render), callers get a copy of the list.
+let MEMO = {};
+const memoReset = () => { MEMO = {}; };
+const memo = (k, fn) => n => { const key = k + '|' + n; if (!(key in MEMO)) MEMO[key] = fn(n); return MEMO[key].slice(); };
 // Photos data.json gives the genus (plus approved candidates), before any "Not this genus".
-function own(n){
+const own = memo('own', n => {
   const g = DATA.gen[n], two = g.levels === 2, L = [];
   VIEWS.forEach(([v]) => { (g.views[v] || []).forEach(p => L.push({...p, base: v})); ((g.more || {})[v] || []).forEach(p => L.push({...p, base: v, multi: true, extra: true})); });
   (DATA.course[n] || []).forEach(p => L.push({...p, base: p.v === 'medium' && two ? 'macro' : p.v}));
@@ -175,21 +182,21 @@ function own(n){
   const add = entry(n).add || {};
   cands(n).filter(p => add[p.f]).forEach(p => L.push({...p, base: add[p.f], cand: true}));
   return L;
-}
+});
 // "Not this genus" (curation out: {f: 'cmp' | other genus}): the photo leaves the genus; given to another genus,
 // it joins that genus in the same view (tagged with where it came from); 'cmp' keeps it for the Look-alikes section.
 const outs = n => entry(n).out || {};
-function photos(n){
+const photos = memo('photos', n => {
   const L = own(n).filter(p => !outs(n)[p.f]);
   Object.keys(DATA.gen).filter(m => m !== n).forEach(m => own(m).filter(p => outs(m)[p.f] === n).forEach(p => L.push({...p, from: m})));
   return L;
-}
+});
 const outOf = n => [...own(n).filter(p => outs(n)[p.f]), ...rawCands(n).filter(p => outs(n)[p.f] && !(entry(n).add || {})[p.f])];
 // New candidate photos from data.json cand, not used by the site until approved here.
 // Coral Finder book photos (data: gen[].book) are candidates too; once added they show on the site but never in games.
 const rawCands = n => [...((DATA.cand || {})[n] || []), ...(DATA.gen[n].book || [])].filter(p => !excl(p.f));
 // A candidate sent to another genus ("Not this") becomes a candidate there, tagged with where it came from.
-const cands = n => [...rawCands(n).filter(p => !outs(n)[p.f]), ...Object.keys(DATA.gen).filter(m => m !== n).flatMap(m => rawCands(m).filter(p => outs(m)[p.f] === n).map(p => ({...p, from: m})))];
+const cands = memo('cands', n => [...rawCands(n).filter(p => !outs(n)[p.f]), ...Object.keys(DATA.gen).filter(m => m !== n).flatMap(m => rawCands(m).filter(p => outs(m)[p.f] === n).map(p => ({...p, from: m})))]);
 // Same order as the Show source chips (ORIGINS), CF book last.
 const oIdx = p => ORIGINS.findIndex(o => o[0] === origin(p));
 const pending = n => { const add = entry(n).add || {}; return cands(n).filter(p => !add[p.f]).sort((a, b) => oIdx(a) - oIdx(b)); };
@@ -255,7 +262,7 @@ const srcTag = p => { const o = origin(p); return `<span class="adm-src o-${o}">
 
 /* ---------- Edits ---------- */
 function edit(n, fn){
-  const k = clone(entry(n)); fn(k);
+  memoReset(); const k = clone(entry(n)); fn(k);
   ['feat', 'move', 'add', 'out'].forEach(x => { if (k[x] && !Object.keys(k[x]).length) delete k[x]; });
   if (k.hide && !k.hide.length) delete k.hide;
   if (Object.keys(k).length) DRAFT.genera[n] = k; else delete DRAFT.genera[n];
@@ -339,6 +346,7 @@ function status(){
 // Which header tab the page belongs to: the Stats tab holds players, photos, the photo list and coverage.
 const modeKey = () => cur.startsWith('~stats') || cur === '~diff' || cur === '~cov' ? 'stats' : ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
 function render(){
+  memoReset();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
   if (cur === '~quality') return renderQuality();
   if (cur === '~form') return renderForm();
@@ -824,9 +832,11 @@ function renderCand(){
     addEventListener('keydown', candKey); }
 }
 // Crop editor (full screen): drag the frame or its corners; Save keeps it in the draft, Full photo removes it.
+// The frame is in fractions of the ORIGINAL photo, so the editor always shows the original (iNat large), never the
+// local file, which is already cropped once a crop has been applied (re-editing used to compound the two crops).
 function cropEditor(p){
   const lb = $('lightbox'), c0 = crOf(p.f) || [0, 0, 1, 1]; let c = c0.slice();
-  lb.innerHTML = `<div class="adm-crop"><div class="adm-cropbox"><img src="${img(p)}" alt="" draggable="false"><div class="adm-cropfr"><i data-h="lt"></i><i data-h="rt"></i><i data-h="lb"></i><i data-h="rb"></i></div></div>
+  lb.innerHTML = `<div class="adm-crop"><div class="adm-cropbox"><img src="${p.src ? p.src.replace('/original.', '/large.') : img(p)}" alt="" draggable="false"><div class="adm-cropfr"><i data-h="lt"></i><i data-h="rt"></i><i data-h="lb"></i><i data-h="rb"></i></div></div>
     <div class="adm-cropbar"><button type="button" data-c="cancel">Cancel</button><button type="button" data-c="full">Full photo</button><button type="button" class="ok" data-c="save">Save</button></div></div>`;
   lb.hidden = false;
   const box = lb.querySelector('.adm-cropbox'), im = box.querySelector('img'), fr = box.querySelector('.adm-cropfr'), MIN = .08;
