@@ -81,6 +81,17 @@ const server = http.createServer((req, res) => {
     await go('~users');
     let t = await text();
     if (!/Ana Demo/.test(t) || !/mara demo2/.test(t)) fails.push(`${w}px Users: demo players missing`);
+    // Names joined with the anonymous stats: every demo player has a level; sorting by name puts Ana first, reversed last.
+    const lv = await p.$$eval('.adm-urow td:nth-child(2)', L => L.map(td => td.textContent.trim()));
+    if (!lv.length || lv.some(x => x === '–')) fails.push(`${w}px Players: a level is missing (${lv.join(' ')})`);
+    if (!/Not signed in \(\d+\)/.test(t)) fails.push(`${w}px Players: no "Not signed in" group`);
+    const firstName = () => p.$eval('.adm-urow td b', b => b.textContent);
+    await p.click('[data-usort="name"]');
+    await settle();
+    if ((await firstName()) !== 'Ana Demo') fails.push(`${w}px Players: sort by name, first is ${await firstName()}`);
+    await p.click('[data-usort="name"]');
+    await settle();
+    if ((await firstName()) !== 'Test Demo') fails.push(`${w}px Players: reversed sort by name, first is ${await firstName()}`);
     await p.click('[data-uopen="mara demo2"]');
     await settle();
     await p.selectOption('[data-umerge="mara demo2"]', 'Mara Demo');
