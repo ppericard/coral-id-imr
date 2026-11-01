@@ -44,7 +44,7 @@ Key shared helpers (search for them in `app.js`):
 - `shownGroup()`: places starred genera in the lecture group of their look-alikes (display only).
 - `GX(n)`: genus lookup in both IMR genera (`DATA.gen`) and the 27 extra Dauin genera (`DATA.x.gen`: Coral Finder, their sheets, and the bonus genera in games).
 - `MQ`, `isPhone()`, `isStacked()`, `tabH()`: the 3 size classes and phone tab bar height.
-- `fitStage()`, `fitTiles()`: size games to one screen. On phone/tablet, with one row of photos, `fitStage` makes the quiz stage a 4:3 box at most, sized before the photos load (no layout shift); a photo close to the box shape fills it (class `.cov`, object-fit cover), others are shown whole; answers follow the photo. `fitTiles` honours `data-minw` (the phone progress wall: names stay readable, the wall may scroll).
+- `fitStage()`, `fitTiles()`: size games to one screen. On phone/tablet, with one row of photos, `fitStage` gives the quiz stage all the height the question and answers leave, sized before the photos load (no layout shift); a photo close to the box shape fills it (class `.cov`, object-fit cover), others are shown whole. `flag.js` (admin ⚑) hides its button when its photo leaves the page and follows it on resize. `fitTiles` honours `data-minw` (the phone progress wall: names stay readable, the wall may scroll).
 - `IS_ADMIN`: true in Pierre's admin browser (token vault present); gates Pierre-only controls. ⚙ has a View: Admin | User switch.
 
 ### Settings (⚙, `index.html` + `app.js`)
