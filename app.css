@@ -461,7 +461,7 @@ footer{padding-bottom:12px}
 .q .qstage>.qph:only-child{flex-basis:100%}
 .q .qstage.qvs{gap:4px;overflow:hidden}
 .q .qstage.qvs .qph img{object-fit:cover}
-.qstage.qfit .qph img{object-fit:cover}
+.qstage .qph.cov img{object-fit:cover}
 .wide{display:none}
 
 @media (min-width:600px){

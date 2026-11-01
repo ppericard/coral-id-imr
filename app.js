@@ -795,22 +795,20 @@ function fitStage(){
   let best = [n, 1, 0];
   for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c), w = Math.min((W - 8 * (c - 1)) / c, (H - 8 * (r - 1)) / r * 4 / 3); if (w > best[2]) best = [c, r, w]; }
   st.style.gridTemplateColumns = `repeat(${best[0]}, minmax(0, 1fr))`; st.style.gridTemplateRows = `repeat(${best[1]}, minmax(0, 1fr))`;
-  // Phones and tablets (design review 2026-11-01): a fixed tall stage left a landscape photo floating in blurred bars. The stage
-  // now takes the photos' own shape, cropped (object-fit: cover, class .qfit) by at most ~20% of the long side; the full frame
-  // is one tap away in the lightbox. Before any image has loaded, the stage keeps the height computed above.
-  let fit = false;
-  if (isStacked() && !st.classList.contains('qvs')) {
-    const imgs = [...st.querySelectorAll('.qph img')], ready = imgs.filter(i => i.naturalWidth);
-    imgs.filter(i => !i.naturalWidth).forEach(i => i.addEventListener('load', fitStage, {once: true}));
-    if (ready.length && ready.length === imgs.length && best[1] === 1) {
-      const colW = st.children[0].getBoundingClientRect().width;
-      const need = Math.max(...ready.map(i => colW * i.naturalHeight / i.naturalWidth)) / 1.25;
-      if (need < st.getBoundingClientRect().height) st.style.height = Math.max(160, need) + 'px';
-      const boxR = colW / st.getBoundingClientRect().height;
-      fit = ready.every(i => { const r = i.naturalWidth / i.naturalHeight; return Math.max(boxR / r, r / boxR) <= 1.3; });
-    }
-  }
-  st.classList.toggle('qfit', fit);
+  // Phones and tablets (design review 2026-11-01): a fixed tall stage left a landscape photo floating in blurred bars. With one
+  // row of photos the stage is a 4:3 box (the most common photo shape) at most, sized now, before any photo loads, so nothing
+  // moves while they load (Pierre, 2026-11-01). Each photo then fills its box (object-fit: cover, class .cov on its figure) when
+  // that crops at most ~23% of it; a photo of a very different shape is shown whole on its blurred background instead.
+  // The full frame is one tap away in the lightbox.
+  if (isStacked() && !st.classList.contains('qvs') && best[1] === 1) {
+    const colW = st.children[0].getBoundingClientRect().width, h0 = st.getBoundingClientRect().height;
+    const h = Math.min(h0, Math.max(160, colW * 3 / 4));
+    if (h < h0) st.style.height = h + 'px';
+    const boxR = colW / h;
+    st.querySelectorAll('.qph').forEach(f => { const i = f.querySelector('img'); if (!i) return;
+      const set = () => { const r = i.naturalWidth / i.naturalHeight; f.classList.toggle('cov', !!r && Math.max(boxR / r, r / boxR) <= 1.3); };
+      if (i.naturalWidth) set(); else i.addEventListener('load', set, {once: true}); });
+  } else st.querySelectorAll('.qph.cov').forEach(f => f.classList.remove('cov'));
 }
 addEventListener('resize', fitStage);
 // Games with a grid of cards (Memory): fill the free area. Try every column count; cards may be square up to
