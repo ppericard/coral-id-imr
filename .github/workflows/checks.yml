@@ -1,5 +1,6 @@
 # Fast checks on every pull request (code review 2026-11-01, M6/M7): JS syntax, unit tests, JSON files,
-# Python tools, cache-busting versions. No npm: Node and Python only.
+# Python tools, cache-busting versions. Node and Python only, except the page smoke test (job "pages"), which
+# installs Playwright with npm into a temporary folder (Pierre's OK, 2026-11-01); the repo keeps no package.json.
 name: Checks
 on:
   pull_request:
@@ -31,3 +32,17 @@ jobs:
       - name: Cache-busting versions
         run: |
           python3 tools/check_versions.py ${{ github.base_ref && format('--base origin/{0}', github.base_ref) || '' }}
+  pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright (temporary folder, nothing added to the repo)
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
+          npm install --no-save --no-audit --no-fund playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Page smoke test (main routes and admin, 390 and 1280 px, fails on any page error)
+        run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/pages.smoke.js
