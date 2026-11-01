@@ -979,7 +979,8 @@ function covOf(n, v){ const L = gamePool(n, v); return {n: L.length, obs: new Se
 const covLvl = c => COV.filter(k => c.obs >= k).length;
 // Views a genus has in games: 2-level genera have no Closer view.
 const covViews = n => VIEWS.filter(([v]) => !(lv(n) === 2 && v === 'medium'));
-let COV_ORDER = store.get('imr-admin-covorder', 'lecture');
+// Default Thinnest (Pierre 2026-11-01); new key so an older saved choice does not override it.
+let COV_ORDER = store.get('imr-admin-covorder2', 'thin');
 function renderCov(){
   status();
   const R = Object.keys(DATA.gen).filter(n => !DATA.gen[n].x).map((n, i) => {
@@ -987,19 +988,19 @@ function renderCov(){
     return {n, i, cells, min: Math.min(...live.map(c => c.obs)), all: live.flatMap(c => c.L), cand: pending(n).filter(p => !p.cf).length};
   });
   const by = {lecture: (a, b) => a.i - b.i, slate: (a, b) => (DATA.gen[a.n].n || 99) - (DATA.gen[b.n].n || 99) || a.i - b.i, thin: (a, b) => a.min - b.min || a.all.length - b.all.length || a.i - b.i};
-  R.sort(by[COV_ORDER] || by.lecture);
+  R.sort(by[COV_ORDER] || by.thin);
   const max = Math.max(1, ...R.map(r => r.all.length)), thin = R.reduce((s, r) => s + r.cells.filter(c => c && covLvl(c) < 2).length, 0);
   const cell = (r, c, v) => c ? `<td class="cov-c cov-${covLvl(c)}" title="${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}"><b>${c.n}</b>${c.obs < c.n ? `<small>${c.obs}</small>` : ''}</td>` : '<td class="cov-c cov-na">–</td>';
   const bar = r => ORIGINS.filter(o => o[0] !== 'book').map(([o, t]) => { const k = r.all.filter(p => origin(p) === o).length; return k ? `<i class="o-${o}" style="width:${(100 * k / max).toFixed(1)}%" title="${t}: ${k}"></i>` : ''; }).join('');
-  const seg = [['lecture', 'Lecture'], ['slate', 'Slate'], ['thin', 'Thinnest']];
+  const seg = [['thin', 'Thinnest', 'Least covered first'], ['lecture', 'Lecture', 'Lecture order'], ['slate', 'Slate', 'Slate numbers 1-34, then ★']];
   $v.innerHTML = `<section class="adm-cov">
-    <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Order">${seg.map(([k, t]) => `<button type="button" data-co="${k}" aria-pressed="${COV_ORDER === k}">${t}</button>`).join('')}</span>
+    <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Order">${seg.map(([k, t, h]) => `<button type="button" data-co="${k}" title="${h}" aria-pressed="${COV_ORDER === k}">${t}</button>`).join('')}</span>
       <span class="cov-key" aria-label="Colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}">${thin} thin</b></div>
     <table class="cov-t"><thead><tr><th></th>${VIEWS.map(([, t]) => `<th>${t}</th>`).join('')}<th class="cov-srch">Sources</th><th title="Candidates">+</th></tr></thead>
     <tbody>${R.map(r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="cov-src"><span class="cov-bar">${bar(r)}</span><small>${r.all.length}</small></td><td class="cov-cand">${r.cand ? `+${r.cand}` : ''}</td></tr>`).join('')}</tbody></table></section>`;
-  $v.querySelectorAll('[data-co]').forEach(b => b.onclick = () => { COV_ORDER = b.dataset.co; store.set('imr-admin-covorder', COV_ORDER); render(); });
+  $v.querySelectorAll('[data-co]').forEach(b => b.onclick = () => { COV_ORDER = b.dataset.co; store.set('imr-admin-covorder2', COV_ORDER); render(); });
   $v.querySelectorAll('tbody tr').forEach(tr => tr.onclick = e => { if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g); });
 }
 
