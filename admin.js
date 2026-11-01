@@ -557,7 +557,7 @@ const HELP = {
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsph: `<p>Photo difficulty (Elo) from every answer: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers; few answers = rough. Click a dot to see the photo.</p>
     <p>The quiz shows the colony, closer and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
-  statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (players' level on the genus is above what the hardest photo of the view can challenge: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a row to open the genus.</p>`,
+  statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (players' level on the genus is above what the hardest photo of the view can challenge: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
   diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers. Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it sits in the wrong game set.</p>`,
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time.</p>
     <p>The first 3 photos of each view are its featured photos (Easy level, top of the sheet, Coral Finder). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. Hidden photos disappear everywhere, games included; × excludes a photo for good.</p>
@@ -1040,7 +1040,7 @@ function renderCov(){
 // level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
 // The Stats tab holds the sub-views of STAT_TABS; Coverage (renderCov) and the photo list (renderDiff) live there too.
 const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~diff', 'Photo list'], ['~cov', 'Coverage'], ['~stats-needs', 'Needs']];
-let ANS = null, RAS = {}, MEID = null, SF = Object.assign({who: 'all', min: 1, elo: 'all'}, store.get('imr-admin-stats', {}));
+let ANS = null, RAS = {}, MEID = null, SF = Object.assign({who: 'all', min: 1, elo: 'all', nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('imr-admin-stats', {}));
 const statSwitch = () => `<nav class="adm-filter adm-stabs" aria-label="Stats">${STAT_TABS.filter(([h]) => h !== '~cov' || typeof renderCov === 'function')
   .map(([h, t]) => `<a class="adm-fchip plain" href="#${h}" aria-pressed="${cur === h}">${t}</a>`).join('')}</nav>`;
 // Puts the switch above a view rendered by another function (photo list, coverage).
@@ -1169,15 +1169,37 @@ function statsNeeds(){
     const m = Object.values(V).filter(s => s.size >= 2).length;
     if (m < 3) out.push({n, v: 'zoom', vt: 'Several zooms', c: {obs: m}, why: [['zoom', `${m} colon${m === 1 ? 'y' : 'ies'} at 2+ zooms`]], sc: 3 - m});
   });
-  out.sort((a, b) => b.sc - a.sc || a.c.obs - b.c.obs);
-  const T = {few: 'Few colonies', good: 'Few good colonies', zoom: 'Few multi-zoom', easy: 'Too easy', rep: 'Repeats', mix: 'Mix-ups'};
-  const cnt = k => out.filter(o => o.why.some(w => w[0] === k)).length;
-  $v.innerHTML = head + kpis(Object.keys(T).map(k => [T[k], cnt(k)])) + (!Object.keys(ANS.players || {}).some(id => Object.keys((ANS.players[id] || [])[3] || {}).length) ? `<p class="note">"Too easy" needs answers logged by sheet script v5.</p>` : '') + `
-    <div class="adm-tscroll"><table class="adm-tbl adm-needs"><thead><tr><th>Genus</th><th>View</th><th>Colonies</th><th>Why</th></tr></thead><tbody>
-    ${out.map(o => `<tr data-g="${esc(o.n)}"><td><a class="adm-gen" href="#${esc(o.n)}"><i>${esc(o.n)}</i></a></td><td>${esc(o.vt)}</td><td class="n">${o.c.obs}</td>
-      <td>${o.why.map(([k, t]) => `<span class="adm-why w-${k}" title="${T[k]}">${esc(t)}</span>`).join(' ')}</td></tr>`).join('')}</tbody></table></div>`;
-  $v.querySelectorAll('.adm-needs tbody tr').forEach(tr => tr.onclick = e => { if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g); });
-  bindStats();
+  NEEDS = out; NGEN = NGEN || '';
+  const VO = {wide: 0, medium: 1, macro: 2, zoom: 3}, vs = [...new Set(out.map(o => o.v))].sort((a, b) => VO[a] - VO[b]);
+  if (SF.nv !== 'all' && !vs.includes(SF.nv)) SF.nv = 'all';
+  $v.innerHTML = head.replace(/<\/div>$/, `${segBtns('nv', [['all', 'All views'], ...vs.map(v => [v, out.find(o => o.v === v).vt])])}
+    <input type="search" class="adm-nsearch" placeholder="Genus" value="${esc(NGEN)}" aria-label="Genus"></div>`) + '<div id="adm-nbody"></div>'
+    + (!Object.keys(ANS.players || {}).some(id => Object.keys((ANS.players[id] || [])[3] || {}).length) ? `<p class="note">"Too easy" needs answers logged by sheet script v5.</p>` : '');
+  const inp = $v.querySelector('.adm-nsearch'); inp.oninput = () => { NGEN = inp.value; needsBody(); };
+  needsBody(); bindStats();
+}
+// Gap table of statsNeeds, redrawn alone so the genus box keeps focus: reason cards filter (click again = all),
+// view switch and genus box filter, column headers sort (click again = reverse).
+let NEEDS = [], NGEN = '';
+const NEED_T = {few: 'Few colonies', good: 'Few good colonies', zoom: 'Few multi-zoom', easy: 'Too easy', rep: 'Repeats', mix: 'Mix-ups'};
+function needsBody(){
+  const box = $v.querySelector('#adm-nbody'); if (!box) return;
+  const T = NEED_T, q = NGEN.trim().toLowerCase(), VO = {wide: 0, medium: 1, macro: 2, zoom: 3};
+  const base = NEEDS.filter(o => (SF.nv === 'all' || o.v === SF.nv) && (!q || o.n.toLowerCase().includes(q)));
+  const has = k => o => o.why.some(w => w[0] === k), L = SF.nk ? base.filter(has(SF.nk)) : base.slice();
+  const K = {n: o => o.n, v: o => VO[o.v], c: o => o.c.obs, sc: o => o.sc}, f = K[SF.ns] || K.sc, d = SF.nd === 'asc' ? 1 : -1;
+  L.sort((a, b) => { const x = f(a), y = f(b); return (x < y ? -1 : x > y ? 1 : 0) * d || b.sc - a.sc || a.c.obs - b.c.obs || a.n.localeCompare(b.n) || VO[a.v] - VO[b.v]; });
+  const card = (k, t, n) => `<button type="button" data-nk="${k}" aria-pressed="${SF.nk === k}"${n ? '' : ' class="zero"'}><b>${n}</b><span>${t}</span></button>`;
+  const th = (k, t) => `<th${k === 'c' ? ' class="n"' : ''}><button type="button" data-ns="${k}"${SF.ns === k ? ` class="on" aria-sort="${SF.nd === 'asc' ? 'ascending' : 'descending'}"` : ''}>${t}${SF.ns === k ? (SF.nd === 'asc' ? ' ▲' : ' ▼') : ''}</button></th>`;
+  box.innerHTML = `<div class="adm-kpis adm-kpis-row adm-nkpis">${card('', 'All', base.length)}${Object.keys(T).map(k => card(k, T[k], base.filter(has(k)).length)).join('')}</div>
+    <div class="adm-tscroll"><table class="adm-tbl adm-needs"><thead><tr>${th('n', 'Genus')}${th('v', 'View')}${th('c', 'Colonies')}${th('sc', 'Why')}</tr></thead><tbody>
+    ${L.map(o => `<tr data-g="${esc(o.n)}"><td><a class="adm-gen" href="#${esc(o.n)}"><i>${esc(o.n)}</i></a></td><td>${esc(o.vt)}</td><td class="n">${o.c.obs}</td>
+      <td>${o.why.map(([k, t]) => `<span class="adm-why w-${k}${SF.nk === k ? ' on' : ''}" title="${T[k]}">${esc(t)}</span>`).join(' ')}</td></tr>`).join('')}</tbody></table>${L.length ? '' : '<p class="note">None.</p>'}</div>`;
+  const save = () => { store.set('imr-admin-stats', SF); needsBody(); };
+  box.querySelectorAll('[data-nk]').forEach(b => b.onclick = () => { SF.nk = SF.nk === b.dataset.nk ? '' : b.dataset.nk; save(); });
+  box.querySelectorAll('[data-ns]').forEach(b => b.onclick = () => { const k = b.dataset.ns;
+    SF.nd = SF.ns === k ? (SF.nd === 'asc' ? 'desc' : 'asc') : (k === 'sc' ? 'desc' : 'asc'); SF.ns = k; save(); });
+  box.querySelectorAll('.adm-needs tbody tr').forEach(tr => tr.onclick = e => { if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g); });
 }
 const VIEW_T = {wide: 'Colony', medium: 'Closer', macro: 'Corallites', cand: 'Candidate'};
 const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philippines', world: 'iNat world', book: 'CF book'};
