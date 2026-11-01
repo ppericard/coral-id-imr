@@ -42,28 +42,28 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 
 Kept in ROADMAP "Questions for an IMR trainer". Never settle them in the app; keep the lecture's version.
 
-## Rebuild or set up from scratch
+## Setting up to work, and what lives outside GitHub
 
-Everything needed is in the repository; there is no build step and no package manager.
+Nothing needs rebuilding: the site is served by GitHub Pages straight from `main`, so a merged PR is the deploy. There is no build step and no package manager. What a new agent needs is a working copy; the only pieces outside GitHub are the Google Sheet + Apps Script (progress sync) and Pierre's admin token, recreated only if they are ever lost.
 
-**Work on it (any machine or cloud container):**
+**Working copy (any machine or cloud container):**
 1. Clone `https://github.com/ppericard/coral-id-imr` (public). Python 3, Node 18+ and Chromium/Playwright are all you need.
 2. Serve: `python3 -m http.server 8000`, open <http://localhost:8000> (app) and <http://localhost:8000/admin.html?readonly> (admin without a token). Sync and photo Elo talk to the live Apps Script even locally (read-only unless you sign in).
 3. Check: `node --test tests/*.test.js`, `node tests/pages.smoke.js` (Playwright; never add a `package.json`), `python3 tools/check_versions.py --base origin/main`.
 4. Network: iNaturalist hosts (listed under "External resources") for photo scripts; GitHub for PRs. Python scripts need `pillow` (`pip install pillow`) for photo work.
 
-**Recreate the hosting (only if the repo ever moves):**
+**Hosting settings (already in place; only if the repo ever moves):**
 1. GitHub Pages: Settings > Pages > Deploy from branch `main`, folder `/` (root). `.nojekyll` is committed. A merge to `main` is live in a minute or two.
 2. Actions: `.github/workflows/checks.yml` (PR checks) and `approved-photos.yml` (after each `curation.json` push; needs Settings > Actions > Workflow permissions "Read and write").
 3. Admin writes: a fine-grained GitHub token, this repository only, Contents read and write, 90-day expiry; the admin lock screen links to the token page and stores it encrypted with a password of Pierre's choice. Changing the repo name or owner means updating `REPO` in `admin.js` and in `tools/sync/Code.gs` (the admins' token check), then redeploying the script.
 
-**Recreate the progress sync (only if the Sheet or script is lost):**
+**Progress sync (outside GitHub; only if the Sheet or script is ever lost):**
 1. New Google Sheet > Extensions > Apps Script > paste [`tools/sync/Code.gs`](../tools/sync/Code.gs) > save.
 2. Project Settings > Script Properties: add `ANON_SALT` = any long random string (keeps anonymous player ids unguessable; never commit it).
 3. Deploy > New deployment > type **Web app**, Execute as **Me**, Who has access **Anyone** > Deploy, accept the permissions. Run once in the editor a function that calls `UrlFetchApp` (see "Code.gs" below) so the admins' GitHub token check works.
 4. Put the `/exec` URL in `SYNC_URL` in `app.js` (and bump versions with `tools/check_versions.py --fix`). The tabs (`RAs`, `Answers`, `Activity`, `By genus`, `Reports`, `Progress data`) are created on first use. Old progress lives in the old Sheet only.
 
-**Rebuild the content (data.json):** the original build scripts read a scratchpad that no longer exists (`tools/archive/`). `data.json` is the source of truth: edit it directly or through a small re-runnable `tools/apply_*.py` script. The lecture text came from the Google Slides copy of Lecture 6 (Slides API, incl. presenter notes); photos from the lecture deck media, Pierre's iNaturalist and other iNaturalist observers (see ARCHITECTURE.md "Photos" and "Tools").
+**Content (`data.json`):** the original build scripts read a scratchpad that no longer exists (`tools/archive/`). `data.json` is the source of truth: edit it directly or through a small re-runnable `tools/apply_*.py` script. The lecture text came from the Google Slides copy of Lecture 6 (Slides API, incl. presenter notes); photos from the lecture deck media, Pierre's iNaturalist and other iNaturalist observers (see ARCHITECTURE.md "Photos" and "Tools").
 
 ## Working with Pierre
 
