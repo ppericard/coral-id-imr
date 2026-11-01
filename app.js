@@ -1370,7 +1370,6 @@ function showModes(tab, h){
   const on = $modes.querySelector('[aria-current]'); if (on && $modes.scrollWidth > $modes.clientWidth) $modes.scrollLeft = on.offsetLeft - ($modes.clientWidth - on.offsetWidth) / 2;
 }
 function route(){
-  REPC.length = 0;  // the Report buttons of the previous screen are gone (their contexts would pile up otherwise)
   if (CUR_NEW) { CUR = CUR_NEW; CUR_NEW = null; build(); }
   applySize();
   const h = hashNow();
