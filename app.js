@@ -2207,6 +2207,14 @@ const copy = o => JSON.parse(JSON.stringify(o));
 function mergeSaved(j) {
   if (typeof j.rev === 'number') SYNC.srv = j.rev; // the sheet's revision this merge is based on (sent back as at, v6)
   const d = j.data || {};
+  // The leaderboard choice made on another device, if more recent than this one's (else this one's goes with the next send).
+  try {
+    const rb = JSON.parse(d[BOARD] || 'null');
+    if (rb !== null && boardT(rb) > boardT(store.get(BOARD, null))) {
+      store.set(BOARD, rb);
+      showBoardSet();
+    }
+  } catch (e) {}
   let R = {};
   try {
     R = JSON.parse(d['imr-coral-progress'] || '{}') || {};
@@ -2985,7 +2993,12 @@ function showModes(tab, h) {
 // rank and Elo with a link here. Signed-in players appear by default; ⚙ Leaderboard Off takes them off (sent with the next
 // sync, the sheet's Board column). The sheet serves it (GET ?board=1, v14, cached 5 minutes there, 1 minute here).
 const BOARD = 'imr-coral-board'; // an imr-coral key: it travels with the progress, so the choice holds on every device
-const boardOn = () => store.get(BOARD, 1) !== 0;
+// {v: 1 | 0, t: when chosen}: the latest choice wins when two devices meet (mergeSaved); a bare 0/1 is an older form.
+const boardOn = () => {
+  const b = store.get(BOARD, null);
+  return b === null ? true : typeof b === 'object' ? b.v !== 0 : b !== 0;
+};
+const boardT = b => (b && typeof b === 'object' ? b.t || 0 : 0);
 // Elo score shown to players: the ability (0 = able to name an average photo, same scale as photo difficulty) as a
 // familiar number around 1000; +1 ability = +200.
 const eloScore = a => (typeof a === 'number' ? Math.round(1000 + 200 * a) : '–');
@@ -3061,7 +3074,7 @@ const showBoardSet = () =>
 document.querySelectorAll('#boardset button').forEach(
   b =>
     (b.onclick = () => {
-      store.set(BOARD, b.dataset.board === '1' ? 1 : 0);
+      store.set(BOARD, {v: b.dataset.board === '1' ? 1 : 0, t: Date.now()});
       showBoardSet();
       boardP = null;
       syncSoon();
