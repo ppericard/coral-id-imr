@@ -58,6 +58,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 | Coral Finder book crops for the 27 extra Dauin genera (they only have iNat photos). | PR #184 | Parked |
 | Group index / side panel on Genera. Pierre asked twice about a global left sidebar; advised against (width goes to photos), he didn't insist. | thread "Declutter the UI across the app" | Open question |
 | A probabilistic model beyond BKT + Elo (IRT-style) if the current adaptive rule isn't enough. | thread "Review the site as a new RA" | Parked |
+| **A second admin**, if one ever joins: set up their access (add them as a GitHub collaborator, or Pierre prepares the device), because the admin lock screen expects a GitHub token with write access; possibly a restricted role (Candidates, Forms and Quality only), since Genera, Look-alikes and Excluded change Pierre's own choices. The Publish commit message already names who published (token login). | Pierre, 2026-11-01, admin review <https://claude.ai/artifact/L928mKB9zC43yEKbyQbswy> ("note it for the future, if the situation comes up") | Parked |
 | Reuse the data (genera, criteria, photos) in ReefRecall, Pierre's separate app. The coral tools stay standalone, not part of ReefRecall. | 2026-10-31 | Parked |
 
 ## Declined (don't propose again)
