@@ -2,7 +2,7 @@
 
 > **Copied into the repo for the handover (2026-11-01).** Original: a private Claude doc on claude.ai (not reachable from another account). Reviewed `main` at 4f6df67 (PR #264).
 >
-> **Status since:** H1 fixed (#268: `curation.json` in the SW shell + `imr-curation-last` fallback); M1 fixed (#267: sign-in merges anonymous play); M2 fixed (#275: `applyCuration`/`applySlots` in `core.js`, `tests/photos.test.js`); M3 obsolete (#263, Code.gs v8 checks admins by GitHub token); M4 fixed (#272, tabs merge drafts); M5 partly fixed (#277 page smoke test in CI; `data.json` one genus per line and the Prettier/modules split are still open in `docs/ROADMAP.md`); L1, L2, L3 fixed (#268); L4 open (rate-limit reports only if abused); L5/L6 partly (#268); L7 = repo size watch (ROADMAP). `photoSet`/`distractors` still untested (ROADMAP).
+> **Status since:** H1 fixed (#268: `curation.json` in the SW shell + `imr-curation-last` fallback); M1 fixed (#267: sign-in merges anonymous play); M2 fixed (#275: `applyCuration`/`applySlots` in `core.js`, `tests/photos.test.js`); M3 obsolete (#263, Code.gs v8 checks admins by GitHub token); M4 fixed (#272, tabs merge drafts); M5 partly fixed (#277 page smoke test in CI; `data.json` one genus per line done with `tools/datajson.py`; the Prettier/modules split is still open in `docs/ROADMAP.md`); L1, L2, L3 fixed (#268); L4 open (rate-limit reports only if abused); L5/L6 partly (#268); L7 = repo size watch (ROADMAP). `photoSet`/`distractors` still untested (ROADMAP).
 
 Nov 1, 2026 · Pierre Pericard
 

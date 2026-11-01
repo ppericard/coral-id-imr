@@ -1,6 +1,7 @@
 # Ties the corallite clues and the glossary to the IMR lecture and the Coral Finder (no invented classes).
 # Run once on data.json: python3 tools/apply_sources.py
 import json
+from datajson import dump  # the one data.json layout (one genus per line)
 P='data.json'
 d=json.load(open(P))
 # Corallite size: the thresholds used by the Coral Finder boxes (B2/B3 2 mm; S1/S2 and S4/S5 8 mm).
@@ -55,4 +56,4 @@ d['terms']=[['Septa','Vertical blades inside the coral’s cup-like corallite.',
  ["Intra-tentacular budding", "Daughter corallites grow from the inside wall of parent corallites, usually by division of the parent corallite.", "Corals of the World glossary"],
  ["Monticules", "Conical sections of common wall between corallites, which have a secondary radial symmetry.", "Corals of the World glossary"],
  ["Vesicles", "Large grape-like sacs that are expanded during the day in some Euphyllidae.", "Corals of the World glossary"]]
-json.dump(d,open(P,'w'),ensure_ascii=False,separators=(',',':'))
+dump(d, P)

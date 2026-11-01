@@ -60,7 +60,7 @@ Nothing needs rebuilding: the site is served by GitHub Pages from `main` through
 3. Deploy > New deployment > type **Web app**, Execute as **Me**, Who has access **Anyone** > Deploy, accept the permissions. Run once in the editor a function that calls `UrlFetchApp` (see "Code.gs" below) so the admins' GitHub token check works.
 4. Put the `/exec` URL in `SYNC_URL` in `app.js` (and bump versions with `tools/check_versions.py --fix`). The tabs (`RAs`, `Answers`, `Activity`, `By genus`, `Reports`, `Progress data`) are created on first use. Old progress lives in the old Sheet only.
 
-**Content (`data.json`):** the original build scripts read a scratchpad that no longer exists (`tools/archive/`). `data.json` is the source of truth: edit it directly or through a small re-runnable `tools/apply_*.py` script. The lecture text came from the Google Slides copy of Lecture 6 (Slides API, incl. presenter notes); photos from the lecture deck media, Pierre's iNaturalist and other iNaturalist observers (see ARCHITECTURE.md "Photos" and "Tools").
+**Content (`data.json`):** the original build scripts read a scratchpad that no longer exists (`tools/archive/`). `data.json` is the source of truth: edit it directly or through a small re-runnable `tools/apply_*.py` script, and write it with `tools/datajson.py` (one genus per line; the PR check fails on any other layout). The lecture text came from the Google Slides copy of Lecture 6 (Slides API, incl. presenter notes); photos from the lecture deck media, Pierre's iNaturalist and other iNaturalist observers (see ARCHITECTURE.md "Photos" and "Tools").
 
 ## Working with Pierre
 

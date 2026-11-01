@@ -1,5 +1,5 @@
-# Fast checks on every pull request (code review 2026-11-01, M6/M7): JS syntax, unit tests, JSON files,
-# Python tools, cache-busting versions. Node and Python only, except the page smoke test (job "pages"), which
+# Fast checks on every pull request (code review 2026-11-01, M6/M7): JS syntax, unit tests, JSON files (and the
+# data.json layout, M5), Python tools, cache-busting versions. Node and Python only, except the page smoke test (job "pages"), which
 # installs Playwright with npm into a temporary folder (Pierre's OK, 2026-11-01); the repo keeps no package.json.
 name: Checks
 on:
@@ -26,6 +26,9 @@ jobs:
       - name: JSON files parse
         run: |
           for f in *.json; do python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f" || { echo "Bad JSON: $f"; exit 1; }; done
+      - name: data.json layout (one genus per line, written by tools/datajson.py)
+        run: |
+          python3 tools/datajson.py --check
       - name: Python tools compile
         run: |
           python3 -m py_compile tools/*.py

@@ -9,6 +9,7 @@ x.gen[g].more, as tools/apply_multi.py does for the slate genera: games skip the
 Re-runnable: python3 tools/apply_bonus.py
 """
 import json, re, time, urllib.request
+from datajson import dump  # the one data.json layout (one genus per line)
 
 MULTI = {'isopora-x-606660716', 'heliopora-x-129398835'}
 BONUS = ['Millepora', 'Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis']  # same list as app.js BONUS
@@ -41,5 +42,5 @@ for g in BONUS:
     more = {v: L for v, L in more.items() if L}
     if more: G['more'] = more
     else: G.pop('more', None)
-json.dump(d, open('data.json', 'w'), ensure_ascii=False, separators=(',', ':'))
+dump(d, 'data.json')
 print(f'{len(ids)} observations checked, {n} photos marked gid (not Research Grade)')

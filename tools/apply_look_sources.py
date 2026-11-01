@@ -2,6 +2,7 @@
 # Sources, in order: the IMR lecture or the Coral Finder comparing the two genera in words; the same Coral Finder box;
 # the same IMR lecture group. Run once: python3 tools/apply_look_sources.py
 import json
+from datajson import dump  # the one data.json layout (one genus per line)
 P='data.json'; d=json.load(open(P)); G=d['gen']
 TEXT={('Leptoria','Platygyra'):'IMR Lecture 6: Leptoria "could be confused for Platygyra"',
  ('Montipora','Porites'):'IMR Lecture 6: Montipora "can be confused for Porites"',
@@ -45,5 +46,5 @@ for a,v in G.items():
 for a,v in G.items():
     others=[b for b in G if b!=a and (b in v['look'] or a in G[b]['look'])]
     v['lsrc']={b:source(a,b) for b in others}
-json.dump(d,open(P,'w'),ensure_ascii=False,separators=(',',':'))
+dump(d, P)
 print('dropped',dropped)

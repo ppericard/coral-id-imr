@@ -1,4 +1,4 @@
-// IMR Coral ID: hash-routed single page. Data comes from data.json (built by make_site.py).
+// IMR Coral ID: hash-routed single page. Data comes from data.json (written by tools/datajson.py, one genus per line).
 let DATA;
 const $v = document.getElementById('view');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1514,7 +1514,7 @@ const json = u => fetch(u).then(okJson).catch(softFail(u.replace(/\?.*/, ''), {}
 // The page's later scripts (home.js, tour.js...) must be in before the first route: a fast or cached data.json could
 // otherwise arrive first and open the Learn page instead of Home (seen under the welcome tour, 2026-11-01).
 const domReady = new Promise(r => document.readyState === 'loading' ? addEventListener('DOMContentLoaded', r, {once: true}) : r());
-Promise.all([fetch('data.json?v=28').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1'), domReady]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); window.APP_READY = true; if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=29').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1'), domReady]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); window.APP_READY = true; if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 // A tab left open for days still follows Pierre's published curation (e.g. the CF book switch): when the tab comes back
 // into view (or every 30 min while visible), curation.json is read again; a change applies at the next screen (route),
 // never in the middle of a game.
