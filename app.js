@@ -436,6 +436,7 @@ function viewLookalikes(a, b){
     const cur = $v.querySelector('.lkd.on'); if (cur) cur.parentNode.scrollTop = cur.offsetTop - cur.parentNode.offsetTop - 8;
     $v.querySelectorAll('[data-lstep]').forEach(btn => btn.onclick = () => stepTo(i + Number(btn.dataset.lstep)));
     $v.querySelectorAll('[data-lz]').forEach(z => z.onclick = () => zoom([{...m.pa, genus: m.A}, {...m.pb, genus: m.B}], Number(z.dataset.lz)));
+    requestAnimationFrame(() => $v.querySelectorAll('.lkph').forEach(fitLow));
     $v.querySelectorAll('.lkd').forEach((d, k) => d.onclick = e => { e.preventDefault(); stepTo(k); });
     // Swipe left / right anywhere on the pair (photos, title, tips), only when the gesture is mostly sideways.
     const mt = $v.querySelector('.lkmain'); let t0 = null;
@@ -727,11 +728,21 @@ function fitStage(){
     const colW = st.children[0].getBoundingClientRect().width, h = st.getBoundingClientRect().height;
     const boxR = colW / h;
     st.querySelectorAll('.qph').forEach(f => { const i = f.querySelector('img'); if (!i) return;
-      const set = () => { const r = i.naturalWidth / i.naturalHeight; f.classList.toggle('cov', !!r && Math.max(boxR / r, r / boxR) <= 1.3); };
+      // A small photo (some IMR lecture originals are ~300 px wide) is never blown up to fill: shown whole at its own
+      // size on the blurred background instead, sharp rather than soft (Pierre, 2026-11-01, design re-review m5).
+      const set = () => { const r = i.naturalWidth / i.naturalHeight, up = Math.max(colW / i.naturalWidth, h / i.naturalHeight);
+        f.classList.toggle('cov', !!r && Math.max(boxR / r, r / boxR) <= 1.3 && up <= LOWRES); };
       if (i.naturalWidth) set(); else i.addEventListener('load', set, {once: true}); });
   } else st.querySelectorAll('.qph.cov').forEach(f => f.classList.remove('cov'));
 }
 addEventListener('resize', fitStage);
+// Big photo stages (Look-alikes, quiz on phones and tablets): a photo that would be enlarged more than this to fill its
+// box is shown whole at its own size on the blurred background instead (Pierre, 2026-11-01: sharp beats big for the few
+// small IMR lecture photos). Genus sheet tiles keep filling their box.
+const LOWRES = 1.15;
+const fitLow = fig => { const i = fig.querySelector('img'); if (!i) return;
+  const chk = () => { const r = fig.getBoundingClientRect(); fig.classList.toggle('lo', !!i.naturalWidth && Math.max(r.width / i.naturalWidth, r.height / i.naturalHeight) > LOWRES); };
+  if (i.complete && i.naturalWidth) chk(); else i.addEventListener('load', chk, {once: true}); };
 // Games with a grid of cards (Memory): fill the free area. Try every column count; cards may be square up to
 // 4:3 landscape (the photos' shape); keep the layout with the largest cards.
 // Height of the phone bottom tab bar (0 on wider screens): every screen-fitting layout leaves room for it.
