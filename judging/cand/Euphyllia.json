@@ -16,7 +16,7 @@
    "polyps": true
   },
   "euphyllia-cand-269516718": {
-   "view": "medium",
+   "view": "wide",
    "quality": 2,
    "form": "x",
    "keep": "best",
@@ -151,8 +151,9 @@
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "dup",
-   "polyps": true
+   "keep": "alt",
+   "polyps": true,
+   "note": "Same colony from another angle, with neighbours"
   },
   "euphyllia-cand-566741813": {
    "view": "wide",
@@ -201,7 +202,7 @@
    "note": "Small phaceloid colony with green tentacles; Euphyllia likely"
   },
   "euphyllia-cand-559719436": {
-   "view": "medium",
+   "view": "macro",
    "quality": 2,
    "form": "x",
    "keep": "best",

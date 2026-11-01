@@ -147,7 +147,10 @@
    "quality": 2,
    "form": "B",
    "genus": "Acropora",
-   "note": "Protruding tubular radial corallites and pale axial tips: Acropora"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Spiky white tips with protruding corallites look like Acropora, not smooth Seriatopora tips"
   },
   "seriatopora-cand-580866429": {
    "view": "wide",

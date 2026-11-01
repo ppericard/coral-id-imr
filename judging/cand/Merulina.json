@@ -2,7 +2,7 @@
  "genus": "Merulina",
  "photos": {
   "merulina-cand-488111018": {
-   "view": "macro",
+   "view": "medium",
    "quality": 3,
    "form": "x",
    "keep": "best"
@@ -49,7 +49,11 @@
    "view": "wide",
    "quality": 2,
    "form": "E",
-   "keep": "best"
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Large flat encrusting plate with short white-flecked valleys; Merulina ampliata likely"
   },
   "merulina-cand-269472276": {
    "view": "wide",
@@ -77,7 +81,11 @@
    "view": "medium",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Knobby branch tips; Merulina scabricula plausible, Pocillopora not ruled out"
   },
   "merulina-cand-385445363": {
    "view": "wide",
@@ -101,7 +109,11 @@
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Bushy colony of frilly branches; Merulina scabricula plausible"
   },
   "merulina-cand-604391543": {
    "view": "wide",
@@ -196,7 +208,11 @@
    "view": "wide",
    "quality": 3,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Mound of short knobby branches; valleys not clear at this size"
   },
   "merulina-cand-607143562": {
    "view": "medium",
