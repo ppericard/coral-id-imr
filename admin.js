@@ -18,6 +18,32 @@ const ver = p => p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv
 const img = (p, s) => p.r && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : `img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
+// The draft is never published as a whole copy: it is merged, key by key, onto the latest published curation.
+// merge3(base, mine, theirs): base = the published curation this draft started from; a key I changed since base
+// keeps my value, every other key takes the published one (so choices published from another browser or device
+// are never lost). Objects merge key by key; lists and plain values are single choices. Same choice on both sides = conflict, mine wins.
+const isObj = o => o && typeof o === 'object' && !Array.isArray(o), eq = (a, b) => JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
+function merge3(base, mine, theirs){
+  const b = isObj(base) ? base : {}, m = isObj(mine) ? mine : {}, t = isObj(theirs) ? theirs : {}, out = {};
+  new Set([...Object.keys(b), ...Object.keys(m), ...Object.keys(t)]).forEach(k => {
+    const v = eq(m[k], b[k]) ? t[k] : eq(t[k], b[k]) ? m[k] : isObj(m[k]) && isObj(t[k]) ? merge3(b[k], m[k], t[k]) : m[k];
+    if (v !== undefined && !(isObj(v) && !Object.keys(v).length && k !== 'genera')) out[k] = v; });
+  return out;
+}
+// An old draft saved before drafts kept their base: add what it has on top of the published curation, never remove.
+function mergeOld(mine, theirs){
+  const m = isObj(mine) ? mine : {}, t = isObj(theirs) ? theirs : {}, out = {...t};
+  Object.keys(m).forEach(k => { out[k] = isObj(m[k]) && isObj(t[k]) ? mergeOld(m[k], t[k]) : m[k] === undefined ? t[k] : m[k]; });
+  return out;
+}
+// Re-base the draft (and every Undo/Redo step) onto a newer published curation.
+function rebase(next){
+  const base = SAVED, f = d => merge3(base, d, next);
+  DRAFT = f(DRAFT); DRAFT.genera = DRAFT.genera || {};
+  HIST = HIST.map(x => JSON.stringify(f(JSON.parse(x)))); FUT = FUT.map(x => JSON.stringify(f(JSON.parse(x))));
+  SAVED = clone(next); SAVED.genera = SAVED.genera || {}; snap = JSON.stringify(DRAFT); memoReset();
+  store.set('imr-curation-draft', DRAFT); store.set('imr-curation-base', SAVED);
+}
 
 let SHOWN_COVER = null, SUG = {}, DUPS = [], FU0, PICKS = {}, PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
@@ -838,7 +864,7 @@ function renderCand(){
         <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
       </figure>
       <div class="adm-acts adm-swacts">${qSeg(p)}${fSeg(p)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOf(p.f) ? ' on' : ''}" data-crop aria-pressed="${!!crOf(p.f)}">Crop</button><button type="button" data-skip>Skip</button></div></div>
-      <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${(p.vg || p.view) === w ? ' sug' : ''}" data-add="${w}" title="Add (${i + 1})">✓ ${label(n, w)}</button>`).join('')}</div>
+      <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${(p.vg || p.view) === w ? ' sug' : ''}" data-add="${w}" title="${(p.vg || p.view) === w ? 'Suggested · ' : ''}Add (${i + 1})">+ ${label(n, w)}</button>`).join('')}</div>
     </section>`;
     if (nx) new Image().src = img(nx.p);
     const S = $v.querySelector('.adm-sw'), f = p.f, go = () => { CSKIP.delete(f); };
@@ -903,10 +929,13 @@ async function save(){
   const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(), sg = sgChanged(), cd = cdChanged(), mt = mtChanged(), cr = crChanged(), sn = snChanged(); if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn) || !TOKEN) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
   try {
+    // Never overwrite what was published from elsewhere since this page loaded: re-read it and merge first.
+    const f = await gh(`/contents/${FILE}?ref=${BRANCH}`).catch(e => { if (/Not Found/.test(e.message)) return null; throw e; });
+    if (f && f.sha !== SHA) { rebase(JSON.parse(fromB64(f.content))); SHA = f.sha; }
     const out = output(), text = JSON.stringify(out, null, 2) + '\n';
     const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const r = await gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg, content: toB64(text), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})});
-    SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); saveDraft();
+    SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); saveDraft(); store.set('imr-curation-base', SAVED);
     toast('Published. The public site shows it within a minute or two.');
   } catch (x) { toast(/does not match|sha/i.test(x.message) ? 'The site was published from elsewhere in the meantime: reload the page, your draft is kept.' : 'Not published (your draft is kept): ' + x.message); }
   b.textContent = ''; render();
@@ -934,8 +963,11 @@ async function start(){
   // Every photo name in data.json (field, extra, lecture, candidates), to spot choices left pointing nowhere.
   KNOWN = new Set([...Object.values(DATA.gen).flatMap(g => [...Object.values(g.views || {}), ...Object.values(g.more || {}), g.book || []].flat()), ...Object.values(DATA.course || {}).flat(), ...Object.values(DATA.cand || {}).flat(), ...(DATA.cmp || [])].map(p => p.f));
   // Unsaved edits from an earlier visit are kept, on top of what is saved.
-  const old = store.get('imr-curation-draft', null);
-  DRAFT = old && old.genera ? old : clone(SAVED); snap = JSON.stringify(DRAFT);
+  // The draft only carries the changes made since its base: everything published since then (from another
+  // device, or by the candidate refill) comes in underneath. Drafts from before this rule only add, never remove.
+  const old = store.get('imr-curation-draft', null), base = store.get('imr-curation-base', null);
+  DRAFT = old && old.genera ? (base ? merge3(base, old, SAVED) : mergeOld(old, SAVED)) : clone(SAVED); DRAFT.genera = DRAFT.genera || {};
+  snap = JSON.stringify(DRAFT); store.set('imr-curation-draft', DRAFT); store.set('imr-curation-base', SAVED);
   // Pierre's clicks in the old Coral Finder letters (curation.json "form") stay as they are, shown as the hint.
   Object.assign(LEGACY, SAVED.form || {}, DRAFT.form || {});
   const nf = importFlags(); if (nf) setTimeout(() => toast(`${nf} new photo${nf > 1 ? 's' : ''} flagged on the site: see Triage.`), 50);
@@ -957,6 +989,10 @@ async function start(){
   window.onhashchange = () => { cur = decodeURIComponent(location.hash.slice(1)); const h = $('admhelp'); if (h) h.remove(); render(); window.scrollTo({top: 0}); };
   // Every click is kept in this browser's draft, so leaving or reloading loses nothing: warn only if that save failed.
   window.onbeforeunload = e => { if (draftLost) { e.preventDefault(); e.returnValue = ''; } };
+  // Every photo shows its file name in small, plain and selectable, so Pierre can quote it (hidden on phones, CSS).
+  const fid = () => $v.querySelectorAll('figure[data-f] figcaption, .adm-sw[data-f] .adm-swcard figcaption').forEach(c => { if (c.querySelector('.adm-fid')) return;
+    const f = c.closest('[data-f]').dataset.f, s = document.createElement('small'); s.className = 'adm-fid'; s.textContent = f; c.appendChild(s); });
+  new MutationObserver(fid).observe($v, {childList: true, subtree: true});
   render();
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.
