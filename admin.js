@@ -207,13 +207,16 @@ const entry = n => DRAFT.genera[n] || {};
 const lv = n => entry(n).lv || (DATA.gen[n].levels === 2 ? 2 : 3);
 const viewOf = (n, p) => { const v = (entry(n).move || {})[p.f] || p.base; return v === 'medium' && lv(n) === 2 && DATA.gen[n].levels !== 2 ? 'wide' : v; };
 const hidden = (n, p) => (entry(n).hide || []).includes(p.f);
+// Photos kept out of the featured / genus-sheet slots: extra photos and Coral Finder book photos (the site keeps
+// added book photos apart from the views: Coral Finder only, never the sheet, cover or games; app.js applySlots).
+const offSlot = p => !!(p.extra || p.cf);
 // Same order as applySlots in app.js: IMR photos, then Pierre's, then other observers, each by quality,
-// Poor photos and multi-coral photos last.
+// Poor photos and multi-coral photos last, then book photos.
 function autoOrder(L){
   const byQ = x => x.slice().sort((a, b) => qOf(b.f) - qOf(a.f));
-  const main = L.filter(p => !p.extra), out = [...byQ(main.filter(p => p.imr)), ...byQ(main.filter(p => !p.imr && p.own)), ...byQ(main.filter(p => !p.imr && !p.own))];
+  const main = L.filter(p => !offSlot(p)), out = [...byQ(main.filter(p => p.imr)), ...byQ(main.filter(p => !p.imr && p.own)), ...byQ(main.filter(p => !p.imr && !p.own))];
   const ok = out.filter(p => !p.multi);
-  return [...ok.filter(p => qOf(p.f) > 1), ...ok.filter(p => qOf(p.f) === 1), ...out.filter(p => p.multi), ...L.filter(p => p.extra)];
+  return [...ok.filter(p => qOf(p.f) > 1), ...ok.filter(p => qOf(p.f) === 1), ...out.filter(p => p.multi), ...byQ(L.filter(offSlot))];
 }
 // k photos from L in order, a different observation each time when possible (as take() in app.js).
 const takeObs = (L, k) => { const out = [], seen = new Set(); [true, false].forEach(fresh => L.forEach(p => { if (out.length < k && !out.includes(p) && (!fresh || !seen.has(p.o || p.f))) { out.push(p); seen.add(p.o || p.f); } })); return out; };
@@ -221,20 +224,20 @@ function rowOf(n, v){
   const live = photos(n).filter(p => viewOf(n, p) === v && !hidden(n, p)), order = autoOrder(live);
   const pin = (entry(n).feat || {})[v];
   // No pick of yours: Claude's suggestion (picks.json) first, then the automatic order, as on the site.
-  const sug = ((PICKS[n] || {})[v] || []).map(f => live.find(p => p.f === f && !p.multi && !p.extra)).filter(Boolean);
+  const sug = ((PICKS[n] || {})[v] || []).map(f => live.find(p => p.f === f && !p.multi && !offSlot(p))).filter(Boolean);
   // Featured = always the first FEAT photos (Pierre): his pinned ones in his order, the rest filled automatically,
   // never with a Poor photo while better ones exist, except IMR lecture photos (as on the site).
-  const pinned = (pin || []).map(f => live.find(p => p.f === f)).filter(Boolean).slice(0, FEAT);
-  const cand = [...sug, ...order.filter(p => !p.multi && !p.extra)].filter(p => !pinned.includes(p)), k = FEAT - pinned.length;
+  const pinned = (pin || []).map(f => live.find(p => p.f === f && !p.cf)).filter(Boolean).slice(0, FEAT);
+  const cand = [...sug, ...order.filter(p => !p.multi && !offSlot(p))].filter(p => !pinned.includes(p)), k = FEAT - pinned.length;
   const good = takeObs(cand.filter(p => p.imr || qOf(p.f) !== 1), k), feat = [...pinned, ...good, ...takeObs(cand.filter(p => !good.includes(p)), k - good.length)];
   return {feat, pinned: pinned.map(p => p.f), auto: !pinned.length, rest: order.filter(p => !feat.includes(p)), hid: photos(n).filter(p => viewOf(n, p) === v && hidden(n, p))};
 }
 function coverOf(n){
   const g = DATA.gen[n], all = photos(n).filter(p => !hidden(n, p)), k = entry(n);
   // Same fallbacks as cover() in app.js: your pick, the first IMR featured Closer photo, data.json's pick, the first closer field photo (featured first).
-  const F = (k.feat || {}).medium || [], med = all.filter(x => viewOf(n, x) === 'medium' && !x.imr && !x.extra);
+  const F = (k.feat || {}).medium || [], med = all.filter(x => viewOf(n, x) === 'medium' && !x.imr && !offSlot(x));
   const ri = rowOf(n, 'medium').feat.find(x => x.imr);
-  const p = (k.cover && all.find(x => x.f === k.cover)) || ri || all.find(x => x.f === g.cover && !x.extra) || med.find(x => F.includes(x.f)) || med[0] || all.find(x => !x.imr && !x.extra);
+  const p = (k.cover && all.find(x => x.f === k.cover)) || ri || all.find(x => x.f === g.cover && !offSlot(x)) || med.find(x => F.includes(x.f)) || med[0] || all.find(x => !x.imr && !offSlot(x));
   return p && {...p, view: viewOf(n, p), picked: !!k.cover};
 }
 // Status (Pierre): ✓ only when the genus has everything the site needs AND he validated it (curation ok: true).
@@ -293,10 +296,11 @@ const ACT = {
     if (p.cand || pending(n).includes(p)) { k.add = k.add || {}; k.add[f] = to; }
     else if (!was) { k.move = k.move || {}; if (to === p.base) delete k.move[f]; else k.move[f] = to; }
     dropFeat(k, f);
+    if (p.cf) at = null;   // book photos never take a featured slot (the site keeps them for the Coral Finder only)
     // Dropped after the last of 3 featured photos: it takes the last place (it used to fall off the end).
     if (at !== null) { L.splice(Math.min(at, L.length, FEAT - 1), 0, f); k.feat = k.feat || {}; k.feat[to] = L.slice(0, FEAT); }
     // Dragged out of the first places: the next photo moves up, and the set is pinned so it can't come straight back.
-    else if (inFeat) { const nx = r.rest.find(x => x.f !== f && !x.multi && !x.extra && (x.imr || qOf(x.f) !== 1)) || r.rest.find(x => x.f !== f && !x.multi && !x.extra);
+    else if (inFeat) { const nx = r.rest.find(x => x.f !== f && !x.multi && !offSlot(x) && (x.imr || qOf(x.f) !== 1)) || r.rest.find(x => x.f !== f && !x.multi && !offSlot(x));
       if (nx) L.push(nx.f); k.feat = k.feat || {}; if (L.length) k.feat[to] = L; else delete k.feat[to]; }
   }),
 
@@ -365,7 +369,7 @@ function render(){
       <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : DATA.gen[m].x ? 'not IMR' : '★'}${c && c.view === 'macro' && lv(m) !== 2 ? ' · <b class="warnc" title="Cover is a close-up">macro cover</b>' : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}${missing(m).length ? ' · <b class="warnc" title="Missing photos">⚠ check</b>' : ''}</small></span><span class="dots">${e.ok ? (needs(m).length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></a>`; }).join('');
   const body = rows(n).map(([v]) => { const r = rowOf(n, v), out = [...r.feat, ...r.rest].filter(p => !shown(p)).length;
     return `<section class="adm-row"><h3>${label(n, v)} <small>${r.feat.length + r.rest.length} photo${r.feat.length + r.rest.length === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
-      <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: !r.pinned.includes(p.f), last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${(sh => r.rest.filter(shown).map(p => tile(n, p, v, sh.includes(p) ? {num: FEAT + 1 + sh.indexOf(p), sheet: true} : {})).join(''))(r.rest.filter(p => !p.multi && !p.extra).slice(0, SHEET - r.feat.length))}</div>
+      <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: !r.pinned.includes(p.f), last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${(sh => r.rest.filter(shown).map(p => tile(n, p, v, sh.includes(p) ? {num: FEAT + 1 + sh.indexOf(p), sheet: true} : {})).join(''))(r.rest.filter(p => !p.multi && !offSlot(p)).slice(0, SHEET - r.feat.length))}</div>
       ${r.feat.length + r.rest.length ? '' : '<p class="note">No photo in this view.</p>'}</section>`; }).join('');
   const P = unused(n), Ps = P.filter(shown), two = lv(n) === 2;
   const candTile = p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"${crStyle(p.f)}></button>${GRIP}${XBTN}
