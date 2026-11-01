@@ -9,7 +9,8 @@ from numpy.lib.stride_tricks import sliding_window_view as win
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(R, 'tools'))
 from excluded import excluded
-d = json.load(open(f'{R}/data.json'))
+from datajson import load_all
+d = load_all()  # data.json + the candidates waiting in cand.json
 
 def photos(n):
     g = d['gen'][n]; out = {}

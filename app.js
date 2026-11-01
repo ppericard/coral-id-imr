@@ -3165,7 +3165,7 @@ function viewBoard() {
         ? `<ol class="blist">${B.rows
             .map(
               (r, i) =>
-                `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span><span class="belo" title="${r[2] == null ? `Elo shows from ${ELO_MIN} answers` : 'Elo: level from all answers'}">${r[2] == null ? '' : `Elo ${eloScore(r[2])}`}</span></li>`
+                `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="belo" title="${r[2] == null ? `Elo shows from ${ELO_MIN} answers` : 'Elo: level from all answers'}">${r[2] == null ? '' : `Elo ${eloScore(r[2])}`}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
             )
             .join('')}</ol>`
         : '<p class="note">Nobody yet: be the first.</p>');
@@ -3640,8 +3640,30 @@ const json = u =>
 // The page's later scripts (home.js, tour.js...) must be in before the first route: a fast or cached data.json could
 // otherwise arrive first and open the Learn page instead of Home (seen under the welcome tour, 2026-11-01).
 const domReady = new Promise(r => (document.readyState === 'loading' ? addEventListener('DOMContentLoaded', r, {once: true}) : r()));
-Promise.all([fetch('data.json?v=29').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1'), domReady])
-  .then(([d, c, f, q, k]) => {
+// The preview of an unsaved draft (?draft) may add candidates still waiting: those live in cand.json, out of data.json
+// (tools/datajson.py; the players never need them), so the preview fetches them too.
+const draftCand = () =>
+  /[?&]draft\b/.test(location.search)
+    ? fetch('cand.json', {cache: 'no-cache'})
+        .then(okJson)
+        .then(j => j.cand || {})
+        .catch(() => ({}))
+    : Promise.resolve({});
+Promise.all([
+  fetch('data.json?v=30').then(r => r.json()),
+  curation(),
+  forms(),
+  json('quality.json?v=3'),
+  json('picks.json?v=1'),
+  draftCand(),
+  domReady
+])
+  .then(([d, c, f, q, k, dc]) => {
+    Object.entries(dc).forEach(([g, L]) => {
+      const C = (d.cand = d.cand || {}),
+        have = new Set((C[g] || []).map(p => p.f));
+      C[g] = [...(C[g] || []), ...L.filter(p => !have.has(p.f))];
+    });
     RAW = d;
     CUR = c;
     FORMS = f;
@@ -3665,6 +3687,24 @@ Promise.all([fetch('data.json?v=29').then(r => r.json()), curation(), forms(), j
 // A tab left open for days still follows Pierre's published curation (e.g. the CF book switch): when the tab comes back
 // into view (or every 30 min while visible), curation.json is read again; a change applies at the next screen (route),
 // never in the middle of a game.
+// A photo Pierre adds from the candidates waiting (cand.json) reaches data.json only when the Candidate photos Action has
+// run after his Publish: an open tab whose curation adds a photo its data.json lacks fetches data.json again (now, or at
+// a later refresh if the Action has not finished), so the photo shows without a reload (code review #331).
+const rawFs = () => {
+  const s = new Set(),
+    add = L => (L || []).forEach(p => p && s.add(p.f));
+  [...Object.values(RAW.gen || {}), ...Object.values((RAW.x || {}).gen || {})].forEach(g => {
+    Object.values(g.views || {}).forEach(add);
+    Object.values(g.more || {}).forEach(add);
+    add(g.book);
+  });
+  [RAW.cand, RAW.course].forEach(o => Object.values(o || {}).forEach(add));
+  return s;
+};
+const addsMissing = c => {
+  const have = rawFs();
+  return Object.values((c && c.genera) || {}).some(g => Object.keys(g.add || {}).some(f => !have.has(f)));
+};
 function curRefresh() {
   if (!RAW || /[?&]draft\b/.test(location.search)) return;
   curAt = Date.now();
@@ -3673,6 +3713,15 @@ function curRefresh() {
     .then(c => {
       if (c) store.set(CUR_LAST, c);
       if (c && JSON.stringify(c) !== JSON.stringify(CUR)) CUR_NEW = c;
+      if (c && addsMissing(c))
+        return fetch('data.json', {cache: 'no-cache'})
+          .then(r => (r.ok ? r.json() : null))
+          .then(d => {
+            if (d && d.gen) {
+              RAW = d;
+              CUR_NEW = c; // rebuilt at the next page change, with the photo in
+            }
+          });
     })
     .catch(() => {});
 }
