@@ -30,6 +30,20 @@ There was no evidence of two custom deployers competing: neither checked-in
 workflow deployed Pages. `candidate-photos` concurrency controls photo processing,
 not Pages. Adding concurrency to that workflow or to Checks cannot clear this lock.
 
+### Outcome (2026-11-01, 09:05 UTC)
+
+After the source switch to **GitHub Actions** (PR #292), two Deploy Pages runs
+(09:01) still failed with "Please cancel `a74bd57` first", although the Pages API
+reported `a74bd57` as `succeed` and refused to cancel it ("it's finished"). The
+improved cancel workflow (PR #295) listed every github-pages deployment: both
+`a74bd57` deployments were `success`, so there was nothing to cancel. The next
+push-triggered Deploy Pages run ([41291510767](https://github.com/ppericard/coral-id-imr/actions/runs/41291510767),
+commit `067b947`) **succeeded** and the live site matched `main`. The lock cleared
+on GitHub's side about 75 minutes after it appeared; no step we took is known to
+have released it. If it recurs: run the cancel workflow (harmless), then wait and
+redeploy; after a few hours, contact GitHub Support with the failed run URL.
+New files can return 404 from the CDN for a minute or two after a deploy.
+
 ## Workflow inventory and triggers
 
 | Workflow | Trigger / commits | Publishes Pages? |
@@ -108,7 +122,7 @@ specific run (not unrelated Checks or Candidate photos):
 gh api --method POST "repos/$REPO/actions/runs/$RUN_ID/force-cancel"
 ```
 
-**No terminal?** Actions > **Cancel stuck Pages deployment** (`pages-cancel.yml`) > Run workflow, paste the SHA from the error, then run **Deploy Pages**. It makes the same cancel call with the workflow's own token.
+**No terminal?** Actions > **Cancel stuck Pages deployment** (`pages-cancel.yml`) > Run workflow, paste the SHA from the error, then run **Deploy Pages**. It lists recent github-pages deployments with their state, cancels each one for that SHA by Pages deployment ID, then by SHA, and warns if nothing was cancellable.
 
 **If the run is already completed, or a new deploy still says “due to in progress
 deployment. Please cancel <sha> first”, cancel the Pages deployment itself.**
