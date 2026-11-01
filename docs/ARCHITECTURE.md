@@ -13,7 +13,7 @@ admin.html ──(GitHub Contents API, Pierre's token)──> curation.json on m
 ```
 
 - Static site served by GitHub Pages from `main` (root). No framework, no bundler, no npm.
-- A service worker (`sw.js`) caches the app shell for offline use; photos are lazy-loaded.
+- A service worker (`sw.js`) caches the app shell for offline use (versioned cache `V`, replaced on each deploy) and photos as they are viewed, in a separate cache `imr-photos-v1` that deploys never delete (capped at 2,500 entries, only good replies kept).
 - Everything runs in the browser. The only backend is a Google Apps Script web app that stores RA progress in a Google Sheet.
 
 ## Front end
