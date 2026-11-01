@@ -18,7 +18,7 @@ The order the previous agents would follow; Pierre may reorder. Details of each 
 6. ~~Test the question draw~~ (done: `tests/draw.smoke.js`) and ~~`data.json` one genus per line~~ (done: `tools/datajson.py`).
 7. ~~Code formatting~~ (done, Prettier 3.9.10) + **modules** (L1): the module split waits for the first beta testers' feedback (Pierre agreed the formatting alone is safe).
 8. Game photo sets by Elo band, photo Elo without Pierre's answers: once RAs have played (~10 answers per game photo).
-9. ~~User management page~~: done (admin Users tab, Code.gs v11; Pierre must redeploy the script).
+9. ~~User management page~~: done (admin Players > Users, Code.gs v11, live 2026-11-01).
 10. Content and curation helpers: growth-form/quality guesses for new candidates (on request), near-duplicates re-run, admin toggle for `use` (declined), branching *Cyphastrea* photos, paliform-lobe rings in Corallite anatomy.
 11. Everything else under "Parked" stays parked until Pierre brings it up.
 
