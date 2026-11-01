@@ -3,9 +3,11 @@
 # ID (Needs ID, at least 2 identifications agreeing on the genus or below: iNat needs 2+ IDs for a community taxon).
 # Caps (Pierre, 2026-10-31, so the pile to sort stays small): at most DAUIN_CAP Dauin observations waiting per genus,
 # Philippines ones only while the genus has fewer than POOR Dauin photos, at most PH_CAP waiting. Each observation brings
-# all its photos, up to PER_OBS (Pierre, 2026-11-01: "on my observations I take at least three: the colony, closer, a
-# macro"; a game question shows the views of ONE colony, so a whole observation is worth more than two loose photos).
-# Until then it was 2 photos per observation (its first and last) and the caps counted photos.
+# ALL its photos (PER_OBS only guards against an odd one with dozens; Pierre, 2026-11-01: "on my observations I take at
+# least three: the colony, closer, a macro"; a game question shows the views of ONE colony). No order is assumed: an
+# observer may take five photos at one zoom; sorting by view, quality and near-duplicates is for the judging pass
+# afterwards (judging/AGENTS.md), so that what Pierre sees keeps a real variety. Until then it was 2 photos per
+# observation (its first and last) and the caps counted photos.
 # Only waiting candidates count, so a re-run (GitHub Action after each publish) refills what Pierre sorted. Lists them in data.json "cand".
 # The app ignores "cand"; Pierre approves candidates in admin.html. Run from the repo root.
 # New candidates are NOT downloaded (r: 1 = shown straight from iNaturalist, from src): only the ones Pierre adds are,
@@ -18,7 +20,7 @@ UA = {'User-Agent': 'coral-id-imr/1.0'}
 LIC = 'cc-by,cc-by-nc,cc0,cc-by-sa,cc-by-nc-sa'
 SCLERACTINIA = 47532  # iNaturalist taxon for stony corals; guards against homonym genera (e.g. Astrea snails)
 DAUIN = 'lat=9.19&lng=123.26&radius=40'
-DAUIN_CAP, PH_CAP, PER_OBS = 15, 6, 4
+DAUIN_CAP, PH_CAP, PER_OBS = 15, 6, 12
 PHILIPPINES = 'place_id=6873'
 POOR = 15  # fewer Dauin photos (site + candidates) than this: also fetch Philippines candidates
 get = lambda u: json.load(urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60))
@@ -59,7 +61,7 @@ for g in GEN:
         # Research Grade first, then genus-level community IDs (votes order within each).
         obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if o['quality_grade'] == 'needs_id' and genus_ok(o, T[0]['id'])]
         # Shortlist that varies (Pierre): pick one by one the observation whose species and observer are least represented
-        # so far (votes order breaks ties), and take its photos in their order (colony first, closer ones after, usually).
+        # so far (votes order breaks ties), and take all its photos.
         pool = []
         for rank, o in enumerate(obs):
             P = [ph for ph in o['photos'] if ph.get('license_code') and str(ph['id']) not in usedp and not excluded(photo_id=ph['id'])][:PER_OBS]
