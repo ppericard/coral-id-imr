@@ -18,7 +18,7 @@ The order the previous agents would follow; Pierre may reorder. Details of each 
 6. ~~Test the question draw~~ (done: `tests/draw.smoke.js`) and ~~`data.json` one genus per line~~ (done: `tools/datajson.py`).
 7. **Code formatting + modules** (L1). The handover is a good moment: a single agent, no parallel branches.
 8. Game photo sets by Elo band, photo Elo without Pierre's answers: once RAs have played (~10 answers per game photo).
-9. ~~User management page~~: done (admin Stats > Users, Code.gs v11; Pierre must redeploy the script).
+9. ~~User management page~~: done (admin Users tab, Code.gs v11; Pierre must redeploy the script).
 10. Content and curation helpers: growth-form/quality guesses for new candidates (on request), near-duplicates re-run, admin toggle for `use` (declined), branching *Cyphastrea* photos, paliform-lobe rings in Corallite anatomy.
 11. Everything else under "Parked" stays parked until Pierre brings it up.
 
@@ -104,7 +104,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 - Publishing `curation.json` as a whole copy from the admin (lost curation on 2026-11-01; Publish merges key by key since PR #240).
 
 ## Done recently (for context)
-- 2026-11-01: admin user management (Pierre: beta testers coming; was Parked, now first): Stats > Users lists every signed-in player by name with their numbers (answers, right, last 50, days, learned, seen, reports; per player: games, mix-ups, genera to review), and Merge into / Delete (both confirm, permanent). Code.gs v11 (redeploy by Pierre): admin-token endpoints, `Removed` tab, `gone` error for removed names; duel-on-a-pair mode kept. App: a device signed in with a removed name says so and asks to sign out.
+- 2026-11-01: admin user management (Pierre: beta testers coming; was Parked, now first): the Users tab lists every signed-in player by name with their numbers (answers, right, last 50, days, learned, seen, reports; per player: games, mix-ups, genera to review), and Merge into / Delete (both confirm, permanent). Code.gs v11 (redeploy by Pierre): admin-token endpoints, `Removed` tab, `gone` error for removed names; duel-on-a-pair mode kept. App: a device signed in with a removed name says so and asks to sign out.
 - 2026-11-01: admin Both / Sheet / Game per photo (`curation.json` `use`, PR #303) added, then removed the same day at Pierre's request: the field came from PR #96 as an agent's option, never used (0 entries), and nobody had asked for a button.
 - 2026-11-01: link preview image (Pierre asked, WhatsApp showed text only): Open Graph meta tags + `og.jpg` (tools/og/make_og.js).
 - 2026-11-01: personal learning path from confusions (Pierre approved): each answer counts the wrong choices offered (`P[g].off`), and the pooled confusion score becomes the prior for the player's own record on the pair (`pairConf`, weight offers / (offers + 8)): a pair a player keeps mixing up becomes their trap and comes back in duels; one they now tell apart fades. My progress "Often mixed up" ranks the pairs by that score.
