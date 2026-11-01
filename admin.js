@@ -1140,8 +1140,10 @@ function statsPlayers(){
 // Where to look for more photos (Pierre, 2026-10-31): per genus x view, the reasons the game pool falls short, from
 // coverage (covOf), photo quality and difficulty (STATS Elo), players' levels per genus (sheet v5) and their answers.
 function statsNeeds(){
-  const head = `${statSwitch()}<div class="adm-shead"><h2>Where to look for photos</h2>${eloSeg()}</div>`, R = ANS.rows || [], OFF = 1.0, PS = photoStats();
-  const TH = {}; Object.values(ANS.players || {}).forEach(p => Object.entries(p[3] || {}).forEach(([g, t]) => (TH[g] = TH[g] || []).push(t)));
+  const head = `${statSwitch()}<div class="adm-shead"><h2>Where to look for photos</h2>${eloSeg()}</div>`, OFF = 1.0, PS = photoStats();
+  // "Without me" drops this browser's own answers and level everywhere on the page (repeats, mix-ups, too easy), not only from the photo Elo.
+  const noMe = SF.elo === 'others' && MEID, R = (ANS.rows || []).filter(r => !noMe || r[0] !== MEID);
+  const TH = {}; Object.entries(ANS.players || {}).filter(([id]) => !noMe || id !== MEID).map(([, p]) => p).forEach(p => Object.entries(p[3] || {}).forEach(([g, t]) => (TH[g] = TH[g] || []).push(t)));
   const SEEN = {}; R.forEach(r => r[6].split(' ').filter(Boolean).forEach(f => { const k = r[0] + '|' + f; SEEN[k] = (SEEN[k] || 0) + 1; }));
   const ids = [...new Set(R.map(r => r[0]))], MX = {};
   R.filter(r => !r[4] && r[3]).forEach(r => { const m = MX[r[2]] = MX[r[2]] || {}; m[r[3]] = (m[r[3]] || 0) + 1; });
