@@ -897,7 +897,6 @@ function answer(cur, c, target, ph, cor, unseen){
   const vs = !good && GX(c) ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(tipsText(GX(c)))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>${again ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}` : '';
   document.getElementById('after').innerHTML = `<div class="fb">
     <h3 class="${good ? 'ok' : 'ko'}">${good ? 'Yes' : 'No'}, it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>
-    ${nbo.length ? `<p class="bonusnew">Bonus unlocked: ${nbo.map(n => `<a href="#g-${esc(n)}"><i>${esc(n)}</i></a>`).join(', ')} (not on the IMR list, common at Dauin)</p>` : ''}
     <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
     <details class="more"><summary>Coral Finder</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details>${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: cur})}</div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
@@ -908,6 +907,29 @@ function answer(cur, c, target, ph, cor, unseen){
   // a mix-up montage or a duel), so it is in the same place after every answer (Pierre, 2026-11-01). Phones: bottom sheet.
   bindGo(document.getElementById('after'));
   const nb = document.getElementById('next'); nb.focus({preventScroll: true}); nb.onclick = route;
+  if (nbo.length) unlockShow(nbo);
+}
+// Unlock card (Pierre, 2026-11-01): shown once per newly unlocked bonus genus, over the quiz feedback. A "?" tile turns
+// over to the genus's cover photo, with its name and Coral Finder ID tips. Got it / Esc / Enter / a click outside closes
+// it (Enter is caught first, so it doesn't also skip to the next question). No motion with prefers-reduced-motion.
+function unlockShow(L){
+  const n = L[0], g = GX(n), p = cover(g), d = document.createElement('div');
+  d.className = 'unlock'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Bonus genus unlocked');
+  d.innerHTML = `<div class="ulcard"><div class="ulflip"><div class="ulback" aria-hidden="true"><b>?</b></div><div class="ulfront">${p ? `<img src="${img(p, 's')}" alt="">` : ''}</div></div>
+    <p class="ulkick">Bonus genus unlocked</p><h3><i>${esc(n)}</i></h3>
+    <p class="ulnote">Not on the IMR list, but common at Dauin. It now joins the photo quiz and the duels.</p>
+    <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tipsList(g)}</div>
+    ${L.length > 1 ? `<p class="ulnote">Also unlocked: ${L.slice(1).map(x => `<i>${esc(x)}</i>`).join(', ')}</p>` : ''}
+    <div class="ulbtns"><a class="linkish" href="#g-${esc(n)}">Open its sheet</a><button class="next" type="button">Got it</button></div></div>`;
+  document.body.appendChild(d);
+  const close = () => { d.remove(); document.removeEventListener('keydown', key, true); const nb = document.getElementById('next'); if (nb) nb.focus({preventScroll: true}); };
+  // Enter on the focused sheet link follows it (its click closes the card); elsewhere Enter / Esc just close the card.
+  const key = e => { if (e.key !== 'Escape' && e.key !== 'Enter') return; e.stopPropagation();
+    if (e.key === 'Enter' && e.target.closest && e.target.closest('.unlock a')) return; e.preventDefault(); close(); };
+  document.addEventListener('keydown', key, true);
+  d.querySelector('button').onclick = close; d.querySelector('a').addEventListener('click', close);
+  d.addEventListener('click', e => { if (e.target === d) close(); });
+  setTimeout(() => { const b = d.querySelector('button'); if (b) b.focus({preventScroll: true}); }, 50);
 }
 function distractors(t, list){
   const look = list.filter(n => n !== t && (GX(t).look.includes(n) || GX(n).look.includes(t)));
@@ -938,27 +960,26 @@ function quizDuel(a, b){
   const t = pick(pair);
   question(a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t));
 }
-// Bonus genera on My progress: the unlocked ones (tile colour = learning step, outside the slate score) and the next unlock.
-function bonusBox(){
-  const L = bonusOpen(), nx = L.length < BONUS.length ? BONUS_AT(L.length) : null, st = n => lvStep(n), lv = n => level(n);
-  return `<div class="pbonus"><h3 class="label">Bonus genera <small>not on the IMR list</small></h3><p class="chips">${L.map(n => `<a class="chip ${lv(n)[0]} s${st(n)}" href="#g-${esc(n)}" title="${esc(n)}: ${lv(n)[1]}"><i>${esc(n)}</i></a>`).join('')}${nx ? `<span class="chip lock" title="Slate progress needed">${L.length ? 'Next' : 'First'} at ${nx}%</span>` : ''}</p></div>`;
-}
 // Progress board, one screen: a wall of the 39 cover photos in slate order (name band in the level colour, grey photo =
 // not seen, red border = review) beside a side column with the overall ring, what to review first, sign-in and backup.
 function quizBoard(){
   const list = Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n).sort((a, b) => slateIdx(a) - slateIdx(b));
-  const lv = Object.fromEntries(list.map(n => [n, level(n)]));
+  // Bonus genera (off the slate) get tiles after the slate genera: unlocked ones like any genus, locked ones as "?"
+  // tiles showing the slate progress that unlocks them (Pierre, 2026-11-01). They stay out of the ring and the counts.
+  const BO = bonusOpen(), locked = BONUS.slice(BO.length).map((n, i) => BONUS_AT(BO.length + i));
+  const lv = Object.fromEntries([...list, ...BO].map(n => [n, level(n)]));
   const count = k => list.filter(n => lv[n][0] === k).length;
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
   // Learning level on a 6-step scale (one colour ramp, light to dark): 0 = not seen, 1-4 = quarters of the genus's
   // progress (genScore), 5 = learned. "Review" is a separate marker, so it never hides the level.
-  const st = Object.fromEntries(list.map(n => [n, lvStep(n)])), nst = k => list.filter(n => st[n] === k).length;
+  const st = Object.fromEntries([...list, ...BO].map(n => [n, lvStep(n)])), nst = k => list.filter(n => st[n] === k).length;
   let deg = 0; const ring = [5, 4, 3, 2, 1, 0].map(k => { const d = 360 * nst(k) / list.length, c = `${k ? `var(--lv${k})` : 'var(--line)'} ${deg}deg ${deg + d}deg`; deg += d; return c; }).join(',');
   const STEPS = [[0, 'Not seen'], [1, '< 25%'], [2, '25-50%'], [3, '50-75%'], [4, '75%+'], [5, 'Learned']];
   // Photo wall: the cover in full colour (grey = not seen) with a name band coloured by the genus's step on the scale,
   // holding the mini ring + % like the Slate and Groups tiles; review = red border and "!".
-  const tile = n => { const g = DATA.gen[n], p = cover(g), [cl] = lv[n];
-    return `<a class="pw ${cl} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}">${p ? `<img src="${img(p, 's')}" alt="" loading="lazy">` : ''}<span class="pwb"><i>${esc(n)}${g.n ? '' : ' ★'}</i>${pct(n)}</span></a>`; };
+  const tile = n => { const g = GX(n), p = cover(g), [cl] = lv[n];
+    return `<a class="pw ${cl} s${st[n]}${g.x ? ' bonus' : ''}" href="#g-${esc(n)}" title="${g.x ? 'Bonus genus, not on the IMR list. ' : ''}${tip(n)}">${p ? `<img src="${img(p, 's')}" alt="" loading="lazy">` : ''}${g.x ? '<b class="pbtag">Bonus</b>' : ''}<span class="pwb"><i>${esc(n)}${g.n || g.x ? '' : ' ★'}</i>${pct(n)}</span></a>`; };
+  const lockT = (at, cls) => `<span class="${cls} plock" title="Bonus genus, unlocks at ${at}% progress"><b aria-hidden="true">?</b><small>${at}%</small></span>`;
   const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
   // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
   const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}% of the way)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
@@ -968,18 +989,23 @@ function quizBoard(){
   const pct = n => st[n] > 0 && st[n] < 5 ? `<small class="pct" style="--p:${Math.round(100 * genScore(n))}%">${Math.round(100 * genScore(n))}%</small>` : '';
   const gi = n => shownGroup(n) || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
   const VIEWS = {
-    photos: () => `<div class="pgrid pwall"${isPhone() ? ' data-minw="72"' : ''}>${list.map(tile).join('')}</div>`,
+    photos: () => `<div class="pgrid pwall"${isPhone() ? ' data-minw="72"' : ''}>${[...list, ...BO].map(tile).join('')}${locked.map(at => lockT(at, 'pw')).join('')}</div>`,
     // Laid out like the physical IMR slate: 1-20 down the left column, 21-34 down the right, starred genera under them.
     slate: () => { const num = list.filter(n => DATA.gen[n].n), L = num.filter(n => DATA.gen[n].n <= 20), R = num.filter(n => DATA.gen[n].n > 20), S = list.filter(n => !DATA.gen[n].n);
       const ps = n => `<a class="ps ${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><b>${DATA.gen[n].n ? DATA.gen[n].n + '.' : '★'}</b><i>${esc(n)}</i>${pct(n)}</a>`;
-      return `<div class="pslate" style="--rows:${Math.max(L.length, R.length + (S.length ? S.length + 1 : 0))}">${L.map(ps).join('')}${R.map(ps).join('')}${S.length ? '<span class="psgap"></span>' : ''}${S.map(ps).join('')}</div>`; },
+      // Bonus genera: one strip across both columns under the slate, so the board still fits one screen.
+      const rows = Math.max(L.length, R.length + (S.length ? S.length + 1 : 0));
+      const bx = BO.map(n => `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="#g-${esc(n)}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i>${esc(n)}</i>${pct(n)}</a>`).join('') + locked.map(at => lockT(at, 'ps')).join('');
+      return `<div class="pslate" style="--rows:${rows}">${L.map(ps).join('')}${R.map(ps).join('')}${S.length ? '<span class="psgap"></span>' : ''}${S.map(ps).join('')}<div class="psbonus" style="grid-row:${rows + 1}" title="Bonus genera, not on the IMR list">${bx}</div></div>`; },
     groups: () => `<div class="pgroups">${groups.map(k => { const gr = DATA.imrg.find(x => x.n === k), L = list.filter(n => gi(n) === k);
       return `<div class="pgr" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn" title="${gr ? esc(gr.t) : 'Not covered in the lecture'}">${gr ? gr.n : '★'}</span><span class="pgt">${gr ? esc(gr.t) : 'Not covered in the lecture'}</span>
-        <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
+        <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}
+      <div class="pgr pgbonus"><span class="gn" title="Bonus genera, not on the IMR list">+</span><span class="pgt">Bonus: not on the IMR list</span>
+        <span class="pseg">${BO.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`).join('')}${locked.map(at => lockT(at, 'pgl')).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BONUS.length}</small></div></div>`
   };
   let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
   $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, get it right on harder and harder photos, once with the corallites in view, and once in a look-alike duel. A mistake sets it back, for the genus you missed and for the one you answered.</p>
-  <p class="lede"><b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin and easily taken for a genus of the list (fire coral <i>Millepora</i> first). The first joins the photo quiz and the duels at ${BONUS_AT(0)}% progress, then one more every 5%. They don't count in your progress; their ID tips come from the Coral Finder.</p>
+  <p class="lede"><b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin and easily taken for a genus of the list (fire coral <i>Millepora</i> first). The first joins the photo quiz and the duels at ${BONUS_AT(0)}% progress, then one more every 5%. They don't count in your progress; their ID tips come from the Coral Finder. On this page they come after the list: a <b>?</b> tile is a bonus genus still locked, with the progress that unlocks it.</p>
   <p class="lede"><b>Colours</b>: white with a dashed border = not seen; then from pale to dark, one step per quarter of the way; the darkest, with a tick = learned. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet${isPhone() ? '' : '; hover it to see what it still needs'}.</p>
   <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. Learned means your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus the two milestones above.</p>
   <div class="pgame pboard"><div class="pgwrap"></div>
@@ -989,7 +1015,6 @@ function quizBoard(){
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera"><b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Learned</p>
     ${weak.length ? `<div><h3 class="label">Review first</h3><p class="chips">${weak.slice(0, 4).map(n => `<a class="chip" href="#g-${esc(n)}"><i>${esc(n)}</i></a>`).join('')}</p></div>` : ''}
-    ${bonusBox()}
     ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> / <i>${esc(o)}</i> ×${k}</a>`).join('')}</p></div>` : ''}
     <p><a class="next go" href="#quiz">Practise now</a></p>
     ${SYNC_URL ? '<section class="sync" id="sync"></section>' : ''}

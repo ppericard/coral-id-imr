@@ -1064,14 +1064,6 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .repf input,.repf textarea{font:inherit;font-size:var(--fs-m);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 9px;resize:vertical}
 .repbtns{display:flex;justify-content:flex-end;gap:8px}
 .repbtns .next{padding:8px 18px}
-/* Bonus genera (off the IMR list): chips on My progress coloured by learning step, the next unlock in muted dashed. */
-.pbonus .label small{font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0}
-.pbonus .chip{background:var(--lvc,var(--surface));color:var(--lvt,var(--ink));border-color:var(--lvc,var(--line))}
-.pbonus .chip.s0{border-style:dashed;color:var(--muted)}
-.pbonus .chip.weak{border:2px solid var(--bad)}
-.pbonus .chip.s5 i::after{content:" \2713";font-style:normal;font-weight:700}
-.pbonus .chip.lock{border-style:dashed;color:var(--muted);background:transparent;cursor:default}
-.fb .bonusnew{margin:6px 0;padding:6px 10px;border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--accent);font-size:var(--fs-s)}
 .cmpcol h3 small{font:400 var(--fs-xs) var(--body);color:var(--muted)}
 
 /* Phone tab bar (design review 2026-11-01): icon + label tabs, not pills; the current tab is accent-coloured with a tinted
@@ -1098,3 +1090,37 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 /* Photo credits under sheet photos: quiet text, underlined only on hover (the source stays one click away). */
 .strip figcaption a,.credit a{text-decoration:none}
 .strip figcaption a:hover,.credit a:hover{text-decoration:underline}
+/* Bonus genera (off the IMR list) on My progress: unlocked tiles carry a small "Bonus" tag; locked ones are "?" tiles
+   with the slate progress that unlocks them, in every view (photo wall, slate, groups). */
+.pwall .pw .pbtag{position:absolute;top:4px;left:4px;z-index:1;padding:1px 6px;border-radius:var(--pill);background:var(--surface);color:var(--ink);font:600 var(--fs-2xs)/1.4 var(--body);letter-spacing:.02em}
+.plock{display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px dashed var(--line);border-radius:var(--r-sm);color:var(--muted);background:transparent;cursor:default}
+.plock b{font:700 1.1rem/1 var(--body)}
+.plock small{font-size:var(--fs-xs)}
+.pwall .pw.plock{display:flex;flex-direction:column;border-radius:var(--r);border:2px dashed var(--line);background:var(--surface-2)}
+.pwall .pw.plock b{font-size:2.4rem}
+.pslate .ps.plock{justify-content:flex-start;padding:0 8px}
+.pseg .pgl{flex:1}
+.pgbonus .gn{background:transparent;border:1.5px dashed var(--line);color:var(--muted)}
+.unlock{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:rgb(0 0 0 / .5);animation:ulfade .25s ease-out}
+.ulcard{width:min(380px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--surface);color:var(--ink);border-radius:var(--r);padding:20px;text-align:center;box-shadow:var(--shadow-hover);animation:ulpop .45s cubic-bezier(.2,1.4,.4,1)}
+.ulflip{position:relative;width:min(240px,70vw);aspect-ratio:4/3;margin:0 auto 14px;perspective:900px}
+.ulback,.ulfront{position:absolute;inset:0;border-radius:var(--r);backface-visibility:hidden;overflow:hidden;animation:.7s .35s ease-in-out both}
+.ulback{display:grid;place-items:center;border:2px dashed var(--line);background:var(--surface-2);color:var(--muted);animation-name:ulturnback}
+.ulback b{font:700 3.4rem/1 var(--body)}
+.ulfront{animation-name:ulturnfront;box-shadow:0 0 0 3px var(--accent),0 0 24px var(--accent)}
+.ulfront img{width:100%;height:100%;object-fit:cover;display:block}
+.ulkick{margin:0;color:var(--accent);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:var(--fs-xs)}
+.ulcard h3{margin:2px 0 6px;font-size:1.6rem}
+.ulnote{margin:0 0 10px;color:var(--muted);font-size:var(--fs-s)}
+.ultips{text-align:left;margin:0 0 12px}
+.ultips .label{margin:0 0 4px}
+.ulbtns{display:flex;align-items:center;justify-content:space-between;gap:12px}
+@keyframes ulfade{from{opacity:0}}
+@keyframes ulpop{from{transform:scale(.7);opacity:0}}
+@keyframes ulturnback{from{transform:rotateY(0)}to{transform:rotateY(180deg)}}
+@keyframes ulturnfront{from{transform:rotateY(-180deg)}to{transform:rotateY(0)}}
+@media (prefers-reduced-motion:reduce){.unlock,.ulcard,.ulback,.ulfront{animation-duration:.01s;animation-delay:0s}}
+.psbonus{grid-column:1/-1;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin-top:6px;min-height:30px}
+.psbonus .ps{padding:0 6px;gap:4px;font-size:var(--fs-xs)}
+.psbonus .ps i{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+@media (max-width:599.98px){.psbonus{grid-template-columns:repeat(3,minmax(0,1fr))}}
