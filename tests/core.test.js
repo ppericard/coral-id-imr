@@ -1,6 +1,6 @@
 // core.js: curation merge (admin Publish), progress merge (two devices), photo Elo (same as Code.gs stats_).
 const test = require('node:test'), assert = require('node:assert');
-const {merge3, mergeOld, mergeProgress, eloOf} = require('../core.js');
+const {merge3, mergeOld, mergeProgress, eloOf, confusionOf, confScore, CONF} = require('../core.js');
 const {loadCodeGs} = require('./gas.js');
 
 test('merge3: my changes win, changes published elsewhere are kept', () => {
@@ -62,6 +62,27 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
   }
   const rows = s.get({answers: '1'}).rows, sheet = s.get({stats: '1'}).photos;
   assert.deepStrictEqual(eloOf(rows), sheet);
+});
+
+test('confusionOf counts the same pairs as Code.gs stats_ conf, and keeps the direction', () => {
+  const s = loadCodeGs(), G = ['Acropora', 'Montipora', 'Porites', 'Favites'];
+  let n = 0;
+  for (let i = 0; i < 30; i++) {
+    const g = G[i % 4], ch = [g, G[(i + 1) % 4], G[(i + 2) % 4]], a = i % 3 ? g : ch[1 + (i % 2)];
+    s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [{id: 'c' + (n++), t: new Date(Date.UTC(2026, 10, 1, 0, 0, n)).toISOString(), g, a, ok: a === g ? 1 : 0, m: 'quiz', ph: 'x-1', ch: i === 0 ? '' : ch.join(' ')}]});
+  }
+  const rows = s.get({answers: '1'}).rows, C = confusionOf(rows);
+  assert.deepStrictEqual(C.pair, s.get({stats: '1'}).conf);
+  assert.strictEqual(rows[0][10], '');
+  assert.ok(Object.keys(C.old).length === 0 || Object.values(C.old).every(v => v > 0));
+  const [off, mix] = C.pair['Acropora|Montipora'], d1 = C.dir['Acropora|Montipora'] || [0, 0], d2 = C.dir['Montipora|Acropora'] || [0, 0];
+  assert.deepStrictEqual([d1[0] + d2[0], d1[1] + d2[1]], [off, mix]);
+});
+
+test('confScore starts at the prior and follows the answers', () => {
+  assert.strictEqual(confScore(undefined, CONF.LOOK), CONF.LOOK);
+  assert.ok(confScore([40, 0], CONF.LOOK) < CONF.TRAP, 'a declared look-alike nobody mixes up fades');
+  assert.ok(confScore([20, 10], CONF.BASE) > CONF.TRAP, 'an undeclared pair often mixed up becomes a trap');
 });
 
 test('mergeTabs: two admin tabs keep each other\'s clicks and settle without bouncing', () => {

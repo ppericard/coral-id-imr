@@ -79,6 +79,26 @@ function eloOf(rows){
   return out;
 }
 
+// Confusions between genera (Pierre, 2026-11-01): from the answer log rows (as eloOf; row[10] = the genera offered,
+// space-separated, logged since sheet script v10). pair["A|B"] (A before B alphabetically) = [offered together, mixed up]:
+// one was shown with the other among the choices, and the other was answered. Same counts as Code.gs stats_ conf (tests
+// check it). dir["shown|other"] = [offered, answered] keeps the direction. old["shown|answered"] = mix-ups logged without
+// their choices (before v10): they can't be turned into a rate, only counted.
+function confusionOf(rows){
+  const pair = {}, dir = {}, old = {}, inc = (O, k, took) => { const c = O[k] = O[k] || [0, 0]; c[0]++; if (took) c[1]++; };
+  rows.forEach(r => {
+    const g = r[2], a = r[3], ok = r[4], ch = String(r[10] || '').split(/\s+/).filter(x => x && x !== g);
+    if (!g) return;
+    if (!ch.length) { if (!ok && a && a !== g) old[g + '|' + a] = (old[g + '|' + a] || 0) + 1; return; }
+    ch.forEach(x => { const took = !ok && a === x; inc(pair, g < x ? g + '|' + x : x + '|' + g, took); inc(dir, g + '|' + x, took); });
+  });
+  return {pair, dir, old};
+}
+// Confusion score of a pair: its mix-up rate when offered together, starting from a prior rate worth CONF.W offers (the
+// declared look-alikes of the IMR lecture and the Coral Finder start high), then following the players' real answers.
+const CONF = {W: 8, LOOK: 0.3, FAM: 0.12, FORM: 0.08, BASE: 0.03, TRAP: 0.2};
+const confScore = (c, prior) => ((c ? c[1] : 0) + CONF.W * prior) / ((c ? c[0] : 0) + CONF.W);
+
 // Two admin tabs in one browser share the stored draft. Each write carries _tab: {rev, seen}: its own revision and the
 // revision of the stored draft that tab had last seen. `revs` maps the revisions this tab wrote or took in to their drafts,
 // so the merge base is exactly the draft the other tab started from, even when both clicked before hearing of each other.
@@ -216,6 +236,6 @@ function applySlots(d, c, o = {}){
   });
 }
 
-const CORE = {applyCuration, applySlots, CAP, isObj, eq, canon, merge3, mergeTabs, takeTab, mergeOld, mergeProgress, eloOf};
+const CORE = {applyCuration, applySlots, CAP, isObj, eq, canon, merge3, mergeTabs, takeTab, mergeOld, mergeProgress, eloOf, confusionOf, CONF, confScore};
 if (typeof module !== 'undefined' && module.exports) module.exports = CORE; else Object.assign(root, CORE);
 })(this);
