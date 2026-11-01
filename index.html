@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- CSP (code review 2026-11-01, L2): scripts only from this site; the inline theme script is allowed by its hash, checked by tests/csp.test.js. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-X/v0Mr+YT/Fgy6ZPABgbzrjNdjq1Cp0y9h7WoVOuyDg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://api.github.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="author" content="Pierre Pericard">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>IMR Coral ID</title>
@@ -50,7 +52,7 @@
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
 <script src="core.js?v=1"></script>
-<script src="app.js?v=116"></script>
+<script src="app.js?v=117"></script>
 <script src="flag.js?v=4"></script>
 <script src="proto/lab.js?v=55"></script>
 <script src="home-art.js?v=3"></script>
