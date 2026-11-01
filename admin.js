@@ -379,7 +379,7 @@ function status(){
   const ms = $('modesel'); if (ms) { ms.innerHTML = [...document.querySelectorAll('#modes [data-mode]')].map(a => `<option value="${esc(a.getAttribute('href'))}"${a.getAttribute('aria-current') === 'true' ? ' selected' : ''}>${esc(a.textContent)}</option>`).join(''); ms.hidden = false; }
 }
 // Which header tab the page belongs to: the Stats tab holds players, photos, the photo list and coverage.
-const modeKey = () => cur.startsWith('~stats') || cur === '~diff' || cur === '~cov' ? 'stats' : ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~look': 'mont', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
+const modeKey = () => cur.startsWith('~stats') || cur === '~diff' || cur === '~cov' || cur === '~fcov' ? 'stats' : ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~look': 'mont', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
 function render(){
   memoReset();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
@@ -388,7 +388,7 @@ function render(){
   if (cur === '~excluded') return renderExcluded();
   if (cur === '~triage') return renderTriage();
   // Every Stats sub-view keeps the Stats sub-menu on top, whichever function draws it (Pierre, 2026-11-01).
-  if (modeKey() === 'stats') { if (cur === '~diff') renderDiff(); else if (cur === '~cov') renderCov(); else renderStats(); return withSwitch(); }
+  if (modeKey() === 'stats') { if (cur === '~diff') renderDiff(); else if (cur === '~cov') renderCov(); else if (cur === '~fcov') renderFcov(); else renderStats(); return withSwitch(); }
   if (cur === '~look' || cur === '~mont') return renderMont(); // ~mont = old address, kept for bookmarks
   if (cur === '~cand') return renderCand();
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
@@ -578,6 +578,7 @@ function renderQuality(){
 
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
+  fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the 39 IMR genera and the book's other genera seen at Dauin (CF only). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Game coverage). Forms = growth forms seen on Colony and Closer photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z. Click a row to open the genus.</p>`,
   cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture. Click a row to open the genus.</p>`,
   stats: `<p>Every quiz and duel answer synced to the sheet. Players are anonymous: a number, ranked by level; "you" marks the name synced in this browser (All / Others / Me). Level is on the same scale as photo difficulty. Last 20 = right answers among the player's last 20. Learned = genera learned on their last sync. Days = days with answers. Photos = different photos answered (more = more variety). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
@@ -599,7 +600,7 @@ const HELP = {
 };
 function toggleHelp(){
   let h = $('admhelp'); if (h) { h.remove(); return; }
-  const m = cur === '~stats-photos' ? 'statsph' : cur === '~stats-needs' ? 'statsneeds' : modeKey() === 'stats' ? ({'~diff': 'diff', '~cov': 'cov'}[cur] || 'stats') : modeKey();
+  const m = cur === '~stats-photos' ? 'statsph' : cur === '~stats-needs' ? 'statsneeds' : modeKey() === 'stats' ? ({'~diff': 'diff', '~cov': 'cov', '~fcov': 'fcov'}[cur] || 'stats') : modeKey();
   h = document.createElement('div'); h.id = 'admhelp'; h.className = 'adm-help'; h.setAttribute('role', 'dialog'); h.setAttribute('aria-label', 'Help');
   h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button>${HELP[m]}`;
   h.querySelector('button').onclick = () => h.remove(); $('tools').append(h);
@@ -1093,11 +1094,46 @@ function renderCov(){
   $v.querySelectorAll('tbody tr').forEach(tr => tr.onclick = e => { if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g); });
 }
 
+// Finder coverage (Pierre 2026-11-01): what the Coral Finder can show per genus, the 39 IMR genera and the book's
+// extra genera present at Dauin. Pool = every photo of the view not hidden, not multi-coral, approved CF book photos
+// included; colour = distinct colonies with a photo that is not Poor; Forms = growth forms seen (Colony + Closer);
+// Species = distinct species named on the photos.
+let FCOV = Object.assign({set: 'all', order: 'thin'}, store.get('imr-admin-fcov', {}));
+function renderFcov(){
+  status();
+  const isX = n => !!(DATA.x && DATA.x.gen[n]);
+  const names = Object.keys(DATA.gen).filter(n => FCOV.set === 'all' || (FCOV.set === 'x') === isX(n));
+  const R = names.map((n, i) => {
+    const pool = photos(n).filter(p => !hidden(n, p) && !p.multi);
+    const cells = covViews(n).length ? VIEWS.map(([v]) => covViews(n).some(x => x[0] === v) ? (L => {
+      const good = L.filter(p => qOf(p.f) >= 2);
+      return {n: L.length, obs: new Set(good.map(p => p.o || p.f)).size, cf: L.filter(p => p.cf).length, L}; })(pool.filter(p => viewOf(n, p) === v)) : null) : [];
+    const live = cells.filter(Boolean), forms = [...new Set(pool.filter(p => viewOf(n, p) !== 'macro').map(p => fOf(p.f)).filter(f => f && FORM_ORDER.includes(f)))].sort((a, b) => FORM_ORDER.indexOf(a) - FORM_ORDER.indexOf(b));
+    const sp = [...new Set(pool.map(p => p.t).filter(t => t && /\s/.test(t.trim())).map(t => t.trim().split(/\s+/).slice(0, 2).join(' ')))].sort();
+    return {n, i, x: isX(n), cells, min: live.length ? Math.min(...live.map(c => c.obs)) : 0, tot: pool.length, forms, sp};
+  });
+  const by = {thin: (a, b) => a.min - b.min || a.tot - b.tot || a.i - b.i, thick: (a, b) => b.tot - a.tot || a.i - b.i, az: (a, b) => a.n.localeCompare(b.n)};
+  R.sort(by[FCOV.order] || by.thin);
+  const thin = R.reduce((s, r) => s + r.cells.filter(c => c && covLvl(c) < 2).length, 0);
+  const cell = (r, c, v) => c ? `<td class="cov-c cov-${covLvl(c)}" title="${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} good colon${c.obs === 1 ? 'y' : 'ies'}${c.cf ? ` · ${c.cf} CF book` : ''}"><b>${c.n}</b><small>${c.obs} good</small>${c.cf ? `<span class="cov-off">incl. ${c.cf} CF</span>` : ''}</td>` : '<td class="cov-c cov-na">–</td>';
+  const seg = (k, L) => `<span class="adm-qseg adm-lvseg" role="group">${L.map(([v, t]) => `<button type="button" data-fc="${k}" data-v="${v}" aria-pressed="${FCOV[k] === v}">${t}</button>`).join('')}</span>`;
+  $v.innerHTML = `<section class="adm-cov">
+    <div class="adm-filter cov-head">${seg('set', [['all', 'All'], ['imr', 'IMR list'], ['x', 'CF only']])}${seg('order', [['thin', 'Thinnest'], ['thick', 'Thickest'], ['az', 'A–Z']])}
+      <span class="cov-key" aria-label="Good colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
+      <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 good colonies">${thin} thin</b></div>
+    <table class="cov-t fcov-t"><thead><tr><th></th>${VIEWS.map(([, t]) => `<th>${t}</th>`).join('')}<th>Forms</th><th>Species</th></tr></thead>
+    <tbody>${R.map(r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${r.x ? ' <small class="fcov-x">CF only</small>' : ''}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
+      <td class="fcov-f">${r.forms.map(f => `<span class="adm-why" title="${esc(fName(f))}">${FABBR[f]}</span>`).join(' ') || '<span title="No growth form set on these photos yet">–</span>'}</td>
+      <td class="fcov-s" title="${esc(r.sp.join(', '))}">${r.sp.length || '–'}</td></tr>`).join('')}</tbody></table></section>`;
+  $v.querySelectorAll('[data-fc]').forEach(b => b.onclick = () => { FCOV[b.dataset.fc] = b.dataset.v; store.set('imr-admin-fcov', FCOV); render(); });
+  $v.querySelectorAll('tbody tr').forEach(tr => tr.onclick = e => { if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g); });
+}
+
 /* ---------- Stats: players (anonymous) and photo difficulty, from the sync sheet ---------- */
 // ?answers=1 (sheet script v4): every answer, RA replaced by an anonymous id; ?stats=1: Elo difficulty per photo and
 // level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
 // The Stats tab holds the sub-views of STAT_TABS; Coverage (renderCov) and the photo list (renderDiff) live there too.
-const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~diff', 'Photo list'], ['~cov', 'Coverage'], ['~stats-needs', 'Needs']];
+const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~diff', 'Photo list'], ['~cov', 'Game coverage'], ['~fcov', 'Sheet & Finder coverage'], ['~stats-needs', 'Needs']];
 let ANS = null, RAS = {}, MEID = null, SF = Object.assign({who: 'all', min: 1, elo: 'all', nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('imr-admin-stats', {}));
 const statSwitch = () => `<nav class="adm-filter adm-stabs" aria-label="Stats">${STAT_TABS.filter(([h]) => h !== '~cov' || typeof renderCov === 'function')
   .map(([h, t]) => `<a class="adm-fchip plain" href="#${h}" aria-pressed="${cur === h}">${t}</a>`).join('')}</nav>`;
