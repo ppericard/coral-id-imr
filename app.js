@@ -186,7 +186,7 @@ function applySlots(d, c){
 }
 // Game photos of genus n in view v at a level (levels add up: Medium = Easy + Medium photos).
 const LEVELS = [['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']];
-const gamePics = (n, v, lvl = 'hard') => { const s = (DATA.gen[n].sl || {})[v]; if (!s) return DATA.gen[n].views[v] || [];
+const gamePics = (n, v, lvl = 'hard') => { const s = (GX(n).sl || {})[v]; if (!s) return GX(n).views[v] || [];
   return LEVELS.slice(0, LEVELS.findIndex(([k]) => k === lvl) + 1).flatMap(([k]) => s[k]); };
 // Growth form of each photo: one of the 7 IMR growth forms (forms.json "forms"; x = form not visible) as p.form, and
 // p.polyps when polyps or vesicles are extended. Pierre's choice in curation.json "gf" wins over the first guess in
@@ -471,7 +471,7 @@ function pairs(){
 // (lsrc "IMR Lecture 6...") or the Coral Finder text ("Coral Finder p. ..."). Pairs that only share a Coral Finder box
 // or an IMR group stay on the genus sheets and in duels. IMR pairs first, then by slate order.
 const pairKey = (a, b) => [a, b].sort().join('|');
-const lsrcOf = (a, b) => (DATA.gen[a].lsrc || {})[b] || (DATA.gen[b].lsrc || {})[a] || '';
+const lsrcOf = (a, b) => (GX(a).lsrc || {})[b] || (GX(b).lsrc || {})[a] || '';
 const isClassic = (a, b) => /^(IMR|Coral Finder p)/.test(lsrcOf(a, b));
 function classics(){
   const tier = ([a, b]) => /^IMR/.test(lsrcOf(a, b)) ? 0 : 1;
@@ -556,9 +556,10 @@ function fitLk(){
 }
 addEventListener('resize', fitLk);
 function viewCompare(a, b){
-  const A = DATA.gen[a], B = DATA.gen[b];
+  // Bonus genera can be compared with a slate genus or with each other (quiz mix-ups).
+  const A = DATA.gen[a] || (isBonus(a) && GX(a)), B = DATA.gen[b] || (isBonus(b) && GX(b));
   if (!A || !B) return viewLookalikes();
-  const col = (n, g) => `<div class="cmpcol"><h3><a class="linkish" href="#g-${esc(n)}"><i>${esc(n)}</i></a>${g.n ? '' : ' ★'}</h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p>${g.qt ? '<h4>ID tips (IMR)</h4>' : ''}${tipsList(g)}<details class="more"><summary>Coral Finder</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>`;
+  const col = (n, g) => `<div class="cmpcol"><h3><a class="linkish" href="#g-${esc(n)}"><i>${esc(n)}</i></a>${g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'}</h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p>${g.qt ? `<h4>${tipsLabel(g)}</h4>` : ''}${tipsList(g)}<details class="more"><summary>Coral Finder</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>`;
   const flat = [];
   const row = ([v, label]) => {
     const cell = (n, g) => { const p = (g.views[v] || [])[0]; if (!p) return `<div class="cmpph none">${g.levels === 2 ? 'no separate level' : 'no photo'}</div>`; flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom cmpph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:599.98px) 46vw, 460px" alt="${esc(n)}, ${label.toLowerCase()}" loading="lazy"></button>`; };
@@ -588,7 +589,26 @@ const Q = Object.assign({view: 'any', level: 'auto'}, store.get('imr-coral-quiz'
 if (Q.lvv !== 3) { Q.level = 'auto'; Q.course = false; Q.lvv = 3; }  // Auto only: no level selector, no Lecture set (Pierre, 2026-10-31)
 const saveQ = () => store.set('imr-coral-quiz', Q);
 let session = {ok: 0, n: 0}, last = null, duelPair = null;
-const pool = () => Object.keys(DATA.gen).filter(n => (Q.stars || DATA.gen[n].n) && photoSet(n).shown.length);
+// Bonus genera (Pierre, 2026-11-01): genera off the IMR slate that are common at Dauin and easily taken for a slate
+// genus, added to the photo quiz and the duels once the player has made some progress ("not at the very start, but
+// fairly soon"). Picked from the Coral Finder book genera present at Dauin (data.json "x", tools/build_extra.py):
+// 4+ Research Grade iNaturalist observations within 40 km, and a look-alike on the slate named by the Coral Finder
+// (Millepora / Porites, Isopora / Acropora, Leptoseris / Pavona, Sandalolitha / Halomitra, Pleuractis / Lobactis),
+// or not a hard coral at all (Heliopora, like Millepora). The first unlocks at 10% slate progress, then one more per
+// 5% (performance only, never time). Once unlocked a genus stays unlocked (Q.bu). They never count in the slate
+// progress (progPct, the 39 tiles, the sync summary), and their ID tips come from the Coral Finder, labelled as such.
+// Game photos: Research Grade observations (or Pierre's own) only, never multi-coral (tools/apply_bonus.py).
+const BONUS = ['Millepora', 'Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis'];
+const BONUS_AT = i => 10 + 5 * i;
+const isBonus = n => !DATA.gen[n] && BONUS.includes(n) && !!GX(n);
+function bonusOpen(){
+  const p = progPct(), k = Math.max(Q.bu || 0, BONUS.filter((_, i) => p >= BONUS_AT(i)).length);
+  if (k > (Q.bu || 0)) { Q.bu = k; saveQ(); }
+  return BONUS.slice(0, k).filter(n => GX(n));
+}
+const pool = () => [...Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n), ...bonusOpen()].filter(n => photoSet(n).shown.length);
+// ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera.
+const tipsLabel = g => g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)';
 // A quiz question shows the views of ONE colony: colony and closer views, the corallites as a hint (or one view alone).
 // Continuous difficulty (Pierre, 2026-10-31; Elo as in Pelánek 2016 / Duolingo Birdbrain, no time criteria): every
 // question draws from ALL the game photos of the genus, weighted by how close each photo's difficulty (photoDiff) is to
@@ -604,12 +624,15 @@ const PICKD = {TARGET_OFF: 1.0, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5
 // A single view counts as harder (SINGLE), so easier photos are picked for it. The other views show after the answer.
 const singleP = n => Math.min(0.85, Math.max(0, (ability(n) - 0.5) / 1.5));
 function photoSet(n){
-  const g = DATA.gen[n], two = g.levels === 2, need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
+  const g = GX(n), two = g.levels === 2, need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
   const shownV = two ? ['wide', 'macro'] : ['wide', 'medium'];
   // The Colony slot never gets a photo whose growth form is "x" (too close to see it): that is a close-up. Except for a
   // genus with a single IMR growth form (Pierre): the form is no question there, so the photo still works as a colony.
   const oneForm = imrFormsOf(n).length === 1, ok = v => p => v !== 'wide' || p.form !== 'x' || oneForm;
-  const pics = v => gamePics(n, v, 'hard').filter(ok(v));
+  // Bonus genera: Research Grade only. A two-level genus's close-ups may still sit in "medium" (extra genera from
+  // tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is reachable.
+  const gameOk = p => !g.x || p.own || !p.gid;
+  const pics = v => [...gamePics(n, v, 'hard'), ...(two && v === 'macro' ? gamePics(n, 'medium', 'hard') : [])].filter(ok(v)).filter(gameOk);
   const single = Math.random() < singleP(n), s = P[n] || {}, seen = s.ps || {}, ro = s.ro || [], tgt = ability(n) - PICKD.TARGET_OFF - (single ? PICKD.SINGLE : 0);
   const h = [...recent(n).slice(-5)], hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
   // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
@@ -658,7 +681,7 @@ const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3};
 const RECENT = 10;
 const recent = n => { const s = P[n] || {}; return s.h ? s.h.slice(-RECENT) : ''; };
 const misses = h => [...h].filter(x => x === '0').length;
-const hasDuel = n => DATA.gen[n].look.some(b => DATA.gen[b]);
+const hasDuel = n => GX(n).look.some(b => DATA.gen[b]);
 // Progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability.
 const ability = n => { const s = P[n] || {}; return typeof s.th === 'number' ? s.th : ELO.th0 + Math.min(2, s.lv || 0); };
 function abilityStep(n, s, good, d, k){
@@ -671,7 +694,7 @@ const photoBand = n => { const t = ability(n) - PICKD.TARGET_OFF; return t < -0.
 const seenOf = n => { const all = new Set(VIEWS.flatMap(([v]) => gamePics(n, v, 'hard').map(p => p.f))), ps = (P[n] || {}).ps || {};
   return `${[...all].filter(f => ps[f]).length} of ${all.size} seen`; };
 // Game set (Easy/Medium/Hard) of a photo of genus n, the prior of its difficulty; lecture or unlisted photos = Easy.
-function photoLvl(n, p){ const sl = DATA.gen[n].sl || {}; for (const v of Object.keys(sl)) for (let i = 2; i >= 0; i--) if ((sl[v][LEVELS[i][0]] || []).some(x => x.f === p.f)) return i; return 0; }
+function photoLvl(n, p){ const sl = GX(n).sl || {}; for (const v of Object.keys(sl)) for (let i = 2; i >= 0; i--) if ((sl[v][LEVELS[i][0]] || []).some(x => x.f === p.f)) return i; return 0; }
 // Photo difficulty (Elo): every RA's answers, rated by the sync sheet (?stats=1, tools/sync/Code.gs stats_). 0 = average
 // photo, +1 = clearly harder. Few answers: pulled towards the photo's game set (Easy -1, Medium 0, Hard +1).
 let PSTAT = (store.get('imr-photo-stats', {}) || {}).photos || {};
@@ -719,7 +742,7 @@ function quizNav(){ return ''; }
 function bindQuizNav(){ bindGo(); }
 // The game rules (behind the ? button).
 const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
-  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on. Every answer counts in <a href="#progress">My progress</a>.</p>
+  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on. Every answer counts in <a href="#progress">My progress</a>. From ${BONUS_AT(0)}% progress, <b>bonus genera</b> join in: corals off the IMR list that are common at Dauin and easily confused with it (fire coral <i>Millepora</i> first).</p>
   <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus is learned once your answers make it 95% sure you know it (right answers on harder photos count more), plus one right answer with the corallites in view and one in a look-alike duel: see ? on <a href="#progress">My progress</a>.</p>`;
 function question(cur, target, choices, prompt, set){
   const ph = set.shown, lab = VIEW_LABEL;
@@ -771,6 +794,22 @@ function fitStage(){
   let best = [n, 1, 0];
   for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c), w = Math.min((W - 8 * (c - 1)) / c, (H - 8 * (r - 1)) / r * 4 / 3); if (w > best[2]) best = [c, r, w]; }
   st.style.gridTemplateColumns = `repeat(${best[0]}, minmax(0, 1fr))`; st.style.gridTemplateRows = `repeat(${best[1]}, minmax(0, 1fr))`;
+  // Phones and tablets (design review 2026-11-01): a fixed tall stage left a landscape photo floating in blurred bars. The stage
+  // now takes the photos' own shape, cropped (object-fit: cover, class .qfit) by at most ~20% of the long side; the full frame
+  // is one tap away in the lightbox. Before any image has loaded, the stage keeps the height computed above.
+  let fit = false;
+  if (isStacked() && !st.classList.contains('qvs')) {
+    const imgs = [...st.querySelectorAll('.qph img')], ready = imgs.filter(i => i.naturalWidth);
+    imgs.filter(i => !i.naturalWidth).forEach(i => i.addEventListener('load', fitStage, {once: true}));
+    if (ready.length && ready.length === imgs.length && best[1] === 1) {
+      const colW = st.children[0].getBoundingClientRect().width;
+      const need = Math.max(...ready.map(i => colW * i.naturalHeight / i.naturalWidth)) / 1.25;
+      if (need < st.getBoundingClientRect().height) st.style.height = Math.max(160, need) + 'px';
+      const boxR = colW / st.getBoundingClientRect().height;
+      fit = ready.every(i => { const r = i.naturalWidth / i.naturalHeight; return Math.max(boxR / r, r / boxR) <= 1.3; });
+    }
+  }
+  st.classList.toggle('qfit', fit);
 }
 addEventListener('resize', fitStage);
 // Games with a grid of cards (Memory): fill the free area. Try every column count; cards may be square up to
@@ -785,11 +824,20 @@ function fitTiles(grid, gap, dims){
   grid.dataset.gap = gap; if (dims) grid.dataset.dims = dims.join('x');
   const n = grid.children.length, W = grid.parentNode.clientWidth;
   const H = Math.max(240, innerHeight - grid.getBoundingClientRect().top - window.scrollY - 16 - tabH());
-  const opts = dims ? [[dims[1], dims[0]], [dims[0], dims[1]]] : Array.from({length: n}, (_, i) => [i + 1, Math.ceil(n / (i + 1))]);
+  let opts = dims ? [[dims[1], dims[0]], [dims[0], dims[1]]] : Array.from({length: n}, (_, i) => [i + 1, Math.ceil(n / (i + 1))]);
+  // data-minw: tiles never narrower than this (their label must stay readable); the grid may then scroll.
+  const minw = +grid.dataset.minw || 0;
   let best = null;
+  if (minw && !dims) {
+    // The most columns that keep tiles at least minw wide; tiles then take the full column width (the grid may scroll).
+    const ok = opts.filter(([c]) => (W - gap * (c - 1)) / c >= minw);
+    if (ok.length) { const c = Math.max(...ok.map(o => o[0])), cw = (W - gap * (c - 1)) / c, [, r] = ok.find(o => o[0] === c);
+      const ch = (H - gap * (r - 1)) / r, w = cw, h = Math.max(Math.min(ch, cw), cw * .9);
+      best = {c, w, h, score: 0}; opts = []; }
+  }
   for (const [c, r] of opts) {
     const cw = (W - gap * (c - 1)) / c, ch = (H - gap * (r - 1)) / r;
-    const h = Math.min(ch, cw * (dims ? 1.25 : 1)), w = Math.min(cw, h * (dims ? 1.8 : 4 / 3));
+    let h = Math.min(ch, cw * (dims ? 1.25 : 1)), w = Math.min(cw, h * (dims ? 1.8 : 4 / 3));
     const score = dims ? Math.min(w, h) : w * h;
     if (!best || score > best.score) best = {c, w, h, score};
   }
@@ -818,7 +866,7 @@ function answer(cur, c, target, ph, cor, unseen){
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
   s.h = ((s.h || '') + (good ? 1 : 0)).slice(-10);  // recent results, newest last
   // Pierre's rule: a wrong answer also shows the genus given is not mastered, so it counts as a miss for it too.
-  if (!good && DATA.gen[c]) { const w = st(c); bktObs(c, w, false, 0, k); w.h = ((w.h || '') + '0').slice(-10); w.streak = 0; abilityStep(c, w, false, 0, k); }
+  if (!good && GX(c)) { const w = st(c); bktObs(c, w, false, 0, k); w.h = ((w.h || '') + '0').slice(-10); w.streak = 0; abilityStep(c, w, false, 0, k); }
   if (good && cor) s.cor = 1;  // milestone: right with the corallites photo in view
   if (good && cur.startsWith('quiz-duel')) s.du = 1;  // milestone: won a look-alike duel
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
@@ -829,9 +877,9 @@ function answer(cur, c, target, ph, cor, unseen){
   // genus answered in the same view, so the difference is seen at the moment of the mistake. The pair then comes back
   // as a duel in the photo quiz a couple of questions later.
   let again = false;
-  if (!good && DATA.gen[c]) {
+  if (!good && GX(c)) {
     // Only photos the player saw during the question: a corallites hint left closed is not "the photo shown".
-    const order = ph.filter(p => p !== unseen).sort((x, y) => (y.view === 'macro') - (x.view === 'macro')), V = DATA.gen[c].views;
+    const order = ph.filter(p => p !== unseen).sort((x, y) => (y.view === 'macro') - (x.view === 'macro')), G = GX(c), V = Object.fromEntries(Object.entries(G.views).map(([v, L]) => [v, L.filter(p => !G.x || p.own || !p.gid)]));
     const tp = order.find(p => (V[p.view] || []).length);
     if (tp) {
       const [, cp] = photoPair([tp], V[tp.view], tp), st0 = $v.querySelector('.qstage'), lab = VIEW_LABEL[tp.view] || '';
@@ -844,12 +892,13 @@ function answer(cur, c, target, ph, cor, unseen){
     if (cur === 'quiz') { rematch = {pair: [target, c], wait: 1}; again = true; }
   }
   $v.querySelectorAll('[data-c]').forEach(b => { b.disabled = true; if (b.dataset.c === target) b.classList.add('ok'); else if (b.dataset.c === c) b.classList.add('ko'); });
-    const g = DATA.gen[target];
-  const vs = !good && DATA.gen[c] ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(tipsText(DATA.gen[c]))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>${again ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}` : '';
+  // Bonus genera unlocked and not announced yet (Q.ba = how many were announced) are named once in the feedback.
+  const g = GX(target), bo = bonusOpen(), nbo = bo.slice(Q.ba || 0); if (nbo.length) { Q.ba = bo.length; saveQ(); }
+  const vs = !good && GX(c) ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(tipsText(GX(c)))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>${again ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}` : '';
   document.getElementById('after').innerHTML = `<div class="fb">
-    <h3 class="${good ? 'ok' : 'ko'}">${good ? 'Yes' : 'No'}, it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.n ? '' : ' (★ not surveyed)'}</h3>
-    ${g.qt ? `<p class="label">ID tips (IMR)</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="vs"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}${vs}
-    <details class="more"><summary>Coral Finder</summary>${g.imr.length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details>${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: cur})}</div>
+    <h3 class="${good ? 'ok' : 'ko'}">${good ? 'Yes' : 'No'}, it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>
+    <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
+    <details class="more"><summary>Coral Finder</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details>${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: cur})}</div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
   // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
   const qq = $v.querySelector('.q'); if (qq) qq.classList.add('done');
@@ -858,10 +907,33 @@ function answer(cur, c, target, ph, cor, unseen){
   // a mix-up montage or a duel), so it is in the same place after every answer (Pierre, 2026-11-01). Phones: bottom sheet.
   bindGo(document.getElementById('after'));
   const nb = document.getElementById('next'); nb.focus({preventScroll: true}); nb.onclick = route;
+  if (nbo.length) unlockShow(nbo);
+}
+// Unlock card (Pierre, 2026-11-01): shown once per newly unlocked bonus genus, over the quiz feedback. A "?" tile turns
+// over to the genus's cover photo, with its name and Coral Finder ID tips. Got it / Esc / Enter / a click outside closes
+// it (Enter is caught first, so it doesn't also skip to the next question). No motion with prefers-reduced-motion.
+function unlockShow(L){
+  const n = L[0], g = GX(n), p = cover(g), d = document.createElement('div');
+  d.className = 'unlock'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Bonus genus unlocked');
+  d.innerHTML = `<div class="ulcard"><div class="ulflip"><div class="ulback" aria-hidden="true"><b>?</b></div><div class="ulfront">${p ? `<img src="${img(p, 's')}" alt="">` : ''}</div></div>
+    <p class="ulkick">Bonus genus unlocked</p><h3><i>${esc(n)}</i></h3>
+    <p class="ulnote">Not on the IMR list, but common at Dauin. It now joins the photo quiz and the duels.</p>
+    <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tipsList(g)}</div>
+    ${L.length > 1 ? `<p class="ulnote">Also unlocked: ${L.slice(1).map(x => `<i>${esc(x)}</i>`).join(', ')}</p>` : ''}
+    <div class="ulbtns"><a class="linkish" href="#g-${esc(n)}">Open its sheet</a><button class="next" type="button">Got it</button></div></div>`;
+  document.body.appendChild(d);
+  const close = () => { d.remove(); document.removeEventListener('keydown', key, true); const nb = document.getElementById('next'); if (nb) nb.focus({preventScroll: true}); };
+  // Enter on the focused sheet link follows it (its click closes the card); elsewhere Enter / Esc just close the card.
+  const key = e => { if (e.key !== 'Escape' && e.key !== 'Enter') return; e.stopPropagation();
+    if (e.key === 'Enter' && e.target.closest && e.target.closest('.unlock a')) return; e.preventDefault(); close(); };
+  document.addEventListener('keydown', key, true);
+  d.querySelector('button').onclick = close; d.querySelector('a').addEventListener('click', close);
+  d.addEventListener('click', e => { if (e.target === d) close(); });
+  setTimeout(() => { const b = d.querySelector('button'); if (b) b.focus({preventScroll: true}); }, 50);
 }
 function distractors(t, list){
-  const look = DATA.gen[t].look.filter(n => list.includes(n));
-  const fam = list.filter(n => n !== t && DATA.gen[n].fam === DATA.gen[t].fam && !look.includes(n));
+  const look = list.filter(n => n !== t && (GX(t).look.includes(n) || GX(n).look.includes(t)));
+  const fam = list.filter(n => n !== t && GX(n).fam === GX(t).fam && !look.includes(n));
   const rest = shuffle(list.filter(n => n !== t && !look.includes(n) && !fam.includes(n)));
   return [...shuffle(look), ...shuffle(fam), ...rest].slice(0, 3);
 }
@@ -878,7 +950,8 @@ function quizDuel(a, b){
   const list = pool();
   let pair = a && b ? [a, b] : null;
   if (!pair) {
-    const ps = pairs().filter(([x, y]) => list.includes(x) && list.includes(y));
+    // Unlocked bonus genera duel with the slate look-alike the Coral Finder names.
+    const ps = [...pairs(), ...bonusOpen().flatMap(b => GX(b).look.filter(a => DATA.gen[a]).map(a => [a, b]))].filter(([x, y]) => list.includes(x) && list.includes(y));
     // Your mix-ups come up most, then the classic look-alikes (compared in the IMR lecture or the Coral Finder text).
     const w = ps.map(([x, y]) => (weight(x) + weight(y)) * (mixedUp(x, y) ? 3 : isClassic(x, y) ? 2 : 1)), t0 = w.reduce((p, q) => p + q, 0);
     let r = Math.random() * t0; pair = ps[0];
@@ -891,18 +964,22 @@ function quizDuel(a, b){
 // not seen, red border = review) beside a side column with the overall ring, what to review first, sign-in and backup.
 function quizBoard(){
   const list = Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n).sort((a, b) => slateIdx(a) - slateIdx(b));
-  const lv = Object.fromEntries(list.map(n => [n, level(n)]));
+  // Bonus genera (off the slate) get tiles after the slate genera: unlocked ones like any genus, locked ones as "?"
+  // tiles showing the slate progress that unlocks them (Pierre, 2026-11-01). They stay out of the ring and the counts.
+  const BO = bonusOpen(), locked = BONUS.slice(BO.length).map((n, i) => BONUS_AT(BO.length + i));
+  const lv = Object.fromEntries([...list, ...BO].map(n => [n, level(n)]));
   const count = k => list.filter(n => lv[n][0] === k).length;
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
   // Learning level on a 6-step scale (one colour ramp, light to dark): 0 = not seen, 1-4 = quarters of the genus's
   // progress (genScore), 5 = learned. "Review" is a separate marker, so it never hides the level.
-  const st = Object.fromEntries(list.map(n => [n, lvStep(n)])), nst = k => list.filter(n => st[n] === k).length;
+  const st = Object.fromEntries([...list, ...BO].map(n => [n, lvStep(n)])), nst = k => list.filter(n => st[n] === k).length;
   let deg = 0; const ring = [5, 4, 3, 2, 1, 0].map(k => { const d = 360 * nst(k) / list.length, c = `${k ? `var(--lv${k})` : 'var(--line)'} ${deg}deg ${deg + d}deg`; deg += d; return c; }).join(',');
   const STEPS = [[0, 'Not seen'], [1, '< 25%'], [2, '25-50%'], [3, '50-75%'], [4, '75%+'], [5, 'Learned']];
   // Photo wall: the cover in full colour (grey = not seen) with a name band coloured by the genus's step on the scale,
   // holding the mini ring + % like the Slate and Groups tiles; review = red border and "!".
-  const tile = n => { const g = DATA.gen[n], p = cover(g), [cl] = lv[n];
-    return `<a class="pw ${cl} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}">${p ? `<img src="${img(p, 's')}" alt="" loading="lazy">` : ''}<span class="pwb"><i>${esc(n)}${g.n ? '' : ' ★'}</i>${pct(n)}</span></a>`; };
+  const tile = n => { const g = GX(n), p = cover(g), [cl] = lv[n];
+    return `<a class="pw ${cl} s${st[n]}${g.x ? ' bonus' : ''}" href="#g-${esc(n)}" title="${g.x ? 'Bonus genus, not on the IMR list. ' : ''}${tip(n)}">${p ? `<img src="${img(p, 's')}" alt="" loading="lazy">` : ''}${g.x ? '<b class="pbtag">Bonus</b>' : ''}<span class="pwb"><i>${esc(n)}${g.n || g.x ? '' : ' ★'}</i>${pct(n)}</span></a>`; };
+  const lockT = (at, cls) => `<span class="${cls} plock" title="Bonus genus, unlocks at ${at}% progress"><b aria-hidden="true">?</b><small>${at}%</small></span>`;
   const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
   // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
   const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}% of the way)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
@@ -912,17 +989,23 @@ function quizBoard(){
   const pct = n => st[n] > 0 && st[n] < 5 ? `<small class="pct" style="--p:${Math.round(100 * genScore(n))}%">${Math.round(100 * genScore(n))}%</small>` : '';
   const gi = n => shownGroup(n) || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
   const VIEWS = {
-    photos: () => `<div class="pgrid pwall">${list.map(tile).join('')}</div>`,
+    photos: () => `<div class="pgrid pwall"${isPhone() ? ' data-minw="72"' : ''}>${[...list, ...BO].map(tile).join('')}${locked.map(at => lockT(at, 'pw')).join('')}</div>`,
     // Laid out like the physical IMR slate: 1-20 down the left column, 21-34 down the right, starred genera under them.
     slate: () => { const num = list.filter(n => DATA.gen[n].n), L = num.filter(n => DATA.gen[n].n <= 20), R = num.filter(n => DATA.gen[n].n > 20), S = list.filter(n => !DATA.gen[n].n);
       const ps = n => `<a class="ps ${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><b>${DATA.gen[n].n ? DATA.gen[n].n + '.' : '★'}</b><i>${esc(n)}</i>${pct(n)}</a>`;
-      return `<div class="pslate" style="--rows:${Math.max(L.length, R.length + (S.length ? S.length + 1 : 0))}">${L.map(ps).join('')}${R.map(ps).join('')}${S.length ? '<span class="psgap"></span>' : ''}${S.map(ps).join('')}</div>`; },
+      // Bonus genera: one strip across both columns under the slate, so the board still fits one screen.
+      const rows = Math.max(L.length, R.length + (S.length ? S.length + 1 : 0));
+      const bx = BO.map(n => `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="#g-${esc(n)}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i>${esc(n)}</i>${pct(n)}</a>`).join('') + locked.map(at => lockT(at, 'ps')).join('');
+      return `<div class="pslate" style="--rows:${rows}">${L.map(ps).join('')}${R.map(ps).join('')}${S.length ? '<span class="psgap"></span>' : ''}${S.map(ps).join('')}<div class="psbonus" style="grid-row:${rows + 1}" title="Bonus genera, not on the IMR list">${bx}</div></div>`; },
     groups: () => `<div class="pgroups">${groups.map(k => { const gr = DATA.imrg.find(x => x.n === k), L = list.filter(n => gi(n) === k);
       return `<div class="pgr" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn" title="${gr ? esc(gr.t) : 'Not covered in the lecture'}">${gr ? gr.n : '★'}</span><span class="pgt">${gr ? esc(gr.t) : 'Not covered in the lecture'}</span>
-        <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
+        <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}
+      <div class="pgr pgbonus"><span class="gn" title="Bonus genera, not on the IMR list">+</span><span class="pgt">Bonus: not on the IMR list</span>
+        <span class="pseg">${BO.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`).join('')}${locked.map(at => lockT(at, 'pgl')).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BONUS.length}</small></div></div>`
   };
   let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
   $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, get it right on harder and harder photos, once with the corallites in view, and once in a look-alike duel. A mistake sets it back, for the genus you missed and for the one you answered.</p>
+  <p class="lede"><b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin and easily taken for a genus of the list (fire coral <i>Millepora</i> first). The first joins the photo quiz and the duels at ${BONUS_AT(0)}% progress, then one more every 5%. They don't count in your progress; their ID tips come from the Coral Finder. On this page they come after the list: a <b>?</b> tile is a bonus genus still locked, with the progress that unlocks it.</p>
   <p class="lede"><b>Colours</b>: white with a dashed border = not seen; then from pale to dark, one step per quarter of the way; the darkest, with a tick = learned. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet${isPhone() ? '' : '; hover it to see what it still needs'}.</p>
   <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. Learned means your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus the two milestones above.</p>
   <div class="pgame pboard"><div class="pgwrap"></div>
@@ -944,7 +1027,7 @@ function quizBoard(){
   // Phones: the Photos/Slate/Groups switch sits above the board and stays pinned while the page scrolls (Pierre, 2026-10-31).
   if (matchMedia(MQ.phone).matches) { const sg = $v.querySelector('.pboard .gside .seg'); sg.classList.add('pvpin'); $v.querySelector('.pboard').before(sg); }
   const rb = document.getElementById('reset');
-  rb.onclick = () => { if (rb.dataset.armed) { P = {}; store.set('imr-coral-reset', new Date().toISOString()); save(); route(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } };
+  rb.onclick = () => { if (rb.dataset.armed) { P = {}; delete Q.bu; delete Q.ba; saveQ(); store.set('imr-coral-reset', new Date().toISOString()); save(); route(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } };
   const wrap = $v.querySelector('.pboard .pgwrap');
   const show = () => { wrap.innerHTML = VIEWS[pv](); $v.querySelectorAll('[data-pv]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pv === pv));
     requestAnimationFrame(() => { const g = wrap.firstChild; if (g.classList.contains('pgrid')) fitTiles(g, 6); else g.style[pv === 'slate' ? 'minHeight' : 'height'] = Math.max(320, innerHeight - g.getBoundingClientRect().top - window.scrollY - 16 - tabH()) + 'px'; }); };
@@ -957,8 +1040,9 @@ const $prog = document.getElementById('prog');
 function showProg(){ if (!DATA) return; const n = Object.keys(DATA.gen); const pt = `${progPct(n)}%`, lt = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length} genera learned`; document.getElementById('progn').textContent = pt; $prog.title = `Your progress: ${pt} (${lt})`; const p2 = document.getElementById('progn2'); if (p2) p2.textContent = pt;
   // Not signed in: the pill says so, so RAs find where to save their progress.
   const pill = document.getElementById('prog'), out = !!SYNC_URL && !SYNC;
-  pill.classList.toggle('nosync', out || !!syncTrouble()); pill.querySelector('.pl').textContent = out ? 'Sign in · progress' : 'My progress';
-  pill.title = SYNC ? `Signed in as ${SYNC.name}: your progress per genus` : out ? 'Sign in to save your progress' : 'Your progress per genus'; }
+  pill.classList.toggle('nosync', out || !!syncTrouble()); pill.querySelector('.pl').textContent = 'Progress'; pill.style.setProperty('--pp', progPct(n));
+  // Status only (design review 2026-11-01): the pill shows progress; signing in is an action on My progress. Not signed in = the dot.
+  pill.title = SYNC ? `Signed in as ${SYNC.name}: your progress per genus` : out ? 'Your progress (not saved online yet: sign in on My progress)' : 'Your progress per genus'; }
 // Progress files: every imr-coral-* key in localStorage (quiz progress, settings, Lab scores), as JSON.
 const progData = () => { const d = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('imr-coral') && k !== 'imr-coral-sync') d[k] = localStorage.getItem(k); } } catch (e) {} return d; };
 const loadData = d => Object.entries(d || {}).forEach(([k, v]) => k.startsWith('imr-coral') && k !== 'imr-coral-sync' && localStorage.setItem(k, v));
@@ -1102,7 +1186,7 @@ document.addEventListener('click', e => {
 function reportDialog(c, btn){
   let d = document.getElementById('repdlg'); if (d) d.remove();
   d = document.createElement('dialog'); d.id = 'repdlg'; d.className = 'repdlg';
-  const names = Object.keys(DATA.gen).sort();
+  const names = [...Object.keys(DATA.gen), ...bonusOpen()].sort();
   d.innerHTML = `<form method="dialog">
     <h3>Report a problem</h3>
     <div class="repwhy" role="radiogroup" aria-label="Problem">${REP_WHY.map(([k, t], i) => `<label><input type="radio" name="why" value="${k}"${i ? '' : ' checked'}><span>${t}</span></label>`).join('')}</div>
@@ -1250,7 +1334,7 @@ function ctxBar(h){
       <span class="pn"><a href="#g-${esc(prev)}" title="Previous: ${esc(prev)} (←)" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="#g-${esc(next)}" title="Next: ${esc(next)} (→)" aria-label="Next genus: ${esc(next)}">›</a></span>`;
   }
   const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
-  if (a && DATA.gen[a] && DATA.gen[b]) return `${back}<h2 class="ctx-t"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="#cmp">Look-alikes</a>`;
+  if (a && GX(a) && GX(b) && (DATA.gen[a] || isBonus(a)) && (DATA.gen[b] || isBonus(b))) return `${back}<h2 class="ctx-t"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="#cmp">Look-alikes</a>`;
   return '';
 }
 function showModes(tab, h){
@@ -1378,7 +1462,7 @@ const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(okJson).catch(softFail('curation.json (Pierre\'s photo choices)', {})); };
 const forms = () => fetch('forms.json?v=7').then(okJson).catch(softFail('forms.json', {})).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u => fetch(u).then(okJson).catch(softFail(u.replace(/\?.*/, ''), {}));
-Promise.all([fetch('data.json?v=25').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); window.APP_READY = true; if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=26').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); window.APP_READY = true; if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 // A tab left open for days still follows Pierre's published curation (e.g. the CF book switch): when the tab comes back
 // into view (or every 30 min while visible), curation.json is read again; a change applies at the next screen (route),
 // never in the middle of a game.
