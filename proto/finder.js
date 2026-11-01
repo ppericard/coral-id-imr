@@ -155,7 +155,7 @@ LAB.add({
       // Many varied examples at a glance, as on the paper Coral Finder's pages: cover first, then round-robin over
       // colony / closer / corallites (featured photos lead each view), a different observation each time when possible.
       // With one view picked, only that view's photos (all views when the genus has none of it).
-      const varied = (g, k) => { const one = pv !== 'mix' && (g.views[pv] || []).length, c = one ? null : cover(g);
+      const varied = (g, k, n) => { const one = pv !== 'mix' && (g.views[pv] || []).length, c = one ? null : (n && formCover(n)) || cover(g);
         // Coral Finder book photos (g.book) alternate with the field photos of the same view.
         // Capped set per view (applySlots in app.js): featured photos, then up to 3 approved book photos.
         const mix = v => { const F = ((g.sl || {})[v] || {}).finder || [], A = F.filter(p => !p.cf && (!c || p.f !== c.f)).map(p => ({...p, view: v})), B = F.filter(p => p.cf), o = [];
@@ -164,22 +164,30 @@ LAB.add({
         const out = c ? [c] : [], used = new Set(c ? [c.o] : []); let i = 0;
         while (out.length < k && L.some(x => x.length)) { const Q = L[i++ % L.length]; if (!Q.length) continue; const j = Q.findIndex(p => !used.has(p.o)); const p = Q.splice(j >= 0 ? j : 0, 1)[0]; used.add(p.o); out.push(p); }
         return out; };
+      // With a growth form picked, the lead photo shows the genus in that form (photo growth form, checked in admin), so a
+      // newcomer never compares a massive colony with a branching cover (first-time RA review, 2026-11-01). The cover stays
+      // when it already shows that form; a genus with no photo of the form keeps its cover.
+      const formCover = n => { if (pv !== 'mix' || !(S.form.size || S.imrf.size)) return null;
+        const rank = p => p.imr ? 0 : p.own ? 1 : 2;  // photo priority: IMR lecture, then Pierre's own, then the rest
+        const P = [...[...S.form].flatMap(id => formPhotos(n, id)), ...[...S.imrf].flatMap(id => imrFormPhotos(n, id))].map((p, i) => [p, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(a => a[0]);
+        if (!P.length) return null; const c = cover(G[n]);
+        return c && P.some(p => p === c || (p.f && p.f === c.f)) ? c : P[0]; };
       const more = n => { const all = VIEWS.flatMap(([v]) => ((G[n].sl || {})[v] || {}).finder || []), own = all.filter(p => src(p) === 'dauin').length;
         return all.length > 8 ? `<button type="button" class="linkish fdmore" data-x="${esc(n)}">All ${all.length} photos${own ? ` (${own} from Dauin)` : ''}</button>` : ''; };
       const mosaic = n => { const g = G[n];
         return `<article class="fdrow"><div class="fdinfo">${head(n)}<p class="fdtip">${esc(tipsText(g))}</p>${tools(n)}${more(n)}</div>
-          <div class="fdmos">${varied(g, 8).map(p => ph(n, p, p.view)).join('')}</div></article>`; };
+          <div class="fdmos">${varied(g, 8, n).map(p => ph(n, p, p.view)).join('')}</div></article>`; };
       // Opened genus: photos dominate; a narrow side column holds the name, the IMR cue, the tools and (folded) the
       // Coral Finder features.
       const big = (n, off) => { const g = G[n];
         return `<article class="fdbig${off ? ' off' : ''}"><div class="fdinfo fdbigside">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}
           <p class="fdcue fdtip">${esc(tipsText(g))}</p><details class="fdcrit"${notIMR(n) ? ' open' : ''}><summary>Coral Finder${notIMR(n) ? ` <small>p. ${g.pages.join(', ')}</small>` : ''}</summary><ul>${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details>${tools(n)}</div>
-          <div class="fdbigph">${varied(g, 99).map(p => ph(n, p, p.view)).join('')}</div></article>`; };
+          <div class="fdbigph">${varied(g, 99, n).map(p => ph(n, p, p.view)).join('')}</div></article>`; };
       // Contact sheet: one line per genus with all its photos, small, to scan the whole shortlist line by line.
-      const sheet = n => isX(n) ? big(n) : `<article class="fdsheet"><div class="fdinfo">${head(n)}</div><div class="fdall">${varied(G[n], 99).map(p => ph(n, p, p.view)).join('')}</div></article>`;
+      const sheet = n => isX(n) ? big(n) : `<article class="fdsheet"><div class="fdinfo">${head(n)}</div><div class="fdall">${varied(G[n], 99, n).map(p => ph(n, p, p.view)).join('')}</div></article>`;
       // Photos follow the admin's curation (applied to DATA in app.js): hidden ones are gone, featured ones lead each
       // view, and Auto and "One clue off" tiles show the genus cover. The header's origin filter applies too.
-      const tile = (n, off) => { if (isX(n)) return big(n, off); const g = G[n], v = pv === 'mix' ? null : pv, p = v ? (g.views[v] || [])[0] || cover(g) : cover(g);
+      const tile = (n, off) => { if (isX(n)) return big(n, off); const g = G[n], v = pv === 'mix' ? null : pv, p = v ? (g.views[v] || [])[0] || cover(g) : formCover(n) || cover(g);
         return `<article class="fdtile${off ? ' off' : ''}">${p ? ph(n, p, v && (g.views[v] || [])[0] ? v : p.view || 'medium') : '<span class="none">no photo</span>'}<div class="fdinfo">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}<p class="fdtip">${esc(tipsText(g))}</p>${tools(n)}</div></article>`; };
       // Look-alikes outside the shortlist: worth a glance before deciding.
       const near = left.length && left.length <= 3 ? uniq(left.flatMap(n => lookOf(n))).filter(n => G[n] && !left.includes(n) && !close.includes(n)) : [];
