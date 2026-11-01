@@ -988,7 +988,7 @@ const covLvl = c => COV.filter(k => c.obs >= k).length;
 // Views a genus has in games: 2-level genera have no Closer view.
 const covViews = n => VIEWS.filter(([v]) => !(lv(n) === 2 && v === 'medium'));
 // Default Thinnest (Pierre 2026-11-01); new key so an older saved choice does not override it.
-let COV_ORDER = store.get('imr-admin-covorder2', 'thin');
+let COV_ORDER = store.get('imr-admin-covorder2', 'thin'); if (COV_ORDER !== 'lecture') COV_ORDER = 'thin';
 function renderCov(){
   status();
   const R = Object.keys(DATA.gen).filter(n => !DATA.gen[n].x).map((n, i) => {
@@ -999,12 +999,12 @@ function renderCov(){
   // in app.js), then slate order inside a group; genera outside the lecture groups last.
   const lg = n => { const g = DATA.gen[n]; if (g.ig) return g.ig; const L = (g.look || []).map(b => DATA.gen[b] && DATA.gen[b].ig).filter(Boolean);
     if (!L.length) return 99; const c = {}; L.forEach(k => c[k] = (c[k] || 0) + 1); return L.reduce((b, k) => c[k] > c[b] ? k : b, L[0]); };
-  const by = {lecture: (a, b) => lg(a.n) - lg(b.n) || a.i - b.i, slate: (a, b) => (DATA.gen[a.n].n || 99) - (DATA.gen[b.n].n || 99) || a.i - b.i, thin: (a, b) => a.min - b.min || a.all.length - b.all.length || a.i - b.i};
+  const by = {lecture: (a, b) => lg(a.n) - lg(b.n) || a.i - b.i, thin: (a, b) => a.min - b.min || a.all.length - b.all.length || a.i - b.i};
   R.sort(by[COV_ORDER] || by.thin);
   const max = Math.max(1, ...R.map(r => r.all.length)), thin = R.reduce((s, r) => s + r.cells.filter(c => c && covLvl(c) < 2).length, 0);
   const cell = (r, c, v) => c ? `<td class="cov-c cov-${covLvl(c)}" title="${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}"><b>${c.n}</b>${c.obs < c.n ? `<small>${c.obs}</small>` : ''}</td>` : '<td class="cov-c cov-na">–</td>';
   const bar = r => ORIGINS.filter(o => o[0] !== 'book').map(([o, t]) => { const k = r.all.filter(p => origin(p) === o).length; return k ? `<i class="o-${o}" style="width:${(100 * k / max).toFixed(1)}%" title="${t}: ${k}"></i>` : ''; }).join('');
-  const seg = [['thin', 'Thinnest', 'Least covered first'], ['lecture', 'Lecture', 'Lecture order'], ['slate', 'Slate', 'Slate numbers 1-34, then ★']];
+  const seg = [['thin', 'Thinnest', 'Least covered first'], ['lecture', 'Lecture', 'Lecture order']];
   $v.innerHTML = `<section class="adm-cov">
     <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Order">${seg.map(([k, t, h]) => `<button type="button" data-co="${k}" title="${h}" aria-pressed="${COV_ORDER === k}">${t}</button>`).join('')}</span>
       <span class="cov-key" aria-label="Colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
