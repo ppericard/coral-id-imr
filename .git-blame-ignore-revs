@@ -1,0 +1,5 @@
+# Commits that only reformat code: `git blame` skips them when run with
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# (GitHub's blame view reads this file by itself).
+# Prettier 3.9.10 pass over the JS and CSS (#312)
+dc4320e206bca2f8e575f62d5689f86966353ac3
