@@ -552,7 +552,7 @@ function renderQuality(){
 
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
-  cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field photos only (no lecture slide, no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The line under it counts the photos of that view left out and why: IMR (lecture slide, own quiz), several (several corals), Ø (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Click a row to open the genus.</p>`,
+  cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The line under it counts the photos of that view left out and why: several (several corals), Ø (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Click a row to open the genus.</p>`,
   stats: `<p>Every quiz and duel answer synced to the sheet. Players are anonymous: a number, ranked by level; "you" marks the name synced in this browser (All / Others / Me). Level is on the same scale as photo difficulty. Last 20 = right answers among the player's last 20. Learned = genera learned on their last sync. Days = days with answers. Photos = different photos answered (more = more variety). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsph: `<p>Photo difficulty (Elo) from every answer: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers; few answers = rough. Click a dot to see the photo.</p>
@@ -981,26 +981,24 @@ function renderDiff(){
 }
 
 /* ---------- Photo coverage ---------- */
-// Game photos of genus n in view v, as the games can draw them (applySlots in app.js): field photos only, so no lecture
-// slide, no Coral Finder book photo, no multi-coral, hidden or "sheet only" photo. Poor photos count (Pierre: games use
+// Game photos of genus n in view v, as the games can draw them (applySlots in app.js): field and IMR lecture photos, but no
+// Coral Finder book photo, no multi-coral, hidden or "sheet only" photo. Poor photos count (Pierre: games use
 // them at the Hard level, realistic like ReefCloud images). The Colony slot never takes a photo whose growth form is not visible (photoSet in app.js). Diversity = distinct colonies
 // (iNat observations), so 5 shots of one colony count once. Shared by the Coverage page and the Candidates queue.
 const COV = [1, 3, 5, 8];  // colonies per genus x view from which a cell reaches level 1, 2, 3, 4
-let COURSE = null;
 function gamePool(n, v){
-  COURSE = COURSE || new Set(Object.values(DATA.course || {}).flat().map(p => p.f));
   const use = DRAFT.use || {};
   // A genus with a single IMR growth form (Pierre): the form is no question, so a "form not visible" photo still counts.
   const oneForm = v === 'wide' && new Set(photos(n).filter(p => !p.multi && !hidden(n, p)).map(p => fOf(p.f)).filter(x => x && x !== 'x' && x !== 'p')).size === 1;
-  return photos(n).filter(p => viewOf(n, p) === v && !hidden(n, p) && !p.multi && !p.extra && !p.cf && !COURSE.has(p.f) && use[p.f] !== 'ref' && !(v === 'wide' && fOf(p.f) === 'x' && !oneForm));
+  return photos(n).filter(p => viewOf(n, p) === v && !hidden(n, p) && !p.multi && !p.extra && !p.cf && use[p.f] !== 'ref' && !(v === 'wide' && fOf(p.f) === 'x' && !oneForm));
 }
 function covOf(n, v){ const L = gamePool(n, v); return {n: L.length, obs: new Set(L.map(p => p.o || p.f)).size, L}; }
 // Photos of a genus x view left out of the game pool, by reason (Pierre: show what isn't counted and why).
-const OFF = [['imr', 'IMR'], ['multi', 'several'], ['x', 'Ø'], ['ref', 'sheet only'], ['cf', 'CF'], ['hid', 'removed']];
+const OFF = [['multi', 'several'], ['x', 'Ø'], ['ref', 'sheet only'], ['cf', 'CF'], ['hid', 'removed']];
 function covOff(n, v){
   const pool = new Set(gamePool(n, v).map(p => p.f)), use = DRAFT.use || {}, out = {};
   photos(n).filter(p => viewOf(n, p) === v && !pool.has(p.f)).forEach(p => {
-    const why = hidden(n, p) ? 'hid' : p.cf ? 'cf' : COURSE.has(p.f) ? 'imr' : p.multi ? 'multi' : use[p.f] === 'ref' ? 'ref' : v === 'wide' && fOf(p.f) === 'x' ? 'x' : null;
+    const why = hidden(n, p) ? 'hid' : p.cf ? 'cf' : p.multi ? 'multi' : use[p.f] === 'ref' ? 'ref' : v === 'wide' && fOf(p.f) === 'x' ? 'x' : null;
     if (why) out[why] = (out[why] || 0) + 1; });
   return OFF.filter(([k]) => out[k]).map(([k, t]) => `${t} ${out[k]}`).join(' · ');
 }

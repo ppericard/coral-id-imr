@@ -54,6 +54,8 @@ Judge every photo whose manifest `genus` is the genus of the file, candidates an
 The growth forms taught in the IMR course (manifest `forms`: letter, name and the lecture's definition; read them
 before you start). **One letter per photo: the dominant form visible in this photo.** Judge the shape the photo
 shows, not what the genus usually does. `x` = form not visible (the photo is too close to tell the colony's form).
+Use `x` only when the shape really cannot be read: a part of a colony whose shape is still obvious (the edge of
+a plate, a round free-living disc, a branch tip) gets its form, not `x`.
 There is no list of forms allowed per genus: do not make one up. Coral Finder book photos (`source: "book"`) may
 omit `form`.
 
@@ -70,6 +72,12 @@ How well the photo teaches the genus in its view.
 - **2 Fair**: usable but with one real weakness: soft focus, strong blue/green cast, small or partly hidden
   subject, cluttered frame.
 - **1 Poor**: hard to learn from: blurred, very dark or washed out, subject tiny or mostly hidden.
+
+Calibration (Pierre, 2026-11-01; tools/quality_eye.json holds Claude's by-eye ratings of every field photo as
+examples): judge each photo against what is normal for its view, never against the other views. A macro
+(Corallites) photo is sharp on a small part of the frame by nature: shallow depth of field, a soft background or
+soft edges are normal and do not lower the rating; rate it on the corallites in focus. Warm flash colours are fine.
+Poor is rare (about 1 photo in 20): blurred everywhere, very dark, heavy haze or cast, or the subject too small.
 
 ### `view`: Colony, Closer or Corallites
 
@@ -93,7 +101,8 @@ Never for IMR lecture photos, except `exclude`. A `note` is required.
 ### `multi`: several corals in frame (omit when false)
 
 `true` when another coral takes a large part of the frame or could be the answer. Such photos stay out of games
-(they remain on the genus sheet).
+(they remain on the genus sheet). Not when the main coral sits in the middle and fills most of the frame and the
+others are only small, partly visible bits at the edges (Pierre, 2026-11-01): the answer is obvious there.
 
 ### `unsure` and `note`
 
