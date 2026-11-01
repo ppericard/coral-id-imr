@@ -127,3 +127,8 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 
 - 2026-11-01: #244 explain empty "Without me" views; #242/#243 admin "Game coverage" + "Sheet & Finder coverage", sortable by view; #241 Thickest order; #240 Publish merges key by key (and restored lost curation); #233/#236/#238 admin Look-alikes Hide / All / Auto|Manual, `#~look`; #231 curation re-read in long-open tabs; #230 "Photos from" setting removed; #229/#209 "Without me" photo Elo; #227 IMR lecture photos in games; #225/#222/#208 progress scale (6 steps, mini ring); #224/#220 book photos on sheets only when pinned or to fill gaps; #219/#226 colour-blind mode; #214/#218 colour themes, Depth default; #207 one colony per question; #203 sync pulls other devices on start-up; #201/#202 Code.gs v5 deployed; #200 single-view questions.
 - PR #198 admin Stats "Needs" tab (where to look for more photos); #197 continuous difficulty; #195 admin Stats; #194 Coverage; #193 Candidates order; #184/#188 extra Dauin genera in the Coral Finder; #159 look-alike montage deck; #150 two-door Home; #168/#172 responsive system, mobile-first; #132 guided tour.
+
+## Pages deployment migration (2026-11-01)
+
+- Prepared: `pages.yml` provides one cancellable deployer and includes Candidate photos bot updates. Incident evidence and recovery: [PAGES.md](PAGES.md).
+- Pending activation: merge the deployment PR after Checks passes, change Pages source from branch publishing to GitHub Actions, cancel the orphan Pages deployment, dispatch and verify the first deployment. Settings/environment access was unavailable during investigation; do not mark this migration complete until verified.

@@ -90,6 +90,7 @@ These came from Pierre's explicit feedback. When in doubt, follow them over your
 | `img/` | WebP photos, 1600 px + 480 px `-s` thumbnails. No Git LFS. |
 | `tools/` | Python build/import scripts; `tools/sync/Code.gs` is the Google Apps Script for progress sync. |
 | `judging/` | Package for an outside photo-judging agent. |
+| `.github/workflows/pages.yml` | Single Pages deployer: main pushes, manual dispatch and Candidate photos completion; requires Actions source. Recovery: `docs/PAGES.md`. |
 | `.github/workflows/approved-photos.yml` | After each `curation.json` push: download approved candidates, refill candidate lists. |
 
 Details in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).

@@ -41,7 +41,7 @@ Kept in ROADMAP "Questions for an IMR trainer". Never settle them in the app; ke
 
 ## Setting up to work, and what lives outside GitHub
 
-Nothing needs rebuilding: the site is served by GitHub Pages straight from `main`, so a merged PR is the deploy. There is no build step and no package manager. What a new agent needs is a working copy; the only pieces outside GitHub are the Google Sheet + Apps Script (progress sync) and Pierre's admin token, recreated only if they are ever lost.
+Nothing needs rebuilding: the site is served by GitHub Pages from `main` through `pages.yml`, so a merged PR triggers deployment. The Pages source must be GitHub Actions; see [PAGES.md](PAGES.md) for migration and recovery. There is no build step and no package manager. What a new agent needs is a working copy; the only pieces outside GitHub are the Google Sheet + Apps Script (progress sync) and Pierre's admin token, recreated only if they are ever lost.
 
 **Working copy (any machine or cloud container):**
 1. Clone `https://github.com/ppericard/coral-id-imr` (public). Python 3, Node 18+ and Chromium/Playwright are all you need.
@@ -50,8 +50,8 @@ Nothing needs rebuilding: the site is served by GitHub Pages straight from `main
 4. Network: iNaturalist hosts (listed under "External resources") for photo scripts; GitHub for PRs. Python scripts need `pillow` (`pip install pillow`) for photo work.
 
 **Hosting settings (already in place; only if the repo ever moves):**
-1. GitHub Pages: Settings > Pages > Deploy from branch `main`, folder `/` (root). `.nojekyll` is committed. A merge to `main` is live in a minute or two.
-2. Actions: `.github/workflows/checks.yml` (PR checks) and `approved-photos.yml` (after each `curation.json` push; needs Settings > Actions > Workflow permissions "Read and write").
+1. GitHub Pages: Settings > Pages > Source **GitHub Actions**, with `pages.yml` as the single deployer. This replaces the original branch `main` / root source; verify the migration in [PAGES.md](PAGES.md), since the setting is outside git. `.nojekyll` remains committed.
+2. Actions: `.github/workflows/pages.yml` (push to `main`, manual dispatch, and Candidate photos completion), `.github/workflows/checks.yml` (PR checks) and `approved-photos.yml` (after each `curation.json` push; needs Settings > Actions > Workflow permissions "Read and write").
 3. Admin writes: a fine-grained GitHub token, this repository only, Contents read and write, 90-day expiry; the admin lock screen links to the token page and stores it encrypted with a password of Pierre's choice. Changing the repo name or owner means updating `REPO` in `admin.js` and in `tools/sync/Code.gs` (the admins' token check), then redeploying the script.
 
 **Progress sync (outside GitHub; only if the Sheet or script is ever lost):**
