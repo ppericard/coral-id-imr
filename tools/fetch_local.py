@@ -1,8 +1,11 @@
 # Fetches candidate photos (iNaturalist, open licence) that the site doesn't use yet: taken near Dauin (40 km), plus
 # elsewhere in the Philippines for genera with few Dauin photos. Accepted IDs: Research Grade, or a genus-level community
 # ID (Needs ID, at least 2 identifications agreeing on the genus or below: iNat needs 2+ IDs for a community taxon).
-# Caps (Pierre, 2026-10-31, so the pile to sort stays small): at most DAUIN_CAP Dauin candidates waiting per genus,
-# Philippines ones only while the genus has fewer than POOR Dauin photos, at most PH_CAP waiting; 2 photos per observation.
+# Caps (Pierre, 2026-10-31, so the pile to sort stays small): at most DAUIN_CAP Dauin observations waiting per genus,
+# Philippines ones only while the genus has fewer than POOR Dauin photos, at most PH_CAP waiting. Each observation brings
+# all its photos, up to PER_OBS (Pierre, 2026-11-01: "on my observations I take at least three: the colony, closer, a
+# macro"; a game question shows the views of ONE colony, so a whole observation is worth more than two loose photos).
+# Until then it was 2 photos per observation (its first and last) and the caps counted photos.
 # Only waiting candidates count, so a re-run (GitHub Action after each publish) refills what Pierre sorted. Lists them in data.json "cand".
 # The app ignores "cand"; Pierre approves candidates in admin.html. Run from the repo root.
 # New candidates are NOT downloaded (r: 1 = shown straight from iNaturalist, from src): only the ones Pierre adds are,
@@ -15,7 +18,7 @@ UA = {'User-Agent': 'coral-id-imr/1.0'}
 LIC = 'cc-by,cc-by-nc,cc0,cc-by-sa,cc-by-nc-sa'
 SCLERACTINIA = 47532  # iNaturalist taxon for stony corals; guards against homonym genera (e.g. Astrea snails)
 DAUIN = 'lat=9.19&lng=123.26&radius=40'
-DAUIN_CAP, PH_CAP, PER_OBS = 15, 6, 2
+DAUIN_CAP, PH_CAP, PER_OBS = 15, 6, 4
 PHILIPPINES = 'place_id=6873'
 POOR = 15  # fewer Dauin photos (site + candidates) than this: also fetch Philippines candidates
 get = lambda u: json.load(urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60))
@@ -49,27 +52,28 @@ for g in GEN:
     for where in (DAUIN, PHILIPPINES):
         if where == PHILIPPINES and dauin_n(g) >= POOR: continue
         loc = 'dauin' if where == DAUIN else 'ph'
-        out = cand.setdefault(g, []); cap = len(out) + (DAUIN_CAP if loc == 'dauin' else PH_CAP) - sum(p.get('loc') == loc and waiting(p) for p in out)
-        if cap <= len(out): continue
+        out = cand.setdefault(g, [])
+        room = (DAUIN_CAP if loc == 'dauin' else PH_CAP) - len({p.get('o') for p in out if p.get('loc') == loc and waiting(p)})
+        if room <= 0: continue
         obs = get(f'https://api.inaturalist.org/v1/observations?taxon_id={T[0]["id"]}&{where}&quality_grade=research,needs_id&photos=true&photo_license={LIC}&order_by=votes&per_page=200')['results']
         # Research Grade first, then genus-level community IDs (votes order within each).
         obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if o['quality_grade'] == 'needs_id' and genus_ok(o, T[0]['id'])]
-        # Shortlist that varies (Pierre): pick one by one the photo whose species, observation, observer and zoom
-        # (an observation's first photo is usually the colony, its last a close-up) are least represented so far.
+        # Shortlist that varies (Pierre): pick one by one the observation whose species and observer are least represented
+        # so far (votes order breaks ties), and take its photos in their order (colony first, closer ones after, usually).
         pool = []
         for rank, o in enumerate(obs):
-            P = [ph for ph in o['photos'] if ph.get('license_code') and str(ph['id']) not in usedp and not excluded(photo_id=ph['id'])]
-            for slot, ph in enumerate(([P[0], P[-1]] if len(P) > 1 else P)[:PER_OBS]): pool.append((o, ph, slot, rank))
+            P = [ph for ph in o['photos'] if ph.get('license_code') and str(ph['id']) not in usedp and not excluded(photo_id=ph['id'])][:PER_OBS]
+            if P: pool.append((o, P, rank))
         n = Counter()
-        for p in out: n['t', p.get('t')] += 1; n['o', p.get('o')] += 1
-        while pool and len(out) < cap:
-            o, ph, slot, rank = min(pool, key=lambda x: (n['o', f'https://www.inaturalist.org/observations/{x[0]["id"]}'], n['t', x[0]['taxon']['name']], n['u', x[0]['user']['login']], n['s', x[2]], x[3]))
-            pool = [x for x in pool if x[1]['id'] != ph['id']]
+        for p in out: n['t', p.get('t')] += 1
+        while pool and room > 0:
+            o, P, rank = min(pool, key=lambda x: (n['t', x[0]['taxon']['name']], n['u', x[0]['user']['login']], x[2]))
+            pool = [x for x in pool if x[0]['id'] != o['id']]
             url = f'https://www.inaturalist.org/observations/{o["id"]}'
-            n['o', url] += 1; n['t', o['taxon']['name']] += 1; n['u', o['user']['login']] += 1; n['s', slot] += 1
-            usedp.add(str(ph['id']))
-            f = f'{g.lower()}-cand-{ph["id"]}'
-            out.append(dict(f=f, a=ph['attribution'], lic=ph['license_code'], o=url, t=o['taxon']['name'], own=o['user']['login'] == 'ppericard', loc=loc, src=ph['url'].replace('square', 'original'), r=1, **({} if o['quality_grade'] == 'research' else {'gid': 1})))
+            n['t', o['taxon']['name']] += 1; n['u', o['user']['login']] += 1; room -= 1
+            for ph in P:
+                usedp.add(str(ph['id']))
+                out.append(dict(f=f'{g.lower()}-cand-{ph["id"]}', a=ph['attribution'], lic=ph['license_code'], o=url, t=o['taxon']['name'], own=o['user']['login'] == 'ppericard', loc=loc, src=ph['url'].replace('square', 'original'), r=1, **({} if o['quality_grade'] == 'research' else {'gid': 1})))
         time.sleep(0.5)
     if not cand[g]: del cand[g]
     print(g, len(cand.get(g, [])))
