@@ -26,6 +26,17 @@ function mergeOld(mine, theirs){
   return out;
 }
 
+// Two admin tabs in one browser (code re-review 2026-11-01, M4): each keeps its draft in memory and writes all of it to
+// localStorage on every click, so the last tab clicked used to erase the other tab's clicks. When another tab writes its
+// draft, this tab merges it onto its own: shared = the draft both tabs last agreed on (what this tab last wrote or took),
+// mine = this tab's draft, other = the one just written. Returns the merged draft and whether this tab must write it back
+// (it holds clicks the other tab lacks). Compared without key order, so two tabs never bounce the same draft back and forth.
+const canon = o => JSON.stringify(o, (k, v) => isObj(v) ? Object.keys(v).sort().reduce((a, x) => (a[x] = v[x], a), {}) : v);
+function mergeTabs(shared, mine, other){
+  const draft = merge3(shared, mine, other); draft.genera = draft.genera || {};
+  return {draft, share: canon(draft) !== canon(other), changed: canon(draft) !== canon(mine)};
+}
+
 // Two devices on one account (app.js mergeSaved): three-way merge of the per-genus progress. B = the record as last
 // sent or received, P = this device, R = the record just pulled. Counts add up (R + P - B), so neither side's answers
 // are lost or counted twice; the latest local state wins for the per-genus model when this device answered since B.
@@ -68,6 +79,18 @@ function eloOf(rows){
   return out;
 }
 
-const CORE = {isObj, eq, merge3, mergeOld, mergeProgress, eloOf};
+// Two admin tabs in one browser share the stored draft. Each write carries _tab: {rev, seen}: its own revision and the
+// revision of the stored draft that tab had last seen. `revs` maps the revisions this tab wrote or took in to their drafts,
+// so the merge base is exactly the draft the other tab started from, even when both clicked before hearing of each other.
+// Returns null for a revision already taken in; an untagged draft (older admin page) merges against `saved`.
+function takeTab(revs, mine, saved, stored){
+  const t = stored._tab || {}, other = Object.assign({}, stored); delete other._tab;
+  if (t.rev && revs[t.rev]) return null;
+  const m = mergeTabs(revs[t.seen] || saved, mine, other);
+  if (t.rev) revs[t.rev] = other;
+  return m;
+}
+
+const CORE = {isObj, eq, canon, merge3, mergeTabs, takeTab, mergeOld, mergeProgress, eloOf};
 if (typeof module !== 'undefined' && module.exports) module.exports = CORE; else Object.assign(root, CORE);
 })(this);
