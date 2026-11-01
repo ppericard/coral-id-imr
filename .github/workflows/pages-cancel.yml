@@ -2,6 +2,9 @@ name: Cancel stuck Pages deployment
 # Manual button for the GitHub Pages backend lock: a deploy fails with
 # "due to in progress deployment. Please cancel <sha> first". Paste that <sha>,
 # run this, then run "Deploy Pages" (pages.yml). See docs/PAGES.md > Manual recovery.
+# The same commit can have several Pages deployments (one per re-run): the job
+# lists the recent github-pages deployments and tries to cancel every one of
+# that commit that has not finished, by deployment id, then by the SHA.
 on:
   workflow_dispatch:
     inputs:
@@ -10,17 +13,31 @@ on:
         required: true
 permissions:
   pages: write
+  deployments: read
 jobs:
   cancel:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Cancel the Pages deployment
+      - name: Cancel the Pages deployment(s)
         env:
           GH_TOKEN: ${{ github.token }}
           SHA: ${{ inputs.sha }}
         run: |
           case "$SHA" in *[!0-9a-f]*|'') echo '::error::sha must be a hex commit SHA'; exit 1;; esac
-          gh api "repos/$GITHUB_REPOSITORY/pages/deployments/$SHA" || true
-          gh api --method POST "repos/$GITHUB_REPOSITORY/pages/deployments/$SHA/cancel"
-          gh api "repos/$GITHUB_REPOSITORY/pages/deployments/$SHA" || true
+          R="repos/$GITHUB_REPOSITORY"
+          echo "Recent github-pages deployments (id, sha, latest state):"
+          ids=$(gh api "$R/deployments?environment=github-pages&per_page=30" --jq '.[] | "\(.id) \(.sha)"')
+          ok=0
+          while read -r id sha; do
+            [ -n "$id" ] || continue
+            st=$(gh api "$R/deployments/$id/statuses?per_page=1" --jq '.[0].state // "none"')
+            echo "$id $sha $st"
+            if [ "$sha" = "$SHA" ]; then
+              echo "  pages state: $(gh api "$R/pages/deployments/$id" --jq .status 2>&1 || true)"
+              if gh api --method POST "$R/pages/deployments/$id/cancel" >/dev/null 2>&1; then echo "  cancelled $id"; ok=1; fi
+            fi
+          done <<< "$ids"
+          echo "By SHA: $(gh api "$R/pages/deployments/$SHA" 2>&1 || true)"
+          gh api --method POST "$R/pages/deployments/$SHA/cancel" >/dev/null 2>&1 && ok=1 && echo "cancelled by SHA"
+          [ "$ok" = 1 ] || echo "::warning::Nothing cancellable for $SHA (GitHub reports it finished). If deploys still fail, wait or contact GitHub Support with the request ID."
