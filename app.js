@@ -1024,8 +1024,27 @@ function syncOnce(){
     .finally(() => { if (SYNC === me) bindSync(); });
 }
 const syncSoon = () => { if (!SYNC_URL || !SYNC) return; SYNC.dirty = true; SYNC.rev = (SYNC.rev || 0) + 1; store.set('imr-coral-sync', SYNC); clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 3000); };
-const syncRetry = () => { if (SYNC && (SYNC.dirty || (SYNC.log || []).length)) syncPush(); };
-window.addEventListener('online', syncRetry);
+// Bring in what other devices saved: on start-up, when the app comes back to the screen (a phone PWA resumed,
+// a desktop tab switched to) and when back online. Unsent changes here: a full sync (pull, merge, send).
+// Otherwise only a pull and merge, nothing written to the sheet. My progress redraws if the merge changed it.
+let pulledAt = 0;
+function syncPull(){
+  if (!SYNC_URL || !SYNC || !DATA) return Promise.resolve(null);
+  if (SYNC.dirty || (SYNC.log || []).length) return syncPush();
+  if (syncing) return syncing;
+  const me = SYNC, before = JSON.stringify(P); pulledAt = Date.now();
+  syncing = syncGet(me).then(j => { if (SYNC !== me) return null;
+      if (!j.ok) { if (j.error === 'pin') { me.err = 'pin'; store.set('imr-coral-sync', me); } return j; }
+      if (j.found) mergeSaved(j);
+      delete me.err; me.last = new Date().toISOString(); store.set('imr-coral-sync', me);
+      if (JSON.stringify(P) !== before && /^#(progress|quiz-board)$/.test(location.hash)) route();
+      return j; })
+    .catch(() => null)
+    .finally(() => { syncing = null; if (syncAgain) { syncAgain = false; syncPush(); } if (SYNC === me) bindSync(); });
+  return syncing;
+}
+window.addEventListener('online', syncPull);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - pulledAt > 30000) syncPull(); });
 // What is wrong with the sync, in words, or '' when everything is saved.
 function syncTrouble(){
   if (!SYNC_URL || !SYNC) return '';
@@ -1262,5 +1281,5 @@ const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store
   return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
 const forms = () => fetch('forms.json?v=7').then(r => r.ok ? r.json() : {}).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}));
-Promise.all([fetch('data.json?v=23').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncRetry(); loadStats(); if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=23').then(r => r.json()), curation(), forms(), json('quality.json?v=1'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
