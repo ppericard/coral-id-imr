@@ -696,6 +696,8 @@ function genScore(n){
   const part = Math.min(1, Math.max(0, (knownP(n) - BKT.L0) / (BKT.MASTER - BKT.L0))), duel = hasDuel(n) ? 1 : 0;
   return 0.75 * part + 0.25 * ((s.cor ? 1 : 0) + (duel && s.du ? 1 : 0)) / (1 + duel);
 }
+// Step of a genus on the learning scale: 0 not seen, 1-4 quarters of genScore, 5 learned (My progress colours).
+const lvStep = n => { const k = level(n)[0]; return k === 'new' ? 0 : k === 'ok' ? 5 : 1 + Math.min(3, Math.floor(4 * genScore(n))); };
 const progPct = (L = Object.keys(DATA.gen)) => Math.round(100 * L.reduce((t, n) => t + genScore(n), 0) / L.length);
 function level(n){
   const s = P[n]; if (!s || (s.ok + s.ko === 0 && !s.h)) return ['new', 'Not seen'];
@@ -880,36 +882,39 @@ function quizBoard(){
   const list = Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n).sort((a, b) => slateIdx(a) - slateIdx(b));
   const lv = Object.fromEntries(list.map(n => [n, level(n)]));
   const count = k => list.filter(n => lv[n][0] === k).length;
-  const LV = [['ok', 'Learned'], ['mid', 'Learning'], ['weak', 'Review'], ['new', 'Not seen']];
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
-  let deg = 0; const ring = LV.map(([k]) => { const d = 360 * count(k) / list.length, c = `var(--${k === 'ok' ? 'good' : k === 'mid' ? 'accent' : k === 'weak' ? 'bad' : 'line'}) ${deg}deg ${deg + d}deg`; deg += d; return c; }).join(',');
+  // Learning level on a 6-step scale (one colour ramp, light to dark): 0 = not seen, 1-4 = quarters of the genus's
+  // progress (genScore), 5 = learned. "Review" is a separate marker, so it never hides the level.
+  const st = Object.fromEntries(list.map(n => [n, lvStep(n)])), nst = k => list.filter(n => st[n] === k).length;
+  let deg = 0; const ring = [5, 4, 3, 2, 1, 0].map(k => { const d = 360 * nst(k) / list.length, c = `${k ? `var(--lv${k})` : 'var(--line)'} ${deg}deg ${deg + d}deg`; deg += d; return c; }).join(',');
+  const STEPS = [[0, 'Not seen'], [1, '< 25%'], [2, '25-50%'], [3, '50-75%'], [4, '75%+'], [5, 'Learned']];
   const tile = n => { const g = DATA.gen[n], p = cover(g), s = P[n] || {ok: 0, ko: 0}, [cl, lb] = lv[n];
     const tide = cl === 'mid' || cl === 'weak';
     // Rising tide: colour fills the photo from the bottom up to the genus's partial mastery, with a wavy waterline.
-    return `<a class="pw ${cl}" href="#g-${esc(n)}" title="${tip(n)}"${tide ? ` style="--p:${genScore(n).toFixed(2)}"` : ''}>${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">${tide ? `<img class="col" src="${img(p, 's')}" alt="" loading="lazy"><b class="wave"></b>` : ''}` : ''}<span><i>${esc(n)}</i>${g.n ? '' : ' ★'}</span></a>`; };
+    return `<a class="pw ${cl} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${tide ? ` style="--p:${genScore(n).toFixed(2)}"` : ''}>${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">${tide ? `<img class="col" src="${img(p, 's')}" alt="" loading="lazy"><b class="wave"></b>` : ''}` : ''}<span><i>${esc(n)}</i>${g.n ? '' : ' ★'}</span></a>`; };
   const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
   // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
-  const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
-  // Learning level as a fill gauge: the tile fills from the left as the genus gets closer to learned.
-  const fill = n => lv[n][0] === 'mid' || lv[n][0] === 'weak' ? ` style="--p:${(100 * genScore(n)).toFixed(0)}%"` : '';
+  const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}% of the way)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
+  // Learning level: the tile's colour is its step on the scale, and a thin line along its bottom shows the exact progress.
+  const fill = n => st[n] > 0 && st[n] < 5 ? ` style="--p:${(100 * genScore(n)).toFixed(0)}%"` : '';
   const gi = n => shownGroup(n) || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
   const VIEWS = {
     photos: () => `<div class="pgrid pwall">${list.map(tile).join('')}</div>`,
     // Laid out like the physical IMR slate: 1-20 down the left column, 21-34 down the right, starred genera under them.
     slate: () => { const num = list.filter(n => DATA.gen[n].n), L = num.filter(n => DATA.gen[n].n <= 20), R = num.filter(n => DATA.gen[n].n > 20), S = list.filter(n => !DATA.gen[n].n);
-      const ps = n => `<a class="ps ${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><b>${DATA.gen[n].n ? DATA.gen[n].n + '.' : '★'}</b><i>${esc(n)}</i></a>`;
+      const ps = n => `<a class="ps ${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><b>${DATA.gen[n].n ? DATA.gen[n].n + '.' : '★'}</b><i>${esc(n)}</i></a>`;
       return `<div class="pslate" style="--rows:${Math.max(L.length, R.length + (S.length ? S.length + 1 : 0))}">${L.map(ps).join('')}${R.map(ps).join('')}${S.length ? '<span class="psgap"></span>' : ''}${S.map(ps).join('')}</div>`; },
     groups: () => `<div class="pgroups">${groups.map(k => { const gr = DATA.imrg.find(x => x.n === k), L = list.filter(n => gi(n) === k);
       return `<div class="pgr" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn" title="${gr ? esc(gr.t) : 'Not covered in the lecture'}">${gr ? gr.n : '★'}</span><span class="pgt">${gr ? esc(gr.t) : 'Not covered in the lecture'}</span>
-        <span class="pseg">${L.map(n => `<a class="${lv[n][0]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i></a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
+        <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i></a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}</div>`
   };
   let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
-  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. On the photos: full colour = learned; colour rising from the bottom = learning (the higher the waterline, the closer to learned); red waterline = to review (comes up more often in the quiz); grey = not seen yet. On the Slate and Groups views: grey = not seen; a teal fill rising from the left = learning (the fuller, the closer to learned); red fill and border = to review; solid green = learned. Each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level (naming a genus when the photo shows another one counts as a mistake for both). Learned: your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5 answers. Click a genus to open its sheet.</p>
+  $v.innerHTML = `<p class="lede">Three views of the same progress, pick the one you like. On the photos: full colour = learned; colour rising from the bottom = learning (the higher the waterline, the closer to learned); red waterline = to review (comes up more often in the quiz); grey = not seen yet. On the Slate and Groups views the colour is the learning level, from white with a dashed border (not seen) through pale to deep teal (each step = a quarter of the way to learned) to dark green with a tick (learned); a thin line along the bottom of a tile shows exactly how far it has got. A red border and a red ! = to review, whatever the level. The scale under the ring counts the genera at each step. Each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level (naming a genus when the photo shows another one counts as a mistake for both). Learned: your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus two milestones: right once with the corallites photo open, and right once in a look-alike duel. Hover a genus to see what it still needs. Review: 2 or more mistakes in the last 5 answers. Click a genus to open its sheet.</p>
   <div class="pgame pboard"><div class="pgwrap"></div>
   <aside class="gside">
     <div class="seg" role="group" aria-label="View">${[['photos', 'Photos'], ['slate', 'Slate'], ['groups', 'Groups']].map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`).join('')}</div>
     <div class="pring" style="background:conic-gradient(${ring})"><span><b>${progPct(list)}%</b><small>${count('ok')}/${list.length} learned</small></span></div>
-    <p class="plegend">${LV.map(([k, t]) => `<span class="lvl ${k}">${t} ${count(k)}</span>`).join(' ')}</p>
+    <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera"><b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
     ${weak.length ? `<div><h3 class="label">Review first</h3><p class="chips">${weak.slice(0, 4).map(n => `<a class="chip" href="#g-${esc(n)}"><i>${esc(n)}</i></a>`).join('')}</p></div>` : ''}
     ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> / <i>${esc(o)}</i> ×${k}</a>`).join('')}</p></div>` : ''}
     <p><a class="next go" href="#quiz">Practise now</a></p>
