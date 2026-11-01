@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 5 (2026-11-01: continuous difficulty, answers carry expected success, ability and new photos; single-view answers)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 6 (2026-11-01: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -20,7 +20,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 5;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 6;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -28,24 +28,56 @@ function find_(sh, name){
   return i > 0 ? i + 1 : 0;
 }
 function clean_(p){ return {name: String(p.name || '').trim().slice(0, 40), pin: String(p.pin || '').trim()}; }
+// A user string never becomes a formula: a leading = + - @ gets Sheets' quote prefix (hidden, not part of the value read back).
+// Also used for the code hash, whose base64 can start with +.
+const safe_ = x => { const t = String(x == null ? '' : x); return /^[=+\-@]/.test(t) ? "'" + t : t; };
+// Answer fields keep only the characters they can have; anything else is dropped.
+const word_ = (x, re, n) => { const t = String(x == null ? '' : x).slice(0, n); return re.test(t) ? t : ''; };
+// Wrong codes: after 5 for one name within 10 minutes, every attempt for that name waits 10 minutes (10,000 codes can't be tried).
+const failKey_ = name => 'pinfail:' + name.toLowerCase();
+const blocked_ = name => Number(CacheService.getScriptCache().get(failKey_(name)) || 0) >= 5;
+function failed_(name){ const c = CacheService.getScriptCache(), k = failKey_(name); c.put(k, String(Number(c.get(k) || 0) + 1), 600); }
+
+// Progress of any size: a Sheets cell holds at most 50,000 characters, so the progress JSON lives in the "Progress data" tab,
+// one row per RA: name, revision, then the JSON in chunks of 45,000 characters. RAs column H keeps the JSON when it fits
+// (readable, and what older script versions read), else '@Progress data'. The revision counts writes (stale-write check).
+const DATA_TAB = 'Progress data', CHUNK = 45000;
+function dataRow_(name){ const sh = sheet_(DATA_TAB, ['Name', 'Revision', 'Data']), r = find_(sh, name); return {sh: sh, r: r}; }
+function readData_(name, h){
+  const d = dataRow_(name);
+  if (!d.r) return {rev: 0, json: h && h !== '@' + DATA_TAB ? h : '{}'};
+  const row = d.sh.getRange(d.r, 1, 1, d.sh.getLastColumn()).getValues()[0];
+  return {rev: Number(row[1]) || 0, json: row.slice(2).map(String).join('') || '{}'};
+}
+function writeData_(name, json, rev){
+  const d = dataRow_(name), r = d.r || d.sh.getLastRow() + 1, parts = [];
+  for (let i = 0; i < json.length; i += CHUNK) parts.push(safe_(json.slice(i, i + CHUNK)));
+  const old = d.r ? d.sh.getLastColumn() : 0, row = [safe_(name), rev].concat(parts);
+  while (row.length < old) row.push('');  // clear chunks left over from a longer copy
+  d.sh.getRange(r, 1, 1, row.length).setValues([row]);
+}
 
 // GET ?stats=1 → photo difficulty learned from every answer (Elo, see stats_), cached 10 minutes.
 // GET ?answers=1 → every answer with the RA replaced by an anonymous id (see answers_), for the admin Stats page.
 // GET ?name=…&pin=… → the saved progress for that RA, if the code matches.
 function doGet(e){
   if (e.parameter.stats) return json_(stats_());
-  if (e.parameter.answers) return json_(answers_());
+  if (e.parameter.answers) return json_(answers_(e.parameter));
   const {name, pin} = clean_(e.parameter);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const sh = sheet_('RAs', HEAD), r = find_(sh, name);
   if (!r) return json_({ok: true, found: false});
+  if (blocked_(name)) return json_({ok: false, error: 'wait'});
   const row = sh.getRange(r, 1, 1, HEAD.length).getValues()[0];
-  if (row[6] !== hash_(name, pin)) return json_({ok: false, error: 'pin'});
-  return json_({ok: true, found: true, updated: row[1], data: JSON.parse(row[7] || '{}')});
+  if (row[6] !== hash_(name, pin)) { failed_(name); return json_({ok: false, error: 'pin'}); }
+  const d = readData_(name, String(row[7] || ''));
+  return json_({ok: true, found: true, updated: row[1], rev: d.rev, data: JSON.parse(d.json)});
 }
 
 // POST {name, pin, data, summary: {learned, seen, total, review: [], genera: {Genus: 'ok'|'mid'|'weak'|'new'}},
-//   answers: [{id, t, g, a, ok, m, ph, e, th, nw}]} → {ok, log: true}; log tells the app its answers are saved.
+//   answers: [{id, t, g, a, ok, m, ph, e, th, nw}], at: revision merged against (optional)} → {ok, log: true, rev}.
+// log tells the app its answers are saved; they are logged first, so they are kept even if the progress write fails.
+// at ≠ the saved revision → {ok: false, error: 'stale', log: true}: another device wrote meanwhile; the app pulls, merges, resends.
 function doPost(e){
   const p = JSON.parse(e.postData.contents), {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
@@ -53,20 +85,27 @@ function doPost(e){
   try {
     const sh = sheet_('RAs', HEAD), h = hash_(name, pin), s = p.summary || {};
     let r = find_(sh, name);
-    if (r && sh.getRange(r, 7).getValue() !== h) return json_({ok: false, error: 'pin'});
-    if (!r) { r = sh.getLastRow() + 1; }
-    sh.getRange(r, 1, 1, HEAD.length).setValues([[name, new Date(), s.learned || 0, s.seen || 0, s.total || 0, (s.review || []).join(', '), h, JSON.stringify(p.data || {})]]);
+    if (r && blocked_(name)) return json_({ok: false, error: 'wait'});
+    if (r && sh.getRange(r, 7).getValue() !== h) { failed_(name); return json_({ok: false, error: 'pin'}); }
+    logAnswers_(name, p.answers);
+    const rev = r ? readData_(name, String(sh.getRange(r, 8).getValue() || '')).rev : 0;
+    if (typeof p.at === 'number' && p.at !== rev) return json_({ok: false, error: 'stale', log: true, rev: rev});
+    const json = JSON.stringify(p.data || {});
+    try {
+      writeData_(name, json, rev + 1);
+      if (!r) { r = sh.getLastRow() + 1; }
+      sh.getRange(r, 1, 1, HEAD.length).setValues([[safe_(name), new Date(), s.learned || 0, s.seen || 0, s.total || 0, (s.review || []).map(safe_).join(', '), safe_(h), json.length < CHUNK ? json : '@' + DATA_TAB]]);
+    } catch (err) { return json_({ok: false, error: 'save', log: true}); }
     // One row per RA, one column per genus, coloured by status: the class at a glance.
     const genera = Object.keys(s.genera || {});
     if (genera.length) {
-      const g = sheet_('By genus'), head = ['Name', 'Learned'].concat(genera);
+      const g = sheet_('By genus'), head = ['Name', 'Learned'].concat(genera.map(safe_));
       g.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold'); g.setFrozenRows(1); g.setFrozenColumns(2);
       const gr = find_(g, name) || g.getLastRow() + 1;
-      g.getRange(gr, 1, 1, head.length).setValues([[name, (s.learned || 0) + '/' + (s.total || 0)].concat(genera.map(n => LABELS[s.genera[n]] || ''))])
+      g.getRange(gr, 1, 1, head.length).setValues([[safe_(name), (s.learned || 0) + '/' + (s.total || 0)].concat(genera.map(n => LABELS[s.genera[n]] || ''))])
         .setBackgrounds([['#ffffff', '#ffffff'].concat(genera.map(n => COLORS[s.genera[n]] || '#ffffff'))]);
     }
-    logAnswers_(name, p.answers);
-    return json_({ok: true, log: true});
+    return json_({ok: true, log: true, rev: rev + 1});
   } finally { lock.releaseLock(); }
 }
 
@@ -78,8 +117,9 @@ function logAnswers_(name, answers){
   if (!SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Activity')) sheet_('Activity').getRange(1, 1).setFormula(ACTIVITY);
   const n = sh.getLastRow() - 1;
   const seen = new Set(n > 0 ? sh.getRange(2, 8, n, 1).getValues().map(r => String(r[0])) : []);
-  const rows = answers.filter(a => a && a.id && !seen.has(String(a.id))).slice(0, 500)
-    .map(a => [name, new Date(a.t), String(a.g || ''), String(a.a || ''), a.ok ? 1 : 0, String(a.m || ''), String(a.ph || ''), String(a.id), num_(a.e), num_(a.th), num_(a.nw)]);
+  const G = /^[A-Za-z][A-Za-z -]*$/, M = /^[a-z0-9|-]*$/, PH = /^[A-Za-z0-9_. -]*$/, ID = /^[a-z0-9]+$/;
+  const rows = answers.filter(a => a && a.id && ID.test(String(a.id)) && !seen.has(String(a.id))).slice(0, 2000)
+    .map(a => [safe_(name), new Date(a.t), word_(a.g, G, 40), word_(a.a, G, 40), a.ok ? 1 : 0, word_(a.m, M, 40), word_(a.ph, PH, 400), String(a.id).slice(0, 20), num_(a.e), num_(a.th), num_(a.nw)]);
   if (!rows.length) return;
   const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
   if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
@@ -87,20 +127,32 @@ function logAnswers_(name, answers){
 }
 const num_ = x => typeof x === 'number' && isFinite(x) ? x : '';
 
-// Anonymous id of an RA: the same for the same name, no name in it. The admin page computes it for its own name only.
-function aid_(name){
-  return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|anon|' + String(name).trim().toLowerCase(), Utilities.Charset.UTF_8)).slice(0, 8);
+// Anonymous id of an RA: the same for the same name, no name in it. Its salt is secret (Script Properties, made on first
+// use), so nobody can rebuild ids from a list of names; the admin learns its own id with ?answers=1&name=…&pin=… (v6).
+function anonSalt_(){
+  const pr = PropertiesService.getScriptProperties(); let s = pr.getProperty('ANON_SALT');
+  if (!s) { s = Utilities.getUuid(); pr.setProperty('ANON_SALT', s); }
+  return s;
+}
+function aid_(name, salt){
+  return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, (salt || anonSalt_()) + '|anon|' + String(name).trim().toLowerCase(), Utilities.Charset.UTF_8)).slice(0, 8);
 }
 
 // {ok, rows: [[id, time ms, genus shown, answered, right 0|1, mode, photos, expected, ability, new photos]],
 //   players: {id: [learned, seen, total, {genus: ability}]}}. Expected/ability/new photos are null on answers before v5.
-function answers_(){
+function answers_(q){
   const ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName('Answers'), ra = ss.getSheetByName('RAs'), out = {ok: true, rows: [], players: {}};
+  const salt = anonSalt_(), ids = {}, id = n => ids[n] = ids[n] || aid_(n, salt);
+  // me: the caller's own id, only with its name and right code (the admin page marks "you").
+  const {name, pin} = clean_(q || {});
+  if (name && /^\d{4}$/.test(pin) && ra && !blocked_(name)) { const r = find_(ra, name); if (r && ra.getRange(r, 7).getValue() === hash_(name, pin)) out.me = id(name); else if (r) failed_(name); }
+  const big = {}; const dt = ss.getSheetByName(DATA_TAB);
+  if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { big[String(r[0]).toLowerCase()] = r.slice(2).map(String).join(''); });
   if (sh && sh.getLastRow() > 1) out.rows = sh.getRange(2, 1, sh.getLastRow() - 1, 11).getValues().filter(r => r[0])
-    .map(r => [aid_(r[0]), new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6])]
+    .map(r => [id(r[0]), new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6])]
       .concat([8, 9, 10].map(i => r[i] === '' ? null : Number(r[i]))));
   if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, 8).getValues().filter(r => r[0])
-    .forEach(r => out.players[aid_(r[0])] = [Number(r[2]) || 0, Number(r[3]) || 0, Number(r[4]) || 0, abilities_(r[7])]);
+    .forEach(r => out.players[id(r[0])] = [Number(r[2]) || 0, Number(r[3]) || 0, Number(r[4]) || 0, abilities_(big[String(r[0]).toLowerCase()] || r[7])]);
   return out;
 }
 // Per-genus ability (th) from an RA's saved progress, nothing else from it.
@@ -117,7 +169,7 @@ function abilities_(data){
 // answers, right]}, ras: {anonymous id: [ability, answers]}}. Difficulty 0 = average photo; +1 = clearly harder.
 // admin.js eloOf replays the same rules in the browser (photo Elo with or without the author's answers): keep both in step.
 function stats_(){
-  const cache = CacheService.getScriptCache(), hit = cache.get('stats5');
+  const cache = CacheService.getScriptCache(), hit = cache.get('stats6');
   if (hit) return JSON.parse(hit);
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: {}, ras: {}};
   if (!sh || sh.getLastRow() < 2) return out;
@@ -133,7 +185,8 @@ function stats_(){
     ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * d; p[2]++; p[1] += ok; });
   });
   Object.keys(P).forEach(f => out.photos[f] = [Math.round(P[f][0] * 100) / 100, P[f][2], P[f][1]]);
-  Object.keys(R).forEach(n => out.ras[aid_(n)] = [Math.round(R[n][0] * 100) / 100, R[n][1]]);
-  try { cache.put('stats5', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
+  const salt = anonSalt_();
+  Object.keys(R).forEach(n => out.ras[aid_(n, salt)] = [Math.round(R[n][0] * 100) / 100, R[n][1]]);
+  try { cache.put('stats6', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
   return out;
 }

@@ -1192,12 +1192,15 @@ const statSwitch = () => `<nav class="adm-filter adm-stabs" aria-label="${modeKe
 // Puts the switch above a view rendered by another function (photo list, coverage).
 const withSwitch = () => { if (!$v.querySelector('.adm-stabs')) $v.insertAdjacentHTML('afterbegin', statSwitch()); };
 function loadStats(){
-  const me = (store.get('imr-coral-sync', null) || {}).name;
+  // Script v6 keeps the anonymous-id salt secret and returns the caller's own id (me) for its name and code; the
+  // local digest below only matches script v5 and older.
+  const sy = store.get('imr-coral-sync', null) || {}, me = sy.name;
   const digest = me ? crypto.subtle.digest('SHA-256', new TextEncoder().encode(`imr-coral-id|anon|${me.trim().toLowerCase()}`))
     .then(b => { MEID = btoa(String.fromCharCode(...new Uint8Array(b))).slice(0, 8); }).catch(() => {}) : Promise.resolve();
   const get = q => fetch(SYNC_URL + q).then(r => r.json()).catch(() => ({}));
-  return Promise.all([get('?answers=1'), STATS ? null : get('?stats=1'), digest]).then(([a, s]) => {
-    ELO_NOME = null; ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, rows: [], players: {}};
+  const who = me && sy.pin ? `&name=${encodeURIComponent(me)}&pin=${encodeURIComponent(sy.pin)}` : '';
+  return Promise.all([get('?answers=1' + who), STATS ? null : get('?stats=1'), digest]).then(([a, s]) => {
+    ELO_NOME = null; if (a && a.me) MEID = a.me; ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, rows: [], players: {}};
     if (s) { STATS = s.ok ? s.photos || {} : {}; RAS = s.ok ? s.ras || {} : {}; }
   });
 }
