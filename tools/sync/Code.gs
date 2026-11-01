@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 11 (2026-11-01: v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 12 (2026-11-01: v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -20,7 +20,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 11;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 12;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -82,7 +82,8 @@ function doGet(e){
 // never name/pin, so an older script answers 'input' and never mistakes a report for an empty progress write.
 function doPost(e){
   const p = JSON.parse(e.postData.contents);
-  if (Array.isArray(p.reports)) return json_(logReports_(p));
+  if (Array.isArray(p.anonAnswers)) return json_(anon_(p));  // v12: players not signed in (see anon_)
+  if (Array.isArray(p.reports)) { if (over_('reports', 300)) return json_({ok: false, error: 'busy'}); return json_(logReports_(p)); }
   if (p.readReports) return json_(reports_(p.token));  // admin: POST {readReports: 1, token} (see reports_)
   if (p.users || p.userData || p.userDelete || p.userMerge) return json_(users_(p));  // admin user management (v11, see users_)
   const {name, pin} = clean_(p);
@@ -96,6 +97,12 @@ function doPost(e){
     // joined; the app then asks the player to sign out (and to sign in under the other name).
     const g = r ? null : gone_(name, h);
     if (g) { if (g.into) logAnswers_(g.into, p.answers); return json_({ok: false, error: 'gone', into: g.into, log: !!g.into}); }
+    // Caps (v12): at most 40 new accounts and 3000 answers per name every 6 hours; over that, nothing is written and the
+    // app keeps its answers to send later. A real class of RAs stays far below both.
+    if (!r && over_('newacct', 40)) return json_({ok: false, error: 'busy'});
+    if (Array.isArray(p.answers) && p.answers.length && over_('n:' + name.toLowerCase(), 3000, p.answers.length)) return json_({ok: false, error: 'busy'});
+    // The first send after signing in carries the device's anonymous id: its anonymous answers become this name's.
+    if (r && /^[a-z0-9]{8,16}$/.test(String(p.anon || ''))) relabel_('Answers', 1, '~anon ' + p.anon, name);
     if (r && sh.getRange(r, 7).getValue() !== h) { failed_(name); return json_({ok: false, error: 'pin'}); }
     logAnswers_(name, p.answers);
     const rev = r ? readData_(name, String(sh.getRange(r, 8).getValue() || '')).rev : 0;
@@ -412,4 +419,30 @@ function autoUpdate(){
     log('deployed v' + dv + ' as version ' + ver.versionNumber + ' (' + deps.length + ' web app deployment' + (deps.length === 1 ? '' : 's') + ')' + (v > VERSION ? '' : ', finishing an interrupted update'));
     return 'deployed v' + dv;
   } catch (e) { log('error: ' + e.message); return 'error'; }
+}
+
+// Players who never sign in (v12, Pierre 2026-11-01: their answers should still improve the photo ratings and the
+// confusions). POST {anon: random device id, anonAnswers: [...]}: logged like a signed-in player's, under the name
+// "~anon <id>" (no name, no code). Signing in later moves them to the name (doPost, p.anon). Caps: 100 answers per
+// request, 600 per id and 6000 for all anonymous players every 6 hours; over that: {ok: false, error: 'busy'}.
+function anon_(p){
+  const id = String(p.anon || '');
+  if (!/^[a-z0-9]{8,16}$/.test(id)) return {ok: false, error: 'input'};
+  const L = p.anonAnswers.slice(0, 100);
+  if (over_('a:' + id, 600, L.length) || over_('anon', 6000, L.length)) return {ok: false, error: 'busy'};
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try { logAnswers_('~anon ' + id, L); } finally { lock.releaseLock(); }
+  return {ok: true, log: true};
+}
+// Flood guard: a counter per key in the script cache for a 6-hour window. Returns true (and counts nothing) when adding
+// n would pass the limit; the first refusal of a window is written to the "Alerts" tab, so Pierre and agents see it.
+function over_(key, limit, n){
+  n = n || 1;
+  const c = CacheService.getScriptCache(), w = Math.floor(Date.now() / 216e5), k = 'cap:' + key + ':' + w, v = Number(c.get(k) || 0);
+  if (v + n > limit) {
+    if (!c.get(k + ':alert')) { c.put(k + ':alert', '1', 21600); try { sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), safe_('limit reached: ' + key + ' (' + limit + ' per 6 h)')]); } catch (e) {} }
+    return true;
+  }
+  c.put(k, String(v + n), 21600);
+  return false;
 }

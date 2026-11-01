@@ -17,7 +17,7 @@ const ans = (id, extra = {}) => ({
 
 test('new RA, save and load back, with revision', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 11});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 12});
   const r = s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}, answers: [ans('a1')]});
   assert.strictEqual(r.ok, true);
   assert.strictEqual(r.log, true);
@@ -138,7 +138,7 @@ const rep = (id, extra = {}) => ({
 test('reports: logged once, reporter verified by code, never mistaken for a progress write', () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}});
-  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 11});
+  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 12});
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1'), rep('r2', {why: 'multi', fix: ''})]});
   s.post({rname: 'Bob', rpin: '', reports: [rep('r3', {why: 'bogus'}), rep('r4', {why: 'photo', note: '=HYPERLINK("x")'})]});
   const R = s.sheets.Reports;
@@ -198,7 +198,7 @@ test('users: admin token only; one row per player with their numbers', () => {
   assert.strictEqual(s.post({users: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
   const r = s.post({users: 1, token: TOK});
   assert.strictEqual(r.ok, true);
-  assert.strictEqual(r.v, 11);
+  assert.strictEqual(r.v, 12);
   const ana = r.users.find(u => u.name === 'Ana');
   assert.strictEqual(ana.answers, 2);
   assert.strictEqual(ana.right, 1);
@@ -228,7 +228,7 @@ test('userMerge: progress written to into, answers and reports relabelled, from 
     [['Ana B', 'Ana']]
   );
   // The old device of "Ana B": a pull and a send both get 'gone', and its new answers go to Ana.
-  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 11});
+  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 12});
   const w = s.post({name: 'Ana B', pin: '5678', data: prog(9), summary: {}, answers: [ans('b2')]});
   assert.strictEqual(w.error, 'gone');
   assert.strictEqual(w.log, true);
@@ -345,4 +345,39 @@ test('autoUpdate: an interrupted update (code in place, deploy failed) is finish
     ['post /versions', 'get /deployments', 'put /deployments/WEB']
   );
   assert.strictEqual(s2.props.AUTO_PENDING, undefined);
+});
+
+// Anonymous answers (v12).
+test('anonymous answers are logged under ~anon <id>, then move to the name at sign-in', () => {
+  const s = loadCodeGs();
+  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: 12});
+  assert.strictEqual(s.post({anon: 'Bad Id!', anonAnswers: [ans('z3')]}).error, 'input');
+  assert.deepStrictEqual(
+    s.sheets.Answers.rows.slice(1).map(r => r[0]),
+    ['~anon abc123xyz0', '~anon abc123xyz0']
+  );
+  // New account: nothing to move yet (the name has no row); first sync of an existing name with anon moves them.
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: []});
+  const r = s.post({name: 'Ana', pin: '1234', data: prog(2), summary: {}, answers: [ans('z1'), ans('z2'), ans('z4')], anon: 'abc123xyz0'});
+  assert.strictEqual(r.ok, true);
+  const names = s.sheets.Answers.rows.slice(1).map(x => x[0]);
+  assert.deepStrictEqual(names, ['Ana', 'Ana', 'Ana'], 'moved to the name, and the resent answers were not logged twice');
+});
+
+test('floods are capped: per anonymous id, and the first refusal goes to the Alerts tab', () => {
+  const s = loadCodeGs(),
+    many = n => Array.from({length: n}, (_, i) => ans('f' + Math.random().toString(36).slice(2, 8) + i));
+  for (let i = 0; i < 6; i++) assert.strictEqual(s.post({anon: 'flooder001', anonAnswers: many(100)}).ok, true);
+  assert.strictEqual(s.post({anon: 'flooder001', anonAnswers: many(10)}).error, 'busy');
+  assert.strictEqual(s.post({anon: 'flooder001', anonAnswers: many(10)}).error, 'busy');
+  assert.strictEqual(s.sheets.Alerts.rows.length, 2, 'one alert line (plus the header), not one per refusal');
+  assert.match(String(s.sheets.Alerts.rows[1][1]), /limit reached: a:flooder001/);
+  assert.strictEqual(s.post({anon: 'someoneelse', anonAnswers: many(5)}).ok, true, 'other players are not blocked');
+});
+
+test('new accounts are capped per 6 hours', () => {
+  const s = loadCodeGs();
+  for (let i = 0; i < 40; i++) assert.strictEqual(s.post({name: 'P' + i, pin: '1234', data: prog(1), summary: {}}).ok, true);
+  assert.strictEqual(s.post({name: 'P40', pin: '1234', data: prog(1), summary: {}}).error, 'busy');
+  assert.strictEqual(s.post({name: 'P1', pin: '1234', data: prog(2), summary: {}}).ok, true, 'existing accounts still sync');
 });
