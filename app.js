@@ -1428,8 +1428,12 @@ const knownP = n => {
   });
   return L;
 };
+// A miss never raises L: on the hardest photos the slip chance passes the wrong-guess chance, and with the learning step
+// a miss used to lift the genus (0.96 -> 0.964; Pierre: the % falls back on a miss). Found by draw.smoke.js on PR #336.
 function bktObs(n, s, good, b, k) {
-  s.L = Math.round(bktStep(knownP(n), good, b, k) * 1e4) / 1e4;
+  const L0 = knownP(n),
+    L = bktStep(L0, good, b, k);
+  s.L = Math.round((good ? L : Math.min(L, L0)) * 1e4) / 1e4;
 }
 // Silent mastery exam (Pierre, 2026-11-01: "an ultimate test to go from 95% to 100%"). Its count (2/5) is shown nowhere:
 // the genus's % creeping up from 95%, then falling back on a miss, keeps the mystery (Pierre). Once a genus is 95% sure (L),
