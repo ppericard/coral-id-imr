@@ -3695,7 +3695,8 @@ function renderUsers() {
   // Answers without a name: devices that never signed in (~anon) and deleted accounts, by anonymous id.
   const named = new Set(U.map(u => u.id).filter(Boolean)),
     A = {};
-  if (named.size)
+  // Sheet v13 gives ids; an older one doesn't, and every answer would look anonymous. With v13 an empty list is fine.
+  if ((USERS.v || 0) >= 13)
     (ANS.rows || []).forEach(r => {
       if (named.has(r[0])) return;
       const a = (A[r[0]] = A[r[0]] || {n: 0, ok: 0, last: 0});
@@ -3769,6 +3770,7 @@ function bindUsers() {
     rl.onclick = () => {
       USERS = null;
       ANS = null;
+      STATS = null; // levels (ras) too, not only the counts
       render();
     };
   $v.querySelectorAll('[data-uopen]').forEach(
