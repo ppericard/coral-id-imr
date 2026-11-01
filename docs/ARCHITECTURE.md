@@ -173,6 +173,7 @@ Still useful / re-runnable:
 - Run: `python3 -m http.server 8000` at the repo root, open <http://localhost:8000> (`admin.html` for the back-office; without a token use `admin.html?readonly`). Sync and photo Elo talk to the live Apps Script even locally.
 - Deploy: GitHub Pages from `main` (root, `.nojekyll`); a merge to `main` is live within a minute or two. The service worker serves the cached shell, so bump the `?v=` numbers and `sw.js` `V` (see AGENTS.md) or users keep the old files. `curation.json` is always fetched with `no-cache`.
 - Pierre's Publish triggers `.github/workflows/approved-photos.yml`, which commits to `main` on its own.
+- **Stuck Pages deploy** (seen 2026-11-01): if the live site stops updating, check the "pages build and deployment" runs in Actions. When the deploy job fails with "due to in progress deployment. Please cancel <sha> first", re-run that older `<sha>` run in full (its deploy then completes), then re-run the failed jobs of the newest run. Check: the live `admin.html` names the same `admin.js?v=` as `main`.
 
 ## Players' reports (2026-11-01)
 
