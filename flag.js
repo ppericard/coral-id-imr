@@ -23,7 +23,8 @@
     } catch (e) {}
   };
   const fileOf = im => {
-    const m = /img\/(.+?)(-s)?\.webp/.exec(im.currentSrc || im.src || '');
+    // Any of the photo's sizes (tools/photos.py): -t 240, -s 480, -m 960 px, or none (1600 px).
+    const m = /img\/(.+?)(-[tsm])?\.webp/.exec(im.currentSrc || im.src || '');
     return m ? m[1] : null;
   };
   // Genus and view of a photo file, from the built data (views, more, lecture photos, approved book photos).
