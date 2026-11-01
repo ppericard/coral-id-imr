@@ -5619,3 +5619,29 @@ footer .rep:hover {
     font-size: var(--fs-m);
   }
 }
+/* 🏆 page tabs (Leaderboard / Achievements) and the share of players per achievement */
+.btabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.btabs a {
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: var(--fs-s);
+  font-weight: 600;
+}
+.btabs a[aria-current='page'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--surface);
+}
+.achp {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
