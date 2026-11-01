@@ -1,9 +1,9 @@
 // Offline cache: app shell first, then photos as they are viewed.
-const V = 'imr-coral-id-v171';
+const V = 'imr-coral-id-v172';
 // Photos live in their own cache that no deploy deletes (code review 2026-11-01, H3): bumping V used to wipe every
 // offline photo. Capped at PH_MAX entries, oldest first out (cache keys keep insertion order).
 const PH = 'imr-photos-v1', PH_MAX = 2500;
-const SHELL = ['./', 'index.html', 'app.css?v=77', 'core.js?v=1', 'app.js?v=117', 'flag.js?v=4', 'quality.json?v=3', 'picks.json?v=1', 'data.json?v=25', 'forms.json?v=7', 'icon.svg', 'manifest.webmanifest', 'proto/lab.js?v=55', 'proto/lab.css?v=41', 'home-art.js?v=3', 'home.js?v=23', 'home.css?v=20', 'tour.js?v=6',
+const SHELL = ['./', 'index.html', 'app.css?v=77', 'core.js?v=1', 'app.js?v=118', 'flag.js?v=4', 'quality.json?v=3', 'picks.json?v=1', 'data.json?v=25', 'forms.json?v=7', 'icon.svg', 'manifest.webmanifest', 'proto/lab.js?v=55', 'proto/lab.css?v=41', 'home-art.js?v=3', 'home.js?v=23', 'home.css?v=20', 'tour.js?v=6',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'].map(f => `proto/${f}.js?v=55`)];
 self.addEventListener('install', e => e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));
