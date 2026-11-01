@@ -726,7 +726,10 @@ function renderMont(){
         <div class="adm-msides"><div><i>${esc(p.A)}</i>${strip(p, 'a', m.LA, m.a)}</div><div><i>${esc(p.B)}</i>${strip(p, 'b', m.LB, m.b)}</div></div></div>` : '<p class="note">No view with photos of both.</p>'}</article>`; }).join('')}</section>`;
   const cur = k => ({...((DRAFT.mont || {})[k] || {})});
   const keep = fn => { const y = window.scrollY; fn(); renderMont(); window.scrollTo(0, y); };
-  $v.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => keep(() => setMont(b.dataset.k, {hide: cur(b.dataset.k).hide, v: b.dataset.mv})));
+  // Changing the view keeps the two photos on show when they belong to the new view (always so for All).
+  $v.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => keep(() => { const k = b.dataset.k, w = b.dataset.mv, p = L.find(x => x.k === k), m = montPick(p);
+    const has = (n, x) => x && montList(n, w).some(y => y.f === x.f) ? x.f : null;
+    setMont(k, {hide: cur(k).hide, v: w, a: has(p.A, m.a), b: has(p.B, m.b)}); }));
   $v.querySelectorAll('.adm-mth').forEach(b => b.onclick = () => keep(() => { const k = b.dataset.k, p = L.find(x => x.k === k), m = montPick(p);
     setMont(k, {hide: m.hide, v: m.v, a: m.a && m.a.f, b: m.b && m.b.f, [b.dataset.side]: b.dataset.f}); }));
   $v.querySelectorAll('[data-mauto]').forEach(b => b.onclick = () => { if (cur(b.dataset.k).v) keep(() => setMont(b.dataset.k, {hide: cur(b.dataset.k).hide})); });
