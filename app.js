@@ -2018,6 +2018,7 @@ function quizBoard() {
       .map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`)
       .join('')}</div>
     <div class="pring" style="background:conic-gradient(${ring})"><span><b>${progPct(list)}%</b><small>${count('ok')}/${list.length} learned</small></span></div>
+    <a class="pboardl" id="pboardl" href="#board">🏆 Leaderboard</a>
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera"><b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Learned</p>
     ${
@@ -2032,6 +2033,12 @@ function quizBoard() {
   </aside></div>`;
   bindQuizNav('quiz-board');
   bindSync();
+  // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page).
+  loadBoard().then(B => {
+    const a = document.getElementById('pboardl'),
+      i = B && B.rows ? boardMe(B.rows) : -1;
+    if (a && i >= 0) a.innerHTML = `🏆 <b>#${i + 1}</b> · Elo ${eloScore(B.rows[i][2])}`;
+  });
   // Phones: the Photos/Slate/Groups switch sits above the board and stays pinned while the page scrolls (Pierre, 2026-10-31).
   if (matchMedia(MQ.phone).matches) {
     const sg = $v.querySelector('.pboard .gside .seg');
@@ -2187,7 +2194,9 @@ function syncSummary() {
     seen: n.filter(x => genera[x] !== 'new').length,
     total: n.length,
     review: n.filter(x => genera[x] === 'weak'),
-    genera
+    genera,
+    pct: progPct(n), // the public leaderboard (sheet v14): progress as the header shows it
+    board: boardOn() ? 1 : 0
   };
 }
 const syncGet = (a = SYNC) => fetch(`${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}`).then(r => r.json());
@@ -2917,6 +2926,7 @@ function sectionOf(h) {
   if (!h || h === 'home') return 'home';
   if (h.startsWith('lab')) return 'lab';
   if (h === 'progress' || h === 'quiz-board') return 'progress';
+  if (h === 'board') return 'board';
   const m = modeOf(h);
   return Object.keys(MODES).find(t => MODES[t].some(x => x[0] === m)) || 'learn';
 }
@@ -2970,6 +2980,89 @@ function showModes(tab, h) {
   const on = $modes.querySelector('[aria-current]');
   if (on && $modes.scrollWidth > $modes.clientWidth) $modes.scrollLeft = on.offsetLeft - ($modes.clientWidth - on.offsetWidth) / 2;
 }
+// Public leaderboard (Pierre, 2026-11-01): every signed-in player by progress %, then Elo (their ability from every
+// answer, so players at 100% keep competing). 🏆 in the header opens it from any page; My progress shows the player's
+// rank and Elo with a link here. Signed-in players appear by default; ⚙ Leaderboard Off takes them off (sent with the next
+// sync, the sheet's Board column). The sheet serves it (GET ?board=1, v14, cached 5 minutes there, 1 minute here).
+const BOARD = 'imr-board';
+const boardOn = () => store.get(BOARD, 1) !== 0;
+// Elo score shown to players: the ability (0 = able to name an average photo, same scale as photo difficulty) as a
+// familiar number around 1000; +1 ability = +200.
+const eloScore = a => (typeof a === 'number' ? Math.round(1000 + 200 * a) : '–');
+let boardAt = 0,
+  boardP = null;
+const loadBoard = () => {
+  if (!boardP || Date.now() - boardAt > 60000) {
+    boardAt = Date.now();
+    boardP = fetch(SYNC_URL + '?board=1')
+      .then(r => r.json())
+      .then(j => (j && j.ok && Array.isArray(j.rows) ? j : {err: j && j.v < 14 ? 'old' : 'na'}))
+      .catch(() => ({err: 'offline'}));
+  }
+  return boardP;
+};
+const boardMe = rows => (SYNC && SYNC.name ? rows.findIndex(r => String(r[0]).toLowerCase() === SYNC.name.trim().toLowerCase()) : -1);
+function viewBoard() {
+  // The title sits inside .board: pageHelp drops top-level titles where the header names the page, and here it doesn't.
+  $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. To leave the leaderboard, ⚙ Settings, Leaderboard: Off.</p>
+  <div class="board"><h2 class="btitle">🏆 Leaderboard</h2><div id="board"><p class="note">Loading…</p></div></div>`;
+  loadBoard().then(B => {
+    const box = document.getElementById('board');
+    if (!box || hashNow() !== 'board') return;
+    if (!B || B.err) {
+      box.innerHTML = `<p class="note">${B && B.err === 'offline' ? 'The leaderboard needs a connection.' : 'The leaderboard is not available yet.'}</p>`;
+      return;
+    }
+    const me = boardMe(B.rows);
+    const note = !SYNC
+      ? '<p class="note">Sign in (⚙ Settings) to appear on the leaderboard.</p>'
+      : !boardOn()
+        ? '<p class="note">You are not on the leaderboard (⚙ Settings, Leaderboard: Off).</p>'
+        : me < 0
+          ? '<p class="note">You will appear here after your next answers are saved.</p>'
+          : '';
+    box.innerHTML =
+      note +
+      (B.rows.length
+        ? `<ol class="blist">${B.rows
+            .map(
+              (r, i) =>
+                `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span><span class="belo" title="Elo: level from all answers">Elo ${eloScore(r[2])}</span></li>`
+            )
+            .join('')}</ol>`
+        : '<p class="note">Nobody yet: be the first.</p>');
+    const m = box.querySelector('.me');
+    if (m && m.scrollIntoView && m.getBoundingClientRect().bottom > innerHeight) m.scrollIntoView({block: 'center'});
+  });
+}
+// Told once, when the leaderboard arrives, to players already signed in: their name now shows there.
+function boardNotice() {
+  if (!SYNC || store.get('imr-board-told', 0)) return;
+  store.set('imr-board-told', 1);
+  const t = document.createElement('div');
+  t.className = 'apptoast';
+  t.setAttribute('role', 'status');
+  t.innerHTML = `<span>🏆 New: a <a href="#board">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.</span><button type="button" aria-label="Close">✕</button>`;
+  t.querySelector('button').onclick = () => t.remove();
+  t.querySelector('a').onclick = () => t.remove();
+  document.body.append(t);
+  setTimeout(() => t.remove(), 15000);
+}
+// ⚙ Leaderboard On / Off: saved here, sent with the next sync.
+const showBoardSet = () =>
+  document
+    .querySelectorAll('#boardset button')
+    .forEach(b => b.setAttribute('aria-pressed', String((b.dataset.board === '1') === boardOn())));
+document.querySelectorAll('#boardset button').forEach(
+  b =>
+    (b.onclick = () => {
+      store.set(BOARD, b.dataset.board === '1' ? 1 : 0);
+      showBoardSet();
+      boardP = null;
+      syncSoon();
+    })
+);
+showBoardSet();
 function route() {
   if (CUR_NEW) {
     CUR = CUR_NEW;
@@ -2985,6 +3078,8 @@ function route() {
   $gpop.hidden = true;
   showProg();
   tab === 'progress' ? $prog.setAttribute('aria-current', 'page') : $prog.removeAttribute('aria-current');
+  const bg = document.getElementById('boardgo');
+  if (bg) tab === 'board' ? bg.setAttribute('aria-current', 'page') : bg.removeAttribute('aria-current');
   document
     .querySelectorAll('nav [data-tab]')
     .forEach(b => (b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
@@ -3012,6 +3107,7 @@ function route() {
   else if (h === 'quiz-course')
     location.replace('#quiz'); // the Lecture photo set was removed (Pierre, 2026-10-31)
   else if (h === 'progress' || h === 'quiz-board') quizBoard();
+  else if (h === 'board') viewBoard();
   else if (h.startsWith('quiz-duel')) {
     const [, a, b] = h.split('|');
     quizDuel(a, b);
@@ -3236,6 +3332,7 @@ Promise.all([fetch('data.json?v=29').then(r => r.json()), curation(), forms(), j
     loadStats();
     window.APP_READY = true;
     if (window.tourFirst) tourFirst();
+    boardNotice();
   })
   .catch(() => {
     $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>';

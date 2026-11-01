@@ -17,7 +17,7 @@ const ans = (id, extra = {}) => ({
 
 test('new RA, save and load back, with revision', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 13});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 14});
   const r = s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}, answers: [ans('a1')]});
   assert.strictEqual(r.ok, true);
   assert.strictEqual(r.log, true);
@@ -138,7 +138,7 @@ const rep = (id, extra = {}) => ({
 test('reports: logged once, reporter verified by code, never mistaken for a progress write', () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}});
-  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 13});
+  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 14});
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1'), rep('r2', {why: 'multi', fix: ''})]});
   s.post({rname: 'Bob', rpin: '', reports: [rep('r3', {why: 'bogus'}), rep('r4', {why: 'photo', note: '=HYPERLINK("x")'})]});
   const R = s.sheets.Reports;
@@ -198,7 +198,7 @@ test('users: admin token only; one row per player with their numbers', () => {
   assert.strictEqual(s.post({users: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
   const r = s.post({users: 1, token: TOK});
   assert.strictEqual(r.ok, true);
-  assert.strictEqual(r.v, 13);
+  assert.strictEqual(r.v, 14);
   const ana = r.users.find(u => u.name === 'Ana');
   // v13: the anonymous id of ?answers=1, so the admin can put names on the anonymous stats.
   const a = s.get({answers: 1});
@@ -232,7 +232,7 @@ test('userMerge: progress written to into, answers and reports relabelled, from 
     [['Ana B', 'Ana']]
   );
   // The old device of "Ana B": a pull and a send both get 'gone', and its new answers go to Ana.
-  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 13});
+  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 14});
   const w = s.post({name: 'Ana B', pin: '5678', data: prog(9), summary: {}, answers: [ans('b2')]});
   assert.strictEqual(w.error, 'gone');
   assert.strictEqual(w.log, true);
@@ -354,7 +354,7 @@ test('autoUpdate: an interrupted update (code in place, deploy failed) is finish
 // Anonymous answers (v12).
 test('anonymous answers are logged under ~anon <id>, then move to the name at sign-in', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: 13});
+  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: 14});
   assert.strictEqual(s.post({anon: 'Bad Id!', anonAnswers: [ans('z3')]}).error, 'input');
   assert.deepStrictEqual(
     s.sheets.Answers.rows.slice(1).map(r => r[0]),
@@ -401,5 +401,38 @@ test('anonymous answers also move to a brand-new account at its first sync', () 
   assert.deepStrictEqual(
     s.sheets.Answers.rows.slice(1).map(r => r[0]),
     ['Ben', 'Ben']
+  );
+});
+
+// Public leaderboard (v14).
+test('board: signed-in players by progress then level; opted-out players and their codes never shown', () => {
+  const s = seed();
+  s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {learned: 2, seen: 3, total: 39, pct: 41.6, board: 1}, answers: [ans('a3')]});
+  s.post({name: 'Ana B', pin: '5678', data: prog(2), summary: {learned: 1, seen: 1, total: 39, pct: 12, board: 0}, answers: []});
+  s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {pct: 41.6}, answers: [ans('c2')]});
+  const b = s.get({board: '1'});
+  assert.strictEqual(b.ok, true);
+  assert.strictEqual(b.v, 14);
+  assert.deepStrictEqual(
+    b.rows.map(r => r[0]),
+    ['Ana', 'Ben'].sort((x, y) => {
+      const lx = b.rows.find(r => r[0] === x)[2],
+        ly = b.rows.find(r => r[0] === y)[2];
+      return ly - lx;
+    }),
+    'Ana B opted out; equal progress ranks by level'
+  );
+  assert.ok(
+    b.rows.every(r => r[1] === 42 && typeof r[2] === 'number' && r[3] > 0),
+    'progress rounded, level and answers'
+  );
+  assert.ok(!JSON.stringify(b).match(/1234|1111|hash|imr-coral/), 'no code, hash or progress data');
+  // Cached 5 minutes, then the opt-out is seen.
+  s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {pct: 41.6, board: 0}, answers: []});
+  assert.strictEqual(s.get({board: '1'}).rows.length, 2, 'cached');
+  Object.keys(s.cache).forEach(k => delete s.cache[k]);
+  assert.deepStrictEqual(
+    s.get({board: '1'}).rows.map(r => r[0]),
+    ['Ana']
   );
 });
