@@ -62,18 +62,14 @@
    "quality": 3,
    "form": "U",
    "keep": "best",
-   "multi": true,
-   "note": "Soft coral polyps fill the lower left corner"
+   "note": "Soft coral polyps in the lower left corner"
   },
   "cynarina-cand-598236980": {
    "view": "wide",
-   "quality": 1,
+   "quality": 2,
    "form": "U",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Blurred red bubbly polyp; Cynarina likely"
+   "note": "Soft focus"
   },
   "cynarina-cand-110903717": {
    "view": "wide",
