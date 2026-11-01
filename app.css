@@ -272,6 +272,11 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 }
 .hero-ph img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border-radius:var(--r)}
 .idbox h3:first-child{margin-top:0}
+/* Genus sheet: the player's own level on this genus and what it still needs (only once seen). */
+.myprog{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:10px 0 12px;font-size:var(--fs-s);color:var(--muted)}
+.myprog .mpl{position:relative;display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:var(--pill);background:var(--lvc,var(--surface));color:var(--lvt,var(--ink));border:1px solid var(--lvc,var(--line));font-weight:600;text-decoration:none}
+.myprog .mpl.weak{border:2px solid var(--bad)}
+.myprog .pct{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-xs);font-weight:700;font-variant-numeric:tabular-nums}
 .idbox .crit{font-size:var(--fs-s)}
 .idbox .chips{margin-bottom:0}
 .idbox .kpick a{opacity:1;border-color:transparent;box-shadow:none;font-weight:500;font-size:var(--fs-s)}
@@ -689,15 +694,17 @@ a.lt:hover{border-color:var(--accent)}
 .pslate .ps.weak,.pseg a.weak{border:2px solid var(--bad)}
 .pslate .ps.weak::after,.pseg a.weak::after,.pwall .pw.weak::after,.plvl .pl-rev::before{z-index:1;content:"!";position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;background:var(--bad);color:var(--surface);font:700 var(--fs-2xs)/14px var(--body);text-align:center;font-style:normal}
 /* Scale legend under the ring: one swatch per step with its count, then the review marker. */
-.plvl{display:flex;gap:3px;justify-content:center;flex-wrap:wrap}
-.plvl span{position:relative;flex:1 1 0;min-width:40px;max-width:64px;display:flex;flex-direction:column;align-items:center;padding:4px 2px;border-radius:var(--r-sm);background:var(--lvc,var(--surface));color:var(--lvt,var(--ink));border:1px solid var(--lvc,var(--line));line-height:1.1}
+/* The six levels on one row, "Review" as its own slim row below, at every size (design review 2026-11-01 on phones;
+   desktop too since 2026-11-01: seven boxes in the side column cut "Not seen" and "Learned"). */
+.plvl{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px}
+.plvl span{position:relative;min-width:0;display:flex;flex-direction:column;align-items:center;padding:4px 0;border-radius:var(--r-sm);background:var(--lvc,var(--surface));color:var(--lvt,var(--ink));border:1px solid var(--lvc,var(--line));line-height:1.1}
 .plvl span.s0{border-style:dashed;color:var(--muted)}
 .plvl b{font-size:var(--fs-m);font-variant-numeric:tabular-nums}
-.plvl small{font-size:var(--fs-xs);white-space:nowrap}
-.plvl .pl-rev{border:2px solid var(--bad)}
+.plvl small{font-size:var(--fs-xs);text-align:center;max-width:100%}
+.plvl .pl-rev{grid-column:1/-1;flex-direction:row;justify-content:center;gap:6px;padding:2px 8px;border:2px solid var(--bad)}
 .plvl .pl-rev::before{top:-7px;right:-7px}
 .plvl .pl-rev.zero{border-color:var(--line)}
-.plvl .pl-rev.zero::before{background:var(--muted)}  /* nothing to review: the legend stays, without the alarm */
+.plvl .pl-rev.zero::before{display:none}  /* nothing to review: the legend stays, without any "!" (a grey one still read as an alarm, RA re-review 2026-11-01) */
 /* Progress towards Learned as a number at the right of a tile (with the 5px bar along its bottom). */
 .pslate .ps .pct,.pseg a .pct{display:inline-flex;align-items:center;gap:4px;color:inherit;text-align:right;margin-left:auto;padding-left:6px;font-size:.78em;font-weight:700;font-variant-numeric:tabular-nums;font-style:normal;flex:none}
 .pseg a{justify-content:flex-start;gap:4px}.pseg a i{margin:0 auto}
@@ -950,10 +957,12 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .pwall .pw{outline:0;border:2px solid transparent}
 .pwall .pw.weak{border-color:var(--bad)}
 .pwall .pw.s0{border:1px dashed var(--line)}
-.pwall .pw .pwb{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:4px;padding:3px 6px;opacity:1;font-size:var(--fs-xs);line-height:1.2;background:var(--lvc,var(--surface));color:var(--lvt,var(--muted));container-type:inline-size;white-space:nowrap}
-.pwall .pw .pwb i{overflow:hidden;text-overflow:ellipsis;min-width:0}
-/* Phones: the genus name is the tile's key information, so it wraps on two lines instead of being cut (design review 2026-11-01). */
-@media (max-width:599.98px){.pwall .pw .pwb{flex-wrap:wrap;gap:0 4px;padding:3px 5px}.pwall .pw .pwb i{flex:1 1 100%;white-space:normal;overflow-wrap:anywhere;line-height:1.15}.pwall .pw .pwb .pct{margin-left:0}}
+.pwall .pw .pwb{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:4px;padding:3px 6px;opacity:1;font-size:var(--fs-xs);line-height:1.2;background:var(--lvc,var(--surface));color:var(--lvt,var(--muted));container-type:inline-size;flex-wrap:wrap;column-gap:4px}
+/* The genus name is the tile's key information: never cut. It keeps its own line when it fits; otherwise the ring and %
+   move to a second line (tablet and desktop: "Duncanopsammia", RA re-review 2026-11-01), and a name wider than the tile
+   wraps (phones, design review 2026-11-01). */
+.pwall .pw .pwb i{flex:0 0 auto;max-width:100%;white-space:normal;overflow-wrap:break-word}
+@media (max-width:599.98px){.pwall .pw .pwb{padding:3px 5px}.pwall .pw .pwb i{flex:1 1 100%;line-height:1.15}.pwall .pw .pwb .pct{margin-left:0}}
 .pwall .pw .pwb .pct{display:inline-flex;align-items:center;gap:4px;margin-left:auto;font-size:.9em;font-weight:700;font-style:normal;font-variant-numeric:tabular-nums;flex:none}
 .pwall .pw.s5 .pwb i::after{content:" \2713";font-style:normal;font-weight:700}
 .pwall .pw:hover img{filter:none;transform:scale(1.03);transition:transform .2s}
@@ -1122,13 +1131,6 @@ html.touring body::after{content:"";display:block;height:80vh}
   .sections a[aria-current="page"] .tabi{background:color-mix(in srgb,var(--accent) 16%,transparent)}
   .sections a:hover{border-color:transparent}
   .sections a .tabn{color:var(--good)}
-}
-/* My progress legend on phones: the six levels on one row, "Review" as its own slim row below (design review 2026-11-01). */
-@media (max-width:599.98px){
-  .plvl{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px}
-  .plvl span{min-width:0;max-width:none;padding:4px 0}
-  .plvl small{white-space:normal;text-align:center;max-width:100%}
-  .plvl .pl-rev{grid-column:1/-1;flex-direction:row;justify-content:center;gap:6px;padding:2px 8px}
 }
 /* Genus sheet bar: Back reads as a button, not a stray link (design review 2026-11-01). */
 .modes.ctx .up{background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);border-radius:var(--pill);font-weight:600}
