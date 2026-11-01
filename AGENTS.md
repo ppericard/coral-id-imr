@@ -2,7 +2,10 @@
 
 Read this first if you are an AI agent (Claude Code, Codex, other) or a new developer picking up this repository. It holds what you cannot guess from the code: who the app is for, the owner's standing rules, how the pieces fit together and how to ship a change.
 
+**New here (e.g. a new Claude account)? Read [`docs/HANDOVER.md`](docs/HANDOVER.md) right after this file**: state of play, what Pierre still has to do, how to work with him, external resources, and a first prompt.
+
 Companion docs:
+- [`docs/HANDOVER.md`](docs/HANDOVER.md): handover of 2026-11-01 (the project moved to another Claude account; earlier memory, chats and claude.ai docs are not reachable). Reviews copied in [`docs/reviews/`](docs/reviews/README.md).
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): files, data model, build tools, admin, progress sync, deploy.
 - [`docs/DESIGN.md`](docs/DESIGN.md): design tokens (type scale, radii, shadows, colours) and the component inventory. Follow it for any UI change.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md): ideas discussed but not built yet, open questions, items waiting on someone. **Add to it whenever an idea is discussed and not implemented right away.**
@@ -21,12 +24,13 @@ Companion docs:
 These came from Pierre's explicit feedback. When in doubt, follow them over your own taste, and ask him rather than guessing.
 
 ### Content and sources
-1. **Never contradict or "correct" the IMR course or its lecturers** in the app. Keep the IMR wording (families, lecture lines, mnemonics, spellings). Where another source differs, add at most a discreet, dated, sourced note ("Source X (year) says…", shown as "Other sources" from `gen[g].info`), never "the lecture is wrong/outdated". Obvious slide slips are silently not reproduced and mentioned to Pierre only.
+1. **Never contradict or "correct" the IMR course or its lecturers** in the app. Keep the IMR wording (families, lecture lines, mnemonics, spellings). Where another source differs, add at most a discreet, dated, sourced note ("Source X (year) says…", shown as "Other sources" from `gen[g].info`), never "the lecture is wrong/outdated". Obvious slide slips are silently not reproduced and mentioned to Pierre only. When a source is old, trust IMR unless a very reliable *recent* source says otherwise; IMR trainers may be more up to date than the literature. Why: Pierre is new at IMR and the app is used there; visibly correcting the trainers would hurt his relationships ("Je ne veux pas me faire des ennemis").
 2. **Never invent categories or information.** Groupings come only from existing references: IMR Lecture 6 groups (1-11), Coral Finder 2022 categories/boxes, the 7 IMR growth forms, or a mix. Every clue, label or pair carries its source (slide number, CF page/box). Claude-made look-alike "families" were rejected.
 3. **IMR lecture cues are the most important content.** Two levels: the **ID tip** (`gen[g].qt`, from `tools/id_tips.txt`) is SHORT, 2-3 essentials, shown everywhere (quiz feedback, cards, ID tips view, comparisons) in a highlighted box; the full lecture cues (`gen[g].imr`, incl. review slides and presenter notes) appear only on the genus sheet under "IMR lecture notes".
-4. **Growth form is an entry point only**, never genus-specific and never a strict filter (rank, don't filter). Photos use the 7 IMR (AIMS lifeform) forms: Branching, Tabulate, Encrusting, Foliose/Plating, Massive, Submassive, Mushroom (+ "x" too close to tell, + separate "polyps extended" flag). One form per photo, the dominant visible one.
+4. **Growth form is an entry point only**, never genus-specific and never a strict filter (rank, don't filter). Photos use the 7 IMR (AIMS lifeform) forms: Branching, Tabulate, Encrusting, Foliose/Plating, Massive, Submassive, Mushroom (+ "x" too close to tell, + separate "polyps extended" flag). One form per photo, the dominant visible one. The polyps flag ✿ only for polyps visibly extended at colony scale, only for the Coral Finder "extended by day" genera (Alveopora, Duncanopsammia, Goniopora, Heliofungia, Plerogyra, Tubastraea), never on macro photos.
 5. **Everything produced is in English** (UI, docs, data, commit messages, artifact titles). Pierre chats in French; only chat may be French.
-6. Open discrepancies between sources are listed in `docs/ROADMAP.md` ("Questions for an IMR trainer"). Don't settle them yourself.
+6. Open discrepancies between sources are listed in `docs/ROADMAP.md` ("Questions for an IMR trainer"). Don't settle them yourself. The slide text is not the whole course: some points are only said in class or only shown in an uncaptioned photo, so a criterion missing from the slides is "check with an IMR trainer", never "not taught".
+6b. **Starred genera** (Duncanopsammia, Alveopora, Merulina, Cyphastrea, Halomitra) are on the slate *because* they look like surveyed genera: never show them as a separate "not covered" group; `shownGroup()` places them in the lecture group of their Coral Finder look-alikes (display only).
 
 ### Photos
 7. **Photo priority in every context: IMR lecture photos first, then Pierre's own (iNat user `ppericard`), then other iNaturalist observers and Coral Finder book photos only to fill gaps.** Covers and the first 3 ("featured") photos per view: IMR before Pierre's. IMR photos are never auto-rated Poor and never auto-excluded. Exception: the Coral Finder mixes sources on purpose for variety.
@@ -43,8 +47,9 @@ These came from Pierre's explicit feedback. When in doubt, follow them over your
 14. Difficulty is adaptive and continuous: per-genus player ability vs photo difficulty on one Elo scale (Pelánek 2016), ~80% target success, guaranteed variety and new photos, more single-view questions as the level rises (details in ARCHITECTURE.md). No manual Easy/Medium/Hard selector. Pierre's own answers bias photo difficulty (he knows the photos): admin Stats has a "Without me" switch; the games still use everyone's answers until RAs have played (ROADMAP). Starred genera are always included in Practice. Never split practice by lecture group.
 14a. **Bonus genera** (Pierre, 2026-11-01): a few genera off the slate that are common at Dauin and easily confused with slate genera (fire coral *Millepora* first) join the photo quiz and duels once the player has some progress (not at the very start, but soon; unlocked by progress, never time). They never count in slate progress, their ID tips are the Coral Finder's (labelled so), their game photos are Research Grade iNat (or Pierre's) only. Details: ARCHITECTURE.md "Bonus genera".
 14b. **All photos of one game question come from ONE observation (same colony)** (Pierre, 2026-11-01). Never top up a missing zoom level with another colony: a colony with one view becomes a single-view question.
-14c. **Answer choices get harder gradually** (Pierre, 2026-11-01: "at the very start it must be simple", traps appear little by little). In the photo quiz the wrong choices for a genus start easy (genera sharing no IMR growth form with it), and its look-alikes come in one by one, and soon (one after the first right answer, all three after about 5: look-alikes are one of the ways genera are learned), as the player's Elo ability on that genus rises (`TRAP`, `trapsFor()`, `distractors()` in `app.js`). Duels stay look-alike pairs by design.
-15. Visual recognition and fast side-by-side comparison beat theory. The 5-question observation routine is only for the very first contact.
+14c. **Answer choices get harder gradually** (Pierre, 2026-11-01: "at the very start it must be simple", traps appear little by little). In the photo quiz the wrong choices for a genus start easy (genera sharing no IMR growth form with it), and its look-alikes come in one by one, and soon (one after the first right answer, all three after about 5: look-alikes are one of the ways genera are learned), as the player's Elo ability on that genus rises (`TRAP`, `trapsFor()`, `distractors()` in `app.js`). Duels stay look-alike pairs by design. Official IMR / Coral Finder look-alikes only *seed* the confusions: real player answers then decide which genera get confused (Pierre, 2026-11-01; confusion scores, see ROADMAP).
+15. Visual recognition and fast side-by-side comparison beat theory. The 5-question observation routine is only for the very first contact. In the field people recognise genera by overall look; on photos they use the Coral Finder: growth form first, then a quick visual comparison of the candidates. Quiz feedback shows corallite traits and lecture cues, never growth form as the reason.
+15b. Short-term goal: ID on ideal photos, or on dives with time to look closely. ReefCloud point drills, realistic/degraded images, RealityScan and Metashape material are medium term (ROADMAP "Parked").
 
 ### UI and layout
 16. **Declutter**: only essentials on a page. No page titles or intro paragraphs; explanations go behind the shared "?" help button (`pageHelp()` moves any top-level `h2`, `.lede`, `.tips`, `.gloss`, `h3.label` there automatically). One shared mechanism for everything; no per-page exceptions; code homogeneous.
@@ -54,14 +59,18 @@ These came from Pierre's explicit feedback. When in doubt, follow them over your
 19b. **No third-party scripts** (the origin `ppericard.github.io` is shared and the admin token lives on it). A new external image or API host must be added to the CSP meta in `index.html`/`admin.html` (see ARCHITECTURE.md "Security model").
 20. No horizontal sliders. Visual and dynamic beats text. New features must not degrade the look.
 20b. Settings that were removed on purpose (don't bring them back): the "Photos from Dauin / Philippines / All" filter (PR #230; the IMR/own-first rule already does that job), the Reef theme, the quiz level selector.
+20c. **Never hardcode the genus count** ("39") in user-facing text: it changes (bonus genera). Docs may say 39 for the slate.
+20d. **Sign-in never on My progress**: signed out = a "Sign in" button in the header on every page; signed in = account line and Sign out at the top of ⚙. The welcome tour bubble never covers what it points at.
 21. Home = two big doors only ("Learn & practise", "Identify a coral"). Phones: bottom tab bar, no Tools/Lab tab (hammer icon in header).
 22. **Lab/Tools prototypes graduate into the main app only with Pierre's explicit approval.** Propose; never promote yourself.
-23. **Admin is for Pierre only**: minimal, no explanatory text on the page (tooltips = bare names; help behind the admin "?"), one-click segmented controls, header on one line.
+23. **Admin is for Pierre only**: minimal, no explanatory text on the page (tooltips = bare names; help behind the admin "?"), one-click segmented controls (reuse the existing segmented style, no default browser buttons, no lone ✓ marks), header on one line. Everyday per-photo actions (× exclude, Reject, Remove) are one click with **no confirmation**: Undo is the safety net (Pierre, PR #265); confirmations only for bulk or site-wide actions (Publish, Validate N, CF book switch). Same information = a filter; different information = a separate view (Pierre, PR #242).
 
 ### Working with Pierre
 24. Pierre wants agents to work autonomously on this repo, **including merging their own PRs**. Ask first only before destructive or irreversible actions (history rewrite, deleting data, bulk changes to his curation).
 25. Pierre prefers many prototypes first and trims later. He judges UX by taps/clicks, scrolls, and what is on screen versus elsewhere.
 26. Record every idea that is discussed but not implemented in `docs/ROADMAP.md`, with its source and status.
+27. **Fix by default**: after a review, fix every finding you can without asking ("fais corriger tout ce que tu peux faire corriger", 2026-11-01). Ask Pierre only real choices (one short question each, with a recommendation) or actions that need his hands (Apps Script redeploy, admin curation, IMR content). Never re-ask something already answered: check ROADMAP and PR descriptions.
+28. Pierre writes in French (often dictated); reply in French. The coral tools stay quick and standalone, not part of ReefRecall (his separate app).
 
 ## Repository map (short)
 
@@ -103,6 +112,8 @@ Details in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 - **This file**: the standing rules. Keep it current when Pierre states a new lasting rule.
 - **`docs/ROADMAP.md`**: deferred ideas, open questions, pending actions.
-- **Pull requests** (#1-#244 by 2026-11-01): each PR description explains a decision; `git log` titles are a good index.
+- **`docs/HANDOVER.md`**: state at the account switch (2026-11-01), Pierre's pending actions, external resources, Apps Script redeploy steps.
+- **`docs/reviews/`**: the last expert reviews, with what is still open.
+- **Pull requests** (#1-#285+ by 2026-11-01): each PR description explains a decision; `git log` titles are a good index.
 - **Code comments**: most non-obvious behaviours are explained in a comment right above the code, often with the date and "Pierre" when it was his call.
-- Claude project memory and design docs on claude.ai (linked in ROADMAP.md) hold the conversation history, but they are not reachable by every agent: anything that matters must also be in this repo.
+- The original Claude project memory and the claude.ai design docs linked in ROADMAP.md are **not reachable** from the new account (handover 2026-11-01): their substance was copied into this repo. From now on, anything that matters must be in this repo, not only in an agent's memory.

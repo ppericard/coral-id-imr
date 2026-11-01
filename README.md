@@ -4,11 +4,11 @@ A static web app for learning the 39 coral genera on the IMR (Institute for Mari
 
 Live: <https://ppericard.github.io/coral-id-imr/> · Built for the Research Assistants trained at IMR, whose first task is genus-level labelling of benthic photos in ReefCloud.
 
-**Docs:** [AGENTS.md](AGENTS.md) (handover and standing rules for any agent or developer) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (files, data, admin, sync, deploy) · [docs/ROADMAP.md](docs/ROADMAP.md) (ideas not built yet, open questions).
+**Docs:** [AGENTS.md](AGENTS.md) (standing rules for any agent or developer) · [docs/HANDOVER.md](docs/HANDOVER.md) (state of play and how to take over) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (files, data, admin, sync, deploy) · [docs/ROADMAP.md](docs/ROADMAP.md) (prioritised backlog, open questions) · [docs/DESIGN.md](docs/DESIGN.md) (design tokens and components) · [docs/reviews/](docs/reviews/README.md) (expert reviews).
 
 ## What's inside
 
-- **Learn**: the Genera page (photos or short ID tips, in IMR lecture-group or slate order); a genus sheet per genus with three photo views (colony, closer, corallites), the IMR lecture notes, a mnemonic, Coral Finder features and "Don't confuse with"; Look-alikes, a deck of classic pair montages.
+- **Learn**: the Genera page (photos or short ID tips, in IMR lecture-group or slate order); a genus sheet per genus with three photo views (colony, close-up, corallites), the IMR lecture notes, a mnemonic, Coral Finder features and "Don't confuse with"; Look-alikes, a deck of classic pair montages.
 - **Practice**: Photo → genus (adaptive difficulty), look-alike duels and Memory (colony ↔ corallites). From 10% progress, bonus genera off the slate that are common at Dauin (fire coral *Millepora* first) join the quiz and duels, outside the slate score.
 - **Identify**: the Coral Finder, a clue-based ranking that follows the Coral Finder 2022 book (growth form, then box, then corallite clues), also listing 27 non-IMR genera seen at Dauin.
 - **My progress**: learned / learning / review per genus on a 6-step colour scale, synced to a Google Sheet when an RA signs in.
