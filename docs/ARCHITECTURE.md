@@ -123,7 +123,7 @@ For Pierre only (not linked except from ⚙ for token holders). Modes by hash: g
 - `Answers` columns: Name, Time, Genus shown, Answered, Right, Mode, Photos (space-separated file stems), Id, Expected, Ability, New photos.
 - Version history: v2 Answers/Activity tabs; v3 `?stats=1` photo difficulty; v4 `?answers=1` anonymous ids (PR #195); v5 answers carry expected success, ability, new photos, single-view answers count +0.5 harder (PRs #197, #201). v6 progress of any size, stale-write check, input hardening, PIN throttle, secret anonymous-id salt (code review, 2026-11-01). **v5 is deployed and verified (2026-11-01); v6 redeploy pending.** The app and admin work with v5 and v6. Every reply carries `v`, so the app and admin can tell which script is live.
 - The app keeps unsent answers (max 2,000) until the server confirms `log: true`.
-- Tests: `node --test tests/*.test.js` runs `tools/sync/Code.gs` against an in-memory sheet (`tests/gas.js`).
+- Tests: `node --test tests/*.test.js` runs `tools/sync/Code.gs` against an in-memory sheet (`tests/gas.js`), and checks `core.js` (`merge3`, `mergeProgress`, and `eloOf` against `stats_`).
 
 ## Tools (`tools/`)
 

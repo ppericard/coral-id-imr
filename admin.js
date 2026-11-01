@@ -18,30 +18,7 @@ const ver = p => p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv
 const img = (p, s) => p.r && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : `img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
-// The draft is never published as a whole copy: it is merged, key by key, onto the latest published curation.
-// merge3(base, mine, theirs): base = the published curation this draft started from; a key I changed since base
-// keeps my value, every other key takes the published one (so choices published from another browser or device
-// are never lost). Objects merge key by key; lists and plain values are single choices. Same choice on both sides = conflict, mine wins.
-const isObj = o => o && typeof o === 'object' && !Array.isArray(o), eq = (a, b) => JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
-// conf (optional): collects the paths where both sides changed the same choice differently, so Publish can say which
-// published choices this draft replaced (the rule stays the same: mine wins).
-function merge3(base, mine, theirs, conf, path = []){
-  const b = isObj(base) ? base : {}, m = isObj(mine) ? mine : {}, t = isObj(theirs) ? theirs : {}, out = {};
-  new Set([...Object.keys(b), ...Object.keys(m), ...Object.keys(t)]).forEach(k => {
-    const both = isObj(m[k]) && isObj(t[k]);
-    if (conf && !both && !eq(m[k], b[k]) && !eq(t[k], b[k]) && !eq(m[k], t[k])) conf.push([...path, k]);
-    const v = eq(m[k], b[k]) ? t[k] : eq(t[k], b[k]) ? m[k] : both ? merge3(b[k], m[k], t[k], conf, [...path, k]) : m[k];
-    // A copy, never a shared object: setQ & co. edit DRAFT's maps in place, and a map shared with SAVED would change
-    // both, hiding the edit from Publish (code review 2026-11-01).
-    if (v !== undefined && !(isObj(v) && !Object.keys(v).length && k !== 'genera')) out[k] = v && typeof v === 'object' ? clone(v) : v; });
-  return out;
-}
-// An old draft saved before drafts kept their base: add what it has on top of the published curation, never remove.
-function mergeOld(mine, theirs){
-  const m = isObj(mine) ? mine : {}, t = isObj(theirs) ? theirs : {}, out = {...t};
-  Object.keys(m).forEach(k => { out[k] = isObj(m[k]) && isObj(t[k]) ? mergeOld(m[k], t[k]) : m[k] === undefined ? t[k] : m[k]; });
-  return out;
-}
+// merge3 (three-way merge of a draft onto the latest published curation) and mergeOld live in core.js.
 // Re-base the draft (and every Undo/Redo step) onto a newer published curation.
 // Returns the paths where the draft replaced a choice published from elsewhere (see merge3).
 function rebase(next){
@@ -1242,19 +1219,7 @@ function loadStats(){
 // bias their difficulty). "All" is the sheet's ?stats=1, the ratings the games use. "Without me" replays the same Elo
 // (eloOf, a copy of stats_ in tools/sync/Code.gs: keep the two in step) over the answer log minus MEID's answers.
 // Nothing is reset or stored: the log is kept, so any filter is a fresh replay.
-function eloOf(rows){
-  const P = {}, R = {}, sig = x => 1 / (1 + Math.exp(-x));
-  rows.slice().sort((a, b) => a[1] - b[1]).forEach(r => {
-    const fs = r[6].split(/\s+/).filter(Boolean); if (!r[0] || !fs.length) return;
-    const ok = r[4] ? 1 : 0, g = r[5].indexOf('quiz-duel') === 0 ? 0.5 : 0.25, ra = R[r[0]] = R[r[0]] || [0, 0];
-    const ph = fs.map(f => P[f] = P[f] || [0, 0, 0]), b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
-    const d = ok - (g + (1 - g) * sig(ra[0] - b));
-    ra[0] += 0.6 / (1 + ra[1] / 40) * d; ra[1]++;
-    ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * d; p[2]++; p[1] += ok; });
-  });
-  const out = {}; Object.keys(P).forEach(f => out[f] = [Math.round(P[f][0] * 100) / 100, P[f][2], P[f][1]]);
-  return out;
-}
+// eloOf(rows) lives in core.js (tests/core.test.js checks it against Code.gs stats_).
 let ELO_NOME = null;
 const photoStats = () => SF.elo !== 'others' || !MEID || !ANS ? STATS : (ELO_NOME = ELO_NOME || eloOf(ANS.rows.filter(r => r[0] !== MEID)));
 const eloSeg = () => MEID ? segBtns('elo', [['all', 'All'], ['others', 'Without me']]) : '';

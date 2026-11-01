@@ -62,6 +62,8 @@ These came from Pierre's explicit feedback. When in doubt, follow them over your
 | Path | What |
 |---|---|
 | `index.html`, `app.js`, `app.css` | The public app (router, all main pages, games, progress, sync). |
+| `core.js` | Pure functions shared by app and admin, tested in `tests/`: curation merge (`merge3`, `mergeOld`), two-device progress merge (`mergeProgress`), photo Elo replay (`eloOf`, same rules as `Code.gs` `stats_`). |
+| `tests/` | `node --test tests/*.test.js`: `core.js` and the sync script against an in-memory sheet (`gas.js`). |
 | `home.js`, `home-art.js`, `home.css` | Home page and its SVG schematics. |
 | `tour.js` | First-visit guided tour (`?tour` forces it). |
 | `flag.js` | ⚑ "bad photo" button, only in Pierre's admin browser. |
@@ -79,8 +81,8 @@ Details in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## How to make a change
 
-1. Branch from `main` (fetch first: `main` moves often, see below). Run locally: `python3 -m http.server 8000` and open <http://localhost:8000>. There is no build step. Tests: `node --test tests/*.test.js` (Node only, no npm); add one when you change logic they cover.
-2. **Cache busting (easy to forget):** when you change a shell file, bump its `?v=N` in `index.html` (and in `app.js` for `data.json`/`forms.json` fetches), the same entry in `sw.js` `SHELL`, and the `sw.js` cache name `V`. For a Lab file, bump `LAB_V` in `proto/lab.js` and `proto/lab.*?v=` in `index.html` and `sw.js`. Other parallel branches bump these too: on rebase, take a number above `main`'s.
+1. Branch from `main` (fetch first: `main` moves often, see below). Run locally: `python3 -m http.server 8000` and open <http://localhost:8000>. There is no build step. Tests: `node --test tests/*.test.js` (Node only, no npm); add one when you change logic they cover. Pure logic shared by app and admin (curation merge, progress merge, photo Elo) lives in `core.js` so it can be tested. Every PR runs `.github/workflows/checks.yml` (JS syntax, tests, JSON, Python, versions).
+2. **Cache busting (easy to forget):** when you change a shell file, bump its `?v=N` in `index.html` (and in `app.js` for `data.json`/`forms.json` fetches), the same entry in `sw.js` `SHELL`, and the `sw.js` cache name `V`. For a Lab file, bump `LAB_V` in `proto/lab.js` and `proto/lab.*?v=` in `index.html` and `sw.js`. Other parallel branches bump these too: on rebase, take a number above `main`'s. **`python3 tools/check_versions.py --base origin/main --fix` does all of this for you** (run it after rebasing, before pushing); the PR check fails when a changed file kept its old number.
 3. Editing `data.json` by hand is normal (the original build script reads a scratchpad that no longer exists). Write it with `json.dumps(d, ensure_ascii=False, separators=(',', ':'))` to keep the compact format. Prefer a small, re-runnable `tools/apply_*.py` script that documents the change.
 4. Check visually with Playwright (Chromium) at the widths in rule 19, light and dark, phone and desktop; check that games fit one screen. Open the browser console: no errors.
 5. Open a PR with a short English description (what changed, why, screenshots for UI). Merge it yourself once checked, as a **squash merge** whose title ends with ` (#N)` (that is how `git log` reads). Never force-push `main`; never rewrite history without Pierre's go-ahead (a history rewrite to shrink `.git` was discussed and declined for now).
