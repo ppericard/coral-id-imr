@@ -49,11 +49,11 @@ function rebase(next){
   DRAFT = merge3(base, DRAFT, next, conf); DRAFT.genera = DRAFT.genera || {};
   HIST = HIST.map(x => JSON.stringify(f(JSON.parse(x)))); FUT = FUT.map(x => JSON.stringify(f(JSON.parse(x))));
   SAVED = clone(next); SAVED.genera = SAVED.genera || {}; snap = JSON.stringify(DRAFT); memoReset();
-  store.set('imr-curation-draft', DRAFT); store.set('imr-curation-base', SAVED);
+  if (TOKEN) { store.set('imr-curation-draft', DRAFT); store.set('imr-curation-base', SAVED); }
   return conf;
 }
 // "genera > Acropora > feat > wide" → "Acropora featured Colony"; top-level maps → "quality of acropora-…".
-const confName = p => { const V = Object.fromEntries(VIEWS), W = {feat: 'featured', cover: 'cover', hide: 'hidden photos', move: 'view moves', add: 'added photos', out: 'not this genus', lv: 'levels', ok: 'validation'};
+const confName = p => { const V = Object.fromEntries(VIEWS), W = {feat: 'featured', cover: 'cover', hide: 'hidden photos', move: 'view moves', add: 'added photos', out: 'not this genus', lv: 'zooms', ok: 'validation'};
   return p[0] === 'genera' ? [p[1], ...p.slice(2).map(x => V[x] || W[x] || x)].filter(Boolean).join(' ') : p.length > 1 ? `${p[0]} of ${p[1]}` : p[0]; };
 const confNote = c => !c.length ? '' : ` Your choice replaced the one published from elsewhere for ${c.slice(0, 3).map(confName).join(', ')}${c.length > 3 ? ` and ${c.length - 3} more` : ''}.`;
 
@@ -70,11 +70,12 @@ let draftAt = null;
 // No button ever clears several choices at once: Undo (or Ctrl+Z) steps back one click at a time, within this visit.
 // Redo (or Ctrl+Shift+Z / Ctrl+Y) steps forward again; a new click clears the redo steps.
 let HIST = [], FUT = [], snap = null;
-function saveDraft(){ memoReset(); if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); FUT = []; snap = JSON.stringify(DRAFT); draftLost = !store.set('imr-curation-draft', DRAFT); draftAt = new Date(); }
+// Read-only (no token): clicks stay in this tab only, nothing is kept as a draft (admin review, 2026-11-01).
+function saveDraft(){ memoReset(); if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); FUT = []; snap = JSON.stringify(DRAFT); if (!TOKEN) return; draftLost = !store.set('imr-curation-draft', DRAFT); draftAt = new Date(); }
 let draftLost = false;
 function step(from, to, msg){
   if (!from.length) return toast(msg[0]);
-  to.push(snap); snap = from.pop(); DRAFT = JSON.parse(snap); memoReset(); store.set('imr-curation-draft', DRAFT); draftAt = new Date(); render(); toast(msg[1]);
+  to.push(snap); snap = from.pop(); DRAFT = JSON.parse(snap); memoReset(); if (TOKEN) { store.set('imr-curation-draft', DRAFT); draftAt = new Date(); } render(); toast(msg[1]);
 }
 const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']), redo = () => step(FUT, HIST, ['Nothing to redo.', 'Redone.']);
 const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
@@ -364,7 +365,7 @@ function tile(n, p, v, st){
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"${crStyle(p.f)}></button>${st.cls === 'is-hidden' ? XBTN : GRIP + XBTN}
     ${st.num ? `<span class="adm-num${st.sheet ? ' sheet' : ''}"${st.sheet ? ' title="Genus sheet"' : ''}>${st.num}</span>` : ''}
     ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
-    <figcaption>${p.from ? `<span class="adm-src new" title="From ${esc(p.from)}">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">new</span>' : ''}${srcTag(p)}${p.multi || p.wasMulti ? `<button type="button" class="adm-src multi${p.wasMulti ? ' off' : ''}" data-act="multi" title="Several corals" aria-pressed="${!p.wasMulti}">${p.wasMulti ? 'one coral' : 'several corals'}</button>` : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
+    <figcaption>${p.from ? `<span class="adm-src new" title="From ${esc(p.from)}">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">added</span>' : ''}${srcTag(p)}${p.multi || p.wasMulti ? `<button type="button" class="adm-src multi${p.wasMulti ? ' off' : ''}" data-act="multi" title="Several corals" aria-pressed="${!p.wasMulti}">${p.wasMulti ? 'one coral' : 'several corals'}</button>` : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}${fSeg(p)}
       ${st.cls === 'is-hidden' ? `<button type="button" data-act="hide" class="on">Show again</button>` : `
       <span class="adm-qseg adm-vseg" role="group" aria-label="View">${moves}</span>
@@ -384,7 +385,7 @@ function status(){
   const t = draftAt ? ` (saved ${draftAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})})` : '';
   // Publish carries the status (no separate status text): "● Publish" with a draft, "Published" when clean.
   const sv = $('save'); if (sv.textContent !== 'Publishing…') sv.textContent = !TOKEN ? 'Read-only' : parts.length ? '● Publish' : 'Published';
-  sv.title = parts.length ? `Draft${t}: ${parts.join(' + ')}` : 'Publish';
+  sv.title = !TOKEN ? 'Read-only: changes are not kept' : parts.length ? `Draft${t}: ${parts.join(' + ')}` : 'Publish';
   $('undo').disabled = !HIST.length; $('redo').disabled = !FUT.length;
   $('save').disabled = !TOKEN || !parts.length;
   if (cur[0] !== '~') lastGenus = cur;
@@ -412,7 +413,7 @@ function render(){
   $('preview').href = `./?draft#g-${encodeURIComponent(n)}`;
   const side = names.map(m => { const c = coverOf(m), e = DRAFT.genera[m] || {}, dirty = ch.includes(m), h = (e.hide || []).length;
     return `<a href="#${esc(m)}" class="adm-g${m === n ? ' cur' : ''}"${m === n ? ' aria-current="true"' : ''}>${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
-      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : DATA.gen[m].x ? 'not IMR' : '★'}${c && c.view === 'macro' && lv(m) !== 2 ? ' · <b class="warnc" title="Cover is a close-up">macro cover</b>' : ''}${pending(m).length ? ` · ${pending(m).length} new` : ''}${missing(m).length ? ' · <b class="warnc" title="Missing photos">⚠ check</b>' : ''}</small></span><span class="dots">${e.ok ? (needs(m).length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></a>`; }).join('');
+      <small>${DATA.gen[m].n ? 'No. ' + DATA.gen[m].n : DATA.gen[m].x ? 'not IMR' : '★'}${c && c.view === 'macro' && lv(m) !== 2 ? ' · <b class="warnc" title="Cover is a close-up">macro cover</b>' : ''}${pending(m).length ? ` · ${pending(m).length} waiting` : ''}${missing(m).length ? ' · <b class="warnc" title="Missing photos">⚠ check</b>' : ''}</small></span><span class="dots">${e.ok ? (needs(m).length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></a>`; }).join('');
   const body = rows(n).map(([v]) => { const r = rowOf(n, v), out = [...r.feat, ...r.rest].filter(p => !shown(p)).length;
     return `<section class="adm-row"><h3>${label(n, v)} <small>${r.feat.length + r.rest.length} photo${r.feat.length + r.rest.length === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
       <div class="adm-grid" data-drop="${v}">${r.feat.map((p, i) => shown(p) ? tile(n, p, v, {num: i + 1, auto: !r.pinned.includes(p.f), last: i === r.feat.length - 1, cls: 'is-feat'}) : '').join('')}${(sh => r.rest.filter(shown).map(p => tile(n, p, v, sh.includes(p) ? {num: FEAT + 1 + sh.indexOf(p), sheet: true} : {})).join(''))(r.rest.filter(p => !p.multi && !p.extra).slice(0, SHEET - r.feat.length))}</div>
@@ -429,17 +430,23 @@ function render(){
       <figcaption>${srcTag(p)}<span class="adm-t">${outs(n)[p.f] === 'cmp' ? 'look-alike comparison' : '→ ' + esc(outs(n)[p.f])}</span></figcaption>
       <div class="adm-acts"><button type="button" data-act="out" data-to="back">Put back</button></div></figure>`).join('')}</div></section>` : '';
   const cnt = o => [...photos(n), ...P].filter(p => origin(p) === o).length;
-  const filter = `<div class="adm-filter adm-sticky">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><select class="adm-gsel2" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zoom levels" title="Zoom levels">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} levels</button>`).join('')}</span>${(nd => `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!k.ok}" title="Validated">✓ Validated</button>${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${poorIn(n).length ? `<b class="adm-needs adm-warn">${poorIn(n).map(esc).join(' · ')}</b>` : ''}`)(needs(n))}<span class="adm-shows" role="group" aria-label="Show photos from">${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}" title="${t}">${SHORT_O[o]} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">All</button>' : ''}</span></div>`;
+  const filter = `<div class="adm-filter adm-sticky">${cv ? `<button type="button" class="adm-sthumb${cv.view === 'macro' && lv(n) !== 2 ? ' warnc' : ''}" data-f="${esc(cv.f)}" data-act="zoomcover" title="Cover"><img src="${img(cv, 1)}" alt="${esc(n)} cover"></button>` : ''}<b class="adm-sname"><i>${esc(n)}</i></b><select class="adm-gsel2" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><a class="adm-sheet" href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet" aria-label="Open the sheet">↗</a><span class="adm-qseg adm-lvseg" role="group" aria-label="Zooms" title="Zooms">${[3, 2].map(x => `<button type="button" data-lv="${x}" aria-pressed="${lv(n) === x}">${x} zooms</button>`).join('')}</span>${(nd => `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!k.ok}" title="Validated">✓ Validated</button>${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${poorIn(n).length ? `<b class="adm-needs adm-warn">${poorIn(n).map(esc).join(' · ')}</b>` : ''}`)(needs(n))}<span class="adm-shows" role="group" aria-label="Show photos from">${ORIGINS.map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}" title="${t}">${SHORT_O[o]} <b>${cnt(o)}</b></button>`).join('')}${SHOW.size < ORIGINS.length ? '<button type="button" class="adm-link" data-o="all">All</button>' : ''}</span></div>`;
   $v.innerHTML = `<div class="adm">
     <nav class="adm-side" aria-label="Genera"><select id="gsel" aria-label="Genus">${names.map(m => `<option${m === n ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select><div class="adm-list">${side}</div></nav>
     <section class="adm-main">
-      ${missing(n).length ? `<p class="warn"><b>${missing(n).length} of your choices name a photo that is no longer in the data</b>: ${missing(n).map(f => `<code>${esc(f)}</code>`).join(', ')}. Kept but no longer applied; tell Claude to remap them.</p>` : ''}
+      ${missing(n).length ? `<p class="warn"><b>${missing(n).length} choice${missing(n).length === 1 ? '' : 's'} name a photo that is no longer in the data</b>: ${missing(n).map(f => `<code>${esc(f)}</code>`).join(', ')}. Kept but no longer applied. <button type="button" class="adm-link" data-forget>Forget them</button> (Undo brings them back), or ask Pierre.</p>` : ''}
       ${filter}${body}${candRow}${outRow}
     </section></div>`;
   $v.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { const o = b.dataset.o;
     if (o === 'all') SHOW = new Set(ORIGINS.map(x => x[0])); else SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
     store.set('imr-admin-origins', [...SHOW]); render(); });
   const okb = $v.querySelector('[data-ok]'); if (okb) okb.onclick = () => { const nd = needs(n); if (!k.ok && nd.length) { toast('Not ready: ' + nd.join(' · ')); return; } edit(n, k => { if (k.ok) delete k.ok; else k.ok = true; }); };
+  // Forget choices naming photos no longer in the data: one click, one Undo step, only on this genus (never automatic).
+  const fg = $v.querySelector('[data-forget]'); if (fg) fg.onclick = () => { const gone = new Set(missing(n)); edit(n, k => {
+    if (gone.has(k.cover)) delete k.cover;
+    if (k.feat) Object.keys(k.feat).forEach(v => { k.feat[v] = k.feat[v].filter(f => !gone.has(f)); if (!k.feat[v].length) delete k.feat[v]; });
+    if (k.hide) { k.hide = k.hide.filter(f => !gone.has(f)); if (!k.hide.length) delete k.hide; }
+    ['move', 'add', 'out'].forEach(m => { if (k[m]) { gone.forEach(f => delete k[m][f]); if (!Object.keys(k[m]).length) delete k[m]; } }); }); };
   $v.querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { const x = Number(b.dataset.lv); edit(n, k => { if (x === (DATA.gen[n].levels === 2 ? 2 : 3)) delete k.lv; else k.lv = x; }); });
   $('gsel').onchange = e => { location.hash = e.target.value; };
   const g2 = $v.querySelector('.adm-gsel2'); if (g2) g2.onchange = e => { location.hash = e.target.value; };
@@ -530,7 +537,8 @@ function toast(msg){ let t = document.querySelector('.adm-toast'); if (!t) { t =
 function missing(n){
   const k = entry(n);
   const refs = [k.cover, ...Object.values(k.feat || {}).flat(), ...(k.hide || []), ...Object.keys(k.move || {}), ...Object.keys(k.add || {}), ...Object.keys(k.out || {})].filter(Boolean);
-  return [...new Set(refs.filter(f => !KNOWN.has(f)))];
+  // An excluded photo is gone on purpose: a choice still naming it is not broken (admin review, 2026-11-01).
+  return [...new Set(refs.filter(f => !KNOWN.has(f) && !(DRAFT.exclude || {})[f]))];
 }
 
 /* ---------- Quality ---------- */
@@ -596,20 +604,21 @@ const HELP = {
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
   start: `<p><b>Work in this order</b></p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them.</li><li><b>Forms</b> and <b>Quality</b>: check the growth form and quality guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Needs</b>: which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
-    <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
+    <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish, a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
-  fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the 39 IMR genera and the book's other genera seen at Dauin (CF only). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Game coverage). Forms = growth forms seen on Colony and Closer photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Closer or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
+  fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the 39 IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Game coverage). Forms = growth forms seen on Colony and Closer photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Closer or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Closer or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   stats: `<p>Every quiz and duel answer synced to the sheet. Players are anonymous: a number, ranked by level; "you" marks the name synced in this browser (All / Others / Me). Level is on the same scale as photo difficulty. Last 20 = right answers among the player's last 20. Learned = genera learned on their last sync. Days = days with answers. Photos = different photos answered (more = more variety). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsph: `<p>Photo difficulty (Elo) from every answer: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers; few answers = rough. Click a dot to see the photo.</p>
     <p>The quiz shows the colony, closer and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (players' level on the genus is above what the hardest photo of the view can challenge: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
-  diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers. Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it sits in the wrong game set.</p>`,
+  diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers. Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time.</p>
-    <p>The first 3 photos of each view are its featured photos (Easy level, top of the sheet, Coral Finder). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. Hidden photos disappear everywhere, games included; × excludes a photo for good.</p>
-    <p>The letters on each photo are its growth form (see Growth form).</p>`,
+    <p>The first 3 photos of each view are its featured photos (top of the genus sheet, Coral Finder). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. Hidden photos disappear everywhere, games included; × excludes a photo for good.</p>
+    <p>The letters on each photo are its growth form (see Growth form).</p>
+    <p><b>Symbols.</b> Genus list: <b>✓</b> validated and complete; <b>!</b> validated but something is missing again; <b>●</b> draft not published; <b>⚠ check</b> a choice names a photo no longer in the data; <b>N waiting</b> candidates not reviewed yet; <b>macro cover</b> the cover is a close-up. Photos: <b>filled number 1-3</b> featured; <b>outlined number 4-6</b> also on the genus sheet; <b>dashed frame</b> a candidate, not on the site yet; <b>faded dashed frame</b> hidden; <b>added</b> a candidate you added; <b>Cover</b> the cover photo. Dashed tags or buttons are guesses, solid ones are your choices. <b>3 zooms / 2 zooms</b>: with 2, Closer photos join Colony.</p>`,
   form: `<p>The 7 IMR growth forms (Lecture 6, slides 3-10), one per photo, the main form visible: <b>Br</b> Branching, <b>En</b> Encrusting, <b>Ta</b> Tabulate, <b>Mu</b> Mushroom, <b>Ma</b> Massive, <b>Sm</b> Submassive, <b>Fo</b> Foliose/Plating; <b>∅</b> = form not visible (too close). <b>✿</b> = polyps or vesicles extended (not a form; it fills the Coral Finder "Large daytime polyps" tile).</p>
     <p>The Coral Finder growth-form tiles use them: Branching = Br + Ta, Thin plates and crusts = En + Fo, Massive or thick = Ma + Sm, Columns = Sm, Solitary = Mu, Meandering = any form of the genera it lists. Dashed = a first guess, solid = yours (always wins); a red ? = a guess to double-check.</p>
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>`,
@@ -679,8 +688,10 @@ function renderForm(){
   $v.querySelectorAll('[data-act="zoom"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'); zoom(t.dataset.g, t.dataset.f); });
   $v.querySelectorAll('[data-act="exclude"]').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.closest('[data-f]'); ACT.exclude(t.dataset.g, t.dataset.f); });
   // Validate a whole row: every first guess still shown in it (with the filters on) becomes Pierre's own choice, in one undo step.
-  $v.querySelectorAll('[data-fok]').forEach(b => b.onclick = () => { const c = b.dataset.fok; DRAFT.gf = {...(DRAFT.gf || {})};
-    all.filter(p => fOf(p.f) === c && !fSet(p.f)).forEach(p => { const m = fP(mineF(p.f)), pol = m === null ? fP(AUTOF[p.f]) === true : m;
+  $v.querySelectorAll('[data-fok]').forEach(b => b.onclick = () => { const c = b.dataset.fok, todo = all.filter(p => fOf(p.f) === c && !fSet(p.f));
+    if (!confirm(`Validate ${todo.length} growth form${todo.length === 1 ? '' : 's'} as ${FABBR[c] || c}?`)) return;
+    DRAFT.gf = {...(DRAFT.gf || {})};
+    todo.forEach(p => { const m = fP(mineF(p.f)), pol = m === null ? fP(AUTOF[p.f]) === true : m;
       DRAFT.gf[p.f] = c + (m === false ? 'n' : pol ? 'p' : ''); });
     saveDraft(); renderForm(); });
   bindF($v);
@@ -698,13 +709,20 @@ function renderForm(){
 /* ---------- Excluded ---------- */
 function renderExcluded(){
   status();
-  const X = DRAFT.exclude || {}, list = Object.keys(X).map(f => PHOTOS[f] ? {...PHOTOS[f], f} : {f, genus: '?'});
+  // A photo excluded and since removed from data.json: genus from its file name, thumbnail from iNaturalist when the name
+  // ends in an iNat photo id (admin review, 2026-11-01). The extension is unknown: try .jpg, then .jpeg, then .png.
+  const gone = f => { const m = f.match(/^([a-z]+)-/), id = (f.match(/-(\d{5,})$/) || [])[1], gn = m && Object.keys(DATA.gen).find(x => x.toLowerCase() === m[1]);
+    return {f, genus: gn || (/^imrl-/.test(f) ? 'IMR lecture' : '?'), gone: true, inat: id}; };
+  const X = DRAFT.exclude || {}, list = Object.keys(X).map(f => PHOTOS[f] ? {...PHOTOS[f], f} : gone(f));
+  const io = id => `https://inaturalist-open-data.s3.amazonaws.com/photos/${id}/small`;
   $v.innerHTML = `<section class="adm-quality"><div class="adm-qhead"><h2>Excluded photos</h2></div>
     ${list.length ? `<div class="adm-grid adm-qgrid">${list.map(p => `<figure class="adm-tile" data-f="${esc(p.f)}" data-g="${esc(p.genus)}">
-      <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge">${p.genus === '?' ? '<span class="none">missing</span>' : `<img src="${img(p, 1)}" alt="" loading="lazy">`}</button>
-      <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a>${p.genus === '?' ? '' : srcTag(p)}</figcaption>
+      <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge">${!p.gone ? `<img src="${img(p, 1)}" alt="" loading="lazy">` : p.inat ? `<img src="${io(p.inat)}.jpg" alt="" loading="lazy" data-ext="0">` : '<span class="none">no preview</span>'}</button>
+      <figcaption>${DATA.gen[p.genus] ? `<a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a>` : `<span class="adm-gen">${esc(p.genus)}</span>`}${!p.gone ? srcTag(p) : p.inat ? `<a class="adm-src" href="https://www.inaturalist.org/photos/${p.inat}" target="_blank" rel="noopener">iNat ↗</a>` : ''}</figcaption>
       <div class="adm-acts"><button type="button" data-act="restore">Restore</button></div></figure>`).join('')}</div>` : '<p class="note">No excluded photo.</p>'}</section>`;
   const set = (f, r) => { DRAFT.exclude = {...(DRAFT.exclude || {})}; if (r) DRAFT.exclude[f] = r; else delete DRAFT.exclude[f]; saveDraft(); renderExcluded(); };
+  $v.querySelectorAll('img[data-ext]').forEach(im => im.onerror = () => { const i = Number(im.dataset.ext) + 1, E = ['jpg', 'jpeg', 'png'];
+    if (i < E.length) { im.dataset.ext = i; im.src = im.src.replace(/\.\w+$/, '.' + E[i]); } else im.replaceWith(Object.assign(document.createElement('span'), {className: 'none', textContent: 'no preview'})); });
   $v.querySelectorAll('[data-act="restore"]').forEach(b => b.onclick = () => set(b.closest('[data-f]').dataset.f, null));
   $v.querySelectorAll('[data-act="zoomx"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'), p = PHOTOS[t.dataset.f]; if (p) zoomOne(p); });
 }
@@ -723,7 +741,7 @@ function renderTriage(){
     const cv = coverOf(n); SHOWN_COVER = cv && cv.f;
     return tile0(n, q, viewOf(n, q), {cls: hidden(n, q) ? 'is-hidden' : '', extra: `<button type="button" class="adm-tdone" data-tdone>✓ Done</button>`})
       .replace('<figure class="adm-tile', `<figure data-g="${esc(n)}" class="adm-tile`).replace(GRIP, '').replace('<figcaption>', `<figcaption><a class="adm-gen" href="#${esc(n)}"><i>${esc(n)}</i></a>${where}`); };
-  const poor = []; Object.entries(DRAFT.genera).forEach(([n, k]) => Object.entries(k.feat || {}).forEach(([v, L]) => L.forEach(f => { if (PHOTOS[f] && qOf(f) === 1) poor.push({...PHOTOS[f], f, genus: n, fv: v}); })));
+  const poor = []; Object.entries(DRAFT.genera).forEach(([n, k]) => Object.entries(k.feat || {}).forEach(([v, L]) => L.forEach(f => { if (PHOTOS[f] && !offSlot(PHOTOS[f]) && qOf(f) === 1) poor.push({...PHOTOS[f], f, genus: n, fv: v}); })));
   $v.innerHTML = `<section class="adm-quality">
     <div class="adm-qhead"><h2>Flagged on the site <small>${flagged.length}</small></h2></div>
     ${flagged.length ? `<div class="adm-grid adm-qgrid adm-flagged">${flagged.map(flagTile).join('')}</div>` : '<p class="note">Nothing flagged.</p>'}
@@ -887,10 +905,9 @@ function renderCand(){
       <figure class="adm-swcard">
         <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img src="${img(p)}" alt=""${crStyle(p.f)}></button>
         <a class="adm-swg" href="#${encodeURIComponent(n)}" title="Genus page"><i>${esc(n)}</i>${p.from ? `<small>from ${esc(p.from)}</small>` : ''}</a>
-        <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
         <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
       </figure>
-      <div class="adm-acts adm-swacts">${qSeg(p)}${fSeg(p)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOf(p.f) ? ' on' : ''}" data-crop aria-pressed="${!!crOf(p.f)}">Crop</button><button type="button" data-skip>Skip</button></div></div>
+      <div class="adm-acts adm-swacts">${qSeg(p)}${fSeg(p)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOf(p.f) ? ' on' : ''}" data-crop aria-pressed="${!!crOf(p.f)}">Crop</button><button type="button" data-skip>Skip</button><button type="button" class="adm-swx" data-x title="Exclude for good" aria-label="Exclude for good">× Exclude</button></div></div>
       <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${(p.vg || p.view) === w ? ' sug' : ''}" data-add="${w}" title="${(p.vg || p.view) === w ? 'Suggested · ' : ''}Add (${i + 1})">+ ${label(n, w)}</button>`).join('')}</div>
     </section>`;
     if (nx) new Image().src = img(nx.p);
@@ -957,8 +974,23 @@ const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAF
 let AUTHOR;
 const author = async () => AUTHOR !== undefined ? AUTHOR : (AUTHOR = await fetch('https://api.github.com/user', {headers: {Accept: 'application/vnd.github+json', Authorization: `Bearer ${TOKEN}`}})
   .then(r => r.ok ? r.json() : {}).then(j => j.login || '').catch(() => '') || ((store.get('imr-coral-sync', null) || {}).name || '').trim());
+// What Publish will send, asked before it goes (admin review, 2026-11-01): counts per kind of change, then the genera
+// touched with what changed in each.
+const nDiff = (a, b) => [...new Set([...Object.keys(a || {}), ...Object.keys(b || {})])].filter(k => !same((a || {})[k], (b || {})[k])).length;
+function pubSummary(){
+  const W = {feat: 'featured', cover: 'cover', hide: 'hidden', move: 'view moves', add: 'added photos', out: 'not this genus', lv: 'zooms', ok: 'validated'};
+  const L = [[nDiff(DRAFT.quality, SAVED.quality), 'quality rating'], [nDiff(DRAFT.gf, SAVED.gf), 'growth form'], [nDiff(DRAFT.exclude, SAVED.exclude), 'exclusion'],
+    [nDiff(seenOf(DRAFT, true), seenOf(SAVED, true)), 'candidate review'], [nDiff(seenOf(DRAFT, false), seenOf(SAVED, false)) + nDiff(DRAFT.use, SAVED.use), 'triage suggestion'],
+    [nDiff(DRAFT.flag, SAVED.flag), 'triage flag'], [nDiff(DRAFT.crop, SAVED.crop), 'crop'], [nDiff(DRAFT.single, SAVED.single), 'several-corals mark'], [nDiff(DRAFT.mont, SAVED.mont), 'look-alike pair']]
+    .filter(([c]) => c).map(([c, t]) => `${c} ${t}${c > 1 ? 's' : ''}`);
+  if (bChanged()) L.push(`Coral Finder book photos ${bookOn(DRAFT) ? 'ON' : 'OFF'} on the whole site`);
+  const G = changed().map(n => { const a = DRAFT.genera[n] || {}, b = SAVED.genera[n] || {};
+    return `${n}: ${[...new Set([...Object.keys(a), ...Object.keys(b)])].filter(k => !same(a[k], b[k])).map(k => W[k] || k).join(', ')}`; });
+  return [...L, ...(G.length ? [`${G.length} ${G.length > 1 ? 'genera' : 'genus'}:`, ...G.slice(0, 12).map(x => '  ' + x), ...(G.length > 12 ? [`  and ${G.length - 12} more`] : [])] : [])].join('\n');
+}
 async function save(){
   const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(), sg = sgChanged(), cd = cdChanged(), mt = mtChanged(), cr = crChanged(), sn = snChanged(); if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn) || !TOKEN) return;
+  if (!confirm(`Publish to the public site?\n\n${pubSummary()}`)) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
   const conf = [];
   // Never overwrite what was published from elsewhere since this page loaded: re-read it and merge first.
@@ -1003,7 +1035,7 @@ async function start(){
   // device, or by the candidate refill) comes in underneath. Drafts from before this rule only add, never remove.
   const old = store.get('imr-curation-draft', null), base = store.get('imr-curation-base', null);
   DRAFT = old && old.genera ? (base ? merge3(base, old, SAVED) : mergeOld(old, SAVED)) : clone(SAVED); DRAFT.genera = DRAFT.genera || {};
-  snap = JSON.stringify(DRAFT); store.set('imr-curation-draft', DRAFT); store.set('imr-curation-base', SAVED);
+  snap = JSON.stringify(DRAFT); if (TOKEN) { store.set('imr-curation-draft', DRAFT); store.set('imr-curation-base', SAVED); }
   // Pierre's clicks in the old Coral Finder letters (curation.json "form") stay as they are, shown as the hint.
   Object.assign(LEGACY, SAVED.form || {}, DRAFT.form || {});
   const nf = importFlags(); if (nf) setTimeout(() => toast(`${nf} new photo${nf > 1 ? 's' : ''} flagged on the site: see Triage.`), 50);
@@ -1014,7 +1046,9 @@ async function start(){
   const so = $('signout'); if (so) { so.hidden = !TOKEN; so.onclick = signOut; }
   $('undo').onclick = undo;
   $('help').onclick = toggleHelp;
-  $('booksw').onclick = () => { if (bookOn(DRAFT)) DRAFT.book = false; else delete DRAFT.book; saveDraft(); render(); };
+  // Site-wide switch: asks first (admin review, 2026-11-01).
+  $('booksw').onclick = () => { if (!confirm(`Turn Coral Finder book photos ${bookOn(DRAFT) ? 'OFF' : 'ON'} on the whole site (after Publish)?`)) return;
+    if (bookOn(DRAFT)) DRAFT.book = false; else delete DRAFT.book; saveDraft(); render(); };
   $('redo').onclick = redo;
   $('redo2').onclick = redo; $('help2').onclick = toggleHelp;
   $('modesel').onchange = e => { location.hash = e.target.value.replace(/^#/, ''); };
@@ -1167,11 +1201,11 @@ function renderFcov(){
   const cell = (r, c, v) => c ? `<td class="cov-c cov-${covLvl(c)}" title="${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} good colon${c.obs === 1 ? 'y' : 'ies'}${c.cf ? ` · ${c.cf} CF book` : ''}"><b>${c.n}</b><small>${c.obs} good</small>${c.cf ? `<span class="cov-off">incl. ${c.cf} CF</span>` : ''}</td>` : '<td class="cov-c cov-na">–</td>';
   const seg = (k, L) => `<span class="adm-qseg adm-lvseg" role="group">${L.map(([v, t]) => `<button type="button" data-fc="${k}" data-v="${v}" aria-pressed="${FCOV[k] === v && !(k === 'order' && FCOV.col)}">${t}</button>`).join('')}</span>`;
   $v.innerHTML = `<section class="adm-cov">
-    <div class="adm-filter cov-head">${seg('set', [['all', 'All'], ['imr', 'IMR list'], ['x', 'CF only']])}${seg('order', [['thin', 'Thinnest'], ['thick', 'Thickest'], ['az', 'A–Z']])}
+    <div class="adm-filter cov-head">${seg('set', [['all', 'All'], ['imr', 'IMR list'], ['x', 'Not IMR']])}${seg('order', [['thin', 'Thinnest'], ['thick', 'Thickest'], ['az', 'A–Z']])}
       <span class="cov-key" aria-label="Good colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 good colonies">${thin} thin</b></div>
     <table class="cov-t fcov-t"><thead><tr><th></th>${colTh(FCOV)}<th>Forms</th><th>Species</th><th title="Candidates">+</th></tr></thead>
-    <tbody>${R.map(r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${r.x ? ' <small class="fcov-x">CF only</small>' : ''}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
+    <tbody>${R.map(r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${r.x ? ' <small class="fcov-x">not IMR</small>' : ''}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="fcov-f">${r.forms.map(f => `<span class="adm-why" title="${esc(fName(f))}">${FABBR[f]}</span>`).join(' ') || '<span title="No growth form set on these photos yet">–</span>'}</td>
       <td class="fcov-s" title="${esc(r.sp.join(', '))}">${r.sp.length || '–'}</td><td class="cov-cand">${r.cand ? `+${r.cand}` : ''}</td></tr>`).join('')}</tbody></table></section>`;
   bindCol(FCOV, () => store.set('imr-admin-fcov', FCOV));
