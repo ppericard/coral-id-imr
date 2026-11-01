@@ -567,7 +567,7 @@ const HELP = {
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. On the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
-  mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one montage each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first).</p>`,
+  mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one montage each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto</b> drops your picks for that pair. <b>Hide</b> keeps a pair off the site until there are good examples; click again to show it.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns. Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
 };
@@ -695,26 +695,42 @@ function classicPairs(){
   const tier = p => /^IMR/.test(p.src) ? 0 : 1;
   return out.sort((x, y) => tier(x) - tier(y) || Math.min(idx(x.A), idx(x.B)) - Math.min(idx(y.A), idx(y.B)));
 }
-const montList = (n, v) => { const r = rowOf(n, v); return [...r.feat, ...r.rest]; };
+// "all" = photos of every zoom level (Pierre, 2026-11-01), so a pair can show two nearby zooms; the automatic pick then
+// prefers the nearest levels. "hide" keeps the comparison off the site until good examples exist; "Auto" drops his
+// view and photo picks (the hide stays). Both are per pair and go through Undo like every other click.
+const MONT_VIEWS = [...VIEWS, ['all', 'All']], ZOOM = {wide: 0, medium: 1, macro: 2};
+const montList = (n, v) => v === 'all' ? VIEWS.flatMap(([w]) => montList(n, w)) : (r => [...r.feat, ...r.rest])(rowOf(n, v));
 function montPick(p){
-  const m = (DRAFT.mont || {})[p.k] || {}, ok = v => v && montList(p.A, v).length && montList(p.B, v).length;
-  const v = ok(m.v) ? m.v : [MONT_V[p.k] || 'macro', 'macro', 'medium', 'wide'].find(ok); if (!v) return {v: null};
+  const e = (DRAFT.mont || {})[p.k] || {}, m = e, ok = v => v && montList(p.A, v).length && montList(p.B, v).length;
+  const v = ok(m.v) ? m.v : [MONT_V[p.k] || 'macro', 'macro', 'medium', 'wide'].find(ok); if (!v) return {v: null, hide: !!e.hide};
   const LA = montList(p.A, v), LB = montList(p.B, v), mine = m.v === v, fa = mine && LA.find(x => x.f === m.a), fb = mine && LB.find(x => x.f === m.b);
-  let best = null; (fa ? [fa] : LA.slice(0, 6)).forEach((x, i) => (fb ? [fb] : LB.slice(0, 6)).forEach((y, j) => { const sc = i + j + (fOf(x.f) && fOf(x.f) === fOf(y.f) ? 0 : 8); if (!best || sc < best[0]) best = [sc, x, y]; }));
-  return {v, a: best[1], b: best[2], set: !!(DRAFT.mont || {})[p.k], LA, LB};
+  const gap = (x, y) => v === 'all' ? 4 * Math.abs(ZOOM[viewOf(p.A, x)] - ZOOM[viewOf(p.B, y)]) : 0;
+  let best = null; (fa ? [fa] : LA.slice(0, 6)).forEach((x, i) => (fb ? [fb] : LB.slice(0, 6)).forEach((y, j) => { const sc = i + j + (fOf(x.f) && fOf(x.f) === fOf(y.f) ? 0 : 8) + gap(x, y); if (!best || sc < best[0]) best = [sc, x, y]; }));
+  return {v, a: best[1], b: best[2], set: !!m.v, hide: !!e.hide, LA, LB};
+}
+// Write one pair's entry (null fields dropped; an empty entry is removed, so the row is automatic again).
+function setMont(k, e){
+  const out = {}; Object.entries(e).forEach(([x, y]) => { if (y) out[x] = y; });
+  const M = {...(DRAFT.mont || {})}; if (Object.keys(out).length) M[k] = out; else delete M[k];
+  DRAFT.mont = M; saveDraft();
 }
 function renderMont(){
   status();
   const L = classicPairs();
   const strip = (p, side, list, chosen) => `<div class="adm-mstrip">${list.map(x => `<button type="button" class="adm-mth${x.f === chosen.f ? ' on' : ''}" data-k="${esc(p.k)}" data-side="${side}" data-f="${esc(x.f)}" title="${esc(x.t || '')}"><img src="${img(x, 1)}" alt="" loading="lazy">${srcTag(x)}</button>`).join('')}</div>`;
   $v.innerHTML = `<section class="adm-quality adm-mont">${L.map(p => { const m = montPick(p);
-    return `<article class="adm-mrow${m.set ? ' set' : ''}"><div class="adm-mhead"><b><i>${esc(p.A)}</i> / <i>${esc(p.B)}</i></b><small>${esc(p.src)}</small>
-      <span class="adm-qseg adm-lvseg" role="group" aria-label="View">${VIEWS.map(([w, t]) => `<button type="button" data-k="${esc(p.k)}" data-mv="${w}" aria-pressed="${m.v === w}"${montList(p.A, w).length && montList(p.B, w).length ? '' : ' disabled'}>${t}</button>`).join('')}</span>${m.set ? '<b class="dot done" title="Your pick">✓</b>' : '<small class="note">auto</small>'}</div>
+    return `<article class="adm-mrow${m.set ? ' set' : ''}${m.hide ? ' off' : ''}"><div class="adm-mhead"><b><i>${esc(p.A)}</i> / <i>${esc(p.B)}</i></b><small>${esc(p.src)}</small>
+      <span class="adm-qseg adm-lvseg" role="group" aria-label="View">${MONT_VIEWS.map(([w, t]) => `<button type="button" data-k="${esc(p.k)}" data-mv="${w}" aria-pressed="${m.v === w}"${montList(p.A, w).length && montList(p.B, w).length ? '' : ' disabled'}>${t}</button>`).join('')}</span>${m.set ? `<button type="button" class="adm-mauto" data-k="${esc(p.k)}" data-mauto title="Auto">Auto</button><b class="dot done" title="Your pick">✓</b>` : '<small class="note">auto</small>'}
+      <button type="button" class="adm-mhide" data-k="${esc(p.k)}" data-mhide aria-pressed="${m.hide}" title="${m.hide ? 'Hidden' : 'Hide'}">${m.hide ? 'Hidden' : 'Hide'}</button></div>
       ${m.v ? `<div class="adm-mbody"><div class="adm-mprev"><img src="${img(m.a)}" alt="${esc(p.A)}"><img src="${img(m.b)}" alt="${esc(p.B)}"></div>
         <div class="adm-msides"><div><i>${esc(p.A)}</i>${strip(p, 'a', m.LA, m.a)}</div><div><i>${esc(p.B)}</i>${strip(p, 'b', m.LB, m.b)}</div></div></div>` : '<p class="note">No view with photos of both.</p>'}</article>`; }).join('')}</section>`;
-  const put = (k, fn) => { const p = L.find(x => x.k === k), m = montPick(p), e = {v: m.v, a: m.a && m.a.f, b: m.b && m.b.f}; fn(e); DRAFT.mont = {...(DRAFT.mont || {}), [k]: e}; saveDraft(); renderMont(); };
-  $v.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => { const y = window.scrollY; const k = b.dataset.k, w = b.dataset.mv; DRAFT.mont = {...(DRAFT.mont || {}), [k]: {v: w}}; saveDraft(); renderMont(); window.scrollTo(0, y); });
-  $v.querySelectorAll('.adm-mth').forEach(b => b.onclick = () => { const y = window.scrollY; put(b.dataset.k, e => { e[b.dataset.side] = b.dataset.f; }); window.scrollTo(0, y); });
+  const cur = k => ({...((DRAFT.mont || {})[k] || {})});
+  const keep = fn => { const y = window.scrollY; fn(); renderMont(); window.scrollTo(0, y); };
+  $v.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => keep(() => setMont(b.dataset.k, {hide: cur(b.dataset.k).hide, v: b.dataset.mv})));
+  $v.querySelectorAll('.adm-mth').forEach(b => b.onclick = () => keep(() => { const k = b.dataset.k, p = L.find(x => x.k === k), m = montPick(p);
+    setMont(k, {hide: m.hide, v: m.v, a: m.a && m.a.f, b: m.b && m.b.f, [b.dataset.side]: b.dataset.f}); }));
+  $v.querySelectorAll('[data-mauto]').forEach(b => b.onclick = () => keep(() => setMont(b.dataset.k, {hide: cur(b.dataset.k).hide})));
+  $v.querySelectorAll('[data-mhide]').forEach(b => b.onclick = () => keep(() => { const e = cur(b.dataset.k); setMont(b.dataset.k, {...e, hide: !e.hide}); }));
 }
 /* ---------- Triage: the judging agent's suggestions (suggest.json) ---------- */
 const seen = k => !!(DRAFT.seen || {})[k];
