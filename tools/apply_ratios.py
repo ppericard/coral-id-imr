@@ -5,6 +5,7 @@ up front to pick side by side or stacked (designer re-review 2026-11-01). Re-run
 skipped and keep no `ar` (the app then assumes 4:3). Run after adding photos: python3 tools/apply_ratios.py
 """
 import json, os
+from datajson import dump  # the one data.json layout (one genus per line)
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -39,5 +40,5 @@ def walk(x):
             walk(v)
 
 walk(d)
-json.dump(d, open(P, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+dump(d, P)
 print(f'{n[0]} photos updated, {n[1]} without a local file')

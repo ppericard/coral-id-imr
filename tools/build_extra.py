@@ -7,6 +7,7 @@
 # Photos: iNaturalist, open licences, Dauin first then the Philippines, shown straight from iNaturalist (r: 1).
 # Run from the repo root: python3 tools/build_extra.py
 import json, time, urllib.request
+from datajson import dump  # the one data.json layout (one genus per line)
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 LIC = 'cc-by,cc-by-nc,cc0,cc-by-sa,cc-by-nc-sa'
 DAUIN, PH = 'lat=9.19&lng=123.26&radius=40', 'place_id=6873'
@@ -125,5 +126,5 @@ for g, (pages, tr, crit, qt) in X.items():
 groups = [{'id': 'N', 'name': 'Blue, fire, organ pipe corals', 'sub': 'Not true hard corals: they build skeletons and look coral-like', 'color': 'other',
            'leaves': [{'id': 'N1', 't': 'Blue, fire, organ pipe, lace corals & spiculites', 's': None, 'a': 77, 'b': 78, 'g': []}]}]
 d['x'] = {'gen': out, 'leaf': leaf, 'groups': groups}
-json.dump(d, open('data.json', 'w'), ensure_ascii=False, separators=(',', ':'))
+dump(d, 'data.json')
 print(len(out), 'genera')

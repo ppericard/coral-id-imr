@@ -67,6 +67,7 @@ Theme Light | Dark segmented switch (`imr-coral-theme`, light default) · Colour
 ## Data files
 
 ### `data.json` (served source of truth)
+Layout (code re-review M5): written only by `tools/datajson.py` `dump()`: one top-level key per line, and one genus per line inside `gen`, `course`, `cand`, `x` and `x.gen` (compact JSON within a line, key order kept, trailing newline), so edits to different genera merge cleanly. `python3 tools/datajson.py` rewrites the file in that layout; `--check` (PR check) fails when it is not. The app only parses it, so the layout does not matter to it.
 - `gen{Genus}`: `n` slate number, `fam`, `ig` IMR lecture group, `imr` lecture cues (verbatim), `qt` short ID tips, `sum` short description, `mn` mnemonic, `crit` Coral Finder criteria, `tr` trait ids, `look` look-alikes + `lsrc` source per pair, `pages` CF pages, `sl`/`rsl` slide numbers, `info` dated "Other sources" notes, `check` points to check with a trainer, `levels` (2 or 3 views), `views{wide,medium,macro}` photo lists, `more` extra photos, `book` Coral Finder book crops, `cover`.
 - Photo object: `f` file stem in `img/`, `ar` width/height (quiz layout; `r: 1` means remote, see below), `a` attribution, `lic`, `o` original URL, `t` taxon, `own` (Pierre's), `loc` (dauin/ph/world), `src` remote URL when not downloaded (`r: 1`), `gid: 1` when the iNat observation is not Research Grade (candidates; bonus genera, kept out of games).
 - `key` Coral Finder front-page key (growth form → boxes), `imrg` the 11 IMR lecture groups, `traits` corallite clues with sources, `terms` glossary `[term, definition, source]`, `tips` the lecture's observation questions, `course` lecture photos, `cmp` lecture comparison images, `cand{Genus}` candidate photos for the admin, `x` extra Dauin genera for the Coral Finder and the bonus genera (built by `tools/build_extra.py`; `tools/apply_bonus.py` re-checks Research Grade and moves multi-coral photos of the bonus genera to `more`).
@@ -143,7 +144,7 @@ What is public, what protects what (code review, 2026-11-01).
 
 ## Tools (`tools/`)
 
-Python 3 scripts, run from the repo root. Many were one-off steps of the original build and read a scratchpad that no longer exists (`make_site.py`, `build_photos.py`, `apply_levels.py`, `build_lecture_more.py`, `coral_finder_book/*`): they now live in `tools/archive/` (kept for reference, cannot be re-run); edit `data.json` directly instead.
+Python 3 scripts, run from the repo root. Many were one-off steps of the original build and read a scratchpad that no longer exists (`make_site.py`, `build_photos.py`, `apply_levels.py`, `build_lecture_more.py`, `coral_finder_book/*`): they now live in `tools/archive/` (kept for reference, cannot be re-run); edit `data.json` directly instead, and write it with `tools/datajson.py`.
 
 Still useful / re-runnable:
 | Script | Purpose |
@@ -158,6 +159,7 @@ Still useful / re-runnable:
 | `build_extra.py` | Extra Dauin genera for the Coral Finder (`data.json` `x`). |
 | `apply_bonus.py` | Bonus genera in games: marks photos of non-Research-Grade observations `gid: 1` (asks iNat) and moves their multi-coral photos to `more`. Keep its `BONUS` list equal to `app.js`; re-run after `build_extra.py`. |
 | `apply_covers.py`, `apply_look_sources.py`, `apply_sources.py`, `apply_review_slides.py`, `apply_cmp.py`, `apply_multi.py` | One-time content passes, idempotent; document how fields were built. |
+| `datajson.py` | Shared helper: the one `data.json` writer (`load()`, `dump(d, path)`, one genus per line). Every script above that writes `data.json` uses it. Run alone it rewrites the file in that layout; `--check` is the PR check. |
 | `excluded.py` | Shared helper: excluded photos. |
 | `apply_ratios.py` | Photo shape `ar` into `data.json` (quiz layout before photos load); run after adding photos (the Action runs it too). |
 | `apply_box_photos.py` | Coral Finder box illustrations (`tools/box_photos.txt`, crops of the book's own box pages) into `data.json` `key` leaves `ph`. |

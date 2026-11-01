@@ -3,6 +3,7 @@
 # 2. multi.txt: moves multi-coral field photos from gen[g].views to gen[g].more (genus sheets only),
 #    and flags multi-coral lecture photos with multi:true (course quiz skips them).
 import json, os
+from datajson import dump  # the one data.json layout (one genus per line)
 from PIL import Image
 rows = lambda fn: [l.split() for l in open('tools/' + fn) if l.strip() and not l.startswith('#')]
 d = json.load(open('data.json'))
@@ -28,4 +29,4 @@ for g, G in d['gen'].items():
 for L in d['course'].values():
     for p in L:
         if p['f'] in multi: p['multi'] = True
-json.dump(d, open('data.json', 'w'), ensure_ascii=False, separators=(',', ':'))
+dump(d, 'data.json')
