@@ -353,7 +353,7 @@ function status(){
   const ms = $('modesel'); if (ms) { ms.innerHTML = [...document.querySelectorAll('#modes [data-mode]')].map(a => `<option value="${esc(a.getAttribute('href'))}"${a.getAttribute('aria-current') === 'true' ? ' selected' : ''}>${esc(a.textContent)}</option>`).join(''); ms.hidden = false; }
 }
 // Which header tab the page belongs to: the Stats tab holds players, photos, the photo list and coverage.
-const modeKey = () => cur.startsWith('~stats') || cur === '~diff' || cur === '~cov' ? 'stats' : ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
+const modeKey = () => cur.startsWith('~stats') || cur === '~diff' || cur === '~cov' ? 'stats' : ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~look': 'mont', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
 function render(){
   memoReset();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
@@ -363,7 +363,7 @@ function render(){
   if (cur === '~triage') return renderTriage();
   // Every Stats sub-view keeps the Stats sub-menu on top, whichever function draws it (Pierre, 2026-11-01).
   if (modeKey() === 'stats') { if (cur === '~diff') renderDiff(); else if (cur === '~cov') renderCov(); else renderStats(); return withSwitch(); }
-  if (cur === '~mont') return renderMont();
+  if (cur === '~look' || cur === '~mont') return renderMont(); // ~mont = old address, kept for bookmarks
   if (cur === '~cand') return renderCand();
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
   const ch = changed(), n = cur, g = DATA.gen[n], cv = coverOf(n), k = entry(n); SHOWN_COVER = cv && cv.f;
@@ -567,7 +567,7 @@ const HELP = {
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. On the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
-  mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto</b> drops your picks for that pair. <b>Hide</b> keeps a pair off the site until there are good examples; click again to show it.</p>`,
+  mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Mine</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Mine; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns. Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
 };
@@ -720,8 +720,8 @@ function renderMont(){
   const strip = (p, side, list, chosen) => `<div class="adm-mstrip">${list.map(x => `<button type="button" class="adm-mth${x.f === chosen.f ? ' on' : ''}" data-k="${esc(p.k)}" data-side="${side}" data-f="${esc(x.f)}" title="${esc(x.t || '')}"><img src="${img(x, 1)}" alt="" loading="lazy">${srcTag(x)}</button>`).join('')}</div>`;
   $v.innerHTML = `<section class="adm-quality adm-mont">${L.map(p => { const m = montPick(p);
     return `<article class="adm-mrow${m.set ? ' set' : ''}${m.hide ? ' off' : ''}"><div class="adm-mhead"><b><i>${esc(p.A)}</i> / <i>${esc(p.B)}</i></b><small>${esc(p.src)}</small>
-      <span class="adm-qseg adm-lvseg" role="group" aria-label="View">${MONT_VIEWS.map(([w, t]) => `<button type="button" data-k="${esc(p.k)}" data-mv="${w}" aria-pressed="${m.v === w}"${montList(p.A, w).length && montList(p.B, w).length ? '' : ' disabled'}>${t}</button>`).join('')}</span>${m.set ? `<button type="button" class="adm-mauto" data-k="${esc(p.k)}" data-mauto title="Auto">Auto</button><b class="dot done" title="Your pick">✓</b>` : '<small class="note">auto</small>'}
-      <button type="button" class="adm-mhide" data-k="${esc(p.k)}" data-mhide aria-pressed="${m.hide}" title="${m.hide ? 'Hidden' : 'Hide'}">${m.hide ? 'Hidden' : 'Hide'}</button></div>
+      <span class="adm-qseg adm-lvseg" role="group" aria-label="View">${MONT_VIEWS.map(([w, t]) => `<button type="button" data-k="${esc(p.k)}" data-mv="${w}" aria-pressed="${m.v === w}"${montList(p.A, w).length && montList(p.B, w).length ? '' : ' disabled'}>${t}</button>`).join('')}</span><span class="adm-qseg adm-lvseg" role="group" aria-label="Pick"><button type="button" data-k="${esc(p.k)}" data-mauto aria-pressed="${!m.set}" title="Automatic pick">Auto</button><button type="button" aria-pressed="${m.set}" disabled title="Your pick">Mine</button></span>
+      <span class="adm-qseg adm-lvseg adm-mvis" role="group" aria-label="On the site"><button type="button" data-k="${esc(p.k)}" data-mhide="0" aria-pressed="${!m.hide}" title="Shown on the site">Shown</button><button type="button" data-k="${esc(p.k)}" data-mhide="1" aria-pressed="${m.hide}" title="Hidden from the site">Hidden</button></span></div>
       ${m.v ? `<div class="adm-mbody"><div class="adm-mprev"><img src="${img(m.a)}" alt="${esc(p.A)}"><img src="${img(m.b)}" alt="${esc(p.B)}"></div>
         <div class="adm-msides"><div><i>${esc(p.A)}</i>${strip(p, 'a', m.LA, m.a)}</div><div><i>${esc(p.B)}</i>${strip(p, 'b', m.LB, m.b)}</div></div></div>` : '<p class="note">No view with photos of both.</p>'}</article>`; }).join('')}</section>`;
   const cur = k => ({...((DRAFT.mont || {})[k] || {})});
@@ -729,8 +729,8 @@ function renderMont(){
   $v.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => keep(() => setMont(b.dataset.k, {hide: cur(b.dataset.k).hide, v: b.dataset.mv})));
   $v.querySelectorAll('.adm-mth').forEach(b => b.onclick = () => keep(() => { const k = b.dataset.k, p = L.find(x => x.k === k), m = montPick(p);
     setMont(k, {hide: m.hide, v: m.v, a: m.a && m.a.f, b: m.b && m.b.f, [b.dataset.side]: b.dataset.f}); }));
-  $v.querySelectorAll('[data-mauto]').forEach(b => b.onclick = () => keep(() => setMont(b.dataset.k, {hide: cur(b.dataset.k).hide})));
-  $v.querySelectorAll('[data-mhide]').forEach(b => b.onclick = () => keep(() => { const e = cur(b.dataset.k); setMont(b.dataset.k, {...e, hide: !e.hide}); }));
+  $v.querySelectorAll('[data-mauto]').forEach(b => b.onclick = () => { if (cur(b.dataset.k).v) keep(() => setMont(b.dataset.k, {hide: cur(b.dataset.k).hide})); });
+  $v.querySelectorAll('[data-mhide]').forEach(b => b.onclick = () => { const e = cur(b.dataset.k), h = b.dataset.mhide === '1'; if (!!e.hide !== h) keep(() => setMont(b.dataset.k, {...e, hide: h})); });
 }
 /* ---------- Triage: the judging agent's suggestions (suggest.json) ---------- */
 const seen = k => !!(DRAFT.seen || {})[k];
