@@ -29,6 +29,7 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 
 | What | Where / how |
 |---|---|
+| **Redeploy the sync script v11** (user management page, Stats > Users). Steps below ("Code.gs and how to redeploy"); no new permission needed. | Admin > Stats > Users says "Sheet script v11 not deployed" until then. |
 | Review the debatable lecture points and the Stylophora wording (he planned to review the course on Mon 2026-11-02). | ROADMAP "Waiting on Pierre". Any change becomes a discreet note, never a correction. |
 | Confirm Merulina's placement (shown with Hydnophora, lecture group 7; alternative group 5). | ROADMAP. |
 | Say which Lab tools he marked Keep / Trim (votes live only in his browser). | ROADMAP. |
@@ -58,7 +59,7 @@ Nothing needs rebuilding: the site is served by GitHub Pages from `main` through
 1. New Google Sheet > Extensions > Apps Script > paste [`tools/sync/Code.gs`](../tools/sync/Code.gs) > save.
 2. Project Settings > Script Properties: add `ANON_SALT` = any long random string (keeps anonymous player ids unguessable; never commit it).
 3. Deploy > New deployment > type **Web app**, Execute as **Me**, Who has access **Anyone** > Deploy, accept the permissions. Run once in the editor a function that calls `UrlFetchApp` (see "Code.gs" below) so the admins' GitHub token check works.
-4. Put the `/exec` URL in `SYNC_URL` in `app.js` (and bump versions with `tools/check_versions.py --fix`). The tabs (`RAs`, `Answers`, `Activity`, `By genus`, `Reports`, `Progress data`) are created on first use. Old progress lives in the old Sheet only.
+4. Put the `/exec` URL in `SYNC_URL` in `app.js` (and bump versions with `tools/check_versions.py --fix`). The tabs (`RAs`, `Answers`, `Activity`, `By genus`, `Reports`, `Progress data`, `Removed`) are created on first use. Old progress lives in the old Sheet only.
 
 **Content (`data.json`):** the original build scripts read a scratchpad that no longer exists (`tools/archive/`). `data.json` is the source of truth: edit it directly or through a small re-runnable `tools/apply_*.py` script, and write it with `tools/datajson.py` (one genus per line; the PR check fails on any other layout). The lecture text came from the Google Slides copy of Lecture 6 (Slides API, incl. presenter notes); photos from the lecture deck media, Pierre's iNaturalist and other iNaturalist observers (see ARCHITECTURE.md "Photos" and "Tools").
 

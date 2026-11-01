@@ -64,6 +64,30 @@ function mergeProgress(B, P, R){
   return out0;
 }
 
+// Two accounts of one person merged in the admin (user management, Code.gs v11): A = the name that goes away, B = the
+// name kept, both as saved by the app (progData: localStorage key -> string). Their answers are different answers, so
+// counts add up (ok, ko, mix-ups, offers, photos seen), milestones are kept if either has them, and the per-genus model
+// (ability th, knowledge L, recent results h...) comes from whichever account answered that genus more. Settings are
+// B's; bonus genera unlocked on either stay unlocked. Returns B's data with the merged progress.
+function mergeUsers(A, B){
+  A = A || {}; B = B || {};
+  const J = (d, k) => { try { return JSON.parse(d[k] || 'null'); } catch (e) { return null; } };
+  const a = J(A, 'imr-coral-progress') || {}, b = J(B, 'imr-coral-progress') || {}, P = {};
+  const n = s => (s.ok || 0) + (s.ko || 0), add = (x, y) => { const o = {...(x || {})}; Object.keys(y || {}).forEach(k => { o[k] = (o[k] || 0) + y[k]; }); return o; };
+  new Set([...Object.keys(a), ...Object.keys(b)]).forEach(g => {
+    const x = a[g] || {}, y = b[g] || {}, main = n(x) > n(y) ? x : y, o = {...(main === x ? y : x), ...main};
+    o.ok = (x.ok || 0) + (y.ok || 0); o.ko = (x.ko || 0) + (y.ko || 0); o.streak = main.streak || 0;
+    ['conf', 'off'].forEach(f => { const c = add(x[f], y[f]); if (Object.keys(c).length) o[f] = c; else delete o[f]; });
+    const ps = {...(x.ps || {})}; Object.keys(y.ps || {}).forEach(f => { const p = ps[f] || [0, 0]; ps[f] = [p[0] + y.ps[f][0], p[1] + y.ps[f][1]]; });
+    if (Object.keys(ps).length) o.ps = ps; else delete o.ps;
+    if (x.cor || y.cor) o.cor = 1; if (x.du || y.du) o.du = 1;
+    if (o.ok + o.ko || o.h) P[g] = o;
+  });
+  const out = {...A, ...B, 'imr-coral-progress': JSON.stringify(P)}, qa = J(A, 'imr-coral-quiz'), qb = J(B, 'imr-coral-quiz');
+  if (qa || qb) out['imr-coral-quiz'] = JSON.stringify({...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)});
+  return out;
+}
+
 // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
 // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them).
 function eloOf(rows){
@@ -243,6 +267,6 @@ function applySlots(d, c, o = {}){
   });
 }
 
-const CORE = {applyCuration, applySlots, CAP, isObj, eq, canon, merge3, mergeTabs, takeTab, mergeOld, mergeProgress, eloOf, confusionOf, CONF, confScore, pairConf};
+const CORE = {applyCuration, applySlots, CAP, isObj, eq, canon, merge3, mergeTabs, takeTab, mergeOld, mergeProgress, eloOf, confusionOf, CONF, confScore, pairConf, mergeUsers};
 if (typeof module !== 'undefined' && module.exports) module.exports = CORE; else Object.assign(root, CORE);
 })(this);

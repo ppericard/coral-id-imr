@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 10 (2026-11-01: v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 11 (2026-11-01: v11: admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -20,7 +20,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 10;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 11;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -66,7 +66,7 @@ function doGet(e){
   const {name, pin} = clean_(e.parameter);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const sh = sheet_('RAs', HEAD), r = find_(sh, name);
-  if (!r) return json_({ok: true, found: false});
+  if (!r) { const g = gone_(name, hash_(name, pin)); return json_(g ? {ok: false, error: 'gone', into: g.into} : {ok: true, found: false}); }
   if (blocked_(name)) return json_({ok: false, error: 'wait'});
   const row = sh.getRange(r, 1, 1, HEAD.length).getValues()[0];
   if (row[6] !== hash_(name, pin)) { failed_(name); return json_({ok: false, error: 'pin'}); }
@@ -84,6 +84,7 @@ function doPost(e){
   const p = JSON.parse(e.postData.contents);
   if (Array.isArray(p.reports)) return json_(logReports_(p));
   if (p.readReports) return json_(reports_(p.token));  // admin: POST {readReports: 1, token} (see reports_)
+  if (p.users || p.userData || p.userDelete || p.userMerge) return json_(users_(p));  // admin user management (v11, see users_)
   const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
@@ -91,6 +92,10 @@ function doPost(e){
     const sh = sheet_('RAs', HEAD), h = hash_(name, pin), s = p.summary || {};
     let r = find_(sh, name);
     if (r && blocked_(name)) return json_({ok: false, error: 'wait'});
+    // A name the admin removed or merged, with its old code: no new account. Answers of a merged name go to the name it
+    // joined; the app then asks the player to sign out (and to sign in under the other name).
+    const g = r ? null : gone_(name, h);
+    if (g) { if (g.into) logAnswers_(g.into, p.answers); return json_({ok: false, error: 'gone', into: g.into, log: !!g.into}); }
     if (r && sh.getRange(r, 7).getValue() !== h) { failed_(name); return json_({ok: false, error: 'pin'}); }
     logAnswers_(name, p.answers);
     const rev = r ? readData_(name, String(sh.getRange(r, 8).getValue() || '')).rev : 0;
@@ -122,7 +127,7 @@ function logAnswers_(name, answers){
   if (!SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Activity')) sheet_('Activity').getRange(1, 1).setFormula(ACTIVITY);
   const n = sh.getLastRow() - 1;
   const seen = new Set(n > 0 ? sh.getRange(2, 8, n, 1).getValues().map(r => String(r[0])) : []);
-  const G = /^[A-Za-z][A-Za-z -]*$/, M = /^[a-z0-9|-]*$/, PH = /^[A-Za-z0-9_. -]*$/, ID = /^[a-z0-9]+$/, CH = /^[A-Za-z ]*$/;
+  const G = /^[A-Za-z][A-Za-z -]*$/, M = /^[A-Za-z0-9|-]*$/, PH = /^[A-Za-z0-9_. -]*$/, ID = /^[a-z0-9]+$/, CH = /^[A-Za-z ]*$/;
   const rows = answers.filter(a => a && a.id && ID.test(String(a.id)) && !seen.has(String(a.id))).slice(0, 2000)
     .map(a => [safe_(name), new Date(a.t), word_(a.g, G, 40), word_(a.a, G, 40), a.ok ? 1 : 0, word_(a.m, M, 40), word_(a.ph, PH, 400), String(a.id).slice(0, 20), num_(a.e), num_(a.th), num_(a.nw), word_(a.ch, CH, 200)]);
   if (!rows.length) return;
@@ -222,7 +227,7 @@ function logReports_(p){
       if (r && ra.getRange(r, 7).getValue() === hash_(name, pin)) ok = 1; else if (r) failed_(name); }
     const sh = sheet_('Reports', REP), n = sh.getLastRow() - 1;
     const seen = new Set(n > 0 ? sh.getRange(2, REP.length, n, 1).getValues().map(r => String(r[0])) : []);
-    const G = /^[A-Za-z][A-Za-z -]*$/, M = /^[a-z0-9|-]*$/, PH = /^[A-Za-z0-9_. -]*$/;
+    const G = /^[A-Za-z][A-Za-z -]*$/, M = /^[A-Za-z0-9|-]*$/, PH = /^[A-Za-z0-9_. -]*$/;
     const rows = L.filter(r => !seen.has(String(r.id))).map(r => [new Date(r.t || Date.now()), safe_(name), ok, WHY[r.why], word_(r.g, G, 40), word_(r.a, G, 40),
       text_(r.fix, 60), text_(r.note, 1000), word_(r.m, M, 40), word_(r.ph, PH, 400), text_(r.w, 120), String(r.id)]);
     if (rows.length) { const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
@@ -253,4 +258,104 @@ function reports_(token){
   const rows = sh.getRange(2, 1, sh.getLastRow() - 1, REP.length).getValues().filter(x => x[11])
     .map(x => [String(x[11]), new Date(x[0]).getTime() || 0, String(x[1]), Number(x[2]) ? 1 : 0, key[x[3]] || 'other', String(x[4]), String(x[5]), String(x[6]), String(x[7]), String(x[8]), String(x[9]), String(x[10])]);
   return {ok: true, rows: rows.reverse()};
+}
+
+// Admin user management (v11, Pierre 2026-11-01: "a page in the admin to manage the users, now that beta testers come").
+// Every call needs the admin token (isAdmin_), like reading reports. POST bodies:
+//   {users: 1, token} → {ok, users: [{name, updated, learned, seen, total, review, answers, right, first, last, days,
+//     modes: {mode: [answers, right]}, recent: [answers, right] (last 50), mix: [[shown, answered, times]] (top 5),
+//     reports, size}], removed: [{name, into, time}]}
+//   {userData: name, token} → {ok, rev, data}: that player's saved progress (the admin merges two players in the browser,
+//     with core.js mergeUsers, then sends the result back with userMerge).
+//   {userDelete: name, answers: true|false, token} → deletes the player's rows (RAs, Progress data, By genus). Their
+//     answers are deleted too when answers is true (test accounts), else kept for photo difficulty under "~deleted <id>".
+//   {userMerge: {from, into, data, at}, token} → into gets data (the merged progress; at = into's revision when the admin
+//     read it, else 'stale'), every answer and report of from is relabelled into, and from's rows are deleted.
+// Both leave a line in the "Removed" tab (name, code hash, into, time): a device still signed in with that name and code
+// gets error 'gone' (with into) instead of silently re-creating the account. Someone new may still pick the name with
+// another code. Reports keep their text; nothing else changes.
+const REMOVED = ['Name', 'Code hash', 'Into', 'Time'];
+function gone_(name, h){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Removed');
+  if (!sh || sh.getLastRow() < 2) return null;
+  const k = name.toLowerCase(), rows = sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues();
+  for (let i = rows.length - 1; i >= 0; i--) if (String(rows[i][0]).toLowerCase() === k && rows[i][1] === h) return {into: String(rows[i][2] || '')};
+  return null;
+}
+const lc_ = x => String(x == null ? '' : x).trim().toLowerCase();
+// Deletes every row of tab `tab` whose column `col` (1-based) is the name (bottom up, so row numbers stay valid).
+function dropRows_(tab, name, col){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tab); if (!sh || sh.getLastRow() < 2) return 0;
+  const v = sh.getRange(2, col || 1, sh.getLastRow() - 1, 1).getValues(), k = lc_(name); let n = 0;
+  for (let i = v.length - 1; i >= 0; i--) if (lc_(v[i][0]) === k) { sh.deleteRow(i + 2); n++; }
+  return n;
+}
+// Renames the name in column `col` of tab `tab` (answers, reports): one write of the whole column.
+function relabel_(tab, col, from, into){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tab); if (!sh || sh.getLastRow() < 2) return 0;
+  const rg = sh.getRange(2, col, sh.getLastRow() - 1, 1), v = rg.getValues(), k = lc_(from); let n = 0;
+  v.forEach(r => { if (lc_(r[0]) === k) { r[0] = safe_(into); n++; } });
+  if (n) rg.setValues(v);
+  return n;
+}
+function users_(p){
+  if (!isAdmin_(String(p.token || ''))) return {ok: false, error: 'token'};
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), ra = sheet_('RAs', HEAD);
+  const row_ = name => { const r = find_(ra, name); return r ? {r: r, v: ra.getRange(r, 1, 1, HEAD.length).getValues()[0]} : null; };
+  const removed_ = (name, h, into) => sheet_('Removed', REMOVED).appendRow([safe_(name), h, safe_(into || ''), new Date()]);
+  if (p.userData) {
+    const u = row_(String(p.userData)); if (!u) return {ok: false, error: 'user'};
+    const d = readData_(String(u.v[0]), String(u.v[7] || ''));
+    return {ok: true, rev: d.rev, data: JSON.parse(d.json)};
+  }
+  if (p.userDelete || p.userMerge) {
+    const lock = LockService.getScriptLock(); lock.waitLock(10000);
+    try {
+      if (p.userDelete) {
+        const u = row_(String(p.userDelete)); if (!u) return {ok: false, error: 'user'};
+        const name = String(u.v[0]);
+        const answers = p.answers ? dropRows_('Answers', name) : relabel_('Answers', 1, name, '~deleted ' + aid_(name));
+        ['RAs', DATA_TAB, 'By genus'].forEach(t => dropRows_(t, name));
+        removed_(name, u.v[6], '');
+        return {ok: true, answers: answers};
+      }
+      const m = p.userMerge || {}, a = row_(String(m.from || '')), b = row_(String(m.into || ''));
+      if (!a || !b || a.r === b.r || !m.data || typeof m.data !== 'object') return {ok: false, error: 'user'};
+      const from = String(a.v[0]), into = String(b.v[0]), cur = readData_(into, String(b.v[7] || ''));
+      if (typeof m.at === 'number' && m.at !== cur.rev) return {ok: false, error: 'stale', rev: cur.rev};
+      const json = JSON.stringify(m.data);
+      writeData_(into, json, cur.rev + 1);
+      ra.getRange(b.r, 2).setValue(new Date()); ra.getRange(b.r, 8).setValue(json.length < CHUNK ? json : '@' + DATA_TAB);
+      const answers = relabel_('Answers', 1, from, into), reports = relabel_('Reports', 2, from, into);
+      ['RAs', DATA_TAB, 'By genus'].forEach(t => dropRows_(t, from));
+      removed_(from, a.v[6], into);
+      return {ok: true, rev: cur.rev + 1, answers: answers, reports: reports};
+    } finally { lock.releaseLock(); }
+  }
+  // The list, with each player's numbers from the Answers and Reports tabs.
+  const out = {ok: true, users: [], removed: []}, by = {};
+  if (ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, HEAD.length).getValues().filter(r => r[0]).forEach(r => {
+    const u = {name: String(r[0]), updated: new Date(r[1]).getTime() || 0, learned: Number(r[2]) || 0, seen: Number(r[3]) || 0, total: Number(r[4]) || 0,
+      review: String(r[5] || ''), answers: 0, right: 0, first: 0, last: 0, days: 0, modes: {}, recent: [0, 0], mix: [], reports: 0, size: String(r[7] || '').length};
+    out.users.push(u); by[lc_(u.name)] = u;
+  });
+  const an = ss.getSheetByName('Answers'), days = {}, mixes = {}, last50 = {};
+  if (an && an.getLastRow() > 1) an.getRange(2, 1, an.getLastRow() - 1, 6).getValues().forEach(r => {
+    const u = by[lc_(r[0])]; if (!u) return;
+    const t = new Date(r[1]).getTime() || 0, ok = Number(r[4]) ? 1 : 0, mode = String(r[5]).split('|')[0] || '?', k = lc_(u.name);
+    u.answers++; u.right += ok; if (t && (!u.first || t < u.first)) u.first = t; if (t > u.last) u.last = t;
+    (days[k] = days[k] || {})[Utilities.formatDate ? Utilities.formatDate(new Date(t), 'GMT+8', 'yyyy-MM-dd') : new Date(t + 8 * 36e5).toISOString().slice(0, 10)] = 1;
+    const md = u.modes[mode] = u.modes[mode] || [0, 0]; md[0]++; md[1] += ok;
+    (last50[k] = last50[k] || []).push([t, ok]);
+    if (!ok && r[3] && r[3] !== r[2]) { const x = (mixes[k] = mixes[k] || {}), key = r[2] + '|' + r[3]; x[key] = (x[key] || 0) + 1; }
+  });
+  Object.keys(by).forEach(k => { const u = by[k];
+    u.days = Object.keys(days[k] || {}).length;
+    const L = (last50[k] || []).sort((a, b) => a[0] - b[0]).slice(-50); u.recent = [L.length, L.reduce((t, x) => t + x[1], 0)];
+    u.mix = Object.keys(mixes[k] || {}).map(x => x.split('|').concat([mixes[k][x]])).sort((a, b) => b[2] - a[2]).slice(0, 5); });
+  const rp = ss.getSheetByName('Reports');
+  if (rp && rp.getLastRow() > 1) rp.getRange(2, 2, rp.getLastRow() - 1, 1).getValues().forEach(r => { const u = by[lc_(r[0])]; if (u) u.reports++; });
+  const rm = ss.getSheetByName('Removed');
+  if (rm && rm.getLastRow() > 1) out.removed = rm.getRange(2, 1, rm.getLastRow() - 1, 4).getValues().filter(r => r[0]).map(r => ({name: String(r[0]), into: String(r[2] || ''), time: new Date(r[3]).getTime() || 0})).reverse();
+  return out;
 }

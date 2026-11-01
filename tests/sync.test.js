@@ -7,7 +7,7 @@ const ans = (id, extra = {}) => ({id, t: '2026-11-01T00:00:00Z', g: 'Acropora', 
 
 test('new RA, save and load back, with revision', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 10});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 11});
   const r = s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}, answers: [ans('a1')]});
   assert.strictEqual(r.ok, true); assert.strictEqual(r.log, true); assert.strictEqual(r.rev, 1);
   const g = s.get({name: 'ana', pin: '1234'});
@@ -100,7 +100,7 @@ const rep = (id, extra = {}) => ({id, t: '2026-11-01T00:00:00Z', why: 'wrong', g
 test('reports: logged once, reporter verified by code, never mistaken for a progress write', () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}});
-  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 10});
+  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 11});
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1'), rep('r2', {why: 'multi', fix: ''})]});
   s.post({rname: 'Bob', rpin: '', reports: [rep('r3', {why: 'bogus'}), rep('r4', {why: 'photo', note: '=HYPERLINK("x")'})]});
   const R = s.sheets.Reports;
@@ -127,4 +127,69 @@ test('reports list: only a GitHub token that can write to the repo, checked once
   assert.strictEqual(s.fetched.length, n, 'remembered for 10 minutes');
   assert.ok(!JSON.stringify(s.cache).includes('ghp_write'), 'the token itself is never stored');
   assert.strictEqual(s.get({reports: '1', name: 'Ana', pin: '1234'}).found, true, 'no GET for reports');
+});
+
+// Admin user management (v11).
+const TOK = 'ghp_write000000000000000000';
+const seed = () => {
+  const s = loadCodeGs();
+  s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {learned: 1, seen: 2, total: 39}, answers: [ans('a1'), ans('a2', {ok: 0, a: 'Montipora', m: 'quiz-duel'})]});
+  s.post({name: 'Ana B', pin: '5678', data: prog(2), summary: {learned: 0, seen: 1, total: 39}, answers: [ans('b1')]});
+  s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {}, answers: [ans('c1')]});
+  s.post({rname: 'Ana B', rpin: '5678', reports: [{id: 'r1', why: 'photo', t: '2026-11-01T00:00:00Z'}]});
+  return s;
+};
+
+test('users: admin token only; one row per player with their numbers', () => {
+  const s = seed();
+  assert.strictEqual(s.post({users: 1}).error, 'token');
+  assert.strictEqual(s.post({users: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
+  const r = s.post({users: 1, token: TOK});
+  assert.strictEqual(r.ok, true); assert.strictEqual(r.v, 11);
+  const ana = r.users.find(u => u.name === 'Ana');
+  assert.strictEqual(ana.answers, 2); assert.strictEqual(ana.right, 1); assert.strictEqual(ana.learned, 1); assert.strictEqual(ana.days, 1);
+  assert.deepStrictEqual(ana.modes, {quiz: [1, 1], 'quiz-duel': [1, 0]});
+  assert.deepStrictEqual(ana.mix, [['Acropora', 'Montipora', 1]]);
+  assert.strictEqual(r.users.find(u => u.name === 'Ana B').reports, 1);
+  assert.strictEqual(s.post({userData: 'ana b', token: TOK}).rev, 1);
+});
+
+test('userMerge: progress written to into, answers and reports relabelled, from removed and refused afterwards', () => {
+  const s = seed();
+  const merged = prog(5);
+  assert.strictEqual(s.post({userMerge: {from: 'Ana B', into: 'Ana', data: merged, at: 0}, token: TOK}).error, 'stale');
+  const r = s.post({userMerge: {from: 'Ana B', into: 'Ana', data: merged, at: 1}, token: TOK});
+  assert.strictEqual(r.ok, true); assert.strictEqual(r.answers, 1); assert.strictEqual(r.reports, 1); assert.strictEqual(r.rev, 2);
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).data, merged);
+  const u = s.post({users: 1, token: TOK});
+  assert.deepStrictEqual(u.users.map(x => x.name).sort(), ['Ana', 'Ben']);
+  assert.strictEqual(u.users.find(x => x.name === 'Ana').answers, 3);
+  assert.deepStrictEqual(u.removed.map(x => [x.name, x.into]), [['Ana B', 'Ana']]);
+  // The old device of "Ana B": a pull and a send both get 'gone', and its new answers go to Ana.
+  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 11});
+  const w = s.post({name: 'Ana B', pin: '5678', data: prog(9), summary: {}, answers: [ans('b2')]});
+  assert.strictEqual(w.error, 'gone'); assert.strictEqual(w.log, true);
+  assert.strictEqual(s.post({users: 1, token: TOK}).users.find(x => x.name === 'Ana').answers, 4);
+  assert.strictEqual(s.sheets.RAs.getLastRow(), 3, 'no account re-created for Ana B');
+  // Someone new may still take the name with another code.
+  assert.strictEqual(s.post({name: 'Ana B', pin: '0000', data: prog(1), summary: {}}).ok, true);
+});
+
+test('userDelete: rows gone; answers kept anonymously unless asked; the old code is refused', () => {
+  const s = seed();
+  const r = s.post({userDelete: 'Ben', token: TOK});
+  assert.strictEqual(r.ok, true); assert.strictEqual(r.answers, 1);
+  assert.ok(s.sheets.Answers.rows.some(x => /^~deleted /.test(x[0])), 'answers kept for photo difficulty, without the name');
+  assert.ok(!s.sheets.RAs.rows.some(x => x && x[0] === 'Ben'));
+  assert.strictEqual(s.get({name: 'Ben', pin: '1111'}).error, 'gone');
+  const d = s.post({userDelete: 'Ana B', answers: true, token: TOK});
+  assert.strictEqual(d.answers, 1);
+  assert.ok(!s.sheets.Answers.rows.some(x => x && /Ana B/.test(x[0])));
+  assert.strictEqual(s.post({userDelete: 'Nobody', token: TOK}).error, 'user');
+});
+
+test('a duel on a chosen pair keeps its mode (rated as 2 choices)', () => {
+  const s = loadCodeGs();
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('d1', {m: 'quiz-duel|Acropora|Montipora'})]});
+  assert.strictEqual(s.sheets.Answers.getRange(2, 6).getValue(), 'quiz-duel|Acropora|Montipora');
 });

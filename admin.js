@@ -422,7 +422,7 @@ function status(){
   const ms = $('modesel'); if (ms) { ms.innerHTML = [...document.querySelectorAll('#modes [data-mode]')].map(a => `<option value="${esc(a.getAttribute('href'))}"${a.getAttribute('aria-current') === 'true' ? ' selected' : ''}>${esc(a.textContent)}</option>`).join(''); ms.hidden = false; }
 }
 // Which header tab the page belongs to: the Stats tab holds players, photos, the photo list and coverage.
-const modeKey = () => NEED_TABS.some(([h]) => h === cur) ? 'needs' : cur.startsWith('~stats') || cur === '~diff' ? 'stats' : ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~look': 'mont', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
+const modeKey = () => NEED_TABS.some(([h]) => h === cur) ? 'needs' : cur.startsWith('~stats') || cur === '~diff' || cur === '~users' ? 'stats' : ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~look': 'mont', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
 function render(){
   memoReset();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
@@ -432,7 +432,7 @@ function render(){
   if (cur === '~triage') return renderTriage();
   // Every Stats / Needs sub-view keeps its sub-menu on top, whichever function draws it (Pierre, 2026-11-01).
   if (modeKey() === 'needs') { if (cur === '~cov') renderCov(); else if (cur === '~fcov') renderFcov(); else renderStats(); return withSwitch(); }
-  if (modeKey() === 'stats') { if (cur === '~diff') renderDiff(); else renderStats(); return withSwitch(); }
+  if (modeKey() === 'stats') { if (cur === '~diff') renderDiff(); else if (cur === '~users') renderUsers(); else renderStats(); return withSwitch(); }
   if (cur === '~look' || cur === '~mont') return renderMont(); // ~mont = old address, kept for bookmarks
   if (cur === '~cand') return renderCand();
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
@@ -638,6 +638,7 @@ const HELP = {
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Game coverage). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name, most recently active first (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Last = last answer. Right = all their answers; Last 50 = their last 50. Days = days with answers. Learned and Seen = genera, from their last sync. Reports = problems they reported (Triage). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review.</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
   stats: `<p>Every quiz and duel answer synced to the sheet. Players are anonymous: a number, ranked by level; "you" marks the name synced in this browser (All / Others / Me). Level is on the same scale as photo difficulty. Last 20 = right answers among the player's last 20. Learned = genera learned on their last sync. Days = days with answers. Photos = different photos answered (more = more variety). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
@@ -663,7 +664,7 @@ const HELP = {
 };
 function toggleHelp(){
   let h = $('admhelp'); if (h) { h.remove(); return; }
-  const m = ({'~stats-photos': 'statsph', '~stats-conf': 'statsconf', '~stats-needs': 'statsneeds', '~diff': 'diff', '~cov': 'cov', '~fcov': 'fcov'})[cur] || modeKey();
+  const m = ({'~users': 'users', '~stats-photos': 'statsph', '~stats-conf': 'statsconf', '~stats-needs': 'statsneeds', '~diff': 'diff', '~cov': 'cov', '~fcov': 'fcov'})[cur] || modeKey();
   h = document.createElement('div'); h.id = 'admhelp'; h.className = 'adm-help'; h.setAttribute('role', 'dialog'); h.setAttribute('aria-label', 'Help');
   // Two tabs: this page's help, and "Start here" (shown first until this browser has opened it once).
   let tab = store.get('imr-admin-started', false) ? 'page' : 'start';
@@ -1312,7 +1313,7 @@ function renderFcov(){
 // level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
 // The Stats tab holds the sub-views of STAT_TABS (incl. the photo list, renderDiff). The to-do lists (Needs and the two
 // coverage views) are their own "Needs" tab, NEED_TABS (Pierre, 2026-11-01, admin review rec. 6: work lists, not statistics).
-const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~stats-conf', 'Confusions'], ['~diff', 'Photo list']];
+const STAT_TABS = [['~users', 'Users'], ['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~stats-conf', 'Confusions'], ['~diff', 'Photo list']];
 const NEED_TABS = [['~stats-needs', 'Where to look'], ['~cov', 'Game coverage'], ['~fcov', 'Sheet & Finder coverage']];
 let ANS = null, RAS = {}, MEID = null, SF = Object.assign({who: 'all', min: 1, elo: 'all', nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('imr-admin-stats', {}));
 const statSwitch = () => `<nav class="adm-filter adm-stabs" aria-label="${modeKey() === 'needs' ? 'Needs' : 'Stats'}">${(modeKey() === 'needs' ? NEED_TABS : STAT_TABS)
@@ -1352,6 +1353,67 @@ const sbar = (v, max, cls = '') => `<span class="adm-bar${cls ? ' ' + cls : ''}"
 function bindStats(){
   $v.querySelectorAll('[data-sf]').forEach(b => b.onclick = () => { const k = b.dataset.sf; SF[k] = k === 'min' ? Number(b.dataset.v) : b.dataset.v; store.set('imr-admin-stats', SF); render(); });
   $v.querySelectorAll('[data-zf]').forEach(b => b.onclick = () => zoom(b.dataset.g, b.dataset.zf));
+}
+// Users (Pierre, 2026-11-01: "now that beta testers come, I need to see and manage them"): every player who signed in,
+// by name, with their numbers, from sheet script v11 (POST {users: 1, token}; names, so the admin token is checked like
+// for reports). Merge = two names of one person: the progress is merged here (core.js mergeUsers: answers add up, the
+// busier account's model per genus), then the sheet relabels the answers and reports and deletes the other name.
+// Delete = a test or abandoned account (its answers stay for photo difficulty, without the name, unless asked).
+// Both are permanent, so both ask first; a device still signed in with the old name is told and asked to sign out.
+let USERS = null, usersAt = 0, uOpen = null;
+function loadUsers(force){
+  if (!force && USERS && Date.now() - usersAt < 120000) return Promise.resolve(USERS);
+  if (!TOKEN) { USERS = {err: 'Needs the GitHub token'}; return Promise.resolve(USERS); }
+  return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({users: 1, token: TOKEN})}).then(r => r.json())
+    .then(j => { usersAt = Date.now();
+      USERS = j && j.ok && j.users ? j : {err: !j || !j.v || j.v < 11 ? `Sheet script v11 not deployed (live: v${esc((j && j.v) || '?')})` : j.error === 'token' ? 'Token refused' : 'Not available'}; return USERS; })
+    .catch(() => (USERS = {err: 'Offline'}));
+}
+const userPost = body => fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({...body, token: TOKEN})}).then(r => r.json());
+function renderUsers(){
+  status();
+  const head = `<div class="adm-shead"><h2>Users</h2><button type="button" class="adm-fchip plain" data-uload title="Reload">↻</button></div>`;
+  if (!USERS) { $v.innerHTML = head + '<p class="note">Loading…</p>'; loadUsers().then(() => { if (cur === '~users') render(); }); return; }
+  if (USERS.err) { $v.innerHTML = head + `<p class="warn">${USERS.err}${/v11/.test(USERS.err) ? ` · <a href="https://raw.githubusercontent.com/${REPO}/main/tools/sync/Code.gs" target="_blank" rel="noopener">Code.gs</a>` : ''}</p>`; bindUsers(); return; }
+  const U = USERS.users.slice().sort((a, b) => (b.last || b.updated) - (a.last || a.updated)), total = DATA ? Object.keys(DATA.gen).length : 0;
+  const when = t => t ? days(t) : '–', date = t => t ? new Date(t).toLocaleDateString([], {day: 'numeric', month: 'short'}) : '–';
+  const opts = n => U.filter(u => u.name !== n).map(u => `<option>${esc(u.name)}</option>`).join('');
+  const MODE = {quiz: 'Photo quiz', 'quiz-duel': 'Duel', '?': 'Other'};
+  const detail = u => `<tr class="adm-udet"><td colspan="10"><div class="adm-sgrid">
+      <section class="adm-scard"><h3>Games</h3><table class="adm-tbl">${Object.entries(u.modes).sort((a, b) => b[1][0] - a[1][0]).map(([m, [n, r]]) => `<tr><td>${esc(MODE[m] || m)}</td><td>${pct(r, n)}</td><td>${sbar(r, n)}</td><td class="n">${n}</td></tr>`).join('') || '<tr><td>No answers</td></tr>'}</table>
+        <p class="note">First answer ${date(u.first)} · last ${date(u.last)} · ${u.days} day${u.days === 1 ? '' : 's'}</p></section>
+      <section class="adm-scard"><h3>Mix-ups</h3>${u.mix.length ? `<table class="adm-tbl">${u.mix.map(([a, b, n]) => `<tr><td><i>${esc(a)}</i> → <i>${esc(b)}</i></td><td class="n">${n}×</td></tr>`).join('')}</table>` : '<p class="note">None</p>'}
+        ${u.review ? `<h3>Review</h3><p>${u.review.split(', ').map(n => `<i>${esc(n)}</i>`).join(', ')}</p>` : ''}</section>
+      <section class="adm-scard"><h3>Manage</h3>
+        <p><label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label></p>
+        <p><button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete</button></p></section></div></td></tr>`;
+  const act = U.filter(u => u.last && Date.now() - u.last < 7 * 864e5).length, ans = U.reduce((t, u) => t + u.answers, 0);
+  $v.innerHTML = head + kpis([['Users', U.length], ['Active 7 d', act], ['Answers', ans], ['Removed', USERS.removed.length]]) + (!U.length ? '<p class="note">Nobody has signed in yet.</p>' : `
+    <section class="adm-scard adm-ucard"><div class="adm-tscroll"><table class="adm-tbl adm-utbl"><thead><tr><th>Name</th><th>Last</th><th>Answers</th><th>Right</th><th title="Right among the last 50">Last 50</th><th>Days</th><th>Learned</th><th>Seen</th><th title="Reports sent">Reports</th><th></th></tr></thead><tbody>
+      ${U.map(u => `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}" data-uopen="${esc(u.name)}"><td><b>${esc(u.name)}</b></td><td>${when(u.last || u.updated)}</td><td>${u.answers}</td><td>${pct(u.right, u.answers)}</td><td>${pct(u.recent[1], u.recent[0])}</td><td>${u.days}</td>
+        <td>${u.learned}/${u.total || total}</td><td>${u.seen}</td><td>${u.reports || ''}</td><td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`).join('')}</tbody></table></div></section>`)
+    + (USERS.removed.length ? `<details class="adm-uremoved"><summary>Removed (${USERS.removed.length})</summary><table class="adm-tbl">${USERS.removed.map(r => `<tr><td>${esc(r.name)}</td><td>${r.into ? `merged into <b>${esc(r.into)}</b>` : 'deleted'}</td><td>${date(r.time)}</td></tr>`).join('')}</table></details>` : '');
+  bindUsers();
+}
+function bindUsers(){
+  const rl = $v.querySelector('[data-uload]'); if (rl) rl.onclick = () => { USERS = null; render(); };
+  $v.querySelectorAll('[data-uopen]').forEach(tr => tr.onclick = () => { uOpen = uOpen === tr.dataset.uopen ? null : tr.dataset.uopen; render(); });
+  const done = (msg, j) => { if (j && j.ok) { toast(msg); USERS = null; uOpen = null; render(); } else toast(j && j.error === 'stale' ? 'The player just synced: try again.' : `Not done (${(j && j.error) || 'offline'}).`); };
+  $v.querySelectorAll('[data-umerge]').forEach(s => s.onchange = () => {
+    const from = s.dataset.umerge, into = s.value; if (!into) return;
+    if (!confirm(`Merge "${from}" into "${into}"?\n\nTheir progress is combined under "${into}", every answer and report of "${from}" is moved to "${into}", and "${from}" is deleted. This cannot be undone.`)) { s.value = ''; return; }
+    toast('Merging…');
+    Promise.all([userPost({userData: from}), userPost({userData: into})]).then(([a, b]) => {
+      if (!(a && a.ok && b && b.ok)) return done('', a && !a.ok ? a : b);
+      return userPost({userMerge: {from, into, data: mergeUsers(a.data, b.data), at: b.rev}}).then(j => done(`"${from}" merged into "${into}".`, j));
+    }).catch(() => done('', null));
+  });
+  $v.querySelectorAll('[data-udel]').forEach(b => b.onclick = () => {
+    const name = b.dataset.udel, u = (USERS.users || []).find(x => x.name === name) || {answers: 0};
+    if (!confirm(`Delete "${name}"?\n\nTheir account and progress are deleted. This cannot be undone.`)) return;
+    const drop = u.answers > 0 && confirm(`Also delete their ${u.answers} answer${u.answers === 1 ? '' : 's'}?\n\nOK: delete them too (a test account).\nCancel: keep them without the name (they help rate photo difficulty).`);
+    userPost({userDelete: name, answers: drop}).then(j => done(`"${name}" deleted.`, j)).catch(() => done('', null));
+  });
 }
 function renderStats(){
   status();
