@@ -843,11 +843,13 @@ function unlockShow(L){
 }
 // Wrong choices get harder as the player gets better at the target genus (Pierre, 2026-11-01: "at the very start it must
 // be simple", then traps appear little by little). TRAP gives how many of the 3 wrong choices are look-alikes of the
-// target (IMR lecture or Coral Finder pairs, `look` both ways), from the genus's Elo ability: none at the start (ability 0),
-// one from about 0.8, two from 1.3, all three from 1.8, rounded at random in between so the step is smooth. The other
+// target (IMR lecture or Coral Finder pairs, `look` both ways), from the genus's Elo ability: none on a genus's very first
+// question (ability 0), then they come in fast because look-alikes are how genera are learned (Pierre, 2026-11-01): one
+// from 0.18 (after the first right answer), two from 0.36, all three from 0.54 (about 5 right answers), rounded at random
+// in between. A mistake drops the ability by about 0.5, so the choices ease off again. The other
 // wrong choices are easy ones while traps are few: genera sharing no IMR growth form with the target (imrFormsOf),
 // other IMR lecture groups first; once two traps are in, the last one is any genus (family first), as before.
-const TRAP = {start: 0.3, step: 0.5};
+const TRAP = {start: 0, step: 0.18};
 const trapsFor = t => { const x = Math.min(3, Math.max(0, (ability(t) - TRAP.start) / TRAP.step)); return Math.floor(x) + (Math.random() < x % 1 ? 1 : 0); };
 function distractors(t, list, traps = trapsFor(t)){
   const T = GX(t), look = list.filter(n => n !== t && (T.look.includes(n) || GX(n).look.includes(t)));
