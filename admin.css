@@ -471,3 +471,17 @@ td.cov-c .cov-off{display:block;font-size:.62rem;font-weight:500;line-height:1.1
 .adm-why.w-zoom{background:var(--surface-2);border-color:var(--accent,var(--line));border-style:dashed}
 .adm-why.w-easy{background:var(--good-bg);border-color:var(--good);color:var(--ink)}
 @media (min-width:1024px){.adm-kpis:has(> div:nth-child(5)){grid-template-columns:repeat(5,minmax(0,1fr))}}
+/* Stats > Needs: reason cards are filters (one row from tablet up), sortable headers, view switch + genus box */
+.adm-nsearch{font:inherit;font-size:.85rem;min-height:30px;padding:0 10px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--ink);width:11em}
+.adm-nkpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.adm-nkpis button{font:inherit;text-align:left;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px 12px;display:flex;flex-direction:column;cursor:pointer;min-width:0}
+.adm-nkpis button:hover{border-color:var(--accent)}
+.adm-nkpis button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.adm-nkpis button.zero b{color:var(--muted)}
+.adm-nkpis span{overflow-wrap:anywhere}
+@media (max-width:599px){.adm-nkpis button{padding:6px 8px}.adm-nkpis b{font-size:1.2rem}.adm-nkpis span{font-size:.62rem;letter-spacing:.03em}}
+@media (min-width:600px){.adm-kpis.adm-nkpis{grid-template-columns:repeat(7,minmax(0,1fr))}}
+.adm-needs th button{font:inherit;font-size:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;background:none;border:0;padding:4px 0;cursor:pointer;white-space:nowrap}
+.adm-needs th button.on{color:var(--accent)}
+.adm-needs th.n{text-align:right}
+.adm-why.on{box-shadow:0 0 0 1.5px var(--accent)}
