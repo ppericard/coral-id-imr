@@ -356,8 +356,13 @@ test('anonymous answers are logged under ~anon <id>, then move to the name at si
     s.sheets.Answers.rows.slice(1).map(r => r[0]),
     ['~anon abc123xyz0', '~anon abc123xyz0']
   );
-  // New account: nothing to move yet (the name has no row); first sync of an existing name with anon moves them.
+  // An existing name with the wrong code moves nothing.
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: []});
+  assert.strictEqual(s.post({name: 'Ana', pin: '9999', data: prog(9), summary: {}, answers: [], anon: 'abc123xyz0'}).error, 'pin');
+  assert.deepStrictEqual(
+    s.sheets.Answers.rows.slice(1).map(r => r[0]),
+    ['~anon abc123xyz0', '~anon abc123xyz0']
+  );
   const r = s.post({name: 'Ana', pin: '1234', data: prog(2), summary: {}, answers: [ans('z1'), ans('z2'), ans('z4')], anon: 'abc123xyz0'});
   assert.strictEqual(r.ok, true);
   const names = s.sheets.Answers.rows.slice(1).map(x => x[0]);
@@ -380,4 +385,17 @@ test('new accounts are capped per 6 hours', () => {
   for (let i = 0; i < 40; i++) assert.strictEqual(s.post({name: 'P' + i, pin: '1234', data: prog(1), summary: {}}).ok, true);
   assert.strictEqual(s.post({name: 'P40', pin: '1234', data: prog(1), summary: {}}).error, 'busy');
   assert.strictEqual(s.post({name: 'P1', pin: '1234', data: prog(2), summary: {}}).ok, true, 'existing accounts still sync');
+});
+
+test('anonymous answers also move to a brand-new account at its first sync', () => {
+  const s = loadCodeGs();
+  s.post({anon: 'newplayer1', anonAnswers: [ans('y1')]});
+  assert.strictEqual(
+    s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {}, answers: [ans('y1'), ans('y2')], anon: 'newplayer1'}).ok,
+    true
+  );
+  assert.deepStrictEqual(
+    s.sheets.Answers.rows.slice(1).map(r => r[0]),
+    ['Ben', 'Ben']
+  );
 });

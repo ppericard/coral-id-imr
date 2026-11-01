@@ -2564,11 +2564,11 @@ function sendAnon() {
     .then(r => r.json())
     .then(j => {
       if (!j || !j.log) return;
-      const done = new Set(batch.map(x => x.id));
-      store.set(
-        ANONQ,
-        store.get(ANONQ, []).filter(x => !done.has(x.id))
-      );
+      const done = new Set(batch.map(x => x.id)),
+        left = store.get(ANONQ, []).filter(x => !done.has(x.id));
+      store.set(ANONQ, left);
+      // More than one batch waiting (played offline): the next one follows; a refused batch ('busy') is not retried here.
+      if (left.length) setTimeout(sendAnon, 1000);
     })
     .catch(() => {})
     .finally(() => {
