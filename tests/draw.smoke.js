@@ -135,6 +135,16 @@ const server = http.createServer((req, res) => {
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.97, ex: {k: 3, v: ['wide'], at: answersSoFar()}};
     answer('quiz', 'Porites' === t ? 'Acropora' : 'Porites', t, photoSet(t).shown, false, null);
     if (P[t].ex) fails.push(`${t}: a miss did not end the exam`);
+    // Mastery holds only while the genus stays known: misses that bring it under 95% take it away.
+    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.96, mx: 1};
+    for (let i = 0; i < 3 && P[t].mx; i++) answer('quiz', 'Porites' === t ? 'Acropora' : 'Porites', t, photoSet(t).shown, false, null);
+    if (P[t].mx) fails.push(`${t}: still mastered after misses (L ${knownP(t)})`);
+    // Exam photos are never-seen ones while some remain.
+    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.97, ps: {}};
+    const v0 = examSet(t).shown[0];
+    P[t].ps[v0.f] = [1, 0];
+    for (let i = 0; i < 20; i++)
+      if (examSet(t).shown[0].f === v0.f && gamePics(t, v0.view, 'hard').length > 1) fails.push(`${t}: exam reused a photo already seen`);
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
   await b.close();

@@ -1190,12 +1190,15 @@ function examSet(n) {
   if (!vs.length) return null;
   const v = pick(todo.length ? todo : vs),
     L = pics(v),
-    fresh = L.filter(p => !(ps[p.f] || [0, 0])[1]),
-    pool = fresh.length
-      ? fresh
-      : L.slice()
-          .sort((a, b) => (ps[a.f] || [0])[0] - (ps[b.f] || [0])[0])
-          .slice(0, 3);
+    // Never shown at all first (a photo answered wrong has been seen, and its answer shown); else the least seen of those
+    // never answered right; else the least seen.
+    fresh = L.filter(p => !(ps[p.f] || [0])[0]),
+    unright = L.filter(p => !(ps[p.f] || [0, 0])[1]),
+    least = M =>
+      M.slice()
+        .sort((a, b) => (ps[a.f] || [0])[0] - (ps[b.f] || [0])[0])
+        .slice(0, 3),
+    pool = fresh.length ? fresh : least(unright.length ? unright : L);
   const p = pool.reduce((a, b) => (photoDiff(n, b) > photoDiff(n, a) ? b : a));
   return {shown: [{...p, view: lab(v)}], hint: null, reveal: [], exam: true};
 }
@@ -1697,6 +1700,9 @@ function answer(cur, c, target, ph, cor, unseen) {
     } else s.ex = ex;
   }
   if (!good && GX(c) && P[c]) delete P[c].ex;
+  // Mastery is kept only while the genus stays known: below 95% again (misses lower it, for the genus shown and for the one
+  // answered), it is lost and the exam comes back (code review #327).
+  [target, ...(!good && GX(c) ? [c] : [])].forEach(n => P[n] && P[n].mx && knownP(n) < BKT.MASTER && delete P[n].mx);
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
   // sheet's Answers tab also gets what was played before the account existed (Pierre, 2026-11-01).
