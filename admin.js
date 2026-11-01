@@ -914,9 +914,10 @@ function renderCand(){
       <figure class="adm-swcard">
         <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img src="${img(p)}" alt=""${crStyle(p.f)}></button>
         <a class="adm-swg" href="#${encodeURIComponent(n)}" title="Genus page"><i>${esc(n)}</i>${p.from ? `<small>from ${esc(p.from)}</small>` : ''}</a>
+        <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
         <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
       </figure>
-      <div class="adm-acts adm-swacts">${qSeg(p)}${fSeg(p)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOf(p.f) ? ' on' : ''}" data-crop aria-pressed="${!!crOf(p.f)}">Crop</button><button type="button" data-skip>Skip</button><button type="button" class="adm-swx" data-x title="Exclude for good" aria-label="Exclude for good">× Exclude</button></div></div>
+      <div class="adm-acts adm-swacts">${qSeg(p)}${fSeg(p)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOf(p.f) ? ' on' : ''}" data-crop aria-pressed="${!!crOf(p.f)}">Crop</button><button type="button" data-skip>Skip</button></div></div>
       <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${(p.vg || p.view) === w ? ' sug' : ''}" data-add="${w}" title="${(p.vg || p.view) === w ? 'Suggested · ' : ''}Add (${i + 1})">+ ${label(n, w)}</button>`).join('')}</div>
     </section>`;
     if (nx) new Image().src = img(nx.p);
