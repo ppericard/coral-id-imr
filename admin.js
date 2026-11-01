@@ -578,8 +578,8 @@ function renderQuality(){
 
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
-  fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the 39 IMR genera and the book's other genera seen at Dauin (CF only). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Game coverage). Forms = growth forms seen on Colony and Closer photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z. Click a row to open the genus.</p>`,
-  cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture. Click a row to open the genus.</p>`,
+  fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the 39 IMR genera and the book's other genera seen at Dauin (CF only). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Game coverage). Forms = growth forms seen on Colony and Closer photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Closer or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
+  cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Closer or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   stats: `<p>Every quiz and duel answer synced to the sheet. Players are anonymous: a number, ranked by level; "you" marks the name synced in this browser (All / Others / Me). Level is on the same scale as photo difficulty. Last 20 = right answers among the player's last 20. Learned = genera learned on their last sync. Days = days with answers. Photos = different photos answered (more = more variety). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsph: `<p>Photo difficulty (Elo) from every answer: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers; few answers = rough. Click a dot to see the photo.</p>
@@ -1066,6 +1066,14 @@ const covLvl = c => COV.filter(k => c.obs >= k).length;
 const covViews = n => VIEWS.filter(([v]) => !(lv(n) === 2 && v === 'medium'));
 // Default Thinnest (Pierre 2026-11-01); new key so an older saved choice does not override it.
 let COV_ORDER = store.get('imr-admin-covorder2', 'thin'); if (!['lecture', 'thick'].includes(COV_ORDER)) COV_ORDER = 'thin';
+// Sort by one zoom column (Pierre 2026-11-01), both coverage views: click a view header (fewest colonies first),
+// again to reverse; a genus without that view stays last; the order switch clears it. st = {col, dir}, saved by save().
+const colSort = (st, R) => { const i = VIEWS.findIndex(v => v[0] === st.col); if (i < 0) return; const d = st.dir === 'desc' ? -1 : 1;
+  R.sort((a, b) => { const x = a.cells[i], y = b.cells[i]; if (!x || !y) return !x - !y || a.i - b.i; return d * (x.obs - y.obs || x.n - y.n) || a.i - b.i; }); };
+const colTh = st => VIEWS.map(([k, t]) => `<th><button type="button" class="cov-sort${st.col === k ? ' on' : ''}" data-cs="${k}">${t}${st.col === k ? (st.dir === 'desc' ? ' ▼' : ' ▲') : ''}</button></th>`).join('');
+const bindCol = (st, save) => $v.querySelectorAll('[data-cs]').forEach(b => b.onclick = () => { const k = b.dataset.cs;
+  st.dir = st.col === k && st.dir === 'asc' ? 'desc' : 'asc'; st.col = k; save(); render(); });
+let COVS = Object.assign({col: '', dir: 'asc'}, store.get('imr-admin-covsort', {}));
 function renderCov(){
   status();
   const R = Object.keys(DATA.gen).filter(n => !DATA.gen[n].x).map((n, i) => {
@@ -1078,19 +1086,20 @@ function renderCov(){
     if (!L.length) return 99; const c = {}; L.forEach(k => c[k] = (c[k] || 0) + 1); return L.reduce((b, k) => c[k] > c[b] ? k : b, L[0]); };
   const by = {lecture: (a, b) => lg(a.n) - lg(b.n) || a.i - b.i, thin: (a, b) => a.min - b.min || a.all.length - b.all.length || a.i - b.i,
     thick: (a, b) => b.all.length - a.all.length || b.max - a.max || a.i - b.i};
-  R.sort(by[COV_ORDER] || by.thin);
+  R.sort(by[COV_ORDER] || by.thin); colSort(COVS, R);
   const max = Math.max(1, ...R.map(r => r.all.length)), thin = R.reduce((s, r) => s + r.cells.filter(c => c && covLvl(c) < 2).length, 0), rich = R.reduce((s, r) => s + r.cells.filter(c => c && covLvl(c) === 4).length, 0);
   const cell = (r, c, v) => c ? `<td class="cov-c cov-${covLvl(c)}" title="${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}${(o => o ? ` · not counted: ${esc(o)}` : '')(covOff(r.n, v, true))}"><b>${c.n}</b>${c.obs < c.n ? `<small>${c.obs}</small>` : ''}${(o => o ? `<span class="cov-off">${o}</span>` : '')(covOff(r.n, v))}</td>` : '<td class="cov-c cov-na">–</td>';
   const bar = r => ORIGINS.filter(o => o[0] !== 'book').map(([o, t]) => { const k = r.all.filter(p => origin(p) === o).length; return k ? `<i class="o-${o}" style="width:${(100 * k / max).toFixed(1)}%" title="${t}: ${k}"></i>` : ''; }).join('');
   const seg = [['thin', 'Thinnest', 'Least covered first'], ['thick', 'Thickest', 'Most photos first'], ['lecture', 'Lecture', 'Lecture order']];
   $v.innerHTML = `<section class="adm-cov">
-    <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Order">${seg.map(([k, t, h]) => `<button type="button" data-co="${k}" title="${h}" aria-pressed="${COV_ORDER === k}">${t}</button>`).join('')}</span>
+    <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Order">${seg.map(([k, t, h]) => `<button type="button" data-co="${k}" title="${h}" aria-pressed="${!COVS.col && COV_ORDER === k}">${t}</button>`).join('')}</span>
       <span class="cov-key" aria-label="Colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 colonies">${thin} thin</b><b class="cov-rich" title="Cells with 8+ colonies">${rich} at 8+</b></div>
-    <table class="cov-t"><thead><tr><th></th>${VIEWS.map(([, t]) => `<th>${t}</th>`).join('')}<th class="cov-srch">Sources</th><th title="Candidates">+</th></tr></thead>
+    <table class="cov-t"><thead><tr><th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates">+</th></tr></thead>
     <tbody>${R.map(r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="cov-src"><span class="cov-bar">${bar(r)}</span><small>${r.all.length}</small></td><td class="cov-cand">${r.cand ? `+${r.cand}` : ''}</td></tr>`).join('')}</tbody></table></section>`;
-  $v.querySelectorAll('[data-co]').forEach(b => b.onclick = () => { COV_ORDER = b.dataset.co; store.set('imr-admin-covorder2', COV_ORDER); render(); });
+  $v.querySelectorAll('[data-co]').forEach(b => b.onclick = () => { COV_ORDER = b.dataset.co; COVS.col = ''; store.set('imr-admin-covsort', COVS); store.set('imr-admin-covorder2', COV_ORDER); render(); });
+  bindCol(COVS, () => store.set('imr-admin-covsort', COVS));
   $v.querySelectorAll('tbody tr').forEach(tr => tr.onclick = e => { if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g); });
 }
 
@@ -1098,7 +1107,7 @@ function renderCov(){
 // extra genera present at Dauin. Pool = every photo of the view not hidden, not multi-coral, approved CF book photos
 // included; colour = distinct colonies with a photo that is not Poor; Forms = growth forms seen (Colony + Closer);
 // Species = distinct species named on the photos.
-let FCOV = Object.assign({set: 'all', order: 'thin'}, store.get('imr-admin-fcov', {}));
+let FCOV = Object.assign({set: 'all', order: 'thin', col: '', dir: 'asc'}, store.get('imr-admin-fcov', {}));
 function renderFcov(){
   status();
   const isX = n => !!(DATA.x && DATA.x.gen[n]);
@@ -1113,19 +1122,20 @@ function renderFcov(){
     return {n, i, x: isX(n), cand: pending(n).filter(p => !p.cf).length, cells, min: live.length ? Math.min(...live.map(c => c.obs)) : 0, tot: pool.length, forms, sp};
   });
   const by = {thin: (a, b) => a.min - b.min || a.tot - b.tot || a.i - b.i, thick: (a, b) => b.tot - a.tot || a.i - b.i, az: (a, b) => a.n.localeCompare(b.n)};
-  R.sort(by[FCOV.order] || by.thin);
+  R.sort(by[FCOV.order] || by.thin); colSort(FCOV, R);
   const thin = R.reduce((s, r) => s + r.cells.filter(c => c && covLvl(c) < 2).length, 0);
   const cell = (r, c, v) => c ? `<td class="cov-c cov-${covLvl(c)}" title="${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} good colon${c.obs === 1 ? 'y' : 'ies'}${c.cf ? ` · ${c.cf} CF book` : ''}"><b>${c.n}</b><small>${c.obs} good</small>${c.cf ? `<span class="cov-off">incl. ${c.cf} CF</span>` : ''}</td>` : '<td class="cov-c cov-na">–</td>';
-  const seg = (k, L) => `<span class="adm-qseg adm-lvseg" role="group">${L.map(([v, t]) => `<button type="button" data-fc="${k}" data-v="${v}" aria-pressed="${FCOV[k] === v}">${t}</button>`).join('')}</span>`;
+  const seg = (k, L) => `<span class="adm-qseg adm-lvseg" role="group">${L.map(([v, t]) => `<button type="button" data-fc="${k}" data-v="${v}" aria-pressed="${FCOV[k] === v && !(k === 'order' && FCOV.col)}">${t}</button>`).join('')}</span>`;
   $v.innerHTML = `<section class="adm-cov">
     <div class="adm-filter cov-head">${seg('set', [['all', 'All'], ['imr', 'IMR list'], ['x', 'CF only']])}${seg('order', [['thin', 'Thinnest'], ['thick', 'Thickest'], ['az', 'A–Z']])}
       <span class="cov-key" aria-label="Good colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 good colonies">${thin} thin</b></div>
-    <table class="cov-t fcov-t"><thead><tr><th></th>${VIEWS.map(([, t]) => `<th>${t}</th>`).join('')}<th>Forms</th><th>Species</th><th title="Candidates">+</th></tr></thead>
+    <table class="cov-t fcov-t"><thead><tr><th></th>${colTh(FCOV)}<th>Forms</th><th>Species</th><th title="Candidates">+</th></tr></thead>
     <tbody>${R.map(r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${r.x ? ' <small class="fcov-x">CF only</small>' : ''}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="fcov-f">${r.forms.map(f => `<span class="adm-why" title="${esc(fName(f))}">${FABBR[f]}</span>`).join(' ') || '<span title="No growth form set on these photos yet">–</span>'}</td>
       <td class="fcov-s" title="${esc(r.sp.join(', '))}">${r.sp.length || '–'}</td><td class="cov-cand">${r.cand ? `+${r.cand}` : ''}</td></tr>`).join('')}</tbody></table></section>`;
-  $v.querySelectorAll('[data-fc]').forEach(b => b.onclick = () => { FCOV[b.dataset.fc] = b.dataset.v; store.set('imr-admin-fcov', FCOV); render(); });
+  bindCol(FCOV, () => store.set('imr-admin-fcov', FCOV));
+  $v.querySelectorAll('[data-fc]').forEach(b => b.onclick = () => { FCOV[b.dataset.fc] = b.dataset.v; if (b.dataset.fc === 'order') FCOV.col = ''; store.set('imr-admin-fcov', FCOV); render(); });
   $v.querySelectorAll('tbody tr').forEach(tr => tr.onclick = e => { if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g); });
 }
 
