@@ -199,7 +199,10 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 @media (min-width:600px){
   .gpack>.gblk>.gdiv{margin-top:10px;align-items:flex-end}
 }
-.gpack>.gblk[data-n="1"]>.gdiv{font-size:var(--fs-s);text-wrap:balance;line-height:1.2}
+.gpack>.gblk[data-n="1"]>.gdiv{font-size:var(--fs-s);line-height:1.2}
+/* A one-card group shares its row: its title stays on at most 2 lines (full title on hover) so the row's titles line up
+   (designer re-review 2026-11-01, m2). */
+.gpack>.gblk[data-n="1"]>.gdiv .gt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .gpack>.gblk>.gdiv .gn{flex:none}
 .tiplist.gpack>.gblk{column-gap:28px}
 /* Phone base (mobile-first); larger screens restore below. */
@@ -219,7 +222,7 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 .card .cap{padding:9px 12px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .card i{font-weight:600;font-size:var(--fs-m)}
 .card small{color:var(--muted);font-size:var(--fs-xs)}
-.card p{margin:4px 0 0;font-size:var(--fs-s);color:var(--ink);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.card p{margin:4px 0 0;font-size:var(--fs-s);color:var(--ink)}
 .strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(max(min(100%,260px),calc((100% - 24px) / 3)),1fr));gap:12px;margin:6px 0 12px}
 :root[data-size="s"] .strip{grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr))}
 :root[data-size="l"] .strip{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,420px),calc((100% - 12px) / 2)),1fr))}
@@ -320,7 +323,9 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 .cmpph{aspect-ratio:4/3;border-radius:var(--r);overflow:hidden;background:var(--surface-2)}
 .cmpph img{width:100%;height:100%;object-fit:cover;display:block}
 .cmplab{margin:18px 0 6px}
-.cmprow.text{margin:8px 0 6px}.cmpcol h3{margin:0;font-size:var(--fs-l)}.cmpcol .crit{font-size:var(--fs-s)}
+.cmprow.text{margin:8px 0 6px}.cmpcol .cmpsheet{font:400 var(--fs-s) var(--body);margin-left:6px}.cmpcol .tipbox{margin-top:8px}
+/* A page without help keeps the ? slot, so the header never shifts (designer re-review 2026-11-01, N2). */
+#help[hidden]{display:inline-flex;visibility:hidden}.cmpcol h3{margin:0;font-size:var(--fs-l)}.cmpcol .crit{font-size:var(--fs-s)}
 
 /* ---------- Quiz: one screen, photos left (sized to the window), choices and feedback right ---------- */
 .q{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;height:auto;margin-top:4px}
@@ -374,7 +379,8 @@ kbd{font:600 var(--fs-xs)/1 var(--body);font-style:normal;color:var(--muted);bor
 .fb{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;box-shadow:var(--shadow)}
 .fb h3{margin:0 0 6px;font-size:var(--fs-m)}
 .fb h3 a{color:inherit}
-.fb h3.ok{color:var(--good)}.fb h3.ko{color:var(--bad)}
+/* Only "Yes"/"No" takes the right/wrong colour: the genus to remember stays in ink (designer re-review 2026-11-01, N3). */
+.fb h3 a{text-decoration-color:var(--line)}.fb h3.ok .v{color:var(--good)}.fb h3.ko .v{color:var(--bad)}
 .fb .keyid{margin:0;font-size:var(--fs-s)}
 .fb ul{margin:6px 0 0;padding-left:1.1em;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-s)}
 .fb .vs{margin:8px 0 0;font-size:var(--fs-s);color:var(--muted)}
@@ -657,8 +663,8 @@ a.lt:hover{border-color:var(--accent)}
 :root[data-cvd="1"][data-theme="dark"]{--good:#b5dcff;--good-bg:#1a3047;--bad:#d6731a;--bad-bg:#45270f}
 /* Colour-blind mode: the dark-blue "right" is close to the accent used for selected and active states, so it also changes
    shape (design review 2026-11-01): right = filled with a white tick, wrong = dashed orange outline. */
-:root[data-cvd="1"] .ans button.ok{background:var(--good);color:var(--surface);border-color:var(--good)}
-:root[data-cvd="1"] .ans button.ok kbd{color:inherit;border-color:currentColor;background:transparent}
+/* Correct = pale fill + thick SOLID border, wrong = dashed: a solid dark fill read as a pressed button (re-review N3). */
+:root[data-cvd="1"] .ans button.ok{border-width:3px}
 :root[data-cvd="1"] .ans button.ko{border-style:dashed;border-width:2px}
 :root[data-cvd="1"] .ans button.ok::after,:root[data-cvd="1"] .ans button.ko::after{font-size:1.15em}
 /* Colour-blind mode: "to review" also changes shape (thick dashed border), not only colour. */
@@ -874,7 +880,7 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
   .lkdeck{display:grid}
 }
 .lkd{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--surface);color:var(--ink);text-decoration:none}
-.lkd span{display:grid;grid-template-columns:1fr 1fr;gap:1px;height:48px}
+.lkd span{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,1fr);gap:1px;height:48px;flex:none;overflow:hidden} /* photos never spill over the label (re-review p7) */
 .lkd img{width:100%;height:100%;object-fit:cover;display:block}
 .lkd small{padding:2px 6px;font-size:var(--fs-xs);line-height:1.2;overflow-wrap:anywhere} /* full pair name on up to two lines (design review 2026-11-01) */
 .lkd:hover{border-color:var(--accent)}
@@ -979,9 +985,13 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 }
 
 /* Genera on phones: family, order and group index behind one Filter line. */
-.gfilt{flex:1 1 100%;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:0 10px}
-.gfilt > summary{cursor:pointer;min-height:40px;display:flex;align-items:center;gap:6px;font-weight:600;list-style-position:inside}
-.gfilt[open]{display:flex;flex-direction:column;gap:8px;padding-bottom:10px}
+/* Closed, the phone Filter is a small chip beside Photos | ID tips (one row saved, and it no longer looks like a text
+   field; designer re-review 2026-11-01, p8); open, it takes the full width. */
+.gfilt{flex:0 0 auto;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);padding:0 14px}
+.gfilt > summary{cursor:pointer;min-height:36px;display:flex;align-items:center;gap:6px;font-size:var(--fs-s);font-weight:600;list-style:none}
+.gfilt > summary::-webkit-details-marker{display:none}
+.gfilt > summary::after{content:"\25BE";color:var(--muted)}
+.gfilt[open]{flex:1 1 100%;border-radius:var(--r);display:flex;flex-direction:column;gap:8px;padding-bottom:10px}
 .gfilt select{width:100%}
 .gfilt .gjump{margin:0}
 /* Phones, every page (Pierre, 2026-10-31: win space above and below the content): slimmer header, section tabs,
@@ -1094,10 +1104,11 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
    with the slate progress that unlocks them, in every view (photo wall, slate, groups). */
 .pwall .pw .pbtag{position:absolute;top:4px;left:4px;z-index:1;padding:1px 6px;border-radius:var(--pill);background:var(--surface);color:var(--ink);font:600 var(--fs-2xs)/1.4 var(--body);letter-spacing:.02em}
 .plock{display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px dashed var(--line);border-radius:var(--r-sm);color:var(--muted);background:transparent;cursor:default}
-.plock b{font:700 1.1rem/1 var(--body)}
+.plock b{font:700 var(--fs-m)/1 var(--body)}
 .plock small{font-size:var(--fs-xs)}
 .pwall .pw.plock{display:flex;flex-direction:column;border-radius:var(--r);border:2px dashed var(--line);background:var(--surface-2)}
-.pwall .pw.plock b{font-size:2.4rem}
+.pwall .pw.plock b{font:700 var(--fs-xl)/1 var(--display)}
+.pwall .pw.plock small{text-align:center;padding:0 6px;line-height:1.2}
 .pslate .ps.plock{justify-content:flex-start;padding:0 8px}
 .pseg .pgl{flex:1}
 .pgbonus .gn{background:transparent;border:1.5px dashed var(--line);color:var(--muted)}
