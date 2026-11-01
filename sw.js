@@ -1,9 +1,9 @@
 // Offline cache: app shell first, then photos as they are viewed.
-const V = 'imr-coral-id-v180';
+const V = 'imr-coral-id-v181';
 // Photos live in their own cache that no deploy deletes (code review 2026-11-01, H3): bumping V used to wipe every
 // offline photo. Capped at PH_MAX entries, oldest first out (cache keys keep insertion order).
 const PH = 'imr-photos-v1', PH_MAX = 2500;
-const SHELL = ['./', 'index.html', 'app.css?v=85', 'core.js?v=1', 'app.js?v=125', 'flag.js?v=4', 'quality.json?v=3', 'picks.json?v=1', 'data.json?v=26', 'forms.json?v=7', 'icon.svg', 'manifest.webmanifest', 'proto/lab.js?v=58', 'proto/lab.css?v=43', 'home-art.js?v=3', 'home.js?v=23', 'home.css?v=21', 'tour.js?v=6',
+const SHELL = ['./', 'index.html', 'app.css?v=85', 'core.js?v=1', 'app.js?v=126', 'flag.js?v=5', 'quality.json?v=3', 'picks.json?v=1', 'data.json?v=26', 'forms.json?v=7', 'icon.svg', 'manifest.webmanifest', 'curation.json', 'proto/lab.js?v=59', 'proto/lab.css?v=43', 'home-art.js?v=3', 'home.js?v=23', 'home.css?v=21', 'tour.js?v=7',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'].map(f => `proto/${f}.js?v=58`)];
 self.addEventListener('install', e => e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));
@@ -17,6 +17,7 @@ self.addEventListener('activate', e => e.waitUntil((async () => {
   }
   await self.clients.claim();
 })()));
+const SLOW = 4000;
 let trimAt = 0;
 const trim = async c => { if (Date.now() - trimAt < 60000) return; trimAt = Date.now(); const ks = await c.keys(); for (const k of ks.slice(0, Math.max(0, ks.length - PH_MAX))) await c.delete(k); };
 self.addEventListener('fetch', e => {
@@ -24,6 +25,12 @@ self.addEventListener('fetch', e => {
   if (u.origin !== location.origin || e.request.method !== 'GET') return;
   // Photos: cache first; only good replies are kept, so a passing 404 is not stored for good.
   if (u.pathname.includes('/img/')) e.respondWith(caches.open(PH).then(c => c.match(e.request).then(r => r || fetch(e.request).then(res => { if (res.ok) { const cl = res.clone(); c.put(e.request, cl).then(() => trim(c)); } return res; }))));
-  // App files: always revalidate with the server so an update never mixes new and old files.
-  else e.respondWith(fetch(e.request, {cache: 'no-cache'}).then(res => { if (res.ok) { const c = res.clone(); caches.open(V).then(x => x.put(e.request, c)); } return res; }).catch(() => caches.match(e.request)));
+  // App files: revalidated with the server (versioned files have their ?v in the URL, so old and new never mix). On a slow
+  // link (field, boat) a file already cached is served after SLOW ms instead of waiting for the network, which still
+  // refreshes the cache in the background (code re-review 2026-11-01, L1).
+  else {
+    const net = fetch(e.request, {cache: 'no-cache'}).then(res => { if (res.ok) { const c = res.clone(); return caches.open(V).then(x => x.put(e.request, c)).then(() => res, () => res); } return res; });
+    e.waitUntil(net.catch(() => {}));
+    e.respondWith(caches.match(e.request).then(hit => !hit ? net : Promise.race([net.then(r => r.ok ? r : hit, () => hit), new Promise(ok => setTimeout(() => ok(hit), SLOW))])));
+  }
 });

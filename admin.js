@@ -17,6 +17,8 @@ const store = {
 const ver = p => p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '';
 const img = (p, s) => p.r && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : `img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
 const clone = o => JSON.parse(JSON.stringify(o));
+// The page hash, decoded; a malformed %-escape no longer throws (code re-review L2).
+const hashNow = () => { const h = location.hash.slice(1); try { return decodeURIComponent(h); } catch (e) { return h; } };
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 // merge3 (three-way merge of a draft onto the latest published curation) and mergeOld live in core.js.
 // Re-base the draft (and every Undo/Redo step) onto a newer published curation.
@@ -1064,8 +1066,8 @@ async function start(){
   addEventListener('keydown', e => { if (!(e.ctrlKey || e.metaKey) || e.target.closest('input,textarea')) return; const k = e.key.toLowerCase();
     if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); } else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); } });
   // On a phone the page opens on the candidates, one per screen.
-  cur = decodeURIComponent(location.hash.slice(1)) || (matchMedia('(max-width: 599px)').matches ? '~cand' : Object.keys(DATA.gen)[0]);
-  window.onhashchange = () => { cur = decodeURIComponent(location.hash.slice(1)); const h = $('admhelp'); if (h) h.remove(); render(); window.scrollTo({top: 0}); };
+  cur = hashNow() || (matchMedia('(max-width: 599px)').matches ? '~cand' : Object.keys(DATA.gen)[0]);
+  window.onhashchange = () => { cur = hashNow(); const h = $('admhelp'); if (h) h.remove(); render(); window.scrollTo({top: 0}); };
   // Every click is kept in this browser's draft, so leaving or reloading loses nothing: warn only if that save failed.
   window.onbeforeunload = e => { if (draftLost) { e.preventDefault(); e.returnValue = ''; } };
   // Every photo shows its file name in small, plain and selectable, so Pierre can quote it (hidden on phones, CSS).

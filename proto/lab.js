@@ -37,7 +37,7 @@ const isLabHash = h => h.startsWith('lab') || h.split('|')[0] in GRADUATED;
 LAB.files.forEach(f => {
   const s = document.createElement('script');
   s.src = `proto/${f}.js?v=${LAB_V}`; s.async = false; LAB.pending++;
-  s.onload = s.onerror = () => { const h = decodeURIComponent(location.hash.slice(1)); if (--LAB.pending === 0 && DATA && (isLabHash(h) || !h || h === 'home')) route(); };
+  s.onload = s.onerror = () => { const h = hashNow(); if (--LAB.pending === 0 && DATA && (isLabHash(h) || !h || h === 'home')) route(); };
   document.head.appendChild(s);
 });
 
@@ -119,7 +119,7 @@ function labTool(h){
 }
 // Leaving the Lab stops any running animation or timer.
 addEventListener('hashchange', () => {
-  const h = decodeURIComponent(location.hash.slice(1));
+  const h = hashNow();
   if (isLabHash(h) || !h || h === 'home') return;
   delete document.documentElement.dataset.page;
   if (LAB.stop) { try { LAB.stop(); } catch (e) {} LAB.stop = null; }
