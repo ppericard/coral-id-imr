@@ -552,7 +552,7 @@ function renderQuality(){
 
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
-  cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The line under it counts the photos of that view left out and why: several (several corals), Ø (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Click a row to open the genus.</p>`,
+  cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Click a row to open the genus.</p>`,
   stats: `<p>Every quiz and duel answer synced to the sheet. Players are anonymous: a number, ranked by level; "you" marks the name synced in this browser (All / Others / Me). Level is on the same scale as photo difficulty. Last 20 = right answers among the player's last 20. Learned = genera learned on their last sync. Days = days with answers. Photos = different photos answered (more = more variety). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsph: `<p>Photo difficulty (Elo) from every answer: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers; few answers = rough. Click a dot to see the photo.</p>
@@ -994,13 +994,15 @@ function gamePool(n, v){
 }
 function covOf(n, v){ const L = gamePool(n, v); return {n: L.length, obs: new Set(L.map(p => p.o || p.f)).size, L}; }
 // Photos of a genus x view left out of the game pool, by reason (Pierre: show what isn't counted and why).
-const OFF = [['multi', 'several'], ['x', 'Ø'], ['ref', 'sheet only'], ['cf', 'CF'], ['hid', 'removed']];
-function covOff(n, v){
+// Short label in the cell, long one in the cell's tooltip.
+const OFF = [['multi', 'multi‑coral', 'with several corals'], ['x', 'no form', 'form not visible'], ['ref', 'sheet only', 'sheet only'], ['cf', 'CF', 'Coral Finder book'], ['hid', 'removed', 'removed']];
+function covOff(n, v, long){
   const pool = new Set(gamePool(n, v).map(p => p.f)), use = DRAFT.use || {}, out = {};
   photos(n).filter(p => viewOf(n, p) === v && !pool.has(p.f)).forEach(p => {
     const why = hidden(n, p) ? 'hid' : p.cf ? 'cf' : p.multi ? 'multi' : use[p.f] === 'ref' ? 'ref' : v === 'wide' && fOf(p.f) === 'x' ? 'x' : null;
     if (why) out[why] = (out[why] || 0) + 1; });
-  return OFF.filter(([k]) => out[k]).map(([k, t]) => `${t} ${out[k]}`).join(' · ');
+  const L = OFF.filter(([k]) => out[k]);
+  return long ? L.map(([k, , t]) => `${out[k]} ${t}`).join(', ') : L.length ? 'excl. ' + L.map(([k, t]) => `${out[k]} ${t}`).join(' · ') : '';
 }
 // 0 none, 1 thin (1-2 colonies), 2 short (3-4), 3 fair (5-7), 4 well covered (8+). Thin = level 0 or 1.
 const covLvl = c => COV.filter(k => c.obs >= k).length;
@@ -1021,7 +1023,7 @@ function renderCov(){
   const by = {lecture: (a, b) => lg(a.n) - lg(b.n) || a.i - b.i, thin: (a, b) => a.min - b.min || a.all.length - b.all.length || a.i - b.i};
   R.sort(by[COV_ORDER] || by.thin);
   const max = Math.max(1, ...R.map(r => r.all.length)), thin = R.reduce((s, r) => s + r.cells.filter(c => c && covLvl(c) < 2).length, 0);
-  const cell = (r, c, v) => c ? `<td class="cov-c cov-${covLvl(c)}" title="${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}"><b>${c.n}</b>${c.obs < c.n ? `<small>${c.obs}</small>` : ''}${(o => o ? `<span class="cov-off">${o}</span>` : '')(covOff(r.n, v))}</td>` : '<td class="cov-c cov-na">–</td>';
+  const cell = (r, c, v) => c ? `<td class="cov-c cov-${covLvl(c)}" title="${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}${(o => o ? ` · not counted: ${esc(o)}` : '')(covOff(r.n, v, true))}"><b>${c.n}</b>${c.obs < c.n ? `<small>${c.obs}</small>` : ''}${(o => o ? `<span class="cov-off">${o}</span>` : '')(covOff(r.n, v))}</td>` : '<td class="cov-c cov-na">–</td>';
   const bar = r => ORIGINS.filter(o => o[0] !== 'book').map(([o, t]) => { const k = r.all.filter(p => origin(p) === o).length; return k ? `<i class="o-${o}" style="width:${(100 * k / max).toFixed(1)}%" title="${t}: ${k}"></i>` : ''; }).join('');
   const seg = [['thin', 'Thinnest', 'Least covered first'], ['lecture', 'Lecture', 'Lecture order']];
   $v.innerHTML = `<section class="adm-cov">
