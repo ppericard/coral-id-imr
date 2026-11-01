@@ -86,6 +86,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 - Publishing `curation.json` as a whole copy from the admin (lost curation on 2026-11-01; Publish merges key by key since PR #240).
 
 ## Done recently (for context)
+- 2026-11-01: tour step 3 has big arrows pointing at both the game tabs and Practice in the menu (Pierre: the highlighted menu drew the eye away from the games).
 - 2026-11-01: confusion scores (Pierre): every answer logs the choices offered (Code.gs v10, **redeploy pending**); quiz traps = the genera players actually mix up with the target, starting from the declared look-alikes (IMR lecture, Coral Finder) as a prior; admin Stats > Confusions lists pairs (offered, mixed up, rate, score), photos, colonies and species most often missed. Also fixed: wide admin Stats cards (Players, Pairs) were hidden on phones by the site's `.wide` class.
 - 2026-11-01: admin > Growth form: 📌 on a photo makes it a lead photo of that form's tile on the Coral Finder start (curation.json `tile`; up to 3 per form, the rest stays automatic). Pierre asked where to choose the Branching tile photo: there was no control.
 - 2026-11-01: first-time RA re-review: Coral Finder cards lead with a photo of the growth form picked (#269); quiz answer choices start easy (other growth forms) and bring in look-alikes as the genus's Elo ability rises, scored with the matching guess rate (Code.gs v9, redeploy pending).

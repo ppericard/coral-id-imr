@@ -9,11 +9,12 @@
   // starts the photo quiz. Details (genus sheets, answers, corallites, Coral Finder) are behind each page's ?.
   // sel: the element to spotlight (alt: fallback when it is hidden); also: an element joined into the same frame (? and ⚙);
   // plus: a second, separate spotlight (Practice in the menu, at the other end of a phone screen); tall: 'end' shows the
-  // bottom of a target too tall to fit beside the bubble (the doors' buttons), instead of its top.
+  // bottom of a target too tall to fit beside the bubble (the doors' buttons), instead of its top; arrows: a big arrow points
+  // at each spotlight, so two spotlights far apart both catch the eye (Pierre, 2026-11-01: the menu drew the eye from the games).
   const STEPS = [
     {h: '', sel: '.hdoors', tall: 'end', t: 'Two ways in', d: 'Learn & practise while you learn the genera. Identify when you need to name a coral on a ReefCloud photo.'},
     {h: '', signin: true},
-    {h: 'quiz', sel: '#modes', plus: 'nav [data-tab=practice]', t: 'Three games', d: 'Practice in the menu opens the games. Photo → genus: name the genus from photos. Look-alike duels: two genera often confused. Memory: match colony and corallites. Switch games here at any time.'},
+    {h: 'quiz', sel: '#modes', plus: 'nav [data-tab=practice]', arrows: true, t: 'Three games', d: 'Practice in the menu opens the games. Photo → genus: name the genus from photos. Look-alike duels: two genera often confused. Memory: match colony and corallites. Switch games here at any time.'},
     {h: 'quiz', sel: '#prog', alt: 'nav [data-tab=progress]', t: 'Your progress', d: 'Each genus fills up as you get it right on harder photos, once with the corallites in view and once in a duel. Tap to see every genus.'},
     {h: 'quiz', sel: '#help', t: 'Help on every page', d: 'Tap ? for what a page does. ⚙ sets the theme and colours. Replay this tour from ?.', also: '#setb'}
   ].filter(s => !s.signin || SYNC_URL);
@@ -117,19 +118,51 @@
     if (phone()) {
       const below = r ? bd.bottom - GAP - r.bottom - pad : H, above = r ? r.top - pad - GAP - 8 : 0;
       b.style.left = b.style.top = '';
-      b.classList.toggle('up', !!r && below < bh + GAP && (above >= bh || above > below));
-      return;
+      // Two spotlights with arrows (top and bottom of the screen): the sheet sits midway, leaving room for both arrows.
+      const mid = s.arrows && rects.length > 1 ? (r.bottom + rects[1].top - bh) / 2 : null;
+      b.classList.toggle('mid', mid !== null);
+      if (mid !== null) b.style.top = mid + 'px';
+      b.classList.toggle('up', mid === null && !!r && below < bh + GAP && (above >= bh || above > below));
+      return arrows(s, rects, b, W, H);
     }
-    const bw = b.offsetWidth, m = 14, mid = r ? r.left + (r.right - r.left - bw) / 2 : 0, wide = b.classList.contains('wide');
+    // With arrows, the bubble stands one arrow further from the target, so the arrow fits between them.
+    const bw = b.offsetWidth, m = 14, d = s.arrows ? m + 70 : m, mid = r ? r.left + (r.right - r.left - bw) / 2 : 0, wide = b.classList.contains('wide');
     let left, top;
     if (!r) { left = (W - bw) / 2; top = (H - bh) / 2; }
-    else if (H - r.bottom - pad > bh + m) { top = r.bottom + pad + m; left = wide ? mid : r.left; }
-    else if (r.top - pad - bd.top > bh + m) { top = r.top - pad - m - bh; left = wide ? mid : r.left; }
+    else if (H - r.bottom - pad > bh + d) { top = r.bottom + pad + d; left = wide ? mid : r.left; }
+    else if (r.top - pad - bd.top > bh + d) { top = r.top - pad - d - bh; left = wide ? mid : r.left; }
     else if (W - r.right > bw + m) { left = r.right + pad + m; top = r.top; }
     else if (r.left > bw + m) { left = r.left - pad - m - bw; top = r.top; }
     else { left = mid; top = H - bh - m; }  // a target taller than the screen: at the bottom, over its scrolled-off part
     b.style.left = Math.max(m, Math.min(W - bw - m, left)) + 'px';
     b.style.top = Math.max(m, Math.min(H - bh - m, top)) + 'px';
+    arrows(s, rects, b, W, H);
+  }
+  // Big arrows in the dimmed area, one per spotlight, pointing at it: below or above it (towards the middle of the
+  // screen first), else beside it; never over the bubble or another spotlight. The main one aims at the target's
+  // content (the game tabs, not the empty end of their bar).
+  function arrows(s, rects, b, W, H){
+    const g = root.querySelector('.tarrows');
+    if (!s.arrows) { g.innerHTML = ''; return; }
+    const bb = b.getBoundingClientRect(), A = 44, L = 58, pad = 6, hit = (x, y, w, h, q, e = 6) => x < q.right + e && x + w > q.left - e && y < q.bottom + e && y + h > q.top - e;
+    const kids = target ? [...target.children].filter(vis).map(e => e.getBoundingClientRect()) : [];
+    const aimX = (q, i) => !i && kids.length ? (Math.min(...kids.map(k => k.left)) + Math.max(...kids.map(k => k.right))) / 2 : (q.left + q.right) / 2;
+    let out = '';
+    rects.forEach((q, i) => {
+      const cx = aimX(q, i), cy = (q.top + q.bottom) / 2, up = cy < H / 2;
+      const spots = [
+        {x: cx - A / 2, y: q.bottom + pad + 8, w: A, h: L, a: 0},        // below, pointing up
+        {x: cx - A / 2, y: q.top - pad - 8 - L, w: A, h: L, a: 180},     // above, pointing down
+        {x: q.left - pad - 8 - L, y: cy - A / 2, w: L, h: A, a: 90},     // left, pointing right
+        {x: q.right + pad + 8, y: cy - A / 2, w: L, h: A, a: 270}        // right, pointing left
+      ];
+      if (!up) [spots[0], spots[1]] = [spots[1], spots[0]];
+      const p = spots.find(o => o.x >= 2 && o.y >= 2 && o.x + o.w <= W - 2 && o.y + o.h <= H - 2 && !hit(o.x, o.y, o.w, o.h, bb) && !rects.some(z => hit(o.x, o.y, o.w, o.h, z, 2)));
+      if (!p) return;
+      // Drawn pointing up around (0,0), then turned: the bob animation moves it towards the spotlight.
+      out += `<g transform="translate(${p.x + p.w / 2},${p.y + p.h / 2}) rotate(${p.a})"><path class="tarw" d="M0,${-L / 2} L${A / 2},${-L / 2 + 24} H${A * .17} V${L / 2} H${-A * .17} V${-L / 2 + 24} H${-A / 2} Z"/></g>`;
+    });
+    g.innerHTML = out;
   }
   // Skipping the tour before its sign-in step (Escape too) still offers the sign-in card once: a beta tester who skips
   // at once should not miss it (Pierre, 2026-11-01). "Later" there leaves the card after 10 answers in place.
@@ -155,7 +188,7 @@
     $helpbox.hidden = true; $help.setAttribute('aria-expanded', 'false');
     root = document.createElement('div');
     root.id = 'tour'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'Guided tour');
-    root.innerHTML = `<svg aria-hidden="true" preserveAspectRatio="none"><path class="tdim" fill-rule="evenodd"/><path class="tring"/></svg>
+    root.innerHTML = `<svg aria-hidden="true" preserveAspectRatio="none"><path class="tdim" fill-rule="evenodd"/><path class="tring"/><g class="tarrows"></g></svg>
       <div class="tblk"></div><div class="tbub" tabindex="-1" aria-live="polite"></div>`;
     document.body.appendChild(root);
     document.documentElement.classList.add('touring');  // room below the page, so the last element can scroll clear of the bubble
