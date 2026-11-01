@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 6 (2026-11-01: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 7 (2026-11-01: players report a wrong answer or a bad photo (Reports tab, ?reports=1 for the owner); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -20,7 +20,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 6;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 7;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -60,8 +60,10 @@ function writeData_(name, json, rev){
 // GET ?stats=1 → photo difficulty learned from every answer (Elo, see stats_), cached 10 minutes.
 // GET ?answers=1 → every answer with the RA replaced by an anonymous id (see answers_), for the admin Stats page.
 // GET ?name=…&pin=… → the saved progress for that RA, if the code matches.
+// GET ?reports=1&name=…&pin=… → the players' reports, with who sent them, for the sheet owner only (see reports_, v7).
 function doGet(e){
   if (e.parameter.stats) return json_(stats_());
+  if (e.parameter.reports) return json_(reports_(e.parameter));
   if (e.parameter.answers) return json_(answers_(e.parameter));
   const {name, pin} = clean_(e.parameter);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
@@ -78,8 +80,12 @@ function doGet(e){
 //   answers: [{id, t, g, a, ok, m, ph, e, th, nw}], at: revision merged against (optional)} → {ok, log: true, rev}.
 // log tells the app its answers are saved; they are logged first, so they are kept even if the progress write fails.
 // at ≠ the saved revision → {ok: false, error: 'stale', log: true}: another device wrote meanwhile; the app pulls, merges, resends.
+// POST {reports: [...], rname, rpin} → {ok, rep: true}: players' reports (logReports_, v7). The reporter goes in rname/rpin,
+// never name/pin, so an older script answers 'input' and never mistakes a report for an empty progress write.
 function doPost(e){
-  const p = JSON.parse(e.postData.contents), {name, pin} = clean_(p);
+  const p = JSON.parse(e.postData.contents);
+  if (Array.isArray(p.reports)) return json_(logReports_(p));
+  const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
@@ -189,4 +195,48 @@ function stats_(){
   Object.keys(R).forEach(n => out.ras[aid_(n, salt)] = [Math.round(R[n][0] * 100) / 100, R[n][1]]);
   try { cache.put('stats6', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
   return out;
+}
+
+// Players' reports (v7): from a game, after the answer, a player says the expected genus is probably wrong (and may say
+// which genus it is), the photo shows several corals, the photo is bad, or something else, with an optional note.
+// One row per report in the "Reports" tab. The reporter is the sync name when its code matches ("Verified" 1),
+// else the name typed or nothing ("Verified" 0). Nothing here changes the photos: Pierre decides in the admin Triage.
+const REP = ['Time', 'Reporter', 'Verified', 'Reason', 'Expected', 'Answered', 'Suggested genus', 'Note', 'Mode', 'Photos', 'Id'];
+const WHY = {wrong: 'Wrong answer', multi: 'Several corals', photo: 'Bad photo', other: 'Other'};
+const text_ = (x, n) => safe_(String(x == null ? '' : x).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, n));
+function logReports_(p){
+  const L = p.reports.filter(r => r && /^[a-z0-9]{1,20}$/.test(String(r.id)) && WHY[r.why]).slice(0, 50);
+  if (!L.length) return {ok: true, rep: true};
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const name = String(p.rname || '').trim().slice(0, 40), pin = String(p.rpin || '').trim();
+    let ok = 0;
+    if (name && /^\d{4}$/.test(pin) && !blocked_(name)) { const ra = sheet_('RAs', HEAD), r = find_(ra, name);
+      if (r && ra.getRange(r, 7).getValue() === hash_(name, pin)) ok = 1; else if (r) failed_(name); }
+    const sh = sheet_('Reports', REP), n = sh.getLastRow() - 1;
+    const seen = new Set(n > 0 ? sh.getRange(2, REP.length, n, 1).getValues().map(r => String(r[0])) : []);
+    const G = /^[A-Za-z][A-Za-z -]*$/, M = /^[a-z0-9|-]*$/, PH = /^[A-Za-z0-9_. -]*$/;
+    const rows = L.filter(r => !seen.has(String(r.id))).map(r => [new Date(r.t || Date.now()), safe_(name), ok, WHY[r.why], word_(r.g, G, 40), word_(r.a, G, 40),
+      text_(r.fix, 60), text_(r.note, 500), word_(r.m, M, 40), word_(r.ph, PH, 400), String(r.id)]);
+    if (rows.length) sh.getRange(sh.getLastRow() + 1, 1, rows.length, REP.length).setValues(rows);
+    return {ok: true, rep: true};
+  } finally { lock.releaseLock(); }
+}
+// {ok, rows: [[id, time ms, reporter, verified 0|1, reason key, expected, answered, suggested genus, note, mode, photos]]},
+// newest first. Names are shown, so only the sheet owner gets them: the RA whose name is in Script Properties OWNER
+// (set it in Project settings > Script properties); while OWNER is unset, the first RA to call this with a right code claims it.
+function reports_(q){
+  const {name, pin} = clean_(q || {});
+  if (!name || !/^\d{4}$/.test(pin)) return {ok: false, error: 'input'};
+  if (blocked_(name)) return {ok: false, error: 'wait'};
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), ra = ss.getSheetByName('RAs'), r = ra ? find_(ra, name) : 0;
+  if (!r || ra.getRange(r, 7).getValue() !== hash_(name, pin)) { if (r) failed_(name); return {ok: false, error: 'pin'}; }
+  const pr = PropertiesService.getScriptProperties(), owner = pr.getProperty('OWNER');
+  if (!owner) pr.setProperty('OWNER', name);
+  else if (owner.trim().toLowerCase() !== name.toLowerCase()) return {ok: false, error: 'owner'};
+  const sh = ss.getSheetByName('Reports'), key = {}; Object.keys(WHY).forEach(k => key[WHY[k]] = k);
+  if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, REP.length).getValues().filter(x => x[10])
+    .map(x => [String(x[10]), new Date(x[0]).getTime() || 0, String(x[1]), Number(x[2]) ? 1 : 0, key[x[3]] || 'other', String(x[4]), String(x[5]), String(x[6]), String(x[7]), String(x[8]), String(x[9])]);
+  return {ok: true, rows: rows.reverse()};
 }

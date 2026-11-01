@@ -848,7 +848,7 @@ function answer(cur, c, target, ph, cor, unseen){
   document.getElementById('after').innerHTML = `<div class="fb">
     <h3 class="${good ? 'ok' : 'ko'}">${good ? 'Yes' : 'No'}, it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.n ? '' : ' (★ not surveyed)'}</h3>
     ${g.qt ? `<p class="label">ID tips (IMR)</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="vs"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}${vs}
-    <details class="more"><summary>Coral Finder</summary>${g.imr.length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details></div>
+    <details class="more"><summary>Coral Finder</summary>${g.imr.length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details>${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: cur})}</div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
   // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
   const qq = $v.querySelector('.q'); if (qq) qq.classList.add('done');
@@ -1069,6 +1069,61 @@ function syncPull(){
 }
 window.addEventListener('online', syncPull);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - pulledAt > 30000) syncPull(); });
+// Players' reports (Pierre, 2026-11-01): in a game, once the answer is out, "⚑ Report a problem" opens a small dialog:
+// wrong answer (with a field for the right genus), several corals, bad photo, other, plus an optional note. A report
+// carries the photos shown, the expected genus and the answer given. It waits in localStorage 'imr-reports' and goes to
+// the sheet's "Reports" tab (Code.gs v7: POST {reports, rname, rpin}; the sync name and code when signed in, else the name
+// typed in the dialog). An older script answers without rep: true, so reports stay queued until Pierre redeploys.
+// Nothing changes on the site: Pierre reads reports, with who sent them, in the admin Triage.
+const REP_WHY = [['wrong', 'Wrong answer'], ['multi', 'Several corals'], ['photo', 'Bad photo'], ['other', 'Other']];
+const REPC = [];  // context of each Report button drawn: {g: expected genus, a: answer given, ph: photo files, m: game}
+const repBtn = c => `<button type="button" class="linkish rep" data-rep="${REPC.push(c) - 1}">⚑ Report a problem</button>`;
+function sendReports(){
+  const L = store.get('imr-reports', []);
+  if (!SYNC_URL || !L.length || navigator.onLine === false) return;
+  const who = SYNC ? {rname: SYNC.name, rpin: SYNC.pin} : {rname: store.get('imr-report-name', '')};
+  fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({...who, reports: L})}).then(r => r.json()).then(j => {
+    if (!j || !j.rep) return;
+    const sent = new Set(L.map(x => x.id)); store.set('imr-reports', store.get('imr-reports', []).filter(x => !sent.has(x.id)));
+  }).catch(() => {});
+}
+window.addEventListener('online', sendReports);
+setTimeout(sendReports, 4000);
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-rep]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const c = REPC[+b.dataset.rep]; if (c) reportDialog(c, b);
+}, true);
+function reportDialog(c, btn){
+  let d = document.getElementById('repdlg'); if (d) d.remove();
+  d = document.createElement('dialog'); d.id = 'repdlg'; d.className = 'repdlg';
+  const names = Object.keys(DATA.gen).sort();
+  d.innerHTML = `<form method="dialog">
+    <h3>Report a problem</h3>
+    <div class="repwhy" role="radiogroup" aria-label="Problem">${REP_WHY.map(([k, t], i) => `<label><input type="radio" name="why" value="${k}"${i ? '' : ' checked'}><span>${t}</span></label>`).join('')}</div>
+    <label class="repf" data-for="wrong">Right genus, if you know<input name="fix" list="repgen" autocomplete="off" maxlength="60" placeholder="e.g. ${esc(names.find(n => n !== c.g) || '')}"></label>
+    <datalist id="repgen">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+    <label class="repf"><span>Note <small>(optional)</small></span><textarea name="note" rows="2" maxlength="500"></textarea></label>
+    ${SYNC ? '' : `<label class="repf">Your name<input name="who" maxlength="40" autocomplete="name" value="${esc(store.get('imr-report-name', ''))}"></label>`}
+    <div class="repbtns"><button type="button" class="next sec" value="cancel">Cancel</button><button type="submit" class="next" value="send">Send</button></div>
+  </form>`;
+  document.body.appendChild(d);
+  const f = d.querySelector('form'), fix = d.querySelector('[data-for="wrong"]');
+  const upd = () => { fix.hidden = f.why.value !== 'wrong'; };
+  f.querySelectorAll('[name="why"]').forEach(r => r.onchange = upd); upd();
+  d.querySelector('[value="cancel"]').onclick = () => d.close();
+  d.addEventListener('close', () => d.remove());
+  f.onsubmit = e => {
+    e.preventDefault();
+    if (f.who) store.set('imr-report-name', f.who.value.trim());
+    const why = f.why.value;
+    store.set('imr-reports', [...store.get('imr-reports', []), {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(),
+      why, g: c.g, a: c.a || '', ph: c.ph.join(' '), m: c.m, fix: why === 'wrong' ? f.fix.value.trim() : '', note: f.note.value.trim()}].slice(-200));
+    d.close(); sendReports();
+    btn.textContent = '⚑ Reported, thank you'; btn.disabled = true;
+  };
+  d.showModal(); d.querySelector('input[name="why"]').focus();
+}
 // What is wrong with the sync, in words, or '' when everything is saved.
 function syncTrouble(){
   if (!SYNC_URL || !SYNC) return '';

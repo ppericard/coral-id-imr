@@ -1025,3 +1025,21 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 
 /* Genera page: the Coral Finder's extra genera, folded under the 39 */
 .xgen{grid-column:1/-1;margin-top:24px;border-top:1px solid var(--line);padding-top:12px}.xgen>summary{cursor:pointer;font-weight:700;color:var(--muted)}.xgen>summary small{font-weight:400}.xgen>.grid{margin-top:12px}
+/* Players' report (app.js reportDialog): a discreet link after the answer, a small modal dialog. */
+.rep{display:block;margin-top:6px;font-size:.8rem;color:var(--muted);text-decoration:none}
+.rep:hover,.rep:focus-visible{color:var(--accent);text-decoration:underline}
+.rep:disabled{cursor:default;text-decoration:none;color:var(--muted)}
+.repdlg{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);color:var(--ink);padding:16px;width:min(420px,calc(100vw - 32px));box-shadow:var(--shadow-hover)}
+.repdlg::backdrop{background:rgb(0 0 0 / .45)}
+.repdlg h3{margin:0 0 10px;font-size:1.05rem}
+.repwhy{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.repwhy label{position:relative}
+.repwhy input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.repwhy span{display:block;text-align:center;padding:8px 6px;border-radius:var(--pill);border:1.5px solid var(--line);font-size:.9rem}
+.repwhy input:checked+span{border-color:var(--accent);background:var(--accent);color:var(--accent-ink);font-weight:600}
+.repwhy input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.repf{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;font-size:.85rem;color:var(--muted)}
+.repf[hidden]{display:none}
+.repf input,.repf textarea{font:inherit;font-size:.95rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 9px;resize:vertical}
+.repbtns{display:flex;justify-content:flex-end;gap:8px}
+.repbtns .next{padding:8px 18px}

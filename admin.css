@@ -516,3 +516,15 @@ td.cov-c .cov-off{display:block;font-size:.62rem;font-weight:500;line-height:1.1
 .fcov-t td.fcov-s{text-align:center;color:var(--muted)}
 .cov-t th .cov-sort{font:inherit;font-size:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;background:none;border:0;padding:2px 4px;cursor:pointer;white-space:nowrap}
 .cov-t th .cov-sort:hover,.cov-t th .cov-sort.on{color:var(--accent)}
+/* Players' reports in Triage (renderTriage repCard): one card per report, its photos with the genus tools. */
+.adm-rep{border:1px solid var(--line,#dde);border-radius:10px;padding:8px 10px;margin:0 0 12px}
+.adm-rephead{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+.adm-rephead .adm-where{width:auto;display:inline}
+.adm-rephead .adm-tdone{margin-left:auto;font-weight:700}
+.adm-repwho.unv{color:var(--muted,#667);font-weight:600}
+.adm-repwhy{font-weight:600}
+.adm-repfix{font-weight:600}
+.adm-repnote{margin:4px 0 6px;font-style:italic}
+.adm-rep .adm-flagged{margin-top:6px}
+.adm-qhead:has([data-rload]){display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px}
+.adm-qhead:has([data-rload]) .adm-where{width:auto}
