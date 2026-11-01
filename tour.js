@@ -1,23 +1,22 @@
-// Guided tour: walks a new RA through the real pages (Home doors, Learn, Practice, Identify, My progress, help),
+// Guided tour: walks a new RA through the real pages (Home doors, sign-in, the Practice games, My progress, help),
 // spotlighting one element per step with a short bubble. Shown once per browser (localStorage imr-tour, outside the
 // imr-coral-* progress keys so backups and resets leave it alone), never on its own for the admin browser, and
-// replayable from the ? help of any page (or ?tour in the URL). The sign-in step lets the RA type in the real form.
+// replayable from the ? help of any page (or ?tour in the URL). The sign-in step holds the real sign-in form.
 (function(){
   const KEY = 'imr-tour';
+  // Five steps (Pierre, 2026-11-01: beta testers must sign in early and start playing fast): the two doors, signing in
+  // (the form is in the bubble itself, same on phone and desktop), the three games, progress, help; the last button
+  // starts the photo quiz. Details (genus sheets, answers, corallites, Coral Finder) are behind each page's ?.
   const STEPS = [
     {h: '', sel: '.hdoors', t: 'Two ways in', d: 'Learn & practise while you learn the genera. Identify when you need to name a coral on a ReefCloud photo.'},
-    {h: 'genera', sel: '#azgrid a.card', t: 'Learn: one card per genus', d: 'The card shows the deciding features. Tap it for the genus sheet: photos at 3 scales, IMR ID tips, look-alikes.'},
-    {h: 'quiz', sel: '.qstage', t: 'Practice: name the genus', d: 'Two photos of the same coral: the colony, then a close-up.'},
-    {h: 'quiz', sel: '.ans', t: 'Pick an answer', d: 'Wrong? You see why, with the IMR ID tips of both genera. Photos get harder as you get a genus right.'},
-    {h: 'quiz', sel: '#hintb', t: 'Stuck? Look at the corallites', d: 'When no corallite photo is shown, this adds one. One right answer with the corallites in view is a step to learn a genus.'},
-    {h: 'finder', sel: '.fdforms, #labroot', t: 'Identify a coral on your photos', d: 'Start from its growth form, then compare the candidate genera side by side.'},
-    {h: 'progress', sel: '.pwall, .pgrid', t: 'Your progress', d: 'A genus turns darkest, with a tick, once learned: right answers on harder photos, once with the corallites in view, once in a look-alike duel.'},
-    {h: 'progress', sel: '#sync', t: 'Sign in', d: 'Your name and a 4-digit code: your progress is saved for your trainer and follows you on any device.', live: true},
-    {h: '', sel: '#help', t: 'Help on every page', d: 'Tap ? for what a page does. ⚙ sets photo size, theme and colours. Replay this tour from ?.', also: '#setb'}
-  ];
+    {h: '', signin: true},
+    {h: 'quiz', sel: '#modes', t: 'Three games', d: 'Photo → genus: name the genus from photos. Look-alike duels: two genera often confused. Memory: match colony and corallites. Switch games here at any time.'},
+    {h: 'quiz', sel: '#prog', alt: 'nav [data-tab=progress]', t: 'Your progress', d: 'Each genus fills up as you get it right on harder photos, once with the corallites in view and once in a duel. Tap to see all 39.'},
+    {h: 'quiz', sel: '#help', t: 'Help on every page', d: 'Tap ? for what a page does. ⚙ sets the theme and colours. Replay this tour from ?.', also: '#setb'}
+  ].filter(s => !s.signin || SYNC_URL);
   let root = null, step = 0, token = 0, target = null, tick = null;
   const vis = el => { if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
-  const find = s => [...document.querySelectorAll(s.sel)].find(vis) || (s.alt && [...document.querySelectorAll(s.alt)].find(vis)) || null;
+  const find = s => !s.sel ? null : [...document.querySelectorAll(s.sel)].find(vis) || (s.alt && [...document.querySelectorAll(s.alt)].find(vis)) || null;
   const here = h => hashNow() === h;
   function nav(h){
     if (here(h)) return;
@@ -34,19 +33,22 @@
     (function wait(){
       if (my !== token || !root) return;
       const el = find(s);
-      if (!el && Date.now() - t0 < 4000) return setTimeout(wait, 80);
+      if (!el && s.sel && Date.now() - t0 < 4000) return setTimeout(wait, 80);
       target = el;
-      if (el) { if (s.h === '' && s.sel === '#help') window.scrollTo(0, 0); else el.scrollIntoView({block: phone() ? 'start' : 'center', inline: 'nearest'}); }
+      if (!s.sel) window.scrollTo(0, 0);
+      if (el) { if (s.sel === '#help') window.scrollTo(0, 0); else el.scrollIntoView({block: phone() ? 'start' : 'center', inline: 'nearest'}); }
       if (el && phone() && s.sel !== '#help') window.scrollBy(0, -12);
       bubble(); place();
     })();
   }
   function bubble(){
     const s = STEPS[step], last = step === STEPS.length - 1, b = root.querySelector('.tbub');
-    b.innerHTML = `<p class="tstep">${step + 1} / ${STEPS.length}</p><h3>${esc(s.t)}</h3><p>${esc(s.d)}</p>
+    // The sign-in step holds the real sign-in box (bindSync in app.js); its Next reads "Later" until the RA has signed in.
+    b.innerHTML = `<p class="tstep">${step + 1} / ${STEPS.length}</p>${s.signin ? '<section class="sync tsync"></section>' : `<h3>${esc(s.t)}</h3><p>${esc(s.d)}</p>`}
       <div class="tnav"><button type="button" class="linkish tskip">${last ? 'Close' : 'Skip tour'}</button><span>
-      ${step ? '<button type="button" class="chip tback">Back</button>' : ''}<button type="button" class="next tnext">${last ? 'Start practising' : 'Next'}</button></span></div>`;
-    b.querySelector('.tskip').onclick = () => close();
+      ${step ? '<button type="button" class="chip tback">Back</button>' : ''}<button type="button" class="next tnext${s.signin && !SYNC ? ' sec' : ''}">${last ? 'Start playing' : s.signin && !SYNC ? 'Later' : 'Next'}</button></span></div>`;
+    if (s.signin) { const box = b.querySelector('.tsync'); bindSync(box); new MutationObserver(() => { const n = b.querySelector('.tnext'); if (n) { n.textContent = SYNC ? 'Next' : 'Later'; n.classList.toggle('sec', !SYNC); } place(); }).observe(box, {childList: true}); }
+    b.querySelector('.tskip').onclick = () => close(null, true);
     if (step) b.querySelector('.tback').onclick = () => show(step - 1);
     b.querySelector('.tnext').onclick = () => last ? close('quiz') : show(step + 1);
     root.classList.toggle('live', !!s.live);
@@ -75,7 +77,7 @@
     root.querySelector('.tdim').setAttribute('d', `M0,0 H${W} V${H} H0 Z` + hole);
     // The bubble: phones keep it at the bottom (CSS); wider screens put it below, above or beside the target.
     // Phones: a sheet at the bottom, or at the top when the target sits in the lower half (it can't always scroll up).
-    if (phone()) { b.style.left = b.style.top = ''; b.classList.toggle('up', !!r && r.top + Math.min(r.height, H / 2) / 2 > H / 2); return; }
+    if (phone()) { b.style.left = b.style.top = ''; b.classList.toggle('up', !r || r.top + Math.min(r.height, H / 2) / 2 > H / 2); return; }
     const bw = b.offsetWidth, bh = b.offsetHeight, m = 14;
     let left, top;
     if (!r) { left = (W - bw) / 2; top = (H - bh) / 2; }
@@ -87,16 +89,20 @@
     b.style.left = Math.max(m, Math.min(W - bw - m, left)) + 'px';
     b.style.top = Math.max(m, Math.min(H - bh - m, top)) + 'px';
   }
-  function close(to){
+  // Skipping the tour before its sign-in step (Escape too) still offers the sign-in card once: a beta tester who skips
+  // at once should not miss it (Pierre, 2026-11-01). "Later" there leaves the card after 10 answers in place.
+  function close(to, skipped){
     if (!root) return;
+    const ask = skipped && !SYNC && SYNC_URL && STEPS.slice(step).some(s => s.signin);
     token++;
     try { sessionStorage.removeItem(KEY); } catch (e) {}
     clearInterval(tick); root.remove(); root = null; target = null;
     document.removeEventListener('keydown', onKey); removeEventListener('resize', place); removeEventListener('scroll', place);
     if (to) go(to);
+    if (ask && window.signinNudge) signinNudge(false);
   }
   function onKey(e){
-    if (e.key === 'Escape') return close();
+    if (e.key === 'Escape') return close(null, true);
     if (e.target.closest && e.target.closest('input, textarea, select')) return;
     if (e.key === 'ArrowRight') { e.preventDefault(); show(step + 1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); show(step - 1); }

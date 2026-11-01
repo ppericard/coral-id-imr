@@ -851,6 +851,9 @@ function fitTiles(grid, gap, dims){
 }
 addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
 function answer(cur, c, target, ph, cor, unseen){
+  // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
+  // was played since, not progress an older sign-out left on the device.
+  if (!SYNC && SYNC_URL && !store.get(LOG0, []).length) store.set(ANONB, P);
   const good = c === target, s = st(target);
   session.n++; if (good) { session.ok++; s.ok++; s.streak++; } else { s.ko++; s.streak = 0; s.conf = s.conf || {}; s.conf[c] = (s.conf[c] || 0) + 1; }
   // Knowledge (BKT) with the difficulty of the photos shown (before the result joins s.h, which BKT replays for old progress).
@@ -872,7 +875,11 @@ function answer(cur, c, target, ph, cor, unseen){
   if (good && cor) s.cor = 1;  // milestone: right with the corallites photo in view
   if (good && cur.startsWith('quiz-duel')) s.du = 1;  // milestone: won a look-alike duel
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
-  if (SYNC) SYNC.log = [...(SYNC.log || []), {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur, ph: ph.map(p => p.f).join(' '), e: Math.round(100 * (1 / k + (1 - 1 / k) * sig(th0 - d0))) / 100, th: th0, nw}].slice(-2000);
+  // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
+  // sheet's Answers tab also gets what was played before the account existed (Pierre, 2026-11-01).
+  const ans = {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur, ph: ph.map(p => p.f).join(' '), e: Math.round(100 * (1 / k + (1 - 1 / k) * sig(th0 - d0))) / 100, th: th0, nw};
+  if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
+  else if (SYNC_URL) store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
   save();
   $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', photoSrc(ph[k])));
   // A mix-up: the stage becomes a montage, the photo shown (corallites if they were shown) next to a photo of the
@@ -910,6 +917,7 @@ function answer(cur, c, target, ph, cor, unseen){
   bindGo(document.getElementById('after'));
   const nb = document.getElementById('next'); nb.focus({preventScroll: true}); nb.onclick = route;
   if (nbo.length) unlockShow(nbo);
+  else if (nudgeDue()) signinNudge();
 }
 // Unlock card (Pierre, 2026-11-01): shown once per newly unlocked bonus genus, over the quiz feedback. A "?" tile turns
 // over to the genus's cover photo, with its name and Coral Finder ID tips. Got it / Esc / Enter / a click outside closes
@@ -1242,8 +1250,53 @@ function syncTrouble(){
   if (SYNC.err) return n ? `Not saved yet: ${n} answer${n > 1 ? 's' : ''} waiting` : 'Not saved yet: could not reach the sheet';
   return '';
 }
+// Answers played before signing in (LOG0) and the one-time sign-in card (NUDGE): outside the imr-coral-* keys, so they
+// never travel in the progress data sent to the sheet.
+const LOG0 = 'imr-log0', NUDGE = 'imr-nudge', ANONB = 'imr-anon-base';
+// Signing in. A new name keeps what this device holds and sends it. A known account (found) is merged with what was
+// played here before signing in: the sheet's settings and quiz state win, the progress of both adds up (mergeProgress
+// with an empty base), then the page reloads and the start-up sync sends the merged progress. Either way the answers
+// played before signing in join the log for the sheet's Answers tab. Before 2026-11-01 a known account replaced the
+// device's progress, so a beta tester who played first and signed in later lost it.
+function signIn(name, pin, j){
+  SYNC = {name, pin, dirty: true, log: store.get(LOG0, [])};
+  try { localStorage.removeItem(LOG0); } catch (e) {}
+  if (!j.found) { try { localStorage.removeItem(ANONB); } catch (e) {} return store.set('imr-coral-sync', SYNC); }
+  let R = {}; try { R = JSON.parse(j.data['imr-coral-progress'] || '{}') || {}; } catch (e) {}
+  SYNC.base = R;
+  // Only what was played while signed out counts: the delta from ANONB (the progress before the first anonymous answer)
+  // is added to the sheet's. Progress left by a sign-out made before sign-out cleared the device (2026-11-01) is in
+  // ANONB, so it is neither counted twice nor credited to another account.
+  const anon = SYNC.log.length > 0, M = anon ? mergeProgress(store.get(ANONB, {}) || {}, P, R) : R;
+  try { localStorage.removeItem(ANONB); } catch (e) {}
+  loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => k !== 'imr-coral-progress')));
+  store.set('imr-coral-progress', M);
+  if (!anon) delete SYNC.dirty;
+  store.set('imr-coral-sync', SYNC);
+  try { sessionStorage.setItem('imr-coral-loaded', 'the IMR sheet'); } catch (e) {}
+  location.reload();
+}
+// One sign-in card, once, after 10 answers played without an account (Pierre, 2026-11-01: beta testers must sign in
+// early so their progress reaches the sheet). Never in Pierre's admin browser. "Later" closes it for good.
+const nudgeDue = () => !SYNC && SYNC_URL && !HAS_ADMIN_TOKEN && !document.querySelector('#tour, .unlock') && !store.get(NUDGE, 0) && store.get(LOG0, []).length >= 10;
+function signinNudge(once = true){
+  if (once) store.set(NUDGE, 1);
+  const d = document.createElement('div');
+  d.className = 'unlock signnudge'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Sign in');
+  d.innerHTML = `<div class="ulcard"><section class="sync tsync"></section><div class="ulbtns"><span></span><button class="next sec" type="button">Later</button></div></div>`;
+  document.body.appendChild(d);
+  const box = d.querySelector('.tsync'), btn = d.querySelector('.ulbtns button');
+  const close = () => { d.remove(); document.removeEventListener('keydown', key, true); bindSync(); const nb = document.getElementById('next'); if (nb) nb.focus({preventScroll: true}); };
+  const key = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } else if (e.key === 'Enter' && !(e.target.closest && e.target.closest('form'))) { e.stopPropagation(); e.preventDefault(); close(); } };
+  document.addEventListener('keydown', key, true);
+  // From a skipped tour, the card ends on the games: once signed in, its button starts the photo quiz.
+  btn.onclick = () => { close(); if (!once && SYNC) go('quiz'); };
+  d.addEventListener('click', e => { if (e.target === d) close(); });
+  bindSync(box);
+  new MutationObserver(() => { btn.textContent = SYNC ? (once ? 'Done' : 'Start playing') : 'Later'; btn.classList.toggle('sec', !SYNC); }).observe(box, {childList: true});
+}
 // The sign-in box: My progress (#sync), or the welcome tour's card while it is open.
-function bindSync(box = document.querySelector('#tour .tsync') || document.getElementById('sync')){
+function bindSync(box = document.querySelector('.tsync') || document.getElementById('sync')){
   showProg();
   if (!box) return;
   box.classList.remove('on', 'warn');
@@ -1261,24 +1314,30 @@ function bindSync(box = document.querySelector('#tour .tsync') || document.getEl
       : `<p class="sline"><span class="sdot"></span><span>Saved for IMR as <b>${esc(SYNC.name)}</b>${when ? ` · ${when}` : ''}</span>
         <button class="linkish" type="button" id="snow">Send now</button><button class="linkish" type="button" id="soff">Sign out</button></p><span class="note" role="status"></span>`;
     box.querySelector('#snow').onclick = () => { msg('Sending…'); syncPush().then(j => { if (!(j && j.ok)) msg(j && j.error === 'pin' ? 'The sheet refused the code for this name.' : 'Could not reach the sheet. Check your connection.'); }); };
-    box.querySelector('#soff').onclick = () => { SYNC = null; try { localStorage.removeItem('imr-coral-sync'); } catch (e) {} bindSync(); };
+    // Signing out also clears this device's progress (it is in the sheet): the next player starts empty, and progress
+    // left here is always the anonymous play of whoever signs in next, which signIn merges into their account.
+    // Answers not saved yet: a second click confirms.
+    const off = box.querySelector('#soff');
+    off.onclick = () => {
+      if ((SYNC.dirty || (SYNC.log || []).length) && !off.dataset.armed) { off.dataset.armed = '1'; off.textContent = 'Sign out: unsaved answers are lost'; return; }
+      SYNC = null; ['imr-coral-sync', 'imr-coral-progress', 'imr-coral-quiz', 'imr-coral-reset', LOG0, NUDGE, ANONB].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+      location.reload();
+    };
     return;
   }
   const fold = box.id === 'sync';
   box.innerHTML = `${fold ? '<details class="sfold"><summary>Sign in to save your progress</summary>' : '<h3>Sign in to save your progress</h3>'}<p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device.</p>
     <form class="sform"><label>Your name <input name="n" required maxlength="40" autocomplete="name"></label>
     <label>4-digit code <input name="p" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"></label>
-    <button class="chip go" type="submit">Sign in</button> <span class="note" role="status"></span></form>
+    <button class="${box.classList.contains('tsync') ? 'next' : 'chip go'}" type="submit">Sign in</button> <span class="note" role="status"></span></form>
     <p class="note">New name: pick any code and remember it. Same name and code later: your saved progress comes back.</p>${fold ? '</details>' : ''}`;
   box.querySelector('form').onsubmit = e => { e.preventDefault();
     const f = e.target, name = f.n.value.trim(), pin = f.p.value.trim();
     msg('Connecting…');
     fetch(`${SYNC_URL}?name=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}`).then(r => r.json()).then(j => {
       if (!j.ok) return msg(j.error === 'pin' ? 'This name already exists with another code.' : j.error === 'wait' ? 'Too many wrong codes for this name: try again in 10 minutes.' : 'Check the name and the 4-digit code.');
-      SYNC = {name, pin}; if (j.found) { try { SYNC.base = JSON.parse(j.data['imr-coral-progress'] || '{}') || {}; } catch (err) { SYNC.base = {}; } } store.set('imr-coral-sync', SYNC);
-      // A known account replaces whatever this device holds (another RA may have used it); a new name keeps it.
-      if (j.found) { Object.keys(progData()).forEach(k => localStorage.removeItem(k)); loadData(j.data); try { sessionStorage.setItem('imr-coral-loaded', 'the IMR sheet'); } catch (err) {} location.reload(); }
-      else { SYNC.dirty = true; store.set('imr-coral-sync', SYNC); syncPush().then(() => bindSync()); }
+      signIn(name, pin, j);
+      if (!j.found) syncPush().then(() => bindSync());
     }).catch(() => msg('Could not reach the sheet. Check your connection.')); };
 }
 // Ask the browser not to evict saved progress when storage runs low.

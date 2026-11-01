@@ -1139,3 +1139,7 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .lb-cap .rep:hover,footer .rep:hover{opacity:1}
 .repline{margin:18px 0 0;text-align:right}
 .repline .rep{display:inline}
+/* Sign-in box inside the tour bubble and the one-time sign-in card (tsync): the box's own frame goes, the bubble or card is the frame. */
+.tsync.sync{border:0;background:none;padding:0;margin:0 0 10px;box-shadow:none;text-align:left}
+.tsync.sync h3{font-family:var(--display);font-size:var(--fs-l);margin:0 0 4px;line-height:1.15}
+.signnudge .ulcard{text-align:left}
