@@ -436,7 +436,6 @@ function viewLookalikes(a, b){
     const cur = $v.querySelector('.lkd.on'); if (cur) cur.parentNode.scrollTop = cur.offsetTop - cur.parentNode.offsetTop - 8;
     $v.querySelectorAll('[data-lstep]').forEach(btn => btn.onclick = () => stepTo(i + Number(btn.dataset.lstep)));
     $v.querySelectorAll('[data-lz]').forEach(z => z.onclick = () => zoom([{...m.pa, genus: m.A}, {...m.pb, genus: m.B}], Number(z.dataset.lz)));
-    requestAnimationFrame(() => $v.querySelectorAll('.lkph').forEach(fitLow));
     $v.querySelectorAll('.lkd').forEach((d, k) => d.onclick = e => { e.preventDefault(); stepTo(k); });
     // Swipe left / right anywhere on the pair (photos, title, tips), only when the gesture is mostly sideways.
     const mt = $v.querySelector('.lkmain'); let t0 = null;
@@ -459,6 +458,8 @@ function fitLk(){
   const k = $v.querySelector('.lk'); if (!k) return;
   const tab = tabH();
   k.style.height = Math.max(360, innerHeight - k.getBoundingClientRect().top - window.scrollY - 14 - tab) + 'px';
+  // Whole or filled is decided again for the new size (a tablet turned, a window resized): see fitLow / LOWRES.
+  k.querySelectorAll('.lkph').forEach(fitLow);
 }
 addEventListener('resize', fitLk);
 function viewCompare(a, b){
