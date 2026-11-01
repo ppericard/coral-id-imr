@@ -28,7 +28,7 @@ function rebase(next){
   DRAFT = merge3(base, DRAFT, next, conf); DRAFT.genera = DRAFT.genera || {};
   HIST = HIST.map(x => JSON.stringify(f(JSON.parse(x)))); FUT = FUT.map(x => JSON.stringify(f(JSON.parse(x))));
   SAVED = clone(next); SAVED.genera = SAVED.genera || {}; snap = JSON.stringify(DRAFT); memoReset();
-  if (TOKEN) { store.set('imr-curation-draft', DRAFT); store.set('imr-curation-base', SAVED); }
+  if (TOKEN) { store.set('imr-curation-draft', DRAFT); store.set('imr-curation-base', SAVED); keepHist(); }
   return conf;
 }
 // "genera > Acropora > feat > wide" → "Acropora featured Colony"; top-level maps → "quality of acropora-…".
@@ -49,12 +49,16 @@ let draftAt = null;
 // No button ever clears several choices at once: Undo (or Ctrl+Z) steps back one click at a time, within this visit.
 // Redo (or Ctrl+Shift+Z / Ctrl+Y) steps forward again; a new click clears the redo steps.
 let HIST = [], FUT = [], snap = null;
+// The Undo steps survive a reload of this tab (admin re-review, 2026-11-01): kept in sessionStorage (this tab only,
+// gone when it closes; the last 60 steps), with the draft they lead to, so another tab's draft never picks them up.
+const HKEY = 'imr-admin-undo';
+const keepHist = () => { if (!TOKEN) return; try { sessionStorage.setItem(HKEY, JSON.stringify({snap, hist: HIST.slice(-60), fut: FUT.slice(-60)})); } catch (e) {} };
 // Read-only (no token): clicks stay in this tab only, nothing is kept as a draft (admin review, 2026-11-01).
-function saveDraft(){ memoReset(); if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); FUT = []; snap = JSON.stringify(DRAFT); if (!TOKEN) return; draftLost = !store.set('imr-curation-draft', DRAFT); draftAt = new Date(); }
+function saveDraft(){ memoReset(); if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); FUT = []; snap = JSON.stringify(DRAFT); if (!TOKEN) return; draftLost = !store.set('imr-curation-draft', DRAFT); draftAt = new Date(); keepHist(); }
 let draftLost = false;
 function step(from, to, msg){
   if (!from.length) return toast(msg[0]);
-  to.push(snap); snap = from.pop(); DRAFT = JSON.parse(snap); memoReset(); if (TOKEN) { store.set('imr-curation-draft', DRAFT); draftAt = new Date(); } render(); toast(msg[1]);
+  to.push(snap); snap = from.pop(); DRAFT = JSON.parse(snap); memoReset(); if (TOKEN) { store.set('imr-curation-draft', DRAFT); draftAt = new Date(); keepHist(); } render(); toast(msg[1]);
 }
 const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']), redo = () => step(FUT, HIST, ['Nothing to redo.', 'Redone.']);
 const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
@@ -162,7 +166,8 @@ function lockScreen(msg){
     <h2>${has ? 'Unlock' : 'Set up this device'}</h2>
     ${has ? `<p class="lede">Enter the admin password.</p>` : `<p class="lede">Choose an admin password and paste a GitHub token that can write to <b>${REPO}</b>. The token stays in this browser, encrypted with the password. Do this once per device.</p>
       <ol class="note adm-steps"><li>Open <a href="https://github.com/settings/personal-access-tokens/new?name=IMR%20Coral%20ID%20curation&description=Photo%20curation%20back-office&expires_in=90&contents=write" target="_blank" rel="noopener">New fine-grained token</a> (pre-filled).</li>
-      <li>Repository access: <b>Only select repositories</b>, then <b>coral-id-imr</b>. Permission: <b>Contents: Read and write</b>.</li><li>Generate, copy it and paste it below.</li></ol>`}
+      <li>Repository access: <b>Only select repositories</b>, then <b>coral-id-imr</b>. Permission: <b>Contents: Read and write</b>.</li><li>Generate, copy it and paste it below.</li></ol>
+      <p class="note">coral-id-imr not in the list? Fine-grained tokens only reach your own repositories or your organisations', so a collaborator uses a <a href="https://github.com/settings/tokens/new?scopes=repo&description=IMR%20Coral%20ID%20curation" target="_blank" rel="noopener">classic token</a> (scope <b>repo</b>, pre-filled) instead.</p>`}
     <form id="lockf" class="adm-form">
       <label>Password <input type="password" id="pw" autocomplete="current-password" required></label>
       ${has ? '' : `<label>Password again <input type="password" id="pw2" autocomplete="new-password" required></label>
@@ -171,6 +176,7 @@ function lockScreen(msg){
       ${msg ? `<p class="adm-err" role="alert">${esc(msg)}</p>` : ''}
     </form>
     ${has ? '<p class="note"><button type="button" class="adm-link" id="forget">Forget this device</button> (removes the stored token)</p>' : ''}
+    <p class="note"><a href="?readonly">Just look (read-only)</a>: nothing can be published or kept.</p>
   </section>`;
   $('pw').focus();
   $('lockf').onsubmit = async e => {
@@ -582,9 +588,9 @@ function renderQuality(){
 const HELP = {
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
   start: `<p><b>Work in this order</b></p>
-    <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them.</li><li><b>Forms</b> and <b>Quality</b>: check the growth form and quality guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Needs</b>: which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
+    <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Needs looks better.</li><li><b>Forms</b> and <b>Quality</b>: check the growth form and quality guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Needs</b>: which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
     <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
-    <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish, a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
+    <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the 39 IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Game coverage). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
@@ -595,9 +601,10 @@ const HELP = {
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (players' level on the genus is above what the hardest photo of the view can challenge: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
   diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers. Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time.</p>
-    <p>The first 3 photos of each view are its featured photos (top of the genus sheet, Coral Finder). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. Hidden photos disappear everywhere, games included; × excludes a photo for good.</p>
+    <p>The first 3 photos of each view are its featured photos (top of the genus sheet, Coral Finder). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. <b>Remove</b> takes a photo off the site (games included) and lists it with the candidates below, where you can add it back.</p>
+    <p><b>Which no?</b> <b>Remove</b>: off the site, back with the candidates. <b>Reject</b> (Candidates): reviewed and not wanted, it stays a candidate. <b>Skip</b>: decide later. <b>Not this</b>: wrong genus, or only fit for a look-alike comparison. <b>×</b>: excluded for good (a person, a drawing, unusable).</p>
     <p>The letters on each photo are its growth form (see Growth form).</p>
-    <p><b>Symbols.</b> Genus list: <b>✓</b> validated and complete; <b>!</b> validated but something is missing again; <b>●</b> draft not published; <b>⚠ check</b> a choice names a photo no longer in the data; <b>N waiting</b> candidates not reviewed yet; <b>macro cover</b> the cover is a close-up. Photos: <b>filled number 1-3</b> featured; <b>outlined number 4-6</b> also on the genus sheet; <b>dashed frame</b> a candidate, not on the site yet; <b>faded dashed frame</b> hidden; <b>added</b> a candidate you added; <b>Cover</b> the cover photo. Dashed tags or buttons are guesses, solid ones are your choices. <b>3 zooms / 2 zooms</b>: with 2, Close-up photos join Colony.</p>`,
+    <p><b>Symbols.</b> Genus list: <b>✓</b> validated and complete; <b>!</b> validated but something is missing again; <b>●</b> draft not published; <b>⚠ check</b> a choice names a photo no longer in the data; <b>N waiting</b> candidates not reviewed yet; <b>macro cover</b> the cover is a close-up. Photos: <b>filled number 1-3</b> featured; <b>outlined number 4-6</b> also on the genus sheet; <b>dashed frame</b> a candidate, not on the site yet; <b>faded dashed frame</b> removed (back with the candidates); <b>added</b> a candidate you added; <b>Cover</b> the cover photo. Dashed tags or buttons are guesses, solid ones are your choices. <b>3 zooms / 2 zooms</b>: with 2, Close-up photos join Colony.</p>`,
   form: `<p>The 7 IMR growth forms (Lecture 6, slides 3-10), one per photo, the main form visible: <b>Br</b> Branching, <b>En</b> Encrusting, <b>Ta</b> Tabulate, <b>Mu</b> Mushroom, <b>Ma</b> Massive, <b>Sm</b> Submassive, <b>Fo</b> Foliose/Plating; <b>∅</b> = form not visible (too close). <b>✿</b> = polyps or vesicles extended (not a form; it fills the Coral Finder "Large daytime polyps" tile).</p>
     <p>The Coral Finder growth-form tiles use them: Branching = Br + Ta, Thin plates and crusts = En + Fo, Massive or thick = Ma + Sm, Columns = Sm, Solitary = Mu, Meandering = any form of the genera it lists. Dashed = a first guess, solid = yours (always wins); a red ? = a guess to double-check.</p>
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>`,
@@ -691,13 +698,15 @@ function renderExcluded(){
   // A photo excluded and since removed from data.json: genus from its file name, thumbnail from iNaturalist when the name
   // ends in an iNat photo id (admin review, 2026-11-01). The extension is unknown: try .jpg, then .jpeg, then .png.
   const gone = f => { const m = f.match(/^([a-z]+)-/), id = (f.match(/-(\d{5,})$/) || [])[1], gn = m && Object.keys(DATA.gen).find(x => x.toLowerCase() === m[1]);
-    return {f, genus: gn || (/^imrl-/.test(f) ? 'IMR lecture' : '?'), gone: true, inat: id}; };
+    // An IMR lecture photo (imrl-p<page>_…): genus and slide from another photo of the same lecture page (admin re-review).
+    const pg = (f.match(/^(imrl-p\d+_)/) || [])[1], sib = pg && Object.entries(DATA.course || {}).flatMap(([g, L]) => L.map(p => ({...p, genus: g}))).find(p => p.f.startsWith(pg));
+    return {f, genus: gn || (sib ? sib.genus : pg ? 'IMR lecture' : '?'), gone: true, inat: id, slide: sib && sib.slide}; };
   const X = DRAFT.exclude || {}, list = Object.keys(X).map(f => PHOTOS[f] ? {...PHOTOS[f], f} : gone(f));
   const io = id => `https://inaturalist-open-data.s3.amazonaws.com/photos/${id}/small`;
   $v.innerHTML = `<section class="adm-quality"><div class="adm-qhead"><h2>Excluded photos</h2></div>
     ${list.length ? `<div class="adm-grid adm-qgrid">${list.map(p => `<figure class="adm-tile" data-f="${esc(p.f)}" data-g="${esc(p.genus)}">
       <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge">${!p.gone ? `<img src="${img(p, 1)}" alt="" loading="lazy">` : p.inat ? `<img src="${io(p.inat)}.jpg" alt="" loading="lazy" data-ext="0">` : '<span class="none">no preview</span>'}</button>
-      <figcaption>${DATA.gen[p.genus] ? `<a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a>` : `<span class="adm-gen">${esc(p.genus)}</span>`}${!p.gone ? srcTag(p) : p.inat ? `<a class="adm-src" href="https://www.inaturalist.org/photos/${p.inat}" target="_blank" rel="noopener">iNat ↗</a>` : ''}</figcaption>
+      <figcaption>${DATA.gen[p.genus] ? `<a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a>` : `<span class="adm-gen">${esc(p.genus)}</span>`}${!p.gone ? srcTag(p) : p.inat ? `<a class="adm-src" href="https://www.inaturalist.org/photos/${p.inat}" target="_blank" rel="noopener">iNat ↗</a>` : p.slide ? `<span class="adm-src">IMR lecture</span> <i>slide ${esc(String(p.slide))}</i>` : ''}</figcaption>
       <div class="adm-acts"><button type="button" data-act="restore">Restore</button></div></figure>`).join('')}</div>` : '<p class="note">No excluded photo.</p>'}</section>`;
   const set = (f, r) => { DRAFT.exclude = {...(DRAFT.exclude || {})}; if (r) DRAFT.exclude[f] = r; else delete DRAFT.exclude[f]; saveDraft(); renderExcluded(); };
   $v.querySelectorAll('img[data-ext]').forEach(im => im.onerror = () => { const i = Number(im.dataset.ext) + 1, E = ['jpg', 'jpeg', 'png'];
@@ -1046,7 +1055,11 @@ async function start(){
   // device, or by the candidate refill) comes in underneath. Drafts from before this rule only add, never remove.
   const old = store.get('imr-curation-draft', null), base = store.get('imr-curation-base', null);
   DRAFT = old && old.genera ? (base ? merge3(base, old, SAVED) : mergeOld(old, SAVED)) : clone(SAVED); DRAFT.genera = DRAFT.genera || {};
-  snap = JSON.stringify(DRAFT); if (TOKEN) { store.set('imr-curation-draft', DRAFT); store.set('imr-curation-base', SAVED); }
+  // Undo steps kept by this tab before a reload come back, re-based like the draft, only if they lead to that same draft.
+  const kept = (() => { try { return JSON.parse(sessionStorage.getItem(HKEY) || 'null'); } catch (e) { return null; } })();
+  if (TOKEN && kept && old && kept.snap === JSON.stringify(old) && Array.isArray(kept.hist) && Array.isArray(kept.fut)) {
+    const f = x => JSON.stringify(base ? merge3(base, JSON.parse(x), SAVED) : mergeOld(JSON.parse(x), SAVED)); HIST = kept.hist.map(f); FUT = kept.fut.map(f); }
+  snap = JSON.stringify(DRAFT); if (TOKEN) { store.set('imr-curation-draft', DRAFT); store.set('imr-curation-base', SAVED); keepHist(); }
   // Pierre's clicks in the old Coral Finder letters (curation.json "form") stay as they are, shown as the hint.
   Object.assign(LEGACY, SAVED.form || {}, DRAFT.form || {});
   const nf = importFlags(); if (nf) setTimeout(() => toast(`${nf} new photo${nf > 1 ? 's' : ''} flagged on the site: see Triage.`), 50);
@@ -1084,7 +1097,7 @@ const SESSION = 'imr-admin-session';
 const sess = {get(){ try { return sessionStorage.getItem(SESSION); } catch (e) { return null; } },
   set(t){ try { t ? sessionStorage.setItem(SESSION, t) : sessionStorage.removeItem(SESSION); } catch (e) {} }};
 store.set(SESSION, null);  // drop the plain copy older versions kept in localStorage
-function signOut(){ sess.set(null); TOKEN = null; location.reload(); }
+function signOut(){ sess.set(null); try { sessionStorage.removeItem(HKEY); } catch (e) {} TOKEN = null; location.reload(); }
 (async () => {
   if (/[?&]readonly\b/.test(location.search)) return start();
   const t = sess.get();
@@ -1215,7 +1228,7 @@ function renderFcov(){
     <div class="adm-filter cov-head">${seg('set', [['all', 'All'], ['imr', 'IMR list'], ['x', 'Not IMR']])}${seg('order', [['thin', 'Thinnest'], ['thick', 'Thickest'], ['az', 'A–Z']])}
       <span class="cov-key" aria-label="Good colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 good colonies">${thin} thin</b></div>
-    <table class="cov-t fcov-t"><thead><tr><th></th>${colTh(FCOV)}<th>Forms</th><th>Species</th><th title="Candidates">+</th></tr></thead>
+    <table class="cov-t fcov-t"><thead><tr><th></th>${colTh(FCOV)}<th class="fcov-fh">Forms</th><th class="fcov-sh">Species</th><th title="Candidates">+</th></tr></thead>
     <tbody>${R.map(r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${r.x ? ' <small class="fcov-x">not IMR</small>' : ''}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="fcov-f">${r.forms.map(f => `<span class="adm-why" title="${esc(fName(f))}">${FABBR[f]}</span>`).join(' ') || '<span title="No growth form set on these photos yet">–</span>'}</td>
       <td class="fcov-s" title="${esc(r.sp.join(', '))}">${r.sp.length || '–'}</td><td class="cov-cand">${r.cand ? `+${r.cand}` : ''}</td></tr>`).join('')}</tbody></table></section>`;
@@ -1308,7 +1321,7 @@ function statsPlayers(){
   $v.innerHTML = head + kpis([['Players', ps.length], ['Answers', R.length], ['Right', pct(ok, R.length)], ['Active 7 d', wk]]) + (!R.length ? `<p class="note">${SF.who === 'others' ? noneButMe() : 'No answers yet.'}</p>` : `
     <div class="adm-sgrid">
     <section class="adm-scard wide"><h3>Players</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>#</th><th>Level</th><th>Answers</th><th>Right</th><th>Last 20</th><th title="Different photos answered">Photos</th><th>Learned</th><th>Days</th><th>Last</th></tr></thead><tbody>
-      ${ps.map((p, i) => `<tr${p.id === MEID ? ' class="me"' : ''}><td>${i + 1}${p.id === MEID ? ' <small>you</small>' : ''}</td><td>${p.lv == null ? '–' : sgn(p.lv)}</td><td>${p.n}</td><td>${pct(p.ok, p.n)}</td><td>${Math.round(100 * p.last)}%</td><td class="n">${p.ph}</td>
+      ${ps.map((p, i) => `<tr${p.id === MEID ? ' class="me"' : ''}><td>${i + 1}${p.id === MEID ? ' <small>you</small>' : ''}</td><td>${p.lv == null ? '–' : sgn(p.lv)}</td><td>${p.n}</td><td>${pct(p.ok, p.n)}</td><td>${Math.round(100 * p.last)}%</td><td>${p.ph}</td>
         <td>${p.sum ? `${p.sum[0]}/${p.sum[2] || total}` : '–'}</td><td>${p.d.size}</td><td>${days(p.at)}</td></tr>`).join('')}</tbody></table></div></section>
     <section class="adm-scard"><h3>Learning curve</h3><div class="adm-cols">${cv.map((b, k) => `<div title="Answers ${k * blk + 1}-${(k + 1) * blk}: ${b[0]}/${b[1]}"${b[1] < 10 ? ' class="few"' : ''}><i style="height:${Math.round(100 * b[0] / b[1])}%"></i><small>${Math.round(100 * b[0] / b[1])}</small></div>`).join('')}</div>
       <p class="adm-axis"><span>Answer 1</span><span>${blk} per bar</span><span>${cv.length * blk}</span></p></section>

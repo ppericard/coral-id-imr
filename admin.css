@@ -415,13 +415,20 @@ td.cov-c .cov-off{display:block;font-size:.62rem;font-weight:500;line-height:1.1
 @media (max-width:599px){
   .cov-t{font-size:.82rem;border-spacing:2px}
   .cov-t tbody th{font-size:.82rem;padding-right:2px}
-  td.cov-c{width:46px;height:28px}
+  td.cov-c{width:42px;height:28px}
   td.cov-c small{display:block;margin:0;line-height:1}
   td.cov-c small::before{content:none}
   td.cov-c b{display:block;line-height:1.1}
   .cov-src{width:auto}
   .cov-src small{display:none}
   .cov-bar{width:100%;min-width:30px}
+  /* Phones: the source bar, growth forms and species count stay on wider screens, so the table never scrolls sideways (admin re-review). */
+  .cov-src,.cov-srch,.fcov-t .fcov-s,.fcov-t .fcov-sh{display:none}
+  .fcov-t .fcov-f,.fcov-t .fcov-fh{display:none}
+  .cov-t tbody th{white-space:normal;font-size:.78rem}
+  .cov-t tbody th i{white-space:nowrap}
+  .cov-t tbody th small{display:block}
+  td.cov-c .cov-off{overflow-wrap:anywhere}
 }
 
 /* ---------- Stats (players, photo difficulty) ---------- */
