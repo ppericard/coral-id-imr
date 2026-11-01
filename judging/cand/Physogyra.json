@@ -6,7 +6,6 @@
    "quality": 3,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "tentacles extended over the whole dome"
   },
   "physogyra-cand-270582352": {
@@ -14,22 +13,19 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "dark; small vesicles cover the colony"
   },
   "physogyra-cand-270582067": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "dup",
-   "polyps": true
+   "keep": "dup"
   },
   "physogyra-cand-460151297": {
    "view": "wide",
    "quality": 3,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -70,15 +66,13 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "tentacles extended over the surface"
   },
   "physogyra-cand-595486798": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "physogyra-cand-611579787": {
    "view": "wide",
@@ -104,7 +98,6 @@
    "quality": 2,
    "form": "S",
    "keep": "best",
-   "polyps": true,
    "note": "blue cast; meanders visible under tentacles"
   },
   "physogyra-cand-598229016": {
@@ -112,7 +105,6 @@
    "quality": 3,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "small vesicles over the meanders"
   },
   "physogyra-cand-46597375": {
@@ -120,7 +112,6 @@
    "quality": 1,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "very hazy, washed out"
   },
   "physogyra-cand-227052436": {
@@ -128,7 +119,6 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -139,7 +129,6 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "vesicles in rows along the meandering valleys"
   },
   "physogyra-cand-335760128": {
@@ -147,7 +136,6 @@
    "quality": 3,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -168,7 +156,6 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "vesicles and blade-like septa in the valleys"
   },
   "physogyra-cand-460171414": {
@@ -176,7 +163,6 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "green cast; vesicles along the meanders"
   },
   "physogyra-cand-332639192": {
@@ -184,37 +170,32 @@
    "quality": 3,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "night tentacles over vesicles"
   },
   "physogyra-cand-332639191": {
    "view": "medium",
    "quality": 2,
    "form": "x",
-   "keep": "dup",
-   "polyps": true
+   "keep": "dup"
   },
   "physogyra-cand-175159089": {
    "view": "wide",
    "quality": 3,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "fish in frame but the colony is clear"
   },
   "physogyra-cand-175239336": {
    "view": "medium",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "physogyra-cand-600486562": {
    "view": "medium",
    "quality": 2,
    "form": "x",
    "keep": "dup",
-   "polyps": true,
    "note": "soft focus; timestamp overlay"
   },
   "physogyra-cand-600486592": {
@@ -222,7 +203,6 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "meandering valleys visible; timestamp overlay"
   },
   "physogyra-cand-326247437": {
@@ -230,7 +210,6 @@
    "quality": 3,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -241,7 +220,6 @@
    "quality": 3,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],

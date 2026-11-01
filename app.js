@@ -201,6 +201,7 @@ let RAW,
 // kept out of DATA.gen so games, quizzes, progress and the Genera pages never see them.
 let XON = store.get('imr-finder-x', true);
 function build() {
+  NEXTQ = null; // a question planned on the old curation could show a photo it now excludes or moves
   const d = structuredClone(RAW);
   applyCuration(d, CUR);
   applyForms(d, CUR);

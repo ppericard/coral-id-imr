@@ -6,7 +6,6 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "Colour cast, small date stamp"
   },
   "fimbriaphyllia-cand-297050976": {
@@ -14,7 +13,6 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "Blue cast; bubble-tipped tentacles on sand"
   },
   "fimbriaphyllia-cand-262124489": {
@@ -22,44 +20,38 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "Dark; a fan worm sits beside the colony"
   },
   "fimbriaphyllia-cand-604392144": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "fimbriaphyllia-cand-604392158": {
    "view": "medium",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "fimbriaphyllia-cand-613837": {
    "view": "medium",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Blue-green cast"
   },
   "fimbriaphyllia-cand-110600255": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "fimbriaphyllia-cand-682475034": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "A pale hydroid branch crosses the right side"
   },
   "fimbriaphyllia-cand-600495807": {
@@ -67,7 +59,6 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -78,7 +69,6 @@
    "quality": 2,
    "form": "M",
    "keep": "alt",
-   "polyps": true,
    "note": "Small colony beside a shell, date stamp"
   },
   "fimbriaphyllia-cand-600495825": {
@@ -86,7 +76,6 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Branched tentacles over a green-striped disc, date stamp"
   },
   "fimbriaphyllia-cand-600495829": {
@@ -94,36 +83,31 @@
    "quality": 2,
    "form": "x",
    "keep": "dup",
-   "polyps": true,
    "note": "Soft, same area as the previous photo"
   },
   "fimbriaphyllia-cand-247049403": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "fimbriaphyllia-cand-258449888": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "fimbriaphyllia-cand-224673747": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "fimbriaphyllia-cand-255252866": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "Small colonies, cluttered frame"
   },
   "fimbriaphyllia-cand-225126683": {
@@ -131,7 +115,6 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "Blue-green cast; crinoid at right"
   },
   "fimbriaphyllia-cand-246889425": {
@@ -139,7 +122,6 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Soft focus"
   },
   "fimbriaphyllia-cand-246889419": {
@@ -147,7 +129,6 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "Green cast"
   },
   "fimbriaphyllia-cand-270608190": {
@@ -165,7 +146,6 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "Blue-green cast"
   },
   "fimbriaphyllia-cand-479302135": {
@@ -173,22 +153,19 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "Blue-green cast"
   },
   "fimbriaphyllia-cand-98213435": {
    "view": "medium",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "fimbriaphyllia-cand-98213726": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "Orange sponge at top left"
   },
   "fimbriaphyllia-cand-308225191": {
@@ -196,7 +173,6 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "Strong blue cast"
   },
   "fimbriaphyllia-cand-460217227": {
@@ -204,7 +180,6 @@
    "quality": 3,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "Small watermark at top right"
   }
  }

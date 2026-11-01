@@ -913,14 +913,14 @@
    "v": "macro",
    "q": 1,
    "k": "alt",
-   "fm": "xp",
+   "fm": "x",
    "n": "Very strong blue cast"
   },
   "alveopora-cand-190591563": {
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "12 tentacles countable"
   },
   "alveopora-cand-190591617": {
@@ -1018,7 +1018,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "12 tentacles clear"
   },
   "alveopora-cand-376513752": {
@@ -1060,7 +1060,7 @@
    "v": "macro",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Soft, date stamp"
   },
   "alveopora-cand-625302757": {
@@ -1310,7 +1310,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Long green-tipped tentacles on sand hide the skeleton"
   },
   "ctenactis-cand-153802900": {
@@ -1355,7 +1355,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "genus"
    ],
@@ -1466,31 +1466,31 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up"
+   "fm": "U"
   },
   "ctenactis-cand-705252366": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Up"
+   "fm": "U"
   },
   "ctenactis-cand-713784319": {
    "v": "macro",
    "q": 3,
    "k": "alt",
-   "fm": "Up"
+   "fm": "U"
   },
   "ctenactis-cand-713784329": {
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "Up"
+   "fm": "U"
   },
   "ctenactis-cand-713784333": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Up"
+   "fm": "U"
   },
   "cycloseris-cand-117871669": {
    "v": "wide",
@@ -1502,7 +1502,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "genus"
    ],
@@ -1512,7 +1512,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Up"
+   "fm": "U"
   },
   "cycloseris-cand-238573102": {
    "v": "wide",
@@ -1534,7 +1534,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Up"
+   "fm": "U"
   },
   "cycloseris-cand-327592709": {
    "v": "wide",
@@ -1546,7 +1546,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "genus"
    ],
@@ -1556,13 +1556,13 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up"
+   "fm": "U"
   },
   "cycloseris-cand-352604528": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "genus"
    ],
@@ -1572,13 +1572,13 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up"
+   "fm": "U"
   },
   "cycloseris-cand-40940235": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "genus"
    ],
@@ -1600,7 +1600,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Up"
+   "fm": "U"
   },
   "cycloseris-cand-576938002": {
    "v": "wide",
@@ -1618,7 +1618,7 @@
    "v": "wide",
    "q": 1,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "genus"
    ],
@@ -1634,7 +1634,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Up"
+   "fm": "U"
   },
   "cycloseris-cand-691356272": {
    "v": "wide",
@@ -2803,7 +2803,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "duncanopsammia-cand-230571742": {
    "v": "medium",
@@ -2954,7 +2954,7 @@
    "v": "macro",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "duncanopsammia-cand-596081127": {
    "v": "wide",
@@ -3079,19 +3079,19 @@
    "v": "macro",
    "q": 2,
    "k": "alt",
-   "fm": "xp"
+   "fm": "x"
   },
   "duncanopsammia-cand-724871528": {
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "duncanopsammia-cand-749674403": {
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "echinophyllia-cand-246907955": {
    "v": "wide",
@@ -3117,7 +3117,7 @@
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "night, tentacles extended"
   },
   "echinophyllia-cand-260162141": {
@@ -3137,7 +3137,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Ep",
+   "fm": "E",
    "n": "dark; raised corallites with tentacles out"
   },
   "echinophyllia-cand-260365104": {
@@ -3223,7 +3223,7 @@
    "v": "wide",
    "q": 2,
    "k": "alt",
-   "fm": "Sp",
+   "fm": "S",
    "u": [
     "genus"
    ],
@@ -3233,7 +3233,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Sp",
+   "fm": "S",
    "u": [
     "genus"
    ],
@@ -3271,7 +3271,7 @@
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "u": [
     "genus"
    ],
@@ -3295,7 +3295,7 @@
    "v": "macro",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "soft focus; tentacle tips out on the corallites"
   },
   "echinophyllia-cand-684022731": {
@@ -3615,63 +3615,63 @@
    "q": 1,
    "k": "best",
    "m": 1,
-   "fm": "xp",
+   "fm": "x",
    "n": "Dark and blurred; Euphyllia among branching coral"
   },
   "euphyllia-cand-224932847": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-230308818": {
    "v": "macro",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-230308857": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-262123787": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-267307332": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-267307337": {
    "v": "wide",
    "q": 2,
    "k": "alt",
-   "fm": "xp",
+   "fm": "x",
    "n": "Same colony from another angle, with neighbours"
   },
   "euphyllia-cand-269514982": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-269516718": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-310596948": {
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "u": [
     "genus"
    ],
@@ -3681,13 +3681,13 @@
    "v": "medium",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-335934642": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "u": [
     "genus"
    ],
@@ -3697,62 +3697,62 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-35099660": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-385444281": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-559719436": {
    "v": "macro",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-566741813": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-566741828": {
    "v": "medium",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-575527515": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Dark background"
   },
   "euphyllia-cand-577328093": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-600484912": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-600484917": {
    "v": "wide",
    "q": 2,
    "k": "alt",
-   "fm": "xp",
+   "fm": "x",
    "u": [
     "genus"
    ],
@@ -3762,33 +3762,33 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-634469211": {
    "v": "wide",
    "q": 2,
    "k": "best",
    "m": 1,
-   "fm": "xp",
+   "fm": "x",
    "n": "Soft corals take a large part of the frame"
   },
   "euphyllia-cand-662428407": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-714339907": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "euphyllia-cand-742225701": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "favites-cand-175031382": {
    "v": "wide",
@@ -4019,59 +4019,59 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "fimbriaphyllia-cand-224673747": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "fimbriaphyllia-cand-225126683": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "Blue-green cast; crinoid at right"
   },
   "fimbriaphyllia-cand-246889419": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "Green cast"
   },
   "fimbriaphyllia-cand-246889425": {
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Soft focus"
   },
   "fimbriaphyllia-cand-247049403": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "fimbriaphyllia-cand-255252866": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "Small colonies, cluttered frame"
   },
   "fimbriaphyllia-cand-258449888": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "fimbriaphyllia-cand-262124489": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "Dark; a fan worm sits beside the colony"
   },
   "fimbriaphyllia-cand-270608190": {
@@ -4088,42 +4088,42 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "Blue cast; bubble-tipped tentacles on sand"
   },
   "fimbriaphyllia-cand-308225191": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "Strong blue cast"
   },
   "fimbriaphyllia-cand-460217227": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "Small watermark at top right"
   },
   "fimbriaphyllia-cand-479302135": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "Blue-green cast"
   },
   "fimbriaphyllia-cand-580859206": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "Colour cast, small date stamp"
   },
   "fimbriaphyllia-cand-600495807": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "u": [
     "genus"
    ],
@@ -4133,67 +4133,67 @@
    "v": "wide",
    "q": 2,
    "k": "alt",
-   "fm": "Mp",
+   "fm": "M",
    "n": "Small colony beside a shell, date stamp"
   },
   "fimbriaphyllia-cand-600495825": {
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Branched tentacles over a green-striped disc, date stamp"
   },
   "fimbriaphyllia-cand-600495829": {
    "v": "medium",
    "q": 2,
    "k": "dup",
-   "fm": "xp",
+   "fm": "x",
    "n": "Soft, same area as the previous photo"
   },
   "fimbriaphyllia-cand-604392144": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "fimbriaphyllia-cand-604392158": {
    "v": "medium",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "fimbriaphyllia-cand-613837": {
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Blue-green cast"
   },
   "fimbriaphyllia-cand-630792956": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "Blue-green cast"
   },
   "fimbriaphyllia-cand-682475034": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "A pale hydroid branch crosses the right side"
   },
   "fimbriaphyllia-cand-98213435": {
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "fimbriaphyllia-cand-98213726": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "Orange sponge at top left"
   },
   "fungia-cand-191091402": {
@@ -4375,13 +4375,13 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "galaxea-cand-131279860": {
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "galaxea-cand-175108798": {
    "v": "wide",
@@ -4417,7 +4417,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "Cluttered by algae."
   },
   "galaxea-cand-267614480": {
@@ -4505,7 +4505,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "galaxea-cand-27967888": {
    "v": "wide",
@@ -4542,14 +4542,14 @@
    "v": "macro",
    "q": 2,
    "k": "dup",
-   "fm": "xp",
+   "fm": "x",
    "n": "A blurred branch crosses the frame."
   },
   "galaxea-cand-345338709": {
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "galaxea-cand-354085389": {
    "v": "wide",
@@ -4566,13 +4566,13 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "galaxea-cand-392975433": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "u": [
     "genus"
    ],
@@ -4588,26 +4588,26 @@
    "v": "macro",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Dim."
   },
   "galaxea-cand-498559005": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "galaxea-cand-554575986": {
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "galaxea-cand-585272665": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "u": [
     "genus"
    ],
@@ -4630,7 +4630,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "u": [
     "form"
    ],
@@ -4640,7 +4640,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Ep",
+   "fm": "E",
    "n": "Algae in front, soft."
   },
   "galaxea-cand-606651530": {
@@ -4677,7 +4677,7 @@
    "v": "wide",
    "q": 1,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "u": [
     "genus"
    ],
@@ -4703,7 +4703,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Ep",
+   "fm": "E",
    "u": [
     "genus"
    ],
@@ -4948,7 +4948,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "goniopora-cand-172888051": {
    "v": "medium",
@@ -5136,7 +5136,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "u": [
     "genus"
    ],
@@ -5188,7 +5188,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "goniopora-cand-48750732": {
    "v": "medium",
@@ -5378,7 +5378,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Up"
+   "fm": "U"
   },
   "halomitra-cand-269392099": {
    "v": "wide",
@@ -5390,7 +5390,7 @@
    "v": "wide",
    "q": 3,
    "k": "alt",
-   "fm": "Up"
+   "fm": "U"
   },
   "halomitra-cand-269393546": {
    "v": "wide",
@@ -5663,7 +5663,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Mouth and white-tipped tentacles."
   },
   "heliofungia-cand-453587801": {
@@ -5697,7 +5697,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "White-tipped tentacles over the striped oral disc."
   },
   "heliofungia-cand-475151021": {
@@ -5805,7 +5805,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Tentacles with a shrimp; cyan cast."
   },
   "heliofungia-cand-64941914": {
@@ -5945,7 +5945,7 @@
    "v": "macro",
    "q": 2,
    "k": "best",
-   "fm": "Bp",
+   "fm": "B",
    "n": "White eight-tentacle polyps out, soft focus"
   },
   "heliopora-cand-249031080": {
@@ -6058,7 +6058,7 @@
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "Sp"
+   "fm": "S"
   },
   "heliopora-cand-580859200": {
    "v": "wide",
@@ -6098,7 +6098,7 @@
    "v": "macro",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "genus"
    ],
@@ -6108,7 +6108,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "genus"
    ],
@@ -6147,7 +6147,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "n": "Night shot, tentacles out."
   },
   "herpolitha-cand-337139898": {
@@ -6217,7 +6217,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "genus"
    ],
@@ -6233,7 +6233,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "genus"
    ],
@@ -6243,7 +6243,7 @@
    "v": "wide",
    "q": 2,
    "k": "dup",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "genus"
    ],
@@ -6261,10 +6261,9 @@
    "q": 2,
    "k": "best",
    "m": 1,
-   "fm": "Up",
+   "fm": "U",
    "u": [
-    "genus",
-    "polyps"
+    "genus"
    ],
    "n": "Partly hidden among other corals; furrow not visible."
   },
@@ -6279,7 +6278,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Ep",
+   "fm": "E",
    "u": [
     "genus"
    ],
@@ -6296,14 +6295,14 @@
    "v": "medium",
    "q": 2,
    "k": "alt",
-   "fm": "xp",
+   "fm": "x",
    "n": "wider surface, tentacles extended"
   },
   "hydnophora-cand-245794783": {
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "tentacles extended hide the monticules"
   },
   "hydnophora-cand-245794927": {
@@ -6317,7 +6316,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Sp",
+   "fm": "S",
    "n": "blue cast; shaggy polyps extended on lobes"
   },
   "hydnophora-cand-247738205": {
@@ -6347,7 +6346,7 @@
    "v": "medium",
    "q": 3,
    "k": "best",
-   "fm": "Bp",
+   "fm": "B",
    "n": "branch tips at night, small tentacles out"
   },
   "hydnophora-cand-261938914": {
@@ -6372,27 +6371,27 @@
    "v": "wide",
    "q": 2,
    "k": "alt",
-   "fm": "Ep",
+   "fm": "E",
    "n": "dark, other angle"
   },
   "hydnophora-cand-270745757": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Ep",
+   "fm": "E",
    "n": "night, green-tipped tentacles extended; small fungiid at the edge"
   },
   "hydnophora-cand-270745770": {
    "v": "wide",
    "q": 2,
    "k": "dup",
-   "fm": "Ep"
+   "fm": "E"
   },
   "hydnophora-cand-270745777": {
    "v": "wide",
    "q": 2,
    "k": "alt",
-   "fm": "Ep",
+   "fm": "E",
    "n": "closer, tentacles and monticules visible"
   },
   "hydnophora-cand-335773128": {
@@ -6453,21 +6452,21 @@
    "v": "wide",
    "q": 1,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "hazy; shaggy polyps extended over the colony"
   },
   "hydnophora-cand-600484653": {
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "monticule ridges visible between extended tentacles"
   },
   "hydnophora-cand-607141593": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Bp"
+   "fm": "B"
   },
   "hydnophora-cand-609866605": {
    "v": "wide",
@@ -6504,7 +6503,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "u": [
     "form",
     "genus"
@@ -6515,7 +6514,7 @@
    "v": "wide",
    "q": 1,
    "k": "dup",
-   "fm": "Mp",
+   "fm": "M",
    "u": [
     "genus"
    ],
@@ -7119,7 +7118,7 @@
    "q": 3,
    "k": "best",
    "m": 1,
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "genus"
    ],
@@ -7299,7 +7298,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "genus"
    ],
@@ -7335,7 +7334,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "lobophyllia-cand-238282879": {
    "v": "wide",
@@ -7354,7 +7353,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "lobophyllia-cand-260331986": {
    "v": "wide",
@@ -7366,7 +7365,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Sp",
+   "fm": "S",
    "u": [
     "form"
    ],
@@ -7376,7 +7375,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "lobophyllia-cand-269474999": {
    "v": "wide",
@@ -7408,7 +7407,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "lobophyllia-cand-269727391": {
    "v": "wide",
@@ -7448,7 +7447,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "lobophyllia-cand-270766479": {
    "v": "wide",
@@ -7516,19 +7515,19 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "lobophyllia-cand-297051273": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "lobophyllia-cand-297051286": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "lobophyllia-cand-311975785": {
    "v": "wide",
@@ -7578,7 +7577,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "lobophyllia-cand-543088288": {
    "v": "medium",
@@ -7604,7 +7603,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "u": [
     "form",
     "genus"
@@ -7615,7 +7614,7 @@
    "v": "wide",
    "q": 2,
    "k": "dup",
-   "fm": "xp",
+   "fm": "x",
    "u": [
     "form",
     "genus"
@@ -7801,31 +7800,31 @@
    "v": "medium",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "lobophyllia-cand-611585363": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "lobophyllia-cand-611585366": {
    "v": "wide",
    "q": 3,
    "k": "dup",
-   "fm": "Mp"
+   "fm": "M"
   },
   "lobophyllia-cand-611585369": {
    "v": "medium",
    "q": 2,
    "k": "alt",
-   "fm": "xp"
+   "fm": "x"
   },
   "lobophyllia-cand-611585384": {
    "v": "medium",
    "q": 2,
    "k": "dup",
-   "fm": "xp"
+   "fm": "x"
   },
   "lobophyllia-cand-648856299": {
    "v": "wide",
@@ -8626,13 +8625,13 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Bp"
+   "fm": "B"
   },
   "montipora-cand-269514898": {
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "Bp"
+   "fm": "B"
   },
   "montipora-cand-269729639": {
    "v": "wide",
@@ -8755,7 +8754,7 @@
    "v": "medium",
    "q": 2,
    "k": "dup",
-   "fm": "Bp",
+   "fm": "B",
    "u": [
     "genus"
    ],
@@ -8765,7 +8764,7 @@
    "v": "medium",
    "q": 2,
    "k": "alt",
-   "fm": "Bp",
+   "fm": "B",
    "u": [
     "genus"
    ],
@@ -8775,7 +8774,7 @@
    "v": "medium",
    "q": 2,
    "k": "dup",
-   "fm": "Bp",
+   "fm": "B",
    "u": [
     "genus"
    ],
@@ -8785,7 +8784,7 @@
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "Bp",
+   "fm": "B",
    "u": [
     "genus"
    ],
@@ -9288,7 +9287,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Fp",
+   "fm": "F",
    "u": [
     "genus"
    ],
@@ -9312,25 +9311,25 @@
    "v": "wide",
    "q": 3,
    "k": "dup",
-   "fm": "Fp"
+   "fm": "F"
   },
   "oxypora-cand-260162576": {
    "v": "wide",
    "q": 2,
    "k": "dup",
-   "fm": "Fp"
+   "fm": "F"
   },
   "oxypora-cand-260162607": {
    "v": "wide",
    "q": 3,
    "k": "dup",
-   "fm": "Fp"
+   "fm": "F"
   },
   "oxypora-cand-260163062": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Fp"
+   "fm": "F"
   },
   "oxypora-cand-270586126": {
    "v": "wide",
@@ -10119,20 +10118,20 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "fish in frame but the colony is clear"
   },
   "physogyra-cand-175239336": {
    "v": "medium",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "physogyra-cand-227052436": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "u": [
     "genus"
    ],
@@ -10142,27 +10141,27 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Sp",
+   "fm": "S",
    "n": "blue cast; meanders visible under tentacles"
   },
   "physogyra-cand-270582067": {
    "v": "wide",
    "q": 2,
    "k": "dup",
-   "fm": "Mp"
+   "fm": "M"
   },
   "physogyra-cand-270582352": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "dark; small vesicles cover the colony"
   },
   "physogyra-cand-326247437": {
    "v": "medium",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "u": [
     "genus"
    ],
@@ -10172,20 +10171,20 @@
    "v": "medium",
    "q": 2,
    "k": "dup",
-   "fm": "xp"
+   "fm": "x"
   },
   "physogyra-cand-332639192": {
    "v": "medium",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "night tentacles over vesicles"
   },
   "physogyra-cand-335760128": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "u": [
     "genus"
    ],
@@ -10215,7 +10214,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "u": [
     "genus"
    ],
@@ -10225,69 +10224,69 @@
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "vesicles and blade-like septa in the valleys"
   },
   "physogyra-cand-460171414": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "green cast; vesicles along the meanders"
   },
   "physogyra-cand-46597375": {
    "v": "wide",
    "q": 1,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "very hazy, washed out"
   },
   "physogyra-cand-479514926": {
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "vesicles in rows along the meandering valleys"
   },
   "physogyra-cand-595486777": {
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "tentacles extended over the surface"
   },
   "physogyra-cand-595486798": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "physogyra-cand-598229016": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "small vesicles over the meanders"
   },
   "physogyra-cand-600486562": {
    "v": "medium",
    "q": 2,
    "k": "dup",
-   "fm": "xp",
+   "fm": "x",
    "n": "soft focus; timestamp overlay"
   },
   "physogyra-cand-600486592": {
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "meandering valleys visible; timestamp overlay"
   },
   "physogyra-cand-608567359": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "u": [
     "genus"
    ],
@@ -10316,7 +10315,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp",
+   "fm": "M",
    "n": "tentacles extended over the whole dome"
   },
   "physogyra-cand-697259803": {
@@ -10645,7 +10644,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Vesicles with a cleaner shrimp."
   },
   "plerogyra-cand-174802235": {
@@ -10755,7 +10754,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Vesicles with an orangutan crab."
   },
   "plerogyra-cand-350432383": {
@@ -10816,7 +10815,7 @@
    "v": "macro",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Vesicles with two shrimps; dim."
   },
   "plerogyra-cand-455587124": {
@@ -10836,7 +10835,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Single valley, vesicles partly deflated show the large septa."
   },
   "plerogyra-cand-46598685": {
@@ -10844,7 +10843,7 @@
    "q": 2,
    "k": "best",
    "m": 1,
-   "fm": "xp",
+   "fm": "x",
    "u": [
     "multi"
    ],
@@ -10901,7 +10900,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Vesicles fill the frame."
   },
   "plerogyra-cand-589619112": {
@@ -10919,7 +10918,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Vesicles over the colony edge."
   },
   "plerogyra-cand-598246502": {
@@ -10974,7 +10973,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Vesicles with a net pattern."
   },
   "plerogyra-cand-684020657": {
@@ -10998,14 +10997,14 @@
    "v": "macro",
    "q": 3,
    "k": "alt",
-   "fm": "xp",
+   "fm": "x",
    "n": "Vesicles around bare septa; Porites at right edge."
   },
   "plerogyra-cand-713091425": {
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Exposed exsert septa among the vesicles."
   },
   "plerogyra-cand-745206682": {
@@ -11029,7 +11028,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "plerogyra-cand-753239577": {
    "v": "wide",
@@ -11230,7 +11229,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Bp"
+   "fm": "B"
   },
   "pocillopora-cand-262218463": {
    "v": "wide",
@@ -11426,13 +11425,13 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Bp"
+   "fm": "B"
   },
   "pocillopora-cand-713112086": {
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "Bp"
+   "fm": "B"
   },
   "pocillopora-cand-713112100": {
    "v": "medium",
@@ -11456,7 +11455,7 @@
    "v": "medium",
    "q": 3,
    "k": "best",
-   "fm": "Bp",
+   "fm": "B",
    "u": [
     "genus"
    ],
@@ -11529,7 +11528,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "form"
    ],
@@ -11539,7 +11538,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "form"
    ],
@@ -11549,14 +11548,14 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Tentacles with white tips fill the frame."
   },
   "polyphyllia-cand-464587212": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "form"
    ],
@@ -11566,7 +11565,7 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "form"
    ],
@@ -11576,7 +11575,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "form"
    ],
@@ -11586,7 +11585,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "form"
    ],
@@ -11596,7 +11595,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "form"
    ],
@@ -12180,14 +12179,14 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "n": "Green cast; tentacles partly out"
   },
   "sandalolitha-cand-611197936": {
    "v": "wide",
    "q": 2,
    "k": "alt",
-   "fm": "Up",
+   "fm": "U",
    "n": "Whole dome on sand from further away"
   },
   "seriatopora-cand-100511784": {
@@ -12296,7 +12295,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Bp"
+   "fm": "B"
   },
   "seriatopora-cand-269736343": {
    "v": "wide",
@@ -12541,7 +12540,7 @@
    "v": "medium",
    "q": 3,
    "k": "best",
-   "fm": "Bp",
+   "fm": "B",
    "n": "Branches with polyps out at night."
   },
   "stylophora-cand-406767069": {
@@ -12775,7 +12774,7 @@
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Up",
+   "fm": "U",
    "u": [
     "genus"
    ],
@@ -12875,19 +12874,19 @@
    "v": "macro",
    "q": 2,
    "k": "alt",
-   "fm": "xp"
+   "fm": "x"
   },
   "tubastraea-cand-267618172": {
    "v": "macro",
    "q": 2,
    "k": "dup",
-   "fm": "xp"
+   "fm": "x"
   },
   "tubastraea-cand-267618191": {
    "v": "macro",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Very dark night shot"
   },
   "tubastraea-cand-269730222": {
@@ -12901,14 +12900,14 @@
    "v": "macro",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Only tentacles in view; corallite walls hidden"
   },
   "tubastraea-cand-329661088": {
    "v": "macro",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "n": "Night shot, tentacles out, corallites hard to see"
   },
   "tubastraea-cand-34709276": {
@@ -12948,7 +12947,7 @@
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "tubastraea-cand-47588690": {
    "v": "medium",
@@ -12961,7 +12960,7 @@
    "v": "macro",
    "q": 2,
    "k": "alt",
-   "fm": "xp"
+   "fm": "x"
   },
   "tubastraea-cand-479525030": {
    "v": "wide",
@@ -13088,19 +13087,19 @@
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "tubipora-cand-195919503": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "tubipora-cand-250813633": {
    "v": "medium",
    "q": 2,
    "k": "best",
-   "fm": "xp",
+   "fm": "x",
    "u": [
     "genus"
    ],
@@ -13110,13 +13109,13 @@
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "tubipora-cand-262128690": {
    "v": "wide",
    "q": 3,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "tubipora-cand-303711251": {
    "v": "macro",
@@ -13139,19 +13138,19 @@
    "v": "medium",
    "q": 3,
    "k": "best",
-   "fm": "Ep"
+   "fm": "E"
   },
   "tubipora-cand-576360392": {
    "v": "macro",
    "q": 3,
    "k": "best",
-   "fm": "xp"
+   "fm": "x"
   },
   "tubipora-cand-584775363": {
    "v": "wide",
    "q": 2,
    "k": "best",
-   "fm": "Mp"
+   "fm": "M"
   },
   "turbinaria-cand-174530659": {
    "v": "wide",

@@ -13,11 +13,9 @@
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
    "multi": true,
    "unsure": [
-    "genus",
-    "polyps"
+    "genus"
    ],
    "note": "Partly hidden among other corals; furrow not visible."
   },
@@ -26,7 +24,6 @@
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -37,7 +34,6 @@
    "quality": 2,
    "form": "U",
    "keep": "dup",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -88,7 +84,6 @@
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -99,7 +94,6 @@
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -116,7 +110,6 @@
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -147,7 +140,6 @@
    "quality": 3,
    "form": "U",
    "keep": "best",
-   "polyps": true,
    "note": "Night shot, tentacles out."
   },
   "herpolitha-cand-445317713": {

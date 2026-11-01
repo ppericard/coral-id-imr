@@ -129,7 +129,6 @@
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "polyps": true,
    "note": "White eight-tentacle polyps out, soft focus"
   },
   "heliopora-cand-131166710": {
@@ -156,8 +155,7 @@
    "view": "medium",
    "quality": 2,
    "form": "S",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "heliopora-cand-181616771": {
    "view": "medium",

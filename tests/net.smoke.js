@@ -91,6 +91,10 @@ const server = http.createServer((req, res) => {
       const got = await p2.evaluate(() => [...document.querySelectorAll('#view .qstage img')].map(i => i.getAttribute('src')));
       if (!want.length || want.some((u, k) => got[k] !== u)) fails.push(`Next did not show the planned question (${want[0]} vs ${got[0]})`);
     }
+    // A curation rebuild (Pierre published while the tab was open) drops the planned question: it could show a photo
+    // the new curation excludes or moves.
+    if (!(await p2.evaluate(() => (planNext('quiz'), build(), NEXTQ === null))))
+      fails.push('A planned question survived a curation rebuild');
     if (errs.length) fails.push('Plan: ' + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }

@@ -5,8 +5,7 @@
    "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "goniopora-cand-262228890": {
    "view": "wide",
@@ -336,7 +335,6 @@
    "quality": 3,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -346,8 +344,7 @@
    "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "goniopora-cand-723807515": {
    "view": "medium",

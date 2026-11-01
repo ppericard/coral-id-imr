@@ -25,15 +25,13 @@
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "halomitra-cand-269392433": {
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "alt",
-   "polyps": true
+   "keep": "alt"
   },
   "halomitra-cand-269393546": {
    "view": "wide",

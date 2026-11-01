@@ -123,15 +123,13 @@
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "montipora-cand-269514898": {
    "view": "medium",
    "quality": 2,
    "form": "B",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "montipora-cand-596709674": {
    "view": "wide",
@@ -223,7 +221,6 @@
    "quality": 2,
    "form": "B",
    "keep": "dup",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -234,7 +231,6 @@
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -245,7 +241,6 @@
    "quality": 2,
    "form": "B",
    "keep": "dup",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -256,7 +251,6 @@
    "quality": 2,
    "form": "B",
    "keep": "alt",
-   "polyps": true,
    "unsure": [
     "genus"
    ],

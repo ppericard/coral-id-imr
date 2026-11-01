@@ -26,7 +26,6 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Only tentacles in view; corallite walls hidden"
   },
   "tubastraea-cand-34709276": {
@@ -60,15 +59,13 @@
    "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "tubastraea-cand-47593376": {
    "view": "macro",
    "quality": 2,
    "form": "x",
-   "keep": "alt",
-   "polyps": true
+   "keep": "alt"
   },
   "tubastraea-cand-47588690": {
    "view": "medium",
@@ -147,22 +144,19 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Very dark night shot"
   },
   "tubastraea-cand-267618172": {
    "view": "macro",
    "quality": 2,
    "form": "x",
-   "keep": "dup",
-   "polyps": true
+   "keep": "dup"
   },
   "tubastraea-cand-267618158": {
    "view": "macro",
    "quality": 2,
    "form": "x",
-   "keep": "alt",
-   "polyps": true
+   "keep": "alt"
   },
   "tubastraea-cand-257180258": {
    "view": "wide",
@@ -190,7 +184,6 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Night shot, tentacles out, corallites hard to see"
   },
   "tubastraea-cand-452616290": {

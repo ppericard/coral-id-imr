@@ -13,7 +13,6 @@
    "quality": 3,
    "form": "E",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -31,7 +30,6 @@
    "quality": 3,
    "form": "B",
    "keep": "best",
-   "polyps": true,
    "note": "branch tips at night, small tentacles out"
   },
   "hydnophora-cand-609866605": {
@@ -51,7 +49,6 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus",
     "form"
@@ -63,7 +60,6 @@
    "quality": 1,
    "form": "M",
    "keep": "dup",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -74,7 +70,6 @@
    "quality": 1,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "hazy; shaggy polyps extended over the colony"
   },
   "hydnophora-cand-600484653": {
@@ -82,7 +77,6 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "monticule ridges visible between extended tentacles"
   },
   "hydnophora-cand-697670527": {
@@ -153,7 +147,6 @@
    "quality": 2,
    "form": "E",
    "keep": "alt",
-   "polyps": true,
    "note": "dark, other angle"
   },
   "hydnophora-cand-270745757": {
@@ -161,22 +154,19 @@
    "quality": 2,
    "form": "E",
    "keep": "best",
-   "polyps": true,
    "note": "night, green-tipped tentacles extended; small fungiid at the edge"
   },
   "hydnophora-cand-270745770": {
    "view": "wide",
    "quality": 2,
    "form": "E",
-   "keep": "dup",
-   "polyps": true
+   "keep": "dup"
   },
   "hydnophora-cand-270745777": {
    "view": "wide",
    "quality": 2,
    "form": "E",
    "keep": "alt",
-   "polyps": true,
    "note": "closer, tentacles and monticules visible"
   },
   "hydnophora-cand-662429151": {
@@ -196,15 +186,13 @@
    "view": "wide",
    "quality": 3,
    "form": "B",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "hydnophora-cand-245795063": {
    "view": "wide",
    "quality": 2,
    "form": "S",
    "keep": "best",
-   "polyps": true,
    "note": "blue cast; shaggy polyps extended on lobes"
   },
   "hydnophora-cand-261938914": {
@@ -244,7 +232,6 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "tentacles extended hide the monticules"
   },
   "hydnophora-cand-245794742": {
@@ -252,7 +239,6 @@
    "quality": 2,
    "form": "x",
    "keep": "alt",
-   "polyps": true,
    "note": "wider surface, tentacles extended"
   },
   "hydnophora-cand-260016130": {

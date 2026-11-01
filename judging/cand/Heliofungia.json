@@ -69,7 +69,6 @@
    "quality": 3,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Mouth and white-tipped tentacles."
   },
   "heliofungia-cand-459714959": {
@@ -193,7 +192,6 @@
    "quality": 3,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "White-tipped tentacles over the striped oral disc."
   },
   "heliofungia-cand-475151021": {
@@ -367,7 +365,6 @@
    "quality": 3,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Tentacles with a shrimp; cyan cast."
   }
  }

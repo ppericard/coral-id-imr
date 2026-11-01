@@ -5,22 +5,19 @@
    "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "tubipora-cand-195919503": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "tubipora-cand-195919262": {
    "view": "medium",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "tubipora-cand-303711251": {
    "view": "macro",
@@ -33,8 +30,7 @@
    "view": "medium",
    "quality": 3,
    "form": "E",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "tubipora-cand-337135104": {
    "view": "wide",
@@ -50,15 +46,13 @@
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "tubipora-cand-250813633": {
    "view": "medium",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -68,15 +62,13 @@
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "tubipora-cand-584775363": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   }
  }
 }

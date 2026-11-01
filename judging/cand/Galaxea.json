@@ -12,7 +12,6 @@
    "quality": 3,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "form"
    ],
@@ -53,15 +52,13 @@
    "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "galaxea-cand-345338670": {
    "view": "macro",
    "quality": 2,
    "form": "x",
    "keep": "dup",
-   "polyps": true,
    "note": "A blurred branch crosses the frame."
   },
   "galaxea-cand-269467451": {
@@ -108,8 +105,7 @@
    "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "galaxea-cand-269513376": {
    "view": "wide",
@@ -188,7 +184,6 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -199,7 +194,6 @@
    "quality": 3,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -248,15 +242,13 @@
    "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "galaxea-cand-693770242": {
    "view": "wide",
    "quality": 2,
    "form": "E",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -266,22 +258,19 @@
    "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "galaxea-cand-363343625": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "galaxea-cand-262121205": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "note": "Cluttered by algae."
   },
   "galaxea-cand-605608107": {
@@ -289,7 +278,6 @@
    "quality": 2,
    "form": "E",
    "keep": "best",
-   "polyps": true,
    "note": "Algae in front, soft."
   },
   "galaxea-cand-609613534": {
@@ -321,30 +309,26 @@
    "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "galaxea-cand-479237101": {
    "view": "macro",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Dim."
   },
   "galaxea-cand-498559005": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "galaxea-cand-613692058": {
    "view": "wide",
    "quality": 1,
    "form": "M",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],

@@ -44,7 +44,6 @@
    "quality": 3,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Vesicles fill the frame."
   },
   "plerogyra-cand-340784294": {
@@ -83,7 +82,6 @@
    "quality": 3,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Vesicles over the colony edge."
   },
   "plerogyra-cand-269726505": {
@@ -114,7 +112,6 @@
    "quality": 3,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Vesicles with a cleaner shrimp."
   },
   "plerogyra-cand-639404409": {
@@ -130,7 +127,6 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Vesicles with two shrimps; dim."
   },
   "plerogyra-cand-312019577": {
@@ -155,8 +151,7 @@
    "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "plerogyra-cand-269733775": {
    "view": "wide",
@@ -208,7 +203,6 @@
    "quality": 3,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Single valley, vesicles partly deflated show the large septa."
   },
   "plerogyra-cand-589619112": {
@@ -246,7 +240,6 @@
    "quality": 3,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Vesicles with a net pattern."
   },
   "plerogyra-cand-669936416": {
@@ -311,7 +304,6 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "multi": true,
    "unsure": [
     "multi"
@@ -371,7 +363,6 @@
    "quality": 3,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Vesicles with an orangutan crab."
   },
   "plerogyra-cand-620923193": {
@@ -394,7 +385,6 @@
    "quality": 3,
    "form": "x",
    "keep": "alt",
-   "polyps": true,
    "note": "Vesicles around bare septa; Porites at right edge."
   },
   "plerogyra-cand-713091425": {
@@ -402,7 +392,6 @@
    "quality": 3,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Exposed exsert septa among the vesicles."
   },
   "plerogyra-cand-576329901": {

@@ -19,7 +19,6 @@
    "quality": 3,
    "form": "F",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -41,29 +40,25 @@
    "view": "wide",
    "quality": 3,
    "form": "F",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "oxypora-cand-260162300": {
    "view": "wide",
    "quality": 3,
    "form": "F",
-   "keep": "dup",
-   "polyps": true
+   "keep": "dup"
   },
   "oxypora-cand-260162576": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "dup",
-   "polyps": true
+   "keep": "dup"
   },
   "oxypora-cand-260162607": {
    "view": "wide",
    "quality": 3,
    "form": "F",
-   "keep": "dup",
-   "polyps": true
+   "keep": "dup"
   },
   "oxypora-cand-611193408": {
    "view": "medium",

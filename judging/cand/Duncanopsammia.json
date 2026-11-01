@@ -12,15 +12,13 @@
    "view": "macro",
    "quality": 2,
    "form": "x",
-   "keep": "alt",
-   "polyps": true
+   "keep": "alt"
   },
   "duncanopsammia-cand-724871528": {
    "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "duncanopsammia-cand-595463426": {
    "view": "wide",
@@ -112,8 +110,7 @@
    "view": "macro",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "duncanopsammia-cand-41558845": {
    "view": "wide",
@@ -126,8 +123,7 @@
    "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "duncanopsammia-cand-230571742": {
    "view": "medium",
@@ -298,8 +294,7 @@
    "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "duncanopsammia-cand-574205151": {
    "view": "medium",

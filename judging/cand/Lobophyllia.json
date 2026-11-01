@@ -5,22 +5,19 @@
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "lobophyllia-cand-489979258": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "lobophyllia-cand-580521690": {
    "view": "wide",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus",
     "form"
@@ -32,7 +29,6 @@
    "quality": 2,
    "form": "x",
    "keep": "dup",
-   "polyps": true,
    "unsure": [
     "genus",
     "form"
@@ -147,7 +143,6 @@
    "quality": 3,
    "form": "S",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "form"
    ],
@@ -157,8 +152,7 @@
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "lobophyllia-cand-606685410": {
    "view": "medium",
@@ -492,78 +486,67 @@
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "lobophyllia-cand-611585366": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "dup",
-   "polyps": true
+   "keep": "dup"
   },
   "lobophyllia-cand-611585357": {
    "view": "medium",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "lobophyllia-cand-611585369": {
    "view": "medium",
    "quality": 2,
    "form": "x",
-   "keep": "alt",
-   "polyps": true
+   "keep": "alt"
   },
   "lobophyllia-cand-611585384": {
    "view": "medium",
    "quality": 2,
    "form": "x",
-   "keep": "dup",
-   "polyps": true
+   "keep": "dup"
   },
   "lobophyllia-cand-297051273": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "lobophyllia-cand-224932671": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "lobophyllia-cand-297051262": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "lobophyllia-cand-297051286": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "lobophyllia-cand-259409014": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "lobophyllia-cand-270758603": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "lobophyllia-cand-46596892": {
    "view": "wide",

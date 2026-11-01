@@ -167,15 +167,13 @@
    "view": "macro",
    "quality": 3,
    "form": "B",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "pocillopora-cand-246489765": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "pocillopora-cand-595777847": {
    "view": "wide",
@@ -187,8 +185,7 @@
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "pocillopora-cand-543961691": {
    "view": "wide",
@@ -281,7 +278,6 @@
    "quality": 3,
    "form": "B",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],

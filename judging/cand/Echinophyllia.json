@@ -13,7 +13,6 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "soft focus; tentacle tips out on the corallites"
   },
   "echinophyllia-cand-684022731": {
@@ -38,7 +37,6 @@
    "quality": 2,
    "form": "S",
    "keep": "alt",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -49,7 +47,6 @@
    "quality": 2,
    "form": "S",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -74,7 +71,6 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -117,7 +113,6 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "night, tentacles extended"
   },
   "echinophyllia-cand-260162141": {
@@ -164,7 +159,6 @@
    "quality": 2,
    "form": "E",
    "keep": "best",
-   "polyps": true,
    "note": "dark; raised corallites with tentacles out"
   },
   "echinophyllia-cand-260387393": {

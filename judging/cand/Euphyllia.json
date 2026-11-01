@@ -5,29 +5,25 @@
    "view": "wide",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-269514982": {
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-269516718": {
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-310596948": {
    "view": "medium",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -37,50 +33,43 @@
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-230308818": {
    "view": "macro",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-230308857": {
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-224932847": {
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-714339907": {
    "view": "wide",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-335732087": {
    "view": "medium",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-575527515": {
    "view": "wide",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "note": "Dark background"
   },
   "euphyllia-cand-634469211": {
@@ -88,7 +77,6 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "multi": true,
    "note": "Soft corals take a large part of the frame"
   },
@@ -96,15 +84,13 @@
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-600484917": {
    "view": "wide",
    "quality": 2,
    "form": "x",
    "keep": "alt",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -114,22 +100,19 @@
    "view": "wide",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-262123787": {
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-177401357": {
    "view": "wide",
    "quality": 1,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "multi": true,
    "note": "Dark and blurred; Euphyllia among branching coral"
   },
@@ -137,65 +120,56 @@
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-267307332": {
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-267307337": {
    "view": "wide",
    "quality": 2,
    "form": "x",
    "keep": "alt",
-   "polyps": true,
    "note": "Same colony from another angle, with neighbours"
   },
   "euphyllia-cand-566741813": {
    "view": "wide",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-566741828": {
    "view": "medium",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-604391103": {
    "view": "wide",
    "quality": 3,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-35099660": {
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-662428407": {
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "euphyllia-cand-335934642": {
    "view": "wide",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -205,8 +179,7 @@
    "view": "macro",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   }
  }
 }

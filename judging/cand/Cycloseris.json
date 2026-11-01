@@ -6,7 +6,6 @@
    "quality": 1,
    "form": "U",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -49,7 +48,6 @@
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -59,22 +57,19 @@
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "cycloseris-cand-258448800": {
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "cycloseris-cand-19108714": {
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "cycloseris-cand-500403787": {
    "view": "wide",
@@ -110,22 +105,19 @@
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "cycloseris-cand-65070613": {
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "cycloseris-cand-169967330": {
    "view": "macro",
    "quality": 3,
    "form": "U",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -136,7 +128,6 @@
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -153,7 +144,6 @@
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -173,8 +163,7 @@
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   }
  }
 }

@@ -12,7 +12,6 @@
    "quality": 3,
    "form": "U",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
@@ -34,8 +33,7 @@
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "ctenactis-cand-262218385": {
    "view": "wide",
@@ -53,8 +51,7 @@
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "ctenactis-cand-605666229": {
    "view": "macro",
@@ -72,22 +69,19 @@
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "ctenactis-cand-713784329": {
    "view": "macro",
    "quality": 3,
    "form": "U",
-   "keep": "best",
-   "polyps": true
+   "keep": "best"
   },
   "ctenactis-cand-713784319": {
    "view": "macro",
    "quality": 3,
    "form": "U",
-   "keep": "alt",
-   "polyps": true
+   "keep": "alt"
   },
   "ctenactis-cand-227576694": {
    "view": "wide",
