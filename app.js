@@ -396,7 +396,8 @@ function viewLookalikes(a, b){
   const L = classics().map(p => montage(...p)).filter(Boolean), mix = m => mixedUp(m.A, m.B);
   L.sort((x, y) => (mix(y) > 0) - (mix(x) > 0) || mix(y) - mix(x));
   if (!L.length) { $v.innerHTML = '<p class="note">No photos yet.</p>'; return; }
-  let i = Math.max(0, a && b ? L.findIndex(m => m.k === pairKey(a, b)) : 0), drawn = false;
+  let i = Math.max(0, a && b ? L.findIndex(m => m.k === pairKey(a, b)) : 0), drawn = false, dir = 0;
+  let hint = matchMedia('(pointer: coarse)').matches && !store.get('imr-coral-lkswiped', 0);
   const draw = () => {
     const m = L[i], gA = DATA.gen[m.A], gB = DATA.gen[m.B], x = mix(m);
     const half = (n, p, k) => `<figure class="lkph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${VIEW_LABEL[p.view].toLowerCase()} view"></button><figcaption><i>${esc(n)}</i></figcaption></figure>`;
@@ -408,9 +409,9 @@ function viewLookalikes(a, b){
     <div class="lk">
       <div class="lkmain">
         <div class="lkhead"><h3><i>${esc(m.A)}</i> or <i>${esc(m.B)}</i>?</h3><small class="lksrc">${srcTag(m.src)}</small>${x ? `<span class="pmix">you mixed them up ×${x}</span>` : ''}</div>
-        <div class="lkm">${half(m.A, m.pa, 0)}${half(m.B, m.pb, 1)}</div>
+        <div class="lkm${dir ? ' in' + (dir > 0 ? 'r' : 'l') : ''}">${half(m.A, m.pa, 0)}${half(m.B, m.pb, 1)}<button type="button" class="lkarr prev" data-lstep="-1" aria-label="Previous pair">‹</button><button type="button" class="lkarr nxt" data-lstep="1" aria-label="Next pair">›</button>${hint ? '<span class="lkhint" aria-hidden="true">Swipe for the next pair</span>' : ''}</div>
         <div class="lktips">${tip(m.A, gA)}${tip(m.B, gB)}</div>
-        <div class="lknav"><button type="button" class="chip" data-lstep="-1" aria-label="Previous pair">←</button><span class="lkn">${i + 1} / ${L.length}</span><button type="button" class="chip" data-lstep="1" aria-label="Next pair">→</button>
+        <div class="lknav"><span class="lkn">Pair ${i + 1} / ${L.length}</span>
           <a class="linkish lkall" href="#cmp-${esc(m.A)}|${esc(m.B)}">All views</a><a class="next" href="#quiz-duel|${esc(m.A)}|${esc(m.B)}">Drill this pair</a></div>
       </div>
       <aside class="lkdeck" aria-label="Classic look-alikes">${deck}</aside>
@@ -420,13 +421,16 @@ function viewLookalikes(a, b){
     $v.querySelectorAll('[data-lstep]').forEach(btn => btn.onclick = () => stepTo(i + Number(btn.dataset.lstep)));
     $v.querySelectorAll('[data-lz]').forEach(z => z.onclick = () => zoom([{...m.pa, genus: m.A}, {...m.pb, genus: m.B}], Number(z.dataset.lz)));
     $v.querySelectorAll('.lkd').forEach((d, k) => d.onclick = e => { e.preventDefault(); stepTo(k); });
-    // Swipe left / right on the montage (phones).
-    const mt = $v.querySelector('.lkm'); let x0 = null;
-    mt.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, {passive: true});
-    mt.addEventListener('touchend', e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) stepTo(i + (dx < 0 ? 1 : -1)); });
+    // Swipe left / right anywhere on the pair (photos, title, tips), only when the gesture is mostly sideways.
+    const mt = $v.querySelector('.lkmain'); let t0 = null;
+    mt.addEventListener('touchstart', e => { t0 = [e.touches[0].clientX, e.touches[0].clientY]; }, {passive: true});
+    mt.addEventListener('touchend', e => { if (!t0) return; const dx = e.changedTouches[0].clientX - t0[0], dy = e.changedTouches[0].clientY - t0[1]; t0 = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) stepTo(i + (dx < 0 ? 1 : -1), true); });
+    dir = 0;
   };
   // The address follows the pair shown (no new history entry), so a pair can be linked and survives a reload.
-  const stepTo = k => { i = (k + L.length) % L.length; history.replaceState(null, '', `#cmp|${L[i].A}|${L[i].B}`); draw(); };
+  // The new pair slides in from the side it came from; the swipe hint goes for good after the first swipe.
+  const stepTo = (k, swiped) => { dir = k > i ? 1 : -1; if (swiped && hint) { hint = false; store.set('imr-coral-lkswiped', 1); } i = (k + L.length) % L.length; history.replaceState(null, '', `#cmp|${L[i].A}|${L[i].B}`); draw(); };
   const keys = e => { if (!$v.querySelector('.lk') || !lb.hidden) return document.removeEventListener('keydown', keys);
     if (e.target.closest('input, textarea, select')) return;
     if (e.key === 'ArrowRight') stepTo(i + 1); else if (e.key === 'ArrowLeft') stepTo(i - 1); };
@@ -639,7 +643,7 @@ const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two ge
 function question(cur, target, choices, prompt, set){
   const ph = set.shown, lab = VIEW_LABEL;
   let answered = false, hintShown = false;
-  const fig = (p, k) => `<figure class="qph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${img(p)}" alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
+  const fig = (p, k) => `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${img(p)}" alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
   // One screen, no scrolling: the photos fill the stage (sized to the window), choices and feedback sit beside them.
   $v.innerHTML = `${gameHelp(cur)}<div class="q bleed">
     <div class="qstage">${ph.map(fig).join('')}</div>
@@ -683,8 +687,18 @@ function fitStage(){
       : Math.max(180, parseFloat(q.style.getPropertyValue('--qh')) - (side ? side.offsetHeight : 240) - 10) + 'px'; }
   else st.style.height = '';
   const n = st.children.length, W = st.clientWidth, H = st.clientHeight;
+  // Grid of the views: the column count that gives the photos the most room (phones and tablets assume 4:3 photos).
+  // Desktop (designer re-review 2026-11-01, N1): each photo's shape is known before it loads (data.json `ar`,
+  // tools/apply_ratios.py; 4:3 if missing), so the grid that shows the most photo area wins: portrait or square views go
+  // side by side instead of in two wide half-blurred bands. The stage keeps its full height (Pierre dislikes a photo
+  // above an empty half screen), and nothing moves while the photos load.
+  const rs = [...st.children].map(f => +f.dataset.r || 4 / 3);
   let best = [n, 1, 0];
-  for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c), w = Math.min((W - 8 * (c - 1)) / c, (H - 8 * (r - 1)) / r * 4 / 3); if (w > best[2]) best = [c, r, w]; }
+  for (let c = 1; c <= n; c++) {
+    const r = Math.ceil(n / c), cw = (W - 8 * (c - 1)) / c, ch = (H - 8 * (r - 1)) / r;
+    const score = isStacked() ? Math.min(cw, ch * 4 / 3) : rs.reduce((a, x) => a + Math.min(cw, ch * x) ** 2 / x, 0);
+    if (score > best[2] * 1.02) best = [c, r, score];
+  }
   st.style.gridTemplateColumns = `repeat(${best[0]}, minmax(0, 1fr))`; st.style.gridTemplateRows = `repeat(${best[1]}, minmax(0, 1fr))`;
   // Phones and tablets: the stage takes all the height the question and answers leave (computed above, before any photo
   // loads, so nothing moves while they load). Each photo fills its box (object-fit: cover, class .cov on its figure) when that
@@ -778,7 +792,7 @@ function answer(cur, c, target, ph, cor, unseen){
     const tp = order.find(p => (V[p.view] || []).length);
     if (tp) {
       const [, cp] = photoPair([tp], V[tp.view], tp), st0 = $v.querySelector('.qstage'), lab = VIEW_LABEL[tp.view] || '';
-      const fig = (p, n, cls, note) => `<figure class="qph ${cls}" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${lab.toLowerCase()} view"></button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> <i>${esc(n)}</i></figcaption><small>${note}</small>${photoSrc(p)}</figure>`;
+      const fig = (p, n, cls, note) => `<figure class="qph ${cls}"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${lab.toLowerCase()} view"></button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> <i>${esc(n)}</i></figcaption><small>${note}</small>${photoSrc(p)}</figure>`;
       st0.classList.add('qvs');
       st0.innerHTML = fig(tp, target, 'qok', 'The photo shown') + fig(cp, c, 'qko', 'Your answer, same view');
       st0.querySelectorAll('[data-vs]').forEach(z => z.onclick = e => { e.stopPropagation(); zoom([{...tp, genus: target}, {...cp, genus: c}], z.dataset.vs === 'qok' ? 0 : 1); });
@@ -1450,7 +1464,7 @@ const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store
     .catch(e => { const last = store.get(CUR_LAST, null); return last ? last : softFail('curation.json (Pierre\'s photo choices)', {})(e); }); };
 const forms = () => fetch('forms.json?v=7').then(okJson).catch(softFail('forms.json', {})).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u => fetch(u).then(okJson).catch(softFail(u.replace(/\?.*/, ''), {}));
-Promise.all([fetch('data.json?v=26').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); window.APP_READY = true; if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=27').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); window.APP_READY = true; if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 // A tab left open for days still follows Pierre's published curation (e.g. the CF book switch): when the tab comes back
 // into view (or every 30 min while visible), curation.json is read again; a change applies at the next screen (route),
 // never in the middle of a game.

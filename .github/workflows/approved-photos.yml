@@ -23,6 +23,8 @@ jobs:
       - run: python tools/fetch_approved.py
       - run: python tools/fetch_local.py
         working-directory: .
+      # Photo shapes for the quiz layout (designer re-review 2026-11-01): new photos get their `ar` too.
+      - run: python tools/apply_ratios.py
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
