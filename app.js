@@ -1169,6 +1169,36 @@ function photoSet(n) {
   // A colony with only closer + corallites shows the closer view, the corallites as the hint.
   return {shown: [one('wide'), one('medium')].filter(Boolean), hint: one('macro')};
 }
+// The next exam question of genus n: one photo alone, in a view the exam has not shown yet when it can, never answered
+// right before (else the least seen), the hardest of them. Null when the genus has no game photo.
+function examSet(n) {
+  const g = GX(n),
+    two = g.levels === 2,
+    need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'],
+    s = P[n] || {},
+    ps = s.ps || {},
+    done = (s.ex || {}).v || [];
+  const oneForm = imrFormsOf(n).length === 1,
+    gameOk = p => (!g.x || p.own || !p.gid) && !p.multi;
+  const lab = v => (two && v === 'macro' ? 'close' : v);
+  const pics = v =>
+    [...gamePics(n, v, 'hard'), ...(two && v === 'macro' ? gamePics(n, 'medium', 'hard') : [])]
+      .filter(p => v !== 'wide' || p.form !== 'x' || oneForm)
+      .filter(gameOk);
+  const vs = need.filter(v => pics(v).length),
+    todo = vs.filter(v => !done.includes(lab(v)));
+  if (!vs.length) return null;
+  const v = pick(todo.length ? todo : vs),
+    L = pics(v),
+    fresh = L.filter(p => !(ps[p.f] || [0, 0])[1]),
+    pool = fresh.length
+      ? fresh
+      : L.slice()
+          .sort((a, b) => (ps[a.f] || [0])[0] - (ps[b.f] || [0])[0])
+          .slice(0, 3);
+  const p = pool.reduce((a, b) => (photoDiff(n, b) > photoDiff(n, a) ? b : a));
+  return {shown: [{...p, view: lab(v)}], hint: null, reveal: [], exam: true};
+}
 // Weighted random pick (weights from f).
 function wpick(L, f) {
   const ws = L.map(x => Math.max(0, f(x))),
@@ -1191,7 +1221,9 @@ const weight = n => {
     w0 = lv === 'new' ? 10 : lv === 'ok' ? 0.25 : lv === 'weak' ? 3 + 2 * u : 1 + 3 * u,
     // Bonus genera (off the IMR list) weigh at most as a genus being learned, even new or to review (Pierre, 2026-11-01:
     // a burst of bonus questions after unlocking some).
-    w = isBonus(n) ? Math.min(w0, BONUS_W) : w0;
+    w1 = isBonus(n) ? Math.min(w0, BONUS_W) : w0,
+    // The mastery exam: a genus ready for its next exam question comes up as one to review; between two of them, it waits.
+    w = examOn(n) ? (examReady(n) ? Math.max(w1, 3) : w1 * 0.05) : w1;
   return lastQs.includes(n) ? w * 0.1 : w;
 };
 // ...and all of them together at most BONUS_SHARE of the draw: their weights are scaled down when they would be more.
@@ -1234,7 +1266,6 @@ const recent = n => {
   return s.h ? s.h.slice(-RECENT) : '';
 };
 const misses = h => [...h].filter(x => x === '0').length;
-const hasDuel = n => GX(n).look.some(b => DATA.gen[b]);
 // Progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability. A genus never answered
 // starts from the player's global level (core.js playerStart: their abilities on the genera already answered), so a
 // strong player gets traps, single views and harder photos on a new genus from its first question.
@@ -1282,8 +1313,9 @@ function photoDiff(n, p) {
 // "Learned" = Bayesian Knowledge Tracing per genus: s.L = probability you know the genus, updated after each answer.
 // A right answer could be a guess (1 in 4 in the quiz, 1 in 2 in a duel, more on easy photos); a mistake could be a slip
 // (more likely on hard photos). So right answers on hard photos count most, and easy photos teach the model little.
-// Learned: L >= 0.95, plus two milestones: once right with the corallites in view, once right in a look-alike duel (when
-// the genus has look-alikes). Review: 2+ mistakes in the last 5 results. No time criteria.
+// The bar of a genus climbs to 95% with L; Learned (100%) takes the silent mastery exam (EXAM, below). The two former
+// milestones (right once with the corallites in view, once in a duel) were dropped: easy, and arbitrary (Pierre,
+// 2026-11-01). Review: 2+ mistakes in the last 5 results. No time criteria.
 const BKT = {L0: 0.1, T: 0.08, MASTER: 0.95};
 function bktStep(L, good, b, k) {
   const g = 1 / k + (1 - 1 / k) * sig(-2 * b - 1),
@@ -1305,24 +1337,40 @@ const knownP = n => {
 function bktObs(n, s, good, b, k) {
   s.L = Math.round(bktStep(knownP(n), good, b, k) * 1e4) / 1e4;
 }
+// Silent mastery exam (Pierre, 2026-11-01: "an ultimate test to go from 95% to 100%"). Once a genus is 95% sure (L),
+// EXAM.n questions on it are slipped into the photo quiz, unannounced (a test on one genus alone would give the answer
+// away), at least EXAM.gap other answers apart (recognition, not short-term memory; counted in answers, never time).
+// Each is as hard as the game gets: one photo alone, never answered right before (else the least seen), the hardest
+// of its view, the views taking turns (colony, close-up, corallites), 3 look-alike traps (examSet, quizPhoto). Every one
+// right: the genus is mastered (s.mx), Learned, 100%. Any miss on the genus, in the exam or not, and any time the genus
+// is given as the answer for another one, ends it (s.ex dropped); it starts again from 0 when L is back at 95%.
+const EXAM = {n: 5, gap: 8};
+const answersSoFar = () => ((P[LEVEL] || {}).ok || 0) + ((P[LEVEL] || {}).ko || 0);
+const examOn = n => {
+  const s = P[n] || {};
+  return !s.mx && knownP(n) >= BKT.MASTER;
+};
+const examReady = n => examOn(n) && (!(P[n] || {}).ex || answersSoFar() - P[n].ex.at >= EXAM.gap);
 function missing(n) {
   const s = P[n] || {},
     m = [],
     L = knownP(n);
+  if (s.mx) return m;
   if (L < BKT.MASTER) m.push(`more right answers, harder photos count more (${Math.round(100 * L)}% sure now)`);
-  if (!s.cor) m.push('right once with the corallites in view (shown, or opened with the hint)');
-  if (hasDuel(n) && !s.du) m.push('right once in a look-alike duel');
+  else
+    m.push(
+      `the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the photo quiz, all right (${(s.ex || {}).k || 0}/${EXAM.n} so far)`
+    );
   return m;
 }
-// Partial progress of a genus, 0 to 1 (so progress moves before a genus is learned): how far its knowledge
-// probability has climbed towards 95% (3/4 of the score) and the two milestones (1/4).
+// Progress of a genus, 0 to 1: how far its knowledge probability has climbed towards 95% fills 95% of it, each exam
+// question passed adds 1%, the passed exam makes it 100%.
 function genScore(n) {
-  if (level(n)[0] === 'ok') return 1;
   const s = P[n];
   if (!s) return 0;
-  const part = Math.min(1, Math.max(0, (knownP(n) - BKT.L0) / (BKT.MASTER - BKT.L0))),
-    duel = hasDuel(n) ? 1 : 0;
-  return 0.75 * part + (0.25 * ((s.cor ? 1 : 0) + (duel && s.du ? 1 : 0))) / (1 + duel);
+  if (s.mx) return 1;
+  const part = Math.min(1, Math.max(0, (knownP(n) - BKT.L0) / (BKT.MASTER - BKT.L0)));
+  return 0.95 * part + (part >= 1 && s.ex ? (0.05 * s.ex.k) / EXAM.n : 0);
 }
 // Step of a genus on the learning scale: 0 not seen, 1-4 quarters of genScore, 5 learned (My progress colours).
 const lvStep = n => {
@@ -1334,7 +1382,7 @@ function level(n) {
   const s = P[n];
   if (!s || (s.ok + s.ko === 0 && !s.h)) return ['new', 'Not seen'];
   if (misses(recent(n).slice(-5)) >= 2) return ['weak', 'Review'];
-  if (!missing(n).length) return ['ok', 'Learned'];
+  if (s.mx) return ['ok', 'Learned'];
   return ['mid', 'Learning'];
 }
 function quizNav() {
@@ -1361,8 +1409,10 @@ function bindQuizNav() {
 const gameHelp =
   cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
   Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? '' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="#progress">My progress</a>. From ${BONUS_AT(0)}% progress, <b>bonus genera</b> join in: corals off the IMR list that are common at Dauin and easily confused with it (fire coral <i>Millepora</i> first).</p>
-  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus is learned once your answers make it 95% sure you know it (right answers on harder photos count more), plus one right answer with the corallites in view and one in a look-alike duel: see ? on <a href="#progress">My progress</a>.</p>`;
+  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus reaches 95% once your answers make it 95% sure you know it (right answers on harder photos count more); it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the photo quiz: see ? on <a href="#progress">My progress</a>.</p>`;
+let EXAMQ = null; // the genus whose exam question is on screen (set by question, read by answer)
 function question(cur, target, choices, prompt, set, kq) {
+  EXAMQ = set.exam ? target : null;
   const ph = set.shown,
     lab = VIEW_LABEL;
   let answered = false,
@@ -1626,7 +1676,27 @@ function answer(cur, c, target, ph, cor, unseen) {
     abilityStep(c, w, false, 0, k);
   }
   if (good && cor) s.cor = 1; // milestone: right with the corallites photo in view
-  if (good && cur.startsWith('quiz-duel')) s.du = 1; // milestone: won a look-alike duel
+  if (good && cur.startsWith('quiz-duel')) s.du = 1; // won a look-alike duel (the duel achievement)
+  // Mastery exam (EXAM): count an exam question passed; any miss on the genus ends its exam, and so does giving the
+  // genus as the answer for another one.
+  const exq = EXAMQ === target;
+  EXAMQ = null;
+  if (!good) delete s.ex;
+  else if (exq) {
+    const ex = s.ex || {k: 0, v: []};
+    ex.k++;
+    ex.v = [...new Set([...ex.v, ph[0].view])];
+    ex.at = answersSoFar();
+    if (ex.k >= EXAM.n) {
+      s.mx = 1;
+      delete s.ex;
+      setTimeout(
+        () => achPop({tier: 3, icon: '🎓', title: `${target} mastered`, desc: `${EXAM.n} hard questions right, slipped into the quiz`}),
+        600
+      );
+    } else s.ex = ex;
+  }
+  if (!good && GX(c) && P[c]) delete P[c].ex;
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
   // sheet's Answers tab also gets what was played before the account existed (Pierre, 2026-11-01).
@@ -1868,9 +1938,10 @@ function quizPhoto() {
     }
   }
   const t = nextTarget(list),
-    traps = trapsFor(t),
+    ex = examReady(t) && examSet(t),
+    traps = ex ? 3 : trapsFor(t),
     ch = shuffle([t, ...distractors(t, list, traps)]);
-  question('quiz', t, ch, 'Which genus?', photoSet(t), traps < 2 ? plausibleK(t, ch) : 0);
+  question('quiz', t, ch, 'Which genus?', ex || photoSet(t), traps < 2 ? plausibleK(t, ch) : 0);
 }
 function quizDuel(a, b) {
   const list = pool();
@@ -2038,10 +2109,10 @@ function quizBoard() {
   };
   let pv = store.get('imr-coral-pview', 'photos');
   if (!VIEWS[pv]) pv = 'photos';
-  $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, get it right on harder and harder photos, once with the corallites in view, and once in a look-alike duel. A mistake sets it back, for the genus you missed and for the one you answered.</p>
+  $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, get it right on harder and harder photos: that fills it up to 95%. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the photo quiz, several questions apart. All ${EXAM.n} right and the genus is learned (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
   <p class="lede"><b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin and easily taken for a genus of the list (fire coral <i>Millepora</i> first). The first joins the photo quiz and the duels at ${BONUS_AT(0)}% progress, then one more every 5%. They don't count in your progress; their ID tips come from the Coral Finder. On this page they come after the list: a <b>?</b> tile is a bonus genus still locked, with the progress that unlocks it.</p>
   <p class="lede"><b>Colours</b>: white with a dashed border = not seen; then from pale to dark, one step per quarter of the way; the darkest, with a tick = learned. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>
-  <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. Learned means your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little), plus the two milestones above.</p>
+  <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. 95% means your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little); learned means its mastery exam is passed too.</p>
   <div class="pgame pboard"><div class="pgwrap"></div>
   <aside class="gside">
     <div class="seg" role="group" aria-label="View">${[
@@ -3105,13 +3176,17 @@ function viewBoard() {
 const ACHK = 'imr-coral-ach';
 // Two records of one player (another device, or this device before signing in): every achievement kept with its
 // earliest date, the best run kept; the current run stays this device's.
+// Version of the record (ACH_V): a record from before the full recount (2026-11-01, mastery exam) brings its feats
+// (best run, corallites, hard photo) but not its achievements, which were counted on the old rules.
+const ACH_V = 2;
 function achMerge(json) {
   try {
     const ra = JSON.parse(json || 'null');
     if (!ra || typeof ra !== 'object') return;
-    const A = store.get(ACHK, {}) || {};
+    const A = store.get(ACHK, {}) || {},
+      old = ra._v !== ACH_V;
     Object.keys(ra).forEach(k => {
-      if (k === '_run') return;
+      if (k === '_run' || k === '_v' || (old && k[0] !== '_')) return;
       A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] ? Math.min(A[k], ra[k]) : ra[k];
     });
     store.set(ACHK, A);
@@ -3139,6 +3214,21 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lvStep(n) >= 5)),
     bonus: bonusOpen().length
   };
+}
+// Full recount, once per device (Pierre, 2026-11-01: "redo the calculation cleanly for everyone, achievements too,
+// locking again those unlocked when they should not have been"): every achievement is tested again on the current
+// progress with the current rules; those still met keep their date, the others go. Feats (runs, corallites, hard photo)
+// stay. Then one sync, so the sheet's copy (leaderboard %, achievement shares) follows.
+function achMigrate() {
+  const A = store.get(ACHK, null);
+  if (A && A._v === ACH_V) return;
+  const B = {_v: ACH_V};
+  if (A) ['_run', '_best', '_cor', '_hard'].forEach(k => A[k] && (B[k] = A[k]));
+  const snap = achSnap(B),
+    t = Date.now();
+  ACH.filter(a => a.test(snap)).forEach(a => (B[a.id] = (A && A[a.id]) || t));
+  store.set(ACHK, B);
+  if (SYNC && A) syncSoon();
 }
 function achCheck(silent) {
   const had = store.get(ACHK, null),
@@ -3555,7 +3645,8 @@ Promise.all([fetch('data.json?v=29').then(r => r.json()), curation(), forms(), j
     AUTOQ = q.q || {};
     PICKS = k;
     build();
-    achCheck(!store.get(ACHK, null)); // before the first page, so the badge on My progress counts them
+    achMigrate();
+    achCheck(); // before the first page, so the badge on My progress counts them
     route();
     syncPull();
     sendAnon();

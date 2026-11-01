@@ -33,7 +33,7 @@
       sel: '#prog',
       alt: 'nav [data-tab=progress]',
       t: 'Your progress',
-      d: 'Each genus fills up as you get it right on harder photos, once with the corallites in view and once in a duel. Tap to see every genus.'
+      d: 'Each genus fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. Tap to see every genus.'
     },
     {
       h: 'quiz',

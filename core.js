@@ -75,12 +75,13 @@
       out.streak = mine ? l.streak || 0 : r.streak || 0;
       if (mine && l.h) out.h = l.h;
       if (mine)
-        ['lv', 'run', 'L', 'th', 'ro'].forEach(k => {
+        ['lv', 'run', 'L', 'th', 'ro', 'ex'].forEach(k => {
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
       if (l.cor || r.cor) out.cor = 1;
       if (l.du || r.du) out.du = 1;
+      if (l.mx || r.mx) out.mx = 1; // mastery exam passed (app.js EXAM): kept from either device
       // Mix-ups (conf: genus answered instead) and offers (off: genus offered as a wrong choice) add up across devices.
       ['conf', 'off'].forEach(f => {
         const c = {...(r[f] || {})};
