@@ -6,7 +6,7 @@ LAB.add({
   render(root){
     const DUR = 12000; let raf = 0, score = {pts: 0, n: 0, streak: 0}, view = 'any';
     // Game layout: stage left, every control (views, choices, score, feedback) in the side column.
-    const chips = () => `<div class="chips">${[['any', 'Any view'], ['wide', 'Colony'], ['medium', 'Closer'], ['macro', 'Corallites']].map(([v, t]) => `<button class="chip" type="button" data-v="${v}" aria-pressed="${v === view}">${t}</button>`).join('')}</div>`;
+    const chips = () => `<div class="chips">${[['any', 'Any view'], ['wide', 'Colony'], ['medium', 'Close-up'], ['macro', 'Corallites']].map(([v, t]) => `<button class="chip" type="button" data-v="${v}" aria-pressed="${v === view}">${t}</button>`).join('')}</div>`;
     root.innerHTML = `<div id="rvbody"></div>`;
     const body = root.querySelector('#rvbody');
     const round = () => {
