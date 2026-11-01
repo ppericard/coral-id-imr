@@ -1,0 +1,269 @@
+{
+ "genus": "Stylophora",
+ "photos": {
+  "stylophora-cand-499945567": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Small colony lying on sand, maybe a loose fragment; blunt tips."
+  },
+  "stylophora-cand-600517043": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Small colony between massive corals; thin branches could be Pocillopora."
+  },
+  "stylophora-cand-269736046": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "note": "Blunt, slightly flattened branch tips."
+  },
+  "stylophora-cand-357894132": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Blunt branches, tiny corallites; soft focus."
+  },
+  "stylophora-cand-246490289": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Blunt branches; crinoid; slight cast."
+  },
+  "stylophora-cand-262217044": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "note": "Blunt flattened tips; polyps show as white dots."
+  },
+  "stylophora-cand-262217183": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "alt",
+   "note": "Front view; another branching coral behind."
+  },
+  "stylophora-cand-262217193": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "dup"
+  },
+  "stylophora-cand-262217195": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "dup",
+   "multi": true,
+   "note": "A neighbouring branching coral takes a large part of the frame."
+  },
+  "stylophora-cand-262217207": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "alt",
+   "multi": true,
+   "note": "Another colony, closer; neighbouring branching coral at right."
+  },
+  "stylophora-cand-479237218": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Blunt branches, scaly surface; blue cast."
+  },
+  "stylophora-cand-600484378": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Small colony on rubble; hazy, date stamp."
+  },
+  "stylophora-cand-600484386": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Branch ends with corallites; soft, date stamp."
+  },
+  "stylophora-cand-693803137": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup",
+   "note": "Flash burns the tips; date stamp."
+  },
+  "stylophora-cand-693803153": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "stylophora-cand-693803157": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "stylophora-cand-693803158": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Blunt branch ends, corallites visible; bright tips, date stamp."
+  },
+  "stylophora-cand-693803167": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Soft, overexposed tips."
+  },
+  "stylophora-cand-379868168": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "polyps": true,
+   "note": "Branches with polyps out at night."
+  },
+  "stylophora-cand-310441722": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Hazy; massive coral behind."
+  },
+  "stylophora-cand-406767069": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "note": "Blunt white tips, scaly surface."
+  },
+  "stylophora-cand-661955502": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Small young colony; dull colour."
+  },
+  "stylophora-cand-91233932": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Hazy; other corals around."
+  },
+  "stylophora-cand-605683373": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Rounded cylindrical tips; could be Pocillopora damicornis."
+  },
+  "stylophora-cand-697840012": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "genus": "Millepora",
+   "note": "Fire coral: yellow flattened fused branches with fine white hairs, no corallites."
+  },
+  "stylophora-cand-574575249": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "note": "Blunt branch ends, scaly surface."
+  },
+  "stylophora-cand-574575250": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Small colony; blue cast; feather star below."
+  },
+  "stylophora-cand-344687890": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Shallow and hazy; two colonies; could be Pocillopora."
+  },
+  "stylophora-cand-344687904": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Same scene with damselfish; could be Pocillopora."
+  },
+  "stylophora-cand-190605585": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "note": "Small colony, blunt tips."
+  },
+  "stylophora-cand-262211590": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "note": "Small colony, blunt flattened tips."
+  },
+  "stylophora-cand-262211706": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "dup"
+  },
+  "stylophora-cand-335771324": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Seen from the surface, hazy; seagrass and urchins."
+  },
+  "stylophora-cand-675216244": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "note": "Colony on sand."
+  },
+  "stylophora-cand-675216183": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Corallites on a blunt branch tip."
+  },
+  "stylophora-cand-246490407": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "note": "Flattened branches; crinoid at right."
+  }
+ }
+}
