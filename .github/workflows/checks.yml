@@ -54,3 +54,5 @@ jobs:
         run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/pages.smoke.js
       - name: Question draw test (photoSet and distractors on the real data, every genus, 4 player levels)
         run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/draw.smoke.js
+      - name: Admin demo test (admin.html?demo, every page and the main actions on made-up data, nothing sent)
+        run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/admin.smoke.js

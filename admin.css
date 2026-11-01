@@ -2758,3 +2758,16 @@ td.cov-c .cov-off {
 .adm-uremoved summary {
   cursor: pointer;
 }
+/* Demo mode banner (admin.html?demo, admin-demo.js) */
+.adm-demo {
+  margin: 0;
+  padding: 6px 16px;
+  background: #7a4b00;
+  color: #fff;
+  font-size: 0.9rem;
+  text-align: center;
+}
+.adm-demo a {
+  color: #fff;
+  text-decoration: underline;
+}
