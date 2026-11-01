@@ -10,7 +10,6 @@ Sources: "thread X" = a Claude project thread with Pierre; dates are 2026. Desig
 
 | Item | Source | Status |
 |---|---|---|
-| **Redeploy Code.gs v8** (v6, PR #250: progress of any size, stale-write check, PIN throttle, secret anonymous-id salt; v7: players' reports, `Reports` tab; v8: reporter names for every admin). App and admin work with v5 meanwhile; players' reports wait in their browsers until v7 or later is live. v8 asks once for the "connect to an external service" permission (it checks admins' GitHub tokens before showing reporter names). | thread "Review the code as an expert developer" | Waiting on Pierre |
 | Review ~10 debatable lecture points (left verbatim): Pocillopora "verrucae purely ornamental", Goniastrea "paliform lobes on the oral disc", Montipora "smallest corallites of all", Tubastraea "dark green to black", Mycedium "no tentacles", Plerogyra "looks solitary", Herpolitha "solitary"; better mnemonics proposed (Acropora = pore at the tip, Pavona = peacock). Any change becomes a discreet note, never a correction. | thread "Fact-check all coral content on the site", PR #22 | Waiting on Pierre |
 | Stylophora wording: Pierre remembered "like Pocillopora but fuzzy"; presenter notes say "smooth from afar, unlike Pocillopora" and "chicken popcorn" (Pierre remembered "chicken nuggets" for Pocillopora). App keeps the written wording. Pierre reviews the course on Mon 2026-11-02 and corrects it himself. | project chat, 2026-10-31 | Waiting on Pierre |
 | Merulina placement: shown with Hydnophora (lecture group 7); group 5 is the alternative. | thread "Declutter the UI across the app", PR #66 | Waiting on Pierre |
@@ -86,6 +85,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 - Publishing `curation.json` as a whole copy from the admin (lost curation on 2026-11-01; Publish merges key by key since PR #240).
 
 ## Done recently (for context)
+- 2026-11-01: Pierre deployed Code.gs v8 and granted it the external-request permission (needed for the admins' GitHub token check).
 - 2026-11-01: beta testers: welcome tour cut to 5 steps (doors, sign-in form in the bubble, the 3 games, progress, help, then "Start playing"); one sign-in card after 10 unsigned answers, and right away when the tour is skipped; answers played before signing in reach the Answers tab; signing in to an existing name merges the device's anonymous play instead of wiping it; sign out clears the device.
 - 2026-11-01: designer re-review (https://claude.ai/artifact/XcHq5wGMomDXoByE1hGcQB), first PR: feedback colours only on Yes/No, colour-blind "correct" no longer a solid fill, full ID tips on Genera cards, 2-line group titles, pair page with boxed tips and a stable header, quieter Memory with one segmented look, one bonus tile on My progress, Look-alikes rail fix, phone Filter chip, shorter lecture credits.
 - 2026-11-01: two admin tabs in one browser merge each other's drafts instead of overwriting them (code re-review M4).
