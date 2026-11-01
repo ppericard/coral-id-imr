@@ -2989,6 +2989,14 @@ async function start() {
       loadSaved()
     ]);
     DUPS = await side('dups.json', 'dup').then(x => (Array.isArray(x) ? x : []));
+    // Candidates waiting live in cand.json (tools/datajson.py; data.json, which every player downloads, keeps only those
+    // curation.json names): merged in here, as one list per genus.
+    const CJ = await side('cand.json', 'cand');
+    DATA.cand = DATA.cand || {};
+    Object.entries(CJ || {}).forEach(([g, L]) => {
+      const have = new Set((DATA.cand[g] || []).map(p => p.f));
+      DATA.cand[g] = [...(DATA.cand[g] || []), ...L.filter(p => !have.has(p.f))];
+    });
   } catch (x) {
     $v.innerHTML = `<p class="warn">Could not load: ${esc(x.message)}</p>`;
     return;

@@ -5342,7 +5342,8 @@ footer .rep:hover {
 }
 .blist li {
   display: grid;
-  grid-template-columns: 2.4em 1fr auto auto;
+  /* Fixed columns so every row lines up (Pierre): name, Elo (right-aligned), progress % at the right edge. */
+  grid-template-columns: 2.4em minmax(0, 1fr) 5.6em 3.4em;
   gap: 10px;
   align-items: center;
   padding: 8px 12px;
@@ -5368,11 +5369,14 @@ footer .rep:hover {
 .bpct {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 .belo {
   color: var(--muted);
   font-size: var(--fs-s);
   font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
 }
 .pboardl {
   display: block;

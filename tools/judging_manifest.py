@@ -3,11 +3,13 @@
 # reference text per genus (IMR lecture cues first, then Coral Finder criteria) and the allowed categories.
 # Earlier guesses (forms.json, quality.json) are left out on purpose, so the judge looks at each photo afresh.
 # Usage: python3 tools/judging_manifest.py   (from the repo root; re-run after curation.json or data.json change)
-import json, os
+import json, os, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 J = lambda p: json.load(open(os.path.join(ROOT, p)))
-d, c = J('data.json'), J('curation.json')
+sys.path.insert(0, os.path.join(ROOT, 'tools'))
+from datajson import load_all
+d, c = load_all(), J('curation.json')  # data.json + the candidates waiting in cand.json
 VIEWS = ['wide', 'medium', 'macro']
 X = c.get('exclude', {})
 FJ = J('forms.json')
