@@ -84,6 +84,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 
 ## Done recently (for context)
 
+- 2026-11-01: design review (lots 1-3): #254 fonts with real italics, muted group colours, 12 px floor, Coral Finder prompt, Light/Dark switch; #256 type/radius tokens, shared controls, one SVG icon set, docs/DESIGN.md; lot 3 (this PR) quiz stage fits the photo on phone/tablet, games aligned with the header, Progress pill with mini ring, phone tab bar icons, readable names on the phone progress wall.
 - 2026-11-01: players report a wrong answer (with the right genus), several corals, a bad photo or other from every game; reports with the reporter's name in admin Triage (Code.gs v7).
 - 2026-11-01: bonus genera in the photo quiz and duels (Millepora first, unlocked from 10% slate progress, outside the slate score).
 

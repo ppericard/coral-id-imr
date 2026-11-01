@@ -26,7 +26,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
    with it. Text keeps its own measure (65-75ch). A module that needs more room adds .bleed (wide screens only). */
 :root{--page:1280px}
 .wrap{max-width:var(--page);margin:0 auto;min-height:calc(100dvh - var(--tabbar-h, 0px));display:flex;flex-direction:column}
-@media (min-width:1340px){.bleed{width:min(1680px,calc(100vw - 48px));margin-left:calc(50% - min(840px,50vw - 24px))}}
+/* .bleed keeps the page's left edge (one left edge per screen, aligned with the logo and tabs; design review 2026-11-01) and
+   only grows to the right, up to 300 px past the page and 24 px from the window edge. */
+@media (min-width:1340px){.bleed{width:min(calc(var(--page) + 300px),calc(50vw + var(--page) / 2 - 24px));margin-left:0}}
 a{color:var(--accent)}
 .vh{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
@@ -103,6 +105,8 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 .sections a:hover,.chip:hover,.theme:hover,.prog:hover{border-color:var(--accent)}
 .prog{display:inline-flex;align-items:center;gap:6px;height:var(--ctl-h);padding:0 12px;text-decoration:none;font-size:var(--fs-s);white-space:nowrap}
 .prog b{color:var(--good);font-variant-numeric:tabular-nums}
+.prog::before{content:"";width:14px;height:14px;border-radius:50%;flex:none;background:radial-gradient(closest-side,var(--surface) 55%,transparent 58%),conic-gradient(var(--good) calc(var(--pp,0) * 1%),color-mix(in srgb,var(--ink) 18%,transparent) 0)}
+.prog[aria-current="page"]::before{background:radial-gradient(closest-side,var(--ink) 55%,transparent 58%),conic-gradient(var(--bg) calc(var(--pp,0) * 1%),color-mix(in srgb,var(--bg) 30%,transparent) 0)}
 .prog[aria-current="page"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .prog[aria-current="page"] b{color:inherit}
 .saveprog{margin:12px 0 18px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -195,7 +199,7 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 @media (min-width:600px){
   .gpack>.gblk>.gdiv{margin-top:10px;align-items:flex-end}
 }
-.gpack>.gblk[data-n="1"]>.gdiv{font-size:var(--fs-s)}
+.gpack>.gblk[data-n="1"]>.gdiv{font-size:var(--fs-s);text-wrap:balance;line-height:1.2}
 .gpack>.gblk>.gdiv .gn{flex:none}
 .tiplist.gpack>.gblk{column-gap:28px}
 /* Phone base (mobile-first); larger screens restore below. */
@@ -335,7 +339,8 @@ body:has(.q),body:has(.pgrid),body:has(.rvstage),body:has(.pgroups),body:has(.ps
 body:has(.q) footer,body:has(.pgrid) footer,body:has(.rvstage) footer,body:has(.pgroups) footer,body:has(.pslate) footer,body:has(.lk) footer{display:none}
 body:has(.q) main,body:has(.pgrid) main,body:has(.rvstage) main,body:has(.pgroups) main,body:has(.pslate) main,body:has(.lk) main{margin-bottom:0}
 .qph{position:relative;margin:0;overflow:hidden;border-radius:var(--r);background:#000;min-height:0;height:100%}
-.qph img{width:100%;height:100%;object-fit:contain;display:block}
+/* scale-down: like contain, but a low-resolution photo is never blown up past its own size (it would look pixelated). */
+.qph img{width:100%;height:100%;object-fit:scale-down;display:block}
 .qph .zoom{height:100%;border-radius:0;position:relative;background:none}
 /* No black bars: a blurred copy of the photo fills the frame around it. */
 .qph::before{content:"";position:absolute;inset:-30px;background:var(--qbg,#000) center/cover;filter:blur(22px) brightness(.55)}
@@ -376,14 +381,14 @@ kbd{font:600 var(--fs-xs)/1 var(--body);font-style:normal;color:var(--muted);bor
 #next{align-self:stretch;text-align:center}
 #next kbd{color:inherit;background:transparent;border-color:currentColor;opacity:.7;margin-left:6px}
 /* Phone base (mobile-first); larger screens restore below. */
-.q{grid-template-rows:minmax(160px,1fr) auto;min-height:var(--qh,70vh)}
+.q{grid-template-rows:auto auto;align-content:start;min-height:var(--qh,70vh)}  /* the stage height is set by fitStage: answers follow the photo */
 .qstage{height:calc(var(--qh,60vh) - 240px)}
 .q.done #after{position:fixed;left:0;right:0;bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px));z-index:25;max-height:62vh;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:6px max(10px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));background:var(--bg);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(0,0,0,.18)}
 .ans{grid-template-columns:1fr 1fr}
 .ans button{justify-content:center}
 
 @media (min-width:1024px){
-  .q{grid-template-rows:revert;min-height:revert}
+  .q{grid-template-rows:revert;min-height:revert;align-content:revert}
   .qstage{height:revert}
   .q.done #after{position:revert;left:revert;right:revert;bottom:revert;z-index:revert;max-height:revert;overflow:revert;display:revert;flex-direction:revert;gap:revert;padding:revert;background:revert;border-top:revert;box-shadow:revert}
   .ans{grid-template-columns:revert}
@@ -456,6 +461,7 @@ footer{padding-bottom:12px}
 .q .qstage>.qph:only-child{flex-basis:100%}
 .q .qstage.qvs{gap:4px;overflow:hidden}
 .q .qstage.qvs .qph img{object-fit:cover}
+.qstage.qfit .qph img{object-fit:cover}
 .wide{display:none}
 
 @media (min-width:600px){
@@ -482,7 +488,7 @@ footer{padding-bottom:12px}
   .q .qstage>.qph{flex:revert;scroll-snap-align:revert}
   .q .qstage>.qph:only-child{flex-basis:revert}
   .q .qstage.qvs{gap:8px;overflow:revert}
-  .q .qstage.qvs .qph img{object-fit:contain}
+  .q .qstage.qvs .qph img{object-fit:scale-down}
   .wide{display:revert}
 }
 
@@ -814,6 +820,11 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .sheet .tipbox h3{margin:0 0 8px;color:var(--accent)}
 .idbox .tipbox .crit{font-size:var(--fs-l);font-weight:600;gap:8px}
 .tipbox .mn{margin:10px 0 0;font-size:var(--fs-s)}
+/* Quiz feedback: the same highlighted ID tips box as the genus sheet, compact (design review 2026-11-01). */
+.fb .fbtips{padding:8px 12px 10px;margin:6px 0 0;border-left-width:4px}
+.fb .fbtips .label{margin:0 0 2px;color:var(--accent)}
+.fb .fbtips ul{margin-top:2px}
+.fb .fbtips .mn{margin-top:6px}
 .lnotes .crit{font-size:var(--fs-s)!important;color:var(--muted);gap:3px}
 .sheet .lnotes h3{margin-top:20px}
 
@@ -865,7 +876,7 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .lkd{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--surface);color:var(--ink);text-decoration:none}
 .lkd span{display:grid;grid-template-columns:1fr 1fr;gap:1px;height:48px}
 .lkd img{width:100%;height:100%;object-fit:cover;display:block}
-.lkd small{padding:2px 6px;font-size:var(--fs-xs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lkd small{padding:2px 6px;font-size:var(--fs-xs);line-height:1.2;overflow-wrap:anywhere} /* full pair name on up to two lines (design review 2026-11-01) */
 .lkd:hover{border-color:var(--accent)}
 .lkd.on{outline:2px solid var(--accent);outline-offset:0}
 .lkd.mix small{color:var(--bad);font-weight:600}
@@ -903,6 +914,8 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .pwall .pw.s0{border:1px dashed var(--line)}
 .pwall .pw .pwb{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:4px;padding:3px 6px;opacity:1;font-size:var(--fs-xs);line-height:1.2;background:var(--lvc,var(--surface));color:var(--lvt,var(--muted));container-type:inline-size;white-space:nowrap}
 .pwall .pw .pwb i{overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* Phones: the genus name is the tile's key information, so it wraps on two lines instead of being cut (design review 2026-11-01). */
+@media (max-width:599.98px){.pwall .pw .pwb{flex-wrap:wrap;gap:0 4px;padding:3px 5px}.pwall .pw .pwb i{flex:1 1 100%;white-space:normal;overflow-wrap:anywhere;line-height:1.15}.pwall .pw .pwb .pct{margin-left:0}}
 .pwall .pw .pwb .pct{display:inline-flex;align-items:center;gap:4px;margin-left:auto;font-size:.9em;font-weight:700;font-style:normal;font-variant-numeric:tabular-nums;flex:none}
 .pwall .pw.s5 .pwb i::after{content:" \2713";font-style:normal;font-weight:700}
 .pwall .pw:hover img{filter:none;transform:scale(1.03);transition:transform .2s}
@@ -1034,21 +1047,21 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 /* Genera page: the Coral Finder's extra genera, folded under the 39 */
 .xgen{grid-column:1/-1;margin-top:24px;border-top:1px solid var(--line);padding-top:12px}.xgen>summary{cursor:pointer;font-weight:700;color:var(--muted)}.xgen>summary small{font-weight:400}.xgen>.grid{margin-top:12px}
 /* Players' report (app.js reportDialog): a discreet link after the answer, a small modal dialog. */
-.rep{display:block;margin-top:6px;font-size:.8rem;color:var(--muted);text-decoration:none}
+.rep{display:block;margin-top:6px;font-size:var(--fs-xs);color:var(--muted);text-decoration:none}
 .rep:hover,.rep:focus-visible{color:var(--accent);text-decoration:underline}
 .rep:disabled{cursor:default;text-decoration:none;color:var(--muted)}
 .repdlg{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);color:var(--ink);padding:16px;width:min(420px,calc(100vw - 32px));box-shadow:var(--shadow-hover)}
 .repdlg::backdrop{background:rgb(0 0 0 / .45)}
-.repdlg h3{margin:0 0 10px;font-size:1.05rem}
+.repdlg h3{margin:0 0 10px;font-size:var(--fs-m)}
 .repwhy{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
 .repwhy label{position:relative}
 .repwhy input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
-.repwhy span{display:block;text-align:center;padding:8px 6px;border-radius:var(--pill);border:1.5px solid var(--line);font-size:.9rem}
+.repwhy span{display:block;text-align:center;padding:8px 6px;border-radius:var(--pill);border:1.5px solid var(--line);font-size:var(--fs-s)}
 .repwhy input:checked+span{border-color:var(--accent);background:var(--accent);color:var(--accent-ink);font-weight:600}
 .repwhy input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
-.repf{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;font-size:.85rem;color:var(--muted)}
+.repf{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;font-size:var(--fs-s);color:var(--muted)}
 .repf[hidden]{display:none}
-.repf input,.repf textarea{font:inherit;font-size:.95rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 9px;resize:vertical}
+.repf input,.repf textarea{font:inherit;font-size:var(--fs-m);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 9px;resize:vertical}
 .repbtns{display:flex;justify-content:flex-end;gap:8px}
 .repbtns .next{padding:8px 18px}
 /* Bonus genera (off the IMR list): chips on My progress coloured by learning step, the next unlock in muted dashed. */
@@ -1058,5 +1071,30 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .pbonus .chip.weak{border:2px solid var(--bad)}
 .pbonus .chip.s5 i::after{content:" \2713";font-style:normal;font-weight:700}
 .pbonus .chip.lock{border-style:dashed;color:var(--muted);background:transparent;cursor:default}
-.fb .bonusnew{margin:6px 0;padding:6px 10px;border-radius:8px;background:var(--surface);border:1px solid var(--accent);font-size:.9rem}
-.cmpcol h3 small{font:400 .8rem var(--body);color:var(--muted)}
+.fb .bonusnew{margin:6px 0;padding:6px 10px;border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--accent);font-size:var(--fs-s)}
+.cmpcol h3 small{font:400 var(--fs-xs) var(--body);color:var(--muted)}
+
+/* Phone tab bar (design review 2026-11-01): icon + label tabs, not pills; the current tab is accent-coloured with a tinted
+   pill behind its icon (the platform pattern), so it no longer looks like a pressed button. Icons are hidden on wider screens. */
+.tabi{display:none}
+@media (max-width:599.98px){
+  :root{--tabbar-h:58px}
+  .sections a{flex-direction:column;gap:2px;border:0;background:none;box-shadow:none;color:var(--muted);font-size:var(--fs-xs);min-height:50px;padding:0}
+  .sections a .tabi{display:block;width:44px;height:28px;padding:3px 11px;border-radius:var(--pill)}
+  .sections a[aria-current="page"]{background:none;color:var(--accent);font-weight:600}
+  .sections a[aria-current="page"] .tabi{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+  .sections a:hover{border-color:transparent}
+  .sections a .tabn{color:var(--good)}
+}
+/* My progress legend on phones: the six levels on one row, "Review" as its own slim row below (design review 2026-11-01). */
+@media (max-width:599.98px){
+  .plvl{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px}
+  .plvl span{min-width:0;max-width:none;padding:4px 0}
+  .plvl small{white-space:normal;text-align:center;max-width:100%}
+  .plvl .pl-rev{grid-column:1/-1;flex-direction:row;justify-content:center;gap:6px;padding:2px 8px}
+}
+/* Genus sheet bar: Back reads as a button, not a stray link (design review 2026-11-01). */
+.modes.ctx .up{background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);border-radius:var(--pill);font-weight:600}
+/* Photo credits under sheet photos: quiet text, underlined only on hover (the source stays one click away). */
+.strip figcaption a,.credit a{text-decoration:none}
+.strip figcaption a:hover,.credit a:hover{text-decoration:underline}

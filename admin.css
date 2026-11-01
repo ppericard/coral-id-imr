@@ -4,6 +4,9 @@ body.admin header{max-width:none}
 .adm-tag{font-family:var(--display);font-weight:600;font-size:1.05rem;color:var(--muted);letter-spacing:.02em}
 body.admin header{flex-wrap:wrap;gap:8px 14px}
 body.admin .brand{flex:none}
+/* Says where you are (design review 2026-11-01): one word, hidden on phones to keep the header on one line. */
+.adm-name{font-size:var(--fs-l)}
+@media (max-width:599.98px){.adm-name{display:none}}
 body.admin .hdr-tools{margin-left:auto;flex-wrap:nowrap;gap:6px;white-space:nowrap}
 body.admin .hdr-tools .chip{padding-inline:11px}
 body.admin .hdr-tools .adm-ico{padding:0;width:34px;justify-content:center;font-size:1.05rem}
