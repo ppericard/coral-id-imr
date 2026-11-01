@@ -145,6 +145,27 @@ const server = http.createServer((req, res) => {
     P[t].ps[v0.f] = [1, 0];
     for (let i = 0; i < 20; i++)
       if (examSet(t).shown[0].f === v0.f && gamePics(t, v0.view, 'hard').length > 1) fails.push(`${t}: exam reused a photo already seen`);
+    // The sheet's leaderboard % (Code.gs pctOf_, a copy of core.js pctOf) equals the app's progPct on varied progress.
+    for (let r = 0; r < 20; r++) {
+      P = {};
+      Object.keys(DATA.gen).forEach((n, i) => {
+        const x = (i * 7 + r * 13) % 10;
+        if (x === 0) return;
+        P[n] =
+          x === 1
+            ? {ok: 3, ko: 1, h: '1011'}
+            : {
+                ok: x,
+                ko: 1,
+                h: '11',
+                L: Math.min(0.99, 0.1 * x),
+                ...(x === 9 ? {ex: {k: r % 5, v: [], at: 0}} : {}),
+                ...(x === 8 && r % 2 ? {mx: 1} : {})
+              };
+      });
+      if (progPct() !== pctOf(P, Object.keys(DATA.gen)))
+        fails.push(`progress %: app ${progPct()} vs core pctOf ${pctOf(P, Object.keys(DATA.gen))}`);
+    }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
   await b.close();
