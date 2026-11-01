@@ -33,6 +33,11 @@ The visual rules every page follows. They came out of the expert UI review of 20
 | Yes / No question that narrows a list | `.fdq` with two `.fdans` (Coral Finder) | Question on top, two big answer buttons side by side (≥ 72 px tall, full width), each with its count and photos of what is on that side; "Can't tell" as `.linkish`. Never small text links as answers. |
 | Disclosure | `<details>` with a muted `▸` summary | e.g. "Backup or reset progress" at the bottom of ⚙. |
 
+## Lab drawings
+
+- Concept drawings (Corallite anatomy and other schematics) use ONE vivid highlight colour, `--hl` in `proto/lab.css` (raspberry in light, pink in dark), only for the part being explained; everything else fades to grey (`--dk`). Rings on photos use the same colour and dim the rest of the photo (Pierre, PR #177).
+- Home door schematics are drawn SVG (`home-art.js`), not screenshots; in dark mode the drawings keep the light palette.
+
 ## Icons
 
 One SVG set (24 px grid, 1.75 stroke, `currentColor`): see `LAB_ICONS` in `proto/lab.js` for the Tools hub and the inline SVGs in `index.html`. No Unicode pictographs as icons (✺ ⌘ ◐…); plain symbols in text (✓ ✗ ★ ←) are fine.
