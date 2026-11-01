@@ -1188,12 +1188,24 @@ let lastQs = [];
 const weight = n => {
   const lv = level(n)[0],
     u = 1 - knownP(n),
-    w = lv === 'new' ? 10 : lv === 'ok' ? 0.25 : lv === 'weak' ? 3 + 2 * u : 1 + 3 * u;
+    w0 = lv === 'new' ? 10 : lv === 'ok' ? 0.25 : lv === 'weak' ? 3 + 2 * u : 1 + 3 * u,
+    // Bonus genera (off the IMR list) weigh at most as a genus being learned, even new or to review (Pierre, 2026-11-01:
+    // a burst of bonus questions after unlocking some).
+    w = isBonus(n) ? Math.min(w0, BONUS_W) : w0;
   return lastQs.includes(n) ? w * 0.1 : w;
 };
+// ...and all of them together at most BONUS_SHARE of the draw: their weights are scaled down when they would be more.
+const BONUS_W = 4,
+  BONUS_SHARE = 0.15;
 function weighted(list) {
   const w = list.map(weight),
-    t = w.reduce((a, b) => a + b, 0);
+    b = list.reduce((s, n, i) => s + (isBonus(n) ? w[i] : 0), 0),
+    o = w.reduce((a, x) => a + x, 0) - b;
+  if (b && o && b / (b + o) > BONUS_SHARE) {
+    const f = (BONUS_SHARE * o) / ((1 - BONUS_SHARE) * b);
+    list.forEach((n, i) => isBonus(n) && (w[i] *= f));
+  }
+  const t = w.reduce((a, x) => a + x, 0);
   let r = Math.random() * t;
   for (let i = 0; i < list.length; i++) {
     r -= w[i];
@@ -1909,6 +1921,7 @@ function badge() {
     <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
     <a id="pbrank" href="#board">🏆 ${name ? '' : 'Leaderboard · '}Elo ${eloScore(G && typeof G.th === 'number' ? G.th : 0)}</a>
     <a href="#ach">🏅 <b>${got.length}</b>/${ACH.length} ${got
+      .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
       .slice(0, 3)
       .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
       .join('')}</a></div></div>`;
@@ -3202,11 +3215,15 @@ function viewAch() {
 }
 // Told once, when the leaderboard arrives, to players already signed in: their name now shows there.
 function boardNotice() {
-  // Players signed in before the leaderboard: one sync writes their progress % (the sheet has none for them yet).
-  if (SYNC && !store.get('imr-board-sent', 0)) {
-    store.set('imr-board-sent', 1);
-    syncSoon();
-  }
+  // Players signed in before the leaderboard: one sync writes their progress % (the sheet has none for them yet). Only
+  // once the sheet serves the leaderboard (v14): an older script ignores the %, which left everyone at 0% (2026-11-01).
+  if (SYNC && !store.get('imr-board-sent14', 0))
+    loadBoard().then(B => {
+      if (B && !B.err && SYNC && !store.get('imr-board-sent14', 0)) {
+        store.set('imr-board-sent14', 1);
+        syncSoon();
+      }
+    });
   if (!SYNC || store.get('imr-board-told', 0)) return;
   store.set('imr-board-told', 1);
   const t = document.createElement('div');
