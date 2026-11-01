@@ -15,7 +15,7 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    ok = o => new Response(JSON.stringify({v: 12, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
+    ok = o => new Response(JSON.stringify({v: 13, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
   const PLAYERS = [
@@ -201,6 +201,7 @@
     Object.values(S.users).forEach(u => {
       by[lc(u.name)] = {
         name: u.name,
+        id: aid(u.name),
         updated: u.updated,
         learned: u.learned,
         seen: u.seen,

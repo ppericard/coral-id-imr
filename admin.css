@@ -2710,6 +2710,24 @@ td.cov-c .cov-off {
 }
 
 /* Users (Stats > Users): one row per player, click for details; Delete in the danger colour, never a default button. */
+/* Players page: every column title sorts (click again to reverse) */
+.adm-utbl .adm-usort {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.adm-utbl .adm-usort[aria-pressed='true'] {
+  color: var(--ink);
+}
+.adm-utbl .adm-urow.me td {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
 .adm-utbl .adm-urow {
   cursor: pointer;
 }
