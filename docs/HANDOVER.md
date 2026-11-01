@@ -50,7 +50,7 @@ Nothing needs rebuilding: the site is served by GitHub Pages straight from `main
 4. Network: iNaturalist hosts (listed under "External resources") for photo scripts; GitHub for PRs. Python scripts need `pillow` (`pip install pillow`) for photo work.
 
 **Hosting settings (already in place; only if the repo ever moves):**
-1. GitHub Pages: Settings > Pages > Deploy from branch `main`, folder `/` (root). `.nojekyll` is committed. A merge to `main` is live in a minute or two.
+1. GitHub Pages: Settings > Pages > Deploy from branch `main`, folder `/` (root). `.nojekyll` is committed. A merge to `main` is live in a minute or two. If the site stops updating and the "pages build and deployment" run fails with "Please cancel <sha> first" (a known GitHub Pages glitch, hit several times on 2026-11-01), re-run that `<sha>`'s run in full: see ARCHITECTURE.md > Run and deploy > Stuck Pages deploy. A red run that a later green run superseded can be ignored.
 2. Actions: `.github/workflows/checks.yml` (PR checks) and `approved-photos.yml` (after each `curation.json` push; needs Settings > Actions > Workflow permissions "Read and write").
 3. Admin writes: a fine-grained GitHub token, this repository only, Contents read and write, 90-day expiry; the admin lock screen links to the token page and stores it encrypted with a password of Pierre's choice. Changing the repo name or owner means updating `REPO` in `admin.js` and in `tools/sync/Code.gs` (the admins' token check), then redeploying the script.
 
