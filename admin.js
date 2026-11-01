@@ -23,11 +23,17 @@ const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 // keeps my value, every other key takes the published one (so choices published from another browser or device
 // are never lost). Objects merge key by key; lists and plain values are single choices. Same choice on both sides = conflict, mine wins.
 const isObj = o => o && typeof o === 'object' && !Array.isArray(o), eq = (a, b) => JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
-function merge3(base, mine, theirs){
+// conf (optional): collects the paths where both sides changed the same choice differently, so Publish can say which
+// published choices this draft replaced (the rule stays the same: mine wins).
+function merge3(base, mine, theirs, conf, path = []){
   const b = isObj(base) ? base : {}, m = isObj(mine) ? mine : {}, t = isObj(theirs) ? theirs : {}, out = {};
   new Set([...Object.keys(b), ...Object.keys(m), ...Object.keys(t)]).forEach(k => {
-    const v = eq(m[k], b[k]) ? t[k] : eq(t[k], b[k]) ? m[k] : isObj(m[k]) && isObj(t[k]) ? merge3(b[k], m[k], t[k]) : m[k];
-    if (v !== undefined && !(isObj(v) && !Object.keys(v).length && k !== 'genera')) out[k] = v; });
+    const both = isObj(m[k]) && isObj(t[k]);
+    if (conf && !both && !eq(m[k], b[k]) && !eq(t[k], b[k]) && !eq(m[k], t[k])) conf.push([...path, k]);
+    const v = eq(m[k], b[k]) ? t[k] : eq(t[k], b[k]) ? m[k] : both ? merge3(b[k], m[k], t[k], conf, [...path, k]) : m[k];
+    // A copy, never a shared object: setQ & co. edit DRAFT's maps in place, and a map shared with SAVED would change
+    // both, hiding the edit from Publish (code review 2026-11-01).
+    if (v !== undefined && !(isObj(v) && !Object.keys(v).length && k !== 'genera')) out[k] = v && typeof v === 'object' ? clone(v) : v; });
   return out;
 }
 // An old draft saved before drafts kept their base: add what it has on top of the published curation, never remove.
@@ -37,13 +43,19 @@ function mergeOld(mine, theirs){
   return out;
 }
 // Re-base the draft (and every Undo/Redo step) onto a newer published curation.
+// Returns the paths where the draft replaced a choice published from elsewhere (see merge3).
 function rebase(next){
-  const base = SAVED, f = d => merge3(base, d, next);
-  DRAFT = f(DRAFT); DRAFT.genera = DRAFT.genera || {};
+  const base = SAVED, f = d => merge3(base, d, next), conf = [];
+  DRAFT = merge3(base, DRAFT, next, conf); DRAFT.genera = DRAFT.genera || {};
   HIST = HIST.map(x => JSON.stringify(f(JSON.parse(x)))); FUT = FUT.map(x => JSON.stringify(f(JSON.parse(x))));
   SAVED = clone(next); SAVED.genera = SAVED.genera || {}; snap = JSON.stringify(DRAFT); memoReset();
   store.set('imr-curation-draft', DRAFT); store.set('imr-curation-base', SAVED);
+  return conf;
 }
+// "genera > Acropora > feat > wide" → "Acropora featured Colony"; top-level maps → "quality of acropora-…".
+const confName = p => { const V = Object.fromEntries(VIEWS), W = {feat: 'featured', cover: 'cover', hide: 'hidden photos', move: 'view moves', add: 'added photos', out: 'not this genus', lv: 'levels', ok: 'validation'};
+  return p[0] === 'genera' ? [p[1], ...p.slice(2).map(x => V[x] || W[x] || x)].filter(Boolean).join(' ') : p.length > 1 ? `${p[0]} of ${p[1]}` : p[0]; };
+const confNote = c => !c.length ? '' : ` Your choice replaced the one published from elsewhere for ${c.slice(0, 3).map(confName).join(', ')}${c.length > 3 ? ` and ${c.length - 3} more` : ''}.`;
 
 let SHOWN_COVER = null, SUG = {}, DUPS = [], FU0, PICKS = {}, PHOTOS = {}, KNOWN = new Set(), DATA, SAVED = {v: 1, genera: {}}, SHA = null, DRAFT, TOKEN = null, cur = null, AUTOQ = {}, AUTOF = {}, lastGenus = null;
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
@@ -149,7 +161,9 @@ async function unlockToken(pw){
 }
 
 /* ---------- GitHub ---------- */
-const gh = (path, opts = {}) => fetch(API + path, {...opts, headers: {Accept: 'application/vnd.github+json', Authorization: `Bearer ${TOKEN}`, ...(opts.headers || {})}})
+// cache: 'no-store': GitHub API replies say max-age=60, and a cached read would carry an old sha right after a publish
+// from another device.
+const gh = (path, opts = {}) => fetch(API + path, {cache: 'no-store', ...opts, headers: {Accept: 'application/vnd.github+json', Authorization: `Bearer ${TOKEN}`, ...(opts.headers || {})}})
   .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.message || `GitHub error ${r.status}`); return j; });
 const fromB64 = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ''))));
 const toB64 = s => btoa(unescape(encodeURIComponent(s)));
@@ -167,7 +181,7 @@ function lockScreen(msg){
   $v.innerHTML = `<section class="adm-lock">
     <h2>${has ? 'Unlock' : 'Set up this device'}</h2>
     ${has ? `<p class="lede">Enter the admin password.</p>` : `<p class="lede">Choose an admin password and paste a GitHub token that can write to <b>${REPO}</b>. The token stays in this browser, encrypted with the password. Do this once per device.</p>
-      <ol class="note adm-steps"><li>Open <a href="https://github.com/settings/personal-access-tokens/new?name=IMR%20Coral%20ID%20curation&description=Photo%20curation%20back-office&expires_in=none&contents=write" target="_blank" rel="noopener">New fine-grained token</a> (pre-filled).</li>
+      <ol class="note adm-steps"><li>Open <a href="https://github.com/settings/personal-access-tokens/new?name=IMR%20Coral%20ID%20curation&description=Photo%20curation%20back-office&expires_in=90&contents=write" target="_blank" rel="noopener">New fine-grained token</a> (pre-filled).</li>
       <li>Repository access: <b>Only select repositories</b>, then <b>coral-id-imr</b>. Permission: <b>Contents: Read and write</b>.</li><li>Generate, copy it and paste it below.</li></ol>`}
     <form id="lockf" class="adm-form">
       <label>Password <input type="password" id="pw" autocomplete="current-password" required></label>
@@ -186,11 +200,11 @@ function lockScreen(msg){
       else { if ($('pw').value !== $('pw2').value) throw new Error('The two passwords differ.'); TOKEN = $('tok').value.trim(); }
       await checkToken();
       if (!has) await lockToken($('pw').value, TOKEN);
-      store.set(SESSION, TOKEN);
+      sess.set(TOKEN);
       start();
     } catch (x) { TOKEN = null; lockScreen(x.message); }
   };
-  if (has) $('forget').onclick = () => { if (confirm('Remove the stored token from this browser?')) { store.set('imr-admin-vault', null); store.set(SESSION, null); lockScreen(); } };
+  if (has) $('forget').onclick = () => { if (confirm('Remove the stored token from this browser?')) { store.set('imr-admin-vault', null); sess.set(null); lockScreen(); } };
 }
 
 /* ---------- Photos of a genus, as the genus sheet orders them ---------- */
@@ -946,17 +960,20 @@ const author = async () => AUTHOR !== undefined ? AUTHOR : (AUTHOR = await fetch
 async function save(){
   const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(), sg = sgChanged(), cd = cdChanged(), mt = mtChanged(), cr = crChanged(), sn = snChanged(); if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn) || !TOKEN) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
+  const conf = [];
+  // Never overwrite what was published from elsewhere since this page loaded: re-read it and merge first.
+  const fresh = async () => { const f = await gh(`/contents/${FILE}?ref=${BRANCH}`).catch(e => { if (/Not Found/.test(e.message)) return null; throw e; });
+    if (f && f.sha !== SHA) { conf.push(...rebase(JSON.parse(fromB64(f.content)))); SHA = f.sha; } };
   try {
-    // Never overwrite what was published from elsewhere since this page loaded: re-read it and merge first.
-    const f = await gh(`/contents/${FILE}?ref=${BRANCH}`).catch(e => { if (/Not Found/.test(e.message)) return null; throw e; });
-    if (f && f.sha !== SHA) { rebase(JSON.parse(fromB64(f.content))); SHA = f.sha; }
-    const out = output(), text = JSON.stringify(out, null, 2) + '\n';
+    await fresh();
     const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
-    const who = await author();
-    const r = await gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg + (who ? ` (by ${who})` : ''), content: toB64(text), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})});
+    const who = await author(), stale = x => /does not match|sha|409/i.test(x.message);
+    // A publish from elsewhere between the read and the write: read again, merge, and try once more on our own.
+    const put = () => { const out = output(); return gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg + (who ? ` (by ${who})` : ''), content: toB64(JSON.stringify(out, null, 2) + '\n'), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})}).then(r => [r, out]); };
+    const [r, out] = await put().catch(async x => { if (!stale(x)) throw x; await fresh(); return put(); });
     SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); saveDraft(); store.set('imr-curation-base', SAVED);
-    toast('Published. The public site shows it within a minute or two.');
-  } catch (x) { toast(/does not match|sha/i.test(x.message) ? 'The site was published from elsewhere in the meantime: reload the page, your draft is kept.' : 'Not published (your draft is kept): ' + x.message); }
+    toast('Published. The public site shows it within a minute or two.' + confNote(conf));
+  } catch (x) { toast(/does not match|sha|409/i.test(x.message) ? 'The site was published from elsewhere at the same moment twice: reload the page, your draft is kept.' : 'Not published (your draft is kept): ' + x.message); }
   b.textContent = ''; render();
 }
 function download(){
@@ -1016,12 +1033,17 @@ async function start(){
 }
 // Without a token the page opens read-only (download the JSON) only with ?readonly, so nobody wanders in by accident.
 // Stay signed in on this browser after unlocking (survives reloads) until "Sign out".
+// The unlocked token lives in sessionStorage only (Pierre, 2026-11-01, code review H1): it survives reloads in this tab and
+// is gone when the browser closes, so the plain token never stays on disk. localStorage only holds the encrypted vault.
 const SESSION = 'imr-admin-session';
-function signOut(){ store.set(SESSION, null); TOKEN = null; location.reload(); }
+const sess = {get(){ try { return sessionStorage.getItem(SESSION); } catch (e) { return null; } },
+  set(t){ try { t ? sessionStorage.setItem(SESSION, t) : sessionStorage.removeItem(SESSION); } catch (e) {} }};
+store.set(SESSION, null);  // drop the plain copy older versions kept in localStorage
+function signOut(){ sess.set(null); TOKEN = null; location.reload(); }
 (async () => {
   if (/[?&]readonly\b/.test(location.search)) return start();
-  const t = store.get(SESSION, null);
-  if (t) { TOKEN = t; try { await checkToken(); return start(); } catch (x) { TOKEN = null; if (/credentials|cannot write|401/i.test(x.message)) store.set(SESSION, null); return lockScreen(x.message); } }
+  const t = sess.get();
+  if (t) { TOKEN = t; try { await checkToken(); return start(); } catch (x) { TOKEN = null; if (/credentials|cannot write|401/i.test(x.message)) sess.set(null); return lockScreen(x.message); } }
   lockScreen();
 })();
 
