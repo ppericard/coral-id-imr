@@ -5,7 +5,6 @@
       "cover": "imr-p15_i4",
       "feat": {
         "wide": [
-          "imrl-p8_g36",
           "imrl-p8_i7",
           "imrl-p8_g37"
         ],
@@ -274,7 +273,8 @@
         "dipsastraea-cand-746236837": "medium",
         "dipsastraea-cand-746238014": "macro",
         "dipsastraea-cand-745205496": "macro",
-        "dipsastraea-cand-606648842": "wide"
+        "dipsastraea-cand-606648842": "wide",
+        "dipsastraea-cand-488111530": "macro"
       }
     },
     "Astrea": {
@@ -296,6 +296,10 @@
         "goniastrea-cand-746237370": "macro",
         "goniastrea-cand-746237358": "macro",
         "goniastrea-cand-746236792": "wide"
+      },
+      "cover": "imr-p63_g188",
+      "move": {
+        "goniastrea-medium-746236762": "macro"
       }
     },
     "Favites": {
@@ -343,6 +347,11 @@
       "add": {
         "halomitra-cand-269460672": "wide",
         "halomitra-cand-269460824": "wide"
+      }
+    },
+    "Euphyllia": {
+      "add": {
+        "euphyllia-cand-34785125": "wide"
       }
     },
     "Fimbriaphyllia": {
@@ -506,7 +515,8 @@
     "cand:trachyphyllia-cand-39415248": 1,
     "cand:tubastraea-cand-269472065": 1,
     "cand:tubastraea-cf-10-00": 1,
-    "cand:tubipora-x-720027172": 1
+    "cand:tubipora-x-720027172": 1,
+    "rep:mvxhsphed2y4": 1
   },
   "mont": {
     "Acropora|Cyphastrea": {
@@ -552,6 +562,12 @@
       0,
       1,
       1
+    ],
+    "euphyllia-cand-34785125": [
+      0.08,
+      0.079,
+      0.776,
+      0.921
     ],
     "fimbriaphyllia-cand-586201148": [
       0.104,
