@@ -75,7 +75,7 @@
       out.streak = mine ? l.streak || 0 : r.streak || 0;
       if (mine && l.h) out.h = l.h;
       if (mine)
-        ['lv', 'run', 'L', 'th', 'ro'].forEach(k => {
+        ['lv', 'run', 'L', 'th', 'ro', 'ex', 'mx'].forEach(k => {
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
