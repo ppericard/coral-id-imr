@@ -11,6 +11,52 @@
    Input, not width, decides touch vs mouse: (hover:none),(pointer:coarse) = touch -> bigger targets, no hover-only info,
    no keyboard hints; (hover:hover) and (pointer:fine) = mouse -> hover effects, kbd hints. */
 
+/* Fonts served from this site (fonts/, latin subset of Google Fonts, SIL Open Font License), cached by the service worker:
+   no third-party round trip before the first paint, and they work offline (Pierre, 2026-11-01: fluid on poor
+   connections). Source Sans 3 is one variable file per style (400-700). */
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(fonts/source-sans-3-normal.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(fonts/source-sans-3-italic.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/barlow-condensed-600-normal.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/barlow-condensed-600-italic.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/barlow-condensed-700-normal.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/barlow-condensed-700-italic.woff2) format('woff2');
+}
+
 /* ---------- Tokens ---------- */
 :root {
   --bg: #f2f5f6;
@@ -1837,6 +1883,9 @@ body:has(.lk) main {
   height: 100%;
   object-fit: scale-down;
   display: block;
+  /* The small version (480 px, often cached already) shows in the same place until the full photo is in: something to
+     look at at once on a slow connection, and the fallback when the full photo fails (app.js data-lo). */
+  background: var(--qbg) center / contain no-repeat;
 }
 .qph .zoom {
   height: 100%;
@@ -2397,9 +2446,11 @@ footer {
 }
 .q .qstage.qvs .qph img {
   object-fit: cover;
+  background-size: cover;
 }
 .qstage .qph.cov img {
   object-fit: cover;
+  background-size: cover;
 }
 .wide {
   display: none;
@@ -2502,6 +2553,7 @@ footer {
   }
   .q .qstage.qvs .qph img {
     object-fit: scale-down;
+    background-size: contain;
   }
   .wide {
     display: revert;

@@ -1,0 +1,164 @@
+{
+ "genus": "Trachyphyllia",
+ "photos": {
+  "trachyphyllia-cand-260201207": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Free-living hourglass corallite; U chosen as closest IMR form"
+  },
+  "trachyphyllia-cand-260201043": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "alt",
+   "note": "Another angle on the same individual"
+  },
+  "trachyphyllia-cand-239232960": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "trachyphyllia-cand-500445515": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Partly cut by the left edge"
+  },
+  "trachyphyllia-cand-600484570": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Date stamp in corner"
+  },
+  "trachyphyllia-cand-467377467": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  },
+  "trachyphyllia-cand-270765109": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "trachyphyllia-cand-270765202": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "dup",
+   "note": "Darker repeat of the same framing"
+  },
+  "trachyphyllia-cand-467334912": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
+  },
+  "trachyphyllia-cand-227579541": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Pale lobed meandroid colony; Trachyphyllia plausible, Lobophyllia not ruled out"
+  },
+  "trachyphyllia-cand-270860181": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "trachyphyllia-cand-693417397": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Close part of the meandering valleys"
+  },
+  "trachyphyllia-cand-297051426": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "trachyphyllia-cand-460442366": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Side view with tentacles out at night; Trachyphyllia plausible"
+  },
+  "trachyphyllia-cand-468187522": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Dark"
+  },
+  "trachyphyllia-cand-297051516": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "trachyphyllia-cand-260323479": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "trachyphyllia-cand-468177430": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "trachyphyllia-cand-260201512": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "trachyphyllia-cand-260201747": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "dup",
+   "note": "Same framing, a little closer"
+  },
+  "trachyphyllia-cand-468565986": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Blue cast"
+  },
+  "trachyphyllia-cand-489216594": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "note": "Looks like the same individual as observation 150855950"
+  },
+  "trachyphyllia-cand-260016280": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  }
+ }
+}

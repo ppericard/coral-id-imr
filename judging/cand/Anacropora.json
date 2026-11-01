@@ -1,0 +1,36 @@
+{
+ "genus": "Anacropora",
+ "photos": {
+  "anacropora-cand-224673378": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Dark, small colony in the torch beam"
+  },
+  "anacropora-cand-227053804": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Blue cast; a hawkfish below"
+  },
+  "anacropora-cand-227053798": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Blue cast"
+  },
+  "anacropora-cand-445465004": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Dense thicket of very thin branches; could be Seriatopora"
+  }
+ }
+}

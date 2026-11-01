@@ -1,0 +1,578 @@
+{
+ "genus": "Lobophyllia",
+ "photos": {
+  "lobophyllia-cand-269727191": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-489979258": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-580521690": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Ring of bulbous tentacles around a dark centre; may be L. flabelliformis polyps out, or a corallimorph"
+  },
+  "lobophyllia-cand-580521696": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Same animal as the best, further away"
+  },
+  "lobophyllia-cand-269726945": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Orange fleshy lobes with spiky teeth around a pale centre; unusual look, check genus"
+  },
+  "lobophyllia-cand-269726816": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "dup",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Same colony as the best, slightly further"
+  },
+  "lobophyllia-cand-606685405": {
+   "view": "wide",
+   "quality": 1,
+   "form": "M",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Snorkel shot from above, small meandroid colony among other brain corals"
+  },
+  "lobophyllia-cand-609326193": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Large fleshy corallites with spiky septal teeth"
+  },
+  "lobophyllia-cand-609326117": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Hazy shallow shot of the whole colony"
+  },
+  "lobophyllia-cand-609326075": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "note": "Hand covers part of the frame but gives scale for the corallites"
+  },
+  "lobophyllia-cand-311975785": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Flat rough red fleshy disc; could be a corallimorph, not clearly Lobophyllia"
+  },
+  "lobophyllia-cand-543088288": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Wide valleys with shared grooved walls (former Symphyllia)"
+  },
+  "lobophyllia-cand-596085796": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Large dome with fine meanders; walls look grooved but could be Platygyra"
+  },
+  "lobophyllia-cand-648856299": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-27992779": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Strong blue cast"
+  },
+  "lobophyllia-cand-269727391": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Large dark dome with fine meanders; former Symphyllia or Platygyra"
+  },
+  "lobophyllia-cand-269396022": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Separate flabello-meandroid lobes with tentacles out at night"
+  },
+  "lobophyllia-cand-269473184": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-606685410": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best"
+  },
+  "lobophyllia-cand-606685393": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Hazy snorkel shot of a large dome"
+  },
+  "lobophyllia-cand-606685391": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-429956868": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Blue cast"
+  },
+  "lobophyllia-cand-746237033": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-746237038": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "lobophyllia-cand-344579083": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-46244679": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "note": "Small copyright text in a corner"
+  },
+  "lobophyllia-cand-596086007": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-596085999": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "dup"
+  },
+  "lobophyllia-cand-174425369": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-747427072": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-269474999": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-609325734": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-580521806": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-339003166": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Watermark logo in a corner"
+  },
+  "lobophyllia-cand-745206174": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "lobophyllia-cand-745206158": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "lobophyllia-cand-269731909": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-269731919": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt"
+  },
+  "lobophyllia-cand-269731791": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
+  },
+  "lobophyllia-cand-269731903": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best"
+  },
+  "lobophyllia-cand-607128147": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "genus": "Platygyra",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Narrow meandering valleys and thin walls fit Platygyra better than Lobophyllia"
+  },
+  "lobophyllia-cand-661977822": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "multi": true,
+   "note": "Hazy; small colony next to a plate coral and other corals"
+  },
+  "lobophyllia-cand-661979683": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Hazy but shows large separate fleshy corallites with teeth"
+  },
+  "lobophyllia-cand-611577633": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "note": "Partly bleached colony"
+  },
+  "lobophyllia-cand-611577634": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
+  },
+  "lobophyllia-cand-611577636": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
+  },
+  "lobophyllia-cand-611577646": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
+  },
+  "lobophyllia-cand-611577644": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
+  },
+  "lobophyllia-cand-95852584": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Blue cast"
+  },
+  "lobophyllia-cand-270766479": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Single large monocentric polyp; check against Cynarina or another lobophylliid"
+  },
+  "lobophyllia-cand-270766621": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Same polyp as the best, slightly further"
+  },
+  "lobophyllia-cand-711510095": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-260331986": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-243661752": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-611576064": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "note": "Partly bleached colony"
+  },
+  "lobophyllia-cand-611576094": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
+  },
+  "lobophyllia-cand-611576101": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt"
+  },
+  "lobophyllia-cand-611576106": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "alt"
+  },
+  "lobophyllia-cand-611576134": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "dup"
+  },
+  "lobophyllia-cand-611576068": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "lobophyllia-cand-611576079": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "alt"
+  },
+  "lobophyllia-cand-611576091": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "dup"
+  },
+  "lobophyllia-cand-270767220": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Single large monocentric polyp; check against Cynarina or another lobophylliid"
+  },
+  "lobophyllia-cand-270767086": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Same polyp, another angle"
+  },
+  "lobophyllia-cand-270767204": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Same polyp as the best"
+  },
+  "lobophyllia-cand-238282879": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Blue cast"
+  },
+  "lobophyllia-cand-611585363": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-611585366": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "dup"
+  },
+  "lobophyllia-cand-611585357": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "lobophyllia-cand-611585369": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt"
+  },
+  "lobophyllia-cand-611585384": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup"
+  },
+  "lobophyllia-cand-297051273": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-224932671": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-297051262": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-297051286": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-259409014": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-270758603": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-46596892": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-577326731": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Blue cast"
+  },
+  "lobophyllia-cand-577326735": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "lobophyllia-cand-129404321": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Strong blue cast"
+  }
+ }
+}

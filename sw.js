@@ -1,5 +1,5 @@
 // Offline cache: app shell first, then photos as they are viewed.
-const V = 'imr-coral-id-v224';
+const V = 'imr-coral-id-v225';
 // Photos live in their own cache that no deploy deletes (code review 2026-11-01, H3): bumping V used to wipe every
 // offline photo. Capped at PH_MAX entries, oldest first out (cache keys keep insertion order).
 const PH = 'imr-photos-v1',
@@ -7,15 +7,18 @@ const PH = 'imr-photos-v1',
 const SHELL = [
   './',
   'index.html',
-  'app.css?v=103',
+  'app.css?v=104',
   'core.js?v=13',
-  'app.js?v=152',
+  'app.js?v=153',
   'flag.js?v=7',
   'quality.json?v=3',
   'picks.json?v=1',
   'data.json?v=30',
   'forms.json?v=7',
   'icon.svg',
+  'fonts/source-sans-3-normal.woff2',
+  'fonts/source-sans-3-italic.woff2',
+  'fonts/barlow-condensed-700-normal.woff2',
   'manifest.webmanifest',
   'curation.json',
   'proto/lab.js?v=66',
@@ -56,7 +59,7 @@ self.addEventListener('activate', e =>
     })()
   )
 );
-const SLOW = 4000;
+const SLOW = 2000;
 let trimAt = 0;
 const trim = async c => {
   if (Date.now() - trimAt < 60000) return;
@@ -84,9 +87,25 @@ self.addEventListener('fetch', e => {
         )
       )
     );
-  // App files: revalidated with the server (versioned files have their ?v in the URL, so old and new never mix). On a slow
-  // link (field, boat) a file already cached is served after SLOW ms instead of waiting for the network, which still
-  // refreshes the cache in the background (code re-review 2026-11-01, L1).
+  // Versioned files (?v= in the URL: a new version is a new URL) and the fonts never change: cache first, no network at
+  // all once cached (Pierre, 2026-11-01: fluid on poor connections; each launch used to revalidate every file).
+  else if (u.searchParams.has('v') || u.pathname.includes('/fonts/'))
+    e.respondWith(
+      caches.match(e.request).then(
+        hit =>
+          hit ||
+          fetch(e.request).then(res => {
+            if (res.ok) {
+              const c = res.clone();
+              caches.open(V).then(x => x.put(e.request, c));
+            }
+            return res;
+          })
+      )
+    );
+  // The other app files (the page itself, curation.json, the manifest): revalidated with the server. On a slow link
+  // (field, boat) a file already cached is served after SLOW ms instead of waiting for the network, which still refreshes
+  // the cache in the background (code re-review 2026-11-01, L1).
   else {
     const net = fetch(e.request, {cache: 'no-cache'}).then(res => {
       if (res.ok) {

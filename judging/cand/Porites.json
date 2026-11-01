@@ -1,0 +1,458 @@
+{
+ "genus": "Porites",
+ "photos": {
+  "porites-cand-27992781": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Purple knobby colony; a yellow colony in front, likely Porites too."
+  },
+  "porites-cand-606690310": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus",
+    "quality"
+   ],
+   "note": "Murky reef scene, many corals; the central yellow branching colony is probably the Porites."
+  },
+  "porites-cand-112940009": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "note": "A second branching colony fills the upper right."
+  },
+  "porites-cand-269730484": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "porites-cand-269289550": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "porites-cand-269289770": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "alt"
+  },
+  "porites-cand-269474661": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "porites-cand-269474749": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "dup"
+  },
+  "porites-cand-269732181": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best"
+  },
+  "porites-cand-175093845": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Strong blue cast; lumpy dome between large plates, surface could be Goniopora polyps, corallites not visible."
+  },
+  "porites-cand-588677870": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "porites-cand-237009558": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "view"
+   ],
+   "note": "Hazy top-down lumpy pink colony; tiny corallites suggest Porites but a closer check is needed."
+  },
+  "porites-cand-745675660": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "porites-cand-745675693": {
+   "view": "medium",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "porites-cand-175097141": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best"
+  },
+  "porites-cand-578446648": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Branching colony with clownfish, genus not confirmed; a massive Porites-like mound bottom left."
+  },
+  "porites-cand-175099671": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "note": "Micro-atoll ring shape, typical of massive Porites."
+  },
+  "porites-cand-269728244": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Stacked lumpy plates; corallites not visible, Montipora is a look-alike."
+  },
+  "porites-cand-461418892": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "multi": true
+  },
+  "porites-cand-606657989": {
+   "view": "wide",
+   "quality": 1,
+   "form": "M",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Reef scene from above with many massive mounds, no single subject."
+  },
+  "porites-cand-47521614": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "porites-cand-27992828": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Pink lumpy boulder in seagrass, hazy; corallites not visible."
+  },
+  "porites-cand-500455513": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "view"
+   ],
+   "note": "Small lumpy colony with a Christmas tree worm; corallites visible."
+  },
+  "porites-cand-34710636": {
+   "view": "medium",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Honeycomb of shared walls but corallites look large next to the shrimps; Goniopora is a look-alike."
+  },
+  "porites-cand-34710747": {
+   "view": "medium",
+   "quality": 3,
+   "form": "M",
+   "keep": "alt",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Same colony as the best, closer; corallites look large for Porites."
+  },
+  "porites-cand-175110794": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best"
+  },
+  "porites-cand-269733637": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "porites-cand-606658035": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best"
+  },
+  "porites-cand-461415421": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "porites-cand-48874145": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "porites-cand-27970614": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "porites-cand-175097109": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "porites-cand-461415558": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "porites-cand-606657996": {
+   "view": "medium",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "porites-cand-703169553": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "porites-cand-703169612": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "dup"
+  },
+  "porites-cand-703169671": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "dup"
+  },
+  "porites-cand-703169675": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "dup"
+  },
+  "porites-cand-93260271": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "porites-cand-57893765": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "porites-cand-177404003": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "porites-cand-191090803": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true
+  },
+  "porites-cand-191090972": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "alt",
+   "multi": true
+  },
+  "porites-cand-605700662": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Dense fine branchlets with white tips; looks like Pocillopora (verrucae-like knobs), Porites rus label not confirmed."
+  },
+  "porites-cand-227054031": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "porites-cand-270609405": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Purple crust with knobs, Porites rus-like."
+  },
+  "porites-cand-675777920": {
+   "view": "medium",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Soft focus; corallites in odd patches, Porites rus label not confirmed."
+  },
+  "porites-cand-675777984": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Small fine branching colony on rubble; another coral may be the subject."
+  },
+  "porites-cand-575526934": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Small green crust among red sponges; corallites not visible."
+  },
+  "porites-cand-437174104": {
+   "view": "medium",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Purple lumpy surface with polyps showing as white dots."
+  },
+  "porites-cand-583535818": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "porites-cand-590132746": {
+   "view": "wide",
+   "quality": 1,
+   "form": "S",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Blurred purple knobs among other corals."
+  },
+  "porites-cand-492416780": {
+   "view": "medium",
+   "quality": 2,
+   "form": "S",
+   "keep": "best"
+  },
+  "porites-cand-675778064": {
+   "view": "medium",
+   "quality": 3,
+   "form": "S",
+   "keep": "best"
+  },
+  "porites-cand-675778159": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "porites-cand-264017115": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "porites-cand-352677216": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true
+  },
+  "porites-cand-352668615": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup",
+   "multi": true
+  },
+  "porites-cand-596905493": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "best"
+  },
+  "porites-cand-479233911": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "porites-cand-268983361": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  }
+ }
+}

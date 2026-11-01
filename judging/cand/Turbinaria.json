@@ -1,0 +1,413 @@
+{
+ "genus": "Turbinaria",
+ "photos": {
+  "turbinaria-cand-269459990": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "note": "Plate spreading over rock, smooth surface and well-spaced corallites clear"
+  },
+  "turbinaria-cand-269468430": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Old film scan, green cast; several plates"
+  },
+  "turbinaria-cand-269469175": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "turbinaria-cand-27992723": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "genus": "Diploastrea",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Massive dome with crowded raised corallites, not Turbinaria; looks like Diploastrea"
+  },
+  "turbinaria-cand-174530659": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "turbinaria-cand-269471685": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "turbinaria-cand-269471620": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "alt"
+  },
+  "turbinaria-cand-311972096": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "turbinaria-cand-311286597": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "turbinaria-cand-611606937": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Crinoid on top, soft coral at right edge"
+  },
+  "turbinaria-cand-611606940": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "alt"
+  },
+  "turbinaria-cand-611606941": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "dup"
+  },
+  "turbinaria-cand-611606953": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "dup"
+  },
+  "turbinaria-cand-611606955": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "note": "Close view of the dome, corallite pattern"
+  },
+  "turbinaria-cand-611606954": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "turbinaria-cand-194636424": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Turbid green water"
+  },
+  "turbinaria-cand-595763949": {
+   "view": "medium",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "turbinaria-cand-595763952": {
+   "view": "medium",
+   "quality": 2,
+   "form": "E",
+   "keep": "alt",
+   "note": "White octocoral polyps at top"
+  },
+  "turbinaria-cand-595763945": {
+   "view": "medium",
+   "quality": 2,
+   "form": "E",
+   "keep": "alt",
+   "multi": true,
+   "note": "Octocoral polyps cover half the frame"
+  },
+  "turbinaria-cand-437171649": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "alt"
+  },
+  "turbinaria-cand-437171645": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "turbinaria-cand-713117223": {
+   "view": "medium",
+   "quality": 2,
+   "form": "E",
+   "keep": "alt",
+   "unsure": [
+    "form"
+   ],
+   "note": "Plate edge visible top right, cluttered"
+  },
+  "turbinaria-cand-713117204": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "turbinaria-cand-713117213": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "turbinaria-cand-336569718": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "turbinaria-cand-611572444": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "turbinaria-cand-611572461": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "dup"
+  },
+  "turbinaria-cand-611572472": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "alt"
+  },
+  "turbinaria-cand-611572507": {
+   "view": "medium",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "turbinaria-cand-611572478": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "dup"
+  },
+  "turbinaria-cand-611572483": {
+   "view": "medium",
+   "quality": 3,
+   "form": "F",
+   "keep": "alt"
+  },
+  "turbinaria-cand-597647549": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "alt"
+  },
+  "turbinaria-cand-597647553": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best"
+  },
+  "turbinaria-cand-597647554": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "alt"
+  },
+  "turbinaria-cand-597647568": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "alt"
+  },
+  "turbinaria-cand-597647571": {
+   "view": "medium",
+   "quality": 3,
+   "form": "S",
+   "keep": "best"
+  },
+  "turbinaria-cand-597647573": {
+   "view": "medium",
+   "quality": 2,
+   "form": "S",
+   "keep": "alt"
+  },
+  "turbinaria-cand-597647586": {
+   "view": "medium",
+   "quality": 2,
+   "form": "S",
+   "keep": "dup"
+  },
+  "turbinaria-cand-437172016": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "turbinaria-cand-675778278": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Soft focus, green cast"
+  },
+  "turbinaria-cand-675778332": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Blue cast"
+  },
+  "turbinaria-cand-611584776": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "Small Diploastrea-like neighbour at right edge"
+  },
+  "turbinaria-cand-611584743": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "alt"
+  },
+  "turbinaria-cand-611584774": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "alt"
+  },
+  "turbinaria-cand-611584751": {
+   "view": "medium",
+   "quality": 2,
+   "form": "E",
+   "keep": "best"
+  },
+  "turbinaria-cand-611584763": {
+   "view": "medium",
+   "quality": 2,
+   "form": "E",
+   "keep": "alt"
+  },
+  "turbinaria-cand-577593176": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Small subject, colour cast"
+  },
+  "turbinaria-cand-598194703": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best"
+  },
+  "turbinaria-cand-598194702": {
+   "view": "medium",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "turbinaria-cand-409781688": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "note": "Divers far in background"
+  },
+  "turbinaria-cand-595764608": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "Strong green cast"
+  },
+  "turbinaria-cand-595764602": {
+   "view": "medium",
+   "quality": 1,
+   "form": "x",
+   "keep": "best",
+   "note": "Blurred, strong green cast"
+  },
+  "turbinaria-cand-609166877": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Dark, blue cast"
+  },
+  "turbinaria-cand-611590558": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "turbinaria-cand-611590560": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "alt",
+   "multi": true,
+   "note": "Massive Porites-like colony takes the left half"
+  },
+  "turbinaria-cand-611590564": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "dup",
+   "multi": true
+  },
+  "turbinaria-cand-611590580": {
+   "view": "medium",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "turbinaria-cand-591979716": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Dark background, flash"
+  },
+  "turbinaria-cand-598202252": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Blue cast"
+  },
+  "turbinaria-cand-598202249": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "turbinaria-cand-598202251": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "alt"
+  },
+  "turbinaria-cand-598202263": {
+   "view": "wide",
+   "quality": 1,
+   "form": "F",
+   "keep": "alt",
+   "note": "Blurred"
+  },
+  "turbinaria-cand-545720018": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  }
+ }
+}

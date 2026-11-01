@@ -1,0 +1,100 @@
+{
+ "genus": "Gardineroseris",
+ "photos": {
+  "gardineroseris-cand-270769674": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "note": "Scalloped surface on broad plates"
+  },
+  "gardineroseris-cand-270769701": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "dup"
+  },
+  "gardineroseris-cand-566696910": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Sharp-edged excavated pits; watermark text"
+  },
+  "gardineroseris-cand-566696924": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Watermark text"
+  },
+  "gardineroseris-cand-566696925": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "alt",
+   "note": "Wider surface patch with colour change; watermark text"
+  },
+  "gardineroseris-cand-324354289": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Flat polygonal corallites with thin walls, not clearly excavated pits"
+  },
+  "gardineroseris-cand-693257026": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Watermark text at the bottom"
+  },
+  "gardineroseris-cand-455587183": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "multi": true,
+   "note": "Partly dead fragment on sand; another coral attached at the right"
+  },
+  "gardineroseris-cand-270769047": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "gardineroseris-cand-270582541": {
+   "view": "wide",
+   "quality": 1,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Dark; plates without visible scalloped pits; may be another agariciid"
+  },
+  "gardineroseris-cand-270764559": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Partly bleached; other massive corals on top"
+  },
+  "gardineroseris-cand-260011702": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Dark around the lit dome"
+  },
+  "gardineroseris-cand-270767778": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  }
+ }
+}

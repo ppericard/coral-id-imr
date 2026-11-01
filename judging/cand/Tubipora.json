@@ -1,0 +1,74 @@
+{
+ "genus": "Tubipora",
+ "photos": {
+  "tubipora-cand-576360392": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "tubipora-cand-195919503": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "tubipora-cand-195919262": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "tubipora-cand-303711251": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Loose fragment of red tube skeleton on sand, no living tissue: shows the organ-pipe skeleton."
+  },
+  "tubipora-cand-566701141": {
+   "view": "medium",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "tubipora-cand-337135104": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Turf-covered mound, polyps not visible; genus cannot be confirmed from this photo."
+  },
+  "tubipora-cand-262128690": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "tubipora-cand-250813633": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Short white clubbed tentacles; could be another soft coral such as Clavularia."
+  },
+  "tubipora-cand-262128554": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "tubipora-cand-584775363": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  }
+ }
+}

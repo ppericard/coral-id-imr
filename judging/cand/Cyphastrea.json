@@ -1,0 +1,210 @@
+{
+ "genus": "Cyphastrea",
+ "photos": {
+  "cyphastrea-cand-606648846": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "form"
+   ],
+   "note": "Lobed colony; a large plate coral fills the right third."
+  },
+  "cyphastrea-cand-269733591": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "cyphastrea-cand-270771703": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "cyphastrea-cand-270771960": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup",
+   "note": "Darker repeat of the best."
+  },
+  "cyphastrea-cand-725113802": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best"
+  },
+  "cyphastrea-cand-725113780": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "cyphastrea-cand-629092635": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Blurred red object in the foreground."
+  },
+  "cyphastrea-cand-357894381": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "alt",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Branching coral fills the top; red corallites are unusual for Cyphastrea."
+  },
+  "cyphastrea-cand-357894372": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Blue cast; red cone corallites, Cyphastrea not certain."
+  },
+  "cyphastrea-cand-605674065": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Soft; a seagrass blade crosses the colony."
+  },
+  "cyphastrea-cand-460472600": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "Green cast; another coral at lower left."
+  },
+  "cyphastrea-cand-460472574": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Green cast."
+  },
+  "cyphastrea-cand-227054309": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Dim, green cast."
+  },
+  "cyphastrea-cand-566693045": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "cyphastrea-cand-756299813": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Small colony among seagrass blades."
+  },
+  "cyphastrea-cand-110608799": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "cyphastrea-cand-270588956": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Dark; crinoids on top."
+  },
+  "cyphastrea-cand-566687376": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "cyphastrea-cand-357894517": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "multi": true,
+   "note": "Several corals in frame around the colony."
+  },
+  "cyphastrea-cand-357894527": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "cyphastrea-cand-262126543": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Lumpy colony, could read as submassive."
+  },
+  "cyphastrea-cand-566693050": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "cyphastrea-cand-357894433": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Soft."
+  },
+  "cyphastrea-cand-260323772": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "cyphastrea-cand-260362796": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Lobed crust filling the frame."
+  },
+  "cyphastrea-cand-260381528": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "cyphastrea-cand-260200746": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "Partly buried in sediment."
+  }
+ }
+}

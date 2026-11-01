@@ -1,0 +1,240 @@
+{
+ "genus": "Pectinia",
+ "photos": {
+  "pectinia-cand-270772123": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "pectinia-cand-698277041": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Low meandering walls on a spreading base; encrusting or plating."
+  },
+  "pectinia-cand-698277042": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "alt",
+   "unsure": [
+    "form"
+   ],
+   "note": "Closer view with a ruler and a gloved hand at the edge."
+  },
+  "pectinia-cand-246804781": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "pectinia-cand-260042846": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "pectinia-cand-246518745": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "pectinia-cand-175031475": {
+   "view": "wide",
+   "quality": 1,
+   "form": "F",
+   "keep": "best",
+   "note": "Tiny colony beside a nudibranch, with a drawn arrow on the photo."
+  },
+  "pectinia-cand-224931351": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Round young colony with radial ridges and green valleys; young Pectinia likely, Mycedium not excluded."
+  },
+  "pectinia-cand-467331307": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "pectinia-cand-467331467": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "pectinia-cand-260331576": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "pectinia-cand-246910184": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Round young colony with radial ridges; a separate plate coral at the left edge."
+  },
+  "pectinia-cand-710949982": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Round young colony of radial ridges, form hard to fit."
+  },
+  "pectinia-cand-710949998": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "alt",
+   "unsure": [
+    "form"
+   ],
+   "note": "Seen from above."
+  },
+  "pectinia-cand-710949991": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "dup",
+   "unsure": [
+    "form"
+   ],
+   "note": "Same framing as the best, a finger at the edge."
+  },
+  "pectinia-cand-600476152": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Small flower-like corallum with one central mouth and broad lobes, green cast; genus unclear."
+  },
+  "pectinia-cand-600476160": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Centre of the same corallum, soft and green; genus unclear."
+  },
+  "pectinia-cand-39410068": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "pectinia-cand-39410124": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "pectinia-cand-181047871": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Dome of meandering walls; plating or massive."
+  },
+  "pectinia-cand-660522056": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Bleached finger-like upright branches among other corals; does not show Pectinia valleys clearly."
+  },
+  "pectinia-cand-260171969": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "pectinia-cand-574250815": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Upright spires with fine septo-costae; Pectinia spires likely, Hydnophora a look-alike."
+  },
+  "pectinia-cand-574250811": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "form"
+   ],
+   "note": "Close view of the spires, soft focus."
+  },
+  "pectinia-cand-592095008": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "pectinia-cand-710829309": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Round young colony of radial ridges."
+  },
+  "pectinia-cand-710829282": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "dup",
+   "unsure": [
+    "form"
+   ],
+   "note": "Same colony with a ruler in frame."
+  },
+  "pectinia-cand-310980908": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  }
+ }
+}
