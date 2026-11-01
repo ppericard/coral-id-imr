@@ -70,6 +70,9 @@
           "lithophyllon-macro-746237703",
           "lithophyllon-cf-64-g01"
         ]
+      },
+      "move": {
+        "lithophyllon-medium-746236878": "macro"
       }
     },
     "Heliofungia": {
@@ -106,7 +109,10 @@
     "imr-p12_i8": "S",
     "imr-p12_i9": "S",
     "imr-p16_i6": "S",
-    "imrl-p8_i9": "x"
+    "imrl-p8_i9": "x",
+    "lithophyllon-macro-746236865": "U",
+    "lithophyllon-macro-746237703": "U",
+    "lithophyllon-medium-746236878": "U"
   },
   "exclude": {
     "ctenactis-cand-269392275": "excluded",
