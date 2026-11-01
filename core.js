@@ -595,7 +595,7 @@
   // Learning milestones only, never time or days played (the learning model's rule). Each has a family, a tier
   // (1 bronze, 2 silver, 3 gold) and a test on a snapshot the app builds (app.js achSnap):
   //   {total, met, q: [genera at >= 25%, >= 50%, >= 75%], learned, pct, streak (best run of right answers), duel, cor,
-  //    hard, elo (0 until 50 answers: it moves a lot before), group (an IMR lecture group fully learned), bonus}.
+  //    hard, elo (0 until 200 answers, app.js ELO_MIN: it moves a lot before), group (an IMR lecture group fully learned), bonus}.
   // Median questions to reach the quarter rungs, simulated with the real game (2026-11-01, 75% / 90% right): 5 at 25%
   // 76 / 57, 10 at 50% 231 / 137, 5 at 75% 363 / 203, first learned ~430 / ~300.
   const ACH = [

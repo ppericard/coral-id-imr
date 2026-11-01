@@ -1919,7 +1919,7 @@ function badge() {
     G = P[LEVEL];
   return `<div class="pbadge"><span class="pbav" aria-hidden="true">${name ? esc(name.trim()[0].toUpperCase()) : '🪸'}</span>
     <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
-    <a id="pbrank" href="#board">🏆 ${name ? '' : 'Leaderboard · '}Elo ${eloScore(G && typeof G.th === 'number' ? G.th : 0)}</a>
+    <a id="pbrank" href="#board">🏆 ${name ? '' : 'Leaderboard · '}${eloLine(G)}</a>
     <a href="#ach">🏅 <b>${got.length}</b>/${ACH.length} ${got
       .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
       .slice(0, 3)
@@ -2071,7 +2071,7 @@ function quizBoard() {
   loadBoard().then(B => {
     const a = document.getElementById('pbrank'),
       i = B && B.rows ? boardMe(B.rows) : -1;
-    if (a && i >= 0) a.innerHTML = `🏆 <b>#${i + 1}</b> · Elo ${eloScore(B.rows[i][2])}`;
+    if (a && i >= 0) a.innerHTML = `🏆 <b>#${i + 1}</b> · ${B.rows[i][2] == null ? eloLine(P[LEVEL]) : `Elo ${eloScore(B.rows[i][2])}`}`;
   });
   // Phones: the Photos/Slate/Groups switch sits above the board and stays pinned while the page scrolls (Pierre, 2026-10-31).
   if (matchMedia(MQ.phone).matches) {
@@ -2977,7 +2977,7 @@ function sectionOf(h) {
   if (h.startsWith('lab')) return 'lab';
   if (h === 'progress' || h === 'quiz-board') return 'progress';
   if (h === 'board') return 'board';
-  if (h === 'ach') return 'progress';
+  if (h === 'ach') return 'board';
   const m = modeOf(h);
   return Object.keys(MODES).find(t => MODES[t].some(x => x[0] === m)) || 'learn';
 }
@@ -3045,6 +3045,13 @@ const boardT = b => (b && typeof b === 'object' ? b.t || 0 : 0);
 // Elo score shown to players: the ability (0 = able to name an average photo, same scale as photo difficulty) as a
 // familiar number around 1000; +1 ability = +200.
 const eloScore = a => (typeof a === 'number' ? Math.round(1000 + 200 * a) : '–');
+// The Elo shows only from ELO_MIN answers (Pierre, 2026-11-01: "even 50 is not enough to settle the score"); before, the
+// badge says how many answers are left. Same threshold as the sheet's leaderboard (Code.gs ELO_MIN).
+const ELO_MIN = 200;
+const eloLine = G => {
+  const n = G ? (G.ok || 0) + (G.ko || 0) : 0;
+  return n >= ELO_MIN && typeof G.th === 'number' ? `Elo ${eloScore(G.th)}` : `<small>Elo in ${ELO_MIN - n} answers</small>`;
+};
 let boardAt = 0,
   boardP = null;
 const loadBoard = () => {
@@ -3060,8 +3067,8 @@ const loadBoard = () => {
 const boardMe = rows => (SYNC && SYNC.name ? rows.findIndex(r => String(r[0]).toLowerCase() === SYNC.name.trim().toLowerCase()) : -1);
 function viewBoard() {
   // The title sits inside .board: pageHelp drops top-level titles where the header names the page, and here it doesn't.
-  $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. To leave the leaderboard, ⚙ Settings, Leaderboard: Off.</p>
-  <div class="board"><h2 class="btitle">🏆 Leaderboard</h2><div id="board"><p class="note">Loading…</p></div></div>`;
+  $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. The Elo shows from ${ELO_MIN} answers: before that it moves too much to mean anything. To leave the leaderboard, ⚙ Settings, Leaderboard: Off.</p>
+  <div class="board">${boardTabs('board')}<div id="board"><p class="note">Loading…</p></div></div>`;
   loadBoard().then(B => {
     const box = document.getElementById('board');
     if (!box || hashNow() !== 'board') return;
@@ -3083,7 +3090,7 @@ function viewBoard() {
         ? `<ol class="blist">${B.rows
             .map(
               (r, i) =>
-                `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span><span class="belo" title="Elo: level from all answers">Elo ${eloScore(r[2])}</span></li>`
+                `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span><span class="belo" title="${r[2] == null ? `Elo shows from ${ELO_MIN} answers` : 'Elo: level from all answers'}">${r[2] == null ? '' : `Elo ${eloScore(r[2])}`}</span></li>`
             )
             .join('')}</ol>`
         : '<p class="note">Nobody yet: be the first.</p>');
@@ -3127,8 +3134,8 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     duel: L.some(n => (P[n] || {}).du),
     cor: !!A._cor,
     hard: !!A._hard,
-    // The Elo moves a lot over the first answers (it starts fast on purpose): its achievements wait for 50 answers.
-    elo: G && typeof G.th === 'number' && (G.ok || 0) + (G.ko || 0) >= 50 ? eloScore(G.th) : 0,
+    // The Elo moves a lot over the first answers (it starts fast on purpose): its achievements wait for ELO_MIN answers.
+    elo: G && typeof G.th === 'number' && (G.ok || 0) + (G.ko || 0) >= ELO_MIN ? eloScore(G.th) : 0,
     group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lvStep(n) >= 5)),
     bonus: bonusOpen().length
   };
@@ -3203,15 +3210,49 @@ function achRecap(ids) {
   });
 }
 // #ach: every achievement, earned ones first with their date, the others greyed with what earns them.
+// The 🏆 page has two tabs, as on Steam (Pierre, 2026-11-01): Leaderboard (#board) and Achievements (#ach).
+const boardTabs = cur =>
+  `<nav class="btabs" aria-label="Leaderboard and achievements">${[
+    ['board', '🏆 Leaderboard'],
+    ['ach', `🏅 Achievements`]
+  ]
+    .map(([h, t]) => `<a href="#${h}"${h === cur ? ' aria-current="page"' : ''}>${t}</a>`)
+    .join('')}</nav>`;
+// How many signed-in players hold each achievement (sheet v15, GET ?achs=1: {n, counts}), 5 minutes in memory.
+let achsAt = 0,
+  achsP = null;
+const loadAchs = () => {
+  if (!achsP || Date.now() - achsAt > 300000) {
+    achsAt = Date.now();
+    achsP = fetch(SYNC_URL + '?achs=1')
+      .then(r => r.json())
+      .then(j => (j && j.ok && j.counts ? j : null))
+      .catch(() => null);
+  }
+  return achsP;
+};
+// Earned first, newest first; then the others, the most often earned first (the next within reach); each with the share
+// of players holding it, as on Steam.
 function viewAch() {
-  const A = store.get(ACHK, {}) || {},
-    got = ACH.filter(a => A[a.id]).sort((x, y) => A[y.id] - A[x.id]),
-    left = ACH.filter(a => !A[a.id]);
-  const card = (a, on) =>
-    `<li class="achc${on ? ' on' : ''} t${a.tier}"><span class="achic" aria-hidden="true">${a.icon}</span><span><b>${esc(a.title)} ${on ? TIER[a.tier] : ''}</b><small>${esc(a.desc)}${on ? ` · ${new Date(A[a.id]).toLocaleDateString([], {day: 'numeric', month: 'short'})}` : ''}</small></span></li>`;
-  $v.innerHTML = `<p class="lede">Achievements mark milestones of your learning: genera met, a quarter, half, three quarters of the way to learned, learned, your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo. Never time spent.</p>
-  <div class="board"><h2 class="btitle">🏅 Achievements <small>${got.length}/${ACH.length}</small></h2>
+  const A = store.get(ACHK, {}) || {};
+  const draw = S => {
+    const pc = a => (S && S.n ? (100 * (S.counts[a.id] || 0)) / S.n : null),
+      got = ACH.filter(a => A[a.id]).sort((x, y) => A[y.id] - A[x.id]),
+      left = ACH.filter(a => !A[a.id]).sort((x, y) => (pc(y) || 0) - (pc(x) || 0));
+    const share = a => {
+      const p = pc(a);
+      return p == null ? '' : `<span class="achp">${p < 1 && p > 0 ? '<1' : Math.round(p)}% of players</span>`;
+    };
+    const card = (a, on) =>
+      `<li class="achc${on ? ' on' : ''} t${a.tier}"><span class="achic" aria-hidden="true">${a.icon}</span><span><b>${esc(a.title)} ${on ? TIER[a.tier] : ''}</b><small>${esc(a.desc)}${on ? ` · ${new Date(A[a.id]).toLocaleDateString([], {day: 'numeric', month: 'short'})}` : ''}</small>${share(a)}</span></li>`;
+    $v.innerHTML = `<p class="lede">Achievements mark milestones of your learning: genera met, a quarter, half, three quarters of the way to learned, learned, your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo (from ${ELO_MIN} answers). Never time spent. The share of players counts everyone who signed in.</p>
+  <div class="board">${boardTabs('ach')}<h2 class="btitle">${got.length}/${ACH.length} earned</h2>
   <ul class="achl">${got.map(a => card(a, true)).join('')}${left.map(a => card(a, false)).join('')}</ul></div>`;
+  };
+  draw(null);
+  loadAchs().then(S => {
+    if (S && hashNow() === 'ach') draw(S);
+  });
 }
 // Told once, when the leaderboard arrives, to players already signed in: their name now shows there.
 function boardNotice() {
