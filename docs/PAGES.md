@@ -108,6 +108,8 @@ specific run (not unrelated Checks or Candidate photos):
 gh api --method POST "repos/$REPO/actions/runs/$RUN_ID/force-cancel"
 ```
 
+**No terminal?** Actions > **Cancel stuck Pages deployment** (`pages-cancel.yml`) > Run workflow, paste the SHA from the error, then run **Deploy Pages**. It makes the same cancel call with the workflow's own token.
+
 **If the run is already completed, or a new deploy still says “due to in progress
 deployment. Please cancel <sha> first”, cancel the Pages deployment itself.**
 A completed run cannot be fixed by cancelling the Actions run again. Read the

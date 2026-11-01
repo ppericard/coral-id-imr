@@ -1,0 +1,26 @@
+name: Cancel stuck Pages deployment
+# Manual button for the GitHub Pages backend lock: a deploy fails with
+# "due to in progress deployment. Please cancel <sha> first". Paste that <sha>,
+# run this, then run "Deploy Pages" (pages.yml). See docs/PAGES.md > Manual recovery.
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Full commit SHA named in the "Please cancel <sha> first" error'
+        required: true
+permissions:
+  pages: write
+jobs:
+  cancel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Cancel the Pages deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ inputs.sha }}
+        run: |
+          case "$SHA" in *[!0-9a-f]*|'') echo '::error::sha must be a hex commit SHA'; exit 1;; esac
+          gh api "repos/$GITHUB_REPOSITORY/pages/deployments/$SHA" || true
+          gh api --method POST "repos/$GITHUB_REPOSITORY/pages/deployments/$SHA/cancel"
+          gh api "repos/$GITHUB_REPOSITORY/pages/deployments/$SHA" || true
