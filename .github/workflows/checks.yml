@@ -46,3 +46,5 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Page smoke test (main routes and admin, 390 and 1280 px, fails on any page error)
         run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/pages.smoke.js
+      - name: Question draw test (photoSet and distractors on the real data, every genus, 4 player levels)
+        run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/draw.smoke.js
