@@ -5,7 +5,7 @@ const V = 'imr-coral-id-v167';
 const PH = 'imr-photos-v1', PH_MAX = 2500;
 const SHELL = ['./', 'index.html', 'app.css?v=76', 'app.js?v=113', 'flag.js?v=4', 'quality.json?v=3', 'data.json?v=25', 'forms.json?v=7', 'icon.svg', 'manifest.webmanifest', 'proto/lab.js?v=53', 'proto/lab.css?v=40', 'home-art.js?v=3', 'home.js?v=22', 'home.css?v=19', 'tour.js?v=5',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
-  ...['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'].map(f => `proto/${f}.js?v=52`)];
+  ...['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'].map(f => `proto/${f}.js?v=53`)];
 self.addEventListener('install', e => e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));
 // Activate: photos still in an old shell cache move to the photo cache first, then the old shell caches go.
 self.addEventListener('activate', e => e.waitUntil((async () => {
