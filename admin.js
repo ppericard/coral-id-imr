@@ -14,10 +14,12 @@ const VIEWS = [
     ['macro', 'Corallites']
   ],
   FEAT = 3,
-  SHEET = 6,
-  // Cap per genus x view (Pierre, 2026-11-01: "10 good representative photos per genus x zoom would already be great"):
-  // a view with CELL_MAX colonies in the games is full (Candidates swiper, Game coverage; see cellFull).
-  CELL_MAX = 10;
+  SHEET = 6;
+// Cap per genus x view: a view with CELL_MAX colonies in the games is full (Candidates swiper, Game coverage; see
+// cellFull). 10 at first (Pierre, 2026-11-01), then 20 the same day (Pierre: "the goal is to learn the genus, not the
+// photos: the fewer photos, the more risk of learning the photos"; a player at 75% sees ~7 colonies of a genus before
+// its 95%, and its mastery exam wants 5 photos never seen). A let only so the admin test can lower it.
+let CELL_MAX = 20;
 const $v = document.getElementById('view'),
   $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);

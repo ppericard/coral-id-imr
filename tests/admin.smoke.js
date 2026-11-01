@@ -122,6 +122,9 @@ const server = http.createServer((req, res) => {
     // Cap per genus x view: candidates of full cells are left out of the queue; adding one asks which colony it replaces,
     // that colony's photos become sheet only, the candidate is added, and one Undo takes both back.
     const cap = await p.evaluate(() => {
+      // The real data has full cells at 10 colonies (the cap was 10 first): lowered here so the test has some.
+      CELL_MAX = 10;
+      render();
       const cur = document.querySelector('.adm-sw[data-f]'),
         Q = candQueue(CSRC),
         x = candQueue('all').find(y => y.full);
