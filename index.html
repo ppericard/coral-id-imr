@@ -11,12 +11,12 @@
 <meta name="theme-color" content="#0d6f7d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
-<link rel="stylesheet" href="app.css?v=68">
+<link rel="stylesheet" href="app.css?v=69">
 <link rel="stylesheet" href="proto/lab.css?v=40">
 <link rel="stylesheet" href="home.css?v=19">
 </head>
 <body>
-<script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t;var p=localStorage.getItem("imr-coral-palette");if(p)document.documentElement.dataset.palette=p}catch(e){}</script>
+<script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t;document.documentElement.dataset.palette=localStorage.getItem("imr-coral-palette")||"depth"}catch(e){document.documentElement.dataset.palette="depth"}</script>
 <div class="wrap">
   <header>
     <h1 class="brand"><a class="home" href="#home"><img src="icon.svg" alt="" width="30" height="30"><span>IMR Coral ID</span></a></h1>
@@ -49,7 +49,7 @@
   <footer><p>Website and interface by Pierre Pericard. Sources: IMR Lecture 6 · Coral Finder 2022 (R. Kelley, BYOGUIDES) · iNaturalist photos, credited on each photo. For training at IMR.</p></footer>
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
-<script src="app.js?v=102"></script>
+<script src="app.js?v=103"></script>
 <script src="flag.js?v=4"></script>
 <script src="proto/lab.js?v=52"></script>
 <script src="home-art.js?v=3"></script>
