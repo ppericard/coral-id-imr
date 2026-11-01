@@ -22,8 +22,12 @@ const store = {
 const VIEWS = [['wide', 'Colony'], ['medium', 'Closer'], ['macro', 'Corallites']];
 // A candidate just added in the admin (r: 1) shows from iNaturalist until tools/fetch_approved.py has downloaded it.
 const inat = (p, sz) => p.src.replace('/original.', `/${sz}.`);
-const img = (p, size) => p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : `img/${p.f}${size === 's' ? '-s' : ''}.webp`;
-const srcset = p => p.r && p.src ? `${inat(p, 'medium')} 500w, ${inat(p, 'large')} 1024w` : `img/${p.f}-s.webp 480w, img/${p.f}.webp 1600w`;
+// A recropped photo keeps its file name, so its URL carries the crop (cr) and rewrite count (iv): without it the
+// service worker (photos cache-first) and the browser kept the old file for some sizes (-s 480 px vs 1600 px).
+const ver = p => p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '';
+const loc = (p, s) => `img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
+const img = (p, size) => p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size === 's');
+const srcset = p => p.r && p.src ? `${inat(p, 'medium')} 500w, ${inat(p, 'large')} 1024w` : `${loc(p, 1)} 480w, ${loc(p)} 1600w`;
 // Small source label on a game photo (Pierre, 2026-11-01: "sources en petit et cliquable sur chaque photo").
 // One shared component for every game. Shown only once the answer is out: an iNat link names the taxon and an IMR
 // slide number points to a genus. iNat photos (Pierre's and other observers') link to the observation; IMR lecture
@@ -1141,6 +1145,10 @@ function isDark(){ return document.documentElement.dataset.theme === 'dark'; }
 function showTheme(){ const d = isDark(); $theme.textContent = d ? '☀' : '☾'; $theme.setAttribute('aria-label', d ? 'Switch to light theme' : 'Switch to dark theme'); }
 $theme.onclick = () => { const t = isDark() ? 'light' : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.setItem('imr-coral-theme', t); } catch (e) {} showTheme(); };
 showTheme();
+// Colour theme: retints the accent, background and learning-level scale site-wide (CSS :root[data-palette]); Lagoon = default.
+function showPal(){ const p = document.documentElement.dataset.palette || 'lagoon'; document.querySelectorAll('#palette button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pal === p))); }
+document.querySelectorAll('#palette button').forEach(b => b.onclick = () => { const p = b.dataset.pal; if (p === 'lagoon') delete document.documentElement.dataset.palette; else document.documentElement.dataset.palette = p; try { localStorage.setItem('imr-coral-palette', p); } catch (e) {} showPal(); });
+showPal();
 
 // Tools of the Learn, Practice and Identify sections (the learning path order): a tab bar in the sticky header, so they stay in view.
 // Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).

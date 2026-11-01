@@ -13,7 +13,9 @@ const store = {
   set(k, v){ try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 };
 // Candidates not downloaded yet (r: 1) show straight from iNaturalist; tools/fetch_approved.py downloads the ones added.
-const img = (p, s) => p.r && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : `img/${p.f}${s ? '-s' : ''}.webp`;
+// A recropped photo keeps its file name: its URL carries the crop (cr) and rewrite count (iv) so no cache serves the old file.
+const ver = p => p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '';
+const img = (p, s) => p.r && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : `img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 
@@ -30,11 +32,11 @@ let draftAt = null;
 // No button ever clears several choices at once: Undo (or Ctrl+Z) steps back one click at a time, within this visit.
 // Redo (or Ctrl+Shift+Z / Ctrl+Y) steps forward again; a new click clears the redo steps.
 let HIST = [], FUT = [], snap = null;
-function saveDraft(){ if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); FUT = []; snap = JSON.stringify(DRAFT); draftLost = !store.set('imr-curation-draft', DRAFT); draftAt = new Date(); }
+function saveDraft(){ memoReset(); if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); FUT = []; snap = JSON.stringify(DRAFT); draftLost = !store.set('imr-curation-draft', DRAFT); draftAt = new Date(); }
 let draftLost = false;
 function step(from, to, msg){
   if (!from.length) return toast(msg[0]);
-  to.push(snap); snap = from.pop(); DRAFT = JSON.parse(snap); store.set('imr-curation-draft', DRAFT); draftAt = new Date(); render(); toast(msg[1]);
+  to.push(snap); snap = from.pop(); DRAFT = JSON.parse(snap); memoReset(); store.set('imr-curation-draft', DRAFT); draftAt = new Date(); render(); toast(msg[1]);
 }
 const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']), redo = () => step(FUT, HIST, ['Nothing to redo.', 'Redone.']);
 const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
@@ -165,8 +167,13 @@ function lockScreen(msg){
 }
 
 /* ---------- Photos of a genus, as the genus sheet orders them ---------- */
+// own/photos/cands of one genus each walk every genus, and the Candidates queue and Coverage need them for every genus:
+// computed once per draft state (cleared by every edit, undo/redo and render), callers get a copy of the list.
+let MEMO = {};
+const memoReset = () => { MEMO = {}; };
+const memo = (k, fn) => n => { const key = k + '|' + n; if (!(key in MEMO)) MEMO[key] = fn(n); return MEMO[key].slice(); };
 // Photos data.json gives the genus (plus approved candidates), before any "Not this genus".
-function own(n){
+const own = memo('own', n => {
   const g = DATA.gen[n], two = g.levels === 2, L = [];
   VIEWS.forEach(([v]) => { (g.views[v] || []).forEach(p => L.push({...p, base: v})); ((g.more || {})[v] || []).forEach(p => L.push({...p, base: v, multi: true, extra: true})); });
   (DATA.course[n] || []).forEach(p => L.push({...p, base: p.v === 'medium' && two ? 'macro' : p.v}));
@@ -175,21 +182,21 @@ function own(n){
   const add = entry(n).add || {};
   cands(n).filter(p => add[p.f]).forEach(p => L.push({...p, base: add[p.f], cand: true}));
   return L;
-}
+});
 // "Not this genus" (curation out: {f: 'cmp' | other genus}): the photo leaves the genus; given to another genus,
 // it joins that genus in the same view (tagged with where it came from); 'cmp' keeps it for the Look-alikes section.
 const outs = n => entry(n).out || {};
-function photos(n){
+const photos = memo('photos', n => {
   const L = own(n).filter(p => !outs(n)[p.f]);
   Object.keys(DATA.gen).filter(m => m !== n).forEach(m => own(m).filter(p => outs(m)[p.f] === n).forEach(p => L.push({...p, from: m})));
   return L;
-}
+});
 const outOf = n => [...own(n).filter(p => outs(n)[p.f]), ...rawCands(n).filter(p => outs(n)[p.f] && !(entry(n).add || {})[p.f])];
 // New candidate photos from data.json cand, not used by the site until approved here.
 // Coral Finder book photos (data: gen[].book) are candidates too; once added they show on the site but never in games.
 const rawCands = n => [...((DATA.cand || {})[n] || []), ...(DATA.gen[n].book || [])].filter(p => !excl(p.f));
 // A candidate sent to another genus ("Not this") becomes a candidate there, tagged with where it came from.
-const cands = n => [...rawCands(n).filter(p => !outs(n)[p.f]), ...Object.keys(DATA.gen).filter(m => m !== n).flatMap(m => rawCands(m).filter(p => outs(m)[p.f] === n).map(p => ({...p, from: m})))];
+const cands = memo('cands', n => [...rawCands(n).filter(p => !outs(n)[p.f]), ...Object.keys(DATA.gen).filter(m => m !== n).flatMap(m => rawCands(m).filter(p => outs(m)[p.f] === n).map(p => ({...p, from: m})))]);
 // Same order as the Show source chips (ORIGINS), CF book last.
 const oIdx = p => ORIGINS.findIndex(o => o[0] === origin(p));
 const pending = n => { const add = entry(n).add || {}; return cands(n).filter(p => !add[p.f]).sort((a, b) => oIdx(a) - oIdx(b)); };
@@ -255,7 +262,7 @@ const srcTag = p => { const o = origin(p); return `<span class="adm-src o-${o}">
 
 /* ---------- Edits ---------- */
 function edit(n, fn){
-  const k = clone(entry(n)); fn(k);
+  memoReset(); const k = clone(entry(n)); fn(k);
   ['feat', 'move', 'add', 'out'].forEach(x => { if (k[x] && !Object.keys(k[x]).length) delete k[x]; });
   if (k.hide && !k.hide.length) delete k.hide;
   if (Object.keys(k).length) DRAFT.genera[n] = k; else delete DRAFT.genera[n];
@@ -339,16 +346,16 @@ function status(){
 // Which header tab the page belongs to: the Stats tab holds players, photos, the photo list and coverage.
 const modeKey = () => cur.startsWith('~stats') || cur === '~diff' || cur === '~cov' ? 'stats' : ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
 function render(){
+  memoReset();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
   if (cur === '~quality') return renderQuality();
   if (cur === '~form') return renderForm();
   if (cur === '~excluded') return renderExcluded();
   if (cur === '~triage') return renderTriage();
-  if (cur === '~diff') { renderDiff(); return withSwitch(); }
-  if (cur.startsWith('~stats')) return renderStats();
+  // Every Stats sub-view keeps the Stats sub-menu on top, whichever function draws it (Pierre, 2026-11-01).
+  if (modeKey() === 'stats') { if (cur === '~diff') renderDiff(); else if (cur === '~cov') renderCov(); else renderStats(); return withSwitch(); }
   if (cur === '~mont') return renderMont();
   if (cur === '~cand') return renderCand();
-  if (cur === '~cov') { renderCov(); return withSwitch(); }
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
   const ch = changed(), n = cur, g = DATA.gen[n], cv = coverOf(n), k = entry(n); SHOWN_COVER = cv && cv.f;
   status();
@@ -542,7 +549,7 @@ const HELP = {
   statsph: `<p>Photo difficulty (Elo) from every answer: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers; few answers = rough. Click a dot to see the photo.</p>
     <p>The quiz shows the colony, closer and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (players' level on the genus is above what the hardest photo of the view can challenge: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a row to open the genus.</p>`,
-  diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers. Few answers = rough. The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it sits in the wrong game set.</p>`,
+  diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers. Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it sits in the wrong game set.</p>`,
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time.</p>
     <p>The first 3 photos of each view are its featured photos (Easy level, top of the sheet, Coral Finder). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. Hidden photos disappear everywhere, games included; × excludes a photo for good.</p>
     <p>The letters on each photo are its growth form (see Growth form).</p>`,
@@ -825,9 +832,11 @@ function renderCand(){
     addEventListener('keydown', candKey); }
 }
 // Crop editor (full screen): drag the frame or its corners; Save keeps it in the draft, Full photo removes it.
+// The frame is in fractions of the ORIGINAL photo, so the editor always shows the original (iNat large), never the
+// local file, which is already cropped once a crop has been applied (re-editing used to compound the two crops).
 function cropEditor(p){
   const lb = $('lightbox'), c0 = crOf(p.f) || [0, 0, 1, 1]; let c = c0.slice();
-  lb.innerHTML = `<div class="adm-crop"><div class="adm-cropbox"><img src="${img(p)}" alt="" draggable="false"><div class="adm-cropfr"><i data-h="lt"></i><i data-h="rt"></i><i data-h="lb"></i><i data-h="rb"></i></div></div>
+  lb.innerHTML = `<div class="adm-crop"><div class="adm-cropbox"><img src="${p.src ? p.src.replace('/original.', '/large.') : img(p)}" alt="" draggable="false"><div class="adm-cropfr"><i data-h="lt"></i><i data-h="rt"></i><i data-h="lb"></i><i data-h="rb"></i></div></div>
     <div class="adm-cropbar"><button type="button" data-c="cancel">Cancel</button><button type="button" data-c="full">Full photo</button><button type="button" class="ok" data-c="save">Save</button></div></div>`;
   lb.hidden = false;
   const box = lb.querySelector('.adm-cropbox'), im = box.querySelector('img'), fr = box.querySelector('.adm-cropfr'), MIN = .08;
@@ -945,20 +954,20 @@ const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbs
 let STATS = null, DIFF_ORDER = store.get('imr-admin-diff', 'hard');
 function renderDiff(){
   status();
-  if (!STATS) { $v.innerHTML = '<p class="note">Loading…</p>'; loadStats().then(() => { if (cur === '~diff') render(); }); return; }
-  const vl = v => v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1];
-  const L = allPhotos().filter(p => STATS[p.f]).sort((a, b) => (DIFF_ORDER === 'hard' ? -1 : 1) * (STATS[a.f][0] - STATS[b.f][0]));
-  const card = p => { const [d, n, r] = STATS[p.f];
+  if (!STATS || !ANS) { $v.innerHTML = '<p class="note">Loading…</p>'; loadStats().then(() => { if (cur === '~diff') render(); }); return; }
+  const vl = v => v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1], S = photoStats();
+  const L = allPhotos().filter(p => S[p.f] && S[p.f][1] >= SF.min).sort((a, b) => (DIFF_ORDER === 'hard' ? -1 : 1) * (S[a.f][0] - S[b.f][0]));
+  const card = p => { const [d, n, r] = S[p.f];
     return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"${crStyle(p.f)}></button>
     <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}<span class="adm-src" title="Difficulty">${d > 0 ? '+' : ''}${d.toFixed(1)} · ${r}/${n}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`; };
-  $v.innerHTML = `<section class="adm-quality"><div class="adm-qhead"><h2>Photo difficulty</h2></div>
-    <div class="adm-filter"><button type="button" class="adm-fchip plain" data-do="hard" aria-pressed="${DIFF_ORDER === 'hard'}">Hardest</button><button type="button" class="adm-fchip plain" data-do="easy" aria-pressed="${DIFF_ORDER === 'easy'}">Easiest</button></div>
+  $v.innerHTML = `<section class="adm-quality"><div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [[1, '≥1'], [3, '≥3'], [10, '≥10']])}<span class="note">answers</span>
+    <span class="adm-qseg adm-sseg" role="group" aria-label="Order"><button type="button" data-do="hard" aria-pressed="${DIFF_ORDER === 'hard'}">Hardest</button><button type="button" data-do="easy" aria-pressed="${DIFF_ORDER === 'easy'}">Easiest</button></span>${eloSeg()}</div>
     ${L.length ? `<div class="adm-grid adm-qgrid">${L.map(card).join('')}</div>` : '<p class="note">No answers yet.</p>'}</section>`;
-  $v.querySelectorAll('[data-do]').forEach(b => b.onclick = () => { DIFF_ORDER = b.dataset.do; store.set('imr-admin-diff', DIFF_ORDER); renderDiff(); });
+  $v.querySelectorAll('[data-do]').forEach(b => b.onclick = () => { DIFF_ORDER = b.dataset.do; store.set('imr-admin-diff', DIFF_ORDER); render(); });
   $v.querySelectorAll('[data-act="zoom"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'); zoom(t.dataset.g, t.dataset.f); });
-  bindQ();
+  bindQ(); bindStats();
 }
 
 /* ---------- Photo coverage ---------- */
@@ -1008,7 +1017,7 @@ function renderCov(){
 // level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
 // The Stats tab holds the sub-views of STAT_TABS; Coverage (renderCov) and the photo list (renderDiff) live there too.
 const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~diff', 'Photo list'], ['~cov', 'Coverage'], ['~stats-needs', 'Needs']];
-let ANS = null, RAS = {}, MEID = null, SF = Object.assign({who: 'all', min: 1}, store.get('imr-admin-stats', {}));
+let ANS = null, RAS = {}, MEID = null, SF = Object.assign({who: 'all', min: 1, elo: 'all'}, store.get('imr-admin-stats', {}));
 const statSwitch = () => `<nav class="adm-filter adm-stabs" aria-label="Stats">${STAT_TABS.filter(([h]) => h !== '~cov' || typeof renderCov === 'function')
   .map(([h, t]) => `<a class="adm-fchip plain" href="#${h}" aria-pressed="${cur === h}">${t}</a>`).join('')}</nav>`;
 // Puts the switch above a view rendered by another function (photo list, coverage).
@@ -1019,10 +1028,30 @@ function loadStats(){
     .then(b => { MEID = btoa(String.fromCharCode(...new Uint8Array(b))).slice(0, 8); }).catch(() => {}) : Promise.resolve();
   const get = q => fetch(SYNC_URL + q).then(r => r.json()).catch(() => ({}));
   return Promise.all([get('?answers=1'), STATS ? null : get('?stats=1'), digest]).then(([a, s]) => {
-    ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, rows: [], players: {}};
+    ELO_NOME = null; ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, rows: [], players: {}};
     if (s) { STATS = s.ok ? s.photos || {} : {}; RAS = s.ok ? s.ras || {} : {}; }
   });
 }
+// Photo Elo with or without this browser's own answers (Pierre, 2026-11-01: the author knows the photos, so his answers
+// bias their difficulty). "All" is the sheet's ?stats=1, the ratings the games use. "Without me" replays the same Elo
+// (eloOf, a copy of stats_ in tools/sync/Code.gs: keep the two in step) over the answer log minus MEID's answers.
+// Nothing is reset or stored: the log is kept, so any filter is a fresh replay.
+function eloOf(rows){
+  const P = {}, R = {}, sig = x => 1 / (1 + Math.exp(-x));
+  rows.slice().sort((a, b) => a[1] - b[1]).forEach(r => {
+    const fs = r[6].split(/\s+/).filter(Boolean); if (!r[0] || !fs.length) return;
+    const ok = r[4] ? 1 : 0, g = r[5].indexOf('quiz-duel') === 0 ? 0.5 : 0.25, ra = R[r[0]] = R[r[0]] || [0, 0];
+    const ph = fs.map(f => P[f] = P[f] || [0, 0, 0]), b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
+    const d = ok - (g + (1 - g) * sig(ra[0] - b));
+    ra[0] += 0.6 / (1 + ra[1] / 40) * d; ra[1]++;
+    ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * d; p[2]++; p[1] += ok; });
+  });
+  const out = {}; Object.keys(P).forEach(f => out[f] = [Math.round(P[f][0] * 100) / 100, P[f][2], P[f][1]]);
+  return out;
+}
+let ELO_NOME = null;
+const photoStats = () => SF.elo !== 'others' || !MEID || !ANS ? STATS : (ELO_NOME = ELO_NOME || eloOf(ANS.rows.filter(r => r[0] !== MEID)));
+const eloSeg = () => MEID ? segBtns('elo', [['all', 'All'], ['others', 'Without me']]) : '';
 const pct = (r, n) => n ? Math.round(100 * r / n) + '%' : '–';
 const sgn = d => (d > 0 ? '+' : '') + d.toFixed(2);
 const days = t => { const d = Math.floor((Date.now() - t) / 864e5); return d < 1 ? 'today' : d < 2 ? 'yesterday' : d + ' d ago'; };
@@ -1088,7 +1117,7 @@ function statsPlayers(){
 // Where to look for more photos (Pierre, 2026-10-31): per genus x view, the reasons the game pool falls short, from
 // coverage (covOf), photo quality and difficulty (STATS Elo), players' levels per genus (sheet v5) and their answers.
 function statsNeeds(){
-  const head = `${statSwitch()}<div class="adm-shead"><h2>Where to look for photos</h2></div>`, R = ANS.rows || [], OFF = 1.0;
+  const head = `${statSwitch()}<div class="adm-shead"><h2>Where to look for photos</h2>${eloSeg()}</div>`, R = ANS.rows || [], OFF = 1.0, PS = photoStats();
   const TH = {}; Object.values(ANS.players || {}).forEach(p => Object.entries(p[3] || {}).forEach(([g, t]) => (TH[g] = TH[g] || []).push(t)));
   const SEEN = {}; R.forEach(r => r[6].split(' ').filter(Boolean).forEach(f => { const k = r[0] + '|' + f; SEEN[k] = (SEEN[k] || 0) + 1; }));
   const ids = [...new Set(R.map(r => r[0]))], MX = {};
@@ -1100,7 +1129,7 @@ function statsNeeds(){
     if (c.obs < 3) { why.push(['few', `${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}`]); sc += 4 - c.obs; }
     const good = new Set(c.L.filter(p => qOf(p.f) >= 2).map(p => p.o || p.f)).size;
     if (c.obs >= 3 && good < 3) { why.push(['good', `${good} good colon${good === 1 ? 'y' : 'ies'}`]); sc += 1; }
-    if ((TH[n] || []).length) { const rated = c.L.filter(p => STATS[p.f] && STATS[p.f][1] >= 3).map(p => STATS[p.f][0]);
+    if ((TH[n] || []).length) { const rated = c.L.filter(p => PS[p.f] && PS[p.f][1] >= 3).map(p => PS[p.f][0]);
       const hard = rated.length ? Math.max(...rated) : c.L.some(p => qOf(p.f) === 1) ? 1 : 0, top = q3(TH[n]);
       if (top - OFF > hard + 0.3) { why.push(['easy', `players ${sgn(top)} vs hardest ${sgn(hard)}`]); sc += 1.5; } }
     const rep = ids.map(id => { const k = c.L.map(p => SEEN[id + '|' + p.f] || 0).filter(Boolean); return k.length ? k.reduce((a, b) => a + b, 0) / k.length : 0; }).filter(Boolean);
@@ -1123,8 +1152,8 @@ function statsNeeds(){
 const VIEW_T = {wide: 'Colony', medium: 'Closer', macro: 'Corallites', cand: 'Candidate'};
 const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philippines', world: 'iNat world', book: 'CF book'};
 function statsPhotos(){
-  const L = allPhotos().filter(p => STATS[p.f] && STATS[p.f][1] >= SF.min).map(p => ({...p, d: STATS[p.f][0], n: STATS[p.f][1], ok: STATS[p.f][2]}));
-  const head = `${statSwitch()}<div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [[1, '≥1'], [3, '≥3'], [10, '≥10']])}<span class="note">answers</span></div>`;
+  const PS = photoStats(), L = allPhotos().filter(p => PS[p.f] && PS[p.f][1] >= SF.min).map(p => ({...p, d: PS[p.f][0], n: PS[p.f][1], ok: PS[p.f][2]}));
+  const head = `${statSwitch()}<div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [[1, '≥1'], [3, '≥3'], [10, '≥10']])}<span class="note">answers</span>${eloSeg()}</div>`;
   if (!L.length) { $v.innerHTML = head + '<p class="note">No answers yet.</p>'; bindStats(); return; }
   const ds = L.map(p => p.d).sort((a, b) => a - b), mean = a => a.reduce((t, x) => t + x, 0) / a.length;
   const med = ds[Math.floor(ds.length / 2)], sd = Math.sqrt(mean(ds.map(x => (x - mean(ds)) ** 2)));
