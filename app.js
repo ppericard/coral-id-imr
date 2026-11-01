@@ -3870,7 +3870,9 @@ const json = u =>
     .catch(softFail(u.replace(/\?.*/, ''), {}));
 // The page's later scripts (home.js, tour.js...) must be in before the first route: a fast or cached data.json could
 // otherwise arrive first and open the Learn page instead of Home (seen under the welcome tour, 2026-11-01).
-const domReady = new Promise(r => (document.readyState === 'loading' ? addEventListener('DOMContentLoaded', r, {once: true}) : r()));
+// index.html runs the scripts through its loader (retries on an unstable line): window.BOOT says they have all run.
+const domReady =
+  window.BOOT || new Promise(r => (document.readyState === 'loading' ? addEventListener('DOMContentLoaded', r, {once: true}) : r()));
 // The preview of an unsaved draft (?draft) may add candidates still waiting: those live in cand.json, out of data.json
 // (tools/datajson.py; the players never need them), so the preview fetches them too.
 const draftCand = () =>
@@ -3910,9 +3912,6 @@ Promise.all([
     sendAnon();
     loadStats();
     window.APP_READY = true;
-    try {
-      sessionStorage.removeItem('imr-reload'); // index.html: start-up reloads after a failed app file
-    } catch (e) {}
     if (window.tourFirst) tourFirst();
     boardNotice();
     // Fetched ahead once the start-up is over (Pierre, 2026-11-01): the leaderboard and the achievement shares, so their

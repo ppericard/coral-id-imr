@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <!-- CSP (code review 2026-11-01, L2): scripts only from this site; the inline theme script is allowed by its hash, checked by tests/csp.test.js. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-X/v0Mr+YT/Fgy6ZPABgbzrjNdjq1Cp0y9h7WoVOuyDg=' 'sha256-lYWkIgx2jo9bYzrh3AvqvVnIeRS+XvfZdWn/su9kGgs='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://api.github.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-X/v0Mr+YT/Fgy6ZPABgbzrjNdjq1Cp0y9h7WoVOuyDg=' 'sha256-Fr/iMLjwBFpLco1LQ2a4pRBmmwmT4hzT0CLOZTqXWdI='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://api.github.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="author" content="Pierre Pericard">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>IMR Coral ID</title>
@@ -24,13 +24,22 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#0d6f7d">
 <link rel="preload" href="fonts/source-sans-3-normal.woff2" as="font" type="font/woff2" crossorigin>
+<!-- Unstable connection (Pierre, 2026-11-01): the app's scripts are preloaded below (downloaded in parallel) and run in
+     their order by this loader, each failed one tried again up to 3 times (1, 2, 3 s); window.BOOT resolves once all
+     have run (app.js waits for it before the first page). A stylesheet that fails is tried again the same way. -->
+<script>(function(){addEventListener("error",function(e){var t=e.target,n;if(!t||t.tagName!=="LINK"||t.rel!=="stylesheet")return;n=+(t.dataset.r||0);if(n<3)setTimeout(function(){var c=t.cloneNode();c.dataset.r=n+1;t.replaceWith(c)},1000*(n+1))},true);var ok;window.BOOT=new Promise(function(r){ok=r});function go(L,i,n){if(i>=L.length)return ok();var s=document.createElement("script");s.src=L[i];s.async=false;s.onload=function(){go(L,i+1,0)};s.onerror=function(){s.remove();n<3?setTimeout(function(){go(L,i,n+1)},1000*(n+1)):go(L,i+1,0)};document.body.appendChild(s)}addEventListener("DOMContentLoaded",function(){go([].map.call(document.querySelectorAll('link[rel=preload][as=script]'),function(l){return l.href}),0,0)})})()</script>
+<link rel="preload" href="core.js?v=13" as="script">
+<link rel="preload" href="app.js?v=155" as="script">
+<link rel="preload" href="flag.js?v=8" as="script">
+<link rel="preload" href="proto/lab.js?v=67" as="script">
+<link rel="preload" href="home-art.js?v=4" as="script">
+<link rel="preload" href="home.js?v=25" as="script">
+<link rel="preload" href="tour.js?v=12" as="script">
 <link rel="stylesheet" href="app.css?v=105">
 <link rel="stylesheet" href="proto/lab.css?v=48">
 <link rel="stylesheet" href="home.css?v=22">
 </head>
 <body>
-<!-- Unstable connection: an app file (script, stylesheet) that fails to load during start-up reloads the page, twice at most (sessionStorage imr-reload, cleared once the app is ready); files already in come from the cache. -->
-<script>addEventListener("error",function(e){var t=e.target;if(window.APP_READY||!t||!(t.tagName==="SCRIPT"||(t.tagName==="LINK"&&t.rel==="stylesheet")))return;try{var n=+(sessionStorage.getItem("imr-reload")||0);if(n<2){sessionStorage.setItem("imr-reload",n+1);setTimeout(function(){location.reload()},1500)}}catch(x){}},true)</script>
 <script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t;var p=localStorage.getItem("imr-coral-palette");document.documentElement.dataset.palette=p&&p!=="reef"?p:"depth";if(localStorage.getItem("imr-coral-cvd")==="1")document.documentElement.dataset.cvd="1"}catch(e){document.documentElement.dataset.palette="depth"}</script>
 <div class="wrap">
   <header>
@@ -73,12 +82,5 @@
   <footer><p>Website and interface by Pierre Pericard. Sources: IMR Lecture 6 · Coral Finder 2022 (R. Kelley, BYOGUIDES) · iNaturalist photos, credited on each photo. For training at IMR. <a href="privacy.html">Privacy</a></p></footer>
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
-<script src="core.js?v=13"></script>
-<script src="app.js?v=155"></script>
-<script src="flag.js?v=8"></script>
-<script src="proto/lab.js?v=67"></script>
-<script src="home-art.js?v=4"></script>
-<script src="home.js?v=25"></script>
-<script src="tour.js?v=12"></script>
 </body>
 </html>
