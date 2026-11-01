@@ -379,7 +379,7 @@ function status(){
   const ms = $('modesel'); if (ms) { ms.innerHTML = [...document.querySelectorAll('#modes [data-mode]')].map(a => `<option value="${esc(a.getAttribute('href'))}"${a.getAttribute('aria-current') === 'true' ? ' selected' : ''}>${esc(a.textContent)}</option>`).join(''); ms.hidden = false; }
 }
 // Which header tab the page belongs to: the Stats tab holds players, photos, the photo list and coverage.
-const modeKey = () => cur.startsWith('~stats') || cur === '~diff' || cur === '~cov' || cur === '~fcov' ? 'stats' : ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~look': 'mont', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
+const modeKey = () => NEED_TABS.some(([h]) => h === cur) ? 'needs' : cur.startsWith('~stats') || cur === '~diff' ? 'stats' : ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~look': 'mont', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
 function render(){
   memoReset();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
@@ -387,8 +387,9 @@ function render(){
   if (cur === '~form') return renderForm();
   if (cur === '~excluded') return renderExcluded();
   if (cur === '~triage') return renderTriage();
-  // Every Stats sub-view keeps the Stats sub-menu on top, whichever function draws it (Pierre, 2026-11-01).
-  if (modeKey() === 'stats') { if (cur === '~diff') renderDiff(); else if (cur === '~cov') renderCov(); else if (cur === '~fcov') renderFcov(); else renderStats(); return withSwitch(); }
+  // Every Stats / Needs sub-view keeps its sub-menu on top, whichever function draws it (Pierre, 2026-11-01).
+  if (modeKey() === 'needs') { if (cur === '~cov') renderCov(); else if (cur === '~fcov') renderFcov(); else renderStats(); return withSwitch(); }
+  if (modeKey() === 'stats') { if (cur === '~diff') renderDiff(); else renderStats(); return withSwitch(); }
   if (cur === '~look' || cur === '~mont') return renderMont(); // ~mont = old address, kept for bookmarks
   if (cur === '~cand') return renderCand();
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
@@ -578,6 +579,12 @@ function renderQuality(){
 
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
+  // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
+  start: `<p><b>Work in this order</b></p>
+    <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them.</li><li><b>Forms</b> and <b>Quality</b>: check the growth form and quality guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Needs</b>: which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
+    <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
+    <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish, a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
+    <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the 39 IMR genera and the book's other genera seen at Dauin (CF only). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Game coverage). Forms = growth forms seen on Colony and Closer photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Closer or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Closer or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   stats: `<p>Every quiz and duel answer synced to the sheet. Players are anonymous: a number, ranked by level; "you" marks the name synced in this browser (All / Others / Me). Level is on the same scale as photo difficulty. Last 20 = right answers among the player's last 20. Learned = genera learned on their last sync. Days = days with answers. Photos = different photos answered (more = more variety). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
@@ -600,10 +607,15 @@ const HELP = {
 };
 function toggleHelp(){
   let h = $('admhelp'); if (h) { h.remove(); return; }
-  const m = cur === '~stats-photos' ? 'statsph' : cur === '~stats-needs' ? 'statsneeds' : modeKey() === 'stats' ? ({'~diff': 'diff', '~cov': 'cov', '~fcov': 'fcov'}[cur] || 'stats') : modeKey();
+  const m = ({'~stats-photos': 'statsph', '~stats-needs': 'statsneeds', '~diff': 'diff', '~cov': 'cov', '~fcov': 'fcov'})[cur] || modeKey();
   h = document.createElement('div'); h.id = 'admhelp'; h.className = 'adm-help'; h.setAttribute('role', 'dialog'); h.setAttribute('aria-label', 'Help');
-  h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button>${HELP[m]}`;
-  h.querySelector('button').onclick = () => h.remove(); $('tools').append(h);
+  // Two tabs: this page's help, and "Start here" (shown first until this browser has opened it once).
+  let tab = store.get('imr-admin-started', false) ? 'page' : 'start';
+  const draw = () => { if (tab === 'start') store.set('imr-admin-started', true);
+    h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button><span class="adm-qseg adm-htabs" role="group"><button type="button" data-ht="page" aria-pressed="${tab === 'page'}">This page</button><button type="button" data-ht="start" aria-pressed="${tab === 'start'}">Start here</button></span>${HELP[tab === 'start' ? 'start' : m]}`;
+    h.querySelector('.adm-link').onclick = () => h.remove();
+    h.querySelectorAll('[data-ht]').forEach(b => b.onclick = () => { tab = b.dataset.ht; draw(); }); };
+  draw(); $('tools').append(h);
 }
 
 /* ---------- Growth form ---------- */
@@ -926,6 +938,11 @@ const output = () => { const genera = {}; Object.keys(DATA.gen).filter(n => DRAF
   const crop = {}; Object.keys(DRAFT.crop || {}).sort().forEach(k => { crop[k] = DRAFT.crop[k]; });
   const single = {}; Object.keys(DRAFT.single || {}).sort().forEach(k => { single[k] = DRAFT.single[k]; });
   return {v: 1, ...(bookOn(DRAFT) ? {} : {book: false}), genera, ...(Object.keys(quality).length ? {quality} : {}), ...(Object.keys(gf).length ? {gf} : {}), ...(Object.keys(form).length ? {form} : {}), ...(Object.keys(exclude).length ? {exclude} : {}), ...(Object.keys(flag).length ? {flag} : {}), ...(Object.keys(use).length ? {use} : {}), ...(Object.keys(single).length ? {single} : {}), ...(Object.keys(seen).length ? {seen} : {}), ...(Object.keys(mont).length ? {mont} : {}), ...(Object.keys(crop).length ? {crop} : {})}; };
+// Who publishes, shown in the commit message (Pierre, 2026-11-01, admin review): the token's GitHub login, else the
+// name synced in this browser. Looked up once per page; a failure only leaves the name out.
+let AUTHOR;
+const author = async () => AUTHOR !== undefined ? AUTHOR : (AUTHOR = await fetch('https://api.github.com/user', {headers: {Accept: 'application/vnd.github+json', Authorization: `Bearer ${TOKEN}`}})
+  .then(r => r.ok ? r.json() : {}).then(j => j.login || '').catch(() => '') || ((store.get('imr-coral-sync', null) || {}).name || '').trim());
 async function save(){
   const ch = changed(), q = qChanged(), x = xChanged(), bk = bChanged(), fm = fChanged(), fl = flChanged(), sg = sgChanged(), cd = cdChanged(), mt = mtChanged(), cr = crChanged(), sn = snChanged(); if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn) || !TOKEN) return;
   const b = $('save'); b.disabled = true; b.textContent = 'Publishing…';
@@ -935,7 +952,8 @@ async function save(){
     if (f && f.sha !== SHA) { rebase(JSON.parse(fromB64(f.content))); SHA = f.sha; }
     const out = output(), text = JSON.stringify(out, null, 2) + '\n';
     const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
-    const r = await gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg, content: toB64(text), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})});
+    const who = await author();
+    const r = await gh(`/contents/${FILE}`, {method: 'PUT', body: JSON.stringify({message: msg + (who ? ` (by ${who})` : ''), content: toB64(text), branch: BRANCH, ...(SHA ? {sha: SHA} : {})})});
     SHA = r.content.sha; SAVED = clone(out); DRAFT = clone(out); saveDraft(); store.set('imr-curation-base', SAVED);
     toast('Published. The public site shows it within a minute or two.');
   } catch (x) { toast(/does not match|sha/i.test(x.message) ? 'The site was published from elsewhere in the meantime: reload the page, your draft is kept.' : 'Not published (your draft is kept): ' + x.message); }
@@ -1142,10 +1160,12 @@ function renderFcov(){
 /* ---------- Stats: players (anonymous) and photo difficulty, from the sync sheet ---------- */
 // ?answers=1 (sheet script v4): every answer, RA replaced by an anonymous id; ?stats=1: Elo difficulty per photo and
 // level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
-// The Stats tab holds the sub-views of STAT_TABS; Coverage (renderCov) and the photo list (renderDiff) live there too.
-const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~diff', 'Photo list'], ['~cov', 'Game coverage'], ['~fcov', 'Sheet & Finder coverage'], ['~stats-needs', 'Needs']];
+// The Stats tab holds the sub-views of STAT_TABS (incl. the photo list, renderDiff). The to-do lists (Needs and the two
+// coverage views) are their own "Needs" tab, NEED_TABS (Pierre, 2026-11-01, admin review rec. 6: work lists, not statistics).
+const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~diff', 'Photo list']];
+const NEED_TABS = [['~stats-needs', 'Where to look'], ['~cov', 'Game coverage'], ['~fcov', 'Sheet & Finder coverage']];
 let ANS = null, RAS = {}, MEID = null, SF = Object.assign({who: 'all', min: 1, elo: 'all', nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('imr-admin-stats', {}));
-const statSwitch = () => `<nav class="adm-filter adm-stabs" aria-label="Stats">${STAT_TABS.filter(([h]) => h !== '~cov' || typeof renderCov === 'function')
+const statSwitch = () => `<nav class="adm-filter adm-stabs" aria-label="${modeKey() === 'needs' ? 'Needs' : 'Stats'}">${(modeKey() === 'needs' ? NEED_TABS : STAT_TABS)
   .map(([h, t]) => `<a class="adm-fchip plain" href="#${h}" aria-pressed="${cur === h}">${t}</a>`).join('')}</nav>`;
 // Puts the switch above a view rendered by another function (photo list, coverage).
 const withSwitch = () => { if (!$v.querySelector('.adm-stabs')) $v.insertAdjacentHTML('afterbegin', statSwitch()); };
