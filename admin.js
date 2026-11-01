@@ -766,14 +766,17 @@ let CSRC = store.get('imr-admin-csrc2', 'dauin'), CSKIP = new Set();
 const srcOk = (p, s) => s === 'all' || origin(p) === s;
 // Order (Pierre): random, but genus x view cells with few photos come up more often, so the gaps for the games fill
 // first. Each candidate's weight is 1 / (1 + game colonies the genus already has in its view, covOf as on the Coverage page): its guessed view (vg, Claude's
-// guess from the photo), else the genus's emptiest view. Weighted random draw (key -ln(u) / w, u fixed per photo
+// guess from the photo), else the genus's emptiest view; x3 when it completes a colony already in games at another zoom. Weighted random draw (key -ln(u) / w, u fixed per photo
 // and per device), then no two of the same genus in a row when it can be avoided.
 const cseed = () => { let s = store.get('imr-admin-cseed', 0); if (!s) { s = 1 + Math.floor(Math.random() * 2147483645); store.set('imr-admin-cseed', s); } return s; };
 const uOf = f => { let h = cseed() ^ 2166136261; for (let i = 0; i < f.length; i++) h = Math.imul(h ^ f.charCodeAt(i), 16777619); return ((h >>> 0) + .5) / 4294967296; };
 function candQueue(src){
-  const N = {}, cnt = (n, w) => { const k = n + '|' + w; if (!(k in N)) N[k] = covOf(n, w).obs; return N[k]; };
+  const N = {}, O = {}, cnt = (n, w) => { const k = n + '|' + w; if (!(k in N)) { const c = covOf(n, w); N[k] = c.obs; O[k] = new Set(c.L.map(q => q.o).filter(Boolean)); } return N[k]; };
   const weight = (n, p) => { const vs = VIEWS.map(x => x[0]).filter(w => !(lv(n) === 2 && w === 'medium')); let v = p.vg || p.view; if (v === 'medium' && lv(n) === 2) v = 'wide';
-    return 1 / (1 + (vs.includes(v) ? cnt(n, v) : Math.min(...vs.map(w => cnt(n, w))))); };
+    // A candidate from a colony already in games at another zoom counts 3x (Pierre, 2026-11-01): game questions only
+    // show views of one colony, so completing a colony adds a several-zoom question.
+    const sib = p.o && vs.some(w => w !== v && (cnt(n, w), O[n + '|' + w].has(p.o))) ? 3 : 1;
+    return sib / (1 + (vs.includes(v) ? cnt(n, v) : Math.min(...vs.map(w => cnt(n, w))))); };
   const L = [];
   Object.keys(DATA.gen).forEach(n => { const add = entry(n).add || {};
     cands(n).forEach(p => { if (srcOk(p, src) && !add[p.f] && !rejected(p.f)) L.push({p, n, r: -Math.log(uOf(p.f)) / weight(n, p)}); }); });
