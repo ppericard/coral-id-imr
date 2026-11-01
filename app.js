@@ -116,32 +116,13 @@ function applyCuration(d, c){
   });
 }
 
-// Photo origin filter, set in the header: Dauin only, the Philippines, or everywhere (data: p.loc, set on
-// iNaturalist photos; IMR lecture photos have none and always show).
-const ORIGIN_OK = {dauin: ['dauin'], ph: ['dauin', 'ph']};
-let origin = store.get('imr-coral-origin', 'all');
-function filterOrigin(d){
-  const ok = ORIGIN_OK[origin]; if (!ok) return;
-  // Book photos are not from Dauin or the Philippines.
-  Object.values(d.gen).forEach(g => { delete g.book; });
-  // A genus with no field photo from the chosen area keeps the nearest ones (Philippines, then everywhere),
-  // so games and tools always have a photo to show.
-  Object.values(d.gen).forEach(g => {
-    const field = Object.values(g.views).flat();
-    const area = [ok, ORIGIN_OK.ph, null].find(a => !a || field.some(p => !p.loc || a.includes(p.loc)));
-    if (!area) return;
-    const keep = p => !p.loc || area.includes(p.loc);
-    ['views', 'more'].forEach(k => Object.keys(g[k] || {}).forEach(v => { g[k][v] = g[k][v].filter(keep); }));
-    if (g.coverP && !keep(g.coverP)) delete g.coverP;
-  });
-}
 let RAW, CUR, FORMS = {gf: {}, form: {}, cf: {}}, AUTOQ = {}, PICKS = {};
 // Genera not on the IMR slate but in the Coral Finder book and present at Dauin (data.json "x", tools/build_extra.py):
 // Identify > Coral Finder only (Pierre, 2026-10-31), on by default, switch in ⚙ on that page. Same photo pipeline,
 // kept out of DATA.gen so games, quizzes, progress and the Genera pages never see them.
 let XON = store.get('imr-finder-x', true);
-function build(){ const d = structuredClone(RAW); applyCuration(d, CUR); filterOrigin(d); applyForms(d, CUR); applySlots(d, CUR);
-  if (d.x) { const x = {gen: d.x.gen, course: {}, cand: d.cand}; applyCuration(x, CUR); filterOrigin(x); applyForms(x, CUR); applySlots(x, CUR); }
+function build(){ const d = structuredClone(RAW); applyCuration(d, CUR); applyForms(d, CUR); applySlots(d, CUR);
+  if (d.x) { const x = {gen: d.x.gen, course: {}, cand: d.cand}; applyCuration(x, CUR); applyForms(x, CUR); applySlots(x, CUR); }
   DATA = d; }
 // A genus of the list or of the extra genera.
 const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n];
@@ -1140,11 +1121,8 @@ const SIZES = {card: {s: '240px', m: '360px', l: '520px'}, strip: {s: '(max-widt
 const sizesFor = kind => SIZES[kind][photoSize()];
 function applySize(){ const s = photoSize(), on = SIZE_PAGES.includes(pageKey()); document.documentElement.dataset.size = s;
   const sz = document.getElementById('size'); document.getElementById('sizerow').hidden = !on; document.getElementById('xrow').hidden = !/^(lab-)?finder$/.test(pageKey()); document.querySelectorAll('img[data-sz]').forEach(i => i.sizes = sizesFor(i.dataset.sz)); document.querySelectorAll('#size button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === s))); }
-function showOrigin(){ document.querySelectorAll('#origin button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.origin === origin))); }
 const phone = isPhone;
 const cycle = b => b;  // all choices are visible in the settings panel
-document.querySelectorAll('#origin button').forEach(b => b.onclick = () => { b = cycle(b); origin = b.dataset.origin; store.set('imr-coral-origin', origin); showOrigin(); if (RAW) { build(); route(); } });
-showOrigin();
 const showX = () => document.querySelectorAll('#xgen button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.x === '1') === XON)));
 document.querySelectorAll('#xgen button').forEach(b => b.onclick = () => { XON = b.dataset.x === '1'; store.set('imr-finder-x', XON); showX(); if (RAW) route(); });
 showX();
