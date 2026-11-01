@@ -84,6 +84,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 - Publishing `curation.json` as a whole copy from the admin (lost curation on 2026-11-01; Publish merges key by key since PR #240).
 
 ## Done recently (for context)
+- 2026-11-01: welcome tour never covers what it describes (Pierre's phone feedback): each step scrolls its target clear of the bubble, the bubble takes the free side (wider and shorter on wide screens when needed); step 3 also spotlights Practice in the menu; no hardcoded genus count ("39") in the app text; Home no longer opens as Learn when the data loads before the page's scripts.
 - 2026-11-01: first-time RA re-review: Coral Finder cards lead with a photo of the growth form picked (#269); quiz answer choices start easy (other growth forms) and bring in look-alikes as the genus's Elo ability rises, scored with the matching guess rate (Code.gs v9, deployed 2026-11-01).
 - 2026-11-01: Coral Finder suggested questions redesigned (Pierre: tiny hit areas, unclear what to tap, empty space): big full-width Yes / No buttons with the genera's photos on each side, a "No" that ranks (not clue), "Can't tell"; Start over shares the clue chips' first line on phones.
 - 2026-11-01: My progress decluttered (Pierre's phone feedback): board first on phones/tablets, no "Practise now"; sign-in is a filled "Sign in" button in the header while signed out ("Not saved" if saving fails), and once signed in the account line, Sign out and Backup/reset sit in ⚙.

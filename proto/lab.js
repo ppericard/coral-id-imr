@@ -2,7 +2,7 @@
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
 // A prototype that graduates moves to a site section (see GRADUATED) and gets a plain hash: #<id>, #<id>|<arg>.
 // Bump with every Lab change so browsers never mix new and old files (same ?v scheme as app.js).
-const LAB_V = 61;
+const LAB_V = 62;
 // One SVG icon set for the Tools hub (design review 2026-11-01: the old Unicode glyphs had mixed weights and sizes).
 // 24 px grid, 1.75 stroke, currentColor; a tool without an entry falls back to its `icon` text.
 const LAB_ICONS = {
@@ -87,7 +87,7 @@ function viewLab(h){
   const order = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && !GRADUATED[p.id]);
   const grad = LAB.files.map(f => LAB.list.find(x => x.id === f)).filter(p => p && GRADUATED[p.id]);
   $v.innerHTML = `<div class="lab"><h2>Tools</h2>
-  <p class="lede">Optional extras, still being tested, to learn, remember and identify the 39 genera through pictures and play. Learn, Practice and Identify are all you need; try these when you want another angle${IS_ADMIN ? ', then mark each one keep or trim: your marks stay in this browser and tell us what to develop further' : ''}.</p>
+  <p class="lede">Optional extras, still being tested, to learn, remember and identify the genera through pictures and play. Learn, Practice and Identify are all you need; try these when you want another angle${IS_ADMIN ? ', then mark each one keep or trim: your marks stay in this browser and tell us what to develop further' : ''}.</p>
   <div class="labhub">${order.map(p => `<article class="labtile">
     <a class="labopen" href="#lab-${p.id}"><span class="labicon" aria-hidden="true">${labIcon(p)}</span><b>${esc(p.title)}</b><span>${esc(p.blurb)}</span></a>
     ${!IS_ADMIN ? '' : `<div class="labvote" role="group" aria-label="Keep or trim ${esc(p.title)}">
