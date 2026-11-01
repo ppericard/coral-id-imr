@@ -6,7 +6,7 @@ How the app is put together. Rules and workflow are in [`../AGENTS.md`](../AGENT
 
 ```
 data.json (genus data + photo lists) ──┐
-forms.json / quality.json / picks.json ├─> app.js (applyCuration, applyForms, applySlots) ─> pages
+forms.json / quality.json / picks.json ├─> app.js (applyCuration + applySlots from core.js, applyForms) ─> pages
 curation.json (Pierre's choices) ──────┘                                    │
                                                                             └─> progress in localStorage ─> Apps Script ─> Google Sheet
 admin.html ──(GitHub Contents API, Pierre's token)──> curation.json on main ──> GitHub Action fetches approved photos
@@ -37,8 +37,8 @@ Old hashes (`#key`, `#k-…`, `#l-…`, `#key-imr`, `#tips`, `#quiz-course`) red
 
 Key shared helpers (search for them in `app.js`):
 - `build()`: `structuredClone(RAW)` then `applyCuration()`, `applyForms()`, `applySlots()` into `DATA` (also for the extra genera `x`).
-- `applyCuration()`: applies `curation.json` on top of `data.json` (cover, featured order, hide, move, add candidates, not-this-genus, exclude, crop, 2-level genera, book switch, `single`).
-- `applySlots()`: photos per context into `g.sl[view]` (see "Photos per context" below); first 3 = featured. The admin mirrors it (`autoOrder`).
+- `applyCuration()` (in `core.js`): applies `curation.json` on top of `data.json` (cover, featured order, hide, move, add candidates, not-this-genus, exclude, crop, 2-level genera, book switch, `single`).
+- `applySlots(d, c, {picks, autoq})` (in `core.js`): photos per context into `g.sl[view]` (see "Photos per context" below); first 3 = featured. The admin mirrors it (`autoOrder`).
 - `curRefresh()`: a tab left open re-reads `curation.json` when it comes back into view (if the last check is > 5 min old) and every 30 min while visible; a change is applied at the next screen (`route()`), never mid-game. Skipped with `?draft`.
 - `pageHelp()`: moves intros into the "?" help box on every render (MutationObserver on `#view`).
 - `shownGroup()`: places starred genera in the lecture group of their look-alikes (display only).
@@ -125,7 +125,7 @@ For Pierre only (not linked except from ⚙ for token holders). Modes by hash: g
 - `Answers` columns: Name, Time, Genus shown, Answered, Right, Mode, Photos (space-separated file stems), Id, Expected, Ability, New photos.
 - Version history: v2 Answers/Activity tabs; v3 `?stats=1` photo difficulty; v4 `?answers=1` anonymous ids (PR #195); v5 answers carry expected success, ability, new photos, single-view answers count +0.5 harder (PRs #197, #201). v6 progress of any size, stale-write check, input hardening, PIN throttle, secret anonymous-id salt (code review, 2026-11-01). v7 players' reports (`Reports` tab). v8 reports readable by every admin (GitHub token check). **v5 is deployed and verified (2026-11-01); v8 (includes v6 and v7) redeploy pending.** The app and admin work with v5 to v8; reports wait in the player's browser until v7 or later is live, and admin Triage needs v8 to read them. Every reply carries `v`, so the app and admin can tell which script is live.
 - The app keeps unsent answers (max 2,000) until the server confirms `log: true`.
-- Tests: `node --test tests/*.test.js` runs `tools/sync/Code.gs` against an in-memory sheet (`tests/gas.js`), and checks `core.js` (`merge3`, `mergeProgress`, and `eloOf` against `stats_`).
+- Tests: `node --test tests/*.test.js` runs `tools/sync/Code.gs` against an in-memory sheet (`tests/gas.js`), and checks `core.js` (`merge3`, `mergeTabs`, `mergeProgress`, and `eloOf` against `stats_`); `tests/photos.test.js` checks the photo rules on the real data and curation.
 
 ## Security model
 

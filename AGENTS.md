@@ -67,8 +67,8 @@ These came from Pierre's explicit feedback. When in doubt, follow them over your
 | Path | What |
 |---|---|
 | `index.html`, `app.js`, `app.css` | The public app (router, all main pages, games, progress, sync). |
-| `core.js` | Pure functions shared by app and admin, tested in `tests/`: curation merge (`merge3`, `mergeOld`), two-device progress merge (`mergeProgress`), photo Elo replay (`eloOf`, same rules as `Code.gs` `stats_`). |
-| `tests/` | `node --test tests/*.test.js`: `core.js` and the sync script against an in-memory sheet (`gas.js`). |
+| `core.js` | Pure functions shared by app and admin, tested in `tests/`: Pierre's curation and the photos per context (`applyCuration`, `applySlots`, `CAP`), curation merge (`merge3`, `mergeOld`), two-device progress merge (`mergeProgress`), photo Elo replay (`eloOf`, same rules as `Code.gs` `stats_`). |
+| `tests/` | `node --test tests/*.test.js`: `core.js`, the sync script against an in-memory sheet (`gas.js`), and Pierre's photo rules on the real `data.json` + `curation.json` (`photos.test.js`: no book, several-corals or sheet-only photo in games, exclusions and hides applied, pins first, IMR/own first). Add a case there when you add a photo rule. |
 | `home.js`, `home-art.js`, `home.css` | Home page and its SVG schematics. |
 | `tour.js` | First-visit guided tour (`?tour` forces it). |
 | `flag.js` | ⚑ "bad photo" button, only in Pierre's admin browser (players report problems with `repBtn()`/`reportDialog()` in `app.js`, read in admin Triage). |
