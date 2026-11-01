@@ -49,6 +49,21 @@ const server = http.createServer((req, res) => {
         r.abort();
       }
     );
+    // Candidate pass of the judging agent (suggest.json "cand", tools/judging_cand.py): two made-up judgments.
+    const CF = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'cand.json'))).cand)
+      .flat()
+      .filter(x => !x.cf)
+      .slice(0, 2)
+      .map(x => x.f);
+    await ctx.route(base + 'suggest.json', r =>
+      r.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          v: 1,
+          cand: {[CF[0]]: {v: 'macro', q: 3, k: 'best', fm: 'x'}, [CF[1]]: {v: 'wide', q: 1, k: 'dup', fm: 'M', n: 'Same colony as 1'}}
+        })
+      })
+    );
     const p = await ctx.newPage(),
       errs = [];
     p.on('pageerror', e => errs.push(e.message));
@@ -159,6 +174,18 @@ const server = http.createServer((req, res) => {
       await settle();
       if (await p.evaluate(c => (entry(c.n).add || {})[c.f], cap)) fails.push(`${w}px Cap: Undo did not take the replacement back`);
     }
+    // The judgments reach the candidates: view, dashed quality guess, swiper weight and line, reminder of the ones left.
+    const jd = await p.evaluate(F => {
+      const P = Object.values(DATA.cand).flat(),
+        a = P.find(x => x.f === F[0]),
+        b = P.find(x => x.f === F[1]);
+      return {v: a.vg, q: AUTOQ[a.f], wa: jw(a), wb: jw(b), line: jLine(b), left: candQueue('all').filter(x => !x.p.cf && !x.p.j).length};
+    }, CF);
+    if (jd.v !== 'macro' || jd.q !== 3) fails.push(`${w}px Judged: view or quality guess not applied (${jd.v}, ${jd.q})`);
+    if (!(jd.wb < jd.wa / 10)) fails.push(`${w}px Judged: a Poor near-duplicate is not pushed back (${jd.wa} vs ${jd.wb})`);
+    if (!/near-duplicate/.test(jd.line) || !/Same colony/.test(jd.line)) fails.push(`${w}px Judged: swiper line ${jd.line}`);
+    await go('~cand');
+    if (!jd.left || !/not judged yet/.test(await text())) fails.push(`${w}px Judged: no reminder of the candidates not judged`);
     errs.length = 0;
     if (await p.isEnabled('#save')) {
       await p.click('#save');
