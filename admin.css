@@ -485,3 +485,12 @@ td.cov-c .cov-off{display:block;font-size:.62rem;font-weight:500;line-height:1.1
 .adm-needs th button.on{color:var(--accent)}
 .adm-needs th.n{text-align:right}
 .adm-why.on{box-shadow:0 0 0 1.5px var(--accent)}
+/* Needs table: fixed column widths (no jump when filtering or sorting), reasons wrap instead of a sideways scrollbar */
+.adm-tbl.adm-needs{table-layout:fixed}
+.adm-needs th:nth-child(1){width:33%}.adm-needs th:nth-child(2){width:20%}.adm-needs th:nth-child(3){width:17%}
+.adm-needs td{overflow:hidden;text-overflow:ellipsis}
+.adm-needs td:nth-child(2),.adm-needs td:last-child{white-space:normal}
+.adm-needs td:last-child{overflow:visible}
+.adm-needs .adm-why{white-space:normal}
+@media (min-width:600px){.adm-needs th:nth-child(1){width:20%}.adm-needs th:nth-child(2){width:14%}.adm-needs th:nth-child(3){width:8%}}
+#adm-nbody .adm-tscroll{overflow:visible}
