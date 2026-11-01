@@ -39,7 +39,7 @@ function makeSheet(name){
 }
 
 // Loads Code.gs in a fresh context with fresh services; returns the script's globals and the fake spreadsheet.
-function loadCodeGs(){
+function loadCodeGs(opts = {}){
   const sheets = {}, cache = {}, props = {}, fetched = [];
   const ss = {getSheetByName: n => sheets[n] || null, insertSheet: n => (sheets[n] = makeSheet(n))};
   const ctx = {
@@ -51,15 +51,17 @@ function loadCodeGs(){
       getUuid: () => crypto.randomUUID()
     },
     CacheService: {getScriptCache: () => ({get: k => cache[k] ?? null, put: (k, v) => { cache[k] = v; }})},
-    PropertiesService: {getScriptProperties: () => ({getProperty: k => props[k] ?? null, setProperty: (k, v) => { props[k] = v; }})},
-    UrlFetchApp: {fetch: (url, o) => { const t = (o.headers.Authorization || '').slice(7), w = t.startsWith('ghp_write'); fetched.push(url);
+    PropertiesService: {getScriptProperties: () => ({getProperty: k => props[k] ?? null, setProperty: (k, v) => { props[k] = v; }, deleteProperty: k => { delete props[k]; }})},
+    UrlFetchApp: {fetch: (url, o = {}) => { if (opts.fetch) { const r = opts.fetch(url, o); if (r) { fetched.push(url); return r; } }
+      const t = (o.headers.Authorization || '').slice(7), w = t.startsWith('ghp_write'); fetched.push(url);
       return {getResponseCode: () => t.startsWith('ghp_') ? 200 : 401, getContentText: () => JSON.stringify({permissions: {pull: true, push: w}})}; }},
+    ScriptApp: {getScriptId: () => 'SCRIPT_ID', getOAuthToken: () => 'ya29.test', getProjectTriggers: () => [], deleteTrigger(){}, newTrigger: () => ({timeBased: () => ({everyMinutes: () => ({create(){}})})})},
     LockService: {getScriptLock: () => ({waitLock(){}, releaseLock(){}})},
     ContentService: {MimeType: {JSON: 'json'}, createTextOutput: t => ({setMimeType: () => JSON.parse(t)})},
     console
   };
   vm.createContext(ctx);
-  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8') + '\n;this.doGet = doGet; this.doPost = doPost;', ctx);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8') + '\n;this.doGet = doGet; this.doPost = doPost; this.autoUpdate = autoUpdate;', ctx);
   const get = q => ctx.doGet({parameter: q});
   const post = body => ctx.doPost({postData: {contents: JSON.stringify(body)}});
   return {ctx, sheets, cache, props, fetched, get, post};
