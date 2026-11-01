@@ -14,7 +14,10 @@ const VIEWS = [
     ['macro', 'Corallites']
   ],
   FEAT = 3,
-  SHEET = 6;
+  SHEET = 6,
+  // Cap per genus x view (Pierre, 2026-11-01: "10 good representative photos per genus x zoom would already be great"):
+  // a view with CELL_MAX colonies in the games is full (Candidates swiper, Game coverage; see cellFull).
+  CELL_MAX = 10;
 const $v = document.getElementById('view'),
   $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
@@ -1550,7 +1553,7 @@ const HELP = {
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Game coverage). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
+  cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Last = last answer. Right = all their answers; Last 50 = their last 50. Days = days with answers. Learned and Seen = genera, from their last sync. Reports = problems they reported (Triage). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id.</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
   stats: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). All / Others / Me: everyone, everyone but the name synced in this browser, or only it. Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
@@ -1571,7 +1574,7 @@ const HELP = {
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" in the footer of any page (wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
-  cand: `<p>Every new candidate, one at a time, genera taking turns. Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p>`,
+  cand: `<p>Every new candidate, one at a time, genera taking turns. Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full. Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below ${CELL_MAX}. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
 };
 function toggleHelp() {
@@ -2376,7 +2379,21 @@ const CSRCS = [
   ['all', 'All']
 ];
 let CSRC = store.get('imr-admin-csrc2', 'dauin'),
-  CSKIP = new Set();
+  CSKIP = new Set(),
+  CFULL = false, // this tab: also show the candidates waiting in full cells
+  CREPL = null; // {n, f, w}: adding f to a full cell, choosing the colony it replaces
+// Cap per genus x view: CELL_MAX (top of the file). A full cell's candidates leave the swiper (counted, shown on
+// demand) and come back when it drops below; adding one to a full cell asks which colony it replaces in the games (that
+// colony's photos of the view become "sheet only", curation.json use 'ref': still on the genus sheet), or adds anyway.
+// Colonies, not photos: a question shows the views of one colony. A candidate from a colony already in the cell adds none.
+const cellView = (n, p) => {
+  const v = p.vg || p.view;
+  return v === 'medium' && lv(n) === 2 ? 'wide' : v;
+};
+const cellFull = (n, w, o) => {
+  const c = covOf(n, w);
+  return c.obs >= CELL_MAX && !(o && c.L.some(q => q.o === o));
+};
 const srcOk = (p, s) => s === 'all' || origin(p) === s;
 // Order (Pierre): random, but genus x view cells with few photos come up more often, so the gaps for the games fill
 // first. Each candidate's weight is 1 / (1 + game colonies the genus already has in its view, covOf as on the Coverage page): its guessed view (vg, Claude's
@@ -2420,7 +2437,10 @@ function candQueue(src) {
   Object.keys(DATA.gen).forEach(n => {
     const add = entry(n).add || {};
     cands(n).forEach(p => {
-      if (srcOk(p, src) && !add[p.f] && !rejected(p.f)) L.push({p, n, r: -Math.log(uOf(p.f)) / weight(n, p)});
+      if (!srcOk(p, src) || add[p.f] || rejected(p.f)) return;
+      const v = cellView(n, p),
+        full = VIEWS.some(x => x[0] === v) && (cnt(n, v), N[n + '|' + v] >= CELL_MAX && !(p.o && O[n + '|' + v].has(p.o)));
+      L.push({p, n, full, r: -Math.log(uOf(p.f)) / weight(n, p)});
     });
   });
   L.sort((a, b) => a.r - b.r);
@@ -2433,13 +2453,74 @@ function candQueue(src) {
   return out;
 }
 let candKey = null;
+// Adding to a full cell: one tile per colony of the cell, Poor first, featured last; a click moves that colony's photos
+// of the view to "sheet only" and adds the candidate, in one Undo step. "Add anyway" goes over the cap.
+function renderRepl() {
+  const {n, f, w} = CREPL,
+    p = cands(n).find(x => x.f === f) || photos(n).find(x => x.f === f);
+  const done = () => {
+    CREPL = null;
+    CSKIP.delete(f);
+  };
+  if (!p) {
+    done();
+    return render();
+  }
+  const feat = new Set(rowOf(n, w).feat.map(x => x.f)),
+    by = {};
+  covOf(n, w).L.forEach(q => (by[q.o || q.f] = by[q.o || q.f] || []).push(q));
+  const cols = Object.entries(by)
+    .map(([k, L]) => ({k, L, q: Math.min(...L.map(x => qOf(x.f))), ft: L.some(x => feat.has(x.f))}))
+    .sort((a, b) => a.ft - b.ft || a.q - b.q);
+  const QN = {1: 'Poor', 2: 'Fair', 3: 'Good'};
+  $v.innerHTML = `<section class="adm-repl">
+    <div class="adm-shead"><h2><i>${esc(n)}</i> · ${esc(label(n, w))} is full</h2></div>
+    <p class="note">${cols.length} colonies already in the games (cap ${CELL_MAX}). Pick the one this photo replaces: its photos of this view stay on the genus sheet and leave the games. Undo (Ctrl+Z) brings it back.</p>
+    <figure class="adm-repl-new"><img src="${img(p)}" alt=""${crStyle(f)}><figcaption>New: ${esc(p.t || f)}</figcaption></figure>
+    <div class="adm-repl-grid">${cols
+      .map(
+        c => `<button type="button" class="adm-repl-tile" data-repl="${esc(c.k)}"><img src="${img(c.L[0], 1)}" alt="" loading="lazy">
+        <span>${QN[c.q] || ''}${c.ft ? ' · featured' : ''}${c.L.length > 1 ? ` · ${c.L.length} photos` : ''}</span></button>`
+      )
+      .join('')}</div>
+    <p class="adm-repl-acts"><button type="button" class="adm-btn" data-ranyway>Add anyway (${cols.length + 1})</button> <button type="button" class="adm-link" data-rcancel>Cancel</button></p>
+  </section>`;
+  $v.querySelectorAll('[data-repl]').forEach(
+    b =>
+      (b.onclick = () => {
+        const L = (cols.find(c => c.k === b.dataset.repl) || {L: []}).L;
+        DRAFT.use = {...(DRAFT.use || {})};
+        L.forEach(q => (DRAFT.use[q.f] = 'ref'));
+        done();
+        ACT.addc(n, f, null, w); // one draft save, so one Undo step for both
+        toast(`Added to ${n}, ${label(n, w)}; the colony it replaces is now on the sheet only.`);
+      })
+  );
+  $v.querySelector('[data-ranyway]').onclick = () => {
+    done();
+    ACT.addc(n, f, null, w);
+    toast(`Added: ${n}, ${label(n, w)} (${cols.length + 1} colonies, over the cap).`);
+  };
+  $v.querySelector('[data-rcancel]').onclick = () => {
+    CREPL = null;
+    render();
+  };
+}
 function renderCand() {
   status();
-  const Q = candQueue(CSRC),
-    live = Q.filter(x => !CSKIP.has(x.p.f)),
+  if (CREPL) return renderRepl();
+  const shown = x => !CSKIP.has(x.p.f) && (CFULL || !x.full);
+  const Q0 = candQueue(CSRC),
+    nFull = Q0.filter(x => x.full).length,
+    Q = CFULL ? Q0 : Q0.filter(x => !x.full),
+    live = Q0.filter(shown),
     c = live[0],
     nx = live[1];
-  const seg = `<span class="adm-qseg adm-csrc" role="group" aria-label="Source">${CSRCS.map(([s, t]) => `<button type="button" data-src="${s}" aria-pressed="${s === CSRC}">${t} <b>${s === CSRC ? live.length : candQueue(s).filter(x => !CSKIP.has(x.p.f)).length}</b></button>`).join('')}</span>`;
+  const seg =
+    `<span class="adm-qseg adm-csrc" role="group" aria-label="Source">${CSRCS.map(([s, t]) => `<button type="button" data-src="${s}" aria-pressed="${s === CSRC}">${t} <b>${s === CSRC ? live.length : candQueue(s).filter(shown).length}</b></button>`).join('')}</span>` +
+    (nFull
+      ? `<p class="note adm-cfull">${nFull} wait${nFull === 1 ? 's' : ''} in full cells (${CELL_MAX} colonies) · <button type="button" class="adm-link" data-cfull>${CFULL ? 'Hide them' : 'Show them'}</button></p>`
+      : '');
   if (!c) {
     $v.innerHTML = `<section class="adm-sw adm-swempty">${seg}<p class="note">${Q.length ? `${Q.length} skipped.` : 'No candidate left.'}</p>${Q.length ? '<button type="button" class="adm-btn" data-again>Show the skipped ones</button>' : ''}</section>`;
   } else {
@@ -2469,9 +2550,14 @@ function renderCand() {
     S.querySelectorAll('[data-add]').forEach(
       b =>
         (b.onclick = () => {
+          const w = b.dataset.add;
+          if (cellFull(n, w, p.o)) {
+            CREPL = {n, f, w};
+            return render();
+          }
           go();
-          ACT.addc(n, f, null, b.dataset.add);
-          toast(`Added: ${n}, ${label(n, b.dataset.add)}.`);
+          ACT.addc(n, f, null, w);
+          toast(`Added: ${n}, ${label(n, w)}.`);
         })
     );
     S.querySelector('[data-rej]').onclick = () => {
@@ -2509,6 +2595,12 @@ function renderCand() {
         render();
       })
   );
+  const cf = $v.querySelector('[data-cfull]');
+  if (cf)
+    cf.onclick = () => {
+      CFULL = !CFULL;
+      render();
+    };
   const ag = $v.querySelector('[data-again]');
   if (ag)
     ag.onclick = () => {
@@ -3341,7 +3433,7 @@ function renderCov() {
     rich = R.reduce((s, r) => s + r.cells.filter(c => c && covLvl(c) === 4).length, 0);
   const cell = (r, c, v) =>
     c
-      ? `<td class="cov-c cov-${covLvl(c)}" title="${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}${(o => (o ? ` · not counted: ${esc(o)}` : ''))(covOff(r.n, v, true))}"><b>${c.n}</b>${c.obs < c.n ? `<small>${c.obs}</small>` : ''}${(o => (o ? `<span class="cov-off">${o}</span>` : ''))(covOff(r.n, v))}</td>`
+      ? `<td class="cov-c cov-${covLvl(c)}${c.obs > CELL_MAX ? ' cov-over' : c.obs === CELL_MAX ? ' cov-full' : ''}" title="${c.obs > CELL_MAX ? `Over the cap of ${CELL_MAX} colonies · ` : c.obs === CELL_MAX ? `Full (${CELL_MAX} colonies) · ` : ''}${esc(label(r.n, v))}: ${c.n} photo${c.n === 1 ? '' : 's'} · ${c.obs} colon${c.obs === 1 ? 'y' : 'ies'}${(o => (o ? ` · not counted: ${esc(o)}` : ''))(covOff(r.n, v, true))}"><b>${c.n}</b>${c.obs < c.n ? `<small>${c.obs}</small>` : ''}${(o => (o ? `<span class="cov-off">${o}</span>` : ''))(covOff(r.n, v))}</td>`
       : '<td class="cov-c cov-na">–</td>';
   const bar = r =>
     ORIGINS.filter(o => o[0] !== 'book')
@@ -3358,7 +3450,7 @@ function renderCov() {
   $v.innerHTML = `<section class="adm-cov">
     <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Order">${seg.map(([k, t, h]) => `<button type="button" data-co="${k}" title="${h}" aria-pressed="${!COVS.col && COV_ORDER === k}">${t}</button>`).join('')}</span>
       <span class="cov-key" aria-label="Colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
-      <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 colonies">${thin} thin</b><b class="cov-rich" title="Cells with 8+ colonies">${rich} at 8+</b></div>
+      <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 colonies">${thin} thin</b><b title="Cells at the cap of ${CELL_MAX} colonies or over: their candidates wait outside the swiper">${R.reduce((s, r) => s + r.cells.filter(c => c && c.obs >= CELL_MAX).length, 0)} full</b><b class="cov-rich" title="Cells with 8+ colonies">${rich} at 8+</b></div>
     <table class="cov-t"><thead><tr><th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates">+</th></tr></thead>
     <tbody>${R.map(
       r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
