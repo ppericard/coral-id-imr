@@ -464,5 +464,6 @@ td.cov-c small::before{content:"·";margin-right:3px}
 .adm-needs tbody tr{cursor:pointer}
 .adm-why{display:inline-block;font-size:.8rem;padding:1px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);white-space:nowrap;margin:1px 0}
 .adm-why.w-few{background:var(--bad-bg);border-color:var(--bad);color:var(--ink)}
+.adm-why.w-zoom{background:var(--surface-2);border-color:var(--accent,var(--line));border-style:dashed}
 .adm-why.w-easy{background:var(--good-bg);border-color:var(--good);color:var(--ink)}
 @media (min-width:1024px){.adm-kpis:has(> div:nth-child(5)){grid-template-columns:repeat(5,minmax(0,1fr))}}
