@@ -26,6 +26,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .wrap{max-width:var(--page);margin:0 auto;min-height:calc(100dvh - var(--tabbar-h, 0px));display:flex;flex-direction:column}
 @media (min-width:1340px){.bleed{width:min(1680px,calc(100vw - 48px));margin-left:calc(50% - min(840px,50vw - 24px))}}
 a{color:var(--accent)}
+.vh{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 h2{font-family:var(--display);font-weight:700;font-size:1.6rem;margin:12px 0 4px;text-wrap:balance;line-height:1.1}
 .lede{color:var(--muted);margin:0 0 18px;max-width:65ch}
@@ -35,7 +36,7 @@ h2{font-family:var(--display);font-weight:700;font-size:1.6rem;margin:12px 0 4px
 .own{display:inline-block;font-size:.7rem;font-weight:600;color:var(--accent);margin-left:4px}
 .count{font-family:var(--display);font-weight:700;font-size:1.3rem;margin:4px 0 12px}
 /* Credits: one small line pinned to the bottom of the page (the .wrap column fills the window), full page width. */
-footer{margin-top:auto;font-size:.7rem;color:var(--muted);border-top:1px solid var(--line);padding:8px 0 10px}
+footer{margin-top:auto;font-size:.75rem;color:var(--muted);border-top:1px solid var(--line);padding:8px 0 10px}
 footer p{max-width:none;margin:0}
 main{margin-bottom:32px}
 /* small uppercase section label, shared by sheets, compare and fieldsets */
@@ -75,16 +76,20 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 .setpop[hidden]{display:none}
 .setrow{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:.88rem;color:var(--muted)}
 .setrow[hidden]{display:none}
-.palsw{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.palsw{display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
+.setrow:has(.palsw){flex-direction:column;align-items:stretch;gap:6px}
 .palsw button{padding:3px;border:2px solid transparent;border-radius:8px;background:none;cursor:pointer;line-height:0}
 .palsw button[aria-pressed="true"]{border-color:var(--ink)}
 .palsw i{display:block;width:34px;height:16px;border-radius:4px}
+.palsw button{display:flex;flex-direction:column;align-items:center;gap:3px;line-height:1.1}
+.palsw span{font-size:.75rem;color:var(--muted)}
+.palsw button[aria-pressed="true"] span{color:var(--ink);font-weight:600}
 /* Phones: Tools are off the tab bar, so a hammer in the header opens them; tablet/desktop have the Tools tab. */
 .labgo{text-decoration:none;color:inherit}
 @media (min-width:600px){.hdr-tools .labgo{display:none}}
 
 /* ---------- Controls: one pill system for nav, chips, segmented control and icon buttons ---------- */
-.sections a,.chip,.theme,.seg,#size,#adminview,#xgen,#cvd,.prog{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);box-shadow:var(--shadow)}
+.sections a,.chip,.theme,.seg,#size,#adminview,#xgen,#cvd,#theme,.prog{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);box-shadow:var(--shadow)}
 .sections a,.chip{display:inline-flex;align-items:center;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .12s,border-color .12s,color .12s}.chip{min-height:var(--ctl-h)}.sections a{min-height:38px}.chip{font-size:.92rem}.sections a{font-size:.82rem}.chip{padding:0 14px}.sections a{padding:0 4px}
 @media (min-width:600px){
   .sections a{padding:0 14px;font-size:.92rem;min-height:var(--ctl-h)}
@@ -131,23 +136,26 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
   .modes.ctx .ctx-t{font-size:1.25rem;gap:10px}
 }
 .modes.ctx .ctx-t > *{overflow:hidden;text-overflow:ellipsis}
-.modes.ctx .ctx-t small{font-size:.68rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.modes.ctx .ctx-t small{font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 @media (min-width:600px){
   .modes.ctx .ctx-t small{font-size:.78rem}
 }
 .modes.ctx .up{gap:4px}
 .modes.ctx .pn{flex:none;display:flex;gap:2px;padding-left:6px;border-left:1px solid var(--line)}
 .modes.ctx .pn a{width:34px;padding:0;font-size:1.3rem;line-height:1}
-#size,#adminview,#xgen,#cvd{display:flex;overflow:hidden;height:var(--ctl-h)}
-#adminview button,#xgen button,#cvd button{background:none;border:0;color:var(--muted);font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}#adminview button,#xgen button,#cvd button{padding:0 9px}
-#adminview button+button,#xgen button+button{border-left:1px solid var(--line)}
-#adminview button[aria-pressed="true"],#xgen button[aria-pressed="true"],#cvd button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+#size,#adminview,#xgen,#cvd,#theme{display:flex;overflow:hidden;height:var(--ctl-h)}
+#adminview button,#xgen button,#cvd button,#theme button{background:none;border:0;color:var(--muted);font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}#adminview button,#xgen button,#cvd button,#theme button{padding:0 9px}
+#adminview button+button,#xgen button+button,#theme button+button{border-left:1px solid var(--line)}
+#adminview button[aria-pressed="true"],#xgen button[aria-pressed="true"],#cvd button[aria-pressed="true"],#theme button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 #size button{background:none;border:0;color:var(--muted);font:inherit;font-size:.8rem;font-weight:700;width:34px;cursor:pointer}
 #size button+button{border-left:1px solid var(--line)}
 #size button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .theme{width:var(--ctl-h);height:var(--ctl-h);display:inline-flex;align-items:center;justify-content:center;font-size:1.05rem;cursor:pointer;line-height:1}
 .next{align-self:flex-start;display:inline-block;background:var(--accent);color:var(--accent-ink);border:0;border-radius:var(--pill);padding:10px 22px;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;box-shadow:var(--shadow)}
 .next:hover{box-shadow:var(--shadow-hover)}
+/* Secondary button: same shape as the primary .next, outlined (design review 2026-11-01). */
+.next.sec{background:var(--surface);color:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.next.sec:hover{box-shadow:inset 0 0 0 1.5px var(--accent),var(--shadow-hover)}
 .reset{background:none;border:1px solid var(--line);border-radius:var(--pill);padding:6px 14px;cursor:pointer;font:inherit;font-size:.85rem;color:var(--muted)}
 .linkish{font:inherit;background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .crumbs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:18px 0 4px;font-size:.92rem;color:var(--muted)}
@@ -167,10 +175,10 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 :root[data-size="l"] .grid{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,340px),calc((100% - 14px) / 2)),1fr))}
 .card{display:flex;flex-direction:column;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;cursor:pointer;padding:0;text-decoration:none;box-shadow:var(--shadow)}
 .card{position:relative}
-.card.grp{border-top:4px solid hsl(var(--g) 55% 52%)}
+.card.grp{border-top:4px solid hsl(var(--g) 32% 62%)}
 .card .ig{position:absolute;top:8px;left:8px;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:var(--pill);background:hsl(var(--g) 60% 92% / .92);color:hsl(var(--g) 60% 22%)}
 :root[data-theme="dark"] .card .ig{background:hsl(var(--g) 35% 18% / .92);color:hsl(var(--g) 70% 80%)}
-.gdiv{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:14px 0 0;padding-bottom:6px;border-bottom:2px solid hsl(var(--g,200) 45% 55% / .5);font-size:1rem;font-weight:600}
+.gdiv{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:14px 0 0;padding-bottom:6px;border-bottom:2px solid hsl(var(--g,200) 30% 60% / .45);font-size:1rem;font-weight:600}
 .gdiv:first-child{margin-top:0}
 /* Genera in lecture order: one block per group on the page grid (packGroups in app.js sets the spans), so small
    groups share a row. Subgrid keeps the cards on the page columns and the group titles of a row aligned. */
@@ -193,7 +201,7 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
   .gpack>.gblk:first-child>.gdiv{margin-top:10px}
 }
 
-.gdiv .gn{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 6px;border-radius:var(--pill);background:hsl(var(--g,200) 55% 52%);color:#fff;font-size:.85rem}
+.gdiv .gn{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 6px;border-radius:var(--pill);background:hsl(var(--g,200) 40% 88%);color:hsl(var(--g,200) 50% 24%);box-shadow:inset 0 0 0 1px hsl(var(--g,200) 30% 68%);font-size:.85rem}
 .seg-row{display:flex;align-items:center;gap:10px;margin:0 0 12px}
 .seg{display:inline-flex;padding:3px;gap:2px;background:var(--surface-2);border-radius:var(--pill);box-shadow:none}
 .seg button{font:inherit;font-size:.86rem;border:0;background:none;color:var(--muted);padding:5px 14px;border-radius:var(--pill);cursor:pointer}
@@ -345,7 +353,7 @@ body:has(.q) main,body:has(.pgrid) main,body:has(.rvstage) main,body:has(.pgroup
 @media (min-width:1024px){
   .ans button{padding:12px 14px}
 }
-kbd{font:600 .7rem/1 var(--body);font-style:normal;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:3px 5px;background:var(--bg)}
+kbd{font:600 .75rem/1 var(--body);font-style:normal;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:3px 5px;background:var(--bg)}
 .ans button:not([disabled]):hover{border-color:var(--accent)}
 .ans button.ok{background:var(--good-bg);border-color:var(--good);color:var(--good)}
 .ans button.ko{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
@@ -427,7 +435,7 @@ header{grid-template-columns:1fr auto;grid-template-areas:"title tools" "help he
 /* Phones: the sections become a tab bar at the bottom, in thumb reach; Lab stays off the phone nav, progress joins it. */
 .sections{position:fixed;left:0;right:0;bottom:0;z-index:20;margin:0;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line)}
 .sections a[data-tab="lab"]{display:none}
-.tabn{font-weight:700;font-size:.72rem;margin-left:3px;color:var(--good)}
+.tabn{font-weight:700;font-size:.75rem;margin-left:3px;color:var(--good)}
 .sections a[aria-current="page"] .tabn{color:inherit}
 .hdr-tools .prog{display:none}
 body{padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px))}
@@ -616,19 +624,19 @@ a.lt:hover{border-color:var(--accent)}
    (--lv1..--lv4 = quarters of the genus's progress, --lv5 = learned, with a tick). Not seen = white tile, dashed border.
    A thin line along the bottom shows the exact progress (--p). Review = red border + red "!" badge, on top of the level.
    Dark mode has its own steps (light = more learned there too). Contrast checked: text on every step >= 4.4:1. */
-:root{--lv1:#d3ebe7;--lv2:#a2d5cc;--lv3:#63b6a4;--lv4:#2a8770;--lv5:#1d5f34;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
+:root{--lv1:#d3ebe7;--lv2:#a2d5cc;--lv3:#63b6a4;--lv4:#29836d;--lv5:#1d5f34;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
 :root[data-theme="dark"]{--lv1:#1f4a4f;--lv2:#246861;--lv3:#36998a;--lv4:#66c7a5;--lv5:#9edda6;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#06262b;--lvt4:#06262b;--lvt5:#06262b}
 /* Colour themes (setting "Colours", :root[data-palette], localStorage imr-coral-palette): each one retints the chrome
    (accent, background, lines) and the learning-level ramp, with its own light and dark steps. Lagoon = the base colours
    above; Depth is the default theme (set in index.html before first paint). Steps generated in OKLCH at fixed lightness (light .93/.84/.72/.58/.44, dark .38/.48/.61/.74/.86), so every
    theme keeps the same text contrast on each step. */
-:root[data-palette="ocean"]{--bg:#f1f5fa;--surface-2:#e5ecf5;--line:#d3dce7;--accent:#2863ab;--accent-ink:#ffffff;--lv1:#d1edfe;--lv2:#a1d1f4;--lv3:#6aaae6;--lv4:#407bc5;--lv5:#2c4f94;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
+:root[data-palette="ocean"]{--bg:#f1f5fa;--surface-2:#e5ecf5;--line:#d3dce7;--accent:#2863ab;--accent-ink:#ffffff;--lv1:#d1edfe;--lv2:#a1d1f4;--lv3:#6aaae6;--lv4:#3a76c0;--lv5:#2c4f94;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
 :root[data-palette="ocean"][data-theme="dark"]{--bg:#0f141b;--surface:#181f28;--surface-2:#212a35;--line:#2f3945;--accent:#86bafd;--accent-ink:#0d1b2d;--lv1:#2f4653;--lv2:#3b627e;--lv3:#5088bc;--lv4:#77aef3;--lv5:#bad2fd;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
-:root[data-palette="seagrass"]{--bg:#f2f6f0;--surface-2:#e7ede4;--line:#d6ded2;--accent:#437224;--accent-ink:#ffffff;--lv1:#e6edc0;--lv2:#c0d492;--lv3:#8cb460;--lv4:#558b41;--lv5:#29612d;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
+:root[data-palette="seagrass"]{--bg:#f2f6f0;--surface-2:#e7ede4;--line:#d6ded2;--accent:#437224;--accent-ink:#ffffff;--lv1:#e6edc0;--lv2:#c0d492;--lv3:#8cb460;--lv4:#4f813c;--lv5:#29612d;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
 :root[data-palette="seagrass"][data-theme="dark"]{--bg:#11150e;--surface:#1a2017;--surface-2:#242c20;--line:#323b2e;--accent:#9bc684;--accent-ink:#121f0b;--lv1:#414623;--lv2:#56652e;--lv3:#6d9047;--lv4:#89bb78;--lv5:#ace1ad;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
 :root[data-palette="twilight"]{--bg:#f5f3f9;--surface-2:#ebe9f4;--line:#dbd9e6;--accent:#6a4fa9;--accent-ink:#ffffff;--lv1:#ebe3fe;--lv2:#d0c0f9;--lv3:#aa95e8;--lv4:#7e66ca;--lv5:#543f99;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
 :root[data-palette="twilight"][data-theme="dark"]{--bg:#14121a;--surface:#1f1c27;--surface-2:#2a2734;--line:#393544;--accent:#bda8fc;--accent-ink:#1c172b;--lv1:#453e53;--lv2:#625581;--lv3:#8875bd;--lv4:#ad9af9;--lv5:#d0cafe;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
-:root[data-palette="depth"]{--bg:#eff6f9;--surface-2:#e2edf3;--line:#cfdde4;--accent:#066d90;--accent-ink:#ffffff;--lv1:#f4ed8b;--lv2:#9bdda8;--lv3:#4ab9b2;--lv4:#1785af;--lv5:#2e4d99;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
+:root[data-palette="depth"]{--bg:#eff6f9;--surface-2:#e2edf3;--line:#cfdde4;--accent:#066d90;--accent-ink:#ffffff;--lv1:#f4ed8b;--lv2:#9bdda8;--lv3:#4ab9b2;--lv4:#167ca4;--lv5:#2e4d99;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
 :root[data-palette="depth"][data-theme="dark"]{--bg:#0c151a;--surface:#142026;--surface-2:#1c2b33;--line:#2a3b43;--accent:#75c3e8;--accent-ink:#031e29;--lv1:#494404;--lv2:#346c42;--lv3:#31948f;--lv4:#62b7dd;--lv5:#bcd1fd;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
 /* Colour-blind mode (setting "Colour-blind", :root[data-cvd], localStorage imr-coral-cvd): right/wrong and "to review"
    move from green/red to dark blue / orange. Hue alone is not enough (blue and orange of equal brightness merge for
@@ -637,6 +645,12 @@ a.lt:hover{border-color:var(--accent)}
    Never colour alone: answers carry a tick or a cross, review carries "!". The level scale differs by lightness. */
 :root[data-cvd="1"]{--good:#08306b;--good-bg:#dbe6f4;--bad:#c45400;--bad-bg:#fbe3cf}
 :root[data-cvd="1"][data-theme="dark"]{--good:#b5dcff;--good-bg:#1a3047;--bad:#d6731a;--bad-bg:#45270f}
+/* Colour-blind mode: the dark-blue "right" is close to the accent used for selected and active states, so it also changes
+   shape (design review 2026-11-01): right = filled with a white tick, wrong = dashed orange outline. */
+:root[data-cvd="1"] .ans button.ok{background:var(--good);color:var(--surface);border-color:var(--good)}
+:root[data-cvd="1"] .ans button.ok kbd{color:inherit;border-color:currentColor;background:transparent}
+:root[data-cvd="1"] .ans button.ko{border-style:dashed;border-width:2px}
+:root[data-cvd="1"] .ans button.ok::after,:root[data-cvd="1"] .ans button.ko::after{font-size:1.15em}
 /* Colour-blind mode: "to review" also changes shape (thick dashed border), not only colour. */
 :root[data-cvd="1"] :is(.pslate .ps.weak,.pseg a.weak,.pwall .pw.weak,.plvl .pl-rev){border-style:dashed;border-width:3px}
 .s1{--lvc:var(--lv1);--lvt:var(--lvt1)}.s2{--lvc:var(--lv2);--lvt:var(--lvt2)}.s3{--lvc:var(--lv3);--lvt:var(--lvt3)}.s4{--lvc:var(--lv4);--lvt:var(--lvt4)}.s5{--lvc:var(--lv5);--lvt:var(--lvt5)}
@@ -650,7 +664,7 @@ a.lt:hover{border-color:var(--accent)}
 .plvl span{position:relative;flex:1 1 0;min-width:40px;max-width:64px;display:flex;flex-direction:column;align-items:center;padding:4px 2px;border-radius:6px;background:var(--lvc,var(--surface));color:var(--lvt,var(--ink));border:1px solid var(--lvc,var(--line));line-height:1.1}
 .plvl span.s0{border-style:dashed;color:var(--muted)}
 .plvl b{font-size:1rem;font-variant-numeric:tabular-nums}
-.plvl small{font-size:.66rem;white-space:nowrap}
+.plvl small{font-size:.75rem;white-space:nowrap}
 .plvl .pl-rev{border:2px solid var(--bad)}
 .plvl .pl-rev::before{top:-7px;right:-7px}
 .plvl .pl-rev.zero{border-color:var(--line)}
@@ -663,7 +677,7 @@ a.lt:hover{border-color:var(--accent)}
 .pct::before{content:"";width:1.25em;height:1.25em;border-radius:50%;flex:none;background:radial-gradient(closest-side,var(--lvc) 58%,transparent 60%),conic-gradient(var(--lvt) var(--p),color-mix(in srgb,var(--lvt) 22%,transparent) 0)}
 @container (max-width:118px){.pct{font-size:0 !important;padding-left:2px !important}.pct::before{width:14px;height:14px}}
 @container (max-width:60px){.pct{display:none !important}}
-.plvlnote{margin:2px 0 0;font-size:.72rem;color:var(--muted);display:flex;align-items:center;gap:6px;justify-content:center}
+.plvlnote{margin:2px 0 0;font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:6px;justify-content:center}
 .plvlnote .pbar{display:inline-block;width:14px;height:14px;border-radius:50%;background:radial-gradient(closest-side,var(--bg) 58%,transparent 60%),conic-gradient(var(--ink) 65%,color-mix(in srgb,var(--ink) 22%,transparent) 0)}
 /* Groups view: one bar per IMR lecture group, one segment per genus. */
 .pgroups{display:flex;flex-direction:column;gap:6px}
@@ -671,7 +685,7 @@ a.lt:hover{border-color:var(--accent)}
 @media (min-width:600px){
   .pgr{grid-template-columns:28px minmax(0,230px) minmax(0,1fr) 40px}
 }
-.pgr .gn{background:hsl(var(--g,200) 55% 52%);color:#fff;font-size:.85rem}
+.pgr .gn{background:hsl(var(--g,200) 40% 88%);color:hsl(var(--g,200) 50% 24%);box-shadow:inset 0 0 0 1px hsl(var(--g,200) 30% 68%);font-size:.85rem}
 .pgt{font-size:.85rem;color:var(--muted);line-height:1.2}
 .pgr small{color:var(--muted);text-align:right}
 .pseg{display:flex;gap:3px;height:100%;max-height:56px}
@@ -721,10 +735,15 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .tipgr .chip{min-width:34px;text-align:center}
 
 /* Group chips carry their IMR group colour (groupHue in app.js). */
-.gchip{border-color:hsl(var(--g) 55% 52%);background:hsl(var(--g) 55% 52% / .14)}
-.fdopt.gchip{background:var(--surface);box-shadow:inset 3px 0 0 hsl(var(--g) 55% 52%)}
-.gchip[aria-pressed="true"]{background:hsl(var(--g) 55% 52%);border-color:hsl(var(--g) 55% 52%);color:#fff}
-.fdopt.gchip[aria-pressed="true"]{color:inherit;background:hsl(var(--g) 55% 52% / .16)}
+.gchip{border-color:hsl(var(--g) 30% 66%);background:hsl(var(--g) 40% 92%);color:hsl(var(--g) 50% 24%)}
+.fdopt.gchip{background:var(--surface);box-shadow:inset 3px 0 0 hsl(var(--g) 32% 58%)}
+.gchip[aria-pressed="true"]{background:hsl(var(--g) 40% 80%);border-color:hsl(var(--g) 35% 45%);color:hsl(var(--g) 50% 18%)}
+/* IMR group colours are muted tints (design review 2026-11-01): the number and title carry the group; strong colour is kept
+   for the learning-level scale, so the same hue never means two things on one screen. Dark text keeps contrast >= 4.5. */
+:root[data-theme="dark"] :is(.gdiv .gn,.pgr .gn){background:hsl(var(--g,200) 25% 24%);color:hsl(var(--g,200) 55% 84%);box-shadow:inset 0 0 0 1px hsl(var(--g,200) 25% 40%)}
+:root[data-theme="dark"] .gchip{border-color:hsl(var(--g) 25% 40%);background:hsl(var(--g) 25% 18%);color:hsl(var(--g) 55% 84%)}
+:root[data-theme="dark"] .gchip[aria-pressed="true"]{background:hsl(var(--g) 30% 30%);border-color:hsl(var(--g) 35% 60%);color:hsl(var(--g) 60% 90%)}
+.fdopt.gchip[aria-pressed="true"]{color:inherit;background:hsl(var(--g) 32% 58% / .18)}
 /* ID tips: two genera per row (one on phones), larger photos. */
 .tipsec,.tiplist{display:grid;column-gap:28px;align-items:start}.tiplist{grid-template-columns:minmax(0,1fr)}.tipsec{grid-template-columns:minmax(0,1fr)}
 @media (min-width:1024px){
@@ -924,7 +943,7 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .pboard .gside > .pring{grid-column:1;width:84px;height:84px;margin:0}
 .pboard .gside > .pring > span{width:64px;height:64px;font-size:.8rem}
 .pboard .gside > .pring b{font-size:1.3rem}
-.pboard .gside > .pring small{font-size:.62rem;text-align:center;line-height:1.1}
+.pboard .gside > .pring small{font-size:.75rem;text-align:center;line-height:1.1}
 .pboard .gside > .plvl{grid-column:2;justify-content:flex-start}
 .pboard .gside > .plvlnote{justify-content:flex-start}
 

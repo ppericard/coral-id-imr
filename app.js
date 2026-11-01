@@ -217,7 +217,7 @@ const bySlate = L => [...Object.keys(DATA.gen), ...Object.keys((DATA.x || {}).ge
 // group=true marks the card with its IMR confusion group (strip and tag); 'stripe' draws the strip only.
 function card(name, group){
   const g = GX(name), p = cover(g), ig = (group === true || group === 'stripe') && g.ig ? DATA.imrg.find(x => x.n === g.ig) : null;
-  const im = p ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="${esc(name)}" loading="lazy">` : `<span class="ph none">no photo</span>`;
+  const im = p ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="" loading="lazy">` : `<span class="ph none">no photo</span>`;
   return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="fdxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${esc(tipsText(g))}</p></span></a>`;
 }
 function bindCards(root = $v){ root.querySelectorAll('[data-g]').forEach(b => b.onclick = () => go('g-' + b.dataset.g)); }
@@ -291,7 +291,7 @@ const tipsText = g => g.qt ? g.qt.join(' · ') : g.sum;
 // The ID tips view of the Genera page: the 4 lecture questions and the glossary on top, then 2-3 short cues per genus.
 const tipsHead = () => `<div class="tiphead"><ol class="qtiles" aria-label="IMR Lecture 6: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
   <details class="gloss"><summary>Coral anatomy terms</summary><a class="glink" href="#lab-anatomy"><span class="hpv art">${window.homeArt ? homeArt('anatomy') : ''}</span><span><b>Corallite anatomy</b><small>Explore the parts of a corallite on a diagram ›</small></span></a><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>`;
-const tipCard = n => { const g = DATA.gen[n], p = cover(g); return `<article class="tipg"><a href="#g-${esc(n)}" class="tipph">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<i>${esc(n)}</i></a><div>${tipsList(g)}${lookOf(n).length ? `<p class="note">Don't confuse with ${lookOf(n).map(b => `<a href="#cmp-${esc(n)}|${esc(b)}"><i>${esc(b)}</i></a>`).join(', ')}</p>` : ''}</div></article>`; };
+const tipCard = n => { const g = DATA.gen[n], p = cover(g); return `<article class="tipg"><a href="#g-${esc(n)}" class="tipph">${p ? `<img src="${img(p, 's')}" alt="" loading="lazy">` : ''}<i>${esc(n)}</i></a><div>${tipsList(g)}${lookOf(n).length ? `<p class="note">Don't confuse with ${lookOf(n).map(b => `<a href="#cmp-${esc(n)}|${esc(b)}"><i>${esc(b)}</i></a>`).join(', ')}</p>` : ''}</div></article>`; };
 
 /* ---------- genera ---------- */
 let azFam = null, azQ = '', xOpen = false;
@@ -893,7 +893,7 @@ function quizBoard(){
   // Photo wall: the cover in full colour (grey = not seen) with a name band coloured by the genus's step on the scale,
   // holding the mini ring + % like the Slate and Groups tiles; review = red border and "!".
   const tile = n => { const g = DATA.gen[n], p = cover(g), [cl] = lv[n];
-    return `<a class="pw ${cl} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}">${p ? `<img src="${img(p, 's')}" alt="${esc(n)}" loading="lazy">` : ''}<span class="pwb"><i>${esc(n)}${g.n ? '' : ' ★'}</i>${pct(n)}</span></a>`; };
+    return `<a class="pw ${cl} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}">${p ? `<img src="${img(p, 's')}" alt="" loading="lazy">` : ''}<span class="pwb"><i>${esc(n)}${g.n ? '' : ' ★'}</i>${pct(n)}</span></a>`; };
   const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
   // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
   const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}% of the way)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
@@ -1150,10 +1150,10 @@ document.querySelectorAll('#xgen button').forEach(b => b.onclick = () => { XON =
 showX();
 document.querySelectorAll('#size button').forEach(b => b.onclick = () => { b = cycle(b); const p = sizePrefs(); p[pageKey()] = b.dataset.size; try { localStorage.setItem('imr-coral-size', JSON.stringify(p)); } catch (e) {} applySize(); });
 // Light / dark theme switch; follows the system until the reader picks one.
-const $theme = document.getElementById('theme');
+// A Light | Dark segmented switch like the other settings (design review 2026-11-01: one control type per kind of choice).
 function isDark(){ return document.documentElement.dataset.theme === 'dark'; }
-function showTheme(){ const d = isDark(); $theme.textContent = d ? '☀' : '☾'; $theme.setAttribute('aria-label', d ? 'Switch to light theme' : 'Switch to dark theme'); }
-$theme.onclick = () => { const t = isDark() ? 'light' : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.setItem('imr-coral-theme', t); } catch (e) {} showTheme(); };
+function showTheme(){ const d = isDark(); document.querySelectorAll('#theme button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.th === 'dark') === d))); }
+document.querySelectorAll('#theme button').forEach(b => b.onclick = () => { const t = b.dataset.th; document.documentElement.dataset.theme = t; try { localStorage.setItem('imr-coral-theme', t); } catch (e) {} showTheme(); });
 showTheme();
 // Colour theme: retints the accent, background and learning-level scale site-wide (CSS :root[data-palette]); Depth = default
 // (Pierre, 2026-11-01), Lagoon = the base colours in :root.
@@ -1261,11 +1261,13 @@ const $help = document.getElementById('help'), $helpbox = document.getElementByI
 // top-level title or intro, the title is dropped and the intro moves behind ? . route() only resets the help box.
 function pageHelp(){
   const root = $v.querySelector(':scope > .lab') || $v;
-  const found = [...root.querySelectorAll(':scope > h2, :scope > .lede, :scope > .tips, :scope > h3.label, :scope > .gloss')];
+  const found = [...root.querySelectorAll(':scope > h2:not(.vh), :scope > .lede, :scope > .tips, :scope > h3.label, :scope > .gloss')];
   if (!found.length) return;
   const h2 = found.find(x => x.tagName === 'H2'), intro = found.filter(x => x !== h2);
   if (intro.length) { $helpbox.innerHTML = (h2 ? `<h3>${esc(h2.textContent)}</h3>` : '') + intro.map(x => x.outerHTML).join('') + (window.tour ? '<p class="note htour"><button type="button" class="linkish" data-tour>Replay the welcome tour</button></p>' : ''); $help.hidden = false; }
   found.forEach(x => x.remove());
+  // Keep the page title for screen readers (heading order h1 > h2 > h3; design review 2026-11-01), visually hidden.
+  if (h2) root.insertAdjacentHTML('afterbegin', `<h2 class="vh">${esc(h2.textContent)}</h2>`);
 }
 function resetHelp(){ $helpbox.hidden = true; $helpbox.innerHTML = ''; $help.hidden = true; $help.setAttribute('aria-expanded', 'false'); }
 new MutationObserver(pageHelp).observe($v, {childList: true, subtree: true});

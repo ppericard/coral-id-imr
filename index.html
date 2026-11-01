@@ -10,10 +10,10 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#0d6f7d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
-<link rel="stylesheet" href="app.css?v=76">
-<link rel="stylesheet" href="proto/lab.css?v=40">
-<link rel="stylesheet" href="home.css?v=19">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,600;1,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap">
+<link rel="stylesheet" href="app.css?v=77">
+<link rel="stylesheet" href="proto/lab.css?v=41">
+<link rel="stylesheet" href="home.css?v=20">
 </head>
 <body>
 <script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t;var p=localStorage.getItem("imr-coral-palette");document.documentElement.dataset.palette=p&&p!=="reef"?p:"depth";if(localStorage.getItem("imr-coral-cvd")==="1")document.documentElement.dataset.cvd="1"}catch(e){document.documentElement.dataset.palette="depth"}</script>
@@ -37,9 +37,9 @@
         <div class="setrow" id="xrow" hidden><span title="Coral Finder: also rank the rarer genera seen at Dauin that are not on the IMR list">Non-IMR genera</span><div id="xgen" role="group" aria-label="Non-IMR genera"><button type="button" data-x="1">On</button><button type="button" data-x="0">Off</button></div></div>
         <div class="setrow" id="viewrow" hidden><span>View</span><div id="adminview" role="group" aria-label="View"><button type="button" data-view="admin" title="Admin">Admin</button><button type="button" data-view="user" title="User">User</button></div></div>
         <div class="setrow" id="admrow" hidden><span>Admin page</span><a class="setlink" href="admin.html">Open</a></div>
-        <div class="setrow"><span>Theme</span><button type="button" class="theme" id="theme" aria-label="Switch to dark theme">☾</button></div>
+        <div class="setrow"><span>Theme</span><div id="theme" role="group" aria-label="Theme"><button type="button" data-th="light">Light</button><button type="button" data-th="dark">Dark</button></div></div>
         <div class="setrow"><span title="Blue and orange instead of green and red">Colour-blind</span><div id="cvd" role="group" aria-label="Colour-blind mode"><button type="button" data-cvd="1">On</button><button type="button" data-cvd="0">Off</button></div></div>
-        <div class="setrow"><span>Colours</span><div id="palette" class="palsw" role="group" aria-label="Colours"><button type="button" data-pal="lagoon" title="Lagoon" aria-label="Lagoon"><i style="background:linear-gradient(90deg,#d3ebe7,#a2d5cc,#63b6a4,#2a8770,#1d5f34)"></i></button><button type="button" data-pal="ocean" title="Ocean" aria-label="Ocean"><i style="background:linear-gradient(90deg,#d1edfe,#a1d1f4,#6aaae6,#407bc5,#2c4f94)"></i></button><button type="button" data-pal="seagrass" title="Seagrass" aria-label="Seagrass"><i style="background:linear-gradient(90deg,#e6edc0,#c0d492,#8cb460,#558b41,#29612d)"></i></button><button type="button" data-pal="twilight" title="Twilight" aria-label="Twilight"><i style="background:linear-gradient(90deg,#ebe3fe,#d0c0f9,#aa95e8,#7e66ca,#543f99)"></i></button><button type="button" data-pal="depth" title="Depth" aria-label="Depth"><i style="background:linear-gradient(90deg,#f4ed8b,#9bdda8,#4ab9b2,#1785af,#2e4d99)"></i></button></div></div>
+        <div class="setrow"><span>Colours</span><div id="palette" class="palsw" role="group" aria-label="Colours"><button type="button" data-pal="lagoon" title="Lagoon"><i style="background:linear-gradient(90deg,#d3ebe7,#a2d5cc,#63b6a4,#29836d,#1d5f34)"></i><span>Lagoon</span></button><button type="button" data-pal="ocean" title="Ocean"><i style="background:linear-gradient(90deg,#d1edfe,#a1d1f4,#6aaae6,#3a76c0,#2c4f94)"></i><span>Ocean</span></button><button type="button" data-pal="seagrass" title="Seagrass"><i style="background:linear-gradient(90deg,#e6edc0,#c0d492,#8cb460,#4f813c,#29612d)"></i><span>Seagrass</span></button><button type="button" data-pal="twilight" title="Twilight"><i style="background:linear-gradient(90deg,#ebe3fe,#d0c0f9,#aa95e8,#7e66ca,#543f99)"></i><span>Twilight</span></button><button type="button" data-pal="depth" title="Depth"><i style="background:linear-gradient(90deg,#f4ed8b,#9bdda8,#4ab9b2,#167ca4,#2e4d99)"></i><span>Depth</span></button></div></div>
       </div>
     </div>
     <div id="helpbox" class="helpbox" hidden></div>
@@ -49,11 +49,11 @@
   <footer><p>Website and interface by Pierre Pericard. Sources: IMR Lecture 6 · Coral Finder 2022 (R. Kelley, BYOGUIDES) · iNaturalist photos, credited on each photo. For training at IMR.</p></footer>
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
-<script src="app.js?v=113"></script>
+<script src="app.js?v=114"></script>
 <script src="flag.js?v=4"></script>
-<script src="proto/lab.js?v=53"></script>
+<script src="proto/lab.js?v=54"></script>
 <script src="home-art.js?v=3"></script>
-<script src="home.js?v=22"></script>
+<script src="home.js?v=23"></script>
 <script src="tour.js?v=5"></script>
 </body>
 </html>
