@@ -30,7 +30,8 @@ The visual rules every page follows. They came out of the expert UI review of 20
 | Exclusive choice (2-4 options) | `.seg` (and the ⚙ switches, Memory's level and genera set, styled the same) | Grey track, the chosen option is a white pill. Theme is Light / Dark here too. |
 | Filter or toggle in a list | `.chip` | `aria-pressed` for state. |
 | Section tabs | `.modes` | Slim underlined text tabs. |
-| Disclosure | `<details>` with a muted `▸` summary | Inside My progress, the signed-out sign-in fold is shown as a `.next.sec` button. |
+| Yes / No question that narrows a list | `.fdq` with two `.fdans` (Coral Finder) | Question on top, two big answer buttons side by side (≥ 72 px tall, full width), each with its count and photos of what is on that side; "Can't tell" as `.linkish`. Never small text links as answers. |
+| Disclosure | `<details>` with a muted `▸` summary | e.g. "Backup or reset progress" at the bottom of ⚙. |
 
 ## Icons
 
@@ -39,9 +40,15 @@ One SVG set (24 px grid, 1.75 stroke, `currentColor`): see `LAB_ICONS` in `proto
 ## Screens
 
 - Phone tab bar: icon above label (same SVG set), the active tab gets the accent colour and a tinted pill behind its icon.
-- Header progress pill: "Progress" + a mini ring (`--pp`) + %; signing in lives on My progress.
-- Quiz on phone/tablet: with one row of photos the stage is a 4:3 box at most, sized before the photos load: **nothing may move while a photo loads**. A photo close to that shape fills it (cover); a very different shape is shown whole on its blurred background. Full frame in the lightbox.
+- Header progress pill: "Progress" + a mini ring (`--pp`) + %.
+- Signing in: while signed out, a filled "Sign in" pill (`.next.signb`) sits in the header on every page and opens the sign-in card; once signed in it disappears and the account is one quiet line at the top of ⚙ (Send now, Sign out), with "Backup or reset progress" folded at the bottom of ⚙. If saving fails, the header pill comes back as an outlined red "Not saved" that opens ⚙. Never put the account on a content page.
+- My progress: the board (Photos / Slate / Groups) comes first on phones and tablets, then the ring, level counts, Review first and Often mixed up. No "Practise now" button (the nav already has Practice).
+- Quiz on phone/tablet: the stage takes all the height the question and answers leave (Pierre prefers the biggest photo to a tight 4:3 box), sized before the photos load: **nothing may move while a photo loads**. A photo close to that shape fills it (cover); a very different shape is shown whole on its blurred background. Full frame in the lightbox.
+- Quiz on desktop: the grid of views (side by side or stacked) is picked from each photo's known shape (data.json `ar`) to show the most photo; the stage keeps its full height (no photo above an empty half screen) and is laid out before the photos load.
+- Learn > Look-alikes: one pair per screen; move with the big round arrows on the photos, a sideways swipe anywhere on the pair, or the keyboard arrows. A one-time "Swipe for the next pair" hint shows on touch screens until the first swipe.
+- Memory on phones and tablets: the controls fit one compact row above the grid (Easy/Medium/Hard, Random/Look-alikes, ↻ new game) and the status one short line, so the grid gets the screen. The grid turns to the screen (more columns on a landscape screen, more rows on a portrait one). Desktop keeps the side column.
 - Games wider than the page (`.bleed`, ≥ 1340 px) start on the header's left edge and only grow to the right.
 - ID tips are the key content: never clamp or truncate them on a card; they are boxed (`.tipbox`) wherever they appear (sheet, quiz feedback, pair page).
 - The header keeps the ? slot on every page (a page without help hides the button but keeps its place).
 - Memory card backs are quiet (pale accent tint + faint logo mark), never a loud pattern.
+- Game session trail (quiz and duels, next to the question): 10 small cells for the last 10 answers of this visit, grey until answered, then a full `--good` cell for right and a low `--bad` bar for wrong (shape + colour, readable without colour). Fixed width, never moves the layout. No score text in games (Pierre, 2026-11-01).

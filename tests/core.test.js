@@ -64,6 +64,44 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
   assert.deepStrictEqual(eloOf(rows), sheet);
 });
 
+test('mergeTabs: two admin tabs keep each other\'s clicks and settle without bouncing', () => {
+  const {mergeTabs, canon} = require('../core.js');
+  const shared = {v: 1, genera: {A: {cover: 'a1'}}};
+  const tabA = {v: 1, genera: {A: {cover: 'a1', hide: ['x']}}};          // A hid a photo
+  const tabB = {v: 1, genera: {A: {cover: 'a2'}, B: {ok: true}}};        // B changed a cover and validated B, then wrote
+  const a = mergeTabs(shared, tabA, tabB);
+  assert.deepStrictEqual(a.draft, {v: 1, genera: {A: {cover: 'a2', hide: ['x']}, B: {ok: true}}});
+  assert.ok(a.changed && a.share);                                       // A writes the union back
+  const b = mergeTabs(tabB, tabB, a.draft);                              // B takes it: nothing new of its own
+  assert.strictEqual(canon(b.draft), canon(a.draft));
+  assert.ok(!b.share);                                                   // so B does not write again
+  const reordered = JSON.parse(JSON.stringify({genera: a.draft.genera, v: 1}));
+  assert.ok(!mergeTabs(a.draft, a.draft, reordered).share);              // key order alone never triggers a write
+});
+
+test('takeTab: both tabs click before hearing of each other, then one takes back a click', () => {
+  const {takeTab, canon} = require('../core.js');
+  const d0 = {v: 1, genera: {A: {cover: 'a1'}}}, saved = d0;
+  const revA = {'a.1': d0}, revB = {'a.1': d0};                          // both started from A's first write
+  const a2 = {v: 1, genera: {A: {cover: 'a2'}}}, b1 = {v: 1, genera: {A: {cover: 'a1'}, B: {ok: true}}};
+  revA['a.2'] = a2; revB['b.1'] = b1;                                    // each writes its own click, seen = a.1
+  // A hears of B's write: base is a.1, so A's cover survives and B's validation comes in.
+  const m = takeTab(revA, a2, saved, {...b1, _tab: {rev: 'b.1', seen: 'a.1'}});
+  assert.deepStrictEqual(m.draft, {v: 1, genera: {A: {cover: 'a2'}, B: {ok: true}}});
+  assert.ok(m.share);
+  revA['a.3'] = m.draft;
+  // B hears of A's union (seen = b.1, B's own write): it takes it whole.
+  const n = takeTab(revB, b1, saved, {...m.draft, _tab: {rev: 'a.3', seen: 'b.1'}});
+  assert.strictEqual(canon(n.draft), canon(m.draft));
+  assert.ok(!n.share);
+  assert.strictEqual(takeTab(revB, n.draft, saved, {...m.draft, _tab: {rev: 'a.3', seen: 'b.1'}}), null);   // already in
+  // B takes back A's cover (seen = a.3): A follows instead of keeping its own value.
+  const b2 = {v: 1, genera: {A: {cover: 'a1'}, B: {ok: true}}};
+  const o = takeTab(revA, m.draft, saved, {...b2, _tab: {rev: 'b.2', seen: 'a.3'}});
+  assert.deepStrictEqual(o.draft, b2);
+  assert.ok(!('_tab' in o.draft));
+});
+
 test('a quiz question with easy wrong choices (quiz|k2) is rated with a 1/2 guess', () => {
   const row = (m, ok) => ['Ana', 1, 'Acropora', 'Acropora', ok, m, 'acropora-1'];
   // Right on a 2-plausible-choice question proves less than on a 4-choice one: the photo looks less easy.

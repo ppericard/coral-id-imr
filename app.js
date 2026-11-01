@@ -55,137 +55,19 @@ const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p
 // Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick, else the first closer view.
 // Default (Pierre): an IMR photo first, the first IMR featured Closer photo, before data.json's pick.
 const cover = g => g.coverP || (((g.sl || {}).medium || {}).feat || []).find(p => p.imr) || allPhotos(g).find(p => p.f === g.cover) || (g.views.medium || [])[0] || allPhotos(g)[0];
-// Editorial curation from curation.json (edited in admin.html): per genus, cover photo, featured photos
-// per view (in order), hidden photos and photos moved to another view. Hidden photos leave games too.
-// Candidates (data.json cand, not shown until approved) join a view when listed in add {photo: view}.
-function applyCuration(d, c){
-  // Coral Finder book photos (data: gen[].book, cropped from the 2022 book) can be switched off site-wide from the
-  // admin (curation.json "book": false). Kept apart from the views so games and quizzes never use them (captions).
-  if (c && c.book === false) Object.values(d.gen).forEach(g => { delete g.book; });
-  // Book photos are candidates: only those Pierre approved in the admin (genera[n].add {f: view}) show, in that view.
-  const X0 = (c && c.exclude) || {};
-  // Book photos sent to another genus ("Not this", out) are kept here until the out step moves them, then filtered there.
-  const G0 = (c && c.genera) || {};
-  Object.entries(d.gen).forEach(([n, g]) => { if (!g.book) return; const A = (G0[n] || {}).add || {}, O = (G0[n] || {}).out || {};
-    g.book = g.book.filter(p => !X0[p.f] && (A[p.f] || O[p.f])).map(p => A[p.f] && !O[p.f] ? {...p, view: A[p.f]} : p); });
-  // Excluded photos (exclude: {f: reason}) leave every list first: genera, lecture photos, candidates, comparisons.
-  const X = (c && c.exclude) || {}, keep = L => (L || []).filter(p => !X[p.f]);
-  if (Object.keys(X).length) {
-    Object.values(d.gen).forEach(g => ['views', 'more'].forEach(s => Object.keys(g[s] || {}).forEach(v => { g[s][v] = keep(g[s][v]); })));
-    ['course', 'cand'].forEach(s => Object.keys(d[s] || {}).forEach(n => { d[s][n] = keep(d[s][n]); }));
-    if (d.cmp) d.cmp = keep(d.cmp);
-  }
-  // "Several corals" photos Pierre marked as one coral (single: {f: 1}) are normal photos again (games and sheet).
-  const ONE = (c && c.single) || {};
-  if (Object.keys(ONE).length) Object.entries(d.gen).forEach(([n, g]) => { VIEWS.forEach(([v]) => { const L = (g.more || {})[v]; if (!L) return;
-      L.filter(p => ONE[p.f]).forEach(p => (g.views[v] = g.views[v] || []).push(p)); g.more[v] = L.filter(p => !ONE[p.f]); });
-    (d.course[n] || []).forEach(p => { if (ONE[p.f]) delete p.multi; }); });
-  // "Not this genus" (out: {f: 'cmp' | genus}) runs first for every genus, so a photo given to another genus
-  // can be featured or picked as cover there; 'cmp' sends it to the look-alike comparison images (d.cmp).
-  Object.entries((c && c.genera) || {}).forEach(([n, k]) => { const g = d.gen[n]; if (!g) return;
-    Object.entries(k.out || {}).forEach(([f, to]) => {
-      let p = null, at = null;
-      VIEWS.forEach(([v]) => ['views', 'more'].forEach(s => { const L = (g[s] || {})[v] || [], i = L.findIndex(x => x.f === f); if (i >= 0) { p = L.splice(i, 1)[0]; at = [s, v]; } }));
-      const ci = (d.course[n] || []).findIndex(x => x.f === f); if (ci >= 0) { p = d.course[n].splice(ci, 1)[0]; at = ['course']; }
-      const bi = (g.book || []).findIndex(x => x.f === f); if (bi >= 0) { p = g.book.splice(bi, 1)[0]; at = ['book']; }
-      // A candidate sent to another genus becomes a candidate there (shown once added in that genus).
-      const ki = ((d.cand || {})[n] || []).findIndex(x => x.f === f); if (ki >= 0) { p = d.cand[n].splice(ki, 1)[0]; at = ['cand']; }
-      if (!p) return;
-      if (to === 'cmp') (d.cmp = d.cmp || []).push({...p, g: [n]});
-      else if (d.gen[to] && at[0] === 'book') (d.gen[to].book = d.gen[to].book || []).push({...p, t: to});
-      else if (d.gen[to] && at[0] === 'course') (d.course[to] = d.course[to] || []).push(p);
-      else if (d.gen[to] && at[0] === 'cand') ((d.cand = d.cand || {})[to] = d.cand[to] || []).push(p);
-      else if (d.gen[to]) { const G = d.gen[to], S = G[at[0]] = G[at[0]] || {}; (S[at[1]] = S[at[1]] || []).push(p); }
-    }); });
-  // Book photos moved in from another genus show only once added here (add {f: view}).
-  Object.entries(d.gen).forEach(([n, g]) => { if (!g.book) return; const A = (G0[n] || {}).add || {};
-    g.book = g.book.filter(p => p.view || A[p.f]).map(p => p.view ? p : {...p, view: A[p.f]}); });
-  Object.entries((c && c.genera) || {}).forEach(([n, k]) => {
-    const g = d.gen[n]; if (!g) return;
-    Object.entries(k.add || {}).forEach(([f, v]) => { const p = ((d.cand || {})[n] || []).find(x => x.f === f); if (p && VIEWS.some(([w]) => w === v)) (g.views[v] = g.views[v] || []).push(p); });
-    const hide = new Set(k.hide || []), mv = k.move || {}, feat = k.feat || {};
-    const regroup = src => { const out = {}; VIEWS.forEach(([v]) => ((src || {})[v] || []).forEach(p => { if (hide.has(p.f)) return; const w = mv[p.f] || v; (out[w] = out[w] || []).push(p); })); return out; };
-    const all = [...allPhotos(g), ...VIEWS.flatMap(([v]) => (g.more || {})[v] || []), ...(d.course[n] || []), ...(g.book || [])];
-    // Book photos follow Hide and view moves too (they stay out of g.views, so out of games).
-    if (g.book) g.book = g.book.filter(p => !hide.has(p.f)).map(p => mv[p.f] ? {...p, view: mv[p.f]} : p);
-    g.views = regroup(g.views); g.more = regroup(g.more);
-    // Featured photos lead their view, so quick picks (comparisons, first photo of a view) use them too.
-    Object.entries(g.views).forEach(([v, L]) => { const F = feat[v] || []; g.views[v] = [...F.map(f => L.find(p => p.f === f)).filter(Boolean), ...L.filter(p => !F.includes(p.f))]; });
-    if (d.course[n]) d.course[n] = d.course[n].filter(p => !hide.has(p.f)).map(p => mv[p.f] ? {...p, v: mv[p.f]} : p);
-    if (Object.keys(feat).length) g.feat = feat;
-    const cv = k.cover && !hide.has(k.cover) && all.find(p => p.f === k.cover);
-    if (cv) g.coverP = cv;
-    // Zoom levels per genus (curation lv: 2 | 3, admin switch). 2 levels: the Closer photos join Colony, the Closer
-    // view disappears; his Closer picks stay in curation.json, so switching back to 3 restores them.
-    if (k.lv === 3) delete g.levels;
-    if (k.lv === 2 && g.levels !== 2) {
-      g.levels = 2;
-      ['views', 'more'].forEach(s => { const S = g[s] || {}; if ((S.medium || []).length) S.wide = [...(S.wide || []), ...S.medium]; delete S.medium; });
-      if (d.course[n]) d.course[n] = d.course[n].map(p => p.v === 'medium' ? {...p, v: 'wide'} : p);
-      if (g.book) g.book = g.book.map(p => p.view === 'medium' ? {...p, view: 'wide'} : p);
-    }
-  });
-}
-
+// applyCuration(d, c) and applySlots(d, c, {picks, autoq}) live in core.js (tested in tests/photos.test.js).
 let CUR_NEW = null, curAt = Date.now();  // curation read again later (curRefresh)
 let RAW, CUR, FORMS = {gf: {}, form: {}, cf: {}}, AUTOQ = {}, PICKS = {};
 // Genera not on the IMR slate but in the Coral Finder book and present at Dauin (data.json "x", tools/build_extra.py):
 // Identify > Coral Finder only (Pierre, 2026-10-31), on by default, switch in ⚙ on that page. Same photo pipeline,
 // kept out of DATA.gen so games, quizzes, progress and the Genera pages never see them.
 let XON = store.get('imr-finder-x', true);
-function build(){ const d = structuredClone(RAW); applyCuration(d, CUR); applyForms(d, CUR); applySlots(d, CUR);
-  if (d.x) { const x = {gen: d.x.gen, course: {}, cand: d.cand}; applyCuration(x, CUR); applyForms(x, CUR); applySlots(x, CUR); }
+function build(){ const d = structuredClone(RAW); applyCuration(d, CUR); applyForms(d, CUR); applySlots(d, CUR, {picks: PICKS, autoq: AUTOQ});
+  if (d.x) { const x = {gen: d.x.gen, course: {}, cand: d.cand}; applyCuration(x, CUR); applyForms(x, CUR); applySlots(x, CUR, {picks: PICKS, autoq: AUTOQ}); }
   DATA = d; }
 // A genus of the list or of the extra genera.
 const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n];
-// Photos per context (applySlots). Pierre's rule: every IMR photo and every photo of his own is used, with no cap;
-// photos from other iNat observers and approved Coral Finder book photos only fill a set that is short. Per genus
-// and view: sheet = 3 featured + the other IMR/own photos (filled up to 6 in all); games = Easy (the featured),
-// Medium (other good IMR/own photos, filled up to 4), Hard (poor ones, filled up to 4), levels adding up; Coral
-// Finder (needs variety) = featured + 2 photos from other iNat observers + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
-// (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'} keeps a photo on the sheet only
-// or in games only. Nothing is written back: photos left out simply stay unused.
-const CAP = {feat: 3, sheet: 6, medium: 4, hard: 4, inat: 2, book: 3};
-// The automatic rating never calls an IMR lecture photo Poor (Pierre: it misjudges slide images); only his own rating can.
-const autoQ = f => { const a = AUTOQ[f] || 2; return a === 1 && /^imrl?-/.test(f) ? 2 : a; };
-const qualOf = (c, f) => ((c && c.quality) || {})[f] || autoQ(f);
 const isCore = p => !!(p.imr || p.own);
-function applySlots(d, c){
-  const use = (c && c.use) || {}, sug = PICKS.feat || {};
-  // k photos from L in order, a different observation each time when possible.
-  const take = (L, k) => { const out = [], seen = new Set(); [true, false].forEach(fresh => L.forEach(p => { if (out.length < k && !out.includes(p) && (!fresh || !seen.has(p.o || p.f))) { out.push(p); seen.add(p.o || p.f); } })); return out; };
-  const fill = (L, extra, k) => L.length >= k ? L : [...L, ...take(extra.filter(p => !L.includes(p)), k - L.length)];
-  Object.entries(d.gen).forEach(([n, g]) => {
-    const course = (d.course[n] || []).map(p => ({...p, view: p.v === 'medium' && g.levels === 2 ? 'macro' : p.v}));
-    g.sl = {};
-    VIEWS.forEach(([v]) => {
-      const field = (g.views[v] || []).filter(p => !p.multi), q = p => qualOf(c, p.f), byQ = L => L.slice().sort((a, b) => q(b) - q(a));
-      const all = [...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'game');
-      // Sheet order (Pierre): IMR photos first, then his own, then other observers, each by quality; Poor photos last.
-      const rr = [...byQ(all.filter(p => p.imr)), ...byQ(all.filter(p => !p.imr && p.own))];
-      const others = byQ(all.filter(p => !isCore(p)));
-      const ranked = [...rr, ...others].sort((a, b) => (q(a) === 1) - (q(b) === 1));
-      // Coral Finder book photos (Pierre 2026-11-01): on the sheet when pinned, or to fill a gap after every field photo; never in games.
-      const bk = byQ((g.book || []).filter(p => p.view === v)), find = f => all.find(p => p.f === f) || bk.find(p => p.f === f);
-      const pin = ((g.feat || {})[v] || []).map(find).filter(Boolean), hint = ((sug[n] || {})[v] || []).map(find).filter(p => p && !p.cf);
-      // Never a Poor photo while better ones exist, except IMR lecture photos (Pierre).
-      // Featured = always the first 3 (Pierre): his pinned photos, then the best remaining ones.
-      const pool = [...hint, ...ranked].filter(p => !pin.includes(p)), k = CAP.feat - Math.min(pin.length, CAP.feat);
-      const feat = [...pin.slice(0, CAP.feat), ...fill(fill(take(pool.filter(p => p.imr || q(p) !== 1), k), pool, k), bk.filter(p => !pin.includes(p)), k)];
-      // Sheet (Pierre): strictly the first 6 per view in the admin order, the 3 featured then the next 3 (games still use them all).
-      const more = [...ranked, ...bk].filter(p => !feat.includes(p)).slice(0, CAP.sheet - feat.length);
-      // Games: field photos and IMR lecture photos (Pierre 2026-11-01), never multi-coral or book photos.
-      const gm = byQ([...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'ref')), core = gm.filter(isCore), rest = gm.filter(p => !isCore(p));
-      const easy = feat.filter(p => gm.includes(p)), left = p => !easy.includes(p);
-      const medium = fill(core.filter(p => left(p) && q(p) >= 2), rest.filter(p => left(p) && q(p) >= 2), CAP.medium);
-      const hard = fill(core.filter(p => left(p) && !medium.includes(p)), rest.filter(p => left(p) && !medium.includes(p)).reverse(), CAP.hard);
-      const book = bk.filter(p => !feat.includes(p)).slice(0, CAP.book);
-      g.sl[v] = {feat, more, easy: easy.length ? easy : take(gm, 3), medium, hard, finder: [...feat, ...take(others.filter(p => !feat.includes(p) && !p.imr), CAP.inat), ...book]};
-      // Featured photos lead their view, so every "first photo of the view" (Look-alikes, Compare, Lab, home) uses them.
-      if (g.views[v]) g.views[v] = [...feat.filter(p => g.views[v].includes(p)), ...g.views[v].filter(p => !feat.includes(p))];
-    });
-  });
-}
 // Game photos of genus n in view v at a level (levels add up: Medium = Easy + Medium photos).
 const LEVELS = [['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']];
 const gamePics = (n, v, lvl = 'hard') => { const s = (GX(n).sl || {})[v]; if (!s) return GX(n).views[v] || [];
@@ -514,7 +396,8 @@ function viewLookalikes(a, b){
   const L = classics().map(p => montage(...p)).filter(Boolean), mix = m => mixedUp(m.A, m.B);
   L.sort((x, y) => (mix(y) > 0) - (mix(x) > 0) || mix(y) - mix(x));
   if (!L.length) { $v.innerHTML = '<p class="note">No photos yet.</p>'; return; }
-  let i = Math.max(0, a && b ? L.findIndex(m => m.k === pairKey(a, b)) : 0), drawn = false;
+  let i = Math.max(0, a && b ? L.findIndex(m => m.k === pairKey(a, b)) : 0), drawn = false, dir = 0;
+  let hint = matchMedia('(pointer: coarse)').matches && !store.get('imr-coral-lkswiped', 0);
   const draw = () => {
     const m = L[i], gA = DATA.gen[m.A], gB = DATA.gen[m.B], x = mix(m);
     const half = (n, p, k) => `<figure class="lkph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${VIEW_LABEL[p.view].toLowerCase()} view"></button><figcaption><i>${esc(n)}</i></figcaption></figure>`;
@@ -526,9 +409,9 @@ function viewLookalikes(a, b){
     <div class="lk">
       <div class="lkmain">
         <div class="lkhead"><h3><i>${esc(m.A)}</i> or <i>${esc(m.B)}</i>?</h3><small class="lksrc">${srcTag(m.src)}</small>${x ? `<span class="pmix">you mixed them up ×${x}</span>` : ''}</div>
-        <div class="lkm">${half(m.A, m.pa, 0)}${half(m.B, m.pb, 1)}</div>
+        <div class="lkm${dir ? ' in' + (dir > 0 ? 'r' : 'l') : ''}">${half(m.A, m.pa, 0)}${half(m.B, m.pb, 1)}<button type="button" class="lkarr prev" data-lstep="-1" aria-label="Previous pair">‹</button><button type="button" class="lkarr nxt" data-lstep="1" aria-label="Next pair">›</button>${hint ? '<span class="lkhint" aria-hidden="true">Swipe for the next pair</span>' : ''}</div>
         <div class="lktips">${tip(m.A, gA)}${tip(m.B, gB)}</div>
-        <div class="lknav"><button type="button" class="chip" data-lstep="-1" aria-label="Previous pair">←</button><span class="lkn">${i + 1} / ${L.length}</span><button type="button" class="chip" data-lstep="1" aria-label="Next pair">→</button>
+        <div class="lknav"><span class="lkn">Pair ${i + 1} / ${L.length}</span>
           <a class="linkish lkall" href="#cmp-${esc(m.A)}|${esc(m.B)}">All views</a><a class="next" href="#quiz-duel|${esc(m.A)}|${esc(m.B)}">Drill this pair</a></div>
       </div>
       <aside class="lkdeck" aria-label="Classic look-alikes">${deck}</aside>
@@ -538,13 +421,16 @@ function viewLookalikes(a, b){
     $v.querySelectorAll('[data-lstep]').forEach(btn => btn.onclick = () => stepTo(i + Number(btn.dataset.lstep)));
     $v.querySelectorAll('[data-lz]').forEach(z => z.onclick = () => zoom([{...m.pa, genus: m.A}, {...m.pb, genus: m.B}], Number(z.dataset.lz)));
     $v.querySelectorAll('.lkd').forEach((d, k) => d.onclick = e => { e.preventDefault(); stepTo(k); });
-    // Swipe left / right on the montage (phones).
-    const mt = $v.querySelector('.lkm'); let x0 = null;
-    mt.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, {passive: true});
-    mt.addEventListener('touchend', e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) stepTo(i + (dx < 0 ? 1 : -1)); });
+    // Swipe left / right anywhere on the pair (photos, title, tips), only when the gesture is mostly sideways.
+    const mt = $v.querySelector('.lkmain'); let t0 = null;
+    mt.addEventListener('touchstart', e => { t0 = [e.touches[0].clientX, e.touches[0].clientY]; }, {passive: true});
+    mt.addEventListener('touchend', e => { if (!t0) return; const dx = e.changedTouches[0].clientX - t0[0], dy = e.changedTouches[0].clientY - t0[1]; t0 = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) stepTo(i + (dx < 0 ? 1 : -1), true); });
+    dir = 0;
   };
   // The address follows the pair shown (no new history entry), so a pair can be linked and survives a reload.
-  const stepTo = k => { i = (k + L.length) % L.length; history.replaceState(null, '', `#cmp|${L[i].A}|${L[i].B}`); draw(); };
+  // The new pair slides in from the side it came from; the swipe hint goes for good after the first swipe.
+  const stepTo = (k, swiped) => { dir = k > i ? 1 : -1; if (swiped && hint) { hint = false; store.set('imr-coral-lkswiped', 1); } i = (k + L.length) % L.length; history.replaceState(null, '', `#cmp|${L[i].A}|${L[i].B}`); draw(); };
   const keys = e => { if (!$v.querySelector('.lk') || !lb.hidden) return document.removeEventListener('keydown', keys);
     if (e.target.closest('input, textarea, select')) return;
     if (e.key === 'ArrowRight') stepTo(i + 1); else if (e.key === 'ArrowLeft') stepTo(i - 1); };
@@ -592,7 +478,7 @@ const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
 const Q = Object.assign({view: 'any', level: 'auto'}, store.get('imr-coral-quiz', {}), {stars: true});  // starred genera are always asked (Pierre)
 if (Q.lvv !== 3) { Q.level = 'auto'; Q.course = false; Q.lvv = 3; }  // Auto only: no level selector, no Lecture set (Pierre, 2026-10-31)
 const saveQ = () => store.set('imr-coral-quiz', Q);
-let session = {ok: 0, n: 0}, last = null, duelPair = null;
+let session = {ok: 0, n: 0, h: []}, last = null, duelPair = null;
 // Bonus genera (Pierre, 2026-11-01): genera off the IMR slate that are common at Dauin and easily taken for a slate
 // genus, added to the photo quiz and the duels once the player has made some progress ("not at the very start, but
 // fairly soon"). Picked from the Coral Finder book genera present at Dauin (data.json "x", tools/build_extra.py):
@@ -743,6 +629,12 @@ function level(n){
   return ['mid', 'Learning'];
 }
 function quizNav(){ return ''; }
+// Session trail (Pierre, 2026-11-01, instead of a "3/3 right" text): the last 10 answers of this visit as 10 small cells next
+// to the question, grey until answered, then a full green cell for right and a low red bar for wrong (shape and colour, so
+// it reads without colour too). Fixed width: filling it never moves anything. Not saved: My progress holds the real record.
+function trail(){ const h = session.h, ok = h.filter(Boolean).length;
+  return `<span class="trail" role="img" aria-label="${h.length ? `Last ${h.length} answers: ${ok} right, ${h.length - ok} wrong` : 'Your last 10 answers will show here'}" title="Your last 10 answers">${
+    Array.from({length: 10}, (_, i) => { const v = h[i]; return `<i${v === undefined ? '' : v ? ' class="r"' : ' class="w"'}></i>`; }).join('')}</span>`; }
 function bindQuizNav(){ bindGo(); }
 // The game rules (behind the ? button).
 const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
@@ -751,12 +643,12 @@ const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two ge
 function question(cur, target, choices, prompt, set, kq){
   const ph = set.shown, lab = VIEW_LABEL;
   let answered = false, hintShown = false;
-  const fig = (p, k) => `<figure class="qph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${img(p)}" alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
+  const fig = (p, k) => `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${img(p)}" alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
   // One screen, no scrolling: the photos fill the stage (sized to the window), choices and feedback sit beside them.
   $v.innerHTML = `${gameHelp(cur)}<div class="q bleed">
     <div class="qstage">${ph.map(fig).join('')}</div>
     <aside class="qside">
-      <div class="qtop"><p class="prompt">${prompt}</p><span class="score" title="Right answers this session">${session.n ? `${session.ok}/${session.n} right` : ''}</span>${quizNav(cur)}</div>
+      <div class="qtop"><p class="prompt">${prompt}</p>${trail()}${quizNav(cur)}</div>
       <div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
@@ -779,7 +671,7 @@ function question(cur, target, choices, prompt, set, kq){
   const reveal = () => { const R = set.reveal || [], st = $v.querySelector('.qstage'); if (!R.length || !st) return;
     st.insertAdjacentHTML('beforeend', R.map((p, k) => fig(p, ph.length + k)).join('')); fitStage(); };
   $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'); showHint(); reveal(); answered = true; answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint);
-    const sc = $v.querySelector('.score'); if (sc) sc.textContent = `${session.ok}/${session.n} right`; });
+    const tr = $v.querySelector('.trail'); if (tr) tr.outerHTML = trail(); });
 }
 // The quiz stage fills the window below the header, so photos, choices and feedback fit without scrolling.
 // The photos then take the grid (columns x rows) that shows them largest at 4:3.
@@ -795,18 +687,26 @@ function fitStage(){
       : Math.max(180, parseFloat(q.style.getPropertyValue('--qh')) - (side ? side.offsetHeight : 240) - 10) + 'px'; }
   else st.style.height = '';
   const n = st.children.length, W = st.clientWidth, H = st.clientHeight;
+  // Grid of the views: the column count that gives the photos the most room (phones and tablets assume 4:3 photos).
+  // Desktop (designer re-review 2026-11-01, N1): each photo's shape is known before it loads (data.json `ar`,
+  // tools/apply_ratios.py; 4:3 if missing), so the grid that shows the most photo area wins: portrait or square views go
+  // side by side instead of in two wide half-blurred bands. The stage keeps its full height (Pierre dislikes a photo
+  // above an empty half screen), and nothing moves while the photos load.
+  const rs = [...st.children].map(f => +f.dataset.r || 4 / 3);
   let best = [n, 1, 0];
-  for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c), w = Math.min((W - 8 * (c - 1)) / c, (H - 8 * (r - 1)) / r * 4 / 3); if (w > best[2]) best = [c, r, w]; }
+  for (let c = 1; c <= n; c++) {
+    const r = Math.ceil(n / c), cw = (W - 8 * (c - 1)) / c, ch = (H - 8 * (r - 1)) / r;
+    const score = isStacked() ? Math.min(cw, ch * 4 / 3) : rs.reduce((a, x) => a + Math.min(cw, ch * x) ** 2 / x, 0);
+    if (score > best[2] * 1.02) best = [c, r, score];
+  }
   st.style.gridTemplateColumns = `repeat(${best[0]}, minmax(0, 1fr))`; st.style.gridTemplateRows = `repeat(${best[1]}, minmax(0, 1fr))`;
-  // Phones and tablets (design review 2026-11-01): a fixed tall stage left a landscape photo floating in blurred bars. With one
-  // row of photos the stage is a 4:3 box (the most common photo shape) at most, sized now, before any photo loads, so nothing
-  // moves while they load (Pierre, 2026-11-01). Each photo then fills its box (object-fit: cover, class .cov on its figure) when
-  // that crops at most ~23% of it; a photo of a very different shape is shown whole on its blurred background instead.
+  // Phones and tablets: the stage takes all the height the question and answers leave (computed above, before any photo
+  // loads, so nothing moves while they load). Each photo fills its box (object-fit: cover, class .cov on its figure) when that
+  // crops at most ~23% of it; a photo of another shape is shown whole on its blurred background. A 4:3 cap tried after the
+  // design review left a small photo over an empty bottom half (Pierre, 2026-11-01): the bigger photo wins.
   // The full frame is one tap away in the lightbox.
   if (isStacked() && !st.classList.contains('qvs') && best[1] === 1) {
-    const colW = st.children[0].getBoundingClientRect().width, h0 = st.getBoundingClientRect().height;
-    const h = Math.min(h0, Math.max(160, colW * 3 / 4));
-    if (h < h0) st.style.height = h + 'px';
+    const colW = st.children[0].getBoundingClientRect().width, h = st.getBoundingClientRect().height;
     const boxR = colW / h;
     st.querySelectorAll('.qph').forEach(f => { const i = f.querySelector('img'); if (!i) return;
       const set = () => { const r = i.naturalWidth / i.naturalHeight; f.classList.toggle('cov', !!r && Math.max(boxR / r, r / boxR) <= 1.3); };
@@ -855,7 +755,7 @@ function answer(cur, c, target, ph, cor, unseen){
   // was played since, not progress an older sign-out left on the device.
   if (!SYNC && SYNC_URL && !store.get(LOG0, []).length) store.set(ANONB, P);
   const good = c === target, s = st(target);
-  session.n++; if (good) { session.ok++; s.ok++; s.streak++; } else { s.ko++; s.streak = 0; s.conf = s.conf || {}; s.conf[c] = (s.conf[c] || 0) + 1; }
+  session.n++; session.h = [...session.h, good].slice(-10); if (good) { session.ok++; s.ok++; s.streak++; } else { s.ko++; s.streak = 0; s.conf = s.conf || {}; s.conf[c] = (s.conf[c] || 0) + 1; }
   // Knowledge (BKT) with the difficulty of the photos shown (before the result joins s.h, which BKT replays for old progress).
   const nc = $v.querySelectorAll('[data-c]').length || 4, k = Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
   // A photo seen for the first time is the best evidence (Kellman: novel instances); one already answered right twice
@@ -892,7 +792,7 @@ function answer(cur, c, target, ph, cor, unseen){
     const tp = order.find(p => (V[p.view] || []).length);
     if (tp) {
       const [, cp] = photoPair([tp], V[tp.view], tp), st0 = $v.querySelector('.qstage'), lab = VIEW_LABEL[tp.view] || '';
-      const fig = (p, n, cls, note) => `<figure class="qph ${cls}" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${lab.toLowerCase()} view"></button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> <i>${esc(n)}</i></figcaption><small>${note}</small>${photoSrc(p)}</figure>`;
+      const fig = (p, n, cls, note) => `<figure class="qph ${cls}"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${lab.toLowerCase()} view"></button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> <i>${esc(n)}</i></figcaption><small>${note}</small>${photoSrc(p)}</figure>`;
       st0.classList.add('qvs');
       st0.innerHTML = fig(tp, target, 'qok', 'The photo shown') + fig(cp, c, 'qko', 'Your answer, same view');
       st0.querySelectorAll('[data-vs]').forEach(z => z.onclick = e => { e.stopPropagation(); zoom([{...tp, genus: target}, {...cp, genus: c}], z.dataset.vs === 'qok' ? 0 : 1); });
@@ -996,7 +896,8 @@ function quizDuel(a, b){
   question(a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t));
 }
 // Progress board, one screen: a wall of the 39 cover photos in slate order (name band in the level colour, grey photo =
-// not seen, red border = review) beside a side column with the overall ring, what to review first, sign-in and backup.
+// not seen, red border = review) beside a side column with the overall ring, what to review first and the mix-ups. Signing in
+// and backup/reset live in the header and ⚙ (Pierre, 2026-11-01: the board comes first, nothing unrelated around it).
 function quizBoard(){
   const list = Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n).sort((a, b) => slateIdx(a) - slateIdx(b));
   // Bonus genera (off the slate) get tiles after the slate genera: unlocked ones like any genus, locked ones as "?"
@@ -1053,18 +954,11 @@ function quizBoard(){
     <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Learned</p>
     ${weak.length ? `<div><h3 class="label">Review first</h3><p class="chips">${weak.slice(0, 4).map(n => `<a class="chip" href="#g-${esc(n)}"><i>${esc(n)}</i></a>`).join('')}</p></div>` : ''}
     ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> ↔ <i>${esc(o)}</i> <small>· ${k}×</small></a>`).join('')}</p></div>` : ''}
-    <p><a class="next go" href="#quiz">Practise now</a></p>
-    ${SYNC_URL ? '<section class="sync" id="sync"></section>' : ''}
-    <details class="saveprog"><summary>Backup or reset progress</summary><p class="note">Progress is saved in this browser and, once you sign in, in the IMR sheet. You can also save it to a file as a backup, or to move it to another device.</p>
-      <button class="chip" type="button" id="pexp">Save to a file</button> <button class="chip" type="button" id="pload">Load a file</button><input type="file" id="pimp" accept=".json,application/json" hidden> <span class="note" id="pmsg" role="status"></span>
-      <p><button class="reset" type="button" id="reset">Reset progress</button></p></details>
   </aside></div>`;
   bindQuizNav('quiz-board');
-  bindProgFile(); bindSync();
+  bindSync();
   // Phones: the Photos/Slate/Groups switch sits above the board and stays pinned while the page scrolls (Pierre, 2026-10-31).
   if (matchMedia(MQ.phone).matches) { const sg = $v.querySelector('.pboard .gside .seg'); sg.classList.add('pvpin'); $v.querySelector('.pboard').before(sg); }
-  const rb = document.getElementById('reset');
-  rb.onclick = () => { if (rb.dataset.armed) { P = {}; delete Q.bu; delete Q.ba; saveQ(); store.set('imr-coral-reset', new Date().toISOString()); save(); route(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } };
   const wrap = $v.querySelector('.pboard .pgwrap');
   const show = () => { wrap.innerHTML = VIEWS[pv](); $v.querySelectorAll('[data-pv]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pv === pv));
     requestAnimationFrame(() => { const g = wrap.firstChild; if (g.classList.contains('pgrid')) fitTiles(g, 6); else g.style[pv === 'slate' ? 'minHeight' : 'height'] = Math.max(320, innerHeight - g.getBoundingClientRect().top - window.scrollY - 16 - tabH()) + 'px'; }); };
@@ -1077,9 +971,15 @@ const $prog = document.getElementById('prog');
 function showProg(){ if (!DATA) return; const n = Object.keys(DATA.gen); const pt = `${progPct(n)}%`, lt = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length} genera learned`; document.getElementById('progn').textContent = pt; $prog.title = `Your progress: ${pt} (${lt})`; const p2 = document.getElementById('progn2'); if (p2) p2.textContent = pt;
   // Not signed in: the pill says so, so RAs find where to save their progress.
   const pill = document.getElementById('prog'), out = !!SYNC_URL && !SYNC;
-  pill.classList.toggle('nosync', out || !!syncTrouble()); pill.querySelector('.pl').textContent = 'Progress'; pill.style.setProperty('--pp', progPct(n));
+  pill.classList.toggle('nosync', !!syncTrouble()); pill.querySelector('.pl').textContent = 'Progress'; pill.style.setProperty('--pp', progPct(n));
   // Status only (design review 2026-11-01): the pill shows progress; signing in is an action on My progress. Not signed in = the dot.
-  pill.title = SYNC ? `Signed in as ${SYNC.name}: your progress per genus` : out ? 'Your progress (not saved online yet: sign in on My progress)' : 'Your progress per genus'; }
+  pill.title = SYNC ? `Signed in as ${SYNC.name}: your progress per genus` : out ? 'Your progress (not saved online yet: Sign in, top right)' : 'Your progress per genus';
+  // Signing in (Pierre, 2026-11-01): a filled "Sign in" button in the header on every page while signed out; once signed in
+  // it disappears and the account (name, Send now, Sign out) is a quiet line at the top of ⚙. Trouble saving brings it
+  // back as "Not saved", which opens ⚙ where the problem is explained.
+  const sb = document.getElementById('signb'), bad = syncTrouble();
+  sb.hidden = !SYNC_URL || (!!SYNC && !bad); sb.textContent = bad ? 'Not saved' : 'Sign in'; sb.classList.toggle('warn', !!bad);
+  sb.title = bad || 'Sign in to save your progress for your IMR trainer'; }
 // Progress files: every imr-coral-* key in localStorage (quiz progress, settings, Lab scores), as JSON.
 const progData = () => { const d = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('imr-coral') && k !== 'imr-coral-sync') d[k] = localStorage.getItem(k); } } catch (e) {} return d; };
 const loadData = d => Object.entries(d || {}).forEach(([k, v]) => k.startsWith('imr-coral') && k !== 'imr-coral-sync' && localStorage.setItem(k, v));
@@ -1094,7 +994,8 @@ function bindProgFile(){
   };
   const pick = document.getElementById('pimp');
   document.getElementById('pload').onclick = () => pick.click();
-  try { const done = sessionStorage.getItem('imr-coral-loaded'); if (done) { sessionStorage.removeItem('imr-coral-loaded'); msg('Progress loaded from ' + done + '.'); } } catch (e) {}
+  // After loading a file the page reloads: ⚙ opens on the backup fold to confirm it (not after a sign-in, which also reloads).
+  try { const done = sessionStorage.getItem('imr-coral-loaded'); if (done) { sessionStorage.removeItem('imr-coral-loaded'); msg('Progress loaded from ' + done + '.'); if (done !== 'the IMR sheet') { document.querySelector('#settings .saveprog').open = true; setOpen(true); } } } catch (e) {}
   pick.onchange = e => { const f = e.target.files[0]; if (!f) return;
     f.text().then(t => { const j = JSON.parse(t); if (j.app !== 'imr-coral-id' || !j.data) throw 0;
       loadData(j.data);
@@ -1302,7 +1203,9 @@ function signIn(name, pin, j){
 // One sign-in card, once, after 10 answers played without an account (Pierre, 2026-11-01: beta testers must sign in
 // early so their progress reaches the sheet). Never in Pierre's admin browser. "Later" closes it for good.
 const nudgeDue = () => !SYNC && SYNC_URL && !HAS_ADMIN_TOKEN && !document.querySelector('#tour, .unlock') && !store.get(NUDGE, 0) && store.get(LOG0, []).length >= 10;
-function signinNudge(once = true){
+// once = the one-time card (marks it used); play = once signed in, its button opens the photo quiz (skipped tour).
+// The header's Sign in button opens it with neither: it closes with "Close" or "Done".
+function signinNudge(once = true, play = !once){
   if (once) store.set(NUDGE, 1);
   const d = document.createElement('div');
   d.className = 'unlock signnudge'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Sign in');
@@ -1313,12 +1216,13 @@ function signinNudge(once = true){
   const key = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } else if (e.key === 'Enter' && !(e.target.closest && e.target.closest('form'))) { e.stopPropagation(); e.preventDefault(); close(); } };
   document.addEventListener('keydown', key, true);
   // From a skipped tour, the card ends on the games: once signed in, its button starts the photo quiz.
-  btn.onclick = () => { close(); if (!once && SYNC) go('quiz'); };
+  btn.onclick = () => { close(); if (play && SYNC) go('quiz'); };
   d.addEventListener('click', e => { if (e.target === d) close(); });
-  bindSync(box);
-  new MutationObserver(() => { btn.textContent = SYNC ? (once ? 'Done' : 'Start playing') : 'Later'; btn.classList.toggle('sec', !SYNC); }).observe(box, {childList: true});
+  const label = () => { btn.textContent = SYNC ? (play ? 'Start playing' : 'Done') : once || play ? 'Later' : 'Close'; btn.classList.toggle('sec', !SYNC); };
+  label(); bindSync(box);
+  new MutationObserver(label).observe(box, {childList: true});
 }
-// The sign-in box: My progress (#sync), or the welcome tour's card while it is open.
+// The account box: the top of ⚙ (#sync), or the sign-in card (tour, nudge, header button) while one is open.
 function bindSync(box = document.querySelector('.tsync') || document.getElementById('sync')){
   showProg();
   if (!box) return;
@@ -1348,12 +1252,17 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
     };
     return;
   }
-  const fold = box.id === 'sync';
-  box.innerHTML = `${fold ? '<details class="sfold"><summary>Sign in to save your progress</summary>' : '<h3>Sign in to save your progress</h3>'}<p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device.</p>
+  // ⚙ while signed out: one line; the form itself is in the sign-in card.
+  if (box.id === 'sync') {
+    box.innerHTML = `<p class="sline"><span>Not signed in: your progress stays on this device.</span><button class="linkish" type="button" id="sin">Sign in</button></p>`;
+    box.querySelector('#sin').onclick = () => { setOpen(false); signinNudge(false, false); };
+    return;
+  }
+  box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device.</p>
     <form class="sform"><label>Your name <input name="n" required maxlength="40" autocomplete="name"></label>
     <label>4-digit code <input name="p" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"></label>
     <button class="${box.classList.contains('tsync') ? 'next' : 'chip go'}" type="submit">Sign in</button> <span class="note" role="status"></span></form>
-    <p class="note">New name: pick any code and remember it. Same name and code later: your saved progress comes back.</p>${fold ? '</details>' : ''}`;
+    <p class="note">New name: pick any code and remember it. Same name and code later: your saved progress comes back.</p>`;
   box.querySelector('form').onsubmit = e => { e.preventDefault();
     const f = e.target, name = f.n.value.trim(), pin = f.p.value.trim();
     msg('Connecting…');
@@ -1511,7 +1420,16 @@ function resetHelp(){ $helpbox.hidden = true; $helpbox.innerHTML = ''; $help.hid
 new MutationObserver(pageHelp).observe($v, {childList: true, subtree: true});
 // Settings (photo source, photo size, theme) live in one small panel behind ⚙.
 const $setb = document.getElementById('setb'), $set = document.getElementById('settings');
-$setb.onclick = e => { e.stopPropagation(); const open = $set.hidden; $set.hidden = !open; $setb.setAttribute('aria-expanded', String(open)); };
+function setOpen(open){ $set.hidden = !open; $setb.setAttribute('aria-expanded', String(open)); }
+$setb.onclick = e => { e.stopPropagation(); setOpen($set.hidden); };
+// Opening ⚙ (by the button or "Not saved") refreshes the account line.
+new MutationObserver(() => { if (!$set.hidden && SYNC_URL) bindSync(document.getElementById('sync')); }).observe($set, {attributes: true, attributeFilter: ['hidden']});
+// The account and the progress backup live in ⚙ (Pierre, 2026-11-01: not in the middle of My progress).
+document.getElementById('sync').hidden = !SYNC_URL;
+document.getElementById('signb').onclick = e => { e.stopPropagation(); if (syncTrouble()) setOpen(true); else signinNudge(false, false); };
+bindProgFile();
+{ const rb = document.getElementById('reset');
+  rb.onclick = () => { if (rb.dataset.armed) { P = {}; delete Q.bu; delete Q.ba; saveQ(); store.set('imr-coral-reset', new Date().toISOString()); save(); delete rb.dataset.armed; rb.textContent = 'Reset progress'; document.getElementById('pmsg').textContent = 'Progress reset.'; route(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } }; }
 document.getElementById('setx').onclick = () => { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); $setb.focus(); };
 document.addEventListener('click', e => { if (!$set.hidden && !e.target.closest('#settings, #setb')) { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); } });
 // "/" from any page: open Genera with the search box focused, to jump to a genus by typing (Pierre, 2026-10-31).
@@ -1569,7 +1487,7 @@ const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store
     .catch(e => { const last = store.get(CUR_LAST, null); return last ? last : softFail('curation.json (Pierre\'s photo choices)', {})(e); }); };
 const forms = () => fetch('forms.json?v=7').then(okJson).catch(softFail('forms.json', {})).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
 const json = u => fetch(u).then(okJson).catch(softFail(u.replace(/\?.*/, ''), {}));
-Promise.all([fetch('data.json?v=26').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); window.APP_READY = true; if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
+Promise.all([fetch('data.json?v=27').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); window.APP_READY = true; if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 // A tab left open for days still follows Pierre's published curation (e.g. the CF book switch): when the tab comes back
 // into view (or every 30 min while visible), curation.json is read again; a change applies at the next screen (route),
 // never in the middle of a game.
