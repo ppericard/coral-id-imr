@@ -12,7 +12,7 @@ curation.json (Pierre's choices) ──────┘                          
 admin.html ──(GitHub Contents API, Pierre's token)──> curation.json on main ──> GitHub Action fetches approved photos
 ```
 
-- Static site served by GitHub Pages from `main` (root). No framework, no bundler, no npm.
+- Static site served by GitHub Pages from `main` via `pages.yml` (Actions source; migration and recovery in [PAGES.md](PAGES.md)). No framework, no bundler, no npm.
 - A service worker (`sw.js`) caches the app shell for offline use (versioned cache `V`, replaced on each deploy) and photos as they are viewed, in a separate cache `imr-photos-v1` that deploys never delete (capped at 2,500 entries, only good replies kept). `curation.json` is part of the shell, so the first offline launch after a deploy still has Pierre's choices; the app also keeps the last curation it read in `localStorage` (`imr-curation-last`) as a fallback. App files are revalidated with the server, but a file already cached is served after 4 s (`SLOW`) on a slow link while the network refreshes the cache in the background.
 - Everything runs in the browser. The only backend is a Google Apps Script web app that stores RA progress in a Google Sheet.
 
@@ -171,9 +171,10 @@ Still useful / re-runnable:
 ## Run and deploy
 
 - Run: `python3 -m http.server 8000` at the repo root, open <http://localhost:8000> (`admin.html` for the back-office; without a token use `admin.html?readonly`). Sync and photo Elo talk to the live Apps Script even locally.
-- Deploy: GitHub Pages from `main` (root, `.nojekyll`); a merge to `main` is live within a minute or two. The service worker serves the cached shell, so bump the `?v=` numbers and `sw.js` `V` (see AGENTS.md) or users keep the old files. `curation.json` is always fetched with `no-cache`.
-- Pierre's Publish triggers `.github/workflows/approved-photos.yml`, which commits to `main` on its own.
-- **Stuck Pages deploy** (seen 2026-11-01): if the live site stops updating, look at the "pages build and deployment" runs in Actions. When the deploy job fails with "due to in progress deployment. Please cancel <sha> first", GitHub still counts the `<sha>` deploy as running and refuses any other build version. Re-running a newer run does not help. Re-run the `<sha>` run itself in full: a re-run checks out the current `main`, and its deploy is accepted, so the site gets the latest `main`. The block stays until GitHub clears it, so every new merge needs that same re-run. Check: the live `admin.html` names the same `admin.js?v=` as `main`.
+- Deploy: `.github/workflows/pages.yml` publishes current `main` as a static artifact, with one `pages` concurrency group and `cancel-in-progress: true`. Settings > Pages must use **GitHub Actions**; the workflow fails early while the legacy branch source is selected. Migration, incident evidence and CLI recovery: [PAGES.md](PAGES.md).
+- Pierre's Publish pushes `curation.json` to `main`, triggering both Deploy Pages and Candidate photos. The latter commits `data.json`/`img` using `GITHUB_TOKEN`; its completion triggers Deploy Pages again so bot changes are published too.
+- The service worker serves the cached shell, so bump `?v=` numbers and `sw.js` `V` (see AGENTS.md) for shell changes. `curation.json` is fetched with `no-cache`.
+- A completed Actions run can leave a stale Pages backend lock. Cancel the blocking **Pages deployment** as well as any stuck Actions run, then dispatch `pages.yml` on `main`; see [PAGES.md](PAGES.md#manual-recovery). Repeatedly rerunning the blocking legacy SHA is not the fix.
 
 ## Players' reports (2026-11-01)
 
