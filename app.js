@@ -1145,6 +1145,10 @@ function isDark(){ return document.documentElement.dataset.theme === 'dark'; }
 function showTheme(){ const d = isDark(); $theme.textContent = d ? '☀' : '☾'; $theme.setAttribute('aria-label', d ? 'Switch to light theme' : 'Switch to dark theme'); }
 $theme.onclick = () => { const t = isDark() ? 'light' : 'dark'; document.documentElement.dataset.theme = t; try { localStorage.setItem('imr-coral-theme', t); } catch (e) {} showTheme(); };
 showTheme();
+// Colour theme: retints the accent, background and learning-level scale site-wide (CSS :root[data-palette]); Lagoon = default.
+function showPal(){ const p = document.documentElement.dataset.palette || 'lagoon'; document.querySelectorAll('#palette button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pal === p))); }
+document.querySelectorAll('#palette button').forEach(b => b.onclick = () => { const p = b.dataset.pal; if (p === 'lagoon') delete document.documentElement.dataset.palette; else document.documentElement.dataset.palette = p; try { localStorage.setItem('imr-coral-palette', p); } catch (e) {} showPal(); });
+showPal();
 
 // Tools of the Learn, Practice and Identify sections (the learning path order): a tab bar in the sticky header, so they stay in view.
 // Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).

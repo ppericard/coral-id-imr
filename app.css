@@ -75,6 +75,10 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 .setpop[hidden]{display:none}
 .setrow{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:.88rem;color:var(--muted)}
 .setrow[hidden]{display:none}
+.palsw{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.palsw button{padding:3px;border:2px solid transparent;border-radius:8px;background:none;cursor:pointer;line-height:0}
+.palsw button[aria-pressed="true"]{border-color:var(--ink)}
+.palsw i{display:block;width:34px;height:16px;border-radius:4px}
 /* Phones: Tools are off the tab bar, so a hammer in the header opens them; tablet/desktop have the Tools tab. */
 .labgo{text-decoration:none;color:inherit}
 @media (min-width:600px){.hdr-tools .labgo{display:none}}
@@ -619,6 +623,20 @@ a.lt:hover{border-color:var(--accent)}
    Dark mode has its own steps (light = more learned there too). Contrast checked: text on every step >= 4.4:1. */
 :root{--lv1:#d3ebe7;--lv2:#a2d5cc;--lv3:#63b6a4;--lv4:#2a8770;--lv5:#1d5f34;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
 :root[data-theme="dark"]{--lv1:#1f4a4f;--lv2:#246861;--lv3:#36998a;--lv4:#66c7a5;--lv5:#9edda6;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#06262b;--lvt4:#06262b;--lvt5:#06262b}
+/* Colour themes (setting "Colours", :root[data-palette], localStorage imr-coral-palette): each one retints the chrome
+   (accent, background, lines) and the learning-level ramp, with its own light and dark steps. Lagoon = the defaults
+   above. Steps generated in OKLCH at fixed lightness (light .93/.84/.72/.58/.44, dark .38/.48/.61/.74/.86), so every
+   theme keeps the same text contrast on each step. */
+:root[data-palette="reef"]{--bg:#faf3f0;--surface-2:#f4e8e4;--line:#e6d7d2;--accent:#a24019;--accent-ink:#ffffff;--lv1:#fee3c5;--lv2:#f7bd8f;--lv3:#e68a58;--lv4:#c25430;--lv5:#8c2e23;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
+:root[data-palette="reef"][data-theme="dark"]{--bg:#1a110e;--surface:#271b17;--surface-2:#332520;--line:#44342e;--accent:#f89c7c;--accent-ink:#2a140c;--lv1:#523e27;--lv2:#7f522b;--lv3:#bb6b40;--lv4:#f28a6a;--lv5:#febfb4;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
+:root[data-palette="ocean"]{--bg:#f1f5fa;--surface-2:#e5ecf5;--line:#d3dce7;--accent:#2863ab;--accent-ink:#ffffff;--lv1:#d1edfe;--lv2:#a1d1f4;--lv3:#6aaae6;--lv4:#407bc5;--lv5:#2c4f94;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
+:root[data-palette="ocean"][data-theme="dark"]{--bg:#0f141b;--surface:#181f28;--surface-2:#212a35;--line:#2f3945;--accent:#86bafd;--accent-ink:#0d1b2d;--lv1:#2f4653;--lv2:#3b627e;--lv3:#5088bc;--lv4:#77aef3;--lv5:#bad2fd;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
+:root[data-palette="seagrass"]{--bg:#f2f6f0;--surface-2:#e7ede4;--line:#d6ded2;--accent:#437224;--accent-ink:#ffffff;--lv1:#e6edc0;--lv2:#c0d492;--lv3:#8cb460;--lv4:#558b41;--lv5:#29612d;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
+:root[data-palette="seagrass"][data-theme="dark"]{--bg:#11150e;--surface:#1a2017;--surface-2:#242c20;--line:#323b2e;--accent:#9bc684;--accent-ink:#121f0b;--lv1:#414623;--lv2:#56652e;--lv3:#6d9047;--lv4:#89bb78;--lv5:#ace1ad;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
+:root[data-palette="twilight"]{--bg:#f5f3f9;--surface-2:#ebe9f4;--line:#dbd9e6;--accent:#6a4fa9;--accent-ink:#ffffff;--lv1:#ebe3fe;--lv2:#d0c0f9;--lv3:#aa95e8;--lv4:#7e66ca;--lv5:#543f99;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
+:root[data-palette="twilight"][data-theme="dark"]{--bg:#14121a;--surface:#1f1c27;--surface-2:#2a2734;--line:#393544;--accent:#bda8fc;--accent-ink:#1c172b;--lv1:#453e53;--lv2:#625581;--lv3:#8875bd;--lv4:#ad9af9;--lv5:#d0cafe;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
+:root[data-palette="depth"]{--bg:#eff6f9;--surface-2:#e2edf3;--line:#cfdde4;--accent:#066d90;--accent-ink:#ffffff;--lv1:#f4ed8b;--lv2:#9bdda8;--lv3:#4ab9b2;--lv4:#1785af;--lv5:#2e4d99;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
+:root[data-palette="depth"][data-theme="dark"]{--bg:#0c151a;--surface:#142026;--surface-2:#1c2b33;--line:#2a3b43;--accent:#75c3e8;--accent-ink:#031e29;--lv1:#494404;--lv2:#346c42;--lv3:#31948f;--lv4:#62b7dd;--lv5:#bcd1fd;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
 .s1{--lvc:var(--lv1);--lvt:var(--lvt1)}.s2{--lvc:var(--lv2);--lvt:var(--lvt2)}.s3{--lvc:var(--lv3);--lvt:var(--lvt3)}.s4{--lvc:var(--lv4);--lvt:var(--lvt4)}.s5{--lvc:var(--lv5);--lvt:var(--lvt5)}
 .pslate .ps,.pseg a{position:relative;background:var(--lvc,var(--surface)) linear-gradient(color-mix(in srgb,var(--lvt,var(--ink)) 55%,transparent),color-mix(in srgb,var(--lvt,var(--ink)) 55%,transparent)) left bottom / var(--p,0%) 3px no-repeat;color:var(--lvt,var(--ink));border:1px solid var(--lvc,var(--line))}
 .pslate .ps.s0,.pseg a.s0{border-style:dashed;color:var(--muted)}
