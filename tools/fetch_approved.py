@@ -5,7 +5,7 @@
 # Site photos (not candidates) are recropped from their original the same way when Pierre crops them (Triage, genus page).
 # Run from the repo root; the GitHub Action .github/workflows/approved-photos.yml runs it after every curation.json
 # publish and commits the result. Option --all-remote-unused deletes the local files of candidates nobody added.
-import json, os, sys, urllib.request, concurrent.futures as cf
+import json, os, sys, urllib.request, urllib.parse, concurrent.futures as cf
 from PIL import Image
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 d = json.load(open('data.json'))
@@ -17,7 +17,11 @@ todo = [p for L in (d.get('cand') or {}).values() for p in L if p['f'] in added 
 # Site photos (genus views and "more") get Pierre's crop too, redone from their original when it changes.
 todo += [p for g in [*d['gen'].values(), *((d.get('x') or {}).get('gen') or {}).values()] for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L
          if p['f'] not in excl and p.get('src') and p.get('cr') != CROP.get(p['f'])]
+# Only iNaturalist photo hosts (code review 2026-11-01, L8): this runs in a GitHub Action that can write to main.
+HOSTS = ('inaturalist-open-data.s3.amazonaws.com', 'static.inaturalist.org')
 def get(p):
+    host = urllib.parse.urlsplit(p['src']).hostname or ''
+    if not p['src'].startswith('https://') or host not in HOSTS: raise ValueError(f"{p['f']}: not an iNaturalist photo URL: {p['src'][:80]}")
     im = Image.open(urllib.request.urlopen(urllib.request.Request(p['src'], headers=UA), timeout=120)).convert('RGB')
     c = CROP.get(p['f'])
     if c: W, H = im.size; im = im.crop((round(c[0] * W), round(c[1] * H), round(c[2] * W), round(c[3] * H)))

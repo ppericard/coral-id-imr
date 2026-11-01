@@ -1,7 +1,15 @@
 // IMR Coral ID: hash-routed single page. Data comes from data.json (built by make_site.py).
 let DATA;
 const $v = document.getElementById('view');
-const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Links built from data (photo sources): only https, anything else becomes '#' (code review 2026-11-01, L2).
+const safeUrl = u => /^https:\/\//i.test(String(u || '')) ? String(u) : '#';
+// Page keyboard handlers (quiz, look-alikes): each new question or pair aborts the previous handler instead of
+// stacking one more on document (code review 2026-11-01, L3).
+let keysAC = null;
+const viewKeys = () => { if (keysAC) keysAC.abort(); keysAC = new AbortController(); return keysAC.signal; };
+// A side file that failed to load: the app goes on without it, but says so in the console (and to Pierre).
+const softFail = (what, d) => e => { console.warn(`${what} not loaded:`, e && e.message || e); if (typeof IS_ADMIN !== 'undefined' && IS_ADMIN) setTimeout(() => { const t = document.createElement('p'); t.className = 'note'; t.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;background:var(--bg,#fff);padding:4px 8px;border:1px solid currentColor;border-radius:6px'; t.textContent = `Admin: ${what} not loaded`; document.body.append(t); setTimeout(() => t.remove(), 8000); }, 500); return d; };
 // Window size classes, the same values as the media queries in app.css (one source of truth, see its header):
 // phone < 600 px · tablet 600-1023 px (tablets, and a desktop window snapped to half a screen) · desktop >= 1024 px.
 const MQ = {phone: '(max-width:599.98px)', stack: '(max-width:1023.98px)', touch: '(hover:none), (pointer:coarse)'};
@@ -36,10 +44,10 @@ const srcset = p => p.r && p.src ? `${inat(p, 'medium')} 500w, ${inat(p, 'large'
 const author = p => (p.a || '').replace(/^\(c\)\s*/i, '').replace(/,\s*(some|all) rights.*$/i, '').trim();
 const photoSrc = p => !p ? '' : p.cf ? `<span class="psrc">Coral Finder p. ${esc(p.pg)}</span>`
   : p.imr ? `<span class="psrc" title="IMR Lecture 6${p.slide ? ', slide ' + esc(p.slide) : ''}">IMR lecture</span>`
-  : p.o && p.o.includes('inaturalist.org') ? `<a class="psrc" href="${esc(p.o)}" target="_blank" rel="noopener" title="${esc(author(p) || 'iNaturalist')}: open the iNaturalist observation"><span class="pa">${esc(author(p))} · </span>iNat ↗</a>` : '';
+  : p.o && p.o.includes('inaturalist.org') ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p) || 'iNaturalist')}: open the iNaturalist observation"><span class="pa">${esc(author(p))} · </span>iNat ↗</a>` : '';
 // One colour per IMR lecture group, used everywhere a group appears (style="--g:…", CSS hsl(var(--g) …)).
 const groupHue = n => (n * 137) % 360;
-const credit = p => p.cf ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${p.pg}` : p.imr ? `IMR Lecture 6, slide ${p.slide}` : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(p.o)}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
+const credit = p => p.cf ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${p.pg}` : p.imr ? `IMR Lecture 6, slide ${p.slide}` : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
 // Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick, else the first closer view.
 // Default (Pierre): an IMR photo first, the first IMR featured Closer photo, before data.json's pick.
@@ -536,7 +544,7 @@ function viewLookalikes(a, b){
   const keys = e => { if (!$v.querySelector('.lk') || !lb.hidden) return document.removeEventListener('keydown', keys);
     if (e.target.closest('input, textarea, select')) return;
     if (e.key === 'ArrowRight') stepTo(i + 1); else if (e.key === 'ArrowLeft') stepTo(i - 1); };
-  document.addEventListener('keydown', keys);
+  document.addEventListener('keydown', keys, {signal: viewKeys()});
   draw();
 }
 // The deck fills the window below the header: the montage takes the height the title, tips and buttons leave.
@@ -735,7 +743,7 @@ function question(cur, target, choices, prompt, set){
   const keys = e => { if (!document.body.contains($v.querySelector('.q')) || !lb.hidden) return document.removeEventListener('keydown', keys);
     if (e.target.closest('input, textarea, select')) return;
     const b = !answered && $v.querySelectorAll('[data-c]')[Number(e.key) - 1]; if (b) { e.preventDefault(); b.click(); } };
-  document.addEventListener('keydown', keys);
+  document.addEventListener('keydown', keys, {signal: viewKeys()});
   $v.querySelector('.q').addEventListener('click', e => { const z = e.target.closest('[data-q]'); if (!z) return;
     const list = hintShown ? [...ph, set.hint] : answered && set.reveal ? [...ph, ...set.reveal] : ph;
     zoom(list.map(p => ({...p, genus: target})), Number(z.dataset.q), {blind: () => !answered}); });
@@ -1301,11 +1309,13 @@ function hdrMetrics(){
   r.setProperty('--hdr-h', (h - hide) + 'px'); r.setProperty('--hdr-hide', hide + 'px');
 }
 if (window.ResizeObserver) new ResizeObserver(hdrMetrics).observe($hdr); else addEventListener('resize', hdrMetrics);
+// A missing side file (404) counts as a failure, not as an empty file: softFail says so.
+const okJson = r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`));
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
 const curation = () => { const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null);
-  return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({})); };
-const forms = () => fetch('forms.json?v=7').then(r => r.ok ? r.json() : {}).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
-const json = u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+  return dr ? Promise.resolve(dr) : fetch('curation.json', {cache: 'no-cache'}).then(okJson).catch(softFail('curation.json (Pierre\'s photo choices)', {})); };
+const forms = () => fetch('forms.json?v=7').then(okJson).catch(softFail('forms.json', {})).then(j => ({gf: j.gf || {}, form: j.form || {}, cf: j.cf || {}, forms: j.forms || [], gunsure: j.gunsure || {}})).catch(() => ({gf: {}, form: {}, cf: {}, forms: [], gunsure: {}}));
+const json = u => fetch(u).then(okJson).catch(softFail(u.replace(/\?.*/, ''), {}));
 Promise.all([fetch('data.json?v=25').then(r => r.json()), curation(), forms(), json('quality.json?v=3'), json('picks.json?v=1')]).then(([d, c, f, q, k]) => { RAW = d; CUR = c; FORMS = f; CFMAP = f.cf; AUTOQ = q.q || {}; PICKS = k; build(); route(); syncPull(); loadStats(); window.APP_READY = true; if (window.tourFirst) tourFirst(); }).catch(() => { $v.innerHTML = '<p class="warn">Could not load the data. Check your connection and reload.</p>'; });
 // A tab left open for days still follows Pierre's published curation (e.g. the CF book switch): when the tab comes back
 // into view (or every 30 min while visible), curation.json is read again; a change applies at the next screen (route),

@@ -125,9 +125,18 @@ For Pierre only (not linked except from ⚙ for token holders). Modes by hash: g
 - The app keeps unsent answers (max 2,000) until the server confirms `log: true`.
 - Tests: `node --test tests/*.test.js` runs `tools/sync/Code.gs` against an in-memory sheet (`tests/gas.js`), and checks `core.js` (`merge3`, `mergeProgress`, and `eloOf` against `stats_`).
 
+## Security model
+
+What is public, what protects what (code review, 2026-11-01).
+- **Everything in the repo is public**, including the admin page code and the sync URL. The admin password only unlocks the token stored in that browser; it protects nothing on its own.
+- **The GitHub token is the real key**: fine-grained, this repo only, Contents read/write, 90-day expiry. Kept encrypted in `localStorage` (`imr-admin-vault`); the unlocked token lives in `sessionStorage` only. `ppericard.github.io` is shared by every Pages site of the account, so never add third-party scripts: the CSP (`<meta http-equiv="Content-Security-Policy">` in `index.html` and `admin.html`) allows scripts from this site only, inline scripts by hash (`tests/csp.test.js` fails if a hash is stale). Add a host to `img-src` / `connect-src` there when a new external source is needed.
+- **Templates**: every data string goes through `esc()` (escapes `& < > " '`); links from data go through `safeUrl()` (https only).
+- **Sync sheet**: anyone can call the Apps Script URL. A name + 4-digit code only prevents accidental overwrites; v6 throttles wrong codes, never writes a user string as a formula, and keeps anonymous ids unguessable (secret salt). RA data is low-sensitivity (first names and quiz answers).
+- **GitHub Action** (`approved-photos.yml`, `contents: write`): downloads photos only from iNaturalist hosts (`tools/fetch_approved.py` `HOSTS`).
+
 ## Tools (`tools/`)
 
-Python 3 scripts, run from the repo root. Many were one-off steps of the original build and read a scratchpad that no longer exists (`make_site.py`, `build_photos.py`, `apply_levels.py`, `build_lecture_more.py`, `tools/coral_finder_book/*`): kept for reference, edit `data.json` directly instead.
+Python 3 scripts, run from the repo root. Many were one-off steps of the original build and read a scratchpad that no longer exists (`make_site.py`, `build_photos.py`, `apply_levels.py`, `build_lecture_more.py`, `coral_finder_book/*`): they now live in `tools/archive/` (kept for reference, cannot be re-run); edit `data.json` directly instead.
 
 Still useful / re-runnable:
 | Script | Purpose |
