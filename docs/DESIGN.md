@@ -40,7 +40,7 @@ One SVG set (24 px grid, 1.75 stroke, `currentColor`): see `LAB_ICONS` in `proto
 
 - Phone tab bar: icon above label (same SVG set), the active tab gets the accent colour and a tinted pill behind its icon.
 - Header progress pill: "Progress" + a mini ring (`--pp`) + %; signing in lives on My progress.
-- Quiz on phone/tablet: with one row of photos the stage is a 4:3 box at most, sized before the photos load: **nothing may move while a photo loads**. A photo close to that shape fills it (cover); a very different shape is shown whole on its blurred background. Full frame in the lightbox.
+- Quiz on phone/tablet: the stage takes all the height the question and answers leave (Pierre prefers the biggest photo to a tight 4:3 box), sized before the photos load: **nothing may move while a photo loads**. A photo close to that shape fills it (cover); a very different shape is shown whole on its blurred background. Full frame in the lightbox.
 - Games wider than the page (`.bleed`, ≥ 1340 px) start on the header's left edge and only grow to the right.
 - ID tips are the key content: never clamp or truncate them on a card; they are boxed (`.tipbox`) wherever they appear (sheet, quiz feedback, pair page).
 - The header keeps the ? slot on every page (a page without help hides the button but keeps its place).
