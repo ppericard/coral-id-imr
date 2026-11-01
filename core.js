@@ -539,7 +539,41 @@
     });
   }
 
+  // Global player level (Pierre, 2026-11-01: "good beta testers must not wait 100 questions for it to get harder"): the
+  // starting ability of a genus the player has never answered. The player's global ability is an Elo over ALL their answers
+  // (app.js keeps it in the progress as the pseudo-genus LEVEL, '~level': ok, ko and th like a genus, so it syncs and
+  // merges like one); progress saved before it existed falls back on the mean ability of the genera answered. It is shrunk
+  // towards 0 while answers are few (M / (M + N)) and only partly carried over (W: knowing Acropora well says something,
+  // not everything, about Porites), then clamped to [LO, HI]: a strong player's first question on a new genus has traps
+  // and harder photos but is never the hardest, a struggling player's starts a little easier. Taken once: the first answer
+  // on the genus saves its own ability (s.th) from there.
+  const LEVEL = '~level',
+    START = {W: 0.8, N: 10, LO: -0.5, HI: 1.5};
+  function playerStart(P, skip) {
+    P = P || {};
+    const n = s => ((s && s.ok) || 0) + ((s && s.ko) || 0),
+      G = P[LEVEL];
+    let m = 0,
+      t = 0;
+    if (G && typeof G.th === 'number' && n(G)) {
+      m = n(G);
+      t = m * G.th;
+    } else
+      Object.keys(P).forEach(g => {
+        const s = P[g] || {};
+        if (g === skip || g === LEVEL || typeof s.th !== 'number' || !n(s)) return;
+        m += n(s);
+        t += n(s) * s.th;
+      });
+    if (!m) return 0;
+    const v = START.W * (t / m) * (m / (m + START.N));
+    return Math.round(Math.min(START.HI, Math.max(START.LO, v)) * 100) / 100;
+  }
+
   const CORE = {
+    LEVEL,
+    START,
+    playerStart,
     applyCuration,
     applySlots,
     CAP,

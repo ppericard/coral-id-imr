@@ -1223,10 +1223,12 @@ const recent = n => {
 };
 const misses = h => [...h].filter(x => x === '0').length;
 const hasDuel = n => GX(n).look.some(b => DATA.gen[b]);
-// Progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability.
+// Progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability. A genus never answered
+// starts from the player's global level (core.js playerStart: their abilities on the genera already answered), so a
+// strong player gets traps, single views and harder photos on a new genus from its first question.
 const ability = n => {
   const s = P[n] || {};
-  return typeof s.th === 'number' ? s.th : ELO.th0 + Math.min(2, s.lv || 0);
+  return typeof s.th === 'number' ? s.th : s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n);
 };
 function abilityStep(n, s, good, d, k) {
   const th = ability(n),
@@ -1590,6 +1592,10 @@ function answer(cur, c, target, ph, cor, unseen) {
   const bk = solo + ph.reduce((t, p) => t + photoDiff(target, p) + (!ps[p.f] ? 0.5 : ps[p.f][1] >= 2 ? -1 : 0), 0) / Math.max(1, ph.length);
   bktObs(target, s, good, bk, k);
   abilityStep(target, s, good, d0, k);
+  // Global level (core.js playerStart): the same Elo step over every answer, kept as the pseudo-genus LEVEL.
+  const gl = (P[LEVEL] = P[LEVEL] || {ok: 0, ko: 0});
+  gl[good ? 'ok' : 'ko']++;
+  abilityStep(LEVEL, gl, good, d0, k);
   // The corallites hint is revealed after the answer when it was not opened: seen, but not recognised.
   ph.forEach(p => {
     const x = (ps[p.f] = ps[p.f] || [0, 0]);

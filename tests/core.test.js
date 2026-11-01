@@ -1,7 +1,20 @@
 // core.js: curation merge (admin Publish), progress merge (two devices), photo Elo (same as Code.gs stats_).
 const test = require('node:test'),
   assert = require('node:assert');
-const {merge3, mergeOld, mergeProgress, eloOf, confusionOf, confScore, CONF, pairConf, mergeUsers} = require('../core.js');
+const {
+  merge3,
+  mergeOld,
+  mergeProgress,
+  eloOf,
+  confusionOf,
+  confScore,
+  CONF,
+  pairConf,
+  mergeUsers,
+  playerStart,
+  LEVEL,
+  START
+} = require('../core.js');
 const {loadCodeGs} = require('./gas.js');
 
 test('merge3: my changes win, changes published elsewhere are kept', () => {
@@ -231,4 +244,19 @@ test('mergeUsers: two accounts of one person add up; the busier account model wi
   assert.deepStrictEqual(P.Porites, {ok: 1, ko: 0, th: 0.1, streak: 0});
   assert.deepStrictEqual(JSON.parse(M['imr-coral-quiz']), {bu: 2, view: 'any'});
   assert.strictEqual(M['imr-coral-theme'], '"dark"');
+});
+
+test('playerStart: a new genus starts from the global level, shrunk while answers are few, clamped', () => {
+  assert.strictEqual(playerStart({}, 'Acropora'), 0);
+  // Global Elo (LEVEL) wins over the genera; 30 answers at 1.6 → 0.8 * 1.6 * 30/40.
+  assert.strictEqual(playerStart({[LEVEL]: {ok: 30, ko: 0, th: 1.6}, Porites: {ok: 1, ko: 0, th: 0.1}}, 'Acropora'), 0.96);
+  // A strong player is never started at the hardest; a struggling one a little easier, not lower than LO.
+  assert.strictEqual(playerStart({[LEVEL]: {ok: 500, ko: 0, th: 3}}, 'Acropora'), START.HI);
+  assert.strictEqual(playerStart({[LEVEL]: {ok: 10, ko: 90, th: -1.5}}, 'Acropora'), START.LO);
+  // Progress from before the global level: mean ability of the genera answered (weighted by answers), the genus itself skipped.
+  const old = {Porites: {ok: 8, ko: 2, th: 1}, Favites: {ok: 5, ko: 5, th: 0}, Acropora: {ok: 9, ko: 1, th: 2}};
+  assert.strictEqual(playerStart(old, 'Acropora'), Math.round(0.8 * 0.5 * (20 / 30) * 100) / 100);
+  // The pseudo-genus merges across devices like a genus (answers add up, the latest ability).
+  const m = mergeProgress({[LEVEL]: {ok: 2, ko: 0, th: 0.3}}, {[LEVEL]: {ok: 5, ko: 0, th: 0.9}}, {[LEVEL]: {ok: 4, ko: 1, th: 0.5}});
+  assert.deepStrictEqual([m[LEVEL].ok, m[LEVEL].ko, m[LEVEL].th], [7, 1, 0.9]);
 });
