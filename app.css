@@ -640,7 +640,7 @@ a.lt:hover{border-color:var(--accent)}
 :root[data-cvd="1"]{--good:#08306b;--good-bg:#dbe6f4;--bad:#c45400;--bad-bg:#fbe3cf}
 :root[data-cvd="1"][data-theme="dark"]{--good:#b5dcff;--good-bg:#1a3047;--bad:#d6731a;--bad-bg:#45270f}
 /* Colour-blind mode: "to review" also changes shape (thick dashed border), not only colour. */
-:root[data-cvd="1"] :is(.pslate .ps.weak,.pseg a.weak,.pwall .pw.weak){border-style:dashed;border-width:3px}
+:root[data-cvd="1"] :is(.pslate .ps.weak,.pseg a.weak,.pwall .pw.weak,.plvl .pl-rev){border-style:dashed;border-width:3px}
 .s1{--lvc:var(--lv1);--lvt:var(--lvt1)}.s2{--lvc:var(--lv2);--lvt:var(--lvt2)}.s3{--lvc:var(--lv3);--lvt:var(--lvt3)}.s4{--lvc:var(--lv4);--lvt:var(--lvt4)}.s5{--lvc:var(--lv5);--lvt:var(--lvt5)}
 .pslate .ps,.pseg a{position:relative;background:var(--lvc,var(--surface));container-type:inline-size;color:var(--lvt,var(--ink));border:1px solid var(--lvc,var(--line))}
 .pslate .ps.s0,.pseg a.s0{border-style:dashed;color:var(--muted)}
