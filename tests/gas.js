@@ -39,7 +39,7 @@ function makeSheet(name){
 
 // Loads Code.gs in a fresh context with fresh services; returns the script's globals and the fake spreadsheet.
 function loadCodeGs(){
-  const sheets = {}, cache = {}, props = {};
+  const sheets = {}, cache = {}, props = {}, fetched = [];
   const ss = {getSheetByName: n => sheets[n] || null, insertSheet: n => (sheets[n] = makeSheet(n))};
   const ctx = {
     SpreadsheetApp: {getActiveSpreadsheet: () => ss},
@@ -51,6 +51,8 @@ function loadCodeGs(){
     },
     CacheService: {getScriptCache: () => ({get: k => cache[k] ?? null, put: (k, v) => { cache[k] = v; }})},
     PropertiesService: {getScriptProperties: () => ({getProperty: k => props[k] ?? null, setProperty: (k, v) => { props[k] = v; }})},
+    UrlFetchApp: {fetch: (url, o) => { const t = (o.headers.Authorization || '').slice(7), w = t.startsWith('ghp_write'); fetched.push(url);
+      return {getResponseCode: () => t.startsWith('ghp_') ? 200 : 401, getContentText: () => JSON.stringify({permissions: {pull: true, push: w}})}; }},
     LockService: {getScriptLock: () => ({waitLock(){}, releaseLock(){}})},
     ContentService: {MimeType: {JSON: 'json'}, createTextOutput: t => ({setMimeType: () => JSON.parse(t)})},
     console
@@ -59,6 +61,6 @@ function loadCodeGs(){
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8') + '\n;this.doGet = doGet; this.doPost = doPost;', ctx);
   const get = q => ctx.doGet({parameter: q});
   const post = body => ctx.doPost({postData: {contents: JSON.stringify(body)}});
-  return {ctx, sheets, cache, props, get, post};
+  return {ctx, sheets, cache, props, fetched, get, post};
 }
 module.exports = {loadCodeGs, makeSheet};

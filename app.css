@@ -1124,3 +1124,7 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .psbonus .ps{padding:0 6px;gap:4px;font-size:var(--fs-xs)}
 .psbonus .ps i{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 @media (max-width:599.98px){.psbonus{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.lb-cap .rep,footer .rep{display:inline;margin:0;font-size:inherit;color:inherit;text-decoration:underline;text-underline-offset:2px;opacity:.85}
+.lb-cap .rep:hover,footer .rep:hover{opacity:1}
+.repline{margin:18px 0 0;text-align:right}
+.repline .rep{display:inline}
