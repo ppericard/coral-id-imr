@@ -10,7 +10,7 @@ Sources: "thread X" = a Claude project thread with Pierre (in the original Claud
 
 The order the previous agents would follow; Pierre may reorder. Details of each item are in the sections below.
 
-1. **Check the confusion data fills**: confusion scores shipped in PR #286 and Code.gs v10 is live (2026-11-01). Once signed-in players have answered, check that the Answers tab fills its Choices column, that `?stats=1` `conf` grows and that admin Stats > Confusions shows pairs. Until there is enough data, quiz traps use the declared look-alikes.
+1. ~~Check the confusion data fills~~ (verified 2026-11-01: `?stats=1` returns `conf` with 48 pairs, all from Pierre's answers so far; admin Confusions needs the token, not checked):  confusion scores shipped in PR #286 and Code.gs v10 is live (2026-11-01). Once signed-in players have answered, check that the Answers tab fills its Choices column, that `?stats=1` `conf` grows and that admin Stats > Confusions shows pairs. Until there is enough data, quiz traps use the declared look-alikes.
 2. ~~Personal learning path from confusions~~: done (traps, duels and My progress "Often mixed up" follow each player's own mix-ups); a suggestion on the Practice page is left open (see "Next").
 3. **Beta testers' feedback**: Pierre is sending the app to last month's RAs and his next 6 RAs. Watch admin Triage ("Reported by players") and the Answers tab; fix what they hit first.
 4. ~~First-time RA review leftovers~~: done (genus sheet shows what a genus still needs, no "!" on "Review 0", names never cut on the progress wall); the phone hammer icon stays unlabelled (Pierre, declined).
@@ -19,7 +19,7 @@ The order the previous agents would follow; Pierre may reorder. Details of each 
 7. **Code formatting + modules** (L1). The handover is a good moment: a single agent, no parallel branches.
 8. Game photo sets by Elo band, photo Elo without Pierre's answers: once RAs have played (~10 answers per game photo).
 9. **User management page** in admin (delete, merge duplicate names): wanted by Pierre for when beta testers multiply; see "Parked".
-10. Content and curation helpers: growth-form/quality guesses for new candidates (on request), near-duplicates re-run, admin toggle for `use`, branching *Cyphastrea* photos, paliform-lobe rings in Corallite anatomy.
+10. Content and curation helpers: growth-form/quality guesses for new candidates (on request), near-duplicates re-run, ~~admin toggle for `use`~~ (done), branching *Cyphastrea* photos, paliform-lobe rings in Corallite anatomy.
 11. Everything else under "Parked" stays parked until Pierre brings it up.
 
 ## Waiting on Pierre
@@ -53,7 +53,6 @@ Never settle these in the app; keep the lecture's version.
 | **Calibrated, medium-size game photo sets**: draw game photos by Elo band per genus × view rather than at random; maybe cap set size while keeping a real difficulty spread and enough photos to learn the genus, not the photos. Never shrink sets automatically: suggest, Pierre confirms. Needs enough answers first. Whether to cap at all is still open. | thread "Analyse player levels and photo Elo" | Next / Open question |
 | Growth form + quality guesses for auto-refilled candidates (they arrive without guesses; Claude classified PR #181's batch by eye in PR #182). Do it when Pierre asks. | thread "Review photo candidates on phone" | Next (on request) |
 | Near-duplicate / redundancy suggestions among IMR + Pierre photos in Triage, and a visual pre-pick of Featured into `picks.json`. Partly done (`find_dups.py`, PR #149); re-run after adding photos. | thread "Design photo usage per context" | Next |
-| Admin toggle for `curation.json` `use` (`ref` / `game`): the field exists, no button yet. | PR #96 | Next |
 | **Photo Elo without Pierre's answers in the games**: admin Stats can now show photo Elo "Without me" (replayed in the browser, PR for thread "Exclude my answers from photo Elo"), but the games still use the sheet's `?stats=1` over everyone. Plan: once most game photos have ~10 RA answers, Code.gs v6 skips the author's answers (or weighs them less) in `stats_`; needs a redeploy by Pierre. Until then his answers act as a cold-start prior (all 97 answers so far, 2026-11-01, are his). Nothing to reset: Elo is replayed from the Answers log each time. | thread "Exclude my answers from photo Elo" | Next (when RAs have played) |
 | **Branching Cyphastrea photos** for the Acropora / Cyphastrea comparison (Coral Finder p. 8 puts Cyphastrea among branching corals; ramose forms such as *C. decadia*). None of ours is branching (2026-11-01); iNat has *C. decadia* at Sumilon (obs 269721269, CC BY-NC). Pierre can hide the pair in admin Look-alikes until then. | thread "Add a hide button for weak comparisons" | Next (needs photos) |
 | Personal path, last piece: a "Review Favites vs Dipsastraea" suggestion on the Practice page too (My progress already lists the pairs; the games must stay one screen, so it needs a place that does not crowd the question). | personal path, 2026-11-01 | Next (small) |
@@ -84,6 +83,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 | Reuse the data (genera, criteria, photos) in ReefRecall, Pierre's separate app. The coral tools stay standalone, not part of ReefRecall. | 2026-10-31 | Parked |
 | First-time RA review leftover: some wrong-answer comparisons are not like for like (live close-up vs bleached skeleton). Fixed since: phone progress names (#262), named colour swatches, "Closer" renamed "Close-up", what a genus still needs on its sheet, no "!" on "Review 0", names never cut on the progress wall (2026-11-01). | [reviews/2026-11-01-ra-re-review.md](reviews/2026-11-01-ra-re-review.md) | Next (photo-dependent) |
 | Low items from the second admin review: hover + key shortcuts in Forms/Quality can fire by accident; Sign out keeps the draft on a shared device; page titles uneven across admin tabs. | [reviews/2026-11-01-admin-re-review.md](reviews/2026-11-01-admin-re-review.md) | Parked (low) |
+| **PR preview links (test vs production)**: Pierre asked (2026-11-01) whether a separate test site is worth it now that real people use the app. Recommendation: Cloudflare Pages connected to the repo, one preview link per PR on its own origin (a second GitHub Pages site would share `ppericard.github.io` storage: progress, admin token), sync and admin read-only on previews; agents keep merging low-risk PRs alone, PRs that change what RAs see wait for Pierre's OK on the preview. Needs Pierre to create the Cloudflare account (~5 min). | Pierre, 2026-11-01 ("plus tard") | Parked (Pierre: later) |
 | Rate-limit unverified player reports (per-day cap) if they are ever abused. | code re-review L4 | Parked |
 
 ## Declined (don't propose again)
@@ -104,6 +104,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 - Publishing `curation.json` as a whole copy from the admin (lost curation on 2026-11-01; Publish merges key by key since PR #240).
 
 ## Done recently (for context)
+- 2026-11-01: admin genus page: Both / Sheet / Game on each photo sets `curation.json` `use` (sheet only / games only); the field existed since PR #96 without a button.
 - 2026-11-01: link preview image (Pierre asked, WhatsApp showed text only): Open Graph meta tags + `og.jpg` (tools/og/make_og.js).
 - 2026-11-01: personal learning path from confusions (Pierre approved): each answer counts the wrong choices offered (`P[g].off`), and the pooled confusion score becomes the prior for the player's own record on the pair (`pairConf`, weight offers / (offers + 8)): a pair a player keeps mixing up becomes their trap and comes back in duels; one they now tell apart fades. My progress "Often mixed up" ranks the pairs by that score.
 - 2026-11-01: `data.json` one genus per line (code re-review M5): every writer (`tools/*.py`, including the Candidate photos Action's `fetch_approved.py`, `fetch_local.py`, `apply_ratios.py`) goes through the shared `tools/datajson.py`; one top-level key per line and one genus per line in `gen`, `course`, `cand`, `x`, `x.gen` (181 lines instead of one 560 KB line), so edits to different genera merge cleanly. The PR check fails on any other layout (`python3 tools/datajson.py --check`).

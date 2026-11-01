@@ -349,6 +349,8 @@ const ACT = {
     if (L.includes(f)) { L.splice(L.indexOf(f), 1); if (!L.length) { toast('A view needs at least one featured photo: back to the automatic pick.'); delete k.feat[v]; } }
     else if (L.length >= FEAT) toast(`Already ${FEAT} featured: remove one first.`); else L.push(f); }),
   addc: (n, f, v, to) => edit(n, k => { if ((k.hide || []).includes(f)) { const p = photos(n).find(x => x.f === f); k.hide = k.hide.filter(x => x !== f); k.move = k.move || {}; if (to === p.base) delete k.move[f]; else k.move[f] = to; return; } k.add = k.add || {}; k.add[f] = to; }),
+  // Where a photo is used (curation.json use {f: 'ref' | 'game'}): both (no entry), the genus sheet only, or the games only.
+  use: (n, f, v, to) => { const U = {...(DRAFT.use || {})}; if (to === 'ref' || to === 'game') U[f] = to; else delete U[f]; DRAFT.use = U; if (!Object.keys(U).length) delete DRAFT.use; saveDraft(); render(); },
   multi: (n, f) => { const S = {...(DRAFT.single || {})}; if (S[f]) delete S[f]; else S[f] = 1; DRAFT.single = S; if (!Object.keys(S).length) delete DRAFT.single; saveDraft(); render(); },
   exclude: (n, f) => { DRAFT.exclude = DRAFT.exclude || {}; DRAFT.exclude[f] = 'excluded';
     edit(n, k => { dropFeat(k, f); if (k.cover === f) delete k.cover; if (k.add) delete k.add[f]; });
@@ -378,6 +380,9 @@ const ACT = {
 const notThis = n => `<select data-act="out" aria-label="Not this genus"><option value="">Not this</option><option value="cmp">Look-alike comparison</option><optgroup label="Another genus">${Object.keys(DATA.gen).filter(m => m !== n).map(m => `<option>${esc(m)}</option>`).join('')}</optgroup></select>`;
 const changed = () => [...new Set([...Object.keys(DRAFT.genera), ...Object.keys(SAVED.genera)])].filter(n => !same(DRAFT.genera[n], SAVED.genera[n]));
 const tile0 = (...a) => tile(...a);
+// Use: Both (sheet and games), Sheet only, Game only (curation.json use; PR #96 added the field, this the button).
+const useSeg = p => { const u = (DRAFT.use || {})[p.f] || 'all';
+  return `<span class="adm-qseg adm-useg" role="group" aria-label="Use">${[['all', 'Both', 'Sheet and games'], ['ref', 'Sheet', 'Sheet only'], ['game', 'Game', 'Games only']].map(([k, t, d]) => `<button type="button" data-act="use" data-to="${k}" aria-pressed="${u === k}" title="${d}">${t}</button>`).join('')}</span>`; };
 function tile(n, p, v, st){
   // The cover shown in the header (his pick, else the automatic one) is marked on its photo either way.
   const k = entry(n), isCover = (k.cover || SHOWN_COVER) === p.f, two = lv(n) === 2;
@@ -391,6 +396,7 @@ function tile(n, p, v, st){
     <div class="adm-acts">${qSeg(p)}${fSeg(p)}
       ${st.cls === 'is-hidden' ? `<button type="button" data-act="hide" class="on">Show again</button>` : `
       <span class="adm-qseg adm-vseg" role="group" aria-label="View">${moves}</span>
+      ${useSeg(p)}
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Cover">★ Cover</button>
       <button type="button" data-act="hide" title="Remove">Remove</button>
       ${p.src ? `<button type="button" data-act="crop" class="${crOf(p.f) ? 'on' : ''}" aria-pressed="${!!crOf(p.f)}">Crop</button>` : ''}
@@ -487,6 +493,7 @@ function bindTiles(scope, g){
     else if (a === 'out') { if (el.tagName === 'SELECT') el.onchange = () => el.value && ACT.out(n, f, v, el.value); else el.onclick = () => ACT.out(n, f, v, 'back'); }
     else if (a === 'addc') el.onclick = () => ACT.addc(n, f, null, el.dataset.to);
     else if (a === 'move') el.onclick = () => el.dataset.to !== v && ACT.move(n, f, v, el.dataset.to);
+    else if (a === 'use') el.onclick = () => ACT.use(n, f, v, el.dataset.to);
     else if (a === 'zoom' || a === 'zoomcover') el.onclick = () => zoom(n, f);
     else el.onclick = () => ACT[a](n, f, v);
   });
@@ -641,6 +648,7 @@ const HELP = {
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time.</p>
     <p>The first 3 photos of each view are its featured photos (top of the genus sheet, Coral Finder). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. <b>Remove</b> takes a photo off the site (games included) and lists it with the candidates below, where you can add it back.</p>
     <p><b>Which no?</b> <b>Remove</b>: off the site, back with the candidates. <b>Reject</b> (Candidates): reviewed and not wanted, it stays a candidate. <b>Skip</b>: decide later. <b>Not this</b>: wrong genus, or only fit for a look-alike comparison. <b>×</b>: excluded for good (a person, a drawing, unusable).</p>
+    <p><b>Both / Sheet / Game</b> on each photo: where it is used. Both (default) = genus sheet and games; Sheet = sheet only (a good reference photo that gives the answer away or is too easy in a quiz); Game = games only (fine to quiz on, not one to show as a reference).</p>
     <p>The letters on each photo are its growth form (see Growth form).</p>
     <p><b>Symbols.</b> Genus list: <b>✓</b> validated and complete; <b>!</b> validated but something is missing again; <b>●</b> draft not published; <b>⚠ check</b> a choice names a photo no longer in the data; <b>N waiting</b> candidates not reviewed yet; <b>macro cover</b> the cover is a close-up. Photos: <b>filled number 1-3</b> featured; <b>outlined number 4-6</b> also on the genus sheet; <b>dashed frame</b> a candidate, not on the site yet; <b>faded dashed frame</b> removed (back with the candidates); <b>added</b> a candidate you added; <b>Cover</b> the cover photo. Dashed tags or buttons are guesses, solid ones are your choices. <b>3 zooms / 2 zooms</b>: with 2, Close-up photos join Colony.</p>`,
   form: `<p>The 7 IMR growth forms (Lecture 6, slides 3-10), one per photo, the main form visible: <b>Br</b> Branching, <b>En</b> Encrusting, <b>Ta</b> Tabulate, <b>Mu</b> Mushroom, <b>Ma</b> Massive, <b>Sm</b> Submassive, <b>Fo</b> Foliose/Plating; <b>∅</b> = form not visible (too close). <b>✿</b> = polyps or vesicles extended (not a form; it fills the Coral Finder "Large daytime polyps" tile).</p>
