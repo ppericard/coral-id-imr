@@ -11,12 +11,12 @@
 <meta name="theme-color" content="#0d6f7d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
-<link rel="stylesheet" href="app.css?v=69">
+<link rel="stylesheet" href="app.css?v=70">
 <link rel="stylesheet" href="proto/lab.css?v=40">
 <link rel="stylesheet" href="home.css?v=19">
 </head>
 <body>
-<script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t;document.documentElement.dataset.palette=localStorage.getItem("imr-coral-palette")||"depth"}catch(e){document.documentElement.dataset.palette="depth"}</script>
+<script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t;var p=localStorage.getItem("imr-coral-palette");document.documentElement.dataset.palette=p&&p!=="reef"?p:"depth";if(localStorage.getItem("imr-coral-cvd")==="1")document.documentElement.dataset.cvd="1"}catch(e){document.documentElement.dataset.palette="depth"}</script>
 <div class="wrap">
   <header>
     <h1 class="brand"><a class="home" href="#home"><img src="icon.svg" alt="" width="30" height="30"><span>IMR Coral ID</span></a></h1>
@@ -39,7 +39,8 @@
         <div class="setrow" id="viewrow" hidden><span>View</span><div id="adminview" role="group" aria-label="View"><button type="button" data-view="admin" title="Admin">Admin</button><button type="button" data-view="user" title="User">User</button></div></div>
         <div class="setrow" id="admrow" hidden><span>Admin page</span><a class="setlink" href="admin.html">Open</a></div>
         <div class="setrow"><span>Theme</span><button type="button" class="theme" id="theme" aria-label="Switch to dark theme">☾</button></div>
-        <div class="setrow"><span>Colours</span><div id="palette" class="palsw" role="group" aria-label="Colours"><button type="button" data-pal="lagoon" title="Lagoon" aria-label="Lagoon"><i style="background:linear-gradient(90deg,#d3ebe7,#a2d5cc,#63b6a4,#2a8770,#1d5f34)"></i></button><button type="button" data-pal="reef" title="Reef" aria-label="Reef"><i style="background:linear-gradient(90deg,#fee3c5,#f7bd8f,#e68a58,#c25430,#8c2e23)"></i></button><button type="button" data-pal="ocean" title="Ocean" aria-label="Ocean"><i style="background:linear-gradient(90deg,#d1edfe,#a1d1f4,#6aaae6,#407bc5,#2c4f94)"></i></button><button type="button" data-pal="seagrass" title="Seagrass" aria-label="Seagrass"><i style="background:linear-gradient(90deg,#e6edc0,#c0d492,#8cb460,#558b41,#29612d)"></i></button><button type="button" data-pal="twilight" title="Twilight" aria-label="Twilight"><i style="background:linear-gradient(90deg,#ebe3fe,#d0c0f9,#aa95e8,#7e66ca,#543f99)"></i></button><button type="button" data-pal="depth" title="Depth" aria-label="Depth"><i style="background:linear-gradient(90deg,#f4ed8b,#9bdda8,#4ab9b2,#1785af,#2e4d99)"></i></button></div></div>
+        <div class="setrow"><span title="Blue and orange instead of green and red">Colour-blind</span><div id="cvd" role="group" aria-label="Colour-blind mode"><button type="button" data-cvd="1">On</button><button type="button" data-cvd="0">Off</button></div></div>
+        <div class="setrow"><span>Colours</span><div id="palette" class="palsw" role="group" aria-label="Colours"><button type="button" data-pal="lagoon" title="Lagoon" aria-label="Lagoon"><i style="background:linear-gradient(90deg,#d3ebe7,#a2d5cc,#63b6a4,#2a8770,#1d5f34)"></i></button><button type="button" data-pal="ocean" title="Ocean" aria-label="Ocean"><i style="background:linear-gradient(90deg,#d1edfe,#a1d1f4,#6aaae6,#407bc5,#2c4f94)"></i></button><button type="button" data-pal="seagrass" title="Seagrass" aria-label="Seagrass"><i style="background:linear-gradient(90deg,#e6edc0,#c0d492,#8cb460,#558b41,#29612d)"></i></button><button type="button" data-pal="twilight" title="Twilight" aria-label="Twilight"><i style="background:linear-gradient(90deg,#ebe3fe,#d0c0f9,#aa95e8,#7e66ca,#543f99)"></i></button><button type="button" data-pal="depth" title="Depth" aria-label="Depth"><i style="background:linear-gradient(90deg,#f4ed8b,#9bdda8,#4ab9b2,#1785af,#2e4d99)"></i></button></div></div>
       </div>
     </div>
     <div id="helpbox" class="helpbox" hidden></div>
@@ -49,7 +50,7 @@
   <footer><p>Website and interface by Pierre Pericard. Sources: IMR Lecture 6 · Coral Finder 2022 (R. Kelley, BYOGUIDES) · iNaturalist photos, credited on each photo. For training at IMR.</p></footer>
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
-<script src="app.js?v=103"></script>
+<script src="app.js?v=104"></script>
 <script src="flag.js?v=4"></script>
 <script src="proto/lab.js?v=52"></script>
 <script src="home-art.js?v=3"></script>
