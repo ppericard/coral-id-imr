@@ -2758,3 +2758,17 @@ td.cov-c .cov-off {
 .adm-uremoved summary {
   cursor: pointer;
 }
+/* Demo mode banner (admin.html?demo, admin-demo.js): palette tokens, like the sync warning (.sync.warn) */
+.adm-demo {
+  margin: 0;
+  padding: 6px 16px;
+  border-bottom: 2px solid var(--warn);
+  background: color-mix(in srgb, var(--warn) 18%, var(--surface));
+  color: var(--ink);
+  font-size: var(--fs-s);
+  text-align: center;
+}
+.adm-demo a {
+  color: inherit;
+  text-decoration: underline;
+}

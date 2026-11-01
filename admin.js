@@ -18,10 +18,14 @@ const VIEWS = [
 const $v = document.getElementById('view'),
   $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
+// Demo mode (admin.html?demo, admin-demo.js): made-up sync data, and its own browser storage ("demo:" keys), so a
+// demo never reads or writes a real admin draft, token or Undo history.
+const DEMO = !!window.ADMIN_DEMO,
+  SK = k => (DEMO ? 'demo:' + k : k);
 const store = {
   get(k, d) {
     try {
-      const v = localStorage.getItem(k);
+      const v = localStorage.getItem(SK(k));
       return v === null ? d : JSON.parse(v);
     } catch (e) {
       return d;
@@ -29,7 +33,7 @@ const store = {
   },
   set(k, v) {
     try {
-      v === null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v));
+      v === null ? localStorage.removeItem(SK(k)) : localStorage.setItem(SK(k), JSON.stringify(v));
       return true;
     } catch (e) {
       return false;
@@ -137,7 +141,7 @@ let HIST = [],
   snap = null;
 // The Undo steps survive a reload of this tab (admin re-review, 2026-11-01): kept in sessionStorage (this tab only,
 // gone when it closes; the last 60 steps), with the draft they lead to, so another tab's draft never picks them up.
-const HKEY = 'imr-admin-undo';
+const HKEY = SK('imr-admin-undo');
 const keepHist = () => {
   if (!TOKEN) return;
   try {
@@ -3066,7 +3070,7 @@ async function start() {
 // Stay signed in on this browser after unlocking (survives reloads) until "Sign out".
 // The unlocked token lives in sessionStorage only (Pierre, 2026-11-01, code review H1): it survives reloads in this tab and
 // is gone when the browser closes, so the plain token never stays on disk. localStorage only holds the encrypted vault.
-const SESSION = 'imr-admin-session';
+const SESSION = SK('imr-admin-session');
 const sess = {
   get() {
     try {
@@ -3091,6 +3095,12 @@ function signOut() {
   location.reload();
 }
 (async () => {
+  if (DEMO) {
+    TOKEN = 'demo';
+    const pv = $('preview');
+    if (pv) pv.hidden = true; // the site's ?draft preview reads the real draft, not the demo's
+    return start();
+  }
   if (/[?&]readonly\b/.test(location.search)) return start();
   const t = sess.get();
   if (t) {
