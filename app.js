@@ -19,7 +19,7 @@ const store = {
   get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
-const VIEWS = [['wide', 'Colony'], ['medium', 'Closer'], ['macro', 'Corallites']];
+const VIEWS = [['wide', 'Colony'], ['medium', 'Close-up'], ['macro', 'Corallites']];
 // A candidate just added in the admin (r: 1) shows from iNaturalist until tools/fetch_approved.py has downloaded it.
 const inat = (p, sz) => p.src.replace('/original.', `/${sz}.`);
 // A recropped photo keeps its file name, so its URL carries the crop (cr) and rewrite count (iv): without it the
@@ -225,7 +225,7 @@ function bindGo(root = $v){ root.querySelectorAll('[data-go]').forEach(b => b.on
 
 // Full-size viewer shared by every page. opts.blind() true = quiz before answering: hide genus, credit and source links.
 const lb = document.getElementById('lightbox');
-const VIEW_LABEL = {wide: 'Colony', medium: 'Closer', macro: 'Corallites', close: 'Close-up'};
+const VIEW_LABEL = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites', close: 'Close-up'};
 function zoom(list, i, opts = {}){
   const blind = () => opts.blind ? opts.blind() : false;
   const show = () => {
@@ -388,7 +388,7 @@ function viewGenus(name){
   // Coral Finder text: visible for genera the lecture skips, otherwise folded under "More details" with sources and key.
   const cfList = `<h3>Coral Finder features</h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`;
   // Name, slate number and family sit in the sticky header bar (ctxBar), not here.
-  $v.innerHTML = `<p class="lede">One genus on one page. The highlighted <b>ID tips (IMR)</b> are what to remember; the <b>IMR lecture notes</b> give the full lecture cues. Its <b>IMR group</b> is the lecture's confusion group: genera in the same group are the ones to tell apart. Photos at three distances: <b>colony</b>, <b>closer</b> (10-30 cm) and <b>corallites</b> (macro); tap one to enlarge it. <b>Don't confuse with</b>, at the bottom, shows its look-alikes in the same view. Dotted words show their definition when tapped.${isPhone() ? '' : ' ← / → go to the previous / next genus.'}</p>
+  $v.innerHTML = `<p class="lede">One genus on one page. The highlighted <b>ID tips (IMR)</b> are what to remember; the <b>IMR lecture notes</b> give the full lecture cues. Its <b>IMR group</b> is the lecture's confusion group: genera in the same group are the ones to tell apart. Photos at three distances: <b>colony</b>, <b>close-up</b> (10-30 cm) and <b>corallites</b> (macro); tap one to enlarge it. <b>Don't confuse with</b>, at the bottom, shows its look-alikes in the same view. Dotted words show their definition when tapped.${isPhone() ? '' : ' ← / → go to the previous / next genus.'}</p>
   <article class="sheet">
     ${imr.length || g.x ? '' : `<p class="lede keyid">${esc(g.sum)}</p>`}
     ${g.x ? `<p class="warn"><b>Not on the IMR list.</b> A rarer genus seen at Dauin${g.x.nonscl ? ', and not a true hard coral' : ''}.</p>` : g.n ? '' : `<p class="warn"><b>★ Not surveyed by IMR.</b> It is on the slate so you don't mistake it for ${g.look.filter(n => DATA.gen[n].n).map(n => '<i>' + esc(n) + '</i>').join(', ')}, so you need to recognise it and set it aside.</p>`}
@@ -711,7 +711,7 @@ function bindQuizNav(){ bindGo(); }
 // The game rules (behind the ? button).
 const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
   Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on. Every answer counts in <a href="#progress">My progress</a>.</p>
-  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, closer or corallites), and a mistake eases them off. A genus is learned once your answers make it 95% sure you know it (right answers on harder photos count more), plus one right answer with the corallites in view and one in a look-alike duel: see ? on <a href="#progress">My progress</a>.</p>`;
+  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus is learned once your answers make it 95% sure you know it (right answers on harder photos count more), plus one right answer with the corallites in view and one in a look-alike duel: see ? on <a href="#progress">My progress</a>.</p>`;
 function question(cur, target, choices, prompt, set){
   const ph = set.shown, lab = VIEW_LABEL;
   let answered = false, hintShown = false;
