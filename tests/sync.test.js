@@ -110,16 +110,23 @@ test('five wrong codes block the name for a while', () => {
 test('anonymous ids use a secret salt; the caller learns its own id with its code', () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {learned: 1}, answers: [ans('d1')]});
-  const a = s.get({answers: '1'});
+  const T = 'ghp_write000000000000000000';
+  const a = s.post({readAnswers: 1, token: T});
   const id = a.rows[0][0];
   assert.strictEqual(a.me, undefined);
   assert.ok(s.props.ANON_SALT);
   const pub = require('crypto').createHash('sha256').update('imr-coral-id|anon|ana').digest('base64').slice(0, 8);
   assert.notStrictEqual(id, pub, 'not the old public-salt id');
-  assert.strictEqual(s.get({answers: '1', name: 'Ana', pin: '1234'}).me, id);
-  assert.strictEqual(s.get({answers: '1', name: 'Ana', pin: '9999'}).me, undefined);
+  assert.strictEqual(s.post({readAnswers: 1, token: T, aname: 'Ana', apin: '1234'}).me, id);
+  assert.strictEqual(s.post({readAnswers: 1, token: T, aname: 'Ana', apin: '9999'}).me, undefined);
   assert.ok(a.players[id]);
-  assert.ok(s.get({stats: '1'}).ras[id]);
+  assert.ok(s.post({readStats: 1, token: T}).ras[id]);
+  // v14: per-player numbers are admin-only (the public leaderboard names players); the public stats keep the photos.
+  assert.strictEqual(s.get({answers: '1'}).error, 'token');
+  assert.strictEqual(s.post({readAnswers: 1}).error, 'token');
+  assert.strictEqual(s.post({readStats: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
+  const open = s.get({stats: '1'});
+  assert.ok(open.photos && open.conf && !open.ras, 'no per-player ability in public');
 });
 
 const rep = (id, extra = {}) => ({
@@ -201,7 +208,7 @@ test('users: admin token only; one row per player with their numbers', () => {
   assert.strictEqual(r.v, 14);
   const ana = r.users.find(u => u.name === 'Ana');
   // v13: the anonymous id of ?answers=1, so the admin can put names on the anonymous stats.
-  const a = s.get({answers: 1});
+  const a = s.post({readAnswers: 1, token: TOK});
   assert.ok(ana.id && a.rows.some(x => x[0] === ana.id));
   assert.notStrictEqual(ana.id, r.users.find(u => u.name === 'Ana B').id);
   assert.strictEqual(ana.answers, 2);
@@ -413,20 +420,15 @@ test('board: signed-in players by progress then level; opted-out players and the
   const b = s.get({board: '1'});
   assert.strictEqual(b.ok, true);
   assert.strictEqual(b.v, 14);
-  assert.deepStrictEqual(
-    b.rows.map(r => r[0]),
-    ['Ana', 'Ben'].sort((x, y) => {
-      const lx = b.rows.find(r => r[0] === x)[2],
-        ly = b.rows.find(r => r[0] === y)[2];
-      return ly - lx;
-    }),
-    'Ana B opted out; equal progress ranks by level'
-  );
+  assert.deepStrictEqual(b.rows.map(r => r[0]).sort(), ['Ana', 'Ben'], 'Ana B opted out');
+  assert.ok(b.rows[0][2] >= b.rows[1][2], 'equal progress ranks by level');
   assert.ok(
-    b.rows.every(r => r[1] === 42 && typeof r[2] === 'number' && r[3] > 0),
-    'progress rounded, level and answers'
+    b.rows.every(r => r.length === 3 && r[1] === 42 && typeof r[2] === 'number'),
+    'name, progress rounded, level: nothing else'
   );
   assert.ok(!JSON.stringify(b).match(/1234|1111|hash|imr-coral/), 'no code, hash or progress data');
+  // An app that sends no board value (older) keeps the saved choice: Ana B stays off.
+  s.post({name: 'Ana B', pin: '5678', data: prog(2), summary: {learned: 1, seen: 1, total: 39}, answers: [ans('b2')]});
   // Cached 5 minutes, then the opt-out is seen.
   s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {pct: 41.6, board: 0}, answers: []});
   assert.strictEqual(s.get({board: '1'}).rows.length, 2, 'cached');
@@ -435,4 +437,18 @@ test('board: signed-in players by progress then level; opted-out players and the
     s.get({board: '1'}).rows.map(r => r[0]),
     ['Ana']
   );
+});
+
+test('board: a player saved before v14 ranks by learned / total until their next sync', () => {
+  const s = seed();
+  const ra = s.sheets.RAs;
+  assert.ok(ra, 'RAs tab');
+  // Simulate a v13 row: no Progress, no Board.
+  const rows = ra.rows;
+  const r = rows.find(x => x[0] === 'Ana');
+  r[8] = '';
+  r[9] = '';
+  Object.keys(s.cache).forEach(k => delete s.cache[k]);
+  const ana = s.get({board: '1'}).rows.find(x => x[0] === 'Ana');
+  assert.strictEqual(ana[1], Math.round((100 * 1) / 39), 'learned 1 of 39');
 });

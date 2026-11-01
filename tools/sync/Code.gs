@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 14 (2026-11-01: v14: public leaderboard (GET ?board=1: name, progress %, level, answers of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 14 (2026-11-01: v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -59,12 +59,14 @@ function writeData_(name, json, rev){
   d.sh.getRange(r, 1, 1, row.length).setValues([row]);
 }
 
-// GET ?stats=1 → photo difficulty learned from every answer (Elo, see stats_), cached 10 minutes.
-// GET ?answers=1 → every answer with the RA replaced by an anonymous id (see answers_), for the admin Stats page.
+// GET ?stats=1 → photo difficulty learned from every answer (Elo, see stats_), cached 10 minutes: photos and conf only.
+// Per-player numbers are admin-only from v14 (the public leaderboard names players: a public per-id ability or answer log
+// could be matched to a name): POST {readStats: 1, token} → stats_ with ras; POST {readAnswers: 1, token, aname, apin}
+// → answers_ (aname/apin, never name/pin: an older script must not take it for a progress write). GET ?answers=1 → 'token'.
 // GET ?name=…&pin=… → the saved progress for that RA, if the code matches.
 function doGet(e){
-  if (e.parameter.stats) return json_(stats_());
-  if (e.parameter.answers) return json_(answers_(e.parameter));
+  if (e.parameter.stats) { const st = stats_(); return json_({ok: st.ok, photos: st.photos, conf: st.conf}); }
+  if (e.parameter.answers) return json_({ok: false, error: 'token'});
   if (e.parameter.board) return json_(board_());
   const {name, pin} = clean_(e.parameter);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
@@ -88,6 +90,10 @@ function doPost(e){
   if (Array.isArray(p.anonAnswers)) return json_(anon_(p));  // v12: players not signed in (see anon_)
   if (Array.isArray(p.reports)) return json_(logReports_(p));
   if (p.readReports) return json_(reports_(p.token));  // admin: POST {readReports: 1, token} (see reports_)
+  if (p.readStats || p.readAnswers) {  // admin (v14): per-player numbers, see doGet
+    if (!isAdmin_(String(p.token || ''))) return json_({ok: false, error: 'token'});
+    return json_(p.readStats ? stats_() : answers_({name: p.aname, pin: p.apin}));
+  }
   if (p.users || p.userData || p.userDelete || p.userMerge) return json_(users_(p));  // admin user management (v11, see users_)
   const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
@@ -118,7 +124,9 @@ function doPost(e){
       if (!r) { r = sh.getLastRow() + 1; }
       if (sh.getRange(1, 9).getValue() !== HEAD[8]) sh.getRange(1, 1, 1, HEAD.length).setValues([HEAD]).setFontWeight('bold');  // tab made before v14
       const pct = typeof s.pct === 'number' && isFinite(s.pct) ? Math.max(0, Math.min(100, Math.round(s.pct))) : '';
-      sh.getRange(r, 1, 1, HEAD.length).setValues([[safe_(name), new Date(), s.learned || 0, s.seen || 0, s.total || 0, (s.review || []).map(safe_).join(', '), safe_(h), json.length < CHUNK ? json : '@' + DATA_TAB, pct, s.board === 0 ? 0 : 1]]);
+      // Board: the player's choice when the app sends it, else the one saved (an older app must not undo an opt-out).
+      const board = typeof s.board === 'number' ? (s.board ? 1 : 0) : r && sh.getRange(r, 10).getValue() === 0 ? 0 : 1;
+      sh.getRange(r, 1, 1, HEAD.length).setValues([[safe_(name), new Date(), s.learned || 0, s.seen || 0, s.total || 0, (s.review || []).map(safe_).join(', '), safe_(h), json.length < CHUNK ? json : '@' + DATA_TAB, pct, board]]);
     } catch (err) { return json_({ok: false, error: 'save', log: true}); }
     // One row per RA, one column per genus, coloured by status: the class at a glance.
     const genera = Object.keys(s.genera || {});
@@ -276,7 +284,7 @@ function reports_(token){
 }
 
 // Public leaderboard (v14; Pierre, 2026-11-01: "a small leaderboard to keep a little competition going"): GET ?board=1 →
-// {ok, rows: [[name, progress %, level, answers]]}, every signed-in player who did not opt out (Board 0), ranked by
+// {ok, rows: [[name, progress %, level]]}, every signed-in player with answers who did not opt out (Board 0), ranked by
 // progress then level. Level = the player's ability from the photo Elo over every answer (stats_ ras: same scale as photo
 // difficulty), so players at 100% still rank by skill. Names are public here by design: the app says so and lets each
 // player opt out in its settings (privacy.html). Nothing else of the player leaves the sheet. Cached 5 minutes.
@@ -288,8 +296,10 @@ function board_(){
     const ras = stats_().ras || {}, salt = anonSalt_();
     out.rows = ra.getRange(2, 1, ra.getLastRow() - 1, HEAD.length).getValues()
       .filter(r => r[0] && r[9] !== 0 && String(r[9]) !== '0')
-      .map(r => { const x = ras[aid_(String(r[0]), salt)]; return [String(r[0]), r[8] === '' ? null : Number(r[8]), x ? x[0] : null, x ? x[1] : 0]; })
-      .filter(r => r[3] > 0 || r[1])
+      // Progress saved before v14 (blank): learned / total until the player's next sync writes it.
+      .map(r => { const x = ras[aid_(String(r[0]), salt)], pct = r[8] === '' ? (Number(r[4]) ? Math.round(100 * Number(r[2]) / Number(r[4])) : null) : Number(r[8]);
+        return x || pct ? [String(r[0]), pct, x ? x[0] : null] : null; })
+      .filter(Boolean)
       .sort((a, b) => (b[1] || 0) - (a[1] || 0) || (b[2] == null ? -99 : b[2]) - (a[2] == null ? -99 : a[2]))
       .slice(0, 200);
   }

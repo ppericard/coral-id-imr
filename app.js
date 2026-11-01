@@ -2984,7 +2984,7 @@ function showModes(tab, h) {
 // answer, so players at 100% keep competing). 🏆 in the header opens it from any page; My progress shows the player's
 // rank and Elo with a link here. Signed-in players appear by default; ⚙ Leaderboard Off takes them off (sent with the next
 // sync, the sheet's Board column). The sheet serves it (GET ?board=1, v14, cached 5 minutes there, 1 minute here).
-const BOARD = 'imr-board';
+const BOARD = 'imr-coral-board'; // an imr-coral key: it travels with the progress, so the choice holds on every device
 const boardOn = () => store.get(BOARD, 1) !== 0;
 // Elo score shown to players: the ability (0 = able to name an average photo, same scale as photo difficulty) as a
 // familiar number around 1000; +1 ability = +200.
@@ -3037,6 +3037,11 @@ function viewBoard() {
 }
 // Told once, when the leaderboard arrives, to players already signed in: their name now shows there.
 function boardNotice() {
+  // Players signed in before the leaderboard: one sync writes their progress % (the sheet has none for them yet).
+  if (SYNC && !store.get('imr-board-sent', 0)) {
+    store.set('imr-board-sent', 1);
+    syncSoon();
+  }
   if (!SYNC || store.get('imr-board-told', 0)) return;
   store.set('imr-board-told', 1);
   const t = document.createElement('div');
