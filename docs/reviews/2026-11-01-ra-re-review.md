@@ -2,7 +2,7 @@
 
 > **Copied into the repo for the handover (2026-11-01).** Original: a private Claude doc on claude.ai (not reachable from another account).
 >
-> **Status since:** 1-2 fixed (#267 tour cut to 5 steps, #284 bubble never covers its target); 3 fixed (#273, #285: easy wrong choices first, look-alikes from the first right answer); 4 fixed (#269 cards lead with a photo of the picked form); 5 fixed (#280 big Yes/No question cards); 6 partly (one compact bonus tile, designer re-review PR; the red "!" on "Review 0" not verified); 7 open (photo-dependent; see ROADMAP); 8 open: phone hammer icon has no text label, a long name cut on the tablet progress wall (the tour no longer has a photo-size step).
+> **Status since:** 1-2 fixed (#267 tour cut to 5 steps, #284 bubble never covers its target); 3 fixed (#273, #285: easy wrong choices first, look-alikes from the first right answer); 4 fixed (#269 cards lead with a photo of the picked form); 5 fixed (#280 big Yes/No question cards); 6 fixed (one compact bonus tile; no "!" on "Review 0" since 2026-11-01); 7 open (photo-dependent; see ROADMAP); 8 fixed or declined: no long name cut on the progress wall, what a genus still needs is on its sheet (2026-11-01); the phone hammer icon stays unlabelled (Pierre: Tools is not put forward); the tour no longer has a photo-size step.
 
 Nov 1, 2026 · Pierre Pericard
 

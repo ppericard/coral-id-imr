@@ -24,7 +24,7 @@ Hash routing in `route()`. Sections and their tabs are declared once in `MODES`:
 | Section | Hash | What |
 |---|---|---|
 | Home | (clean URL) | Two doors (`home.js`). |
-| Learn | `#genera` | Genera grid (lecture-group order by default, slate order toggle), Photos or ID tips view. `#g-<Genus>` = genus sheet. |
+| Learn | `#genera` | Genera grid (lecture-group order by default, slate order toggle), Photos or ID tips view. `#g-<Genus>` = genus sheet; once the player has seen the genus, a line at the top gives their level on it and what it still needs (`myProg()`, same text as the My progress tooltip). |
 | Learn | `#cmp` | Look-alikes: deck of ~20 classic pair montages (`classics()`, `montage()`); `#cmp-A|B` = pair comparison. |
 | Practice | `#quiz` | Photo → genus, adaptive. |
 | Practice | `#quiz-duel` | Look-alike duels. |
