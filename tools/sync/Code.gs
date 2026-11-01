@@ -115,6 +115,7 @@ function abilities_(data){
 // single view was shown alone (harder than the same photo with the other views). Ratings move
 // by K * (result - P(right)), K shrinking as a photo or an RA gathers answers. Returns {ok, photos: {file: [difficulty,
 // answers, right]}, ras: {anonymous id: [ability, answers]}}. Difficulty 0 = average photo; +1 = clearly harder.
+// admin.js eloOf replays the same rules in the browser (photo Elo with or without the author's answers): keep both in step.
 function stats_(){
   const cache = CacheService.getScriptCache(), hit = cache.get('stats5');
   if (hit) return JSON.parse(hit);
