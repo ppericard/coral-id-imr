@@ -10,8 +10,8 @@ Sources: "thread X" = a Claude project thread with Pierre (in the original Claud
 
 The order the previous agents would follow; Pierre may reorder. Details of each item are in the sections below.
 
-1. **Confusion scores**: make sure the in-flight work is merged and live (state in "Next"), then have Pierre redeploy **Code.gs v10** (steps in HANDOVER.md).
-2. **Personalised path from confusions** (approved by Pierre 2026-11-01, not started): see "Next".
+1. **Code.gs v10 live**: confusion scores shipped in PR #286; Pierre must redeploy v10 ("Waiting on Pierre"), then check that the Answers tab fills its Choices column and that `?stats=1` returns `conf`. Until then quiz traps fall back to the declared look-alikes.
+2. **Personal learning path from confusions** (approved by Pierre 2026-11-01, not started): see "Next".
 3. **Beta testers' feedback**: Pierre is sending the app to last month's RAs and his next 6 RAs. Watch admin Triage ("Reported by players") and the Answers tab; fix what they hit first.
 4. **Two phone leftovers from the first-time RA reviews**: the phone hammer icon (Tools) has no label; "what it still needs" per genus is only a hover tooltip (nothing on touch screens; could go on the genus sheet). Also check the red "!" on "Review 0" and a long genus name cut on the tablet progress wall.
 5. **Design re-review leftovers to verify** ([review](reviews/2026-11-01-design-re-review.md)): p2 Next pinned at the bottom of the feedback column, p9 unexplained dot at the end of the Progress pill, p10 font sizes outside the scale (Memory size labels 11.7 px; 13.3, 28, 38.4 px), m5 low-resolution lecture photos shown upscaled, m11 hex colour literals left in `app.css`.
@@ -31,7 +31,6 @@ The order the previous agents would follow; Pierre may reorder. Details of each 
 | Merulina placement: shown with Hydnophora (lecture group 7); group 5 is the alternative. | thread "Declutter the UI across the app", PR #66 | Waiting on Pierre |
 | Look-alikes page: Pierre will judge the montage deck in use; if it doesn't convince, drop the tab (pairs stay on sheets, Home, duels). | thread "Review the site as a new RA"; PR #159 | Open question |
 | Lab "Keep / Trim" votes are stored in Pierre's browser only; ask him which tools he marked before trimming the Lab. | thread "Prototype visual coral ID tabs" | Waiting on Pierre |
-| Redeploy Code.gs v10 once the confusion-score PR is merged (choice logging). | thread "Re-review the app as a first-time RA" | Waiting on Pierre (after merge) |
 | Pick the lead photo(s) of the Branching tile on the Coral Finder start (the automatic first one is mostly sand): admin > Growth form > View Colony > 📌 (PR #283). | design re-review p3 | Waiting on Pierre |
 | Goniastrea cover is a corallite close-up (cover must be a mid-distance view): change it in admin. | design re-review p6 | Waiting on Pierre |
 | Renew the admin GitHub token before its 90-day expiry (created ~2026-10-31). | security model | Waiting on Pierre (~late Jan 2027) |

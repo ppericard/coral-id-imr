@@ -13,23 +13,23 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 ## State of play (2026-11-01)
 
 - Live app: <https://ppericard.github.io/coral-id-imr/> (GitHub Pages from `main`). Admin: <https://ppericard.github.io/coral-id-imr/admin.html>.
-- About 285 pull requests merged in two days (2026-10-31 and 11-01). Every PR description explains a decision; `git log --oneline` is a good index (squash merges titled `… (#N)`).
-- No open pull requests at handover time, except possibly the one listed under "In flight" below.
+- About 290 pull requests merged in two days (2026-10-31 and 11-01). Every PR description explains a decision; `git log --oneline` is a good index (squash merges titled `… (#N)`).
+- No open pull requests at handover time.
 - Tests: `node --test tests/*.test.js` and `node tests/pages.smoke.js` (Playwright). CI: `.github/workflows/checks.yml`.
-- Progress sync script `tools/sync/Code.gs`: **v9 is live** (deployed by Pierre and verified 2026-11-01). See "Code.gs" below for v10.
+- Progress sync script `tools/sync/Code.gs`: **v9 is live** (deployed by Pierre and verified 2026-11-01); **v10 is written and waits for Pierre's redeploy** (see "Code.gs" below).
 - Users: Pierre, and soon beta testers: last month's Research Assistants (RAs) and his next 6 RAs. Most use phones.
 - A full docs-vs-code pass was done for this handover (previous one at PR #245).
 
-### In flight at handover
+### Last features before the handover
 
-- **Confusion scores** (thread "Re-review the app as a first-time RA"): log the answer choices offered with every quiz answer (app + **Code.gs v10**), a confusion score per genus pair corrected for how often the pair was offered (official IMR / Coral Finder look-alikes only seed it; real player answers then decide), traps in the quiz picked by confusion score, and an admin "Confusions" view (pairs, photos, observations). See the ROADMAP entry "Confusion scores" for its exact state: if its PR is merged, Pierre must redeploy Code.gs v10 (steps below).
-- **Personalised path** (approved by Pierre, NOT started): see ROADMAP, top of the backlog.
+- **Confusion scores** (PR #286, merged 2026-11-01): every quiz answer logs the choices offered (**Code.gs v10, Pierre must redeploy**); a confusion score per genus pair corrected for how often the pair was offered (official IMR / Coral Finder look-alikes only seed it; real player answers then decide); quiz traps picked by confusion score; admin "Confusions" view. Until v10 is live the traps fall back to the declared look-alikes.
+- **Personalised path** (approved by Pierre, NOT started): each player's own mix-ups bring those traps and duels back more often, with suggestions like "Review Favites vs Dipsastraea". Design in ROADMAP "Next"; it is backlog item 2.
 
 ## Pending actions for Pierre (things only he can do)
 
 | What | Where / how |
 |---|---|
-| Redeploy Code.gs **v10** once the confusion-score PR is merged (until then the app keeps working with v9; choices are simply not logged). | Steps under "Code.gs" below. |
+| Redeploy Code.gs **v10** (PR #286; until then the app keeps working with v9, choices are not logged and traps use the declared look-alikes). No new permission needed. Check: `SYNC_URL?name=x&pin=ab` replies `v: 10`. | Steps under "Code.gs" below. |
 | Pick the lead photo of the **Branching** tile on the Coral Finder start (the first one shows mostly sand). | Admin > **Growth form** tab > View **Colony** > pick a genus (e.g. Acropora) > in the "Br Branching" row click 📌 under the photo (becomes 📌1; up to 3 per form, click again to unpin) > **Publish**. |
 | Change the **Goniastrea** cover (it is a corallite close-up; rule: cover = mid-distance view). | Admin > genus Goniastrea > set a colony or close-up photo as cover > Publish. |
 | Review the debatable lecture points and the Stylophora wording (he planned to review the course on Mon 2026-11-02). | ROADMAP "Waiting on Pierre". Any change becomes a discreet note, never a correction. |
