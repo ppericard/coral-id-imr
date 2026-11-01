@@ -1,4 +1,5 @@
 # Extra lecture photos: slide image id, genus, view (wide/medium/macro). Built by build_lecture_more.py.
+# Removed 2026-11-01: p44_i8 (slide 52, labelled Ctenactis) looks more like Lobactis; Pierre agreed to drop doubtful photos.
 p8_g36	Acropora	wide
 p8_i6	Acropora	medium
 p8_i9	Acropora	medium
@@ -82,7 +83,6 @@ p43_i11	Danafungia	wide
 p43_i13	Danafungia	wide
 p43_g134	Danafungia	macro
 p50_i8	Danafungia	wide
-p44_i8	Ctenactis	wide
 p44_i9	Ctenactis	macro
 p44_i10	Ctenactis	wide
 p45_i3	Lobactis	macro
