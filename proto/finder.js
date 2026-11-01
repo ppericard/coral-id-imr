@@ -41,7 +41,7 @@ LAB.add({
         ...(cf ? [cfF, imrF] : [imrF, cfF]),
         ...(forms.length ? [{id: 'box', name: forms.map(f => f.t).join(' / ') + ' ›', note: 'Coral Finder, second step: the boxes of the growth form picked above.',
           // Titled by its form, as on the genus sheet's key path (Pierre: "Coral Finder box" said nothing to RAs).
-          opts: forms.flatMap(f => KEY.find(k => k.id === f.id).leaves.filter(l => l.g.length && (f.id !== 'L' && f.id !== 'C')).map(l => ({id: l.id, t: leafLabel(l), g: l.g, pg: pg(l)})))}] : []),
+          opts: forms.flatMap(f => KEY.find(k => k.id === f.id).leaves.filter(l => l.g.length && (f.id !== 'L' && f.id !== 'C')).map(l => ({id: l.id, t: leafLabel(l), g: l.g, pg: pg(l), ph: l.ph})))}] : []),
         ...DATA.traits.map(c => ({id: c.id, name: c.name, note: c.note, opts: c.opts.map(o => ({id: o.id, t: o.t, s: o.src, g: withTr(o.id)}))})),
         {id: 'ig', name: 'IMR lecture group', note: 'The 11 corallite groups of Lecture 6.', thumbs: true,
           opts: DATA.imrg.map(gr => ({id: 'g' + gr.n, t: gr.n + '. ' + gr.t, g: names.filter(n => G[n].ig === gr.n)}))}
@@ -85,21 +85,21 @@ LAB.add({
     const fitsQ = n => !S.q || n.toLowerCase().includes(S.q.toLowerCase());
     const fits = (n, F, skip) => fitsQ(n) && pen(n, F, skip) === 0;
     const thumb = (n, v = 'medium') => { const p = (G[n].views[v] || [])[0] || cover(G[n]); return p ? img(p, 's') : ''; };
-    // Each growth-form tile shows 4 photos tagged with that form (photo growth form, checked in admin), one genus per
+    // Each growth-form tile shows 3 photos (one large, two small: Pierre 2026-11-01) tagged with that form (photo growth form, checked in admin), one genus per
     // photo and a different genus on each tile where possible; a genus only comes back when its form has too few.
     const tilePics = (() => { const seen = new Set(), out = {};
       [...CFF].sort((a, b) => a.g.length - b.g.length).forEach(f => {
         const L = bySlate(f.g), order = [...L.filter(x => !seen.has(x)), ...L.filter(x => seen.has(x))], per = order.map(x => formPhotos(x, f.id)), pick = [];
-        for (let i = 0; pick.length < 4 && per.some(P => P[i]); i++) per.forEach((P, k) => { if (P[i] && pick.length < 4) { pick.push(P[i]); seen.add(order[k]); } });
+        for (let i = 0; pick.length < 3 && per.some(P => P[i]); i++) per.forEach((P, k) => { if (P[i] && pick.length < 3) { pick.push(P[i]); seen.add(order[k]); } });
         // A form with no classified photo (the book's non-hard-coral group): the genera's cover photos.
-        if (!pick.length) L.slice(0, 4).forEach(x => { const p = cover(G[x]); if (p) pick.push(p); });
+        if (!pick.length) L.slice(0, 3).forEach(x => { const p = cover(G[x]); if (p) pick.push(p); });
         out[f.id] = pick; });
       return out; })();
 
     (() => { const seen = new Set();
       [...IMRF].sort((a, b) => a.g.length - b.g.length).forEach(f => {
         const L = bySlate(f.g), order = [...L.filter(x => !seen.has(x)), ...L.filter(x => seen.has(x))], per = order.map(x => imrFormPhotos(x, f.id)), pick = [];
-        for (let i = 0; pick.length < 4 && per.some(P => P[i]); i++) per.forEach((P, k) => { if (P[i] && pick.length < 4) { pick.push(P[i]); seen.add(order[k]); } });
+        for (let i = 0; pick.length < 3 && per.some(P => P[i]); i++) per.forEach((P, k) => { if (P[i] && pick.length < 3) { pick.push(P[i]); seen.add(order[k]); } });
         tilePics['imrf:' + f.id] = pick; }); })();
     root.innerHTML = `<section class="fdstart" id="fdstart" hidden></section><div class="fdlayout"><aside class="fdside" id="fdside"></aside><section class="fdmain" id="fdmain"></section></div><div class="fdcmp" id="fdcmp" hidden></div>`;
     const $start = root.querySelector('#fdstart'), $lay = root.querySelector('.fdlayout');
@@ -222,8 +222,28 @@ LAB.add({
     const andSw = fid => S[fid].size < 2 ? '' : `<div class="seg fdand" role="group" aria-label="Several forms"><button type="button" data-and="${fid}|0" aria-pressed="${!S.all.has(fid)}">Not sure which form</button><button type="button" data-and="${fid}|1" aria-pressed="${S.all.has(fid)}">Both on this colony</button></div>`;
     const andWire = el => el.querySelectorAll('[data-and]').forEach(b => b.onclick = () => { const [f, v] = b.dataset.and.split('|'); v === '1' ? S.all.add(f) : S.all.delete(f); draw(); });
     const optBtn = (f, o, on, n) => `<button type="button" class="fdbigopt" data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}"><span>${esc(o.t)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="fdc">${n}</span></button>`;
-    // Up to 4 photos for a Coral Finder box: the corallites of each genus first, then their closer views to fill the slots.
-    const boxPics = g => { const L = bySlate(g), P = L.map(x => thumb(x, 'macro')); for (const x of L) { if (P.length >= 4) break; P.push(thumb(x, 'medium')); } return P.filter(Boolean).slice(0, 4); };
+    // Coral Finder box illustrations (Pierre 2026-11-01: the photos must show the box's criterion, or use a drawing).
+    // 1. The book's own photos of that box: crops of its box pages picked by eye (data.json key leaves "ph",
+    //    tools/box_photos.txt), at most 3 (one large + two small); a crop Pierre excluded or the book switched off drops out.
+    // 2. Otherwise a simple drawing of the box's criterion (BOXART), never photos of the genera, which may show
+    //    another form or corallite type of the same genus.
+    // 3. A box with neither whose genera are in no other box (the non-hard-coral group): those genera's cover photos.
+    const BOXART = {
+      // Leafy fronds, lettuce-like (CF p.57): thin upright wavy fronds rising from one base.
+      P4: [[22, 40, 46], [62, 22, 50], [100, 34, 44]].map(([x, t, w]) => { const r = w / 4, top = [0, 1, 2, 3].map(i => `Q${x + r * i + r / 2} ${t - 8 + (i % 2) * 4} ${x + r * (i + 1)} ${t + (i % 2 ? 0 : 3)}`).join(' ');
+        return `<path class="f" d="M${x + w * .38} 104 C${x + 2} 86 ${x - 4} 62 ${x} ${t} ${top} C${x + w + 4} 62 ${x + w * .7} 86 ${x + w * .58} 104 Z"/><path class="st" d="M${x + w / 2} 102 C${x + w * .45} 80 ${x + w * .4} 60 ${x + w * .35} ${t + 10} M${x + w / 2} 90 C${x + w * .6} 70 ${x + w * .7} 56 ${x + w * .72} ${t + 12}"/>`; }).join('') + '<path class="b" d="M10 104 H150"/>',
+      // Free-living: other (CF p.67): small loose corals of other shapes lying unattached on the sand.
+      F3: '<ellipse class="f" cx="52" cy="92" rx="24" ry="9"/><path class="st" d="M32 92 H72 M52 84 V100 M38 86 L66 98 M38 98 L66 86"/><path class="f" d="M92 96 C88 80 98 70 108 78 C114 70 128 72 128 84 C134 92 124 102 112 98 C104 104 94 104 92 96 Z"/><path class="st" d="M100 90 C106 84 112 92 120 86"/><path class="b" d="M10 104 C40 101 70 106 100 102 C120 100 136 104 150 103"/>',
+      // Isolated and attached (CF p.69): one large polyp or cup, fixed to the reef, on its own.
+      F4: '<path class="f" d="M62 104 C62 84 54 74 44 62 C60 66 70 60 80 50 C90 60 100 66 116 62 C106 74 98 84 98 104 Z"/><ellipse class="f" cx="80" cy="54" rx="40" ry="12"/><path class="st" d="M50 52 L58 56 M62 46 L66 52 M80 43 L80 50 M98 46 L94 52 M110 52 L102 56 M56 60 L64 58 M104 60 L96 58"/><ellipse class="w" cx="80" cy="54" rx="6" ry="2.5"/><path class="b" d="M10 104 C40 98 60 106 80 102 C100 98 120 106 150 102"/>'
+    };
+    const boxArt = id => BOXART[id] ? `<svg class="fdsch" viewBox="0 0 160 120" aria-hidden="true">${BOXART[id]}</svg>` : '';
+    const XCL = (CUR && CUR.exclude) || {}, BOOKON = !(CUR && CUR.book === false);
+    const boxPics = o => { const P = BOOKON ? (o.ph || []).filter(f => !XCL[f]).map(f => `img/${f}-s.webp`) : [];
+      if (P.length || BOXART[o.id]) return P.slice(0, 3);
+      // Only genera found in no other box, so their photos can only show this box's criterion.
+      const solo = bySlate(o.g).filter(n => KEY.every(k => k.leaves.every(l => l.id === o.id || !l.g.includes(n))));
+      return solo.length === o.g.length ? solo.map(n => cover(G[n])).filter(Boolean).slice(0, 3).map(p => img(p, 's')) : []; };
     // Shortlist card: closer view and corallites side by side, big enough to compare at a glance.
     const genCard = n => `<button type="button" class="fdgc" data-gx="${esc(n)}"><span class="fdgp"><img src="${thumb(n, 'medium')}" alt="" loading="lazy"><img src="${thumb(n, 'macro')}" alt="" loading="lazy"></span><i>${esc(n)}</i></button>`;
     function drawStart(F){
@@ -240,7 +260,7 @@ LAB.add({
       if (startV === 'c') {
         // The paper Coral Finder's own path: growth form, then the box of that form, then the shortlist.
         const fb = fam('box');
-        body = `${forms(fam('form'))}${fb ? `<div class="fdsrow stack"><h3 title="${esc(fb.note)}">${esc(fb.name)}</h3><div class="fdforms boxes">${fb.opts.map(o => { const P = boxPics(o.g); return `<button type="button" class="fdtileb fdboxt" data-o="box|${o.id}" aria-pressed="${S.box.has(o.id)}"${!cnt(fb, o) && !S.box.has(o.id) ? ' data-zero' : ''}><span class="fdtq n${P.length}">${P.map(u => `<img src="${u}" alt="" loading="lazy">`).join('')}</span><span class="fdtt"><b>${esc(o.t)}</b>${o.pg ? `<small>${o.pg}</small>` : ''}</span><span class="fdc">${cnt(fb, o)}</span></button>`; }).join('')}</div></div>` : ''}`;
+        body = `${forms(fam('form'))}${fb ? `<div class="fdsrow stack"><h3 title="${esc(fb.note)}">${esc(fb.name)}</h3><div class="fdforms boxes">${fb.opts.map(o => { const P = boxPics(o); return `<button type="button" class="fdtileb fdboxt" data-o="box|${o.id}" aria-pressed="${S.box.has(o.id)}"${!cnt(fb, o) && !S.box.has(o.id) ? ' data-zero' : ''}><span class="fdtq n${P.length || 1}">${P.length ? P.map(u => `<img src="${u}" alt="" loading="lazy">`).join('') : boxArt(o.id)}</span><span class="fdtt"><b>${esc(o.t)}</b>${o.pg ? `<small>${o.pg}</small>` : ''}</span><span class="fdc">${cnt(fb, o)}</span></button>`; }).join('')}</div></div>` : ''}`;
       } else {
         // Polyps out by day is its own clue (IMR lecture group 6), taken from Other features.
         const ft = fam('feat'), po = ft && ft.opts.find(o => o.id === 'polyp');
