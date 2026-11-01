@@ -811,7 +811,7 @@ function answer(cur, c, target, ph, cor, unseen){
   if (good && cor) s.cor = 1;  // milestone: right with the corallites photo in view
   if (good && cur.startsWith('quiz-duel')) s.du = 1;  // milestone: won a look-alike duel
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
-  if (SYNC) SYNC.log = [...(SYNC.log || []), {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur, ph: ph.map(p => p.f).join(' '), e: Math.round(100 * (1 / k + (1 - 1 / k) * sig(th0 - d0))) / 100, th: th0, nw}].slice(-500);
+  if (SYNC) SYNC.log = [...(SYNC.log || []), {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur, ph: ph.map(p => p.f).join(' '), e: Math.round(100 * (1 / k + (1 - 1 / k) * sig(th0 - d0))) / 100, th: th0, nw}].slice(-2000);
   save();
   $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', photoSrc(ph[k])));
   // A mix-up: the stage becomes a montage, the photo shown (corallites if they were shown) next to a photo of the
@@ -991,6 +991,7 @@ const syncGet = (a = SYNC) => fetch(`${SYNC_URL}?name=${encodeURIComponent(a.nam
 // are lost. A reset (imr-coral-reset, a time) wins over older progress.
 const copy = o => JSON.parse(JSON.stringify(o));
 function mergeSaved(j){
+  if (typeof j.rev === 'number') SYNC.srv = j.rev;  // the sheet's revision this merge is based on (sent back as at, v6)
   const d = j.data || {}; let R = {}; try { R = JSON.parse(d['imr-coral-progress'] || '{}') || {}; } catch (e) {}
   const rr = JSON.parse(d['imr-coral-reset'] || '""'), lr = store.get('imr-coral-reset', '');
   // A send whose reply was lost but which did reach the sheet: the saved record is exactly what was sent.
@@ -1031,15 +1032,24 @@ function syncPush(){
   syncing = syncOnce().finally(() => { syncing = null; if (syncAgain) { syncAgain = false; syncPush(); } });
   return syncing;
 }
-function syncOnce(){
+// at = the sheet revision merged against (script v6): if another device wrote in between, the sheet answers 'stale'
+// (answers logged all the same) and the whole pull-merge-send runs again, at most twice (code review M1).
+function syncOnce(tries = 0){
   const me = SYNC; let rev, sent, log;
   // If the device is disconnected or switched to another account meanwhile, drop this sync.
   return syncGet(me).then(j => { if (SYNC !== me) return null; if (!j.ok) return j; if (j.found) mergeSaved(j);
     rev = me.rev; sent = copy(P); log = me.log || []; me.pending = progData()['imr-coral-progress'] || ''; store.set('imr-coral-sync', me);
-    return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({name: me.name, pin: me.pin, data: progData(), summary: syncSummary(), answers: log})}).then(r => r.json()); })
-    .then(j => { if (j && j.ok && SYNC === me) { me.last = new Date().toISOString(); me.base = sent; delete me.pending; delete me.err; if (!j.log && log.length) me.err = 'net'; if (j.log) { const done = new Set(log.map(x => x.id)); me.log = (me.log || []).filter(x => !done.has(x.id)); } if (me.rev === rev) delete me.dirty; store.set('imr-coral-sync', me); }
+    const pd = (progData()['imr-coral-progress'] || '').length; if (pd > 40000) console.warn(`Progress is ${pd} characters (sheet script v6 stores any size; v5 stops at 50,000).`);
+    return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({name: me.name, pin: me.pin, data: progData(), summary: syncSummary(), answers: log, ...(typeof me.srv === 'number' ? {at: me.srv} : {})})}).then(r => r.json()); })
+    .then(j => { if (!j || SYNC !== me) return j;
+      // Answers the sheet confirmed are dropped from the queue even when the progress write itself was refused.
+      if (j.log && log.length) { const done = new Set(log.map(x => x.id)); me.log = (me.log || []).filter(x => !done.has(x.id)); store.set('imr-coral-sync', me); }
+      // The retry is a whole sync of its own: its result skips the steps below (they would apply this round's sent copy).
+      if (j.error === 'stale' && tries < 2) { delete me.pending; return syncOnce(tries + 1).then(r => { throw {retried: r}; }); }
+      return j; })
+    .then(j => { if (j && j.ok && SYNC === me) { me.last = new Date().toISOString(); me.base = sent; if (typeof j.rev === 'number') me.srv = j.rev; delete me.pending; delete me.err; if (!j.log && log.length) me.err = 'net'; if (j.log) { const done = new Set(log.map(x => x.id)); me.log = (me.log || []).filter(x => !done.has(x.id)); } if (me.rev === rev) delete me.dirty; store.set('imr-coral-sync', me); }
       else if (j && SYNC === me) { me.err = j.error === 'pin' ? 'pin' : 'net'; store.set('imr-coral-sync', me); } return j; })
-    .catch(() => { if (SYNC === me) { me.err = 'net'; store.set('imr-coral-sync', me); } return null; })
+    .catch(x => { if (x && 'retried' in x) return x.retried; if (SYNC === me) { me.err = 'net'; store.set('imr-coral-sync', me); } return null; })
     .finally(() => { if (SYNC === me) bindSync(); });
 }
 const syncSoon = () => { if (!SYNC_URL || !SYNC) return; SYNC.dirty = true; SYNC.rev = (SYNC.rev || 0) + 1; store.set('imr-coral-sync', SYNC); clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 3000); };
@@ -1104,7 +1114,7 @@ function bindSync(box = document.querySelector('#tour .tsync') || document.getEl
     const f = e.target, name = f.n.value.trim(), pin = f.p.value.trim();
     msg('Connecting…');
     fetch(`${SYNC_URL}?name=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}`).then(r => r.json()).then(j => {
-      if (!j.ok) return msg(j.error === 'pin' ? 'This name already exists with another code.' : 'Check the name and the 4-digit code.');
+      if (!j.ok) return msg(j.error === 'pin' ? 'This name already exists with another code.' : j.error === 'wait' ? 'Too many wrong codes for this name: try again in 10 minutes.' : 'Check the name and the 4-digit code.');
       SYNC = {name, pin}; if (j.found) { try { SYNC.base = JSON.parse(j.data['imr-coral-progress'] || '{}') || {}; } catch (err) { SYNC.base = {}; } } store.set('imr-coral-sync', SYNC);
       // A known account replaces whatever this device holds (another RA may have used it); a new name keeps it.
       if (j.found) { Object.keys(progData()).forEach(k => localStorage.removeItem(k)); loadData(j.data); try { sessionStorage.setItem('imr-coral-loaded', 'the IMR sheet'); } catch (err) {} location.reload(); }
