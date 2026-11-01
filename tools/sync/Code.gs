@@ -218,7 +218,9 @@ function logReports_(p){
     const G = /^[A-Za-z][A-Za-z -]*$/, M = /^[a-z0-9|-]*$/, PH = /^[A-Za-z0-9_. -]*$/;
     const rows = L.filter(r => !seen.has(String(r.id))).map(r => [new Date(r.t || Date.now()), safe_(name), ok, WHY[r.why], word_(r.g, G, 40), word_(r.a, G, 40),
       text_(r.fix, 60), text_(r.note, 500), word_(r.m, M, 40), word_(r.ph, PH, 400), String(r.id)]);
-    if (rows.length) sh.getRange(sh.getLastRow() + 1, 1, rows.length, REP.length).setValues(rows);
+    if (rows.length) { const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
+      if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
+      sh.getRange(at, 1, rows.length, REP.length).setValues(rows); }
     return {ok: true, rep: true};
   } finally { lock.releaseLock(); }
 }

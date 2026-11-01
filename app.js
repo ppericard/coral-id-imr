@@ -1078,13 +1078,17 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 const REP_WHY = [['wrong', 'Wrong answer'], ['multi', 'Several corals'], ['photo', 'Bad photo'], ['other', 'Other']];
 const REPC = [];  // context of each Report button drawn: {g: expected genus, a: answer given, ph: photo files, m: game}
 const repBtn = c => `<button type="button" class="linkish rep" data-rep="${REPC.push(c) - 1}">⚑ Report a problem</button>`;
+// Each report keeps who sent it (rn, rp: the sync account or the name typed, at the time of sending), so a report
+// retried after another player signs in is never credited to them. One batch per sender, at most 50 (the script's cap).
 function sendReports(){
   const L = store.get('imr-reports', []);
   if (!SYNC_URL || !L.length || navigator.onLine === false) return;
-  const who = SYNC ? {rname: SYNC.name, rpin: SYNC.pin} : {rname: store.get('imr-report-name', '')};
-  fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({...who, reports: L})}).then(r => r.json()).then(j => {
+  const k = x => JSON.stringify([x.rn || '', x.rp || '']), first = L.filter(x => k(x) === k(L[0])).slice(0, 50);
+  const reports = first.map(({rn, rp, ...x}) => x);
+  fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({rname: first[0].rn || '', rpin: first[0].rp || '', reports})}).then(r => r.json()).then(j => {
     if (!j || !j.rep) return;
-    const sent = new Set(L.map(x => x.id)); store.set('imr-reports', store.get('imr-reports', []).filter(x => !sent.has(x.id)));
+    const sent = new Set(first.map(x => x.id)), left = store.get('imr-reports', []).filter(x => !sent.has(x.id));
+    store.set('imr-reports', left); if (left.length) sendReports();
   }).catch(() => {});
 }
 window.addEventListener('online', sendReports);
@@ -1117,7 +1121,8 @@ function reportDialog(c, btn){
     e.preventDefault();
     if (f.who) store.set('imr-report-name', f.who.value.trim());
     const why = f.why.value;
-    store.set('imr-reports', [...store.get('imr-reports', []), {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(),
+    const who = SYNC ? {rn: SYNC.name, rp: SYNC.pin} : {rn: f.who.value.trim()};
+    store.set('imr-reports', [...store.get('imr-reports', []), {...who, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(),
       why, g: c.g, a: c.a || '', ph: c.ph.join(' '), m: c.m, fix: why === 'wrong' ? f.fix.value.trim() : '', note: f.note.value.trim()}].slice(-200));
     d.close(); sendReports();
     btn.textContent = '⚑ Reported, thank you'; btn.disabled = true;
