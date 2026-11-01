@@ -71,6 +71,7 @@ These came from Pierre's explicit feedback. When in doubt, follow them over your
 26. Record every idea that is discussed but not implemented in `docs/ROADMAP.md`, with its source and status.
 27. **Fix by default**: after a review, fix every finding you can without asking ("fais corriger tout ce que tu peux faire corriger", 2026-11-01). Ask Pierre only real choices (one short question each, with a recommendation) or actions that need his hands (Apps Script redeploy, admin curation, IMR content). Never re-ask something already answered: check ROADMAP and PR descriptions.
 27b. **Always the latest stable version of every tool and dependency** (Pierre, 2026-11-01): Prettier, Playwright, Node in CI, GitHub Actions, Python packages... Look the version up (`npm view <pkg> version`, <https://nodejs.org/dist/index.json> for the Node LTS) instead of picking one from memory, and when you touch a pinned version, bring it to the latest stable. An exception needs a written reason next to the pin.
+27c. **Don't keep listing his editorial or curation to-dos** (photo picks, candidates to add, content choices) in status messages (Pierre, 2026-11-01: "you'll spend your time doing that"). Note them once in ROADMAP; bring one up only when he asks, or when it blocks a change he asked for. Reminders are for actions only he can do that unblock work (a redeploy, a key, a setting).
 28. Pierre writes in French (often dictated); reply in French. The coral tools stay quick and standalone, not part of ReefRecall (his separate app).
 
 ## Repository map (short)
