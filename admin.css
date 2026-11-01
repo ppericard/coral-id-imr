@@ -1426,6 +1426,19 @@ kbd {
   height: auto;
   align-items: flex-start;
 }
+.adm-judge {
+  flex: none;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-judge.warn {
+  color: var(--bad);
+  font-weight: 600;
+}
 .adm-sw .adm-csrc {
   flex: none;
   width: 100%;
@@ -2797,7 +2810,8 @@ td.cov-c.cov-full {
 td.cov-c.cov-over {
   box-shadow: inset 0 0 0 2px var(--warn);
 }
-.adm-cfull {
+.adm-cfull,
+.adm-cjudge {
   margin: 6px 0 0;
 }
 /* Adding to a full cell: pick the colony it replaces */

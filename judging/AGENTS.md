@@ -143,6 +143,33 @@ photos are always used; others only fill gaps. So suggest iNaturalist candidates
 up to 3 book photos per view for the site's Coral Finder (it mixes sources for variety): the clearest ones, most
 different from the field photos.
 
+## Candidate pass (`judging/cand/<Genus>.json`, `tools/judging_cand.py`)
+
+Run on demand when Pierre asks for it (the admin's Candidates tab counts the candidates not judged yet). It covers
+only the iNaturalist candidates waiting in `cand.json` (whole observations), so Pierre's swiper shows the most
+useful photo of each observation and view first. Nothing is removed: he still swipes every photo himself. Pierre's
+aim: real diversity of colonies and views, so the players learn the genus, not the photos.
+
+1. `python3 tools/judging_cand.py sheets <Genus>` downloads the photos (500 px, `judging/cand/img/`, not in git)
+   and builds one contact sheet per observation (`judging/cand/sheets/<Genus>/<observation>.jpg`, tiles numbered
+   1, 2, 3...). It prints, per sheet, tile number → photo id. Open every sheet. When a tile is too small to judge
+   (view, quality, genus), open `judging/cand/img/<f>.jpg`, or `python3 tools/judging_cand.py big <f>` for 1024 px.
+2. Write `judging/cand/<Genus>.json`: `{"genus": "<Genus>", "photos": {"<f>": {...}}}`, one entry per photo listed,
+   with the fields and categories defined above (`view`, `quality`, `form`, `polyps`, `multi`, `genus`, `unsure`,
+   `note`; `form` required, `x` when not visible) plus **`keep`**:
+   - `best`: the most useful photo of its observation for this view (sharpest, the features of the view clearest).
+     **Exactly one per observation and view**, among the photos that show this genus.
+   - `alt`: same observation and view, but it adds something: another part of the colony, another angle, the
+     colony shape where the best shows the surface, polyps out vs retracted.
+   - `dup`: adds nothing over the `best` (same framing, a few centimetres apart, a burst).
+   - Omit `keep` when `genus` is set (another genus, `cmp` or `exclude`).
+   An observation often holds several corals (the observer photographed the neighbours too): a photo that shows
+   another coral as its subject gets `genus` (that genus if you can tell by the IMR cues, else `exclude` with a
+   note), never `keep`.
+3. `python3 tools/judging_cand.py --check <Genus>` until it passes, then `python3 tools/judging_cand.py` imports
+   every passing genus into `suggest.json` `"cand"` (admin only: players never download it). Commit only
+   `judging/cand/*.json` and `suggest.json`.
+
 ## Workflow
 
 1. `git pull`, then `python3 tools/judging_manifest.py`.

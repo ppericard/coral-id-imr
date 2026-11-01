@@ -2405,6 +2405,28 @@ const srcOk = (p, s) => s === 'all' || origin(p) === s;
 // cells with 8+ 11 -> 2): its guessed view (vg, Claude's
 // guess from the photo), else the genus's emptiest view; x3 when it completes a colony already in games at another zoom. Weighted random draw (key -ln(u) / w, u fixed per photo
 // and per device), then no two of the same genus in a row when it can be avoided.
+// Judged candidates (suggest.json "cand", Pierre 2026-11-01: keep real diversity, sort by hand after a pre-sort): the
+// best photo of each view of an observation first, other angles later, near-duplicates, Poor photos, several corals and
+// other genera last. Nothing is removed: every candidate still comes up. Not judged yet = like a best Fair photo.
+const JK = {best: 1, alt: 0.3, dup: 0.04},
+  JQ = {3: 1.3, 2: 1, 1: 0.15};
+const jw = p => {
+  const j = p.j;
+  if (!j) return 1;
+  if (j.g) return 0.02;
+  return (JK[j.k] || 1) * (JQ[j.q] || 1) * (j.m ? 0.3 : 1);
+};
+const JKT = {
+  best: 'best photo of its observation in this view',
+  alt: 'another angle of its observation',
+  dup: 'near-duplicate of another photo of its observation'
+};
+const jLine = p => {
+  const j = p.j;
+  if (!j) return '';
+  const what = j.g === 'exclude' ? 'unusable' : j.g === 'cmp' ? 'comparison image' : j.g ? `looks like <i>${esc(j.g)}</i>` : JKT[j.k] || '';
+  return `<p class="adm-judge${j.g ? ' warn' : ''}" title="Suggestion of the judging agent (suggest.json)">Judged: ${what}${j.m ? ' · several corals' : ''}${j.u ? ` · unsure: ${esc(j.u.join(', '))}` : ''}${j.n ? ` · ${esc(j.n)}` : ''}</p>`;
+};
 const cseed = () => {
   let s = store.get('imr-admin-cseed', 0);
   if (!s) {
@@ -2437,7 +2459,7 @@ function candQueue(src) {
     // A candidate from a colony already in games at another zoom counts 3x (Pierre, 2026-11-01): game questions only
     // show views of one colony, so completing a colony adds a several-zoom question.
     const sib = p.o && vs.some(w => w !== v && (cnt(n, w), O[n + '|' + w].has(p.o))) ? 3 : 1;
-    return sib / Math.pow(1 + (vs.includes(v) ? cnt(n, v) : Math.min(...vs.map(w => cnt(n, w)))), 3);
+    return (jw(p) * sib) / Math.pow(1 + (vs.includes(v) ? cnt(n, v) : Math.min(...vs.map(w => cnt(n, w)))), 3);
   };
   const L = [];
   Object.keys(DATA.gen).forEach(n => {
@@ -2518,6 +2540,7 @@ function renderCand() {
   const shown = x => !CSKIP.has(x.p.f) && (CFULL || !x.full);
   const Q0 = candQueue(CSRC),
     nFull = Q0.filter(x => x.full).length,
+    nJ = candQueue('all').filter(x => !x.p.cf && !x.p.j).length,
     Q = CFULL ? Q0 : Q0.filter(x => !x.full),
     live = Q0.filter(shown),
     c = live[0],
@@ -2526,6 +2549,10 @@ function renderCand() {
     `<span class="adm-qseg adm-csrc" role="group" aria-label="Source">${CSRCS.map(([s, t]) => `<button type="button" data-src="${s}" aria-pressed="${s === CSRC}">${t} <b>${s === CSRC ? live.length : candQueue(s).filter(shown).length}</b></button>`).join('')}</span>` +
     (nFull
       ? `<p class="note adm-cfull">${nFull} wait${nFull === 1 ? 's' : ''} in full cells (${CELL_MAX} colonies) · <button type="button" class="adm-link" data-cfull>${CFULL ? 'Hide them' : 'Show them'}</button></p>`
+      : '') +
+    // Reminder (Pierre: the judging agent runs on demand, "remind me to launch it").
+    (nJ
+      ? `<p class="note adm-cjudge">${nJ} candidate${nJ === 1 ? '' : 's'} not judged yet: ask your agent for the candidate pass (judging/AGENTS.md).</p>`
       : '');
   if (!c) {
     $v.innerHTML = `<section class="adm-sw adm-swempty">${seg}<p class="note">${Q.length ? `${Q.length} skipped.` : 'No candidate left.'}</p>${Q.length ? '<button type="button" class="adm-btn" data-again>Show the skipped ones</button>' : ''}</section>`;
@@ -2543,7 +2570,7 @@ function renderCand() {
         <a class="adm-swg" href="#${encodeURIComponent(n)}" title="Genus page"><i>${esc(n)}</i>${p.from ? `<small>from ${esc(p.from)}</small>` : ''}</a>
         <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
         <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
-      </figure>
+      </figure>${jLine(p)}
       <div class="adm-acts adm-swacts">${qSeg(p)}${fSeg(p)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOf(p.f) ? ' on' : ''}" data-crop aria-pressed="${!!crOf(p.f)}">Crop</button><button type="button" data-skip>Skip</button></div></div>
       <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${(p.vg || p.view) === w ? ' sug' : ''}" data-add="${w}" title="${(p.vg || p.view) === w ? 'Suggested · ' : ''}Add (${i + 1})">+ ${label(n, w)}</button>`).join('')}</div>
     </section>`;
@@ -3002,6 +3029,23 @@ async function start() {
     return;
   }
   FUNSURE = new Set(Array.isArray(FU0) ? FU0 : []);
+  // The judging agent's candidate pass (suggest.json "cand", tools/judging_cand.py, run on demand): its view replaces the
+  // older guess, its quality and growth form become the dashed first guesses, the rest orders the swiper (jw, candQueue).
+  const SC = (SUG && SUG.cand) || {};
+  Object.values(DATA.cand)
+    .flat()
+    .forEach(p => {
+      const j = SC[p.f];
+      if (!j) return;
+      p.j = j;
+      if (j.v) p.vg = j.v;
+      // It looked at the photo: it replaces the measured rating and the older form guess (yours always win).
+      if (j.q) AUTOQ[p.f] = j.q;
+      if (j.fm) {
+        AUTOF[p.f] = j.fm;
+        (j.u || []).some(x => x === 'form' || x === 'polyps') ? FUNSURE.add(p.f) : FUNSURE.delete(p.f);
+      }
+    });
   // The Coral Finder's extra genera (data.json x: in the book, present at Dauin, not on the IMR list) are curated here
   // like the others, listed after them; curation.json keys them by name as usual.
   if (DATA.x) Object.assign(DATA.gen, DATA.x.gen);

@@ -87,7 +87,7 @@ Written only by the admin's Publish, which merges key by key onto the latest pub
 - `quality.json`: automatic quality 3/2/1 from `tools/photo_quality.py`.
 - `picks.json`: suggested featured photos.
 - `dups.json`: near-duplicates from `tools/find_dups.py`.
-- `suggest.json`: imported results of the outside judging agent (`tools/judging_import.py`).
+- `suggest.json`: imported results of the outside judging agent (`tools/judging_import.py`), and its candidate pass (`tools/judging_cand.py`, `"cand"`: per candidate photo its view, quality, growth form, `best`/`alt`/`dup` within its observation and view, or another genus). Admin only. `admin.js` applies the view and the dashed quality and form guesses, orders the swiper with `jw` (best ×1, alt ×0.3, dup ×0.04; Good ×1.3, Poor ×0.15; several corals ×0.3; another genus ×0.02; not judged ×1), shows the judgment under the photo, and counts the candidates not judged yet (reminder: the pass runs on demand).
 
 Precedence: `curation.json` > suggestion files > `data.json` defaults.
 
@@ -158,7 +158,7 @@ Still useful / re-runnable:
 | `photo_quality.py` | Automatic quality → `quality.json`. |
 | `find_dups.py` | Near-duplicates → `dups.json` (re-run after adding photos). |
 | `tag_origin.py` | `loc` tag (dauin/ph/world) on iNat photos. |
-| `judging_manifest.py`, `judging_import.py` | Outside photo-judging agent package (`judging/`); `--check` validates. |
+| `judging_manifest.py`, `judging_import.py`, `judging_cand.py` | Outside photo-judging agent package (`judging/`); `--check` validates. |
 | `apply_id_tips.py` | `tools/id_tips.txt` → `gen[g].qt`. |
 | `apply_imr_forms.py` | IMR growth form definitions into `forms.json`. |
 | `build_extra.py` | Extra Dauin genera for the Coral Finder (`data.json` `x`). |

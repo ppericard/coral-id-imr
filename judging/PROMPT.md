@@ -30,6 +30,16 @@ in manifest order, saving and checking each genus as you go. Every 8 genera, run
 to the same branch. At the end, open (or update) the pull request and report. Do not merge.
 ```
 
+## Candidate pass (the candidates waiting, on demand)
+
+```text
+Read judging/AGENTS.md (hard rules, the categories, then "Candidate pass") and follow it exactly. Judge every
+genus listed by python3 tools/judging_cand.py todo: build its sheets, look at every sheet yourself, write
+judging/cand/<Genus>.json and run python3 tools/judging_cand.py --check <Genus> until it passes. Then run
+python3 tools/judging_cand.py, commit judging/cand/*.json and suggest.json on a new branch, open a pull request
+and report how many photos you judged, how many you marked unsure or another genus. Do not merge.
+```
+
 ## After the agent's pull request is merged
 
 Open `admin.html`: the growth forms (IMR forms, polyps flag) and quality ratings appear as dashed guesses (one click confirms or corrects), the
