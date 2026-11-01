@@ -1639,7 +1639,11 @@ function answer(cur, c, target, ph, cor, unseen) {
     anonSoon();
   }
   save();
-  achAfter(good, ph);
+  // Achievements on the photos seen before answering: a corallites hint left closed is not one.
+  achAfter(
+    good,
+    ph.filter(p => p !== unseen)
+  );
   $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', photoSrc(ph[k])));
   // A mix-up: the stage becomes a montage, the photo shown (corallites if they were shown) next to a photo of the
   // genus answered in the same view, so the difference is seen at the moment of the mistake. The pair then comes back
@@ -2232,18 +2236,7 @@ function mergeSaved(j) {
       showBoardSet();
     }
   } catch (e) {}
-  // Achievements earned on another device join this one's (earliest date kept, best run kept): never shown twice.
-  try {
-    const ra = JSON.parse(d[ACHK] || 'null');
-    if (ra && typeof ra === 'object') {
-      const A = store.get(ACHK, {}) || {};
-      Object.keys(ra).forEach(k => {
-        if (k === '_run') return;
-        A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] ? Math.min(A[k], ra[k]) : ra[k];
-      });
-      store.set(ACHK, A);
-    }
-  } catch (e) {}
+  achMerge(d[ACHK]); // achievements earned on another device join this one's
   let R = {};
   try {
     R = JSON.parse(d['imr-coral-progress'] || '{}') || {};
@@ -2661,7 +2654,11 @@ function signIn(name, pin, j) {
   try {
     localStorage.removeItem(ANONB);
   } catch (e) {}
+  // The account's settings replace this device's, except the achievements: earned here before signing in, they join the
+  // account's (code review #324).
+  const mine = store.get(ACHK, null);
   loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => k !== 'imr-coral-progress')));
+  if (mine) achMerge(JSON.stringify(mine));
   store.set('imr-coral-progress', M);
   if (!anon) delete SYNC.dirty;
   store.set('imr-coral-sync', SYNC);
@@ -2763,11 +2760,14 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         return;
       }
       SYNC = null;
-      ['imr-coral-sync', 'imr-coral-progress', 'imr-coral-quiz', 'imr-coral-reset', LOG0, NUDGE, ANONB, ANONID, ANONQ].forEach(k => {
-        try {
-          localStorage.removeItem(k);
-        } catch (e) {}
-      });
+      // Achievements and the leaderboard choice belong to the account too: never left to the next player of a shared device.
+      ['imr-coral-sync', 'imr-coral-progress', 'imr-coral-quiz', 'imr-coral-reset', ACHK, BOARD, LOG0, NUDGE, ANONB, ANONID, ANONQ].forEach(
+        k => {
+          try {
+            localStorage.removeItem(k);
+          } catch (e) {}
+        }
+      );
       location.reload();
     };
     return;
@@ -3083,6 +3083,20 @@ function viewBoard() {
 // of right answers and _cor / _hard for one-off feats), an imr-coral key, so it travels with the progress. The first
 // check on a device with progress but no record yet (the feature arriving) grants what is already met in one recap.
 const ACHK = 'imr-coral-ach';
+// Two records of one player (another device, or this device before signing in): every achievement kept with its
+// earliest date, the best run kept; the current run stays this device's.
+function achMerge(json) {
+  try {
+    const ra = JSON.parse(json || 'null');
+    if (!ra || typeof ra !== 'object') return;
+    const A = store.get(ACHK, {}) || {};
+    Object.keys(ra).forEach(k => {
+      if (k === '_run') return;
+      A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] ? Math.min(A[k], ra[k]) : ra[k];
+    });
+    store.set(ACHK, A);
+  } catch (e) {}
+}
 const achList = () => Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n);
 function achSnap(A = store.get(ACHK, {}) || {}) {
   const L = achList(),
@@ -3152,12 +3166,15 @@ function achNext() {
   el.setAttribute('role', 'status');
   el.innerHTML = `<a href="#ach" class="achin"><span class="achic" aria-hidden="true">${a.icon}</span><span><small>Achievement unlocked ${TIER[a.tier]}</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
   document.body.append(el);
+  let tm = 0;
   const done = () => {
+    if (!el.isConnected) return; // once only: a click and the timer must not both move the queue on
+    clearTimeout(tm);
     el.remove();
     achNext();
   };
   el.querySelector('a').onclick = done;
-  setTimeout(done, 4200);
+  tm = setTimeout(done, 4200);
 }
 function achRecap(ids) {
   if (!ids.length) return;
