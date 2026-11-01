@@ -474,7 +474,7 @@ const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
 const Q = Object.assign({view: 'any', level: 'auto'}, store.get('imr-coral-quiz', {}), {stars: true});  // starred genera are always asked (Pierre)
 if (Q.lvv !== 3) { Q.level = 'auto'; Q.course = false; Q.lvv = 3; }  // Auto only: no level selector, no Lecture set (Pierre, 2026-10-31)
 const saveQ = () => store.set('imr-coral-quiz', Q);
-let session = {ok: 0, n: 0}, last = null, duelPair = null;
+let session = {ok: 0, n: 0, h: []}, last = null, duelPair = null;
 // Bonus genera (Pierre, 2026-11-01): genera off the IMR slate that are common at Dauin and easily taken for a slate
 // genus, added to the photo quiz and the duels once the player has made some progress ("not at the very start, but
 // fairly soon"). Picked from the Coral Finder book genera present at Dauin (data.json "x", tools/build_extra.py):
@@ -625,6 +625,12 @@ function level(n){
   return ['mid', 'Learning'];
 }
 function quizNav(){ return ''; }
+// Session trail (Pierre, 2026-11-01, instead of a "3/3 right" text): the last 10 answers of this visit as 10 small cells next
+// to the question, grey until answered, then a full green cell for right and a low red bar for wrong (shape and colour, so
+// it reads without colour too). Fixed width: filling it never moves anything. Not saved: My progress holds the real record.
+function trail(){ const h = session.h, ok = h.filter(Boolean).length;
+  return `<span class="trail" role="img" aria-label="${h.length ? `Last ${h.length} answers: ${ok} right, ${h.length - ok} wrong` : 'Your last 10 answers will show here'}" title="Your last 10 answers">${
+    Array.from({length: 10}, (_, i) => { const v = h[i]; return `<i${v === undefined ? '' : v ? ' class="r"' : ' class="w"'}></i>`; }).join('')}</span>`; }
 function bindQuizNav(){ bindGo(); }
 // The game rules (behind the ? button).
 const gameHelp = cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
@@ -638,7 +644,7 @@ function question(cur, target, choices, prompt, set){
   $v.innerHTML = `${gameHelp(cur)}<div class="q bleed">
     <div class="qstage">${ph.map(fig).join('')}</div>
     <aside class="qside">
-      <div class="qtop"><p class="prompt">${prompt}</p>${quizNav(cur)}</div>
+      <div class="qtop"><p class="prompt">${prompt}</p>${trail()}${quizNav(cur)}</div>
       <div class="ans">${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
@@ -657,11 +663,11 @@ function question(cur, target, choices, prompt, set){
   $v.querySelector('.q').addEventListener('click', e => { const z = e.target.closest('[data-q]'); if (!z) return;
     const list = hintShown ? [...ph, set.hint] : answered && set.reveal ? [...ph, ...set.reveal] : ph;
     zoom(list.map(p => ({...p, genus: target})), Number(z.dataset.q), {blind: () => !answered}); });
-  // No session score in the game header (Pierre, 2026-11-01: "3/3 right" looked out of place); progress lives on My progress.
   // A single-view question shows the other views of the same colony once answered (seen, not part of the answer).
   const reveal = () => { const R = set.reveal || [], st = $v.querySelector('.qstage'); if (!R.length || !st) return;
     st.insertAdjacentHTML('beforeend', R.map((p, k) => fig(p, ph.length + k)).join('')); fitStage(); };
-  $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'); showHint(); reveal(); answered = true; answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint); });
+  $v.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'); showHint(); reveal(); answered = true; answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint);
+    const tr = $v.querySelector('.trail'); if (tr) tr.outerHTML = trail(); });
 }
 // The quiz stage fills the window below the header, so photos, choices and feedback fit without scrolling.
 // The photos then take the grid (columns x rows) that shows them largest at 4:3.
@@ -735,7 +741,7 @@ function answer(cur, c, target, ph, cor, unseen){
   // was played since, not progress an older sign-out left on the device.
   if (!SYNC && SYNC_URL && !store.get(LOG0, []).length) store.set(ANONB, P);
   const good = c === target, s = st(target);
-  session.n++; if (good) { session.ok++; s.ok++; s.streak++; } else { s.ko++; s.streak = 0; s.conf = s.conf || {}; s.conf[c] = (s.conf[c] || 0) + 1; }
+  session.n++; session.h = [...session.h, good].slice(-10); if (good) { session.ok++; s.ok++; s.streak++; } else { s.ko++; s.streak = 0; s.conf = s.conf || {}; s.conf[c] = (s.conf[c] || 0) + 1; }
   // Knowledge (BKT) with the difficulty of the photos shown (before the result joins s.h, which BKT replays for old progress).
   const k = $v.querySelectorAll('[data-c]').length || 4;
   // A photo seen for the first time is the best evidence (Kellman: novel instances); one already answered right twice
