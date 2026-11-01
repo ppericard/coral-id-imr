@@ -34,3 +34,10 @@ The visual rules every page follows. They came out of the expert UI review of 20
 ## Icons
 
 One SVG set (24 px grid, 1.75 stroke, `currentColor`): see `LAB_ICONS` in `proto/lab.js` for the Tools hub and the inline SVGs in `index.html`. No Unicode pictographs as icons (✺ ⌘ ◐…); plain symbols in text (✓ ✗ ★ ←) are fine.
+
+## Screens
+
+- Phone tab bar: icon above label (same SVG set), the active tab gets the accent colour and a tinted pill behind its icon.
+- Header progress pill: "Progress" + a mini ring (`--pp`) + %; signing in lives on My progress.
+- Quiz on phone/tablet: the stage takes the photo's shape (cropped at most ~20%, full frame in the lightbox); never letterbox in blurred bars when one row of photos is shown.
+- Games wider than the page (`.bleed`, ≥ 1340 px) start on the header's left edge and only grow to the right.

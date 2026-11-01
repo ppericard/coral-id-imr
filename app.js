@@ -794,6 +794,22 @@ function fitStage(){
   let best = [n, 1, 0];
   for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c), w = Math.min((W - 8 * (c - 1)) / c, (H - 8 * (r - 1)) / r * 4 / 3); if (w > best[2]) best = [c, r, w]; }
   st.style.gridTemplateColumns = `repeat(${best[0]}, minmax(0, 1fr))`; st.style.gridTemplateRows = `repeat(${best[1]}, minmax(0, 1fr))`;
+  // Phones and tablets (design review 2026-11-01): a fixed tall stage left a landscape photo floating in blurred bars. The stage
+  // now takes the photos' own shape, cropped (object-fit: cover, class .qfit) by at most ~20% of the long side; the full frame
+  // is one tap away in the lightbox. Before any image has loaded, the stage keeps the height computed above.
+  let fit = false;
+  if (isStacked() && !st.classList.contains('qvs')) {
+    const imgs = [...st.querySelectorAll('.qph img')], ready = imgs.filter(i => i.naturalWidth);
+    imgs.filter(i => !i.naturalWidth).forEach(i => i.addEventListener('load', fitStage, {once: true}));
+    if (ready.length && ready.length === imgs.length && best[1] === 1) {
+      const colW = st.children[0].getBoundingClientRect().width;
+      const need = Math.max(...ready.map(i => colW * i.naturalHeight / i.naturalWidth)) / 1.25;
+      if (need < st.getBoundingClientRect().height) st.style.height = Math.max(160, need) + 'px';
+      const boxR = colW / st.getBoundingClientRect().height;
+      fit = ready.every(i => { const r = i.naturalWidth / i.naturalHeight; return Math.max(boxR / r, r / boxR) <= 1.3; });
+    }
+  }
+  st.classList.toggle('qfit', fit);
 }
 addEventListener('resize', fitStage);
 // Games with a grid of cards (Memory): fill the free area. Try every column count; cards may be square up to
@@ -808,11 +824,20 @@ function fitTiles(grid, gap, dims){
   grid.dataset.gap = gap; if (dims) grid.dataset.dims = dims.join('x');
   const n = grid.children.length, W = grid.parentNode.clientWidth;
   const H = Math.max(240, innerHeight - grid.getBoundingClientRect().top - window.scrollY - 16 - tabH());
-  const opts = dims ? [[dims[1], dims[0]], [dims[0], dims[1]]] : Array.from({length: n}, (_, i) => [i + 1, Math.ceil(n / (i + 1))]);
+  let opts = dims ? [[dims[1], dims[0]], [dims[0], dims[1]]] : Array.from({length: n}, (_, i) => [i + 1, Math.ceil(n / (i + 1))]);
+  // data-minw: tiles never narrower than this (their label must stay readable); the grid may then scroll.
+  const minw = +grid.dataset.minw || 0;
   let best = null;
+  if (minw && !dims) {
+    // The most columns that keep tiles at least minw wide; tiles then take the full column width (the grid may scroll).
+    const ok = opts.filter(([c]) => (W - gap * (c - 1)) / c >= minw);
+    if (ok.length) { const c = Math.max(...ok.map(o => o[0])), cw = (W - gap * (c - 1)) / c, [, r] = ok.find(o => o[0] === c);
+      const ch = (H - gap * (r - 1)) / r, w = cw, h = Math.max(Math.min(ch, cw), cw * .9);
+      best = {c, w, h, score: 0}; opts = []; }
+  }
   for (const [c, r] of opts) {
     const cw = (W - gap * (c - 1)) / c, ch = (H - gap * (r - 1)) / r;
-    const h = Math.min(ch, cw * (dims ? 1.25 : 1)), w = Math.min(cw, h * (dims ? 1.8 : 4 / 3));
+    let h = Math.min(ch, cw * (dims ? 1.25 : 1)), w = Math.min(cw, h * (dims ? 1.8 : 4 / 3));
     const score = dims ? Math.min(w, h) : w * h;
     if (!best || score > best.score) best = {c, w, h, score};
   }
@@ -873,7 +898,7 @@ function answer(cur, c, target, ph, cor, unseen){
   document.getElementById('after').innerHTML = `<div class="fb">
     <h3 class="${good ? 'ok' : 'ko'}">${good ? 'Yes' : 'No'}, it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>
     ${nbo.length ? `<p class="bonusnew">Bonus unlocked: ${nbo.map(n => `<a href="#g-${esc(n)}"><i>${esc(n)}</i></a>`).join(', ')} (not on the IMR list, common at Dauin)</p>` : ''}
-    ${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="vs"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}${vs}
+    <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
     <details class="more"><summary>Coral Finder</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details>${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: cur})}</div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
   // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
@@ -943,7 +968,7 @@ function quizBoard(){
   const pct = n => st[n] > 0 && st[n] < 5 ? `<small class="pct" style="--p:${Math.round(100 * genScore(n))}%">${Math.round(100 * genScore(n))}%</small>` : '';
   const gi = n => shownGroup(n) || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
   const VIEWS = {
-    photos: () => `<div class="pgrid pwall">${list.map(tile).join('')}</div>`,
+    photos: () => `<div class="pgrid pwall"${isPhone() ? ' data-minw="72"' : ''}>${list.map(tile).join('')}</div>`,
     // Laid out like the physical IMR slate: 1-20 down the left column, 21-34 down the right, starred genera under them.
     slate: () => { const num = list.filter(n => DATA.gen[n].n), L = num.filter(n => DATA.gen[n].n <= 20), R = num.filter(n => DATA.gen[n].n > 20), S = list.filter(n => !DATA.gen[n].n);
       const ps = n => `<a class="ps ${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><b>${DATA.gen[n].n ? DATA.gen[n].n + '.' : '★'}</b><i>${esc(n)}</i>${pct(n)}</a>`;
@@ -990,8 +1015,9 @@ const $prog = document.getElementById('prog');
 function showProg(){ if (!DATA) return; const n = Object.keys(DATA.gen); const pt = `${progPct(n)}%`, lt = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length} genera learned`; document.getElementById('progn').textContent = pt; $prog.title = `Your progress: ${pt} (${lt})`; const p2 = document.getElementById('progn2'); if (p2) p2.textContent = pt;
   // Not signed in: the pill says so, so RAs find where to save their progress.
   const pill = document.getElementById('prog'), out = !!SYNC_URL && !SYNC;
-  pill.classList.toggle('nosync', out || !!syncTrouble()); pill.querySelector('.pl').textContent = out ? 'Sign in · progress' : 'My progress';
-  pill.title = SYNC ? `Signed in as ${SYNC.name}: your progress per genus` : out ? 'Sign in to save your progress' : 'Your progress per genus'; }
+  pill.classList.toggle('nosync', out || !!syncTrouble()); pill.querySelector('.pl').textContent = 'Progress'; pill.style.setProperty('--pp', progPct(n));
+  // Status only (design review 2026-11-01): the pill shows progress; signing in is an action on My progress. Not signed in = the dot.
+  pill.title = SYNC ? `Signed in as ${SYNC.name}: your progress per genus` : out ? 'Your progress (not saved online yet: sign in on My progress)' : 'Your progress per genus'; }
 // Progress files: every imr-coral-* key in localStorage (quiz progress, settings, Lab scores), as JSON.
 const progData = () => { const d = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('imr-coral') && k !== 'imr-coral-sync') d[k] = localStorage.getItem(k); } } catch (e) {} return d; };
 const loadData = d => Object.entries(d || {}).forEach(([k, v]) => k.startsWith('imr-coral') && k !== 'imr-coral-sync' && localStorage.setItem(k, v));
