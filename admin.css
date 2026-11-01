@@ -2790,3 +2790,57 @@ td.cov-c .cov-off {
   color: inherit;
   text-decoration: underline;
 }
+/* Cap per genus x view (CELL_MAX, admin.js): full and over-the-cap cells on Game coverage */
+td.cov-c.cov-full {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+td.cov-c.cov-over {
+  box-shadow: inset 0 0 0 2px var(--warn);
+}
+.adm-cfull {
+  margin: 6px 0 0;
+}
+/* Adding to a full cell: pick the colony it replaces */
+.adm-repl-new {
+  margin: 8px 0;
+  max-width: 320px;
+}
+.adm-repl-new img {
+  width: 100%;
+  border-radius: 8px;
+}
+.adm-repl-new figcaption {
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+.adm-repl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.adm-repl-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-s);
+  cursor: pointer;
+  text-align: left;
+}
+.adm-repl-tile:hover {
+  border-color: var(--accent);
+}
+.adm-repl-tile img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.adm-repl-acts {
+  margin-top: 12px;
+}
