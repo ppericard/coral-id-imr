@@ -661,15 +661,13 @@
                 })
             );
           }
-          box
-            .querySelectorAll('.rphoto')
-            .forEach(
-              x =>
-                (x.onclick = () =>
-                  zoom(type === 'con' ? [{...photoOf(last.s[0], last.s[1]), genus: ''}] : list, 0, {
-                    blind: () => !box.querySelector('.choice.right')
-                  }))
-            );
+          box.querySelectorAll('.rphoto').forEach(
+            x =>
+              (x.onclick = () =>
+                zoom(type === 'con' ? [{...photoOf(last.s[0], last.s[1]), genus: ''}] : list, 0, {
+                  blind: () => !box.querySelector('.choice.right')
+                }))
+          );
         };
         root.querySelectorAll('[data-t]').forEach(
           b =>
