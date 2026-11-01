@@ -36,6 +36,7 @@ const server = http.createServer((req, res) => {
 // 3. A game photo whose full size keeps failing falls back to its 480 px version; when both fail, the question offers
 //    another one.
 // 4. The leaderboard shows the copy kept on the device at once while the sync script is slow.
+// 5. The service worker installs even when each app file fails once (retried at install).
 // Speed numbers are measured by tools/perf.js, not here. Locally: node tests/net.smoke.js
 (async () => {
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -142,6 +143,36 @@ const server = http.createServer((req, res) => {
     if (errs.length) fails.push('Board: ' + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }
+  // 5. Service worker install on an unstable line: every app file fails once, the install still completes.
+  {
+    const ctx = await b.newContext({viewport: {width: 390, height: 800}});
+    const seen = new Set();
+    await ctx.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await ctx.route(
+      u => u.href.startsWith(base) && !/\.html$|\/$/.test(new URL(u.href).pathname) && !/sw\.js/.test(u.href),
+      r => {
+        const u = r.request().url();
+        if (seen.has(u) || r.request().resourceType() === 'image') return r.fallback();
+        seen.add(u);
+        return r.abort('connectionreset');
+      }
+    );
+    // A bare page: the app's pages would add their own requests, privacy.html's CSP forbids workers.
+    await ctx.route(base + 'sw-test.html', r => r.fulfill({contentType: 'text/html', body: '<!doctype html><title>t</title>'}));
+    const p = await ctx.newPage();
+    await p.goto(base + 'sw-test.html');
+    const ok = await p.evaluate(() =>
+      Promise.race([
+        navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready.then(() => true)),
+        new Promise(ok => setTimeout(() => ok(false), 30000))
+      ]).catch(() => false)
+    );
+    if (!ok) fails.push('The service worker did not install when each file failed once');
+    await ctx.close();
+  }
   await b.close();
   server.close();
   if (fails.length) {
@@ -149,7 +180,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard.'
+    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, service worker install with retries.'
   );
 })().catch(e => {
   console.error(e);

@@ -123,10 +123,11 @@ const ms = x => Math.round(x) + ' ms';
     await p.evaluate(() => (location.hash = 'quiz'));
     const ok1 = await photoShown();
     out.push(`  cold start: Home ${s1(tHome)}, first quiz photo +${ok1 ? s1(Date.now() - t) : 'never (60 s)'}, ${Math.round(bytes / 1024)} KB`);
-    // 2. Quiz clicks, 5 questions.
+    // 2. Quiz clicks, 6 questions: Next at once for 3 (a player in a hurry), after reading the feedback for 3 s for 3
+    // (the usual case: the next question's photos are fetched meanwhile).
     const A = [],
-      N = [];
-    for (let i = 0; i < 5; i++) {
+      N = [[], []];
+    for (let i = 0; i < 6; i++) {
       const has = await p.$('#view [data-c]');
       if (!has) break;
       A.push(
@@ -141,15 +142,17 @@ const ms = x => Math.round(x) + ' ms';
       );
       const nx = await p.$('#next');
       if (!nx) break;
+      if (i % 2) await p.waitForTimeout(3000);
       const t1 = Date.now();
       await p.evaluate(() => document.getElementById('next').click());
       const shown = await photoShown();
-      N.push(shown ? Date.now() - t1 : 60000);
+      N[i % 2].push(shown ? Date.now() - t1 : 60000);
       // Close any popup (achievement, unlock card) that would cover the next question.
       await p.evaluate(() => document.querySelectorAll('.ulcard .next, .achpop').forEach(x => x.click && x.click()));
     }
     const avg = L => (L.length ? L.reduce((a, b) => a + b, 0) / L.length : 0);
-    out.push(`  quiz: answer -> feedback ${ms(avg(A))} (max ${ms(Math.max(0, ...A))}), Next -> photo shown ${ms(avg(N))} (max ${ms(Math.max(0, ...N))})`);
+    const nx = L => `${ms(avg(L))} (max ${ms(Math.max(0, ...L))})`;
+    out.push(`  quiz: answer -> feedback ${nx(A)}; Next -> photo shown: at once ${nx(N[0])}, after reading 3 s ${nx(N[1])}`);
     // 3. Pages: click to paint (route + one frame), then until their photos are in.
     const R = [];
     for (const h of PAGES) {
@@ -172,7 +175,13 @@ const ms = x => Math.round(x) + ' ms';
     }
     out.push('  pages (paint, then content): ' + R.join(' · '));
     // 4. Warm start: the service worker (registered by hand: the app does it on https only) and the caches in place.
-    await p.evaluate(() => navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready));
+    const sw = await p.evaluate(() =>
+      Promise.race([
+        navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready.then(() => true)),
+        new Promise(ok => setTimeout(() => ok(false), 60000))
+      ]).catch(() => false)
+    );
+    if (!sw) out.push('  service worker: not installed within 60 s');
     await p.waitForTimeout(3000);
     bytes = 0;
     t = Date.now();
