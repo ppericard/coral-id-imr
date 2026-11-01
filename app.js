@@ -1625,7 +1625,12 @@ function answer(cur, c, target, ph, cor, unseen) {
     nw
   };
   if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
-  else if (SYNC_URL) store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
+  else if (SYNC_URL) {
+    store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
+    // Not signed in: the answer also goes to the sheet anonymously (Pierre, 2026-11-01), see sendAnon.
+    store.set(ANONQ, [...store.get(ANONQ, []), ans].slice(-500));
+    anonSoon();
+  }
   save();
   $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', photoSrc(ph[k])));
   // A mix-up: the stage becomes a montage, the photo shown (corallites if they were shown) next to a photo of the
@@ -2262,6 +2267,8 @@ function syncOnce(tries = 0) {
           data: progData(),
           summary: syncSummary(),
           answers: log,
+          // First send after signing in: the answers this device sent anonymously move to this name (script v12).
+          ...(me.anon ? {anon: me.anon} : {}),
           ...(typeof me.srv === 'number' ? {at: me.srv} : {})
         })
       }).then(r => r.json());
@@ -2291,6 +2298,7 @@ function syncOnce(tries = 0) {
         delete me.pending;
         delete me.err;
         if (!j.log && log.length) me.err = 'net';
+        if (me.anon) delete me.anon;
         if (j.log) {
           const done = new Set(log.map(x => x.id));
           me.log = (me.log || []).filter(x => !done.has(x.id));
@@ -2526,16 +2534,60 @@ function syncTrouble() {
 // never travel in the progress data sent to the sheet.
 const LOG0 = 'imr-log0',
   NUDGE = 'imr-nudge',
-  ANONB = 'imr-anon-base';
+  ANONB = 'imr-anon-base',
+  ANONID = 'imr-anon-id',
+  ANONQ = 'imr-anonq';
+// Anonymous answers (Pierre, 2026-11-01): a player who never signs in still helps rate the photos and the confusions.
+// Their answers go to the sheet under a random id made on this device ("~anon <id>": no name, no code), in small
+// batches (sheet script v12; an older script answers 'input' and they simply wait here). Signing in later moves them to
+// the player's name (anon in the first send; the sheet skips answers it already has, by id), and a new id is made.
+const anonId = () => {
+  let id = store.get(ANONID, '');
+  if (!/^[a-z0-9]{10}$/.test(id)) {
+    id = Array.from(crypto.getRandomValues(new Uint8Array(10)), b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
+    store.set(ANONID, id);
+  }
+  return id;
+};
+let anonTimer = 0,
+  anonBusy = false;
+const anonSoon = () => {
+  clearTimeout(anonTimer);
+  anonTimer = setTimeout(sendAnon, store.get(ANONQ, []).length >= 10 ? 0 : 20000);
+};
+function sendAnon() {
+  const q = store.get(ANONQ, []);
+  if (SYNC || !SYNC_URL || anonBusy || !q.length) return;
+  const batch = q.slice(0, 100);
+  anonBusy = true;
+  fetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({anon: anonId(), anonAnswers: batch})})
+    .then(r => r.json())
+    .then(j => {
+      if (!j || !j.log) return;
+      const done = new Set(batch.map(x => x.id)),
+        left = store.get(ANONQ, []).filter(x => !done.has(x.id));
+      store.set(ANONQ, left);
+      // More than one batch waiting (played offline): the next one follows; a refused batch ('busy') is not retried here.
+      if (left.length) setTimeout(sendAnon, 1000);
+    })
+    .catch(() => {})
+    .finally(() => {
+      anonBusy = false;
+    });
+}
+window.addEventListener('online', sendAnon);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') sendAnon();
+});
 // Signing in. A new name keeps what this device holds and sends it. A known account (found) is merged with what was
 // played here before signing in: the sheet's settings and quiz state win, the progress of both adds up (mergeProgress
 // with an empty base), then the page reloads and the start-up sync sends the merged progress. Either way the answers
 // played before signing in join the log for the sheet's Answers tab. Before 2026-11-01 a known account replaced the
 // device's progress, so a beta tester who played first and signed in later lost it.
 function signIn(name, pin, j) {
-  SYNC = {name, pin, dirty: true, log: store.get(LOG0, [])};
+  SYNC = {name, pin, dirty: true, log: store.get(LOG0, []), ...(store.get(ANONID, '') ? {anon: store.get(ANONID, '')} : {})};
   try {
-    localStorage.removeItem(LOG0);
+    [LOG0, ANONQ, ANONID].forEach(k => localStorage.removeItem(k));
   } catch (e) {}
   if (!j.found) {
     try {
@@ -2658,7 +2710,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         return;
       }
       SYNC = null;
-      ['imr-coral-sync', 'imr-coral-progress', 'imr-coral-quiz', 'imr-coral-reset', LOG0, NUDGE, ANONB].forEach(k => {
+      ['imr-coral-sync', 'imr-coral-progress', 'imr-coral-quiz', 'imr-coral-reset', LOG0, NUDGE, ANONB, ANONID, ANONQ].forEach(k => {
         try {
           localStorage.removeItem(k);
         } catch (e) {}
@@ -3173,6 +3225,7 @@ Promise.all([fetch('data.json?v=29').then(r => r.json()), curation(), forms(), j
     build();
     route();
     syncPull();
+    sendAnon();
     loadStats();
     window.APP_READY = true;
     if (window.tourFirst) tourFirst();
