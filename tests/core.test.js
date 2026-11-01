@@ -271,3 +271,43 @@ test('levelSeed: the global record starts from the history, so an existing exper
   assert.strictEqual(playerStart(P, 'Acropora'), before);
   assert.deepStrictEqual(levelSeed({}), {ok: 0, ko: 0, th: 0});
 });
+
+test('achievements: unique ids, tiers 1-3; a snapshot unlocks only what it meets, never twice', () => {
+  const {ACH, newAch} = require('../core.js');
+  assert.strictEqual(new Set(ACH.map(a => a.id)).size, ACH.length);
+  assert.ok(ACH.every(a => [1, 2, 3].includes(a.tier) && a.icon && a.title && a.desc));
+  const zero = {
+    total: 34,
+    met: 0,
+    q: [0, 0, 0],
+    learned: 0,
+    pct: 0,
+    streak: 0,
+    duel: false,
+    cor: false,
+    hard: false,
+    elo: 1000,
+    group: false,
+    bonus: 0
+  };
+  assert.deepStrictEqual(newAch(zero, {}), []);
+  const s = {...zero, met: 12, q: [5, 1, 0], pct: 6, streak: 10, duel: true, elo: 1120};
+  const got = newAch(s, {});
+  assert.deepStrictEqual(got, ['met10', 'q25a', 'pct5', 'run10', 'duel', 'elo1100']);
+  assert.deepStrictEqual(newAch(s, Object.fromEntries(got.map(id => [id, 1]))), [], 'never twice');
+  const all = {
+    total: 34,
+    met: 34,
+    q: [34, 34, 34],
+    learned: 34,
+    pct: 100,
+    streak: 30,
+    duel: true,
+    cor: true,
+    hard: true,
+    elo: 1500,
+    group: true,
+    bonus: 3
+  };
+  assert.strictEqual(newAch(all, {}).length, ACH.length, 'every achievement is reachable');
+});

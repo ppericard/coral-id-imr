@@ -590,7 +590,55 @@
     return {ok, ko, th: m ? Math.round((t / m) * 100) / 100 : 0};
   }
 
+  // Achievements (Pierre, 2026-11-01: "unlocked as milestones are passed, with an animated pop-up, to keep the wish to play";
+  // "well spread out": learning a whole genus takes ~300-430 questions, so most rungs are the quarters on the way there).
+  // Learning milestones only, never time or days played (the learning model's rule). Each has a family, a tier
+  // (1 bronze, 2 silver, 3 gold) and a test on a snapshot the app builds (app.js achSnap):
+  //   {total, met, q: [genera at >= 25%, >= 50%, >= 75%], learned, pct, streak (best run of right answers), duel, cor,
+  //    hard, elo (0 until 50 answers: it moves a lot before), group (an IMR lecture group fully learned), bonus}.
+  // Median questions to reach the quarter rungs, simulated with the real game (2026-11-01, 75% / 90% right): 5 at 25%
+  // 76 / 57, 10 at 50% 231 / 137, 5 at 75% 363 / 203, first learned ~430 / ~300.
+  const ACH = [
+    ['met10', 'Explorer', 'Met 10 genera', 1, '🧭', s => s.met >= 10],
+    ['met20', 'Wide eyes', 'Met 20 genera', 1, '🧭', s => s.met >= 20],
+    ['metall', 'Whole slate', 'Met every genus of the list', 2, '🧭', s => s.total && s.met >= s.total],
+    ['q25a', 'Getting there', '5 genera a quarter of the way to learned', 1, '🌱', s => s.q[0] >= 5],
+    ['q25b', 'Growing', '10 genera a quarter of the way', 1, '🌱', s => s.q[0] >= 10],
+    ['q25c', 'Spreading', '20 genera a quarter of the way', 2, '🌱', s => s.q[0] >= 20],
+    ['q50a', 'Halfway', '5 genera halfway to learned', 1, '🌿', s => s.q[1] >= 5],
+    ['q50b', 'Half a reef', '10 genera halfway', 2, '🌿', s => s.q[1] >= 10],
+    ['q50c', 'Thriving', '20 genera halfway', 2, '🌿', s => s.q[1] >= 20],
+    ['q75a', 'Nearly there', '5 genera three quarters of the way', 2, '🪸', s => s.q[2] >= 5],
+    ['q75b', 'Reef builder', '10 genera three quarters of the way', 2, '🪸', s => s.q[2] >= 10],
+    ['learn1', 'First genus learned', 'Learned a genus', 2, '🎓', s => s.learned >= 1],
+    ['learn5', 'Five learned', 'Learned 5 genera', 3, '🎓', s => s.learned >= 5],
+    ['learn10', 'Ten learned', 'Learned 10 genera', 3, '🎓', s => s.learned >= 10],
+    ['learn20', 'Twenty learned', 'Learned 20 genera', 3, '🎓', s => s.learned >= 20],
+    ['learnall', 'Coral master', 'Learned every genus of the list', 3, '👑', s => s.total && s.learned >= s.total],
+    ['pct5', 'First steps', '5% progress', 1, '📈', s => s.pct >= 5],
+    ['pct10', 'On the way', '10% progress', 1, '📈', s => s.pct >= 10],
+    ['pct25', 'A quarter', '25% progress', 2, '📈', s => s.pct >= 25],
+    ['pct50', 'Half the slate', '50% progress', 2, '📈', s => s.pct >= 50],
+    ['pct75', 'Three quarters', '75% progress', 3, '📈', s => s.pct >= 75],
+    ['pct100', 'Complete', '100% progress', 3, '📈', s => s.pct >= 100],
+    ['run10', 'On a roll', '10 right answers in a row', 1, '🔥', s => s.streak >= 10],
+    ['run25', 'Unstoppable', '25 right answers in a row', 2, '🔥', s => s.streak >= 25],
+    ['duel', 'Look-alike slayer', 'Won a look-alike duel', 1, '⚔️', s => s.duel],
+    ['cor', 'Corallite reader', 'Right with only the corallites in view', 1, '🔬', s => s.cor],
+    ['hard', 'Sharp eye', 'Right on a photo most players miss, shown alone', 2, '🎯', s => s.hard],
+    ['elo1100', 'Elo 1100', 'Reached an Elo of 1100', 1, '⭐', s => s.elo >= 1100],
+    ['elo1200', 'Elo 1200', 'Reached an Elo of 1200', 2, '⭐', s => s.elo >= 1200],
+    ['elo1300', 'Elo 1300', 'Reached an Elo of 1300', 3, '⭐', s => s.elo >= 1300],
+    ['elo1400', 'Elo 1400', 'Reached an Elo of 1400', 3, '🌟', s => s.elo >= 1400],
+    ['group', 'Group complete', 'Learned every genus of an IMR lecture group', 3, '🧩', s => s.group],
+    ['bonus', 'Off the list', 'Unlocked a bonus genus', 2, '🔓', s => s.bonus >= 1]
+  ].map(([id, title, desc, tier, icon, test]) => ({id, title, desc, tier, icon, test}));
+  // The achievements a snapshot meets that `have` ({id: time}) does not hold yet, in list order.
+  const newAch = (snap, have) => ACH.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);
+
   const CORE = {
+    ACH,
+    newAch,
     LEVEL,
     START,
     playerStart,
