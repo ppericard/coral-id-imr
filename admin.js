@@ -600,7 +600,7 @@ const HELP = {
     <p>The Coral Finder growth-form tiles use them: Branching = Br + Ta, Thin plates and crusts = En + Fo, Massive or thick = Ma + Sm, Columns = Sm, Solitary = Mu, Meandering = any form of the genera it lists. Dashed = a first guess, solid = yours (always wins); a red ? = a guess to double-check.</p>
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
-  triage: `<p>Only what needs your eye. First, what players reported after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), with who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v7); only the sheet owner (Script property OWNER, else the first account to open this) can read them, using this browser's sync name and code. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
+  triage: `<p>Only what needs your eye. First, what players reported after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), with who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v7); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns. Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
@@ -704,18 +704,17 @@ function renderExcluded(){
   $v.querySelectorAll('[data-act="zoomx"]').forEach(b => b.onclick = () => { const t = b.closest('[data-f]'), p = PHOTOS[t.dataset.f]; if (p) zoomOne(p); });
 }
 // Players' reports (sheet script v7, app.js reportDialog): wrong answer (+ the genus they suggest), several corals, bad
-// photo, other, with a note and WHO sent it (Pierre trusts some players more than others). ?reports=1 answers only the
-// sheet owner, with this browser's sync name and code (Script Properties OWNER). Done = curation.json "seen" {'rep:id': 1},
+// photo, other, with a note and WHO sent it (Pierre trusts some players more than others). Every admin can read them:
+// the sheet checks this page's GitHub token with GitHub (write access to the repo). Done = curation.json "seen" {'rep:id': 1},
 // one report at a time; nothing is ever changed from a report by itself.
 let REPS = null, repsAt = 0;
 const REP_WHY = {wrong: 'Wrong answer', multi: 'Several corals', photo: 'Bad photo', other: 'Other'};
 function loadReports(force){
   if (!force && REPS && Date.now() - repsAt < 300000) return Promise.resolve(REPS);
-  const sy = store.get('imr-coral-sync', null) || {};
-  if (!sy.name || !sy.pin) { REPS = {err: 'Sign in to the sync on the site'}; return Promise.resolve(REPS); }
-  return fetch(`${SYNC_URL}?reports=1&name=${encodeURIComponent(sy.name)}&pin=${encodeURIComponent(sy.pin)}`).then(r => r.json())
+  if (!TOKEN) { REPS = {err: 'Needs the GitHub token'}; return Promise.resolve(REPS); }
+  return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readReports: 1, token: TOKEN})}).then(r => r.json())
     .then(j => { repsAt = Date.now();
-      REPS = j && j.ok && j.rows ? {rows: j.rows} : {err: !j || !j.v || j.v < 7 ? 'Sheet script v7 not deployed' : j.error === 'owner' ? 'Not the sheet owner (OWNER)' : j.error === 'pin' ? 'Sync code refused' : 'Not available'}; return REPS; })
+      REPS = j && j.ok && j.rows ? {rows: j.rows} : {err: !j || !j.v || j.v < 7 ? 'Sheet script v7 not deployed' : j.error === 'token' ? 'Token refused' : 'Not available'}; return REPS; })
     .catch(() => (REPS = {err: 'Offline'}));
 }
 const repsOpen = () => REPS && REPS.rows ? REPS.rows.filter(r => !(DRAFT.seen || {})['rep:' + r[0]]) : [];

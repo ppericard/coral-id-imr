@@ -110,16 +110,18 @@ test('reports: logged once, reporter verified by code, never mistaken for a prog
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).data, prog(3), 'progress untouched');
 });
 
-test('reports list: owner only, first verified caller claims it', () => {
+test('reports list: only a GitHub token that can write to the repo, checked once', () => {
   const s = loadCodeGs();
-  s.post({name: 'Pierre', pin: '1111', data: prog(1), summary: {}});
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}});
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1'), rep('r2', {why: 'other'})]});
-  assert.strictEqual(s.get({reports: '1'}).error, 'input');
-  assert.strictEqual(s.get({reports: '1', name: 'Pierre', pin: '0000'}).error, 'pin');
-  const a = s.get({reports: '1', name: 'Pierre', pin: '1111'});
-  assert.strictEqual(s.props.OWNER, 'Pierre');
+  assert.strictEqual(s.post({readReports: 1}).error, 'token');
+  assert.strictEqual(s.post({readReports: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
+  assert.strictEqual(s.post({readReports: 1, token: 'bad_token_0000000000000000'}).error, 'token');
+  const a = s.post({readReports: 1, token: 'ghp_write000000000000000000'});
   assert.strictEqual(a.rows.length, 2); assert.strictEqual(a.rows[0][0], 'r2', 'newest first');
   assert.deepStrictEqual(a.rows[1].slice(2, 9), ['Ana', 1, 'wrong', 'Acropora', 'Montipora', 'Montipora', 'corallites']);
-  assert.strictEqual(s.get({reports: '1', name: 'Ana', pin: '1234'}).error, 'owner');
+  const n = s.fetched.length; s.post({readReports: 1, token: 'ghp_write000000000000000000'});
+  assert.strictEqual(s.fetched.length, n, 'remembered for 10 minutes');
+  assert.ok(!JSON.stringify(s.cache).includes('ghp_write'), 'the token itself is never stored');
+  assert.strictEqual(s.get({reports: '1', name: 'Ana', pin: '1234'}).found, true, 'no GET for reports');
 });

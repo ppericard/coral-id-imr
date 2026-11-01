@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 7 (2026-11-01: players report a wrong answer or a bad photo (Reports tab, ?reports=1 for the owner); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 7 (2026-11-01: players report a wrong answer or a bad photo (Reports tab, read by admins with their GitHub token); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -60,10 +60,8 @@ function writeData_(name, json, rev){
 // GET ?stats=1 → photo difficulty learned from every answer (Elo, see stats_), cached 10 minutes.
 // GET ?answers=1 → every answer with the RA replaced by an anonymous id (see answers_), for the admin Stats page.
 // GET ?name=…&pin=… → the saved progress for that RA, if the code matches.
-// GET ?reports=1&name=…&pin=… → the players' reports, with who sent them, for the sheet owner only (see reports_, v7).
 function doGet(e){
   if (e.parameter.stats) return json_(stats_());
-  if (e.parameter.reports) return json_(reports_(e.parameter));
   if (e.parameter.answers) return json_(answers_(e.parameter));
   const {name, pin} = clean_(e.parameter);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
@@ -85,6 +83,7 @@ function doGet(e){
 function doPost(e){
   const p = JSON.parse(e.postData.contents);
   if (Array.isArray(p.reports)) return json_(logReports_(p));
+  if (p.readReports) return json_(reports_(p.token));  // admin: POST {readReports: 1, token} (see reports_)
   const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
@@ -224,19 +223,24 @@ function logReports_(p){
     return {ok: true, rep: true};
   } finally { lock.releaseLock(); }
 }
-// {ok, rows: [[id, time ms, reporter, verified 0|1, reason key, expected, answered, suggested genus, note, mode, photos]]},
-// newest first. Names are shown, so only the sheet owner gets them: the RA whose name is in Script Properties OWNER
-// (set it in Project settings > Script properties); while OWNER is unset, the first RA to call this with a right code claims it.
-function reports_(q){
-  const {name, pin} = clean_(q || {});
-  if (!name || !/^\d{4}$/.test(pin)) return {ok: false, error: 'input'};
-  if (blocked_(name)) return {ok: false, error: 'wait'};
-  const ss = SpreadsheetApp.getActiveSpreadsheet(), ra = ss.getSheetByName('RAs'), r = ra ? find_(ra, name) : 0;
-  if (!r || ra.getRange(r, 7).getValue() !== hash_(name, pin)) { if (r) failed_(name); return {ok: false, error: 'pin'}; }
-  const pr = PropertiesService.getScriptProperties(), owner = pr.getProperty('OWNER');
-  if (!owner) pr.setProperty('OWNER', name);
-  else if (owner.trim().toLowerCase() !== name.toLowerCase()) return {ok: false, error: 'owner'};
-  const sh = ss.getSheetByName('Reports'), key = {}; Object.keys(WHY).forEach(k => key[WHY[k]] = k);
+// POST {readReports: 1, token} → {ok, rows: [[id, time ms, reporter, verified 0|1, reason key, expected, answered,
+// suggested genus, note, mode, photos]]}, newest first. Names are shown, so only the app's admins get them: anyone whose
+// GitHub token can write to the repository (the admin page's token; Pierre, 2026-11-01: "all admins"). The token is
+// checked with GitHub once and remembered 10 minutes by its hash only; it is never stored. Sent by POST, so it stays
+// out of URLs and logs. Needs the script's "connect to an external service" permission (asked once on redeploy).
+const REPO = 'ppericard/coral-id-imr';
+function isAdmin_(token){
+  if (!/^[A-Za-z0-9_]{20,255}$/.test(token)) return false;
+  const cache = CacheService.getScriptCache(), key = 'gh:' + Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, token)).slice(0, 40);
+  if (cache.get(key) === '1') return true;
+  const r = UrlFetchApp.fetch('https://api.github.com/repos/' + REPO, {headers: {Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json'}, muteHttpExceptions: true});
+  let ok = false; try { const p = r.getResponseCode() === 200 && JSON.parse(r.getContentText()).permissions; ok = !!(p && (p.push || p.maintain || p.admin)); } catch (e) {}
+  if (ok) cache.put(key, '1', 600);
+  return ok;
+}
+function reports_(token){
+  if (!isAdmin_(String(token || ''))) return {ok: false, error: 'token'};
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Reports'), key = {}; Object.keys(WHY).forEach(k => key[WHY[k]] = k);
   if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
   const rows = sh.getRange(2, 1, sh.getLastRow() - 1, REP.length).getValues().filter(x => x[10])
     .map(x => [String(x[10]), new Date(x[0]).getTime() || 0, String(x[1]), Number(x[2]) ? 1 : 0, key[x[3]] || 'other', String(x[4]), String(x[5]), String(x[6]), String(x[7]), String(x[8]), String(x[9])]);
