@@ -767,7 +767,9 @@ function answer(cur, c, target, ph, cor, unseen){
   // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
   // was played since, not progress an older sign-out left on the device.
   if (!SYNC && SYNC_URL && !store.get(LOG0, []).length) store.set(ANONB, P);
-  const good = c === target, s = st(target);
+  const good = c === target, s = st(target), chs = [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c);
+  // Offers: every wrong choice shown beside the target, so the player's own mix-up rate per pair is known (confOf).
+  chs.forEach(x => { if (x !== target) { s.off = s.off || {}; s.off[x] = (s.off[x] || 0) + 1; } });
   session.n++; session.h = [...session.h, good].slice(-10); if (good) { session.ok++; s.ok++; s.streak++; } else { s.ko++; s.streak = 0; s.conf = s.conf || {}; s.conf[c] = (s.conf[c] || 0) + 1; }
   // Knowledge (BKT) with the difficulty of the photos shown (before the result joins s.h, which BKT replays for old progress).
   const nc = $v.querySelectorAll('[data-c]').length || 4, k = Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
@@ -790,7 +792,7 @@ function answer(cur, c, target, ph, cor, unseen){
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
   // sheet's Answers tab also gets what was played before the account existed (Pierre, 2026-11-01).
-  const ans = {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur + (k < nc ? '|k' + k : ''), ph: ph.map(p => p.f).join(' '), ch: [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c).join(' '), e: Math.round(100 * (1 / k + (1 - 1 / k) * sig(th0 - d0))) / 100, th: th0, nw};
+  const ans = {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur + (k < nc ? '|k' + k : ''), ph: ph.map(p => p.f).join(' '), ch: chs.join(' '), e: Math.round(100 * (1 / k + (1 - 1 / k) * sig(th0 - d0))) / 100, th: th0, nw};
   if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
   else if (SYNC_URL) store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
   save();
@@ -869,9 +871,13 @@ const trapsFor = t => { const x = Math.min(3, Math.max(0, (ability(t) - TRAP.sta
 // the same family, then a shared growth form. With few answers the prior rules; with many, the real mix-ups do, so a pair
 // nobody confuses fades and an undeclared pair players do confuse becomes a trap (core.js CONF, confScore).
 const isLook = (t, n) => GX(t).look.includes(n) || GX(n).look.includes(t);
+// Personal path (Pierre, 2026-11-01): the pooled score is then the prior for this player's own answers on the pair
+// (core.js pairConf: offered together, mixed up), worth CONF.W offers, so the player's weight is offers / (offers + 8).
+// A pair this player keeps mixing up becomes a trap and a duel for them, one they now tell apart fades back to the pool.
+// Performance only, never time.
 function confOf(t, n){
   const prior = isLook(t, n) ? CONF.LOOK : GX(n).fam === GX(t).fam ? CONF.FAM : imrFormsOf(n).some(f => imrFormsOf(t).includes(f)) ? CONF.FORM : CONF.BASE;
-  return confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], prior);
+  return confScore(pairConf(P, t, n), confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], prior));
 }
 // Traps = the genera most confused with the target (a little shuffle among close scores, so every likely pair gets tried).
 const confusable = (t, n) => confOf(t, n) >= CONF.TRAP;
@@ -911,8 +917,9 @@ function quizDuel(a, b){
   if (!pair) {
     // Unlocked bonus genera duel with the slate look-alike the Coral Finder names.
     const ps = [...pairs(), ...bonusOpen().flatMap(b => GX(b).look.filter(a => DATA.gen[a]).map(a => [a, b]))].filter(([x, y]) => list.includes(x) && list.includes(y));
-    // Your mix-ups come up most, then the classic look-alikes (compared in the IMR lecture or the Coral Finder text).
-    const w = ps.map(([x, y]) => (weight(x) + weight(y)) * (mixedUp(x, y) ? 3 : isClassic(x, y) ? 2 : 1)), t0 = w.reduce((p, q) => p + q, 0);
+    // Your mix-ups you still make come up most (personal confusion score, confOf), then pairs players often confuse and
+    // the classic look-alikes (compared in the IMR lecture or the Coral Finder text).
+    const w = ps.map(([x, y]) => (weight(x) + weight(y)) * (mixedUp(x, y) && confusable(x, y) ? 3 : confusable(x, y) || isClassic(x, y) ? 2 : 1)), t0 = w.reduce((p, q) => p + q, 0);
     let r = Math.random() * t0; pair = ps[0];
     for (let i = 0; i < ps.length; i++) { r -= w[i]; if (r <= 0) { pair = ps[i]; break; } }
   }
@@ -942,7 +949,11 @@ function quizBoard(){
   // Locked bonus genera: ONE tile that says what they are and when the next one comes (six "?" tiles read as a puzzle;
   // designer re-review 2026-11-01, N6).
   const lockT = cls => locked.length ? `<span class="${cls} plock" title="Bonus genera off the IMR list, common at Dauin: the next one unlocks at ${locked[0]}% progress"><b aria-hidden="true">+${locked.length}</b><small>bonus genera · next at ${locked[0]}%</small></span>` : '';
-  const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
+  // Your mix-ups to review: each pair you mixed up, ranked by your own confusion score (confOf), so a pair you now tell
+  // apart sinks and the ones you still confuse lead; the chip opens the side-by-side comparison (with "Drill this pair").
+  const seenPair = new Set(), conf = list.flatMap(n => Object.keys((P[n] || {}).conf || {}).filter(o => GX(o)).map(o => n < o ? [n, o] : [o, n]))
+    .filter(([a, b]) => { const k = a + '|' + b; if (seenPair.has(k)) return false; seenPair.add(k); return true; })
+    .map(([a, b]) => [a, b, pairConf(P, a, b)[1], confOf(a, b)]).sort((x, y) => y[3] - x[3]).slice(0, 3);
   // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
   const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}% of the way)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
   // Learning level: the tile's colour is its step on the scale, and a thin line along its bottom shows the exact progress.
