@@ -10,6 +10,7 @@ Sources: "thread X" = a Claude project thread with Pierre; dates are 2026. Desig
 
 | Item | Source | Status |
 |---|---|---|
+| **Redeploy Code.gs v6** (PR #250: progress of any size, stale-write check, PIN throttle, secret anonymous-id salt). App and admin work with v5 meanwhile. | thread "Review the code as an expert developer" | Waiting on Pierre |
 | Review ~10 debatable lecture points (left verbatim): Pocillopora "verrucae purely ornamental", Goniastrea "paliform lobes on the oral disc", Montipora "smallest corallites of all", Tubastraea "dark green to black", Mycedium "no tentacles", Plerogyra "looks solitary", Herpolitha "solitary"; better mnemonics proposed (Acropora = pore at the tip, Pavona = peacock). Any change becomes a discreet note, never a correction. | thread "Fact-check all coral content on the site", PR #22 | Waiting on Pierre |
 | Stylophora wording: Pierre remembered "like Pocillopora but fuzzy"; presenter notes say "smooth from afar, unlike Pocillopora" and "chicken popcorn" (Pierre remembered "chicken nuggets" for Pocillopora). App keeps the written wording. Pierre reviews the course on Mon 2026-11-02 and corrects it himself. | project chat, 2026-10-31 | Waiting on Pierre |
 | Merulina placement: shown with Hydnophora (lecture group 7); group 5 is the alternative. | thread "Declutter the UI across the app", PR #66 | Waiting on Pierre |
@@ -31,6 +32,8 @@ Never settle these in the app; keep the lecture's version.
 
 | Item | Source | Status |
 |---|---|---|
+| **Code formatting + modules** (code review L1, accepted by Pierre): one Prettier pass (printWidth 140, `npx`, no package.json, listed in `.git-blame-ignore-revs`), then split `app.js` into `<script type="module">` files page by page. The formatting commit touches every line, so do it only when no other thread has an open branch. | thread "Review the code as an expert developer" | Next, when other threads are idle |
+| **Repo size watch** (code review L6): `.git` ~194 MB, `img/` ~185 MB; above ~600 MB move `img/` to a separate photo repo (same origin, no code change for reading). | same | Watch |
 | **Calibrated, medium-size game photo sets**: draw game photos by Elo band per genus × view rather than at random; maybe cap set size while keeping a real difficulty spread and enough photos to learn the genus, not the photos. Never shrink sets automatically: suggest, Pierre confirms. Needs enough answers first. Whether to cap at all is still open. | thread "Analyse player levels and photo Elo" | Next / Open question |
 | Growth form + quality guesses for auto-refilled candidates (they arrive without guesses; Claude classified PR #181's batch by eye in PR #182). Do it when Pierre asks. | thread "Review photo candidates on phone" | Next (on request) |
 | Near-duplicate / redundancy suggestions among IMR + Pierre photos in Triage, and a visual pre-pick of Featured into `picks.json`. Partly done (`find_dups.py`, PR #149); re-run after adding photos. | thread "Design photo usage per context" | Next |
