@@ -36,8 +36,10 @@ Hash routing in `route()`. Sections and their tabs are declared once in `MODES`:
 Old hashes (`#key`, `#k-…`, `#l-…`, `#key-imr`, `#tips`, `#quiz-course`) redirect to their current home.
 
 Key shared helpers (search for them in `app.js`):
-- `applyCuration()`: applies `curation.json` on top of `data.json` (cover, featured order, hide, move, add candidates, not-this-genus, exclude, crop, 2-level genera).
-- `applySlots()`: orders each view's photos (Pierre's picks, then IMR, Pierre, others by quality) into `g.sl[view]`; first 3 = featured. The admin mirrors it (`autoOrder`).
+- `build()`: `structuredClone(RAW)` then `applyCuration()`, `applyForms()`, `applySlots()` into `DATA` (also for the extra genera `x`).
+- `applyCuration()`: applies `curation.json` on top of `data.json` (cover, featured order, hide, move, add candidates, not-this-genus, exclude, crop, 2-level genera, book switch, `single`).
+- `applySlots()`: photos per context into `g.sl[view]` (see "Photos per context" below); first 3 = featured. The admin mirrors it (`autoOrder`).
+- `curRefresh()`: a tab left open re-reads `curation.json` when it comes back into view (if the last check is > 5 min old) and every 30 min while visible; a change is applied at the next screen (`route()`), never mid-game. Skipped with `?draft`.
 - `pageHelp()`: moves intros into the "?" help box on every render (MutationObserver on `#view`).
 - `shownGroup()`: places starred genera in the lecture group of their look-alikes (display only).
 - `GX(n)`: genus lookup in both IMR genera (`DATA.gen`) and the 27 extra Dauin genera (`DATA.x.gen`, Coral Finder only).
@@ -45,13 +47,18 @@ Key shared helpers (search for them in `app.js`):
 - `fitStage()`, `fitTiles()`: size games to one screen.
 - `IS_ADMIN`: true in Pierre's admin browser (token vault present); gates Pierre-only controls. ⚙ has a View: Admin | User switch.
 
+### Settings (⚙, `index.html` + `app.js`)
+Theme light/dark (`imr-coral-theme`, light default) · Colour-blind On/Off (`imr-coral-cvd` → `:root[data-cvd]`, blue/orange instead of green/red) · Colours: Lagoon / Ocean / Seagrass / Twilight / Depth (`imr-coral-palette` → `:root[data-palette]`, **Depth default**; the old `reef` value falls back to Depth) · View Admin | User (only in the browser holding the admin token). A small inline script in `index.html` applies theme, palette and cvd before first paint. The Coral Finder has its own switch for the 27 extra Dauin genera (`imr-finder-x`, on by default). Photo size S/M/L sits on each page. The "Photos from Dauin / PH / All" setting was removed in PR #230 (don't bring it back).
+
 ### Learning model (`app.js`)
-- Per-genus state in `localStorage` `imr-coral` (`P[genus]`).
-- **Learned** = Bayesian Knowledge Tracing probability `knownP(n)` ≥ 0.95 plus corallite and duel milestones; guess/slip depend on photo difficulty (`photoDiff`). `genScore` = 0.75 × BKT progress + 0.25 × milestones (header ring, My progress).
-- A wrong answer is a failed observation for the genus shown **and** the genus given.
-- **Continuous difficulty** (PR #197): per-genus ability `P[n].th` on the photo-Elo scale; photos drawn by weight around a target difficulty (~80% expected success, `PICKD`, `ELO` constants, `photoSet()`, `abilityStep()`), with a novelty bonus, memorised photos down-weighted, recent colonies held back and ≥ 3 colonies in rotation.
-- Photo Elo comes from all players' answers via the sync script (`?stats=1`), cached locally.
-- No time-based criteria anywhere (rule).
+- Per-genus state in `localStorage` `imr-coral-progress` (`P[genus]`: `ok`, `ko`, `h` recent results string, `L` BKT, `th` ability, `ps` photos seen `{f: [seen, right]}`, `ro` recent colonies, `cor`/`du` milestones).
+- **Learned** = Bayesian Knowledge Tracing (`BKT`, `bktStep`, `knownP(n)`) ≥ 0.95 plus two milestones: once right with the corallites in view, once right in a look-alike duel (if the genus has look-alikes). Guess and slip depend on the photo's difficulty, so right answers on hard photos count most. **Review** = 2+ misses in the last 5 results. **No time criteria anywhere** (rule).
+- A wrong answer is a failed observation for the genus shown **and** the genus given (rule).
+- **Progress scale**: `genScore` = 0.75 × BKT progress towards 0.95 + 0.25 × milestones; `lvStep` = 6 steps (0 not seen, 1-4 quarters of `genScore`, 5 learned) coloured by the palette's learning-level ramp; tiles on My progress (Photos / Slate / Groups views) show a mini ring + %; review = red border and "!" (dashed in colour-blind mode). `progPct` drives the header ring.
+- **Which genus next**: `weight()` favours unseen (10), review and unsure genera, learned 0.25, and holds back the last 4 genera asked.
+- **Continuous difficulty** (Elo as in Pelánek 2016; PRs #197, #200): per-genus ability `P[n].th` on the photo-difficulty scale, updated by `abilityStep()` with P(right) = g + (1-g)·sigmoid(ability − difficulty), g = 1/choices, K shrinking with answers but ≥ 0.25 (`ELO`). `photoSet()` draws photos weighted around the target `ability − 1.0` (~80% right in a 4-choice question, `PICKD`), with a bonus for never-seen photos (IMR and Pierre's first), photos answered right twice down-weighted, the last colonies held back and ≥ 3 colonies in rotation (`VARIETY`).
+- **One colony per question** (PR #207, rule 14b): photos are grouped by observation (`p.o`); a question shows the views of one colony only, never topped up from another. Beginners favour colonies shot at several zooms; `singleP()` raises the share of single-view questions (up to 85%) as ability rises; a single view counts as +0.5 harder (`SINGLE`). Other views show after the answer.
+- **Photo difficulty** `photoDiff()`: the sheet's photo Elo (`?stats=1`, all players, cached in `imr-photo-stats`) shrunk towards a prior from the photo's game set (Easy −1, Medium 0, Hard +1) when it has few answers. The admin "Without me" switch recomputes it without Pierre's answers for Stats only; the games still use everyone's.
 
 ### Lab prototypes (`proto/`)
 `lab.js` holds the hub, `LAB.files`, `LAB_V` (cache version), `GRADUATED` (tools promoted into a section, currently `finder` and `pairs`) and `PLANNED` (target section of each prototype, shown on the learning path). One file per tool: `anatomy` (Corallite anatomy), `map` (mind map), `web` (look-alike web), `zoom`, `size`, `elim`, `matrix`, `spot`, `reveal` (Blur reveal), `gallery`, `pairs`, `finder`.
@@ -64,7 +71,9 @@ Key shared helpers (search for them in `app.js`):
 - `key` Coral Finder front-page key (growth form → boxes), `imrg` the 11 IMR lecture groups, `traits` corallite clues with sources, `terms` glossary `[term, definition, source]`, `tips` the lecture's observation questions, `course` lecture photos, `cmp` lecture comparison images, `cand{Genus}` candidate photos for the admin, `x` extra Dauin genera for the Coral Finder (built by `tools/build_extra.py`).
 
 ### `curation.json` (Pierre-owned; never overwrite in a PR)
-`genera{Genus}`: `cover`, `feat{view:[f]}`, `hide`, `move`, `add{f:view}`, `out` (not this genus), `ok` (validated), `lv` (2/3 levels); top level: `mont{"A|B":{v,a,b}}` look-alike montage overrides, `quality{f:1-3}`, `gf` growth forms, `exclude{f:reason}`, `flag`, `seen` (dismissed suggestions, reviewed candidates `cand:f`), `use`, `crop{f:[l,t,r,b]}`.
+`genera{Genus}`: `cover`, `feat{view:[f]}`, `hide`, `move`, `add{f:view}`, `out` (not this genus), `ok` (validated), `lv` (2/3 levels); top level: `book: false` (Coral Finder book photos off site-wide; absent = on), `mont{"A|B":{v,a,b,hide}}` Look-alikes overrides (`v` may be `all`), `quality{f:1-3}`, `gf` growth forms, `exclude{f:reason}`, `flag`, `seen` (dismissed suggestions, reviewed candidates `cand:f`), `use{f:'ref'|'game'}` (sheet only / games only), `single{f:1}` (photo wrongly marked "several corals"), `crop{f:[l,t,r,b]}`.
+
+Written only by the admin's Publish, which merges key by key onto the latest published file (see Admin).
 
 ### Suggestion files (machine-written, Pierre confirms in admin)
 - `forms.json`: `forms` (the 7 IMR growth form definitions, single source), `cf` (CF box → IMR forms), `gf` guesses, `gunsure`, legacy `form`.
@@ -75,6 +84,14 @@ Key shared helpers (search for them in `app.js`):
 
 Precedence: `curation.json` > suggestion files > `data.json` defaults.
 
+## Photos per context (`applySlots`, `CAP`)
+
+Per genus and view, from field photos + IMR lecture photos (`data.json` `course`), never multi-coral ones:
+- **Order**: Pierre's pins (`feat`), then Claude's suggestions (`picks.json`), then IMR photos, Pierre's own, other observers, each by quality; Poor last (but an IMR photo is never auto-rated Poor).
+- **Sheet**: the 3 featured + the next ones, 6 in all. Coral Finder book photos only when pinned, or after every field photo to fill a gap.
+- **Games** (`easy`, `medium`, `hard`, levels adding up): field + IMR lecture photos, never book photos, never `use: 'ref'`; Poor photos go to Hard. `gamePics()` reads them.
+- **Coral Finder** (`finder`): featured + 2 other-observer photos + up to 3 approved book photos (variety on purpose).
+
 ## Photos
 
 - WebP, 1600 px long side + 480 px `img/<f>-s.webp`. ~2 300 files, ~185 MB. No Git LFS.
@@ -84,12 +101,17 @@ Precedence: `curation.json` > suggestion files > `data.json` defaults.
 
 ## Admin back-office (`admin.html`)
 
-For Pierre only (not linked except from ⚙ for token holders). Modes by hash: genus pages (default), `#~cand` Candidates swiper (default on phones), `#~triage` (flags, suggestions, duplicates), `#~form` growth forms, `#~quality`, `#~excluded`, `#~mont` look-alike montages, `#~stats` (Players / Photos / Photo list / Coverage / Needs; `#~cov`, `#~diff` are sub-views).
+For Pierre only (not linked except from ⚙ for token holders). Modes by hash: genus pages (default), `#~cand` Candidates swiper (default on phones), `#~triage` (flags, suggestions, duplicates), `#~form` growth forms, `#~quality`, `#~excluded`, `#~look` Look-alikes (`#~mont` = old address), `#~stats` with sub-views Players `#~stats`, Photos `#~stats-photos`, Photo list `#~diff`, Game coverage `#~cov`, Sheet & Finder coverage `#~fcov`, Needs `#~stats-needs`.
 
-- Every click is a local draft (Undo/Redo, Ctrl+Z). **Publish** commits `curation.json` to `main` through the GitHub Contents API with a fine-grained token (this repo only, Contents read/write), stored encrypted in the browser with the admin password. `admin.html?readonly` works without a token (download JSON). `index.html?draft` previews unpublished choices.
+- Every click is a local draft (`imr-curation-draft`, with its base `imr-curation-base`; Undo/Redo, Ctrl+Z). **Publish** commits `curation.json` to `main` through the GitHub Contents API with a fine-grained token (this repo only, Contents read/write), stored encrypted in the browser with the admin password. `admin.html?readonly` works without a token (download JSON). `index.html?draft` previews unpublished choices.
+- **Key-by-key merge** (PR #240): Publish first re-reads the published file; if it changed, `rebase()` applies `merge3(base, draft, published)`: a key Pierre changed since the base keeps his value, every other key takes the published one; objects merge recursively, lists and plain values are single choices (same key changed on both sides: the draft wins). The draft is also merged onto the published file on page load. Old drafts without a base go through `mergeOld()` (adds, never removes). Never go back to publishing a whole copy.
+- **Look-alikes** (`renderMont`): one row per classic pair (same list and automatic pick as `app.js` `classics()` / `montage()`). Per pair: View Colony / Closer / Corallites / **All** (photos of every zoom, the automatic pick prefers the nearest zooms), **Auto | Manual** (clicking a photo makes it Manual; Auto drops his view and photo picks but keeps a hide), **Shown | Hidden** (Hidden keeps the comparison off the public Look-alikes page until good examples exist). Stored in `curation.json` `mont`.
 - Genus status: `needs()` lists what is missing (3 featured per view, non-macro cover…); ✓ Validated is Pierre's button.
 - Needs (PR #198): per genus × view, why the game pool falls short (few colonies, few good ones, too easy for players' level, repeated photos, mix-ups), ranked.
-- Coverage (`renderCov`, `covOf`, `gamePool`): game-usable photos per genus × view, coloured by distinct colonies (0 / 1-2 / 3-4 / 5-7 / 8+).
+- **Game coverage** `#~cov` (`renderCov`, `covOf`, `gamePool`): game-usable photos per genus × view (field + IMR lecture photos; no book, multi-coral, hidden or sheet-only photos; Poor ones count), coloured by distinct colonies (0 / 1-2 / 3-4 / 5-7 / 8+), with an "excl." line and tooltip listing what was left out and why. `covOf` is shared with the Candidates swiper.
+- **Sheet & Finder coverage** `#~fcov` (`renderFcov`): what sheets and the Coral Finder can draw from, IMR genera plus the extra Dauin genera; every photo not hidden or multi-coral, approved book photos included; colour = distinct colonies with a non-Poor photo; plus growth forms and species seen.
+- Both coverage views sort Thinnest / Thickest / A-Z, or by a view column (click again to reverse).
+- **"Without me"** (Photos, Photo list, Needs): drops this browser's own answers (`MEID` = the anonymous id the sheet derives from the signed-in sync name) and replays the Elo in the browser (`eloOf()`, a copy of `stats_` in `Code.gs`: keep them in step). Nothing is stored or reset.
 
 ## Progress sync (Google Sheet)
 
@@ -98,7 +120,8 @@ For Pierre only (not linked except from ⚙ for token holders). Modes by hash: g
 - Devices on one account: every change triggers pull, three-way merge (against `SYNC.base`), then send. The app also pulls and merges (no write) on start-up, when it comes back to the screen (30 s throttle) and when back online, so progress made on another device shows up without answering a question first.
 - Endpoints: `POST` progress + answer log; `GET ?name=&pin=` load (reply carries `v`, the script version); `GET ?stats=1` photo Elo; `GET ?answers=1` anonymous answers for admin Stats.
 - **Versioning**: bump `VERSION` (header comment + constant) on every change. Agents cannot deploy: Pierre copies <https://raw.githubusercontent.com/ppericard/coral-id-imr/main/tools/sync/Code.gs> into Extensions > Apps Script, then Deploy > Manage deployments > Edit > New version (same URL).
-- Version history: v2 Answers/Activity tabs (deployed 2026-10-31); v3 `?stats=1` photo difficulty (deployed); v4 `?answers=1` anonymous ids (PR #195); v5 answers carry expected success, ability, new photos (PR #197). **v4/v5 redeploy pending as of 2026-11-01** (see ROADMAP).
+- `Answers` columns: Name, Time, Genus shown, Answered, Right, Mode, Photos (space-separated file stems), Id, Expected, Ability, New photos.
+- Version history: v2 Answers/Activity tabs; v3 `?stats=1` photo difficulty; v4 `?answers=1` anonymous ids (PR #195); v5 answers carry expected success, ability, new photos, single-view answers count +0.5 harder (PRs #197, #201). **v5 is deployed and verified (2026-11-01).** Every reply carries `v`, so the app and admin can tell which script is live.
 - The app keeps unsent answers (max 500) until the server confirms `log: true`.
 
 ## Tools (`tools/`)
@@ -123,4 +146,9 @@ Still useful / re-runnable:
 
 - IMR Lecture 6 (2026_L6_CoralID.pptx) and a Google Slides copy, plus the Coral Finder 2022 PDF, are on Pierre's Google Drive (IMR folder). Slide text and presenter notes were extracted into `data.json` (`imr`, `mn`, `sl`).
 - Pierre's iNaturalist: user `ppericard`, coral taxon 47532.
-- Deploy: GitHub Pages from `main`; a merge to `main` is live within a minute or two (the service worker updates on the next visit).
+
+## Run and deploy
+
+- Run: `python3 -m http.server 8000` at the repo root, open <http://localhost:8000> (`admin.html` for the back-office; without a token use `admin.html?readonly`). Sync and photo Elo talk to the live Apps Script even locally.
+- Deploy: GitHub Pages from `main` (root, `.nojekyll`); a merge to `main` is live within a minute or two. The service worker serves the cached shell, so bump the `?v=` numbers and `sw.js` `V` (see AGENTS.md) or users keep the old files. `curation.json` is always fetched with `no-cache`.
+- Pierre's Publish triggers `.github/workflows/approved-photos.yml`, which commits to `main` on its own.

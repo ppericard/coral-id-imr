@@ -71,7 +71,12 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 - The 4 static welcome cards (replaced by the guided tour).
 - Git history rewrite to shrink the repo (~97 of 253 MB): Pierre chose to wait; raise again only if size becomes a problem.
 - Asking for ReefCloud images (see Parked).
+- The public "Photos from Dauin / Philippines / All" filter (removed in PR #230: redundant with the IMR/own-first photo rule).
+- The Reef colour theme (dropped in PR #219); Lagoon as default (Depth chosen, PR #218).
+- Coral Finder book photos in games (never), or as featured/sheet photos ahead of field photos.
+- Publishing `curation.json` as a whole copy from the admin (lost curation on 2026-11-01; Publish merges key by key since PR #240).
 
 ## Done recently (for context)
 
+- 2026-11-01: #244 explain empty "Without me" views; #242/#243 admin "Game coverage" + "Sheet & Finder coverage", sortable by view; #241 Thickest order; #240 Publish merges key by key (and restored lost curation); #233/#236/#238 admin Look-alikes Hide / All / Auto|Manual, `#~look`; #231 curation re-read in long-open tabs; #230 "Photos from" setting removed; #229/#209 "Without me" photo Elo; #227 IMR lecture photos in games; #225/#222/#208 progress scale (6 steps, mini ring); #224/#220 book photos on sheets only when pinned or to fill gaps; #219/#226 colour-blind mode; #214/#218 colour themes, Depth default; #207 one colony per question; #203 sync pulls other devices on start-up; #201/#202 Code.gs v5 deployed; #200 single-view questions.
 - PR #198 admin Stats "Needs" tab (where to look for more photos); #197 continuous difficulty; #195 admin Stats; #194 Coverage; #193 Candidates order; #184/#188 extra Dauin genera in the Coral Finder; #159 look-alike montage deck; #150 two-door Home; #168/#172 responsive system, mobile-first; #132 guided tour.
