@@ -3687,6 +3687,24 @@ Promise.all([
 // A tab left open for days still follows Pierre's published curation (e.g. the CF book switch): when the tab comes back
 // into view (or every 30 min while visible), curation.json is read again; a change applies at the next screen (route),
 // never in the middle of a game.
+// A photo Pierre adds from the candidates waiting (cand.json) reaches data.json only when the Candidate photos Action has
+// run after his Publish: an open tab whose curation adds a photo its data.json lacks fetches data.json again (now, or at
+// a later refresh if the Action has not finished), so the photo shows without a reload (code review #331).
+const rawFs = () => {
+  const s = new Set(),
+    add = L => (L || []).forEach(p => p && s.add(p.f));
+  [...Object.values(RAW.gen || {}), ...Object.values((RAW.x || {}).gen || {})].forEach(g => {
+    Object.values(g.views || {}).forEach(add);
+    Object.values(g.more || {}).forEach(add);
+    add(g.book);
+  });
+  [RAW.cand, RAW.course].forEach(o => Object.values(o || {}).forEach(add));
+  return s;
+};
+const addsMissing = c => {
+  const have = rawFs();
+  return Object.values((c && c.genera) || {}).some(g => Object.keys(g.add || {}).some(f => !have.has(f)));
+};
 function curRefresh() {
   if (!RAW || /[?&]draft\b/.test(location.search)) return;
   curAt = Date.now();
@@ -3695,6 +3713,15 @@ function curRefresh() {
     .then(c => {
       if (c) store.set(CUR_LAST, c);
       if (c && JSON.stringify(c) !== JSON.stringify(CUR)) CUR_NEW = c;
+      if (c && addsMissing(c))
+        return fetch('data.json', {cache: 'no-cache'})
+          .then(r => (r.ok ? r.json() : null))
+          .then(d => {
+            if (d && d.gen) {
+              RAW = d;
+              CUR_NEW = c; // rebuilt at the next page change, with the photo in
+            }
+          });
     })
     .catch(() => {});
 }
