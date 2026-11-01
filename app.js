@@ -473,18 +473,25 @@ function classics(){
 // are told apart on the corallites; these on the closer view) and, in that view, the two photos that come first
 // (IMR, then Pierre's) with the same growth form.
 const MONT_V = {'Pocillopora|Stylophora': 'medium', 'Acropora|Anacropora': 'medium', 'Acropora|Cyphastrea': 'medium', 'Acropora|Echinopora': 'medium', 'Goniopora|Porites': 'medium', 'Danafungia|Fungia': 'medium', 'Fungia|Lithophyllon': 'medium', 'Danafungia|Lithophyllon': 'medium'};
-// The two photos of two genera that make the best side by side in a view: same growth form, nearest the front.
+// The two photos of two genera that make the best side by side: same growth form, nearest the front and, when the
+// photos come from all zoom levels ("All", Pierre 2026-11-01), the nearest zoom levels.
+const ZOOM = {wide: 0, medium: 1, macro: 2};
 function photoPair(LA, LB, fa, fb){
   let best = null; const A = fa ? [fa] : LA.slice(0, 6), B = fb ? [fb] : LB.slice(0, 6);
-  A.forEach((x, i) => B.forEach((y, j) => { const sc = i + j + (x.form && x.form === y.form ? 0 : 8); if (!best || sc < best[0]) best = [sc, x, y]; }));
+  const gap = (x, y) => x.view && y.view ? 4 * Math.abs(ZOOM[x.view] - ZOOM[y.view]) : 0;
+  A.forEach((x, i) => B.forEach((y, j) => { const sc = i + j + (x.form && x.form === y.form ? 0 : 8) + gap(x, y); if (!best || sc < best[0]) best = [sc, x, y]; }));
   return best ? [best[1], best[2]] : [];
 }
+// Pierre can hide a comparison until good examples exist (curation.json "mont" {"A|B": {hide: true}}, admin
+// Montages), and pick "all" as the view to pair photos of nearby zoom levels.
 function montage(a, b){
   const k = pairKey(a, b), [A, B] = k.split('|'), m = ((CUR || {}).mont || {})[k] || {}, V = n => DATA.gen[n].views;
-  const has = (n, v) => (V(n)[v] || []).length > 0, ok = v => v && has(A, v) && has(B, v);
+  if (m.hide) return null;
+  const list = (n, v) => (v === 'all' ? Object.keys(ZOOM) : [v]).flatMap(w => (V(n)[w] || []).map(p => ({...p, view: w})));
+  const ok = v => v && list(A, v).length && list(B, v).length;
   const v = ok(m.v) ? m.v : [MONT_V[k] || 'macro', 'macro', 'medium', 'wide'].find(ok); if (!v) return null;
-  const mine = m.v === v, fa = mine && V(A)[v].find(p => p.f === m.a), fb = mine && V(B)[v].find(p => p.f === m.b);
-  const [pa, pb] = photoPair(V(A)[v], V(B)[v], fa, fb);
+  const LA = list(A, v), LB = list(B, v), mine = m.v === v, fa = mine && LA.find(p => p.f === m.a), fb = mine && LB.find(p => p.f === m.b);
+  const [pa, pb] = photoPair(LA, LB, fa, fb);
   return {k, A, B, v, pa, pb, src: lsrcOf(A, B)};
 }
 const srcTag = src => /^IMR/.test(src) ? `<b class="lect">IMR lecture</b> ${esc(src.replace(/^IMR Lecture 6:?\s*/, ''))}` : `<b class="lect cf">Coral Finder</b> ${esc(src.replace(/^Coral Finder /, ''))}`;
@@ -497,7 +504,7 @@ function viewLookalikes(a, b){
   let i = Math.max(0, a && b ? L.findIndex(m => m.k === pairKey(a, b)) : 0), drawn = false;
   const draw = () => {
     const m = L[i], gA = DATA.gen[m.A], gB = DATA.gen[m.B], x = mix(m);
-    const half = (n, p, k) => `<figure class="lkph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${VIEW_LABEL[m.v].toLowerCase()} view"></button><figcaption><i>${esc(n)}</i></figcaption></figure>`;
+    const half = (n, p, k) => `<figure class="lkph" style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-lz="${k}" aria-label="Enlarge ${esc(n)}"><img src="${img(p)}" alt="${esc(n)}, ${VIEW_LABEL[p.view].toLowerCase()} view"></button><figcaption><i>${esc(n)}</i></figcaption></figure>`;
     const tip = (n, g) => `<div class="lktip"><a href="#g-${esc(n)}"><i>${esc(n)}</i></a> ${esc(tipsText(g))}</div>`;
     const deck = L.map((d, k) => `<a class="lkd${k === i ? ' on' : ''}${mix(d) ? ' mix' : ''}" href="#cmp|${esc(d.A)}|${esc(d.B)}" title="${esc(d.A)} or ${esc(d.B)}"><span><img src="${img(d.pa, 's')}" alt="" loading="lazy"><img src="${img(d.pb, 's')}" alt="" loading="lazy"></span><small>${esc(d.A)} / ${esc(d.B)}</small></a>`).join('');
     // The intro goes behind ? (pageHelp) only on the first draw: re-adding it on each step pushed the deck down while the
@@ -516,7 +523,7 @@ function viewLookalikes(a, b){
     drawn = true; fitLk(); requestAnimationFrame(fitLk);
     const cur = $v.querySelector('.lkd.on'); if (cur) cur.parentNode.scrollTop = cur.offsetTop - cur.parentNode.offsetTop - 8;
     $v.querySelectorAll('[data-lstep]').forEach(btn => btn.onclick = () => stepTo(i + Number(btn.dataset.lstep)));
-    $v.querySelectorAll('[data-lz]').forEach(z => z.onclick = () => zoom([{...m.pa, genus: m.A, view: m.v}, {...m.pb, genus: m.B, view: m.v}], Number(z.dataset.lz)));
+    $v.querySelectorAll('[data-lz]').forEach(z => z.onclick = () => zoom([{...m.pa, genus: m.A}, {...m.pb, genus: m.B}], Number(z.dataset.lz)));
     $v.querySelectorAll('.lkd').forEach((d, k) => d.onclick = e => { e.preventDefault(); stepTo(k); });
     // Swipe left / right on the montage (phones).
     const mt = $v.querySelector('.lkm'); let x0 = null;
