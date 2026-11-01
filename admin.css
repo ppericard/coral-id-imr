@@ -447,6 +447,8 @@ td.cov-c .cov-off{display:block;font-size:.62rem;font-weight:500;line-height:1.1
 .adm-kpis b{font-family:var(--display);font-size:1.6rem;line-height:1.1}
 .adm-kpis span{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .adm-sgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+/* app.css hides .wide on phones (a site class); a wide stats card must still show there */
+.adm-sgrid>.adm-scard.wide{display:block}
 .adm-scard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;min-width:0}
 .adm-scard h3{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
 .adm-tscroll{overflow-x:auto}

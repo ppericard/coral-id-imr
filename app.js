@@ -588,6 +588,8 @@ function photoLvl(n, p){ const sl = GX(n).sl || {}; for (const v of Object.keys(
 // Photo difficulty (Elo): every RA's answers, rated by the sync sheet (?stats=1, tools/sync/Code.gs stats_). 0 = average
 // photo, +1 = clearly harder. Few answers: pulled towards the photo's game set (Easy -1, Medium 0, Hard +1).
 let PSTAT = (store.get('imr-photo-stats', {}) || {}).photos || {};
+// Pairs of genera offered together and mixed up, every RA pooled (?stats=1 conf, sheet v10): see confOf.
+let PCONF = (store.get('imr-photo-stats', {}) || {}).conf || {};
 const sig = x => 1 / (1 + Math.exp(-x));
 function photoDiff(n, p){ const prior = photoLvl(n, p) - 1, o = PSTAT[p.f]; return o ? (o[1] * o[0] + 5 * prior) / (o[1] + 5) : prior; }
 // "Learned" = Bayesian Knowledge Tracing per genus: s.L = probability you know the genus, updated after each answer.
@@ -777,7 +779,7 @@ function answer(cur, c, target, ph, cor, unseen){
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
   // sheet's Answers tab also gets what was played before the account existed (Pierre, 2026-11-01).
-  const ans = {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur + (k < nc ? '|k' + k : ''), ph: ph.map(p => p.f).join(' '), e: Math.round(100 * (1 / k + (1 - 1 / k) * sig(th0 - d0))) / 100, th: th0, nw};
+  const ans = {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(), g: target, a: c, ok: good ? 1 : 0, m: cur + (k < nc ? '|k' + k : ''), ph: ph.map(p => p.f).join(' '), ch: [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c).join(' '), e: Math.round(100 * (1 / k + (1 - 1 / k) * sig(th0 - d0))) / 100, th: th0, nw};
   if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
   else if (SYNC_URL) store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
   save();
@@ -851,13 +853,22 @@ function unlockShow(L){
 // other IMR lecture groups first; once two traps are in, the last one is any genus (family first), as before.
 const TRAP = {start: 0, step: 0.18};
 const trapsFor = t => { const x = Math.min(3, Math.max(0, (ability(t) - TRAP.start) / TRAP.step)); return Math.floor(x) + (Math.random() < x % 1 ? 1 : 0); };
+// Confusion score of genus n beside target t (Pierre, 2026-11-01): how often players mix the two up when both are offered
+// (every RA pooled, ?stats=1 conf), starting from a prior: the declared look-alikes (IMR lecture, Coral Finder) high, then
+// the same family, then a shared growth form. With few answers the prior rules; with many, the real mix-ups do, so a pair
+// nobody confuses fades and an undeclared pair players do confuse becomes a trap (core.js CONF, confScore).
+const isLook = (t, n) => GX(t).look.includes(n) || GX(n).look.includes(t);
+function confOf(t, n){
+  const prior = isLook(t, n) ? CONF.LOOK : GX(n).fam === GX(t).fam ? CONF.FAM : imrFormsOf(n).some(f => imrFormsOf(t).includes(f)) ? CONF.FORM : CONF.BASE;
+  return confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], prior);
+}
+// Traps = the genera most confused with the target (a little shuffle among close scores, so every likely pair gets tried).
+const confusable = (t, n) => confOf(t, n) >= CONF.TRAP;
 function distractors(t, list, traps = trapsFor(t)){
-  const T = GX(t), look = list.filter(n => n !== t && (T.look.includes(n) || GX(n).look.includes(t)));
-  const out = shuffle(look).slice(0, traps), left = list.filter(n => n !== t && !look.includes(n));
-  if (traps >= 2) {
-    const fam = left.filter(n => GX(n).fam === T.fam);
-    return [...out, ...shuffle(fam), ...shuffle(left.filter(n => !fam.includes(n)))].slice(0, 3);
-  }
+  const ranked = list.filter(n => n !== t).map(n => [n, confOf(t, n) * (0.8 + 0.4 * Math.random())]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+  const look = ranked.filter(n => confusable(t, n)), out = look.slice(0, traps), left = list.filter(n => n !== t && !look.includes(n));
+  if (traps >= 2) return [...out, ...ranked.filter(n => !look.includes(n)), ...look.slice(traps)].slice(0, 3);  // exactly `traps` traps when others exist
+  const T = GX(t);
   const tf = imrFormsOf(t), apart = n => !imrFormsOf(n).some(f => tf.includes(f));
   const easy = left.filter(apart), far = easy.filter(n => GX(n).ig !== T.ig);
   // Easy choices spread over different growth forms too: three mushroom corals beside a massive target would give the
@@ -870,8 +881,8 @@ function distractors(t, list, traps = trapsFor(t)){
 // Elo and BKT count a guess as 1 in (target + the plausible wrong choices) while traps are few (0 or 1): easy choices from
 // other growth forms are not plausible, so such a question is scored as a 2- or 3-choice one (a right answer there proves
 // less). From 2 traps on, every choice counts, as before.
-const plausibleK = (t, choices) => { const T = GX(t), tf = imrFormsOf(t);
-  return Math.max(2, choices.filter(n => n === t || T.look.includes(n) || GX(n).look.includes(t) || imrFormsOf(n).some(f => tf.includes(f))).length); };
+const plausibleK = (t, choices) => { const tf = imrFormsOf(t);
+  return Math.max(2, choices.filter(n => n === t || confusable(t, n) || imrFormsOf(n).some(f => tf.includes(f))).length); };
 // A mix-up in the photo quiz comes back once as a duel of the two genera, one question later.
 let rematch = null;
 function quizPhoto(){
@@ -1014,7 +1025,7 @@ function bindProgFile(){
 let statsAt = 0;
 setInterval(() => { if (document.visibilityState === 'visible') loadStats(); }, 600000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - statsAt > 600000) loadStats(); });
-function loadStats(){ if (!SYNC_URL || !DATA) return; statsAt = Date.now(); fetch(SYNC_URL + '?stats=1').then(r => r.json()).then(j => { if (j && j.ok && j.photos) { PSTAT = j.photos; store.set('imr-photo-stats', {t: Date.now(), photos: j.photos}); } }).catch(() => {}); }
+function loadStats(){ if (!SYNC_URL || !DATA) return; statsAt = Date.now(); fetch(SYNC_URL + '?stats=1').then(r => r.json()).then(j => { if (j && j.ok && j.photos) { PSTAT = j.photos; PCONF = j.conf || {}; store.set('imr-photo-stats', {t: Date.now(), photos: j.photos, conf: PCONF}); } }).catch(() => {}); }
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
 let SYNC = store.get('imr-coral-sync', null), syncTimer = null;
 function syncSummary(){
