@@ -1051,3 +1051,12 @@ a.psrc:hover,a.psrc:focus-visible{opacity:1;background:rgb(0 0 0 / .75);text-dec
 .repf input,.repf textarea{font:inherit;font-size:.95rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 9px;resize:vertical}
 .repbtns{display:flex;justify-content:flex-end;gap:8px}
 .repbtns .next{padding:8px 18px}
+/* Bonus genera (off the IMR list): chips on My progress coloured by learning step, the next unlock in muted dashed. */
+.pbonus .label small{font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0}
+.pbonus .chip{background:var(--lvc,var(--surface));color:var(--lvt,var(--ink));border-color:var(--lvc,var(--line))}
+.pbonus .chip.s0{border-style:dashed;color:var(--muted)}
+.pbonus .chip.weak{border:2px solid var(--bad)}
+.pbonus .chip.s5 i::after{content:" \2713";font-style:normal;font-weight:700}
+.pbonus .chip.lock{border-style:dashed;color:var(--muted);background:transparent;cursor:default}
+.fb .bonusnew{margin:6px 0;padding:6px 10px;border-radius:8px;background:var(--surface);border:1px solid var(--accent);font-size:.9rem}
+.cmpcol h3 small{font:400 .8rem var(--body);color:var(--muted)}
