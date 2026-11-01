@@ -510,3 +510,5 @@ td.cov-c .cov-off{display:block;font-size:.62rem;font-weight:500;line-height:1.1
 .fcov-t td.fcov-f{white-space:normal;text-align:left}
 .fcov-t td.fcov-f .adm-why{font-size:.72rem;padding:0 6px}
 .fcov-t td.fcov-s{text-align:center;color:var(--muted)}
+.cov-t th .cov-sort{font:inherit;font-size:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;background:none;border:0;padding:2px 4px;cursor:pointer;white-space:nowrap}
+.cov-t th .cov-sort:hover,.cov-t th .cov-sort.on{color:var(--accent)}
