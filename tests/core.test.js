@@ -119,7 +119,8 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
         ]
       });
     }
-  const rows = s.get({answers: '1'}).rows,
+  const T = {token: 'ghp_write000000000000000000'},
+    rows = s.post({readAnswers: 1, ...T}).rows,
     sheet = s.get({stats: '1'}).photos;
   assert.deepStrictEqual(eloOf(rows), sheet);
 });
@@ -151,7 +152,7 @@ test('confusionOf counts the same pairs as Code.gs stats_ conf, and keeps the di
       ]
     });
   }
-  const rows = s.get({answers: '1'}).rows,
+  const rows = s.post({readAnswers: 1, token: 'ghp_write000000000000000000'}).rows,
     C = confusionOf(rows);
   assert.deepStrictEqual(C.pair, s.get({stats: '1'}).conf);
   assert.strictEqual(rows[0][10], '');
