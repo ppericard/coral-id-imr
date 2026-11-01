@@ -11,14 +11,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,600;1,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap">
 <link rel="stylesheet" href="app.css?v=94">
-<link rel="stylesheet" href="admin.css?v=63">
+<link rel="stylesheet" href="admin.css?v=64">
 </head>
 <body class="admin">
 <script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <div class="wrap">
   <header>
     <h1 class="brand"><a class="home" href="./" title="IMR Coral ID"><img src="icon.svg" alt="" width="30" height="30"><span class="adm-name">Admin</span></a></h1>
-    <nav class="adm-modes" id="modes" aria-label="Entry point" hidden><a data-mode="genus" href="#">Genera</a><a data-mode="cand" href="#~cand">Candidates</a><a data-mode="form" href="#~form">Forms</a><a data-mode="quality" href="#~quality">Quality</a><a data-mode="triage" href="#~triage">Triage</a><a data-mode="needs" href="#~stats-needs">Needs</a><a data-mode="stats" href="#~stats">Stats</a><a data-mode="mont" href="#~look">Look-alikes</a><a data-mode="excluded" href="#~excluded">Excluded</a></nav>
+    <nav class="adm-modes" id="modes" aria-label="Entry point" hidden><a data-mode="genus" href="#">Genera</a><a data-mode="cand" href="#~cand">Candidates</a><a data-mode="form" href="#~form">Forms</a><a data-mode="quality" href="#~quality">Quality</a><a data-mode="triage" href="#~triage">Triage</a><a data-mode="needs" href="#~stats-needs">Needs</a><a data-mode="stats" href="#~stats">Stats</a><a data-mode="users" href="#~users">Users</a><a data-mode="mont" href="#~look">Look-alikes</a><a data-mode="excluded" href="#~excluded">Excluded</a></nav>
     <select class="adm-modesel" id="modesel" aria-label="Entry point" hidden></select>
     <div class="hdr-tools" id="tools" hidden>
       <button type="button" class="chip adm-ico" id="undo" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↶</button>
@@ -40,6 +40,6 @@
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
 <script src="core.js?v=7"></script>
-<script src="admin.js?v=98"></script>
+<script src="admin.js?v=99"></script>
 </body>
 </html>

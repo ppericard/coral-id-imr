@@ -136,7 +136,7 @@ body.adm-dragging,body.adm-dragging *{cursor:grabbing!important;user-select:none
 /* Entry points: by genus / by quality */
 .adm-modes{display:inline-flex;padding:3px;gap:2px;background:var(--surface-2);border-radius:var(--pill)}
 .adm-modes[hidden]{display:none}
-.adm-modes a{font-size:.88rem;color:var(--muted);text-decoration:none;padding:5px 14px;border-radius:var(--pill)}
+.adm-modes a{font-size:.88rem;color:var(--muted);text-decoration:none;padding:5px 8px;border-radius:var(--pill)}
 .adm-modes a[aria-current="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:var(--shadow)}
 
 /* Quality: tag (dashed = automatic guess) and three-way control */
@@ -318,6 +318,10 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 .adm-swbar .add.sug{border:2px dashed var(--accent)}
 @media (hover:hover) and (pointer:fine){.adm-swbar .add:hover{background:var(--good-bg);color:var(--good)}}
 .adm-src.rej{background:var(--bad-bg);color:var(--bad)}
+/* Wider screens where the header tabs don't all fit (fitModes() in admin.js): the same menu as on phones, so no tab is
+   ever cut off at the edge (the Users tab made it happen at 1280 px, 2026-11-01). */
+body.admin.adm-narrow .adm-modes{display:none}
+body.admin.adm-narrow .adm-modesel:not([hidden]){display:block;flex:0 1 220px;min-width:0;font:inherit;font-size:.95rem;min-height:36px;padding:0 8px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--ink)}
 /* Phones: header on one line (entry points in a menu; Redo and Help move into ⋯). */
 @media (max-width:599px){
   body.admin header{flex-wrap:nowrap;gap:6px}

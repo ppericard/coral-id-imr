@@ -414,9 +414,14 @@ function status(){
   $('modes').hidden = false; $v.ownerDocument.querySelector('[data-mode="genus"]').href = '#' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
   document.querySelectorAll('[data-mode]').forEach(a => a.setAttribute('aria-current', String(a.dataset.mode === modeKey())));
   const ms = $('modesel'); if (ms) { ms.innerHTML = [...document.querySelectorAll('#modes [data-mode]')].map(a => `<option value="${esc(a.getAttribute('href'))}"${a.getAttribute('aria-current') === 'true' ? ' selected' : ''}>${esc(a.textContent)}</option>`).join(''); ms.hidden = false; }
+  fitModes();
 }
+// The header tabs must never be cut off: when they don't all fit on the line, the entry-point menu replaces them.
+function fitModes(){ const nav = $('modes'); if (!nav || nav.hidden) return; document.body.classList.remove('adm-narrow');
+  if (nav.scrollWidth > nav.clientWidth + 1) document.body.classList.add('adm-narrow'); }
+addEventListener('resize', () => fitModes());
 // Which header tab the page belongs to: the Stats tab holds players, photos, the photo list and coverage.
-const modeKey = () => NEED_TABS.some(([h]) => h === cur) ? 'needs' : cur.startsWith('~stats') || cur === '~diff' || cur === '~users' ? 'stats' : ({'~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~look': 'mont', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
+const modeKey = () => NEED_TABS.some(([h]) => h === cur) ? 'needs' : cur.startsWith('~stats') || cur === '~diff' ? 'stats' : ({'~users': 'users', '~quality': 'quality', '~form': 'form', '~excluded': 'excluded', '~triage': 'triage', '~look': 'mont', '~mont': 'mont', '~cand': 'cand'})[cur] || 'genus';
 function render(){
   memoReset();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
@@ -426,7 +431,8 @@ function render(){
   if (cur === '~triage') return renderTriage();
   // Every Stats / Needs sub-view keeps its sub-menu on top, whichever function draws it (Pierre, 2026-11-01).
   if (modeKey() === 'needs') { if (cur === '~cov') renderCov(); else if (cur === '~fcov') renderFcov(); else renderStats(); return withSwitch(); }
-  if (modeKey() === 'stats') { if (cur === '~diff') renderDiff(); else if (cur === '~users') renderUsers(); else renderStats(); return withSwitch(); }
+  if (cur === '~users') return renderUsers();  // its own tab: managing players, not only stats (Pierre, 2026-11-01)
+  if (modeKey() === 'stats') { if (cur === '~diff') renderDiff(); else renderStats(); return withSwitch(); }
   if (cur === '~look' || cur === '~mont') return renderMont(); // ~mont = old address, kept for bookmarks
   if (cur === '~cand') return renderCand();
   const names = Object.keys(DATA.gen); if (!DATA.gen[cur]) cur = names[0];
@@ -1305,7 +1311,7 @@ function renderFcov(){
 // level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
 // The Stats tab holds the sub-views of STAT_TABS (incl. the photo list, renderDiff). The to-do lists (Needs and the two
 // coverage views) are their own "Needs" tab, NEED_TABS (Pierre, 2026-11-01, admin review rec. 6: work lists, not statistics).
-const STAT_TABS = [['~users', 'Users'], ['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~stats-conf', 'Confusions'], ['~diff', 'Photo list']];
+const STAT_TABS = [['~stats', 'Players'], ['~stats-photos', 'Photos'], ['~stats-conf', 'Confusions'], ['~diff', 'Photo list']];
 const NEED_TABS = [['~stats-needs', 'Where to look'], ['~cov', 'Game coverage'], ['~fcov', 'Sheet & Finder coverage']];
 let ANS = null, RAS = {}, MEID = null, SF = Object.assign({who: 'all', min: 1, elo: 'all', nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('imr-admin-stats', {}));
 const statSwitch = () => `<nav class="adm-filter adm-stabs" aria-label="${modeKey() === 'needs' ? 'Needs' : 'Stats'}">${(modeKey() === 'needs' ? NEED_TABS : STAT_TABS)
@@ -1346,7 +1352,7 @@ function bindStats(){
   $v.querySelectorAll('[data-sf]').forEach(b => b.onclick = () => { const k = b.dataset.sf; SF[k] = k === 'min' ? Number(b.dataset.v) : b.dataset.v; store.set('imr-admin-stats', SF); render(); });
   $v.querySelectorAll('[data-zf]').forEach(b => b.onclick = () => zoom(b.dataset.g, b.dataset.zf));
 }
-// Users (Pierre, 2026-11-01: "now that beta testers come, I need to see and manage them"): every player who signed in,
+// Users, a header tab of its own (Pierre, 2026-11-01: "now that beta testers come, I need to see and manage them"; not under Stats, it manages players): every player who signed in,
 // by name, with their numbers, from sheet script v11 (POST {users: 1, token}; names, so the admin token is checked like
 // for reports). Merge = two names of one person: the progress is merged here (core.js mergeUsers: answers add up, the
 // busier account's model per genus), then the sheet relabels the answers and reports and deletes the other name.

@@ -29,7 +29,7 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 
 | What | Where / how |
 |---|---|
-| **Redeploy the sync script v11** (user management page, Stats > Users). Steps below ("Code.gs and how to redeploy"); no new permission needed. | Admin > Stats > Users says "Sheet script v11 not deployed" until then. |
+| **Redeploy the sync script v11** (user management page, admin Users tab). Steps below ("Code.gs and how to redeploy"); no new permission needed. | Admin > Users says "Sheet script v11 not deployed" until then. |
 | Review the debatable lecture points and the Stylophora wording (he planned to review the course on Mon 2026-11-02). | ROADMAP "Waiting on Pierre". Any change becomes a discreet note, never a correction. |
 | Confirm Merulina's placement (shown with Hydnophora, lecture group 7; alternative group 5). | ROADMAP. |
 | Say which Lab tools he marked Keep / Trim (votes live only in his browser). | ROADMAP. |
