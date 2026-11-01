@@ -34,6 +34,8 @@ D['gen'] = {**D['gen'], **((D.get('x') or {}).get('gen') or {})}
 FORMS = [x['id'] for x in load('forms.json', {}).get('forms', [])] + ['x']
 VIEWS = ('wide', 'medium', 'macro')
 KEEP = ('best', 'alt', 'dup')
+# AGENTS.md rule 4: the polyps flag only for the Coral Finder "extended by day" genera, never on a macro photo.
+POLYPS = {'Alveopora', 'Duncanopsammia', 'Goniopora', 'Heliofungia', 'Plerogyra', 'Tubastraea'}
 FIELDS = {'view', 'quality', 'keep', 'form', 'polyps', 'multi', 'genus', 'unsure', 'note'}
 X = C.get('exclude', {})
 
@@ -130,6 +132,8 @@ def check(n):
         if x.get('form') not in FORMS: E.append(f'{at}: form must be ONE of {" ".join(FORMS)}, not {x.get("form")!r}')
         for b in ('polyps', 'multi'):
             if b in x and x[b] is not True: E.append(f'{at}: {b} is true or omitted')
+        if x.get('polyps') and (n not in POLYPS or x.get('view') == 'macro'):
+            E.append(f'{at}: polyps only for {", ".join(sorted(POLYPS))}, never on a macro photo (AGENTS.md rule 4): omit it')
         g = x.get('genus')
         if g is not None:
             if g == n: E.append(f'{at}: omit "genus" when the photo shows {n}')

@@ -1,0 +1,187 @@
+{
+ "genus": "Leptoseris",
+ "photos": {
+  "leptoseris-cand-269476476": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "leptoseris-cand-726179149": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "leptoseris-cand-545718850": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "leptoseris-cand-604391622": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "leptoseris-cand-604391619": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Soft focus"
+  },
+  "leptoseris-cand-468201386": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Small colony in the frame"
+  },
+  "leptoseris-cand-247051276": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "leptoseris-cand-260337752": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "leptoseris-cand-260337983": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "dup",
+   "note": "Same framing as the best, redder flash"
+  },
+  "leptoseris-cand-716183938": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Photographer watermark at the bottom"
+  },
+  "leptoseris-cand-489649926": {
+   "view": "medium",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "leptoseris-cand-574279914": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Small colony among other reef life"
+  },
+  "leptoseris-cand-574279930": {
+   "view": "wide",
+   "quality": 1,
+   "form": "F",
+   "keep": "dup",
+   "note": "Colony tiny in a sand scene"
+  },
+  "leptoseris-cand-437177540": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "leptoseris-cand-243732023": {
+   "view": "wide",
+   "quality": 1,
+   "form": "x",
+   "genus": "exclude",
+   "note": "Rubble scene; the small orange lobe is not clearly a coral, let alone Leptoseris"
+  },
+  "leptoseris-cand-260198249": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "leptoseris-cand-260198845": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "alt"
+  },
+  "leptoseris-cand-468187784": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "leptoseris-cand-600475537": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "genus": "Cycloseris",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Round free disc with fine septa and central mouth: a mushroom coral, not Leptoseris"
+  },
+  "leptoseris-cand-600475551": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "genus": "Cycloseris",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Same disc, closer: fine septa radiating from a central mouth, fungiid look"
+  },
+  "leptoseris-cand-577737647": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "leptoseris-cand-716179995": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "note": "Photographer watermark at the bottom"
+  },
+  "leptoseris-cand-468187243": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  },
+  "leptoseris-cand-332262063": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "genus": "Cycloseris",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Small round solitary disc with radiating septa; looks like a juvenile mushroom coral"
+  },
+  "leptoseris-cand-607291455": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "leptoseris-cand-607291478": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "leptoseris-cand-468565732": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
+  }
+ }
+}

@@ -1,0 +1,229 @@
+{
+ "genus": "Physogyra",
+ "photos": {
+  "physogyra-cand-611605647": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "note": "tentacles extended over the whole dome"
+  },
+  "physogyra-cand-270582352": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "dark; small vesicles cover the colony"
+  },
+  "physogyra-cand-270582067": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
+  },
+  "physogyra-cand-460151297": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "grape-like vesicles; large vesicles would point to Plerogyra, scale unknown"
+  },
+  "physogyra-cand-93239969": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "retracted, exsert septa; walls hard to read, Plerogyra not ruled out"
+  },
+  "physogyra-cand-437174309": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "blade-like exsert septa, polyp mouth visible"
+  },
+  "physogyra-cand-437174315": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "alt",
+   "note": "meandering valleys with shared walls; cleaner shrimp"
+  },
+  "physogyra-cand-437174311": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "dup"
+  },
+  "physogyra-cand-595486777": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "tentacles extended over the surface"
+  },
+  "physogyra-cand-595486798": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "physogyra-cand-611579787": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "note": "meandering valleys with exsert septa clearly visible"
+  },
+  "physogyra-cand-611579798": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "dup"
+  },
+  "physogyra-cand-611579804": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "dup"
+  },
+  "physogyra-cand-239860164": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "blue cast; meanders visible under tentacles"
+  },
+  "physogyra-cand-598229016": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "note": "small vesicles over the meanders"
+  },
+  "physogyra-cand-46597375": {
+   "view": "wide",
+   "quality": 1,
+   "form": "M",
+   "keep": "best",
+   "note": "very hazy, washed out"
+  },
+  "physogyra-cand-227052436": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "grape-like vesicles; vesicle size could also fit Plerogyra"
+  },
+  "physogyra-cand-479514926": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "vesicles in rows along the meandering valleys"
+  },
+  "physogyra-cand-335760128": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "partly bleached, tentacles extended; skeleton not visible"
+  },
+  "physogyra-cand-697259803": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "retracted, exsert septa; separate walls would mean Plerogyra"
+  },
+  "physogyra-cand-460171400": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "vesicles and blade-like septa in the valleys"
+  },
+  "physogyra-cand-460171414": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "green cast; vesicles along the meanders"
+  },
+  "physogyra-cand-332639192": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "night tentacles over vesicles"
+  },
+  "physogyra-cand-332639191": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup"
+  },
+  "physogyra-cand-175159089": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "note": "fish in frame but the colony is clear"
+  },
+  "physogyra-cand-175239336": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "physogyra-cand-600486562": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup",
+   "note": "soft focus; timestamp overlay"
+  },
+  "physogyra-cand-600486592": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "meandering valleys visible; timestamp overlay"
+  },
+  "physogyra-cand-326247437": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "large patterned vesicles fill the frame; Plerogyra not ruled out"
+  },
+  "physogyra-cand-608567359": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "grape-like vesicles; could be Plerogyra; a massive coral behind it"
+  }
+ }
+}

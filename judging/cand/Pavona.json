@@ -1,0 +1,204 @@
+{
+ "genus": "Pavona",
+ "photos": {
+  "pavona-cand-269667130": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "Dark, cluttered encrusting colony"
+  },
+  "pavona-cand-311709999": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "pavona-cand-315466919": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Small star-like crust growing on a snail shell; could be Psammocora or Leptastrea"
+  },
+  "pavona-cand-260367266": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "dup",
+   "note": "Dark"
+  },
+  "pavona-cand-260367768": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best"
+  },
+  "pavona-cand-611189576": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Green cast, soft"
+  },
+  "pavona-cand-445142798": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Shallow, algae"
+  },
+  "pavona-cand-45864914": {
+   "view": "wide",
+   "quality": 1,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Blurred, shot through the surface"
+  },
+  "pavona-cand-177401237": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "multi": true,
+   "note": "A brain coral takes the right side"
+  },
+  "pavona-cand-633454377": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Blue cast; corallites not visible"
+  },
+  "pavona-cand-445143174": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "genus": "Porites",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Massive Porites-like lobes dominate; Pavona fronds only visible in the gap"
+  },
+  "pavona-cand-45053033": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Shallow, soft; fish"
+  },
+  "pavona-cand-445182802": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Soft focus"
+  },
+  "pavona-cand-232102879": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "pavona-cand-222901821": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Columns behind many fish"
+  },
+  "pavona-cand-380834430": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Left third out of focus"
+  },
+  "pavona-cand-174203199": {
+   "view": "wide",
+   "quality": 1,
+   "form": "F",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Reef seen from the surface, cyan; Pavona fronds tiny among many corals"
+  },
+  "pavona-cand-35096930": {
+   "view": "wide",
+   "quality": 1,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Algae-covered rock in shallow water; coral hard to make out"
+  },
+  "pavona-cand-35099665": {
+   "view": "wide",
+   "quality": 1,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Hazy; coral subject small and unclear"
+  },
+  "pavona-cand-595593415": {
+   "view": "wide",
+   "quality": 1,
+   "form": "E",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Unclear crusts among sediment and other corals"
+  },
+  "pavona-cand-460748483": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "pavona-cand-437172507": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "pavona-cand-575527565": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Columns among many corals; could be Porites"
+  },
+  "pavona-cand-600474118": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "multi": true,
+   "note": "Massive coral at right; date stamp"
+  },
+  "pavona-cand-600474128": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Date stamp"
+  }
+ }
+}

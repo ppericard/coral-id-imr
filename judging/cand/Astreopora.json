@@ -1,0 +1,204 @@
+{
+ "genus": "Astreopora",
+ "photos": {
+  "astreopora-cand-270765251": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Algae patch over part of the colony"
+  },
+  "astreopora-cand-245795180": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Cyan cast"
+  },
+  "astreopora-cand-270765506": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
+  },
+  "astreopora-cand-270765530": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "astreopora-cand-465407783": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Slightly soft"
+  },
+  "astreopora-cand-465408369": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Soft, washed out"
+  },
+  "astreopora-cand-270763520": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Dark"
+  },
+  "astreopora-cand-269667674": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Dark tiered plates; corallites too small to confirm Astreopora (Montipora?)"
+  },
+  "astreopora-cand-269006897": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "astreopora-cand-654478554": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Corallites show clear septa; could be Cyphastrea or another genus"
+  },
+  "astreopora-cand-445299203": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Hazy"
+  },
+  "astreopora-cand-195947110": {
+   "view": "medium",
+   "quality": 1,
+   "form": "x",
+   "keep": "best",
+   "note": "Blurred, green cast"
+  },
+  "astreopora-cand-195947408": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Corallites not visible at this distance"
+  },
+  "astreopora-cand-675216286": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "genus": "exclude",
+   "note": "Soft coral (not a stony coral)"
+  },
+  "astreopora-cand-57893669": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Purple crust; septa visible, could be Cyphastrea"
+  },
+  "astreopora-cand-260020468": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Green cast, dark"
+  },
+  "astreopora-cand-260020620": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "astreopora-cand-260020757": {
+   "view": "medium",
+   "quality": 3,
+   "form": "M",
+   "keep": "alt"
+  },
+  "astreopora-cand-473241285": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Boulder; corallites not visible, genus hard to confirm"
+  },
+  "astreopora-cand-2249876": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "astreopora-cand-566693071": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "astreopora-cand-566693047": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "note": "Blue cast"
+  },
+  "astreopora-cand-269008516": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "astreopora-cand-605674076": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt"
+  },
+  "astreopora-cand-605674087": {
+   "view": "medium",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "astreopora-cand-725536633": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "astreopora-cand-725536647": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "astreopora-cand-57893636": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Half of the colony dead, algae"
+  }
+ }
+}

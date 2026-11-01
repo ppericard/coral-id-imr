@@ -1,0 +1,35 @@
+{
+ "genus": "Psammocora",
+ "photos": {
+  "psammocora-cand-596702833": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Meandering walled valleys on a column look like a brain coral (Platygyra or Goniastrea), not wall-less Psammocora"
+  },
+  "psammocora-cand-596702830": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Walled valleys with septa, like a brain coral; Psammocora not clear"
+  },
+  "psammocora-x-270608116": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Nodular columns, fits P. contigua"
+  }
+ }
+}

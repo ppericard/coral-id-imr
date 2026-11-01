@@ -1,0 +1,77 @@
+{
+ "genus": "Danafungia",
+ "photos": {
+  "danafungia-cand-262212268": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "alt",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Bleached disc seen from above; dome and teeth less clear than on the brown disc."
+  },
+  "danafungia-cand-262212169": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "dup",
+   "note": "Same domed disc as the best, further away."
+  },
+  "danafungia-cand-262212237": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "note": "Domed disc with large septal teeth, a clear example."
+  },
+  "danafungia-cand-262212262": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "dup",
+   "note": "Repeat of the bleached disc."
+  },
+  "danafungia-cand-131282588": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Large irregular septal teeth around the mouth."
+  },
+  "danafungia-cand-181384352": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Held in a hand, a swimmer behind; dome and teeth visible."
+  },
+  "danafungia-cand-181384369": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "dup",
+   "note": "Repeat in hand, the swimmer more visible."
+  },
+  "danafungia-cand-270598718": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "dup",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Blurred branch in the foreground; weak dome, Fungia possible."
+  },
+  "danafungia-cand-270598989": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Weak dome; teeth not clear enough to rule out Fungia."
+  }
+ }
+}

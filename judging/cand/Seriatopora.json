@@ -1,0 +1,234 @@
+{
+ "genus": "Seriatopora",
+ "photos": {
+  "seriatopora-cand-269736254": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "seriatopora-cand-269736343": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "alt",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Thicker blunt branches, another colony; S. caliendrum likely, Stylophora possible"
+  },
+  "seriatopora-cand-269736346": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Same colony as tile 2, darker"
+  },
+  "seriatopora-cand-175984818": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "note": "Small colony among many other corals, shallow and hazy"
+  },
+  "seriatopora-cand-93253372": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "seriatopora-cand-175984433": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "seriatopora-cand-100511784": {
+   "view": "macro",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Thicker branches; S. caliendrum likely but Stylophora not ruled out"
+  },
+  "seriatopora-cand-100511891": {
+   "view": "macro",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Same branches as the best"
+  },
+  "seriatopora-cand-262219444": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Thick blunt pale-tipped branches; S. caliendrum likely, Stylophora possible"
+  },
+  "seriatopora-cand-45384402": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "note": "Aquarium-like lighting"
+  },
+  "seriatopora-cand-654080": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "seriatopora-cand-243177396": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "seriatopora-cand-45384419": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "seriatopora-cand-67413880": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "note": "Acropora fills the left half"
+  },
+  "seriatopora-cand-129402662": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "seriatopora-cand-600516979": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "seriatopora-cand-600516986": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "seriatopora-cand-585933842": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Pale or bleached colony"
+  },
+  "seriatopora-cand-255301454": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "seriatopora-cand-535723362": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "genus": "Acropora",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Spiky white tips with protruding corallites look like Acropora, not smooth Seriatopora tips"
+  },
+  "seriatopora-cand-580866429": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "genus": "Stylophora",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Blunt thick branches with scattered corallites, no rows; looks like Stylophora"
+  },
+  "seriatopora-cand-580866457": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "genus": "Stylophora",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Same type of blunt-branched colony as tile 1; looks like Stylophora"
+  },
+  "seriatopora-cand-262211326": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Thick blunt pale-tipped branches; S. caliendrum likely, Stylophora possible"
+  },
+  "seriatopora-cand-336202413": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "seriatopora-cand-174671643": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "note": "Many other corals around the pink colony"
+  },
+  "seriatopora-cand-227053488": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Branches among green soft coral; Seriatopora likely, Stylophora possible"
+  },
+  "seriatopora-cand-175984995": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "seriatopora-cand-463482466": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "best",
+   "note": "Murky water, small subject"
+  },
+  "seriatopora-cand-629109481": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "seriatopora-cand-175984615": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  }
+ }
+}

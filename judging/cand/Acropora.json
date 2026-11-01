@@ -1,0 +1,493 @@
+{
+ "genus": "Acropora",
+ "photos": {
+  "acropora-cand-269290720": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "acropora-cand-269290745": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-269290934": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "alt"
+  },
+  "acropora-cand-269472418": {
+   "view": "wide",
+   "quality": 3,
+   "form": "T",
+   "keep": "best"
+  },
+  "acropora-cand-269729035": {
+   "view": "wide",
+   "quality": 3,
+   "form": "T",
+   "keep": "best"
+  },
+  "acropora-cand-587997817": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-269732969": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "acropora-cand-269733071": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-269733080": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "acropora-cand-269733107": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "acropora-cand-269733126": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "alt"
+  },
+  "acropora-cand-269473001": {
+   "view": "wide",
+   "quality": 3,
+   "form": "T",
+   "keep": "best"
+  },
+  "acropora-cand-596687231": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "note": "Foliose plates (Turbinaria-like) grow among the Acropora branches"
+  },
+  "acropora-cand-269516993": {
+   "view": "wide",
+   "quality": 2,
+   "form": "T",
+   "keep": "dup"
+  },
+  "acropora-cand-269517264": {
+   "view": "wide",
+   "quality": 2,
+   "form": "T",
+   "keep": "best"
+  },
+  "acropora-cand-269517282": {
+   "view": "wide",
+   "quality": 2,
+   "form": "T",
+   "keep": "dup"
+  },
+  "acropora-cand-609323760": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Flat-topped corymbose colony: branching or tabulate"
+  },
+  "acropora-cand-609323663": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-609323758": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "view"
+   ],
+   "note": "Top-down on many branch tips; axial corallites clear, between Closer and Corallites"
+  },
+  "acropora-cand-269288898": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-269289470": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-733945084": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Staghorn thicket, blue cast"
+  },
+  "acropora-cand-311975840": {
+   "view": "wide",
+   "quality": 2,
+   "form": "T",
+   "keep": "best",
+   "note": "Table on sand, blue cast"
+  },
+  "acropora-cand-269512828": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-269471700": {
+   "view": "wide",
+   "quality": 3,
+   "form": "T",
+   "keep": "best"
+  },
+  "acropora-cand-606605965": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "acropora-cand-585933647": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "note": "Reef scene: pale Acropora at centre among several other corals"
+  },
+  "acropora-cand-174426778": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-174427599": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-269471136": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-600517019": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Pale colony seen from above; axials hard to see at this size"
+  },
+  "acropora-cand-269471827": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-269471919": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "alt"
+  },
+  "acropora-cand-500488387": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-269472349": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-461411478": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Video still, slightly soft"
+  },
+  "acropora-cand-345338038": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Soft focus, green tint"
+  },
+  "acropora-cand-175229010": {
+   "view": "wide",
+   "quality": 3,
+   "form": "T",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Flat-topped corymbose colony: tabulate or branching"
+  },
+  "acropora-cand-27992961": {
+   "view": "wide",
+   "quality": 2,
+   "form": "T",
+   "keep": "best"
+  },
+  "acropora-cand-452562718": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Staghorn with many fish"
+  },
+  "acropora-cand-452562788": {
+   "view": "medium",
+   "quality": 1,
+   "form": "B",
+   "keep": "best",
+   "note": "Fish cover much of the branches"
+  },
+  "acropora-cand-47519932": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-129392908": {
+   "view": "wide",
+   "quality": 2,
+   "form": "T",
+   "keep": "best",
+   "multi": true,
+   "note": "Table in the background of a mixed reef with massive corals in front"
+  },
+  "acropora-cand-39406171": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Green cast"
+  },
+  "acropora-cand-39406231": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Green cast, crinoid at left"
+  },
+  "acropora-cand-614239": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Blue cast"
+  },
+  "acropora-cand-175031319": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-269241350": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Corymbose branchlets on an encrusting base, over massive Porites"
+  },
+  "acropora-cand-261940916": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-177403954": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Blue cast"
+  },
+  "acropora-cand-261938229": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Small young colony, dark"
+  },
+  "acropora-cand-261938321": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "acropora-cand-93261014": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-93261329": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-174802175": {
+   "view": "wide",
+   "quality": 3,
+   "form": "T",
+   "keep": "best"
+  },
+  "acropora-cand-693917261": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "note": "Small colony among other corals and hydroids"
+  },
+  "acropora-cand-693917235": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-693917208": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "acropora-cand-310429736": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Small fish over the branch tips"
+  },
+  "acropora-cand-261939284": {
+   "view": "wide",
+   "quality": 3,
+   "form": "T",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Flat round colony of branchlets: tabulate or branching"
+  },
+  "acropora-cand-261939361": {
+   "view": "wide",
+   "quality": 3,
+   "form": "T",
+   "keep": "dup"
+  },
+  "acropora-cand-45583358": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Shallow, slightly soft"
+  },
+  "acropora-cand-174802149": {
+   "view": "wide",
+   "quality": 3,
+   "form": "T",
+   "keep": "best",
+   "note": "Diver small in the background"
+  },
+  "acropora-cand-261936669": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-261936738": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "dup"
+  },
+  "acropora-cand-261936747": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-57688277": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-261939696": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-580859211": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Strong green colour, date stamp"
+  },
+  "acropora-cand-675778380": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-675778365": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-261939402": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-605655633": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-605655644": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  }
+ }
+}

@@ -1,0 +1,310 @@
+{
+ "genus": "Echinopora",
+ "photos": {
+  "echinopora-cand-39510889": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Green cast."
+  },
+  "echinopora-cand-269515173": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "echinopora-cand-269515536": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "dup",
+   "note": "Darker repeat of the same rosette."
+  },
+  "echinopora-cand-269460870": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "note": "Small single plate."
+  },
+  "echinopora-cand-269460928": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "dup",
+   "note": "Same plate, same framing."
+  },
+  "echinopora-cand-488111443": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "echinopora-cand-488111447": {
+   "view": "medium",
+   "quality": 3,
+   "form": "S",
+   "keep": "alt",
+   "note": "Branch tips with corallites."
+  },
+  "echinopora-cand-488111453": {
+   "view": "medium",
+   "quality": 3,
+   "form": "S",
+   "keep": "alt",
+   "note": "Side view of branch tips."
+  },
+  "echinopora-cand-488111489": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Blue cast; a dark coral fills the right half."
+  },
+  "echinopora-cand-269729764": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Dark."
+  },
+  "echinopora-cand-725550997": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Algae on the surface."
+  },
+  "echinopora-cand-725551034": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Lobed crust; another coral at top left."
+  },
+  "echinopora-cand-254723784": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Green cast; corallites too small to confirm."
+  },
+  "echinopora-cand-270770345": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "Dark."
+  },
+  "echinopora-cand-607144500": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Laminar plate with nodules."
+  },
+  "echinopora-cand-243918283": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Hazy plate field; wavy ridges could be Merulina or Pachyseris, corallites not visible."
+  },
+  "echinopora-cand-64941164": {
+   "view": "wide",
+   "quality": 1,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Heavy haze, plates small in frame; corallites not visible."
+  },
+  "echinopora-cand-713091439": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "echinopora-cand-713091433": {
+   "view": "medium",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "echinopora-cand-684022232": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Yellow cast."
+  },
+  "echinopora-cand-684022130": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Soft."
+  },
+  "echinopora-cand-176990547": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Reef patch of branches and plates; unclear which colony is Echinopora."
+  },
+  "echinopora-cand-176990553": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "alt",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Hazy blue-green reef scene; subject unclear."
+  },
+  "echinopora-cand-270765315": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Lumpy upright branches."
+  },
+  "echinopora-cand-352668759": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Snorkel shot, fish in front."
+  },
+  "echinopora-cand-712554666": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Tubular branch tips could pass for Acropora axial corallites."
+  },
+  "echinopora-cand-712554673": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "alt",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Closer on the tubular tips."
+  },
+  "echinopora-cand-260204394": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Contorted plates; a crinoid in front."
+  },
+  "echinopora-cand-58851810": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Blue cast."
+  },
+  "echinopora-cand-177403923": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Branch surface not visible; Acropora possible."
+  },
+  "echinopora-cand-260017642": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "echinopora-cand-595759342": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Snorkel shot, green cast; corallites too small to confirm."
+  },
+  "echinopora-cand-595759352": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Soft; fine surface could also be Montipora."
+  },
+  "echinopora-cand-712507491": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Dark plate; corallites not clear enough to confirm."
+  },
+  "echinopora-cand-712507482": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Plate edge; corallites dark and soft."
+  },
+  "echinopora-cand-270608547": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "echinopora-cand-405675154": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  }
+ }
+}

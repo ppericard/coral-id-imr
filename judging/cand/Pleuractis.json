@@ -1,0 +1,131 @@
+{
+ "genus": "Pleuractis",
+ "photos": {
+  "pleuractis-cand-269734595": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "pleuractis-cand-227053996": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Acropora branches over the top edge"
+  },
+  "pleuractis-cand-66917878": {
+   "view": "wide",
+   "quality": 1,
+   "form": "U",
+   "keep": "best",
+   "note": "Hazy and blurred"
+  },
+  "pleuractis-cand-693755080": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Green tint, date stamp"
+  },
+  "pleuractis-cand-243913658": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Many mushroom corals of several genera; which are Pleuractis is unclear"
+  },
+  "pleuractis-cand-262212379": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "pleuractis-cand-262216467": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "pleuractis-cand-66918185": {
+   "view": "wide",
+   "quality": 1,
+   "form": "U",
+   "keep": "best",
+   "note": "Blurred, shot through the surface"
+  },
+  "pleuractis-cand-262213200": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "pleuractis-cand-247050617": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "multi": true,
+   "note": "A massive coral takes the right third"
+  },
+  "pleuractis-cand-684020831": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Hazy"
+  },
+  "pleuractis-cand-66918196": {
+   "view": "wide",
+   "quality": 1,
+   "form": "U",
+   "keep": "best",
+   "note": "Blurred, among branching corals"
+  },
+  "pleuractis-cand-262213713": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best"
+  },
+  "pleuractis-cand-600486419": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Green tint, date stamp"
+  },
+  "pleuractis-cand-600486430": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Green tint, date stamp"
+  },
+  "pleuractis-cand-66918168": {
+   "view": "wide",
+   "quality": 1,
+   "form": "U",
+   "keep": "best",
+   "note": "Blurred, shot through the surface"
+  },
+  "pleuractis-cand-267307115": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Shallow, slight haze"
+  },
+  "pleuractis-cand-682475658": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "note": "Hazy"
+  }
+ }
+}

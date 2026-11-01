@@ -1,0 +1,447 @@
+{
+ "genus": "Plerogyra",
+ "photos": {
+  "plerogyra-cand-748383032": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Mound of grape-like vesicles; green cast."
+  },
+  "plerogyra-cand-269516802": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "plerogyra-cand-269516928": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "dup",
+   "polyps": true
+  },
+  "plerogyra-cand-350432383": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Blue cast; other corals around the edges."
+  },
+  "plerogyra-cand-269473879": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Dark."
+  },
+  "plerogyra-cand-580521239": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Vesicles fill the frame."
+  },
+  "plerogyra-cand-340784294": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "plerogyra-cand-538874450": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Green cast."
+  },
+  "plerogyra-cand-46248842": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Vesicles with tentacles starting to extend."
+  },
+  "plerogyra-cand-388551285": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Green cast."
+  },
+  "plerogyra-cand-596084638": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Vesicles over the colony edge."
+  },
+  "plerogyra-cand-269726505": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "alt",
+   "polyps": true,
+   "note": "Same colony from higher; bare patch shows the large septa."
+  },
+  "plerogyra-cand-269726585": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Bare patch in the middle shows the large yellow septa under the vesicles."
+  },
+  "plerogyra-cand-269726593": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "dup",
+   "polyps": true
+  },
+  "plerogyra-cand-163914086": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Vesicles with a cleaner shrimp."
+  },
+  "plerogyra-cand-639404409": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Small colony at the base of a wall; blue-green cast."
+  },
+  "plerogyra-cand-452561541": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Vesicles with two shrimps; dim."
+  },
+  "plerogyra-cand-312019577": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "plerogyra-cand-745206682": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Large colony with rather small vesicles; could be Physogyra."
+  },
+  "plerogyra-cand-752350508": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "plerogyra-cand-269733775": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "polyps": true,
+   "note": "Top view of the meandroid colony; dark."
+  },
+  "plerogyra-cand-269733809": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Meandroid colony: separate vesicle-covered valleys."
+  },
+  "plerogyra-cand-269733816": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "dup",
+   "polyps": true
+  },
+  "plerogyra-cand-42902717": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "plerogyra-cand-469456677": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Small juvenile colony in a hole; looks solitary."
+  },
+  "plerogyra-cand-235458094": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "plerogyra-cand-462729517": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Single valley, vesicles partly deflated show the large septa."
+  },
+  "plerogyra-cand-589619112": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Green, small flat vesicles; could be Physogyra. Large massive coral at left."
+  },
+  "plerogyra-cand-269396996": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "multi": true,
+   "note": "Among Euphyllia-like colonies; dark."
+  },
+  "plerogyra-cand-269397132": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "polyps": true,
+   "multi": true,
+   "note": "More of the surrounding Euphyllia-like colonies."
+  },
+  "plerogyra-cand-669936422": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Vesicles with a net pattern."
+  },
+  "plerogyra-cand-669936416": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "plerogyra-cand-445172218": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "polyps": true,
+   "note": "Seen from the surface, hazy; lobes of small vesicles."
+  },
+  "plerogyra-cand-445172214": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Seen from the surface, hazy; lobes of small vesicles."
+  },
+  "plerogyra-cand-174802235": {
+   "view": "wide",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "form"
+   ],
+   "note": "Separate lobes covered with small vesicles."
+  },
+  "plerogyra-cand-634795033": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Strong green cast."
+  },
+  "plerogyra-cand-455587124": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "plerogyra-cand-577619228": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Blue cast."
+  },
+  "plerogyra-cand-46598685": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Vesicles at top; foreground septa: same colony retracted or another coral. Hazy."
+  },
+  "plerogyra-cand-684020657": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Hazy green; pale plate coral at left edge."
+  },
+  "plerogyra-cand-372491416": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "form"
+   ],
+   "note": "Single juvenile polyp with large radiating vesicles; looks solitary."
+  },
+  "plerogyra-cand-598246502": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Lobed colony; blue cast."
+  },
+  "plerogyra-cand-71223892": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "unsure": [
+    "form"
+   ],
+   "note": "Juvenile single polyp, vesicles around the mouth; dark red light."
+  },
+  "plerogyra-cand-753239577": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "genus": "Physogyra",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Tiny vesicles or polyps over a meandering mound, not Plerogyra's large vesicles; maybe Physogyra."
+  },
+  "plerogyra-cand-34702069": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Vesicles with an orangutan crab."
+  },
+  "plerogyra-cand-620923193": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Dark with flash hotspot."
+  },
+  "plerogyra-cand-513449881": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true
+  },
+  "plerogyra-cand-713091392": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "alt",
+   "note": "Vesicles around bare septa; Porites at right edge."
+  },
+  "plerogyra-cand-713091425": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best",
+   "note": "Exposed exsert septa among the vesicles."
+  },
+  "plerogyra-cand-576329901": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Small colony, vesicles and tentacles."
+  },
+  "plerogyra-cand-576329919": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "dup",
+   "polyps": true
+  },
+  "plerogyra-cand-598783979": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Cyan cast."
+  },
+  "plerogyra-cand-598784018": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup",
+   "polyps": true,
+   "note": "Colony cut at top, more rubble."
+  },
+  "plerogyra-cand-39408047": {
+   "view": "wide",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Single valley with large exsert septa, vesicles retracted; genus not certain."
+  },
+  "plerogyra-cand-574662284": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "polyps": true,
+   "note": "Small juvenile, vesicles and tentacles."
+  }
+ }
+}

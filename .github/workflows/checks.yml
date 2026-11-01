@@ -56,3 +56,5 @@ jobs:
         run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/draw.smoke.js
       - name: Admin demo test (admin.html?demo, every page and the main actions on made-up data, nothing sent)
         run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/admin.smoke.js
+      - name: Poor connection test (start-up without curation.json, preloaded next question, photo fallback, kept leaderboard)
+        run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/net.smoke.js

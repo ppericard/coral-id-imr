@@ -1,0 +1,217 @@
+{
+ "genus": "Echinophyllia",
+ "photos": {
+  "echinophyllia-cand-600493840": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "soft, dark corallites with fluorescent spots; timestamp overlay"
+  },
+  "echinophyllia-cand-684022705": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "soft focus; tentacle tips out on the corallites"
+  },
+  "echinophyllia-cand-684022731": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "note": "ragged plate with raised corallites"
+  },
+  "echinophyllia-cand-576268746": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "lumpy colony with red oral discs; feather stars hide part; genus not clear"
+  },
+  "echinophyllia-cand-270769159": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "alt",
+   "unsure": [
+    "genus"
+   ],
+   "note": "lumpy column under extended tentacles; not a plate, genus unclear"
+  },
+  "echinophyllia-cand-270769395": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "lumpy column under extended tentacles; not a plate, genus unclear"
+  },
+  "echinophyllia-cand-684020655": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "soft focus; ornamented costae visible"
+  },
+  "echinophyllia-cand-684020728": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "note": "encrusting plate with raised corallites"
+  },
+  "echinophyllia-cand-607138811": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "knobby surface with tentacle tips; Echinopora not ruled out"
+  },
+  "echinophyllia-cand-260006664": {
+   "view": "medium",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "note": "night, raised conical corallites"
+  },
+  "echinophyllia-cand-246907955": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "note": "plate with raised corallites and a broad rim"
+  },
+  "echinophyllia-cand-513937795": {
+   "view": "wide",
+   "quality": 1,
+   "form": "E",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "small colony in a busy reef scene; too small to confirm"
+  },
+  "echinophyllia-cand-260365104": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "note": "night; fluorescent corallite mouths; a mushroom coral at the left edge"
+  },
+  "echinophyllia-cand-260044798": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "night, tentacles extended"
+  },
+  "echinophyllia-cand-260162141": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "echinophyllia-cand-260162248": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "fisheye with dark corners"
+  },
+  "echinophyllia-cand-270603165": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "echinophyllia-cand-270603429": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "dup"
+  },
+  "echinophyllia-cand-270589493": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best",
+   "note": "concentric rows of tall tubular corallites"
+  },
+  "echinophyllia-cand-270744606": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "dark plate, corallites hard to read"
+  },
+  "echinophyllia-cand-260364395": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "note": "dark; raised corallites with tentacles out"
+  },
+  "echinophyllia-cand-260387393": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "echinophyllia-cand-260043035": {
+   "view": "wide",
+   "quality": 3,
+   "form": "E",
+   "keep": "best"
+  },
+  "echinophyllia-cand-270598516": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "knobby surface on a plate; Echinopora possible"
+  },
+  "echinophyllia-cand-270598655": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "alt",
+   "unsure": [
+    "genus"
+   ],
+   "note": "closer view of the knobs; Echinopora possible"
+  },
+  "echinophyllia-cand-270768461": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "mound of tall corallites, no plate visible; genus unclear"
+  },
+  "echinophyllia-cand-270768548": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup",
+   "unsure": [
+    "genus"
+   ],
+   "note": "same framing"
+  }
+ }
+}

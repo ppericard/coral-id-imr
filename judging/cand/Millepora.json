@@ -1,0 +1,189 @@
+{
+ "genus": "Millepora",
+ "photos": {
+  "millepora-cand-271269240": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Smooth branches with pale tips, two damselfish."
+  },
+  "millepora-cand-58955651": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Large stand of upright blades; blue cast."
+  },
+  "millepora-cand-36510691": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "alt",
+   "multi": true,
+   "note": "Blurred; a large purple soft coral fills the frame."
+  },
+  "millepora-cand-36510464": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "best",
+   "note": "Blurred."
+  },
+  "millepora-cand-232103195": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "note": "Pale branch tips, pores visible."
+  },
+  "millepora-cand-45487161": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Snorkel, cyan cast; sea urchin in the middle."
+  },
+  "millepora-cand-45487142": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "alt",
+   "note": "Cyan cast, fish."
+  },
+  "millepora-cand-45487591": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "alt",
+   "note": "Colony edge over sand."
+  },
+  "millepora-cand-45487576": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "millepora-cand-45487586": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "millepora-cand-45487599": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "note": "Paler branching coral fills the right half."
+  },
+  "millepora-x-35099053": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "form",
+    "genus"
+   ],
+   "note": "Heavy haze, subject hard to make out."
+  },
+  "millepora-cand-262218218": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "millepora-cand-248586653": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Upright plates; cast."
+  },
+  "millepora-cand-583538123": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "millepora-cand-136990202": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
+  },
+  "millepora-cand-245792437": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "millepora-cand-47823094": {
+   "view": "wide",
+   "quality": 1,
+   "form": "F",
+   "keep": "best",
+   "note": "Subject small and distant, haze."
+  },
+  "millepora-cand-460597196": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Fine smooth branches; Millepora tenera likely, Seriatopora less so."
+  },
+  "millepora-cand-478251214": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Soft, low resolution."
+  },
+  "millepora-cand-260202043": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "millepora-cand-174506184": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Green cast."
+  },
+  "millepora-cand-507830806": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "note": "Same photo as millepora-cand-262218218 (another observation): keep only one."
+  },
+  "millepora-cand-307922639": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Oversaturated colours."
+  },
+  "millepora-cand-79182392": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Green cast."
+  },
+  "millepora-cand-258218936": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "note": "Pale blades with finger-like tops."
+  }
+ }
+}
