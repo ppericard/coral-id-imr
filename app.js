@@ -240,7 +240,7 @@ function zoom(list, i, opts = {}){
   const show = () => {
     const p = list[i], hide = blind(), vl = p.view ? (VIEWS.find(v => v[0] === p.view) || [0, VIEW_LABEL[p.view]])[1] : '';
     const cap = hide ? esc(vl || 'Photo') : `${p.genus ? `<b><i>${esc(p.genus)}</i></b> · ` : ''}${vl ? esc(vl) + ' · ' : ''}${credit(p)}${p.src ? ` · <a href="${esc(p.src)}" target="_blank" rel="noopener">original</a>` : ''}`;
-    lb.innerHTML = `<div class="lb-in"><img src="${img(p)}" alt="${hide ? 'Coral to identify' : esc(p.t || '')}" title="Click for actual size"><p class="lb-cap">${cap}</p>
+    lb.innerHTML = `<div class="lb-in"><img src="${img(p)}" alt="${hide ? 'Coral to identify' : esc(p.t || '')}" title="Click for actual size"><p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
       <div class="lb-nav">${list.length > 1 ? `<button type="button" data-d="-1" aria-label="Previous photo">‹</button><span>${i + 1} / ${list.length}</span><button type="button" data-d="1" aria-label="Next photo">›</button>` : ''}<button type="button" data-x aria-label="Close">Close</button></div></div>`;
     lb.classList.remove('full');
     lb.querySelector('.lb-in img').onclick = e => { e.stopPropagation(); lb.classList.toggle('full'); };
@@ -419,6 +419,7 @@ function viewGenus(name){
     </div>
     <div class="vrows">${rows}</div>
     <section class="hubsec">${lookHub(name)}</section>
+    ${DATA.gen[name] ? `<p class="repline">${repBtn({k: 'sheet', g: name, m: 'sheet'}, '⚑ Report a problem with this sheet')}</p>` : ''}
   </article>`;
   $v.querySelectorAll('[data-z]').forEach(b => b.onclick = () => zoom(flat, Number(b.dataset.z)));
   $v.querySelectorAll('[data-cmp]').forEach(b => b.onclick = () => go('cmp-' + name + '|' + b.dataset.cmp));
@@ -1160,9 +1161,19 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 // the sheet's "Reports" tab (Code.gs v7: POST {reports, rname, rpin}; the sync name and code when signed in, else the name
 // typed in the dialog). An older script answers without rep: true, so reports stay queued until Pierre redeploys.
 // Nothing changes on the site: Pierre reads reports, with who sent them, in the admin Triage.
-const REP_WHY = [['wrong', 'Wrong answer'], ['multi', 'Several corals'], ['photo', 'Bad photo'], ['other', 'Other']];
-const REPC = [];  // context of each Report button drawn: {g: expected genus, a: answer given, ph: photo files, m: game}
-const repBtn = c => `<button type="button" class="linkish rep" data-rep="${REPC.push(c) - 1}">⚑ Report a problem</button>`;
+// Also everywhere else it makes sense (Pierre, 2026-11-01): any enlarged photo (lightbox), the bottom of a genus sheet,
+// and "Send feedback" in the footer of every page. The reasons offered depend on where the report comes from (k).
+const REP_WHY = {
+  game: [['wrong', 'Wrong answer'], ['multi', 'Several corals'], ['photo', 'Bad photo'], ['other', 'Other']],
+  photo: [['wrong', 'Wrong genus'], ['multi', 'Several corals'], ['photo', 'Bad photo'], ['other', 'Other']],
+  sheet: [['info', 'Wrong information'], ['photo', 'Bad photo'], ['other', 'Other']],
+  page: [['info', 'Wrong information'], ['bug', 'Bug'], ['idea', 'Suggestion'], ['other', 'Other']]
+};
+// Context of each Report button drawn: {k: kind, g: genus concerned, a: answer given, ph: photo files, m: game or kind}.
+const REPC = [];
+const repBtn = (c, label = '⚑ Report a problem') => `<button type="button" class="linkish rep" data-rep="${REPC.push(c) - 1}">${label}</button>`;
+// Genus of a photo file, for photos opened without one (lecture comparison images have none).
+const genusOfPhoto = f => { for (const [n, g] of Object.entries(DATA.gen)) { if (VIEWS.some(([v]) => [...(g.views[v] || []), ...((g.more || {})[v] || [])].some(p => p.f === f))) return n; } return ''; };
 // Each report keeps who sent it (rn, rp: the sync account or the name typed, at the time of sending), so a report
 // retried after another player signs in is never credited to them. One batch per sender, at most 50 (the script's cap).
 function sendReports(){
@@ -1177,6 +1188,7 @@ function sendReports(){
   }).catch(() => {});
 }
 window.addEventListener('online', sendReports);
+{ const ft = document.querySelector('footer p'); if (ft) ft.insertAdjacentHTML('beforeend', ` ${repBtn({k: 'page'}, 'Send feedback')}`); }
 setTimeout(sendReports, 4000);
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('[data-rep]'); if (!b) return;
@@ -1186,13 +1198,13 @@ document.addEventListener('click', e => {
 function reportDialog(c, btn){
   let d = document.getElementById('repdlg'); if (d) d.remove();
   d = document.createElement('dialog'); d.id = 'repdlg'; d.className = 'repdlg';
-  const names = [...Object.keys(DATA.gen), ...bonusOpen()].sort();
+  const names = [...Object.keys(DATA.gen), ...bonusOpen()].sort(), kind = c.k || 'game', where = decodeURIComponent(location.hash.slice(1)) || 'home';
   d.innerHTML = `<form method="dialog">
-    <h3>Report a problem</h3>
-    <div class="repwhy" role="radiogroup" aria-label="Problem">${REP_WHY.map(([k, t], i) => `<label><input type="radio" name="why" value="${k}"${i ? '' : ' checked'}><span>${t}</span></label>`).join('')}</div>
+    <h3>${kind === 'page' ? 'Send feedback' : 'Report a problem'}</h3>
+    <div class="repwhy" role="radiogroup" aria-label="Problem">${REP_WHY[kind].map(([k, t], i) => `<label><input type="radio" name="why" value="${k}"${i ? '' : ' checked'}><span>${t}</span></label>`).join('')}</div>
     <label class="repf" data-for="wrong">Right genus, if you know<input name="fix" list="repgen" autocomplete="off" maxlength="60" placeholder="e.g. ${esc(names.find(n => n !== c.g) || '')}"></label>
     <datalist id="repgen">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
-    <label class="repf"><span>Note <small>(optional)</small></span><textarea name="note" rows="2" maxlength="500"></textarea></label>
+    <label class="repf"><span>Note <small>(optional)</small></span><textarea name="note" rows="2" maxlength="1000"></textarea></label>
     ${SYNC ? '' : `<label class="repf">Your name<input name="who" maxlength="40" autocomplete="name" value="${esc(store.get('imr-report-name', ''))}"></label>`}
     <div class="repbtns"><button type="button" class="next sec" value="cancel">Cancel</button><button type="submit" class="next" value="send">Send</button></div>
   </form>`;
@@ -1202,15 +1214,16 @@ function reportDialog(c, btn){
   f.querySelectorAll('[name="why"]').forEach(r => r.onchange = upd); upd();
   d.querySelector('[value="cancel"]').onclick = () => d.close();
   d.addEventListener('close', () => d.remove());
+  d.addEventListener('keydown', e => e.stopPropagation());  // Escape closes this dialog only, not the photo under it
   f.onsubmit = e => {
     e.preventDefault();
     if (f.who) store.set('imr-report-name', f.who.value.trim());
     const why = f.why.value;
     const who = SYNC ? {rn: SYNC.name, rp: SYNC.pin} : {rn: f.who.value.trim()};
     store.set('imr-reports', [...store.get('imr-reports', []), {...who, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: new Date().toISOString(),
-      why, g: c.g, a: c.a || '', ph: c.ph.join(' '), m: c.m, fix: why === 'wrong' ? f.fix.value.trim() : '', note: f.note.value.trim()}].slice(-200));
+      why, g: c.g || '', a: c.a || '', ph: (c.ph || []).join(' '), m: c.m || kind, w: where, fix: why === 'wrong' ? f.fix.value.trim() : '', note: f.note.value.trim()}].slice(-200));
     d.close(); sendReports();
-    btn.textContent = '⚑ Reported, thank you'; btn.disabled = true;
+    btn.textContent = kind === 'page' ? 'Thank you' : '⚑ Reported, thank you'; btn.disabled = true;
   };
   d.showModal(); d.querySelector('input[name="why"]').focus();
 }
