@@ -116,7 +116,7 @@ function abilities_(data){
 // by K * (result - P(right)), K shrinking as a photo or an RA gathers answers. Returns {ok, photos: {file: [difficulty,
 // answers, right]}, ras: {anonymous id: [ability, answers]}}. Difficulty 0 = average photo; +1 = clearly harder.
 function stats_(){
-  const cache = CacheService.getScriptCache(), hit = cache.get('stats4');
+  const cache = CacheService.getScriptCache(), hit = cache.get('stats5');
   if (hit) return JSON.parse(hit);
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: {}, ras: {}};
   if (!sh || sh.getLastRow() < 2) return out;
@@ -133,6 +133,6 @@ function stats_(){
   });
   Object.keys(P).forEach(f => out.photos[f] = [Math.round(P[f][0] * 100) / 100, P[f][2], P[f][1]]);
   Object.keys(R).forEach(n => out.ras[aid_(n)] = [Math.round(R[n][0] * 100) / 100, R[n][1]]);
-  try { cache.put('stats4', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
+  try { cache.put('stats5', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
   return out;
 }
