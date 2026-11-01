@@ -636,7 +636,34 @@
   // The achievements a snapshot meets that `have` ({id: time}) does not hold yet, in list order.
   const newAch = (snap, have) => ACH.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);
 
+  // Progress % of a saved progress P over a list of genera, as app.js shows it (genScore / progPct): per genus, the
+  // knowledge probability L (BKT; progress saved before it replays its recent results as average quiz photos) fills 95%
+  // on its way from 0.1 to 0.95, each mastery-exam question passed adds 1%, a passed exam makes it 100%. The sync sheet
+  // computes the leaderboard % with a copy (Code.gs pctOf_, v16), from each player's saved progress: keep the two in step
+  // (tests/sync.test.js compares them; tests/draw.smoke.js compares this with the app's progPct).
+  function pctOf(P, list) {
+    const L0 = 0.1,
+      T = 0.08,
+      M = 0.95,
+      sig = x => 1 / (1 + Math.exp(-x));
+    const step = (L, good) => {
+      const g = 0.25 + 0.75 * sig(-1),
+        sl = 0.1 + 0.9 * sig(-3),
+        post = good ? (L * (1 - sl)) / (L * (1 - sl) + (1 - L) * g) : (L * sl) / (L * sl + (1 - L) * (1 - g));
+      return post + (1 - post) * T;
+    };
+    const known = s => (typeof s.L === 'number' ? s.L : [...(s.h || '')].reduce((L, x) => step(L, x === '1'), L0));
+    const score = s => {
+      if (!s) return 0;
+      if (s.mx) return 1;
+      const part = Math.min(1, Math.max(0, (known(s) - L0) / (M - L0)));
+      return 0.95 * part + (part >= 1 && s.ex ? (0.05 * (s.ex.k || 0)) / 5 : 0);
+    };
+    return list && list.length ? Math.round((100 * list.reduce((t, n) => t + score((P || {})[n]), 0)) / list.length) : 0;
+  }
+
   const CORE = {
+    pctOf,
     ACH,
     newAch,
     LEVEL,

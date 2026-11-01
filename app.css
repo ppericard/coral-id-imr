@@ -817,6 +817,7 @@ header {
 #adminview,
 #xgen,
 #cvd,
+#boardset,
 #theme {
   display: inline-flex;
   padding: 3px;
@@ -829,6 +830,7 @@ header {
 #adminview button,
 #xgen button,
 #cvd button,
+#boardset button,
 #theme button,
 #size button {
   background: none;
@@ -843,6 +845,7 @@ header {
 #adminview button[aria-pressed='true'],
 #xgen button[aria-pressed='true'],
 #cvd button[aria-pressed='true'],
+#boardset button[aria-pressed='true'],
 #theme button[aria-pressed='true'],
 #size button[aria-pressed='true'] {
   background: var(--surface);
