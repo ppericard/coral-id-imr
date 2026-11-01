@@ -1,5 +1,6 @@
 // "Bad photo" flag, for Pierre only: shown in the browser where the admin page holds his token (imr-admin-vault).
-// A small ⚑ button follows the photo under the pointer (any page, game or lightbox). A click records the photo, its
+// A small ⚑ button follows the photo under the pointer (any page, game or lightbox), in its top-right corner so it never
+// covers the view label or the game source (top-left). A click records the photo, its
 // genus, where it was seen (page, game level, view) and when, in localStorage 'imr-photo-flags'. The admin page
 // picks these up into its draft (curation.json "flag") and lists them in Triage. Nothing is sent from here.
 (() => {
@@ -32,7 +33,7 @@
   let target = null;
   const place = im => { const f = fileOf(im); if (!f) return; target = im; const r = im.getBoundingClientRect();
     if (r.width < 60 || r.height < 40 || r.bottom < 0 || r.top > innerHeight) { btn.hidden = true; return; }
-    btn.style.top = (r.top + 6) + 'px'; btn.style.left = (r.left + 6) + 'px'; btn.hidden = false;
+    btn.style.top = (r.top + 6) + 'px'; btn.style.right = (document.documentElement.clientWidth - r.right + 6) + 'px'; btn.hidden = false;
     btn.classList.toggle('on', read().some(x => x.f === f)); };
   document.addEventListener('pointerover', e => { const im = e.target.closest && e.target.closest('img'); if (im && im !== target) place(im); }, true);
   // The button follows its photo when the page scrolls, and goes away once the photo leaves the page.
