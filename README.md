@@ -6,6 +6,8 @@ A static web app for learning the 39 coral genera on the IMR (Institute for Mari
 
 Live: <https://ppericard.github.io/coral-id-imr/> · Built for the Research Assistants trained at IMR, whose first task is genus-level labelling of benthic photos in ReefCloud.
 
+**Deployment:** [Pages setup and recovery](docs/PAGES.md) (single Actions source; required migration from branch publishing).
+
 **Docs:** [AGENTS.md](AGENTS.md) (standing rules for any agent or developer) · [docs/HANDOVER.md](docs/HANDOVER.md) (state of play and how to take over) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (files, data, admin, sync, deploy) · [docs/ROADMAP.md](docs/ROADMAP.md) (prioritised backlog, open questions) · [docs/DESIGN.md](docs/DESIGN.md) (design tokens and components) · [docs/reviews/](docs/reviews/README.md) (expert reviews).
 
 ## What's inside
