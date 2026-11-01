@@ -5,7 +5,7 @@ LAB.add({
   lede: 'Each step is a different photo of the same genus, from about a metre away down to the corallites. The closer you get, the more the skeleton decides.',
   render(root, start){
     const STEPS = [['wide', 'Colony', '≈ 0.5–2 m', 'Growth form and colour only: a hint, never the answer.'],
-      ['medium', 'Closer', '≈ 10–30 cm', 'Branch tips, verrucae, valleys, plate surface.'],
+      ['medium', 'Close-up', '≈ 10–30 cm', 'Branch tips, verrucae, valleys, plate surface.'],
       ['macro', 'Corallites', '≈ 1–3 cm', 'Wall type, size, septa, columella: this is where you decide.']];
     // No genus in the link: start on a random one, so every visit shows something new.
     let genus = DATA.gen[start] ? start : pick(labNames()), alt = 0, game = null, score = {pts: 0, n: 0}, steps = STEPS;
