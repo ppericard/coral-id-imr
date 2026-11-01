@@ -108,7 +108,7 @@ $v.addEventListener(
   'error',
   e => {
     const i = e.target;
-    if (!(i instanceof HTMLImageElement)) return;
+    if (!(i instanceof HTMLImageElement) || !i.getAttribute('src')) return;
     const n = Number(i.dataset.retry || 0),
       u = i.getAttribute('src');
     if (n < 2) {
@@ -3509,6 +3509,9 @@ document.querySelectorAll('#boardset button').forEach(
 );
 showBoardSet();
 function route() {
+  // Photos of the page being left that are still loading are dropped, so a slow line gives its bandwidth to the new page
+  // (tools/perf.js, slow 3G: the Home photos still downloading delayed the first quiz photo by seconds).
+  $v.querySelectorAll('img').forEach(i => !i.complete && i.removeAttribute('src'));
   if (CUR_NEW) {
     CUR = CUR_NEW;
     CUR_NEW = null;

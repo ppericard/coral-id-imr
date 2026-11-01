@@ -36,7 +36,8 @@ const server = http.createServer((req, res) => {
 // 3. A game photo whose full size keeps failing falls back to its 480 px version; when both fail, the question offers
 //    another one.
 // 4. The leaderboard shows the copy kept on the device at once while the sync script is slow.
-// 5. The service worker installs even when each app file fails once (retried at install).
+// 5. Leaving a page drops its photos still loading.
+// 6. The service worker installs even when each app file fails once (retried at install).
 // Speed numbers are measured by tools/perf.js, not here. Locally: node tests/net.smoke.js
 (async () => {
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -143,7 +144,22 @@ const server = http.createServer((req, res) => {
     if (errs.length) fails.push('Board: ' + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }
-  // 5. Service worker install on an unstable line: every app file fails once, the install still completes.
+  // 5. Leaving a page drops its photos still loading, so they do not take the line from the next page.
+  {
+    const {ctx, p, errs} = await ctxOf();
+    await ctx.route(/\/img\/.*\.webp/, () => {}); // never answer
+    let dropped = 0;
+    p.on('requestfailed', r => /\/img\//.test(r.url()) && dropped++);
+    await p.goto(base);
+    await ready(p);
+    const n = await p.evaluate(() => [...document.querySelectorAll('#view img')].filter(i => !i.complete).length);
+    await p.evaluate(() => (location.hash = 'lab'));
+    await p.waitForTimeout(500);
+    if (!n || !dropped) fails.push(`Leaving Home did not drop its photos still loading (${n} loading, ${dropped} dropped)`);
+    if (errs.length) fails.push('Drop: ' + errs.slice(0, 3).join(' | '));
+    await ctx.close();
+  }
+  // 6. Service worker install on an unstable line: every app file fails once, the install still completes.
   {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}});
     const seen = new Set();
@@ -180,7 +196,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, service worker install with retries.'
+    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries.'
   );
 })().catch(e => {
   console.error(e);
