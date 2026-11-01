@@ -294,15 +294,16 @@ kbd{font:600 .78rem var(--body);border:1px solid var(--line);border-bottom-width
 .adm-swg{position:absolute;left:8px;top:8px;display:flex;flex-direction:column;padding:4px 12px;border-radius:var(--r-sm);background:#000a;color:#fff;text-decoration:none;line-height:1.15}
 .adm-swg i{font:italic 700 1.35rem var(--display)}
 .adm-swg small{font-size:.75rem;opacity:.85}
-.adm-swx{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:50%;background:#0008;color:#fff;font-size:1.5rem;line-height:1;cursor:pointer}
-.adm-swx:hover,.adm-swx:focus-visible{background:var(--bad)}
+/* Exclude for good: in the action row, away from the photo's top-right "close" corner (admin review, 2026-11-01). */
+.adm-swrow .adm-swx{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,var(--line))}
+.adm-swrow .adm-swx:hover,.adm-swrow .adm-swx:focus-visible{background:var(--bad);color:#fff}
 .adm-swcard figcaption{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:6px;padding:18px 10px 8px;background:linear-gradient(transparent,#000c);color:#fff;font-size:.85rem;pointer-events:none}
 .adm-swcard figcaption .adm-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic}
 .adm-swlink{pointer-events:auto;color:#fff;font-weight:600;padding:8px 4px;white-space:nowrap}
 .adm-swacts{display:flex;flex-direction:column;gap:6px}
 .adm-sw .adm-acts .adm-qseg{margin:0}
 .adm-sw .adm-acts .adm-qseg button{min-height:44px;font-size:.9rem;padding:0 2px}
-.adm-swrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.adm-swrow{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
 .adm-swrow select,.adm-swrow button{font:inherit;font-size:.9rem;min-height:44px;border:1px solid var(--line);border-radius:var(--pill);background:var(--surface);color:var(--ink);padding:0 12px}
 .adm-swrow select{min-width:0;padding:0 8px}
 .adm-swrow button{min-width:0;padding:0 6px;cursor:pointer}
