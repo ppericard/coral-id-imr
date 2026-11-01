@@ -91,7 +91,7 @@ Per genus and view, from field photos + IMR lecture photos (`data.json` `course`
 - **Order**: Pierre's pins (`feat`), then Claude's suggestions (`picks.json`), then IMR photos, Pierre's own, other observers, each by quality; Poor last (but an IMR photo is never auto-rated Poor).
 - **Sheet**: the 3 featured + the next ones, 6 in all. Coral Finder book photos only when pinned, or after every field photo to fill a gap.
 - **Games** (`easy`, `medium`, `hard`, levels adding up): field + IMR lecture photos, never book photos, never `use: 'ref'`; Poor photos go to Hard. `gamePics()` reads them.
-- **Coral Finder** (`finder`): featured + 2 other-observer photos + up to 3 approved book photos (variety on purpose).
+- **Coral Finder** (`finder`): featured + 2 other-observer photos + up to 3 approved book photos (variety on purpose). Once a growth form is picked (Coral Finder box or IMR form), each genus card in Mix leads with a photo tagged with that form (`formCover()` in `proto/finder.js`: `formPhotos`/`imrFormPhotos`, IMR lecture first, then Pierre's own); the cover stays when it already shows the form, and a genus with no photo of that form keeps its cover (first-time RA review, 2026-11-01).
 
 ## Photos
 
