@@ -32,7 +32,7 @@ These came from Pierre's explicit feedback. When in doubt, follow them over your
 8. **Pierre's curation choices (`curation.json`) are never changed automatically**: no script, rebuild or import may overwrite them. Only step-by-step Undo of his own actions; **no bulk reset/wipe button of any kind** (he refused it twice). Never overwrite `curation.json` in a PR: Pierre publishes it straight to `main` from the admin; rebase and keep `main`'s copy.
 9. Three views per genus: **colony**, **closer** (10-30 cm part of a colony) and **corallites** (macro). A genus may have 2 levels (closer hidden), never duplicate a photo to fill a view. Cover = mid-distance view, never macro.
 10. Never use photos showing several corals in games. Coral Finder book photos (© R. Kelley / BYOGUIDES) are never in games. "Poor" means identifiable but low visual quality (ReefCloud-like): Poor photos are used at the hard end of games; unidentifiable photos are excluded, not rated Poor.
-11. Provenance tags never on thumbnails; credit in the lightbox only. Games show a discreet iNat link only after the answer.
+11. Provenance tags never on thumbnails; credit in the lightbox. Games: once the answer is out, every photo shows a small clickable source pill (`photoSrc()` in `app.js`: observer + iNat link, or IMR lecture / Coral Finder label), never before the answer (it would give the genus away); hidden on phones, where the enlarged view carries the clickable source (Pierre, 2026-11-01).
 
 ### Learning logic
 12. **Mastery never depends on time** (no spaced-repetition days, no decay, no "refresh"). It is a practical tool, not a retention or daily-habit app (no streaks, lessons, Duolingo-style units). Someone should be able to master everything in a few hours.

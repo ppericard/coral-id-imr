@@ -34,7 +34,7 @@ LAB.add({
         if (done) return; done = true; cancelAnimationFrame(raf);
         const left = t0 === null ? DUR : Math.max(0, DUR - (performance.now() - t0)), ok = b.dataset.c === t, pts = ok ? Math.ceil(left / 1000) : 0;
         score.pts += pts; score.n++; score.streak = ok ? score.streak + 1 : 0;
-        im.style.transition = 'filter .5s'; im.style.filter = 'none'; im.insertAdjacentHTML('afterend', typeof inatTag === 'function' ? inatTag(p) : '');
+        im.style.transition = 'filter .5s'; im.style.filter = 'none'; im.insertAdjacentHTML('afterend', typeof photoSrc === 'function' ? photoSrc(p) : '');
         body.querySelectorAll('[data-c]').forEach(x => x.classList.add(x.dataset.c === t ? 'right' : x === b ? 'wrong' : 'off'));
         body.querySelector('#rvres').innerHTML = `<p class="${ok ? 'ok' : 'ko'}"><b>${ok ? '+' + pts + ' pts' : 'Missed'}</b>: <a href="${genLink(t)}"><i>${esc(t)}</i></a>. ${esc(tipsText(DATA.gen[t]))}</p><p class="credit">${credit(p)}</p><button type="button" class="next" id="rvnext">Next</button>`;
         body.querySelector('#rvnext').onclick = round;
