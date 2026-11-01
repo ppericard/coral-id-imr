@@ -567,7 +567,7 @@ const HELP = {
     <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. On the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
-  mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one montage each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto</b> drops your picks for that pair. <b>Hide</b> keeps a pair off the site until there are good examples; click again to show it.</p>`,
+  mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto</b> drops your picks for that pair. <b>Hide</b> keeps a pair off the site until there are good examples; click again to show it.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns. Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
 };
@@ -686,7 +686,7 @@ function renderTriage(){
     done(f); if (!(entry(n).hide || []).includes(f)) ACT.hide(n, f); else { saveDraft(); renderTriage(); } });
   $v.querySelectorAll('[data-act="zoomx"]').forEach(b => b.onclick = () => { const p = PHOTOS[b.closest('[data-f]').dataset.f]; if (p) zoomOne(p); });
 }
-/* ---------- Montages: one photo pair per classic look-alike pair (curation.json "mont" {"A|B": {v, a, b}}) ---------- */
+/* ---------- Look-alikes (was "Montages"): one photo pair per classic look-alike pair (curation.json "mont" {"A|B": {v, a, b}}) ---------- */
 // Same pairs, order and automatic pick as the site (app.js classics / montage): pairs a source compares in so many words.
 const MONT_V = {'Pocillopora|Stylophora': 'medium', 'Acropora|Anacropora': 'medium', 'Acropora|Cyphastrea': 'medium', 'Acropora|Echinopora': 'medium', 'Goniopora|Porites': 'medium', 'Danafungia|Fungia': 'medium', 'Fungia|Lithophyllon': 'medium', 'Danafungia|Lithophyllon': 'medium'};
 function classicPairs(){
