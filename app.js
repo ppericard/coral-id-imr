@@ -3215,11 +3215,15 @@ function viewAch() {
 }
 // Told once, when the leaderboard arrives, to players already signed in: their name now shows there.
 function boardNotice() {
-  // Players signed in before the leaderboard: one sync writes their progress % (the sheet has none for them yet).
-  if (SYNC && !store.get('imr-board-sent', 0)) {
-    store.set('imr-board-sent', 1);
-    syncSoon();
-  }
+  // Players signed in before the leaderboard: one sync writes their progress % (the sheet has none for them yet). Only
+  // once the sheet serves the leaderboard (v14): an older script ignores the %, which left everyone at 0% (2026-11-01).
+  if (SYNC && !store.get('imr-board-sent14', 0))
+    loadBoard().then(B => {
+      if (B && !B.err && SYNC && !store.get('imr-board-sent14', 0)) {
+        store.set('imr-board-sent14', 1);
+        syncSoon();
+      }
+    });
   if (!SYNC || store.get('imr-board-told', 0)) return;
   store.set('imr-board-told', 1);
   const t = document.createElement('div');
