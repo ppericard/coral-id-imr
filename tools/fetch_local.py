@@ -55,7 +55,8 @@ for g in GEN:
         if where == PHILIPPINES and dauin_n(g) >= POOR: continue
         loc = 'dauin' if where == DAUIN else 'ph'
         out = cand.setdefault(g, [])
-        room = (DAUIN_CAP if loc == 'dauin' else PH_CAP) - len({p.get('o') for p in out if p.get('loc') == loc and waiting(p)})
+        W = {p.get('o') for p in out if p.get('loc') == loc and waiting(p)}  # observations already waiting
+        room = (DAUIN_CAP if loc == 'dauin' else PH_CAP) - len(W)
         if room <= 0: continue
         obs = get(f'https://api.inaturalist.org/v1/observations?taxon_id={T[0]["id"]}&{where}&quality_grade=research,needs_id&photos=true&photo_license={LIC}&order_by=votes&per_page=200')['results']
         # Research Grade first, then genus-level community IDs (votes order within each).
@@ -72,7 +73,9 @@ for g in GEN:
             o, P, rank = min(pool, key=lambda x: (n['t', x[0]['taxon']['name']], n['u', x[0]['user']['login']], x[2]))
             pool = [x for x in pool if x[0]['id'] != o['id']]
             url = f'https://www.inaturalist.org/observations/{o["id"]}'
-            n['t', o['taxon']['name']] += 1; n['u', o['user']['login']] += 1; room -= 1
+            n['t', o['taxon']['name']] += 1; n['u', o['user']['login']] += 1
+            # An observation already waiting (more of its photos) is not a new one: only new observations use the room.
+            if url not in W: W.add(url); room -= 1
             for ph in P:
                 usedp.add(str(ph['id']))
                 out.append(dict(f=f'{g.lower()}-cand-{ph["id"]}', a=ph['attribution'], lic=ph['license_code'], o=url, t=o['taxon']['name'], own=o['user']['login'] == 'ppericard', loc=loc, src=ph['url'].replace('square', 'original'), r=1, **({} if o['quality_grade'] == 'research' else {'gid': 1})))
