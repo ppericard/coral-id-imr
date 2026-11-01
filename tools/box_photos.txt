@@ -1,0 +1,27 @@
+# Coral Finder box illustrations: up to 3 crops from the book's OWN box pages (the photos the Coral Finder 2022 prints
+# for that box), picked by eye for a clean crop (no "1x" inset, no big scale bar). First = large tile.
+# Boxes not listed here (no clean crop on their pages) show a schematic instead. Applied by tools/apply_box_photos.py.
+B1: acropora-cf-3-013 acropora-cf-2-09 acropora-cf-3-05
+B2: pocillopora-cf-6-04 porites-cf-7-04 montipora-cf-7-14
+B3: tubastraea-cf-10-04 echinopora-cf-9-03 tubastraea-cf-10-02
+B4: merulina-cf-12-05 hydnophora-cf-11-11 pectinia-cf-12-01
+M1: lobophyllia-cf-14-02 plerogyra-cf-13-11 lobophyllia-cf-14-01
+M2: pachyseris-cf-15-13 pachyseris-cf-15-10
+M3: platygyra-cf-18-01 goniastrea-cf-17-01 leptoria-cf-17-21
+M4: lobophyllia-cf-20-g21 pectinia-cf-21-05 lobophyllia-cf-20-g11
+S1: cyphastrea-cf-25-g02 goniastrea-cf-23-15 astrea-cf-23-04
+S2: diploastrea-cf-27-m2 favites-cf-28-06 dipsastraea-cf-27-07
+S3: pavona-cf-30-06 pavona-cf-30-05 pavona-cf-30-02
+S4: goniastrea-cf-32-13 porites-cf-31-03 favites-cf-32-05
+S5: favites-cf-38-01
+S6: favites-cf-40-07 lobophyllia-cf-39-01 favites-cf-40-015
+S7: hydnophora-cf-41-04 pachyseris-cf-41-18 porites-cf-42-02
+P1: montipora-cf-43-07 hydnophora-cf-43-016 porites-cf-43-010
+P2: turbinaria-cf-45-015 cyphastrea-cf-45-06 echinopora-cf-46-09
+P3: montipora-cf-49-03 acropora-cf-48-03 turbinaria-cf-50-012
+P5: lithophyllon-cf-59-21 pavona-cf-59-11 pavona-cf-59-13
+P6: porites-cf-61-00 goniastrea-cf-62-18 merulina-cf-62-01
+F1: fungia-cf-63-00 lithophyllon-cf-64-g00 danafungia-cf-63-12
+F2: herpolitha-cf-65-12 ctenactis-cf-65-02 halomitra-cf-66-11
+L1: heliofungia-cf-73-00 plerogyra-cf-74-01 duncanopsammia-cf-74-13
+C1: merulina-cf-75-00 galaxea-cf-75-04 merulina-cf-75-01
