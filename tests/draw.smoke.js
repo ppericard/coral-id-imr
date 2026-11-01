@@ -107,6 +107,44 @@ const server = http.createServer((req, res) => {
           if (k < want) fails.push(`${t}: ${k} trap(s) offered, ${want} asked (${c.join(', ')})`);
           if (traps < 2 && k > traps) fails.push(`${t}: ${k} trap(s) offered at level ${traps} (${c.join(', ')})`);
         }
+    // Mastery exam (app.js EXAM): every genus can be examined (one photo alone, flagged exam); played through the real
+    // quiz with right answers, a 95% genus gets its EXAM.n exam questions at least EXAM.gap answers apart, then is learned.
+    genera.forEach(n => {
+      const e = examSet(n);
+      if (e && (e.shown.length !== 1 || !e.exam)) fails.push(`${n}: exam question is not one photo alone`);
+    });
+    const t = Object.keys(DATA.gen)[0];
+    P = Object.fromEntries(genera.map(n => [n, {ok: 3, ko: 1, h: '1101', th: 0.5, L: 0.5}]));
+    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.97};
+    P[LEVEL] = {ok: 200, ko: 30, th: 1};
+    const at = [];
+    for (let i = 0; i < 400 && !P[t].mx; i++) {
+      quizPhoto();
+      if (EXAMQ === t) {
+        at.push(answersSoFar());
+        if (document.querySelectorAll('.qstage .qph').length !== 1) fails.push('exam question with several photos');
+      }
+      document.querySelector(`[data-c="${CSS.escape(last)}"]`).click();
+    }
+    if (!P[t].mx) fails.push(`${t}: not mastered after 400 right answers (exam questions: ${at.length})`);
+    if (at.length !== EXAM.n) fails.push(`${t}: ${at.length} exam questions, ${EXAM.n} expected`);
+    if (at.some((x, i) => i && x - at[i - 1] < EXAM.gap))
+      fails.push(`${t}: exam questions closer than ${EXAM.gap} answers: ${at.join(', ')}`);
+    if (level(t)[0] !== 'ok' || genScore(t) !== 1) fails.push(`${t}: mastered but not learned at 100%`);
+    // A miss on the genus ends an exam in course.
+    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.97, ex: {k: 3, v: ['wide'], at: answersSoFar()}};
+    answer('quiz', 'Porites' === t ? 'Acropora' : 'Porites', t, photoSet(t).shown, false, null);
+    if (P[t].ex) fails.push(`${t}: a miss did not end the exam`);
+    // Mastery holds only while the genus stays known: misses that bring it under 95% take it away.
+    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.96, mx: 1};
+    for (let i = 0; i < 3 && P[t].mx; i++) answer('quiz', 'Porites' === t ? 'Acropora' : 'Porites', t, photoSet(t).shown, false, null);
+    if (P[t].mx) fails.push(`${t}: still mastered after misses (L ${knownP(t)})`);
+    // Exam photos are never-seen ones while some remain.
+    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.97, ps: {}};
+    const v0 = examSet(t).shown[0];
+    P[t].ps[v0.f] = [1, 0];
+    for (let i = 0; i < 20; i++)
+      if (examSet(t).shown[0].f === v0.f && gamePics(t, v0.view, 'hard').length > 1) fails.push(`${t}: exam reused a photo already seen`);
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
   await b.close();
@@ -116,7 +154,9 @@ const server = http.createServer((req, res) => {
     console.error(`Question draw: ${out.fails.length} problem(s)\n` + out.fails.slice(0, 40).join('\n'));
     process.exit(1);
   }
-  console.log(`Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps.`);
+  console.log(
+    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam.`
+  );
 })().catch(e => {
   console.error(e);
   process.exit(1);

@@ -311,3 +311,16 @@ test('achievements: unique ids, tiers 1-3; a snapshot unlocks only what it meets
   };
   assert.strictEqual(newAch(all, {}).length, ACH.length, 'every achievement is reachable');
 });
+
+test('mergeProgress: the mastery exam (passed or in course) follows the device that played, as the knowledge itself', () => {
+  const B = {Acropora: {ok: 10, ko: 1, L: 0.96, ex: {k: 2, v: ['wide'], at: 50}}};
+  const mine = {Acropora: {ok: 11, ko: 1, L: 0.97, ex: {k: 3, v: ['wide', 'macro'], at: 60}}};
+  const theirs = {Acropora: {ok: 10, ko: 1, L: 0.96, ex: {k: 2, v: ['wide'], at: 50}}, Porites: {ok: 5, ko: 0, mx: 1}};
+  const m = mergeProgress(B, mine, theirs);
+  assert.deepStrictEqual(m.Acropora.ex, mine.Acropora.ex);
+  assert.strictEqual(m.Porites.mx, 1, 'mastered on the other device, not played here');
+  const lostMx = mergeProgress({Porites: {ok: 5, ko: 0, mx: 1}}, {Porites: {ok: 5, ko: 2, L: 0.6}}, {Porites: {ok: 5, ko: 0, mx: 1}});
+  assert.strictEqual(lostMx.Porites.mx, undefined, 'lost here after misses: not brought back');
+  const lost = mergeProgress(B, {Acropora: {ok: 11, ko: 2, L: 0.9}}, theirs);
+  assert.strictEqual(lost.Acropora.ex, undefined, 'a miss here ended the exam');
+});
