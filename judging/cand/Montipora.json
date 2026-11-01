@@ -7,9 +7,9 @@
    "form": "S",
    "keep": "best",
    "unsure": [
-    "genus"
+    "form"
    ],
-   "note": "Lumpy columns look like Montipora but dark; Porites columns also possible"
+   "note": "Lumpy columns on a plate base; submassive chosen"
   },
   "montipora-cand-269512959": {
    "view": "wide",
@@ -78,7 +78,10 @@
    "quality": 3,
    "form": "F",
    "genus": "Merulina",
-   "note": "Plates with valleys fanning out to the margin and upgrowths: Merulina, not Montipora"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Plates with valleys fanning out to the margin and upgrowths look like Merulina; iNat says Montipora"
   },
   "montipora-cand-269473063": {
    "view": "wide",
@@ -221,14 +224,21 @@
    "form": "B",
    "keep": "dup",
    "polyps": true,
-   "note": "Burst of the same branches"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Burst of the same branches; polyps out hide corallites, Porites not ruled out"
   },
   "montipora-cand-345339154": {
    "view": "medium",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "polyps": true
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Polyps out hide corallites; Montipora plausible, Porites not ruled out"
   },
   "montipora-cand-345339083": {
    "view": "medium",
@@ -236,14 +246,21 @@
    "form": "B",
    "keep": "dup",
    "polyps": true,
+   "unsure": [
+    "genus"
+   ],
    "note": "Burst of the same branches, softer"
   },
   "montipora-cand-345339085": {
-   "view": "macro",
+   "view": "medium",
    "quality": 2,
    "form": "B",
-   "keep": "best",
-   "polyps": true
+   "keep": "alt",
+   "polyps": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Closer on the same branches; polyps out hide corallites"
   },
   "montipora-cand-269476092": {
    "view": "wide",
@@ -567,7 +584,10 @@
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Crinoid covers part of the frame"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Red ridged plate; Montipora plausible, Merulina possible; crinoid covers part of the frame"
   },
   "montipora-cand-64936733": {
    "view": "wide",
