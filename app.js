@@ -1135,7 +1135,7 @@ document.addEventListener('click', e => {
 function reportDialog(c, btn){
   let d = document.getElementById('repdlg'); if (d) d.remove();
   d = document.createElement('dialog'); d.id = 'repdlg'; d.className = 'repdlg';
-  const names = Object.keys(DATA.gen).sort();
+  const names = [...Object.keys(DATA.gen), ...bonusOpen()].sort();
   d.innerHTML = `<form method="dialog">
     <h3>Report a problem</h3>
     <div class="repwhy" role="radiogroup" aria-label="Problem">${REP_WHY.map(([k, t], i) => `<label><input type="radio" name="why" value="${k}"${i ? '' : ' checked'}><span>${t}</span></label>`).join('')}</div>
