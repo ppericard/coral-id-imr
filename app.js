@@ -335,7 +335,7 @@ function viewGenera(){
       const blocks = [];
       names.forEach((n, i) => { if (!i || gi(names[i - 1]) !== gi(n)) blocks.push([]); blocks[blocks.length - 1].push(n); });
       html = blocks.map(L => { const gr = DATA.imrg.find(x => x.n === shownGroup(L[0]));
-        const head = gr ? `<h3 class="gdiv" id="grp-${gr.n}" style="--g:${groupHue(gr.n)}"><span class="gn">${gr.n}</span>${esc(gr.t)}</h3>`
+        const head = gr ? `<h3 class="gdiv" id="grp-${gr.n}" style="--g:${groupHue(gr.n)}" title="${esc(gr.t)}"><span class="gn">${gr.n}</span><span class="gt">${esc(gr.t)}</span></h3>`
           : '<h3 class="gdiv"><span class="gn">★</span>Not covered in the lecture</h3>';
         return `<section class="gblk" data-n="${L.length}">${head}${L.map(n => tips ? tipCard(n) : card(n, 'stripe')).join('')}</section>`; }).join('');
     } else html = names.map(n => tips ? tipCard(n) : card(n, true)).join('');
@@ -390,7 +390,7 @@ function viewGenus(name){
     const list = inView(v);
     if (g.levels === 2 && v === 'macro') label = 'Close-up';
     const fig = p => { const i = flat.findIndex(x => x.f === p.f);
-      return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${esc(name)}, ${p.imr ? 'IMR lecture photo' : label.toLowerCase() + ' view'}" loading="lazy"></button><figcaption>${p.imr ? '<b class="lect">IMR lecture</b> ' : ''}${credit(p)}</figcaption></figure>`; };
+      return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${esc(name)}, ${p.imr ? 'IMR lecture photo' : label.toLowerCase() + ' view'}" loading="lazy"></button><figcaption>${p.imr ? `<b class="lect">IMR lecture</b> · slide ${p.slide}` : credit(p)}</figcaption></figure>`; };
     // The cover is already shown at the top: not repeated in its row when the row has other featured photos.
     const feat0 = g.sl[v].feat, feat = cv && feat0.length > 1 ? feat0.filter(p => p.f !== cv.f) : feat0, more = g.sl[v].more;
     return `<section class="vrow"><h3>${label}${feat.length ? '' : ' <span class="gap">missing</span>'}</h3>${feat.length ? `<div class="strip">${feat.map(fig).join('')}</div>` : '<p class="note">No good photo yet for this view.</p>'}
@@ -562,14 +562,15 @@ function viewCompare(a, b){
   // Bonus genera can be compared with a slate genus or with each other (quiz mix-ups).
   const A = DATA.gen[a] || (isBonus(a) && GX(a)), B = DATA.gen[b] || (isBonus(b) && GX(b));
   if (!A || !B) return viewLookalikes();
-  const col = (n, g) => `<div class="cmpcol"><h3><a class="linkish" href="#g-${esc(n)}"><i>${esc(n)}</i></a>${g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'}</h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p>${g.qt ? `<h4>${tipsLabel(g)}</h4>` : ''}${tipsList(g)}<details class="more"><summary>Coral Finder</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>`;
+  const col = (n, g) => `<div class="cmpcol"><h3><i>${esc(n)}</i>${g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'} <a class="linkish cmpsheet" href="#g-${esc(n)}">Sheet ›</a></h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p><div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}</div><details class="more"><summary>Coral Finder</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>`;
   const flat = [];
   const row = ([v, label]) => {
     const cell = (n, g) => { const p = (g.views[v] || [])[0]; if (!p) return `<div class="cmpph none">${g.levels === 2 ? 'no separate level' : 'no photo'}</div>`; flat.push({...p, genus: n, view: v}); return `<button type="button" class="zoom cmpph" data-z="${flat.length - 1}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="(max-width:599.98px) 46vw, 460px" alt="${esc(n)}, ${label.toLowerCase()}" loading="lazy"></button>`; };
     return `<h3 class="cmplab">${label}</h3><div class="cmprow">${cell(a, A)}${cell(b, B)}</div>`;
   };
   // The cues sit above the photos, each under its genus, so they can be read while comparing.
-  $v.innerHTML = `<div class="cmprow text">${col(a, A)}${col(b, B)}</div>
+  $v.innerHTML = `<p class="lede">Two genera that are often confused, side by side: their ID tips, then the same view of each. <b>Drill this pair</b> at the bottom turns it into a quick duel.</p>
+  <div class="cmprow text">${col(a, A)}${col(b, B)}</div>
   ${VIEWS.filter(([v]) => (A.views[v] || []).length || (B.views[v] || []).length).map(row).join('')}
   ${(DATA.cmp || []).some(c => c.imr && c.g.includes(a) && c.g.includes(b)) ? `<h3 class="cmplab">IMR lecture</h3>${cmpShots([a, b])}` : ''}
   <p><a class="next" href="#quiz-duel|${esc(a)}|${esc(b)}">Drill this pair</a></p>`;
@@ -897,7 +898,7 @@ function answer(cur, c, target, ph, cor, unseen){
   const g = GX(target), bo = bonusOpen(), nbo = bo.slice(Q.ba || 0); if (nbo.length) { Q.ba = bo.length; saveQ(); }
   const vs = !good && GX(c) ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(tipsText(GX(c)))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>${again ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}` : '';
   document.getElementById('after').innerHTML = `<div class="fb">
-    <h3 class="${good ? 'ok' : 'ko'}">${good ? 'Yes' : 'No'}, it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>
+    <h3 class="${good ? 'ok' : 'ko'}"><span class="v">${good ? '\u2713 Yes' : '\u2717 No'},</span> it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>
     <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
     <details class="more"><summary>Coral Finder</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details>${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: cur})}</div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
@@ -982,7 +983,9 @@ function quizBoard(){
   // holding the mini ring + % like the Slate and Groups tiles; review = red border and "!".
   const tile = n => { const g = GX(n), p = cover(g), [cl] = lv[n];
     return `<a class="pw ${cl} s${st[n]}${g.x ? ' bonus' : ''}" href="#g-${esc(n)}" title="${g.x ? 'Bonus genus, not on the IMR list. ' : ''}${tip(n)}">${p ? `<img src="${img(p, 's')}" alt="" loading="lazy">` : ''}${g.x ? '<b class="pbtag">Bonus</b>' : ''}<span class="pwb"><i>${esc(n)}${g.n || g.x ? '' : ' ★'}</i>${pct(n)}</span></a>`; };
-  const lockT = (at, cls) => `<span class="${cls} plock" title="Bonus genus, unlocks at ${at}% progress"><b aria-hidden="true">?</b><small>${at}%</small></span>`;
+  // Locked bonus genera: ONE tile that says what they are and when the next one comes (six "?" tiles read as a puzzle;
+  // designer re-review 2026-11-01, N6).
+  const lockT = cls => locked.length ? `<span class="${cls} plock" title="Bonus genera off the IMR list, common at Dauin: the next one unlocks at ${locked[0]}% progress"><b aria-hidden="true">+${locked.length}</b><small>bonus genera · next at ${locked[0]}%</small></span>` : '';
   const conf = list.map(n => { const c = (P[n] || {}).conf; if (!c) return null; const [o, k] = Object.entries(c).sort((x, y) => y[1] - x[1])[0]; return [n, o, k]; }).filter(Boolean).sort((x, y) => y[2] - x[2]).slice(0, 3);
   // Three ways to show the same progress (Pierre wants to try each): photos, slate numbers, lecture groups.
   const tip = n => { const s = P[n] || {ok: 0, ko: 0}, m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : []; return `${esc(n)}: ${lv[n][1]}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}% of the way)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`; };
@@ -992,19 +995,19 @@ function quizBoard(){
   const pct = n => st[n] > 0 && st[n] < 5 ? `<small class="pct" style="--p:${Math.round(100 * genScore(n))}%">${Math.round(100 * genScore(n))}%</small>` : '';
   const gi = n => shownGroup(n) || 99, groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
   const VIEWS = {
-    photos: () => `<div class="pgrid pwall"${isPhone() ? ' data-minw="72"' : ''}>${[...list, ...BO].map(tile).join('')}${locked.map(at => lockT(at, 'pw')).join('')}</div>`,
+    photos: () => `<div class="pgrid pwall"${isPhone() ? ' data-minw="72"' : ''}>${[...list, ...BO].map(tile).join('')}${lockT('pw')}</div>`,
     // Laid out like the physical IMR slate: 1-20 down the left column, 21-34 down the right, starred genera under them.
     slate: () => { const num = list.filter(n => DATA.gen[n].n), L = num.filter(n => DATA.gen[n].n <= 20), R = num.filter(n => DATA.gen[n].n > 20), S = list.filter(n => !DATA.gen[n].n);
       const ps = n => `<a class="ps ${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><b>${DATA.gen[n].n ? DATA.gen[n].n + '.' : '★'}</b><i>${esc(n)}</i>${pct(n)}</a>`;
       // Bonus genera: one strip across both columns under the slate, so the board still fits one screen.
       const rows = Math.max(L.length, R.length + (S.length ? S.length + 1 : 0));
-      const bx = BO.map(n => `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="#g-${esc(n)}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i>${esc(n)}</i>${pct(n)}</a>`).join('') + locked.map(at => lockT(at, 'ps')).join('');
+      const bx = BO.map(n => `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="#g-${esc(n)}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i>${esc(n)}</i>${pct(n)}</a>`).join('') + lockT('ps');
       return `<div class="pslate" style="--rows:${rows}">${L.map(ps).join('')}${R.map(ps).join('')}${S.length ? '<span class="psgap"></span>' : ''}${S.map(ps).join('')}<div class="psbonus" style="grid-row:${rows + 1}" title="Bonus genera, not on the IMR list">${bx}</div></div>`; },
     groups: () => `<div class="pgroups">${groups.map(k => { const gr = DATA.imrg.find(x => x.n === k), L = list.filter(n => gi(n) === k);
       return `<div class="pgr" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn" title="${gr ? esc(gr.t) : 'Not covered in the lecture'}">${gr ? gr.n : '★'}</span><span class="pgt">${gr ? esc(gr.t) : 'Not covered in the lecture'}</span>
         <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`; }).join('')}
       <div class="pgr pgbonus"><span class="gn" title="Bonus genera, not on the IMR list">+</span><span class="pgt">Bonus: not on the IMR list</span>
-        <span class="pseg">${BO.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`).join('')}${locked.map(at => lockT(at, 'pgl')).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BONUS.length}</small></div></div>`
+        <span class="pseg">${BO.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`).join('')}${lockT('pgl')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BONUS.length}</small></div></div>`
   };
   let pv = store.get('imr-coral-pview', 'photos'); if (!VIEWS[pv]) pv = 'photos';
   $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, get it right on harder and harder photos, once with the corallites in view, and once in a look-alike duel. A mistake sets it back, for the genus you missed and for the one you answered.</p>
@@ -1018,7 +1021,7 @@ function quizBoard(){
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera"><b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Learned</p>
     ${weak.length ? `<div><h3 class="label">Review first</h3><p class="chips">${weak.slice(0, 4).map(n => `<a class="chip" href="#g-${esc(n)}"><i>${esc(n)}</i></a>`).join('')}</p></div>` : ''}
-    ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> / <i>${esc(o)}</i> ×${k}</a>`).join('')}</p></div>` : ''}
+    ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> ↔ <i>${esc(o)}</i> <small>· ${k}×</small></a>`).join('')}</p></div>` : ''}
     <p><a class="next go" href="#quiz">Practise now</a></p>
     ${SYNC_URL ? '<section class="sync" id="sync"></section>' : ''}
     <details class="saveprog"><summary>Backup or reset progress</summary><p class="note">Progress is saved in this browser and, once you sign in, in the IMR sheet. You can also save it to a file as a backup, or to move it to another device.</p>
