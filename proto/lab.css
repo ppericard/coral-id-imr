@@ -202,7 +202,12 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 .pin{position:relative;display:block;width:100%;height:100%;transition:transform .45s;transform-style:preserve-3d}
 .pcard.up .pin{transform:rotateY(180deg)}
 .pback,.pfront{position:absolute;inset:0;border-radius:var(--r);backface-visibility:hidden;overflow:hidden}
-.pback{background:repeating-linear-gradient(45deg,var(--accent) 0 10px,color-mix(in srgb,var(--accent) 75%,var(--bg)) 10px 20px)}
+/* Quiet card backs: a pale accent tint with a faint logo mark; the striped backs were the loudest thing on the screen
+   (designer re-review 2026-11-01, N5). */
+.pback{background:color-mix(in srgb,var(--accent) 12%,var(--surface));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 28%,transparent)}
+.pback::after{content:"";position:absolute;inset:0;background:url(../icon.svg) center/min(34%,44px) no-repeat;opacity:.3}
+.pcard:hover .pback{background:color-mix(in srgb,var(--accent) 20%,var(--surface))}
+.gside .seg small{font-size:var(--fs-xs)}
 .pfront{transform:rotateY(180deg);background:var(--surface)}
 .pfront img{width:100%;height:100%;object-fit:cover;display:block}
 .pfront small{position:absolute;top:4px;left:4px;background:#000a;color:#fff;font-size:var(--fs-xs);border-radius:var(--r-xs);padding:1px 5px}
@@ -674,7 +679,8 @@ svg.dim .wedges line.on{opacity:1;stroke:var(--accent)}
 }
 .gside{display:flex;flex-direction:column;gap:10px}
 .gside .chips{margin:0}
-.gside .note{margin:0}
+.gside .note,.gside p{margin:0}
+.gside .seg{display:flex;align-self:stretch}.gside .seg button{flex:1;padding-inline:8px}
 .rvlayout{margin-top:12px}
 @media (min-width:600px){
   .rvlayout{grid-template-columns:minmax(0,1fr) minmax(240px,300px)}
