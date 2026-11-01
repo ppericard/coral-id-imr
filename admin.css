@@ -505,3 +505,4 @@ td.cov-c .cov-off{display:block;font-size:.62rem;font-weight:500;line-height:1.1
 .adm-fid{flex:1 0 100%;font:400 .68rem/1.3 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);user-select:all;overflow-wrap:anywhere;opacity:.8}
 .adm-swcard figcaption .adm-fid{flex:0 1 auto;color:#fffc;pointer-events:auto}
 @media (max-width:599px){.adm-fid{display:none}}
+.cov-head .cov-rich{color:var(--good);font-weight:600}
