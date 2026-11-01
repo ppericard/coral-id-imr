@@ -84,7 +84,7 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 @media (min-width:600px){.hdr-tools .labgo{display:none}}
 
 /* ---------- Controls: one pill system for nav, chips, segmented control and icon buttons ---------- */
-.sections a,.chip,.theme,.seg,#size,#origin,#adminview,#xgen,.prog{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);box-shadow:var(--shadow)}
+.sections a,.chip,.theme,.seg,#size,#origin,#adminview,#xgen,#cvd,.prog{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--pill);box-shadow:var(--shadow)}
 .sections a,.chip{display:inline-flex;align-items:center;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .12s,border-color .12s,color .12s}.chip{min-height:var(--ctl-h)}.sections a{min-height:38px}.chip{font-size:.92rem}.sections a{font-size:.82rem}.chip{padding:0 14px}.sections a{padding:0 4px}
 @media (min-width:600px){
   .sections a{padding:0 14px;font-size:.92rem;min-height:var(--ctl-h)}
@@ -138,13 +138,13 @@ header{position:sticky;top:calc(env(safe-area-inset-top,0px) - var(--hdr-hide,0p
 .modes.ctx .up{gap:4px}
 .modes.ctx .pn{flex:none;display:flex;gap:2px;padding-left:6px;border-left:1px solid var(--line)}
 .modes.ctx .pn a{width:34px;padding:0;font-size:1.3rem;line-height:1}
-#size,#origin,#adminview,#xgen{display:flex;overflow:hidden;height:var(--ctl-h)}
-#origin button,#adminview button,#xgen button{background:none;border:0;color:var(--muted);font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}#adminview button,#xgen button{padding:0 9px}#origin button{padding:0 7px}
+#size,#origin,#adminview,#xgen,#cvd{display:flex;overflow:hidden;height:var(--ctl-h)}
+#origin button,#adminview button,#xgen button,#cvd button{background:none;border:0;color:var(--muted);font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}#adminview button,#xgen button,#cvd button{padding:0 9px}#origin button{padding:0 7px}
 @media (min-width:600px){
   #origin button{padding:0 9px}
 }
 #origin button+button,#adminview button+button,#xgen button+button{border-left:1px solid var(--line)}
-#origin button[aria-pressed="true"],#adminview button[aria-pressed="true"],#xgen button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+#origin button[aria-pressed="true"],#adminview button[aria-pressed="true"],#xgen button[aria-pressed="true"],#cvd button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 #size button{background:none;border:0;color:var(--muted);font:inherit;font-size:.8rem;font-weight:700;width:34px;cursor:pointer}
 #size button+button{border-left:1px solid var(--line)}
 #size button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
@@ -627,8 +627,6 @@ a.lt:hover{border-color:var(--accent)}
    (accent, background, lines) and the learning-level ramp, with its own light and dark steps. Lagoon = the base colours
    above; Depth is the default theme (set in index.html before first paint). Steps generated in OKLCH at fixed lightness (light .93/.84/.72/.58/.44, dark .38/.48/.61/.74/.86), so every
    theme keeps the same text contrast on each step. */
-:root[data-palette="reef"]{--bg:#faf3f0;--surface-2:#f4e8e4;--line:#e6d7d2;--accent:#a24019;--accent-ink:#ffffff;--lv1:#fee3c5;--lv2:#f7bd8f;--lv3:#e68a58;--lv4:#c25430;--lv5:#8c2e23;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
-:root[data-palette="reef"][data-theme="dark"]{--bg:#1a110e;--surface:#271b17;--surface-2:#332520;--line:#44342e;--accent:#f89c7c;--accent-ink:#2a140c;--lv1:#523e27;--lv2:#7f522b;--lv3:#bb6b40;--lv4:#f28a6a;--lv5:#febfb4;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
 :root[data-palette="ocean"]{--bg:#f1f5fa;--surface-2:#e5ecf5;--line:#d3dce7;--accent:#2863ab;--accent-ink:#ffffff;--lv1:#d1edfe;--lv2:#a1d1f4;--lv3:#6aaae6;--lv4:#407bc5;--lv5:#2c4f94;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
 :root[data-palette="ocean"][data-theme="dark"]{--bg:#0f141b;--surface:#181f28;--surface-2:#212a35;--line:#2f3945;--accent:#86bafd;--accent-ink:#0d1b2d;--lv1:#2f4653;--lv2:#3b627e;--lv3:#5088bc;--lv4:#77aef3;--lv5:#bad2fd;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
 :root[data-palette="seagrass"]{--bg:#f2f6f0;--surface-2:#e7ede4;--line:#d6ded2;--accent:#437224;--accent-ink:#ffffff;--lv1:#e6edc0;--lv2:#c0d492;--lv3:#8cb460;--lv4:#558b41;--lv5:#29612d;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
@@ -637,6 +635,11 @@ a.lt:hover{border-color:var(--accent)}
 :root[data-palette="twilight"][data-theme="dark"]{--bg:#14121a;--surface:#1f1c27;--surface-2:#2a2734;--line:#393544;--accent:#bda8fc;--accent-ink:#1c172b;--lv1:#453e53;--lv2:#625581;--lv3:#8875bd;--lv4:#ad9af9;--lv5:#d0cafe;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
 :root[data-palette="depth"]{--bg:#eff6f9;--surface-2:#e2edf3;--line:#cfdde4;--accent:#066d90;--accent-ink:#ffffff;--lv1:#f4ed8b;--lv2:#9bdda8;--lv3:#4ab9b2;--lv4:#1785af;--lv5:#2e4d99;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:var(--ink);--lvt4:#fff;--lvt5:#fff}
 :root[data-palette="depth"][data-theme="dark"]{--bg:#0c151a;--surface:#142026;--surface-2:#1c2b33;--line:#2a3b43;--accent:#75c3e8;--accent-ink:#031e29;--lv1:#494404;--lv2:#346c42;--lv3:#31948f;--lv4:#62b7dd;--lv5:#bcd1fd;--lvt1:var(--ink);--lvt2:var(--ink);--lvt3:#0b1a1e;--lvt4:#0b1a1e;--lvt5:#0b1a1e}
+/* Colour-blind mode (setting "Colour-blind", :root[data-cvd], localStorage imr-coral-cvd): right/wrong and "to review"
+   move from green/red to blue/orange (Okabe-Ito), which stay apart under protanopia, deuteranopia and tritanopia; The level
+   scale needs no change: its steps differ by lightness, which colour-blind readers see. Works on top of any colour theme. */
+:root[data-cvd="1"]{--good:#0067a5;--good-bg:#dcebf6;--bad:#c45400;--bad-bg:#fbe5d3}
+:root[data-cvd="1"][data-theme="dark"]{--good:#7cbcf0;--good-bg:#1a3047;--bad:#f5a25d;--bad-bg:#4a2c14}
 .s1{--lvc:var(--lv1);--lvt:var(--lvt1)}.s2{--lvc:var(--lv2);--lvt:var(--lvt2)}.s3{--lvc:var(--lv3);--lvt:var(--lvt3)}.s4{--lvc:var(--lv4);--lvt:var(--lvt4)}.s5{--lvc:var(--lv5);--lvt:var(--lvt5)}
 .pslate .ps,.pseg a{position:relative;background:var(--lvc,var(--surface)) linear-gradient(color-mix(in srgb,var(--lvt,var(--ink)) 55%,transparent),color-mix(in srgb,var(--lvt,var(--ink)) 55%,transparent)) left bottom / var(--p,0%) 3px no-repeat;color:var(--lvt,var(--ink));border:1px solid var(--lvc,var(--line))}
 .pslate .ps.s0,.pseg a.s0{border-style:dashed;color:var(--muted)}

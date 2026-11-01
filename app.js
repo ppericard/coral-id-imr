@@ -1150,6 +1150,10 @@ showTheme();
 function showPal(){ const p = document.documentElement.dataset.palette || 'depth'; document.querySelectorAll('#palette button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pal === p))); }
 document.querySelectorAll('#palette button').forEach(b => b.onclick = () => { const p = b.dataset.pal; document.documentElement.dataset.palette = p; try { localStorage.setItem('imr-coral-palette', p); } catch (e) {} showPal(); });
 showPal();
+// Colour-blind mode: blue/orange instead of green/red for right/wrong and review (CSS :root[data-cvd]), on top of any theme.
+const showCvd = () => { const on = document.documentElement.dataset.cvd === '1'; document.querySelectorAll('#cvd button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.cvd === '1') === on))); };
+document.querySelectorAll('#cvd button').forEach(b => b.onclick = () => { const on = b.dataset.cvd === '1'; if (on) document.documentElement.dataset.cvd = '1'; else delete document.documentElement.dataset.cvd; try { localStorage.setItem('imr-coral-cvd', on ? '1' : '0'); } catch (e) {} showCvd(); });
+showCvd();
 
 // Tools of the Learn, Practice and Identify sections (the learning path order): a tab bar in the sticky header, so they stay in view.
 // Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).
