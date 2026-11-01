@@ -31,13 +31,19 @@
   btn.title = 'Bad photo: send it to Triage in the admin';
   document.body.appendChild(btn);
   let target = null;
-  const place = im => { const f = fileOf(im); if (!f) return; target = im; const r = im.getBoundingClientRect();
-    if (r.width < 60 || r.height < 40 || r.bottom < 0 || r.top > innerHeight) { btn.hidden = true; return; }
+  let place = im => { const f = fileOf(im); if (!f) return; target = im; const r = im.getBoundingClientRect();
+    if (r.width < 60 || r.height < 40 || r.bottom < 0 || r.top + 30 > innerHeight - (typeof tabH === 'function' ? tabH() : 0)) { btn.hidden = true; return; }
     btn.style.top = (r.top + 6) + 'px'; btn.style.right = (document.documentElement.clientWidth - r.right + 6) + 'px'; btn.hidden = false;
     btn.classList.toggle('on', read().some(x => x.f === f)); };
   document.addEventListener('pointerover', e => { const im = e.target.closest && e.target.closest('img'); if (im && im !== target) place(im); }, true);
-  // The button follows its photo when the page scrolls, and goes away once the photo leaves the page.
-  document.addEventListener('scroll', () => { if (target && document.body.contains(target)) place(target); else btn.hidden = true; }, true);
+  // The button follows its photo when the page scrolls or the photo is resized, and goes away once the photo leaves the
+  // page (new question, other page): on a phone it used to stay where the last photo was, e.g. over the tab bar.
+  const follow = () => { if (target && target.isConnected) place(target); else { btn.hidden = true; target = null; } };
+  document.addEventListener('scroll', follow, true);
+  addEventListener('resize', follow);
+  addEventListener('hashchange', () => { btn.hidden = true; target = null; });
+  new MutationObserver(() => { if (target && !target.isConnected) { btn.hidden = true; target = null; } }).observe(document.body, {childList: true, subtree: true});
+  if (window.ResizeObserver) { const ro = new ResizeObserver(follow); const watch = place; place = im => { ro.disconnect(); watch(im); if (target) ro.observe(target); }; }
   // Touch screens have no hover: a tap on a photo shows the flag for that photo.
   document.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') { const im = e.target.closest && e.target.closest('img'); if (im) place(im); } }, true);
   btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); if (!target) return;
