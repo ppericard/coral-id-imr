@@ -69,42 +69,6 @@
         "stylophora-cand-606690291": "wide"
       }
     },
-    "Lithophyllon": {
-      "cover": "imr-p52_i8",
-      "add": {
-        "lithophyllon-cf-64-g11": "macro",
-        "lithophyllon-cf-64-g02": "macro",
-        "lithophyllon-cf-64-g01": "macro",
-        "lithophyllon-cf-64-g10": "macro",
-        "lithophyllon-cf-59-20": "wide",
-        "lithophyllon-cand-269391063": "wide"
-      },
-      "feat": {
-        "macro": [
-          "lithophyllon-macro-746236865",
-          "lithophyllon-macro-746237703",
-          "lithophyllon-cf-64-g01"
-        ]
-      },
-      "move": {
-        "lithophyllon-medium-746236878": "macro"
-      }
-    },
-    "Heliofungia": {
-      "add": {
-        "heliofungia-cand-269732379": "wide",
-        "heliofungia-cand-746234858": "macro"
-      }
-    },
-    "Cyphastrea": {
-      "add": {
-        "cyphastrea-cand-269512161": "wide",
-        "cyphastrea-cand-484996119": "wide",
-        "cyphastrea-cf-8-10": "wide",
-        "cyphastrea-cand-484996141": "macro",
-        "cyphastrea-cand-269511974": "wide"
-      }
-    },
     "Anacropora": {
       "add": {
         "anacropora-cand-269726965": "wide",
@@ -250,6 +214,27 @@
         "fungia-cand-269732359": "wide"
       }
     },
+    "Lithophyllon": {
+      "cover": "imr-p52_i8",
+      "add": {
+        "lithophyllon-cf-64-g11": "macro",
+        "lithophyllon-cf-64-g02": "macro",
+        "lithophyllon-cf-64-g01": "macro",
+        "lithophyllon-cf-64-g10": "macro",
+        "lithophyllon-cf-59-20": "wide",
+        "lithophyllon-cand-269391063": "wide"
+      },
+      "feat": {
+        "macro": [
+          "lithophyllon-macro-746236865",
+          "lithophyllon-macro-746237703",
+          "lithophyllon-cf-64-g01"
+        ]
+      },
+      "move": {
+        "lithophyllon-medium-746236878": "macro"
+      }
+    },
     "Danafungia": {
       "add": {
         "danafungia-cand-269393406": "wide",
@@ -278,6 +263,12 @@
         "herpolitha-cand-743295509": "wide"
       }
     },
+    "Heliofungia": {
+      "add": {
+        "heliofungia-cand-269732379": "wide",
+        "heliofungia-cand-746234858": "macro"
+      }
+    },
     "Dipsastraea": {
       "add": {
         "dipsastraea-cand-746236837": "medium",
@@ -296,7 +287,7 @@
         "diploastrea-cand-269730992": "wide",
         "diploastrea-cf-27-m0": "wide",
         "diploastrea-cand-269731089": "wide",
-        "diploastrea-cand-269731161": "medium"
+        "diploastrea-cand-269731161": "wide"
       }
     },
     "Goniastrea": {
@@ -337,6 +328,15 @@
         "merulina-cand-746236232": "medium",
         "merulina-cand-585933870": "wide",
         "merulina-cand-488110982": "medium"
+      }
+    },
+    "Cyphastrea": {
+      "add": {
+        "cyphastrea-cand-269512161": "wide",
+        "cyphastrea-cand-484996119": "wide",
+        "cyphastrea-cf-8-10": "wide",
+        "cyphastrea-cand-484996141": "macro",
+        "cyphastrea-cand-269511974": "wide"
       }
     },
     "Halomitra": {
@@ -465,14 +465,6 @@
     "pocillopora-macro-745206187": "excluded",
     "tubastraea-cand-580500321": "excluded"
   },
-  "flag": {
-    "diploastrea-cand-269731161": {
-      "genus": "Diploastrea",
-      "view": "medium",
-      "where": "quiz · level auto",
-      "at": "2026-10-31T16:14:28.590Z"
-    }
-  },
   "seen": {
     "cand:acropora-cf-2-00": 1,
     "cand:alveopora-cf-71-00": 1,
@@ -515,6 +507,38 @@
     "cand:tubastraea-cand-269472065": 1,
     "cand:tubastraea-cf-10-00": 1,
     "cand:tubipora-x-720027172": 1
+  },
+  "mont": {
+    "Acropora|Cyphastrea": {
+      "v": "medium",
+      "a": "imr-p15_i4",
+      "b": "cyphastrea-medium-249833926",
+      "hide": true
+    },
+    "Acropora|Isopora": {
+      "v": "macro"
+    },
+    "Dipsastraea|Favites": {
+      "v": "macro"
+    },
+    "Fungia|Lobactis": {
+      "v": "macro",
+      "a": "fungia-macro-746236363",
+      "b": "imrl-p45_i3"
+    },
+    "Goniopora|Porites": {
+      "v": "medium",
+      "a": "goniopora-medium-745205690d",
+      "b": "porites-medium-746236449"
+    },
+    "Millepora|Porites": {
+      "v": "medium"
+    },
+    "Montipora|Porites": {
+      "v": "macro",
+      "a": "montipora-macro-745674855",
+      "b": "porites-macro-745675630"
+    }
   },
   "crop": {
     "danafungia-cand-242601544": [
