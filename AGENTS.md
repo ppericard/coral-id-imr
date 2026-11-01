@@ -88,6 +88,8 @@ Details in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
    - A merge to `main` is live on GitHub Pages within a minute or two; open tabs pick up the new shell on the next visit (service worker) and a new `curation.json` within 30 min or when the tab comes back into view.
 6. If you changed `tools/sync/Code.gs`: bump `VERSION` (header comment and constant) and tell Pierre he must redeploy (see ARCHITECTURE.md). Agents cannot deploy Apps Script. The deployed version is **v5** (verified 2026-11-01); the app keeps working with an older script, so a change must stay backward compatible until Pierre redeploys. If you change the Elo in `stats_`, change its copy `eloOf()` in `admin.js` too.
 7. If you discussed an idea and did not build it: add it to `docs/ROADMAP.md`.
+8. **Keep the docs current in the same PR (Pierre, 2026-11-01).** A change is not done until the docs say what the code now does. Before merging, check and update as needed: this file (a new lasting rule from Pierre, a changed workflow), `docs/ARCHITECTURE.md` (a new page, hash, setting, data key, `curation.json` key, admin mode, sync endpoint or Code.gs version, model constant), `docs/ROADMAP.md` (ship = move to "Done recently" with the PR number; deferred = add a line; new "don't do X" = Declined) and `README.md` (anything a newcomer sees). Say "Docs: none needed" in the PR description when nothing applies. The goal: another agent (Codex, a Claude Project, a new developer) can take over from the repo alone, with no chat history or memory.
+9. Every ~20 merged PRs, or when Pierre asks, do a full documentation pass: re-check each doc against the code (not against memory) and fix what drifted.
 
 ## Where decisions live
 
