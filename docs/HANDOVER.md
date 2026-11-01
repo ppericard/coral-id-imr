@@ -37,7 +37,6 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 | Say which Lab tools he marked Keep / Trim (votes live only in his browser). | ROADMAP. |
 | Send the app to the beta RAs; renew the admin GitHub token before it expires (fine-grained, 90-day expiry, created around 2026-10-31, so about late January 2027). | Admin lock screen has the token link. |
 | Optional: delete the 87 old `claude/*` branches on GitHub. All belong to merged PRs (checked 2026-11-01); nothing unmerged is left on them. | GitHub > Branches, or Settings > "Automatically delete head branches". |
-| Optional: copy the old Claude project's files he still wants (Coral Finder 2022 PDF, extracted Lecture 6 text, look-alikes study page, screenshots) into the new project. They are not in the repo on purpose (copyright, IMR-internal). | Old project's Files panel. |
 
 ## Questions for an IMR trainer
 
@@ -80,7 +79,7 @@ Pierre Pericard (GitHub `ppericard`), Research Fellow at IMR (Institute for Mari
 | Lecture 6 as Google Slides (read with the Slides API, incl. presenter notes) | Slides id `13msDDkJzPN6fRam-ezX_vl93osAd0Cw4rJ1aINOzveI`. Full-resolution deck media: Drive folder `1FDXDg3XvjXwML0KGxxtjMjVq2fU3jP8i`. |
 | Lecture text in the app | `data.json` `gen[g].imr` (verbatim slide text, review slides, presenter notes), `mn` mnemonics, `sl`/`rsl` slide numbers, `tools/lecture_more.tsv`, `tools/course_views.txt`. |
 | MCP decks "Substrate monitoring 2023", "Intro to substrate" | Marine Conservation Philippines, not IMR. Pierre: don't mine them yet. |
-| Coral Finder 2022 (R. Kelley, BYOGUIDES; copyrighted) | PDF in the old Claude project's files (85 scanned pages, no text layer; PDF page = book page + 5). Page mapping already in `data.json` (`pages`, `key`, `x`). |
+| Coral Finder 2022 (R. Kelley, BYOGUIDES; copyrighted) | PDF on Pierre's Google Drive, in the IMR / coral folder (85 scanned pages, no text layer; PDF page = book page + 5). Never commit it or its page images (copyright). Page mapping already in `data.json` (`pages`, `key`, `x`). |
 | Pierre's iNaturalist | user `ppericard`, coral taxon 47532; covers 36 of the 39 slate genera (missing Anacropora, Astrea, Duncanopsammia at the time). |
 | ReefRecall | Pierre's separate mobile app (`ppericard/reefrecall`). The coral tools stay standalone; the data may be reused there later. |
 
