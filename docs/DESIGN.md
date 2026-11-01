@@ -30,7 +30,7 @@ The visual rules every page follows. They came out of the expert UI review of 20
 | Exclusive choice (2-4 options) | `.seg` (and the ⚙ switches, Memory's level and genera set, styled the same) | Grey track, the chosen option is a white pill. Theme is Light / Dark here too. |
 | Filter or toggle in a list | `.chip` | `aria-pressed` for state. |
 | Section tabs | `.modes` | Slim underlined text tabs. |
-| Disclosure | `<details>` with a muted `▸` summary | Inside My progress, the signed-out sign-in fold is shown as a `.next.sec` button. |
+| Disclosure | `<details>` with a muted `▸` summary | e.g. "Backup or reset progress" at the bottom of ⚙. |
 
 ## Icons
 
@@ -39,7 +39,9 @@ One SVG set (24 px grid, 1.75 stroke, `currentColor`): see `LAB_ICONS` in `proto
 ## Screens
 
 - Phone tab bar: icon above label (same SVG set), the active tab gets the accent colour and a tinted pill behind its icon.
-- Header progress pill: "Progress" + a mini ring (`--pp`) + %; signing in lives on My progress.
+- Header progress pill: "Progress" + a mini ring (`--pp`) + %.
+- Signing in: while signed out, a filled "Sign in" pill (`.next.signb`) sits in the header on every page and opens the sign-in card; once signed in it disappears and the account is one quiet line at the top of ⚙ (Send now, Sign out), with "Backup or reset progress" folded at the bottom of ⚙. If saving fails, the header pill comes back as an outlined red "Not saved" that opens ⚙. Never put the account on a content page.
+- My progress: the board (Photos / Slate / Groups) comes first on phones and tablets, then the ring, level counts, Review first and Often mixed up. No "Practise now" button (the nav already has Practice).
 - Quiz on phone/tablet: the stage takes all the height the question and answers leave (Pierre prefers the biggest photo to a tight 4:3 box), sized before the photos load: **nothing may move while a photo loads**. A photo close to that shape fills it (cover); a very different shape is shown whole on its blurred background. Full frame in the lightbox.
 - Games wider than the page (`.bleed`, ≥ 1340 px) start on the header's left edge and only grow to the right.
 - ID tips are the key content: never clamp or truncate them on a card; they are boxed (`.tipbox`) wherever they appear (sheet, quiz feedback, pair page).
