@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 11 (2026-11-01: v11: admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 11 (2026-11-01: v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -358,4 +358,58 @@ function users_(p){
   const rm = ss.getSheetByName('Removed');
   if (rm && rm.getLastRow() > 1) out.removed = rm.getRange(2, 1, rm.getLastRow() - 1, 4).getValues().filter(r => r[0]).map(r => ({name: String(r[0]), into: String(r[2] || ''), time: new Date(r[3]).getTime() || 0})).reverse();
   return out;
+}
+
+// Self-update from GitHub (v11; Pierre, 2026-11-01: "find a way to redeploy the script without me"). A time trigger
+// (installAutoUpdate, run once by hand in the editor) calls autoUpdate every 15 minutes: when tools/sync/Code.gs on main
+// carries a higher VERSION, the script replaces its own code with it (and its manifest with tools/sync/appsscript.json),
+// saves a new version and points the existing web app deployment(s) at it, through the Apps Script API with the
+// script's own OAuth token. The /exec URL never changes. Needs, once: the Apps Script API switched on in
+// https://script.google.com/home/usersettings, the manifest's scopes accepted (running installAutoUpdate asks), and a
+// first manual deploy of this version. A newer file without autoUpdate is never installed (it would end the updates);
+// every attempt that does something is written to the "Deploy log" tab. Anyone who can push to main can change this
+// script, exactly as they can change the site.
+const SELF_RAW = 'https://raw.githubusercontent.com/' + REPO + '/main/tools/sync/';
+// Run once by hand: makes the trigger, then checks right away that the Apps Script API answers this script (a project
+// whose hidden Cloud project can't use the API fails here, with what to do, instead of at the first real update).
+function installAutoUpdate(){
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'autoUpdate').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('autoUpdate').timeBased().everyMinutes(15).create();
+  const r = UrlFetchApp.fetch('https://script.googleapis.com/v1/projects/' + ScriptApp.getScriptId() + '/content', {headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()}, muteHttpExceptions: true});
+  const msg = r.getResponseCode() === 200 ? 'Self-update ready: the Apps Script API answers. ' + autoUpdate()
+    : 'Self-update NOT ready: the Apps Script API answered ' + r.getResponseCode() + ' (' + r.getContentText().slice(0, 200) + '). Check that the API is on in script.google.com/home/usersettings, else link a Google Cloud project with the Apps Script API enabled (see HANDOVER).';
+  sheet_('Deploy log', ['Time', 'Event']).appendRow([new Date(), msg.slice(0, 500)]);
+  Logger.log(msg);
+  return msg;
+}
+function autoUpdate(){
+  const log = m => sheet_('Deploy log', ['Time', 'Event']).appendRow([new Date(), String(m).slice(0, 500)]);
+  try {
+    const get = f => UrlFetchApp.fetch(SELF_RAW + f + '?t=' + Date.now(), {muteHttpExceptions: true});
+    const src = get('Code.gs'); if (src.getResponseCode() !== 200) return 'github ' + src.getResponseCode();
+    const code = src.getContentText(), m = /const VERSION = (\d+);/.exec(code), v = m ? Number(m[1]) : 0;
+    // AUTO_PENDING: a version whose code is already in place but whose deployment did not finish (a failed /versions or
+    // /deployments call). The code running now is then that version, so it must finish the deployment, not skip it.
+    const props = PropertiesService.getScriptProperties(), pending = Number(props.getProperty('AUTO_PENDING') || 0);
+    if (v <= VERSION && !pending) return 'up to date (v' + VERSION + ')';
+    if (v > VERSION && code.indexOf('function autoUpdate(') < 0) { log('v' + v + ' not installed: it has no autoUpdate'); return 'skipped'; }
+    const man = get('appsscript.json'), id = ScriptApp.getScriptId(), auth = {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()};
+    const api = (method, path, body) => { const o = {method: method, headers: auth, muteHttpExceptions: true}; if (body) { o.contentType = 'application/json'; o.payload = JSON.stringify(body); }
+      const r = UrlFetchApp.fetch('https://script.googleapis.com/v1/projects/' + id + path, o);
+      if (r.getResponseCode() >= 300) throw new Error(method.toUpperCase() + ' ' + path + ' ' + r.getResponseCode() + ': ' + r.getContentText().slice(0, 300));
+      return JSON.parse(r.getContentText() || '{}'); };
+    if (v > VERSION) {
+      const files = api('get', '/content').files || [], js = files.filter(f => f.type === 'SERVER_JS');
+      if (js.length !== 1) { log('v' + v + ' not installed: expected one script file, found ' + js.length); return 'skipped'; }
+      props.setProperty('AUTO_PENDING', String(v));
+      api('put', '/content', {files: files.map(f => ({name: f.name, type: f.type,
+        source: f.type === 'SERVER_JS' ? code : f.name === 'appsscript' && man.getResponseCode() === 200 ? man.getContentText() : f.source}))});
+    }
+    const dv = Math.max(v, pending), ver = api('post', '/versions', {description: 'v' + dv + ' from GitHub main'});
+    const deps = (api('get', '/deployments').deployments || []).filter(d => d.deploymentConfig && d.deploymentConfig.versionNumber && (d.entryPoints || []).some(e => e.entryPointType === 'WEB_APP'));
+    deps.forEach(d => api('put', '/deployments/' + d.deploymentId, {deploymentConfig: {versionNumber: ver.versionNumber, manifestFileName: 'appsscript', description: 'v' + dv + ' (auto)'}}));
+    props.deleteProperty('AUTO_PENDING');
+    log('deployed v' + dv + ' as version ' + ver.versionNumber + ' (' + deps.length + ' web app deployment' + (deps.length === 1 ? '' : 's') + ')' + (v > VERSION ? '' : ', finishing an interrupted update'));
+    return 'deployed v' + dv;
+  } catch (e) { log('error: ' + e.message); return 'error'; }
 }
