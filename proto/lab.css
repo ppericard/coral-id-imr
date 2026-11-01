@@ -736,6 +736,9 @@ button.fdname[aria-expanded="true"]::after{content:" ▾"}
 .fdtq{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:1px;aspect-ratio:4/3;background:var(--line);overflow:hidden}
 .fdtq img{width:100%;height:100%;min-height:0;object-fit:cover;display:block}
 /* Fewer than 4 photos of that growth form: the first one takes the free space. */
+/* Box drawings stay light in dark mode, like the home schematics. */
+.fdsch{grid-column:span 2;grid-row:span 2;width:100%;height:100%;display:block;background:#e9eff1}
+.fdsch .f{fill:#fff;stroke:#14262d;stroke-width:1.6;stroke-linejoin:round}.fdsch .st{fill:none;stroke:#5a6d74;stroke-width:1.1;stroke-linecap:round}.fdsch .b{fill:none;stroke:#5a6d74;stroke-width:2.2;stroke-linecap:round}.fdsch .w{fill:#5a6d74}
 .fdtq.n3 img:first-child{grid-row:span 2}.fdtq.n2 img{grid-row:span 2}.fdtq.n1 img{grid-column:span 2;grid-row:span 2}
 .fdtq.s{aspect-ratio:auto;width:84px;height:63px;flex:none;border-radius:6px;overflow:hidden}
 .fdtt{display:flex;flex-direction:column;padding:6px 8px 8px;border-top:4px solid var(--c,var(--line))}
