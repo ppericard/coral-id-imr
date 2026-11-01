@@ -28,7 +28,7 @@ function rebase(next){
   DRAFT = merge3(base, DRAFT, next, conf); DRAFT.genera = DRAFT.genera || {};
   HIST = HIST.map(x => JSON.stringify(f(JSON.parse(x)))); FUT = FUT.map(x => JSON.stringify(f(JSON.parse(x))));
   SAVED = clone(next); SAVED.genera = SAVED.genera || {}; snap = JSON.stringify(DRAFT); memoReset();
-  if (TOKEN) { store.set('imr-curation-draft', DRAFT); store.set('imr-curation-base', SAVED); keepHist(); }
+  if (TOKEN) { putDraft(); store.set('imr-curation-base', SAVED); keepHist(); }
   return conf;
 }
 // "genera > Acropora > feat > wide" → "Acropora featured Colony"; top-level maps → "quality of acropora-…".
@@ -54,11 +54,34 @@ let HIST = [], FUT = [], snap = null;
 const HKEY = 'imr-admin-undo';
 const keepHist = () => { if (!TOKEN) return; try { sessionStorage.setItem(HKEY, JSON.stringify({snap, hist: HIST.slice(-60), fut: FUT.slice(-60)})); } catch (e) {} };
 // Read-only (no token): clicks stay in this tab only, nothing is kept as a draft (admin review, 2026-11-01).
-function saveDraft(){ memoReset(); if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); FUT = []; snap = JSON.stringify(DRAFT); if (!TOKEN) return; draftLost = !store.set('imr-curation-draft', DRAFT); draftAt = new Date(); keepHist(); }
+function saveDraft(){ memoReset(); if (snap !== null) HIST.push(snap); if (HIST.length > 300) HIST.shift(); FUT = []; snap = JSON.stringify(DRAFT); if (!TOKEN) return; draftLost = !putDraft(); draftAt = new Date(); keepHist(); }
 let draftLost = false;
+// The draft as this tab last wrote it to, or took it from, localStorage: the common base when another admin tab writes its own.
+// Two admin tabs in one browser share the stored draft (code re-review 2026-11-01, M4). Every write is tagged with this
+// tab's revision and the revision it had last seen (takeTab in core.js), and a draft another tab stored is merged in, against
+// the draft that tab started from, before every write and on every storage event. Neither tab erases the other's clicks,
+// even when both click before hearing of each other.
+const TAB = Math.random().toString(36).slice(2, 8), REVS = {}; let REV = 0, SEEN = null;
+function takeOther(){
+  const v = store.get('imr-curation-draft', null);
+  if (!v || !v.genera) return null;
+  const m = takeTab(REVS, DRAFT, SAVED, v);
+  if (!m) return null;
+  if (v._tab) SEEN = v._tab.rev;
+  if (!m.changed) return null;
+  DRAFT = m.draft; snap = JSON.stringify(DRAFT); memoReset(); return m;
+}
+function putDraft(){
+  if (takeOther()) setTimeout(() => toast('Clicks made in another admin tab are in.'), 0);
+  const rev = `${TAB}.${++REV}`, keys = Object.keys(REVS);
+  if (keys.length > 200) keys.slice(0, 50).forEach(k => delete REVS[k]);
+  REVS[rev] = clone(DRAFT);
+  const ok = store.set('imr-curation-draft', Object.assign({}, DRAFT, {_tab: {rev, seen: SEEN}}));
+  SEEN = rev; return ok;
+}
 function step(from, to, msg){
   if (!from.length) return toast(msg[0]);
-  to.push(snap); snap = from.pop(); DRAFT = JSON.parse(snap); memoReset(); if (TOKEN) { store.set('imr-curation-draft', DRAFT); draftAt = new Date(); keepHist(); } render(); toast(msg[1]);
+  to.push(snap); snap = from.pop(); DRAFT = JSON.parse(snap); memoReset(); if (TOKEN) { putDraft(); draftAt = new Date(); keepHist(); } render(); toast(msg[1]);
 }
 const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']), redo = () => step(FUT, HIST, ['Nothing to redo.', 'Redone.']);
 const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
@@ -1054,16 +1077,30 @@ async function start(){
   // The draft only carries the changes made since its base: everything published since then (from another
   // device, or by the candidate refill) comes in underneath. Drafts from before this rule only add, never remove.
   const old = store.get('imr-curation-draft', null), base = store.get('imr-curation-base', null);
+  if (old && old._tab) { SEEN = old._tab.rev; delete old._tab; REVS[SEEN] = clone(old); }   // the draft another open tab started from
   DRAFT = old && old.genera ? (base ? merge3(base, old, SAVED) : mergeOld(old, SAVED)) : clone(SAVED); DRAFT.genera = DRAFT.genera || {};
   // Undo steps kept by this tab before a reload come back, re-based like the draft, only if they lead to that same draft.
   const kept = (() => { try { return JSON.parse(sessionStorage.getItem(HKEY) || 'null'); } catch (e) { return null; } })();
   if (TOKEN && kept && old && kept.snap === JSON.stringify(old) && Array.isArray(kept.hist) && Array.isArray(kept.fut)) {
     const f = x => JSON.stringify(base ? merge3(base, JSON.parse(x), SAVED) : mergeOld(JSON.parse(x), SAVED)); HIST = kept.hist.map(f); FUT = kept.fut.map(f); }
-  snap = JSON.stringify(DRAFT); if (TOKEN) { store.set('imr-curation-draft', DRAFT); store.set('imr-curation-base', SAVED); keepHist(); }
+  snap = JSON.stringify(DRAFT); if (TOKEN) { putDraft(); store.set('imr-curation-base', SAVED); keepHist(); }
   // Pierre's clicks in the old Coral Finder letters (curation.json "form") stay as they are, shown as the hint.
   Object.assign(LEGACY, SAVED.form || {}, DRAFT.form || {});
   const nf = importFlags(); if (nf) setTimeout(() => toast(`${nf} new photo${nf > 1 ? 's' : ''} flagged on the site: see Triage.`), 50);
   addEventListener('storage', e => { if (e.key === 'imr-photo-flags' && e.newValue && importFlags()) render(); });
+  // Another admin tab in this browser clicked: merge its draft onto this one instead of overwriting it at the next click,
+  // and take the base it published (code re-review 2026-11-01, M4). One Undo step brings back this tab's draft as it was.
+  addEventListener('storage', e => {
+    if (!TOKEN || !e.newValue) return;
+    let v; try { v = JSON.parse(e.newValue); } catch (x) { return; }
+    if (e.key === 'imr-curation-base' && v) { SAVED = v; SAVED.genera = SAVED.genera || {}; memoReset(); render(); return; }
+    if (e.key !== 'imr-curation-draft') return;
+    const was = snap, m = takeOther();
+    if (!m) return;
+    if (was !== null) HIST.push(was); FUT = [];
+    if (m.share) putDraft();
+    keepHist(); render(); toast('Clicks made in another admin tab are in.');
+  });
   const keep = changed().length; if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? "genera" : "genus"} not published yet.`);
   $('tools').hidden = false; $('save').onclick = save; $('download').onclick = download;
   const mo = document.querySelector('.adm-more'); if (mo) { mo.querySelector('.adm-menu').addEventListener('click', () => { mo.open = false; }); document.addEventListener('click', e => { if (!mo.contains(e.target)) mo.open = false; }); }
