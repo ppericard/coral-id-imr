@@ -855,7 +855,8 @@ function quizDuel(a, b){
   question(a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t));
 }
 // Progress board, one screen: a wall of the 39 cover photos in slate order (name band in the level colour, grey photo =
-// not seen, red border = review) beside a side column with the overall ring, what to review first, sign-in and backup.
+// not seen, red border = review) beside a side column with the overall ring, what to review first and the mix-ups. Signing in
+// and backup/reset live in the header and ⚙ (Pierre, 2026-11-01: the board comes first, nothing unrelated around it).
 function quizBoard(){
   const list = Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n).sort((a, b) => slateIdx(a) - slateIdx(b));
   // Bonus genera (off the slate) get tiles after the slate genera: unlocked ones like any genus, locked ones as "?"
@@ -912,18 +913,11 @@ function quizBoard(){
     <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Learned</p>
     ${weak.length ? `<div><h3 class="label">Review first</h3><p class="chips">${weak.slice(0, 4).map(n => `<a class="chip" href="#g-${esc(n)}"><i>${esc(n)}</i></a>`).join('')}</p></div>` : ''}
     ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> ↔ <i>${esc(o)}</i> <small>· ${k}×</small></a>`).join('')}</p></div>` : ''}
-    <p><a class="next go" href="#quiz">Practise now</a></p>
-    ${SYNC_URL ? '<section class="sync" id="sync"></section>' : ''}
-    <details class="saveprog"><summary>Backup or reset progress</summary><p class="note">Progress is saved in this browser and, once you sign in, in the IMR sheet. You can also save it to a file as a backup, or to move it to another device.</p>
-      <button class="chip" type="button" id="pexp">Save to a file</button> <button class="chip" type="button" id="pload">Load a file</button><input type="file" id="pimp" accept=".json,application/json" hidden> <span class="note" id="pmsg" role="status"></span>
-      <p><button class="reset" type="button" id="reset">Reset progress</button></p></details>
   </aside></div>`;
   bindQuizNav('quiz-board');
-  bindProgFile(); bindSync();
+  bindSync();
   // Phones: the Photos/Slate/Groups switch sits above the board and stays pinned while the page scrolls (Pierre, 2026-10-31).
   if (matchMedia(MQ.phone).matches) { const sg = $v.querySelector('.pboard .gside .seg'); sg.classList.add('pvpin'); $v.querySelector('.pboard').before(sg); }
-  const rb = document.getElementById('reset');
-  rb.onclick = () => { if (rb.dataset.armed) { P = {}; delete Q.bu; delete Q.ba; saveQ(); store.set('imr-coral-reset', new Date().toISOString()); save(); route(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } };
   const wrap = $v.querySelector('.pboard .pgwrap');
   const show = () => { wrap.innerHTML = VIEWS[pv](); $v.querySelectorAll('[data-pv]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pv === pv));
     requestAnimationFrame(() => { const g = wrap.firstChild; if (g.classList.contains('pgrid')) fitTiles(g, 6); else g.style[pv === 'slate' ? 'minHeight' : 'height'] = Math.max(320, innerHeight - g.getBoundingClientRect().top - window.scrollY - 16 - tabH()) + 'px'; }); };
@@ -936,9 +930,15 @@ const $prog = document.getElementById('prog');
 function showProg(){ if (!DATA) return; const n = Object.keys(DATA.gen); const pt = `${progPct(n)}%`, lt = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length} genera learned`; document.getElementById('progn').textContent = pt; $prog.title = `Your progress: ${pt} (${lt})`; const p2 = document.getElementById('progn2'); if (p2) p2.textContent = pt;
   // Not signed in: the pill says so, so RAs find where to save their progress.
   const pill = document.getElementById('prog'), out = !!SYNC_URL && !SYNC;
-  pill.classList.toggle('nosync', out || !!syncTrouble()); pill.querySelector('.pl').textContent = 'Progress'; pill.style.setProperty('--pp', progPct(n));
+  pill.classList.toggle('nosync', !!syncTrouble()); pill.querySelector('.pl').textContent = 'Progress'; pill.style.setProperty('--pp', progPct(n));
   // Status only (design review 2026-11-01): the pill shows progress; signing in is an action on My progress. Not signed in = the dot.
-  pill.title = SYNC ? `Signed in as ${SYNC.name}: your progress per genus` : out ? 'Your progress (not saved online yet: sign in on My progress)' : 'Your progress per genus'; }
+  pill.title = SYNC ? `Signed in as ${SYNC.name}: your progress per genus` : out ? 'Your progress (not saved online yet: Sign in, top right)' : 'Your progress per genus';
+  // Signing in (Pierre, 2026-11-01): a filled "Sign in" button in the header on every page while signed out; once signed in
+  // it disappears and the account (name, Send now, Sign out) is a quiet line at the top of ⚙. Trouble saving brings it
+  // back as "Not saved", which opens ⚙ where the problem is explained.
+  const sb = document.getElementById('signb'), bad = syncTrouble();
+  sb.hidden = !SYNC_URL || (!!SYNC && !bad); sb.textContent = bad ? 'Not saved' : 'Sign in'; sb.classList.toggle('warn', !!bad);
+  sb.title = bad || 'Sign in to save your progress for your IMR trainer'; }
 // Progress files: every imr-coral-* key in localStorage (quiz progress, settings, Lab scores), as JSON.
 const progData = () => { const d = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('imr-coral') && k !== 'imr-coral-sync') d[k] = localStorage.getItem(k); } } catch (e) {} return d; };
 const loadData = d => Object.entries(d || {}).forEach(([k, v]) => k.startsWith('imr-coral') && k !== 'imr-coral-sync' && localStorage.setItem(k, v));
@@ -953,7 +953,8 @@ function bindProgFile(){
   };
   const pick = document.getElementById('pimp');
   document.getElementById('pload').onclick = () => pick.click();
-  try { const done = sessionStorage.getItem('imr-coral-loaded'); if (done) { sessionStorage.removeItem('imr-coral-loaded'); msg('Progress loaded from ' + done + '.'); } } catch (e) {}
+  // After loading a file the page reloads: ⚙ opens on the backup fold to confirm it (not after a sign-in, which also reloads).
+  try { const done = sessionStorage.getItem('imr-coral-loaded'); if (done) { sessionStorage.removeItem('imr-coral-loaded'); msg('Progress loaded from ' + done + '.'); if (done !== 'the IMR sheet') { document.querySelector('#settings .saveprog').open = true; setOpen(true); } } } catch (e) {}
   pick.onchange = e => { const f = e.target.files[0]; if (!f) return;
     f.text().then(t => { const j = JSON.parse(t); if (j.app !== 'imr-coral-id' || !j.data) throw 0;
       loadData(j.data);
@@ -1161,7 +1162,9 @@ function signIn(name, pin, j){
 // One sign-in card, once, after 10 answers played without an account (Pierre, 2026-11-01: beta testers must sign in
 // early so their progress reaches the sheet). Never in Pierre's admin browser. "Later" closes it for good.
 const nudgeDue = () => !SYNC && SYNC_URL && !HAS_ADMIN_TOKEN && !document.querySelector('#tour, .unlock') && !store.get(NUDGE, 0) && store.get(LOG0, []).length >= 10;
-function signinNudge(once = true){
+// once = the one-time card (marks it used); play = once signed in, its button opens the photo quiz (skipped tour).
+// The header's Sign in button opens it with neither: it closes with "Close" or "Done".
+function signinNudge(once = true, play = !once){
   if (once) store.set(NUDGE, 1);
   const d = document.createElement('div');
   d.className = 'unlock signnudge'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Sign in');
@@ -1172,12 +1175,13 @@ function signinNudge(once = true){
   const key = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } else if (e.key === 'Enter' && !(e.target.closest && e.target.closest('form'))) { e.stopPropagation(); e.preventDefault(); close(); } };
   document.addEventListener('keydown', key, true);
   // From a skipped tour, the card ends on the games: once signed in, its button starts the photo quiz.
-  btn.onclick = () => { close(); if (!once && SYNC) go('quiz'); };
+  btn.onclick = () => { close(); if (play && SYNC) go('quiz'); };
   d.addEventListener('click', e => { if (e.target === d) close(); });
-  bindSync(box);
-  new MutationObserver(() => { btn.textContent = SYNC ? (once ? 'Done' : 'Start playing') : 'Later'; btn.classList.toggle('sec', !SYNC); }).observe(box, {childList: true});
+  const label = () => { btn.textContent = SYNC ? (play ? 'Start playing' : 'Done') : once || play ? 'Later' : 'Close'; btn.classList.toggle('sec', !SYNC); };
+  label(); bindSync(box);
+  new MutationObserver(label).observe(box, {childList: true});
 }
-// The sign-in box: My progress (#sync), or the welcome tour's card while it is open.
+// The account box: the top of ⚙ (#sync), or the sign-in card (tour, nudge, header button) while one is open.
 function bindSync(box = document.querySelector('.tsync') || document.getElementById('sync')){
   showProg();
   if (!box) return;
@@ -1207,12 +1211,17 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
     };
     return;
   }
-  const fold = box.id === 'sync';
-  box.innerHTML = `${fold ? '<details class="sfold"><summary>Sign in to save your progress</summary>' : '<h3>Sign in to save your progress</h3>'}<p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device.</p>
+  // ⚙ while signed out: one line; the form itself is in the sign-in card.
+  if (box.id === 'sync') {
+    box.innerHTML = `<p class="sline"><span>Not signed in: your progress stays on this device.</span><button class="linkish" type="button" id="sin">Sign in</button></p>`;
+    box.querySelector('#sin').onclick = () => { setOpen(false); signinNudge(false, false); };
+    return;
+  }
+  box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device.</p>
     <form class="sform"><label>Your name <input name="n" required maxlength="40" autocomplete="name"></label>
     <label>4-digit code <input name="p" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"></label>
     <button class="${box.classList.contains('tsync') ? 'next' : 'chip go'}" type="submit">Sign in</button> <span class="note" role="status"></span></form>
-    <p class="note">New name: pick any code and remember it. Same name and code later: your saved progress comes back.</p>${fold ? '</details>' : ''}`;
+    <p class="note">New name: pick any code and remember it. Same name and code later: your saved progress comes back.</p>`;
   box.querySelector('form').onsubmit = e => { e.preventDefault();
     const f = e.target, name = f.n.value.trim(), pin = f.p.value.trim();
     msg('Connecting…');
@@ -1370,7 +1379,16 @@ function resetHelp(){ $helpbox.hidden = true; $helpbox.innerHTML = ''; $help.hid
 new MutationObserver(pageHelp).observe($v, {childList: true, subtree: true});
 // Settings (photo source, photo size, theme) live in one small panel behind ⚙.
 const $setb = document.getElementById('setb'), $set = document.getElementById('settings');
-$setb.onclick = e => { e.stopPropagation(); const open = $set.hidden; $set.hidden = !open; $setb.setAttribute('aria-expanded', String(open)); };
+function setOpen(open){ $set.hidden = !open; $setb.setAttribute('aria-expanded', String(open)); }
+$setb.onclick = e => { e.stopPropagation(); setOpen($set.hidden); };
+// Opening ⚙ (by the button or "Not saved") refreshes the account line.
+new MutationObserver(() => { if (!$set.hidden && SYNC_URL) bindSync(document.getElementById('sync')); }).observe($set, {attributes: true, attributeFilter: ['hidden']});
+// The account and the progress backup live in ⚙ (Pierre, 2026-11-01: not in the middle of My progress).
+document.getElementById('sync').hidden = !SYNC_URL;
+document.getElementById('signb').onclick = e => { e.stopPropagation(); if (syncTrouble()) setOpen(true); else signinNudge(false, false); };
+bindProgFile();
+{ const rb = document.getElementById('reset');
+  rb.onclick = () => { if (rb.dataset.armed) { P = {}; delete Q.bu; delete Q.ba; saveQ(); store.set('imr-coral-reset', new Date().toISOString()); save(); delete rb.dataset.armed; rb.textContent = 'Reset progress'; document.getElementById('pmsg').textContent = 'Progress reset.'; route(); } else { rb.dataset.armed = '1'; rb.textContent = 'Confirm reset'; } }; }
 document.getElementById('setx').onclick = () => { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); $setb.focus(); };
 document.addEventListener('click', e => { if (!$set.hidden && !e.target.closest('#settings, #setb')) { $set.hidden = true; $setb.setAttribute('aria-expanded', 'false'); } });
 // "/" from any page: open Genera with the search box focused, to jump to a genus by typing (Pierre, 2026-10-31).
