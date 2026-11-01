@@ -923,7 +923,9 @@ function unlockShow(L){
     <div class="ulbtns"><a class="linkish" href="#g-${esc(n)}">Open its sheet</a><button class="next" type="button">Got it</button></div></div>`;
   document.body.appendChild(d);
   const close = () => { d.remove(); document.removeEventListener('keydown', key, true); const nb = document.getElementById('next'); if (nb) nb.focus({preventScroll: true}); };
-  const key = e => { if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); close(); } };
+  // Enter on the focused sheet link follows it (its click closes the card); elsewhere Enter / Esc just close the card.
+  const key = e => { if (e.key !== 'Escape' && e.key !== 'Enter') return; e.stopPropagation();
+    if (e.key === 'Enter' && e.target.closest && e.target.closest('.unlock a')) return; e.preventDefault(); close(); };
   document.addEventListener('keydown', key, true);
   d.querySelector('button').onclick = close; d.querySelector('a').addEventListener('click', close);
   d.addEventListener('click', e => { if (e.target === d) close(); });
