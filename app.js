@@ -556,8 +556,8 @@ function fitLk(){
 }
 addEventListener('resize', fitLk);
 function viewCompare(a, b){
-  // A bonus genus can be compared with a slate genus (from a quiz mix-up), not two bonus genera together.
-  const A = DATA.gen[a] || (isBonus(a) && DATA.gen[b] && GX(a)), B = DATA.gen[b] || (isBonus(b) && DATA.gen[a] && GX(b));
+  // Bonus genera can be compared with a slate genus or with each other (quiz mix-ups).
+  const A = DATA.gen[a] || (isBonus(a) && GX(a)), B = DATA.gen[b] || (isBonus(b) && GX(b));
   if (!A || !B) return viewLookalikes();
   const col = (n, g) => `<div class="cmpcol"><h3><a class="linkish" href="#g-${esc(n)}"><i>${esc(n)}</i></a>${g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'}</h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p>${g.qt ? `<h4>${tipsLabel(g)}</h4>` : ''}${tipsList(g)}<details class="more"><summary>Coral Finder</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>`;
   const flat = [];
@@ -629,7 +629,10 @@ function photoSet(n){
   // The Colony slot never gets a photo whose growth form is "x" (too close to see it): that is a close-up. Except for a
   // genus with a single IMR growth form (Pierre): the form is no question there, so the photo still works as a colony.
   const oneForm = imrFormsOf(n).length === 1, ok = v => p => v !== 'wide' || p.form !== 'x' || oneForm;
-  const pics = v => gamePics(n, v, 'hard').filter(ok(v)).filter(p => !g.x || p.own || !p.gid);  // bonus genera: Research Grade only
+  // Bonus genera: Research Grade only. A two-level genus's close-ups may still sit in "medium" (extra genera from
+  // tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is reachable.
+  const gameOk = p => !g.x || p.own || !p.gid;
+  const pics = v => [...gamePics(n, v, 'hard'), ...(two && v === 'macro' ? gamePics(n, 'medium', 'hard') : [])].filter(ok(v)).filter(gameOk);
   const single = Math.random() < singleP(n), s = P[n] || {}, seen = s.ps || {}, ro = s.ro || [], tgt = ability(n) - PICKD.TARGET_OFF - (single ? PICKD.SINGLE : 0);
   const h = [...recent(n).slice(-5)], hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
   // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
@@ -851,7 +854,7 @@ function answer(cur, c, target, ph, cor, unseen){
   let again = false;
   if (!good && GX(c)) {
     // Only photos the player saw during the question: a corallites hint left closed is not "the photo shown".
-    const order = ph.filter(p => p !== unseen).sort((x, y) => (y.view === 'macro') - (x.view === 'macro')), V = GX(c).views;
+    const order = ph.filter(p => p !== unseen).sort((x, y) => (y.view === 'macro') - (x.view === 'macro')), G = GX(c), V = Object.fromEntries(Object.entries(G.views).map(([v, L]) => [v, L.filter(p => !G.x || p.own || !p.gid)]));
     const tp = order.find(p => (V[p.view] || []).length);
     if (tp) {
       const [, cp] = photoPair([tp], V[tp.view], tp), st0 = $v.querySelector('.qstage'), lab = VIEW_LABEL[tp.view] || '';
@@ -1280,7 +1283,7 @@ function ctxBar(h){
       <span class="pn"><a href="#g-${esc(prev)}" title="Previous: ${esc(prev)} (←)" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="#g-${esc(next)}" title="Next: ${esc(next)} (→)" aria-label="Next genus: ${esc(next)}">›</a></span>`;
   }
   const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
-  if (a && GX(a) && GX(b) && (DATA.gen[a] || isBonus(a)) && (DATA.gen[b] || isBonus(b)) && (DATA.gen[a] || DATA.gen[b])) return `${back}<h2 class="ctx-t"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="#cmp">Look-alikes</a>`;
+  if (a && GX(a) && GX(b) && (DATA.gen[a] || isBonus(a)) && (DATA.gen[b] || isBonus(b))) return `${back}<h2 class="ctx-t"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="#cmp">Look-alikes</a>`;
   return '';
 }
 function showModes(tab, h){
