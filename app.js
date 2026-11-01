@@ -64,6 +64,11 @@ function applyCuration(d, c){
     ['course', 'cand'].forEach(s => Object.keys(d[s] || {}).forEach(n => { d[s][n] = keep(d[s][n]); }));
     if (d.cmp) d.cmp = keep(d.cmp);
   }
+  // "Several corals" photos Pierre marked as one coral (single: {f: 1}) are normal photos again (games and sheet).
+  const ONE = (c && c.single) || {};
+  if (Object.keys(ONE).length) Object.entries(d.gen).forEach(([n, g]) => { VIEWS.forEach(([v]) => { const L = (g.more || {})[v]; if (!L) return;
+      L.filter(p => ONE[p.f]).forEach(p => (g.views[v] = g.views[v] || []).push(p)); g.more[v] = L.filter(p => !ONE[p.f]); });
+    (d.course[n] || []).forEach(p => { if (ONE[p.f]) delete p.multi; }); });
   // "Not this genus" (out: {f: 'cmp' | genus}) runs first for every genus, so a photo given to another genus
   // can be featured or picked as cover there; 'cmp' sends it to the look-alike comparison images (d.cmp).
   Object.entries((c && c.genera) || {}).forEach(([n, k]) => { const g = d.gen[n]; if (!g) return;
@@ -167,20 +172,21 @@ function applySlots(d, c){
       const rr = [...byQ(all.filter(p => p.imr)), ...byQ(all.filter(p => !p.imr && p.own))];
       const others = byQ(all.filter(p => !isCore(p)));
       const ranked = [...rr, ...others].sort((a, b) => (q(a) === 1) - (q(b) === 1));
-      const find = f => all.find(p => p.f === f);
-      const pin = ((g.feat || {})[v] || []).map(find).filter(Boolean), hint = ((sug[n] || {})[v] || []).map(find).filter(Boolean);
+      // Coral Finder book photos (Pierre 2026-11-01): on the sheet when pinned, or to fill a gap after every field photo; never in games.
+      const bk = byQ((g.book || []).filter(p => p.view === v)), find = f => all.find(p => p.f === f) || bk.find(p => p.f === f);
+      const pin = ((g.feat || {})[v] || []).map(find).filter(Boolean), hint = ((sug[n] || {})[v] || []).map(find).filter(p => p && !p.cf);
       // Never a Poor photo while better ones exist, except IMR lecture photos (Pierre).
       // Featured = always the first 3 (Pierre): his pinned photos, then the best remaining ones.
       const pool = [...hint, ...ranked].filter(p => !pin.includes(p)), k = CAP.feat - Math.min(pin.length, CAP.feat);
-      const feat = [...pin.slice(0, CAP.feat), ...fill(take(pool.filter(p => p.imr || q(p) !== 1), k), pool, k)];
+      const feat = [...pin.slice(0, CAP.feat), ...fill(fill(take(pool.filter(p => p.imr || q(p) !== 1), k), pool, k), bk.filter(p => !pin.includes(p)), k)];
       // Sheet (Pierre): strictly the first 6 per view in the admin order, the 3 featured then the next 3 (games still use them all).
-      const more = ranked.filter(p => !feat.includes(p)).slice(0, CAP.sheet - feat.length);
+      const more = [...ranked, ...bk].filter(p => !feat.includes(p)).slice(0, CAP.sheet - feat.length);
       // Games: field photos only (lecture photos have their own quiz), never multi-coral or book photos.
       const gm = byQ(field.filter(p => use[p.f] !== 'ref')), core = gm.filter(isCore), rest = gm.filter(p => !isCore(p));
       const easy = feat.filter(p => gm.includes(p)), left = p => !easy.includes(p);
       const medium = fill(core.filter(p => left(p) && q(p) >= 2), rest.filter(p => left(p) && q(p) >= 2), CAP.medium);
       const hard = fill(core.filter(p => left(p) && !medium.includes(p)), rest.filter(p => left(p) && !medium.includes(p)).reverse(), CAP.hard);
-      const book = (g.book || []).filter(p => p.view === v).slice(0, CAP.book);
+      const book = bk.filter(p => !feat.includes(p)).slice(0, CAP.book);
       g.sl[v] = {feat, more, easy: easy.length ? easy : take(gm, 3), medium, hard, finder: [...feat, ...take(others.filter(p => !feat.includes(p) && !p.imr), CAP.inat), ...book]};
       // Featured photos lead their view, so every "first photo of the view" (Look-alikes, Compare, Lab, home) uses them.
       if (g.views[v]) g.views[v] = [...feat.filter(p => g.views[v].includes(p)), ...g.views[v].filter(p => !feat.includes(p))];
@@ -601,8 +607,9 @@ const singleP = n => Math.min(0.85, Math.max(0, (ability(n) - 0.5) / 1.5));
 function photoSet(n){
   const g = DATA.gen[n], two = g.levels === 2, need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
   const shownV = two ? ['wide', 'macro'] : ['wide', 'medium'];
-  // The Colony slot never gets a photo whose growth form is "x" (too close to see it): that is a close-up.
-  const ok = v => p => v !== 'wide' || p.form !== 'x';
+  // The Colony slot never gets a photo whose growth form is "x" (too close to see it): that is a close-up. Except for a
+  // genus with a single IMR growth form (Pierre): the form is no question there, so the photo still works as a colony.
+  const oneForm = imrFormsOf(n).length === 1, ok = v => p => v !== 'wide' || p.form !== 'x' || oneForm;
   const pics = v => gamePics(n, v, 'hard').filter(ok(v));
   const single = Math.random() < singleP(n), s = P[n] || {}, seen = s.ps || {}, ro = s.ro || [], tgt = ability(n) - PICKD.TARGET_OFF - (single ? PICKD.SINGLE : 0);
   const h = [...recent(n).slice(-5)], hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
