@@ -3,7 +3,8 @@ let DATA;
 const $v = document.getElementById('view');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // Links built from data (photo sources): only https, anything else becomes '#' (code review 2026-11-01, L2).
-const safeUrl = u => /^https:\/\//i.test(String(u || '')) ? String(u) : '#';
+// An old http:// link (one iNat observation in data.json) is upgraded to https, not dropped.
+const safeUrl = u => { const s = String(u || '').replace(/^http:\/\//i, 'https://'); return /^https:\/\//i.test(s) ? s : '#'; };
 // Page keyboard handlers (quiz, look-alikes): each new question or pair aborts the previous handler instead of
 // stacking one more on document (code review 2026-11-01, L3).
 let keysAC = null;
