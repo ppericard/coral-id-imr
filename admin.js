@@ -14,10 +14,12 @@ const VIEWS = [
     ['macro', 'Corallites']
   ],
   FEAT = 3,
-  SHEET = 6,
-  // Cap per genus x view (Pierre, 2026-11-01: "10 good representative photos per genus x zoom would already be great"):
-  // a view with CELL_MAX colonies in the games is full (Candidates swiper, Game coverage; see cellFull).
-  CELL_MAX = 10;
+  SHEET = 6;
+// Cap per genus x view: a view with CELL_MAX colonies in the games is full (Candidates swiper, Game coverage; see
+// cellFull). 10 at first (Pierre, 2026-11-01), then 20 the same day (Pierre: "the goal is to learn the genus, not the
+// photos: the fewer photos, the more risk of learning the photos"; a player at 75% sees ~7 colonies of a genus before
+// its 95%, and its mastery exam wants 5 photos never seen). A let only so the admin test can lower it.
+let CELL_MAX = 20;
 const $v = document.getElementById('view'),
   $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
@@ -1574,7 +1576,7 @@ const HELP = {
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" in the footer of any page (wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
-  cand: `<p>Every new candidate, one at a time, genera taking turns. Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full. Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below ${CELL_MAX}. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p>`,
+  cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full. Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below ${CELL_MAX}. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
 };
 function toggleHelp() {
@@ -2398,7 +2400,9 @@ const cellFull = (n, w, o) => {
 };
 const srcOk = (p, s) => s === 'all' || origin(p) === s;
 // Order (Pierre): random, but genus x view cells with few photos come up more often, so the gaps for the games fill
-// first. Each candidate's weight is 1 / (1 + game colonies the genus already has in its view, covOf as on the Coverage page): its guessed view (vg, Claude's
+// first. Each candidate's weight is 1 / (1 + game colonies the genus already has in its view, covOf as on the Coverage page)^3 (cubed since
+// 2026-11-01, Pierre: "weigh the genera that really lack photos more strongly"; first 50 of All: thin cells 0-2 colonies 12 -> 30,
+// cells with 8+ 11 -> 2): its guessed view (vg, Claude's
 // guess from the photo), else the genus's emptiest view; x3 when it completes a colony already in games at another zoom. Weighted random draw (key -ln(u) / w, u fixed per photo
 // and per device), then no two of the same genus in a row when it can be avoided.
 const cseed = () => {
@@ -2433,7 +2437,7 @@ function candQueue(src) {
     // A candidate from a colony already in games at another zoom counts 3x (Pierre, 2026-11-01): game questions only
     // show views of one colony, so completing a colony adds a several-zoom question.
     const sib = p.o && vs.some(w => w !== v && (cnt(n, w), O[n + '|' + w].has(p.o))) ? 3 : 1;
-    return sib / (1 + (vs.includes(v) ? cnt(n, v) : Math.min(...vs.map(w => cnt(n, w)))));
+    return sib / Math.pow(1 + (vs.includes(v) ? cnt(n, v) : Math.min(...vs.map(w => cnt(n, w)))), 3);
   };
   const L = [];
   Object.keys(DATA.gen).forEach(n => {
