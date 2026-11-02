@@ -1,7 +1,7 @@
 // IMR Coral ID: the learning model, split out of app.js (2026-11-02, code review L1: one file per part, one piece at a
 // time). Which genus comes next (weighted, the progressive opening OPEN, the easiest first), which photos (photoSet,
 // PICKD, online calibration CAL), how hard they are (photoDiff, the sheet's PSTAT), the player's ability per genus (Elo,
-// ELO, abilityStep), what they know (BKT, knownP), the mastery exam (EXAM), and the wrong choices (TRAP, distractors,
+// ELO, abilityStep), their progress (pgWeight, knownP; core.js PROG), the mastery exam (EXAM), and the wrong choices (TRAP, distractors,
 // pooledConf). docs/LEARNING.md explains every rule. A classic script like app.js, loaded right after progress.js
 // (index.html, in order); app.js waits for every script (window.BOOT) before its first page. Required like app.js.
 // A quiz question shows the views of ONE colony: colony and closer views, the corallites as a hint (or one view alone).
@@ -179,7 +179,7 @@ function wpick(L, f) {
   return L[L.length - 1];
 }
 // Which genus to ask next (Pierre: spread the work, target what is not seen or not mastered yet, keep some chance).
-// Weight by status and by how unsure the knowledge model still is (BKT, 1 - L): review 3-5, learning 1-4,
+// Weight by status and by how far the genus still is from its exam (1 - progress s.pg): review 3-5, learning 1-4,
 // learned 0.25 (unseen 10, so every genus comes up early). A genus asked in the last 4 questions is mostly held back so the work spreads across genera.
 let lastQs = [];
 const weight = n => {
@@ -473,81 +473,59 @@ function photoDiff(n, p) {
     o = PSTAT[p.f];
   return o ? (o[1] * o[0] + 5 * prior) / (o[1] + 5) : prior;
 }
-// "Learned" = Bayesian Knowledge Tracing per genus: s.L = probability you know the genus, updated after each answer.
-// A right answer could be a guess (1 in 4 in the quiz, 1 in 2 in a duel, more on easy photos); a mistake could be a slip
-// (more likely on hard photos). So right answers on hard photos count most, and easy photos teach the model little.
-// The bar of a genus climbs to 95% with L; Learned (100%) takes the silent mastery exam (EXAM, below). The two former
-// milestones (right once with the corallites in view, once in a duel) were dropped: easy, and arbitrary (Pierre,
-// 2026-11-01). Review: 2+ mistakes in the last 5 results. No time criteria.
-const BKT = {L0: 0.1, T: 0.08, MASTER: 0.95, L0MAX: 0.5, LV0: 0.5, LVR: 1.5, LVN: 30};
-// Where a genus's knowledge starts (Pierre, 2026-11-02, point 3): BKT.L0 for everyone, except a player whose overall
-// level (Elo over every answer, LEVEL) is clearly high and rests on BKT.LVN answers or more: then up to BKT.L0MAX, growing
-// continuously from level BKT.LV0 to BKT.LV0 + BKT.LVR (no tiers). Empirical-Bayes prior, as the Elo start of a new
-// genus already uses the global level (core.js playerStart). The mastery exam is unchanged: an expert still proves each
-// genus with its own 5 hard questions; only the way to 95% gets shorter. docs/LEARNING.md.
-const bktStart = () => {
-  const G = P[LEVEL] || {},
-    m = (G.ok || 0) + (G.ko || 0);
-  if (m < BKT.LVN || typeof G.th !== 'number') return BKT.L0;
-  return BKT.L0 + (BKT.L0MAX - BKT.L0) * Math.min(1, Math.max(0, (G.th - BKT.LV0) / BKT.LVR));
-};
-function bktStep(L, good, b, k) {
-  const g = 1 / k + (1 - 1 / k) * sig(-2 * b - 1),
-    sl = 0.1 + 0.9 * sig(2 * b - 3);
-  const post = good ? (L * (1 - sl)) / (L * (1 - sl) + (1 - L) * g) : (L * sl) / (L * sl + (1 - L) * (1 - g));
-  return post + (1 - post) * BKT.T;
+// Progress of a genus (2026-11-02, replaces Bayesian Knowledge Tracing): s.pg, a moving average of its answers, each
+// weighed by what it proves (core.js PROG, pgStep, pgOf; docs/LEARNING.md "Progress (moving average) and mastery").
+// Pierre: "a genus can't be confirmed as learned before it has been compared with the genera it gets confused with",
+// and each next point should be harder to earn, with no hard cap. What a right answer proves, w from 0 to 1:
+// - the plausible choices k (plausibleK: easy choices from other growth forms do not count): (1 − 1/k) / (1 − 1/4),
+//   so 4 plausible choices weigh 1, 3 weigh 0.89, 2 weigh 0.67 (a 1 in 2 guess proves less);
+// - its look-alikes: in full when a genus it gets confused with is among the choices (pooled over every player with the
+//   declared look-alikes as prior, or the player's own mix-ups: the traps' rule), PROG.LOOK (0.5) when none is.
+// So a right answer between 2 genera of different forms counts a third of one against 3 look-alikes. A miss counts in
+// full (core.js). Photo difficulty is left out: simulated as a third factor (0.5 on an easy photo to 1 on a hard one),
+// it only slowed everyone (an expert mastered 5 genera in 1000 questions instead of 16), which A already sets, and the
+// traps already come as the genus's photos get harder (both follow the Elo ability).
+function pgWeight(t, chs, k) {
+  const look = chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >= CONF.TRAP || confusable(t, n)));
+  return Math.min(1, Math.max(0, (1 - 1 / k) / (1 - 1 / 4))) * (look ? 1 : PROG.LOOK);
 }
-// Progress saved before BKT: replay the recent results as average quiz photos.
-const knownP = n => {
-  const s = P[n];
-  if (!s) return 0;
-  if (typeof s.L === 'number') return s.L;
-  let L = s.h ? BKT.L0 : bktStart(); // progress saved before BKT replays from L0, as it always did
-  [...(s.h || '')].forEach(x => {
-    L = bktStep(L, x === '1', 0, 4);
-  });
-  return L;
-};
-// A miss never raises L: on the hardest photos the slip chance passes the wrong-guess chance, and with the learning step
-// a miss used to lift the genus (0.96 -> 0.964; Pierre: the % falls back on a miss). Found by draw.smoke.js on PR #336.
-function bktObs(n, s, good, b, k) {
-  const L0 = knownP(n),
-    L = bktStep(L0, good, b, k);
-  s.L = Math.round((good ? L : Math.min(L, L0)) * 1e4) / 1e4;
+const knownP = n => pgOf(P[n]);
+function pgObs(n, s, good, w) {
+  s.pg = pgStep(knownP(n), good, w);
+  delete s.L; // BKT's knowledge, before s.pg
 }
 // Silent mastery exam (Pierre, 2026-11-01: "an ultimate test to go from 95% to 100%"). Its count (2/5) is shown nowhere:
-// the genus's % creeping up from 95%, then falling back on a miss, keeps the mystery (Pierre). Once a genus is 95% sure (L),
+// the genus's % creeping up from 95%, then falling back on a miss, keeps the mystery (Pierre). Once a genus is at 95% (s.pg at PROG.M),
 // EXAM.n questions on it are slipped into the photo quiz, unannounced (a test on one genus alone would give the answer
 // away), at least EXAM.gap other answers apart (recognition, not short-term memory; counted in answers, never time).
 // Each is as hard as the game gets: one photo alone, never answered right before (else the least seen), the hardest
 // of its view, the views taking turns (colony, close-up, corallites), 3 look-alike traps (examSet, quizPhoto). Every one
 // right: the genus is mastered (s.mx), Learned, 100%. Any miss on the genus, in the exam or not, and any time the genus
-// is given as the answer for another one, ends it (s.ex dropped); it starts again from 0 when L is back at 95%.
+// is given as the answer for another one, ends it (s.ex dropped); it starts again from 0 when s.pg is back at PROG.M.
 const EXAM = {n: 5, gap: 8};
 const answersSoFar = () => ((P[LEVEL] || {}).ok || 0) + ((P[LEVEL] || {}).ko || 0);
 const examOn = n => {
   const s = P[n] || {};
-  return !s.mx && knownP(n) >= BKT.MASTER;
+  return !s.mx && knownP(n) >= PROG.M;
 };
 const examReady = n => examOn(n) && (!(P[n] || {}).ex || answersSoFar() - P[n].ex.at >= EXAM.gap);
+// A learned genus stays learned through one miss (from PROG.M or above, a miss leaves s.pg at PROG.M × (1 − PROG.A) at
+// least) and is lost on a second one before right answers bring it back up: with the moving average a single miss
+// already takes 15% off, so losing it at once took learned genera away from a simulated expert at every slip (rule of
+// code review #327: kept only while the genus stays known).
+const mxKept = n => knownP(n) >= PROG.M * (1 - PROG.A) - 1e-6;
 function missing(n) {
   const s = P[n] || {},
-    m = [],
-    L = knownP(n);
+    m = [];
   if (s.mx) return m;
-  if (L < BKT.MASTER) m.push(`more right answers, harder photos count more (about ${Math.round(100 * L)}% learned so far)`);
+  if (knownP(n) < PROG.M)
+    m.push(`more right answers, most of all against its look-alikes (about ${Math.round(100 * genScore(n))}% of the way so far)`);
   else m.push(`the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the photo quiz, all right`);
   return m;
 }
-// Progress of a genus, 0 to 1: how far its knowledge probability has climbed towards 95% fills 95% of it, each exam
-// question passed adds 1%, the passed exam makes it 100%.
-function genScore(n) {
-  const s = P[n];
-  if (!s) return 0;
-  if (s.mx) return 1;
-  const part = Math.min(1, Math.max(0, (knownP(n) - BKT.L0) / (BKT.MASTER - BKT.L0)));
-  return 0.95 * part + (part >= 1 && s.ex ? (0.05 * s.ex.k) / EXAM.n : 0);
-}
+// Progress of a genus, 0 to 1 (core.js scoreOf): s.pg fills 95% on its way to PROG.M, each exam question passed adds
+// 1%, the passed exam makes it 100%.
+const genScore = n => scoreOf(P[n]);
 // Step of a genus on the learning scale: 0 not seen, 1-4 quarters of genScore, 5 learned (My progress colours).
 const lvStep = n => {
   const k = level(n)[0];
@@ -665,7 +643,7 @@ function distractors(t, list, traps = trapsFor(t), known = introduced) {
   add(other, false);
   return res.slice(0, 3);
 }
-// Elo and BKT count a guess as 1 in (target + the plausible wrong choices) while traps are few (0 or 1): easy choices from
+// Elo and the progress count a guess as 1 in (target + the plausible wrong choices) while traps are few (0 or 1): easy choices from
 // other growth forms are not plausible, so such a question is scored as a 2- or 3-choice one (a right answer there proves
 // less). From 2 traps on, every choice counts, as before.
 const plausibleK = (t, choices) => {

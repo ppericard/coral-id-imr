@@ -76,7 +76,7 @@
       if (mine && l.h) out.h = l.h;
       if (mine)
         // vr: the Elo step's volatility (app.js abilityStep), part of the model the device that played updated.
-        ['lv', 'run', 'L', 'th', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
+        ['lv', 'run', 'L', 'pg', 'th', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
@@ -139,6 +139,9 @@
         y = b[g] || {},
         main = n(x) > n(y) ? x : y,
         o = {...(main === x ? y : x), ...main};
+      // The progress comes from the same account as the rest of the model, recomputed if it was saved before s.pg
+      // (Codex review #367: an old main record let the other account's pg through).
+      if (typeof main.pg === 'number' || main.h || typeof main.L === 'number') o.pg = pgOf(main);
       o.ok = (x.ok || 0) + (y.ok || 0);
       o.ko = (x.ko || 0) + (y.ko || 0);
       o.streak = main.streak || 0;
@@ -690,33 +693,47 @@
   // The achievements a snapshot meets that `have` ({id: time}) does not hold yet, in list order.
   const newAch = (snap, have) => ACH.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);
 
-  // Progress % of a saved progress P over a list of genera, as app.js shows it (genScore / progPct): per genus, the
-  // knowledge probability L (BKT; progress saved before it replays its recent results as average quiz photos) fills 95%
-  // on its way from 0.1 to 0.95, each mastery-exam question passed adds 1%, a passed exam makes it 100%. The sync sheet
-  // computes the leaderboard % with a copy (Code.gs pctOf_, v16), from each player's saved progress: keep the two in step
+  // Progress of a genus (2026-11-02, Pierre: BKT climbed too fast, and a right answer among a few genera counted
+  // almost as much as one against the genus's look-alikes; Pelánek & Řihák 2017 recommend a moving average as the
+  // mastery criterion): s.pg, an exponential moving average of the answers on the genus, each weighed by what it proves
+  // (w, 0 to 1, model.js pgWeight): a right answer s.pg += PROG.A × w × (1 − s.pg), a miss s.pg −= PROG.A × s.pg (a
+  // miss counts in full whatever the choices: missing an easy question says as much as missing a hard one). Each point
+  // is harder to earn than the last, a run of right answers on easy choices tops out lower than one against look-alikes,
+  // and the bar follows the recent answers. PROG.M = the mastery exam's entry, shown as 95%. docs/LEARNING.md
+  // "Progress (moving average) and mastery" has the simulation behind A 0.15 and M 0.8.
+  // OLD: progress saved before s.pg (BKT's L) is recomputed from what the record holds in order, its last 10 results
+  // (s.h), from 0, a right answer weighed 2/3 (what it proved is not known: the middle weight, a 4-choice question
+  // without look-alike or 2 choices with one). Simulated, that is close for a beginner and below the live value for a
+  // strong player (never above it by much): 10 right answers in a row give 0.65, 77% on the bar, so no genus enters the
+  // exam on old answers alone. A genus already learned (s.mx, its exam passed) stays learned, at the exam entry.
+  const PROG = {A: 0.15, M: 0.8, LOOK: 0.5, OLD: 0.67};
+  const pgStep = (g, good, w) => Math.round((g + PROG.A * (good ? w : 1) * ((good ? 1 : 0) - g)) * 1e4) / 1e4;
+  function pgOf(s) {
+    if (!s) return 0;
+    if (typeof s.pg === 'number') return s.pg;
+    const g = [...String(s.h || '')].reduce((x, c) => x + PROG.A * (c === '1' ? PROG.OLD : 1) * ((c === '1' ? 1 : 0) - x), 0);
+    return s.mx ? Math.max(g, PROG.M) : g;
+  }
+  // The bar of a genus, 0 to 1: s.pg fills 95% on its way to PROG.M, each mastery-exam question passed adds 1%, the
+  // passed exam makes it 100%.
+  function scoreOf(s) {
+    if (!s) return 0;
+    if (s.mx) return 1;
+    const g = pgOf(s);
+    return 0.95 * Math.min(1, g / PROG.M) + (g >= PROG.M && s.ex ? (0.05 * (s.ex.k || 0)) / 5 : 0);
+  }
+  // Progress % of a saved progress P over a list of genera, as the app shows it (genScore / progPct). The sync sheet
+  // computes the leaderboard % with a copy (Code.gs pctOf_, v16; s.pg from v22): keep the two in step
   // (tests/sync.test.js compares them; tests/draw.smoke.js compares this with the app's progPct).
   function pctOf(P, list) {
-    const L0 = 0.1,
-      T = 0.08,
-      M = 0.95,
-      sig = x => 1 / (1 + Math.exp(-x));
-    const step = (L, good) => {
-      const g = 0.25 + 0.75 * sig(-1),
-        sl = 0.1 + 0.9 * sig(-3),
-        post = good ? (L * (1 - sl)) / (L * (1 - sl) + (1 - L) * g) : (L * sl) / (L * sl + (1 - L) * (1 - g));
-      return post + (1 - post) * T;
-    };
-    const known = s => (typeof s.L === 'number' ? s.L : [...(s.h || '')].reduce((L, x) => step(L, x === '1'), L0));
-    const score = s => {
-      if (!s) return 0;
-      if (s.mx) return 1;
-      const part = Math.min(1, Math.max(0, (known(s) - L0) / (M - L0)));
-      return 0.95 * part + (part >= 1 && s.ex ? (0.05 * (s.ex.k || 0)) / 5 : 0);
-    };
-    return list && list.length ? Math.round((100 * list.reduce((t, n) => t + score((P || {})[n]), 0)) / list.length) : 0;
+    return list && list.length ? Math.round((100 * list.reduce((t, n) => t + scoreOf((P || {})[n]), 0)) / list.length) : 0;
   }
 
   const CORE = {
+    PROG,
+    pgStep,
+    pgOf,
+    scoreOf,
     pctOf,
     ACH,
     newAch,

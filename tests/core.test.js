@@ -318,6 +318,15 @@ test('mergeUsers: two accounts of one person add up; the busier account model wi
   assert.strictEqual(M['imr-coral-theme'], '"dark"');
 });
 
+test('mergeUsers: the progress (pg) comes from the busier account, recomputed if it was saved before pg', () => {
+  const {pgOf} = require('../core.js');
+  const A = {'imr-coral-progress': JSON.stringify({Acropora: {ok: 40, ko: 1, h: '1111111111', L: 0.99}})},
+    B = {'imr-coral-progress': JSON.stringify({Acropora: {ok: 1, ko: 0, h: '1', pg: 0.1}})};
+  const P = JSON.parse(mergeUsers(A, B)['imr-coral-progress']);
+  assert.strictEqual(P.Acropora.pg, pgOf({h: '1111111111', L: 0.99}));
+  assert.ok(P.Acropora.pg > 0.6, "not the less-played account's 0.1");
+});
+
 test('playerStart: a new genus starts from the global level, shrunk while answers are few, clamped', () => {
   assert.strictEqual(playerStart({}, 'Acropora'), 0);
   // Global Elo (LEVEL) wins over the genera; 30 answers at 1.6 → 0.8 * 1.6 * 30/40.
@@ -393,4 +402,50 @@ test('mergeProgress: the mastery exam (passed or in course) follows the device t
   assert.strictEqual(lostMx.Porites.mx, undefined, 'lost here after misses: not brought back');
   const lost = mergeProgress(B, {Acropora: {ok: 11, ko: 2, L: 0.9}}, theirs);
   assert.strictEqual(lost.Acropora.ex, undefined, 'a miss here ended the exam');
+});
+
+test('progress (PROG): a moving average weighed by what each answer proves; old records recomputed from their recent results', () => {
+  const {PROG, pgStep, pgOf, scoreOf, pctOf} = require('../core.js');
+  // Each point is harder to earn than the last; a right answer weighing a third (2 plausible choices, no look-alike) a third as much.
+  let g = 0,
+    last = 1,
+    n = 0;
+  while (g < PROG.M) {
+    const x = pgStep(g, true, 1);
+    assert.ok(x - g < last, 'each step smaller');
+    last = x - g;
+    g = x;
+    n++;
+  }
+  assert.ok(n >= 8 && n <= 12, `${n} right answers in a row against look-alikes to the exam's entry`);
+  let e = 0,
+    m = 0;
+  while (e < PROG.M && m < 200) {
+    e = pgStep(e, true, 1 / 3);
+    m++;
+  }
+  assert.ok(m >= 3 * n - 3, `${m} easy right answers in a row, against ${n}`);
+  // A miss counts in full, whatever the choices: from 90% on the bar it falls visibly.
+  const p90 = (0.9 * PROG.M) / 0.95;
+  assert.ok(scoreOf({pg: p90}) - scoreOf({pg: pgStep(p90, false, 1 / 3)}) > 0.1);
+  // The bar: 95% at the exam's entry, the exam questions passed on top, 100% once learned.
+  assert.strictEqual(scoreOf({pg: PROG.M}), 0.95);
+  assert.strictEqual(scoreOf({pg: PROG.M, ex: {k: 2}}), 0.97);
+  assert.strictEqual(scoreOf({pg: 0.5, mx: 1}), 1);
+  // Saved before s.pg: BKT's L is ignored, the last results replay from 0 (a right answer 2/3), never to the exam's entry;
+  // a learned genus stays learned, at the entry.
+  assert.strictEqual(pgOf({h: '1111111111', L: 0.99}), pgOf({h: '1111111111'}));
+  assert.ok(pgOf({h: '1111111111'}) > 0.6 && pgOf({h: '1111111111'}) < PROG.M);
+  assert.ok(pgOf({h: '1111111110'}) < pgOf({h: '1111111111'}) * (1 - PROG.A) + 1e-9);
+  assert.strictEqual(pgOf({h: '11', mx: 1}), PROG.M);
+  assert.strictEqual(pgOf({pg: 0.3, h: '1111111111'}), 0.3);
+  assert.strictEqual(pctOf({A: {pg: PROG.M}, B: {mx: 1}}, ['A', 'B', 'C', 'D']), 49);
+});
+
+test('mergeProgress: the progress (pg) follows the device that played', () => {
+  const B = {Acropora: {ok: 10, ko: 1, h: '1', pg: 0.5}};
+  const m = mergeProgress(B, {Acropora: {ok: 11, ko: 1, h: '11', pg: 0.6}}, {Acropora: {ok: 10, ko: 2, h: '10', pg: 0.4}});
+  assert.strictEqual(m.Acropora.pg, 0.6);
+  const old = mergeProgress(B, {Acropora: {ok: 11, ko: 1, h: '11', L: 0.6}}, {Acropora: {ok: 10, ko: 1, h: '1', pg: 0.5}});
+  assert.strictEqual(old.Acropora.pg, undefined, 'played here by an app from before s.pg: recomputed from its results');
 });

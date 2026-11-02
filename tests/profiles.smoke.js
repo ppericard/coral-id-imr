@@ -35,7 +35,7 @@ const server = http.createServer((req, res) => {
 // chance to recognise genus g on a photo of average difficulty, lowered on harder photos and single views; otherwise a
 // guess among the plausible choices; each answer teaches a little. Checks that the app, with nothing set per profile:
 // keeps a beginner on a few genera at a time, the easier ones first, and keeps opening new ones; gives an expert many
-// genera, hard choices (look-alike traps) and genera ready for their mastery exam early. Locally: node tests/profiles.smoke.js
+// genera, hard choices (look-alike traps) and progress well ahead of a beginner's; no genus reaches its exam's entry before it was asked beside a look-alike. Locally: node tests/profiles.smoke.js
 (async () => {
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`;
@@ -77,6 +77,7 @@ const server = http.createServer((req, res) => {
       warmLeft = 0;
       store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
       const know = mk(),
+        early = new Set(),
         first = [],
         rows = [];
       let blk = {n: 0, ok: 0, traps: 0, tn: 0};
@@ -114,6 +115,9 @@ const server = http.createServer((req, res) => {
         }
         document.querySelector(`[data-c="${CSS.escape(pick)}"]`).click();
         know[t] += rate * (1 - know[t]);
+        // Progress (core.js PROG): a genus reaches its exam's entry (95%) only once it has been asked beside one of its
+        // look-alikes (Pierre, 2026-11-02: never confirmed before it has been compared with the genera it gets confused with).
+        if (knownP(t) >= PROG.M && !Object.keys(P[t].off || {}).some(n => GX(n) && pooledConf(t, n) >= CONF.TRAP)) early.add(t);
         if ((i + 1) % 100 === 0) {
           rows.push({
             q: i + 1,
@@ -122,14 +126,16 @@ const server = http.createServer((req, res) => {
             met: G.filter(introduced).length,
             asked: G.filter(asked).length,
             learned: G.filter(g => (P[g] || {}).mx).length,
-            sure: G.filter(g => knownP(g) >= BKT.MASTER).length
+            sure: G.filter(g => knownP(g) >= PROG.M).length,
+            half: G.filter(g => genScore(g) >= 0.5).length,
+            pct: progPct(G)
           });
           blk = {n: 0, ok: 0, traps: 0, tn: 0};
         }
       }
       const gd = G.map(genusDiff),
         mean = L => L.reduce((a, x) => a + x, 0) / L.length;
-      out[name] = {rows, firstEase: +mean(first.slice(0, 8).map(genusDiff)).toFixed(2), allEase: +mean(gd).toFixed(2)};
+      out[name] = {rows, early: [...early], firstEase: +mean(first.slice(0, 8).map(genusDiff)).toFixed(2), allEase: +mean(gd).toFixed(2)};
     }
     // Easiest first: with nothing met and the players' answers behind the photo ratings, the easiest genus (genusDiff)
     // is drawn far more often than the hardest. Made-up ratings: one genus's photos rated easy, another's hard.
@@ -237,11 +243,13 @@ const server = http.createServer((req, res) => {
   // the threshold and failed with some seeds, duels in the quiz or not: 4 seeds compared, 2026-11-02.)
   if (e3.traps < 1 || e1.traps <= b1.traps)
     fails.push(`expert got ${e1.traps}, ${e3.traps} look-alike traps a question (beginner ${b1.traps} at 100)`);
-  // Mastery = 95% sure, then 5 exam questions at least 8 answers apart (EXAM): with every genus open by question 200,
-  // the first ones are mastered around question 300 (docs/LEARNING.md), so what 300 questions must show is genera
-  // sure enough for their exam.
-  if (e3.sure < 3) fails.push(`expert has ${e3.sure} genera 95% sure (mastery exam) after 300 questions`);
-  if (e3.sure <= b3.sure) fails.push(`expert no surer of the genera than a beginner (${e3.sure} vs ${b3.sure})`);
+  // Progress (core.js PROG, a moving average weighed by what each answer proves) climbs progressively: after 300
+  // questions an expert (every genus open by question 200) has many genera half way and far more progress than a
+  // beginner, while genera at their exam's entry (95%) come from about question 400 on (6 seeds, docs/LEARNING.md).
+  if (e3.half < 10) fails.push(`expert has ${e3.half} genera at 50% or more after 300 questions`);
+  if (e3.pct <= b3.pct + 10) fails.push(`expert's progress not clearly above a beginner's (${e3.pct}% vs ${b3.pct}%)`);
+  for (const [k, v] of Object.entries(R))
+    if (v.early && v.early.length) fails.push(`${k}: ${v.early.join(', ')} at 95% before being asked beside a look-alike`);
   if (R.bonusShare > 0.2) fails.push(`a bonus genus took ${Math.round(100 * R.bonusShare)}% of the draws (cap 15%)`);
   if (!(R.cal.with > 1.3 * Math.max(10, R.cal.without)))
     fails.push(`calibration: an unrated photo was not drawn more often: ${JSON.stringify(R.cal)}`);
@@ -251,7 +259,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    'Learning path OK: a beginner and an RA focus on a few genera, easier first, and keep opening; an expert gets many genera, traps and genera ready for mastery.'
+    'Learning path OK: a beginner and an RA focus on a few genera, easier first, and keep opening; an expert gets many genera, traps and progress well ahead; no genus reaches 95% before meeting its look-alikes.'
   );
 })().catch(e => {
   console.error(e);

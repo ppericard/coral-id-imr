@@ -73,7 +73,7 @@ const server = http.createServer((req, res) => {
     let draws = 0;
     // Player levels on every genus: new, beginner, middle, strong (ability th on the photo-difficulty scale).
     for (const th of [null, 0, 1, 2.5]) {
-      P = th === null ? {} : Object.fromEntries(genera.map(n => [n, {ok: 5, ko: 2, h: '1101101', th, L: 0.5}]));
+      P = th === null ? {} : Object.fromEntries(genera.map(n => [n, {ok: 5, ko: 2, h: '1101101', th, pg: 0.4}]));
       for (const n of genera) {
         const g = GX(n),
           book = new Set((g.book || []).map(x => x.f));
@@ -121,8 +121,8 @@ const server = http.createServer((req, res) => {
       if (e && (e.shown.length !== 1 || !e.exam)) fails.push(`${n}: exam question is not one photo alone`);
     });
     const t = Object.keys(DATA.gen)[0];
-    P = Object.fromEntries(genera.map(n => [n, {ok: 3, ko: 1, h: '1101', th: 0.5, L: 0.5}]));
-    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.97};
+    P = Object.fromEntries(genera.map(n => [n, {ok: 3, ko: 1, h: '1101', th: 0.5, pg: 0.4}]));
+    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85};
     P[LEVEL] = {ok: 200, ko: 30, th: 1};
     const at = [],
       qx = question;
@@ -143,7 +143,7 @@ const server = http.createServer((req, res) => {
       fails.push(`${t}: exam questions closer than ${EXAM.gap} answers: ${at.join(', ')}`);
     if (level(t)[0] !== 'ok' || genScore(t) !== 1) fails.push(`${t}: mastered but not learned at 100%`);
     // A miss on the genus ends an exam in course.
-    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.97, ex: {k: 3, v: ['wide'], at: answersSoFar()}};
+    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ex: {k: 3, v: ['wide'], at: answersSoFar()}};
     answer('quiz', 'Porites' === t ? 'Acropora' : 'Porites', t, photoSet(t).shown, false, null);
     if (P[t].ex) fails.push(`${t}: a miss did not end the exam`);
     // Mastery holds only while the genus stays known: misses that bring it under 95% take it away.
@@ -152,20 +152,31 @@ const server = http.createServer((req, res) => {
       pics = Object.values(DATA.gen[t].views)
         .flat()
         .sort((a, b) => photoDiff(t, a) - photoDiff(t, b));
-    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.96, mx: 1};
-    for (let i = 0; i < 3 && P[t].mx; i++) answer('quiz', wrong, t, pics.slice(0, 2), false, null);
-    if (P[t].mx) fails.push(`${t}: still mastered after misses (L ${knownP(t)})`);
-    // A miss never raises what the genus is known to be, even on its hardest photo shown alone.
-    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.96, mx: 1};
+    // One miss keeps a learned genus (mxKept), a second one before it is back up takes it away.
+    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: PROG.M, mx: 1};
+    answer('quiz', wrong, t, pics.slice(0, 2), false, null);
+    if (!P[t].mx) fails.push(`${t}: one miss took a learned genus away (progress ${knownP(t)})`);
+    answer('quiz', wrong, t, pics.slice(0, 2), false, null);
+    if (P[t].mx) fails.push(`${t}: still mastered after two misses (progress ${knownP(t)})`);
+    // A miss never raises the progress, even on its hardest photo shown alone, and takes it down visibly (core.js PROG).
+    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.75};
+    const b0 = genScore(t);
     answer('quiz', wrong, t, pics.slice(-1), false, null);
-    if (knownP(t) > 0.96) fails.push(`${t}: a miss on a hard photo raised L from 0.96 to ${knownP(t)}`);
+    if (genScore(t) > b0 - 0.1) fails.push(`${t}: a miss at ${Math.round(100 * b0)}% only took it to ${Math.round(100 * genScore(t))}%`);
+    // What a right answer proves (pgWeight): more against a look-alike, and more among 4 plausible choices than 2.
+    const la = Object.keys(DATA.gen).find(n => n !== t && pooledConf(t, n) >= CONF.TRAP),
+      far = Object.keys(DATA.gen).find(n => n !== t && pooledConf(t, n) < CONF.TRAP && !isLook(t, n) && !confusable(t, n));
+    if (la && far && !(pgWeight(t, [t, la], 2) > pgWeight(t, [t, far], 2) && pgWeight(t, [t, la], 4) > pgWeight(t, [t, la], 2)))
+      fails.push(`${t}: progress weights do not favour look-alikes and more choices`);
     // Exam photos are never-seen ones while some remain.
-    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.97, ps: {}};
+    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ps: {}};
     const v0 = examSet(t).shown[0];
     P[t].ps[v0.f] = [1, 0];
     for (let i = 0; i < 20; i++)
       if (examSet(t).shown[0].f === v0.f && gamePics(t, v0.view, 'hard').length > 1) fails.push(`${t}: exam reused a photo already seen`);
-    // The sheet's leaderboard % (Code.gs pctOf_, a copy of core.js pctOf) equals the app's progPct on varied progress.
+    // The sheet's leaderboard % (Code.gs pctOf_, a copy of core.js pctOf) from the progress as saved (save()) equals the
+    // app's progPct: varied progress, records saved before s.pg (BKT's L, recent results only, learned) among them, then
+    // a few answers played through the quiz.
     for (let r = 0; r < 20; r++) {
       P = {};
       Object.keys(DATA.gen).forEach((n, i) => {
@@ -177,14 +188,21 @@ const server = http.createServer((req, res) => {
             : {
                 ok: x,
                 ko: 1,
-                h: '11',
-                L: Math.min(0.99, 0.1 * x),
+                h: '1101111111'.slice(0, x),
+                ...(r % 3 ? {pg: Math.min(0.9, 0.1 * x)} : {L: Math.min(0.99, 0.1 * x)}),
                 ...(x === 9 ? {ex: {k: r % 5, v: [], at: 0}} : {}),
                 ...(x === 8 && r % 2 ? {mx: 1} : {})
               };
       });
-      if (progPct() !== pctOf(P, Object.keys(DATA.gen)))
-        fails.push(`progress %: app ${progPct()} vs core pctOf ${pctOf(P, Object.keys(DATA.gen))}`);
+      for (let i = 0; i < 3; i++) {
+        quizPhoto();
+        const c = [...document.querySelectorAll('#view [data-c]')].map(b => b.dataset.c);
+        document.querySelector(`[data-c="${CSS.escape(c[(i + r) % c.length])}"]`).click();
+      }
+      save();
+      const saved = store.get('imr-coral-progress', {});
+      if (progPct() !== pctOf(saved, Object.keys(DATA.gen)))
+        fails.push(`progress %: app ${progPct()} vs core pctOf of the saved progress ${pctOf(saved, Object.keys(DATA.gen))}`);
     }
     // First meetings (INTRO, Pierre 2026-11-02): from zero, INTRO.START cards then questions among them; every genus
     // asked was met on a card before; one met on a card alone is not asked before INTRO.GAP answers; at least
@@ -194,6 +212,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no gentle restart
       warmLeft = 0;
+      rematch = null; // no "Again" left over from the section before
       store.set(INTRO.OFFER.KEY, null);
       NEXTQ = null;
       const q0 = question;
@@ -239,6 +258,7 @@ const server = http.createServer((req, res) => {
         INTROS = {};
         HOLDS = 0; // a fresh player: no opening hold, no gentle restart
         warmLeft = 0;
+        rematch = null; // no "Again" left over from the section before
         NEXTQ = null;
         document.querySelectorAll('.unlock').forEach(x => x.remove());
         quizPhoto();
@@ -256,6 +276,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no gentle restart
       warmLeft = 0;
+      rematch = null; // no "Again" left over from the section before
       store.set(INTRO.OFFER.KEY, null);
       let shownAt = 0;
       for (let i = 0; i <= INTRO.OFFER.UNTIL && !shownAt; i++) {
@@ -283,6 +304,7 @@ const server = http.createServer((req, res) => {
         INTROS = {};
         HOLDS = 0; // a fresh player: no opening hold, no gentle restart
         warmLeft = 0;
+        rematch = null; // no "Again" left over from the section before
         store.set(INTRO.KEY, {});
         store.set(INTRO.OFFER.KEY, null);
         const g = Object.keys(DATA.gen)[5];
@@ -429,6 +451,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no gentle restart
       warmLeft = 0;
+      rematch = null; // no "Again" left over from the section before
     }
     // Opening held while the player does clearly worse than expected (introHold, a CUSUM, Pierre 2026-11-02): two
     // misses where 0.8 was expected hold; right answers pay it back by what they beat the expectation by; never below 0.
@@ -488,6 +511,7 @@ const server = http.createServer((req, res) => {
       document.querySelector(`[data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
       if (HOLDS !== hb) fails.push('an Again of the restart moved the hold');
       warmLeft = 0;
+      rematch = null; // no "Again" left over from the section before
       HOLDS = h0;
     }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
