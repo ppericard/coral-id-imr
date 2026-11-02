@@ -3203,8 +3203,13 @@ async function start() {
   // comes into view or at the next page change. Every click is already in the draft, so nothing is lost (the undo
   // history starts again).
   if ('serviceWorker' in navigator) {
-    const had = !!navigator.serviceWorker.controller;
-    navigator.serviceWorker.addEventListener('controllerchange', () => had && (UPDATED = true));
+    // The first install also takes over: that one is no update; any takeover after it is (a tab first opened before any
+    // version was installed, then left open, still gets the next ones: Codex review #336).
+    let had = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (had) UPDATED = true;
+      had = true;
+    });
     let swAt = Date.now();
     const swCheck = () => {
       swAt = Date.now();

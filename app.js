@@ -3986,8 +3986,13 @@ const swCheck = () => {
       .catch(() => {});
 };
 if ('serviceWorker' in navigator) {
-  const had = !!navigator.serviceWorker.controller; // the first install also takes over: that is no update
-  navigator.serviceWorker.addEventListener('controllerchange', () => had && (UPDATED = true));
+  // The first install also takes over: that one is no update; any takeover after it is (a tab first opened before any
+  // version was installed, then left open, still gets the next ones: Codex review #336).
+  let had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (had) UPDATED = true;
+    had = true;
+  });
 }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;

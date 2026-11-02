@@ -303,6 +303,34 @@ const server = http.createServer((req, res) => {
     await p
       .waitForFunction(() => !window.__old && window.APP_READY && location.hash === '#genera', null, {timeout: 20000})
       .catch(() => fails.push('The page did not reload onto the new version at the next page change'));
+    // A tab opened before any version was installed, then left open, still gets the next version (Codex review #336).
+    const r = await ctx.browser().newContext({viewport: {width: 390, height: 800}});
+    await r.addInitScript(() => localStorage.setItem('imr-tour', '1'));
+    await r.route(
+      u => !u.href.startsWith(base),
+      x => x.abort()
+    );
+    const f = await r.newPage();
+    await f.goto(base);
+    await ready(f);
+    await f.evaluate(() =>
+      navigator.serviceWorker
+        .register('sw.js')
+        .then(() => navigator.serviceWorker.ready)
+        .then(
+          () =>
+            new Promise(ok =>
+              navigator.serviceWorker.controller ? ok() : navigator.serviceWorker.addEventListener('controllerchange', ok)
+            )
+        )
+    );
+    if (await f.evaluate(() => UPDATED)) fails.push('The first install was taken for an update');
+    SWV = 9;
+    await f.evaluate(() => swCheck());
+    await f
+      .waitForFunction(() => UPDATED, null, {timeout: 30000})
+      .catch(() => fails.push('A tab first opened before any install missed the next version'));
+    await r.close();
     // The admin page does the same (its demo mode: no token, nothing sent).
     const q = await ctx.newPage();
     await q.goto(base + 'admin.html?demo');
