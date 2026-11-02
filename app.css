@@ -4050,9 +4050,11 @@ a.psrc:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+/* Above every card and overlay (z-index 60-70): a term tapped on a genus card opened its definition behind the card
+   (an RA, 2026-11-02). */
 .gpop {
   position: fixed;
-  z-index: 60;
+  z-index: 80;
   padding: 10px 12px;
   background: var(--surface);
   color: var(--ink);
