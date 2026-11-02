@@ -116,6 +116,16 @@ const server = http.createServer((req, res) => {
     await p.click('[data-uboard="Dio Demo"]');
     await settle();
     if (!/On the leaderboard/.test(await text())) fails.push(`${w}px Players: Show did not put Dio back`);
+    // Rename (sheet v20): Ben's record moves to the suggested "Ben Demo-test" (the confirm is accepted, above), hidden
+    // from the leaderboard.
+    await p.click('[data-uopen="Ben Demo"]');
+    await settle();
+    await p.evaluate(() => (window.prompt = (q, def) => def)); // the suggested name (Playwright accepts a prompt empty)
+    await p.click('[data-uren="Ben Demo"]');
+    await p.waitForFunction(() => /Ben Demo-test/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
+    const ren = await text();
+    if (!/Ben Demo-test\s+hidden/.test(ren) || /Ben Demo\s/.test(ren.replace(/Ben Demo-test/g, '')))
+      fails.push(`${w}px Players: rename Ben Demo → Ben Demo-test (hidden) not shown`);
     await p.click('[data-uopen="mara demo2"]');
     await settle();
     await p.selectOption('[data-umerge="mara demo2"]', 'Mara Demo');
@@ -157,6 +167,14 @@ const server = http.createServer((req, res) => {
       t: (document.querySelector('.adm-jcards') || {}).innerText || '',
       col: [...document.querySelectorAll('.adm-jtbl tbody tr td:nth-child(2)')].map(td => td.textContent.trim())
     }));
+    // Learned genera (from the saved progress): a tag in the list, a ★ on the genera chart; the games with their modes.
+    const lrn = await p.evaluate(() => ({
+      tags: document.querySelectorAll('.adm-jtbl .adm-jlearn').length,
+      stars: document.querySelectorAll('svg.adm-jl text.s').length,
+      games:
+        /Photo quiz/.test(document.getElementById('view').innerText) && /Look-alike duels/.test(document.getElementById('view').innerText)
+    }));
+    if (!lrn.tags || !lrn.stars || !lrn.games) fails.push(`${w}px journey learned / games: ${JSON.stringify(lrn)}`);
     if (!/First cards/.test(cards.t) || !cards.col.includes('first cards') || !cards.col.some(x => /^#\d+/.test(x)))
       fails.push(`${w}px journey cards (Ana): ${JSON.stringify(cards).slice(0, 300)}`);
     await go('~journey/' + encodeURIComponent('Carla Demo'));

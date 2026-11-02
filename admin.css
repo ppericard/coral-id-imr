@@ -3046,6 +3046,14 @@ td.cov-c.cov-over {
   fill: var(--warn);
   font-weight: 600;
 }
+.adm-jl path.lrn {
+  stroke: var(--good);
+  stroke-width: 1.5;
+}
+.adm-jl text.s {
+  fill: var(--good);
+  font-size: var(--fs-s);
+}
 .adm-jl circle.m {
   fill: var(--surface);
   stroke: var(--accent);
@@ -3067,6 +3075,9 @@ td.cov-c.cov-over {
   margin: 0 4px 0 8px;
   vertical-align: middle;
   border-top: 2px solid var(--accent);
+}
+.adm-jkey i.lrn {
+  border-top-color: var(--good);
 }
 .adm-jkey i.exp {
   border-top: 2px dashed var(--muted);
@@ -3096,4 +3107,17 @@ td.cov-c.cov-over {
 }
 .adm-jcards li {
   margin: 2px 0;
+}
+
+/* A genus learned (mastery exam passed): a small green tag beside its name in the journey's list. */
+.adm-jlearn {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--good-bg);
+  color: var(--good);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  vertical-align: 1px;
 }

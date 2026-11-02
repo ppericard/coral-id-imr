@@ -84,6 +84,7 @@
         st.h = (st.h + (right ? 1 : 0)).slice(-10);
         st.th = Math.round((st.th + (right ? 0.15 : -0.1)) * 100) / 100;
         st.L = Math.min(1, st.L + (right ? 0.08 : 0));
+        if (st.L >= 0.6 && !st.mx) st.mx = t; // learned, and when (the journey's stars)
         const id = 'demo' + (k++).toString(36);
         rows.push([
           name,
@@ -341,6 +342,21 @@
     return {ok: true, users: Object.values(by), removed: S.removed.slice().reverse()};
   }
   function users(p) {
+    // Sheet v20: rename (the record moves, hidden from the leaderboard).
+    if (p.userRename) {
+      const m = p.userRename,
+        u = S.users[lc(m.from || '')],
+        into = String(m.into || '').trim();
+      if (!u || !into) return {ok: false, error: 'user'};
+      if (S.users[lc(into)]) return {ok: false, error: 'exists'};
+      const from = u.name;
+      delete S.users[lc(from)];
+      S.users[lc(into)] = {...u, name: into, board: -1};
+      let answers = 0;
+      S.rows.forEach(r => lc(r[0]) === lc(from) && ((r[0] = into), answers++));
+      S.reports.forEach(r => lc(r[2] || '') === lc(from) && (r[2] = into));
+      return {ok: true, answers, reports: 0};
+    }
     // Sheet v20: hidden from the leaderboard by an admin (-1) or shown (1).
     if (p.userBoard) {
       const u = S.users[lc(p.userBoard)];
@@ -423,7 +439,7 @@
       if (p.readEvents) return ok({ok: true, rows: S.events.map(r => r.slice())});
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
-      if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard) return ok(users(p));
+      if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userRename) return ok(users(p));
       return ok({ok: false, error: 'demo'});
     }
     if (/^https?:/.test(url) && !url.startsWith(location.origin)) return Promise.reject(new TypeError('Blocked in demo mode'));

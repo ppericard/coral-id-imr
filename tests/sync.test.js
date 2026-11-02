@@ -566,6 +566,30 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
   assert.ok(ben(), 'shown again');
 });
 
+test('rename (v20): the record moves to the new name, hidden from the leaderboard; the old name starts over', () => {
+  const s = seed();
+  s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {pct: 41.6, board: 1}, answers: [ans('r1'), ans('r2')]});
+  s.post({rname: 'Ana', rpin: '1234', reports: [rep('rr1')]});
+  const before = s.sheets.Answers.rows.filter(r => r[0] === 'Ana').length;
+  assert.strictEqual(s.post({userRename: {from: 'Ana', into: 'Ana-test'}}).error, 'token', 'admin only');
+  assert.strictEqual(s.post({userRename: {from: 'Ana', into: 'Ben'}, token: TOK}).error, 'exists');
+  const r = s.post({userRename: {from: 'ana', into: 'Ana-test'}, token: TOK});
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.answers, before);
+  assert.strictEqual(s.sheets.Answers.rows.filter(x => x[0] === 'Ana').length, 0, 'no answer left under the old name');
+  assert.strictEqual(s.sheets.Reports.rows.filter(x => x[1] === 'Ana-test').length, 1, 'the report follows');
+  // The renamed record keeps its progress (an archive, read in the admin: the code hash is tied to the name, so the app
+  // does not open it); it is off the leaderboard.
+  const old = s.post({userData: 'Ana-test', token: TOK});
+  assert.deepStrictEqual(old.data, prog(3));
+  Object.keys(s.cache).forEach(k => delete s.cache[k]);
+  assert.ok(!s.get({board: '1'}).rows.some(x => x[0] === 'Ana-test'));
+  // "Ana" is free: signing in again under it (after signing out on the device) starts an empty account.
+  assert.strictEqual(s.get({name: 'Ana', pin: '1234'}).found, false);
+  assert.strictEqual(s.post({name: 'Ana', pin: '1234', data: {}, summary: {board: 1}, answers: []}).ok, true);
+  assert.ok(s.post({users: 1, token: TOK}).users.some(u => u.name === 'Ana-test' && u.board === -1));
+});
+
 test('board: a player saved before v14 ranks by learned / total until their next sync', () => {
   const s = seed();
   const ra = s.sheets.RAs;

@@ -319,7 +319,7 @@ function answer(cur, c, target, ph, cor, unseen) {
     ex.v = [...new Set([...ex.v, ph[0].view])];
     ex.at = answersSoFar();
     if (ex.k >= EXAM.n) {
-      s.mx = 1;
+      s.mx = Date.now(); // learned, and when (the admin's player journey; was 1 before 2026-11-02, still truthy)
       delete s.ex;
       setTimeout(
         () => achPop({tier: 3, icon: '🎓', title: `${target} mastered`, desc: `${EXAM.n} hard questions right, slipped into the quiz`}),
@@ -340,7 +340,8 @@ function answer(cur, c, target, ph, cor, unseen) {
     g: target,
     a: c,
     ok: good ? 1 : 0,
-    m: cur + (k < nc ? '|k' + k : ''),
+    // |x: a question of the mastery exam (never with |k: an exam has every trap), for the admin's player journey.
+    m: cur + (k < nc ? '|k' + k : '') + (exq ? '|x' : ''),
     // A corallites hint left closed is not logged: it was not seen when answering (Codex review #339; the sheet rates and
     // counts as recognised only the photos the player saw).
     ph: ph

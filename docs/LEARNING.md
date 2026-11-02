@@ -93,6 +93,11 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
 - **Easy wrong choices come first from genera the player has met** (2026-11-02): a beginner is not asked to choose
   between names never seen.
 
+### Logged for the admin's player journey (2026-11-02)
+
+A mastery exam question is logged with mode `quiz|x` (exams have every trap, so never `|kN`; the sheet's guess rate and
+mode split read it as `quiz`), and a passed exam keeps its time (`s.mx` = time, was 1; still truthy everywhere).
+
 ### First meeting with a genus (2026-11-02)
 
 Beginner RA review: the first quiz felt like an exam, asking genera the player had never seen. Pierre's design, the same

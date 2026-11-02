@@ -4177,6 +4177,7 @@ function renderUsers() {
       <section class="adm-scard"><h3>Manage</h3>
         <p><label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label></p>
         <p>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></p>
+        <p><button type="button" class="adm-fchip" data-uren="${esc(u.name)}">Rename…</button></p>
         <p><button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete</button></p></section></div></td></tr>`;
   // Answers without a name: devices that never signed in (~anon) and deleted accounts, by anonymous id.
   const named = new Set(U.map(u => u.id).filter(Boolean)),
@@ -4294,6 +4295,31 @@ function bindUsers() {
               : toast(`Not done (${(j && j.error) || 'offline'}${j && j.error === 'input' ? ': needs the sheet script v20' : ''}).`)
           )
           .catch(() => toast('Not done (offline).'));
+      })
+  );
+  // Rename (sheet v20, Pierre 2026-11-02): keep a record apart under a new name ("Pierre-test"), off the leaderboard; the
+  // old name is free again, so its owner can sign out on their devices and sign in under it to start over.
+  $v.querySelectorAll('[data-uren]').forEach(
+    b =>
+      (b.onclick = () => {
+        const name = b.dataset.uren,
+          into = (prompt(`New name for "${name}"?`, `${name}-test`) || '').trim();
+        if (!into || into === name) return;
+        if (
+          !confirm(
+            `Rename "${name}" to "${into}"?\n\nTheir answers, reports and progress move to "${into}", hidden from the leaderboard; the app no longer opens it (an archive, here in the admin).\n"${name}" is free again: to start over under it, sign out on each device, then sign in as "${name}".`
+          )
+        )
+          return;
+        userPost({userRename: {from: name, into}})
+          .then(j =>
+            j && j.error === 'exists'
+              ? toast(`"${into}" is already a player.`)
+              : j && j.error === 'input'
+                ? toast('Not done: needs the sheet script v20.')
+                : done(`"${name}" renamed "${into}".`, j)
+          )
+          .catch(() => done('', null));
       })
   );
   $v.querySelectorAll('[data-umerge]').forEach(
