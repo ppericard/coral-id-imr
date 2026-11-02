@@ -156,8 +156,9 @@ time, each on its card, but never as the answer of the question right after its 
   existed, an RA having left on a run of misses before it was built): each load of the saved progress carries the same
   sum computed by the sheet over every answer it logged for the player, in time order, since their last progress reset
   (`Code.gs` `hold_`, same formula and allowance, `HOLD.SLACK` kept in step with `INTRO.SLACK` by
-  `tests/sync.test.js`); the app adds the answers the sheet has not confirmed yet and keeps the larger of that and its
-  own sum (`holdSync`), so a hold is never lifted by a sync. Players not signed in keep the device's only. Cleared with
+  `tests/sync.test.js`); the app adds the answers the sheet has not confirmed yet and takes that as its hold
+  (`holdSync`): the same sum over the same answers on every device, so right answers on a phone pay back a hold started
+  on a laptop. Players not signed in keep the device's only. Cleared with
   the progress. Why: an RA from the previous month's programme
   (the lecture, a few ID dives and analyses: good, not an expert) at 86% right after 50 answers declined "open all"
   (Pierre: even trained RAs prefer to meet the genera progressively; experts must still be able to open them fast),

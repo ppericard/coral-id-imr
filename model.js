@@ -373,9 +373,10 @@ function holdStep(e, good) {
 // Synced (sheet v23, Pierre 2026-11-02: the hold follows a signed-in player from one device to another, and is rebuilt
 // from the answers given before it existed). Each load of the saved progress (sync.js mergeSaved) brings h, the same sum
 // over every answer the sheet has logged for the player since their last reset (Code.gs hold_, gentle-restart answers
-// left out: logged with |w). The answers of this device the sheet has not confirmed yet (log) are added on top, and the
-// larger of that and this device's own sum is kept: a hold is never lifted by the sync. An older sheet sends no h: the
-// hold stays this device's. Not signed in: this device's only.
+// left out: logged with |w). The answers of this device the sheet has not confirmed yet (log) are added on top, and
+// that is the hold: the same sum over the same answers on every device, so right answers on one device pay back a hold
+// started on another (on a single device it equals the device's own sum). An older sheet sends no h: the hold stays
+// this device's. Not signed in: this device's only.
 const HOLD_WARM = /\|w(\||$)/; // the mode of a gentle-restart answer (quiz.js answer)
 function holdSync(h, log) {
   if (typeof h !== 'number' || !isFinite(h)) return;
@@ -384,7 +385,7 @@ function holdSync(h, log) {
     (t, a) => (a && !HOLD_WARM.test(a.m || '') && String(a.t || '') > reset ? holdNext(t, a.e, a.ok) : t),
     Math.max(0, h)
   );
-  if (x > HOLDS) {
+  if (x !== HOLDS) {
     HOLDS = x;
     store.set(HOLDK, HOLDS);
   }

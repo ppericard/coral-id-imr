@@ -790,7 +790,7 @@ test('v23 hold: the sheet replays the opening hold of model.js over the answers 
   assert.strictEqual(s.get({name: 'Ana', pin: '1234'}).hold, m2.now());
 });
 
-test('v23 hold: the app adds its unconfirmed answers and never lowers its own hold (model.js holdSync)', () => {
+test("v23 hold: the sheet's sum plus the unconfirmed answers is the hold on every device (model.js holdSync)", () => {
   const all = [0.8, 0.9, 0.7, 0.85, 0.6, 0.9].map((e, i) => ({
       id: 'u' + i,
       t: `2026-11-01T08:00:0${i}Z`,
@@ -809,11 +809,11 @@ test('v23 hold: the app adds its unconfirmed answers and never lowers its own ho
   dev.sync(h, all.slice(4));
   assert.strictEqual(dev.now(), one.now());
   assert.strictEqual(saved['imr-hold'], one.now(), 'saved on the device');
-  // A device whose own hold is higher keeps it (never lifted by the sync); a warm answer, or one from before the reset,
-  // in the log is not added; an older sheet (no hold) changes nothing.
+  // A device held by answers paid back on another device follows the sheet (the same answers everywhere); a warm
+  // answer, or one from before the reset, in the log is not added; an older sheet (no hold) changes nothing.
   const hi = modelHold({'imr-hold': 9});
   hi.sync(0, []);
-  assert.strictEqual(hi.now(), 9);
+  assert.strictEqual(hi.now(), 0);
   const w = modelHold({'imr-coral-reset': '2026-11-01T08:00:04Z'});
   w.sync(1, [
     {t: '2026-11-01T08:00:03Z', e: 0.9, ok: 0, m: 'quiz'},
