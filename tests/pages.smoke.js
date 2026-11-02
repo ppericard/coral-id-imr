@@ -125,6 +125,18 @@ const server = http.createServer((req, res) => {
             all: !!document.querySelector('.unlock.intro .ulall [data-all]')
           }))
         );
+        // A glossary term on a card opens its definition on top of the card (an RA, 2026-11-02: it opened behind it).
+        const gt = await q2.$('.unlock.intro .gt');
+        if (gt) {
+          await gt.click();
+          const top = await q2.evaluate(() => {
+            const g = document.querySelector('.gpop'),
+              r = g.getBoundingClientRect();
+            return !g.hidden && g.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+          });
+          if (!top) fails.push(`${w}px glossary term on a genus card: definition not shown on top`);
+          await q2.click('.unlock.intro h3'); // a tap elsewhere closes the definition
+        }
         await q2.click('.unlock.intro .next');
       }
       const ch = await q2.evaluate(() => [...document.querySelectorAll('#view [data-c]')].map(b => b.dataset.c));
