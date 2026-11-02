@@ -2,7 +2,7 @@
 
 > **AI agent or new developer given only this repository's link? Start here.** Read [AGENTS.md](AGENTS.md) (standing rules, how to ship a change), then [docs/HANDOVER.md](docs/HANDOVER.md) (state of play, what the owner still has to do, how to work with him, how to set up a working copy and what lives outside GitHub, a ready-made first prompt), then [docs/ROADMAP.md](docs/ROADMAP.md) (prioritised backlog). Nothing outside this repository is needed to understand or continue the project.
 
-A static web app for learning the 39 coral genera on the IMR (Institute for Marine Research, Dauin, Philippines) survey slate: 34 surveyed genera plus 5 starred look-alikes.
+A static web app for learning the 39 coral genera on the IMR (Institute for Marine Research, Dauin, Philippines) survey slate: 34 surveyed genera plus 5 starred look-alikes, and fire coral (*Millepora*), on the IMR benthic slate.
 
 Live: <https://ppericard.github.io/coral-id-imr/> · Built for the Research Assistants trained at IMR, whose first task is genus-level labelling of benthic photos in ReefCloud.
 
@@ -13,7 +13,7 @@ Live: <https://ppericard.github.io/coral-id-imr/> · Built for the Research Assi
 ## What's inside
 
 - **Learn**: the Genera page (photos or short ID tips, in IMR lecture-group or slate order); a genus sheet per genus with your level on it and what it still needs, three photo views (colony, close-up, corallites), the IMR lecture notes, a mnemonic, Coral Finder features and "Don't confuse with"; Look-alikes, a deck of classic pair montages.
-- **Practice**: Photo → genus (adaptive difficulty), look-alike duels and Memory (colony ↔ corallites). From 10% progress, bonus genera off the slate that are common at Dauin (fire coral *Millepora* first) join the quiz and duels, outside the slate score.
+- **Practice**: Photo → genus (adaptive difficulty), look-alike duels and Memory (colony ↔ corallites). Once every slate genus is met, a card offers 5 bonus genera off the slate that are common at Dauin (⚙ Bonus genera, any time); they join the quiz and duels one at a time, outside the slate score.
 - **Identify**: the Coral Finder, a clue-based ranking that follows the Coral Finder 2022 book (growth form, then box, then corallite clues), also listing 27 non-IMR genera seen at Dauin.
 - **My progress**: learned / learning / review per genus on a 6-step colour scale, synced to a Google Sheet when an RA signs in.
 - **Settings** (⚙): light/dark theme, five colour palettes (Depth by default), colour-blind mode (blue/orange instead of green/red).

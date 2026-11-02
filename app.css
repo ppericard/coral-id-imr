@@ -912,6 +912,7 @@ header {
 #pq,
 #cvd,
 #boardset,
+#bonset,
 #theme {
   display: inline-flex;
   padding: 3px;
@@ -926,6 +927,7 @@ header {
 #pq button,
 #cvd button,
 #boardset button,
+#bonset button,
 #theme button,
 #size button {
   background: none;
@@ -942,6 +944,7 @@ header {
 #pq button[aria-pressed='true'],
 #cvd button[aria-pressed='true'],
 #boardset button[aria-pressed='true'],
+#bonset button[aria-pressed='true'],
 #theme button[aria-pressed='true'],
 #size button[aria-pressed='true'] {
   background: var(--surface);
@@ -5219,8 +5222,7 @@ html.touring body::after {
 .credit a:hover {
   text-decoration: underline;
 }
-/* Bonus genera (off the IMR list) on My progress: unlocked tiles carry a small "Bonus" tag; locked ones are "?" tiles
-   with the slate progress that unlocks them, in every view (photo wall, slate, groups). */
+/* Bonus genera (off the IMR list) on My progress, once the player has them on: their tiles carry a small "Bonus" tag. */
 .pwall .pw .pbtag {
   position: absolute;
   top: 4px;
@@ -5232,45 +5234,6 @@ html.touring body::after {
   color: var(--ink);
   font: 600 var(--fs-xs) / 1.3 var(--body);
   letter-spacing: 0.02em;
-}
-.plock {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: 1.5px dashed var(--line);
-  border-radius: var(--r-sm);
-  color: var(--muted);
-  background: transparent;
-  cursor: default;
-}
-.plock b {
-  font: 700 var(--fs-m) / 1 var(--body);
-}
-.plock small {
-  font-size: var(--fs-xs);
-}
-.pwall .pw.plock {
-  display: flex;
-  flex-direction: column;
-  border-radius: var(--r);
-  border: 2px dashed var(--line);
-  background: var(--surface-2);
-}
-.pwall .pw.plock b {
-  font: 700 var(--fs-xl) / 1 var(--display);
-}
-.pwall .pw.plock small {
-  text-align: center;
-  padding: 0 6px;
-  line-height: 1.2;
-}
-.pslate .ps.plock {
-  justify-content: flex-start;
-  padding: 0 8px;
-}
-.pseg .pgl {
-  flex: 1;
 }
 .pgbonus .gn {
   background: transparent;
@@ -5304,50 +5267,10 @@ html.touring .unlock {
   box-shadow: var(--shadow-hover);
   animation: ulpop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
-.ulflip {
-  position: relative;
-  width: min(240px, 70vw);
-  aspect-ratio: 4/3;
-  margin: 0 auto 14px;
-  perspective: 900px;
-}
-.ulback,
-.ulfront {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--r);
-  backface-visibility: hidden;
-  overflow: hidden;
-  animation: 0.7s 0.35s ease-in-out both;
-}
-.ulback {
-  display: grid;
-  place-items: center;
-  border: 2px dashed var(--line);
-  background: var(--surface-2);
-  color: var(--muted);
-  animation-name: ulturnback;
-}
-.ulback b {
-  font: 700 var(--fs-2xl) / 1 var(--body);
-}
-.ulfront {
-  animation-name: ulturnfront;
-  box-shadow:
-    0 0 0 3px var(--accent),
-    0 0 24px var(--accent);
-}
-.ulfront img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
 /* A card photo that did not load (quiz.js): a plain tile, never a broken-image icon. */
 .unlock img.fail {
   visibility: hidden;
 }
-.ulfront,
 .ulphoto {
   background: var(--surface-2);
 }
@@ -5382,7 +5305,8 @@ html.touring .unlock {
   color: var(--muted);
   font-size: var(--fs-s);
 }
-.ultips {
+.ultips,
+.ulcard .warn {
   text-align: left;
   margin: 0 0 12px;
 }
@@ -5436,27 +5360,9 @@ html.touring .unlock {
     opacity: 0;
   }
 }
-@keyframes ulturnback {
-  from {
-    transform: rotateY(0);
-  }
-  to {
-    transform: rotateY(180deg);
-  }
-}
-@keyframes ulturnfront {
-  from {
-    transform: rotateY(-180deg);
-  }
-  to {
-    transform: rotateY(0);
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .unlock,
-  .ulcard,
-  .ulback,
-  .ulfront {
+  .ulcard {
     animation-duration: 0.01s;
     animation-delay: 0s;
   }

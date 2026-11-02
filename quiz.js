@@ -1,6 +1,6 @@
 // IMR Coral ID: the quiz screens, split out of app.js (2026-11-02, code review L1: one file per part, one piece at a
 // time). A question on screen (question, the session trail, the hint), the stage fitted to the screen (fitStage,
-// fitTiles, fitLow), the answer and its feedback (answer), the one-tap question (pulse), the bonus genus unlock card,
+// fitTiles, fitLow), the answer and its feedback (answer), the one-tap question (pulse), the bonus genera offer,
 // the next question planned and preloaded while the feedback is read (planNext, NEXTQ), the photo quiz (quizPhoto) and
 // the look-alike duels (quizDuel). The rules that choose genus, photos and wrong choices are in model.js. A classic
 // script like app.js, loaded right after model.js (index.html, in order); app.js waits for every script (window.BOOT)
@@ -28,7 +28,7 @@ function bindQuizNav() {
 // The game rules (behind the ? button).
 const gameHelp =
   cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
-  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? '' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="#progress">My progress</a>. From ${BONUS_AT(0)}% progress, <b>bonus genera</b> join in: corals off the IMR list that are common at Dauin and easily confused with it (fire coral <i>Millepora</i> first).</p>
+  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? '' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="#progress">My progress</a>. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
   <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus fills up to 95% with your right answers, each point a little harder to earn than the last, and a right answer counts most when the genus's look-alikes are among the choices; a mistake takes it back down; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the photo quiz: see ? on <a href="#progress">My progress</a>.</p>`;
 let EXAMQ = null; // the genus whose exam question is on screen (set by question, read by answer)
 // Time to answer and photo enlarged (Pierre, 2026-11-02: a right answer that needed a long look or an enlarged photo says
@@ -476,17 +476,14 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     if (b.dataset.c === target) b.classList.add('ok', ...(good ? ['cheer'] : []));
     else if (b.dataset.c === c) b.classList.add('ko');
   });
-  // Bonus genera unlocked and not announced yet (Q.ba = how many were announced) are named once in the feedback.
-  const g = GX(target),
-    bo = bonusOpen(),
-    nbo = bo.slice(Q.ba || 0);
+  const g = GX(target);
   const vs =
     !good && GX(c)
       ? // The answer's own tips, said as such (an RA tester, 2026-11-02: "Why not X:" read as the reasons the photo is not X).
         `<p class="vs">Your answer, <i>${esc(c)}</i>, would show: ${esc(tipsText(GX(c)))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
       : '';
   document.getElementById('after').innerHTML = `<div class="fb">
-    <h3 class="${good ? 'ok cheer' : 'ko'}"><span class="v">${good ? '\u2713 Yes' : '\u2717 No'},</span> it's <a href="#g-${esc(target)}"${sheetTab()}><i>${esc(target)}</i></a>${g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>
+    <h3 class="${good ? 'ok cheer' : 'ko'}"><span class="v">${good ? '\u2713 Yes' : '\u2717 No'},</span> it's <a href="#g-${esc(target)}"${sheetTab()}><i>${esc(target)}</i></a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>
     <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
     <details class="more"><summary>Coral Finder</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details>${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: cur})}</div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
@@ -507,14 +504,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   nb.onclick = route;
   // Chosen now, photos fetched while the feedback is read (planNext). A fixed duel pair (#quiz-duel|A|B) is cheap anyway.
   setTimeout(() => hashNow() === cur && planNext(cur), 50);
-  // One overlay at a time: a bonus card waits for the next answer while another card or the tour is open (it is counted
-  // as announced only when shown). The out-of-game prompts take turns (promptOk), never with a card or an achievement
-  // toast, nor with the mastery toast due in a moment.
-  if (nbo.length && !document.querySelector('.unlock, #tour')) {
-    Q.ba = bo.length;
-    saveQ();
-    unlockShow(nbo);
-  } else if (!nbo.length && !(exq && s.mx) && promptOk()) {
+  // The out-of-game prompts take turns (promptOk), never with a card or an achievement toast, nor with the mastery toast
+  // due in a moment.
+  if (!(exq && s.mx) && promptOk()) {
     if (nudgeDue()) (promptMark(), signinNudge());
     else if (pulseDue()) (promptMark(), pulseAsk());
   }
@@ -572,7 +564,7 @@ function pulseAsk() {
             n: session.n,
             rr: h.length ? Math.round((100 * h.filter(Boolean).length) / h.length) : 0,
             lv: Math.round(((P[LEVEL] || {}).th || 0) * 100) / 100,
-            met: Object.keys(DATA.gen).filter(g => P[g]).length
+            met: slateGenera().filter(g => P[g]).length
           });
           box.innerHTML = '<span>Thank you!</span>';
         } else box.remove();
@@ -611,62 +603,11 @@ document.addEventListener(
   },
   true
 );
-// A genus sheet opened from inside a game (the answer's genus name, the bonus unlock card): on a computer, in a new tab,
+// A genus sheet opened from inside a game (the answer's genus name): on a computer, in a new tab,
 // so the game stays where it was (an RA tester, 2026-11-02: "so that we aren't taken out of the game"); on a phone or
 // tablet the same tab (new tabs there are clumsy, and Back returns to the game).
 // Desktop size class with a mouse: the shared AGENTS rule 19 classes (Codex review #368), no breakpoint of its own.
 const sheetTab = () => (!isStacked() && !matchMedia(MQ.touch).matches ? ' target="_blank" rel="noopener"' : '');
-// Unlock card (Pierre, 2026-11-01): shown once per newly unlocked bonus genus, over the quiz feedback. A "?" tile turns
-// over to the genus's cover photo, with its name and Coral Finder ID tips. Got it / Esc / Enter / a click outside closes
-// it (Enter is caught first, so it doesn't also skip to the next question). No motion with prefers-reduced-motion.
-function unlockShow(L) {
-  const n = L[0],
-    g = GX(n),
-    p = cover(g),
-    d = document.createElement('div');
-  d.className = 'unlock';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Bonus genus unlocked');
-  d.innerHTML = `<div class="ulcard"><div class="ulflip"><div class="ulback" aria-hidden="true"><b>?</b></div><div class="ulfront">${p ? `<img src="${img(p, 's')}" alt="">` : ''}</div></div>
-    <p class="ulkick">Bonus genus unlocked</p><h3><i>${esc(n)}</i></h3>
-    <p class="ulnote">Not on the IMR list, but common at Dauin. It now joins the photo quiz and the duels.</p>
-    <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tipsList(g)}</div>
-    ${
-      L.length > 1
-        ? `<p class="ulnote">Also unlocked: ${L.slice(1)
-            .map(x => `<i>${esc(x)}</i>`)
-            .join(', ')}</p>`
-        : ''
-    }
-    <div class="ulbtns"><a class="linkish" href="#g-${esc(n)}"${sheetTab()}>Open its sheet</a><button class="next" type="button">Got it</button></div></div>`;
-  document.body.appendChild(d);
-  const close = () => {
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-    const nb = document.getElementById('next');
-    if (nb) nb.focus({preventScroll: true});
-  };
-  // Enter on the focused sheet link follows it (its click closes the card); elsewhere Enter / Esc just close the card.
-  const key = e => {
-    if ((e.key !== 'Escape' && e.key !== 'Enter') || document.getElementById('tour')) return; // the tour's keys while the card waits under it
-    e.stopPropagation();
-    if (e.key === 'Enter' && e.target.closest && e.target.closest('.unlock a')) return;
-    e.preventDefault();
-    close();
-  };
-  document.addEventListener('keydown', key, true);
-  d.ulClose = close; // leaving the page closes it (route)
-  d.querySelector('button').onclick = close;
-  d.querySelector('a').addEventListener('click', close);
-  d.addEventListener('click', e => {
-    if (e.target === d) close();
-  });
-  setTimeout(() => {
-    const b = d.querySelector('button');
-    if (b) b.focus({preventScroll: true});
-  }, 50);
-}
 // A mix-up in the photo quiz comes back once as a duel of the two genera, one question later.
 let rematch = null;
 // GAP: answers between two duels slipped in; AGAIN: answers at least after an "Again" (spacing them from the Agains
@@ -807,7 +748,9 @@ function quizPhoto() {
   AUTOD = !!q.auto;
   question(...q);
   if (q.intro) introShow(q.intro, q.start);
-  else if (promptOk() && introOffer()) (promptMark(), introOfferShow()); // never over another card: next question
+  else if (promptOk() && introOffer())
+    (promptMark(), introOfferShow()); // never over another card: next question
+  else if (promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
   topUp(); // the questions after this one, chosen while it is played (planNext)
 }
 // The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now.
@@ -828,7 +771,7 @@ function introOfferShow() {
   d.setAttribute('aria-modal', 'true');
   d.setAttribute('aria-label', 'Open all genera?');
   d.innerHTML = `<div class="ulcard"><p class="ulkick">${a} answers in</p><h3>You seem to know your corals already</h3>
-    <p>Open all ${Object.keys(DATA.gen).length} genera at once, instead of one at a time? ${introLeft().length} are still to come.</p>
+    <p>Open all ${slateGenera().length} genera at once, instead of one at a time? ${introLeft().length} are still to come.</p>
     <div class="ulbtns ulstack"><button class="next" type="button" data-open>Open all genera</button><button class="next sec" type="button">Not now</button></div>
     <p class="note">Also in My progress, any time.</p></div>`;
   document.body.appendChild(d);
@@ -851,6 +794,51 @@ function introOfferShow() {
   d.querySelector('[data-open]').onclick = () => pick(true);
   d.querySelector('.sec').onclick = () => pick(false);
   setTimeout(() => d.querySelector('[data-open]').focus({preventScroll: true}), 50);
+}
+// The bonus genera (app.js BONUS), offered once (Pierre, 2026-11-02): when every slate genus has been met (introduced:
+// its card shown or asked) and the player has not chosen yet (Q.bon undefined). "Add them": they join the genera not
+// met yet and open one at a time like the others; "Not now": never offered again, ⚙ Bonus genera turns them on any time.
+// A prompt like the others (promptOk: never with a card, the tour or an achievement, PROMPT.GAP answers apart).
+// Every slate genus asked at least once, not just met (Pierre, 2026-11-02: an RA who taps Open all genera would otherwise get the offer a
+// question later, before having seen the IMR genera in the quiz; an RA tester: "after all IMR ones have been introduced/reviewed").
+const bonusOfferDue = () => Q.bon === undefined && BONUS.some(n => GX(n)) && slateGenera().every(asked);
+function bonusOfferShow() {
+  const d = document.createElement('div'),
+    pick = on => {
+      bonusSet(on);
+      close();
+    };
+  d.className = 'unlock intro';
+  d.setAttribute('role', 'dialog');
+  d.setAttribute('aria-modal', 'true');
+  d.setAttribute('aria-label', 'Bonus genera');
+  const n = BONUS.filter(x => GX(x)).length;
+  d.innerHTML = `<div class="ulcard"><p class="ulkick">Every genus of the slate met</p><h3>${n} more genera?</h3>
+    <p>Not on the IMR coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.</p>
+    <p class="ulnote">${BONUS.filter(x => GX(x))
+      .map(x => `<i>${esc(x)}</i>`)
+      .join(', ')}</p>
+    <div class="ulbtns ulstack"><button class="next" type="button" data-bonus>Add them</button><button class="next sec" type="button">Not now</button></div>
+    <p class="note">⚙ Settings, Bonus genera, any time. They don't count in your progress.</p></div>`;
+  document.body.appendChild(d);
+  const close = () => {
+    d.remove();
+    document.removeEventListener('keydown', key, true);
+    topUp();
+  };
+  const key = e => {
+    if (e.key === 'Tab' || document.getElementById('tour')) return; // the tour's keys while the card waits under it
+    e.stopPropagation(); // never the quiz's answer keys behind the card
+    if (/^\d$/.test(e.key)) e.preventDefault();
+    if (e.key !== 'Escape') return;
+    e.preventDefault();
+    pick(false);
+  };
+  document.addEventListener('keydown', key, true);
+  d.ulClose = close; // leaving the page closes it unanswered (route): the offer comes back
+  d.querySelector('[data-bonus]').onclick = () => pick(true);
+  d.querySelector('.sec').onclick = () => pick(false);
+  setTimeout(() => d.querySelector('[data-bonus]').focus({preventScroll: true}), 50);
 }
 // The cards of the genera met now (INTRO in model.js), one after the other over the question: the first INTRO.START
 // together ("1 of 4", the first questions are about them), later ones alone (asked a few questions later). Recorded
@@ -875,18 +863,19 @@ function introShow(L, start, kind = start ? 's' : 'c') {
     const n = L[i],
       g = GX(n),
       p = cover(g),
-      star = typeof starNote === 'function' ? starNote(n) : '',
+      star = typeof starNote === 'function' && DATA.gen[n] ? starNote(n) : '',
       more = i < L.length - 1;
     // Met when its card is shown (Codex review #350): a sequence left half-way (reload) shows the rest next time.
     introAdd([n], start, kind);
     d.setAttribute('aria-label', `New genus: ${n}`);
     d.innerHTML = `<div class="ulcard">${p ? `<div class="ulphoto"><img src="${img(p, 's')}" alt=""></div>` : ''}
-      <p class="ulkick">New genus${L.length > 1 ? ` · ${i + 1} of ${L.length}` : ''}</p><h3><i>${esc(n)}</i></h3>
+      <p class="ulkick">${isBonus(n) ? 'Bonus genus' : 'New genus'}${L.length > 1 ? ` · ${i + 1} of ${L.length}` : ''}</p><h3><i>${esc(n)}</i></h3>
       ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
+      ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : isBonus(n) ? '<p class="ulnote">Not on the IMR list, but common at Dauin.</p>' : ''}
       <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tipsList(g)}</div>
       <p class="ulnote">${start ? (more ? `The first questions are about these ${L.length} genera.` : 'Now, which is which?') : 'It comes up in the questions a little later.'}</p>
       <div class="ulbtns"><span></span><button class="next" type="button">${more ? 'Next' : start ? 'Start' : 'Got it'}</button></div>
-      ${start && introLeft().length ? `<div class="ulall"><p><b>Had the IMR coral lecture?</b> Skip the cards and play with all ${Object.keys(DATA.gen).length} genera.</p><button class="next sec" type="button" data-all>Open all genera</button></div>` : ''}</div>`;
+      ${start && introLeft().length ? `<div class="ulall"><p><b>Had the IMR coral lecture?</b> Skip the cards and play with all ${slateGenera().length} genera.</p><button class="next sec" type="button" data-all>Open all genera</button></div>` : ''}</div>`;
     d.querySelector('.next').onclick = next;
     const all = d.querySelector('[data-all]');
     if (all)
@@ -1036,14 +1025,16 @@ function quizDuel(a, b) {
 // A look-alike pair for a duel (the Duel tab, and the duels slipped into the photo quiz): among the pairs whose two
 // genera are in the list and pass keep. Null when none.
 function duelPick(list, keep = () => true) {
-  // Unlocked bonus genera duel with the slate look-alike the Coral Finder names.
+  // Millepora and the bonus genera duel with the slate look-alike the Coral Finder names (when they are in the list).
   const ps = [
     ...pairs(),
-    ...bonusOpen().flatMap(b =>
-      GX(b)
-        .look.filter(a => DATA.gen[a])
-        .map(a => [a, b])
-    )
+    ...[...BENTHIC, ...BONUS]
+      .filter(b => GX(b))
+      .flatMap(b =>
+        GX(b)
+          .look.filter(a => DATA.gen[a])
+          .map(a => [a, b])
+      )
   ].filter(([x, y]) => list.includes(x) && list.includes(y) && keep([x, y]));
   if (!ps.length) return null;
   // Your mix-ups you still make come up most (personal confusion score, confOf), then pairs players often confuse and
