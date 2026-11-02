@@ -83,7 +83,7 @@ function doGet(e){
   const d = readData_(name, String(row[7] || '')), data = JSON.parse(d.json), out = {ok: true, found: true, updated: row[1], rev: d.rev, data: data};
   // v23: the player's opening hold from their answers (hold_). An app before v23 ignores it; a failure leaves it out
   // (the app keeps its own).
-  try { out.hold = hold_(name, resetOf_(data)); } catch (err) {}
+  try { const o = hold_(name, resetOf_(data)); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
   return json_(out);
 }
 
@@ -186,25 +186,28 @@ const flag_ = x => x === 1 || x === true ? 1 : x === 0 || x === false ? 0 : '';
 // HOLD.SLACK is model.js INTRO.SLACK: keep both in step (tests/sync.test.js replays model.js on the same answers).
 // The app takes it and adds its own answers the sheet has not confirmed yet (model.js holdSync). Cached per player
 // until their next answers are logged or moved (logAnswers_, relabel_, dropRows_).
-const HOLD = {SLACK: 0.1};
+const HOLD = {SLACK: 0.1, IDS: 500};
 const holdKey_ = name => 'hold:' + lc_(name);
 function dropHold_(name){ try { CacheService.getScriptCache().remove(holdKey_(name)); } catch (e) {} }
 function resetOf_(data){
   try { return new Date(JSON.parse((data || {})['imr-coral-reset'] || '""')).getTime() || 0; } catch (e) { return 0; }
 }
+// Returns {h, ids}: ids = the answer ids of the player's last HOLD.IDS rows counted, so the app does not add again the
+// answers of a send whose reply was lost (they are already in h; Codex review #370).
 function hold_(name, since){
   const c = CacheService.getScriptCache(), k = holdKey_(name), hit = c.get(k);
-  if (hit) { const o = JSON.parse(hit); if (o.s === since) return o.h; }
+  if (hit) { const o = JSON.parse(hit); if (o.s === since && o.ids) return {h: o.h, ids: o.ids}; }
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), who = lc_(name);
   let h = 0;
-  if (sh && sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, 9).getValues()
+  const rows = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 9).getValues()
     .filter(r => lc_(r[0]) === who && !/\|w(\||$)/.test(String(r[5])))
-    .map(r => [new Date(r[1]).getTime() || 0, Number(r[4]) ? 1 : 0, Number(r[8]) || 0])
+    .map(r => [new Date(r[1]).getTime() || 0, Number(r[4]) ? 1 : 0, Number(r[8]) || 0, String(r[7])])
     .filter(r => r[0] > since)
-    .sort((a, b) => a[0] - b[0])  // stable: answers logged with the same time keep the sheet's order
-    .forEach(([, ok, e]) => { h = Math.max(0, Math.round((h + e - ok - HOLD.SLACK) * 1000) / 1000); });
-  try { c.put(k, JSON.stringify({s: since, h: h}), 21600); } catch (e) {}
-  return h;
+    .sort((a, b) => a[0] - b[0]) : [];  // stable: answers logged with the same time keep the sheet's order
+  rows.forEach(([, ok, e]) => { h = Math.max(0, Math.round((h + e - ok - HOLD.SLACK) * 1000) / 1000); });
+  const ids = rows.slice(-HOLD.IDS).map(r => r[3]);
+  try { c.put(k, JSON.stringify({s: since, h: h, ids: ids}), 21600); } catch (e) {}
+  return {h: h, ids: ids};
 }
 
 // Anonymous id of an RA: the same for the same name, no name in it. Its salt is secret (Script Properties, made on first

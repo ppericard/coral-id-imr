@@ -76,7 +76,7 @@ function mergeSaved(j) {
   delete SYNC.pending;
   if (lr > rr) return; // the sheet's hold too counts from its older reset: this device's stays
   // The opening hold from every answer the sheet has (v23, model.js holdSync), with this device's unconfirmed ones added.
-  const holdIn = () => typeof holdSync === 'function' && holdSync(j.hold, SYNC.log);
+  const holdIn = () => typeof holdSync === 'function' && holdSync(j.hold, SYNC.log, j.holdIds);
   if (rr > lr) {
     introReset();
     introIn();

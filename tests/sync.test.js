@@ -824,6 +824,15 @@ test("v23 hold: the sheet's sum plus the unconfirmed answers is the hold on ever
   const old = modelHold({'imr-hold': 0.5});
   old.sync(undefined, all);
   assert.strictEqual(old.now(), 0.5);
+  // A send whose reply was lost: its answers are on the sheet and still in the log; the reply's ids keep them from
+  // counting twice (Codex review #370).
+  const lost = loadCodeGs();
+  lost.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: all.map(a => ans(a.id, a))});
+  const r = lost.get({name: 'Ana', pin: '1234'}),
+    again = modelHold({'imr-hold': 0});
+  assert.ok(r.holdIds.includes('u5'));
+  again.sync(r.hold, all, r.holdIds);
+  assert.strictEqual(again.now(), one.now());
 });
 
 test('v23 hold: answers moved to the name (sign-in) count at once', () => {

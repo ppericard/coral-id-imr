@@ -378,11 +378,14 @@ function holdStep(e, good) {
 // started on another (on a single device it equals the device's own sum). An older sheet sends no h: the hold stays
 // this device's. Not signed in: this device's only.
 const HOLD_WARM = /\|w(\||$)/; // the mode of a gentle-restart answer (quiz.js answer)
-function holdSync(h, log) {
+// ids: the answers the sheet counted lately (Codex review #370: a send whose reply was lost stays in the log though the
+// sheet has it; it is not added twice).
+function holdSync(h, log, ids) {
   if (typeof h !== 'number' || !isFinite(h)) return;
-  const reset = store.get('imr-coral-reset', '') || '';
+  const reset = store.get('imr-coral-reset', '') || '',
+    had = new Set(Array.isArray(ids) ? ids.map(String) : []);
   const x = (log || []).reduce(
-    (t, a) => (a && !HOLD_WARM.test(a.m || '') && String(a.t || '') > reset ? holdNext(t, a.e, a.ok) : t),
+    (t, a) => (a && !had.has(String(a.id)) && !HOLD_WARM.test(a.m || '') && String(a.t || '') > reset ? holdNext(t, a.e, a.ok) : t),
     Math.max(0, h)
   );
   if (x !== HOLDS) {
