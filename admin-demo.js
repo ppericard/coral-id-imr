@@ -49,8 +49,18 @@
     let k = 0;
     PLAYERS.forEach(([name, skill, n, d0, d1]) => {
       const P = {};
+      // Answers come in sessions of 5-40, about 30 s apart (the Health page reads sessions from the gaps).
+      let left = 0,
+        start = 0,
+        j = 0;
       for (let i = 0; i < n; i++) {
-        const t = NOW - (d0 - ((d0 - d1) * i) / Math.max(1, n - 1)) * DAY - Math.floor(rnd() * 3600e3),
+        if (!left) {
+          left = 5 + Math.floor(rnd() * 36);
+          start = NOW - (d0 - ((d0 - d1) * i) / Math.max(1, n - 1)) * DAY - Math.floor(rnd() * 3600e3);
+          j = 0;
+        }
+        left--;
+        const t = Math.min(NOW - 60e3, start + j++ * (20e3 + Math.floor(rnd() * 20e3))),
           g = pick(G),
           duel = rnd() < 0.2,
           traps = look(g),
