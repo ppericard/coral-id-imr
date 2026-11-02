@@ -717,8 +717,10 @@ const bonusList = () => (Q.bon ? BONUS.filter(n => GX(n)) : []);
 // genera are dropped by themselves (planKey names the genera in play).
 const showBon = () =>
   document.querySelectorAll('#bonset button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.bon === '1') === !!Q.bon)));
+// Q.bonT: when the choice was made, so the latest choice wins across devices (sync.js mergeSaved; Codex review #371).
 function bonusSet(on) {
   Q.bon = !!on;
+  Q.bonT = Date.now();
   saveQ();
   showBon();
   if (typeof syncSoon === 'function') syncSoon();
@@ -1166,7 +1168,8 @@ document.getElementById('signb').onclick = e => {
         P = {};
         delete Q.bu;
         delete Q.ba;
-        delete Q.bon; // the bonus genera are offered again once every slate genus is met
+        delete Q.bon; // the bonus genera are offered again once every slate genus is asked
+        delete Q.bonT;
         saveQ();
         store.set('imr-coral-reset', new Date().toISOString());
         introReset();

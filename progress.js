@@ -121,7 +121,9 @@ function quizBoard() {
         n =>
           `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="#g-${esc(n)}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i>${esc(n)}</i>${pct(n)}</a>`
       ).join('');
-      return `<div class="pslate" style="--rows:${rows}">${L.map(ps).join('')}${R.map(ps).join('')}${S.length ? '<span class="psgap"></span>' : ''}${S.map(ps).join('')}${bx ? `<div class="psbonus" style="grid-row:${rows + 1}" title="Bonus genera, not on the IMR list">${bx}</div>` : ''}</div>`;
+      // The left column padded to the row count, so 21 always starts the right column (Codex review #371: with
+      // Millepora the right column outgrew the left and 21 slipped to the bottom of the left one).
+      return `<div class="pslate" style="--rows:${rows}">${L.map(ps).join('')}${'<span class="psgap"></span>'.repeat(Math.max(0, rows - L.length))}${R.map(ps).join('')}${S.length ? '<span class="psgap"></span>' : ''}${S.map(ps).join('')}${bx ? `<div class="psbonus" style="grid-row:${rows + 1}" title="Bonus genera, not on the IMR list">${bx}</div>` : ''}</div>`;
     },
     groups: () => `<div class="pgroups">${groups
       .map(k => {
