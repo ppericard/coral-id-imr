@@ -5594,6 +5594,33 @@ footer .rep:hover {
   .pboard .gside .pbtxt {
     align-items: center;
   }
+  /* Slate view: two columns of names need about 680 px, not the whole width; the side column takes the rest, with the
+     card's ring beside the text (Pierre, 2026-11-02: too much empty space in the slate, the info could be bigger). */
+  .pgame.pboard:has(.pslate) {
+    grid-template-columns: minmax(0, 680px) minmax(0, 1fr);
+  }
+  .pboard:has(.pslate) .gside .pbadge {
+    flex-direction: row;
+    gap: 20px;
+    padding: 16px 20px;
+    text-align: left;
+  }
+  .pboard:has(.pslate) .gside .pring {
+    width: 140px;
+    height: 140px;
+  }
+  .pboard:has(.pslate) .gside .pring > span {
+    width: 108px;
+    height: 108px;
+  }
+  .pboard:has(.pslate) .gside .pbtxt {
+    align-items: flex-start;
+    gap: 4px;
+    font-size: var(--fs-m);
+  }
+  .pboard:has(.pslate) .gside .pbtxt > b {
+    font-size: var(--fs-xl);
+  }
 }
 .pbtxt a {
   color: var(--ink);
