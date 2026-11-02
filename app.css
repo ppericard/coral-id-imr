@@ -5255,8 +5255,8 @@ html.touring body::after {
   border: 1.5px dashed var(--line);
   color: var(--muted);
 }
-/* A card or offer due while the guided tour runs waits under it, out of sight, and shows once the tour closes (Matt,
-   an RA, 2026-11-02: the first genus card sat on top of the tour's step 3). */
+/* A card or offer due while the guided tour runs waits under it, out of sight, and shows once the tour closes (an RA,
+   2026-11-02: the first genus card sat on top of the tour's step 3). */
 html.touring .unlock {
   display: none;
 }

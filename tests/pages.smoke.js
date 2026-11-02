@@ -242,7 +242,7 @@ const server = http.createServer((req, res) => {
       if (other.length) fails.push(`${w}px quiz: ${other.slice(0, 3).join(' | ')}`);
       await c2.close();
       // The guided tour on a first visit reaches the quiz (step 3) while the first genus cards are due: the cards wait
-      // under it, out of sight, its keys still work, and they show once it closes (Matt, an RA, 2026-11-02).
+      // under it, out of sight, its keys still work, and they show once it closes (an RA, 2026-11-02).
       const ct = await b.newContext({viewport: {width: 1280, height: 860}, serviceWorkers: 'block', intro: true});
       await ct.route(
         u => !u.href.startsWith(base),
