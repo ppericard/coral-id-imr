@@ -272,7 +272,8 @@ const server = http.createServer((req, res) => {
       {
         const n0 = answersSoFar(),
           seen = [];
-        let duels = 0;
+        let duels = 0,
+          lastTwo = null;
         const q1 = question;
         question = (...a) => ((window.__dq = a), q1(...a));
         for (let i = 0; i < 300; i++) {
@@ -281,6 +282,14 @@ const server = http.createServer((req, res) => {
           quizPhoto();
           document.querySelectorAll('.unlock').forEach(x => x.remove());
           const q = window.__dq;
+          // Two 2-choice questions (a duel slipped in, an Again) never closer than AUTO_DUEL.GAP, Agains after a
+          // normal question's mix-up excepted (they follow it by design).
+          if (q[2].length === 2) {
+            const gap = answersSoFar() - (lastTwo == null ? -1e9 : lastTwo[0]),
+              need = lastTwo && lastTwo[1] ? AUTO_DUEL.GAP : AUTO_DUEL.AGAIN;
+            if (AUTOD && gap < need) fails.push(`duel in the quiz ${gap} answers after a 2-choice question`);
+            if (AUTOD || !lastTwo || !lastTwo[1]) lastTwo = [answersSoFar(), AUTOD];
+          }
           if (AUTOD) {
             duels++;
             const k = q[2].slice().sort().join('|'),
@@ -289,7 +298,7 @@ const server = http.createServer((req, res) => {
             if (seen.some(([a, kk]) => kk === k && at - a < AUTO_DUEL.SAME)) fails.push(`duel ${k} twice within ${AUTO_DUEL.SAME} answers`);
             seen.push([at, k]);
           }
-          document.querySelector(`[data-c="${CSS.escape(q[1])}"]`).click();
+          document.querySelector(`[data-c="${CSS.escape(i % 10 ? q[1] : q[2].find(c => c !== q[1]))}"]`).click();
           if (AUTOD && !/^quiz\|d\|k2$/.test(((SYNC && SYNC.log && SYNC.log.slice(-1)[0]) || {}).m || 'quiz|d|k2'))
             fails.push('duel in the quiz not logged quiz|d|k2');
         }

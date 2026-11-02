@@ -403,7 +403,9 @@ function answer(cur, c, target, ph, cor, unseen) {
       );
       fitStage();
     }
-    if (cur === 'quiz') {
+    // Not after a duel slipped into the quiz (AUTO_DUEL): it was already that 2-choice question, and its pair comes back
+    // through duelPick, mix-ups first (Codex review #352: two 2-choice questions two apart).
+    if (cur === 'quiz' && !AUTOD) {
       rematch = {pair: [target, c], wait: 1};
       again = true;
     }
@@ -550,8 +552,11 @@ function unlockShow(L) {
 }
 // A mix-up in the photo quiz comes back once as a duel of the two genera, one question later.
 let rematch = null;
-const AUTO_DUEL = {P: 0.1, FROM: 20, GAP: 5, SAME: 20};
-let twoAt = -Infinity, // answers so far at the last 2-choice question planned (Again, or a duel slipped in)
+// GAP: answers between two duels slipped in; AGAIN: answers at least after an "Again" (spacing them from the Agains
+// by GAP left a player who errs 1 time in 10 with 1 duel in 40 questions instead of 1 in 10).
+const AUTO_DUEL = {P: 0.1, FROM: 20, GAP: 5, AGAIN: 2, SAME: 20};
+let twoAt = -Infinity, // answers so far at the last duel slipped in
+  againAt = -Infinity, // ... and at the last "Again"
   duelLog = [], // [answers so far, pair] of the duels slipped in lately
   AUTOD = false; // the question on screen is one of them (set by quizPhoto, read by answer)
 // "This pair comes back as a duel in a moment": said the first 3 times only (RA review 2026-11-02: it came on every
@@ -730,17 +735,29 @@ function planPhoto() {
     const pair = rematch.pair;
     rematch = null;
     if (pair.every(n => list.includes(n))) {
-      twoAt = answersSoFar();
+      againAt = answersSoFar();
       const t = pick(pair);
       return ['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)];
     }
   }
   // A look-alike duel slipped into the photo quiz (Pierre, 2026-11-02, "a little duel back in the quiz, automatically";
   // the Duel tab had 13 answers in all): AUTO_DUEL.P of the questions from AUTO_DUEL.FROM answers on, AUTO_DUEL.GAP
-  // questions at least after the last 2-choice one, on a pair of genera both met and ready, never the same pair within
+  // questions at least after the last one and AUTO_DUEL.AGAIN after an "Again", on a pair of genera both met and ready, never the same pair within
   // AUTO_DUEL.SAME answers; picked as the Duel tab picks (own mix-ups first). Logged "quiz|d|k2" (counted apart).
   const a = answersSoFar();
-  if (a >= AUTO_DUEL.FROM && a - twoAt >= AUTO_DUEL.GAP && Math.random() < AUTO_DUEL.P && !introStart(list).length) {
+  // The count went back (progress reset): the spacing starts over.
+  if (a < twoAt) twoAt = -Infinity;
+  if (a < againAt) againAt = -Infinity;
+  duelLog = duelLog.filter(([at]) => at <= a);
+  // Never while an "Again" is due (it comes next): the duel would sit right before it.
+  if (
+    !rematch &&
+    a >= AUTO_DUEL.FROM &&
+    a - twoAt >= AUTO_DUEL.GAP &&
+    a - againAt >= AUTO_DUEL.AGAIN &&
+    Math.random() < AUTO_DUEL.P &&
+    !introStart(list).length
+  ) {
     const key = p => p.slice().sort().join('|'),
       recent = new Set(duelLog.filter(([at]) => a - at < AUTO_DUEL.SAME).map(([, k]) => k)),
       pair = duelPick(list, p => p.every(introReady) && !recent.has(key(p)));
