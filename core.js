@@ -75,7 +75,8 @@
       out.streak = mine ? l.streak || 0 : r.streak || 0;
       if (mine && l.h) out.h = l.h;
       if (mine)
-        ['lv', 'run', 'L', 'th', 'ro', 'ex', 'mx'].forEach(k => {
+        // vr: the Elo step's volatility (app.js abilityStep), part of the model the device that played updated.
+        ['lv', 'run', 'L', 'th', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
@@ -165,10 +166,9 @@
     return out;
   }
 
-  // Who rates the photos and the confusions, as tools/sync/Code.gs trusted_ (v17, Pierre 2026-11-02): signed-in players
-  // only (row[11] = 1 marks a device that never signed in; a sheet before v17 sends no flag), with TRUST.N answers or more
-  // and a right rate clearly above chance (one-sided z of at least TRUST.Z against each question's guess rate).
-  const TRUST = {N: 10, Z: 1.645};
+  // Who rates the photos and the confusions, as tools/sync/Code.gs trusted_ (v17; v18: devices that never signed in too,
+  // under the same rule, Pierre 2026-11-02): players with TRUST.N answers or more and a right rate clearly above chance (one-sided z of at least TRUST.Z against each question's guess rate).
+  const TRUST = {N: 10, Z: 1.645}; // answers per player, not per photo
   const guessOf = mode => {
     const kq = /\|k(\d)$/.exec(mode);
     return kq ? 1 / Number(kq[1]) : mode.indexOf('quiz-duel') === 0 ? 0.5 : 0.25;
@@ -188,14 +188,14 @@
     });
     Object.keys(T).forEach(w => {
       const t = T[w];
-      out[w] = !t[4] && t[0] >= TRUST.N && (t[1] - t[2]) / Math.sqrt(t[3]) >= TRUST.Z;
+      out[w] = t[0] >= TRUST.N && (t[1] - t[2]) / Math.sqrt(t[3]) >= TRUST.Z;
     });
     return out;
   }
 
   // How much one answer moves the photos, as Code.gs PHOTO_W (v17): weight n / (n + N) after n answers of the player,
   // and repeats counted against the player's history with the photo (new: NEW harder; right twice before: KNOWN easier).
-  const PHOTO_W = {N: 30, NEW: 0.5, KNOWN: -1};
+  const PHOTO_W = {N: 10, NEW: 0.5, KNOWN: -1}; // v18: 10, was 30 (same reason)
   // Every player starts as a beginner (Code.gs PLAYER0): about 45% right on an average photo with 4 choices.
   const PLAYER0 = -1;
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
@@ -216,7 +216,7 @@
         const ok = r[4] ? 1 : 0,
           g = guessOf(r[5]),
           ra = (R[r[0]] = R[r[0]] || [PLAYER0, 0]);
-        const ph = fs.map(f => (P[f] = P[f] || [0, 0, 0])),
+        const ph = fs.map(f => (P[f] = P[f] || [0, 0, 0, 0])),
           b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
         const d = ok - (g + (1 - g) * sig(ra[0] - b)),
           n = ra[1];
@@ -229,6 +229,7 @@
             p[0] -= (0.8 / (1 + p[2] / 10) / ph.length) * dp * w;
             p[2] += w;
             p[1] += ok * w;
+            p[3]++;
           });
         }
         ra[0] += (0.6 / (1 + n / 40)) * d;
@@ -239,7 +240,9 @@
         });
       });
     const out = {};
-    Object.keys(P).forEach(f => (out[f] = [Math.round(P[f][0] * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10]));
+    Object.keys(P).forEach(
+      f => (out[f] = [Math.round(P[f][0] * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]])
+    );
     return out;
   }
 
@@ -470,11 +473,13 @@
   // Photos per context (applySlots). Pierre's rule: every IMR photo and every photo of his own is used, with no cap;
   // photos from other iNat observers and approved Coral Finder book photos only fill a set that is short. Per genus
   // and view: sheet = 3 featured + the other IMR/own photos (filled up to 6 in all); games = Easy (the featured),
-  // Medium (other good IMR/own photos, filled up to 4), Hard (poor ones, filled up to 4), levels adding up; Coral
+  // Medium (every other good photo), Hard (the poor ones), levels adding up: since 2026-11-02 (Pierre: new photos must
+  // come into the games, the players' answers rate them) games take every photo kept, IMR/own first; they were capped
+  // at 4 Medium and 4 Hard, other observers' photos only filling a short set, so newly validated candidates stayed out; Coral
   // Finder (needs variety) = featured + 2 photos from other iNat observers + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
   // (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'} keeps a photo on the sheet only
   // or in games only. Nothing is written back: photos left out simply stay unused.
-  const CAP = {feat: 3, sheet: 6, medium: 4, hard: 4, inat: 2, book: 3};
+  const CAP = {feat: 3, sheet: 6, inat: 2, book: 3};
   // The automatic rating never calls an IMR lecture photo Poor (Pierre: it misjudges slide images); only his own rating can (autoQ).
   const isCore = p => !!(p.imr || p.own);
   // o.picks = picks.json (Claude's suggested featured photos), o.autoq = quality.json q (automatic rating).
@@ -555,16 +560,8 @@
           rest = gm.filter(p => !isCore(p));
         const easy = feat.filter(p => gm.includes(p)),
           left = p => !easy.includes(p);
-        const medium = fill(
-          core.filter(p => left(p) && q(p) >= 2),
-          rest.filter(p => left(p) && q(p) >= 2),
-          CAP.medium
-        );
-        const hard = fill(
-          core.filter(p => left(p) && !medium.includes(p)),
-          rest.filter(p => left(p) && !medium.includes(p)).reverse(),
-          CAP.hard
-        );
+        const medium = [...core, ...rest].filter(p => left(p) && q(p) >= 2);
+        const hard = [...core, ...rest].filter(p => left(p) && !medium.includes(p));
         const book = bk.filter(p => !feat.includes(p)).slice(0, CAP.book);
         g.sl[v] = {
           feat,
