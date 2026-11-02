@@ -39,7 +39,8 @@ const nAnswers = p => {
 };
 const calBonus = p => 1 + CAL.B / (1 + nAnswers(p) / CAL.N);
 const calSd = p => Math.sqrt(PICKD.SIGMA ** 2 + CAL.U / (1 + nAnswers(p) / CAL.N));
-function photoSet(n) {
+// skip: a photo file left out when the colony has others to show (the photo of the genus card just shown, K9).
+function photoSet(n, skip) {
   const g = GX(n),
     two = g.levels === 2,
     need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
@@ -52,7 +53,10 @@ function photoSet(n) {
   // tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is reachable.
   const gameOk = p => !g.x || p.own || !p.gid;
   const pics = v =>
-    [...gamePics(n, v, 'hard'), ...(two && v === 'macro' ? gamePics(n, 'medium', 'hard') : [])].filter(ok(v)).filter(gameOk);
+    [...gamePics(n, v, 'hard'), ...(two && v === 'macro' ? gamePics(n, 'medium', 'hard') : [])]
+      .filter(ok(v))
+      .filter(gameOk)
+      .filter(p => p.f !== skip);
   // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
   const calQ = level(n)[0] !== 'new' && !shaky(n) && Math.random() < CAL.RATE,
     single = calQ || Math.random() < singleP(n),
@@ -79,6 +83,7 @@ function photoSet(n) {
     })
   );
   const keys = Object.keys(obs);
+  if (!keys.length && skip) return photoSet(n); // the card's photo was its only one
   // All the photos of a question come from ONE observation (Pierre, 2026-11-01: zoom levels of different colonies shown
   // together read as one coral and teach a wrong picture). Beginners (several views) favour colonies photographed at
   // several zooms (cov squared); a colony with a single view becomes a single-view question, never topped up from another one.

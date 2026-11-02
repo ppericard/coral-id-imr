@@ -291,10 +291,12 @@
     g.innerHTML = out;
   }
   // Skipping the tour before its sign-in step (Escape too) still offers the sign-in card once: a beta tester who skips
-  // at once should not miss it (Pierre, 2026-11-01). "Later" there leaves the card after 10 answers in place.
+  // at once should not miss it (Pierre, 2026-11-01). "Later" there leaves the card after 10 answers in place. Skipped ON
+  // the sign-in step, it was seen and dismissed: the same form does not come straight back as a card (walkthrough
+  // 2026-11-02), so only the steps after this one count.
   function close(to, skipped) {
     if (!root) return;
-    const ask = skipped && !SYNC && SYNC_URL && STEPS.slice(step).some(s => s.signin);
+    const ask = skipped && !SYNC && SYNC_URL && STEPS.slice(step + 1).some(s => s.signin);
     token++;
     try {
       sessionStorage.removeItem(KEY);

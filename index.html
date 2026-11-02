@@ -35,19 +35,19 @@
      first visit is this slow (beginner RA review, 2026-11-02: a blank "Loading…" for 5-8 s on a slow line looked stuck). -->
 <script>(function(){addEventListener("error",function(e){var t=e.target,n;if(!t||t.tagName!=="LINK"||t.rel!=="stylesheet")return;n=+(t.dataset.r||0);if(n<3)setTimeout(function(){var c=t.cloneNode();c.dataset.r=n+1;t.replaceWith(c)},1000*(n+1))},true);var ok;window.BOOT=new Promise(function(r){ok=r});function tick(){var p=document.getElementById("bootp");if(p)p.value++}window.bootTick=tick;function go(L,i,n){if(i>=L.length)return ok();var s=document.createElement("script");s.src=L[i];s.onload=function(){tick();go(L,i+1,0)};s.onerror=function(){s.remove();n<3?setTimeout(function(){go(L,i,n+1)},1000*(n+1)):go(L,i+1,0)};document.body.appendChild(s)}addEventListener("DOMContentLoaded",function(){var L=[].map.call(document.querySelectorAll('link[rel=preload][as=script]'),function(l){return l.href}),p=document.getElementById("bootp");if(p)p.max=L.length+1;setTimeout(function(){var s=document.getElementById("boots");if(s)s.hidden=false},6000);go(L,0,0)})})()</script>
 <link rel="preload" href="core.js?v=16" as="script">
-<link rel="preload" href="app.js?v=167" as="script">
-<link rel="preload" href="sync.js?v=3" as="script">
-<link rel="preload" href="progress.js?v=4" as="script">
-<link rel="preload" href="model.js?v=4" as="script">
-<link rel="preload" href="quiz.js?v=5" as="script">
+<link rel="preload" href="app.js?v=168" as="script">
+<link rel="preload" href="sync.js?v=4" as="script">
+<link rel="preload" href="progress.js?v=5" as="script">
+<link rel="preload" href="model.js?v=5" as="script">
+<link rel="preload" href="quiz.js?v=6" as="script">
 <link rel="preload" href="learn.js?v=2" as="script">
 <link rel="preload" href="flag.js?v=9" as="script">
-<link rel="preload" href="proto/lab.js?v=68" as="script">
+<link rel="preload" href="proto/lab.js?v=69" as="script">
 <link rel="preload" href="home-art.js?v=4" as="script">
 <link rel="preload" href="home.js?v=25" as="script">
-<link rel="preload" href="tour.js?v=13" as="script">
-<link rel="stylesheet" href="app.css?v=113">
-<link rel="stylesheet" href="proto/lab.css?v=49">
+<link rel="preload" href="tour.js?v=14" as="script">
+<link rel="stylesheet" href="app.css?v=114">
+<link rel="stylesheet" href="proto/lab.css?v=50">
 <link rel="stylesheet" href="home.css?v=22">
 </head>
 <body>

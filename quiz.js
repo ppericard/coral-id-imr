@@ -66,8 +66,10 @@ function question(cur, target, choices, prompt, set, kq) {
   if (hb) hb.onclick = showHint;
   // Keys: 1-4 answer, Enter goes to the next question.
   const keys = e => {
-    if (!document.body.contains($v.querySelector('.q')) || !lb.hidden) return document.removeEventListener('keydown', keys);
-    if (e.target.closest('input, textarea, select') || document.getElementById('tour')) return; // never an answer under the tour
+    if (!document.body.contains($v.querySelector('.q'))) return document.removeEventListener('keydown', keys);
+    // Keys typed in the enlarged photo are the viewer's (its Escape reaches this handler before the viewer closes: removing
+    // the handler there left 1-4 dead for the rest of the question, new-player walkthrough 2026-11-02).
+    if (!lb.hidden || e.target.closest('input, textarea, select') || document.getElementById('tour')) return; // never an answer under the tour
     const b = !answered && $v.querySelectorAll('[data-c]')[Number(e.key) - 1];
     if (b) {
       e.preventDefault();
@@ -175,6 +177,16 @@ function fitStage() {
   });
 }
 addEventListener('resize', fitStage);
+// The loading placeholder (the small file as the img's own background, app.css .qph img) goes once the photo is in: a
+// photo smaller than its box showed on a blown-up copy of itself instead of the blurred background (walkthrough
+// 2026-11-02). Load events do not bubble, hence the capture.
+$v.addEventListener(
+  'load',
+  e => {
+    if (e.target instanceof HTMLImageElement && e.target.closest('.qph')) e.target.classList.add('in');
+  },
+  true
+);
 // Big photo stages (Look-alikes, quiz on phones and tablets): a photo that would be enlarged more than this to fill its
 // box is shown whole at its own size on the blurred background instead (Pierre, 2026-11-01: sharp beats big for the few
 // small IMR lecture photos). Genus sheet tiles keep filling their box.
@@ -500,6 +512,36 @@ function pulseAsk() {
       })
   );
 }
+// Card photos: the cards sit outside the page view, out of reach of app.js's retries. Here too a photo that fails is
+// tried again twice (after 1 s, then 4 s), and is kept out of sight meanwhile and if it never comes: never a broken-image
+// icon on a card (new-player walkthrough 2026-11-02, a bonus card offline).
+document.addEventListener(
+  'error',
+  e => {
+    const i = e.target;
+    if (!(i instanceof HTMLImageElement) || !i.closest('.unlock') || !i.getAttribute('src')) return;
+    const n = Number(i.dataset.retry || 0),
+      u = i.getAttribute('src');
+    i.classList.add('fail');
+    if (n < 2) {
+      i.dataset.retry = n + 1;
+      setTimeout(
+        () => {
+          if (i.isConnected && i.getAttribute('src') === u) i.src = u.replace(/#.*$/, '') + '#r' + (n + 1);
+        },
+        1000 * (n + 1) ** 2
+      );
+    }
+  },
+  true
+);
+document.addEventListener(
+  'load',
+  e => {
+    if (e.target instanceof HTMLImageElement && e.target.closest('.unlock')) e.target.classList.remove('fail');
+  },
+  true
+);
 // Unlock card (Pierre, 2026-11-01): shown once per newly unlocked bonus genus, over the quiz feedback. A "?" tile turns
 // over to the genus's cover photo, with its name and Coral Finder ID tips. Got it / Esc / Enter / a click outside closes
 // it (Enter is caught first, so it doesn't also skip to the next question). No motion with prefers-reduced-motion.
@@ -540,6 +582,7 @@ function unlockShow(L) {
     close();
   };
   document.addEventListener('keydown', key, true);
+  d.ulClose = close; // leaving the page closes it (route)
   d.querySelector('button').onclick = close;
   d.querySelector('a').addEventListener('click', close);
   d.addEventListener('click', e => {
@@ -652,6 +695,7 @@ function introOfferShow() {
     pick(false);
   };
   document.addEventListener('keydown', key, true);
+  d.ulClose = close; // leaving the page closes it unanswered (route): the offer can come back
   d.querySelector('[data-open]').onclick = () => pick(true);
   d.querySelector('.sec').onclick = () => pick(false);
   setTimeout(() => d.querySelector('[data-open]').focus({preventScroll: true}), 50);
@@ -660,7 +704,7 @@ function introOfferShow() {
 // together ("1 of 4", the first questions are about them), later ones alone (asked a few questions later). Recorded
 // when shown, so a planned question never played leaves no genus met without its card.
 function introShow(L, start, kind = start ? 's' : 'c') {
-  document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
+  document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove())); // with its keys
   const d = document.createElement('div');
   d.className = 'unlock intro';
   d.setAttribute('role', 'dialog');
@@ -671,6 +715,7 @@ function introShow(L, start, kind = start ? 's' : 'c') {
     d.remove();
     document.removeEventListener('keydown', key, true);
   };
+  d.ulClose = close; // leaving the page closes it (route); the genera of the cards not shown yet come next time
   const next = () => (++i < L.length ? show() : close());
   const show = () => {
     const n = L[i],
@@ -794,7 +839,15 @@ function planPhoto() {
   const ex = examReady(t) && examSet(t),
     traps = ex ? 3 : trapsFor(t),
     ch = shuffle([t, ...distractors(t, list, traps, known)]),
-    q = ['quiz', t, ch, 'Which genus?', ex || photoSet(t), traps < 2 ? plausibleK(t, ch) : 0];
+    // The question asked with its genus's card never shows the card's own photo again (new-player walkthrough 2026-11-02).
+    q = [
+      'quiz',
+      t,
+      ch,
+      'Which genus?',
+      ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null),
+      traps < 2 ? plausibleK(t, ch) : 0
+    ];
   if (cards.length) Object.assign(q, {intro: cards, start});
   return q;
 }
@@ -838,5 +891,7 @@ function planDuel(a, b) {
   let pair = a && b ? [a, b] : null;
   if (!pair) pair = duelPick(list);
   const t = pick(pair);
-  return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)];
+  // A genus not met yet gets its card with this duel (quizDuel): not with the card's own photo.
+  const set = photoSet(t, introduced(t) ? null : (cover(GX(t)) || {}).f);
+  return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, set];
 }
