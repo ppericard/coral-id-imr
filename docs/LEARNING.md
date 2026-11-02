@@ -75,6 +75,15 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
   real ratings of 2026-11-02 as start, counts updated as the sheet does): photos with at least one answer 426-435 →
   465-510, with 3 or more ~200 → 225-234, right rates unchanged (73-87%). The bonus fades by itself as the photos get
   answers.
+- **Calibration questions only on a genus the player holds** (met, not shaky): a single, perhaps unusual, photo does
+  not help on a genus still being learned (and a simulated beginner opened genera faster than intended with them).
+- **A new photo's set is only a guess** (`CAL.U` = 1): the targeting's width grows to √(0.7² + U / (1 + answers / 2))
+  for a photo with few answers, so a photo placed in Medium or Hard by hand is not kept away from a player whose target
+  is lower; it narrows back to 0.7 as answers come.
+- **Every kept photo is in the games** (`applySlots`, 2026-11-02): Medium and Hard were capped at 4 per genus and view,
+  other observers' photos only filling a short set, so the candidates Pierre validates would have stayed out.
+- All together, simulated as above: photos with an answer 449-461 → 509-519, with 3 or more 214-221 → 239-255,
+  right rates unchanged.
 - **Look-alike traps** among the wrong choices: from ability (`TRAP`: one per 0.18 above 0, up to 3), chosen among the
   pairs most confused: pooled over every player and declared look-alikes (IMR lecture, Coral Finder) as a prior
   (`CONF`), then the player's own record on the pair (personal path).
@@ -172,7 +181,8 @@ enough"), 600 questions, 3 seeds, genera met (beginner / RA / expert):
 | `OPEN` | after 100 | after 300 | after 600 |
 | --- | --- | --- | --- |
 | K 3, P 0.6 (first) | 12-14 / 9-17 / 25-31 | 14-23 / 18-29 / 34-39 | 26-37 / 26-34 / 39 |
-| **K 5, P 0.6 (now)** | 9-14 / 14-20 / 21-37 | 19-21 / 27-30 / 39 | 28-29 / 33-39 / 39 |
+| **K 5, P 0.6** | 9-14 / 14-20 / 21-37 | 19-21 / 27-30 / 39 | 28-29 / 33-39 / 39 |
+| **K 5, P 0.6 + online calibration (now)** | 11-15 / 10-15 / 29-31 | 18-25 / 22-23 / 39 | 30-36 / 32-38 / 39 |
 | K 5, P 0.5 | 11-15 / 15-28 / 34-35 | 22-30 / 27-34 / 39 | 33-39 / 36-39 / 39 |
 | K 6, P 0.5, READY 0.5 | all 39 by question 500 / all 39 by question 200-400 / 39 at 100 | | |
 
@@ -219,6 +229,10 @@ simulation); recalibrate `ELO` and `OPEN` once a few RA cohorts have played.
   is no minimum per photo: one answer moves it, the app blending it with the photo's set as 5 answers' worth). To
   revisit if beginners or bots arrive in numbers.
 - 2026-11-02, Pierre: OK to seed the photos nobody has answered into the games to calibrate them (`CAL`, above).
+- 2026-11-02, Pierre: relax the arbitrary thresholds so new photos come in quickly (he is validating many candidates)
+  and their answers inform the dynamic algorithm: games take every kept photo (no cap of 4 Medium / 4 Hard), and a
+  photo with few answers gets a wider targeting (`CAL.U`). Three seeds vary by ±5 genera at a given question count:
+  the opening table moved within that noise (a run without `CAL.U` gave the RA 19-21 genera at question 300).
 
 ## References
 

@@ -166,24 +166,25 @@ const server = http.createServer((req, res) => {
       for (let i = 0; i < 2000; i++) if (weighted(list) === bonus) hit++;
       out.bonusShare = hit / 2000;
     }
-    // Online calibration (CAL): a photo nobody has answered yet comes up more often than its rated twins, without
-    // changing the difficulty targeting (made-up ratings at each photo's own prior difficulty).
+    // Online calibration (CAL): on a genus the player holds, a photo nobody has answered yet comes up more often than its
+    // rated twins (made-up ratings at each photo's own prior difficulty).
     {
       P = {};
       const keep = PSTAT,
         g = G.find(n => VIEWS.flatMap(([v]) => gamePics(n, v, 'hard')).length >= 8),
         L = [...new Set(VIEWS.flatMap(([v]) => gamePics(g, v, 'hard')))],
         f0 = L[L.length - 1].f,
-        rate = CAL.RATE,
-        shown = r => {
-          CAL.RATE = r;
+        keepCal = {...CAL},
+        shown = on => {
+          Object.assign(CAL, on ? keepCal : {B: 0, RATE: 0, U: 0});
           let k = 0;
           for (let i = 0; i < 3000; i++) if (photoSet(g).shown.some(x => x.f === f0)) k++;
           return k;
         };
       PSTAT = Object.fromEntries(L.filter(x => x.f !== f0).map(x => [x.f, [photoLvl(g, x) - 1, 40, 30, 40]]));
-      out.cal = {genus: g, photo: f0, without: shown(0), with: shown(rate)};
-      CAL.RATE = rate;
+      // Calibration questions come on a genus the player already holds (met, not shaky).
+      P[g] = {ok: 20, ko: 2, h: '1111111111', th: 1.5, L: 0.9};
+      out.cal = {genus: g, photo: f0, without: shown(false), with: shown(true)};
       PSTAT = keep;
     }
     return out;

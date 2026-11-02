@@ -473,11 +473,13 @@
   // Photos per context (applySlots). Pierre's rule: every IMR photo and every photo of his own is used, with no cap;
   // photos from other iNat observers and approved Coral Finder book photos only fill a set that is short. Per genus
   // and view: sheet = 3 featured + the other IMR/own photos (filled up to 6 in all); games = Easy (the featured),
-  // Medium (other good IMR/own photos, filled up to 4), Hard (poor ones, filled up to 4), levels adding up; Coral
+  // Medium (every other good photo), Hard (the poor ones), levels adding up: since 2026-11-02 (Pierre: new photos must
+  // come into the games, the players' answers rate them) games take every photo kept, IMR/own first; they were capped
+  // at 4 Medium and 4 Hard, other observers' photos only filling a short set, so newly validated candidates stayed out; Coral
   // Finder (needs variety) = featured + 2 photos from other iNat observers + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
   // (picks.json feat) come next, then quality. curation.json "use" {f: 'ref'|'game'} keeps a photo on the sheet only
   // or in games only. Nothing is written back: photos left out simply stay unused.
-  const CAP = {feat: 3, sheet: 6, medium: 4, hard: 4, inat: 2, book: 3};
+  const CAP = {feat: 3, sheet: 6, inat: 2, book: 3};
   // The automatic rating never calls an IMR lecture photo Poor (Pierre: it misjudges slide images); only his own rating can (autoQ).
   const isCore = p => !!(p.imr || p.own);
   // o.picks = picks.json (Claude's suggested featured photos), o.autoq = quality.json q (automatic rating).
@@ -558,16 +560,8 @@
           rest = gm.filter(p => !isCore(p));
         const easy = feat.filter(p => gm.includes(p)),
           left = p => !easy.includes(p);
-        const medium = fill(
-          core.filter(p => left(p) && q(p) >= 2),
-          rest.filter(p => left(p) && q(p) >= 2),
-          CAP.medium
-        );
-        const hard = fill(
-          core.filter(p => left(p) && !medium.includes(p)),
-          rest.filter(p => left(p) && !medium.includes(p)).reverse(),
-          CAP.hard
-        );
+        const medium = [...core, ...rest].filter(p => left(p) && q(p) >= 2);
+        const hard = [...core, ...rest].filter(p => left(p) && !medium.includes(p));
         const book = bk.filter(p => !feat.includes(p)).slice(0, CAP.book);
         g.sl[v] = {
           feat,

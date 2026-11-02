@@ -1183,13 +1183,19 @@ const singleP = n => Math.min(0.85, Math.max(0, (ability(n) - 0.5) / 1.5));
 // shown are single views of a colony, which the choice of colony below scores down (a third, or a ninth for several
 // views). So CAL.RATE of the questions are calibration questions, as adaptive tests give a share of the slots to
 // items being pretested: the colony is chosen on the difficulty targeting and the bonus alone, a single view then
-// showing alone. docs/LEARNING.md.
-const CAL = {B: 2, N: 2, RATE: 0.2};
-const calBonus = p => {
-  const o = PSTAT[p.f],
-    n = o ? (o[3] ?? o[1]) : 0;
-  return 1 + CAL.B / (1 + n / CAL.N);
+// showing alone. Only on a genus the player already holds (met, not shaky, as the opening of genera reads it): one
+// photo alone, perhaps unusual, would not help on a genus still being learned. docs/LEARNING.md.
+// CAL.U: how unsure the difficulty of a photo nobody has answered is (variance, in difficulty units; its set only says
+// Easy -1, Medium 0, Hard +1): the targeting is that much wider for it, narrowing as answers come (U / (1 + answers /
+// CAL.N)), so a new photo is not kept away by a set placed by hand. Pierre, 2026-11-02: "relax the arbitrary thresholds
+// so new photos come in, and their answers inform the dynamic algorithm".
+const CAL = {B: 2, N: 2, RATE: 0.2, U: 1};
+const nAnswers = p => {
+  const o = PSTAT[p.f];
+  return o ? (o[3] ?? o[1]) : 0;
 };
+const calBonus = p => 1 + CAL.B / (1 + nAnswers(p) / CAL.N);
+const calSd = p => Math.sqrt(PICKD.SIGMA ** 2 + CAL.U / (1 + nAnswers(p) / CAL.N));
 function photoSet(n) {
   const g = GX(n),
     two = g.levels === 2,
@@ -1204,7 +1210,8 @@ function photoSet(n) {
   const gameOk = p => !g.x || p.own || !p.gid;
   const pics = v =>
     [...gamePics(n, v, 'hard'), ...(two && v === 'macro' ? gamePics(n, 'medium', 'hard') : [])].filter(ok(v)).filter(gameOk);
-  const calQ = Math.random() < CAL.RATE,
+  // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
+  const calQ = level(n)[0] !== 'new' && !shaky(n) && Math.random() < CAL.RATE,
     single = calQ || Math.random() < singleP(n),
     s = P[n] || {},
     seen = s.ps || {},
@@ -1214,7 +1221,7 @@ function photoSet(n) {
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
   // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
   const w = (p, off = 0) => {
-    const x = (photoDiff(n, p) + off - tgt) / PICKD.SIGMA,
+    const x = (photoDiff(n, p) + off - tgt) / calSd(p),
       k = seen[p.f];
     let r = Math.exp((-x * x) / 2) * calBonus(p);
     if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1);

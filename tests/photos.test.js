@@ -139,6 +139,23 @@ test('several-corals photos (kept apart in "more") never reach games or the shee
   );
 });
 
+test('games take every kept field photo, other observers\' too, with no cap (Pierre, 2026-11-02)', () => {
+  const use = CUR.use || {};
+  each(D, (n, g, v, s) => {
+    const game = new Set(GAME.flatMap(k => s[k]).map(p => p.f));
+    (g.views[v] || [])
+      .filter(p => !p.multi && use[p.f] !== 'ref')
+      .forEach(p => assert.ok(game.has(p.f), `${n} ${v}: ${p.f} kept but not in the games`));
+  });
+  // A view with many photos from other observers keeps them all (synthetic: 12 good ones).
+  const d = structuredClone(RAW),
+    [n] = Object.entries(d.gen).find(([, g]) => (g.views.wide || []).length);
+  d.gen[n].views.wide = Array.from({length: 12}, (_, i) => ({f: `t-${i}`, o: `obs-${i}`}));
+  d.course[n] = [];
+  applySlots(d, {}, {});
+  assert.strictEqual(new Set(GAME.flatMap(k => d.gen[n].sl.wide[k]).map(p => p.f)).size, 12);
+});
+
 test('excluding or hiding a game photo removes it at once (synthetic curation)', () => {
   const [n, g] = Object.entries(D.gen).find(([, g]) => g.sl.wide && g.sl.wide.easy.length),
     f = g.sl.wide.easy[0].f;
