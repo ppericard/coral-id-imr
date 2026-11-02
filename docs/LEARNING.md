@@ -138,7 +138,8 @@ time, each on its card, but never as the answer of the question right after its 
 
 - **Cards**: name, cover photo, ID tips, and for a ★ genus the surveyed look-alike it is on the slate for (rule 6b).
   The first `INTRO.START` (4) come one after the other ("1 of 4", Next, Start), picked by the progressive path's draw
-  (easiest first); the first question is about one of them.
+  (easiest first); the first question is about one of them, never with that card's own photo (`photoSet(n, skip)`; a
+  new-player walkthrough, 2026-11-02, got the very same photo twice in a row; same for a duel that brings a card).
 - **When a genus opens** stays the progressive path's call (below): a draw that falls on a genus not met yet shows its
   card and asks about a genus already met. At least `INTRO.EVERY` (2) answers between two cards.
 - **Not right after**: a genus met on a card alone can be asked from `INTRO.GAP` (2) answers on (one question at least

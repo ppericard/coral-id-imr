@@ -799,7 +799,15 @@ function planPhoto() {
   const ex = examReady(t) && examSet(t),
     traps = ex ? 3 : trapsFor(t),
     ch = shuffle([t, ...distractors(t, list, traps, known)]),
-    q = ['quiz', t, ch, 'Which genus?', ex || photoSet(t), traps < 2 ? plausibleK(t, ch) : 0];
+    // The question asked with its genus's card never shows the card's own photo again (new-player walkthrough 2026-11-02).
+    q = [
+      'quiz',
+      t,
+      ch,
+      'Which genus?',
+      ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null),
+      traps < 2 ? plausibleK(t, ch) : 0
+    ];
   if (cards.length) Object.assign(q, {intro: cards, start});
   return q;
 }
@@ -843,5 +851,7 @@ function planDuel(a, b) {
   let pair = a && b ? [a, b] : null;
   if (!pair) pair = duelPick(list);
   const t = pick(pair);
-  return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)];
+  // A genus not met yet gets its card with this duel (quizDuel): not with the card's own photo.
+  const set = photoSet(t, introduced(t) ? null : (cover(GX(t)) || {}).f);
+  return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, set];
 }
