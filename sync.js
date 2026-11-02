@@ -537,10 +537,30 @@ window.addEventListener('unhandledrejection', e => {
   if (navigator.onLine === false || (r && r.name === 'TypeError' && /fetch|network|load failed/i.test(r.message || ''))) return;
   ev('err', {msg: ('Unhandled: ' + (r && (r.message || r)) || '').slice(0, 300), src: String((r && r.stack) || '').split('\n')[1] || ''});
 });
+// Load times (app.js loadMark): sent once a visit.
+function loadSend() {
+  if (loadSent || !('t0' in LOADM)) return;
+  loadSent = true;
+  const nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {},
+    bytes = (performance.getEntriesByType ? performance.getEntriesByType('resource') : []).reduce(
+      (t, e) => t + (e.transferSize || 0),
+      nav.transferSize || 0
+    );
+  ev('load', {
+    ...LOADM,
+    bps: Math.round(linkMeasure() / 1000),
+    kb: Math.round(bytes / 1024),
+    sw: navigator.serviceWorker && navigator.serviceWorker.controller ? 1 : 0,
+    sv: saver() ? 1 : 0,
+    th: isDark() ? 'dark' : 'light',
+    w: innerWidth
+  });
+}
 window.addEventListener('online', sendEvents);
 window.addEventListener('online', sendAnon);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
+    loadSend();
     sendAnon();
     sendEvents();
   }

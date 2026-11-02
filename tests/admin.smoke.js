@@ -202,6 +202,8 @@ const server = http.createServer((req, res) => {
     const evt = await text();
     if (!/About right/i.test(evt) || !/reading 'views'/.test(evt) || !/Saves that failed/i.test(evt))
       fails.push(`${w}px Errors & feedback: demo events missing`);
+    // Load times (sheet v21): the demo's three visits, their median line and the CDN server.
+    if (!/Load times/.test(evt) || !/640 kbit\/s/.test(evt) || !/MNL/.test(evt)) fails.push(`${w}px Errors & feedback: load times missing`);
     // Keys come from anyone's device: "__proto__" as a photo or a message must not break the page (Codex review #343).
     const proto = await p.evaluate(() => {
       EVS.rows.unshift(

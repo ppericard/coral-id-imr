@@ -183,7 +183,9 @@ addEventListener('resize', fitStage);
 $v.addEventListener(
   'load',
   e => {
-    if (e.target instanceof HTMLImageElement && e.target.closest('.qph')) e.target.classList.add('in');
+    if (!(e.target instanceof HTMLImageElement && e.target.closest('.qph'))) return;
+    e.target.classList.add('in');
+    if (hashNow() === 'quiz') loadMark('q1'); // the first quiz photo on screen (sync.js load times)
   },
   true
 );

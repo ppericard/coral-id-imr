@@ -138,6 +138,22 @@ const linkMeasure = () => {
   if (bytes >= LINK.MIN && time > 0) store.set(LINK.KEY, (linkBps = Math.round((bytes * 8000) / time)));
   return linkBps;
 };
+// Load times (sheet v21 'load'; Pierre, 2026-11-02, after an RA on a ~86 kbit/s line waited 37 s for Home): one event a
+// visit, so the loading order and LINK.SLOW can be set from the players' real lines rather than from lab profiles. Times
+// in seconds from the start of the navigation: p0 / t0 the first page drawn and when, qo the quiz opened, q1 its first
+// photo shown, nx the first other page opened. Sent when the first quiz photo shows, when the app is hidden, or 3 min
+// after the first page, with the line measured (bps, kbit/s), the bytes downloaded so far (kb), whether a service worker
+// served the page (sw: the offline copy), Saver on or off (sv), the theme (th), the window width (w) and the CDN server
+// that sent data.json (pop: GitHub Pages' x-served-by, e.g. "cache-mnl…": Manila). Here, not in sync.js: data.json
+// can arrive before sync.js has run.
+const LOADM = {};
+let loadSent = false; // sync.js loadSend
+function loadMark(k, v) {
+  if (loadSent || k in LOADM) return;
+  LOADM[k] = v !== undefined ? v : Math.round(performance.now() / 100) / 10;
+  if (k === 't0') setTimeout(loadSend, 180000);
+  if (k === 'q1') loadSend();
+}
 const saver = () => {
   const c = navigator.connection;
   if (PQ !== 'auto') return PQ === 'saver';
@@ -990,6 +1006,12 @@ function route() {
   // page (Back, a tab, a link) closes it and its keys (new-player walkthrough 2026-11-02: phone Back from the quiz left the
   // card over Home). A redraw of the same page keeps it. First-meeting cards are met when shown: the rest come next time.
   if (h !== routeFrom) document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+  // Load times (loadMark): the first page drawn, the quiz opened, the first other page.
+  if (!('p0' in LOADM)) {
+    loadMark('p0', h || 'home');
+    loadMark('t0');
+  } else if (h !== routeFrom && (h || 'home') !== LOADM.p0) loadMark('nx', h || 'home');
+  if (h === 'quiz') loadMark('qo');
   routeFrom = h;
   // Home lives at the clean URL; an old #home link is rewritten to it.
   if (h === 'home') history.replaceState({d: pageDepth}, '', location.pathname + location.search);
@@ -1352,6 +1374,7 @@ function need(n) {
 }
 Promise.all([
   getR('data.json?v=32')
+    .then(r => (loadMark('pop', String(r.headers.get('x-served-by') || '').slice(0, 60)), r))
     .then(okJson)
     .then(d => (window.bootTick && bootTick(), d)),
   curation(),
