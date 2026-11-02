@@ -91,7 +91,8 @@
         "seriatopora-cand-269736243": "wide",
         "seriatopora-cand-746236532": "medium",
         "seriatopora-cand-746236570": "medium",
-        "seriatopora-cand-600516986": "medium"
+        "seriatopora-cand-600516986": "medium",
+        "seriatopora-cand-600516979": "wide"
       }
     },
     "Porites": {
@@ -105,7 +106,8 @@
         "porites-cand-461415515": "wide",
         "porites-cand-48874159": "medium",
         "porites-cand-745675660": "macro",
-        "porites-cand-745675693": "medium"
+        "porites-cand-745675693": "medium",
+        "porites-cand-48874145": "wide"
       }
     },
     "Tubastraea": {
@@ -234,7 +236,8 @@
         "goniopora-cand-745205522": "macro",
         "goniopora-cand-745205699": "wide",
         "goniopora-cand-608897666": "macro",
-        "goniopora-cand-409196464": "medium"
+        "goniopora-cand-409196464": "medium",
+        "goniopora-cand-606656903": "wide"
       }
     },
     "Plerogyra": {
@@ -330,7 +333,10 @@
       "add": {
         "herpolitha-cand-311983422": "wide",
         "herpolitha-cand-466162070": "wide",
-        "herpolitha-cand-743295509": "wide"
+        "herpolitha-cand-743295509": "wide",
+        "herpolitha-cand-611198028": "wide",
+        "herpolitha-cand-460641873": "wide",
+        "herpolitha-cand-190588837": "macro"
       }
     },
     "Heliofungia": {
@@ -537,6 +543,7 @@
     "duncanopsammia-cf-50-014": 1,
     "echinopora-cand-745205445": 2,
     "echinopora-cand-745205487": 2,
+    "favites-cand-269471394": 3,
     "fungia-cand-269732683": 3,
     "galaxea-cand-175108798": 2,
     "galaxea-cand-269731175": 3,
@@ -548,7 +555,9 @@
     "halomitra-cand-269460672": 2,
     "heliofungia-cand-269395768": 3,
     "heliofungia-cand-269395858": 2,
+    "herpolitha-cand-460641873": 2,
     "herpolitha-cand-466162070": 1,
+    "herpolitha-cand-611198028": 1,
     "imrl-p8_g36": 2,
     "imrl-p8_g37": 3,
     "lithophyllon-cand-269391063": 3,
@@ -574,8 +583,10 @@
     "pocillopora-medium-306893648": 2,
     "pocillopora-wide-374959119": 1,
     "porites-cand-269475353": 3,
+    "porites-cand-48874145": 2,
     "porites-cand-596708040": 3,
     "porites-cand-606690293": 2,
+    "seriatopora-cand-600516979": 1,
     "seriatopora-cand-600516986": 1,
     "seriatopora-cand-746236532": 2,
     "stylophora-cand-606690291": 2,
@@ -742,6 +753,12 @@
       0.833,
       1
     ],
+    "favites-cand-269471394": [
+      0.167,
+      0.068,
+      0.905,
+      0.991
+    ],
     "fimbriaphyllia-cand-586201148": [
       0.104,
       0.091,
@@ -855,6 +872,12 @@
       0,
       1,
       1
+    ],
+    "seriatopora-cand-600516979": [
+      0.201,
+      0.113,
+      0.932,
+      0.957
     ],
     "stylocoeniella-x-752350384": [
       0,
