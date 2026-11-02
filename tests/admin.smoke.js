@@ -119,6 +119,14 @@ const server = http.createServer((req, res) => {
     if (/Test Demo/.test(await text())) fails.push(`${w}px Users: delete did not remove "Test Demo"`);
 
     // Triage lists the demo reports; Activity shows the demo players' answers.
+    // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
+    await go('~events');
+    await p
+      .waitForFunction(() => /Saves that failed/i.test(document.getElementById('view').innerText), null, {timeout: 10000})
+      .catch(() => {});
+    const evt = await text();
+    if (!/About right/i.test(evt) || !/reading 'views'/.test(evt) || !/Saves that failed/i.test(evt))
+      fails.push(`${w}px Errors & feedback: demo events missing`);
     await go('~triage');
     if (!/Demo report/.test(await text())) fails.push(`${w}px Triage: demo reports missing`);
     await go('~stats');

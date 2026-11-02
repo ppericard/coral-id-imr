@@ -932,7 +932,8 @@ const GROUPS = [
       ['~triage', 'Triage'],
       ['~stats-needs', 'Where to look'],
       ['~cov', 'Game coverage'],
-      ['~fcov', 'Sheet & Finder coverage']
+      ['~fcov', 'Sheet & Finder coverage'],
+      ['~events', 'Errors & feedback']
     ]
   ],
   [
@@ -1024,6 +1025,7 @@ const modeKey = () =>
           '~form': 'form',
           '~excluded': 'excluded',
           '~triage': 'triage',
+          '~events': 'events',
           '~look': 'mont',
           '~mont': 'mont',
           '~cand': 'cand'
@@ -1035,6 +1037,7 @@ function render() {
   if (cur === '~form') return renderForm();
   if (cur === '~excluded') return renderExcluded();
   if (cur === '~triage') return renderTriage();
+  if (cur === '~events') return renderEvents();
   // Every Stats / Needs sub-view keeps its sub-menu on top, whichever function draws it (Pierre, 2026-11-01).
   if (modeKey() === 'needs') {
     if (cur === '~cov') renderCov();
@@ -1563,6 +1566,7 @@ function renderQuality() {
 
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
+  events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap question "These questions are: Too easy · About right · Too hard" (after 15 answers, then every 60), with the player's level and their right rate when they answered. Grouped, the most devices first. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
   start: `<p><b>Four tabs</b>: <b>To do</b> (players' reports, your flags, where photos are missing), <b>Photos</b> (Genera, Candidates, Growth form, Quality, Look-alikes, Excluded), <b>Players</b> (who plays, their numbers, merge or delete names) and <b>Photo stats</b> (how hard each photo is). The pages of a tab are in the row under the header; each tab reopens the page you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Growth form</b> and <b>Quality</b>: check the growth form and quality guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>To do › Where to look</b>: which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
@@ -1947,6 +1951,155 @@ function loadReports(force) {
     .catch(() => (REPS = {err: 'Offline'}));
 }
 const repsOpen = () => (REPS && REPS.rows ? REPS.rows.filter(r => !(DRAFT.seen || {})['rep:' + r[0]]) : []);
+// Errors & feedback (sheet v19, Pierre 2026-11-02: most RAs will not report problems): what the players' devices report
+// by themselves (app.js ev): app errors, photos that did not load, saves that failed, and the one-tap question's answers.
+// Rows [id, time ms, device, kind, message, where, page, detail, app version, browser], newest first. Admin token only.
+let EVS = null,
+  evsAt = 0;
+function loadEvents(force) {
+  if (!force && EVS && Date.now() - evsAt < 300000) return Promise.resolve(EVS);
+  if (!TOKEN) return Promise.resolve((EVS = {err: 'Needs the GitHub token'}));
+  return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readEvents: 1, token: TOKEN})})
+    .then(r => r.json())
+    .then(j => {
+      evsAt = Date.now();
+      return (EVS =
+        j && j.ok && j.rows
+          ? {rows: j.rows}
+          : {
+              err:
+                !j || !j.v || j.v < 19
+                  ? 'Sheet script v19 not running yet (it updates itself within 15 minutes)'
+                  : j.error === 'token'
+                    ? 'Token refused'
+                    : 'Not available'
+            });
+    })
+    .catch(() => (EVS = {err: 'Offline'}));
+}
+const EV_DAYS = 30;
+function renderEvents() {
+  status();
+  if (!EVS) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    loadEvents().then(() => cur === '~events' && renderEvents());
+    return;
+  }
+  const head = `<div class="adm-shead"><h2>Errors & feedback</h2><button type="button" class="adm-link" data-evr>Refresh</button></div>`;
+  if (EVS.err) {
+    $v.innerHTML = head + `<p class="note">${esc(EVS.err)}</p>`;
+    return bindEv();
+  }
+  const since = Date.now() - EV_DAYS * 864e5,
+    R = EVS.rows.filter(r => r[1] >= since),
+    of = k => R.filter(r => r[3] === k),
+    when = t => days(t),
+    group = (L, key) => {
+      const O = {};
+      L.forEach(r => {
+        const k = key(r),
+          g = (O[k] = O[k] || {k, n: 0, dev: new Set(), last: 0, pg: new Set(), av: new Set(), ua: new Set(), r});
+        g.n++;
+        g.dev.add(r[2]);
+        g.last = Math.max(g.last, r[1]);
+        if (r[6]) g.pg.add(r[6]);
+        if (r[8]) g.av.add(r[8]);
+        if (r[9]) g.ua.add(r[9]);
+      });
+      return Object.values(O).sort((a, b) => b.dev.size - a.dev.size || b.n - a.n || b.last - a.last);
+    },
+    few = (S, n = 3) => esc([...S].slice(0, n).join(', ') + (S.size > n ? ` +${S.size - n}` : ''));
+  // The one-tap question: how many said each, overall and by player level (overall level from the answer's detail).
+  const P = of('pulse').map(r => {
+      let d = {};
+      try {
+        d = JSON.parse(r[7] || '{}');
+      } catch (e) {}
+      return {r: r[4], ...d, t: r[1], dev: r[2]};
+    }),
+    RS = [
+      ['easy', 'Too easy'],
+      ['ok', 'About right'],
+      ['hard', 'Too hard']
+    ],
+    band = lv =>
+      typeof lv !== 'number'
+        ? 'unknown'
+        : lv < -0.5
+          ? 'beginner (level below −0.5)'
+          : lv < 0.5
+            ? 'middle (−0.5 to +0.5)'
+            : 'strong (above +0.5)',
+    bands = [...new Set(P.map(x => band(x.lv)))].sort(),
+    pmax = Math.max(1, ...RS.map(([k]) => P.filter(x => x.r === k).length)),
+    rrOf = L => (L.length ? Math.round(L.reduce((t, x) => t + (x.rr || 0), 0) / L.length) + '%' : '–');
+  const pulse = P.length
+    ? `<table class="adm-tbl"><thead><tr><th>Answer</th><th>Times</th><th></th><th title="Right % of their last 10 answers when they answered, on average">Last 10 right</th></tr></thead><tbody>${RS.map(
+        ([k, t]) => {
+          const L = P.filter(x => x.r === k);
+          return `<tr><td>${t}</td><td class="n">${L.length}</td><td>${sbar(L.length, pmax, k === 'ok' ? '' : 'bad')}</td><td class="n">${rrOf(L)}</td></tr>`;
+        }
+      ).join('')}</tbody></table>
+      <table class="adm-tbl"><thead><tr><th>Player level</th>${RS.map(([, t]) => `<th>${t}</th>`).join('')}</tr></thead><tbody>${bands
+        .map(
+          b =>
+            `<tr><td>${esc(b)}</td>${RS.map(([k]) => `<td class="n">${P.filter(x => band(x.lv) === b && x.r === k).length || ''}</td>`).join('')}</tr>`
+        )
+        .join(
+          ''
+        )}</tbody></table><p class="note">${new Set(P.map(x => x.dev)).size} device${new Set(P.map(x => x.dev)).size === 1 ? '' : 's'} answered. The games aim at about 80% right: many "Too hard" from beginners would mean the start is too steep.</p>`
+    : '<p class="note">No answer yet: the question comes after 15 answers, then every 60.</p>';
+  const errs = group(of('err'), r => r[4] + ' @ ' + r[5]),
+    errT = errs.length
+      ? `<table class="adm-tbl"><thead><tr><th>Error</th><th>Devices</th><th>Times</th><th>Last</th><th>Pages</th><th>App</th><th>Browsers</th></tr></thead><tbody>${errs
+          .map(
+            g =>
+              `<tr><td><code>${esc(g.r[4])}</code><br><small>${esc(g.r[5])}</small></td><td class="n">${g.dev.size}</td><td class="n">${g.n}</td><td>${when(g.last)}</td><td><small>${few(g.pg)}</small></td><td><small>${few(g.av)}</small></td><td><small>${few(g.ua)}</small></td></tr>`
+          )
+          .join('')}</tbody></table>`
+      : '<p class="note">No app error reported.</p>';
+  const phs = group(of('photo'), r => r[4]),
+    phT = phs.length
+      ? `<table class="adm-tbl"><thead><tr><th>Photo</th><th>Devices</th><th>Times</th><th>Last</th><th>Browsers</th></tr></thead><tbody>${phs
+          .map(g => {
+            const p = PHOTOS[g.k];
+            return `<tr><td>${p ? `<button type="button" class="adm-link" data-zf="${esc(g.k)}" data-g="${esc(p.genus)}"><i>${esc(p.genus)}</i></button> ` : ''}<code>${esc(g.k)}</code></td><td class="n">${g.dev.size}</td><td class="n">${g.n}</td><td>${when(g.last)}</td><td><small>${few(g.ua)}</small></td></tr>`;
+          })
+          .join(
+            ''
+          )}</tbody></table><p class="note">A photo that fails on many devices may be missing or broken; on one device only, most likely its connection.</p>`
+      : '<p class="note">No photo failed to load.</p>';
+  const sy = group(of('sync'), r => r[4]),
+    syT = sy.length
+      ? `<table class="adm-tbl"><thead><tr><th>Save problem</th><th>Devices</th><th>Times</th><th>Last</th></tr></thead><tbody>${sy
+          .map(
+            g =>
+              `<tr><td><code>${esc(g.k)}</code></td><td class="n">${g.dev.size}</td><td class="n">${g.n}</td><td>${when(g.last)}</td></tr>`
+          )
+          .join('')}</tbody></table>`
+      : '<p class="note">No failed save while online.</p>';
+  $v.innerHTML =
+    head +
+    kpis([
+      ['One-tap answers', P.length],
+      ['App errors', of('err').length],
+      ['Photos not loaded', of('photo').length],
+      ['Failed saves', of('sync').length]
+    ]) +
+    `<p class="note">Last ${EV_DAYS} days, sent by the players' devices without a name (a random id per device).</p>
+    <div class="adm-sgrid">
+    <section class="adm-scard"><h3>"These questions are…"</h3>${pulse}</section>
+    <section class="adm-scard wide"><h3>App errors</h3>${errT}</section>
+    <section class="adm-scard"><h3>Photos that did not load</h3>${phT}</section>
+    <section class="adm-scard"><h3>Saves that failed</h3>${syT}</section>
+    </div>`;
+  bindEv();
+}
+function bindEv() {
+  const r = $v.querySelector('[data-evr]');
+  if (r) r.onclick = () => loadEvents(true).then(() => cur === '~events' && renderEvents());
+  $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
+}
 // Triage: only what needs Pierre's eye. 1) photos he flagged on the site, with where they were seen;
 // 2) Featured photos rated Poor. Views without his own Featured pick are not a task (Pierre): the automatic pick is fine.
 function renderTriage() {

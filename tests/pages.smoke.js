@@ -78,6 +78,47 @@ const server = http.createServer((req, res) => {
       await p.waitForTimeout(700);
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
     }
+    // The one-tap question after 15 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
+    // A fresh browser that has seen the tour (a tour opened earlier in this context resumes after a reload).
+    if (w === 390) {
+      const c2 = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
+      await c2.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await c2.addInitScript(() => {
+        localStorage.setItem('imr-tour', '"done"');
+        localStorage.setItem('imr-nudge', '1');
+      });
+      const q2 = await c2.newPage(),
+        e2 = [];
+      q2.on('pageerror', e => e2.push(e.message));
+      await q2.goto(base + '#quiz');
+      await q2.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      let at = 0;
+      for (let i = 1; i <= 20 && !at; i++) {
+        await q2.waitForSelector('#view [data-c]');
+        await q2.evaluate(() => document.querySelector('#view [data-c]').click());
+        await q2.waitForSelector('#next');
+        if (await q2.$('#after .pulse')) at = i;
+        else await q2.evaluate(() => document.getElementById('next').click());
+      }
+      if (at !== 15) fails.push(`${w}px one-tap question: shown at answer ${at}, expected 15`);
+      else {
+        await q2.click('[data-pulse="hard"]');
+        await q2.evaluate(() =>
+          setTimeout(() => {
+            throw new Error('smoke test error');
+          }, 0)
+        );
+        await q2.waitForTimeout(300);
+        const q = await q2.evaluate(() => JSON.parse(localStorage.getItem('imr-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg)));
+        if (!q.includes('pulse:hard') || !q.some(x => /smoke test error/.test(x))) fails.push(`${w}px events not queued: ${q.join(' | ')}`);
+      }
+      const other = e2.filter(e => !/smoke test error/.test(e));
+      if (other.length) fails.push(`${w}px quiz: ${other.slice(0, 3).join(' | ')}`);
+      await c2.close();
+    }
     errs.length = 0;
     await p.goto(base + 'admin.html?readonly');
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});

@@ -15,7 +15,7 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    ok = o => new Response(JSON.stringify({v: 17, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
+    ok = o => new Response(JSON.stringify({v: 19, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
   const PLAYERS = [
@@ -157,7 +157,53 @@
       rp(3, 'Dio Demo', 'info', g2, '', '', 'Demo feedback: a typo on this sheet.', 'sheet', '', '#' + g2),
       rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', '#home')
     ];
-    S = {rows, users, reports, removed: [], list};
+    // Events (sheet v19): [id, time, device, kind, message, where, page, detail, app, browser], newest first.
+    const events = [];
+    for (let i = 0; i < 24; i++) {
+      const r = ['ok', 'ok', 'hard', 'easy', 'ok', 'hard'][i % 6];
+      events.push([
+        'demoev' + i,
+        NOW - i * 7 * 3600e3,
+        'demodev' + (i % 5),
+        'pulse',
+        r,
+        '',
+        'quiz',
+        JSON.stringify({r, m: 'quiz', n: 10 + i, rr: r === 'hard' ? 40 : r === 'easy' ? 100 : 80, lv: -1.2 + (i % 5) * 0.5, met: 6 + i}),
+        '159',
+        'Chrome 140 mobile'
+      ]);
+    }
+    events.push(
+      [
+        'demoeva',
+        NOW - 3600e3,
+        'demodev1',
+        'err',
+        "TypeError: Cannot read properties of undefined (reading 'views')",
+        'app.js:1234:5',
+        'quiz',
+        '',
+        '159',
+        'Chrome 140 mobile'
+      ],
+      [
+        'demoevb',
+        NOW - 2 * 3600e3,
+        'demodev2',
+        'err',
+        "TypeError: Cannot read properties of undefined (reading 'views')",
+        'app.js:1234:5',
+        'quiz-duel',
+        '',
+        '158',
+        'Safari 18 mobile'
+      ],
+      ['demoevc', NOW - 5 * 3600e3, 'demodev3', 'photo', pics[g1][0].f, '', 'quiz', '', '159', 'Samsung 27 mobile'],
+      ['demoevd', NOW - 9 * 3600e3, 'demodev4', 'sync', 'save failed: Failed to fetch', '', 'quiz', '', '159', 'Chrome 140 mobile']
+    );
+    events.sort((a, b) => b[1] - a[1]);
+    S = {rows, users, reports, events, removed: [], list};
     return S;
   }
   // Anonymous id of a name, as Code.gs aid_ (8 characters, no name in it); here a plain hash, there is no secret to keep.
@@ -334,6 +380,7 @@
       }
       const p = JSON.parse(opts.body || '{}');
       if (p.readReports) return ok({ok: true, rows: S.reports.map(r => r.slice())});
+      if (p.readEvents) return ok({ok: true, rows: S.events.map(r => r.slice())});
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
       if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete) return ok(users(p));

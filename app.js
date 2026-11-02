@@ -164,6 +164,12 @@ $v.addEventListener(
       i.dataset.retry = 2;
       i.src = i.dataset.lo;
     } else if (i.closest('.qstage') && !$v.querySelector('.q.done, #qfail')) {
+      if (navigator.onLine !== false)
+        ev('photo', {
+          f: resized(u, '')
+            .replace(/^img\//, '')
+            .replace(/\.webp.*$/, '')
+        });
       const a = document.getElementById('after');
       if (a) {
         a.insertAdjacentHTML(
@@ -2015,6 +2021,51 @@ function answer(cur, c, target, ph, cor, unseen) {
   setTimeout(() => hashNow() === cur && planNext(cur), 50);
   if (nbo.length) unlockShow(nbo);
   else if (nudgeDue()) signinNudge();
+  else if (pulseDue()) pulseAsk();
+}
+// One-tap question (Pierre, 2026-11-02: people answer a tap, not "any comments?"): now and then, under the answer's
+// feedback, "These questions are: Too easy · About right · Too hard" (or × for not now). First after PULSE.FIRST answers
+// in all, then every PULSE.EVERY answers, never before PULSE.SESSION answers of this visit; counted in answers, never time.
+// The answer goes to the sheet as an event (ev 'pulse') with what the game knew then: the mode, answers this visit, right
+// % of the last 10, overall level, genera met. Nothing in the game changes with it (yet): it tells Pierre whether the
+// adaptive difficulty feels right to the players.
+const PULSE = {FIRST: 15, EVERY: 60, SESSION: 8},
+  PULSEK = 'imr-pulse';
+const pulseDue = (h = hashNow()) =>
+  (h === 'quiz' || h.startsWith('quiz-duel')) &&
+  !document.querySelector('#tour, .unlock') &&
+  session.n >= PULSE.SESSION &&
+  answersSoFar() >= PULSE.FIRST &&
+  answersSoFar() - (store.get(PULSEK, {}).at ?? -1e9) >= PULSE.EVERY;
+function pulseAsk() {
+  const nb = document.getElementById('next');
+  if (!nb) return;
+  nb.insertAdjacentHTML(
+    'beforebegin',
+    `<div class="pulse" role="group" aria-label="How are the questions?"><span>These questions are</span><button type="button" data-pulse="easy">Too easy</button><button type="button" data-pulse="ok">About right</button><button type="button" data-pulse="hard">Too hard</button><button type="button" class="pulsex" data-pulse="" aria-label="Not now" title="Not now">×</button></div>`
+  );
+  const box = document.querySelector('#after .pulse');
+  store.set(PULSEK, {at: answersSoFar()});
+  box.querySelectorAll('[data-pulse]').forEach(
+    b =>
+      (b.onclick = e => {
+        e.stopPropagation();
+        const r = b.dataset.pulse;
+        if (r) {
+          const h = session.h;
+          ev('pulse', {
+            r,
+            m: hashNow().split('|')[0],
+            n: session.n,
+            rr: h.length ? Math.round((100 * h.filter(Boolean).length) / h.length) : 0,
+            lv: Math.round(((P[LEVEL] || {}).th || 0) * 100) / 100,
+            met: Object.keys(DATA.gen).filter(g => P[g]).length
+          });
+          box.innerHTML = '<span>Thank you!</span>';
+        } else box.remove();
+        document.getElementById('next')?.focus({preventScroll: true});
+      })
+  );
 }
 // Unlock card (Pierre, 2026-11-01): shown once per newly unlocked bonus genus, over the quiz feedback. A "?" tile turns
 // over to the genus's cover photo, with its name and Coral Finder ID tips. Got it / Esc / Enter / a click outside closes
@@ -2719,6 +2770,8 @@ function syncOnce(tries = 0) {
         store.set('imr-coral-sync', me);
       } else if (j && SYNC === me) {
         me.err = j.error === 'pin' || j.error === 'wait' || j.error === 'gone' ? j.error : 'net';
+        if (me.err === 'net' && j.error !== 'stale' && j.error !== 'busy')
+          ev('sync', {msg: 'save refused: ' + String(j.error || 'no reply')});
         if (j.error === 'gone') me.into = j.into || '';
         store.set('imr-coral-sync', me);
       }
@@ -2727,6 +2780,7 @@ function syncOnce(tries = 0) {
     .catch(x => {
       if (x && 'retried' in x) return x.retried;
       if (SYNC === me) {
+        if (navigator.onLine !== false) ev('sync', {msg: 'save failed: ' + String((x && x.message) || x).slice(0, 120)});
         me.err = 'net';
         store.set('imr-coral-sync', me);
       }
@@ -2987,9 +3041,102 @@ function sendAnon() {
       anonBusy = false;
     });
 }
+// Events (Pierre, 2026-11-02: most RAs will not report problems, so the app reports what it can by itself; sheet v19
+// events_): app errors, photos that still fail after their retries, saves that fail while online, and the answers to the
+// occasional one-tap question (pulse). Anonymous: a random device id of its own (EVID, never a name or the answers' id),
+// the app version and a short browser name. Queued here (EVQ, at most 50) and sent in small batches; never from a local
+// copy (LOCAL) nor without the sync URL. At most EV_MAX reports a visit, the same message once.
+const EVID = 'imr-dev-id',
+  EVQ = 'imr-evq',
+  EV_MAX = 15;
+const evSeen = new Set();
+let evTimer = 0,
+  evBusy = false;
+const devId = () => {
+  let id = store.get(EVID, '');
+  if (!/^[a-z0-9]{10}$/.test(id)) {
+    id = Array.from(crypto.getRandomValues(new Uint8Array(10)), b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
+    store.set(EVID, id);
+  }
+  return id;
+};
+const appVer = () => ((document.querySelector('link[href*="app.js?v="]') || {}).href || '').replace(/^.*\?v=/, '');
+const uaShort = () => {
+  const u = navigator.userAgent,
+    m = u.match(/(Edg|OPR|SamsungBrowser|Firefox|CriOS|Chrome|Version)\/(\d+)/);
+  const b = !m
+    ? 'other'
+    : m[1] === 'Version'
+      ? 'Safari'
+      : m[1] === 'CriOS'
+        ? 'Chrome iOS'
+        : m[1] === 'Edg'
+          ? 'Edge'
+          : m[1] === 'OPR'
+            ? 'Opera'
+            : m[1];
+  return `${b} ${m ? m[2] : ''}${/Mobi|Android/.test(u) ? ' mobile' : ''}`.trim();
+};
+function ev(k, o = {}) {
+  const key = k + '|' + (o.msg || o.f || o.r || '');
+  if (k !== 'pulse' && (evSeen.has(key) || evSeen.size >= EV_MAX)) return;
+  evSeen.add(key);
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  store.set(
+    EVQ,
+    [
+      ...store.get(EVQ, []),
+      {id, t: new Date().toISOString(), k, pg: (location.hash || '#home').slice(1, 60), av: appVer(), ua: uaShort(), ...o}
+    ].slice(-50)
+  );
+  clearTimeout(evTimer);
+  evTimer = setTimeout(sendEvents, k === 'pulse' ? 2000 : 10000);
+}
+function sendEvents() {
+  const q = store.get(EVQ, []);
+  if (!SYNC_URL || LOCAL || evBusy || !q.length || navigator.onLine === false) return;
+  const batch = q.slice(0, 50);
+  evBusy = true;
+  fetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({dev: devId(), events: batch})})
+    .then(r => r.json())
+    .then(j => {
+      // Sent, or refused for good (an older sheet answers 'input', a full window 'busy'): either way they leave the queue.
+      if (!j || (!j.ev && j.error !== 'input' && j.error !== 'busy')) return;
+      const done = new Set(batch.map(x => x.id));
+      store.set(
+        EVQ,
+        store.get(EVQ, []).filter(x => !done.has(x.id))
+      );
+    })
+    .catch(() => {})
+    .finally(() => {
+      evBusy = false;
+    });
+}
+// App errors: script errors and promise rejections, with where they happened. Not the photo and stylesheet load errors
+// (those are elements, handled where they retry).
+window.addEventListener('error', e => {
+  if (!e.message || e.target !== window) return;
+  ev('err', {
+    msg: String(e.message).slice(0, 300),
+    src: `${String(e.filename || '')
+      .replace(/^.*\//, '')
+      .replace(/\?.*$/, '')}:${e.lineno || 0}:${e.colno || 0}`
+  });
+});
+window.addEventListener('unhandledrejection', e => {
+  const r = e.reason;
+  // A failed fetch while offline is no error of the app.
+  if (navigator.onLine === false || (r && r.name === 'TypeError' && /fetch|network|load failed/i.test(r.message || ''))) return;
+  ev('err', {msg: ('Unhandled: ' + (r && (r.message || r)) || '').slice(0, 300), src: String((r && r.stack) || '').split('\n')[1] || ''});
+});
+window.addEventListener('online', sendEvents);
 window.addEventListener('online', sendAnon);
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') sendAnon();
+  if (document.visibilityState === 'hidden') {
+    sendAnon();
+    sendEvents();
+  }
 });
 // Signing in. A new name keeps what this device holds and sends it. A known account (found) is merged with what was
 // played here before signing in: the sheet's settings and quiz state win, the progress of both adds up (mergeProgress
