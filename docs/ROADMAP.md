@@ -109,6 +109,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 - Publishing `curation.json` as a whole copy from the admin (lost curation on 2026-11-01; Publish merges key by key since PR #240).
 
 ## Done recently (for context)
+- 2026-11-02: first feedback from an RA with a web-development background: on a first visit the guided tour's step 3 and the first genus card were both on screen, the card above the tour. Cards and offers due during the tour now wait under it and show when it closes; the tour's keys still work.
 - 2026-11-01: anonymous answers (Pierre): players who never sign in still feed the photo ratings and confusions, under a random device id, moved to their name if they sign in; flood caps and an Alerts tab (Code.gs v12, docs/SECURITY.md); privacy page updated.
 - 2026-11-01: `privacy.html` (what the app stores, where, how to have it deleted; linked from the footer): needed for the Google Cloud consent screen of the self-updating sync script, and useful now that beta testers sign in.
 - 2026-11-01: one Prettier pass (3.9.10, the latest stable, `.prettierrc.json`, print width 140) over the app, admin, Lab and test JS and the CSS; checked by comparing every file's syntax tree before and after (identical except one `a && (b && c)` → `a && b && c`) and by the tests; Prettier 3.3.3 (picked from memory, not the latest) dropped array elements in `proto/anatomy.js`; Pierre: always the latest stable version. CI moved to Node 26 (LTS) and Playwright 1.64.1 at the same time. PR check added. Module split still to do.

@@ -307,8 +307,13 @@
     document.removeEventListener('keydown', onKey);
     removeEventListener('resize', place);
     removeEventListener('scroll', place);
-    if (to) go(to);
+    // Already there with a card waiting under the tour (the first genus cards): keep that question and its cards; going
+    // there again would draw a new one and drop the card already counted as met (Codex review #353).
+    if (to && !(here(to) && document.querySelector('.unlock'))) go(to);
     if (ask && window.signinNudge) signinNudge(false);
+    // A card that waited under the tour (app.css html.touring .unlock) now shows: give it the focus.
+    const b = document.querySelector('.unlock .next');
+    if (b) b.focus({preventScroll: true});
   }
   function onKey(e) {
     if (e.key === 'Escape') return close(null, true);
