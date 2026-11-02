@@ -98,6 +98,14 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
 A mastery exam question is logged with mode `quiz|x` (exams have every trap, so never `|kN`; the sheet's guess rate and
 mode split read it as `quiz`), and a passed exam keeps its time (`s.mx` = time, was 1; still truthy everywhere).
 
+### "Again: A or B?" rated as 2 choices (2026-11-02)
+
+Since 2026-11-01 (#251) a mix-up in the photo quiz comes back once as a 2-choice duel of the two genera, one question
+later. It was logged plain `quiz`, so the sheet rated it with a 1 in 4 guess instead of 1 in 2 (a right answer looked
+more convincing than it is): 59 of the first 552 answers, 11%. The app now logs it `quiz|k2`, and the sheet (v20) and
+the admin (`core.js`) read the number of choices from the Choices column when the mode does not give it, which corrects
+the answers already logged.
+
 ### First meeting with a genus (2026-11-02)
 
 Beginner RA review: the first quiz felt like an exam, asking genera the player had never seen. Pierre's design, the same

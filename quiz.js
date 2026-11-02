@@ -341,7 +341,9 @@ function answer(cur, c, target, ph, cor, unseen) {
     a: c,
     ok: good ? 1 : 0,
     // |x: a question of the mastery exam (never with |k: an exam has every trap), for the admin's player journey.
-    m: cur + (k < nc ? '|k' + k : '') + (exq ? '|x' : ''),
+    // A photo-quiz question with fewer than 4 choices ("Again: A or B?" after a mix-up) says so too: logged plain "quiz",
+    // the sheet rated it as a 4-choice one (a 1 in 4 guess instead of 1 in 2; 59 of the first 552 answers, 2026-11-02).
+    m: cur + (k < (cur === 'quiz' ? 4 : nc) ? '|k' + k : '') + (exq ? '|x' : ''),
     // A corallites hint left closed is not logged: it was not seen when answering (Codex review #339; the sheet rates and
     // counts as recognised only the photos the player saw).
     ph: ph

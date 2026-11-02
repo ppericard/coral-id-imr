@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 20 (2026-11-02: v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 20 (2026-11-02: v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -228,28 +228,36 @@ const PHOTO_W = {N: 10, NEW: 0.5, KNOWN: -1};
 // their course, others know even less): level PLAYER0 = -1, i.e. about 45% right on a photo of average difficulty with
 // 4 choices. Starting at 0 (average), a beginner's misses made the photos look harder than they are.
 const PLAYER0 = -1;
-const guess_ = mode => { const kq = /\|k(\d)$/.exec(mode); return kq ? 1 / Number(kq[1]) : mode.indexOf('quiz-duel') === 0 ? 0.5 : 0.25; };
-function trusted_(rows){  // rows: [who, right 0|1, mode, anonymous]
+// v20: a photo-quiz question logged without its number of choices but with fewer than 4 in the Choices column (the
+// "Again: A or B?" question after a mix-up, logged plain "quiz" until 2026-11-02) is rated with its real guess rate,
+// 1 / choices (Pierre: correct the existing data too; nothing in the sheet is rewritten). core.js guessOf in step.
+const guess_ = (mode, choices) => {
+  const kq = /\|k(\d)$/.exec(mode); if (kq) return 1 / Number(kq[1]);
+  if (mode.indexOf('quiz-duel') === 0) return 0.5;
+  const n = String(choices || '').split(/\s+/).filter(Boolean).length;
+  return n >= 2 && n < 4 ? 1 / n : 0.25;
+};
+function trusted_(rows){  // rows: [who, right 0|1, mode, anonymous, choices]
   const T = {}, out = {};
-  rows.forEach(([w, ok, m, an]) => { const t = T[w] = T[w] || [0, 0, 0, 0, an], g = guess_(m); t[0]++; t[1] += ok; t[2] += g; t[3] += g * (1 - g); });
+  rows.forEach(([w, ok, m, an, ch]) => { const t = T[w] = T[w] || [0, 0, 0, 0, an], g = guess_(m, ch); t[0]++; t[1] += ok; t[2] += g; t[3] += g * (1 - g); });
   Object.keys(T).forEach(w => { const t = T[w]; out[w] = t[0] >= TRUST.N && (t[1] - t[2]) / Math.sqrt(t[3]) >= TRUST.Z; });
   return out;
 }
 function stats_(){
-  const cache = CacheService.getScriptCache(), hit = cache.get('stats11');
+  const cache = CacheService.getScriptCache(), hit = cache.get('stats12');
   if (hit) return JSON.parse(hit);
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: {}, ras: {}, conf: {}};
   if (!sh || sh.getLastRow() < 2) return out;
   const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 12).getValues().filter(r => r[0]).sort((a, b) => new Date(a[1]) - new Date(b[1]));
   const P = {}, R = {}, H = {}, sig = x => 1 / (1 + Math.exp(-x));
   // One player whatever the capitalisation of the name (find_ and hash_ match names case-blind; aid_ lowercases too).
-  const trust = trusted_(rows.map(r => [lc_(r[0]), Number(r[4]) ? 1 : 0, String(r[5]), lc_(r[0]).indexOf('~anon ') === 0]));
+  const trust = trusted_(rows.map(r => [lc_(r[0]), Number(r[4]) ? 1 : 0, String(r[5]), lc_(r[0]).indexOf('~anon ') === 0, String(r[11] || '')]));
   rows.forEach(r => {
     const who = lc_(r[0]), ok = Number(r[4]) ? 1 : 0, mode = String(r[5]), fs = String(r[6]).split(/\s+/).filter(Boolean);
     const sg = String(r[2]), sa = String(r[3]);
     if (trust[who]) String(r[11] || '').split(/\s+/).filter(x => x && x !== sg).forEach(x => { const k = sg < x ? sg + '|' + x : x + '|' + sg, c = out.conf[k] = out.conf[k] || [0, 0]; c[0]++; if (!ok && sa === x) c[1]++; });
     if (!fs.length) return;
-    const g = guess_(mode), ra = R[who] = R[who] || [PLAYER0, 0];
+    const g = guess_(mode, r[11]), ra = R[who] = R[who] || [PLAYER0, 0];
     const ph = fs.map(f => P[f] = P[f] || [0, 0, 0, 0]), b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);  // one view alone is harder (app.js PICKD.SINGLE)
     const e = g + (1 - g) * sig(ra[0] - b), d = ok - e, n = ra[1];
     // The photos move on trusted players' answers, weighed by their experience, against their own history with each photo.
@@ -268,7 +276,7 @@ function stats_(){
   Object.keys(P).forEach(f => out.photos[f] = [Math.round(P[f][0] * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]]);
   const salt = anonSalt_();
   Object.keys(R).forEach(n => out.ras[aid_(n, salt)] = [Math.round(R[n][0] * 100) / 100, R[n][1]]);
-  try { cache.put('stats11', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
+  try { cache.put('stats12', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
   return out;
 }
 
@@ -514,7 +522,7 @@ function users_(p){
         if (!(w in hit)) hit[w] = ids.has(aid_(w, salt));
         if (hit[w]) { sh.deleteRow(i + 2); n++; }
       }
-      try { CacheService.getScriptCache().remove('stats11'); } catch (e) {}
+      try { CacheService.getScriptCache().remove('stats12'); } catch (e) {}
       return {ok: true, answers: n};
     } finally { lock.releaseLock(); }
   }
@@ -536,7 +544,7 @@ function users_(p){
         relabel_(DATA_TAB, 1, from, into);
         relabel_('By genus', 1, from, into);
         const answers = relabel_('Answers', 1, from, into), reports = relabel_('Reports', 2, from, into);
-        ['board14', 'stats11'].forEach(k => { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
+        ['board14', 'stats12'].forEach(k => { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
         return {ok: true, answers: answers, reports: reports};
       }
       if (p.userDelete) {
