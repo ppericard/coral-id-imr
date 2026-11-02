@@ -3700,7 +3700,7 @@ function covOf(n, v) {
 // Photos of a genus x view left out of the game pool, by reason (Pierre: show what isn't counted and why).
 // Short label in the cell, long one in the cell's tooltip.
 const OFF = [
-  ['multi', 'multi‑coral', 'with several corals'],
+  ['multi', 'multi', 'with several corals'],
   ['x', 'no form', 'form not visible'],
   ['ref', 'sheet only', 'sheet only'],
   ['cf', 'CF', 'Coral Finder book'],
@@ -3828,7 +3828,16 @@ function renderCov() {
     <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Order">${seg.map(([k, t, h]) => `<button type="button" data-co="${k}" title="${h}" aria-pressed="${!COVS.col && COV_ORDER === k}">${t}</button>`).join('')}</span>
       <span class="cov-key" aria-label="Colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 colonies">${thin} thin</b><b title="Cells at the cap of ${CELL_MAX} colonies or over: their candidates wait outside the swiper">${R.reduce((s, r) => s + r.cells.filter(c => c && c.obs >= CELL_MAX).length, 0)} full</b>${(k => (k ? `<b class="warnc" title="Cells over the cap of ${CELL_MAX} colonies (added anyway): orange outline below; adding to a full cell suggests a colony to retire">⚠ ${k} over the cap</b>` : ''))(R.reduce((s, r) => s + r.cells.filter(c => c && c.obs > CELL_MAX).length, 0))}<b class="cov-rich" title="Cells with 8+ colonies">${rich} at 8+</b></div>
-    <table class="cov-t"><thead><tr><th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates">+</th></tr></thead>
+    <details class="cov-legend"><summary>Legend</summary><dl>
+      <dt><b>9</b></dt><dd>photos of the genus in the games, for this view</dd>
+      <dt><small>6</small></dt><dd>colonies they come from, when fewer than photos (several photos of one colony count once)</dd>
+      <dt>colour</dt><dd>colonies: <span class="cov-c cov-0">0</span> none · <span class="cov-c cov-1">1–2</span> thin · <span class="cov-c cov-2">3–4</span> · <span class="cov-c cov-3">5–7</span> · <span class="cov-c cov-4">8+</span></dd>
+      <dt>excl.</dt><dd>photos of this view left out of the games, and why: <b>multi</b> several corals in the photo · <b>no form</b> growth form not visible (Colony view) · <b>sheet</b> shown on the genus sheet only · <b>CF</b> Coral Finder book (poor quality, rights) · <b>removed</b> taken out by you</dd>
+      <dt>–</dt><dd>no such view for this genus (2-level genera have no Close-up)</dd>
+      <dt>+</dt><dd>candidates waiting in Candidates, iNaturalist only (Coral Finder book photos not counted)</dd>
+      <dt>thin · full · at 8+</dt><dd>cells with 0–2 colonies · at the cap of ${CELL_MAX} colonies · with 8 or more</dd>
+      <dt>Sources</dt><dd>all photos of the genus by origin (hover a segment)</dd></dl></details>
+    <table class="cov-t"><thead><tr><th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates waiting in Candidates (iNaturalist; Coral Finder book photos not counted)">+</th></tr></thead>
     <tbody>${R.map(
       r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="cov-src"><span class="cov-bar">${bar(r)}</span><small>${r.all.length}</small></td><td class="cov-cand">${r.cand ? `+${r.cand}` : ''}</td></tr>`
@@ -3928,7 +3937,7 @@ function renderFcov() {
     ])}
       <span class="cov-key" aria-label="Good colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 good colonies">${thin} thin</b></div>
-    <table class="cov-t fcov-t"><thead><tr><th></th>${colTh(FCOV)}<th class="fcov-fh">Forms</th><th class="fcov-sh">Species</th><th title="Candidates">+</th></tr></thead>
+    <table class="cov-t fcov-t"><thead><tr><th></th>${colTh(FCOV)}<th class="fcov-fh">Forms</th><th class="fcov-sh">Species</th><th title="Candidates waiting in Candidates (iNaturalist; Coral Finder book photos not counted)">+</th></tr></thead>
     <tbody>${R.map(
       r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${r.x ? ' <small class="fcov-x">not IMR</small>' : ''}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="fcov-f">${r.forms.map(f => `<span class="adm-why" title="${esc(fName(f))}">${FABBR[f]}</span>`).join(' ') || '<span title="No growth form set on these photos yet">–</span>'}</td>

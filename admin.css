@@ -3121,3 +3121,35 @@ td.cov-c.cov-over {
   font-weight: 600;
   vertical-align: 1px;
 }
+
+/* Game coverage legend (Pierre, 2026-11-02: "the cryptic notations, I already forgot what they mean"). */
+.cov-legend {
+  margin: 4px 0 12px;
+  font-size: var(--fs-s);
+}
+.cov-legend summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+}
+.cov-legend dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 8px 0 0;
+}
+.cov-legend dt {
+  font-weight: 600;
+  text-align: right;
+}
+.cov-legend dd {
+  margin: 0;
+  color: var(--muted);
+}
+.cov-legend .cov-c {
+  display: inline-block;
+  min-width: 28px;
+  padding: 0 4px;
+  border-radius: 4px;
+  text-align: center;
+}
