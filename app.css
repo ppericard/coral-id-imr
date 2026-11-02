@@ -3074,18 +3074,18 @@ a.lt:hover {
   filter: grayscale(1) opacity(0.45);
 }
 .pring {
-  width: 150px;
-  height: 150px;
+  flex: none;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  margin: 0 auto;
 }
 .pring > span {
-  width: 112px;
-  height: 112px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: var(--bg);
+  background: var(--surface);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3094,12 +3094,9 @@ a.lt:hover {
   color: var(--muted);
 }
 .pring b {
-  font-size: var(--fs-2xl);
+  font-size: var(--fs-s);
   line-height: 1;
   color: var(--ink);
-}
-.pring small {
-  font-size: var(--fs-xs);
 }
 .pboard .plegend {
   justify-content: center;
@@ -3150,16 +3147,9 @@ a.lt:hover {
 .pboard .gside .seg button {
   flex: 1;
 }
-.seg.pvpin {
-  position: sticky;
-  top: 0;
-  z-index: 4;
-  display: flex;
-  margin: 4px 0 0;
-  box-shadow: var(--shadow);
-}
-.seg.pvpin button {
-  flex: 1;
+/* The Slate / Photos / Groups switch: last in the side column, so at the very bottom on phones (Pierre, 2026-11-02). */
+.pboard .gside .pvseg {
+  margin-top: 6px;
 }
 /* Slate view: laid out like the physical IMR slate (two columns, numbers down each column, starred genera last). */
 .pslate {
@@ -4769,37 +4759,6 @@ html.touring body::after {
 .pboard .gside > * {
   grid-column: 1 / -1;
 }
-.pboard .gside > .pring {
-  grid-column: 1;
-  width: 84px;
-  height: 84px;
-  margin: 0;
-}
-.pboard .gside > .pring > span {
-  width: 64px;
-  height: 64px;
-  font-size: var(--fs-xs);
-}
-.pboard .gside > .pring b {
-  font-size: var(--fs-l);
-}
-.pboard .gside > .pring small {
-  font-size: var(--fs-xs);
-  text-align: center;
-  line-height: 1.1;
-}
-.pboard .gside > .plvl {
-  grid-column: 2;
-  justify-content: flex-start;
-}
-/* With the player's badge (Pierre, 2026-11-01: "not great use of space"): ring and badge side by side, the legend under them. */
-.pboard .gside > .pbadge {
-  grid-column: 2;
-  margin: 0;
-}
-.pboard .gside > .pbadge ~ .plvl {
-  grid-column: 1 / -1;
-}
 .pboard .gside > .plvlnote {
   justify-content: flex-start;
 }
@@ -4816,29 +4775,6 @@ html.touring body::after {
   }
   .pboard .gside > * {
     grid-column: revert;
-  }
-  .pboard .gside > .pring {
-    grid-column: revert;
-    width: 150px;
-    height: 150px;
-    margin: 0px auto;
-  }
-  .pboard .gside > .pring > span {
-    width: 112px;
-    height: 112px;
-    font-size: var(--fs-m);
-  }
-  .pboard .gside > .pring b {
-    font-size: var(--fs-2xl);
-  }
-  .pboard .gside > .pring small {
-    font-size: var(--fs-xs);
-    text-align: revert;
-    line-height: revert;
-  }
-  .pboard .gside > .plvl {
-    grid-column: revert;
-    justify-content: center;
   }
 }
 
@@ -5606,25 +5542,13 @@ footer .rep:hover {
 /* ---------- Achievements (core.js ACH): badge on My progress, #ach page, unlock pop-up ---------- */
 .pbadge {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
-  margin: 10px 0;
-  padding: 10px 12px;
+  margin: 0 0 8px;
+  padding: 8px 12px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
-}
-.pbav {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--surface);
-  font-size: var(--fs-l);
-  font-weight: 700;
 }
 .pbtxt {
   display: flex;
@@ -5637,6 +5561,87 @@ footer .rep:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.pbtxt > span {
+  color: var(--muted);
+}
+.pbtxt > span > * {
+  white-space: nowrap;
+}
+.pbtxt > span > :not(:first-child)::before {
+  content: ' · ';
+  color: var(--muted);
+}
+/* Desktop: the card sits beside the board, so it can be roomier (Pierre, 2026-11-02: save space on phones only). */
+@media (min-width: 1024px) {
+  .pboard .pbadge {
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .pboard .pring {
+    width: 120px;
+    height: 120px;
+  }
+  .pboard .pring > span {
+    width: 92px;
+    height: 92px;
+  }
+  .pboard .pring b {
+    font-size: var(--fs-2xl);
+  }
+  .pboard .pbtxt {
+    align-items: center;
+  }
+  /* Slate view: two columns of names need about 680 px, not the whole width; the side column takes the rest, with the
+     card's ring beside the text (Pierre, 2026-11-02: too much empty space in the slate, the info could be bigger). */
+  /* The player's card is the board's first child: first on phones and tablets (one column), and at the top of the side
+     column on desktop, by grid placement, so it follows the width both ways (Codex review #356). */
+  .pgame.pboard {
+    grid-template-rows: auto 1fr;
+  }
+  .pboard > .pbadge {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+  .pboard > .pgwrap {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  .pboard > .gside {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .pgame.pboard:has(.pslate) {
+    grid-template-columns: minmax(0, 680px) minmax(360px, 1fr);
+  }
+  .pboard:has(.pslate) .pbadge {
+    flex-direction: row;
+    gap: 20px;
+    padding: 16px 20px;
+    text-align: left;
+  }
+  .pboard:has(.pslate) .pring {
+    width: 140px;
+    height: 140px;
+  }
+  .pboard:has(.pslate) .pring > span {
+    width: 108px;
+    height: 108px;
+  }
+  .pboard:has(.pslate) .pbtxt > span {
+    white-space: normal;
+  }
+  .pboard:has(.pslate) .pbtxt {
+    align-items: flex-start;
+    gap: 4px;
+    font-size: var(--fs-m);
+  }
+  .pboard:has(.pslate) .pbtxt > b {
+    font-size: var(--fs-xl);
+  }
 }
 .pbtxt a {
   color: var(--ink);
@@ -5793,16 +5798,6 @@ footer .rep:hover {
   }
   .confetti {
     display: none;
-  }
-}
-@media (max-width: 1023.98px) {
-  .pbadge {
-    padding: 8px 10px;
-  }
-  .pbav {
-    width: 36px;
-    height: 36px;
-    font-size: var(--fs-m);
   }
 }
 /* 🏆 page tabs (Leaderboard / Achievements) and the share of players per achievement */
