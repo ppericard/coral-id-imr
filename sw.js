@@ -9,7 +9,7 @@ const SHELL = [
   'index.html',
   'app.css?v=116',
   'core.js?v=19',
-  'app.js?v=171',
+  'app.js?v=172',
   'sync.js?v=9',
   'progress.js?v=8',
   'model.js?v=9',

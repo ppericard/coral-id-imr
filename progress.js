@@ -670,6 +670,43 @@ function boardNotice() {
   );
   t.querySelector('a').onclick = () => t.remove();
 }
+// Progress recalculated for everyone (Pierre, 2026-11-02: when we recalculate every player's progress, say so with a
+// real pop-up, not a discreet note; no algorithm details). Once per device, to a player who already has answers (a new
+// player has nothing recalculated), at the first moment no tour or card is open; marked seen only by its button or
+// Escape, so a card closed by leaving the page comes back. A later recalculation gets a new RECALC.ID and text.
+const RECALC = {KEY: 'imr-recalc', ID: 'progress-moving-average-2026-11'};
+function recalcNotice() {
+  if (store.get(RECALC.KEY, '') === RECALC.ID) return;
+  if (!answersSoFar()) return store.set(RECALC.KEY, RECALC.ID);
+  if (document.querySelector('#tour, .unlock, .recalc'))
+    return void addEventListener('hashchange', () => setTimeout(recalcNotice, 300), {once: true});
+  const d = document.createElement('div');
+  d.className = 'unlock recalc';
+  d.setAttribute('role', 'dialog');
+  d.setAttribute('aria-modal', 'true');
+  d.setAttribute('aria-label', 'Progress recalculated');
+  d.innerHTML = `<div class="ulcard"><p class="ulkick">Update</p><h3>We've improved how progress is measured</h3>
+    <p>Based on feedback from the first players, your progress now reflects more closely how well you can tell each genus apart from the others. Your % may be lower than before, and it will grow a little more slowly. None of your answers is lost.</p>
+    <div class="ulbtns"><span></span><button class="next" type="button">Got it</button></div></div>`;
+  document.body.appendChild(d);
+  const close = seen => {
+    if (seen) store.set(RECALC.KEY, RECALC.ID);
+    d.remove();
+    document.removeEventListener('keydown', key, true);
+  };
+  const key = e => {
+    if (e.key === 'Tab') return;
+    e.stopPropagation(); // never the quiz's keys behind the card
+    if (e.key === 'Escape' || e.key === 'Enter') {
+      e.preventDefault();
+      close(true);
+    }
+  };
+  document.addEventListener('keydown', key, true);
+  d.ulClose = () => close(false); // leaving the page (route): shown again later
+  d.querySelector('.next').onclick = () => close(true);
+  setTimeout(() => d.querySelector('.next').focus({preventScroll: true}), 50);
+}
 // A short note at the bottom of the screen (.apptoast; html is the app's own text), closed by ✕ or after ms.
 function appToast(html, ms) {
   const t = document.createElement('div');
