@@ -452,8 +452,15 @@ function zoom(list, i, opts = {}) {
     if (e.pointerType !== 'mouse' || e.button || !lb.classList.contains('full')) return;
     drag = {x: e.clientX, y: e.clientY, l: lb.scrollLeft, t: lb.scrollTop};
   };
+  lb.onpointerup = lb.onpointercancel = () => {
+    drag = null;
+    lb.classList.remove('dragging');
+  };
   lb.onpointermove = e => {
     if (!drag) return;
+    // Released outside the window (no pointerup reached us): the drag ends here (Codex review #357). No pointer capture:
+    // it would retarget the click that zooms back out to the viewer itself.
+    if (!(e.buttons & 1)) return lb.onpointerup();
     const dx = e.clientX - drag.x,
       dy = e.clientY - drag.y;
     if (!moved && Math.hypot(dx, dy) < 5) return;
@@ -461,10 +468,6 @@ function zoom(list, i, opts = {}) {
     lb.classList.add('dragging');
     lb.scrollLeft = drag.l - dx;
     lb.scrollTop = drag.t - dy;
-  };
-  lb.onpointerup = lb.onpointercancel = () => {
-    drag = null;
-    lb.classList.remove('dragging');
   };
   // Swipe left/right between photos (single finger only, so pinch-zoom still works).
   let x0 = null;

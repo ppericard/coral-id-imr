@@ -351,6 +351,23 @@ const server = http.createServer((req, res) => {
       await qz.mouse.move(500, 250, {steps: 5});
       await qz.mouse.up();
       const z1 = await qz.evaluate(() => ({full: lightbox.classList.contains('full'), t: lightbox.scrollTop, open: !lightbox.hidden}));
+      // A drag released outside the window (no pointerup): moving back over the photo with no button pressed must not pan.
+      await qz.mouse.down();
+      await qz.mouse.move(500, 260, {steps: 5});
+      await qz.evaluate(() =>
+        lightbox.dispatchEvent(
+          new PointerEvent('pointermove', {pointerType: 'mouse', buttons: 0, clientX: 500, clientY: 200, bubbles: true})
+        )
+      );
+      const zt = await qz.evaluate(() => lightbox.scrollTop);
+      await qz.evaluate(() =>
+        lightbox.dispatchEvent(
+          new PointerEvent('pointermove', {pointerType: 'mouse', buttons: 0, clientX: 500, clientY: 100, bubbles: true})
+        )
+      );
+      if ((await qz.evaluate(() => lightbox.scrollTop)) !== zt)
+        fails.push('enlarged photo still panning after the button was released outside');
+      await qz.mouse.up();
       await qz.mouse.click(500, 300);
       const z2 = await qz.evaluate(() => ({full: lightbox.classList.contains('full'), open: !lightbox.hidden}));
       if (!z0.full || !z0.over || !z1.full || !z1.open || z1.t <= z0.t || z2.full || !z2.open)
