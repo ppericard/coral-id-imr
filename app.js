@@ -105,7 +105,7 @@ const loc = (p, s) => `img/${p.f}${s ? '-' + s : ''}.webp${ver(p)}`;
 const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size));
 // Photo quality (Pierre, 2026-11-01: slow, unstable connections in the Philippines): a big photo (game, sheet cover)
 // gets the smallest file that covers its box at the screen's density, counted up to 2x (a 3x phone sees no difference).
-// Saver counts 1x, about one size down; Full always takes the 1600 px file. Auto is Saver when the browser reports
+// Saver takes the 480 px file for game photos and stage photos whatever the box; Full always takes the 1600 px file. Auto is Saver when the browser reports
 // the data saver or a slow connection (Network Information API: Chrome on Android), or when the app measures a slow line
 // itself (linkBps). The enlarged view always loads the 1600 px file (Saver: on a click).
 let PQ = store.get('imr-photo-q', 'auto');
@@ -145,7 +145,10 @@ const saver = () => {
 const fit = px => {
   if (PQ === 'full') return '';
   if (!(px > 0)) return 'm';
-  const need = px * (saver() ? 1 : Math.min(window.devicePixelRatio || 1, 2));
+  // Saver (chosen, or Auto on a slow line): the 480 px file whatever the box (field link, 2026-11-02: at 1x a desktop quiz
+  // box still took the 960 px file, two per question, and the quiz came no faster on a laptop than before).
+  if (saver()) return 's';
+  const need = px * Math.min(window.devicePixelRatio || 1, 2);
   // A file is never blown up past LOWRES (1.15x): a photo enlarged more is shown whole at its own size (fitStage, fitLow).
   return need <= 520 ? 's' : need <= 1100 ? 'm' : '';
 };
@@ -230,7 +233,7 @@ const coverW = (p, long) => {
 // screen density. Pierre, 2026-11-01: the home photos need no big files for how they are shown.
 const thumb = (p, sizes) => {
   if (p.r && p.src) return `src="${img(p, 's')}"`;
-  if (saver()) return `src="${loc(p, 't')}"`; // Saver counts 1x: a thumbnail is at most ~240 px (field link: Home's band on a desktop took ~600 KB)
+  if (saver()) return `src="${loc(p, 't')}"`; // Saver: a thumbnail is at most ~240 px (field link: Home's band on a desktop took ~600 KB)
   const w = long => Math.round(long * Math.min(1, p.ar || 4 / 3));
   return `src="${loc(p, 's')}" srcset="${loc(p, 't')} ${w(240)}w, ${loc(p, 's')} ${w(480)}w" sizes="${sizes}"`;
 };
