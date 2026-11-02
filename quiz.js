@@ -177,6 +177,16 @@ function fitStage() {
   });
 }
 addEventListener('resize', fitStage);
+// The loading placeholder (the small file as the img's own background, app.css .qph img) goes once the photo is in: a
+// photo smaller than its box showed on a blown-up copy of itself instead of the blurred background (walkthrough
+// 2026-11-02). Load events do not bubble, hence the capture.
+$v.addEventListener(
+  'load',
+  e => {
+    if (e.target instanceof HTMLImageElement && e.target.closest('.qph')) e.target.classList.add('in');
+  },
+  true
+);
 // Big photo stages (Look-alikes, quiz on phones and tablets): a photo that would be enlarged more than this to fill its
 // box is shown whole at its own size on the blurred background instead (Pierre, 2026-11-01: sharp beats big for the few
 // small IMR lecture photos). Genus sheet tiles keep filling their box.

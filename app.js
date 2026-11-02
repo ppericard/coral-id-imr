@@ -861,7 +861,7 @@ function ctxBar(h) {
   }
   const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
   if (a && GX(a) && GX(b) && (DATA.gen[a] || isBonus(a)) && (DATA.gen[b] || isBonus(b)))
-    return `${back}<h2 class="ctx-t"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="#cmp">Look-alikes</a>`;
+    return `${back}<h2 class="ctx-t ctx-pair"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="#cmp">Look-alikes</a>`;
   return '';
 }
 function showModes(tab, h) {

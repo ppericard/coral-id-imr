@@ -735,18 +735,14 @@ svg.dim .wedges line.on {
 .rhead .rtrack {
   height: 46px;
 }
+/* 12 px on every screen (readable floor, AGENTS rule 18); phones show only the 0.5 / 2 / 8 / 50 mm ticks, so they fit. */
 .rtick {
   position: absolute;
   top: 0;
   transform: translateX(-50%);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   color: var(--muted);
   white-space: nowrap;
-}
-@media (min-width: 600px) {
-  .rtick {
-    font-size: var(--fs-xs);
-  }
 }
 .rtick::after {
   content: '';
@@ -871,12 +867,14 @@ svg.dim .wedges line.on {
     left: calc(12px + var(--nw) + (100% - 24px - var(--nw)) * var(--k, 0.5));
   }
 }
+/* Text on a --bad fill is --surface (DESIGN.md): white on the light theme's dark red, dark on the dark theme's salmon,
+   at least 4.5:1 in every palette and the colour-blind mode (white on salmon was 2.2:1). */
 .rcursor span {
   position: absolute;
   top: -2px;
   left: 4px;
   background: var(--bad);
-  color: #fff;
+  color: var(--surface);
   font-size: var(--fs-xs);
   border-radius: var(--r-xs);
   padding: 1px 5px;
