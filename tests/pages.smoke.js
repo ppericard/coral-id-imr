@@ -181,14 +181,20 @@ const server = http.createServer((req, res) => {
       if (at !== 15) fails.push(`${w}px one-tap question: shown at answer ${at}, expected 15`);
       else {
         await q2.click('[data-pulse="hard"]');
-        await q2.evaluate(() =>
-          setTimeout(() => {
-            throw new Error('smoke test error');
-          }, 0)
-        );
+        // An error from one of the app's script files is reported; one injected into the page by a browser or an
+        // extension (no file, or the page itself), and the harmless ResizeObserver warning, are not (Pierre, 2026-11-02).
+        await q2.evaluate(() => {
+          const dir = location.origin + location.pathname.replace(/[^/]*$/, ''),
+            err = (message, filename) => window.dispatchEvent(new ErrorEvent('error', {message, filename, lineno: 1}));
+          err('smoke test error', dir + 'quiz.js?v=1');
+          err("ReferenceError: Can't find variable: __firefox__", location.href);
+          err('Script error.', '');
+          err('ResizeObserver loop completed with undelivered notifications.', dir + 'app.js');
+        });
         await q2.waitForTimeout(300);
         const q = await q2.evaluate(() => JSON.parse(localStorage.getItem('imr-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg)));
         if (!q.includes('pulse:hard') || !q.some(x => /smoke test error/.test(x))) fails.push(`${w}px events not queued: ${q.join(' | ')}`);
+        if (q.some(x => /__firefox__|Script error|ResizeObserver/.test(x))) fails.push(`${w}px noise errors queued: ${q.join(' | ')}`);
       }
       // Back closes an enlarged photo and stays on the page (RA review 2026-11-02).
       await q2.evaluate(() => (location.hash = 'g-Porites'));
