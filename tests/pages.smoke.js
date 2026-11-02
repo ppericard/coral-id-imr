@@ -267,6 +267,11 @@ const server = http.createServer((req, res) => {
         };
       });
       if (under.hash !== '#quiz' || !under.card || under.shown) fails.push(`tour over the first cards: ${JSON.stringify(under)}`);
+      // The quiz's answer keys never answer the question under the tour (Codex review #353).
+      await qt.keyboard.press('1');
+      await qt.waitForTimeout(200);
+      if (await qt.evaluate(() => !!document.getElementById('next') || !!P[LEVEL]))
+        fails.push('key 1 answered the question under the tour');
       await qt.keyboard.press('ArrowRight');
       await qt.waitForTimeout(300);
       const step = await qt.evaluate(() => document.querySelector('#tour .tstep')?.textContent);

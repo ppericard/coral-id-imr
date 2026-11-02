@@ -67,7 +67,7 @@ function question(cur, target, choices, prompt, set, kq) {
   // Keys: 1-4 answer, Enter goes to the next question.
   const keys = e => {
     if (!document.body.contains($v.querySelector('.q')) || !lb.hidden) return document.removeEventListener('keydown', keys);
-    if (e.target.closest('input, textarea, select')) return;
+    if (e.target.closest('input, textarea, select') || document.getElementById('tour')) return; // never an answer under the tour
     const b = !answered && $v.querySelectorAll('[data-c]')[Number(e.key) - 1];
     if (b) {
       e.preventDefault();
