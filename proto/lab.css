@@ -1844,14 +1844,9 @@ path.wallc {
   --hl-soft: color-mix(in srgb, var(--hl) 34%, var(--surface));
 }
 :root[data-theme='dark'] :is(.lab, .a2lay) {
+  /* The app's own theme (⚙ Theme, Light by default), never the system's: app.css ignores prefers-color-scheme too. */
   --hl: #ff5cab;
   --hl-soft: color-mix(in srgb, var(--hl) 55%, var(--surface));
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) :is(.lab, .a2lay) {
-    --hl: #ff5cab;
-    --hl-soft: color-mix(in srgb, var(--hl) 55%, var(--surface));
-  }
 }
 .blk {
   --dk: var(--ink);

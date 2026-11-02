@@ -753,7 +753,7 @@ document.querySelectorAll('#size button').forEach(
       applySize();
     })
 );
-// Light / dark theme switch; follows the system until the reader picks one.
+// Light / dark theme switch. Light by default (AGENTS rule 18), whatever the system's theme; the reader's pick is kept.
 // A Light | Dark segmented switch like the other settings (design review 2026-11-01: one control type per kind of choice).
 function isDark() {
   return document.documentElement.dataset.theme === 'dark';
