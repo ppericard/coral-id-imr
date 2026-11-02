@@ -2,7 +2,7 @@
 // and registers itself with LAB.add(). Routes: #lab (hub), #lab-<id>, #lab-<id>|<arg>.
 // A prototype that graduates moves to a site section (see GRADUATED) and gets a plain hash: #<id>, #<id>|<arg>.
 // Bump with every Lab change so browsers never mix new and old files (same ?v scheme as app.js).
-const LAB_V = 65;
+const LAB_V = 66;
 // One SVG icon set for the Tools hub (design review 2026-11-01: the old Unicode glyphs had mixed weights and sizes).
 // 24 px grid, 1.75 stroke, currentColor; a tool without an entry falls back to its `icon` text.
 const LAB_ICONS = {
@@ -53,17 +53,27 @@ const PLANNED = {
 };
 const SECTION_NAME = {learn: 'Learn', identify: 'Identify', practice: 'Practice'};
 const isLabHash = h => h.startsWith('lab') || h.split('|')[0] in GRADUATED;
-// Load every prototype; once all are in, redraw if the reader opened a Lab page directly.
-LAB.files.forEach(f => {
+// Load every prototype; once all are in, redraw if the reader opened a Lab page directly. One that fails (unstable
+// line) is tried again up to 3 times, 1, 2 then 3 s later (Pierre, 2026-11-01).
+const labLoad = (f, n = 0) => {
   const s = document.createElement('script');
   s.src = `proto/${f}.js?v=${LAB_V}`;
   s.async = false;
-  LAB.pending++;
-  s.onload = s.onerror = () => {
+  const done = () => {
     const h = hashNow();
     if (--LAB.pending === 0 && DATA && (isLabHash(h) || !h || h === 'home')) route();
   };
+  s.onload = done;
+  s.onerror = () => {
+    s.remove();
+    if (n < 3) setTimeout(() => labLoad(f, n + 1), 1000 * (n + 1));
+    else done();
+  };
   document.head.appendChild(s);
+};
+LAB.files.forEach(f => {
+  LAB.pending++;
+  labLoad(f);
 });
 
 /* ---------- helpers shared by the prototypes ---------- */

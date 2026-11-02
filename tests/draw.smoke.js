@@ -136,9 +136,18 @@ const server = http.createServer((req, res) => {
     answer('quiz', 'Porites' === t ? 'Acropora' : 'Porites', t, photoSet(t).shown, false, null);
     if (P[t].ex) fails.push(`${t}: a miss did not end the exam`);
     // Mastery holds only while the genus stays known: misses that bring it under 95% take it away.
+    // Misses on its easiest photos (a random set could be the hardest, where a miss says little: CI run of PR #336).
+    const wrong = 'Porites' === t ? 'Acropora' : 'Porites',
+      pics = Object.values(DATA.gen[t].views)
+        .flat()
+        .sort((a, b) => photoDiff(t, a) - photoDiff(t, b));
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.96, mx: 1};
-    for (let i = 0; i < 3 && P[t].mx; i++) answer('quiz', 'Porites' === t ? 'Acropora' : 'Porites', t, photoSet(t).shown, false, null);
+    for (let i = 0; i < 3 && P[t].mx; i++) answer('quiz', wrong, t, pics.slice(0, 2), false, null);
     if (P[t].mx) fails.push(`${t}: still mastered after misses (L ${knownP(t)})`);
+    // A miss never raises what the genus is known to be, even on its hardest photo shown alone.
+    P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.96, mx: 1};
+    answer('quiz', wrong, t, pics.slice(-1), false, null);
+    if (knownP(t) > 0.96) fails.push(`${t}: a miss on a hard photo raised L from 0.96 to ${knownP(t)}`);
     // Exam photos are never-seen ones while some remain.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.97, ps: {}};
     const v0 = examSet(t).shown[0];

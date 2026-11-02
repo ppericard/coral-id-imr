@@ -548,7 +548,7 @@
     note,
     k,
     edit
-  ) => `<figure class="ringed"><button type="button" class="rphoto" data-k="${k}" aria-label="${esc(genus)}, enlarge photo"><img src="${img({f: file})}" alt="${esc(genus)} corallites${ring ? ', a ring marks the feature' : ''}" loading="lazy">${ring ? `<span class="ring" style="left:${ring[0]}%;top:${ring[1]}%;width:${ring[2] * 2}%" aria-hidden="true"></span>` : ''}</button>
+  ) => `<figure class="ringed"><button type="button" class="rphoto" data-k="${k}" aria-label="${esc(genus)}, enlarge photo"><img src="${img({f: file}, fit(Math.min(innerWidth, 800)))}" alt="${esc(genus)} corallites${ring ? ', a ring marks the feature' : ''}" loading="lazy">${ring ? `<span class="ring" style="left:${ring[0]}%;top:${ring[1]}%;width:${ring[2] * 2}%" aria-hidden="true"></span>` : ''}</button>
     <figcaption><a href="${genLink(genus)}"><i>${esc(genus)}</i></a> · ${esc(note)}${edit ? `<br><code class="a2xy" data-xy="${k}">tap the photo for x, y</code>` : ''}</figcaption></figure>`;
   const gthumb = (n, list, note, here) => {
     list.push({...viewPhoto(n, 'macro'), genus: n, view: 'macro'});
@@ -640,7 +640,7 @@
             const right = arrOf(n),
               p = pick(DATA.gen[n].views.macro || [viewPhoto(n, 'macro')]);
             const opts = shuffle([pick(right), ...shuffle(ARR.filter(x => !right.includes(x))).slice(0, 3)]);
-            box.innerHTML = `<p class="a2q">How do the corallites sit together?</p><div class="a2drill"><figure class="ringed"><button type="button" class="rphoto" data-k="0" aria-label="Enlarge photo"><img src="${img(p)}" alt="Corallites to classify"></button></figure></div>
+            box.innerHTML = `<p class="a2q">How do the corallites sit together?</p><div class="a2drill"><figure class="ringed"><button type="button" class="rphoto" data-k="0" aria-label="Enlarge photo"><img src="${img(p, fit(Math.min(innerWidth, 800)))}" alt="Corallites to classify"></button></figure></div>
               <div class="choices">${opts.map(x => `<button type="button" class="choice" data-a="${x.id}" style="font-style:normal">${esc(x.name)}</button>`).join('')}</div><p class="a2fb" aria-live="polite"></p>`;
             list.length = 0;
             list.push({...p, view: 'macro'});
