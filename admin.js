@@ -1564,7 +1564,7 @@ const HELP = {
   stats: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). All / Others / Me: everyone, everyone but the name synced in this browser, or only it. Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
-  statsph: `<p>Photo difficulty (Elo) from the answers of players clearly above chance, signed in or not (sheet v18), each weighed by the player's experience: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (from sheet v18; before, weighed answers, so a photo answered once was hidden); few answers = rough. Click a dot to see the photo.</p>
+  statsph: `<p>Photo difficulty (Elo) from the answers of players clearly above chance, signed in or not (sheet v18), each weighed by the player's experience: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (from sheet v18; before, weighed answers, so a photo answered once was hidden); few answers = rough. Genera: one lane per view (colony, close-up, corallites), a dot per photo (bigger and stronger with more answers), the lane's median as a bar, and from 5 photos a box (middle half of the photos) with whiskers; genera sorted by median. Click a dot to see the photo.</p>
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (players' level on the genus is above what the hardest photo of the view can challenge: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
   diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
@@ -4585,7 +4585,18 @@ function statsPhotos() {
     return;
   }
   const ds = L.map(p => p.d).sort((a, b) => a - b),
-    mean = a => a.reduce((t, x) => t + x, 0) / a.length;
+    mean = a => a.reduce((t, x) => t + x, 0) / a.length,
+    // Quantile q of a sorted list, linear between neighbours (the median at 0.5).
+    qtl = (a, q) => {
+      const i = (a.length - 1) * q,
+        k = Math.floor(i);
+      return a[k] + (a[Math.min(k + 1, a.length - 1)] - a[k]) * (i - k);
+    },
+    median = a =>
+      qtl(
+        a.slice().sort((x, y) => x - y),
+        0.5
+      );
   const med = ds[Math.floor(ds.length / 2)],
     sd = Math.sqrt(mean(ds.map(x => (x - mean(ds)) ** 2)));
   // Histogram, 0.1 wide bins, stacked by view.
@@ -4609,7 +4620,7 @@ function statsPhotos() {
         k,
         t: T ? T[k] || k : k,
         a,
-        m: mean(a.map(p => p.d)),
+        m: median(a.map(p => p.d)),
         n: a.reduce((t, p) => t + p.n, 0),
         ok: a.reduce((t, p) => t + p.ok, 0)
       }))
@@ -4624,10 +4635,35 @@ function statsPhotos() {
   const x0 = Math.min(-1, Math.floor(ds[0] * 2) / 2),
     x1 = Math.max(1, Math.ceil(ds[ds.length - 1] * 2) / 2),
     X = d => ((100 * (d - x0)) / (x1 - x0)).toFixed(1) + '%';
-  const strip = a =>
-    `<span class="adm-strip"><b style="left:${X(0)}"></b>${a.map(p => `<button type="button" class="v-${p.view}" style="left:${X(p.d)};top:calc(50% + ${{wide: -4, macro: 4}[p.view] || 0}px)" data-zf="${esc(p.f)}" data-g="${esc(p.genus)}" title="${esc(VIEW_T[p.view] || p.view)} ${sgn(p.d)} · ${p.a} answer${p.a === 1 ? '' : 's'}, ${pct(p.ok, p.n)} right"></button>`).join('')}</span>`;
+  // One lane per view (Pierre, 2026-11-02: the three zoom levels must not mix as photos add up): a dot per photo, its
+  // size and strength growing with its answers (a pale small dot = a rough rating); the lane's median as a tick; from
+  // BOX_MIN photos, a box (quartiles) and whiskers (the farthest photos within 1.5 boxes), behind the dots. Fewer photos
+  // get no box: quartiles of 2-4 values would look more precise than they are.
+  const BOX_MIN = 5,
+    lanes = Object.keys(VIEW_T).filter(v => L.some(p => p.view === v)),
+    dot = p => {
+      const k = Math.min(1, p.a / 10);
+      return `<button type="button" class="v-${p.view}" style="left:${X(p.d)};--s:${(7 + 5 * k).toFixed(1)}px;opacity:${(0.35 + 0.6 * k).toFixed(2)}" data-zf="${esc(p.f)}" data-g="${esc(p.genus)}" title="${esc(VIEW_T[p.view] || p.view)} ${sgn(p.d)} · ${p.a} answer${p.a === 1 ? '' : 's'}, ${pct(p.ok, p.n)} right"></button>`;
+    },
+    lane = (a, v) => {
+      const P = a.filter(p => p.view === v);
+      if (!P.length) return `<span class="adm-strip"><b style="left:${X(0)}"></b></span>`;
+      const d = P.map(p => p.d).sort((x, y) => x - y),
+        med = qtl(d, 0.5);
+      let box = '';
+      if (d.length >= BOX_MIN) {
+        const q1 = qtl(d, 0.25),
+          q3 = qtl(d, 0.75),
+          r = 1.5 * (q3 - q1),
+          lo = d.find(x => x >= q1 - r),
+          hi = d.filter(x => x <= q3 + r).pop();
+        box = `<u style="left:${X(lo)};right:calc(100% - ${X(hi)})"></u><s class="v-${v}" style="left:${X(q1)};right:calc(100% - ${X(q3)})"></s>`;
+      }
+      return `<span class="adm-strip" title="${esc(VIEW_T[v])}: median ${sgn(med)}, ${P.length} photo${P.length === 1 ? '' : 's'}"><b style="left:${X(0)}"></b>${box}${P.map(dot).join('')}<i class="v-${v}" style="left:${X(med)}"></i></span>`;
+    },
+    strip = a => `<span class="adm-lanes">${lanes.map(v => lane(a, v)).join('')}</span>`;
   const table = (Rw, first) =>
-    `<table class="adm-tbl"><thead><tr><th>${first}</th><th>Photos</th><th>Mean</th><th>Right</th></tr></thead><tbody>${Rw.map(r => `<tr><td>${esc(r.t)}</td><td class="n">${r.a.length}</td><td>${sgn(r.m)}</td><td>${pct(r.ok, r.n)}</td></tr>`).join('')}</tbody></table>`;
+    `<table class="adm-tbl"><thead><tr><th>${first}</th><th>Photos</th><th>Median</th><th>Right</th></tr></thead><tbody>${Rw.map(r => `<tr><td>${esc(r.t)}</td><td class="n">${r.a.length}</td><td>${sgn(r.m)}</td><td>${pct(r.ok, r.n)}</td></tr>`).join('')}</tbody></table>`;
   const legend = `<p class="adm-legend">${Object.keys(VIEW_T)
     .filter(v => L.some(p => p.view === v))
     .map(v => `<span><i class="v-${v}"></i>${VIEW_T[v]}</span>`)
