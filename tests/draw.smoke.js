@@ -304,7 +304,9 @@ const server = http.createServer((req, res) => {
             if (seen.some(([a, kk]) => kk === k && at - a < AUTO_DUEL.SAME)) fails.push(`duel ${k} twice within ${AUTO_DUEL.SAME} answers`);
             seen.push([at, k]);
           }
+          const won = AUTOD && i % 10;
           document.querySelector(`[data-c="${CSS.escape(i % 10 ? q[1] : q[2].find(c => c !== q[1]))}"]`).click();
+          if (won && !P[q[1]].du) fails.push('a duel won in the quiz does not count for the duel achievement');
           if (AUTOD && !/^quiz\|d\|k2$/.test(((SYNC && SYNC.log && SYNC.log.slice(-1)[0]) || {}).m || 'quiz|d|k2'))
             fails.push('duel in the quiz not logged quiz|d|k2');
         }

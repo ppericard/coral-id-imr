@@ -307,7 +307,7 @@ function answer(cur, c, target, ph, cor, unseen) {
     abilityStep(c, w, false, 0, k);
   }
   if (good && cor) s.cor = 1; // milestone: right with the corallites photo in view
-  if (good && cur.startsWith('quiz-duel')) s.du = 1; // won a look-alike duel (the duel achievement)
+  if (good && (cur.startsWith('quiz-duel') || (cur === 'quiz' && AUTOD))) s.du = 1; // won a look-alike duel, in the Duel tab or slipped into the quiz (the duel achievement)
   // Mastery exam (EXAM): count an exam question passed; any miss on the genus ends its exam, and so does giving the
   // genus as the answer for another one.
   const exq = EXAMQ === target;

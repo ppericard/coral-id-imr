@@ -114,7 +114,7 @@ Duel tab picks (`duelPick`: the player's own mix-ups first, then pairs players c
 look-alikes), both genera met and ready, never the same pair within 20 answers (`SAME`), at least 5 questions after the
 last one (`GAP`) and 2 after an "Again" (`AGAIN`), never while an "Again" is due, and a mix-up in one of them brings no
 "Again" (its pair comes back through the duel choice, mix-ups first; Codex review #352). Prompt "Look-alikes: A or B?"; logged `quiz|d|k2` (rated 1 in 2, counted
-apart in the player journey). Simulated over 4 seeds, it does not slow the opening of genera (an expert met 27 genera
+apart in the player journey; a win counts for the Look-alike slayer achievement, as in the Duel tab). Simulated over 4 seeds, it does not slow the opening of genera (an expert met 27 genera
 after 100 questions with duels, 26 without, seed 3333); the profiles test now checks an expert's traps at 300
 questions (one or more a question) and more than a beginner's at 100, the mean of the two sitting at the threshold.
 
