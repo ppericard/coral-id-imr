@@ -251,12 +251,13 @@ function stats_(){
     if (trust[who]) {
       const fam = hs.reduce((t, h) => t + (!h[0] ? PHOTO_W.NEW : h[1] >= 2 ? PHOTO_W.KNOWN : 0), 0) / hs.length;
       const dp = ok - (g + (1 - g) * sig(ra[0] - b - fam)), w = n / (n + PHOTO_W.N);
-      ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * dp * w; p[2]++; p[1] += ok; });
+      // Counts are weighed too: they damp later steps and tell the app how sure the rating is (photoDiff).
+      ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * dp * w; p[2] += w; p[1] += ok * w; });
     }
     ra[0] += 0.6 / (1 + n / 40) * d; ra[1]++;
     hs.forEach(h => { h[0]++; h[1] += ok; });
   });
-  Object.keys(P).forEach(f => out.photos[f] = [Math.round(P[f][0] * 100) / 100, P[f][2], P[f][1]]);
+  Object.keys(P).forEach(f => out.photos[f] = [Math.round(P[f][0] * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10]);
   const salt = anonSalt_();
   Object.keys(R).forEach(n => out.ras[aid_(n, salt)] = [Math.round(R[n][0] * 100) / 100, R[n][1]]);
   try { cache.put('stats10', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time

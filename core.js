@@ -227,8 +227,8 @@
             w = n / (n + PHOTO_W.N);
           ph.forEach(p => {
             p[0] -= (0.8 / (1 + p[2] / 10) / ph.length) * dp * w;
-            p[2]++;
-            p[1] += ok;
+            p[2] += w;
+            p[1] += ok * w;
           });
         }
         ra[0] += (0.6 / (1 + n / 40)) * d;
@@ -239,7 +239,7 @@
         });
       });
     const out = {};
-    Object.keys(P).forEach(f => (out[f] = [Math.round(P[f][0] * 100) / 100, P[f][2], P[f][1]]));
+    Object.keys(P).forEach(f => (out[f] = [Math.round(P[f][0] * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10]));
     return out;
   }
 
