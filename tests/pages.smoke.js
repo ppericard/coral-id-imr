@@ -54,6 +54,20 @@ const server = http.createServer((req, res) => {
   const base = `http://127.0.0.1:${server.address().port}/`,
     fails = [];
   const b = await chromium.launch();
+  // The first-encounter card (quiz.js introShow) would cover the quiz in the checks that are not about it: every genus
+  // starts as met on a card, except in a context opened with {intro: true}.
+  const INTROS = JSON.stringify(Object.fromEntries(Object.keys(require('../data.json').gen).map(n => [n, [0, 1]]))),
+    ctxNew = b.newContext.bind(b);
+  b.newContext = async ({intro, ...o} = {}) => {
+    const c = await ctxNew(o);
+    if (!intro)
+      await c.addInitScript(s => {
+        try {
+          localStorage.getItem('imr-coral-intro') || localStorage.setItem('imr-coral-intro', s);
+        } catch (e) {}
+      }, INTROS);
+    return c;
+  };
   for (const w of [390, 1280]) {
     const ctx = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
     // Only this site: photos from iNaturalist and the Google sync are cut off, so the test never depends on them.
@@ -81,7 +95,7 @@ const server = http.createServer((req, res) => {
     // The one-tap question after 15 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
     // A fresh browser that has seen the tour (a tour opened earlier in this context resumes after a reload).
     if (w === 390) {
-      const c2 = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
+      const c2 = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block', intro: true});
       await c2.route(
         u => !u.href.startsWith(base),
         r => r.abort()
@@ -95,9 +109,44 @@ const server = http.createServer((req, res) => {
       q2.on('pageerror', e => e2.push(e.message));
       await q2.goto(base + '#quiz');
       await q2.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      // A player starting from zero first meets INTRO.START genera on cards, one after the other ("1 of 4"), and the
+      // first question is about one of them, its choices among them (Pierre, 2026-11-02).
+      await q2.waitForSelector('.unlock.intro', {timeout: 5000}).catch(() => {});
+      // The quiz's keys never answer the question behind a card (Codex review #350).
+      await q2.keyboard.press('1');
+      if (await q2.evaluate(() => !!document.getElementById('next') || !!P[LEVEL])) fails.push(`${w}px key 1 answered behind a card`);
+      const seen = [];
+      for (let k = 0; k < 6 && (await q2.$('.unlock.intro')); k++) {
+        seen.push(
+          await q2.evaluate(() => ({
+            name: document.querySelector('.unlock.intro h3').textContent,
+            kick: document.querySelector('.unlock.intro .ulkick').textContent,
+            img: !!document.querySelector('.unlock.intro .ulphoto img'),
+            all: !!document.querySelector('.unlock.intro .ulall [data-all]')
+          }))
+        );
+        await q2.click('.unlock.intro .next');
+      }
+      const ch = await q2.evaluate(() => [...document.querySelectorAll('#view [data-c]')].map(b => b.dataset.c));
+      // My progress offers to open every genus (RAs who had the lecture and skipped the button on the first cards).
+      await q2.evaluate(() => (location.hash = 'quiz-board'));
+      await q2.waitForSelector('#openall', {timeout: 5000}).catch(() => {});
+      if (!(await q2.$('#openall'))) fails.push(`${w}px My progress: no button to open all genera`);
+      else {
+        await q2.click('#openall');
+        const left = await q2.evaluate(() => introLeft().length);
+        if (left || (await q2.$('#openall'))) fails.push(`${w}px open all genera: ${left} left`);
+      }
+      await q2.evaluate(() => (location.hash = 'quiz'));
+      await q2.waitForTimeout(500);
+      if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all && c.kick.includes(`${k + 1} of 4`)))
+        fails.push(`${w}px first cards: ${JSON.stringify(seen)}`);
+      else if (!ch.every(c => seen.some(s => s.name === c)))
+        fails.push(`${w}px first question not among the first cards: ${ch.join(', ')}`);
       let at = 0;
       for (let i = 1; i <= 20 && !at; i++) {
         await q2.waitForSelector('#view [data-c]');
+        await q2.evaluate(() => document.querySelectorAll('.unlock.intro').forEach(x => x.remove()));
         await q2.evaluate(() => document.querySelector('#view [data-c]').click());
         await q2.waitForSelector('#next');
         if (await q2.$('#after .pulse')) at = i;

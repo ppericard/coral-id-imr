@@ -616,7 +616,10 @@ function syncTrouble() {
   // Too many wrong codes for this name (anyone can cause it): say so rather than "could not reach the sheet" (code re-review L3).
   if (SYNC.err === 'wait') return 'Not saved yet: too many wrong codes for this name, try again in 10 minutes';
   const n = (SYNC.log || []).length;
-  if (SYNC.err) return n ? `Not saved yet: ${n} answer${n > 1 ? 's' : ''} waiting` : 'Not saved yet: could not reach the sheet';
+  if (SYNC.err)
+    return n
+      ? `Not saved yet: ${n} answer${n > 1 ? 's' : ''} waiting`
+      : 'Not saved online yet: no connection (your progress stays on this phone)';
   return '';
 }
 // The sync sheet's address and this device's sign-in: state that many pages read, kept here with the pages; the code
@@ -1011,6 +1014,7 @@ document.getElementById('signb').onclick = e => {
       delete Q.ba;
       saveQ();
       store.set('imr-coral-reset', new Date().toISOString());
+      introReset(); // the first-meeting cards start over with the progress
       save();
       delete rb.dataset.armed;
       rb.textContent = 'Reset progress';
@@ -1169,7 +1173,9 @@ const draftCand = () =>
         .catch(() => ({}))
     : Promise.resolve({});
 Promise.all([
-  getR('data.json?v=31').then(okJson),
+  getR('data.json?v=32')
+    .then(okJson)
+    .then(d => (window.bootTick && bootTick(), d)),
   curation(),
   forms(),
   json('quality.json?v=3'),

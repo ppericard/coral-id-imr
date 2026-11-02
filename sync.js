@@ -64,6 +64,7 @@ function mergeSaved(j) {
     }
   } catch (e) {}
   achMerge(d[ACHK]); // achievements earned on another device join this one's
+  const introIn = () => introMerge(d[INTRO.KEY], d[INTRO.OFFER.KEY]); // first-meeting cards seen on another device
   let R = {};
   try {
     R = JSON.parse(d['imr-coral-progress'] || '{}') || {};
@@ -75,6 +76,8 @@ function mergeSaved(j) {
   delete SYNC.pending;
   if (lr > rr) return;
   if (rr > lr) {
+    introReset();
+    introIn();
     P = R;
     SYNC.base = copy(R);
     store.set('imr-coral-sync', SYNC);
@@ -83,6 +86,7 @@ function mergeSaved(j) {
     showProg();
     return;
   }
+  introIn();
   // In place: other code holds P by name only, but keep the same object anyway.
   const M = mergeProgress(SYNC.base || {}, P, R);
   Object.keys(P).forEach(g => delete P[g]);
@@ -656,7 +660,11 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       msg('Sending…');
       syncPush().then(j => {
         if (!(j && j.ok))
-          msg(j && j.error === 'pin' ? 'The sheet refused the code for this name.' : 'Could not reach the sheet. Check your connection.');
+          msg(
+            j && j.error === 'pin'
+              ? 'Wrong code for this name.'
+              : 'Could not connect. Check your connection: your progress stays on this phone meanwhile.'
+          );
       });
     };
     // Signing out also clears this device's progress (it is in the sheet): the next player starts empty, and progress
@@ -671,13 +679,26 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       }
       SYNC = null;
       // Achievements and the leaderboard choice belong to the account too: never left to the next player of a shared device.
-      ['imr-coral-sync', 'imr-coral-progress', 'imr-coral-quiz', 'imr-coral-reset', ACHK, BOARD, LOG0, NUDGE, ANONB, ANONID, ANONQ].forEach(
-        k => {
-          try {
-            localStorage.removeItem(k);
-          } catch (e) {}
-        }
-      );
+      // The first-meeting cards too (Codex review #350): the next player meets their own genera.
+      [
+        'imr-coral-sync',
+        'imr-coral-progress',
+        'imr-coral-quiz',
+        'imr-coral-reset',
+        INTRO.KEY,
+        INTRO.OFFER.KEY,
+        ACHK,
+        BOARD,
+        LOG0,
+        NUDGE,
+        ANONB,
+        ANONID,
+        ANONQ
+      ].forEach(k => {
+        try {
+          localStorage.removeItem(k);
+        } catch (e) {}
+      });
       location.reload();
     };
     return;
@@ -720,7 +741,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         signIn(name, pin, j);
         if (!j.found) syncPush().then(() => bindSync());
       })
-      .catch(() => msg('Could not reach the sheet. Check your connection.'));
+      .catch(() => msg('Could not connect. Check your connection: your progress stays on this phone meanwhile.'));
   };
 }
 // Ask the browser not to evict saved progress when storage runs low.

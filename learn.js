@@ -262,7 +262,7 @@ function viewGenus(name) {
 // has got and what it still needs. My progress only had this in a hover tooltip, invisible on touch screens (RA re-review
 // 2026-11-01); tapping a tile there opens this sheet.
 function myProg(n) {
-  const [k, t] = level(n);
+  const [k, t] = shownLevel(n);
   if (k === 'new') return '';
   const st = lvStep(n),
     pc = Math.round(100 * genScore(n)),

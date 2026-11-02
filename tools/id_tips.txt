@@ -7,7 +7,7 @@ Stylophora	Blunt branch tips | Hooded corallites (facing down) | Smooth skeleton
 Anacropora	No axial corallite | Corallites look empty; smooth surface
 Seriatopora	Thin, tangled branches | Black corallites in rows | No hooded corallites
 Porites	Small corallites, shared walls | Honeycomb pattern
-Tubastraea	Dark green to black | Round tubular corallite at each branch end
+Tubastraea	Dark green to black, or bright orange | Round tubular corallite at each branch end
 Echinopora	Untidy branching tangles | Whole colony made of small beads | Spines between large corallites
 Astreopora	Massive | Cylindrical corallites standing out | Corallites look like holes
 Galaxea	Spiky, star-like corallites | Blade-like septa

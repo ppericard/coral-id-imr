@@ -40,7 +40,7 @@ function quizBoard() {
   // tiles showing the slate progress that unlocks them (Pierre, 2026-11-01). They stay out of the ring and the counts.
   const BO = bonusOpen(),
     locked = BONUS.slice(BO.length).map((n, i) => BONUS_AT(BO.length + i));
-  const lv = Object.fromEntries([...list, ...BO].map(n => [n, level(n)]));
+  const lv = Object.fromEntries([...list, ...BO].map(n => [n, shownLevel(n)]));
   const count = k => list.filter(n => lv[n][0] === k).length;
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
   // Learning level on a 6-step scale (one colour ramp, light to dark): 0 = not seen, 1-4 = quarters of the genus's
@@ -157,10 +157,15 @@ function quizBoard() {
     ]
       .map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`)
       .join('')}</div>
-    <div class="pring" style="background:conic-gradient(${ring})"><span><b>${progPct(list)}%</b><small>${count('ok')}/${list.length} learned</small></span></div>
+    <div class="pring" style="background:conic-gradient(${ring})"><span><b>${progPct(list)}%</b><small>${count('ok') ? `${count('ok')}/${list.length} learned` : `${list.length - count('new')}/${list.length} met`}</small></span></div>
     ${badge()}
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera"><b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Learned</p>
+    ${
+      introLeft().length
+        ? `<div class="popen"><p><b>Had the IMR coral lecture?</b> ${introLeft().length} genera are not open yet: they come one at a time as you play.</p><button type="button" class="next" id="openall">Open all genera</button></div>`
+        : ''
+    }
     ${
       weak.length
         ? `<div><h3 class="label">Review first</h3><p class="chips">${weak
@@ -172,6 +177,14 @@ function quizBoard() {
     ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> ↔ <i>${esc(o)}</i> <small>· ${k}×</small></a>`).join('')}</p></div>` : ''}
   </aside></div>`;
   bindQuizNav('quiz-board');
+  const oa = document.getElementById('openall');
+  if (oa)
+    oa.onclick = () => {
+      introAll();
+      NEXTQ = null;
+      save();
+      quizBoard();
+    };
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page).
   const rank = B => {
@@ -318,7 +331,9 @@ const eloScore = a => (typeof a === 'number' ? Math.round(1000 + 200 * a) : '–
 const ELO_MIN = 200;
 const eloLine = G => {
   const n = G ? (G.ok || 0) + (G.ko || 0) : 0;
-  return n >= ELO_MIN && typeof G.th === 'number' ? `Elo ${eloScore(G.th)}` : `<small>Elo in ${ELO_MIN - n} answers</small>`;
+  return n >= ELO_MIN && typeof G.th === 'number'
+    ? `Elo ${eloScore(G.th)}`
+    : `<small>Your rating shows after ${ELO_MIN - n} more answers</small>`;
 };
 // The sync script answers in 1-3 s (a Google Apps Script starting up), whatever its own cache: so the last board is kept
 // on this device (BOARD_C, not an imr-coral key: it never travels with the progress) and shown at once, then replaced
