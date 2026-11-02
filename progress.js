@@ -425,7 +425,7 @@ function achMerge(json) {
     const A = store.get(ACHK, {}) || {},
       old = ra._v !== ACH_V;
     Object.keys(ra).forEach(k => {
-      if (k === '_run' || k === '_v' || k === '_new' || (old && k[0] !== '_')) return;
+      if (k === '_run' || k === '_v' || (old && k[0] !== '_')) return;
       A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] ? Math.min(A[k], ra[k]) : ra[k];
     });
     store.set(ACHK, A);
@@ -490,16 +490,20 @@ function achCheck(silent) {
     fams.add(achFam(a));
     A[id] = t;
   });
-  if (quiet.length && had && !silent) A._new = [...(A._new || []), ...quiet];
   store.set(ACHK, A);
+  if (quiet.length && had && !silent) store.set(ACHNEW, [...achUnseen(), ...quiet]);
   achDot();
   achRecap(silent || !had ? ids : loud);
 }
 // Families: the icons of one kind of milestone (genus progress, learned, Elo).
 const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '👑': '🎓', '🌟': '⭐'},
   achFam = a => ACH_FAM[a.icon] || a.icon;
-// Achievements earned quietly and not seen yet: a dot on 🏆 in the header and on 🏅 in the player's card.
-const achNew = () => ((store.get(ACHK, {}) || {})._new || []).length;
+// Achievements earned quietly and not seen yet: a dot on 🏆 in the header and on 🏅 in the player's card. Kept on this
+// device only (its own key, outside the synced record: a sign-in or another device's sync never brings or drops them;
+// Codex review #360); sign-out clears it with the progress.
+const ACHNEW = 'imr-ach-new',
+  achUnseen = () => store.get(ACHNEW, []) || [],
+  achNew = () => achUnseen().length;
 function achDot() {
   const bg = document.getElementById('boardgo');
   if (bg) bg.classList.toggle('hasnew', achNew() > 0);
@@ -614,11 +618,10 @@ const loadAchs = () => {
 // of players holding it, as on Steam.
 function viewAch() {
   const A = store.get(ACHK, {}) || {},
-    fresh = new Set(A._new || []);
+    fresh = new Set(achUnseen());
   // Seen now: the quiet ones lose their dot, and keep a "New" tag on this visit.
   if (fresh.size) {
-    delete A._new;
-    store.set(ACHK, A);
+    store.set(ACHNEW, []);
     achDot();
   }
   const draw = S => {

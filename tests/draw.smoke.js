@@ -339,16 +339,18 @@ const server = http.createServer((req, res) => {
           const q0 = achQ.length;
           achCheck();
           const B = store.get(ACHK, {}) || {},
+            nw = store.get('imr-ach-new', []),
             popped =
               achQ.slice(q0).some(a => a.id === 'met20') ||
               [...document.querySelectorAll('.achpop b')].some(b => /Wide eyes/.test(b.textContent));
-          if (!B.met20 || !(B._new || []).includes('met20') || popped)
-            fails.push(`quiet achievement: ${JSON.stringify({held: !!B.met20, nw: B._new, popped})}`);
+          // Unseen ones are kept on this device only, never in the synced record (Codex review #360).
+          if (!B.met20 || !nw.includes('met20') || B._new || popped)
+            fails.push(`quiet achievement: ${JSON.stringify({held: !!B.met20, nw, popped})}`);
           if (!document.getElementById('boardgo').classList.contains('hasnew')) fails.push('no "new" dot on 🏆 after a quiet achievement');
           viewAch();
           if (
             !document.querySelector('.achc.new') ||
-            (store.get(ACHK, {}) || {})._new ||
+            store.get('imr-ach-new', []).length ||
             document.getElementById('boardgo').classList.contains('hasnew')
           )
             fails.push('the achievements page did not show and clear the new achievement');
