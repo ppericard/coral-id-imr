@@ -105,9 +105,10 @@
       }
       // First-meeting cards (app model.js INTRO): the first 4 genera together, the others one at a time 2 answers before
       // their first question; Carla opened all from the offer card at answer 40, Ben declined it at answer 50.
-      const mine = rows.filter(r => r[0] === name),
+      const mine = rows.filter(r => r[0] === name).sort((x, y) => x[1] - y[1]), // in time order, as the journey reads them
         intro = {},
-        at = a => (mine[Math.max(0, a - 1)] || mine[0] || [0, NOW])[1],
+        // Shown just after the a-th answer (as in the app: the card's time is after that answer's), before the first one for 0.
+        at = a => (mine[Math.max(0, a - 1)] || mine[0] || [0, NOW])[1] + (a ? 1 : -1),
         openAt = name === 'Carla Demo' ? 40 : null;
       mine.forEach((r, i) => {
         if (intro[r[2]] || (gen[r[2]] || {}).x) return;

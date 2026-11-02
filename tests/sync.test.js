@@ -602,7 +602,10 @@ test('rename (v20): names merged into the renamed player follow it to the archiv
   assert.strictEqual(s.get({name: 'Alias', pin: '4321'}).into, 'Ana-test');
   s.post({name: 'Alias', pin: '4321', data: prog(1), summary: {}, answers: [ans('al2')]});
   assert.ok(!s.sheets.Answers.rows.some(r => r[0] === 'Ana' && r[7] === 'al2'), 'never into the new Ana');
-  assert.ok(s.sheets.Answers.rows.some(r => r[0] === 'Ana-test' && r[7] === 'al2'), 'into the archive');
+  assert.ok(
+    s.sheets.Answers.rows.some(r => r[0] === 'Ana-test' && r[7] === 'al2'),
+    'into the archive'
+  );
 });
 
 test('board: a player saved before v14 ranks by learned / total until their next sync', () => {
