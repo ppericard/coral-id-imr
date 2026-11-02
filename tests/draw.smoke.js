@@ -1,12 +1,15 @@
 // Question draw test (code re-review 2026-11-01, ROADMAP "Test the question draw"): runs the real photoSet() and
 // distractors() of app.js in Chromium, for every genus and several player levels, and checks Pierre's rules:
 // - every photo of a question (shown, hint, revealed after) comes from ONE observation (same colony; AGENTS.md 14b);
-// - never a several-corals or Coral Finder book photo in a game (rule 10); bonus genera: Research Grade or Pierre's only (14a);
+// - never a several-corals or Coral Finder book photo in a game (rule 10); genera off the IMR list (Millepora, bonus):
+//   Research Grade or Pierre's only (14a);
 // - answer choices: 3 distinct genera of the list, never the target; exactly the asked number of traps (look-alikes /
 //   confused genera) when enough exist, none at the very start (14c);
 // - first meetings: genera met on cards before being asked, never right after their card (INTRO), none while the
 //   player falls behind (introHold);
-// - out-of-game prompts at least PROMPT.GAP answers apart (promptOk).
+// - out-of-game prompts at least PROMPT.GAP answers apart (promptOk);
+// - Millepora a slate genus (progress, cards); the bonus genera offered once every slate genus is met and never before,
+//   "Not now" kept, once on opened one card at a time, never counted in the progress, Off out of the draw.
 // Like pages.smoke.js it needs Playwright (CI installs it in a temporary folder; no package.json). Locally:
 // node tests/draw.smoke.js
 const http = require('http'),
@@ -69,7 +72,7 @@ const server = http.createServer((req, res) => {
       RUNS = 30,
       key = x => x.o || x.f,
       bonus = BONUS.filter(n => GX(n));
-    const genera = [...Object.keys(DATA.gen), ...bonus];
+    const genera = [...slateGenera(), ...bonus];
     let draws = 0;
     // Player levels on every genus: new, beginner, middle, strong (ability th on the photo-difficulty scale).
     for (const th of [null, 0, 1, 2.5]) {
@@ -92,13 +95,15 @@ const server = http.createServer((req, res) => {
           all.forEach(x => {
             if (x.multi) fails.push(`${n}: several-corals photo ${x.f} in a game`);
             if (book.has(x.f)) fails.push(`${n}: Coral Finder book photo ${x.f} in a game`);
-            if (g.x && !x.own && x.gid) fails.push(`${n}: bonus genus photo ${x.f} is not Research Grade`);
+            if (g.x && !x.own && x.gid) fails.push(`${n}: photo ${x.f} of a genus off the IMR list is not Research Grade`);
           });
         }
       }
     }
     // Answer choices, from the slate list, at each number of traps.
-    const list = Object.keys(DATA.gen);
+    const list = slateGenera();
+    if (!list.includes('Millepora') || list.length !== Object.keys(DATA.gen).length + 1 || pool().some(isBonus))
+      fails.push(`slate genera: ${list.length}, Millepora ${list.includes('Millepora')}, bonus genera in the pool before any choice`);
     for (const t of list)
       for (const traps of [0, 1, 2, 3])
         for (let i = 0; i < 10; i++) {
@@ -179,7 +184,7 @@ const server = http.createServer((req, res) => {
     // a few answers played through the quiz.
     for (let r = 0; r < 20; r++) {
       P = {};
-      Object.keys(DATA.gen).forEach((n, i) => {
+      slateGenera().forEach((n, i) => {
         const x = (i * 7 + r * 13) % 10;
         if (x === 0) return;
         P[n] =
@@ -201,8 +206,8 @@ const server = http.createServer((req, res) => {
       }
       save();
       const saved = store.get('imr-coral-progress', {});
-      if (progPct() !== pctOf(saved, Object.keys(DATA.gen)))
-        fails.push(`progress %: app ${progPct()} vs core pctOf of the saved progress ${pctOf(saved, Object.keys(DATA.gen))}`);
+      if (progPct() !== pctOf(saved, slateGenera()))
+        fails.push(`progress %: app ${progPct()} vs core pctOf of the saved progress ${pctOf(saved, slateGenera())}`);
     }
     // First meetings (INTRO, Pierre 2026-11-02): from zero, INTRO.START cards then questions among them; every genus
     // asked was met on a card before; one met on a card alone is not asked before INTRO.GAP answers; at least
@@ -236,7 +241,9 @@ const server = http.createServer((req, res) => {
           fails.push(`first question: cards ${now.join(', ')}, asked ${tg}`);
         // The question shown with its genus's card never repeats the card's photo (new-player walkthrough 2026-11-02).
         if (now.includes(tg) && shownF.includes((cover(GX(tg)) || {}).f)) fails.push(`question ${i}: the photo of ${tg}'s card again`);
-        if (!at[tg] && !asked(tg) && !isBonus(tg)) fails.push(`question ${i}: ${tg} asked without its card`);
+        if (!at[tg] && !asked(tg)) fails.push(`question ${i}: ${tg} asked without its card`);
+        if (document.querySelector('.unlock [data-bonus]'))
+          fails.push(`question ${i}: bonus genera offered before every slate genus is met`);
         else if (at[tg] && !at[tg][1] && a < at[tg][0] + INTRO.GAP)
           fails.push(`question ${i}: ${tg} asked ${a - at[tg][0]} answer(s) after its card`);
         const ch = [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c);
@@ -440,12 +447,57 @@ const server = http.createServer((req, res) => {
       const oa = store.get(INTRO.OFFER.KEY, {}) || {};
       if (!oa.open || oa.via !== 'progress' || !oa.t || Object.values(introMap()).some(e => !e[2] || !e[3]))
         fails.push(`open all not recorded for the journey: ${JSON.stringify(oa)}`);
+      // Every slate genus met: the bonus genera are offered once (a prompt: PROMPT.GAP answers after the last one);
+      // "Not now" is kept.
+      let boffers = 0;
+      store.set(PROMPT.KEY, null);
+      delete Q.bon;
       for (let i = 0; i < 30; i++) {
         NEXTQ = null;
         quizPhoto();
+        const bo = document.querySelector('.unlock [data-bonus]');
+        if (bo) {
+          boffers++;
+          bo.closest('.ulcard').querySelector('.sec').click();
+        }
         if (document.querySelector('.unlock.intro')) fails.push('a card after opening all genera');
         document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
         document.querySelector(`[data-c="${CSS.escape(tg)}"]`).click();
+      }
+      if (boffers !== 1 || Q.bon !== false || pool().some(isBonus))
+        fails.push(`bonus offer after every slate genus met: shown ${boffers} time(s), Q.bon ${Q.bon}`);
+      // On (⚙): they join the genera not met yet and open one card at a time, at least INTRO.EVERY answers apart, each
+      // asked only after its card; their answers never move the progress; Off takes them out again, progress kept.
+      bonusSet(true);
+      {
+        const B = BONUS.filter(n => GX(n)),
+          cards = [];
+        if (!B.every(n => pool().includes(n)) || B.some(introduced)) fails.push('bonus genera on: not in the pool as genera not met');
+        for (let i = 0; i < 150; i++) {
+          NEXTQ = null;
+          const a = answersSoFar(),
+            before = new Set(Object.keys(INTROS));
+          quizPhoto();
+          for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
+          if (document.querySelector('.unlock [data-bonus]')) fails.push('bonus offer made again');
+          const now = Object.keys(INTROS).filter(n => !before.has(n));
+          if (now.length) cards.push([a, now]);
+          if (isBonus(tg) && !introduced(tg)) fails.push(`${tg} asked without its card`);
+          document.querySelectorAll('.unlock').forEach(x => x.remove());
+          document.querySelector(`[data-c="${CSS.escape(tg)}"]`).click();
+        }
+        cards.forEach(([a, L], i) => {
+          if (L.length !== 1 || !isBonus(L[0])) fails.push(`bonus cards: ${L.join(', ')} at ${a} answers`);
+          if (i && a - cards[i - 1][0] < INTRO.EVERY) fails.push(`two bonus cards ${a - cards[i - 1][0]} answer(s) apart`);
+        });
+        if (cards.length < 2) fails.push(`only ${cards.length} bonus genus card(s) in 150 questions`);
+        // Their own progress grows, the slate's % does not count it.
+        const pb = {...P};
+        B.forEach(n => (P[n] = {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: 1}));
+        if (progPct() !== progPct(slateGenera()) || slateGenera().some(isBonus)) fails.push('bonus genera counted in the progress');
+        P = pb;
+        bonusSet(false);
+        if (pool().some(isBonus) || !B.some(n => P[n])) fails.push('bonus genera off: still in the pool, or their progress lost');
       }
       question = q0;
       INTROS = {};

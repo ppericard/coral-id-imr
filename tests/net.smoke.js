@@ -51,9 +51,10 @@ const server = http.createServer((req, res) => {
   const base = `http://127.0.0.1:${server.address().port}/`;
   const b = await chromium.launch(),
     fails = [];
-  // The first-encounter card (quiz.js introShow) would cover the quiz in the checks that are not about it: every genus
-  // starts as met on a card, except in a context opened with {intro: true}.
-  const INTROS = JSON.stringify(Object.fromEntries(Object.keys(require('../data.json').gen).map(n => [n, [0, 1]]))),
+  // The first-encounter card (quiz.js introShow) would cover the quiz in the checks that are not about it: every slate
+  // genus (Millepora too, app.js BENTHIC) starts as met on a card, except in a context opened with {intro: true}; the
+  // bonus genera offer that then comes (every slate genus met) is answered "Not now" (Q.bon false).
+  const INTROS = JSON.stringify(Object.fromEntries([...Object.keys(require('../data.json').gen), 'Millepora'].map(n => [n, [0, 1]]))),
     ctxNew = b.newContext.bind(b);
   b.newContext = async ({intro, ...o} = {}) => {
     const c = await ctxNew(o);
@@ -61,6 +62,7 @@ const server = http.createServer((req, res) => {
       await c.addInitScript(s => {
         try {
           localStorage.getItem('imr-coral-intro') || localStorage.setItem('imr-coral-intro', s);
+          localStorage.getItem('imr-coral-quiz') || localStorage.setItem('imr-coral-quiz', '{"bon":false}');
         } catch (e) {}
       }, INTROS);
     return c;

@@ -28,12 +28,13 @@
 //   montage). A first-meeting card teaches like one right answer. No forgetting (no time in the app either).
 //
 // Measures, at each checkpoint (50, 100, 200, 300 questions, then every 300), mean +- sd over the seeds:
-// - know39: true mean know over the 39 slate genera; knowMet: over the genera met (cards or asked).
+// - knowSlate: true mean know over the slate genera (the 39 of the IMR coral slate and Millepora); knowMet: over the
+//   genera met (cards or asked).
 // - thErr / thBias: mean |theta - logit(know)| and mean (theta - logit(know)) over the genera met, theta = ability(g),
 //   the app's Elo estimate (the learner's own model has the same scale: theta = logit(know) means a perfect estimate;
 //   theta is clamped to ELO.lo..hi, so a genus known at 2% cannot be estimated below -1.5).
 // - progGap: mean (genScore(g) - know[g]) over the genera met: > 0 the progress bar over-claims, < 0 it under-claims;
-//   prog / know%: the app's progress over the 39 (progPct) next to 100 x know39.
+//   prog / know%: the app's progress over the slate (progPct) next to 100 x knowSlate.
 // - met, learned (s.mx), right % over the questions since the previous checkpoint.
 // - look: true chance to tell a declared look-alike pair apart (IMR lecture / Coral Finder, `look`, both genera on the
 //   slate), in a 2-choice question on an average photo, both directions averaged, over every declared pair.
@@ -41,6 +42,8 @@
 //   difficulty +1 and the single-view 0.5, 4 choices: the genus and its 3 most confusable slate genera by pooledConf).
 // - exam: genera that entered the mastery exam so far (examOn true, or an exam question shown), and refEntry, their
 //   mean true success on the hard reference question at the moment they entered; refLearned, the same when learned.
+// - Per run: when Millepora was met and first asked, when the bonus genera were offered (every slate genus met; the
+//   simulated player accepts, "Add them"), and the share of the questions on bonus genera after that.
 const http = require('http'),
   fs = require('fs'),
   os = require('os'),
@@ -50,7 +53,7 @@ const ROOT = path.join(__dirname, '..');
 
 // Profiles: the three players of profiles.smoke.js (same definitions: beginner, RA = "lectureRA", expert) and a strong
 // RA who knows 60% of the genera well (docs/LEARNING.md, the open-all offer and the opening hold). know of slate genus i
-// (data.json order) = hi when i % 5 < m, else lo; bonus genera = lo. rate: RATE of the learner below.
+// (slateGenera() order: data.json, then Millepora) = hi when i % 5 < m, else lo; bonus genera = lo. rate: RATE of the learner below.
 const PROFILES = {
   beginner: {m: 0, hi: 0.02, lo: 0.02, rate: 0.12},
   lectureRA: {m: 2, hi: 0.55, lo: 0.1, rate: 0.12},
@@ -131,7 +134,7 @@ function play(cfg) {
   };
   Math.random = gen((seed * 2246822519) ^ 0x85ebca6b);
   const rnd = gen((seed * 2654435761) ^ 0x9e3779b9);
-  const SL = Object.keys(DATA.gen),
+  const SL = slateGenera(),
     know = {};
   SL.forEach((g, i) => (know[g] = i % 5 < prof.m ? prof.hi : prof.lo));
   BONUS.forEach(g => (know[g] = prof.lo));
@@ -192,7 +195,15 @@ function play(cfg) {
     nDuel = 0,
     nAgain = 0,
     nCards = 0;
+  const mill = {met: null, asked: null},
+    bon = {offer: null, n: 0, q: 0};
   for (let i = 0; i < N; i++) {
+    // Achievement toasts have gone by the next question (4 s in the app; no time passes in this loop), and the sign-in
+    // card is closed: the out-of-game prompts (the bonus genera offer among them) wait for neither (quiz.js promptOk).
+    document.querySelectorAll('.achpop').forEach(x => x.remove());
+    achQ.length = 0;
+    achBusy = false;
+    document.querySelectorAll('.unlock:not(.intro)').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
     // Through the real planner (Codex review #365): the questions planned ahead stay after a right answer, as in the app.
     // Its own top-ups are timers, which never fire inside this synchronous loop, so they are called here instead.
     quizPhoto();
@@ -200,6 +211,12 @@ function play(cfg) {
     const q = SHOWNQ;
     // The first-meeting cards, read through: each teaches like one right answer.
     (q.intro || []).forEach(g => (teach(g, prof.rate), nCards++));
+    // The bonus genera offer (every slate genus met): accepted.
+    const bo = document.querySelector('.unlock [data-bonus]');
+    if (bo) {
+      if (bon.offer === null) bon.offer = i + 1;
+      bo.click();
+    }
     for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
     const [, t, , , set] = window.__q,
       ch = [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c),
@@ -227,6 +244,12 @@ function play(cfg) {
     if (!good) teach(pick, prof.rate * L.PICKED);
     blk.n++;
     blk.ok += good;
+    if (mill.met === null && introduced('Millepora')) mill.met = i + 1;
+    if (mill.asked === null && t === 'Millepora') mill.asked = i + 1;
+    if (bon.offer !== null && bon.offer <= i + 1) {
+      bon.q++;
+      if (isBonus(t)) bon.n++;
+    }
     SL.forEach(g => {
       if (!(g in entry) && inExam(g)) entry[g] = {q: i + 1, ref: ref(g), know: know[g]};
       if (!(g in learnedAt) && (P[g] || {}).mx) learnedAt[g] = {q: i + 1, ref: ref(g), know: know[g]};
@@ -238,7 +261,7 @@ function play(cfg) {
         le = Object.values(learnedAt);
       rows.push({
         q: i + 1,
-        know39: mean(SL.map(g => know[g])),
+        knowSlate: mean(SL.map(g => know[g])),
         knowMet: mean(met.map(g => know[g])),
         thErr: mean(th.map(Math.abs)),
         thBias: mean(th),
@@ -260,7 +283,17 @@ function play(cfg) {
       blk = {n: 0, ok: 0};
     }
   }
-  return {rows, entry, learnedAt, pairs: PAIRS.length};
+  return {
+    rows,
+    entry,
+    learnedAt,
+    pairs: PAIRS.length,
+    millMet: mill.met,
+    millAsked: mill.asked,
+    bonusOffer: bon.offer,
+    bonusShare: bon.q ? bon.n / bon.q : null,
+    bonusMet: BONUS.filter(introduced).length
+  };
 }
 
 async function run(browser, base, name, seed) {
@@ -287,7 +320,7 @@ async function run(browser, base, name, seed) {
 }
 
 const KEYS = [
-  ['know39', 'know39', 2, 1],
+  ['knowSlate', 'knowSlate', 2, 1],
   ['knowMet', 'knowMet', 2, 1],
   ['thErr', '|th-lk|', 2, 1],
   ['thBias', 'th-lk', 2, 1],
@@ -362,11 +395,24 @@ function table(S) {
     `\nLearning-outcome simulation: ${NAMES.join(', ')}; ${SEEDS} seeds x ${QN} questions; ${runs.length} runs in ${secs.toFixed(0)} s (${WORKERS} workers)`
   );
   console.log(
-    'know39/knowMet: true knowledge (39 slate / met); |th-lk|, th-lk: Elo ability vs logit(know), genera met; prog-know: genScore - know, genera met;\n' +
-      "prog%: the app's progress over the 39; right%: since the previous row; look: true look-alike pair accuracy; ref>=.9: genera truly passing the\n" +
+    'knowSlate/knowMet: true knowledge (slate / met); |th-lk|, th-lk: Elo ability vs logit(know), genera met; prog-know: genScore - know, genera met;\n' +
+      "prog%: the app's progress over the slate; right%: since the previous row; look: true look-alike pair accuracy; ref>=.9: genera truly passing the\n" +
       'hard reference question 90%; exam: genera entered in the mastery exam; ref@exam / ref@learn: their true reference success then (genera counted).'
   );
   console.log(table(S));
+  // Millepora met / first asked and the bonus offer, per profile: median question over the runs where it happened.
+  const med = A => {
+    const v = A.filter(x => typeof x === 'number').sort((a, b) => a - b);
+    return v.length ? (v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2) : '-';
+  };
+  console.log('\nMillepora met / first asked, bonus genera offered (median question, runs where it happened), bonus share after the offer:');
+  for (const name of NAMES) {
+    const R = runs.filter(r => r.profile === name),
+      n = k => R.filter(r => typeof r[k] === 'number').length;
+    console.log(
+      `  ${name}: met ${med(R.map(r => r.millMet))} (${n('millMet')}/${R.length}), asked ${med(R.map(r => r.millAsked))} (${n('millAsked')}/${R.length}), offer ${med(R.map(r => r.bonusOffer))} (${n('bonusOffer')}/${R.length}), share ${R.some(r => r.bonusShare !== null) ? (100 * med(R.map(r => r.bonusShare))).toFixed(0) + '%' : '-'}, bonus met ${med(R.map(r => r.bonusMet))}`
+    );
+  }
   if (errs.length) console.log('\nPage errors: ' + errs.slice(0, 5).join(' | '));
   if (OUT) {
     fs.writeFileSync(

@@ -112,7 +112,7 @@
   // name kept, both as saved by the app (progData: localStorage key -> string). Their answers are different answers, so
   // counts add up (ok, ko, mix-ups, offers, photos seen), milestones are kept if either has them, and the per-genus model
   // (ability th, knowledge L, recent results h...) comes from whichever account answered that genus more. Settings are
-  // B's; bonus genera unlocked on either stay unlocked. Returns B's data with the merged progress.
+  // B's; bonus genera unlocked or on (bon) on either stay so. Returns B's data with the merged progress.
   function mergeUsers(A, B) {
     A = A || {};
     B = B || {};
@@ -164,8 +164,11 @@
     const out = {...A, ...B, 'imr-coral-progress': JSON.stringify(P)},
       qa = J(A, 'imr-coral-quiz'),
       qb = J(B, 'imr-coral-quiz');
-    if (qa || qb)
-      out['imr-coral-quiz'] = JSON.stringify({...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)});
+    if (qa || qb) {
+      const q = {...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)};
+      if ((qa || {}).bon || (qb || {}).bon) q.bon = true;
+      out['imr-coral-quiz'] = JSON.stringify(q);
+    }
     return out;
   }
 
@@ -650,7 +653,7 @@
   // Learning milestones only, never time or days played (the learning model's rule). Each has a family, a tier
   // (1 bronze, 2 silver, 3 gold) and a test on a snapshot the app builds (app.js achSnap):
   //   {total, met, q: [genera at >= 25%, >= 50%, >= 75%], learned, pct, streak (best run of right answers), duel, cor,
-  //    hard, elo (0 until 200 answers, app.js ELO_MIN: it moves a lot before), group (an IMR lecture group fully learned), bonus}.
+  //    hard, elo (0 until 200 answers, app.js ELO_MIN: it moves a lot before), group (an IMR lecture group fully learned), bonus (bonus genera met)}.
   // Median questions to reach the quarter rungs, simulated with the real game (2026-11-01, 75% / 90% right): 5 at 25%
   // 76 / 57, 10 at 50% 231 / 137, 5 at 75% 363 / 203, first learned ~430 / ~300.
   // Descriptions say what the player can now do (Pierre, 2026-11-02: informational feedback motivates, Deci, Koestner &
@@ -688,7 +691,7 @@
     ['elo1300', 'Elo 1300', 'Reached an Elo of 1300', 3, '⭐', s => s.elo >= 1300],
     ['elo1400', 'Elo 1400', 'Reached an Elo of 1400', 3, '🌟', s => s.elo >= 1400],
     ['group', 'Group complete', 'You know a whole IMR lecture group', 3, '🧩', s => s.group],
-    ['bonus', 'Off the list', 'You unlocked a genus off the IMR list', 2, '🔓', s => s.bonus >= 1]
+    ['bonus', 'Off the list', 'You met a bonus genus, off the IMR list', 2, '🔓', s => s.bonus >= 1]
   ].map(([id, title, desc, tier, icon, test]) => ({id, title, desc, tier, icon, test}));
   // The achievements a snapshot meets that `have` ({id: time}) does not hold yet, in list order.
   const newAch = (snap, have) => ACH.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);

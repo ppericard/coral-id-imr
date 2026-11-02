@@ -217,14 +217,16 @@ function viewGenus(name) {
   <article class="sheet">
     ${imr.length || g.x ? '' : `<p class="lede keyid">${esc(g.sum)}</p>`}
     ${
-      g.x
-        ? `<p class="warn"><b>Not on the IMR list.</b> A rarer genus seen at Dauin${g.x.nonscl ? ', and not a true hard coral' : ''}.</p>`
-        : g.n
-          ? ''
-          : `<p class="warn"><b>★ Not surveyed by IMR.</b> It is on the slate so you don't mistake it for ${g.look
-              .filter(n => DATA.gen[n].n)
-              .map(n => '<i>' + esc(n) + '</i>')
-              .join(', ')}, so you need to recognise it and set it aside.</p>`
+      isBenthic(name)
+        ? `<p class="warn">${BENTHIC_NOTE}</p>`
+        : g.x
+          ? `<p class="warn"><b>Not on the IMR list.</b> A rarer genus seen at Dauin${g.x.nonscl ? ', and not a true hard coral' : ''}.</p>`
+          : g.n
+            ? ''
+            : `<p class="warn"><b>★ Not surveyed by IMR.</b> It is on the slate so you don't mistake it for ${g.look
+                .filter(n => DATA.gen[n].n)
+                .map(n => '<i>' + esc(n) + '</i>')
+                .join(', ')}, so you need to recognise it and set it aside.</p>`
     }
     ${myProg(name)}
     <div class="hero">
@@ -338,6 +340,7 @@ function lookHub(name) {
 // in the lecture group most of their Coral Finder look-alikes belong to (ties: the first listed look-alike).
 function shownGroup(n) {
   const g = DATA.gen[n];
+  if (!g) return 0; // Millepora and the bonus genera: no lecture group
   if (g.ig) return g.ig;
   const L = g.look.filter(b => DATA.gen[b] && DATA.gen[b].ig),
     c = {};
@@ -549,12 +552,12 @@ function fitLk() {
 }
 addEventListener('resize', fitLk);
 function viewCompare(a, b) {
-  // Bonus genera can be compared with a slate genus or with each other (quiz mix-ups).
-  const A = DATA.gen[a] || (isBonus(a) && GX(a)),
-    B = DATA.gen[b] || (isBonus(b) && GX(b));
+  // Millepora and the bonus genera can be compared with a slate genus or with each other (quiz mix-ups).
+  const A = gameGenus(a) && GX(a),
+    B = gameGenus(b) && GX(b);
   if (!A || !B) return viewLookalikes();
   const col = (n, g) =>
-    `<div class="cmpcol"><h3><i>${esc(n)}</i>${g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'} <a class="linkish cmpsheet" href="#g-${esc(n)}">Sheet ›</a></h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p><div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}</div><details class="more"><summary>Coral Finder</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>`;
+    `<div class="cmpcol"><h3><i>${esc(n)}</i>${isBenthic(n) ? ' <small>fire coral</small>' : g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'} <a class="linkish cmpsheet" href="#g-${esc(n)}">Sheet ›</a></h3><p class="note">${esc(g.fam)}${g.ig ? ' · IMR group ' + g.ig : ''}</p><div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}</div><details class="more"><summary>Coral Finder</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>`;
   const flat = [];
   const row = ([v, label]) => {
     const cell = (n, g) => {

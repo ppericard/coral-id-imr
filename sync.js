@@ -34,8 +34,9 @@ function loadStats() {
     })
     .catch(() => {});
 }
+// The slate genera (Millepora included since 2026-11-02): the sheet's "By genus" columns and the leaderboard % follow them.
 function syncSummary() {
-  const n = Object.keys(DATA.gen),
+  const n = slateGenera(),
     genera = Object.fromEntries(n.map(x => [x, level(x)[0]]));
   return {
     learned: n.filter(x => genera[x] === 'ok').length,
@@ -75,6 +76,23 @@ function mergeSaved(j) {
   if (SYNC.pending && d['imr-coral-progress'] === SYNC.pending) SYNC.base = R;
   delete SYNC.pending;
   if (lr > rr) return; // the sheet's hold too counts from its older reset: this device's stays
+  // The Bonus genera choice made on another device, if more recent than this one's (or made there only; Codex review #371);
+  // after the reset check, so a choice saved before this device's newer reset does not come back.
+  try {
+    const rq = JSON.parse(d['imr-coral-quiz'] || '{}') || {};
+    if (typeof rq.bon === 'boolean' && (Q.bon === undefined || (rq.bonT || 0) > (Q.bonT || 0))) {
+      Q.bon = rq.bon;
+      Q.bonT = rq.bonT || 0;
+      saveQ();
+      showBon();
+    } else if (rr > lr && typeof rq.bon !== 'boolean' && Q.bon !== undefined) {
+      // A progress reset made on another device: the offer comes again here too.
+      delete Q.bon;
+      delete Q.bonT;
+      saveQ();
+      showBon();
+    }
+  } catch (e) {}
   // The opening hold from every answer the sheet has (v23, model.js holdSync), with this device's unconfirmed ones added.
   const holdIn = () => typeof holdSync === 'function' && holdSync(j.hold, SYNC.log, j.holdIds);
   if (rr > lr) {
@@ -350,7 +368,7 @@ function reportDialog(c, btn) {
   d = document.createElement('dialog');
   d.id = 'repdlg';
   d.className = 'repdlg';
-  const names = [...Object.keys(DATA.gen), ...bonusOpen()].sort(),
+  const names = [...slateGenera(), ...bonusList()].sort(),
     kind = c.k || 'game',
     where = hashNow() || 'home';
   d.innerHTML = `<form method="dialog">
