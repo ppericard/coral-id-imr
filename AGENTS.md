@@ -82,12 +82,13 @@ These came from Pierre's explicit feedback. When in doubt, follow them over your
 
 | Path | What |
 |---|---|
-| `index.html`, `app.js`, `app.css` | The public app (router, all main pages, games, progress, sync). |
+| `index.html`, `app.js`, `app.css` | The public app (router, all main pages, games, progress). |
+| `sync.js` | The link with the sync sheet, split out of `app.js` (code review L1, 2026-11-02): signed-in progress (`syncPush`, `syncPull`), photo statistics (`loadStats`), players' reports (`reportDialog`), answers of players not signed in (`sendAnon`), the app's own error reports and one-tap answers (`ev`, `pulse`), signing in (`signIn`, `bindSync`). A classic script loaded right after `app.js` (it shares its top-level names); `app.js` waits for every script (`window.BOOT`) before its first page. Required like `app.js` (the loader tries it 3 times, the service worker keeps it); the state the pages read (`SYNC_URL`, `LOCAL`, `SYNC`, `syncTrouble`) stays in `app.js`. |
 | `core.js` | Pure functions shared by app and admin, tested in `tests/`: Pierre's curation and the photos per context (`applyCuration`, `applySlots`, `CAP`), curation merge (`merge3`, `mergeOld`), two-device progress merge (`mergeProgress`), photo Elo replay (`eloOf`, same rules as `Code.gs` `stats_`). |
 | `tests/` | `node --test tests/*.test.js`: `core.js`, the sync script against an in-memory sheet (`gas.js`), and Pierre's photo rules on the real `data.json` + `curation.json` (`photos.test.js`: no book, several-corals or sheet-only photo in games, exclusions and hides applied, pins first, IMR/own first). Add a case there when you add a photo rule. `draw.smoke.js` runs the real `photoSet()` / `distractors()` in Chromium (one observation per question, no multi or book photo, bonus Research Grade only, traps as asked): extend it when you change the question draw. |
 | `home.js`, `home-art.js`, `home.css` | Home page and its SVG schematics. |
 | `tour.js` | First-visit guided tour (`?tour` forces it). |
-| `flag.js` | ⚑ "bad photo" button, only in Pierre's admin browser (players report problems with `repBtn()`/`reportDialog()` in `app.js`, read in admin Triage). |
+| `flag.js` | ⚑ "bad photo" button, only in Pierre's admin browser (players report problems with `repBtn()`/`reportDialog()` in `sync.js`, read in admin Triage). |
 | `proto/` | Lab/Tools prototypes (`lab.js` hub + one file per tool); `finder.js` is the graduated Coral Finder. |
 | `admin.html`, `admin.js`, `admin.css` | Pierre's photo curation back-office. |
 | `data.json` | All genus data and photo lists (the served source of truth). |
