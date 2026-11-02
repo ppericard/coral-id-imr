@@ -9,11 +9,11 @@ const SHELL = [
   'index.html',
   'app.css?v=113',
   'core.js?v=16',
-  'app.js?v=167',
+  'app.js?v=168',
   'sync.js?v=3',
-  'progress.js?v=4',
-  'model.js?v=4',
-  'quiz.js?v=5',
+  'progress.js?v=5',
+  'model.js?v=5',
+  'quiz.js?v=6',
   'learn.js?v=2',
   'flag.js?v=9',
   'quality.json?v=3',
@@ -26,15 +26,15 @@ const SHELL = [
   'fonts/barlow-condensed-700-normal.woff2',
   'manifest.webmanifest',
   'curation.json',
-  'proto/lab.js?v=68',
-  'proto/lab.css?v=49',
+  'proto/lab.js?v=69',
+  'proto/lab.css?v=50',
   'home-art.js?v=4',
   'home.js?v=25',
   'home.css?v=22',
-  'tour.js?v=13',
+  'tour.js?v=14',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'].map(
-    f => `proto/${f}.js?v=67`
+    f => `proto/${f}.js?v=68`
   )
 ];
 const get = async (c, u, n = 3) => {
