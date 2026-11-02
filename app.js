@@ -667,11 +667,6 @@ const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 // Progress per genus {ok, ko, streak, conf}, kept in this browser only.
 let P = store.get('imr-coral-progress', {}) || {};
 const save = () => {
-  // How far each genus's % may go, from the look-alikes it has faced (model.js coverOf), saved for the sheet's leaderboard.
-  if (typeof coverOf === 'function' && DATA)
-    Object.keys(P).forEach(n => {
-      if (n in DATA.gen && P[n] && typeof P[n] === 'object') P[n].cv = coverOf(n);
-    });
   store.set('imr-coral-progress', P);
   prog();
   syncSoon();
@@ -1352,9 +1347,6 @@ const SETUP = {
     // the achievement record is migrated and counted here, before any answer.
     achMigrate();
     achCheck(); // before My progress opens, so its badge counts them
-    // Progress saved before a change of what the bar may claim (look-alike limit, model.js coverOf): saved again once,
-    // so the leaderboard (sheet) shows the same % as the app from this visit on.
-    if (Object.keys(P).some(n => n in DATA.gen && P[n] && typeof P[n] === 'object' && P[n].cv !== coverOf(n))) save();
     prog();
     window.APP_READY = true; // Home, the quiz and the Learn pages work (tests and tools/perf.js wait for this)
   },
@@ -1362,7 +1354,6 @@ const SETUP = {
     syncPull();
     sendAnon();
     boardNotice();
-    newsNotice();
     loadBoard();
     loadAchs();
   },

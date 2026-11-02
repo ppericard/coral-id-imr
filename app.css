@@ -5647,7 +5647,6 @@ footer .rep:hover {
   display: flex;
   gap: 10px;
   align-items: center;
-  width: max-content; /* centred by left 50%: without it the note shrinks to half the screen (a 4-line note on phones) */
   max-width: min(92vw, 520px);
   padding: 10px 14px;
   border: 1px solid var(--line);

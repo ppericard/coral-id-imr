@@ -670,27 +670,6 @@ function boardNotice() {
   );
   t.querySelector('a').onclick = () => t.remove();
 }
-// What's new (Pierre, 2026-11-02: when a change alters what returning players see, progress recalculated for everyone
-// above all, say so at their next visit; sparingly, not for every release). The newest note of NEWS this device has not
-// shown yet, once, as the bottom note (appToast: nothing to tap through). A device with no answer yet has nothing to
-// compare: its notes count as shown. Add a note only for a change players would otherwise wonder about (AGENTS.md).
-const NEWS = [
-    {
-      id: 'progress-lookalikes',
-      html: '📈 <b>Progress recalculated.</b> A genus now counts as learned only once you have told it apart from its look-alikes in the quiz, so some of your % went down. None of your answers is lost.'
-    }
-  ],
-  NEWSK = 'imr-news';
-function newsNotice() {
-  const seen = store.get(NEWSK, []) || [],
-    left = NEWS.filter(x => !seen.includes(x.id));
-  if (!left.length) return;
-  store.set(
-    NEWSK,
-    NEWS.map(x => x.id)
-  );
-  if (answersSoFar() > 0) appToast(left[left.length - 1].html, 20000);
-}
 // A short note at the bottom of the screen (.apptoast; html is the app's own text), closed by ✕ or after ms.
 function appToast(html, ms) {
   const t = document.createElement('div');

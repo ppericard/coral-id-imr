@@ -215,17 +215,6 @@ met the 39 slate genera almost at once.
   a miss lifted the genus).
 - **Mastery exam**: at L ≥ 0.95, `EXAM.n` = 5 hard questions on the genus alone, unannounced, at least `EXAM.gap` = 8
   answers apart; all right = Learned. No time criteria anywhere (rule).
-- **Tested against its look-alikes** (`coverOf`, Pierre, 2026-11-02): "a genus can't be confirmed as learned before it
-  has been compared with the genera it gets confused with". Trying the app from zero, Pierre had a genus at 95% with 8
-  genera open; an RA's answers fell apart once more genera opened (above). A right answer among a few easy genera says
-  little about telling the genus apart from all 39. Its look-alikes are the lecture's and the Coral Finder's (`isLook`,
-  1 to 5 a genus); one is **faced** once it was offered beside the genus, either way round, and not picked by mistake
-  that time (`s.off` offers > `s.conf` mix-ups). The genus's bar stops at (faced + 1) / (look-alikes + 1) of its way
-  (3 look-alikes, none faced: a quarter of 95%; all faced: no limit), its mastery exam waits until every look-alike is
-  faced, and its sheet's "Still needed" names the ones left. L itself is unchanged: only what the bar and the exam claim.
-  Saved with the progress as `s.cv` (`app.js save`) so the leaderboard % (sheet v22 `pctOf_`, `core.js pctOf`) applies
-  the same limit. Simulated (`profiles.smoke`): an expert still mastered genera by question 200 (2 by 300, 1 before),
-  since they meet every genus early.
 - **Where L starts** (2026-11-02, Pierre's point 3): `BKT.L0` for everyone, except a player whose global level is
   clearly high and rests on `BKT.LVN` (30) answers or more: then up to `BKT.L0MAX` (0.5), growing continuously from
   level `BKT.LV0` (0.5) to `LV0 + LVR` (2.0). An empirical-Bayes prior, as the Elo start of a new genus already uses the

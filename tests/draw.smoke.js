@@ -183,27 +183,8 @@ const server = http.createServer((req, res) => {
                 ...(x === 8 && r % 2 ? {mx: 1} : {})
               };
       });
-      save(); // saves each genus's look-alike limit (cv) with the progress, as after an answer
       if (progPct() !== pctOf(P, Object.keys(DATA.gen)))
         fails.push(`progress %: app ${progPct()} vs core pctOf ${pctOf(P, Object.keys(DATA.gen))}`);
-    }
-    // Tested against its look-alikes (coverOf, Pierre 2026-11-02): a 97% genus none of whose look-alikes was offered
-    // beside it stops at (0 + 1) / (look-alikes + 1) of its way and gets no exam; once each was offered and not picked,
-    // either way round, no limit.
-    {
-      const t = 'Pocillopora',
-        L = Object.keys(DATA.gen).filter(x => x !== t && isLook(t, x));
-      P = {[t]: {ok: 20, ko: 0, L: 0.97, h: '1111111111'}};
-      const cap = Math.round(100 / (L.length + 1)) / 100;
-      if (!L.length || coverOf(t) !== cap || Math.abs(genScore(t) - 0.95 * cap) > 1e-9 || examOn(t))
-        fails.push(`look-alike limit: ${JSON.stringify({L, cv: coverOf(t), score: genScore(t), exam: examOn(t)})}`);
-      P[t].off = {[L[0]]: 2};
-      P[t].conf = {[L[0]]: 2}; // offered twice, picked twice: not faced
-      if (coverOf(t) !== cap) fails.push('a look-alike picked each time it was offered counts as faced');
-      L.forEach((x, i) => (i % 2 ? (P[x] = {ok: 1, ko: 0, off: {[t]: 1}}) : (P[t].off[x] = 3)));
-      if (coverOf(t) !== 1 || genScore(t) !== 0.95 || !examOn(t))
-        fails.push(`look-alikes all faced: ${JSON.stringify({cv: coverOf(t), score: genScore(t), exam: examOn(t)})}`);
-      P = {};
     }
     // First meetings (INTRO, Pierre 2026-11-02): from zero, INTRO.START cards then questions among them; every genus
     // asked was met on a card before; one met on a card alone is not asked before INTRO.GAP answers; at least
@@ -449,17 +430,6 @@ const server = http.createServer((req, res) => {
       session.h = Array.from({length: 10}, (_, i) => i < 7);
       if (introHold()) fails.push('held at 7 right of 10 where 8 were expected');
       Object.assign(session, s0);
-    }
-    // What's new (NEWS, progress.js): the newest note shown once to a device that has answers, never again.
-    {
-      store.set(NEWSK, []);
-      document.querySelectorAll('.apptoast').forEach(x => x.remove());
-      if (!answersSoFar()) fails.push('news test needs answers');
-      newsNotice();
-      const one = document.querySelectorAll('.apptoast').length;
-      document.querySelectorAll('.apptoast').forEach(x => x.remove());
-      newsNotice();
-      if (one !== 1 || document.querySelector('.apptoast')) fails.push(`news note shown ${one} time(s), then again`);
     }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
