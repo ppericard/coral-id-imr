@@ -371,6 +371,13 @@ function bindGo(root = $v) {
 
 // Full-size viewer shared by every page. opts.blind() true = quiz before answering: hide genus, credit and source links.
 const lb = document.getElementById('lightbox');
+let lbClose = null;
+// Back closes the open viewer. A viewer's entry reached with no viewer open (Forward after closing a photo, or Back onto
+// it from a link followed inside the viewer) is stepped over, like after a reload (Codex review #344).
+addEventListener('popstate', () => {
+  if (lbClose) lbClose(true);
+  else if ((history.state || {}).lb) history.back();
+});
 const VIEW_LABEL = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites', close: 'Close-up'};
 function zoom(list, i, opts = {}) {
   const blind = () => (opts.blind ? opts.blind() : false);
@@ -398,7 +405,7 @@ function zoom(list, i, opts = {}) {
           step(Number(b.dataset.d));
         })
     );
-    lb.querySelector('[data-x]').onclick = close;
+    lb.querySelector('[data-x]').onclick = () => close();
     lb.querySelector('[data-x]').focus({preventScroll: true});
   };
   const step = d => {
@@ -406,7 +413,12 @@ function zoom(list, i, opts = {}) {
     show();
   };
   const back = document.activeElement;
-  const close = () => {
+  // Phones close an enlarged photo with Back (RA review 2026-11-02: Back changed the page under it, then left the app):
+  // opening adds a history entry with the same address, Back (popstate) closes it, and Close takes the entry back.
+  const close = fromBack => {
+    if (lbClose !== close) return;
+    lbClose = null;
+    if (!fromBack && history.state && history.state.lb) history.back();
     lb.hidden = true;
     lb.innerHTML = '';
     lb.classList.remove('full');
@@ -428,6 +440,9 @@ function zoom(list, i, opts = {}) {
     if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
     x0 = null;
   };
+  if (lbClose) lbClose(true);
+  else history.pushState({lb: 1, d: pageDepth}, '');
+  lbClose = close;
   lb.hidden = false;
   lb.onclick = e => {
     if (e.target === lb) close();
@@ -1065,7 +1080,7 @@ function viewLookalikes(a, b) {
       store.set('imr-coral-lkswiped', 1);
     }
     i = (k + L.length) % L.length;
-    history.replaceState(null, '', `#cmp|${L[i].A}|${L[i].B}`);
+    history.replaceState({d: pageDepth}, '', `#cmp|${L[i].A}|${L[i].B}`);
     draw();
   };
   const keys = e => {
@@ -1638,6 +1653,10 @@ function question(cur, target, choices, prompt, set, kq) {
     st.insertAdjacentHTML('beforeend', fig(set.hint, ph.length, ph.length + 1));
     if (hb) hb.remove();
     fitStage();
+    // Phones show the photos as a swipe strip: bring the corallites in (RA review 2026-11-02: only a sliver showed at the
+    // edge, as if nothing happened). Only the strip scrolls, never the page.
+    const h = st.lastElementChild;
+    if (h && st.scrollWidth > st.clientWidth + 4) st.scrollTo({left: h.offsetLeft - st.offsetLeft, behavior: 'smooth'});
   };
   if (hb) hb.onclick = showHint;
   // Keys: 1-4 answer, Enter goes to the next question.
@@ -1995,7 +2014,7 @@ function answer(cur, c, target, ph, cor, unseen) {
   }
   const vs =
     !good && GX(c)
-      ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(tipsText(GX(c)))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>${again ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
+      ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(tipsText(GX(c)))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
       : '';
   document.getElementById('after').innerHTML = `<div class="fb">
     <h3 class="${good ? 'ok' : 'ko'}"><span class="v">${good ? '\u2713 Yes' : '\u2717 No'},</span> it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>
@@ -2206,6 +2225,14 @@ const plausibleK = (t, choices) => {
 };
 // A mix-up in the photo quiz comes back once as a duel of the two genera, one question later.
 let rematch = null;
+// "This pair comes back as a duel in a moment": said the first 3 times only (RA review 2026-11-02: it came on every
+// wrong answer, about 20 times in 30 questions); the pair still comes back every time.
+const againTold = () => {
+  const n = store.get('imr-again-told', 0);
+  if (n >= 3) return false;
+  store.set('imr-again-told', n + 1);
+  return true;
+};
 // The next question is chosen while the player reads the feedback (and once at start-up), and its photos are fetched
 // meanwhile, so Next shows it at once even on a slow connection (Pierre, 2026-11-01: "preload the photos"). Used only
 // if nothing changed since: same answers count and same genera in play (settings), else chosen afresh.
@@ -2326,6 +2353,16 @@ function badge() {
       .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
       .join('')}</a></div></div>`;
 }
+// A name of 13+ letters (Duncanopsammia) gets a soft hyphen near its middle, between a vowel and a consonant: a phone
+// tile breaks it there with a hyphen instead of anywhere, at the normal size (RA review and Codex review #344).
+const shyName = n => {
+  if (n.length < 13) return n;
+  const V = /[aeiouy]/i;
+  for (let d = 0; d < n.length / 2 - 3; d++)
+    for (const i of [Math.round(n.length / 2) + d, Math.round(n.length / 2) - d])
+      if (V.test(n[i - 1]) && !V.test(n[i])) return n.slice(0, i) + '\u00ad' + n.slice(i);
+  return n;
+};
 function quizBoard() {
   const list = Object.keys(DATA.gen)
     .filter(n => Q.stars || DATA.gen[n].n)
@@ -2364,7 +2401,7 @@ function quizBoard() {
     const g = GX(n),
       p = cover(g),
       [cl] = lv[n];
-    return `<a class="pw ${cl} s${st[n]}${g.x ? ' bonus' : ''}" href="#g-${esc(n)}" title="${g.x ? 'Bonus genus, not on the IMR list. ' : ''}${tip(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 100px, 165px')} alt="" loading="lazy">` : ''}${g.x ? '<b class="pbtag">Bonus</b>' : ''}<span class="pwb"><i>${esc(n)}${g.n || g.x ? '' : ' ★'}</i>${pct(n)}</span></a>`;
+    return `<a class="pw ${cl} s${st[n]}${g.x ? ' bonus' : ''}" href="#g-${esc(n)}" title="${g.x ? 'Bonus genus, not on the IMR list. ' : ''}${tip(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 100px, 165px')} alt="" loading="lazy">` : ''}${g.x ? '<b class="pbtag">Bonus</b>' : ''}<span class="pwb"><i>${esc(shyName(n))}${g.n || g.x ? '' : ' ★'}</i>${pct(n)}</span></a>`;
   };
   // Locked bonus genera: ONE tile that says what they are and when the next one comes (six "?" tiles read as a puzzle;
   // designer re-review 2026-11-01, N6).
@@ -3530,7 +3567,7 @@ function showModes(tab, h) {
     $modes.hidden = false;
     $modes.setAttribute('aria-label', 'Page');
     $modes.innerHTML = ctx;
-    $modes.querySelector('[data-back]').onclick = () => (history.length > 1 ? history.back() : go(h.startsWith('g-') ? 'genera' : 'cmp'));
+    $modes.querySelector('[data-back]').onclick = () => (pageDepth > 0 ? history.back() : go(h.startsWith('g-') ? 'genera' : 'cmp'));
     return;
   }
   // A section with a single tool needs no tab bar.
@@ -3862,9 +3899,27 @@ document.querySelectorAll('#boardset button').forEach(
     })
 );
 showBoardSet();
+let routeFrom = '',
+  generaY = null,
+  // How many pages of the app lie behind this one in the tab's history: Back on a sheet goes back only when there is
+  // one (history.length also counts the enlarged photo's entry, which left a deep-linked sheet's Back doing nothing:
+  // Codex review #344). Kept in each history entry's state, so a reload or Back / Forward keeps it right.
+  pageDepth = typeof (history.state || {}).d === 'number' ? history.state.d : 0;
+if (!history.state || typeof history.state.d !== 'number') history.replaceState({...(history.state || {}), d: pageDepth}, '');
+// A reload while a photo was enlarged keeps the viewer's history entry, with no viewer open: it is stepped over at once,
+// so the next Back leaves the page (Codex review #344: the first Back did nothing visible).
+else if (history.state.lb) history.back();
+addEventListener('hashchange', () => {
+  const s = history.state || {};
+  if (typeof s.d === 'number') pageDepth = s.d;
+  else history.replaceState({...s, d: ++pageDepth}, '');
+});
 function route() {
   // A new version took over in the background (see UPDATED): the page reloads on the way to the next page.
   if (UPDATED) return location.reload();
+  // A tab tapped while the app is still loading (slow line, RA review 2026-11-02): nothing to draw yet; the start-up's
+  // own route() opens the page tapped, from the hash.
+  if (!DATA) return;
   // Photos of the page being left that are still loading are dropped, so a slow line gives its bandwidth to the new page
   // (tools/perf.js, slow 3G: the Home photos still downloading delayed the first quiz photo by seconds).
   $v.querySelectorAll('img').forEach(i => {
@@ -3879,8 +3934,17 @@ function route() {
   }
   applySize();
   const h = hashNow();
+  // Genera list → a genus sheet → back: the list opens where it was left (RA review 2026-11-02: an 8000 px list came back
+  // at the top). The genus at the top of the screen is kept when leaving it (not the scroll: the photos above it are not
+  // loaded yet on the way back), and brought back to the same place only when coming back from a sheet.
+  if (routeFrom === 'genera') {
+    const a = [...$v.querySelectorAll('a[href^="#g-"]')].find(x => x.getBoundingClientRect().top > $hdr.getBoundingClientRect().bottom);
+    generaY = a ? [a.getAttribute('href'), a.getBoundingClientRect().top] : null;
+  }
+  const fromSheet = routeFrom.startsWith('g-');
+  routeFrom = h;
   // Home lives at the clean URL; an old #home link is rewritten to it.
-  if (h === 'home') history.replaceState(null, '', location.pathname + location.search);
+  if (h === 'home') history.replaceState({d: pageDepth}, '', location.pathname + location.search);
   const tab = sectionOf(h);
   resetHelp();
   $gpop.hidden = true;
@@ -3925,6 +3989,10 @@ function route() {
   } else if ((!h || h === 'home') && window.viewHome) viewHome();
   else viewGenera();
   window.scrollTo(0, 0);
+  if (h === 'genera' && fromSheet && generaY) {
+    const a = $v.querySelector(`a[href="${CSS.escape(generaY[0])}"]`);
+    if (a) window.scrollTo(0, a.getBoundingClientRect().top - generaY[1]);
+  }
   pageHelp();
   hdrMetrics();
   // The intro moved behind ? only now, so the quiz stage is resized to the space it really has (phones gained ~280 px).
@@ -4078,7 +4146,7 @@ $help.onclick = () => {
 document.querySelector('.brand .home').onclick = e => {
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
   e.preventDefault();
-  if (location.hash) history.pushState(null, '', location.pathname + location.search);
+  if (location.hash) history.pushState({d: ++pageDepth}, '', location.pathname + location.search);
   route();
 };
 // Header metrics for CSS: --hdr-h (what stays pinned: sticky offset for the page bar, cover photo, side panels)
