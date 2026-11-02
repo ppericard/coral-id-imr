@@ -636,8 +636,9 @@ let twoAt = -Infinity, // answers so far at the last duel slipped in
   duelLog = [], // [answers so far, pair] of the duels slipped in lately
   AUTOD = false, // the question on screen is one of them (set by quizPhoto, read by answer)
   warmLeft = null; // gentle-restart questions left this visit (planPhoto; null: not decided yet)
-// The gentle restart at a visit (planPhoto): N easy questions for a player with FROM answers or more.
-const WARM = {N: 5, FROM: 10};
+// The gentle restart at a visit (planPhoto): N easy questions for a player with FROM answers or more (10, Pierre
+// 2026-11-02: 5 was short; the second half also brings back the genera to review, still with easy choices).
+const WARM = {N: 10, FROM: 10};
 // "This pair comes back as a duel in a moment": said the first 3 times only (RA review 2026-11-02: it came on every
 // wrong answer, about 20 times in 30 questions); the pair still comes back every time.
 const againTold = () => {
@@ -903,14 +904,18 @@ function planPhoto() {
   // INTRO.EVERY answers) shows its card instead, and the question is about another genus.
   let cards = introStart(list);
   // A gentle restart (Pierre, 2026-11-02, after an RA left on a run of misses): a player coming back with WARM.FROM
-  // answers or more gets WARM.N questions on genera already answered right and not to review, with easy choices, before
-  // anything else of the visit: no card, no duel, no exam. Their answers leave the opening hold as it was (answer()).
+  // answers or more gets WARM.N questions on genera already answered right, with easy choices, before anything else of
+  // the visit: no card, no duel, no exam. The first half leaves out the genera to review (a positive start), the second
+  // half brings them back. Their answers leave the opening hold as it was (answer()).
   if (warmLeft === null) warmLeft = answersSoFar() >= WARM.FROM ? WARM.N : 0;
   const start = cards.length > 0,
     ready = n => cards.includes(n) || introReady(n),
     known = n => cards.includes(n) || introduced(n),
     met = list.filter(ready),
-    warmL = warmLeft > 0 && !start ? met.filter(n => (P[n] || {}).ok > 0 && !['new', 'weak'].includes(level(n)[0])) : [],
+    warmL =
+      warmLeft > 0 && !start
+        ? met.filter(n => (P[n] || {}).ok > 0 && level(n)[0] !== 'new' && (warmLeft <= WARM.N / 2 || level(n)[0] !== 'weak'))
+        : [],
     warm = warmL.length >= 2,
     open = !start && !warm && introSince() >= INTRO.EVERY && !introHold();
   if (warm) warmLeft--;

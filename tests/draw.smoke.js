@@ -448,7 +448,8 @@ const server = http.createServer((req, res) => {
       // A player slightly below what the game expects (0.85 expected, 0.8 right) is never held: the slack.
       for (let i = 0; i < 200; i++) holdStep(0.85, i % 5 !== 0);
       if (introHold()) fails.push(`held a player 5 points below expectation: ${HOLDS}`);
-      // The gentle restart: a player with answers gets WARM.N questions on genera already answered right, easy choices,
+      // The gentle restart: a player with answers gets WARM.N questions on genera already answered right (none to review in
+      // the first half), easy choices,
       // no card, duel or exam, flagged warm; their answers leave the hold as it was.
       HOLDS = 2;
       warmLeft = null;
@@ -461,6 +462,7 @@ const server = http.createServer((req, res) => {
         const t = SHOWNQ[1];
         if (i < WARM.N && (!SHOWNQ.warm || SHOWNQ.intro || SHOWNQ.auto || SHOWNQ[4].exam || !(P[t] || {}).ok))
           fails.push(`gentle restart question ${i}: ${JSON.stringify({t, warm: SHOWNQ.warm, ok: (P[t] || {}).ok})}`);
+        if (i < WARM.N / 2 && level(t)[0] === 'weak') fails.push(`gentle restart question ${i}: ${t} to review in the first half`);
         if (i >= WARM.N && SHOWNQ.warm) fails.push(`gentle restart longer than ${WARM.N}`);
         const h = HOLDS;
         document.querySelector(`[data-c="${CSS.escape(t)}"]`).click();

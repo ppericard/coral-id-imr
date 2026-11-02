@@ -159,8 +159,8 @@ time, each on its card, but never as the answer of the question right after its 
   (three misses in a row) and from answer 67, off and on. Simulated (6 seeds, 200 questions, genera met, without →
   with): beginner 15 → 13, lecture-level RA 14 → 13, strong RA 22 → 23, expert 27 → 28.
 - **Gentle restart** (`WARM` in `quiz.js`, Pierre, 2026-11-02): a player coming back with `WARM.FROM` (10) answers or
-  more first gets `WARM.N` (5) questions on genera already answered right and not to review, with easy choices: no
-  card, no duel, no exam. A positive start before the harder questions; their answers do not count for the hold
+  more first gets `WARM.N` (10; 5 at first, Pierre: too short) questions on genera already answered right, with easy
+  choices: no card, no duel, no exam. The first half leaves out the genera to review, the second half brings them back. A positive start before the harder questions; their answers do not count for the hold
   (Pierre: easy right answers must not reopen new genera after a run of misses).
 - **Not right after**: a genus met on a card alone can be asked from `INTRO.GAP` (2) answers on (one question at least
   in between; the card says "It comes up in the questions a little later"). The first 4 can be asked at once.
