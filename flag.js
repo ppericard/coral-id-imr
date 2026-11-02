@@ -95,12 +95,38 @@
     btn.hidden = true;
     target = null;
   });
+  // Touch screens have no hover, and a tap on a game photo opens the enlarged view: the flag never showed there
+  // (Pierre, 2026-11-02). It now goes by itself on the biggest photo in view (the question's photo, the enlarged one),
+  // after each page change; a tap on another photo still moves it there.
+  const touch = matchMedia('(hover: none)').matches;
+  let pending = 0;
+  const auto = () => {
+    pending = 0;
+    if (target && target.isConnected && !(lbOpen() && !target.closest('#lightbox'))) return;
+    const imgs = [...document.querySelectorAll(lbOpen() ? '#lightbox img' : '#view img')].filter(fileOf);
+    let best = null,
+      area = 0;
+    imgs.forEach(im => {
+      const r = im.getBoundingClientRect(),
+        a = Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0)) * Math.max(0, r.width);
+      if (a > area) ((best = im), (area = a));
+    });
+    if (best) place(best);
+  };
+  const lbOpen = () => {
+    const lb = document.getElementById('lightbox');
+    return !!lb && !lb.hidden;
+  };
   new MutationObserver(() => {
     if (target && !target.isConnected) {
       btn.hidden = true;
       target = null;
     }
-  }).observe(document.body, {childList: true, subtree: true});
+    if (touch && !pending) pending = requestAnimationFrame(auto);
+  }).observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ['hidden']});
+  // A photo that just loaded has its size only now (the enlarged view's, a new question's).
+  if (touch)
+    document.addEventListener('load', e => e.target.tagName === 'IMG' && !pending && (pending = requestAnimationFrame(auto)), true);
   if (window.ResizeObserver) {
     const ro = new ResizeObserver(follow);
     const watch = place;

@@ -2995,7 +2995,9 @@ async function start() {
     new ResizeObserver(() =>
       document.documentElement.style.setProperty('--sub-h', sb.offsetHeight ? sb.offsetHeight + 6 + 'px' : '0px')
     ).observe(sb);
-  $v.innerHTML = '<p class="note">Loading photos…</p>';
+  // The same words as the page before the script ran: "Loading…" then "Loading photos…" looked like two steps on any
+  // page, Players included (Pierre, 2026-11-02).
+  $v.innerHTML = '<p class="note">Loading…</p>';
   const side = (u, k) =>
     fetch(u, {cache: 'no-cache'})
       .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
@@ -3939,7 +3941,7 @@ function renderUsers() {
           )
           .join(
             ''
-          )}</tbody></table><p><button type="button" class="adm-danger" data-adel disabled>Delete the answers of the selected ids</button> <small class="note">Test runs and junk (sheet v17). Permanent.</small></p></details>`
+          )}</tbody></table><p><button type="button" class="adm-danger" data-adel disabled${(USERS.v || 0) < 17 ? ' data-old' : ''}>Delete the answers of the selected ids</button> <small class="note">${(USERS.v || 0) < 17 ? `Needs the sheet script v17 (live: v${USERS.v || '?'}; it updates itself within 15 minutes of a release).` : 'Test runs and junk (sheet v17). Permanent.'}</small></p></details>`
       : '') +
     (USERS.removed.length
       ? `<details class="adm-uremoved"><summary>Removed (${USERS.removed.length})</summary><table class="adm-tbl">${USERS.removed.map(r => `<tr><td>${esc(r.name)}</td><td>${r.into ? `merged into <b>${esc(r.into)}</b>` : 'deleted'}</td><td>${date(r.time)}</td></tr>`).join('')}</table></details>`
@@ -4011,7 +4013,7 @@ function bindUsers() {
   // Answers without a name (test runs, junk): select ids, then delete all their answers (sheet v17 anonDelete).
   const aBoxes = [...$v.querySelectorAll('[data-aid]')],
     aBtn = $v.querySelector('[data-adel]'),
-    aSync = () => aBtn && (aBtn.disabled = !aBoxes.some(x => x.checked));
+    aSync = () => aBtn && (aBtn.disabled = 'old' in aBtn.dataset || !aBoxes.some(x => x.checked));
   aBoxes.forEach(x => (x.onchange = aSync));
   const aAll = $v.querySelector('[data-aall]');
   if (aAll)

@@ -1323,10 +1323,53 @@ const weight = n => {
 // ...and all of them together at most BONUS_SHARE of the draw: their weights are scaled down when they would be more.
 const BONUS_W = 4,
   BONUS_SHARE = 0.15;
+// Progressive path (Pierre, 2026-11-02: "rather than spamming a beginner with 40 genera, start with the easiest ones,
+// opening new ones as they go, with nothing set by hand"). New genera are opened by the player's own results: while
+// fewer than OPEN.K genera met are still shaky (below), the genera not met yet share OPEN.READY of the draw (a share,
+// so the pace holds as the genera met add up); otherwise only OPEN.TRICKLE, so a new one still comes now and then.
+// Among them, the easiest (genusDiff) come first, softly (OPEN.T): a beginner meets a few easy genera at a time, an
+// expert keeps opening new ones because none stays shaky. docs/LEARNING.md.
+const OPEN = {K: 3, N: 4, L: 0.6, READY: 0.35, TRICKLE: 0.03, T: 1.5, CONF: 2};
+// Difficulty of a genus from the data, never set by hand: the mean difficulty of its game photos (photoDiff: Pierre's
+// Easy/Medium/Hard sets at first, the players' answers as they come, sheet v17) plus how much it gets confused (its two
+// highest pooled confusion scores over CONF.TRAP, x OPEN.CONF). Cleared when the data or the photo stats change.
+let GDIFF = {};
+const genusDiff = n => {
+  if (n in GDIFF) return GDIFF[n];
+  const ps = [...new Set(VIEWS.flatMap(([v]) => gamePics(n, v, 'hard')))],
+    pd = ps.length ? ps.reduce((t, p) => t + photoDiff(n, p), 0) / ps.length : 0,
+    cs = Object.keys(DATA.gen)
+      .filter(x => x !== n)
+      .map(x => pooledConf(n, x))
+      .sort((a, b) => b - a)
+      .slice(0, 2),
+    cf = cs.length ? cs.reduce((a, x) => a + x, 0) / cs.length : 0;
+  return (GDIFF[n] = Math.round((pd + OPEN.CONF * Math.max(0, cf - CONF.TRAP)) * 100) / 100);
+};
+// Shaky: met, not mastered, and either going wrong (level 'weak': 2 misses in the last 5) or still new to the player
+// (fewer than OPEN.N answers and knowledge under OPEN.L). Simulated (docs/LEARNING.md): knowledge alone climbs slowly on
+// the easy photos a beginner gets, so a beginner at 85-90% right opened almost nothing; the answer count alone made an
+// expert wait OPEN.N answers on each genus before the next.
+const shaky = n => {
+  const s = P[n] || {},
+    k = level(n)[0];
+  return k !== 'new' && !s.mx && (k === 'weak' || ((s.ok || 0) + (s.ko || 0) < OPEN.N && knownP(n) < OPEN.L));
+};
 function weighted(list) {
   const w = list.map(weight),
     b = list.reduce((s, n, i) => s + (isBonus(n) ? w[i] : 0), 0),
     o = w.reduce((a, x) => a + x, 0) - b;
+  const fresh = list.map((n, i) => [n, i]).filter(([n]) => level(n)[0] === 'new');
+  if (fresh.length) {
+    const share = list.filter(shaky).length < OPEN.K ? OPEN.READY : OPEN.TRICKLE,
+      rest = w.reduce((a, x, i) => a + (level(list[i])[0] === 'new' ? 0 : x), 0),
+      tot = rest ? (share * rest) / (1 - share) : 1,
+      gd = fresh.map(([n]) => genusDiff(n)),
+      lo = Math.min(...gd),
+      e = gd.map(x => Math.exp(-OPEN.T * (x - lo))),
+      se = e.reduce((a, x) => a + x, 0);
+    fresh.forEach(([n, i], k) => (w[i] = ((tot * e[k]) / se) * (isBonus(n) ? Math.min(1, BONUS_W / 10) : 1)));
+  }
   if (b && o && b / (b + o) > BONUS_SHARE) {
     const f = (BONUS_SHARE * o) / ((1 - BONUS_SHARE) * b);
     list.forEach((n, i) => isBonus(n) && (w[i] *= f));
@@ -1353,7 +1396,13 @@ function nextTarget(list) {
 // answer, as in the sync sheet (Code.gs stats_): P(right) = g + (1 - g) * sigmoid(ability - difficulty), g = 1/choices;
 // ability moves by K * (result - P(right)), K shrinking as answers build up (Pelánek 2016) but never below 0.25 so a
 // genus that starts going wrong eases off quickly. Starts at 0 (target = the featured photos); no time criteria.
-const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3};
+const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
+// Learners change (Pierre, 2026-11-02, three players: a complete beginner, an IMR RA after one lecture, an expert): a
+// step that only shrinks with the answers suits a stable skill, and a simulated beginner or RA stayed rated as a beginner
+// (easy photos, no traps) at 80-87% right. As Glicko-2's volatility (Glickman 2012): s.vr follows the recent surprise
+// (result - expected, moving average, rate ELO.vr); while answers keep beating (or missing) the expectation, the step
+// grows by up to ELO.vg x |s.vr|, within kmax, so the rating catches up; it settles back once the player is predictable.
+// docs/LEARNING.md.
 const RECENT = 10;
 const recent = n => {
   const s = P[n] || {};
@@ -1372,7 +1421,8 @@ function abilityStep(n, s, good, d, k) {
     g = 1 / k,
     e = g + (1 - g) * sig(th - d),
     m = (s.ok || 0) + (s.ko || 0);
-  const K = Math.max(ELO.kmin, ELO.kmax / (1 + m / ELO.n));
+  s.vr = Math.round(((1 - ELO.vr) * (s.vr || 0) + ELO.vr * ((good ? 1 : 0) - e)) * 1000) / 1000;
+  const K = Math.min(ELO.kmax, Math.max(ELO.kmin, ELO.kmax / (1 + m / ELO.n)) * (1 + ELO.vg * Math.abs(s.vr)));
   s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * 100) / 100;
   delete s.lv;
   delete s.run;
@@ -1410,7 +1460,18 @@ function photoDiff(n, p) {
 // The bar of a genus climbs to 95% with L; Learned (100%) takes the silent mastery exam (EXAM, below). The two former
 // milestones (right once with the corallites in view, once in a duel) were dropped: easy, and arbitrary (Pierre,
 // 2026-11-01). Review: 2+ mistakes in the last 5 results. No time criteria.
-const BKT = {L0: 0.1, T: 0.08, MASTER: 0.95};
+const BKT = {L0: 0.1, T: 0.08, MASTER: 0.95, L0MAX: 0.5, LV0: 0.5, LVR: 1.5, LVN: 30};
+// Where a genus's knowledge starts (Pierre, 2026-11-02, point 3): BKT.L0 for everyone, except a player whose overall
+// level (Elo over every answer, LEVEL) is clearly high and rests on BKT.LVN answers or more: then up to BKT.L0MAX, growing
+// continuously from level BKT.LV0 to BKT.LV0 + BKT.LVR (no tiers). Empirical-Bayes prior, as the Elo start of a new
+// genus already uses the global level (core.js playerStart). The mastery exam is unchanged: an expert still proves each
+// genus with its own 5 hard questions; only the way to 95% gets shorter. docs/LEARNING.md.
+const bktStart = () => {
+  const G = P[LEVEL] || {},
+    m = (G.ok || 0) + (G.ko || 0);
+  if (m < BKT.LVN || typeof G.th !== 'number') return BKT.L0;
+  return BKT.L0 + (BKT.L0MAX - BKT.L0) * Math.min(1, Math.max(0, (G.th - BKT.LV0) / BKT.LVR));
+};
 function bktStep(L, good, b, k) {
   const g = 1 / k + (1 - 1 / k) * sig(-2 * b - 1),
     sl = 0.1 + 0.9 * sig(2 * b - 3);
@@ -1422,7 +1483,7 @@ const knownP = n => {
   const s = P[n];
   if (!s) return 0;
   if (typeof s.L === 'number') return s.L;
-  let L = BKT.L0;
+  let L = s.h ? BKT.L0 : bktStart(); // progress saved before BKT replays from L0, as it always did
   [...(s.h || '')].forEach(x => {
     L = bktStep(L, x === '1', 0, 4);
   });
@@ -1990,7 +2051,8 @@ const isLook = (t, n) => GX(t).look.includes(n) || GX(n).look.includes(t);
 // (core.js pairConf: offered together, mixed up), worth CONF.W offers, so the player's weight is offers / (offers + 8).
 // A pair this player keeps mixing up becomes a trap and a duel for them, one they now tell apart fades back to the pool.
 // Performance only, never time.
-function confOf(t, n) {
+// The pair's score over every player (pooled answers on top of the declared prior), before this player's own record.
+function pooledConf(t, n) {
   const prior = isLook(t, n)
     ? CONF.LOOK
     : GX(n).fam === GX(t).fam
@@ -1998,7 +2060,10 @@ function confOf(t, n) {
       : imrFormsOf(n).some(f => imrFormsOf(t).includes(f))
         ? CONF.FORM
         : CONF.BASE;
-  return confScore(pairConf(P, t, n), confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], prior));
+  return confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], prior);
+}
+function confOf(t, n) {
+  return confScore(pairConf(P, t, n), pooledConf(t, n));
 }
 // Traps = the genera most confused with the target (a little shuffle among close scores, so every likely pair gets tried).
 const confusable = (t, n) => confOf(t, n) >= CONF.TRAP;
@@ -2008,7 +2073,14 @@ function distractors(t, list, traps = trapsFor(t)) {
     .map(n => [n, confOf(t, n) * (0.8 + 0.4 * Math.random())])
     .sort((a, b) => b[1] - a[1])
     .map(x => x[0]);
-  const look = ranked.filter(n => confusable(t, n)),
+  // A player who tells every look-alike apart (an expert) still gets the hardest choices the level asks for: the traps
+  // left over come from the pairs other players confuse most, then the declared look-alikes, instead of easy genera
+  // (Pierre, 2026-11-02: simulated, an expert's traps fell from 1.8 to 0.1 a question as their own record cleared them).
+  const mine = ranked.filter(n => confusable(t, n)),
+    pooled = list
+      .filter(n => n !== t && !mine.includes(n) && pooledConf(t, n) >= CONF.TRAP)
+      .sort((a, b) => pooledConf(t, b) - pooledConf(t, a)),
+    look = [...mine, ...pooled],
     out = look.slice(0, traps),
     left = list.filter(n => n !== t && !look.includes(n));
   if (traps >= 2) return [...out, ...ranked.filter(n => !look.includes(n)), ...look.slice(traps)].slice(0, 3); // exactly `traps` traps when others exist
@@ -2019,7 +2091,10 @@ function distractors(t, list, traps = trapsFor(t)) {
     far = easy.filter(n => GX(n).ig !== T.ig);
   // Easy choices spread over different growth forms too: three mushroom corals beside a massive target would give the
   // answer away as the odd one out.
-  const cand = [...shuffle(far), ...shuffle(easy.filter(n => !far.includes(n))), ...shuffle(left.filter(n => !easy.includes(n)))];
+  // Easy wrong choices come first from genera the player has already met (a beginner is not asked to choose between
+  // names never seen), then the others (Pierre, 2026-11-02).
+  const met = L => [...shuffle(L.filter(n => P[n])), ...shuffle(L.filter(n => !P[n]))];
+  const cand = [...met(far), ...met(easy.filter(n => !far.includes(n))), ...met(left.filter(n => !easy.includes(n)))];
   const used = new Set(out.flatMap(imrFormsOf)),
     res = [...out];
   for (const n of cand) {
