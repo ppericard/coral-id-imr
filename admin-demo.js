@@ -100,7 +100,10 @@
           Math.round(100 * pe) / 100,
           st.th,
           0,
-          ch.sort(() => rnd() - 0.5).join(' ')
+          ch.sort(() => rnd() - 0.5).join(' '),
+          // Seconds to answer and a photo enlarged (sheet v23), from the answer's number (the random draws stay the same).
+          Math.round((3 + ((k * 37) % 120) / 10 + (right ? 0 : 5)) * 10) / 10,
+          k % 7 ? 0 : 1
         ]);
       }
       // First-meeting cards (app model.js INTRO): the first 4 genera together, the others one at a time 2 answers before
@@ -274,7 +277,23 @@
   function answers() {
     const out = {ok: true, rows: [], players: {}, me: aid(ME)};
     // Index 11: answered without signing in (sheet v17), so trustOf leaves it out of the photo ratings as the sheet does.
-    out.rows = S.rows.map(r => [aid(r[0]), r[1], r[2], r[3], r[4], r[5], r[6], r[8], r[9], r[10], r[11], /^~anon /.test(r[0]) ? 1 : 0]);
+    // 12, 13 (sheet v23): seconds to answer and enlarged, null when not logged.
+    out.rows = S.rows.map(r => [
+      aid(r[0]),
+      r[1],
+      r[2],
+      r[3],
+      r[4],
+      r[5],
+      r[6],
+      r[8],
+      r[9],
+      r[10],
+      r[11],
+      /^~anon /.test(r[0]) ? 1 : 0,
+      r[12] ?? null,
+      r[13] ?? null
+    ]);
     Object.values(S.users).forEach(u => {
       const P = JSON.parse(u.data['imr-coral-progress'] || '{}'),
         th = {};

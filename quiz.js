@@ -31,6 +31,24 @@ const gameHelp =
   Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? '' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="#progress">My progress</a>. From ${BONUS_AT(0)}% progress, <b>bonus genera</b> join in: corals off the IMR list that are common at Dauin and easily confused with it (fire coral <i>Millepora</i> first).</p>
   <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus fills up to 95% with your right answers, each point a little harder to earn than the last, and a right answer counts most when the genus's look-alikes are among the choices; a mistake takes it back down; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the photo quiz: see ? on <a href="#progress">My progress</a>.</p>`;
 let EXAMQ = null; // the genus whose exam question is on screen (set by question, read by answer)
+// Time to answer and photo enlarged (Pierre, 2026-11-02: a right answer that needed a long look or an enlarged photo says
+// the photo was harder; logged with each answer to be analysed later, nothing uses them yet; sheet v23 Seconds and
+// Enlarged): the clock starts when the question's first photo is in (its load event, or at once if it already was),
+// starts again when a card or the offer over the question closes (quiz.js introShow, introOfferShow: reading a card is
+// not looking at the photo), and stops while the app is hidden; zm is 1 once a photo of the question is enlarged.
+const QCLOCK = {n: 0, t0: null, off: 0, hid: null, zm: 0};
+const qclockStart = () => {
+  const t = performance.now();
+  Object.assign(QCLOCK, {t0: t, off: 0, hid: document.hidden ? t : null});
+};
+const qclockGo = () => QCLOCK.t0 === null && qclockStart();
+const qclockAgain = () => QCLOCK.t0 !== null && qclockStart();
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) QCLOCK.hid = performance.now();
+  else if (QCLOCK.hid !== null) ((QCLOCK.off += performance.now() - QCLOCK.hid), (QCLOCK.hid = null));
+});
+const qclockRead = () =>
+  QCLOCK.t0 === null ? null : Math.round(Math.max(0, Math.min(600, (performance.now() - QCLOCK.t0 - QCLOCK.off) / 1000)) * 10) / 10;
 function question(cur, target, choices, prompt, set, kq) {
   EXAMQ = set.exam ? target : null;
   const ph = set.shown,
@@ -50,6 +68,13 @@ function question(cur, target, choices, prompt, set, kq) {
     </aside></div>`;
   bindQuizNav(cur);
   fitStage();
+  const qn = (QCLOCK.n = (QCLOCK.n || 0) + 1),
+    ims = [...$v.querySelectorAll('.qstage .qph img')];
+  Object.assign(QCLOCK, {t0: null, off: 0, hid: null, zm: 0});
+  // The first of the question's photos to be in starts it, whichever (Codex review #370: one cached or quicker than the
+  // first in the page would otherwise be looked at off the clock).
+  if (ims.some(im => im.complete && im.naturalWidth)) qclockGo();
+  else ims.forEach(im => im.addEventListener('load', () => QCLOCK.n === qn && qclockGo(), {once: true}));
   const hb = document.getElementById('hintb');
   const showHint = () => {
     if (hintShown || !set.hint) return;
@@ -81,6 +106,7 @@ function question(cur, target, choices, prompt, set, kq) {
     const z = e.target.closest('[data-q]');
     if (!z) return;
     const list = hintShown ? [...ph, set.hint] : answered && set.reveal ? [...ph, ...set.reveal] : ph;
+    if (!answered) QCLOCK.zm = 1;
     zoom(
       list.map(p => ({...p, genus: target})),
       Number(z.dataset.q),
@@ -98,11 +124,12 @@ function question(cur, target, choices, prompt, set, kq) {
   $v.querySelectorAll('[data-c]').forEach(
     b =>
       (b.onclick = () => {
-        const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close');
+        const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'),
+          tm = {rt: qclockRead(), zm: QCLOCK.zm};
         showHint();
         reveal();
         answered = true;
-        answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint);
+        answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint, tm);
         const tr = $v.querySelector('.trail');
         if (tr) tr.outerHTML = trail();
       })
@@ -260,7 +287,7 @@ function fitTiles(grid, gap, dims) {
   grid.classList.add('fit');
 }
 addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
-function answer(cur, c, target, ph, cor, unseen) {
+function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
   // was played since, not progress an older sign-out left on the device.
   if (!SYNC && SYNC_URL && !store.get(LOG0, []).length) store.set(ANONB, P);
@@ -349,6 +376,7 @@ function answer(cur, c, target, ph, cor, unseen) {
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
   // sheet's Answers tab also gets what was played before the account existed (Pierre, 2026-11-01).
+  const warm = !!(cur === 'quiz' && SHOWNQ && SHOWNQ.warm);
   const ans = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     t: new Date().toISOString(),
@@ -359,7 +387,14 @@ function answer(cur, c, target, ph, cor, unseen) {
     // A photo-quiz question with fewer than 4 choices ("Again: A or B?" after a mix-up) says so too: logged plain "quiz",
     // the sheet rated it as a 4-choice one (a 1 in 4 guess instead of 1 in 2; 59 of the first 552 answers, 2026-11-02).
     // |d: a look-alike duel slipped into the photo quiz (AUTO_DUEL), before |kN (the sheet reads |kN at the end).
-    m: cur + (cur === 'quiz' && AUTOD ? '|d' : '') + (k < (cur === 'quiz' ? 4 : nc) ? '|k' + k : '') + (exq ? '|x' : ''),
+    // |w: a question of the gentle restart (WARM), left out of the opening hold, here and by the sync sheet (v23,
+    // Code.gs hold_), before |kN too.
+    m:
+      cur +
+      (cur === 'quiz' && AUTOD ? '|d' : '') +
+      (warm ? '|w' : '') +
+      (k < (cur === 'quiz' ? 4 : nc) ? '|k' + k : '') +
+      (exq ? '|x' : ''),
     // A corallites hint left closed is not logged: it was not seen when answering (Codex review #339; the sheet rates and
     // counts as recognised only the photos the player saw).
     ph: ph
@@ -369,10 +404,13 @@ function answer(cur, c, target, ph, cor, unseen) {
     ch: chs.join(' '),
     e: Math.round(100 * (1 / k + (1 - 1 / k) * sig(th0 - d0))) / 100,
     th: th0,
-    nw
+    nw,
+    // Seconds to answer and a photo enlarged before answering (QCLOCK, in question): logged only (sheet v23).
+    ...(typeof tm.rt === 'number' ? {rt: tm.rt} : {}),
+    zm: tm.zm ? 1 : 0
   };
   // The opening hold's record (model.js holdStep), except the gentle restart's easy questions (Pierre: they must not lift it).
-  if (!(cur === 'quiz' && SHOWNQ && SHOWNQ.warm)) holdStep(ans.e, good);
+  if (!warm) holdStep(ans.e, good);
   if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
   else if (SYNC_URL) {
     store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
@@ -797,6 +835,7 @@ function introOfferShow() {
   const close = () => {
     d.remove();
     document.removeEventListener('keydown', key, true);
+    qclockAgain(); // the time to answer counts from here (QCLOCK)
     topUp();
   };
   const key = e => {
@@ -827,6 +866,7 @@ function introShow(L, start, kind = start ? 's' : 'c') {
   const close = () => {
     d.remove();
     document.removeEventListener('keydown', key, true);
+    qclockAgain(); // the time to answer counts from here (QCLOCK)
     topUp();
   };
   d.ulClose = close; // leaving the page closes it (route); the genera of the cards not shown yet come next time
