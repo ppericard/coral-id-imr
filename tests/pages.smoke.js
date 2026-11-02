@@ -178,6 +178,81 @@ async function overlays(b, base) {
     if (sign !== !!at || r.tour || r.card !== !at) fails.push(`Escape on tour step ${at + 1}: ${JSON.stringify({sign, ...r})}`);
     await c.close();
   }
+  // Out-of-game prompts take turns, counted in answers (2026-11-02): the sign-in card at 20 answers (not before), the
+  // one-tap question first at 35, at least 10 answers between two of them, never with an achievement toast or a card on
+  // screen. A new player, mostly right, 60 answers; toasts closed by a tap as they come.
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 844}}, () => localStorage.setItem('imr-tour', '"done"'));
+    await p.goto(base + '#quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const seenP = [];
+    for (let i = 0; i < 60; i++) {
+      await p.waitForSelector('#view [data-c]:not([disabled])');
+      const r = await p.evaluate(i => {
+        // A new genus's card is read and closed before answering, as a player does.
+        document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+        // A toast is tapped away (without following its link) before answering.
+        document.querySelectorAll('.achpop a').forEach(a => {
+          a.addEventListener('click', e => e.preventDefault());
+          a.click();
+        });
+        const t = SHOWNQ[1],
+          bs = [...document.querySelectorAll('#view [data-c]')];
+        (i % 6 === 5 ? bs.find(b => b.dataset.c !== t) : bs.find(b => b.dataset.c === t)).click();
+        const card = document.querySelector('.unlock'),
+          toast = !!document.querySelector('.achpop') || achBusy;
+        return {
+          a: answersSoFar(),
+          sign: !!document.querySelector('.unlock.signnudge'),
+          pulse: !!document.querySelector('#after .pulse'),
+          other: !!card && !card.matches('.signnudge'),
+          toast
+        };
+      }, i);
+      if (r.sign || r.pulse) seenP.push({...r, k: r.sign ? 'sign-in' : 'pulse'});
+      await p.evaluate(() => {
+        document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+        document.querySelector('[data-pulse=""]')?.click();
+        document.getElementById('next').click();
+      });
+    }
+    const sign = seenP.find(x => x.k === 'sign-in'),
+      pulse = seenP.find(x => x.k === 'pulse'),
+      gaps = seenP.slice(1).map((x, k) => x.a - seenP[k].a);
+    if (
+      !sign ||
+      !pulse ||
+      sign.a < 20 ||
+      sign.a > 25 ||
+      pulse.a < 35 ||
+      pulse.a > 45 ||
+      gaps.some(g => g < 10) ||
+      seenP.some(x => x.other || x.toast)
+    )
+      fails.push(`prompt spacing over 60 answers: ${JSON.stringify(seenP)}`);
+    await c.close();
+  }
+  // The right answer's celebration (app.css .cheer) plays on the choice and on "✓ Yes", and not at all with
+  // prefers-reduced-motion; Next is there and focused at once.
+  for (const reducedMotion of ['no-preference', 'reduce']) {
+    const [c, p] = await open({viewport: {width: 1280, height: 800}, reducedMotion}, seen);
+    await p.goto(base + '#quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('#view [data-c]');
+    const r = await p.evaluate(() => {
+      document.querySelector(`#view [data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
+      const b = document.querySelector('#view .ans button.ok'),
+        v = document.querySelector('#after .fb h3 .v');
+      return {
+        btn: getComputedStyle(b).animationName,
+        yes: getComputedStyle(v).animationName,
+        next: document.activeElement === document.getElementById('next')
+      };
+    });
+    const want = reducedMotion === 'reduce' ? ['none', 'none'] : ['cheer', 'tickpop'];
+    if (r.btn !== want[0] || r.yes !== want[1] || !r.next) fails.push(`right-answer celebration (${reducedMotion}): ${JSON.stringify(r)}`);
+    await c.close();
+  }
   return fails;
 }
 
@@ -224,7 +299,7 @@ async function overlays(b, base) {
       await p.waitForTimeout(700);
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
     }
-    // The one-tap question after 15 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
+    // The one-tap question after 35 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
     // A fresh browser that has seen the tour (a tour opened earlier in this context resumes after a reload).
     if (w === 390) {
       const c2 = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block', intro: true});
@@ -305,15 +380,21 @@ async function overlays(b, base) {
       else if (!ch.every(c => seen.some(s => s.name === c)))
         fails.push(`${w}px first question not among the first cards: ${ch.join(', ')}`);
       let at = 0;
-      for (let i = 1; i <= 20 && !at; i++) {
+      for (let i = 1; i <= 40 && !at; i++) {
         await q2.waitForSelector('#view [data-c]');
         await q2.evaluate(() => document.querySelectorAll('.unlock.intro').forEach(x => x.remove()));
+        // Achievement toasts have gone by the next answer (4 s; the prompts wait for them, PROMPT).
+        await q2.evaluate(() => {
+          document.querySelectorAll('.achpop').forEach(x => x.remove());
+          achQ.length = 0;
+          achBusy = false;
+        });
         await q2.evaluate(() => document.querySelector('#view [data-c]').click());
         await q2.waitForSelector('#next');
         if (await q2.$('#after .pulse')) at = i;
         else await q2.evaluate(() => document.getElementById('next').click());
       }
-      if (at !== 15) fails.push(`${w}px one-tap question: shown at answer ${at}, expected 15`);
+      if (at !== 35) fails.push(`${w}px one-tap question: shown at answer ${at}, expected 35`);
       else {
         await q2.click('[data-pulse="hard"]');
         // An error from one of the app's script files is reported; one injected into the page by a browser or an

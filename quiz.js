@@ -432,25 +432,24 @@ function answer(cur, c, target, ph, cor, unseen) {
       again = true;
     }
   }
+  // A right answer gets a short celebration on the choice itself and on "✓ Yes" (app.css .cheer: a pulse and the tick
+  // popping, ~400 ms, none with prefers-reduced-motion; "fewer, better pop-ups", Pierre 2026-11-02: the reward is on the
+  // action, not in a pop-up). It never holds the player: Next is there and focused at once.
   $v.querySelectorAll('[data-c]').forEach(b => {
     b.disabled = true;
-    if (b.dataset.c === target) b.classList.add('ok');
+    if (b.dataset.c === target) b.classList.add('ok', ...(good ? ['cheer'] : []));
     else if (b.dataset.c === c) b.classList.add('ko');
   });
   // Bonus genera unlocked and not announced yet (Q.ba = how many were announced) are named once in the feedback.
   const g = GX(target),
     bo = bonusOpen(),
     nbo = bo.slice(Q.ba || 0);
-  if (nbo.length) {
-    Q.ba = bo.length;
-    saveQ();
-  }
   const vs =
     !good && GX(c)
       ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(tipsText(GX(c)))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
       : '';
   document.getElementById('after').innerHTML = `<div class="fb">
-    <h3 class="${good ? 'ok' : 'ko'}"><span class="v">${good ? '\u2713 Yes' : '\u2717 No'},</span> it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>
+    <h3 class="${good ? 'ok cheer' : 'ko'}"><span class="v">${good ? '\u2713 Yes' : '\u2717 No'},</span> it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>
     <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
     <details class="more"><summary>Coral Finder</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details>${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: cur})}</div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
@@ -471,17 +470,40 @@ function answer(cur, c, target, ph, cor, unseen) {
   nb.onclick = route;
   // Chosen now, photos fetched while the feedback is read (planNext). A fixed duel pair (#quiz-duel|A|B) is cheap anyway.
   setTimeout(() => hashNow() === cur && planNext(cur), 50);
-  if (nbo.length) unlockShow(nbo);
-  else if (nudgeDue()) signinNudge();
-  else if (pulseDue()) pulseAsk();
+  // One overlay at a time: a bonus card waits for the next answer while another card or the tour is open (it is counted
+  // as announced only when shown). The out-of-game prompts take turns (promptOk), never with a card or an achievement
+  // toast, nor with the mastery toast due in a moment.
+  if (nbo.length && !document.querySelector('.unlock, #tour')) {
+    Q.ba = bo.length;
+    saveQ();
+    unlockShow(nbo);
+  } else if (!nbo.length && !(exq && s.mx) && promptOk()) {
+    if (nudgeDue()) (promptMark(), signinNudge());
+    else if (pulseDue()) (promptMark(), pulseAsk());
+  }
 }
+// Out-of-game prompts ("fewer, better pop-ups", Pierre 2026-11-02, after a new-player walkthrough counted an
+// interruption every ~2 answers): the sign-in card (from NUDGE_AT answers, sync.js), the one-tap question (from
+// PULSE.FIRST) and the offer to open all genera (from INTRO.OFFER.AT, model.js) are at least PROMPT.GAP answers apart and
+// never shown with a card, the tour or an achievement toast on screen or waiting: one that falls too close waits until
+// the gap is met. Counted in answers, never time. One value for all three: the answers count when the last one showed
+// (this device; a count that went back, a progress reset, starts the spacing over).
+const PROMPT = {KEY: 'imr-prompt-at', GAP: 10};
+const promptOk = () => {
+  if (document.querySelector('#tour, .unlock, .achpop') || (typeof achBusy !== 'undefined' && achBusy)) return false;
+  const a = answersSoFar(),
+    at = store.get(PROMPT.KEY, null);
+  return typeof at !== 'number' || a < at || a - at >= PROMPT.GAP;
+};
+const promptMark = () => store.set(PROMPT.KEY, answersSoFar());
 // One-tap question (Pierre, 2026-11-02: people answer a tap, not "any comments?"): now and then, under the answer's
 // feedback, "These questions are: Too easy · About right · Too hard" (or × for not now). First after PULSE.FIRST answers
-// in all, then every PULSE.EVERY answers, never before PULSE.SESSION answers of this visit; counted in answers, never time.
+// in all (35 since 2026-11-02, was 15: the sign-in card comes at 20 and prompts are PROMPT.GAP apart), then every
+// PULSE.EVERY answers, never before PULSE.SESSION answers of this visit; counted in answers, never time.
 // The answer goes to the sheet as an event (ev 'pulse') with what the game knew then: the mode, answers this visit, right
 // % of the last 10, overall level, genera met. Nothing in the game changes with it (yet): it tells Pierre whether the
 // adaptive difficulty feels right to the players.
-const PULSE = {FIRST: 15, EVERY: 60, SESSION: 8},
+const PULSE = {FIRST: 35, EVERY: 60, SESSION: 8},
   PULSEK = 'imr-pulse';
 const pulseDue = (h = hashNow()) =>
   (h === 'quiz' || h.startsWith('quiz-duel')) &&
@@ -739,7 +761,7 @@ function quizPhoto() {
   AUTOD = !!q.auto;
   question(...q);
   if (q.intro) introShow(q.intro, q.start);
-  else if (!document.querySelector('.unlock') && introOffer()) introOfferShow(); // never over another card: next question
+  else if (promptOk() && introOffer()) (promptMark(), introOfferShow()); // never over another card: next question
   topUp(); // the questions after this one, chosen while it is played (planNext)
 }
 // The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now.

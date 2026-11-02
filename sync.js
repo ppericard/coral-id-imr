@@ -609,15 +609,18 @@ function signIn(name, pin, j) {
   } catch (e) {}
   location.reload();
 }
-// One sign-in card, once, after 10 answers played without an account (Pierre, 2026-11-01: beta testers must sign in
-// early so their progress reaches the sheet). Never in Pierre's admin browser. "Later" closes it for good.
+// One sign-in card, once, after NUDGE_AT answers played without an account (Pierre, 2026-11-01: beta testers must sign in
+// early so their progress reaches the sheet; 20 since 2026-11-02, was 10, "fewer, better pop-ups": nothing is lost by
+// waiting, the answers played before signing in (LOG0) join the account at sign-in). Spaced from the other prompts
+// (quiz.js promptOk). Never in Pierre's admin browser. "Later" closes it for good.
+const NUDGE_AT = 20;
 const nudgeDue = () =>
   !SYNC &&
   SYNC_URL &&
   !HAS_ADMIN_TOKEN &&
   !document.querySelector('#tour, .unlock') &&
   !store.get(NUDGE, 0) &&
-  store.get(LOG0, []).length >= 10;
+  store.get(LOG0, []).length >= NUDGE_AT;
 // once = the one-time card (marks it used); play = once signed in, its button opens the photo quiz (skipped tour).
 // The header's Sign in button opens it with neither: it closes with "Close" or "Done".
 function signinNudge(once = true, play = !once) {

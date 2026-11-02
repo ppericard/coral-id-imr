@@ -656,6 +656,17 @@ header {
     radial-gradient(closest-side, var(--surface) 55%, transparent 58%),
     conic-gradient(var(--good) calc(var(--pp, 0) * 1%), color-mix(in srgb, var(--ink) 18%, transparent) 0);
 }
+/* The header ring fills smoothly to its new value after an answer (tablet and desktop; registered so it can animate). */
+@property --pp {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .prog {
+    transition: --pp 600ms ease-out;
+  }
+}
 .prog[aria-current='page']::before {
   background:
     radial-gradient(closest-side, var(--ink) 55%, transparent 58%),
@@ -2092,6 +2103,46 @@ kbd {
 }
 .ans button.ko::after {
   content: '\2717';
+}
+/* A right answer's small celebration (quiz.js answer, "fewer, better pop-ups" 2026-11-02): the choice pulses once with a
+   ring of the "right" colour fading out, its tick and the feedback's "✓ Yes" pop in. About 400 ms, on the action itself,
+   never a pop-up; nothing waits for it (Next is there at once). No motion with prefers-reduced-motion. The colour is
+   --good, so the colour-blind mode and the dark theme follow. */
+@media (prefers-reduced-motion: no-preference) {
+  .ans button.ok.cheer {
+    animation: cheer 420ms cubic-bezier(0.3, 1.4, 0.5, 1);
+  }
+  .ans button.ok.cheer::after,
+  .fb h3.cheer .v {
+    display: inline-block;
+    animation: tickpop 420ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  }
+}
+@keyframes cheer {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--good) 55%, transparent);
+  }
+  40% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 12px color-mix(in srgb, var(--good) 0%, transparent);
+  }
+}
+@keyframes tickpop {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 .ans button[disabled] {
   cursor: default;
@@ -5496,6 +5547,17 @@ footer .rep:hover {
   top: -2px;
   right: -8px;
 }
+/* The Achievements tab of the leaderboard page: the same dot after its label. */
+.btabs a.hasnew::after {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--bad);
+  vertical-align: 2px;
+}
 .achc.new b::after {
   content: 'New';
   margin-left: 6px;
@@ -5585,6 +5647,7 @@ footer .rep:hover {
   display: flex;
   gap: 10px;
   align-items: center;
+  width: max-content; /* centred by left 50%: without it the note shrinks to half the screen (a 4-line note on phones) */
   max-width: min(92vw, 520px);
   padding: 10px 14px;
   border: 1px solid var(--line);
