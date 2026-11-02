@@ -544,6 +544,9 @@ function users_(p){
         relabel_(DATA_TAB, 1, from, into);
         relabel_('By genus', 1, from, into);
         const answers = relabel_('Answers', 1, from, into), reports = relabel_('Reports', 2, from, into);
+        // Names merged into it before point to the archive too (Removed's Into): a device still signed in with one of
+        // them must not log into the new account under the old name (Codex review #352).
+        relabel_('Removed', 3, from, into);
         ['board14', 'stats12'].forEach(k => { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
         return {ok: true, answers: answers, reports: reports};
       }

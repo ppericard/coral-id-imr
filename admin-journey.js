@@ -193,6 +193,10 @@ function renderJourney(name) {
     openAt = offer && offer.open ? offer.at : null,
     // A card shown after the player's a-th answer: its time, else that answer's (cards saved before times were kept).
     cardT = e => e[2] || (R[Math.min(R.length, Math.max(1, e[0])) - 1] || R[0])[1],
+    // Answers in the log before a time: where an event with a time sits in the history. The app's own count restarts at
+    // a progress reset while the sheet keeps every answer (Codex review #352); the count only for events without a time.
+    before = (tm, n) => (tm ? R.filter(r => r[1] < tm).length : n),
+    openN = offer && offer.open ? before(offer.t, offer.at) : null,
     // The kind kept with the card (from 2026-11-02); before, guessed from readiness and the answer count.
     kindOf = e =>
       !e
@@ -219,7 +223,7 @@ function renderJourney(name) {
             : '<li><b>First cards</b> none saved (progress from before the cards, or played on another device not synced yet)</li>'
         }<li><b>Cards one at a time</b> ${singles.length}</li>${
           openAt != null
-            ? `<li><b>Opened all genera</b> after answer ${openAt} · ${jTime(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${alls.length} genera at once</li>`
+            ? `<li><b>Opened all genera</b> after answer ${openN} · ${jTime(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${alls.length} genera at once</li>`
             : offer
               ? `<li><b>Offer to open all</b> declined after answer ${offer.at}${offer.t ? ' · ' + jTime(offer.t) : ''}</li>`
               : '<li><b>Open all genera</b> not used</li>'
@@ -278,7 +282,7 @@ function renderJourney(name) {
       ],
       days: dayStarts,
       dots: J.marks.map(([i, g, t]) => [i, J.met[i], `${g}: answer ${i + 1}, ${jTime(t)}`]),
-      marks: openAt != null ? [[Math.min(R.length - 1, openAt), 'Opened all']] : [],
+      marks: openN != null ? [[Math.min(R.length - 1, openN), 'Opened all']] : [],
       stars: lrnPts.map(([g, i]) => [i, lrnSeries[i], `${g} learned: answer ${i + 1}, ${jTime(R[i][1])}`]),
       label: 'Genera met over time'
     })}
@@ -342,8 +346,9 @@ function renderJourney(name) {
     if (!e) return '–';
     if (k === 'start') return `<span title="${esc(jTime(cardT(e)))}">first cards</span>`;
     if (k === 'all') return `<span title="${esc(jTime(cardT(e)))}">opened all</span>`;
-    const later = J.G[g].first + 1 - e[0];
-    return `<span title="${esc(jTime(cardT(e)))} · asked ${later === 1 ? 'at the next question' : `${later} questions later`}">#${e[0]} · ${jDate(cardT(e))}</span>`;
+    const n = before(e[2], e[0]),
+      later = J.G[g].first + 1 - n;
+    return `<span title="${esc(jTime(cardT(e)))} · asked ${later === 1 ? 'at the next question' : `${later} questions later`}">#${n} · ${jDate(cardT(e))}</span>`;
   };
   const dots = h => `<span class="adm-jdots">${[...h].map(c => `<i class="${c === '1' ? 'ok' : 'ko'}"></i>`).join('')}</span>`,
     sortBtn = (k, t) => `<button type="button" data-jsort="${k}" aria-pressed="${JSORT === k}">${t}</button>`;

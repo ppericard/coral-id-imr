@@ -590,6 +590,21 @@ test('rename (v20): the record moves to the new name, hidden from the leaderboar
   assert.ok(s.post({users: 1, token: TOK}).users.some(u => u.name === 'Ana-test' && u.board === -1));
 });
 
+test('rename (v20): names merged into the renamed player follow it to the archive', () => {
+  const s = seed();
+  s.post({name: 'Alias', pin: '4321', data: prog(1), summary: {}, answers: [ans('al1')]});
+  const al = s.post({userData: 'Alias', token: TOK}),
+    an = s.post({userData: 'Ana', token: TOK});
+  assert.strictEqual(s.post({userMerge: {from: 'Alias', into: 'Ana', data: {...an.data}, at: an.rev}, token: TOK}).ok, true, al.ok);
+  assert.strictEqual(s.post({userRename: {from: 'Ana', into: 'Ana-test'}, token: TOK}).ok, true);
+  s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: []}); // Ana starts over
+  // A device still signed in as Alias: told it is gone, into the archive, and its answers land there.
+  assert.strictEqual(s.get({name: 'Alias', pin: '4321'}).into, 'Ana-test');
+  s.post({name: 'Alias', pin: '4321', data: prog(1), summary: {}, answers: [ans('al2')]});
+  assert.ok(!s.sheets.Answers.rows.some(r => r[0] === 'Ana' && r[7] === 'al2'), 'never into the new Ana');
+  assert.ok(s.sheets.Answers.rows.some(r => r[0] === 'Ana-test' && r[7] === 'al2'), 'into the archive');
+});
+
 test('board: a player saved before v14 ranks by learned / total until their next sync', () => {
   const s = seed();
   const ra = s.sheets.RAs;
