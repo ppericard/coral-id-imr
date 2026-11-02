@@ -2555,8 +2555,9 @@ function renderCand() {
   if (CREPL) return renderRepl();
   const shown = x => !CSKIP.has(x.p.f) && (CFULL || !x.full);
   // An empty source (Pierre, 2026-11-02: "Pierre 0" opened on "No candidate left") gives way to the first source, in
-  // priority order, that still has candidates to go through.
-  if (!candQueue(CSRC).filter(shown).length) {
+  // priority order, that still has candidates to go through. Only a source with no candidate at all: one whose
+  // candidates are skipped or wait in full cells stays, so they can still be shown (Codex review #340).
+  if (!candQueue(CSRC).length) {
     const s = CSRCS.map(([k]) => k).find(k => candQueue(k).filter(shown).length);
     if (s) CSRC = s;
   }

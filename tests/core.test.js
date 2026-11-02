@@ -56,6 +56,13 @@ test('mergeOld only adds', () => {
   });
 });
 
+test('mergeProgress keeps the volatility (vr) of the device that played (Codex review #340)', () => {
+  const B = {A: {ok: 1, ko: 0, h: '1', th: 0, vr: 0}},
+    P = {A: {ok: 2, ko: 0, h: '11', th: 0.3, vr: 0.12}},
+    R = {A: {ok: 1, ko: 0, h: '1', th: 0, vr: 0}};
+  assert.strictEqual(mergeProgress(B, P, R).A.vr, 0.12);
+});
+
 test('mergeProgress: answers from both devices add up, nothing counted twice', () => {
   const B = {Acropora: {ok: 10, ko: 2, ps: {p1: [5, 4]}, conf: {Porites: 1}}};
   const P = {Acropora: {ok: 13, ko: 2, ps: {p1: [6, 5], p2: [1, 1]}, conf: {Porites: 1}, th: 0.4, h: '111'}};

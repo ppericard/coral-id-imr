@@ -249,6 +249,7 @@ let RAW,
 // kept out of DATA.gen so games, quizzes, progress and the Genera pages never see them.
 let XON = store.get('imr-finder-x', true);
 function build() {
+  GDIFF = {};
   NEXTQ = null; // a question planned on the old curation could show a photo it now excludes or moves
   const d = structuredClone(RAW);
   applyCuration(d, CUR);
@@ -1356,9 +1357,7 @@ const shaky = n => {
   return k !== 'new' && !s.mx && (k === 'weak' || ((s.ok || 0) + (s.ko || 0) < OPEN.N && knownP(n) < OPEN.L));
 };
 function weighted(list) {
-  const w = list.map(weight),
-    b = list.reduce((s, n, i) => s + (isBonus(n) ? w[i] : 0), 0),
-    o = w.reduce((a, x) => a + x, 0) - b;
+  const w = list.map(weight);
   const fresh = list.map((n, i) => [n, i]).filter(([n]) => level(n)[0] === 'new');
   if (fresh.length) {
     const share = list.filter(shaky).length < OPEN.K ? OPEN.READY : OPEN.TRICKLE,
@@ -1370,6 +1369,10 @@ function weighted(list) {
       se = e.reduce((a, x) => a + x, 0);
     fresh.forEach(([n, i], k) => (w[i] = ((tot * e[k]) / se) * (isBonus(n) ? Math.min(1, BONUS_W / 10) : 1)));
   }
+  // Bonus share from the weights as they now stand (Codex review #340: the totals taken before the progressive path's
+  // rescaling let a bonus genus take ~45% of the draws).
+  const b = list.reduce((s, n, i) => s + (isBonus(n) ? w[i] : 0), 0),
+    o = w.reduce((a, x) => a + x, 0) - b;
   if (b && o && b / (b + o) > BONUS_SHARE) {
     const f = (BONUS_SHARE * o) / ((1 - BONUS_SHARE) * b);
     list.forEach((n, i) => isBonus(n) && (w[i] *= f));
@@ -2522,6 +2525,7 @@ function loadStats() {
     .then(j => {
       if (j && j.ok && j.photos) {
         PSTAT = j.photos;
+        GDIFF = {}; // genus difficulties follow the new photo stats and confusions
         PCONF = j.conf || {};
         store.set('imr-photo-stats', {t: Date.now(), photos: j.photos, conf: PCONF});
       }

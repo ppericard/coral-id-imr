@@ -118,6 +118,18 @@ const server = http.createServer((req, res) => {
         mean = L => L.reduce((a, x) => a + x, 0) / L.length;
       out[name] = {rows, firstEase: +mean(first.slice(0, 8).map(genusDiff)).toFixed(2), allEase: +mean(gd).toFixed(2)};
     }
+    // Bonus genera keep at most BONUS_SHARE of the draw with the progressive path's weights (Codex review #340): five
+    // slate genera mastered, the others not met, one bonus genus being learned.
+    const bonus = BONUS.filter(n => GX(n))[0];
+    if (bonus) {
+      P = {};
+      G.slice(0, 5).forEach(g => (P[g] = {ok: 20, ko: 0, h: '1111111111', th: 1, L: 0.99, mx: 1}));
+      P[bonus] = {ok: 5, ko: 3, h: '11010', th: 0, L: 0.4};
+      const list = [...G, bonus];
+      let hit = 0;
+      for (let i = 0; i < 2000; i++) if (weighted(list) === bonus) hit++;
+      out.bonusShare = hit / 2000;
+    }
     return out;
   });
   await b.close();
@@ -126,7 +138,8 @@ const server = http.createServer((req, res) => {
     [b1, , b3] = R.beginner.rows,
     [e1, , e3] = R.expert.rows,
     [r1, , r3] = R.RA.rows;
-  for (const [k, v] of Object.entries(R)) console.log(k, JSON.stringify(v));
+  for (const [k, v] of Object.entries(R)) if (v.rows) console.log(k, JSON.stringify(v));
+  console.log('bonus share', R.bonusShare);
   if (b1.met > 16) fails.push(`beginner met ${b1.met} genera in 100 questions: not focused`);
   if (b3.met <= b1.met) fails.push(`beginner stopped opening genera (${b1.met} then ${b3.met})`);
   if (r3.met <= r1.met) fails.push(`RA stopped opening genera (${r1.met} then ${r3.met})`);
@@ -136,6 +149,7 @@ const server = http.createServer((req, res) => {
   if (e3.met <= b3.met) fails.push(`expert opened no more genera than a beginner (${e3.met} vs ${b3.met})`);
   if ((e1.traps + e3.traps) / 2 < 1) fails.push(`expert got ${e1.traps}, ${e3.traps} look-alike traps a question`);
   if (e3.learned < 1) fails.push('expert mastered no genus in 300 questions');
+  if (R.bonusShare > 0.2) fails.push(`a bonus genus took ${Math.round(100 * R.bonusShare)}% of the draws (cap 15%)`);
   if (errs.length) fails.push('page errors: ' + errs.slice(0, 3).join(' | '));
   if (fails.length) {
     console.error(`Learning path: ${fails.length} problem(s)\n` + fails.join('\n'));
