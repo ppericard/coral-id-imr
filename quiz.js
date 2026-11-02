@@ -734,7 +734,8 @@ function planPhoto() {
     known = n => cards.includes(n) || introduced(n),
     met = list.filter(ready),
     open = !start && introSince() >= INTRO.EVERY;
-  let t = nextTarget(met.length ? (open ? list.filter(n => ready(n) || !introduced(n)) : met) : list);
+  // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say).
+  let t = nextTarget(start ? cards : met.length ? (open ? list.filter(n => ready(n) || !introduced(n)) : met) : list);
   if (met.length && !known(t)) {
     cards = [t];
     t = nextTarget(met);
