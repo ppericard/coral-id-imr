@@ -372,7 +372,12 @@ function bindGo(root = $v) {
 // Full-size viewer shared by every page. opts.blind() true = quiz before answering: hide genus, credit and source links.
 const lb = document.getElementById('lightbox');
 let lbClose = null;
-addEventListener('popstate', () => lbClose && lbClose(true));
+// Back closes the open viewer. A viewer's entry reached with no viewer open (Forward after closing a photo, or Back onto
+// it from a link followed inside the viewer) is stepped over, like after a reload (Codex review #344).
+addEventListener('popstate', () => {
+  if (lbClose) lbClose(true);
+  else if ((history.state || {}).lb) history.back();
+});
 const VIEW_LABEL = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites', close: 'Close-up'};
 function zoom(list, i, opts = {}) {
   const blind = () => (opts.blind ? opts.blind() : false);

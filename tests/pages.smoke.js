@@ -151,6 +151,19 @@ const server = http.createServer((req, res) => {
       await q3.waitForTimeout(800);
       const bl = await q3.evaluate(() => location.hash);
       if (bl !== '#quiz') fails.push(`${w}px Back after a reload with a photo enlarged: ${bl}`);
+      // Forward onto a closed photo's entry is stepped over too: the sheet's Back then returns to the quiz.
+      await q3.evaluate(() => (location.hash = 'g-Porites'));
+      await q3.waitForTimeout(600);
+      await q3.evaluate(() => document.querySelector('#view .zoom').click());
+      await q3.waitForTimeout(300);
+      await q3.click('#lightbox [data-x]');
+      await q3.waitForTimeout(400);
+      await q3.goForward();
+      await q3.waitForTimeout(500);
+      await q3.click('[data-back]');
+      await q3.waitForTimeout(800);
+      const bf = await q3.evaluate(() => location.hash);
+      if (bf !== '#quiz') fails.push(`${w}px Back after Forward onto a closed photo: ${bf}`);
       // From the quiz to a sheet, then a reload: the sheet's Back still returns to the quiz (Codex review #344).
       await q3.evaluate(() => (location.hash = 'quiz'));
       await q3.waitForTimeout(600);
