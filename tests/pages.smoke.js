@@ -276,17 +276,25 @@ const server = http.createServer((req, res) => {
       await qt.waitForTimeout(300);
       const step = await qt.evaluate(() => document.querySelector('#tour .tstep')?.textContent);
       if (step === under.step) fails.push(`tour keys blocked by a card waiting under it (${step})`);
-      await qt.keyboard.press('Escape');
-      await qt.waitForTimeout(300);
+      // Through to the last step and its "Start playing" (already on the quiz): the waiting cards show from the first.
+      const first = await qt.evaluate(() => document.querySelector('.unlock.intro h3').textContent);
+      for (let k = 0; k < 4 && (await qt.$('#tour .tnext')) && !/Start/.test(await qt.textContent('#tour .tnext')); k++) {
+        await qt.click('#tour .tnext');
+        await qt.waitForTimeout(400);
+      }
+      await qt.click('#tour .tnext');
+      await qt.waitForTimeout(400);
       const after = await qt.evaluate(() => {
         const u = document.querySelector('.unlock.intro');
         return {
           tour: !!document.getElementById('tour'),
           shown: !!u && getComputedStyle(u).display !== 'none',
-          kick: u && u.querySelector('.ulkick').textContent
+          kick: u && u.querySelector('.ulkick').textContent,
+          name: u && u.querySelector('h3').textContent
         };
       });
-      if (after.tour || !after.shown || !/1 of/.test(after.kick || '')) fails.push(`first cards after the tour: ${JSON.stringify(after)}`);
+      if (after.tour || !after.shown || !/1 of/.test(after.kick || '') || after.name !== first)
+        fails.push(`first cards after the tour (first ${first}): ${JSON.stringify(after)}`);
       await ct.close();
     }
     errs.length = 0;
