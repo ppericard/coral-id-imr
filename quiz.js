@@ -719,7 +719,13 @@ const takePlan = cur => {
 let SHOWNQ = null; // the photo-quiz question on screen (planNext)
 function quizPhoto() {
   const q = (SHOWNQ = takePlan('quiz') || planPhoto());
-  if (q.again) againAt = answersSoFar(); // the duel spacing counts from when the "Again" shows, not when it was planned
+  // The duel spacing counts from when an "Again" or a slipped-in duel shows, not from when it was planned (Codex review
+  // #361: a duel planned 2 questions ahead left the next one 2 answers early).
+  if (q.again) againAt = answersSoFar();
+  if (q.auto) {
+    twoAt = answersSoFar();
+    duelLog = [...duelLog.filter(([, k]) => k !== q.auto), [twoAt, q.auto]];
+  }
   AUTOD = !!q.auto;
   question(...q);
   if (q.intro) introShow(q.intro, q.start);
@@ -902,7 +908,7 @@ function planPhoto() {
       return Object.assign(
         ['quiz', t, shuffle(pair.slice()), `Look-alikes: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)],
         {
-          auto: 1
+          auto: key(pair) // the pair, so its spacing is set again when it shows (quizPhoto)
         }
       );
     }

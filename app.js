@@ -1108,17 +1108,22 @@ document.getElementById('signb').onclick = e => {
   const rb = document.getElementById('reset');
   rb.onclick = () => {
     if (rb.dataset.armed) {
-      P = {};
-      delete Q.bu;
-      delete Q.ba;
-      saveQ();
-      store.set('imr-coral-reset', new Date().toISOString());
-      if (typeof introReset === 'function') introReset(); // the first-meeting cards start over with the progress
-      save();
-      delete rb.dataset.armed;
-      rb.textContent = 'Reset progress';
-      document.getElementById('pmsg').textContent = 'Progress reset.';
-      route();
+      // After the quiz tier (Codex review #361): the first-meeting cards (model.js) start over with the progress.
+      rb.disabled = true;
+      need(2).then(() => {
+        P = {};
+        delete Q.bu;
+        delete Q.ba;
+        saveQ();
+        store.set('imr-coral-reset', new Date().toISOString());
+        introReset();
+        save();
+        delete rb.dataset.armed;
+        rb.disabled = false;
+        rb.textContent = 'Reset progress';
+        document.getElementById('pmsg').textContent = 'Progress reset.';
+        route();
+      });
     } else {
       rb.dataset.armed = '1';
       rb.textContent = 'Confirm reset';
