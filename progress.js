@@ -677,7 +677,9 @@ function boardNotice() {
 const RECALC = {KEY: 'imr-recalc', ID: 'progress-moving-average-2026-11'};
 function recalcNotice() {
   if (store.get(RECALC.KEY, '') === RECALC.ID) return;
-  if (!answersSoFar()) return store.set(RECALC.KEY, RECALC.ID);
+  // Answers: the global count, or the genera's own for progress saved before it (Codex review #367).
+  const played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && ((s.ok || 0) + (s.ko || 0) > 0 || s.h));
+  if (!played) return store.set(RECALC.KEY, RECALC.ID);
   // Something else on screen (the tour, a card): try again a little later, until the screen is clear.
   if (document.querySelector('.recalc')) return; // already on screen
   if (document.querySelector('#tour, .unlock')) return void setTimeout(recalcNotice, 2000);
