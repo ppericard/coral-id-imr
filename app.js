@@ -3901,6 +3901,9 @@ let routeFrom = '',
   // Codex review #344). Kept in each history entry's state, so a reload or Back / Forward keeps it right.
   pageDepth = typeof (history.state || {}).d === 'number' ? history.state.d : 0;
 if (!history.state || typeof history.state.d !== 'number') history.replaceState({...(history.state || {}), d: pageDepth}, '');
+// A reload while a photo was enlarged keeps the viewer's history entry, with no viewer open: it is stepped over at once,
+// so the next Back leaves the page (Codex review #344: the first Back did nothing visible).
+else if (history.state.lb) history.back();
 addEventListener('hashchange', () => {
   const s = history.state || {};
   if (typeof s.d === 'number') pageDepth = s.d;
