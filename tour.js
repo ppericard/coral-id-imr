@@ -309,6 +309,9 @@
     removeEventListener('scroll', place);
     if (to) go(to);
     if (ask && window.signinNudge) signinNudge(false);
+    // A card that waited under the tour (app.css html.touring .unlock) now shows: give it the focus.
+    const b = document.querySelector('.unlock .next');
+    if (b) b.focus({preventScroll: true});
   }
   function onKey(e) {
     if (e.key === 'Escape') return close(null, true);

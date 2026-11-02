@@ -241,6 +241,48 @@ const server = http.createServer((req, res) => {
       const other = e2.filter(e => !/smoke test error/.test(e));
       if (other.length) fails.push(`${w}px quiz: ${other.slice(0, 3).join(' | ')}`);
       await c2.close();
+      // The guided tour on a first visit reaches the quiz (step 3) while the first genus cards are due: the cards wait
+      // under it, out of sight, its keys still work, and they show once it closes (Matt, an RA, 2026-11-02).
+      const ct = await b.newContext({viewport: {width: 1280, height: 860}, serviceWorkers: 'block', intro: true});
+      await ct.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await ct.addInitScript(() => localStorage.setItem('imr-nudge', '1'));
+      const qt = await ct.newPage();
+      await qt.goto(base);
+      await qt.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
+      for (let k = 0; k < 4 && (await qt.evaluate(() => location.hash !== '#quiz')); k++) {
+        await qt.keyboard.press('ArrowRight');
+        await qt.waitForTimeout(400);
+      }
+      await qt.waitForSelector('.unlock.intro', {state: 'attached', timeout: 5000}).catch(() => {});
+      const under = await qt.evaluate(() => {
+        const u = document.querySelector('.unlock.intro');
+        return {
+          hash: location.hash,
+          card: !!u,
+          shown: !!u && getComputedStyle(u).display !== 'none',
+          step: document.querySelector('#tour .tstep')?.textContent
+        };
+      });
+      if (under.hash !== '#quiz' || !under.card || under.shown) fails.push(`tour over the first cards: ${JSON.stringify(under)}`);
+      await qt.keyboard.press('ArrowRight');
+      await qt.waitForTimeout(300);
+      const step = await qt.evaluate(() => document.querySelector('#tour .tstep')?.textContent);
+      if (step === under.step) fails.push(`tour keys blocked by a card waiting under it (${step})`);
+      await qt.keyboard.press('Escape');
+      await qt.waitForTimeout(300);
+      const after = await qt.evaluate(() => {
+        const u = document.querySelector('.unlock.intro');
+        return {
+          tour: !!document.getElementById('tour'),
+          shown: !!u && getComputedStyle(u).display !== 'none',
+          kick: u && u.querySelector('.ulkick').textContent
+        };
+      });
+      if (after.tour || !after.shown || !/1 of/.test(after.kick || '')) fails.push(`first cards after the tour: ${JSON.stringify(after)}`);
+      await ct.close();
     }
     errs.length = 0;
     await p.goto(base + 'admin.html?readonly');
