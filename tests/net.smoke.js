@@ -303,6 +303,20 @@ const server = http.createServer((req, res) => {
     await p
       .waitForFunction(() => !window.__old && window.APP_READY && location.hash === '#genera', null, {timeout: 20000})
       .catch(() => fails.push('The page did not reload onto the new version at the next page change'));
+    // The admin page does the same (its demo mode: no token, nothing sent).
+    const q = await ctx.newPage();
+    await q.goto(base + 'admin.html?demo');
+    await q.waitForFunction(() => typeof UPDATED !== 'undefined' && navigator.serviceWorker.controller, null, {timeout: 20000});
+    await q.evaluate(() => (window.__old = 1));
+    SWV = 2;
+    await q.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
+    await q
+      .waitForFunction(() => UPDATED, null, {timeout: 30000})
+      .catch(() => fails.push('Admin: a new version did not take over in the background'));
+    await q.evaluate(() => (location.hash = '~cand'));
+    await q
+      .waitForFunction(() => !window.__old && location.hash === '#~cand', null, {timeout: 20000})
+      .catch(() => fails.push('Admin: the page did not reload onto the new version at the next page change'));
     await ctx.close();
   }
   // 6. Service worker install on an unstable line: every app file fails once, the install still completes.
