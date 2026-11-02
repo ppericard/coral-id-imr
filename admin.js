@@ -1353,6 +1353,8 @@ function zoom(n, f) {
         })
     );
     lb.querySelector('[data-x]').onclick = close;
+    lb.classList.remove('full');
+    lbFull(lb);
   };
   const key = e => {
     if (e.key === 'Escape') close();
@@ -1363,6 +1365,7 @@ function zoom(n, f) {
   };
   const close = () => {
     lb.hidden = true;
+    lb.classList.remove('full');
     lb.innerHTML = '';
     document.removeEventListener('keydown', key);
   };
@@ -2348,10 +2351,21 @@ function bindSug() {
       })
   );
 }
+// A click on the enlarged photo shows it at actual size, as in the games (app.js zoom; Pierre, 2026-11-02).
+const lbFull = lb => {
+  const im = lb.querySelector('.lb-in img');
+  if (!im) return;
+  im.title = 'Click for actual size';
+  im.onclick = e => {
+    e.stopPropagation();
+    lb.classList.toggle('full');
+  };
+};
 function zoomOne(p) {
   const lb = $('lightbox'),
     close = () => {
       lb.hidden = true;
+      lb.classList.remove('full');
       lb.innerHTML = '';
       document.removeEventListener('keydown', key);
     },
@@ -2360,6 +2374,7 @@ function zoomOne(p) {
     };
   lb.innerHTML = `<div class="lb-in"><img src="${img(p)}" alt=""><p class="lb-cap"><i>${esc(p.genus)}</i> · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p><div class="lb-nav"><button type="button" data-x>Close</button></div></div>`;
   lb.querySelector('[data-x]').onclick = close;
+  lbFull(lb);
   lb.hidden = false;
   lb.onclick = e => {
     if (e.target === lb) close();
@@ -2539,6 +2554,12 @@ function renderCand() {
   status();
   if (CREPL) return renderRepl();
   const shown = x => !CSKIP.has(x.p.f) && (CFULL || !x.full);
+  // An empty source (Pierre, 2026-11-02: "Pierre 0" opened on "No candidate left") gives way to the first source, in
+  // priority order, that still has candidates to go through.
+  if (!candQueue(CSRC).filter(shown).length) {
+    const s = CSRCS.map(([k]) => k).find(k => candQueue(k).filter(shown).length);
+    if (s) CSRC = s;
+  }
   const Q0 = candQueue(CSRC),
     nFull = Q0.filter(x => x.full).length,
     nJ = candQueue('all').filter(x => !x.p.cf && !x.p.j).length,
