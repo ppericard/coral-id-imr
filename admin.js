@@ -2120,9 +2120,9 @@ function renderEvents() {
       return V.length ? V[Math.floor(V.length / 2)] : '';
     },
     ldT = LD.length
-      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>When</th><th>Browser</th><th>Line</th><th>First page</th><th>Quiz photo</th><th>Downloaded</th><th>Cache</th><th>Saver</th><th>Theme</th><th>Server</th><th>Next</th></tr></thead><tbody><tr><td>Median</td><td></td><td class="n">${med(LD.map(x => x.bps))} kbit/s</td><td class="n">${sec(med(LD.map(x => x.t0)))}</td><td class="n">${sec(med(LD.map(qw)))}</td><td class="n">${med(LD.map(x => x.kb))} KB</td><td></td><td></td><td></td><td></td><td></td></tr>${LD.map(
+      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>When</th><th>Browser</th><th>Line</th><th>First page</th><th>Quiz photo</th><th>Downloaded</th><th>Cache</th><th>Saver</th><th>Installed</th><th>Theme</th><th>Server</th><th>Next</th></tr></thead><tbody><tr><td>Median</td><td></td><td class="n">${med(LD.map(x => x.bps))} kbit/s</td><td class="n">${sec(med(LD.map(x => x.t0)))}</td><td class="n">${sec(med(LD.map(qw)))}</td><td class="n">${med(LD.map(x => x.kb))} KB</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>${LD.map(
           x =>
-            `<tr><td>${when(x.t)}</td><td><small>${esc(x.ua || '')}</small></td><td class="n">${x.bps ? esc(x.bps) + ' kbit/s' : ''}</td><td class="n">${sec(x.t0)} <small>${esc(x.p0 || '')}</small></td><td class="n">${sec(qw(x))}</td><td class="n">${esc(x.kb ?? '')} KB</td><td>${x.sw ? 'yes' : ''}</td><td>${x.sv ? 'yes' : ''}</td><td>${esc(x.th || '')}</td><td>${esc(x.pop)}</td><td><small>${esc(x.nx || '')}</small></td></tr>`
+            `<tr><td>${when(x.t)}</td><td><small>${esc(x.ua || '')}</small></td><td class="n">${x.bps ? esc(x.bps) + ' kbit/s' : ''}</td><td class="n">${sec(x.t0)} <small>${esc(x.p0 || '')}</small></td><td class="n">${sec(qw(x))}</td><td class="n">${esc(x.kb ?? '')} KB</td><td>${x.sw ? 'yes' : ''}</td><td>${x.sv ? 'yes' : ''}</td><td>${x.st ? 'yes' : ''}</td><td>${esc(x.th || '')}</td><td>${esc(x.pop)}</td><td><small>${esc(x.nx || '')}</small></td></tr>`
         ).join('')}</tbody></table></div>`
       : '<p class="note">None yet.</p>';
   $v.innerHTML =
@@ -2132,7 +2132,8 @@ function renderEvents() {
       ['App errors', of('err').length],
       ['Photos not loaded', of('photo').length],
       ['Failed saves', of('sync').length],
-      ['Visits timed', of('load').length]
+      ['Visits timed', of('load').length],
+      ['Installed app', LD.filter(x => x.st).length + ' / ' + LD.length]
     ]) +
     `<div class="adm-sgrid adm-ev">
     <section class="adm-scard"><h3>"These questions are…" · ${EV_DAYS} days</h3>${pulse}</section>

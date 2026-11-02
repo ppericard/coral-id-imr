@@ -143,7 +143,8 @@ const linkMeasure = () => {
 // in seconds from the start of the navigation: p0 / t0 the first page drawn and when, qo the quiz opened, q1 its first
 // photo shown, nx the first other page opened. Sent when the first quiz photo shows, when the app is hidden, or 3 min
 // after the first page, with the line measured (bps, kbit/s), the bytes downloaded so far (kb), whether a service worker
-// served the page (sw: the offline copy), Saver on or off (sv), the theme (th), the window width (w) and the CDN server
+// served the page (sw: the offline copy), Saver on or off (sv), the theme (th), the window width (w), installed as an app or
+// in a browser tab (st) and the CDN server
 // that sent data.json (pop: GitHub Pages' x-served-by, e.g. "cache-mnl…": Manila). Here, not in sync.js: data.json
 // can arrive before sync.js has run.
 const LOADM = {};

@@ -553,7 +553,9 @@ function loadSend() {
     sw: navigator.serviceWorker && navigator.serviceWorker.controller ? 1 : 0,
     sv: saver() ? 1 : 0,
     th: isDark() ? 'dark' : 'light',
-    w: innerWidth
+    w: innerWidth,
+    // Installed on the home screen (opened as an app) or played in a browser tab (Pierre: a tab has to find the link again).
+    st: matchMedia('(display-mode: standalone)').matches || navigator.standalone === true ? 1 : 0
   });
 }
 window.addEventListener('online', sendEvents);

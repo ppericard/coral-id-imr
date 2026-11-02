@@ -509,6 +509,7 @@ test('v21 load events: load times, the line and the CDN server, nothing else kep
         sv: 1,
         th: 'light',
         w: 390,
+        st: 1,
         extra: 'dropped'
       },
       {id: 'l2', k: 'load', pop: '=cmd()', p0: '=1+1', th: 'pink', t0: 99999}
@@ -527,7 +528,8 @@ test('v21 load events: load times, the line and the CDN server, nothing else kep
     sw: 0,
     sv: 1,
     th: 'light',
-    w: 390
+    w: 390,
+    st: 1
   });
   assert.strictEqual(E.getRange(3, 4).getValue(), '', 'a server name that is not one is dropped');
   const d = JSON.parse(E.getRange(3, 7).getValue());

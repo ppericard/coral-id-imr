@@ -340,7 +340,7 @@ function reports_(token){
 // n = answers this visit, rr = right % of the last 10, lv = overall level, met = genera met), 'load' (v21, once a visit:
 // pop = the CDN server that sent data.json; p0 / t0 = first page and seconds to draw it, qo / q1 = seconds to the quiz
 // and to its first photo, nx = next page, bps = line in kbit/s, kb = KB downloaded, sw = served by the offline copy,
-// sv = Saver, th = theme, w = window width). Every event also carries
+// sv = Saver, th = theme, w = window width, st = installed as an app rather than in a browser tab). Every event also carries
 // the app version (av) and a short browser name (ua). One row each in the "Events" tab, text cut short and never run as
 // a formula. Caps: 50 events per request, 200 per device and 3000 in all every 6 hours; an id already logged is skipped.
 const EVH = ['Time', 'Device', 'Kind', 'Message', 'Where', 'Page', 'Detail', 'App', 'Browser', 'Id'];
@@ -361,7 +361,7 @@ function events_(p){
       const det = x.k === 'pulse'
         ? JSON.stringify({r: ['easy', 'ok', 'hard'].indexOf(x.r) >= 0 ? x.r : '', m: word_(x.m, /^[a-z-]*$/, 20), n: num(x.n, 0, 10000), rr: num(x.rr, 0, 100), lv: num(x.lv, -5, 5), met: num(x.met, 0, 100)})
         : x.k === 'load'
-          ? JSON.stringify({p0: pg(x.p0), t0: num(x.t0, 0, 3600), qo: num(x.qo, 0, 86400), q1: num(x.q1, 0, 86400), nx: pg(x.nx), bps: num(x.bps, 0, 1e7), kb: num(x.kb, 0, 1e7), sw: x.sw ? 1 : 0, sv: x.sv ? 1 : 0, th: word_(x.th, /^(dark|light)$/, 5), w: num(x.w, 0, 10000)})
+          ? JSON.stringify({p0: pg(x.p0), t0: num(x.t0, 0, 3600), qo: num(x.qo, 0, 86400), q1: num(x.q1, 0, 86400), nx: pg(x.nx), bps: num(x.bps, 0, 1e7), kb: num(x.kb, 0, 1e7), sw: x.sw ? 1 : 0, sv: x.sv ? 1 : 0, th: word_(x.th, /^(dark|light)$/, 5), w: num(x.w, 0, 10000), st: x.st ? 1 : 0})
           : '';
       return [new Date(x.t || Date.now()), dev, x.k, text_(x.k === 'pulse' ? x.r : x.k === 'photo' ? x.f : x.k === 'load' ? word_(x.pop, /^[a-zA-Z0-9, -]*$/, 60) : x.msg, 300), text_(x.src, 160), text_(x.pg, 80), det, text_(x.av, 20), text_(x.ua, 40), String(x.id)];
     });

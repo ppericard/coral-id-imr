@@ -252,7 +252,7 @@
         pop,
         '',
         'quiz',
-        JSON.stringify({p0: 'home', t0, qo, q1, nx: 'quiz', bps, kb, sw, sv, th, w}),
+        JSON.stringify({p0: 'home', t0, qo, q1, nx: 'quiz', bps, kb, sw, sv, th, w, st: sw}),
         '170',
         ua
       ])
