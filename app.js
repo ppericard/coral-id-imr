@@ -2630,6 +2630,28 @@ function bindProgFile() {
   };
 }
 
+// What is wrong with the sync, in words, or '' when everything is saved.
+function syncTrouble() {
+  if (!SYNC_URL || !SYNC) return '';
+  if (SYNC.err === 'pin') return 'Not saved: code refused';
+  if (SYNC.err === 'gone')
+    return SYNC.into ? `Not saved: this account was merged into ${SYNC.into}` : 'Not saved: this account was removed';
+  // Too many wrong codes for this name (anyone can cause it): say so rather than "could not reach the sheet" (code re-review L3).
+  if (SYNC.err === 'wait') return 'Not saved yet: too many wrong codes for this name, try again in 10 minutes';
+  const n = (SYNC.log || []).length;
+  if (SYNC.err) return n ? `Not saved yet: ${n} answer${n > 1 ? 's' : ''} waiting` : 'Not saved yet: could not reach the sheet';
+  return '';
+}
+// The sync sheet's address and this device's sign-in: state that many pages read, kept here with the pages; the code
+// that talks to the sheet is in sync.js.
+const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
+// A copy run on this computer (tests, tools/perf.js, a developer) never sends anonymous answers or reports to the real
+// sheet (Pierre, 2026-11-02: 17 "players" in the admin were tools/perf.js runs: once the service worker was in, its
+// requests passed by the test's network mocks and reached the sheet).
+const LOCAL = /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])$/.test(location.hostname) || location.protocol === 'file:';
+let SYNC = store.get('imr-coral-sync', null),
+  syncTimer = null;
+
 /* ---------- routing ---------- */
 function go(h) {
   if (hashNow() === h) route();
@@ -3510,12 +3532,9 @@ Promise.all([
     achCheck(); // before the first page, so the badge on My progress counts them
     route();
     if (CUR_KEPT) curRefresh();
-    // sync.js (the sheet link) loads after app.js: if it never arrived on a bad line, the app still starts, unsaved.
-    if (window.syncPull) {
-      syncPull();
-      sendAnon();
-      loadStats();
-    }
+    syncPull();
+    sendAnon();
+    loadStats();
     window.APP_READY = true;
     if (window.tourFirst) tourFirst();
     boardNotice();

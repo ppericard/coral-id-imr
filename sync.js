@@ -2,7 +2,10 @@
 // one file per part, one piece at a time). Signed-in progress (sync), photo statistics (loadStats), players' reports,
 // answers of players not signed in (anonymous), the app's own error reports and one-tap answers (events), signing in.
 // A classic script like app.js: it shares app.js's top-level names and is loaded right after it (index.html, in
-// order); app.js waits for every script (window.BOOT) before its first page, so nothing here is needed earlier.
+// order); app.js waits for every script (window.BOOT) before its first page, so nothing here is needed earlier. Like
+// app.js it is required: the loader tries it 3 times and the service worker keeps it; if it never arrives the start-up
+// says the data could not be loaded, with Try again, as it did when this code was in app.js. The sync state the pages
+// read (SYNC_URL, LOCAL, SYNC, syncTrouble) stays in app.js.
 // RA sync: progress goes to Pierre's Google Sheet (Apps Script web app, tools/sync/Code.gs) under a name
 // and a 4-digit code; the same name and code bring it back on another device. Off while SYNC_URL is empty.
 // Photo difficulty from the sheet (Elo over every RA's answers), kept for offline use. An older sheet script without
@@ -31,13 +34,6 @@ function loadStats() {
     })
     .catch(() => {});
 }
-const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
-// A copy run on this computer (tests, tools/perf.js, a developer) never sends anonymous answers or reports to the real
-// sheet (Pierre, 2026-11-02: 17 "players" in the admin were tools/perf.js runs: once the service worker was in, its
-// requests passed by the test's network mocks and reached the sheet).
-const LOCAL = /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])$/.test(location.hostname) || location.protocol === 'file:';
-let SYNC = store.get('imr-coral-sync', null),
-  syncTimer = null;
 function syncSummary() {
   const n = Object.keys(DATA.gen),
     genera = Object.fromEntries(n.map(x => [x, level(x)[0]]));
@@ -397,18 +393,6 @@ function reportDialog(c, btn) {
   };
   d.showModal();
   d.querySelector('input[name="why"]').focus();
-}
-// What is wrong with the sync, in words, or '' when everything is saved.
-function syncTrouble() {
-  if (!SYNC_URL || !SYNC) return '';
-  if (SYNC.err === 'pin') return 'Not saved: code refused';
-  if (SYNC.err === 'gone')
-    return SYNC.into ? `Not saved: this account was merged into ${SYNC.into}` : 'Not saved: this account was removed';
-  // Too many wrong codes for this name (anyone can cause it): say so rather than "could not reach the sheet" (code re-review L3).
-  if (SYNC.err === 'wait') return 'Not saved yet: too many wrong codes for this name, try again in 10 minutes';
-  const n = (SYNC.log || []).length;
-  if (SYNC.err) return n ? `Not saved yet: ${n} answer${n > 1 ? 's' : ''} waiting` : 'Not saved yet: could not reach the sheet';
-  return '';
 }
 // Answers played before signing in (LOG0) and the one-time sign-in card (NUDGE): outside the imr-coral-* keys, so they
 // never travel in the progress data sent to the sheet.
