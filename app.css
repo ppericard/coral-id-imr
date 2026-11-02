@@ -2069,6 +2069,42 @@ kbd {
 .fb h3 a {
   color: inherit;
 }
+/* One-tap question (pulse, app.js): a quiet row under the feedback, above Next; wraps on narrow phones. */
+.pulse {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: var(--r);
+  background: var(--surface-2);
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+.pulse span {
+  margin-right: 2px;
+}
+.pulse button {
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  min-height: 36px;
+  cursor: pointer;
+}
+.pulse button:hover {
+  border-color: var(--accent);
+}
+.pulse .pulsex {
+  margin-left: auto;
+  border: none;
+  background: none;
+  color: var(--muted);
+  padding: 6px 8px;
+}
 /* Only "Yes"/"No" takes the right/wrong colour: the genus to remember stays in ink (designer re-review 2026-11-01, N3). */
 .fb h3 a {
   text-decoration-color: var(--line);

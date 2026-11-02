@@ -2256,6 +2256,15 @@ td.cov-c .cov-off {
 .adm-tscroll {
   overflow-x: auto;
 }
+/* Errors & feedback: long error messages and photo names wrap inside their cell. */
+.adm-ev code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}
+.adm-ev td:first-child {
+  min-width: 13em;
+}
 .adm-tscroll.tall {
   max-height: 420px;
   overflow-y: auto;
@@ -2899,4 +2908,100 @@ td.cov-c.cov-over {
 }
 .adm-repl-acts {
   margin-top: 12px;
+}
+/* To do > Health (statsHealth): four cards; where players stop and the photos span the grid, genera and activity share
+   the last row on desktop (2 + 1 columns). */
+.adm-health .adm-hsec h3 small {
+  color: var(--muted);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.adm-hsec h4 {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--muted);
+  margin: 10px 0 4px;
+}
+.adm-hsec h4:first-child {
+  margin-top: 0;
+}
+.adm-hgrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px 20px;
+}
+.adm-hsec .adm-tbl th.n {
+  text-align: right;
+}
+.adm-hgrid .adm-tbl + .adm-tbl {
+  margin-top: 8px;
+}
+.adm-hsec .adm-bar {
+  width: 100%;
+  min-width: 40px;
+}
+.adm-hsec .adm-tbl td:has(> .adm-bar) {
+  width: 40%;
+}
+.adm-hphotos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.adm-htile {
+  margin: 0;
+  min-width: 0;
+}
+.adm-htile .adm-ph {
+  width: 100%;
+  border-radius: var(--r-xs);
+  overflow: hidden;
+}
+.adm-htile figcaption {
+  font-size: var(--fs-xs);
+  line-height: 1.35;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+.adm-htile figcaption > span {
+  color: var(--muted);
+}
+.adm-htile .adm-hnum {
+  display: block;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.adm-cols.adm-hcols {
+  height: 80px;
+  gap: 2px;
+}
+.adm-cols.adm-hcols > div {
+  min-width: 3px;
+}
+@media (max-width: 599px) {
+  .adm-hphotos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
+@media (min-width: 600px) {
+  .adm-hsec.full,
+  .adm-hsec.g,
+  .adm-hsec.t {
+    grid-column: 1/-1;
+  }
+  .adm-hgrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .adm-hgrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .adm-hsec.g {
+    grid-column: span 2;
+  }
+  .adm-hsec.t {
+    grid-column: span 1;
+  }
 }

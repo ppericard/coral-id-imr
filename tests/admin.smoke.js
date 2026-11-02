@@ -119,6 +119,14 @@ const server = http.createServer((req, res) => {
     if (/Test Demo/.test(await text())) fails.push(`${w}px Users: delete did not remove "Test Demo"`);
 
     // Triage lists the demo reports; Activity shows the demo players' answers.
+    // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
+    await go('~events');
+    await p
+      .waitForFunction(() => /Saves that failed/i.test(document.getElementById('view').innerText), null, {timeout: 10000})
+      .catch(() => {});
+    const evt = await text();
+    if (!/About right/i.test(evt) || !/reading 'views'/.test(evt) || !/Saves that failed/i.test(evt))
+      fails.push(`${w}px Errors & feedback: demo events missing`);
     await go('~triage');
     if (!/Demo report/.test(await text())) fails.push(`${w}px Triage: demo reports missing`);
     await go('~stats');
@@ -135,6 +143,40 @@ const server = http.createServer((req, res) => {
       };
     });
     if (!ln.rows || ln.lanes < 2 || ln.noMedian) fails.push(`${w}px Photo difficulty: lanes per view missing ${JSON.stringify(ln)}`);
+    // Health (To do): its four sections from the demo answers, with and without this browser's own answers, no sideways
+    // page scroll; a photo everyone misses opens in the lightbox.
+    const health = () =>
+      p.evaluate(() => ({
+        secs: [...document.querySelectorAll('[data-health]')].map(s => s.dataset.health).join(' '),
+        rows: document.querySelectorAll('[data-health="genera"] tbody tr').length,
+        bars: document.querySelectorAll('[data-health="time"] .adm-cols > div').length,
+        wide: document.documentElement.scrollWidth - innerWidth
+      }));
+    await go('~health');
+    for (const v of ['all', 'others']) {
+      if (v === 'others') {
+        if (!(await p.$('[data-sf="elo"][data-v="others"]'))) {
+          fails.push(`${w}px Health: no "Without me" switch`);
+          break;
+        }
+        await p.click('[data-sf="elo"][data-v="others"]');
+        await settle();
+      }
+      const hs = await health();
+      if (hs.secs !== 'stop photos genera time' || !hs.rows || hs.bars !== 60)
+        fails.push(`${w}px Health (${v}): sections ${JSON.stringify(hs)}`);
+      if (hs.wide > 0) fails.push(`${w}px Health (${v}): page ${hs.wide} px wider than the window`);
+    }
+    if (await p.$('[data-health="photos"] [data-zf]')) {
+      await p.click('[data-health="photos"] [data-zf]');
+      if (await p.evaluate(() => document.getElementById('lightbox').hidden)) fails.push(`${w}px Health: a photo click opened nothing`);
+      await p.keyboard.press('Escape');
+    }
+    if (errs.length) fails.push(`${w}px Health: ${errs.slice(0, 3).join(' | ')}`);
+    if (await p.$('[data-sf="elo"][data-v="all"]')) {
+      await p.click('[data-sf="elo"][data-v="all"]');
+      await settle();
+    }
 
     // Candidates: Skip sets the photo aside, Reject marks it reviewed (a draft change), then Publish (in memory).
     await go('~cand');
@@ -228,7 +270,7 @@ const server = http.createServer((req, res) => {
     console.error(`Admin demo: ${fails.length} problem(s)\n` + fails.join('\n'));
     process.exit(1);
   }
-  console.log('Admin demo OK: every page at 390 and 1280 px, merge, delete, triage, skip, reject, cap, publish; nothing sent.');
+  console.log('Admin demo OK: every page at 390 and 1280 px, merge, delete, triage, health, skip, reject, cap, publish; nothing sent.');
 })().catch(e => {
   console.error(e);
   process.exit(1);

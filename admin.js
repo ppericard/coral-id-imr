@@ -932,7 +932,9 @@ const GROUPS = [
       ['~triage', 'Triage'],
       ['~stats-needs', 'Where to look'],
       ['~cov', 'Game coverage'],
-      ['~fcov', 'Sheet & Finder coverage']
+      ['~fcov', 'Sheet & Finder coverage'],
+      ['~events', 'Errors & feedback'],
+      ['~health', 'Health']
     ]
   ],
   [
@@ -1024,6 +1026,7 @@ const modeKey = () =>
           '~form': 'form',
           '~excluded': 'excluded',
           '~triage': 'triage',
+          '~events': 'events',
           '~look': 'mont',
           '~mont': 'mont',
           '~cand': 'cand'
@@ -1035,6 +1038,7 @@ function render() {
   if (cur === '~form') return renderForm();
   if (cur === '~excluded') return renderExcluded();
   if (cur === '~triage') return renderTriage();
+  if (cur === '~events') return renderEvents();
   // Every Stats / Needs sub-view keeps its sub-menu on top, whichever function draws it (Pierre, 2026-11-01).
   if (modeKey() === 'needs') {
     if (cur === '~cov') renderCov();
@@ -1561,10 +1565,23 @@ function renderQuality() {
   );
 }
 
+// Thresholds of the Health page (statsHealth), here because its help text quotes them.
+const HEALTH = {
+  GAP: 30, // minutes between two answers that start a new session
+  EARLY: 10, // a session of at most this many answers ended early
+  PH_MIN: 5, // answers before a photo is judged
+  PH_LOW: 0.4, // right rate under which a photo is one everyone misses
+  PH_FAR: 1, // difficulty this far above its genus median (1 = clearly harder)
+  G_MIN: 10, // answers on a genus before a player counts as stuck on it
+  G_LOW: 0.5, // right rate over a player's last G_MIN answers on a genus under which they are stuck
+  DAYS: 30
+};
+
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
+  events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap question "These questions are: Too easy · About right · Too hard" (after 15 answers, then every 60), with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. The games aim at about 80% right, so many "Too hard" from beginners would mean the start is too steep. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
-  start: `<p><b>Four tabs</b>: <b>To do</b> (players' reports, your flags, where photos are missing), <b>Photos</b> (Genera, Candidates, Growth form, Quality, Look-alikes, Excluded), <b>Players</b> (who plays, their numbers, merge or delete names) and <b>Photo stats</b> (how hard each photo is). The pages of a tab are in the row under the header; each tab reopens the page you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
+  start: `<p><b>Four tabs</b>: <b>To do</b> (players' reports, your flags, where photos are missing, how the app is working for players), <b>Photos</b> (Genera, Candidates, Growth form, Quality, Look-alikes, Excluded), <b>Players</b> (who plays, their numbers, merge or delete names) and <b>Photo stats</b> (how hard each photo is). The pages of a tab are in the row under the header; each tab reopens the page you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Growth form</b> and <b>Quality</b>: check the growth form and quality guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>To do › Where to look</b>: which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
     <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
@@ -1592,6 +1609,11 @@ const HELP = {
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" in the footer of any page (wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full. Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below ${CELL_MAX}. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p>`,
+  health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. <b>Without me</b> drops this browser's own answers everywhere on the page.</p>
+    <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
+    <p><b>Photos everyone misses.</b> Photos shown in ${HEALTH.PH_MIN} answers or more with under ${Math.round(HEALTH.PH_LOW * 100)}% right, or a difficulty at least ${HEALTH.PH_FAR} above the median of their genus (+1 = clearly harder; photo Elo, with ${HEALTH.PH_MIN}+ rated answers). They may be mislabelled, show another coral, or be bad photos: click to enlarge, the genus name opens its page. Right % and answers count every answer that showed the photo; the number after them is the difficulty against the genus median.</p>
+    <p><b>Genera that don't take off.</b> Per slate genus, from the answers where it was shown: players who met it, the median of their right rates on it, and Stuck = players with ${HEALTH.G_MIN}+ answers on it still under ${Math.round(HEALTH.G_LOW * 100)}% over their last ${HEALTH.G_MIN} (out of the players with ${HEALTH.G_MIN}+ answers). Most stuck first.</p>
+    <p><b>Activity.</b> Answers and players with at least one answer per day (this browser's time zone), the last ${HEALTH.DAYS} days; hover a bar for its day and count.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`
 };
 function toggleHelp() {
@@ -1608,7 +1630,8 @@ function toggleHelp() {
       '~stats-needs': 'statsneeds',
       '~diff': 'diff',
       '~cov': 'cov',
-      '~fcov': 'fcov'
+      '~fcov': 'fcov',
+      '~health': 'health'
     }[cur] || modeKey();
   h = document.createElement('div');
   h.id = 'admhelp';
@@ -1947,6 +1970,152 @@ function loadReports(force) {
     .catch(() => (REPS = {err: 'Offline'}));
 }
 const repsOpen = () => (REPS && REPS.rows ? REPS.rows.filter(r => !(DRAFT.seen || {})['rep:' + r[0]]) : []);
+// Errors & feedback (sheet v19, Pierre 2026-11-02: most RAs will not report problems): what the players' devices report
+// by themselves (app.js ev): app errors, photos that did not load, saves that failed, and the one-tap question's answers.
+// Rows [id, time ms, device, kind, message, where, page, detail, app version, browser], newest first. Admin token only.
+let EVS = null,
+  evsAt = 0;
+function loadEvents(force) {
+  if (!force && EVS && Date.now() - evsAt < 300000) return Promise.resolve(EVS);
+  if (!TOKEN) return Promise.resolve((EVS = {err: 'Needs the GitHub token'}));
+  return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readEvents: 1, token: TOKEN})})
+    .then(r => r.json())
+    .then(j => {
+      evsAt = Date.now();
+      return (EVS =
+        j && j.ok && j.rows
+          ? {rows: j.rows}
+          : {
+              err:
+                !j || !j.v || j.v < 19
+                  ? 'Sheet script v19 not running yet (it updates itself within 15 minutes)'
+                  : j.error === 'token'
+                    ? 'Token refused'
+                    : 'Not available'
+            });
+    })
+    .catch(() => (EVS = {err: 'Offline'}));
+}
+const EV_DAYS = 30;
+function renderEvents() {
+  status();
+  if (!EVS) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    loadEvents().then(() => cur === '~events' && renderEvents());
+    return;
+  }
+  const head = `<div class="adm-shead"><h2>Errors & feedback</h2><button type="button" class="adm-link" data-evr>Refresh</button></div>`;
+  if (EVS.err) {
+    $v.innerHTML = head + `<p class="note">${esc(EVS.err)}</p>`;
+    return bindEv();
+  }
+  const since = Date.now() - EV_DAYS * 864e5,
+    R = EVS.rows.filter(r => r[1] >= since),
+    of = k => R.filter(r => r[3] === k),
+    when = t => days(t),
+    group = (L, key) => {
+      const O = {};
+      L.forEach(r => {
+        const k = key(r),
+          g = (O[k] = O[k] || {k, n: 0, dev: new Set(), last: 0, pg: new Set(), av: new Set(), ua: new Set(), r});
+        g.n++;
+        g.dev.add(r[2]);
+        g.last = Math.max(g.last, r[1]);
+        if (r[6]) g.pg.add(r[6]);
+        if (r[8]) g.av.add(r[8]);
+        if (r[9]) g.ua.add(r[9]);
+      });
+      return Object.values(O).sort((a, b) => b.dev.size - a.dev.size || b.n - a.n || b.last - a.last);
+    },
+    few = (S, n = 3) => esc([...S].slice(0, n).join(', ') + (S.size > n ? ` +${S.size - n}` : ''));
+  // The one-tap question: how many said each, overall and by player level (overall level from the answer's detail).
+  const P = of('pulse').map(r => {
+      let d = {};
+      try {
+        d = JSON.parse(r[7] || '{}');
+      } catch (e) {}
+      return {r: r[4], ...d, t: r[1], dev: r[2]};
+    }),
+    RS = [
+      ['easy', 'Too easy'],
+      ['ok', 'About right'],
+      ['hard', 'Too hard']
+    ],
+    band = lv =>
+      typeof lv !== 'number'
+        ? 'unknown'
+        : lv < -0.5
+          ? 'beginner (level below −0.5)'
+          : lv < 0.5
+            ? 'middle (−0.5 to +0.5)'
+            : 'strong (above +0.5)',
+    bands = [...new Set(P.map(x => band(x.lv)))].sort(),
+    pmax = Math.max(1, ...RS.map(([k]) => P.filter(x => x.r === k).length)),
+    rrOf = L => (L.length ? Math.round(L.reduce((t, x) => t + (x.rr || 0), 0) / L.length) + '%' : '–');
+  const pulse = P.length
+    ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Answer</th><th>Times</th><th></th><th title="Right % of their last 10 answers when they answered, on average">Last 10 right</th></tr></thead><tbody>${RS.map(
+        ([k, t]) => {
+          const L = P.filter(x => x.r === k);
+          return `<tr><td>${t}</td><td class="n">${L.length}</td><td>${sbar(L.length, pmax, k === 'ok' ? '' : 'bad')}</td><td class="n">${rrOf(L)}</td></tr>`;
+        }
+      ).join('')}</tbody></table></div>
+      <div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Player level</th>${RS.map(([, t]) => `<th>${t}</th>`).join('')}</tr></thead><tbody>${bands
+        .map(
+          b =>
+            `<tr><td>${esc(b)}</td>${RS.map(([k]) => `<td class="n">${P.filter(x => band(x.lv) === b && x.r === k).length || ''}</td>`).join('')}</tr>`
+        )
+        .join(
+          ''
+        )}</tbody></table><p class="note">${new Set(P.map(x => x.dev)).size} device${new Set(P.map(x => x.dev)).size === 1 ? '' : 's'}</p>`
+    : '<p class="note">None yet.</p>';
+  const errs = group(of('err'), r => r[4] + ' @ ' + r[5]),
+    errT = errs.length
+      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Error</th><th>Devices</th><th>Times</th><th>Last</th><th>Pages</th><th>App</th><th>Browsers</th></tr></thead><tbody>${errs
+          .map(
+            g =>
+              `<tr><td><code>${esc(g.r[4])}</code><br><small>${esc(g.r[5])}</small></td><td class="n">${g.dev.size}</td><td class="n">${g.n}</td><td>${when(g.last)}</td><td><small>${few(g.pg)}</small></td><td><small>${few(g.av)}</small></td><td><small>${few(g.ua)}</small></td></tr>`
+          )
+          .join('')}</tbody></table></div>`
+      : '<p class="note">No app error reported.</p>';
+  const phs = group(of('photo'), r => r[4]),
+    phT = phs.length
+      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Photo</th><th>Devices</th><th>Times</th><th>Last</th><th>Browsers</th></tr></thead><tbody>${phs
+          .map(g => {
+            const p = PHOTOS[g.k];
+            return `<tr><td>${p ? `<button type="button" class="adm-link" data-zf="${esc(g.k)}" data-g="${esc(p.genus)}"><i>${esc(p.genus)}</i></button> ` : ''}<code>${esc(g.k)}</code></td><td class="n">${g.dev.size}</td><td class="n">${g.n}</td><td>${when(g.last)}</td><td><small>${few(g.ua)}</small></td></tr>`;
+          })
+          .join('')}</tbody></table></div>`
+      : '<p class="note">No photo failed to load.</p>';
+  const sy = group(of('sync'), r => r[4]),
+    syT = sy.length
+      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Save problem</th><th>Devices</th><th>Times</th><th>Last</th></tr></thead><tbody>${sy
+          .map(
+            g =>
+              `<tr><td><code>${esc(g.k)}</code></td><td class="n">${g.dev.size}</td><td class="n">${g.n}</td><td>${when(g.last)}</td></tr>`
+          )
+          .join('')}</tbody></table></div>`
+      : '<p class="note">No failed save while online.</p>';
+  $v.innerHTML =
+    head +
+    kpis([
+      ['One-tap answers', P.length],
+      ['App errors', of('err').length],
+      ['Photos not loaded', of('photo').length],
+      ['Failed saves', of('sync').length]
+    ]) +
+    `<div class="adm-sgrid adm-ev">
+    <section class="adm-scard"><h3>"These questions are…" · ${EV_DAYS} days</h3>${pulse}</section>
+    <section class="adm-scard wide"><h3>App errors</h3>${errT}</section>
+    <section class="adm-scard"><h3>Photos that did not load</h3>${phT}</section>
+    <section class="adm-scard"><h3>Saves that failed</h3>${syT}</section>
+    </div>`;
+  bindEv();
+}
+function bindEv() {
+  const r = $v.querySelector('[data-evr]');
+  if (r) r.onclick = () => loadEvents(true).then(() => cur === '~events' && renderEvents());
+  $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
+}
 // Triage: only what needs Pierre's eye. 1) photos he flagged on the site, with where they were seen;
 // 2) Featured photos rated Poor. Views without his own Featured pick are not a task (Pierre): the automatic pick is fine.
 function renderTriage() {
@@ -3789,7 +3958,8 @@ const STAT_TABS = [
 const NEED_TABS = [
   ['~stats-needs', 'Where to look'],
   ['~cov', 'Game coverage'],
-  ['~fcov', 'Sheet & Finder coverage']
+  ['~fcov', 'Sheet & Finder coverage'],
+  ['~health', 'Health']
 ];
 let ANS = null,
   RAS = {},
@@ -4171,7 +4341,7 @@ function renderStats() {
   if (!ANS) {
     $v.innerHTML = statSwitch() + '<p class="note">Loading…</p>';
     loadStats().then(() => {
-      if (cur.startsWith('~stats')) render();
+      if (cur.startsWith('~stats') || cur === '~health') render();
     });
     return;
   }
@@ -4181,7 +4351,9 @@ function renderStats() {
       ? statsConf()
       : cur === '~stats-needs'
         ? statsNeeds()
-        : statsPlayers();
+        : cur === '~health'
+          ? statsHealth()
+          : statsPlayers();
 }
 // Rows kept by the player filter (all, others than this browser's synced name, or only it).
 const statRows = () => ANS.rows.filter(r => SF.who === 'all' || !MEID || (SF.who === 'me') === (r[0] === MEID));
@@ -4523,6 +4695,246 @@ function needsBody() {
         if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g);
       })
   );
+}
+// Health (Pierre, 2026-11-02: "most RAs will not send feedback"): what the answers already logged say about how the
+// app works for players, with no new data. Where players stop (sessions = answers less than GAP minutes apart; how long
+// they last; what the short ones ended on), photos everyone misses (maybe mislabelled or bad: a link to the genus page),
+// genera that don't take off for players, and activity over the last DAYS days. Anonymous ids only, like the other
+// stats pages; "Without me" drops this browser's own answers everywhere on the page, as on Where to look.
+function statsHealth() {
+  const H = HEALTH,
+    head = `<div class="adm-shead"><h2>Health</h2>${eloSeg()}</div>`;
+  if (ANS.old) {
+    $v.innerHTML =
+      head +
+      `<p class="warn">${ANS.err === 'token' ? "Needs this page's GitHub token: per-player answers are admin-only (sheet v14)." : `Sheet script v${esc(ANS.v || '?')}: needs v4.`} <a href="https://raw.githubusercontent.com/${REPO}/main/tools/sync/Code.gs" target="_blank" rel="noopener">Code.gs</a></p>`;
+    bindStats();
+    return;
+  }
+  const noMe = SF.elo === 'others' && MEID,
+    R = (ANS.rows || []).filter(r => !noMe || r[0] !== MEID);
+  if (!R.length) {
+    $v.innerHTML = head + `<p class="note">${noMe ? noneButMe() : 'No answers yet.'}</p>`;
+    bindStats();
+    return;
+  }
+  const now = Date.now(),
+    ok = r => !!r[4],
+    plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
+    median = a => {
+      const b = a.slice().sort((x, y) => x - y),
+        k = b.length >> 1;
+      return !b.length ? null : b.length % 2 ? b[k] : (b[k - 1] + b[k]) / 2;
+    },
+    tbl = (cols, rows) =>
+      `<table class="adm-tbl"><thead><tr>${cols.map(c => `<th${/^n:/.test(c) ? ' class="n"' : ''}>${c.replace(/^n:/, '')}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`,
+    // One row per bucket: label, count, share and a bar against the biggest bucket.
+    dist = (L, tot, bad) => {
+      const mx = Math.max(1, ...L.map(x => x[1]));
+      return L.map(
+        ([t, n], i) =>
+          `<tr><td>${t}</td><td>${sbar(n, mx, bad && bad(i) ? 'bad' : '')}</td><td class="n">${n}</td><td class="n">${pct(n, tot)}</td></tr>`
+      );
+    },
+    gameOf = m => (/^quiz-duel/.test(m) ? 'Duel' : /^quiz/.test(m) ? 'Photo quiz' : m || 'Other');
+
+  // 1. Where players stop: one player's answers, oldest first, cut where two answers are GAP minutes apart or more.
+  const BY = {};
+  R.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
+  const S = [];
+  Object.entries(BY).forEach(([id, L]) => {
+    L.sort((a, b) => a[1] - b[1]);
+    let s = null;
+    L.forEach(r => {
+      if (!s || r[1] - s.L[s.L.length - 1][1] >= H.GAP * 6e4) S.push((s = {id, L: []}));
+      s.L.push(r);
+    });
+  });
+  // A session whose last answer is less than GAP minutes old may still be going: it has not ended yet.
+  const ended = S.filter(s => now - s.L[s.L.length - 1][1] >= H.GAP * 6e4),
+    going = S.length - ended.length,
+    nP = Object.keys(BY).length,
+    perP = Object.values(BY).map(L => S.filter(s => s.id === L[0][0]).length);
+  const inB = (n, a, b) => n >= a && n <= b,
+    LEN = [
+      ['1-5', 1, 5],
+      ['6-10', 6, 10],
+      ['11-20', 11, 20],
+      ['21-50', 21, 50],
+      ['51+', 51, Infinity]
+    ].map(([t, a, b]) => [t, ended.filter(s => inB(s.L.length, a, b)).length]),
+    PER = [
+      ['1', 1, 1],
+      ['2', 2, 2],
+      ['3-5', 3, 5],
+      ['6-10', 6, 10],
+      ['11+', 11, Infinity]
+    ].map(([t, a, b]) => [t, perP.filter(n => inB(n, a, b)).length]);
+  // How a session ended: the misses in a row on its last answers (a run of misses before quitting = frustration).
+  const missRun = s => {
+      let k = 0;
+      for (let i = s.L.length - 1; i >= 0 && !ok(s.L[i]); i--) k++;
+      return Math.min(3, k);
+    },
+    early = ended.filter(s => s.L.length <= H.EARLY),
+    longer = ended.filter(s => s.L.length > H.EARLY),
+    runs = L => [0, 1, 2, 3].map(k => L.filter(s => missRun(s) === k).length),
+    RE = runs(early),
+    RL = runs(longer),
+    END_T = ['Right', '1 miss', '2 misses', '3+ misses'];
+  const top = (L, key, k) => {
+    const O = {};
+    L.forEach(s => {
+      const x = key(s.L[s.L.length - 1]);
+      O[x] = (O[x] || 0) + 1;
+    });
+    return Object.entries(O)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, k);
+  };
+  const stopSec = `<section class="adm-scard adm-hsec full" data-health="stop"><h3>Where players stop</h3><div class="adm-hgrid">
+    <div><h4>Answers per session</h4>${ended.length ? tbl(['Answers', '', 'n:Sessions', 'n:'], dist(LEN, ended.length)) : '<p class="note">None ended yet.</p>'}${going ? `<p class="note">${plural(going, 'session')} still going</p>` : ''}</div>
+    <div><h4>Sessions per player</h4>${tbl(['Sessions', '', 'n:Players', 'n:'], dist(PER, nP))}</div>
+    <div><h4>How sessions ended</h4>${
+      ended.length
+        ? `<table class="adm-tbl"><thead><tr><th>Last answers</th><th class="n" title="Sessions of ${H.EARLY} answers or fewer">≤${H.EARLY}</th><th></th><th class="n" title="Longer sessions">&gt;${H.EARLY}</th></tr></thead><tbody>${END_T.map(
+            (t, k) =>
+              `<tr><td>${t}</td><td class="n">${pct(RE[k], early.length)}</td><td>${sbar(RE[k], early.length, k ? 'bad' : '')}</td><td class="n">${pct(RL[k], longer.length)}</td></tr>`
+          ).join(
+            ''
+          )}<tr><td>Sessions</td><td class="n">${early.length}</td><td></td><td class="n">${longer.length}</td></tr></tbody></table>`
+        : '<p class="note">None ended yet.</p>'
+    }</div>
+    <div><h4>Last shown, sessions ≤${H.EARLY}</h4>${
+      early.length
+        ? tbl(
+            ['Genus', 'n:Sessions'],
+            top(early, r => r[2], 5).map(
+              ([g, n]) => `<tr><td><a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a></td><td class="n">${n}</td></tr>`
+            )
+          ) +
+          tbl(
+            ['Game', 'n:Sessions'],
+            top(early, r => gameOf(r[5]), 3).map(([m, n]) => `<tr><td>${esc(m)}</td><td class="n">${n}</td></tr>`)
+          )
+        : '<p class="note">None.</p>'
+    }</div></div></section>`;
+
+  // 2. Photos everyone misses: answers from the log (each answer counts once for every photo it showed), difficulty
+  // from the photo Elo (with or without me) against the median of the genus's rated photos.
+  const PS = photoStats(),
+    META = {};
+  allPhotos()
+    .filter(p => p.view !== 'cand')
+    .forEach(p => (META[p.f] = META[p.f] || p));
+  const PH = {};
+  R.forEach(r =>
+    new Set(r[6].split(' ').filter(Boolean)).forEach(f => {
+      if (!META[f]) return;
+      const o = (PH[f] = PH[f] || {n: 0, ok: 0});
+      o.n++;
+      o.ok += r[4];
+    })
+  );
+  const GMED = {};
+  Object.values(META).forEach(p => {
+    if (nAns(PS[p.f]) >= 3) (GMED[p.genus] = GMED[p.genus] || []).push(PS[p.f][0]);
+  });
+  Object.keys(GMED).forEach(g => (GMED[g] = GMED[g].length >= 3 ? median(GMED[g]) : null));
+  const BAD = Object.entries(PH)
+    .filter(([, o]) => o.n >= H.PH_MIN)
+    .map(([f, o]) => {
+      const p = META[f],
+        s = PS[f],
+        m = GMED[p.genus],
+        far = s && nAns(s) >= H.PH_MIN && m != null ? s[0] - m : null;
+      return {p, ...o, r: o.ok / o.n, far};
+    })
+    .filter(o => o.r < H.PH_LOW || (o.far != null && o.far >= H.PH_FAR))
+    .sort((a, b) => a.r - b.r || b.n - a.n);
+  const MAXPH = 24,
+    phTile = o =>
+      `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(o.p.f)}" data-g="${esc(o.p.genus)}" aria-label="Enlarge"><img src="${img(o.p, 1)}" alt="" loading="lazy"></button>
+      <figcaption><a class="adm-gen" href="#${esc(o.p.genus)}" title="Open the genus"><i>${esc(o.p.genus)}</i></a> <span>${esc(label(o.p.genus, o.p.view))}</span>
+      <span class="adm-hnum"><b${o.r < H.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')}${o.far != null ? ` · <span title="Difficulty against the genus median"${o.far >= H.PH_FAR ? ' class="warnc"' : ''}>${sgn(o.far)}</span>` : ''}</span></figcaption></figure>`;
+  const phSec = `<section class="adm-scard adm-hsec full" data-health="photos"><h3>Photos everyone misses <small>${BAD.length}</small></h3>${
+    BAD.length
+      ? `<div class="adm-hphotos">${BAD.slice(0, MAXPH).map(phTile).join('')}</div>${BAD.length > MAXPH ? `<p class="note">+${BAD.length - MAXPH} more</p>` : ''}`
+      : '<p class="note">None.</p>'
+  }</section>`;
+
+  // 3. Genera that don't take off: per slate genus, each player's right rate on the photos of it (answers where it was
+  // shown); stuck = G_MIN answers or more on it and still under G_LOW over the last G_MIN.
+  const PG = {};
+  Object.values(BY).forEach(L =>
+    L.forEach(r => {
+      const k = r[0] + '|' + r[2];
+      (PG[k] = PG[k] || []).push(r[4]);
+    })
+  );
+  const GR = Object.keys(DATA.gen)
+    .filter(n => !DATA.gen[n].x)
+    .map(n => {
+      const P = Object.keys(BY)
+        .map(id => PG[id + '|' + n])
+        .filter(Boolean);
+      const rate = P.map(a => a.reduce((t, x) => t + x, 0) / a.length),
+        stuck = P.filter(a => a.length >= H.G_MIN && a.slice(-H.G_MIN).reduce((t, x) => t + x, 0) / H.G_MIN < H.G_LOW).length;
+      return {n, met: P.length, m: median(rate), stuck, long: P.filter(a => a.length >= H.G_MIN).length};
+    })
+    .sort((a, b) => b.stuck - a.stuck || (a.m ?? 2) - (b.m ?? 2) || a.n.localeCompare(b.n));
+  const gSec = `<section class="adm-scard adm-hsec g" data-health="genera"><h3>Genera that don't take off</h3><div class="adm-tscroll tall">${tbl(
+    [
+      'Genus',
+      'n:Players',
+      'Median right',
+      '',
+      `n:<span title="Players with ${H.G_MIN}+ answers on it, under ${Math.round(H.G_LOW * 100)}% over their last ${H.G_MIN}">Stuck</span>`
+    ],
+    GR.map(
+      g =>
+        `<tr><td><a class="adm-gen" href="#${esc(g.n)}"><i>${esc(g.n)}</i></a></td><td class="n">${g.met || '–'}</td><td class="n">${g.m == null ? '–' : pct(g.m, 1)}</td><td>${g.m == null ? '' : sbar(g.m, 1, g.m < H.G_LOW ? 'bad' : '')}</td><td class="n">${g.long ? `<b${g.stuck ? ' class="warnc"' : ''}>${g.stuck}</b> / ${g.long}` : '–'}</td></tr>`
+    )
+  )}</div></section>`;
+
+  // 4. Activity over time: answers and active players per local day, the last DAYS days (today last).
+  const D = [];
+  for (let i = H.DAYS - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - i);
+    D.push({t: d.getTime(), n: 0, p: new Set()});
+  }
+  const end = new Date(D[D.length - 1].t);
+  end.setDate(end.getDate() + 1);
+  R.forEach(r => {
+    if (r[1] < D[0].t || r[1] >= end.getTime()) return;
+    let k = D.length - 1;
+    while (k > 0 && r[1] < D[k].t) k--;
+    D[k].n++;
+    D[k].p.add(r[0]);
+  });
+  const day = t => new Date(t).toLocaleDateString([], {day: 'numeric', month: 'short'}),
+    cols = (v, w) => {
+      const mx = Math.max(1, ...D.map(v));
+      return `<div class="adm-cols adm-hcols">${D.map(d => `<div title="${day(d.t)}: ${plural(v(d), w)}"><i style="height:${((100 * v(d)) / mx).toFixed(1)}%"></i></div>`).join('')}</div>
+      <p class="adm-axis"><span>${day(D[0].t)}</span><span>max ${mx}</span><span>today</span></p>`;
+    },
+    in30 = D.reduce((t, d) => t + d.n, 0);
+  const tSec = `<section class="adm-scard adm-hsec t" data-health="time"><h3>Activity, last ${H.DAYS} days <small>${in30}</small></h3>
+    <h4>Answers per day</h4>${cols(d => d.n, 'answer')}
+    <h4>Players per day</h4>${cols(d => d.p.size, 'player')}</section>`;
+
+  $v.innerHTML =
+    head +
+    kpis([
+      ['Players', nP],
+      ['Sessions', S.length],
+      ['Sessions / player', Math.round(median(perP) * 10) / 10],
+      ['Answers / session', Math.round(median(S.map(s => s.L.length)) * 10) / 10]
+    ]) +
+    `<div class="adm-sgrid adm-health">${stopSec}${phSec}${gSec}${tSec}</div>`;
+  bindStats();
 }
 const VIEW_T = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites', cand: 'Candidate'};
 const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philippines', world: 'iNat world', book: 'CF book'};
