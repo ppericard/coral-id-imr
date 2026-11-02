@@ -1353,6 +1353,8 @@ function zoom(n, f) {
         })
     );
     lb.querySelector('[data-x]').onclick = close;
+    lb.classList.remove('full');
+    lbFull(lb);
   };
   const key = e => {
     if (e.key === 'Escape') close();
@@ -1363,6 +1365,7 @@ function zoom(n, f) {
   };
   const close = () => {
     lb.hidden = true;
+    lb.classList.remove('full');
     lb.innerHTML = '';
     document.removeEventListener('keydown', key);
   };
@@ -1557,11 +1560,11 @@ const HELP = {
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Game coverage). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Last = last answer. Right = all their answers; Last 50 = their last 50. Days = days with answers. Learned and Seen = genera, from their last sync. Reports = problems they reported (Triage). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id. Photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17); a device's answers count once it signs in.</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Last = last answer. Right = all their answers; Last 50 = their last 50. Days = days with answers. Learned and Seen = genera, from their last sync. Reports = problems they reported (Triage). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id. Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
   stats: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). All / Others / Me: everyone, everyone but the name synced in this browser, or only it. Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
-  statsph: `<p>Photo difficulty (Elo) from the answers of signed-in players above chance (sheet v17), each weighed by the player's experience: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many (weighed) answers; few answers = rough. Click a dot to see the photo.</p>
+  statsph: `<p>Photo difficulty (Elo) from the answers of players clearly above chance, signed in or not (sheet v18), each weighed by the player's experience: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (from sheet v18; before, weighed answers, so a photo answered once was hidden); few answers = rough. Click a dot to see the photo.</p>
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (players' level on the genus is above what the hardest photo of the view can challenge: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
   diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
@@ -2348,10 +2351,21 @@ function bindSug() {
       })
   );
 }
+// A click on the enlarged photo shows it at actual size, as in the games (app.js zoom; Pierre, 2026-11-02).
+const lbFull = lb => {
+  const im = lb.querySelector('.lb-in img');
+  if (!im) return;
+  im.title = 'Click for actual size';
+  im.onclick = e => {
+    e.stopPropagation();
+    lb.classList.toggle('full');
+  };
+};
 function zoomOne(p) {
   const lb = $('lightbox'),
     close = () => {
       lb.hidden = true;
+      lb.classList.remove('full');
       lb.innerHTML = '';
       document.removeEventListener('keydown', key);
     },
@@ -2360,6 +2374,7 @@ function zoomOne(p) {
     };
   lb.innerHTML = `<div class="lb-in"><img src="${img(p)}" alt=""><p class="lb-cap"><i>${esc(p.genus)}</i> · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p><div class="lb-nav"><button type="button" data-x>Close</button></div></div>`;
   lb.querySelector('[data-x]').onclick = close;
+  lbFull(lb);
   lb.hidden = false;
   lb.onclick = e => {
     if (e.target === lb) close();
@@ -2539,6 +2554,13 @@ function renderCand() {
   status();
   if (CREPL) return renderRepl();
   const shown = x => !CSKIP.has(x.p.f) && (CFULL || !x.full);
+  // An empty source (Pierre, 2026-11-02: "Pierre 0" opened on "No candidate left") gives way to the first source, in
+  // priority order, that still has candidates to go through. Only a source with no candidate at all: one whose
+  // candidates are skipped or wait in full cells stays, so they can still be shown (Codex review #340).
+  if (!candQueue(CSRC).length) {
+    const s = CSRCS.map(([k]) => k).find(k => candQueue(k).filter(shown).length);
+    if (s) CSRC = s;
+  }
   const Q0 = candQueue(CSRC),
     nFull = Q0.filter(x => x.full).length,
     nJ = candQueue('all').filter(x => !x.p.cf && !x.p.j).length,
@@ -2995,7 +3017,9 @@ async function start() {
     new ResizeObserver(() =>
       document.documentElement.style.setProperty('--sub-h', sb.offsetHeight ? sb.offsetHeight + 6 + 'px' : '0px')
     ).observe(sb);
-  $v.innerHTML = '<p class="note">Loading photos…</p>';
+  // The same words as the page before the script ran: "Loading…" then "Loading photos…" looked like two steps on any
+  // page, Players included (Pierre, 2026-11-02).
+  $v.innerHTML = '<p class="note">Loading…</p>';
   const side = (u, k) =>
     fetch(u, {cache: 'no-cache'})
       .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
@@ -3340,13 +3364,13 @@ function renderDiff() {
   const vl = v => (v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1]),
     S = photoStats();
   const L = allPhotos()
-    .filter(p => S[p.f] && S[p.f][1] >= SF.min)
+    .filter(p => S[p.f] && nAns(S[p.f]) >= SF.min)
     .sort((a, b) => (DIFF_ORDER === 'hard' ? -1 : 1) * (S[a.f][0] - S[b.f][0]));
   const card = p => {
     const [d, n, r] = S[p.f];
     return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"${crStyle(p.f)}></button>
-    <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}<span class="adm-src" title="Difficulty">${d > 0 ? '+' : ''}${d.toFixed(1)} · ${r}/${n}</span></figcaption>
+    <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}<span class="adm-src" title="Difficulty · answers that rated it, right (weighed by experience)">${d > 0 ? '+' : ''}${d.toFixed(1)} · ${nAns(S[p.f])} · ${pct(r, n)}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
   };
   $v.innerHTML = `<section class="adm-quality"><div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [
@@ -3732,6 +3756,9 @@ function loadStats() {
 // Nothing is reset or stored: the log is kept, so any filter is a fresh replay.
 // eloOf(rows) lives in core.js (tests/core.test.js checks it against Code.gs stats_).
 let ELO_NOME = null;
+// Answers that rated a photo (sheet v18's 4th field); the weighed count before v18. The filters use it: a photo answered
+// once weighs under 1 (n / (n + 10)) and "≥1" hid it (Pierre, 2026-11-02: only ~100 photos of the ~300 answered).
+const nAns = s => (s ? (s[3] ?? s[1]) : 0);
 const photoStats = () =>
   SF.elo !== 'others' || !MEID || !ANS ? STATS : (ELO_NOME = ELO_NOME || eloOf(ANS.rows.filter(r => r[0] !== MEID)));
 const eloSeg = () =>
@@ -3932,14 +3959,14 @@ function renderUsers() {
           `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${u.id && u.id === MEID ? ' me' : ''}" data-uopen="${esc(u.name)}">${UCOLS.map(([k]) => `<td>${cell(k, u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
       ).join('')}</tbody></table></div></section>`) +
     (anon.length
-      ? `<details class="adm-uremoved"><summary>Not signed in (${anon.length})</summary><p class="note">Devices that played without signing in, and accounts deleted with their answers kept: no name. Tick test runs or junk to delete their answers. Their answers count in Activity; for photo difficulty and confusions only once the device signs in (sheet v17: signed-in players clearly above chance, weighed by experience).</p><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th>Level</th><th>Answers</th><th>Right</th><th>Last</th></tr></thead><tbody>${anon
+      ? `<details class="adm-uremoved"><summary>Not signed in (${anon.length})</summary><p class="note">Devices that played without signing in, and accounts deleted with their answers kept: no name. Tick test runs or junk to delete their answers. Their answers count in Activity, and for photo difficulty and confusions under the same rule as everyone's (sheet v18: clearly above chance, 10 answers or more, weighed by experience).</p><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th>Level</th><th>Answers</th><th>Right</th><th>Last</th></tr></thead><tbody>${anon
           .map(
             ([id, a]) =>
               `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><code>${esc(id)}</code></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td><td>${days(a.last)}</td></tr>`
           )
           .join(
             ''
-          )}</tbody></table><p><button type="button" class="adm-danger" data-adel disabled>Delete the answers of the selected ids</button> <small class="note">Test runs and junk (sheet v17). Permanent.</small></p></details>`
+          )}</tbody></table><p><button type="button" class="adm-danger" data-adel disabled${(USERS.v || 0) < 17 ? ' data-old' : ''}>Delete the answers of the selected ids</button> <small class="note">${(USERS.v || 0) < 17 ? `Needs the sheet script v17 (live: v${USERS.v || '?'}; it updates itself within 15 minutes of a release).` : 'Test runs and junk (sheet v17). Permanent.'}</small></p></details>`
       : '') +
     (USERS.removed.length
       ? `<details class="adm-uremoved"><summary>Removed (${USERS.removed.length})</summary><table class="adm-tbl">${USERS.removed.map(r => `<tr><td>${esc(r.name)}</td><td>${r.into ? `merged into <b>${esc(r.into)}</b>` : 'deleted'}</td><td>${date(r.time)}</td></tr>`).join('')}</table></details>`
@@ -4011,7 +4038,7 @@ function bindUsers() {
   // Answers without a name (test runs, junk): select ids, then delete all their answers (sheet v17 anonDelete).
   const aBoxes = [...$v.querySelectorAll('[data-aid]')],
     aBtn = $v.querySelector('[data-adel]'),
-    aSync = () => aBtn && (aBtn.disabled = !aBoxes.some(x => x.checked));
+    aSync = () => aBtn && (aBtn.disabled = 'old' in aBtn.dataset || !aBoxes.some(x => x.checked));
   aBoxes.forEach(x => (x.onchange = aSync));
   const aAll = $v.querySelector('[data-aall]');
   if (aAll)
@@ -4274,7 +4301,7 @@ function statsNeeds() {
           sc += 1;
         }
         if ((TH[n] || []).length) {
-          const rated = c.L.filter(p => PS[p.f] && PS[p.f][1] >= 3).map(p => PS[p.f][0]);
+          const rated = c.L.filter(p => nAns(PS[p.f]) >= 3).map(p => PS[p.f][0]);
           const hard = rated.length ? Math.max(...rated) : c.L.some(p => qOf(p.f) === 1) ? 1 : 0,
             top = q3(TH[n]);
           if (top - OFF > hard + 0.3) {
@@ -4545,8 +4572,8 @@ function statsConf() {
 function statsPhotos() {
   const PS = photoStats(),
     L = allPhotos()
-      .filter(p => PS[p.f] && PS[p.f][1] >= SF.min)
-      .map(p => ({...p, d: PS[p.f][0], n: PS[p.f][1], ok: PS[p.f][2]}));
+      .filter(p => PS[p.f] && nAns(PS[p.f]) >= SF.min)
+      .map(p => ({...p, d: PS[p.f][0], n: PS[p.f][1], ok: PS[p.f][2], a: nAns(PS[p.f])}));
   const head = `${statSwitch()}<div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [
     [1, '≥1'],
     [3, '≥3'],
@@ -4598,7 +4625,7 @@ function statsPhotos() {
     x1 = Math.max(1, Math.ceil(ds[ds.length - 1] * 2) / 2),
     X = d => ((100 * (d - x0)) / (x1 - x0)).toFixed(1) + '%';
   const strip = a =>
-    `<span class="adm-strip"><b style="left:${X(0)}"></b>${a.map(p => `<button type="button" class="v-${p.view}" style="left:${X(p.d)};top:calc(50% + ${{wide: -4, macro: 4}[p.view] || 0}px)" data-zf="${esc(p.f)}" data-g="${esc(p.genus)}" title="${esc(VIEW_T[p.view] || p.view)} ${sgn(p.d)} · ${p.ok}/${p.n}"></button>`).join('')}</span>`;
+    `<span class="adm-strip"><b style="left:${X(0)}"></b>${a.map(p => `<button type="button" class="v-${p.view}" style="left:${X(p.d)};top:calc(50% + ${{wide: -4, macro: 4}[p.view] || 0}px)" data-zf="${esc(p.f)}" data-g="${esc(p.genus)}" title="${esc(VIEW_T[p.view] || p.view)} ${sgn(p.d)} · ${p.a} answer${p.a === 1 ? '' : 's'}, ${pct(p.ok, p.n)} right"></button>`).join('')}</span>`;
   const table = (Rw, first) =>
     `<table class="adm-tbl"><thead><tr><th>${first}</th><th>Photos</th><th>Mean</th><th>Right</th></tr></thead><tbody>${Rw.map(r => `<tr><td>${esc(r.t)}</td><td class="n">${r.a.length}</td><td>${sgn(r.m)}</td><td>${pct(r.ok, r.n)}</td></tr>`).join('')}</tbody></table>`;
   const legend = `<p class="adm-legend">${Object.keys(VIEW_T)

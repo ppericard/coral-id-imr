@@ -8,6 +8,7 @@ Companion docs:
 - [`docs/HANDOVER.md`](docs/HANDOVER.md): handover of 2026-11-01 (the project moved to another Claude account; earlier memory, chats and claude.ai docs are not reachable). Reviews copied in [`docs/reviews/`](docs/reviews/README.md).
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): files, data model, build tools, admin, progress sync, deploy.
 - [`docs/DESIGN.md`](docs/DESIGN.md): design tokens (type scale, radii, shadows, colours) and the component inventory. Follow it for any UI change.
+- [`docs/LEARNING.md`](docs/LEARNING.md): the learning model, with the research it rests on and every choice made (Elo, BKT, mastery exam, progressive path, pooled photo statistics, the three-player simulation). **Change a learning constant only with its reason there.**
 - [`docs/ROADMAP.md`](docs/ROADMAP.md): ideas discussed but not built yet, open questions, items waiting on someone. **Add to it whenever an idea is discussed and not implemented right away.**
 - [`judging/AGENTS.md`](judging/AGENTS.md): a separate brief for an agent that only judges photos (growth form, quality, view...). Not this file's job.
 

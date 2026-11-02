@@ -56,6 +56,13 @@ test('mergeOld only adds', () => {
   });
 });
 
+test('mergeProgress keeps the volatility (vr) of the device that played (Codex review #340)', () => {
+  const B = {A: {ok: 1, ko: 0, h: '1', th: 0, vr: 0}},
+    P = {A: {ok: 2, ko: 0, h: '11', th: 0.3, vr: 0.12}},
+    R = {A: {ok: 1, ko: 0, h: '1', th: 0, vr: 0}};
+  assert.strictEqual(mergeProgress(B, P, R).A.vr, 0.12);
+});
+
 test('mergeProgress: answers from both devices add up, nothing counted twice', () => {
   const B = {Acropora: {ok: 10, ko: 2, ps: {p1: [5, 4]}, conf: {Porites: 1}}};
   const P = {Acropora: {ok: 13, ko: 2, ps: {p1: [6, 5], p2: [1, 1]}, conf: {Porites: 1}, th: 0.4, h: '111'}};
@@ -221,7 +228,7 @@ test('a quiz question with easy wrong choices (quiz|k2) is rated with a 1/2 gues
   assert.strictEqual(E('quiz|k2', 1), E('quiz-duel', 1));
 });
 
-test('photo ratings and confusions count only signed-in players clearly above chance (v17)', () => {
+test('photo ratings and confusions count only players clearly above chance, signed in or not (v18)', () => {
   const R = (who, i, ok, f, an, m = 'quiz', ch = 'Acropora Porites Favites Montipora') => [
     who,
     i,
@@ -237,19 +244,23 @@ test('photo ratings and confusions count only signed-in players clearly above ch
     an ? 1 : 0
   ];
   const good = Array.from({length: 12}, (_, i) => R('Ana', i, 1, 'p-' + i));
-  // A device that never signed in, however good, moves nothing.
-  const anon = Array.from({length: 12}, (_, i) => R('Zed', 100 + i, 0, 'x-1', 1));
-  assert.deepStrictEqual(trustOf([...good, ...anon]), {Ana: true, Zed: false});
-  assert.strictEqual(eloOf([...good, ...anon])['x-1'][1], 0, 'anonymous answers do not count');
-  assert.deepStrictEqual(confusionOf(anon).pair, {}, 'nor in confusions');
+  // A device that never signed in counts under the same rule (v18): a real player yes, random clicks no.
+  const anon = Array.from({length: 12}, (_, i) => R('Zed', 100 + i, i % 4 ? 1 : 0, 'x-1', 1)),
+    anonBot = Array.from({length: 12}, (_, i) => R('Zbot', 300 + i, 0, 'x-2', 1));
+  assert.deepStrictEqual(trustOf([...good, ...anon, ...anonBot]), {Ana: true, Zed: true, Zbot: false});
+  assert.ok(eloOf([...good, ...anon])['x-1'][1] > 0, 'a real anonymous player rates the photos');
+  assert.strictEqual(eloOf([...good, ...anon])['x-1'][3], 12, 'plain count of the answers that rated it, beside the weighed one');
+  assert.strictEqual(eloOf([...good, ...anonBot])['x-2'][1], 0, 'an anonymous player at chance does not');
+  assert.ok(Object.keys(confusionOf(anon).pair).length > 0, 'and counts in the confusions');
+  assert.deepStrictEqual(confusionOf(anonBot).pair, {}, 'not at chance');
   // A signed-in player at chance (random clicks) moves nothing either; too few answers neither.
   const rand = Array.from({length: 40}, (_, i) => R('Bot', 200 + i, i % 4 === 0 ? 1 : 0, 'y-' + (i % 5)));
   assert.strictEqual(trustOf(rand).Bot, false);
   assert.strictEqual(trustOf(good.slice(0, 9)).Ana, false, 'fewer than TRUST.N answers');
   // Repeats count (Duolingo HLR, PFA): every answer of a trusted player is counted.
   const again = [...good, R('Ana', 50, 0, 'z-1'), R('Ana', 51, 0, 'z-1'), R('Ana', 52, 0, 'z-1')];
-  // Weighed counts: three answers at n = 12, 13, 14 weigh 12/42 + 13/43 + 14/44 (photoDiff's confidence, damping).
-  assert.strictEqual(eloOf(again)['z-1'][1], 0.9);
+  // Weighed counts: three answers at n = 12, 13, 14 weigh 12/22 + 13/23 + 14/24 (photoDiff's confidence, damping).
+  assert.strictEqual(eloOf(again)['z-1'][1], 1.7);
 });
 
 test("v17: a beginner's answers move the photos more as their level settles; a remembered photo moves less", () => {
