@@ -262,6 +262,7 @@ const INTRO = {
   GAP: 2,
   EVERY: 2,
   HOLD: 1.5,
+  SLACK: 0.1,
   OFFER: {KEY: 'imr-coral-intro-offer', AT: 50, UNTIL: 150, MET: 10, TH: 0.5}
 };
 let INTROS = null;
@@ -339,22 +340,34 @@ function introMerge(m, o) {
 }
 const introReset = () => {
   INTROS = {};
+  HOLDS = 0; // the opening hold starts over with the progress (holdStep, below; called after this file has run)
+  store.set('imr-hold', 0);
   store.set(INTRO.KEY, {});
   store.set(INTRO.OFFER.KEY, null);
 };
 // Opening held while the player does clearly worse than expected (Pierre, 2026-11-02, after an RA at 86% right met 9
 // genera in 21 answers and dropped to 5 right in 10: "when many genera have just opened and the answers suddenly get
-// worse, space the new ones; an expert keeps opening regularly"): no new card while, over the last 10 answers of this
-// visit, the right answers fall INTRO.HOLD or more below the success the game expected for them (the answer's e).
-// A player who keeps up (an expert) is never held; one who falls behind is, until the answers catch up. Simulated
-// (6 seeds, 200 questions, docs/LEARNING.md): an expert met 31 genera (27 without), a beginner 14 (15), a lecture-level
-// RA 13 (13); on that RA's real answers it would have held from answer 73 (5 right of 10 where 8 were expected).
-const introHold = () => {
-  const h = session.h,
-    e = session.e || [];
-  if (h.length < 10 || e.length < 10) return false;
-  return e.reduce((t, x) => t + x, 0) - h.filter(Boolean).length >= INTRO.HOLD;
-};
+// worse, space the new ones; an expert keeps opening regularly"). A running sum of how far the answers fall below the
+// success the game expected (each answer's e), never below 0: a CUSUM (Page 1954, the standard detector of a lasting
+// drop), so a run of misses adds up however long it lasts, a spell of answers above expectation is not banked against
+// a later drop, and right answers pay the debt back by what they beat the expectation by (an easy one, e 0.9, by 0.1).
+// No new card while it is INTRO.HOLD or more. Kept on the device (imr-hold), so it carries from one visit to the next
+// (Pierre: a player who left on a run of misses must not come back to new genera); cleared with the progress (reset,
+// sign-out). The gentle restart's questions do not count (quiz.js WARM). A sliding window of the last 10 answers
+// was tried first: it forgot the misses at the next visit, and a longer one hid a sudden drop behind earlier good
+// answers (on that RA's answers, 20 answers never reached the threshold). SLACK: only a shortfall of more than 0.1 an
+// answer adds up (the CUSUM's allowance), so a player the game slightly overrates (0.85 expected, 0.8 right) is never
+// held: without it the simulated expert, 85% right where the game expected a little more, was held for good. HOLD 1.5:
+// on that RA's answers it holds at answers 11-12 (three misses in a row) and from answer 67 on, off and on (the window:
+// 73); simulated (6 seeds, 200 questions, genera met, without -> with), a beginner 15 -> 13, a lecture-level RA
+// 14 -> 13, a strong RA 22 -> 23, an expert 27 -> 28.
+const HOLDK = 'imr-hold';
+let HOLDS = Number(store.get(HOLDK, 0)) || 0;
+const introHold = () => HOLDS >= INTRO.HOLD;
+function holdStep(e, good) {
+  HOLDS = Math.max(0, Math.round((HOLDS + (Number(e) || 0) - (good ? 1 : 0) - INTRO.SLACK) * 1000) / 1000);
+  store.set(HOLDK, HOLDS);
+}
 const introSince = () => answersSoFar() - Math.max(-Infinity, ...Object.values(introMap()).map(e => e[0]));
 function weighted(list) {
   const w = list.map(weight);

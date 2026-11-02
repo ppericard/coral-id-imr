@@ -2,7 +2,7 @@
 
 Every review and study was first written as a private Claude doc or artifact on claude.ai, in Pierre's original Claude account. **Those links do not open from another account.** The latest round of each review is copied here, with a status header saying what has been fixed since. Earlier rounds and studies are summarised below: their decisions are in `AGENTS.md`, their leftovers in `ROADMAP.md`.
 
-## Copied in full (latest round, 2026-11-01)
+## Copied in full (latest round, 2026-11-01; the algorithm review 2026-11-02)
 
 | File | Review | Open items |
 |---|---|---|
@@ -10,6 +10,7 @@ Every review and study was first written as a private Claude doc or artifact on 
 | [2026-11-01-admin-re-review.md](2026-11-01-admin-re-review.md) | A new admin, second round | Second-admin token steps untested; three low items |
 | [2026-11-01-ra-re-review.md](2026-11-01-ra-re-review.md) | A first-time RA, second round | Phone hammer icon label, tablet name cut, red "!" on Review 0 (check), like-for-like wrong-answer photos |
 | [2026-11-01-design-re-review.md](2026-11-01-design-re-review.md) | Expert UI designer, second round | p2, p9, p10, m5, m11 to verify |
+| [2026-11-02-learning-algorithm-review.md](2026-11-02-learning-algorithm-review.md) | Independent review of the learning algorithm (Pierre: compare it with the guidelines and with what others do) | Its 8 proposals, one by one with Pierre (ROADMAP "Independent review"); progress as a weighted moving average agreed 2026-11-02 |
 | [../reference/genus-overview-2026-10-31.md](../reference/genus-overview-2026-10-31.md) | Pierre's first study doc on the 39 genera | Background only; `data.json` supersedes it |
 
 ## Summarised only (first rounds and studies, all closed or carried into ROADMAP)
