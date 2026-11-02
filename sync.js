@@ -684,6 +684,12 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         off.textContent = 'Sign out: unsaved answers are lost';
         return;
       }
+      // The keys below come from the quiz tier (INTRO, ACHK): on a slow first visit ⚙ is usable before it is in, so the
+      // sign-out waits for it rather than failing half-way, signed out in memory but not on the device (Codex review #361).
+      off.disabled = true;
+      (typeof need === 'function' ? need(2) : Promise.resolve()).then(signOff);
+    };
+    const signOff = () => {
       SYNC = null;
       // Achievements and the leaderboard choice belong to the account too: never left to the next player of a shared device.
       // The first-meeting cards too (Codex review #350): the next player meets their own genera.

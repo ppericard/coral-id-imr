@@ -719,6 +719,7 @@ const takePlan = cur => {
 let SHOWNQ = null; // the photo-quiz question on screen (planNext)
 function quizPhoto() {
   const q = (SHOWNQ = takePlan('quiz') || planPhoto());
+  if (q.again) againAt = answersSoFar(); // the duel spacing counts from when the "Again" shows, not when it was planned
   AUTOD = !!q.auto;
   question(...q);
   if (q.intro) introShow(q.intro, q.start);
@@ -849,7 +850,10 @@ function planPhoto() {
     if (pair.every(n => list.includes(n))) {
       againAt = answersSoFar();
       const t = pick(pair);
-      return ['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)];
+      // Planned ahead, it shows later than planned: quizPhoto sets againAt again when it shows (Codex review #361).
+      return Object.assign(['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)], {
+        again: 1
+      });
     }
   }
   // The genus asked is one already met (INTRO): ready, or one of the cards shown with this question when they are the
