@@ -166,7 +166,13 @@ const server = http.createServer((req, res) => {
         f: x.p.f,
         w: CREPL.w,
         tiles: document.querySelectorAll('[data-repl]').length,
-        refs: Object.values(DRAFT.use || {}).filter(v => v === 'ref').length
+        refs: Object.values(DRAFT.use || {}).filter(v => v === 'ref').length,
+        // Suggested colony first (unless every colony is one to keep), kept colonies last.
+        order: [...document.querySelectorAll('[data-repl]')]
+          .map(b => (b.classList.contains('sug') ? 's' : /keep \(/.test(b.textContent) ? 'k' : 'o'))
+          .join(''),
+        over: OVER,
+        warn: /⚠/.test(document.querySelector('#modes [data-mode="todo"]').textContent)
       };
     });
     if (cap.bookFull) fails.push(`${w}px Cap: a Coral Finder book candidate (never in games) counted as full`);
@@ -174,6 +180,9 @@ const server = http.createServer((req, res) => {
     else {
       if (cap.shownFull) fails.push(`${w}px Cap: the swiper shows a candidate of a full cell`);
       if (cap.tiles < 10) fails.push(`${w}px Cap: replace screen shows ${cap.tiles} colonies`);
+      if (!/^(s[ok]*|k+)$/.test(cap.order) || /k.*o/.test(cap.order))
+        fails.push(`${w}px Cap: suggested colony not first or kept ones not last (${cap.order})`);
+      if (!!cap.over !== cap.warn) fails.push(`${w}px Cap: ${cap.over} cells over the cap, To do warning ${cap.warn}`);
       await p.click('[data-repl]');
       await settle();
       const after = await p.evaluate(

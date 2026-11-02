@@ -2886,6 +2886,11 @@ td.cov-c.cov-over {
 .adm-repl-tile:hover {
   border-color: var(--accent);
 }
+/* The colony suggested for retirement (retireOrder): Pierre confirms with a click, or picks another. */
+.adm-repl-tile.sug {
+  border-color: var(--warn);
+  box-shadow: 0 0 0 2px var(--warn);
+}
 .adm-repl-tile img {
   width: 100%;
   aspect-ratio: 4 / 3;
