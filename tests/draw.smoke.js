@@ -192,6 +192,8 @@ const server = http.createServer((req, res) => {
     {
       P = {};
       INTROS = {};
+      HOLDS = 0; // a fresh player: no opening hold, no gentle restart
+      warmLeft = 0;
       store.set(INTRO.OFFER.KEY, null);
       NEXTQ = null;
       const q0 = question;
@@ -235,6 +237,8 @@ const server = http.createServer((req, res) => {
       for (let i = 0, same = 0; i < 60; i++) {
         P = {};
         INTROS = {};
+        HOLDS = 0; // a fresh player: no opening hold, no gentle restart
+        warmLeft = 0;
         NEXTQ = null;
         document.querySelectorAll('.unlock').forEach(x => x.remove());
         quizPhoto();
@@ -250,6 +254,8 @@ const server = http.createServer((req, res) => {
       // genera opens every genus left.
       P = {};
       INTROS = {};
+      HOLDS = 0; // a fresh player: no opening hold, no gentle restart
+      warmLeft = 0;
       store.set(INTRO.OFFER.KEY, null);
       let shownAt = 0;
       for (let i = 0; i <= INTRO.OFFER.UNTIL && !shownAt; i++) {
@@ -275,6 +281,8 @@ const server = http.createServer((req, res) => {
       // another device join this one's (introMerge), ready; a progress reset starts them over.
       {
         INTROS = {};
+        HOLDS = 0; // a fresh player: no opening hold, no gentle restart
+        warmLeft = 0;
         store.set(INTRO.KEY, {});
         store.set(INTRO.OFFER.KEY, null);
         const g = Object.keys(DATA.gen)[5];
@@ -419,17 +427,68 @@ const server = http.createServer((req, res) => {
       }
       question = q0;
       INTROS = {};
+      HOLDS = 0; // a fresh player: no opening hold, no gentle restart
+      warmLeft = 0;
     }
-    // Opening held while the player does clearly worse than expected (introHold, Pierre 2026-11-02): 6 right of 10
-    // where 8 were expected holds; 7 of 10 does not.
+    // Opening held while the player does clearly worse than expected (introHold, a CUSUM, Pierre 2026-11-02): two
+    // misses where 0.8 was expected hold; right answers pay it back by what they beat the expectation by; never below 0.
     {
-      const s0 = {h: session.h, e: session.e};
-      session.e = Array(10).fill(0.8);
-      session.h = Array.from({length: 10}, (_, i) => i < 6);
-      if (!introHold()) fails.push('no hold at 6 right of 10 where 8 were expected');
-      session.h = Array.from({length: 10}, (_, i) => i < 7);
-      if (introHold()) fails.push('held at 7 right of 10 where 8 were expected');
-      Object.assign(session, s0);
+      const h0 = HOLDS;
+      HOLDS = 0;
+      holdStep(0.8, false);
+      if (introHold()) fails.push('held after one miss');
+      holdStep(0.8, false);
+      holdStep(0.8, false);
+      const on = introHold(); // 3 x (0.8 - SLACK)
+      let n = 0;
+      while (introHold() && n < 50) (holdStep(0.95, true), n++);
+      if (!on || n < 3) fails.push(`hold: on ${on}, released after ${n} right answer(s)`);
+      for (let i = 0; i < 20; i++) holdStep(0.5, true);
+      if (HOLDS !== 0) fails.push(`hold below 0: ${HOLDS}`);
+      // A player slightly below what the game expects (0.85 expected, 0.8 right) is never held: the slack.
+      for (let i = 0; i < 200; i++) holdStep(0.85, i % 5 !== 0);
+      if (introHold()) fails.push(`held a player 5 points below expectation: ${HOLDS}`);
+      // The gentle restart: a player with answers gets WARM.N questions on genera already answered right (none to review in
+      // the first half), easy choices,
+      // no card, duel or exam, flagged warm; their answers leave the hold as it was.
+      HOLDS = 2;
+      warmLeft = null;
+      NEXTQ = null;
+      const Qs = [];
+      for (let i = 0; i < WARM.N + 2; i++) {
+        document.querySelectorAll('.unlock').forEach(x => x.remove());
+        quizPhoto();
+        Qs.push(SHOWNQ);
+        const t = SHOWNQ[1];
+        if (i < WARM.N && (!SHOWNQ.warm || SHOWNQ.intro || SHOWNQ.auto || SHOWNQ[4].exam || !(P[t] || {}).ok))
+          fails.push(`gentle restart question ${i}: ${JSON.stringify({t, warm: SHOWNQ.warm, ok: (P[t] || {}).ok})}`);
+        if (i < WARM.N / 2 && level(t)[0] === 'weak') fails.push(`gentle restart question ${i}: ${t} to review in the first half`);
+        if (i >= WARM.N && SHOWNQ.warm) fails.push(`gentle restart longer than ${WARM.N}`);
+        const h = HOLDS;
+        document.querySelector(`[data-c="${CSS.escape(t)}"]`).click();
+        if (i < WARM.N && HOLDS !== h) fails.push(`a gentle-restart answer moved the hold: ${h} -> ${HOLDS}`);
+      }
+      // A miss during the restart still brings its Again, flagged with the restart: the hold does not move.
+      warmLeft = 3;
+      NEXTQ = null;
+      document.querySelectorAll('.unlock').forEach(x => x.remove());
+      quizPhoto();
+      const hb = HOLDS,
+        miss = [...document.querySelectorAll('#view [data-c]')].find(b => b.dataset.c !== SHOWNQ[1]);
+      miss.click();
+      // The Again comes one question later.
+      for (let k = 0; k < 2 && !(SHOWNQ && SHOWNQ.again && k); k++) {
+        NEXTQ = null;
+        document.querySelectorAll('.unlock').forEach(x => x.remove());
+        quizPhoto();
+        if (!SHOWNQ.again) document.querySelector(`[data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
+      }
+      if (!SHOWNQ.again || !SHOWNQ.warm || HOLDS !== hb)
+        fails.push(`Again during the restart: ${JSON.stringify({again: SHOWNQ.again, warm: SHOWNQ.warm, hold: [hb, HOLDS]})}`);
+      document.querySelector(`[data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
+      if (HOLDS !== hb) fails.push('an Again of the restart moved the hold');
+      warmLeft = 0;
+      HOLDS = h0;
     }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });

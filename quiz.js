@@ -374,7 +374,8 @@ function answer(cur, c, target, ph, cor, unseen) {
     th: th0,
     nw
   };
-  session.e = [...(session.e || []), ans.e].slice(-10); // expected success of the last 10 (introHold)
+  // The opening hold's record (model.js holdStep), except the gentle restart's easy questions (Pierre: they must not lift it).
+  if (!(cur === 'quiz' && SHOWNQ && SHOWNQ.warm)) holdStep(ans.e, good);
   if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
   else if (SYNC_URL) {
     store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
@@ -633,7 +634,11 @@ const AUTO_DUEL = {P: 0.1, FROM: 20, GAP: 5, AGAIN: 2, SAME: 20};
 let twoAt = -Infinity, // answers so far at the last duel slipped in
   againAt = -Infinity, // ... and at the last "Again"
   duelLog = [], // [answers so far, pair] of the duels slipped in lately
-  AUTOD = false; // the question on screen is one of them (set by quizPhoto, read by answer)
+  AUTOD = false, // the question on screen is one of them (set by quizPhoto, read by answer)
+  warmLeft = null; // gentle-restart questions left this visit (planPhoto; null: not decided yet)
+// The gentle restart at a visit (planPhoto): N easy questions for a player with FROM answers or more (10, Pierre
+// 2026-11-02: 5 was short; the second half also brings back the genera to review, still with easy choices).
+const WARM = {N: 10, FROM: 10};
 // "This pair comes back as a duel in a moment": said the first 3 times only (RA review 2026-11-02: it came on every
 // wrong answer, about 20 times in 30 questions); the pair still comes back every time.
 const againTold = () => {
@@ -657,9 +662,9 @@ const againTold = () => {
 const AHEAD = 3;
 let NEXTQ = null;
 const planKey = (cur, i = 0) => `${cur}|${answersSoFar() + i}|${pool().join()}`;
-const planState = () => ({last, lastQs, rematch: rematch && {...rematch}, twoAt, againAt, duelLog});
+const planState = () => ({last, lastQs, rematch: rematch && {...rematch}, twoAt, againAt, duelLog, warmLeft});
 function dropPlans() {
-  if (NEXTQ) ({last, lastQs, rematch, twoAt, againAt, duelLog} = NEXTQ.snap);
+  if (NEXTQ) ({last, lastQs, rematch, twoAt, againAt, duelLog, warmLeft} = NEXTQ.snap);
   NEXTQ = null;
 }
 const plain = q => !q.intro && !q.auto && !q[4].exam && q[2].length > 2;
@@ -889,8 +894,11 @@ function planPhoto() {
       againAt = answersSoFar();
       const t = pick(pair);
       // Planned ahead, it shows later than planned: quizPhoto sets againAt again when it shows (Codex review #361).
+      // During the gentle restart an Again still follows a miss (it corrects it), counted with the restart: it leaves the
+      // opening hold as it was (Codex review #364).
       return Object.assign(['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)], {
-        again: 1
+        again: 1,
+        ...(warmLeft > 0 ? {warm: 1} : {})
       });
     }
   }
@@ -898,13 +906,26 @@ function planPhoto() {
   // first ones. A draw that falls on a genus not met yet (the progressive path opening one, at most one card every
   // INTRO.EVERY answers) shows its card instead, and the question is about another genus.
   let cards = introStart(list);
+  // A gentle restart (Pierre, 2026-11-02, after an RA left on a run of misses): a player coming back with WARM.FROM
+  // answers or more gets WARM.N questions on genera already answered right, with easy choices, before anything else of
+  // the visit: no card, no duel, no exam. The first half leaves out the genera to review (a positive start), the second
+  // half brings them back. Their answers leave the opening hold as it was (answer()).
+  if (warmLeft === null) warmLeft = answersSoFar() >= WARM.FROM ? WARM.N : 0;
   const start = cards.length > 0,
     ready = n => cards.includes(n) || introReady(n),
     known = n => cards.includes(n) || introduced(n),
     met = list.filter(ready),
-    open = !start && introSince() >= INTRO.EVERY && !introHold();
+    // Genera answered right; the first half without those to review, unless fewer than 2 are left (Codex review #364:
+    // a player with only genera to review got no restart at all). Fewer than 2 answered right: no restart.
+    warmAll = warmLeft > 0 && !start ? met.filter(n => (P[n] || {}).ok > 0 && level(n)[0] !== 'new') : [],
+    warmSure = warmAll.filter(n => level(n)[0] !== 'weak'),
+    warmL = warmLeft > WARM.N / 2 && warmSure.length >= 2 ? warmSure : warmAll,
+    warm = warmL.length >= 2,
+    open = !start && !warm && introSince() >= INTRO.EVERY && !introHold();
+  if (warm) warmLeft--;
+  else if (warmLeft > 0 && !start) warmLeft = 0; // not enough genera answered right: no restart this visit
   // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say).
-  let t = nextTarget(start ? cards : met.length ? (open ? list.filter(n => ready(n) || !introduced(n)) : met) : list);
+  let t = nextTarget(start ? cards : warm ? warmL : met.length ? (open ? list.filter(n => ready(n) || !introduced(n)) : met) : list);
   if (met.length && !known(t)) {
     cards = [t];
     t = nextTarget(met);
@@ -922,6 +943,7 @@ function planPhoto() {
   // Never while an "Again" is due (it comes next): the duel would sit right before it.
   if (
     !cards.length &&
+    !warm &&
     !rematch &&
     a >= AUTO_DUEL.FROM &&
     a - twoAt >= AUTO_DUEL.GAP &&
@@ -945,8 +967,8 @@ function planPhoto() {
       );
     }
   }
-  const ex = examReady(t) && examSet(t),
-    traps = ex ? 3 : trapsFor(t),
+  const ex = !warm && examReady(t) && examSet(t),
+    traps = ex ? 3 : warm ? 0 : trapsFor(t),
     ch = shuffle([t, ...distractors(t, list, traps, known)]),
     // The question asked with its genus's card never shows the card's own photo again (new-player walkthrough 2026-11-02).
     q = [
@@ -958,6 +980,7 @@ function planPhoto() {
       traps < 2 ? plausibleK(t, ch) : 0
     ];
   if (cards.length) Object.assign(q, {intro: cards, start});
+  if (warm) q.warm = 1;
   return q;
 }
 function quizDuel(a, b) {
