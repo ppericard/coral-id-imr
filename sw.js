@@ -21,15 +21,15 @@ const SHELL = [
   'fonts/barlow-condensed-700-normal.woff2',
   'manifest.webmanifest',
   'curation.json',
-  'proto/lab.js?v=67',
-  'proto/lab.css?v=48',
+  'proto/lab.js?v=68',
+  'proto/lab.css?v=49',
   'home-art.js?v=4',
   'home.js?v=25',
   'home.css?v=22',
   'tour.js?v=12',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'pairs', 'gallery'].map(
-    f => `proto/${f}.js?v=66`
+    f => `proto/${f}.js?v=67`
   )
 ];
 const get = async (c, u, n = 3) => {

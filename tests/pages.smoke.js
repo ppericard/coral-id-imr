@@ -115,6 +115,28 @@ const server = http.createServer((req, res) => {
         const q = await q2.evaluate(() => JSON.parse(localStorage.getItem('imr-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg)));
         if (!q.includes('pulse:hard') || !q.some(x => /smoke test error/.test(x))) fails.push(`${w}px events not queued: ${q.join(' | ')}`);
       }
+      // Back closes an enlarged photo and stays on the page (RA review 2026-11-02).
+      await q2.evaluate(() => (location.hash = 'g-Porites'));
+      await q2.waitForTimeout(600);
+      await q2.evaluate(() => document.querySelector('#view .zoom').click());
+      await q2.waitForTimeout(300);
+      await q2.goBack();
+      await q2.waitForTimeout(400);
+      const lbb = await q2.evaluate(() => ({open: !document.getElementById('lightbox').hidden, h: location.hash}));
+      if (lbb.open || lbb.h !== '#g-Porites') fails.push(`${w}px Back with an enlarged photo: ${JSON.stringify(lbb)}`);
+      // Coral Finder: the "Compare A and B" button is readable (its text was the colour of its background).
+      await q2.evaluate(() => (location.hash = 'finder|form=M'));
+      await q2.waitForTimeout(800);
+      for (const k of [0, 2]) {
+        await q2.locator('button:has-text("Compare")').nth(k).click();
+        await q2.waitForTimeout(300);
+      }
+      const cc = await q2.evaluate(() => {
+        const n = document.querySelector('.fdcmp .next'),
+          c = n && getComputedStyle(n);
+        return n ? [c.color, c.backgroundColor] : null;
+      });
+      if (!cc || cc[0] === cc[1]) fails.push(`${w}px Coral Finder compare button unreadable: ${JSON.stringify(cc)}`);
       const other = e2.filter(e => !/smoke test error/.test(e));
       if (other.length) fails.push(`${w}px quiz: ${other.slice(0, 3).join(' | ')}`);
       await c2.close();

@@ -2764,9 +2764,13 @@ path.wallc {
 }
 .fdcmp {
   position: fixed;
-  left: 50%;
-  bottom: 14px;
-  transform: translateX(-50%);
+  /* Centred between 12 px margins, above the phone tab bar (RA review 2026-11-02: left 50% squeezed it to half the
+     screen, the button became an empty blob, and it sat over the tab bar). */
+  left: 12px;
+  right: 12px;
+  width: fit-content;
+  margin: 0 auto;
+  bottom: calc(var(--tabbar-h, 0px) + env(safe-area-inset-bottom, 0px) + 10px);
   z-index: 20;
   display: flex;
   gap: 10px;
@@ -2780,6 +2784,8 @@ path.wallc {
 }
 .fdcmp .next {
   padding: 8px 16px;
+  /* ".lab a" (accent text) won over ".next": the button's text was the colour of its background (RA review 2026-11-02). */
+  color: var(--accent-ink);
 }
 /* Phone base (mobile-first); larger screens restore below. */
 .fdside {

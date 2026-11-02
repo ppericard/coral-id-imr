@@ -2283,7 +2283,7 @@ td i {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: color-mix(in srgb, var(--photo-bg) 93%, transparent);
+  background: color-mix(in srgb, var(--photo-bg) 97%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2315,6 +2315,10 @@ td i {
   font-size: var(--fs-s);
   margin: 0;
   text-align: center;
+  /* An opaque band: the page under the enlarged photo showed through the caption (RA review 2026-11-02). */
+  background: var(--photo-bg);
+  border-radius: var(--r-sm);
+  padding: 4px 8px;
 }
 .lb-in img {
   cursor: zoom-in;
@@ -4129,6 +4133,10 @@ a.psrc:focus-visible {
   gap: 10px;
   flex-wrap: wrap;
 }
+/* In the pair's title row the badge flows with the title (it was placed against the page corner, under the logo). */
+.lkhead .pmix {
+  position: static;
+}
 .lkhead h3 {
   font-family: var(--display);
   font-size: var(--fs-l);
@@ -4535,6 +4543,13 @@ a.psrc:focus-visible {
   max-width: 100%;
   white-space: normal;
   overflow-wrap: break-word;
+}
+/* 13+ letters (Duncanopsammia): a little smaller, so a phone tile keeps the word whole (RA review 2026-11-02). */
+@media (max-width: 599.98px) {
+  .pwall .pw .pwb i.long {
+    font-size: 0.8em;
+    letter-spacing: -0.01em;
+  }
 }
 @media (max-width: 599.98px) {
   .pwall .pw .pwb {
