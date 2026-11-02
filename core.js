@@ -168,7 +168,7 @@
 
   // Who rates the photos and the confusions, as tools/sync/Code.gs trusted_ (v17; v18: devices that never signed in too,
   // under the same rule, Pierre 2026-11-02): players with TRUST.N answers or more and a right rate clearly above chance (one-sided z of at least TRUST.Z against each question's guess rate).
-  const TRUST = {N: 5, Z: 1.645}; // v18: 5, was 10 (Pierre 2026-11-02: ratings must move quickly)
+  const TRUST = {N: 10, Z: 1.645}; // answers per player, not per photo
   const guessOf = mode => {
     const kq = /\|k(\d)$/.exec(mode);
     return kq ? 1 / Number(kq[1]) : mode.indexOf('quiz-duel') === 0 ? 0.5 : 0.25;

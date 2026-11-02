@@ -130,7 +130,7 @@ Photo difficulty feeds every player's game (which photos, how hard), and confusi
 real learners, not bots, random clicks or test runs (17 anonymous "players" turned out to be `tools/perf.js` runs).
 
 - **Who counts** (`trusted_`, `TRUST`): players, signed in or not (v18; v17 left out devices that never signed in),
-  with at least 5 answers (10 in v17) and a right rate clearly above chance (one-sided z ≥
+  with at least 10 answers (per player; a photo counts from its first answer) and a right rate clearly above chance (one-sided z ≥
   1.645 against each question's guess rate), judged on the whole history at each recompute: a beginner who gets out of
   chance then counts with all their answers. Every answer still moves the player's own level.
 - **How much an answer weighs** (`PHOTO_W.N`; the sheet also returns the plain count of the answers, v18, which the
@@ -213,9 +213,11 @@ simulation); recalibrate `ELO` and `OPEN` once a few RA cohorts have played.
   sign-in, is what tells a real player from a bot or a test run. Signing in still saves the progress, for the trainer
   and on any device, and puts the player on the leaderboard.
 - 2026-11-02, Pierre: the photo ratings must move quickly, the first players being RAs and experts who all bring real
-  information (Pierre, Emmy, and an anonymous player who is probably IMR staff): `TRUST.N` 10 → 5 and `PHOTO_W.N` 30 →
-  10 (sheet v18). The 10th answer of a player now weighs 0.5, the 30th 0.75 (were 0.25 and 0.5). The above-chance
-  test stays: it is what keeps random clicks out. To revisit if beginners or bots arrive in numbers.
+  information (Pierre, Emmy, and an anonymous player who is probably IMR staff): `PHOTO_W.N` 30 → 10 (sheet v18). The
+  10th answer of a player now weighs 0.5, the 30th 0.75 (were 0.25 and 0.5). `TRUST.N` stays 10: it counts a player's
+  answers, which every real player passes quickly (lowered to 5 for a moment, when it read as answers per photo; there
+  is no minimum per photo: one answer moves it, the app blending it with the photo's set as 5 answers' worth). To
+  revisit if beginners or bots arrive in numbers.
 - 2026-11-02, Pierre: OK to seed the photos nobody has answered into the games to calibrate them (`CAL`, above).
 
 ## References
