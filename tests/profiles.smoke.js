@@ -81,6 +81,8 @@ const server = http.createServer((req, res) => {
       for (let i = 0; i < 300; i++) {
         NEXTQ = null;
         quizPhoto();
+        // The player reads the first-meeting cards through (each genus is met when its card shows).
+        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
         const t = window.__q[1];
         if (!first.includes(t)) first.push(t);
         const ch = [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c),
