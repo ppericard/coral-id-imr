@@ -57,5 +57,7 @@ One SVG set (24 px grid, 1.75 stroke, `currentColor`): see `LAB_ICONS` in `proto
 - Games wider than the page (`.bleed`, ≥ 1340 px) start on the header's left edge and only grow to the right.
 - ID tips are the key content: never clamp or truncate them on a card; they are boxed (`.tipbox`) wherever they appear (sheet, quiz feedback, pair page).
 - The header keeps the ? slot on every page (a page without help hides the button but keeps its place).
+- Hover looks on choice buttons (quiz answers, Lab game choices, Memory tiles, Coral Finder options) live under `@media (hover: hover)`: on touch screens `:hover` sticks after a tap and the next answer under the finger looked chosen.
+- One overlay at a time: an achievement pop-up waits while a card (`.unlock`) or the tour is open; a card closes when its page is left. Every overlay closes with Escape (cards, ⚙, ? help, enlarged photo, tour).
 - Memory card backs are quiet (pale accent tint + faint logo mark), never a loud pattern.
 - Game session trail (quiz and duels, next to the question): 10 small cells for the last 10 answers of this visit, grey until answered, then a full `--good` cell for right and a low `--bad` bar for wrong (shape + colour, readable without colour). Fixed width, never moves the layout. No score text in games (Pierre, 2026-11-01).

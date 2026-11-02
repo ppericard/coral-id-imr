@@ -854,6 +854,17 @@ header {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Compare A or B: both names always show (a phone cut "Pocillopora or Stylopho"): one scale step smaller on phones, and
+   a second line when they still do not fit. */
+.modes.ctx .ctx-pair > span {
+  white-space: normal;
+  text-overflow: clip;
+}
+@media (max-width: 599.98px) {
+  .modes.ctx .ctx-pair {
+    font-size: var(--fs-m);
+  }
+}
 .modes.ctx .ctx-t small {
   font-size: var(--fs-xs);
   font-weight: 600;
@@ -1915,6 +1926,10 @@ body:has(.lk) main {
      look at at once on a slow connection, and the fallback when the full photo fails (app.js data-lo). */
   background: var(--qbg) center / contain no-repeat;
 }
+/* Loaded (quiz.js): no placeholder left around a photo smaller than its box, only the blurred background. */
+.qph img.in {
+  background: none;
+}
 .qph .zoom {
   height: 100%;
   border-radius: 0;
@@ -2047,8 +2062,12 @@ kbd {
   padding: 3px 5px;
   background: var(--bg);
 }
-.ans button:not([disabled]):hover {
-  border-color: var(--accent);
+/* Hover looks only where there is a real hover: on touch screens :hover sticks after a tap, so the next question's
+   answer under the finger looked chosen (new-player walkthrough 2026-11-02). Same for the other choice buttons below. */
+@media (hover: hover) {
+  .ans button:not([disabled]):hover {
+    border-color: var(--accent);
+  }
 }
 .ans button.ok {
   background: var(--good-bg);
@@ -2120,8 +2139,10 @@ kbd {
   min-height: 36px;
   cursor: pointer;
 }
-.pulse button:hover {
-  border-color: var(--accent);
+@media (hover: hover) {
+  .pulse button:hover {
+    border-color: var(--accent);
+  }
 }
 .pulse .pulsex {
   margin-left: auto;
@@ -5158,7 +5179,7 @@ html.touring body::after {
   border-radius: var(--pill);
   background: var(--surface);
   color: var(--ink);
-  font: 600 var(--fs-2xs) / 1.4 var(--body);
+  font: 600 var(--fs-xs) / 1.3 var(--body);
   letter-spacing: 0.02em;
 }
 .plock {
@@ -5270,6 +5291,14 @@ html.touring .unlock {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+/* A card photo that did not load (quiz.js): a plain tile, never a broken-image icon. */
+.unlock img.fail {
+  visibility: hidden;
+}
+.ulfront,
+.ulphoto {
+  background: var(--surface-2);
 }
 /* First-encounter card (quiz.js introShow): the genus's cover photo, no flip. */
 .ulphoto {

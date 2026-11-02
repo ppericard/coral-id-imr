@@ -189,8 +189,8 @@ const server = http.createServer((req, res) => {
       store.set(INTRO.OFFER.KEY, null);
       NEXTQ = null;
       const q0 = question;
-      let tg;
-      question = (...a) => ((tg = a[1]), q0(...a));
+      let tg, shownF;
+      question = (...a) => ((tg = a[1]), (shownF = a[4].shown.map(p => p.f)), q0(...a));
       const at = {},
         cardsAt = [];
       let offers = 0;
@@ -207,6 +207,8 @@ const server = http.createServer((req, res) => {
         now.forEach(n => (at[n] = [a, INTROS[n][1]]));
         if (i === 0 && (now.length !== INTRO.START || !now.includes(tg)))
           fails.push(`first question: cards ${now.join(', ')}, asked ${tg}`);
+        // The question shown with its genus's card never repeats the card's photo (new-player walkthrough 2026-11-02).
+        if (now.includes(tg) && shownF.includes((cover(GX(tg)) || {}).f)) fails.push(`question ${i}: the photo of ${tg}'s card again`);
         if (!at[tg] && !asked(tg) && !isBonus(tg)) fails.push(`question ${i}: ${tg} asked without its card`);
         else if (at[tg] && !at[tg][1] && a < at[tg][0] + INTRO.GAP)
           fails.push(`question ${i}: ${tg} asked ${a - at[tg][0]} answer(s) after its card`);
@@ -223,6 +225,16 @@ const server = http.createServer((req, res) => {
         document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
         document.querySelector(`[data-c="${CSS.escape(i % 3 ? tg : ch.find(c => c !== tg))}"]`).click();
       }
+      // The same over many first questions (one draw each above would rarely catch it).
+      for (let i = 0, same = 0; i < 60; i++) {
+        P = {};
+        INTROS = {};
+        NEXTQ = null;
+        document.querySelectorAll('.unlock').forEach(x => x.remove());
+        quizPhoto();
+        if (shownF.includes((cover(GX(tg)) || {}).f) && !same++) fails.push(`first question: the photo of ${tg}'s card again`);
+      }
+      document.querySelectorAll('.unlock').forEach(x => x.remove());
       cardsAt.forEach(([a, k], i) => {
         if (i && a - cardsAt[i - 1][0] < INTRO.EVERY) fails.push(`two cards ${a - cardsAt[i - 1][0]} answer(s) apart`);
         if (i && k !== 1) fails.push(`${k} cards at once after the first ones`);
