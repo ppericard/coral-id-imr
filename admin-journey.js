@@ -243,7 +243,9 @@ function renderJourney(name) {
       .filter(([g, i]) => i != null && J.slate.has(g))
       .sort((a, b) => a[1] - b[1]),
     lrnUnknown = Object.keys(LRN).filter(g => lrnAt[g] == null && J.slate.has(g)).length,
-    lrnSeries = R.map((_, i) => lrnPts.filter(([, k]) => k <= i).length + lrnUnknown);
+    // Only the genera whose time is known: one learned before times were kept has no place on the time line (counting it
+    // from the first answer drew a learned genus where there was none; Pierre, 2026-11-02, "what is this curve based on?").
+    lrnSeries = R.map((_, i) => lrnPts.filter(([, k]) => k <= i).length);
 
   // 1. Progress: right answers on the last WIN against what was expected of them, and genera met.
   const dayStarts = [];
@@ -269,7 +271,7 @@ function renderJourney(name) {
         label: 'Right answers over time'
       }
     )}
-    <h4>Genera met and learned <span class="adm-jkey"><i class="acc"></i>met ${J.marks.length}/${total} <i class="lrn"></i>★ learned ${Object.keys(LRN).filter(g => J.slate.has(g)).length}${lrnUnknown ? ` (${lrnUnknown} before times were kept)` : ''}</span></h4>
+    <h4>Genera met and learned <span class="adm-jkey"><i class="acc"></i>met ${J.marks.length}/${total} <i class="lrn"></i>★ learned ${Object.keys(LRN).filter(g => J.slate.has(g)).length}${lrnUnknown ? ` (${lrnUnknown} learned before times were kept: not on the curve)` : ''}</span></h4>
     ${journeyChart([{v: J.met, cls: 'met'}, ...(C && !C.err ? [{v: lrnSeries, cls: 'lrn'}] : [])], total, {
       ticks: [
         [Math.round(total / 2), Math.round(total / 2)],
