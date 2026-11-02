@@ -3,7 +3,8 @@
 // - every photo of a question (shown, hint, revealed after) comes from ONE observation (same colony; AGENTS.md 14b);
 // - never a several-corals or Coral Finder book photo in a game (rule 10); bonus genera: Research Grade or Pierre's only (14a);
 // - answer choices: 3 distinct genera of the list, never the target; exactly the asked number of traps (look-alikes /
-//   confused genera) when enough exist, none at the very start (14c).
+//   confused genera) when enough exist, none at the very start (14c);
+// - first meetings: genera met on cards before being asked, never right after their card (INTRO).
 // Like pages.smoke.js it needs Playwright (CI installs it in a temporary folder; no package.json). Locally:
 // node tests/draw.smoke.js
 const http = require('http'),
@@ -175,6 +176,44 @@ const server = http.createServer((req, res) => {
       if (progPct() !== pctOf(P, Object.keys(DATA.gen)))
         fails.push(`progress %: app ${progPct()} vs core pctOf ${pctOf(P, Object.keys(DATA.gen))}`);
     }
+    // First meetings (INTRO, Pierre 2026-11-02): from zero, INTRO.START cards then questions among them; every genus
+    // asked was met on a card before; one met on a card alone is not asked before INTRO.GAP answers; at least
+    // INTRO.EVERY answers between two cards; with enough genera met, the choices are all genera met.
+    {
+      P = {};
+      INTROS = {};
+      NEXTQ = null;
+      const q0 = question;
+      let tg;
+      question = (...a) => ((tg = a[1]), q0(...a));
+      const at = {},
+        cardsAt = [];
+      for (let i = 0; i < 120; i++) {
+        const a = answersSoFar(),
+          before = new Set(Object.keys(INTROS));
+        NEXTQ = null;
+        quizPhoto();
+        const now = Object.keys(INTROS).filter(n => !before.has(n));
+        if (now.length) cardsAt.push([a, now.length]);
+        now.forEach(n => (at[n] = [a, INTROS[n][1]]));
+        if (i === 0 && (now.length !== INTRO.START || !now.includes(tg)))
+          fails.push(`first question: cards ${now.join(', ')}, asked ${tg}`);
+        if (!at[tg] && !asked(tg) && !isBonus(tg)) fails.push(`question ${i}: ${tg} asked without its card`);
+        else if (at[tg] && !at[tg][1] && a < at[tg][0] + INTRO.GAP)
+          fails.push(`question ${i}: ${tg} asked ${a - at[tg][0]} answer(s) after its card`);
+        const ch = [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c);
+        if (Object.keys(INTROS).length >= 4 && !ch.every(introduced)) fails.push(`question ${i}: a choice never met (${ch.join(', ')})`);
+        document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
+        document.querySelector(`[data-c="${CSS.escape(i % 3 ? tg : ch.find(c => c !== tg))}"]`).click();
+      }
+      cardsAt.forEach(([a, k], i) => {
+        if (i && a - cardsAt[i - 1][0] < INTRO.EVERY) fails.push(`two cards ${a - cardsAt[i - 1][0]} answer(s) apart`);
+        if (i && k !== 1) fails.push(`${k} cards at once after the first ones`);
+      });
+      if (cardsAt.length < 3) fails.push(`only ${cardsAt.length} card showing(s) in 120 questions`);
+      question = q0;
+      INTROS = {};
+    }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
   await b.close();
@@ -185,7 +224,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam.`
+    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, first meetings.`
   );
 })().catch(e => {
   console.error(e);

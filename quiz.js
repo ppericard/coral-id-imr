@@ -600,52 +600,65 @@ const takePlan = cur => {
 function quizPhoto() {
   const q = takePlan('quiz') || planPhoto();
   question(...q);
-  introDue(q[1]) && introShow(q[1]);
+  if (q.intro) introShow(q.intro, q.start);
 }
-// First meeting with a genus (beginner RA review, Pierre 2026-11-02: the first quiz felt like an exam, guessing genera
-// never seen): before its first question, a card shows the genus, its cover photo and its ID tips (and, for a ★ genus,
-// the surveyed look-alike it is on the slate for); Got it opens the question, which is then about that genus. Once per
-// genus on this device (INTRO, outside the synced progress). Not for bonus genera (their unlock card does it) nor
-// for a genus already asked (progress from before this card, or from another device). Asked, not met: a genus given
-// as a wrong answer gets a miss in its history (Pierre's rule) but its ok/ko stay at 0, and its card is still due.
-const INTRO = 'imr-intro';
-const introDue = n => !!n && DATA.gen[n] && !((P[n] || {}).ok || (P[n] || {}).ko) && !(store.get(INTRO, []) || []).includes(n);
-function introShow(n) {
-  store.set(INTRO, [...(store.get(INTRO, []) || []), n]);
+// The cards of the genera met now (INTRO in model.js), one after the other over the question: the first INTRO.START
+// together ("1 of 4", the first questions are about them), later ones alone (asked a few questions later). Recorded
+// when shown, so a planned question never played leaves no genus met without its card.
+function introShow(L, start) {
+  introAdd(L, start);
   document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
-  const g = GX(n),
-    p = cover(g),
-    star = typeof starNote === 'function' ? starNote(n) : '',
-    d = document.createElement('div');
+  const d = document.createElement('div');
   d.className = 'unlock intro';
   d.setAttribute('role', 'dialog');
   d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', `New genus: ${n}`);
-  d.innerHTML = `<div class="ulcard">${p ? `<div class="ulphoto"><img src="${img(p, 's')}" alt=""></div>` : ''}
-    <p class="ulkick">New genus</p><h3><i>${esc(n)}</i></h3>
-    ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
-    <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tipsList(g)}</div>
-    <div class="ulbtns"><span></span><button class="next" type="button">Got it</button></div></div>`;
   document.body.appendChild(d);
+  let i = 0;
   const close = () => {
     d.remove();
     document.removeEventListener('keydown', key, true);
+  };
+  const next = () => (++i < L.length ? show() : close());
+  const show = () => {
+    const n = L[i],
+      g = GX(n),
+      p = cover(g),
+      star = typeof starNote === 'function' ? starNote(n) : '',
+      more = i < L.length - 1;
+    d.setAttribute('aria-label', `New genus: ${n}`);
+    d.innerHTML = `<div class="ulcard">${p ? `<div class="ulphoto"><img src="${img(p, 's')}" alt=""></div>` : ''}
+      <p class="ulkick">New genus${L.length > 1 ? ` · ${i + 1} of ${L.length}` : ''}</p><h3><i>${esc(n)}</i></h3>
+      ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
+      <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tipsList(g)}</div>
+      <p class="ulnote">${start ? (more ? `The first questions are about these ${L.length} genera.` : 'Now, which is which?') : 'It comes up in the questions a little later.'}</p>
+      <div class="ulbtns"><span></span><button class="next" type="button">${more ? 'Next' : start ? 'Start' : 'Got it'}</button></div></div>`;
+    d.querySelector('button').onclick = next;
+    setTimeout(() => {
+      const b = d.querySelector('button');
+      if (b) b.focus({preventScroll: true});
+    }, 50);
   };
   const key = e => {
     if (e.key !== 'Escape' && e.key !== 'Enter') return;
     e.stopPropagation();
     e.preventDefault();
-    close();
+    e.key === 'Escape' ? close() : next();
   };
   document.addEventListener('keydown', key, true);
-  d.querySelector('button').onclick = close;
   d.addEventListener('click', e => {
     if (e.target === d) close();
   });
-  setTimeout(() => {
-    const b = d.querySelector('button');
-    if (b) b.focus({preventScroll: true});
-  }, 50);
+  show();
+}
+// Cards due with the next question (INTRO): the first ones while fewer than INTRO.START slate genera are met (picked by
+// the progressive path's draw, easiest first), else none: planPhoto may add one when its draw falls on a genus not met.
+function introStart(list) {
+  const slate = list.filter(n => !isBonus(n)),
+    want = INTRO.START - slate.filter(introduced).length,
+    L = [];
+  for (let fresh = slate.filter(n => !introduced(n)); L.length < want && fresh.length; fresh = fresh.filter(n => n !== L[L.length - 1]))
+    L.push(weighted(fresh));
+  return L;
 }
 function planPhoto() {
   const list = pool();
@@ -657,16 +670,33 @@ function planPhoto() {
       return ['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)];
     }
   }
-  const t = nextTarget(list),
-    ex = examReady(t) && examSet(t),
+  // The genus asked is one already met (INTRO): ready, or one of the cards shown with this question when they are the
+  // first ones. A draw that falls on a genus not met yet (the progressive path opening one, at most one card every
+  // INTRO.EVERY answers) shows its card instead, and the question is about another genus.
+  let cards = introStart(list);
+  const start = cards.length > 0,
+    ready = n => cards.includes(n) || introReady(n),
+    known = n => cards.includes(n) || introduced(n),
+    met = list.filter(ready),
+    open = !start && introSince() >= INTRO.EVERY;
+  let t = nextTarget(met.length ? (open ? list.filter(n => ready(n) || !introduced(n)) : met) : list);
+  if (met.length && !known(t)) {
+    cards = [t];
+    t = nextTarget(met);
+  }
+  const ex = examReady(t) && examSet(t),
     traps = ex ? 3 : trapsFor(t),
-    ch = shuffle([t, ...distractors(t, list, traps)]);
-  return ['quiz', t, ch, 'Which genus?', ex || photoSet(t), traps < 2 ? plausibleK(t, ch) : 0];
+    ch = shuffle([t, ...distractors(t, list, traps, known)]),
+    q = ['quiz', t, ch, 'Which genus?', ex || photoSet(t), traps < 2 ? plausibleK(t, ch) : 0];
+  if (cards.length) Object.assign(q, {intro: cards, start});
+  return q;
 }
 function quizDuel(a, b) {
   const q = (!a && !b && takePlan('quiz-duel')) || planDuel(a, b);
   question(...q);
-  introDue(q[1]) && introShow(q[1]);
+  // Both genera are named on the buttons: the cards of those not met yet come together, and either can be the answer.
+  const L = q[2].filter(n => !introduced(n));
+  if (L.length) introShow(L, true);
 }
 function planDuel(a, b) {
   const list = pool();

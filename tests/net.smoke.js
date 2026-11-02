@@ -49,8 +49,8 @@ const server = http.createServer((req, res) => {
   const b = await chromium.launch(),
     fails = [];
   // The first-encounter card (quiz.js introShow) would cover the quiz in the checks that are not about it: every genus
-  // starts as introduced, except in a context opened with {intro: true}.
-  const INTROS = JSON.stringify(Object.keys(require('../data.json').gen)),
+  // starts as met on a card, except in a context opened with {intro: true}.
+  const INTROS = JSON.stringify(Object.fromEntries(Object.keys(require('../data.json').gen).map(n => [n, [0, 1]]))),
     ctxNew = b.newContext.bind(b);
   b.newContext = async ({intro, ...o} = {}) => {
     const c = await ctxNew(o);

@@ -72,6 +72,7 @@ const server = http.createServer((req, res) => {
     const out = {};
     for (const [name, [mk, rate]] of Object.entries(profiles)) {
       P = {};
+      INTROS = {};
       const know = mk(),
         first = [],
         rows = [];
@@ -108,7 +109,8 @@ const server = http.createServer((req, res) => {
             q: i + 1,
             right: Math.round((100 * blk.ok) / blk.n),
             traps: +(blk.traps / blk.n).toFixed(2),
-            met: G.filter(g => P[g]).length,
+            met: G.filter(introduced).length,
+            asked: G.filter(asked).length,
             learned: G.filter(g => (P[g] || {}).mx).length,
             sure: G.filter(g => knownP(g) >= BKT.MASTER).length
           });
@@ -123,6 +125,7 @@ const server = http.createServer((req, res) => {
     // is drawn far more often than the hardest. Made-up ratings: one genus's photos rated easy, another's hard.
     {
       P = {};
+      INTROS = {};
       const keep = PSTAT,
         fake = {},
         [ga, gb] = [G[3], G[7]];
@@ -159,6 +162,7 @@ const server = http.createServer((req, res) => {
     const bonus = BONUS.filter(n => GX(n))[0];
     if (bonus) {
       P = {};
+      INTROS = {};
       G.slice(0, 5).forEach(g => (P[g] = {ok: 20, ko: 0, h: '1111111111', th: 1, L: 0.99, mx: 1}));
       P[bonus] = {ok: 5, ko: 3, h: '11010', th: 0, L: 0.4};
       const list = [...G, bonus];
@@ -170,6 +174,7 @@ const server = http.createServer((req, res) => {
     // rated twins (made-up ratings at each photo's own prior difficulty).
     {
       P = {};
+      INTROS = {};
       const keep = PSTAT,
         g = G.find(n => VIEWS.flatMap(([v]) => gamePics(n, v, 'hard')).length >= 8),
         L = [...new Set(VIEWS.flatMap(([v]) => gamePics(g, v, 'hard')))],

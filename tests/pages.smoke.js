@@ -55,8 +55,8 @@ const server = http.createServer((req, res) => {
     fails = [];
   const b = await chromium.launch();
   // The first-encounter card (quiz.js introShow) would cover the quiz in the checks that are not about it: every genus
-  // starts as introduced, except in a context opened with {intro: true}.
-  const INTROS = JSON.stringify(Object.keys(require('../data.json').gen)),
+  // starts as met on a card, except in a context opened with {intro: true}.
+  const INTROS = JSON.stringify(Object.fromEntries(Object.keys(require('../data.json').gen).map(n => [n, [0, 1]]))),
     ctxNew = b.newContext.bind(b);
   b.newContext = async ({intro, ...o} = {}) => {
     const c = await ctxNew(o);
@@ -109,17 +109,25 @@ const server = http.createServer((req, res) => {
       q2.on('pageerror', e => e2.push(e.message));
       await q2.goto(base + '#quiz');
       await q2.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-      // First question: the card of a genus never asked comes first, names the genus asked, and Got it closes it.
+      // A player starting from zero first meets INTRO.START genera on cards, one after the other ("1 of 4"), and the
+      // first question is about one of them, its choices among them (Pierre, 2026-11-02).
       await q2.waitForSelector('.unlock.intro', {timeout: 5000}).catch(() => {});
-      const card = await q2.evaluate(() => {
-        const h = document.querySelector('.unlock.intro h3');
-        return {name: h && h.textContent, img: !!document.querySelector('.unlock.intro .ulphoto img')};
-      });
-      if (!card.name || !card.img) fails.push(`${w}px first-encounter card: ${JSON.stringify(card)}`);
-      else {
+      const seen = [];
+      for (let k = 0; k < 6 && (await q2.$('.unlock.intro')); k++) {
+        seen.push(
+          await q2.evaluate(() => ({
+            name: document.querySelector('.unlock.intro h3').textContent,
+            kick: document.querySelector('.unlock.intro .ulkick').textContent,
+            img: !!document.querySelector('.unlock.intro .ulphoto img')
+          }))
+        );
         await q2.click('.unlock.intro button');
-        if (await q2.$('.unlock.intro')) fails.push(`${w}px first-encounter card: Got it did not close it`);
       }
+      const ch = await q2.evaluate(() => [...document.querySelectorAll('#view [data-c]')].map(b => b.dataset.c));
+      if (seen.length !== 4 || !seen.every((c, k) => c.img && c.kick.includes(`${k + 1} of 4`)))
+        fails.push(`${w}px first cards: ${JSON.stringify(seen)}`);
+      else if (!ch.every(c => seen.some(s => s.name === c)))
+        fails.push(`${w}px first question not among the first cards: ${ch.join(', ')}`);
       let at = 0;
       for (let i = 1; i <= 20 && !at; i++) {
         await q2.waitForSelector('#view [data-c]');
