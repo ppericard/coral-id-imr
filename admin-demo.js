@@ -172,7 +172,8 @@
       .toLowerCase();
   function answers() {
     const out = {ok: true, rows: [], players: {}, me: aid(ME)};
-    out.rows = S.rows.map(r => [aid(r[0]), r[1], r[2], r[3], r[4], r[5], r[6], r[8], r[9], r[10], r[11]]);
+    // Index 11: answered without signing in (sheet v17), so trustOf leaves it out of the photo ratings as the sheet does.
+    out.rows = S.rows.map(r => [aid(r[0]), r[1], r[2], r[3], r[4], r[5], r[6], r[8], r[9], r[10], r[11], /^~anon /.test(r[0]) ? 1 : 0]);
     Object.values(S.users).forEach(u => {
       const P = JSON.parse(u.data['imr-coral-progress'] || '{}'),
         th = {};
@@ -265,6 +266,12 @@
       const u = S.users[lc(p.userData)];
       return u ? {ok: true, rev: u.rev, data: JSON.parse(JSON.stringify(u.data))} : {ok: false, error: 'user'};
     }
+    if (Array.isArray(p.anonDelete)) {
+      const ids = new Set(p.anonDelete.map(String)),
+        n = S.rows.length;
+      S.rows = S.rows.filter(r => !(/^~(anon|deleted) /.test(r[0]) && ids.has(aid(r[0]))));
+      return {ok: true, answers: n - S.rows.length};
+    }
     if (p.userDelete) {
       const u = S.users[lc(p.userDelete)];
       if (!u) return {ok: false, error: 'user'};
@@ -329,7 +336,7 @@
       if (p.readReports) return ok({ok: true, rows: S.reports.map(r => r.slice())});
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
-      if (p.users || p.userData || p.userDelete || p.userMerge) return ok(users(p));
+      if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete) return ok(users(p));
       return ok({ok: false, error: 'demo'});
     }
     if (/^https?:/.test(url) && !url.startsWith(location.origin)) return Promise.reject(new TypeError('Blocked in demo mode'));

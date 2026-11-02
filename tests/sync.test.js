@@ -391,6 +391,22 @@ test('v17: anonymous answers rate no photo until the device signs in; then they 
   assert.ok(p && p[1] === 1 && p[0] < 0, 'once signed in, the answers rate the photos: ' + JSON.stringify(p));
 });
 
+test('v17: one player whatever the capitalisation of the name (trust and first answer per photo)', () => {
+  const s = loadCodeGs(),
+    A = (i, ph) => ans('k' + i, {ph, t: new Date(Date.UTC(2026, 10, 1, 0, 0, i)).toISOString()});
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [0, 1, 2, 3, 4, 5].map(i => A(i, 'pic-' + i))});
+  s.post({
+    name: 'ana',
+    pin: '1234',
+    data: prog(2),
+    summary: {},
+    answers: [6, 7, 8, 9, 10, 11].map(i => A(i, i === 11 ? 'pic-0' : 'pic-' + i))
+  });
+  const P = s.get({stats: '1'}).photos;
+  assert.strictEqual(P['pic-1'][1], 1, '12 right answers under Ana and ana make one trusted player');
+  assert.strictEqual(P['pic-0'][1], 1, 'and one answer per photo, whatever the spelling');
+});
+
 test("v17 anonDelete: admin only, removes the answers of chosen anonymous ids, never a named player's", () => {
   const s = loadCodeGs(),
     T = {token: 'ghp_write000000000000000000'};

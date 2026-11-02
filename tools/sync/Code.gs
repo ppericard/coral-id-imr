@@ -225,9 +225,10 @@ function stats_(){
   if (!sh || sh.getLastRow() < 2) return out;
   const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 12).getValues().filter(r => r[0]).sort((a, b) => new Date(a[1]) - new Date(b[1]));
   const P = {}, R = {}, seen = {}, sig = x => 1 / (1 + Math.exp(-x));
-  const trust = trusted_(rows.map(r => [String(r[0]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[0]).indexOf('~anon ') === 0]));
+  // One player whatever the capitalisation of the name (find_ and hash_ match names case-blind; aid_ lowercases too).
+  const trust = trusted_(rows.map(r => [lc_(r[0]), Number(r[4]) ? 1 : 0, String(r[5]), lc_(r[0]).indexOf('~anon ') === 0]));
   rows.forEach(r => {
-    const who = String(r[0]), ok = Number(r[4]) ? 1 : 0, mode = String(r[5]), fs = String(r[6]).split(/\s+/).filter(Boolean);
+    const who = lc_(r[0]), ok = Number(r[4]) ? 1 : 0, mode = String(r[5]), fs = String(r[6]).split(/\s+/).filter(Boolean);
     const sg = String(r[2]), sa = String(r[3]);
     if (trust[who]) String(r[11] || '').split(/\s+/).filter(x => x && x !== sg).forEach(x => { const k = sg < x ? sg + '|' + x : x + '|' + sg, c = out.conf[k] = out.conf[k] || [0, 0]; c[0]++; if (!ok && sa === x) c[1]++; });
     if (!fs.length) return;
