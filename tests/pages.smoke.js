@@ -115,6 +115,80 @@ const server = http.createServer((req, res) => {
         const q = await q2.evaluate(() => JSON.parse(localStorage.getItem('imr-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg)));
         if (!q.includes('pulse:hard') || !q.some(x => /smoke test error/.test(x))) fails.push(`${w}px events not queued: ${q.join(' | ')}`);
       }
+      // Back closes an enlarged photo and stays on the page (RA review 2026-11-02).
+      await q2.evaluate(() => (location.hash = 'g-Porites'));
+      await q2.waitForTimeout(600);
+      await q2.evaluate(() => document.querySelector('#view .zoom').click());
+      await q2.waitForTimeout(300);
+      await q2.goBack();
+      await q2.waitForTimeout(400);
+      const lbb = await q2.evaluate(() => ({open: !document.getElementById('lightbox').hidden, h: location.hash}));
+      if (lbb.open || lbb.h !== '#g-Porites') fails.push(`${w}px Back with an enlarged photo: ${JSON.stringify(lbb)}`);
+      // A sheet opened by a link in a fresh tab: after a photo was enlarged and closed, its Back button still leads to
+      // Genera (Codex review #344: history.length counted the photo's entry, and Back did nothing).
+      const q3 = await c2.newPage();
+      await q3.goto(base + '#g-Porites');
+      await q3.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await q3.evaluate(() => document.querySelector('#view .zoom').click());
+      await q3.waitForTimeout(300);
+      await q3.click('#lightbox [data-x]');
+      await q3.waitForTimeout(400);
+      await q3.click('[data-back]');
+      await q3.waitForTimeout(800);
+      const bk = await q3.evaluate(() => location.hash);
+      if (bk !== '#genera') fails.push(`${w}px Back on a linked sheet after a photo: ${bk}`);
+      // A reload with a photo enlarged: its history entry is stepped over, so the sheet's Back returns to the quiz.
+      await q3.evaluate(() => (location.hash = 'quiz'));
+      await q3.waitForTimeout(600);
+      await q3.evaluate(() => (location.hash = 'g-Porites'));
+      await q3.waitForTimeout(600);
+      await q3.evaluate(() => document.querySelector('#view .zoom').click());
+      await q3.waitForTimeout(300);
+      await q3.reload();
+      await q3.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await q3.waitForTimeout(300);
+      await q3.click('[data-back]');
+      await q3.waitForTimeout(800);
+      const bl = await q3.evaluate(() => location.hash);
+      if (bl !== '#quiz') fails.push(`${w}px Back after a reload with a photo enlarged: ${bl}`);
+      // Forward onto a closed photo's entry is stepped over too: the sheet's Back then returns to the quiz.
+      await q3.evaluate(() => (location.hash = 'g-Porites'));
+      await q3.waitForTimeout(600);
+      await q3.evaluate(() => document.querySelector('#view .zoom').click());
+      await q3.waitForTimeout(300);
+      await q3.click('#lightbox [data-x]');
+      await q3.waitForTimeout(400);
+      await q3.goForward();
+      await q3.waitForTimeout(500);
+      await q3.click('[data-back]');
+      await q3.waitForTimeout(800);
+      const bf = await q3.evaluate(() => location.hash);
+      if (bf !== '#quiz') fails.push(`${w}px Back after Forward onto a closed photo: ${bf}`);
+      // From the quiz to a sheet, then a reload: the sheet's Back still returns to the quiz (Codex review #344).
+      await q3.evaluate(() => (location.hash = 'quiz'));
+      await q3.waitForTimeout(600);
+      await q3.evaluate(() => (location.hash = 'g-Porites'));
+      await q3.waitForTimeout(600);
+      await q3.reload();
+      await q3.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await q3.click('[data-back]');
+      await q3.waitForTimeout(800);
+      const bq = await q3.evaluate(() => location.hash);
+      if (bq !== '#quiz') fails.push(`${w}px Back on a sheet after a reload: ${bq}`);
+      await q3.close();
+      // Coral Finder: the "Compare A and B" button is readable (its text was the colour of its background).
+      await q2.evaluate(() => (location.hash = 'finder|form=M'));
+      await q2.waitForTimeout(800);
+      for (const k of [0, 2]) {
+        await q2.locator('button:has-text("Compare")').nth(k).click();
+        await q2.waitForTimeout(300);
+      }
+      const cc = await q2.evaluate(() => {
+        const n = document.querySelector('.fdcmp .next'),
+          c = n && getComputedStyle(n);
+        return n ? [c.color, c.backgroundColor] : null;
+      });
+      if (!cc || cc[0] === cc[1]) fails.push(`${w}px Coral Finder compare button unreadable: ${JSON.stringify(cc)}`);
       const other = e2.filter(e => !/smoke test error/.test(e));
       if (other.length) fails.push(`${w}px quiz: ${other.slice(0, 3).join(' | ')}`);
       await c2.close();
