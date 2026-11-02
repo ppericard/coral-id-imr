@@ -862,6 +862,7 @@ header {
 #size,
 #adminview,
 #xgen,
+#pq,
 #cvd,
 #boardset,
 #theme {
@@ -875,6 +876,7 @@ header {
 }
 #adminview button,
 #xgen button,
+#pq button,
 #cvd button,
 #boardset button,
 #theme button,
@@ -890,6 +892,7 @@ header {
 }
 #adminview button[aria-pressed='true'],
 #xgen button[aria-pressed='true'],
+#pq button[aria-pressed='true'],
 #cvd button[aria-pressed='true'],
 #boardset button[aria-pressed='true'],
 #theme button[aria-pressed='true'],

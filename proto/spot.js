@@ -20,7 +20,7 @@ LAB.add({
       const feats = g.tr.filter(x => trSet('feat').includes(x));
       const steps = ['wall', 'size', ...(feats.length ? ['feat'] : [])];
       let si = 0;
-      root.innerHTML = `<div class="spot"><button type="button" class="spotph" id="spz"><img src="${img(p)}" alt="Corallites to read"></button><div class="spotq" id="spq"></div></div>
+      root.innerHTML = `<div class="spot"><button type="button" class="spotph" id="spz"><img src="${img(p, fit(Math.min(innerWidth, 800)))}" alt="Corallites to read"></button><div class="spotq" id="spq"></div></div>
         <p class="note" id="spscore"></p>`;
       const showScore = () => {
         root.querySelector('#spscore').textContent = Object.entries(score)

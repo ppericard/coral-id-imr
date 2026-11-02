@@ -82,7 +82,7 @@ LAB.add({
       sel.clear();
       const p = viewPhoto(mystery, 'macro');
       root.querySelector('#elimmyst').innerHTML =
-        `<figure class="emyst"><img src="${img(p)}" alt="Mystery coral, corallites"><figcaption>Mystery coral: tick what you see, then tap your answer on the board.</figcaption></figure>`;
+        `<figure class="emyst"><img src="${img(p, fit(Math.min(innerWidth, 800)))}" alt="Mystery coral, corallites"><figcaption>Mystery coral: tick what you see, then tap your answer on the board.</figcaption></figure>`;
       root.querySelector('#elimres').innerHTML = '';
       root.querySelectorAll('.etile').forEach(x => x.classList.remove('answer'));
       draw();

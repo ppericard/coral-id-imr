@@ -123,6 +123,9 @@ const ms = x => Math.round(x) + ' ms';
     await p.evaluate(() => (location.hash = 'quiz'));
     const ok1 = await photoShown();
     out.push(`  cold start: Home ${s1(tHome)}, first quiz photo +${ok1 ? s1(Date.now() - t) : 'never (60 s)'}, ${Math.round(bytes / 1024)} KB`);
+    out.push(
+      `  photos: ${await p.evaluate(() => (navigator.connection || {}).effectiveType || '?')} reported, Auto works as ${await p.evaluate(() => (typeof saver === 'function' && saver() ? 'Saver' : 'by box'))}`
+    );
     // 2. Quiz clicks, 6 questions: Next at once for 3 (a player in a hurry), after reading the feedback for 3 s for 3
     // (the usual case: the next question's photos are fetched meanwhile).
     const A = [],

@@ -6,6 +6,7 @@
 import json, os
 import numpy as np
 from PIL import Image
+import photos  # the photo list and its sizes
 
 def measure(path):
     im = Image.open(path).convert('RGB')
@@ -26,7 +27,7 @@ def measure(path):
     cast = max(gr, b) - r  # underwater photos lose red first
     return dict(sharp=sharp, contrast=float(g.std()), cast=float(cast), dark=float(abs(g.mean() - .45)), px=max(w, h))
 
-files = sorted(f[:-5] for f in os.listdir('img') if f.endswith('.webp') and not f.endswith('-s.webp'))
+files = photos.photos()  # the 1600 px files only, not their smaller sizes (Codex review #336)
 M = {f: measure(f'img/{f}.webp') for f in files}
 
 def rank(key, reverse=False):

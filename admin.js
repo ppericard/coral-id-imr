@@ -165,7 +165,8 @@ function saveDraft() {
   draftAt = new Date();
   keepHist();
 }
-let draftLost = false;
+let draftLost = false,
+  UPDATED = false; // a new version took over in the background (see the init: reloads at the next calm moment)
 // The draft as this tab last wrote it to, or took it from, localStorage: the common base when another admin tab writes its own.
 // Two admin tabs in one browser share the stored draft (code re-review 2026-11-01, M4). Every write is tagged with this
 // tab's revision and the revision it had last seen (takeTab in core.js), and a draft another tab stored is merged in, against
@@ -3190,12 +3191,40 @@ async function start() {
   // On a phone the page opens on the candidates, one per screen.
   cur = hashNow() || (matchMedia('(max-width: 599px)').matches ? '~cand' : Object.keys(DATA.gen)[0]);
   window.onhashchange = () => {
+    if (UPDATED && !draftLost) return location.reload(); // a new version took over: loaded on the way to the next page
     cur = hashNow();
     const h = $('admhelp');
     if (h) h.remove();
     render();
     window.scrollTo({top: 0});
   };
+  // New versions (Pierre, 2026-11-02, same as the app): sw.js is checked again when the page comes back into view (5 min
+  // apart) and every 30 min; once a new version has taken over in the background, the page reloads itself when it next
+  // comes into view or at the next page change. Every click is already in the draft, so nothing is lost (the undo
+  // history starts again).
+  if ('serviceWorker' in navigator) {
+    // The first install also takes over: that one is no update; any takeover after it is (a tab first opened before any
+    // version was installed, then left open, still gets the next ones: Codex review #336).
+    let had = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (had) UPDATED = true;
+      had = true;
+    });
+    let swAt = Date.now();
+    const swCheck = () => {
+      swAt = Date.now();
+      navigator.serviceWorker
+        .getRegistration()
+        .then(r => r && r.update())
+        .catch(() => {});
+    };
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      if (UPDATED && !draftLost) return location.reload();
+      if (Date.now() - swAt > 300000) swCheck();
+    });
+    setInterval(() => document.visibilityState === 'visible' && swCheck(), 1800000);
+  }
   // Every click is kept in this browser's draft, so leaving or reloading loses nothing: warn only if that save failed.
   window.onbeforeunload = e => {
     if (draftLost) {

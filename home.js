@@ -7,7 +7,7 @@
     const g = DATA.gen[n];
     if (!g) return '';
     const p = (g.views[v] || [])[0] || (g.views.macro || [])[0] || cover(g);
-    return p ? img(p, 's') : '';
+    return p ? thumb(p, '(max-width:599.98px) 80px, 270px') : '';
   };
   window.viewHome = function () {
     document.documentElement.dataset.page = 'lab'; // full width, like the Lab (lab.css)
@@ -15,7 +15,7 @@
     // Door 1 art: a band of corallite close-ups. Door 2 art: a real ReefCloud photo with its 5 points (Pierre's, 2026-10-31), centred on the active point.
     const tiles = shuffle(names)
       .slice(0, 12)
-      .map(g => `<img src="${ph(g, 'macro')}" alt="" loading="lazy">`)
+      .map(g => `<img ${ph(g, 'macro')} alt="" loading="lazy">`)
       .join('');
     $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the genera; Identify when you need to name a coral on a ReefCloud photo.</p><div class="home-page">
       <div class="hdoors">
@@ -32,7 +32,7 @@
           </div>
         </section>
         <section class="hdoor identify">
-          <a class="hdart rc" href="#finder" tabindex="-1" aria-hidden="true"><img src="img/reefcloud-example.webp" alt="" loading="lazy"></a>
+          <a class="hdart rc" href="#finder" tabindex="-1" aria-hidden="true"><img src="img/reefcloud-example-m.webp" srcset="img/reefcloud-example-m.webp 760w, img/reefcloud-example.webp 1240w" sizes="(max-width:599.98px) 92vw, 920px" alt="" loading="lazy"></a>
           <div class="hdbody">
             <p class="hdwhen">On ReefCloud · when a point stumps you</p>
             <h2>Identify a coral</h2>

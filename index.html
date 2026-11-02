@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <!-- CSP (code review 2026-11-01, L2): scripts only from this site; the inline theme script is allowed by its hash, checked by tests/csp.test.js. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-X/v0Mr+YT/Fgy6ZPABgbzrjNdjq1Cp0y9h7WoVOuyDg='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://api.github.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-X/v0Mr+YT/Fgy6ZPABgbzrjNdjq1Cp0y9h7WoVOuyDg=' 'sha256-7SNU5fvUhUDfPR9chlZX9O81+TIPYYr6SYV+uIbX+4g='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://api.github.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="author" content="Pierre Pericard">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>IMR Coral ID</title>
@@ -24,7 +24,19 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#0d6f7d">
 <link rel="preload" href="fonts/source-sans-3-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="app.css?v=104">
+<!-- Unstable connection (Pierre, 2026-11-01): the app's scripts are preloaded below (downloaded in parallel) and run in
+     their order by this loader (each one inserted when the one before has run, so not async=false: that queue also holds
+     the Lab prototypes and would make start-up wait for them), each failed one tried again up to 3 times (1, 2, 3 s); window.BOOT resolves once all
+     have run (app.js waits for it before the first page). A stylesheet that fails is tried again the same way. -->
+<script>(function(){addEventListener("error",function(e){var t=e.target,n;if(!t||t.tagName!=="LINK"||t.rel!=="stylesheet")return;n=+(t.dataset.r||0);if(n<3)setTimeout(function(){var c=t.cloneNode();c.dataset.r=n+1;t.replaceWith(c)},1000*(n+1))},true);var ok;window.BOOT=new Promise(function(r){ok=r});function go(L,i,n){if(i>=L.length)return ok();var s=document.createElement("script");s.src=L[i];s.onload=function(){go(L,i+1,0)};s.onerror=function(){s.remove();n<3?setTimeout(function(){go(L,i,n+1)},1000*(n+1)):go(L,i+1,0)};document.body.appendChild(s)}addEventListener("DOMContentLoaded",function(){go([].map.call(document.querySelectorAll('link[rel=preload][as=script]'),function(l){return l.href}),0,0)})})()</script>
+<link rel="preload" href="core.js?v=13" as="script">
+<link rel="preload" href="app.js?v=155" as="script">
+<link rel="preload" href="flag.js?v=8" as="script">
+<link rel="preload" href="proto/lab.js?v=67" as="script">
+<link rel="preload" href="home-art.js?v=4" as="script">
+<link rel="preload" href="home.js?v=25" as="script">
+<link rel="preload" href="tour.js?v=12" as="script">
+<link rel="stylesheet" href="app.css?v=105">
 <link rel="stylesheet" href="proto/lab.css?v=48">
 <link rel="stylesheet" href="home.css?v=22">
 </head>
@@ -42,8 +54,8 @@
     </nav>
     <div class="hdr-tools">
       <a class="prog" id="prog" href="#progress" title="Your progress per genus" aria-label="My progress"><span class="pl">My progress</span> <b id="progn">0%</b></a>
-      <a class="theme labgo" href="#lab" aria-label="Tools" title="Tools"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 12-8.4 8.4a2.1 2.1 0 0 1-3-3L12 9"/><path d="M17.6 15 22 10.6"/><path d="m20.9 11.7-1.3-1.3c-.6-.6-.9-1.3-.9-2.1V7l-2.3-2.3a5.5 5.5 0 0 0-4-1.7H9l.9.8a6.2 6.2 0 0 1 2.1 4.6V10l2 2h1.2c.8 0 1.6.3 2.1.9l1.3 1.3"/></svg></a>
       <a class="theme boardgo" id="boardgo" href="#board" aria-label="Leaderboard" title="Leaderboard">🏆</a>
+      <a class="theme labgo" href="#lab" aria-label="Tools" title="Tools"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 12-8.4 8.4a2.1 2.1 0 0 1-3-3L12 9"/><path d="M17.6 15 22 10.6"/><path d="m20.9 11.7-1.3-1.3c-.6-.6-.9-1.3-.9-2.1V7l-2.3-2.3a5.5 5.5 0 0 0-4-1.7H9l.9.8a6.2 6.2 0 0 1 2.1 4.6V10l2 2h1.2c.8 0 1.6.3 2.1.9l1.3 1.3"/></svg></a>
       <button type="button" class="next signb" id="signb" hidden>Sign in</button>
       <button type="button" class="theme" id="help" aria-label="Help for this page" aria-expanded="false" aria-controls="helpbox" title="Help for this page" hidden>?</button>
       <button type="button" class="theme" id="setb" aria-label="Settings" aria-expanded="false" aria-controls="settings" title="Settings">⚙</button>
@@ -51,6 +63,7 @@
         <div class="sethead"><b>Settings</b><button type="button" class="setx" id="setx" aria-label="Close settings">✕</button></div>
         <section class="sync setsync" id="sync" hidden></section>
         <div class="setrow" id="sizerow"><span>Photo size</span><div id="size" role="group" aria-label="Photo size"><button type="button" data-size="s" title="Small photos">S</button><button type="button" data-size="m" title="Medium photos">M</button><button type="button" data-size="l" title="Large photos">L</button></div></div>
+        <div class="setrow"><span title="Auto: lighter photos when the phone reports a slow connection or its data saver">Photo quality</span><div id="pq" role="group" aria-label="Photo quality"><button type="button" data-pq="auto" title="Lighter photos on a slow connection">Auto</button><button type="button" data-pq="saver" title="Lighter photos, less data">Saver</button><button type="button" data-pq="full" title="The sharpest photos, more data">Full</button></div></div>
         <div class="setrow" id="xrow" hidden><span title="Coral Finder: also rank the rarer genera seen at Dauin that are not on the IMR list">Non-IMR genera</span><div id="xgen" role="group" aria-label="Non-IMR genera"><button type="button" data-x="1">On</button><button type="button" data-x="0">Off</button></div></div>
         <div class="setrow" id="viewrow" hidden><span>View</span><div id="adminview" role="group" aria-label="View"><button type="button" data-view="admin" title="Admin">Admin</button><button type="button" data-view="user" title="User">User</button></div></div>
         <div class="setrow" id="admrow" hidden><span>Admin page</span><a class="setlink" href="admin.html">Open</a></div>
@@ -70,12 +83,5 @@
   <footer><p>Website and interface by Pierre Pericard. Sources: IMR Lecture 6 · Coral Finder 2022 (R. Kelley, BYOGUIDES) · iNaturalist photos, credited on each photo. For training at IMR. <a href="privacy.html">Privacy</a></p></footer>
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
-<script src="core.js?v=13"></script>
-<script src="app.js?v=154"></script>
-<script src="flag.js?v=7"></script>
-<script src="proto/lab.js?v=66"></script>
-<script src="home-art.js?v=4"></script>
-<script src="home.js?v=24"></script>
-<script src="tour.js?v=12"></script>
 </body>
 </html>
