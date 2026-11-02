@@ -3925,6 +3925,9 @@ function renderFcov() {
       i,
       x: isX(n),
       cand: pending(n).filter(p => !p.cf).length,
+      cby: pending(n)
+        .filter(p => !p.cf)
+        .reduce((o, p) => ((o[origin(p)] = (o[origin(p)] || 0) + 1), o), {}),
       cells,
       min: live.length ? Math.min(...live.map(c => c.obs)) : 0,
       tot: pool.length,
