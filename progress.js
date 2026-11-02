@@ -7,8 +7,9 @@
 // and backup/reset live in the header and ⚙ (Pierre, 2026-11-01: the board comes first, nothing unrelated around it).
 // The player's card on My progress (Pierre, 2026-11-01: "a badge, as in video games"; 2026-11-02: one compact element
 // with the ring, at the top of the page, not under the 39 tiles): the overall ring with its %, then the name, place and
-// Elo on the leaderboard (filled once it loads; the Elo from this device until then), genera learned (or met) and
-// achievements earned with the last three. The rank links to the leaderboard, the achievements to their page.
+// Elo on the leaderboard (filled once it loads; the Elo from this device until then; nothing before the Elo is due and
+// while not on the board: it comes by itself, Pierre 2026-11-02), genera learned (or met) and achievements earned with the
+// last three. The rank links to the leaderboard, the achievements to their page.
 function badge(ring, pct, sub) {
   const A = store.get(ACHK, {}) || {},
     got = ACH.filter(a => A[a.id]).sort((x, y) => A[y.id] - A[x.id]),
@@ -16,7 +17,7 @@ function badge(ring, pct, sub) {
     G = P[LEVEL];
   return `<div class="pbadge"><div class="pring" style="background:conic-gradient(${ring})"><span><b>${pct}%</b></span></div>
     <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
-    <span>${sub} · <a id="pbrank" href="#board">🏆 ${eloLine(G)}</a> · <a href="#ach">🏅 <b>${got.length}</b>/${ACH.length} ${got
+    <span><span>${sub}</span><a id="pbrank" href="#board"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a><a href="#ach">🏅 <b>${got.length}</b>/${ACH.length} ${got
       .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
       .slice(0, 3)
       .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
@@ -191,7 +192,10 @@ function quizBoard() {
   const rank = B => {
     const a = document.getElementById('pbrank'),
       i = B && B.rows ? boardMe(B.rows) : -1;
-    if (a && i >= 0) a.innerHTML = `🏆 <b>#${i + 1}</b> · ${B.rows[i][2] == null ? eloLine(P[LEVEL]) : `Elo ${eloScore(B.rows[i][2])}`}`;
+    if (!a || i < 0) return;
+    const elo = B.rows[i][2] == null ? eloLine(P[LEVEL]) : `Elo ${eloScore(B.rows[i][2])}`;
+    a.innerHTML = `🏆 <b>#${i + 1}</b>${elo ? ' · ' + elo : ''}`;
+    a.hidden = false;
   };
   rank(boardCached());
   loadBoard().then(rank);
@@ -329,7 +333,7 @@ const eloScore = a => (typeof a === 'number' ? Math.round(1000 + 200 * a) : '–
 const ELO_MIN = 200;
 const eloLine = G => {
   const n = G ? (G.ok || 0) + (G.ko || 0) : 0;
-  return n >= ELO_MIN && typeof G.th === 'number' ? `Elo ${eloScore(G.th)}` : `<small>Elo in ${ELO_MIN - n} answers</small>`;
+  return n >= ELO_MIN && typeof G.th === 'number' ? `Elo ${eloScore(G.th)}` : '';
 };
 // The sync script answers in 1-3 s (a Google Apps Script starting up), whatever its own cache: so the last board is kept
 // on this device (BOARD_C, not an imr-coral key: it never travels with the progress) and shown at once, then replaced

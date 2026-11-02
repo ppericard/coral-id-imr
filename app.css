@@ -5565,8 +5565,35 @@ footer .rep:hover {
 .pbtxt > span {
   color: var(--muted);
 }
-.pbtxt > span a {
+.pbtxt > span > * {
   white-space: nowrap;
+}
+.pbtxt > span > :not(:first-child)::before {
+  content: ' · ';
+  color: var(--muted);
+}
+/* Desktop: the card sits beside the board, so it can be roomier (Pierre, 2026-11-02: save space on phones only). */
+@media (min-width: 1024px) {
+  .pboard .gside .pbadge {
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .pboard .gside .pring {
+    width: 120px;
+    height: 120px;
+  }
+  .pboard .gside .pring > span {
+    width: 92px;
+    height: 92px;
+  }
+  .pboard .gside .pring b {
+    font-size: var(--fs-2xl);
+  }
+  .pboard .gside .pbtxt {
+    align-items: center;
+  }
 }
 .pbtxt a {
   color: var(--ink);
