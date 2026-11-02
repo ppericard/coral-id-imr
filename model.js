@@ -243,9 +243,16 @@ const shaky = n => {
 // and asks about a genus already met. Kept on the device (imr-intro: genus -> [answers when shown, 1 if one of the
 // first cards]); a genus already asked (another device, progress from before the cards) or a bonus genus (its own unlock
 // card) counts as met. docs/LEARNING.md.
-// PROBE/RATE: the first cards go to everyone; a player with RATE of their first PROBE answers right already knows the
-// genera (an RA after the lecture), so all of them open at once (introProbe), with a notice that can take it back.
-const INTRO = {KEY: 'imr-intro', START: 4, GAP: 2, EVERY: 2, PROBE: 10, RATE: 0.9, AUTO: 'imr-intro-auto'};
+// OFFER: after a few dozen answers, a player whose overall level (Elo, P[LEVEL].th) is already high knows their corals
+// (an RA after the lecture): a card offers to open all the genera at once (introOffer). Synced with the progress (the
+// sheet keeps every imr-coral* key; sync.js introMerge).
+const INTRO = {
+  KEY: 'imr-coral-intro',
+  START: 4,
+  GAP: 2,
+  EVERY: 2,
+  OFFER: {KEY: 'imr-coral-intro-offer', AT: 50, UNTIL: 150, MET: 10, TH: 0.5}
+};
 let INTROS = null;
 const introMap = () => {
   if (INTROS) return INTROS;
@@ -270,27 +277,46 @@ const introReady = n => {
 // once, without cards: the draw then asks first the genera never asked (weight 10), choices from the whole slate.
 const introLeft = () => Object.keys(DATA.gen).filter(n => !introduced(n));
 const introAll = () => introAdd(introLeft(), true);
-// Decided once, at the PROBE-th answer: mostly right (RATE), every genus left opens at once (Pierre, 2026-11-02: show
-// the first 4 cards to everyone, then open all without cards if the first answers are mostly right). The notice
-// (quiz.js introNotice) offers to go back to one at a time (introUndo). Returns true when it opens them.
-function introProbe() {
-  const a = answersSoFar();
-  if (a < INTRO.PROBE || store.get(INTRO.AUTO, null) || !introLeft().length) return false;
-  if (((P[LEVEL] || {}).ok || 0) / a < INTRO.RATE) {
-    store.set(INTRO.AUTO, {n: 0});
-    return false;
+// The offer to open all genera (Pierre, 2026-11-02: 10 answers on 4 genera are too few to decide; after about 50
+// questions and some 10 genera met, a card says the player seems to know their corals and offers to open them all).
+// Due once, between OFFER.AT and OFFER.UNTIL answers, with OFFER.MET slate genera met and a level of OFFER.TH or more:
+// simulated at 50 answers, a beginner -0.9, an RA who knows 60% of the genera -0.2, 80% +0.8, an expert +1.2
+// (docs/LEARNING.md). A card, not an automatic opening: "Not now" keeps one at a time; My progress still offers it.
+const introOffer = () => {
+  const a = answersSoFar(),
+    O = INTRO.OFFER;
+  return (
+    a >= O.AT &&
+    a <= O.UNTIL &&
+    !store.get(O.KEY, null) &&
+    introLeft().length > 0 &&
+    Object.keys(DATA.gen).filter(introduced).length >= O.MET &&
+    ((P[LEVEL] || {}).th || 0) >= O.TH
+  );
+};
+// Another device's cards (synced): a genus met there is met here too, and ready (its card was seen); the offer, once
+// answered on one device, is not made again on another. Progress reset: the cards start over with it.
+function introMerge(m, o) {
+  try {
+    m = JSON.parse(m || 'null');
+    o = JSON.parse(o || 'null');
+  } catch (e) {
+    return;
   }
-  const L = introLeft();
-  introAdd(L, true);
-  store.set(INTRO.AUTO, {n: L.length, ok: (P[LEVEL] || {}).ok || 0, of: a, L, show: 1});
-  return true;
+  if (m && typeof m === 'object' && !Array.isArray(m)) {
+    const L = introMap();
+    let ch = false;
+    Object.entries(m).forEach(([n, e]) => {
+      if (Array.isArray(e) && !L[n]) ch = L[n] = [e[0] || 0, 1];
+    });
+    if (ch) store.set(INTRO.KEY, L);
+  }
+  if (o && typeof o === 'object' && !store.get(INTRO.OFFER.KEY, null)) store.set(INTRO.OFFER.KEY, o);
 }
-const introUndo = () => {
-  const s = store.get(INTRO.AUTO, {}) || {},
-    m = introMap();
-  (s.L || []).forEach(n => asked(n) || delete m[n]);
-  store.set(INTRO.KEY, m);
-  store.set(INTRO.AUTO, {n: 0, undone: 1});
+const introReset = () => {
+  INTROS = {};
+  store.set(INTRO.KEY, {});
+  store.set(INTRO.OFFER.KEY, null);
 };
 const introSince = () => answersSoFar() - Math.max(-Infinity, ...Object.values(introMap()).map(e => e[0]));
 function weighted(list) {

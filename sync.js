@@ -64,6 +64,7 @@ function mergeSaved(j) {
     }
   } catch (e) {}
   achMerge(d[ACHK]); // achievements earned on another device join this one's
+  const introIn = () => introMerge(d[INTRO.KEY], d[INTRO.OFFER.KEY]); // first-meeting cards seen on another device
   let R = {};
   try {
     R = JSON.parse(d['imr-coral-progress'] || '{}') || {};
@@ -75,6 +76,8 @@ function mergeSaved(j) {
   delete SYNC.pending;
   if (lr > rr) return;
   if (rr > lr) {
+    introReset();
+    introIn();
     P = R;
     SYNC.base = copy(R);
     store.set('imr-coral-sync', SYNC);
@@ -83,6 +86,7 @@ function mergeSaved(j) {
     showProg();
     return;
   }
+  introIn();
   // In place: other code holds P by name only, but keep the same object anyway.
   const M = mergeProgress(SYNC.base || {}, P, R);
   Object.keys(P).forEach(g => delete P[g]);

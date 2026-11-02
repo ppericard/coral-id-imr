@@ -73,7 +73,7 @@ const server = http.createServer((req, res) => {
     for (const [name, [mk, rate]] of Object.entries(profiles)) {
       P = {};
       INTROS = {};
-      store.set(INTRO.AUTO, null);
+      store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
       const know = mk(),
         first = [],
         rows = [];
@@ -127,7 +127,7 @@ const server = http.createServer((req, res) => {
     {
       P = {};
       INTROS = {};
-      store.set(INTRO.AUTO, null);
+      store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
       const keep = PSTAT,
         fake = {},
         [ga, gb] = [G[3], G[7]];
@@ -165,7 +165,7 @@ const server = http.createServer((req, res) => {
     if (bonus) {
       P = {};
       INTROS = {};
-      store.set(INTRO.AUTO, null);
+      store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
       G.slice(0, 5).forEach(g => (P[g] = {ok: 20, ko: 0, h: '1111111111', th: 1, L: 0.99, mx: 1}));
       P[bonus] = {ok: 5, ko: 3, h: '11010', th: 0, L: 0.4};
       const list = [...G, bonus];
@@ -178,7 +178,7 @@ const server = http.createServer((req, res) => {
     {
       P = {};
       INTROS = {};
-      store.set(INTRO.AUTO, null);
+      store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
       const keep = PSTAT,
         g = G.find(n => VIEWS.flatMap(([v]) => gamePics(n, v, 'hard')).length >= 8),
         L = [...new Set(VIEWS.flatMap(([v]) => gamePics(g, v, 'hard')))],

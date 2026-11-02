@@ -114,14 +114,17 @@ time, each on its card, but never as the answer of the question right after its 
   lecture and have little time): a button on the first cards, and in My progress while genera are still unopened,
   opens every slate genus at once, without cards (`introAll`). The draw then asks first the genera never asked, with
   choices from the whole slate. A tinted box with a real button, not a chip (Pierre: white on white was easy to miss).
-- **Opened from the answers** (Pierre, same day): everyone gets the first 4 cards; at the 10th answer (`INTRO.PROBE`),
-  9 or more right (`INTRO.RATE` 0.9) opens every genus left, once (`introProbe`), with a notice ("10 of your first 10
-  right") whose "No, one genus at a time" takes it back (`introUndo`). Decided once: below 0.9 the cards go on, and
-  the button stays. With 4 choices among the 4 genera just met, a beginner at 70% right passes 9 of 10 about one time
-  in seven; an RA at 90%, three times in four.
-- Kept on the device (`imr-intro`: genus -> [answers when shown, 1 for the first cards]), outside the synced progress;
-  a genus already asked (another device, progress from before the cards) or a bonus genus (its own unlock card) counts
-  as met. Checked in CI (`tests/draw.smoke.js`, first meetings; `tests/pages.smoke.js`, the 4 cards).
+- **Offer to open all** (Pierre, same day: 10 answers on 4 genera are too few to decide): between the 50th and the
+  150th answer (`INTRO.OFFER`), with 10 slate genera met or more and an overall level (Elo, `P[LEVEL].th`) of 0.5 or
+  more, a card says "You seem to know your corals already" and offers Open all genera or Not now (`introOffer`), once.
+  Simulated at 50 answers: a beginner -0.9, an RA who knows 60% of the genera -0.2, 80% +0.8, an expert +1.2. The
+  correct-answer rate does not tell them apart (the game keeps everyone near 80%: 68%, 76%, 86%, 88%). A card, not an
+  automatic opening, so a wrong guess costs a tap.
+- Synced with the progress: the cards (`imr-coral-intro`: genus -> [answers when shown, 1 for the first cards]) and
+  the offer (`imr-coral-intro-offer`) are `imr-coral*` keys, which the sheet keeps; on a pull, the cards seen on another
+  device join this one's (`introMerge`), and a progress reset starts them over (`introReset`). A genus already asked
+  or a bonus genus (its own unlock card) counts as met. Checked in CI (`tests/draw.smoke.js`, first meetings, offer,
+  sync; `tests/pages.smoke.js`, the 4 cards and My progress).
 
 My progress no longer shows "Review" (weak) for a genus with fewer than 5 answers (`REVIEW_MIN`, `shownLevel` in
 model.js): it shows "Learning" until there is enough evidence. The ring counts genera met ("6/39 met") until one is
@@ -274,7 +277,7 @@ simulation); recalibrate `ELO` and `OPEN` once a few RA cohorts have played.
   "Loading…" (above and ARCHITECTURE); ★ genera stay in from the start, being there for comparison. Then: 4 cards to
   start and questions among those, new genera one at a time, never asked right after their card; `OPEN.K` 5 → 6 to
   keep the RA's pace (table above). For the RAs, a button opens all genera at once (on the first cards and in My
-  progress).
+  progress), and a card offers it after about 50 answers at a high level; all of it synced.
 - 2026-11-02, Pierre: OK to seed the photos nobody has answered into the games to calibrate them (`CAL`, above).
 - 2026-11-02, Pierre: relax the arbitrary thresholds so new photos come in quickly (he is validating many candidates)
   and their answers inform the dynamic algorithm: games take every kept photo (no cap of 4 Medium / 4 Hard), and a

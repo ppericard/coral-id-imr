@@ -1014,6 +1014,7 @@ document.getElementById('signb').onclick = e => {
       delete Q.ba;
       saveQ();
       store.set('imr-coral-reset', new Date().toISOString());
+      introReset(); // the first-meeting cards start over with the progress
       save();
       delete rb.dataset.armed;
       rb.textContent = 'Reset progress';

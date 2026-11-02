@@ -57,7 +57,7 @@ const server = http.createServer((req, res) => {
     if (!intro)
       await c.addInitScript(s => {
         try {
-          localStorage.getItem('imr-intro') || localStorage.setItem('imr-intro', s);
+          localStorage.getItem('imr-coral-intro') || localStorage.setItem('imr-coral-intro', s);
         } catch (e) {}
       }, INTROS);
     return c;

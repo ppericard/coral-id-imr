@@ -182,6 +182,7 @@ function quizBoard() {
     oa.onclick = () => {
       introAll();
       NEXTQ = null;
+      save();
       quizBoard();
     };
   bindSync();

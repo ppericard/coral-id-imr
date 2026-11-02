@@ -601,41 +601,44 @@ function quizPhoto() {
   const q = takePlan('quiz') || planPhoto();
   question(...q);
   if (q.intro) introShow(q.intro, q.start);
-  else if ((store.get(INTRO.AUTO, {}) || {}).show) introNotice();
+  else if (!document.querySelector('.unlock') && introOffer()) introOfferShow(); // never over another card: next question
 }
-// After introProbe opened every genus: say so, once, with a way back to one genus at a time (the question shown is
-// then drawn again among the genera met).
-function introNotice() {
-  const s = store.get(INTRO.AUTO, {}) || {};
-  store.set(INTRO.AUTO, {...s, show: 0});
-  const d = document.createElement('div');
+// The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now.
+function introOfferShow() {
+  const d = document.createElement('div'),
+    a = answersSoFar(),
+    pick = open => {
+      store.set(INTRO.OFFER.KEY, {at: a, open: open ? 1 : 0});
+      if (open) {
+        introAll();
+        NEXTQ = null;
+      }
+      save();
+      close();
+    };
   d.className = 'unlock intro';
   d.setAttribute('role', 'dialog');
   d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'All genera open');
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">All genera open</p><h3>${s.ok} of your first ${s.of} right</h3>
-    <p>You already know these well, so the other ${s.n} genera of the slate are open now, without cards.</p>
-    <div class="ulbtns ulstack"><button class="next" type="button">Great</button><button class="next sec" type="button" data-undo>No, one genus at a time</button></div></div>`;
+  d.setAttribute('aria-label', 'Open all genera?');
+  d.innerHTML = `<div class="ulcard"><p class="ulkick">${a} answers in</p><h3>You seem to know your corals already</h3>
+    <p>Open all ${Object.keys(DATA.gen).length} genera at once, instead of one at a time? ${introLeft().length} are still to come.</p>
+    <div class="ulbtns ulstack"><button class="next" type="button" data-open>Open all genera</button><button class="next sec" type="button">Not now</button></div>
+    <p class="note">Also in My progress, any time.</p></div>`;
   document.body.appendChild(d);
   const close = () => {
     d.remove();
     document.removeEventListener('keydown', key, true);
   };
   const key = e => {
-    if (e.key !== 'Escape' && e.key !== 'Enter') return;
+    if (e.key !== 'Escape') return;
     e.stopPropagation();
     e.preventDefault();
-    close();
+    pick(false);
   };
   document.addEventListener('keydown', key, true);
-  d.querySelector('.next:not([data-undo])').onclick = close;
-  d.querySelector('[data-undo]').onclick = () => {
-    introUndo();
-    close();
-    NEXTQ = null;
-    quizPhoto();
-  };
-  setTimeout(() => d.querySelector('.next').focus({preventScroll: true}), 50);
+  d.querySelector('[data-open]').onclick = () => pick(true);
+  d.querySelector('.sec').onclick = () => pick(false);
+  setTimeout(() => d.querySelector('[data-open]').focus({preventScroll: true}), 50);
 }
 // The cards of the genera met now (INTRO in model.js), one after the other over the question: the first INTRO.START
 // together ("1 of 4", the first questions are about them), later ones alone (asked a few questions later). Recorded
@@ -674,6 +677,7 @@ function introShow(L, start) {
       all.onclick = () => {
         introAll();
         NEXTQ = null;
+        save();
         close();
       };
     setTimeout(() => {
@@ -716,7 +720,6 @@ function planPhoto() {
   // The genus asked is one already met (INTRO): ready, or one of the cards shown with this question when they are the
   // first ones. A draw that falls on a genus not met yet (the progressive path opening one, at most one card every
   // INTRO.EVERY answers) shows its card instead, and the question is about another genus.
-  introProbe();
   let cards = introStart(list);
   const start = cards.length > 0,
     ready = n => cards.includes(n) || introReady(n),
