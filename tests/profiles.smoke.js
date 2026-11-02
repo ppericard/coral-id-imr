@@ -166,6 +166,26 @@ const server = http.createServer((req, res) => {
       for (let i = 0; i < 2000; i++) if (weighted(list) === bonus) hit++;
       out.bonusShare = hit / 2000;
     }
+    // Online calibration (CAL): a photo nobody has answered yet comes up more often than its rated twins, without
+    // changing the difficulty targeting (made-up ratings at each photo's own prior difficulty).
+    {
+      P = {};
+      const keep = PSTAT,
+        g = G.find(n => VIEWS.flatMap(([v]) => gamePics(n, v, 'hard')).length >= 8),
+        L = [...new Set(VIEWS.flatMap(([v]) => gamePics(g, v, 'hard')))],
+        f0 = L[L.length - 1].f,
+        rate = CAL.RATE,
+        shown = r => {
+          CAL.RATE = r;
+          let k = 0;
+          for (let i = 0; i < 3000; i++) if (photoSet(g).shown.some(x => x.f === f0)) k++;
+          return k;
+        };
+      PSTAT = Object.fromEntries(L.filter(x => x.f !== f0).map(x => [x.f, [photoLvl(g, x) - 1, 40, 30, 40]]));
+      out.cal = {genus: g, photo: f0, without: shown(0), with: shown(rate)};
+      CAL.RATE = rate;
+      PSTAT = keep;
+    }
     return out;
   });
   await b.close();
@@ -175,7 +195,7 @@ const server = http.createServer((req, res) => {
     [e1, , e3] = R.expert.rows,
     [r1, , r3] = R.RA.rows;
   for (const [k, v] of Object.entries(R)) if (v.rows) console.log(k, JSON.stringify(v));
-  console.log('bonus share', R.bonusShare, 'easy first', JSON.stringify(R.easyFirst));
+  console.log('bonus share', R.bonusShare, 'easy first', JSON.stringify(R.easyFirst), 'calibration', JSON.stringify(R.cal));
   if (b1.met > 16) fails.push(`beginner met ${b1.met} genera in 100 questions: not focused`);
   if (b3.met <= b1.met) fails.push(`beginner stopped opening genera (${b1.met} then ${b3.met})`);
   if (r3.met <= r1.met) fails.push(`RA stopped opening genera (${r1.met} then ${r3.met})`);
@@ -194,6 +214,8 @@ const server = http.createServer((req, res) => {
   if (e3.sure < 3) fails.push(`expert has ${e3.sure} genera 95% sure (mastery exam) after 300 questions`);
   if (e3.sure <= b3.sure) fails.push(`expert no surer of the genera than a beginner (${e3.sure} vs ${b3.sure})`);
   if (R.bonusShare > 0.2) fails.push(`a bonus genus took ${Math.round(100 * R.bonusShare)}% of the draws (cap 15%)`);
+  if (!(R.cal.with > 1.3 * Math.max(10, R.cal.without)))
+    fails.push(`calibration: an unrated photo was not drawn more often: ${JSON.stringify(R.cal)}`);
   if (errs.length) fails.push('page errors: ' + errs.slice(0, 3).join(' | '));
   if (fails.length) {
     console.error(`Learning path: ${fails.length} problem(s)\n` + fails.join('\n'));

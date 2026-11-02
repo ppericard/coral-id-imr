@@ -63,6 +63,18 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
 ### What a question shows
 
 - **Photos**: drawn around ability − `PICKD.TARGET_OFF` (1.0), about 80% expected success.
+- **Online calibration** (`CAL`, Pierre 2026-11-02: about half the 600 game photos had never been shown to anyone, so
+  they could not be rated). Adaptive tests seed new items among the calibrated ones to calibrate them (pretest items,
+  online calibration in computerized adaptive testing). Here a photo with few answers from all players (the sheet's
+  plain count) weighs × (1 + `CAL.B` / (1 + answers / `CAL.N`)), B 2, N 2: × 3 with none, × 2 after 2, × 1.5 after 6,
+  on top of the difficulty targeting. That alone hardly changed which photos came up: most photos never shown are single
+  views of a colony (256 of the 340 unrated), which the colony choice scores down so that beginners see colonies at
+  every zoom, and corallite photos of complete colonies only show as the hint (not counted unless opened). So `CAL.RATE`
+  = 20% of the questions are calibration questions: one view alone (as for strong players), the colony chosen on the
+  targeting and the bonus only, the view the players have answered least. Simulated (3 players, 1200 questions, the
+  real ratings of 2026-11-02 as start, counts updated as the sheet does): photos with at least one answer 426-435 →
+  465-510, with 3 or more ~200 → 225-234, right rates unchanged (73-87%). The bonus fades by itself as the photos get
+  answers.
 - **Look-alike traps** among the wrong choices: from ability (`TRAP`: one per 0.18 above 0, up to 3), chosen among the
   pairs most confused: pooled over every player and declared look-alikes (IMR lecture, Coral Finder) as a prior
   (`CONF`), then the player's own record on the pair (personal path).
@@ -204,6 +216,7 @@ simulation); recalibrate `ELO` and `OPEN` once a few RA cohorts have played.
   information (Pierre, Emmy, and an anonymous player who is probably IMR staff): `TRUST.N` 10 → 5 and `PHOTO_W.N` 30 →
   10 (sheet v18). The 10th answer of a player now weighs 0.5, the 30th 0.75 (were 0.25 and 0.5). The above-chance
   test stays: it is what keeps random clicks out. To revisit if beginners or bots arrive in numbers.
+- 2026-11-02, Pierre: OK to seed the photos nobody has answered into the games to calibrate them (`CAL`, above).
 
 ## References
 

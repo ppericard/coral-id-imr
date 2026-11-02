@@ -1175,6 +1175,21 @@ const PICKD = {TARGET_OFF: 1.0, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5
 // alone), up to 85% of them, so each view is learned on its own and each photo's difficulty is measured on its own.
 // A single view counts as harder (SINGLE), so easier photos are picked for it. The other views show after the answer.
 const singleP = n => Math.min(0.85, Math.max(0, (ability(n) - 0.5) / 1.5));
+// Online calibration (Pierre, 2026-11-02: about half the 600 game photos had never been shown to anyone, so they could
+// not be rated): as adaptive tests seed new items among the calibrated ones, a photo with few answers from all the
+// players (the sheet's plain count, v18) is drawn more often: x (1 + CAL.B / (1 + answers / CAL.N)), i.e. x3 with none,
+// x2 after 2, x1.5 after 6, fading as the rating firms up. It multiplies the difficulty targeting, never replaces it.
+// That alone hardly moved anything (simulated: 2 players, 800 questions, the same ~330 photos shown): most photos never
+// shown are single views of a colony, which the choice of colony below scores down (a third, or a ninth for several
+// views). So CAL.RATE of the questions are calibration questions, as adaptive tests give a share of the slots to
+// items being pretested: the colony is chosen on the difficulty targeting and the bonus alone, a single view then
+// showing alone. docs/LEARNING.md.
+const CAL = {B: 2, N: 2, RATE: 0.2};
+const calBonus = p => {
+  const o = PSTAT[p.f],
+    n = o ? (o[3] ?? o[1]) : 0;
+  return 1 + CAL.B / (1 + n / CAL.N);
+};
 function photoSet(n) {
   const g = GX(n),
     two = g.levels === 2,
@@ -1189,7 +1204,8 @@ function photoSet(n) {
   const gameOk = p => !g.x || p.own || !p.gid;
   const pics = v =>
     [...gamePics(n, v, 'hard'), ...(two && v === 'macro' ? gamePics(n, 'medium', 'hard') : [])].filter(ok(v)).filter(gameOk);
-  const single = Math.random() < singleP(n),
+  const calQ = Math.random() < CAL.RATE,
+    single = calQ || Math.random() < singleP(n),
     s = P[n] || {},
     seen = s.ps || {},
     ro = s.ro || [],
@@ -1200,7 +1216,7 @@ function photoSet(n) {
   const w = (p, off = 0) => {
     const x = (photoDiff(n, p) + off - tgt) / PICKD.SIGMA,
       k = seen[p.f];
-    let r = Math.exp((-x * x) / 2);
+    let r = Math.exp((-x * x) / 2) * calBonus(p);
     if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1);
     else if (k[1] >= 2) r *= 0.6;
     return r;
@@ -1224,7 +1240,7 @@ function photoSet(n) {
       off = !single && nv === 1 ? PICKD.SINGLE : 0,
       cov = nv / need.length;
     const m = vs.reduce((t, v) => t + Math.max(...o[v].map(p => w(p, off))), 0) / vs.length;
-    return m * (single ? cov : cov * cov) * (ro.includes(k) ? 0.15 : 1);
+    return m * (calQ ? 1 : single ? cov : cov * cov) * (ro.includes(k) ? 0.15 : 1);
   };
   const sc = Object.fromEntries(keys.map(k => [k, score(k)])),
     top = Math.max(0, ...Object.values(sc));
@@ -1246,7 +1262,8 @@ function photoSet(n) {
   const lab = v => (two && v === 'macro' ? 'close' : v);
   const has = need.filter(v => (o[v] || []).length);
   if (single || has.length === 1) {
-    const v = has.length ? pick(has) : null;
+    // A calibration question shows the view whose photo the players have answered least.
+    const v = !has.length ? null : calQ ? wpick(has, x => Math.max(...o[x].map(p => w(p) * calBonus(p) ** 2))) : pick(has);
     if (v) {
       const p = one(v);
       return {shown: [{...p, view: lab(v)}], hint: null, reveal: has.filter(x => x !== v).map(x => ({...pick(o[x]), view: lab(x)}))};
