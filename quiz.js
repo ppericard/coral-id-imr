@@ -296,7 +296,7 @@ function answer(cur, c, target, ph, cor, unseen) {
   const solo = ph.length === 1 ? PICKD.SINGLE : 0; // one view alone is harder than the same photo with the others
   const ps = (s.ps = s.ps || {}),
     d0 = solo + ph.reduce((t, p) => t + photoDiff(target, p), 0) / Math.max(1, ph.length);
-  pgObs(target, s, good, pgWeight(target, chs, k));
+  pgObs(target, s, good, good ? pgWeight(target, chs, k) : pgMissW(th0, d0, k));
   abilityStep(target, s, good, d0, k);
   // Global level (core.js playerStart): the same Elo step over every answer, kept as the pseudo-genus LEVEL.
   // Made at the first answer from the player's history (levelSeed), whose counts already include this answer.
@@ -314,7 +314,7 @@ function answer(cur, c, target, ph, cor, unseen) {
   // Pierre's rule: a wrong answer also shows the genus given is not mastered, so it counts as a miss for it too.
   if (!good && GX(c)) {
     const w = st(c);
-    pgObs(c, w, false, 1); // a miss counts in full (core.js PROG)
+    pgObs(c, w, false, pgMissW(ability(c), d0, k)); // as for the genus shown: the photo's difficulty against its level
     w.h = ((w.h || '') + '0').slice(-10);
     w.streak = 0;
     abilityStep(c, w, false, 0, k);

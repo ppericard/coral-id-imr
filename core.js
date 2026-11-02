@@ -696,8 +696,10 @@
   // Progress of a genus (2026-11-02, Pierre: BKT climbed too fast, and a right answer among a few genera counted
   // almost as much as one against the genus's look-alikes; Pelánek & Řihák 2017 recommend a moving average as the
   // mastery criterion): s.pg, an exponential moving average of the answers on the genus, each weighed by what it proves
-  // (w, 0 to 1, model.js pgWeight): a right answer s.pg += PROG.A × w × (1 − s.pg), a miss s.pg −= PROG.A × s.pg (a
-  // miss counts in full whatever the choices: missing an easy question says as much as missing a hard one). Each point
+  // (w, 0 to 1): a right answer s.pg += PROG.A × w × (1 − s.pg), w from the choices (model.js pgWeight); a miss
+  // s.pg −= PROG.A × w × s.pg, w from how hard the photo was for the player (model.js pgMissW: in full on a photo at
+  // the player's level, less on a harder one; Pierre: a miss on a very hard photo does not mean the genus is badly
+  // known, and a miss must not cost more than it proves). Each point
   // is harder to earn than the last, a run of right answers on easy choices tops out lower than one against look-alikes,
   // and the bar follows the recent answers. PROG.M = the mastery exam's entry, shown as 95%. docs/LEARNING.md
   // "Progress (moving average) and mastery" has the simulation behind A 0.15 and M 0.8.
@@ -707,7 +709,7 @@
   // strong player (never above it by much): 10 right answers in a row give 0.65, 77% on the bar, so no genus enters the
   // exam on old answers alone. A genus already learned (s.mx, its exam passed) stays learned, at the exam entry.
   const PROG = {A: 0.15, M: 0.8, LOOK: 0.5, OLD: 0.67};
-  const pgStep = (g, good, w) => Math.round((g + PROG.A * (good ? w : 1) * ((good ? 1 : 0) - g)) * 1e4) / 1e4;
+  const pgStep = (g, good, w) => Math.round((g + PROG.A * w * ((good ? 1 : 0) - g)) * 1e4) / 1e4;
   function pgOf(s) {
     if (!s) return 0;
     if (typeof s.pg === 'number') return s.pg;
