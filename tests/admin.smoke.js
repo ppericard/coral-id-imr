@@ -123,6 +123,18 @@ const server = http.createServer((req, res) => {
     if (!/Demo report/.test(await text())) fails.push(`${w}px Triage: demo reports missing`);
     await go('~stats');
     if (/No answers yet/.test(await text())) fails.push(`${w}px Activity: no answers`);
+    // Photo difficulty by genus: one lane per view, a median bar in every lane that has photos.
+    await go('~stats-photos');
+    const ln = await p.evaluate(() => {
+      const rows = [...document.querySelectorAll('.adm-gstrips .adm-lanes')];
+      return {
+        rows: rows.length,
+        lanes: rows.length ? rows[0].querySelectorAll('.adm-strip').length : 0,
+        noMedian: [...document.querySelectorAll('.adm-lanes .adm-strip')].filter(x => x.querySelector('button') && !x.querySelector('i'))
+          .length
+      };
+    });
+    if (!ln.rows || ln.lanes < 2 || ln.noMedian) fails.push(`${w}px Photo difficulty: lanes per view missing ${JSON.stringify(ln)}`);
 
     // Candidates: Skip sets the photo aside, Reject marks it reviewed (a draft change), then Publish (in memory).
     await go('~cand');
