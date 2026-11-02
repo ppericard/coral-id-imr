@@ -374,6 +374,7 @@ function answer(cur, c, target, ph, cor, unseen) {
     th: th0,
     nw
   };
+  session.e = [...(session.e || []), ans.e].slice(-10); // expected success of the last 10 (introHold)
   if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
   else if (SYNC_URL) {
     store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
@@ -872,7 +873,7 @@ function planPhoto() {
     ready = n => cards.includes(n) || introReady(n),
     known = n => cards.includes(n) || introduced(n),
     met = list.filter(ready),
-    open = !start && introSince() >= INTRO.EVERY;
+    open = !start && introSince() >= INTRO.EVERY && !introHold();
   // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say).
   let t = nextTarget(start ? cards : met.length ? (open ? list.filter(n => ready(n) || !introduced(n)) : met) : list);
   if (met.length && !known(t)) {
