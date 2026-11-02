@@ -182,6 +182,7 @@ const server = http.createServer((req, res) => {
     {
       P = {};
       INTROS = {};
+      store.set(INTRO.AUTO, null);
       NEXTQ = null;
       const q0 = question;
       let tg;
@@ -211,6 +212,28 @@ const server = http.createServer((req, res) => {
         if (i && k !== 1) fails.push(`${k} cards at once after the first ones`);
       });
       if (cardsAt.length < 3) fails.push(`only ${cardsAt.length} card showing(s) in 120 questions`);
+      // Two right answers in three: no automatic opening at the PROBE-th answer.
+      if ((store.get(INTRO.AUTO, {}) || {}).n) fails.push('all genera opened at 67% right');
+      // Mostly right from the start (an RA after the lecture): at the PROBE-th answer every genus opens, a notice says
+      // so, and "one genus at a time" takes it back.
+      P = {};
+      INTROS = {};
+      store.set(INTRO.AUTO, null);
+      for (let i = 0; i <= INTRO.PROBE; i++) {
+        NEXTQ = null;
+        quizPhoto();
+        if (i === INTRO.PROBE) {
+          const notice = document.querySelector('.unlock.intro [data-undo]');
+          if (introLeft().length || !notice) fails.push(`all right: ${introLeft().length} genera left, notice ${!!notice}`);
+          if (notice) {
+            notice.click();
+            if (introLeft().length < 30) fails.push(`one at a time again: only ${introLeft().length} genera left`);
+            if (!introReady(tg)) fails.push(`after going back to one at a time, ${tg} asked without its card`);
+          }
+        }
+        document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
+        document.querySelector(`[data-c="${CSS.escape(tg)}"]`).click();
+      }
       // "I've had the IMR lecture": every slate genus opens at once, and no card comes after.
       introAll();
       if (introLeft().length) fails.push(`open all genera: ${introLeft().length} left`);

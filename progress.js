@@ -163,7 +163,7 @@ function quizBoard() {
     <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Learned</p>
     ${
       introLeft().length
-        ? `<div class="popen"><p class="note">${introLeft().length} genera not opened yet: they come one at a time as you play.</p><button type="button" class="chip" id="openall">I've had the IMR lecture: open all genera</button></div>`
+        ? `<div class="popen"><p><b>Had the IMR coral lecture?</b> ${introLeft().length} genera are not open yet: they come one at a time as you play.</p><button type="button" class="next" id="openall">Open all genera</button></div>`
         : ''
     }
     ${

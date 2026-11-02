@@ -243,7 +243,9 @@ const shaky = n => {
 // and asks about a genus already met. Kept on the device (imr-intro: genus -> [answers when shown, 1 if one of the
 // first cards]); a genus already asked (another device, progress from before the cards) or a bonus genus (its own unlock
 // card) counts as met. docs/LEARNING.md.
-const INTRO = {KEY: 'imr-intro', START: 4, GAP: 2, EVERY: 2};
+// PROBE/RATE: the first cards go to everyone; a player with RATE of their first PROBE answers right already knows the
+// genera (an RA after the lecture), so all of them open at once (introProbe), with a notice that can take it back.
+const INTRO = {KEY: 'imr-intro', START: 4, GAP: 2, EVERY: 2, PROBE: 10, RATE: 0.9, AUTO: 'imr-intro-auto'};
 let INTROS = null;
 const introMap = () => {
   if (INTROS) return INTROS;
@@ -268,6 +270,28 @@ const introReady = n => {
 // once, without cards: the draw then asks first the genera never asked (weight 10), choices from the whole slate.
 const introLeft = () => Object.keys(DATA.gen).filter(n => !introduced(n));
 const introAll = () => introAdd(introLeft(), true);
+// Decided once, at the PROBE-th answer: mostly right (RATE), every genus left opens at once (Pierre, 2026-11-02: show
+// the first 4 cards to everyone, then open all without cards if the first answers are mostly right). The notice
+// (quiz.js introNotice) offers to go back to one at a time (introUndo). Returns true when it opens them.
+function introProbe() {
+  const a = answersSoFar();
+  if (a < INTRO.PROBE || store.get(INTRO.AUTO, null) || !introLeft().length) return false;
+  if (((P[LEVEL] || {}).ok || 0) / a < INTRO.RATE) {
+    store.set(INTRO.AUTO, {n: 0});
+    return false;
+  }
+  const L = introLeft();
+  introAdd(L, true);
+  store.set(INTRO.AUTO, {n: L.length, ok: (P[LEVEL] || {}).ok || 0, of: a, L, show: 1});
+  return true;
+}
+const introUndo = () => {
+  const s = store.get(INTRO.AUTO, {}) || {},
+    m = introMap();
+  (s.L || []).forEach(n => asked(n) || delete m[n]);
+  store.set(INTRO.KEY, m);
+  store.set(INTRO.AUTO, {n: 0, undone: 1});
+};
 const introSince = () => answersSoFar() - Math.max(-Infinity, ...Object.values(introMap()).map(e => e[0]));
 function weighted(list) {
   const w = list.map(weight);

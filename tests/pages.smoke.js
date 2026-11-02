@@ -119,7 +119,7 @@ const server = http.createServer((req, res) => {
             name: document.querySelector('.unlock.intro h3').textContent,
             kick: document.querySelector('.unlock.intro .ulkick').textContent,
             img: !!document.querySelector('.unlock.intro .ulphoto img'),
-            all: !!document.querySelector('.unlock.intro [data-all]')
+            all: !!document.querySelector('.unlock.intro .ulall [data-all]')
           }))
         );
         await q2.click('.unlock.intro .next');

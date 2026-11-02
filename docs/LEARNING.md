@@ -113,7 +113,12 @@ time, each on its card, but never as the answer of the question right after its 
 - **"I've had the IMR lecture: open all genera"** (Pierre, same day: the first users are RAs who saw every genus in the
   lecture and have little time): a button on the first cards, and in My progress while genera are still unopened,
   opens every slate genus at once, without cards (`introAll`). The draw then asks first the genera never asked, with
-  choices from the whole slate.
+  choices from the whole slate. A tinted box with a real button, not a chip (Pierre: white on white was easy to miss).
+- **Opened from the answers** (Pierre, same day): everyone gets the first 4 cards; at the 10th answer (`INTRO.PROBE`),
+  9 or more right (`INTRO.RATE` 0.9) opens every genus left, once (`introProbe`), with a notice ("10 of your first 10
+  right") whose "No, one genus at a time" takes it back (`introUndo`). Decided once: below 0.9 the cards go on, and
+  the button stays. With 4 choices among the 4 genera just met, a beginner at 70% right passes 9 of 10 about one time
+  in seven; an RA at 90%, three times in four.
 - Kept on the device (`imr-intro`: genus -> [answers when shown, 1 for the first cards]), outside the synced progress;
   a genus already asked (another device, progress from before the cards) or a bonus genus (its own unlock card) counts
   as met. Checked in CI (`tests/draw.smoke.js`, first meetings; `tests/pages.smoke.js`, the 4 cards).

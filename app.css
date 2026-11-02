@@ -5354,19 +5354,35 @@ html.touring body::after {
 .ultips .label {
   margin: 0 0 4px;
 }
-/* "Open all genera" beside Next on the first cards, and in My progress (model.js introAll). */
-.ulbtns [data-all] {
-  flex: 1 1 0;
-  min-width: 0;
-  white-space: normal;
-  font-size: var(--fs-s);
+/* "Open all genera" (model.js introAll): a tinted band at the foot of the first cards and a box in My progress, with a
+   real button (Pierre, 2026-11-02: a white chip on white was easy to miss). */
+.ulall,
+.popen {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--r);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
   text-align: left;
 }
-.ulbtns .next {
-  flex: none;
+.ulall p,
+.popen p {
+  margin: 0 0 10px;
+  font-size: var(--fs-s);
 }
-.popen .chip {
-  margin-top: 4px;
+.ulall .next,
+.popen .next {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+.ulstack {
+  flex-direction: column;
+  align-items: stretch;
+}
+.ulstack .next {
+  align-self: stretch;
+  text-align: center;
 }
 .ulbtns {
   display: flex;
