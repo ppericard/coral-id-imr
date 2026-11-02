@@ -1,0 +1,509 @@
+// IMR Coral ID: the learning model, split out of app.js (2026-11-02, code review L1: one file per part, one piece at a
+// time). Which genus comes next (weighted, the progressive opening OPEN, the easiest first), which photos (photoSet,
+// PICKD, online calibration CAL), how hard they are (photoDiff, the sheet's PSTAT), the player's ability per genus (Elo,
+// ELO, abilityStep), what they know (BKT, knownP), the mastery exam (EXAM), and the wrong choices (TRAP, distractors,
+// pooledConf). docs/LEARNING.md explains every rule. A classic script like app.js, loaded right after progress.js
+// (index.html, in order); app.js waits for every script (window.BOOT) before its first page. Required like app.js.
+// A quiz question shows the views of ONE colony: colony and closer views, the corallites as a hint (or one view alone).
+// Continuous difficulty (Pierre, 2026-10-31; Elo as in Pelánek 2016 / Duolingo Birdbrain, no time criteria): every
+// question draws from ALL the game photos of the genus, weighted by how close each photo's difficulty (photoDiff) is to
+// the target for this player on this genus (ability(n) - TARGET_OFF, about 80% right in a 4-choice question). On top:
+// photos never seen get a bonus (bigger when the player is doing well; IMR and Pierre's photos first), photos already
+// answered right twice weigh less (they may be memorised), the colony of the last 2 questions on the genus is held back,
+// and at least 3 colonies stay in rotation (VARIETY) whatever the level, so a struggling player still sees new photos.
+// Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
+const PICKD = {TARGET_OFF: 1.0, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
+// One zoom level per question (Pierre, 2026-10-31): beginners get every view of the colony (lots of information); as
+// the player's level on the genus rises, more and more questions show a single view (colony, closer or corallites
+// alone), up to 85% of them, so each view is learned on its own and each photo's difficulty is measured on its own.
+// A single view counts as harder (SINGLE), so easier photos are picked for it. The other views show after the answer.
+const singleP = n => Math.min(0.85, Math.max(0, (ability(n) - 0.5) / 1.5));
+// Online calibration (Pierre, 2026-11-02: about half the 600 game photos had never been shown to anyone, so they could
+// not be rated): as adaptive tests seed new items among the calibrated ones, a photo with few answers from all the
+// players (the sheet's plain count, v18) is drawn more often: x (1 + CAL.B / (1 + answers / CAL.N)), i.e. x3 with none,
+// x2 after 2, x1.5 after 6, fading as the rating firms up. It multiplies the difficulty targeting, never replaces it.
+// That alone hardly moved anything (simulated: 2 players, 800 questions, the same ~330 photos shown): most photos never
+// shown are single views of a colony, which the choice of colony below scores down (a third, or a ninth for several
+// views). So CAL.RATE of the questions are calibration questions, as adaptive tests give a share of the slots to
+// items being pretested: the colony is chosen on the difficulty targeting and the bonus alone, a single view then
+// showing alone. Only on a genus the player already holds (met, not shaky, as the opening of genera reads it): one
+// photo alone, perhaps unusual, would not help on a genus still being learned. docs/LEARNING.md.
+// CAL.U: how unsure the difficulty of a photo nobody has answered is (variance, in difficulty units; its set only says
+// Easy -1, Medium 0, Hard +1): the targeting is that much wider for it, narrowing as answers come (U / (1 + answers /
+// CAL.N)), so a new photo is not kept away by a set placed by hand. Pierre, 2026-11-02: "relax the arbitrary thresholds
+// so new photos come in, and their answers inform the dynamic algorithm".
+const CAL = {B: 2, N: 2, RATE: 0.2, U: 1};
+const nAnswers = p => {
+  const o = PSTAT[p.f];
+  return o ? (o[3] ?? o[1]) : 0;
+};
+const calBonus = p => 1 + CAL.B / (1 + nAnswers(p) / CAL.N);
+const calSd = p => Math.sqrt(PICKD.SIGMA ** 2 + CAL.U / (1 + nAnswers(p) / CAL.N));
+function photoSet(n) {
+  const g = GX(n),
+    two = g.levels === 2,
+    need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
+  const shownV = two ? ['wide', 'macro'] : ['wide', 'medium'];
+  // The Colony slot never gets a photo whose growth form is "x" (too close to see it): that is a close-up. Except for a
+  // genus with a single IMR growth form (Pierre): the form is no question there, so the photo still works as a colony.
+  const oneForm = imrFormsOf(n).length === 1,
+    ok = v => p => v !== 'wide' || p.form !== 'x' || oneForm;
+  // Bonus genera: Research Grade only. A two-level genus's close-ups may still sit in "medium" (extra genera from
+  // tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is reachable.
+  const gameOk = p => !g.x || p.own || !p.gid;
+  const pics = v =>
+    [...gamePics(n, v, 'hard'), ...(two && v === 'macro' ? gamePics(n, 'medium', 'hard') : [])].filter(ok(v)).filter(gameOk);
+  // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
+  const calQ = level(n)[0] !== 'new' && !shaky(n) && Math.random() < CAL.RATE,
+    single = calQ || Math.random() < singleP(n),
+    s = P[n] || {},
+    seen = s.ps || {},
+    ro = s.ro || [],
+    tgt = ability(n) - PICKD.TARGET_OFF - (single ? PICKD.SINGLE : 0);
+  const h = [...recent(n).slice(-5)],
+    hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
+  // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
+  const w = (p, off = 0) => {
+    const x = (photoDiff(n, p) + off - tgt) / calSd(p),
+      k = seen[p.f];
+    let r = Math.exp((-x * x) / 2) * calBonus(p);
+    if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1);
+    else if (k[1] >= 2) r *= 0.6;
+    return r;
+  };
+  const obs = {};
+  need.forEach(v =>
+    pics(v).forEach(p => {
+      const k = p.o || p.f;
+      (obs[k] = obs[k] || {})[v] = (obs[k][v] || []).concat([p]);
+    })
+  );
+  const keys = Object.keys(obs);
+  // All the photos of a question come from ONE observation (Pierre, 2026-11-01: zoom levels of different colonies shown
+  // together read as one coral and teach a wrong picture). Beginners (several views) favour colonies photographed at
+  // several zooms (cov squared); a colony with a single view becomes a single-view question, never topped up from another one.
+  const score = k => {
+    const o = obs[k],
+      vs = (single ? need : shownV).filter(v => o[v]);
+    if (!vs.length) return 0;
+    const nv = need.filter(v => o[v]).length,
+      off = !single && nv === 1 ? PICKD.SINGLE : 0,
+      cov = nv / need.length;
+    const m = vs.reduce((t, v) => t + Math.max(...o[v].map(p => w(p, off))), 0) / vs.length;
+    return m * (calQ ? 1 : single ? cov : cov * cov) * (ro.includes(k) ? 0.15 : 1);
+  };
+  const sc = Object.fromEntries(keys.map(k => [k, score(k)])),
+    top = Math.max(0, ...Object.values(sc));
+  keys
+    .filter(k => sc[k] > 0)
+    .sort((a, b) => sc[b] - sc[a])
+    .slice(0, PICKD.VARIETY)
+    .forEach(k => {
+      if (!ro.includes(k)) sc[k] = Math.max(sc[k], 0.5 * top);
+    });
+  keys.forEach(k => {
+    if (sc[k] > 0) sc[k] = Math.max(sc[k], PICKD.FLOOR * top);
+  });
+  const o = top ? obs[wpick(keys, k => sc[k])] : keys.length ? obs[pick(keys)] : {};
+  const one = v => {
+    const L = o[v] || [];
+    return L.length ? {...wpick(L, w), view: v} : null;
+  };
+  const lab = v => (two && v === 'macro' ? 'close' : v);
+  const has = need.filter(v => (o[v] || []).length);
+  if (single || has.length === 1) {
+    // A calibration question shows the view whose photo the players have answered least.
+    const v = !has.length ? null : calQ ? wpick(has, x => Math.max(...o[x].map(p => w(p) * calBonus(p) ** 2))) : pick(has);
+    if (v) {
+      const p = one(v);
+      return {shown: [{...p, view: lab(v)}], hint: null, reveal: has.filter(x => x !== v).map(x => ({...pick(o[x]), view: lab(x)}))};
+    }
+    return {shown: [], hint: null};
+  }
+  // Two-level genera (e.g. Plerogyra, mushroom corals) show colony + close-up, with no hint.
+  if (two) {
+    const m = one('macro');
+    return {shown: [one('wide'), m && {...m, view: 'close'}].filter(Boolean), hint: null};
+  }
+  // A colony with only closer + corallites shows the closer view, the corallites as the hint.
+  return {shown: [one('wide'), one('medium')].filter(Boolean), hint: one('macro')};
+}
+// The next exam question of genus n: one photo alone, in a view the exam has not shown yet when it can, never answered
+// right before (else the least seen), the hardest of them. Null when the genus has no game photo.
+function examSet(n) {
+  const g = GX(n),
+    two = g.levels === 2,
+    need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'],
+    s = P[n] || {},
+    ps = s.ps || {},
+    done = (s.ex || {}).v || [];
+  const oneForm = imrFormsOf(n).length === 1,
+    gameOk = p => (!g.x || p.own || !p.gid) && !p.multi;
+  const lab = v => (two && v === 'macro' ? 'close' : v);
+  const pics = v =>
+    [...gamePics(n, v, 'hard'), ...(two && v === 'macro' ? gamePics(n, 'medium', 'hard') : [])]
+      .filter(p => v !== 'wide' || p.form !== 'x' || oneForm)
+      .filter(gameOk);
+  const vs = need.filter(v => pics(v).length),
+    todo = vs.filter(v => !done.includes(lab(v)));
+  if (!vs.length) return null;
+  const v = pick(todo.length ? todo : vs),
+    L = pics(v),
+    // Never shown at all first (a photo answered wrong has been seen, and its answer shown); else the least seen of those
+    // never answered right; else the least seen.
+    fresh = L.filter(p => !(ps[p.f] || [0])[0]),
+    unright = L.filter(p => !(ps[p.f] || [0, 0])[1]),
+    least = M =>
+      M.slice()
+        .sort((a, b) => (ps[a.f] || [0])[0] - (ps[b.f] || [0])[0])
+        .slice(0, 3),
+    pool = fresh.length ? fresh : least(unright.length ? unright : L);
+  const p = pool.reduce((a, b) => (photoDiff(n, b) > photoDiff(n, a) ? b : a));
+  return {shown: [{...p, view: lab(v)}], hint: null, reveal: [], exam: true};
+}
+// Weighted random pick (weights from f).
+function wpick(L, f) {
+  const ws = L.map(x => Math.max(0, f(x))),
+    t = ws.reduce((a, b) => a + b, 0);
+  if (!t) return pick(L);
+  let r = Math.random() * t;
+  for (let i = 0; i < L.length; i++) {
+    r -= ws[i];
+    if (r <= 0) return L[i];
+  }
+  return L[L.length - 1];
+}
+// Which genus to ask next (Pierre: spread the work, target what is not seen or not mastered yet, keep some chance).
+// Weight by status and by how unsure the knowledge model still is (BKT, 1 - L): review 3-5, learning 1-4,
+// learned 0.25 (unseen 10, so every genus comes up early). A genus asked in the last 4 questions is mostly held back so the work spreads across genera.
+let lastQs = [];
+const weight = n => {
+  const lv = level(n)[0],
+    u = 1 - knownP(n),
+    w0 = lv === 'new' ? 10 : lv === 'ok' ? 0.25 : lv === 'weak' ? 3 + 2 * u : 1 + 3 * u,
+    // Bonus genera (off the IMR list) weigh at most as a genus being learned, even new or to review (Pierre, 2026-11-01:
+    // a burst of bonus questions after unlocking some).
+    w1 = isBonus(n) ? Math.min(w0, BONUS_W) : w0,
+    // The mastery exam: a genus ready for its next exam question comes up as one to review; between two of them, it waits.
+    w = examOn(n) ? (examReady(n) ? Math.max(w1, 3) : w1 * 0.05) : w1;
+  return lastQs.includes(n) ? w * 0.1 : w;
+};
+// ...and all of them together at most BONUS_SHARE of the draw: their weights are scaled down when they would be more.
+const BONUS_W = 4,
+  BONUS_SHARE = 0.15;
+// Progressive path (Pierre, 2026-11-02: "rather than spamming a beginner with 40 genera, start with the easiest ones,
+// opening new ones as they go, with nothing set by hand"). New genera are opened by the player's own results: while
+// fewer than OPEN.K genera met are still shaky (below), the genera not met yet share OPEN.READY of the draw (a share,
+// so the pace holds as the genera met add up); otherwise only OPEN.TRICKLE, so a new one still comes now and then.
+// Among them, the easiest (genusDiff) come first, softly (OPEN.T): a beginner meets a few easy genera at a time, an
+// expert keeps opening new ones because none stays shaky. docs/LEARNING.md.
+// K 5 (was 3; Pierre, 2026-11-02: genera should open a little more easily, ~25 of 39 met by an RA after 600 questions
+// was too few): simulated, an RA meets 33-39 after 600 questions, a beginner still 9-14 after 100 (docs/LEARNING.md).
+const OPEN = {K: 5, P: 0.6, READY: 0.35, TRICKLE: 0.03, T: 3, CONF: 2, DATA: 300};
+// How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
+// OPEN.DATA, up to 1. Without them the genus difficulty is only the photo sets and declared look-alikes, which put
+// Acropora and Galaxea among the hardest and Alveopora first (Pierre expects the first two easy): the order then stays
+// random until the answers can say (2026-11-02).
+const easyTrust = () => Math.min(1, Object.values(PSTAT).reduce((t, o) => t + (o[1] || 0), 0) / OPEN.DATA);
+// Difficulty of a genus from the data, never set by hand: the mean difficulty of its game photos (photoDiff: Pierre's
+// Easy/Medium/Hard sets at first, the players' answers as they come, sheet v17) plus how much it gets confused (its two
+// highest pooled confusion scores over CONF.TRAP, x OPEN.CONF). Cleared when the data or the photo stats change.
+let GDIFF = {};
+const genusDiff = n => {
+  if (n in GDIFF) return GDIFF[n];
+  const ps = [...new Set(VIEWS.flatMap(([v]) => gamePics(n, v, 'hard')))],
+    pd = ps.length ? ps.reduce((t, p) => t + photoDiff(n, p), 0) / ps.length : 0,
+    cs = Object.keys(DATA.gen)
+      .filter(x => x !== n)
+      .map(x => pooledConf(n, x))
+      .sort((a, b) => b - a)
+      .slice(0, 2),
+    cf = cs.length ? cs.reduce((a, x) => a + x, 0) / cs.length : 0;
+  return (GDIFF[n] = Math.round((pd + OPEN.CONF * Math.max(0, cf - CONF.TRAP)) * 100) / 100);
+};
+// Shaky: met, not mastered, and the player's expected success on an average photo of the genus (4 choices, at its
+// genusDiff) still under OPEN.P. The genus ability allows for how hard the questions were (a miss on a hard one moves
+// it little) and starts from the player's global level (playerStart), so the signal is what the player knows, at any
+// level, from the first answer. Tried first (docs/LEARNING.md): recent misses (2 in the last 5: the game keeps everyone
+// near 80% right, where that happens about one time in four at any level, and a simulated RA opened fewer genera than a
+// complete beginner); BKT knowledge alone (climbs too slowly on a beginner's easy photos); a minimum of answers per new
+// genus (it held an expert back, each new genus waiting to be drawn again).
+const shaky = n => {
+  const s = P[n] || {};
+  return level(n)[0] !== 'new' && !s.mx && 0.25 + 0.75 * sig(ability(n) - genusDiff(n)) < OPEN.P;
+};
+function weighted(list) {
+  const w = list.map(weight);
+  const fresh = list.map((n, i) => [n, i]).filter(([n]) => level(n)[0] === 'new');
+  if (fresh.length) {
+    const share = list.filter(shaky).length < OPEN.K ? OPEN.READY : OPEN.TRICKLE,
+      rest = w.reduce((a, x, i) => a + (level(list[i])[0] === 'new' ? 0 : x), 0),
+      tot = rest ? (share * rest) / (1 - share) : 1,
+      gd = fresh.map(([n]) => genusDiff(n)),
+      lo = Math.min(...gd),
+      tr = easyTrust(),
+      e = gd.map(x => Math.exp(-OPEN.T * tr * (x - lo))),
+      se = e.reduce((a, x) => a + x, 0);
+    fresh.forEach(([n, i], k) => (w[i] = ((tot * e[k]) / se) * (isBonus(n) ? Math.min(1, BONUS_W / 10) : 1)));
+  }
+  // Bonus share from the weights as they now stand (Codex review #340: the totals taken before the progressive path's
+  // rescaling let a bonus genus take ~45% of the draws).
+  const b = list.reduce((s, n, i) => s + (isBonus(n) ? w[i] : 0), 0),
+    o = w.reduce((a, x) => a + x, 0) - b;
+  if (b && o && b / (b + o) > BONUS_SHARE) {
+    const f = (BONUS_SHARE * o) / ((1 - BONUS_SHARE) * b);
+    list.forEach((n, i) => isBonus(n) && (w[i] *= f));
+  }
+  const t = w.reduce((a, x) => a + x, 0);
+  let r = Math.random() * t;
+  for (let i = 0; i < list.length; i++) {
+    r -= w[i];
+    if (r <= 0) return list[i];
+  }
+  return list[list.length - 1];
+}
+function nextTarget(list) {
+  let n,
+    k = 0;
+  do {
+    n = weighted(list);
+  } while (n === last && list.length > 1 && ++k < 10);
+  last = n;
+  lastQs = [...lastQs, n].slice(-4);
+  return n;
+}
+// Player ability per genus (s.th), on the same scale as photo difficulty (0 = average photo). Elo update after each
+// answer, as in the sync sheet (Code.gs stats_): P(right) = g + (1 - g) * sigmoid(ability - difficulty), g = 1/choices;
+// ability moves by K * (result - P(right)), K shrinking as answers build up (Pelánek 2016) but never below 0.25 so a
+// genus that starts going wrong eases off quickly. Starts at 0 (target = the featured photos); no time criteria.
+const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
+// Learners change (Pierre, 2026-11-02, three players: a complete beginner, an IMR RA after one lecture, an expert): a
+// step that only shrinks with the answers suits a stable skill, and a simulated beginner or RA stayed rated as a beginner
+// (easy photos, no traps) at 80-87% right. As Glicko-2's volatility (Glickman 2012): s.vr follows the recent surprise
+// (result - expected, moving average, rate ELO.vr); while answers keep beating (or missing) the expectation, the step
+// grows by up to ELO.vg x |s.vr|, within kmax, so the rating catches up; it settles back once the player is predictable.
+// docs/LEARNING.md.
+const RECENT = 10;
+const recent = n => {
+  const s = P[n] || {};
+  return s.h ? s.h.slice(-RECENT) : '';
+};
+const misses = h => [...h].filter(x => x === '0').length;
+// Progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability. A genus never answered
+// starts from the player's global level (core.js playerStart: their abilities on the genera already answered), so a
+// strong player gets traps, single views and harder photos on a new genus from its first question.
+const ability = n => {
+  const s = P[n] || {};
+  return typeof s.th === 'number' ? s.th : s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n);
+};
+function abilityStep(n, s, good, d, k) {
+  const th = ability(n),
+    g = 1 / k,
+    e = g + (1 - g) * sig(th - d),
+    m = (s.ok || 0) + (s.ko || 0);
+  s.vr = Math.round(((1 - ELO.vr) * (s.vr || 0) + ELO.vr * ((good ? 1 : 0) - e)) * 1000) / 1000;
+  const K = Math.min(ELO.kmax, Math.max(ELO.kmin, ELO.kmax / (1 + m / ELO.n)) * (1 + ELO.vg * Math.abs(s.vr)));
+  s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * 100) / 100;
+  delete s.lv;
+  delete s.run;
+}
+// For My progress: where the genus's photo difficulty stands, and how many of its game photos the player has seen.
+const photoBand = n => {
+  const t = ability(n) - PICKD.TARGET_OFF;
+  return t < -0.5 ? 'easy' : t < 0.5 ? 'medium' : 'hard';
+};
+const seenOf = n => {
+  const all = new Set(VIEWS.flatMap(([v]) => gamePics(n, v, 'hard').map(p => p.f))),
+    ps = (P[n] || {}).ps || {};
+  return `${[...all].filter(f => ps[f]).length} of ${all.size} seen`;
+};
+// Game set (Easy/Medium/Hard) of a photo of genus n, the prior of its difficulty; lecture or unlisted photos = Easy.
+function photoLvl(n, p) {
+  const sl = GX(n).sl || {};
+  for (const v of Object.keys(sl)) for (let i = 2; i >= 0; i--) if ((sl[v][LEVELS[i][0]] || []).some(x => x.f === p.f)) return i;
+  return 0;
+}
+// Photo difficulty (Elo): every RA's answers, rated by the sync sheet (?stats=1, tools/sync/Code.gs stats_). 0 = average
+// photo, +1 = clearly harder. Few answers: pulled towards the photo's game set (Easy -1, Medium 0, Hard +1).
+let PSTAT = (store.get('imr-photo-stats', {}) || {}).photos || {};
+// Pairs of genera offered together and mixed up, every RA pooled (?stats=1 conf, sheet v10): see confOf.
+let PCONF = (store.get('imr-photo-stats', {}) || {}).conf || {};
+const sig = x => 1 / (1 + Math.exp(-x));
+function photoDiff(n, p) {
+  const prior = photoLvl(n, p) - 1,
+    o = PSTAT[p.f];
+  return o ? (o[1] * o[0] + 5 * prior) / (o[1] + 5) : prior;
+}
+// "Learned" = Bayesian Knowledge Tracing per genus: s.L = probability you know the genus, updated after each answer.
+// A right answer could be a guess (1 in 4 in the quiz, 1 in 2 in a duel, more on easy photos); a mistake could be a slip
+// (more likely on hard photos). So right answers on hard photos count most, and easy photos teach the model little.
+// The bar of a genus climbs to 95% with L; Learned (100%) takes the silent mastery exam (EXAM, below). The two former
+// milestones (right once with the corallites in view, once in a duel) were dropped: easy, and arbitrary (Pierre,
+// 2026-11-01). Review: 2+ mistakes in the last 5 results. No time criteria.
+const BKT = {L0: 0.1, T: 0.08, MASTER: 0.95, L0MAX: 0.5, LV0: 0.5, LVR: 1.5, LVN: 30};
+// Where a genus's knowledge starts (Pierre, 2026-11-02, point 3): BKT.L0 for everyone, except a player whose overall
+// level (Elo over every answer, LEVEL) is clearly high and rests on BKT.LVN answers or more: then up to BKT.L0MAX, growing
+// continuously from level BKT.LV0 to BKT.LV0 + BKT.LVR (no tiers). Empirical-Bayes prior, as the Elo start of a new
+// genus already uses the global level (core.js playerStart). The mastery exam is unchanged: an expert still proves each
+// genus with its own 5 hard questions; only the way to 95% gets shorter. docs/LEARNING.md.
+const bktStart = () => {
+  const G = P[LEVEL] || {},
+    m = (G.ok || 0) + (G.ko || 0);
+  if (m < BKT.LVN || typeof G.th !== 'number') return BKT.L0;
+  return BKT.L0 + (BKT.L0MAX - BKT.L0) * Math.min(1, Math.max(0, (G.th - BKT.LV0) / BKT.LVR));
+};
+function bktStep(L, good, b, k) {
+  const g = 1 / k + (1 - 1 / k) * sig(-2 * b - 1),
+    sl = 0.1 + 0.9 * sig(2 * b - 3);
+  const post = good ? (L * (1 - sl)) / (L * (1 - sl) + (1 - L) * g) : (L * sl) / (L * sl + (1 - L) * (1 - g));
+  return post + (1 - post) * BKT.T;
+}
+// Progress saved before BKT: replay the recent results as average quiz photos.
+const knownP = n => {
+  const s = P[n];
+  if (!s) return 0;
+  if (typeof s.L === 'number') return s.L;
+  let L = s.h ? BKT.L0 : bktStart(); // progress saved before BKT replays from L0, as it always did
+  [...(s.h || '')].forEach(x => {
+    L = bktStep(L, x === '1', 0, 4);
+  });
+  return L;
+};
+// A miss never raises L: on the hardest photos the slip chance passes the wrong-guess chance, and with the learning step
+// a miss used to lift the genus (0.96 -> 0.964; Pierre: the % falls back on a miss). Found by draw.smoke.js on PR #336.
+function bktObs(n, s, good, b, k) {
+  const L0 = knownP(n),
+    L = bktStep(L0, good, b, k);
+  s.L = Math.round((good ? L : Math.min(L, L0)) * 1e4) / 1e4;
+}
+// Silent mastery exam (Pierre, 2026-11-01: "an ultimate test to go from 95% to 100%"). Its count (2/5) is shown nowhere:
+// the genus's % creeping up from 95%, then falling back on a miss, keeps the mystery (Pierre). Once a genus is 95% sure (L),
+// EXAM.n questions on it are slipped into the photo quiz, unannounced (a test on one genus alone would give the answer
+// away), at least EXAM.gap other answers apart (recognition, not short-term memory; counted in answers, never time).
+// Each is as hard as the game gets: one photo alone, never answered right before (else the least seen), the hardest
+// of its view, the views taking turns (colony, close-up, corallites), 3 look-alike traps (examSet, quizPhoto). Every one
+// right: the genus is mastered (s.mx), Learned, 100%. Any miss on the genus, in the exam or not, and any time the genus
+// is given as the answer for another one, ends it (s.ex dropped); it starts again from 0 when L is back at 95%.
+const EXAM = {n: 5, gap: 8};
+const answersSoFar = () => ((P[LEVEL] || {}).ok || 0) + ((P[LEVEL] || {}).ko || 0);
+const examOn = n => {
+  const s = P[n] || {};
+  return !s.mx && knownP(n) >= BKT.MASTER;
+};
+const examReady = n => examOn(n) && (!(P[n] || {}).ex || answersSoFar() - P[n].ex.at >= EXAM.gap);
+function missing(n) {
+  const s = P[n] || {},
+    m = [],
+    L = knownP(n);
+  if (s.mx) return m;
+  if (L < BKT.MASTER) m.push(`more right answers, harder photos count more (${Math.round(100 * L)}% sure now)`);
+  else m.push(`the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the photo quiz, all right`);
+  return m;
+}
+// Progress of a genus, 0 to 1: how far its knowledge probability has climbed towards 95% fills 95% of it, each exam
+// question passed adds 1%, the passed exam makes it 100%.
+function genScore(n) {
+  const s = P[n];
+  if (!s) return 0;
+  if (s.mx) return 1;
+  const part = Math.min(1, Math.max(0, (knownP(n) - BKT.L0) / (BKT.MASTER - BKT.L0)));
+  return 0.95 * part + (part >= 1 && s.ex ? (0.05 * s.ex.k) / EXAM.n : 0);
+}
+// Step of a genus on the learning scale: 0 not seen, 1-4 quarters of genScore, 5 learned (My progress colours).
+const lvStep = n => {
+  const k = level(n)[0];
+  return k === 'new' ? 0 : k === 'ok' ? 5 : 1 + Math.min(3, Math.floor(4 * genScore(n)));
+};
+const progPct = (L = Object.keys(DATA.gen)) => Math.round((100 * L.reduce((t, n) => t + genScore(n), 0)) / L.length);
+function level(n) {
+  const s = P[n];
+  if (!s || (s.ok + s.ko === 0 && !s.h)) return ['new', 'Not seen'];
+  if (misses(recent(n).slice(-5)) >= 2) return ['weak', 'Review'];
+  if (s.mx) return ['ok', 'Learned'];
+  return ['mid', 'Learning'];
+}
+
+// Wrong choices get harder as the player gets better at the target genus (Pierre, 2026-11-01: "at the very start it must
+// be simple", then traps appear little by little). TRAP gives how many of the 3 wrong choices are look-alikes of the
+// target (IMR lecture or Coral Finder pairs, `look` both ways), from the genus's Elo ability: none on a genus's very first
+// question (ability 0), then they come in fast because look-alikes are how genera are learned (Pierre, 2026-11-01): one
+// from 0.18 (after the first right answer), two from 0.36, all three from 0.54 (about 5 right answers), rounded at random
+// in between. A mistake drops the ability by about 0.5, so the choices ease off again. The other
+// wrong choices are easy ones while traps are few: genera sharing no IMR growth form with the target (imrFormsOf),
+// other IMR lecture groups first; once two traps are in, the last one is any genus (family first), as before.
+const TRAP = {start: 0, step: 0.18};
+const trapsFor = t => {
+  const x = Math.min(3, Math.max(0, (ability(t) - TRAP.start) / TRAP.step));
+  return Math.floor(x) + (Math.random() < x % 1 ? 1 : 0);
+};
+// Confusion score of genus n beside target t (Pierre, 2026-11-01): how often players mix the two up when both are offered
+// (every RA pooled, ?stats=1 conf), starting from a prior: the declared look-alikes (IMR lecture, Coral Finder) high, then
+// the same family, then a shared growth form. With few answers the prior rules; with many, the real mix-ups do, so a pair
+// nobody confuses fades and an undeclared pair players do confuse becomes a trap (core.js CONF, confScore).
+const isLook = (t, n) => GX(t).look.includes(n) || GX(n).look.includes(t);
+// Personal path (Pierre, 2026-11-01): the pooled score is then the prior for this player's own answers on the pair
+// (core.js pairConf: offered together, mixed up), worth CONF.W offers, so the player's weight is offers / (offers + 8).
+// A pair this player keeps mixing up becomes a trap and a duel for them, one they now tell apart fades back to the pool.
+// Performance only, never time.
+// The pair's score over every player (pooled answers on top of the declared prior), before this player's own record.
+function pooledConf(t, n) {
+  const prior = isLook(t, n)
+    ? CONF.LOOK
+    : GX(n).fam === GX(t).fam
+      ? CONF.FAM
+      : imrFormsOf(n).some(f => imrFormsOf(t).includes(f))
+        ? CONF.FORM
+        : CONF.BASE;
+  return confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], prior);
+}
+function confOf(t, n) {
+  return confScore(pairConf(P, t, n), pooledConf(t, n));
+}
+// Traps = the genera most confused with the target (a little shuffle among close scores, so every likely pair gets tried).
+const confusable = (t, n) => confOf(t, n) >= CONF.TRAP;
+function distractors(t, list, traps = trapsFor(t)) {
+  const ranked = list
+    .filter(n => n !== t)
+    .map(n => [n, confOf(t, n) * (0.8 + 0.4 * Math.random())])
+    .sort((a, b) => b[1] - a[1])
+    .map(x => x[0]);
+  // A player who tells every look-alike apart (an expert) still gets the hardest choices the level asks for: the traps
+  // left over come from the pairs other players confuse most, then the declared look-alikes, instead of easy genera
+  // (Pierre, 2026-11-02: simulated, an expert's traps fell from 1.8 to 0.1 a question as their own record cleared them).
+  const mine = ranked.filter(n => confusable(t, n)),
+    pooled = list
+      .filter(n => n !== t && !mine.includes(n) && pooledConf(t, n) >= CONF.TRAP)
+      .sort((a, b) => pooledConf(t, b) - pooledConf(t, a)),
+    look = [...mine, ...pooled],
+    out = look.slice(0, traps),
+    left = list.filter(n => n !== t && !look.includes(n));
+  if (traps >= 2) return [...out, ...ranked.filter(n => !look.includes(n)), ...look.slice(traps)].slice(0, 3); // exactly `traps` traps when others exist
+  const T = GX(t);
+  const tf = imrFormsOf(t),
+    apart = n => !imrFormsOf(n).some(f => tf.includes(f));
+  const easy = left.filter(apart),
+    far = easy.filter(n => GX(n).ig !== T.ig);
+  // Easy choices spread over different growth forms too: three mushroom corals beside a massive target would give the
+  // answer away as the odd one out.
+  // Easy wrong choices come first from genera the player has already met (a beginner is not asked to choose between
+  // names never seen), then the others (Pierre, 2026-11-02).
+  const met = L => [...shuffle(L.filter(n => P[n])), ...shuffle(L.filter(n => !P[n]))];
+  const cand = [...met(far), ...met(easy.filter(n => !far.includes(n))), ...met(left.filter(n => !easy.includes(n)))];
+  const used = new Set(out.flatMap(imrFormsOf)),
+    res = [...out];
+  for (const n of cand) {
+    if (res.length >= 3) break;
+    if (!imrFormsOf(n).some(f => used.has(f))) {
+      res.push(n);
+      imrFormsOf(n).forEach(f => used.add(f));
+    }
+  }
+  return [...res, ...cand.filter(n => !res.includes(n))].slice(0, 3);
+}
+// Elo and BKT count a guess as 1 in (target + the plausible wrong choices) while traps are few (0 or 1): easy choices from
+// other growth forms are not plausible, so such a question is scored as a 2- or 3-choice one (a right answer there proves
+// less). From 2 traps on, every choice counts, as before.
+const plausibleK = (t, choices) => {
+  const tf = imrFormsOf(t);
+  return Math.max(2, choices.filter(n => n === t || confusable(t, n) || imrFormsOf(n).some(f => tf.includes(f))).length);
+};
