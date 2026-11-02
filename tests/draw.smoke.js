@@ -468,6 +468,26 @@ const server = http.createServer((req, res) => {
         document.querySelector(`[data-c="${CSS.escape(t)}"]`).click();
         if (i < WARM.N && HOLDS !== h) fails.push(`a gentle-restart answer moved the hold: ${h} -> ${HOLDS}`);
       }
+      // A miss during the restart still brings its Again, flagged with the restart: the hold does not move.
+      warmLeft = 3;
+      NEXTQ = null;
+      document.querySelectorAll('.unlock').forEach(x => x.remove());
+      quizPhoto();
+      const hb = HOLDS,
+        miss = [...document.querySelectorAll('#view [data-c]')].find(b => b.dataset.c !== SHOWNQ[1]);
+      miss.click();
+      // The Again comes one question later.
+      for (let k = 0; k < 2 && !(SHOWNQ && SHOWNQ.again && k); k++) {
+        NEXTQ = null;
+        document.querySelectorAll('.unlock').forEach(x => x.remove());
+        quizPhoto();
+        if (!SHOWNQ.again) document.querySelector(`[data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
+      }
+      if (!SHOWNQ.again || !SHOWNQ.warm || HOLDS !== hb)
+        fails.push(`Again during the restart: ${JSON.stringify({again: SHOWNQ.again, warm: SHOWNQ.warm, hold: [hb, HOLDS]})}`);
+      document.querySelector(`[data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
+      if (HOLDS !== hb) fails.push('an Again of the restart moved the hold');
+      warmLeft = 0;
       HOLDS = h0;
     }
     return {fails: [...new Set(fails)], draws, genera: genera.length};

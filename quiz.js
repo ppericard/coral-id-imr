@@ -894,8 +894,11 @@ function planPhoto() {
       againAt = answersSoFar();
       const t = pick(pair);
       // Planned ahead, it shows later than planned: quizPhoto sets againAt again when it shows (Codex review #361).
+      // During the gentle restart an Again still follows a miss (it corrects it), counted with the restart: it leaves the
+      // opening hold as it was (Codex review #364).
       return Object.assign(['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)], {
-        again: 1
+        again: 1,
+        ...(warmLeft > 0 ? {warm: 1} : {})
       });
     }
   }
@@ -912,13 +915,15 @@ function planPhoto() {
     ready = n => cards.includes(n) || introReady(n),
     known = n => cards.includes(n) || introduced(n),
     met = list.filter(ready),
-    warmL =
-      warmLeft > 0 && !start
-        ? met.filter(n => (P[n] || {}).ok > 0 && level(n)[0] !== 'new' && (warmLeft <= WARM.N / 2 || level(n)[0] !== 'weak'))
-        : [],
+    // Genera answered right; the first half without those to review, unless fewer than 2 are left (Codex review #364:
+    // a player with only genera to review got no restart at all). Fewer than 2 answered right: no restart.
+    warmAll = warmLeft > 0 && !start ? met.filter(n => (P[n] || {}).ok > 0 && level(n)[0] !== 'new') : [],
+    warmSure = warmAll.filter(n => level(n)[0] !== 'weak'),
+    warmL = warmLeft > WARM.N / 2 && warmSure.length >= 2 ? warmSure : warmAll,
     warm = warmL.length >= 2,
     open = !start && !warm && introSince() >= INTRO.EVERY && !introHold();
   if (warm) warmLeft--;
+  else if (warmLeft > 0 && !start) warmLeft = 0; // not enough genera answered right: no restart this visit
   // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say).
   let t = nextTarget(start ? cards : warm ? warmL : met.length ? (open ? list.filter(n => ready(n) || !introduced(n)) : met) : list);
   if (met.length && !known(t)) {
