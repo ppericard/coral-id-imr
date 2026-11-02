@@ -3,7 +3,8 @@
 // - every photo of a question (shown, hint, revealed after) comes from ONE observation (same colony; AGENTS.md 14b);
 // - never a several-corals or Coral Finder book photo in a game (rule 10); bonus genera: Research Grade or Pierre's only (14a);
 // - answer choices: 3 distinct genera of the list, never the target; exactly the asked number of traps (look-alikes /
-//   confused genera) when enough exist, none at the very start (14c).
+//   confused genera) when enough exist, none at the very start (14c);
+// - first meetings: genera met on cards before being asked, never right after their card (INTRO).
 // Like pages.smoke.js it needs Playwright (CI installs it in a temporary folder; no package.json). Locally:
 // node tests/draw.smoke.js
 const http = require('http'),
@@ -175,6 +176,106 @@ const server = http.createServer((req, res) => {
       if (progPct() !== pctOf(P, Object.keys(DATA.gen)))
         fails.push(`progress %: app ${progPct()} vs core pctOf ${pctOf(P, Object.keys(DATA.gen))}`);
     }
+    // First meetings (INTRO, Pierre 2026-11-02): from zero, INTRO.START cards then questions among them; every genus
+    // asked was met on a card before; one met on a card alone is not asked before INTRO.GAP answers; at least
+    // INTRO.EVERY answers between two cards; with enough genera met, the choices are all genera met.
+    {
+      P = {};
+      INTROS = {};
+      store.set(INTRO.OFFER.KEY, null);
+      NEXTQ = null;
+      const q0 = question;
+      let tg;
+      question = (...a) => ((tg = a[1]), q0(...a));
+      const at = {},
+        cardsAt = [];
+      let offers = 0;
+      for (let i = 0; i < 120; i++) {
+        const a = answersSoFar(),
+          before = new Set(Object.keys(INTROS));
+        NEXTQ = null;
+        document.querySelectorAll('.unlock').forEach(x => x.remove()); // closed by the player before Next
+        quizPhoto();
+        // The player reads the cards through (each genus is met when its card shows).
+        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
+        const now = Object.keys(INTROS).filter(n => !before.has(n));
+        if (now.length) cardsAt.push([a, now.length]);
+        now.forEach(n => (at[n] = [a, INTROS[n][1]]));
+        if (i === 0 && (now.length !== INTRO.START || !now.includes(tg)))
+          fails.push(`first question: cards ${now.join(', ')}, asked ${tg}`);
+        if (!at[tg] && !asked(tg) && !isBonus(tg)) fails.push(`question ${i}: ${tg} asked without its card`);
+        else if (at[tg] && !at[tg][1] && a < at[tg][0] + INTRO.GAP)
+          fails.push(`question ${i}: ${tg} asked ${a - at[tg][0]} answer(s) after its card`);
+        const ch = [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c);
+        if (Object.keys(INTROS).length >= 4 && !ch.every(introduced)) fails.push(`question ${i}: a choice never met (${ch.join(', ')})`);
+        // The offer to open all genera: only in its window, at a high enough level, once; declined here.
+        const offer = document.querySelector('.unlock.intro [data-open]');
+        if (offer) {
+          const O = INTRO.OFFER,
+            th = (P[LEVEL] || {}).th || 0;
+          if (a < O.AT || a > O.UNTIL || th < O.TH || offers++) fails.push(`offer at ${a} answers, level ${th}, offer #${offers}`);
+          document.querySelector('.unlock.intro .sec').click();
+        }
+        document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
+        document.querySelector(`[data-c="${CSS.escape(i % 3 ? tg : ch.find(c => c !== tg))}"]`).click();
+      }
+      cardsAt.forEach(([a, k], i) => {
+        if (i && a - cardsAt[i - 1][0] < INTRO.EVERY) fails.push(`two cards ${a - cardsAt[i - 1][0]} answer(s) apart`);
+        if (i && k !== 1) fails.push(`${k} cards at once after the first ones`);
+      });
+      if (cardsAt.length < 3) fails.push(`only ${cardsAt.length} card showing(s) in 120 questions`);
+      // Mostly right (an RA after the lecture): the offer comes between OFFER.AT and OFFER.UNTIL answers, and Open all
+      // genera opens every genus left.
+      P = {};
+      INTROS = {};
+      store.set(INTRO.OFFER.KEY, null);
+      let shownAt = 0;
+      for (let i = 0; i <= INTRO.OFFER.UNTIL && !shownAt; i++) {
+        NEXTQ = null;
+        document.querySelectorAll('.unlock').forEach(x => x.remove()); // closed by the player before Next
+        quizPhoto();
+        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
+        const o = document.querySelector('.unlock.intro [data-open]');
+        if (o) {
+          shownAt = answersSoFar();
+          o.click();
+        }
+        document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
+        document.querySelector(`[data-c="${CSS.escape(tg)}"]`).click();
+      }
+      if (!shownAt || shownAt < INTRO.OFFER.AT || introLeft().length)
+        fails.push(`all right: offer at ${shownAt} answers, ${introLeft().length} genera left after Open all`);
+      // Synced with the progress: the cards and the offer are imr-coral* keys (sent by progData), and the cards seen on
+      // another device join this one's (introMerge), ready; a progress reset starts them over.
+      {
+        INTROS = {};
+        store.set(INTRO.KEY, {});
+        store.set(INTRO.OFFER.KEY, null);
+        const g = Object.keys(DATA.gen)[5];
+        introAdd([Object.keys(DATA.gen)[0]], false);
+        store.set(INTRO.OFFER.KEY, {at: 60, open: 0});
+        const d = progData();
+        if (!d[INTRO.KEY] || !d[INTRO.OFFER.KEY]) fails.push('cards or offer not in the synced data');
+        store.set(INTRO.OFFER.KEY, null);
+        introMerge(JSON.stringify({[g]: [7, 0]}), JSON.stringify({at: 60, open: 0}));
+        if (!introduced(g) || !introReady(g) || !introduced(Object.keys(DATA.gen)[0]) || !store.get(INTRO.OFFER.KEY, null))
+          fails.push('cards from another device not merged');
+        introReset();
+        if (g in introMap() || store.get(INTRO.OFFER.KEY, null)) fails.push('progress reset kept the cards');
+      }
+      // "I've had the IMR lecture": every slate genus opens at once, and no card comes after.
+      introAll();
+      if (introLeft().length) fails.push(`open all genera: ${introLeft().length} left`);
+      for (let i = 0; i < 30; i++) {
+        NEXTQ = null;
+        quizPhoto();
+        if (document.querySelector('.unlock.intro')) fails.push('a card after opening all genera');
+        document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
+        document.querySelector(`[data-c="${CSS.escape(tg)}"]`).click();
+      }
+      question = q0;
+      INTROS = {};
+    }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
   await b.close();
@@ -185,7 +286,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam.`
+    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, first meetings.`
   );
 })().catch(e => {
   console.error(e);

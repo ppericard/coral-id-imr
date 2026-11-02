@@ -48,6 +48,20 @@ const server = http.createServer((req, res) => {
   const base = `http://127.0.0.1:${server.address().port}/`;
   const b = await chromium.launch(),
     fails = [];
+  // The first-encounter card (quiz.js introShow) would cover the quiz in the checks that are not about it: every genus
+  // starts as met on a card, except in a context opened with {intro: true}.
+  const INTROS = JSON.stringify(Object.fromEntries(Object.keys(require('../data.json').gen).map(n => [n, [0, 1]]))),
+    ctxNew = b.newContext.bind(b);
+  b.newContext = async ({intro, ...o} = {}) => {
+    const c = await ctxNew(o);
+    if (!intro)
+      await c.addInitScript(s => {
+        try {
+          localStorage.getItem('imr-coral-intro') || localStorage.setItem('imr-coral-intro', s);
+        } catch (e) {}
+      }, INTROS);
+    return c;
+  };
   const ctxOf = async (opts = {}) => {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}, deviceScaleFactor: opts.dpr || 1, serviceWorkers: 'block'});
     await ctx.addInitScript(() => {

@@ -199,7 +199,10 @@ const BONUS_W = 4,
 // expert keeps opening new ones because none stays shaky. docs/LEARNING.md.
 // K 5 (was 3; Pierre, 2026-11-02: genera should open a little more easily, ~25 of 39 met by an RA after 600 questions
 // was too few): simulated, an RA meets 33-39 after 600 questions, a beginner still 9-14 after 100 (docs/LEARNING.md).
-const OPEN = {K: 5, P: 0.6, READY: 0.35, TRICKLE: 0.03, T: 3, CONF: 2, DATA: 300};
+// K 6 with the first-meeting cards (INTRO): the choices are now genera met, so a wrong answer no longer opens a genus
+// never asked (it used to, for about a third of the genera met); simulated, an RA asked 28-35 genera after 600
+// questions, a beginner 12-15 after 100 (K 5: 24; K 8: a beginner 17-18 after 100).
+const OPEN = {K: 6, P: 0.6, READY: 0.35, TRICKLE: 0.03, T: 3, CONF: 2, DATA: 300};
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
 // OPEN.DATA, up to 1. Without them the genus difficulty is only the photo sets and declared look-alikes, which put
 // Acropora and Galaxea among the hardest and Alveopora first (Pierre expects the first two easy): the order then stays
@@ -232,12 +235,98 @@ const shaky = n => {
   const s = P[n] || {};
   return level(n)[0] !== 'new' && !s.mx && 0.25 + 0.75 * sig(ability(n) - genusDiff(n)) < OPEN.P;
 };
+// First meeting with a genus (Pierre, 2026-11-02, after the beginner RA review): a player starting from zero first meets
+// INTRO.START genera on cards (name, cover photo, ID tips) and is asked about those; new genera then come one at a time,
+// each on its card, and never as the answer of the question right after its card ("too easy"): a genus met on a single
+// card can be asked from INTRO.GAP answers on, and a new card waits INTRO.EVERY answers after the last one. Which genus
+// opens and when stays the progressive path's (weighted, OPEN): a draw that falls on a genus not met yet shows its card
+// and asks about a genus already met. Kept on the device (imr-intro: genus -> [answers when shown, 1 if one of the
+// first cards]); a genus already asked (another device, progress from before the cards) or a bonus genus (its own unlock
+// card) counts as met. docs/LEARNING.md.
+// OFFER: after a few dozen answers, a player whose overall level (Elo, P[LEVEL].th) is already high knows their corals
+// (an RA after the lecture): a card offers to open all the genera at once (introOffer). Synced with the progress (the
+// sheet keeps every imr-coral* key; sync.js introMerge).
+const INTRO = {
+  KEY: 'imr-coral-intro',
+  START: 4,
+  GAP: 2,
+  EVERY: 2,
+  OFFER: {KEY: 'imr-coral-intro-offer', AT: 50, UNTIL: 150, MET: 10, TH: 0.5}
+};
+let INTROS = null;
+const introMap = () => {
+  if (INTROS) return INTROS;
+  const m = store.get(INTRO.KEY, {});
+  return (INTROS = m && typeof m === 'object' && !Array.isArray(m) ? m : {});
+};
+const introAdd = (L, start) => {
+  const m = introMap(),
+    a = answersSoFar();
+  L.forEach(n => (m[n] = [a, start ? 1 : 0]));
+  store.set(INTRO.KEY, m);
+  syncSoon(); // sent at once, not with the next answer: a card left without answering is met on the other devices too
+};
+const asked = n => !!((P[n] || {}).ok || (P[n] || {}).ko);
+const introduced = n => isBonus(n) || asked(n) || n in introMap();
+const introReady = n => {
+  if (isBonus(n) || asked(n)) return true;
+  const e = introMap()[n];
+  return !!e && (!!e[1] || answersSoFar() >= e[0] + INTRO.GAP);
+};
+// "I've had the IMR lecture" (Pierre, 2026-11-02): an RA has seen every genus in the lecture and has little time, so
+// one card at a time would hold them back. On the first cards and in My progress, one tap opens every slate genus at
+// once, without cards: the draw then asks first the genera never asked (weight 10), choices from the whole slate.
+const introLeft = () => Object.keys(DATA.gen).filter(n => !introduced(n));
+const introAll = () => introAdd(introLeft(), true);
+// The offer to open all genera (Pierre, 2026-11-02: 10 answers on 4 genera are too few to decide; after about 50
+// questions and some 10 genera met, a card says the player seems to know their corals and offers to open them all).
+// Due once, between OFFER.AT and OFFER.UNTIL answers, with OFFER.MET slate genera met and a level of OFFER.TH or more:
+// simulated at 50 answers, a beginner -0.9, an RA who knows 60% of the genera -0.2, 80% +0.8, an expert +1.2
+// (docs/LEARNING.md). A card, not an automatic opening: "Not now" keeps one at a time; My progress still offers it.
+const introOffer = () => {
+  const a = answersSoFar(),
+    O = INTRO.OFFER;
+  return (
+    a >= O.AT &&
+    a <= O.UNTIL &&
+    !store.get(O.KEY, null) &&
+    introLeft().length > 0 &&
+    Object.keys(DATA.gen).filter(introduced).length >= O.MET &&
+    ((P[LEVEL] || {}).th || 0) >= O.TH
+  );
+};
+// Another device's cards (synced): a genus met there is met here too, and ready (its card was seen); the offer, once
+// answered on one device, is not made again on another. Progress reset: the cards start over with it.
+function introMerge(m, o) {
+  try {
+    m = JSON.parse(m || 'null');
+    o = JSON.parse(o || 'null');
+  } catch (e) {
+    return;
+  }
+  if (m && typeof m === 'object' && !Array.isArray(m)) {
+    const L = introMap();
+    let ch = false;
+    Object.entries(m).forEach(([n, e]) => {
+      if (Array.isArray(e) && !L[n]) ch = L[n] = [e[0] || 0, 1];
+    });
+    if (ch) store.set(INTRO.KEY, L);
+  }
+  if (o && typeof o === 'object' && !store.get(INTRO.OFFER.KEY, null)) store.set(INTRO.OFFER.KEY, o);
+}
+const introReset = () => {
+  INTROS = {};
+  store.set(INTRO.KEY, {});
+  store.set(INTRO.OFFER.KEY, null);
+};
+const introSince = () => answersSoFar() - Math.max(-Infinity, ...Object.values(introMap()).map(e => e[0]));
 function weighted(list) {
   const w = list.map(weight);
-  const fresh = list.map((n, i) => [n, i]).filter(([n]) => level(n)[0] === 'new');
+  // Not met yet: the genera with no card shown and never asked (a genus met on its card weighs as a new one, 10).
+  const fresh = list.map((n, i) => [n, i]).filter(([n]) => !introduced(n));
   if (fresh.length) {
     const share = list.filter(shaky).length < OPEN.K ? OPEN.READY : OPEN.TRICKLE,
-      rest = w.reduce((a, x, i) => a + (level(list[i])[0] === 'new' ? 0 : x), 0),
+      rest = w.reduce((a, x, i) => a + (introduced(list[i]) ? x : 0), 0),
       tot = rest ? (share * rest) / (1 - share) : 1,
       gd = fresh.map(([n]) => genusDiff(n)),
       lo = Math.min(...gd),
@@ -396,7 +485,7 @@ function missing(n) {
     m = [],
     L = knownP(n);
   if (s.mx) return m;
-  if (L < BKT.MASTER) m.push(`more right answers, harder photos count more (${Math.round(100 * L)}% sure now)`);
+  if (L < BKT.MASTER) m.push(`more right answers, harder photos count more (about ${Math.round(100 * L)}% learned so far)`);
   else m.push(`the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the photo quiz, all right`);
   return m;
 }
@@ -422,6 +511,15 @@ function level(n) {
   if (s.mx) return ['ok', 'Learned'];
   return ['mid', 'Learning'];
 }
+// What a player is shown (My progress, the genus sheet): "Review" (red, with "!") only once the genus has REVIEW_MIN
+// answers, before that it is still being learned (beginner RA review, Pierre 2026-11-02: after a first session seven
+// red "Review" tiles read as a list of failures). The game itself still gives such a genus more questions (level).
+const REVIEW_MIN = 5;
+const shownLevel = n => {
+  const l = level(n),
+    s = P[n] || {};
+  return l[0] === 'weak' && (s.ok || 0) + (s.ko || 0) < REVIEW_MIN ? ['mid', 'Learning'] : l;
+};
 
 // Wrong choices get harder as the player gets better at the target genus (Pierre, 2026-11-01: "at the very start it must
 // be simple", then traps appear little by little). TRAP gives how many of the 3 wrong choices are look-alikes of the
@@ -461,7 +559,7 @@ function confOf(t, n) {
 }
 // Traps = the genera most confused with the target (a little shuffle among close scores, so every likely pair gets tried).
 const confusable = (t, n) => confOf(t, n) >= CONF.TRAP;
-function distractors(t, list, traps = trapsFor(t)) {
+function distractors(t, list, traps = trapsFor(t), known = introduced) {
   const ranked = list
     .filter(n => n !== t)
     .map(n => [n, confOf(t, n) * (0.8 + 0.4 * Math.random())])
@@ -470,14 +568,20 @@ function distractors(t, list, traps = trapsFor(t)) {
   // A player who tells every look-alike apart (an expert) still gets the hardest choices the level asks for: the traps
   // left over come from the pairs other players confuse most, then the declared look-alikes, instead of easy genera
   // (Pierre, 2026-11-02: simulated, an expert's traps fell from 1.8 to 0.1 a question as their own record cleared them).
-  const mine = ranked.filter(n => confusable(t, n)),
+  // Traps only among the genera met (`known`): a look-alike never seen is no trap for a beginner, only a name to guess.
+  const mine = ranked.filter(n => known(n) && confusable(t, n)),
     pooled = list
-      .filter(n => n !== t && !mine.includes(n) && pooledConf(t, n) >= CONF.TRAP)
+      .filter(n => n !== t && known(n) && !mine.includes(n) && pooledConf(t, n) >= CONF.TRAP)
       .sort((a, b) => pooledConf(t, b) - pooledConf(t, a)),
     look = [...mine, ...pooled],
     out = look.slice(0, traps),
     left = list.filter(n => n !== t && !look.includes(n));
-  if (traps >= 2) return [...out, ...ranked.filter(n => !look.includes(n)), ...look.slice(traps)].slice(0, 3); // exactly `traps` traps when others exist
+  // Exactly `traps` traps when other genera met exist; genera never met only to make up the three.
+  if (traps >= 2)
+    return [...out, ...ranked.filter(n => known(n) && !look.includes(n)), ...look.slice(traps), ...ranked.filter(n => !known(n))].slice(
+      0,
+      3
+    );
   const T = GX(t);
   const tf = imrFormsOf(t),
     apart = n => !imrFormsOf(n).some(f => tf.includes(f));
@@ -485,20 +589,31 @@ function distractors(t, list, traps = trapsFor(t)) {
     far = easy.filter(n => GX(n).ig !== T.ig);
   // Easy choices spread over different growth forms too: three mushroom corals beside a massive target would give the
   // answer away as the odd one out.
-  // Easy wrong choices come first from genera the player has already met (a beginner is not asked to choose between
-  // names never seen), then the others (Pierre, 2026-11-02).
-  const met = L => [...shuffle(L.filter(n => P[n])), ...shuffle(L.filter(n => !P[n]))];
-  const cand = [...met(far), ...met(easy.filter(n => !far.includes(n))), ...met(left.filter(n => !easy.includes(n)))];
-  const used = new Set(out.flatMap(imrFormsOf)),
+  // Easy wrong choices come from genera the player has already met (`known`: on a card or asked) before any other, even
+  // at the cost of the spread of forms: a beginner is not asked to choose between names never seen, and the first
+  // questions stay among the genera of the first cards (Pierre, 2026-11-02).
+  const rank = L => [
+    ...shuffle(L.filter(n => far.includes(n))),
+    ...shuffle(L.filter(n => easy.includes(n) && !far.includes(n))),
+    ...shuffle(L.filter(n => !easy.includes(n)))
+  ];
+  const met = rank(left.filter(known)),
+    other = rank(left.filter(n => !known(n))),
+    used = new Set(out.flatMap(imrFormsOf)),
     res = [...out];
-  for (const n of cand) {
-    if (res.length >= 3) break;
-    if (!imrFormsOf(n).some(f => used.has(f))) {
+  const add = (L, spread) =>
+    L.forEach(n => {
+      if (res.length >= 3 || res.includes(n) || (spread && imrFormsOf(n).some(f => used.has(f)))) return;
       res.push(n);
       imrFormsOf(n).forEach(f => used.add(f));
-    }
-  }
-  return [...res, ...cand.filter(n => !res.includes(n))].slice(0, 3);
+    });
+  add(met, true);
+  add(met, false);
+  // Still short (a beginner who has met only a few genera): a look-alike met beats a name never seen.
+  add(look.filter(known), false);
+  add(other, true);
+  add(other, false);
+  return res.slice(0, 3);
 }
 // Elo and BKT count a guess as 1 in (target + the plausible wrong choices) while traps are few (0 or 1): easy choices from
 // other growth forms are not plausible, so such a question is scored as a 2- or 3-choice one (a right answer there proves

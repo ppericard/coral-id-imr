@@ -93,13 +93,50 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
 - **Easy wrong choices come first from genera the player has met** (2026-11-02): a beginner is not asked to choose
   between names never seen.
 
+### First meeting with a genus (2026-11-02)
+
+Beginner RA review: the first quiz felt like an exam, asking genera the player had never seen. Pierre's design, the same
+day: a player starting from zero first meets 4 genera on cards, is asked about those, and new genera then come one at a
+time, each on its card, but never as the answer of the question right after its card ("too easy"). In model.js
+(`INTRO`) and quiz.js (`introShow`, `planPhoto`):
+
+- **Cards**: name, cover photo, ID tips, and for a ★ genus the surveyed look-alike it is on the slate for (rule 6b).
+  The first `INTRO.START` (4) come one after the other ("1 of 4", Next, Start), picked by the progressive path's draw
+  (easiest first); the first question is about one of them.
+- **When a genus opens** stays the progressive path's call (below): a draw that falls on a genus not met yet shows its
+  card and asks about a genus already met. At least `INTRO.EVERY` (2) answers between two cards.
+- **Not right after**: a genus met on a card alone can be asked from `INTRO.GAP` (2) answers on (one question at least
+  in between; the card says "It comes up in the questions a little later"). The first 4 can be asked at once.
+- **Choices among the genera met**: easy wrong choices and traps come from the genera met (a card or an answer); a
+  look-alike already met beats a name never seen; genera never met only make up the three when too few are met.
+- **Duels**: both genera are named on the buttons, so the cards of those not met yet come together before the duel.
+- **"I've had the IMR lecture: open all genera"** (Pierre, same day: the first users are RAs who saw every genus in the
+  lecture and have little time): a button on the first cards, and in My progress while genera are still unopened,
+  opens every slate genus at once, without cards (`introAll`). The draw then asks first the genera never asked, with
+  choices from the whole slate. A tinted box with a real button, not a chip (Pierre: white on white was easy to miss).
+- **Offer to open all** (Pierre, same day: 10 answers on 4 genera are too few to decide): between the 50th and the
+  150th answer (`INTRO.OFFER`), with 10 slate genera met or more and an overall level (Elo, `P[LEVEL].th`) of 0.5 or
+  more, a card says "You seem to know your corals already" and offers Open all genera or Not now (`introOffer`), once.
+  Simulated at 50 answers: a beginner -0.9, an RA who knows 60% of the genera -0.2, 80% +0.8, an expert +1.2. The
+  correct-answer rate does not tell them apart (the game keeps everyone near 80%: 68%, 76%, 86%, 88%). A card, not an
+  automatic opening, so a wrong guess costs a tap.
+- Synced with the progress: the cards (`imr-coral-intro`: genus -> [answers when shown, 1 for the first cards]) and
+  the offer (`imr-coral-intro-offer`) are `imr-coral*` keys, which the sheet keeps; on a pull, the cards seen on another
+  device join this one's (`introMerge`), and a progress reset starts them over (`introReset`). A genus already asked
+  or a bonus genus (its own unlock card) counts as met. Checked in CI (`tests/draw.smoke.js`, first meetings, offer,
+  sync; `tests/pages.smoke.js`, the 4 cards and My progress).
+
+My progress no longer shows "Review" (weak) for a genus with fewer than 5 answers (`REVIEW_MIN`, `shownLevel` in
+model.js): it shows "Learning" until there is enough evidence. The ring counts genera met ("6/39 met") until one is
+learned, then genera learned. The model itself (`level`) is unchanged.
+
 ### Which genus comes next: the progressive path (2026-11-02)
 
 Pierre: rather than spamming a beginner with 40 genera, focus on the easiest ones, opening new ones as they go,
 everything estimated from the data. Before, a genus never seen weighed 10 against 1-4 for one being learned: a beginner
 met the 39 slate genera almost at once.
 
-- **Opening by results**: while fewer than `OPEN.K` (5; 3 at first) genera met are *shaky*, the genera not met yet share
+- **Opening by results**: while fewer than `OPEN.K` (6; 3 at first, then 5) genera met are *shaky*, the genera not met yet share
   `OPEN.READY` (35%) of the draw; otherwise `OPEN.TRICKLE` (3%), so a new one still comes now and then. A share, not a
   weight, so the pace holds as the genera met add up.
 - **Shaky** = met, not mastered, and the player's expected success on an average photo of the genus (4 choices, at its
@@ -185,6 +222,14 @@ enough"), 600 questions, 3 seeds, genera met (beginner / RA / expert):
 | **K 5, P 0.6 + online calibration (now)** | 11-15 / 10-15 / 29-31 | 18-25 / 22-23 / 39 | 30-36 / 32-38 / 39 |
 | K 5, P 0.5 | 11-15 / 15-28 / 34-35 | 22-30 / 27-34 / 39 | 33-39 / 36-39 / 39 |
 | K 6, P 0.5, READY 0.5 | all 39 by question 500 / all 39 by question 200-400 / 39 at 100 | | |
+| K 5 + first-meeting cards (EVERY 3) | 12 / 8 / 17 | 15 / 14 / 37 | 25 / 26 / 39 (1 seed; genera asked) |
+| **K 6 + first-meeting cards (EVERY 2, now)** | 12-15 / 12-14 / 25 | 18-20 / 17-19 / 39 | 26-28 / 28-35 / 39 (genera asked) |
+| K 8 + first-meeting cards (EVERY 2) | 17-18 / 11-17 / 15-25 | 26 / 23 / 39 | 32 / 33 / 39 |
+
+With the cards (2026-11-02) the choices are genera met, so a wrong answer no longer opens a genus never asked (before,
+a beginner picking an unknown name as a wrong answer opened it: the earlier rows count those). K 6 brings the RA back
+near the pace Pierre asked for while the beginner stays under 16 genera in 100 questions; the expert meets all 39 by
+question 200-300 instead of 100 (one card every 2 answers at most). Runs vary by about 5 genera.
 
 K 5 with P 0.6 is the small step Pierre asked for: the RA opens faster (one genus more every ~15 questions at first),
 the beginner stays on about ten genera for the first 100 questions. Lowering P too made the beginner open faster as well (18 genera
@@ -228,6 +273,11 @@ simulation); recalibrate `ELO` and `OPEN` once a few RA cohorts have played.
   answers, which every real player passes quickly (lowered to 5 for a moment, when it read as answers per photo; there
   is no minimum per photo: one answer moves it, the app blending it with the photo's set as 5 answers' worth). To
   revisit if beginners or bots arrive in numbers.
+- 2026-11-02, Pierre (beginner RA review): first-meeting cards, kinder first My progress, plain words, a bar under
+  "Loading…" (above and ARCHITECTURE); ★ genera stay in from the start, being there for comparison. Then: 4 cards to
+  start and questions among those, new genera one at a time, never asked right after their card; `OPEN.K` 5 → 6 to
+  keep the RA's pace (table above). For the RAs, a button opens all genera at once (on the first cards and in My
+  progress), and a card offers it after about 50 answers at a high level; all of it synced.
 - 2026-11-02, Pierre: OK to seed the photos nobody has answered into the games to calibrate them (`CAL`, above).
 - 2026-11-02, Pierre: relax the arbitrary thresholds so new photos come in quickly (he is validating many candidates)
   and their answers inform the dynamic algorithm: games take every kept photo (no cap of 4 Medium / 4 Hard), and a
