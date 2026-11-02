@@ -3,7 +3,7 @@
 
 Pierre, 2026-11-02: the search for new candidates (tools/fetch_local.py) runs on request, not on a schedule; the agent
 reminds him when a genus runs short. Run it at the start of a working session and in recaps; if it lists genera,
-say so to Pierre and offer to run the search for them. It only reads cand.json and data.json.
+say so to Pierre and offer to run the search for them. It only reads cand.json, data.json and curation.json.
 
 Usage: python3 tools/cand_gaps.py [MIN]   (MIN: candidates waiting under which a genus is listed; default 5)
 """
@@ -13,14 +13,22 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "tools"))
+from excluded import excluded  # noqa: E402  (photos Pierre excluded for good)
 
 
 def gaps(minimum=5):
     cand = json.loads((ROOT / "cand.json").read_text())["cand"]
     slate = list(json.loads((ROOT / "data.json").read_text())["gen"])
+    # Waiting = not decided yet, as fetch_local.py counts them (Codex review #365): not added, not rejected
+    # (curation.json seen 'cand:f'), not sent away (out), not excluded.
+    cur = json.loads((ROOT / "curation.json").read_text())
+    gens = (cur.get("genera") or {}).values()
+    added = {f for k in gens for f in (k.get("add") or {})}
+    gone = {f for k in gens for f in (k.get("out") or {})} | {k[5:] for k in (cur.get("seen") or {}) if k.startswith("cand:")}
     out = []
     for g in slate:
-        waiting = cand.get(g, [])
+        waiting = [p for p in cand.get(g, []) if p["f"] not in added and p["f"] not in gone and not excluded(p["f"])]
         if len(waiting) < minimum:
             views = collections.Counter(p.get("vg", "unsorted") for p in waiting)
             out.append((g, len(waiting), dict(views)))
