@@ -2973,8 +2973,11 @@ function cropEditor(p) {
       height: (c[3] - c[1]) * 100 + '%'
     });
   };
+  // On a touch screen the photo keeps EDGE px from each side (Pierre, 2026-11-02: a crop dragged to the screen's edge
+  // set off the phone's back / forward swipe, and the page changed).
+  const EDGE = matchMedia('(pointer: coarse)').matches ? 40 : 12;
   const fit = () => {
-    const W = innerWidth - 24,
+    const W = innerWidth - 2 * EDGE,
       H = innerHeight - 110,
       r = im.naturalWidth / im.naturalHeight || 1.33,
       w = Math.min(W, H * r);
@@ -3770,6 +3773,14 @@ const bindCol = (st, save) =>
       })
   );
 let COVS = Object.assign({col: '', dir: 'asc'}, store.get('imr-admin-covsort', {}));
+// The + column's sources, short label (cell) and long one (tooltip, legend); IMR and the book left out.
+const CAND_SRC = [
+  ['dauin', 'Dauin', 'iNat Dauin'],
+  ['ph', 'PH', 'iNat Philippines'],
+  ['own', 'Own', 'your photos'],
+  ['world', 'Other', 'iNat elsewhere'],
+  ['imr', 'IMR', 'IMR lecture']
+];
 function renderCov() {
   status();
   const R = Object.keys(DATA.gen)
@@ -3784,7 +3795,11 @@ function renderCov() {
         min: Math.min(...live.map(c => c.obs)),
         max: Math.max(...live.map(c => c.obs)),
         all: live.flatMap(c => c.L),
-        cand: pending(n).filter(p => !p.cf).length
+        // Candidates by source (Pierre, 2026-11-02: Dauin, Philippines and his own at least; the book never).
+        cand: pending(n).filter(p => !p.cf).length,
+        cby: pending(n)
+          .filter(p => !p.cf)
+          .reduce((o, p) => ((o[origin(p)] = (o[origin(p)] || 0) + 1), o), {})
       };
     });
   // Lecture order = the app's Genera list: IMR lecture group (★ genera in the group of their look-alikes, as shownGroup
@@ -3834,13 +3849,19 @@ function renderCov() {
       <dt>colour</dt><dd>colonies: <span class="cov-c cov-0">0</span> none · <span class="cov-c cov-1">1–2</span> thin · <span class="cov-c cov-2">3–4</span> · <span class="cov-c cov-3">5–7</span> · <span class="cov-c cov-4">8+</span></dd>
       <dt>excl.</dt><dd>photos of this view left out of the games, and why: <b>multi</b> several corals in the photo · <b>no form</b> growth form not visible (Colony view) · <b>sheet</b> shown on the genus sheet only · <b>CF</b> Coral Finder book (poor quality, rights) · <b>removed</b> taken out by you</dd>
       <dt>–</dt><dd>no such view for this genus (2-level genera have no Close-up)</dd>
-      <dt>+</dt><dd>candidates waiting in Candidates, iNaturalist only (Coral Finder book photos not counted)</dd>
+      <dt>+</dt><dd>candidates waiting in Candidates, by source: <b>Dauin</b> iNaturalist at Dauin · <b>PH</b> iNaturalist elsewhere in the Philippines · <b>Own</b> your photos · <b>Other</b> iNaturalist elsewhere (Coral Finder book photos never counted)</dd>
       <dt>thin · full · at 8+</dt><dd>cells with 0–2 colonies · at the cap of ${CELL_MAX} colonies · with 8 or more</dd>
       <dt>Sources</dt><dd>all photos of the genus by origin (hover a segment)</dd></dl></details>
-    <table class="cov-t"><thead><tr><th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates waiting in Candidates (iNaturalist; Coral Finder book photos not counted)">+</th></tr></thead>
+    <table class="cov-t"><thead><tr><th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates waiting in Candidates, by source (Coral Finder book photos not counted)">+</th></tr></thead>
     <tbody>${R.map(
       r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
-      <td class="cov-src"><span class="cov-bar">${bar(r)}</span><small>${r.all.length}</small></td><td class="cov-cand">${r.cand ? `+${r.cand}` : ''}</td></tr>`
+      <td class="cov-src"><span class="cov-bar">${bar(r)}</span><small>${r.all.length}</small></td><td class="cov-cand" title="${r.cand} candidate${r.cand === 1 ? '' : 's'}${CAND_SRC.filter(
+        ([k]) => r.cby[k]
+      )
+        .map(([k, , l]) => ` · ${l} ${r.cby[k]}`)
+        .join('')}">${CAND_SRC.filter(([k]) => r.cby[k])
+        .map(([k, s]) => `<span class="o-${k}">${s} ${r.cby[k]}</span>`)
+        .join('')}</td></tr>`
     ).join('')}</tbody></table></section>`;
   $v.querySelectorAll('[data-co]').forEach(
     b =>
@@ -3937,11 +3958,17 @@ function renderFcov() {
     ])}
       <span class="cov-key" aria-label="Good colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 good colonies">${thin} thin</b></div>
-    <table class="cov-t fcov-t"><thead><tr><th></th>${colTh(FCOV)}<th class="fcov-fh">Forms</th><th class="fcov-sh">Species</th><th title="Candidates waiting in Candidates (iNaturalist; Coral Finder book photos not counted)">+</th></tr></thead>
+    <table class="cov-t fcov-t"><thead><tr><th></th>${colTh(FCOV)}<th class="fcov-fh">Forms</th><th class="fcov-sh">Species</th><th title="Candidates waiting in Candidates, by source (Coral Finder book photos not counted)">+</th></tr></thead>
     <tbody>${R.map(
       r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${r.x ? ' <small class="fcov-x">not IMR</small>' : ''}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="fcov-f">${r.forms.map(f => `<span class="adm-why" title="${esc(fName(f))}">${FABBR[f]}</span>`).join(' ') || '<span title="No growth form set on these photos yet">–</span>'}</td>
-      <td class="fcov-s" title="${esc(r.sp.join(', '))}">${r.sp.length || '–'}</td><td class="cov-cand">${r.cand ? `+${r.cand}` : ''}</td></tr>`
+      <td class="fcov-s" title="${esc(r.sp.join(', '))}">${r.sp.length || '–'}</td><td class="cov-cand" title="${r.cand} candidate${r.cand === 1 ? '' : 's'}${CAND_SRC.filter(
+        ([k]) => r.cby[k]
+      )
+        .map(([k, , l]) => ` · ${l} ${r.cby[k]}`)
+        .join('')}">${CAND_SRC.filter(([k]) => r.cby[k])
+        .map(([k, s]) => `<span class="o-${k}">${s} ${r.cby[k]}</span>`)
+        .join('')}</td></tr>`
     ).join('')}</tbody></table></section>`;
   bindCol(FCOV, () => store.set('imr-admin-fcov', FCOV));
   $v.querySelectorAll('[data-fc]').forEach(

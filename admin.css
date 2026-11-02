@@ -2070,11 +2070,21 @@ td.cov-c .cov-off {
   border-left: 1px solid var(--surface);
 }
 .cov-cand {
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   color: var(--accent);
   font-weight: 600;
   text-align: right;
   white-space: nowrap;
+}
+/* One line per source in Game coverage's + column, in the source's colour (as the photo tags). */
+.cov-cand span {
+  display: block;
+  margin: 2px 0;
+  padding: 0 6px;
+  border-radius: var(--pill);
+  background: var(--o);
+  color: var(--band-ink);
+  text-align: center;
 }
 @media (max-width: 599px) {
   .cov-t {
