@@ -280,6 +280,7 @@
     Object.values(S.users).forEach(u => {
       by[lc(u.name)] = {
         name: u.name,
+        board: u.board ?? 1,
         id: aid(u.name),
         updated: u.updated,
         learned: u.learned,
@@ -340,6 +341,13 @@
     return {ok: true, users: Object.values(by), removed: S.removed.slice().reverse()};
   }
   function users(p) {
+    // Sheet v20: hidden from the leaderboard by an admin (-1) or shown (1).
+    if (p.userBoard) {
+      const u = S.users[lc(p.userBoard)];
+      if (!u) return {ok: false, error: 'user'};
+      u.board = p.hide ? -1 : 1;
+      return {ok: true, board: u.board};
+    }
     if (p.userData) {
       const u = S.users[lc(p.userData)];
       return u ? {ok: true, rev: u.rev, data: JSON.parse(JSON.stringify(u.data))} : {ok: false, error: 'user'};
@@ -415,7 +423,7 @@
       if (p.readEvents) return ok({ok: true, rows: S.events.map(r => r.slice())});
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
-      if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete) return ok(users(p));
+      if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard) return ok(users(p));
       return ok({ok: false, error: 'demo'});
     }
     if (/^https?:/.test(url) && !url.startsWith(location.origin)) return Promise.reject(new TypeError('Blocked in demo mode'));

@@ -107,6 +107,15 @@ const server = http.createServer((req, res) => {
     await p.click('[data-usort="name"]');
     await settle();
     if ((await firstName()) !== 'Test Demo') fails.push(`${w}px Players: reversed sort by name, first is ${await firstName()}`);
+    // Leaderboard (sheet v20): Hide marks the player hidden, Show puts them back.
+    await p.click('[data-uopen="Dio Demo"]');
+    await settle();
+    await p.click('[data-uboard="Dio Demo"]');
+    await settle();
+    if (!/Hidden from the leaderboard/.test(await text())) fails.push(`${w}px Players: Hide did not hide Dio from the leaderboard`);
+    await p.click('[data-uboard="Dio Demo"]');
+    await settle();
+    if (!/On the leaderboard/.test(await text())) fails.push(`${w}px Players: Show did not put Dio back`);
     await p.click('[data-uopen="mara demo2"]');
     await settle();
     await p.selectOption('[data-umerge="mara demo2"]', 'Mara Demo');

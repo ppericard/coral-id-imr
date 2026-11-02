@@ -4176,6 +4176,7 @@ function renderUsers() {
         }</section>
       <section class="adm-scard"><h3>Manage</h3>
         <p><label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label></p>
+        <p>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></p>
         <p><button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete</button></p></section></div></td></tr>`;
   // Answers without a name: devices that never signed in (~anon) and deleted accounts, by anonymous id.
   const named = new Set(U.map(u => u.id).filter(Boolean)),
@@ -4194,7 +4195,7 @@ function renderUsers() {
     ans = U.reduce((t, u) => t + u.answers, 0);
   const cell = (k, u) =>
     ({
-      name: `<b>${esc(u.name)}</b>${u.id && u.id === MEID ? ' <small>you</small>' : ''}`,
+      name: `<b>${esc(u.name)}</b>${u.id && u.id === MEID ? ' <small>you</small>' : ''}${u.board === -1 ? ' <small title="Hidden from the leaderboard">hidden</small>' : ''}`,
       lv: u.lv == null ? '–' : sgn(u.lv),
       answers: u.answers,
       right: pct(u.right, u.answers),
@@ -4277,6 +4278,24 @@ function bindUsers() {
       render();
     } else toast(j && j.error === 'stale' ? 'The player just synced: try again.' : `Not done (${(j && j.error) || 'offline'}).`);
   };
+  // Leaderboard (sheet v20, Pierre 2026-11-02: a test account must not show there): hidden by an admin, which the
+  // player's own syncs never undo; Show puts them back. Only the leaderboard changes: answers, progress, stats stay.
+  $v.querySelectorAll('[data-uboard]').forEach(
+    b =>
+      (b.onclick = () => {
+        const name = b.dataset.uboard,
+          hide = b.dataset.hide === '1';
+        userPost({userBoard: name, hide})
+          .then(j =>
+            j && j.ok
+              ? (((USERS.users.find(x => x.name === name) || {}).board = j.board),
+                toast(hide ? `"${name}" hidden from the leaderboard.` : `"${name}" back on the leaderboard.`),
+                render())
+              : toast(`Not done (${(j && j.error) || 'offline'}${j && j.error === 'input' ? ': needs the sheet script v20' : ''}).`)
+          )
+          .catch(() => toast('Not done (offline).'));
+      })
+  );
   $v.querySelectorAll('[data-umerge]').forEach(
     s =>
       (s.onchange = () => {
