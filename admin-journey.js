@@ -183,6 +183,11 @@ function renderJourney(name) {
     last50 = R.slice(-50),
     sLen = J.S.map(s => s.length).sort((a, b) => a - b),
     medS = sLen[Math.floor(sLen.length / 2)],
+    // Seconds to answer and photo enlarged (sheet v23; null before): logged to be analysed later, shown here only.
+    RT = R.map(r => r[12])
+      .filter(x => typeof x === 'number')
+      .sort((a, b) => a - b),
+    ZM = R.map(r => r[13]).filter(x => x === 0 || x === 1),
     dayKeys = Object.keys(J.perDay)
       .map(Number)
       .sort((a, b) => a - b);
@@ -424,7 +429,9 @@ function renderJourney(name) {
       ['Genera met', `${J.marks.length}/${total}`],
       ['Learned', `${u.learned}/${u.total || total}`],
       ['Days', dayKeys.length],
-      ['Sessions', J.S.length]
+      ['Sessions', J.S.length],
+      ...(RT.length ? [['Median time', RT[Math.floor(RT.length / 2)].toFixed(1) + ' s']] : []),
+      ...(ZM.length ? [['Enlarged', pct(ZM.filter(Boolean).length, ZM.length)]] : [])
     ]) +
     `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${daysSec}</div>`;
   bindJReload();

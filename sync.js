@@ -74,7 +74,9 @@ function mergeSaved(j) {
   // A send whose reply was lost but which did reach the sheet: the saved record is exactly what was sent.
   if (SYNC.pending && d['imr-coral-progress'] === SYNC.pending) SYNC.base = R;
   delete SYNC.pending;
-  if (lr > rr) return;
+  if (lr > rr) return; // the sheet's hold too counts from its older reset: this device's stays
+  // The opening hold from every answer the sheet has (v23, model.js holdSync), with this device's unconfirmed ones added.
+  const holdIn = () => typeof holdSync === 'function' && holdSync(j.hold, SYNC.log, j.holdIds);
   if (rr > lr) {
     introReset();
     introIn();
@@ -82,11 +84,13 @@ function mergeSaved(j) {
     SYNC.base = copy(R);
     store.set('imr-coral-sync', SYNC);
     store.set('imr-coral-reset', rr);
+    holdIn(); // after the reset time is in: only the answers since then count
     store.set('imr-coral-progress', P);
     prog();
     return;
   }
   introIn();
+  holdIn();
   // In place: other code holds P by name only, but keep the same object anyway.
   const M = mergeProgress(SYNC.base || {}, P, R);
   Object.keys(P).forEach(g => delete P[g]);
@@ -180,6 +184,9 @@ function syncOnce(tries = 0) {
           const done = new Set(log.map(x => x.id));
           me.log = (me.log || []).filter(x => !done.has(x.id));
         }
+        // The sheet's hold over every answer now logged, in time order (v23; Codex review #370), plus any answer given
+        // while this send was on its way.
+        if (typeof holdSync === 'function') holdSync(j.hold, me.log, j.holdIds);
         if (me.rev === rev) delete me.dirty;
         store.set('imr-coral-sync', me);
       } else if (j && SYNC === me) {
