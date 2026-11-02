@@ -740,39 +740,6 @@ function planPhoto() {
       return ['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)];
     }
   }
-  // A look-alike duel slipped into the photo quiz (Pierre, 2026-11-02, "a little duel back in the quiz, automatically";
-  // the Duel tab had 13 answers in all): AUTO_DUEL.P of the questions from AUTO_DUEL.FROM answers on, AUTO_DUEL.GAP
-  // questions at least after the last one and AUTO_DUEL.AGAIN after an "Again", on a pair of genera both met and ready, never the same pair within
-  // AUTO_DUEL.SAME answers; picked as the Duel tab picks (own mix-ups first). Logged "quiz|d|k2" (counted apart).
-  const a = answersSoFar();
-  // The count went back (progress reset): the spacing starts over.
-  if (a < twoAt) twoAt = -Infinity;
-  if (a < againAt) againAt = -Infinity;
-  duelLog = duelLog.filter(([at]) => at <= a);
-  // Never while an "Again" is due (it comes next): the duel would sit right before it.
-  if (
-    !rematch &&
-    a >= AUTO_DUEL.FROM &&
-    a - twoAt >= AUTO_DUEL.GAP &&
-    a - againAt >= AUTO_DUEL.AGAIN &&
-    Math.random() < AUTO_DUEL.P &&
-    !introStart(list).length
-  ) {
-    const key = p => p.slice().sort().join('|'),
-      recent = new Set(duelLog.filter(([at]) => a - at < AUTO_DUEL.SAME).map(([, k]) => k)),
-      pair = duelPick(list, p => p.every(introReady) && !recent.has(key(p)));
-    if (pair) {
-      twoAt = a;
-      duelLog = [...duelLog.filter(([at]) => a - at < AUTO_DUEL.SAME), [a, key(pair)]];
-      const t = pick(pair);
-      return Object.assign(
-        ['quiz', t, shuffle(pair.slice()), `Look-alikes: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)],
-        {
-          auto: 1
-        }
-      );
-    }
-  }
   // The genus asked is one already met (INTRO): ready, or one of the cards shown with this question when they are the
   // first ones. A draw that falls on a genus not met yet (the progressive path opening one, at most one card every
   // INTRO.EVERY answers) shows its card instead, and the question is about another genus.
@@ -787,6 +754,42 @@ function planPhoto() {
   if (met.length && !known(t)) {
     cards = [t];
     t = nextTarget(met);
+  }
+  // Not when the path opens a genus (a card) this question: opening comes first (Pierre, 2026-11-02).
+  // A look-alike duel slipped into the photo quiz (Pierre, 2026-11-02, "a little duel back in the quiz, automatically";
+  // the Duel tab had 13 answers in all): AUTO_DUEL.P of the questions from AUTO_DUEL.FROM answers on, AUTO_DUEL.GAP
+  // questions at least after the last one and AUTO_DUEL.AGAIN after an "Again", on a pair of genera both met and ready, never the same pair within
+  // AUTO_DUEL.SAME answers; picked as the Duel tab picks (own mix-ups first). Logged "quiz|d|k2" (counted apart).
+  const a = answersSoFar();
+  // The count went back (progress reset): the spacing starts over.
+  if (a < twoAt) twoAt = -Infinity;
+  if (a < againAt) againAt = -Infinity;
+  duelLog = duelLog.filter(([at]) => at <= a);
+  // Never while an "Again" is due (it comes next): the duel would sit right before it.
+  if (
+    !cards.length &&
+    !rematch &&
+    a >= AUTO_DUEL.FROM &&
+    a - twoAt >= AUTO_DUEL.GAP &&
+    a - againAt >= AUTO_DUEL.AGAIN &&
+    Math.random() < AUTO_DUEL.P
+  ) {
+    const key = p => p.slice().sort().join('|'),
+      recent = new Set(duelLog.filter(([at]) => a - at < AUTO_DUEL.SAME).map(([, k]) => k)),
+      pair = duelPick(list, p => p.every(introReady) && !recent.has(key(p)));
+    if (pair) {
+      twoAt = a;
+      duelLog = [...duelLog.filter(([at]) => a - at < AUTO_DUEL.SAME), [a, key(pair)]];
+      const t = pick(pair);
+      last = t; // the genus asked is the duel's, not the one drawn above for the card decision
+      lastQs = [...lastQs.slice(0, -1), t];
+      return Object.assign(
+        ['quiz', t, shuffle(pair.slice()), `Look-alikes: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)],
+        {
+          auto: 1
+        }
+      );
+    }
   }
   const ex = examReady(t) && examSet(t),
     traps = ex ? 3 : trapsFor(t),
