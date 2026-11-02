@@ -385,16 +385,17 @@ test('v18: a device that never signed in rates the photos once its answers are c
     at = i => new Date(Date.UTC(2026, 10, 1, 0, 0, i)).toISOString(),
     L = Array.from({length: 12}, (_, i) => ans('w' + i, {ph: 'pic-' + i, t: at(i)}));
   s.post({anon: 'device0001', anonAnswers: L.slice(0, 9)});
-  assert.deepStrictEqual(s.get({stats: '1'}).photos['pic-0'], [0, 0, 0], 'fewer than TRUST.N answers: no photo moved');
+  assert.deepStrictEqual(s.get({stats: '1'}).photos['pic-0'], [0, 0, 0, 0], 'fewer than TRUST.N answers: no photo moved');
   s.post({anon: 'device0001', anonAnswers: L.slice(9)});
   for (const k of Object.keys(s.cache)) delete s.cache[k]; // stats are cached 10 minutes
   const p = s.get({stats: '1'}).photos['pic-11'];
   assert.ok(p && p[1] > 0 && p[0] < 0, 'without signing in, a real player rates the photos: ' + JSON.stringify(p));
+  assert.strictEqual(p[3], 1, 'plain count beside the weighed one (v18): answered once, weighs under 1');
   // Random clicks (wrong every time here) stay out, signed in or not.
   const B = Array.from({length: 12}, (_, i) => ans('b' + i, {ph: 'bot-' + i, ok: 0, a: 'Porites', t: at(20 + i)}));
   s.post({anon: 'clicker001', anonAnswers: B});
   for (const k of Object.keys(s.cache)) delete s.cache[k];
-  assert.deepStrictEqual(s.get({stats: '1'}).photos['bot-0'], [0, 0, 0], 'answers at chance move nothing');
+  assert.deepStrictEqual(s.get({stats: '1'}).photos['bot-0'], [0, 0, 0, 0], 'answers at chance move nothing');
 });
 
 test('v17: one player whatever the capitalisation of the name (trust and history per photo)', () => {

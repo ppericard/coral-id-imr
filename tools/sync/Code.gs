@@ -244,7 +244,7 @@ function stats_(){
     if (trust[who]) String(r[11] || '').split(/\s+/).filter(x => x && x !== sg).forEach(x => { const k = sg < x ? sg + '|' + x : x + '|' + sg, c = out.conf[k] = out.conf[k] || [0, 0]; c[0]++; if (!ok && sa === x) c[1]++; });
     if (!fs.length) return;
     const g = guess_(mode), ra = R[who] = R[who] || [PLAYER0, 0];
-    const ph = fs.map(f => P[f] = P[f] || [0, 0, 0]), b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);  // one view alone is harder (app.js PICKD.SINGLE)
+    const ph = fs.map(f => P[f] = P[f] || [0, 0, 0, 0]), b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);  // one view alone is harder (app.js PICKD.SINGLE)
     const e = g + (1 - g) * sig(ra[0] - b), d = ok - e, n = ra[1];
     // The photos move on trusted players' answers, weighed by their experience, against their own history with each photo.
     const hs = fs.map(f => H[who + '|' + f] = H[who + '|' + f] || [0, 0]);
@@ -252,12 +252,14 @@ function stats_(){
       const fam = hs.reduce((t, h) => t + (!h[0] ? PHOTO_W.NEW : h[1] >= 2 ? PHOTO_W.KNOWN : 0), 0) / hs.length;
       const dp = ok - (g + (1 - g) * sig(ra[0] - b - fam)), w = n / (n + PHOTO_W.N);
       // Counts are weighed too: they damp later steps and tell the app how sure the rating is (photoDiff).
-      ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * dp * w; p[2] += w; p[1] += ok * w; });
+      ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * dp * w; p[2] += w; p[1] += ok * w; p[3]++; });
     }
     ra[0] += 0.6 / (1 + n / 40) * d; ra[1]++;
     hs.forEach(h => { h[0]++; h[1] += ok; });
   });
-  Object.keys(P).forEach(f => out.photos[f] = [Math.round(P[f][0] * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10]);
+  // [difficulty, weighed answers, weighed right, answers]: the 4th (v18) is the plain count of the answers that rated the
+  // photo, for the admin's filters (Pierre, 2026-11-02: a photo answered once weighs under 1 and "≥1" hid it).
+  Object.keys(P).forEach(f => out.photos[f] = [Math.round(P[f][0] * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]]);
   const salt = anonSalt_();
   Object.keys(R).forEach(n => out.ras[aid_(n, salt)] = [Math.round(R[n][0] * 100) / 100, R[n][1]]);
   try { cache.put('stats11', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time

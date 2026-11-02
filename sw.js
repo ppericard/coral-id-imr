@@ -13,7 +13,7 @@ const SHELL = [
   'flag.js?v=9',
   'quality.json?v=3',
   'picks.json?v=1',
-  'data.json?v=30',
+  'data.json?v=31',
   'forms.json?v=7',
   'icon.svg',
   'fonts/source-sans-3-normal.woff2',

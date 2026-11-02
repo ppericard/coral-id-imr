@@ -3983,7 +3983,7 @@ const draftCand = () =>
         .catch(() => ({}))
     : Promise.resolve({});
 Promise.all([
-  getR('data.json?v=30').then(okJson),
+  getR('data.json?v=31').then(okJson),
   curation(),
   forms(),
   json('quality.json?v=3'),

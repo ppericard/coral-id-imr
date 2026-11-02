@@ -216,7 +216,7 @@
         const ok = r[4] ? 1 : 0,
           g = guessOf(r[5]),
           ra = (R[r[0]] = R[r[0]] || [PLAYER0, 0]);
-        const ph = fs.map(f => (P[f] = P[f] || [0, 0, 0])),
+        const ph = fs.map(f => (P[f] = P[f] || [0, 0, 0, 0])),
           b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
         const d = ok - (g + (1 - g) * sig(ra[0] - b)),
           n = ra[1];
@@ -229,6 +229,7 @@
             p[0] -= (0.8 / (1 + p[2] / 10) / ph.length) * dp * w;
             p[2] += w;
             p[1] += ok * w;
+            p[3]++;
           });
         }
         ra[0] += (0.6 / (1 + n / 40)) * d;
@@ -239,7 +240,9 @@
         });
       });
     const out = {};
-    Object.keys(P).forEach(f => (out[f] = [Math.round(P[f][0] * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10]));
+    Object.keys(P).forEach(
+      f => (out[f] = [Math.round(P[f][0] * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]])
+    );
     return out;
   }
 

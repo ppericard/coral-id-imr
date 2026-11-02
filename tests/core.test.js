@@ -249,6 +249,7 @@ test('photo ratings and confusions count only players clearly above chance, sign
     anonBot = Array.from({length: 12}, (_, i) => R('Zbot', 300 + i, 0, 'x-2', 1));
   assert.deepStrictEqual(trustOf([...good, ...anon, ...anonBot]), {Ana: true, Zed: true, Zbot: false});
   assert.ok(eloOf([...good, ...anon])['x-1'][1] > 0, 'a real anonymous player rates the photos');
+  assert.strictEqual(eloOf([...good, ...anon])['x-1'][3], 12, 'plain count of the answers that rated it, beside the weighed one');
   assert.strictEqual(eloOf([...good, ...anonBot])['x-2'][1], 0, 'an anonymous player at chance does not');
   assert.ok(Object.keys(confusionOf(anon).pair).length > 0, 'and counts in the confusions');
   assert.deepStrictEqual(confusionOf(anonBot).pair, {}, 'not at chance');

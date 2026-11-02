@@ -121,7 +121,8 @@ real learners, not bots, random clicks or test runs (17 anonymous "players" turn
   with at least 10 answers and a right rate clearly above chance (one-sided z ≥
   1.645 against each question's guess rate), judged on the whole history at each recompute: a beginner who gets out of
   chance then counts with all their answers. Every answer still moves the player's own level.
-- **How much an answer weighs** (`PHOTO_W.N`): n / (n + 30) after n answers of the player (Glicko's idea: an uncertain
+- **How much an answer weighs** (`PHOTO_W.N`; the sheet also returns the plain count of the answers, v18, which the
+  admin's filters use): n / (n + 30) after n answers of the player (Glicko's idea: an uncertain
   player moves the items little). A beginner's random first answers weigh little, their informed later ones more.
 - **Repeats** (`PHOTO_W.NEW`, `KNOWN`): every answer counts, against the player's own history with the photo, as in
   Duolingo's half-life regression and PFA: a photo new to the player is expected 0.5 harder, one already right twice 1
