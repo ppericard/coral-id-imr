@@ -100,7 +100,9 @@
         "porites-cand-269730424": "wide",
         "porites-cand-606659662": "medium",
         "porites-cand-461415515": "wide",
-        "porites-cand-48874159": "medium"
+        "porites-cand-48874159": "medium",
+        "porites-cand-745675660": "macro",
+        "porites-cand-745675693": "medium"
       }
     },
     "Tubastraea": {
@@ -168,7 +170,11 @@
         "lobophyllia-cand-311685350": "wide",
         "lobophyllia-cand-588674234": "wide",
         "lobophyllia-cand-344579081": "wide",
-        "lobophyllia-cand-588673429": "wide"
+        "lobophyllia-cand-588673429": "wide",
+        "lobophyllia-cand-746237038": "macro",
+        "lobophyllia-cand-745206174": "macro",
+        "lobophyllia-cand-745206158": "macro",
+        "lobophyllia-cand-746237033": "wide"
       }
     },
     "Pavona": {
@@ -217,7 +223,9 @@
         "goniopora-cand-412013633": "wide",
         "goniopora-cand-620837643": "macro",
         "goniopora-cand-606656925": "medium",
-        "goniopora-cand-626565085": "medium"
+        "goniopora-cand-626565085": "medium",
+        "goniopora-cand-745205522": "macro",
+        "goniopora-cand-745205699": "wide"
       }
     },
     "Plerogyra": {
@@ -227,7 +235,8 @@
         "plerogyra-cand-339695851": "macro",
         "plerogyra-cand-583861335": "wide",
         "plerogyra-cand-752350462": "macro",
-        "plerogyra-cand-412025177": "wide"
+        "plerogyra-cand-412025177": "wide",
+        "plerogyra-cand-745206682": "wide"
       }
     },
     "Montipora": {
@@ -329,7 +338,8 @@
         "dipsastraea-cand-606648842": "wide",
         "dipsastraea-cand-606648845": "medium",
         "dipsastraea-cand-269396734": "wide",
-        "dipsastraea-cand-606652630": "medium"
+        "dipsastraea-cand-606652630": "medium",
+        "dipsastraea-cand-746238012": "wide"
       }
     },
     "Astrea": {
@@ -441,7 +451,9 @@
         "oxypora-cand-269726454": "medium",
         "oxypora-cand-269517395": "wide",
         "oxypora-cand-472830245": "medium",
-        "oxypora-cand-472830239": "wide"
+        "oxypora-cand-472830239": "wide",
+        "oxypora-cand-552620356": "wide",
+        "oxypora-cand-552620439": "macro"
       }
     },
     "Cynarina": {
@@ -520,6 +532,7 @@
     "platygyra-cf-18-01": 2,
     "plerogyra-cand-339695851": 2,
     "plerogyra-cand-412025177": 2,
+    "plerogyra-cand-745206682": 2,
     "pocillopora-cand-311286514": 2,
     "pocillopora-medium-306893648": 2,
     "pocillopora-wide-374959119": 1,
