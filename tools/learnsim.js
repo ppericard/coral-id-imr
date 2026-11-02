@@ -170,7 +170,16 @@ function play(cfg) {
   INTROS = {};
   HOLDS = 0;
   warmLeft = 0;
+  // The planner's history too: start-up's own planNext drew with unseeded randomness and left recent genera damped
+  // (weight x 0.1), so the same seed gave different runs (Codex review #365).
+  dropPlans();
   NEXTQ = null;
+  SHOWNQ = null;
+  last = null;
+  lastQs = [];
+  rematch = null;
+  twoAt = againAt = -Infinity;
+  duelLog = [];
   store.set(INTRO.OFFER.KEY, {open: 0});
   const q0 = question;
   question = (...a) => ((window.__q = a), q0(...a));
@@ -184,8 +193,10 @@ function play(cfg) {
     nAgain = 0,
     nCards = 0;
   for (let i = 0; i < N; i++) {
-    NEXTQ = null;
+    // Through the real planner (Codex review #365): the questions planned ahead stay after a right answer, as in the app.
+    // Its own top-ups are timers, which never fire inside this synchronous loop, so they are called here instead.
     quizPhoto();
+    planNext('quiz');
     const q = SHOWNQ;
     // The first-meeting cards, read through: each teaches like one right answer.
     (q.intro || []).forEach(g => (teach(g, prof.rate), nCards++));
@@ -211,6 +222,7 @@ function play(cfg) {
     }
     const good = pick === t;
     document.querySelector(`#view [data-c="${CSS.escape(pick)}"]`).click();
+    planNext('quiz'); // answer()'s top-up after the feedback
     teach(t, prof.rate * (good ? 1 : L.MISS));
     if (!good) teach(pick, prof.rate * L.PICKED);
     blk.n++;

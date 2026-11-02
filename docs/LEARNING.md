@@ -359,7 +359,7 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   are 1..N, the app's `Math.random` and the learner's own generator both seeded from it, so a run is reproducible and
   the same seeds before and after a change give paired comparisons. `--stats` loads a `?stats=1` answer of the sync
   sheet as the photo ratings (default: none, Pierre's Easy/Medium/Hard sets, as in CI). `--out` writes every run and
-  the summary as JSON. 30 seeds × 4 profiles × 300 questions: about 4 minutes on 4 cores.
+  the summary as JSON. 30 seeds × 4 profiles × 300 questions: about 9 minutes on 4 cores (with the question planner running between answers, as in the app: Codex review #365).
 - **Profiles**: beginner (knows every genus at 2%, learns 0.12 of the gap per exposure), lecture-level RA (the profiles
   test's RA: 55% on 2 genera in 5, 10% on the others, 0.12), strong RA (85% on 3 genera in 5, 10% on the others, 0.12),
   expert (93%, 0.05). The open-all offer is declined (the path is what is measured).
@@ -392,20 +392,20 @@ brackets). 120 runs in 237 s on 4 cores.
 
 | Profile, question | know39 | knowMet | \|θ − logit k\| | θ − logit k | genScore − know | met | learned | right % | look-alike | ref ≥ 0.9 | entered exam | ref at entry | ref when learned |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| beginner 100 | 0.27±0.02 | 0.60±0.04 | 1.28±0.22 | −0.77±0.34 | −0.23±0.05 | 16.7±2.0 | 0 | 81±4 | 0.66±0.01 | 0 | 0.1±0.3 | 0.55 (2) | - |
-| beginner 300 | 0.54±0.04 | 0.73±0.04 | 1.67±0.17 | −1.32±0.28 | −0.22±0.05 | 28.7±3.4 | 0 | 84±3 | 0.81±0.02 | 0.3±0.5 | 0.7±0.8 | 0.64±0.10 (15) | - |
-| lecture RA 100 | 0.48±0.02 | 0.66±0.04 | 1.14±0.20 | −0.76±0.35 | −0.29±0.05 | 20.9±3.4 | 0 | 82±4 | 0.78±0.01 | 0 | 0.1±0.3 | 0.62±0.10 (4) | - |
-| lecture RA 300 | 0.72±0.02 | 0.74±0.02 | 1.38±0.15 | −1.10±0.23 | −0.22±0.04 | 37.2±2.7 | 0 | 86±3 | 0.89±0.01 | 0.4±0.7 | 1.3±1.0 | 0.66±0.07 (24) | - |
-| strong RA 100 | 0.70±0.02 | 0.77±0.03 | 1.48±0.16 | −1.07±0.33 | −0.33±0.08 | 25.1±3.8 | 0 | 87±5 | 0.89±0.01 | 0.7±0.8 | 0.4±0.6 | 0.88±0.02 (10) | - |
-| strong RA 300 | 0.85±0.01 | 0.85±0.01 | 1.66±0.14 | −1.53±0.18 | −0.18±0.06 | 39.0±0.0 | 0.2±0.4 | 89±3 | 0.95±0.00 | 5.4±1.7 | 4.5±2.7 | 0.85±0.04 (29) | 0.93±0.02 (6) |
-| expert 100 | 0.94±0.00 | 0.94±0.00 | 1.41±0.11 | −1.41±0.11 | −0.26±0.05 | 29.4±2.5 | 0 | 96±3 | 0.98±0.00 | 1.5±1.0 | 2.5±1.3 | 0.89±0.01 (28) | - |
-| expert 300 | 0.95±0.00 | 0.95±0.00 | 1.37±0.10 | −1.37±0.10 | −0.03±0.01 | 39.0±0.0 | 3.8±1.9 | 96±2 | 0.98±0.00 | 12.2±1.8 | 23.4±2.4 | 0.89±0.00 (30) | 0.91±0.00 (28) |
+| beginner 100 | 0.25±0.01 | 0.62±0.04 | 1.38±0.21 | −0.82±0.42 | −0.22±0.07 | 15.2±1.6 | 0 | 83±5 | 0.65±0.01 | 0 | 0 | - | - |
+| beginner 300 | 0.54±0.04 | 0.72±0.05 | 1.62±0.21 | −1.27±0.33 | −0.22±0.05 | 29.0±3.6 | 0 | 83±4 | 0.81±0.02 | 0.5±0.6 | 0.7±0.8 | 0.67±0.09 (17) | - |
+| lecture RA 100 | 0.47±0.02 | 0.67±0.04 | 1.15±0.17 | −0.73±0.34 | −0.26±0.08 | 18.8±2.4 | 0 | 83±6 | 0.77±0.01 | 0 | 0.3±0.6 | 0.68±0.03 (8) | - |
+| lecture RA 300 | 0.71±0.03 | 0.75±0.02 | 1.41±0.21 | −1.15±0.24 | −0.23±0.05 | 35.7±3.9 | 0.2±0.4 | 85±3 | 0.89±0.01 | 0.7±1.1 | 1.8±1.4 | 0.69±0.06 (26) | 0.82±0.04 (5) |
+| strong RA 100 | 0.68±0.02 | 0.78±0.03 | 1.49±0.14 | −1.02±0.25 | −0.29±0.08 | 21.7±3.0 | 0 | 84±4 | 0.88±0.01 | 1.3±1.0 | 0.9±0.9 | 0.80±0.12 (18) | - |
+| strong RA 300 | 0.85±0.01 | 0.85±0.02 | 1.59±0.16 | −1.42±0.23 | −0.16±0.06 | 38.8±1.3 | 0.6±0.8 | 89±3 | 0.95±0.01 | 5.8±1.4 | 5.5±2.4 | 0.84±0.05 (30) | 0.93±0.05 (15) |
+| expert 100 | 0.94±0.00 | 0.95±0.00 | 1.39±0.13 | −1.39±0.13 | −0.19±0.03 | 21.1±1.5 | 0.1±0.3 | 97±3 | 0.98±0.00 | 3.5±1.1 | 4.7±1.8 | 0.89±0.00 (30) | 0.91±0.00 (2) |
+| expert 300 | 0.95±0.00 | 0.95±0.00 | 1.30±0.10 | −1.30±0.10 | −0.03±0.02 | 39.0±0.0 | 6.1±2.5 | 96±2 | 0.98±0.00 | 12.6±1.8 | 23.4±2.5 | 0.89±0.00 (30) | 0.91±0.00 (30) |
 
 What it says, on this learner: the Elo ability under-estimates every profile by 0.8 to 1.5 logits and the gap does not
 close in 300 questions (so the photos stay easy: an expert answers 96% right, not 80%); the progress bar under-claims
 by about 0.2 for the learners; a beginner's or lecture RA's genus enters the mastery exam (BKT 95%) while its true
-success on a hard reference question is only about 0.6, an expert's about 0.9 (the review's item 2 asks for ≥ 0.85);
-the exam then keeps the genera learned at 0.91-0.93 true reference success.
+success on a hard reference question is only about 0.7, an expert's about 0.9 (the review's item 2 asks for ≥ 0.85);
+the exam then keeps the genera learned at 0.82-0.93 true reference success.
 
 ## Decision log
 
