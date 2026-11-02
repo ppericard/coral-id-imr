@@ -307,7 +307,7 @@ function answer(cur, c, target, ph, cor, unseen) {
     abilityStep(c, w, false, 0, k);
   }
   if (good && cor) s.cor = 1; // milestone: right with the corallites photo in view
-  if (good && cur.startsWith('quiz-duel')) s.du = 1; // won a look-alike duel (the duel achievement)
+  if (good && (cur.startsWith('quiz-duel') || (cur === 'quiz' && AUTOD))) s.du = 1; // won a look-alike duel, in the Duel tab or slipped into the quiz (the duel achievement)
   // Mastery exam (EXAM): count an exam question passed; any miss on the genus ends its exam, and so does giving the
   // genus as the answer for another one.
   const exq = EXAMQ === target;
@@ -319,7 +319,7 @@ function answer(cur, c, target, ph, cor, unseen) {
     ex.v = [...new Set([...ex.v, ph[0].view])];
     ex.at = answersSoFar();
     if (ex.k >= EXAM.n) {
-      s.mx = 1;
+      s.mx = Date.now(); // learned, and when (the admin's player journey; was 1 before 2026-11-02, still truthy)
       delete s.ex;
       setTimeout(
         () => achPop({tier: 3, icon: '🎓', title: `${target} mastered`, desc: `${EXAM.n} hard questions right, slipped into the quiz`}),
@@ -340,7 +340,11 @@ function answer(cur, c, target, ph, cor, unseen) {
     g: target,
     a: c,
     ok: good ? 1 : 0,
-    m: cur + (k < nc ? '|k' + k : ''),
+    // |x: a question of the mastery exam (never with |k: an exam has every trap), for the admin's player journey.
+    // A photo-quiz question with fewer than 4 choices ("Again: A or B?" after a mix-up) says so too: logged plain "quiz",
+    // the sheet rated it as a 4-choice one (a 1 in 4 guess instead of 1 in 2; 59 of the first 552 answers, 2026-11-02).
+    // |d: a look-alike duel slipped into the photo quiz (AUTO_DUEL), before |kN (the sheet reads |kN at the end).
+    m: cur + (cur === 'quiz' && AUTOD ? '|d' : '') + (k < (cur === 'quiz' ? 4 : nc) ? '|k' + k : '') + (exq ? '|x' : ''),
     // A corallites hint left closed is not logged: it was not seen when answering (Codex review #339; the sheet rates and
     // counts as recognised only the photos the player saw).
     ph: ph
@@ -399,7 +403,9 @@ function answer(cur, c, target, ph, cor, unseen) {
       );
       fitStage();
     }
-    if (cur === 'quiz') {
+    // Not after a duel slipped into the quiz (AUTO_DUEL): it was already that 2-choice question, and its pair comes back
+    // through duelPick, mix-ups first (Codex review #352: two 2-choice questions two apart).
+    if (cur === 'quiz' && !AUTOD) {
       rematch = {pair: [target, c], wait: 1};
       again = true;
     }
@@ -546,6 +552,13 @@ function unlockShow(L) {
 }
 // A mix-up in the photo quiz comes back once as a duel of the two genera, one question later.
 let rematch = null;
+// GAP: answers between two duels slipped in; AGAIN: answers at least after an "Again" (spacing them from the Agains
+// by GAP left a player who errs 1 time in 10 with 1 duel in 40 questions instead of 1 in 10).
+const AUTO_DUEL = {P: 0.1, FROM: 20, GAP: 5, AGAIN: 2, SAME: 20};
+let twoAt = -Infinity, // answers so far at the last duel slipped in
+  againAt = -Infinity, // ... and at the last "Again"
+  duelLog = [], // [answers so far, pair] of the duels slipped in lately
+  AUTOD = false; // the question on screen is one of them (set by quizPhoto, read by answer)
 // "This pair comes back as a duel in a moment": said the first 3 times only (RA review 2026-11-02: it came on every
 // wrong answer, about 20 times in 30 questions); the pair still comes back every time.
 const againTold = () => {
@@ -599,6 +612,7 @@ const takePlan = cur => {
 };
 function quizPhoto() {
   const q = takePlan('quiz') || planPhoto();
+  AUTOD = !!q.auto;
   question(...q);
   if (q.intro) introShow(q.intro, q.start);
   else if (!document.querySelector('.unlock') && introOffer()) introOfferShow(); // never over another card: next question
@@ -608,9 +622,9 @@ function introOfferShow() {
   const d = document.createElement('div'),
     a = answersSoFar(),
     pick = open => {
-      store.set(INTRO.OFFER.KEY, {at: a, open: open ? 1 : 0});
+      store.set(INTRO.OFFER.KEY, {at: a, open: 0, t: Date.now()});
       if (open) {
-        introAll();
+        introAll('offer');
         NEXTQ = null;
       }
       save();
@@ -645,7 +659,7 @@ function introOfferShow() {
 // The cards of the genera met now (INTRO in model.js), one after the other over the question: the first INTRO.START
 // together ("1 of 4", the first questions are about them), later ones alone (asked a few questions later). Recorded
 // when shown, so a planned question never played leaves no genus met without its card.
-function introShow(L, start) {
+function introShow(L, start, kind = start ? 's' : 'c') {
   document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
   const d = document.createElement('div');
   d.className = 'unlock intro';
@@ -665,7 +679,7 @@ function introShow(L, start) {
       star = typeof starNote === 'function' ? starNote(n) : '',
       more = i < L.length - 1;
     // Met when its card is shown (Codex review #350): a sequence left half-way (reload) shows the rest next time.
-    introAdd([n], start);
+    introAdd([n], start, kind);
     d.setAttribute('aria-label', `New genus: ${n}`);
     d.innerHTML = `<div class="ulcard">${p ? `<div class="ulphoto"><img src="${img(p, 's')}" alt=""></div>` : ''}
       <p class="ulkick">New genus${L.length > 1 ? ` · ${i + 1} of ${L.length}` : ''}</p><h3><i>${esc(n)}</i></h3>
@@ -678,7 +692,7 @@ function introShow(L, start) {
     const all = d.querySelector('[data-all]');
     if (all)
       all.onclick = () => {
-        introAll();
+        introAll('card');
         NEXTQ = null;
         save();
         close();
@@ -721,8 +735,42 @@ function planPhoto() {
     const pair = rematch.pair;
     rematch = null;
     if (pair.every(n => list.includes(n))) {
+      againAt = answersSoFar();
       const t = pick(pair);
       return ['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)];
+    }
+  }
+  // A look-alike duel slipped into the photo quiz (Pierre, 2026-11-02, "a little duel back in the quiz, automatically";
+  // the Duel tab had 13 answers in all): AUTO_DUEL.P of the questions from AUTO_DUEL.FROM answers on, AUTO_DUEL.GAP
+  // questions at least after the last one and AUTO_DUEL.AGAIN after an "Again", on a pair of genera both met and ready, never the same pair within
+  // AUTO_DUEL.SAME answers; picked as the Duel tab picks (own mix-ups first). Logged "quiz|d|k2" (counted apart).
+  const a = answersSoFar();
+  // The count went back (progress reset): the spacing starts over.
+  if (a < twoAt) twoAt = -Infinity;
+  if (a < againAt) againAt = -Infinity;
+  duelLog = duelLog.filter(([at]) => at <= a);
+  // Never while an "Again" is due (it comes next): the duel would sit right before it.
+  if (
+    !rematch &&
+    a >= AUTO_DUEL.FROM &&
+    a - twoAt >= AUTO_DUEL.GAP &&
+    a - againAt >= AUTO_DUEL.AGAIN &&
+    Math.random() < AUTO_DUEL.P &&
+    !introStart(list).length
+  ) {
+    const key = p => p.slice().sort().join('|'),
+      recent = new Set(duelLog.filter(([at]) => a - at < AUTO_DUEL.SAME).map(([, k]) => k)),
+      pair = duelPick(list, p => p.every(introReady) && !recent.has(key(p)));
+    if (pair) {
+      twoAt = a;
+      duelLog = [...duelLog.filter(([at]) => a - at < AUTO_DUEL.SAME), [a, key(pair)]];
+      const t = pick(pair);
+      return Object.assign(
+        ['quiz', t, shuffle(pair.slice()), `Look-alikes: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)],
+        {
+          auto: 1
+        }
+      );
     }
   }
   // The genus asked is one already met (INTRO): ready, or one of the cards shown with this question when they are the
@@ -752,39 +800,40 @@ function quizDuel(a, b) {
   question(...q);
   // Both genera are named on the buttons: the cards of those not met yet come together, and either can be the answer.
   const L = q[2].filter(n => !introduced(n));
-  if (L.length) introShow(L, true);
+  if (L.length) introShow(L, true, 'c');
+}
+// A look-alike pair for a duel (the Duel tab, and the duels slipped into the photo quiz): among the pairs whose two
+// genera are in the list and pass keep. Null when none.
+function duelPick(list, keep = () => true) {
+  // Unlocked bonus genera duel with the slate look-alike the Coral Finder names.
+  const ps = [
+    ...pairs(),
+    ...bonusOpen().flatMap(b =>
+      GX(b)
+        .look.filter(a => DATA.gen[a])
+        .map(a => [a, b])
+    )
+  ].filter(([x, y]) => list.includes(x) && list.includes(y) && keep([x, y]));
+  if (!ps.length) return null;
+  // Your mix-ups you still make come up most (personal confusion score, confOf), then pairs players often confuse and
+  // the classic look-alikes (compared in the IMR lecture or the Coral Finder text).
+  const w = ps.map(
+      ([x, y]) => (weight(x) + weight(y)) * (mixedUp(x, y) && confusable(x, y) ? 3 : confusable(x, y) || isClassic(x, y) ? 2 : 1)
+    ),
+    t0 = w.reduce((p, q) => p + q, 0);
+  let r = Math.random() * t0;
+  for (let i = 0; i < ps.length; i++) {
+    r -= w[i];
+    if (r <= 0) return ps[i];
+  }
+  return ps[ps.length - 1];
 }
 function planDuel(a, b) {
   const list = pool();
   // A pair from a link (#quiz-duel|A|B) must name two genera with game photos; anything else gets a normal duel (code re-review L2).
   if (a && b && !(a !== b && GX(a) && GX(b) && photoSet(a).shown.length && photoSet(b).shown.length)) a = b = undefined;
   let pair = a && b ? [a, b] : null;
-  if (!pair) {
-    // Unlocked bonus genera duel with the slate look-alike the Coral Finder names.
-    const ps = [
-      ...pairs(),
-      ...bonusOpen().flatMap(b =>
-        GX(b)
-          .look.filter(a => DATA.gen[a])
-          .map(a => [a, b])
-      )
-    ].filter(([x, y]) => list.includes(x) && list.includes(y));
-    // Your mix-ups you still make come up most (personal confusion score, confOf), then pairs players often confuse and
-    // the classic look-alikes (compared in the IMR lecture or the Coral Finder text).
-    const w = ps.map(
-        ([x, y]) => (weight(x) + weight(y)) * (mixedUp(x, y) && confusable(x, y) ? 3 : confusable(x, y) || isClassic(x, y) ? 2 : 1)
-      ),
-      t0 = w.reduce((p, q) => p + q, 0);
-    let r = Math.random() * t0;
-    pair = ps[0];
-    for (let i = 0; i < ps.length; i++) {
-      r -= w[i];
-      if (r <= 0) {
-        pair = ps[i];
-        break;
-      }
-    }
-  }
+  if (!pair) pair = duelPick(list);
   const t = pick(pair);
   return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)];
 }

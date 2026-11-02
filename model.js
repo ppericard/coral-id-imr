@@ -259,10 +259,14 @@ const introMap = () => {
   const m = store.get(INTRO.KEY, {});
   return (INTROS = m && typeof m === 'object' && !Array.isArray(m) ? m : {});
 };
-const introAdd = (L, start) => {
+// kind (Codex review #352: readiness and answer count alone can't tell them apart once synced): 's' one of the first
+// cards, 'c' a card of its own (or a duel's), 'a' opened with Open all genera.
+const introAdd = (L, start, kind = start ? 's' : 'c') => {
   const m = introMap(),
     a = answersSoFar();
-  L.forEach(n => (m[n] = [a, start ? 1 : 0]));
+  // [answers so far, 1 when ready at once (first cards, Open all, a duel's), time shown, kind] (time and kind: the admin's
+  // player journey).
+  L.forEach(n => (m[n] = [a, start ? 1 : 0, Date.now(), kind]));
   store.set(INTRO.KEY, m);
   syncSoon(); // sent at once, not with the next answer: a card left without answering is met on the other devices too
 };
@@ -277,7 +281,12 @@ const introReady = n => {
 // one card at a time would hold them back. On the first cards and in My progress, one tap opens every slate genus at
 // once, without cards: the draw then asks first the genera never asked (weight 10), choices from the whole slate.
 const introLeft = () => Object.keys(DATA.gen).filter(n => !introduced(n));
-const introAll = () => introAdd(introLeft(), true);
+// via: where the player opened them ('card' the first cards, 'progress' My progress, 'offer' the offer card), kept
+// with the offer (which is then never made) for the admin's player journey.
+const introAll = via => {
+  introAdd(introLeft(), true, 'a');
+  store.set(INTRO.OFFER.KEY, {at: answersSoFar(), open: 1, via, t: Date.now()});
+};
 // The offer to open all genera (Pierre, 2026-11-02: 10 answers on 4 genera are too few to decide; after about 50
 // questions and some 10 genera met, a card says the player seems to know their corals and offers to open them all).
 // Due once, between OFFER.AT and OFFER.UNTIL answers, with OFFER.MET slate genera met and a level of OFFER.TH or more:
@@ -308,11 +317,14 @@ function introMerge(m, o) {
     const L = introMap();
     let ch = false;
     Object.entries(m).forEach(([n, e]) => {
-      if (Array.isArray(e) && !L[n]) ch = L[n] = [e[0] || 0, 1];
+      if (Array.isArray(e) && !L[n]) ch = L[n] = [e[0] || 0, 1, e[2] || 0, e[3] || (e[1] ? 's' : 'c')];
     });
     if (ch) store.set(INTRO.KEY, L);
   }
-  if (o && typeof o === 'object' && !store.get(INTRO.OFFER.KEY, null)) store.set(INTRO.OFFER.KEY, o);
+  // The latest decision wins (its time t): declined on one device, then Open all on another, must not go back to the
+  // decline at the next sync (Codex review #352). Without times (older), the one already here stays.
+  const here = store.get(INTRO.OFFER.KEY, null);
+  if (o && typeof o === 'object' && (!here || (o.t || 0) > (here.t || 0))) store.set(INTRO.OFFER.KEY, o);
 }
 const introReset = () => {
   INTROS = {};

@@ -84,6 +84,9 @@
         st.h = (st.h + (right ? 1 : 0)).slice(-10);
         st.th = Math.round((st.th + (right ? 0.15 : -0.1)) * 100) / 100;
         st.L = Math.min(1, st.L + (right ? 0.08 : 0));
+        // Learned here: this answer passed the exam (logged quiz|x, the journey's star).
+        const passed = right && st.L >= 0.6 && !st.mx;
+        if (passed) st.mx = t;
         const id = 'demo' + (k++).toString(36);
         rows.push([
           name,
@@ -91,7 +94,7 @@
           g,
           ans,
           right ? 1 : 0,
-          duel ? 'quiz-duel' : 'quiz',
+          duel ? 'quiz-duel' : passed ? 'quiz|x' : 'quiz',
           ph,
           id,
           Math.round(100 * pe) / 100,
@@ -100,6 +103,20 @@
           ch.sort(() => rnd() - 0.5).join(' ')
         ]);
       }
+      // First-meeting cards (app model.js INTRO): the first 4 genera together, the others one at a time 2 answers before
+      // their first question; Carla opened all from the offer card at answer 40, Ben declined it at answer 50.
+      const mine = rows.filter(r => r[0] === name).sort((x, y) => x[1] - y[1]), // in time order, as the journey reads them
+        intro = {},
+        // Shown just after the a-th answer (as in the app: the card's time is after that answer's), before the first one for 0.
+        at = a => (mine[Math.max(0, a - 1)] || mine[0] || [0, NOW])[1] + (a ? 1 : -1),
+        openAt = name === 'Carla Demo' ? 40 : null;
+      mine.forEach((r, i) => {
+        if (intro[r[2]] || (gen[r[2]] || {}).x) return;
+        const a = openAt != null && i >= openAt ? openAt : Object.keys(intro).length < 4 ? 0 : Math.max(0, i - 2);
+        intro[r[2]] = [a, a === 0 || a === openAt ? 1 : 0, at(a), a === openAt ? 'a' : a === 0 ? 's' : 'c'];
+      });
+      const offer =
+        openAt != null ? {at: openAt, open: 1, via: 'offer', t: at(openAt)} : name === 'Ben Demo' ? {at: 50, open: 0, t: at(50)} : null;
       const learned = Object.values(P).filter(s => s.L >= 0.6).length;
       users[name.toLowerCase()] = {
         name,
@@ -112,7 +129,12 @@
           .slice(0, 4)
           .join(', '),
         rev: 3,
-        data: {'imr-coral-progress': JSON.stringify(P), 'imr-coral-settings': '{}'}
+        data: {
+          'imr-coral-progress': JSON.stringify(P),
+          'imr-coral-settings': '{}',
+          'imr-coral-intro': JSON.stringify(intro),
+          ...(offer ? {'imr-coral-intro-offer': JSON.stringify(offer)} : {})
+        }
       };
     });
     // A few answers of players who never signed in (v12 "~anon <id>").
@@ -262,6 +284,7 @@
     Object.values(S.users).forEach(u => {
       by[lc(u.name)] = {
         name: u.name,
+        board: u.board ?? 1,
         id: aid(u.name),
         updated: u.updated,
         learned: u.learned,
@@ -322,6 +345,28 @@
     return {ok: true, users: Object.values(by), removed: S.removed.slice().reverse()};
   }
   function users(p) {
+    // Sheet v20: rename (the record moves, hidden from the leaderboard).
+    if (p.userRename) {
+      const m = p.userRename,
+        u = S.users[lc(m.from || '')],
+        into = String(m.into || '').trim();
+      if (!u || !into) return {ok: false, error: 'user'};
+      if (S.users[lc(into)]) return {ok: false, error: 'exists'};
+      const from = u.name;
+      delete S.users[lc(from)];
+      S.users[lc(into)] = {...u, name: into, board: -1};
+      let answers = 0;
+      S.rows.forEach(r => lc(r[0]) === lc(from) && ((r[0] = into), answers++));
+      S.reports.forEach(r => lc(r[2] || '') === lc(from) && (r[2] = into));
+      return {ok: true, answers, reports: 0};
+    }
+    // Sheet v20: hidden from the leaderboard by an admin (-1) or shown (1).
+    if (p.userBoard) {
+      const u = S.users[lc(p.userBoard)];
+      if (!u) return {ok: false, error: 'user'};
+      u.board = p.hide ? -1 : 1;
+      return {ok: true, board: u.board};
+    }
     if (p.userData) {
       const u = S.users[lc(p.userData)];
       return u ? {ok: true, rev: u.rev, data: JSON.parse(JSON.stringify(u.data))} : {ok: false, error: 'user'};
@@ -397,7 +442,7 @@
       if (p.readEvents) return ok({ok: true, rows: S.events.map(r => r.slice())});
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
-      if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete) return ok(users(p));
+      if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userRename) return ok(users(p));
       return ok({ok: false, error: 'demo'});
     }
     if (/^https?:/.test(url) && !url.startsWith(location.origin)) return Promise.reject(new TypeError('Blocked in demo mode'));

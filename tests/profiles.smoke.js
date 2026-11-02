@@ -77,7 +77,7 @@ const server = http.createServer((req, res) => {
       const know = mk(),
         first = [],
         rows = [];
-      let blk = {n: 0, ok: 0, traps: 0};
+      let blk = {n: 0, ok: 0, traps: 0, tn: 0};
       for (let i = 0; i < 300; i++) {
         NEXTQ = null;
         quizPhoto();
@@ -104,20 +104,25 @@ const server = http.createServer((req, res) => {
           pick = right ? t : ch.filter(c => c !== t)[Math.floor(rnd() * (ch.length - 1))];
         blk.n++;
         blk.ok += right;
-        blk.traps += traps;
+        // Traps of the 4-choice questions only: a look-alike duel slipped into the quiz (AUTO_DUEL) has one wrong choice,
+        // always a look-alike, and is a separate exercise.
+        if (!AUTOD) {
+          blk.traps += traps;
+          blk.tn++;
+        }
         document.querySelector(`[data-c="${CSS.escape(pick)}"]`).click();
         know[t] += rate * (1 - know[t]);
         if ((i + 1) % 100 === 0) {
           rows.push({
             q: i + 1,
             right: Math.round((100 * blk.ok) / blk.n),
-            traps: +(blk.traps / blk.n).toFixed(2),
+            traps: +(blk.traps / Math.max(1, blk.tn)).toFixed(2),
             met: G.filter(introduced).length,
             asked: G.filter(asked).length,
             learned: G.filter(g => (P[g] || {}).mx).length,
             sure: G.filter(g => knownP(g) >= BKT.MASTER).length
           });
-          blk = {n: 0, ok: 0, traps: 0};
+          blk = {n: 0, ok: 0, traps: 0, tn: 0};
         }
       }
       const gd = G.map(genusDiff),
@@ -219,7 +224,11 @@ const server = http.createServer((req, res) => {
     fails.push(`easiest genus not drawn first: ${E.easy} (${E.dEasy}) ${E.nEasy} times, ${E.hard} (${E.dHard}) ${E.nHard} times`);
   if (e1.met <= b1.met) fails.push(`expert met no more genera than a beginner in 100 questions (${e1.met} vs ${b1.met})`);
   if (e3.met <= b3.met) fails.push(`expert opened no more genera than a beginner (${e3.met} vs ${b3.met})`);
-  if ((e1.traps + e3.traps) / 2 < 1) fails.push(`expert got ${e1.traps}, ${e3.traps} look-alike traps a question`);
+  // Traps come only from genera met (first-meeting cards), so an expert has few at 100 questions; once their genera are
+  // open (300) they get one or more a question, and more than a beginner from the start. (The mean of 100 and 300 sat at
+  // the threshold and failed with some seeds, duels in the quiz or not: 4 seeds compared, 2026-11-02.)
+  if (e3.traps < 1 || e1.traps <= b1.traps)
+    fails.push(`expert got ${e1.traps}, ${e3.traps} look-alike traps a question (beginner ${b1.traps} at 100)`);
   // Mastery = 95% sure, then 5 exam questions at least 8 answers apart (EXAM): with every genus open by question 200,
   // the first ones are mastered around question 300 (docs/LEARNING.md), so what 300 questions must show is genera
   // sure enough for their exam.

@@ -93,6 +93,40 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
 - **Easy wrong choices come first from genera the player has met** (2026-11-02): a beginner is not asked to choose
   between names never seen.
 
+### Logged for the admin's player journey (2026-11-02)
+
+A mastery exam question is logged with mode `quiz|x` (exams have every trap, so never `|kN`; the sheet's guess rate and
+mode split read it as `quiz`), and a passed exam keeps its time (`s.mx` = time, was 1; still truthy everywhere).
+
+### "Again: A or B?" rated as 2 choices (2026-11-02)
+
+Since 2026-11-01 (#251) a mix-up in the photo quiz comes back once as a 2-choice duel of the two genera, one question
+later. It was logged plain `quiz`, so the sheet rated it with a 1 in 4 guess instead of 1 in 2 (a right answer looked
+more convincing than it is): 59 of the first 552 answers, 11%. The app now logs it `quiz|k2`, and the sheet (v20) and
+the admin (`core.js`) read the number of choices from the Choices column when the mode does not give it, which corrects
+the answers already logged.
+
+### Look-alike duels slipped into the photo quiz (2026-11-02)
+
+The Duel tab had 13 answers in all (2 players); "Again: A or B?" only follows a mix-up. Pierre (1 in 10): from the 20th
+answer on, about 1 photo-quiz question in 10 (`AUTO_DUEL.P` 0.1, `quiz.js`) is a duel on a look-alike pair, picked as the
+Duel tab picks (`duelPick`: the player's own mix-ups first, then pairs players confuse, then the IMR / Coral Finder
+look-alikes), both genera met and ready, never the same pair within 20 answers (`SAME`), at least 5 questions after the
+last one (`GAP`) and 2 after an "Again" (`AGAIN`), never while an "Again" is due, and a mix-up in one of them brings no
+"Again" (its pair comes back through the duel choice, mix-ups first; Codex review #352). Prompt "Look-alikes: A or B?"; logged `quiz|d|k2` (rated 1 in 2, counted
+apart in the player journey; a win counts for the Look-alike slayer achievement, as in the Duel tab). Simulated over 4 seeds, it does not slow the opening of genera (an expert met 27 genera
+after 100 questions with duels, 26 without, seed 3333); the profiles test now checks an expert's traps at 300
+questions (one or more a question) and more than a beginner's at 100, the mean of the two sitting at the threshold.
+
+### Pierre's Easy / Medium / Hard sets against the players' answers (measured 2026-11-02)
+
+The sets only give a photo's starting difficulty in the app (`photoDiff`: -1 / 0 / +1, weighing 5 answers); the sheet's
+Elo never uses them. On the live data (552 answers, 438 photos rated): 342 of the 499 game photos in a set have answers;
+Hard photos have 7 (they go to strong players); Easy and Medium are right 78% and 77% of the time. Rank correlation
+between set and Elo: 0.00 for photos with 3 answers or more (121), 0.36 (p 0.01) with 5 or more (45: 39 Easy, 6 Medium,
+Medium +0.35 against Easy -0.05). Too few answers to drop the sets or to trust them; to measure again once about 100
+photos have 5 answers or more, Hard ones included.
+
 ### First meeting with a genus (2026-11-02)
 
 Beginner RA review: the first quiz felt like an exam, asking genera the player had never seen. Pierre's design, the same
@@ -120,8 +154,9 @@ time, each on its card, but never as the answer of the question right after its 
   Simulated at 50 answers: a beginner -0.9, an RA who knows 60% of the genera -0.2, 80% +0.8, an expert +1.2. The
   correct-answer rate does not tell them apart (the game keeps everyone near 80%: 68%, 76%, 86%, 88%). A card, not an
   automatic opening, so a wrong guess costs a tap.
-- Synced with the progress: the cards (`imr-coral-intro`: genus -> [answers when shown, 1 for the first cards]) and
-  the offer (`imr-coral-intro-offer`) are `imr-coral*` keys, which the sheet keeps; on a pull, the cards seen on another
+- Synced with the progress: the cards (`imr-coral-intro`: genus -> [answers when shown, 1 when ready at once (first cards, Open all,
+  a duel's), time shown, kind: s first cards / c a card of its own / a Open all]) and the offer (`imr-coral-intro-offer`: {at, open, via: card / progress / offer, t}, also written by Open
+  all genera, for the admin's player journey) are `imr-coral*` keys, which the sheet keeps; on a pull, the cards seen on another
   device join this one's (`introMerge`), and a progress reset starts them over (`introReset`). A genus already asked
   or a bonus genus (its own unlock card) counts as met. Checked in CI (`tests/draw.smoke.js`, first meetings, offer,
   sync; `tests/pages.smoke.js`, the 4 cards and My progress).

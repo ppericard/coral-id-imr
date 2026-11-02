@@ -1584,7 +1584,7 @@ const HEALTH = {
 const HELP = {
   // A getter: JOURNEY is in admin-journey.js, loaded after this file.
   get journey() {
-    return `<p>One player's path, from their answers in the sheet (signed in). <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day. <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered. <b>Genera</b>: every genus they were asked, in the order met (answer number and date of its first question), or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>Days played</b>: answers per day (hover for the right share); a session = answers less than ${HEALTH.GAP} minutes apart.</p>`;
+    return `<p>One player's path, from their answers in the sheet (signed in). <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day, a dashed orange one when they opened all the genera at once. The green curve counts the genera learned (mastery exam passed, still held), each at the answer that passed its mastery exam (★: its last right exam question); genera learned before exam questions were logged (2 Nov 2026) have no such answer and are not on it (the legend says how many). <b>Cards</b> (from their saved progress, read with this page's token): the first cards and when, how many single cards, and whether they opened all the genera at once (after which answer, when, and from where: the first cards, My progress or the offer card) or declined the offer; times are kept from 2 Nov 2026 (before, the time of that answer). <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered. <b>Genera</b>: every genus they were asked, in the order met; Card = when its card showed (first cards, opened all, or after which answer; hover for how many questions later it was asked), First asked = answer number and date of its first question, or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>Days played</b>: answers per day (hover for the right share); a session = answers less than ${HEALTH.GAP} minutes apart.</p>`;
   },
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap question "These questions are: Too easy · About right · Too hard" (after 15 answers, then every 60), with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. The games aim at about 80% right, so many "Too hard" from beginners would mean the start is too steep. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
@@ -2973,8 +2973,11 @@ function cropEditor(p) {
       height: (c[3] - c[1]) * 100 + '%'
     });
   };
+  // On a touch screen the photo keeps EDGE px from each side (Pierre, 2026-11-02: a crop dragged to the screen's edge
+  // set off the phone's back / forward swipe, and the page changed).
+  const EDGE = matchMedia('(pointer: coarse)').matches ? 40 : 12;
   const fit = () => {
-    const W = innerWidth - 24,
+    const W = innerWidth - 2 * EDGE,
       H = innerHeight - 110,
       r = im.naturalWidth / im.naturalHeight || 1.33,
       w = Math.min(W, H * r);
@@ -3700,7 +3703,7 @@ function covOf(n, v) {
 // Photos of a genus x view left out of the game pool, by reason (Pierre: show what isn't counted and why).
 // Short label in the cell, long one in the cell's tooltip.
 const OFF = [
-  ['multi', 'multi‑coral', 'with several corals'],
+  ['multi', 'multi', 'with several corals'],
   ['x', 'no form', 'form not visible'],
   ['ref', 'sheet only', 'sheet only'],
   ['cf', 'CF', 'Coral Finder book'],
@@ -3770,6 +3773,14 @@ const bindCol = (st, save) =>
       })
   );
 let COVS = Object.assign({col: '', dir: 'asc'}, store.get('imr-admin-covsort', {}));
+// The + column's sources, short label (cell) and long one (tooltip, legend); IMR and the book left out.
+const CAND_SRC = [
+  ['dauin', 'Dauin', 'iNat Dauin'],
+  ['ph', 'PH', 'iNat Philippines'],
+  ['own', 'Own', 'your photos'],
+  ['world', 'Other', 'iNat elsewhere'],
+  ['imr', 'IMR', 'IMR lecture']
+];
 function renderCov() {
   status();
   const R = Object.keys(DATA.gen)
@@ -3784,7 +3795,11 @@ function renderCov() {
         min: Math.min(...live.map(c => c.obs)),
         max: Math.max(...live.map(c => c.obs)),
         all: live.flatMap(c => c.L),
-        cand: pending(n).filter(p => !p.cf).length
+        // Candidates by source (Pierre, 2026-11-02: Dauin, Philippines and his own at least; the book never).
+        cand: pending(n).filter(p => !p.cf).length,
+        cby: pending(n)
+          .filter(p => !p.cf)
+          .reduce((o, p) => ((o[origin(p)] = (o[origin(p)] || 0) + 1), o), {})
       };
     });
   // Lecture order = the app's Genera list: IMR lecture group (★ genera in the group of their look-alikes, as shownGroup
@@ -3828,10 +3843,25 @@ function renderCov() {
     <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Order">${seg.map(([k, t, h]) => `<button type="button" data-co="${k}" title="${h}" aria-pressed="${!COVS.col && COV_ORDER === k}">${t}</button>`).join('')}</span>
       <span class="cov-key" aria-label="Colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 colonies">${thin} thin</b><b title="Cells at the cap of ${CELL_MAX} colonies or over: their candidates wait outside the swiper">${R.reduce((s, r) => s + r.cells.filter(c => c && c.obs >= CELL_MAX).length, 0)} full</b>${(k => (k ? `<b class="warnc" title="Cells over the cap of ${CELL_MAX} colonies (added anyway): orange outline below; adding to a full cell suggests a colony to retire">⚠ ${k} over the cap</b>` : ''))(R.reduce((s, r) => s + r.cells.filter(c => c && c.obs > CELL_MAX).length, 0))}<b class="cov-rich" title="Cells with 8+ colonies">${rich} at 8+</b></div>
-    <table class="cov-t"><thead><tr><th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates">+</th></tr></thead>
+    <details class="cov-legend"><summary>Legend</summary><dl>
+      <dt><b>9</b></dt><dd>photos of the genus in the games, for this view</dd>
+      <dt><small>6</small></dt><dd>colonies they come from, when fewer than photos (several photos of one colony count once)</dd>
+      <dt>colour</dt><dd>colonies: <span class="cov-c cov-0">0</span> none · <span class="cov-c cov-1">1–2</span> thin · <span class="cov-c cov-2">3–4</span> · <span class="cov-c cov-3">5–7</span> · <span class="cov-c cov-4">8+</span></dd>
+      <dt>excl.</dt><dd>photos of this view left out of the games, and why: <b>multi</b> several corals in the photo · <b>no form</b> growth form not visible (Colony view) · <b>sheet</b> shown on the genus sheet only · <b>CF</b> Coral Finder book (poor quality, rights) · <b>removed</b> taken out by you</dd>
+      <dt>–</dt><dd>no such view for this genus (2-level genera have no Close-up)</dd>
+      <dt>+</dt><dd>candidates waiting in Candidates, by source: <b>Dauin</b> iNaturalist at Dauin · <b>PH</b> iNaturalist elsewhere in the Philippines · <b>Own</b> your photos · <b>Other</b> iNaturalist elsewhere (Coral Finder book photos never counted)</dd>
+      <dt>thin · full · at 8+</dt><dd>cells with 0–2 colonies · at the cap of ${CELL_MAX} colonies · with 8 or more</dd>
+      <dt>Sources</dt><dd>all photos of the genus by origin (hover a segment)</dd></dl></details>
+    <table class="cov-t"><thead><tr><th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates waiting in Candidates, by source (Coral Finder book photos not counted)">+</th></tr></thead>
     <tbody>${R.map(
       r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
-      <td class="cov-src"><span class="cov-bar">${bar(r)}</span><small>${r.all.length}</small></td><td class="cov-cand">${r.cand ? `+${r.cand}` : ''}</td></tr>`
+      <td class="cov-src"><span class="cov-bar">${bar(r)}</span><small>${r.all.length}</small></td><td class="cov-cand" title="${r.cand} candidate${r.cand === 1 ? '' : 's'}${CAND_SRC.filter(
+        ([k]) => r.cby[k]
+      )
+        .map(([k, , l]) => ` · ${l} ${r.cby[k]}`)
+        .join('')}">${CAND_SRC.filter(([k]) => r.cby[k])
+        .map(([k, s]) => `<span class="o-${k}">${s} ${r.cby[k]}</span>`)
+        .join('')}</td></tr>`
     ).join('')}</tbody></table></section>`;
   $v.querySelectorAll('[data-co]').forEach(
     b =>
@@ -3895,6 +3925,9 @@ function renderFcov() {
       i,
       x: isX(n),
       cand: pending(n).filter(p => !p.cf).length,
+      cby: pending(n)
+        .filter(p => !p.cf)
+        .reduce((o, p) => ((o[origin(p)] = (o[origin(p)] || 0) + 1), o), {}),
       cells,
       min: live.length ? Math.min(...live.map(c => c.obs)) : 0,
       tot: pool.length,
@@ -3928,11 +3961,17 @@ function renderFcov() {
     ])}
       <span class="cov-key" aria-label="Good colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 good colonies">${thin} thin</b></div>
-    <table class="cov-t fcov-t"><thead><tr><th></th>${colTh(FCOV)}<th class="fcov-fh">Forms</th><th class="fcov-sh">Species</th><th title="Candidates">+</th></tr></thead>
+    <table class="cov-t fcov-t"><thead><tr><th></th>${colTh(FCOV)}<th class="fcov-fh">Forms</th><th class="fcov-sh">Species</th><th title="Candidates waiting in Candidates, by source (Coral Finder book photos not counted)">+</th></tr></thead>
     <tbody>${R.map(
       r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${r.x ? ' <small class="fcov-x">not IMR</small>' : ''}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
       <td class="fcov-f">${r.forms.map(f => `<span class="adm-why" title="${esc(fName(f))}">${FABBR[f]}</span>`).join(' ') || '<span title="No growth form set on these photos yet">–</span>'}</td>
-      <td class="fcov-s" title="${esc(r.sp.join(', '))}">${r.sp.length || '–'}</td><td class="cov-cand">${r.cand ? `+${r.cand}` : ''}</td></tr>`
+      <td class="fcov-s" title="${esc(r.sp.join(', '))}">${r.sp.length || '–'}</td><td class="cov-cand" title="${r.cand} candidate${r.cand === 1 ? '' : 's'}${CAND_SRC.filter(
+        ([k]) => r.cby[k]
+      )
+        .map(([k, , l]) => ` · ${l} ${r.cby[k]}`)
+        .join('')}">${CAND_SRC.filter(([k]) => r.cby[k])
+        .map(([k, s]) => `<span class="o-${k}">${s} ${r.cby[k]}</span>`)
+        .join('')}</td></tr>`
     ).join('')}</tbody></table></section>`;
   bindCol(FCOV, () => store.set('imr-admin-fcov', FCOV));
   $v.querySelectorAll('[data-fc]').forEach(
@@ -4176,6 +4215,8 @@ function renderUsers() {
         }</section>
       <section class="adm-scard"><h3>Manage</h3>
         <p><label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label></p>
+        <p>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></p>
+        <p><button type="button" class="adm-fchip" data-uren="${esc(u.name)}">Rename…</button></p>
         <p><button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete</button></p></section></div></td></tr>`;
   // Answers without a name: devices that never signed in (~anon) and deleted accounts, by anonymous id.
   const named = new Set(U.map(u => u.id).filter(Boolean)),
@@ -4194,7 +4235,7 @@ function renderUsers() {
     ans = U.reduce((t, u) => t + u.answers, 0);
   const cell = (k, u) =>
     ({
-      name: `<b>${esc(u.name)}</b>${u.id && u.id === MEID ? ' <small>you</small>' : ''}`,
+      name: `<b>${esc(u.name)}</b>${u.id && u.id === MEID ? ' <small>you</small>' : ''}${u.board === -1 ? ' <small title="Hidden from the leaderboard">hidden</small>' : ''}`,
       lv: u.lv == null ? '–' : sgn(u.lv),
       answers: u.answers,
       right: pct(u.right, u.answers),
@@ -4258,6 +4299,7 @@ function bindUsers() {
       USERS = null;
       ANS = null;
       STATS = null; // levels (ras) too, not only the counts
+      Object.keys(JDATA).forEach(k => delete JDATA[k]); // the journeys' saved progress (admin-journey.js) too
       render();
     };
   $v.querySelectorAll('[data-uopen]').forEach(
@@ -4277,6 +4319,49 @@ function bindUsers() {
       render();
     } else toast(j && j.error === 'stale' ? 'The player just synced: try again.' : `Not done (${(j && j.error) || 'offline'}).`);
   };
+  // Leaderboard (sheet v20, Pierre 2026-11-02: a test account must not show there): hidden by an admin, which the
+  // player's own syncs never undo; Show puts them back. Only the leaderboard changes: answers, progress, stats stay.
+  $v.querySelectorAll('[data-uboard]').forEach(
+    b =>
+      (b.onclick = () => {
+        const name = b.dataset.uboard,
+          hide = b.dataset.hide === '1';
+        userPost({userBoard: name, hide})
+          .then(j =>
+            j && j.ok
+              ? (((USERS.users.find(x => x.name === name) || {}).board = j.board),
+                toast(hide ? `"${name}" hidden from the leaderboard.` : `"${name}" back on the leaderboard.`),
+                render())
+              : toast(`Not done (${(j && j.error) || 'offline'}${j && j.error === 'input' ? ': needs the sheet script v20' : ''}).`)
+          )
+          .catch(() => toast('Not done (offline).'));
+      })
+  );
+  // Rename (sheet v20, Pierre 2026-11-02): keep a record apart under a new name ("Pierre-test"), off the leaderboard; the
+  // old name is free again, so its owner can sign out on their devices and sign in under it to start over.
+  $v.querySelectorAll('[data-uren]').forEach(
+    b =>
+      (b.onclick = () => {
+        const name = b.dataset.uren,
+          into = (prompt(`New name for "${name}"?`, `${name}-test`) || '').trim();
+        if (!into || into === name) return;
+        if (
+          !confirm(
+            `Rename "${name}" to "${into}"?\n\nTheir answers, reports and progress move to "${into}", hidden from the leaderboard; the app no longer opens it (an archive, here in the admin).\n"${name}" is free again: to start over under it, sign out on each device, then sign in as "${name}".`
+          )
+        )
+          return;
+        userPost({userRename: {from: name, into}})
+          .then(j =>
+            j && j.error === 'exists'
+              ? toast(`"${into}" is already a player.`)
+              : j && j.error === 'input'
+                ? toast('Not done: needs the sheet script v20.')
+                : done(`"${name}" renamed "${into}".`, j)
+          )
+          .catch(() => done('', null));
+      })
+  );
   $v.querySelectorAll('[data-umerge]').forEach(
     s =>
       (s.onchange = () => {

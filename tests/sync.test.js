@@ -17,7 +17,7 @@ const ans = (id, extra = {}) => ({
 
 test('new RA, save and load back, with revision', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 19});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 20});
   const r = s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}, answers: [ans('a1')]});
   assert.strictEqual(r.ok, true);
   assert.strictEqual(r.log, true);
@@ -145,7 +145,7 @@ const rep = (id, extra = {}) => ({
 test('reports: logged once, reporter verified by code, never mistaken for a progress write', () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}});
-  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 19});
+  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 20});
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1'), rep('r2', {why: 'multi', fix: ''})]});
   s.post({rname: 'Bob', rpin: '', reports: [rep('r3', {why: 'bogus'}), rep('r4', {why: 'photo', note: '=HYPERLINK("x")'})]});
   const R = s.sheets.Reports;
@@ -205,7 +205,7 @@ test('users: admin token only; one row per player with their numbers', () => {
   assert.strictEqual(s.post({users: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
   const r = s.post({users: 1, token: TOK});
   assert.strictEqual(r.ok, true);
-  assert.strictEqual(r.v, 19);
+  assert.strictEqual(r.v, 20);
   const ana = r.users.find(u => u.name === 'Ana');
   // v13: the anonymous id of ?answers=1, so the admin can put names on the anonymous stats.
   const a = s.post({readAnswers: 1, token: TOK});
@@ -239,7 +239,7 @@ test('userMerge: progress written to into, answers and reports relabelled, from 
     [['Ana B', 'Ana']]
   );
   // The old device of "Ana B": a pull and a send both get 'gone', and its new answers go to Ana.
-  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 19});
+  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 20});
   const w = s.post({name: 'Ana B', pin: '5678', data: prog(9), summary: {}, answers: [ans('b2')]});
   assert.strictEqual(w.error, 'gone');
   assert.strictEqual(w.log, true);
@@ -361,7 +361,7 @@ test('autoUpdate: an interrupted update (code in place, deploy failed) is finish
 // Anonymous answers (v12).
 test('anonymous answers are logged under ~anon <id>, then move to the name at sign-in', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: 19});
+  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: 20});
   assert.strictEqual(s.post({anon: 'Bad Id!', anonAnswers: [ans('z3')]}).error, 'input');
   assert.deepStrictEqual(
     s.sheets.Answers.rows.slice(1).map(r => r[0]),
@@ -459,7 +459,7 @@ test('v19 events: anonymous error reports and one-tap answers, logged once, capp
       ev('e4', {k: 'nope', msg: 'unknown kind'})
     ]
   });
-  assert.deepStrictEqual(r, {ok: true, ev: true, v: 19});
+  assert.deepStrictEqual(r, {ok: true, ev: true, v: 20});
   s.post({dev: 'dev0000001', events: [ev('e1', {k: 'err', msg: 'again'})]});
   const E = s.sheets.Events;
   assert.strictEqual(E.getLastRow(), 4, 'three events, an unknown kind and a resent id are not logged');
@@ -524,7 +524,7 @@ test('board: signed-in players by progress then level; opted-out players and the
   s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {pct: 41.6}, answers: [ans('c2')]});
   const b = s.get({board: '1'});
   assert.strictEqual(b.ok, true);
-  assert.strictEqual(b.v, 19);
+  assert.strictEqual(b.v, 20);
   assert.deepStrictEqual(b.rows.map(r => r[0]).sort(), ['Ana', 'Ben'], 'Ana B opted out');
   assert.ok(
     b.rows.every(r => r.length === 3 && r[1] === 42 && r[2] === null),
@@ -540,6 +540,71 @@ test('board: signed-in players by progress then level; opted-out players and the
   assert.deepStrictEqual(
     s.get({board: '1'}).rows.map(r => r[0]),
     ['Ana']
+  );
+});
+
+test('board (v20): an admin hides a player from the leaderboard; their own syncs never bring them back', () => {
+  const s = seed();
+  s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {pct: 41.6, board: 1}, answers: [ans('a3')]});
+  s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {pct: 30, board: 1}, answers: [ans('c2')]});
+  const ben = () => s.get({board: '1'}).rows.some(r => r[0] === 'Ben');
+  assert.ok(ben());
+  assert.strictEqual(s.post({userBoard: 'Ben', hide: true}).error, 'token', 'admin only');
+  assert.strictEqual(s.post({userBoard: 'Nobody', hide: true, token: TOK}).error, 'user');
+  assert.deepStrictEqual(s.post({userBoard: 'ben', hide: true, token: TOK}), {ok: true, board: -1, v: 20});
+  assert.ok(!ben(), 'hidden at once (cache cleared)');
+  assert.ok(
+    s.get({board: '1'}).rows.some(r => r[0] === 'Ana'),
+    'the others stay'
+  );
+  // Ben's app keeps sending board: 1 (his own setting): he stays hidden.
+  s.post({name: 'Ben', pin: '1111', data: prog(2), summary: {pct: 35, board: 1}, answers: [ans('c3')]});
+  Object.keys(s.cache).forEach(k => delete s.cache[k]);
+  assert.ok(!ben(), 'still hidden after his own sync');
+  assert.strictEqual(s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ben').board, -1, 'the admin list says so');
+  assert.deepStrictEqual(s.post({userBoard: 'Ben', hide: false, token: TOK}), {ok: true, board: 1, v: 20});
+  assert.ok(ben(), 'shown again');
+});
+
+test('rename (v20): the record moves to the new name, hidden from the leaderboard; the old name starts over', () => {
+  const s = seed();
+  s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {pct: 41.6, board: 1}, answers: [ans('r1'), ans('r2')]});
+  s.post({rname: 'Ana', rpin: '1234', reports: [rep('rr1')]});
+  const before = s.sheets.Answers.rows.filter(r => r[0] === 'Ana').length;
+  assert.strictEqual(s.post({userRename: {from: 'Ana', into: 'Ana-test'}}).error, 'token', 'admin only');
+  assert.strictEqual(s.post({userRename: {from: 'Ana', into: 'Ben'}, token: TOK}).error, 'exists');
+  const r = s.post({userRename: {from: 'ana', into: 'Ana-test'}, token: TOK});
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.answers, before);
+  assert.strictEqual(s.sheets.Answers.rows.filter(x => x[0] === 'Ana').length, 0, 'no answer left under the old name');
+  assert.strictEqual(s.sheets.Reports.rows.filter(x => x[1] === 'Ana-test').length, 1, 'the report follows');
+  // The renamed record keeps its progress (an archive, read in the admin: the code hash is tied to the name, so the app
+  // does not open it); it is off the leaderboard.
+  const old = s.post({userData: 'Ana-test', token: TOK});
+  assert.deepStrictEqual(old.data, prog(3));
+  Object.keys(s.cache).forEach(k => delete s.cache[k]);
+  assert.ok(!s.get({board: '1'}).rows.some(x => x[0] === 'Ana-test'));
+  // "Ana" is free: signing in again under it (after signing out on the device) starts an empty account.
+  assert.strictEqual(s.get({name: 'Ana', pin: '1234'}).found, false);
+  assert.strictEqual(s.post({name: 'Ana', pin: '1234', data: {}, summary: {board: 1}, answers: []}).ok, true);
+  assert.ok(s.post({users: 1, token: TOK}).users.some(u => u.name === 'Ana-test' && u.board === -1));
+});
+
+test('rename (v20): names merged into the renamed player follow it to the archive', () => {
+  const s = seed();
+  s.post({name: 'Alias', pin: '4321', data: prog(1), summary: {}, answers: [ans('al1')]});
+  const al = s.post({userData: 'Alias', token: TOK}),
+    an = s.post({userData: 'Ana', token: TOK});
+  assert.strictEqual(s.post({userMerge: {from: 'Alias', into: 'Ana', data: {...an.data}, at: an.rev}, token: TOK}).ok, true, al.ok);
+  assert.strictEqual(s.post({userRename: {from: 'Ana', into: 'Ana-test'}, token: TOK}).ok, true);
+  s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: []}); // Ana starts over
+  // A device still signed in as Alias: told it is gone, into the archive, and its answers land there.
+  assert.strictEqual(s.get({name: 'Alias', pin: '4321'}).into, 'Ana-test');
+  s.post({name: 'Alias', pin: '4321', data: prog(1), summary: {}, answers: [ans('al2')]});
+  assert.ok(!s.sheets.Answers.rows.some(r => r[0] === 'Ana' && r[7] === 'al2'), 'never into the new Ana');
+  assert.ok(
+    s.sheets.Answers.rows.some(r => r[0] === 'Ana-test' && r[7] === 'al2'),
+    'into the archive'
   );
 });
 
@@ -577,7 +642,7 @@ test('achs: how many signed-in players hold each achievement; counts only', () =
   s.post({name: 'Ben', pin: '1111', data: data({met10: 3}), summary: {}, answers: []});
   s.post({name: 'Cy', pin: '2222', data: prog(1), summary: {}, answers: []});
   const a = s.get({achs: '1'});
-  assert.strictEqual(a.v, 19);
+  assert.strictEqual(a.v, 20);
   assert.strictEqual(a.n, 2, 'players with a record');
   assert.deepStrictEqual(a.counts, {met10: 2, run10: 1}, 'no _ fields');
   assert.ok(!JSON.stringify(a).match(/Ana|Ben/), 'no names');

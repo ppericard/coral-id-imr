@@ -2070,11 +2070,21 @@ td.cov-c .cov-off {
   border-left: 1px solid var(--surface);
 }
 .cov-cand {
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   color: var(--accent);
   font-weight: 600;
   text-align: right;
   white-space: nowrap;
+}
+/* One line per source in Game coverage's + column, in the source's colour (as the photo tags). */
+.cov-cand span {
+  display: block;
+  margin: 2px 0;
+  padding: 0 6px;
+  border-radius: var(--pill);
+  background: var(--o);
+  color: var(--band-ink);
+  text-align: center;
 }
 @media (max-width: 599px) {
   .cov-t {
@@ -3037,6 +3047,23 @@ td.cov-c.cov-over {
   stroke: var(--line);
   stroke-dasharray: 2 3;
 }
+.adm-jl line.o {
+  stroke: var(--warn);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 3;
+}
+.adm-jl text.o {
+  fill: var(--warn);
+  font-weight: 600;
+}
+.adm-jl path.lrn {
+  stroke: var(--good);
+  stroke-width: 1.5;
+}
+.adm-jl text.s {
+  fill: var(--good);
+  font-size: var(--fs-s);
+}
 .adm-jl circle.m {
   fill: var(--surface);
   stroke: var(--accent);
@@ -3059,6 +3086,9 @@ td.cov-c.cov-over {
   vertical-align: middle;
   border-top: 2px solid var(--accent);
 }
+.adm-jkey i.lrn {
+  border-top-color: var(--good);
+}
 .adm-jkey i.exp {
   border-top: 2px dashed var(--muted);
 }
@@ -3078,4 +3108,58 @@ td.cov-c.cov-over {
 .adm-jnot {
   font-size: var(--fs-s, 0.85rem);
   color: var(--muted);
+}
+
+.adm-jcards {
+  margin: 0;
+  padding-left: 18px;
+  font-size: var(--fs-s);
+}
+.adm-jcards li {
+  margin: 2px 0;
+}
+
+/* A genus learned (mastery exam passed): a small green tag beside its name in the journey's list. */
+.adm-jlearn {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--good-bg);
+  color: var(--good);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  vertical-align: 1px;
+}
+
+/* Game coverage legend (Pierre, 2026-11-02: "the cryptic notations, I already forgot what they mean"). */
+.cov-legend {
+  margin: 4px 0 12px;
+  font-size: var(--fs-s);
+}
+.cov-legend summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+}
+.cov-legend dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 8px 0 0;
+}
+.cov-legend dt {
+  font-weight: 600;
+  text-align: right;
+}
+.cov-legend dd {
+  margin: 0;
+  color: var(--muted);
+}
+.cov-legend .cov-c {
+  display: inline-block;
+  min-width: 28px;
+  padding: 0 4px;
+  border-radius: 4px;
+  text-align: center;
 }

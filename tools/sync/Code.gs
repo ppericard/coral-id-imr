@@ -1,11 +1,11 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 19 (2026-11-02: v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 20 (2026-11-02: v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
 
 const SALT = 'imr-coral-id';
 // Progress and Board (v14): the player's progress % (as the app shows it) and 0 when they chose to stay off the public
-// leaderboard (blank or 1 = shown).
+// leaderboard (blank or 1 = shown); -1 (v20) = hidden by an admin (userBoard), kept whatever the player's app sends.
 const HEAD = ['Name', 'Updated', 'Learned', 'Seen', 'Total', 'Review first', 'Code hash', 'Data', 'Progress', 'Board'];
 const COLORS = {ok: '#dcefd9', mid: '#e3f1f3', weak: '#f7dcd6', new: '#f2f2f2'};
 const LABELS = {ok: 'Learned', mid: 'Learning', weak: 'Review', new: ''};
@@ -22,7 +22,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 19;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 20;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -97,7 +97,7 @@ function doPost(e){
     if (!isAdmin_(String(p.token || ''))) return json_({ok: false, error: 'token'});
     return json_(p.readStats ? stats_() : answers_({name: p.aname, pin: p.apin}));
   }
-  if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete) return json_(users_(p));  // admin user management (v11, see users_)
+  if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userRename) return json_(users_(p));  // admin user management (v11, see users_)
   const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
@@ -128,7 +128,9 @@ function doPost(e){
       if (sh.getRange(1, 9).getValue() !== HEAD[8]) sh.getRange(1, 1, 1, HEAD.length).setValues([HEAD]).setFontWeight('bold');  // tab made before v14
       const pct = typeof s.pct === 'number' && isFinite(s.pct) ? Math.max(0, Math.min(100, Math.round(s.pct))) : '';
       // Board: the player's choice when the app sends it, else the one saved (an older app must not undo an opt-out).
-      const board = typeof s.board === 'number' ? (s.board ? 1 : 0) : r && sh.getRange(r, 10).getValue() === 0 ? 0 : 1;
+      // An admin's hide (-1, v20) stays: the player's app never sends it back to 1.
+      const saved = r ? sh.getRange(r, 10).getValue() : '',
+        board = Number(saved) === -1 && saved !== '' ? -1 : typeof s.board === 'number' ? (s.board ? 1 : 0) : saved === 0 ? 0 : 1;
       sh.getRange(r, 1, 1, HEAD.length).setValues([[safe_(name), new Date(), s.learned || 0, s.seen || 0, s.total || 0, (s.review || []).map(safe_).join(', '), safe_(h), json.length < CHUNK ? json : '@' + DATA_TAB, pct, board]]);
     } catch (err) { return json_({ok: false, error: 'save', log: true}); }
     // One row per RA, one column per genus, coloured by status: the class at a glance.
@@ -226,28 +228,36 @@ const PHOTO_W = {N: 10, NEW: 0.5, KNOWN: -1};
 // their course, others know even less): level PLAYER0 = -1, i.e. about 45% right on a photo of average difficulty with
 // 4 choices. Starting at 0 (average), a beginner's misses made the photos look harder than they are.
 const PLAYER0 = -1;
-const guess_ = mode => { const kq = /\|k(\d)$/.exec(mode); return kq ? 1 / Number(kq[1]) : mode.indexOf('quiz-duel') === 0 ? 0.5 : 0.25; };
-function trusted_(rows){  // rows: [who, right 0|1, mode, anonymous]
+// v20: a photo-quiz question logged without its number of choices but with fewer than 4 in the Choices column (the
+// "Again: A or B?" question after a mix-up, logged plain "quiz" until 2026-11-02) is rated with its real guess rate,
+// 1 / choices (Pierre: correct the existing data too; nothing in the sheet is rewritten). core.js guessOf in step.
+const guess_ = (mode, choices) => {
+  const kq = /\|k(\d)$/.exec(mode); if (kq) return 1 / Number(kq[1]);
+  if (mode.indexOf('quiz-duel') === 0) return 0.5;
+  const n = String(choices || '').split(/\s+/).filter(Boolean).length;
+  return n >= 2 && n < 4 ? 1 / n : 0.25;
+};
+function trusted_(rows){  // rows: [who, right 0|1, mode, anonymous, choices]
   const T = {}, out = {};
-  rows.forEach(([w, ok, m, an]) => { const t = T[w] = T[w] || [0, 0, 0, 0, an], g = guess_(m); t[0]++; t[1] += ok; t[2] += g; t[3] += g * (1 - g); });
+  rows.forEach(([w, ok, m, an, ch]) => { const t = T[w] = T[w] || [0, 0, 0, 0, an], g = guess_(m, ch); t[0]++; t[1] += ok; t[2] += g; t[3] += g * (1 - g); });
   Object.keys(T).forEach(w => { const t = T[w]; out[w] = t[0] >= TRUST.N && (t[1] - t[2]) / Math.sqrt(t[3]) >= TRUST.Z; });
   return out;
 }
 function stats_(){
-  const cache = CacheService.getScriptCache(), hit = cache.get('stats11');
+  const cache = CacheService.getScriptCache(), hit = cache.get('stats12');
   if (hit) return JSON.parse(hit);
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: {}, ras: {}, conf: {}};
   if (!sh || sh.getLastRow() < 2) return out;
   const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 12).getValues().filter(r => r[0]).sort((a, b) => new Date(a[1]) - new Date(b[1]));
   const P = {}, R = {}, H = {}, sig = x => 1 / (1 + Math.exp(-x));
   // One player whatever the capitalisation of the name (find_ and hash_ match names case-blind; aid_ lowercases too).
-  const trust = trusted_(rows.map(r => [lc_(r[0]), Number(r[4]) ? 1 : 0, String(r[5]), lc_(r[0]).indexOf('~anon ') === 0]));
+  const trust = trusted_(rows.map(r => [lc_(r[0]), Number(r[4]) ? 1 : 0, String(r[5]), lc_(r[0]).indexOf('~anon ') === 0, String(r[11] || '')]));
   rows.forEach(r => {
     const who = lc_(r[0]), ok = Number(r[4]) ? 1 : 0, mode = String(r[5]), fs = String(r[6]).split(/\s+/).filter(Boolean);
     const sg = String(r[2]), sa = String(r[3]);
     if (trust[who]) String(r[11] || '').split(/\s+/).filter(x => x && x !== sg).forEach(x => { const k = sg < x ? sg + '|' + x : x + '|' + sg, c = out.conf[k] = out.conf[k] || [0, 0]; c[0]++; if (!ok && sa === x) c[1]++; });
     if (!fs.length) return;
-    const g = guess_(mode), ra = R[who] = R[who] || [PLAYER0, 0];
+    const g = guess_(mode, r[11]), ra = R[who] = R[who] || [PLAYER0, 0];
     const ph = fs.map(f => P[f] = P[f] || [0, 0, 0, 0]), b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);  // one view alone is harder (app.js PICKD.SINGLE)
     const e = g + (1 - g) * sig(ra[0] - b), d = ok - e, n = ra[1];
     // The photos move on trusted players' answers, weighed by their experience, against their own history with each photo.
@@ -266,7 +276,7 @@ function stats_(){
   Object.keys(P).forEach(f => out.photos[f] = [Math.round(P[f][0] * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]]);
   const salt = anonSalt_();
   Object.keys(R).forEach(n => out.ras[aid_(n, salt)] = [Math.round(R[n][0] * 100) / 100, R[n][1]]);
-  try { cache.put('stats11', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
+  try { cache.put('stats12', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
   return out;
 }
 
@@ -400,7 +410,7 @@ function board_(){
       try { return pctOf_(JSON.parse(JSON.parse(readData_(String(r[0]), String(r[7] || '')).json || '{}')['imr-coral-progress'] || '{}'), list); } catch (e) { return null; }
     };
     out.rows = ra.getRange(2, 1, ra.getLastRow() - 1, HEAD.length).getValues()
-      .filter(r => r[0] && r[9] !== 0 && String(r[9]) !== '0')
+      .filter(r => r[0] && !(r[9] !== '' && Number(r[9]) <= 0))  // 0 the player's opt-out, -1 hidden by an admin (v20)
       // Progress saved before v14 (blank): learned / total until the player's next sync writes it.
       // Level only from ELO_MIN answers (v15, Pierre: "even 50 is not enough to settle the score"): null before.
       .map(r => { const x = ras[aid_(String(r[0]), salt)], own = pctFrom(r), pct = own != null ? own : r[8] === '' ? (Number(r[4]) ? Math.round(100 * Number(r[2]) / Number(r[4])) : null) : Number(r[8]);
@@ -436,6 +446,9 @@ function achs_(){
 //   {users: 1, token} → {ok, users: [{name, updated, learned, seen, total, review, answers, right, first, last, days,
 //     modes: {mode: [answers, right]}, recent: [answers, right] (last 50), mix: [[shown, answered, times]] (top 5),
 //     reports, size}], removed: [{name, into, time}]}
+//   {userRename: {from, into}, token} → {ok, answers, reports}: the record moves to a new name, hidden from the
+//     leaderboard; 'exists' when the new name is taken (v20).
+//   {userBoard: name, hide, token} → {ok, board}: hidden from the leaderboard by an admin (-1) or shown again (1) (v20).
 //   {userData: name, token} → {ok, rev, data}: that player's saved progress (the admin merges two players in the browser,
 //     with core.js mergeUsers, then sends the result back with userMerge).
 //   {userDelete: name, answers: true|false, token} → deletes the player's rows (RAs, Progress data, By genus). Their
@@ -474,6 +487,20 @@ function users_(p){
   const ss = SpreadsheetApp.getActiveSpreadsheet(), ra = sheet_('RAs', HEAD);
   const row_ = name => { const r = find_(ra, name); return r ? {r: r, v: ra.getRange(r, 1, 1, HEAD.length).getValues()[0]} : null; };
   const removed_ = (name, h, into) => sheet_('Removed', REMOVED).appendRow([safe_(name), h, safe_(into || ''), new Date()]);
+  // v20: {userBoard: name, hide: true|false, token} hides the player from the public leaderboard (Board -1, which their
+  // own syncs keep) or shows them again (1). Pierre, 2026-11-02: a renamed test account must not be on the leaderboard.
+  // Under the script lock, as progress saves (Codex review #352): a sync between the read and the write could otherwise
+  // put back the Board value it read.
+  if (p.userBoard) {
+    const lock = LockService.getScriptLock(); lock.waitLock(10000);
+    try {
+      const u = row_(String(p.userBoard)); if (!u) return {ok: false, error: 'user'};
+      const b = p.hide ? -1 : 1;
+      ra.getRange(u.r, 10).setValue(b);
+      CacheService.getScriptCache().remove('board14');
+      return {ok: true, board: b};
+    } finally { lock.releaseLock(); }
+  }
   if (p.userData) {
     const u = row_(String(p.userData)); if (!u) return {ok: false, error: 'user'};
     const d = readData_(String(u.v[0]), String(u.v[7] || ''));
@@ -495,13 +522,34 @@ function users_(p){
         if (!(w in hit)) hit[w] = ids.has(aid_(w, salt));
         if (hit[w]) { sh.deleteRow(i + 2); n++; }
       }
-      try { CacheService.getScriptCache().remove('stats11'); } catch (e) {}
+      try { CacheService.getScriptCache().remove('stats12'); } catch (e) {}
       return {ok: true, answers: n};
     } finally { lock.releaseLock(); }
   }
-  if (p.userDelete || p.userMerge) {
+  if (p.userDelete || p.userMerge || p.userRename) {
     const lock = LockService.getScriptLock(); lock.waitLock(10000);
     try {
+      // v20: {userRename: {from, into}, token} → the player's record moves to a new name (Pierre, 2026-11-02: keep his
+      // account played with the old algorithms apart, as "Pierre-test", and start over as "Pierre"): RAs row, saved
+      // progress, By genus, answers and reports; hidden from the leaderboard (-1). An archive, read in the admin: the code
+      // hash is tied to the name (hash_), so the app no longer opens it. The
+      // old name is not marked removed: a device still signed in with it, or a new sign-in, starts a new account there.
+      if (p.userRename) {
+        const m = p.userRename || {}, a = row_(String(m.from || '')), into = String(m.into || '').trim().slice(0, 40);
+        if (!a || !into) return {ok: false, error: 'user'};
+        if (row_(into)) return {ok: false, error: 'exists'};
+        const from = String(a.v[0]);
+        ra.getRange(a.r, 1).setValue(safe_(into));
+        ra.getRange(a.r, 10).setValue(-1);
+        relabel_(DATA_TAB, 1, from, into);
+        relabel_('By genus', 1, from, into);
+        const answers = relabel_('Answers', 1, from, into), reports = relabel_('Reports', 2, from, into);
+        // Names merged into it before point to the archive too (Removed's Into): a device still signed in with one of
+        // them must not log into the new account under the old name (Codex review #352).
+        relabel_('Removed', 3, from, into);
+        ['board14', 'stats12'].forEach(k => { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
+        return {ok: true, answers: answers, reports: reports};
+      }
       if (p.userDelete) {
         const u = row_(String(p.userDelete)); if (!u) return {ok: false, error: 'user'};
         const name = String(u.v[0]);
@@ -528,7 +576,7 @@ function users_(p){
   const out = {ok: true, users: [], removed: []}, by = {}, salt = anonSalt_();
   if (ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, HEAD.length).getValues().filter(r => r[0]).forEach(r => {
     const u = {name: String(r[0]), id: aid_(String(r[0]), salt), updated: new Date(r[1]).getTime() || 0, learned: Number(r[2]) || 0, seen: Number(r[3]) || 0, total: Number(r[4]) || 0,
-      review: String(r[5] || ''), answers: 0, right: 0, first: 0, last: 0, days: 0, modes: {}, recent: [0, 0], mix: [], reports: 0, size: String(r[7] || '').length};
+      review: String(r[5] || ''), board: r[9] === '' ? 1 : Number(r[9]), answers: 0, right: 0, first: 0, last: 0, days: 0, modes: {}, recent: [0, 0], mix: [], reports: 0, size: String(r[7] || '').length};
     out.users.push(u); by[lc_(u.name)] = u;
   });
   const an = ss.getSheetByName('Answers'), days = {}, mixes = {}, last50 = {};

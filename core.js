@@ -169,9 +169,16 @@
   // Who rates the photos and the confusions, as tools/sync/Code.gs trusted_ (v17; v18: devices that never signed in too,
   // under the same rule, Pierre 2026-11-02): players with TRUST.N answers or more and a right rate clearly above chance (one-sided z of at least TRUST.Z against each question's guess rate).
   const TRUST = {N: 10, Z: 1.645}; // answers per player, not per photo
-  const guessOf = mode => {
+  // As Code.gs guess_ (v20): without |kN, a photo-quiz question with 2 or 3 genera in its choices (readAnswers row
+  // index 10) is rated with 1 / choices ("Again: A or B?", logged plain "quiz" until 2026-11-02).
+  const guessOf = (mode, choices) => {
     const kq = /\|k(\d)$/.exec(mode);
-    return kq ? 1 / Number(kq[1]) : mode.indexOf('quiz-duel') === 0 ? 0.5 : 0.25;
+    if (kq) return 1 / Number(kq[1]);
+    if (mode.indexOf('quiz-duel') === 0) return 0.5;
+    const n = String(choices || '')
+      .split(/\s+/)
+      .filter(Boolean).length;
+    return n >= 2 && n < 4 ? 1 / n : 0.25;
   };
   function trustOf(rows) {
     const T = {},
@@ -179,7 +186,7 @@
     rows.forEach(r => {
       if (!r[0]) return;
       const t = (T[r[0]] = T[r[0]] || [0, 0, 0, 0, 0]),
-        g = guessOf(r[5]);
+        g = guessOf(r[5], r[10]);
       t[0]++;
       t[1] += r[4] ? 1 : 0;
       t[2] += g;
@@ -214,7 +221,7 @@
         const fs = r[6].split(/\s+/).filter(Boolean);
         if (!r[0] || !fs.length) return;
         const ok = r[4] ? 1 : 0,
-          g = guessOf(r[5]),
+          g = guessOf(r[5], r[10]),
           ra = (R[r[0]] = R[r[0]] || [PLAYER0, 0]);
         const ph = fs.map(f => (P[f] = P[f] || [0, 0, 0, 0])),
           b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
