@@ -144,6 +144,20 @@ const server = http.createServer((req, res) => {
       await q2.evaluate(() => (location.hash = 'quiz-board'));
       await q2.waitForSelector('#openall', {timeout: 5000}).catch(() => {});
       if (!(await q2.$('#openall'))) fails.push(`${w}px My progress: no button to open all genera`);
+      // My progress (Pierre, 2026-11-02): the player's card (ring + badge) above the board on phones, Slate by default,
+      // the view switch last on the page.
+      const pg = await q2.evaluate(() => {
+        const c = document.querySelector('#view .pbadge'),
+          b = document.querySelector('#view .pboard'),
+          sw = document.querySelector('#view .pvseg');
+        return {
+          card: !!c && !!c.querySelector('.pring') && !!b && !!(c.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING),
+          slate: !!document.querySelector('#view .pslate'),
+          last:
+            !!sw && !sw.nextElementSibling && sw.getBoundingClientRect().top >= b.querySelector('.pgwrap').getBoundingClientRect().bottom
+        };
+      });
+      if (!pg.card || !pg.slate || !pg.last) fails.push(`${w}px My progress layout: ${JSON.stringify(pg)}`);
       else {
         await q2.click('#openall');
         const left = await q2.evaluate(() => introLeft().length);

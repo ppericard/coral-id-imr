@@ -5,22 +5,22 @@
 // Progress board, one screen: a wall of the 39 cover photos in slate order (name band in the level colour, grey photo =
 // not seen, red border = review) beside a side column with the overall ring, what to review first and the mix-ups. Signing in
 // and backup/reset live in the header and ⚙ (Pierre, 2026-11-01: the board comes first, nothing unrelated around it).
-// The player's badge on My progress (Pierre, 2026-11-01: "a badge, as in video games, that shows the player's
-// achievements"): name, place and Elo on the leaderboard (filled once it loads; the Elo from this device until then),
-// achievements earned with the last three. Each half links to its page.
-function badge() {
+// The player's card on My progress (Pierre, 2026-11-01: "a badge, as in video games"; 2026-11-02: one compact element
+// with the ring, at the top of the page, not under the 39 tiles): the overall ring with its %, then the name, place and
+// Elo on the leaderboard (filled once it loads; the Elo from this device until then), genera learned (or met) and
+// achievements earned with the last three. The rank links to the leaderboard, the achievements to their page.
+function badge(ring, pct, sub) {
   const A = store.get(ACHK, {}) || {},
     got = ACH.filter(a => A[a.id]).sort((x, y) => A[y.id] - A[x.id]),
     name = SYNC && SYNC.name ? SYNC.name : '',
     G = P[LEVEL];
-  return `<div class="pbadge"><span class="pbav" aria-hidden="true">${name ? esc(name.trim()[0].toUpperCase()) : '🪸'}</span>
+  return `<div class="pbadge"><div class="pring" style="background:conic-gradient(${ring})"><span><b>${pct}%</b></span></div>
     <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
-    <a id="pbrank" href="#board">🏆 ${name ? '' : 'Leaderboard · '}${eloLine(G)}</a>
-    <a href="#ach">🏅 <b>${got.length}</b>/${ACH.length} ${got
+    <span>${sub} · <a id="pbrank" href="#board">🏆 ${eloLine(G)}</a> · <a href="#ach">🏅 <b>${got.length}</b>/${ACH.length} ${got
       .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
       .slice(0, 3)
       .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
-      .join('')}</a></div></div>`;
+      .join('')}</a></span></div></div>`;
 }
 // A name of 13+ letters (Duncanopsammia) gets a soft hyphen near its middle, between a vowel and a consonant: a phone
 // tile breaks it there with a hyphen instead of anywhere, at the normal size (RA review and Codex review #344).
@@ -142,23 +142,17 @@ function quizBoard() {
       <div class="pgr pgbonus"><span class="gn" title="Bonus genera, not on the IMR list">+</span><span class="pgt">Bonus: not on the IMR list</span>
         <span class="pseg">${BO.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`).join('')}${lockT('pgl')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BONUS.length}</small></div></div>`
   };
-  let pv = store.get('imr-coral-pview', 'photos');
-  if (!VIEWS[pv]) pv = 'photos';
+  // Slate by default (Pierre, 2026-11-02: compact, and the order of the IMR slate the RAs know); the view switch is at the
+  // bottom of the side column.
+  let pv = store.get('imr-coral-pview', 'slate');
+  if (!VIEWS[pv]) pv = 'slate';
   $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, get it right on harder and harder photos: that fills it up to 95%. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the photo quiz, several questions apart. All ${EXAM.n} right and the genus is learned (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
   <p class="lede"><b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin and easily taken for a genus of the list (fire coral <i>Millepora</i> first). The first joins the photo quiz and the duels at ${BONUS_AT(0)}% progress, then one more every 5%. They don't count in your progress; their ID tips come from the Coral Finder. On this page they come after the list: a <b>?</b> tile is a bonus genus still locked, with the progress that unlocks it.</p>
   <p class="lede"><b>Colours</b>: white with a dashed border = not seen; then from pale to dark, one step per quarter of the way; the darkest, with a tick = learned. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>
   <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. 95% means your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little); learned means its mastery exam is passed too.</p>
   <div class="pgame pboard"><div class="pgwrap"></div>
   <aside class="gside">
-    <div class="seg" role="group" aria-label="View">${[
-      ['photos', 'Photos'],
-      ['slate', 'Slate'],
-      ['groups', 'Groups']
-    ]
-      .map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`)
-      .join('')}</div>
-    <div class="pring" style="background:conic-gradient(${ring})"><span><b>${progPct(list)}%</b><small>${count('ok') ? `${count('ok')}/${list.length} learned` : `${list.length - count('new')}/${list.length} met`}</small></span></div>
-    ${badge()}
+    ${badge(ring, progPct(list), count('ok') ? `${count('ok')}/${list.length} learned` : `${list.length - count('new')}/${list.length} met`)}
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera"><b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Learned</p>
     ${
@@ -175,6 +169,13 @@ function quizBoard() {
         : ''
     }
     ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> ↔ <i>${esc(o)}</i> <small>· ${k}×</small></a>`).join('')}</p></div>` : ''}
+    <div class="seg pvseg" role="group" aria-label="View">${[
+      ['slate', 'Slate'],
+      ['photos', 'Photos'],
+      ['groups', 'Groups']
+    ]
+      .map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`)
+      .join('')}</div>
   </aside></div>`;
   bindQuizNav('quiz-board');
   const oa = document.getElementById('openall');
@@ -194,12 +195,9 @@ function quizBoard() {
   };
   rank(boardCached());
   loadBoard().then(rank);
-  // Phones: the Photos/Slate/Groups switch sits above the board and stays pinned while the page scrolls (Pierre, 2026-10-31).
-  if (matchMedia(MQ.phone).matches) {
-    const sg = $v.querySelector('.pboard .gside .seg');
-    sg.classList.add('pvpin');
-    $v.querySelector('.pboard').before(sg);
-  }
+  // Phones and tablets (the side column goes under the board): the player's card goes above the board, so the ring and
+  // the badge are seen first (Pierre, 2026-11-02); the view switch stays at the very bottom.
+  if (isStacked()) $v.querySelector('.pboard').before($v.querySelector('.pboard .gside .pbadge'));
   const wrap = $v.querySelector('.pboard .pgwrap');
   const show = () => {
     wrap.innerHTML = VIEWS[pv]();
@@ -331,9 +329,7 @@ const eloScore = a => (typeof a === 'number' ? Math.round(1000 + 200 * a) : '–
 const ELO_MIN = 200;
 const eloLine = G => {
   const n = G ? (G.ok || 0) + (G.ko || 0) : 0;
-  return n >= ELO_MIN && typeof G.th === 'number'
-    ? `Elo ${eloScore(G.th)}`
-    : `<small>Your rating shows after ${ELO_MIN - n} more answers</small>`;
+  return n >= ELO_MIN && typeof G.th === 'number' ? `Elo ${eloScore(G.th)}` : `<small>Elo in ${ELO_MIN - n} answers</small>`;
 };
 // The sync script answers in 1-3 s (a Google Apps Script starting up), whatever its own cache: so the last board is kept
 // on this device (BOARD_C, not an imr-coral key: it never travels with the progress) and shown at once, then replaced
