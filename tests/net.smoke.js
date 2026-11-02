@@ -13,6 +13,7 @@ const TYPES = {
   '.woff2': 'font/woff2',
   '.webmanifest': 'application/manifest+json'
 };
+let SWV = 0;
 const server = http.createServer((req, res) => {
   const u = decodeURIComponent(new URL(req.url, 'http://x').pathname),
     f = path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
@@ -26,7 +27,7 @@ const server = http.createServer((req, res) => {
       return res.end();
     }
     res.writeHead(200, {'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream'});
-    res.end(b);
+    res.end(u === '/sw.js' && SWV ? b + `\n// deploy ${SWV}\n` : b); // test 9: a new deploy changes sw.js
   });
 });
 
@@ -38,6 +39,7 @@ const server = http.createServer((req, res) => {
 // 4. The leaderboard shows the copy kept on the device at once while the sync script is slow.
 // 5. Leaving a page drops its photos still loading.
 // 6. The service worker installs even when each app file fails once (retried at install).
+// 9. A new version reloads the page by itself at the next page change.
 // 8. Start-up recovers when its scripts, stylesheet and data.json fail once (loader retries, getR).
 // 7. Photo sizes follow the box, the screen density and the Photo quality setting (Auto, Saver, Full); thumbnails 240 px.
 // Speed numbers are measured by tools/perf.js, not here. Locally: node tests/net.smoke.js
@@ -274,6 +276,35 @@ const server = http.createServer((req, res) => {
       .catch(() => fails.push('Start-up failed on a line where every 5th request fails'));
     await ctx.close();
   }
+  // 9. A new version (Pierre, 2026-11-02: players never reload by hand): once it has taken over in the background, the
+  // page reloads itself at the next page change.
+  {
+    const ctx = await b.newContext({viewport: {width: 390, height: 800}});
+    await ctx.addInitScript(() => localStorage.setItem('imr-tour', '1'));
+    await ctx.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    const p = await ctx.newPage();
+    await p.goto(base);
+    await ready(p);
+    await p.evaluate(() => navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready)); // https only in the app
+    await p.reload();
+    await ready(p);
+    if (!(await p.evaluate(() => !!navigator.serviceWorker.controller))) fails.push('Update test: the page is not controlled');
+    await p.evaluate(() => (window.__old = 1));
+    SWV = 1;
+    await p.evaluate(() => swCheck());
+    await p
+      .waitForFunction(() => UPDATED, null, {timeout: 30000})
+      .catch(() => fails.push('A new version did not take over in the background'));
+    if (!(await p.evaluate(() => window.__old))) fails.push('The page reloaded in the middle of a page');
+    await p.evaluate(() => (location.hash = 'genera'));
+    await p
+      .waitForFunction(() => !window.__old && window.APP_READY && location.hash === '#genera', null, {timeout: 20000})
+      .catch(() => fails.push('The page did not reload onto the new version at the next page change'));
+    await ctx.close();
+  }
   // 6. Service worker install on an unstable line: every app file fails once, the install still completes.
   {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}});
@@ -311,7 +342,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries, photo sizes, start-up retries.'
+    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries, photo sizes, start-up retries, new versions without a manual reload.'
   );
 })().catch(e => {
   console.error(e);

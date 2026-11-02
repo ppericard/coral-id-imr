@@ -3592,6 +3592,8 @@ document.querySelectorAll('#boardset button').forEach(
 );
 showBoardSet();
 function route() {
+  // A new version took over in the background (see UPDATED): the page reloads on the way to the next page.
+  if (UPDATED) return location.reload();
   // Photos of the page being left that are still loading are dropped, so a slow line gives its bandwidth to the new page
   // (tools/perf.js, slow 3G: the Home photos still downloading delayed the first quiz photo by seconds).
   $v.querySelectorAll('img').forEach(i => {
@@ -3968,10 +3970,35 @@ function curRefresh() {
     })
     .catch(() => {});
 }
+// New versions (Pierre, 2026-11-02: players will not know to reload, he had to reload once or twice himself). Each
+// deploy changes sw.js (its cache name V). The browser checks it at each launch, and the app asks again when it comes
+// back into view and every 30 min (swCheck). The new version installs in the background and takes over (skipWaiting,
+// clients.claim): this page then reloads itself at the next calm moment, when it comes back into view or at the next
+// page change (route), so the player is on the new version without doing anything. Progress is saved at every answer.
+let UPDATED = false,
+  swAt = Date.now();
+const swCheck = () => {
+  swAt = Date.now();
+  if ('serviceWorker' in navigator)
+    navigator.serviceWorker
+      .getRegistration()
+      .then(r => r && r.update())
+      .catch(() => {});
+};
+if ('serviceWorker' in navigator) {
+  const had = !!navigator.serviceWorker.controller; // the first install also takes over: that is no update
+  navigator.serviceWorker.addEventListener('controllerchange', () => had && (UPDATED = true));
+}
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && Date.now() - curAt > 300000) curRefresh();
+  if (document.visibilityState !== 'visible') return;
+  if (UPDATED) return location.reload();
+  if (Date.now() - curAt > 300000) curRefresh();
+  if (Date.now() - swAt > 300000) swCheck();
 });
 setInterval(() => {
-  if (document.visibilityState === 'visible') curRefresh();
+  if (document.visibilityState === 'visible') {
+    curRefresh();
+    swCheck();
+  }
 }, 1800000);
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
