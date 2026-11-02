@@ -137,6 +137,17 @@ const server = http.createServer((req, res) => {
       await q3.waitForTimeout(800);
       const bk = await q3.evaluate(() => location.hash);
       if (bk !== '#genera') fails.push(`${w}px Back on a linked sheet after a photo: ${bk}`);
+      // From the quiz to a sheet, then a reload: the sheet's Back still returns to the quiz (Codex review #344).
+      await q3.evaluate(() => (location.hash = 'quiz'));
+      await q3.waitForTimeout(600);
+      await q3.evaluate(() => (location.hash = 'g-Porites'));
+      await q3.waitForTimeout(600);
+      await q3.reload();
+      await q3.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await q3.click('[data-back]');
+      await q3.waitForTimeout(800);
+      const bq = await q3.evaluate(() => location.hash);
+      if (bq !== '#quiz') fails.push(`${w}px Back on a sheet after a reload: ${bq}`);
       await q3.close();
       // Coral Finder: the "Compare A and B" button is readable (its text was the colour of its background).
       await q2.evaluate(() => (location.hash = 'finder|form=M'));

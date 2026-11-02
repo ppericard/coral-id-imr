@@ -436,7 +436,7 @@ function zoom(list, i, opts = {}) {
     x0 = null;
   };
   if (lbClose) lbClose(true);
-  else history.pushState({lb: 1}, '');
+  else history.pushState({lb: 1, d: pageDepth}, '');
   lbClose = close;
   lb.hidden = false;
   lb.onclick = e => {
@@ -1075,7 +1075,7 @@ function viewLookalikes(a, b) {
       store.set('imr-coral-lkswiped', 1);
     }
     i = (k + L.length) % L.length;
-    history.replaceState(null, '', `#cmp|${L[i].A}|${L[i].B}`);
+    history.replaceState({d: pageDepth}, '', `#cmp|${L[i].A}|${L[i].B}`);
     draw();
   };
   const keys = e => {
@@ -3562,7 +3562,7 @@ function showModes(tab, h) {
     $modes.hidden = false;
     $modes.setAttribute('aria-label', 'Page');
     $modes.innerHTML = ctx;
-    $modes.querySelector('[data-back]').onclick = () => (pagesSeen > 0 ? history.back() : go(h.startsWith('g-') ? 'genera' : 'cmp'));
+    $modes.querySelector('[data-back]').onclick = () => (pageDepth > 0 ? history.back() : go(h.startsWith('g-') ? 'genera' : 'cmp'));
     return;
   }
   // A section with a single tool needs no tab bar.
@@ -3896,11 +3896,16 @@ document.querySelectorAll('#boardset button').forEach(
 showBoardSet();
 let routeFrom = '',
   generaY = null,
-  // Moves between pages of the app in this tab (hash changes): Back on a sheet goes back only when there is a page to go
-  // back to (history.length also counts the enlarged photo's entry, which left a deep-linked sheet's Back doing nothing:
-  // Codex review #344).
-  pagesSeen = 0;
-addEventListener('hashchange', () => pagesSeen++);
+  // How many pages of the app lie behind this one in the tab's history: Back on a sheet goes back only when there is
+  // one (history.length also counts the enlarged photo's entry, which left a deep-linked sheet's Back doing nothing:
+  // Codex review #344). Kept in each history entry's state, so a reload or Back / Forward keeps it right.
+  pageDepth = typeof (history.state || {}).d === 'number' ? history.state.d : 0;
+if (!history.state || typeof history.state.d !== 'number') history.replaceState({...(history.state || {}), d: pageDepth}, '');
+addEventListener('hashchange', () => {
+  const s = history.state || {};
+  if (typeof s.d === 'number') pageDepth = s.d;
+  else history.replaceState({...s, d: ++pageDepth}, '');
+});
 function route() {
   // A new version took over in the background (see UPDATED): the page reloads on the way to the next page.
   if (UPDATED) return location.reload();
@@ -3931,7 +3936,7 @@ function route() {
   const fromSheet = routeFrom.startsWith('g-');
   routeFrom = h;
   // Home lives at the clean URL; an old #home link is rewritten to it.
-  if (h === 'home') history.replaceState(null, '', location.pathname + location.search);
+  if (h === 'home') history.replaceState({d: pageDepth}, '', location.pathname + location.search);
   const tab = sectionOf(h);
   resetHelp();
   $gpop.hidden = true;
@@ -4133,7 +4138,7 @@ $help.onclick = () => {
 document.querySelector('.brand .home').onclick = e => {
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
   e.preventDefault();
-  if (location.hash) history.pushState(null, '', location.pathname + location.search);
+  if (location.hash) history.pushState({d: ++pageDepth}, '', location.pathname + location.search);
   route();
 };
 // Header metrics for CSS: --hdr-h (what stays pinned: sticky offset for the page bar, cover photo, side panels)
