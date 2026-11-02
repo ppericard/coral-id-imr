@@ -4269,6 +4269,7 @@ function bindUsers() {
       USERS = null;
       ANS = null;
       STATS = null; // levels (ras) too, not only the counts
+      Object.keys(JDATA).forEach(k => delete JDATA[k]); // the journeys' saved progress (admin-journey.js) too
       render();
     };
   $v.querySelectorAll('[data-uopen]').forEach(

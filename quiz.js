@@ -646,7 +646,7 @@ function introOfferShow() {
 // The cards of the genera met now (INTRO in model.js), one after the other over the question: the first INTRO.START
 // together ("1 of 4", the first questions are about them), later ones alone (asked a few questions later). Recorded
 // when shown, so a planned question never played leaves no genus met without its card.
-function introShow(L, start) {
+function introShow(L, start, kind = start ? 's' : 'c') {
   document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
   const d = document.createElement('div');
   d.className = 'unlock intro';
@@ -666,7 +666,7 @@ function introShow(L, start) {
       star = typeof starNote === 'function' ? starNote(n) : '',
       more = i < L.length - 1;
     // Met when its card is shown (Codex review #350): a sequence left half-way (reload) shows the rest next time.
-    introAdd([n], start);
+    introAdd([n], start, kind);
     d.setAttribute('aria-label', `New genus: ${n}`);
     d.innerHTML = `<div class="ulcard">${p ? `<div class="ulphoto"><img src="${img(p, 's')}" alt=""></div>` : ''}
       <p class="ulkick">New genus${L.length > 1 ? ` · ${i + 1} of ${L.length}` : ''}</p><h3><i>${esc(n)}</i></h3>
@@ -753,7 +753,7 @@ function quizDuel(a, b) {
   question(...q);
   // Both genera are named on the buttons: the cards of those not met yet come together, and either can be the answer.
   const L = q[2].filter(n => !introduced(n));
-  if (L.length) introShow(L, true);
+  if (L.length) introShow(L, true, 'c');
 }
 function planDuel(a, b) {
   const list = pool();

@@ -17,7 +17,9 @@ let JSORT = 'met';
 // imr-coral-intro-offer {at, open, via, t} (model.js INTRO; times and via from 2026-11-02). name -> null while loading.
 const JDATA = {};
 function journeyCards(name) {
-  if (name in JDATA) return JDATA[name];
+  // Kept until Players' ↻ (or the journey's) clears it; a failed read is not kept (Codex review #352).
+  if (JDATA[name] && !JDATA[name].err) return JDATA[name];
+  if (name in JDATA && JDATA[name] === null) return null;
   JDATA[name] = null;
   userPost({userData: name})
     .then(j => {
@@ -40,6 +42,7 @@ function journeyCards(name) {
         j && j.ok ? {map: P('imr-coral-intro') || {}, offer: P('imr-coral-intro-offer'), learned} : {err: (j && j.error) || 'unreachable'};
     })
     .catch(() => (JDATA[name] = {err: 'unreachable'}))
+    .then(() => JDATA[name] && JDATA[name].err && setTimeout(() => delete JDATA[name], 0))
     .then(() => cur === '~journey/' + name && render());
   return null;
 }
@@ -153,7 +156,7 @@ function journeyChart(series, top, opt = {}) {
 
 function renderJourney(name) {
   status();
-  const back = `<a class="adm-fchip plain" href="#~users">← Players</a>`;
+  const back = `<a class="adm-fchip plain" href="#~users">← Players</a><button type="button" class="adm-fchip plain" data-jload title="Reload">↻</button>`;
   if (!USERS || !ANS) {
     $v.innerHTML = `<div class="adm-shead">${back}<h2>${esc(name)}</h2></div><p class="note">Loading…</p>`;
     Promise.all([USERS ? null : loadUsers(), ANS ? null : loadStats()]).then(() => {
@@ -164,12 +167,14 @@ function renderJourney(name) {
   const u = (USERS.users || []).find(x => x.name === name);
   if (!u || !u.id) {
     $v.innerHTML = `<div class="adm-shead">${back}<h2>${esc(name)}</h2></div><p class="note">${u ? 'No anonymous id for this player yet (sheet script v13).' : 'No player by this name.'}</p>`;
+    bindJReload();
     return;
   }
   const R = (ANS.rows || []).filter(r => r[0] === u.id).sort((a, b) => a[1] - b[1]);
   const head = `<div class="adm-shead">${back}<h2>${esc(name)}</h2>${u.id === MEID ? '<small class="note">you</small>' : ''}</div>`;
   if (!R.length) {
     $v.innerHTML = head + '<p class="note">No answers yet.</p>';
+    bindJReload();
     return;
   }
   const J = journeyOf(R),
@@ -189,7 +194,17 @@ function renderJourney(name) {
     openAt = offer && offer.open ? offer.at : null,
     // A card shown after the player's a-th answer: its time, else that answer's (cards saved before times were kept).
     cardT = e => e[2] || (R[Math.min(R.length, Math.max(1, e[0])) - 1] || R[0])[1],
-    kindOf = e => (!e ? '' : !e[1] ? 'card' : openAt != null && e[0] === openAt ? 'all' : 'start'),
+    // The kind kept with the card (from 2026-11-02); before, guessed from readiness and the answer count.
+    kindOf = e =>
+      !e
+        ? ''
+        : e[3]
+          ? {s: 'start', c: 'card', a: 'all'}[e[3]] || 'card'
+          : !e[1]
+            ? 'card'
+            : openAt != null && e[0] === openAt
+              ? 'all'
+              : 'start',
     CM = (C && C.map) || {},
     byKind = k => Object.keys(CM).filter(g => kindOf(CM[g]) === k && J.slate.has(g));
   const first = byKind('start').sort((a, b) => CM[a][0] - CM[b][0]),
@@ -404,6 +419,7 @@ function renderJourney(name) {
       ['Sessions', J.S.length]
     ]) +
     `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${daysSec}</div>`;
+  bindJReload();
   $v.querySelectorAll('[data-jsort]').forEach(
     b =>
       (b.onclick = () => {
@@ -411,4 +427,17 @@ function renderJourney(name) {
         render();
       })
   );
+}
+
+// ↻ on the journey: the answers, the players and this player's saved progress read again.
+function bindJReload() {
+  const b = $v.querySelector('[data-jload]');
+  if (b)
+    b.onclick = () => {
+      Object.keys(JDATA).forEach(k => delete JDATA[k]);
+      USERS = null;
+      ANS = null;
+      STATS = null;
+      render();
+    };
 }

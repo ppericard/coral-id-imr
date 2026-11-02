@@ -125,8 +125,8 @@ time, each on its card, but never as the answer of the question right after its 
   Simulated at 50 answers: a beginner -0.9, an RA who knows 60% of the genera -0.2, 80% +0.8, an expert +1.2. The
   correct-answer rate does not tell them apart (the game keeps everyone near 80%: 68%, 76%, 86%, 88%). A card, not an
   automatic opening, so a wrong guess costs a tap.
-- Synced with the progress: the cards (`imr-coral-intro`: genus -> [answers when shown, 1 for the first cards or Open all,
-  time shown]) and the offer (`imr-coral-intro-offer`: {at, open, via: card / progress / offer, t}, also written by Open
+- Synced with the progress: the cards (`imr-coral-intro`: genus -> [answers when shown, 1 when ready at once (first cards, Open all,
+  a duel's), time shown, kind: s first cards / c a card of its own / a Open all]) and the offer (`imr-coral-intro-offer`: {at, open, via: card / progress / offer, t}, also written by Open
   all genera, for the admin's player journey) are `imr-coral*` keys, which the sheet keeps; on a pull, the cards seen on another
   device join this one's (`introMerge`), and a progress reset starts them over (`introReset`). A genus already asked
   or a bonus genus (its own unlock card) counts as met. Checked in CI (`tests/draw.smoke.js`, first meetings, offer,

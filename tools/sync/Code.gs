@@ -481,12 +481,17 @@ function users_(p){
   const removed_ = (name, h, into) => sheet_('Removed', REMOVED).appendRow([safe_(name), h, safe_(into || ''), new Date()]);
   // v20: {userBoard: name, hide: true|false, token} hides the player from the public leaderboard (Board -1, which their
   // own syncs keep) or shows them again (1). Pierre, 2026-11-02: a renamed test account must not be on the leaderboard.
+  // Under the script lock, as progress saves (Codex review #352): a sync between the read and the write could otherwise
+  // put back the Board value it read.
   if (p.userBoard) {
-    const u = row_(String(p.userBoard)); if (!u) return {ok: false, error: 'user'};
-    const b = p.hide ? -1 : 1;
-    ra.getRange(u.r, 10).setValue(b);
-    CacheService.getScriptCache().remove('board14');
-    return {ok: true, board: b};
+    const lock = LockService.getScriptLock(); lock.waitLock(10000);
+    try {
+      const u = row_(String(p.userBoard)); if (!u) return {ok: false, error: 'user'};
+      const b = p.hide ? -1 : 1;
+      ra.getRange(u.r, 10).setValue(b);
+      CacheService.getScriptCache().remove('board14');
+      return {ok: true, board: b};
+    } finally { lock.releaseLock(); }
   }
   if (p.userData) {
     const u = row_(String(p.userData)); if (!u) return {ok: false, error: 'user'};
