@@ -212,6 +212,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no gentle restart
       warmLeft = 0;
+      rematch = null; // no "Again" left over from the section before
       store.set(INTRO.OFFER.KEY, null);
       NEXTQ = null;
       const q0 = question;
@@ -257,6 +258,7 @@ const server = http.createServer((req, res) => {
         INTROS = {};
         HOLDS = 0; // a fresh player: no opening hold, no gentle restart
         warmLeft = 0;
+        rematch = null; // no "Again" left over from the section before
         NEXTQ = null;
         document.querySelectorAll('.unlock').forEach(x => x.remove());
         quizPhoto();
@@ -274,6 +276,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no gentle restart
       warmLeft = 0;
+      rematch = null; // no "Again" left over from the section before
       store.set(INTRO.OFFER.KEY, null);
       let shownAt = 0;
       for (let i = 0; i <= INTRO.OFFER.UNTIL && !shownAt; i++) {
@@ -301,6 +304,7 @@ const server = http.createServer((req, res) => {
         INTROS = {};
         HOLDS = 0; // a fresh player: no opening hold, no gentle restart
         warmLeft = 0;
+        rematch = null; // no "Again" left over from the section before
         store.set(INTRO.KEY, {});
         store.set(INTRO.OFFER.KEY, null);
         const g = Object.keys(DATA.gen)[5];
@@ -447,6 +451,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no gentle restart
       warmLeft = 0;
+      rematch = null; // no "Again" left over from the section before
     }
     // Opening held while the player does clearly worse than expected (introHold, a CUSUM, Pierre 2026-11-02): two
     // misses where 0.8 was expected hold; right answers pay it back by what they beat the expectation by; never below 0.
@@ -506,6 +511,7 @@ const server = http.createServer((req, res) => {
       document.querySelector(`[data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
       if (HOLDS !== hb) fails.push('an Again of the restart moved the hold');
       warmLeft = 0;
+      rematch = null; // no "Again" left over from the section before
       HOLDS = h0;
     }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
