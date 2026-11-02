@@ -5597,7 +5597,7 @@ footer .rep:hover {
   /* Slate view: two columns of names need about 680 px, not the whole width; the side column takes the rest, with the
      card's ring beside the text (Pierre, 2026-11-02: too much empty space in the slate, the info could be bigger). */
   .pgame.pboard:has(.pslate) {
-    grid-template-columns: minmax(0, 680px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 680px) minmax(360px, 1fr);
   }
   .pboard:has(.pslate) .gside .pbadge {
     flex-direction: row;
@@ -5612,6 +5612,9 @@ footer .rep:hover {
   .pboard:has(.pslate) .gside .pring > span {
     width: 108px;
     height: 108px;
+  }
+  .pboard:has(.pslate) .gside .pbtxt > span {
+    white-space: normal;
   }
   .pboard:has(.pslate) .gside .pbtxt {
     align-items: flex-start;
