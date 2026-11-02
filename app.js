@@ -2449,6 +2449,10 @@ function loadStats() {
     .catch(() => {});
 }
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
+// A copy run on this computer (tests, tools/perf.js, a developer) never sends anonymous answers or reports to the real
+// sheet (Pierre, 2026-11-02: 17 "players" in the admin were tools/perf.js runs: once the service worker was in, its
+// requests passed by the test's network mocks and reached the sheet).
+const LOCAL = /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])$/.test(location.hostname) || location.protocol === 'file:';
 let SYNC = store.get('imr-coral-sync', null),
   syncTimer = null;
 function syncSummary() {
@@ -2714,7 +2718,7 @@ const genusOfPhoto = f => {
 // retried after another player signs in is never credited to them. One batch per sender, at most 50 (the script's cap).
 function sendReports() {
   const L = store.get('imr-reports', []);
-  if (!SYNC_URL || !L.length || navigator.onLine === false) return;
+  if (!SYNC_URL || LOCAL || !L.length || navigator.onLine === false) return;
   const k = x => JSON.stringify([x.rn || '', x.rp || '']),
     first = L.filter(x => k(x) === k(L[0])).slice(0, 50);
   const reports = first.map(({rn, rp, ...x}) => x);
@@ -2847,7 +2851,7 @@ const anonSoon = () => {
 };
 function sendAnon() {
   const q = store.get(ANONQ, []);
-  if (SYNC || !SYNC_URL || anonBusy || !q.length) return;
+  if (SYNC || !SYNC_URL || LOCAL || anonBusy || !q.length) return;
   const batch = q.slice(0, 100);
   anonBusy = true;
   fetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({anon: anonId(), anonAnswers: batch})})
