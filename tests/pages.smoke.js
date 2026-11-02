@@ -52,13 +52,13 @@ const server = http.createServer((req, res) => {
 // One overlay at a time, and each one closable (new-player walkthrough 2026-11-02). Returns the failures.
 async function overlays(b, base) {
   const fails = [];
-  const open = async (o, init) => {
+  const open = async (o, init, arg) => {
     const c = await b.newContext({serviceWorkers: 'block', ...o});
     await c.route(
       u => !u.href.startsWith(base),
       r => r.abort()
     );
-    await c.addInitScript(init || (() => {}));
+    await c.addInitScript(init || (() => {}), arg);
     const p = await c.newPage();
     return [c, p];
   };
@@ -107,7 +107,7 @@ async function overlays(b, base) {
       achPop({tier: 1, icon: '🧪', title: 'Smoke B', desc: 'test'});
     });
     await p.waitForTimeout(100);
-    await p.evaluate(() => unlockShow([Object.keys(DATA.gen)[0]]));
+    await p.evaluate(() => introShow([Object.keys(DATA.gen)[0]], false));
     await p.waitForTimeout(100);
     const s3 = await t();
     await p.keyboard.press('Escape');
@@ -124,8 +124,10 @@ async function overlays(b, base) {
       fails.push(`achievement toast over a card: ${JSON.stringify([s1, s2, s3, s4, b4])}`);
     // K10: a card photo that fails (here every outside host is cut off, as offline) never shows a broken-image icon.
     const off = await p.evaluate(() => {
-      const L = [...BONUS, ...Object.keys(DATA.gen)].filter(n => GX(n) && cover(GX(n)) && !img(cover(GX(n)), 's').startsWith('img/'));
-      if (L.length) unlockShow([L[0]]);
+      const L = [...BENTHIC, ...BONUS, ...Object.keys(DATA.gen)].filter(
+        n => GX(n) && cover(GX(n)) && !img(cover(GX(n)), 's').startsWith('img/')
+      );
+      if (L.length) introShow([L[0]], false);
       return L[0];
     });
     if (off) {
@@ -136,6 +138,66 @@ async function overlays(b, base) {
       });
       if (!v) fails.push(`broken-image icon on the card of ${off}`);
       await p.keyboard.press('Escape');
+    }
+    await c.close();
+  }
+  // Millepora a slate genus (Pierre, 2026-11-02): a returning player who saw the earlier recalculation pop-up gets the
+  // Millepora one, once (AGENTS rule 12); one who missed both gets both on one card. Bonus genera unlocked by the
+  // former thresholds (Q.bu 2+) stay on; Millepora alone (Q.bu 1) is no opt-in. Millepora's first card and sheet warn.
+  for (const [recalc, bu] of [
+    ['progress-moving-average-2026-11', 3],
+    ['', 1]
+  ]) {
+    const [c, p] = await open(
+      {viewport: {width: 390, height: 800}, intro: true},
+      ({r, u}) => {
+        localStorage.setItem('imr-tour', '"done"');
+        localStorage.setItem('imr-nudge', '1');
+        if (r && !localStorage.getItem('imr-recalc')) localStorage.setItem('imr-recalc', JSON.stringify(r));
+        localStorage.getItem('imr-coral-progress') ||
+          localStorage.setItem(
+            'imr-coral-progress',
+            JSON.stringify({Acropora: {ok: 3, ko: 1, h: '1101'}, Millepora: {ok: 2, ko: 0, h: '11'}})
+          );
+        localStorage.getItem('imr-coral-quiz') || localStorage.setItem('imr-coral-quiz', JSON.stringify({bu: u}));
+      },
+      {r: recalc, u: bu}
+    );
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('.recalc', {timeout: 8000}).catch(() => {});
+    const r = await p.evaluate(() => ({
+      h: [...document.querySelectorAll('.recalc h3')].map(x => x.textContent),
+      bon: Q.bon,
+      pct: progPct(),
+      n: slateGenera().length,
+      mill: genScore('Millepora') > 0
+    }));
+    const want = recalc ? 1 : 2;
+    if (r.h.length !== want || !/^Millepora now counts/.test(r.h[0]) || r.bon !== (bu > 1 ? true : undefined) || r.n !== 40 || !r.mill)
+      fails.push(`returning player (seen ${recalc || 'none'}, bu ${bu}): ${JSON.stringify(r)}`);
+    await p.click('.recalc .next').catch(() => {});
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForTimeout(2500);
+    if (await p.$('.recalc')) fails.push('recalculation pop-up shown twice');
+    if (!recalc) {
+      // Millepora met on its card (a slate genus: a card like the others) and its sheet: the warning.
+      const w = await p.evaluate(() => {
+        introShow(['Millepora'], false);
+        const t = document.querySelector('.unlock.intro .warn')?.textContent || '';
+        document.querySelector('.unlock.intro').ulClose();
+        return t;
+      });
+      await p.evaluate(() => (location.hash = 'g-Millepora'));
+      await p.waitForSelector('.sheet .warn');
+      const s = await p.evaluate(() => document.querySelector('.sheet .warn').textContent);
+      for (const [k, t] of [
+        ['card', w],
+        ['sheet', s]
+      ])
+        if (!/^Not a hard coral and not on the IMR coral list, but it's on the IMR benthic slate/.test(t))
+          fails.push(`Millepora ${k} warning: ${t}`);
     }
     await c.close();
   }
@@ -261,9 +323,10 @@ async function overlays(b, base) {
   const base = `http://127.0.0.1:${server.address().port}/`,
     fails = [];
   const b = await chromium.launch();
-  // The first-encounter card (quiz.js introShow) would cover the quiz in the checks that are not about it: every genus
-  // starts as met on a card, except in a context opened with {intro: true}.
-  const INTROS = JSON.stringify(Object.fromEntries(Object.keys(require('../data.json').gen).map(n => [n, [0, 1]]))),
+  // The first-encounter card (quiz.js introShow) would cover the quiz in the checks that are not about it: every slate
+  // genus (Millepora too, app.js BENTHIC) starts as met on a card, except in a context opened with {intro: true}; the
+  // bonus genera offer that then comes (every slate genus met) is answered "Not now" (Q.bon false).
+  const INTROS = JSON.stringify(Object.fromEntries([...Object.keys(require('../data.json').gen), 'Millepora'].map(n => [n, [0, 1]]))),
     ctxNew = b.newContext.bind(b);
   b.newContext = async ({intro, ...o} = {}) => {
     const c = await ctxNew(o);
@@ -271,6 +334,7 @@ async function overlays(b, base) {
       await c.addInitScript(s => {
         try {
           localStorage.getItem('imr-coral-intro') || localStorage.setItem('imr-coral-intro', s);
+          localStorage.getItem('imr-coral-quiz') || localStorage.setItem('imr-coral-quiz', '{"bon":false}');
         } catch (e) {}
       }, INTROS);
     return c;
@@ -373,6 +437,9 @@ async function overlays(b, base) {
         const said = await q2.evaluate(() => document.querySelector('.apptoast')?.textContent || '');
         if (!/All \d+ genera are open/.test(said)) fails.push(`${w}px open all genera: no confirmation (${said})`);
       }
+      // Every slate genus is now met, so the bonus genera offer (a prompt, tested in draw.smoke.js) would come at 30 and
+      // move the one-tap question to 40: this player has already chosen (⚙ Bonus genera: Off).
+      await q2.evaluate(() => bonusSet(false));
       await q2.evaluate(() => (location.hash = 'quiz'));
       await q2.waitForTimeout(500);
       if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all && c.kick.includes(`${k + 1} of 4`)))

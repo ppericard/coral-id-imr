@@ -194,11 +194,11 @@ time, each on its card, but never as the answer of the question right after its 
   a duel's), time shown, kind: s first cards / c a card of its own / a Open all]) and the offer (`imr-coral-intro-offer`: {at, open, via: card / progress / offer, t}, also written by Open
   all genera, for the admin's player journey) are `imr-coral*` keys, which the sheet keeps; on a pull, the cards seen on another
   device join this one's (`introMerge`), and a progress reset starts them over (`introReset`). A genus already asked
-  or a bonus genus (its own unlock card) counts as met. Checked in CI (`tests/draw.smoke.js`, first meetings, offer,
+  counts as met; the bonus genera, once on, get a first-meeting card like the others. Checked in CI (`tests/draw.smoke.js`, first meetings, offer,
   sync; `tests/pages.smoke.js`, the 4 cards and My progress).
 
 My progress no longer shows "Review" (weak) for a genus with fewer than 5 answers (`REVIEW_MIN`, `shownLevel` in
-model.js): it shows "Learning" until there is enough evidence. The ring counts genera met ("6/39 met") until one is
+model.js): it shows "Learning" until there is enough evidence. The ring counts genera met ("6/40 met") until one is
 learned, then genera learned. The model itself (`level`) is unchanged.
 
 ### Which genus comes next: the progressive path (2026-11-02)
@@ -229,6 +229,38 @@ met the 39 slate genera almost at once.
   how much it gets confused (its two highest pooled confusion scores above `CONF.TRAP`). With little data the photo sets
   and declared look-alikes decide; the answers take over as they come (Pierre expects Acropora and Galaxea to come out
   easy: the data will say).
+
+### Millepora and the bonus genera (2026-11-02)
+
+Pierre: *Millepora* (fire coral) is everywhere at Dauin and in ReefCloud photos and is on the IMR **benthic** slate
+(taught in the benthos lecture), though not on the IMR coral list, being a hydrozoan, not a hard coral. So it is now a
+slate genus for everything (`slateGenera()` = the 39 + `BENTHIC`): the draw, the opening (by `genusDiff`, like the
+others, from the start: no threshold, no opt-in), the progress (over 40 genera), My progress, the sync summary and the
+leaderboard, achievements. Its first card and its sheet warn that it is not a hard coral and not on the IMR coral list.
+
+The other 5 bonus genera (Isopora, Leptoseris, Heliopora, Sandalolitha, Pleuractis) became **opt-in**: a card offers
+them once every slate genus has been met (`introduced`), and ⚙ Bonus genera turns them on or off any time (`Q.bon`).
+Once on they are simply genera not met yet: they open through the same progressive path (easiest first, the shaky
+slope, the opening hold), one card at a time. The progress thresholds (`BONUS_AT`), the weight cap (`BONUS_W` 4) and
+the 15% share (`BONUS_SHARE`) were removed (AGENTS rule 14f): they came after the slate, so the normal opening and
+weights keep them in proportion. Simulated (`tools/learnsim.js`, 10 seeds × 600 questions, the simulated player
+accepts the offer), share of the questions on bonus genera from the offer to question 600, per run: 9-16% (median 13%
+for every profile), about the old cap with no cap at all.
+
+When it happens, median question over the 10 seeds (all 10 runs each), and the progress over the slate (`prog%`,
+mean ± sd) against `main` before the change (same seeds; 39 genera, bonus genera unlocked from 10% and capped at 15%):
+
+| Profile | *Millepora* met / first asked (before: unlocked / first asked) | bonus genera offered | progress at 300: before → after | at 600: before → after |
+| --- | --- | --- | --- | --- |
+| beginner | 196 / 200.5 (93 / 95.5) | 465.5 | 28±2 → 31±2 | 54±3 → 58±2 |
+| lecture RA | 153 / 161.5 (72.5 / 79.5) | 245.5 | 37±4 → 43±3 | 67±4 → 70±3 |
+| strong RA | 124 / 133.5 (55 / 65.5) | 218 | 51±4 → 53±3 | 81±3 → 82±2 |
+| expert | 147 / 167 (42 / 56) | 228 | 66±2 → 66±2 | 93±1 → 93±1 |
+
+*Millepora* now comes when the opening reaches it (its `genusDiff` puts it in the second half), later than its old
+10% unlock. The progress is a little higher at the same question count because the bonus genera no longer take
+questions before the slate is met (up to 15% of them from 10% progress before), despite the 40th genus in the
+denominator; without accepting the offer (first run, same seeds), 600 questions gave 61 / 75 / 87 / 95%.
 
 ### Progress (moving average) and mastery
 
@@ -384,9 +416,11 @@ app's: `know[g]` = chance to recognise genus g on an average photo (beginner 0.0
 on the others, expert 0.93), lowered on harder photos and single views; otherwise a guess among the plausible choices;
 each answer teaches `rate` × (1 − know). The numbers show trends, not real players: recalibrate with real answers.
 
-The quiz draws from the 39 genera of the IMR slate; the 6 bonus genera (Millepora, Isopora, Leptoseris, Heliopora,
-Sandalolitha, Pleuractis) open one by one with the progress (at 10%, 15%, ... 35%, `BONUS_AT`) and keep at most 15% of
-the draw. The tables count the 39 (the first table of 2026-11-02 said "45", counting the bonus genera by mistake).
+Until 2026-11-02 the quiz drew from the 39 genera of the IMR slate, and the 6 bonus genera (Millepora, Isopora,
+Leptoseris, Heliopora, Sandalolitha, Pleuractis) opened one by one with the progress (at 10%, 15%, ... 35%, `BONUS_AT`)
+and kept at most 15% of the draw. The tables below count the 39 (the first table of 2026-11-02 said "45", counting the
+bonus genera by mistake). Since then Millepora is a slate genus (40) and the other 5 are opt-in: "Millepora and the
+bonus genera" below.
 
 Calibration of `OPEN.K` (Pierre, 2026-11-02: "600 questions and only twenty-some genera open for the RAs may not be
 enough"), 600 questions, 3 seeds, genera met (beginner / RA / expert):
@@ -489,7 +523,8 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   time among easy choices, a quarter among three look-alikes, and a genus the player knows is ruled out more often.
   After each answer the genus shown gains rate × (1 − know), 1.5 × that after a miss (the side-by-side montage), the
   genus wrongly picked 0.5 × that; a first-meeting card teaches like one answer. No forgetting.
-- **Measures** at questions 50, 100, 200, 300: true mean `know` over the 39 slate genera and over the genera met; the
+- **Measures** at questions 50, 100, 200, 300: true mean `know` over the slate genera (`knowSlate`: 40 with Millepora
+  since 2026-11-02; `know39` before) and over the genera met; the
   Elo estimate against the truth, |θ − logit(know)| and its sign, over the genera met; the progress bar against the
   truth, genScore − know over the genera met (below 0: it under-claims), and `progPct`; genera met, learned (`s.mx`),
   right % since the previous checkpoint; the true chance to tell each declared look-alike pair apart (2 choices,
@@ -565,6 +600,9 @@ the exam then keeps the genera learned at 0.82-0.93 true reference success.
   factor 0.5, misses in full, a learned genus survives one miss; old progress recomputed from its last 10 results
   ("Progress (moving average) and mastery"). Sheet v22 computes the leaderboard % the same way. A pop-up announcing the
   recalculation to the players is not built yet (ROADMAP).
+- 2026-11-02, Pierre: *Millepora* joins the slate (on the IMR benthic slate; the progress goes over 40 genera, announced
+  with a second `RECALC` note); the other bonus genera become opt-in, offered once every slate genus is met, and open
+  like slate genera, without their thresholds, weight cap or share limit ("Millepora and the bonus genera").
 
 ## References
 

@@ -2,11 +2,11 @@
 // review L1: one file per part, one piece at a time). A classic script like app.js and sync.js: it shares their
 // top-level names and is loaded right after sync.js (index.html, in order); app.js waits for every script
 // (window.BOOT) before its first page. Required like app.js: the loader tries it 3 times, the service worker keeps it.
-// Progress board, one screen: a wall of the 39 cover photos in slate order (name band in the level colour, grey photo =
+// Progress board, one screen: a wall of the slate genera's cover photos in slate order (name band in the level colour, grey photo =
 // not seen, red border = review) beside a side column with the overall ring, what to review first and the mix-ups. Signing in
 // and backup/reset live in the header and ⚙ (Pierre, 2026-11-01: the board comes first, nothing unrelated around it).
 // The player's card on My progress (Pierre, 2026-11-01: "a badge, as in video games"; 2026-11-02: one compact element
-// with the ring, at the top of the page, not under the 39 tiles): the overall ring with its %, then the name, place and
+// with the ring, at the top of the page, not under the slate tiles): the overall ring with its %, then the name, place and
 // Elo on the leaderboard (filled once it loads; the Elo from this device until then; nothing before the Elo is due and
 // while not on the board: it comes by itself, Pierre 2026-11-02), genera learned (or met) and achievements earned with the
 // last three. The rank links to the leaderboard, the achievements to their page.
@@ -34,13 +34,10 @@ const shyName = n => {
   return n;
 };
 function quizBoard() {
-  const list = Object.keys(DATA.gen)
-    .filter(n => Q.stars || DATA.gen[n].n)
-    .sort((a, b) => slateIdx(a) - slateIdx(b));
-  // Bonus genera (off the slate) get tiles after the slate genera: unlocked ones like any genus, locked ones as "?"
-  // tiles showing the slate progress that unlocks them (Pierre, 2026-11-01). They stay out of the ring and the counts.
-  const BO = bonusOpen(),
-    locked = BONUS.slice(BO.length).map((n, i) => BONUS_AT(BO.length + i));
+  const list = slateGenera();
+  // Bonus genera (off the slate), once on (⚙ or the offer card): tiles after the slate genera (Pierre, 2026-11-01).
+  // They stay out of the ring and the counts.
+  const BO = bonusList();
   const lv = Object.fromEntries([...list, ...BO].map(n => [n, shownLevel(n)]));
   const count = k => list.filter(n => lv[n][0] === k).length;
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
@@ -71,14 +68,9 @@ function quizBoard() {
     const g = GX(n),
       p = cover(g),
       [cl] = lv[n];
-    return `<a class="pw ${cl} s${st[n]}${g.x ? ' bonus' : ''}" href="#g-${esc(n)}" title="${g.x ? 'Bonus genus, not on the IMR list. ' : ''}${tip(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 100px, 165px')} alt="" loading="lazy">` : ''}${g.x ? '<b class="pbtag">Bonus</b>' : ''}<span class="pwb"><i>${esc(shyName(n))}${g.n || g.x ? '' : ' ★'}</i>${pct(n)}</span></a>`;
+    const b = isBonus(n);
+    return `<a class="pw ${cl} s${st[n]}${b ? ' bonus' : ''}" href="#g-${esc(n)}" title="${b ? 'Bonus genus, not on the IMR list. ' : isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 100px, 165px')} alt="" loading="lazy">` : ''}${b ? '<b class="pbtag">Bonus</b>' : ''}<span class="pwb"><i>${esc(shyName(n))}${g.n || g.x ? '' : ' ★'}</i>${pct(n)}</span></a>`;
   };
-  // Locked bonus genera: ONE tile that says what they are and when the next one comes (six "?" tiles read as a puzzle;
-  // designer re-review 2026-11-01, N6).
-  const lockT = cls =>
-    locked.length
-      ? `<span class="${cls} plock" title="Bonus genera off the IMR list, common at Dauin: the next one unlocks at ${locked[0]}% progress"><b aria-hidden="true">+${locked.length}</b><small>bonus genera · next at ${locked[0]}%</small></span>`
-      : '';
   // Your mix-ups to review: each pair you mixed up, ranked by your own confusion score (confOf), so a pair you now tell
   // apart sinks and the ones you still confuse lead; the chip opens the side-by-side comparison (with "Drill this pair").
   const seenPair = new Set(),
@@ -113,42 +105,51 @@ function quizBoard() {
   const gi = n => shownGroup(n) || 99,
     groups = [...new Set(list.map(gi))].sort((a, b) => a - b);
   const VIEWS = {
-    photos: () =>
-      `<div class="pgrid pwall"${isPhone() ? ' data-minw="72"' : ''}>${[...list, ...BO].map(tile).join('')}${lockT('pw')}</div>`,
-    // Laid out like the physical IMR slate: 1-20 down the left column, 21-34 down the right, starred genera under them.
+    photos: () => `<div class="pgrid pwall"${isPhone() ? ' data-minw="72"' : ''}>${[...list, ...BO].map(tile).join('')}</div>`,
+    // Laid out like the physical IMR slate: 1-20 down the left column, 21-34 down the right, starred genera under them,
+    // then Millepora (the benthic slate, no number: "F" for fire coral).
     slate: () => {
-      const num = list.filter(n => DATA.gen[n].n),
-        L = num.filter(n => DATA.gen[n].n <= 20),
-        R = num.filter(n => DATA.gen[n].n > 20),
-        S = list.filter(n => !DATA.gen[n].n);
+      const num = list.filter(n => GX(n).n),
+        L = num.filter(n => GX(n).n <= 20),
+        R = num.filter(n => GX(n).n > 20),
+        S = list.filter(n => !GX(n).n);
       const ps = n =>
-        `<a class="ps ${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><b>${DATA.gen[n].n ? DATA.gen[n].n + '.' : '★'}</b><i>${esc(n)}</i>${pct(n)}</a>`;
+        `<a class="ps ${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}"${fill(n)}><b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i>${esc(n)}</i>${pct(n)}</a>`;
       // Bonus genera: one strip across both columns under the slate, so the board still fits one screen.
       const rows = Math.max(L.length, R.length + (S.length ? S.length + 1 : 0));
-      const bx =
-        BO.map(
-          n =>
-            `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="#g-${esc(n)}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i>${esc(n)}</i>${pct(n)}</a>`
-        ).join('') + lockT('ps');
-      return `<div class="pslate" style="--rows:${rows}">${L.map(ps).join('')}${R.map(ps).join('')}${S.length ? '<span class="psgap"></span>' : ''}${S.map(ps).join('')}<div class="psbonus" style="grid-row:${rows + 1}" title="Bonus genera, not on the IMR list">${bx}</div></div>`;
+      const bx = BO.map(
+        n =>
+          `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="#g-${esc(n)}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i>${esc(n)}</i>${pct(n)}</a>`
+      ).join('');
+      return `<div class="pslate" style="--rows:${rows}">${L.map(ps).join('')}${R.map(ps).join('')}${S.length ? '<span class="psgap"></span>' : ''}${S.map(ps).join('')}${bx ? `<div class="psbonus" style="grid-row:${rows + 1}" title="Bonus genera, not on the IMR list">${bx}</div>` : ''}</div>`;
     },
     groups: () => `<div class="pgroups">${groups
       .map(k => {
         const gr = DATA.imrg.find(x => x.n === k),
-          L = list.filter(n => gi(n) === k);
-        return `<div class="pgr" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn" title="${gr ? esc(gr.t) : 'Not covered in the lecture'}">${gr ? gr.n : '★'}</span><span class="pgt">${gr ? esc(gr.t) : 'Not covered in the lecture'}</span>
+          L = list.filter(n => gi(n) === k),
+          // No lecture group: Millepora (the benthic slate, F as on the Slate view); a starred genus left ungrouped, ★.
+          [mk, t] = gr
+            ? [gr.n, esc(gr.t)]
+            : L.every(isBenthic)
+              ? ['F', 'IMR benthic slate, not a hard coral']
+              : ['★', 'Not covered in the lecture'];
+        return `<div class="pgr" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn" title="${t}">${mk}</span><span class="pgt">${t}</span>
         <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`;
       })
       .join('')}
-      <div class="pgr pgbonus"><span class="gn" title="Bonus genera, not on the IMR list">+</span><span class="pgt">Bonus: not on the IMR list</span>
-        <span class="pseg">${BO.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`).join('')}${lockT('pgl')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BONUS.length}</small></div></div>`
+      ${
+        BO.length
+          ? `<div class="pgr pgbonus"><span class="gn" title="Bonus genera, not on the IMR list">+</span><span class="pgt">Bonus: not on the IMR list</span>
+        <span class="pseg">${BO.map(n => `<a class="${lv[n][0]} s${st[n]}" href="#g-${esc(n)}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BO.length}</small></div>`
+          : ''
+      }</div>`
   };
   // Slate by default (Pierre, 2026-11-02: compact, and the order of the IMR slate the RAs know); the view switch is at the
   // bottom of the side column.
   let pv = store.get('imr-coral-pview', 'slate');
   if (!VIEWS[pv]) pv = 'slate';
   $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the photo quiz, several questions apart. All ${EXAM.n} right and the genus is learned (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
-  <p class="lede"><b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin and easily taken for a genus of the list (fire coral <i>Millepora</i> first). The first joins the photo quiz and the duels at ${BONUS_AT(0)}% progress, then one more every 5%. They don't count in your progress; their ID tips come from the Coral Finder. On this page they come after the list: a <b>?</b> tile is a bonus genus still locked, with the progress that unlocks it.</p>
+  <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder. On this page they come after the slate.</p>
   <p class="lede"><b>Colours</b>: white with a dashed border = not seen; then from pale to dark, one step per quarter of the way; the darkest, with a tick = learned. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>
   <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the genus: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down, less when the photo was harder than your level. 95% means it has held up against its look-alikes; learned means its mastery exam is passed too.</p>
   <div class="pgame pboard">${badge(ring, progPct(list), count('ok') ? `${count('ok')}/${list.length} learned` : `${list.length - count('new')}/${list.length} met`)}<div class="pgwrap"></div>
@@ -186,7 +187,7 @@ function quizBoard() {
       save();
       quizBoard();
       // The box goes and little else changes on this page: say it worked (new-player walkthrough 2026-11-02).
-      appToast(`All ${Object.keys(DATA.gen).length} genera are open: the quiz now asks any of them.`, 6000);
+      appToast(`All ${slateGenera().length} genera are open: the quiz now asks any of them.`, 6000);
     };
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page).
@@ -227,7 +228,7 @@ function quizBoard() {
 const $prog = document.getElementById('prog');
 function showProg() {
   if (!DATA) return;
-  const n = Object.keys(DATA.gen);
+  const n = slateGenera();
   const pt = `${progPct(n)}%`,
     lt = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length} genera learned`;
   document.getElementById('progn').textContent = pt;
@@ -431,7 +432,7 @@ function achMerge(json) {
     store.set(ACHK, A);
   } catch (e) {}
 }
-const achList = () => Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n);
+const achList = () => slateGenera();
 function achSnap(A = store.get(ACHK, {}) || {}) {
   const L = achList(),
     st = L.map(lvStep),
@@ -451,7 +452,7 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     // The Elo moves a lot over the first answers (it starts fast on purpose): its achievements wait for ELO_MIN answers.
     elo: G && typeof G.th === 'number' && (G.ok || 0) + (G.ko || 0) >= ELO_MIN ? eloScore(G.th) : 0,
     group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lvStep(n) >= 5)),
-    bonus: bonusOpen().length
+    bonus: bonusList().filter(introduced).length
   };
 }
 // Full recount, once per device (Pierre, 2026-11-01: "redo the calculation cleanly for everyone, achievements too,
@@ -673,13 +674,33 @@ function boardNotice() {
 // Progress recalculated for everyone (Pierre, 2026-11-02: when we recalculate every player's progress, say so with a
 // real pop-up, not a discreet note; no algorithm details). Once per device, to a player who already has answers (a new
 // player has nothing recalculated), at the first moment no tour or card is open; marked seen only by its button or
-// Escape, so a card closed by leaving the page comes back on the next one. A later recalculation gets a new RECALC.ID and text.
-const RECALC = {KEY: 'imr-recalc', ID: 'progress-moving-average-2026-11'};
+// Escape, so a card closed by leaving the page comes back on the next one. A later recalculation adds a note at the end
+// of RECALC.L (a new id, a title and a text): a player shown every note but the last sees the last; one who missed
+// several sees them all on one card, latest first. KEY holds the id of the last note seen.
+const RECALC = {
+  KEY: 'imr-recalc',
+  L: [
+    {
+      id: 'progress-moving-average-2026-11',
+      t: "We've improved how progress is measured",
+      p: 'Based on feedback from the first players, your progress now reflects more closely how well you can tell each genus apart from the others. Your % may be lower than before, and it will grow a little more slowly. None of your answers is lost.'
+    },
+    {
+      id: 'millepora-counts-2026-11',
+      t: '<i>Millepora</i> now counts in your progress',
+      p: '<i>Millepora</i> (fire coral) is on the IMR benthic slate and very common at Dauin and in ReefCloud photos, so it now counts in your progress, which is now over 40 genera: your % may be a little lower.'
+    }
+  ]
+};
 function recalcNotice() {
-  if (store.get(RECALC.KEY, '') === RECALC.ID) return;
+  const L = RECALC.L,
+    last = L[L.length - 1].id,
+    seen = store.get(RECALC.KEY, ''),
+    due = L.slice(L.findIndex(x => x.id === seen) + 1).reverse();
+  if (!due.length) return;
   // Answers: the global count, or the genera's own for progress saved before it (Codex review #367).
   const played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && ((s.ok || 0) + (s.ko || 0) > 0 || s.h));
-  if (!played) return store.set(RECALC.KEY, RECALC.ID);
+  if (!played) return store.set(RECALC.KEY, last);
   // Something else on screen (the tour, a card): try again a little later, until the screen is clear.
   if (document.querySelector('.recalc')) return; // already on screen
   if (document.querySelector('#tour, .unlock')) return void setTimeout(recalcNotice, 2000);
@@ -688,12 +709,11 @@ function recalcNotice() {
   d.setAttribute('role', 'dialog');
   d.setAttribute('aria-modal', 'true');
   d.setAttribute('aria-label', 'Progress recalculated');
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">Update</p><h3>We've improved how progress is measured</h3>
-    <p>Based on feedback from the first players, your progress now reflects more closely how well you can tell each genus apart from the others. Your % may be lower than before, and it will grow a little more slowly. None of your answers is lost.</p>
+  d.innerHTML = `<div class="ulcard"><p class="ulkick">Update</p>${due.map(x => `<h3>${x.t}</h3><p>${x.p}</p>`).join('')}
     <div class="ulbtns"><span></span><button class="next" type="button">Got it</button></div></div>`;
   document.body.appendChild(d);
   const close = seen => {
-    if (seen) store.set(RECALC.KEY, RECALC.ID);
+    if (seen) store.set(RECALC.KEY, last);
     d.remove();
     document.removeEventListener('keydown', key, true);
   };

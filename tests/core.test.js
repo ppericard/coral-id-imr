@@ -317,6 +317,13 @@ test('mergeUsers: two accounts of one person add up; the busier account model wi
   assert.deepStrictEqual(JSON.parse(M['imr-coral-quiz']), {bu: 2, view: 'any'});
   assert.strictEqual(M['imr-coral-theme'], '"dark"');
 });
+test('mergeUsers: bonus genera on for either account stay on (Q.bon)', () => {
+  const q = (a, b) =>
+    JSON.parse(mergeUsers({'imr-coral-quiz': JSON.stringify(a)}, {'imr-coral-quiz': JSON.stringify(b)})['imr-coral-quiz']);
+  assert.strictEqual(q({bon: true}, {bon: false}).bon, true);
+  assert.strictEqual(q({bon: false}, {}).bon, false, 'a "Not now" is kept: the offer is not made again');
+  assert.strictEqual(q({}, {}).bon, undefined, 'no choice yet: the offer stays due');
+});
 
 test('mergeUsers: the progress (pg) comes from the busier account, recomputed if it was saved before pg', () => {
   const {pgOf} = require('../core.js');

@@ -34,8 +34,9 @@ function loadStats() {
     })
     .catch(() => {});
 }
+// The slate genera (Millepora included since 2026-11-02): the sheet's "By genus" columns and the leaderboard % follow them.
 function syncSummary() {
-  const n = Object.keys(DATA.gen),
+  const n = slateGenera(),
     genera = Object.fromEntries(n.map(x => [x, level(x)[0]]));
   return {
     learned: n.filter(x => genera[x] === 'ok').length,
@@ -350,7 +351,7 @@ function reportDialog(c, btn) {
   d = document.createElement('dialog');
   d.id = 'repdlg';
   d.className = 'repdlg';
-  const names = [...Object.keys(DATA.gen), ...bonusOpen()].sort(),
+  const names = [...slateGenera(), ...bonusList()].sort(),
     kind = c.k || 'game',
     where = hashNow() || 'home';
   d.innerHTML = `<form method="dialog">

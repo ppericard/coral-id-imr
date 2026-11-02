@@ -5088,7 +5088,7 @@ function statsConf() {
     .sort((x, y) => y[1] - x[1])
     .slice(0, 15);
   // Per photo, colony and species: answers where the photo was shown, the wrong ones, and what it was taken for most.
-  // Bonus genera's photos (DATA.x.gen) are played too once unlocked.
+  // Millepora's and the bonus genera's photos (DATA.x.gen) are played too (Millepora a slate genus, the others once on).
   const META = {};
   allPhotos().forEach(p => (META[p.f] = p));
   Object.entries((DATA.x || {}).gen || {}).forEach(([n, g]) =>

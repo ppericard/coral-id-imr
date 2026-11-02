@@ -185,17 +185,11 @@ let lastQs = [];
 const weight = n => {
   const lv = level(n)[0],
     u = 1 - knownP(n),
-    w0 = lv === 'new' ? 10 : lv === 'ok' ? 0.25 : lv === 'weak' ? 3 + 2 * u : 1 + 3 * u,
-    // Bonus genera (off the IMR list) weigh at most as a genus being learned, even new or to review (Pierre, 2026-11-01:
-    // a burst of bonus questions after unlocking some).
-    w1 = isBonus(n) ? Math.min(w0, BONUS_W) : w0,
+    w1 = lv === 'new' ? 10 : lv === 'ok' ? 0.25 : lv === 'weak' ? 3 + 2 * u : 1 + 3 * u,
     // The mastery exam: a genus ready for its next exam question comes up as one to review; between two of them, it waits.
     w = examOn(n) ? (examReady(n) ? Math.max(w1, 3) : w1 * 0.05) : w1;
   return lastQs.includes(n) ? w * 0.1 : w;
 };
-// ...and all of them together at most BONUS_SHARE of the draw: their weights are scaled down when they would be more.
-const BONUS_W = 4,
-  BONUS_SHARE = 0.15;
 // Progressive path (Pierre, 2026-11-02: "rather than spamming a beginner with 40 genera, start with the easiest ones,
 // opening new ones as they go, with nothing set by hand"). New genera are opened by the player's own results: the
 // genera not met yet share OPEN.READY of the draw with no genus met still shaky (below), down in a straight line to
@@ -225,7 +219,7 @@ const genusDiff = n => {
   if (n in GDIFF) return GDIFF[n];
   const ps = [...new Set(VIEWS.flatMap(([v]) => gamePics(n, v, 'hard')))],
     pd = ps.length ? ps.reduce((t, p) => t + photoDiff(n, p), 0) / ps.length : 0,
-    cs = Object.keys(DATA.gen)
+    cs = slateGenera()
       .filter(x => x !== n)
       .map(x => pooledConf(n, x))
       .sort((a, b) => b - a)
@@ -251,8 +245,8 @@ const shaky = n => {
 // introHold, below). Which genus
 // opens and when stays the progressive path's (weighted, OPEN): a draw that falls on a genus not met yet shows its card
 // and asks about a genus already met. Kept on the device (imr-intro: genus -> [answers when shown, 1 if one of the
-// first cards]); a genus already asked (another device, progress from before the cards) or a bonus genus (its own unlock
-// card) counts as met. docs/LEARNING.md.
+// first cards]); a genus already asked (another device, progress from before the cards) counts as met. Bonus genera
+// (once on, app.js Q.bon) open the same way, on their own card. docs/LEARNING.md.
 // OFFER: after a few dozen answers, a player whose overall level (Elo, P[LEVEL].th) is already high knows their corals
 // (an RA after the lecture): a card offers to open all the genera at once (introOffer). Synced with the progress (the
 // sheet keeps every imr-coral* key; sync.js introMerge).
@@ -283,16 +277,17 @@ const introAdd = (L, start, kind = start ? 's' : 'c') => {
   syncSoon(); // sent at once, not with the next answer: a card left without answering is met on the other devices too
 };
 const asked = n => !!((P[n] || {}).ok || (P[n] || {}).ko);
-const introduced = n => isBonus(n) || asked(n) || n in introMap();
+const introduced = n => asked(n) || n in introMap();
 const introReady = n => {
-  if (isBonus(n) || asked(n)) return true;
+  if (asked(n)) return true;
   const e = introMap()[n];
   return !!e && (!!e[1] || answersSoFar() >= e[0] + INTRO.GAP);
 };
 // "I've had the IMR lecture" (Pierre, 2026-11-02): an RA has seen every genus in the lecture and has little time, so
 // one card at a time would hold them back. On the first cards and in My progress, one tap opens every slate genus at
 // once, without cards: the draw then asks first the genera never asked (weight 10), choices from the whole slate.
-const introLeft = () => Object.keys(DATA.gen).filter(n => !introduced(n));
+// The bonus genera are not opened with them: they open one at a time once on (opt-in, app.js BONUS).
+const introLeft = () => slateGenera().filter(n => !introduced(n));
 // via: where the player opened them ('card' the first cards, 'progress' My progress, 'offer' the offer card), kept
 // with the offer (which is then never made) for the admin's player journey.
 const introAll = via => {
@@ -312,7 +307,7 @@ const introOffer = () => {
     a <= O.UNTIL &&
     !store.get(O.KEY, null) &&
     introLeft().length > 0 &&
-    Object.keys(DATA.gen).filter(introduced).length >= O.MET &&
+    slateGenera().filter(introduced).length >= O.MET &&
     ((P[LEVEL] || {}).th || 0) >= O.TH
   );
 };
@@ -408,15 +403,7 @@ function weighted(list) {
       tr = easyTrust(),
       e = gd.map(x => Math.exp(-OPEN.T * tr * (x - lo))),
       se = e.reduce((a, x) => a + x, 0);
-    fresh.forEach(([n, i], k) => (w[i] = ((tot * e[k]) / se) * (isBonus(n) ? Math.min(1, BONUS_W / 10) : 1)));
-  }
-  // Bonus share from the weights as they now stand (Codex review #340: the totals taken before the progressive path's
-  // rescaling let a bonus genus take ~45% of the draws).
-  const b = list.reduce((s, n, i) => s + (isBonus(n) ? w[i] : 0), 0),
-    o = w.reduce((a, x) => a + x, 0) - b;
-  if (b && o && b / (b + o) > BONUS_SHARE) {
-    const f = (BONUS_SHARE * o) / ((1 - BONUS_SHARE) * b);
-    list.forEach((n, i) => isBonus(n) && (w[i] *= f));
+    fresh.forEach(([, i], k) => (w[i] = (tot * e[k]) / se));
   }
   const t = w.reduce((a, x) => a + x, 0);
   let r = Math.random() * t;
@@ -567,7 +554,7 @@ const lvStep = n => {
   const k = level(n)[0];
   return k === 'new' ? 0 : k === 'ok' ? 5 : 1 + Math.min(3, Math.floor(4 * genScore(n)));
 };
-const progPct = (L = Object.keys(DATA.gen)) => Math.round((100 * L.reduce((t, n) => t + genScore(n), 0)) / L.length);
+const progPct = (L = slateGenera()) => Math.round((100 * L.reduce((t, n) => t + genScore(n), 0)) / L.length);
 function level(n) {
   const s = P[n];
   if (!s || (s.ok + s.ko === 0 && !s.h)) return ['new', 'Not seen'];

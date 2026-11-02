@@ -59,7 +59,7 @@ const server = http.createServer((req, res) => {
   const R = await p.evaluate(() => {
     const sig = x => 1 / (1 + Math.exp(-x)),
       logit = q => Math.log(q / (1 - q)),
-      G = Object.keys(DATA.gen);
+      G = slateGenera();
     let seed = 7;
     const rnd = () => (seed = (seed * 48271) % 2147483647) / 2147483647;
     const q0 = question;
@@ -176,21 +176,23 @@ const server = http.createServer((req, res) => {
       PSTAT = keep;
       GDIFF = {};
     }
-    // Bonus genera keep at most BONUS_SHARE of the draw with the progressive path's weights (Codex review #340): five
-    // slate genera mastered, the others not met, one bonus genus being learned.
-    const bonus = BONUS.filter(n => GX(n))[0];
-    if (bonus) {
+    // Bonus genera (opt-in, 2026-11-02; their own weight cap and 15% share went with it): once on, the genera not met
+    // yet, so together they get the opening's share of the draw (OPEN.READY at most, nothing shaky), never more; off,
+    // never drawn. Every slate genus met and half way, none of the bonus genera met.
+    const B = BONUS.filter(n => GX(n));
+    if (B.length) {
       P = {};
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no gentle restart
       warmLeft = 0;
-      store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
-      G.slice(0, 5).forEach(g => (P[g] = {ok: 20, ko: 0, h: '1111111111', th: 1, L: 0.99, mx: 1}));
-      P[bonus] = {ok: 5, ko: 3, h: '11010', th: 0, L: 0.4};
-      const list = [...G, bonus];
-      let hit = 0;
-      for (let i = 0; i < 2000; i++) if (weighted(list) === bonus) hit++;
-      out.bonusShare = hit / 2000;
+      G.forEach(g => (P[g] = {ok: 8, ko: 2, h: '1101111011', th: 1.5, pg: 0.5}));
+      const draw = list => {
+        let hit = 0;
+        for (let i = 0; i < 2000; i++) if (isBonus(weighted(list))) hit++;
+        return hit / 2000;
+      };
+      out.bonusShare = draw([...G, ...B]);
+      out.bonusOff = (bonusSet(false), draw(pool()));
     }
     // Online calibration (CAL): on a genus the player holds, a photo nobody has answered yet comes up more often than its
     // rated twins (made-up ratings at each photo's own prior difficulty).
@@ -226,7 +228,16 @@ const server = http.createServer((req, res) => {
     [e1, , e3] = R.expert.rows,
     [r1, , r3] = R.RA.rows;
   for (const [k, v] of Object.entries(R)) if (v.rows) console.log(k, JSON.stringify(v));
-  console.log('bonus share', R.bonusShare, 'easy first', JSON.stringify(R.easyFirst), 'calibration', JSON.stringify(R.cal));
+  console.log(
+    'bonus share',
+    R.bonusShare,
+    'off',
+    R.bonusOff,
+    'easy first',
+    JSON.stringify(R.easyFirst),
+    'calibration',
+    JSON.stringify(R.cal)
+  );
   if (b1.met > 16) fails.push(`beginner met ${b1.met} genera in 100 questions: not focused`);
   if (b3.met <= b1.met) fails.push(`beginner stopped opening genera (${b1.met} then ${b3.met})`);
   if (r3.met <= r1.met) fails.push(`RA stopped opening genera (${r1.met} then ${r3.met})`);
@@ -250,7 +261,8 @@ const server = http.createServer((req, res) => {
   if (e3.pct <= b3.pct + 10) fails.push(`expert's progress not clearly above a beginner's (${e3.pct}% vs ${b3.pct}%)`);
   for (const [k, v] of Object.entries(R))
     if (v.early && v.early.length) fails.push(`${k}: ${v.early.join(', ')} at 95% before being asked beside a look-alike`);
-  if (R.bonusShare > 0.2) fails.push(`a bonus genus took ${Math.round(100 * R.bonusShare)}% of the draws (cap 15%)`);
+  if (!(R.bonusShare > 0 && R.bonusShare <= 0.4) || R.bonusOff)
+    fails.push(`bonus genera not met took ${Math.round(100 * R.bonusShare)}% of the draws (the opening's 35% at most); off: ${R.bonusOff}`);
   if (!(R.cal.with > 1.3 * Math.max(10, R.cal.without)))
     fails.push(`calibration: an unrated photo was not drawn more often: ${JSON.stringify(R.cal)}`);
   if (errs.length) fails.push('page errors: ' + errs.slice(0, 3).join(' | '));

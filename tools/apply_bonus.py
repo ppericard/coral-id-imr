@@ -12,7 +12,7 @@ import json, re, time, urllib.request
 from datajson import dump  # the one data.json layout (one genus per line)
 
 MULTI = {'isopora-x-606660716', 'heliopora-x-129398835'}
-BONUS = ['Millepora', 'Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis']  # same list as app.js BONUS
+BONUS = ['Millepora', 'Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis']  # app.js BENTHIC + BONUS (Millepora is a slate genus since 2026-11-02, same photo rule)
 
 d = json.load(open('data.json'))
 X = d['x']['gen']

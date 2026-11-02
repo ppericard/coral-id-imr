@@ -409,7 +409,7 @@ const imrFormsOf = n => {
 
 /* ---------- shared bits ---------- */
 // Genera in IMR slate order (data.json lists them that way, starred genera last).
-const slateIdx = n => Object.keys(DATA.gen).indexOf(n);
+const slateIdx = n => slateGenera().indexOf(n);
 const bySlate = L => [...Object.keys(DATA.gen), ...Object.keys((DATA.x || {}).gen || {})].filter(n => L.includes(n));
 // group=true marks the card with its IMR confusion group (strip and tag); 'stripe' draws the strip only.
 function card(name, group) {
@@ -685,28 +685,53 @@ const saveQ = () => store.set('imr-coral-quiz', Q);
 let session = {ok: 0, n: 0, h: []},
   last = null,
   duelPair = null;
-// Bonus genera (Pierre, 2026-11-01): genera off the IMR slate that are common at Dauin and easily taken for a slate
-// genus, added to the photo quiz and the duels once the player has made some progress ("not at the very start, but
-// fairly soon"). Picked from the Coral Finder book genera present at Dauin (data.json "x", tools/build_extra.py):
-// 4+ Research Grade iNaturalist observations within 40 km, and a look-alike on the slate named by the Coral Finder
-// (Millepora / Porites, Isopora / Acropora, Leptoseris / Pavona, Sandalolitha / Halomitra, Pleuractis / Lobactis),
-// or not a hard coral at all (Heliopora, like Millepora). The first unlocks at 10% slate progress, then one more per
-// 5% (performance only, never time). Once unlocked a genus stays unlocked (Q.bu). They never count in the slate
-// progress (progPct, the 39 tiles, the sync summary), and their ID tips come from the Coral Finder, labelled as such.
+// Millepora (fire coral; Pierre, 2026-11-02): not a hard coral (a hydrozoan), so not on the IMR coral list, but on the
+// IMR benthic slate (taught in the benthos lecture) and everywhere at Dauin and in ReefCloud photos. A game genus like
+// those of the coral slate (the draw, the opening of genera, progress, My progress, the sync summary, achievements); its
+// data stays in data.json "x" (Coral Finder ID tips, with their pages; Research Grade game photos, as the bonus genera).
+const BENTHIC = ['Millepora'];
+const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
+// The genera the games teach and the progress counts: the IMR coral slate (data.json order, starred genera last) and
+// BENTHIC. "The slate" in the code means this list.
+const slateGenera = () => [...Object.keys(DATA.gen), ...BENTHIC.filter(n => GX(n))];
+// Bonus genera (Pierre, 2026-11-01; opt-in since 2026-11-02): genera off the IMR slate that are common at Dauin and
+// easily taken for a slate genus. Picked from the Coral Finder book genera present at Dauin (data.json "x",
+// tools/build_extra.py): 4+ Research Grade iNaturalist observations within 40 km, and a look-alike on the slate named by
+// the Coral Finder (Isopora / Acropora, Leptoseris / Pavona, Sandalolitha / Halomitra, Pleuractis / Lobactis), or not a
+// hard coral at all (Heliopora). Offered once, by a card, when the player has met every slate genus (quiz.js
+// bonusOfferShow); ⚙ Bonus genera On / Off changes it any time (Q.bon; Off keeps their progress). Once on, they join
+// the genera not met yet and open like the others (model.js weighted, OPEN). They never count in the progress (progPct,
+// the slate tiles, the sync summary), and their ID tips come from the Coral Finder, labelled as such.
 // Game photos: Research Grade observations (or Pierre's own) only, never multi-coral (tools/apply_bonus.py).
-const BONUS = ['Millepora', 'Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis'];
-const BONUS_AT = i => 10 + 5 * i;
+const BONUS = ['Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis'];
 const isBonus = n => !DATA.gen[n] && BONUS.includes(n) && !!GX(n);
-function bonusOpen() {
-  const p = progPct(),
-    k = Math.max(Q.bu || 0, BONUS.filter((_, i) => p >= BONUS_AT(i)).length);
-  if (k > (Q.bu || 0)) {
-    Q.bu = k;
-    saveQ();
-  }
-  return BONUS.slice(0, k).filter(n => GX(n));
+// Players who had bonus genera unlocked by the former progress thresholds (Q.bu, Millepora counted first) keep them
+// on, so nothing disappears under them; Millepora alone (Q.bu 1) is now a slate genus, so not an opt-in.
+if (Q.bon === undefined && Q.bu > 1) {
+  Q.bon = true;
+  saveQ();
 }
-const pool = () => [...Object.keys(DATA.gen).filter(n => Q.stars || DATA.gen[n].n), ...bonusOpen()].filter(n => photoSet(n).shown.length);
+const bonusList = () => (Q.bon ? BONUS.filter(n => GX(n)) : []);
+// ⚙ Bonus genera On / Off, and the offer card (quiz.js bonusOfferShow): saved in the quiz settings, synced with them.
+// Off takes them out of the photo quiz and the duels; their progress is kept. Questions planned ahead with the old
+// genera are dropped by themselves (planKey names the genera in play).
+const showBon = () =>
+  document.querySelectorAll('#bonset button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.bon === '1') === !!Q.bon)));
+function bonusSet(on) {
+  Q.bon = !!on;
+  saveQ();
+  showBon();
+  if (typeof syncSoon === 'function') syncSoon();
+  if (RAW && /^(progress|quiz-board)$/.test(hashNow())) route();
+}
+document.querySelectorAll('#bonset button').forEach(b => (b.onclick = () => bonusSet(b.dataset.bon === '1')));
+showBon();
+// The warning on Millepora's first-meeting card and genus sheet (Pierre, 2026-11-02).
+const BENTHIC_NOTE =
+  "Not a hard coral and not on the IMR coral list, but it's on the IMR benthic slate and very common at Dauin, including in ReefCloud photos.";
+// A genus of the games: the slate (coral and benthic) or a bonus genus.
+const gameGenus = n => !!DATA.gen[n] || isBenthic(n) || isBonus(n);
+const pool = () => [...slateGenera(), ...bonusList()].filter(n => photoSet(n).shown.length);
 // ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera.
 const tipsLabel = g => (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');
 // What is wrong with the sync, in words, or '' when everything is saved.
@@ -918,11 +943,11 @@ function ctxBar(h) {
       i = L.indexOf(n);
     const prev = L[(i - 1 + L.length) % L.length],
       next = L[(i + 1) % L.length];
-    return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${g.x ? 'Not on IMR list' : g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(g.fam)}</small></h2>
+    return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${isBenthic(n) ? 'IMR benthic slate' : g.x ? 'Not on IMR list' : g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(g.fam)}</small></h2>
       <span class="pn"><a href="#g-${esc(prev)}" title="Previous: ${esc(prev)} (←)" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="#g-${esc(next)}" title="Next: ${esc(next)} (→)" aria-label="Next genus: ${esc(next)}">›</a></span>`;
   }
   const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
-  if (a && GX(a) && GX(b) && (DATA.gen[a] || isBonus(a)) && (DATA.gen[b] || isBonus(b)))
+  if (a && GX(a) && GX(b) && gameGenus(a) && gameGenus(b))
     return `${back}<h2 class="ctx-t ctx-pair"><span><i>${esc(a)}</i> or <i>${esc(b)}</i>?</span></h2><a class="ctx-l" href="#cmp">Look-alikes</a>`;
   return '';
 }
@@ -1141,6 +1166,7 @@ document.getElementById('signb').onclick = e => {
         P = {};
         delete Q.bu;
         delete Q.ba;
+        delete Q.bon; // the bonus genera are offered again once every slate genus is met
         saveQ();
         store.set('imr-coral-reset', new Date().toISOString());
         introReset();
