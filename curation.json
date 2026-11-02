@@ -90,7 +90,8 @@
       "add": {
         "seriatopora-cand-269736243": "wide",
         "seriatopora-cand-746236532": "medium",
-        "seriatopora-cand-746236570": "medium"
+        "seriatopora-cand-746236570": "medium",
+        "seriatopora-cand-600516986": "medium"
       }
     },
     "Porites": {
@@ -213,7 +214,8 @@
         "platygyra-cand-589333597": "wide",
         "platygyra-cand-752350463": "wide",
         "platygyra-cand-269727615": "wide",
-        "platygyra-cand-596694852": "wide"
+        "platygyra-cand-596694852": "wide",
+        "platygyra-cand-339004020": "medium"
       }
     },
     "Leptoria": {
@@ -243,7 +245,9 @@
         "plerogyra-cand-583861335": "wide",
         "plerogyra-cand-752350462": "macro",
         "plerogyra-cand-412025177": "wide",
-        "plerogyra-cand-745206682": "wide"
+        "plerogyra-cand-745206682": "wide",
+        "plerogyra-cand-269733809": "wide",
+        "plerogyra-cand-752350508": "macro"
       }
     },
     "Montipora": {
@@ -341,7 +345,8 @@
         "heliofungia-cand-269732506": "wide",
         "heliofungia-cand-453587788": "macro",
         "heliofungia-cand-269734223": "wide",
-        "heliofungia-cand-269734178": "wide"
+        "heliofungia-cand-269734178": "wide",
+        "heliofungia-cand-538874380": "wide"
       },
       "lv": 2,
       "move": {
@@ -375,7 +380,8 @@
         "diploastrea-cand-269731161": "wide",
         "diploastrea-cand-269396863": "wide",
         "diploastrea-cand-452544085": "macro",
-        "diploastrea-cand-269471380": "wide"
+        "diploastrea-cand-269471380": "wide",
+        "diploastrea-cand-269731513": "medium"
       }
     },
     "Goniastrea": {
@@ -439,7 +445,8 @@
     "Halomitra": {
       "add": {
         "halomitra-cand-269460672": "wide",
-        "halomitra-cand-269460824": "wide"
+        "halomitra-cand-269460824": "wide",
+        "halomitra-cand-269518478": "wide"
       }
     },
     "Euphyllia": {
@@ -466,7 +473,8 @@
     },
     "Pleuractis": {
       "add": {
-        "pleuractis-cand-269735766": "wide"
+        "pleuractis-cand-269735766": "wide",
+        "pleuractis-cand-269734595": "wide"
       }
     },
     "Oxypora": {
@@ -568,6 +576,7 @@
     "porites-cand-269475353": 3,
     "porites-cand-596708040": 3,
     "porites-cand-606690293": 2,
+    "seriatopora-cand-600516986": 1,
     "seriatopora-cand-746236532": 2,
     "stylophora-cand-606690291": 2,
     "stylophora-cand-745205098": 3,
