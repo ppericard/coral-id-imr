@@ -39,7 +39,7 @@ const server = http.createServer((req, res) => {
 // 4. The leaderboard shows the copy kept on the device at once while the sync script is slow.
 // 5. Leaving a page drops its photos still loading.
 // 6. The service worker installs even when each app file fails once (retried at install).
-// 9. A new version reloads the page by itself at the next page change.
+// 9. A new version reloads the page by itself at the next page change; a local copy sends nothing to the sheet.
 // 8. Start-up recovers when its scripts, stylesheet and data.json fail once (loader retries, getR).
 // 7. Photo sizes follow the box, the screen density and the Photo quality setting (Auto, Saver, Full); thumbnails 240 px.
 // Speed numbers are measured by tools/perf.js, not here. Locally: node tests/net.smoke.js
@@ -292,6 +292,22 @@ const server = http.createServer((req, res) => {
     await p.reload();
     await ready(p);
     if (!(await p.evaluate(() => !!navigator.serviceWorker.controller))) fails.push('Update test: the page is not controlled');
+    // A local copy never sends anonymous answers or reports to the real sheet, even with the service worker in (its
+    // requests pass by ctx.route): tools/perf.js runs had reached it.
+    const sent = await p.evaluate(async () => {
+      const f = window.fetch,
+        hits = [];
+      window.fetch = (u, o) =>
+        /script\.google/.test(String((u && u.url) || u)) ? (hits.push(String(u)), Promise.reject(new Error('x'))) : f(u, o);
+      localStorage.setItem('imr-anonq', JSON.stringify([{id: 'a1', t: Date.now(), g: 'Acropora', a: 'Porites', ok: 0}]));
+      localStorage.setItem('imr-reports', JSON.stringify([{k: 'photo', m: 'test'}]));
+      sendAnon();
+      sendReports();
+      await new Promise(ok => setTimeout(ok, 300));
+      window.fetch = f;
+      return hits;
+    });
+    if (sent.length) fails.push('A local copy sent answers or reports to the sheet: ' + sent[0].slice(0, 60));
     await p.evaluate(() => (window.__old = 1));
     SWV = 1;
     await p.evaluate(() => swCheck());
