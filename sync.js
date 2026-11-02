@@ -550,7 +550,7 @@ function loadSend() {
     ...LOADM,
     bps: Math.round(linkMeasure() / 1000),
     kb: Math.round(bytes / 1024),
-    sw: navigator.serviceWorker && navigator.serviceWorker.controller ? 1 : 0,
+    sw: SW0 ? 1 : 0,
     sv: saver() ? 1 : 0,
     th: isDark() ? 'dark' : 'light',
     w: innerWidth,

@@ -52,6 +52,10 @@ const server = http.createServer((req, res) => {
     try {
       localStorage.setItem('imr-tour', '"done"');
     } catch (e) {}
+    // Same draws every run (as profiles.smoke.js): unseeded, the mastery-exam check failed once on CI (PR #362: the 5th
+    // exam question of a 97% genus, drawn rarely, did not come within the 400 answers; not reproduced in 48 local runs).
+    let s = 4242;
+    Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
   });
   const p = await ctx.newPage(),
     errs = [];

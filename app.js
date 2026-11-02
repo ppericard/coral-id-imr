@@ -147,7 +147,9 @@ const linkMeasure = () => {
 // in a browser tab (st) and the CDN server
 // that sent data.json (pop: GitHub Pages' x-served-by, e.g. "cache-mnl…": Manila). Here, not in sync.js: data.json
 // can arrive before sync.js has run.
-const LOADM = {};
+const LOADM = {},
+  // Served by the offline copy at start-up (Codex review #362: the service worker registered later takes the page over).
+  SW0 = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
 let loadSent = false; // sync.js loadSend
 function loadMark(k, v) {
   if (loadSent || k in LOADM) return;
@@ -970,6 +972,9 @@ function route() {
   // A tab tapped while the app is still loading (slow line, RA review 2026-11-02): nothing to draw yet; the start-up's
   // own route() opens the page tapped, from the hash.
   if (!DATA) return;
+  // Load times (loadMark): the quiz is opened when tapped, before its files arrive (Codex review #362: a wait behind
+  // "Loading…" was left out of the photo wait).
+  if (hashNow() === 'quiz') loadMark('qo');
   // Photos of the page being left that are still loading are dropped, so a slow line gives its bandwidth to the new page
   // (tools/perf.js, slow 3G: the Home photos still downloading delayed the first quiz photo by seconds).
   $v.querySelectorAll('img').forEach(i => {
@@ -1012,7 +1017,6 @@ function route() {
     loadMark('p0', h || 'home');
     loadMark('t0');
   } else if (h !== routeFrom && (h || 'home') !== LOADM.p0) loadMark('nx', h || 'home');
-  if (h === 'quiz') loadMark('qo');
   routeFrom = h;
   // Home lives at the clean URL; an old #home link is rewritten to it.
   if (h === 'home') history.replaceState({d: pageDepth}, '', location.pathname + location.search);

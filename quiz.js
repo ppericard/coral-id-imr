@@ -721,7 +721,14 @@ const takePlan = cur => {
 };
 let SHOWNQ = null; // the photo-quiz question on screen (planNext)
 function quizPhoto() {
-  const q = (SHOWNQ = takePlan('quiz') || planPhoto());
+  let q = takePlan('quiz') || planPhoto();
+  // A planned card waits while the player falls behind (introHold, Codex review #362: a right answer that starts the
+  // hold leaves the questions planned before it): the plans go and the question is chosen again.
+  if (q.intro && !q.start && introHold()) {
+    dropPlans();
+    q = planPhoto();
+  }
+  SHOWNQ = q;
   // The duel spacing counts from when an "Again" or a slipped-in duel shows, not from when it was planned (Codex review
   // #361: a duel planned 2 questions ahead left the next one 2 answers early).
   if (q.again) againAt = answersSoFar();
