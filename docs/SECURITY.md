@@ -32,10 +32,10 @@ leak of the Sheet would expose little.
 A real class of RAs stays far below every cap. A determined attacker can still add up to ~6000 anonymous answers
 and 40 accounts per 6 hours, but since v17 (2026-11-02, Pierre) the statistics count **only signed-in players whose
 answers are clearly above chance** (10 answers or more, one-sided z ≥ 1.645 against each question's guess rate:
-`TRUST`, `trusted_` in `Code.gs`, `trustOf` in `core.js`), and **only a player's first answer on each photo**: anonymous
+`TRUST`, `trusted_` in `Code.gs`, `trustOf` in `core.js`), and a player's answers **weigh more as their level settles** (n / (n + 30)): anonymous
 answers count once their device signs in; random clicking, bots answering at chance and test runs never count. A bot
-that signs in and reads the right answers from the app's data could still pull photos towards "easy", one answer per
-photo and account.
+that signs in and reads the right answers from the app's data could still pull photos towards "easy" (repeats on a photo
+it got right twice weigh less, as remembered).
 
 ## If it happens
 

@@ -193,13 +193,16 @@
     return out;
   }
 
+  // How much one answer moves the photos, as Code.gs PHOTO_W (v17): weight n / (n + N) after n answers of the player,
+  // and repeats counted against the player's history with the photo (new: NEW harder; right twice before: KNOWN easier).
+  const PHOTO_W = {N: 30, NEW: 0.5, KNOWN: -1};
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
   // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them). Every answer
-  // moves the player's level; a photo moves only on a trusted player's first answer on it (trustOf, v17).
+  // moves the player's level; the photos move on trusted players' answers only (trustOf, v17), weighed as above.
   function eloOf(rows) {
     const P = {},
       R = {},
-      seen = {},
+      H = {},
       trust = trustOf(rows),
       sig = x => 1 / (1 + Math.exp(-x));
     rows
@@ -213,19 +216,25 @@
           ra = (R[r[0]] = R[r[0]] || [0, 0]);
         const ph = fs.map(f => (P[f] = P[f] || [0, 0, 0])),
           b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
-        const d = ok - (g + (1 - g) * sig(ra[0] - b));
-        ra[0] += (0.6 / (1 + ra[1] / 40)) * d;
-        ra[1]++;
-        if (trust[r[0]])
-          fs.forEach((f, i) => {
-            const k = r[0] + '|' + f;
-            if (seen[k]) return;
-            seen[k] = 1;
-            const p = ph[i];
-            p[0] -= (0.8 / (1 + p[2] / 10) / ph.length) * d;
+        const d = ok - (g + (1 - g) * sig(ra[0] - b)),
+          n = ra[1];
+        const hs = fs.map(f => (H[r[0] + '|' + f] = H[r[0] + '|' + f] || [0, 0]));
+        if (trust[r[0]]) {
+          const fam = hs.reduce((t, h) => t + (!h[0] ? PHOTO_W.NEW : h[1] >= 2 ? PHOTO_W.KNOWN : 0), 0) / hs.length;
+          const dp = ok - (g + (1 - g) * sig(ra[0] - b - fam)),
+            w = n / (n + PHOTO_W.N);
+          ph.forEach(p => {
+            p[0] -= (0.8 / (1 + p[2] / 10) / ph.length) * dp * w;
             p[2]++;
             p[1] += ok;
           });
+        }
+        ra[0] += (0.6 / (1 + n / 40)) * d;
+        ra[1]++;
+        hs.forEach(h => {
+          h[0]++;
+          h[1] += ok;
+        });
       });
     const out = {};
     Object.keys(P).forEach(f => (out[f] = [Math.round(P[f][0] * 100) / 100, P[f][2], P[f][1]]));
@@ -721,6 +730,7 @@
     eloOf,
     trustOf,
     TRUST,
+    PHOTO_W,
     confusionOf,
     CONF,
     confScore,

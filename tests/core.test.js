@@ -221,7 +221,7 @@ test('a quiz question with easy wrong choices (quiz|k2) is rated with a 1/2 gues
   assert.strictEqual(E('quiz|k2', 1), E('quiz-duel', 1));
 });
 
-test('photo ratings and confusions count only signed-in players clearly above chance, first answer per photo (v17)', () => {
+test('photo ratings and confusions count only signed-in players clearly above chance (v17)', () => {
   const R = (who, i, ok, f, an, m = 'quiz', ch = 'Acropora Porites Favites Montipora') => [
     who,
     i,
@@ -246,9 +246,28 @@ test('photo ratings and confusions count only signed-in players clearly above ch
   const rand = Array.from({length: 40}, (_, i) => R('Bot', 200 + i, i % 4 === 0 ? 1 : 0, 'y-' + (i % 5)));
   assert.strictEqual(trustOf(rand).Bot, false);
   assert.strictEqual(trustOf(good.slice(0, 9)).Ana, false, 'fewer than TRUST.N answers');
-  // Only a player's first answer on a photo moves it.
+  // Repeats count (Duolingo HLR, PFA): every answer of a trusted player is counted.
   const again = [...good, R('Ana', 50, 0, 'z-1'), R('Ana', 51, 0, 'z-1'), R('Ana', 52, 0, 'z-1')];
-  assert.strictEqual(eloOf(again)['z-1'][1], 1);
+  assert.strictEqual(eloOf(again)['z-1'][1], 3);
+});
+
+test("v17: a beginner's answers move the photos more as their level settles; a remembered photo moves less", () => {
+  const R = (i, ok, f) => ['Lea', i, 'Acropora', ok ? 'Acropora' : 'Porites', ok, 'quiz', f];
+  // Pierre's case: a beginner at chance for 20 answers, then right most of the time. Trusted over the whole history.
+  const early = Array.from({length: 20}, (_, i) => R(i, i % 4 === 0 ? 1 : 0, 'e-' + i)),
+    later = Array.from({length: 40}, (_, i) => R(20 + i, i % 5 ? 1 : 0, 'l-' + i)),
+    L = [...early, ...later];
+  assert.strictEqual(trustOf(L).Lea, true);
+  const E = eloOf(L);
+  // Same outcome (a miss), early (answer 2) and late (answer 25): the late one moves its photo more.
+  assert.strictEqual(early[1][4], 0);
+  assert.strictEqual(later[5][4], 0);
+  assert.ok(Math.abs(E['e-1'][0]) < Math.abs(E['l-5'][0]) / 2, `early ${E['e-1'][0]} vs late ${E['l-5'][0]}`);
+  // A right answer on a photo already right twice (remembered) moves it less than one on a new photo.
+  const base = [...L, R(100, 1, 'k-1'), R(101, 1, 'k-1')],
+    dKnown = eloOf([...base, R(102, 1, 'k-1')])['k-1'][0] - eloOf(base)['k-1'][0],
+    dNew = eloOf([...base, R(102, 1, 'n-1')])['n-1'][0];
+  assert.ok(Math.abs(dKnown) < Math.abs(dNew), `known ${dKnown} vs new ${dNew}`);
 });
 
 test('mergeUsers: two accounts of one person add up; the busier account model wins per genus', () => {

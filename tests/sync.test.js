@@ -387,11 +387,11 @@ test('v17: anonymous answers rate no photo until the device signs in; then they 
   assert.deepStrictEqual(s.get({stats: '1'}).photos['pic-0'], [0, 0, 0], 'logged, but no photo moved');
   assert.strictEqual(s.post({name: 'Cy', pin: '2222', data: prog(1), summary: {}, answers: L, anon: 'device0001'}).ok, true);
   for (const k of Object.keys(s.cache)) delete s.cache[k]; // stats are cached 10 minutes
-  const p = s.get({stats: '1'}).photos['pic-0'];
+  const p = s.get({stats: '1'}).photos['pic-11'];
   assert.ok(p && p[1] === 1 && p[0] < 0, 'once signed in, the answers rate the photos: ' + JSON.stringify(p));
 });
 
-test('v17: one player whatever the capitalisation of the name (trust and first answer per photo)', () => {
+test('v17: one player whatever the capitalisation of the name (trust and history per photo)', () => {
   const s = loadCodeGs(),
     A = (i, ph) => ans('k' + i, {ph, t: new Date(Date.UTC(2026, 10, 1, 0, 0, i)).toISOString()});
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [0, 1, 2, 3, 4, 5].map(i => A(i, 'pic-' + i))});
@@ -404,7 +404,7 @@ test('v17: one player whatever the capitalisation of the name (trust and first a
   });
   const P = s.get({stats: '1'}).photos;
   assert.strictEqual(P['pic-1'][1], 1, '12 right answers under Ana and ana make one trusted player');
-  assert.strictEqual(P['pic-0'][1], 1, 'and one answer per photo, whatever the spelling');
+  assert.strictEqual(P['pic-0'][1], 2, 'one history per photo, whatever the spelling (answered twice)');
 });
 
 test("v17 anonDelete: admin only, removes the answers of chosen anonymous ids, never a named player's", () => {
