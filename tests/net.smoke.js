@@ -249,6 +249,16 @@ const server = http.createServer((req, res) => {
       fails.push('app.css not applied after failing once');
     await ctx.close();
   }
+  // 8c. A Lab prototype that never answers does not hold the start-up (Codex review, PR #336).
+  {
+    const {ctx, p} = await ctxOf();
+    await ctx.route(/\/proto\/zoom\.js/, () => {}); // never answers
+    await p.goto(base, {waitUntil: 'commit'}); // the load event waits for it
+    await p
+      .waitForFunction(() => window.APP_READY && document.querySelector('.hdoors'), null, {timeout: 15000})
+      .catch(() => fails.push('A hanging Lab prototype held the start-up'));
+    await ctx.close();
+  }
   // 8b. A line where every 5th request fails (tools/perf.js "unstable" profile): the app still starts. Reloading the
   // page on a failed file (first try) never got through: each reload failed again.
   {
