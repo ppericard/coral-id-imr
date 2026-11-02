@@ -1330,7 +1330,9 @@ const BONUS_W = 4,
 // so the pace holds as the genera met add up); otherwise only OPEN.TRICKLE, so a new one still comes now and then.
 // Among them, the easiest (genusDiff) come first, softly (OPEN.T): a beginner meets a few easy genera at a time, an
 // expert keeps opening new ones because none stays shaky. docs/LEARNING.md.
-const OPEN = {K: 3, P: 0.6, READY: 0.35, TRICKLE: 0.03, T: 3, CONF: 2, DATA: 300};
+// K 5 (was 3; Pierre, 2026-11-02: genera should open a little more easily, ~25 of 39 met by an RA after 600 questions
+// was too few): simulated, an RA meets 33-39 after 600 questions, a beginner still 9-14 after 100 (docs/LEARNING.md).
+const OPEN = {K: 5, P: 0.6, READY: 0.35, TRICKLE: 0.03, T: 3, CONF: 2, DATA: 300};
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
 // OPEN.DATA, up to 1. Without them the genus difficulty is only the photo sets and declared look-alikes, which put
 // Acropora and Galaxea among the hardest and Alveopora first (Pierre expects the first two easy): the order then stays
@@ -3121,7 +3123,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
     };
     return;
   }
-  box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device, and your answers help rate the photos (those of players not signed in don't).</p>
+  box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device.</p>
     <form class="sform"><label>Your name <input name="n" required maxlength="40" autocomplete="name"></label>
     <label>4-digit code <input name="p" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"></label>
     <button class="${box.classList.contains('tsync') ? 'next' : 'chip go'}" type="submit">Sign in</button> <span class="note" role="status"></span></form>

@@ -78,7 +78,7 @@ Pierre: rather than spamming a beginner with 40 genera, focus on the easiest one
 everything estimated from the data. Before, a genus never seen weighed 10 against 1-4 for one being learned: a beginner
 met the 39 slate genera almost at once.
 
-- **Opening by results**: while fewer than `OPEN.K` (3) genera met are *shaky*, the genera not met yet share
+- **Opening by results**: while fewer than `OPEN.K` (5; 3 at first) genera met are *shaky*, the genera not met yet share
   `OPEN.READY` (35%) of the draw; otherwise `OPEN.TRICKLE` (3%), so a new one still comes now and then. A share, not a
   weight, so the pace holds as the genera met add up.
 - **Shaky** = met, not mastered, and the player's expected success on an average photo of the genus (4 choices, at its
@@ -112,13 +112,13 @@ met the 39 slate genera almost at once.
   global level. The exam is unchanged: an expert still proves each genus with its own 5 hard questions. Simulated: an
   expert mastered 7 genera in 600 questions before, 5-21 after (4 seeds).
 
-## Pooled statistics: photo difficulty and confusions (sheet v17, 2026-11-02)
+## Pooled statistics: photo difficulty and confusions (sheet v17-v18, 2026-11-02)
 
 Photo difficulty feeds every player's game (which photos, how hard), and confusions pick the traps. They must reflect
 real learners, not bots, random clicks or test runs (17 anonymous "players" turned out to be `tools/perf.js` runs).
 
-- **Who counts** (`trusted_`, `TRUST`): signed-in players only (anonymous answers are kept and count once the device
-  signs in, as they move to the name), with at least 10 answers and a right rate clearly above chance (one-sided z ≥
+- **Who counts** (`trusted_`, `TRUST`): players, signed in or not (v18; v17 left out devices that never signed in),
+  with at least 10 answers and a right rate clearly above chance (one-sided z ≥
   1.645 against each question's guess rate), judged on the whole history at each recompute: a beginner who gets out of
   chance then counts with all their answers. Every answer still moves the player's own level.
 - **How much an answer weighs** (`PHOTO_W.N`): n / (n + 30) after n answers of the player (Glicko's idea: an uncertain
@@ -149,8 +149,28 @@ app's: `know[g]` = chance to recognise genus g on an average photo (beginner 0.0
 on the others, expert 0.93), lowered on harder photos and single views; otherwise a guess among the plausible choices;
 each answer teaches `rate` × (1 − know). The numbers show trends, not real players: recalibrate with real answers.
 
-Exploration, 600 questions, 4 seeds (genera met out of the 39 in the quiz; the first table of 2026-11-02 said "45",
-counting bonus genera by mistake):
+The quiz draws from the 39 genera of the IMR slate; the 6 bonus genera (Millepora, Isopora, Leptoseris, Heliopora,
+Sandalolitha, Pleuractis) open one by one with the progress (at 10%, 15%, ... 35%, `BONUS_AT`) and keep at most 15% of
+the draw. The tables count the 39 (the first table of 2026-11-02 said "45", counting the bonus genera by mistake).
+
+Calibration of `OPEN.K` (Pierre, 2026-11-02: "600 questions and only twenty-some genera open for the RAs may not be
+enough"), 600 questions, 3 seeds, genera met (beginner / RA / expert):
+
+| `OPEN` | after 100 | after 300 | after 600 |
+| --- | --- | --- | --- |
+| K 3, P 0.6 (first) | 12-14 / 9-17 / 25-31 | 14-23 / 18-29 / 34-39 | 26-37 / 26-34 / 39 |
+| **K 5, P 0.6 (now)** | 9-14 / 14-20 / 21-37 | 19-21 / 27-30 / 39 | 28-29 / 33-39 / 39 |
+| K 5, P 0.5 | 11-15 / 15-28 / 34-35 | 22-30 / 27-34 / 39 | 33-39 / 36-39 / 39 |
+| K 6, P 0.5, READY 0.5 | all 39 by question 500 / all 39 by question 200-400 / 39 at 100 | | |
+
+K 5 with P 0.6 is the small step Pierre asked for: the RA opens faster (one genus more every ~15 questions at first),
+the beginner stays on about ten genera for the first 100 questions. Lowering P too made the beginner open faster as well (18 genera
+in 100 questions in the CI test, which keeps that at 16 at most). Mastery is barely changed: an expert masters
+10-17 genera in 600 questions (9-21 with K 3); the first ones come around question 300, after 95% and the 5 exam
+questions at least 8 answers apart, so the CI test checks that an expert has genera ready for their exam (95% sure)
+after 300 questions, not mastered ones.
+
+Exploration of the first setting (K 3), 600 questions, 4 seeds:
 
 | | Beginner | RA | Expert |
 | --- | --- | --- | --- |
@@ -168,11 +188,17 @@ simulation); recalibrate `ELO` and `OPEN` once a few RA cohorts have played.
 
 ## Decision log
 
-- 2026-11-02, Pierre: anonymous answers do not rate photos; sign in to count; stats only from players above chance;
+- 2026-11-02, Pierre: anonymous answers do not rate photos; sign in to count (reversed the same day, below); stats only from players above chance;
   developer test answers deleted (admin anonDelete); first-answer-only rejected; experience weight and history-aware
   repeats; players start as beginners.
 - 2026-11-02, Pierre: three player paths, nothing coded per path; progressive opening of genera, easiest first, from
   the data; experts keep hard traps; adaptive step (volatility); BKT start from the global level (point 3).
+- 2026-11-02, Pierre: genera should open a little more easily for the RAs: `OPEN.K` 3 → 5 (table above); to
+  recalibrate with real answers.
+- 2026-11-02, Pierre: devices that never signed in count again for photo difficulty and confusions (sheet v18), under
+  the same rule as everyone (10 answers or more, clearly above chance, weighed by experience): the rule, not the
+  sign-in, is what tells a real player from a bot or a test run. Signing in still saves the progress, for the trainer
+  and on any device, and puts the player on the leaderboard.
 
 ## References
 

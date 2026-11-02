@@ -228,7 +228,7 @@ test('a quiz question with easy wrong choices (quiz|k2) is rated with a 1/2 gues
   assert.strictEqual(E('quiz|k2', 1), E('quiz-duel', 1));
 });
 
-test('photo ratings and confusions count only signed-in players clearly above chance (v17)', () => {
+test('photo ratings and confusions count only players clearly above chance, signed in or not (v18)', () => {
   const R = (who, i, ok, f, an, m = 'quiz', ch = 'Acropora Porites Favites Montipora') => [
     who,
     i,
@@ -244,11 +244,14 @@ test('photo ratings and confusions count only signed-in players clearly above ch
     an ? 1 : 0
   ];
   const good = Array.from({length: 12}, (_, i) => R('Ana', i, 1, 'p-' + i));
-  // A device that never signed in, however good, moves nothing.
-  const anon = Array.from({length: 12}, (_, i) => R('Zed', 100 + i, 0, 'x-1', 1));
-  assert.deepStrictEqual(trustOf([...good, ...anon]), {Ana: true, Zed: false});
-  assert.strictEqual(eloOf([...good, ...anon])['x-1'][1], 0, 'anonymous answers do not count');
-  assert.deepStrictEqual(confusionOf(anon).pair, {}, 'nor in confusions');
+  // A device that never signed in counts under the same rule (v18): a real player yes, random clicks no.
+  const anon = Array.from({length: 12}, (_, i) => R('Zed', 100 + i, i % 4 ? 1 : 0, 'x-1', 1)),
+    anonBot = Array.from({length: 12}, (_, i) => R('Zbot', 300 + i, 0, 'x-2', 1));
+  assert.deepStrictEqual(trustOf([...good, ...anon, ...anonBot]), {Ana: true, Zed: true, Zbot: false});
+  assert.ok(eloOf([...good, ...anon])['x-1'][1] > 0, 'a real anonymous player rates the photos');
+  assert.strictEqual(eloOf([...good, ...anonBot])['x-2'][1], 0, 'an anonymous player at chance does not');
+  assert.ok(Object.keys(confusionOf(anon).pair).length > 0, 'and counts in the confusions');
+  assert.deepStrictEqual(confusionOf(anonBot).pair, {}, 'not at chance');
   // A signed-in player at chance (random clicks) moves nothing either; too few answers neither.
   const rand = Array.from({length: 40}, (_, i) => R('Bot', 200 + i, i % 4 === 0 ? 1 : 0, 'y-' + (i % 5)));
   assert.strictEqual(trustOf(rand).Bot, false);

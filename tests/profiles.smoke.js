@@ -35,7 +35,7 @@ const server = http.createServer((req, res) => {
 // chance to recognise genus g on a photo of average difficulty, lowered on harder photos and single views; otherwise a
 // guess among the plausible choices; each answer teaches a little. Checks that the app, with nothing set per profile:
 // keeps a beginner on a few genera at a time, the easier ones first, and keeps opening new ones; gives an expert many
-// genera, hard choices (look-alike traps) and mastered genera early. Locally: node tests/profiles.smoke.js
+// genera, hard choices (look-alike traps) and genera ready for their mastery exam early. Locally: node tests/profiles.smoke.js
 (async () => {
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`;
@@ -109,7 +109,8 @@ const server = http.createServer((req, res) => {
             right: Math.round((100 * blk.ok) / blk.n),
             traps: +(blk.traps / blk.n).toFixed(2),
             met: G.filter(g => P[g]).length,
-            learned: G.filter(g => (P[g] || {}).mx).length
+            learned: G.filter(g => (P[g] || {}).mx).length,
+            sure: G.filter(g => knownP(g) >= BKT.MASTER).length
           });
           blk = {n: 0, ok: 0, traps: 0};
         }
@@ -187,7 +188,11 @@ const server = http.createServer((req, res) => {
   if (e1.met <= b1.met) fails.push(`expert met no more genera than a beginner in 100 questions (${e1.met} vs ${b1.met})`);
   if (e3.met <= b3.met) fails.push(`expert opened no more genera than a beginner (${e3.met} vs ${b3.met})`);
   if ((e1.traps + e3.traps) / 2 < 1) fails.push(`expert got ${e1.traps}, ${e3.traps} look-alike traps a question`);
-  if (e3.learned < 1) fails.push('expert mastered no genus in 300 questions');
+  // Mastery = 95% sure, then 5 exam questions at least 8 answers apart (EXAM): with every genus open by question 200,
+  // the first ones are mastered around question 300 (docs/LEARNING.md), so what 300 questions must show is genera
+  // sure enough for their exam.
+  if (e3.sure < 3) fails.push(`expert has ${e3.sure} genera 95% sure (mastery exam) after 300 questions`);
+  if (e3.sure <= b3.sure) fails.push(`expert no surer of the genera than a beginner (${e3.sure} vs ${b3.sure})`);
   if (R.bonusShare > 0.2) fails.push(`a bonus genus took ${Math.round(100 * R.bonusShare)}% of the draws (cap 15%)`);
   if (errs.length) fails.push('page errors: ' + errs.slice(0, 3).join(' | '));
   if (fails.length) {
@@ -195,7 +200,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    'Learning path OK: a beginner and an RA focus on a few genera, easier first, and keep opening; an expert gets many genera, traps and mastery.'
+    'Learning path OK: a beginner and an RA focus on a few genera, easier first, and keep opening; an expert gets many genera, traps and genera ready for mastery.'
   );
 })().catch(e => {
   console.error(e);

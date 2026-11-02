@@ -166,9 +166,8 @@
     return out;
   }
 
-  // Who rates the photos and the confusions, as tools/sync/Code.gs trusted_ (v17, Pierre 2026-11-02): signed-in players
-  // only (row[11] = 1 marks a device that never signed in; a sheet before v17 sends no flag), with TRUST.N answers or more
-  // and a right rate clearly above chance (one-sided z of at least TRUST.Z against each question's guess rate).
+  // Who rates the photos and the confusions, as tools/sync/Code.gs trusted_ (v17; v18: devices that never signed in too,
+  // under the same rule, Pierre 2026-11-02): players with TRUST.N answers or more and a right rate clearly above chance (one-sided z of at least TRUST.Z against each question's guess rate).
   const TRUST = {N: 10, Z: 1.645};
   const guessOf = mode => {
     const kq = /\|k(\d)$/.exec(mode);
@@ -189,7 +188,7 @@
     });
     Object.keys(T).forEach(w => {
       const t = T[w];
-      out[w] = !t[4] && t[0] >= TRUST.N && (t[1] - t[2]) / Math.sqrt(t[3]) >= TRUST.Z;
+      out[w] = t[0] >= TRUST.N && (t[1] - t[2]) / Math.sqrt(t[3]) >= TRUST.Z;
     });
     return out;
   }
