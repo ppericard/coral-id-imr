@@ -504,18 +504,41 @@ function achPop(a) {
   achQ.push(a);
   if (!achBusy) achNext();
 }
+// One overlay at a time (new-player walkthrough 2026-11-02: a toast sat on a "New genus" card, and tapping it left the
+// question): while a card (.unlock, the sign-in card included) or the tour is open, the toast waits and shows once they
+// have closed; a card that opens over a toast sends it back to the front of the queue, to show whole afterwards.
+const achBlocked = () => document.querySelector('.unlock, #tour');
+function achHold(a) {
+  achQ.unshift(a);
+  const mo = new MutationObserver(() => {
+    if (achBlocked()) return;
+    mo.disconnect();
+    achNext();
+  });
+  mo.observe(document.body, {childList: true});
+}
 function achNext() {
   const a = achQ.shift();
   if (!a) return (achBusy = false);
   achBusy = true;
+  if (achBlocked()) return achHold(a);
   const el = document.createElement('div');
   el.className = 'achpop t' + a.tier + (calm() ? ' calm' : '');
   el.setAttribute('role', 'status');
   el.innerHTML = `<a href="#ach" class="achin"><span class="achic" aria-hidden="true">${a.icon}</span><span><small>Achievement unlocked ${TIER[a.tier]}</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
   document.body.append(el);
   let tm = 0;
+  const mo = new MutationObserver(() => {
+    if (!el.isConnected || !achBlocked()) return;
+    mo.disconnect();
+    clearTimeout(tm);
+    el.remove();
+    achHold(a);
+  });
+  mo.observe(document.body, {childList: true});
   const done = () => {
     if (!el.isConnected) return; // once only: a click and the timer must not both move the queue on
+    mo.disconnect();
     clearTimeout(tm);
     el.remove();
     achNext();

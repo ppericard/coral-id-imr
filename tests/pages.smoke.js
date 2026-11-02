@@ -49,6 +49,116 @@ const server = http.createServer((req, res) => {
   });
 });
 
+// One overlay at a time, and each one closable (new-player walkthrough 2026-11-02). Returns the failures.
+async function overlays(b, base) {
+  const fails = [];
+  const open = async (o, init) => {
+    const c = await b.newContext({serviceWorkers: 'block', ...o});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(init || (() => {}));
+    const p = await c.newPage();
+    return [c, p];
+  };
+  const seen = () => {
+    localStorage.setItem('imr-tour', '"done"');
+    localStorage.setItem('imr-nudge', '1');
+  };
+  // C2: Back from the quiz closes the first genus card (it stayed over Home, its Next going on there). The cards shown
+  // are met; the rest come next time, as "1 of 2".
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}, intro: true}, seen);
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.evaluate(() => (location.hash = 'quiz'));
+    await p.waitForSelector('.unlock.intro', {timeout: 5000}).catch(() => {});
+    await p.click('.unlock.intro .next'); // card 2 of 4
+    await p.goBack();
+    await p.waitForTimeout(500);
+    await p.keyboard.press('Enter'); // a card's keys left behind would move on to a card no longer there
+    const r = await p.evaluate(() => ({h: location.hash, cards: document.querySelectorAll('.unlock').length}));
+    await p.evaluate(() => (location.hash = 'quiz'));
+    await p.waitForSelector('.unlock.intro', {timeout: 5000}).catch(() => {});
+    const kick = await p.evaluate(() => document.querySelector('.unlock.intro .ulkick')?.textContent);
+    if (r.h !== '' || r.cards || !/1 of 2/.test(kick || '')) fails.push(`card after Back from the quiz: ${JSON.stringify({...r, kick})}`);
+    await c.close();
+  }
+  // C1: an achievement toast never shows over a card: it waits for the card to close (both orders).
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}, intro: true}, seen);
+    await p.goto(base + '#quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('.unlock.intro', {timeout: 5000}).catch(() => {});
+    const t = () => p.evaluate(() => [!!document.querySelector('.unlock'), !!document.querySelector('.achpop')]);
+    await p.evaluate(() => achPop({tier: 1, icon: '🧪', title: 'Smoke A', desc: 'test'}));
+    await p.waitForTimeout(100);
+    const s1 = await t();
+    while (await p.$('.unlock.intro')) await p.click('.unlock.intro .next');
+    await p.waitForTimeout(100);
+    const s2 = await t();
+    // A card opening over a toast already on screen sends it back to wait.
+    await p.evaluate(() => {
+      document.querySelectorAll('.achpop a').forEach(a => {
+        a.addEventListener('click', e => e.preventDefault()); // closes it, without opening #ach
+        a.click();
+      });
+      achPop({tier: 1, icon: '🧪', title: 'Smoke B', desc: 'test'});
+    });
+    await p.waitForTimeout(100);
+    await p.evaluate(() => unlockShow([Object.keys(DATA.gen)[0]]));
+    await p.waitForTimeout(100);
+    const s3 = await t();
+    await p.keyboard.press('Escape');
+    await p.waitForTimeout(100);
+    const s4 = await t(),
+      b4 = await p.evaluate(() => document.querySelector('.achpop b')?.textContent);
+    if (
+      s1.join() !== 'true,false' ||
+      s2.join() !== 'false,true' ||
+      s3.join() !== 'true,false' ||
+      s4.join() !== 'false,true' ||
+      b4 !== 'Smoke B'
+    )
+      fails.push(`achievement toast over a card: ${JSON.stringify([s1, s2, s3, s4, b4])}`);
+    await c.close();
+  }
+  // C6: Escape closes an enlarged photo and the answer keys 1-4 still work on that question (desktop).
+  {
+    const [c, p] = await open({viewport: {width: 1280, height: 860}}, seen);
+    await p.goto(base + '#quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('#view .qph .zoom');
+    await p.click('#view .qph .zoom');
+    await p.waitForTimeout(200);
+    await p.keyboard.press('Escape');
+    await p.waitForTimeout(200);
+    await p.keyboard.press('1');
+    await p.waitForTimeout(200);
+    const r = await p.evaluate(() => ({lb: !document.getElementById('lightbox').hidden, answered: !!document.getElementById('next')}));
+    if (r.lb || !r.answered) fails.push(`answer keys after Escape on an enlarged photo: ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // C7: Escape on the tour's sign-in step closes it for good; Escape before that step still offers sign-in once.
+  for (const at of [0, 1]) {
+    const [c, p] = await open({viewport: {width: 1280, height: 860}}, () => localStorage.setItem('imr-nudge', '1'));
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
+    for (let k = 0; k < at; k++) {
+      await p.keyboard.press('ArrowRight');
+      await p.waitForTimeout(300);
+    }
+    const sign = await p.evaluate(() => !!document.querySelector('#tour .tsync'));
+    await p.keyboard.press('Escape');
+    await p.waitForTimeout(300);
+    const r = await p.evaluate(() => ({tour: !!document.getElementById('tour'), card: !!document.querySelector('.unlock.signnudge')}));
+    if (sign !== !!at || r.tour || r.card !== !at) fails.push(`Escape on tour step ${at + 1}: ${JSON.stringify({sign, ...r})}`);
+    await c.close();
+  }
+  return fails;
+}
+
 (async () => {
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`,
@@ -379,6 +489,7 @@ const server = http.createServer((req, res) => {
       if (!z0.full || !z0.over || !z1.full || !z1.open || z1.t <= z0.t || z2.full || !z2.open)
         fails.push(`enlarged photo drag: ${JSON.stringify({z0, z1, z2})}`);
       await cz.close();
+      for (const f of await overlays(b, base)) fails.push(f);
     }
     errs.length = 0;
     await p.goto(base + 'admin.html?readonly');

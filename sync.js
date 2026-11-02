@@ -627,6 +627,7 @@ function signinNudge(once = true, play = !once) {
     }
   };
   document.addEventListener('keydown', key, true);
+  d.ulClose = close; // leaving the page closes it (route)
   // From a skipped tour, the card ends on the games: once signed in, its button starts the photo quiz.
   btn.onclick = () => {
     close();

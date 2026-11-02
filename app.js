@@ -932,6 +932,10 @@ function route() {
     generaY = a ? [a.getAttribute('href'), a.getBoundingClientRect().top] : null;
   }
   const fromSheet = routeFrom.startsWith('g-');
+  // A card (.unlock: new genus, bonus genus, the offer to open all, sign-in) belongs to the page it opened on: leaving that
+  // page (Back, a tab, a link) closes it and its keys (new-player walkthrough 2026-11-02: phone Back from the quiz left the
+  // card over Home). A redraw of the same page keeps it. First-meeting cards are met when shown: the rest come next time.
+  if (h !== routeFrom) document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
   routeFrom = h;
   // Home lives at the clean URL; an old #home link is rewritten to it.
   if (h === 'home') history.replaceState({d: pageDepth}, '', location.pathname + location.search);

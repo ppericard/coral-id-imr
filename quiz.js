@@ -66,8 +66,10 @@ function question(cur, target, choices, prompt, set, kq) {
   if (hb) hb.onclick = showHint;
   // Keys: 1-4 answer, Enter goes to the next question.
   const keys = e => {
-    if (!document.body.contains($v.querySelector('.q')) || !lb.hidden) return document.removeEventListener('keydown', keys);
-    if (e.target.closest('input, textarea, select') || document.getElementById('tour')) return; // never an answer under the tour
+    if (!document.body.contains($v.querySelector('.q'))) return document.removeEventListener('keydown', keys);
+    // Keys typed in the enlarged photo are the viewer's (its Escape reaches this handler before the viewer closes: removing
+    // the handler there left 1-4 dead for the rest of the question, new-player walkthrough 2026-11-02).
+    if (!lb.hidden || e.target.closest('input, textarea, select') || document.getElementById('tour')) return; // never an answer under the tour
     const b = !answered && $v.querySelectorAll('[data-c]')[Number(e.key) - 1];
     if (b) {
       e.preventDefault();
@@ -540,6 +542,7 @@ function unlockShow(L) {
     close();
   };
   document.addEventListener('keydown', key, true);
+  d.ulClose = close; // leaving the page closes it (route)
   d.querySelector('button').onclick = close;
   d.querySelector('a').addEventListener('click', close);
   d.addEventListener('click', e => {
@@ -652,6 +655,7 @@ function introOfferShow() {
     pick(false);
   };
   document.addEventListener('keydown', key, true);
+  d.ulClose = close; // leaving the page closes it unanswered (route): the offer can come back
   d.querySelector('[data-open]').onclick = () => pick(true);
   d.querySelector('.sec').onclick = () => pick(false);
   setTimeout(() => d.querySelector('[data-open]').focus({preventScroll: true}), 50);
@@ -660,7 +664,7 @@ function introOfferShow() {
 // together ("1 of 4", the first questions are about them), later ones alone (asked a few questions later). Recorded
 // when shown, so a planned question never played leaves no genus met without its card.
 function introShow(L, start, kind = start ? 's' : 'c') {
-  document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
+  document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove())); // with its keys
   const d = document.createElement('div');
   d.className = 'unlock intro';
   d.setAttribute('role', 'dialog');
@@ -671,6 +675,7 @@ function introShow(L, start, kind = start ? 's' : 'c') {
     d.remove();
     document.removeEventListener('keydown', key, true);
   };
+  d.ulClose = close; // leaving the page closes it (route); the genera of the cards not shown yet come next time
   const next = () => (++i < L.length ? show() : close());
   const show = () => {
     const n = L[i],
