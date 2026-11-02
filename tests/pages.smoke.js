@@ -148,16 +148,16 @@ const server = http.createServer((req, res) => {
       // the view switch last on the page.
       const pg = await q2.evaluate(() => {
         const c = document.querySelector('#view .pbadge'),
-          b = document.querySelector('#view .pboard'),
+          b = document.querySelector('#view .pboard .pgwrap'),
           sw = document.querySelector('#view .pvseg');
         return {
-          card: !!c && !!c.querySelector('.pring') && !!b && !!(c.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING),
+          card: !!c && !!c.querySelector('.pring') && !!b,
+          above: !!c && !!b && c.getBoundingClientRect().bottom <= b.getBoundingClientRect().top + 1,
           slate: !!document.querySelector('#view .pslate'),
-          last:
-            !!sw && !sw.nextElementSibling && sw.getBoundingClientRect().top >= b.querySelector('.pgwrap').getBoundingClientRect().bottom
+          last: !!sw && !sw.nextElementSibling && sw.getBoundingClientRect().top >= b.getBoundingClientRect().bottom
         };
       });
-      if (!pg.card || !pg.slate || !pg.last) fails.push(`${w}px My progress layout: ${JSON.stringify(pg)}`);
+      if (!pg.card || !pg.above || !pg.slate || !pg.last) fails.push(`${w}px My progress layout: ${JSON.stringify(pg)}`);
       else {
         await q2.click('#openall');
         const left = await q2.evaluate(() => introLeft().length);

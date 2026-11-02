@@ -151,9 +151,8 @@ function quizBoard() {
   <p class="lede"><b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin and easily taken for a genus of the list (fire coral <i>Millepora</i> first). The first joins the photo quiz and the duels at ${BONUS_AT(0)}% progress, then one more every 5%. They don't count in your progress; their ID tips come from the Coral Finder. On this page they come after the list: a <b>?</b> tile is a bonus genus still locked, with the progress that unlocks it.</p>
   <p class="lede"><b>Colours</b>: white with a dashed border = not seen; then from pale to dark, one step per quarter of the way; the darkest, with a tick = learned. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>
   <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. 95% means your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little); learned means its mastery exam is passed too.</p>
-  <div class="pgame pboard"><div class="pgwrap"></div>
+  <div class="pgame pboard">${badge(ring, progPct(list), count('ok') ? `${count('ok')}/${list.length} learned` : `${list.length - count('new')}/${list.length} met`)}<div class="pgwrap"></div>
   <aside class="gside">
-    ${badge(ring, progPct(list), count('ok') ? `${count('ok')}/${list.length} learned` : `${list.length - count('new')}/${list.length} met`)}
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera"><b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Learned</p>
     ${
@@ -199,9 +198,6 @@ function quizBoard() {
   };
   rank(boardCached());
   loadBoard().then(rank);
-  // Phones and tablets (the side column goes under the board): the player's card goes above the board, so the ring and
-  // the badge are seen first (Pierre, 2026-11-02); the view switch stays at the very bottom.
-  if (isStacked()) $v.querySelector('.pboard').before($v.querySelector('.pboard .gside .pbadge'));
   const wrap = $v.querySelector('.pboard .pgwrap');
   const show = () => {
     wrap.innerHTML = VIEWS[pv]();

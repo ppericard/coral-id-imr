@@ -5574,54 +5574,72 @@ footer .rep:hover {
 }
 /* Desktop: the card sits beside the board, so it can be roomier (Pierre, 2026-11-02: save space on phones only). */
 @media (min-width: 1024px) {
-  .pboard .gside .pbadge {
+  .pboard .pbadge {
     flex-direction: column;
     gap: 8px;
     padding: 14px 12px;
     text-align: center;
   }
-  .pboard .gside .pring {
+  .pboard .pring {
     width: 120px;
     height: 120px;
   }
-  .pboard .gside .pring > span {
+  .pboard .pring > span {
     width: 92px;
     height: 92px;
   }
-  .pboard .gside .pring b {
+  .pboard .pring b {
     font-size: var(--fs-2xl);
   }
-  .pboard .gside .pbtxt {
+  .pboard .pbtxt {
     align-items: center;
   }
   /* Slate view: two columns of names need about 680 px, not the whole width; the side column takes the rest, with the
      card's ring beside the text (Pierre, 2026-11-02: too much empty space in the slate, the info could be bigger). */
+  /* The player's card is the board's first child: first on phones and tablets (one column), and at the top of the side
+     column on desktop, by grid placement, so it follows the width both ways (Codex review #356). */
+  .pgame.pboard {
+    grid-template-rows: auto 1fr;
+  }
+  .pboard > .pbadge {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+  .pboard > .pgwrap {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  .pboard > .gside {
+    grid-column: 2;
+    grid-row: 2;
+  }
   .pgame.pboard:has(.pslate) {
     grid-template-columns: minmax(0, 680px) minmax(360px, 1fr);
   }
-  .pboard:has(.pslate) .gside .pbadge {
+  .pboard:has(.pslate) .pbadge {
     flex-direction: row;
     gap: 20px;
     padding: 16px 20px;
     text-align: left;
   }
-  .pboard:has(.pslate) .gside .pring {
+  .pboard:has(.pslate) .pring {
     width: 140px;
     height: 140px;
   }
-  .pboard:has(.pslate) .gside .pring > span {
+  .pboard:has(.pslate) .pring > span {
     width: 108px;
     height: 108px;
   }
-  .pboard:has(.pslate) .gside .pbtxt > span {
+  .pboard:has(.pslate) .pbtxt > span {
     white-space: normal;
   }
-  .pboard:has(.pslate) .gside .pbtxt {
+  .pboard:has(.pslate) .pbtxt {
     align-items: flex-start;
     gap: 4px;
     font-size: var(--fs-m);
   }
-  .pboard:has(.pslate) .gside .pbtxt > b {
+  .pboard:has(.pslate) .pbtxt > b {
     font-size: var(--fs-xl);
   }
 }
