@@ -114,7 +114,10 @@ let PQ = store.get('imr-photo-q', 'auto');
 // this page got from the network over the time spent receiving them (Resource Timing; overlapping downloads count once,
 // files from a cache count nothing), once LINK.MIN bytes are in. Under LINK.SLOW bit/s, Auto works as Saver. The last
 // measure is kept (imr-link): a launch served from the cache measures nothing and starts from it.
-const LINK = {SLOW: 1e6, MIN: 40000, KEY: 'imr-link'};
+// LINK.SLOW 500 kbit/s (Pierre, 2026-11-02; 1 Mbit/s at first): 480 px photos on a 1080p or 4K desktop screen are a real
+// loss, so only a line where the 960 px pair of a question (~170 KB) takes over ~3 s gets them. Not yet measured on the
+// players' links: to recalibrate once real link speeds are logged.
+const LINK = {SLOW: 5e5, MIN: 40000, KEY: 'imr-link'};
 let linkBps = store.get(LINK.KEY, 0),
   linkAt = 0;
 const linkMeasure = () => {
@@ -138,9 +141,10 @@ const linkMeasure = () => {
 const saver = () => {
   const c = navigator.connection;
   if (PQ !== 'auto') return PQ === 'saver';
-  if (c && (c.saveData || /2g|3g/.test(c.effectiveType || ''))) return true;
+  if (c && c.saveData) return true;
+  // The app's own measure decides once it has one; the browser's estimate (2g/3g reaches ~1.5 Mbit/s) only before.
   const b = linkMeasure();
-  return b > 0 && b < LINK.SLOW;
+  return b > 0 ? b < LINK.SLOW : !!c && /2g|3g/.test(c.effectiveType || '');
 };
 const fit = px => {
   if (PQ === 'full') return '';

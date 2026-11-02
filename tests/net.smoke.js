@@ -225,16 +225,17 @@ const server = http.createServer((req, res) => {
       if (h.some(u => !/-t\.webp/.test(u)))
         fails.push(`Home thumbnails on a 2x phone not 240 px: ${h.filter(u => !/-t\.webp/.test(u)).slice(0, 2)}`);
     });
-    // Auto on a slow connection (Network Information API) = Saver: smaller files, enlarged view 960 then 1600 px.
+    // Saver: smaller files, enlarged view 960 then 1600 px. (Auto on a browser-reported 2g/3g line only counts until the
+    // app has measured the line itself, which a local server does at once; the measured case is checked below.)
     await run(
       {width: 390, height: 800},
       2,
       () => {
         localStorage.setItem('imr-tour', '1');
-        Object.defineProperty(navigator, 'connection', {value: {effectiveType: '3g', saveData: false}, configurable: true});
+        localStorage.setItem('imr-photo-q', '"saver"');
       },
       async (p, t) => {
-        if (t.some(x => x === 'full')) fails.push(`Auto on 3G still loaded 1600 px quiz photos: ${t}`);
+        if (t.some(x => x === 'full')) fails.push(`Saver still loaded 1600 px quiz photos: ${t}`);
         await p.click('#view .qstage .zoom');
         const lb1 = await p.getAttribute('#lightbox .lb-in img', 'src');
         if (tier(lb1) !== 'm') fails.push(`Saver enlarged view did not start at 960 px: ${lb1}`);
@@ -243,7 +244,7 @@ const server = http.createServer((req, res) => {
         if (tier(lb2) !== 'full') fails.push(`Saver enlarged view did not load 1600 px on a click: ${lb2}`);
       }
     );
-    // Auto on a line measured slow (Resource Timing, ~800 kbit/s here; Chrome reports no slow connection): Saver, and the
+    // Auto on a line measured slow (Resource Timing, ~320 kbit/s here, under LINK.SLOW = 500 kbit/s; Chrome reports no slow connection): Saver, and the
     // shown photo is not moved to a bigger file after layout.
     {
       const ctx = await b.newContext({viewport: {width: 390, height: 800}, deviceScaleFactor: 2, serviceWorkers: 'block'});
@@ -255,13 +256,13 @@ const server = http.createServer((req, res) => {
       const p = await ctx.newPage(),
         cdp = await ctx.newCDPSession(p);
       await cdp.send('Network.enable');
-      await cdp.send('Network.emulateNetworkConditions', {offline: false, downloadThroughput: 1e5, uploadThroughput: 1e5, latency: 50});
+      await cdp.send('Network.emulateNetworkConditions', {offline: false, downloadThroughput: 4e4, uploadThroughput: 4e4, latency: 50});
       await p.goto(base + '#quiz');
       await p.waitForFunction(() => window.APP_READY && document.querySelector('#view .qstage img'), null, {timeout: 60000});
       await p.waitForTimeout(1500);
       const t = await p.evaluate(() => [...document.querySelectorAll('#view .qstage img')].map(i => i.getAttribute('src')));
       const kb = await p.evaluate(() => Math.round(linkMeasure() / 1000));
-      if (!(kb > 0 && kb < 1000) || t.some(u => tier(u) !== 's'))
+      if (!(kb > 0 && kb < 500) || t.some(u => tier(u) !== 's'))
         fails.push(`Auto on a line measured at ${kb} kbit/s did not take the 480 px files: ${t}`);
       await ctx.close();
     }
