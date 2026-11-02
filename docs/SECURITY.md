@@ -24,10 +24,10 @@ leak of the Sheet would expose little.
   could be read as a spreadsheet formula is neutralised (`safe_`).
 - **Code per name**: a name's progress can only be written with its code; 5 wrong codes lock the name for 10 minutes.
 - **Caps per 6 hours** (`over_`): 100 answers per anonymous request; 600 per anonymous id and 6000 for all anonymous
-  players; 3000 answers per name; 40 new accounts; 300 report requests. Over a cap the script writes nothing and
+  players; 3000 answers per name; 40 new accounts; 300 report requests; 200 events per device and 3000 in all (v19 error reports and one-tap answers, `events_`, 50 per request). Over a cap the script writes nothing and
   answers `busy` (the app keeps its answers and sends them later). The first refusal of each window is written to the
   Sheet's **Alerts** tab.
-- **Duplicates**: an answer id already in the Answers tab is never logged twice.
+- **Duplicates**: an answer id already in the Answers tab is never logged twice; the same for an event id in the Events tab (v19).
 
 A real class of RAs stays far below every cap. A determined attacker can still add up to ~6000 anonymous answers
 and 40 accounts per 6 hours, but since v17 (2026-11-02, Pierre) the statistics count **only players whose
