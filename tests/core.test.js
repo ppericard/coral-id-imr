@@ -318,6 +318,15 @@ test('mergeUsers: two accounts of one person add up; the busier account model wi
   assert.strictEqual(M['imr-coral-theme'], '"dark"');
 });
 
+test('mergeUsers: the progress (pg) comes from the busier account, recomputed if it was saved before pg', () => {
+  const {pgOf} = require('../core.js');
+  const A = {'imr-coral-progress': JSON.stringify({Acropora: {ok: 40, ko: 1, h: '1111111111', L: 0.99}})},
+    B = {'imr-coral-progress': JSON.stringify({Acropora: {ok: 1, ko: 0, h: '1', pg: 0.1}})};
+  const P = JSON.parse(mergeUsers(A, B)['imr-coral-progress']);
+  assert.strictEqual(P.Acropora.pg, pgOf({h: '1111111111', L: 0.99}));
+  assert.ok(P.Acropora.pg > 0.6, "not the less-played account's 0.1");
+});
+
 test('playerStart: a new genus starts from the global level, shrunk while answers are few, clamped', () => {
   assert.strictEqual(playerStart({}, 'Acropora'), 0);
   // Global Elo (LEVEL) wins over the genera; 30 answers at 1.6 → 0.8 * 1.6 * 30/40.

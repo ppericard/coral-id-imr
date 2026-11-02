@@ -139,6 +139,9 @@
         y = b[g] || {},
         main = n(x) > n(y) ? x : y,
         o = {...(main === x ? y : x), ...main};
+      // The progress comes from the same account as the rest of the model, recomputed if it was saved before s.pg
+      // (Codex review #367: an old main record let the other account's pg through).
+      if (typeof main.pg === 'number' || main.h || typeof main.L === 'number') o.pg = pgOf(main);
       o.ok = (x.ok || 0) + (y.ok || 0);
       o.ko = (x.ko || 0) + (y.ko || 0);
       o.streak = main.streak || 0;

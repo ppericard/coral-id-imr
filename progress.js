@@ -673,13 +673,14 @@ function boardNotice() {
 // Progress recalculated for everyone (Pierre, 2026-11-02: when we recalculate every player's progress, say so with a
 // real pop-up, not a discreet note; no algorithm details). Once per device, to a player who already has answers (a new
 // player has nothing recalculated), at the first moment no tour or card is open; marked seen only by its button or
-// Escape, so a card closed by leaving the page comes back. A later recalculation gets a new RECALC.ID and text.
+// Escape, so a card closed by leaving the page comes back on the next one. A later recalculation gets a new RECALC.ID and text.
 const RECALC = {KEY: 'imr-recalc', ID: 'progress-moving-average-2026-11'};
 function recalcNotice() {
   if (store.get(RECALC.KEY, '') === RECALC.ID) return;
   if (!answersSoFar()) return store.set(RECALC.KEY, RECALC.ID);
-  if (document.querySelector('#tour, .unlock, .recalc'))
-    return void addEventListener('hashchange', () => setTimeout(recalcNotice, 300), {once: true});
+  // Something else on screen (the tour, a card): try again a little later, until the screen is clear.
+  if (document.querySelector('.recalc')) return; // already on screen
+  if (document.querySelector('#tour, .unlock')) return void setTimeout(recalcNotice, 2000);
   const d = document.createElement('div');
   d.className = 'unlock recalc';
   d.setAttribute('role', 'dialog');
@@ -703,7 +704,12 @@ function recalcNotice() {
     }
   };
   document.addEventListener('keydown', key, true);
-  d.ulClose = () => close(false); // leaving the page (route): shown again later
+  // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (Codex review #367: a returning
+  // player opening straight at #quiz had it closed by the first route, before ever seeing it).
+  d.ulClose = () => {
+    close(false);
+    setTimeout(recalcNotice, 300);
+  };
   d.querySelector('.next').onclick = () => close(true);
   setTimeout(() => d.querySelector('.next').focus({preventScroll: true}), 50);
 }
