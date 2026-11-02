@@ -149,7 +149,11 @@ function doPost(e){
       g.getRange(gr, 1, 1, head.length).setValues([[safe_(name), (s.learned || 0) + '/' + (s.total || 0)].concat(genera.map(n => LABELS[s.genera[n]] || ''))])
         .setBackgrounds([['#ffffff', '#ffffff'].concat(genera.map(n => COLORS[s.genera[n]] || '#ffffff'))]);
     }
-    return json_({ok: true, log: true, rev: rev + 1});
+    // The hold over every answer now logged, in time order (Codex review #370: a device that sent answers older than
+    // another device's must not keep the order it replayed them in): the app takes it after a send.
+    const out = {ok: true, log: true, rev: rev + 1};
+    try { const o = hold_(name, resetOf_(p.data)); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
+    return json_(out);
   } finally { lock.releaseLock(); }
 }
 

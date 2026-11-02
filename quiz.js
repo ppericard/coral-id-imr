@@ -69,10 +69,12 @@ function question(cur, target, choices, prompt, set, kq) {
   bindQuizNav(cur);
   fitStage();
   const qn = (QCLOCK.n = (QCLOCK.n || 0) + 1),
-    im0 = $v.querySelector('.qstage .qph img');
+    ims = [...$v.querySelectorAll('.qstage .qph img')];
   Object.assign(QCLOCK, {t0: null, off: 0, hid: null, zm: 0});
-  if (im0 && im0.complete && im0.naturalWidth) qclockGo();
-  else if (im0) im0.addEventListener('load', () => QCLOCK.n === qn && qclockGo(), {once: true});
+  // The first of the question's photos to be in starts it, whichever (Codex review #370: one cached or quicker than the
+  // first in the page would otherwise be looked at off the clock).
+  if (ims.some(im => im.complete && im.naturalWidth)) qclockGo();
+  else ims.forEach(im => im.addEventListener('load', () => QCLOCK.n === qn && qclockGo(), {once: true}));
   const hb = document.getElementById('hintb');
   const showHint = () => {
     if (hintShown || !set.hint) return;

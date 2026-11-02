@@ -835,6 +835,30 @@ test("v23 hold: the sheet's sum plus the unconfirmed answers is the hold on ever
   assert.strictEqual(again.now(), one.now());
 });
 
+test("v23 hold: a send of answers older than another device's gets the hold in time order back (Codex review #370)", () => {
+  const s = loadCodeGs(),
+    at = i => `2026-11-01T08:00:${String(i).padStart(2, '0')}Z`;
+  // Device A: 8 right answers; device B, offline before them: 3 misses, sent afterwards.
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: prog(1),
+    summary: {},
+    answers: [...Array(8)].map((_, i) => ans('a' + i, {t: at(10 + i), e: 0.8, ok: 1}))
+  });
+  const r = s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: prog(1),
+    summary: {},
+    answers: [0, 1, 2].map(i => ans('b' + i, {t: at(1 + i), e: 0.8, ok: 0, a: 'Montipora'}))
+  });
+  assert.strictEqual(r.hold, 0, 'three misses, then eight right answers: paid back');
+  const dev = modelHold({'imr-hold': 2.1});
+  dev.sync(r.hold, [], r.holdIds);
+  assert.strictEqual(dev.now(), 0);
+});
+
 test('v23 hold: answers moved to the name (sign-in) count at once', () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: []});

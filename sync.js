@@ -184,6 +184,9 @@ function syncOnce(tries = 0) {
           const done = new Set(log.map(x => x.id));
           me.log = (me.log || []).filter(x => !done.has(x.id));
         }
+        // The sheet's hold over every answer now logged, in time order (v23; Codex review #370), plus any answer given
+        // while this send was on its way.
+        if (typeof holdSync === 'function') holdSync(j.hold, me.log, j.holdIds);
         if (me.rev === rev) delete me.dirty;
         store.set('imr-coral-sync', me);
       } else if (j && SYNC === me) {
