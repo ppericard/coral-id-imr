@@ -516,8 +516,14 @@ function sendEvents() {
 }
 // App errors: script errors and promise rejections, with where they happened. Not the photo and stylesheet load errors
 // (those are elements, handled where they retry).
+// Only errors thrown by the app's own script files (Pierre, 2026-11-02: the Events tab filled with noise): scripts a
+// browser or an extension injects into the page (iOS Firefox's __firefox__, crypto wallets' window.ethereum) are reported
+// against the page itself or no file, and cross-origin ones as "Script error."; "ResizeObserver loop…" is a harmless
+// browser warning.
+const ownError = (msg, file) =>
+  String(file || '').startsWith(location.origin) && /\.js(\?|$)/.test(String(file)) && !/ResizeObserver loop/.test(msg);
 window.addEventListener('error', e => {
-  if (!e.message || e.target !== window) return;
+  if (!e.message || e.target !== window || !ownError(e.message, e.filename)) return;
   ev('err', {
     msg: String(e.message).slice(0, 300),
     src: `${String(e.filename || '')
