@@ -118,6 +118,34 @@ const server = http.createServer((req, res) => {
     await p.waitForFunction(() => !/Test Demo/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
     if (/Test Demo/.test(await text())) fails.push(`${w}px Users: delete did not remove "Test Demo"`);
 
+    // A player's journey (admin-journey.js), opened from their row: numbers, both curves, the genera in the order met.
+    await p.click('[data-uopen="Ana Demo"]');
+    await settle();
+    await p.click('.adm-udet a[href^="#~journey/"]');
+    await settle();
+    const jo = await p.evaluate(() => {
+      const v = document.getElementById('view'),
+        met = [...v.querySelectorAll('.adm-jtbl tbody tr td:nth-child(2)')].map(td => Number((td.textContent.match(/#(\d+)/) || [])[1]));
+      return {
+        h: (v.querySelector('h2') || {}).textContent,
+        charts: v.querySelectorAll('svg.adm-jl path').length,
+        rows: met.length,
+        ordered: met.every((x, i) => !i || x > met[i - 1]),
+        lists: /Easiest for them/i.test(v.innerText) && /Hardest for them/i.test(v.innerText),
+        tab: (document.querySelector('#subnav [aria-pressed="true"]') || {}).textContent,
+        // Chart labels at 12 px at least as rendered (--fs-xs, never scaled down by the viewBox; Codex review #351).
+        small: [...v.querySelectorAll('svg.adm-jl')].some(
+          s => (s.clientWidth / s.viewBox.baseVal.width) * parseFloat(getComputedStyle(s.querySelector('text')).fontSize) < 11.9
+        )
+      };
+    });
+    if (jo.h !== 'Ana Demo' || jo.charts < 3 || !jo.rows || !jo.ordered || !jo.lists || jo.tab !== 'Players' || jo.small)
+      fails.push(`${w}px journey: ${JSON.stringify(jo)}`);
+    await p.click('[data-jsort="hard"]');
+    await settle();
+    const firstHard = await p.$eval('.adm-jtbl tbody tr td:nth-child(5)', td => td.textContent);
+    if (!/-|–/.test(firstHard)) fails.push(`${w}px journey: hardest first starts at ${firstHard}`);
+
     // Triage lists the demo reports; Activity shows the demo players' answers.
     // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
     await go('~events');
