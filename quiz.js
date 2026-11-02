@@ -630,8 +630,10 @@ function introOfferShow() {
     document.removeEventListener('keydown', key, true);
   };
   const key = e => {
+    if (e.key === 'Tab') return;
+    e.stopPropagation(); // never the quiz's answer keys behind the card
+    if (/^\d$/.test(e.key)) e.preventDefault();
     if (e.key !== 'Escape') return;
-    e.stopPropagation();
     e.preventDefault();
     pick(false);
   };
@@ -644,7 +646,6 @@ function introOfferShow() {
 // together ("1 of 4", the first questions are about them), later ones alone (asked a few questions later). Recorded
 // when shown, so a planned question never played leaves no genus met without its card.
 function introShow(L, start) {
-  introAdd(L, start);
   document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
   const d = document.createElement('div');
   d.className = 'unlock intro';
@@ -663,6 +664,8 @@ function introShow(L, start) {
       p = cover(g),
       star = typeof starNote === 'function' ? starNote(n) : '',
       more = i < L.length - 1;
+    // Met when its card is shown (Codex review #350): a sequence left half-way (reload) shows the rest next time.
+    introAdd([n], start);
     d.setAttribute('aria-label', `New genus: ${n}`);
     d.innerHTML = `<div class="ulcard">${p ? `<div class="ulphoto"><img src="${img(p, 's')}" alt=""></div>` : ''}
       <p class="ulkick">New genus${L.length > 1 ? ` · ${i + 1} of ${L.length}` : ''}</p><h3><i>${esc(n)}</i></h3>
@@ -685,15 +688,20 @@ function introShow(L, start) {
       if (b) b.focus({preventScroll: true});
     }, 50);
   };
+  // The quiz's keys (1-4 answer) never reach the question behind the card (Codex review #350). Enter on a focused
+  // button presses it; elsewhere Enter, and Escape, move on (the first cards are not skipped: each is met when shown).
   const key = e => {
-    if (e.key !== 'Escape' && e.key !== 'Enter') return;
+    if (e.key === 'Tab') return;
     e.stopPropagation();
+    if (e.key === 'Enter' && document.activeElement && d.contains(document.activeElement)) return;
+    if (/^\d$/.test(e.key)) e.preventDefault();
+    if (e.key !== 'Escape' && e.key !== 'Enter') return;
     e.preventDefault();
-    e.key === 'Escape' ? close() : next();
+    start ? next() : close();
   };
   document.addEventListener('keydown', key, true);
   d.addEventListener('click', e => {
-    if (e.target === d) close();
+    if (e.target === d) start ? next() : close();
   });
   show();
 }

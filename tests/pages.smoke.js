@@ -112,6 +112,9 @@ const server = http.createServer((req, res) => {
       // A player starting from zero first meets INTRO.START genera on cards, one after the other ("1 of 4"), and the
       // first question is about one of them, its choices among them (Pierre, 2026-11-02).
       await q2.waitForSelector('.unlock.intro', {timeout: 5000}).catch(() => {});
+      // The quiz's keys never answer the question behind a card (Codex review #350).
+      await q2.keyboard.press('1');
+      if (await q2.evaluate(() => !!document.getElementById('next') || !!P[LEVEL])) fails.push(`${w}px key 1 answered behind a card`);
       const seen = [];
       for (let k = 0; k < 6 && (await q2.$('.unlock.intro')); k++) {
         seen.push(

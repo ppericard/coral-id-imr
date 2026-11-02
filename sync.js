@@ -679,13 +679,26 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       }
       SYNC = null;
       // Achievements and the leaderboard choice belong to the account too: never left to the next player of a shared device.
-      ['imr-coral-sync', 'imr-coral-progress', 'imr-coral-quiz', 'imr-coral-reset', ACHK, BOARD, LOG0, NUDGE, ANONB, ANONID, ANONQ].forEach(
-        k => {
-          try {
-            localStorage.removeItem(k);
-          } catch (e) {}
-        }
-      );
+      // The first-meeting cards too (Codex review #350): the next player meets their own genera.
+      [
+        'imr-coral-sync',
+        'imr-coral-progress',
+        'imr-coral-quiz',
+        'imr-coral-reset',
+        INTRO.KEY,
+        INTRO.OFFER.KEY,
+        ACHK,
+        BOARD,
+        LOG0,
+        NUDGE,
+        ANONB,
+        ANONID,
+        ANONQ
+      ].forEach(k => {
+        try {
+          localStorage.removeItem(k);
+        } catch (e) {}
+      });
       location.reload();
     };
     return;
