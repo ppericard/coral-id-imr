@@ -118,15 +118,19 @@ const server = http.createServer((req, res) => {
     P = Object.fromEntries(genera.map(n => [n, {ok: 3, ko: 1, h: '1101', th: 0.5, L: 0.5}]));
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.97};
     P[LEVEL] = {ok: 200, ko: 30, th: 1};
-    const at = [];
+    const at = [],
+      qx = question;
+    let shownT = null;
+    question = (...a) => ((shownT = a[1]), qx(...a)); // the genus asked (a duel slipped in is not nextTarget's)
     for (let i = 0; i < 400 && !P[t].mx; i++) {
       quizPhoto();
       if (EXAMQ === t) {
         at.push(answersSoFar());
         if (document.querySelectorAll('.qstage .qph').length !== 1) fails.push('exam question with several photos');
       }
-      document.querySelector(`[data-c="${CSS.escape(last)}"]`).click();
+      document.querySelector(`[data-c="${CSS.escape(shownT)}"]`).click();
     }
+    question = qx;
     if (!P[t].mx) fails.push(`${t}: not mastered after 400 right answers (exam questions: ${at.length})`);
     if (at.length !== EXAM.n) fails.push(`${t}: ${at.length} exam questions, ${EXAM.n} expected`);
     if (at.some((x, i) => i && x - at[i - 1] < EXAM.gap))
@@ -262,6 +266,35 @@ const server = http.createServer((req, res) => {
           fails.push('cards from another device not merged');
         introReset();
         if (g in introMap() || store.get(INTRO.OFFER.KEY, null)) fails.push('progress reset kept the cards');
+      }
+      // Look-alike duels slipped into the photo quiz (AUTO_DUEL): about 1 question in 10 once past the first answers,
+      // on pairs of genera met, never the same pair twice within AUTO_DUEL.SAME answers, logged quiz|d|k2.
+      {
+        const n0 = answersSoFar(),
+          seen = [];
+        let duels = 0;
+        const q1 = question;
+        question = (...a) => ((window.__dq = a), q1(...a));
+        for (let i = 0; i < 300; i++) {
+          NEXTQ = null;
+          document.querySelectorAll('.unlock').forEach(x => x.remove());
+          quizPhoto();
+          document.querySelectorAll('.unlock').forEach(x => x.remove());
+          const q = window.__dq;
+          if (AUTOD) {
+            duels++;
+            const k = q[2].slice().sort().join('|'),
+              at = answersSoFar();
+            if (q[2].length !== 2 || !q[2].every(introReady)) fails.push(`duel in the quiz on ${q[2].join(', ')}`);
+            if (seen.some(([a, kk]) => kk === k && at - a < AUTO_DUEL.SAME)) fails.push(`duel ${k} twice within ${AUTO_DUEL.SAME} answers`);
+            seen.push([at, k]);
+          }
+          document.querySelector(`[data-c="${CSS.escape(q[1])}"]`).click();
+          if (AUTOD && !/^quiz\|d\|k2$/.test(((SYNC && SYNC.log && SYNC.log.slice(-1)[0]) || {}).m || 'quiz|d|k2'))
+            fails.push('duel in the quiz not logged quiz|d|k2');
+        }
+        question = q1;
+        if (duels < 12 || duels > 50) fails.push(`${duels} duels in the quiz in 300 questions (about 1 in 10 expected)`);
       }
       // "I've had the IMR lecture": every slate genus opens at once, and no card comes after.
       introAll('progress');

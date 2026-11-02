@@ -376,7 +376,7 @@ function renderJourney(name) {
         'Photo quiz',
         r =>
           /^quiz(\||$)/.test(r[5]) &&
-          !/\|x$/.test(r[5]) &&
+          !/\|[xd](\||$)/.test(r[5]) &&
           String(r[10] || '')
             .split(' ')
             .filter(Boolean).length !== 2
@@ -385,18 +385,20 @@ function renderJourney(name) {
         'Again: A or B? (after a mix-up)',
         r =>
           /^quiz(\||$)/.test(r[5]) &&
+          !/\|d(\||$)/.test(r[5]) &&
           String(r[10] || '')
             .split(' ')
             .filter(Boolean).length === 2
       ],
+      ['Look-alike duel in the quiz', r => /^quiz\|d(\||$)/.test(r[5])],
       ['Mastery exam', r => /\|x$/.test(r[5])],
-      ['Look-alike duels', r => /^quiz-duel/.test(r[5])],
+      ['Look-alike duels (tab)', r => /^quiz-duel/.test(r[5])],
       ['Other', r => !/^quiz/.test(r[5])]
     ].map(([t, f]) => {
       const L = R.filter(f);
       return [t, L.length, L.reduce((n, r) => n + r[4], 0)];
     }),
-    games = `<section class="adm-scard"><h3>Games</h3><table class="adm-tbl">${GM.filter(([t, n]) => n || t === 'Look-alike duels')
+    games = `<section class="adm-scard"><h3>Games</h3><table class="adm-tbl">${GM.filter(([t, n]) => n || /^Look-alike duels/.test(t))
       .map(
         ([t, n, r]) => `<tr><td>${t}</td><td class="n">${pct(r, n)}</td><td>${n ? sbar(r, n) : ''}</td><td class="n">${n || '0'}</td></tr>`
       )

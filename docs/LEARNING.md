@@ -106,6 +106,26 @@ more convincing than it is): 59 of the first 552 answers, 11%. The app now logs 
 the admin (`core.js`) read the number of choices from the Choices column when the mode does not give it, which corrects
 the answers already logged.
 
+### Look-alike duels slipped into the photo quiz (2026-11-02)
+
+The Duel tab had 13 answers in all (2 players); "Again: A or B?" only follows a mix-up. Pierre (1 in 10): from the 20th
+answer on, about 1 photo-quiz question in 10 (`AUTO_DUEL.P` 0.1, `quiz.js`) is a duel on a look-alike pair, picked as the
+Duel tab picks (`duelPick`: the player's own mix-ups first, then pairs players confuse, then the IMR / Coral Finder
+look-alikes), both genera met and ready, never the same pair within 20 answers (`SAME`), at least 5 questions after the
+last 2-choice one (`GAP`, "Again" included). Prompt "Look-alikes: A or B?"; logged `quiz|d|k2` (rated 1 in 2, counted
+apart in the player journey). Simulated over 4 seeds, it does not slow the opening of genera (an expert met 27 genera
+after 100 questions with duels, 26 without, seed 3333); the profiles test now checks an expert's traps at 300
+questions (one or more a question) and more than a beginner's at 100, the mean of the two sitting at the threshold.
+
+### Pierre's Easy / Medium / Hard sets against the players' answers (measured 2026-11-02)
+
+The sets only give a photo's starting difficulty in the app (`photoDiff`: -1 / 0 / +1, weighing 5 answers); the sheet's
+Elo never uses them. On the live data (552 answers, 438 photos rated): 342 of the 499 game photos in a set have answers;
+Hard photos have 7 (they go to strong players); Easy and Medium are right 78% and 77% of the time. Rank correlation
+between set and Elo: 0.00 for photos with 3 answers or more (121), 0.36 (p 0.01) with 5 or more (45: 39 Easy, 6 Medium,
+Medium +0.35 against Easy -0.05). Too few answers to drop the sets or to trust them; to measure again once about 100
+photos have 5 answers or more, Hard ones included.
+
 ### First meeting with a genus (2026-11-02)
 
 Beginner RA review: the first quiz felt like an exam, asking genera the player had never seen. Pierre's design, the same
