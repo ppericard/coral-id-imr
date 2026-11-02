@@ -196,6 +196,8 @@
   // How much one answer moves the photos, as Code.gs PHOTO_W (v17): weight n / (n + N) after n answers of the player,
   // and repeats counted against the player's history with the photo (new: NEW harder; right twice before: KNOWN easier).
   const PHOTO_W = {N: 30, NEW: 0.5, KNOWN: -1};
+  // Every player starts as a beginner (Code.gs PLAYER0): about 45% right on an average photo with 4 choices.
+  const PLAYER0 = -1;
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
   // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them). Every answer
   // moves the player's level; the photos move on trusted players' answers only (trustOf, v17), weighed as above.
@@ -213,7 +215,7 @@
         if (!r[0] || !fs.length) return;
         const ok = r[4] ? 1 : 0,
           g = guessOf(r[5]),
-          ra = (R[r[0]] = R[r[0]] || [0, 0]);
+          ra = (R[r[0]] = R[r[0]] || [PLAYER0, 0]);
         const ph = fs.map(f => (P[f] = P[f] || [0, 0, 0])),
           b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
         const d = ok - (g + (1 - g) * sig(ra[0] - b)),
@@ -731,6 +733,7 @@
     trustOf,
     TRUST,
     PHOTO_W,
+    PLAYER0,
     confusionOf,
     CONF,
     confScore,

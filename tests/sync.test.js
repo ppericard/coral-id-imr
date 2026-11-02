@@ -407,6 +407,15 @@ test('v17: one player whatever the capitalisation of the name (trust and history
   assert.strictEqual(P['pic-0'][1], 2, 'one history per photo, whatever the spelling (answered twice)');
 });
 
+test('v17: every player starts as a beginner (PLAYER0 = -1), not an average player', () => {
+  const s = loadCodeGs(),
+    T = 'ghp_write000000000000000000';
+  s.post({name: 'New', pin: '1234', data: prog(1), summary: {}, answers: [ans('b1', {ok: 0, a: 'Porites'})]});
+  const ras = Object.values(s.post({readStats: 1, token: T}).ras);
+  assert.strictEqual(ras.length, 1);
+  assert.ok(ras[0][0] < -1 && ras[0][0] > -1.5, 'one miss from -1: ' + ras[0][0]);
+});
+
 test("v17 anonDelete: admin only, removes the answers of chosen anonymous ids, never a named player's", () => {
   const s = loadCodeGs(),
     T = {token: 'ghp_write000000000000000000'};
