@@ -481,13 +481,24 @@ function photoDiff(n, p) {
 //   so 4 plausible choices weigh 1, 3 weigh 0.89, 2 weigh 0.67 (a 1 in 2 guess proves less);
 // - its look-alikes: in full when a genus it gets confused with is among the choices (pooled over every player with the
 //   declared look-alikes as prior, or the player's own mix-ups: the traps' rule), PROG.LOOK (0.5) when none is.
-// So a right answer between 2 genera of different forms counts a third of one against 3 look-alikes. A miss counts in
-// full (core.js). Photo difficulty is left out: simulated as a third factor (0.5 on an easy photo to 1 on a hard one),
-// it only slowed everyone (an expert mastered 5 genera in 1000 questions instead of 16), which A already sets, and the
+// So a right answer between 2 genera of different forms counts a third of one against 3 look-alikes. A miss weighs
+// what it proves too (pgMissW below: in full on a photo at the player's level, less on a harder one). Photo
+// difficulty is left out of a right answer's weight: simulated as a third factor (0.5 on an easy photo to 1 on a hard
+// one), it only slowed everyone (an expert mastered 5 genera in 1000 questions instead of 16), which A already sets, and the
 // traps already come as the genus's photos get harder (both follow the Elo ability).
 function pgWeight(t, chs, k) {
   const look = chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >= CONF.TRAP || confusable(t, n)));
   return Math.min(1, Math.max(0, (1 - 1 / k) / (1 - 1 / 4))) * (look ? 1 : PROG.LOOK);
+}
+// What a miss proves (Pierre, 2026-11-02: "a miss on a very hard photo doesn't necessarily mean the genus is badly
+// known"; a miss must not cost more than it proves): the Elo chance the player had to get it right (ability th against
+// the photo's difficulty d, k choices, as abilityStep), over the chance the game aims for (a photo PICKD.TARGET_OFF
+// below the ability, about 80% with 4 choices). A photo at the player's level or easier: the miss counts in full; a
+// harder one: less (1 unit harder: 0.78; 2 units: 0.56). No new constant: the Elo and the photo targeting set it.
+// The right answers keep their weight (pgWeight): simulated, a photo factor on them only slowed everyone.
+function pgMissW(th, d, k) {
+  const e = x => 1 / k + (1 - 1 / k) * sig(x);
+  return Math.min(1, e(th - d) / e(PICKD.TARGET_OFF));
 }
 const knownP = n => pgOf(P[n]);
 function pgObs(n, s, good, w) {
