@@ -1330,7 +1330,12 @@ const BONUS_W = 4,
 // so the pace holds as the genera met add up); otherwise only OPEN.TRICKLE, so a new one still comes now and then.
 // Among them, the easiest (genusDiff) come first, softly (OPEN.T): a beginner meets a few easy genera at a time, an
 // expert keeps opening new ones because none stays shaky. docs/LEARNING.md.
-const OPEN = {K: 3, N: 4, L: 0.6, READY: 0.35, TRICKLE: 0.03, T: 1.5, CONF: 2};
+const OPEN = {K: 3, P: 0.6, READY: 0.35, TRICKLE: 0.03, T: 3, CONF: 2, DATA: 300};
+// How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
+// OPEN.DATA, up to 1. Without them the genus difficulty is only the photo sets and declared look-alikes, which put
+// Acropora and Galaxea among the hardest and Alveopora first (Pierre expects the first two easy): the order then stays
+// random until the answers can say (2026-11-02).
+const easyTrust = () => Math.min(1, Object.values(PSTAT).reduce((t, o) => t + (o[1] || 0), 0) / OPEN.DATA);
 // Difficulty of a genus from the data, never set by hand: the mean difficulty of its game photos (photoDiff: Pierre's
 // Easy/Medium/Hard sets at first, the players' answers as they come, sheet v17) plus how much it gets confused (its two
 // highest pooled confusion scores over CONF.TRAP, x OPEN.CONF). Cleared when the data or the photo stats change.
@@ -1347,14 +1352,16 @@ const genusDiff = n => {
     cf = cs.length ? cs.reduce((a, x) => a + x, 0) / cs.length : 0;
   return (GDIFF[n] = Math.round((pd + OPEN.CONF * Math.max(0, cf - CONF.TRAP)) * 100) / 100);
 };
-// Shaky: met, not mastered, and either going wrong (level 'weak': 2 misses in the last 5) or still new to the player
-// (fewer than OPEN.N answers and knowledge under OPEN.L). Simulated (docs/LEARNING.md): knowledge alone climbs slowly on
-// the easy photos a beginner gets, so a beginner at 85-90% right opened almost nothing; the answer count alone made an
-// expert wait OPEN.N answers on each genus before the next.
+// Shaky: met, not mastered, and the player's expected success on an average photo of the genus (4 choices, at its
+// genusDiff) still under OPEN.P. The genus ability allows for how hard the questions were (a miss on a hard one moves
+// it little) and starts from the player's global level (playerStart), so the signal is what the player knows, at any
+// level, from the first answer. Tried first (docs/LEARNING.md): recent misses (2 in the last 5: the game keeps everyone
+// near 80% right, where that happens about one time in four at any level, and a simulated RA opened fewer genera than a
+// complete beginner); BKT knowledge alone (climbs too slowly on a beginner's easy photos); a minimum of answers per new
+// genus (it held an expert back, each new genus waiting to be drawn again).
 const shaky = n => {
-  const s = P[n] || {},
-    k = level(n)[0];
-  return k !== 'new' && !s.mx && (k === 'weak' || ((s.ok || 0) + (s.ko || 0) < OPEN.N && knownP(n) < OPEN.L));
+  const s = P[n] || {};
+  return level(n)[0] !== 'new' && !s.mx && 0.25 + 0.75 * sig(ability(n) - genusDiff(n)) < OPEN.P;
 };
 function weighted(list) {
   const w = list.map(weight);
@@ -1365,7 +1372,8 @@ function weighted(list) {
       tot = rest ? (share * rest) / (1 - share) : 1,
       gd = fresh.map(([n]) => genusDiff(n)),
       lo = Math.min(...gd),
-      e = gd.map(x => Math.exp(-OPEN.T * (x - lo))),
+      tr = easyTrust(),
+      e = gd.map(x => Math.exp(-OPEN.T * tr * (x - lo))),
       se = e.reduce((a, x) => a + x, 0);
     fresh.forEach(([n, i], k) => (w[i] = ((tot * e[k]) / se) * (isBonus(n) ? Math.min(1, BONUS_W / 10) : 1)));
   }

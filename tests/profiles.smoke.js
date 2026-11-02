@@ -118,6 +118,41 @@ const server = http.createServer((req, res) => {
         mean = L => L.reduce((a, x) => a + x, 0) / L.length;
       out[name] = {rows, firstEase: +mean(first.slice(0, 8).map(genusDiff)).toFixed(2), allEase: +mean(gd).toFixed(2)};
     }
+    // Easiest first: with nothing met and the players' answers behind the photo ratings, the easiest genus (genusDiff)
+    // is drawn far more often than the hardest. Made-up ratings: one genus's photos rated easy, another's hard.
+    {
+      P = {};
+      const keep = PSTAT,
+        fake = {},
+        [ga, gb] = [G[3], G[7]];
+      [ga, gb].forEach((g, k) =>
+        Object.values(GX(g).views)
+          .flat()
+          .forEach(p => (fake[p.f] = k ? [1.5, 40, 10] : [-1.5, 40, 36]))
+      );
+      PSTAT = fake;
+      GDIFF = {};
+      const byD = G.slice().sort((a, b) => genusDiff(a) - genusDiff(b)),
+        easy = byD[0],
+        hard = byD[byD.length - 1],
+        n = {[easy]: 0, [hard]: 0};
+      for (let i = 0; i < 4000; i++) {
+        const x = weighted(G);
+        if (x in n) n[x]++;
+      }
+      out.easyFirst = {easy, hard, dEasy: genusDiff(easy), dHard: genusDiff(hard), nEasy: n[easy], nHard: n[hard]};
+      // Without any rating from the players, no order: the two are drawn about as often.
+      PSTAT = {};
+      GDIFF = {};
+      const m = {[easy]: 0, [hard]: 0};
+      for (let i = 0; i < 4000; i++) {
+        const x = weighted(G);
+        if (x in m) m[x]++;
+      }
+      out.noData = m;
+      PSTAT = keep;
+      GDIFF = {};
+    }
     // Bonus genera keep at most BONUS_SHARE of the draw with the progressive path's weights (Codex review #340): five
     // slate genera mastered, the others not met, one bonus genus being learned.
     const bonus = BONUS.filter(n => GX(n))[0];
@@ -139,13 +174,17 @@ const server = http.createServer((req, res) => {
     [e1, , e3] = R.expert.rows,
     [r1, , r3] = R.RA.rows;
   for (const [k, v] of Object.entries(R)) if (v.rows) console.log(k, JSON.stringify(v));
-  console.log('bonus share', R.bonusShare);
+  console.log('bonus share', R.bonusShare, 'easy first', JSON.stringify(R.easyFirst));
   if (b1.met > 16) fails.push(`beginner met ${b1.met} genera in 100 questions: not focused`);
   if (b3.met <= b1.met) fails.push(`beginner stopped opening genera (${b1.met} then ${b3.met})`);
   if (r3.met <= r1.met) fails.push(`RA stopped opening genera (${r1.met} then ${r3.met})`);
-  if (R.beginner.firstEase > R.beginner.allEase)
-    fails.push(`beginner's first genera not easier (${R.beginner.firstEase} vs ${R.beginner.allEase})`);
-  if (e1.met < 15) fails.push(`expert met only ${e1.met} genera in 100 questions`);
+  const E = R.easyFirst,
+    N = Object.values(R.noData);
+  if (Math.max(...N) > 2 * Math.min(...N))
+    fails.push(`without the players' ratings an order was applied anyway: ${JSON.stringify(R.noData)}`);
+  if (!(E.nEasy > 3 * Math.max(1, E.nHard)))
+    fails.push(`easiest genus not drawn first: ${E.easy} (${E.dEasy}) ${E.nEasy} times, ${E.hard} (${E.dHard}) ${E.nHard} times`);
+  if (e1.met <= b1.met) fails.push(`expert met no more genera than a beginner in 100 questions (${e1.met} vs ${b1.met})`);
   if (e3.met <= b3.met) fails.push(`expert opened no more genera than a beginner (${e3.met} vs ${b3.met})`);
   if ((e1.traps + e3.traps) / 2 < 1) fails.push(`expert got ${e1.traps}, ${e3.traps} look-alike traps a question`);
   if (e3.learned < 1) fails.push('expert mastered no genus in 300 questions');

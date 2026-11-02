@@ -76,16 +76,23 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
 
 Pierre: rather than spamming a beginner with 40 genera, focus on the easiest ones, opening new ones as they go,
 everything estimated from the data. Before, a genus never seen weighed 10 against 1-4 for one being learned: a beginner
-met the 45 genera almost at once.
+met the 39 slate genera almost at once.
 
 - **Opening by results**: while fewer than `OPEN.K` (3) genera met are *shaky*, the genera not met yet share
   `OPEN.READY` (35%) of the draw; otherwise `OPEN.TRICKLE` (3%), so a new one still comes now and then. A share, not a
   weight, so the pace holds as the genera met add up.
-- **Shaky** = met, not mastered, and either going wrong (2 misses in its last 5) or still new to the player (fewer than
-  `OPEN.N` = 4 answers and knowledge under `OPEN.L` = 0.6). Simulated: knowledge alone made a beginner at 85-90% right
-  open almost nothing (BKT climbs slowly on easy photos); the answer count alone made an expert wait 4 answers on each
-  genus.
-- **Easiest first, softly**: among the genera not met, weight exp(−`OPEN.T` × (difficulty − easiest)), `OPEN.T` = 1.5.
+- **Shaky** = met, not mastered, and the player's expected success on an average photo of the genus (4 choices, at its
+  difficulty) under `OPEN.P` = 0.6, from the genus ability. That ability allows for how hard the questions were and
+  starts from the global level, so the signal is what the player knows, at any level, from the first answer. Tried and
+  dropped, all in the simulation (Pierre spotted the first): recent misses (2 in the last 5): the game keeps everyone
+  near 80% right, where that happens about one time in four at any level, so an RA opened fewer genera than a complete
+  beginner; BKT knowledge alone: climbs too slowly on a beginner's easy photos; a minimum of answers per new genus: held
+  an expert back, each new genus waiting to be drawn again.
+- **Easiest first, softly**: among the genera not met, weight exp(−`OPEN.T` × (difficulty − easiest)), `OPEN.T` = 3 (1.5 was too weak to show with the narrow spread of difficulties before real data).
+- **Trusted only as far as the data goes** (`easyTrust`): the easy-first preference is scaled by the players' answers
+  behind the photo ratings, over `OPEN.DATA` = 300 (weighed), up to 1. Before real answers, the photo sets and declared
+  look-alikes put Acropora and Galaxea among the hardest and Alveopora first, against Pierre's experience: the opening
+  order stays random (still a few genera at a time) until the answers can say.
 - **Genus difficulty from the data** (`genusDiff`), never set by hand: the mean difficulty of its game photos
   (`photoDiff`: Pierre's Easy/Medium/Hard photo sets at first, the players' answers as they come) + `OPEN.CONF` (2) ×
   how much it gets confused (its two highest pooled confusion scores above `CONF.TRAP`). With little data the photo sets
@@ -103,7 +110,7 @@ met the 45 genera almost at once.
   clearly high and rests on `BKT.LVN` (30) answers or more: then up to `BKT.L0MAX` (0.5), growing continuously from
   level `BKT.LV0` (0.5) to `LV0 + LVR` (2.0). An empirical-Bayes prior, as the Elo start of a new genus already uses the
   global level. The exam is unchanged: an expert still proves each genus with its own 5 hard questions. Simulated: an
-  expert mastered 7 genera in 600 questions before, 19 after.
+  expert mastered 7 genera in 600 questions before, 5-21 after (4 seeds).
 
 ## Pooled statistics: photo difficulty and confusions (sheet v17, 2026-11-02)
 
@@ -142,14 +149,18 @@ app's: `know[g]` = chance to recognise genus g on an average photo (beginner 0.0
 on the others, expert 0.93), lowered on harder photos and single views; otherwise a guess among the plausible choices;
 each answer teaches `rate` × (1 − know). The numbers show trends, not real players: recalibrate with real answers.
 
-Exploration, 600 questions, before → after the 2026-11-02 changes:
+Exploration, 600 questions, 4 seeds (genera met out of the 39 in the quiz; the first table of 2026-11-02 said "45",
+counting bonus genera by mistake):
 
 | | Beginner | RA | Expert |
 | --- | --- | --- | --- |
-| Genera met after 100 questions | all → 11 | all → 8 | all → 21 |
-| Genera met after 600 | 45 → 26 | 45 → 23 | 45 → 35 |
-| Traps a question, end | 0.07 → 0.3 | 0.08 → 0.3 | 0.07 → 1.4 |
-| Genera mastered after 600 | 0 → 1 | 0 → 0 | 7 → 19 |
+| Genera met after 100 questions (before: all 39) | 11-14 | 8-16 | 11-31 (31 in 2 seeds of 4) |
+| Genera met after 600 | 26-33 | 26-35 | 37-39 (39 by question 200 in 2 seeds) |
+| Traps a question, end (before: ~0.1 for all) | 0.3-0.5 | 0.2-0.6 | 1.5-1.7 |
+| Genera mastered after 600 (before: expert 7) | 0-1 | 0-4 | 5-21 |
+
+The beginner and the RA open at about the same pace here because the learner model's RA knows its genera only at 55%,
+near the `OPEN.P` threshold, and its beginner learns fast; with real players, recalibrate.
 
 Known limits: with little real data, the genus difficulty is mostly the photo sets and declared look-alikes, so "easiest
 first" is weak until answers come in. Learners are still rated cautiously (abilities around −0.5 at 80-90% right in the
