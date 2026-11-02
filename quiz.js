@@ -67,7 +67,7 @@ function question(cur, target, choices, prompt, set, kq) {
   // Keys: 1-4 answer, Enter goes to the next question.
   const keys = e => {
     if (!document.body.contains($v.querySelector('.q')) || !lb.hidden) return document.removeEventListener('keydown', keys);
-    if (e.target.closest('input, textarea, select')) return;
+    if (e.target.closest('input, textarea, select') || document.getElementById('tour')) return; // never an answer under the tour
     const b = !answered && $v.querySelectorAll('[data-c]')[Number(e.key) - 1];
     if (b) {
       e.preventDefault();
@@ -533,7 +533,7 @@ function unlockShow(L) {
   };
   // Enter on the focused sheet link follows it (its click closes the card); elsewhere Enter / Esc just close the card.
   const key = e => {
-    if (e.key !== 'Escape' && e.key !== 'Enter') return;
+    if ((e.key !== 'Escape' && e.key !== 'Enter') || document.getElementById('tour')) return; // the tour's keys while the card waits under it
     e.stopPropagation();
     if (e.key === 'Enter' && e.target.closest && e.target.closest('.unlock a')) return;
     e.preventDefault();
@@ -644,7 +644,7 @@ function introOfferShow() {
     document.removeEventListener('keydown', key, true);
   };
   const key = e => {
-    if (e.key === 'Tab') return;
+    if (e.key === 'Tab' || document.getElementById('tour')) return; // the tour's keys while the card waits under it
     e.stopPropagation(); // never the quiz's answer keys behind the card
     if (/^\d$/.test(e.key)) e.preventDefault();
     if (e.key !== 'Escape') return;
@@ -705,7 +705,7 @@ function introShow(L, start, kind = start ? 's' : 'c') {
   // The quiz's keys (1-4 answer) never reach the question behind the card (Codex review #350). Enter on a focused
   // button presses it; elsewhere Enter, and Escape, move on (the first cards are not skipped: each is met when shown).
   const key = e => {
-    if (e.key === 'Tab') return;
+    if (e.key === 'Tab' || document.getElementById('tour')) return; // the tour's keys while the card waits under it
     e.stopPropagation();
     if (e.key === 'Enter' && document.activeElement && d.contains(document.activeElement)) return;
     if (/^\d$/.test(e.key)) e.preventDefault();
