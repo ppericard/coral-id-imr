@@ -2362,6 +2362,18 @@ td i {
   max-height: none;
   cursor: zoom-out;
 }
+/* A mouse drags the photo at actual size (app.js zoom): a hand, and a closed hand while dragging. */
+@media (hover: hover) and (pointer: fine) {
+  #lightbox.full,
+  #lightbox.full .lb-in img {
+    cursor: grab;
+  }
+  #lightbox.full.dragging,
+  #lightbox.full.dragging .lb-in img {
+    cursor: grabbing;
+    user-select: none;
+  }
+}
 #lightbox.full .lb-cap,
 #lightbox.full .lb-nav {
   position: sticky;

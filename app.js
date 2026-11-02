@@ -392,11 +392,25 @@ function zoom(list, i, opts = {}) {
     lb.innerHTML = `<div class="lb-in"><img src="${img(p, saver() ? 'm' : '')}" style="background:center / contain no-repeat url('${img(p, 's')}')" alt="${hide ? 'Coral to identify' : esc(p.t || '')}" title="Click for actual size"><p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
       <div class="lb-nav">${list.length > 1 ? `<button type="button" data-d="-1" aria-label="Previous photo">‹</button><span>${i + 1} / ${list.length}</span><button type="button" data-d="1" aria-label="Next photo">›</button>` : ''}<button type="button" data-x aria-label="Close">Close</button></div></div>`;
     lb.classList.remove('full');
-    lb.querySelector('.lb-in img').onclick = e => {
+    const im = lb.querySelector('.lb-in img');
+    im.draggable = false;
+    im.onclick = e => {
       e.stopPropagation();
+      if (moved) return; // the end of a drag, not a click
+      // Actual size centred on the point clicked (an RA, 2026-11-02: zoomed in, then had to scroll to find it).
+      const rx = e.offsetX / im.clientWidth,
+        ry = e.offsetY / im.clientHeight;
       lb.classList.toggle('full');
-      const u = e.target.getAttribute('src') || '';
-      if (u.startsWith('img/') && tierOf(u)) e.target.src = resized(u, '');
+      const u = im.getAttribute('src') || '';
+      if (u.startsWith('img/') && tierOf(u)) im.src = resized(u, '');
+      if (lb.classList.contains('full')) {
+        const at = () => {
+          lb.scrollLeft = rx * im.clientWidth - lb.clientWidth / 2;
+          lb.scrollTop = ry * im.clientHeight - lb.clientHeight / 2;
+        };
+        at();
+        im.addEventListener('load', at, {once: true});
+      }
     };
     lb.querySelectorAll('[data-d]').forEach(
       b =>
@@ -429,6 +443,29 @@ function zoom(list, i, opts = {}) {
     if (e.key === 'Escape') close();
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') step(e.key === 'ArrowRight' ? 1 : -1);
   };
+  // At actual size, a mouse drags the photo around (an RA, 2026-11-02: "click and drag rather than scrolling", hand
+  // cursor); a touch screen already pans it natively. A press that moves under 5 px is still a click (back to fit).
+  let drag = null,
+    moved = false;
+  lb.onpointerdown = e => {
+    moved = false;
+    if (e.pointerType !== 'mouse' || e.button || !lb.classList.contains('full')) return;
+    drag = {x: e.clientX, y: e.clientY, l: lb.scrollLeft, t: lb.scrollTop};
+  };
+  lb.onpointermove = e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x,
+      dy = e.clientY - drag.y;
+    if (!moved && Math.hypot(dx, dy) < 5) return;
+    moved = true;
+    lb.classList.add('dragging');
+    lb.scrollLeft = drag.l - dx;
+    lb.scrollTop = drag.t - dy;
+  };
+  lb.onpointerup = lb.onpointercancel = () => {
+    drag = null;
+    lb.classList.remove('dragging');
+  };
   // Swipe left/right between photos (single finger only, so pinch-zoom still works).
   let x0 = null;
   lb.ontouchstart = e => {
@@ -445,7 +482,7 @@ function zoom(list, i, opts = {}) {
   lbClose = close;
   lb.hidden = false;
   lb.onclick = e => {
-    if (e.target === lb) close();
+    if (e.target === lb && !moved) close();
   };
   document.addEventListener('keydown', key);
   show();
