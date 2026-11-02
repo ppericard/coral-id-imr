@@ -899,6 +899,7 @@ function status() {
   }
   const tn = Object.keys(DRAFT.flag || {}).length + sugCount() + repsOpen().length,
     xn = Object.keys(DRAFT.exclude || {}).length;
+  OVER = overCap();
   const t = draftAt ? ` (saved ${draftAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})})` : '';
   // Publish carries the status (no separate status text): "● Publish" with a draft, "Published" when clean.
   const sv = $('save');
@@ -966,6 +967,13 @@ const GROUPS = [
 ];
 const pageOf = () => (cur === '~mont' ? '~look' : cur[0] === '~' ? cur : ''); // '' = a genus page
 const groupKey = () => (GROUPS.find(g => g[2].some(([h]) => h === pageOf())) || GROUPS[1])[0];
+// Genus x view cells over the cap (CELL_MAX colonies in the games, after "Add anyway"): a warning on the To do tab and
+// on Game coverage (Pierre, 2026-11-02: "at least a warning").
+let OVER = 0;
+const overCap = () =>
+  Object.keys(DATA.gen)
+    .filter(n => !DATA.gen[n].x)
+    .reduce((t, n) => t + covViews(n).filter(([v]) => covOf(n, v).obs > CELL_MAX).length, 0);
 function navs(tn, xn) {
   const g = groupKey(),
     page = pageOf(),
@@ -975,13 +983,16 @@ function navs(tn, xn) {
     store.set('imr-admin-sub', last);
   }
   const href = h => (h ? '#' + h : genusHash()),
-    cnt = h => (h === '~triage' && tn ? ` (${tn})` : h === '~excluded' && xn ? ` (${xn})` : '');
+    cnt = h =>
+      h === '~triage' && tn ? ` (${tn})` : h === '~excluded' && xn ? ` (${xn})` : h === '~cov' && OVER ? ` (⚠ ${OVER} over the cap)` : '';
   $('modes').hidden = false;
   document.querySelectorAll('#modes [data-mode]').forEach(a => {
     const G = GROUPS.find(x => x[0] === a.dataset.mode),
       h = G[2].some(([x]) => x === last[G[0]]) ? last[G[0]] : G[2][0][0];
     a.href = href(h);
-    a.textContent = G[1] + (G[0] === 'todo' && tn ? ` (${tn})` : '');
+    a.textContent = G[1] + (G[0] === 'todo' && tn ? ` (${tn})` : '') + (G[0] === 'todo' && OVER ? ' ⚠' : '');
+    if (G[0] === 'todo')
+      a.title = OVER ? `${OVER} genus × view cell${OVER === 1 ? '' : 's'} over the cap of ${CELL_MAX} colonies (Game coverage)` : '';
     a.setAttribute('aria-current', String(G[0] === g));
   });
   const sub = $('subnav'),
@@ -2497,9 +2508,84 @@ function candQueue(src) {
   return out;
 }
 let candKey = null;
-// Adding to a full cell: one tile per colony of the cell, Poor first, featured last; a click moves that colony's photos
-// of the view to "sheet only" and adds the candidate, in one Undo step. "Add anyway" goes over the cap.
+// Which colony of a full cell to retire for a new one (Pierre, 2026-11-02: semi-automatic, for the most variety in the
+// games: easy and hard photos, every growth form, several observers). Kept, never suggested: a colony with a photo among
+// the first SHEET of the view (the sheet's references), IMR lecture and Pierre's own photos, the only colony of a growth
+// form. Among the others, the most to retire first: Poor quality; then a difficulty the cell already has (rated
+// colonies, the nearest other colony's difficulty within 0.5) and many answers (well known, little left to learn
+// from it); then, on a tie, an observer with many colonies in the cell. Colonies with few answers are kept: their
+// rating is still coming (online calibration). Returns the colonies, most to retire first, each with its reasons.
+function retireOrder(n, w, cols) {
+  const r = rowOf(n, w),
+    top = new Set([...r.feat, ...r.rest.slice(0, Math.max(0, SHEET - r.feat.length))].map(p => p.f)),
+    PS = STATS || {},
+    ans = p => nAns(PS[p.f]),
+    who = p =>
+      p.imr
+        ? 'IMR'
+        : String(p.a || '')
+            .replace(/^\(c\)\s*/i, '')
+            .split(',')[0]
+            .trim() || '?',
+    form = c => {
+      const F = c.L.map(p => fOf(p.f)).filter(x => x && x !== 'x' && x !== 'p');
+      return F[0] || '';
+    },
+    forms = {},
+    owners = {};
+  cols.forEach(c => {
+    c.form = form(c);
+    if (c.form) forms[c.form] = (forms[c.form] || 0) + 1;
+    c.who = who(c.L[0]);
+    owners[c.who] = (owners[c.who] || 0) + 1;
+    c.ans = c.L.reduce((t, p) => t + ans(p), 0);
+    const R = c.L.filter(p => ans(p) >= 3);
+    c.d = R.length ? R.reduce((t, p) => t + PS[p.f][0], 0) / R.length : null;
+  });
+  cols.forEach(c => {
+    c.keep = c.L.some(p => top.has(p.f))
+      ? 'on the sheet'
+      : c.L.some(p => p.imr || p.own)
+        ? c.L.some(p => p.imr)
+          ? 'IMR'
+          : 'your photo'
+        : c.form && forms[c.form] === 1
+          ? `only ${c.form} colony`
+          : '';
+    const nn = c.d === null ? null : Math.min(...cols.filter(o => o !== c && o.d !== null).map(o => Math.abs(o.d - c.d)), 9);
+    c.why = [];
+    c.score = 0;
+    if (c.q === 1) {
+      c.score += 10;
+      c.why.push('Poor');
+    }
+    if (nn !== null && nn < 0.5) {
+      c.score += 3 * (1 - nn / 0.5);
+      c.why.push(`difficulty ${sgn(c.d)} like another colony`);
+    }
+    if (c.ans >= 10) {
+      c.score += Math.min(2, c.ans / 30);
+      c.why.push(`${Math.round(c.ans)} answers`);
+    } else if (c.ans < 3) c.score -= 1; // still being rated
+    if (owners[c.who] > 2) {
+      c.score += 0.5 * Math.min(1, (owners[c.who] - 2) / 5);
+      c.why.push(`${owners[c.who]} colonies by ${c.who}`);
+    }
+  });
+  return cols.slice().sort((a, b) => !!a.keep - !!b.keep || b.score - a.score);
+}
+// Adding to a full cell: one tile per colony of the cell, the suggested one (retireOrder) first and marked, the kept
+// ones last; a click moves that colony's photos of the view to "sheet only" and adds the candidate, in one Undo step.
+// "Add anyway" goes over the cap.
+let REPL_STATS = false;
 function renderRepl() {
+  // The suggestion reads the photo ratings: fetched once if this page has not loaded them yet (drawn again then).
+  if (!STATS && !REPL_STATS) {
+    REPL_STATS = true;
+    loadStats()
+      .catch(() => {})
+      .then(() => CREPL && render());
+  }
   const {n, f, w} = CREPL,
     p = cands(n).find(x => x.f === f) || photos(n).find(x => x.f === f);
   const done = () => {
@@ -2513,18 +2599,21 @@ function renderRepl() {
   const feat = new Set(rowOf(n, w).feat.map(x => x.f)),
     by = {};
   covOf(n, w).L.forEach(q => (by[q.o || q.f] = by[q.o || q.f] || []).push(q));
-  const cols = Object.entries(by)
-    .map(([k, L]) => ({k, L, q: Math.min(...L.map(x => qOf(x.f))), ft: L.some(x => feat.has(x.f))}))
-    .sort((a, b) => a.ft - b.ft || a.q - b.q);
+  const cols = retireOrder(
+      n,
+      w,
+      Object.entries(by).map(([k, L]) => ({k, L, q: Math.min(...L.map(x => qOf(x.f))), ft: L.some(x => feat.has(x.f))}))
+    ),
+    sug = cols[0] && !cols[0].keep ? cols[0] : null;
   const QN = {1: 'Poor', 2: 'Fair', 3: 'Good'};
   $v.innerHTML = `<section class="adm-repl">
     <div class="adm-shead"><h2><i>${esc(n)}</i> · ${esc(label(n, w))} is full</h2></div>
-    <p class="note">${cols.length} colonies in the games (cap ${CELL_MAX}) · replace which one?</p>
+    <p class="note">${cols.length} colonies in the games (cap ${CELL_MAX}) · replace which one?${sug ? ` Suggested: the first one${sug.why.length ? ` (${esc(sug.why.join(', '))})` : ''}, for the most variety; any other works too.` : ' Every colony is one to keep (sheet references, IMR, your photos, a growth form shown once): choose, or add anyway.'}</p>
     <figure class="adm-repl-new"><img src="${img(p)}" alt=""${crStyle(f)}><figcaption>New: ${esc(p.t || f)}</figcaption></figure>
     <div class="adm-repl-grid">${cols
       .map(
-        c => `<button type="button" class="adm-repl-tile" data-repl="${esc(c.k)}"><img src="${img(c.L[0], 1)}" alt="" loading="lazy">
-        <span>${QN[c.q] || ''}${c.ft ? ' · featured' : ''}${c.L.length > 1 ? ` · ${c.L.length} photos` : ''}</span></button>`
+        c => `<button type="button" class="adm-repl-tile${c === sug ? ' sug' : ''}" data-repl="${esc(c.k)}" title="${esc(c.keep ? 'Kept: ' + c.keep : c.why.join(', ') || 'Nothing against it')}"><img src="${img(c.L[0], 1)}" alt="" loading="lazy">
+        <span>${c === sug ? '<b>Suggested</b> · ' : ''}${QN[c.q] || ''}${c.ft ? ' · featured' : ''}${c.L.length > 1 ? ` · ${c.L.length} photos` : ''}${c.keep ? ` · keep (${esc(c.keep)})` : ''}</span></button>`
       )
       .join('')}</div>
     <p class="adm-repl-acts"><button type="button" class="adm-btn" data-ranyway>Add anyway (${cols.length + 1})</button> <button type="button" class="adm-link" data-rcancel>Cancel</button></p>
@@ -3561,7 +3650,7 @@ function renderCov() {
   $v.innerHTML = `<section class="adm-cov">
     <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Order">${seg.map(([k, t, h]) => `<button type="button" data-co="${k}" title="${h}" aria-pressed="${!COVS.col && COV_ORDER === k}">${t}</button>`).join('')}</span>
       <span class="cov-key" aria-label="Colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
-      <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 colonies">${thin} thin</b><b title="Cells at the cap of ${CELL_MAX} colonies or over: their candidates wait outside the swiper">${R.reduce((s, r) => s + r.cells.filter(c => c && c.obs >= CELL_MAX).length, 0)} full</b><b class="cov-rich" title="Cells with 8+ colonies">${rich} at 8+</b></div>
+      <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 colonies">${thin} thin</b><b title="Cells at the cap of ${CELL_MAX} colonies or over: their candidates wait outside the swiper">${R.reduce((s, r) => s + r.cells.filter(c => c && c.obs >= CELL_MAX).length, 0)} full</b>${(k => (k ? `<b class="warnc" title="Cells over the cap of ${CELL_MAX} colonies (added anyway): orange outline below; adding to a full cell suggests a colony to retire">⚠ ${k} over the cap</b>` : ''))(R.reduce((s, r) => s + r.cells.filter(c => c && c.obs > CELL_MAX).length, 0))}<b class="cov-rich" title="Cells with 8+ colonies">${rich} at 8+</b></div>
     <table class="cov-t"><thead><tr><th></th>${colTh(COVS)}<th class="cov-srch">Sources</th><th title="Candidates">+</th></tr></thead>
     <tbody>${R.map(
       r => `<tr data-g="${esc(r.n)}"><th scope="row"><a href="#${esc(r.n)}"><i>${esc(r.n)}</i></a>${DATA.gen[r.n].n ? '' : ' <small>★</small>'}</th>${r.cells.map((c, j) => cell(r, c, VIEWS[j][0])).join('')}
