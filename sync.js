@@ -83,7 +83,7 @@ function mergeSaved(j) {
     store.set('imr-coral-sync', SYNC);
     store.set('imr-coral-reset', rr);
     store.set('imr-coral-progress', P);
-    showProg();
+    prog();
     return;
   }
   introIn();
@@ -95,7 +95,7 @@ function mergeSaved(j) {
   SYNC.base = copy(R);
   store.set('imr-coral-sync', SYNC);
   store.set('imr-coral-progress', P);
-  showProg();
+  prog();
 }
 // Pull, merge, then send. Every change bumps SYNC.rev; a send clears SYNC.dirty only if nothing changed
 // meanwhile. Unsent progress is retried on start-up and when back online.
@@ -646,7 +646,7 @@ function signinNudge(once = true, play = !once) {
 }
 // The account box: the top of ⚙ (#sync), or the sign-in card (tour, nudge, header button) while one is open.
 function bindSync(box = document.querySelector('.tsync') || document.getElementById('sync')) {
-  showProg();
+  prog();
   if (!box) return;
   box.classList.remove('on', 'warn');
   const msg = t => (box.querySelector('[role=status]').textContent = t);
@@ -684,6 +684,12 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         off.textContent = 'Sign out: unsaved answers are lost';
         return;
       }
+      // The keys below come from the quiz tier (INTRO, ACHK): on a slow first visit ⚙ is usable before it is in, so the
+      // sign-out waits for it rather than failing half-way, signed out in memory but not on the device (Codex review #361).
+      off.disabled = true;
+      (typeof need === 'function' ? need(2) : Promise.resolve()).then(signOff);
+    };
+    const signOff = () => {
       SYNC = null;
       // Achievements and the leaderboard choice belong to the account too: never left to the next player of a shared device.
       // The first-meeting cards too (Codex review #350): the next player meets their own genera.
@@ -746,8 +752,12 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
                   ? 'Too many wrong codes for this name: try again in 10 minutes.'
                   : 'Check the name and the 4-digit code.'
           );
-        signIn(name, pin, j);
-        if (!j.found) syncPush().then(() => bindSync());
+        // The achievements' record (progress.js) must be in before an account is merged (Codex review #361: a sign-in
+        // from the tour on a slow first visit came before it).
+        return (typeof need === 'function' ? need(2) : Promise.resolve()).then(() => {
+          signIn(name, pin, j);
+          if (!j.found) syncPush().then(() => bindSync());
+        });
       })
       .catch(() => msg('Could not connect. Check your connection: your progress stays on this phone meanwhile.'));
   };

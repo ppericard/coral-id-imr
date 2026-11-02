@@ -32,7 +32,7 @@
           </div>
         </section>
         <section class="hdoor identify">
-          <a class="hdart rc" href="#finder" tabindex="-1" aria-hidden="true"><img src="img/reefcloud-example-m.webp" srcset="img/reefcloud-example-m.webp 760w, img/reefcloud-example.webp 1240w" sizes="(max-width:599.98px) 92vw, 920px" alt="" loading="lazy"></a>
+          <a class="hdart rc" href="#finder" tabindex="-1" aria-hidden="true"><img src="img/reefcloud-example-m.webp" srcset="img/reefcloud-example-m.webp 760w${saver() ? '' : ', img/reefcloud-example.webp 1240w'}" sizes="(max-width:599.98px) 92vw, 920px" alt="" loading="lazy"></a>
           <div class="hdbody">
             <p class="hdwhen">On ReefCloud · when a point stumps you</p>
             <h2>Identify a coral</h2>

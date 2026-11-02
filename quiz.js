@@ -272,6 +272,8 @@ function answer(cur, c, target, ph, cor, unseen) {
       s.off[x] = (s.off[x] || 0) + 1;
     }
   });
+  // A wrong answer changes what comes next ("Again", traps, the exam): the questions chosen ahead are chosen again.
+  if (!good) dropPlans();
   session.n++;
   session.h = [...session.h, good].slice(-10);
   if (good) {
@@ -334,7 +336,9 @@ function answer(cur, c, target, ph, cor, unseen) {
       s.mx = Date.now(); // learned, and when (the admin's player journey; was 1 before 2026-11-02, still truthy)
       delete s.ex;
       setTimeout(
-        () => achPop({tier: 3, icon: '🎓', title: `${target} mastered`, desc: `${EXAM.n} hard questions right, slipped into the quiz`}),
+        () =>
+          typeof achPop === 'function' &&
+          achPop({tier: 3, icon: '🎓', title: `${target} mastered`, desc: `${EXAM.n} hard questions right, slipped into the quiz`}),
         600
       );
     } else s.ex = ex;
@@ -377,10 +381,13 @@ function answer(cur, c, target, ph, cor, unseen) {
   }
   save();
   // Achievements on the photos seen before answering: a corallites hint left closed is not one.
-  achAfter(
-    good,
-    ph.filter(p => p !== unseen)
-  );
+  // progress.js (tier 4, index.html) may come after the first answers of a first visit: its start-up check (achCheck)
+  // then counts what they earned.
+  if (typeof achAfter === 'function')
+    achAfter(
+      good,
+      ph.filter(p => p !== unseen)
+    );
   $v.querySelectorAll('.qstage .qph').forEach((f, k) => f.insertAdjacentHTML('beforeend', photoSrc(ph[k])));
   // A mix-up: the stage becomes a montage, the photo shown (corallites if they were shown) next to a photo of the
   // genus answered in the same view, so the difference is seen at the moment of the mistake. The pair then comes back
@@ -610,55 +617,120 @@ const againTold = () => {
   store.set('imr-again-told', n + 1);
   return true;
 };
-// The next question is chosen while the player reads the feedback (and once at start-up), and its photos are fetched
-// meanwhile, so Next shows it at once even on a slow connection (Pierre, 2026-11-01: "preload the photos"). Used only
-// if nothing changed since: same answers count and same genera in play (settings), else chosen afresh.
+// The next questions are chosen ahead and their photos fetched meanwhile, so Next shows one at once even on a slow
+// connection (Pierre, 2026-11-01: "preload the photos"). Up to AHEAD questions of the photo quiz (Pierre, 2026-11-02,
+// field link: ~86 kbit/s, and a fluent RA answers in ~8 s, less than one question's photos take; 95% of the answers are
+// in the photo quiz), one in the Duel tab. NEXTQ is the first of them, each holding the next (.next): setting it to null
+// drops them all. Each is used only if nothing changed since it was chosen: the answers count it was planned for and the
+// genera in play (settings, bonus genera), else chosen afresh.
+// Planning ahead keeps the rules of the draw: a question with cards, an exam question, a duel slipped in or an "Again"
+// ends the queue (nothing is chosen past it before it is played: cards are met when shown, an exam answer spaces the
+// next), and a wrong answer drops the queue (its "Again" comes one question later, as before), putting back the
+// planner's own state (the genus asked last, the duel and "Again" spacing) as it was before those questions were
+// chosen. What changes: after a right answer, the questions already chosen stay, chosen up to AHEAD - 1 answers earlier
+// (their weights lag those answers; a new card, exam question or duel comes up to that many questions later).
+const AHEAD = 3;
 let NEXTQ = null;
-const planKey = cur => `${cur}|${answersSoFar()}|${pool().join()}`;
-// Fetched in order of need, two at a time: the photos shown first (small version, then full size), then the hint and
-// the other views shown after the answer. All at once they shared a slow line, and the first photo came later than with
-// no preloading at all (tools/perf.js, slow 3G: Next -> photo 11 s before preloading, 20 s with everything in parallel).
-const preload = set => {
-  const later = [...(set.hint ? [set.hint] : []), ...(set.reveal || [])],
-    n = (set.shown || []).length,
-    Q = [
+const planKey = (cur, i = 0) => `${cur}|${answersSoFar() + i}|${pool().join()}`;
+const planState = () => ({last, lastQs, rematch: rematch && {...rematch}, twoAt, againAt, duelLog});
+function dropPlans() {
+  if (NEXTQ) ({last, lastQs, rematch, twoAt, againAt, duelLog} = NEXTQ.snap);
+  NEXTQ = null;
+}
+const plain = q => !q.intro && !q.auto && !q[4].exam && q[2].length > 2;
+// The photos of the planned questions, fetched in the order they will be needed, two files at a time: question after
+// question (the cards of the genera met first, then the photos shown, small version then full size, then the hint and
+// the other views shown after the answer). All at once they shared a slow line, and the first photo came later than
+// with no preloading at all (tools/perf.js, slow 3G: Next -> photo 11 s before preloading, 20 s with everything in
+// parallel). The question on screen (ONQ) keeps its turn until its own files are in; a question dropped (NEXTQ = null,
+// dropPlans) fetches nothing more. prefetched() resolves once nothing is left to fetch (the start-up then moves on to
+// the next tier, index.html).
+let PF = [],
+  ONQ = null,
+  pfLive = 0,
+  pfWait = [];
+const pfUrls = q => {
+  const set = q[4],
+    later = [...(set.hint ? [set.hint] : []), ...(set.reveal || [])],
+    n = (set.shown || []).length;
+  return [
+    ...new Set([
+      ...(q.intro || [])
+        .map(g => cover(GX(g)))
+        .filter(Boolean)
+        .map(p => img(p, 's')),
       ...(set.shown || []).flatMap(p => [img(p, 's'), qsrc(p, n)]),
       ...later.map(p => img(p, 's')),
       ...later.map(p => qsrc(p, n + later.length))
-    ],
-    held = [];
-  let live = 0;
-  const go = () => {
-    while (live < 2 && Q.length) {
+    ])
+  ].filter(u => u.startsWith('img/')); // the site's own files (an iNaturalist photo waiting to be downloaded loads when shown)
+};
+const pump = () => {
+  const kept = new Set([ONQ]);
+  for (let x = NEXTQ; x; x = x.next) kept.add(x);
+  PF = PF.filter(x => kept.has(x) && x.urls.length);
+  // Images, so the question's own <img> shares the download still on its way (with fetch() the same file came twice on
+  // the field link). They hold the page's load event while they load.
+  for (const x of PF)
+    while (pfLive < 2 && x.urls.length) {
       const i = new Image();
-      live++;
-      i.onload = i.onerror = () => (live--, go());
+      pfLive++;
+      i.onload = i.onerror = () => (pfLive--, pump());
       i.decoding = 'async';
-      i.src = Q.shift();
-      held.push(i);
+      i.src = x.urls.shift();
+      x.held.push(i);
     }
-  };
-  go();
-  return held;
+  if (!pfLive && !PF.length) pfWait.splice(0).forEach(ok => ok());
 };
+const prefetched = () => new Promise(ok => (pfWait.push(ok), pump()));
+// Tops the queue up to AHEAD (questions after the one on screen if it is not answered yet). Not while the cards of
+// the genera met are open: they are recorded as they show, and a plan made meanwhile would deal them again.
 function planNext(cur) {
-  if (cur !== 'quiz' && cur !== 'quiz-duel') return;
-  const k = planKey(cur);
-  if (NEXTQ && NEXTQ.k === k) return;
-  const args = cur === 'quiz' ? planPhoto() : planDuel();
-  NEXTQ = {k, args, imgs: preload(args[4])};
+  if ((cur !== 'quiz' && cur !== 'quiz-duel') || document.querySelector('.unlock.intro')) return;
+  const o = $v.querySelector('.q:not(.done)') ? 1 : 0;
+  // A question on screen that changes what comes next (an exam question, a duel slipped in, an "Again", cards) is answered
+  // before anything is planned past it: its answer moves the exam's spacing and the photos seen (Codex review #361).
+  if (o && cur === 'quiz' && SHOWNQ && !plain(SHOWNQ)) return;
+  const pk = pool().join(),
+    key = i => `${cur}|${answersSoFar() + o + i}|${pk}`;
+  if (NEXTQ && NEXTQ.k !== key(0)) dropPlans();
+  let n = 0,
+    end = null;
+  for (let x = NEXTQ; x; x = x.next) (n++, (end = x));
+  while (n < (cur === 'quiz' ? AHEAD : 1) && !(end && end.stop)) {
+    const snap = planState(),
+      args = cur === 'quiz' ? planPhoto() : planDuel(),
+      x = {k: key(n++), args, snap, stop: !plain(args), urls: pfUrls(args), held: [], next: null};
+    if (end) end.next = x;
+    else NEXTQ = x;
+    end = x;
+    PF.push(x);
+  }
+  pump();
 }
+const topUp = () => setTimeout(() => planNext(hashNow()), 50);
 const takePlan = cur => {
-  const q = NEXTQ && NEXTQ.k === planKey(cur) ? NEXTQ.args : null;
-  NEXTQ = null;
-  return q;
+  const x = NEXTQ;
+  if (!x || x.k !== planKey(cur)) return (dropPlans(), (ONQ = null));
+  NEXTQ = x.next;
+  ONQ = x;
+  return x.args;
 };
+let SHOWNQ = null; // the photo-quiz question on screen (planNext)
 function quizPhoto() {
-  const q = takePlan('quiz') || planPhoto();
+  const q = (SHOWNQ = takePlan('quiz') || planPhoto());
+  // The duel spacing counts from when an "Again" or a slipped-in duel shows, not from when it was planned (Codex review
+  // #361: a duel planned 2 questions ahead left the next one 2 answers early).
+  if (q.again) againAt = answersSoFar();
+  if (q.auto) {
+    twoAt = answersSoFar();
+    duelLog = [...duelLog.filter(([, k]) => k !== q.auto), [twoAt, q.auto]];
+  }
   AUTOD = !!q.auto;
   question(...q);
   if (q.intro) introShow(q.intro, q.start);
   else if (!document.querySelector('.unlock') && introOffer()) introOfferShow(); // never over another card: next question
+  topUp(); // the questions after this one, chosen while it is played (planNext)
 }
 // The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now.
 function introOfferShow() {
@@ -685,6 +757,7 @@ function introOfferShow() {
   const close = () => {
     d.remove();
     document.removeEventListener('keydown', key, true);
+    topUp();
   };
   const key = e => {
     if (e.key === 'Tab' || document.getElementById('tour')) return; // the tour's keys while the card waits under it
@@ -714,6 +787,7 @@ function introShow(L, start, kind = start ? 's' : 'c') {
   const close = () => {
     d.remove();
     document.removeEventListener('keydown', key, true);
+    topUp();
   };
   d.ulClose = close; // leaving the page closes it (route); the genera of the cards not shown yet come next time
   const next = () => (++i < L.length ? show() : close());
@@ -782,7 +856,10 @@ function planPhoto() {
     if (pair.every(n => list.includes(n))) {
       againAt = answersSoFar();
       const t = pick(pair);
-      return ['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)];
+      // Planned ahead, it shows later than planned: quizPhoto sets againAt again when it shows (Codex review #361).
+      return Object.assign(['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)], {
+        again: 1
+      });
     }
   }
   // The genus asked is one already met (INTRO): ready, or one of the cards shown with this question when they are the
@@ -831,7 +908,7 @@ function planPhoto() {
       return Object.assign(
         ['quiz', t, shuffle(pair.slice()), `Look-alikes: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)],
         {
-          auto: 1
+          auto: key(pair) // the pair, so its spacing is set again when it shows (quizPhoto)
         }
       );
     }

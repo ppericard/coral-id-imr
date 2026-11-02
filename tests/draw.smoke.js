@@ -326,6 +326,23 @@ const server = http.createServer((req, res) => {
         // Spacing and the draws make the count vary (11 in a CI run, about 15 on average): enough to show they come.
         if (duels < 5 || duels > 50) fails.push(`${duels} duels in the quiz in 300 questions (about 1 in 10 expected)`);
       }
+      // Nothing is planned past a question that changes what comes next while it is on screen (Codex review #361: an
+      // exam planned behind an unanswered exam broke its spacing); a plain question gets its next ones planned.
+      {
+        const keepV = $v.innerHTML,
+          keepQ = SHOWNQ;
+        dropPlans();
+        $v.innerHTML = '<div class="q"></div>';
+        SHOWNQ = ['quiz', 'X', ['A', 'B', 'C', 'D'], '', {exam: true}];
+        planNext('quiz');
+        if (NEXTQ) fails.push('questions planned past an unanswered exam question');
+        SHOWNQ = ['quiz', 'X', ['A', 'B', 'C', 'D'], '', {}];
+        planNext('quiz');
+        if (!NEXTQ) fails.push('no question planned past a plain question');
+        dropPlans();
+        $v.innerHTML = keepV;
+        SHOWNQ = keepQ;
+      }
       // Achievement toasts (Pierre, 2026-11-02): the first of each family and the top tier pop up; a later step of a family
       // already held lands quietly (a "new" dot on 🏆), and the achievements page clears it.
       {
