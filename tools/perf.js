@@ -97,6 +97,17 @@ const ms = x => Math.round(x) + ' ms';
     await cdp.send('Emulation.setCPUThrottlingRate', {rate: pr.cpu});
     let bytes = 0;
     cdp.on('Network.loadingFinished', e => (bytes += e.encodedDataLength));
+    // The sync script is also mocked inside the page: once the service worker is registered (warm start), requests
+    // going through it pass by ctx.route, and a run reached the real sheet (17 anonymous "players", 2026-11-02).
+    await p.addInitScript(() => {
+      const f = window.fetch;
+      window.fetch = (u, o) => {
+        const url = String((u && u.url) || u);
+        if (!/script\.google/.test(url)) return f(u, o);
+        const body = /board=1/.test(url) ? {ok: true, rows: [['Ana', 42, 1180], ['Ben', 30, 0]]} : /achs=1/.test(url) ? {ok: true, n: 2, counts: {}} : {ok: true};
+        return new Promise(ok => setTimeout(() => ok(new Response(JSON.stringify(body), {headers: {'Content-Type': 'application/json'}})), 2000));
+      };
+    });
     await p.addInitScript(() => {
       window.__lt = 0;
       try {

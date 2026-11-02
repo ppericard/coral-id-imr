@@ -30,7 +30,7 @@
      have run (app.js waits for it before the first page). A stylesheet that fails is tried again the same way. -->
 <script>(function(){addEventListener("error",function(e){var t=e.target,n;if(!t||t.tagName!=="LINK"||t.rel!=="stylesheet")return;n=+(t.dataset.r||0);if(n<3)setTimeout(function(){var c=t.cloneNode();c.dataset.r=n+1;t.replaceWith(c)},1000*(n+1))},true);var ok;window.BOOT=new Promise(function(r){ok=r});function go(L,i,n){if(i>=L.length)return ok();var s=document.createElement("script");s.src=L[i];s.onload=function(){go(L,i+1,0)};s.onerror=function(){s.remove();n<3?setTimeout(function(){go(L,i,n+1)},1000*(n+1)):go(L,i+1,0)};document.body.appendChild(s)}addEventListener("DOMContentLoaded",function(){go([].map.call(document.querySelectorAll('link[rel=preload][as=script]'),function(l){return l.href}),0,0)})})()</script>
 <link rel="preload" href="core.js?v=13" as="script">
-<link rel="preload" href="app.js?v=155" as="script">
+<link rel="preload" href="app.js?v=156" as="script">
 <link rel="preload" href="flag.js?v=8" as="script">
 <link rel="preload" href="proto/lab.js?v=67" as="script">
 <link rel="preload" href="home-art.js?v=4" as="script">
