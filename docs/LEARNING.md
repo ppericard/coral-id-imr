@@ -242,11 +242,26 @@ is a good mastery criterion.
     declared look-alikes as prior, or the player's own mix-ups: the traps' rule), `PROG.LOOK` = 0.5 when none is.
   
   A right answer between the genus and genera of other forms (k 2, no look-alike) weighs a third of one against three
-  look-alikes. **A miss counts in full** (`w` = 1) whatever the choices: missing an easy question says as much about
-  not knowing the genus as missing a hard one, and with the same weight a genus answered only on easy choices still
-  climbed to its success rate, only more slowly; with misses in full, such a run tops out below its success rate (90%
-  right on easy choices: 0.75, under the exam's entry; 95%: 0.86). In the games look-alikes come in among the choices
-  after the first right answers anyway (traps, rule 14c). A wrong answer counts against both genera (rule 13).
+  look-alikes. **A miss weighs what it proves too** (`model.js` `pgMissW`; Pierre, 2026-11-02: "a miss on a very hard
+  photo doesn't mean the genus is badly known", and a miss must not cost more than it proves): the Elo chance the
+  player had to get it right (ability against the photo's difficulty, k choices) over the chance the game aims for
+  (a photo `PICKD.TARGET_OFF` below the ability: about 80% with 4 choices), at most 1. A photo at the player's level
+  or easier: in full; 1 unit harder 0.78, 2 units 0.57, 3 units 0.43 (4 choices; with 2 choices less discount, a guess
+  is 1 in 2). No new constant. The choices do not lighten a miss: missing among easy choices says as much about not
+  knowing the genus as missing among look-alikes, and with the same light weight a genus answered only on easy
+  choices would still climb to its success rate, only more slowly; this way such a run tops out below its success
+  rate (90% right on easy choices: about 0.75, under the exam's entry). In the games look-alikes come in among the
+  choices after the first right answers anyway (traps, rule 14c). A wrong answer counts against both genera (rule 13),
+  each with its own ability against the photo.
+
+  Is it fair? With look-alikes among 4 choices, a right answer and a miss at the player's level weigh the same and the
+  average settles on the success rate: at 95% on the bar (0.8) a miss takes 4 times what a right answer adds because
+  4 right answers to 1 miss is exactly that level. Simulated (`tools/learnsim.js`, 30 seeds × 4 profiles × 300
+  questions, paired with misses in full): progress, genera met, look-alike accuracy and the true success of the genera
+  entering the exam unchanged within the spread (strong RA 0.93 against 0.91, expert 0.92 both); as the photos are
+  picked at the player's level, a miss weighs 0.90 on average and under 0.8 for about 1 miss in 5 (photos well above
+  the level: calibration photos, the exam's hardest ones). The misses that say little cost less; the measure loses
+  nothing.
 - **The bar** = 0.95 × min(1, `s.pg` / `PROG.M`), `PROG.M` = 0.8 = the mastery exam's entry, shown as 95%; each exam
   question passed adds 1%, the passed exam makes it 100% (`scoreOf`, `genScore`; the sheet's `pctOf_` is a copy,
   v22). The draw weight of a genus being learned uses 1 − `s.pg` where it used 1 − L.

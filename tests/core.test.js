@@ -425,9 +425,12 @@ test('progress (PROG): a moving average weighed by what each answer proves; old 
     m++;
   }
   assert.ok(m >= 3 * n - 3, `${m} easy right answers in a row, against ${n}`);
-  // A miss counts in full, whatever the choices: from 90% on the bar it falls visibly.
-  const p90 = (0.9 * PROG.M) / 0.95;
-  assert.ok(scoreOf({pg: p90}) - scoreOf({pg: pgStep(p90, false, 1 / 3)}) > 0.1);
+  // A miss on a photo at the player's level counts in full: from 90% on the bar it falls visibly; on a much harder photo
+  // (model.js pgMissW, 0.56 two units above the level) about half as much.
+  const p90 = (0.9 * PROG.M) / 0.95,
+    full = scoreOf({pg: p90}) - scoreOf({pg: pgStep(p90, false, 1)}),
+    hard = scoreOf({pg: p90}) - scoreOf({pg: pgStep(p90, false, 0.56)});
+  assert.ok(full > 0.1 && hard < 0.6 * full, `${full} ${hard}`);
   // The bar: 95% at the exam's entry, the exam questions passed on top, 100% once learned.
   assert.strictEqual(scoreOf({pg: PROG.M}), 0.95);
   assert.strictEqual(scoreOf({pg: PROG.M, ex: {k: 2}}), 0.97);
