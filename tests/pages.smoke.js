@@ -178,6 +178,143 @@ async function overlays(b, base) {
     if (sign !== !!at || r.tour || r.card !== !at) fails.push(`Escape on tour step ${at + 1}: ${JSON.stringify({sign, ...r})}`);
     await c.close();
   }
+  // A genus opened after the first cards is met inside the quiz ("fewer, better pop-ups", 2026-11-02): a turn on the quiz
+  // stage, no card over it, one screen, not an answer (nothing logged), the genus met with kind 'c'; Enter goes on to a
+  // question about another genus. Phone and desktop.
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    const [c, p] = await open({viewport: {width: w, height: h}, intro: true}, seen);
+    await p.goto(base + '#quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('.unlock.intro', {timeout: 5000}).catch(() => {});
+    while (await p.$('.unlock.intro')) await p.click('.unlock.intro .ulbtns .next');
+    let m = null;
+    for (let i = 0; i < 30 && !m; i++) {
+      await p.waitForSelector('#view [data-c]:not([disabled]), .qmeet');
+      if (await p.$('.qmeet')) break;
+      if (await p.$('.unlock')) m = {card: await p.evaluate(() => document.querySelector('.unlock').className), at: i};
+      await p.evaluate(() => {
+        document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+        document.querySelector(`#view [data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
+      });
+      await p.click('#next');
+    }
+    if (m) fails.push(`${w}px a card in the quiz after the first ones: ${JSON.stringify(m)}`);
+    const t = await p.evaluate(() => {
+      const q = document.querySelector('#view .qmeet'),
+        n = q && q.querySelector('h3 a i').textContent,
+        nb = q && q.querySelector('#next').getBoundingClientRect(),
+        st = q && q.querySelector('.qstage .qph img');
+      return (
+        q && {
+          n,
+          card: !!document.querySelector('.unlock'),
+          tag: !!q.querySelector('.newtag'),
+          link: !!q.querySelector(`a[href="#g-${CSS.escape(n)}"]`),
+          tips: !!q.querySelector('.tipbox li, .tipbox .keyid'),
+          photo: !!st,
+          fits: nb.bottom <= innerHeight && document.scrollingElement.scrollHeight <= innerHeight + 1,
+          focus: document.activeElement === q.querySelector('#next'),
+          kind: (introMap()[n] || [])[3],
+          a: answersSoFar(),
+          log: store.get(LOG0, []).length
+        }
+      );
+    });
+    if (!t || t.card || !t.tag || !t.link || !t.tips || !t.photo || !t.fits || !t.focus || t.kind !== 'c')
+      fails.push(`${w}px genus turn in the quiz: ${JSON.stringify(t)}`);
+    else {
+      await p.keyboard.press('1'); // not a question: no answer key does anything
+      await p.keyboard.press('Enter');
+      await p.waitForTimeout(200);
+      const q = await p.evaluate(() => ({
+        meet: !!document.querySelector('.qmeet'),
+        asked: SHOWNQ && SHOWNQ[1],
+        choices: document.querySelectorAll('#view [data-c]:not([disabled])').length,
+        a: answersSoFar(),
+        log: store.get(LOG0, []).length
+      }));
+      if (q.meet || q.asked === t.n || q.choices < 2 || q.a !== t.a || q.log !== t.log)
+        fails.push(`${w}px after the genus turn of ${t.n}: ${JSON.stringify(q)}`);
+    }
+    await c.close();
+  }
+  // Out-of-game prompts take turns, counted in answers (2026-11-02): the sign-in card at 20 answers (not before), the
+  // one-tap question first at 35, at least 10 answers between two of them, never with an achievement toast or a card on
+  // screen. A new player, mostly right, 60 answers; toasts closed by a tap as they come.
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 844}}, () => localStorage.setItem('imr-tour', '"done"'));
+    await p.goto(base + '#quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const seenP = [];
+    for (let i = 0; i < 60; i++) {
+      await p.waitForSelector('#view [data-c]:not([disabled]), .qmeet');
+      const r = await p.evaluate(i => {
+        document.querySelector('.qmeet #next')?.click();
+        // A toast is tapped away (without following its link) before answering.
+        document.querySelectorAll('.achpop a').forEach(a => {
+          a.addEventListener('click', e => e.preventDefault());
+          a.click();
+        });
+        const t = SHOWNQ[1],
+          bs = [...document.querySelectorAll('#view [data-c]')];
+        (i % 6 === 5 ? bs.find(b => b.dataset.c !== t) : bs.find(b => b.dataset.c === t)).click();
+        const card = document.querySelector('.unlock'),
+          toast = !!document.querySelector('.achpop') || achBusy;
+        return {
+          a: answersSoFar(),
+          sign: !!document.querySelector('.unlock.signnudge'),
+          pulse: !!document.querySelector('#after .pulse'),
+          other: !!card && !card.matches('.signnudge'),
+          toast
+        };
+      }, i);
+      if (r.sign || r.pulse) seenP.push({...r, k: r.sign ? 'sign-in' : 'pulse'});
+      await p.evaluate(() => {
+        document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+        document.querySelector('[data-pulse=""]')?.click();
+        document.getElementById('next').click();
+      });
+    }
+    const sign = seenP.find(x => x.k === 'sign-in'),
+      pulse = seenP.find(x => x.k === 'pulse'),
+      gaps = seenP.slice(1).map((x, k) => x.a - seenP[k].a);
+    if (
+      !sign ||
+      !pulse ||
+      sign.a < 20 ||
+      sign.a > 25 ||
+      pulse.a < 35 ||
+      pulse.a > 45 ||
+      gaps.some(g => g < 10) ||
+      seenP.some(x => x.other || x.toast)
+    )
+      fails.push(`prompt spacing over 60 answers: ${JSON.stringify(seenP)}`);
+    await c.close();
+  }
+  // The right answer's celebration (app.css .cheer) plays on the choice and on "✓ Yes", and not at all with
+  // prefers-reduced-motion; Next is there and focused at once.
+  for (const reducedMotion of ['no-preference', 'reduce']) {
+    const [c, p] = await open({viewport: {width: 1280, height: 800}, reducedMotion}, seen);
+    await p.goto(base + '#quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('#view [data-c]');
+    const r = await p.evaluate(() => {
+      document.querySelector(`#view [data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
+      const b = document.querySelector('#view .ans button.ok'),
+        v = document.querySelector('#after .fb h3 .v');
+      return {
+        btn: getComputedStyle(b).animationName,
+        yes: getComputedStyle(v).animationName,
+        next: document.activeElement === document.getElementById('next')
+      };
+    });
+    const want = reducedMotion === 'reduce' ? ['none', 'none'] : ['cheer', 'tickpop'];
+    if (r.btn !== want[0] || r.yes !== want[1] || !r.next) fails.push(`right-answer celebration (${reducedMotion}): ${JSON.stringify(r)}`);
+    await c.close();
+  }
   return fails;
 }
 
@@ -224,7 +361,7 @@ async function overlays(b, base) {
       await p.waitForTimeout(700);
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
     }
-    // The one-tap question after 15 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
+    // The one-tap question after 35 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
     // A fresh browser that has seen the tour (a tour opened earlier in this context resumes after a reload).
     if (w === 390) {
       const c2 = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block', intro: true});
@@ -305,15 +442,21 @@ async function overlays(b, base) {
       else if (!ch.every(c => seen.some(s => s.name === c)))
         fails.push(`${w}px first question not among the first cards: ${ch.join(', ')}`);
       let at = 0;
-      for (let i = 1; i <= 20 && !at; i++) {
+      for (let i = 1; i <= 40 && !at; i++) {
         await q2.waitForSelector('#view [data-c]');
         await q2.evaluate(() => document.querySelectorAll('.unlock.intro').forEach(x => x.remove()));
+        // Achievement toasts have gone by the next answer (4 s; the prompts wait for them, PROMPT).
+        await q2.evaluate(() => {
+          document.querySelectorAll('.achpop').forEach(x => x.remove());
+          achQ.length = 0;
+          achBusy = false;
+        });
         await q2.evaluate(() => document.querySelector('#view [data-c]').click());
         await q2.waitForSelector('#next');
         if (await q2.$('#after .pulse')) at = i;
         else await q2.evaluate(() => document.getElementById('next').click());
       }
-      if (at !== 15) fails.push(`${w}px one-tap question: shown at answer ${at}, expected 15`);
+      if (at !== 35) fails.push(`${w}px one-tap question: shown at answer ${at}, expected 35`);
       else {
         await q2.click('[data-pulse="hard"]');
         // An error from one of the app's script files is reported; one injected into the page by a browser or an

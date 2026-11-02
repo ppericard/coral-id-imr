@@ -432,25 +432,24 @@ function answer(cur, c, target, ph, cor, unseen) {
       again = true;
     }
   }
+  // A right answer gets a short celebration on the choice itself and on "✓ Yes" (app.css .cheer: a pulse and the tick
+  // popping, ~400 ms, none with prefers-reduced-motion; "fewer, better pop-ups", Pierre 2026-11-02: the reward is on the
+  // action, not in a pop-up). It never holds the player: Next is there and focused at once.
   $v.querySelectorAll('[data-c]').forEach(b => {
     b.disabled = true;
-    if (b.dataset.c === target) b.classList.add('ok');
+    if (b.dataset.c === target) b.classList.add('ok', ...(good ? ['cheer'] : []));
     else if (b.dataset.c === c) b.classList.add('ko');
   });
   // Bonus genera unlocked and not announced yet (Q.ba = how many were announced) are named once in the feedback.
   const g = GX(target),
     bo = bonusOpen(),
     nbo = bo.slice(Q.ba || 0);
-  if (nbo.length) {
-    Q.ba = bo.length;
-    saveQ();
-  }
   const vs =
     !good && GX(c)
       ? `<p class="vs">Why not <i>${esc(c)}</i>: ${esc(tipsText(GX(c)))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
       : '';
   document.getElementById('after').innerHTML = `<div class="fb">
-    <h3 class="${good ? 'ok' : 'ko'}"><span class="v">${good ? '\u2713 Yes' : '\u2717 No'},</span> it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>
+    <h3 class="${good ? 'ok cheer' : 'ko'}"><span class="v">${good ? '\u2713 Yes' : '\u2717 No'},</span> it's <a href="#g-${esc(target)}"><i>${esc(target)}</i></a>${g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>
     <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
     <details class="more"><summary>Coral Finder</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details>${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: cur})}</div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
@@ -471,17 +470,40 @@ function answer(cur, c, target, ph, cor, unseen) {
   nb.onclick = route;
   // Chosen now, photos fetched while the feedback is read (planNext). A fixed duel pair (#quiz-duel|A|B) is cheap anyway.
   setTimeout(() => hashNow() === cur && planNext(cur), 50);
-  if (nbo.length) unlockShow(nbo);
-  else if (nudgeDue()) signinNudge();
-  else if (pulseDue()) pulseAsk();
+  // One overlay at a time: a bonus card waits for the next answer while another card or the tour is open (it is counted
+  // as announced only when shown). The out-of-game prompts take turns (promptOk), never with a card or an achievement
+  // toast, nor with the mastery toast due in a moment.
+  if (nbo.length && !document.querySelector('.unlock, #tour')) {
+    Q.ba = bo.length;
+    saveQ();
+    unlockShow(nbo);
+  } else if (!nbo.length && !(exq && s.mx) && promptOk()) {
+    if (nudgeDue()) (promptMark(), signinNudge());
+    else if (pulseDue()) (promptMark(), pulseAsk());
+  }
 }
+// Out-of-game prompts ("fewer, better pop-ups", Pierre 2026-11-02, after a new-player walkthrough counted an
+// interruption every ~2 answers): the sign-in card (from NUDGE_AT answers, sync.js), the one-tap question (from
+// PULSE.FIRST) and the offer to open all genera (from INTRO.OFFER.AT, model.js) are at least PROMPT.GAP answers apart and
+// never shown with a card, the tour or an achievement toast on screen or waiting: one that falls too close waits until
+// the gap is met. Counted in answers, never time. One value for all three: the answers count when the last one showed
+// (this device; a count that went back, a progress reset, starts the spacing over).
+const PROMPT = {KEY: 'imr-prompt-at', GAP: 10};
+const promptOk = () => {
+  if (document.querySelector('#tour, .unlock, .achpop') || (typeof achBusy !== 'undefined' && achBusy)) return false;
+  const a = answersSoFar(),
+    at = store.get(PROMPT.KEY, null);
+  return typeof at !== 'number' || a < at || a - at >= PROMPT.GAP;
+};
+const promptMark = () => store.set(PROMPT.KEY, answersSoFar());
 // One-tap question (Pierre, 2026-11-02: people answer a tap, not "any comments?"): now and then, under the answer's
 // feedback, "These questions are: Too easy · About right · Too hard" (or × for not now). First after PULSE.FIRST answers
-// in all, then every PULSE.EVERY answers, never before PULSE.SESSION answers of this visit; counted in answers, never time.
+// in all (35 since 2026-11-02, was 15: the sign-in card comes at 20 and prompts are PROMPT.GAP apart), then every
+// PULSE.EVERY answers, never before PULSE.SESSION answers of this visit; counted in answers, never time.
 // The answer goes to the sheet as an event (ev 'pulse') with what the game knew then: the mode, answers this visit, right
 // % of the last 10, overall level, genera met. Nothing in the game changes with it (yet): it tells Pierre whether the
 // adaptive difficulty feels right to the players.
-const PULSE = {FIRST: 15, EVERY: 60, SESSION: 8},
+const PULSE = {FIRST: 35, EVERY: 60, SESSION: 8},
   PULSEK = 'imr-pulse';
 const pulseDue = (h = hashNow()) =>
   (h === 'quiz' || h.startsWith('quiz-duel')) &&
@@ -658,10 +680,11 @@ const pfUrls = q => {
     n = (set.shown || []).length;
   return [
     ...new Set([
+      // A genus met inside the quiz (meetShow) shows its cover on the stage, at the stage's size.
       ...(q.intro || [])
         .map(g => cover(GX(g)))
         .filter(Boolean)
-        .map(p => img(p, 's')),
+        .flatMap(p => (q.start ? [img(p, 's')] : [img(p, 's'), qsrc(p, 1)])),
       ...(set.shown || []).flatMap(p => [img(p, 's'), qsrc(p, n)]),
       ...later.map(p => img(p, 's')),
       ...later.map(p => qsrc(p, n + later.length))
@@ -687,9 +710,10 @@ const pump = () => {
 };
 const prefetched = () => new Promise(ok => (pfWait.push(ok), pump()));
 // Tops the queue up to AHEAD (questions after the one on screen if it is not answered yet). Not while the cards of
-// the genera met are open: they are recorded as they show, and a plan made meanwhile would deal them again.
+// the genera met are open, nor during a genus's turn in the quiz (meetShow): they are recorded as they show, and a plan
+// made meanwhile would deal them again (the question that follows the turn is already chosen).
 function planNext(cur) {
-  if ((cur !== 'quiz' && cur !== 'quiz-duel') || document.querySelector('.unlock.intro')) return;
+  if ((cur !== 'quiz' && cur !== 'quiz-duel') || document.querySelector('.unlock.intro') || $v.querySelector('.qmeet')) return;
   const o = $v.querySelector('.q:not(.done)') ? 1 : 0;
   // A question on screen that changes what comes next (an exam question, a duel slipped in, an "Again", cards) is answered
   // before anything is planned past it: its answer moves the exam's spacing and the photos seen (Codex review #361).
@@ -737,10 +761,68 @@ function quizPhoto() {
     duelLog = [...duelLog.filter(([, k]) => k !== q.auto), [twoAt, q.auto]];
   }
   AUTOD = !!q.auto;
+  if (q.intro && !q.start) return meetShow(q);
   question(...q);
-  if (q.intro) introShow(q.intro, q.start);
-  else if (!document.querySelector('.unlock') && introOffer()) introOfferShow(); // never over another card: next question
+  if (q.intro) introShow(q.intro);
+  else if (promptOk() && introOffer()) (promptMark(), introOfferShow()); // never over another card: next question
   topUp(); // the questions after this one, chosen while it is played (planNext)
+}
+// A genus opened by the progressive path, met inside the quiz ("fewer, better pop-ups", Pierre 2026-11-02: a blocking
+// "New genus" card every few answers was the main interruption after the first ones). A turn of the quiz on the same
+// stage, not a question: its cover photo, its name (a link to its sheet) with a "New" tag, its ID tips, and Continue (or
+// Enter), which shows the question chosen with it, about another genus (never asked right after it, INTRO.GAP). Nothing
+// is logged as an answer and no ability moves; the genus is met when the turn shows, as its card was (introAdd, kind
+// 'c', time shown: the admin's player journey). The first INTRO.START genera keep their cards (introShow).
+function meetShow(q) {
+  const n = q.intro[0],
+    g = GX(n),
+    p = cover(g),
+    star = typeof starNote === 'function' ? starNote(n) : '';
+  introAdd([n], false, 'c');
+  // The question that follows is fetched meanwhile, like a planned one (pump): a question drawn just now too.
+  if (!ONQ || ONQ.args !== q) {
+    ONQ = {args: q, urls: pfUrls(q), held: []};
+    PF.push(ONQ);
+  }
+  pump();
+  $v.innerHTML = `${gameHelp('quiz')}<div class="q bleed done qmeet">
+    <div class="qstage">${
+      p
+        ? `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="0" aria-label="Enlarge photo"><img src="${qsrc(p, 1)}" data-lo="${img(p, 's')}" alt="${esc(n)}"></button>${photoSrc(p)}</figure>`
+        : ''
+    }</div>
+    <aside class="qside">
+      <div class="qtop"><p class="prompt">New genus</p>${trail()}</div>
+      <div id="after"><div class="fb">
+        <h3><span class="newtag">New</span> <a href="#g-${esc(n)}" title="Open its sheet"><i>${esc(n)}</i></a></h3>
+        ${star ? `<p class="vs">${star}: on the slate so you learn to tell them apart.</p>` : ''}
+        <div class="tipbox fbtips"><p class="label">${tipsLabel(g)}</p>${tipsList(g, 'imrfb')}</div></div>
+        <button class="next" type="button" id="next">Continue <kbd>↵</kbd></button></div>
+    </aside></div>`;
+  fitStage();
+  const nb = document.getElementById('next');
+  let gone = false;
+  const go = () => {
+    if (gone || !nb.isConnected) return;
+    gone = true;
+    question(...q);
+    topUp();
+  };
+  nb.onclick = go;
+  nb.focus({preventScroll: true});
+  const z = $v.querySelector('.qmeet .zoom');
+  if (z) z.onclick = () => zoom([{...p, genus: n}], 0);
+  // Enter goes on (a focused link or button does its own thing); never under the tour, a card or an enlarged photo.
+  document.addEventListener(
+    'keydown',
+    e => {
+      if (e.key !== 'Enter' || !lb.hidden || document.querySelector('#tour, .unlock')) return;
+      if (e.target.closest && e.target.closest('a, button, input, textarea, select, summary')) return;
+      e.preventDefault();
+      go();
+    },
+    {signal: viewKeys()}
+  );
 }
 // The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now.
 function introOfferShow() {
@@ -784,9 +866,10 @@ function introOfferShow() {
   setTimeout(() => d.querySelector('[data-open]').focus({preventScroll: true}), 50);
 }
 // The cards of the genera met now (INTRO in model.js), one after the other over the question: the first INTRO.START
-// together ("1 of 4", the first questions are about them), later ones alone (asked a few questions later). Recorded
-// when shown, so a planned question never played leaves no genus met without its card.
-function introShow(L, start, kind = start ? 's' : 'c') {
+// together ("1 of 4", the first questions are about them), and in the Duel tab those of a duel's genera not met yet
+// (kind 'c'). A genus opened later by the progressive path is met inside the quiz instead (meetShow). Recorded when
+// shown, so a planned question never played leaves no genus met without its card.
+function introShow(L, kind = 's') {
   document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove())); // with its keys
   const d = document.createElement('div');
   d.className = 'unlock intro';
@@ -808,15 +891,15 @@ function introShow(L, start, kind = start ? 's' : 'c') {
       star = typeof starNote === 'function' ? starNote(n) : '',
       more = i < L.length - 1;
     // Met when its card is shown (Codex review #350): a sequence left half-way (reload) shows the rest next time.
-    introAdd([n], start, kind);
+    introAdd([n], true, kind);
     d.setAttribute('aria-label', `New genus: ${n}`);
     d.innerHTML = `<div class="ulcard">${p ? `<div class="ulphoto"><img src="${img(p, 's')}" alt=""></div>` : ''}
       <p class="ulkick">New genus${L.length > 1 ? ` · ${i + 1} of ${L.length}` : ''}</p><h3><i>${esc(n)}</i></h3>
       ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
       <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tipsList(g)}</div>
-      <p class="ulnote">${start ? (more ? `The first questions are about these ${L.length} genera.` : 'Now, which is which?') : 'It comes up in the questions a little later.'}</p>
-      <div class="ulbtns"><span></span><button class="next" type="button">${more ? 'Next' : start ? 'Start' : 'Got it'}</button></div>
-      ${start && introLeft().length ? `<div class="ulall"><p><b>Had the IMR coral lecture?</b> Skip the cards and play with all ${Object.keys(DATA.gen).length} genera.</p><button class="next sec" type="button" data-all>Open all genera</button></div>` : ''}</div>`;
+      <p class="ulnote">${more ? `The first questions are about these ${L.length} genera.` : 'Now, which is which?'}</p>
+      <div class="ulbtns"><span></span><button class="next" type="button">${more ? 'Next' : 'Start'}</button></div>
+      ${introLeft().length ? `<div class="ulall"><p><b>Had the IMR coral lecture?</b> Skip the cards and play with all ${Object.keys(DATA.gen).length} genera.</p><button class="next sec" type="button" data-all>Open all genera</button></div>` : ''}</div>`;
     d.querySelector('.next').onclick = next;
     const all = d.querySelector('[data-all]');
     if (all)
@@ -840,11 +923,11 @@ function introShow(L, start, kind = start ? 's' : 'c') {
     if (/^\d$/.test(e.key)) e.preventDefault();
     if (e.key !== 'Escape' && e.key !== 'Enter') return;
     e.preventDefault();
-    start ? next() : close();
+    next();
   };
   document.addEventListener('keydown', key, true);
   d.addEventListener('click', e => {
-    if (e.target === d) start ? next() : close();
+    if (e.target === d) next();
   });
   show();
 }
@@ -943,7 +1026,7 @@ function quizDuel(a, b) {
   question(...q);
   // Both genera are named on the buttons: the cards of those not met yet come together, and either can be the answer.
   const L = q[2].filter(n => !introduced(n));
-  if (L.length) introShow(L, true, 'c');
+  if (L.length) introShow(L, 'c');
 }
 // A look-alike pair for a duel (the Duel tab, and the duels slipped into the photo quiz): among the pairs whose two
 // genera are in the list and pass keep. Null when none.

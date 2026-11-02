@@ -142,6 +142,11 @@ time, each on its card, but never as the answer of the question right after its 
   new-player walkthrough, 2026-11-02, got the very same photo twice in a row; same for a duel that brings a card).
 - **When a genus opens** stays the progressive path's call (below): a draw that falls on a genus not met yet shows its
   card and asks about a genus already met. At least `INTRO.EVERY` (2) answers between two cards.
+- **Met inside the quiz after the first cards** (`meetShow`, "fewer, better pop-ups", Pierre 2026-11-02: a blocking card
+  every few answers was the main interruption): a genus opened later gets a turn of the quiz on the same stage, not a
+  card over it: its cover photo, its name (a link to its sheet) with a "New" tag, its ID tips and Continue (or Enter),
+  which shows the question chosen with it, about another genus. Not an answer: nothing is logged, no ability moves; met
+  when the turn shows (kind `c`). The first `INTRO.START` keep their cards, and so do a Duel-tab pair's genera not met.
 - **Held while the player falls behind** (`introHold`, Pierre, 2026-11-02): no new card while, over the last 10
   answers of the visit, the right answers fall `INTRO.HOLD` (1.5) or more below the success the game expected for them
   (each answer's `e`). Why: an RA from the previous month's programme (the lecture, a few ID dives and analyses: good,
