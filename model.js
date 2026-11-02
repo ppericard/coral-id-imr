@@ -192,9 +192,10 @@ const weight = n => {
 const BONUS_W = 4,
   BONUS_SHARE = 0.15;
 // Progressive path (Pierre, 2026-11-02: "rather than spamming a beginner with 40 genera, start with the easiest ones,
-// opening new ones as they go, with nothing set by hand"). New genera are opened by the player's own results: while
-// fewer than OPEN.K genera met are still shaky (below), the genera not met yet share OPEN.READY of the draw (a share,
-// so the pace holds as the genera met add up); otherwise only OPEN.TRICKLE, so a new one still comes now and then.
+// opening new ones as they go, with nothing set by hand"). New genera are opened by the player's own results: the
+// genera not met yet share OPEN.READY of the draw with no genus met still shaky (below), down in a straight line to
+// OPEN.TRICKLE at OPEN.K shaky or more (a share, so the pace holds as the genera met add up; a slope, not a switch,
+// so a genus more or less shaky never flips the pace: Pierre, 2026-11-02).
 // Among them, the easiest (genusDiff) come first, softly (OPEN.T): a beginner meets a few easy genera at a time, an
 // expert keeps opening new ones because none stays shaky. docs/LEARNING.md.
 // K 5 (was 3; Pierre, 2026-11-02: genera should open a little more easily, ~25 of 39 met by an RA after 600 questions
@@ -202,7 +203,10 @@ const BONUS_W = 4,
 // K 6 with the first-meeting cards (INTRO): the choices are now genera met, so a wrong answer no longer opens a genus
 // never asked (it used to, for about a third of the genera met); simulated, an RA asked 28-35 genera after 600
 // questions, a beginner 12-15 after 100 (K 5: 24; K 8: a beginner 17-18 after 100).
-const OPEN = {K: 6, P: 0.6, READY: 0.35, TRICKLE: 0.03, T: 3, CONF: 2, DATA: 300};
+// K 10 with the slope: over 6 seeds, genera met after 100 questions, a beginner 13.2 +- 1.5 (the switch: 13.0 +- 2.9), a
+// lecture-level RA 17.3 +- 3.2 and 29 by question 300 (the switch: 24), an expert 24.8 +- 3.1; K 12 opened 16-19 to a
+// beginner at 72% right (docs/LEARNING.md).
+const OPEN = {K: 10, P: 0.6, READY: 0.35, TRICKLE: 0.03, T: 3, CONF: 2, DATA: 300};
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
 // OPEN.DATA, up to 1. Without them the genus difficulty is only the photo sets and declared look-alikes, which put
 // Acropora and Galaxea among the hardest and Alveopora first (Pierre expects the first two easy): the order then stays
@@ -337,7 +341,8 @@ function weighted(list) {
   // Not met yet: the genera with no card shown and never asked (a genus met on its card weighs as a new one, 10).
   const fresh = list.map((n, i) => [n, i]).filter(([n]) => !introduced(n));
   if (fresh.length) {
-    const share = list.filter(shaky).length < OPEN.K ? OPEN.READY : OPEN.TRICKLE,
+    // A slope rather than a switch (Pierre, 2026-11-02): READY with no shaky genus met, down to TRICKLE at K or more.
+    const share = OPEN.TRICKLE + (OPEN.READY - OPEN.TRICKLE) * Math.max(0, 1 - list.filter(shaky).length / OPEN.K),
       rest = w.reduce((a, x, i) => a + (introduced(list[i]) ? x : 0), 0),
       tot = rest ? (share * rest) / (1 - share) : 1,
       gd = fresh.map(([n]) => genusDiff(n)),
