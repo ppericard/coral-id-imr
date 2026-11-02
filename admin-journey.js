@@ -17,9 +17,9 @@ let JSORT = 'met';
 // imr-coral-intro-offer {at, open, via, t} (model.js INTRO; times and via from 2026-11-02). name -> null while loading.
 const JDATA = {};
 function journeyCards(name) {
-  // Kept until Players' ↻ (or the journey's) clears it; a failed read is not kept (Codex review #352).
-  if (JDATA[name] && !JDATA[name].err) return JDATA[name];
-  if (name in JDATA && JDATA[name] === null) return null;
+  // Kept, a failed read too (shown with its error), until Players' ↻ or the journey's clears it: a read is never
+  // started again by itself (Codex review #352: an error re-read at once looped).
+  if (name in JDATA) return JDATA[name];
   JDATA[name] = null;
   userPost({userData: name})
     .then(j => {
@@ -42,7 +42,6 @@ function journeyCards(name) {
         j && j.ok ? {map: P('imr-coral-intro') || {}, offer: P('imr-coral-intro-offer'), learned} : {err: (j && j.error) || 'unreachable'};
     })
     .catch(() => (JDATA[name] = {err: 'unreachable'}))
-    .then(() => JDATA[name] && JDATA[name].err && setTimeout(() => delete JDATA[name], 0))
     .then(() => cur === '~journey/' + name && render());
   return null;
 }
@@ -213,7 +212,7 @@ function renderJourney(name) {
   const cardsLine = !C
     ? '<p class="note">Cards: loading…</p>'
     : C.err
-      ? `<p class="note">Cards: the player's saved progress could not be read (${esc(C.err)}).</p>`
+      ? `<p class="note">Cards: the player's saved progress could not be read (${esc(C.err)}); ↻ to try again.</p>`
       : `<ul class="adm-jcards">${
           first.length
             ? `<li><b>First cards</b> ${first.map(g => `<i>${esc(g)}</i>`).join(', ')} · ${jTime(cardT(CM[first[0]]))}</li>`
