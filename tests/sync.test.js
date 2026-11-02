@@ -821,6 +821,14 @@ test("v23 hold: the sheet's sum plus the unconfirmed answers is the hold on ever
     {t: '2026-11-01T08:00:06Z', e: 0.9, ok: 0, m: 'quiz'}
   ]);
   assert.strictEqual(w.now(), 1.8);
+  // A comeback answer after a break (|c, since the comeback replaced the gentle restart) counts, with its own e, on the
+  // device and on the sheet (hold_ leaves out |w only).
+  const c = modelHold();
+  c.sync(0, [{t: '2026-11-01T08:00:07Z', e: 0.62, ok: 0, m: 'quiz|c|k2'}]);
+  assert.strictEqual(c.now(), 0.52);
+  const sc = loadCodeGs();
+  sc.post({name: 'Cy', pin: '1234', data: prog(1), summary: {}, answers: [ans('c1', {e: 0.62, ok: 0, m: 'quiz|c|k2'})]});
+  assert.strictEqual(sc.get({name: 'Cy', pin: '1234'}).hold, 0.52);
   const old = modelHold({'imr-hold': 0.5});
   old.sync(undefined, all);
   assert.strictEqual(old.now(), 0.5);

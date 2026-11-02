@@ -73,8 +73,8 @@ const server = http.createServer((req, res) => {
     for (const [name, [mk, rate]] of Object.entries(profiles)) {
       P = {};
       INTROS = {};
-      HOLDS = 0; // a fresh player: no opening hold, no gentle restart
-      warmLeft = 0;
+      HOLDS = 0; // a fresh player: no opening hold, no comeback
+      CB = {r: 0, t: 0, ok: 0, f: 0};
       store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
       const know = mk(),
         early = new Set(),
@@ -142,8 +142,8 @@ const server = http.createServer((req, res) => {
     {
       P = {};
       INTROS = {};
-      HOLDS = 0; // a fresh player: no opening hold, no gentle restart
-      warmLeft = 0;
+      HOLDS = 0; // a fresh player: no opening hold, no comeback
+      CB = {r: 0, t: 0, ok: 0, f: 0};
       store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
       const keep = PSTAT,
         fake = {},
@@ -183,8 +183,8 @@ const server = http.createServer((req, res) => {
     if (B.length) {
       P = {};
       INTROS = {};
-      HOLDS = 0; // a fresh player: no opening hold, no gentle restart
-      warmLeft = 0;
+      HOLDS = 0; // a fresh player: no opening hold, no comeback
+      CB = {r: 0, t: 0, ok: 0, f: 0};
       G.forEach(g => (P[g] = {ok: 8, ko: 2, h: '1101111011', th: 1.5, pg: 0.5}));
       const draw = list => {
         let hit = 0;
@@ -199,8 +199,8 @@ const server = http.createServer((req, res) => {
     {
       P = {};
       INTROS = {};
-      HOLDS = 0; // a fresh player: no opening hold, no gentle restart
-      warmLeft = 0;
+      HOLDS = 0; // a fresh player: no opening hold, no comeback
+      CB = {r: 0, t: 0, ok: 0, f: 0};
       store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
       const keep = PSTAT,
         g = G.find(n => VIEWS.flatMap(([v]) => gamePics(n, v, 'hard')).length >= 8),
