@@ -84,7 +84,9 @@
         st.h = (st.h + (right ? 1 : 0)).slice(-10);
         st.th = Math.round((st.th + (right ? 0.15 : -0.1)) * 100) / 100;
         st.L = Math.min(1, st.L + (right ? 0.08 : 0));
-        if (st.L >= 0.6 && !st.mx) st.mx = t; // learned, and when (the journey's stars)
+        // Learned here: this answer passed the exam (logged quiz|x, the journey's star).
+        const passed = right && st.L >= 0.6 && !st.mx;
+        if (passed) st.mx = t;
         const id = 'demo' + (k++).toString(36);
         rows.push([
           name,
@@ -92,7 +94,7 @@
           g,
           ans,
           right ? 1 : 0,
-          duel ? 'quiz-duel' : 'quiz',
+          duel ? 'quiz-duel' : passed ? 'quiz|x' : 'quiz',
           ph,
           id,
           Math.round(100 * pe) / 100,

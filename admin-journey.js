@@ -225,26 +225,17 @@ function renderJourney(name) {
               : '<li><b>Open all genera</b> not used</li>'
         }</ul>`;
 
-  // Learned genera and when: the time kept with the mastery (from 2026-11-02), else the last exam answer on the genus
-  // (logged "|x" from 2026-11-02); else learned, time unknown.
+  // Learned genera and when: the answer that passed the exam, i.e. the last right exam question (|x) on the genus
+  // (Pierre, 2026-11-02: "you know which question validated the exam"). Once learned a genus gets no more exam
+  // questions; if it is lost and learned again, the last one is still the one that counts. Learned before exam
+  // questions were logged (2026-11-02): no such answer, the time is unknown.
   const LRN = (C && C.learned) || {},
     lrnAt = {};
-  Object.entries(LRN).forEach(([g, mx]) => {
+  Object.keys(LRN).forEach(g => {
     let i = -1;
-    // The answer on this genus closest to the time kept, an exam question first (Codex review #352: the first answer of
-    // any genus near that time put the star on the wrong one).
-    if (mx > 1e12) {
-      let best = Infinity;
-      R.forEach((r, k) => {
-        if (r[2] !== g) return;
-        const d = Math.abs(r[1] - mx) - (/\|x$/.test(String(r[5])) ? 6e4 : 0);
-        if (d < best) ((best = d), (i = k));
-      });
-    }
-    if (i < 0)
-      R.forEach((r, k) => {
-        if (r[2] === g && r[4] && /\|x$/.test(String(r[5]))) i = k;
-      });
+    R.forEach((r, k) => {
+      if (r[2] === g && r[4] && /\|x$/.test(String(r[5]))) i = k;
+    });
     lrnAt[g] = i >= 0 ? i : null;
   });
   const lrnPts = Object.entries(lrnAt)
