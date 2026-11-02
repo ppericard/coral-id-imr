@@ -239,7 +239,7 @@ others, from the start: no threshold, no opt-in), the progress (over 40 genera),
 leaderboard, achievements. Its first card and its sheet warn that it is not a hard coral and not on the IMR coral list.
 
 The other 5 bonus genera (Isopora, Leptoseris, Heliopora, Sandalolitha, Pleuractis) became **opt-in**: a card offers
-them once every slate genus has been met (`introduced`), and ⚙ Bonus genera turns them on or off any time (`Q.bon`).
+them once every slate genus has been asked at least once (`asked`, not only met), and ⚙ Bonus genera turns them on or off any time (`Q.bon`).
 Once on they are simply genera not met yet: they open through the same progressive path (easiest first, the shaky
 slope, the opening hold), one card at a time. The progress thresholds (`BONUS_AT`), the weight cap (`BONUS_W` 4) and
 the 15% share (`BONUS_SHARE`) were removed (AGENTS rule 14f): they came after the slate, so the normal opening and
@@ -601,7 +601,7 @@ the exam then keeps the genera learned at 0.82-0.93 true reference success.
   ("Progress (moving average) and mastery"). Sheet v22 computes the leaderboard % the same way. A pop-up announcing the
   recalculation to the players is not built yet (ROADMAP).
 - 2026-11-02, Pierre: *Millepora* joins the slate (on the IMR benthic slate; the progress goes over 40 genera, announced
-  with a second `RECALC` note); the other bonus genera become opt-in, offered once every slate genus is met, and open
+  with a second `RECALC` note); the other bonus genera become opt-in, offered once every slate genus has been asked, and open
   like slate genera, without their thresholds, weight cap or share limit ("Millepora and the bonus genera").
 
 ## References

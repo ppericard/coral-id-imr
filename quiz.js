@@ -799,7 +799,9 @@ function introOfferShow() {
 // its card shown or asked) and the player has not chosen yet (Q.bon undefined). "Add them": they join the genera not
 // met yet and open one at a time like the others; "Not now": never offered again, ⚙ Bonus genera turns them on any time.
 // A prompt like the others (promptOk: never with a card, the tour or an achievement, PROMPT.GAP answers apart).
-const bonusOfferDue = () => Q.bon === undefined && BONUS.some(n => GX(n)) && slateGenera().every(introduced);
+// Every slate genus asked at least once, not just met (Pierre, 2026-11-02: an RA who taps Open all genera would otherwise get the offer a
+// question later, before having seen the IMR genera in the quiz; an RA tester: "after all IMR ones have been introduced/reviewed").
+const bonusOfferDue = () => Q.bon === undefined && BONUS.some(n => GX(n)) && slateGenera().every(asked);
 function bonusOfferShow() {
   const d = document.createElement('div'),
     pick = on => {
