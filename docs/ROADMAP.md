@@ -110,6 +110,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 - Publishing `curation.json` as a whole copy from the admin (lost curation on 2026-11-01; Publish merges key by key since PR #240).
 
 ## Done recently (for context)
+- 2026-11-02: RA feedback: a glossary term (dotted underline) tapped on a genus card opened its definition behind the card; the definition now sits above every card and overlay.
 - 2026-11-02: opening of genera as a slope instead of a switch (`OPEN.K` 6 → 10, calibrated over 6 seeds on two photo sets) and no duel slipped into the quiz on a question that opens a genus (Pierre: simplest algorithm, no new setting); AGENTS rules 14f (simplest algorithm), 14g (compute once) and the full new-player replay after each milestone.
 - 2026-11-02: first feedback from an RA with a web-development background: on a first visit the guided tour's step 3 and the first genus card were both on screen, the card above the tour. Cards and offers due during the tour now wait under it and show when it closes; the tour's keys still work.
 - 2026-11-01: anonymous answers (Pierre): players who never sign in still feed the photo ratings and confusions, under a random device id, moved to their name if they sign in; flood caps and an Alerts tab (Code.gs v12, docs/SECURITY.md); privacy page updated.
