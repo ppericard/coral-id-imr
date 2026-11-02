@@ -608,9 +608,9 @@ function introOfferShow() {
   const d = document.createElement('div'),
     a = answersSoFar(),
     pick = open => {
-      store.set(INTRO.OFFER.KEY, {at: a, open: open ? 1 : 0});
+      store.set(INTRO.OFFER.KEY, {at: a, open: 0, t: Date.now()});
       if (open) {
-        introAll();
+        introAll('offer');
         NEXTQ = null;
       }
       save();
@@ -678,7 +678,7 @@ function introShow(L, start) {
     const all = d.querySelector('[data-all]');
     if (all)
       all.onclick = () => {
-        introAll();
+        introAll('card');
         NEXTQ = null;
         save();
         close();

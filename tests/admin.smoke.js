@@ -125,7 +125,7 @@ const server = http.createServer((req, res) => {
     await settle();
     const jo = await p.evaluate(() => {
       const v = document.getElementById('view'),
-        met = [...v.querySelectorAll('.adm-jtbl tbody tr td:nth-child(2)')].map(td => Number((td.textContent.match(/#(\d+)/) || [])[1]));
+        met = [...v.querySelectorAll('.adm-jtbl tbody tr td:nth-child(3)')].map(td => Number((td.textContent.match(/#(\d+)/) || [])[1]));
       return {
         h: (v.querySelector('h2') || {}).textContent,
         charts: v.querySelectorAll('svg.adm-jl path').length,
@@ -141,9 +141,29 @@ const server = http.createServer((req, res) => {
     });
     if (jo.h !== 'Ana Demo' || jo.charts < 3 || !jo.rows || !jo.ordered || !jo.lists || jo.tab !== 'Players' || jo.small)
       fails.push(`${w}px journey: ${JSON.stringify(jo)}`);
+    // The first-meeting cards from the player's saved progress (userData): Ana's first cards and single cards; Carla
+    // opened all from the offer card (an orange line on the genera chart).
+    await p.waitForFunction(() => /First cards/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
+    const cards = await p.evaluate(() => ({
+      t: (document.querySelector('.adm-jcards') || {}).innerText || '',
+      col: [...document.querySelectorAll('.adm-jtbl tbody tr td:nth-child(2)')].map(td => td.textContent.trim())
+    }));
+    if (!/First cards/.test(cards.t) || !cards.col.includes('first cards') || !cards.col.some(x => /^#\d+/.test(x)))
+      fails.push(`${w}px journey cards (Ana): ${JSON.stringify(cards).slice(0, 300)}`);
+    await go('~journey/' + encodeURIComponent('Carla Demo'));
+    await p
+      .waitForFunction(() => /Opened all genera/.test(document.getElementById('view').innerText), null, {timeout: 10000})
+      .catch(() => {});
+    const carla = await p.evaluate(() => ({
+      t: (document.querySelector('.adm-jcards') || {}).innerText || '',
+      line: !!document.querySelector('svg.adm-jl line.o')
+    }));
+    if (!/Opened all genera after answer 40.*offer card/.test(carla.t) || !carla.line)
+      fails.push(`${w}px journey (Carla): ${JSON.stringify(carla)}`);
+    await go('~journey/' + encodeURIComponent('Ana Demo'));
     await p.click('[data-jsort="hard"]');
     await settle();
-    const firstHard = await p.$eval('.adm-jtbl tbody tr td:nth-child(5)', td => td.textContent);
+    const firstHard = await p.$eval('.adm-jtbl tbody tr td:nth-child(6)', td => td.textContent);
     if (!/-|–/.test(firstHard)) fails.push(`${w}px journey: hardest first starts at ${firstHard}`);
 
     // Triage lists the demo reports; Activity shows the demo players' answers.

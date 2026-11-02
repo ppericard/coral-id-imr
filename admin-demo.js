@@ -100,6 +100,19 @@
           ch.sort(() => rnd() - 0.5).join(' ')
         ]);
       }
+      // First-meeting cards (app model.js INTRO): the first 4 genera together, the others one at a time 2 answers before
+      // their first question; Carla opened all from the offer card at answer 40, Ben declined it at answer 50.
+      const mine = rows.filter(r => r[0] === name),
+        intro = {},
+        at = a => (mine[Math.max(0, a - 1)] || mine[0] || [0, NOW])[1],
+        openAt = name === 'Carla Demo' ? 40 : null;
+      mine.forEach((r, i) => {
+        if (intro[r[2]] || (gen[r[2]] || {}).x) return;
+        const a = openAt != null && i >= openAt ? openAt : Object.keys(intro).length < 4 ? 0 : Math.max(0, i - 2);
+        intro[r[2]] = [a, a === 0 || a === openAt ? 1 : 0, at(a)];
+      });
+      const offer =
+        openAt != null ? {at: openAt, open: 1, via: 'offer', t: at(openAt)} : name === 'Ben Demo' ? {at: 50, open: 0, t: at(50)} : null;
       const learned = Object.values(P).filter(s => s.L >= 0.6).length;
       users[name.toLowerCase()] = {
         name,
@@ -112,7 +125,12 @@
           .slice(0, 4)
           .join(', '),
         rev: 3,
-        data: {'imr-coral-progress': JSON.stringify(P), 'imr-coral-settings': '{}'}
+        data: {
+          'imr-coral-progress': JSON.stringify(P),
+          'imr-coral-settings': '{}',
+          'imr-coral-intro': JSON.stringify(intro),
+          ...(offer ? {'imr-coral-intro-offer': JSON.stringify(offer)} : {})
+        }
       };
     });
     // A few answers of players who never signed in (v12 "~anon <id>").

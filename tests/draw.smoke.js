@@ -264,8 +264,12 @@ const server = http.createServer((req, res) => {
         if (g in introMap() || store.get(INTRO.OFFER.KEY, null)) fails.push('progress reset kept the cards');
       }
       // "I've had the IMR lecture": every slate genus opens at once, and no card comes after.
-      introAll();
+      introAll('progress');
       if (introLeft().length) fails.push(`open all genera: ${introLeft().length} left`);
+      // Kept for the admin's player journey: when each card showed, and where all were opened from.
+      const oa = store.get(INTRO.OFFER.KEY, {}) || {};
+      if (!oa.open || oa.via !== 'progress' || !oa.t || Object.values(introMap()).some(e => !e[2]))
+        fails.push(`open all not recorded for the journey: ${JSON.stringify(oa)}`);
       for (let i = 0; i < 30; i++) {
         NEXTQ = null;
         quizPhoto();

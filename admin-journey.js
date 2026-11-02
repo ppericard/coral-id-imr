@@ -12,6 +12,31 @@ const JOURNEY = {
   DAYS: 60 // at most this many days in the per-day chart (the last ones)
 };
 let JSORT = 'met';
+// First-meeting cards and Open all genera, from the player's saved progress (sheet userData, admin token): the app keeps
+// them as imr-coral-intro {genus: [answers so far, 1 for the first cards or Open all, time shown]} and
+// imr-coral-intro-offer {at, open, via, t} (model.js INTRO; times and via from 2026-11-02). name -> null while loading.
+const JDATA = {};
+function journeyCards(name) {
+  if (name in JDATA) return JDATA[name];
+  JDATA[name] = null;
+  userPost({userData: name})
+    .then(j => {
+      const d = (j && j.ok && j.data) || {},
+        P = k => {
+          try {
+            return JSON.parse(d[k] || 'null');
+          } catch (e) {
+            return null;
+          }
+        };
+      JDATA[name] =
+        j && j.ok ? {map: P('imr-coral-intro') || {}, offer: P('imr-coral-intro-offer')} : {err: (j && j.error) || 'unreachable'};
+    })
+    .catch(() => (JDATA[name] = {err: 'unreachable'}))
+    .then(() => cur === '~journey/' + name && render());
+  return null;
+}
+const JVIA = {card: 'on the first cards', progress: 'from My progress', offer: 'from the offer card'};
 const jDate = t => new Date(t).toLocaleDateString([], {day: 'numeric', month: 'short'}),
   jTime = t => new Date(t).toLocaleString([], {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}),
   jPts = x => (x == null ? '–' : `${x > 0 ? '+' : ''}${Math.round(100 * x)} pts`);
@@ -96,6 +121,12 @@ function journeyChart(series, top, opt = {}) {
   const days = (opt.days || [])
     .map(([i, t]) => `<line x1="${x(i)}" x2="${x(i)}" y1="${pt}" y2="${H - pb}" class="d"><title>${esc(t)}</title></line>`)
     .join('');
+  const marks = (opt.marks || [])
+    .map(
+      ([i, t]) =>
+        `<line x1="${x(i)}" x2="${x(i)}" y1="${pt}" y2="${H - pb}" class="o"><title>${esc(t)}</title></line><text x="${x(i) + 4}" y="${pt + 12}" class="o">${esc(t)}</text>`
+    )
+    .join('');
   const dots = (opt.dots || [])
     .map(([i, v, t]) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3.2" class="m"><title>${esc(t)}</title></circle>`)
     .join('');
@@ -104,7 +135,7 @@ function journeyChart(series, top, opt = {}) {
     .join('');
   return `<svg class="adm-jl" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opt.label || '')}">${grid}${days}${series
     .map(s => `<path d="${path(s.v)}" class="${s.cls}"/>`)
-    .join('')}${dots}${xt}</svg>`;
+    .join('')}${marks}${dots}${xt}</svg>`;
 }
 
 function renderJourney(name) {
@@ -139,6 +170,34 @@ function renderJourney(name) {
       .map(Number)
       .sort((a, b) => a - b);
 
+  // 0. The cards: when each genus was shown, and whether (and how) all were opened at once.
+  const C = journeyCards(name),
+    offer = C && C.offer,
+    openAt = offer && offer.open ? offer.at : null,
+    // A card shown after the player's a-th answer: its time, else that answer's (cards saved before times were kept).
+    cardT = e => e[2] || (R[Math.min(R.length, Math.max(1, e[0])) - 1] || R[0])[1],
+    kindOf = e => (!e ? '' : !e[1] ? 'card' : openAt != null && e[0] === openAt ? 'all' : 'start'),
+    CM = (C && C.map) || {},
+    byKind = k => Object.keys(CM).filter(g => kindOf(CM[g]) === k && J.slate.has(g));
+  const first = byKind('start').sort((a, b) => CM[a][0] - CM[b][0]),
+    singles = byKind('card'),
+    alls = byKind('all');
+  const cardsLine = !C
+    ? '<p class="note">Cards: loading…</p>'
+    : C.err
+      ? `<p class="note">Cards: the player's saved progress could not be read (${esc(C.err)}).</p>`
+      : `<ul class="adm-jcards">${
+          first.length
+            ? `<li><b>First cards</b> ${first.map(g => `<i>${esc(g)}</i>`).join(', ')} · ${jTime(cardT(CM[first[0]]))}</li>`
+            : '<li><b>First cards</b> none saved (progress from before the cards, or played on another device not synced yet)</li>'
+        }<li><b>Cards one at a time</b> ${singles.length}</li>${
+          openAt != null
+            ? `<li><b>Opened all genera</b> after answer ${openAt} · ${jTime(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${alls.length} genera at once</li>`
+            : offer
+              ? `<li><b>Offer to open all</b> declined after answer ${offer.at}${offer.t ? ' · ' + jTime(offer.t) : ''}</li>`
+              : '<li><b>Open all genera</b> not used</li>'
+        }</ul>`;
+
   // 1. Progress: right answers on the last WIN against what was expected of them, and genera met.
   const dayStarts = [];
   R.forEach((r, i) => {
@@ -171,9 +230,11 @@ function renderJourney(name) {
       ],
       days: dayStarts,
       dots: J.marks.map(([i, g, t]) => [i, J.met[i], `${g}: answer ${i + 1}, ${jTime(t)}`]),
+      marks: openAt != null ? [[Math.min(R.length - 1, openAt), 'Opened all']] : [],
       label: 'Genera met over time'
     })}
-    <p class="adm-axis"><span>answer 1 · ${jDate(R[0][1])}</span><span>vertical lines: a new day</span><span>answer ${R.length} · ${jDate(R[R.length - 1][1])}</span></p></section>`;
+    <p class="adm-axis"><span>answer 1 · ${jDate(R[0][1])}</span><span>vertical lines: a new day</span><span>answer ${R.length} · ${jDate(R[R.length - 1][1])}</span></p>
+    <h4>Cards</h4>${cardsLine}</section>`;
 
   // 2. Easy and hard for them: right answers against the chance the game expected (photo difficulty, their level).
   const scored = Object.entries(J.G).filter(([, s]) => s.n >= JOURNEY.MIN && s.score != null),
@@ -217,17 +278,28 @@ function renderJourney(name) {
           ? b[1].n - a[1].n
           : a[1].first - b[1].first
   );
+  // The card of a genus: the first ones, Open all, or a card on its own (after answer a, asked k answers later).
+  const cardCell = g => {
+    const e = CM[g],
+      k = kindOf(e);
+    if (!C || C.err) return '';
+    if (!e) return '–';
+    if (k === 'start') return `<span title="${esc(jTime(cardT(e)))}">first cards</span>`;
+    if (k === 'all') return `<span title="${esc(jTime(cardT(e)))}">opened all</span>`;
+    const later = J.G[g].first + 1 - e[0];
+    return `<span title="${esc(jTime(cardT(e)))} · asked ${later === 1 ? 'at the next question' : `${later} questions later`}">#${e[0]} · ${jDate(cardT(e))}</span>`;
+  };
   const dots = h => `<span class="adm-jdots">${[...h].map(c => `<i class="${c === '1' ? 'ok' : 'ko'}"></i>`).join('')}</span>`,
     sortBtn = (k, t) => `<button type="button" data-jsort="${k}" aria-pressed="${JSORT === k}">${t}</button>`;
   const table = `<section class="adm-scard adm-jwide"><div class="adm-shead"><h3>Genera <small>${rows.length}</small></h3><span class="adm-qseg adm-sseg" role="group">${sortBtn('met', 'Order met')}${sortBtn('easy', 'Easiest')}${sortBtn('hard', 'Hardest')}${sortBtn('n', 'Most asked')}</span></div>
-    <div class="adm-tscroll"><table class="adm-tbl adm-jtbl"><thead><tr><th>Genus</th><th>Met</th><th>Answers</th><th>Right</th><th title="Right answers against the chance the game expected">vs expected</th><th>Last 10</th><th>Answered instead</th></tr></thead><tbody>${rows
+    <div class="adm-tscroll"><table class="adm-tbl adm-jtbl"><thead><tr><th>Genus</th><th title="When its card showed: after which answer">Card</th><th title="Its first question">First asked</th><th>Answers</th><th>Right</th><th title="Right answers against the chance the game expected">vs expected</th><th>Last 10</th><th>Answered instead</th></tr></thead><tbody>${rows
       .map(([g, s]) => {
         const inst = Object.entries(s.inst)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 2)
           .map(([x, n]) => `<i>${esc(x)}</i> ${n}×`)
           .join(', ');
-        return `<tr><td><a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a>${J.slate.has(g) ? '' : ' <small>bonus</small>'}</td><td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td><td>${dots(s.h)}</td><td>${inst}</td></tr>`;
+        return `<tr><td><a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a>${J.slate.has(g) ? '' : ' <small>bonus</small>'}</td><td class="n">${cardCell(g, s)}</td><td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td><td>${dots(s.h)}</td><td>${inst}</td></tr>`;
       })
       .join('')}</tbody></table></div></section>`;
 

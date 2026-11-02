@@ -180,7 +180,7 @@ function quizBoard() {
   const oa = document.getElementById('openall');
   if (oa)
     oa.onclick = () => {
-      introAll();
+      introAll('progress');
       NEXTQ = null;
       save();
       quizBoard();
