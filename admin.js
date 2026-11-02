@@ -967,7 +967,7 @@ const GROUPS = [
     ]
   ]
 ];
-const pageOf = () => (cur === '~mont' ? '~look' : cur[0] === '~' ? cur : ''); // '' = a genus page
+const pageOf = () => (cur === '~mont' ? '~look' : cur.startsWith('~journey/') ? '~users' : cur[0] === '~' ? cur : ''); // '' = a genus page; a player's journey sits under Players
 const groupKey = () => (GROUPS.find(g => g[2].some(([h]) => h === pageOf())) || GROUPS[1])[0];
 // Genus x view cells over the cap (CELL_MAX colonies in the games, after "Add anyway"): a warning on the To do tab and
 // on Game coverage (Pierre, 2026-11-02: "at least a warning").
@@ -1016,21 +1016,23 @@ function navs(tn, xn) {
 }
 // Which kind of page this is (help text, the Stats-style views): not the header tab, see groupKey().
 const modeKey = () =>
-  NEED_TABS.some(([h]) => h === cur)
-    ? 'needs'
-    : cur.startsWith('~stats') || cur === '~diff'
-      ? 'stats'
-      : {
-          '~users': 'users',
-          '~quality': 'quality',
-          '~form': 'form',
-          '~excluded': 'excluded',
-          '~triage': 'triage',
-          '~events': 'events',
-          '~look': 'mont',
-          '~mont': 'mont',
-          '~cand': 'cand'
-        }[cur] || 'genus';
+  cur.startsWith('~journey/')
+    ? 'journey'
+    : NEED_TABS.some(([h]) => h === cur)
+      ? 'needs'
+      : cur.startsWith('~stats') || cur === '~diff'
+        ? 'stats'
+        : {
+            '~users': 'users',
+            '~quality': 'quality',
+            '~form': 'form',
+            '~excluded': 'excluded',
+            '~triage': 'triage',
+            '~events': 'events',
+            '~look': 'mont',
+            '~mont': 'mont',
+            '~cand': 'cand'
+          }[cur] || 'genus';
 function render() {
   memoReset();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
@@ -1047,6 +1049,7 @@ function render() {
     return withSwitch();
   }
   if (cur === '~users') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
+  if (cur.startsWith('~journey/')) return renderJourney(cur.slice(9)); // one player's path (admin-journey.js)
   if (modeKey() === 'stats') {
     if (cur === '~diff') renderDiff();
     else renderStats();
@@ -1579,6 +1582,10 @@ const HEALTH = {
 
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
+  // A getter: JOURNEY is in admin-journey.js, loaded after this file.
+  get journey() {
+    return `<p>One player's path, from their answers in the sheet (signed in). <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day. <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered. <b>Genera</b>: every genus they were asked, in the order met (answer number and date of its first question), or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>Days played</b>: answers per day (hover for the right share); a session = answers less than ${HEALTH.GAP} minutes apart.</p>`;
+  },
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap question "These questions are: Too easy · About right · Too hard" (after 15 answers, then every 60), with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. The games aim at about 80% right, so many "Too hard" from beginners would mean the start is too steep. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
   start: `<p><b>Four tabs</b>: <b>To do</b> (players' reports, your flags, where photos are missing, how the app is working for players), <b>Photos</b> (Genera, Candidates, Growth form, Quality, Look-alikes, Excluded), <b>Players</b> (who plays, their numbers, merge or delete names) and <b>Photo stats</b> (how hard each photo is). The pages of a tab are in the row under the header; each tab reopens the page you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
@@ -4151,7 +4158,7 @@ function renderUsers() {
       .join('');
   const MODE = {quiz: 'Photo quiz', 'quiz-duel': 'Duel', '?': 'Other'};
   const detail = u => `<tr class="adm-udet"><td colspan="${UCOLS.length + 1}"><div class="adm-sgrid">
-      <section class="adm-scard"><h3>Games</h3><table class="adm-tbl">${
+      <section class="adm-scard"><p><a class="adm-fchip" href="#~journey/${encodeURIComponent(u.name)}">Journey →</a></p><h3>Games</h3><table class="adm-tbl">${
         Object.entries(u.modes)
           .sort((a, b) => b[1][0] - a[1][0])
           .map(([m, [n, r]]) => `<tr><td>${esc(MODE[m] || m)}</td><td>${pct(r, n)}</td><td>${sbar(r, n)}</td><td class="n">${n}</td></tr>`)

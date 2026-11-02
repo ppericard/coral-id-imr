@@ -95,6 +95,7 @@ These came from Pierre's explicit feedback. When in doubt, follow them over your
 | `flag.js` | ⚑ "bad photo" button, only in Pierre's admin browser (players report problems with `repBtn()`/`reportDialog()` in `sync.js`, read in admin Triage). |
 | `proto/` | Lab/Tools prototypes (`lab.js` hub + one file per tool); `finder.js` is the graduated Coral Finder. |
 | `admin.html`, `admin.js`, `admin.css` | Pierre's photo curation back-office. |
+| `admin-journey.js` | Admin: one player's journey (`#~journey/<name>`, opened from Players): progress, genera met over time, easiest / hardest for them, mix-ups, days. Loaded after `admin.js`, whose helpers it uses. |
 | `data.json` | All genus data and photo lists (the served source of truth). |
 | `curation.json` | Pierre's choices, applied on top of `data.json` at load. Pierre-owned. |
 | `forms.json`, `quality.json`, `picks.json`, `dups.json`, `suggest.json` | Machine suggestions (growth forms, quality, featured picks, duplicates, judging results). |

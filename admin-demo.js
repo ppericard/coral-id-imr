@@ -43,7 +43,9 @@
       if (L.length) pics[n] = L;
     });
     const G = Object.keys(pics),
-      look = n => (gen[n].look || []).filter(x => pics[x]);
+      look = n => (gen[n].look || []).filter(x => pics[x]),
+      // Some genera easier than others for everyone (the journey page's easiest / hardest), fixed per genus.
+      ease = Object.fromEntries(G.map(g => [g, (rnd() - 0.5) * 0.4]));
     const rows = [],
       users = {};
     let k = 0;
@@ -61,7 +63,8 @@
         }
         left--;
         const t = Math.min(NOW - 60e3, start + j++ * (20e3 + Math.floor(rnd() * 20e3))),
-          g = pick(G),
+          // Genera open progressively, as in the app: 4 at first, one more every ~8 answers.
+          g = pick(G.slice(0, Math.min(G.length, 4 + Math.floor(i / 8)))),
           duel = rnd() < 0.2,
           traps = look(g),
           others = G.filter(x => x !== g);
@@ -71,7 +74,8 @@
           if (!ch.includes(x)) ch.push(x);
         }
         const st = (P[g] = P[g] || {ok: 0, ko: 0, h: '', th: 0, L: 0.2});
-        const right = rnd() < skill + Math.min(0.25, (st.ok + st.ko) * 0.02),
+        const pe = Math.max(0.3, Math.min(0.95, skill + Math.min(0.25, (st.ok + st.ko) * 0.02))),
+          right = rnd() < Math.max(0.05, Math.min(0.98, pe + ease[g])),
           ans = right ? g : pick(ch.slice(1)),
           p = pick(pics[g]),
           same = pics[g].filter(x => x.o && x.o === p.o && x.f !== p.f),
@@ -90,7 +94,7 @@
           duel ? 'quiz-duel' : 'quiz',
           ph,
           id,
-          0.6,
+          Math.round(100 * pe) / 100,
           st.th,
           0,
           ch.sort(() => rnd() - 0.5).join(' ')
