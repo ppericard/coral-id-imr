@@ -1347,6 +1347,7 @@ const SETUP = {
     // the achievement record is migrated and counted here, before any answer.
     achMigrate();
     achCheck(); // before My progress opens, so its badge counts them
+    recalcNotice(); // every player's progress recalculated (2026-11-02): said once, with a pop-up
     prog();
     window.APP_READY = true; // Home, the quiz and the Learn pages work (tests and tools/perf.js wait for this)
   },

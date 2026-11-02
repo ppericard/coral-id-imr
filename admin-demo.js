@@ -73,7 +73,7 @@
           const x = traps.length && rnd() < 0.6 ? pick(traps) : pick(others);
           if (!ch.includes(x)) ch.push(x);
         }
-        const st = (P[g] = P[g] || {ok: 0, ko: 0, h: '', th: 0, L: 0.2});
+        const st = (P[g] = P[g] || {ok: 0, ko: 0, h: '', th: 0, pg: 0.2});
         const pe = Math.max(0.3, Math.min(0.95, skill + Math.min(0.25, (st.ok + st.ko) * 0.02))),
           right = rnd() < Math.max(0.05, Math.min(0.98, pe + ease[g])),
           ans = right ? g : pick(ch.slice(1)),
@@ -83,9 +83,9 @@
         st[right ? 'ok' : 'ko']++;
         st.h = (st.h + (right ? 1 : 0)).slice(-10);
         st.th = Math.round((st.th + (right ? 0.15 : -0.1)) * 100) / 100;
-        st.L = Math.min(1, st.L + (right ? 0.08 : 0));
+        st.pg = Math.min(1, st.pg + (right ? 0.08 : 0));
         // Learned here: this answer passed the exam (logged quiz|x, the journey's star).
-        const passed = right && st.L >= 0.6 && !st.mx;
+        const passed = right && st.pg >= 0.6 && !st.mx;
         if (passed) st.mx = t;
         const id = 'demo' + (k++).toString(36);
         rows.push([
@@ -117,7 +117,7 @@
       });
       const offer =
         openAt != null ? {at: openAt, open: 1, via: 'offer', t: at(openAt)} : name === 'Ben Demo' ? {at: 50, open: 0, t: at(50)} : null;
-      const learned = Object.values(P).filter(s => s.L >= 0.6).length;
+      const learned = Object.values(P).filter(s => s.pg >= 0.6).length;
       users[name.toLowerCase()] = {
         name,
         updated: NOW - d1 * DAY,

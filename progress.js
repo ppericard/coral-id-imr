@@ -147,10 +147,10 @@ function quizBoard() {
   // bottom of the side column.
   let pv = store.get('imr-coral-pview', 'slate');
   if (!VIEWS[pv]) pv = 'slate';
-  $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, get it right on harder and harder photos: that fills it up to 95%. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the photo quiz, several questions apart. All ${EXAM.n} right and the genus is learned (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
+  $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the photo quiz, several questions apart. All ${EXAM.n} right and the genus is learned (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
   <p class="lede"><b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin and easily taken for a genus of the list (fire coral <i>Millepora</i> first). The first joins the photo quiz and the duels at ${BONUS_AT(0)}% progress, then one more every 5%. They don't count in your progress; their ID tips come from the Coral Finder. On this page they come after the list: a <b>?</b> tile is a bonus genus still locked, with the progress that unlocks it.</p>
   <p class="lede"><b>Colours</b>: white with a dashed border = not seen; then from pale to dark, one step per quarter of the way; the darkest, with a tick = learned. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>
-  <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. 95% means your answers make it 95% sure you know the genus (a probability updated after each answer: right answers on harder photos count more, a lucky guess on an easy photo counts little); learned means its mastery exam is passed too.</p>
+  <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the genus: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down. 95% means it has held up against its look-alikes; learned means its mastery exam is passed too.</p>
   <div class="pgame pboard">${badge(ring, progPct(list), count('ok') ? `${count('ok')}/${list.length} learned` : `${list.length - count('new')}/${list.length} met`)}<div class="pgwrap"></div>
   <aside class="gside">
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera"><b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
@@ -669,6 +669,51 @@ function boardNotice() {
     15000
   );
   t.querySelector('a').onclick = () => t.remove();
+}
+// Progress recalculated for everyone (Pierre, 2026-11-02: when we recalculate every player's progress, say so with a
+// real pop-up, not a discreet note; no algorithm details). Once per device, to a player who already has answers (a new
+// player has nothing recalculated), at the first moment no tour or card is open; marked seen only by its button or
+// Escape, so a card closed by leaving the page comes back on the next one. A later recalculation gets a new RECALC.ID and text.
+const RECALC = {KEY: 'imr-recalc', ID: 'progress-moving-average-2026-11'};
+function recalcNotice() {
+  if (store.get(RECALC.KEY, '') === RECALC.ID) return;
+  // Answers: the global count, or the genera's own for progress saved before it (Codex review #367).
+  const played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && ((s.ok || 0) + (s.ko || 0) > 0 || s.h));
+  if (!played) return store.set(RECALC.KEY, RECALC.ID);
+  // Something else on screen (the tour, a card): try again a little later, until the screen is clear.
+  if (document.querySelector('.recalc')) return; // already on screen
+  if (document.querySelector('#tour, .unlock')) return void setTimeout(recalcNotice, 2000);
+  const d = document.createElement('div');
+  d.className = 'unlock recalc';
+  d.setAttribute('role', 'dialog');
+  d.setAttribute('aria-modal', 'true');
+  d.setAttribute('aria-label', 'Progress recalculated');
+  d.innerHTML = `<div class="ulcard"><p class="ulkick">Update</p><h3>We've improved how progress is measured</h3>
+    <p>Based on feedback from the first players, your progress now reflects more closely how well you can tell each genus apart from the others. Your % may be lower than before, and it will grow a little more slowly. None of your answers is lost.</p>
+    <div class="ulbtns"><span></span><button class="next" type="button">Got it</button></div></div>`;
+  document.body.appendChild(d);
+  const close = seen => {
+    if (seen) store.set(RECALC.KEY, RECALC.ID);
+    d.remove();
+    document.removeEventListener('keydown', key, true);
+  };
+  const key = e => {
+    if (e.key === 'Tab') return;
+    e.stopPropagation(); // never the quiz's keys behind the card
+    if (e.key === 'Escape' || e.key === 'Enter') {
+      e.preventDefault();
+      close(true);
+    }
+  };
+  document.addEventListener('keydown', key, true);
+  // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (Codex review #367: a returning
+  // player opening straight at #quiz had it closed by the first route, before ever seeing it).
+  d.ulClose = () => {
+    close(false);
+    setTimeout(recalcNotice, 300);
+  };
+  d.querySelector('.next').onclick = () => close(true);
+  setTimeout(() => d.querySelector('.next').focus({preventScroll: true}), 50);
 }
 // A short note at the bottom of the screen (.apptoast; html is the app's own text), closed by ✕ or after ms.
 function appToast(html, ms) {

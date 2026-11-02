@@ -29,7 +29,7 @@ function bindQuizNav() {
 const gameHelp =
   cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
   Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? '' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="#progress">My progress</a>. From ${BONUS_AT(0)}% progress, <b>bonus genera</b> join in: corals off the IMR list that are common at Dauin and easily confused with it (fire coral <i>Millepora</i> first).</p>
-  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus reaches 95% once your answers make it 95% sure you know it (right answers on harder photos count more); it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the photo quiz: see ? on <a href="#progress">My progress</a>.</p>`;
+  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus fills up to 95% with your right answers, each point a little harder to earn than the last, and a right answer counts most when the genus's look-alikes are among the choices; a mistake takes it back down; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the photo quiz: see ? on <a href="#progress">My progress</a>.</p>`;
 let EXAMQ = null; // the genus whose exam question is on screen (set by question, read by answer)
 function question(cur, target, choices, prompt, set, kq) {
   EXAMQ = set.exam ? target : null;
@@ -288,18 +288,15 @@ function answer(cur, c, target, ph, cor, unseen) {
     s.conf = s.conf || {};
     s.conf[c] = (s.conf[c] || 0) + 1;
   }
-  // Knowledge (BKT) with the difficulty of the photos shown (before the result joins s.h, which BKT replays for old progress).
+  // Progress (pgObs) weighed by what the answer proves: the plausible choices k and the look-alikes among the choices.
   const nc = $v.querySelectorAll('[data-c]').length || 4,
     k = Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
-  // A photo seen for the first time is the best evidence (Kellman: novel instances); one already answered right twice
-  // may be memorised, so it counts as an easier photo (a right answer then looks more like a guess).
   const th0 = ability(target),
     nw = ph.filter(p => !(s.ps || {})[p.f]).length;
   const solo = ph.length === 1 ? PICKD.SINGLE : 0; // one view alone is harder than the same photo with the others
   const ps = (s.ps = s.ps || {}),
     d0 = solo + ph.reduce((t, p) => t + photoDiff(target, p), 0) / Math.max(1, ph.length);
-  const bk = solo + ph.reduce((t, p) => t + photoDiff(target, p) + (!ps[p.f] ? 0.5 : ps[p.f][1] >= 2 ? -1 : 0), 0) / Math.max(1, ph.length);
-  bktObs(target, s, good, bk, k);
+  pgObs(target, s, good, pgWeight(target, chs, k));
   abilityStep(target, s, good, d0, k);
   // Global level (core.js playerStart): the same Elo step over every answer, kept as the pseudo-genus LEVEL.
   // Made at the first answer from the player's history (levelSeed), whose counts already include this answer.
@@ -317,7 +314,7 @@ function answer(cur, c, target, ph, cor, unseen) {
   // Pierre's rule: a wrong answer also shows the genus given is not mastered, so it counts as a miss for it too.
   if (!good && GX(c)) {
     const w = st(c);
-    bktObs(c, w, false, 0, k);
+    pgObs(c, w, false, 1); // a miss counts in full (core.js PROG)
     w.h = ((w.h || '') + '0').slice(-10);
     w.streak = 0;
     abilityStep(c, w, false, 0, k);
@@ -346,9 +343,9 @@ function answer(cur, c, target, ph, cor, unseen) {
     } else s.ex = ex;
   }
   if (!good && GX(c) && P[c]) delete P[c].ex;
-  // Mastery is kept only while the genus stays known: below 95% again (misses lower it, for the genus shown and for the one
-  // answered), it is lost and the exam comes back (code review #327).
-  [target, ...(!good && GX(c) ? [c] : [])].forEach(n => P[n] && P[n].mx && knownP(n) < BKT.MASTER && delete P[n].mx);
+  // Mastery is kept only while the genus stays known (code review #327): a second miss before it is back up loses it and
+  // the exam comes back, for the genus shown and for the one answered (mxKept).
+  [target, ...(!good && GX(c) ? [c] : [])].forEach(n => P[n] && P[n].mx && !mxKept(n) && delete P[n].mx);
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
   // sheet's Answers tab also gets what was played before the account existed (Pierre, 2026-11-01).
