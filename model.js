@@ -352,10 +352,11 @@ const introReset = () => {
 // drop), so a run of misses adds up however long it lasts, a spell of answers above expectation is not banked against
 // a later drop, and right answers pay the debt back by what they beat the expectation by (an easy one, e 0.9, by 0.1).
 // No new card while it is INTRO.HOLD or more. Kept on the device (imr-hold), so it carries from one visit to the next
-// (Pierre: a player who left on a run of misses must not come back to new genera); cleared with the progress (reset,
-// sign-out). The gentle restart's questions do not count (quiz.js WARM). A sliding window of the last 10 answers
-// was tried first: it forgot the misses at the next visit, and a longer one hid a sudden drop behind earlier good
-// answers (on that RA's answers, 20 answers never reached the threshold). SLACK: only a shortfall of more than 0.1 an
+// (Pierre: a player who left on a run of misses must not come back to new genera), and for a signed-in player rebuilt by
+// the sync sheet from all their answers (holdSync, below); cleared with the progress (reset, sign-out). The gentle
+// restart's questions do not count (quiz.js WARM). A sliding window of the last 10 answers was tried first: it forgot
+// the misses at the next visit, and a longer one hid a sudden drop behind earlier good answers (on that RA's answers, 20
+// answers never reached the threshold). SLACK: only a shortfall of more than 0.1 an
 // answer adds up (the CUSUM's allowance), so a player the game slightly overrates (0.85 expected, 0.8 right) is never
 // held: without it the simulated expert, 85% right where the game expected a little more, was held for good. HOLD 1.5:
 // on that RA's answers it holds at answers 11-12 (three misses in a row) and from answer 67 on, off and on (the window:
@@ -364,9 +365,29 @@ const introReset = () => {
 const HOLDK = 'imr-hold';
 let HOLDS = Number(store.get(HOLDK, 0)) || 0;
 const introHold = () => HOLDS >= INTRO.HOLD;
+const holdNext = (h, e, good) => Math.max(0, Math.round((h + (Number(e) || 0) - (good ? 1 : 0) - INTRO.SLACK) * 1000) / 1000);
 function holdStep(e, good) {
-  HOLDS = Math.max(0, Math.round((HOLDS + (Number(e) || 0) - (good ? 1 : 0) - INTRO.SLACK) * 1000) / 1000);
+  HOLDS = holdNext(HOLDS, e, good);
   store.set(HOLDK, HOLDS);
+}
+// Synced (sheet v23, Pierre 2026-11-02: the hold follows a signed-in player from one device to another, and is rebuilt
+// from the answers given before it existed). Each load of the saved progress (sync.js mergeSaved) brings h, the same sum
+// over every answer the sheet has logged for the player since their last reset (Code.gs hold_, gentle-restart answers
+// left out: logged with |w). The answers of this device the sheet has not confirmed yet (log) are added on top, and the
+// larger of that and this device's own sum is kept: a hold is never lifted by the sync. An older sheet sends no h: the
+// hold stays this device's. Not signed in: this device's only.
+const HOLD_WARM = /\|w(\||$)/; // the mode of a gentle-restart answer (quiz.js answer)
+function holdSync(h, log) {
+  if (typeof h !== 'number' || !isFinite(h)) return;
+  const reset = store.get('imr-coral-reset', '') || '';
+  const x = (log || []).reduce(
+    (t, a) => (a && !HOLD_WARM.test(a.m || '') && String(a.t || '') > reset ? holdNext(t, a.e, a.ok) : t),
+    Math.max(0, h)
+  );
+  if (x > HOLDS) {
+    HOLDS = x;
+    store.set(HOLDK, HOLDS);
+  }
 }
 const introSince = () => answersSoFar() - Math.max(-Infinity, ...Object.values(introMap()).map(e => e[0]));
 function weighted(list) {

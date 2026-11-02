@@ -151,7 +151,14 @@ time, each on its card, but never as the answer of the question right after its 
   `INTRO.SLACK` (0.1) an answer, never below 0, is `INTRO.HOLD` (1.5) or more. A CUSUM (Page 1954, the standard detector of a lasting drop): a run of misses adds up however long it
   lasts, a spell above expectation is not banked against a later drop, and right answers pay the debt back by what they
   beat the expectation by (an easy one, e 0.9, by 0.1). Kept on the device (`imr-hold`), so a player who left on a run
-  of misses does not come back to new genera; cleared with the progress. Why: an RA from the previous month's programme
+  of misses does not come back to new genera, and, for a signed-in player, synced through the sheet (sheet v23, Pierre
+  2026-11-02: it follows the player from one device to another, and is rebuilt from the answers given before it
+  existed, an RA having left on a run of misses before it was built): each load of the saved progress carries the same
+  sum computed by the sheet over every answer it logged for the player, in time order, since their last progress reset
+  (`Code.gs` `hold_`, same formula and allowance, `HOLD.SLACK` kept in step with `INTRO.SLACK` by
+  `tests/sync.test.js`); the app adds the answers the sheet has not confirmed yet and keeps the larger of that and its
+  own sum (`holdSync`), so a hold is never lifted by a sync. Players not signed in keep the device's only. Cleared with
+  the progress. Why: an RA from the previous month's programme
   (the lecture, a few ID dives and analyses: good, not an expert) at 86% right after 50 answers declined "open all"
   (Pierre: even trained RAs prefer to meet the genera progressively; experts must still be able to open them fast),
   then met 9 genera in 21 answers (one every 2, the `EVERY` floor), fell to 5 right in 10 where about 8 were expected,
@@ -165,7 +172,8 @@ time, each on its card, but never as the answer of the question right after its 
 - **Gentle restart** (`WARM` in `quiz.js`, Pierre, 2026-11-02): a player coming back with `WARM.FROM` (10) answers or
   more first gets `WARM.N` (10; 5 at first, Pierre: too short) questions on genera already answered right, with easy
   choices: no card, no duel, no exam. The first half leaves out the genera to review (unless fewer than 2 others are left), the second half brings them back; an Again after a miss still comes, counted with the restart; fewer than 2 genera answered right: no restart. A positive start before the harder questions; their answers do not count for the hold
-  (Pierre: easy right answers must not reopen new genera after a run of misses).
+  (Pierre: easy right answers must not reopen new genera after a run of misses): logged with `|w` in their mode
+  (before `|kN`), which the sheet's hold leaves out too.
 - **Not right after**: a genus met on a card alone can be asked from `INTRO.GAP` (2) answers on (one question at least
   in between; the card says "It comes up in the questions a little later"). The first 4 can be asked at once.
 - **Choices among the genera met**: easy wrong choices and traps come from the genera met (a card or an answer); a

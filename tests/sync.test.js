@@ -17,7 +17,7 @@ const ans = (id, extra = {}) => ({
 
 test('new RA, save and load back, with revision', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 22});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 23});
   const r = s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}, answers: [ans('a1')]});
   assert.strictEqual(r.ok, true);
   assert.strictEqual(r.log, true);
@@ -145,7 +145,7 @@ const rep = (id, extra = {}) => ({
 test('reports: logged once, reporter verified by code, never mistaken for a progress write', () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}});
-  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 22});
+  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 23});
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1'), rep('r2', {why: 'multi', fix: ''})]});
   s.post({rname: 'Bob', rpin: '', reports: [rep('r3', {why: 'bogus'}), rep('r4', {why: 'photo', note: '=HYPERLINK("x")'})]});
   const R = s.sheets.Reports;
@@ -205,7 +205,7 @@ test('users: admin token only; one row per player with their numbers', () => {
   assert.strictEqual(s.post({users: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
   const r = s.post({users: 1, token: TOK});
   assert.strictEqual(r.ok, true);
-  assert.strictEqual(r.v, 22);
+  assert.strictEqual(r.v, 23);
   const ana = r.users.find(u => u.name === 'Ana');
   // v13: the anonymous id of ?answers=1, so the admin can put names on the anonymous stats.
   const a = s.post({readAnswers: 1, token: TOK});
@@ -239,7 +239,7 @@ test('userMerge: progress written to into, answers and reports relabelled, from 
     [['Ana B', 'Ana']]
   );
   // The old device of "Ana B": a pull and a send both get 'gone', and its new answers go to Ana.
-  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 22});
+  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 23});
   const w = s.post({name: 'Ana B', pin: '5678', data: prog(9), summary: {}, answers: [ans('b2')]});
   assert.strictEqual(w.error, 'gone');
   assert.strictEqual(w.log, true);
@@ -361,7 +361,7 @@ test('autoUpdate: an interrupted update (code in place, deploy failed) is finish
 // Anonymous answers (v12).
 test('anonymous answers are logged under ~anon <id>, then move to the name at sign-in', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: 22});
+  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: 23});
   assert.strictEqual(s.post({anon: 'Bad Id!', anonAnswers: [ans('z3')]}).error, 'input');
   assert.deepStrictEqual(
     s.sheets.Answers.rows.slice(1).map(r => r[0]),
@@ -459,7 +459,7 @@ test('v19 events: anonymous error reports and one-tap answers, logged once, capp
       ev('e4', {k: 'nope', msg: 'unknown kind'})
     ]
   });
-  assert.deepStrictEqual(r, {ok: true, ev: true, v: 22});
+  assert.deepStrictEqual(r, {ok: true, ev: true, v: 23});
   s.post({dev: 'dev0000001', events: [ev('e1', {k: 'err', msg: 'again'})]});
   const E = s.sheets.Events;
   assert.strictEqual(E.getLastRow(), 4, 'three events, an unknown kind and a resent id are not logged');
@@ -577,7 +577,7 @@ test('board: signed-in players by progress then level; opted-out players and the
   s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {pct: 41.6}, answers: [ans('c2')]});
   const b = s.get({board: '1'});
   assert.strictEqual(b.ok, true);
-  assert.strictEqual(b.v, 22);
+  assert.strictEqual(b.v, 23);
   assert.deepStrictEqual(b.rows.map(r => r[0]).sort(), ['Ana', 'Ben'], 'Ana B opted out');
   assert.ok(
     b.rows.every(r => r.length === 3 && r[1] === 42 && r[2] === null),
@@ -604,7 +604,7 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
   assert.ok(ben());
   assert.strictEqual(s.post({userBoard: 'Ben', hide: true}).error, 'token', 'admin only');
   assert.strictEqual(s.post({userBoard: 'Nobody', hide: true, token: TOK}).error, 'user');
-  assert.deepStrictEqual(s.post({userBoard: 'ben', hide: true, token: TOK}), {ok: true, board: -1, v: 22});
+  assert.deepStrictEqual(s.post({userBoard: 'ben', hide: true, token: TOK}), {ok: true, board: -1, v: 23});
   assert.ok(!ben(), 'hidden at once (cache cleared)');
   assert.ok(
     s.get({board: '1'}).rows.some(r => r[0] === 'Ana'),
@@ -615,7 +615,7 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
   Object.keys(s.cache).forEach(k => delete s.cache[k]);
   assert.ok(!ben(), 'still hidden after his own sync');
   assert.strictEqual(s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ben').board, -1, 'the admin list says so');
-  assert.deepStrictEqual(s.post({userBoard: 'Ben', hide: false, token: TOK}), {ok: true, board: 1, v: 22});
+  assert.deepStrictEqual(s.post({userBoard: 'Ben', hide: false, token: TOK}), {ok: true, board: 1, v: 23});
   assert.ok(ben(), 'shown again');
 });
 
@@ -695,7 +695,7 @@ test('achs: how many signed-in players hold each achievement; counts only', () =
   s.post({name: 'Ben', pin: '1111', data: data({met10: 3}), summary: {}, answers: []});
   s.post({name: 'Cy', pin: '2222', data: prog(1), summary: {}, answers: []});
   const a = s.get({achs: '1'});
-  assert.strictEqual(a.v, 22);
+  assert.strictEqual(a.v, 23);
   assert.strictEqual(a.n, 2, 'players with a record');
   assert.deepStrictEqual(a.counts, {met10: 2, run10: 1}, 'no _ fields');
   assert.ok(!JSON.stringify(a).match(/Ana|Ben/), 'no names');
@@ -726,4 +726,168 @@ test('board (v16): the % is computed from the saved progress with the app formul
   s.post({name: 'Ben', pin: '1111', data: {'imr-coral-progress': JSON.stringify(Q)}, summary: {genera}, answers: [ans('q1')]});
   Object.keys(s.cache).forEach(k => delete s.cache[k]);
   assert.strictEqual(s.get({board: '1'}).rows.find(r => r[0] === 'Ben')[1], pctOf(Q, Object.keys(genera)));
+});
+
+// model.js's opening hold (INTRO, holdNext, holdStep, holdSync) run in Node on a stub store: the app's own code.
+function modelHold(saved = {}) {
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'model.js'), 'utf8'),
+    intro = /const INTRO = \{[\s\S]*?\n\};\n/.exec(src)[0],
+    hold = src.slice(src.indexOf("const HOLDK = 'imr-hold';"), src.indexOf('const introSince'));
+  const ctx = {store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)}};
+  require('vm').createContext(ctx);
+  require('vm').runInContext(intro + hold + '\nthis.step = holdStep; this.sync = holdSync; this.now = () => HOLDS;', ctx);
+  return ctx;
+}
+
+test('v23 hold: the sheet replays the opening hold of model.js over the answers in time order, gentle restart left out', () => {
+  const s = loadCodeGs(),
+    m = modelHold();
+  // A run of misses, a recovery, warm answers (|w, never counted), an older row without expected success, an answer
+  // logged later than its neighbours, all sent out of order in two batches.
+  const R = [1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1];
+  const L = R.map((ok, i) => {
+    const warm = i >= 12 && i < 16;
+    return ans('h' + i, {
+      t: new Date(Date.UTC(2026, 10, 1, 8, 0, i === 7 ? 40 : i)).toISOString(),
+      ok,
+      a: ok ? 'Acropora' : 'Porites',
+      m: warm ? 'quiz|w' + (i % 2 ? '|k2' : '') : i % 5 === 4 ? 'quiz|k2' : 'quiz',
+      ...(i === 3 ? {} : {e: Math.round((0.55 + ((i * 37) % 41) / 100) * 100) / 100})
+    });
+  });
+  const byTime = L.slice().sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
+  byTime.forEach(a => !/\|w/.test(a.m) && m.step(a.e, a.ok));
+  const want = m.now();
+  assert.ok(want >= 1.5, 'the sequence ends on a hold, so the test means something: ' + want);
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: L.slice(15)});
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: L.slice(0, 15)});
+  assert.strictEqual(s.get({name: 'Ana', pin: '1234'}).hold, want);
+  // Cached until the player's next answers; their next answer changes it.
+  assert.ok('hold:ana' in s.cache);
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: prog(1),
+    summary: {},
+    answers: [ans('h99', {t: '2026-11-01T09:00:00Z', ok: 0, a: 'Porites', e: 0.9})]
+  });
+  m.step(0.9, 0);
+  assert.strictEqual(s.get({name: 'ana', pin: '1234'}).hold, m.now());
+  // Another player's answers never count: a player without answers has no hold.
+  s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {}, answers: []});
+  assert.strictEqual(s.get({name: 'Ben', pin: '1111'}).hold, 0);
+  // Only the answers since the last progress reset count (imr-coral-reset: the app's reset starts the hold over).
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: {...prog(0), 'imr-coral-reset': JSON.stringify('2026-11-01T08:00:20Z')},
+    summary: {},
+    answers: []
+  });
+  const m2 = modelHold();
+  byTime.filter(a => a.t > '2026-11-01T08:00:20Z' && !/\|w/.test(a.m)).forEach(a => m2.step(a.e, a.ok));
+  m2.step(0.9, 0);
+  assert.strictEqual(s.get({name: 'Ana', pin: '1234'}).hold, m2.now());
+});
+
+test('v23 hold: the app adds its unconfirmed answers and never lowers its own hold (model.js holdSync)', () => {
+  const all = [0.8, 0.9, 0.7, 0.85, 0.6, 0.9].map((e, i) => ({
+      id: 'u' + i,
+      t: `2026-11-01T08:00:0${i}Z`,
+      e,
+      ok: i % 3 === 2 ? 1 : 0,
+      m: 'quiz'
+    })),
+    one = modelHold();
+  all.forEach(a => one.step(a.e, a.ok));
+  // The sheet has the first four; the last two wait in the device's log: the result is the sum over all six.
+  const s = loadCodeGs();
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: all.slice(0, 4).map(a => ans(a.id, a))});
+  const h = s.get({name: 'Ana', pin: '1234'}).hold,
+    saved = {'imr-hold': 0},
+    dev = modelHold(saved);
+  dev.sync(h, all.slice(4));
+  assert.strictEqual(dev.now(), one.now());
+  assert.strictEqual(saved['imr-hold'], one.now(), 'saved on the device');
+  // A device whose own hold is higher keeps it (never lifted by the sync); a warm answer, or one from before the reset,
+  // in the log is not added; an older sheet (no hold) changes nothing.
+  const hi = modelHold({'imr-hold': 9});
+  hi.sync(0, []);
+  assert.strictEqual(hi.now(), 9);
+  const w = modelHold({'imr-coral-reset': '2026-11-01T08:00:04Z'});
+  w.sync(1, [
+    {t: '2026-11-01T08:00:03Z', e: 0.9, ok: 0, m: 'quiz'},
+    {t: '2026-11-01T08:00:05Z', e: 0.9, ok: 0, m: 'quiz|w|k2'},
+    {t: '2026-11-01T08:00:06Z', e: 0.9, ok: 0, m: 'quiz'}
+  ]);
+  assert.strictEqual(w.now(), 1.8);
+  const old = modelHold({'imr-hold': 0.5});
+  old.sync(undefined, all);
+  assert.strictEqual(old.now(), 0.5);
+});
+
+test('v23 hold: answers moved to the name (sign-in) count at once', () => {
+  const s = loadCodeGs();
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: []});
+  assert.strictEqual(s.get({name: 'Ana', pin: '1234'}).hold, 0);
+  s.post({anon: 'abc123xyz0', anonAnswers: [1, 2, 3].map(i => ans('m' + i, {t: `2026-11-01T08:00:0${i}Z`, ok: 0, a: 'Porites', e: 0.8}))});
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [], anon: 'abc123xyz0'});
+  assert.strictEqual(s.get({name: 'Ana', pin: '1234'}).hold, 2.1);
+});
+
+test('v23 Answers: Seconds and Enlarged at the end, sanitised; the columns before them never move', () => {
+  const s = loadCodeGs(),
+    T = 'ghp_write000000000000000000';
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: prog(1),
+    summary: {},
+    answers: [
+      ans('t1', {rt: 7.34, zm: 1, e: 0.8, ch: 'Acropora Porites'}),
+      ans('t2', {rt: 9999, zm: 0}),
+      ans('t3', {rt: -3, zm: 'x'}),
+      ans('t4', {rt: '12', zm: true}),
+      ans('t5')
+    ]
+  });
+  const A = s.sheets.Answers;
+  assert.deepStrictEqual([...A.rows[0].slice(11)], ['Choices', 'Seconds', 'Enlarged']);
+  assert.deepStrictEqual(
+    A.rows.slice(1).map(r => [r[7], r[8], r[11], r[12], r[13]]),
+    [
+      ['t1', 0.8, 'Acropora Porites', 7.3, 1],
+      ['t2', '', '', 600, 0],
+      ['t3', '', '', 0, ''],
+      ['t4', '', '', '', 1],
+      ['t5', '', '', '', '']
+    ]
+  );
+  // readAnswers: the anonymous flag stays at index 11, seconds and enlarged follow (null when not logged).
+  assert.deepStrictEqual(
+    s.post({readAnswers: 1, token: T}).rows.map(x => x.slice(10)),
+    [
+      ['Acropora Porites', 0, 7.3, 1],
+      ['', 0, 600, 0],
+      ['', 0, 0, null],
+      ['', 0, null, 1],
+      ['', 0, null, null]
+    ]
+  );
+  // A tab made before v23 gets the two headers; its old rows read as not logged.
+  const s2 = loadCodeGs();
+  s2.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('o1')]});
+  s2.sheets.Answers.rows.forEach(x => (x.length = 12));
+  s2.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('o2', {rt: 3, zm: 0})]});
+  assert.deepStrictEqual([...s2.sheets.Answers.rows[0].slice(12)], ['Seconds', 'Enlarged']);
+  assert.deepStrictEqual(
+    s2.post({readAnswers: 1, token: T}).rows.map(x => x.slice(12)),
+    [
+      [null, null],
+      [3, 0]
+    ]
+  );
+  // The players list and the photo stats read as before.
+  assert.strictEqual(s.post({users: 1, token: T}).users[0].answers, 5);
+  assert.strictEqual(s.get({stats: '1'}).ok, true);
 });
