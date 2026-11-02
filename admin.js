@@ -3932,12 +3932,14 @@ function renderUsers() {
           `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${u.id && u.id === MEID ? ' me' : ''}" data-uopen="${esc(u.name)}">${UCOLS.map(([k]) => `<td>${cell(k, u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
       ).join('')}</tbody></table></div></section>`) +
     (anon.length
-      ? `<details class="adm-uremoved"><summary>Not signed in (${anon.length})</summary><p class="note">Devices that played without signing in, and accounts deleted with their answers kept: no name, so nothing to manage. Their answers count in Activity; for photo difficulty and confusions only once the device signs in (sheet v17: signed-in players clearly above chance, first answer per photo).</p><table class="adm-tbl"><thead><tr><th>Id</th><th>Level</th><th>Answers</th><th>Right</th><th>Last</th></tr></thead><tbody>${anon
+      ? `<details class="adm-uremoved"><summary>Not signed in (${anon.length})</summary><p class="note">Devices that played without signing in, and accounts deleted with their answers kept: no name. Tick test runs or junk to delete their answers. Their answers count in Activity; for photo difficulty and confusions only once the device signs in (sheet v17: signed-in players clearly above chance, first answer per photo).</p><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th>Level</th><th>Answers</th><th>Right</th><th>Last</th></tr></thead><tbody>${anon
           .map(
             ([id, a]) =>
-              `<tr><td><code>${esc(id)}</code></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td><td>${days(a.last)}</td></tr>`
+              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><code>${esc(id)}</code></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td><td>${days(a.last)}</td></tr>`
           )
-          .join('')}</tbody></table></details>`
+          .join(
+            ''
+          )}</tbody></table><p><button type="button" class="adm-danger" data-adel disabled>Delete the answers of the selected ids</button> <small class="note">Test runs and junk (sheet v17). Permanent.</small></p></details>`
       : '') +
     (USERS.removed.length
       ? `<details class="adm-uremoved"><summary>Removed (${USERS.removed.length})</summary><table class="adm-tbl">${USERS.removed.map(r => `<tr><td>${esc(r.name)}</td><td>${r.into ? `merged into <b>${esc(r.into)}</b>` : 'deleted'}</td><td>${date(r.time)}</td></tr>`).join('')}</table></details>`
@@ -4006,6 +4008,31 @@ function bindUsers() {
           .catch(() => done('', null));
       })
   );
+  // Answers without a name (test runs, junk): select ids, then delete all their answers (sheet v17 anonDelete).
+  const aBoxes = [...$v.querySelectorAll('[data-aid]')],
+    aBtn = $v.querySelector('[data-adel]'),
+    aSync = () => aBtn && (aBtn.disabled = !aBoxes.some(x => x.checked));
+  aBoxes.forEach(x => (x.onchange = aSync));
+  const aAll = $v.querySelector('[data-aall]');
+  if (aAll)
+    aAll.onchange = () => {
+      aBoxes.forEach(x => (x.checked = aAll.checked));
+      aSync();
+    };
+  if (aBtn)
+    aBtn.onclick = () => {
+      const ids = aBoxes.filter(x => x.checked).map(x => x.dataset.aid);
+      if (
+        !ids.length ||
+        !confirm(
+          `Delete every answer of ${ids.length} anonymous id${ids.length > 1 ? 's' : ''}?\n\nFor test runs and junk. This cannot be undone.`
+        )
+      )
+        return;
+      userPost({anonDelete: ids})
+        .then(j => done(j && j.ok ? `${j.answers} answer${j.answers === 1 ? '' : 's'} deleted.` : '', j))
+        .catch(() => done('', null));
+    };
   $v.querySelectorAll('[data-udel]').forEach(
     b =>
       (b.onclick = () => {

@@ -40,8 +40,9 @@ photo and account.
 ## If it happens
 
 1. Look at the **Alerts** tab and admin **Players** (Activity, Users): a burst of `~anon` ids or new names.
-2. Delete the junk: admin Players > Users > Delete (with its answers) for fake names; for `~anon` rows, delete them in
-   the Answers tab of the Sheet (filter on the name column). Photo ratings and confusions are recomputed from the
+2. Delete the junk: admin Players > Users > Delete (with its answers) for fake names; for answers without a name, tick
+   their ids under Players > Not signed in, then "Delete the answers of the selected ids" (sheet v17 `anonDelete`, admin
+   token, never a named player's answers). Photo ratings and confusions are recomputed from the
    Answers tab every time, so they recover on their own.
 3. Tighten a cap in `over_` calls (`tools/sync/Code.gs`, bump `VERSION`: it deploys itself) or, in an emergency, stop
    anonymous answers by having `anon_` return `busy`.

@@ -100,6 +100,9 @@ function loadCodeGs(opts = {}) {
         get: k => cache[k] ?? null,
         put: (k, v) => {
           cache[k] = v;
+        },
+        remove: k => {
+          delete cache[k];
         }
       })
     },

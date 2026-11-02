@@ -391,6 +391,29 @@ test('v17: anonymous answers rate no photo until the device signs in; then they 
   assert.ok(p && p[1] === 1 && p[0] < 0, 'once signed in, the answers rate the photos: ' + JSON.stringify(p));
 });
 
+test("v17 anonDelete: admin only, removes the answers of chosen anonymous ids, never a named player's", () => {
+  const s = loadCodeGs(),
+    T = {token: 'ghp_write000000000000000000'};
+  s.post({anon: 'testrun001', anonAnswers: [ans('t1'), ans('t2')]});
+  s.post({anon: 'realdev001', anonAnswers: [ans('r1')]});
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('n1')]});
+  const rows = s.post({readAnswers: 1, ...T}).rows,
+    test = rows[0][0], // the first rows logged are the test run's
+    named = rows.find(r => !r[11])[0];
+  assert.deepStrictEqual(
+    rows.map(r => r[11]),
+    [1, 1, 1, 0]
+  );
+  assert.strictEqual(s.post({anonDelete: [test], token: 'nope'}).error, 'token');
+  const r = s.post({anonDelete: [named, test], ...T});
+  assert.deepStrictEqual([r.ok, r.answers], [true, 2]);
+  assert.deepStrictEqual(
+    s.sheets.Answers.rows.slice(1).map(x => x[0]),
+    ['~anon realdev001', 'Ana'],
+    "only the chosen anonymous id; a named player's answers are never deleted"
+  );
+});
+
 test('floods are capped: per anonymous id, and the first refusal goes to the Alerts tab', () => {
   const s = loadCodeGs(),
     many = n => Array.from({length: n}, (_, i) => ans('f' + Math.random().toString(36).slice(2, 8) + i));
