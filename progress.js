@@ -498,15 +498,18 @@ function achCheck(silent) {
 // Families: the icons of one kind of milestone (genus progress, learned, Elo).
 const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '👑': '🎓', '🌟': '⭐'},
   achFam = a => ACH_FAM[a.icon] || a.icon;
-// Achievements earned quietly and not seen yet: a dot on 🏆 in the header and on 🏅 in the player's card. Kept on this
+// Achievements earned quietly and not seen yet: a dot on 🏆 in the header, on the Achievements tab and on 🏅 in the
+// player's card. Kept on this
 // device only (its own key, outside the synced record: a sign-in or another device's sync never brings or drops them;
 // Codex review #360); sign-out clears it with the progress.
 const ACHNEW = 'imr-ach-new',
   achUnseen = () => store.get(ACHNEW, []) || [],
   achNew = () => achUnseen().length;
 function achDot() {
-  const bg = document.getElementById('boardgo');
+  const bg = document.getElementById('boardgo'),
+    tab = document.querySelector('.btabs a[href="#ach"]'); // the Achievements tab of the leaderboard page (boardTabs)
   if (bg) bg.classList.toggle('hasnew', achNew() > 0);
+  if (tab) tab.classList.toggle('hasnew', achNew() > 0);
 }
 // After each answer: the run of right answers and the one-off feats, then the check.
 function achAfter(good, ph) {
@@ -593,7 +596,12 @@ const boardTabs = cur =>
     ['board', '🏆 Leaderboard'],
     ['ach', `🏅 Achievements`]
   ]
-    .map(([h, t]) => `<a href="#${h}"${h === cur ? ' aria-current="page"' : ''}>${t}</a>`)
+    // Achievements not seen yet: the dot on 🏆 leads to the Leaderboard tab, so the Achievements tab carries it too
+    // (Pierre, 2026-11-02: on the leaderboard, nothing said where the new ones were).
+    .map(
+      ([h, t]) =>
+        `<a href="#${h}"${h === cur ? ' aria-current="page"' : ''}${h === 'ach' && cur !== 'ach' && achNew() ? ' class="hasnew"' : ''}>${t}</a>`
+    )
     .join('')}</nav>`;
 // How many signed-in players hold each achievement (sheet v15, GET ?achs=1: {n, counts}), 5 minutes in memory.
 let achsAt = 0,

@@ -2144,23 +2144,6 @@ kbd {
     transform: scale(1);
   }
 }
-/* A genus met inside the quiz (quiz.js meetShow): its name a step bigger, with a "New" tag before it. */
-.qmeet .fb h3 {
-  font-size: var(--fs-l);
-}
-.newtag {
-  display: inline-block;
-  margin-right: 4px;
-  padding: 2px 8px;
-  border-radius: var(--pill);
-  background: var(--accent);
-  color: var(--accent-ink);
-  font: 700 var(--fs-xs) / 1.3 var(--body);
-  font-style: normal;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  vertical-align: 2px;
-}
 .ans button[disabled] {
   cursor: default;
 }
@@ -5563,6 +5546,17 @@ footer .rep:hover {
 .pbtxt a.hasnew::after {
   top: -2px;
   right: -8px;
+}
+/* The Achievements tab of the leaderboard page: the same dot after its label. */
+.btabs a.hasnew::after {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--bad);
+  vertical-align: 2px;
 }
 .achc.new b::after {
   content: 'New';

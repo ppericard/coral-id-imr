@@ -4,8 +4,8 @@
 // - never a several-corals or Coral Finder book photo in a game (rule 10); bonus genera: Research Grade or Pierre's only (14a);
 // - answer choices: 3 distinct genera of the list, never the target; exactly the asked number of traps (look-alikes /
 //   confused genera) when enough exist, none at the very start (14c);
-// - first meetings: genera met on cards (the first ones) or in the quiz's genus turn (meetShow) before being asked,
-//   never right after it (INTRO), none while the player falls behind (introHold); the turn is not an answer;
+// - first meetings: genera met on cards before being asked, never right after their card (INTRO), none while the
+//   player falls behind (introHold);
 // - out-of-game prompts at least PROMPT.GAP answers apart (promptOk).
 // Like pages.smoke.js it needs Playwright (CI installs it in a temporary folder; no package.json). Locally:
 // node tests/draw.smoke.js
@@ -196,51 +196,18 @@ const server = http.createServer((req, res) => {
       NEXTQ = null;
       const q0 = question;
       let tg, shownF;
-      let qn = 0; // questions shown (a turn shows none; the same genus can come twice in a row)
-      question = (...a) => (qn++, (tg = a[1]), (shownF = a[4].shown.map(p => p.f)), q0(...a));
+      question = (...a) => ((tg = a[1]), (shownF = a[4].shown.map(p => p.f)), q0(...a));
       const at = {},
-        cardsAt = [],
-        logN = () => (SYNC ? (SYNC.log || []).length : store.get(LOG0, []).length);
-      let offers = 0,
-        meets = 0;
+        cardsAt = [];
+      let offers = 0;
       for (let i = 0; i < 120; i++) {
         const a = answersSoFar(),
           before = new Set(Object.keys(INTROS));
         NEXTQ = null;
         document.querySelectorAll('.unlock').forEach(x => x.remove()); // closed by the player before Next
-        const qn0 = qn;
         quizPhoto();
-        // After the first cards, a genus opened by the path is met inside the quiz, never on a blocking card
-        // ("fewer, better pop-ups", 2026-11-02).
-        if (i && document.querySelector('.unlock.intro .ulall, .unlock.intro h3 i')) fails.push(`question ${i}: a blocking genus card`);
         // The player reads the cards through (each genus is met when its card shows).
         for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
-        // The genus's turn in the quiz: not a question (no answer logged, no ability), the genus met as a card is
-        // (kind 'c', time shown), nothing planned past it while it shows; Continue shows a question about another genus,
-        // never with the turn's photo.
-        const meet = document.querySelector('#view .qmeet');
-        if (meet) {
-          meets++;
-          const n = meet.querySelector('h3 a i').textContent,
-            e = INTROS[n] || [],
-            lg = logN();
-          if (i === 0 || qn !== qn0 || answersSoFar() !== a || asked(n) || e[0] !== a || e[1] || !e[2] || e[3] !== 'c')
-            fails.push(`question ${i}: genus turn for ${n}: ${JSON.stringify({e, a: answersSoFar(), asked: asked(n)})}`);
-          if (
-            !meet.querySelector('.newtag') ||
-            !meet.querySelector(`a[href="#g-${CSS.escape(n)}"]`) ||
-            !meet.querySelector('.tipbox li, .tipbox .keyid')
-          )
-            fails.push(`genus turn for ${n}: no New tag, sheet link or ID tips`);
-          if (document.querySelector('.unlock') || meet.querySelector('[data-c]'))
-            fails.push(`genus turn for ${n}: a card or choices with it`);
-          planNext('quiz');
-          if (NEXTQ) fails.push('a question planned during a genus turn');
-          meet.querySelector('#next').click();
-          if (document.querySelector('.qmeet') || qn !== qn0 + 1 || tg === n || logN() !== lg || answersSoFar() !== a)
-            fails.push(`question ${i}: after the turn for ${n}, asked ${tg}`);
-          if (shownF.includes((cover(GX(n)) || {}).f)) fails.push(`question ${i}: the photo of ${n}'s turn again`);
-        }
         const now = Object.keys(INTROS).filter(n => !before.has(n));
         if (now.length) cardsAt.push([a, now.length]);
         now.forEach(n => (at[n] = [a, INTROS[n][1]]));
@@ -279,7 +246,6 @@ const server = http.createServer((req, res) => {
         if (i && k !== 1) fails.push(`${k} cards at once after the first ones`);
       });
       if (cardsAt.length < 3) fails.push(`only ${cardsAt.length} card showing(s) in 120 questions`);
-      if (meets < 2) fails.push(`only ${meets} genus turn(s) in the quiz in 120 questions`);
       // Mostly right (an RA after the lecture): the offer comes between OFFER.AT and OFFER.UNTIL answers, and Open all
       // genera opens every genus left.
       P = {};
@@ -295,7 +261,6 @@ const server = http.createServer((req, res) => {
         achBusy = false;
         quizPhoto();
         for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
-        document.querySelector('.qmeet #next')?.click();
         const o = document.querySelector('.unlock.intro [data-open]');
         if (o) {
           shownAt = answersSoFar();
@@ -344,7 +309,6 @@ const server = http.createServer((req, res) => {
           document.querySelectorAll('.unlock').forEach(x => x.remove());
           quizPhoto();
           document.querySelectorAll('.unlock').forEach(x => x.remove());
-          document.querySelector('.qmeet #next')?.click();
           const q = window.__dq;
           // Two 2-choice questions (a duel slipped in, an Again) never closer than AUTO_DUEL.GAP, Agains after a
           // normal question's mix-up excepted (they follow it by design).
@@ -449,7 +413,7 @@ const server = http.createServer((req, res) => {
       for (let i = 0; i < 30; i++) {
         NEXTQ = null;
         quizPhoto();
-        if (document.querySelector('.unlock.intro, .qmeet')) fails.push('a card after opening all genera');
+        if (document.querySelector('.unlock.intro')) fails.push('a card after opening all genera');
         document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
         document.querySelector(`[data-c="${CSS.escape(tg)}"]`).click();
       }
@@ -477,7 +441,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, first meetings, genus turns, prompt spacing.`
+    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, first meetings, prompt spacing.`
   );
 })().catch(e => {
   console.error(e);
