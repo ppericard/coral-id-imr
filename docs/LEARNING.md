@@ -118,11 +118,11 @@ Photo difficulty feeds every player's game (which photos, how hard), and confusi
 real learners, not bots, random clicks or test runs (17 anonymous "players" turned out to be `tools/perf.js` runs).
 
 - **Who counts** (`trusted_`, `TRUST`): players, signed in or not (v18; v17 left out devices that never signed in),
-  with at least 10 answers and a right rate clearly above chance (one-sided z ≥
+  with at least 5 answers (10 in v17) and a right rate clearly above chance (one-sided z ≥
   1.645 against each question's guess rate), judged on the whole history at each recompute: a beginner who gets out of
   chance then counts with all their answers. Every answer still moves the player's own level.
 - **How much an answer weighs** (`PHOTO_W.N`; the sheet also returns the plain count of the answers, v18, which the
-  admin's filters use): n / (n + 30) after n answers of the player (Glicko's idea: an uncertain
+  admin's filters use): n / (n + 10) after n answers of the player (n + 30 in v17) (Glicko's idea: an uncertain
   player moves the items little). A beginner's random first answers weigh little, their informed later ones more.
 - **Repeats** (`PHOTO_W.NEW`, `KNOWN`): every answer counts, against the player's own history with the photo, as in
   Duolingo's half-life regression and PFA: a photo new to the player is expected 0.5 harder, one already right twice 1
@@ -197,9 +197,13 @@ simulation); recalibrate `ELO` and `OPEN` once a few RA cohorts have played.
 - 2026-11-02, Pierre: genera should open a little more easily for the RAs: `OPEN.K` 3 → 5 (table above); to
   recalibrate with real answers.
 - 2026-11-02, Pierre: devices that never signed in count again for photo difficulty and confusions (sheet v18), under
-  the same rule as everyone (10 answers or more, clearly above chance, weighed by experience): the rule, not the
+  the same rule as everyone (clearly above chance, weighed by experience): the rule, not the
   sign-in, is what tells a real player from a bot or a test run. Signing in still saves the progress, for the trainer
   and on any device, and puts the player on the leaderboard.
+- 2026-11-02, Pierre: the photo ratings must move quickly, the first players being RAs and experts who all bring real
+  information (Pierre, Emmy, and an anonymous player who is probably IMR staff): `TRUST.N` 10 → 5 and `PHOTO_W.N` 30 →
+  10 (sheet v18). The 10th answer of a player now weighs 0.5, the 30th 0.75 (were 0.25 and 0.5). The above-chance
+  test stays: it is what keeps random clicks out. To revisit if beginners or bots arrive in numbers.
 
 ## References
 

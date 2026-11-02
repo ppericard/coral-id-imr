@@ -168,7 +168,7 @@
 
   // Who rates the photos and the confusions, as tools/sync/Code.gs trusted_ (v17; v18: devices that never signed in too,
   // under the same rule, Pierre 2026-11-02): players with TRUST.N answers or more and a right rate clearly above chance (one-sided z of at least TRUST.Z against each question's guess rate).
-  const TRUST = {N: 10, Z: 1.645};
+  const TRUST = {N: 5, Z: 1.645}; // v18: 5, was 10 (Pierre 2026-11-02: ratings must move quickly)
   const guessOf = mode => {
     const kq = /\|k(\d)$/.exec(mode);
     return kq ? 1 / Number(kq[1]) : mode.indexOf('quiz-duel') === 0 ? 0.5 : 0.25;
@@ -195,7 +195,7 @@
 
   // How much one answer moves the photos, as Code.gs PHOTO_W (v17): weight n / (n + N) after n answers of the player,
   // and repeats counted against the player's history with the photo (new: NEW harder; right twice before: KNOWN easier).
-  const PHOTO_W = {N: 30, NEW: 0.5, KNOWN: -1};
+  const PHOTO_W = {N: 10, NEW: 0.5, KNOWN: -1}; // v18: 10, was 30 (same reason)
   // Every player starts as a beginner (Code.gs PLAYER0): about 45% right on an average photo with 4 choices.
   const PLAYER0 = -1;
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as

@@ -384,9 +384,9 @@ test('v18: a device that never signed in rates the photos once its answers are c
   const s = loadCodeGs(),
     at = i => new Date(Date.UTC(2026, 10, 1, 0, 0, i)).toISOString(),
     L = Array.from({length: 12}, (_, i) => ans('w' + i, {ph: 'pic-' + i, t: at(i)}));
-  s.post({anon: 'device0001', anonAnswers: L.slice(0, 9)});
+  s.post({anon: 'device0001', anonAnswers: L.slice(0, 4)});
   assert.deepStrictEqual(s.get({stats: '1'}).photos['pic-0'], [0, 0, 0, 0], 'fewer than TRUST.N answers: no photo moved');
-  s.post({anon: 'device0001', anonAnswers: L.slice(9)});
+  s.post({anon: 'device0001', anonAnswers: L.slice(4)});
   for (const k of Object.keys(s.cache)) delete s.cache[k]; // stats are cached 10 minutes
   const p = s.get({stats: '1'}).photos['pic-11'];
   assert.ok(p && p[1] > 0 && p[0] < 0, 'without signing in, a real player rates the photos: ' + JSON.stringify(p));
@@ -401,17 +401,17 @@ test('v18: a device that never signed in rates the photos once its answers are c
 test('v17: one player whatever the capitalisation of the name (trust and history per photo)', () => {
   const s = loadCodeGs(),
     A = (i, ph) => ans('k' + i, {ph, t: new Date(Date.UTC(2026, 10, 1, 0, 0, i)).toISOString()});
-  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [0, 1, 2, 3, 4, 5].map(i => A(i, 'pic-' + i))});
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [0, 1, 2].map(i => A(i, 'pic-' + i))});
   s.post({
     name: 'ana',
     pin: '1234',
     data: prog(2),
     summary: {},
-    answers: [6, 7, 8, 9, 10, 11].map(i => A(i, i === 11 ? 'pic-0' : 'pic-' + i))
+    answers: [3, 4, 5].map(i => A(i, i === 5 ? 'pic-0' : 'pic-' + i))
   });
   const P = s.get({stats: '1'}).photos;
-  assert.ok(P['pic-10'][1] > 0, '12 right answers under Ana and ana make one trusted player');
-  assert.strictEqual(P['pic-0'][1], 0.3, 'one history per photo, whatever the spelling: weights 0 (answer 1) and 11/41 (answer 12)');
+  assert.ok(P['pic-4'][1] > 0, '6 right answers under Ana and ana make one trusted player (3 each would not)');
+  assert.strictEqual(P['pic-0'][1], 0.3, 'one history per photo, whatever the spelling: weights 0 (answer 1) and 5/15 (answer 6)');
 });
 
 test('v17: every player starts as a beginner (PLAYER0 = -1), not an average player', () => {

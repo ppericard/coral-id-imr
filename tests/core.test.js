@@ -256,11 +256,11 @@ test('photo ratings and confusions count only players clearly above chance, sign
   // A signed-in player at chance (random clicks) moves nothing either; too few answers neither.
   const rand = Array.from({length: 40}, (_, i) => R('Bot', 200 + i, i % 4 === 0 ? 1 : 0, 'y-' + (i % 5)));
   assert.strictEqual(trustOf(rand).Bot, false);
-  assert.strictEqual(trustOf(good.slice(0, 9)).Ana, false, 'fewer than TRUST.N answers');
+  assert.strictEqual(trustOf(good.slice(0, 4)).Ana, false, 'fewer than TRUST.N answers');
   // Repeats count (Duolingo HLR, PFA): every answer of a trusted player is counted.
   const again = [...good, R('Ana', 50, 0, 'z-1'), R('Ana', 51, 0, 'z-1'), R('Ana', 52, 0, 'z-1')];
-  // Weighed counts: three answers at n = 12, 13, 14 weigh 12/42 + 13/43 + 14/44 (photoDiff's confidence, damping).
-  assert.strictEqual(eloOf(again)['z-1'][1], 0.9);
+  // Weighed counts: three answers at n = 12, 13, 14 weigh 12/22 + 13/23 + 14/24 (photoDiff's confidence, damping).
+  assert.strictEqual(eloOf(again)['z-1'][1], 1.7);
 });
 
 test("v17: a beginner's answers move the photos more as their level settles; a remembered photo moves less", () => {
