@@ -93,6 +93,19 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
 - **Easy wrong choices come first from genera the player has met** (2026-11-02): a beginner is not asked to choose
   between names never seen.
 
+### First meeting with a genus (2026-11-02)
+
+Beginner RA review: the first quiz felt like an exam, asking genera the player had never seen. Before the first
+question on a genus never asked, a card shows it: name, cover photo, ID tips, and for a ★ genus the surveyed look-alike
+it is on the slate for (rule 6b). Got it opens the question, which is about that genus. Once per genus on the device
+(`imr-intro`, outside the synced progress), and only for a genus never asked (ok and ko both 0): a genus given as a
+wrong answer has a miss in its history but still gets its card the first time it is asked. Bonus genera have their own
+unlock card. The order of genera is unchanged (★ genera come early, with their look-alikes).
+
+My progress no longer shows "Review" (weak) for a genus with fewer than 5 answers (`REVIEW_MIN`, `shownLevel` in
+model.js): it shows "Learning" until there is enough evidence. The ring counts genera met ("6/39 met") until one is
+learned, then genera learned. The model itself (`level`, the draw) is unchanged.
+
 ### Which genus comes next: the progressive path (2026-11-02)
 
 Pierre: rather than spamming a beginner with 40 genera, focus on the easiest ones, opening new ones as they go,
@@ -228,6 +241,8 @@ simulation); recalibrate `ELO` and `OPEN` once a few RA cohorts have played.
   answers, which every real player passes quickly (lowered to 5 for a moment, when it read as answers per photo; there
   is no minimum per photo: one answer moves it, the app blending it with the photo's set as 5 answers' worth). To
   revisit if beginners or bots arrive in numbers.
+- 2026-11-02, Pierre (beginner RA review): first-encounter card, kinder first My progress, plain words, a bar under
+  "Loading…" (above and ARCHITECTURE); ★ genera stay in from the start, being there for comparison.
 - 2026-11-02, Pierre: OK to seed the photos nobody has answered into the games to calibrate them (`CAL`, above).
 - 2026-11-02, Pierre: relax the arbitrary thresholds so new photos come in quickly (he is validating many candidates)
   and their answers inform the dynamic algorithm: games take every kept photo (no cap of 4 Medium / 4 Hard), and a

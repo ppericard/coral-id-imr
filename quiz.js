@@ -598,7 +598,54 @@ const takePlan = cur => {
   return q;
 };
 function quizPhoto() {
-  question(...(takePlan('quiz') || planPhoto()));
+  const q = takePlan('quiz') || planPhoto();
+  question(...q);
+  introDue(q[1]) && introShow(q[1]);
+}
+// First meeting with a genus (beginner RA review, Pierre 2026-11-02: the first quiz felt like an exam, guessing genera
+// never seen): before its first question, a card shows the genus, its cover photo and its ID tips (and, for a ★ genus,
+// the surveyed look-alike it is on the slate for); Got it opens the question, which is then about that genus. Once per
+// genus on this device (INTRO, outside the synced progress). Not for bonus genera (their unlock card does it) nor
+// for a genus already asked (progress from before this card, or from another device). Asked, not met: a genus given
+// as a wrong answer gets a miss in its history (Pierre's rule) but its ok/ko stay at 0, and its card is still due.
+const INTRO = 'imr-intro';
+const introDue = n => !!n && DATA.gen[n] && !((P[n] || {}).ok || (P[n] || {}).ko) && !(store.get(INTRO, []) || []).includes(n);
+function introShow(n) {
+  store.set(INTRO, [...(store.get(INTRO, []) || []), n]);
+  document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
+  const g = GX(n),
+    p = cover(g),
+    star = typeof starNote === 'function' ? starNote(n) : '',
+    d = document.createElement('div');
+  d.className = 'unlock intro';
+  d.setAttribute('role', 'dialog');
+  d.setAttribute('aria-modal', 'true');
+  d.setAttribute('aria-label', `New genus: ${n}`);
+  d.innerHTML = `<div class="ulcard">${p ? `<div class="ulphoto"><img src="${img(p, 's')}" alt=""></div>` : ''}
+    <p class="ulkick">New genus</p><h3><i>${esc(n)}</i></h3>
+    ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
+    <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tipsList(g)}</div>
+    <div class="ulbtns"><span></span><button class="next" type="button">Got it</button></div></div>`;
+  document.body.appendChild(d);
+  const close = () => {
+    d.remove();
+    document.removeEventListener('keydown', key, true);
+  };
+  const key = e => {
+    if (e.key !== 'Escape' && e.key !== 'Enter') return;
+    e.stopPropagation();
+    e.preventDefault();
+    close();
+  };
+  document.addEventListener('keydown', key, true);
+  d.querySelector('button').onclick = close;
+  d.addEventListener('click', e => {
+    if (e.target === d) close();
+  });
+  setTimeout(() => {
+    const b = d.querySelector('button');
+    if (b) b.focus({preventScroll: true});
+  }, 50);
 }
 function planPhoto() {
   const list = pool();
@@ -617,8 +664,9 @@ function planPhoto() {
   return ['quiz', t, ch, 'Which genus?', ex || photoSet(t), traps < 2 ? plausibleK(t, ch) : 0];
 }
 function quizDuel(a, b) {
-  const q = !a && !b && takePlan('quiz-duel');
-  question(...(q || planDuel(a, b)));
+  const q = (!a && !b && takePlan('quiz-duel')) || planDuel(a, b);
+  question(...q);
+  introDue(q[1]) && introShow(q[1]);
 }
 function planDuel(a, b) {
   const list = pool();

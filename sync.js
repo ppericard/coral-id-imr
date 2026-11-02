@@ -656,7 +656,11 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       msg('Sending…');
       syncPush().then(j => {
         if (!(j && j.ok))
-          msg(j && j.error === 'pin' ? 'The sheet refused the code for this name.' : 'Could not reach the sheet. Check your connection.');
+          msg(
+            j && j.error === 'pin'
+              ? 'Wrong code for this name.'
+              : 'Could not connect. Check your connection: your progress stays on this phone meanwhile.'
+          );
       });
     };
     // Signing out also clears this device's progress (it is in the sheet): the next player starts empty, and progress
@@ -720,7 +724,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         signIn(name, pin, j);
         if (!j.found) syncPush().then(() => bindSync());
       })
-      .catch(() => msg('Could not reach the sheet. Check your connection.'));
+      .catch(() => msg('Could not connect. Check your connection: your progress stays on this phone meanwhile.'));
   };
 }
 // Ask the browser not to evict saved progress when storage runs low.

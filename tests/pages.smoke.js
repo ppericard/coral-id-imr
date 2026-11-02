@@ -54,6 +54,20 @@ const server = http.createServer((req, res) => {
   const base = `http://127.0.0.1:${server.address().port}/`,
     fails = [];
   const b = await chromium.launch();
+  // The first-encounter card (quiz.js introShow) would cover the quiz in the checks that are not about it: every genus
+  // starts as introduced, except in a context opened with {intro: true}.
+  const INTROS = JSON.stringify(Object.keys(require('../data.json').gen)),
+    ctxNew = b.newContext.bind(b);
+  b.newContext = async ({intro, ...o} = {}) => {
+    const c = await ctxNew(o);
+    if (!intro)
+      await c.addInitScript(s => {
+        try {
+          localStorage.getItem('imr-intro') || localStorage.setItem('imr-intro', s);
+        } catch (e) {}
+      }, INTROS);
+    return c;
+  };
   for (const w of [390, 1280]) {
     const ctx = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
     // Only this site: photos from iNaturalist and the Google sync are cut off, so the test never depends on them.
@@ -81,7 +95,7 @@ const server = http.createServer((req, res) => {
     // The one-tap question after 15 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
     // A fresh browser that has seen the tour (a tour opened earlier in this context resumes after a reload).
     if (w === 390) {
-      const c2 = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
+      const c2 = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block', intro: true});
       await c2.route(
         u => !u.href.startsWith(base),
         r => r.abort()
@@ -95,9 +109,21 @@ const server = http.createServer((req, res) => {
       q2.on('pageerror', e => e2.push(e.message));
       await q2.goto(base + '#quiz');
       await q2.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      // First question: the card of a genus never asked comes first, names the genus asked, and Got it closes it.
+      await q2.waitForSelector('.unlock.intro', {timeout: 5000}).catch(() => {});
+      const card = await q2.evaluate(() => {
+        const h = document.querySelector('.unlock.intro h3');
+        return {name: h && h.textContent, img: !!document.querySelector('.unlock.intro .ulphoto img')};
+      });
+      if (!card.name || !card.img) fails.push(`${w}px first-encounter card: ${JSON.stringify(card)}`);
+      else {
+        await q2.click('.unlock.intro button');
+        if (await q2.$('.unlock.intro')) fails.push(`${w}px first-encounter card: Got it did not close it`);
+      }
       let at = 0;
       for (let i = 1; i <= 20 && !at; i++) {
         await q2.waitForSelector('#view [data-c]');
+        await q2.evaluate(() => document.querySelectorAll('.unlock.intro').forEach(x => x.remove()));
         await q2.evaluate(() => document.querySelector('#view [data-c]').click());
         await q2.waitForSelector('#next');
         if (await q2.$('#after .pulse')) at = i;

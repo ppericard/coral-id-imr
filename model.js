@@ -396,7 +396,7 @@ function missing(n) {
     m = [],
     L = knownP(n);
   if (s.mx) return m;
-  if (L < BKT.MASTER) m.push(`more right answers, harder photos count more (${Math.round(100 * L)}% sure now)`);
+  if (L < BKT.MASTER) m.push(`more right answers, harder photos count more (about ${Math.round(100 * L)}% learned so far)`);
   else m.push(`the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the photo quiz, all right`);
   return m;
 }
@@ -422,6 +422,15 @@ function level(n) {
   if (s.mx) return ['ok', 'Learned'];
   return ['mid', 'Learning'];
 }
+// What a player is shown (My progress, the genus sheet): "Review" (red, with "!") only once the genus has REVIEW_MIN
+// answers, before that it is still being learned (beginner RA review, Pierre 2026-11-02: after a first session seven
+// red "Review" tiles read as a list of failures). The game itself still gives such a genus more questions (level).
+const REVIEW_MIN = 5;
+const shownLevel = n => {
+  const l = level(n),
+    s = P[n] || {};
+  return l[0] === 'weak' && (s.ok || 0) + (s.ko || 0) < REVIEW_MIN ? ['mid', 'Learning'] : l;
+};
 
 // Wrong choices get harder as the player gets better at the target genus (Pierre, 2026-11-01: "at the very start it must
 // be simple", then traps appear little by little). TRAP gives how many of the 3 wrong choices are look-alikes of the
