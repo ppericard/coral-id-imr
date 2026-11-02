@@ -7,7 +7,7 @@ const PH = 'imr-photos-v1',
 const SHELL = [
   './',
   'index.html',
-  'app.css?v=112',
+  'app.css?v=113',
   'core.js?v=16',
   'app.js?v=167',
   'sync.js?v=3',
