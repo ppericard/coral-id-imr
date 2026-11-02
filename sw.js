@@ -1,5 +1,5 @@
 // Offline cache: app shell first, then photos as they are viewed.
-const V = 'imr-coral-id-v252';
+const V = 'imr-coral-id-v253';
 // Photos live in their own cache that no deploy deletes (code review 2026-11-01, H3): bumping V used to wipe every
 // offline photo. Capped at PH_MAX entries, oldest first out (cache keys keep insertion order).
 const PH = 'imr-photos-v1',
@@ -9,11 +9,11 @@ const SHELL = [
   'index.html',
   'app.css?v=116',
   'core.js?v=18',
-  'app.js?v=170',
-  'sync.js?v=7',
+  'app.js?v=171',
+  'sync.js?v=8',
   'progress.js?v=7',
-  'model.js?v=6',
-  'quiz.js?v=8',
+  'model.js?v=7',
+  'quiz.js?v=9',
   'learn.js?v=2',
   'flag.js?v=9',
   'quality.json?v=3',
