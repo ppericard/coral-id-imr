@@ -142,6 +142,17 @@ time, each on its card, but never as the answer of the question right after its 
   new-player walkthrough, 2026-11-02, got the very same photo twice in a row; same for a duel that brings a card).
 - **When a genus opens** stays the progressive path's call (below): a draw that falls on a genus not met yet shows its
   card and asks about a genus already met. At least `INTRO.EVERY` (2) answers between two cards.
+- **Held while the player falls behind** (`introHold`, Pierre, 2026-11-02): no new card while, over the last 10
+  answers of the visit, the right answers fall `INTRO.HOLD` (1.5) or more below the success the game expected for them
+  (each answer's `e`). Why: an RA from the previous month's programme (the lecture, a few ID dives and analyses: good,
+  not an expert) at 86% right after 50 answers declined "open all" (Pierre: even trained RAs prefer to meet the genera
+  progressively; experts must still be able to open them fast), then met 9 genera in 21 answers
+  (one every 2, the `EVERY` floor) and fell to 5 right in 10, where about 8 were expected, and answered the one-tap
+  question "too hard". Pierre: space the new genera when the answers suddenly get worse, but let an expert keep opening
+  them. A fixed wider gap (`EVERY` 5) and holding on any miss of a genus just met were tried first: both slowed the
+  expert (26-28 genera after 200 questions down to 22-24). Simulated with the hold (6 seeds, 200 questions, genera
+  met): beginner 15 → 14, lecture-level RA 13 → 13, a strong RA (60% of genera known well) 24 → 21, expert 27 → 31
+  (practice while held leaves fewer shaky genera, so more open later). On that RA's real answers it holds from answer 73.
 - **Not right after**: a genus met on a card alone can be asked from `INTRO.GAP` (2) answers on (one question at least
   in between; the card says "It comes up in the questions a little later"). The first 4 can be asked at once.
 - **Choices among the genera met**: easy wrong choices and traps come from the genera met (a card or an answer); a

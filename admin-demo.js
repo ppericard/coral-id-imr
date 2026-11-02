@@ -238,6 +238,25 @@
       ['demoevc', NOW - 5 * 3600e3, 'demodev3', 'photo', pics[g1][0].f, '', 'quiz', '', '159', 'Samsung 27 mobile'],
       ['demoevd', NOW - 9 * 3600e3, 'demodev4', 'sync', 'save failed: Failed to fetch', '', 'quiz', '', '159', 'Chrome 140 mobile']
     );
+    // Load times (sheet v21): made-up visits, a slow phone line and a fast desktop one.
+    [
+      [86, 21.4, 30.2, 40.5, 512, 0, 1, 'light', 390, 'cache-mnl9725-MNL', 'Chrome 140 mobile'],
+      [2400, 1.8, 4.1, 4.9, 2300, 0, 0, 'dark', 1440, 'cache-sin1820-SIN', 'Firefox 144'],
+      [640, 0.6, 2.2, 2.6, 40, 1, 0, 'light', 412, 'cache-mnl9731-MNL', 'Samsung 27 mobile']
+    ].forEach(([bps, t0, qo, q1, kb, sw, sv, th, w, pop, ua], i) =>
+      events.push([
+        'demoevl' + i,
+        NOW - (i + 1) * 4 * 3600e3,
+        'demodev' + i,
+        'load',
+        pop,
+        '',
+        'quiz',
+        JSON.stringify({p0: 'home', t0, qo, q1, nx: 'quiz', bps, kb, sw, sv, th, w, st: sw}),
+        '170',
+        ua
+      ])
+    );
     events.sort((a, b) => b[1] - a[1]);
     S = {rows, users, reports, events, removed: [], list};
     return S;

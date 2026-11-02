@@ -4,7 +4,8 @@
 // - never a several-corals or Coral Finder book photo in a game (rule 10); bonus genera: Research Grade or Pierre's only (14a);
 // - answer choices: 3 distinct genera of the list, never the target; exactly the asked number of traps (look-alikes /
 //   confused genera) when enough exist, none at the very start (14c);
-// - first meetings: genera met on cards before being asked, never right after their card (INTRO).
+// - first meetings: genera met on cards before being asked, never right after their card (INTRO), none while the
+//   player falls behind (introHold).
 // Like pages.smoke.js it needs Playwright (CI installs it in a temporary folder; no package.json). Locally:
 // node tests/draw.smoke.js
 const http = require('http'),
@@ -51,6 +52,10 @@ const server = http.createServer((req, res) => {
     try {
       localStorage.setItem('imr-tour', '"done"');
     } catch (e) {}
+    // Same draws every run (as profiles.smoke.js): unseeded, the mastery-exam check failed once on CI (PR #362: the 5th
+    // exam question of a 97% genus, drawn rarely, did not come within the 400 answers; not reproduced in 48 local runs).
+    let s = 4242;
+    Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
   });
   const p = await ctx.newPage(),
     errs = [];
@@ -390,6 +395,17 @@ const server = http.createServer((req, res) => {
       }
       question = q0;
       INTROS = {};
+    }
+    // Opening held while the player does clearly worse than expected (introHold, Pierre 2026-11-02): 6 right of 10
+    // where 8 were expected holds; 7 of 10 does not.
+    {
+      const s0 = {h: session.h, e: session.e};
+      session.e = Array(10).fill(0.8);
+      session.h = Array.from({length: 10}, (_, i) => i < 6);
+      if (!introHold()) fails.push('no hold at 6 right of 10 where 8 were expected');
+      session.h = Array.from({length: 10}, (_, i) => i < 7);
+      if (introHold()) fails.push('held at 7 right of 10 where 8 were expected');
+      Object.assign(session, s0);
     }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });

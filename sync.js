@@ -537,10 +537,32 @@ window.addEventListener('unhandledrejection', e => {
   if (navigator.onLine === false || (r && r.name === 'TypeError' && /fetch|network|load failed/i.test(r.message || ''))) return;
   ev('err', {msg: ('Unhandled: ' + (r && (r.message || r)) || '').slice(0, 300), src: String((r && r.stack) || '').split('\n')[1] || ''});
 });
+// Load times (app.js loadMark): sent once a visit.
+function loadSend() {
+  if (loadSent || !('t0' in LOADM)) return;
+  loadSent = true;
+  const nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {},
+    bytes = (performance.getEntriesByType ? performance.getEntriesByType('resource') : []).reduce(
+      (t, e) => t + (e.transferSize || 0),
+      nav.transferSize || 0
+    );
+  ev('load', {
+    ...LOADM,
+    bps: Math.round(linkMeasure() / 1000),
+    kb: Math.round(bytes / 1024),
+    sw: SW0 ? 1 : 0,
+    sv: saver() ? 1 : 0,
+    th: isDark() ? 'dark' : 'light',
+    w: innerWidth,
+    // Installed on the home screen (opened as an app) or played in a browser tab (Pierre: a tab has to find the link again).
+    st: matchMedia('(display-mode: standalone)').matches || navigator.standalone === true ? 1 : 0
+  });
+}
 window.addEventListener('online', sendEvents);
 window.addEventListener('online', sendAnon);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
+    loadSend();
     sendAnon();
     sendEvents();
   }
