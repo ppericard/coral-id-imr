@@ -121,7 +121,9 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
             g: 'Acropora',
             a: i % 3 ? 'Acropora' : 'Porites',
             ok: i % 3 ? 1 : 0,
-            m: ['quiz-duel', 'quiz', 'quiz|k2', 'quiz|k3'][i % 4],
+            m: ['quiz-duel', 'quiz', 'quiz|k2', 'quiz|k3', 'quiz'][i % 5],
+            // Every 5th: a plain "quiz" with 2 choices ("Again: A or B?" logged before 2026-11-02), rated 1 in 2 (v20).
+            ch: i % 5 === 4 ? 'Acropora Porites' : 'Acropora Porites Favites Montipora',
             ph: ph.join(' ')
           }
         ]
@@ -226,6 +228,10 @@ test('a quiz question with easy wrong choices (quiz|k2) is rated with a 1/2 gues
   // Right on a 2-plausible-choice question proves less than on a 4-choice one: the photo looks less easy.
   assert.ok(E('quiz|k2', 1) > E('quiz', 1));
   assert.strictEqual(E('quiz|k2', 1), E('quiz-duel', 1));
+  // v20: a plain "quiz" with 2 genera in its choices ("Again: A or B?" before 2026-11-02) is a 2-choice question too.
+  const E2 = ch => eloOf([...past, ['Ana', 1, 'Acropora', 'Acropora', 1, 'quiz', 'acropora-1', null, null, null, ch]])['acropora-1'][0];
+  assert.strictEqual(E2('Acropora Porites'), E('quiz|k2', 1));
+  assert.strictEqual(E2('Acropora Porites Favites Montipora'), E('quiz', 1));
 });
 
 test('photo ratings and confusions count only players clearly above chance, signed in or not (v18)', () => {

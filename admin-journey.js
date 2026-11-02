@@ -12,6 +12,40 @@ const JOURNEY = {
   DAYS: 60 // at most this many days in the per-day chart (the last ones)
 };
 let JSORT = 'met';
+// First-meeting cards and Open all genera, from the player's saved progress (sheet userData, admin token): the app keeps
+// them as imr-coral-intro {genus: [answers so far, 1 for the first cards or Open all, time shown]} and
+// imr-coral-intro-offer {at, open, via, t} (model.js INTRO; times and via from 2026-11-02). name -> null while loading.
+const JDATA = {};
+function journeyCards(name) {
+  // Kept, a failed read too (shown with its error), until Players' ↻ or the journey's clears it: a read is never
+  // started again by itself (Codex review #352: an error re-read at once looped).
+  if (name in JDATA) return JDATA[name];
+  JDATA[name] = null;
+  userPost({userData: name})
+    .then(j => {
+      const d = (j && j.ok && j.data) || {},
+        P = k => {
+          try {
+            return JSON.parse(d[k] || 'null');
+          } catch (e) {
+            return null;
+          }
+        };
+      // Learned genera (mx: mastery exam passed; its time from 2026-11-02, 1 before).
+      const prog = P('imr-coral-progress') || {},
+        learned = Object.fromEntries(
+          Object.entries(prog)
+            .filter(([, s]) => s && s.mx)
+            .map(([g, s]) => [g, s.mx])
+        );
+      JDATA[name] =
+        j && j.ok ? {map: P('imr-coral-intro') || {}, offer: P('imr-coral-intro-offer'), learned} : {err: (j && j.error) || 'unreachable'};
+    })
+    .catch(() => (JDATA[name] = {err: 'unreachable'}))
+    .then(() => cur === '~journey/' + name && render());
+  return null;
+}
+const JVIA = {card: 'on the first cards', progress: 'from My progress', offer: 'from the offer card'};
 const jDate = t => new Date(t).toLocaleDateString([], {day: 'numeric', month: 'short'}),
   jTime = t => new Date(t).toLocaleString([], {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}),
   jPts = x => (x == null ? '–' : `${x > 0 ? '+' : ''}${Math.round(100 * x)} pts`);
@@ -96,6 +130,18 @@ function journeyChart(series, top, opt = {}) {
   const days = (opt.days || [])
     .map(([i, t]) => `<line x1="${x(i)}" x2="${x(i)}" y1="${pt}" y2="${H - pb}" class="d"><title>${esc(t)}</title></line>`)
     .join('');
+  const marks = (opt.marks || [])
+    .map(
+      ([i, t]) =>
+        `<line x1="${x(i)}" x2="${x(i)}" y1="${pt}" y2="${H - pb}" class="o"><title>${esc(t)}</title></line><text x="${x(i) + 4}" y="${pt + 12}" class="o">${esc(t)}</text>`
+    )
+    .join('');
+  const stars = (opt.stars || [])
+    .map(
+      ([i, v, t]) =>
+        `<text x="${x(i).toFixed(1)}" y="${(y(v) + 5).toFixed(1)}" text-anchor="middle" class="s">★<title>${esc(t)}</title></text>`
+    )
+    .join('');
   const dots = (opt.dots || [])
     .map(([i, v, t]) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3.2" class="m"><title>${esc(t)}</title></circle>`)
     .join('');
@@ -104,12 +150,12 @@ function journeyChart(series, top, opt = {}) {
     .join('');
   return `<svg class="adm-jl" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opt.label || '')}">${grid}${days}${series
     .map(s => `<path d="${path(s.v)}" class="${s.cls}"/>`)
-    .join('')}${dots}${xt}</svg>`;
+    .join('')}${marks}${dots}${stars}${xt}</svg>`;
 }
 
 function renderJourney(name) {
   status();
-  const back = `<a class="adm-fchip plain" href="#~users">← Players</a>`;
+  const back = `<a class="adm-fchip plain" href="#~users">← Players</a><button type="button" class="adm-fchip plain" data-jload title="Reload">↻</button>`;
   if (!USERS || !ANS) {
     $v.innerHTML = `<div class="adm-shead">${back}<h2>${esc(name)}</h2></div><p class="note">Loading…</p>`;
     Promise.all([USERS ? null : loadUsers(), ANS ? null : loadStats()]).then(() => {
@@ -120,12 +166,14 @@ function renderJourney(name) {
   const u = (USERS.users || []).find(x => x.name === name);
   if (!u || !u.id) {
     $v.innerHTML = `<div class="adm-shead">${back}<h2>${esc(name)}</h2></div><p class="note">${u ? 'No anonymous id for this player yet (sheet script v13).' : 'No player by this name.'}</p>`;
+    bindJReload();
     return;
   }
   const R = (ANS.rows || []).filter(r => r[0] === u.id).sort((a, b) => a[1] - b[1]);
   const head = `<div class="adm-shead">${back}<h2>${esc(name)}</h2>${u.id === MEID ? '<small class="note">you</small>' : ''}</div>`;
   if (!R.length) {
     $v.innerHTML = head + '<p class="note">No answers yet.</p>';
+    bindJReload();
     return;
   }
   const J = journeyOf(R),
@@ -138,6 +186,69 @@ function renderJourney(name) {
     dayKeys = Object.keys(J.perDay)
       .map(Number)
       .sort((a, b) => a - b);
+
+  // 0. The cards: when each genus was shown, and whether (and how) all were opened at once.
+  const C = journeyCards(name),
+    offer = C && C.offer,
+    openAt = offer && offer.open ? offer.at : null,
+    // A card shown after the player's a-th answer: its time, else that answer's (cards saved before times were kept).
+    cardT = e => e[2] || (R[Math.min(R.length, Math.max(1, e[0])) - 1] || R[0])[1],
+    // Answers in the log before a time: where an event with a time sits in the history. The app's own count restarts at
+    // a progress reset while the sheet keeps every answer (Codex review #352); the count only for events without a time.
+    before = (tm, n) => (tm ? R.filter(r => r[1] < tm).length : n),
+    openN = offer && offer.open ? before(offer.t, offer.at) : null,
+    // The kind kept with the card (from 2026-11-02); before, guessed from readiness and the answer count.
+    kindOf = e =>
+      !e
+        ? ''
+        : e[3]
+          ? {s: 'start', c: 'card', a: 'all'}[e[3]] || 'card'
+          : !e[1]
+            ? 'card'
+            : openAt != null && e[0] === openAt
+              ? 'all'
+              : 'start',
+    CM = (C && C.map) || {},
+    byKind = k => Object.keys(CM).filter(g => kindOf(CM[g]) === k && J.slate.has(g));
+  const first = byKind('start').sort((a, b) => CM[a][0] - CM[b][0]),
+    singles = byKind('card'),
+    alls = byKind('all');
+  const cardsLine = !C
+    ? '<p class="note">Cards: loading…</p>'
+    : C.err
+      ? `<p class="note">Cards: the player's saved progress could not be read (${esc(C.err)}); ↻ to try again.</p>`
+      : `<ul class="adm-jcards">${
+          first.length
+            ? `<li><b>First cards</b> ${first.map(g => `<i>${esc(g)}</i>`).join(', ')} · ${jTime(cardT(CM[first[0]]))}</li>`
+            : '<li><b>First cards</b> none saved (progress from before the cards, or played on another device not synced yet)</li>'
+        }<li><b>Cards one at a time</b> ${singles.length}</li>${
+          openAt != null
+            ? `<li><b>Opened all genera</b> after answer ${openN} · ${jTime(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${alls.length} genera at once</li>`
+            : offer
+              ? `<li><b>Offer to open all</b> declined after answer ${offer.at}${offer.t ? ' · ' + jTime(offer.t) : ''}</li>`
+              : '<li><b>Open all genera</b> not used</li>'
+        }</ul>`;
+
+  // Learned genera and when: the answer that passed the exam, i.e. the last right exam question (|x) on the genus
+  // (Pierre, 2026-11-02: "you know which question validated the exam"). Once learned a genus gets no more exam
+  // questions; if it is lost and learned again, the last one is still the one that counts. Learned before exam
+  // questions were logged (2026-11-02): no such answer, the time is unknown.
+  const LRN = (C && C.learned) || {},
+    lrnAt = {};
+  Object.keys(LRN).forEach(g => {
+    let i = -1;
+    R.forEach((r, k) => {
+      if (r[2] === g && r[4] && /\|x$/.test(String(r[5]))) i = k;
+    });
+    lrnAt[g] = i >= 0 ? i : null;
+  });
+  const lrnPts = Object.entries(lrnAt)
+      .filter(([g, i]) => i != null && J.slate.has(g))
+      .sort((a, b) => a[1] - b[1]),
+    lrnUnknown = Object.keys(LRN).filter(g => lrnAt[g] == null && J.slate.has(g)).length,
+    // Only the genera whose time is known: one learned before times were kept has no place on the time line (counting it
+    // from the first answer drew a learned genus where there was none; Pierre, 2026-11-02, "what is this curve based on?").
+    lrnSeries = R.map((_, i) => lrnPts.filter(([, k]) => k <= i).length);
 
   // 1. Progress: right answers on the last WIN against what was expected of them, and genera met.
   const dayStarts = [];
@@ -163,17 +274,20 @@ function renderJourney(name) {
         label: 'Right answers over time'
       }
     )}
-    <h4>Genera met <span class="adm-jkey">${J.marks.length}/${total}</span></h4>
-    ${journeyChart([{v: J.met, cls: 'met'}], total, {
+    <h4>Genera met and learned <span class="adm-jkey"><i class="acc"></i>met ${J.marks.length}/${total} <i class="lrn"></i>★ learned ${Object.keys(LRN).filter(g => J.slate.has(g)).length}${lrnUnknown ? ` (${lrnUnknown} learned before times were kept: not on the curve)` : ''}</span></h4>
+    ${journeyChart([{v: J.met, cls: 'met'}, ...(C && !C.err ? [{v: lrnSeries, cls: 'lrn'}] : [])], total, {
       ticks: [
         [Math.round(total / 2), Math.round(total / 2)],
         [total, total]
       ],
       days: dayStarts,
       dots: J.marks.map(([i, g, t]) => [i, J.met[i], `${g}: answer ${i + 1}, ${jTime(t)}`]),
+      marks: openN != null ? [[Math.min(R.length - 1, openN), 'Opened all']] : [],
+      stars: lrnPts.map(([g, i]) => [i, lrnSeries[i], `${g} learned: answer ${i + 1}, ${jTime(R[i][1])}`]),
       label: 'Genera met over time'
     })}
-    <p class="adm-axis"><span>answer 1 · ${jDate(R[0][1])}</span><span>vertical lines: a new day</span><span>answer ${R.length} · ${jDate(R[R.length - 1][1])}</span></p></section>`;
+    <p class="adm-axis"><span>answer 1 · ${jDate(R[0][1])}</span><span>vertical lines: a new day</span><span>answer ${R.length} · ${jDate(R[R.length - 1][1])}</span></p>
+    <h4>Cards</h4>${cardsLine}</section>`;
 
   // 2. Easy and hard for them: right answers against the chance the game expected (photo difficulty, their level).
   const scored = Object.entries(J.G).filter(([, s]) => s.n >= JOURNEY.MIN && s.score != null),
@@ -205,6 +319,13 @@ function renderJourney(name) {
             })
             .join('')}</table>`
         : '<p class="note">None</p>'
+    }${
+      u.review
+        ? `<h3>To review</h3><p>${u.review
+            .split(', ')
+            .map(g => `<i>${esc(g)}</i>`)
+            .join(', ')}</p>`
+        : ''
     }${notMet.length ? `<h3>Not met yet <small>${notMet.length}</small></h3><p class="adm-jnot">${notMet.map(g => `<i>${esc(g)}</i>`).join(', ')}</p>` : ''}</section>`;
 
   // 3. Every genus asked, in the order they were met (or easiest / hardest first).
@@ -217,19 +338,67 @@ function renderJourney(name) {
           ? b[1].n - a[1].n
           : a[1].first - b[1].first
   );
+  // The card of a genus: the first ones, Open all, or a card on its own (after answer a, asked k answers later).
+  const cardCell = g => {
+    const e = CM[g],
+      k = kindOf(e);
+    if (!C || C.err) return '';
+    if (!e) return '–';
+    if (k === 'start') return `<span title="${esc(jTime(cardT(e)))}">first cards</span>`;
+    if (k === 'all') return `<span title="${esc(jTime(cardT(e)))}">opened all</span>`;
+    const n = before(e[2], e[0]),
+      later = J.G[g].first + 1 - n;
+    return `<span title="${esc(jTime(cardT(e)))} · asked ${later === 1 ? 'at the next question' : `${later} questions later`}">#${n} · ${jDate(cardT(e))}</span>`;
+  };
   const dots = h => `<span class="adm-jdots">${[...h].map(c => `<i class="${c === '1' ? 'ok' : 'ko'}"></i>`).join('')}</span>`,
     sortBtn = (k, t) => `<button type="button" data-jsort="${k}" aria-pressed="${JSORT === k}">${t}</button>`;
   const table = `<section class="adm-scard adm-jwide"><div class="adm-shead"><h3>Genera <small>${rows.length}</small></h3><span class="adm-qseg adm-sseg" role="group">${sortBtn('met', 'Order met')}${sortBtn('easy', 'Easiest')}${sortBtn('hard', 'Hardest')}${sortBtn('n', 'Most asked')}</span></div>
-    <div class="adm-tscroll"><table class="adm-tbl adm-jtbl"><thead><tr><th>Genus</th><th>Met</th><th>Answers</th><th>Right</th><th title="Right answers against the chance the game expected">vs expected</th><th>Last 10</th><th>Answered instead</th></tr></thead><tbody>${rows
+    <div class="adm-tscroll"><table class="adm-tbl adm-jtbl"><thead><tr><th>Genus</th><th title="When its card showed: after which answer">Card</th><th title="Its first question">First asked</th><th>Answers</th><th>Right</th><th title="Right answers against the chance the game expected">vs expected</th><th>Last 10</th><th>Answered instead</th></tr></thead><tbody>${rows
       .map(([g, s]) => {
         const inst = Object.entries(s.inst)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 2)
           .map(([x, n]) => `<i>${esc(x)}</i> ${n}×`)
           .join(', ');
-        return `<tr><td><a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a>${J.slate.has(g) ? '' : ' <small>bonus</small>'}</td><td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td><td>${dots(s.h)}</td><td>${inst}</td></tr>`;
+        return `<tr><td><a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a>${g in LRN ? ` <span class="adm-jlearn" title="Learned (mastery exam passed)${lrnAt[g] != null ? ': ' + esc(jTime(R[lrnAt[g]][1])) : ''}">learned</span>` : ''}${J.slate.has(g) ? '' : ' <small>bonus</small>'}</td><td class="n">${cardCell(g, s)}</td><td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td><td>${dots(s.h)}</td><td>${inst}</td></tr>`;
       })
       .join('')}</tbody></table></div></section>`;
+
+  // 3b. Games (as on Players, Pierre 2026-11-02: "bring that page's numbers into the journey"), with the photo quiz
+  // split: its own 4-choice questions, the "Again: A or B?" rematch after a mix-up (2 choices, logged as the photo
+  // quiz), and the mastery exam questions (|x, from 2026-11-02); Look-alike duels are their own tab in Practice.
+  const GM = [
+      [
+        'Photo quiz',
+        r =>
+          /^quiz(\||$)/.test(r[5]) &&
+          !/\|[xd](\||$)/.test(r[5]) &&
+          String(r[10] || '')
+            .split(' ')
+            .filter(Boolean).length !== 2
+      ],
+      [
+        'Again: A or B? (after a mix-up)',
+        r =>
+          /^quiz(\||$)/.test(r[5]) &&
+          !/\|d(\||$)/.test(r[5]) &&
+          String(r[10] || '')
+            .split(' ')
+            .filter(Boolean).length === 2
+      ],
+      ['Look-alike duel in the quiz', r => /^quiz\|d(\||$)/.test(r[5])],
+      ['Mastery exam', r => /\|x$/.test(r[5])],
+      ['Look-alike duels (tab)', r => /^quiz-duel/.test(r[5])],
+      ['Other', r => !/^quiz/.test(r[5])]
+    ].map(([t, f]) => {
+      const L = R.filter(f);
+      return [t, L.length, L.reduce((n, r) => n + r[4], 0)];
+    }),
+    games = `<section class="adm-scard"><h3>Games</h3><table class="adm-tbl">${GM.filter(([t, n]) => n || /^Look-alike duels/.test(t))
+      .map(
+        ([t, n, r]) => `<tr><td>${t}</td><td class="n">${pct(r, n)}</td><td>${n ? sbar(r, n) : ''}</td><td class="n">${n || '0'}</td></tr>`
+      )
+      .join('')}</table></section>`;
 
   // 4. Days played: answers per day, right share in the title.
   const D = dayKeys.slice(-JOURNEY.DAYS),
@@ -257,7 +426,8 @@ function renderJourney(name) {
       ['Days', dayKeys.length],
       ['Sessions', J.S.length]
     ]) +
-    `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${daysSec}</div>`;
+    `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${daysSec}</div>`;
+  bindJReload();
   $v.querySelectorAll('[data-jsort]').forEach(
     b =>
       (b.onclick = () => {
@@ -265,4 +435,17 @@ function renderJourney(name) {
         render();
       })
   );
+}
+
+// ↻ on the journey: the answers, the players and this player's saved progress read again.
+function bindJReload() {
+  const b = $v.querySelector('[data-jload]');
+  if (b)
+    b.onclick = () => {
+      Object.keys(JDATA).forEach(k => delete JDATA[k]);
+      USERS = null;
+      ANS = null;
+      STATS = null;
+      render();
+    };
 }

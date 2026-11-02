@@ -118,15 +118,19 @@ const server = http.createServer((req, res) => {
     P = Object.fromEntries(genera.map(n => [n, {ok: 3, ko: 1, h: '1101', th: 0.5, L: 0.5}]));
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, L: 0.97};
     P[LEVEL] = {ok: 200, ko: 30, th: 1};
-    const at = [];
+    const at = [],
+      qx = question;
+    let shownT = null;
+    question = (...a) => ((shownT = a[1]), qx(...a)); // the genus asked (a duel slipped in is not nextTarget's)
     for (let i = 0; i < 400 && !P[t].mx; i++) {
       quizPhoto();
       if (EXAMQ === t) {
         at.push(answersSoFar());
         if (document.querySelectorAll('.qstage .qph').length !== 1) fails.push('exam question with several photos');
       }
-      document.querySelector(`[data-c="${CSS.escape(last)}"]`).click();
+      document.querySelector(`[data-c="${CSS.escape(shownT)}"]`).click();
     }
+    question = qx;
     if (!P[t].mx) fails.push(`${t}: not mastered after 400 right answers (exam questions: ${at.length})`);
     if (at.length !== EXAM.n) fails.push(`${t}: ${at.length} exam questions, ${EXAM.n} expected`);
     if (at.some((x, i) => i && x - at[i - 1] < EXAM.gap))
@@ -260,12 +264,63 @@ const server = http.createServer((req, res) => {
         introMerge(JSON.stringify({[g]: [7, 0]}), JSON.stringify({at: 60, open: 0}));
         if (!introduced(g) || !introReady(g) || !introduced(Object.keys(DATA.gen)[0]) || !store.get(INTRO.OFFER.KEY, null))
           fails.push('cards from another device not merged');
+        // The latest decision about the offer wins: declined here, opened later on another device.
+        store.set(INTRO.OFFER.KEY, {at: 60, open: 0, t: 1000});
+        introMerge(null, JSON.stringify({at: 80, open: 1, via: 'progress', t: 2000}));
+        if (!(store.get(INTRO.OFFER.KEY, {}) || {}).open) fails.push('an older decline kept over a later Open all');
+        introMerge(null, JSON.stringify({at: 50, open: 0, t: 500}));
+        if (!(store.get(INTRO.OFFER.KEY, {}) || {}).open) fails.push('an older decline replaced a later Open all');
         introReset();
         if (g in introMap() || store.get(INTRO.OFFER.KEY, null)) fails.push('progress reset kept the cards');
       }
+      // Look-alike duels slipped into the photo quiz (AUTO_DUEL): about 1 question in 10 once past the first answers,
+      // on pairs of genera met, never the same pair twice within AUTO_DUEL.SAME answers, logged quiz|d|k2.
+      {
+        const n0 = answersSoFar(),
+          seen = [];
+        let duels = 0,
+          lastTwo = null;
+        const q1 = question;
+        question = (...a) => ((window.__dq = a), q1(...a));
+        for (let i = 0; i < 300; i++) {
+          NEXTQ = null;
+          document.querySelectorAll('.unlock').forEach(x => x.remove());
+          quizPhoto();
+          document.querySelectorAll('.unlock').forEach(x => x.remove());
+          const q = window.__dq;
+          // Two 2-choice questions (a duel slipped in, an Again) never closer than AUTO_DUEL.GAP, Agains after a
+          // normal question's mix-up excepted (they follow it by design).
+          if (q[2].length === 2) {
+            const gap = answersSoFar() - (lastTwo == null ? -1e9 : lastTwo[0]),
+              need = lastTwo && lastTwo[1] ? AUTO_DUEL.GAP : AUTO_DUEL.AGAIN;
+            if (AUTOD && gap < need) fails.push(`duel in the quiz ${gap} answers after a 2-choice question`);
+            if (AUTOD || !lastTwo || !lastTwo[1]) lastTwo = [answersSoFar(), AUTOD];
+          }
+          if (AUTOD) {
+            duels++;
+            const k = q[2].slice().sort().join('|'),
+              at = answersSoFar();
+            if (q[2].length !== 2 || !q[2].every(introReady)) fails.push(`duel in the quiz on ${q[2].join(', ')}`);
+            if (seen.some(([a, kk]) => kk === k && at - a < AUTO_DUEL.SAME)) fails.push(`duel ${k} twice within ${AUTO_DUEL.SAME} answers`);
+            seen.push([at, k]);
+          }
+          const won = AUTOD && i % 10;
+          document.querySelector(`[data-c="${CSS.escape(i % 10 ? q[1] : q[2].find(c => c !== q[1]))}"]`).click();
+          if (won && !P[q[1]].du) fails.push('a duel won in the quiz does not count for the duel achievement');
+          if (AUTOD && !/^quiz\|d\|k2$/.test(((SYNC && SYNC.log && SYNC.log.slice(-1)[0]) || {}).m || 'quiz|d|k2'))
+            fails.push('duel in the quiz not logged quiz|d|k2');
+        }
+        question = q1;
+        // Spacing and the draws make the count vary (11 in a CI run, about 15 on average): enough to show they come.
+        if (duels < 5 || duels > 50) fails.push(`${duels} duels in the quiz in 300 questions (about 1 in 10 expected)`);
+      }
       // "I've had the IMR lecture": every slate genus opens at once, and no card comes after.
-      introAll();
+      introAll('progress');
       if (introLeft().length) fails.push(`open all genera: ${introLeft().length} left`);
+      // Kept for the admin's player journey: when each card showed, and where all were opened from.
+      const oa = store.get(INTRO.OFFER.KEY, {}) || {};
+      if (!oa.open || oa.via !== 'progress' || !oa.t || Object.values(introMap()).some(e => !e[2] || !e[3]))
+        fails.push(`open all not recorded for the journey: ${JSON.stringify(oa)}`);
       for (let i = 0; i < 30; i++) {
         NEXTQ = null;
         quizPhoto();
