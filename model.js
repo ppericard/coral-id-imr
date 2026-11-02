@@ -247,7 +247,8 @@ const shaky = n => {
 // First meeting with a genus (Pierre, 2026-11-02, after the beginner RA review): a player starting from zero first meets
 // INTRO.START genera on cards (name, cover photo, ID tips) and is asked about those; new genera then come one at a time,
 // each on its card, and never as the answer of the question right after its card ("too easy"): a genus met on a single
-// card can be asked from INTRO.GAP answers on, and a new card waits INTRO.EVERY answers after the last one. Which genus
+// card can be asked from INTRO.GAP answers on, and a new card waits INTRO.EVERY answers after the last one (and while
+// introHold, below). Which genus
 // opens and when stays the progressive path's (weighted, OPEN): a draw that falls on a genus not met yet shows its card
 // and asks about a genus already met. Kept on the device (imr-intro: genus -> [answers when shown, 1 if one of the
 // first cards]); a genus already asked (another device, progress from before the cards) or a bonus genus (its own unlock
@@ -260,6 +261,7 @@ const INTRO = {
   START: 4,
   GAP: 2,
   EVERY: 2,
+  HOLD: 1.5,
   OFFER: {KEY: 'imr-coral-intro-offer', AT: 50, UNTIL: 150, MET: 10, TH: 0.5}
 };
 let INTROS = null;
@@ -339,6 +341,19 @@ const introReset = () => {
   INTROS = {};
   store.set(INTRO.KEY, {});
   store.set(INTRO.OFFER.KEY, null);
+};
+// Opening held while the player does clearly worse than expected (Pierre, 2026-11-02, after an RA at 86% right met 9
+// genera in 21 answers and dropped to 5 right in 10: "when many genera have just opened and the answers suddenly get
+// worse, space the new ones; an expert keeps opening regularly"): no new card while, over the last 10 answers of this
+// visit, the right answers fall INTRO.HOLD or more below the success the game expected for them (the answer's e).
+// A player who keeps up (an expert) is never held; one who falls behind is, until the answers catch up. Simulated
+// (6 seeds, 200 questions, docs/LEARNING.md): an expert met 31 genera (27 without), a beginner 14 (15), a lecture-level
+// RA 13 (13); on that RA's real answers it would have held from answer 73 (5 right of 10 where 8 were expected).
+const introHold = () => {
+  const h = session.h,
+    e = session.e || [];
+  if (h.length < 10 || e.length < 10) return false;
+  return e.reduce((t, x) => t + x, 0) - h.filter(Boolean).length >= INTRO.HOLD;
 };
 const introSince = () => answersSoFar() - Math.max(-Infinity, ...Object.values(introMap()).map(e => e[0]));
 function weighted(list) {

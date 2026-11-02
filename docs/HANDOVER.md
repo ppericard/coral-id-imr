@@ -111,7 +111,7 @@ The cloud environment needs network access to `api.inaturalist.org`, `www.inatur
 - 2026-10-31: first standalone artifacts (Coral Finder key, quiz, mind map, genus doc, now in `reference/`), then one web app on GitHub Pages, the Lab of prototypes, the admin back-office, photo curation rules, the Coral Finder rebuilt as a tolerant clue ranking, responsive system, adaptive difficulty.
 - 2026-11-01: expert reviews (code, admin, RA, design) and their fixes, Code.gs v6-v9, players' reports, bonus genera, welcome tour for beta testers, graded answer choices, confusion scores.
 - An incident on 2026-11-01 (a stale admin draft published as a whole copy wiped curation) led to the key-by-key Publish merge (PR #240): never go back to whole-copy publishing.
-- A git history rewrite to shrink the repo was discussed and declined for now (`.git` ~277 MB on 2026-11-01). Raise it only if size becomes a problem.
+- The photos are leaving the repo (Pierre, 2026-11-02): Cloudflare R2 first, then `img/` removed, then a history rewrite to shrink `.git` (pack 290 MiB on 2026-11-02), the force-push only with Pierre's explicit go and a backup clone. See ROADMAP "Photos out of the repo".
 
 ## First prompt for the new account
 

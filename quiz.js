@@ -183,7 +183,9 @@ addEventListener('resize', fitStage);
 $v.addEventListener(
   'load',
   e => {
-    if (e.target instanceof HTMLImageElement && e.target.closest('.qph')) e.target.classList.add('in');
+    if (!(e.target instanceof HTMLImageElement && e.target.closest('.qph'))) return;
+    e.target.classList.add('in');
+    if (hashNow() === 'quiz') loadMark('q1'); // the first quiz photo on screen (sync.js load times)
   },
   true
 );
@@ -372,6 +374,7 @@ function answer(cur, c, target, ph, cor, unseen) {
     th: th0,
     nw
   };
+  session.e = [...(session.e || []), ans.e].slice(-10); // expected success of the last 10 (introHold)
   if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
   else if (SYNC_URL) {
     store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
@@ -718,7 +721,14 @@ const takePlan = cur => {
 };
 let SHOWNQ = null; // the photo-quiz question on screen (planNext)
 function quizPhoto() {
-  const q = (SHOWNQ = takePlan('quiz') || planPhoto());
+  let q = takePlan('quiz') || planPhoto();
+  // A planned card waits while the player falls behind (introHold, Codex review #362: a right answer that starts the
+  // hold leaves the questions planned before it): the plans go and the question is chosen again.
+  if (q.intro && !q.start && introHold()) {
+    dropPlans();
+    q = planPhoto();
+  }
+  SHOWNQ = q;
   // The duel spacing counts from when an "Again" or a slipped-in duel shows, not from when it was planned (Codex review
   // #361: a duel planned 2 questions ahead left the next one 2 answers early).
   if (q.again) againAt = answersSoFar();
@@ -870,7 +880,7 @@ function planPhoto() {
     ready = n => cards.includes(n) || introReady(n),
     known = n => cards.includes(n) || introduced(n),
     met = list.filter(ready),
-    open = !start && introSince() >= INTRO.EVERY;
+    open = !start && introSince() >= INTRO.EVERY && !introHold();
   // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say).
   let t = nextTarget(start ? cards : met.length ? (open ? list.filter(n => ready(n) || !introduced(n)) : met) : list);
   if (met.length && !known(t)) {

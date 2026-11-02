@@ -2103,19 +2103,44 @@ function renderEvents() {
           )
           .join('')}</tbody></table></div>`
       : '<p class="note">No failed save while online.</p>';
+  // Load times (sheet v21 'load', one a visit): the newest 40, and the median of each column.
+  const LD = of('load')
+      .map(r => {
+        let d = {};
+        try {
+          d = JSON.parse(r[7] || '{}');
+        } catch (e) {}
+        return {...d, t: r[1], pop: String(r[4] || '').replace(/^.*-/, ''), ua: r[9]};
+      })
+      .slice(0, 40),
+    sec = x => (typeof x === 'number' ? x.toFixed(1) + ' s' : ''),
+    qw = x => (typeof x.q1 === 'number' && typeof x.qo === 'number' ? Math.max(0, x.q1 - x.qo) : ''),
+    med = L => {
+      const V = L.filter(x => typeof x === 'number').sort((a, b) => a - b);
+      return V.length ? V[Math.floor(V.length / 2)] : '';
+    },
+    ldT = LD.length
+      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>When</th><th>Browser</th><th>Line</th><th>First page</th><th>Quiz photo</th><th>Downloaded</th><th>Cache</th><th>Saver</th><th>Installed</th><th>Theme</th><th>Server</th><th>Next</th></tr></thead><tbody><tr><td>Median</td><td></td><td class="n">${med(LD.map(x => x.bps))} kbit/s</td><td class="n">${sec(med(LD.map(x => x.t0)))}</td><td class="n">${sec(med(LD.map(qw)))}</td><td class="n">${med(LD.map(x => x.kb))} KB</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>${LD.map(
+          x =>
+            `<tr><td>${when(x.t)}</td><td><small>${esc(x.ua || '')}</small></td><td class="n">${x.bps ? esc(x.bps) + ' kbit/s' : ''}</td><td class="n">${sec(x.t0)} <small>${esc(x.p0 || '')}</small></td><td class="n">${sec(qw(x))}</td><td class="n">${esc(x.kb ?? '')} KB</td><td>${x.sw ? 'yes' : ''}</td><td>${x.sv ? 'yes' : ''}</td><td>${x.st ? 'yes' : ''}</td><td>${esc(x.th || '')}</td><td>${esc(x.pop)}</td><td><small>${esc(x.nx || '')}</small></td></tr>`
+        ).join('')}</tbody></table></div>`
+      : '<p class="note">None yet.</p>';
   $v.innerHTML =
     head +
     kpis([
       ['One-tap answers', P.length],
       ['App errors', of('err').length],
       ['Photos not loaded', of('photo').length],
-      ['Failed saves', of('sync').length]
+      ['Failed saves', of('sync').length],
+      ['Visits timed', of('load').length],
+      ['Installed app', LD.filter(x => x.st).length + ' / ' + LD.length]
     ]) +
     `<div class="adm-sgrid adm-ev">
     <section class="adm-scard"><h3>"These questions are…" · ${EV_DAYS} days</h3>${pulse}</section>
     <section class="adm-scard wide"><h3>App errors</h3>${errT}</section>
     <section class="adm-scard"><h3>Photos that did not load</h3>${phT}</section>
     <section class="adm-scard"><h3>Saves that failed</h3>${syT}</section>
+    <section class="adm-scard wide"><h3>Load times</h3>${ldT}</section>
     </div>`;
   bindEv();
 }
