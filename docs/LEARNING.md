@@ -142,17 +142,26 @@ time, each on its card, but never as the answer of the question right after its 
   new-player walkthrough, 2026-11-02, got the very same photo twice in a row; same for a duel that brings a card).
 - **When a genus opens** stays the progressive path's call (below): a draw that falls on a genus not met yet shows its
   card and asks about a genus already met. At least `INTRO.EVERY` (2) answers between two cards.
-- **Held while the player falls behind** (`introHold`, Pierre, 2026-11-02): no new card while, over the last 10
-  answers of the visit, the right answers fall `INTRO.HOLD` (1.5) or more below the success the game expected for them
-  (each answer's `e`). Why: an RA from the previous month's programme (the lecture, a few ID dives and analyses: good,
-  not an expert) at 86% right after 50 answers declined "open all" (Pierre: even trained RAs prefer to meet the genera
-  progressively; experts must still be able to open them fast), then met 9 genera in 21 answers
-  (one every 2, the `EVERY` floor) and fell to 5 right in 10, where about 8 were expected, and answered the one-tap
-  question "too hard". Pierre: space the new genera when the answers suddenly get worse, but let an expert keep opening
-  them. A fixed wider gap (`EVERY` 5) and holding on any miss of a genus just met were tried first: both slowed the
-  expert (26-28 genera after 200 questions down to 22-24). Simulated with the hold (6 seeds, 200 questions, genera
-  met): beginner 15 → 14, lecture-level RA 13 → 13, a strong RA (60% of genera known well) 24 → 21, expert 27 → 31
-  (practice while held leaves fewer shaky genera, so more open later). On that RA's real answers it holds from answer 73.
+- **Held while the player falls behind** (`introHold`, Pierre, 2026-11-02): no new card while a running sum of how
+  far the answers fall below the success the game expected for them (each answer's `e`), less an allowance
+  `INTRO.SLACK` (0.1) an answer, never below 0, is `INTRO.HOLD` (1.5) or more. A CUSUM (Page 1954, the standard detector of a lasting drop): a run of misses adds up however long it
+  lasts, a spell above expectation is not banked against a later drop, and right answers pay the debt back by what they
+  beat the expectation by (an easy one, e 0.9, by 0.1). Kept on the device (`imr-hold`), so a player who left on a run
+  of misses does not come back to new genera; cleared with the progress. Why: an RA from the previous month's programme
+  (the lecture, a few ID dives and analyses: good, not an expert) at 86% right after 50 answers declined "open all"
+  (Pierre: even trained RAs prefer to meet the genera progressively; experts must still be able to open them fast),
+  then met 9 genera in 21 answers (one every 2, the `EVERY` floor), fell to 5 right in 10 where about 8 were expected,
+  answered the one-tap question "too hard" and stopped. Tried first: a fixed wider gap (`EVERY` 5) and holding on any
+  miss of a genus just met (both slowed the expert, 26-28 genera after 200 questions down to 22-24); the last 10 answers
+  of the visit (forgot the misses at the next visit; a 20-answer window hid the drop behind the earlier good answers and
+  never triggered on that RA). The allowance keeps a player the game slightly overrates (0.85 expected, 0.8 right) from
+  ever being held: without it, the simulated expert was held for good. On that RA's answers it holds at answers 11-12
+  (three misses in a row) and from answer 67, off and on. Simulated (6 seeds, 200 questions, genera met, without →
+  with): beginner 15 → 13, lecture-level RA 14 → 13, strong RA 22 → 23, expert 27 → 28.
+- **Gentle restart** (`WARM` in `quiz.js`, Pierre, 2026-11-02): a player coming back with `WARM.FROM` (10) answers or
+  more first gets `WARM.N` (5) questions on genera already answered right and not to review, with easy choices: no
+  card, no duel, no exam. A positive start before the harder questions; their answers do not count for the hold
+  (Pierre: easy right answers must not reopen new genera after a run of misses).
 - **Not right after**: a genus met on a card alone can be asked from `INTRO.GAP` (2) answers on (one question at least
   in between; the card says "It comes up in the questions a little later"). The first 4 can be asked at once.
 - **Choices among the genera met**: easy wrong choices and traps come from the genera met (a card or an answer); a
