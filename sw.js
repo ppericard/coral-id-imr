@@ -8,15 +8,9 @@ const SHELL = [
   './',
   'index.html',
   'app.css?v=116',
-<<<<<<< HEAD
   'core.js?v=18',
   'app.js?v=171',
   'sync.js?v=8',
-=======
-  'core.js?v=18',
-  'app.js?v=171',
-  'sync.js?v=8',
->>>>>>> parent of f1d0256 (A genus is not learned before it has been tested against its look-alikes: its % stops at (faced + 1) / (look-alikes + 1), its exam waits for all; leaderboard follows (sheet v22); progress saved again once; a What's new note tells returning players)
   'progress.js?v=7',
   'model.js?v=7',
   'quiz.js?v=9',
