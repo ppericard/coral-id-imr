@@ -321,7 +321,10 @@ function introMerge(m, o) {
     });
     if (ch) store.set(INTRO.KEY, L);
   }
-  if (o && typeof o === 'object' && !store.get(INTRO.OFFER.KEY, null)) store.set(INTRO.OFFER.KEY, o);
+  // The latest decision wins (its time t): declined on one device, then Open all on another, must not go back to the
+  // decline at the next sync (Codex review #352). Without times (older), the one already here stays.
+  const here = store.get(INTRO.OFFER.KEY, null);
+  if (o && typeof o === 'object' && (!here || (o.t || 0) > (here.t || 0))) store.set(INTRO.OFFER.KEY, o);
 }
 const introReset = () => {
   INTROS = {};

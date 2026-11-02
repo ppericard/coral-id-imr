@@ -264,6 +264,12 @@ const server = http.createServer((req, res) => {
         introMerge(JSON.stringify({[g]: [7, 0]}), JSON.stringify({at: 60, open: 0}));
         if (!introduced(g) || !introReady(g) || !introduced(Object.keys(DATA.gen)[0]) || !store.get(INTRO.OFFER.KEY, null))
           fails.push('cards from another device not merged');
+        // The latest decision about the offer wins: declined here, opened later on another device.
+        store.set(INTRO.OFFER.KEY, {at: 60, open: 0, t: 1000});
+        introMerge(null, JSON.stringify({at: 80, open: 1, via: 'progress', t: 2000}));
+        if (!(store.get(INTRO.OFFER.KEY, {}) || {}).open) fails.push('an older decline kept over a later Open all');
+        introMerge(null, JSON.stringify({at: 50, open: 0, t: 500}));
+        if (!(store.get(INTRO.OFFER.KEY, {}) || {}).open) fails.push('an older decline replaced a later Open all');
         introReset();
         if (g in introMap() || store.get(INTRO.OFFER.KEY, null)) fails.push('progress reset kept the cards');
       }
