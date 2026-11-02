@@ -514,7 +514,7 @@ const EXAM = {n: 5, gap: 8};
 const answersSoFar = () => ((P[LEVEL] || {}).ok || 0) + ((P[LEVEL] || {}).ko || 0);
 const examOn = n => {
   const s = P[n] || {};
-  return !s.mx && knownP(n) >= BKT.MASTER;
+  return !s.mx && knownP(n) >= BKT.MASTER && coverOf(n) >= 1; // every look-alike faced first (coverOf)
 };
 const examReady = n => examOn(n) && (!(P[n] || {}).ex || answersSoFar() - P[n].ex.at >= EXAM.gap);
 function missing(n) {
@@ -522,17 +522,36 @@ function missing(n) {
     m = [],
     L = knownP(n);
   if (s.mx) return m;
+  const left = Object.keys(DATA.gen).filter(x => x !== n && isLook(n, x) && !faced(n, x));
   if (L < BKT.MASTER) m.push(`more right answers, harder photos count more (about ${Math.round(100 * L)}% learned so far)`);
-  else m.push(`the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the photo quiz, all right`);
+  if (left.length) m.push(`to be told apart from its look-alikes in the quiz: ${left.join(', ')}`);
+  else if (L >= BKT.MASTER) m.push(`the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the photo quiz, all right`);
   return m;
 }
 // Progress of a genus, 0 to 1: how far its knowledge probability has climbed towards 95% fills 95% of it, each exam
 // question passed adds 1%, the passed exam makes it 100%.
+// Tested against its look-alikes (Pierre, 2026-11-02: "a genus can't be confirmed as learned before it has been compared
+// with the genera it gets confused with"; trying the app from zero, a genus showed 95% with 8 genera open, and an RA's
+// answers fell apart once more genera opened). Its look-alikes are those of the IMR lecture and the Coral Finder (isLook,
+// 1 to 5 a genus). One is faced once it was offered beside the genus, either way round, and not picked by mistake that
+// time (s.off offers > s.conf mix-ups). The genus's % stops at (faced + 1) / (look-alikes + 1) of its way, and its
+// mastery exam waits until every look-alike is faced: 3 look-alikes, none faced: a quarter; all: no limit. Rounded to
+// the hundredth and saved with the progress (s.cv, app.js save), so the sheet's leaderboard % (Code.gs pctOf_) and
+// core.js pctOf apply the same limit without the look-alike lists.
+const faced = (n, x) => {
+  const a = P[n] || {},
+    b = P[x] || {};
+  return ((a.off || {})[x] || 0) > ((a.conf || {})[x] || 0) || ((b.off || {})[n] || 0) > ((b.conf || {})[n] || 0);
+};
+function coverOf(n) {
+  const L = Object.keys(DATA.gen).filter(x => x !== n && isLook(n, x));
+  return L.length ? Math.round((100 * (L.filter(x => faced(n, x)).length + 1)) / (L.length + 1)) / 100 : 1;
+}
 function genScore(n) {
   const s = P[n];
   if (!s) return 0;
   if (s.mx) return 1;
-  const part = Math.min(1, Math.max(0, (knownP(n) - BKT.L0) / (BKT.MASTER - BKT.L0)));
+  const part = Math.min(coverOf(n), Math.max(0, (knownP(n) - BKT.L0) / (BKT.MASTER - BKT.L0)));
   return 0.95 * part + (part >= 1 && s.ex ? (0.05 * s.ex.k) / EXAM.n : 0);
 }
 // Step of a genus on the learning scale: 0 not seen, 1-4 quarters of genScore, 5 learned (My progress colours).

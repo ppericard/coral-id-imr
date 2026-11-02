@@ -123,6 +123,7 @@ Details in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 8. If you discussed an idea and did not build it: add it to `docs/ROADMAP.md`.
 9. **Keep the docs current in the same PR (Pierre, 2026-11-01).** A change is not done until the docs say what the code now does. Before merging, check and update as needed: this file (a new lasting rule from Pierre, a changed workflow), `docs/ARCHITECTURE.md` (a new page, hash, setting, data key, `curation.json` key, admin mode, sync endpoint or Code.gs version, model constant), `docs/ROADMAP.md` (ship = move to "Done recently" with the PR number; deferred = add a line; new "don't do X" = Declined) and `README.md` (anything a newcomer sees). Say "Docs: none needed" in the PR description when nothing applies. The goal: another agent (Codex, a Claude Project, a new developer) can take over from the repo alone, with no chat history or memory.
 10. Every ~20 merged PRs, or when Pierre asks, do a full documentation pass: re-check each doc against the code (not against memory) and fix what drifted.
+11. **Tell returning players what changed, sparingly (Pierre, 2026-11-02).** When a change alters what a returning player sees in a way they would wonder about (their progress recalculated above all, or a new feature worth knowing), add a note to `NEWS` in `progress.js`: shown once per device at the next visit, as the bottom note (no tap needed), never to a new player. Not for every release.
 
 ## Where decisions live
 
