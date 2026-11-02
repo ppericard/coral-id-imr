@@ -279,6 +279,9 @@ async function overlays(b, base) {
         await q2.click('#openall');
         const left = await q2.evaluate(() => introLeft().length);
         if (left || (await q2.$('#openall'))) fails.push(`${w}px open all genera: ${left} left`);
+        // ... and says so (the box just went before).
+        const said = await q2.evaluate(() => document.querySelector('.apptoast')?.textContent || '');
+        if (!/All \d+ genera are open/.test(said)) fails.push(`${w}px open all genera: no confirmation (${said})`);
       }
       await q2.evaluate(() => (location.hash = 'quiz'));
       await q2.waitForTimeout(500);

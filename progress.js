@@ -185,6 +185,8 @@ function quizBoard() {
       NEXTQ = null;
       save();
       quizBoard();
+      // The box goes and little else changes on this page: say it worked (new-player walkthrough 2026-11-02).
+      appToast(`All ${Object.keys(DATA.gen).length} genera are open: the quiz now asks any of them.`, 6000);
     };
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page).
@@ -623,14 +625,22 @@ function boardNotice() {
     });
   if (!SYNC || store.get('imr-board-told', 0)) return;
   store.set('imr-board-told', 1);
+  const t = appToast(
+    '🏆 New: a <a href="#board">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
+    15000
+  );
+  t.querySelector('a').onclick = () => t.remove();
+}
+// A short note at the bottom of the screen (.apptoast; html is the app's own text), closed by ✕ or after ms.
+function appToast(html, ms) {
   const t = document.createElement('div');
   t.className = 'apptoast';
   t.setAttribute('role', 'status');
-  t.innerHTML = `<span>🏆 New: a <a href="#board">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.</span><button type="button" aria-label="Close">✕</button>`;
+  t.innerHTML = `<span>${html}</span><button type="button" aria-label="Close">✕</button>`;
   t.querySelector('button').onclick = () => t.remove();
-  t.querySelector('a').onclick = () => t.remove();
   document.body.append(t);
-  setTimeout(() => t.remove(), 15000);
+  setTimeout(() => t.remove(), ms);
+  return t;
 }
 // ⚙ Leaderboard On / Off: saved here, sent with the next sync.
 const showBoardSet = () =>
