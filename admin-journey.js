@@ -72,8 +72,9 @@ function journeyOf(R) {
 
 // A line chart over the answers (x = answer number): series [{v: [...], cls}], y from 0 to top.
 function journeyChart(series, top, opt = {}) {
-  // Drawn at the page's width, so its text stays 11 px on a phone as on a desktop.
-  const W = Math.max(300, Math.min(1100, ($v.clientWidth || 900) - 48)),
+  // Drawn at the page's width (a little under it, so never scaled down), so its labels keep the 12 px minimum (--fs-xs)
+  // on a phone as on a desktop (AGENTS.md rule 18; Codex review #351).
+  const W = Math.max(300, Math.min(1100, ($v.clientWidth || 900) - 56)),
     H = 190,
     pl = 34,
     pr = 8,

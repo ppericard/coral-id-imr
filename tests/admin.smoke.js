@@ -132,10 +132,14 @@ const server = http.createServer((req, res) => {
         rows: met.length,
         ordered: met.every((x, i) => !i || x > met[i - 1]),
         lists: /Easiest for them/i.test(v.innerText) && /Hardest for them/i.test(v.innerText),
-        tab: (document.querySelector('#subnav [aria-pressed="true"]') || {}).textContent
+        tab: (document.querySelector('#subnav [aria-pressed="true"]') || {}).textContent,
+        // Chart labels at 12 px at least as rendered (--fs-xs, never scaled down by the viewBox; Codex review #351).
+        small: [...v.querySelectorAll('svg.adm-jl')].some(
+          s => (s.clientWidth / s.viewBox.baseVal.width) * parseFloat(getComputedStyle(s.querySelector('text')).fontSize) < 11.9
+        )
       };
     });
-    if (jo.h !== 'Ana Demo' || jo.charts < 3 || !jo.rows || !jo.ordered || !jo.lists || jo.tab !== 'Players')
+    if (jo.h !== 'Ana Demo' || jo.charts < 3 || !jo.rows || !jo.ordered || !jo.lists || jo.tab !== 'Players' || jo.small)
       fails.push(`${w}px journey: ${JSON.stringify(jo)}`);
     await p.click('[data-jsort="hard"]');
     await settle();
