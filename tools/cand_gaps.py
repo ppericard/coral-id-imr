@@ -48,7 +48,8 @@ def short(minimum=5):
 UA = {"User-Agent": "coral-id-imr/1.0"}
 LIC = "cc-by,cc-by-nc,cc0,cc-by-sa,cc-by-nc-sa"
 SCLERACTINIA = 47532
-WHERE = ("lat=9.19&lng=123.26&radius=40", "place_id=6873")
+DAUIN, PHILIPPINES = "lat=9.19&lng=123.26&radius=40", "place_id=6873"
+POOR = 15  # fetch_local.py: Philippines candidates only while a genus has fewer Dauin photos than this (or --ph-all)
 
 
 def _get(u):
@@ -56,26 +57,36 @@ def _get(u):
 
 
 def findable(g):
-    """New observations the search could take for genus g (0: nothing to remind Pierre about)."""
+    """(near Dauin, elsewhere in the Philippines): new observations the search could take for genus g; (0, 0): nothing
+    to remind Pierre about."""
     d = load_all()
     gen = {**d["gen"], **((d.get("x") or {}).get("gen") or {})}
     used = {re.sub(r"\D", "", p["f"].split("-")[-1]) for x in gen.values() for L in [*x["views"].values(), *(x.get("more") or {}).values()] for p in L}
     used |= {p["f"].split("-")[-1] for L in (d.get("cand") or {}).values() for p in L}
     T = [t for t in _get(f"https://api.inaturalist.org/v1/taxa?q={g}&rank=genus&per_page=10")["results"] if t["name"] == g and SCLERACTINIA in t.get("ancestor_ids", [])]
     if not T:
-        return 0
-    tid, found = T[0]["id"], set()
-    for where in WHERE:
-        url = f"https://api.inaturalist.org/v1/observations?taxon_id={tid}&{where}&quality_grade=research,needs_id&photos=true&photo_license={LIC}&per_page=200"
+        return 0, 0
+    tid, found = T[0]["id"], {DAUIN: set(), PHILIPPINES: set()}
+    for where in (DAUIN, PHILIPPINES):
+        # The same first page as the fetcher (votes order, 200; Codex review #366).
+        url = f"https://api.inaturalist.org/v1/observations?taxon_id={tid}&{where}&quality_grade=research,needs_id&photos=true&photo_license={LIC}&order_by=votes&per_page=200"
         for o in _get(url)["results"]:
             t = o.get("taxon") or {}
             genus_ok = o.get("community_taxon_id") and o.get("identifications_most_agree") and o["community_taxon_id"] == t.get("id") and (t.get("id") == tid or tid in (t.get("ancestor_ids") or []))
             if (o["quality_grade"] == "research" or genus_ok) and any(
                 ph.get("license_code") and str(ph["id"]) not in used and not excluded(photo_id=ph["id"]) for ph in o["photos"]
             ):
-                found.add(o["id"])
+                found[where].add(o["id"])
         time.sleep(0.5)
-    return len(found)
+    return len(found[DAUIN]), len(found[PHILIPPINES] - found[DAUIN])
+
+
+def dauin_n(g):
+    """Dauin photos of genus g (site + candidates still in the files), as fetch_local.py counts them for POOR."""
+    d = load_all()
+    x = {**d["gen"], **((d.get("x") or {}).get("gen") or {})}[g]
+    site = sum(p.get("loc") == "dauin" or p.get("own") for L in x["views"].values() for p in L)
+    return site + sum(p.get("loc") == "dauin" and not excluded(p["f"]) for p in (d.get("cand") or {}).get(g, []))
 
 
 if __name__ == "__main__":
@@ -84,12 +95,17 @@ if __name__ == "__main__":
     rows = [(g, n, v, None) for g, n, v in short(m)]
     if "--offline" not in sys.argv:
         rows = [(g, n, v, findable(g)) for g, n, v, _ in rows]
-        dry = [g for g, _, _, f in rows if not f]
-        rows = [r for r in rows if r[3]]
+        dry = [g for g, _, _, f in rows if not sum(f)]
+        rows = [r for r in rows if sum(r[3])]
         if dry:
             print("Short, but nothing more on iNaturalist near Dauin or in the Philippines (no reminder): " + ", ".join(dry))
     if not rows:
         print(f"Nothing to remind Pierre about (every genus has {m} or more candidates waiting, or nothing more to find).")
     for g, n, views, f in rows:
-        more = f", {f} new observation(s) to fetch" if f else ""
+        more = ""
+        if f:
+            # The fetcher looks elsewhere in the Philippines only for genera with few Dauin photos, unless --ph-all
+            # (Codex review #366): say which command finds them.
+            ph_all = f[1] and dauin_n(g) >= POOR
+            more = f", new observations: {f[0]} near Dauin, {f[1]} elsewhere in the Philippines; run: python3 tools/fetch_local.py{' --ph-all' if ph_all else ''} {g}"
         print(f"{g}: {n} waiting {views if views else ''}{more}".rstrip())
