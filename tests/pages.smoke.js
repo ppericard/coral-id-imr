@@ -138,6 +138,13 @@ async function overlays(b, base) {
     await p.waitForTimeout(200);
     const r = await p.evaluate(() => ({lb: !document.getElementById('lightbox').hidden, answered: !!document.getElementById('next')}));
     if (r.lb || !r.answered) fails.push(`answer keys after Escape on an enlarged photo: ${JSON.stringify(r)}`);
+    // K3: Escape closes the ? help box, like ⚙.
+    await p.click('#help');
+    await p.waitForTimeout(100);
+    const hOpen = await p.evaluate(() => !document.getElementById('helpbox').hidden);
+    await p.keyboard.press('Escape');
+    await p.waitForTimeout(100);
+    if (!hOpen || (await p.evaluate(() => !document.getElementById('helpbox').hidden))) fails.push('Escape does not close the ? help');
     await c.close();
   }
   // C7: Escape on the tour's sign-in step closes it for good; Escape before that step still offers sign-in once.

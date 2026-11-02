@@ -1111,6 +1111,13 @@ document.addEventListener('keydown', e => {
     $setb.setAttribute('aria-expanded', 'false');
     $setb.focus();
   }
+  // The ? help box closes with Escape too, like ⚙ and the enlarged photo (new-player walkthrough 2026-11-02).
+  if (e.key === 'Escape' && !$helpbox.hidden && lb.hidden) {
+    $helpbox.hidden = true;
+    $help.setAttribute('aria-expanded', 'false');
+    $help.focus();
+    hdrMetrics();
+  }
 });
 // Admin | User view switch: only in the browser holding the admin token; a switch reloads so every module follows.
 const $viewrow = document.getElementById('viewrow');
