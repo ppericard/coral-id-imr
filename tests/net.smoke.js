@@ -42,6 +42,9 @@ const server = http.createServer((req, res) => {
 // 9. A new version reloads the page by itself at the next page change; a local copy sends nothing to the sheet.
 // 8. Start-up recovers when its scripts, stylesheet and data.json fail once (loader retries, getR).
 // 7. Photo sizes follow the box, the screen density and the Photo quality setting (Auto, Saver, Full); thumbnails 240 px.
+//    Auto is Saver on a line the app measures as slow, and Saver never moves a shown photo to a bigger file.
+// 10. Load order (index.html tiers): Home shows before My progress and the Tools files are asked for, the quiz files come
+//    before My progress, which comes before the Tools; a link straight to #quiz, #progress or #lab on a first visit works.
 // Speed numbers are measured by tools/perf.js, not here. Locally: node tests/net.smoke.js
 (async () => {
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -168,7 +171,9 @@ const server = http.createServer((req, res) => {
     await ctx.route(/\/img\/.*\.webp/, () => {}); // never answer
     let dropped = 0;
     p.on('requestfailed', r => /\/img\//.test(r.url()) && dropped++);
-    await p.goto(base);
+    // The photos of the next quiz questions, fetched as images from start-up on, hold the page's load event: here they
+    // never come.
+    await p.goto(base, {waitUntil: 'domcontentloaded'});
     await ready(p);
     const n = await p.evaluate(() => [...document.querySelectorAll('#view img')].filter(i => !i.complete).length);
     await p.evaluate(() => (location.hash = 'lab'));
@@ -205,10 +210,20 @@ const server = http.createServer((req, res) => {
       if (!t.length || t.some(x => x === 's')) fails.push(`Phone 2x quiz photos too small: ${t}`);
       if (t.some(x => x === 'full') && t.length === 1) fails.push(`Phone 2x single quiz photo took 1600 px: ${t}`);
       // Home band thumbnails (~60 px on a phone): the 240 px files (Pierre: no big files for how they are shown).
-      await p.evaluate(() => (location.hash = 'home'));
+      // A 480 px file the quiz already fetched (its next questions' photos) may be shown instead: the browser picks a
+      // srcset file it already has, at no cost.
+      const t0 = await p.evaluate(() => ((location.hash = 'home'), performance.now()));
       await p.waitForTimeout(1500);
-      const h = await p.evaluate(() => [...document.querySelectorAll('.hdtiles img')].map(i => i.currentSrc).filter(Boolean)); // lazy: those in view
-      if (!h.length || h.some(u => !/-t\.webp/.test(u))) fails.push(`Home thumbnails on a 2x phone not 240 px: ${h.slice(0, 2)}`);
+      const h = await p.evaluate(
+        t0 =>
+          [...document.querySelectorAll('.hdtiles img')]
+            .map(i => i.currentSrc)
+            .filter(Boolean) // lazy: those in view
+            .filter(u => !performance.getEntriesByName(u).some(e => e.startTime < t0)),
+        t0
+      );
+      if (h.some(u => !/-t\.webp/.test(u)))
+        fails.push(`Home thumbnails on a 2x phone not 240 px: ${h.filter(u => !/-t\.webp/.test(u)).slice(0, 2)}`);
     });
     // Auto on a slow connection (Network Information API) = Saver: smaller files, enlarged view 960 then 1600 px.
     await run(
@@ -228,6 +243,28 @@ const server = http.createServer((req, res) => {
         if (tier(lb2) !== 'full') fails.push(`Saver enlarged view did not load 1600 px on a click: ${lb2}`);
       }
     );
+    // Auto on a line measured slow (Resource Timing, ~800 kbit/s here; Chrome reports no slow connection): Saver, and the
+    // shown photo is not moved to a bigger file after layout.
+    {
+      const ctx = await b.newContext({viewport: {width: 390, height: 800}, deviceScaleFactor: 2, serviceWorkers: 'block'});
+      await ctx.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await ctx.addInitScript(() => localStorage.setItem('imr-tour', '1'));
+      const p = await ctx.newPage(),
+        cdp = await ctx.newCDPSession(p);
+      await cdp.send('Network.enable');
+      await cdp.send('Network.emulateNetworkConditions', {offline: false, downloadThroughput: 1e5, uploadThroughput: 1e5, latency: 50});
+      await p.goto(base + '#quiz');
+      await p.waitForFunction(() => window.APP_READY && document.querySelector('#view .qstage img'), null, {timeout: 60000});
+      await p.waitForTimeout(1500);
+      const t = await p.evaluate(() => [...document.querySelectorAll('#view .qstage img')].map(i => i.getAttribute('src')));
+      const kb = await p.evaluate(() => Math.round(linkMeasure() / 1000));
+      if (!(kb > 0 && kb < 1000) || t.some(u => tier(u) !== 's'))
+        fails.push(`Auto on a line measured at ${kb} kbit/s did not take the 480 px files: ${t}`);
+      await ctx.close();
+    }
     // Full: 1600 px even on a small screen.
     await run(
       {width: 390, height: 800},
@@ -307,7 +344,9 @@ const server = http.createServer((req, res) => {
     await ready(p);
     if (!(await p.evaluate(() => !!navigator.serviceWorker.controller))) fails.push('Update test: the page is not controlled');
     // A local copy never sends anonymous answers or reports to the real sheet, even with the service worker in (its
-    // requests pass by ctx.route): tools/perf.js runs had reached it.
+    // requests pass by ctx.route): tools/perf.js runs had reached it. Once every tier is in (index.html: the sheet's
+    // reads, leaderboard and sync, come with tier 4), so only what this check sends is counted.
+    await p.waitForFunction(() => typeof HAVE !== 'undefined' && HAVE >= 5, null, {timeout: 20000});
     const sent = await p.evaluate(async () => {
       const f = window.fetch,
         hits = [];
@@ -377,6 +416,46 @@ const server = http.createServer((req, res) => {
       .catch(() => fails.push('Admin: the page did not reload onto the new version at the next page change'));
     await ctx.close();
   }
+  // 10. Load order. Home first: nothing of My progress or the Tools asked for before it shows; then the quiz's files,
+  // then My progress, then the Tools, one tier after the other.
+  {
+    const {ctx, p, errs} = await ctxOf();
+    // When Home was drawn and when each file was asked for, on the page's own clock.
+    await ctx.addInitScript(() =>
+      new MutationObserver((m, o) => {
+        if (document.querySelector('#view .hdoors')) ((window.__home = performance.now()), o.disconnect());
+      }).observe(document, {childList: true, subtree: true})
+    );
+    await p.goto(base);
+    await p
+      .waitForFunction(() => typeof HAVE !== 'undefined' && HAVE >= 5, null, {timeout: 20000})
+      .catch(() => fails.push('The last tier never came'));
+    const [home, at] = await p.evaluate(() => [
+      window.__home,
+      Object.fromEntries(performance.getEntriesByType('resource').map(e => [new URL(e.name).pathname.slice(1), e.startTime]))
+    ]);
+    const early = ['progress.js', 'flag.js', 'proto/lab.js', 'proto/finder.js'].filter(f => !(at[f] > home));
+    if (!(home > 0) || early.length) fails.push(`Asked for before Home showed (${home} ms): ${early.join(', ')}`);
+    const order = ['quiz.js', 'progress.js', 'proto/lab.js'].map(f => at[f]);
+    if (!order.every((x, i) => x >= 0 && (!i || x >= order[i - 1])))
+      fails.push(`Tiers out of order (quiz, My progress, Tools): ${order.join(', ')} ms`);
+    if (errs.length) fails.push('Load order: ' + errs.slice(0, 3).join(' | '));
+    await ctx.close();
+  }
+  // Links straight to a page on a first visit: the page waits for its tier, then opens.
+  for (const [h, sel] of [
+    ['quiz', '#view [data-c]'],
+    ['progress', '#view .pring'],
+    ['lab', '#view .lab a']
+  ]) {
+    const {ctx, p, errs} = await ctxOf();
+    await p.goto(base + '#' + h);
+    await p
+      .waitForFunction(s => document.querySelector(s) && !/Loading/.test(document.getElementById('view').innerText), sel, {timeout: 20000})
+      .catch(() => fails.push(`A first visit straight to #${h} did not open it`));
+    if (errs.length) fails.push(`#${h} first: ` + errs.slice(0, 3).join(' | '));
+    await ctx.close();
+  }
   // 6. Service worker install on an unstable line: every app file fails once, the install still completes.
   {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}});
@@ -414,7 +493,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries, photo sizes, start-up retries, new versions without a manual reload.'
+    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries, photo sizes, start-up retries, new versions without a manual reload, load order and links straight to a page.'
   );
 })().catch(e => {
   console.error(e);

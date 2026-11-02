@@ -83,7 +83,7 @@ function mergeSaved(j) {
     store.set('imr-coral-sync', SYNC);
     store.set('imr-coral-reset', rr);
     store.set('imr-coral-progress', P);
-    showProg();
+    prog();
     return;
   }
   introIn();
@@ -95,7 +95,7 @@ function mergeSaved(j) {
   SYNC.base = copy(R);
   store.set('imr-coral-sync', SYNC);
   store.set('imr-coral-progress', P);
-  showProg();
+  prog();
 }
 // Pull, merge, then send. Every change bumps SYNC.rev; a send clears SYNC.dirty only if nothing changed
 // meanwhile. Unsent progress is retried on start-up and when back online.
@@ -646,7 +646,7 @@ function signinNudge(once = true, play = !once) {
 }
 // The account box: the top of ⚙ (#sync), or the sign-in card (tour, nudge, header button) while one is open.
 function bindSync(box = document.querySelector('.tsync') || document.getElementById('sync')) {
-  showProg();
+  prog();
   if (!box) return;
   box.classList.remove('on', 'warn');
   const msg = t => (box.querySelector('[role=status]').textContent = t);

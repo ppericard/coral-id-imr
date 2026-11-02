@@ -106,12 +106,41 @@ const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'larg
 // Photo quality (Pierre, 2026-11-01: slow, unstable connections in the Philippines): a big photo (game, sheet cover)
 // gets the smallest file that covers its box at the screen's density, counted up to 2x (a 3x phone sees no difference).
 // Saver counts 1x, about one size down; Full always takes the 1600 px file. Auto is Saver when the browser reports
-// the data saver or a slow connection (Network Information API: Chrome on Android; elsewhere Auto works as Full-by-box).
-// The enlarged view always loads the 1600 px file (Saver: on a click).
+// the data saver or a slow connection (Network Information API: Chrome on Android), or when the app measures a slow line
+// itself (linkBps). The enlarged view always loads the 1600 px file (Saver: on a click).
 let PQ = store.get('imr-photo-q', 'auto');
+// The line as measured by the app (field HAR, 2026-11-02: at ~86 kbit/s Chrome's estimate did not flag the link, so Auto
+// loaded the 960 px quiz photo, 62 KB in 19 s; Safari and Firefox have no Network Information API at all): the bytes
+// this page got from the network over the time spent receiving them (Resource Timing; overlapping downloads count once,
+// files from a cache count nothing), once LINK.MIN bytes are in. Under LINK.SLOW bit/s, Auto works as Saver. The last
+// measure is kept (imr-link): a launch served from the cache measures nothing and starts from it.
+const LINK = {SLOW: 1e6, MIN: 40000, KEY: 'imr-link'};
+let linkBps = store.get(LINK.KEY, 0),
+  linkAt = 0;
+const linkMeasure = () => {
+  if (Date.now() - linkAt < 2000 || !window.performance || !performance.getEntriesByType) return linkBps;
+  linkAt = Date.now();
+  const E = performance
+    .getEntriesByType('resource')
+    .filter(e => e.transferSize > 0 && e.responseEnd > e.responseStart)
+    .sort((a, b) => a.responseStart - b.responseStart);
+  let bytes = 0,
+    time = 0,
+    end = 0;
+  E.forEach(e => {
+    bytes += e.transferSize;
+    if (e.responseEnd > end) time += e.responseEnd - Math.max(e.responseStart, end);
+    end = Math.max(end, e.responseEnd);
+  });
+  if (bytes >= LINK.MIN && time > 0) store.set(LINK.KEY, (linkBps = Math.round((bytes * 8000) / time)));
+  return linkBps;
+};
 const saver = () => {
   const c = navigator.connection;
-  return PQ === 'saver' || (PQ === 'auto' && !!c && (!!c.saveData || /2g|3g/.test(c.effectiveType || '')));
+  if (PQ !== 'auto') return PQ === 'saver';
+  if (c && (c.saveData || /2g|3g/.test(c.effectiveType || ''))) return true;
+  const b = linkMeasure();
+  return b > 0 && b < LINK.SLOW;
 };
 const fit = px => {
   if (PQ === 'full') return '';
@@ -131,7 +160,10 @@ const tierOf = u => (/-[ts]\.webp/.test(u) ? 's' : /-m\.webp/.test(u) ? 'm' : ''
 // A photo shown bigger than its file was chosen for gets the bigger file (never a smaller one: it is already loaded); the
 // smaller one stays shown until the bigger is in. Not after the fallback to 480 px (data-low). Pages with big photos
 // (data-fit) call upsize after their layout.
+// Saver never moves a shown photo to a bigger file (field HAR: the 480 px quiz photo was cancelled for the 960 px one);
+// only the enlarged view does, on the player's tap.
 const upsizeImg = (i, px) => {
+  if (saver()) return;
   const u = i.getAttribute('src') || '',
     want = fit(px);
   if (px && !i.dataset.low && u.startsWith('img/') && PXR[want] > PXR[tierOf(u)]) i.src = resized(u, want);
@@ -198,6 +230,7 @@ const coverW = (p, long) => {
 // screen density. Pierre, 2026-11-01: the home photos need no big files for how they are shown.
 const thumb = (p, sizes) => {
   if (p.r && p.src) return `src="${img(p, 's')}"`;
+  if (saver()) return `src="${loc(p, 't')}"`; // Saver counts 1x: a thumbnail is at most ~240 px (field link: Home's band on a desktop took ~600 KB)
   const w = long => Math.round(long * Math.min(1, p.ar || 4 / 3));
   return `src="${loc(p, 's')}" srcset="${loc(p, 't')} ${w(240)}w, ${loc(p, 's')} ${w(480)}w" sizes="${sizes}"`;
 };
@@ -609,9 +642,12 @@ const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 let P = store.get('imr-coral-progress', {}) || {};
 const save = () => {
   store.set('imr-coral-progress', P);
-  showProg();
+  prog();
   syncSoon();
 };
+// The header progress pill (showProg, progress.js): that file comes in tier 4 (index.html), after the quiz on a first
+// visit, so the pill keeps its 0% until then.
+const prog = () => typeof showProg === 'function' && showProg();
 const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
 const Q = Object.assign({view: 'any', level: 'auto'}, store.get('imr-coral-quiz', {}), {stars: true}); // starred genera are always asked (Pierre)
 if (Q.lvv !== 3) {
@@ -736,7 +772,7 @@ document.querySelectorAll('#pq button').forEach(
       store.set('imr-photo-q', PQ);
       NEXTQ = null;
       showPQ();
-      fitStage();
+      if (typeof fitStage === 'function') fitStage();
       upsize();
     })
 );
@@ -917,6 +953,17 @@ function route() {
     i.removeAttribute('srcset'); // with a srcset, removing src alone keeps the download
     i.removeAttribute('src');
   });
+  // A page opened before its files arrived (first visit on a slow line, or a link straight to it) shows the loading bar
+  // and asks for its tier now, ahead of the others (index.html), then opens.
+  const nt = pageTier(hashNow());
+  if (nt > HAVE) {
+    const h0 = hashNow();
+    resetHelp();
+    document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove())); // as below
+    $v.innerHTML = `<div class="boot"><p class="note">Loading…</p><progress id="bootp" max="${bootMax(nt)}" value="${window.bootTick ? bootTick.n() : 0}" aria-label="Loading"></progress></div>`;
+    need(nt).then(() => hashNow() === h0 && route());
+    return;
+  }
   if (CUR_NEW) {
     CUR = CUR_NEW;
     CUR_NEW = null;
@@ -942,8 +989,9 @@ function route() {
   const tab = sectionOf(h);
   resetHelp();
   $gpop.hidden = true;
-  showProg();
-  tab === 'progress' ? $prog.setAttribute('aria-current', 'page') : $prog.removeAttribute('aria-current');
+  prog();
+  const pg0 = document.getElementById('prog'); // the pill ($prog in progress.js, tier 4)
+  tab === 'progress' ? pg0.setAttribute('aria-current', 'page') : pg0.removeAttribute('aria-current');
   const bg = document.getElementById('boardgo');
   if (bg) tab === 'board' ? bg.setAttribute('aria-current', 'page') : bg.removeAttribute('aria-current');
   document
@@ -990,8 +1038,8 @@ function route() {
   pageHelp();
   hdrMetrics();
   // The intro moved behind ? only now, so the quiz stage is resized to the space it really has (phones gained ~280 px).
-  fitStage();
-  fitLk();
+  if (typeof fitStage === 'function') fitStage();
+  if (typeof fitLk === 'function') fitLk();
   // Same for card games (Memory): their grid was sized before the intro left, so it is refitted to the room it now has.
   document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g));
   // Big photos (sheet cover, lab tools) get the file for the box they got (the quiz and Look-alikes do it in their fit).
@@ -1058,7 +1106,7 @@ document.getElementById('signb').onclick = e => {
       delete Q.ba;
       saveQ();
       store.set('imr-coral-reset', new Date().toISOString());
-      introReset(); // the first-meeting cards start over with the progress
+      if (typeof introReset === 'function') introReset(); // the first-meeting cards start over with the progress
       save();
       delete rb.dataset.armed;
       rb.textContent = 'Reset progress';
@@ -1223,18 +1271,81 @@ const draftCand = () =>
         .then(j => j.cand || {})
         .catch(() => ({}))
     : Promise.resolve({});
+// Load order (Pierre, 2026-11-02, from a field HAR at ~86 kbit/s: Home, then the photo quiz and its photos, then My
+// progress, then the rest, each tier after the other so they never share the line with what the player waits for).
+// The files of each tier are listed in index.html (loadTier); here each tier is also set up once its files are in:
+//   1 Home: data.json, curation (the first page waits for these and for BOOT);
+//   2 the quiz: model.js, quiz.js, learn.js (the quiz uses its look-alike pairs and montages), with forms.json,
+//     quality.json and picks.json (growth forms and photo ratings: the draw and the photo slots use them), then the
+//     data is rebuilt with them and the sheet's photo statistics asked for;
+//   3 the photos of the next quiz questions (planNext, prefetched in quiz.js): no files of its own;
+//   4 My progress (progress.js): achievements, the header pill, then the sheet calls (sync, anonymous answers,
+//     leaderboard);
+//   5 the rest (Tools, ⚑), then the service worker, whose install caches every other file of the shell for the next
+//     visit (registered before, its install fetched the whole shell, Lab included, alongside the start-up files).
+// need(N) brings tiers 2..N (files and set-up); a page opened early calls it for its own tier (route), a link straight to
+// a page at start-up too (below), so its files come with Home's.
+let HAVE = 1,
+  started;
+const STARTED = new Promise(r => (started = r)),
+  TIERP = {},
+  // The tier each page needs: Home 1; the quiz, the duels and the Learn pages 2; My progress, the leaderboard and the
+  // achievements 4; the Tools and the Coral Finder (proto/) 5.
+  pageTier = h =>
+    !h || h === 'home' ? 1 : /^(progress|quiz-board|board|ach)$/.test(h) ? 4 : /^(quiz|genera|g-|cmp|tips|key-imr$)/.test(h) ? 2 : 5,
+  // Steps of the loading bar for a page of tier n: its scripts, and data.json.
+  bootMax = n => [...document.querySelectorAll('link[data-tier]')].filter(l => +l.dataset.tier <= n).length + 1;
+let J2 = null;
+const tier2json = () => J2 || (J2 = Promise.all([forms(), json('quality.json?v=3'), json('picks.json?v=1')]));
+const SETUP = {
+  2: ([f, q, k]) => {
+    FORMS = f;
+    CFMAP = f.cf;
+    AUTOQ = q.q || {};
+    PICKS = k;
+    build();
+    loadStats();
+    window.APP_READY = true; // Home, the quiz and the Learn pages work (tests and tools/perf.js wait for this)
+  },
+  4: () => {
+    achMigrate();
+    achCheck(); // before My progress opens, so its badge counts them
+    prog();
+    syncPull();
+    sendAnon();
+    boardNotice();
+    loadBoard();
+    loadAchs();
+  },
+  5: () => {
+    if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+};
+function need(n) {
+  if (n <= HAVE) return Promise.resolve();
+  if (!TIERP[n])
+    TIERP[n] = Promise.all([n > 2 ? need(n - 1) : STARTED, window.loadTier ? loadTier(n) : null, n === 2 ? tier2json() : null])
+      .then(a => SETUP[n] && SETUP[n](a[2]))
+      .then(() => (HAVE = Math.max(HAVE, n)));
+  return TIERP[n];
+}
+{
+  const n = pageTier(hashNow()),
+    bp = document.getElementById('bootp');
+  if (n > 1) {
+    need(n);
+    if (bp) bp.max = bootMax(n);
+  }
+}
 Promise.all([
   getR('data.json?v=32')
     .then(okJson)
     .then(d => (window.bootTick && bootTick(), d)),
   curation(),
-  forms(),
-  json('quality.json?v=3'),
-  json('picks.json?v=1'),
   draftCand(),
   domReady
 ])
-  .then(([d, c, f, q, k, dc]) => {
+  .then(([d, c, dc]) => {
     Object.entries(dc).forEach(([g, L]) => {
       const C = (d.cand = d.cand || {}),
         have = new Set((C[g] || []).map(p => p.f));
@@ -1242,28 +1353,22 @@ Promise.all([
     });
     RAW = d;
     CUR = c;
-    FORMS = f;
-    CFMAP = f.cf;
-    AUTOQ = q.q || {};
-    PICKS = k;
     build();
-    achMigrate();
-    achCheck(); // before the first page, so the badge on My progress counts them
     route();
+    started();
     if (CUR_KEPT) curRefresh();
-    syncPull();
-    sendAnon();
-    loadStats();
-    window.APP_READY = true;
     if (window.tourFirst) tourFirst();
-    boardNotice();
-    // Fetched ahead once the start-up is over (Pierre, 2026-11-01): the leaderboard and the achievement shares, so their
-    // pages open at once, and the first quiz question with its photos.
-    setTimeout(() => {
-      loadBoard();
-      loadAchs();
-      if (hashNow() !== 'quiz') planNext('quiz');
-    }, 2500);
+    // Then the other tiers in the background, one after the other: the quiz, the photos of its next questions (planned
+    // now, so the quiz opens at once; a player already in the quiz or a duel gets theirs topped up), My progress (with
+    // the leaderboard and the achievement shares, so their pages open at once), the rest.
+    need(2)
+      .then(() => {
+        const h = hashNow();
+        planNext(h.startsWith('quiz') ? h : 'quiz');
+        return prefetched();
+      })
+      .then(() => need(4))
+      .then(() => need(5));
   })
   .catch(() => {
     $v.innerHTML =
@@ -1347,4 +1452,4 @@ setInterval(() => {
     swCheck();
   }
 }, 1800000);
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+// The service worker is registered once every tier is in (SETUP[5]).
