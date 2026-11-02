@@ -687,8 +687,11 @@ const prefetched = () => new Promise(ok => (pfWait.push(ok), pump()));
 // the genera met are open: they are recorded as they show, and a plan made meanwhile would deal them again.
 function planNext(cur) {
   if ((cur !== 'quiz' && cur !== 'quiz-duel') || document.querySelector('.unlock.intro')) return;
-  const o = $v.querySelector('.q:not(.done)') ? 1 : 0,
-    pk = pool().join(),
+  const o = $v.querySelector('.q:not(.done)') ? 1 : 0;
+  // A question on screen that changes what comes next (an exam question, a duel slipped in, an "Again", cards) is answered
+  // before anything is planned past it: its answer moves the exam's spacing and the photos seen (Codex review #361).
+  if (o && cur === 'quiz' && SHOWNQ && !plain(SHOWNQ)) return;
+  const pk = pool().join(),
     key = i => `${cur}|${answersSoFar() + o + i}|${pk}`;
   if (NEXTQ && NEXTQ.k !== key(0)) dropPlans();
   let n = 0,
@@ -713,8 +716,9 @@ const takePlan = cur => {
   ONQ = x;
   return x.args;
 };
+let SHOWNQ = null; // the photo-quiz question on screen (planNext)
 function quizPhoto() {
-  const q = takePlan('quiz') || planPhoto();
+  const q = (SHOWNQ = takePlan('quiz') || planPhoto());
   AUTOD = !!q.auto;
   question(...q);
   if (q.intro) introShow(q.intro, q.start);

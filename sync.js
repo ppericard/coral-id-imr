@@ -746,8 +746,12 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
                   ? 'Too many wrong codes for this name: try again in 10 minutes.'
                   : 'Check the name and the 4-digit code.'
           );
-        signIn(name, pin, j);
-        if (!j.found) syncPush().then(() => bindSync());
+        // The achievements' record (progress.js) must be in before an account is merged (Codex review #361: a sign-in
+        // from the tour on a slow first visit came before it).
+        return (typeof need === 'function' ? need(2) : Promise.resolve()).then(() => {
+          signIn(name, pin, j);
+          if (!j.found) syncPush().then(() => bindSync());
+        });
       })
       .catch(() => msg('Could not connect. Check your connection: your progress stays on this phone meanwhile.'));
   };

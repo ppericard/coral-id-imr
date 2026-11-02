@@ -1282,12 +1282,12 @@ const draftCand = () =>
 // progress, then the rest, each tier after the other so they never share the line with what the player waits for).
 // The files of each tier are listed in index.html (loadTier); here each tier is also set up once its files are in:
 //   1 Home: data.json, curation (the first page waits for these and for BOOT);
-//   2 the quiz: model.js, quiz.js, learn.js (the quiz uses its look-alike pairs and montages), with forms.json,
+//   2 the quiz: model.js, quiz.js, learn.js (the quiz uses its look-alike pairs and montages) and progress.js (13 KB:
+//     each answer updates the achievements, and My progress then opens at once; Codex review #361), with forms.json,
 //     quality.json and picks.json (growth forms and photo ratings: the draw and the photo slots use them), then the
-//     data is rebuilt with them and the sheet's photo statistics asked for;
+//     data is rebuilt with them, the achievements counted and the sheet's photo statistics asked for;
 //   3 the photos of the next quiz questions (planNext, prefetched in quiz.js): no files of its own;
-//   4 My progress (progress.js): achievements, the header pill, then the sheet calls (sync, anonymous answers,
-//     leaderboard);
+//   4 the sheet calls (sync, anonymous answers, leaderboard and achievement shares): no files of their own;
 //   5 the rest (Tools, ⚑), then the service worker, whose install caches every other file of the shell for the next
 //     visit (registered before, its install fetched the whole shell, Lab included, alongside the start-up files).
 // need(N) brings tiers 2..N (files and set-up); a page opened early calls it for its own tier (route), a link straight to
@@ -1296,10 +1296,9 @@ let HAVE = 1,
   started;
 const STARTED = new Promise(r => (started = r)),
   TIERP = {},
-  // The tier each page needs: Home 1; the quiz, the duels and the Learn pages 2; My progress, the leaderboard and the
-  // achievements 4; the Tools and the Coral Finder (proto/) 5.
-  pageTier = h =>
-    !h || h === 'home' ? 1 : /^(progress|quiz-board|board|ach)$/.test(h) ? 4 : /^(quiz|genera|g-|cmp|tips|key-imr$)/.test(h) ? 2 : 5,
+  // The tier each page needs: Home 1; the quiz, the duels, the Learn pages, My progress, the leaderboard and the
+  // achievements 2 (progress.js is small and the quiz needs it); the Tools and the Coral Finder (proto/) 5.
+  pageTier = h => (!h || h === 'home' ? 1 : /^(quiz|genera|g-|cmp|tips|key-imr$|progress|quiz-board|board|ach)/.test(h) ? 2 : 5),
   // Steps of the loading bar for a page of tier n: its scripts, and data.json.
   bootMax = n => [...document.querySelectorAll('link[data-tier]')].filter(l => +l.dataset.tier <= n).length + 1;
 let J2 = null;
@@ -1312,12 +1311,14 @@ const SETUP = {
     PICKS = k;
     build();
     loadStats();
-    window.APP_READY = true; // Home, the quiz and the Learn pages work (tests and tools/perf.js wait for this)
-  },
-  4: () => {
+    // progress.js comes with the quiz (Codex review #361: answers given before it lost their achievement bookkeeping):
+    // the achievement record is migrated and counted here, before any answer.
     achMigrate();
     achCheck(); // before My progress opens, so its badge counts them
     prog();
+    window.APP_READY = true; // Home, the quiz and the Learn pages work (tests and tools/perf.js wait for this)
+  },
+  4: () => {
     syncPull();
     sendAnon();
     boardNotice();
