@@ -113,7 +113,9 @@ answer on, about 1 photo-quiz question in 10 (`AUTO_DUEL.P` 0.1, `quiz.js`) is a
 Duel tab picks (`duelPick`: the player's own mix-ups first, then pairs players confuse, then the IMR / Coral Finder
 look-alikes), both genera met and ready, never the same pair within 20 answers (`SAME`), at least 5 questions after the
 last one (`GAP`) and 2 after an "Again" (`AGAIN`), never while an "Again" is due, and a mix-up in one of them brings no
-"Again" (its pair comes back through the duel choice, mix-ups first; Codex review #352). Prompt "Look-alikes: A or B?"; logged `quiz|d|k2` (rated 1 in 2, counted
+"Again" (its pair comes back through the duel choice, mix-ups first; Codex review #352), and never on a question where the
+path opens a genus (a card): opening comes first (Pierre, 2026-11-02; with the old order, a duel drawn at the wrong
+time delayed a genus, and a weak RA met about 3 genera fewer by question 300). Prompt "Look-alikes: A or B?"; logged `quiz|d|k2` (rated 1 in 2, counted
 apart in the player journey; a win counts for the Look-alike slayer achievement, as in the Duel tab). Simulated over 4 seeds, it does not slow the opening of genera (an expert met 27 genera
 after 100 questions with duels, 26 without, seed 3333); the profiles test now checks an expert's traps at 300
 questions (one or more a question) and more than a beginner's at 100, the mean of the two sitting at the threshold.
@@ -171,9 +173,11 @@ Pierre: rather than spamming a beginner with 40 genera, focus on the easiest one
 everything estimated from the data. Before, a genus never seen weighed 10 against 1-4 for one being learned: a beginner
 met the 39 slate genera almost at once.
 
-- **Opening by results**: while fewer than `OPEN.K` (6; 3 at first, then 5) genera met are *shaky*, the genera not met yet share
-  `OPEN.READY` (35%) of the draw; otherwise `OPEN.TRICKLE` (3%), so a new one still comes now and then. A share, not a
-  weight, so the pace holds as the genera met add up.
+- **Opening by results**: the genera not met yet share `OPEN.READY` (35%) of the draw while no genus met is *shaky*,
+  down in a straight line to `OPEN.TRICKLE` (3%) at `OPEN.K` (10) shaky genera or more, so a new one still comes now
+  and then. A share, not a weight, so the pace holds as the genera met add up. A slope, not a switch (until 2026-11-02:
+  35% below 6 shaky genera, 3% from 6; K was 3, then 5, then 6): one genus more or less shaky no longer flips the pace,
+  which made the opening a lottery (below).
 - **Shaky** = met, not mastered, and the player's expected success on an average photo of the genus (4 choices, at its
   difficulty) under `OPEN.P` = 0.6, from the genus ability. That ability allows for how hard the questions were and
   starts from the global level, so the signal is what the player knows, at any level, from the first answer. Tried and
@@ -266,6 +270,38 @@ a beginner picking an unknown name as a wrong answer opened it: the earlier rows
 near the pace Pierre asked for while the beginner stays under 16 genera in 100 questions; the expert meets all 39 by
 question 200-300 instead of 100 (one card every 2 answers at most). Runs vary by about 5 genera.
 
+The switch to a slope (2026-11-02, Pierre: "35% with no shaky genus and 3% from 6, shouldn't that be better
+calibrated? it deserves a test"; and "the simpler the algorithm, the better"). With the switch, a player sitting near
+6 shaky genera flipped between 35% and 3% from one answer to the next, so the same player met 8 to 24 genera after 100
+questions depending on the draws. Simulated with 6 seeds (11, 222, 3333, 44444, 555, 6666), genera met, mean ± sd
+(beginner; weak RA; "lecture" RA, who knows 80% of the genera and a quarter of them only half; expert):
+
+| `OPEN` | after 50 | after 100 | after 200 | after 300 | right at 100 |
+| --- | --- | --- | --- | --- | --- |
+| switch, K 6 (before) | 12.0 / 11.8 / 12.0 / 15.8 | 14.5±1.4 / 13.8±2.9 / 16.0±7.8 / 22.5±7.0 | 16.3 / 16.0 / 25.3 / 30.8 | 19.8 / 19.3 / 27.5 / 35.5 | 74-88% |
+| slope, K 6 | 10.8 / 9.2 / 12.5 / 14.8 | 11.7±0.7 / 11.3±1.4 / 16.7±4.4 / 21.7±3.7 | 14.2 / 14.5 / 23.7 / 31.7 | 17.7 / 17.3 / 28.7 / 35.2 | 75-92% |
+| slope, K 9 | 11.7 / 11.7 / 13.5 / 16.2 | 12.7±1.6 / 13.3±2.1 / 19.3±2.8 / 21.7±3.3 | 17.0 / 17.3 / 26.5 / 33.2 | 19.8 / 20.7 / 30.2 / 37.8 | 76-87% |
+| slope, K 12 | 11.5 / 12.3 / 14.7 / 15.5 | 14.5±1.0 / 15.7±2.2 / 19.8±2.0 / 25.8±3.8 | 17.3 / 18.7 / 29.2 / 39 | 20.8 / 23.2 / 35.2 / 39 | 72-88% |
+| slope, K 15 | 14.5 / 12.7 / 15.8 / 15.3 | 18.7±1.4 / 16.2±1.7 / 23.8±3.1 / 23.8±2.4 | 22.3 / 21.5 / 36.5 / 36.5 | 24.2 / 25.0 / 37.2 / 38.8 | 71-86% |
+
+All rows also have no duel slipped into the quiz when the path opens a genus that question (below). On these data
+K 12 kept the beginner where it was (14.5 at 100) and opened faster for those who learn. Then the photo candidates
+added on `main` the same day changed the photo ratings the simulation draws on, and the same grid gave:
+
+| `OPEN` (photos of 2026-11-02, after #352) | after 50 | after 100 | after 200 | after 300 | right at 100 |
+| --- | --- | --- | --- | --- | --- |
+| switch, K 6 (before) | 12.0 / 12.3 / 13.2 / 15.8 | 13.0±2.9 / 13.5±2.3 / 16.5±4.2 / 24.8±6.4 | 16.8 / 17.7 / 21.0 / 32.8 | 19.2 / 20.2 / 24.3 / 36.7 | 76-86% |
+| slope, K 8 | 10.2 / 12.0 / 13.5 / 14.0 | 12.8±1.1 / 13.7±0.9 / 20.2±4.1 / 20.5±4.0 | 14.7 / 16.5 / 28.0 / 28.7 | 18.5 / 19.5 / 31.0 / 34.3 | 75-86% |
+| **slope, K 10 (now)** | 10.8 / 10.8 / 11.8 / 16.0 | 13.2±1.5 / 12.2±2.0 / 17.3±3.2 / 24.8±3.1 | 17.0 / 16.5 / 25.8 / 38.3 | 20.8 / 20.5 / 29.3 / 39 | 74-86% |
+| slope, K 12 | 11.7 / 12.7 / 14.5 / 16.2 | 15.7±1.9 / 15.5±2.9 / 23.3±3.4 / 23.7±2.5 | 18.3 / 19.7 / 33.7 / 36.3 | 23.8 / 23.7 / 37.2 / 39 | 72-84% |
+
+K 12 now opened 16 genera on average to a beginner in 100 questions, at 72% right (18 on the CI seed, over the test's
+16), so K 10: the beginner stays at the switch's pace (13.2) with half its spread, the lecture RA meets 29 genera by
+question 300 instead of 24, and the expert all 39 by question 200. A change of photos moved the results by about 3
+genera: 6 seeds are a minimum, and the order between K 8, 10 and 12 for the RA is within the noise (the independent
+review's first point: a simulation over more seeds, ROADMAP). A coupling of the duel rate with the number of shaky
+genera was tried as well (3 more settings) and dropped: no gain over the slope alone.
+
 K 5 with P 0.6 is the small step Pierre asked for: the RA opens faster (one genus more every ~15 questions at first),
 the beginner stays on about ten genera for the first 100 questions. Lowering P too made the beginner open faster as well (18 genera
 in 100 questions in the CI test, which keeps that at 16 at most). Mastery is barely changed: an expert masters
@@ -318,6 +354,11 @@ simulation); recalibrate `ELO` and `OPEN` once a few RA cohorts have played.
   and their answers inform the dynamic algorithm: games take every kept photo (no cap of 4 Medium / 4 Hard), and a
   photo with few answers gets a wider targeting (`CAL.U`). Three seeds vary by ±5 genera at a given question count:
   the opening table moved within that noise (a run without `CAL.U` gave the RA 19-21 genera at question 300).
+- 2026-11-02, Pierre: the opening as a slope rather than a switch, `OPEN.K` 6 → 10 (tables above), and no duel slipped
+  into the quiz on a question that opens a genus. No setting added: "the simpler the algorithm, the better; rethink or
+  recalibrate the existing variables rather than add one to patch a problem". K 12 on the first grid, 10 once the
+  new photos were in. An independent review of the algorithm against the literature (Pelánek, Papoušek, Duolingo,
+  BKT, interleaving) is done (ROADMAP, "To discuss") and may revisit this.
 
 ## References
 
