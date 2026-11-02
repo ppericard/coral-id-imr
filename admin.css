@@ -2396,9 +2396,45 @@ td.cov-c .cov-off {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+/* Difficulty by genus: one lane per view (colony, close-up, corallites), so the three never mix (Pierre, 2026-11-02). */
+.adm-lanes {
+  display: grid;
+  gap: 1px;
+  padding: 3px 0;
+}
 .adm-strip {
   position: relative;
   height: 18px;
+}
+.adm-lanes .adm-strip {
+  height: 12px;
+}
+/* Box (quartiles), whiskers and median tick: behind the dots, in the view's colour. */
+.adm-strip s,
+.adm-strip u,
+.adm-strip i {
+  position: absolute;
+  pointer-events: none;
+}
+.adm-strip s {
+  top: 1px;
+  bottom: 1px;
+  opacity: 0.28;
+  border-radius: 2px;
+}
+.adm-strip u {
+  top: 50%;
+  height: 1px;
+  background: var(--muted);
+}
+.adm-strip i {
+  top: -1px;
+  bottom: -1px;
+  width: 3px;
+  margin-left: -1.5px;
+  border-radius: 1px;
+  box-shadow: 0 0 0 1px var(--surface);
+  z-index: 2;
 }
 .adm-strip b {
   position: absolute;
@@ -2408,11 +2444,12 @@ td.cov-c .cov-off {
   background: var(--line);
 }
 .adm-strip button {
+  --s: 12px;
   position: absolute;
   top: 50%;
-  width: 12px;
-  height: 12px;
-  margin: -6px 0 0 -6px;
+  width: var(--s);
+  height: var(--s);
+  margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
   border-radius: 50%;
   border: 1px solid var(--surface);
   padding: 0;
