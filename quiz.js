@@ -554,7 +554,10 @@ function unlockShow(L) {
 let rematch = null;
 // GAP: answers between two duels slipped in; AGAIN: answers at least after an "Again" (spacing them from the Agains
 // by GAP left a player who errs 1 time in 10 with 1 duel in 40 questions instead of 1 in 10).
-const AUTO_DUEL = {P: 0.1, FROM: 20, GAP: 5, AGAIN: 2, SAME: 20};
+// P: the share of duels, from LO while the path wants to open genera to HI while the player consolidates (openness 0;
+// Pierre, 2026-11-02: open a genus when the path wants one rather than a duel, more duels to work on the shaky genera);
+// LO = HI = P gives a fixed share. SHAKY: weight of a pair with a shaky genus.
+const AUTO_DUEL = {P: 0.1, LO: 0.1, HI: 0.1, FROM: 20, GAP: 5, AGAIN: 2, SAME: 20, SHAKY: 1};
 let twoAt = -Infinity, // answers so far at the last duel slipped in
   againAt = -Infinity, // ... and at the last "Again"
   duelLog = [], // [answers so far, pair] of the duels slipped in lately
@@ -755,12 +758,16 @@ function planPhoto() {
     a >= AUTO_DUEL.FROM &&
     a - twoAt >= AUTO_DUEL.GAP &&
     a - againAt >= AUTO_DUEL.AGAIN &&
-    Math.random() < AUTO_DUEL.P &&
+    Math.random() < AUTO_DUEL.LO + (AUTO_DUEL.HI - AUTO_DUEL.LO) * (1 - openness(list.filter(shaky).length)) &&
     !introStart(list).length
   ) {
     const key = p => p.slice().sort().join('|'),
       recent = new Set(duelLog.filter(([at]) => a - at < AUTO_DUEL.SAME).map(([, k]) => k)),
-      pair = duelPick(list, p => p.every(introReady) && !recent.has(key(p)));
+      pair = duelPick(
+        list,
+        p => p.every(introReady) && !recent.has(key(p)),
+        p => (p.some(shaky) ? AUTO_DUEL.SHAKY : 1)
+      );
     if (pair) {
       twoAt = a;
       duelLog = [...duelLog.filter(([at]) => a - at < AUTO_DUEL.SAME), [a, key(pair)]];
@@ -804,7 +811,7 @@ function quizDuel(a, b) {
 }
 // A look-alike pair for a duel (the Duel tab, and the duels slipped into the photo quiz): among the pairs whose two
 // genera are in the list and pass keep. Null when none.
-function duelPick(list, keep = () => true) {
+function duelPick(list, keep = () => true, boost = () => 1) {
   // Unlocked bonus genera duel with the slate look-alike the Coral Finder names.
   const ps = [
     ...pairs(),
@@ -818,7 +825,8 @@ function duelPick(list, keep = () => true) {
   // Your mix-ups you still make come up most (personal confusion score, confOf), then pairs players often confuse and
   // the classic look-alikes (compared in the IMR lecture or the Coral Finder text).
   const w = ps.map(
-      ([x, y]) => (weight(x) + weight(y)) * (mixedUp(x, y) && confusable(x, y) ? 3 : confusable(x, y) || isClassic(x, y) ? 2 : 1)
+      ([x, y]) =>
+        (weight(x) + weight(y)) * (mixedUp(x, y) && confusable(x, y) ? 3 : confusable(x, y) || isClassic(x, y) ? 2 : 1) * boost([x, y])
     ),
     t0 = w.reduce((p, q) => p + q, 0);
   let r = Math.random() * t0;
