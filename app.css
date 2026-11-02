@@ -5475,6 +5475,37 @@ footer .rep:hover {
 }
 
 /* ---------- Leaderboard (Pierre, 2026-11-01): 🏆 in the header, #board page, rank in My progress ---------- */
+/* Achievements earned quietly and not seen yet (progress.js achNew): a dot on 🏆 and on 🏅 in the player's card; a "New"
+   tag on the achievements page. */
+.boardgo.hasnew,
+.pbtxt a.hasnew {
+  position: relative;
+}
+.boardgo.hasnew::after,
+.pbtxt a.hasnew::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bad);
+}
+.pbtxt a.hasnew::after {
+  top: -2px;
+  right: -8px;
+}
+.achc.new b::after {
+  content: 'New';
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: var(--pill);
+  background: var(--accent);
+  color: var(--surface);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
 .boardgo {
   text-decoration: none;
   color: inherit;

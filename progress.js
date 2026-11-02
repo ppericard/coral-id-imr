@@ -17,7 +17,7 @@ function badge(ring, pct, sub) {
     G = P[LEVEL];
   return `<div class="pbadge"><div class="pring" style="background:conic-gradient(${ring})"><span><b>${pct}%</b></span></div>
     <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
-    <span><span>${sub}</span><a id="pbrank" href="#board"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a><a href="#ach">🏅 <b>${got.length}</b>/${ACH.length} ${got
+    <span><span>${sub}</span><a id="pbrank" href="#board"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a><a href="#ach"${achNew() ? ' class="hasnew"' : ''}>🏅 <b>${got.length}</b>/${ACH.length} ${got
       .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
       .slice(0, 3)
       .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
@@ -475,13 +475,38 @@ function achCheck(silent) {
     ids = newAch(achSnap(A), A);
   if (!ids.length) {
     if (!had) store.set(ACHK, A);
-    return;
+    return achDot();
   }
-  const t = Date.now();
-  ids.forEach(id => (A[id] = t));
+  // Only the first achievement of each family and the top tier pop up (Pierre, 2026-11-02, after a walkthrough counted
+  // 7-9 toasts in 60 answers): a new kind stays a surprise, an intermediate step lands quietly on the achievements page
+  // with a "new" dot on 🏅 / 🏆. Several at once make one toast.
+  const fams = new Set(ACH.filter(a => A[a.id]).map(achFam)),
+    t = Date.now(),
+    loud = [],
+    quiet = [];
+  ids.forEach(id => {
+    const a = ACH.find(x => x.id === id);
+    (a.tier === 3 || !fams.has(achFam(a)) ? loud : quiet).push(id);
+    fams.add(achFam(a));
+    A[id] = t;
+  });
   store.set(ACHK, A);
-  if (silent || !had) achRecap(ids);
-  else ids.forEach(id => achPop(ACH.find(a => a.id === id)));
+  if (quiet.length && had && !silent) store.set(ACHNEW, [...achUnseen(), ...quiet]);
+  achDot();
+  achRecap(silent || !had ? ids : loud);
+}
+// Families: the icons of one kind of milestone (genus progress, learned, Elo).
+const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '👑': '🎓', '🌟': '⭐'},
+  achFam = a => ACH_FAM[a.icon] || a.icon;
+// Achievements earned quietly and not seen yet: a dot on 🏆 in the header and on 🏅 in the player's card. Kept on this
+// device only (its own key, outside the synced record: a sign-in or another device's sync never brings or drops them;
+// Codex review #360); sign-out clears it with the progress.
+const ACHNEW = 'imr-ach-new',
+  achUnseen = () => store.get(ACHNEW, []) || [],
+  achNew = () => achUnseen().length;
+function achDot() {
+  const bg = document.getElementById('boardgo');
+  if (bg) bg.classList.toggle('hasnew', achNew() > 0);
 }
 // After each answer: the run of right answers and the one-off feats, then the check.
 function achAfter(good, ph) {
@@ -592,7 +617,13 @@ const loadAchs = () => {
 // Earned first, newest first; then the others, the most often earned first (the next within reach); each with the share
 // of players holding it, as on Steam.
 function viewAch() {
-  const A = store.get(ACHK, {}) || {};
+  const A = store.get(ACHK, {}) || {},
+    fresh = new Set(achUnseen());
+  // Seen now: the quiet ones lose their dot, and keep a "New" tag on this visit.
+  if (fresh.size) {
+    store.set(ACHNEW, []);
+    achDot();
+  }
   const draw = S => {
     const pc = a => (S && S.n ? (100 * (S.counts[a.id] || 0)) / S.n : null),
       got = ACH.filter(a => A[a.id]).sort((x, y) => A[y.id] - A[x.id]),
@@ -602,7 +633,7 @@ function viewAch() {
       return p == null ? '' : `<span class="achp">${p < 1 && p > 0 ? '<1' : Math.round(p)}% of players</span>`;
     };
     const card = (a, on) =>
-      `<li class="achc${on ? ' on' : ''} t${a.tier}"><span class="achic" aria-hidden="true">${a.icon}</span><span><b>${esc(a.title)} ${on ? TIER[a.tier] : ''}</b><small>${esc(a.desc)}${on ? ` · ${new Date(A[a.id]).toLocaleDateString([], {day: 'numeric', month: 'short'})}` : ''}</small>${share(a)}</span></li>`;
+      `<li class="achc${on ? ' on' : ''}${fresh.has(a.id) ? ' new' : ''} t${a.tier}"><span class="achic" aria-hidden="true">${a.icon}</span><span><b>${esc(a.title)} ${on ? TIER[a.tier] : ''}</b><small>${esc(a.desc)}${on ? ` · ${new Date(A[a.id]).toLocaleDateString([], {day: 'numeric', month: 'short'})}` : ''}</small>${share(a)}</span></li>`;
     $v.innerHTML = `<p class="lede">Achievements mark milestones of your learning: genera met, a quarter, half, three quarters of the way to learned, learned, your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo (from ${ELO_MIN} answers). Never time spent. The share of players counts everyone who signed in.</p>
   <div class="board">${boardTabs('ach')}<h2 class="btitle">${got.length}/${ACH.length} earned</h2>
   <ul class="achl">${got.map(a => card(a, true)).join('')}${left.map(a => card(a, false)).join('')}</ul></div>`;

@@ -695,6 +695,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         INTRO.KEY,
         INTRO.OFFER.KEY,
         ACHK,
+        'imr-ach-new',
         BOARD,
         LOG0,
         NUDGE,
