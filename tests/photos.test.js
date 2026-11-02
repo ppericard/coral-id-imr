@@ -139,7 +139,7 @@ test('several-corals photos (kept apart in "more") never reach games or the shee
   );
 });
 
-test('games take every kept field photo, other observers\' too, with no cap (Pierre, 2026-11-02)', () => {
+test("games take every kept field photo, other observers' too, with no cap (Pierre, 2026-11-02)", () => {
   const use = CUR.use || {};
   each(D, (n, g, v, s) => {
     const game = new Set(GAME.flatMap(k => s[k]).map(p => p.f));
