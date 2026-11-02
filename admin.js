@@ -2014,7 +2014,8 @@ function renderEvents() {
     of = k => R.filter(r => r[3] === k),
     when = t => days(t),
     group = (L, key) => {
-      const O = {};
+      // Keys come from the players' devices (Codex review #343: "__proto__" broke the page): no prototype.
+      const O = Object.create(null);
       L.forEach(r => {
         const k = key(r),
           g = (O[k] = O[k] || {k, n: 0, dev: new Set(), last: 0, pg: new Set(), av: new Set(), ua: new Set(), r});
@@ -2081,7 +2082,7 @@ function renderEvents() {
     phT = phs.length
       ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Photo</th><th>Devices</th><th>Times</th><th>Last</th><th>Browsers</th></tr></thead><tbody>${phs
           .map(g => {
-            const p = PHOTOS[g.k];
+            const p = Object.hasOwn(PHOTOS, g.k) ? PHOTOS[g.k] : null;
             return `<tr><td>${p ? `<button type="button" class="adm-link" data-zf="${esc(g.k)}" data-g="${esc(p.genus)}"><i>${esc(p.genus)}</i></button> ` : ''}<code>${esc(g.k)}</code></td><td class="n">${g.dev.size}</td><td class="n">${g.n}</td><td>${when(g.last)}</td><td><small>${few(g.ua)}</small></td></tr>`;
           })
           .join('')}</tbody></table></div>`
@@ -4739,7 +4740,7 @@ function statsHealth() {
     gameOf = m => (/^quiz-duel/.test(m) ? 'Duel' : /^quiz/.test(m) ? 'Photo quiz' : m || 'Other');
 
   // 1. Where players stop: one player's answers, oldest first, cut where two answers are GAP minutes apart or more.
-  const BY = {};
+  const BY = Object.create(null);
   R.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
   const S = [];
   Object.entries(BY).forEach(([id, L]) => {
@@ -4783,7 +4784,7 @@ function statsHealth() {
     RL = runs(longer),
     END_T = ['Right', '1 miss', '2 misses', '3+ misses'];
   const top = (L, key, k) => {
-    const O = {};
+    const O = Object.create(null);
     L.forEach(s => {
       const x = key(s.L[s.L.length - 1]);
       O[x] = (O[x] || 0) + 1;
@@ -4823,11 +4824,11 @@ function statsHealth() {
   // 2. Photos everyone misses: answers from the log (each answer counts once for every photo it showed), difficulty
   // from the photo Elo (with or without me) against the median of the genus's rated photos.
   const PS = photoStats(),
-    META = {};
+    META = Object.create(null);
   allPhotos()
     .filter(p => p.view !== 'cand')
     .forEach(p => (META[p.f] = META[p.f] || p));
-  const PH = {};
+  const PH = Object.create(null);
   R.forEach(r =>
     new Set(r[6].split(' ').filter(Boolean)).forEach(f => {
       if (!META[f]) return;
@@ -4836,7 +4837,7 @@ function statsHealth() {
       o.ok += r[4];
     })
   );
-  const GMED = {};
+  const GMED = Object.create(null);
   Object.values(META).forEach(p => {
     if (nAns(PS[p.f]) >= 3) (GMED[p.genus] = GMED[p.genus] || []).push(PS[p.f][0]);
   });
@@ -4865,7 +4866,7 @@ function statsHealth() {
 
   // 3. Genera that don't take off: per slate genus, each player's right rate on the photos of it (answers where it was
   // shown); stuck = G_MIN answers or more on it and still under G_LOW over the last G_MIN.
-  const PG = {};
+  const PG = Object.create(null);
   Object.values(BY).forEach(L =>
     L.forEach(r => {
       const k = r[0] + '|' + r[2];

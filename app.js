@@ -2046,6 +2046,8 @@ function pulseAsk() {
   );
   const box = document.querySelector('#after .pulse');
   store.set(PULSEK, {at: answersSoFar()});
+  // The row makes the phone's feedback sheet taller: the photos above it are sized again (Codex review #343).
+  fitStage();
   box.querySelectorAll('[data-pulse]').forEach(
     b =>
       (b.onclick = e => {
@@ -2063,6 +2065,7 @@ function pulseAsk() {
           });
           box.innerHTML = '<span>Thank you!</span>';
         } else box.remove();
+        fitStage();
         document.getElementById('next')?.focus({preventScroll: true});
       })
   );
@@ -3062,20 +3065,19 @@ const devId = () => {
 };
 const appVer = () => ((document.querySelector('link[href*="app.js?v="]') || {}).href || '').replace(/^.*\?v=/, '');
 const uaShort = () => {
+  // Edge, Opera and Samsung Internet also carry "Chrome/": their own token first (Codex review #343).
   const u = navigator.userAgent,
-    m = u.match(/(Edg|OPR|SamsungBrowser|Firefox|CriOS|Chrome|Version)\/(\d+)/);
-  const b = !m
-    ? 'other'
-    : m[1] === 'Version'
-      ? 'Safari'
-      : m[1] === 'CriOS'
-        ? 'Chrome iOS'
-        : m[1] === 'Edg'
-          ? 'Edge'
-          : m[1] === 'OPR'
-            ? 'Opera'
-            : m[1];
-  return `${b} ${m ? m[2] : ''}${/Mobi|Android/.test(u) ? ' mobile' : ''}`.trim();
+    T = [
+      ['Edge', /Edg(?:A|iOS)?\/(\d+)/],
+      ['Opera', /OPR\/(\d+)/],
+      ['Samsung', /SamsungBrowser\/(\d+)/],
+      ['Firefox', /(?:Firefox|FxiOS)\/(\d+)/],
+      ['Chrome iOS', /CriOS\/(\d+)/],
+      ['Chrome', /Chrome\/(\d+)/],
+      ['Safari', /Version\/(\d+).*Safari/]
+    ],
+    m = T.map(([b, re]) => [b, u.match(re)]).find(([, x]) => x);
+  return `${m ? m[0] + ' ' + m[1][1] : 'other'}${/Mobi|Android/.test(u) ? ' mobile' : ''}`;
 };
 function ev(k, o = {}) {
   const key = k + '|' + (o.msg || o.f || o.r || '');

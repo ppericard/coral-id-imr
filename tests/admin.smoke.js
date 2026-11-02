@@ -127,6 +127,20 @@ const server = http.createServer((req, res) => {
     const evt = await text();
     if (!/About right/i.test(evt) || !/reading 'views'/.test(evt) || !/Saves that failed/i.test(evt))
       fails.push(`${w}px Errors & feedback: demo events missing`);
+    // Keys come from anyone's device: "__proto__" as a photo or a message must not break the page (Codex review #343).
+    const proto = await p.evaluate(() => {
+      EVS.rows.unshift(
+        ['protox', Date.now(), 'devx', 'photo', '__proto__', '', 'quiz', '', '1', 'x'],
+        ['protoy', Date.now(), 'devx', 'err', '__proto__', '', 'quiz', '', '1', 'x']
+      );
+      try {
+        renderEvents();
+        return /__proto__/.test(document.getElementById('view').innerText);
+      } catch (e) {
+        return e.message;
+      }
+    });
+    if (proto !== true) fails.push(`${w}px Errors & feedback with a "__proto__" event: ${proto}`);
     await go('~triage');
     if (!/Demo report/.test(await text())) fails.push(`${w}px Triage: demo reports missing`);
     await go('~stats');
