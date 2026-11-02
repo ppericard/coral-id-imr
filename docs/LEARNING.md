@@ -5,7 +5,7 @@ photos. Each choice says where it comes from: published work, Pierre's decisions
 three-player simulation, `tests/profiles.smoke.js`). Keep this file in step with the code: a constant changed here is
 changed there, with the reason.
 
-Code: `app.js` (the player's own model, in the browser), `core.js` (shared helpers, also run by the admin), the sync
+Code: `model.js` (the player's own model, in the browser; `app.js` before 2026-11-02), `core.js` (shared helpers, also run by the admin), the sync
 sheet script `tools/sync/Code.gs` (statistics pooled over every player, `stats_`). ARCHITECTURE.md describes the code;
 this file explains why it works that way.
 
