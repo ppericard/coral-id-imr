@@ -231,7 +231,16 @@ function renderJourney(name) {
     lrnAt = {};
   Object.entries(LRN).forEach(([g, mx]) => {
     let i = -1;
-    if (mx > 1e12) i = R.findIndex(r => r[1] >= mx - 5000);
+    // The answer on this genus closest to the time kept, an exam question first (Codex review #352: the first answer of
+    // any genus near that time put the star on the wrong one).
+    if (mx > 1e12) {
+      let best = Infinity;
+      R.forEach((r, k) => {
+        if (r[2] !== g) return;
+        const d = Math.abs(r[1] - mx) - (/\|x$/.test(String(r[5])) ? 6e4 : 0);
+        if (d < best) ((best = d), (i = k));
+      });
+    }
     if (i < 0)
       R.forEach((r, k) => {
         if (r[2] === g && r[4] && /\|x$/.test(String(r[5]))) i = k;
