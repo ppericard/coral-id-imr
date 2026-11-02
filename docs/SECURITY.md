@@ -30,7 +30,12 @@ leak of the Sheet would expose little.
 - **Duplicates**: an answer id already in the Answers tab is never logged twice.
 
 A real class of RAs stays far below every cap. A determined attacker can still add up to ~6000 anonymous answers
-and 40 accounts per 6 hours: enough to skew statistics, not to break the Sheet quickly.
+and 40 accounts per 6 hours, but since v17 (2026-11-02, Pierre) the statistics count **only signed-in players whose
+answers are clearly above chance** (10 answers or more, one-sided z ≥ 1.645 against each question's guess rate:
+`TRUST`, `trusted_` in `Code.gs`, `trustOf` in `core.js`), and **only a player's first answer on each photo**: anonymous
+answers count once their device signs in; random clicking, bots answering at chance and test runs never count. A bot
+that signs in and reads the right answers from the app's data could still pull photos towards "easy", one answer per
+photo and account.
 
 ## If it happens
 
@@ -43,8 +48,8 @@ and 40 accounts per 6 hours: enough to skew statistics, not to break the Sheet q
 
 ## Not done yet (ROADMAP)
 
-- Weigh answers by trust in the statistics (signed-in, long-standing players more than one-off anonymous ids), and an
-  admin switch to exclude a player or an anonymous id from the statistics.
+- An admin switch to exclude a signed-in player from the statistics (v17 already leaves out anonymous ids and players
+  at chance).
 - Check server-side that the photos of an answer belong to the genus shown (needs a compact photo list in the script).
 - Archive old answers to a second tab or Sheet before the 10-million-cell limit.
 - Show the Alerts tab in the admin (To do).

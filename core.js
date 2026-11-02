@@ -165,11 +165,42 @@
     return out;
   }
 
+  // Who rates the photos and the confusions, as tools/sync/Code.gs trusted_ (v17, Pierre 2026-11-02): signed-in players
+  // only (row[11] = 1 marks a device that never signed in; a sheet before v17 sends no flag), with TRUST.N answers or more
+  // and a right rate clearly above chance (one-sided z of at least TRUST.Z against each question's guess rate).
+  const TRUST = {N: 10, Z: 1.645};
+  const guessOf = mode => {
+    const kq = /\|k(\d)$/.exec(mode);
+    return kq ? 1 / Number(kq[1]) : mode.indexOf('quiz-duel') === 0 ? 0.5 : 0.25;
+  };
+  function trustOf(rows) {
+    const T = {},
+      out = {};
+    rows.forEach(r => {
+      if (!r[0]) return;
+      const t = (T[r[0]] = T[r[0]] || [0, 0, 0, 0, 0]),
+        g = guessOf(r[5]);
+      t[0]++;
+      t[1] += r[4] ? 1 : 0;
+      t[2] += g;
+      t[3] += g * (1 - g);
+      if (r[11]) t[4] = 1;
+    });
+    Object.keys(T).forEach(w => {
+      const t = T[w];
+      out[w] = !t[4] && t[0] >= TRUST.N && (t[1] - t[2]) / Math.sqrt(t[3]) >= TRUST.Z;
+    });
+    return out;
+  }
+
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
-  // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them).
+  // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them). Every answer
+  // moves the player's level; a photo moves only on a trusted player's first answer on it (trustOf, v17).
   function eloOf(rows) {
     const P = {},
       R = {},
+      seen = {},
+      trust = trustOf(rows),
       sig = x => 1 / (1 + Math.exp(-x));
     rows
       .slice()
@@ -178,19 +209,23 @@
         const fs = r[6].split(/\s+/).filter(Boolean);
         if (!r[0] || !fs.length) return;
         const ok = r[4] ? 1 : 0,
-          kq = /\|k(\d)$/.exec(r[5]),
-          g = kq ? 1 / Number(kq[1]) : r[5].indexOf('quiz-duel') === 0 ? 0.5 : 0.25,
+          g = guessOf(r[5]),
           ra = (R[r[0]] = R[r[0]] || [0, 0]);
         const ph = fs.map(f => (P[f] = P[f] || [0, 0, 0])),
           b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
         const d = ok - (g + (1 - g) * sig(ra[0] - b));
         ra[0] += (0.6 / (1 + ra[1] / 40)) * d;
         ra[1]++;
-        ph.forEach(p => {
-          p[0] -= (0.8 / (1 + p[2] / 10) / ph.length) * d;
-          p[2]++;
-          p[1] += ok;
-        });
+        if (trust[r[0]])
+          fs.forEach((f, i) => {
+            const k = r[0] + '|' + f;
+            if (seen[k]) return;
+            seen[k] = 1;
+            const p = ph[i];
+            p[0] -= (0.8 / (1 + p[2] / 10) / ph.length) * d;
+            p[2]++;
+            p[1] += ok;
+          });
       });
     const out = {};
     Object.keys(P).forEach(f => (out[f] = [Math.round(P[f][0] * 100) / 100, P[f][2], P[f][1]]));
@@ -203,6 +238,8 @@
   // check it). dir["shown|other"] = [offered, answered] keeps the direction. old["shown|answered"] = mix-ups logged without
   // their choices (before v10): they can't be turned into a rate, only counted.
   function confusionOf(rows) {
+    const trust = trustOf(rows);
+    rows = rows.filter(r => trust[r[0]]); // trusted players only, as Code.gs stats_ (v17)
     const pair = {},
       dir = {},
       old = {},
@@ -682,6 +719,8 @@
     mergeOld,
     mergeProgress,
     eloOf,
+    trustOf,
+    TRUST,
     confusionOf,
     CONF,
     confScore,

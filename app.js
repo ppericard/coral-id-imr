@@ -3029,7 +3029,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
     };
     return;
   }
-  box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device.</p>
+  box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device, and your answers help rate the photos (those of players not signed in don't).</p>
     <form class="sform"><label>Your name <input name="n" required maxlength="40" autocomplete="name"></label>
     <label>4-digit code <input name="p" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"></label>
     <button class="${box.classList.contains('tsync') ? 'next' : 'chip go'}" type="submit">Sign in</button> <span class="note" role="status"></span></form>

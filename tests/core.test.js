@@ -6,6 +6,7 @@ const {
   mergeOld,
   mergeProgress,
   eloOf,
+  trustOf,
   confusionOf,
   confScore,
   CONF,
@@ -212,10 +213,42 @@ test('takeTab: both tabs click before hearing of each other, then one takes back
 });
 
 test('a quiz question with easy wrong choices (quiz|k2) is rated with a 1/2 guess', () => {
-  const row = (m, ok) => ['Ana', 1, 'Acropora', 'Acropora', ok, m, 'acropora-1'];
+  // Ana has a record that counts (v17: signed in, clearly above chance) before the answer under test.
+  const past = Array.from({length: 12}, (_, i) => ['Ana', 0, 'Porites', 'Porites', 1, 'quiz', 'porites-' + i]),
+    E = (m, ok) => eloOf([...past, ['Ana', 1, 'Acropora', 'Acropora', ok, m, 'acropora-1']])['acropora-1'][0];
   // Right on a 2-plausible-choice question proves less than on a 4-choice one: the photo looks less easy.
-  assert.ok(eloOf([row('quiz|k2', 1)])['acropora-1'][0] > eloOf([row('quiz', 1)])['acropora-1'][0]);
-  assert.strictEqual(eloOf([row('quiz|k2', 1)])['acropora-1'][0], eloOf([row('quiz-duel', 1)])['acropora-1'][0]);
+  assert.ok(E('quiz|k2', 1) > E('quiz', 1));
+  assert.strictEqual(E('quiz|k2', 1), E('quiz-duel', 1));
+});
+
+test('photo ratings and confusions count only signed-in players clearly above chance, first answer per photo (v17)', () => {
+  const R = (who, i, ok, f, an, m = 'quiz', ch = 'Acropora Porites Favites Montipora') => [
+    who,
+    i,
+    'Acropora',
+    ok ? 'Acropora' : 'Porites',
+    ok,
+    m,
+    f,
+    null,
+    null,
+    null,
+    ch,
+    an ? 1 : 0
+  ];
+  const good = Array.from({length: 12}, (_, i) => R('Ana', i, 1, 'p-' + i));
+  // A device that never signed in, however good, moves nothing.
+  const anon = Array.from({length: 12}, (_, i) => R('Zed', 100 + i, 0, 'x-1', 1));
+  assert.deepStrictEqual(trustOf([...good, ...anon]), {Ana: true, Zed: false});
+  assert.strictEqual(eloOf([...good, ...anon])['x-1'][1], 0, 'anonymous answers do not count');
+  assert.deepStrictEqual(confusionOf(anon).pair, {}, 'nor in confusions');
+  // A signed-in player at chance (random clicks) moves nothing either; too few answers neither.
+  const rand = Array.from({length: 40}, (_, i) => R('Bot', 200 + i, i % 4 === 0 ? 1 : 0, 'y-' + (i % 5)));
+  assert.strictEqual(trustOf(rand).Bot, false);
+  assert.strictEqual(trustOf(good.slice(0, 9)).Ana, false, 'fewer than TRUST.N answers');
+  // Only a player's first answer on a photo moves it.
+  const again = [...good, R('Ana', 50, 0, 'z-1'), R('Ana', 51, 0, 'z-1'), R('Ana', 52, 0, 'z-1')];
+  assert.strictEqual(eloOf(again)['z-1'][1], 1);
 });
 
 test('mergeUsers: two accounts of one person add up; the busier account model wins per genus', () => {
