@@ -41,6 +41,10 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
   fits each word's difficulty beside the learner's own counters with that word (times seen, right, wrong): repeats count,
   against what the learner is expected to remember.
 - **Bayesian Knowledge Tracing** (Corbett & Anderson 1994): probability that a skill is known, with guess and slip.
+  Used for the progress bar until 2026-11-02, replaced by a moving average (below).
+- **Mastery criteria** (Pelánek & Řihák, UMAP 2017; *New Review of Hypermedia and Multimedia* 2018): which answers feed
+  the mastery decision and where its threshold sits matter more than the learner model; an exponential moving average of
+  the answers is a simple, good criterion. The progress bar since 2026-11-02.
 - **Urnings** (Hofman et al. 2020; Bolsinova et al. 2022): an Elo alternative with explicit standard errors, robust to
   adaptive item selection, used in Math Garden. **Keeping Elo alive** (Bolsinova et al. 2025): with adaptive selection,
   Elo ratings' variance inflates over time; two parallel chains help. Not adopted (see below), kept in mind.
@@ -217,18 +221,106 @@ met the 39 slate genera almost at once.
   and declared look-alikes decide; the answers take over as they come (Pierre expects Acropora and Galaxea to come out
   easy: the data will say).
 
-### Knowledge (BKT) and mastery
+### Progress (moving average) and mastery
 
-- `P[genus].L` from BKT (`BKT.L0` 0.1, learning `T` 0.08), guess and slip depending on the photo's difficulty: right
-  answers on hard photos count most. **A miss never raises L** (2026-11-02: on the hardest photos slip passed guess and
-  a miss lifted the genus).
-- **Mastery exam**: at L ≥ 0.95, `EXAM.n` = 5 hard questions on the genus alone, unannounced, at least `EXAM.gap` = 8
-  answers apart; all right = Learned. No time criteria anywhere (rule).
-- **Where L starts** (2026-11-02, Pierre's point 3): `BKT.L0` for everyone, except a player whose global level is
-  clearly high and rests on `BKT.LVN` (30) answers or more: then up to `BKT.L0MAX` (0.5), growing continuously from
-  level `BKT.LV0` (0.5) to `LV0 + LVR` (2.0). An empirical-Bayes prior, as the Elo start of a new genus already uses the
-  global level. The exam is unchanged: an expert still proves each genus with its own 5 hard questions. Simulated: an
-  expert mastered 7 genera in 600 questions before, 5-21 after (4 seeds).
+Until 2026-11-02 the bar of a genus was Bayesian Knowledge Tracing (BKT: `P[genus].L`, `L0` 0.1, learning `T` 0.08,
+guess and slip from the photo's difficulty, a start up to 0.5 for a strong player, `bktStart`). Pierre: it climbed far
+too fast (from scratch about 7 right answers to 95%, 4 for a strong player), and a right answer among a few genera met
+(easy choices, often only 2 plausible) counted almost as much as one against the genus's real look-alikes: "a genus
+can't be confirmed as learned before it has been compared with the genera it gets confused with". He wanted progress
+that slows down by itself, each point harder to earn than the last, with no hard cap. The independent review
+([reviews](reviews/2026-11-02-learning-algorithm-review.md)) had also found BKT degenerate on hard photos (a right
+answer lowered L above difficulty ~2, where exam photos sit) and suggested dropping it; Pelánek & Řihák (UMAP 2017)
+find that the data used and the threshold matter more than the learner model, and that an exponential moving average
+is a good mastery criterion.
+
+- **The rule** (`core.js` `PROG`, `pgStep`, `pgOf`; `model.js` `pgWeight`, `pgObs`): `s.pg ← s.pg + A · w · (right −
+  s.pg)`, `A` = 0.15. A right answer weighs `w` = what it proves, from what the question showed:
+  - the plausible choices `k` (`plausibleK`: easy choices of other growth forms do not count): (1 − 1/k) / (1 − 1/4),
+    so 4 weigh 1, 3 weigh 0.89, 2 weigh 0.67;
+  - its look-alikes: in full when a genus it gets confused with is among the choices (pooled confusion ≥ `CONF.TRAP`,
+    declared look-alikes as prior, or the player's own mix-ups: the traps' rule), `PROG.LOOK` = 0.5 when none is.
+  
+  A right answer between the genus and genera of other forms (k 2, no look-alike) weighs a third of one against three
+  look-alikes. **A miss counts in full** (`w` = 1) whatever the choices: missing an easy question says as much about
+  not knowing the genus as missing a hard one, and with the same weight a genus answered only on easy choices still
+  climbed to its success rate, only more slowly; with misses in full, such a run tops out below its success rate (90%
+  right on easy choices: 0.75, under the exam's entry; 95%: 0.86). In the games look-alikes come in among the choices
+  after the first right answers anyway (traps, rule 14c). A wrong answer counts against both genera (rule 13).
+- **The bar** = 0.95 × min(1, `s.pg` / `PROG.M`), `PROG.M` = 0.8 = the mastery exam's entry, shown as 95%; each exam
+  question passed adds 1%, the passed exam makes it 100% (`scoreOf`, `genScore`; the sheet's `pctOf_` is a copy,
+  v22). The draw weight of a genus being learned uses 1 − `s.pg` where it used 1 − L.
+- **The exam's entry is 0.8, not 0.95**: a moving average sits near the recent success rate, and the game keeps
+  everyone near 80-88% right (difficulty targeting), so at 0.95 almost no genus ever reached the exam (table: an
+  expert had 0 genera at 95% after 600 questions with A 0.1-0.2). 0.8 of what each answer proved, look-alikes in play,
+  is reached by holding up against harder and harder questions; the 5 exam questions then decide, as before.
+- **Mastery exam**: from `s.pg` ≥ `PROG.M`, `EXAM.n` = 5 hard questions on the genus alone, unannounced, at least
+  `EXAM.gap` = 8 answers apart; all right = Learned. Any miss ends an exam in course (unchanged). **A learned genus
+  survives one miss** (`mxKept`: lost below `PROG.M` × (1 − A), i.e. on a second miss before it is back up): a single
+  miss takes 15% off, so losing it at once (the BKT rule, under which a miss at L 0.99 left the genus above 0.95)
+  took learned genera from a simulated expert at every slip (learned genera lost by an expert in 1000 questions:
+  2.5-8.5 depending on A and the entry, 0.5-3.3 with this rule). No time criteria anywhere (rule).
+- **Photo difficulty left out** of `w`: simulated as a third factor (0.5 on an easy photo to 1 on a hard one), it only
+  slowed everyone (an expert mastered 5 genera in 1000 questions instead of 16), which `A` already sets, and the traps
+  already come as a genus's photos get harder (both follow its Elo ability). One factor less (rule 14f).
+- **Progress saved before `s.pg`** (`pgOf`, the same in the app, `core.js` and the sheet): BKT's L is ignored; the
+  device holds no answer log, only the last 10 results of each genus (`s.h`), so those are replayed from 0, a right
+  answer weighed `PROG.OLD` = 0.67 (what it proved is not known: the middle weight), a miss in full. Simulated (the
+  replay against the live value after 1000 questions, genera with 10 answers or more, misses there weighed as right
+  answers, so in full a little lower still): +0.03 for a beginner, −0.07 for
+  a lecture-level RA, −0.11 a strong RA, −0.21 an expert (weight 1 would overstate a beginner by 0.15); 10 right in a
+  row give 0.65, 77% on the bar: no genus enters the exam on old answers alone. A learned genus (`s.mx`) stays learned,
+  at the exam's entry. The record is rewritten at the genus's next answer. On the base runs (BKT, 300 questions, 6
+  seeds) this recalculation moves the overall %: beginner 21-30% → 23-28%, lecture-level RA 35-41% → 33-37%, strong
+  RA 32-53% → 27-44%, expert 65-82% → 45-51%; genera at 95% or more before their exam all drop under it. A fuller
+  recalculation for signed-in players could replay their whole answer log from the sheet's Answers tab (mode `|kN`,
+  Choices): ROADMAP.
+- **Removed**: `BKT` (7 constants), `bktStep`'s guess and slip formula, `bktStart`, the "a miss never raises L" patch,
+  the photo familiarity offsets of `answer()` (`bk`: +0.5 for a new photo, −1 for one right twice; the sheet's `stats_`
+  keeps its own copy for the photo ratings, `PHOTO_W`).
+
+Simulation (6 seeds: 11, 222, 3333, 44444, 555, 6666; four profiles: a beginner, a lecture-level RA who knows 60% of
+the genera, a quarter more half, a strong RA who knows 60% of the genera well, an expert; the scratch harness of
+`tests/profiles.smoke.js`, 1000 questions). Means over seeds; each cell: genera at 50% or more / 80% / 95% / learned,
+then the overall progress:
+
+| Rule | Profile | after 100 | after 300 | after 600 | after 1000 |
+| --- | --- | --- | --- | --- | --- |
+| BKT (before) | beginner | 3.2 / 0.2 / 0 / 0, 11% | 10.5 / 1.7 / 0.3 / 0, 27% | 16.3 / 3.8 / 1.2 / 0.2, 40% | 25.3 / 10.3 / 2.8 / 1.3, 60% |
+| | lecture RA | 5.3 / 0.8 / 0 / 0, 17% | 16.0 / 5.2 / 1.2 / 0, 39% | 27.7 / 11.8 / 3.8 / 1.2, 62% | 34.8 / 23.2 / 11.8 / 5.3, 79% |
+| | strong RA | 6.7 / 1.7 / 0 / 0, 20% | 18.2 / 7.0 / 2.7 / 0.7, 46% | 32.0 / 18.0 / 7.8 / 2.5, 73% | 37.3 / 29.7 / 20.3 / 12.3, 88% |
+| | expert | 14.3 / 3.7 / 0.2 / 0, 34% | 32.7 / 20.5 / 6.2 / 0.3, 74% | 38.0 / 32.7 / 24.3 / 10.0, 91% | 39 / 38.3 / 35.2 / 33.0, 98% |
+| **A 0.15, entry 0.8 (now)** | beginner | 0.7 / 0 / 0 / 0, 8% | 6.2 / 0.3 / 0 / 0, 19% | 12.5 / 1.3 / 0.3 / 0, 34% | 22.5 / 4.5 / 2.0 / 1.0, 52% |
+| | lecture RA | 2.5 / 0.2 / 0 / 0, 13% | 10.7 / 1.7 / 0.3 / 0, 33% | 23.0 / 7.0 / 2.2 / 0.5, 55% | 35.7 / 18.0 / 6.5 / 3.2, 76% |
+| | strong RA | 3.2 / 0 / 0 / 0, 17% | 13.7 / 2.2 / 0 / 0, 40% | 28.2 / 11.5 / 2.2 / 0, 63% | 38.2 / 22.3 / 13.8 / 6.0, 82% |
+| | expert | 5.0 / 0 / 0 / 0, 22% | 24.5 / 3.7 / 0.3 / 0, 57% | 38.7 / 25.7 / 9.0 / 0.7, 83% | 39 / 34.8 / 27.0 / 16.5, 94% |
+| A 0.10, entry 0.8 | expert | 2.7 / 0 / 0 / 0, 18% | 17.8 / 0.3 / 0 / 0, 48% | 37.2 / 13.0 / 0.5 / 0, 72% | 38.7 / 32.7 / 14.2 / 3.2, 89% |
+| A 0.20, entry 0.8 | expert | 8.8 / 1.0 / 0 / 0, 26% | 30.0 / 10.0 / 2.7 / 0, 66% | 38.5 / 30.7 / 17.7 / 3.5, 88% | 39 / 37.5 / 29.3 / 25.7, 97% |
+| A 0.15, entry 0.85 | expert | 4.0 / 0 / 0 / 0, 22% | 25.5 / 2.2 / 0.2 / 0, 57% | 37.5 / 22.3 / 3.8 / 0.2, 80% | 39 / 34.7 / 19.0 / 9.8, 92% |
+| A 0.15, entry 0.95 (first try, a miss weighed w) | expert | 3.7 / 0 / 0 / 0, 19% | 23.3 / 0.7 / 0 / 0, 52% | 38.3 / 11.7 / 0 / 0, 74% | |
+
+Learned genera for the expert over 1500 questions (all 39 met by question 200): BKT 31.7 at 1000, 38.7 at 1500;
+A 0.15: 16.3, 35.7; A 0.2: 24.0, 36.3; A 0.1: 4.0, 30.7. A miss at 90% or more on the bar now takes 11-14 points
+off (BKT: 3-6).
+
+Right answers to reach the exam's entry (95% on the bar):
+
+- in a row, from 0 (`core.test.js`): 10 against look-alikes among 4 plausible choices (w 1); 16 with 2 plausible
+  choices and a look-alike, or 4 without (w 0.67); 32 with 2 plausible choices and no look-alike (w 0.33). BKT: about
+  7, 4 from a strong player's start.
+- in the simulated games, misses included (mean right answers on the genus before it got there): beginner 29 (19 of
+  them on easy 2-choice questions), lecture RA 17, strong RA 16, expert 15 (BKT: 19, 12, 12, 10).
+- no genus reached it while 10 genera or fewer were met, nor before being asked beside a look-alike (in any profile or
+  seed; `tests/profiles.smoke.js` now checks the second).
+
+Why A 0.15 and the entry at 0.8: A 0.1 matched Pierre's "15-25 informative right answers" in a row (16 against
+look-alikes) but left an expert with 4 genera learned after 1000 questions (rule 12: everything in a few hours); A
+0.2 is close to BKT for the expert (8 right in a row) and drops 15-17 points on a miss. A 0.15 sits between: 10 in a
+row, 15-17 right answers in a real game for players who know their genera, 29 for a beginner, an expert with every
+genus at 50%+ by question 600 and nearly all learned by 1500. The entry: 0.85 kept more genera under it (an expert
+learned 9.8 genera in 1000 questions instead of 16.5); 0.8 is the success the game aims at, held on questions that
+prove something. To recalibrate with real answers: the per-genus success on look-alike questions of
+RAs who then pass the exam.
 
 ## Pooled statistics: photo difficulty and confusions (sheet v17-v18, 2026-11-02)
 
@@ -244,7 +336,7 @@ real learners, not bots, random clicks or test runs (17 anonymous "players" turn
   player moves the items little). A beginner's random first answers weigh little, their informed later ones more.
 - **Repeats** (`PHOTO_W.NEW`, `KNOWN`): every answer counts, against the player's own history with the photo, as in
   Duolingo's half-life regression and PFA: a photo new to the player is expected 0.5 harder, one already right twice 1
-  easier (the app's own rule). Counts grow by the weight too (they damp later steps and are the app's confidence in a
+  easier (the rule the app's BKT used until 2026-11-02). Counts grow by the weight too (they damp later steps and are the app's confidence in a
   rating).
 - **Everyone starts as a beginner** (`PLAYER0` = −1, about 45% right on an average photo with 4 choices): starting at 0
   (average), a beginner's misses made the photos look harder.
@@ -327,8 +419,10 @@ K 5 with P 0.6 is the small step Pierre asked for: the RA opens faster (one genu
 the beginner stays on about ten genera for the first 100 questions. Lowering P too made the beginner open faster as well (18 genera
 in 100 questions in the CI test, which keeps that at 16 at most). Mastery is barely changed: an expert masters
 10-17 genera in 600 questions (9-21 with K 3); the first ones come around question 300, after 95% and the 5 exam
-questions at least 8 answers apart, so the CI test checks that an expert has genera ready for their exam (95% sure)
-after 300 questions, not mastered ones.
+questions at least 8 answers apart, so the CI test checked that an expert had genera ready for their exam (95% sure)
+after 300 questions, not mastered ones. With the moving average (2026-11-02, above) the first genera reach the exam
+around question 400: the test now checks an expert's progress at 300 (genera half way, far ahead of a beginner) and
+that no genus reaches 95% before being asked beside a look-alike.
 
 Exploration of the first setting (K 3), 600 questions, 4 seeds:
 
@@ -441,6 +535,12 @@ the exam then keeps the genera learned at 0.82-0.93 true reference success.
   recalibrate the existing variables rather than add one to patch a problem". K 12 on the first grid, 10 once the
   new photos were in. An independent review of the algorithm against the literature (Pelánek, Papoušek, Duolingo,
   BKT, interleaving) is done (ROADMAP, "To discuss") and may revisit this.
+- 2026-11-02, Pierre: the progress % climbed far too fast and a right answer among a few genera counted almost as much
+  as one against the genus's look-alikes. Agreed: a moving average weighed by what each answer proves, simulated first
+  (6 seeds, 4 profiles, up to 1500 questions). BKT dropped; `PROG` A 0.15, exam entry 0.8 shown as 95%, look-alike
+  factor 0.5, misses in full, a learned genus survives one miss; old progress recomputed from its last 10 results
+  ("Progress (moving average) and mastery"). Sheet v22 computes the leaderboard % the same way. A pop-up announcing the
+  recalculation to the players is not built yet (ROADMAP).
 
 ## References
 
@@ -459,6 +559,8 @@ the exam then keeps the genera learned at 0.82-0.93 true reference success.
 - Duolingo, Birdbrain: <https://blog.duolingo.com/learning-how-to-help-you-learn-introducing-birdbrain>;
   IEEE Spectrum, How Duolingo's AI learns what you need to learn: <https://spectrum.ieee.org/duolingo>
 - Corbett, A., Anderson, J. (1994). Knowledge tracing. *UMUAI* 4.
+- Pelánek, R., Řihák, J. (2017). Experimental analysis of mastery learning criteria. *UMAP 2017*; Pelánek, R., Řihák, J.
+  (2018). Analysis and design of mastery learning criteria. *New Review of Hypermedia and Multimedia* 24.
 - Hofman, A. et al. (2020). Tracking with (un)certainty. *Journal of Intelligence* 8.
   <https://dspace.library.uu.nl/bitstream/1874/396191/1/jintelligence_08_00010_v2.pdf>; Bolsinova, M. et al. (2022).
   Urnings: a new method for tracking dynamically changing parameters in paired comparison systems.
