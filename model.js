@@ -264,6 +264,7 @@ const introAdd = (L, start) => {
     a = answersSoFar();
   L.forEach(n => (m[n] = [a, start ? 1 : 0]));
   store.set(INTRO.KEY, m);
+  syncSoon(); // sent at once, not with the next answer: a card left without answering is met on the other devices too
 };
 const asked = n => !!((P[n] || {}).ok || (P[n] || {}).ko);
 const introduced = n => isBonus(n) || asked(n) || n in introMap();
