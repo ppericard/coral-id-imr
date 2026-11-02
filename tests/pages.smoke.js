@@ -322,6 +322,57 @@ const server = http.createServer((req, res) => {
       if (after.tour || !after.shown || !/1 of/.test(after.kick || '') || after.name !== first)
         fails.push(`first cards after the tour (first ${first}): ${JSON.stringify(after)}`);
       await ct.close();
+      // Enlarged photo at actual size: a mouse drags it around (an RA, 2026-11-02), a click without moving goes back to fit.
+      const cz = await b.newContext({viewport: {width: 1024, height: 600}, serviceWorkers: 'block'});
+      await cz.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await cz.addInitScript(() => localStorage.setItem('imr-tour', '"done"'));
+      const qz = await cz.newPage();
+      await qz.goto(base + '#g-Acropora');
+      await qz.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await qz.waitForTimeout(800);
+      const pic = await qz.evaluateHandle(() =>
+        [...document.querySelectorAll('#view img')].find(i => i.getBoundingClientRect().width > 120)
+      );
+      await pic.click();
+      await qz.waitForTimeout(800);
+      const bb = await (await qz.$('#lightbox .lb-in img')).boundingBox();
+      await qz.mouse.click(bb.x + bb.width / 2, bb.y + bb.height / 2);
+      await qz.waitForTimeout(1500);
+      const z0 = await qz.evaluate(() => ({
+        full: lightbox.classList.contains('full'),
+        t: lightbox.scrollTop,
+        over: lightbox.scrollHeight > lightbox.clientHeight
+      }));
+      await qz.mouse.move(500, 300);
+      await qz.mouse.down();
+      await qz.mouse.move(500, 250, {steps: 5});
+      await qz.mouse.up();
+      const z1 = await qz.evaluate(() => ({full: lightbox.classList.contains('full'), t: lightbox.scrollTop, open: !lightbox.hidden}));
+      // A drag released outside the window (no pointerup): moving back over the photo with no button pressed must not pan.
+      await qz.mouse.down();
+      await qz.mouse.move(500, 260, {steps: 5});
+      await qz.evaluate(() =>
+        lightbox.dispatchEvent(
+          new PointerEvent('pointermove', {pointerType: 'mouse', buttons: 0, clientX: 500, clientY: 200, bubbles: true})
+        )
+      );
+      const zt = await qz.evaluate(() => lightbox.scrollTop);
+      await qz.evaluate(() =>
+        lightbox.dispatchEvent(
+          new PointerEvent('pointermove', {pointerType: 'mouse', buttons: 0, clientX: 500, clientY: 100, bubbles: true})
+        )
+      );
+      if ((await qz.evaluate(() => lightbox.scrollTop)) !== zt)
+        fails.push('enlarged photo still panning after the button was released outside');
+      await qz.mouse.up();
+      await qz.mouse.click(500, 300);
+      const z2 = await qz.evaluate(() => ({full: lightbox.classList.contains('full'), open: !lightbox.hidden}));
+      if (!z0.full || !z0.over || !z1.full || !z1.open || z1.t <= z0.t || z2.full || !z2.open)
+        fails.push(`enlarged photo drag: ${JSON.stringify({z0, z1, z2})}`);
+      await cz.close();
     }
     errs.length = 0;
     await p.goto(base + 'admin.html?readonly');

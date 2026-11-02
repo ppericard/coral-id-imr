@@ -4195,24 +4195,10 @@ function renderUsers() {
       .sort((a, b) => a.name.localeCompare(b.name))
       .map(u => `<option>${esc(u.name)}</option>`)
       .join('');
-  const MODE = {quiz: 'Photo quiz', 'quiz-duel': 'Duel', '?': 'Other'};
+  // A player's games, mix-ups, genera to review and days played are on their Journey page (Pierre, 2026-11-02: one place
+  // for a player's path); the row only opens it and the account tools.
   const detail = u => `<tr class="adm-udet"><td colspan="${UCOLS.length + 1}"><div class="adm-sgrid">
-      <section class="adm-scard"><p><a class="adm-fchip" href="#~journey/${encodeURIComponent(u.name)}">Journey →</a></p><h3>Games</h3><table class="adm-tbl">${
-        Object.entries(u.modes)
-          .sort((a, b) => b[1][0] - a[1][0])
-          .map(([m, [n, r]]) => `<tr><td>${esc(MODE[m] || m)}</td><td>${pct(r, n)}</td><td>${sbar(r, n)}</td><td class="n">${n}</td></tr>`)
-          .join('') || '<tr><td>No answers</td></tr>'
-      }</table>
-        <p class="note">First answer ${date(u.first)} · last ${date(u.last)} · ${u.days} day${u.days === 1 ? '' : 's'}</p></section>
-      <section class="adm-scard"><h3>Mix-ups</h3>${u.mix.length ? `<table class="adm-tbl">${u.mix.map(([a, b, n]) => `<tr><td><i>${esc(a)}</i> → <i>${esc(b)}</i></td><td class="n">${n}×</td></tr>`).join('')}</table>` : '<p class="note">None</p>'}
-        ${
-          u.review
-            ? `<h3>Review</h3><p>${u.review
-                .split(', ')
-                .map(n => `<i>${esc(n)}</i>`)
-                .join(', ')}</p>`
-            : ''
-        }</section>
+      <section class="adm-scard"><p><a class="next" href="#~journey/${encodeURIComponent(u.name)}">Journey →</a></p></section>
       <section class="adm-scard"><h3>Manage</h3>
         <p><label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label></p>
         <p>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></p>
