@@ -576,8 +576,8 @@ document.addEventListener(
 // A genus sheet opened from inside a game (the answer's genus name, the bonus unlock card): on a computer, in a new tab,
 // so the game stays where it was (an RA tester, 2026-11-02: "so that we aren't taken out of the game"); on a phone or
 // tablet the same tab (new tabs there are clumsy, and Back returns to the game).
-const sheetTab = () =>
-  matchMedia('(hover: hover) and (pointer: fine) and (min-width: 900px)').matches ? ' target="_blank" rel="noopener"' : '';
+// Desktop size class with a mouse: the shared AGENTS rule 19 classes (Codex review #368), no breakpoint of its own.
+const sheetTab = () => (!isStacked() && !matchMedia(MQ.touch).matches ? ' target="_blank" rel="noopener"' : '');
 // Unlock card (Pierre, 2026-11-01): shown once per newly unlocked bonus genus, over the quiz feedback. A "?" tile turns
 // over to the genus's cover photo, with its name and Coral Finder ID tips. Got it / Esc / Enter / a click outside closes
 // it (Enter is caught first, so it doesn't also skip to the next question). No motion with prefers-reduced-motion.
