@@ -30,21 +30,27 @@ leak of the Sheet would expose little.
 - **Duplicates**: an answer id already in the Answers tab is never logged twice.
 
 A real class of RAs stays far below every cap. A determined attacker can still add up to ~6000 anonymous answers
-and 40 accounts per 6 hours: enough to skew statistics, not to break the Sheet quickly.
+and 40 accounts per 6 hours, but since v17 (2026-11-02, Pierre) the statistics count **only signed-in players whose
+answers are clearly above chance** (10 answers or more, one-sided z ≥ 1.645 against each question's guess rate:
+`TRUST`, `trusted_` in `Code.gs`, `trustOf` in `core.js`), and a player's answers **weigh more as their level settles** (n / (n + 30)): anonymous
+answers count once their device signs in; random clicking, bots answering at chance and test runs never count. A bot
+that signs in and reads the right answers from the app's data could still pull photos towards "easy" (repeats on a photo
+it got right twice weigh less, as remembered).
 
 ## If it happens
 
 1. Look at the **Alerts** tab and admin **Players** (Activity, Users): a burst of `~anon` ids or new names.
-2. Delete the junk: admin Players > Users > Delete (with its answers) for fake names; for `~anon` rows, delete them in
-   the Answers tab of the Sheet (filter on the name column). Photo ratings and confusions are recomputed from the
+2. Delete the junk: admin Players > Users > Delete (with its answers) for fake names; for answers without a name, tick
+   their ids under Players > Not signed in, then "Delete the answers of the selected ids" (sheet v17 `anonDelete`, admin
+   token, never a named player's answers). Photo ratings and confusions are recomputed from the
    Answers tab every time, so they recover on their own.
 3. Tighten a cap in `over_` calls (`tools/sync/Code.gs`, bump `VERSION`: it deploys itself) or, in an emergency, stop
    anonymous answers by having `anon_` return `busy`.
 
 ## Not done yet (ROADMAP)
 
-- Weigh answers by trust in the statistics (signed-in, long-standing players more than one-off anonymous ids), and an
-  admin switch to exclude a player or an anonymous id from the statistics.
+- An admin switch to exclude a signed-in player from the statistics (v17 already leaves out anonymous ids and players
+  at chance).
 - Check server-side that the photos of an answer belong to the genus shown (needs a compact photo list in the script).
 - Archive old answers to a second tab or Sheet before the 10-million-cell limit.
 - Show the Alerts tab in the admin (To do).
