@@ -5292,6 +5292,14 @@ html.touring .unlock {
   object-fit: cover;
   display: block;
 }
+/* A card photo that did not load (quiz.js): a plain tile, never a broken-image icon. */
+.unlock img.fail {
+  visibility: hidden;
+}
+.ulfront,
+.ulphoto {
+  background: var(--surface-2);
+}
 /* First-encounter card (quiz.js introShow): the genus's cover photo, no flip. */
 .ulphoto {
   width: min(260px, 72vw);

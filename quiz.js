@@ -512,6 +512,36 @@ function pulseAsk() {
       })
   );
 }
+// Card photos: the cards sit outside the page view, out of reach of app.js's retries. Here too a photo that fails is
+// tried again twice (after 1 s, then 4 s), and is kept out of sight meanwhile and if it never comes: never a broken-image
+// icon on a card (new-player walkthrough 2026-11-02, a bonus card offline).
+document.addEventListener(
+  'error',
+  e => {
+    const i = e.target;
+    if (!(i instanceof HTMLImageElement) || !i.closest('.unlock') || !i.getAttribute('src')) return;
+    const n = Number(i.dataset.retry || 0),
+      u = i.getAttribute('src');
+    i.classList.add('fail');
+    if (n < 2) {
+      i.dataset.retry = n + 1;
+      setTimeout(
+        () => {
+          if (i.isConnected && i.getAttribute('src') === u) i.src = u.replace(/#.*$/, '') + '#r' + (n + 1);
+        },
+        1000 * (n + 1) ** 2
+      );
+    }
+  },
+  true
+);
+document.addEventListener(
+  'load',
+  e => {
+    if (e.target instanceof HTMLImageElement && e.target.closest('.unlock')) e.target.classList.remove('fail');
+  },
+  true
+);
 // Unlock card (Pierre, 2026-11-01): shown once per newly unlocked bonus genus, over the quiz feedback. A "?" tile turns
 // over to the genus's cover photo, with its name and Coral Finder ID tips. Got it / Esc / Enter / a click outside closes
 // it (Enter is caught first, so it doesn't also skip to the next question). No motion with prefers-reduced-motion.

@@ -122,6 +122,21 @@ async function overlays(b, base) {
       b4 !== 'Smoke B'
     )
       fails.push(`achievement toast over a card: ${JSON.stringify([s1, s2, s3, s4, b4])}`);
+    // K10: a card photo that fails (here every outside host is cut off, as offline) never shows a broken-image icon.
+    const off = await p.evaluate(() => {
+      const L = [...BONUS, ...Object.keys(DATA.gen)].filter(n => GX(n) && cover(GX(n)) && !img(cover(GX(n)), 's').startsWith('img/'));
+      if (L.length) unlockShow([L[0]]);
+      return L[0];
+    });
+    if (off) {
+      await p.waitForTimeout(500);
+      const v = await p.evaluate(() => {
+        const i = document.querySelector('.unlock img');
+        return i && (i.naturalWidth > 0 || getComputedStyle(i).visibility === 'hidden');
+      });
+      if (!v) fails.push(`broken-image icon on the card of ${off}`);
+      await p.keyboard.press('Escape');
+    }
     await c.close();
   }
   // C6: Escape closes an enlarged photo and the answer keys 1-4 still work on that question (desktop).
