@@ -326,6 +326,35 @@ const server = http.createServer((req, res) => {
         // Spacing and the draws make the count vary (11 in a CI run, about 15 on average): enough to show they come.
         if (duels < 5 || duels > 50) fails.push(`${duels} duels in the quiz in 300 questions (about 1 in 10 expected)`);
       }
+      // Achievement toasts (Pierre, 2026-11-02): the first of each family and the top tier pop up; a later step of a family
+      // already held lands quietly (a "new" dot on 🏆), and the achievements page clears it.
+      {
+        const keep = store.get(ACHK, null),
+          snap = achSnap(),
+          meets = ACH.filter(a => a.test(snap)).map(a => a.id);
+        if (meets.includes('met20')) {
+          const A = {_v: ACH_V};
+          meets.filter(id => id !== 'met20').forEach(id => (A[id] = 1));
+          store.set(ACHK, A);
+          const q0 = achQ.length;
+          achCheck();
+          const B = store.get(ACHK, {}) || {},
+            popped =
+              achQ.slice(q0).some(a => a.id === 'met20') ||
+              [...document.querySelectorAll('.achpop b')].some(b => /Wide eyes/.test(b.textContent));
+          if (!B.met20 || !(B._new || []).includes('met20') || popped)
+            fails.push(`quiet achievement: ${JSON.stringify({held: !!B.met20, nw: B._new, popped})}`);
+          if (!document.getElementById('boardgo').classList.contains('hasnew')) fails.push('no "new" dot on 🏆 after a quiet achievement');
+          viewAch();
+          if (
+            !document.querySelector('.achc.new') ||
+            (store.get(ACHK, {}) || {})._new ||
+            document.getElementById('boardgo').classList.contains('hasnew')
+          )
+            fails.push('the achievements page did not show and clear the new achievement');
+          store.set(ACHK, keep);
+        } else fails.push(`achievement test needs 20 genera met (${snap.met})`);
+      }
       // "I've had the IMR lecture": every slate genus opens at once, and no card comes after.
       introAll('progress');
       if (introLeft().length) fails.push(`open all genera: ${introLeft().length} left`);
