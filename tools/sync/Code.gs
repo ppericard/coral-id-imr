@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 18 (2026-11-02: v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 19 (2026-11-02: v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -22,7 +22,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 18;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 19;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -91,6 +91,8 @@ function doPost(e){
   if (Array.isArray(p.anonAnswers)) return json_(anon_(p));  // v12: players not signed in (see anon_)
   if (Array.isArray(p.reports)) return json_(logReports_(p));
   if (p.readReports) return json_(reports_(p.token));  // admin: POST {readReports: 1, token} (see reports_)
+  if (Array.isArray(p.events)) return json_(events_(p));  // v19: error reports and one-tap answers (see events_)
+  if (p.readEvents) return json_(readEvents_(p.token));  // admin: POST {readEvents: 1, token}
   if (p.readStats || p.readAnswers) {  // admin (v14): per-player numbers, see doGet
     if (!isAdmin_(String(p.token || ''))) return json_({ok: false, error: 'token'});
     return json_(p.readStats ? stats_() : answers_({name: p.aname, pin: p.apin}));
@@ -318,6 +320,50 @@ function reports_(token){
   if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
   const rows = sh.getRange(2, 1, sh.getLastRow() - 1, REP.length).getValues().filter(x => x[11])
     .map(x => [String(x[11]), new Date(x[0]).getTime() || 0, String(x[1]), Number(x[2]) ? 1 : 0, key[x[3]] || 'other', String(x[4]), String(x[5]), String(x[6]), String(x[7]), String(x[8]), String(x[9]), String(x[10])]);
+  return {ok: true, rows: rows.reverse()};
+}
+
+// Events (v19, Pierre 2026-11-02: most RAs will not report problems, so the app reports what it can by itself). POST
+// {dev: random device id (never a name), events: [{id, t, k, ...}]} → {ok, ev: true}. Kinds: 'err' (an app error: msg,
+// src = file:line, pg = page), 'photo' (a photo that did not load after its retries: f, pg), 'sync' (a save that failed
+// while online: msg = the error code), 'pulse' (the occasional one-tap question: r = easy | ok | hard, m = game mode,
+// n = answers this visit, rr = right % of the last 10, lv = overall level, met = genera met). Every event also carries
+// the app version (av) and a short browser name (ua). One row each in the "Events" tab, text cut short and never run as
+// a formula. Caps: 50 events per request, 200 per device and 3000 in all every 6 hours; an id already logged is skipped.
+const EVH = ['Time', 'Device', 'Kind', 'Message', 'Where', 'Page', 'Detail', 'App', 'Browser', 'Id'];
+const EVK = {err: 1, photo: 1, sync: 1, pulse: 1};
+function events_(p){
+  const dev = String(p.dev || '');
+  if (!/^[a-z0-9]{8,16}$/.test(dev)) return {ok: false, error: 'input'};
+  const L = p.events.filter(x => x && EVK[x.k] && /^[a-z0-9]{1,20}$/.test(String(x.id))).slice(0, 50);
+  if (!L.length) return {ok: true, ev: true};
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    if (over_('ev:' + dev, 200, L.length) || over_('events', 3000, L.length)) return {ok: false, error: 'busy'};
+    const sh = sheet_('Events', EVH), n = sh.getLastRow() - 1;
+    const seen = new Set(n > 0 ? sh.getRange(Math.max(2, n - 1998), EVH.length, Math.min(n, 2000), 1).getValues().map(r => String(r[0])) : []);
+    const num = (x, lo, hi) => { const v = Number(x); return isFinite(v) ? Math.max(lo, Math.min(hi, Math.round(v * 100) / 100)) : ''; };
+    const rows = L.filter(x => !seen.has(String(x.id))).map(x => {
+      const det = x.k === 'pulse'
+        ? JSON.stringify({r: ['easy', 'ok', 'hard'].indexOf(x.r) >= 0 ? x.r : '', m: word_(x.m, /^[a-z-]*$/, 20), n: num(x.n, 0, 10000), rr: num(x.rr, 0, 100), lv: num(x.lv, -5, 5), met: num(x.met, 0, 100)})
+        : '';
+      return [new Date(x.t || Date.now()), dev, x.k, text_(x.k === 'pulse' ? x.r : x.k === 'photo' ? x.f : x.msg, 300), text_(x.src, 160), text_(x.pg, 80), det, text_(x.av, 20), text_(x.ua, 40), String(x.id)];
+    });
+    if (rows.length) { const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
+      if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);
+      sh.getRange(at, 1, rows.length, EVH.length).setValues(rows); }
+    return {ok: true, ev: true};
+  } finally { lock.releaseLock(); }
+}
+// POST {readEvents: 1, token} (v19) → {ok, rows: [[id, time ms, device, kind, message, where, page, detail, app, browser]]},
+// newest first, the last 3000. Admins only (isAdmin_), like the reports.
+function readEvents_(token){
+  if (!isAdmin_(String(token || ''))) return {ok: false, error: 'token'};
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Events');
+  if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
+  const n = sh.getLastRow() - 1, from = Math.max(2, n - 2998);
+  const rows = sh.getRange(from, 1, n - from + 2, EVH.length).getValues().filter(x => x[9])
+    .map(x => [String(x[9]), new Date(x[0]).getTime() || 0, String(x[1]), String(x[2]), String(x[3]), String(x[4]), String(x[5]), String(x[6]), String(x[7]), String(x[8])]);
   return {ok: true, rows: rows.reverse()};
 }
 
