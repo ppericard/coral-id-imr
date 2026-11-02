@@ -110,6 +110,7 @@ Pierre's short-term goal is ID on ideal photos, or on dives with time to examine
 - Publishing `curation.json` as a whole copy from the admin (lost curation on 2026-11-01; Publish merges key by key since PR #240).
 
 ## Done recently (for context)
+- 2026-11-02: the Events tab no longer fills with noise (Pierre): only errors from the app's own script files are sent, not those of browser or extension scripts injected into the page (iOS Firefox, crypto wallets) nor the harmless ResizeObserver warning.
 - 2026-11-02: enlarged photo (RA request): at actual size a mouse drags the photo around (hand cursor) instead of scrolling, and the zoom centres on the point clicked.
 - 2026-11-02: admin Players (Pierre): a player's row no longer repeats the games, mix-ups and genera to review; they are on the Journey page, which the row opens.
 - 2026-11-02: My progress (Pierre): the ring and the badge are one compact card at the top (ring with %, name, learned or met, leaderboard place and Elo, achievements); Slate is the default view; the view switch moved to the bottom (no longer pinned on phones).

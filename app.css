@@ -5552,11 +5552,16 @@ footer .rep:hover {
 }
 
 /* ---------- Achievements (core.js ACH): badge on My progress, #ach page, unlock pop-up ---------- */
+/* Phones and tablets: 10 px between the card and the board (Pierre, 2026-11-02: the card's margin plus the grid's 16 px
+   gap left too much). */
+.pgame.pboard {
+  row-gap: 10px;
+}
 .pbadge {
   display: flex;
   gap: 12px;
   align-items: center;
-  margin: 0 0 8px;
+  margin: 0;
   padding: 8px 12px;
   border: 1px solid var(--line);
   border-radius: 12px;
