@@ -4544,12 +4544,9 @@ a.psrc:focus-visible {
   white-space: normal;
   overflow-wrap: break-word;
 }
-/* 13+ letters (Duncanopsammia): a little smaller, so a phone tile keeps the word whole (RA review 2026-11-02). */
-@media (max-width: 599.98px) {
-  .pwall .pw .pwb i.long {
-    font-size: 0.8em;
-    letter-spacing: -0.01em;
-  }
+/* 13+ letters carry a soft hyphen (shyName in app.js): the break shows a hyphen, never a cut word. */
+.pwall .pw .pwb i {
+  hyphens: manual;
 }
 @media (max-width: 599.98px) {
   .pwall .pw .pwb {

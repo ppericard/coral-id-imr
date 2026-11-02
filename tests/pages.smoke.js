@@ -124,6 +124,20 @@ const server = http.createServer((req, res) => {
       await q2.waitForTimeout(400);
       const lbb = await q2.evaluate(() => ({open: !document.getElementById('lightbox').hidden, h: location.hash}));
       if (lbb.open || lbb.h !== '#g-Porites') fails.push(`${w}px Back with an enlarged photo: ${JSON.stringify(lbb)}`);
+      // A sheet opened by a link in a fresh tab: after a photo was enlarged and closed, its Back button still leads to
+      // Genera (Codex review #344: history.length counted the photo's entry, and Back did nothing).
+      const q3 = await c2.newPage();
+      await q3.goto(base + '#g-Porites');
+      await q3.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await q3.evaluate(() => document.querySelector('#view .zoom').click());
+      await q3.waitForTimeout(300);
+      await q3.click('#lightbox [data-x]');
+      await q3.waitForTimeout(400);
+      await q3.click('[data-back]');
+      await q3.waitForTimeout(800);
+      const bk = await q3.evaluate(() => location.hash);
+      if (bk !== '#genera') fails.push(`${w}px Back on a linked sheet after a photo: ${bk}`);
+      await q3.close();
       // Coral Finder: the "Compare A and B" button is readable (its text was the colour of its background).
       await q2.evaluate(() => (location.hash = 'finder|form=M'));
       await q2.waitForTimeout(800);

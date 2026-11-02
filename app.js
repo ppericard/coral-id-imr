@@ -2348,6 +2348,16 @@ function badge() {
       .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
       .join('')}</a></div></div>`;
 }
+// A name of 13+ letters (Duncanopsammia) gets a soft hyphen near its middle, between a vowel and a consonant: a phone
+// tile breaks it there with a hyphen instead of anywhere, at the normal size (RA review and Codex review #344).
+const shyName = n => {
+  if (n.length < 13) return n;
+  const V = /[aeiouy]/i;
+  for (let d = 0; d < n.length / 2 - 3; d++)
+    for (const i of [Math.round(n.length / 2) + d, Math.round(n.length / 2) - d])
+      if (V.test(n[i - 1]) && !V.test(n[i])) return n.slice(0, i) + '\u00ad' + n.slice(i);
+  return n;
+};
 function quizBoard() {
   const list = Object.keys(DATA.gen)
     .filter(n => Q.stars || DATA.gen[n].n)
@@ -2386,7 +2396,7 @@ function quizBoard() {
     const g = GX(n),
       p = cover(g),
       [cl] = lv[n];
-    return `<a class="pw ${cl} s${st[n]}${g.x ? ' bonus' : ''}" href="#g-${esc(n)}" title="${g.x ? 'Bonus genus, not on the IMR list. ' : ''}${tip(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 100px, 165px')} alt="" loading="lazy">` : ''}${g.x ? '<b class="pbtag">Bonus</b>' : ''}<span class="pwb"><i${n.length >= 13 ? ' class="long"' : ''}>${esc(n)}${g.n || g.x ? '' : ' ★'}</i>${pct(n)}</span></a>`;
+    return `<a class="pw ${cl} s${st[n]}${g.x ? ' bonus' : ''}" href="#g-${esc(n)}" title="${g.x ? 'Bonus genus, not on the IMR list. ' : ''}${tip(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 100px, 165px')} alt="" loading="lazy">` : ''}${g.x ? '<b class="pbtag">Bonus</b>' : ''}<span class="pwb"><i>${esc(shyName(n))}${g.n || g.x ? '' : ' ★'}</i>${pct(n)}</span></a>`;
   };
   // Locked bonus genera: ONE tile that says what they are and when the next one comes (six "?" tiles read as a puzzle;
   // designer re-review 2026-11-01, N6).
@@ -3552,7 +3562,7 @@ function showModes(tab, h) {
     $modes.hidden = false;
     $modes.setAttribute('aria-label', 'Page');
     $modes.innerHTML = ctx;
-    $modes.querySelector('[data-back]').onclick = () => (history.length > 1 ? history.back() : go(h.startsWith('g-') ? 'genera' : 'cmp'));
+    $modes.querySelector('[data-back]').onclick = () => (pagesSeen > 0 ? history.back() : go(h.startsWith('g-') ? 'genera' : 'cmp'));
     return;
   }
   // A section with a single tool needs no tab bar.
@@ -3885,7 +3895,12 @@ document.querySelectorAll('#boardset button').forEach(
 );
 showBoardSet();
 let routeFrom = '',
-  generaY = null;
+  generaY = null,
+  // Moves between pages of the app in this tab (hash changes): Back on a sheet goes back only when there is a page to go
+  // back to (history.length also counts the enlarged photo's entry, which left a deep-linked sheet's Back doing nothing:
+  // Codex review #344).
+  pagesSeen = 0;
+addEventListener('hashchange', () => pagesSeen++);
 function route() {
   // A new version took over in the background (see UPDATED): the page reloads on the way to the next page.
   if (UPDATED) return location.reload();
