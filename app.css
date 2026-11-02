@@ -2047,8 +2047,12 @@ kbd {
   padding: 3px 5px;
   background: var(--bg);
 }
-.ans button:not([disabled]):hover {
-  border-color: var(--accent);
+/* Hover looks only where there is a real hover: on touch screens :hover sticks after a tap, so the next question's
+   answer under the finger looked chosen (new-player walkthrough 2026-11-02). Same for the other choice buttons below. */
+@media (hover: hover) {
+  .ans button:not([disabled]):hover {
+    border-color: var(--accent);
+  }
 }
 .ans button.ok {
   background: var(--good-bg);
@@ -2120,8 +2124,10 @@ kbd {
   min-height: 36px;
   cursor: pointer;
 }
-.pulse button:hover {
-  border-color: var(--accent);
+@media (hover: hover) {
+  .pulse button:hover {
+    border-color: var(--accent);
+  }
 }
 .pulse .pulsex {
   margin-left: auto;

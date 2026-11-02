@@ -128,8 +128,12 @@
 .lab .choices.col .choice {
   font-style: normal;
 }
-.lab .choice:hover {
-  border-color: var(--accent);
+/* Hover looks only where there is a real hover (touch screens keep :hover after a tap, so a tile or choice looked
+   chosen: new-player walkthrough 2026-11-02). Same for the choice buttons below. */
+@media (hover: hover) {
+  .lab .choice:hover {
+    border-color: var(--accent);
+  }
 }
 .lab .choice.right {
   background: var(--good-bg);
@@ -1008,8 +1012,10 @@ svg.dim .wedges line.on {
   background: url(../icon.svg) center/min(34%, 44px) no-repeat;
   opacity: 0.3;
 }
-.pcard:hover .pback {
-  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+@media (hover: hover) {
+  .pcard:hover .pback {
+    background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+  }
 }
 .gside .seg small {
   font-size: var(--fs-xs);
@@ -2330,8 +2336,10 @@ path.wallc {
   min-height: 34px;
   line-height: 1.2;
 }
-.fdopt:hover {
-  border-color: var(--accent);
+@media (hover: hover) {
+  .fdopt:hover {
+    border-color: var(--accent);
+  }
 }
 .fdopt[aria-pressed='true'] {
   background: var(--accent);
@@ -3163,8 +3171,10 @@ button.fdname[aria-expanded='true']::after {
   cursor: pointer;
   position: relative;
 }
-.fdtileb:hover {
-  border-color: var(--accent);
+@media (hover: hover) {
+  .fdtileb:hover {
+    border-color: var(--accent);
+  }
 }
 .fdtileb[aria-pressed='true'] {
   border-color: var(--accent);
@@ -3310,9 +3320,11 @@ button.fdname[aria-expanded='true']::after {
 .fdboxb > span:nth-child(2) {
   flex: 1;
 }
-.fdbigopt:hover,
-.fdboxb:hover {
-  border-color: var(--accent);
+@media (hover: hover) {
+  .fdbigopt:hover,
+  .fdboxb:hover {
+    border-color: var(--accent);
+  }
 }
 .fdbigopt[aria-pressed='true'],
 .fdboxb[aria-pressed='true'] {
@@ -3430,8 +3442,10 @@ button.fdname[aria-expanded='true']::after {
   color: var(--ink);
   text-decoration: none;
 }
-.fdgc:hover {
-  border-color: var(--accent);
+@media (hover: hover) {
+  .fdgc:hover {
+    border-color: var(--accent);
+  }
 }
 .fdgp {
   display: grid;
