@@ -118,13 +118,25 @@ const server = http.createServer((req, res) => {
           await q2.evaluate(() => ({
             name: document.querySelector('.unlock.intro h3').textContent,
             kick: document.querySelector('.unlock.intro .ulkick').textContent,
-            img: !!document.querySelector('.unlock.intro .ulphoto img')
+            img: !!document.querySelector('.unlock.intro .ulphoto img'),
+            all: !!document.querySelector('.unlock.intro [data-all]')
           }))
         );
-        await q2.click('.unlock.intro button');
+        await q2.click('.unlock.intro .next');
       }
       const ch = await q2.evaluate(() => [...document.querySelectorAll('#view [data-c]')].map(b => b.dataset.c));
-      if (seen.length !== 4 || !seen.every((c, k) => c.img && c.kick.includes(`${k + 1} of 4`)))
+      // My progress offers to open every genus (RAs who had the lecture and skipped the button on the first cards).
+      await q2.evaluate(() => (location.hash = 'quiz-board'));
+      await q2.waitForSelector('#openall', {timeout: 5000}).catch(() => {});
+      if (!(await q2.$('#openall'))) fails.push(`${w}px My progress: no button to open all genera`);
+      else {
+        await q2.click('#openall');
+        const left = await q2.evaluate(() => introLeft().length);
+        if (left || (await q2.$('#openall'))) fails.push(`${w}px open all genera: ${left} left`);
+      }
+      await q2.evaluate(() => (location.hash = 'quiz'));
+      await q2.waitForTimeout(500);
+      if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all && c.kick.includes(`${k + 1} of 4`)))
         fails.push(`${w}px first cards: ${JSON.stringify(seen)}`);
       else if (!ch.every(c => seen.some(s => s.name === c)))
         fails.push(`${w}px first question not among the first cards: ${ch.join(', ')}`);

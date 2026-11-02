@@ -162,6 +162,11 @@ function quizBoard() {
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera"><b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Learned</p>
     ${
+      introLeft().length
+        ? `<div class="popen"><p class="note">${introLeft().length} genera not opened yet: they come one at a time as you play.</p><button type="button" class="chip" id="openall">I've had the IMR lecture: open all genera</button></div>`
+        : ''
+    }
+    ${
       weak.length
         ? `<div><h3 class="label">Review first</h3><p class="chips">${weak
             .slice(0, 4)
@@ -172,6 +177,13 @@ function quizBoard() {
     ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> ↔ <i>${esc(o)}</i> <small>· ${k}×</small></a>`).join('')}</p></div>` : ''}
   </aside></div>`;
   bindQuizNav('quiz-board');
+  const oa = document.getElementById('openall');
+  if (oa)
+    oa.onclick = () => {
+      introAll();
+      NEXTQ = null;
+      quizBoard();
+    };
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page).
   const rank = B => {

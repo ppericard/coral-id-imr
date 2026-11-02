@@ -263,6 +263,11 @@ const introReady = n => {
   const e = introMap()[n];
   return !!e && (!!e[1] || answersSoFar() >= e[0] + INTRO.GAP);
 };
+// "I've had the IMR lecture" (Pierre, 2026-11-02): an RA has seen every genus in the lecture and has little time, so
+// one card at a time would hold them back. On the first cards and in My progress, one tap opens every slate genus at
+// once, without cards: the draw then asks first the genera never asked (weight 10), choices from the whole slate.
+const introLeft = () => Object.keys(DATA.gen).filter(n => !introduced(n));
+const introAll = () => introAdd(introLeft(), true);
 const introSince = () => answersSoFar() - Math.max(-Infinity, ...Object.values(introMap()).map(e => e[0]));
 function weighted(list) {
   const w = list.map(weight);

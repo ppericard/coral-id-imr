@@ -110,6 +110,10 @@ time, each on its card, but never as the answer of the question right after its 
 - **Choices among the genera met**: easy wrong choices and traps come from the genera met (a card or an answer); a
   look-alike already met beats a name never seen; genera never met only make up the three when too few are met.
 - **Duels**: both genera are named on the buttons, so the cards of those not met yet come together before the duel.
+- **"I've had the IMR lecture: open all genera"** (Pierre, same day: the first users are RAs who saw every genus in the
+  lecture and have little time): a button on the first cards, and in My progress while genera are still unopened,
+  opens every slate genus at once, without cards (`introAll`). The draw then asks first the genera never asked, with
+  choices from the whole slate.
 - Kept on the device (`imr-intro`: genus -> [answers when shown, 1 for the first cards]), outside the synced progress;
   a genus already asked (another device, progress from before the cards) or a bonus genus (its own unlock card) counts
   as met. Checked in CI (`tests/draw.smoke.js`, first meetings; `tests/pages.smoke.js`, the 4 cards).
@@ -264,7 +268,8 @@ simulation); recalibrate `ELO` and `OPEN` once a few RA cohorts have played.
 - 2026-11-02, Pierre (beginner RA review): first-meeting cards, kinder first My progress, plain words, a bar under
   "Loading…" (above and ARCHITECTURE); ★ genera stay in from the start, being there for comparison. Then: 4 cards to
   start and questions among those, new genera one at a time, never asked right after their card; `OPEN.K` 5 → 6 to
-  keep the RA's pace (table above).
+  keep the RA's pace (table above). For the RAs, a button opens all genera at once (on the first cards and in My
+  progress).
 - 2026-11-02, Pierre: OK to seed the photos nobody has answered into the games to calibrate them (`CAL`, above).
 - 2026-11-02, Pierre: relax the arbitrary thresholds so new photos come in quickly (he is validating many candidates)
   and their answers inform the dynamic algorithm: games take every kept photo (no cap of 4 Medium / 4 Hard), and a

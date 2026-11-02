@@ -211,6 +211,16 @@ const server = http.createServer((req, res) => {
         if (i && k !== 1) fails.push(`${k} cards at once after the first ones`);
       });
       if (cardsAt.length < 3) fails.push(`only ${cardsAt.length} card showing(s) in 120 questions`);
+      // "I've had the IMR lecture": every slate genus opens at once, and no card comes after.
+      introAll();
+      if (introLeft().length) fails.push(`open all genera: ${introLeft().length} left`);
+      for (let i = 0; i < 30; i++) {
+        NEXTQ = null;
+        quizPhoto();
+        if (document.querySelector('.unlock.intro')) fails.push('a card after opening all genera');
+        document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
+        document.querySelector(`[data-c="${CSS.escape(tg)}"]`).click();
+      }
       question = q0;
       INTROS = {};
     }

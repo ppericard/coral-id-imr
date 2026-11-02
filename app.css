@@ -5354,6 +5354,20 @@ html.touring body::after {
 .ultips .label {
   margin: 0 0 4px;
 }
+/* "Open all genera" beside Next on the first cards, and in My progress (model.js introAll). */
+.ulbtns [data-all] {
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: normal;
+  font-size: var(--fs-s);
+  text-align: left;
+}
+.ulbtns .next {
+  flex: none;
+}
+.popen .chip {
+  margin-top: 4px;
+}
 .ulbtns {
   display: flex;
   align-items: center;

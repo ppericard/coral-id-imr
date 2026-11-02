@@ -631,10 +631,17 @@ function introShow(L, start) {
       ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
       <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tipsList(g)}</div>
       <p class="ulnote">${start ? (more ? `The first questions are about these ${L.length} genera.` : 'Now, which is which?') : 'It comes up in the questions a little later.'}</p>
-      <div class="ulbtns"><span></span><button class="next" type="button">${more ? 'Next' : start ? 'Start' : 'Got it'}</button></div></div>`;
-    d.querySelector('button').onclick = next;
+      <div class="ulbtns">${start && introLeft().length ? '<button class="chip" type="button" data-all>I\'ve had the IMR lecture: open all genera</button>' : '<span></span>'}<button class="next" type="button">${more ? 'Next' : start ? 'Start' : 'Got it'}</button></div></div>`;
+    d.querySelector('.next').onclick = next;
+    const all = d.querySelector('[data-all]');
+    if (all)
+      all.onclick = () => {
+        introAll();
+        NEXTQ = null;
+        close();
+      };
     setTimeout(() => {
-      const b = d.querySelector('button');
+      const b = d.querySelector('.next');
       if (b) b.focus({preventScroll: true});
     }, 50);
   };
