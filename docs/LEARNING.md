@@ -346,6 +346,67 @@ Known limits: with little real data, the genus difficulty is mostly the photo se
 first" is weak until answers come in. Learners are still rated cautiously (abilities around −0.5 at 80-90% right in the
 simulation); recalibrate `ELO` and `OPEN` once a few RA cohorts have played.
 
+### Learning-outcome simulation (`tools/learnsim.js`)
+
+The independent review's first point (docs/reviews/2026-11-02-learning-algorithm-review.md, §3-§4): the profiles test
+above measures pacing (genera met, traps, genera ready for their exam) on one seed, not learning. `tools/learnsim.js`
+drives the same real quiz (the app's draw, photos, traps, duels, Again, exam, Elo, knowledge model and progress, all
+untouched; only the player is simulated) and measures what the simulated players really learn, and how far the app's
+estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minutes; numbers for reading).
+
+- **Run**: `node tools/learnsim.js [--seeds 30] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
+  [--workers 4] [--out file.json] [--stats stats.json]`. Each run (profile × seed) gets a fresh browser context; seeds
+  are 1..N, the app's `Math.random` and the learner's own generator both seeded from it, so a run is reproducible and
+  the same seeds before and after a change give paired comparisons. `--stats` loads a `?stats=1` answer of the sync
+  sheet as the photo ratings (default: none, Pierre's Easy/Medium/Hard sets, as in CI). `--out` writes every run and
+  the summary as JSON. 30 seeds × 4 profiles × 300 questions: about 4 minutes on 4 cores.
+- **Profiles**: beginner (knows every genus at 2%, learns 0.12 of the gap per exposure), lecture-level RA (the profiles
+  test's RA: 55% on 2 genera in 5, 10% on the others, 0.12), strong RA (85% on 3 genera in 5, 10% on the others, 0.12),
+  expert (93%, 0.05). The open-all offer is declined (the path is what is measured).
+- **Learner**: `know[g]` = chance to recognise genus g on an average photo with all its views; on a question it
+  recognises the genus with σ(logit(know) − photo difficulty − 0.5 if one view alone), photo difficulty from the
+  app's `photoDiff`. Not recognised, it picks a choice with weight (1 + 3 × s) × (1 − 0.5 × know of that choice), s = 1
+  for the genus shown and min(1, `pooledConf` / `CONF.LOOK`) for another (about 1 for a declared look-alike, 0.1 for an
+  unrelated genus): wrong answers fall on look-alikes, an unrecognised photo goes to the right genus about half the
+  time among easy choices, a quarter among three look-alikes, and a genus the player knows is ruled out more often.
+  After each answer the genus shown gains rate × (1 − know), 1.5 × that after a miss (the side-by-side montage), the
+  genus wrongly picked 0.5 × that; a first-meeting card teaches like one answer. No forgetting.
+- **Measures** at questions 50, 100, 200, 300: true mean `know` over the 39 slate genera and over the genera met; the
+  Elo estimate against the truth, |θ − logit(know)| and its sign, over the genera met; the progress bar against the
+  truth, genScore − know over the genera met (below 0: it under-claims), and `progPct`; genera met, learned (`s.mx`),
+  right % since the previous checkpoint; the true chance to tell each declared look-alike pair apart (2 choices,
+  average photo, both ways); genera whose true success on a **hard reference question** (one photo alone, difficulty
+  +1 plus the single view's 0.5, 4 choices: the genus and its 3 most confusable slate genera) is 0.9 or more; genera that
+  entered the mastery exam (`examOn`, first time), and their true reference success at that moment and when learned.
+- **Limits**: the learner is ours, a few round numbers, not fitted to real answers; the photo difficulty it meets is the
+  app's own estimate (so photo calibration cannot be judged); learning is per genus only (a duel or a montage teaches
+  the two genera, not the pair as such); no forgetting, no fatigue; the RA profiles know a fixed set of genera (every
+  5th genus in data.json order), so the spread is that of the draws, not of who knows what. θ is clamped to
+  `ELO.lo`..`hi` (−1.5..3), so a genus known at 2% always shows an error of about 2.4 there. Since the learner's
+  guesses beat 1 in k (choices from other growth forms are ruled out), a θ that fits its answers would sit a little
+  above logit(know): a negative θ − logit(know) is an under-estimate, not an artefact.
+
+Baseline on `main` of 2026-11-02 (BKT knowledge, before the progress formula change), 30 seeds, 300 questions, no
+`--stats`, mean ± sd over the seeds (ref@exam: mean over the runs where a genus entered the exam, their number in
+brackets). 120 runs in 237 s on 4 cores.
+
+| Profile, question | know39 | knowMet | \|θ − logit k\| | θ − logit k | genScore − know | met | learned | right % | look-alike | ref ≥ 0.9 | entered exam | ref at entry | ref when learned |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| beginner 100 | 0.27±0.02 | 0.60±0.04 | 1.28±0.22 | −0.77±0.34 | −0.23±0.05 | 16.7±2.0 | 0 | 81±4 | 0.66±0.01 | 0 | 0.1±0.3 | 0.55 (2) | - |
+| beginner 300 | 0.54±0.04 | 0.73±0.04 | 1.67±0.17 | −1.32±0.28 | −0.22±0.05 | 28.7±3.4 | 0 | 84±3 | 0.81±0.02 | 0.3±0.5 | 0.7±0.8 | 0.64±0.10 (15) | - |
+| lecture RA 100 | 0.48±0.02 | 0.66±0.04 | 1.14±0.20 | −0.76±0.35 | −0.29±0.05 | 20.9±3.4 | 0 | 82±4 | 0.78±0.01 | 0 | 0.1±0.3 | 0.62±0.10 (4) | - |
+| lecture RA 300 | 0.72±0.02 | 0.74±0.02 | 1.38±0.15 | −1.10±0.23 | −0.22±0.04 | 37.2±2.7 | 0 | 86±3 | 0.89±0.01 | 0.4±0.7 | 1.3±1.0 | 0.66±0.07 (24) | - |
+| strong RA 100 | 0.70±0.02 | 0.77±0.03 | 1.48±0.16 | −1.07±0.33 | −0.33±0.08 | 25.1±3.8 | 0 | 87±5 | 0.89±0.01 | 0.7±0.8 | 0.4±0.6 | 0.88±0.02 (10) | - |
+| strong RA 300 | 0.85±0.01 | 0.85±0.01 | 1.66±0.14 | −1.53±0.18 | −0.18±0.06 | 39.0±0.0 | 0.2±0.4 | 89±3 | 0.95±0.00 | 5.4±1.7 | 4.5±2.7 | 0.85±0.04 (29) | 0.93±0.02 (6) |
+| expert 100 | 0.94±0.00 | 0.94±0.00 | 1.41±0.11 | −1.41±0.11 | −0.26±0.05 | 29.4±2.5 | 0 | 96±3 | 0.98±0.00 | 1.5±1.0 | 2.5±1.3 | 0.89±0.01 (28) | - |
+| expert 300 | 0.95±0.00 | 0.95±0.00 | 1.37±0.10 | −1.37±0.10 | −0.03±0.01 | 39.0±0.0 | 3.8±1.9 | 96±2 | 0.98±0.00 | 12.2±1.8 | 23.4±2.4 | 0.89±0.00 (30) | 0.91±0.00 (28) |
+
+What it says, on this learner: the Elo ability under-estimates every profile by 0.8 to 1.5 logits and the gap does not
+close in 300 questions (so the photos stay easy: an expert answers 96% right, not 80%); the progress bar under-claims
+by about 0.2 for the learners; a beginner's or lecture RA's genus enters the mastery exam (BKT 95%) while its true
+success on a hard reference question is only about 0.6, an expert's about 0.9 (the review's item 2 asks for ≥ 0.85);
+the exam then keeps the genera learned at 0.91-0.93 true reference success.
+
 ## Decision log
 
 - 2026-11-02, Pierre: anonymous answers do not rate photos; sign in to count (reversed the same day, below); stats only from players above chance;
