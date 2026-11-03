@@ -443,6 +443,77 @@ const server = http.createServer((req, res) => {
     const evt = await text();
     if (!/About right/i.test(evt) || !/reading 'views'/.test(evt) || !/Saves that failed/i.test(evt))
       fails.push(`${w}px Errors & feedback: demo events missing`);
+    // One-tap questions (core.js PULSEQ): every item of the bank under its wording, its answers counted by level band
+    // and by mode as the demo's rows say (rows with no item id are the first item's), and the common scales table.
+    const pq = await p.evaluate(() => {
+      const since = Date.now() - 30 * 864e5,
+        R = EVS.rows.filter(r => r[3] === 'pulse' && r[1] >= since),
+        tb = document.querySelector('.adm-pitems'),
+        heads = [...tb.querySelectorAll('thead th')].map(th => th.textContent),
+        col = t => heads.indexOf(t),
+        cell = (q, label, c) => {
+          const body = [...tb.tBodies].find(b => b.querySelector('.adm-pq th').firstChild.textContent.trim() === q);
+          const row = body && [...body.rows].find(tr => tr.cells[0].textContent === label);
+          return row ? parseInt(row.cells[c].textContent, 10) || 0 : -1;
+        },
+        bandOf = lv => (lv < -0.5 ? 'Beginner' : lv < 0.5 ? 'Middle' : 'Strong'),
+        bad = [];
+      for (const it of PULSEQ)
+        for (const [k, t] of it.a) {
+          const L = R.filter(r => (r[5] || PULSE0) === it.id && r[4] === k),
+            want = {
+              All: L.length,
+              Beginner: L.filter(r => bandOf(JSON.parse(r[7]).lv) === 'Beginner').length,
+              Strong: L.filter(r => bandOf(JSON.parse(r[7]).lv) === 'Strong').length,
+              Quiz: L.filter(r => JSON.parse(r[7]).m === 'quiz').length,
+              Duel: L.filter(r => JSON.parse(r[7]).m === 'quiz-duel').length
+            };
+          for (const [h, n] of Object.entries(want))
+            if (cell(it.q, t, col(h)) !== n) bad.push(`${it.q} ${t} ${h}: ${cell(it.q, t, col(h))} ≠ ${n}`);
+        }
+      // The response under each item (2026-11-03): shown, Not now, and no answer = shown − answered − Not now, counted
+      // over the rows with an item id, by band and mode as above.
+      const codes = new Set(PULSEQ.flatMap(it => it.a.map(a => a[0])));
+      let ign = 0;
+      for (const it of PULSEQ) {
+        const L = R.filter(r => r[5] === it.id),
+          per = f => {
+            const C = L.filter(r => f(JSON.parse(r[7]))),
+              sh = C.filter(r => r[4] === PULSE_SHOWN).length,
+              an = C.filter(r => codes.has(r[4])).length,
+              sk = C.filter(r => r[4] === PULSE_SKIP).length;
+            return {Shown: sh, 'Not now': sk, 'No answer': Math.max(0, sh - an - sk)};
+          },
+          cols = {All: () => true, Beginner: d => bandOf(d.lv) === 'Beginner', Duel: d => d.m === 'quiz-duel'};
+        for (const [h, f] of Object.entries(cols))
+          for (const [label, n] of Object.entries(per(f))) {
+            if (h === 'All' && label === 'No answer') ign += n;
+            if (cell(it.q, label, col(h)) !== n) bad.push(`${it.q} ${label} ${h}: ${cell(it.q, label, col(h))} ≠ ${n}`);
+          }
+      }
+      const sc = document.querySelector('.adm-pscale');
+      return {
+        heads,
+        bad,
+        ign,
+        scale:
+          !!sc &&
+          /Difficulty/.test(sc.textContent) &&
+          /Feel/.test(sc.textContent) &&
+          /Beginner/.test(sc.textContent) &&
+          /Shown/.test(sc.textContent) &&
+          /Answered/.test(sc.textContent),
+        title: document.querySelector('.adm-pulse h3')?.textContent || ''
+      };
+    });
+    if (
+      !pq.scale ||
+      !/One-tap questions/i.test(pq.title) ||
+      ['All', 'Beginner', 'Middle', 'Strong', 'Quiz', 'Duel'].some(h => !pq.heads.includes(h)) ||
+      pq.bad.length ||
+      !pq.ign
+    )
+      fails.push(`${w}px Errors & feedback, one-tap questions: ${JSON.stringify(pq)}`);
     // Load times (sheet v21): the demo's three visits, their median line and the CDN server.
     if (!/Load times/i.test(evt) || !/640 kbit\/s/.test(evt) || !/MNL/.test(evt))
       fails.push(`${w}px Errors & feedback: load times missing`);
@@ -542,9 +613,50 @@ const server = http.createServer((req, res) => {
         fails.push(`${w}px Health (${v}): sections ${JSON.stringify(hs)}`);
       if (hs.wide > 0) fails.push(`${w}px Health (${v}): page ${hs.wide} px wider than the window`);
     }
+    // The enlarged photo's caption links to the photo's source, as in the games (AGENTS.md rule 11; Pierre, 2026-11-03:
+    // he opened his own photo everyone misses, to check its identification on iNaturalist, and found no link): an iNat
+    // photo's observation (new tab, noopener) and the genus sheet; a Coral Finder book photo keeps its © line, no link.
+    const lbSrc = f =>
+      p.evaluate(f => {
+        const ph = PHOTOS[f],
+          cap = document.querySelector('#lightbox:not([hidden]) .lb-cap');
+        if (!cap) return 'no lightbox';
+        if (!cap.querySelector(`code`) || cap.querySelector('code').textContent !== f) return 'caption names another photo';
+        const a = [...cap.querySelectorAll('a.lb-src')];
+        if (ph.cf)
+          return a.length ? 'a book photo has a source link' : /Coral Finder/.test(cap.textContent) ? '' : 'book photo without its © line';
+        if (!/inaturalist\.org\/observations\//.test(ph.o || '')) return a.length ? 'a link on a photo with no iNat page' : '';
+        if (a.length !== 1 || a[0].href !== ph.o) return `no link to ${ph.o}`;
+        if (a[0].target !== '_blank' || !/noopener/.test(a[0].rel)) return 'source link not in a new tab with noopener';
+        if (!cap.querySelector(`a[href$="#g-${encodeURIComponent(ph.genus)}"]`)) return 'genus not linked to its sheet';
+        return '';
+      }, f);
     if (await p.$('[data-health="photos"] [data-zf]')) {
       await p.click('[data-health="photos"] [data-zf]');
       if (await p.evaluate(() => document.getElementById('lightbox').hidden)) fails.push(`${w}px Health: a photo click opened nothing`);
+      else {
+        const e = await lbSrc(await p.$eval('[data-health="photos"] [data-zf]', b => b.dataset.zf));
+        if (e) fails.push(`${w}px Health lightbox: ${e}`);
+      }
+      await p.keyboard.press('Escape');
+    }
+    // Both admin lightboxes (zoom: a genus's photos; zoomOne: Excluded, Flags, Candidates, auto-sort), on Pierre's photo
+    // of the report, a candidate and a Coral Finder book photo.
+    for (const [how, f] of await p.evaluate(() => {
+      const own = 'lobactis-medium-746236519',
+        cand = Object.values(DATA.cand)
+          .flat()
+          .find(x => !x.cf),
+        book = Object.values(PHOTOS).find(x => x.cf);
+      return [
+        ['zoom', PHOTOS[own] ? own : Object.values(PHOTOS).find(x => x.own).f],
+        ['zoomOne', cand.f],
+        ['zoomOne', book.f]
+      ];
+    })) {
+      await p.evaluate(([how, f]) => (how === 'zoom' ? zoom(PHOTOS[f].genus, f) : zoomOne(PHOTOS[f])), [how, f]);
+      const e = await lbSrc(f);
+      if (e) fails.push(`${w}px Lightbox (${how}, ${f}): ${e}`);
       await p.keyboard.press('Escape');
     }
     if (errs.length) fails.push(`${w}px Health: ${errs.slice(0, 3).join(' | ')}`);

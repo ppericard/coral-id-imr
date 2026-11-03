@@ -1029,6 +1029,7 @@ function sectionOf(h) {
   if (h === 'progress' || h === 'quiz-board') return 'progress';
   if (h === 'board') return 'board';
   if (h === 'ach') return 'board';
+  if (h === 'about') return 'about'; // no tab: reached from the Home credit line and the ? help
   const m = modeOf(h);
   return Object.keys(MODES).find(t => MODES[t].some(x => x[0] === m)) || 'learn';
 }
@@ -1042,6 +1043,7 @@ function generaOrder() {
 // On a genus sheet or a pair, the header bar names the page instead of listing the section's tools.
 function ctxBar(h) {
   const back = `<button type="button" class="up" data-back aria-label="Back">‹<span>Back</span></button>`;
+  if (h === 'about') return `${back}<h2 class="ctx-t">About and credits</h2>`;
   if (h.startsWith('g-') && GX(h.slice(2))) {
     const n = h.slice(2),
       g = GX(n),
@@ -1064,7 +1066,8 @@ function showModes(tab, h) {
     $modes.hidden = false;
     $modes.setAttribute('aria-label', 'Page');
     $modes.innerHTML = ctx;
-    $modes.querySelector('[data-back]').onclick = () => (pageDepth > 0 ? history.back() : go(h.startsWith('g-') ? 'genera' : 'cmp'));
+    $modes.querySelector('[data-back]').onclick = () =>
+      pageDepth > 0 ? history.back() : go(h.startsWith('g-') ? 'genera' : h === 'about' ? 'home' : 'cmp');
     return;
   }
   // A section with a single tool needs no tab bar.
@@ -1190,6 +1193,9 @@ function route() {
   else if (h === 'progress' || h === 'quiz-board') quizBoard();
   else if (h === 'board') viewBoard();
   else if (h === 'ach') viewAch();
+  // About and credits (home.js); #credits is another name for it.
+  else if (h === 'credits') location.replace('#about');
+  else if (h === 'about' && window.viewAbout) viewAbout();
   else if (h.startsWith('quiz-duel')) {
     const [, a, b] = h.split('|');
     quizDuel(a, b);
@@ -1219,6 +1225,10 @@ const $help = document.getElementById('help'),
   $helpbox = document.getElementById('helpbox');
 // One rule for every page and every render path (route, tabs, toggles, Lab tools): whenever the view gets a
 // top-level title or intro, the title is dropped and the intro moves behind ? . route() only resets the help box.
+// The last line of the ? help on every page (Pierre, 2026-11-03: the credits footer left the pages): About and credits,
+// the privacy notice and Send feedback (AGENTS.md rule 11b), two taps from anywhere. So the ? shows on every page.
+const helpEnd = () =>
+  `<p class="note hend"><a href="#about">About &amp; credits</a> · <a href="privacy.html">Privacy</a>${typeof repBtn === 'function' ? ' · ' + repBtn({k: 'page'}, 'Send feedback') : ''}</p>`;
 function pageHelp() {
   const root = $v.querySelector(':scope > .lab') || $v;
   const found = [...root.querySelectorAll(':scope > h2:not(.vh), :scope > .lede, :scope > .tips, :scope > h3.label, :scope > .gloss')];
@@ -1229,7 +1239,8 @@ function pageHelp() {
     $helpbox.innerHTML =
       (h2 ? `<h3>${esc(h2.textContent)}</h3>` : '') +
       intro.map(x => x.outerHTML).join('') +
-      (window.tour ? '<p class="note htour"><button type="button" class="linkish" data-tour>Replay the welcome tour</button></p>' : '');
+      (window.tour ? '<p class="note htour"><button type="button" class="linkish" data-tour>Replay the welcome tour</button></p>' : '') +
+      helpEnd();
     $help.hidden = false;
   }
   found.forEach(x => x.remove());
@@ -1238,8 +1249,8 @@ function pageHelp() {
 }
 function resetHelp() {
   $helpbox.hidden = true;
-  $helpbox.innerHTML = '';
-  $help.hidden = true;
+  $helpbox.innerHTML = helpEnd(); // a page with explanations puts them above it (pageHelp)
+  $help.hidden = false;
   $help.setAttribute('aria-expanded', 'false');
 }
 new MutationObserver(pageHelp).observe($v, {childList: true, subtree: true});
@@ -1463,9 +1474,14 @@ let HAVE = 1,
   started;
 const STARTED = new Promise(r => (started = r)),
   TIERP = {},
-  // The tier each page needs: Home 1; the quiz, the duels, the Learn pages, My progress, the leaderboard and the
+  // The tier each page needs: Home and About 1; the quiz, the duels, the Learn pages, My progress, the leaderboard and the
   // achievements 2 (progress.js is small and the quiz needs it); the Tools and the Coral Finder (proto/) 5.
-  pageTier = h => (!h || h === 'home' ? 1 : /^(quiz|genera|g-|cmp|tips|key-imr$|progress|quiz-board|board|ach)/.test(h) ? 2 : 5),
+  pageTier = h =>
+    !h || h === 'home' || h === 'about' || h === 'credits'
+      ? 1
+      : /^(quiz|genera|g-|cmp|tips|key-imr$|progress|quiz-board|board|ach)/.test(h)
+        ? 2
+        : 5,
   // Steps of the loading bar for a page of tier n: its scripts, and data.json.
   bootMax = n => [...document.querySelectorAll('link[data-tier]')].filter(l => +l.dataset.tier <= n).length + 1;
 let J2 = null;
