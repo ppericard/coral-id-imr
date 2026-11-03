@@ -193,6 +193,23 @@
       .filter(Boolean).length;
     return n >= 2 && n < 4 ? 1 / n : 0.25;
   };
+  // How sure a player's level is (Pierre, 2026-11-03: a level from 35 answers at 97% right sat above one from 245):
+  // {player id: 95% margin, in level units}, 1.96 / sqrt(Fisher information) of their answers' logged expectations
+  // (row[7]) under the guess-rate model P = g + (1 - g) sigmoid (ability - difficulty), g = guessOf. An answer that was
+  // a near-sure success tells little, so a run of easy right answers keeps the margin wide. Answers logged before v5
+  // (no expectation) are left out.
+  function levelMargin(rows) {
+    const I = {};
+    (rows || []).forEach(r => {
+      const p = r[7];
+      if (typeof p !== 'number' || !(p > 0 && p < 1)) return;
+      const g = guessOf(String(r[5] || ''), r[10]),
+        s = Math.min(0.99, Math.max(0.01, (p - g) / (1 - g))),
+        d = (1 - g) * s * (1 - s);
+      I[r[0]] = (I[r[0]] || 0) + (d * d) / (p * (1 - p));
+    });
+    return Object.fromEntries(Object.entries(I).map(([k, v]) => [k, 1.96 / Math.sqrt(v)]));
+  }
   function trustOf(rows) {
     const T = {},
       out = {};
@@ -765,6 +782,7 @@
     mergeOld,
     mergeProgress,
     eloOf,
+    levelMargin,
     trustOf,
     TRUST,
     PHOTO_W,

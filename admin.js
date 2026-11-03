@@ -1595,7 +1595,7 @@ const HELP = {
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Game coverage). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   cov: `<p>Game photos per genus and view: what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Last = last answer. Right = all their answers; Last 50 = their last 50. Days = days with answers. Learned and Seen = genera, from their last sync. Reports = problems they reported (Triage). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Elo = the score players see (1000 + 200 × Level; shown to them from 200 answers), ± its 95% margin: a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. Last = last answer. Right = all their answers; Last 50 = their last 50. Days = days with answers. Learned and Seen = genera, from their last sync. Reports = problems they reported (Triage). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
   stats: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). All / Others / Me: everyone, everyone but the name synced in this browser, or only it. Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
@@ -3774,9 +3774,9 @@ function covOff(n, v, long) {
 const covLvl = c => COV.filter(k => c.obs >= k).length;
 // Views a genus has in games: 2-level genera have no Closer view.
 const covViews = n => VIEWS.filter(([v]) => !(lv(n) === 2 && v === 'medium'));
-// Default Thinnest (Pierre 2026-11-01); new key so an older saved choice does not override it.
-let COV_ORDER = store.get('imr-admin-covorder2', 'thin');
-if (!['lecture', 'thick'].includes(COV_ORDER)) COV_ORDER = 'thin';
+// Thinnest at every opening (Pierre 2026-11-01, again 2026-11-03: a saved Thickest kept coming back): the order and a
+// column sort chosen on the page last until the page is reloaded, never saved.
+let COV_ORDER = 'thin';
 // Sort by one zoom column (Pierre 2026-11-01), both coverage views: click a view header (fewest colonies first),
 // again to reverse; a genus without that view stays last; the order switch clears it. st = {col, dir}, saved by save().
 const colSort = (st, R) => {
@@ -3806,7 +3806,7 @@ const bindCol = (st, save) =>
         render();
       })
   );
-let COVS = Object.assign({col: '', dir: 'asc'}, store.get('imr-admin-covsort', {}));
+let COVS = {col: '', dir: 'asc'};
 // The + column's sources, short label (cell) and long one (tooltip, legend); IMR and the book left out.
 const CAND_SRC = [
   ['dauin', 'Dauin', 'iNat Dauin'],
@@ -3902,12 +3902,10 @@ function renderCov() {
       (b.onclick = () => {
         COV_ORDER = b.dataset.co;
         COVS.col = '';
-        store.set('imr-admin-covsort', COVS);
-        store.set('imr-admin-covorder2', COV_ORDER);
         render();
       })
   );
-  bindCol(COVS, () => store.set('imr-admin-covsort', COVS));
+  bindCol(COVS, () => {});
   $v.querySelectorAll('tbody tr').forEach(
     tr =>
       (tr.onclick = e => {
@@ -4184,6 +4182,7 @@ const userPost = body => fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({
 const UCOLS = [
   ['name', 'Name', u => u.name.toLowerCase(), 1],
   ['lv', 'Level', u => u.lv ?? -99, 0, 'Overall level, on the photo-difficulty scale (photo Elo, every answer)'],
+  ['elo', 'Elo', u => u.lv ?? -99, 0, 'The Elo players see (1000 + 200 × level, shown to them from 200 answers), ± its 95% margin'],
   ['answers', 'Answers', u => u.answers, 0],
   ['right', 'Right', u => (u.answers ? u.right / u.answers : -1), 0],
   ['recent', 'Last 50', u => (u.recent[0] ? u.recent[1] / u.recent[0] : -1), 0, 'Right among the last 50'],
@@ -4239,7 +4238,8 @@ function renderUsers() {
         <p><button type="button" class="adm-fchip" data-uren="${esc(u.name)}">Rename…</button></p>
         <p><button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete</button></p></section></div></td></tr>`;
   // Answers without a name: devices that never signed in (~anon) and deleted accounts, by anonymous id.
-  const named = new Set(U.map(u => u.id).filter(Boolean)),
+  const LVM = levelMargin(ANS.rows || []), // 95% margin of each player's level (core.js)
+    named = new Set(U.map(u => u.id).filter(Boolean)),
     A = {};
   // Sheet v13 gives ids; an older one doesn't, and every answer would look anonymous. With v13 an empty list is fine.
   if ((USERS.v || 0) >= 13)
@@ -4258,6 +4258,10 @@ function renderUsers() {
     ({
       name: `<b>${esc(u.name)}</b>${u.id && u.id === MEID ? ' <small>you</small>' : ''}${u.board === -1 ? ' <small title="Hidden from the leaderboard">hidden</small>' : ''}`,
       lv: u.lv == null ? '–' : sgn(u.lv),
+      elo:
+        u.lv == null
+          ? '–'
+          : `${Math.round(1000 + 200 * u.lv)}${u.id && LVM[u.id] ? ` <small>±${Math.round((200 * LVM[u.id]) / 10) * 10}</small>` : ''}`,
       answers: u.answers,
       right: pct(u.right, u.answers),
       recent: pct(u.recent[1], u.recent[0]),
