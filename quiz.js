@@ -1001,10 +1001,10 @@ function quizPhoto(cur = 'quiz') {
   zoomHint(); // once per device, never over a card or offer shown just above
   topUp(); // the questions after this one, chosen while it is played (planNext)
 }
-// The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now.
+// The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now (Escape).
+// Leaving the page closes it unanswered (route): the offer can come back.
 function introOfferShow() {
-  const d = document.createElement('div'),
-    a = answersSoFar(),
+  const a = answersSoFar(),
     pick = open => {
       store.set(INTRO.OFFER.KEY, {at: a, open: 0, t: Date.now()});
       if (open) {
@@ -1012,81 +1012,46 @@ function introOfferShow() {
         NEXTQ = null;
       }
       save();
-      close();
     };
-  d.className = 'unlock intro';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Open all genera?');
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">${a} answers in</p><h3>You seem to know your corals already</h3>
-    <p>Open all ${slateGenera().length} genera at once, instead of one at a time? ${introLeft().length} are still to come.</p>
-    <div class="ulbtns ulstack"><button class="next" type="button" data-open>Open all genera</button><button class="next sec" type="button">Not now</button></div>
-    <p class="note">Also in My progress, any time.</p></div>`;
-  document.body.appendChild(d);
-  const close = () => {
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-    qclockAgain(); // the time to answer counts from here (QCLOCK)
-    topUp();
-  };
-  const key = e => {
-    if (e.key === 'Tab' || document.getElementById('tour')) return; // the tour's keys while the card waits under it
-    e.stopPropagation(); // never the quiz's answer keys behind the card
-    if (/^\d$/.test(e.key)) e.preventDefault();
-    if (e.key !== 'Escape') return;
-    e.preventDefault();
-    pick(false);
-  };
-  document.addEventListener('keydown', key, true);
-  d.ulClose = close; // leaving the page closes it unanswered (route): the offer can come back
-  d.querySelector('[data-open]').onclick = () => pick(true);
-  d.querySelector('.sec').onclick = () => pick(false);
-  setTimeout(() => d.querySelector('[data-open]').focus({preventScroll: true}), 50);
+  cardShow({
+    kind: 'tip',
+    cls: 'intro',
+    kick: `${a} answers in`,
+    title: 'You seem to know your corals already',
+    body: `<p>Open all ${slateGenera().length} genera at once, instead of one at a time? ${introLeft().length} are still to come.</p>`,
+    primary: {text: 'Open all genera', attr: 'data-open', on: () => pick(true)},
+    secondary: {text: 'Not now', on: () => pick(false)},
+    esc: 2,
+    note: 'Also in My progress, any time.',
+    onClose: topUp
+  });
 }
 // Back to one at a time (model.js backDue, introBack), over the question, once: after Open all genera, when the answers
 // since have fallen clearly below what the game expected. "One at a time" closes the genera opened at once; the question
-// on screen is chosen again (it may be about one of them, or offer one as a choice). Escape: Keep them all.
+// on screen is chosen again (it may be about one of them, or offer one as a choice). Escape: Keep them all. Leaving the
+// page closes it unanswered (route): the card can come back.
 function backShow() {
-  const d = document.createElement('div'),
-    n = backOpen().length,
-    pick = keep => {
-      const L = introBack(keep);
-      save();
-      close();
-      if (L.length) {
-        dropPlans();
-        NEXTQ = null;
-        quizPhoto();
-      }
-    };
-  d.className = 'unlock intro';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Keep all genera?');
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">Lots of new genera at once</p><h3>Keep them all, or go back to one at a time?</h3>
-    <p>Since you opened all genera, the questions have been harder for you. With one at a time, the ${n} genera opened at once go back in the queue and come back one by one, each on its card. Your answers are kept.</p>
-    <div class="ulbtns ulstack"><button class="next" type="button" data-back>One at a time</button><button class="next sec" type="button" data-keep>Keep them all</button></div>
-    <p class="note">My progress can open them all again, any time.</p></div>`;
-  document.body.appendChild(d);
-  const close = () => {
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-    qclockAgain(); // the time to answer counts from here (QCLOCK)
-    topUp();
+  const pick = keep => {
+    const L = introBack(keep);
+    save();
+    if (L.length) {
+      dropPlans();
+      NEXTQ = null;
+      quizPhoto();
+    }
   };
-  const key = e => {
-    if (e.key === 'Tab' || document.getElementById('tour')) return; // the tour's keys while the card waits under it
-    e.stopPropagation(); // never the quiz's answer keys behind the card
-    if (/^\d$/.test(e.key)) e.preventDefault();
-    if (e.key !== 'Escape') return;
-    e.preventDefault();
-    pick(true);
-  };
-  document.addEventListener('keydown', key, true);
-  d.ulClose = close; // leaving the page closes it unanswered (route): the card can come back
-  d.querySelector('[data-back]').onclick = () => pick(false);
-  d.querySelector('[data-keep]').onclick = () => pick(true);
-  setTimeout(() => d.querySelector('[data-back]').focus({preventScroll: true}), 50);
+  cardShow({
+    kind: 'tip',
+    cls: 'intro',
+    kick: 'Lots of new genera at once',
+    title: 'Keep them all, or go back to one at a time?',
+    body: `<p>Since you opened all genera, the questions have been harder for you. With one at a time, the ${backOpen().length} genera opened at once go back in the queue and come back one by one, each on its card. Your answers are kept.</p>`,
+    primary: {text: 'One at a time', attr: 'data-back', on: () => pick(false)},
+    secondary: {text: 'Keep them all', attr: 'data-keep', on: () => pick(true)},
+    esc: 2,
+    note: 'My progress can open them all again, any time.',
+    onClose: topUp
+  });
 }
 // The bonus genera (app.js BONUS), offered once (Pierre, 2026-11-02): when every slate genus has been met (introduced:
 // its card shown or asked) and the player has not chosen yet (Q.bon undefined). "Add them": they join the genera not
@@ -1095,116 +1060,102 @@ function backShow() {
 // Every slate genus asked at least once, not just met (Pierre, 2026-11-02: an RA who taps Open all genera would otherwise get the offer a
 // question later, before having seen the IMR genera in the quiz; an RA tester: "after all IMR ones have been introduced/reviewed").
 // A genus closed again by "One at a time" (model.js introBack) waits for its card first.
+// The card shows their own photos as a row of round crops (each genus's cover, a plain disc when it has none or it fails).
 const bonusOfferDue = () => Q.bon === undefined && BONUS.some(n => GX(n)) && slateGenera().every(n => asked(n) && introduced(n));
 function bonusOfferShow() {
-  const d = document.createElement('div'),
-    pick = on => {
-      bonusSet(on);
-      close();
-    };
-  d.className = 'unlock intro';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Bonus genera');
-  const n = BONUS.filter(x => GX(x)).length;
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">Every genus of the slate met</p><h3>${n} more genera?</h3>
-    <p>Not on the IMR coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.</p>
-    <p class="ulnote">${BONUS.filter(x => GX(x))
-      .map(x => `<i>${esc(x)}</i>`)
-      .join(', ')}</p>
-    <div class="ulbtns ulstack"><button class="next" type="button" data-bonus>Add them</button><button class="next sec" type="button">Not now</button></div>
-    <p class="note">⚙ Settings, Bonus genera, any time. They don't count in your progress.</p></div>`;
-  document.body.appendChild(d);
-  const close = () => {
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-    topUp();
-  };
-  const key = e => {
-    if (e.key === 'Tab' || document.getElementById('tour')) return; // the tour's keys while the card waits under it
-    e.stopPropagation(); // never the quiz's answer keys behind the card
-    if (/^\d$/.test(e.key)) e.preventDefault();
-    if (e.key !== 'Escape') return;
-    e.preventDefault();
-    pick(false);
-  };
-  document.addEventListener('keydown', key, true);
-  d.ulClose = close; // leaving the page closes it unanswered (route): the offer comes back
-  d.querySelector('[data-bonus]').onclick = () => pick(true);
-  d.querySelector('.sec').onclick = () => pick(false);
-  setTimeout(() => d.querySelector('[data-bonus]').focus({preventScroll: true}), 50);
+  const L = BONUS.filter(x => GX(x));
+  cardShow({
+    kind: 'bonus',
+    cls: 'intro',
+    kick: 'Every genus of the slate met',
+    title: `${L.length} more genera?`,
+    body: `<p>Not on the IMR coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.</p>${bonusThumbs(L)}
+    <p class="ulnote">${L.map(x => `<i>${esc(x)}</i>`).join(', ')}</p>`,
+    primary: {text: 'Add them', attr: 'data-bonus', on: () => bonusSet(true)},
+    secondary: {text: 'Not now', on: () => bonusSet(false)},
+    esc: 2,
+    note: "⚙ Settings, Bonus genera, any time. They don't count in your progress.",
+    onClose: topUp // leaving the page closes it unanswered (route): the offer comes back
+  });
 }
+const bonusThumbs = L =>
+  `<div class="ulthumbs">${L.map(n => {
+    const p = cover(GX(n));
+    return p ? `<img src="${img(p, 's')}" alt="">` : '<span></span>';
+  }).join('')}</div>`;
 // The cards of the genera met now (INTRO in model.js), one after the other over the question: the first INTRO.START
 // together ("1 of 4", the first questions are about them), later ones alone (asked a few questions later). Recorded
 // when shown, so a planned question never played leaves no genus met without its card.
 function introShow(L, start, kind = start ? 's' : 'c', offerAll = start) {
   document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove())); // with its keys
-  const d = document.createElement('div');
-  d.className = 'unlock intro';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  document.body.appendChild(d);
   let i = 0,
     told = false; // "tap an underlined word" said (once, on the first card whose tips have one)
-  const close = () => {
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-    qclockAgain(); // the time to answer counts from here (QCLOCK)
-    topUp();
-  };
-  d.ulClose = close; // leaving the page closes it (route); the genera of the cards not shown yet come next time
-  const next = () => (++i < L.length ? show() : close());
-  const show = () => {
+  const card = () => {
     const n = L[i],
-      g = GX(n),
-      p = cover(g),
-      star = typeof starNote === 'function' && DATA.gen[n] ? starNote(n) : '',
-      more = i < L.length - 1,
-      tips = tipsList(g),
-      hint = start && !told && tips.includes('data-gt');
-    if (hint) told = true;
+      more = i < L.length - 1;
     // Met when its card is shown (Codex review #350): a sequence left half-way (reload) shows the rest next time.
     introAdd([n], start, kind);
-    d.setAttribute('aria-label', `New genus: ${n}`);
-    d.innerHTML = `<div class="ulcard">${p ? `<div class="ulphoto"><img src="${img(p, 's')}" alt=""></div>` : ''}
-      <p class="ulkick">${isBonus(n) ? 'Bonus genus' : 'New genus'}${L.length > 1 ? ` · ${i + 1} of ${L.length}` : ''}</p><h3><i>${esc(n)}</i></h3>
-      ${plainLine(g)}
-      ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
-      ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : isBonus(n) ? '<p class="ulnote">Not on the IMR list, but common at Dauin.</p>' : ''}
-      <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tips}${hint ? '<p class="gthint">Tap an underlined word to see what it means.</p>' : ''}</div>
-      <p class="ulnote">${start ? (more ? `The first questions are about these ${L.length} genera.` : 'Now, which is which?') : 'It comes up in the questions a little later.'}</p>
-      <div class="ulbtns"><span></span><button class="next" type="button">${more ? 'Next' : start ? 'Start' : 'Got it'}</button></div>
-      ${offerAll && introLeft().length ? `<div class="ulall"><p><b>Had the IMR coral lecture?</b> Skip the cards and play with all ${slateGenera().length} genera.</p><button class="next sec" type="button" data-all>Open all genera</button></div>` : ''}</div>`;
-    d.querySelector('.next').onclick = next;
-    const all = d.querySelector('[data-all]');
-    if (all)
-      all.onclick = () => {
+    const c = introCard(n, {
+      pos: L.length > 1 ? `${i + 1} of ${L.length}` : '',
+      hint: start && !told,
+      note: start
+        ? more
+          ? `The first questions are about these ${L.length} genera.`
+          : 'Now, which is which?'
+        : 'It comes up in the questions a little later.',
+      btn: more ? 'Next' : start ? 'Start' : 'Got it',
+      all: offerAll && introLeft().length > 0
+    });
+    if (c.hinted) told = true;
+    c.primary = {...c.primary, stay: true, on: next};
+    return c;
+  };
+  const next = () => (++i < L.length ? d.set(card()) : d.close(1));
+  // Enter outside a button, Escape and a tap outside move on (the first cards are not skipped: each is met when shown).
+  const on = () => (start ? next() : d.close('esc'));
+  const d = cardShow({
+    ...card(),
+    esc: on,
+    enter: on,
+    tap: on,
+    // Open all genera (model.js introAll) from the first cards.
+    bind: d =>
+      d.querySelector('[data-all]') &&
+      (d.querySelector('[data-all]').onclick = () => {
         introAll('card');
         NEXTQ = null;
         save();
-        close();
-      };
-    setTimeout(() => {
-      const b = d.querySelector('.next');
-      if (b) b.focus({preventScroll: true});
-    }, 50);
-  };
-  // The quiz's keys (1-4 answer) never reach the question behind the card (Codex review #350). Enter on a focused
-  // button presses it; elsewhere Enter, and Escape, move on (the first cards are not skipped: each is met when shown).
-  const key = e => {
-    if (e.key === 'Tab' || document.getElementById('tour')) return; // the tour's keys while the card waits under it
-    e.stopPropagation();
-    if (e.key === 'Enter' && document.activeElement && d.contains(document.activeElement)) return;
-    if (/^\d$/.test(e.key)) e.preventDefault();
-    if (e.key !== 'Escape' && e.key !== 'Enter') return;
-    e.preventDefault();
-    start ? next() : close();
-  };
-  document.addEventListener('keydown', key, true);
-  d.addEventListener('click', e => {
-    if (e.target === d) start ? next() : close();
+        d.close('all');
+      }),
+    onClose: topUp // leaving the page closes it (route); the genera of the cards not shown yet come next time
   });
-  show();
+}
+// One genus's first-meeting card (introShow; the Lab's cards page shows one with nothing recorded): its photo as a band,
+// the plain sentence, the ID tips. o: pos ("1 of 4"), note, btn, all (the Open all genera box), hint (the glossary hint,
+// said when the tips hold a term: hinted).
+function introCard(n, o = {}) {
+  const g = GX(n),
+    p = cover(g),
+    star = typeof starNote === 'function' && DATA.gen[n] ? starNote(n) : '',
+    tips = tipsList(g),
+    hinted = !!o.hint && tips.includes('data-gt');
+  return {
+    kind: 'genus',
+    cls: 'intro',
+    photo: p ? img(p, 's') : '',
+    kick: `${isBonus(n) ? 'Bonus genus' : 'New genus'}${o.pos ? ` · ${o.pos}` : ''}`,
+    title: `<i>${esc(n)}</i>`,
+    body: `${plainLine(g)}
+      ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
+      ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : isBonus(n) ? '<p class="ulnote">Not on the IMR list, but common at Dauin.</p>' : ''}
+      <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tips}${hinted ? '<p class="gthint">Tap an underlined word to see what it means.</p>' : ''}</div>
+      ${o.note ? `<p class="ulnote">${o.note}</p>` : ''}`,
+    primary: {text: o.btn || 'Got it'},
+    after: o.all
+      ? `<div class="ulall"><p><b>Had the IMR coral lecture?</b> Skip the cards and play with all ${slateGenera().length} genera.</p><button class="next sec" type="button" data-all>Open all genera</button></div>`
+      : '',
+    hinted
+  };
 }
 // Cards due with the next question (INTRO): the first ones while fewer than INTRO.START slate genera are met (picked by
 // the progressive path's draw, easiest first), else none: planPhoto may add one when its draw falls on a genus not met.
