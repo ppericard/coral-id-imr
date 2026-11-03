@@ -589,7 +589,7 @@ const server = http.createServer((req, res) => {
       const inQ = () => candQueue('all').some(x => x.p.f === F[2] && !x.aside);
       return {aside: !inQ(), note: !!document.querySelector('.adm-caside')};
     }, CF);
-    if (!as.aside || !as.note) fails.push(`${w}px Pre-sort: the near-duplicate is not set aside (${JSON.stringify(as)})`);
+    if (!as.aside || !as.note) fails.push(`${w}px Pre-sort: the comparison image is not set aside (${JSON.stringify(as)})`);
     // The rule (same as tools/excluded.py set_aside): several corals and Poor are set aside too, unless unsure.
     const rule = await p.evaluate(() =>
       [
@@ -611,7 +611,7 @@ const server = http.createServer((req, res) => {
       await settle();
       if (
         (await p.$eval('.adm-caside', e => e.getAttribute('aria-pressed'))) !== 'true' ||
-        !(await p.evaluate(F => candQueue('all').some(x => x.p.f === F[1]), CF))
+        !(await p.evaluate(F => candQueue('all').some(x => x.p.f === F[2]), CF))
       )
         fails.push(`${w}px Pre-sort: Show did not bring them back`);
       await p.click('[data-caside]');

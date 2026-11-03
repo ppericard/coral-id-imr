@@ -144,7 +144,7 @@ the view it would join if added.
 **What you set aside, Pierre does not see** (Pierre, 2026-11-03: the pre-sort takes everything obvious off his hands).
 A candidate judged `exclude` or `cmp`, a near-duplicate (`dup`), a photo of several corals (`multi`) or a Poor photo
 (quality 1), with no `unsure`, no longer comes up in the admin's Candidates: the auto-sort rejects it (excludes it for
-`exclude`; a `cmp` stays set aside, a count and a Show link keep it reachable), below "What happens to a sure
+`exclude`; a `cmp` stays set aside, the "set aside" toggle above the queue keeps it reachable), below "What happens to a sure
 judgment". So be sure: at the least doubt, add `"unsure"` and it stays in his queue (an `exclude` with `unsure`
 is not set aside).
 
