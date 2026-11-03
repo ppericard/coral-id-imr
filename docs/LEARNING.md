@@ -918,7 +918,7 @@ drives the same real quiz (the app's draw, photos, traps, duels, Again, exam, El
 untouched; only the player is simulated) and measures what the simulated players really learn, and how far the app's
 estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minutes; numbers for reading).
 
-- **Run**: `node tools/learnsim.js [--seeds 30] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
+- **Run**: `node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
   [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...] [--mem 0,0.4,1.5,2]`. Each run (profile × seed) gets a fresh browser context; seeds
   are 1..N, the app's `Math.random` and the learner's own generator both seeded from it, so a run is reproducible and
   the same seeds before and after a change give paired comparisons. `--stats` loads a `?stats=1` answer of the sync

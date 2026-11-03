@@ -4,7 +4,7 @@
 // truth, over many seeds, so a change to the algorithm can be judged on outcomes with a spread. Not run by CI (minutes,
 // numbers for reading). docs/LEARNING.md, "Learning-outcome simulation".
 //
-//   node tools/learnsim.js [--seeds 30] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
+//   node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
 //                          [--workers 4] [--out results.json] [--stats stats.json] [--met Acropora,Porites,...]
 //                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20]
 //
@@ -115,7 +115,7 @@ const arg = (k, d) => {
   const i = process.argv.indexOf('--' + k);
   return i > 0 && process.argv[i + 1] !== undefined ? process.argv[i + 1] : d;
 };
-const SEEDS = Number(arg('seeds', 30)),
+const SEEDS = Number(arg('seeds', 5)),
   QN = Number(arg('questions', 300)),
   NAMES = arg('profiles', Object.keys(PROFILES).join(',')).split(','),
   WORKERS = Number(arg('workers', Math.max(1, Math.min(4, os.cpus().length)))),
