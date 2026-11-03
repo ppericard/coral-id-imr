@@ -163,6 +163,21 @@ test('reports: logged once, reporter verified by code, never mistaken for a prog
   );
 });
 
+test('v34: a save from an app that does not know a subject keeps that subject in the saved copy (Codex review #442)', () => {
+  const s = loadCodeGs(),
+    fish = {'reefid-sync-fish-progress': JSON.stringify({t01: {ok: 10, ko: 2}}), 'reefid-sync-fish-quiz': '{"c2":true}'};
+  s.post({name: 'Ana', pin: '1234', data: {...prog(1), ...fish}, summary: {}});
+  // An app from before fish saves its whole record, with no fish key: the fish keys stay.
+  s.post({name: 'Ana', pin: '1234', data: prog(2), summary: {}});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).data, {...prog(2), ...fish});
+  // A fish-aware app's save is taken as it is: a reset fish progress is an empty record, kept as such.
+  s.post({name: 'Ana', pin: '1234', data: {...prog(2), 'reefid-sync-fish-progress': '{}'}, summary: {}});
+  assert.deepStrictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-fish-progress']), {});
+  // The corals' keys are never kept that way: the saving app owns them.
+  s.post({name: 'Ana', pin: '1234', data: {}, summary: {}});
+  assert.ok(!('reefid-sync-coral-progress' in s.get({name: 'Ana', pin: '1234'}).data));
+});
+
 test('reports list: only a GitHub token that can write to the repo, checked once', () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}});

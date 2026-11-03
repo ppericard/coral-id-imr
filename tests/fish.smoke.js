@@ -369,6 +369,60 @@ const server = http.createServer((req, res) => {
     if (ex.subj !== 'fish' || ex.hash !== '#genera') rv.push(`Fish chosen on a coral genus sheet: ${JSON.stringify(ex)}`);
     await c3.close();
   }
+  // (7) A saved copy without fish keys (saved by an app from before fish) is not an empty fish record (Codex review
+  // #442): the fish progress synced before stays here and goes with the next save (was erased: 10/2 to nothing).
+  {
+    const c5 = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
+    await c5.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c5.addInitScript(() => {
+      const F = {t01: {ok: 10, ko: 2}};
+      try {
+        if (!sessionStorage.getItem('fish-old')) {
+          sessionStorage.setItem('fish-old', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+          localStorage.setItem('reefid-sync-fish-progress', JSON.stringify(F));
+          localStorage.setItem('reefid-account', JSON.stringify({name: 'Ana', pin: '1234', log: [], base: {}, fbase: F, srv: 1}));
+        }
+      } catch (e) {}
+      window.SAVES = [];
+      // Another device on an app from before fish saved the account since (revision 2): no fish key in the copy.
+      const data = {'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 3, ko: 1}})};
+      window.SHEET_STUB = (url, o) => {
+        const reply =
+          o && o.method === 'POST'
+            ? (SAVES.push(JSON.parse(o.body)), {ok: true, log: true, rev: 3})
+            : {ok: true, found: true, data, rev: 2};
+        return Promise.resolve({json: () => Promise.resolve({...reply, v: 29})});
+      };
+    });
+    const q = await c5.newPage();
+    q.on('pageerror', e => errs.push(`old copy: ${e.message}`));
+    await q.goto(base + '#home');
+    await q.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH, null, {timeout: 30000});
+    await q.evaluate(() => syncPush());
+    const o = await q.evaluate(() => ({
+      here: (P.t01 || {}).ok,
+      sent: SAVES.length ? (JSON.parse(SAVES[SAVES.length - 1].data['reefid-sync-fish-progress'] || '{}').t01 || {}).ok : null
+    }));
+    if (o.here !== 10 || o.sent !== 10) rv.push(`a saved copy without fish keys erased the fish progress: ${JSON.stringify(o)}`);
+    // (8) Tools › Type the genus with Fish chosen: the corals' genera (the Tools are the corals'; Codex review #442: it
+    // drew fish teaching ids, "It was t01").
+    await q.evaluate(() => (location.hash = '#lab-type'));
+    await q.waitForSelector('#view .tyform', {timeout: 15000});
+    await q.click('#view .tyform [data-idk]');
+    const ty = await q.evaluate(() => ({
+      subj: SUBJ.id,
+      res: (document.querySelector('#tyres') || {}).textContent || '',
+      label: document.querySelector('#view .tyform label').textContent
+    }));
+    if (ty.subj !== 'fish' || !/It was [A-Z][a-z]+/.test(ty.res) || /\bt\d\d\b/.test(ty.res) || ty.label !== 'Genus')
+      rv.push(`Type the genus with Fish chosen: ${JSON.stringify(ty)}`);
+    await c5.close();
+  }
   // (6) fish.json cannot come at start-up (Codex review #442): the app opens on the corals, nothing empty is kept, and
   // the next try loads the fish.
   {

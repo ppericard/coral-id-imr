@@ -295,6 +295,19 @@
     return out;
   }
 
+  // A player's saved data (the sheet's Data, Code.gs save), with the keys of the subjects after the first (fish:
+  // reefid-sync-fish-*) that the saved copy holds and the incoming one lacks kept from the saved copy: an app from before
+  // that subject saves its whole record without them, and replacing the record would erase that progress, which no
+  // answer log can rebuild (Codex review #442). saved, data: {key: value}; returns the data to save.
+  function keepSubjectKeys(saved, data) {
+    const out = {...(data || {})},
+      pre = SUBJECTS.slice(1).map(S => KEYS.SYNC + S.id + '-');
+    Object.keys(saved || {}).forEach(k => {
+      if (!(k in out) && pre.some(x => k.startsWith(x))) out[k] = saved[k];
+    });
+    return out;
+  }
+
   // The draft is never published as a whole copy: it is merged, key by key, onto the latest published curation.
   // merge3(base, mine, theirs): base = the published curation this draft started from; a key I changed since base
   // keeps my value, every other key takes the published one (so choices published from another browser or device
@@ -2541,6 +2554,7 @@
     subjKey,
     subjDev,
     fishGen,
+    keepSubjectKeys,
     fishNames,
     fishTypeNames,
     typeNormAll,

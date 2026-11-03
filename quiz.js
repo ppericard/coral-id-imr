@@ -53,15 +53,16 @@ const typeNames = () => {
   return TYPEN.L;
 };
 const typeMatch = text => typeMatchIn(typeNames(), text, UNITS[SUBJ.id].norm);
-const typeForm = () => `<form class="tyform" autocomplete="off">
-    <label for="tyin">${SUBJ.one[0].toUpperCase() + SUBJ.one.slice(1)}</label>
-    <input id="tyin" name="genus" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" placeholder="Type the ${SUBJ.one}">
+// S: the subject the form names and reads (the quiz's own; Tools › Type the genus is the corals', whatever is on screen).
+const typeForm = (S = SUBJ) => `<form class="tyform" autocomplete="off">
+    <label for="tyin">${S.one[0].toUpperCase() + S.one.slice(1)}</label>
+    <input id="tyin" name="genus" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" placeholder="Type the ${S.one}">
     <div class="tybtns"><button type="submit" class="next">Check</button><button type="button" class="next sec" data-idk>I don't know</button></div>
     <p class="tymsg" aria-live="polite"></p></form>`;
 // Binds a typed form: done(m, text) once answered, m the genus read ({g, old, exact}) or null for "I don't know". A
 // word that is no genus (even with the tolerance), or as close to two, is no answer: the player is asked to check it.
 // After the answer the field is locked; after "I don't know" it is emptied (a word rejected earlier is no answer).
-function typeBind(form, done) {
+function typeBind(form, done, S = SUBJ) {
   const inp = form.querySelector('input'),
     msg = form.querySelector('.tymsg');
   let over = false;
@@ -79,8 +80,8 @@ function typeBind(form, done) {
     if (over) return;
     const text = inp.value.trim();
     if (!text) return inp.focus();
-    const m = typeMatch(text);
-    if (!m) msg.textContent = `“${text}” is not a ${SUBJ.one} in the game: check the spelling.`;
+    const m = S === SUBJ ? typeMatch(text) : inSubject(S.id, () => typeMatch(text));
+    if (!m) msg.textContent = `“${text}” is not a ${S.one} in the game: check the spelling.`;
     else if (m.near) msg.textContent = `Close to ${m.near.map(unameT).join(' and ')}: which one? Check the spelling.`;
     else return end(m, text);
     inp.focus();

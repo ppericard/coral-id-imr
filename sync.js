@@ -226,10 +226,13 @@ function mergeSaved(j) {
   } catch (e) {}
   achMerge(d[ACHK]); // achievements earned on another device join this one's
   // Each subject's progress on its own (core.js SUBJECTS), as if it were on screen (inSubject): its cards, reset, opt-in
-  // sets and opening hold. A subject played on neither side is left alone (the first, the corals, always runs).
+  // sets and opening hold. A subject the saved copy does not hold is left alone (the first, the corals, always runs):
+  // absent is not empty (Codex review #442: a copy saved by an app from before fish has no fish keys, and merged as an
+  // empty record it erased this device's fish progress, which no answer log can rebuild); this device's goes with the
+  // next save. A reset is a key with an empty record and a reset time, never an absent key.
   SUBJECTS.forEach((S, i) => {
     const pk = subjKey(S.id, 'progress');
-    if (i && !(pk in d) && store.get(pk, null) === null) return;
+    if (i && !(pk in d)) return;
     inSubject(S.id, () => mergeSubject(j, d, S, mine));
   });
   showBon(); // ⚙'s opt-in switches, from the subject on screen's settings
