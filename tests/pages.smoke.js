@@ -1027,8 +1027,9 @@ async function basicsFit(b, base) {
     await p.goto(base + '#lab');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     for (const st of ['colony', 'polyp', 'corallite', 'septa', 'teeth', 'walls', 'forms']) {
+      // The walls check opens once the four wall types have been seen (basicsTeach checks that part).
       await p.evaluate(s => {
-        localStorage.removeItem('imr-basics');
+        localStorage.setItem('imr-basics', JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {}));
         location.hash = 'lab-basics|' + s;
       }, st);
       await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
@@ -1057,6 +1058,221 @@ async function basicsFit(b, base) {
       if (r.check > r.room) fails.push(`${w}x${h} Coral basics ${st}: the answered check takes ${r.check} px, only ${r.room} px on screen`);
       if (r.srcs < r.photos) fails.push(`${w}x${h} Coral basics ${st}: ${r.photos} check photos, ${r.srcs} source pills after the answer`);
     }
+    await c.close();
+  }
+  return fails;
+}
+
+// Coral basics, Pierre's feedback of 2026-11-03: step 4 defines costae beside septa (a term of its own, a label in its own
+// colour outside the cup's rim, the septa label inside it, the centre on the cup's centre); step 6 shows the four wall
+// types one after the other, "Next: Growth forms" only after the fourth, the check opening then; step 7 picks a form on a
+// drawn icon and shows 2-3 large photos of it, each enlarged with its genus; every teaching photo opens the enlarged
+// view when tapped, with its labels over the whole photo and a Labels switch. Returns the failures.
+async function basicsTeach(b, base) {
+  const fails = [];
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+    });
+    const p = await c.newPage(),
+      errs = [];
+    p.on('pageerror', e => errs.push(e.message));
+    const go = async (st, seen = {}) => {
+      await p.evaluate(
+        ([s, v]) => {
+          localStorage.setItem('imr-basics', JSON.stringify(v));
+          location.hash = 'lab-basics|' + s;
+        },
+        [st, seen]
+      );
+      await p.waitForSelector('.bx-fig .bx-zoom, .bx-forms', {timeout: 15000});
+    };
+    const W = `${w}px Coral basics`;
+    await p.goto(base + '#lab');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    // Step 4: septa inside the rim, costae outside it, the centre on the rim's centre; Costae defined as its own term.
+    await go('septa');
+    const sp = await p.evaluate(() => {
+      const q = s => document.querySelector(s),
+        rim = q('.bx-fig .bx-rim'),
+        at = (e, k) => Number(e.getAttribute(k));
+      // distance from the rim's centre in rim radii: < 1 inside the rim, 1 on it
+      const inRim = d => Math.hypot((at(d, 'cx') - at(rim, 'cx')) / at(rim, 'rx'), (at(d, 'cy') - at(rim, 'cy')) / at(rim, 'ry'));
+      return {
+        rim: !!rim,
+        sep: q('.bx-fig .bx-dot.sep') && inRim(q('.bx-fig .bx-dot.sep')),
+        cos: q('.bx-fig .bx-dot.cos') && inRim(q('.bx-fig .bx-dot.cos')),
+        ctr: q('.bx-fig .bx-dot.ctr') && inRim(q('.bx-fig .bx-dot.ctr')),
+        labs: [...document.querySelectorAll('.bx-fig .bx-lab')].map(e => e.className + ':' + e.textContent),
+        more: (q('.bx-more') || {}).textContent || '',
+        key: (q('.bx-key') || {}).textContent || '',
+        off: [...document.querySelectorAll('.bx-side .bx-off')].map(e => e.textContent).join(' | ')
+      };
+    });
+    if (!sp.rim) fails.push(`${W} septa: no rim drawn on the photo`);
+    else {
+      if (!(sp.sep < 0.75)) fails.push(`${W} septa: the septa point is not well inside the rim (${sp.sep})`);
+      // Costae are immediately outside the wall (Pierre, PR #424): past the rim, by less than a quarter of its radius.
+      if (!(sp.cos > 1.05 && sp.cos < 1.25)) fails.push(`${W} septa: the costae point is not just outside the rim (${sp.cos} rim radii)`);
+      if (!(sp.ctr < 0.4)) fails.push(`${W} septa: the centre point is not near the rim's centre (${sp.ctr})`);
+    }
+    if (!sp.labs.some(l => /\bsep\b/.test(l) && /septa/.test(l)) || !sp.labs.some(l => /\bcos\b/.test(l) && /costae/.test(l)))
+      fails.push(`${W} septa: no septa and costae labels in their colours: ${sp.labs.join(', ')}`);
+    if (!/^Costae: /.test(sp.more) || !/costae/.test(sp.key) || !/slide 13: “When septa cross the wall/.test(sp.off))
+      fails.push(`${W} septa: costae not defined as a term of its own with IMR Lecture 6 slide 13`);
+    // Tapping the photo enlarges it with the step's labels over the whole photo, and a Labels switch.
+    await p.click('.bx-fig .bx-zoom');
+    await p.waitForSelector('#lightbox .lb-over .bx-lab', {timeout: 5000}).catch(() => {});
+    // the photo has loaded (here from the local fallback) and the layer has followed it
+    await p
+      .waitForFunction(
+        () => {
+          const a = document.querySelector('#lightbox .lb-in img').getBoundingClientRect(),
+            o = document.querySelector('#lightbox .lb-over').getBoundingClientRect();
+          return a.width > 200 && Math.abs(a.width - o.width) < 2 && Math.abs(a.top - o.top) < 2;
+        },
+        null,
+        {timeout: 8000}
+      )
+      .catch(() => {});
+    const lb = await p.evaluate(() => {
+      const im = document.querySelector('#lightbox .lb-in img'),
+        ov = document.querySelector('#lightbox .lb-over');
+      if (!im || !ov) return null;
+      const a = im.getBoundingClientRect(),
+        o = ov.getBoundingClientRect();
+      return {
+        d: Math.max(Math.abs(a.left - o.left), Math.abs(a.top - o.top), Math.abs(a.width - o.width), Math.abs(a.height - o.height)),
+        labs: ov.querySelectorAll('.bx-lab').length
+      };
+    });
+    if (!lb || lb.d > 2 || lb.labs < 3)
+      fails.push(`${W} septa: the enlarged photo has no labels on it, or they are off the photo: ${JSON.stringify(lb)}`);
+    // The drawing of the layer (rim, dots, pointers) fills it like the labels (Codex on PR #424): its box is the layer's and
+    // each dot sits at its photo coordinates, at fit and at actual size.
+    const marks = () =>
+      p.evaluate(() => {
+        const ov = document.querySelector('#lightbox .lb-over'),
+          o = ov.getBoundingClientRect(),
+          sv = ov.querySelector('svg').getBoundingClientRect(),
+          vb = ov.querySelector('svg').viewBox.baseVal;
+        let d = Math.max(
+          Math.abs(sv.left - o.left),
+          Math.abs(sv.top - o.top),
+          Math.abs(sv.width - o.width),
+          Math.abs(sv.height - o.height)
+        );
+        ov.querySelectorAll('.bx-dot').forEach(c => {
+          const r = c.getBoundingClientRect(),
+            x = o.left + (c.cx.baseVal.value / vb.width) * o.width,
+            y = o.top + (c.cy.baseVal.value / vb.height) * o.height;
+          d = Math.max(d, Math.abs(r.left + r.width / 2 - x), Math.abs(r.top + r.height / 2 - y));
+        });
+        return Math.round(d);
+      });
+    const fitD = await marks();
+    if (fitD > 2) fails.push(`${W} septa: the enlarged photo's rings and pointers are ${fitD} px off the photo`);
+    await p.evaluate(() => document.querySelector('#lightbox .lb-in img').click());
+    await p.waitForTimeout(800);
+    const fullD = await marks();
+    if (fullD > 2) fails.push(`${W} septa: at actual size, the rings and pointers are ${fullD} px off the photo`);
+    await p.evaluate(() => document.querySelector('#lightbox .lb-in img').click());
+    await p.click('#lightbox [data-ov]').catch(() => fails.push(`${W} septa: no Labels switch in the enlarged view`));
+    if (!(await p.evaluate(() => document.querySelector('#lightbox .lb-over').hidden)))
+      fails.push(`${W} septa: Labels off left the labels on`);
+    await p.click('#lightbox [data-x]');
+    // Every step's teaching photo is the enlarge button (no small "Enlarge" link any more).
+    for (const st of ['colony', 'polyp', 'corallite', 'teeth']) {
+      await go(st);
+      const z = await p.evaluate(() => ({
+        n: document.querySelectorAll('.bx-fig .bx-zoom .zic').length,
+        link: [...document.querySelectorAll('.bx-fig button')].some(b => b.textContent === 'Enlarge')
+      }));
+      if (!z.n || z.link) fails.push(`${W} ${st}: the photo is not the enlarge button (${JSON.stringify(z)})`);
+      await p.click('.bx-fig .bx-zoom');
+      if (!(await p.waitForSelector('#lightbox .lb-over', {timeout: 5000}).catch(() => null)))
+        fails.push(`${W} ${st}: tapping the photo does not enlarge it with its labels`);
+      await p.click('#lightbox [data-x]').catch(() => {});
+    }
+    // Step 6: the four wall types in turn; the next step only after the fourth; the check opens then.
+    await go('walls');
+    const seen = [];
+    for (let k = 0; k < 6; k++) {
+      const st = await p.evaluate(() => ({
+        on: (document.querySelector('.bx-wtabs [aria-pressed="true"]') || {}).dataset?.w,
+        next: (document.querySelector('.bx-nav .next') || {}).textContent || '',
+        open: document.querySelector('.bx-check').open
+      }));
+      seen.push(st.on);
+      if (/Growth forms/.test(st.next) && new Set(seen).size < 4)
+        fails.push(`${W} walls: "Next: Growth forms" after only ${seen.join(', ')}`);
+      if (st.open && new Set(seen).size < 4) fails.push(`${W} walls: the check is open before the four types were seen`);
+      if (!/Next wall type/.test(st.next)) {
+        if (new Set(seen).size !== 4 || !st.open) fails.push(`${W} walls: ended after ${seen.join(', ')}, check open ${st.open}`);
+        break;
+      }
+      await p.click('.bx-nav .bx-wnext');
+    }
+    if (new Set(seen).size !== 4) fails.push(`${W} walls: the four wall types were not all shown: ${seen.join(', ')}`);
+    // Step 7: 7 drawn form icons; each shows 2-3 large example photos, each enlarged with its genus named.
+    await go('forms');
+    const nf = await p.evaluate(() => document.querySelectorAll('.bx-forms [data-f] svg.bx-fi').length);
+    if (nf !== 7) fails.push(`${W} forms: ${nf} drawn form icons, not 7`);
+    for (let j = 0; j < 7; j++) {
+      await p.click(`.bx-forms [data-f="${j}"]`);
+      const ex = await p.evaluate(() =>
+        [...document.querySelectorAll('.bx-fex figure')].map(f => ({
+          w: Math.round(f.querySelector('img').getBoundingClientRect().width),
+          g: (f.querySelector('figcaption i') || {}).textContent || '',
+          // rule 7: 0 IMR lecture photo, 1 Pierre's own, 2 another observer's
+          r: (n => {
+            const fi = (f
+                .querySelector('img')
+                .getAttribute('src')
+                .match(/img\/([^/?]+?)(?:-[mst])?\.webp/) || [])[1],
+              q = [...Object.values(DATA.gen[n].views).flat(), ...(DATA.course[n] || [])].find(x => x.f === fi) || {};
+            return q.imr ? 0 : q.own ? 1 : 2;
+          })((f.querySelector('figcaption i') || {}).textContent)
+        }))
+      );
+      const name = await p.evaluate(j => document.querySelectorAll('.bx-forms [data-f]')[j].textContent, j);
+      if (ex.length < 2 || ex.length > 3) fails.push(`${W} forms ${name}: ${ex.length} example photos`);
+      // Larger than the old 4-per-row thumbnails (about a quarter of the column).
+      if (ex.length && Math.max(...ex.map(e => e.w)) < (w < 600 ? 330 : 400))
+        fails.push(`${W} forms ${name}: the largest example is ${Math.max(...ex.map(e => e.w))} px wide`);
+      if (ex.some(e => !e.g)) fails.push(`${W} forms ${name}: an example photo without its genus`);
+      if (ex.some((e, i) => i && e.r < ex[i - 1].r))
+        fails.push(
+          `${W} forms ${name}: examples not in rule 7's order (IMR, Pierre's, others): ${ex.map(e => e.g + ':' + e.r).join(', ')}`
+        );
+    }
+    await p.click('.bx-fex .bx-fx');
+    const cap = await p
+      .waitForSelector('#lightbox .lb-cap', {timeout: 5000})
+      .then(e => e.textContent())
+      .catch(() => '');
+    if (!/Mushroom|Danafungia|Herpolitha|Fungia/.test(cap) || !/·/.test(cap))
+      fails.push(`${W} forms: the enlarged example has no genus or credit: "${cap}"`);
+    await p.click('#lightbox [data-x]').catch(() => {});
+    // Words lists Costae and opens step 4.
+    await p.evaluate(() => (location.hash = 'lab-basics|words'));
+    await p.waitForSelector('.bx-words', {timeout: 5000});
+    const cw = await p.evaluate(() =>
+      [...document.querySelectorAll('.bx-words dt a')].some(
+        a => a.textContent === 'Costae' && a.getAttribute('href') === '#lab-basics|septa'
+      )
+    );
+    if (!cw) fails.push(`${W} words: no Costae entry linking to step 4`);
+    if (errs.length) fails.push(`${W}: ${errs.slice(0, 3).join(' | ')}`);
     await c.close();
   }
   return fails;
@@ -1131,8 +1347,9 @@ async function basicsFit(b, base) {
     // classified photo opens the enlarged view.
     for (const st of ['colony', 'septa', 'teeth', 'walls', 'forms', 'corallite']) {
       errs.length = 0;
+      // The walls check opens once the four wall types have been seen (basicsTeach checks that part).
       await p.evaluate(s => {
-        localStorage.removeItem('imr-basics');
+        localStorage.setItem('imr-basics', JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {}));
         location.hash = 'lab-basics|' + s;
       }, st);
       await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
@@ -1625,6 +1842,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   }
   for (const f of await basicsFit(b, base)) fails.push(f);
   for (const f of await credits(b, base)) fails.push(f);
+  for (const f of await basicsTeach(b, base)) fails.push(f);
   await b.close();
   for (const f of await signin(base)) fails.push(f);
   server.close();

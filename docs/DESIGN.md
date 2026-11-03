@@ -39,7 +39,9 @@ The visual rules every page follows. They came out of the expert UI review of 20
 
 ## Lab drawings
 
-- Concept drawings (Corallite anatomy and other schematics) use ONE vivid highlight colour, `--hl` in `proto/lab.css` (raspberry in light, pink in dark), only for the part being explained; everything else fades to grey (`--dk`). Rings on photos use the same colour and dim the rest of the photo (Pierre, PR #177).
+- Concept drawings (Corallite anatomy and other schematics) use ONE vivid highlight colour, `--hl` in `proto/lab.css` (raspberry in light, pink in dark), only for the part being explained; everything else fades to grey (`--dk`). Rings on photos use the same colour and dim the rest of the photo (Pierre, PR #177), lightly in Coral basics (2026-11-03: a beginner must still see the subject). The one exception is a drawing that teaches two parts against each other: the second takes `--hl2` (the palette accent), with a key, and the photo's labels carry a dot of the same colour (Coral basics step 4: septa `--hl` inside the rim, costae `--hl2` outside it). `--hl` and `--hl2` are also set on `#lightbox`, for labels shown in the enlarged view.
+- Growth-form icons (Coral basics step 7, `FORM_ICON` in `proto/basics.js`): 64 × 48 silhouettes on a seabed line, round strokes in `currentColor` with a soft tint fill, the picked one in the accent.
+- A teaching photo that enlarges is itself the button, with the `ZOOMI` mark in its corner, never a separate small "Enlarge" link; the enlarged view can carry the photo's labels (`zoom(list, i, {over})`, a Labels switch).
 - Home door schematics are drawn SVG (`home-art.js`), not screenshots; in dark mode the drawings keep the light palette.
 
 ## Icons
