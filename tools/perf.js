@@ -190,7 +190,8 @@ async function field() {
             if (!(await p.$('#view [data-c]'))) break;
             // Right, except the second answer (a fluent RA gets ~80% right; a wrong answer re-plans what comes next).
             await p.evaluate(wrong => {
-              const f = (document.querySelector('#view .qstage img').getAttribute('src') || '').replace(/^img\/|(-[tsm])?\.webp.*$/g, ''),
+              const i0 = document.querySelector('#view .qstage img'),
+                f = i0.dataset.f || (i0.getAttribute('src') || '').replace(/^img\/|(-[tsm])?\.webp.*$/g, ''), // data-f: Millepora's iNat URLs
                 all = {...DATA.gen, ...((DATA.x || {}).gen || {})},
                 has = n => [...Object.values(all[n].views || {}).flat(), ...((DATA.course || {})[n] || [])].some(x => x && x.f === f),
                 t = Object.keys(all).find(has),

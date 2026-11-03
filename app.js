@@ -223,10 +223,13 @@ $v.addEventListener(
       i.src = i.dataset.lo;
     } else if (i.closest('.qstage') && !$v.querySelector('.q.done, #qfail')) {
       if (navigator.onLine !== false)
+        // By the photo's name (data-f, quiz.js): an iNaturalist URL (Millepora's photos) is not one admin can look up.
         ev('photo', {
-          f: resized(u, '')
-            .replace(/^img\//, '')
-            .replace(/\.webp.*$/, '')
+          f:
+            i.dataset.f ||
+            resized(u, '')
+              .replace(/^img\//, '')
+              .replace(/\.webp.*$/, '')
         });
       const a = document.getElementById('after');
       if (a) {

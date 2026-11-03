@@ -83,7 +83,22 @@ const server = http.createServer((req, res) => {
       }
     );
     if (opts.hangCuration) await ctx.route(base + 'curation.json', () => {}); // never answers
-    if (opts.failFull) await ctx.route(/\/img\/[^/]+(?<!-s)\.webp/, r => r.abort('connectionreset'));
+    if (opts.failFull) {
+      await ctx.route(/\/img\/[^/]+(?<!-s)\.webp/, r => r.abort('connectionreset'));
+      // A Millepora photo (iNaturalist, r: 1, app.js img()): its bigger file ('large') fails too and its 480 px one
+      // ('medium') answers, here with a local 480 px file (every other host is cut off, so that check failed whenever
+      // the first question was on Millepora).
+      const small = fs.readFileSync(
+        path.join(
+          ROOT,
+          'img',
+          fs.readdirSync(path.join(ROOT, 'img')).find(f => f.endsWith('-s.webp'))
+        )
+      );
+      await ctx.route(/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/\d+\/(large|medium)\./, r =>
+        /\/large\./.test(r.request().url()) ? r.abort('connectionreset') : r.fulfill({contentType: 'image/webp', body: small})
+      );
+    }
     if (opts.failAll) await ctx.route(/\/img\/.*\.webp/, r => r.abort('connectionreset'));
     const p = await ctx.newPage(),
       errs = [];
@@ -111,11 +126,20 @@ const server = http.createServer((req, res) => {
       await p2
         .waitForFunction(() => typeof NEXTQ !== 'undefined' && NEXTQ && NEXTQ.args, null, {timeout: 5000})
         .catch(() => fails.push('No next question planned during the feedback'));
-      const want = await p2.evaluate(() => (NEXTQ && NEXTQ.args ? NEXTQ.args[4].shown.map(x => resized(img(x), '')) : []));
+      // The same photos (by name: data-f, quiz.js), each in one of its files. The size is chosen when it shows (the box,
+      // the line measured, Saver): an iNaturalist photo (Millepora's, not downloaded: r: 1) is its 'medium' file for
+      // 480 px and 'large' otherwise, names resized() leaves alone, so comparing resized(…, '') failed whenever
+      // Millepora came up (#376).
+      const want = await p2.evaluate(() =>
+        NEXTQ && NEXTQ.args ? NEXTQ.args[4].shown.map(x => ({f: x.f, files: [img(x, 's'), img(x, 'm'), img(x, '')]})) : []
+      );
       await p2.evaluate(() => document.querySelectorAll('.unlock .next, .achpop').forEach(x => x.click && x.click()));
       await p2.click('#next');
-      const got = await p2.evaluate(() => [...document.querySelectorAll('#view .qstage img')].map(i => resized(i.getAttribute('src'), '')));
-      if (!want.length || want.some((u, k) => got[k] !== u)) fails.push(`Next did not show the planned question (${want[0]} vs ${got[0]})`);
+      const got = await p2.evaluate(() =>
+        [...document.querySelectorAll('#view .qstage img')].map(i => ({f: i.dataset.f, u: i.getAttribute('src').replace(/#.*$/, '')}))
+      );
+      if (!want.length || got.length !== want.length || want.some((w, k) => got[k].f !== w.f || !w.files.includes(got[k].u)))
+        fails.push(`Next did not show the planned question (${want.map(w => w.f)} vs ${got.map(g => `${g.f} ${g.u}`)})`);
     }
     // A curation rebuild (Pierre published while the tab was open) drops the planned question: it could show a photo
     // the new curation excludes or moves.
@@ -188,7 +212,13 @@ const server = http.createServer((req, res) => {
   // 7. Photo sizes: the file fits the box at the screen's density (up to 2x); Saver (asked, or Auto on a slow connection)
   // one size down, the enlarged view at 960 px then 1600 on a click; Full always 1600 px.
   {
-    const tier = u => (/-s\.webp/.test(u) ? 's' : /-m\.webp/.test(u) ? 'm' : 'full');
+    // An iNaturalist photo (Millepora's, not downloaded: r: 1) has two files (app.js img()): 'medium' (500 px) for the
+    // 480 px size, 'large' (1024 px) for both 960 and 1600 px ('m+': passes for either). Read as 1600 px, a Millepora
+    // question failed the Saver checks (#375).
+    const tier = u =>
+        /-s\.webp|\/photos\/\d+\/medium\./.test(u) ? 's' : /-m\.webp/.test(u) ? 'm' : /\/photos\/\d+\/large\./.test(u) ? 'm+' : 'full',
+      big = x => x === 'full' || x === 'm+',
+      mid = x => x === 'm' || x === 'm+';
     const run = async (vp, dpr, init, check) => {
       const ctx = await b.newContext({viewport: vp, deviceScaleFactor: dpr, serviceWorkers: 'block'});
       await ctx.route(
@@ -238,13 +268,13 @@ const server = http.createServer((req, res) => {
         localStorage.setItem('imr-photo-q', '"saver"');
       },
       async (p, t) => {
-        if (t.some(x => x === 'full')) fails.push(`Saver still loaded 1600 px quiz photos: ${t}`);
+        if (t.some(big)) fails.push(`Saver still loaded 1600 px quiz photos: ${t}`);
         await p.click('#view .qstage .zoom');
         const lb1 = await p.getAttribute('#lightbox .lb-in img', 'src');
-        if (tier(lb1) !== 'm') fails.push(`Saver enlarged view did not start at 960 px: ${lb1}`);
+        if (!mid(tier(lb1))) fails.push(`Saver enlarged view did not start at 960 px: ${lb1}`);
         await p.click('#lightbox .lb-in img');
         const lb2 = await p.getAttribute('#lightbox .lb-in img', 'src');
-        if (tier(lb2) !== 'full') fails.push(`Saver enlarged view did not load 1600 px on a click: ${lb2}`);
+        if (!big(tier(lb2))) fails.push(`Saver enlarged view did not load 1600 px on a click: ${lb2}`);
       }
     );
     // Auto on a line measured slow (Resource Timing, ~320 kbit/s here, under LINK.SLOW = 500 kbit/s; Chrome reports no slow connection): Saver, and the
@@ -278,12 +308,12 @@ const server = http.createServer((req, res) => {
         localStorage.setItem('imr-photo-q', JSON.stringify('full'));
       },
       async (p, t) => {
-        if (t.some(x => x !== 'full')) fails.push(`Full quality did not load 1600 px: ${t}`);
+        if (!t.length || t.some(x => !big(x))) fails.push(`Full quality did not load 1600 px: ${t}`);
       }
     );
     // Big dense screen: a box bigger than guessed gets the 1600 px file.
     await run({width: 1440, height: 900}, 2, tour, async (p, t) => {
-      if (t.length === 1 && t[0] !== 'full') fails.push(`Big 2x screen single quiz photo not 1600 px: ${t}`);
+      if (t.length === 1 && !big(t[0])) fails.push(`Big 2x screen single quiz photo not 1600 px: ${t}`);
     });
   }
   // 8. Start-up on an unstable line: core.js, app.js, home.js, app.css and data.json fail once each, the app still starts
@@ -354,8 +384,11 @@ const server = http.createServer((req, res) => {
     const sent = await p.evaluate(async () => {
       const f = window.fetch,
         hits = [];
+      // Only writes count (POST), as in check 11: the sheet's reads (leaderboard, achievements) may come at any time.
       window.fetch = (u, o) =>
-        /script\.google/.test(String((u && u.url) || u)) ? (hits.push(String(u)), Promise.reject(new Error('x'))) : f(u, o);
+        /script\.google/.test(String((u && u.url) || u)) && String((o && o.method) || 'GET').toUpperCase() === 'POST'
+          ? (hits.push(String(u)), Promise.reject(new Error('x')))
+          : f(u, o);
       localStorage.setItem('imr-anonq', JSON.stringify([{id: 'a1', t: Date.now(), g: 'Acropora', a: 'Porites', ok: 0}]));
       localStorage.setItem('imr-reports', JSON.stringify([{k: 'photo', m: 'test'}]));
       sendAnon();
@@ -407,7 +440,13 @@ const server = http.createServer((req, res) => {
     // The admin page does the same (its demo mode: no token, nothing sent).
     const q = await ctx.newPage();
     await q.goto(base + 'admin.html?demo');
-    await q.waitForFunction(() => typeof UPDATED !== 'undefined' && navigator.serviceWorker.controller, null, {timeout: 20000});
+    // Loaded first (DRAFT is set after the last of its files), and its first page's photos in: a new worker takes over only
+    // once the old one has no fetch in flight. Published while start() still fetched cand.json, the new worker now and
+    // then stayed waiting past the 30 s below (Chromium, about 1 run in 8, 2026-11-03); that case is checked next.
+    await q.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera && navigator.serviceWorker.controller, null, {
+      timeout: 20000
+    });
+    await q.waitForLoadState('networkidle');
     await q.evaluate(() => (window.__old = 1));
     SWV = 2;
     await q.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
@@ -418,6 +457,23 @@ const server = http.createServer((req, res) => {
     await q
       .waitForFunction(() => !window.__old && location.hash === '#~cand', null, {timeout: 20000})
       .catch(() => fails.push('Admin: the page did not reload onto the new version at the next page change'));
+    // A version that takes over while the admin is still loading is seen too: the new worker waits for the old one's
+    // fetches still in flight, then takes over the moment the last ends, before start() goes on. admin.js listened only
+    // from the end of start() and missed it; whether it did depended on which came first, so what is checked is that it
+    // listens while start() still waits for its files (here cand.json never answers).
+    await ctx.route(/cand\.json/, () => {});
+    const q2 = await ctx.newPage();
+    await q2.addInitScript(() => {
+      const add = ServiceWorkerContainer.prototype.addEventListener;
+      ServiceWorkerContainer.prototype.addEventListener = function (t, ...a) {
+        if (t === 'controllerchange') window.__ccOn = 1;
+        return add.call(this, t, ...a);
+      };
+    });
+    await q2.goto(base + 'admin.html?demo', {waitUntil: 'domcontentloaded'});
+    await q2.waitForFunction(() => typeof UPDATED !== 'undefined', null, {timeout: 20000});
+    if (!(await q2.evaluate(() => window.__ccOn && !(typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera))))
+      fails.push('Admin: not listening for a new version while it loads');
     await ctx.close();
   }
   // 10. Load order. Home first: nothing of My progress or the Tools asked for before it shows; then the quiz's files,
@@ -507,8 +563,12 @@ const server = http.createServer((req, res) => {
     const r = await p.evaluate(async () => {
       const f = window.fetch,
         hits = [];
+      // Only writes count (POST: answers, reports, events): Home's own reads (the leaderboard, the achievements' shares)
+      // are GETs, allowed from any copy, and sometimes landed in this window (the check failed now and then).
       window.fetch = (u, o) =>
-        /script\.google/.test(String((u && u.url) || u)) ? (hits.push(String(u)), Promise.reject(new Error('x'))) : f(u, o);
+        /script\.google/.test(String((u && u.url) || u)) && String((o && o.method) || 'GET').toUpperCase() === 'POST'
+          ? (hits.push(String(u)), Promise.reject(new Error('x')))
+          : f(u, o);
       localStorage.setItem('imr-anonq', JSON.stringify([{id: 'w1', t: Date.now(), g: 'Acropora', a: 'Porites', ok: 0}]));
       localStorage.setItem('imr-reports', JSON.stringify([{k: 'photo', m: 'test'}]));
       sendAnon();
