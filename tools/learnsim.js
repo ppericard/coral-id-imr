@@ -12,9 +12,10 @@
 //
 // --choice (2026-11-03, the first-launch question, model.js START): the answer the simulated player gives before its
 // first question: new (default: the variables of today's default player), imr, know, or auto (beginner new, lecture RA
-// imr, strong RA and expert know). --fallback: how the player answers the one-time card that comes when the first
-// CHOICE.N answers do not fit the choice (model.js startDue): keep (default) or accept (the first option it offers). Per
-// run: the first CHOICE.N answers' mean surprise (right - the app's expected success), right %, the global level then,
+// imr, strong RA and expert know). --fallback: how the player answers the one-time card that comes when the answers
+// do not fit the choice at a checkpoint (core.js CHOICE.AT, model.js startDue): keep (default) or accept (the first
+// option it offers). Per run: the first 20 answers' mean surprise (right - the app's expected success), right %, the
+// global level then,
 // and the fallback card (answer, direction lo / hi). --vars (calibration only): other values for a choice's variables
 // (core.js CHOICE opts), e.g. '{"know":{"p":1.5,"at":20}}'.
 // --openall (optional; without it the open-all offer is declined, as before): 'offer' accepts the offer card when it shows

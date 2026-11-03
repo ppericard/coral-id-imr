@@ -542,7 +542,7 @@ const introReset = () => {
 // The first-launch question (Pierre, 2026-11-03; core.js CHOICE, docs/LEARNING.md "The first-launch question"): the
 // player's answer in reefid-sync-coral-start (synced with the progress, like every reefid-sync* key): {c the choice, t its time,
 // at the answers count then, via (tour, card, fallback, inferred), n and s the fallback window (answers counted since
-// the choice, up to CHOICE.N, and the sum of their surprise, right - e), fb the fallback cards shown ({'<choice>-lo' / '-hi': [answers,
+// the choice, up to the last of CHOICE.AT, and the sum of their surprise, right - e), fb the fallback cards shown ({'<choice>-lo' / '-hi': [answers,
 // time]), h the choices made, [c, at, t, via], for the admin's player journey}. Its variables (startV) are read where
 // the model uses them: the level a genus never answered starts from (ability, core.js playerStart) and when the offer
 // to open all genera can come (introOffer). Nothing else is coded per choice.
@@ -568,15 +568,15 @@ function startRestart() {
   const o = startOf();
   if (o) store.set(CHOICE.KEY, {...o, at: 0, w: [], v: null, hd: 0});
 }
-// The fallback window (quiz.js answer): each answer after the choice, up to 3 CHOICE.N, as [its difficulty (dm, as the
+// The fallback window (quiz.js answer): each answer after the choice, up to the last of CHOICE.AT, as [its difficulty (dm, as the
 // ability step takes it), the guess rate 1 / k, right, the genus's first answer]; hd once the opening hold has been on
-// at one of them. At each checkpoint (N, 2 N, 3 N answers) the verdict (core.js startCheck), on the global level and
+// at one of them. At each checkpoint (CHOICE.AT: 40 and 60 answers) the verdict (core.js startCheck), on the global level and
 // the slate genera met then, is kept as v until its card shows (startDue).
 function startStep(d, k, good, first) {
   const o = startOf();
   if (!o || !startOn() || typeof d !== 'number' || !isFinite(d)) return; // a coral answer (CHOICE.SUBJ) only
   const w = Array.isArray(o.w) ? o.w : [];
-  if (w.length >= 3 * CHOICE.N) return;
+  if (w.length >= Math.max(...CHOICE.AT)) return;
   const W = [...w, [Math.round(d * 100) / 100, k > 0 && isFinite(k) ? Math.round(1000 / k) / 1000 : 0, good ? 1 : 0, first ? 1 : 0]],
     hd = o.hd || (introHold() ? 1 : 0),
     v = startCheck(W, o.c, (P[LEVEL] || {}).th, slateGenera().filter(introduced).length, hd);

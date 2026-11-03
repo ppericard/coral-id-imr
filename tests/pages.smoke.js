@@ -1495,8 +1495,8 @@ async function startSmoke(b, base) {
       fails.push(`existing player with ${n} answers: asked ${asked}, record ${JSON.stringify(r)}`);
     await c.close();
   }
-  // 4. The fallback card: once over a new question when the first CHOICE.N answers fall clearly below the answer's
-  // band (core.js startCheck); Keep my answer; never again.
+  // 4. The fallback card: once over a new question when, at the first checkpoint (CHOICE.AT, 40 answers), the global
+  // level is clearly below the answer's band (core.js startCheck); Keep my answer; never again.
   {
     const [c, p] = await open(() => {
       localStorage.setItem('reefid-tour', '"done"');
@@ -1507,9 +1507,9 @@ async function startSmoke(b, base) {
     await p.waitForSelector('.unlock.intro', {timeout: 8000}).catch(() => {});
     while (await p.$('.unlock.intro')) await p.click('.unlock.intro .ulbtns .next:not(.sec)');
     const due = await p.evaluate(() => {
-      // 20 answers, the first on each genus, one in four right on average photos: clearly below "know well".
-      P[LEVEL] = {ok: 5, ko: 15, th: 0.3}; // the global level the window is checked against
-      for (let i = 0; i < CHOICE.N; i++) startStep(0, 4, i % 4 === 0, true);
+      // 40 answers, the first on each genus, one in four right on average photos: clearly below "know well".
+      P[LEVEL] = {ok: 10, ko: 30, th: -0.5}; // the global level the window is checked against
+      for (let i = 0; i < CHOICE.AT[0]; i++) startStep(0, 4, i % 4 === 0, true);
       return startDue();
     });
     // The next questions until the card shows (a question that opens a genus shows its card first; the prompt waits).

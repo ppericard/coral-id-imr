@@ -2266,23 +2266,24 @@ const CORE_ = (function () { const module = {exports: {}};
   // (model.js introOffer, INTRO.OFFER.AT for everyone before); v.basics, Coral basics offered first. "new" is the
   // default player of before (a new player is a beginner). Values and their simulation: docs/LEARNING.md "The first-
   // launch question". Stored in reefid-sync-coral-start (synced with the progress): {c, t, at, via, w, v, hd, fb, h}.
-  // Fallback (for everyone, also those who answered: they may have picked wrong; Pierre, 2026-11-04: "a really weak
-  // player shows quickly in 20 answers; an expert, 20 answers isn't enough: with few genera unlocked even a mediocre
-  // player gets everything right"): the answers after the choice (w: [difficulty, guess rate, right, first answer on its
-  // genus], kept up to 3 N) are checked at N, 2 N and 3 N answers (startCheck). The level each answer predicts is a band
-  // around its prior, the edges midway between the priors (new under 0.25, IMR course 0.25 to 0.875, know well above).
-  // 'lo' (clearly below the band: Coral basics, or a lower answer): the level fitted on each genus's FIRST answer (before
-  // the game has adapted to that genus; difficulty allowed for; levelFit) is below the band's floor with 95% confidence,
-  // or below it at all while the opening hold has fired in the window (#425 eases the questions then, so the misses do
-  // not show in the expectation) and the global level is not clearly above the floor. 'hi' (clearly above the band: a
-  // higher answer), only from 2 N answers and OFFER.MET (10) genera met: the global level (the Elo over every answer,
-  // difficulty allowed for) is above the band's ceiling with 95% confidence, and the first-answer level is above it too
-  // (a player who did well only on the few genera they have learned does not count). z 1.96, as the admin's level
-  // margin. The simulation and the real log: docs/LEARNING.md "The first-launch question".
+  // Fallback (for everyone, also those who answered: they may have picked wrong): the answers after the choice (w:
+  // [difficulty, guess rate, right, first answer on its genus], kept up to the last checkpoint) are checked at AT (40
+  // and 60) answers only (Pierre, 2026-11-04: no card before 40 answers in either direction, "an expert, 20 answers
+  // isn't enough: with few genera unlocked even a mediocre player gets everything right"; startCheck). The level each
+  // answer predicts is a band around its prior, the edges midway between the priors (new under 0.25, IMR course 0.25 to
+  // 0.875, know well above). The rule reads the level the game already keeps, the global level (the Elo over every
+  // answer, difficulty allowed for), with its standard error over the window (Pierre's pick, variant "Bh"):
+  // 'lo' (clearly below the band: Coral basics, or a lower answer) when it is below the band's floor with 95%
+  // confidence, or below the floor at all while the opening hold has fired in the window (#425 eases the questions then,
+  // so the misses do not show in the expectation); 'hi' (clearly above the band: a higher answer), with OFFER.MET (10)
+  // genera met, when it is above the band's ceiling with 95% confidence and, as a guard only, the level fitted on each
+  // genus's FIRST answer (before the game has adapted to it; levelFit) is above the ceiling too: a player who did well
+  // only on the few genera they have learned is not moved up. z 1.96, as the admin's level margin. The simulation, the
+  // real log and the variants compared: docs/LEARNING.md "The fallback test, redesigned".
   const CHOICE = {
     KEY: 'reefid-sync-coral-start',
     ASK: 50,
-    N: 20,
+    AT: [40, 60], // the checkpoints of the fallback window (answers after the choice); the window ends at the last
     Z: 1.96,
     MET: 10, // the slate genera met before a 'hi' verdict: the same as the open-all offer's (model.js INTRO.OFFER.MET)
     SUBJ: 'coral', // the subject the question is about (core.js SUBJECTS): fish keeps its own state
@@ -2328,21 +2329,20 @@ const CORE_ = (function () { const module = {exports: {}};
     }
     return [Math.round(bt * 100) / 100, stSe(bt, A)];
   }
-  // The verdict at a checkpoint (N, 2 N or 3 N answers after the choice), null between them, when consistent or with
-  // too little evidence: 'lo' or 'hi' (above). w: the window's answers [d, g, right, first]; lv: the global level now;
-  // met: the slate genera met; held: the opening hold fired in the window.
+  // The verdict at a checkpoint (AT: 40 or 60 answers after the choice), null between them and when consistent: 'lo'
+  // or 'hi' (above). w: the window's answers [d, g, right, first]; lv: the global level now; met: the slate genera met;
+  // held: the opening hold fired in the window.
   function startCheck(w, c, lv, met, held) {
     const n = (w || []).length;
-    if (!n || n % CHOICE.N || n > 3 * CHOICE.N || !startOpt(c)) return null;
+    if (!CHOICE.AT.includes(n) || !startOpt(c) || typeof lv !== 'number') return null;
     const [floor, ceil] = startBand(c),
-      F = w.filter(a => a[3]);
-    if (!F.length || typeof lv !== 'number') return null;
-    const [fl, fse] = levelFit(F),
       se = stSe(lv, w),
       z = CHOICE.Z;
-    if (fl + z * fse < floor || (held && fl < floor && lv < floor + z * se)) return 'lo';
-    if (n >= 2 * CHOICE.N && met >= CHOICE.MET && lv - z * se > ceil && fl > ceil) return 'hi';
-    return null;
+    if (lv + z * se < floor || (held && lv < floor)) return 'lo';
+    if (met < CHOICE.MET || lv - z * se <= ceil) return null;
+    // The guard: the first answers on each genus above the ceiling too (never a trigger on their own).
+    const F = w.filter(a => a[3]);
+    return F.length && levelFit(F)[0] > ceil ? 'hi' : null;
   }
   // The choices a fallback card offers: below the current one ('lo') or above it ('hi').
   const startNext = (c, dir) => {

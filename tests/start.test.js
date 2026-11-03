@@ -81,9 +81,10 @@ test('playerStart: the answers are shrunk towards the level said, not towards 0;
   assert.strictEqual(playerStart({}, 'X', 9), START.HI, 'clamped');
 });
 
-test('fallback verdict: at N, 2 N and 3 N answers; the first answers on each genus against the band, the global level for "higher"', () => {
-  const N = CHOICE.N,
+test('fallback verdict (Bh): at 40 and 60 answers only; the global level against the band, the first answers only a guard on "higher"', () => {
+  const [A1, A2] = CHOICE.AT,
     {startBand, levelFit, startCheck} = C;
+  assert.deepStrictEqual(CHOICE.AT, [40, 60], 'no card before 40 answers (Pierre, 2026-11-04)');
   assert.deepStrictEqual(startBand('new'), [-Infinity, (startVars('new').p + startVars('imr').p) / 2]);
   assert.deepStrictEqual(startBand('imr'), [(startVars('new').p + startVars('imr').p) / 2, (startVars('imr').p + startVars('know').p) / 2]);
   assert.deepStrictEqual(startBand('know'), [(startVars('imr').p + startVars('know').p) / 2, Infinity]);
@@ -91,45 +92,56 @@ test('fallback verdict: at N, 2 N and 3 N answers; the first answers on each gen
   const fit = (r, d) => levelFit(Array.from({length: 10}, (_, i) => [d, 0.25, i < r ? 1 : 0]))[0];
   assert.ok(fit(3, 0) < fit(6, 0) && fit(6, 0) < fit(9, 0));
   assert.ok(fit(6, 1) > fit(6, 0), 'the same answers on harder questions: a higher level');
-  // w: [d, g, right, first]; a beginner who said "know well": first answers half wrong on average photos.
+  // w: [d, g, right, first] on average photos (d 0, 4 choices).
   const W = (n, okF, firstF = () => true) => Array.from({length: n}, (_, i) => [0, 0.25, okF(i) ? 1 : 0, firstF(i) ? 1 : 0]);
-  const weak = W(N, i => i % 3 === 0);
-  assert.strictEqual(startCheck(weak.slice(0, N - 1), 'know', 0.2, 6, 0), null, 'not between checkpoints');
-  assert.strictEqual(startCheck(weak, 'know', 0.2, 6, 0), 'lo', 'clearly below the band');
-  assert.strictEqual(startCheck(weak, 'new', -1, 6, 0), null, 'nothing below "new"... and no "higher" either');
-  // Half right on first answers: not confidently below "know well" alone, below it with the opening hold fired.
-  const half = W(N, i => i % 2 === 0);
-  assert.strictEqual(startCheck(half, 'imr', 0.5, 6, 0), null);
-  assert.strictEqual(startCheck(half, 'imr', 0.5, 6, 1), 'lo', 'the opening hold fired in the window');
-  assert.strictEqual(startCheck(half, 'imr', 3, 6, 1), null, 'not with a global level clearly above the floor');
-  // "Higher": only from 2 N answers, OFFER.MET genera met, the global level clearly above the band and the first answers too.
+  // A beginner who said "know well": one in four right, a global level of -0.5.
+  const weak = n => W(n, i => i % 4 === 0);
+  assert.strictEqual(startCheck(weak(20), 'know', -0.5, 6, 0), null, 'no card at 20 answers any more');
+  assert.strictEqual(startCheck(weak(A1 - 1), 'know', -0.5, 6, 0), null, 'not between checkpoints');
+  assert.strictEqual(startCheck(weak(A1), 'know', -0.5, 6, 0), 'lo', 'the global level clearly below the band at 40');
+  assert.strictEqual(startCheck(weak(50), 'know', -0.5, 6, 0), null, 'not at 50');
+  assert.strictEqual(startCheck(weak(A2), 'know', -0.5, 6, 0), 'lo', 'and at 60');
+  assert.strictEqual(startCheck(weak(A2 + 1), 'know', -0.5, 6, 0), null, 'nothing after the last checkpoint');
+  assert.strictEqual(startCheck(weak(A1), 'new', -1.5, 6, 0), null, 'nothing below "new"... and no "higher" either');
+  // "Lower" reads the global level, not the first answers: first answers all right, the level clearly under the floor.
+  assert.strictEqual(
+    startCheck(
+      W(A1, () => true),
+      'imr',
+      -1,
+      6,
+      0
+    ),
+    'lo',
+    'the global level decides "lower"'
+  );
+  // A fast learner (the real log: a lecture-level RA) missing first meetings, the hold fired, the global level inside
+  // the band: no card (the former rule sent her down on the first answers and the hold together).
+  const firstMiss = W(A1, i => i % 3 === 0);
+  assert.ok(levelFit(firstMiss)[0] < startBand('imr')[0], 'first-answer level under the floor');
+  assert.strictEqual(startCheck(firstMiss, 'imr', 0.73, 12, 1), null, 'the first answers never trigger "lower"');
+  // The opening hold: below the floor, not clearly, with the hold fired in the window.
+  const ok = W(A1, () => true);
+  assert.strictEqual(startCheck(ok, 'imr', 0, 6, 0), null, 'below the floor, not clearly: nothing');
+  assert.strictEqual(startCheck(ok, 'imr', 0, 6, 1), 'lo', 'with the opening hold fired in the window');
+  assert.strictEqual(startCheck(ok, 'imr', 0.5, 6, 1), null, 'the hold alone, with the level in the band: nothing');
+  // "Higher": OFFER.MET genera met, the global level clearly above the band, the first answers above it too (a guard).
   const strong = W(
-    2 * N,
+    A1,
     () => true,
     i => i % 3 === 0
   );
-  assert.strictEqual(startCheck(strong.slice(0, N), 'new', 2.5, 12, 0), null, 'not at N');
+  assert.strictEqual(startCheck(strong.slice(0, 20), 'new', 2.5, 12, 0), null, 'not at 20');
   assert.strictEqual(startCheck(strong, 'new', 2.5, CHOICE.MET - 1, 0), null, 'not with too few genera met');
   assert.strictEqual(startCheck(strong, 'new', 2.5, CHOICE.MET, 0), 'hi');
-  // A player right on the few genera they learned but not on their first answers: not "higher".
+  // A player right on the few genera they learned but not on their first answers: not "higher" (the guard).
   const learnt = W(
-    2 * N,
+    A1,
     i => i % 3 !== 0,
     i => i % 3 === 0
   );
-  assert.strictEqual(startCheck(learnt, 'new', 2.5, CHOICE.MET, 0), null, 'first answers decide too');
-  assert.strictEqual(startCheck(strong, 'new', 0.2, CHOICE.MET, 0), null, 'the global level decides too');
-  assert.strictEqual(
-    startCheck(
-      W(3 * N + 1, () => true),
-      'new',
-      2.5,
-      12,
-      0
-    ),
-    null,
-    'nothing after 3 N'
-  );
+  assert.strictEqual(startCheck(learnt, 'new', 2.5, CHOICE.MET, 0), null, 'the first answers guard "higher"');
+  assert.strictEqual(startCheck(strong, 'new', 0.2, CHOICE.MET, 0), null, 'the first answers alone never trigger "higher"');
   assert.deepStrictEqual(C.startNext('know', 'lo'), ['imr', 'new'], 'lower answers, nearest first');
   assert.deepStrictEqual(C.startNext('new', 'hi'), ['imr', 'know']);
   assert.deepStrictEqual(C.startNext('new', 'lo'), []);
@@ -181,28 +193,29 @@ test('stored and its variables set: the answer, when, how; the offer to open all
 });
 
 test('fallback: consistent answers, no card; inconsistent, one card per answer and direction, never twice', () => {
-  const N = CHOICE.N;
+  const N = CHOICE.AT[0],
+    END = CHOICE.AT[CHOICE.AT.length - 1];
   // Consistent: "IMR course", three in four right on average photos, a level in the band.
   const B = model();
   B.startSet('imr', 'tour');
   B.play(
-    3 * N,
+    END,
     0,
     i => i % 4 !== 0,
     i => i % 2 === 0,
     0.5
   );
-  assert.strictEqual(B.startOf().w.length, 3 * N);
+  assert.strictEqual(B.startOf().w.length, END);
   assert.strictEqual(B.startDue(), null, 'consistent: nothing');
   B.play(30, 0, false, true, -1.5);
-  assert.strictEqual(B.startOf().w.length, 3 * N, 'the window stops at 3 N');
+  assert.strictEqual(B.startOf().w.length, END, 'the window stops at the last checkpoint');
   assert.strictEqual(B.startDue(), null, 'answers after the window do not count');
-  // Struggling after "I know corals well": lo at N, once.
+  // Struggling after "I know corals well": lo at 40 answers, once.
   const L = model();
   L.startSet('know', 'tour');
-  L.play(N - 1, 0, i => i % 4 === 0, true, 0.3);
-  assert.strictEqual(L.startDue(), null, 'not before N answers');
-  L.play(1, 0, false, true, 0.3);
+  L.play(N - 1, 0, i => i % 4 === 0, true, -0.5);
+  assert.strictEqual(L.startDue(), null, 'not before 40 answers');
+  L.play(1, 0, false, true, -0.5);
   assert.strictEqual(L.startDue(), 'lo');
   L.startShown('lo');
   assert.strictEqual(L.startDue(), null, 'never twice');
@@ -217,13 +230,13 @@ test('fallback: consistent answers, no card; inconsistent, one card per answer a
   L.startSet('know', 'fallback');
   L.play(N, 0, false, true, -1);
   assert.strictEqual(L.startDue(), null, '"I know corals well" was told already');
-  // Better than said: hi, from 2 N answers with OFFER.MET genera met (the record reads slateGenera and introduced).
+  // Better than said: hi, at 40 answers with OFFER.MET genera met (the record reads slateGenera and introduced).
   const H = model({slate: Array.from({length: 12}, (_, i) => 'G' + i)});
   H.introAdd(H.ctx.slateGenera(), true, 's');
   H.startSet('new', 'tour');
-  H.play(N, 0.5, true, i => i % 2 === 0, 2.5);
-  assert.strictEqual(H.startDue(), null, 'not at N');
-  H.play(N, 0.5, true, i => i % 2 === 0, 2.5);
+  H.play(20, 0.5, true, i => i % 2 === 0, 2.5);
+  assert.strictEqual(H.startDue(), null, 'not at 20');
+  H.play(N - 20, 0.5, true, i => i % 2 === 0, 2.5);
   assert.strictEqual(H.startDue(), 'hi');
   // After a move up on a fallback card, never a card back down (and the other way round); further up is still possible.
   const U = model({slate: Array.from({length: 12}, (_, i) => 'G' + i)});
@@ -236,13 +249,13 @@ test('fallback: consistent answers, no card; inconsistent, one card per answer a
   assert.strictEqual(U.startDue(), null, 'but not right after moving up on its card');
   U.startSet('know', 'fallback');
   U.startSet('imr', 'fallback');
-  U.play(2 * N, 0.5, true, i => i % 2 === 0, 2.5);
+  U.play(N, 0.5, true, i => i % 2 === 0, 2.5);
   assert.strictEqual(U.startDue(), null, 'and not back up after moving down');
   // Inferred (an existing player, never asked): never a card.
   const I = model({slate: Array.from({length: 12}, (_, i) => 'G' + i)});
   I.introAdd(I.ctx.slateGenera(), true, 's');
   I.startSet('new', 'inferred');
-  I.play(2 * N, 0.5, true, true, 2.5);
+  I.play(N, 0.5, true, true, 2.5);
   assert.strictEqual(I.startDue(), null, 'inferred: no card');
   // Nothing to offer: no card ("I know corals well" and easier; "new", struggling, Coral basics done).
   const D = model({basics: true});
@@ -397,7 +410,7 @@ test('corals only: on the fish subject the default prior, no window, no card', (
   M.ctx.SUBJ = C.subjectOf('fish');
   assert.notStrictEqual(M.ctx.SUBJ.id, CHOICE.SUBJ);
   assert.deepStrictEqual(M.startV(), startVars('new'), 'fish: the default player');
-  M.play(CHOICE.N, 0, false, true, -1);
+  M.play(CHOICE.AT[0], 0, false, true, -1);
   assert.strictEqual((M.startOf().w || []).length, 0, 'no window on fish answers');
   assert.strictEqual(M.startDue(), null);
   M.ctx.SUBJ = C.subjectOf('coral');

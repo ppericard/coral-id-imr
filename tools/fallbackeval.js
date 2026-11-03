@@ -4,12 +4,14 @@
 //   node tools/learnsim.js --seeds 5 --questions 300 --choice new --fallback keep --out <dir>/t-new.json   (and imr, know)
 //   node tools/fallbackeval.js <dir> [answers.json]
 // <dir>/t-new.json, t-imr.json, t-know.json: every profile under each answer, the card kept (learnsim records each run's
-// first 80 answers: e, th, mode, first answer on its genus, the global level, the opening hold, the genera met after it).
+// first 80 answers: e, th, mode, first answer on its genus, the global level, the opening hold, the genera met after it;
+// the window runs to the last checkpoint, core.js CHOICE.AT).
 // The confusion matrix: per profile and declared answer, the cards ("lower", "higher"), the answer of the verdict, the
 // share in the right direction (the truthful answers: beginner new, lecture RA IMR course, strong RA and expert know
 // well) and the true knowledge at q100 / q300 against the truthful answer's. answers.json: the sheet's Answers tab
 // ({values: [[header], ...rows]}), each player's first 60 answers replayed under each answer (core.js replayProgress
 // with the answer's prior), the genera met counted as the genera answered so far, the hold recomputed from the logged e.
+// Players with fewer answers than the first checkpoint get no verdict.
 const path = require('path'),
   fs = require('fs');
 const W = path.join(__dirname, '..'),
@@ -18,7 +20,7 @@ if (!S) throw new Error('usage: node tools/fallbackeval.js <dir with t-new.json,
 const C = require(path.join(W, 'core.js'));
 const ORDER = ['new', 'imr', 'know'],
   TRUE = {beginner: 'new', lectureRA: 'imr', strongRA: 'know', expert: 'know'},
-  N = C.CHOICE.N;
+  END = Math.max(...C.CHOICE.AT);
 const gOf = m => (/\|t/.test(m) ? 0 : /\|k(\d+)/.test(m) ? 1 / Number(/\|k(\d+)/.exec(m)[1]) : /^quiz-duel/.test(m) ? 0.5 : 0.25);
 const dOf = (e, th, g) => {
   const q = Math.min(0.995, Math.max(0.005, (e - g) / (1 - g)));
@@ -29,7 +31,7 @@ function verdict(tr, c) {
   const w = [];
   let hd = 0;
   for (const a of tr) {
-    if (w.length >= 3 * N) break;
+    if (w.length >= END) break;
     if (typeof a.e !== 'number' || typeof a.th !== 'number') continue;
     const g = gOf(a.m);
     w.push([Math.round(dOf(a.e, a.th, g) * 100) / 100, g, a.ok, a.first]);
@@ -73,7 +75,7 @@ for (const prof of ['beginner', 'lectureRA', 'strongRA', 'expert'])
   }
 console.log(`Wrong answers caught in the right direction: ${hit}/${nhit}; cards to truthful answers: ${fa}/${nfa}`);
 
-// 2. The real log: each player's first 3 N answers, replayed under each answer (the global level with its prior, as the
+// 2. The real log: each player's first END answers, replayed under each answer (the global level with its prior, as the
 // sheet's replay steps it), the genera met as answered so far, the opening hold recomputed from the logged e (the sheet's
 // hold_, the app's holdNext), the first answer on each genus.
 if (LOGF) {
@@ -87,14 +89,14 @@ if (LOGF) {
   v.slice(1).forEach(r => (by[r[0]] = by[r[0]] || []).push(r));
   const players = Object.values(by)
     .map(rs => rs.sort((a, b) => String(a[ix.Time]).localeCompare(String(b[ix.Time]))))
-    .filter(rs => rs.length >= N && rs.slice(0, N).every(r => r[ix.Expected] !== '' && r[ix.Expected] !== undefined))
+    .filter(rs => rs.length >= C.CHOICE.AT[0] && rs.slice(0, END).every(r => r[ix.Expected] !== '' && r[ix.Expected] !== undefined))
     .sort((a, b) => b.length - a.length);
-  console.log(`\nReal log: ${players.length} players with their first ${N} answers logged with the expectation (aggregates only).`);
-  console.log('| player | answers | first-answer right (first 3N) | under "new" | under "IMR course" | under "know well" |');
+  console.log(`\nReal log: ${players.length} players with ${C.CHOICE.AT[0]} answers or more, their first ${END} logged with the expectation (aggregates only).`);
+  console.log(`| player | answers | first-answer right (first ${END}) | under "new" | under "IMR course" | under "know well" |`);
   console.log('|---|---|---|---|---|---|');
   players.forEach((rs, pi) => {
     const id = 'p',
-      rows = rs.slice(0, 3 * N).map(r => [
+      rows = rs.slice(0, END).map(r => [
         id,
         Date.parse(String(r[ix.Time]).replace(' ', 'T') + ':00Z') + (r.__i = 0),
         r[ix['Genus shown']],
