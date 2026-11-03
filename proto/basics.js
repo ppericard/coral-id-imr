@@ -11,8 +11,6 @@
     // Day-extended polyps: only an aside on the polyp step now (Pierre, 2026-11-03: too special to explain a polyp).
     polypsDay: {g: 'Goniopora', f: 'goniopora-medium-745205676', h: 768},
     galaxea: {g: 'Galaxea', f: 'galaxea-medium-745206102', h: 768},
-    stylophora: {g: 'Stylophora', f: 'stylophora-macro-745205068', h: 768},
-    disc: {g: 'Dipsastraea', f: 'dipsastraea-macro-723438755', h: 768},
     nowall: {g: 'Pavona', f: 'pavona-macro-745204888', h: 768},
     cups: {g: 'Dipsastraea', f: 'dipsastraea-macro-746236818', h: 720},
     cupsMed: {g: 'Diploastrea', f: 'diploastrea-medium-746238185', h: 768},
@@ -46,7 +44,7 @@
     const mask = focus.length
       ? `<mask id="bxm${k}"><rect x="${b[0]}" y="${b[1]}" width="${b[2]}" height="${b[3]}" fill="#fff"/>${focus.map(m => `<ellipse cx="${m[1]}" cy="${m[2]}" rx="${m[3]}" ry="${m[4]}" fill="#000"/>`).join('')}</mask><rect class="bx-dim" x="${b[0]}" y="${b[1]}" width="${b[2]}" height="${b[3]}" mask="url(#bxm${k})"/>`
       : '';
-    return `<div class="bx-ph${cls ? ' ' + cls : ''}" data-k="${k}" style="aspect-ratio:${b[2]} / ${b[3]}">
+    return `<div class="bx-ph${cls ? ' ' + cls : ''}" data-k="${k}" style="aspect-ratio:${b[2]} / ${b[3]};--ar:${(b[2] / b[3]).toFixed(4)}">
       <img src="${img({f: s.f}, fit((Math.min(innerWidth, 640) * 960) / b[2]))}" alt="${esc(s.g)}${labels.length ? ', labelled: ' + esc(labels.map(l => l[0]).join(', ')) : ''}" style="width:${((960 / b[2]) * 100).toFixed(2)}%;height:${((s.h / b[3]) * 100).toFixed(2)}%;left:${((-b[0] / b[2]) * 100).toFixed(2)}%;top:${((-b[1] / b[3]) * 100).toFixed(2)}%" draggable="false">
       <svg viewBox="${b.join(' ')}" preserveAspectRatio="none" aria-hidden="true">${mask}${marks.map(draw).join('')}${edit ? hits.map(([x, y]) => `<circle class="bx-hit" cx="${x}" cy="${y}" r="${HIT}"/>`).join('') : ''}<g class="bx-taps"></g></svg>
       ${labels.map(([t, x, y, a = 'c']) => `<span class="bx-lab bx-${a}" style="left:${pctX(x, b)};top:${pctY(y, b)}">${esc(t)}</span>`).join('')}</div>`;
@@ -238,50 +236,22 @@
       term: 'Septo-costae'
     }
   };
-  // The polyp step's photo (Pierre, 2026-11-03: a standard coral whose polyp is clearly coming out of its cup, not a
-  // day-extended one). Three candidates for Pierre to choose from: #lab-basics|polyp|a (default), |b, |c.
+  // The polyp step's photo (Pierre, 2026-11-03): a standard coral whose polyp clearly comes out of its cup, not a
+  // day-extended one. He chose Galaxea among three candidates (Stylophora and a Dipsastraea disc were the others).
   const POLYP = {
-    a: {
-      s: PH.galaxea,
-      box: [450, 460, 300, 240],
-      marks: [
-        ['ell', 602, 600, 60, 88],
-        ['line', 512, 568, 550, 592],
-        ['line', 690, 532, 602, 592]
-      ],
-      labels: [
-        ['one polyp', 602, 488],
-        ['tentacles', 490, 560],
-        ['mouth', 705, 522]
-      ],
-      note: 'Each polyp comes out of its own tall cup, tentacles out.'
-    },
-    b: {
-      s: PH.stylophora,
-      box: [380, 290, 240, 192],
-      marks: [
-        ['ell', 467, 372, 36, 32],
-        ['line', 548, 458, 490, 386]
-      ],
-      labels: [
-        ['one polyp', 467, 322],
-        ['tentacles', 565, 466]
-      ],
-      note: 'Tiny polyps, tentacles out, each from its own cup on the branch.'
-    },
-    c: {
-      s: PH.disc,
-      box: [200, 110, 600, 480],
-      marks: [
-        ['ell', 512, 352, 120, 100],
-        ['line', 640, 498, 503, 374]
-      ],
-      labels: [
-        ['centre of one polyp', 512, 226],
-        ['mouth', 652, 512]
-      ],
-      note: 'Tentacles pulled in: the soft disc and the mouth of one polyp, over its cup.'
-    }
+    s: PH.galaxea,
+    box: [450, 460, 300, 240],
+    marks: [
+      ['ell', 602, 600, 60, 88],
+      ['line', 512, 568, 550, 592],
+      ['line', 690, 532, 602, 592]
+    ],
+    labels: [
+      ['one polyp', 602, 488],
+      ['tentacles', 490, 560],
+      ['mouth', 705, 522]
+    ],
+    note: 'Each polyp comes out of its own tall cup, tentacles out.'
   };
   const FORMS7 = [
     ['B', 'Branching', 'Acropora', 'acropora-wide-745206089'],
@@ -331,12 +301,12 @@
       id: 'polyp',
       t: 'The polyp: one tiny animal',
       term: 'Polyp',
-      fig: v => {
-        const c = POLYP[v] || POLYP.a;
+      fig: () => {
+        const c = POLYP;
         return `${photo(c.s, c)}<figcaption><a href="${genLink(c.s.g)}"><i>${esc(c.s.g)}</i></a> · ${esc(c.note)} <button type="button" class="linkish" data-z="0">Enlarge</button></figcaption>
           <p class="bx-aside">Some corals keep long polyps out by day, like <i>Goniopora</i> (IMR Lecture 6). <button type="button" class="linkish" data-z="1">See it</button></p>`;
       },
-      photos: v => [(POLYP[v] || POLYP.a).s, PH.polypsDay],
+      photos: () => [POLYP.s, PH.polypsDay],
       draw: polypSide,
       say: 'A polyp is a soft tube with one mouth in the middle of a ring of tentacles, which catch food. It sits on the stony cup it builds. By day, many corals pull their tentacles in.',
       check: {
@@ -543,7 +513,7 @@
         .map(x => `<small class="bx-off"><b>${esc(x[0])}</b> · ${esc(x[2])}: “${esc(x[1])}”</small>`)
         .join('');
       root.innerHTML = `<div class="bx">${steps}<div class="bx-lay">
-        <figure class="bx-fig">${s.walls ? '' : s.forms ? '' : s.fig(sub)}</figure>
+        <figure class="bx-fig">${s.walls ? '' : s.forms ? '' : s.fig()}</figure>
         <div class="bx-side"><h3 class="bx-t"><small>Step ${i + 1} of ${STEPS.length}</small>${esc(s.t)}</h3>
           <div class="bx-say">${s.draw || s.walls ? `<span class="bx-draw">${s.draw ? s.draw() : ''}</span>` : ''}<p>${esc(s.say)}</p></div>
           ${o ? `<small class="bx-off">${esc(o[2])}: “${esc(o[1])}”</small>` : ''}${also}${s.src ? `<small class="bx-off">${esc(s.src)}</small>` : ''}
@@ -583,7 +553,7 @@
         show(0);
       } else {
         if (s.id === 'teeth') list.push(pobj(PH.bigTeeth), pobj(PH.fineTeeth));
-        else if (s.photos) list.push(...s.photos(sub).map(pobj));
+        else if (s.photos) list.push(...s.photos().map(pobj));
         else list.push(pobj({colony: PH.colony, corallite: PH.cups, septa: PH.cups}[s.id]));
         fig.querySelectorAll('[data-z]').forEach(b => (b.onclick = () => zoom(list, Number(b.dataset.z))));
       }
@@ -608,6 +578,11 @@
   // Once answered, every check offers the app's report (rule 11b): the step, the answer given and the photos shown, and
   // its photos open in the enlarged view (with its own report and the credit).
   const rep = ctx => (typeof repBtn === 'function' ? ' ' + repBtn(ctx) : '');
+  // Once answered, each check photo also gets the games' clickable source pill (rule 11: photoSrc, app.js; hidden on
+  // phones, where the enlarged view carries the source). Never before the answer: it would give the genus away.
+  const src = (el, p) => {
+    if (el && !el.querySelector('.psrc') && typeof photoSrc === 'function') el.insertAdjacentHTML('beforeend', photoSrc(p));
+  };
   const fb = (box, ok, text, ctx) => {
     box.querySelector('.bx-fb').innerHTML =
       `${ok ? '<b class="ok">✓ Yes.</b>' : '<b class="ko">✗ No.</b>'} ${text}${ctx ? `<span class="bx-rep">${rep(ctx)}</span>` : ''}`;
@@ -638,7 +613,7 @@
       box.innerHTML = `<p class="bx-qt">${esc(c.q)}</p><div class="bx-pick">${opts
         .map(
           ([g, f, j]) =>
-            `<button type="button" class="choice" data-j="${j}"><img src="${img({f}, 's')}" alt="Septa, close up" loading="lazy"></button>`
+            `<div class="bx-pk"><button type="button" class="choice" data-j="${j}"><img src="${img({f}, 's')}" alt="Septa, close up" loading="lazy"></button></div>`
         )
         .join('')}</div><p class="bx-fb" aria-live="polite"></p>`;
       box.querySelectorAll('[data-j]').forEach(
@@ -651,6 +626,7 @@
             box
               .querySelectorAll('[data-j]')
               .forEach(x => x.classList.add(Number(x.dataset.j) === c.a ? 'right' : x === b ? 'wrong' : 'off'));
+            box.querySelectorAll('.bx-pk').forEach((w, i) => src(w, shown[i]));
             fb(box, ok, esc(c.why) + ' <span class="note">Tap a photo to enlarge it.</span>', {
               g: c.opts[c.a][0],
               a: c.opts[j][0],
@@ -666,6 +642,7 @@
         taps = ph.querySelector('.bx-taps');
       let right = false;
       ph.onclick = e => {
+        if (e.target.closest('.psrc')) return; // the source pill is a link, not a tap on the photo
         const r = ph.getBoundingClientRect(),
           x = c.box[0] + ((e.clientX - r.left) / r.width) * c.box[2],
           y = c.box[1] + ((e.clientY - r.top) / r.height) * c.box[3];
@@ -679,6 +656,7 @@
         taps.innerHTML = `<circle class="bx-tapm ${ok ? 'ok' : 'ko'}" cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="10"/>${ok ? '' : `<circle class="bx-ring" cx="${best[0]}" cy="${best[1]}" r="${HIT + 8}"/>`}`;
         if (right) return;
         const ctx = {g: c.s.g, a: `tap ${Math.round(x)},${Math.round(y)}`, ph: [c.s.f], m};
+        src(ph, pobj(c.s));
         fb(box, ok, ok ? esc(c.why) : 'That is a wall between cups. The centre of the nearest cup is ringed: try again.', ctx);
         box.querySelector('.bx-fb').insertAdjacentHTML('beforeend', ' <button type="button" class="linkish bx-enl">Enlarge</button>');
         box.querySelector('.bx-enl').onclick = () => zoom([pobj(c.s)], 0);
@@ -693,7 +671,7 @@
       const [a, g, f] = pick(pool);
       const opts =
         c.type === 'form' ? shuffle([a, ...shuffle(names.map((_, j) => j).filter(j => j !== a)).slice(0, 2)]) : names.map((_, j) => j);
-      box.innerHTML = `<p class="bx-qt">${esc(c.q)}</p><button type="button" class="bx-cph" aria-label="Enlarge photo"><img src="${img({f}, 'm')}" alt="Photo to classify" loading="lazy"></button><div class="choices col">${opts
+      box.innerHTML = `<p class="bx-qt">${esc(c.q)}</p><div class="bx-cphw"><button type="button" class="bx-cph" aria-label="Enlarge photo"><img src="${img({f}, 'm')}" alt="Photo to classify" loading="lazy"></button></div><div class="choices col">${opts
         .map(j => `<button type="button" class="choice" data-j="${j}">${esc(names[j])}</button>`)
         .join('')}</div><p class="bx-fb" aria-live="polite"></p>`;
       // Before the answer the enlarged view hides the genus (blind), as in the games.
@@ -709,6 +687,7 @@
               c.type === 'form'
                 ? `<a href="${genLink(g)}"><i>${esc(g)}</i></a>: ${esc(names[a])}. ${esc(formDef(FORMS7[a][0]))}`
                 : esc(c.why[a]);
+            src(box.querySelector('.bx-cphw'), pobj({g, f}));
             fb(box, ok, why + ' ' + again, {g, a: names[j], ph: [f], m});
             box.querySelector('.bx-again').onclick = () => ask(box, c, markDone, edit, sid);
             if (ok) markDone();

@@ -526,6 +526,63 @@ async function signin(base) {
   return fails;
 }
 
+// Coral basics on a phone and a tablet (Codex on PR #405): the teaching photo leaves room on screen (at most 45% of its
+// height), each check (photo, answers, feedback) fits between the header and the tab bar once answered (rule 17), and
+// every photo of a check gets the games' clickable source once answered (rule 11, photoSrc). Returns the failures.
+async function basicsFit(b, base) {
+  const fails = [];
+  for (const [w, h] of [
+    [390, 844],
+    [768, 1024]
+  ]) {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+    });
+    const p = await c.newPage();
+    await p.goto(base + '#lab');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    for (const st of ['colony', 'polyp', 'corallite', 'septa', 'teeth', 'walls', 'forms']) {
+      await p.evaluate(s => {
+        localStorage.removeItem('imr-basics');
+        location.hash = 'lab-basics|' + s;
+      }, st);
+      await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
+      const r = await p.evaluate(st => {
+        const q = document.querySelector('.bx-q');
+        if (st === 'corallite') {
+          const ph = q.querySelector('.bx-tap'),
+            r = ph.getBoundingClientRect();
+          ph.dispatchEvent(new MouseEvent('click', {clientX: r.left + r.width * 0.587, clientY: r.top + r.height * 0.485, bubbles: true}));
+        } else q.querySelector('.choice').click();
+        const top = document.querySelector('header').getBoundingClientRect().bottom,
+          tabs = document.querySelector('nav.sections'),
+          tb = tabs && getComputedStyle(tabs).position === 'fixed' ? tabs.getBoundingClientRect().top : innerHeight;
+        const sum = document.querySelector('.bx-check summary').getBoundingClientRect(),
+          fb = q.querySelector('.bx-fb').getBoundingClientRect();
+        return {
+          photo: Math.max(0, ...[...document.querySelectorAll('.bx-fig .bx-ph')].map(e => e.getBoundingClientRect().height)),
+          check: Math.round(fb.bottom - sum.top),
+          room: Math.round(tb - top),
+          photos: q.querySelectorAll('img').length,
+          srcs: q.querySelectorAll('.psrc').length
+        };
+      }, st);
+      if (r.photo > 0.45 * h)
+        fails.push(`${w}x${h} Coral basics ${st}: teaching photo ${Math.round(r.photo)} px tall, over 45% of the screen`);
+      if (r.check > r.room) fails.push(`${w}x${h} Coral basics ${st}: the answered check takes ${r.check} px, only ${r.room} px on screen`);
+      if (r.srcs < r.photos) fails.push(`${w}x${h} Coral basics ${st}: ${r.photos} check photos, ${r.srcs} source pills after the answer`);
+    }
+    await c.close();
+  }
+  return fails;
+}
+
 (async () => {
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`,
@@ -960,6 +1017,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
     }
     await ctx.close();
   }
+  for (const f of await basicsFit(b, base)) fails.push(f);
   await b.close();
   for (const f of await signin(base)) fails.push(f);
   server.close();

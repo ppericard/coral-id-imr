@@ -3721,11 +3721,23 @@ body:has(.fdstart:not([hidden])) footer {
   font-size: var(--fs-s);
   color: var(--muted);
 }
+/* Every photo is bounded by the screen's height (rule 17, Codex on PR #405): its width follows from --h and its ratio
+   (--ar, set inline), so on a tall-and-narrow tablet the teaching photo no longer takes half the screen. */
 .bx-ph {
+  --h: 42dvh;
   position: relative;
   overflow: hidden;
+  /* width set, then capped: its children are all absolute, so an auto width in a grid cell would be 0 */
+  width: 100%;
+  max-width: min(100%, calc(var(--h) * var(--ar, 1.33)));
+  margin-inline: auto;
   border-radius: var(--r);
   background: var(--photo-bg);
+}
+@media (min-width: 1024px) {
+  .bx-fig .bx-ph {
+    --h: 62dvh;
+  }
 }
 .bx-ph img {
   position: absolute;
@@ -3881,8 +3893,11 @@ body:has(.fdstart:not([hidden])) footer {
   border-radius: var(--r-sm);
 }
 .bx-cph img {
-  max-height: 34vh;
+  max-height: 30dvh;
   border-radius: var(--r);
+}
+.bx-pick img {
+  max-height: 24dvh;
 }
 .bx-cph {
   display: block;
@@ -3902,9 +3917,24 @@ body:has(.fdstart:not([hidden])) footer {
   margin-top: 4px;
   font-size: var(--fs-s);
 }
-.bx-tap {
-  max-width: 460px;
+.bx-ph.bx-tap {
+  --h: 34dvh;
+  max-width: min(100%, 460px, calc(var(--h) * var(--ar, 1.33)));
   cursor: crosshair;
+}
+/* The games' source pill (app.css .psrc) keeps its white-on-scrim text: .lab a would paint it in the accent, unreadable
+   on the dark pill. */
+.lab a.psrc {
+  color: var(--on-photo);
+}
+/* the source pill (app.css .psrc) sits on the check photos once answered */
+.bx-pk,
+.bx-cphw {
+  position: relative;
+}
+.lab .bx-pk .choice {
+  display: block;
+  width: 100%;
 }
 .bx-tapm {
   stroke: var(--on-photo);
