@@ -418,7 +418,7 @@ test('response time: with --player, k is still chosen on the other players', () 
   assert.deepStrictEqual(one.res['e+T*'].train.p1, all['e+T*'].train.p1);
 });
 
-// The app's own rule (core.js RTIME, rtWeight, rtAdd; rules version 5, 2026-11-04), replayed by +A, is the rule measured
+// The app's own rule (core.js RTIME, rtWeight, rtAdd; rules version 4, 2026-11-04), replayed by +A, is the rule measured
 // as +T1.5+G: the same predictions answer by answer, so the real-log figures of +T*+G stand for what the app does.
 test('response time: the app rule (+A) replays exactly as the measured +T1.5+G, and --rtfit reads the time terms', () => {
   const C = require('../core.js'),

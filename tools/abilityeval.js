@@ -266,7 +266,7 @@ function replay(list, variant, pooledOf = null) {
     Object.assign(scored[scored.length - 1], {z: zr, pz: lastZ[r.t] ?? null});
     lastZ[r.t] = good ? zr : null;
     // +A: the app's own answer-time rule (core.js rtWeight and rtAdd, as quiz.js answer and replayProgress run them,
-    // since rules version 5; a core.js without them, e.g. main's before it through --model: no change).
+    // since rules version 4; a core.js without them, e.g. main's before it through --model: no change).
     const appRT = flags.includes('A') && typeof M.K.rtWeight === 'function',
       wA = appRT ? M.K.rtWeight(P[C.LEVEL], r.sec, k, good) : 1;
     if (v === 'd') offStep(r.t, s, good, d, k);

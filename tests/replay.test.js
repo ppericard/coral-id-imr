@@ -295,7 +295,7 @@ test("replayProgress goes on from a replay: the sheet's, then this device's answ
     ch: 'A B C'
   };
   assert.deepStrictEqual(C.logRow(a, 'me'), ['me', Date.parse(a.t), 'A', 'B', 0, 'quiz|k3', 'f1 f2', 0.7, 0.4, 1, 'A B C', null, null]);
-  // The seconds to answer (rt) at 12, as in the sheet's readAnswers rows (response time, rules version 5).
+  // The seconds to answer (rt) at 12, as in the sheet's readAnswers rows (response time, rules version 4).
   assert.strictEqual(C.logRow({...a, rt: 4.5}, 'me')[12], 4.5);
   assert.deepStrictEqual(C.logRow({id: 'y', t: 'x', g: 'A', a: 'A', ok: 1}, 'me').slice(7), [null, null, null, '', null, null]);
 });
@@ -544,7 +544,7 @@ test("replayBase: the shared history only, never this device's unsent answers (C
   assert.strictEqual(base[C.LEVEL].ok, 2);
 });
 
-// Response time (rules version 5, 2026-11-04; core.js RTIME, rtWeight, rtAdd; docs/LEARNING.md "Response time"): the
+// Response time (rules version 4, 2026-11-04; core.js RTIME, rtWeight, rtAdd; docs/LEARNING.md "Response time"): the
 // app weighs a right answer's two ability steps by its seconds against the player's earlier timed answers, kept in the
 // global level's record (P[LEVEL].rt); the sheet's replay of the log, which reads the same seconds, rebuilds the same
 // abilities and the same record, from scratch or going on from an earlier replay.

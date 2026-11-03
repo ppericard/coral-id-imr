@@ -124,8 +124,16 @@ function replayAdopt(rp, pending, v, cut, pre) {
       rows = (pending || []).filter(a => a && a.g && !had.has(String(a.id)) && String(a.t || '') > reset).map(a => logRow(a, me)),
       last = Number((rp.rec[LEVEL] || {}).at) || 0,
       gen = {...((DATA && DATA.x && DATA.x.gen) || {}), ...((DATA && DATA.gen) || {})},
+      // This device's answers on top, under the rules of the script that sent the replay: the answer time only from
+      // core.js RT_SHEET, as the live game (model.js rtOn; AGENTS.md 7a, Codex review #444).
       R = rows.length
-        ? replayProgress(rows, {gen, mem: PMEM, conf: PCONF, start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}}})[me].P
+        ? replayProgress(rows, {
+            gen,
+            mem: PMEM,
+            conf: PCONF,
+            start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}},
+            time: Number(v) >= RT_SHEET
+          })[me].P
         : rp.rec,
       before = copy(P),
       M = replayedOf({P: R}, P, rp.rv);

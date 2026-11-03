@@ -1687,7 +1687,7 @@ Pierre's decision (2026-11-03): release with these settings ("quickly in product
 following each player's measured recall, no fixed ramp), its variants simulated with 5 seeds (AGENTS.md 14f). Any change
 is recorded here with its numbers.
 
-### Response time (measured 2026-11-03; in the ability since 2026-11-04, rules version 5)
+### Response time (measured 2026-11-03; in the ability since 2026-11-04, rules version 4)
 
 Pierre, 2026-11-03: "the time I take to answer goes with the difficulty, either the photo is hard or the genus is hard
 for me. If I take long, it was harder, even when I got it right. If I enlarge, it is usually the photo (far colony
@@ -1816,7 +1816,7 @@ Reproduce: `node tools/abilityeval.js answers.json --variants 'e+X+M,e+X+M+T*,e+
 --grid '0,0.1,0.2,0.3,0.5,0.75,1,1.5,2,3'` (the `+H` row with grid 0-1.5, the `+U` row with 1-2; the answer-level
 tables in sections 1-3 come from a read-only script kept outside the repo).
 
-**5. In the ability (2026-11-04, rules version 5).** Pierre, 2026-11-04: "the signal is already very clear on few
+**5. In the ability (2026-11-04, rules version 4).** Pierre, 2026-11-04: "the signal is already very clear on few
 players; the question is how to integrate it", and AGENTS.md rule 12 was about the time between sessions (days, a
 Duolingo-style decay), not the seconds an answer takes: reworded, those seconds are evidence about that answer and
 may weigh how much it moves the ability, never a decay nor a penalty for being slow on its own.
@@ -1845,8 +1845,9 @@ may weigh how much it moves the ability, never a decay nor a penalty for being s
   are recorded whatever the sheet's version.
 - **The app never gets ahead of the sheet** (AGENTS.md 7a): the weight is on only once the sync script's replies say
   v ≥ `RT_SHEET` (32; `sync.js` `sheetV`, the last reply's `v` kept on the device as `imr-sheet-v`; `model.js`
-  `rtOn`); before it every weight is 1, exactly as before. A device then adopts the v32 replay of its whole log under
-  rules version 5 (standard card `RV_CARD`).
+  `rtOn`); before it every weight is 1, exactly as before, and so in the device's own answers replayed on top of an
+  adopted replay (`sync.js` `replayAdopt` passes `time` from the reply's `v`; Codex review #444). A device then adopts the v32 replay of its whole log under
+  rules version 4 (standard card `RV_CARD`).
 
 **Real answers, the app's implementation against main** (`tools/abilityeval.js`, `e+X+M` on main's `core.js` through
 `--model` against `e+X+M+A` on this one: `+A` replays `core.js` `rtWeight` / `rtAdd` as the app runs them, and gives
@@ -2121,7 +2122,7 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     wrongly given, a genus's ability moving with the global level (`levelMove`, `lt`; the level's step without a floor,
     4 decimals; Calibration step 2, #415), a learned mark kept unless a miss logged after its exam takes it away as the
     game does. v2 (2026-11-04): the opening pace and known mix-ups (#425): the mix-ups term in the question's difficulty
-    for the ability, the global level and a miss's weight ("Known mix-ups" above). v5 (2026-11-04): answer time weighs
+    for the ability, the global level and a miss's weight ("Known mix-ups" above). v4 (2026-11-04): answer time weighs
     right answers ("Response time": a right answer's genus and level steps times clamp(1 − 1.5 z, 0.5, 1.5); the
     sheet replays it from v32, which reads the Seconds column). A device that skips several versions
     sees the standard card once, at the last of them, with its progress before and after the whole jump (`core.js`
@@ -2343,7 +2344,7 @@ What it says, on this learner:
 - **Time between sessions** for progress, mastery or ability (spaced-repetition days, decay, a "refresh"): ruled out
   (AGENTS.md rule 12). The one exception, time to plan the questions after a break, is the comeback above. The seconds
   taken to answer are not time between sessions (Pierre, 2026-11-04, rewording rule 12): they are evidence about that
-  answer, and since rules version 5 they weigh how much a right answer moves the ability ("Response time"); never a
+  answer, and since rules version 4 they weigh how much a right answer moves the ability ("Response time"); never a
   decay, never a penalty for being slow on its own.
 
 ## Simulation (`tests/profiles.smoke.js`, CI)
@@ -2575,7 +2576,7 @@ is not in the simulation.
 
 - 2026-11-04, Pierre ("the signal is already very clear on few players; the question is how to integrate it"; rule 12
   was about days between sessions, not the seconds an answer takes): **answer time weighs right answers** (rules
-  version 5, sheet v32): a right answer's genus and level steps times clamp(1 − 1.5 z, 0.5, 1.5), z its log seconds
+  version 4, sheet v32): a right answer's genus and level steps times clamp(1 − 1.5 z, 0.5, 1.5), z its log seconds
   against the median of the player's own earlier timed answers (kept exactly in `P['~level'].rt`, replayed from the
   log); misses, typed, untimed and the first 10 timed answers unchanged; on in the app only once the script is v32.
   Real answers: −2.20 ± 0.72 × 10⁻³ log-loss per answer against main, every timed player better, no group worse.
