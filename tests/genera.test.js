@@ -86,9 +86,9 @@ sys.argv = ['x']
 s = importlib.util.spec_from_file_location('fl', 'tools/fetch_local.py'); fl = importlib.util.module_from_spec(s); s.loader.exec_module(fl)
 G = {'A': {'views': {'wide': [{'f': 'a1', 'o': 'o1'}, {'f': 'a2', 'o': 'o2'}]}}, 'B': {'views': {'wide': [{'f': 'b1', 'o': 'o3'}]}}}
 cur = {'genera': {'A': {'out': {'a2': 'B'}}}}
-print(json.dumps([fl.colonies('A', G, {}, cur), fl.colonies('B', G, {}, cur)]))`)
+print(json.dumps([fl.colonies('A', G, {}, cur), fl.colonies('B', G, {}, cur), fl.colonies('B', G, {}, {**cur, 'use': {'b1': 'ref'}})]))`)
   );
-  assert.deepStrictEqual(r, [{wide: 1}, {wide: 2}]);
+  assert.deepStrictEqual(r, [{wide: 1}, {wide: 2}, {wide: 1}], 'a sheet-only colony (use ref) no longer counts, as admin.js gamePool');
 });
 
 test('fetch_local --plan: a waiting candidate of a view that has its colonies holds no room (Codex review #390)', () => {

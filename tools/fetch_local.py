@@ -58,14 +58,16 @@ def kept_views(g, G, cur):
 def colonies(g, G, cand, cur, excl=lambda f: False):
     """{view: distinct colonies (observations)} of genus g's photos as curated: data.json views, moved (curation move)
     and the candidates Pierre added (curation add, whichever genus list holds them), without hidden, excluded,
-    several-corals or Coral Finder book photos. A 2-level genus's medium photos join wide (as the admin's viewOf)."""
+    sheet-only (use 'ref'), several-corals or Coral Finder book photos. A 2-level genus's medium photos join wide (as the admin's viewOf)."""
     gens = cur.get('genera') or {}
     k = gens.get(g) or {}
     hide, move, add, out = set(k.get('hide') or []), k.get('move') or {}, k.get('add') or {}, k.get('out') or {}
+    # A colony set to "sheet only" (curation use 'ref') no longer counts, as admin.js gamePool (Codex review #390).
+    ref = {f for f, u in (cur.get('use') or {}).items() if u == 'ref'}
     lv2 = kept_views(g, G, cur)[1] == 'macro'
     by = {}
     def put(p, v, mv=move):
-        if p.get('multi') or p.get('cf') or p['f'] in hide or excl(p['f']): return
+        if p.get('multi') or p.get('cf') or p['f'] in hide or p['f'] in ref or excl(p['f']): return
         v = mv.get(p['f'], v)
         if lv2 and v == 'medium': v = 'wide'
         by.setdefault(v, set()).add(p.get('o') or p['f'])
