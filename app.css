@@ -2783,6 +2783,10 @@ footer {
   .wide {
     display: revert;
   }
+  /* Its phone-only counterpart (a short tab name, app.js MODES). */
+  .narrow {
+    display: none;
+  }
 }
 
 /* ---------- Progress board ---------- */
@@ -3999,7 +4003,7 @@ a.psrc:focus-visible {
 }
 /* IMR group colours are muted tints (design review 2026-11-01): the number and title carry the group; strong colour is kept
    for the learning-level scale, so the same hue never means two things on one screen. Dark text keeps contrast >= 4.5. */
-:root[data-theme='dark'] :is(.gdiv .gn, .pgr .gn) {
+:root[data-theme='dark'] :is(.gdiv .gn, .pgr .gn, .cqh .gn) {
   background: hsl(var(--g, 200) 25% 24%);
   color: hsl(var(--g, 200) 55% 84%);
   box-shadow: inset 0 0 0 1px hsl(var(--g, 200) 25% 40%);
@@ -4017,6 +4021,192 @@ a.psrc:focus-visible {
 .fdopt.gchip[aria-pressed='true'] {
   color: inherit;
   background: hsl(var(--g) 32% 58% / 0.18);
+}
+/* Custom quiz, the selection screen (quiz.js viewCustom; Pierre, 2026-11-03): search and the A-Z / IMR groups switch,
+   quick picks, then every genus in view as a small photo with its name (in the IMR groups view, under each group's
+   muted tint on its number), and a bar with the count, Clear all and Start that stays above the phone tab bar.
+   A picked genus gets the accent ring and a tick (rings mark selection, DESIGN.md). */
+.cqtools {
+  margin: 4px 0 8px;
+  flex-wrap: nowrap;
+}
+.cqtools input {
+  flex: 1 1 120px;
+}
+.cqquick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.cqquick .label {
+  margin-right: 2px;
+}
+.cqquick .chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.cqquick select.chip {
+  max-width: 100%;
+  color: var(--accent);
+}
+.cq {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0 0 12px;
+}
+.cqg[hidden] {
+  display: none;
+}
+.cqh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.cqh .gn {
+  flex: none;
+  border-radius: var(--pill);
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  background: hsl(var(--g, 200) 40% 88%);
+  color: hsl(var(--g, 200) 50% 24%);
+  box-shadow: inset 0 0 0 1px hsl(var(--g, 200) 30% 68%);
+}
+.cqht {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.cqht small {
+  display: block;
+  font-weight: 400;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.cqall {
+  flex: none;
+  font-size: var(--fs-s);
+  padding: 6px 0;
+}
+.cqtiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+  gap: 6px;
+}
+@media (min-width: 600px) {
+  .cqtiles {
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    gap: 8px;
+  }
+}
+.cqtile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  cursor: pointer;
+}
+.cqtile[hidden] {
+  display: none;
+}
+.cqtile img,
+.cqtile .cqnoph {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--surface-2);
+}
+.cqtile i {
+  padding: 3px 4px 4px;
+  font-size: var(--fs-xs);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.cqtile small {
+  margin: -2px 0 4px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.cqtile[aria-pressed='true'] {
+  border-color: var(--accent);
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+}
+.cqtile[aria-pressed='true'] i {
+  font-weight: 600;
+}
+.cqtile[aria-pressed='true']::after {
+  content: '✓';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+@media (hover: hover) {
+  .cqtile:hover {
+    border-color: var(--accent);
+  }
+}
+.cqbar {
+  position: sticky;
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+.cqn {
+  flex: 1;
+  min-width: 0;
+}
+.cqn small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.cqbar .next {
+  align-self: center;
+}
+.cqbar .next:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+}
+.cqbar .linkish:disabled {
+  color: var(--muted);
+  cursor: default;
+  text-decoration: none;
 }
 /* ID tips: two genera per row (one on phones), larger photos. */
 .tipsec,
