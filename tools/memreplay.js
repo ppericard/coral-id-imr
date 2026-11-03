@@ -46,7 +46,7 @@ const DATA = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),
   GEN = DATA.gen || {},
   look = (a, b) => ((GEN[a] || {}).look || []).includes(b) || ((GEN[b] || {}).look || []).includes(a);
 const sig = x => 1 / (1 + Math.exp(-x)),
-  TARGET_OFF = 1; // model.js PICKD.TARGET_OFF
+  AIM = 0.8; // model.js PICKD.P: the chance every question aims for (TARGET_OFF 1.0 before 2026-11-03)
 // Number of choices as the app scored it: a typed answer (|t) none to guess from (Infinity, model.js TYPED.k), |kN in
 // the mode, a duel 2, else the genera in the choices (2-3), else 4.
 const kOf = (mode, choices) => {
@@ -128,7 +128,7 @@ if (dif.length) {
 }
 
 // App side, per player.
-const pgMissW = (th, d, k) => Math.min(1, (1 / k + (1 - 1 / k) * sig(th - d)) / (1 / k + (1 - 1 / k) * sig(TARGET_OFF)));
+const pgMissW = (th, d, k) => Math.min(1, (1 / k + (1 - 1 / k) * sig(th - d)) / AIM);
 const pgMemW = (th, d, fam, k) => (fam >= 0 ? 1 : Math.min(1, (1 / k + (1 - 1 / k) * sig(th - d)) / (1 / k + (1 - 1 / k) * sig(th - d - fam))));
 const players = {};
 rows
