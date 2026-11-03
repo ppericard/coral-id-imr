@@ -244,9 +244,9 @@ aim: real diversity of colonies and views, so the players learn the genus, not t
    of the frame gets quality at most Fair (2) and a note "small" (Pierre has kept such photos). Labels, scale bars,
    rulers, markers or arrows that a crop removes without cutting the subject: suggest that crop and keep the photo
    (the import keeps each trim at half its size, `CROP_K`, so the box you write must trim twice as far as the label
-   reaches; when that would cut the subject, Pierre can still crop it by hand: `exclude` with `unsure`). Never reasons to reject: watermarks, logos, date stamps,
-   species labels on book crops, extended tentacles. Book crops (`cf`) are not in the pass yet (`cands` skips them);
-   the book rules apply when they are judged.
+   reaches; when that would cut the subject, Pierre can still crop it by hand: `exclude` with `unsure`). Never
+   reasons to reject: watermarks, logos, date stamps, species labels on book crops, extended tentacles. Book crops
+   (`cf`) are not in the pass yet (`cands` skips them); the book rules apply when they are judged.
 3. `python3 tools/judging_cand.py --check <Genus>` until it passes, then `python3 tools/judging_cand.py` imports
    every passing genus into `suggest.json` `"cand"` (admin only: players never download it). Commit only
    `judging/cand/*.json` and `suggest.json`.
