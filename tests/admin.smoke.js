@@ -371,7 +371,8 @@ const server = http.createServer((req, res) => {
       tags: document.querySelectorAll('.adm-jtbl .adm-jlearn').length,
       stars: document.querySelectorAll('svg.adm-jl text.s').length,
       games:
-        /Photo quiz/.test(document.getElementById('view').innerText) && /Look-alike duels/.test(document.getElementById('view').innerText)
+        [...document.querySelectorAll('#view td')].some(td => td.textContent === 'Quiz') &&
+        /Look-alike duels/.test(document.getElementById('view').innerText)
     }));
     if (!lrn.tags || !lrn.stars || !lrn.games) fails.push(`${w}px journey learned / games: ${JSON.stringify(lrn)}`);
     if (!/First cards/.test(cards.t) || !cards.col.includes('first cards') || !cards.col.some(x => /^#\d+/.test(x)))
