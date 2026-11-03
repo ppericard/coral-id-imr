@@ -1895,7 +1895,8 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     adoption runs through `model.js` `mxRecalc`: a learned mark it takes away is told with the card above (reason
     `bkt`; a mark taken by a later rules version would say "recalculated from all your answers with the app's current
     rules", reason `rules`). Then, at once, the announcement card of every version skipped that has a `msg`
-    (`progress.js` `rvNotice`: once per version per device, `imr-rv-msg`; never held, one after another, after
+    (`progress.js` `rvNotice`, an update card of `app.js` `cardShow` with the progress ring before and after: once per
+    version per device, `imr-rv-msg`; never held, one after another, after
     `recalcNotice` and `mxLostNotice`; only to a device that had answers). Every version has the standard card
     (`core.js` `RV_CARD`; Pierre, 2026-11-03, a standing rule: "only to the players whose progress the replay moves a
     lot; if it moves everyone a lot, everyone gets it"): "Your progress was recalculated with the improved model",

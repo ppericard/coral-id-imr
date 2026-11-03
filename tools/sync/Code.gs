@@ -2274,6 +2274,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // it moves everyone a lot, everyone gets it"): shown to a player whose progress % the adoption moved by 5 points or
   // more, either way (progress.js rvNoticeAdd), with the two %.
   const RV_CARD = {
+    kind: 'update', // the card's kind (app.js cardShow, CARD_KINDS)
     t: 'Your progress was recalculated with the improved model',
     p: 'Your progress is now computed again from all your answers, with the rules the app uses today. It went from {from}% to {to}%. Every answer you gave is kept.',
     only: 'changed',

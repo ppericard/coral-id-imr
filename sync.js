@@ -875,50 +875,36 @@ const nudgeDue = () =>
   store.get(LOG0, []).length >= NUDGE_AT;
 // once = the one-time card (marks it used); play = once signed in, its button opens the photo quiz (skipped tour).
 // The header's Sign in button opens it with neither: it closes with "Close" or "Done".
+// The card (app.js cardShow) holds the account box (bindSync), which draws its own title and redraws itself as the player
+// signs in; its one button reads Later / Close, then Done or Start playing once signed in. Escape, Enter outside the form
+// and a tap outside close it; the focus goes back to the question's Next when there is one.
 function signinNudge(once = true, play = !once) {
   if (once) store.set(NUDGE, 1);
-  const d = document.createElement('div');
-  d.className = 'unlock signnudge';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Sign in');
-  d.innerHTML = `<div class="ulcard"><section class="sync tsync"></section><div class="ulbtns"><span></span><button class="next sec" type="button">Later</button></div></div>`;
-  document.body.appendChild(d);
+  const d = cardShow({
+    kind: 'account',
+    cls: 'signnudge',
+    label: 'Sign in',
+    body: '<section class="sync tsync"></section>',
+    secondary: {text: 'Later', on: () => play && SYNC && go('quiz')}, // from a skipped tour: once signed in, the photo quiz
+    esc: 'esc',
+    enter: 'enter',
+    tap: 'tap',
+    focus: '.ulbtns button', // its button, not the name field: no keyboard popping up on a phone
+    onClose: () => {
+      bindSync();
+      const nb = document.getElementById('next');
+      if (nb) nb.focus({preventScroll: true});
+    }
+  });
   const box = d.querySelector('.tsync'),
     btn = d.querySelector('.ulbtns button');
-  const close = () => {
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-    bindSync();
-    const nb = document.getElementById('next');
-    if (nb) nb.focus({preventScroll: true});
-  };
-  const key = e => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      close();
-    } else if (e.key === 'Enter' && !(e.target.closest && e.target.closest('form'))) {
-      e.stopPropagation();
-      e.preventDefault();
-      close();
-    }
-  };
-  document.addEventListener('keydown', key, true);
-  d.ulClose = close; // leaving the page closes it (route)
-  // From a skipped tour, the card ends on the games: once signed in, its button starts the photo quiz.
-  btn.onclick = () => {
-    close();
-    if (play && SYNC) go('quiz');
-  };
-  d.addEventListener('click', e => {
-    if (e.target === d) close();
-  });
   const label = () => {
     btn.textContent = SYNC ? (play ? 'Start playing' : 'Done') : once || play ? 'Later' : 'Close';
     btn.classList.toggle('sec', !SYNC);
+    d.relabel();
   };
-  label();
   bindSync(box);
+  label();
   new MutationObserver(label).observe(box, {childList: true});
 }
 // The account box: the top of ⚙ (#sync), or the sign-in card (tour, nudge, header button) while one is open.
