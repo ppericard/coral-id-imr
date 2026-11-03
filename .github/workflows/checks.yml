@@ -1,19 +1,29 @@
 # Fast checks on every pull request (code review 2026-11-01, M6/M7): JS syntax, unit tests, JSON files (and the
-# data.json layout, M5), Python tools, cache-busting versions. Node and Python only, except the page smoke test (job "pages"), which
-# installs Playwright with npm into a temporary folder (Pierre's OK, 2026-11-01); the repo keeps no package.json.
+# data.json layout, M5), Python tools, cache-busting versions. Node and Python only, except the Playwright smoke tests (jobs
+# "smoke (…)", one per smoke file, in parallel on separate runners), which install Playwright with npm into a temporary folder
+# (Pierre's OK, 2026-11-01); the repo keeps no package.json.
 name: Checks
 on:
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
+# A new push to the same PR cancels the run still going on the older commit (test-suite review, 2026-11-04: 2.9 pushes per
+# branch, each run waited behind the stale one).
+concurrency:
+  group: checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
+      # Depth 1: the whole history with every photo cost ~300 s of checkout. The cache-busting check needs only the base
+      # branch's tip, fetched below without its blobs (git fetches the few it reads, the files this PR changed, on demand).
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
+      - name: Base branch for the cache-busting check (one commit, no blobs until read)
+        if: github.base_ref
+        run: |
+          git fetch --no-tags --depth=1 --filter=blob:none origin "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
       - uses: actions/setup-node@v7
         with:
           node-version: '26'
@@ -44,27 +54,40 @@ jobs:
       - name: Cache-busting versions
         run: |
           python3 tools/check_versions.py ${{ github.base_ref && format('--base origin/{0}', github.base_ref) || '' }}
-  pages:
+  smoke:
+    name: smoke (${{ matrix.smoke }})
     runs-on: ubuntu-latest
+    strategy:
+      # Every smoke reports: one failing smoke no longer hides the others (the old single job stopped at its first failure).
+      fail-fast: false
+      matrix:
+        include:
+          - smoke: pages
+            what: Page smoke test (main routes and admin, 390 and 1280 px, fails on any page error)
+          - smoke: draw
+            what: Question draw test (photoSet and distractors on the real data, every genus, 4 player levels)
+          - smoke: fish
+            what: Fish quiz test (the fish subject on the real fish.json, circles opt-in, winks, progress kept apart)
+          - smoke: admin
+            what: Admin demo test (admin.html?demo, every page and the main actions on made-up data, nothing sent)
+          - smoke: profiles
+            what: Learning path test (a beginner, an IMR RA, an expert through the real quiz; docs/LEARNING.md)
+          - smoke: net
+            what: Poor connection test (start-up without curation.json, preloaded next question, photo fallback, kept leaderboard)
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: '26'
+      # The Chromium download (~170 MB) is kept between runs; the key follows the Playwright pin below.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ms-playwright-${{ runner.os }}-1.64.1
       - name: Install Playwright (temporary folder, nothing added to the repo)
         run: |
           mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
           npm install --no-save --no-audit --no-fund playwright@1.64.1
           npx playwright install --with-deps chromium
-      - name: Page smoke test (main routes and admin, 390 and 1280 px, fails on any page error)
-        run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/pages.smoke.js
-      - name: Question draw test (photoSet and distractors on the real data, every genus, 4 player levels)
-        run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/draw.smoke.js
-      - name: Fish quiz test (the fish subject on the real fish.json, circles opt-in, winks, progress kept apart)
-        run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/fish.smoke.js
-      - name: Admin demo test (admin.html?demo, every page and the main actions on made-up data, nothing sent)
-        run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/admin.smoke.js
-      - name: Learning path test (a beginner, an IMR RA, an expert through the real quiz; docs/LEARNING.md)
-        run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/profiles.smoke.js
-      - name: Poor connection test (start-up without curation.json, preloaded next question, photo fallback, kept leaderboard)
-        run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/net.smoke.js
+      - name: ${{ matrix.what }}
+        run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/${{ matrix.smoke }}.smoke.js
