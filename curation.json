@@ -230,7 +230,6 @@
         "tubastraea-cand-66015515": "medium",
         "tubastraea-cand-721148279": "macro",
         "tubastraea-cand-61065917": "wide",
-        "tubastraea-cand-267618191": "medium",
         "tubastraea-cand-511776175": "wide",
         "tubastraea-cand-254850194": "macro"
       }
@@ -1717,6 +1716,7 @@
     "hydnophora-cand-587997422": 2,
     "hydnophora-cand-609866605": 2,
     "hydnophora-cand-697670527": 2,
+    "imrl-p55_i2": 1,
     "imrl-p8_g36": 2,
     "imrl-p8_g37": 3,
     "isopora-cand-226446276": 2,
@@ -2752,6 +2752,7 @@
     "heliopora-cand-181616803": "auto",
     "heliopora-cand-181616836": "auto",
     "imrl-p10_i7": "excluded",
+    "imrl-p55_i2": "excluded",
     "leptoria-cand-466228998": "auto",
     "lithophyllon-cand-445317217": "auto",
     "lithophyllon-macro-746237709": "excluded",
@@ -2767,6 +2768,7 @@
     "pocillopora-macro-745206187": "excluded",
     "porites-cand-606657989": "auto",
     "seriatopora-cand-463482466": "auto",
+    "tubastraea-cand-267618191": "excluded",
     "tubastraea-cand-580500321": "excluded",
     "tubipora-cand-303711251": "auto"
   },
@@ -3318,10 +3320,10 @@
       0.975
     ],
     "alveopora-cand-376513752": [
-      0.1,
-      0.075,
-      0.875,
-      0.9
+      0.122,
+      0.159,
+      0.792,
+      0.865
     ],
     "alveopora-cand-625302757": [
       0.146,
@@ -3330,10 +3332,22 @@
       1
     ],
     "anacropora-cand-224673378": [
-      0.05,
-      0.05,
-      0.875,
-      0.875
+      0.119,
+      0.171,
+      0.789,
+      0.861
+    ],
+    "astreopora-cand-473241285": [
+      0,
+      0.084,
+      0.846,
+      1
+    ],
+    "astreopora-cand-725536647": [
+      0,
+      0,
+      0.841,
+      1
     ],
     "catalaphyllia-cand-595488408": [
       0,
@@ -3358,6 +3372,12 @@
       0.05,
       0.875,
       0.925
+    ],
+    "ctenactis-cand-693783226": [
+      0.064,
+      0.092,
+      0.931,
+      0.966
     ],
     "cycloseris-cand-329120173": [
       0,
@@ -3940,6 +3960,12 @@
       0.05,
       1,
       1
+    ],
+    "millepora-x-461415589": [
+      0.141,
+      0,
+      0.926,
+      0.947
     ],
     "montipora-cand-269467989": [
       0,
@@ -4683,6 +4709,12 @@
       0.05,
       0.075,
       0.975,
+      1
+    ],
+    "stylophora-cand-335771324": [
+      0.131,
+      0.339,
+      0.669,
       1
     ],
     "stylophora-cand-600484386": [
@@ -5917,7 +5949,7 @@
       "tubastraea-cand-262125467": "aw2Mp#",
       "tubastraea-cand-267618158": "r",
       "tubastraea-cand-267618172": "r",
-      "tubastraea-cand-267618191": "am2xp",
+      "tubastraea-cand-267618191": "am2xp@tnxokp",
       "tubastraea-cand-269730222": "aw2B",
       "tubastraea-cand-34709276": "am2E",
       "tubastraea-cand-362855076": "aw2B#",
