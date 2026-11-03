@@ -575,7 +575,9 @@ function achNext() {
   const el = document.createElement('div');
   el.className = 'achpop t' + a.tier + (calm() ? ' calm' : '');
   el.setAttribute('role', 'status');
-  el.innerHTML = `<a href="#ach" class="achin"><span class="achic" aria-hidden="true">${a.icon}</span><span><small>Achievement unlocked ${TIER[a.tier]}</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
+  // The cards' look (app.js cardShow, docs/DESIGN.md "Cards"), as a toast: the achievement's own emoji in a small medallion
+  // with its tier at the edge, on the pale tint of the kind's hue.
+  el.innerHTML = `<a href="#ach" class="achin" data-k="ach"><span class="achic" aria-hidden="true"><span>${a.icon || CARD_KINDS.ach}</span><span class="tier">${TIER[a.tier] || ''}</span></span><span><small>Achievement unlocked</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
   document.body.append(el);
   let tm = 0;
   const mo = new MutationObserver(() => {
@@ -698,26 +700,30 @@ function boardNotice() {
 // 2026-11-03, with its own kicker and button): a player shown every note but the last sees the last; one who missed
 // several sees them all on one card, latest first. KEY holds the id of the last note seen. Exception: the photo memory
 // recalculation (2026-11-03, core.js memRecalc) is silent, Pierre's choice (the bars only move down 1-3 points).
+// Each note has a kind (app.js CARD_KINDS: 'update' for a recalculation, 'feature' for a new game mode): the latest due
+// gives the card its medallion, for a recalculation the player's progress ring as it is now.
 const RECALC = {
   KEY: 'imr-recalc',
   L: [
     {
       id: 'progress-moving-average-2026-11',
+      kind: 'update',
       t: "We've improved how progress is measured",
       p: 'Based on feedback from the first players, your progress now reflects more closely how well you can tell each genus apart from the others. Your % may be lower than before, and it will grow a little more slowly. None of your answers is lost.'
     },
     {
       id: 'millepora-counts-2026-11',
+      kind: 'update',
       t: '<i>Millepora</i> now counts in your progress',
       p: '<i>Millepora</i> (fire coral) is on the IMR benthic slate and very common at Dauin and in ReefCloud photos, so it now counts in your progress, which is now over 40 genera: your % may be a little lower.'
     },
     // A new game mode announced the same way (Pierre, 2026-11-03: a card for typed questions, a little tongue-in-cheek;
-    // text validated by Pierre). k, b, a: the card's kicker, button and label when this note is the latest due.
+    // text validated by Pierre). k, b: the card's kicker and button when this note is the latest due.
     {
       id: 'typed-questions-2026-11',
+      kind: 'feature',
       k: 'New',
       b: 'Bring it on',
-      a: 'New: typed questions',
       t: 'Think you know your genera? Think again.',
       p: "New in the quiz: typed questions. No choices, no hints, just the photo and an empty box: type the genus from memory. They show up once you're doing well on a genus, and mastery exams now include them. Picking among four is good; naming it cold is what makes an expert."
     }
@@ -735,44 +741,30 @@ function recalcNotice() {
   // Something else on screen (the tour, a card): try again a little later, until the screen is clear.
   if (document.querySelector('.recalc')) return; // already on screen
   if (document.querySelector('#tour, .unlock')) return void setTimeout(recalcNotice, 2000);
-  const d = document.createElement('div');
-  d.className = 'unlock recalc';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', due[0].a || 'Progress recalculated');
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">${due[0].k || 'Update'}</p>${due.map(x => `<h3>${x.t}</h3><p>${x.p}</p>`).join('')}
-    <div class="ulbtns"><span></span><button class="next" type="button">${due[0].b || 'Got it'}</button></div></div>`;
-  document.body.appendChild(d);
-  const close = seen => {
-    if (seen) store.set(RECALC.KEY, last);
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-  };
-  const key = e => {
-    if (e.key === 'Tab') return;
-    e.stopPropagation(); // never the quiz's keys behind the card
-    if (e.key === 'Escape' || e.key === 'Enter') {
-      e.preventDefault();
-      close(true);
-    }
-  };
-  document.addEventListener('keydown', key, true);
-  // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (Codex review #367: a returning
-  // player opening straight at #quiz had it closed by the first route, before ever seeing it).
-  d.ulClose = () => {
-    close(false);
-    setTimeout(recalcNotice, 300);
-  };
-  d.querySelector('.next').onclick = () => close(true);
-  setTimeout(() => d.querySelector('.next').focus({preventScroll: true}), 50);
+  const k = due[0].kind || 'update';
+  cardShow({
+    kind: k,
+    cls: 'recalc',
+    visual: k === 'update' ? cardRing(progPct()) : '',
+    kick: due[0].k || 'Update',
+    title: due[0].t,
+    body: due.map((x, i) => `${i ? `<h3>${x.t}</h3>` : ''}<p>${x.p}</p>`).join(''),
+    primary: {text: due[0].b || 'Got it', on: () => store.set(RECALC.KEY, last)},
+    esc: 1,
+    enter: 1,
+    // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (Codex review #367: a returning
+    // player opening straight at #quiz had it closed by the first route, before ever seeing it).
+    onClose: how => how === 'route' && setTimeout(recalcNotice, 300)
+  });
 }
 // An apology, once (Pierre, 2026-11-04; core.js SORRY, sorryOf, sorryFelt, sorryText): to a player who really felt the
 // opening of #408 run unchecked (too many new genera at once, no easier questions after misses), at app open, in plain
 // words, greeted by the first word of their sign-in name (else "Hi!"). Whether they felt it is read once, the first time
 // this version runs on the device (FIRST: the time, and what core.js sorryOf reads then: the answers in the window, the
-// opening hold's sum, the cards opened in it), so playing on changes nothing. The same card as recalcNotice: one card at
-// a time (it waits while the tour or another card is up), never held, its button or Escape close it for good on this
-// device (imr-sorry, like imr-recalc, kept on the device); leaving the page closes it unseen and it comes back.
+// opening hold's sum, the cards opened in it), so playing on changes nothing. A card like recalcNotice's (app.js
+// cardShow, kind apology: 🙏 on the warm --warn tint): one card at a time (it waits while the tour or another card is
+// up), never held, its button, Enter or Escape close it for good on this device (imr-sorry, like imr-recalc, kept on the
+// device); leaving the page closes it unseen and it comes back.
 const SORRYK = {KEY: 'imr-sorry', FIRST: 'imr-sorry-first'};
 function sorryNotice() {
   const now = Date.now();
@@ -788,39 +780,21 @@ function sorryNotice() {
   if (!sorryDue({felt: F, now, shown: store.get(SORRYK.KEY, 0)})) return;
   if (document.querySelector('.sorry')) return; // already on screen
   if (document.querySelector('#tour, .unlock')) return void setTimeout(sorryNotice, 2000);
-  const x = sorryText(SYNC && SYNC.name, now, new Date(now).getTimezoneOffset()),
-    d = document.createElement('div');
-  d.className = 'unlock sorry';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Sorry');
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">Sorry</p><h3>${esc(x.t)}</h3><p>${esc(x.p)}</p>
-    <div class="ulbtns"><span></span><button class="next" type="button">Thanks</button></div></div>`;
-  document.body.appendChild(d);
-  const close = seen => {
-    if (seen) store.set(SORRYK.KEY, Date.now());
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-    if (typeof qclockAgain === 'function') qclockAgain(); // over a question: its time to answer counts from here
-  };
-  const key = e => {
-    if (e.key === 'Tab') return;
-    e.stopPropagation(); // never the quiz's keys behind the card
-    if (/^\d$/.test(e.key)) e.preventDefault();
-    if (e.key === 'Escape' || e.key === 'Enter') {
-      e.preventDefault();
-      close(true);
-    }
-  };
-  document.addEventListener('keydown', key, true);
-  d.ulClose = () => {
-    close(false);
-    setTimeout(sorryNotice, 300);
-  };
-  d.querySelector('.next').onclick = () => close(true);
-  setTimeout(() => d.querySelector('.next').focus({preventScroll: true}), 50);
+  const x = sorryText(SYNC && SYNC.name, now, new Date(now).getTimezoneOffset());
+  cardShow({
+    kind: 'apology',
+    cls: 'sorry',
+    kick: 'Sorry',
+    title: esc(x.t),
+    body: `<p>${esc(x.p)}</p>`,
+    primary: {text: 'Thanks', on: () => store.set(SORRYK.KEY, Date.now())},
+    esc: 1,
+    enter: 1,
+    onClose: how => how === 'route' && setTimeout(sorryNotice, 300)
+  });
 }
-// A short note at the bottom of the screen (.apptoast; html is the app's own text), closed by ✕ or after ms.
+// A short note at the bottom of the screen (.apptoast, the cards' tint and shadow; html is the app's own text), closed by
+// ✕ or after ms.
 function appToast(html, ms) {
   const t = document.createElement('div');
   t.className = 'apptoast';
