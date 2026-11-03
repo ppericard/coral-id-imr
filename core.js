@@ -606,16 +606,27 @@
       p = 1 / k + (1 - 1 / k) * s;
     return ((1 - 1 / k) * s * (1 - s)) ** 2 / (p * (1 - p));
   };
+  // Hierarchical photo Elo (Pierre, 2026-11-03; docs/LEARNING.md "Hierarchical photo Elo"): a photo's difficulty is its
+  // genus's offset plus its own residual, the player rule "global level + genus" (Pelánek et al. 2017) applied to the
+  // photos. Both move on every trusted answer by the same surprise: the residual as the photo rating always did, the
+  // genus offset by GENUS_K / (1 + its weighed answers / 10), the photos' damping form. A photo nobody has answered starts
+  // at its genus's offset instead of 0. GENUS_K 0.4: on the real answer log, replayed with each answer scored before it
+  // moves anything, 0.2 and 0.4 both beat a photo-only Elo and the Easy / Medium / Hard prior, 0.8 moves too fast.
+  // Code.gs GENUS_K in step; ?stats=1 serves the offsets as gd (sheet v31), the photos' ratings as totals.
+  const GENUS_K = 0.4;
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
   // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them). Every answer
   // moves the player's level; the photos and the memory offsets move on trusted players' answers only (trustOf, v17),
   // weighed as above. All against the same expectation, photo memory included (until v25 the level ignored memory
   // and the photos used the fixed rule, so the two pulled apart).
-  // Returns the photo ratings P, the player levels R ([level, answers, information]), the memory offsets mem (rounded
-  // as served) and memn, the trusted answers behind each bucket (a question with several photos shares its answer
-  // between their buckets).
+  // Returns the photo ratings P (the residual, [rating, weighed answers, weighed right, answers]), the genus of each photo
+  // PG, the genus offsets G ([offset, weighed answers]), the player levels R ([level, answers, information]), the memory
+  // offsets mem (rounded as served) and memn, the trusted answers behind each bucket (a question with several photos
+  // shares its answer between their buckets). Every photo of a question is of the genus shown (one colony, rule 14b).
   function eloReplay(rows) {
     const P = {},
+      PG = {},
+      G = {},
       R = {},
       H = {},
       trust = trustOf(rows),
@@ -633,8 +644,10 @@
         const ok = r[4] ? 1 : 0,
           g = guessOf(r[5], r[10]),
           ra = (R[r[0]] = R[r[0]] || [PLAYER0, 0]);
-        const ph = fs.map(f => (P[f] = P[f] || [0, 0, 0, 0])),
-          b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
+        const gs = String(r[2] || ''),
+          go = (G[gs] = G[gs] || [0, 0]),
+          ph = fs.map(f => ((PG[f] = gs), (P[f] = P[f] || [0, 0, 0, 0]))),
+          b = go[0] + ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
         const hs = fs.map(f => (H[r[0] + '|' + f] = H[r[0] + '|' + f] || [0, 0])),
           s = sig(ra[0] - b - memFam(hs, mem)),
           e = g + (1 - g) * s,
@@ -651,6 +664,8 @@
             p[1] += ok * w;
             p[3]++;
           });
+          go[0] -= (GENUS_K / (1 + go[1] / 10)) * d * w;
+          go[1] += w;
           hs.forEach(h => (A[memBucket(h)] += 1 / hs.length));
           for (let j = 1; j < 4; j++)
             if (A[j]) {
@@ -669,7 +684,7 @@
           h[1] += ok;
         });
       });
-    return {P, R, mem: mem.map(x => Math.round(x * 100) / 100), memn: N.map(x => Math.round(x * 10) / 10)};
+    return {P, PG, G, R, mem: mem.map(x => Math.round(x * 100) / 100), memn: N.map(x => Math.round(x * 10) / 10)};
   }
   // The photo memory offsets estimated from the answer log, as Code.gs ?stats=1 mem and memn.
   function photoMemOf(rows) {
@@ -727,13 +742,21 @@
     }
     return true;
   }
+  // The photo ratings as Code.gs ?stats=1 photos: [difficulty (genus offset + residual), weighed answers, weighed right,
+  // answers].
   function eloOf(rows) {
-    const {P} = eloReplay(rows);
+    const {P, PG, G} = eloReplay(rows);
     const out = {};
     Object.keys(P).forEach(
-      f => (out[f] = [Math.round(P[f][0] * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]])
+      f =>
+        (out[f] = [Math.round((G[PG[f]][0] + P[f][0]) * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]])
     );
     return out;
+  }
+  // The genus offsets as Code.gs ?stats=1 gd (v31): {genus: [offset, weighed answers]}.
+  function genusOffsetsOf(rows) {
+    const {G} = eloReplay(rows);
+    return Object.fromEntries(Object.entries(G).map(([n, o]) => [n, [Math.round(o[0] * 100) / 100, Math.round(o[1] * 10) / 10]]));
   }
 
   // Confusions between genera (Pierre, 2026-11-01): from the answer log rows (as eloOf; row[10] = the genera offered,
@@ -1042,8 +1065,9 @@
   }
   // Photos per context (applySlots). Pierre's rule: every IMR photo and every photo of his own is used, with no cap;
   // photos from other iNat observers and approved Coral Finder book photos only fill a set that is short. Per genus
-  // and view: sheet = 3 featured + the other IMR/own photos (filled up to 6 in all); games = Easy (the featured),
-  // Medium (every other good photo), Hard (the poor ones), levels adding up: since 2026-11-02 (Pierre: new photos must
+  // and view: sheet = 3 featured + the other IMR/own photos (filled up to 6 in all); games = one list, every photo kept
+  // (game: the featured first, then IMR/own, each by quality, Poor last; until 2026-11-03 it was split into Easy / Medium
+  // / Hard sets that gave a new photo its starting difficulty, docs/LEARNING.md): since 2026-11-02 (Pierre: new photos must
   // come into the games, the players' answers rate them) games take every photo kept, IMR/own first; they were capped
   // at 4 Medium and 4 Hard, other observers' photos only filling a short set, so newly validated candidates stayed out; Coral
   // Finder (needs variety) = featured + 2 photos from other iNat observers + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
@@ -1128,17 +1152,15 @@
         const gm = byQ([...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'ref')),
           core = gm.filter(isCore),
           rest = gm.filter(p => !isCore(p));
-        const easy = feat.filter(p => gm.includes(p)),
-          left = p => !easy.includes(p);
-        const medium = [...core, ...rest].filter(p => left(p) && q(p) >= 2);
-        const hard = [...core, ...rest].filter(p => left(p) && !medium.includes(p));
+        // One list per view (Pierre, 2026-11-03: the Easy / Medium / Hard sets went, docs/LEARNING.md "Hierarchical
+        // photo Elo"): the featured game photos first, then IMR / own before other observers, each by quality, Poor last.
+        const lead = feat.filter(p => gm.includes(p)),
+          after = [...core, ...rest].filter(p => !lead.includes(p));
         const book = bk.filter(p => !feat.includes(p)).slice(0, CAP.book);
         g.sl[v] = {
           feat,
           more,
-          easy: easy.length ? easy : take(gm, 3),
-          medium,
-          hard,
+          game: [...lead, ...after.filter(p => q(p) >= 2), ...after.filter(p => q(p) < 2)],
           finder: [
             ...feat,
             ...take(
@@ -1696,6 +1718,15 @@
       v: 2,
       at: '2026-11-04',
       why: 'The opening pace and known mix-ups (#425): a question whose choices hold a genus the player mixes up with the one shown more than everyone does (3 or more plausible choices) counts as that much harder, for the ability, the global level and the weight of a miss',
+      msg: RV_CARD
+    },
+    {
+      v: 3,
+      at: '2026-11-04',
+      why: 'Hierarchical photo Elo (sheet v31): the genus offset enters the expectation the photo memory offsets are fitted against, so the memory offsets the replay uses change',
+      // Codex P1 on #422: mem (?stats=1, Code.gs stats_) feeds replayProgress, so a log replayed under v2 gives other
+      // bars than under v3. Pierre's standing rule (2026-11-03): every rules version gets the standard recalculation
+      // card, only for the players whose progress % moves by 5 points or more.
       msg: RV_CARD
     }
   ];
@@ -2385,6 +2416,8 @@
     mergeOld,
     mergeProgress,
     eloOf,
+    genusOffsetsOf,
+    GENUS_K,
     levelMargin,
     playSplit,
     trustOf,

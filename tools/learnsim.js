@@ -5,7 +5,7 @@
 // numbers for reading). docs/LEARNING.md, "Learning-outcome simulation".
 //
 //   node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
-//                          [--workers 4] [--out results.json] [--stats stats.json] [--met Acropora,Porites,...]
+//                          [--workers 4] [--out results.json] [--stats stats.json] [--truth truth.json] [--met Acropora,Porites,...]
 //                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20] [--openall offer|N] [--back keep|one]
 //
 // --openall (optional; without it the open-all offer is declined, as before): 'offer' accepts the offer card when it shows
@@ -39,7 +39,10 @@
 // The learner (kept simple on purpose; every constant is in LEARNER below):
 // - know[g]: the chance to recognise genus g on a photo of average difficulty with all its views. On a question it
 //   recognises the genus shown t with p = sigmoid(logit(know[t]) - d - 0.5 x single view), d the mean photoDiff of the
-//   photos shown (the app's own photo difficulty: its sets, or --stats), as in profiles.smoke.js. Recognised = right.
+//   photos shown (the app's own photo difficulty, photoDiff: --stats, or 0 for every photo without it), as in
+//   profiles.smoke.js; or, with --truth, each photo's true difficulty from that file, independent of the app's estimate
+//   (2026-11-03, the hierarchical photo Elo: a change to the app's photo difficulty must not change the learner's world
+//   too). truth.json: {photos: {file: difficulty}, gd: {genus: difficulty of a photo not listed}}. Recognised = right.
 // - Otherwise it picks among the choices by how much each looks like the photo: weight 1 + LOOK x s(t, c), with
 //   s(t, t) = 1 and s(t, c) = min(1, pooledConf(t, c) / CONF.LOOK) for another genus (the app's own confusion prior and
 //   pooled mix-ups: about 1 for a declared look-alike, 0.4 same family, 0.27 shared growth form, 0.1 otherwise), times
@@ -141,6 +144,7 @@ const SEEDS = Number(arg('seeds', 5)),
   WORKERS = Number(arg('workers', Math.max(1, Math.min(4, os.cpus().length)))),
   OUT = arg('out', null),
   STATS = arg('stats', null),
+  TRUTH = arg('truth', null),
   AFTER = Number(arg('after', 20)),
   UNIT = {m: 60000, h: 3600000, d: 864e5, w: 7 * 864e5, mo: 30 * 864e5},
   BREAKS = (arg('breaks', '') || '')
@@ -173,9 +177,10 @@ const CPS = [
       )
   )
 ].sort((a, b) => a - b);
-// Photo statistics of the sync sheet (?stats=1 answer, or {photos, conf}), to rate the photos as live players do;
-// without it the photo difficulty is Pierre's Easy/Medium/Hard sets, as in CI.
+// Photo statistics of the sync sheet (?stats=1 answer, or {photos, conf, mem, gd, v}), to rate the photos as live
+// players do; without it every photo's difficulty is 0 (no sheet), as in CI (the Easy/Medium/Hard sets before 2026-11-03).
 const STATS_JSON = STATS ? JSON.parse(fs.readFileSync(STATS, 'utf8')) : null;
+const TRUTH_JSON = TRUTH ? JSON.parse(fs.readFileSync(TRUTH, 'utf8')) : null;
 
 const TYPES = {
   '.html': 'text/html',
@@ -206,7 +211,9 @@ const server = http.createServer((req, res) => {
 
 // One player, inside the page: the app's globals (P, quizPhoto, photoDiff, pooledConf, ...) are in scope.
 function play(cfg) {
-  const {prof, seed, N, cps, L, breaks, after, openall, back} = cfg;
+  const {prof, seed, N, cps, L, breaks, after, openall, back, truth} = cfg;
+  // The learner's difficulty of a photo of genus t: --truth when given, else the app's own (photoDiff).
+  const trueD = (t, p) => (truth ? (truth.photos || {})[p.f] ?? ((truth.gd || {})[t] || 0) : photoDiff(t, p));
   // With breaks: a virtual clock, STEP an answer (the app reads Date.now for the comeback).
   let T = Date.parse('2026-11-02T08:00:00Z');
   if (breaks.length) Date.now = () => T;
@@ -272,7 +279,7 @@ function play(cfg) {
     bucket = h => (!h || !h[0] ? 0 : !h[1] ? 1 : h[1] === 1 ? 2 : 3),
     memOn = fs => mean(fs.map(f => L.MEM[bucket(LM[f])])) || 0;
   // Game photos per slate genus (as My progress counts them, seenOf), and its group: few, many, or neither.
-  const NPH = Object.fromEntries(SL.map(g => [g, new Set(VIEWS.flatMap(([v]) => gamePics(g, v, 'hard').map(p => p.f))).size])),
+  const NPH = Object.fromEntries(SL.map(g => [g, new Set(VIEWS.flatMap(([v]) => gamePics(g, v).map(p => p.f))).size])),
     grpOf = g => (!(g in NPH) ? null : NPH[g] <= L.FEW ? 'few' : NPH[g] >= L.MANY ? 'many' : null),
     GRP = {few: SL.filter(g => grpOf(g) === 'few'), many: SL.filter(g => grpOf(g) === 'many')},
     gq = {few: {n: 0, ok: 0, rep: 0, repOk: 0}, many: {n: 0, ok: 0, rep: 0, repOk: 0}};
@@ -385,7 +392,7 @@ function play(cfg) {
       [, t, , , set] = window.__q,
       ch = typed ? window.__q[2] : [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c),
       shown = set.shown || [],
-      d = mean(shown.map(p => photoDiff(t, p))) || 0,
+      d = mean(shown.map(p => trueD(t, p))) || 0,
       single = shown.length === 1,
       fs = shown.map(p => p.f),
       rep = fs.some(f => LM[f] && LM[f][0]),
@@ -627,7 +634,14 @@ async function run(browser, base, name, seed) {
     if (st)
       localStorage.setItem(
         'reefid-photo-stats',
-        JSON.stringify({t: Date.now(), photos: st.photos || {}, conf: st.conf || {}, ...(st.mem ? {mem: st.mem} : {})})
+        JSON.stringify({
+          t: Date.now(),
+          v: st.v,
+          photos: st.photos || {},
+          conf: st.conf || {},
+          ...(st.mem ? {mem: st.mem} : {}),
+          ...(st.gd ? {gd: st.gd} : {})
+        })
       );
   }, STATS_JSON);
   const p = await ctx.newPage(),
@@ -647,7 +661,8 @@ async function run(browser, base, name, seed) {
     breaks: BREAKS,
     after: AFTER,
     openall: OPENALL,
-    back: BACK
+    back: BACK,
+    truth: TRUTH_JSON
   });
   await ctx.close();
   return {profile: name, seed, errs, ...r};
@@ -980,6 +995,7 @@ function openTable(runs) {
           profiles: Object.fromEntries(NAMES.map(n => [n, PROFILES[n]])),
           learner: LEARNER,
           stats: STATS || null,
+          truth: TRUTH || null,
           seconds: secs,
           summary: S,
           byPhotos: GS,

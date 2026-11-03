@@ -8,8 +8,9 @@
 // read (SYNC_URL, LOCAL, SYNC, syncTrouble) stays in app.js.
 // RA sync: progress goes to Pierre's Google Sheet (Apps Script web app, tools/sync/Code.gs) under a name
 // and a 4-digit code; the same name and code bring it back on another device. Off while SYNC_URL is empty.
-// Photo difficulty from the sheet (Elo over every RA's answers), kept for offline use. An older sheet script without
-// stats simply answers with an error, and the game-set priors are used.
+// Photo difficulty from the sheet (Elo over every RA's answers), kept for offline use, with the sheet's version (v) so
+// the genus offsets (gd, sheet v31) are read only from a sheet that has them. An older sheet script without stats
+// simply answers with an error, and every photo's prior is 0.
 // Refreshed every 10 minutes while the page is open (the sheet caches it for 10 minutes too), and on coming back to a
 // tab left open longer than that.
 let statsAt = 0;
@@ -31,7 +32,15 @@ function loadStats() {
         GDIFF = {}; // genus difficulties follow the new photo stats and confusions
         PCONF = j.conf || {};
         PMEM = memOf(j.mem); // photo memory offsets (sheet v26); the prior from an older sheet
-        store.set('reefid-photo-stats', {t: Date.now(), photos: j.photos, conf: PCONF, ...(j.mem ? {mem: j.mem} : {})});
+        PGD = gdOf(j); // genus offsets of the photo Elo (sheet v31, model.js photoDiff); none from an older sheet
+        store.set('reefid-photo-stats', {
+          t: Date.now(),
+          v: j.v,
+          photos: j.photos,
+          conf: PCONF,
+          ...(j.mem ? {mem: j.mem} : {}),
+          ...(j.gd ? {gd: j.gd} : {})
+        });
       }
     })
     .catch(() => {});
