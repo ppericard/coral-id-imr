@@ -1142,6 +1142,102 @@ async function basicsFit(b, base) {
       if (!z0.full || !z0.over || !z1.full || !z1.open || z1.t <= z0.t || z2.full || !z2.open)
         fails.push(`enlarged photo drag: ${JSON.stringify({z0, z1, z2})}`);
       await cz.close();
+      // The enlarge mark and the one-time hint (Pierre, 2026-11-03: players almost never enlarged a quiz photo). Every quiz
+      // and genus sheet photo shows the mark, its button labelled "Enlarge photo"; a new player gets "… a photo to see it
+      // bigger" on their 2nd question, once (not on the 1st, not again after a reload), and never once a photo was enlarged.
+      {
+        const hintCtx = async () => {
+          const c = await b.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
+          await c.route(
+            u => !u.href.startsWith(base),
+            r => r.abort()
+          );
+          await c.addInitScript(() => {
+            localStorage.setItem('imr-tour', '"done"');
+            localStorage.setItem('imr-nudge', '1');
+          });
+          const p = await c.newPage();
+          await p.goto(base + '#quiz');
+          await p.waitForFunction(() => window.APP_READY && document.querySelector('#view .qph'), null, {timeout: 30000});
+          return [c, p];
+        };
+        const hintIn = (p, ms) =>
+          p.waitForSelector('#view .zhint', {timeout: ms}).then(
+            () => p.textContent('#view .zhint'),
+            () => null
+          );
+        // toast: an achievement toast is up when the next question shows (as after a duel won as the first question, which
+        // made this check fail in CI on PR #410: the hint was tried once and skipped under the toast); clicked in the page,
+        // so Playwright does not wait for the toast to leave first.
+        const nextQ = async (p, toast) => {
+          await p.click('#view [data-c]');
+          if (toast)
+            await p.evaluate(() => (achPop({tier: 1, icon: '🧪', title: 'Smoke', desc: 'test'}), document.getElementById('next').click()));
+          else await p.click('#next');
+          await p.waitForFunction(() => document.querySelector('#view .qph') && !document.querySelector('#view .q.done'));
+        };
+        const marks = p =>
+          p.evaluate(sel => {
+            const z = [...document.querySelectorAll(sel)];
+            const ok = b => {
+              const i = b.querySelector('.zic svg'),
+                r = i && i.closest('.zic').getBoundingClientRect();
+              return /^Enlarge photo/.test(b.getAttribute('aria-label') || '') && !!r && r.width >= 24 && r.height >= 24;
+            };
+            return z.length ? z.filter(b => !ok(b)).length : -1;
+          }, '#view .qph .zoom, #view .hero-ph, #view .strip .zoom');
+        const [c, p] = await hintCtx();
+        const r = {mark: await marks(p), q1: await hintIn(p, 1500)};
+        await nextQ(p, true);
+        // Never with the toast; once it has gone, on the same question.
+        r.toast = await p.evaluate(() => !!document.querySelector('.achpop'));
+        await p.waitForFunction(
+          () => {
+            if (document.querySelector('.achpop') && document.querySelector('.zhint')) window.__zboth = 1;
+            return !document.querySelector('.achpop') && !(typeof achBusy !== 'undefined' && achBusy);
+          },
+          null,
+          {polling: 100, timeout: 15000}
+        );
+        r.both = await p.evaluate(() => !!window.__zboth);
+        r.q2 = await hintIn(p, 3000);
+        r.same = await p.evaluate(() => answersSoFar());
+        r.label = await p.getAttribute('#view .qph .zoom', 'aria-label');
+        await p.keyboard.press('Shift'); // any key or tap sends it away
+        await p.waitForTimeout(500);
+        r.gone = !(await p.$('#view .zhint'));
+        await p.reload();
+        await p.waitForFunction(() => window.APP_READY && document.querySelector('#view .qph'), null, {timeout: 30000});
+        r.reload = await hintIn(p, 2000);
+        await nextQ(p);
+        r.after = await hintIn(p, 1500);
+        await p.evaluate(() => (location.hash = 'g-Acropora'));
+        await p.waitForSelector('#view .hero-ph');
+        r.sheet = await marks(p);
+        // mark: the number of photo buttons without the mark or the label (0 = all have them; -1 = no photo found).
+        if (
+          r.mark ||
+          r.q1 ||
+          !r.toast ||
+          r.both ||
+          r.same !== 1 ||
+          !/^(Tap|Click) a photo to see it bigger$/.test(r.q2 || '') ||
+          r.label !== 'Enlarge photo' ||
+          !r.gone
+        )
+          fails.push(`enlarge mark and hint on a new player's first questions: ${JSON.stringify(r)}`);
+        if (r.reload || r.after || r.sheet) fails.push(`enlarge hint shown again, or genus sheet photos unmarked: ${JSON.stringify(r)}`);
+        await c.close();
+        // A player who already enlarged a photo never gets it.
+        const [c2, p2] = await hintCtx();
+        await p2.click('#view .qph .zoom');
+        await p2.waitForSelector('#lightbox:not([hidden])');
+        await p2.keyboard.press('Escape');
+        await nextQ(p2);
+        const z = {hint: await hintIn(p2, 2500), key: await p2.evaluate(() => localStorage.getItem('imr-zoomhint'))};
+        if (z.hint || z.key !== '"zoomed"') fails.push(`enlarge hint after a photo was enlarged: ${JSON.stringify(z)}`);
+        await c2.close();
+      }
       for (const f of await overlays(b, base)) fails.push(f);
     }
     errs.length = 0;

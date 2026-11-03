@@ -122,7 +122,7 @@ function question(cur, target, choices, prompt, set, kq) {
   // data-f names the photo whatever its file: an iNaturalist photo not downloaded yet (r: 1, a candidate just added) keeps
   // iNaturalist's file names (app.js img()), which resized() leaves alone (the failed-photo report, tests).
   const fig = (p, k, n = ph.length) =>
-    `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${qsrc(p, n)}" data-lo="${img(p, 's')}"${p.f ? ` data-f="${esc(p.f)}"` : ''} alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
+    `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${qsrc(p, n)}" data-lo="${img(p, 's')}"${p.f ? ` data-f="${esc(p.f)}"` : ''} alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}">${ZOOMI}</button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
   // One screen, no scrolling: the photos fill the stage (sized to the window), choices and feedback sit beside them.
   $v.innerHTML = `${gameHelp(cur)}<div class="q bleed">
     <div class="qstage">${ph.map((p, k) => fig(p, k)).join('')}</div>
@@ -568,7 +568,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
         st0 = $v.querySelector('.qstage'),
         lab = VIEW_LABEL[tp.view] || '';
       const fig = (p, n, cls, note) =>
-        `<figure class="qph ${cls}"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(n)}"><img src="${qsrc(p, 2)}" alt="${esc(n)}, ${lab.toLowerCase()} view"></button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> <i>${esc(n)}</i></figcaption><small>${note}</small>${photoSrc(p)}</figure>`;
+        `<figure class="qph ${cls}"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(n)}"><img src="${qsrc(p, 2)}" alt="${esc(n)}, ${lab.toLowerCase()} view">${ZOOMI}</button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> <i>${esc(n)}</i></figcaption><small>${note}</small>${photoSrc(p)}</figure>`;
       st0.classList.add('qvs');
       st0.innerHTML = fig(tp, target, 'qok', 'The photo shown') + fig(cp, c, 'qko', 'Your answer, same view');
       st0.querySelectorAll('[data-vs]').forEach(
@@ -647,13 +647,51 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
 // the gap is met. Counted in answers, never time. One value for all three: the answers count when the last one showed
 // (this device; a count that went back, a progress reset, starts the spacing over).
 const PROMPT = {KEY: 'imr-prompt-at', GAP: 10};
+// The tour, a card or an achievement toast on screen or waiting (cards wait under the tour, toasts under a card).
+const overlayBusy = () => !!document.querySelector('#tour, .unlock, .achpop') || (typeof achBusy !== 'undefined' && achBusy);
 const promptOk = () => {
-  if (document.querySelector('#tour, .unlock, .achpop') || (typeof achBusy !== 'undefined' && achBusy)) return false;
+  if (overlayBusy()) return false;
   const a = answersSoFar(),
     at = store.get(PROMPT.KEY, null);
   return typeof at !== 'number' || a < at || a - at >= PROMPT.GAP;
 };
 const promptMark = () => store.set(PROMPT.KEY, answersSoFar());
+// One-time hint that a photo enlarges (Pierre, 2026-11-03: in the answers logged, every player but one enlarged a quiz
+// photo for 0-2% of their answers, so most did not know they could; "make it clear, without nagging every time"). Over the
+// first photo of a photo-quiz question, from the player's ZHINT.AT-th answer on (their 2nd question at the earliest), a
+// bubble pointing at the enlarge mark (app.js ZOOMI): "Tap a photo to see it bigger" ("Click" with a mouse). Once per
+// device (app.js ZHINT_KEY, set when it shows), and never once a photo has been enlarged there. Never with the tour, a
+// card or an achievement toast on screen or waiting (overlayBusy, as promptOk; not its spacing: it asks nothing and goes
+// by itself): it waits, looking again every ZHINT.DELAY, until they have gone while the question is still unanswered,
+// else tries the next question (CI, PR #410: a duel won as the first question popped "first duel won", whose toast was
+// still up when the 2nd question showed, and the hint, tried once, was skipped there). It goes at the first tap, click or
+// key, or after ZHINT.MS; it lets every tap through. Nothing else changes: the question, its clock and its answer are
+// untouched.
+const ZHINT = {AT: 1, DELAY: 600, MS: 6000};
+function zoomHint() {
+  if (store.get(ZHINT_KEY, null) || answersSoFar() < ZHINT.AT) return;
+  const f = $v.querySelector('.q .qstage .qph');
+  if (!f) return;
+  const show = () => {
+    if (!f.isConnected || f.closest('.q.done') || store.get(ZHINT_KEY, null)) return;
+    if (!lb.hidden || overlayBusy()) return void setTimeout(show, ZHINT.DELAY);
+    store.set(ZHINT_KEY, 'seen');
+    const mouse = matchMedia('(hover: hover) and (pointer: fine)').matches;
+    f.insertAdjacentHTML('beforeend', `<span class="zhint" role="status">${mouse ? 'Click' : 'Tap'} a photo to see it bigger</span>`);
+    const h = f.querySelector('.zhint'),
+      stop = new AbortController();
+    const off = () => {
+      if (stop.signal.aborted) return;
+      stop.abort();
+      h.classList.add('out');
+      setTimeout(() => h.remove(), 300);
+    };
+    addEventListener('pointerdown', off, {capture: true, signal: stop.signal});
+    addEventListener('keydown', off, {capture: true, signal: stop.signal});
+    setTimeout(off, ZHINT.MS);
+  };
+  setTimeout(show, ZHINT.DELAY);
+}
 // One-tap question (Pierre, 2026-11-02: people answer a tap, not "any comments?"): now and then, under the answer's
 // feedback, "These questions are: Too easy · About right · Too hard" (or × for not now). First after PULSE.FIRST answers
 // in all (35 since 2026-11-02, was 15: the sign-in card comes at 20 and prompts are PROMPT.GAP apart), then every
@@ -905,6 +943,7 @@ function quizPhoto(cur = 'quiz') {
     (promptMark(), introOfferShow()); // never over another card: next question
   else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
   else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
+  zoomHint(); // once per device, never over a card or offer shown just above
   topUp(); // the questions after this one, chosen while it is played (planNext)
 }
 // The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now.
