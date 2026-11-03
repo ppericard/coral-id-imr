@@ -405,10 +405,13 @@ function renderJourney(name, anonId = '') {
             .split(' ')
             .filter(Boolean).length === 2
       ],
-      ['Look-alike duel in the quiz', r => /^quiz\|d(\||$)/.test(r[5])],
+      // A duel slipped into the custom quiz is logged quiz|s|d|k2 (quiz.js answer).
+      ['Look-alike duel in the quiz', r => /^quiz\|(s\|)?d(\||$)/.test(r[5])],
       // Typed questions (quiz.js, model.js TYPED, logged |t; their exam questions too, also counted under Mastery exam).
       ['Typed (recall)', r => /^quiz\|(.*\|)?t(\||$)/.test(r[5])],
       ['Mastery exam', r => /\|x$/.test(r[5])],
+      // The custom quiz (quiz|s…, 2026-11-03): photo-quiz answers on the genera the player picked, also in the rows above.
+      ['Custom quiz (genera picked)', r => /^quiz\|s(\||$)/.test(r[5])],
       ['Look-alike duels (tab)', r => /^quiz-duel/.test(r[5])],
       ['Other', r => !/^quiz/.test(r[5])]
     ].map(([t, f]) => {
@@ -447,7 +450,7 @@ function renderJourney(name, anonId = '') {
       ${D.map(rowOf).join('')}
     </div>
     <p class="adm-axis"><span class="adm-hkey">fewer${[1, 2, 3, 4, 5].map(k => `<i style="background:var(--lv${k})"></i>`).join('')}more</span><span>busiest hour ${hmx} · local time</span></p>
-    <p class="note">${J.S.length} session${J.S.length === 1 ? '' : 's'} · median ${medS} answers · first ${jTime(R[0][1])} · last ${jTime(R[R.length - 1][1])}</p></section>`;
+    <p class="note">${J.S.length} session${J.S.length === 1 ? '' : 's'}${(c => (c ? ` (${c} with the custom quiz)` : ''))(J.S.filter(L => L.some(r => /^quiz\|s(\||$)/.test(r[5]))).length)} · median ${medS} answers · first ${jTime(R[0][1])} · last ${jTime(R[R.length - 1][1])}</p></section>`;
 
   $v.innerHTML =
     head +

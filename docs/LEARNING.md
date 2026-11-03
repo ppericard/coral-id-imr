@@ -334,7 +334,8 @@ real success much; the 4-choice questions, the bulk of the exam and of strong pl
 ### Logged for the admin's player journey (2026-11-02)
 
 A mastery exam question is logged with mode `quiz|x` (exams have every trap, so never `|kN`; the sheet's guess rate and
-mode split read it as `quiz`), and a passed exam keeps its time (`s.mx` = time, was 1; still truthy everywhere).
+mode split read it as `quiz`), and a passed exam keeps its time (`s.mx` = time, was 1; still truthy everywhere). A
+custom-quiz answer (2026-11-03, below) is logged `quiz|s…`, the journey's "Custom quiz" row and Activity's "custom".
 
 ### "Again: A or B?" rated as 2 choices (2026-11-02)
 
@@ -359,6 +360,68 @@ time delayed a genus, and a weak RA met about 3 genera fewer by question 300). P
 apart in the player journey; a win counts for the Look-alike slayer achievement, as in the Duel tab). Simulated over 4 seeds, it does not slow the opening of genera (an expert met 27 genera
 after 100 questions with duels, 26 without, seed 3333); the profiles test now checks an expert's traps at 300
 questions (one or more a question) and more than a beginner's at 100, the mean of the two sitting at the threshold.
+
+### Custom quiz: the photo quiz on the genera the player picks (2026-11-03)
+
+Pierre: a game mode next to the quiz where the player selects the genera to work on, and the quiz is exactly the photo
+quiz, all its formats included, limited to them. Code: `model.js` `CUSTOM`, `customOf`, `customDraw`, `customChoices`;
+`quiz.js` `quizCustom`, `viewCustom`, `planPhoto(cur)`; tests `tests/custom.test.js`, `tests/pages.smoke.js`.
+
+- **What changes** is only the genus asked and the wrong choices. Photos (level, calibration, memory, one colony),
+  typed questions, "Again: A or B?" after a mix-up, the duels slipped in (`duelPick` among the selection), the comeback
+  and every scoring rule are the photo quiz's. At least `CUSTOM.MIN` = 2 genera.
+- **No mastery exam in the custom quiz** (Codex review #411, rule 14e; Pierre's decision, 2026-11-03: exams happen
+  only in the normal quiz): an exam question has every look-alike trap, and the custom quiz's choices come from the
+  selection, which may hold none of the genus's look-alikes, so a Learned earned there would not prove what the exam
+  proves. So the custom quiz never asks an exam question (`planPhoto`: no `examSet` with a selection) and never credits
+  the exam or `s.mx` from its answers (`answer`: `exq` is never true there). Its answers still move the progress bar,
+  up to the exam's entry (95%); the exam then comes in Photo → genus. A genus ready for its exam is still drawn in the
+  custom quiz, as a normal question, and a miss there still restarts an exam begun (any miss on the genus does, rule
+  14e). The help says so (the selection screen and the quiz's ?). `tests/draw.smoke.js` plays a custom session on
+  genera one exam question from Learned, all right: no exam question, no `s.mx`.
+- **Scored with the choices really shown** (Codex review #411): the photo quiz counts every choice from 2 traps on,
+  because it shows the traps its level asks for; a selection may not hold them (4 unrelated genera picked for a strong
+  player), so in the custom quiz the look-alikes among the choices decide: fewer than 2 there, and the guess rate is
+  1 / `plausibleK` (the target and the choices it could be taken for: look-alikes, confused or sharing a growth form),
+  as for a beginner's easy choices. Measured on the real draw (`tests/draw.smoke.js`): *Acropora*, *Astreopora*,
+  *Fungia*, *Alveopora* picked by a strong player were scored as 4-choice questions; `plausibleK` gives 2.
+- **The genus asked** (`customDraw`): any genus of the selection, weighed by the photo quiz's `weight()` (`drawW`: what
+  the model does not yet know the player holds; the last 4 held back). **No opening path**: no first cards,
+  no opening chance (`openChance`, `openPick`), no opening hold, no visit floor, no ★ wait (rules for the order the game opens genera in, while the
+  player chose these). A genus not met yet is asked at once, with its first-meeting card shown over that question (kind
+  `c`, ready at once, the card's photo not reused: as the Duel tab does for a genus named on its buttons); the card is
+  shown once, and the genus then counts as met in the photo quiz too. The offers about which genera are in play (open
+  all, back to one at a time, bonus genera) are not made in the custom quiz.
+- **The wrong choices** (`customChoices`): `distractors()` run on the selection, so its rules work inside it: traps by
+  level among the pairs most confused, else easy genera of other growth forms, genera met first. A selection of
+  look-alikes therefore drills itself (with nothing easier picked, its own look-alikes are the choices even at 0 traps,
+  and `plausibleK` counts them: a right answer proves more). Only a selection of fewer than 4 genera is topped up from
+  the other genera in play (the slate, and the bonus genera when on), by the same rules, asking for the traps the
+  selection could not give (`traps` − the selection's own confusable choices). An "Again" after a mix-up with a genus
+  outside the selection (a top-up choice, or a typed answer) asks the selected genus of the pair.
+- **What counts**: every answer is a photo-quiz answer: progress, ability, the global level, photo ratings and
+  confusions in the sheet, the opening hold (each answer with the expectation it had; a selection the player finds hard
+  holds new cards in the photo quiz, as any run of misses would), achievements. Logged with the mode `quiz|s` before
+  any other tag (`quiz|s|d|k2`, `quiz|s|k3`, `quiz|s|t`): the sheet's `guess_` reads `|kN`
+  at the end and `|t` anywhere, and its mode split keeps `quiz`, so the deployed script (v27) stores and rates it as any
+  photo-quiz answer, no new version needed (AGENTS.md 7a; `tests/custom.test.js` compares the two modes).
+- **Comeback**: during a comeback the custom quiz asks the comeback's genera of its selection when at least 2 of them
+  were answered right; otherwise it plays as usual and leaves the comeback (`CB`) to the photo quiz rather than ending
+  it (`quiz.js` `cbIn`).
+- **Picking** (Pierre, 2026-11-03: "not everyone knows the IMR lecture groups"; then "do not group genera by growth
+  form": it is not genus-specific, many genera take 3-4 forms or more, only the mushroom corals keep one): every genus
+  is in view as a small photo with its name, A-Z by default, the IMR lecture groups as the other view (for RAs, the
+  genera in view inside each group); quick picks that need no knowledge, My weakest (genera answered, lowest progress
+  first, 6), Recently missed (a miss in the last 5 answers, latest first, 8) and Look-alikes of … (a genus and its
+  declared or confused look-alikes, `isLook`, `confusable`); a search box. The selection is saved at each change
+  (`imr-coral-custom`, synced, the latest wins) and preselected next time.
+- **Checked** (AGENTS.md 14g): `tools/learnsim.js --seeds 5 --questions 300`, the four profiles, `main` (ed0ee83)
+  against this change, same seeds: every number of every table identical (true knowledge, |th-lk|, prog-know, progress,
+  genera met, right %, look-alike accuracy, exams, first met), as expected: the photo quiz's path is the same code with
+  no selection (`planPhoto('quiz')`), and learnsim plays the photo quiz only. The real answer log cannot judge it: no
+  answer exists in the new mode yet, and a custom-quiz answer is scored by the photo quiz's own functions (expected
+  success, Elo, progress weight, hold); to compare once players use it: the Expected against actual of `quiz|s…`
+  answers beside plain `quiz` ones (a selection of look-alikes should come out harder, and `plausibleK` count it so).
 
 ### One contrast queue (2026-11-03)
 
@@ -1596,6 +1659,10 @@ is not in the simulation.
   beginner met *Duncanopsammia* and *Cyphastrea* before *Turbinaria* and *Astreopora*): the references read from the data
   (`core.js` `starRefs`, the genera of the card's "★ look-alike of …" line), a weight of 0 in the opening draw until
   they are met, Open all unchanged, no new constant ("Starred genera after their reference").
+- 2026-11-03, Pierre: a custom quiz, the photo quiz on the genera the player picks: the genus asked drawn among them by
+  the usual weights with no opening path (a genus not met yet is asked with its card), the choices from them first
+  (the trap rules inside the selection), topped up from the slate only under 4 genera; every answer counts as a
+  photo-quiz answer, logged `quiz|s…` ("Custom quiz: the photo quiz on the genera the player picks").
 
 ## References
 

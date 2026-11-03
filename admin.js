@@ -5379,9 +5379,18 @@ const statRows = () => ANS.rows.filter(r => SF.who === 'all' || !myIds().size ||
 // Recent sessions (Pierre, 2026-11-03: who played last, is anyone playing now): the last RECENT.N sessions of every
 // player (sessionsOf), newest first, by name when signed in (USERS ids), else by anonymous id as on Players. Playing
 // now = its last answer less than RECENT.NOW minutes old. Modes: quiz (look-alike duels slipped into it included, as on
-// Players), duel (the Duel tab), typed (|t, logged by the typed answers once they are in the quiz).
+// Players), custom (the custom quiz, quiz|s…, its typed answers included: the genera picked by the player, 2026-11-03),
+// duel (the Duel tab), typed (|t, logged by the typed answers once they are in the quiz).
 const modeOf = m =>
-  /^quiz-duel/.test(m) ? 'duel' : String(m).split('|').includes('t') ? 'typed' : /^quiz(\||$)/.test(m) ? 'quiz' : 'other';
+  /^quiz-duel/.test(m)
+    ? 'duel'
+    : /^quiz\|s(\||$)/.test(m)
+      ? 'custom'
+      : String(m).split('|').includes('t')
+        ? 'typed'
+        : /^quiz(\||$)/.test(m)
+          ? 'quiz'
+          : 'other';
 function recentSessions(R) {
   const NM = Object.create(null);
   ((USERS && USERS.users) || []).forEach(u => u.id && (NM[u.id] = u));
@@ -5395,7 +5404,7 @@ function recentSessions(R) {
     modes = s => {
       const c = {};
       s.L.forEach(r => (c[modeOf(r[5])] = (c[modeOf(r[5])] || 0) + 1));
-      return ['quiz', 'duel', 'typed', 'other']
+      return ['quiz', 'custom', 'duel', 'typed', 'other']
         .filter(k => c[k])
         .map(k => (Object.keys(c).length > 1 ? `${k} <small>${c[k]}</small>` : k))
         .join(' · ');
