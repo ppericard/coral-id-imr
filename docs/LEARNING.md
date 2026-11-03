@@ -247,6 +247,98 @@ never the genus wrongly given, so they need nothing and the app does not wait fo
 saved keep the drag they took until their genus is answered again (a replay of the sheet's log would correct them:
 ROADMAP).
 
+### Second phase: other ways to recognise strong players sooner (2026-11-03, measured, nothing changed)
+
+Pierre, after the fix above: study, on the real answers and in the simulation (AGENTS.md 14g), (a) a pair-level
+confusion term, the principled home for "picking B says something"; (b) a hierarchical ability, genus = global level +
+offset; (c) the 1/k guess on 2-choice questions; (d) a success target that depends on the level; (e) a short placement
+phase for a new player. All on `main` after #408 with rule e; nothing below is in the app.
+
+**What the literature says about the success target** (checked at the sources, 2026-11-03):
+
+- Wilson, Shenhav, Straccia & Cohen (2019), "The Eighty Five Percent Rule for optimal learning", *Nature
+  Communications* 10:4646: for learning by gradient descent on a binary classification with Gaussian noise, the optimal
+  training error rate is 15.87%, accuracy about 85%. Shown on artificial neural networks and a model of perceptual
+  learning, not on classroom or fact learning.
+- Papoušek, Stanislav & Pelánek (ITS 2016; FI MU report FIMU-RS-2016-02), the geography system: target error rates 5,
+  20, 35 and 50% (success 95, 80, 65, 50%). Easier questions kept more learners in the short term, harder ones brought
+  more of them back and more learning (the main difference between the easiest condition and the others); survival
+  after 100 answers 26.0-26.5% in every condition; most learners rated the difficulty "appropriate" at about 30% of
+  their own answers wrong. Their conclusion: "start with easy questions to hook learners up and then switch to more
+  difficult questions".
+- Pelánek et al. (UMUAI 2017): 50% gives the most information about a learner, "however, a 50% success rate is rather
+  low and for many learners it could decrease their motivation"; their system aims at 75%. They cite Jansen et al.
+  (2013, Math Garden): targets 60, 75 and 90%, the easiest giving the best learning, through more problems solved.
+- Duolingo publishes no target success rate (the Birdbrain post and the IEEE Spectrum article give none; "about 80%"
+  appears only in unsourced secondary sites).
+- Why it matters here: the Fisher information of an answer, ((1 − g) σ (1 − σ))² / (P (1 − P)), is largest near 50%
+  (a little higher with a guess rate), so at the app's 80% a right answer moves the ability little: one reason strong
+  players are recognised slowly.
+
+**On the real answers** (`tools/abilityeval.js`, same log and players as above; P*λ*: the pair term, the question on A
+made harder by λ × the player's own mix-up rate with the most confused genus among the choices, mixed up / (offered + 8);
+X: the guess counts the names the player can rule out, each wrong choice ruled out with σ(θ_j − d); h: level + offset with
+rule e). Mean predicted / right, log-loss:
+
+| Rule | log-loss | 2 choices (727) | 4 choices (451) | level < 0 (203) | level ≥ 0.75 (617) | after a false alarm (141) |
+| --- | --- | --- | --- | --- | --- | --- |
+| e (now) | 0.465 | 0.80 / 0.87, 0.412 | 0.77 / 0.78, 0.551 | 0.74 / 0.83, 0.470 | 0.81 / 0.86, 0.429 | 0.81 / 0.81, 0.466 |
+| h | **0.458** | 0.81 / 0.87, 0.410 | 0.79 / 0.78, 0.535 | 0.72 / 0.83, 0.490 | 0.84 / 0.86, 0.408 | 0.80 / 0.81, 0.488 |
+| e + P1 | 0.465 | 0.79 / 0.87, 0.412 | 0.77 / 0.78, 0.549 | 0.74 / 0.83, 0.470 | 0.81 / 0.86, 0.429 | 0.80 / 0.81, 0.465 |
+| e + P2 | 0.466 | 0.79 / 0.87, 0.414 | 0.77 / 0.78, 0.548 | 0.73 / 0.83, 0.471 | 0.80 / 0.86, 0.430 | 0.80 / 0.81, 0.464 |
+| e + P4 | 0.467 | 0.78 / 0.87, 0.417 | 0.76 / 0.78, 0.547 | 0.73 / 0.83, 0.473 | 0.80 / 0.86, 0.431 | 0.78 / 0.81, 0.465 |
+| e + X | 0.465 | 0.87 / 0.87, 0.402 | 0.81 / 0.78, 0.565 | 0.80 / 0.83, 0.444 | 0.86 / 0.86, 0.432 | 0.86 / 0.81, 0.474 |
+| h + X | 0.470 | 0.88 / 0.87, 0.410 | 0.84 / 0.78, 0.566 | 0.77 / 0.83, 0.460 | 0.90 / 0.86, 0.428 | 0.85 / 0.81, 0.501 |
+
+- **(a) The pair term predicts nothing more** (0.465-0.467 for λ 1-4): on these answers, a genus the player has mixed
+  up with A among the choices does not make A's question harder than its ability and photo already say. The mix-ups
+  are already used where they help (traps, duels, Again); no term is needed in the ability.
+- **(b) Level + offset predicts best overall** (0.458) and for strong players (level ≥ 0.75: 0.429 → 0.408; the strong
+  RA's genera 0.95 against a fit of 0.73, an over-shoot), but worse for players under 0 (0.470 → 0.490) and after a
+  false alarm (0.466 → 0.488).
+- **(c) Ruling out known names** calibrates the 2-choice questions (0.87 / 0.87; the Duel tab 0.91 / 0.93) and the
+  players under 0, but over-predicts the 4-choice questions (0.81 / 0.78): overall no better. And it credits the right
+  answers to the ruling out, so the abilities fall (the strong RA's genera 0.59 → 0.23): the opposite of the goal. A
+  guess between 1/k and this (players rule out some names, not all they know) may fit both; not tried (it needs a
+  constant).
+
+**Simulated** (`tools/learnsim.js`, 5 seeds × 600 questions, the same seeds; e: the app now; H: level + offset (the
+genus ability moves with the global level since its own last step); T: the success aimed at 85% at a global level of 0
+or less, down to 72% at 1.5 or more, in every format (as `aimOff`); P: the first 20 answers aimed at 65%, then 80%.
+Cells as above: θ − logit k / |θ − logit k| / right % / genera met / learned / entered the exam / true knowledge):
+
+| Profile, question | e (now) | H level + offset | T level-dependent target | P placement |
+| --- | --- | --- | --- | --- |
+| beginner 100 | −0.44 / 1.04 / 79 / 19.2 / 0.0 / 0.0 / 0.29 | 0.03 / 0.97 / 76 / 25.4 / 0.0 / 0.0 / 0.32 | −0.35 / 1.06 / 79 / 19.8 / 0.0 / 0.0 / 0.29 | −0.04 / 1.03 / 79 / 23.2 / 0.0 / 0.0 / 0.30 |
+| beginner 300 | −0.45 / 1.21 / 83 / 39.6 / 0.0 / 0.4 / 0.64 | −0.19 / 0.78 / 80 / 40.0 / 0.0 / 0.0 / 0.69 | −0.65 / 1.32 / 83 / 38.0 / 0.0 / 0.2 / 0.64 | −0.56 / 1.01 / 82 / 40.0 / 0.0 / 0.0 / 0.67 |
+| beginner 600 | −1.44 / 1.50 / 88 / 40.0 / 0.6 / 5.0 / 0.87 | 0.03 / 0.62 / 85 / 40.0 / 0.2 / 3.4 / 0.88 | −1.51 / 1.55 / 87 / 40.0 / 0.2 / 3.4 / 0.87 | −1.44 / 1.47 / 89 / 40.0 / 0.0 / 3.4 / 0.87 |
+| lecture RA 100 | 0.01 / 0.81 / 79 / 33.4 / 0.0 / 0.0 / 0.53 | −0.19 / 0.93 / 78 / 28.4 / 0.0 / 0.0 / 0.51 | −0.12 / 0.80 / 81 / 30.8 / 0.0 / 0.0 / 0.52 | −0.03 / 0.83 / 81 / 28.8 / 0.0 / 0.0 / 0.51 |
+| lecture RA 300 | −0.79 / 0.93 / 87 / 40.0 / 0.0 / 0.0 / 0.77 | −0.34 / 0.85 / 84 / 40.0 / 0.0 / 0.0 / 0.77 | −0.80 / 0.90 / 84 / 40.0 / 0.0 / 0.0 / 0.77 | −0.85 / 1.01 / 87 / 39.8 / 0.0 / 0.0 / 0.77 |
+| lecture RA 600 | −1.45 / 1.47 / 91 / 40.0 / 1.0 / 8.4 / 0.90 | −0.38 / 0.62 / 89 / 40.0 / 0.4 / 7.6 / 0.91 | −1.45 / 1.46 / 91 / 40.0 / 0.6 / 7.2 / 0.91 | −1.54 / 1.54 / 90 / 40.0 / 0.4 / 7.0 / 0.91 |
+| strong RA 100 | −0.48 / 1.31 / 84 / 30.6 / 0.0 / 0.0 / 0.70 | −0.20 / 1.15 / 87 / 32.4 / 0.0 / 0.0 / 0.71 | −0.66 / 1.37 / 85 / 31.2 / 0.0 / 0.0 / 0.69 | −0.72 / 1.32 / 84 / 31.4 / 0.0 / 0.0 / 0.71 |
+| strong RA 300 | −1.10 / 1.30 / 91 / 40.0 / 0.0 / 0.2 / 0.86 | −0.47 / 0.87 / 90 / 40.0 / 0.0 / 0.8 / 0.86 | −1.18 / 1.33 / 88 / 40.0 / 0.0 / 0.6 / 0.85 | −1.19 / 1.32 / 88 / 40.0 / 0.0 / 0.4 / 0.86 |
+| strong RA 600 | −1.71 / 1.72 / 93 / 40.0 / 1.8 / 16.4 / 0.94 | −0.60 / 0.85 / 93 / 40.0 / 2.4 / 15.4 / 0.94 | −1.78 / 1.81 / 93 / 40.0 / 2.2 / 12.4 / 0.94 | −1.78 / 1.79 / 93 / 40.0 / 1.8 / 14.0 / 0.94 |
+| expert 100 | −1.26 / 1.26 / 96 / 27.8 / 0.0 / 0.0 / 0.94 | −0.69 / 0.69 / 98 / 27.6 / 0.0 / 0.0 / 0.94 | −1.24 / 1.24 / 96 / 27.8 / 0.0 / 0.2 / 0.94 | −1.21 / 1.21 / 98 / 27.2 / 0.0 / 0.0 / 0.94 |
+| expert 300 | −1.20 / 1.20 / 96 / 40.0 / 0.0 / 2.6 / 0.95 | −1.08 / 1.08 / 94 / 40.0 / 0.0 / 3.0 / 0.95 | −1.17 / 1.17 / 96 / 40.0 / 0.8 / 3.8 / 0.95 | −1.16 / 1.16 / 97 / 40.0 / 0.2 / 5.0 / 0.95 |
+| expert 600 | −1.25 / 1.25 / 97 / 40.0 / 6.2 / 26.2 / 0.97 | −1.04 / 1.04 / 97 / 40.0 / 5.8 / 25.2 / 0.97 | −1.25 / 1.25 / 97 / 40.0 / 7.2 / 25.2 / 0.97 | −1.23 / 1.23 / 98 / 40.0 / 9.0 / 24.4 / 0.97 |
+
+- **(b) H is the only one that clearly recognises strong players sooner**: |θ − logit k| for the strong RA 1.30 → 0.87
+  at 300 and 1.72 → 0.85 at 600, the expert 1.26 → 0.69 at 100, the lecture RA 1.47 → 0.62 at 600, with the same
+  right % and exams. The cost is at the start and for the weaker: the beginner is rated above the truth at first
+  (+0.46 at question 50), opens faster (25.4 genera by question 100 against 19.2) at 76% right, and the spread over
+  the seeds doubles (±0.4-0.7); on the real answers it predicts worse for the players under 0. The best candidate for a
+  next step, if the offset gets its own uncertainty (it now inherits the genus's K) so a new genus leans on the level
+  only while its own answers are few.
+- **(d) T changes nothing** beyond the spread: the strong RA answers 88% right instead of 91% at 300, but its ability
+  is no closer (1.33 against 1.30). With this learner the photos cannot get hard enough to bring a strong player near
+  72%, and the Elo's slow catch-up is not about the information per answer alone.
+- **(e) P changes nothing** after the first 50 questions (strong RA 1.32 against 1.30 at 300); the first 20 answers are
+  too few for the genus abilities, which start from the level anyway.
+- So nothing is changed now. Next, if Pierre wants: H with an uncertainty for the offset (one model instead of two
+  estimates), checked the same way; the 2-choice guess (c) with a fitted share of names ruled out once there are more
+  answers; the success target (d) left at 80%, closest to the literature (75-85%) and to what learners call
+  "appropriate" (about 70%).
+
 ### What a question shows
 
 - **Photos**: drawn around ability − `aimOff(k)`, so that the question is right with the chance `PICKD.P` = 0.8 in its
@@ -1591,6 +1683,11 @@ is not in the simulation.
   recent results and runs, as before), as in the Elo learner models of adaptive practice (Pelánek et al. 2017); on the
   real answers the next answer is predicted better (log-loss 0.481 → 0.465) and a strong RA's genera move from 0.11 to
   0.59 (fit 0.73); simulated, the error of the ability falls for every profile ("The genus wrongly given in the Elo").
+- 2026-11-03, Pierre: second phase, measured on the real answers and in the simulation, nothing changed: a pair-level
+  confusion term (no gain), level + offset (the best for strong players, worse at a beginner's start: the next
+  candidate), the 2-choice guess with names ruled out (calibrates 2-choice questions, lowers the abilities), a
+  level-dependent success target and a placement phase (no gain); the success target figures of the literature checked
+  ("Second phase").
 
 - 2026-11-03, Pierre (for everyone): a ★ genus opens only after the genus its card compares it to has been met (a
   beginner met *Duncanopsammia* and *Cyphastrea* before *Turbinaria* and *Astreopora*): the references read from the data

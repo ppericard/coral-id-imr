@@ -101,8 +101,17 @@ function replay(list, variant) {
     off = {}, // rule d: genus offsets from the level
     fa = new Set(), // genera wrongly given since their own last question (a false alarm on them)
     scored = [];
+  // Study options (2026-11-03, second phase; docs/LEARNING.md "Second phase"): P<λ>, a pair-level confusion term: the
+  // question on A is that much harder, λ x the player's own mix-up rate with the most confused genus among the choices
+  // (core.js pairConf: mixed up / (offered + CONF.W 8)), in the prediction and the genus's step; X, a guess that lets the
+  // player rule out the names they know: each of the k - 1 wrong choices is ruled out with the chance σ(θ_j - d) (mean
+  // over the distractors offered), the guess is 1 / (1 + the ones left). Rule h: d's level + offset with e's rule (no
+  // step on the genus given).
+  const lam = Number((flags.find(f => /^P/.test(f)) || 'P0').slice(1)),
+    elim = flags.includes('X'),
+    hier = v === 'd' || v === 'h';
   const plan = g => {
-    if (v !== 'd') return M.M.ability(g);
+    if (!hier) return M.M.ability(g);
     const L = (P[C.LEVEL] || {}).th || 0;
     if (!(g in off)) off[g] = M.M.ability(g) - L; // a genus never answered starts where the app would start it
     return L + off[g];
@@ -127,14 +136,25 @@ function replay(list, variant) {
     const d = th0 - logit(Math.min(0.995, Math.max(0.005, (e - g) / (1 - g)))),
       good = r.ok === 1,
       L = (P[C.LEVEL] || {}).th || 0,
-      th = plan(r.t);
-    scored.push({y: good ? 1 : 0, p: g + (1 - g) * sig(th - d), pl: g + (1 - g) * sig(L - d), k, L, mode: r.mode, fa: fa.has(r.t)});
+      th = plan(r.t),
+      chs = String(r.ch || '')
+        .split(/\s+/)
+        .filter(x => x && x !== r.t);
+    const rmax = lam && chs.length ? Math.max(...chs.map(x => (([o, m]) => m / (o + 8))(C.pairConf(P, r.t, x)))) : 0,
+      dd = d + lam * rmax;
+    let kk = k;
+    if (elim && isFinite(k) && chs.length) kk = 1 + (k - 1) * (1 - chs.reduce((t, x) => t + sig(plan(x) - d), 0) / chs.length);
+    const gg = guess(kk);
+    scored.push({y: good ? 1 : 0, p: gg + (1 - gg) * sig(th - dd), pl: g + (1 - g) * sig(L - d), k, L, mode: r.mode, fa: fa.has(r.t)});
     fa.delete(r.t);
     const s = st(r.t);
     if (good) s.ok++;
     else s.ko++;
-    if (v === 'd') offStep(r.t, s, good, d, k);
-    else M.M.abilityStep(r.t, s, good, d, k);
+    if (hier) offStep(r.t, s, good, dd, kk);
+    else M.M.abilityStep(r.t, s, good, dd, kk);
+    // The player's own record on the pairs (the app's s.off and s.conf, quiz.js answer).
+    chs.forEach(x => ((s.off = s.off || {}), (s.off[x] = (s.off[x] || 0) + 1)));
+    if (!good && r.a && r.a !== r.t) (s.conf = s.conf || {}), (s.conf[r.a] = (s.conf[r.a] || 0) + 1);
     if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
     else P[C.LEVEL] = C.levelSeed(P);
     // +L: the global level's step without the floor ELO.kmin (its K keeps shrinking with the answers, Pelánek's
