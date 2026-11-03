@@ -313,8 +313,17 @@ const server = http.createServer((req, res) => {
         cdp = await ctx.newCDPSession(p);
       await cdp.send('Network.enable');
       await cdp.send('Network.emulateNetworkConditions', {offline: false, downloadThroughput: 4e4, uploadThroughput: 4e4, latency: 50});
-      await p.goto(base + '#quiz');
-      await p.waitForFunction(() => window.APP_READY && document.querySelector('#view .qstage img'), null, {timeout: 60000});
+      // Not the load event (Playwright's 30 s default): on this line the page loads its first two tiers (the scripts, the
+      // stylesheets and fonts, data.json, forms.json...: about 830 KB, 2026-11-03) before it fires, 29 s on main and 30 s
+      // with the full replay's code (+45 KB), so the check failed on bytes, not on what it checks. What it needs is the
+      // quiz and its photo, timed here on their own.
+      const t0 = Date.now();
+      await p.goto(base + '#quiz', {waitUntil: 'commit'});
+      const shown = await p
+        .waitForFunction(() => window.APP_READY && document.querySelector('#view .qstage img'), null, {timeout: 90000})
+        .then(() => true)
+        .catch(() => false);
+      if (!shown) fails.push(`a ~320 kbit/s line: no quiz photo ${Math.round((Date.now() - t0) / 1000)} s after opening #quiz`);
       await p.waitForTimeout(1500);
       const t = await p.evaluate(() => [...document.querySelectorAll('#view .qstage img')].map(i => i.getAttribute('src')));
       const kb = await p.evaluate(() => Math.round(linkMeasure() / 1000));

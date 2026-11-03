@@ -15,7 +15,10 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    ok = o => new Response(JSON.stringify({v: 19, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
+    // The script version the demo answers as: the current one (v28: the admin shows the full replay, admin.js replayOn),
+    // or an older one with ?demo&v=27 (tests/admin.smoke.js: the admin then does what it did before; AGENTS.md 7a).
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 28,
+    ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
   const PLAYERS = [
@@ -214,8 +217,8 @@
         'quiz',
         p.f,
         'demoa' + i,
-        null,
-        null,
+        0.7, // expected and ability as the app logs them, so the full replay reads them too
+        0.5,
         null,
         ''
       ]);
@@ -345,6 +348,43 @@
     );
     events.sort((a, b) => b[1] - a[1]);
     S = {rows, users, reports, events, removed: [], list};
+    // Saved progress as the app saves it now: the full replay of each player's answers (core.js replayProgress, with the
+    // memory offsets and confusions this demo's stats serve, as the admin replays them), plus the exams the demo passed
+    // and each genus's ability. Two stale copies, as real players who have not opened the app since a recalculation:
+    // Dio's is from the former model (BKT: L and the last results, no pg) with a genus learned then, which today's rules
+    // take back (core.js memRecalc, replayedOf); Ben's was saved 20 answers ago. The others match the replay (no ↻ mark).
+    const st = stats(),
+      A = answers().rows,
+      cut = Object.fromEntries(Object.values(users).map(u => [aid(u.name), Infinity]));
+    const benRows = A.filter(r => r[0] === aid('Ben Demo')).sort((a, b) => a[1] - b[1]);
+    cut[aid('Ben Demo')] = benRows[benRows.length - 21][1];
+    const rep = replayProgress(
+      A.filter(r => !(r[1] > cut[r[0]])),
+      {gen, mem: st.mem, conf: st.conf}
+    );
+    Object.values(users).forEach(u => {
+      const old = JSON.parse(u.data['imr-coral-progress']),
+        R = (rep[aid(u.name)] || {P: {}}).P,
+        P = {};
+      Object.entries(R).forEach(([g, r]) => {
+        if (g === LEVEL) return; // the replay's global level: the demo's copies keep none
+        // A mark the game would have taken away at a later miss (core.js mxKeeps; the replay's lm) is not in the copy the
+        // app saved.
+        const o = {...(old[g] || {})};
+        if (o.mx && r.lm > o.mx) delete o.mx;
+        P[g] =
+          u.name === 'Dio Demo'
+            ? {ok: r.ok, ko: r.ko, h: r.h, th: o.th || 0, L: Math.round(Math.min(0.97, 0.2 + 0.12 * r.ok) * 100) / 100}
+            : {ok: r.ok, ko: r.ko, h: r.h, th: o.th || 0, pg: r.pg, ps: r.ps, off: r.off, conf: r.conf, pm: 1, ...(o.mx ? {mx: o.mx} : {})};
+      });
+      // Dio's best genus was learned under the former model (an exam passed before 2026-11-02: mx 1, no time).
+      if (u.name === 'Dio Demo') {
+        const best = Object.keys(P).sort((a, b) => P[b].ok - P[a].ok)[0];
+        if (best) P[best].mx = 1;
+      }
+      u.data['imr-coral-progress'] = JSON.stringify(P);
+      u.learned = list.filter(g => P[g] && P[g].mx).length;
+    });
     return S;
   }
   // Anonymous id of a name, as Code.gs aid_ (8 characters, no name in it); here a plain hash, there is no secret to keep.

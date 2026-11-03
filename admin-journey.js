@@ -17,37 +17,11 @@ let JSORT = 'met';
 // imr-coral-intro-offer {at, open, via, t, n} (model.js INTRO; times and via from 2026-11-02), with the back card's choice
 // (bk keep / one, after answer bat, bn genera closed, time bt; from 2026-11-03), and the first-launch question
 // imr-coral-start {c, t, at, via, n, s, fb, h} (core.js CHOICE, model.js startSet; 2026-11-03). name -> null while loading.
+// The learned genera come from the full replay (admin.js progOf), which takes the mastery exams from the same copy.
 const JDATA = {};
 function journeyCards(name) {
-  // Kept, a failed read too (shown with its error), until Players' ↻ or the journey's clears it: a read is never
-  // started again by itself (Codex review #352: an error re-read at once looped).
-  if (name in JDATA) return JDATA[name];
-  JDATA[name] = null;
-  userPost({userData: name})
-    .then(j => {
-      const d = (j && j.ok && j.data) || {},
-        P = k => {
-          try {
-            return JSON.parse(d[k] || 'null');
-          } catch (e) {
-            return null;
-          }
-        };
-      // Learned genera (mx: mastery exam passed; its time from 2026-11-02, 1 before).
-      const prog = P('imr-coral-progress') || {},
-        learned = Object.fromEntries(
-          Object.entries(prog)
-            .filter(([, s]) => s && s.mx)
-            .map(([g, s]) => [g, s.mx])
-        );
-      JDATA[name] =
-        j && j.ok
-          ? {map: P('imr-coral-intro') || {}, offer: P('imr-coral-intro-offer'), start: P('imr-coral-start'), learned}
-          : {err: (j && j.error) || 'unreachable'};
-    })
-    .catch(() => (JDATA[name] = {err: 'unreachable'}))
-    .then(() => cur === '~journey/' + name && render());
-  return null;
+  const S = savedOf(name);
+  return !S ? null : S.err ? {err: S.err} : {map: S.intro, offer: S.offer, start: S.start};
 }
 const JVIA = {card: 'on the first cards', progress: 'from My progress', offer: 'from the offer card'};
 // How the first-launch answer was given (model.js startSet via), and the fallback cards (core.js CHOICE).
@@ -222,7 +196,12 @@ function renderJourney(name, anonId = '') {
       .sort((a, b) => a - b);
 
   // 0. The cards: when each genus was shown, and whether (and how) all were opened at once.
-  const C = anonId ? {anon: 1, map: {}, offer: null, learned: {}} : journeyCards(name),
+  const C = anonId ? {anon: 1, map: {}, offer: null} : journeyCards(name),
+    // Progress replayed from the whole log (admin.js progOf, docs/LEARNING.md "Full replay"), with the saved copy's
+    // mastery exams; beside it what the saved copy says when it differs. null while the saved copy is read.
+    // Before sheet script v28 (admin.js replayOn): {off: 1}, the saved copy as it is, and no replayed value shown.
+    PG = progOf(anonId ? {id: anonId, anon: 1} : u),
+    RP = replayOn(),
     offer = C && C.offer,
     openAt = offer && offer.open ? offer.at : null,
     // A card shown after the player's a-th answer: its time, else that answer's (cards saved before times were kept).
@@ -276,7 +255,13 @@ function renderJourney(name, anonId = '') {
   // (Pierre, 2026-11-02: "you know which question validated the exam"). Once learned a genus gets no more exam
   // questions; if it is lost and learned again, the last one is still the one that counts. Learned before exam
   // questions were logged (2026-11-02): no such answer, the time is unknown.
-  const LRN = (C && C.learned) || {},
+  const LRN = PG
+      ? Object.fromEntries(
+          Object.entries(PG.G)
+            .filter(([, s]) => s.mx)
+            .map(([g, s]) => [g, s.mx])
+        )
+      : {},
     lrnAt = {};
   Object.keys(LRN).forEach(g => {
     let i = -1;
@@ -318,7 +303,7 @@ function renderJourney(name, anonId = '') {
       }
     )}
     <h4>Genera met and learned <span class="adm-jkey"><i class="acc"></i>met ${J.marks.length}/${total} <i class="lrn"></i>★ learned ${Object.keys(LRN).filter(g => J.slate.has(g)).length}${lrnUnknown ? ` (${lrnUnknown} learned before times were kept: not on the curve)` : ''}</span></h4>
-    ${journeyChart([{v: J.met, cls: 'met'}, ...(C && !C.err ? [{v: lrnSeries, cls: 'lrn'}] : [])], total, {
+    ${journeyChart([{v: J.met, cls: 'met'}, ...(PG && !PG.err ? [{v: lrnSeries, cls: 'lrn'}] : [])], total, {
       ticks: [
         [Math.round(total / 2), Math.round(total / 2)],
         [total, total]
@@ -394,17 +379,25 @@ function renderJourney(name, anonId = '') {
       later = J.G[g].first + 1 - n;
     return `<span title="${esc(jTime(cardT(e)))} · asked ${later === 1 ? 'at the next question' : `${later} questions later`}">#${n} · ${jDate(cardT(e))}</span>`;
   };
+  // A genus's bar (core.js scoreOf) replayed, and the saved copy's when it differs.
+  const SP = (!anonId && (PSAVED[name] || {}).P) || null,
+    genProg = g => {
+      if (!PG) return '…';
+      const v = Math.round(100 * scoreOf(PG.G[g])),
+        o = SP && !PG.err ? Math.round(100 * scoreOf(SP[g])) : v;
+      return `${withSaved(v + '%', o + '%')} ${sbar(v, 100)}`;
+    };
   const dots = h => `<span class="adm-jdots">${[...h].map(c => `<i class="${c === '1' ? 'ok' : 'ko'}"></i>`).join('')}</span>`,
     sortBtn = (k, t) => `<button type="button" data-jsort="${k}" aria-pressed="${JSORT === k}">${t}</button>`;
   const table = `<section class="adm-scard adm-jwide"><div class="adm-shead"><h3>Genera <small>${rows.length}</small></h3><span class="adm-qseg adm-sseg" role="group">${sortBtn('met', 'Order met')}${sortBtn('easy', 'Easiest')}${sortBtn('hard', 'Hardest')}${sortBtn('n', 'Most asked')}</span></div>
-    <div class="adm-tscroll"><table class="adm-tbl adm-jtbl"><thead><tr><th>Genus</th><th title="When its card showed: after which answer">Card</th><th title="Its first question">First asked</th><th>Answers</th><th>Right</th><th title="Right answers against the chance the game expected">vs expected</th><th>Last 10</th><th>Answered instead</th></tr></thead><tbody>${rows
+    <div class="adm-tscroll"><table class="adm-tbl adm-jtbl"><thead><tr><th>Genus</th><th title="When its card showed: after which answer">Card</th><th title="Its first question">First asked</th><th>Answers</th><th>Right</th><th title="Right answers against the chance the game expected">vs expected</th>${RP ? `<th title="The genus's bar, replayed from every answer in the log with the current rules (↻ saved: what the copy in the sheet still says)">Progress</th>` : ''}<th>Last 10</th><th>Answered instead</th></tr></thead><tbody>${rows
       .map(([g, s]) => {
         const inst = Object.entries(s.inst)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 2)
           .map(([x, n]) => `<i>${esc(x)}</i> ${n}×`)
           .join(', ');
-        return `<tr><td><a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a>${g in LRN ? ` <span class="adm-jlearn" title="Learned (mastery exam passed)${lrnAt[g] != null ? ': ' + esc(jTime(R[lrnAt[g]][1])) : ''}">learned</span>` : ''}${J.slate.has(g) ? '' : ' <small>bonus</small>'}</td><td class="n">${cardCell(g, s)}</td><td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td><td>${dots(s.h)}</td><td>${inst}</td></tr>`;
+        return `<tr><td><a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a>${g in LRN ? ` <span class="adm-jlearn" title="Learned (mastery exam passed)${lrnAt[g] != null ? ': ' + esc(jTime(R[lrnAt[g]][1])) : ''}">learned</span>` : ''}${J.slate.has(g) ? '' : ' <small>bonus</small>'}</td><td class="n">${cardCell(g, s)}</td><td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td>${RP ? `<td class="n">${genProg(g)}</td>` : ''}<td>${dots(s.h)}</td><td>${inst}</td></tr>`;
       })
       .join('')}</tbody></table></div></section>`;
 
@@ -486,7 +479,23 @@ function renderJourney(name, anonId = '') {
       ...(sp.d[0] ? [['Duels', `${sp.d[0]} · ${pct(sp.d[1], sp.d[0])}`]] : []),
       ['Level', lv == null ? '–' : sgn(lv)],
       ['Genera met', `${J.marks.length}/${total}`],
-      ...(anonId ? [] : [['Learned', `${u.learned}/${u.total || total}`]]), // not saved for a device that never signed in
+      // Replayed from the whole log (progOf); Learned needs the saved copy (the mastery exams): not for a device that never
+      // signed in.
+      ...(RP ? [['Progress', !PG ? '…' : withSaved(PG.pct + '%', PG.saved && PG.saved.pct + '%')]] : []),
+      ...(anonId
+        ? []
+        : [
+            [
+              'Learned',
+              !RP
+                ? `${u.learned}/${u.total || total}`
+                : !PG
+                  ? '…'
+                  : PG.err
+                    ? `${u.learned}/${u.total || total}`
+                    : withSaved(`${PG.learned}/${PG.total}`, PG.saved && `${PG.saved.learned}/${PG.total}`)
+            ]
+          ]),
       ['Days', dayKeys.length],
       ['Sessions', J.S.length],
       ...(RT.length ? [['Median time', RT[Math.floor(RT.length / 2)].toFixed(1) + ' s']] : []),
@@ -508,7 +517,7 @@ function bindJReload() {
   const b = $v.querySelector('[data-jload]');
   if (b)
     b.onclick = () => {
-      Object.keys(JDATA).forEach(k => delete JDATA[k]);
+      savedClear();
       USERS = null;
       ANS = null;
       STATS = null;
