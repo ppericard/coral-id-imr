@@ -4,9 +4,18 @@
 // truth, over many seeds, so a change to the algorithm can be judged on outcomes with a spread. Not run by CI (minutes,
 // numbers for reading). docs/LEARNING.md, "Learning-outcome simulation".
 //
-//   node tools/learnsim.js [--seeds 30] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
+//   node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
 //                          [--workers 4] [--out results.json] [--stats stats.json] [--met Acropora,Porites,...]
-//                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20]
+//                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20] [--openall offer|N] [--back keep|one]
+//
+// --openall (optional; without it the open-all offer is declined, as before): 'offer' accepts the offer card when it shows
+// (model.js introOffer: 50-150 answers, 10 genera met, level 0.5); N opens all at question N if the offer has not come
+// by then (introAll, as the offer's button). The back card that may follow (model.js backDue) is answered --back: 'keep'
+// (default: Keep them all, so its timing is measured and nothing changes) or 'one' (One at a time). Per run: the answer
+// at which all were opened, the answer since then at which the back card showed, and after Open all the app's expected
+// success (each answer's e) against the learner's true chance and its answers: on the genera opened at once, at their
+// first question and over the first 30 answers after Open all, and on the genera met before (the starting ability of a
+// genus never answered, core.js playerStart, against what the learner really knows).
 //
 // --breaks (optional; without it nothing changes): the app runs on a virtual clock (10 s an answer), and after the
 // --questions of the first session the player leaves for each break in turn (each from the same state, the generators
@@ -55,10 +64,13 @@
 //   genera met (cards or asked).
 // - thErr / thBias: mean |theta - logit(know)| and mean (theta - logit(know)) over the genera met, theta = ability(g),
 //   the app's Elo estimate (the learner's own model has the same scale: theta = logit(know) means a perfect estimate;
-//   theta is clamped to ELO.lo..hi, so a genus known at 2% cannot be estimated below -1.5).
+//   theta is clamped to ELO.lo..hi, so a genus known at 2% cannot be estimated below -1.5). level: the app's global level
+//   (P['~level'].th).
 // - progGap: mean (genScore(g) - know[g]) over the genera met: > 0 the progress bar over-claims, < 0 it under-claims;
 //   prog / know%: the app's progress over the slate (progPct) next to 100 x knowSlate.
 // - met, learned (s.mx), right % over the questions since the previous checkpoint.
+// - open/15: the most genera opened on their own cards (the path's pace, the first cards left out) in any 15
+//   consecutive questions so far (2026-11-04: a strong player was opened 7 genera in 16 answers).
 // - look: true chance to tell a declared look-alike pair apart (IMR lecture / Coral Finder, `look`, both genera on the
 //   slate), in a 2-choice question on an average photo, both directions averaged, over every declared pair.
 // - refTrue: genera whose true success on the hard reference question is 0.9 or more (one photo alone, photo
@@ -88,7 +100,12 @@ const PROFILES = {
   beginner: {m: 0, hi: 0.02, lo: 0.02, rate: 0.12},
   lectureRA: {m: 2, hi: 0.55, lo: 0.1, rate: 0.12},
   strongRA: {m: 3, hi: 0.85, lo: 0.1, rate: 0.12},
-  expert: {m: 5, hi: 0.93, lo: 0.93, rate: 0.05}
+  expert: {m: 5, hi: 0.93, lo: 0.93, rate: 0.05},
+  // A strong player who knows 80% of the genera well and the rest hardly: few genera stay shaky, so the opening runs at
+  // full speed, and a genus never answered starts from their high global level (2026-11-04, the run of 2026-11-03 that
+  // fell from 83% to 50% right after 7 genera opened in 16 answers). Not in the default list: run it with --profiles
+  // strongBack --questions 60 --breaks 8h --after 40 (that player came back from an 8-hour break).
+  strongBack: {m: 4, hi: 0.9, lo: 0.1, rate: 0.12}
 };
 // The learner's constants (above). LOOK 3: a declared look-alike draws an unrecognised photo as much as the genus
 // itself (a coin toss in a look-alike duel), an unrelated genus 1.3 against 4. ELIM 0.5: a genus known for sure is
@@ -115,9 +132,9 @@ const arg = (k, d) => {
   const i = process.argv.indexOf('--' + k);
   return i > 0 && process.argv[i + 1] !== undefined ? process.argv[i + 1] : d;
 };
-const SEEDS = Number(arg('seeds', 30)),
+const SEEDS = Number(arg('seeds', 5)),
   QN = Number(arg('questions', 300)),
-  NAMES = arg('profiles', Object.keys(PROFILES).join(',')).split(','),
+  NAMES = arg('profiles', 'beginner,lectureRA,strongRA,expert').split(','),
   WORKERS = Number(arg('workers', Math.max(1, Math.min(4, os.cpus().length)))),
   OUT = arg('out', null),
   STATS = arg('stats', null),
@@ -131,6 +148,8 @@ const SEEDS = Number(arg('seeds', 30)),
       if (!m) throw new Error(`bad break ${b} (10m, 8h, 3d, 1w, 1mo)`);
       return [b, Number(m[1]) * UNIT[m[2]]];
     }),
+  OPENALL = arg('openall', ''),
+  BACK = arg('back', 'keep'),
   MET = arg('met', 'Acropora,Porites,Pocillopora,Montipora,Millepora').split(',').filter(Boolean);
 {
   const m = arg('mem', null);
@@ -184,7 +203,7 @@ const server = http.createServer((req, res) => {
 
 // One player, inside the page: the app's globals (P, quizPhoto, photoDiff, pooledConf, ...) are in scope.
 function play(cfg) {
-  const {prof, seed, N, cps, L, breaks, after} = cfg;
+  const {prof, seed, N, cps, L, breaks, after, openall, back} = cfg;
   // With breaks: a virtual clock, STEP an answer (the app reads Date.now for the comeback).
   let T = Date.parse('2026-11-02T08:00:00Z');
   if (breaks.length) Date.now = () => T;
@@ -193,6 +212,8 @@ function play(cfg) {
     cl = q => Math.min(0.995, Math.max(0.005, q)),
     logit = q => Math.log(cl(q) / (1 - cl(q))),
     mean = A => (A.length ? A.reduce((a, x) => a + x, 0) / A.length : null);
+  // The most genera opened on their own cards in any 15 consecutive questions (Q: the questions that opened one).
+  const per15 = Q => Math.max(0, ...Q.map(q => Q.filter(x => x >= q && x < q + 15).length));
   // Two generators (mulberry32) seeded from the run's seed: the app's Math.random, seeded again here because the page
   // load draws a varying number of times (photos and timers come in their own order), and the learner's own.
   const gen = a => () => {
@@ -258,7 +279,7 @@ function play(cfg) {
   const inExam = g => (typeof examOn === 'function' && examOn(g)) || !!(P[g] || {}).ex;
 
   // A fresh player (the context's storage is empty): no hold, no gentle restart, the open-all offer declined (the path
-  // is what is measured, as in profiles.smoke.js).
+  // is what is measured, as in profiles.smoke.js), unless --openall.
   P = {};
   INTROS = {};
   HOLDS = 0;
@@ -272,10 +293,15 @@ function play(cfg) {
   SHOWNQ = null;
   last = null;
   lastQs = [];
-  rematch = null;
-  twoAt = againAt = -Infinity;
-  duelLog = [];
-  store.set(INTRO.OFFER.KEY, {open: 0});
+  rematch = Array.isArray(rematch) ? [] : null; // the Again queue (a list since 2026-11-04; one slot before)
+  twoAt = -Infinity;
+  twoPair = '';
+  store.set(INTRO.OFFER.KEY, openall ? null : {open: 0});
+  // --openall: the app's expectation of each answer (the e the opening hold gets).
+  let lastE = null;
+  const hs0 = holdStep;
+  holdStep = (e, good) => ((lastE = e), hs0(e, good));
+  const oa = {at: null, set: [], back: null, ans: []};
   const q0 = question;
   question = (...a) => ((window.__q = a), q0(...a));
 
@@ -284,6 +310,7 @@ function play(cfg) {
     learnedAt = {},
     metAt = {};
   let blk = {n: 0, ok: 0},
+    opens = [], // the questions (1-based) that opened a genus on its own card (the path's pace; not the first cards)
     nEx = 0,
     nDuel = 0,
     nAgain = 0,
@@ -300,7 +327,27 @@ function play(cfg) {
     document.querySelectorAll('.unlock:not(.intro)').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
     // Through the real planner (Codex review #365): the questions planned ahead stay after a right answer, as in the app.
     // Its own top-ups are timers, which never fire inside this synchronous loop, so they are called here instead.
+    if (openall && openall !== 'offer' && oa.at === null && i + 1 >= Number(openall)) {
+      oa.set = introLeft();
+      introAll('offer');
+      oa.at = answersSoFar();
+      dropPlans();
+      NEXTQ = null;
+    }
     quizPhoto();
+    if (openall) {
+      const o = document.querySelector('.unlock.intro [data-open]');
+      if (o && oa.at === null) {
+        oa.set = introLeft();
+        o.click();
+        oa.at = answersSoFar();
+      }
+      if (document.querySelector('.unlock.intro [data-back]')) {
+        oa.back = answersSoFar() - oa.at;
+        oa.h = (store.get(INTRO.OFFER.KEY, {}) || {}).h;
+        document.querySelector(`.unlock.intro [data-${back === 'one' ? 'back' : 'keep'}]`).click();
+      }
+    }
     planNext('quiz');
     const q = SHOWNQ;
     if (pre) pre(q);
@@ -312,7 +359,7 @@ function play(cfg) {
       if (bon.offer === null && i >= 0) bon.offer = i + 1;
       bo.click();
     }
-    for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
+    for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-back]):not(.sec)'));) b.click();
     // A typed question (model.js TYPED, quiz.js typeForm) has no buttons: its choices are the draw's, unseen (Codex
     // review #393). Recall, no guessing: known, the genus is typed; not known, "I don't know" half the time, else a genus
     // it is taken for (the same confusion weights, the genus itself left out).
@@ -323,9 +370,11 @@ function play(cfg) {
       d = mean(shown.map(p => photoDiff(t, p))) || 0,
       single = shown.length === 1,
       fs = shown.map(p => p.f),
-      rep = fs.some(f => LM[f] && LM[f][0]);
+      rep = fs.some(f => LM[f] && LM[f][0]),
+      pRec = sig(logit(kn(t)) - d - (single ? L.SINGLE : 0) + memOn(fs)),
+      first = !asked(t);
     let pick = t;
-    if (!(rnd() < sig(logit(kn(t)) - d - (single ? L.SINGLE : 0) + memOn(fs)))) {
+    if (!(rnd() < pRec)) {
       const pool = typed ? ch.filter(c => c !== t) : ch,
         ws = pool.map(c => wOf(t, c));
       let r = rnd() * ws.reduce((a, x) => a + x, 0);
@@ -338,12 +387,17 @@ function play(cfg) {
       if (typed && rnd() < 0.5) pick = ''; // "I don't know"
     }
     const good = pick === t;
+    // The learner's true chance on this question: recognised, or (choices only) its guess falls on t.
+    const pTrue = typed ? pRec : pRec + (1 - pRec) * (wOf(t, t) / ch.reduce((a, c) => a + wOf(t, c), 0));
+    lastE = null;
     if (typed) {
       const f = document.querySelector('#view .tyform');
       if (!pick) f.querySelector('[data-idk]').click();
       else ((f.querySelector('input').value = pick), f.requestSubmit());
     } else document.querySelector(`#view [data-c="${CSS.escape(pick)}"]`).click();
     planNext('quiz'); // answer()'s top-up after the feedback
+    if (oa.at !== null && lastE !== null)
+      oa.ans.push({k: answersSoFar() - oa.at, e: lastE, p: pTrue, ok: good ? 1 : 0, all: oa.set.includes(t), first});
     teach(t, prof.rate * (good ? 1 : L.MISS));
     if (!good && pick) teach(pick, prof.rate * L.PICKED);
     if (good) spaced(t);
@@ -369,6 +423,7 @@ function play(cfg) {
     if (set.exam) nEx++;
     if (q.auto) nDuel++;
     if (q.again) nAgain++;
+    if ((q.intro || []).length && !q.start) opens.push(i + 1);
     blk.n++;
     blk.ok += good;
     if (mill.met === null && introduced('Millepora')) mill.met = i + 1;
@@ -393,11 +448,13 @@ function play(cfg) {
         knowMet: mean(met.map(g => know[g])),
         thErr: mean(th.map(Math.abs)),
         thBias: mean(th),
+        level: (P[LEVEL] || {}).th || 0,
         progGap: mean(met.map(g => genScore(g) - know[g])),
         prog: progPct(SL),
         met: met.length,
         learned: SL.filter(g => (P[g] || {}).mx).length,
         right: (100 * blk.ok) / blk.n,
+        o15: per15(opens),
         look: lookAcc(),
         refTrue: SL.filter(g => ref(g) >= L.REF_OK).length,
         exam: en.length,
@@ -444,8 +501,7 @@ function play(cfg) {
         last,
         lastQs: [...lastQs],
         twoAt,
-        againAt,
-        duelLog: JSON.stringify(duelLog),
+        twoPair,
         rematch: JSON.stringify(rematch)
       };
     breaks.forEach(([name, ms], bi) => {
@@ -468,8 +524,7 @@ function play(cfg) {
       last = snap.last;
       lastQs = [...snap.lastQs];
       twoAt = snap.twoAt;
-      againAt = snap.againAt;
-      duelLog = JSON.parse(snap.duelLog);
+      twoPair = snap.twoPair;
       rematch = JSON.parse(snap.rematch);
       if (!old) CB = Object.assign({r: 0, t: 0, ok: 0, f: 0}, store.get(COMEBACK.KEY, {}) || {});
       Math.random = gen((seed * 2246822519) ^ (0x85ebca6b + 7919 * (bi + 1)));
@@ -489,6 +544,7 @@ function play(cfg) {
         holdCb: 0,
         holdAfter: 0,
         hold0: HOLDS,
+        opens: [], // the --after questions (1-based, from the end of the comeback) that opened a genus on its card
         rust0: null,
         loss: before - mean(metB.map(g => know[g]))
       };
@@ -509,6 +565,7 @@ function play(cfg) {
           inCb = false;
           r.after++;
           r.afterOk += good;
+          if ((q.intro || []).length && !q.start) r.opens.push(r.after);
           if (introHold()) r.holdAfter++;
         }
       }
@@ -527,7 +584,8 @@ function play(cfg) {
     millAsked: mill.asked,
     bonusOffer: bon.offer,
     bonusShare: bon.q ? bon.n / bon.q : null,
-    bonusMet: BONUS.filter(introduced).length
+    bonusMet: BONUS.filter(introduced).length,
+    openAll: openall ? oa : null
   };
 }
 
@@ -553,7 +611,17 @@ async function run(browser, base, name, seed) {
   // Every script tier in (My progress, the Tools) and the network quiet, so each run starts from the same state.
   await p.evaluate(() => window.loadTier && window.loadTier(5));
   await p.waitForLoadState('networkidle');
-  const r = await p.evaluate(play, {prof: PROFILES[name], seed, N: QN, cps: CPS, L: LEARNER, breaks: BREAKS, after: AFTER});
+  const r = await p.evaluate(play, {
+    prof: PROFILES[name],
+    seed,
+    N: QN,
+    cps: CPS,
+    L: LEARNER,
+    breaks: BREAKS,
+    after: AFTER,
+    openall: OPENALL,
+    back: BACK
+  });
   await ctx.close();
   return {profile: name, seed, errs, ...r};
 }
@@ -563,11 +631,13 @@ const KEYS = [
   ['knowMet', 'knowMet', 2, 1],
   ['thErr', '|th-lk|', 2, 1],
   ['thBias', 'th-lk', 2, 1],
+  ['level', 'level', 2, 1],
   ['progGap', 'prog-know', 2, 1],
   ['prog', 'prog%', 0, 1],
   ['met', 'met', 1, 1],
   ['learned', 'learned', 1, 1],
   ['right', 'right%', 0, 1],
+  ['o15', 'open/15', 1, 1],
   ['look', 'look', 2, 1],
   ['refTrue', 'ref>=.9', 1, 1],
   ['exam', 'exam', 1, 1],
@@ -715,6 +785,10 @@ function breakSummary(runs) {
         held: {med: quant(held, 0.5), min: Math.min(...held), max: Math.max(...held)},
         cbRight: m(r => (r.cbLen ? (100 * r.cbOk) / r.cbLen : NaN)),
         afterRight: m(r => (100 * r.afterOk) / r.after),
+        // The opening's pace after the comeback: genera opened in the first 15 answers, and the most in any 15.
+        open15: m(r => r.opens.filter(x => x <= 15).length),
+        open15max: m(r => Math.max(0, ...r.opens.map(q => r.opens.filter(x => x >= q && x < q + 15).length))),
+        opened: m(r => r.opens.length),
         holdCbRuns: R.filter(r => r.holdCb > 0).length,
         holdCb: m(r => r.holdCb),
         holdAfterRuns: R.filter(r => r.holdAfter > 0).length,
@@ -732,16 +806,19 @@ function breakTable(BS) {
     `\nAfter a break (${QN} questions first, then the comeback and ${AFTER} more; ${SEEDS} seeds)`,
     'len: comeback questions, median [quartiles] min-max; held: answers with no genus opening, median min-max; right%: during the comeback / the ' +
       AFTER +
-      ' after;\nhold: runs with the opening hold on during the comeback / after it (mean answers held), and already on at the break; rust: app, start; loss: true mean know lost (genera met).'
+      ' after;\nopened: genera opened on their cards in the first 15 answers after the comeback / the most in any 15 / in all ' +
+      AFTER +
+      ';\nhold: runs with the opening hold on during the comeback / after it (mean answers held), and already on at the break; rust: app, start; loss: true mean know lost (genera met).'
   ];
   for (const name of NAMES) {
     lines.push(`\n${name}`);
-    const head = ['break', 'len', 'held', 'right% cb/after', 'hold cb', 'hold after', 'hold@0', 'rust', 'loss'],
+    const head = ['break', 'len', 'held', 'right% cb/after', 'opened 1st 15/max 15/all', 'hold cb', 'hold after', 'hold@0', 'rust', 'loss'],
       body = BS[name].map(r => [
         r.brk,
         `${f(r.len.med, 1)} [${f(r.len.q1, 1)}-${f(r.len.q3, 1)}] ${r.len.min}-${r.len.max}`,
         `${f(r.held.med, 1)} ${r.held.min}-${r.held.max}`,
         `${f(r.cbRight)} / ${f(r.afterRight)}`,
+        `${f(r.open15, 1)} / ${f(r.open15max, 1)} / ${f(r.opened, 1)}`,
         `${r.holdCbRuns}/${r.n} (${f(r.holdCb, 1)})`,
         `${r.holdAfterRuns}/${r.n} (${f(r.holdAfter, 1)})`,
         `${r.hold0Runs}/${r.n}`,
@@ -751,6 +828,30 @@ function breakTable(BS) {
       w = head.map((h, j) => Math.max(h.length, ...body.map(b => b[j].length)));
     lines.push(head.map((h, j) => h.padStart(w[j])).join('  '));
     body.forEach(b => lines.push(b.map((x, j) => x.padStart(w[j])).join('  ')));
+  }
+  return lines.join('\n');
+}
+
+// --openall: per profile, the runs where all were opened (median answer), the back card (runs, answers after Open all,
+// the sum h then), and after Open all the app's expected success e against the learner's true chance p and its right
+// answers, as means over the pooled answers: first question on each genus opened at once, the first 30 answers after
+// Open all on those genera and on the genera met before, and every answer after Open all.
+function openTable(runs) {
+  const f = (x, d = 2) => (x === null || x === undefined || isNaN(x) ? '-' : x.toFixed(d)),
+    m = v => (v.length ? v.reduce((a, x) => a + x, 0) / v.length : NaN),
+    lines = [`\nOpen all (--openall ${OPENALL}, back card answered ${BACK}); e: app's expected success, p: true chance, ok: right (pooled answers)`];
+  for (const name of NAMES) {
+    const R = runs.filter(r => r.profile === name && r.openAll && r.openAll.at !== null),
+      A = R.flatMap(r => r.openAll.ans),
+      bk = R.filter(r => r.openAll.back !== null),
+      row = (lab, X) => `    ${lab.padEnd(28)} n ${String(X.length).padStart(4)}  e ${f(m(X.map(x => x.e)))}  p ${f(m(X.map(x => x.p)))}  ok ${f(m(X.map(x => x.ok)))}  e-p ${f(m(X.map(x => x.e - x.p)))}`;
+    lines.push(
+      `  ${name}: opened in ${R.length}/${runs.filter(r => r.profile === name).length} runs (answer ${R.map(r => r.openAll.at).join(', ') || '-'}; ${f(m(R.map(r => r.openAll.set.length)), 1)} genera at once); back card in ${bk.length}/${R.length} runs, at answer ${bk.map(r => r.openAll.back).join(', ') || '-'} after Open all`
+    );
+    lines.push(row('first question, opened at once', A.filter(x => x.all && x.first)));
+    lines.push(row('first 30, opened at once', A.filter(x => x.all && x.k <= 30)));
+    lines.push(row('first 30, met before', A.filter(x => !x.all && x.k <= 30)));
+    lines.push(row('every answer after Open all', A));
   }
   return lines.join('\n');
 }
@@ -813,6 +914,7 @@ function breakTable(BS) {
       };
     console.log(`  ${name}: ${MET.map(cell).join(', ')}`);
   }
+  if (OPENALL) console.log(openTable(runs));
   if (errs.length) console.log('\nPage errors: ' + errs.slice(0, 5).join(' | '));
   if (OUT) {
     fs.writeFileSync(

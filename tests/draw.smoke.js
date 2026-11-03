@@ -6,13 +6,19 @@
 // - answer choices: 3 distinct genera of the list, never the target; exactly the asked number of traps (look-alikes /
 //   confused genera) when enough exist, none at the very start (14c);
 // - first meetings: genera met on cards before being asked, never right after their card (INTRO), none while the
-//   player falls behind (introHold);
+//   player falls behind (introHold); a starred genus never before the genera its card compares it to (core.js starRefs);
 // - out-of-game prompts at least PROMPT.GAP answers apart (promptOk);
 // - Millepora a slate genus (progress, cards); the bonus genera offered once every slate genus is met and never before,
 //   "Not now" kept, once on opened one card at a time, never counted in the progress, Off out of the draw;
 // - typed questions (model.js TYPED): sometimes on a genus well on its way, never under TYPED.from; logged quiz|t with
 //   the genus read as the answer; a typo read, a word that is no genus refused, a typed miss against both genera, "I
-//   don't know" a miss for the genus shown only; the mastery exam needs TYPED.exam typed right answers.
+//   don't know" a miss for the genus shown only; the mastery exam needs TYPED.exam typed right answers;
+// - the custom quiz (quiz.js planPhoto on its selection): only genera picked are asked, one not met with its card, the
+//   choices from the selection, topped up to 4 only under 4 genera picked;
+// - a learned mark from the former model (BKT, no s.pg) taken away at load: one card at start-up, never held, its genus
+//   named, the learned-based badge taken back and kept so through a merge, never again after a reload or the next
+//   answers; a drop at a pull shown at once, after a card already open; learned with s.pg: nothing; due at the same
+//   load as an update note (RECALC), the note first, then this card, neither lost.
 // Like pages.smoke.js it needs Playwright (CI installs it in a temporary folder; no package.json). Locally:
 // node tests/draw.smoke.js
 const http = require('http'),
@@ -192,6 +198,20 @@ const server = http.createServer((req, res) => {
     if (at.some((x, i) => i && x - at[i - 1] < EXAM.gap))
       fails.push(`${t}: exam questions closer than ${EXAM.gap} answers: ${at.join(', ')}`);
     if (level(t)[0] !== 'ok' || genScore(t) !== 1) fails.push(`${t}: mastered but not learned at 100%`);
+    // One draw weight (model.js drawW, review item 8): never asked weighs 1, the most; a genus known and measured less
+    // than one badly known; "Review" is shaky, the same chance.
+    {
+      const keep = {...P},
+        [a, b, c] = genera.filter(n => DATA.gen[n] && n !== t);
+      P[a] = {ok: 0, ko: 0};
+      P[b] = {ok: 40, ko: 4, h: '1111111111', th: 2.5};
+      P[c] = {ok: 6, ko: 6, h: '0101010101', th: -1.4};
+      const w = [a, b, c].map(drawW);
+      if (!(w[0] === 1 && w[1] < w[2] && w[2] < 1)) fails.push(`draw weights: never asked ${w[0]}, known ${w[1]}, shaky ${w[2]}`);
+      if (level(c)[0] !== 'weak' || level(b)[0] === 'weak' || shaky(b) || !shaky(c)) fails.push('Review is not shaky');
+      Object.keys(P).forEach(k => delete P[k]);
+      Object.assign(P, keep);
+    }
     // Typed questions (model.js TYPED, quiz.js typeForm): a genus well on its way (here 89%) is sometimes asked typed, a
     // beginner's genus (24%) never; a typed answer is logged quiz|t with the genus read as its answer (never the raw
     // text) and no choices; a typo is read as the genus; a typed miss naming another genus counts against both; "I
@@ -207,7 +227,7 @@ const server = http.createServer((req, res) => {
       const n = {hi: 0, hiT: 0, lo: 0, loT: 0};
       for (let i = 0; i < 300; i++) {
         NEXTQ = null;
-        rematch = null;
+        rematch = [];
         quizPhoto();
         document.querySelectorAll('.unlock').forEach(x => x.remove());
         const g = SHOWNQ[1],
@@ -224,7 +244,7 @@ const server = http.createServer((req, res) => {
       const typedQ = () => {
         for (let i = 0; i < 200; i++) {
           NEXTQ = null;
-          rematch = null;
+          rematch = [];
           quizPhoto();
           document.querySelectorAll('.unlock').forEach(x => x.remove());
           if (SHOWNQ.typed) return SHOWNQ[1];
@@ -234,7 +254,9 @@ const server = http.createServer((req, res) => {
       };
       let g = typedQ();
       const f = () => document.querySelector('#view .tyform'),
-        typo = g.slice(0, 2) + g[3] + g[2] + g.slice(4), // two neighbouring letters swapped
+        // two different neighbouring letters swapped, from the third on (Millepora's "ll" swapped is no typo)
+        sw = [...g].findIndex((x, i) => i >= 2 && g[i + 1] && x !== g[i + 1]),
+        typo = g.slice(0, sw) + g[sw + 1] + g[sw] + g.slice(sw + 2),
         a0 = answersSoFar();
       f().querySelector('input').value = 'xyzcoral';
       f().requestSubmit();
@@ -251,18 +273,32 @@ const server = http.createServer((req, res) => {
       g = typedQ();
       const other = hi.find(x => x !== g),
         h0 = (P[other].h || '').length,
-        th0 = ability(g);
+        th0 = ability(g),
+        thO = ability(other),
+        ownO = [P[other].th, P[other].lt],
+        lvO = P[LEVEL].th,
+        pgO = P[other].pg;
       say(other);
       l = logged();
+      // Against both genera (rule 13): the genus shown in its ability and progress, the genus given in its progress and
+      // recent results only, no Elo step of its own (docs/LEARNING.md "The genus wrongly given in the Elo"): its own
+      // estimate and the level it was stepped against unchanged; its ability moves only with the global level, as every
+      // genus does ("Global level and genus"), so never by more than the level's own move.
       if (
         !/^quiz\|t(\|x)?$/.test(l.m) ||
         l.a !== other ||
         l.ok ||
         P[other].h.slice(-1) !== '0' ||
         !(ability(g) < th0) ||
+        P[other].th !== ownO[0] ||
+        P[other].lt !== ownO[1] ||
+        Math.abs(ability(other) - thO) > Math.abs(P[LEVEL].th - lvO) + 0.011 ||
+        !(P[other].pg < pgO) ||
         !(P[g].conf || {})[other]
       )
-        fails.push(`typed miss naming ${other} for ${g}: logged ${JSON.stringify(l)}, ${other} h ${P[other].h} (was ${h0} long)`);
+        fails.push(
+          `typed miss naming ${other} for ${g}: logged ${JSON.stringify(l)}, ${other} h ${P[other].h} (was ${h0} long), ability ${thO} -> ${ability(other)}, progress ${pgO} -> ${P[other].pg}`
+        );
       if (!document.querySelector('#after h3.ko')) fails.push('a typed miss: the feedback is not a wrong answer');
       g = typedQ();
       const before = JSON.stringify(Object.fromEntries(Object.entries(P).filter(([k]) => k !== g && k !== LEVEL)));
@@ -277,7 +313,7 @@ const server = http.createServer((req, res) => {
       if (f().querySelector('input').value || !document.querySelector('#after h3.idk'))
         fails.push(`I don't know: field "${f().querySelector('input').value}", feedback ${document.querySelector('#after h3').className}`);
       NEXTQ = null;
-      rematch = null;
+      rematch = [];
     }
     // A miss on the genus ends an exam in course.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ex: {k: 3, v: ['wide'], at: answersSoFar()}};
@@ -408,7 +444,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
-      rematch = null; // no "Again" left over from the section before
+      rematch = []; // no "Again" left over from the section before
       store.set(INTRO.OFFER.KEY, null);
       NEXTQ = null;
       const q0 = question;
@@ -427,6 +463,12 @@ const server = http.createServer((req, res) => {
         for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
         const now = Object.keys(INTROS).filter(n => !before.has(n));
         if (now.length) cardsAt.push([a, now.length]);
+        // A starred genus opens only after the genera its card compares it to (core.js starRefs; Pierre, 2026-11-03).
+        now.forEach((n, k) =>
+          starRefs(DATA, n)
+            .filter(r => pool().includes(r) && !at[r] && !asked(r) && !now.slice(0, k).includes(r))
+            .forEach(r => fails.push(`question ${i}: ★ ${n} opened before its reference ${r}`))
+        );
         now.forEach(n => (at[n] = [a, INTROS[n][1]]));
         if (i === 0 && (now.length !== INTRO.START || !now.includes(tg)))
           fails.push(`first question: cards ${now.join(', ')}, asked ${tg}`);
@@ -439,6 +481,9 @@ const server = http.createServer((req, res) => {
           fails.push(`question ${i}: ${tg} asked ${a - at[tg][0]} answer(s) after its card`);
         const ch = choices();
         if (Object.keys(INTROS).length >= 4 && !ch.every(introduced)) fails.push(`question ${i}: a choice never met (${ch.join(', ')})`);
+        // A genus met on a card of its own is no choice on the question behind it: its card says it comes up a little
+        // later (beginner review 2026-11-03).
+        if (i && now.length === 1 && ch.includes(now[0])) fails.push(`question ${i}: ${now[0]} a choice behind its own card`);
         // The offer to open all genera: only in its window, at a high enough level, once; declined here.
         const offer = document.querySelector('.unlock.intro [data-open]');
         if (offer) {
@@ -456,13 +501,57 @@ const server = http.createServer((req, res) => {
         INTROS = {};
         HOLDS = 0; // a fresh player: no opening hold, no comeback
         CB = {r: 0, t: 0, ok: 0, f: 0};
-        rematch = null; // no "Again" left over from the section before
+        rematch = []; // no "Again" left over from the section before
         NEXTQ = null;
         document.querySelectorAll('.unlock').forEach(x => x.remove());
         quizPhoto();
         if (shownF.includes((cover(GX(tg)) || {}).f) && !same++) fails.push(`first question: the photo of ${tg}'s card again`);
       }
       document.querySelectorAll('.unlock').forEach(x => x.remove());
+      // Starred genera after their references (core.js starRefs, model.js openPick; Pierre, 2026-11-03), on many paths:
+      // the first cards from zero, in the order shown, and the opening draw once every other genus is met. A reference
+      // missing from the genera in play never holds a starred genus back.
+      {
+        const star = slateGenera().filter(n => starRefs(DATA, n).length),
+          refs = [...new Set(star.flatMap(n => starRefs(DATA, n)))];
+        if (!star.length) fails.push('no starred genus with a reference in the data');
+        for (let i = 0; i < 200; i++) {
+          P = {};
+          INTROS = {};
+          const L = introStart(pool());
+          L.forEach((n, k) =>
+            starRefs(DATA, n).forEach(r => {
+              if (pool().includes(r) && !L.slice(0, k).includes(r)) fails.push(`first cards ${L.join(', ')}: ★ ${n} before ${r}`);
+            })
+          );
+        }
+        P = {};
+        INTROS = {};
+        slateGenera()
+          .filter(n => !star.includes(n) && !refs.includes(n))
+          .forEach(n => (INTROS[n] = [0, 1, 0, 's']));
+        const seen = new Set(),
+          openFrom = L =>
+            openPick(
+              L.filter(n => !introduced(n)),
+              L
+            );
+        for (let i = 0; i < 2000; i++) seen.add(openFrom(pool()));
+        const early = star.filter(n => seen.has(n));
+        if (early.length) fails.push(`opening draw: ★ ${early.join(', ')} drawn before their references`);
+        if (!refs.some(r => seen.has(r))) fails.push('opening draw: no reference drawn');
+        refs.forEach(r => (INTROS[r] = [0, 1, 0, 's']));
+        seen.clear();
+        for (let i = 0; i < 2000; i++) seen.add(openFrom(pool()));
+        if (!star.every(n => seen.has(n)))
+          fails.push(`opening draw: references met, ★ ${star.filter(n => !seen.has(n)).join(', ')} never drawn`);
+        refs.forEach(r => delete INTROS[r]);
+        seen.clear();
+        for (let i = 0; i < 2000; i++) seen.add(openFrom(pool().filter(n => !refs.includes(n))));
+        if (!star.every(n => seen.has(n))) fails.push('opening draw: ★ genera held back by references out of the list');
+        P = {};
+        INTROS = {};
+      }
       cardsAt.forEach(([a, k], i) => {
         if (i && a - cardsAt[i - 1][0] < INTRO.EVERY) fails.push(`two cards ${a - cardsAt[i - 1][0]} answer(s) apart`);
         if (i && k !== 1) fails.push(`${k} cards at once after the first ones`);
@@ -474,7 +563,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
-      rematch = null; // no "Again" left over from the section before
+      rematch = []; // no "Again" left over from the section before
       store.set(INTRO.OFFER.KEY, null);
       let shownAt = 0;
       for (let i = 0; i <= INTRO.OFFER.UNTIL && !shownAt; i++) {
@@ -496,13 +585,102 @@ const server = http.createServer((req, res) => {
       }
       if (!shownAt || shownAt < INTRO.OFFER.AT || introLeft().length)
         fails.push(`all right: offer at ${shownAt} answers, ${introLeft().length} genera left after Open all`);
+      // Back to one at a time (model.js backDue, introBack; Pierre 2026-11-03): from that Open all, a player who keeps up
+      // never gets the card; one who then drops gets it once the drop since Open all reaches 2 x INTRO.HOLD. "One at a
+      // time" closes every genus opened at once (answered or not), the others stay open, and they come back through
+      // their cards, one at a time, never asked or offered as a choice while closed.
+      {
+        const nextQ = () => {
+          NEXTQ = null;
+          document.querySelectorAll('.unlock, .achpop').forEach(x => x.remove()); // closed by the player before Next
+          achQ.length = 0;
+          achBusy = false;
+          quizPhoto();
+        };
+        // The sections after this one go on from the state of that Open all.
+        const keep = {P: JSON.stringify(P), I: JSON.stringify(INTROS), o: store.get(INTRO.OFFER.KEY, null), HOLDS, bon: Q.bon};
+        const allSet = Object.keys(INTROS).filter(n => INTROS[n][3] === 'a'),
+          before = Object.keys(INTROS).filter(n => INTROS[n][3] !== 'a');
+        for (let i = 0; i < 40; i++) {
+          nextQ();
+          if (document.querySelector('.unlock [data-back]')) fails.push(`back card for a player who keeps up (answer ${answersSoFar()})`);
+          for (
+            let b;
+            (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-back]):not([data-bonus]):not(.sec)'));
+          )
+            b.click();
+          say(tg);
+        }
+        let backAt = null;
+        for (let i = 0; i < 40 && backAt === null; i++) {
+          nextQ();
+          if (document.querySelector('.unlock [data-back]')) backAt = (store.get(INTRO.OFFER.KEY, {}) || {}).h;
+          else say(choices().find(c => c !== tg));
+        }
+        const hb = HOLDS;
+        if (backAt === null || backAt < 2 * INTRO.HOLD)
+          fails.push(`dropping: back card ${backAt === null ? 'never shown' : 'at ' + backAt}`);
+        const t0 = SHOWNQ[1];
+        document.querySelector('.unlock [data-back]').click();
+        const o = store.get(INTRO.OFFER.KEY, {}) || {},
+          shut = allSet.filter(n => INTROS[n] && INTROS[n][3] === 'b');
+        if (o.bk !== 'one' || shut.length !== allSet.length || !before.every(introduced) || allSet.some(introduced))
+          fails.push(`One at a time: closed ${shut.length} of ${allSet.length}, record ${JSON.stringify(o)}`);
+        // Closed genera hold no place among the shaky ones that stop the opening (Codex P1 on #408): closed with their
+        // answers kept and badly known, they would keep the opening chance at 0, and being closed they are never asked,
+        // so the player could never open them again.
+        {
+          const P0 = JSON.stringify(P);
+          allSet.forEach(n => (P[n] = {...(P[n] || {}), ok: Math.max(1, (P[n] || {}).ok || 0), ko: 3, th: -1.5}));
+          const stuck = allSet.filter(shaky).length;
+          if (stuck >= OPEN.K && !(openChance(pool()) > 0))
+            fails.push(`One at a time: ${stuck} closed genera, badly known, keep the opening chance at ${openChance(pool())}`);
+          if (stuck < OPEN.K) fails.push(`One at a time: only ${stuck} closed genera made shaky for the check`);
+          P = JSON.parse(P0);
+        }
+        // The question on screen was chosen again among the genera still open.
+        if (!introReady(SHOWNQ[1]) || !choices().every(introduced))
+          fails.push(`after One at a time: asked ${SHOWNQ[1]} (was ${t0}), choices ${choices().join(', ')}`);
+        const back = new Set();
+        for (let i = 0; i < 200 && back.size < 2; i++) {
+          const was = new Set(allSet.filter(introduced)); // a card shows with the question (quizPhoto)
+          if (i) nextQ();
+          if (document.querySelector('.unlock [data-back]')) fails.push('back card shown twice');
+          for (
+            let b;
+            (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-back]):not([data-bonus]):not(.sec)'));
+          )
+            b.click();
+          const now = allSet.filter(n => introduced(n) && !was.has(n));
+          if (now.length > 1) fails.push(`${now.length} closed genera back at once`);
+          now.forEach(n => (INTROS[n][3] !== 'c' ? fails.push(`${n} back without its card`) : back.add(n)));
+          if (!introReady(SHOWNQ[1]) && !SHOWNQ.intro) fails.push(`question ${i}: ${SHOWNQ[1]} asked while closed`);
+          if (!choices().every(c => introduced(c) || (SHOWNQ.intro || []).includes(c)))
+            fails.push(`question ${i}: a closed genus among the choices (${choices().join(', ')})`);
+          say(tg);
+        }
+        if (back.size < 2)
+          fails.push(
+            `One at a time: ${back.size} closed genera came back on their cards in 200 answers (hold ${hb} at the back card, ${HOLDS} now)`
+          );
+        document.querySelectorAll('.unlock').forEach(x => x.remove());
+        P = JSON.parse(keep.P);
+        INTROS = JSON.parse(keep.I);
+        store.set(INTRO.KEY, INTROS);
+        store.set(INTRO.OFFER.KEY, keep.o);
+        HOLDS = keep.HOLDS;
+        if (keep.bon === undefined) delete Q.bon;
+        else Q.bon = keep.bon;
+        rematch = [];
+        NEXTQ = null;
+      }
       // Synced with the progress: the cards and the offer are reefid-sync* keys (sent by progData), and the cards seen on
       // another device join this one's (introMerge), ready; a progress reset starts them over.
       {
         INTROS = {};
         HOLDS = 0; // a fresh player: no opening hold, no comeback
         CB = {r: 0, t: 0, ok: 0, f: 0};
-        rematch = null; // no "Again" left over from the section before
+        rematch = []; // no "Again" left over from the section before
         store.set(INTRO.KEY, {});
         store.set(INTRO.OFFER.KEY, null);
         const g = Object.keys(DATA.gen)[5];
@@ -523,11 +701,11 @@ const server = http.createServer((req, res) => {
         introReset();
         if (g in introMap() || store.get(INTRO.OFFER.KEY, null)) fails.push('progress reset kept the cards');
       }
-      // Look-alike duels slipped into the photo quiz (AUTO_DUEL): about 1 question in 10 once past the first answers,
-      // on pairs of genera met, never the same pair twice within AUTO_DUEL.SAME answers, logged quiz|d|k2.
+      // Contrast questions (quiz.js CONTRAST): look-alike duels slipped into the photo quiz, about 1 question in 10, on
+      // pairs of genera met and ready, never the pair of the previous contrast question,
+      // logged quiz|d|k2; with the Agains, two 2-choice questions are never closer than CONTRAST.GAP.
       {
-        const n0 = answersSoFar(),
-          seen = [];
+        const n0 = answersSoFar();
         let duels = 0,
           lastTwo = null;
         const q1 = question;
@@ -538,21 +716,16 @@ const server = http.createServer((req, res) => {
           quizPhoto();
           document.querySelectorAll('.unlock').forEach(x => x.remove());
           const q = window.__dq;
-          // Two 2-choice questions (a duel slipped in, an Again) never closer than AUTO_DUEL.GAP, Agains after a
-          // normal question's mix-up excepted (they follow it by design).
           if (q[2].length === 2) {
-            const gap = answersSoFar() - (lastTwo == null ? -1e9 : lastTwo[0]),
-              need = lastTwo && lastTwo[1] ? AUTO_DUEL.GAP : AUTO_DUEL.AGAIN;
-            if (AUTOD && gap < need) fails.push(`duel in the quiz ${gap} answers after a 2-choice question`);
-            if (AUTOD || !lastTwo || !lastTwo[1]) lastTwo = [answersSoFar(), AUTOD];
-          }
-          if (AUTOD) {
-            duels++;
-            const k = q[2].slice().sort().join('|'),
-              at = answersSoFar();
-            if (q[2].length !== 2 || !q[2].every(introReady)) fails.push(`duel in the quiz on ${q[2].join(', ')}`);
-            if (seen.some(([a, kk]) => kk === k && at - a < AUTO_DUEL.SAME)) fails.push(`duel ${k} twice within ${AUTO_DUEL.SAME} answers`);
-            seen.push([at, k]);
+            const at = answersSoFar(),
+              k = q[2].slice().sort().join('|');
+            if (lastTwo && at - lastTwo[0] < CONTRAST.GAP) fails.push(`2-choice questions ${at - lastTwo[0]} answers apart`);
+            if (AUTOD) {
+              duels++;
+              if (!q[2].every(introReady)) fails.push(`duel in the quiz on ${q[2].join(', ')}`);
+              if (lastTwo && lastTwo[1] === k) fails.push(`duel ${k} right after a contrast question on the same pair`);
+            }
+            lastTwo = [at, k];
           }
           const won = AUTOD && i % 10;
           say(i % 10 ? q[1] : q[2].find(c => c !== q[1]));
@@ -563,6 +736,116 @@ const server = http.createServer((req, res) => {
         question = q1;
         // Spacing and the draws make the count vary (11 in a CI run, about 15 on average): enough to show they come.
         if (duels < 5 || duels > 50) fails.push(`${duels} duels in the quiz in 300 questions (about 1 in 10 expected)`);
+      }
+      // The Again queue (quiz.js CONTRAST.Q, rematchAdd; 2026-11-04): up to 3 pairs, asked oldest first, each CONTRAST.GAP
+      // after the last contrast question, a newer mix-up never pushing an older one out; an Again never asks a genus not
+      // met yet (the genus shown instead).
+      {
+        const met = pool().filter(introReady),
+          [a, b, c, d, e, f, g, h] = met,
+          at = answersSoFar();
+        dropPlans();
+        NEXTQ = null;
+        rematch = [];
+        twoAt = -Infinity;
+        rematchAdd([a, b], at - 6);
+        rematchAdd([c, d], at - 5);
+        rematchAdd([e, f], at - 4);
+        if (rematchAdd([g, h], at - 3) || rematch.length !== 3) fails.push('Again queue: a fourth pair queued, or an older one pushed out');
+        const got = [];
+        for (let i = 0; i < 12 && rematch.length; i++) {
+          const q = planPhoto('quiz', at + i);
+          if (q.again) got.push([at + i, q[2].slice().sort().join('|')]);
+        }
+        const want = [
+          [a, b],
+          [c, d],
+          [e, f]
+        ].map(x => x.sort().join('|'));
+        if (got.map(x => x[1]).join() !== want.join() || got.some((x, i) => i && x[0] - got[i - 1][0] < CONTRAST.GAP))
+          fails.push(`Again queue: ${JSON.stringify(got)}, want ${want.join(', ')} oldest first`);
+        const never = pool().find(n => !introduced(n));
+        if (never) {
+          rematch = [{pair: [a, never], at: at - 6}];
+          twoAt = -Infinity;
+          const q = planPhoto('quiz', at);
+          if (!q.again || q[1] !== a) fails.push(`Again on a genus never met: asked ${q[1]} (${q.again ? 'Again' : 'no Again'})`);
+        }
+        rematch = [];
+        twoAt = -Infinity;
+        dropPlans();
+        NEXTQ = null;
+      }
+      // Look-alikes from the data (model.js dataLooks, core.js dataLook; 2026-11-04): a pair no source declares that the
+      // players keep mixing up (CONF.N offers or more, pooled score from CONF.TRAP) duels like a declared one.
+      {
+        const met = pool().filter(introReady),
+          un = [];
+        met.forEach((x, i) => met.slice(i + 1).forEach(y => !isLook(x, y) && un.push([x, y].sort())));
+        const [x, y] = un[0],
+          k = x + '|' + y,
+          keep = PCONF[k];
+        PCONF[k] = [40, 14];
+        if (!dataLooks(met).some(p => p.join('|') === k)) fails.push(`${k} mixed up 14 times in 40 not a look-alike from the data`);
+        let n = 0;
+        for (let i = 0; i < 400 && !n; i++) n += (duelPick(met) || []).slice().sort().join('|') === k ? 1 : 0;
+        if (!n) fails.push(`${k}, a look-alike from the data, never drawn for a duel`);
+        PCONF[k] = [40, 2];
+        if (dataLooks(met).some(p => p.join('|') === k)) fails.push(`${k} mixed up 2 times in 40 a look-alike from the data`);
+        if (keep) PCONF[k] = keep;
+        else delete PCONF[k];
+      }
+      // Opening pace (model.js openPace, OPEN.MAX in OPEN.WIN answers; 2026-11-04): a player whose genera met are all solid
+      // (nothing shaky, so openChance is 1) gets at most OPEN.MAX cards in any OPEN.WIN answers, never a card while a genus
+      // carded in the window waits for its question, and each carded genus is asked within a few answers of its card.
+      {
+        const keepP = JSON.stringify(P),
+          keepI = JSON.stringify(introMap());
+        dropPlans();
+        NEXTQ = null;
+        rematch = [];
+        HOLDS = 0;
+        CB = {r: 0, t: 0, ok: 0, f: 0};
+        store.set(INTRO.OFFER.KEY, {at: 0, open: 0}); // the open-all offer declined
+        const S = pool().filter(n => !isBonus(n)),
+          old = S.slice(0, 12),
+          m = {};
+        Object.keys(P).forEach(n => n !== LEVEL && delete P[n]);
+        old.forEach(n => {
+          P[n] = {ok: 30, ko: 1, streak: 5, h: '1111111111', th: 2.8, lt: (P[LEVEL] || {}).th || 0};
+          m[n] = [0, 1, Date.now(), 's'];
+        });
+        store.set(INTRO.KEY, m);
+        INTROS = null;
+        const cards = [],
+          fromCard = {};
+        for (let i = 0; i < 60; i++) {
+          NEXTQ = null;
+          document.querySelectorAll('.unlock:not(.intro)').forEach(x => x.remove());
+          const at = answersSoFar(),
+            waiting = openRecent(at).filter(n => !asked(n));
+          quizPhoto();
+          const q = SHOWNQ;
+          if (q.intro && !q.start) {
+            cards.push(at);
+            q.intro.forEach(n => (fromCard[n] = at));
+            if (waiting.length) fails.push(`opening pace: a card at answer ${at} while ${waiting.join(', ')} waited for its question`);
+          }
+          document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+          say(q[1]);
+        }
+        const most = Math.max(0, ...cards.map(x => cards.filter(y => y >= x && y < x + OPEN.WIN).length)),
+          late = Object.entries(fromCard).filter(([n, at]) => !(P[n] && P[n].ok + P[n].ko > 0) && answersSoFar() - at > INTRO.GAP + 4);
+        if (most > OPEN.MAX || cards.length < 4)
+          fails.push(`opening pace: ${cards.length} cards in 60 answers, ${most} in ${OPEN.WIN} at most`);
+        if (late.length) fails.push(`opening pace: ${late.map(x => x[0]).join(', ')} carded and not asked`);
+        Object.keys(P).forEach(n => delete P[n]);
+        Object.assign(P, JSON.parse(keepP));
+        store.set(INTRO.KEY, JSON.parse(keepI));
+        INTROS = null;
+        rematch = [];
+        dropPlans();
+        NEXTQ = null;
       }
       // Nothing is planned past a question that changes what comes next while it is on screen (Codex review #361: an
       // exam planned behind an unanswered exam broke its spacing); a plain question gets its next ones planned.
@@ -640,10 +923,14 @@ const server = http.createServer((req, res) => {
         fails.push(`open all not recorded for the journey: ${JSON.stringify(oa)}`);
       // Every slate genus met: the bonus genera are offered once (a prompt: PROMPT.GAP answers after the last one);
       // "Not now" is kept.
-      let boffers = 0;
+      // Until every slate genus has been asked once (bonusOfferDue), then 30 more questions to check "Not now" holds:
+      // how many were asked before opening all depends on the opening pace (model.js openPace).
+      let boffers = 0,
+        after = 0;
       store.set(PROMPT.KEY, null);
       delete Q.bon;
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 400 && after < 30; i++) {
+        if (boffers) after++;
         NEXTQ = null;
         quizPhoto();
         const bo = document.querySelector('.unlock [data-bonus]');
@@ -694,7 +981,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
-      rematch = null; // no "Again" left over from the section before
+      rematch = []; // no "Again" left over from the section before
     }
     // Opening held while the player does clearly worse than expected (introHold, a CUSUM, Pierre 2026-11-02): two
     // misses where 0.8 was expected hold; right answers pay it back by what they beat the expectation by; never below 0.
@@ -727,7 +1014,7 @@ const server = http.createServer((req, res) => {
         right = () => say(SHOWNQ[1]),
         fresh = () => {
           NEXTQ = null;
-          rematch = null;
+          rematch = [];
           document.querySelectorAll('.unlock').forEach(x => x.remove());
         };
       CB = {r: 0, t: 0, ok: 0, f: 0};
@@ -806,11 +1093,232 @@ const server = http.createServer((req, res) => {
         fails.push(`Again during the comeback: ${JSON.stringify({again: SHOWNQ.again, warm: SHOWNQ.warm, cb: SHOWNQ.cb})}`);
       right();
       CB = {r: 0, t: 0, ok: 0, f: 0};
-      rematch = null; // no "Again" left over from the section before
+      rematch = []; // no "Again" left over from the section before
       HOLDS = h0;
+    }
+    // Custom quiz (model.js customDraw, customChoices; quiz.js planPhoto on CUSTOM_H): the real draw on the real data,
+    // a new player and a strong one. Every genus asked is one picked, a genus not met yet comes with its own card (it is
+    // the one asked), the choices come from the selection when it has 4 genera or more, and a 2-genus selection is
+    // topped up to 4 distinct choices with the other picked genus among them; the photo quiz's offers never show there.
+    {
+      const sel4 = ['Pocillopora', 'Stylophora', 'Seriatopora', 'Acropora', 'Porites'],
+        sel2 = ['Fungia', 'Danafungia'];
+      for (const strong of [false, true])
+        for (const sel of [sel4, sel2]) {
+          P = strong ? Object.fromEntries(genera.map(n => [n, {ok: 20, ko: 2, h: '1111011111', th: 2, pg: 0.7}])) : {};
+          if (strong) P[LEVEL] = {ok: 400, ko: 40, th: 2};
+          store.set(INTRO.KEY, {});
+          INTROS = null;
+          rematch = [];
+          NEXTQ = null;
+          store.set(CUSTOM.KEY, {g: sel, t: Date.now()});
+          for (let i = 0; i < 40; i++) {
+            const q = planPhoto(CUSTOM_H),
+              [cur, t, ch] = q,
+              tag = `custom quiz (${strong ? 'strong' : 'new'} player, ${sel.length} picked): ${t} [${ch.join(', ')}]`;
+            if (cur !== CUSTOM_H || !sel.includes(t)) fails.push(`${tag}: genus asked not picked`);
+            if (q.intro && (q.intro.join() !== t || !q.custom)) fails.push(`${tag}: card ${q.intro} with the question`);
+            if (!q.intro && !introduced(t)) fails.push(`${tag}: a genus not met asked without its card`);
+            if (q.intro) introAdd(q.intro, true, 'c');
+            if (!ch.includes(t) || new Set(ch).size !== ch.length) fails.push(`${tag}: choices`);
+            if (ch.length === 4 && sel.length >= 4 && ch.some(n => !sel.includes(n))) fails.push(`${tag}: a choice outside the selection`);
+            if (sel.length === 2 && !q.again && !q.auto && (ch.length !== 4 || !sel.every(n => ch.includes(n))))
+              fails.push(`${tag}: a 2-genus selection not topped up to 4 with both genera`);
+            if (!q.again && !q.auto && !q.typed && ch.length !== 4) fails.push(`${tag}: ${ch.length} choices`);
+          }
+        }
+      // Codex review #411 (1): a selection of genera nobody confuses can't give the traps a strong player's level asks
+      // for; the question is scored with the choices really shown (plausibleK), never as a 4-choice one with traps.
+      // (2): no mastery exam question in the custom quiz (rule 14e: its choices could hold no look-alike); the exam
+      // comes in the photo quiz.
+      {
+        // Four genera no pair of which is confusable, sharing no IMR growth form if the data allows (then plausibleK < 4).
+        const pick4 = ok => {
+          const L = [];
+          for (const n of pool()) if (L.length < 4 && L.every(x => ok(x, n))) L.push(n);
+          return L;
+        };
+        const far = pick4((x, n) => !confusable(x, n) && !confusable(n, x) && !imrFormsOf(x).some(f => imrFormsOf(n).includes(f))),
+          apart = far.length === 4 ? far : pick4((x, n) => !confusable(x, n) && !confusable(n, x));
+        P = Object.fromEntries(genera.map(n => [n, {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85}]));
+        P[LEVEL] = {ok: 600, ko: 40, th: 2};
+        rematch = [];
+        NEXTQ = null;
+        store.set(CUSTOM.KEY, {g: apart, t: Date.now()});
+        let exams = 0,
+          scored = 0;
+        for (let i = 0; i < 60; i++) {
+          const q = planPhoto(CUSTOM_H),
+            [, t, ch, , set, kq] = q;
+          if (set.exam) exams++;
+          if (q.again || q.auto || q.typed) continue;
+          scored++;
+          // The k the answer uses (quiz.js answer: 0 = every choice counts).
+          const want = ch.filter(n => n !== t && confusable(t, n)).length < 2 ? plausibleK(t, ch) : ch.length;
+          if ((kq || ch.length) !== want)
+            fails.push(`custom quiz on ${apart.join(', ')}: ${t} [${ch.join(', ')}] scored k ${kq}, ${want} expected`);
+        }
+        if (apart.length < 4 || !scored) fails.push(`custom quiz scoring check did not run (${apart.join(', ')}, ${scored})`);
+        if (exams) fails.push(`custom quiz: ${exams} mastery exam questions in 60 (the exam belongs to the photo quiz)`);
+        // A played custom session (Pierre, 2026-11-03: exams only in the normal quiz): genera one exam question from
+        // Learned, every answer right, typed ones too; never an exam question on screen, never s.mx from it.
+        P = Object.fromEntries(
+          genera.map(n => [n, {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.9, ex: {k: EXAM.n - 1, t: TYPED.exam, v: ['wide'], at: -99}}])
+        );
+        P[LEVEL] = {ok: 600, ko: 40, th: 2};
+        NEXTQ = null;
+        let shown = 0;
+        for (let i = 0; i < 30; i++) {
+          document.querySelectorAll('.unlock').forEach(x => x.remove());
+          quizPhoto(CUSTOM_H);
+          if (EXAMQ || SHOWNQ[4].exam) shown++;
+          say(SHOWNQ[1]);
+        }
+        const mx = apart.filter(n => P[n].mx);
+        if (shown || mx.length) fails.push(`custom quiz session: ${shown} exam questions shown, mastery credited on ${mx.join(', ')}`);
+        if (!(answersSoFar() > 600)) fails.push('custom quiz session: the answers were not counted');
+      }
+      store.set(CUSTOM.KEY, null);
+      store.set(INTRO.KEY, {});
+      INTROS = null;
     }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
+  // Learned under the former model (core.js memRecalc, model.js mxRecalc, progress.js mxLostNotice and achRecheck):
+  // progress saved with a learned genus, then a reload (the drop happens at load, before achievements are set up).
+  // Learned with s.pg (since 2026-11-02): nothing told, nothing taken back. Learned without (BKT): an announcement card
+  // at start-up, on the page opened, before any answer and even at the start of a new visit (never held: AGENTS.md rule
+  // 12), once; the mark and learn1 gone, learn1 not brought back by the sheet's older copy, nothing again on reload or
+  // answers. A drop at a pull: the card at once, or right after another card open then.
+  {
+    const t = await p.evaluate(() => slateGenera()[3]);
+    // Two genera answered (a comeback needs two), the last answer `ago` ms back.
+    const seed = (rec, ago) =>
+      p.evaluate(
+        ([t, rec, ago]) => {
+          const at = Date.now() - ago,
+            u = slateGenera().find(n => n !== t);
+          store.set('reefid-sync-coral-progress', {
+            [t]: {...rec, at},
+            [u]: {ok: 8, ko: 2, h: '11011111', pg: 0.5, pm: 1, at},
+            [LEVEL]: {ok: 300, ko: 60, th: 1, at}
+          });
+          localStorage.removeItem('reefid-comeback');
+          store.set(ACHK, {_v: ACH_V, learn1: 1000, met10: 1000});
+          store.set('reefid-recalc', RECALC.L[RECALC.L.length - 1].id);
+          localStorage.removeItem(MXL.KEY);
+        },
+        [t, rec, ago]
+      );
+    const load = async () => {
+      await p.reload();
+      await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await p.waitForTimeout(500);
+    };
+    const card = () =>
+      p.evaluate(() => {
+        const c = document.querySelector('.unlock.mxlost');
+        return c && {h: c.querySelector('h3').textContent, p: c.querySelector('p:not(.ulkick)').textContent, a: answersSoFar()};
+      });
+    // Plays n quiz questions, right, the other overlays out of the way; counts the cards.
+    const play = n =>
+      p.evaluate(
+        ([t, n]) => {
+          let seen = 0;
+          for (let i = 0; i < n; i++) {
+            document.querySelectorAll('.unlock:not(.mxlost), .achpop').forEach(x => x.remove());
+            achQ = [];
+            achBusy = false;
+            NEXTQ = null;
+            quizPhoto();
+            const c = document.querySelector('.unlock.mxlost');
+            if (c) (seen++, c.querySelector('.next').click());
+            document.querySelectorAll('.unlock').forEach(x => x.remove());
+            // Right: its choice, or typed on a typed question (model.js TYPED: a genus well on its way is sometimes
+            // asked typed).
+            const b = document.querySelector(`#view [data-c="${CSS.escape(SHOWNQ[1])}"]`),
+              f = document.querySelector('#view .tyform');
+            if (b) b.click();
+            else ((f.querySelector('input').value = SHOWNQ[1]), f.requestSubmit());
+          }
+          const A = store.get(ACHK, {}) || {};
+          return {seen, mx: (P[t] || {}).mx, learn1: A.learn1, gone: (A._gone || {}).learn1, M: store.get(MXL.KEY, null)};
+        },
+        [t, n]
+      );
+    const fail = (m, x) => out.fails.push(`learned under the former model: ${m} ${JSON.stringify(x)}`);
+    await seed({ok: 30, ko: 2, h: '1111111111', pg: 0.97, mx: 1762150000000, pm: 1}, 0);
+    await load();
+    const a0 = await card(),
+      a = await play(15);
+    if (a0 || a.seen || a.mx !== 1762150000000 || a.learn1 !== 1000 || a.gone || (a.M && Object.keys(a.M.due || {}).length))
+      fail('learned with s.pg was touched', {a0, a});
+    // A new visit (2 hours since the last answer): the card shows anyway, at start-up, over Home.
+    await seed({ok: 13, ko: 1, h: '1111111110', L: 0.9997, mx: 1, pm: 1}, 2 * 3600e3);
+    await load();
+    const c0 = await card(),
+      before = await p.evaluate(
+        t => ({mx: P[t].mx, A: store.get(ACHK, {}), M: store.get(MXL.KEY, null), noOpen: noOpen(), h: hashNow()}),
+        t
+      );
+    if (!c0 || c0.a !== 360 || !before.noOpen || !c0.p.includes(t) || !/badge earned with it is taken back/.test(c0.p))
+      fail('no card at start-up, before any answer', {c0, before});
+    if (before.mx || before.A.learn1 || !before.A._gone || !before.A._gone.learn1 || before.A.met10 !== 1000 || !before.M.due[t])
+      fail('at load', before);
+    // The sheet's copy, from before the drop: learn1 does not come back.
+    const merged = await p.evaluate(() => {
+      achMerge(JSON.stringify({_v: ACH_V, learn1: 1000, met10: 900}));
+      return store.get(ACHK, {});
+    });
+    if (merged.learn1 || merged.met10 !== 900) fail('a merge brought the badge back', merged);
+    await p.click('.unlock.mxlost .next');
+    const b1 = await play(15);
+    if (b1.seen || b1.mx || b1.M.due[t] || b1.M.told[t] !== 1) fail('after OK', b1);
+    await load();
+    const c2 = await card(),
+      b2 = await play(12);
+    if (c2 || b2.seen || b2.learn1 || b2.mx) fail('again after a reload', {c2, b2});
+    // With an update note due at the same load (progress.js RECALC, here the typed-questions announcement): both cards,
+    // one after the other, neither lost: the note first (recalcNotice runs first at start-up), the learned card once it
+    // is closed (it waits for any card on screen, tried again every 2 s).
+    await seed({ok: 13, ko: 1, h: '1111111110', L: 0.9997, mx: 1, pm: 1}, 0);
+    await p.evaluate(() => store.set('reefid-recalc', RECALC.L[RECALC.L.length - 2].id));
+    await load();
+    const both = () =>
+      p.evaluate(() => ({
+        recalc: [...document.querySelectorAll('.unlock.recalc h3')].map(x => x.textContent),
+        mx: !!document.querySelector('.unlock.mxlost'),
+        n: document.querySelectorAll('.unlock').length
+      }));
+    const d0 = await both();
+    if (d0.recalc.length !== 1 || d0.recalc[0] !== (await p.evaluate(() => RECALC.L[RECALC.L.length - 1].t)) || d0.mx || d0.n !== 1)
+      fail('update note and learned card due together: not the note alone first', d0);
+    await p.click('.unlock.recalc .next');
+    await p.waitForSelector('.unlock.mxlost', {timeout: 5000}).catch(() => {});
+    const d1 = await both(),
+      c5 = await card();
+    if (d1.recalc.length || !d1.mx || d1.n !== 1 || !c5 || !c5.p.includes(t)) fail('the learned card did not follow the note', {d1, c5});
+    await p.click('.unlock.mxlost .next').catch(() => {});
+    await load();
+    const d2 = await both();
+    if (d2.recalc.length || d2.mx) fail('a card came back after both were seen', d2);
+    // A drop brought by a pull while another card is open: the card waits for it, then shows on its own.
+    const u = await p.evaluate(() => {
+      const u = slateGenera()[5],
+        d = document.createElement('div');
+      d.className = 'unlock other';
+      document.body.append(d);
+      P[u] = {ok: 12, ko: 0, h: '1111111111', L: 0.999, mx: 1, pm: 1};
+      memRecalcAll();
+      return u;
+    });
+    const c3 = await card();
+    await p.evaluate(() => document.querySelector('.unlock.other').remove());
+    await p.waitForTimeout(2500);
+    const c4 = await card();
+    if (c3 || !c4 || !c4.p.includes(u)) fail('a drop at a pull, behind another card', {c3, c4});
+    await p.evaluate(() => localStorage.removeItem(MXL.KEY));
+  }
   await b.close();
   server.close();
   if (errs.length) out.fails.push('Page errors: ' + errs.join(' | '));
@@ -819,7 +1327,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, prompt spacing.`
+    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, starred genera after their references, prompt spacing, custom quiz, learned marks of the former model taken back.`
   );
 })().catch(e => {
   console.error(e);

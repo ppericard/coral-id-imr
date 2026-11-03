@@ -1,131 +1,163 @@
 {
  "genus": "Pleuractis",
  "photos": {
-  "pleuractis-cand-269734595": {
-   "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "best"
-  },
   "pleuractis-cand-227053996": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Acropora branches over the top edge"
+   "crop": [
+    0.12,
+    0.08,
+    0.78,
+    0.92
+   ]
   },
   "pleuractis-cand-66917878": {
    "view": "wide",
    "quality": 1,
    "form": "U",
    "keep": "best",
-   "note": "Hazy and blurred"
+   "note": "691 px, milky green veil, soft everywhere"
   },
   "pleuractis-cand-693755080": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Green tint, date stamp"
+   "crop": [
+    0.2,
+    0.12,
+    0.8,
+    0.86
+   ],
+   "note": "Cyan cast, soft at 100%"
   },
   "pleuractis-cand-243913658": {
    "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "U",
    "keep": "best",
    "multi": true,
-   "unsure": [
-    "genus"
-   ],
-   "note": "Many mushroom corals of several genera; which are Pleuractis is unclear"
+   "note": "Several mushroom corals of different shapes fill the frame"
   },
   "pleuractis-cand-262212379": {
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "best"
-  },
-  "pleuractis-cand-262216467": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.15,
+    1.0,
+    0.95
+   ]
   },
   "pleuractis-cand-66918185": {
    "view": "wide",
    "quality": 1,
    "form": "U",
    "keep": "best",
-   "note": "Blurred, shot through the surface"
+   "note": "535 px, hazy and blurred, disc hard to see"
   },
   "pleuractis-cand-262213200": {
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.0,
+    0.85,
+    1.0
+   ]
   },
   "pleuractis-cand-247050617": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best",
    "multi": true,
-   "note": "A massive coral takes the right third"
+   "note": "A large massive coral takes the right half of the frame"
   },
   "pleuractis-cand-684020831": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Hazy"
+   "crop": [
+    0.1,
+    0.15,
+    0.85,
+    0.95
+   ],
+   "note": "Green cast, soft at 100%"
   },
   "pleuractis-cand-66918196": {
    "view": "wide",
    "quality": 1,
    "form": "U",
    "keep": "best",
-   "note": "Blurred, among branching corals"
+   "note": "556 px, hazy, disc small among branching corals"
   },
   "pleuractis-cand-262213713": {
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.08,
+    0.85,
+    0.95
+   ]
   },
   "pleuractis-cand-600486419": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Green tint, date stamp"
+   "note": "Green cast, soft at 100%; date stamp"
   },
   "pleuractis-cand-600486430": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "U",
    "keep": "best",
-   "note": "Green tint, date stamp"
+   "note": "Closer on the mouth, soft at 100%; date stamp"
   },
   "pleuractis-cand-66918168": {
    "view": "wide",
    "quality": 1,
    "form": "U",
    "keep": "best",
-   "note": "Blurred, shot through the surface"
+   "note": "697 px, hazy, disc small among branching corals"
   },
   "pleuractis-cand-267307115": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Shallow, slight haze"
+   "crop": [
+    0.0,
+    0.1,
+    0.95,
+    0.95
+   ],
+   "note": "Soft at 100%"
   },
   "pleuractis-cand-682475658": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Hazy"
+   "crop": [
+    0.1,
+    0.05,
+    0.85,
+    1.0
+   ],
+   "note": "Noise at 100%"
   }
  }
 }

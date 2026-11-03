@@ -15,7 +15,10 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    ok = o => new Response(JSON.stringify({v: 19, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
+    // The script version the demo answers as: the current one (v28: the admin shows the full replay, admin.js replayOn),
+    // or an older one with ?demo&v=27 (tests/admin.smoke.js: the admin then does what it did before; AGENTS.md 7a).
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 28,
+    ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
   const PLAYERS = [
@@ -32,6 +35,18 @@
   // One dataset for every request: concurrent first calls (answers and stats together) wait for the same build.
   let BUILD = null;
   const build = () => (BUILD = BUILD || make());
+  // Moves the last n of one player's rows into one session ending at `end`, about 37 s apart, in their order; the last
+  // `typed` plain quiz answers among them become typed ones (quiz|t: no choices offered).
+  function live(L, n, end, typed) {
+    L.sort((a, b) => a[1] - b[1])
+      .slice(-n)
+      .forEach((r, i, M) => (r[1] = end - (M.length - 1 - i) * 37e3));
+    if (typed)
+      L.slice(-n)
+        .filter(r => r[5] === 'quiz')
+        .slice(-typed)
+        .forEach(r => ((r[5] = 'quiz|t'), (r[11] = '')));
+  }
   async function make() {
     const D = await real('data.json', {cache: 'no-cache'}).then(r => r.json());
     const gen = {...D.gen, ...((D.x && D.x.gen) || {})},
@@ -47,7 +62,11 @@
       // Some genera easier than others for everyone (the journey page's easiest / hardest), fixed per genus.
       ease = Object.fromEntries(G.map(g => [g, (rnd() - 0.5) * 0.4]));
     const rows = [],
-      users = {};
+      users = {},
+      // The made-up sessions end 2 hours ago at the latest; then a few recent ones, relative to now, for Players' Last
+      // column and Activity's Recent sessions (Pierre, 2026-11-03): Carla playing now (her last answer 1 minute ago,
+      // quiz, duels and typed answers), a device not signed in that stopped 12 minutes ago.
+      END = NOW - 2 * 3600e3;
     let k = 0;
     PLAYERS.forEach(([name, skill, n, d0, d1]) => {
       const P = {};
@@ -58,11 +77,11 @@
       for (let i = 0; i < n; i++) {
         if (!left) {
           left = 5 + Math.floor(rnd() * 36);
-          start = NOW - (d0 - ((d0 - d1) * i) / Math.max(1, n - 1)) * DAY - Math.floor(rnd() * 3600e3);
+          start = END - (d0 - ((d0 - d1) * i) / Math.max(1, n - 1)) * DAY - Math.floor(rnd() * 3600e3);
           j = 0;
         }
         left--;
-        const t = Math.min(NOW - 60e3, start + j++ * (20e3 + Math.floor(rnd() * 20e3))),
+        const t = Math.min(END, start + j++ * (20e3 + Math.floor(rnd() * 20e3))),
           // Genera open progressively, as in the app: 4 at first, one more every ~8 answers.
           g = pick(G.slice(0, Math.min(G.length, 4 + Math.floor(i / 8)))),
           duel = rnd() < 0.2,
@@ -106,6 +125,21 @@
           k % 7 ? 0 : 1
         ]);
       }
+      // Carla is playing now: her last 24 answers moved to the last 15 minutes, two of them typed (quiz|t, no choices).
+      if (name === 'Carla Demo') {
+        live(
+          rows.filter(r => r[0] === name),
+          24,
+          NOW - 60e3,
+          2
+        );
+        // ... her last 8 photo-quiz answers in the custom quiz (quiz|s…, the genera she picked; app quiz.js quizCustom).
+        rows
+          .filter(r => r[0] === name && r[5] === 'quiz')
+          .sort((x, y) => x[1] - y[1])
+          .slice(-8)
+          .forEach(r => (r[5] = r[5].replace(/^quiz/, 'quiz|s')));
+      }
       // First-meeting cards (app model.js INTRO): the first 4 genera together, the others one at a time 2 answers before
       // their first question; Carla opened all from the offer card at answer 40, Ben declined it at answer 50.
       const mine = rows.filter(r => r[0] === name).sort((x, y) => x[1] - y[1]), // in time order, as the journey reads them
@@ -119,10 +153,17 @@
         intro[r[2]] = [a, a === 0 || a === openAt ? 1 : 0, at(a), a === openAt ? 'a' : a === 0 ? 's' : 'c'];
       });
       const offer =
-        openAt != null ? {at: openAt, open: 1, via: 'offer', t: at(openAt)} : name === 'Ben Demo' ? {at: 50, open: 0, t: at(50)} : null;
+        openAt != null
+          ? // and answered the back card (model.js backDue) with Keep them all 30 answers later.
+            {at: openAt, open: 1, via: 'offer', t: at(openAt), bk: 'keep', bat: openAt + 30, bn: 0, bt: at(openAt + 30)}
+          : name === 'Ben Demo'
+            ? {at: 50, open: 0, t: at(50)}
+            : null;
       const learned = Object.values(P).filter(s => s.pg >= 0.6).length;
       users[name.toLowerCase()] = {
         name,
+        // Test Demo is hidden from the leaderboard (Players greys its name), as a renamed test account would be.
+        ...(name === 'Test Demo' ? {board: -1} : {}),
         updated: NOW - d1 * DAY,
         learned,
         seen: Object.keys(P).length,
@@ -154,12 +195,19 @@
         'quiz',
         p.f,
         'demoa' + i,
-        null,
-        null,
+        0.7, // expected and ability as the app logs them, so the full replay reads them too
+        0.5,
         null,
         ''
       ]);
     }
+    // A device not signed in that stopped 12 minutes ago: its last 8 answers.
+    live(
+      rows.filter(r => r[0] === '~anon demo0'),
+      8,
+      NOW - 12 * 60e3,
+      0
+    );
     // Reports: [id, time, reporter, verified, why, expected, answered, suggested, note, mode, photos, where], newest first.
     const rp = (i, who, why, g, a, fix, note, m, f, w) => [
       'demorep' + i,
@@ -197,21 +245,37 @@
       rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', '#home')
     ];
     // Events (sheet v19): [id, time, device, kind, message, where, page, detail, app, browser], newest first.
+    // One-tap prompts (core.js PULSEQ): the item in Where, the code in Message; Detail keeps r only for easy / ok / hard,
+    // as the sheet does. Each prompt logs its showing, then an answer, "Not now" (skip), moving on (none) or nothing (the
+    // app closed); the first prompt is an answer from before the bank (no item id, no showing logged).
     const events = [];
-    for (let i = 0; i < 24; i++) {
-      const r = ['ok', 'ok', 'hard', 'easy', 'ok', 'hard'][i % 6];
-      events.push([
-        'demoev' + i,
-        NOW - i * 7 * 3600e3,
-        'demodev' + (i % 5),
-        'pulse',
-        r,
-        '',
-        'quiz',
-        JSON.stringify({r, m: 'quiz', n: 10 + i, rr: r === 'hard' ? 40 : r === 'easy' ? 100 : 80, lv: -1.2 + (i % 5) * 0.5, met: 6 + i}),
-        '159',
-        'Chrome 140 mobile'
-      ]);
+    for (let i = 0; i < 48; i++) {
+      const it = PULSEQ[i % PULSEQ.length],
+        out = i % 8,
+        r = out === 5 ? PULSE_SKIP : out === 6 ? PULSE_NONE : out === 7 ? '' : it.a[[1, 1, 2, 0, 1][out]][0],
+        m = i % 4 === 3 ? 'quiz-duel' : 'quiz',
+        old = i === 0,
+        row = (k, code) => [
+          'demoev' + i + k,
+          NOW - i * 4 * 3600e3 + (k === 'b' ? 30e3 : 0),
+          'demodev' + (i % 5),
+          'pulse',
+          code,
+          old ? '' : it.id,
+          m,
+          JSON.stringify({
+            r: ['easy', 'ok', 'hard'].includes(code) ? code : '',
+            m,
+            n: 10 + i,
+            rr: code === 'hard' || code === 'yes' ? 40 : code === 'easy' ? 100 : 80,
+            lv: -1.2 + (i % 5) * 0.5,
+            met: 6 + i
+          }),
+          '159',
+          'Chrome 140 mobile'
+        ];
+      if (!old) events.push(row('a', PULSE_SHOWN));
+      if (r) events.push(row('b', r));
     }
     events.push(
       [
@@ -262,6 +326,43 @@
     );
     events.sort((a, b) => b[1] - a[1]);
     S = {rows, users, reports, events, removed: [], list};
+    // Saved progress as the app saves it now: the full replay of each player's answers (core.js replayProgress, with the
+    // memory offsets and confusions this demo's stats serve, as the admin replays them), plus the exams the demo passed
+    // and each genus's ability. Two stale copies, as real players who have not opened the app since a recalculation:
+    // Dio's is from the former model (BKT: L and the last results, no pg) with a genus learned then, which today's rules
+    // take back (core.js memRecalc, replayedOf); Ben's was saved 20 answers ago. The others match the replay (no ↻ mark).
+    const st = stats(),
+      A = answers().rows,
+      cut = Object.fromEntries(Object.values(users).map(u => [aid(u.name), Infinity]));
+    const benRows = A.filter(r => r[0] === aid('Ben Demo')).sort((a, b) => a[1] - b[1]);
+    cut[aid('Ben Demo')] = benRows[benRows.length - 21][1];
+    const rep = replayProgress(
+      A.filter(r => !(r[1] > cut[r[0]])),
+      {gen, mem: st.mem, conf: st.conf}
+    );
+    Object.values(users).forEach(u => {
+      const old = JSON.parse(u.data['reefid-sync-coral-progress']),
+        R = (rep[aid(u.name)] || {P: {}}).P,
+        P = {};
+      Object.entries(R).forEach(([g, r]) => {
+        if (g === LEVEL) return; // the replay's global level: the demo's copies keep none
+        // A mark the game would have taken away at a later miss (core.js mxKeeps; the replay's lm) is not in the copy the
+        // app saved.
+        const o = {...(old[g] || {})};
+        if (o.mx && r.lm > o.mx) delete o.mx;
+        P[g] =
+          u.name === 'Dio Demo'
+            ? {ok: r.ok, ko: r.ko, h: r.h, th: o.th || 0, L: Math.round(Math.min(0.97, 0.2 + 0.12 * r.ok) * 100) / 100}
+            : {ok: r.ok, ko: r.ko, h: r.h, th: o.th || 0, pg: r.pg, ps: r.ps, off: r.off, conf: r.conf, pm: 1, ...(o.mx ? {mx: o.mx} : {})};
+      });
+      // Dio's best genus was learned under the former model (an exam passed before 2026-11-02: mx 1, no time).
+      if (u.name === 'Dio Demo') {
+        const best = Object.keys(P).sort((a, b) => P[b].ok - P[a].ok)[0];
+        if (best) P[best].mx = 1;
+      }
+      u.data['reefid-sync-coral-progress'] = JSON.stringify(P);
+      u.learned = list.filter(g => P[g] && P[g].mx).length;
+    });
     return S;
   }
   // Anonymous id of a name, as Code.gs aid_ (8 characters, no name in it); here a plain hash, there is no secret to keep.

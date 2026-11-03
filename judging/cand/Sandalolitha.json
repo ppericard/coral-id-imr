@@ -6,53 +6,75 @@
    "quality": 3,
    "form": "U",
    "keep": "best",
-   "note": "Heavy dome with close corallites, other corals around the edges"
+   "crop": [
+    0.12,
+    0.15,
+    0.85,
+    0.95
+   ],
+   "unsure": [
+    "keep"
+   ],
+   "note": "Close to the live wide photos of this colony, but another angle"
   },
   "sandalolitha-cand-611197927": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Green cast; tentacles partly out"
+   "crop": [
+    0.0,
+    0.1,
+    0.95,
+    1.0
+   ],
+   "note": "Green-cyan cast"
   },
   "sandalolitha-cand-611197936": {
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "alt",
-   "note": "Whole dome on sand from further away"
+   "keep": "dup",
+   "note": "small; same disc farther away, adds nothing"
   },
   "sandalolitha-cand-262212725": {
-   "view": "wide",
-   "quality": 2,
-   "form": "U",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Oval dome with radiating septa from one axis; could be a large solitary fungiid"
-  },
-  "sandalolitha-cand-604391250": {
    "view": "wide",
    "quality": 3,
    "form": "U",
    "keep": "best",
-   "unsure": [
-    "genus"
+   "note": "Dark vignetting at the corners, centre crisp at 100%"
+  },
+  "sandalolitha-cand-604391250": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.15,
+    1.0,
+    1.0
    ],
-   "note": "Flat oval with few centres and long septa; may be Lithophyllon or Podabacia"
+   "note": "Soft at 100%"
   },
   "sandalolitha-cand-262215615": {
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.12,
+    1.0,
+    0.95
+   ]
   },
   "sandalolitha-cand-262215542": {
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "dup"
+   "keep": "dup",
+   "note": "Same framing as the best, slightly farther"
   },
   "sandalolitha-cand-270751227": {
    "view": "wide",
@@ -60,21 +82,16 @@
    "form": "U",
    "keep": "best",
    "unsure": [
-    "genus",
-    "form"
+    "quality"
    ],
-   "note": "Looks attached in a crevice; could be Lithophyllon or Podabacia"
+   "note": "Disc partly hidden by rubble and algae, soft at 100%"
   },
   "sandalolitha-cand-270751009": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "dup",
-   "unsure": [
-    "genus",
-    "form"
-   ],
-   "note": "Same colony as the best"
+   "note": "Same disc, similar framing, more rubble in frame"
   },
   "sandalolitha-cand-262212916": {
    "view": "wide",
@@ -84,27 +101,42 @@
   },
   "sandalolitha-cand-270761615": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
-   "keep": "best"
-  },
-  "sandalolitha-cand-270761609": {
-   "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "alt"
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.1,
+    0.95,
+    1.0
+   ]
   },
   "sandalolitha-cand-270761377": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
-   "keep": "dup"
+   "keep": "alt",
+   "crop": [
+    0.05,
+    0.25,
+    1.0,
+    0.95
+   ],
+   "note": "Side profile of the same disc"
   },
   "sandalolitha-cand-270761592": {
    "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "dup",
+   "note": "Between the side and top views, adds nothing"
+  },
+  "sandalolitha-cand-270761609": {
+   "view": "macro",
    "quality": 3,
    "form": "U",
-   "keep": "dup"
+   "keep": "best",
+   "note": "Centre of the disc with the mouths"
   }
  }
 }

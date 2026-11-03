@@ -52,7 +52,7 @@
   btn.className = 'pflag';
   btn.hidden = true;
   btn.textContent = '⚑';
-  btn.title = 'Bad photo: send it to Triage in the admin';
+  btn.title = 'Bad photo: send it to To do in the admin';
   document.body.appendChild(btn);
   let target = null;
   let place = im => {
@@ -155,7 +155,7 @@
     if (!f) return;
     const L = read();
     if (L.some(x => x.f === f)) {
-      btn.title = 'Already flagged: see Triage in the admin';
+      btn.title = 'Already flagged: see To do in the admin';
       return;
     }
     L.push({f, ...locate(f), where: where(), at: new Date().toISOString()});

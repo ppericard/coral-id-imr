@@ -3,56 +3,67 @@
  "photos": {
   "fimbriaphyllia-cand-580859206": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "M",
    "keep": "best",
-   "note": "Colour cast, small date stamp"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Cyan cast, soft at 100%; date stamp; tentacle tips not readable"
   },
   "fimbriaphyllia-cand-297050976": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Blue cast; bubble-tipped tentacles on sand"
+   "note": "1400 px, tentacles out"
   },
   "fimbriaphyllia-cand-262124489": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Dark; a fan worm sits beside the colony"
+   "note": "A fan worm at the right"
   },
   "fimbriaphyllia-cand-604392144": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "note": "Dark"
   },
   "fimbriaphyllia-cand-604392158": {
    "view": "medium",
    "quality": 3,
-   "form": "x",
+   "form": "M",
    "keep": "best"
   },
   "fimbriaphyllia-cand-613837": {
-   "view": "medium",
+   "view": "wide",
    "quality": 2,
-   "form": "x",
+   "form": "M",
    "keep": "best",
-   "note": "Blue-green cast"
+   "note": "1200 px, cyan cast"
   },
   "fimbriaphyllia-cand-110600255": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "1200 px; rounded bubble-like tips, Plerogyra possible"
   },
   "fimbriaphyllia-cand-682475034": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "A pale hydroid branch crosses the right side"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Noisy and soft at 100%; a sponge at the right"
   },
   "fimbriaphyllia-cand-600495807": {
    "view": "wide",
@@ -62,125 +73,119 @@
    "unsure": [
     "genus"
    ],
-   "note": "On sand, long tentacles with pale tips; could be Catalaphyllia"
+   "note": "Spread polyp on sand with sparse tips; date stamp"
   },
   "fimbriaphyllia-cand-600495818": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "alt",
-   "note": "Small colony beside a shell, date stamp"
+   "note": "Polyp from the side; date stamp"
   },
   "fimbriaphyllia-cand-600495825": {
    "view": "medium",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "note": "Branched tentacles over a green-striped disc, date stamp"
+   "note": "Date stamp at the corner"
   },
   "fimbriaphyllia-cand-600495829": {
    "view": "medium",
    "quality": 2,
    "form": "x",
-   "keep": "dup",
-   "note": "Soft, same area as the previous photo"
+   "keep": "dup"
   },
   "fimbriaphyllia-cand-247049403": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "note": "Green fluorescent tentacles"
   },
   "fimbriaphyllia-cand-258449888": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best"
   },
   "fimbriaphyllia-cand-224673747": {
    "view": "wide",
-   "quality": 3,
-   "form": "M",
-   "keep": "best"
-  },
-  "fimbriaphyllia-cand-255252866": {
-   "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "note": "Small colonies, cluttered frame"
+   "keep": "best"
   },
   "fimbriaphyllia-cand-225126683": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Blue-green cast; crinoid at right"
+   "note": "Cyan cast"
   },
   "fimbriaphyllia-cand-246889425": {
-   "view": "medium",
+   "view": "wide",
    "quality": 2,
-   "form": "x",
+   "form": "M",
    "keep": "best",
-   "note": "Soft focus"
+   "note": "Soft at 100%"
   },
   "fimbriaphyllia-cand-246889419": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "note": "Green cast"
-  },
-  "fimbriaphyllia-cand-270608190": {
-   "view": "wide",
-   "quality": 3,
-   "form": "M",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Polyps retracted: thin meandering walls with separate walls visible"
+   "keep": "dup"
   },
   "fimbriaphyllia-cand-630792956": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "note": "Blue-green cast"
+   "keep": "best"
   },
   "fimbriaphyllia-cand-479302135": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Blue-green cast"
+   "crop": [
+    0.2,
+    0.15,
+    0.9,
+    1.0
+   ],
+   "note": "Another coral at the bottom left"
   },
   "fimbriaphyllia-cand-98213435": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
-   "keep": "best"
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Soft; a fish among the tentacles"
   },
   "fimbriaphyllia-cand-98213726": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "M",
    "keep": "best",
-   "note": "Orange sponge at top left"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Soft over the whole frame, tentacles out"
   },
   "fimbriaphyllia-cand-308225191": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Strong blue cast"
+   "note": "Strong cyan cast; tentacle shapes readable"
   },
   "fimbriaphyllia-cand-460217227": {
    "view": "wide",
    "quality": 3,
    "form": "M",
    "keep": "best",
-   "note": "Small watermark at top right"
+   "note": "Watermark at the corner"
   }
  }
 }

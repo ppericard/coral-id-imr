@@ -326,6 +326,12 @@ const credit = p =>
     : p.imr
       ? `IMR Lecture 6, slide ${esc(p.slide)}`
       : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
+// Before the answer the enlarged quiz photo credits its author by name only (Pierre, 2026-11-03): no taxon and no link,
+// which would give the genus away (rule 11); the full credit comes with the answer.
+const blindCredit = p => {
+  const n = p.cf ? 'R. Kelley / BYOGUIDES' : p.imr ? '' : author(p);
+  return p.imr ? ' · IMR lecture' : n ? ` · © ${esc(n)}` : '';
+};
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
 // Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick, else the first closer view.
 // Default (Pierre): an IMR photo first, the first IMR featured Closer photo, before data.json's pick.
@@ -457,7 +463,7 @@ function card(name, group) {
   const im = p
     ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="" loading="lazy">`
     : `<span class="ph none">no photo</span>`;
-  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="fdxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${esc(tipsText(g))}</p></span></a>`;
+  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="fdxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${gloss(tipsText(g), undefined, true)}</p></span></a>`;
 }
 function bindCards(root = $v) {
   root.querySelectorAll('[data-g]').forEach(b => (b.onclick = () => go('g-' + b.dataset.g)));
@@ -466,7 +472,8 @@ function bindGo(root = $v) {
   root.querySelectorAll('[data-go]').forEach(b => (b.onclick = () => go(b.dataset.go)));
 }
 
-// Full-size viewer shared by every page. opts.blind() true = quiz before answering: hide genus, credit and source links.
+// Full-size viewer shared by every page. opts.blind() true = quiz before answering: hide the genus, the taxon and the
+// source links; the author's name alone stays (blindCredit).
 const lb = document.getElementById('lightbox');
 let lbClose = null;
 // Back closes the open viewer. A viewer's entry reached with no viewer open (Forward after closing a photo, or Back onto
@@ -476,21 +483,56 @@ addEventListener('popstate', () => {
   else if ((history.state || {}).lb) history.back();
 });
 const VIEW_LABEL = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites', close: 'Close-up'};
+// The enlarge mark on photos that open this viewer (quiz, duels, genus sheet; Pierre, 2026-11-03: almost no player
+// enlarged a quiz photo, 0-2% of answers for all but one, so most did not know they could). A magnifier with a plus in a
+// corner, from the app's SVG set; decorative, the button around it carries the label "Enlarge photo".
+const ZOOMI =
+  '<span class="zic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4M11 8.5v5M8.5 11h5"/></svg></span>';
+// The one-time "Tap a photo to see it bigger" hint (quiz.js zoomHint): 'seen' once shown, 'zoomed' once a photo has been
+// enlarged on this device; either way it is never due again. Per device, not part of the progress.
+const ZHINT_KEY = 'reefid-zoomhint';
+// opts.over(p): an optional layer drawn over the whole photo (HTML in % of the photo, e.g. the labels of a Coral basics
+// step, proto/basics.js), with a Labels on/off switch; it follows the photo at fit and at actual size.
 function zoom(list, i, opts = {}) {
+  if (store.get(ZHINT_KEY, null) !== 'zoomed') store.set(ZHINT_KEY, 'zoomed');
   const blind = () => (opts.blind ? opts.blind() : false);
+  let overOn = true,
+    ro = null;
   const show = () => {
     const p = list[i],
       hide = blind(),
-      vl = p.view ? (VIEWS.find(v => v[0] === p.view) || [0, VIEW_LABEL[p.view]])[1] : '';
+      vl = p.view ? (VIEWS.find(v => v[0] === p.view) || [0, VIEW_LABEL[p.view]])[1] : '',
+      over = !hide && opts.over ? opts.over(p) : '';
     const cap = hide
-      ? esc(vl || 'Photo')
+      ? esc(vl || 'Photo') + blindCredit(p)
       : `${p.genus ? `<b><i>${esc(p.genus)}</i></b> · ` : ''}${vl ? esc(vl) + ' · ' : ''}${credit(p)}${p.src ? ` · <a href="${esc(safeUrl(p.src))}" target="_blank" rel="noopener">original</a>` : ''}`;
     // The 1600 px file, over the 480 px one shown at once (usually already loaded). Saver: 960 px, 1600 on a click.
-    lb.innerHTML = `<div class="lb-in"><img src="${img(p, saver() ? 'm' : '')}" style="background:center / contain no-repeat url('${img(p, 's')}')" alt="${hide ? 'Coral to identify' : esc(p.t || '')}" title="Click for actual size"><p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
-      <div class="lb-nav">${list.length > 1 ? `<button type="button" data-d="-1" aria-label="Previous photo">‹</button><span>${i + 1} / ${list.length}</span><button type="button" data-d="1" aria-label="Next photo">›</button>` : ''}<button type="button" data-x aria-label="Close">Close</button></div></div>`;
+    lb.innerHTML = `<div class="lb-in"><img src="${img(p, saver() ? 'm' : '')}" style="background:center / contain no-repeat url('${img(p, 's')}')" alt="${hide ? 'Coral to identify' : esc(p.t || '')}" title="Click for actual size">${over ? `<div class="lb-over"${overOn ? '' : ' hidden'}>${over}</div>` : ''}<p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
+      <div class="lb-nav">${list.length > 1 ? `<button type="button" data-d="-1" aria-label="Previous photo">‹</button><span>${i + 1} / ${list.length}</span><button type="button" data-d="1" aria-label="Next photo">›</button>` : ''}${over ? `<button type="button" data-ov aria-pressed="${overOn}">Labels</button>` : ''}<button type="button" data-x aria-label="Close">Close</button></div></div>`;
     lb.classList.remove('full');
     const im = lb.querySelector('.lb-in img');
     im.draggable = false;
+    // The layer sits exactly on the photo's box (the photo keeps its ratio, so its box is the picture).
+    if (ro) ro.disconnect();
+    const ov = lb.querySelector('.lb-over');
+    if (ov) {
+      const place = () =>
+        Object.assign(ov.style, {
+          left: im.offsetLeft + 'px',
+          top: im.offsetTop + 'px',
+          width: im.offsetWidth + 'px',
+          height: im.offsetHeight + 'px'
+        });
+      place();
+      im.addEventListener('load', place);
+      if (typeof ResizeObserver === 'function') (ro = new ResizeObserver(place)).observe(im);
+      lb.querySelector('[data-ov]').onclick = e => {
+        e.stopPropagation();
+        overOn = !overOn;
+        ov.hidden = !overOn;
+        e.currentTarget.setAttribute('aria-pressed', overOn);
+      };
+    }
     im.onclick = e => {
       e.stopPropagation();
       if (moved) return; // the end of a drag, not a click
@@ -529,6 +571,7 @@ function zoom(list, i, opts = {}) {
   const close = fromBack => {
     if (lbClose !== close) return;
     lbClose = null;
+    if (ro) ro.disconnect();
     if (!fromBack && history.state && history.state.lb) history.back();
     lb.hidden = true;
     lb.innerHTML = '';
@@ -598,30 +641,54 @@ const noteText = x => x.replace(/^(Review slide|Instructor's notes): /, '');
 // Full lecture notes for the genus sheet.
 const notesList = (g, cls = '') =>
   g.imr.length
-    ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${g.imr.map(x => `<li>${gloss(noteText(x))}</li>`).join('')}</ul><p class="tref">IMR Lecture 6${g.sl && g.sl.length ? ', ' + slideRef(g.sl.length > 1 ? 'slides' : 'slide', g.sl) : ''}</p>`
+    ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${glossAll(g.imr.map(noteText))
+        .map(x => `<li>${x}</li>`)
+        .join(
+          ''
+        )}</ul><p class="tref">IMR Lecture 6${g.sl && g.sl.length ? ', ' + slideRef(g.sl.length > 1 ? 'slides' : 'slide', g.sl) : ''}</p>`
     : `<p class="note">Not on the lecture slides: see the Coral Finder below.</p>`;
-// Glossary terms in tips and lecture notes: tap (or focus + Enter) to see the definition and its source.
-// Very common words (wall, corallite, mouth) are left plain. Matching patterns per glossary term:
+// Glossary terms in tips, lecture notes, genus cards, quiz feedback and the Coral Finder: tap (or focus + Enter) to see
+// the definition and its source. Matching patterns per glossary term (Corallite and Polyp glossed too since the beginner
+// review of 2026-11-03: players who never had the IMR lecture; "septal teeth" opens Septa):
 const GLOSS_PAT = {
   'Septo-costae': 'septo-costae',
-  'Septa': 'septa',
+  'Septa': 'septa(?:l(?: teeth)?)?',
   'Costae': 'costae',
   'Coenosteum': 'coenosteum',
   'Paliform lobes': 'paliform lobes?',
   'Axial corallite': 'axial corallites?',
   'Verrucae': 'verrucae',
-  'Hooded corallites': 'hooded',
+  'Hooded corallites': 'hooded(?: corallites?)?',
   'Extra-tentacular budding': 'extra-tentacular(?: budding)?',
   'Intra-tentacular budding': 'intra-tentacular(?: budding)?',
   'Monticules': 'monticules?',
-  'Vesicles': 'vesicles?'
+  'Vesicles': 'vesicles?',
+  'Corallite': 'corallites?',
+  'Polyp': 'polyps?',
+  // The most frequent words of the genus sheets with no entry until 2026-11-03 (tools/apply_plain_terms.py MORE).
+  'Free-living': 'free-living',
+  'Solitary': 'solitary',
+  'Separate walls': 'separate(?:[- ]walls?|-walled)|plocoid',
+  'Shared walls': 'shared walls?|cerioid',
+  'Phaceloid': 'phaceloid',
+  'Radial corallites': 'radial corallites?',
+  'Tentacular lobes': 'tentacular lobes?',
+  'Axial furrow': 'axial furrow',
+  'Spinules': 'spinules?'
 };
 let glossRe = null;
-function gloss(text) {
+// Each term is underlined once per text block, at its first occurrence: a tip saying "corallites" three times gets one
+// underline, not three. seen (a Set) carries that over several calls that make one block (the items of one tips list).
+// btn: the text sits inside a button (a Coral Finder box): the term is tappable but not a focus stop of its own.
+function gloss(text, seen = new Set(), btn = false) {
   const t = esc(text);
   if (!DATA.terms) return t;
   if (!glossRe) {
-    const keys = DATA.terms.map(x => x[0]).filter(k => GLOSS_PAT[k]);
+    // Longer patterns first, so "axial corallite" wins over "corallite" at the same place.
+    const keys = DATA.terms
+      .map(x => x[0])
+      .filter(k => GLOSS_PAT[k])
+      .sort((a, b) => GLOSS_PAT[b].length - GLOSS_PAT[a].length);
     glossRe = keys.length
       ? {keys, re: new RegExp('\\b(?:' + keys.map(k => '(' + GLOSS_PAT[k] + ')').join('|') + ')\\b', 'gi')}
       : {re: null};
@@ -629,18 +696,29 @@ function gloss(text) {
   if (!glossRe.re) return t;
   return t.replace(glossRe.re, (m, ...g) => {
     const k = glossRe.keys[g.slice(0, glossRe.keys.length).findIndex(x => x !== undefined)];
-    return k ? `<span class="gt" tabindex="0" role="button" data-gt="${esc(k)}">${m}</span>` : m;
+    if (!k || seen.has(k)) return m;
+    seen.add(k);
+    return `<span class="gt"${btn ? '' : ' tabindex="0" role="button"'} data-gt="${esc(k)}">${m}</span>`;
   });
 }
+// The items of one list glossed as one block (each term underlined once in the list).
+const glossAll = (L, btn) => {
+  const seen = new Set();
+  return L.map(x => gloss(x, seen, btn));
+};
 const $gpop = document.createElement('div');
 $gpop.className = 'gpop';
 $gpop.hidden = true;
 $gpop.setAttribute('role', 'tooltip');
 document.body.appendChild($gpop);
+// A term's text: the plain-words sentence written for beginners (data.json terms[i][3], tools/apply_plain_terms.py), then
+// the sourced definition with its source.
+const termDef = ([, d, src, plain]) =>
+  `${plain ? `${esc(plain)} <span class="gdef">${esc(d)}</span>` : esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}`;
 function showGloss(el) {
   const t = DATA.terms.find(x => x[0] === el.dataset.gt);
   if (!t) return;
-  $gpop.innerHTML = `<b>${esc(t[0])}</b> ${esc(t[1])}${t[2] ? ` <small>${esc(t[2])}</small>` : ''}`;
+  $gpop.innerHTML = `<b>${esc(t[0])}</b> ${termDef(t)}`;
   $gpop.hidden = false;
   const r = el.getBoundingClientRect(),
     w = Math.min(320, innerWidth - 24);
@@ -648,7 +726,9 @@ function showGloss(el) {
   $gpop.style.left = Math.max(12, Math.min(r.left, innerWidth - w - 12)) + 'px';
   const below = r.bottom + 8,
     h = $gpop.offsetHeight;
-  $gpop.style.top = (below + h > innerHeight - 8 ? r.top - h - 8 : below) + 'px';
+  // Below the term, else above it, and always inside the screen (a term high on a tall card, whose definition did not
+  // fit above it, went off the top: pages smoke, 2026-11-03).
+  $gpop.style.top = Math.max(8, Math.min(below + h > innerHeight - 8 ? r.top - h - 8 : below, innerHeight - h - 8)) + 'px';
 }
 document.addEventListener(
   'click',
@@ -676,13 +756,15 @@ addEventListener(
 // Short ID tips; genera the lecture skips fall back to the Coral Finder summary.
 const tipsList = (g, cls = '') =>
   g.qt
-    ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${g.qt.map(x => `<li>${gloss(x)}</li>`).join('')}</ul>`
+    ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${glossAll(g.qt)
+        .map(x => `<li>${x}</li>`)
+        .join('')}</ul>`
     : `<p class="keyid">${gloss(g.sum)}</p>`;
 const tipsText = g => (g.qt ? g.qt.join(' · ') : g.sum);
 // The ID tips view of the Genera page: the 4 lecture questions and the glossary on top, then 2-3 short cues per genus.
 const tipsHead =
   () => `<div class="tiphead"><ol class="qtiles" aria-label="IMR Lecture 6: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
-  <details class="gloss"><summary>Coral anatomy terms</summary><a class="glink" href="#lab-anatomy"><span class="hpv art">${window.homeArt ? homeArt('anatomy') : ''}</span><span><b>Corallite anatomy</b><small>Explore the parts of a corallite on a diagram ›</small></span></a><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>`;
+  <details class="gloss"><summary>Coral anatomy terms</summary><a class="glink" href="#lab-anatomy"><span class="hpv art">${window.homeArt ? homeArt('anatomy') : ''}</span><span><b>Corallite anatomy</b><small>Explore the parts of a corallite on a diagram ›</small></span></a><dl>${DATA.terms.map(t => `<dt>${esc(t[0])}</dt><dd>${termDef(t)}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>`;
 const tipCard = n => {
   const g = DATA.gen[n],
     p = cover(g);
@@ -772,6 +854,11 @@ const BENTHIC_NOTE =
 // A genus of the games: the slate (coral and benthic) or a bonus genus.
 const gameGenus = n => !!DATA.gen[n] || isBenthic(n) || isBonus(n);
 const pool = () => [...slateGenera(), ...bonusList()].filter(n => photoSet(n).shown.length);
+// The plain sentence (Pierre, 2026-11-03): one everyday-words line per genus (data.json `plain`, tools/apply_plain_sheets.py),
+// clear for everyone, beginners included. Right under the photo of the genus sheet and of the first-meeting card, before
+// the ID tips and lecture notes, in body text with no label (Pierre's review: a muted labelled line above the photo was
+// skipped). It adds to the scientific text and replaces none of it.
+const plainLine = g => (g.plain ? `<p class="plainw">${esc(g.plain)}</p>` : '');
 // ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera.
 const tipsLabel = g => (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');
 // What is wrong with the sync, in words, or '' when everything is saved.
@@ -962,8 +1049,12 @@ const MODES = {
     ['cmp', 'Look-alikes', 'Classic look-alikes, one pair per screen']
   ],
   practice: [
-    ['quiz', 'Photo → genus', 'Name the genus'],
-    ['quiz-duel', 'Look-alike duels', 'Two genera often confused'],
+    // "Quiz", not "Photo → genus" (Pierre, 2026-11-03: it is a general quiz now, typed answers and duels slipped in); the
+    // ids and routes stay (#quiz, quiz|… in the answer log). Phones: "Duels", so the four tabs fit 360 px without
+    // scrolling (rule 20): Quiz, Custom quiz, Duels, Memory take 262 of 328 px there; "Look-alike duels" would leave 2 px.
+    ['quiz', 'Quiz', 'Name the genus'],
+    ['quiz-custom', 'Custom quiz', 'The quiz on the genera you pick'],
+    ['quiz-duel', '<span class="wide">Look-alike duels</span><span class="narrow">Duels</span>', 'Two genera often confused'],
     ['pairs', 'Memory', 'Match colony and corallites']
   ],
   identify: [['finder', 'Coral Finder', 'Tap the clues you see, get a ranked shortlist']]
@@ -979,6 +1070,7 @@ function sectionOf(h) {
   if (h === 'progress' || h === 'quiz-board') return 'progress';
   if (h === 'board') return 'board';
   if (h === 'ach') return 'board';
+  if (h === 'about') return 'about'; // no tab: reached from the Home credit line and the ? help
   const m = modeOf(h);
   return Object.keys(MODES).find(t => MODES[t].some(x => x[0] === m)) || 'learn';
 }
@@ -992,6 +1084,7 @@ function generaOrder() {
 // On a genus sheet or a pair, the header bar names the page instead of listing the section's tools.
 function ctxBar(h) {
   const back = `<button type="button" class="up" data-back aria-label="Back">‹<span>Back</span></button>`;
+  if (h === 'about') return `${back}<h2 class="ctx-t">About and credits</h2>`;
   if (h.startsWith('g-') && GX(h.slice(2))) {
     const n = h.slice(2),
       g = GX(n),
@@ -1014,7 +1107,8 @@ function showModes(tab, h) {
     $modes.hidden = false;
     $modes.setAttribute('aria-label', 'Page');
     $modes.innerHTML = ctx;
-    $modes.querySelector('[data-back]').onclick = () => (pageDepth > 0 ? history.back() : go(h.startsWith('g-') ? 'genera' : 'cmp'));
+    $modes.querySelector('[data-back]').onclick = () =>
+      pageDepth > 0 ? history.back() : go(h.startsWith('g-') ? 'genera' : h === 'about' ? 'home' : 'cmp');
     return;
   }
   // A section with a single tool needs no tab bar.
@@ -1047,6 +1141,125 @@ addEventListener('hashchange', () => {
   if (typeof s.d === 'number') pageDepth = s.d;
   else history.replaceState({...s, d: ++pageDepth}, '');
 });
+// Cards (Pierre, 2026-11-03: direction B, Medallion, of the Lab mock-up, for the whole family; docs/DESIGN.md "Cards").
+// Every card over the page comes from cardShow: a round medallion over the card's top edge holds the kind's emoji
+// (CARD_KINDS) or a visual (cardRing, the progress ring), then a kicker, the title, the text and the buttons stacked full
+// width, the main one on top, centred on a pale tint of the kind's hue (the accent; the warm --warn for an apology). The
+// first meeting with a genus keeps its photo as a full-width band instead (its photo is there to be learned), the emoji
+// on a chip at the band's edge. One overlay at a time stays the callers' job (they wait while '#tour, .unlock' is up);
+// cardShow owns the rest: the .unlock overlay (hidden under the tour, closed by route() through ulClose when its page is
+// left), role dialog, aria-modal, labelled by its kicker and title, the focus (main button, or o.focus, kept inside on
+// Tab, given back on close), the keys (Escape / Enter outside a button or field / a tap outside: o.esc / o.enter / o.tap,
+// 1 or 2 = as that button, or a function; the quiz's answer keys never reach the page behind; the tour's pass while the
+// card waits under it), and on close the question's clock (quiz.js qclockAgain: reading a card is not looking at the
+// photo). o: {kind, cls (classes the callers' code and tests look for), kick, title (HTML; none: the first h3 of the body
+// labels it, else o.label), body, photo (genus band URL), visual (medallion HTML), primary / secondary ({text, attr, on,
+// stay}: on runs after the card closes, or instead of closing with stay), note, after, bind(d) after each render,
+// onClose(how: 1, 2, 'esc', 'enter', 'tap', 'route')}. Returns the overlay: d.close(how), d.set(changes) redraws it.
+const CARD_KINDS = {apology: '🙏', update: '🔄', feature: '✨', genus: '🪸', tip: '💡', bonus: '🎁', account: '💾', ach: '🏆'};
+let cardN = 0;
+function cardShow(o) {
+  const d = document.createElement('div'),
+    from = document.activeElement,
+    id = 'ulh' + ++cardN;
+  d.className = ('unlock ' + (o.cls || '')).trim();
+  d.setAttribute('role', 'dialog');
+  d.setAttribute('aria-modal', 'true');
+  let shut = false;
+  const close = how => {
+    if (shut) return;
+    shut = true;
+    d.remove();
+    document.removeEventListener('keydown', key, true);
+    if (from && from !== document.body && from.isConnected && !document.querySelector('.unlock')) from.focus({preventScroll: true});
+    if (typeof qclockAgain === 'function') qclockAgain();
+    if (o.onClose) o.onClose(how);
+  };
+  const act = (w, how) => {
+    if (typeof w === 'function') return w();
+    const b = (w === 1 || w === 2) && o[w === 1 ? 'primary' : 'secondary'];
+    if (!b) return close(how);
+    if (!b.stay) close(w);
+    if (b.on) b.on();
+  };
+  // The labels: the kicker and title, or a title the body draws itself (the sign-in box, redrawn as it changes).
+  d.relabel = () => {
+    const h = d.querySelector('.ulpanel h3');
+    if (h && !h.id) h.id = id + 'h';
+    const k = d.querySelector('.ulkick');
+    if (h) (d.setAttribute('aria-labelledby', (k ? k.id + ' ' : '') + h.id), d.removeAttribute('aria-label'));
+    else (d.setAttribute('aria-label', o.label || o.kick || ''), d.removeAttribute('aria-labelledby'));
+  };
+  const btn = (b, n) =>
+    b ? `<button class="next${n === 2 ? ' sec' : ''}" type="button" data-b="${n}"${b.attr ? ' ' + b.attr : ''}>${b.text}</button>` : '';
+  const draw = () => {
+    const e = `<span class="e" aria-hidden="true">${CARD_KINDS[o.kind] || ''}</span>`,
+      band = !!o.photo;
+    d.innerHTML = `<div class="ulcard${band ? ' band' : ''}" data-k="${o.kind || ''}">${
+      band ? '' : `<div class="ulmed${o.visual ? ' vis' : ''}" aria-hidden="true">${o.visual || e}</div>`
+    }<div class="ulpanel">${band ? `<div class="ulphoto"><img src="${o.photo}" alt=""></div>` : ''}${
+      o.kick ? `<p class="ulkick" id="${id}k">${band ? e : ''}${o.kick}</p>` : ''
+    }${o.title ? `<h3 id="${id}h">${o.title}</h3>` : ''}${o.body || ''}${
+      o.primary || o.secondary ? `<div class="ulbtns">${btn(o.primary, 1)}${btn(o.secondary, 2)}</div>` : ''
+    }${o.note ? `<p class="note ulfoot">${o.note}</p>` : ''}${o.after || ''}</div></div>`;
+    d.querySelectorAll('[data-b]').forEach(b => (b.onclick = () => act(Number(b.dataset.b))));
+    d.relabel();
+    if (o.bind) o.bind(d);
+    if (o.focus !== false)
+      setTimeout(() => {
+        const f = d.querySelector(o.focus || '[data-b="1"]') || d.querySelector('[data-b]');
+        if (f && !shut) f.focus({preventScroll: true});
+      }, 50);
+  };
+  const tabbable = () =>
+    [...d.querySelectorAll('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])')].filter(
+      x => !x.disabled && x.getClientRects().length
+    );
+  const key = e => {
+    if (document.getElementById('tour')) return; // the card waits under the tour: the tour's keys
+    const t = e.target,
+      inside = t instanceof Element && d.contains(t);
+    if (e.key === 'Tab') {
+      // The focus stays in the card.
+      const f = tabbable(),
+        i = f.indexOf(document.activeElement);
+      if (!f.length) return e.preventDefault();
+      if (e.shiftKey ? i <= 0 : i < 0 || i === f.length - 1) {
+        e.preventDefault();
+        f[e.shiftKey ? f.length - 1 : 0].focus();
+      }
+      return;
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      return act(o.esc === undefined ? 'esc' : o.esc, 'esc');
+    }
+    if (inside && t.matches('input, textarea, select')) return; // typing in the card's form (sign-in)
+    e.stopPropagation(); // never the quiz's answer keys behind the card
+    if (/^\d$/.test(e.key)) e.preventDefault();
+    if (e.key !== 'Enter' || (inside && t.closest('button, a[href], [tabindex]')) || o.enter === undefined) return; // Enter presses it
+    e.preventDefault();
+    act(o.enter, 'enter');
+  };
+  document.addEventListener('keydown', key, true);
+  d.addEventListener('click', e => {
+    if (e.target === d && o.tap !== undefined) act(o.tap, 'tap');
+  });
+  d.close = close;
+  d.ulClose = () => close('route');
+  d.set = c => (Object.assign(o, c), draw());
+  draw();
+  document.body.appendChild(d);
+  return d;
+}
+// A progress ring for a card's medallion: pct strong, was (a former value) faint behind it.
+function cardRing(pct, was) {
+  const C = 2 * Math.PI * 26,
+    arc = (p, c) =>
+      `<circle class="${c}" cx="32" cy="32" r="26" stroke-dasharray="${((C * Math.max(0, Math.min(100, p))) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 32 32)"/>`;
+  return `<svg class="ulring" viewBox="0 0 64 64"><circle class="tr" cx="32" cy="32" r="26"/>${was != null && was !== pct ? arc(was, 'gh') : ''}${pct > 0 ? arc(pct, 'ar') : ''}<text x="32" y="38.5" text-anchor="middle">${pct}%</text></svg>`;
+}
 function route() {
   // A new version took over in the background (see UPDATED): the page reloads on the way to the next page.
   if (UPDATED) return location.reload();
@@ -1132,12 +1345,17 @@ function route() {
     viewLookalikes(a, b);
   } else if (h.startsWith('cmp-')) viewCompare(...h.slice(4).split('|'));
   else if (h === 'quiz') quizPhoto();
-  // Lecture photos are now a photo set of Photo -> genus.
+  // The custom quiz (quiz.js): its selection screen, and the quiz on the genera picked.
+  else if (h === 'quiz-custom' || h === 'quiz-custom|play') quizCustom(h);
+  // Lecture photos are now a photo set of the Quiz.
   else if (h === 'quiz-course')
     location.replace('#quiz'); // the Lecture photo set was removed (Pierre, 2026-10-31)
   else if (h === 'progress' || h === 'quiz-board') quizBoard();
   else if (h === 'board') viewBoard();
   else if (h === 'ach') viewAch();
+  // About and credits (home.js); #credits is another name for it.
+  else if (h === 'credits') location.replace('#about');
+  else if (h === 'about' && window.viewAbout) viewAbout();
   else if (h.startsWith('quiz-duel')) {
     const [, a, b] = h.split('|');
     quizDuel(a, b);
@@ -1167,6 +1385,10 @@ const $help = document.getElementById('help'),
   $helpbox = document.getElementById('helpbox');
 // One rule for every page and every render path (route, tabs, toggles, Lab tools): whenever the view gets a
 // top-level title or intro, the title is dropped and the intro moves behind ? . route() only resets the help box.
+// The last line of the ? help on every page (Pierre, 2026-11-03: the credits footer left the pages): About and credits,
+// the privacy notice and Send feedback (AGENTS.md rule 11b), two taps from anywhere. So the ? shows on every page.
+const helpEnd = () =>
+  `<p class="note hend"><a href="#about">About &amp; credits</a> · <a href="privacy.html">Privacy</a>${typeof repBtn === 'function' ? ' · ' + repBtn({k: 'page'}, 'Send feedback') : ''}</p>`;
 function pageHelp() {
   const root = $v.querySelector(':scope > .lab') || $v;
   const found = [...root.querySelectorAll(':scope > h2:not(.vh), :scope > .lede, :scope > .tips, :scope > h3.label, :scope > .gloss')];
@@ -1177,7 +1399,8 @@ function pageHelp() {
     $helpbox.innerHTML =
       (h2 ? `<h3>${esc(h2.textContent)}</h3>` : '') +
       intro.map(x => x.outerHTML).join('') +
-      (window.tour ? '<p class="note htour"><button type="button" class="linkish" data-tour>Replay the welcome tour</button></p>' : '');
+      (window.tour ? '<p class="note htour"><button type="button" class="linkish" data-tour>Replay the welcome tour</button></p>' : '') +
+      helpEnd();
     $help.hidden = false;
   }
   found.forEach(x => x.remove());
@@ -1186,8 +1409,8 @@ function pageHelp() {
 }
 function resetHelp() {
   $helpbox.hidden = true;
-  $helpbox.innerHTML = '';
-  $help.hidden = true;
+  $helpbox.innerHTML = helpEnd(); // a page with explanations puts them above it (pageHelp)
+  $help.hidden = false;
   $help.setAttribute('aria-expanded', 'false');
 }
 new MutationObserver(pageHelp).observe($v, {childList: true, subtree: true});
@@ -1411,9 +1634,14 @@ let HAVE = 1,
   started;
 const STARTED = new Promise(r => (started = r)),
   TIERP = {},
-  // The tier each page needs: Home 1; the quiz, the duels, the Learn pages, My progress, the leaderboard and the
+  // The tier each page needs: Home and About 1; the quiz, the duels, the Learn pages, My progress, the leaderboard and the
   // achievements 2 (progress.js is small and the quiz needs it); the Tools and the Coral Finder (proto/) 5.
-  pageTier = h => (!h || h === 'home' ? 1 : /^(quiz|genera|g-|cmp|tips|key-imr$|progress|quiz-board|board|ach)/.test(h) ? 2 : 5),
+  pageTier = h =>
+    !h || h === 'home' || h === 'about' || h === 'credits'
+      ? 1
+      : /^(quiz|genera|g-|cmp|tips|key-imr$|progress|quiz-board|board|ach)/.test(h)
+        ? 2
+        : 5,
   // Steps of the loading bar for a page of tier n: its scripts, and data.json.
   bootMax = n => [...document.querySelectorAll('link[data-tier]')].filter(l => +l.dataset.tier <= n).length + 1;
 let J2 = null;
@@ -1429,8 +1657,12 @@ const SETUP = {
     // progress.js comes with the quiz (Codex review #361: answers given before it lost their achievement bookkeeping):
     // the achievement record is migrated and counted here, before any answer.
     achMigrate();
+    achRecheck(); // a learned mark taken away at load (model.js mxRecalc): its achievements first
     achCheck(); // before My progress opens, so its badge counts them
     recalcNotice(); // every player's progress recalculated (2026-11-02): said once, with a pop-up
+    mxLostNotice(); // a learned mark taken away (model.js mxRecalc): said once, after the card above if both are due
+    rvNotice(); // the cards of the rules versions skipped (core.js RVS msg, sync.js replayAdopt): after those above
+    sorryNotice(); // an apology to the players of the broken opening (2026-11-03/04): once, after any recalculation note
     prog();
     window.APP_READY = true; // Home, the quiz and the Learn pages work (tests and tools/perf.js wait for this)
   },
@@ -1463,7 +1695,7 @@ function need(n) {
   }
 }
 Promise.all([
-  getR('data.json?v=34')
+  getR('data.json?v=37')
     .then(r => (loadMark('pop', String(r.headers.get('x-served-by') || '').slice(0, 60)), r))
     .then(okJson)
     .then(d => (window.bootTick && bootTick(), d)),

@@ -3,7 +3,7 @@
 // top-level names and is loaded right after sync.js (index.html, in order); app.js waits for every script
 // (window.BOOT) before its first page. Required like app.js: the loader tries it 3 times, the service worker keeps it.
 // Progress board, one screen: a wall of the slate genera's cover photos in slate order (name band in the level colour, grey photo =
-// not seen, red border = review) beside a side column with the overall ring, what to review first and the mix-ups. Signing in
+// not seen, amber dot = review) beside a side column with the overall ring, what to review first and the mix-ups. Signing in
 // and backup/reset live in the header and ⚙ (Pierre, 2026-11-01: the board comes first, nothing unrelated around it).
 // The player's card on My progress (Pierre, 2026-11-01: "a badge, as in video games"; 2026-11-02: one compact element
 // with the ring, at the top of the page, not under the slate tiles): the overall ring with its %, then the name, place and
@@ -56,7 +56,7 @@ function quizBoard() {
     .join(',');
   const STEPS = MASTERY.map(([t], k) => [k, t]);
   // Photo wall: the cover in full colour (grey = not seen) with a name band coloured by the genus's step on the scale,
-  // holding the mini ring + % like the Slate and Groups tiles; review = red border and "!".
+  // holding the mini ring + % like the Slate and Groups tiles; review = an amber dot (app.css, 2026-11-03).
   const tile = n => {
     const g = GX(n),
       p = cover(g),
@@ -143,7 +143,7 @@ function quizBoard() {
   // bottom of the side column.
   let pv = store.get('reefid-sync-pview', 'slate');
   if (!VIEWS[pv]) pv = 'slate';
-  $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the photo quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
+  $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
   <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Small typos and old names are accepted; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
   <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder. On this page they come after the slate.</p>
   <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from 95% (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>
@@ -424,7 +424,8 @@ function paintBoard(B) {
 // check on a device with progress but no record yet (the feature arriving) grants what is already met in one recap.
 const ACHK = 'reefid-sync-ach';
 // Two records of one player (another device, or this device before signing in): every achievement kept with its
-// earliest date, the best run kept; the current run stays this device's.
+// earliest date, the best run kept; the current run stays this device's; an achievement taken back (A._gone, achRecheck)
+// never comes back from a copy earned before (core.js mergeAch).
 // Version of the record (ACH_V): a record from before the full recount (2026-11-01, mastery exam) brings its feats
 // (best run, corallites, hard photo) but not its achievements, which were counted on the old rules.
 const ACH_V = 2;
@@ -432,14 +433,37 @@ function achMerge(json) {
   try {
     const ra = JSON.parse(json || 'null');
     if (!ra || typeof ra !== 'object') return;
-    const A = store.get(ACHK, {}) || {},
-      old = ra._v !== ACH_V;
-    Object.keys(ra).forEach(k => {
-      if (k === '_run' || k === '_v' || (old && k[0] !== '_')) return;
-      A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] ? Math.min(A[k], ra[k]) : ra[k];
-    });
-    store.set(ACHK, A);
+    store.set(ACHK, mergeAch(store.get(ACHK, {}) || {}, ra, ACH_V));
   } catch (e) {}
+}
+// A learned mark taken away by a recalculation (model.js mxRecalc, MXL): the achievements resting on genera learned
+// (core.js ACH_LEARN: Instructor, Coral master, Group complete) that the progress no longer meets are taken back, dated
+// in the record's _gone so no merge brings them back (core.js achRevoke, mergeAch); earned again, they come back as
+// usual. Only then: everywhere else achievements are only added. The removals are kept and synced even when this record
+// held none of them (achMigrate dropped them at start-up, or they were earned on another device): without them the next
+// merge would bring back the sheet's copy (Codex review #399). The ids taken back go to the card (mxLostNotice) and
+// leave the "new" dots; one sync, so the sheet's copy (achievement shares) follows.
+function achRecheck() {
+  const M = store.get(MXL.KEY, null);
+  if (!M || !M.ach) return [];
+  const A = store.get(ACHK, null),
+    was = JSON.stringify(A),
+    out = A ? achRevoke(A, achSnap(A), Date.now()) : [];
+  if (A && JSON.stringify(A) !== was) {
+    store.set(ACHK, A);
+    if (SYNC) syncSoon();
+  }
+  if (out.length) {
+    store.set(
+      ACHNEW,
+      achUnseen().filter(id => !out.includes(id))
+    );
+    achDot();
+  }
+  delete M.ach;
+  M.gone = Object.keys(M.due || {}).length ? [...new Set([...(M.gone || []), ...out])] : []; // the card names them if it is due
+  store.set(MXL.KEY, M);
+  return out;
 }
 const achList = () => slateGenera();
 function achSnap(A = store.get(ACHK, {}) || {}) {
@@ -472,7 +496,7 @@ function achMigrate() {
   const A = store.get(ACHK, null);
   if (A && A._v === ACH_V) return;
   const B = {_v: ACH_V};
-  if (A) ['_run', '_best', '_cor', '_hard'].forEach(k => A[k] && (B[k] = A[k]));
+  if (A) ['_run', '_best', '_cor', '_hard', '_gone'].forEach(k => A[k] && (B[k] = A[k]));
   const snap = achSnap(B),
     t = Date.now();
   ACH.filter(a => a.test(snap)).forEach(a => (B[a.id] = (A && A[a.id]) || t));
@@ -565,7 +589,9 @@ function achNext() {
   const el = document.createElement('div');
   el.className = 'achpop t' + a.tier + (calm() ? ' calm' : '');
   el.setAttribute('role', 'status');
-  el.innerHTML = `<a href="#ach" class="achin"><span class="achic" aria-hidden="true">${a.icon}</span><span><small>Achievement unlocked ${TIER[a.tier]}</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
+  // The cards' look (app.js cardShow, docs/DESIGN.md "Cards"), as a toast: the achievement's own emoji in a small medallion
+  // with its tier at the edge, on the pale tint of the kind's hue.
+  el.innerHTML = `<a href="#ach" class="achin" data-k="ach"><span class="achic" aria-hidden="true"><span>${a.icon || CARD_KINDS.ach}</span><span class="tier">${TIER[a.tier] || ''}</span></span><span><small>Achievement unlocked</small><b>${esc(a.title)}</b><span>${esc(a.desc)}</span></span></a>${calm() ? '' : `<span class="confetti" aria-hidden="true">${Array.from({length: 14}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</span>`}`;
   document.body.append(el);
   let tm = 0;
   const mo = new MutationObserver(() => {
@@ -684,21 +710,36 @@ function boardNotice() {
 // real pop-up, not a discreet note; no algorithm details). Once per device, to a player who already has answers (a new
 // player has nothing recalculated), at the first moment no tour or card is open; marked seen only by its button or
 // Escape, so a card closed by leaving the page comes back on the next one. A later recalculation adds a note at the end
-// of RECALC.L (a new id, a title and a text): a player shown every note but the last sees the last; one who missed
+// of RECALC.L (a new id, a title and a text), and so does a new game mode worth announcing (typed questions,
+// 2026-11-03, with its own kicker and button): a player shown every note but the last sees the last; one who missed
 // several sees them all on one card, latest first. KEY holds the id of the last note seen. Exception: the photo memory
 // recalculation (2026-11-03, core.js memRecalc) is silent, Pierre's choice (the bars only move down 1-3 points).
+// Each note has a kind (app.js CARD_KINDS: 'update' for a recalculation, 'feature' for a new game mode): the latest due
+// gives the card its medallion, for a recalculation the player's progress ring as it is now.
 const RECALC = {
   KEY: 'reefid-recalc',
   L: [
     {
       id: 'progress-moving-average-2026-11',
+      kind: 'update',
       t: "We've improved how progress is measured",
       p: 'Based on feedback from the first players, your progress now reflects more closely how well you can tell each genus apart from the others. Your % may be lower than before, and it will grow a little more slowly. None of your answers is lost.'
     },
     {
       id: 'millepora-counts-2026-11',
+      kind: 'update',
       t: '<i>Millepora</i> now counts in your progress',
       p: '<i>Millepora</i> (fire coral) is on the IMR benthic slate and very common at Dauin and in ReefCloud photos, so it now counts in your progress, which is now over 40 genera: your % may be a little lower.'
+    },
+    // A new game mode announced the same way (Pierre, 2026-11-03: a card for typed questions, a little tongue-in-cheek;
+    // text validated by Pierre). k, b: the card's kicker and button when this note is the latest due.
+    {
+      id: 'typed-questions-2026-11',
+      kind: 'feature',
+      k: 'New',
+      b: 'Bring it on',
+      t: 'Think you know your genera? Think again.',
+      p: "New in the quiz: typed questions. No choices, no hints, just the photo and an empty box: type the genus from memory. They show up once you're doing well on a genus, and mastery exams now include them. Picking among four is good; naming it cold is what makes an expert."
     }
   ]
 };
@@ -714,38 +755,179 @@ function recalcNotice() {
   // Something else on screen (the tour, a card): try again a little later, until the screen is clear.
   if (document.querySelector('.recalc')) return; // already on screen
   if (document.querySelector('#tour, .unlock')) return void setTimeout(recalcNotice, 2000);
-  const d = document.createElement('div');
-  d.className = 'unlock recalc';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Progress recalculated');
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">Update</p>${due.map(x => `<h3>${x.t}</h3><p>${x.p}</p>`).join('')}
-    <div class="ulbtns"><span></span><button class="next" type="button">Got it</button></div></div>`;
-  document.body.appendChild(d);
-  const close = seen => {
-    if (seen) store.set(RECALC.KEY, last);
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-  };
-  const key = e => {
-    if (e.key === 'Tab') return;
-    e.stopPropagation(); // never the quiz's keys behind the card
-    if (e.key === 'Escape' || e.key === 'Enter') {
-      e.preventDefault();
-      close(true);
-    }
-  };
-  document.addEventListener('keydown', key, true);
-  // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (Codex review #367: a returning
-  // player opening straight at #quiz had it closed by the first route, before ever seeing it).
-  d.ulClose = () => {
-    close(false);
-    setTimeout(recalcNotice, 300);
-  };
-  d.querySelector('.next').onclick = () => close(true);
-  setTimeout(() => d.querySelector('.next').focus({preventScroll: true}), 50);
+  const k = due[0].kind || 'update';
+  cardShow({
+    kind: k,
+    cls: 'recalc',
+    visual: k === 'update' ? cardRing(progPct()) : '',
+    kick: due[0].k || 'Update',
+    title: due[0].t,
+    body: due.map((x, i) => `${i ? `<h3>${x.t}</h3>` : ''}<p>${x.p}</p>`).join(''),
+    primary: {text: due[0].b || 'Got it', on: () => store.set(RECALC.KEY, last)},
+    esc: 1,
+    enter: 1,
+    // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (Codex review #367: a returning
+    // player opening straight at #quiz had it closed by the first route, before ever seeing it).
+    onClose: how => how === 'route' && setTimeout(recalcNotice, 300)
+  });
 }
-// A short note at the bottom of the screen (.apptoast; html is the app's own text), closed by ✕ or after ms.
+// A learned mark taken away by a recalculation (model.js mxRecalc, MXL; Pierre, 2026-11-03: players know they test an
+// early beta): told once on this device by an announcement card, like recalcNotice (AGENTS.md rule 12: never held, no
+// visit floor or prompt spacing): at start-up once the progress is in (app.js SETUP 2) and right after a pull or an
+// answer that drops a mark (mxLost), on whatever page is open. Another card or the tour on screen: it waits for it
+// (tried again every 2 s). Names the genera, and the achievements taken back with them (achRecheck). Seen only by OK (or
+// Enter / Escape): those marks go to told and are never told again here; leaving the page closes it unseen and it comes
+// back once the new page is drawn.
+const andList = L => (L.length < 2 ? L.join('') : L.slice(0, -1).join(', ') + ' and ' + L[L.length - 1]);
+// why: the reason per genus (model.js mxRecalc): 'bkt' an exam passed under the former model, 'rules' a recalculation of
+// the whole log under newer rules (the sheet's full replay, sync.js replayAdopt).
+function mxLostText(L, nAch, why = {}) {
+  const one = L.length === 1,
+    it = x => andList(x.map(n => `<i>${esc(n)}</i>`)),
+    B = L.filter(n => (why[n] || 'bkt') === 'bkt'),
+    N = L.filter(n => (why[n] || 'bkt') !== 'bkt'),
+    back = x =>
+      x.length === 1
+        ? 'This genus is back on its progress bar, and its exam'
+        : 'These genera are back on their progress bars, and their exams';
+  return [
+    B.length
+      ? `You passed the mastery exam on ${it(B)} under the beta's first rules, which brought the exam too early. ${back(B)} will come again.`
+      : '',
+    N.length
+      ? `Your progress was recalculated from all your answers with the app's current rules, and the mastery exam you passed on ${it(N)} no longer stands. ${back(N)} will come again.`
+      : '',
+    nAch ? `Until then, the ${nAch > 1 ? 'badges' : 'badge'} earned with ${one ? 'it' : 'them'} ${nAch > 1 ? 'are' : 'is'} taken back.` : ''
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+let mxLostT = 0;
+function mxLostNotice() {
+  clearTimeout(mxLostT);
+  const M = store.get(MXL.KEY, {}) || {},
+    due = M.due || {},
+    L = Object.keys(due).sort();
+  if (!L.length || document.querySelector('.mxlost')) return;
+  if (document.querySelector('#tour, .unlock')) return void (mxLostT = setTimeout(mxLostNotice, 2000));
+  cardShow({
+    kind: 'update',
+    cls: 'mxlost',
+    kick: 'Early beta',
+    title: `${L.length > 1 ? 'Mastery exams' : 'Mastery exam'} to take again`,
+    body: `<p>${mxLostText(L, (M.gone || []).length, M.why || {})}</p>`,
+    primary: {
+      text: 'OK',
+      on: () => {
+        // Seen: those marks go to told; a drop that came while the card was open shows next.
+        const N = store.get(MXL.KEY, {}) || {},
+          told = N.told || {},
+          left = {...(N.due || {})};
+        L.forEach(n => {
+          told[n] = due[n];
+          if (left[n] === due[n]) delete left[n];
+        });
+        store.set(MXL.KEY, {...N, due: left, told, gone: []});
+        mxLostNotice();
+      }
+    },
+    esc: 1,
+    enter: 1,
+    onClose: how => how === 'route' && (mxLostT = setTimeout(mxLostNotice, 300))
+  });
+}
+// The announcement card of a rules version (core.js RVS msg; Pierre, 2026-11-03: announcement cards show as soon as the
+// player opens or reconnects to the app, on whatever page they land on, one after another if several, never held by
+// the visit floor or the prompt spacing; AGENTS.md "How to make a change" 12). When this device adopts the sheet's full
+// replay of a newer version (sync.js replayAdopt), every version it skipped that has a msg is due, once per version
+// on this device (RVN.KEY, device only: due, the versions still to show; told, those shown; pct, the progress % before
+// and after the adoption, per version, for a msg with only: 'changed', due only when the two differ by msg.min points or
+// more, either way: core.js RV_CARD, 5). One card per version,
+// oldest first, the next as soon as one is closed; like recalcNotice and mxLostNotice it only waits for another card
+// or the tour on screen (tried again every 2 s), and a page change closes it unseen to show it again on the new page.
+// At start-up (app.js SETUP 2, after the two cards above) and right after an adoption.
+const RVN = {KEY: 'reefid-rv-msg'};
+function rvNoticeAdd(from, to, pct) {
+  const M = store.get(RVN.KEY, {}) || {},
+    told = M.told || [],
+    due = (M.due || []).filter(v => !told.includes(v)),
+    pc = M.pct || {};
+  rvMsgs(from, to).forEach(x => {
+    if (told.includes(x.v) || due.includes(x.v)) return;
+    if (x.msg.only === 'changed' && !(pct && pct[0] !== pct[1] && Math.abs(pct[1] - pct[0]) >= (x.msg.min || 0))) return;
+    if (pct) pc[x.v] = pct;
+    due.push(x.v);
+  });
+  store.set(RVN.KEY, {due: due.sort((a, b) => a - b), told, pct: pc});
+  if (window.APP_READY) rvNotice();
+}
+let rvT = 0;
+function rvNotice() {
+  clearTimeout(rvT);
+  const M = store.get(RVN.KEY, {}) || {},
+    x = RVS.find(r => (M.due || []).includes(r.v) && r.msg && !(M.told || []).includes(r.v));
+  if (!x || document.querySelector('.rvmsg')) return;
+  if (document.querySelector('#tour, .unlock')) return void (rvT = setTimeout(rvNotice, 2000));
+  // The progress ring in the medallion: the % after the recalculation, the one before faint behind it (app.js cardRing).
+  const [pf, pt] = (M.pct || {})[x.v] || [];
+  cardShow({
+    kind: x.msg.kind || 'update',
+    cls: 'rvmsg',
+    kick: 'Update',
+    title: x.msg.t,
+    visual: pt != null ? cardRing(pt, pf) : '',
+    body: `<p>${x.msg.p.replace('{from}', pf).replace('{to}', pt)}</p>`,
+    primary: {
+      text: 'Got it',
+      on: () => {
+        const N = store.get(RVN.KEY, {}) || {};
+        store.set(RVN.KEY, {...N, due: (N.due || []).filter(v => v !== x.v), told: [...new Set([...(N.told || []), x.v])]});
+        rvNotice(); // the next version's card, if any
+      }
+    },
+    esc: 1,
+    enter: 1,
+    onClose: how => how === 'route' && (rvT = setTimeout(rvNotice, 300))
+  });
+}
+// An apology, once (Pierre, 2026-11-04; core.js SORRY, sorryOf, sorryFelt, sorryText): to a player who really felt the
+// opening of #408 run unchecked (too many new genera at once, no easier questions after misses), at app open, in plain
+// words, greeted by the first word of their sign-in name (else "Hi!"). Whether they felt it is read once, the first time
+// this version runs on the device (FIRST: the time, and what core.js sorryOf reads then: the answers in the window, the
+// opening hold's sum, the cards opened in it), so playing on changes nothing. A card like recalcNotice's (app.js
+// cardShow, kind apology: 🙏 on the warm --warn tint): one card at a time (it waits while the tour or another card is
+// up), never held, its button, Enter or Escape close it for good on this device (reefid-sorry, like reefid-recalc, kept on the
+// device); leaving the page closes it unseen and it comes back.
+const SORRYK = {KEY: 'reefid-sorry', FIRST: 'reefid-sorry-first'};
+function sorryNotice() {
+  const now = Date.now();
+  let F = store.get(SORRYK.FIRST, null);
+  if (!F || typeof F !== 'object') {
+    let log = [];
+    try {
+      log = [...((SYNC && SYNC.log) || []), ...(store.get(LOG0, []) || [])];
+    } catch (e) {}
+    F = {t: now, ...sorryOf({log, cards: introMap(), total: answersSoFar(), h: HOLDS, first: now})};
+    store.set(SORRYK.FIRST, F);
+  }
+  if (!sorryDue({felt: F, now, shown: store.get(SORRYK.KEY, 0)})) return;
+  if (document.querySelector('.sorry')) return; // already on screen
+  if (document.querySelector('#tour, .unlock')) return void setTimeout(sorryNotice, 2000);
+  const x = sorryText(SYNC && SYNC.name, now, new Date(now).getTimezoneOffset());
+  cardShow({
+    kind: 'apology',
+    cls: 'sorry',
+    kick: 'Sorry',
+    title: esc(x.t),
+    body: `<p>${esc(x.p)}</p>`,
+    primary: {text: 'Thanks', on: () => store.set(SORRYK.KEY, Date.now())},
+    esc: 1,
+    enter: 1,
+    onClose: how => how === 'route' && setTimeout(sorryNotice, 300)
+  });
+}
+// A short note at the bottom of the screen (.apptoast, the cards' tint and shadow; html is the app's own text), closed by
+// ✕ or after ms.
 function appToast(html, ms) {
   const t = document.createElement('div');
   t.className = 'apptoast';

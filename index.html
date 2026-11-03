@@ -26,7 +26,7 @@
 <link rel="preload" href="fonts/source-sans-3-normal.woff2" as="font" type="font/woff2" crossorigin>
 <!-- Slow first visit (beginner RA review, 2026-11-02): data.json, the biggest start-up file, downloads alongside the
      scripts instead of after app.js has run (same URL as the fetch in app.js; crossorigin so the fetch can reuse it). -->
-<link rel="preload" href="data.json?v=34" as="fetch" crossorigin>
+<link rel="preload" href="data.json?v=37" as="fetch" crossorigin>
 <!-- Load order (Pierre, 2026-11-02; field HAR: ~86 kbit/s from the IMR field station, everything asked at once, so every
      file got a sliver of the line and all came at 20-25 s). The files come in tiers, one tier after the other:
      1 Home (preloaded below, with the stylesheets, the main font and data.json; proto/lab.css also holds the layout of
@@ -40,21 +40,21 @@
      per script run and one for data.json (bootTick; bootTick.n() = steps so far), and after 6 s a line says only the
      first visit is this slow (beginner RA review, 2026-11-02: a blank "Loading…" for 5-8 s on a slow line looked stuck). -->
 <script>(function(){addEventListener("error",function(e){var t=e.target,n;if(!t||t.tagName!=="LINK"||t.rel!=="stylesheet")return;n=+(t.dataset.r||0);if(n<3)setTimeout(function(){var c=t.cloneNode();c.dataset.r=n+1;t.replaceWith(c)},1000*(n+1))},true);var D=0,T={},dom=new Promise(function(r){addEventListener("DOMContentLoaded",r)});function tick(){var p=document.getElementById("bootp");D++;if(p)p.value=D}tick.n=function(){return D};window.bootTick=tick;function go(L,i,n,ok){if(i>=L.length)return ok();var s=document.createElement("script");s.src=L[i];s.onload=function(){tick();go(L,i+1,0,ok)};s.onerror=function(){s.remove();n<3?setTimeout(function(){go(L,i,n+1,ok)},1000*(n+1)):go(L,i+1,0,ok)};document.body.appendChild(s)}function tier(k){if(T[k])return T[k];var got=dom.then(function(){return[].map.call(document.querySelectorAll('link[data-tier="'+k+'"]'),function(l){if(k>1){var c=document.createElement("link");c.rel="preload";c.as="script";c.href=l.href;document.head.appendChild(c)}return l.href})});return T[k]=Promise.all([got,k>1?tier(k-1):dom]).then(function(a){return new Promise(function(ok){go(a[0],0,0,ok)})})}window.loadTier=tier;dom.then(function(){var p=document.getElementById("bootp");if(p)p.max=document.querySelectorAll('link[data-tier="1"]').length+1;setTimeout(function(){var s=document.getElementById("boots");if(s)s.hidden=false},6000)});window.BOOT=tier(1)})()</script>
-<link rel="preload" href="core.js?v=31" as="script" data-tier="1">
-<link rel="preload" href="app.js?v=183" as="script" data-tier="1">
-<link rel="preload" href="sync.js?v=18" as="script" data-tier="1">
+<link rel="preload" href="core.js?v=40" as="script" data-tier="1">
+<link rel="preload" href="app.js?v=195" as="script" data-tier="1">
+<link rel="preload" href="sync.js?v=23" as="script" data-tier="1">
 <link rel="preload" href="home-art.js?v=4" as="script" data-tier="1">
-<link rel="preload" href="home.js?v=27" as="script" data-tier="1">
-<link rel="preload" href="tour.js?v=15" as="script" data-tier="1">
-<link data-tier="2" href="model.js?v=18">
-<link data-tier="2" href="quiz.js?v=23">
-<link data-tier="2" href="learn.js?v=5">
-<link data-tier="2" href="progress.js?v=13">
-<link data-tier="5" href="flag.js?v=10">
-<link data-tier="5" href="proto/lab.js?v=72">
-<link rel="stylesheet" href="app.css?v=120">
-<link rel="stylesheet" href="proto/lab.css?v=52">
-<link rel="stylesheet" href="home.css?v=22">
+<link rel="preload" href="home.js?v=31" as="script" data-tier="1">
+<link rel="preload" href="tour.js?v=19" as="script" data-tier="1">
+<link data-tier="2" href="model.js?v=31">
+<link data-tier="2" href="quiz.js?v=38">
+<link data-tier="2" href="learn.js?v=12">
+<link data-tier="2" href="progress.js?v=19">
+<link data-tier="5" href="flag.js?v=11">
+<link data-tier="5" href="proto/lab.js?v=78">
+<link rel="stylesheet" href="app.css?v=130">
+<link rel="stylesheet" href="proto/lab.css?v=56">
+<link rel="stylesheet" href="home.css?v=23">
 </head>
 <body>
 <script>/* rename-app: keep (the names before the rename too: app.js moves them after this runs) */try{var g=function(k){return localStorage.getItem("reefid-sync-"+k)||localStorage.getItem("imr-coral-"+k)},t=g("theme");if(t)document.documentElement.dataset.theme=t;var p=g("palette");document.documentElement.dataset.palette=p&&p!=="reef"?p:"depth";if(g("cvd")==="1")document.documentElement.dataset.cvd="1"}catch(e){document.documentElement.dataset.palette="depth"}</script>
@@ -73,7 +73,7 @@
       <a class="theme boardgo" id="boardgo" href="#board" aria-label="Leaderboard" title="Leaderboard">🏆</a>
       <a class="theme labgo" href="#lab" aria-label="Tools" title="Tools"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 12-8.4 8.4a2.1 2.1 0 0 1-3-3L12 9"/><path d="M17.6 15 22 10.6"/><path d="m20.9 11.7-1.3-1.3c-.6-.6-.9-1.3-.9-2.1V7l-2.3-2.3a5.5 5.5 0 0 0-4-1.7H9l.9.8a6.2 6.2 0 0 1 2.1 4.6V10l2 2h1.2c.8 0 1.6.3 2.1.9l1.3 1.3"/></svg></a>
       <button type="button" class="next signb" id="signb" hidden>Sign in</button>
-      <button type="button" class="theme" id="help" aria-label="Help for this page" aria-expanded="false" aria-controls="helpbox" title="Help for this page" hidden>?</button>
+      <button type="button" class="theme" id="help" aria-label="Help and about" aria-expanded="false" aria-controls="helpbox" title="Help and about" hidden>?</button>
       <button type="button" class="theme" id="setb" aria-label="Settings" aria-expanded="false" aria-controls="settings" title="Settings">⚙</button>
       <div id="settings" class="setpop" hidden>
         <div class="sethead"><b>Settings</b><button type="button" class="setx" id="setx" aria-label="Close settings">✕</button></div>
@@ -84,7 +84,7 @@
         <div class="setrow" id="viewrow" hidden><span>View</span><div id="adminview" role="group" aria-label="View"><button type="button" data-view="admin" title="Admin">Admin</button><button type="button" data-view="user" title="User">User</button></div></div>
         <div class="setrow" id="admrow" hidden><span>Admin page</span><a class="setlink" href="admin.html">Open</a></div>
         <div class="setrow"><span title="Show your name, progress and Elo on the public leaderboard (signed-in players)">Leaderboard</span><div id="boardset" role="group" aria-label="Leaderboard"><button type="button" data-board="1">On</button><button type="button" data-board="0">Off</button></div></div>
-        <div class="setrow"><span title="Genera off the IMR list but common at Dauin, in the photo quiz and the duels (they don't count in your progress)">Bonus genera</span><div id="bonset" role="group" aria-label="Bonus genera"><button type="button" data-bon="1">On</button><button type="button" data-bon="0">Off</button></div></div>
+        <div class="setrow"><span title="Genera off the IMR list but common at Dauin, in the Quiz and the duels (they don't count in your progress)">Bonus genera</span><div id="bonset" role="group" aria-label="Bonus genera"><button type="button" data-bon="1">On</button><button type="button" data-bon="0">Off</button></div></div>
         <div class="setrow"><span>Theme</span><div id="theme" role="group" aria-label="Theme"><button type="button" data-th="light">Light</button><button type="button" data-th="dark">Dark</button></div></div>
         <div class="setrow"><span title="Blue and orange instead of green and red">Colour-blind</span><div id="cvd" role="group" aria-label="Colour-blind mode"><button type="button" data-cvd="1">On</button><button type="button" data-cvd="0">Off</button></div></div>
         <div class="setrow"><span>Colours</span><div id="palette" class="palsw" role="group" aria-label="Colours"><button type="button" data-pal="lagoon" title="Lagoon"><i style="background:linear-gradient(90deg,#d3ebe7,#a2d5cc,#63b6a4,#29836d,#1d5f34)"></i><span>Lagoon</span></button><button type="button" data-pal="ocean" title="Ocean"><i style="background:linear-gradient(90deg,#d1edfe,#a1d1f4,#6aaae6,#3a76c0,#2c4f94)"></i><span>Ocean</span></button><button type="button" data-pal="seagrass" title="Seagrass"><i style="background:linear-gradient(90deg,#e6edc0,#c0d492,#8cb460,#4f813c,#29612d)"></i><span>Seagrass</span></button><button type="button" data-pal="twilight" title="Twilight"><i style="background:linear-gradient(90deg,#ebe3fe,#d0c0f9,#aa95e8,#7e66ca,#543f99)"></i><span>Twilight</span></button><button type="button" data-pal="depth" title="Depth"><i style="background:linear-gradient(90deg,#f4ed8b,#9bdda8,#4ab9b2,#167ca4,#2e4d99)"></i><span>Depth</span></button></div></div>
@@ -97,7 +97,6 @@
   </header>
   <nav id="modes" class="modes" hidden></nav>
   <main id="view"><div class="boot"><p class="note">Loading…</p><progress id="bootp" max="13" value="0" aria-label="Loading"></progress><p class="note" id="boots" hidden>Slow connection: still loading. Only the first visit takes this long; after that the app opens from your phone.</p></div></main>
-  <footer><p>Website and interface by Pierre Pericard. Sources: IMR Lecture 6 · Coral Finder 2022 (R. Kelley, BYOGUIDES) · iNaturalist photos, credited on each photo. For training at IMR. <a href="privacy.html">Privacy</a></p></footer>
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
 </body>

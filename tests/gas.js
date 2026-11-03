@@ -142,7 +142,7 @@ function loadCodeGs(opts = {}) {
       deleteTrigger() {},
       newTrigger: () => ({timeBased: () => ({everyMinutes: () => ({create() {}})})})
     },
-    LockService: {getScriptLock: () => ({waitLock() {}, releaseLock() {}})},
+    LockService: {getScriptLock: () => ({waitLock() {}, tryLock: () => true, releaseLock() {}})},
     ContentService: {MimeType: {JSON: 'json'}, createTextOutput: t => ({setMimeType: () => JSON.parse(t)})},
     console
   };

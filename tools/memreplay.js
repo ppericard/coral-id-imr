@@ -10,19 +10,21 @@
 // Prints:
 // - the sheet side: the photo memory offsets the new rule estimates from these answers (core.js photoMemOf, as ?stats=1
 //   mem will serve them), and how far the photo ratings move from the old rule (v25, copied below) to the new one;
-// - per player (anonymous id), replayed in time order with the app's rules: the progress of each genus (s.pg, the bar
-//   %), the overall % over the genera answered, and the opening hold (the CUSUM of the logged expectations), old -> new.
+// - per player (anonymous id), replayed in time order with the app's rules by core.js replayProgress (the full replay the
+//   admin shows, docs/LEARNING.md "Full replay"): the progress of each genus (s.pg, the bar %), the overall % over the
+//   genera answered, and the opening hold (the CUSUM of the expectations), old rule (before the photo memory) -> new.
 //   Each question's difficulty d is recovered from what the app logged then (expected e, ability th, k choices):
-//   e = 1/k + (1 - 1/k) sig(th - d). The new rule adds the player's memory of the photos (fam, from their own history
-//   in the log) to d: the right answer weighs x pgMemW, the miss pgMissW at d + fam, the expectation e at d + fam.
-//   Beside it, "silent recalculation": what the app's one-time recalculation of saved progress (core.js memRecalc,
-//   from the genus's photos [shown, right] alone, as a device holds them) makes of the old-rule bar.
+//   e = 1/k + (1 - 1/k) sig(th - d) (core.js MEM_LOGGED: since the photo memory the logged e includes it). The new rule
+//   adds the player's memory of the photos (fam, from their own history in the log) to d: the right answer weighs
+//   x pgMemW, the miss pgMissW at d + fam, the expectation e at d + fam. Beside it, "silent recalculation": what the
+//   app's one-time recalculation of saved progress (core.js memRecalc, from the genus's photos [shown, right] alone, as a
+//   device holds them) makes of the old-rule bar.
 //
-// Approximations (the replay is a what-if, not the app): the look-alike factor of a right answer uses the declared
-// look-alikes only (data.json look), not the pooled confusions; the genus wrongly given gets a miss in full under both
-// rules; the ability and the photo choice are those the app logged (in the new rule the ability would move a little
-// differently, and other photos would have come up); a comeback answer's recall is taken as 1; the mastery exam is not
-// replayed, so a genus learned shows at most 95%. Answers logged without expected/ability (before sheet v5) are skipped.
+// Approximations (the replay is a what-if, not the app): listed with core.js replayProgress (the ability and the photos
+// are those the app logged, a comeback answer's recall is taken as 1, the look-alike prior without the growth forms, the
+// genus wrongly given weighed at the chance on the genus shown); the pooled confusions are those of this log
+// (core.js confusionOf); the mastery exam is not replayed, so a genus learned shows at most 95%. Answers logged without
+// expected/ability (before sheet v5) are not replayed.
 const fs = require('fs'),
   path = require('path');
 const C = require('../core.js');
@@ -43,22 +45,8 @@ const J = JSON.parse(fs.readFileSync(file, 'utf8')),
   ONLY = opt('player', null),
   MIN = Number(opt('min', 5));
 const DATA = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),
-  GEN = DATA.gen || {},
-  look = (a, b) => ((GEN[a] || {}).look || []).includes(b) || ((GEN[b] || {}).look || []).includes(a);
-const sig = x => 1 / (1 + Math.exp(-x)),
-  TARGET_OFF = 1; // model.js PICKD.TARGET_OFF
-// Number of choices as the app scored it: a typed answer (|t) none to guess from (Infinity, model.js TYPED.k), |kN in
-// the mode, a duel 2, else the genera in the choices (2-3), else 4.
-const kOf = (mode, choices) => {
-  if (C.TYPED_RE.test(mode)) return Infinity;
-  const kq = /\|k(\d)/.exec(mode);
-  if (kq) return Number(kq[1]);
-  if (/duel|\|d/.test(mode)) return 2;
-  const n = String(choices || '')
-    .split(/\s+/)
-    .filter(Boolean).length;
-  return n >= 2 && n < 4 ? n : 4;
-};
+  GEN = {...(DATA.gen || {}), ...((DATA.x || {}).gen || {})}; // Millepora and the bonus genera too, as the app's GX
+const sig = x => 1 / (1 + Math.exp(-x));
 
 // The sheet before v26 (Code.gs stats_ v25, core.js eloReplay before 2026-11-03): fixed memory rule for the photo's
 // step only (new +0.5, right twice -1), the player's level without it.
@@ -127,74 +115,38 @@ if (dif.length) {
   );
 }
 
-// App side, per player.
-const pgMissW = (th, d, k) => Math.min(1, (1 / k + (1 - 1 / k) * sig(th - d)) / (1 / k + (1 - 1 / k) * sig(TARGET_OFF)));
-const pgMemW = (th, d, fam, k) => (fam >= 0 ? 1 : Math.min(1, (1 / k + (1 - 1 / k) * sig(th - d)) / (1 / k + (1 - 1 / k) * sig(th - d - fam))));
-const players = {};
-rows
-  .slice()
-  .sort((a, b) => a[1] - b[1])
-  .forEach(r => (players[r[0]] = players[r[0]] || []).push(r));
-const bar = pg => Math.round(95 * Math.min(1, pg / C.PROG.M));
-for (const [id, L] of Object.entries(players)) {
-  if (ONLY && id !== ONLY) continue;
-  const H = {},
-    HG = {},
-    G = {},
-    hold = {old: 0, new: 0},
-    n = {all: 0, rep: 0, used: 0};
-  for (const r of L) {
-    const fs = String(r[6] || '')
-        .split(/\s+/)
-        .filter(Boolean),
-      t = r[2],
-      c = r[3],
-      ok = !!r[4],
-      k = kOf(r[5], r[10]),
-      e = r[7],
-      th = r[8];
-    const hs = fs.map(f => H[f]);
-    n.all++;
-    if (hs.some(h => h && h[0])) n.rep++;
-    if (typeof e === 'number' && typeof th === 'number' && fs.length) {
-      n.used++;
-      const q = Math.min(0.995, Math.max(0.005, (e - 1 / k) / (1 - 1 / k))),
-        d = th - Math.log(q / (1 - q)),
-        fam = C.memFam(hs, MEMV),
-        g = (G[t] = G[t] || {old: 0, new: 0, n: 0}),
-        chs = String(r[10] || '')
-          .split(/\s+/)
-          .filter(Boolean),
-        w = Math.min(1, (1 - 1 / k) / (1 - 1 / 4)) * (!isFinite(k) || chs.some(x => x !== t && look(t, x)) ? 1 : C.PROG.LOOK);
-      g.n++;
-      g.old = C.pgStep(g.old, ok, ok ? w : pgMissW(th, d, k));
-      g.new = C.pgStep(g.new, ok, ok ? w * pgMemW(th, d, fam, k) : pgMissW(th, d + fam, k));
-      if (!ok && c && c !== t) {
-        const x = (G[c] = G[c] || {old: 0, new: 0, n: 0});
-        x.old = C.pgStep(x.old, false, 1);
-        x.new = C.pgStep(x.new, false, 1);
+// App side, per player: core.js replayProgress, the full replay the admin shows (docs/LEARNING.md "Full replay"), under
+// the rule before the photo memory (memory: false) and today's. The opening hold (model.js holdNext, INTRO.SLACK 0.1) on
+// each rule's expectation, from the difficulty the replay recovers.
+const opts = {gen: GEN, mem: MEMV, conf: C.confusionOf(rows).pair},
+  hold = {},
+  run = memory =>
+    C.replayProgress(rows, {
+      ...opts,
+      memory,
+      onAnswer: (r, {d, fam, k}) => {
+        const h = (hold[r[0]] = hold[r[0]] || {old: 0, new: 0}),
+          e = 1 / k + (1 - 1 / k) * sig(r[8] - d - fam);
+        h[memory ? 'new' : 'old'] = Math.max(0, h[memory ? 'new' : 'old'] + e - (r[4] ? 1 : 0) - 0.1);
       }
-      // The opening hold (model.js holdNext, INTRO.SLACK 0.1), on the expectation logged then and the one with memory.
-      const eNew = 1 / k + (1 - 1 / k) * sig(th - d - fam);
-      hold.old = Math.max(0, hold.old + e - (ok ? 1 : 0) - 0.1);
-      hold.new = Math.max(0, hold.new + eNew - (ok ? 1 : 0) - 0.1);
-    }
-    fs.forEach(f => {
-      const h = (H[f] = H[f] || [0, 0]),
-        hg = ((HG[t] = HG[t] || {})[f] = (HG[t] || {})[f] || [0, 0]);
-      h[0]++;
-      h[1] += ok ? 1 : 0;
-      hg[0]++;
-      hg[1] += ok ? 1 : 0;
-    });
-  }
-  if (n.used < MIN) continue;
-  const gs = Object.entries(G),
-    pct = k => Math.round(gs.reduce((a, [, g]) => a + bar(g[k]), 0) / Math.max(1, gs.length));
-  // What the app's silent recalculation (core.js memRecalc) makes of the old-rule progress, from the genus's photos alone.
-  gs.forEach(([name, g]) => (g.rc = (r => (C.memRecalc(r, MEMV), r.pg))({pg: g.old, ps: HG[name] || {}})));
+    }),
+  OLD = run(false),
+  NEW = run(true);
+const bar = pg => Math.round(95 * Math.min(1, pg / C.PROG.M));
+for (const [id, pl] of Object.entries(NEW)) {
+  if ((ONLY && id !== ONLY) || pl.used < MIN) continue;
+  const gs = Object.entries(pl.P)
+    .filter(([name]) => name !== C.LEVEL)
+    .map(([name, g]) => {
+      const o = OLD[id].P[name];
+      // What the app's silent recalculation (core.js memRecalc) makes of the old-rule progress, from the genus's photos alone.
+      const rc = (x => (C.memRecalc(x, MEMV), x.pg))({pg: o.pg, ps: JSON.parse(JSON.stringify(o.ps))});
+      return [name, {n: g.ok + g.ko, old: o.pg, new: g.pg, rc}];
+    }),
+    pct = k => Math.round(gs.reduce((a, [, g]) => a + bar(g[k]), 0) / Math.max(1, gs.length)),
+    h = hold[id] || {old: 0, new: 0};
   console.log(
-    `\n${id}: ${n.all} answers (${n.used} replayed), ${Math.round((100 * n.rep) / n.all)}% on a photo already shown; mean bar over the ${gs.length} genera answered ${pct('old')}% -> ${pct('new')}% (silent recalculation ${pct('rc')}%); opening hold ${hold.old.toFixed(2)} -> ${hold.new.toFixed(2)} (holds at 1.5)`
+    `\n${id}: ${pl.n} answers (${pl.used} replayed), ${Math.round((100 * pl.rep) / pl.n)}% on a photo already shown; mean bar over the ${gs.length} genera answered ${pct('old')}% -> ${pct('new')}% (silent recalculation ${pct('rc')}%); opening hold ${h.old.toFixed(2)} -> ${h.new.toFixed(2)} (holds at 1.5)`
   );
   gs.filter(([, g]) => g.n >= MIN)
     .sort((a, b) => b[1].n - a[1].n)
