@@ -24,11 +24,15 @@ def ob(i, lic='cc-by', u=None, g='research', ll=(9.2, 123.3), inph=True, an=(), 
             'ph': [[i * 10 + k, f'https://inaturalist-open-data.s3.amazonaws.com/photos/{i * 10 + k}/square.jpg', lic, f'(c) u{i}'] for k in range(n)]}
 `;
 
-test('licence classes: CC0 / CC BY, then Pierre own, then CC BY-SA, then NC', () => {
+test('licences: Pierre own first whatever its licence, then CC0 / CC BY, then NC; never share-alike or ND', () => {
   const out = J(
-    `print(json.dumps([lic_class('cc0', False), lic_class('cc-by', False), lic_class('cc-by-nc', True), lic_class(None, True), lic_class('cc-by-sa', False), lic_class('cc-by-nc', False), lic_class('cc-by-nc-sa', False), lic_class('cc-by', True)]))`
+    `print(json.dumps([[lic_class('cc0', False), lic_class('cc-by', False), lic_class('cc-by-nc', True), lic_class(None, True), lic_class('cc-by', True), lic_class('cc-by-nc', False)], [lic_ok(x, False) for x in ('cc0', 'cc-by', 'cc-by-nc', 'cc-by-sa', 'cc-by-nc-sa', 'cc-by-nd', 'cc-by-nc-nd', None)], [lic_ok(None, True), lic_ok('cc-by-sa', True)]]))`
   );
-  assert.deepStrictEqual(out, [0, 0, 1, 1, 2, 3, 3, 0]);
+  assert.deepStrictEqual(out, [
+    [1, 1, 0, 0, 0, 2],
+    [true, true, true, false, false, false, false, false],
+    [true, false]
+  ]);
 });
 
 test('tiers: within 40 km of Dauin, within 250 km in the Philippines, the rest of the country, abroad', () => {
@@ -55,36 +59,54 @@ print(json.dumps([
   u(ob(11, n=1), ex={'110'}),                    # an excluded photo
   u(ob(12, rk='genus')),
   u(ob(13, lic='cc-by-nc-nd')),                  # NC and no derivatives: never (8 such photos came in once)
+  u(ob(14, lic='cc-by-sa')),                     # share-alike: never (Pierre: it would block a commercial reuse)
+  u(ob(15, lic='cc-by-nc-sa')),
 ]))`);
   assert.deepStrictEqual(out, [
-    [0, 'dauin', false, 1, ''],
+    [1, 'dauin', false, 1, ''],
     null,
-    [1, 'dauin', true, 1, ''],
-    [1, 'dauin', true, 1, ''],
+    [0, 'dauin', true, 1, ''],
+    [0, 'dauin', true, 1, ''],
     null,
     null,
     null,
-    [0, 'dauin', false, 1, 'juvenile/male'],
-    [0, 'dauin', false, 4, ''],
-    [0, 'dauin', false, 1, ''],
+    [1, 'dauin', false, 1, 'juvenile/male'],
+    [1, 'dauin', false, 4, ''],
+    [1, 'dauin', false, 1, ''],
+    null,
+    null,
     null,
     null,
     null
   ]);
 });
 
-test('select: free licences first across the Philippines, nearest first within a licence; NC only to fill', () => {
+test('select, a species not confirmed near Dauin: Pierre own first, then free licences across the Philippines nearest first, NC to fill, abroad last', () => {
   const out = J(`${OBS}
 it = lambda *a, **k: usable_obs(ob(*a, **k), set(), set())
-pools = {'dauin': [it(1, 'cc-by-nc'), it(2, 'cc-by'), it(3, 'cc-by-nc', u='ppericard')], 'region': [it(4, 'cc0', ll=(10.3, 123.9))], 'ph': [it(5, 'cc-by', ll=(14.6, 121.0)), it(6, 'cc-by-sa', ll=(14.6, 121.0))]}
+pools = {'dauin': [it(1, 'cc-by-nc'), it(2, 'cc-by'), it(3, 'cc-by-nc', u='ppericard')], 'region': [it(4, 'cc0', ll=(10.3, 123.9))], 'ph': [it(5, 'cc-by', ll=(14.6, 121.0)), it(6, 'cc-by-nc', ll=(14.6, 121.0))],
+         'world': [it(8, 'cc-by-nc', u='ppericard', ll=(-8.5, 115.2), inph=False)]}
 W = lambda: [{**it(7, 'cc0', ll=(-8.5, 115.2), inph=False), 'tier': 'world'}]
-print(json.dumps([[o['id'] for o in select(pools, r, {}, None, W)] for r in (3, 5, 6, 9)]))`);
+print(json.dumps([[o['id'] for o in select(pools, r, {}, None, W)] for r in (1, 2, 5, 7, 9)]))`);
   assert.deepStrictEqual(out, [
-    [2, 4, 5], // CC BY Dauin, CC0 region, CC BY Luzon: the free ones, nearest first
-    [2, 4, 5, 3, 6], // then Pierre's own, then CC BY-SA
-    [2, 4, 5, 3, 6, 1], // NC only to fill the gap
-    [2, 4, 5, 3, 6, 1, 7] // the Philippines exhausted: abroad, whatever the room left
+    [3], // Pierre's own first, whatever its licence
+    [3, 8], // his own abroad too
+    [3, 8, 2, 4, 5], // then CC BY Dauin, CC0 region, CC BY Luzon: the free ones, nearest first
+    [3, 8, 2, 4, 5, 1, 6], // NC only to fill, nearest first
+    [3, 8, 2, 4, 5, 1, 6, 7] // the Philippines exhausted: abroad
   ]);
+});
+
+test('select, a species confirmed near Dauin: Pierre own first, then from anywhere by licence, not by distance', () => {
+  const out = J(`${OBS}
+it = lambda *a, **k: usable_obs(ob(*a, **k), set(), set())
+pools = {'dauin': [it(1, 'cc-by-nc'), it(3, 'cc-by-nc', u='ppericard')], 'ph': [it(5, 'cc-by-nc', ll=(14.6, 121.0))]}
+W = lambda: [{**it(7, 'cc0', ll=(-8.5, 115.2), inph=False), 'tier': 'world'}]
+print(json.dumps([[o['id'] for o in select(pools, r, {'ph': True}, None, W, anywhere=True)] for r in (2, 4)]))`);
+  // The CC0 photo from abroad comes before the NC ones from Dauin, even while the Philippines have more.
+  assert.deepStrictEqual(out[0], [3, 7]);
+  assert.deepStrictEqual(out[1].slice(0, 2), [3, 7]);
+  assert.deepStrictEqual(out[1].slice(2).sort(), [1, 5]);
 });
 
 test('select: abroad never while a Philippine search has more than it read, and never fetched when not needed', () => {
@@ -219,7 +241,8 @@ test('fetch_fish.py offline on a fixture cache: tiers, licences, presence, recor
   };
   fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
   fs.writeFileSync(path.join(dir, 'cur.json'), JSON.stringify({fish: {exclude: {'fish-s1-cand-9990': 'excluded'}}}));
-  // The cache: s1 has Dauin NC, a free one in Luzon, Pierre's own Needs ID; s2 has one Philippine photo, so abroad fills.
+  // The cache: s1 (confirmed near Dauin) has Dauin NC, a free one in Luzon, a CC0 one and a share-alike one abroad, and
+  // Pierre's own Needs ID; s2 (not seen near Dauin) has one Philippine photo, so abroad fills.
   py(
     `${OBS}
 d = sys.argv[1]
@@ -229,7 +252,8 @@ Q = queries(501)
 put(Q['own'], [ob(1, u='ppericard', g='needs_id', lic='cc-by-nc')])
 put(Q['dauin'], [ob(2, lic='cc-by-nc'), ob(3, lic='cc-by-nc', n=2), ob(999, lic='cc-by')])
 put(Q['region'], [ob(2, lic='cc-by-nc'), ob(3, lic='cc-by-nc', n=2), ob(999, lic='cc-by')])
-put(Q['ph'], [ob(2, lic='cc-by-nc'), ob(3, lic='cc-by-nc', n=2), ob(999, lic='cc-by'), ob(4, lic='cc-by', ll=(14.6, 121.0))])
+put(Q['ph'], [ob(2, lic='cc-by-nc'), ob(3, lic='cc-by-nc', n=2), ob(999, lic='cc-by'), ob(4, lic='cc-by', ll=(14.6, 121.0)), ob(12, lic='cc-by-sa', ll=(14.6, 121.0))], total=50)
+put(Q['world'], [ob(10, lic='cc0', ll=(-8.5, 115.2), inph=False), ob(11, lic='cc-by-sa', ll=(-8.5, 115.2), inph=False)])
 Q = queries(502)
 put(Q['dauin'], [])
 put(Q['region'], [])
@@ -255,7 +279,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   const run = (...a) => execFileSync('python3', ['tools/fetch_fish.py', ...args, ...a], {cwd: ROOT, encoding: 'utf8'});
   const plan = JSON.parse(run('--plan'));
   assert.strictEqual(plan.missing, 0);
-  assert.deepStrictEqual(plan.species.s1.add, {ph: 1, dauin: 2}); // the free Luzon one, Pierre's own, then one NC
+  assert.deepStrictEqual(plan.species.s1.add, {dauin: 1, ph: 1, world: 1}); // Pierre's own, then the free ones from anywhere
   assert.deepStrictEqual(plan.species.s2.add, {ph: 1, world: 2}); // the Philippines exhausted: abroad, CC BY first
   assert.ok(!plan.species.s3, 'a species out of the game gets nothing');
   assert.ok(!fs.existsSync(path.join(dir, 'fish-cand.json')), '--plan writes nothing');
@@ -263,21 +287,21 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   const C = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8'));
   assert.strictEqual(C.v, 1);
   assert.deepStrictEqual(Object.keys(C.cand), ['s1', 's2']);
-  const s1 = C.cand.s1;
-  assert.deepStrictEqual(
-    s1.map(p => [p.o.split('/').pop(), p.lic, p.loc, p.own]),
-    [
-      ['4', 'cc-by', 'ph', false],
-      ['1', 'cc-by-nc', 'dauin', true],
-      // one NC observation of the two (fixed hash order), with all its photos
-      ['3', 'cc-by-nc', 'dauin', false],
-      ['3', 'cc-by-nc', 'dauin', false]
-    ]
-  );
-  assert.strictEqual(s1[1].ni, 1, "Pierre's Needs ID observation is marked, and kept (rule 6a)");
-  assert.deepStrictEqual(Object.keys(s1[0]), ['f', 'a', 'lic', 'o', 't', 'own', 'loc', 'src', 'r']);
-  assert.match(s1[0].f, /^fish-s1-cand-40$/);
-  assert.match(s1[0].src, /\/photos\/40\/original\.jpg$/);
+  const s1 = C.cand.s1,
+    row = p => [p.o.split('/').pop(), p.lic, p.loc, p.own];
+  // Pierre's own first (NC, Needs ID); then CC BY from Luzon and CC0 from abroad before the NC ones of Dauin, which the
+  // Philippines still have more of; never the share-alike ones.
+  assert.deepStrictEqual(row(s1[0]), ['1', 'cc-by-nc', 'dauin', true]);
+  assert.deepStrictEqual(s1.slice(1).map(row).sort(), [
+    ['10', 'cc0', 'world', false],
+    ['4', 'cc-by', 'ph', false]
+  ]);
+  assert.strictEqual(s1[0].ni, 1, "Pierre's Needs ID observation is marked, and kept (rule 6a)");
+  const p4 = s1.find(p => p.o.endsWith('/4'));
+  assert.deepStrictEqual(Object.keys(p4), ['f', 'a', 'lic', 'o', 't', 'own', 'loc', 'src', 'r']);
+  assert.match(p4.f, /^fish-s1-cand-40$/);
+  assert.match(p4.src, /\/photos\/40\/original\.jpg$/);
+  assert.ok(!/-sa"/.test(JSON.stringify(C)), 'no share-alike photo');
   assert.ok(!JSON.stringify(C).includes('9990'), 'an excluded photo never comes back');
   assert.deepStrictEqual(
     C.cand.s2.map(p => [p.lic, p.loc]),

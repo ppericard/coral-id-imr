@@ -8,14 +8,17 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
 - Identity: Research Grade at the species level; Pierre's own observations (iNaturalist user ppericard) identified to
   the species count as confirmed even when Needs ID (AGENTS.md rule 6a), nobody else's. Never captive (captive=false),
   never an observation annotated "Dead" (fish markets; the pre-sort sets aside the unannotated ones).
-- Sources, nearest first, as tools/fetch_local.py: within 40 km of Dauin, then within REGION_KM (250 km), then the rest
-  of the Philippines; abroad only for a species confirmed in the Philippines (fish.json present.ph) and only when the
-  Philippines are exhausted (every Philippine observation the search can see is taken and room is left; when the one
-  page read is not all of them, later pages may still hold some, so nothing from abroad).
-- Licences (fish prefer free licences; corals keep NC): CC0 and CC BY first, then Pierre's own (CC BY-NC), then CC BY-SA,
-  then NC (CC BY-NC, CC BY-NC-SA) only to fill the gaps. Never ND (crops are derivatives). The licence comes before the
-  distance inside the Philippines (a CC BY photo from Luzon before an NC one from Dauin: fish look the same across the
-  country), the Philippines before abroad whatever the licence (`select`).
+- Licences (Pierre, 2026-11-03; fish prefer free licences, corals keep NC): only CC0, CC BY and CC BY-NC. Never a
+  share-alike licence (CC BY-SA, CC BY-NC-SA: it would block a later commercial reuse) nor ND (crops are derivatives).
+  Each photo keeps its licence (`lic`): a commercial version could keep only CC0 / CC BY and Pierre's own.
+- Order (`select`, Pierre, 2026-11-03): Pierre's own observations FIRST for every species, wherever they were made and
+  whatever their licence (his are CC BY or CC BY-NC, credited "Pierre Pericard"). Then:
+  - a species confirmed near Dauin (fish.json present.dauin: confirmed within 40 km): photos from anywhere, the world
+    included, ordered by licence (CC0 / CC BY before NC), not by distance;
+  - any other species: the Philippines first, by licence then nearest (within 40 km of Dauin, within REGION_KM = 250 km,
+    the rest of the country), and abroad only for a species confirmed in the Philippines (present.ph), only when the
+    Philippines are exhausted (every Philippine observation the search can see is taken and room is left; when the one
+    page read is not all of them, later pages may still hold some, so nothing from abroad), by licence too.
 - Quality varied on purpose (Pierre: poor iNaturalist photos stand in for SVS video frames, on which EventMeasure
   identifications are made): no ordering by votes (that favours the best photos), no quality filter. The order is a
   fixed hash of the observation id (neutral, reproducible), then the least represented observer and life stage first
@@ -67,7 +70,10 @@ DAUIN_KM, REGION_KM = 40, 250  # as tools/fetch_local.py
 PH = 6873  # iNaturalist place: the Philippines
 PIERRE = "ppericard"
 CAP, PER_OBS = 30, 4
-LICENCES = "cc0,cc-by,cc-by-sa,cc-by-nc,cc-by-nc-sa"  # no ND: a crop is a derivative
+# The searches ask for these (unchanged so the cache stays valid); an observation can mix licences, so each photo is then
+# checked against OK: never share-alike, never ND (Pierre, 2026-11-03).
+LICENCES = "cc0,cc-by,cc-by-sa,cc-by-nc,cc-by-nc-sa"
+OK = ("cc0", "cc-by", "cc-by-nc")
 TIERS = ("dauin", "region", "ph")  # the Philippines, nearest first; then "world"
 LOC = {"dauin": "dauin", "region": "ph", "ph": "ph", "world": "world"}
 # iNaturalist annotations: Life Stage (1) Adult 2, Juvenile 8; Sex (9) Female 10, Male 11; Alive or Dead (17) Dead 19.
@@ -76,12 +82,15 @@ DEAD = (17, 19)
 
 
 def lic_class(lic, own):
-    """0 CC0 / CC BY, 1 Pierre's own, 2 CC BY-SA, 3 NC: the order fish photos are taken in (Pierre, 2026-11-03)."""
-    if lic in ("cc0", "cc-by"):
-        return 0
+    """0 Pierre's own (whatever its licence), 1 CC0 / CC BY, 2 NC: the order fish photos are taken in (Pierre, 2026-11-03)."""
     if own:
-        return 1
-    return 2 if lic == "cc-by-sa" else 3
+        return 0
+    return 1 if lic in ("cc0", "cc-by") else 2
+
+
+def lic_ok(lic, own):
+    """A photo's licence is usable: CC0, CC BY, CC BY-NC; Pierre's own even without one. Never share-alike or ND."""
+    return lic in OK or (own and not lic)
 
 
 def km(a, b):
@@ -189,7 +198,7 @@ def usable_obs(o, used, excl):
     own = o.get("u") == PIERRE
     if not own and o.get("g") != "research":
         return None
-    P = [p for p in o["ph"] if (p[2] or own) and "nd" not in (p[2] or "").split("-") and str(p[0]) not in used and str(p[0]) not in excl and p[1]]
+    P = [p for p in o["ph"] if lic_ok(p[2], own) and str(p[0]) not in used and str(p[0]) not in excl and p[1]]
     if not P:
         return None
     P = P[:PER_OBS]
@@ -197,12 +206,14 @@ def usable_obs(o, used, excl):
     return {**o, "P": P, "own": own, "cls": min(lic_class(p[2], own) for p in P), "tier": tier_of(o), "st": "/".join(st), "h": hord(o["id"])}
 
 
-def select(pools, room, more, n=None, world=lambda: []):
-    """Pick up to `room` observations: by licence class (0-3), and within a class nearest first (dauin, region, ph);
-    abroad (world(), fetched only then) only when the Philippines are exhausted: room is left and no Philippine search
-    had more results than it read (more[tier]). Within a bucket, the least represented observer and life stage first,
-    then the fixed hash order. pools: {tier: [items from usable_obs]}; n: Counter of ('u', login) / ('s', stage) already
-    in the species' list. Returns [item, ...] in the order taken."""
+def select(pools, room, more, n=None, world=lambda: [], anywhere=False):
+    """Pick up to `room` observations (Pierre, 2026-11-03). Pierre's own first (class 0), from any pool. Then, for a
+    species confirmed near Dauin (anywhere=True): every place at once, abroad included (world() fetched), by licence
+    class (1 CC0 / CC BY, then 2 NC), not by distance. Otherwise: by licence class, and within a class nearest first
+    (dauin, region, ph); abroad (world(), fetched only then) only when the Philippines are exhausted: room is left and no
+    Philippine search had more results than it read (more[tier]). Within a bucket, the least represented observer and
+    life stage first, then the fixed hash order. pools: {tier: [items from usable_obs]} (tier "world": Pierre's own
+    abroad); n: Counter of ('u', login) / ('s', stage) already in the species' list. Returns [item, ...] in order."""
     n = Counter() if n is None else n
     taken, seen = [], set()
 
@@ -218,12 +229,20 @@ def select(pools, room, more, n=None, world=lambda: []):
             n["s", o["st"]] += 1
             room -= 1
 
-    for cls in range(4):
+    allp = [o for t in (*TIERS, "world") for o in pools.get(t, [])]
+    take([o for o in allp if o["own"]])
+    if anywhere:
+        if room > 0:
+            allp += world()
+        for cls in (1, 2):
+            take([o for o in allp if o["cls"] == cls])
+        return taken
+    for cls in (1, 2):
         for t in TIERS:
             take([o for o in pools.get(t, []) if o["cls"] == cls])
     if room > 0 and not any(more.get(t) for t in TIERS):
         W = world()
-        for cls in range(4):
+        for cls in (1, 2):
             take([o for o in W if o["cls"] == cls])
     return taken
 
@@ -327,17 +346,16 @@ def run(args):
             for p in L:
                 if not gone(p["f"]):
                     n["s", p.get("st", "")] += 1
-            own_abroad = pools.pop("world", [])  # Pierre's own observations abroad wait with the world tier
-
             def world():
                 if not (s.get("present") or {}).get("ph"):
                     return []  # abroad only for a species confirmed in the Philippines
                 w = net.get(Q["world"])
                 out = [usable_obs(o, used, excl) for o in (w or {}).get("results", [])
                        if f"https://www.inaturalist.org/observations/{o['id']}" not in known and o["id"] not in byid]
-                return own_abroad + [{**x, "tier": "world"} for x in out if x]
+                return [{**x, "tier": "world"} for x in out if x]
 
-            taken = select(pools, room, more, n, world)
+            # Confirmed near Dauin (present.dauin): photos from anywhere, by licence (Pierre, 2026-11-03).
+            taken = select(pools, room, more, n, world, anywhere=bool((s.get("present") or {}).get("dauin")))
             add = Counter(LOC[o["tier"]] for o in taken)
             plan[sid] = {"name": s["name"], "entry": t["id"], "have": len(keep_obs), "room": room, "add": dict(add)}
             if args.plan:
