@@ -388,7 +388,7 @@ function renderJourney(name, anonId = '') {
   // quiz), and the mastery exam questions (|x, from 2026-11-02); Look-alike duels are their own tab in Practice.
   const GM = [
       [
-        'Photo quiz',
+        'Quiz',
         r =>
           /^quiz(\||$)/.test(r[5]) &&
           !/\|[xdt](\||$)/.test(r[5]) &&
