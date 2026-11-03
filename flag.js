@@ -1,15 +1,15 @@
-// "Bad photo" flag, for Pierre only: shown in the browser where the admin page holds his token (imr-admin-vault).
+// "Bad photo" flag, for Pierre only: shown in the browser where the admin page holds his token (reefid-admin-vault).
 // A small ⚑ button follows the photo under the pointer (any page, game or lightbox), in its top-right corner so it never
 // covers the view label or the game source (top-left). A click records the photo, its
-// genus, where it was seen (page, game level, view) and when, in localStorage 'imr-photo-flags'. The admin page
+// genus, where it was seen (page, game level, view) and when, in localStorage 'reefid-photo-flags'. The admin page
 // picks these up into its draft (curation.json "flag") and lists them in Triage. Nothing is sent from here.
 (() => {
   let admin = false;
   try {
-    admin = !!localStorage.getItem('imr-admin-vault') && localStorage.getItem('imr-admin-view') !== 'user';
+    admin = !!localStorage.getItem('reefid-admin-vault') && localStorage.getItem('reefid-admin-view') !== 'user';
   } catch (e) {}
   if (!admin) return;
-  const KEY = 'imr-photo-flags';
+  const KEY = 'reefid-photo-flags';
   const read = () => {
     try {
       return JSON.parse(localStorage.getItem(KEY)) || [];

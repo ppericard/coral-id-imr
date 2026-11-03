@@ -207,8 +207,8 @@ const server = http.createServer((req, res) => {
       r => r.abort()
     );
     await ctx.addInitScript(st => {
-      localStorage.setItem('imr-tour', '"done"');
-      localStorage.setItem('imr-photo-stats', JSON.stringify({t: Date.now(), photos: st.photos, conf: st.conf, mem: st.mem}));
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-photo-stats', JSON.stringify({t: Date.now(), photos: st.photos, conf: st.conf, mem: st.mem}));
     }, st);
     const page = await ctx.newPage();
     page.on('pageerror', e => console.error('page error:', e.message));

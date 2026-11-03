@@ -1,4 +1,4 @@
-/* IMR Coral ID: one app for the key, genus sheets with three photo views, look-alike comparisons and the quiz.
+/* IMR Reef ID: one app for the key, genus sheets with three photo views, look-alike comparisons and the quiz.
    Sections: tokens · base · header · controls · cards · genus sheet · key · look-alikes · quiz · lightbox · responsive.
 
    MOBILE-FIRST: every rule outside a media query is the PHONE style; tablet and desktop are added with min-width
@@ -3508,7 +3508,7 @@ a.lt:hover {
   --lvt4: #06262b;
   --lvt5: #06262b;
 }
-/* Colour themes (setting "Colours", :root[data-palette], localStorage imr-coral-palette): each one retints the chrome
+/* Colour themes (setting "Colours", :root[data-palette], localStorage reefid-sync-palette): each one retints the chrome
    (accent, background, lines) and the learning-level ramp, with its own light and dark steps. Lagoon = the base colours
    above; Depth is the default theme (set in index.html before first paint). Steps generated in OKLCH at fixed lightness (light .93/.84/.72/.58/.44, dark .38/.48/.61/.74/.86), so every
    theme keeps the same text contrast on each step. */
@@ -3652,7 +3652,7 @@ a.lt:hover {
   --lvt4: #0b1a1e;
   --lvt5: #0b1a1e;
 }
-/* Colour-blind mode (setting "Colour-blind", :root[data-cvd], localStorage imr-coral-cvd): right/wrong and "to review"
+/* Colour-blind mode (setting "Colour-blind", :root[data-cvd], localStorage reefid-sync-cvd): right/wrong and "to review"
    move from green/red to dark blue / orange. Hue alone is not enough (blue and orange of equal brightness merge for
    monochromats and in grey), so the pair also differs in lightness: luminance ratio 2.8 light, 2.3 dark; simulated
    (Machado 2009) OKLab distance >= 25 for protan, deutan, tritan and greyscale. Text contrast >= 4.5 on its surface.

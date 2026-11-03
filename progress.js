@@ -1,4 +1,4 @@
-// IMR Coral ID: My progress, the progress pill, the leaderboard and achievements, split out of app.js (2026-11-02, code
+// IMR Reef ID: My progress, the progress pill, the leaderboard and achievements, split out of app.js (2026-11-02, code
 // review L1: one file per part, one piece at a time). A classic script like app.js and sync.js: it shares their
 // top-level names and is loaded right after sync.js (index.html, in order); app.js waits for every script
 // (window.BOOT) before its first page. Required like app.js: the loader tries it 3 times, the service worker keeps it.
@@ -141,7 +141,7 @@ function quizBoard() {
   };
   // Slate by default (Pierre, 2026-11-02: compact, and the order of the IMR slate the RAs know); the view switch is at the
   // bottom of the side column.
-  let pv = store.get('imr-coral-pview', 'slate');
+  let pv = store.get('reefid-sync-pview', 'slate');
   if (!VIEWS[pv]) pv = 'slate';
   $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
   <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Small typos and old names are accepted; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
@@ -213,7 +213,7 @@ function quizBoard() {
     b =>
       (b.onclick = () => {
         pv = b.dataset.pv;
-        store.set('imr-coral-pview', pv);
+        store.set('reefid-sync-pview', pv);
         show();
       })
   );
@@ -262,28 +262,28 @@ function showProg() {
   sb.hidden = !SYNC_URL || (!!SYNC && !bad);
   sb.textContent = bad ? 'Not saved' : 'Sign in';
   sb.classList.toggle('warn', !!bad);
-  sb.title = bad || 'Sign in to save your progress for your IMR trainer';
+  sb.title = bad || `Sign in to save your progress for your ${ORG.short} trainer`;
 }
-// Progress files: every imr-coral-* key in localStorage (quiz progress, settings, Lab scores), as JSON.
+// Progress files and the sheet: every key that travels (core.js KEYS.SYNC: quiz progress, settings, achievements...), as JSON.
+// A key whose move to its new name is pending (core.js migrateKeys) counts under its new name (core.js travelData).
 const progData = () => {
-  const d = {};
   try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k.startsWith('imr-coral') && k !== 'imr-coral-sync') d[k] = localStorage.getItem(k);
-    }
-  } catch (e) {}
-  return d;
+    return travelData(localStorage);
+  } catch (e) {
+    return {};
+  }
 };
-const loadData = d =>
-  Object.entries(d || {}).forEach(([k, v]) => k.startsWith('imr-coral') && k !== 'imr-coral-sync' && localStorage.setItem(k, v));
+// A file or a saved account may carry the names from before the rename to IMR Reef ID (core.js keysIn).
+const loadData = d => Object.entries(keysIn(d)).forEach(([k, v]) => k.startsWith(KEYS.SYNC) && localStorage.setItem(k, v));
+// A progress file says which app wrote it: 'reefid', or before the rename (2026-11-03) the old id, still read.
+const PROG_APP = ['reefid', 'imr-coral-id']; // rename-app: keep
 function bindProgFile() {
   const msg = t => (document.getElementById('pmsg').textContent = t);
   document.getElementById('pexp').onclick = () => {
-    const out = {app: 'imr-coral-id', saved: new Date().toISOString(), data: progData()};
+    const out = {app: PROG_APP[0], saved: new Date().toISOString(), data: progData()};
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 1)], {type: 'application/json'}));
-    a.download = `imr-coral-progress-${out.saved.slice(0, 10)}.json`;
+    a.download = `reefid-progress-${out.saved.slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
     msg('Saved. Keep the file somewhere safe (Drive, email to yourself).');
@@ -292,11 +292,11 @@ function bindProgFile() {
   document.getElementById('pload').onclick = () => pick.click();
   // After loading a file the page reloads: ⚙ opens on the backup fold to confirm it (not after a sign-in, which also reloads).
   try {
-    const done = sessionStorage.getItem('imr-coral-loaded');
+    const done = sessionStorage.getItem('reefid-loaded');
     if (done) {
-      sessionStorage.removeItem('imr-coral-loaded');
+      sessionStorage.removeItem('reefid-loaded');
       msg('Progress loaded from ' + done + '.');
-      if (done !== 'the IMR sheet') {
+      if (done !== SHEET_NAME) {
         document.querySelector('#settings .saveprog').open = true;
         setOpen(true);
       }
@@ -308,15 +308,15 @@ function bindProgFile() {
     f.text()
       .then(t => {
         const j = JSON.parse(t);
-        if (j.app !== 'imr-coral-id' || !j.data) throw 0;
+        if (!PROG_APP.includes(j.app) || !j.data) throw 0;
         loadData(j.data);
         // Reload so every setting held in memory (quiz options, list order, Lab state) picks up the file.
         try {
-          sessionStorage.setItem('imr-coral-loaded', f.name);
+          sessionStorage.setItem('reefid-loaded', f.name);
         } catch (e) {}
         location.reload();
       })
-      .catch(() => msg('This file is not an IMR Coral ID progress file.'));
+      .catch(() => msg(`This file is not an ${ORG.app} progress file.`));
   };
 }
 
@@ -324,7 +324,7 @@ function bindProgFile() {
 // answer, so players at 100% keep competing). 🏆 in the header opens it from any page; My progress shows the player's
 // rank and Elo with a link here. Signed-in players appear by default; ⚙ Leaderboard Off takes them off (sent with the next
 // sync, the sheet's Board column). The sheet serves it (GET ?board=1, v14, cached 5 minutes there, 1 minute here).
-const BOARD = 'imr-coral-board'; // an imr-coral key: it travels with the progress, so the choice holds on every device
+const BOARD = 'reefid-sync-board'; // a reefid-sync key: it travels with the progress, so the choice holds on every device
 // {v: 1 | 0, t: when chosen}: the latest choice wins when two devices meet (mergeSaved); a bare 0/1 is an older form.
 const boardOn = () => {
   const b = store.get(BOARD, null);
@@ -342,10 +342,10 @@ const eloLine = G => {
   return n >= ELO_MIN && typeof G.th === 'number' ? `Elo ${eloScore(G.th)}` : '';
 };
 // The sync script answers in 1-3 s (a Google Apps Script starting up), whatever its own cache: so the last board is kept
-// on this device (BOARD_C, not an imr-coral key: it never travels with the progress) and shown at once, then replaced
+// on this device (BOARD_C, not a reefid-sync key: it never travels with the progress) and shown at once, then replaced
 // when the fresh one arrives (Pierre, 2026-11-01: "the leaderboard takes long to load"). It is also fetched a few seconds
 // after start-up, so the first visit to the page is usually instant too.
-const BOARD_C = 'imr-board-cache';
+const BOARD_C = 'reefid-board-cache';
 let boardAt = 0,
   boardP = null;
 const ago = t => {
@@ -417,10 +417,10 @@ function paintBoard(B) {
   if (m && m.scrollIntoView && m.getBoundingClientRect().bottom > innerHeight) m.scrollIntoView({block: 'center'});
 }
 // Achievements (core.js ACH, Pierre 2026-11-01): checked after every answer on a snapshot of the progress (achSnap);
-// each new one pops up (achPop, one after the other). Kept in imr-coral-ach ({id: time}, plus _run / _best for the run
-// of right answers and _cor / _hard for one-off feats), an imr-coral key, so it travels with the progress. The first
+// each new one pops up (achPop, one after the other). Kept in reefid-sync-ach ({id: time}, plus _run / _best for the run
+// of right answers and _cor / _hard for one-off feats), a reefid-sync key, so it travels with the progress. The first
 // check on a device with progress but no record yet (the feature arriving) grants what is already met in one recap.
-const ACHK = 'imr-coral-ach';
+const ACHK = 'reefid-sync-ach';
 // Two records of one player (another device, or this device before signing in): every achievement kept with its
 // earliest date, the best run kept; the current run stays this device's; an achievement taken back (A._gone, achRecheck)
 // never comes back from a copy earned before (core.js mergeAch).
@@ -534,7 +534,7 @@ const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '👑': '🎓', '🌟': '⭐'},
 // player's card. Kept on this
 // device only (its own key, outside the synced record: a sign-in or another device's sync never brings or drops them;
 // Codex review #360); sign-out clears it with the progress.
-const ACHNEW = 'imr-ach-new',
+const ACHNEW = 'reefid-ach-new',
   achUnseen = () => store.get(ACHNEW, []) || [],
   achNew = () => achUnseen().length;
 function achDot() {
@@ -649,7 +649,7 @@ const loadAchs = () => {
       .then(j => (j && j.ok && j.counts ? j : null))
       .catch(() => null)
       .then(j => {
-        if (j) store.set('imr-achs-cache', {n: j.n, counts: j.counts});
+        if (j) store.set('reefid-achs-cache', {n: j.n, counts: j.counts});
         else achsAt = 0;
         return j;
       });
@@ -680,7 +680,7 @@ function viewAch() {
   <div class="board">${boardTabs('ach')}<h2 class="btitle">${got.length}/${ACH.length} earned</h2>
   <ul class="achl">${got.map(a => card(a, true)).join('')}${left.map(a => card(a, false)).join('')}</ul></div>`;
   };
-  draw(store.get('imr-achs-cache', null));
+  draw(store.get('reefid-achs-cache', null));
   loadAchs().then(S => {
     if (S && hashNow() === 'ach') draw(S);
   });
@@ -689,15 +689,15 @@ function viewAch() {
 function boardNotice() {
   // Players signed in before the leaderboard: one sync writes their progress % (the sheet has none for them yet). Only
   // once the sheet serves the leaderboard (v14): an older script ignores the %, which left everyone at 0% (2026-11-01).
-  if (SYNC && !store.get('imr-board-sent14', 0))
+  if (SYNC && !store.get('reefid-board-sent14', 0))
     loadBoard().then(B => {
-      if (B && !B.err && SYNC && !store.get('imr-board-sent14', 0)) {
-        store.set('imr-board-sent14', 1);
+      if (B && !B.err && SYNC && !store.get('reefid-board-sent14', 0)) {
+        store.set('reefid-board-sent14', 1);
         syncSoon();
       }
     });
-  if (!SYNC || store.get('imr-board-told', 0)) return;
-  store.set('imr-board-told', 1);
+  if (!SYNC || store.get('reefid-board-told', 0)) return;
+  store.set('reefid-board-told', 1);
   const t = appToast(
     '🏆 New: a <a href="#board">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
     15000
@@ -715,7 +715,7 @@ function boardNotice() {
 // Each note has a kind (app.js CARD_KINDS: 'update' for a recalculation, 'feature' for a new game mode): the latest due
 // gives the card its medallion, for a recalculation the player's progress ring as it is now.
 const RECALC = {
-  KEY: 'imr-recalc',
+  KEY: 'reefid-recalc',
   L: [
     {
       id: 'progress-moving-average-2026-11',
@@ -844,7 +844,7 @@ function mxLostNotice() {
 // oldest first, the next as soon as one is closed; like recalcNotice and mxLostNotice it only waits for another card
 // or the tour on screen (tried again every 2 s), and a page change closes it unseen to show it again on the new page.
 // At start-up (app.js SETUP 2, after the two cards above) and right after an adoption.
-const RVN = {KEY: 'imr-rv-msg'};
+const RVN = {KEY: 'reefid-rv-msg'};
 function rvNoticeAdd(from, to, pct) {
   const M = store.get(RVN.KEY, {}) || {},
     told = M.told || [],
@@ -894,9 +894,9 @@ function rvNotice() {
 // this version runs on the device (FIRST: the time, and what core.js sorryOf reads then: the answers in the window, the
 // opening hold's sum, the cards opened in it), so playing on changes nothing. A card like recalcNotice's (app.js
 // cardShow, kind apology: 🙏 on the warm --warn tint): one card at a time (it waits while the tour or another card is
-// up), never held, its button, Enter or Escape close it for good on this device (imr-sorry, like imr-recalc, kept on the
+// up), never held, its button, Enter or Escape close it for good on this device (reefid-sorry, like reefid-recalc, kept on the
 // device); leaving the page closes it unseen and it comes back.
-const SORRYK = {KEY: 'imr-sorry', FIRST: 'imr-sorry-first'};
+const SORRYK = {KEY: 'reefid-sorry', FIRST: 'reefid-sorry-first'};
 function sorryNotice() {
   const now = Date.now();
   let F = store.get(SORRYK.FIRST, null);

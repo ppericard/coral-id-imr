@@ -71,7 +71,7 @@
 //   answers (PR #431: -0.88 per unit of z on the answer itself, -0.39 on the next answer on the genus after a right one);
 //   T0 only sets the scale (z is against the player's own median). No zoom: the learner never enlarges a photo (too
 //   few real answers to model it yet). The app weighs a right answer's steps by its time once the sync script replays
-//   it (core.js RT_SHEET): the tool says so to the app (the sheet version it last saw, imr-sheet-v); --rtapp off keeps
+//   it (core.js RT_SHEET): the tool says so to the app (the sheet version it last saw, reefid-sheet-v); --rtapp off keeps
 //   the app as before that script (every weight 1); --rt off gives no seconds at all (the learner before 2026-11-04).
 //   --rtlog writes the app's own answer log of every run (readAnswers rows, player = profile:seed, then the learner's
 //   pTrue and its time noise) for tools/abilityeval.js.
@@ -665,13 +665,13 @@ async function run(browser, base, name, seed) {
     r => r.abort()
   );
   await ctx.addInitScript(([st, rtapp]) => {
-    localStorage.setItem('imr-tour', '"done"');
+    localStorage.setItem('reefid-tour', '"done"');
     // The sync script version the app last saw (sync.js sheetV): one that replays the answer time (core.js RT_SHEET), so
     // the app weighs its steps by it; --rtapp off: an older one.
-    if (rtapp) localStorage.setItem('imr-sheet-v', '1000');
+    if (rtapp) localStorage.setItem('reefid-sheet-v', '1000');
     if (st)
       localStorage.setItem(
-        'imr-photo-stats',
+        'reefid-photo-stats',
         JSON.stringify({
           t: Date.now(),
           v: st.v,
