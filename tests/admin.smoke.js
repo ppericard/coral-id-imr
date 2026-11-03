@@ -30,8 +30,9 @@ const server = http.createServer((req, res) => {
 });
 
 // Admin smoke test in demo mode (admin.html?demo, admin-demo.js; Pierre, 2026-11-01: agents must be able to see and test
-// the admin): every page of the 4 tabs at 390 and 1280 px with no page error, then the main actions on made-up data:
-// open a player, merge two names, delete a test account, the reports in Triage, Skip and Reject in Candidates, Publish.
+// the admin): every view of the 9 tabs and every old address at 390 and 1280 px with no page error, each landing on its
+// tab and view, the view remembered per tab, then the main actions on made-up data: open a player, merge two names,
+// delete a test account, the reports in To do, Skip and Reject in Candidates, Publish.
 // Checks that nothing leaves the page (no call reaches the sync script or GitHub) and that the demo never writes the real
 // admin storage keys. Needs Playwright like pages.smoke.js. Locally: node tests/admin.smoke.js
 (async () => {
@@ -75,7 +76,7 @@ const server = http.createServer((req, res) => {
       await p.waitForTimeout(300);
       await p
         .waitForFunction(() => !/^\s*Loading/.test((document.querySelector('#view .note') || {}).textContent || ''), null, {timeout: 15000})
-        .catch(() => fails.push(`${w}px #${location.hash}: still loading`));
+        .catch(async () => fails.push(`${w}px ${await p.evaluate(() => location.hash)}: still loading`));
       await p.waitForTimeout(200);
     };
     const go = async h => {
@@ -89,8 +90,94 @@ const server = http.createServer((req, res) => {
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
     if (!(await p.$('.adm-demo'))) fails.push(`${w}px: no demo banner`);
     if (await p.$('.adm-lock')) fails.push(`${w}px: lock screen shown in demo mode`);
-    const pages = await p.evaluate(() => GROUPS.flatMap(g => g[2].map(x => x[0])).map(h => h || Object.keys(DATA.gen)[0]));
-    for (const h of pages) await go(h);
+    // 9 tabs in 3 groups (Pierre, 2026-11-03), every former page a view: each view and each old address lands on its tab
+    // (pressed in the tab row, or selected in the phone menu) and view (pressed in the view switch), with no page error and
+    // no sideways scroll.
+    const where = () =>
+      p.evaluate(() => ({
+        tab: (document.querySelector('#subnav .adm-subtabs [aria-pressed="true"]') || {}).textContent || '',
+        menu: ((document.getElementById('modesel') || {}).selectedOptions || [])[0]?.textContent || '',
+        view: (document.querySelector('#subnav .adm-views [aria-pressed="true"]') || {}).dataset?.view ?? null,
+        views: document.querySelectorAll('#subnav .adm-views a').length,
+        shown: !!document.querySelector('#subnav .adm-views') && document.querySelector('#subnav .adm-views').offsetParent !== null,
+        wide: document.documentElement.scrollWidth - innerWidth
+      }));
+    const ROUTES = await p.evaluate(() => {
+      const L = TABS.flatMap(t => t[2].map(([h, v]) => ({h, tab: t[1], view: t[2].length > 1 ? h : null, n: t[2].length, name: v})));
+      // Old addresses that are not a view of their own, and a player's journey (under Players).
+      return [
+        ...L,
+        {h: '~mont', tab: 'Look-alikes', view: null, n: 1},
+        {h: '~stats-needs', tab: 'Coverage', view: '~cov', n: 2},
+        {h: '~journey/Ana Demo', tab: 'Players', view: null, n: 1}
+      ];
+    });
+    const OLD = ['~triage', '~stats-needs', '~cov', '~fcov', '~events', '~health', '~cand', '~form', '~quality', '~look', '~excluded'];
+    OLD.push('~users', '~stats', '~stats-conf', '~stats-photos', '~diff', '~mont');
+    const miss = OLD.filter(h => !ROUTES.some(r => r.h === h));
+    if (miss.length) fails.push(`${w}px: old addresses without a tab: ${miss.join(' ')}`);
+    if (ROUTES.filter(r => r.tab && !['~mont', '~stats-needs', '~journey/Ana Demo'].includes(r.h)).length < 17)
+      fails.push(`${w}px: fewer than 17 views`);
+    for (const r of ROUTES) {
+      const h = r.h || (await p.evaluate(() => Object.keys(DATA.gen)[0]));
+      await go(h);
+      const at = await where();
+      const strip = x => x.replace(/ \(\d+\)$| ⚠$/, '');
+      if (strip(at.tab) !== r.tab || strip(at.menu) !== r.tab) fails.push(`${w}px #${h}: tab ${at.tab || at.menu}, not ${r.tab}`);
+      if (r.n > 1 && (at.view !== r.view || at.views !== r.n || !at.shown))
+        fails.push(`${w}px #${h}: view switch ${JSON.stringify(at)}, expected ${r.view} of ${r.n}`);
+      if (r.n === 1 && at.views) fails.push(`${w}px #${h}: a view switch on a one-view tab`);
+      if (at.wide > 0) fails.push(`${w}px #${h}: page ${at.wide} px wider than the window`);
+    }
+    // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs).
+    await go('~fcov');
+    await go('~triage');
+    const mem = await p.evaluate(() => ({
+      cov: (document.querySelector('#subnav .adm-subtabs a:nth-child(2)') || {}).getAttribute?.('href'),
+      todo: document.querySelector('#modes [data-mode="todo"]').getAttribute('href'),
+      players: document.querySelector('#modes [data-mode="players"]').getAttribute('href'),
+      kept: (store.get('imr-admin-view', {}) || {}).cov
+    }));
+    if (mem.cov !== '#~fcov' || mem.todo !== '#~triage' || mem.kept !== '~fcov' || mem.players !== '#~users')
+      fails.push(`${w}px: views not remembered ${JSON.stringify(mem)}`);
+    await p.reload();
+    await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
+    await settle();
+    if ((await p.evaluate(() => document.querySelector('#modes [data-mode="todo"]').getAttribute('href'))) !== '#~triage')
+      fails.push(`${w}px: the To do group forgot its last view after a reload`);
+    // To do › All: Health's red line (the demo has photos everyone misses), the reports, the devices' errors, suggestions last.
+    await go('~todo');
+    await p
+      .waitForFunction(() => document.querySelector('[data-hline]') && /Errors/.test(document.getElementById('view').innerText), null, {
+        timeout: 15000
+      })
+      .catch(() => {});
+    const all = await p.evaluate(() => {
+      const v = document.getElementById('view'),
+        t = v.innerText;
+      return {
+        line: !!v.querySelector('[data-hline] a[href="#~health"]'),
+        rep: /Demo report/.test(t),
+        err: !!v.querySelector('.adm-tderr'),
+        first: v.querySelector('section > *')?.matches('[data-hline]')
+      };
+    });
+    if (!all.line || !all.rep || !all.err || !all.first) fails.push(`${w}px To do › All: ${JSON.stringify(all)}`);
+    // Genera › Hidden: Put back takes a removed photo back.
+    const hid = await p.evaluate(() => {
+      const n = Object.keys(DATA.gen).find(g => photos(g).length > 3),
+        f = photos(n)[0].f;
+      ACT.hide(n, f);
+      location.hash = '~hidden';
+      return {n, f};
+    });
+    await settle();
+    if (!(await p.$(`#view [data-f="${hid.f}"] [data-unhide]`))) fails.push(`${w}px Hidden: the removed photo is not listed`);
+    else {
+      await p.click(`#view [data-f="${hid.f}"] [data-unhide]`);
+      await settle();
+      if (await p.evaluate(h => (entry(h.n).hide || []).includes(h.f), hid)) fails.push(`${w}px Hidden: Put back left the photo removed`);
+    }
 
     // Users: the made-up players, one opened, a merge and a delete.
     await go('~users');
@@ -104,8 +191,32 @@ const server = http.createServer((req, res) => {
       if (!/Not signed in ·[\s\S]*not saved \(not signed in\)/.test(await text())) fails.push(`${w}px ${anon}: anonymous Journey missing`);
       await go('~users');
     }
+    // Who played last (Pierre, 2026-11-03): Last is the second column, to the minute, and the default sort, most recent
+    // first by the exact time of the last answer; Carla (the demo's player now) first, with the "now" pill.
+    const lastCol = () =>
+      p.$$eval('.adm-urow', L =>
+        L.map(tr => ({
+          name: tr.querySelector('td b').textContent,
+          t: Number((tr.querySelector('td:nth-child(2) [data-t]') || {dataset: {t: 0}}).dataset.t),
+          now: !!tr.querySelector('td:nth-child(2) .adm-ago.now'),
+          txt: tr.querySelector('td:nth-child(2)').textContent.trim()
+        }))
+      );
+    const checkLast = async how => {
+      const L = await lastCol();
+      if (!L.length || L[0].name !== 'Carla Demo' || !L[0].now || L[0].txt !== 'now')
+        fails.push(`${w}px Players (${how}): Carla not first and "now" (${JSON.stringify(L[0])})`);
+      if (L.some((x, i) => i && x.t > L[i - 1].t))
+        fails.push(`${w}px Players (${how}): not most recent first ${L.map(x => x.txt).join(', ')}`);
+      if (L.filter(x => x.now).length !== 1)
+        fails.push(`${w}px Players (${how}): ${L.filter(x => x.now).length} players "now", expected 1`);
+      if (!L.slice(1).every(x => /min ago|h ago|yesterday|^\d+ \w+$|^\w+ \d+$/.test(x.txt)))
+        fails.push(`${w}px Players (${how}): Last texts ${L.map(x => x.txt).join(', ')}`);
+    };
+    await checkLast('default sort');
+    if (!/12 min ago/.test(t)) fails.push(`${w}px Players: the device that stopped 12 minutes ago is not "12 min ago"`);
     // Names joined with the anonymous stats: every demo player has a level; sorting by name puts Ana first, reversed last.
-    const lv = await p.$$eval('.adm-urow td:nth-child(2)', L => L.map(td => td.textContent.trim()));
+    const lv = await p.$$eval('.adm-urow td:nth-child(3)', L => L.map(td => td.textContent.trim()));
     if (!lv.length || lv.some(x => x === '–')) fails.push(`${w}px Players: a level is missing (${lv.join(' ')})`);
     if (!/Not signed in \(\d+\)/.test(t)) fails.push(`${w}px Players: no "Not signed in" group`);
     const firstName = () => p.$eval('.adm-urow td b', b => b.textContent);
@@ -121,6 +232,10 @@ const server = http.createServer((req, res) => {
       await settle();
       if (!(await p.$('.adm-urow'))) fails.push(`${w}px Players: sort by ${k} left no rows`);
     }
+    // One tap on Last brings back most recent first.
+    await p.click('[data-usort="last"]');
+    await settle();
+    await checkLast('Last tapped');
     await p.click('[data-usort="name"]');
     await settle();
     // Leaderboard (sheet v20): Hide marks the player hidden, Show puts them back.
@@ -209,7 +324,7 @@ const server = http.createServer((req, res) => {
     const firstHard = await p.$eval('.adm-jtbl tbody tr td:nth-child(6)', td => td.textContent);
     if (!/-|–/.test(firstHard)) fails.push(`${w}px journey: hardest first starts at ${firstHard}`);
 
-    // Triage lists the demo reports; Activity shows the demo players' answers.
+    // To do › Reports lists the demo reports; Activity shows the demo players' answers.
     // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
     await go('~events');
     await p
@@ -236,9 +351,51 @@ const server = http.createServer((req, res) => {
     });
     if (proto !== true) fails.push(`${w}px Errors & feedback with a "__proto__" event: ${proto}`);
     await go('~triage');
-    if (!/Demo report/.test(await text())) fails.push(`${w}px Triage: demo reports missing`);
+    if (!/Demo report/.test(await text())) fails.push(`${w}px To do › Reports: demo reports missing`);
     await go('~stats');
     if (/No answers yet/.test(await text())) fails.push(`${w}px Activity: no answers`);
+    // Recent sessions (Pierre, 2026-11-03): the last 10 sessions of every player, newest first, by name or anonymous id;
+    // Carla playing now (quiz, duel and typed answers), the device that stopped 12 minutes ago by its id; ↻ reloads.
+    const recent = () =>
+      p.evaluate(() => {
+        const c = document.querySelector('[data-recent]');
+        if (!c) return null;
+        const R = [...c.querySelectorAll('tbody tr')].map(tr => ({
+          who: tr.cells[0].textContent.trim(),
+          anon: !!tr.cells[0].querySelector('code'),
+          link: (tr.cells[0].querySelector('a') || {}).getAttribute?.('href') || '',
+          t: Number((tr.cells[1].querySelector('[data-t]') || {dataset: {t: 0}}).dataset.t),
+          last: tr.cells[1].textContent.trim(),
+          n: Number(tr.cells[2].textContent),
+          modes: tr.cells[6].textContent,
+          now: tr.classList.contains('now')
+        }));
+        return {first: c === document.querySelector('#view section'), head: c.querySelector('h3').textContent, R};
+      });
+    const rs = await recent();
+    if (!rs) fails.push(`${w}px Activity: no Recent sessions`);
+    else {
+      const R = rs.R,
+        c = R[0] || {},
+        an = R.find(x => x.anon) || {};
+      if (!rs.first || R.length !== 10) fails.push(`${w}px Recent sessions: not first or ${R.length} rows, expected 10`);
+      if (R.some((x, i) => i && x.t > R[i - 1].t)) fails.push(`${w}px Recent sessions: not newest first`);
+      if (c.who !== 'Carla Demo' || !c.now || c.last !== 'now' || c.n !== 24 || !/1 playing now/.test(rs.head))
+        fails.push(`${w}px Recent sessions: Carla not playing now ${JSON.stringify(c)} ${rs.head}`);
+      if (!/quiz/.test(c.modes) || !/duel/.test(c.modes) || !/typed 2/.test(c.modes))
+        fails.push(`${w}px Recent sessions: modes ${c.modes}`);
+      if (R.filter(x => x.now).length !== 1) fails.push(`${w}px Recent sessions: ${R.filter(x => x.now).length} sessions now, expected 1`);
+      if (an.last !== '12 min ago' || an.n !== 8 || !/^#~anon\//.test(an.link) || R[1] !== an)
+        fails.push(`${w}px Recent sessions: the device not signed in ${JSON.stringify(an)}`);
+      if (!R.some(x => /^#~journey\//.test(x.link) && !x.now)) fails.push(`${w}px Recent sessions: no other signed-in player`);
+    }
+    // ↻ reads the answers again (no timer): the page comes back with its sessions.
+    const before = await p.evaluate(() => ANS.at);
+    await p.click('[data-sload]');
+    await settle();
+    const re = await recent();
+    if (!re || re.R.length !== 10 || !(await p.evaluate(b => ANS && ANS.at > b, before)))
+      fails.push(`${w}px Activity ↻: the answers were not read again`);
     // Photo difficulty by genus: one lane per view, a median bar in every lane that has photos.
     await go('~stats-photos');
     const ln = await p.evaluate(() => {
@@ -316,9 +473,17 @@ const server = http.createServer((req, res) => {
     });
     if (gq.macro) fails.push(`${w}px Candidates: ${gq.macro} Corallites candidates for Finder-only genera`);
     if (!gq.cap) fails.push(`${w}px Cap: not CELL_MAX for the game genera and CAP.sheet for the Finder-only ones`);
+    // Where to look: a banner above the Games grid (its first cells), open in full on its old address.
+    const lk = await p.evaluate(() => ({
+      links: document.querySelectorAll('#cov-look .cov-lk').length,
+      grid: !!document.querySelector('.cov-t')
+    }));
+    if (!lk.links || !lk.grid) fails.push(`${w}px Coverage › Games: Where to look banner ${JSON.stringify(lk)}`);
     await go('~stats-needs');
     if (!(await p.evaluate(() => (NEEDS || []).length && NEEDS.every(r => isGame(r.n)))))
       fails.push(`${w}px Where to look: empty, or a row for a genus no game asks`);
+    if (!(await p.evaluate(() => !!document.querySelector('#cov-look.open .adm-needs') && !!document.querySelector('.cov-t'))))
+      fails.push(`${w}px Where to look: not open above the Games grid`);
     // Candidates: Skip sets the photo aside, Reject marks it reviewed (a draft change), then Publish (in memory).
     await go('~cand');
     if (await p.$('[data-skip]')) {
@@ -459,7 +624,9 @@ const server = http.createServer((req, res) => {
     console.error(`Admin demo: ${fails.length} problem(s)\n` + fails.join('\n'));
     process.exit(1);
   }
-  console.log('Admin demo OK: every page at 390 and 1280 px, merge, delete, triage, health, skip, reject, cap, publish; nothing sent.');
+  console.log(
+    'Admin demo OK: every tab, view and old address at 390 and 1280 px, merge, delete, reports, health, skip, reject, cap, publish; nothing sent.'
+  );
 })().catch(e => {
   console.error(e);
   process.exit(1);
