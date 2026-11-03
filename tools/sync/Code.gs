@@ -138,7 +138,10 @@ function doPost(e){
     if (f.fresh.length && over_('n:' + name.toLowerCase(), 3000, f.fresh.length)) return json_({ok: false, error: 'busy'});
     // The first send after signing in carries the device's anonymous id: its anonymous answers become this name's, for an
     // existing account (code checked above) as for a new one (before logAnswers_, which skips the resent ids).
-    if (/^[a-z0-9]{8,16}$/.test(String(p.anon || ''))) relabel_('Answers', 1, '~anon ' + p.anon, name);
+    if (/^[a-z0-9]{8,16}$/.test(String(p.anon || ''))) {
+      relabel_('Answers', 1, '~anon ' + p.anon, name);
+      pagesMove_('~anon ' + p.anon, name);  // v29: the sheets opened on the device go with its answers (Codex review #423)
+    }
     logAnswers_(name, f.fresh, f.seen);
     if (!p.av) oldApp_('save', name);  // after the code check (Codex review #373)
     const rev = r ? readData_(name, String(sh.getRange(r, 8).getValue() || '')).rev : 0;
@@ -559,6 +562,25 @@ function evWho_(p){
   } catch (e) { return ''; }
 }
 const PAGES_TAB = 'Pages', PAGES_READ = 10000;
+// The Pages tab follows the answers (Codex review #423): its rows carry the admin's id of the answers' Name column
+// (aid_), so whenever answers change name (a device's answers claimed at sign-in, an admin rename, merge or delete) the
+// summaries move with them, and they are deleted with them (anonDelete, a delete with the answers). Ids are compared
+// exactly (base64: case matters), and every value goes back through safe_ (an id can start with + or =).
+function pagesMove_(from, into){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(PAGES_TAB); if (!sh || sh.getLastRow() < 2) return 0;
+  const salt = anonSalt_(), a = aid_(from, salt), b = aid_(into, salt);
+  const rg = sh.getRange(2, 4, sh.getLastRow() - 1, 1), v = rg.getValues().map(r => String(r[0])); let n = 0;
+  v.forEach((x, i) => { if (x === a) { v[i] = b; n++; } });
+  if (n) rg.setValues(v.map(x => [safe_(x)]));
+  return n;
+}
+// Deletes the summaries of these admin ids (a Set).
+function pagesDrop_(ids){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(PAGES_TAB); if (!sh || sh.getLastRow() < 2 || !ids.size) return 0;
+  const v = sh.getRange(2, 4, sh.getLastRow() - 1, 1).getValues(); let n = 0;
+  for (let i = v.length - 1; i >= 0; i--) if (ids.has(String(v[i][0]))) { sh.deleteRow(i + 2); n++; }
+  return n;
+}
 function events_(p){
   const dev = String(p.dev || '');
   if (!/^[a-z0-9]{8,16}$/.test(dev)) return {ok: false, error: 'input'};
@@ -752,6 +774,9 @@ function users_(p){
         if (!(w in hit)) hit[w] = ids.has(aid_(w, salt));
         if (hit[w]) { sh.deleteRow(i + 2); n++; }
       }
+      // v29: their sheets opened too (ids are the admin's, as the Pages tab keeps them); never a named player's.
+      const named = new Set(ss.getSheetByName('RAs') && ra.getLastRow() > 1 ? ra.getRange(2, 1, ra.getLastRow() - 1, 1).getValues().map(r => aid_(String(r[0]), salt)) : []);
+      pagesDrop_(new Set([...ids].filter(x => !named.has(x))));
       try { CacheService.getScriptCache().remove('stats14'); } catch (e) {}
       return {ok: true, answers: n};
     } finally { lock.releaseLock(); }
@@ -774,6 +799,7 @@ function users_(p){
         relabel_(DATA_TAB, 1, from, into);
         relabel_('By genus', 1, from, into);
         const answers = relabel_('Answers', 1, from, into), reports = relabel_('Reports', 2, from, into);
+        pagesMove_(from, into);
         // Names merged into it before point to the archive too (Removed's Into): a device still signed in with one of
         // them must not log into the new account under the old name (Codex review #352).
         relabel_('Removed', 3, from, into);
@@ -785,6 +811,7 @@ function users_(p){
         const u = row_(String(p.userDelete)); if (!u) return {ok: false, error: 'user'};
         const name = String(u.v[0]);
         const answers = p.answers ? dropRows_('Answers', name) : relabel_('Answers', 1, name, '~deleted ' + aid_(name));
+        if (p.answers) pagesDrop_(new Set([aid_(name)])); else pagesMove_(name, '~deleted ' + aid_(name));
         ['RAs', DATA_TAB, 'By genus', RPL.TAB].forEach(t => dropRows_(t, name));
         removed_(name, u.v[6], '');
         return {ok: true, answers: answers};
@@ -797,6 +824,7 @@ function users_(p){
       writeData_(into, json, cur.rev + 1);
       ra.getRange(b.r, 2).setValue(new Date()); ra.getRange(b.r, 8).setValue(json.length < CHUNK ? json : '@' + DATA_TAB);
       const answers = relabel_('Answers', 1, from, into), reports = relabel_('Reports', 2, from, into);
+      pagesMove_(from, into);
       ['RAs', DATA_TAB, 'By genus', RPL.TAB].forEach(t => dropRows_(t, from));
       removed_(from, a.v[6], into);
       return {ok: true, rev: cur.rev + 1, answers: answers, reports: reports};

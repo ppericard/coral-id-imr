@@ -661,6 +661,68 @@ test("v29 pages events: cleaned, in their own tab, under the admin's id of the p
   assert.deepStrictEqual(P[P.length - 1].slice(0, 5), ['p1', Date.parse('2026-11-03T10:00:00Z'), 'dev0000009', 'pages', anonAid]);
 });
 
+test("v29 pages events follow the player's answers: sign-in claim, rename, merge, delete, anonDelete (Codex review #423)", () => {
+  const s = loadCodeGs(),
+    T = 'ghp_write000000000000000000',
+    pg = id => ({id, t: '2026-11-03T10:00:00Z', k: 'pages', vi: 'v' + id, na: 1, r: {genus: [1, 5]}, g: {Acropora: [1, 5, 'quiz', 1]}}),
+    ids = () => s.sheets.Pages.rows.slice(1).map(r => [r[9], r[3]]),
+    aidOf = w => vm.runInContext(`aid_(${JSON.stringify(w)})`, s.ctx),
+    users = () => s.post({users: 1, token: T}).users,
+    answerIds = () => new Set(s.post({readAnswers: 1, token: T}).rows.map(r => r[0]));
+  // Played anonymously (answers and two sheets opened), then signed in as Ana: the answers move to Ana, the sheets too.
+  s.post({anon: 'devanon002', anonAnswers: [ans('a1')], av: '190'});
+  s.post({dev: 'dev0000011', eanon: 'devanon002', events: [pg('p1'), pg('p2')]});
+  s.post({anon: 'devanon003', anonAnswers: [ans('a2')], av: '190'});
+  s.post({dev: 'dev0000012', eanon: 'devanon003', events: [pg('p3')]});
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [], anon: 'devanon002', av: '190'});
+  const ana = users().find(u => u.name === 'Ana').id;
+  assert.deepStrictEqual(
+    ids(),
+    [
+      ['p1', ana],
+      ['p2', ana],
+      ['p3', aidOf('~anon devanon003')]
+    ],
+    "the claimed device's sheets join the account, another device's stay apart"
+  );
+  assert.ok(answerIds().has(ana));
+  // Renamed: the archive keeps them.
+  assert.strictEqual(s.post({userRename: {from: 'Ana', into: 'Ana-test'}, token: T}).ok, true);
+  const arch = users().find(u => u.name === 'Ana-test').id;
+  assert.deepStrictEqual(ids().slice(0, 2), [
+    ['p1', arch],
+    ['p2', arch]
+  ]);
+  // Merged into Ben: Ben's now.
+  s.post({name: 'Ben', pin: '4321', data: prog(1), summary: {}, answers: [ans('b1')], av: '190'});
+  const ben = users().find(u => u.name === 'Ben').id;
+  assert.strictEqual(s.post({userMerge: {from: 'Ana-test', into: 'Ben', data: prog(2)}, token: T}).ok, true);
+  assert.deepStrictEqual(ids().slice(0, 2), [
+    ['p1', ben],
+    ['p2', ben]
+  ]);
+  // Deleted with the answers kept: under the answers' "~deleted" id; anonDelete of that id (or of a device) removes them.
+  assert.strictEqual(s.post({userDelete: 'Ben', answers: false, token: T}).ok, true);
+  const del = aidOf('~deleted ' + ben);
+  assert.deepStrictEqual(ids().slice(0, 2), [
+    ['p1', del],
+    ['p2', del]
+  ]);
+  assert.ok(answerIds().has(del));
+  s.post({name: 'Dee', pin: '2222', data: prog(1), summary: {}, answers: [ans('d1')], av: '190'});
+  s.post({dev: 'dev0000014', ename: 'Dee', epin: '2222', events: [pg('p5')]});
+  const dee = users().find(u => u.name === 'Dee').id;
+  assert.strictEqual(s.post({anonDelete: [del, aidOf('~anon devanon003'), dee], token: T}).ok, true);
+  assert.deepStrictEqual(ids(), [['p5', dee]], "a named player's sheets are never deleted by anonDelete");
+  s.post({userDelete: 'Dee', answers: true, token: T});
+  // Deleted with the answers: the sheets go too.
+  s.post({name: 'Cid', pin: '1111', data: prog(1), summary: {}, answers: [ans('c1')], av: '190'});
+  s.post({dev: 'dev0000013', ename: 'Cid', epin: '1111', events: [pg('p4')]});
+  assert.strictEqual(ids().length, 1);
+  assert.strictEqual(s.post({userDelete: 'Cid', answers: true, token: T}).ok, true);
+  assert.deepStrictEqual(ids(), []);
+});
+
 test('v29 pages events: an app before v29 sends none, and its other events are logged as before', () => {
   const s = loadCodeGs();
   // An app before 2026-11-03's events (no av, no player id) and an unknown kind.

@@ -36,7 +36,7 @@ leak of the Sheet would expose little.
   and code (`ename`, `epin`, never `name`/`pin`, so no other handler takes it for a progress write), which the script
   checks against the RAs tab and does not keep. A wrong code, an unknown or a locked name store no id; the reply is the
   same either way (`{ok, ev}`), so the events cannot be used to guess a code, and a wrong code there counts no failure
-  (it never locks the player's account). Read by admins only (`readEvents` with `pages: 1` and the token).
+  (it never locks the player's account). Read by admins only (`readEvents` with `pages: 1` and the token). They follow the answers when an account claims a device's anonymous answers, and through admin renames, merges and deletes.
 
 A real class of RAs stays far below every cap. A determined attacker can still add up to ~6000 anonymous answers
 and 40 accounts per 6 hours, but since v17 (2026-11-02, Pierre) the statistics count **only players whose
