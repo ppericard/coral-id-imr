@@ -13,6 +13,7 @@ const {
   pairConf,
   mergeUsers,
   playerStart,
+  commonFactor,
   levelSeed,
   LEVEL,
   START
@@ -502,4 +503,19 @@ test('levelMargin: the 95% margin of a level, on the replay of the level, shrink
   const two = levelMargin([...Array(50)].map((_, i) => row('d', i % 5 ? 1 : 0, 'quiz|k2'))).d,
     four = levelMargin([...Array(50)].map((_, i) => row('e', i % 5 ? 1 : 0))).e;
   assert.ok(two > four, `${two} vs ${four}`);
+});
+
+test('commonFactor: common first, relative to the median of the genera not met yet, neutral when cm is missing', () => {
+  // Median of 3, 8, 15 = 8: the median genus weighs 1, a commoner one more, a rarer one less, damped by the square root.
+  const f = commonFactor([3, 8, 15, undefined]);
+  assert.strictEqual(f[1], 1);
+  assert.ok(Math.abs(f[2] - Math.sqrt(16 / 9)) < 1e-12);
+  assert.ok(Math.abs(f[0] - Math.sqrt(4 / 9)) < 1e-12);
+  assert.ok(f[2] > f[1] && f[1] > f[0]);
+  assert.strictEqual(f[3], 1, 'no cm: counts as the median');
+  // Relative: the same genus weighs less when the genera left to open are all commoner.
+  assert.ok(commonFactor([8, 60, 40])[0] < 1);
+  assert.deepStrictEqual(commonFactor([undefined, null]), [1, 1]);
+  assert.deepStrictEqual(commonFactor([]), []);
+  assert.strictEqual(commonFactor([0, 0, 2, 4])[1], Math.sqrt(1 / 2), 'even count: the mean of the two middle values');
 });

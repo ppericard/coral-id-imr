@@ -199,6 +199,8 @@ const weight = n => {
 // so a genus more or less shaky never flips the pace: Pierre, 2026-11-02).
 // Among them, the easiest (genusDiff) come first, softly (OPEN.T): a beginner meets a few easy genera at a time, an
 // expert keeps opening new ones because none stays shaky. docs/LEARNING.md.
+// And the most common near Dauin (Pierre, 2026-11-03: "easy and common first"): each weight is multiplied by
+// core.js commonFactor of its data.json cm (tools/commonness.py), relative to the median of the genera not met yet.
 // K 5 (was 3; Pierre, 2026-11-02: genera should open a little more easily, ~25 of 39 met by an RA after 600 questions
 // was too few): simulated, an RA meets 33-39 after 600 questions, a beginner still 9-14 after 100 (docs/LEARNING.md).
 // K 6 with the first-meeting cards (INTRO): the choices are now genera met, so a wrong answer no longer opens a genus
@@ -545,7 +547,8 @@ function weighted(list) {
       gd = fresh.map(([n]) => genusDiff(n)),
       lo = Math.min(...gd),
       tr = easyTrust(),
-      e = gd.map(x => Math.exp(-OPEN.T * tr * (x - lo))),
+      cf = commonFactor(fresh.map(([n]) => (GX(n) || {}).cm)),
+      e = gd.map((x, k) => Math.exp(-OPEN.T * tr * (x - lo)) * cf[k]),
       se = e.reduce((a, x) => a + x, 0);
     fresh.forEach(([, i], k) => (w[i] = (tot * e[k]) / se));
   }

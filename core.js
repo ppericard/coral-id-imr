@@ -672,6 +672,17 @@
     return {ok, ko, th: m ? Math.round((t / m) * 100) / 100 : 0};
   }
 
+  // Common first (Pierre, 2026-11-03: open the genera "easy and common first"): the opening weight of each genus not met
+  // yet (model.js weighted) is multiplied by sqrt((1 + cm) / (1 + median cm of those genera)), cm = how common the genus
+  // is near Dauin on iNaturalist (data.json, tools/commonness.py). No constant: the square root damps it, the median
+  // makes it relative to the genera still to open. A genus without cm counts as the median (factor 1).
+  function commonFactor(cms) {
+    const v = (cms || []).filter(x => typeof x === 'number' && x >= 0).sort((a, b) => a - b),
+      h = v.length >> 1,
+      med = v.length ? (v.length % 2 ? v[h] : (v[h - 1] + v[h]) / 2) : 0;
+    return (cms || []).map(x => (typeof x === 'number' && x >= 0 ? Math.sqrt((1 + x) / (1 + med)) : 1));
+  }
+
   // Achievements (Pierre, 2026-11-01: "unlocked as milestones are passed, with an animated pop-up, to keep the wish to play";
   // "well spread out": learning a whole genus takes ~300-430 questions, so most rungs are the quarters on the way there).
   // Learning milestones only, never time or days played (the learning model's rule). Each has a family, a tier
@@ -770,6 +781,7 @@
     START,
     playerStart,
     levelSeed,
+    commonFactor,
     applyCuration,
     applySlots,
     CAP,

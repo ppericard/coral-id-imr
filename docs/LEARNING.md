@@ -347,6 +347,73 @@ met the 39 slate genera almost at once.
   and declared look-alikes decide; the answers take over as they come (Pierre expects Acropora and Galaxea to come out
   easy: the data will say).
 
+### Common first (2026-11-03)
+
+Pierre: open the genera "easy and common first". The genera RAs meet all the time on Dauin reefs and in ReefCloud
+photos (*Acropora*, *Porites*, *Pocillopora*, *Montipora*, *Millepora*) should come earlier, with no list of
+exceptions kept by hand. Until then how common a genus is played no part: once the photo stats passed `OPEN.DATA`,
+the order was difficulty only.
+
+- **The measure** (`tools/commonness.py`, run once offline, never on the phones: AGENTS.md rule 14g): for every game
+  genus (the slate, Millepora and the bonus genera), iNaturalist's verifiable observations of the genus taxon (by
+  name, inside Cnidaria) within 40 km of Dauin, and the distinct observers of the same. **`cm` = √(observations ×
+  observers)**, the geometric mean, written to the genus's `data.json` record. Pierre's compromise: near Dauin the top
+  observer makes 29% of the stony-coral observations and the top 10 make 70%, so observation counts follow a few
+  systematic divers (abundance), and observer counts follow casual divers (who favour spectacular genera). A genus whose
+  own `crit` / `imr` lines say "formerly X" also counts X near Dauin (one query over both taxa, so an observer of both
+  counts once): one rule, no hand list ("refer to X" lines are not used: *Fungia* is still a valid genus).
+- **The rule** (`commonFactor` in `core.js`, used by `model.js` `weighted`): the opening weight of each genus not met
+  yet, exp(−`OPEN.T` × trust × (difficulty − easiest)), is multiplied by √((1 + cm) / (1 + median cm of the genera not
+  met yet)). No new constant: the square root damps it, the median makes it relative to what is left to open, and a
+  genus without `cm` counts as the median (factor 1). Commonness applies fully from the first question (it does not
+  depend on the players' answers), while difficulty fades in with them (`easyTrust`), as before. It weighs the first
+  cards too (they are drawn by `weighted` among the genera not met).
+- **Biases to keep in mind**: iNaturalist favours spectacular or easy-to-photograph genera (*Plerogyra* 30,
+  *Tubastraea* 18, *Lobophyllia* 40 come out more common than an RA's transects would say) and underrates small,
+  encrusting or hard-to-name ones; a genus renamed recently is undercounted unless its "formerly" line catches the old
+  name (*Astrea* comes out at 0 even with *Montastraea* / *Phymastrea* counted: its observers near Dauin may file it
+  under another genus, or none). 40 km of Dauin is a few hundred observations in all, so a difference of one or two
+  between rare genera means little; the square root keeps such genera close.
+
+Measured 2026-11-03 (iNaturalist, verifiable, 40 km of Dauin):
+
+| Genus | Observations | Observers | cm |
+| --- | --- | --- | --- |
+| *Acropora* | 119 | 30 | 60 |
+| *Lobophyllia* | 68 | 23 | 40 |
+| *Porites* | 68 | 19 | 36 |
+| *Plerogyra* | 37 | 24 | 30 |
+| *Pocillopora* | 48 | 14 | 26 |
+| *Montipora* | 41 | 16 | 26 |
+| *Goniopora* | 35 | 16 | 24 |
+| *Tubastraea* | 23 | 14 | 18 |
+| *Platygyra* | 25 | 13 | 18 |
+| *Millepora* | 22 | 13 | 17 |
+| ... (median of the 40 slate genera: 8) | | | |
+| *Pectinia* | 6 | 3 | 4 |
+| *Lobactis* | 1 | 1 | 1 |
+| *Astrea* (+ formerly *Montastraea*, *Phymastrea*) | 0 | 0 | 0 |
+
+The whole table is printed by the tool. Effect, `tools/learnsim.js` with the live photo stats (`--stats`, the sheet's
+`?stats=1` answer of 2026-11-03), 10 seeds × 300 questions, same seeds, median question at which a genus is first met
+(card or asked; `--met`; ">300": not met in half the runs or more), before → after:
+
+| Profile | *Acropora* | *Porites* | *Pocillopora* | *Montipora* | *Millepora* | *Pectinia* | *Lobactis* |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| beginner | 151 → 60 | 176 → 8 | 48 → 48 | 72 → 55 | 193 → 126 | 117 → 172 | >300 → >300 |
+| lecture RA | 103 → 20 | 171 → 6 | 91 → 55 | 102 → 79 | 66 → 54 | 68 → 106 | 235 → 247 |
+| strong RA | 132 → 11 | 115 → 6 | 83 → 101 | 100 → 69 | 86 → 92 | 51 → 79 | 105 → 203 |
+| expert | 116 → 35 | 135 → 6 | 127 → 51 | 122 → 126 | 63 → 92 | 61 → 25 | 76 → 195 |
+
+Over the 40 slate genera, the rank correlation between `cm` and the median question first met went from −0.18 / −0.34
+/ −0.17 / +0.11 (beginner / lecture RA / strong RA / expert) to −0.66 / −0.73 / −0.59 / −0.56; the 10 most common were
+first met at a median of question 50-60 (was 94-126). With 10 seeds a single genus's median moves by tens of questions
+from noise (*Millepora* for the expert, *Pocillopora* for the strong RA). The outcomes held, at 300 questions: genera
+met 29.9 / 38.7 / 40 / 40 (were 32.5 / 39.7 / 40 / 40), progress 31 / 41 / 52 / 65% (33 / 42 / 55 / 64%), true
+knowledge of the slate 0.56 / 0.73 / 0.85 / 0.95 (0.58 / 0.74 / 0.85 / 0.95), right % 86 / 84 / 87 / 96 (84 / 84 / 87 /
+96), true reference success at exam entry 0.82 (1 genus) / 0.85 (2) / 0.94 (5) / 0.92 (10) (was - / 0.85
+(1) / 0.91 (4) / 0.92 (9)).
+
 ### Millepora and the bonus genera (2026-11-02)
 
 Pierre: *Millepora* (fire coral) is everywhere at Dauin and in ReefCloud photos and is on the IMR **benthic** slate
@@ -626,7 +693,7 @@ untouched; only the player is simulated) and measures what the simulated players
 estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minutes; numbers for reading).
 
 - **Run**: `node tools/learnsim.js [--seeds 30] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
-  [--workers 4] [--out file.json] [--stats stats.json]`. Each run (profile × seed) gets a fresh browser context; seeds
+  [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...]`. Each run (profile × seed) gets a fresh browser context; seeds
   are 1..N, the app's `Math.random` and the learner's own generator both seeded from it, so a run is reproducible and
   the same seeds before and after a change give paired comparisons. `--stats` loads a `?stats=1` answer of the sync
   sheet as the photo ratings (default: none, Pierre's Easy/Medium/Hard sets, as in CI). `--out` writes every run and
@@ -661,6 +728,8 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   average photo, both ways); genera whose true success on a **hard reference question** (one photo alone, difficulty
   +1 plus the single view's 0.5, 4 choices: the genus and its 3 most confusable slate genera) is 0.9 or more; genera that
   entered the mastery exam (`examOn`, first time), and their true reference success at that moment and when learned.
+  Per run, the question at which each genus was first met (`metAt`), printed as the median per profile for the genera
+  of `--met` (default the five most common at Dauin; a run where it was not met counts as later than the last question).
 - **Limits**: the learner is ours, a few round numbers, not fitted to real answers; the photo difficulty it meets is the
   app's own estimate (so photo calibration cannot be judged); learning is per genus only (a duel or a montage teaches
   the two genera, not the pair as such); no forgetting (except across `--breaks`), no fatigue; the RA profiles know a fixed set of genera (every
@@ -739,6 +808,9 @@ the exam then keeps the genera learned at 0.82-0.93 true reference success.
   (AGENTS.md rule 12 exception), progress, mastery and ability never decay. Then: a new visit (30 minutes without an
   answer, the web-analytics session timeout) opens no genus in its first 10 answers, comeback or not; the comeback's
   answers feed the opening hold with the expectation they really had (logged `|c`, not left out like `|w`).
+- 2026-11-03, Pierre: open the genera "easy and common first": `cm` from iNaturalist near Dauin (geometric mean of
+  observations and observers, `tools/commonness.py`), one factor √((1 + cm) / (1 + median)) on the opening weight, no new
+  constant ("Common first").
 
 ## References
 

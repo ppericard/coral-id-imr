@@ -5,7 +5,7 @@
 // numbers for reading). docs/LEARNING.md, "Learning-outcome simulation".
 //
 //   node tools/learnsim.js [--seeds 30] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
-//                          [--workers 4] [--out results.json] [--stats stats.json]
+//                          [--workers 4] [--out results.json] [--stats stats.json] [--met Acropora,Porites,...]
 //                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20]
 //
 // --breaks (optional; without it nothing changes): the app runs on a virtual clock (10 s an answer), and after the
@@ -58,6 +58,8 @@
 //   mean true success on the hard reference question at the moment they entered; refLearned, the same when learned.
 // - Per run: when Millepora was met and first asked, when the bonus genera were offered (every slate genus met; the
 //   simulated player accepts, "Add them"), and the share of the questions on bonus genera after that.
+// - Per run, metAt: the question at which each genus was first met (card or asked); printed as the median question per
+//   profile for the genera of --met (a genus not met counts as later than the last question, shown ">N").
 const http = require('http'),
   fs = require('fs'),
   os = require('os'),
@@ -98,7 +100,8 @@ const SEEDS = Number(arg('seeds', 30)),
       const m = /^(\d+(?:\.\d+)?)(mo|m|h|d|w)$/.exec(b);
       if (!m) throw new Error(`bad break ${b} (10m, 8h, 3d, 1w, 1mo)`);
       return [b, Number(m[1]) * UNIT[m[2]]];
-    });
+    }),
+  MET = arg('met', 'Acropora,Porites,Pocillopora,Montipora,Millepora').split(',').filter(Boolean);
 for (const n of NAMES) if (!PROFILES[n]) throw new Error(`unknown profile ${n} (${Object.keys(PROFILES).join(', ')})`);
 const CPS = [
   ...new Set(
@@ -231,7 +234,8 @@ function play(cfg) {
 
   const rows = [],
     entry = {},
-    learnedAt = {};
+    learnedAt = {},
+    metAt = {};
   let blk = {n: 0, ok: 0},
     nEx = 0,
     nDuel = 0,
@@ -295,6 +299,7 @@ function play(cfg) {
     blk.n++;
     blk.ok += good;
     if (mill.met === null && introduced('Millepora')) mill.met = i + 1;
+    SL.concat(BONUS).forEach(g => !(g in metAt) && introduced(g) && (metAt[g] = i + 1));
     if (mill.asked === null && t === 'Millepora') mill.asked = i + 1;
     if (bon.offer !== null && bon.offer <= i + 1) {
       bon.q++;
@@ -419,6 +424,7 @@ function play(cfg) {
     rows,
     entry,
     learnedAt,
+    metAt,
     pairs: PAIRS.length,
     breaks: out,
     millMet: mill.met,
@@ -617,6 +623,16 @@ function breakTable(BS) {
   }
   const BS = BREAKS.length ? breakSummary(runs) : null;
   if (BS) console.log(breakTable(BS));
+  // First met, per genus of --met: median question over every run, a run where it was not met counting as after QN.
+  console.log(`\nFirst met (median question over the runs; >${QN}: not met in half of them or more; met in n runs):`);
+  for (const name of NAMES) {
+    const R = runs.filter(r => r.profile === name),
+      cell = g => {
+        const m = med(R.map(r => (r.metAt || {})[g] ?? Infinity));
+        return `${g} ${m === Infinity ? '>' + QN : m} (${R.filter(r => (r.metAt || {})[g]).length}/${R.length})`;
+      };
+    console.log(`  ${name}: ${MET.map(cell).join(', ')}`);
+  }
   if (errs.length) console.log('\nPage errors: ' + errs.slice(0, 5).join(' | '));
   if (OUT) {
     fs.writeFileSync(
