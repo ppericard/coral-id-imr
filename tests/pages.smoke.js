@@ -823,9 +823,6 @@ async function replayAdoptCheck(base) {
     window.fetch = (u, o) => (/script\.google/.test(String((u && u.url) || u)) ? answer(u, o) : f(u, o));
   };
   // sv: the sheet script version the stub answers as (the replay from v28, core.js RV_SHEET).
-  // The rules version whose card shows only when the replay moved the progress % (v1; the later ones, v2 the photo Elo
-  // of sheet v29, have no card so far).
-  const CV = (C.RVS.filter(x => x.msg && x.msg.only === 'changed').pop() || {}).v;
   const open = async (rv, core, sv = C.RV_SHEET) => {
     const c = await bs.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
     await c.addInitScript(STUB, [rec, data, core ? C.RV + 1 : C.RV, sv]);
@@ -881,22 +878,30 @@ async function replayAdoptCheck(base) {
     const a = s.P.Acropora || {};
     if (a.pg !== dev.Acropora.pg || a.ok !== 2 || 'rv' in a || s.rv || s.pending || s.card)
       fails.push(`replay: adopted from a script before v${C.RV_SHEET}: ${JSON.stringify({a, rv: s.rv, pending: s.pending, card: s.card})}`);
-    // A card with only: 'changed' is due only when the progress % moved (progress.js rvNoticeAdd).
+    // The standard card (core.js RV_CARD, only: 'changed', min 5) is due only when the progress % moved by 5 points or
+    // more, and then shows with the two % (progress.js rvNoticeAdd, rvNotice).
     const due = await p.evaluate(v => {
       const d = [];
       for (const pct of [
         [10, 10],
-        [10, 9]
+        [10, 14],
+        [10, 5]
       ]) {
         localStorage.removeItem('imr-rv-msg');
         rvNoticeAdd(0, v, pct);
-        d.push(JSON.parse(localStorage.getItem('imr-rv-msg')).due);
+        // Shown at once when no other card is on screen (rvNotice waits behind one: the update note may be up here).
+        document.querySelectorAll('.unlock, #tour').forEach(e => e.remove());
+        rvNotice();
+        const t = (document.querySelector('.rvmsg p:not(.ulkick)') || {}).textContent || '';
+        d.push([JSON.parse(localStorage.getItem('imr-rv-msg')).due, t]);
         document.querySelectorAll('.rvmsg').forEach(e => e.remove());
       }
       localStorage.removeItem('imr-rv-msg');
       return d;
     }, C.RV);
-    if (due[0].length || !due[1].includes(CV)) fails.push(`replay: the card's only-when-changed rule: ${JSON.stringify(due)}`);
+    // Every version since 0 has the standard card (RV_CARD): it is due once, for the last version (progress.js rvNoticeAdd).
+    if (due[0][0].length || due[1][0].length || due[2][0].join() !== String(C.RV) || !due[2][1].includes('went from 10% to 5%'))
+      fails.push(`replay: the card's 5-point rule: ${JSON.stringify(due)}`);
     await c.close();
   }
   // A stale device: the replay adopted once, its own answer on top.
@@ -930,10 +935,13 @@ async function replayAdoptCheck(base) {
     if (!last || Math.abs(JSON.parse(last.data).Acropora.pg - all.Acropora.pg) > 1e-9)
       fails.push('replay: the adopted progress was not sent');
     if (s.pending) fails.push('replay: its own answer was not sent');
-    // Version 1's card is due only when the replay moved the progress % (Pierre, 2026-11-03), and says the two % (it
-    // may wait behind the learned-mark card).
-    const [pf, pt] = (s.rvm.pct || {})[CV] || [];
-    if ((s.rvm.due || []).includes(CV) !== (pf !== undefined && pf !== pt) || (s.card && !s.text.includes(`went from ${pf}% to ${pt}%`)))
+    // Version 1's card is due only when the replay moved the progress % by 5 points or more (Pierre, 2026-11-03), and
+    // says the two % (it may wait behind the learned-mark card).
+    const [pf, pt] = (s.rvm.pct || {})[C.RV] || [];
+    if (
+      (s.rvm.due || []).includes(C.RV) !== (pf !== undefined && Math.abs(pt - pf) >= C.RV_CARD.min) ||
+      (s.card && !s.text.includes(`went from ${pf}% to ${pt}%`))
+    )
       fails.push(`replay: the recalculation card: ${JSON.stringify({card: s.card, text: s.text, rvm: s.rvm})}`);
     // The next load: not adopted again (the sheet now sends another record: the progress stays), and the load says the
     // version applied.
