@@ -186,8 +186,8 @@ function renderJourney(name, anonId = '') {
   const J = journeyOf(R),
     total = J.slate.size,
     lv = RAS[u.id] ? RAS[u.id][0] : null,
-    ok = R.reduce((n, r) => n + r[4], 0),
-    last50 = R.slice(-50),
+    // The photo quiz apart from the Duel tab (core.js playSplit; Pierre, 2026-11-03).
+    sp = playSplit(R)[R.length ? R[0][0] : ''] || {q: [0, 0], q50: [0, 0], d: [0, 0]},
     sLen = J.S.map(s => s.length).sort((a, b) => a - b),
     medS = sLen[Math.floor(sLen.length / 2)],
     // Seconds to answer and photo enlarged (sheet v23; null before): logged to be analysed later, shown here only.
@@ -446,14 +446,9 @@ function renderJourney(name, anonId = '') {
     head +
     kpis([
       ['Answers', R.length],
-      ['Right', pct(ok, R.length)],
-      [
-        'Last 50',
-        pct(
-          last50.reduce((n, r) => n + r[4], 0),
-          last50.length
-        )
-      ],
+      ['Quiz right', pct(sp.q[1], sp.q[0])],
+      ['Last 50', pct(sp.q50[1], sp.q50[0])],
+      ...(sp.d[0] ? [['Duels', `${sp.d[0]} · ${pct(sp.d[1], sp.d[0])}`]] : []),
       ['Level', lv == null ? '–' : sgn(lv)],
       ['Genera met', `${J.marks.length}/${total}`],
       ...(anonId ? [] : [['Learned', `${u.learned}/${u.total || total}`]]), // not saved for a device that never signed in
