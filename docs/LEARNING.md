@@ -157,6 +157,8 @@ time, each on its card, but never as the answer of the question right after its 
   new-player walkthrough, 2026-11-02, got the very same photo twice in a row; same for a duel that brings a card).
 - **When a genus opens** stays the progressive path's call (below): a draw that falls on a genus not met yet shows its
   card and asks about a genus already met. At least `INTRO.EVERY` (2) answers between two cards.
+- **A ★ genus after the genera it is compared to** (Pierre, 2026-11-03): it opens, on a card of its own or among the
+  first cards, only once the surveyed genera its card names are met ("Starred genera after their reference", below).
 - **Held while the player falls behind** (`introHold`, Pierre, 2026-11-02): no new card while a running sum of how
   far the answers fall below the success the game expected for them (each answer's `e`), less an allowance
   `INTRO.SLACK` (0.1) an answer, never below 0, is `INTRO.HOLD` (1.5) or more. A CUSUM (Page 1954, the standard detector of a lasting drop): a run of misses adds up however long it
@@ -447,6 +449,51 @@ met 29.9 / 38.7 / 40 / 40 (were 32.5 / 39.7 / 40 / 40), progress 31 / 41 / 52 / 
 knowledge of the slate 0.56 / 0.73 / 0.85 / 0.95 (0.58 / 0.74 / 0.85 / 0.95), right % 86 / 84 / 87 / 96 (84 / 84 / 87 /
 96), true reference success at exam entry 0.82 (1 genus) / 0.85 (2) / 0.94 (5) / 0.92 (10) (was - / 0.85
 (1) / 0.91 (4) / 0.92 (9)).
+
+### Starred genera after their reference (2026-11-03)
+
+Pierre, for everyone: a ★ genus (on the slate, not surveyed by IMR, there because it looks like surveyed genera,
+AGENTS.md rule 6b) opens only once the genus its card compares it to has been met. A beginner had met *Duncanopsammia*
+("Like *Turbinaria*, but corallites about 6 mm") and *Cyphastrea* ("neater than *Astreopora*") before ever seeing
+*Turbinaria* or *Astreopora*: the card's comparison then teaches nothing.
+
+- **The references, from the data** (`core.js` `starRefs`, no list in code): a starred genus is one of `data.json`
+  `gen` without a slate number (`n` 0); its references are its Coral Finder look-alikes (`look`) that are surveyed
+  (numbered) and in the lecture group it is shown in (`lectureGroup`, the app's `shownGroup`): exactly the genera of its
+  card's "★ look-alike of …" line (`learn.js` `starNote`, which now reads `starRefs`). Today: *Duncanopsammia* →
+  *Turbinaria*, *Tubastraea*; *Alveopora* → *Goniopora*; *Merulina* → *Hydnophora*; *Cyphastrea* → *Astreopora*,
+  *Echinopora*; *Halomitra* → *Herpolitha*. All of them, not one: the card names them all, and its ID tips compare with
+  the first.
+- **The rule** (`core.js` `starWaits`, `model.js` `weighted`): in the opening draw, a ★ genus not met weighs 0 while one
+  of its references is in the list drawn from and not met (a card or an answer). The genera met, the pace (`OPEN`), the
+  easy and common first order are unchanged; the ★ genus simply waits its turn behind its references. It applies
+  wherever genera open one at a time: the first 4 cards (`introStart`: a reference drawn earlier among them counts as
+  met, so its card shows first), a card of its own, a genus closed again by One at a time. A duel of the Duel tab that
+  brings both cards shows the reference's first. **Open all** still opens everything at once (the rule only orders the
+  one-at-a-time path), and the choices are unchanged (genera met).
+- **Never blocked for ever**: a reference is always a surveyed genus, which never waits itself (no cycle, even if a ★
+  genus listed another ★ genus as a look-alike); a reference not in the list (not in the game, no photos) never holds a
+  genus back; should every genus left wait, they all open as before. No new constant.
+- **Checked**: `tests/genera.test.js` (the references of the real data; not eligible before its references, eligible
+  after, a missing reference never blocks); `tests/draw.smoke.js` (over a beginner's 120 questions and 200 first-card
+  draws no ★ genus opens before its references; with every other genus met, no ★ genus drawn before its references, all
+  of them once the references are met, and all of them when the references are out of the list).
+
+Simulated (`tools/learnsim.js`, 5 seeds × 300 questions, the same seeds, before → after; the draws part ways at the first
+★ genus held back, so the two runs differ by noise beyond that):
+
+| Profile | genera met at 100 | met at 300 | true knowledge of the slate at 100 | at 300 | ★ met before a reference |
+| --- | --- | --- | --- | --- | --- |
+| beginner | 16.0 ± 2.0 → 13.4 ± 2.4 | 31.6 ± 3.6 → 36.0 ± 1.9 | 0.25 → 0.24 | 0.57 → 0.59 | 15 of 23 → 0 of 15 |
+| lecture RA | 19.6 ± 1.5 → 18.4 ± 2.8 | 38.2 ± 3.5 → 36.8 ± 3.6 | 0.46 → 0.47 | 0.73 → 0.72 | 16 of 24 → 0 of 22 |
+| strong RA | 19.6 ± 1.7 → 19.0 ± 1.7 | 40 → 40 | 0.68 → 0.67 | 0.85 → 0.85 | 11 of 25 → 0 of 25 |
+| expert | 19.8 ± 1.3 → 20.0 ± 1.0 | 40 → 40 | 0.94 → 0.94 | 0.95 → 0.95 | 17 of 25 → 0 of 25 |
+
+(★ met: the ★ genera met in the 5 runs, at most 25; "before a reference": met at an earlier question than one of its
+references, or with a reference never met.) The genera met and the true knowledge move within the spread over the
+seeds; before, 6 in 10 ★ genera came before a genus they are compared to, now none. The ★ genera come later (median
+question first met, over the profiles, about 40-200 before, 150-270 after; a beginner met 15 of them in the 5 runs
+instead of 23), which suits them: they are on the slate to be told apart from genera already known.
 
 ### Millepora and the bonus genera (2026-11-02)
 
@@ -1156,6 +1203,11 @@ is not in the simulation.
   after Open all; 30 answers + the hold would have come 4 answers before the player quit); One at a time closes every genus
   opened at once, answered or not, until its card reopens it, answers and progress kept ("First meeting with a genus").
   The starting ability of those genera measured, not changed ("Open all: the app's expectation against the truth").
+
+- 2026-11-03, Pierre (for everyone): a ★ genus opens only after the genus its card compares it to has been met (a
+  beginner met *Duncanopsammia* and *Cyphastrea* before *Turbinaria* and *Astreopora*): the references read from the data
+  (`core.js` `starRefs`, the genera of the card's "★ look-alike of …" line), a weight of 0 in the opening draw until
+  they are met, Open all unchanged, no new constant ("Starred genera after their reference").
 
 ## References
 
