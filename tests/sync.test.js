@@ -485,6 +485,49 @@ test('v19 events: anonymous error reports and one-tap answers, logged once, capp
   assert.strictEqual(s.post({dev: 'flood00001', events: many(1)}).error, 'busy');
 });
 
+// The one-tap question's bank (2026-11-03, core.js PULSEQ) needs no new sheet version: the item id rides in src (Where
+// column) and the answer's code in r (Message column), both kept as text since v19; Detail keeps r only for easy / ok /
+// hard, as before. What the admin reads back (readEvents) is what the app sent, for every item and code of the bank.
+test('v19 events carry the one-tap bank: item id in Where, answer code in Message, as they came', () => {
+  const {PULSEQ, PULSE_SHOWN, PULSE_SKIP, PULSE_NONE, pulseScore} = require('../core.js'),
+    s = loadCodeGs(),
+    // Every answer of every item, and each item's prompt events (shown, Not now, moved on without a tap: 2026-11-03).
+    sent = PULSEQ.flatMap(it => [...it.a.map(([r]) => r), PULSE_SHOWN, PULSE_SKIP, PULSE_NONE].map(r => ({q: it.id, r}))),
+    events = sent.map((x, i) => ({
+      id: 'p' + i,
+      t: '2026-11-03T00:00:00Z',
+      k: 'pulse',
+      r: x.r,
+      src: x.q,
+      m: i % 2 ? 'quiz-duel' : 'quiz',
+      n: 20,
+      rr: 70,
+      lv: 0.3,
+      met: 12,
+      av: '200',
+      ua: 'Chrome 141'
+    }));
+  assert.strictEqual(s.post({dev: 'dev0000009', events}).ok, true);
+  const rows = s
+    .post({readEvents: 1, token: 'ghp_write000000000000000000'})
+    .rows.reverse()
+    .filter(x => x[3] === 'pulse');
+  assert.deepStrictEqual(
+    rows.map(x => ({q: x[5], r: x[4]})),
+    sent,
+    'item and code read back as sent'
+  );
+  rows.forEach((x, i) => {
+    const d = JSON.parse(x[7]);
+    assert.strictEqual(d.r, ['easy', 'ok', 'hard'].includes(sent[i].r) ? sent[i].r : '');
+    assert.strictEqual(d.m, i % 2 ? 'quiz-duel' : 'quiz');
+    assert.strictEqual(d.lv, 0.3);
+    const sc = pulseScore(x[5], x[4]);
+    if ([PULSE_SHOWN, PULSE_SKIP, PULSE_NONE].includes(x[4])) assert.deepStrictEqual(sc, {d: null, f: null}, 'no answer');
+    else assert.ok(sc.d !== null || sc.f !== null, 'scored by the admin');
+  });
+});
+
 test('v21 load events: load times, the line and the CDN server, nothing else kept', () => {
   const s = loadCodeGs();
   s.post({

@@ -246,21 +246,37 @@
       rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', '#home')
     ];
     // Events (sheet v19): [id, time, device, kind, message, where, page, detail, app, browser], newest first.
+    // One-tap prompts (core.js PULSEQ): the item in Where, the code in Message; Detail keeps r only for easy / ok / hard,
+    // as the sheet does. Each prompt logs its showing, then an answer, "Not now" (skip), moving on (none) or nothing (the
+    // app closed); the first prompt is an answer from before the bank (no item id, no showing logged).
     const events = [];
-    for (let i = 0; i < 24; i++) {
-      const r = ['ok', 'ok', 'hard', 'easy', 'ok', 'hard'][i % 6];
-      events.push([
-        'demoev' + i,
-        NOW - i * 7 * 3600e3,
-        'demodev' + (i % 5),
-        'pulse',
-        r,
-        '',
-        'quiz',
-        JSON.stringify({r, m: 'quiz', n: 10 + i, rr: r === 'hard' ? 40 : r === 'easy' ? 100 : 80, lv: -1.2 + (i % 5) * 0.5, met: 6 + i}),
-        '159',
-        'Chrome 140 mobile'
-      ]);
+    for (let i = 0; i < 48; i++) {
+      const it = PULSEQ[i % PULSEQ.length],
+        out = i % 8,
+        r = out === 5 ? PULSE_SKIP : out === 6 ? PULSE_NONE : out === 7 ? '' : it.a[[1, 1, 2, 0, 1][out]][0],
+        m = i % 4 === 3 ? 'quiz-duel' : 'quiz',
+        old = i === 0,
+        row = (k, code) => [
+          'demoev' + i + k,
+          NOW - i * 4 * 3600e3 + (k === 'b' ? 30e3 : 0),
+          'demodev' + (i % 5),
+          'pulse',
+          code,
+          old ? '' : it.id,
+          m,
+          JSON.stringify({
+            r: ['easy', 'ok', 'hard'].includes(code) ? code : '',
+            m,
+            n: 10 + i,
+            rr: code === 'hard' || code === 'yes' ? 40 : code === 'easy' ? 100 : 80,
+            lv: -1.2 + (i % 5) * 0.5,
+            met: 6 + i
+          }),
+          '159',
+          'Chrome 140 mobile'
+        ];
+      if (!old) events.push(row('a', PULSE_SHOWN));
+      if (r) events.push(row('b', r));
     }
     events.push(
       [

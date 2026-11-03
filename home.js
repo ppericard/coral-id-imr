@@ -7,7 +7,7 @@
     const g = DATA.gen[n];
     if (!g) return '';
     const p = (g.views[v] || [])[0] || (g.views.macro || [])[0] || cover(g);
-    return p ? thumb(p, '(max-width:599.98px) 100px, 270px') : '';
+    return p ? thumb(p, '(max-width:599.98px) calc((100vw - 40px) / 4), 270px') : ''; // a phone tile: a quarter of the band
   };
   window.viewHome = function () {
     document.documentElement.dataset.page = 'lab'; // full width, like the Lab (lab.css)
