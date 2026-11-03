@@ -242,3 +242,91 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
   const old = {post: async () => ({ok: false, error: 'input', v: 29}), log: t => logs.push(t)};
   assert.strictEqual(await sheetRun(old, 'tok', {B: 0}), 'old');
 });
+
+// Codex review #441: with few players (no bootstrap), an effect constant within each player must carry the players'
+// spread in its interval, not shrink with their number of answers (the fixed effects' covariance marginal over the
+// random effects, margV).
+test('a player-level effect from 4 players is not made sure by many answers each (lmm and glmm)', () => {
+  const R = A.rng(9),
+    nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
+    sig = x => 1 / (1 + Math.exp(-x)),
+    habit = [0.1, 0.3, 0.5, 0.7],
+    u = [0.8, -0.9, 1.1, -0.6]; // the players' own effects (SD about 1), unrelated to their habit
+  const y = [],
+    yb = [],
+    X = [],
+    kp = [];
+  for (let i = 0; i < 8000; i++) {
+    const p = i % 4;
+    y.push(1 + u[p] + nrm() * 0.5);
+    yb.push(R() < sig(u[p]) ? 1 : 0);
+    X.push([1, habit[p] - 0.4]);
+    kp.push('p' + p);
+  }
+  const L = A.lmm(y, X, [A.factor('player', kp)]),
+    G = A.glmm(yb, X, [A.factor('player', kp)]);
+  // conditional on the players' effects the SE would be about 0.01 (lmm) and 0.05 (glmm): the habit would look "clear"
+  assert.ok(L.se[1] > 0.5, `lmm habit SE ${L.se[1]}`);
+  assert.ok(G.se[1] > 0.5, `glmm habit SE ${G.se[1]}`);
+  // a within-player effect keeps a tight interval
+  const y2 = [],
+    X2 = [];
+  for (let i = 0; i < 8000; i++) {
+    const p = i % 4,
+      x = R() < 0.5 ? 1 : 0;
+    y2.push(1 + u[p] + 0.3 * x + nrm() * 0.5);
+    X2.push([1, x]);
+  }
+  const L2 = A.lmm(y2, X2, [A.factor('player', kp)]);
+  assert.ok(L2.se[1] < 0.02 && Math.abs(L2.b[1] - 0.3) < 0.04, `within-player SE ${L2.se[1]}`);
+});
+
+// Codex review #441: the exam is read from |x whatever the format (a typed exam question is quiz|t|x).
+test('a typed exam question counts as an exam', () => {
+  const r = (m, ch) => ['p1', 1, 'A', 'A', 1, m, 'f1', 0.7, 0, 0, ch, 0, 5, 0];
+  const L = A.prep([r('quiz|t|x', ''), r('quiz|x', 'A B C D'), r('quiz|t', '')]);
+  assert.deepStrictEqual(
+    L.map(a => [a.f, a.exam]),
+    [
+      ['typed', 1],
+      ['exam', 1],
+      ['typed', 0]
+    ]
+  );
+});
+
+// Codex review #441: a change to the photos' features (curation: view, quality) refits every milestone.
+test('stored milestones are refitted when the photo features change', () => {
+  const fs = require('fs'),
+    data = JSON.parse(fs.readFileSync(require('path').join(__dirname, '..', 'data.json'))),
+    rows = A.demoLog(data, Date.UTC(2026, 10, 1), {days: 400, players: A.DEMO_PLAYERS.slice(0, 3).map(p => [p[0], p[1], 400, p[3]])});
+  const meta = {ph: A.photoMeta(data)},
+    r1 = A.report(rows, meta, null, {B: 0}),
+    f = Object.keys(meta.ph)[0],
+    meta2 = {ph: {...meta.ph, [f]: ['macro', 1, null, 'inat']}},
+    r2 = A.report(rows, meta2, r1, {B: 0}),
+    r3 = A.report(rows, meta, r1, {B: 0});
+  assert.notStrictEqual(r2.R[1000], r1.R[1000], 'a photo moved: refitted');
+  assert.strictEqual(r3.R[1000], r1.R[1000], 'nothing changed: reused');
+});
+
+// Codex review #441: each player's mix-ups against the pooled rates are observed / expected, not the odds ratio exp(u).
+test('confusions: a player who mixes up often reads as observed / expected', () => {
+  const R = A.rng(4),
+    G = ['A', 'B', 'C', 'D'],
+    rows = [];
+  for (let i = 0; i < 4000; i++) {
+    const p = 'p' + (i % 4),
+      k = Math.floor(R() * 4),
+      g = G[k],
+      o = G[(k + 1) % 4],
+      // p0 picks the wrong one 60% of the time, the others 20%
+      ok = R() < (p === 'p0' ? 0.4 : 0.8);
+    rows.push([p, i * 1000, g, ok ? g : o, ok ? 1 : 0, 'quiz|d|k2', 'f' + (i % 50), 0.7, 0, 0, `${g} ${o}`, 0, 5, 0]);
+  }
+  const c = A.confusions(A.prep(rows), 0, 1),
+    p0 = c.player.find(x => x.k === 'p0');
+  assert.ok(Math.abs(p0.oe - p0.mix / p0.exp) < 1e-9, 'observed / expected');
+  assert.ok(p0.oe < 2.5 && p0.or > p0.oe, `obs/exp ${p0.oe.toFixed(2)}, odds ratio ${p0.or.toFixed(2)}`);
+  assert.ok(p0.lo < p0.oe && p0.oe < p0.hi);
+});

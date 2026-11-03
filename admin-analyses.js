@@ -253,7 +253,8 @@ function anConv(rep, key) {
   if (Ms.length < 2) return '';
   const last = rep.R[Ms[Ms.length - 1]].A[key].effects.filter(e => e.est != null && e.unit !== 'n' && !(e.hi - e.lo > 20));
   const W = anW(),
-    cols = W >= 900 ? 3 : W >= 560 ? 2 : 1,
+    // the grid's columns follow the size classes (admin.css .adm-an-convs: 1 on phones, 2 on tablets, 3 on desktops)
+    cols = matchMedia('(min-width: 1024px)').matches ? 3 : matchMedia('(min-width: 600px)').matches ? 2 : 1,
     w = Math.floor((W - (cols - 1) * 12) / cols) - 4;
   const cells = last.map(e => {
     const P = Ms.map(M => [M, (rep.R[M].A[key].effects || []).find(x => x.k === e.k)]).filter(
@@ -528,11 +529,12 @@ const ANV = {
         {nul: 1, tf: v => '×' + v.toFixed(2), title: 'Mix-ups observed / expected, by player'}
       ) +
         anTable(
-          ['Player', '#Chances', '#Mixed', '#Expected', '#×'],
+          ['Player', '#Chances', '#Mixed', '#Expected', '#Obs. / exp.', '#Odds ×'],
           a.player.map(
             (p, i) =>
-              `<tr><td>${anWho(p.k, i)}</td><td class="n">${p.n}</td><td class="n">${p.mix}</td><td class="n">${p.exp.toFixed(1)}</td><td class="n">×${p.oe.toFixed(2)}</td></tr>`
-          )
+              `<tr><td>${anWho(p.k, i)}</td><td class="n">${p.n}</td><td class="n">${p.mix}</td><td class="n">${p.exp.toFixed(1)}</td><td class="n">×${p.oe.toFixed(2)}<small class="adm-an-ci">[${p.lo.toFixed(2)}, ${p.hi.toFixed(2)}]</small></td><td class="n" title="The player's own effect in the model, as an odds ratio">${p.or != null ? `×${p.or.toFixed(2)}<small class="adm-an-ci">[${p.orLo.toFixed(2)}, ${p.orHi.toFixed(2)}]</small>` : '–'}</td></tr>`
+          ),
+          'adm-an-eff'
         ),
       'wide'
     )
@@ -735,7 +737,7 @@ Object.assign(HELP, {
   'an-zoom': `<p><b>Zoom.</b> Does enlarging a photo go with a right answer, beyond the app's expectation? Logistic model with each question's guess rate, the app's expectation as offset and a player random effect; the effect of enlarging is measured against each player's own habit (enlarged − their rate), apart from how much they enlarge (between players). Players: their answers, how often they enlarge, right % and right − expected with and without enlarging. By view: how often each view shown gets enlarged. Since 2026-11-03 20:24 the enlarge mark is visible: compare milestones after it.</p>${AN_HELP_COMMON}`,
   'an-photo': `<p><b>Photo factors</b> (explanatory IRT, LLTM with a photo random effect). Right / wrong with each question's guess rate; random effects player (ability), genus, photo (a question's photos share it); fixed effects the photos' features, averaged over the photos shown: view (close-up, corallites against colony), quality (fair, poor against good; Pierre's rating else the automatic one), sharpness (log, per SD; metrics.json), source (Pierre's, other iNaturalist against IMR lecture), one view alone, typed. Read as difficulty: + = harder. Harder / easier than their features say: the photos whose own effect is furthest from what their features predict (click to enlarge).</p>${AN_HELP_COMMON}`,
   'an-fmt': `<p><b>Formats.</b> For each question format (4 choices, 4 shown with 3 or 2 plausible, Again, duel in the quiz, Duel tab, exam, typed): P(right) = c + (1 − c) sig(x + d), x the app's own log-odds for the answer (its Expected without its guess floor), fitted per format: c the real guess rate (◇ = the fixed value the app uses: 1/k, ½ for a duel, 0 typed), d the extra difficulty the app's expectation misses (+ = harder than the app thinks). Right − expected: the plain gap. The guess rate is pinned by the weakest answers: its interval stays wide until there are many.</p>${AN_HELP_COMMON}`,
-  'an-conf': `<p><b>Confusions.</b> Each wrong choice offered is a chance to be picked (typed answers left out). Logistic model: random effects the pair of genera and the player, fixed effects the view shown (close-up, corallites, several views against colony) and the number of wrong choices. SD player = how much players differ from the pooled rates (each player against the pooled: mix-ups observed / expected, ×1 = like everyone). Pairs: offered together, mixed up, the rate by view shown (answers under it) and the pair's own effect.</p>${AN_HELP_COMMON}`,
+  'an-conf': `<p><b>Confusions.</b> Each wrong choice offered is a chance to be picked (typed answers left out). Logistic model: random effects the pair of genera and the player, fixed effects the view shown (close-up, corallites, several views against colony) and the number of wrong choices. SD player = how much players differ from the pooled rates (each player against the pooled: mix-ups observed / expected from the pooled rates of the pairs, views and choices they met, ×1 = like everyone, interval from the count's Poisson spread; Odds × = the player's own effect in the model, an odds ratio, larger than observed / expected when mix-ups are common). Pairs: offered together, mixed up, the rate by view shown (answers under it) and the pair's own effect.</p>${AN_HELP_COMMON}`,
   'an-learn': `<p><b>Learning curves.</b> Right / wrong with the guess rate, random effects player and genus, fixed effects the log of answers already given on the genus (the slope), right after a miss on it, an Again asked after that miss (its extra effect), typed, exam and comeback questions. Answers to reach 80% (recognised beyond guessing, the app's target) for an average player, overall and by genus. The first-meeting card and the side-by-side comparison leave no row in the answer log: they cannot be measured yet (ROADMAP).</p>${AN_HELP_COMMON}`,
   'an-back': `<p><b>Comeback.</b> Answers after a right answer on the same genus: the forgetting slope, logit per log(1 + days since), with the expectation of that previous answer as offset and a player random effect; and the comeback questions (|c): right − the app's expected (its FSRS curve, model.js comebackOf). By band: how many, right %, the app's expectation now and before the break.</p>${AN_HELP_COMMON}`,
   'an-sess': `<p><b>Sessions</b> (answers less than 30 minutes apart). Sessions still going after n answers (Kaplan-Meier; a session whose last answer is under 30 minutes before the log's end is still open, censored). What ends a session: a discrete-time survival model (logistic, player random effect) on each answer, stop after it or not: the answer wrong, 2+ misses in a row, the question's expected difficulty, a slow answer against the player's usual, the position.</p>${AN_HELP_COMMON}`

@@ -111,7 +111,6 @@ function doPost(e){
   if (Array.isArray(p.reports)) return json_(logReports_(p));
   if (p.readReports) return json_(reports_(p.token));  // admin: POST {readReports: 1, token} (see reports_)
   if (Array.isArray(p.events)) return json_(events_(p));  // v19: error reports and one-tap answers (see events_)
-  if (p.readEvents) return json_(readEvents_(p.token));  // admin: POST {readEvents: 1, token}
   if (p.analysesPut || p.analysesGet) return json_(analyses_(p));  // admin (v35): the Analyses report, see analyses_
   if (p.readEvents) return json_(readEvents_(p.token, p.pages));  // admin: POST {readEvents: 1, token}; v30 pages: 1 for the Pages tab
   if (p.readStats || p.readAnswers) {  // admin (v14): per-player numbers, see doGet

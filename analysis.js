@@ -118,6 +118,80 @@
     return out;
   }
 
+  // Covariance of the fixed effects marginal over the random effects: the inverse of the Schur complement
+  // X'WX - X'WZ (Z'WZ + D)^-1 Z'WX of the joint precision of (b, u), D the random effects' prior precision (lam per
+  // factor), W the rows' weights (1 for the Gaussian model, the Fisher weights of the logistic one), times scale.
+  // Exact for crossed and shared (a question's photos) levels; dense, so above MAXM levels each level's block is
+  // taken alone (the Schur terms of every level summed), an approximation, kept only while it stays positive.
+  const MAXM = 2500;
+  function margV(X, F, W, lam, scale, XtWX) {
+    const p = X[0].length,
+      N = X.length,
+      off = [],
+      m = F.reduce((t, f) => (off.push(t), t + f.n), 0),
+      wt = i => (W ? W[i] : 1);
+    if (!m) return inverse(XtWX).map(r => r.map(v => v * scale));
+    let S;
+    if (m <= MAXM) {
+      const C = new Float64Array(m * m),
+        B = new Float64Array(p * m);
+      for (let i = 0; i < N; i++) {
+        const L = [];
+        F.forEach((f, k) => {
+          for (let q = f.start[i]; q < f.start[i + 1]; q++) L.push([off[k] + f.lev[q], f.w[q]]);
+        });
+        const wi = wt(i);
+        L.forEach(([a, wa]) => {
+          for (let c = 0; c < p; c++) B[c * m + a] += X[i][c] * wa * wi;
+          L.forEach(([b, wb]) => (C[a * m + b] += wa * wb * wi));
+        });
+      }
+      F.forEach((f, k) => {
+        const d = lam(f);
+        for (let j = 0; j < f.n; j++) C[(off[k] + j) * m + off[k] + j] += d;
+      });
+      // Cholesky C = L L' (in place, lower triangle)
+      for (let j = 0; j < m; j++) {
+        let d = C[j * m + j];
+        for (let k = 0; k < j; k++) d -= C[j * m + k] * C[j * m + k];
+        d = Math.sqrt(Math.max(d, 1e-12));
+        C[j * m + j] = d;
+        for (let i = j + 1; i < m; i++) {
+          let v = C[i * m + j];
+          for (let k = 0; k < j; k++) v -= C[i * m + k] * C[j * m + k];
+          C[i * m + j] = v / d;
+        }
+      }
+      // Y = L^-1 B' column by column; then B C^-1 B' = Y'Y
+      const Y = [];
+      for (let c = 0; c < p; c++) {
+        const y = new Float64Array(m);
+        for (let i = 0; i < m; i++) {
+          let v = B[c * m + i];
+          for (let k = 0; k < i; k++) v -= C[i * m + k] * y[k];
+          y[i] = v / C[i * m + i];
+        }
+        Y.push(y);
+      }
+      S = XtWX.map((r, a) => r.map((v, c) => v - Y[a].reduce((t, x, i) => t + x * Y[c][i], 0)));
+    } else {
+      S = XtWX.map(r => r.slice());
+      F.forEach(f => {
+        const A = Array.from({length: f.n}, () => new Float64Array(p)),
+          D = new Float64Array(f.n).fill(lam(f));
+        for (let i = 0; i < N; i++)
+          for (let q = f.start[i]; q < f.start[i + 1]; q++) {
+            const j = f.lev[q];
+            D[j] += f.w[q] * f.w[q] * wt(i);
+            for (let c = 0; c < p; c++) A[j][c] += X[i][c] * f.w[q] * wt(i);
+          }
+        for (let j = 0; j < f.n; j++) for (let a = 0; a < p; a++) for (let c = 0; c < p; c++) S[a][c] -= (A[j][a] * A[j][c]) / D[j];
+      });
+      if (S.some((r, a) => !(r[a] > 1e-9))) S = XtWX;
+    }
+    return inverse(S.map((r, a) => r.map((v, c) => v + (a === c ? 1e-9 : 0)))).map(r => r.map(v => v * scale));
+  }
+
   /* ---------- Linear mixed model (Gaussian, crossed random effects) ---------- */
   // y = X b + sum_f Z_f u_f + e, u_f ~ N(0, tau2_f), e ~ N(0, s2). Alternating (backfitting) updates of b and of each
   // factor's BLUPs, u_j = Z_j'r / (n_j + s2 / tau2), with EM updates of the variance components (posterior second
@@ -182,8 +256,10 @@
       const now = [...b, s2, ...F.map(f => f.tau2)];
       if (now.every((v, k) => Math.abs(v - old[k]) < (FAST ? 1e-4 : 1e-6) * (1 + Math.abs(v)))) break;
     }
-    const V = inverse(XtX).map(row => row.map(v => v * s2));
-    return {b, se: V.map((row, a) => Math.sqrt(Math.max(0, row[a]))), V, s2, F, nz: nz(X)};
+    // The fixed effects' covariance, marginal over the random effects (Codex review #441: conditional on them, an effect
+    // that is constant within a player looked sure from many answers of a few players).
+    const V = FAST ? null : margV(X, F, null, f => s2 / f.tau2, s2, XtX);
+    return {b, se: V ? V.map((row, a) => Math.sqrt(Math.max(0, row[a]))) : b.map(() => NaN), V, s2, F, nz: nz(X)};
   }
 
   /* ---------- Logistic mixed model with a guess rate (explanatory IRT) ---------- */
@@ -254,8 +330,16 @@
       });
       if (move < (o.tol || (FAST ? 1e-3 : 1e-4))) break;
     }
-    const V = inverse(H);
-    return {b, se: V.map((row, a) => Math.sqrt(Math.max(0, row[a]))), V, F, eta, nz: nz(X)};
+    let V = null;
+    if (!FAST) {
+      sc();
+      const XW = ridge(
+        X[0].map((_, a) => X[0].map((__, c) => X.reduce((t, x, i) => t + x[a] * x[c] * W[i], 0))),
+        X
+      );
+      V = margV(X, F, W, f => 1 / f.tau2, 1, XW);
+    }
+    return {b, se: V ? V.map((row, a) => Math.sqrt(Math.max(0, row[a]))) : b.map(() => NaN), V, F, eta, nz: nz(X)};
   }
 
   // Two-parameter fit of one question format against the app's own expectation: P = c + (1 - c) sig(x + d), x the
@@ -375,6 +459,8 @@
           f: fmtOf(m, ch.length),
           typed: TYPED_RE.test(m) ? 1 : 0,
           back: /\|c(\||$)/.test(m) ? 1 : 0,
+          // an exam question (|x), typed or not (a typed exam question is logged quiz|t|x; Codex review #441)
+          exam: /\|x(\||$)/.test(m) ? 1 : 0,
           qv: !ph.length
             ? null
             : ph.length === 1
@@ -901,11 +987,18 @@
     });
     const plist = Object.values(pl).map(o => {
       const j = jp.get(o.k);
+      // observed / expected (expected from the pooled rates: pair, view, choices), its interval from the count's Poisson
+      // spread (square-root scale); the player's own effect apart, as an odds ratio (Codex review #441: exp(u) is not
+      // observed / expected when mix-ups are common)
+      const e = Math.max(o.exp, 1e-9);
       return {
         ...o,
-        oe: Math.exp(Fp.u[j]),
-        lo: Math.exp(Fp.u[j] - Z * Math.sqrt(Fp.cv[j])),
-        hi: Math.exp(Fp.u[j] + Z * Math.sqrt(Fp.cv[j]))
+        oe: o.mix / e,
+        lo: Math.max(0, Math.sqrt(o.mix) - Z / 2) ** 2 / e,
+        hi: (Math.sqrt(o.mix + 1) + Z / 2) ** 2 / e,
+        or: Math.exp(Fp.u[j]),
+        orLo: Math.exp(Fp.u[j] - Z * Math.sqrt(Fp.cv[j])),
+        orHi: Math.exp(Fp.u[j] + Z * Math.sqrt(Fp.cv[j]))
       };
     });
     void X;
@@ -923,7 +1016,7 @@
   ];
   const MASTER = 0.8; // mastery = 80% recognised beyond guessing, the app's target success
   function lnFit(D) {
-    const X = D.map(a => [1, Math.log(1 + a.n), a.afterMiss, a.afterAgain, a.typed, a.f === 'exam' ? 1 : 0, a.back]),
+    const X = D.map(a => [1, Math.log(1 + a.n), a.afterMiss, a.afterAgain, a.typed, a.exam, a.back]),
       F = [
         factor(
           'player',
@@ -1439,18 +1532,32 @@
   /* ---------- The report: every milestone, earlier ones reused ---------- */
   // A milestone's fingerprint: its answers (count, last time, right answers, players), so a stored result is reused only
   // for the very same answers under the same code (AV).
-  function fpOf(rows, M) {
+  // The photos' features too (Codex review #441): a view or quality changed in curation refits every milestone.
+  function hashOf(o) {
+    const t = JSON.stringify(
+      Object.keys(o || {})
+        .sort()
+        .map(k => [k, o[k]])
+    );
+    let h = 2166136261;
+    for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619) >>> 0;
+    return h.toString(36);
+  }
+  function fpOf(rows, M, mh = '') {
     const S = rows.slice(0, M);
-    return [AV, M, S.length ? S[S.length - 1][1] : 0, S.reduce((s, r) => s + (r[4] ? 1 : 0), 0), new Set(S.map(r => r[0])).size].join(':');
+    return [AV, M, S.length ? S[S.length - 1][1] : 0, S.reduce((s, r) => s + (r[4] ? 1 : 0), 0), new Set(S.map(r => r[0])).size, mh].join(
+      ':'
+    );
   }
   // rows: the whole answer log; prev: the stored report (or null); o: {B, seed, progress, now}. Returns {AV, made,
   // answers, M: [milestones], R: {milestone: result}}; a result carries its fingerprint fp.
   function report(rows, meta, prev, o = {}) {
     const all = (rows || []).slice().sort((a, b) => a[1] - b[1]),
       Ms = milestones(all.length),
+      mh = hashOf(meta && meta.ph),
       R = {};
     Ms.forEach(M => {
-      const fp = fpOf(all, M),
+      const fp = fpOf(all, M, mh),
         old = prev && prev.AV === AV && prev.R && prev.R[M];
       if (old && old.fp === fp) R[M] = old;
       else {
@@ -1503,6 +1610,7 @@
     newly,
     photoMeta,
     fpOf,
+    hashOf,
     report,
     compact,
     rt,
