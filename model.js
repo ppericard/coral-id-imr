@@ -1074,5 +1074,56 @@ function customChoices(t, sel, play, traps, known) {
     )
   ].slice(0, 3);
 }
+// The custom quiz's "My mix-ups" view (Pierre, 2026-11-03: "you usually know you make mistakes around these kinds of
+// genera, so you go there"): the genera in play grouped by the player's own confusions, most confused first.
+// mixEdges: each pair of genera in play the player mixed up, weighed by how often, both ways (s.conf: the genus given
+// instead of the one shown, typed answers included). lookEdges: the declared look-alikes (data.json look, IMR lecture
+// and Coral Finder; isLook both ways), weighed by how much every player confuses them (pooledConf), for a player with no
+// mix-up yet. mixClusters: greedy clusters, the heaviest pair first: two genera in no cluster start one, a genus joins
+// the cluster of its partner when it is paired with at least half of its genera and it has fewer than CUSTOM.CLUSTER,
+// two clusters never merge (a chain of look-alikes, A like B like C like D, would otherwise make one cluster of genera
+// that do not look alike); each cluster weighs its pairs, heaviest first.
+CUSTOM.CLUSTER = 6;
+const mixEdges = play => {
+  const E = [];
+  play.forEach((a, i) =>
+    play.slice(i + 1).forEach(b => {
+      const w = (((P[a] || {}).conf || {})[b] || 0) + (((P[b] || {}).conf || {})[a] || 0);
+      if (w > 0) E.push([a, b, w]);
+    })
+  );
+  return E;
+};
+const lookEdges = play => {
+  const E = [];
+  play.forEach((a, i) => play.slice(i + 1).forEach(b => isLook(a, b) && E.push([a, b, pooledConf(a, b)])));
+  return E;
+};
+function mixClusters(edges, cap = CUSTOM.CLUSTER) {
+  const of = new Map(),
+    C = [],
+    E = edges.filter(e => e[2] > 0),
+    pair = new Set(E.flatMap(([a, b]) => [a + '|' + b, b + '|' + a]));
+  E.sort((x, y) => y[2] - x[2] || (x[0] + '|' + x[1]).localeCompare(y[0] + '|' + y[1])).forEach(([a, b, w]) => {
+    const ca = of.get(a),
+      cb = of.get(b);
+    if (!ca && !cb) {
+      const c = {g: [a, b], w};
+      C.push(c);
+      of.set(a, c).set(b, c);
+    } else if (ca && cb) {
+      if (ca === cb) ca.w += w;
+    } else {
+      const c = ca || cb,
+        n = ca ? b : a;
+      if (c.g.length < cap && 2 * c.g.filter(x => pair.has(n + '|' + x)).length >= c.g.length) {
+        c.g.push(n);
+        of.set(n, c);
+        c.w += w;
+      }
+    }
+  });
+  return C.sort((x, y) => y.w - x.w);
+}
 // Once the whole file is in (save, LEVEL and PMEM above): the progress saved before the photo memory, recalculated.
 memRecalcAll();

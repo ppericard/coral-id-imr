@@ -48,7 +48,7 @@ function model({P = {}, ab = {}} = {}) {
   vm.runInContext(
     pick('function wpick', '// Which genus to ask next') +
       pick('const trapsFor = ', '// Once the whole file is in') +
-      '\nthis.M = {CUSTOM, customOf, customDraw, customChoices, distractors, confusable};',
+      '\nthis.M = {CUSTOM, customOf, customDraw, customChoices, distractors, confusable, mixEdges, lookEdges, mixClusters};',
     ctx
   );
   // Arrays made in the vm's realm compare unequal to this one's in deepStrictEqual: copied here.
@@ -57,7 +57,19 @@ function model({P = {}, ab = {}} = {}) {
       f =>
       (...a) =>
         (r => (Array.isArray(r) ? [...r] : r))(f(...a));
-  return {...M, customOf: here(M.customOf), customChoices: here(M.customChoices)};
+  // Clusters: plain objects with arrays, copied too.
+  const clusters =
+    f =>
+    (...a) =>
+      Array.from(f(...a), c => ({g: [...c.g], w: c.w}));
+  return {
+    ...M,
+    customOf: here(M.customOf),
+    customChoices: here(M.customChoices),
+    mixEdges: (...a) => Array.from(M.mixEdges(...a), e => [...e]),
+    lookEdges: (...a) => Array.from(M.lookEdges(...a), e => [...e]),
+    mixClusters: clusters(M.mixClusters)
+  };
 }
 const known = () => true;
 
@@ -161,4 +173,73 @@ test('quiz|s modes: rated like the photo quiz by the sheet (Code.gs guess_) and 
   }
   // ... and its opening hold counts them (only |w is left out).
   assert.ok(!/\|w(\||$)/.test('quiz|s|c|k3'));
+});
+
+// "My mix-ups" (quiz.js viewCustom, model.js mixEdges, lookEdges, mixClusters; Pierre, 2026-11-03): the genera a player
+// confuses, in clusters, most confused first.
+test('mixEdges: the pairs the player mixed up, both ways, among the genera in play only', () => {
+  const M = model({P: {A: {conf: {B: 3, Z: 9}}, B: {conf: {A: 2}}, E: {conf: {F: 1}}, G: {conf: {}}}});
+  assert.deepStrictEqual(M.mixEdges(PLAY), [
+    ['A', 'B', 5],
+    ['E', 'F', 1]
+  ]);
+  assert.deepStrictEqual(M.mixEdges(['A', 'C', 'E']), []);
+});
+
+test('mixClusters: heaviest pairs first, a genus joins its partner up to CUSTOM.CLUSTER, clusters never merge', () => {
+  const M = model();
+  // A-B 5, B-C 3, E-F 4, C-E 2 (C and E already in two clusters: no merge), G-H 1, zero weights ignored.
+  const C = M.mixClusters([
+    ['A', 'B', 5],
+    ['B', 'C', 3],
+    ['E', 'F', 4],
+    ['C', 'E', 2],
+    ['G', 'H', 1],
+    ['I', 'J', 0]
+  ]);
+  assert.deepStrictEqual(C, [
+    {g: ['A', 'B', 'C'], w: 8},
+    {g: ['E', 'F'], w: 4},
+    {g: ['G', 'H'], w: 1}
+  ]);
+  // A pair inside one cluster adds to its weight; a full cluster takes no one (cap 3 here): D stays out, then pairs with L.
+  // A genus paired with fewer than half a cluster's genera stays out: a chain A-B-C-D-E-F makes two clusters.
+  const D = M.mixClusters(
+    [
+      ['A', 'B', 5],
+      ['B', 'C', 4],
+      ['A', 'C', 3],
+      ['C', 'D', 2],
+      ['D', 'L', 1]
+    ],
+    3
+  );
+  assert.deepStrictEqual(D, [
+    {g: ['A', 'B', 'C'], w: 12},
+    {g: ['D', 'L'], w: 1}
+  ]);
+  const chain = M.mixClusters([
+    ['A', 'B', 5],
+    ['B', 'C', 4],
+    ['C', 'D', 3],
+    ['D', 'E', 2],
+    ['E', 'F', 1]
+  ]);
+  assert.deepStrictEqual(chain, [
+    {g: ['A', 'B', 'C'], w: 9},
+    {g: ['D', 'E', 'F'], w: 3}
+  ]);
+  assert.strictEqual(M.CUSTOM.CLUSTER, 6);
+  assert.deepStrictEqual(M.mixClusters([]), []);
+});
+
+test('lookEdges: the declared look-alikes (both ways) for a player with no mix-up, in clusters of genera alike', () => {
+  const M = model(),
+    E = M.lookEdges(PLAY);
+  assert.deepStrictEqual(E.map(e => e[0] + e[1]).sort(), ['AB', 'AC', 'BD', 'EF']);
+  assert.ok(E.every(e => e[2] > 0));
+  const C = M.mixClusters(E);
+  // A-B, A-C: A, B, C; D's only look-alike, B, is a third of that cluster: D stays out (no chain through B).
+  assert.deepStrictEqual(C.map(c => c.g.slice().sort().join('')).sort(), ['ABC', 'EF']);
+  assert.ok(C.every(c => c.g.every(n => PLAY.includes(n))));
 });

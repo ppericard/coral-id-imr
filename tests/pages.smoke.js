@@ -329,25 +329,52 @@ async function overlays(b, base) {
     if (r.btn !== want[0] || r.yes !== want[1] || !r.next) fails.push(`right-answer celebration (${reducedMotion}): ${JSON.stringify(r)}`);
     await c.close();
   }
-  // Custom quiz (quiz.js viewCustom, quizCustom; 2026-11-03), on a phone: nothing picked at first (Start off), A-Z, photos
-  // picked and Clear all, a quick pick (a genus and its look-alikes), the IMR groups view and the search, the choice kept
-  // after a reload (in the view left), then a dozen questions all on the genera picked, logged quiz|s…; the Practice tabs fit the width.
+  // Custom quiz (quiz.js viewCustom, quizCustom; 2026-11-03), on a phone: nothing picked at first (Start off); IMR groups
+  // by default (Pierre: "nobody picks genera alphabetically"), also on a device that had kept the old A-Z view; My mix-ups
+  // with the declared look-alikes and a note before any mix-up, then the player's own clusters with their counts; the
+  // Progress view; photos picked and Clear all, a quick pick (a genus and its look-alikes), the search, the choice and
+  // the view kept after a reload, then a dozen questions all on the genera picked, logged quiz|s…; nothing wider than
+  // the screen in any view (the Practice tabs included), at 390 and 360 px.
   {
-    const [c, p] = await open({viewport: {width: 390, height: 844}}, seen);
+    const [c, p] = await open({viewport: {width: 390, height: 844}}, () => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+      if (!sessionStorage.getItem('cq-old')) {
+        sessionStorage.setItem('cq-old', '1');
+        localStorage.setItem('imr-custom-view', '"az"'); // the A-Z view kept by a device before 2026-11-03
+      }
+    });
     await p.goto(base + '#quiz-custom');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     await p.waitForSelector('.cqtile');
     const state = () =>
       p.evaluate(() => ({
+        view: document.querySelector('[data-cv][aria-pressed="true"]').dataset.cv,
         on: [...new Set([...document.querySelectorAll('.cqtile[aria-pressed="true"]')].map(b => b.dataset.g))].sort(),
         start: !document.querySelector('[data-start]').disabled,
         n: document.querySelector('.cqn b').textContent,
         shown: [...new Set([...document.querySelectorAll('.cqtile:not([hidden])')].map(b => b.dataset.g))],
         tabs: (m => m.scrollWidth <= m.clientWidth)(document.getElementById('modes')),
-        heads: document.querySelectorAll('.cqg:not([hidden]) .cqh').length,
-        tiles: [...document.querySelectorAll('.cqtile')].map(b => b.dataset.g)
+        wide: [...document.querySelectorAll('#view *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1).length,
+        heads: [...document.querySelectorAll('.cqg:not([hidden]) .cqht')].map(h => h.textContent),
+        first: [...document.querySelectorAll('.cqg:first-of-type .cqtile')].map(b => b.dataset.g),
+        tiles: [...document.querySelectorAll('.cqtile')].map(b => b.dataset.g),
+        note: !!document.querySelector('.cqnote'),
+        play: pool()
       }));
     const s0 = await state();
+    await p.click('[data-cv="mix"]');
+    const m0 = await state();
+    // A player who mixed Pocillopora up with Stylophora 4 times and Seriatopora with Stylophora 3 times.
+    await p.evaluate(() => {
+      P.Pocillopora = {...(P.Pocillopora || {}), ok: 3, ko: 4, conf: {Stylophora: 4}};
+      P.Seriatopora = {...(P.Seriatopora || {}), ok: 2, ko: 3, conf: {Stylophora: 3}};
+    });
+    await p.click('[data-cv="prog"]');
+    const g0 = await state();
+    await p.click('[data-cv="mix"]');
+    const m1 = await state();
+    await p.click('[data-cv="imr"]');
     for (const g of ['Acropora', 'Pocillopora', 'Porites']) await p.click(`.cqtile[data-g="${g}"]`);
     const s1 = await state();
     await p.click('[data-clear]');
@@ -355,21 +382,36 @@ async function overlays(b, base) {
     await p.selectOption('#cqlk', 'Pocillopora');
     const s3 = await state(),
       looks = await p.evaluate(() => cqLooks('Pocillopora', pool()).sort());
-    await p.click('[data-cv="imr"]');
-    const s4 = await state();
     await p.fill('#cqq', 'acro');
     const s5 = await state();
+    await p.click('[data-cv="mix"]'); // the view kept after the reload
     await p.reload();
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     await p.waitForSelector('.cqtile');
     const s6 = await state();
+    const all = L => [...new Set(L)].sort().join(),
+      trio = s0.play.filter(n => ['Pocillopora', 'Stylophora', 'Seriatopora'].includes(n)); // a cluster in the game's order
     if (
+      s0.view !== 'imr' ||
+      s0.heads.length < 5 || // the IMR lecture groups, every genus in play in view, the first group in the IMR order
+      all(s0.tiles) !== all(s0.play) ||
+      s0.first.join() !== s0.play.filter(n => s0.first.includes(n)).join() ||
       s0.on.length ||
-      s0.heads || // A-Z by default: one grid, every genus in play once, in order (no grouping by growth form)
-      s0.tiles.join() !== [...s0.tiles].sort((a, b) => a.localeCompare(b)).join() ||
-      new Set(s0.tiles).size !== s0.tiles.length ||
       s0.start ||
       !s0.tabs ||
+      s0.wide ||
+      m0.view !== 'mix' ||
+      !m0.note || // no mix-up yet: the declared look-alike sets, said so
+      m0.heads.length < 3 ||
+      m0.wide ||
+      g0.view !== 'prog' ||
+      !g0.heads.includes('Not seen yet') ||
+      !g0.heads.some(h => /^(To review|Learning)$/.test(h)) ||
+      g0.wide ||
+      m1.note ||
+      m1.heads[0] !== `${trio.join(' · ')} 7 mix-ups` ||
+      m1.first.join() !== trio.join() ||
+      m1.wide ||
       s1.on.join() !== 'Acropora,Pocillopora,Porites' ||
       !s1.start ||
       s1.n !== '3 genera' ||
@@ -377,15 +419,24 @@ async function overlays(b, base) {
       s2.start ||
       s3.on.join() !== looks.join() ||
       looks.length < 2 ||
-      s4.on.join() !== s3.on.join() ||
-      s4.heads < 5 || // the IMR lecture groups, their genera in view
-      [...s4.tiles].sort().join() !== [...s0.tiles].sort().join() ||
       s5.shown.some(g => !/acro/i.test(g)) ||
       !s5.shown.includes('Acropora') ||
+      s6.view !== 'mix' ||
       s6.on.join() !== looks.join() ||
       !s6.start
     )
-      fails.push(`custom quiz selection: ${JSON.stringify({s0, s1, s2, s3, looks, s4, s5, s6})}`);
+      fails.push(
+        `custom quiz selection: ${JSON.stringify({s0, m0, g0, m1, s1, s2, s3, looks, s5, s6}, (k, v) => (k === 'play' || k === 'tiles' ? undefined : v))}`
+      );
+    // 360 px: every view fits the width.
+    await p.setViewportSize({width: 360, height: 780});
+    for (const v of ['imr', 'mix', 'prog']) {
+      await p.click(`[data-cv="${v}"]`);
+      const w = await state();
+      if (w.wide || !w.tabs) fails.push(`custom quiz at 360 px, view ${v}: ${w.wide} elements wider than the screen, tabs fit ${w.tabs}`);
+    }
+    await p.click('[data-cv="imr"]');
+    await p.setViewportSize({width: 390, height: 844});
     await p.click('[data-start]');
     const asked = [],
       modes = [];
