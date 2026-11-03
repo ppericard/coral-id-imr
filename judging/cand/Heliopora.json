@@ -3,234 +3,208 @@
  "photos": {
   "heliopora-cand-230608614": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "S",
-   "keep": "alt",
-   "note": "Blue-grey clubs; a hawkfish in front"
+   "keep": "best",
+   "note": "A hawkfish over the centre; soft at 100%"
   },
   "heliopora-cand-230608612": {
    "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "best"
+   "quality": 2,
+   "form": "S",
+   "keep": "alt",
+   "note": "Another part of the colony, top view"
   },
   "heliopora-cand-227054225": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Blue-green cast"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Red branches with white tips and furry tissue; Heliopora not certain"
   },
-  "heliopora-cand-464890309": {
-   "view": "medium",
-   "quality": 2,
-   "form": "S",
+  "heliopora-cand-580859200": {
+   "view": "wide",
+   "quality": 1,
+   "form": "F",
    "keep": "best",
-   "note": "Haze at the bottom of the frame (shot through glass?)"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Strong cyan cast, soft; date stamp; plates, genus not certain"
+  },
+  "heliopora-cand-270607566": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
   },
   "heliopora-x-464890275": {
    "view": "medium",
-   "quality": 2,
+   "quality": 1,
    "form": "S",
    "keep": "dup",
-   "note": "Soft, haze"
+   "note": "Fogged lens, same lobes as the live Closer photo"
   },
   "heliopora-x-464890321": {
    "view": "medium",
    "quality": 1,
    "form": "S",
-   "keep": "alt",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Blurred, haze; brown lobes may be another coral"
+   "keep": "dup",
+   "note": "Fogged lens, same lobes as the live Closer photo"
   },
   "heliopora-cand-464890294": {
    "view": "medium",
-   "quality": 2,
+   "quality": 1,
    "form": "S",
-   "keep": "alt",
-   "note": "Closer on the white polyp dots, haze at bottom"
-  },
-  "heliopora-cand-580859200": {
-   "view": "wide",
-   "quality": 2,
-   "form": "F",
    "keep": "best",
-   "note": "Blades with white margins; cast, small date stamp"
-  },
-  "heliopora-cand-270607566": {
-   "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "best"
+   "note": "Fogged lens: milky veil over the frame"
   },
   "heliopora-cand-254723751": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "multi": true,
-   "unsure": [
-    "genus"
-   ],
-   "note": "Brown-tipped pale branches; a yellow-brown coral fills the left; genus not certain"
+   "note": "1600 px; polyps out"
   },
   "heliopora-cand-249031080": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "S",
    "keep": "best",
-   "note": "Turbid water"
+   "note": "Murky green, soft at 100%"
   },
   "heliopora-cand-260012597": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Dark, blades with white margins"
+   "note": "Dark; other plates than the live photos"
   },
   "heliopora-cand-174425297": {
    "view": "wide",
    "quality": 2,
-   "form": "B",
+   "form": "F",
    "keep": "best",
    "unsure": [
-    "form"
+    "genus"
    ],
-   "note": "Cluttered reef flat, blue branches in front, ridges behind"
+   "note": "Blue-grey plates in a reef scene; genus not certain"
   },
   "heliopora-cand-583537714": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
    "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "Brown knobby branches with pale tips, could be another branching coral"
+   "note": "Yellow knobby branches; Pocillopora or Porites possible"
   },
   "heliopora-cand-445447176": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
    "keep": "best",
-   "note": "Turbid, on seagrass"
+   "note": "Milky veil and soft at 100%; seagrass"
   },
   "heliopora-cand-445447143": {
-   "view": "medium",
-   "quality": 2,
+   "view": "wide",
+   "quality": 1,
    "form": "B",
-   "keep": "best",
-   "note": "Turbid"
-  },
-  "heliopora-cand-245791077": {
-   "view": "macro",
-   "quality": 2,
-   "form": "B",
-   "keep": "best",
-   "note": "White eight-tentacle polyps out, soft focus"
+   "keep": "dup"
   },
   "heliopora-cand-131166710": {
    "view": "wide",
    "quality": 2,
-   "form": "B",
+   "form": "F",
    "keep": "best",
-   "note": "Dark shadow over the colony"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Dark blades on sand, soft at 100%; genus not certain"
   },
   "heliopora-cand-350949518": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "A damselfish in the frame"
+   "note": "1024 px; a fish at the left"
   },
   "heliopora-cand-350949530": {
    "view": "medium",
-   "quality": 3,
+   "quality": 1,
    "form": "F",
-   "keep": "best"
+   "keep": "alt",
+   "note": "594 px, closer"
   },
   "heliopora-cand-57893649": {
    "view": "medium",
-   "quality": 2,
+   "quality": 1,
    "form": "S",
-   "keep": "best"
+   "keep": "best",
+   "note": "Milky and soft at 100%"
   },
   "heliopora-cand-181616771": {
-   "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "Dead skeleton fragment out of water; shows the blue skeleton"
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "genus": "exclude",
+   "note": "Bare skeleton out of the water"
   },
   "heliopora-cand-181616803": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "Dead skeleton out of water; pores clear"
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "genus": "exclude",
+   "note": "Bare skeleton out of the water"
   },
   "heliopora-cand-181616836": {
-   "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "alt",
-   "unsure": [
-    "keep"
-   ],
-   "note": "Dead skeleton fragment out of water, another side"
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "genus": "exclude",
+   "note": "Bare skeleton out of the water"
   },
   "heliopora-cand-181047626": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
    "keep": "best",
    "multi": true,
    "unsure": [
-    "genus"
+    "multi"
    ],
-   "note": "Pinkish branches; a Platygyra-like brain coral and others take much of the frame"
+   "note": "Reef scene: a brain coral fills the right; watermark"
   },
   "heliopora-cand-270764172": {
    "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Branches with flattened blade-like ends, white margins"
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
   },
   "heliopora-cand-270764322": {
    "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "dup",
-   "unsure": [
-    "form"
-   ],
-   "note": "Same colony, closer framing"
+   "quality": 2,
+   "form": "F",
+   "keep": "dup"
   },
   "heliopora-cand-445447447": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
    "keep": "best",
-   "note": "Turbid; algae fills the right half"
+   "multi": true,
+   "note": "Murky; a foliose coral takes half the frame"
   },
   "heliopora-cand-443691683": {
    "view": "wide",
    "quality": 1,
    "form": "B",
    "keep": "best",
-   "note": "Blurred"
+   "note": "Soft over the whole frame"
   }
  }
 }
