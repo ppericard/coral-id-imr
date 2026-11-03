@@ -1847,11 +1847,14 @@ path.wallc {
 /* Concept drawings: the part being explained is drawn in --hl (a vivid colour used nowhere else in the drawings,
    and also for the photo rings); everything else fades to a quiet grey so the highlighted part is the only thing that pops. */
 .lab,
-.a2lay {
+.a2lay,
+#lightbox {
   --hl: #d1006b;
   --hl-soft: color-mix(in srgb, var(--hl) 34%, var(--surface));
+  /* Coral basics, step 4: costae, the second part taught beside the septa (--hl): the palette's accent. */
+  --hl2: var(--accent);
 }
-:root[data-theme='dark'] :is(.lab, .a2lay) {
+:root[data-theme='dark'] :is(.lab, .a2lay, #lightbox) {
   /* The app's own theme (⚙ Theme, Light by default), never the system's: app.css ignores prefers-color-scheme too. */
   --hl: #ff5cab;
   --hl-soft: color-mix(in srgb, var(--hl) 55%, var(--surface));
@@ -3714,9 +3717,6 @@ body:has(.fdstart:not([hidden])) main {
   margin: 0;
 }
 .bx-fig figcaption {
-  display: flex;
-  gap: 12px;
-  align-items: baseline;
   margin-top: 4px;
   font-size: var(--fs-s);
   color: var(--muted);
@@ -3752,13 +3752,14 @@ body:has(.fdstart:not([hidden])) main {
 }
 .bx-dim {
   fill: var(--photo-bg);
-  opacity: 0.4;
+  /* light (Pierre, 2026-11-03: the dimmed photo and the thick ring fought the subject for a beginner) */
+  opacity: 0.22;
 }
 .bx-ring,
 .bx-out {
   fill: none;
   stroke: var(--hl);
-  stroke-width: 3.5;
+  stroke-width: 2.5;
   vector-effect: non-scaling-stroke;
   filter: drop-shadow(0 0 1.5px var(--photo-bg));
 }
@@ -3776,6 +3777,58 @@ body:has(.fdstart:not([hidden])) main {
   stroke: var(--on-photo);
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
+}
+.bx-dot.cos {
+  fill: var(--hl2);
+}
+.bx-dot.ctr {
+  fill: var(--on-photo);
+  stroke: var(--photo-bg);
+}
+/* the rim of one cup (step 4): a thin dashed ring, nothing dimmed */
+.bx-rim {
+  fill: none;
+  stroke: var(--on-photo);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 1.5px var(--photo-bg));
+}
+/* a label in one of the two colours of step 4 (septa, costae): a dot of that colour before the text */
+.bx-lab.sep::before,
+.bx-lab.cos::before,
+.bx-key i {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--hl);
+  box-shadow: 0 0 0 1.5px var(--on-photo);
+  vertical-align: -1px;
+}
+.bx-lab.cos::before,
+.bx-key i.cos {
+  background: var(--hl2);
+}
+.bx-key {
+  display: grid;
+  gap: 2px;
+  margin-top: 6px;
+  font-size: var(--fs-xs);
+  line-height: 1.3;
+}
+.bx-key i {
+  box-shadow: none;
+}
+/* A teaching photo opens the enlarged view (app.js zoom), the enlarge mark (app.css .zic) in its corner. */
+.bx-zoom {
+  cursor: zoom-in;
+}
+.bx-zoom:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
 }
 .bx-hit {
   fill: none;
@@ -3830,6 +3883,12 @@ body:has(.fdstart:not([hidden])) main {
 }
 .bx-say p {
   margin: 0;
+}
+.bx-txt p + p {
+  margin-top: 8px;
+}
+.bx-wsay:empty {
+  display: none;
 }
 .bx-draw {
   flex: 0 0 120px;
@@ -3947,39 +4006,140 @@ body:has(.fdstart:not([hidden])) main {
 .bx-tapm.ko {
   fill: var(--bad);
 }
-.bx-seg {
+.bx-wtabs {
+  display: flex;
+  width: 100%;
   margin-bottom: 8px;
+}
+.bx-wtabs button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 6px 4px;
+  white-space: nowrap;
+}
+.bx-wtabs b {
+  font-weight: 700;
+}
+.bx-wtabs .ok {
+  color: var(--good);
 }
 .bx-forms {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
 }
+@media (min-width: 600px) {
+  .bx-forms {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
 .bx-forms button {
-  padding: 0;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 6px 2px 5px;
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
-  overflow: hidden;
   background: var(--surface);
   color: var(--ink);
   font: inherit;
   cursor: pointer;
 }
 .bx-forms button[aria-pressed='true'] {
-  border-color: var(--hl);
-  box-shadow: inset 0 0 0 2px var(--hl);
-}
-.bx-forms img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
+  color: var(--accent);
 }
 .bx-forms span {
   display: block;
-  padding: 3px 2px;
   font-size: var(--fs-xs);
   line-height: 1.2;
+  text-align: center;
+}
+.bx-forms button[aria-pressed='true'] span {
+  font-weight: 700;
+}
+/* the growth-form silhouettes (proto/basics.js FORM_ICON) */
+.bx-fi {
+  display: block;
+  width: 100%;
+  max-width: 64px;
+  height: auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.bx-fi .fi-f {
+  fill: color-mix(in srgb, currentColor 22%, transparent);
+}
+.bx-fi .fi-l {
+  stroke-width: 2.6;
+}
+.bx-fi .fi-t {
+  stroke-width: 4;
+}
+.bx-fi .fi-d {
+  stroke-width: 3;
+}
+.bx-fi .fi-r,
+.bx-fi .fi-b {
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+/* the rock under an encrusting coral */
+.bx-fi .fi-r {
+  fill: color-mix(in srgb, var(--muted) 25%, transparent);
+  stroke: none;
+}
+/* 2-3 large example photos of the form picked: the first across the width, the others side by side under it */
+.bx-fex {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+.bx-fex figure {
+  margin: 0;
+}
+.bx-fex.n3 figure:first-child,
+.bx-fex.n1 figure {
+  grid-column: 1 / -1;
+}
+/* two examples (Tabulate): both across the width on a phone, the first larger beside the second from tablets up */
+.bx-fex.n2 {
+  grid-template-columns: 1fr;
+}
+@media (min-width: 600px) {
+  .bx-fex.n2 {
+    grid-template-columns: 3fr 2fr;
+    align-items: start;
+  }
+}
+.bx-fex .zoom {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: var(--photo-bg);
+  border-radius: var(--r);
+  overflow: hidden;
+  cursor: zoom-in;
+}
+.bx-fex img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+.bx-fex.n3 figure:first-child img {
+  aspect-ratio: 16 / 10;
+}
+.bx-fex figcaption {
+  margin-top: 2px;
+  font-size: var(--fs-s);
 }
 .bx-fdef {
   margin: 8px 0 0;
@@ -4074,6 +4234,16 @@ body:has(.fdstart:not([hidden])) main {
 .bxd .hl {
   stroke: var(--hl);
   stroke-width: 2.6;
+}
+.bxd .cos {
+  stroke: var(--hl2);
+  stroke-width: 2.6;
+}
+.bxd .sk.wb {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
 }
 .bxd .wl.hl {
   stroke-width: 3;
