@@ -192,7 +192,11 @@ async function overlays(b, base) {
         document.getElementById('smokeopener').focus();
       });
       await p.evaluate(`(${CASES[i][1]})()`);
-      await p.waitForTimeout(150);
+      // The card moves the focus into itself on a timer (cardShow): wait for it, not for a fixed time (a busy page ran the
+      // timer after the 150 ms this waited, and the focus was still outside: pages smoke, 2026-11-03).
+      await p
+        .waitForFunction(() => !!document.querySelector('.unlock')?.contains(document.activeElement), null, {timeout: 5000})
+        .catch(() => {});
       const r = await p.evaluate(() => {
         const d = document.querySelectorAll('.unlock'),
           u = d[0],
@@ -2039,7 +2043,8 @@ async function basicsTeach(b, base) {
     if (gl.titles || !gl.cards || !gl.def || gl.h !== '#genera') fails.push(`${w}px Genera glossary: ${JSON.stringify(gl)}`);
     // The Coral Finder's "on the slate" count is the app's (slateGenera: Millepora in), not a count of its own.
     await p.evaluate(() => (location.hash = 'finder'));
-    await p.waitForTimeout(600);
+    // The Finder's own files may still be on their way (its tier, app.js need): wait for its start screen, not a fixed time.
+    await p.waitForSelector('#view [data-show]', {timeout: 15000}).catch(() => {});
     const fd = await p.evaluate(() => [document.querySelector('[data-show]')?.textContent || '', slateGenera().length]);
     if (!fd[0].includes(`(${fd[1]} on the slate)`)) fails.push(`${w}px Coral Finder slate count: "${fd[0]}", expected ${fd[1]}`);
     // The one-tap question after 35 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
@@ -2242,11 +2247,14 @@ async function basicsTeach(b, base) {
       await q3.close();
       // Coral Finder: the "Compare A and B" button is readable (its text was the colour of its background).
       await q2.evaluate(() => (location.hash = 'finder|form=M'));
-      await q2.waitForTimeout(800);
+      // Waits on the Finder's state, not on time: its list drawn, then each Compare taken (aria-pressed), then the link.
+      await q2.waitForSelector('#view [data-cmpk]', {timeout: 15000}).catch(() => {});
       for (const k of [0, 2]) {
-        await q2.locator('button:has-text("Compare")').nth(k).click();
-        await q2.waitForTimeout(300);
+        const cb = q2.locator('#view button[data-cmpk]').nth(k);
+        await cb.click();
+        await q2.waitForFunction(e => e.getAttribute('aria-pressed') === 'true', await cb.elementHandle(), {timeout: 5000}).catch(() => {});
       }
+      await q2.waitForSelector('.fdcmp .next', {timeout: 5000}).catch(() => {});
       const cc = await q2.evaluate(() => {
         const n = document.querySelector('.fdcmp .next'),
           c = n && getComputedStyle(n);
