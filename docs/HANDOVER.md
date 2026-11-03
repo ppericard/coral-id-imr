@@ -34,7 +34,7 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 | Say which Lab tools he marked Keep / Trim (votes live only in his browser). | ROADMAP. |
 | Send the app to the beta RAs; renew the admin GitHub token before it expires (fine-grained, 90-day expiry, created around 2026-10-31, so about late January 2027). | Admin lock screen has the token link. |
 | Create the secret `ANALYSES_ADMIN_TOKEN` so the Analyses report computes itself (2026-11-04). | Below, "Analyses report". |
-| Optional: delete the 87 old `claude/*` branches on GitHub. All belong to merged PRs (checked 2026-11-01); nothing unmerged is left on them. | GitHub > Branches, or Settings > "Automatically delete head branches". |
+| Clean merged branches (Pierre, 2026-11-04: they hide the ones that never got a PR, AGENTS 26b): turn on Settings > General > Pull Requests > "Automatically delete head branches" for the future, and for the ~130 already merged run Actions > **Prune merged branches** (`prune-branches.yml`) once with "dry_run" ticked (it lists), then unticked (it deletes). It deletes only branches whose PR was merged and that got nothing after the merge; a deleted branch can be restored from its PR page. Agents cannot delete branches from their sessions (the git proxy refuses). | GitHub Settings; Actions. |
 
 ## Questions for an IMR trainer
 
