@@ -706,6 +706,24 @@ async function basicsFit(b, base) {
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     if (errs.length) fails.push(`${w}px start: ${errs.join(' | ')}`);
+    // The plain sentence (Pierre, 2026-11-03): on a genus sheet, right after the photo and before the ID tips, with no label.
+    await p.evaluate(() => (location.hash = 'g-Goniastrea'));
+    await p.waitForTimeout(700);
+    const pl = await p.evaluate(() => {
+      const e = document.querySelector('#view .sheet .plainw'),
+        ph = document.querySelector('#view .sheet .hero-ph'),
+        tips = document.querySelector('#view .sheet .tipbox'),
+        after = (a, b) => !!(a && b && a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+      return {
+        text: e ? e.textContent : '',
+        want: DATA.gen.Goniastrea.plain,
+        afterPhoto: after(ph, e),
+        beforeTips: after(e, tips),
+        label: !!(e && e.querySelector('b'))
+      };
+    });
+    if (pl.text !== pl.want || !pl.afterPhoto || !pl.beforeTips || pl.label)
+      fails.push(`${w}px genus sheet plain line: ${JSON.stringify(pl)}`);
     for (const h of ROUTES) {
       errs.length = 0;
       await p.evaluate(h => {
@@ -792,7 +810,14 @@ async function basicsFit(b, base) {
             img: !!document.querySelector('.unlock.intro .ulphoto img'),
             all: !!document.querySelector('.unlock.intro .ulall [data-all]'),
             gt: !!document.querySelector('.unlock.intro .ultips .gt'),
-            hint: !!document.querySelector('.unlock.intro .gthint')
+            hint: !!document.querySelector('.unlock.intro .gthint'),
+            // The plain sentence: after the photo, before the tips, no label (Pierre, 2026-11-03).
+            plain: (() => {
+              const c = document.querySelector('.unlock.intro'),
+                e = c.querySelector('.plainw'),
+                after = (a, b) => !!(a && b && a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+              return !!e && !e.querySelector('b') && after(c.querySelector('.ulphoto'), e) && after(e, c.querySelector('.ultips'));
+            })()
           }))
         );
         // A glossary term on a card opens its definition on top of the card (an RA, 2026-11-02: it opened behind it).
@@ -843,7 +868,7 @@ async function basicsFit(b, base) {
       await q2.evaluate(() => (bonusSet(false), introBack(true)));
       await q2.evaluate(() => (location.hash = 'quiz'));
       await q2.waitForTimeout(500);
-      if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all && c.kick.includes(`${k + 1} of 4`)))
+      if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all && c.plain && c.kick.includes(`${k + 1} of 4`)))
         fails.push(`${w}px first cards: ${JSON.stringify(seen)}`);
       // "Tap an underlined word" is said once, on the first card with one (beginner review 2026-11-03).
       else if (seen.filter(c => c.hint).length !== +seen.some(c => c.gt) || seen.findIndex(c => c.hint) !== seen.findIndex(c => c.gt))

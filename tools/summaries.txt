@@ -25,9 +25,9 @@ Fungia	Free-living round disc with a central mouth and regular saw-like septal t
 Lithophyllon	Free-living round disc with fine, regular septal teeth (<1 mm) giving a neat, smooth look.
 Danafungia	Free-living round disc, domed in the centre, with large irregular septal teeth (>1 mm).
 Ctenactis	Free-living elongate disc, one long axial furrow with mouths but no secondary mouths; large saw-like teeth.
-Lobactis	Free-living oval disc (to 17 cm) with tall pale tentacular lobes raised on the major septa.
+Lobactis	Free-living oval disc (to 17 cm) with tall tentacular lobes, often green, blue or white, raised on the major septa.
 Herpolitha	Free-living elongate colony: long axial furrow plus secondary mouths across the surface; can be X or Y shaped.
-Heliofungia	Free-living disc hidden by long anemone-like tentacles with white tips, extended by day.
+Heliofungia	Free-living disc hidden by long anemone-like tentacles with white or pink tips, extended by day.
 Dipsastraea	Separate-walled oval corallites that divide in two (intra-tentacular budding); colony not crowded.
 Astrea	Crowded round corallites with separate walls; small ones bud between large ones (extra-tentacular); alternating septa.
 Diploastrea	Low cone-shaped corallites (8-10 mm) with broad walls in a regular polygonal pattern; large domes.
