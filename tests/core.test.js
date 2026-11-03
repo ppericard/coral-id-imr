@@ -890,3 +890,30 @@ test('a typed answer (quiz|t) has no guess rate, in core.js and in the sheet (v2
   const rows = s.post({readAnswers: 1, token: 'ghp_write000000000000000000'}).rows;
   assert.deepStrictEqual(eloOf(rows), s.get({stats: '1'}).photos);
 });
+
+// Admin Photo stats › Overview: quantiles linear between neighbours, the spread of a list (median, middle half, range, mean).
+test('quantile and distOf: median and spread', () => {
+  const {quantile, distOf} = require('../core.js');
+  assert.strictEqual(quantile([], 0.5), null);
+  assert.strictEqual(quantile([7], 0.25), 7);
+  assert.strictEqual(quantile([1, 2, 3, 4], 0.5), 2.5);
+  assert.strictEqual(quantile([1, 2, 3, 4], 0.25), 1.75);
+  assert.strictEqual(quantile([1, 2, 3, 4], 0.75), 3.25);
+  assert.strictEqual(quantile([1, 2, 3, 4, 5], 0.5), 3);
+  assert.strictEqual(quantile([1, 2, 3], 0), 1);
+  assert.strictEqual(quantile([1, 2, 3], 1), 3);
+  // Unsorted input with a duplicate and a value that is not a number: sorted, the non-number left out, input untouched.
+  const L = [10, 0, 4, 4, NaN, 'x', 2];
+  assert.deepStrictEqual(distOf(L), {n: 5, sum: 20, mean: 4, min: 0, p25: 2, med: 4, p75: 4, max: 10});
+  assert.strictEqual(L[0], 10);
+  assert.deepStrictEqual(distOf([]), {n: 0, sum: 0, mean: null, min: null, p25: null, med: null, p75: null, max: null});
+  // Against a brute-force definition on random lists: the median splits the list in two halves of equal size.
+  for (let k = 1; k < 40; k++) {
+    const a = Array.from({length: k}, (_, i) => (i * 7919) % 23),
+      s = a.slice().sort((x, y) => x - y),
+      d = distOf(a),
+      m = k % 2 ? s[(k - 1) / 2] : (s[k / 2 - 1] + s[k / 2]) / 2;
+    assert.strictEqual(d.med, m);
+    assert.ok(d.p25 <= d.med && d.med <= d.p75 && d.min <= d.p25 && d.p75 <= d.max);
+  }
+});
