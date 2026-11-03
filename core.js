@@ -197,6 +197,28 @@
   // {player id: 95% margin, in level units}, 1.96 / sqrt(Fisher information) gathered on the same replay as the level
   // itself (eloReplay, Code.gs stats_ ras; Codex review #375): an answer that was a near-sure success tells little, so a
   // run of easy right answers keeps the margin wide.
+  // A player's right rate in the photo quiz apart from the Duel tab (Pierre, 2026-11-03: a new player's 31 duels on one
+  // chosen pair, 2 choices each, made 89% in the quiz read as 95%): per anonymous id, [answers, right] in the quiz (mode
+  // quiz or quiz|…, duels slipped into the quiz included), in its last 50, and in the Duel tab (quiz-duel…). Other
+  // games are in neither. rows: readAnswers rows [id, t, shown, answered, ok, mode, …].
+  function playSplit(rows) {
+    const out = {};
+    (rows || [])
+      .slice()
+      .sort((a, b) => a[1] - b[1])
+      .forEach(r => {
+        const m = String(r[5] || ''),
+          o = (out[r[0]] = out[r[0]] || {q: [0, 0], d: [0, 0], L: []});
+        if (m.startsWith('quiz-duel')) (o.d[0]++, (o.d[1] += r[4] ? 1 : 0));
+        else if (m === 'quiz' || m.startsWith('quiz|')) (o.q[0]++, (o.q[1] += r[4] ? 1 : 0), o.L.push(r[4] ? 1 : 0));
+      });
+    Object.values(out).forEach(o => {
+      const L = o.L.slice(-50);
+      o.q50 = [L.length, L.reduce((t, x) => t + x, 0)];
+      delete o.L;
+    });
+    return out;
+  }
   function levelMargin(rows) {
     const {R} = eloReplay(rows || []);
     return Object.fromEntries(Object.entries(R).map(([k, r]) => [k, r[2] > 0 ? 1.96 / Math.sqrt(r[2]) : Infinity]));
@@ -796,6 +818,7 @@
     mergeProgress,
     eloOf,
     levelMargin,
+    playSplit,
     trustOf,
     TRUST,
     PHOTO_W,
