@@ -357,6 +357,21 @@ const server = http.createServer((req, res) => {
     if (!/near-duplicate/.test(jd.line) || !/Same colony/.test(jd.line)) fails.push(`${w}px Judged: swiper line ${jd.line}`);
     await go('~cand');
     if (!jd.left || !/not judged yet/.test(await text())) fails.push(`${w}px Judged: no reminder of the candidates not judged`);
+    // A suggested crop (suggest.json cand c) shows on the candidate and is saved with the add (Pierre, 2026-11-03).
+    const sc = await p.evaluate(F => {
+      const n = Object.keys(DATA.cand).find(g => DATA.cand[g].some(x => x.f === F[0])),
+        q = DATA.cand[n].find(x => x.f === F[0]),
+        had = (DRAFT.crop || {})[F[0]];
+      q.j = {...q.j, c: [0.05, 0.04, 0.95, 0.97]};
+      const shown = /object-view-box/.test(crSrc(q, 1));
+      ACT.addc(n, F[0], null, 'macro');
+      const saved = JSON.stringify((DRAFT.crop || {})[F[0]]);
+      return {had: !!had, shown, saved};
+    }, CF);
+    if (!sc.had && (!sc.shown || sc.saved !== '[0.05,0.04,0.95,0.97]'))
+      fails.push(`${w}px Suggested crop: not shown or not saved with the add (${JSON.stringify(sc)})`);
+    await p.click('#undo');
+    await settle();
     // The pre-sort sets the sure near-duplicate aside (Pierre, 2026-11-03): out of the queue, counted, back on Show.
     const as = await p.evaluate(F => {
       const inQ = () => candQueue('all').some(x => x.p.f === F[1] && !x.aside);

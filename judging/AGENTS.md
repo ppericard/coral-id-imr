@@ -68,18 +68,45 @@ genera (Alveopora, Duncanopsammia, Goniopora, Heliofungia, Plerogyra, Tubastraea
 
 ### `quality`: 3 Good, 2 Fair, 1 Poor
 
-How well the photo teaches the genus in its view.
-- **3 Good**: sharp where it matters, well exposed, natural enough colour; the features of this view (colony
-  shape, or corallite pattern, or corallite detail) are clearly visible; the coral fills the frame.
-- **2 Fair**: usable but with one real weakness: soft focus, strong blue/green cast, small or partly hidden
-  subject, cluttered frame.
-- **1 Poor**: hard to learn from: blurred, very dark or washed out, subject tiny or mostly hidden.
+How much fine detail the photo shows of this genus in its view. Pierre's method: open the photo large, look at how
+sharp it is and how much fine detail there is. Look at the whole frame first, then at 100% (the largest file you
+have) on the sharpest part of the coral and on its centre. Rate the coral's detail first, light and framing second.
 
-Calibration (Pierre, 2026-11-01; tools/quality_eye.json holds Claude's by-eye ratings of every field photo as
-examples): judge each photo against what is normal for its view, never against the other views. A macro
-(Corallites) photo is sharp on a small part of the frame by nature: shallow depth of field, a soft background or
-soft edges are normal and do not lower the rating; rate it on the corallites in focus. Warm flash colours are fine.
-Poor is rare (about 1 photo in 20): blurred everywhere, very dark, heavy haze or cast, or the subject too small.
+- **3 Good**: passes all four tests.
+  1. Fine detail: at 100%, the finest structures of the coral (septa and septal teeth, corallite walls and
+     openings, pores, coenosteum granules, papillae) show as separate crisp lines or points, with a natural fine
+     grain.
+  2. Extent: that sharpness covers the main subject (macro: the central corallites; other views: most of the
+     coral), not one lobe edge or one branch while the rest of the coral is soft.
+  3. Skeleton visible: polyps, tentacles or vesicles do not cover the coral.
+  4. No veil: no haze and no strong cast over the whole frame.
+- **2 Fair** (the usual level): the coral reads clearly in the whole frame but fails one or more Good tests.
+  Typical: at 100%, smooth, waxy or "painted" surfaces (phone or compact-camera noise reduction); structures that
+  are blobs or fuzzy dots instead of points and lines (Pocillopora verrucae, Turbinaria corallites with no
+  opening); oversharpening halos; sharp on a strip only; polyps or vesicles out; softness that shows only at 100%;
+  a cast that leaves the features readable; a small (888-1500 px) but clean image.
+- **1 Poor**: the whole frame is damaged and the genus is hard to read even at screen size. Any one of:
+  - motion blur or camera shake that shows in the whole-frame view (doubled or streaked edges);
+  - a milky, murky or washed-out veil over the whole frame (no real blacks, no clean whites), with the detail
+    soft at 100%;
+  - a strong cyan, green or blue cast over everything (sand and coral the same tint) and the genus features hidden
+    or lost, e.g. a coral that is not "extended by day" covered in tentacles;
+  - under 1000 px on the long side with noise or oversharpening mush;
+  - subject tiny, mostly hidden or very dark.
+
+Calibration (Pierre, 2026-11-01; refitted 2026-11-03 on 44 photos he rated):
+- Never lower a photo whose coral passes the 100% test because of dark or blue water, a diver, fish, clutter at
+  the edges, dim or warm (flash) light, or a coral that fills only half the frame. Most of Pierre's Good photos
+  have such areas.
+- Softness that shows only at 100% gives Fair, not Poor. Poor needs damage you can see in the whole frame.
+- Extended-by-day genera (Alveopora, Duncanopsammia, Goniopora, Heliofungia, Plerogyra, Tubastraea): polyps out
+  are normal, so Fair, not Poor. They are not Good, because the skeleton detail is hidden.
+- Macro (Corallites): shallow depth of field and a soft background are normal; rate on the central corallites.
+  A blurred branch across the front, or a sharp zone on one edge only, gives Fair.
+- Between two levels, take the lower: past mistakes were almost always one level too high.
+- Expect, on iNaturalist candidates, about 1 photo in 5 Good, 2 in 3 Fair, 1 in 7 Poor.
+- Measured blind on 44 other photos Pierre rated (2026-11-03): 73% exact, every miss one level, misses now as often
+  too low as too high (6 and 6). Before: 3 in 40 on 500 px sheets, 64% at full size with the old wording.
 
 ### `view`: Colony, Closer or Corallites
 
@@ -161,7 +188,12 @@ aim: real diversity of colonies and views, so the players learn the genus, not t
 1. `python3 tools/judging_cand.py sheets <Genus>` downloads the photos (500 px, `judging/cand/img/`, not in git)
    and builds one contact sheet per observation (`judging/cand/sheets/<Genus>/<observation>.jpg`, tiles numbered
    1, 2, 3...). It prints, per sheet, tile number → photo id. Open every sheet. When a tile is too small to judge
-   (view, quality, genus), open `judging/cand/img/<f>.jpg`, or `python3 tools/judging_cand.py big <f>` for 1024 px.
+   (view, genus), open `judging/cand/img/<f>.jpg`, or `python3 tools/judging_cand.py big <f>` for 1024 px.
+   **Quality and crop are judged at full size** (Pierre, 2026-11-03: "I open the photo large and look at how sharp it
+   is"): for every photo you keep (`best`, `alt`), run `python3 tools/judging_cand.py detail <f>` and open
+   `judging/cand/detail/<f>.jpg`: the whole frame with a 10% grid, and three 100% crops (the two sharpest areas, the
+   centre). Rate `quality` from the 100% crops, never from a sheet tile: on the 500 px sheets the pass agreed with
+   Pierre on 3 photos in 40 (always too generous); at full size, 64%.
 2. Write `judging/cand/<Genus>.json`: `{"genus": "<Genus>", "photos": {"<f>": {...}}}`, one entry per photo listed,
    with the fields and categories defined above (`view`, `quality`, `form`, `polyps`, `multi`, `genus`, `unsure`,
    `note`; `form` required, `x` when not visible) plus **`keep`**:
@@ -171,6 +203,11 @@ aim: real diversity of colonies and views, so the players learn the genus, not t
      colony shape where the best shows the surface, polyps out vs retracted.
    - `dup`: adds nothing over the `best` (same framing, a few centimetres apart, a burst).
    - Omit `keep` when `genus` is set (another genus, `cmp` or `exclude`).
+   For a `best` or `alt` photo, **`crop`**: `[left, top, right, bottom]` as fractions of the photo, read off the grid
+   of its detail sheet. Trim only what distracts from the subject: another coral, sand, dark water, a diver, a blurred
+   foreground; keep the whole subject (the colony for a Colony photo). Omit it when the frame needs nothing. The
+   import keeps each trim at half its size (`CROP_K`: on 79 of Pierre's crops the pass cut twice as much as he does),
+   and the admin shows the result on the candidate and applies it when he adds the photo; he can change it.
    An observation often holds several corals (the observer photographed the neighbours too): a photo that shows
    another coral as its subject gets `genus` (that genus if you can tell by the IMR cues, else `exclude` with a
    note), never `keep`.
