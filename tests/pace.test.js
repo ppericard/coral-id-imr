@@ -221,9 +221,29 @@ test('the apology card: only to a player who felt it (20 answers in the window, 
   assert.strictEqual(C.sorryFelt({n: 12, h: 4.31, c: 0}), false, 'too few answers in the window');
 });
 
+test('firstName: the first word of the sign-in name, capitalised; nothing usable gives ""', () => {
+  for (const [n, want] of [
+    ['Ana Lopez', 'Ana'],
+    ['Ana B.', 'Ana'],
+    ['Ana B', 'Ana'],
+    ['Ana', 'Ana'],
+    ['  ana   maria  ', 'Ana'],
+    ['élodie', 'Élodie'],
+    ["O'Neil Smith", "O'Neil"],
+    ['Jean-Luc', 'Jean-Luc'],
+    ['', ''],
+    [undefined, ''],
+    ['   ', ''],
+    ['~a8x', ''],
+    ['123', '']
+  ])
+    assert.strictEqual(C.firstName(n), want, JSON.stringify(n));
+});
+
 test('the apology card: greeted by the first word of the sign-in name, else "Hi!"; when said in the player own day', () => {
   assert.strictEqual(C.sorryHi('Ana'), 'Hi Ana!');
-  assert.strictEqual(C.sorryHi('  Ana Maria Lopez '), 'Hi Ana!');
+  assert.strictEqual(C.sorryHi('  ana Maria Lopez '), 'Hi Ana!');
+  assert.strictEqual(C.sorryHi('~a8x'), 'Hi!');
   assert.strictEqual(C.sorryHi(''), 'Hi!');
   assert.strictEqual(C.sorryHi(undefined), 'Hi!');
   const manila = -480; // getTimezoneOffset in Manila (UTC+8): the window opened at 19:34 there

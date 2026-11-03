@@ -919,10 +919,14 @@ const server = http.createServer((req, res) => {
         fails.push(`open all not recorded for the journey: ${JSON.stringify(oa)}`);
       // Every slate genus met: the bonus genera are offered once (a prompt: PROMPT.GAP answers after the last one);
       // "Not now" is kept.
-      let boffers = 0;
+      // Until every slate genus has been asked once (bonusOfferDue), then 30 more questions to check "Not now" holds:
+      // how many were asked before opening all depends on the opening pace (model.js openPace).
+      let boffers = 0,
+        after = 0;
       store.set(PROMPT.KEY, null);
       delete Q.bon;
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 400 && after < 30; i++) {
+        if (boffers) after++;
         NEXTQ = null;
         quizPhoto();
         const bo = document.querySelector('.unlock [data-bonus]');

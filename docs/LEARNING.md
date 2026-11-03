@@ -538,6 +538,65 @@ questions were expected about 87% on a photo aimed 1.0 below the ability; now th
 real success much; the 4-choice questions, the bulk of the exam and of strong players' questions, are calibrated
 (expected 76%, right 77%, n 496). Typed: 5 answers, too few.
 
+### What the players say about the difficulty (one-tap questions, 2026-11-03)
+
+Why: the success target is moving to one that depends on the player's level. Papoušek, Stanislav & Pelánek (2016;
+geography practice, conditions aiming at 5, 20, 35 and 50% errors) found that easier questions keep learners
+answering at first while harder ones bring them back and teach more. After 30 answers their system asked "What is the
+difficulty of asked questions?" (Too Easy / Appropriate / Too Difficult; over 40,000 ratings): most learners answered
+Appropriate when their own error rate was around 30%, the 35% condition had the most Appropriate ratings (66%), yet at
+least a third still wanted easier or harder questions, and they name changing the target from the learners' ratings
+as future work (extended report FIMU-RS-2016-02, section "Explicit Feedback"). Whether that holds for a given level here is what the
+players can tell us, as they play (Pierre, 2026-11-03: "all the more important to ask from time to time whether it's
+too hard or not hard enough … am I having fun, is it too frustrating, too easy, too hard … slightly different questions
+about roughly the same concept"). The main players are IMR RAs: the challenge must suit strong players without
+overwhelming beginners, and the answers are read by level band for that reason.
+
+**The bank** (`core.js` `PULSEQ`; when and how it is asked: ARCHITECTURE.md "One-tap questions"). Six single items,
+three answers each, one tap; each answer is put on one or two common scales (`pulseScore`): **felt difficulty** d (−1
+too easy, 0 right, +1 too hard) and **feel** f (−1 bad, 0 neutral, +1 good).
+
+| Item | Answers (d / f) | Construct | Source |
+| --- | --- | --- | --- |
+| These questions are | Too easy −1 · About right 0 · Too hard +1 (d) | perceived difficulty | the app's item since sheet v19; the same three answers as Papoušek, Stanislav & Pelánek's (2016) "What is the difficulty of asked questions?" (Too Easy / Appropriate / Too Difficult); one question on difficulty is a usable measure: Sauro & Dumas (2009) compared three one-question post-task ratings, and the 7-point "Overall, this task was: Very Easy … Very Difficult" (later named the Single Ease Question) was as sensitive as the best of them and correlated with task time and the SUS |
+| Right now I feel | Bored −1 · In the zone 0 · Struggling +1 (d) | challenge-skill balance, as a state | flow's three channels, boredom (skill above challenge), flow, anxiety (challenge above skill) (Csikszentmihalyi 1975); the words are ours, no published item. The same balance as item 16 of the flow short scale (FKS, Rheinberg, Vollmeyer & Engeser 2003: "Für mich persönlich sind die jetzigen Anforderungen…", "zu wenig" · "gerade richtig" · "zu hoch", 9 points), which the first version used as "For me, the challenge is: Too low · Just right · Too high"; replaced before release (Pierre, 2026-11-03): non-native speakers could not tell whether "low" meant easy or hard. No feel value: being in the zone is not the same as having fun, which "Having fun?" asks |
+| Want harder photos? | Yes −1 · Keep it 0 · Easier +1 (d) | challenge-skill balance, asked as a wish | the same balance phrased as what to change (a design choice, no published item); a wish and a judgement can differ, so its own counts stay visible |
+| Having fun? | Not really −1 · It's OK 0 · Yes! +1 (f) | enjoyment | positive affect of the in-game GEQ (items 11 "I felt content" and 14 "I felt good"; IJsselsteijn, de Kort & Poels 2013; 14 items, two per component, "not at all" 0 to "extremely" 4, made to be asked several times during play) |
+| Frustrating? | Not at all 0/0 · A bit +0.5/−0.5 · Very +1/−1 (d, f) | frustration | tension of the in-game GEQ (items 6 "I felt frustrated" and 8 "I felt irritable"); flow's anxiety channel, challenge above skill |
+| Getting boring? | Not at all 0/0 · A bit −0.5/−0.5 · Yes −1/−1 (d, f) | boredom | negative affect of the in-game GEQ (items 3 "I felt bored" and 7 "I found it tiresome"); flow's boredom channel, skill above challenge |
+
+Choices: three answers, never a 5- or 7-point scale (one tap on a phone row, Pierre: "people answer a tap"); words, not
+emoji faces (DESIGN.md: no pictographs as icons). The two one-sided items say nothing on the other side: a "not at all"
+is 0 (not too hard, not too easy), and as both come equally often (rounds), they pull a band's mean towards 0 without
+tilting it; read each item's own counts beside the mean. PENS (Ryan, Rigby & Przybylski 2006) was considered: its
+competence and autonomy items measure need satisfaction over a session, not whether the difficulty suits the player
+now. Varied wording costs strict comparability (experience sampling usually repeats one item: Csikszentmihalyi & Larson
+1987); it is the price of not wearing the players out, and why every item is mapped to a common scale and still shown
+alone, and why the first item ever is the plain one, the same as the v19 answers. "Right now I feel" shares a word with
+"Getting boring?" (Bored): one picks a state among three, the other rates boredom alone; the rounds never put them
+next to each other.
+
+**Seen, then answered** (Pierre, 2026-11-03, from the first screenshots: a row inside the feedback card was easy to
+miss and a big Next was tapped without reading it). The question is a block of its own before Next, tinted, titled
+"Quick question", its three answers on one row of equal widths (360 px and up); one tap answers, × closes, nothing
+waits for it. Each prompt logs its showing, so the admin knows the **response rate** by item, level band and mode
+(shown, answered, Not now, no answer). A low rate in one band would bias that band's answers towards the players who
+care to answer: read it next to the answers.
+
+**How the answers will be used for the level-dependent target** (not built: ROADMAP "Level-dependent target"). Admin
+To do › Errors shows, for each level band (the overall level when they answered: below −0.5, −0.5 to +0.5, above +0.5)
+and each mode, the mean felt difficulty and feel, the answers and devices behind them, the response rate and the right
+% of the last 10 answers. The target is right for a band when its mean felt difficulty sits near 0 with feel not
+negative. The rule, **approved by Pierre on 2026-11-03**, to build once the data exists: read a band only from about 20
+answers from 5 devices or more (one talkative device must not decide: compare with the mean of each device's mean); a
+band whose felt difficulty stays beyond ±0.25 moves its target success by 0.05 at a time (towards easier for "too
+hard", towards harder for "too easy", the research's ~70% for strong players as the likely end), each move checked in
+`tools/learnsim.js` and on the real answer log as for any change to the algorithm (AGENTS.md rule 14g); a harder target
+for strong players stands only if their feel does not drop. The duels are easier by design (2 choices): read the photo
+quiz first. Pierre's caution with the approval: felt difficulty is subjective, so no move before a band reaches those
+thresholds, and the answers check the target, they never steer it answer by answer. The prompt every 40 answers was
+approved the same day.
+
 ### Logged for the admin's player journey (2026-11-02)
 
 A mastery exam question is logged with mode `quiz|x` (exams have every trap, so never `|kN`; the sheet's guess rate and
@@ -640,7 +699,8 @@ Again and the duel are the same question, a 2-choice contrast of a look-alike pa
 
 - **One queue, one slot**: every mix-up of the photo quiz queues its pair (`rematch`), a contrast question's too (an
   Again missed comes again, as before; a duel missed now brings its Again, where it used to come back only through the
-  duel draw). The newest mix-up replaces one still waiting, as before.
+  duel draw). The newest mix-up replaced one still waiting, as before; since 2026-11-04 the queue holds up to
+  `CONTRAST.Q` = 3 pairs, oldest first ("After the collapsed runs of 2026-11-03", below).
 - **One gap**: two contrast questions are at least `CONTRAST.GAP` = 2 questions apart, and a queued pair comes 2
   questions after its mix-up (one question in between, the Again's timing since #251). Counted on the answers at which
   each planned question will show (`planPhoto(at)`), so the plans made ahead no longer need the spacing reset when a
@@ -967,6 +1027,180 @@ rule is the same as before.
 
 **Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): the log holds no record of when a card could have opened, so the opening cannot be replayed; the shaky signal it
 counts is checked with item 8 ("One draw weight", below).
+
+### After the collapsed runs of 2026-11-03 (2026-11-04)
+
+Two players' runs collapsed on the evening of 2026-11-03, after #408 (one opening rule, merged 11:34 UTC) and #413 (no
+Elo step on the genus wrongly given). A strong player, right after a comeback ended, was opened 7 new genera in 16
+answers (nearly every `INTRO.EVERY` slot: with few genera shaky, `openChance` = 1 − shaky / `OPEN.K` was near 1, and
+#413 left fewer genera looking shaky), then fell from 83% right to 50% while the expected success `e` stayed about 0.76:
+each new genus was asked once or twice, so its misses never lowered `e` on its next question; the global level fell
+from 1.49 to −0.08 but then only seeded the genera not met; the opening hold only stopped the cards; the "Again" kept
+one pair, the newest mix-up replacing the waiting one, so a real two-way mix-up (5 misses) never came back as a drill;
+and since #413 picking the wrong genus lowered nothing. A second player's run after the same deploy fell to 48% right
+where 70% was expected. The hotfix #421 capped the opening chance at 0.5 and held the opening while 3 genera opened
+were unasked; this is the full fix, approved by Pierre ("I validate all your proposals"), and it replaces the hotfix.
+#415 (the global level moves every genus, the success aimed for follows the level) was already part of the answer: with
+it, the falling level would have lowered `e` on every genus.
+
+**1. Opening pace** (`model.js` `openRecent`, `openPace`, `OPEN.MAX` 3, `OPEN.WIN` 15; `quiz.js` `planPhoto`):
+
+- No new genus while a genus opened on a card (the first cards or one of its own) in the last `OPEN.WIN` answers has not
+  been asked yet, and none once `OPEN.MAX` of them have opened in that window: about 3 new genera per 15 answers at
+  most. The question already on screen or planned before counts as asked (`soon`), else planning ahead (3 questions)
+  would hold every card two questions longer. Open all and a genus closed again ("One at a time") take no place.
+- A genus carded in the window and not asked yet is asked as soon as it is ready (after its `INTRO.GAP`): the block
+  alone, waiting for the weighted draw to come round to it among 20-40 genera met, slowed every profile to about one
+  card per 8-12 answers (genera met by question 100: strong RA 33.4 → 14.0, expert 27.2 → 12.8) and cost knowledge
+  (strong RA at 300: 0.86 → 0.78). With it the pace is the ceiling's.
+- An "Again" never asks a genus not met yet: a genus never met, offered to make up the three wrong choices and picked,
+  was asked by its Again with no card (the second player met a bonus genus that way): it asks the genus shown instead.
+- `openChance` (1 − shaky / `OPEN.K`) and the level-tied shaky bar of #415 are kept; the hotfix's cap (0.5) and
+  `OPEN.UNASKED` (3) go: measured against both below.
+- `OPEN.MAX` 4 was tried: nothing changed for the expert (15.4 genera by question 100 either way) and little for the
+  others; the window's unasked rule and the planning set the pace below the ceiling, which binds in bursts (the
+  `open/15` column: 3.0, the most in any 15 answers).
+
+**2. Easier questions while the opening hold is on** (`model.js` `holdEase`; `quiz.js` `planPhoto`): the ability the
+photos and the format (traps, single views: `trapsFor(t, shift)`, `formatAt`) aim at is lowered by h − `INTRO.HOLD`
+logits while the hold's sum h is past `INTRO.HOLD` (1.5): 0 at the threshold (no cliff), one logit for each answer's
+worth of misses beyond it, back to 0 as right answers pay h back. Every question but an exam (the Again and the duels
+too). No new constant: h is already in success units, on the scale the Elo steps the ability on. On the real answers
+(read-only replay of the logged `e`) the strong player's h crossed 1.5 at the 27th answer of the collapsed run (44 answers) and
+peaked at 3.22, the second player's at the 13th of 31, peaking at 4.31; the ease would have been 0.8-0.9 logits on average
+over the 17-18 answers held (a 4-choice question aimed at 80% right is then aimed at about 88% for the same ability).
+A replay cannot say how those players would have answered easier photos (rule 14g).
+
+**3a. Known mix-ups** (`core.js` `confGap`; `model.js` `confTerm`; `quiz.js` `answer`, `planPhoto`): on a question
+whose choices hold a genus the player mixes up with the one asked more than everyone does, the question counts that much
+harder for them: c = logit(confOf) − logit(pooledConf), the player's own score of the pair (`pairConf`, shrunk toward
+the pooled score with `CONF.W` offers, as for the traps) against the pooled one, the most over the choices, 0 when
+lower. The expected success, the Elo steps (genus and level), the miss weight of the progress, the logged `e`, the
+opening hold and the photo's aim (`photoSet` shift − c) all take it: the signal the wrong pick's Elo step gave before
+#413, now on the pair, without stepping the genus wrongly given. Scored before the answer updates anything (the offers
+of this question are counted after). **Only on a question with 3 or more plausible choices**: on the real answers the
+2-choice contrast questions of the pair (the Again right after the side-by-side montage, a duel) and the questions with
+easy choices were right more often than expected, not less.
+
+Real answers (`node tools/abilityeval.js answers.json --variants e,e+X,e+X+M --priors priors.json`, the sheet's
+Answers tab read 2026-11-03, read-only: 1,258 answers of 9 players with 20 or more; `e` the app with #415; the pooled
+score from the other players' answers on the app's own priors; paired log-loss difference per answer, ± its standard
+error, 95% interval):
+
+| Group (answers) | app (#415) mean p / right, log-loss | term on every question | **term, 3+ plausible choices (shipped)** |
+| --- | --- | --- | --- |
+| all (1258) | 0.79 / 0.82, 0.4728 | +0.0053 ± 0.0026 [+0.0002, +0.0105] | −0.0009 ± 0.0019 [−0.0047, +0.0028] |
+| term > 0, 3-4 choices (88) | 0.78 / 0.67, 0.6974 | p 0.72, −0.0061 ± 0.0236 | p 0.71, −0.0098 ± 0.0264 [−0.062, +0.042] |
+| term > 0, 2 plausible (226) | 0.79 / 0.83, 0.4288 | p 0.73, +0.0369 ± 0.0093 | (not applied) |
+| 4 choices (487) | 0.79 / 0.76, 0.5489 | +0.0018 ± 0.0046 | −0.0008 ± 0.0048 |
+| level ≥ 0.75 (656) | 0.83 / 0.85, 0.4171 | +0.0046 ± 0.0034 | −0.0010 ± 0.0030 |
+
+- Where it applies (88 answers) the expectation moves from 0.78 to 0.71 for 0.67 right: calibration clearly better, the
+  log-loss better on average but within its noise (few answers). Overall within the noise of the app's (−0.0009 ±
+  0.0019): it does not move the estimates away from what players do, and corrects the one place where they were too
+  high.
+- On every question (as first proposed) it was worse (+0.0053 ± 0.0026), all of it from the 2-choice questions: right
+  83% where it predicted 73%. Kept off there. Also measured: the term on the prediction only, not the steps (`+Y`), and
+  summed over the choices (`+Z`): the same picture.
+
+**3b. The Again queue** (`quiz.js` `CONTRAST.Q` 3, `rematchAdd`): up to 3 pairs wait, oldest first, each still
+`CONTRAST.GAP` after its mix-up and after the last contrast question; a newer mix-up never pushes an older one out (with
+the queue full it waits for its next miss); a pair already waiting is not queued twice. The player of 2026-11-03 mixed
+two genera up both ways 5 times; with one slot each newer mix-up replaced the pair, so it never came back as a drill.
+
+**4. Look-alikes from the data** (`core.js` `dataLook`, `CONF.N` 20; `model.js` `isDataLook`, `dataLooks`): Pierre: "if
+the data says people constantly confuse two genera, they become look-alikes by force; that was the point of the
+confusion data: to find look-alikes the courses never named". A pair no source declares is a look-alike from the data
+once offered together `CONF.N` times or more with a pooled score (`pooledConf`: the players' mix-ups on the pair's own
+prior, same family 0.12, a shared growth form 0.08, else 0.03, worth `CONF.W` 8 offers) of `CONF.TRAP` (0.2) or more:
+the prior's weight makes it clear (at 20 offers two unrelated genera need 6 mix-ups, 30%; the declared look-alikes were
+mixed up 13% of the times they were offered, other pairs 5%). Such pairs join the declared ones in the duels slipped
+into the quiz and the Duel tab (`duelPick`), on the genus sheet's "Don't confuse with" (labelled "Often mixed up by
+players"), and in admin Confusions ("look-alike from the data"); the traps and the progress's look-alike weight
+(`pgWeight`) already followed the same pooled score, and any mix-up already queued its Again. The declared look-alikes
+stay the prior (`isLook`): a pair from the data does not raise its own prior. On the real answers (2026-11-03, trusted
+players, as `?stats=1` computes it) one pair qualifies: *Alveopora* and *Tubastraea*, offered together 30 times and mixed
+up 8 (27%; 3 of 18 one way, 5 of 12 the other), pooled score 0.227; it is the diagnosis's two-way pair. Close, with
+too few offers yet: *Heliopora* / *Isopora* (15 offers, 6 mix-ups), *Merulina* / *Millepora* (18, 5), *Herpolitha* /
+*Lobactis* (16, 4); *Millepora* / *Pachyseris* has 34 offers but scores 0.18.
+
+**5. The apology card**: "The apology card" in ARCHITECTURE.md; the rule (`core.js` `sorryFelt`), at Pierre's request,
+goes only to the players who felt it: 20 answers or more in the window and the opening hold's sum at 3 or more (2 ×
+`INTRO.HOLD`, the evidence the back-to-one-at-a-time card asks for) when the fixed version first runs, or 1.5 with 4
+genera or more carded within 15 answers in the window. On the real answers it selects the two collapsed runs (44
+answers, 68% right where 76% was expected, the hold at 3.22, 7 cards in 16 answers; 31 answers, 48% against 70%, the
+hold at 4.31) and no other player (they were the only two who answered in the window). A run at its expected success
+ends with the hold at 3 or more about 2-5% of the time (simulated, 20-80 answers at e 0.7-0.9); a right % 10 points
+under `e` alone would have missed the first run (8 points).
+
+**Simulated** (`tools/learnsim.js`, 5 seeds × 600 questions, the same seeds; cells: true knowledge of the slate /
+genera met / right % since the previous row / the most genera carded in any 15 answers / learned / entered the exam;
+`hier` = this branch's base, #415 before the hotfix; `hotfix` = #415 with #421; `now` = this change on #415 with main
+merged, the hotfix replaced):
+
+| Profile, question | `hier` | `hotfix` | **now** |
+| --- | --- | --- | --- |
+| beginner 50 | 0.17 / 10.8 / 70 / 4.8 / 0.0 / 0.0 | 0.17 / 11.0 / 73 / 4.8 / 0.0 / 0.0 | 0.16 / 10.6 / 76 / 3.0 / 0.0 / 0.0 |
+| beginner 100 | 0.28 / 18.8 / 78 / 5.4 / 0.0 / 0.0 | 0.27 / 18.0 / 79 / 4.8 / 0.0 / 0.2 | 0.28 / 18.2 / 75 / 3.0 / 0.0 / 0.0 |
+| beginner 200 | 0.46 / 27.2 / 77 / 5.4 / 0.0 / 0.0 | 0.45 / 28.2 / 81 / 4.8 / 0.0 / 0.2 | 0.48 / 29.4 / 78 / 3.0 / 0.0 / 0.0 |
+| beginner 300 | 0.61 / 36.4 / 81 / 5.6 / 0.0 / 0.6 | 0.62 / 37.4 / 81 / 4.8 / 0.0 / 1.0 | 0.66 / 38.8 / 78 / 3.0 / 0.0 / 0.2 |
+| beginner 600 | 0.87 / 40.0 / 84 / 5.6 / 0.4 / 4.8 | 0.87 / 40.0 / 84 / 4.8 / 0.8 / 5.8 | 0.87 / 40.0 / 85 / 3.0 / 0.2 / 3.6 |
+| lectureRA 50 | 0.40 / 16.0 / 81 / 5.6 / 0.0 / 0.0 | 0.39 / 13.2 / 82 / 4.0 / 0.0 / 0.0 | 0.37 / 10.6 / 85 / 3.0 / 0.0 / 0.0 |
+| lectureRA 100 | 0.49 / 24.8 / 81 / 5.8 / 0.0 / 0.0 | 0.47 / 19.2 / 80 / 4.2 / 0.0 / 0.0 | 0.45 / 19.0 / 84 / 3.0 / 0.0 / 0.4 |
+| lectureRA 200 | 0.65 / 38.4 / 80 / 6.0 / 0.0 / 0.0 | 0.62 / 31.0 / 79 / 4.2 / 0.0 / 0.4 | 0.63 / 34.4 / 80 / 3.0 / 0.0 / 0.4 |
+| lectureRA 300 | 0.76 / 40.0 / 80 / 6.4 / 0.0 / 0.0 | 0.75 / 40.0 / 83 / 4.2 / 0.0 / 0.4 | 0.75 / 40.0 / 80 / 3.0 / 0.0 / 1.0 |
+| lectureRA 600 | 0.91 / 40.0 / 88 / 6.4 / 0.4 / 6.4 | 0.91 / 40.0 / 87 / 4.2 / 1.0 / 7.6 | 0.90 / 40.0 / 87 / 3.0 / 1.0 / 6.0 |
+| strongRA 50 | 0.62 / 19.0 / 88 / 6.8 / 0.0 / 0.0 | 0.62 / 14.4 / 85 / 5.0 / 0.0 / 0.0 | 0.61 / 10.2 / 87 / 3.0 / 0.0 / 0.0 |
+| strongRA 100 | 0.69 / 33.4 / 85 / 7.0 / 0.0 / 0.2 | 0.67 / 21.0 / 88 / 5.2 / 0.0 / 0.0 | 0.67 / 19.2 / 86 / 3.0 / 0.0 / 0.4 |
+| strongRA 200 | 0.81 / 40.0 / 80 / 7.0 / 0.0 / 0.4 | 0.76 / 32.6 / 89 / 5.2 / 0.0 / 0.4 | 0.80 / 37.4 / 83 / 3.0 / 0.0 / 0.4 |
+| strongRA 300 | 0.86 / 40.0 / 88 / 7.0 / 0.0 / 0.8 | 0.84 / 40.0 / 87 / 5.2 / 0.0 / 2.4 | 0.86 / 40.0 / 86 / 3.0 / 0.2 / 1.2 |
+| strongRA 600 | 0.94 / 40.0 / 92 / 7.0 / 2.6 / 14.2 | 0.94 / 40.0 / 90 / 5.2 / 4.2 / 16.0 | 0.94 / 40.0 / 92 / 3.0 / 1.8 / 12.2 |
+| expert 50 | 0.94 / 15.0 / 98 / 4.6 / 0.0 / 0.0 | 0.93 / 12.0 / 98 / 3.8 / 0.0 / 0.0 | 0.93 / 10.8 / 96 / 3.0 / 0.0 / 0.0 |
+| expert 100 | 0.94 / 27.2 / 96 / 5.0 / 0.0 / 0.2 | 0.94 / 20.4 / 94 / 4.0 / 0.0 / 0.6 | 0.94 / 19.4 / 96 / 3.0 / 0.0 / 0.4 |
+| expert 200 | 0.95 / 40.0 / 96 / 5.4 / 0.0 / 1.4 | 0.95 / 31.4 / 95 / 4.0 / 0.4 / 2.4 | 0.95 / 37.8 / 95 / 3.0 / 0.0 / 1.6 |
+| expert 300 | 0.95 / 40.0 / 97 / 5.4 / 0.2 / 3.2 | 0.95 / 39.4 / 96 / 4.0 / 0.8 / 5.8 | 0.95 / 40.0 / 95 / 3.0 / 0.6 / 2.8 |
+| expert 600 | 0.97 / 40.0 / 96 / 5.4 / 5.6 / 24.0 | 0.97 / 40.0 / 96 / 4.2 / 7.0 / 24.6 | 0.97 / 40.0 / 97 / 3.0 / 6.6 / 22.0 |
+
+- **The pace is bounded**: never more than 3 genera carded in 15 answers (`hier` up to 5-7, the hotfix up to 4-5);
+  genera met by question 100: beginner 18.2 (`hier` 18.8, hotfix 18.0), lecture RA 19.0 (24.8, 19.2), strong RA 19.2
+  (33.4, 21.0), expert 19.4 (27.2, 20.4); every profile meets all 40 by about question 230-300, the hotfix's strong RA
+  and expert later (32.6 and 31.4 by question 200, now 37.4 and 37.8).
+- **Nobody learns less**: true knowledge of the slate as `hier` or better at every checkpoint (beginner 0.48 / 0.66 at
+  200 / 300 against 0.46 / 0.61; strong RA 0.80 / 0.86 against 0.81 / 0.86), above the hotfix's at 200 for the strong
+  RA (0.80 against 0.76); equal at 600 everywhere. Right % within the seeds' spread of `hier` (the strong RA 83-87%
+  over 100-300 where `hier` dipped to 80% at 200, its burst of openings).
+- **Genera learned by 600** (the mastery exam passed) are fewer than the hotfix's for the strong RA (1.8 ± 0.8 against
+  4.2 ± 2.0; `hier` 2.6 ± 2.1) and within the spread elsewhere: the hotfix, slower to open, puts more answers on fewer
+  genera early. Neither the Again queue (`CONTRAST.Q` 1: 2.2 ± 0.8) nor the confusion term (off: 1.8 ± 1.3) explains
+  it; the knowledge, the measure that decides (14f), is the same at 600.
+- The hotfix's cap of the chance at 0.5 on top of this rule (5 seeds × 300) slowed the strong players further (strong RA
+  32.0 genera by question 200, knowledge 0.76 instead of 0.80): not kept. `OPEN.UNASKED` 3 is subsumed by the
+  window's rule (no card while any genus carded in it waits for its question, asked as soon as ready).
+- The Elo's error |θ − logit k| is a little lower than both at 600 (strong RA 1.25 against 1.35 / 1.43, beginner 1.03
+  against 1.20 / 1.19).
+
+After a break (the diagnosis's situation: `--profiles strongBack,strongRA,lectureRA --questions 60 --breaks 8h --after
+40`; `strongBack` a strong player who knows 80% of the genera well and the rest hardly, so few genera stay shaky; right %
+in the 40 answers after the comeback; genera opened on their cards in the first 15 of them / the most in any 15 / in all
+40):
+
+| Profile | `hier` right % / opened | `hotfix` | **now** |
+| --- | --- | --- | --- |
+| strongBack | 90 / 1.8 · 5.0 · 8.4 | 95 / 1.6 · 3.4 · 5.2 | 94 / 1.2 · 3.0 · 6.0 |
+| strong RA | 87 / 1.8 · 4.8 · 8.2 | 89 / 1.2 · 3.4 · 4.2 | 86 / 1.6 · 3.0 · 6.0 |
+| lecture RA | 84 / 1.6 · 5.2 · 8.2 | 83 / 1.0 · 3.0 · 5.0 | 80 / 1.4 · 3.0 · 5.8 |
+
+- The simulated learner does not collapse as the real players did (it is right 87-90% after the comeback with the old
+  pace too): new genera are learned from their card and their easy first questions, faster than real players learn
+  them. So learnsim measures the pace (5 genera in 15 answers before, 3 now) and that nobody learns less; whether the
+  easier questions would have saved those runs, it cannot say (ROADMAP).
+- On the collapsed runs' logged sequences (`scratchpad` replay, read-only): with the strong player's own cards (the
+  device's record of when each opened), 6 of the 7 cards of answers 199-215 would not have opened when they did (the
+  first, at 199, waited for its question, which the run never asked: under the new rule it is asked two answers later
+  and holds the next card until then); over the whole log 17 of its 34 cards would have waited. The second player's
+  cards are not on record; inferred from the first question on each genus (a card `INTRO.GAP` before), 3 of the 5
+  genera new in the collapsed run would have waited (one more came through an Again on a genus never met, which the
+  new rule also stops).
 
 ### One draw weight (2026-11-03)
 
@@ -1673,6 +1907,11 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   sheet as the photo ratings (default: none, Pierre's Easy/Medium/Hard sets, as in CI; its `mem`, sheet v26, the app's
   photo memory offsets). `--out` writes every run and
   the summary as JSON. 30 seeds × 4 profiles × 300 questions: about 9 minutes on 4 cores (with the question planner running between answers, as in the app: Codex review #365).
+- **Opening pace** (2026-11-04): `open/15`, the most genera opened on their own cards in any 15 consecutive questions so
+  far; with `--breaks`, the genera opened in the first 15 answers after the comeback, the most in any 15 and in all the
+  `--after` ones. Profile `strongBack` (not in the default list): a strong player who knows 80% of the genera well and
+  the rest hardly (few genera stay shaky), for `--profiles strongBack --questions 60 --breaks 8h --after 40`, the
+  situation of the run that collapsed on 2026-11-03.
 - **Profiles**: beginner (knows every genus at 2%, learns 0.12 of the gap per exposure), lecture-level RA (the profiles
   test's RA: 55% on 2 genera in 5, 10% on the others, 0.12), strong RA (85% on 3 genera in 5, 10% on the others, 0.12),
   expert (93%, 0.05). The open-all offer is declined (the path is what is measured), unless `--openall`: `offer`
@@ -1781,6 +2020,38 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-04, Pierre ("I validate all your proposals", after the collapsed runs of 2026-11-03): the opening's pace
+  (`openPace`: no card while a genus carded in the last 15 answers waits for its question, at most 3 in any 15, a
+  carded genus asked as soon as ready; replaces the hotfix's cap and `OPEN.UNASKED`), easier questions while the hold
+  is on (`holdEase`, h − `INTRO.HOLD` logits), the player's own mix-ups in the expectation (`confTerm`, on 3 or more
+  plausible choices only: worse on the 2-choice questions on the real answers), the Again queue of 3 pairs, look-alikes
+  from the data (`dataLook`: 20 offers, pooled score 0.2; one pair today, *Alveopora* / *Tubastraea*), an Again never
+  on a genus not met, and a one-time apology card, only to the players who felt it (Pierre: not to a player of a
+  single answer; 20 answers in the window and the hold at 3). Simulated: the pace bounded, knowledge as before or
+  better, genera learned by 600 within the spread except the strong RA against the hotfix; real answers: the
+  confusion term neutral overall (−0.0009 ± 0.0019) and better calibrated where it applies ("After the collapsed runs
+  of 2026-11-03").
+
+- 2026-11-03, Pierre (hotfix): two strong players' runs collapsed after #408 and #413 (one met 7 new genera in 16
+  answers, three of them never asked, then fell from 83% to 50% right): `openChance` is capped at `OPEN.MAX` 0.5, and
+  no genus opens while `OPEN.UNASKED` (3) genera opened earlier are still unasked. A stopgap until the full fix (opening
+  pace per window, easier questions while the hold is on, the pair confusion term, data look-alikes).
+  `tools/learnsim.js`, 5 seeds x 300 questions, true knowledge of the slate / genera met at questions 100 and 300:
+
+  | Profile | `main` q100 | hotfix q100 | `main` q300 | hotfix q300 |
+  | --- | --- | --- | --- | --- |
+  | beginner | 0.31 / 23.2 | 0.29 / 18.8 | 0.65 / 38.2 | 0.60 / 34.6 |
+  | lecture RA | 0.49 / 24.2 | 0.48 / 21.8 | 0.76 / 40.0 | 0.74 / 39.2 |
+  | strong RA | 0.69 / 32.2 | 0.68 / 22.8 | 0.86 / 40.0 | 0.85 / 39.6 |
+  | expert | 0.94 / 26.4 | 0.94 / 19.8 | 0.95 / 40.0 | 0.95 / 39.8 |
+
+  Right %: within the seeds' spread (beginner 74 / 83 at 100 / 300, main 73 / 80). Tried first: no genus while any
+  opened genus is unasked (`OPEN.UNASKED` 1): genera met by question 300 fell to 24-25 for every profile and true
+  knowledge with them (strong RA 0.77, beginner 0.48): rejected; 2: 33-35 genera, strong RA 0.81: rejected; the cap
+  alone: knowledge as `main`, but nothing stops a run of openings whose genera are never asked. Real log (rule 14g):
+  the rule only changes which question comes, not the Elo's predictions, so the log's log-loss is unchanged by
+  construction; measured instead on the collapsed run's logged sequence: of its 7 cards in 16 answers, 4 pass the
+  unasked rule (each then at a chance of at most 0.5) and 3 are blocked, 2 of them genera the run never asked.
 - 2026-11-02, Pierre: anonymous answers do not rate photos; sign in to count (reversed the same day, below); stats only from players above chance;
   developer test answers deleted (admin anonDelete); first-answer-only rejected; experience weight and history-aware
   repeats; players start as beginners.
@@ -1881,6 +2152,15 @@ is not in the simulation.
   (the trap rules inside the selection), topped up from the slate only under 4 genera; every answer counts as a
   photo-quiz answer, logged `quiz|s…` ("Custom quiz: the photo quiz on the genera the player picks").
 
+- 2026-11-03, Pierre: the one-tap question varies (six items on felt difficulty, fun, frustration and boredom, in
+  rounds, never twice in a row) and comes every 40 answers instead of 60 (twice that after a "Not now"), so the
+  level-dependent target can be checked by level band; logged in the existing v19 events, no new sheet version; nothing
+  in the game reads the answers yet ("What the players say about the difficulty").
+- 2026-11-03, Pierre (reviewing that PR): every 40 answers approved; the rule that turns the answers into the
+  level-dependent target approved, with the caution that felt difficulty is subjective (no move before the thresholds;
+  built later, once data exists); "For me, the challenge is: Too low / Too high" replaced by "Right now I feel: Bored /
+  In the zone / Struggling"; the question made a block of its own before Next; the response rate logged.
+
 ## References
 
 - Pelánek, R. (2016). Applications of the Elo rating system in adaptive educational systems. *Computers & Education*
@@ -1910,5 +2190,25 @@ is not in the simulation.
   *Psychometrika* 49.
 - Ghosh, A., Raspat, J., Lan, A. (2021). Option tracing: beyond correctness analysis in knowledge tracing. *AIED 2021*.
   <https://arxiv.org/abs/2104.09043>
+- Papoušek, J., Stanislav, V., Pelánek, R. (2016). Impact of question difficulty on engagement and learning. In
+  *Intelligent Tutoring Systems (ITS 2016)*, LNCS 9684, pp. 267-272. Springer. <https://doi.org/10.1007/978-3-319-39583-8_28>;
+  extended version: Evaluation of the impact of question difficulty on engagement and learning, FI MU Report Series
+  FIMU-RS-2016-02, Masaryk University, March 2016 (the difficulty question and its results).
+  <https://www.fi.muni.cz/reports/files/2016/FIMU-RS-2016-02.pdf>
+- Rheinberg, F., Vollmeyer, R., Engeser, S. (2003). Die Erfassung des Flow-Erlebens [The flow short scale, FKS]. In
+  Stiensmeier-Pelster, J., Rheinberg, F. (eds.), *Diagnostik von Motivation und Selbstkonzept* (pp. 261-279).
+  Göttingen: Hogrefe. Items in Rheinberg, Vollmeyer & Engeser (2019), FKS. Flow-Kurzskala [Verfahrensdokumentation],
+  Open Test Archive, ZPID. <https://doi.org/10.23668/psycharchives.4488>
+- IJsselsteijn, W. A., de Kort, Y. A. W., Poels, K. (2013). *The Game Experience Questionnaire*. Technische Universiteit
+  Eindhoven (FUGA project; section 3, In-game GEQ, and its scoring guidelines).
+  <https://pure.tue.nl/ws/files/21666907/Game_Experience_Questionnaire_English.pdf>
+- Ryan, R. M., Rigby, C. S., Przybylski, A. (2006). The motivational pull of video games: a self-determination theory
+  approach (PENS). *Motivation and Emotion* 30.
+- Csikszentmihalyi, M. (1975). *Beyond boredom and anxiety*. Jossey-Bass (the flow channel between boredom and
+  anxiety; 25th anniversary edition 2000, *Beyond boredom and anxiety: experiencing flow in work and play*).
+- Csikszentmihalyi, M. (1990). *Flow: the psychology of optimal experience*. Harper & Row; Csikszentmihalyi, M., Larson,
+  R. (1987). Validity and reliability of the experience-sampling method. *Journal of Nervous and Mental Disease* 175.
+- Sauro, J., Dumas, J. S. (2009). Comparison of three one-question, post-task usability questionnaires. *CHI 2009*,
+  pp. 1599-1608. ACM. <https://doi.org/10.1145/1518701.1518946>
 - Bolsinova, M. et al. (2025). Keeping Elo alive. *British Journal of Mathematical and Statistical Psychology*.
   <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12784335/>

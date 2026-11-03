@@ -311,6 +311,8 @@ const server = http.createServer((req, res) => {
   if (e3.pct <= b3.pct + 10) fails.push(`expert's progress not clearly above a beginner's (${e3.pct}% vs ${b3.pct}%)`);
   for (const [k, v] of Object.entries(R))
     if (v.early && v.early.length) fails.push(`${k}: ${v.early.join(', ')} at 95% before being asked beside a look-alike`);
+  // Nothing shaky: the opening chance is 1 (its pace is then openPace's: at most OPEN.MAX genera in OPEN.WIN answers,
+  // 2026-11-04; the hotfix of 2026-11-03 capped the chance itself at 0.5).
   if (R.bonusOpen !== 1 || !R.bonusPick || R.bonusOff)
     fails.push(`bonus genera not met: opening chance ${R.bonusOpen} (1 expected), opened: ${R.bonusPick}; off: ${R.bonusOff} in the pool`);
   if (!(R.cal.with > 1.3 * Math.max(10, R.cal.without)))

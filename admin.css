@@ -2303,6 +2303,37 @@ td.cov-c .cov-off {
 .adm-tscroll {
   overflow-x: auto;
 }
+/* Errors & feedback, one-tap questions (admin.js pulseView): compact tables, numbers under right-aligned headers, each
+   item's wording as written heading its answers, the share beside a count quiet. */
+.adm-pulse .adm-tbl {
+  width: auto;
+}
+.adm-pulse th.n {
+  text-align: right;
+}
+.adm-pulse td.n {
+  padding-left: 14px;
+}
+.adm-pulse td.n small {
+  color: var(--muted);
+  font-weight: 400;
+}
+.adm-pitems .adm-pq th {
+  position: static;
+  padding-top: 10px;
+  font-size: 0.82rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink);
+}
+.adm-pscale {
+  margin-bottom: 10px;
+}
+/* Under an item's answers: its Not now, no answer and shown rows (the response), quieter than the answers. */
+.adm-pitems .adm-pmeta td {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
 /* Errors & feedback: long error messages and photo names wrap inside their cell. */
 .adm-ev code {
   white-space: normal;

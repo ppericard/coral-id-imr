@@ -507,13 +507,16 @@
     };
   };
   const sorryDue = ({felt, now, shown}) => !shown && now < SORRY.UNTIL && !!felt && sorryFelt(felt);
-  // The greeting: the first word of the sign-in name, else a plain "Hi!".
-  const sorryHi = name => {
-    const w = String(name || '')
-      .trim()
-      .split(/\s+/)[0];
-    return w ? `Hi ${w}!` : 'Hi!';
+  // The first name to greet a player with, from their sign-in name (Pierre, 2026-11-04, for every personalised card,
+  // AGENTS.md rule 20e): the first word ("Ana Lopez" -> "Ana", "Ana B." -> "Ana"), its first letter capitalised;
+  // only the letters it starts with (an apostrophe or a hyphen inside kept: "O'Neil", "Jean-Luc"), so a name with no
+  // letter first ("~a12", "123") gives '' and the card says a plain "Hi!".
+  const firstName = name => {
+    const m = /^\p{L}[\p{L}\p{M}'’-]*/u.exec(String(name || '').trim()),
+      w = m ? m[0].replace(/['’-]+$/, '') : '';
+    return w ? w[0].toUpperCase() + w.slice(1) : '';
   };
+  const sorryHi = name => (firstName(name) ? `Hi ${firstName(name)}!` : 'Hi!');
   // When it happened, as the player's clock says it (tz: minutes behind UTC, Date's getTimezoneOffset): this evening,
   // yesterday evening (afternoon, morning), else the date.
   const sorryWhen = (now, tz = 0) => {
@@ -1171,6 +1174,116 @@
     return at[at.length - 1][1];
   }
 
+  // The one-tap question's bank (Pierre, 2026-11-03: "ask slightly different questions about roughly the same
+  // concept", so the players say as they go whether the difficulty suits their level; quiz.js pulseAsk, admin Errors).
+  // Each item is answered in one tap; each answer sits on one or two common scales: d, felt difficulty (−1 too easy,
+  // 0 right, +1 too hard) and f, how the play feels (−1 bad, 0 neutral, +1 good); null = says nothing on that scale.
+  // A "no" to a one-sided item (frustrating? boring?) is 0 on both: not too hard, not too easy; asked as often as each
+  // other, the two one-sided items shrink a mean towards 0 without tilting it. Codes easy / ok / hard keep their v19
+  // meaning on the difficulty scale (the sheet's Detail keeps only those three); an item's other codes ride as they
+  // come (Message column) and its id in the Where column: no new sheet version (v19 stores both as text).
+  // Sources (docs/LEARNING.md "What the players say about the difficulty"): are, the app's question since v19 (the
+  // Too Easy / Appropriate / Too Difficult rating of Papoušek, Stanislav & Pelánek 2016); zone, flow's three channels
+  // (boredom, flow, anxiety: Csikszentmihalyi 1975), the balance the flow short scale's item 16 asks as demands too
+  // little / just right / too high (Rheinberg, Vollmeyer & Engeser 2003); more, the same balance asked as a wish; fun,
+  // frus, bored, the in-game GEQ's positive affect, tension and negative affect items (IJsselsteijn, de Kort & Poels 2013).
+  // Besides the answers, every prompt logs its showing (PULSE_SHOWN) and, when it ends without an answer, a "Not now"
+  // (PULSE_SKIP) or moving on without a tap (PULSE_NONE): the admin's response rates.
+  const PULSE_SHOWN = 'shown',
+    PULSE_SKIP = 'skip',
+    PULSE_NONE = 'none';
+  const PULSEQ = [
+    {
+      id: 'are',
+      q: 'These questions are',
+      a: [
+        ['easy', 'Too easy', -1, null],
+        ['ok', 'About right', 0, null],
+        ['hard', 'Too hard', 1, null]
+      ]
+    },
+    // The challenge-skill balance as the flow channels, said as states (Pierre, 2026-11-03: "the challenge is too low /
+    // too high" left non-native speakers unsure whether low meant easy or hard).
+    {
+      id: 'zone',
+      q: 'Right now I feel',
+      a: [
+        ['easy', 'Bored', -1, null],
+        ['ok', 'In the zone', 0, null],
+        ['hard', 'Struggling', 1, null]
+      ]
+    },
+    {
+      id: 'more',
+      q: 'Want harder photos?',
+      a: [
+        ['easy', 'Yes', -1, null],
+        ['ok', 'Keep it', 0, null],
+        ['hard', 'Easier', 1, null]
+      ]
+    },
+    {
+      id: 'fun',
+      q: 'Having fun?',
+      a: [
+        ['lo', 'Not really', null, -1],
+        ['mid', "It's OK", null, 0],
+        ['hi', 'Yes!', null, 1]
+      ]
+    },
+    {
+      id: 'frus',
+      q: 'Frustrating?',
+      a: [
+        ['no', 'Not at all', 0, 0],
+        ['bit', 'A bit', 0.5, -0.5],
+        ['yes', 'Very', 1, -1]
+      ]
+    },
+    {
+      id: 'bored',
+      q: 'Getting boring?',
+      a: [
+        ['no', 'Not at all', 0, 0],
+        ['bit', 'A bit', -0.5, -0.5],
+        ['yes', 'Yes', -1, -1]
+      ]
+    }
+  ];
+  // The first item ever asked, and the item of every answer logged before the bank (no item id: sheet rows until
+  // 2026-11-03).
+  const PULSE0 = 'are';
+  const pulseItem = id => PULSEQ.find(x => x.id === (id || PULSE0)) || null;
+  // An answer on the common scales: {d, f}, null where it says nothing (an unknown item or code: both null).
+  function pulseScore(id, code) {
+    const it = pulseItem(id),
+      a = it && it.a.find(x => x[0] === code);
+    return a ? {d: a[2], f: a[3]} : {d: null, f: null};
+  }
+  // Which item to ask next. Rounds: every item once in a shuffled order, then a new round, never starting with the item
+  // just asked, so a player never meets the same wording twice in a row and meets each one as often. st is what the
+  // device stored at the last ask ({q: item asked, left: the round's items still to ask}; before the bank, {at} alone,
+  // which means PULSE0 was asked); rnd a random number generator in [0, 1). Returns {q, left}, to store.
+  function pulsePick(st, rnd = Math.random) {
+    const ids = PULSEQ.map(x => x.id),
+      last = (st && st.q) || (st && typeof st.at === 'number' ? PULSE0 : ''),
+      shuffle = L => {
+        const o = L.slice();
+        for (let i = o.length - 1; i > 0; i--) {
+          const j = Math.floor(rnd() * (i + 1));
+          [o[i], o[j]] = [o[j], o[i]];
+        }
+        return o;
+      };
+    let left = (st && Array.isArray(st.left) ? st.left : []).filter((x, i, L) => ids.includes(x) && x !== last && L.indexOf(x) === i);
+    if (!left.length) {
+      if (!last) return {q: PULSE0, left: shuffle(ids.filter(x => x !== PULSE0))};
+      left = shuffle(ids);
+      if (left[0] === last) left.push(left.shift());
+    }
+    return {q: left[0], left: left.slice(1)};
+  }
+
   const CORE = {
     BENTHIC,
     BONUS,
@@ -1200,6 +1313,7 @@
     newAch,
     LEVEL,
     SORRY,
+    firstName,
     sorryFelt,
     sorryOf,
     sorryDue,
@@ -1241,7 +1355,15 @@
     confGap,
     dataLook,
     pairConf,
-    mergeUsers
+    mergeUsers,
+    PULSEQ,
+    PULSE0,
+    PULSE_SHOWN,
+    PULSE_SKIP,
+    PULSE_NONE,
+    pulseItem,
+    pulseScore,
+    pulsePick
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = CORE;
   else Object.assign(root, CORE);
