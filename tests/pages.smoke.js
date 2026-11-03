@@ -1891,7 +1891,9 @@ async function basicsTeach(b, base) {
         u => !u.href.startsWith(base),
         r => r.abort()
       );
-      await cb.addInitScript(() => localStorage.setItem('imr-tour', '"done"'));
+      await cb.addInitScript(
+        () => (localStorage.setItem('imr-tour', '"done"'), localStorage.setItem('imr-coral-start', '{"c":"new","t":1}'))
+      );
       const qb = await cb.newPage();
       await qb.goto(base + '#quiz');
       await qb.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
