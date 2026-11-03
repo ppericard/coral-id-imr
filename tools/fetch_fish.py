@@ -189,7 +189,7 @@ def usable_obs(o, used, excl):
     own = o.get("u") == PIERRE
     if not own and o.get("g") != "research":
         return None
-    P = [p for p in o["ph"] if (p[2] or own) and p[2] != "cc-by-nd" and str(p[0]) not in used and str(p[0]) not in excl and p[1]]
+    P = [p for p in o["ph"] if (p[2] or own) and "nd" not in (p[2] or "").split("-") and str(p[0]) not in used and str(p[0]) not in excl and p[1]]
     if not P:
         return None
     P = P[:PER_OBS]

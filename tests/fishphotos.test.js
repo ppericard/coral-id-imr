@@ -54,6 +54,7 @@ print(json.dumps([
   u(ob(10, n=2), used={'100'}),                  # a photo already a candidate
   u(ob(11, n=1), ex={'110'}),                    # an excluded photo
   u(ob(12, rk='genus')),
+  u(ob(13, lic='cc-by-nc-nd')),                  # NC and no derivatives: never (8 such photos came in once)
 ]))`);
   assert.deepStrictEqual(out, [
     [0, 'dauin', false, 1, ''],
@@ -66,6 +67,7 @@ print(json.dumps([
     [0, 'dauin', false, 1, 'juvenile/male'],
     [0, 'dauin', false, 4, ''],
     [0, 'dauin', false, 1, ''],
+    null,
     null,
     null
   ]);

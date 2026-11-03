@@ -482,7 +482,9 @@ const server = http.createServer((req, res) => {
     console.error(`Admin demo: ${fails.length} problem(s)\n` + fails.join('\n'));
     process.exit(1);
   }
-  console.log('Admin demo OK: every page at 390 and 1280 px, merge, delete, triage, health, skip, reject, cap, publish; nothing sent.');
+  console.log(
+    'Admin demo OK: every page at 390 and 1280 px, merge, delete, triage, health, skip, reject, cap, fish, publish; nothing sent.'
+  );
 })().catch(e => {
   console.error(e);
   process.exit(1);
