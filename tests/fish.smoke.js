@@ -362,7 +362,49 @@ const server = http.createServer((req, res) => {
       }));
       if (g.subj !== 'coral' || g.hash !== '#' + h) rv.push(`#${h} with Fish chosen: ${JSON.stringify(g)}`);
     }
+    // (5) Fish chosen by the player on a coral genus sheet: the fish page of the section, not straight back to corals.
+    await q.evaluate(() => setSubject('fish'));
+    await q.waitForTimeout(800);
+    const ex = await q.evaluate(() => ({subj: SUBJ.id, hash: location.hash}));
+    if (ex.subj !== 'fish' || ex.hash !== '#genera') rv.push(`Fish chosen on a coral genus sheet: ${JSON.stringify(ex)}`);
     await c3.close();
+  }
+  // (6) fish.json cannot come at start-up (Codex review #442): the app opens on the corals, nothing empty is kept, and
+  // the next try loads the fish.
+  {
+    const c4 = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
+    let fail = true;
+    await c4.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c4.route(
+      u => /\/fish\.json/.test(u.href),
+      r => (fail ? r.fulfill({status: 404, body: ''}) : r.fallback())
+    );
+    await c4.addInitScript(() => {
+      try {
+        if (!sessionStorage.getItem('fish-fail')) {
+          sessionStorage.setItem('fish-fail', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+        }
+      } catch (e) {}
+    });
+    const q = await c4.newPage();
+    await q.goto(base + '#quiz');
+    await q.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const a = await q.evaluate(() => ({subj: SUBJ.id, fish: !!FISH, cached: !!FISHP}));
+    fail = false;
+    const b2 = await q.evaluate(() =>
+      setSubject('fish').then(
+        () => ({subj: SUBJ.id, n: slateGenera().length}),
+        e => ({err: String(e && e.message)})
+      )
+    );
+    if (a.subj !== 'coral' || a.fish || a.cached || b2.subj !== 'fish' || b2.n !== 27)
+      rv.push(`fish.json failing at start-up: ${JSON.stringify(a)} then ${JSON.stringify(b2)}`);
+    await c4.close();
   }
   const fails = [...out, ...ui, ...rv];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')

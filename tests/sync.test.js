@@ -175,6 +175,10 @@ test('reports list: only a GitHub token that can write to the repo, checked once
   assert.strictEqual(a.rows[0][0], 'r2', 'newest first');
   assert.deepStrictEqual(a.rows[1].slice(2, 9), ['Ana', 1, 'wrong', 'Acropora', 'Montipora', 'Montipora', 'corallites']);
   assert.strictEqual(a.rows[0][11], '', 'where (v8)');
+  // v34: a fish report keeps its teaching ids and its photo (Codex review #442: the ids lost their digits).
+  s.post({rname: 'Ana', rpin: '1234', reports: [rep('r3', {g: 't01', a: 't05', fix: '', ph: 'fi464458713'})]});
+  const f = s.post({readReports: 1, token: 'ghp_write000000000000000000'}).rows.find(r => r[0] === 'r3');
+  assert.deepStrictEqual([f[5], f[6], f[10]], ['t01', 't05', 'fi464458713']);
   const n = s.fetched.length;
   s.post({readReports: 1, token: 'ghp_write000000000000000000'});
   assert.strictEqual(s.fetched.length, n, 'remembered for 10 minutes');

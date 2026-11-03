@@ -379,7 +379,12 @@ let FISH = null,
 const fishLoad = () =>
   FISHP ||
   (FISHP = Promise.all([json('fish.json?v=1'), json('fish-photos.json?v=2')])
-    .then(([f, ph]) => (FISH = fishGen(f, (ph || {}).photos)))
+    .then(([f, ph]) => {
+      // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
+      // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals).
+      if (!f || !Array.isArray(f.teach) || !f.teach.length || !ph || !ph.photos) throw new Error('fish data not loaded');
+      return (FISH = fishGen(f, ph.photos));
+    })
     .catch(e => {
       FISHP = null;
       throw e;
@@ -426,6 +431,11 @@ function setSubject(id) {
     showBon();
     prog();
     if (typeof syncSoon === 'function') syncSoon();
+    // A page the new subject does not have (Fish chosen on a coral genus sheet): its section's page for the subject, so the
+    // route does not hand the player straight back (Codex review #442; the hand-off in route is for links only).
+    const h = hashNow(),
+      sp = subjPage(h);
+    if (sp !== h) history.replaceState(history.state, '', '#' + sp);
     route();
   });
 }
