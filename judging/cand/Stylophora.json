@@ -6,7 +6,16 @@
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Small colony lying on sand, maybe a loose fragment; blunt tips."
+   "crop": [
+    0.2,
+    0.1,
+    0.85,
+    1.0
+   ],
+   "unsure": [
+    "genus"
+   ],
+   "note": "Small loose colony lying on sand, maybe a broken fragment; soft at 100%"
   },
   "stylophora-cand-600517043": {
    "view": "wide",
@@ -14,255 +23,311 @@
    "form": "B",
    "keep": "best",
    "multi": true,
-   "unsure": [
-    "genus"
-   ],
-   "note": "Small colony between massive corals; thin branches could be Pocillopora."
+   "note": "small colony between large massive corals; soft"
   },
   "stylophora-cand-269736046": {
    "view": "wide",
    "quality": 3,
    "form": "B",
    "keep": "best",
-   "note": "Blunt, slightly flattened branch tips."
+   "crop": [
+    0.1,
+    0.15,
+    0.95,
+    1.0
+   ]
   },
   "stylophora-cand-357894132": {
    "view": "medium",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
    "keep": "best",
-   "note": "Blunt branches, tiny corallites; soft focus."
+   "note": "Strong cyan-magenta cast and smeared at 100%"
   },
   "stylophora-cand-246490289": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Blunt branches; crinoid; slight cast."
+   "crop": [
+    0.05,
+    0.05,
+    0.95,
+    1.0
+   ],
+   "note": "Blue cast, soft at 100%"
   },
   "stylophora-cand-262217044": {
    "view": "wide",
    "quality": 3,
    "form": "B",
    "keep": "best",
-   "note": "Blunt flattened tips; polyps show as white dots."
+   "crop": [
+    0.08,
+    0.15,
+    0.85,
+    1.0
+   ]
   },
   "stylophora-cand-262217183": {
    "view": "wide",
    "quality": 3,
    "form": "B",
-   "keep": "alt",
-   "note": "Front view; another branching coral behind."
+   "keep": "dup",
+   "note": "Same colony, similar framing"
   },
   "stylophora-cand-262217193": {
    "view": "wide",
    "quality": 3,
    "form": "B",
-   "keep": "dup"
+   "keep": "dup",
+   "note": "Same colony, similar framing"
   },
   "stylophora-cand-262217195": {
    "view": "wide",
    "quality": 3,
    "form": "B",
-   "keep": "dup",
+   "keep": "alt",
    "multi": true,
-   "note": "A neighbouring branching coral takes a large part of the frame."
+   "unsure": [
+    "multi"
+   ],
+   "note": "Side view; a second branching colony fills the right half"
   },
   "stylophora-cand-262217207": {
    "view": "wide",
    "quality": 3,
    "form": "B",
-   "keep": "alt",
-   "multi": true,
-   "note": "Another colony, closer; neighbouring branching coral at right."
+   "keep": "dup",
+   "note": "Same colony and side view as the alternative"
   },
   "stylophora-cand-479237218": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Blunt branches, scaly surface; blue cast."
+   "note": "Cyan cast, smeared at 100%"
   },
   "stylophora-cand-600484378": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Small colony on rubble; hazy, date stamp."
+   "crop": [
+    0.0,
+    0.05,
+    0.9,
+    0.85
+   ],
+   "note": "Soft at 100%; crop removes the date stamp"
   },
   "stylophora-cand-600484386": {
    "view": "medium",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Branch ends with corallites; soft, date stamp."
+   "crop": [
+    0.0,
+    0.0,
+    0.9,
+    0.85
+   ],
+   "note": "Soft at 100%; crop removes the date stamp"
   },
   "stylophora-cand-693803137": {
    "view": "medium",
    "quality": 2,
    "form": "B",
-   "keep": "dup",
-   "note": "Flash burns the tips; date stamp."
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.0,
+    0.95,
+    0.88
+   ],
+   "note": "Shallow focus; crop removes the date stamp"
   },
   "stylophora-cand-693803153": {
    "view": "medium",
    "quality": 2,
    "form": "B",
-   "keep": "dup"
+   "keep": "dup",
+   "note": "Same branches; date stamp"
   },
   "stylophora-cand-693803157": {
    "view": "medium",
    "quality": 2,
    "form": "B",
-   "keep": "dup"
+   "keep": "dup",
+   "note": "Same branches; date stamp"
   },
   "stylophora-cand-693803158": {
    "view": "medium",
    "quality": 2,
    "form": "B",
-   "keep": "best",
-   "note": "Blunt branch ends, corallites visible; bright tips, date stamp."
+   "keep": "dup",
+   "note": "Same branches; date stamp"
   },
   "stylophora-cand-693803167": {
-   "view": "macro",
-   "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "note": "Soft, overexposed tips."
+   "view": "medium",
+   "quality": 1,
+   "form": "B",
+   "keep": "dup",
+   "note": "Washed-out and soft; date stamp"
   },
   "stylophora-cand-379868168": {
    "view": "medium",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Branches with polyps out at night."
+   "note": "Soft at 100%"
   },
   "stylophora-cand-310441722": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Hazy; massive coral behind."
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Soft corals and other colonies around; soft at 100%"
   },
   "stylophora-cand-406767069": {
-   "view": "medium",
+   "view": "wide",
    "quality": 3,
    "form": "B",
    "keep": "best",
-   "note": "Blunt white tips, scaly surface."
+   "note": "Blue cast; Pocillopora-like look but corallites crisp"
   },
   "stylophora-cand-661955502": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Small young colony; dull colour."
+   "crop": [
+    0.2,
+    0.15,
+    0.8,
+    1.0
+   ],
+   "note": "Soft at 100%"
   },
   "stylophora-cand-91233932": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Hazy; other corals around."
+   "crop": [
+    0.1,
+    0.05,
+    0.75,
+    1.0
+   ],
+   "note": "Soft at 100%"
   },
   "stylophora-cand-605683373": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Rounded cylindrical tips; could be Pocillopora damicornis."
+   "note": "Smeared at 100%, colour fringing"
   },
   "stylophora-cand-697840012": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
-   "genus": "Millepora",
-   "note": "Fire coral: yellow flattened fused branches with fine white hairs, no corallites."
+   "keep": "best",
+   "note": "Soft at 100%"
   },
   "stylophora-cand-574575249": {
    "view": "medium",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Blunt branch ends, scaly surface."
+   "note": "Blue cast, soft at 100%"
   },
   "stylophora-cand-574575250": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
    "keep": "best",
-   "note": "Small colony; blue cast; feather star below."
+   "note": "Motion blur over the whole frame"
   },
   "stylophora-cand-344687890": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "best",
+   "note": "443 px, blurred"
+  },
+  "stylophora-cand-344687904": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "dup",
+   "note": "1178 px, blurred; fish across the colony"
+  },
+  "stylophora-cand-190605585": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "unsure": [
-    "genus"
+   "crop": [
+    0.15,
+    0.1,
+    0.85,
+    0.95
    ],
-   "note": "Shallow and hazy; two colonies; could be Pocillopora."
+   "note": "Soft at 100%"
   },
-  "stylophora-cand-344687904": {
+  "stylophora-cand-262211590": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.1,
+    0.85,
+    0.95
+   ],
+   "note": "Dark, warm cast; polyps partly out"
+  },
+  "stylophora-cand-262211706": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "dup",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Same scene with damselfish; could be Pocillopora."
-  },
-  "stylophora-cand-190605585": {
-   "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "best",
-   "note": "Small colony, blunt tips."
-  },
-  "stylophora-cand-262211590": {
-   "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "best",
-   "note": "Small colony, blunt flattened tips."
-  },
-  "stylophora-cand-262211706": {
-   "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "dup"
+   "note": "Same colony, same framing"
   },
   "stylophora-cand-335771324": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Seen from the surface, hazy; seagrass and urchins."
+   "note": "small; sea urchins and algae around; soft at 100%"
   },
   "stylophora-cand-675216244": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Colony on sand."
+   "note": "Soft at 100%"
   },
   "stylophora-cand-675216183": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
    "keep": "best",
-   "note": "Corallites on a blunt branch tip."
+   "note": "785 px, soft"
   },
   "stylophora-cand-246490407": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Flattened branches; crinoid at right."
+   "note": "Smeared at 100%"
   }
  }
 }
