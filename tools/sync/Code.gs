@@ -2053,9 +2053,9 @@ const CORE_ = (function () { const module = {exports: {}};
 
   // What one answer proves, the weights of pgStep (docs/LEARNING.md "Progress (moving average) and mastery"), shared by
   // the app (model.js pgWeight, quiz.js answer) and the full replay below, so both run the same rules.
-  // TARGET_OFF: the game aims its photos this far below the player's ability on the genus (about 80% right with 4
-  // choices; model.js PICKD.TARGET_OFF).
-  const TARGET_OFF = 1.0;
+  // TARGET_P: the chance every question aims for, whatever its format (model.js PICKD.P, the difficulty controller:
+  // about 80% right; 2026-11-03, before it a photo TARGET_OFF 1.0 below the ability, 80% with 4 choices only).
+  const TARGET_P = 0.8;
   const sigm = x => 1 / (1 + Math.exp(-x));
   // A right answer, w from 0 to 1: the plausible choices k ((1 − 1/k) / (1 − 1/4): 4 weigh 1, 3 0.89, 2 0.67), in full
   // when a genus it gets confused with is among the choices (look), PROG.LOOK when none is. model.js pgWeight finds look.
@@ -2064,15 +2064,15 @@ const CORE_ = (function () { const module = {exports: {}};
   const pgRightW = (k, look) => Math.min(1, Math.max(0, (1 - 1 / k) / (1 - 1 / 4))) * (look || !isFinite(k) ? 1 : PROG.LOOK);
   // What a miss proves (Pierre, 2026-11-02: "a miss on a very hard photo doesn't necessarily mean the genus is badly
   // known"; a miss must not cost more than it proves): the Elo chance the player had to get it right (ability th against
-  // the photo's difficulty d, k choices, as abilityStep), over the chance the game aims for (a photo TARGET_OFF below the
-  // ability, about 80% with 4 choices). A photo at the player's level or easier: the miss counts in full; a harder one:
+  // the photo's difficulty d, k choices, as abilityStep), over the chance the game aims for (TARGET_P, 0.8, whatever the
+  // format: model.js's difficulty controller). A photo at the player's level or easier: the miss counts in full; a harder one:
   // less (1 unit harder: 0.78; 2 units: 0.56). No new constant: the Elo and the photo targeting set it. The right answers
   // keep their weight (pgRightW): simulated, a photo factor on them only slowed everyone.
   // R: the recall expected after a break, for a comeback question (model.js comebackOf; 1 otherwise): the chance the
   // player had is then the recall-adjusted one, so a miss the rust explains costs less progress (Pierre, 2026-11-02).
   function pgMissW(th, d, k, R = 1) {
     const e = (x, r = 1) => 1 / k + (1 - 1 / k) * r * sigm(x);
-    return Math.min(1, e(th - d, R) / e(TARGET_OFF));
+    return Math.min(1, e(th - d, R) / TARGET_P);
   }
   // What a right answer on a photo the player knows proves (Pierre, 2026-11-03): only what memory does not explain. The
   // mirror of pgMissW (a ratio of chances, like it): the chance the player had on the same photos new over the chance
@@ -2417,7 +2417,7 @@ const CORE_ = (function () { const module = {exports: {}};
     pgOf,
     scoreOf,
     pctOf,
-    TARGET_OFF,
+    TARGET_P,
     pgRightW,
     pgMissW,
     pgMemW,

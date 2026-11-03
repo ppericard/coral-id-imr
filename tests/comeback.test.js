@@ -19,7 +19,8 @@ function model({P = {}, th = {}, answers = 0} = {}) {
       P,
       LEVEL: '~level',
       INTRO: {SLACK: 0.1},
-      PICKD: {TARGET_OFF: 1},
+      PICKD: {P: 0.8},
+      aimOff: (k = 4) => Math.log((0.8 - 1 / k) / (1 - 1 / k) / (1 - (0.8 - 1 / k) / (1 - 1 / k))),
       pgMissW, // core.js (shared with the full replay since 2026-11-03)
       sig: x => 1 / (1 + Math.exp(-x)),
       ability: n => th[n] ?? 0,
@@ -165,9 +166,10 @@ test('comeback questions: the surest genera until one is right, then the most ru
 });
 
 test('a miss the rust explains costs less progress (pgMissW with the recall)', () => {
-  const f = pgMissW;
-  assert.strictEqual(f(1, 0, 4), 1);
-  assert.strictEqual(f(1, 0, 4, 1), 1);
+  const f = pgMissW; // core.js (shared with the full replay)
+  // A photo at the game's aim (aimOff(4) = 1.01 below the ability) or easier: in full.
+  assert.strictEqual(f(1.02, 0, 4), 1);
+  assert.strictEqual(f(1.02, 0, 4, 1), 1);
   const e = x => 0.25 + (0.75 * x) / (1 + Math.exp(-1));
-  assert.ok(Math.abs(f(1, 0, 4, 0.6) - e(0.6) / e(1)) < 1e-9 && f(1, 0, 4, 0.6) < 0.75);
+  assert.ok(Math.abs(f(1, 0, 4, 0.6) - e(0.6) / 0.8) < 1e-9 && f(1, 0, 4, 0.6) < 0.75);
 });
