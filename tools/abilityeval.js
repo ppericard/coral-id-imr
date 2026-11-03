@@ -6,6 +6,7 @@
 //   node tools/abilityeval.js answers.json [--variants a,e,e+L] [--player <name or id>] [--min 20] [--json out.json]
 //                             [--priors priors.json]
 //                             [--model other/model.js]
+//                             [--grid 0,0.5,1;1,1.5]
 //
 // answers.json: the answer log, either the admin's readAnswers rows [id, time ms, genus shown, answered, right 0|1, mode,
 // photos, expected, ability, new photos, choices, ...] (as tools/memreplay.js reads them), or the sheet's Answers tab as
@@ -31,6 +32,13 @@
 // 0.8); L, the global level's step without the floor ELO.kmin (its K keeps shrinking with the answers; the volatility
 // still lets it catch up with a lasting change). The level bands of a rule with L are those of its own level.
 //
+// Response time (2026-11-03, docs/LEARNING.md "Response time"), options with a number: +Tk a right answer's genus step
+// times w = clamp(1 - k z, 0.5, 1.5), z its log(seconds) against the player's own median so far; +Sk misses too; +Hh the
+// speed-accuracy score of Math Garden instead of right / wrong; +Uc every right answer's step times c (a control); +G
+// the level's step too; +N no time effect when a photo was enlarged. The prediction never uses the answer's own time.
+// A '*' in place of a number (e.g. e+X+M+T*+G) replays every value of --grid (one list per '*', ';' between lists) and
+// chooses it per player by leave one player out: each player is scored with the value best on the other players.
+// After the tables, every rule's paired log-loss difference per answer against the first one, ± its standard error.
 // Each question's difficulty d is recovered from what the app logged when it was asked (expected e, ability th, k
 // choices): e = 1/k + (1 - 1/k) sig(th - d), so the photo, its memory offset and the single-view handicap are those the
 // player really met; answers logged without e/th (before sheet v5) are skipped. The prediction for an answer is the
@@ -105,11 +113,13 @@ function normalise(raw) {
     .map(x => x[0]);
   return raw.map((r, i) =>
     typeof r[1] === 'number'
-      ? {p: r[0], i, t: r[2], at: timeOf(r[1]), a: r[3], ok: Number(r[4]) ? 1 : 0, mode: r[5], e: r[7], th: r[8], ch: r[10]}
-      : {p: r[0], i, t: r[2], at: timeOf(r[1]), a: r[3], ok: String(r[4]) === '1' ? 1 : 0, mode: r[5], e: r[8], th: r[9], ch: r[11]}
+      ? {p: r[0], i, t: r[2], at: timeOf(r[1]), a: r[3], ok: Number(r[4]) ? 1 : 0, mode: r[5], e: r[7], th: r[8], ch: r[10], ...rt(r)}
+      : {p: r[0], i, t: r[2], at: timeOf(r[1]), a: r[3], ok: String(r[4]) === '1' ? 1 : 0, mode: r[5], e: r[8], th: r[9], ch: r[11], ...rt(r)}
   );
 }
 const num = x => (x === '' || x === null || x === undefined ? NaN : Number(x));
+// Seconds to answer and a photo enlarged first (sheet v23 on; both row layouts keep them at 12 and 13): NaN / null before.
+const rt = r => ({sec: num(r[12]), zm: r[13] === undefined || r[13] === '' || r[13] === null ? null : Number(r[13]) ? 1 : 0});
 
 // The reference for the level bands: the app's global level as #413 stepped it (model.js abilityStep of 2026-11-03,
 // ELO {kmax 0.8, kmin 0.25, n 15, vr 0.1, vg 2}, with the kmin floor), kept here so that the bands never depend on the
@@ -123,10 +133,51 @@ function refStep(s, good, d, k) {
   const K = Math.min(REF.kmax, Math.max(REF.kmin, REF.kmax / (1 + m / REF.n)) * (1 + REF.vg * Math.abs(s.vr)));
   s.th = Math.round(Math.min(REF.hi, Math.max(REF.lo, s.th + K * ((good ? 1 : 0) - e))) * 100) / 100;
 }
+// Response time as a weak signal (2026-11-03, docs/LEARNING.md "Response time"): z = log(seconds) minus the median
+// log(seconds) of the player's own earlier timed answers (RT.MIN of them at least; typed questions left out, they take
+// longer by design), known only once the answer is given, so it changes the step after the answer, never its prediction.
+// An answer without time (before sheet v23), a typed one, or one of the player's first RT.MIN timed answers: factor 1.
+const RT = {MIN: 10, LO: 0.5, HI: 1.5, ZD: 1};
+const median = a => {
+  const s = [...a].sort((x, y) => x - y),
+    n = s.length;
+  return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+};
+// The step abilityStep just made, redone with its own K on another surprise: K from the answer count and the volatility
+// it just stored (model.js abilityStep as of 2026-11-03: the level has no kmin floor, rounded to 4 decimals, a genus
+// to 2; with an older --model the time rules' level step would not match it).
+function restep(n, s, th, surprise) {
+  const E = M.M.ELO,
+    m = (s.ok || 0) + (s.ko || 0),
+    K = Math.min(E.kmax, Math.max(n === C.LEVEL ? 0 : E.kmin, E.kmax / (1 + m / E.n)) * (1 + E.vg * Math.abs(s.vr || 0))),
+    r = n === C.LEVEL ? 1e4 : 100;
+  s.th = Math.round(Math.min(E.hi, Math.max(E.lo, th + K * surprise)) * r) / r;
+}
+// The speed-accuracy score of Maris & van der Maas (2012), used by Math Garden (Klinkenberg et al. 2011, "high speed,
+// high stakes"): s = (2x - 1)(1 - t/D), whose expectation is the Langevin function coth(c) - 1/c of the ability gap c
+// (P(right) = sig(c), as in the Elo). The app has no time limit: D is a pseudo-deadline, e^RT.ZD times the player's
+// median, t capped at D (a slower answer scores 0 either way).
+const langevin = c => (Math.abs(c) < 1e-4 ? c / 3 : 1 / Math.tanh(c) - 1 / c);
 // One player's replay under one rule. Returns the scored answers and the final model.
 function replay(list, variant, pooledOf = null) {
   const [v, ...flags] = variant.split('+'),
     P = {};
+  // Time flags (docs/LEARNING.md "Response time"): Tk a right answer's genus step times w = clamp(1 - k z, RT.LO, RT.HI)
+  // (fast > 1, slow < 1), misses unchanged; Sk the same w on misses too (a fast miss steps further down); Hh the
+  // speed-accuracy score instead of right / wrong, its step K h (s - L(c)), c = th - d (the guess rate left aside); Uc
+  // every right answer's genus step times c more, whatever the time (a control: does a speed rule only make the steps
+  // up bigger? with T, the two multiply); G the level's step too; N no time effect on an answer with a photo enlarged
+  // (the time spent enlarged is in the seconds).
+  const fv = c => {
+      const f = flags.find(x => x[0] === c && /^[A-Z][\d.]+$/.test(x));
+      return f ? Number(f.slice(1)) : null;
+    },
+    kT = fv('T'),
+    kS = fv('S'),
+    kH = fv('H'),
+    kU = fv('U'),
+    past = [], // the player's earlier timed answers, log seconds
+    lastZ = {}; // per genus, the z of its last own answer if it was right
   // The confusion term (+X, +Y, +Z): the most (or the sum) over the choices offered of the player's excess on the pair.
   const cX = flags.includes('X') || flags.includes('Y') || flags.includes('Z'),
     termOf = (r, sum, min3) => {
@@ -177,7 +228,7 @@ function replay(list, variant, pooledOf = null) {
       good = r.ok === 1,
       L = (P[C.LEVEL] || {}).th || 0,
       th = plan(r.t);
-    scored.push({y: good ? 1 : 0, p: g + (1 - g) * sig(th - d0 - cf), cf, pl: g + (1 - g) * sig(L - d), k, L: L0.th, mode: r.mode, fa: fa.has(r.t)});
+    scored.push({y: good ? 1 : 0, p: g + (1 - g) * sig(th - d0 - cf), cf, pl: g + (1 - g) * sig(L - d), k, L: L0.th, mode: r.mode, fa: fa.has(r.t), r});
     fa.delete(r.t);
     const s = st(r.t);
     if (good) s.ok++;
@@ -188,8 +239,27 @@ function replay(list, variant, pooledOf = null) {
       .filter(x => x && x !== r.t)
       .forEach(x => ((s.off = s.off || {}), (s.off[x] = (s.off[x] || 0) + 1)));
     if (!good && r.a && r.a !== r.t) (s.conf = s.conf || {}), (s.conf[r.a] = (s.conf[r.a] || 0) + 1);
+    // The answer's speed against the player's own earlier answers (z), then the time rule's weight or score.
+    const timed = isFinite(r.sec) && r.sec > 0 && isFinite(k),
+      zr = timed && past.length >= RT.MIN ? Math.log(r.sec) - median(past) : null,
+      z = flags.includes('N') && r.zm === 1 ? null : zr;
+    if (timed) past.push(Math.log(r.sec));
+    const wT = z === null ? 1 : Math.min(RT.HI, Math.max(RT.LO, 1 - (kT ?? kS ?? 0) * z)),
+      w = (good && kU !== null ? kU : 1) * ((kT !== null && good) || kS !== null ? wT : 1),
+      sH = z === null || kH === null ? null : (good ? 1 : -1) * Math.max(0, 1 - Math.exp(z - RT.ZD)),
+      timeStep = (n, st, th1) => {
+        if (sH !== null) restep(n, st, th1, kH * (sH - langevin(th1 - d)));
+        else if (w !== 1) restep(n, st, th1, w * ((good ? 1 : 0) - (guess(k) + (1 - guess(k)) * sig(th1 - d))));
+      };
+    // For the groups: this answer's speed, and the speed of the genus's last own answer when it was right.
+    Object.assign(scored[scored.length - 1], {z: zr, pz: lastZ[r.t] ?? null});
+    lastZ[r.t] = good ? zr : null;
     if (v === 'd') offStep(r.t, s, good, d, k);
-    else M.M.abilityStep(r.t, s, good, d, k);
+    else {
+      const th1 = M.M.ability(r.t); // what abilityStep starts from (its answer count already holds this answer)
+      M.M.abilityStep(r.t, s, good, d, k);
+      timeStep(r.t, s, th1);
+    }
     if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
     else P[C.LEVEL] = C.levelSeed(P);
     // The level bands come from a reference level stepped by one fixed rule (refStep), whatever the model (--model)
@@ -203,7 +273,9 @@ function replay(list, variant, pooledOf = null) {
     const VG = M.M.ELO.vg;
     if (flags.includes('L')) M.M.ELO.kmin = 0;
     if (flags.includes('V')) M.M.ELO.vg = 0;
+    const thL = P[C.LEVEL].th;
     M.M.abilityStep(C.LEVEL, P[C.LEVEL], good, d, k);
+    if (flags.includes('G')) timeStep(C.LEVEL, P[C.LEVEL], thL);
     M.M.ELO.kmin = KMIN;
     M.M.ELO.vg = VG;
     const c = r.a;
@@ -253,7 +325,27 @@ const kGroup = o => (!isFinite(o.k) ? 'typed' : o.k === 2 ? 'k2' : 'k3-4'),
   lGroup = o => (o.L < 0 ? 'level<0' : o.L < 0.75 ? 'level 0-0.75' : 'level>=0.75'),
   // The 2-choice questions by kind: the Duel tab, a duel slipped into the quiz (|d), the quiz's other 2-choice
   // questions ("Again: A or B?" and easy choices of other growth forms, |k2).
-  fGroup = o => (o.k !== 2 ? null : /^quiz-duel/.test(o.mode) ? '2: Duel tab' : /\|d/.test(o.mode) ? '2: quiz duel' : '2: quiz');
+  fGroup = o => (o.k !== 2 ? null : /^quiz-duel/.test(o.mode) ? '2: Duel tab' : /\|d/.test(o.mode) ? '2: quiz duel' : '2: quiz'),
+  // Response time: answers whose genus was last answered right fast (z < -0.3) or slowly (z > 0.3), whatever the rule.
+  tGroup = o => (o.pz === null || o.pz === undefined ? null : o.pz < -0.3 ? 'after a fast right' : o.pz > 0.3 ? 'after a slow right' : 'after a mid right');
+function groupScores(all) {
+  const groups = {};
+  // 'after a false alarm': a genus's first own question after it was given wrongly for another genus.
+  all.forEach(o =>
+    [kGroup(o), lGroup(o), fGroup(o), tGroup(o), o.fa ? 'after a false alarm' : null].forEach(G => G && (groups[G] = groups[G] || []).push(o))
+  );
+  return Object.fromEntries(Object.entries(groups).map(([G, l]) => [G, score(l)]));
+}
+// Paired log-loss difference per answer of rule b against rule a (the same answers, in the same order): mean, its
+// standard error and 95% interval; only the answers keep(o) holds.
+function paired(a, b, keep = () => true) {
+  const ll = o => -Math.log(o.y ? o.p : 1 - o.p),
+    d = a.scored.map((o, i) => [o, ll(b.scored[i]) - ll(o)]).filter(([o]) => keep(o)).map(x => x[1]),
+    n = d.length,
+    m = d.reduce((t, x) => t + x, 0) / n,
+    se = Math.sqrt(d.reduce((t, x) => t + (x - m) ** 2, 0) / (n - 1) / n);
+  return {n, d: m, se, lo: m - 1.96 * se, hi: m + 1.96 * se};
+}
 function score(list) {
   const n = list.length,
     ll = list.reduce((t, o) => t - (o.y ? Math.log(o.p) : Math.log(1 - o.p)), 0) / n,
@@ -265,7 +357,8 @@ function score(list) {
 }
 
 // Every rule on every player with min answers or more: {players, res: {rule: {all, groups, per}}, ref}.
-function evaluate(raw, {variants = ['a', 'e'], min = 20, only = null, priors = null} = {}) {
+// A variant with '*' is a family over grid (one list of values per '*'), scored by leave one player out (below).
+function evaluate(raw, {variants = ['a', 'e'], min = 20, only = null, priors = null, grid = [[0.1, 0.2, 0.3, 0.5]]} = {}) {
 const byPlayer = {};
 normalise(raw).forEach(r => (byPlayer[r.p] = byPlayer[r.p] || []).push(r));
 // Pooled confusions (+X/+Y/+Z): [offered together, mixed up] per pair, per player, so each player's own answers can be
@@ -299,7 +392,22 @@ const pooledFor = p => (a, b) => {
   return C.confScore([c.all[0] - own[0], c.all[1] - own[1]], prior(a, b));
 };
 const players = Object.keys(byPlayer).filter(p => (!only || p === only) && byPlayer[p].length >= min);
-const res = {};
+const res = {},
+  families = {};
+variants = variants.flatMap(v => {
+  if (!v.includes('*')) return [v];
+  // One grid per '*', in order (the last one reused): every combination is a variant replayed.
+  let out = [v];
+  v.split('*')
+    .slice(0, -1)
+    .forEach((_, i) => {
+      const g = grid[Math.min(i, grid.length - 1)];
+      out = out.flatMap(x => g.map(n => x.replace('*', n)));
+    });
+  families[v] = out;
+  return out;
+});
+variants = [...new Set(variants)];
 variants.forEach(v => {
   // +W: a genus never answered starts from the full global level (core.js START.W 1 instead of 0.8; the shrinkage
   // M / (M + START.N) still fades with the answers).
@@ -314,14 +422,30 @@ variants.forEach(v => {
     M.P = P;
     per[p] = {n: scored.length, level: (P[C.LEVEL] || {}).th, genus: gs.reduce((t, g) => t + (P[g].ok + P[g].ko) * plan(g), 0) / (w || 1), ...score(scored)};
   });
-  const groups = {};
-  // 'after a false alarm': a genus's first own question after it was given wrongly for another genus.
-  all.forEach(o =>
-    [kGroup(o), lGroup(o), fGroup(o), o.fa ? 'after a false alarm' : null].forEach(G => G && (groups[G] = groups[G] || []).push(o))
-  );
   C.START.W = W0;
-  res[v] = {all: score(all), groups: Object.fromEntries(Object.entries(groups).map(([G, l]) => [G, score(l)])), per};
+  res[v] = {all: score(all), groups: groupScores(all), per};
   Object.defineProperty(res[v], "scored", {value: all}); // every scored answer, for paired comparisons (not in --json)
+});
+// A family with '*' (e.g. e+X+M+T*): each value of its grid replayed, the value chosen for each player by leave one
+// player out (the lowest log-loss on the other players' answers), so the score is never fitted on the answers scored.
+Object.keys(families).forEach(F => {
+  const vs = families[F],
+    ll = (v, p) => res[v].per[p].ll * res[v].per[p].n,
+    picks = {},
+    per = {},
+    all = [];
+  players.forEach(p => {
+    const best = vs.reduce((b, v) => {
+      const t = players.filter(q => q !== p).reduce((a, q) => a + ll(v, q), 0);
+      return t < b[1] - 1e-12 ? [v, t] : b;
+    }, [null, Infinity])[0];
+    picks[p] = best;
+    per[p] = res[best].per[p];
+  });
+  // In the order of the other rules' scored answers (player by player), so paired differences line up.
+  players.forEach(p => all.push(...res[picks[p]].scored.filter(o => o.r.p === p)));
+  res[F] = {all: score(all), groups: groupScores(all), per, picks};
+  Object.defineProperty(res[F], 'scored', {value: all});
 });
 // Static reference per player (variant-independent).
 const ref = {};
@@ -344,7 +468,7 @@ players.forEach(p => {
 return {players, res, ref, byPlayer};
 }
 const groupsOf = (res, variants) => [...new Set(variants.flatMap(v => Object.keys(res[v].groups)))].sort();
-module.exports = {evaluate, normalise, kOf, groupsOf, GAME, useModel};
+module.exports = {evaluate, normalise, kOf, groupsOf, paired, GAME, useModel, RT};
 if (require.main === module) {
 const args = process.argv.slice(2),
   opt = (k, d) => {
@@ -360,11 +484,14 @@ const VARIANTS = opt('variants', 'a,b,c,d,e,e+L').split(','),
   ONLY = opt('player', null),
   MIN = Number(opt('min', 20)),
   OUT = opt('json', null),
-  PRIORS = opt('priors', null) ? JSON.parse(fs.readFileSync(opt('priors', null), 'utf8')) : null;
+  PRIORS = opt('priors', null) ? JSON.parse(fs.readFileSync(opt('priors', null), 'utf8')) : null,
+  GRID = opt('grid', '0,0.25,0.5,1,1.5,2')
+    .split(';')
+    .map(l => l.split(',').map(Number));
 if (opt('cf-from', null)) CF_FROM = timeOf(opt('cf-from', null));
 if (opt('model', null)) useModel(path.resolve(opt('model', null)));
   const J = JSON.parse(fs.readFileSync(file, 'utf8')),
-  {players, res, ref, byPlayer} = evaluate(Array.isArray(J) ? J : J.rows || J.values || [], {variants: VARIANTS, min: MIN, only: ONLY, priors: PRIORS});
+  {players, res, ref, byPlayer} = evaluate(Array.isArray(J) ? J : J.rows || J.values || [], {variants: VARIANTS, min: MIN, only: ONLY, priors: PRIORS, grid: GRID});
 const f = (x, n = 3) => (typeof x === 'number' && isFinite(x) ? x.toFixed(n) : '-');
 console.log(`Players with ${MIN}+ answers: ${players.length}; answers scored: ${res[VARIANTS[0]].all.n}`);
 console.log('\nNext-answer prediction (log-loss, Brier; lower is better):');
@@ -398,5 +525,24 @@ players
         `${f(ref[p].global, 2)}/${f(ref[p].genus, 2)}`
     )
   );
+VARIANTS.filter(v => res[v].picks).forEach(v =>
+  console.log(`\n${v}, value chosen for each player on the others: ` + players.map(p => `${p.slice(0, 18)} ${res[v].picks[p]}`).join(', '))
+);
+if (VARIANTS.length > 1) {
+  console.log(`\nPaired log-loss difference per answer against ${VARIANTS[0]} (negative: better), ± se [95%]:`);
+  console.log('group'.padEnd(20) + VARIANTS.slice(1).map(v => v.padEnd(34)).join(''));
+  ['all', ...G0].forEach(G => {
+    const keep = G === 'all' ? () => true : o => groupScores([o])[G];
+    console.log(
+      G.padEnd(20) +
+        VARIANTS.slice(1)
+          .map(v => {
+            const q = paired(res[VARIANTS[0]], res[v], keep);
+            return (q.n ? `${f(q.d, 4)} ± ${f(q.se, 4)} [${f(q.lo, 3)}, ${f(q.hi, 3)}]` : '-').padEnd(33) + ' ';
+          })
+          .join('')
+    );
+  });
+}
 if (OUT) fs.writeFileSync(OUT, JSON.stringify({res, ref}, null, 1));
 }
