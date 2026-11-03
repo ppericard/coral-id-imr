@@ -437,7 +437,13 @@ const server = http.createServer((req, res) => {
     // The admin page does the same (its demo mode: no token, nothing sent).
     const q = await ctx.newPage();
     await q.goto(base + 'admin.html?demo');
-    await q.waitForFunction(() => typeof UPDATED !== 'undefined' && navigator.serviceWorker.controller, null, {timeout: 20000});
+    // Loaded first (DRAFT is set after the last of its files), and its first page's photos in: a new worker takes over only
+    // once the old one has no fetch in flight. Published while start() still fetched cand.json, the new worker now and
+    // then stayed waiting past the 30 s below (Chromium, about 1 run in 8, 2026-11-03); that case is checked next.
+    await q.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera && navigator.serviceWorker.controller, null, {
+      timeout: 20000
+    });
+    await q.waitForLoadState('networkidle');
     await q.evaluate(() => (window.__old = 1));
     SWV = 2;
     await q.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
@@ -448,6 +454,23 @@ const server = http.createServer((req, res) => {
     await q
       .waitForFunction(() => !window.__old && location.hash === '#~cand', null, {timeout: 20000})
       .catch(() => fails.push('Admin: the page did not reload onto the new version at the next page change'));
+    // A version that takes over while the admin is still loading is seen too: the new worker waits for the old one's
+    // fetches still in flight, then takes over the moment the last ends, before start() goes on. admin.js listened only
+    // from the end of start() and missed it; whether it did depended on which came first, so what is checked is that it
+    // listens while start() still waits for its files (here cand.json never answers).
+    await ctx.route(/cand\.json/, () => {});
+    const q2 = await ctx.newPage();
+    await q2.addInitScript(() => {
+      const add = ServiceWorkerContainer.prototype.addEventListener;
+      ServiceWorkerContainer.prototype.addEventListener = function (t, ...a) {
+        if (t === 'controllerchange') window.__ccOn = 1;
+        return add.call(this, t, ...a);
+      };
+    });
+    await q2.goto(base + 'admin.html?demo', {waitUntil: 'domcontentloaded'});
+    await q2.waitForFunction(() => typeof UPDATED !== 'undefined', null, {timeout: 20000});
+    if (!(await q2.evaluate(() => window.__ccOn && !(typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera))))
+      fails.push('Admin: not listening for a new version while it loads');
     await ctx.close();
   }
   // 10. Load order. Home first: nothing of My progress or the Tools asked for before it shows; then the quiz's files,
