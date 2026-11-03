@@ -440,12 +440,18 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   s.h = ((s.h || '') + (good ? 1 : 0)).slice(-10); // recent results, newest last
   // Pierre's rule: a wrong answer also shows the genus given is not mastered, so it counts as a miss for it too. Without
   // the photo memory: the player's memory of a photo is of its own genus, the one shown; it says nothing of genus c.
+  // In the progress, its recent results and its runs; not in its Elo ability (2026-11-03, docs/LEARNING.md "The genus
+  // wrongly given in the Elo"): as in the Elo learner models of adaptive practice (Pelánek et al. 2017: a learner's
+  // knowledge of an item is not updated when it is a distractor), the ability moves on the questions about the genus
+  // itself. The step it had (a full miss on an average photo, its uncertainty never shrinking) made the app
+  // under-rate strong players: on the real answers, a strong RA's genera averaged 0.11 against 0.73 fitted, and the
+  // next answer is predicted better without it (log-loss 0.481 -> 0.465). The mix-up itself counts on the pair
+  // (s.conf: traps, duels, Again).
   if (!good && GX(c)) {
     const w = st(c);
     pgObs(c, w, false, pgMissW(ability(c), d0, k, rC)); // as for the genus shown: the photo's difficulty against its level
     w.h = ((w.h || '') + '0').slice(-10);
     w.streak = 0;
-    abilityStep(c, w, false, 0, k);
   }
   if (good && cor) s.cor = 1; // milestone: right with the corallites photo in view
   if (good && (cur.startsWith('quiz-duel') || (photoQuiz(cur) && AUTOD))) s.du = 1; // won a look-alike duel, in the Duel tab or slipped into the quiz (the duel achievement)
