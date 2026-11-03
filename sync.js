@@ -29,7 +29,8 @@ function loadStats() {
         PSTAT = j.photos;
         GDIFF = {}; // genus difficulties follow the new photo stats and confusions
         PCONF = j.conf || {};
-        store.set('imr-photo-stats', {t: Date.now(), photos: j.photos, conf: PCONF});
+        PMEM = memOf(j.mem); // photo memory offsets (sheet v26); the prior from an older sheet
+        store.set('imr-photo-stats', {t: Date.now(), photos: j.photos, conf: PCONF, ...(j.mem ? {mem: j.mem} : {})});
       }
     })
     .catch(() => {});
@@ -105,6 +106,7 @@ function mergeSaved(j) {
     store.set('imr-coral-reset', rr);
     holdIn(); // after the reset time is in: only the answers since then count
     store.set('imr-coral-progress', P);
+    if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
     prog();
     return;
   }
@@ -118,6 +120,7 @@ function mergeSaved(j) {
   SYNC.base = copy(R);
   store.set('imr-coral-sync', SYNC);
   store.set('imr-coral-progress', P);
+  if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
   prog();
 }
 // Pull, merge, then send. Every change bumps SYNC.rev; a send clears SYNC.dirty only if nothing changed

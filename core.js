@@ -71,12 +71,13 @@
         out = {...r};
       out.ok = Math.max(0, (r.ok || 0) + (l.ok || 0) - (b.ok || 0));
       out.ko = Math.max(0, (r.ko || 0) + (l.ko || 0) - (b.ko || 0));
-      const mine = (l.ok || 0) + (l.ko || 0) !== (b.ok || 0) + (b.ko || 0) || (l.h || '') !== (b.h || '');
+      // A record recalculated here for the photo memory (pm, memRecalc) counts as this device's model too.
+      const mine = (l.ok || 0) + (l.ko || 0) !== (b.ok || 0) + (b.ko || 0) || (l.h || '') !== (b.h || '') || (l.pm || 0) !== (b.pm || 0);
       out.streak = mine ? l.streak || 0 : r.streak || 0;
       if (mine && l.h) out.h = l.h;
       if (mine)
         // vr: the Elo step's volatility (app.js abilityStep), part of the model the device that played updated.
-        ['lv', 'run', 'L', 'pg', 'th', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
+        ['lv', 'run', 'L', 'pg', 'pm', 'th', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
@@ -149,6 +150,9 @@
       // The progress comes from the same account as the rest of the model, recomputed if it was saved before s.pg
       // (Codex review #367: an old main record let the other account's pg through).
       if (typeof main.pg === 'number' || main.h || typeof main.L === 'number') o.pg = pgOf(main);
+      // The photo memory mark goes with that progress (memRecalc): the other account's would leave it uncorrected.
+      if (main.pm) o.pm = main.pm;
+      else delete o.pm;
       o.ok = (x.ok || 0) + (y.ok || 0);
       o.ko = (x.ko || 0) + (y.ko || 0);
       o.streak = main.streak || 0;
@@ -243,20 +247,58 @@
     return out;
   }
 
-  // How much one answer moves the photos, as Code.gs PHOTO_W (v17): weight n / (n + N) after n answers of the player,
-  // and repeats counted against the player's history with the photo (new: NEW harder; right twice before: KNOWN easier).
+  // How much one answer moves the photos, as Code.gs PHOTO_W (v17): weight n / (n + N) after n answers of the player.
+  // NEW and KNOWN: the fixed memory rule of v17-v25 (a photo new to the player 0.5 harder, one right twice before 1
+  // easier), now only the prior of the estimated photo memory below (MEM).
   const PHOTO_W = {N: 10, NEW: 0.5, KNOWN: -1}; // v18: 10, was 30 (same reason)
   // Every player starts as a beginner (Code.gs PLAYER0): about 45% right on an average photo with 4 choices.
   const PLAYER0 = -1;
+  // Photo memory (Pierre, 2026-11-03: in a genus with few photos the same ones come back, players learn the photos
+  // rather than the genus, and that skews the photo difficulty and the player's progress). One rule for the sheet, the
+  // admin and the app: an answer on a photo is expected easier by an offset (logits subtracted from its difficulty) that
+  // depends on the player's own history with that photo, [times shown, times right] (H in the replay, s.ps in the app):
+  // bucket 0 new, 1 shown but never right, 2 right once, 3 right twice or more (memBucket). A question with several
+  // photos takes the mean offset of its photos (memFam). New is the reference, 0: a photo's rating is what a player meets
+  // on it the first time. The other three are estimated from the trusted answers, rated in the same replay as the photos
+  // and the players (eloReplay, Code.gs stats_, v26): after each answer, each offset its photos fall in moves by its
+  // surprise (right - expected) over the information gathered so far plus the prior's (a step of Newton's method on the
+  // log-likelihood, as Glicko moves a rating by what it learns over how sure it already is), the prior MEM.PRIOR weighing
+  // as much as MEM.N answers at the game's usual chance (80%, 4 choices). The prior is the old fixed rule (PHOTO_W) as
+  // offsets from a new photo: 0, -0.5, -0.5, -1.5; a bucket with few answers stays close to it. N 10: answers on a
+  // remembered photo are 90% right or more, where each tells little, so the 64 "right once" answers of the first 550
+  // move it about two thirds of the way to what they show (30: half way). ?stats=1 serves the estimate as mem (memn:
+  // answers behind each bucket); the app falls back to the prior with an older sheet (memOf). docs/LEARNING.md "Photo
+  // memory".
+  const MEM = {N: 10, PRIOR: [0, -PHOTO_W.NEW, -PHOTO_W.NEW, PHOTO_W.KNOWN - PHOTO_W.NEW]};
+  const memBucket = h => (!h || !h[0] ? 0 : !h[1] ? 1 : h[1] === 1 ? 2 : 3);
+  const memFam = (hs, mem) => (hs.length ? hs.reduce((t, h) => t + mem[memBucket(h)], 0) / hs.length : 0);
+  // The offsets of a ?stats=1 reply (mem, sheet v26), or the prior from an older sheet.
+  const memOf = m =>
+    Array.isArray(m) && m.length === 4 && m.every(x => typeof x === 'number' && isFinite(x)) ? m.slice() : MEM.PRIOR.slice();
+  // Fisher information of one answer at ability - difficulty x with k choices; the prior's weight is MEM.N of them at
+  // x = 1 with 4 choices (about 80% right), 0.135 each.
+  const infoAt = (x, k) => {
+    const s = 1 / (1 + Math.exp(-x)),
+      p = 1 / k + (1 - 1 / k) * s;
+    return ((1 - 1 / k) * s * (1 - s)) ** 2 / (p * (1 - p));
+  };
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
   // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them). Every answer
-  // moves the player's level; the photos move on trusted players' answers only (trustOf, v17), weighed as above.
-  // The replay behind eloOf (Code.gs stats_): photo ratings P and player levels R ([level, answers, information]).
+  // moves the player's level; the photos and the memory offsets move on trusted players' answers only (trustOf, v17),
+  // weighed as above. All against the same expectation, photo memory included (until v25 the level ignored memory
+  // and the photos used the fixed rule, so the two pulled apart).
+  // Returns the photo ratings P, the player levels R ([level, answers, information]), the memory offsets mem (rounded
+  // as served) and memn, the trusted answers behind each bucket (a question with several photos shares its answer
+  // between their buckets).
   function eloReplay(rows) {
     const P = {},
       R = {},
       H = {},
       trust = trustOf(rows),
+      mem = MEM.PRIOR.slice(),
+      I = [0, 0, 0, 0],
+      N = [0, 0, 0, 0],
+      tau = MEM.N * infoAt(1, 4),
       sig = x => 1 / (1 + Math.exp(-x));
     rows
       .slice()
@@ -269,24 +311,33 @@
           ra = (R[r[0]] = R[r[0]] || [PLAYER0, 0]);
         const ph = fs.map(f => (P[f] = P[f] || [0, 0, 0, 0])),
           b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
-        const d = ok - (g + (1 - g) * sig(ra[0] - b)),
+        const hs = fs.map(f => (H[r[0] + '|' + f] = H[r[0] + '|' + f] || [0, 0])),
+          s = sig(ra[0] - b - memFam(hs, mem)),
+          e = g + (1 - g) * s,
+          d = ok - e,
           n = ra[1];
-        const hs = fs.map(f => (H[r[0] + '|' + f] = H[r[0] + '|' + f] || [0, 0]));
         if (trust[r[0]]) {
-          const fam = hs.reduce((t, h) => t + (!h[0] ? PHOTO_W.NEW : h[1] >= 2 ? PHOTO_W.KNOWN : 0), 0) / hs.length;
-          const dp = ok - (g + (1 - g) * sig(ra[0] - b - fam)),
-            w = n / (n + PHOTO_W.N);
+          const w = n / (n + PHOTO_W.N),
+            D = (1 - g) * s * (1 - s),
+            v = Math.max(1e-6, e * (1 - e)),
+            A = [0, 0, 0, 0];
           ph.forEach(p => {
-            p[0] -= (0.8 / (1 + p[2] / 10) / ph.length) * dp * w;
+            p[0] -= (0.8 / (1 + p[2] / 10) / ph.length) * d * w;
             p[2] += w;
             p[1] += ok * w;
             p[3]++;
           });
+          hs.forEach(h => (A[memBucket(h)] += 1 / hs.length));
+          for (let j = 1; j < 4; j++)
+            if (A[j]) {
+              I[j] += (w * (D * A[j]) ** 2) / v;
+              mem[j] -= (w * d * D * A[j]) / v / (tau + I[j]);
+              N[j] += A[j];
+            }
+          N[0] += A[0];
         }
         // Fisher information about the level from this answer, on the same model as the level's step (levelMargin).
-        const s = sig(ra[0] - b),
-          p = g + (1 - g) * s;
-        ra[2] = (ra[2] || 0) + ((1 - g) * s * (1 - s)) ** 2 / Math.max(1e-6, p * (1 - p));
+        ra[2] = (ra[2] || 0) + ((1 - g) * s * (1 - s)) ** 2 / Math.max(1e-6, e * (1 - e));
         ra[0] += (0.6 / (1 + n / 40)) * d;
         ra[1]++;
         hs.forEach(h => {
@@ -294,7 +345,45 @@
           h[1] += ok;
         });
       });
-    return {P, R};
+    return {P, R, mem: mem.map(x => Math.round(x * 100) / 100), memn: N.map(x => Math.round(x * 10) / 10)};
+  }
+  // The photo memory offsets estimated from the answer log, as Code.gs ?stats=1 mem and memn.
+  function photoMemOf(rows) {
+    const {mem, memn} = eloReplay(rows);
+    return {mem, memn};
+  }
+  // Progress saved before the photo memory, recalculated once and silently (Pierre, 2026-11-03: the replay of the real
+  // answer log moved the bars down 1-3 points, so no pop-up). Every answer since the change weighs a right answer on a
+  // known photo x pgMemW (model.js); the answers before it counted in full. The device keeps no answer log for a
+  // signed-in player (the sheet has it), only each genus's record: its photos [shown, right] (s.ps). A uniform factor f
+  // on the right answers' weights multiplies the moving average's balance odds by f (pg = p w / (p w + (1 - p) m) for a
+  // success rate p, right weight w, miss weight m), so pg' = f pg / (f pg + 1 - pg), f the mean weight of the genus's
+  // right answers: of a photo's r right answers in n shows, r / n count as its first show (weight 1, a share as if right
+  // answers fell evenly on its shows) and the rest as repeats, at the weight of the bucket the photo has now, at the
+  // game's target (ability 1 above the photo, 4 choices). Approximate (no order is kept, misses on known photos are not
+  // redone): tools/memreplay.js prints it beside the full replay of the sheet's log. Never raises a bar. A learned genus is
+  // left alone (its exam showed photos never seen). Once per record: s.pm marks it (also set on a record that needed no
+  // change) and travels with s.pg between devices (mergeProgress, mergeUsers), so no device corrects a record twice; a
+  // record made after the change is marked at its first answer (quiz.js answer) and never corrected. Returns true when
+  // it marked the record now.
+  function memRecalc(s, mem) {
+    if (!s || typeof s !== 'object' || s.pm) return false;
+    s.pm = 1;
+    if (s.mx || typeof s.pg !== 'number' || !(s.pg > 0)) return true;
+    const e = x => 0.25 + 0.75 / (1 + Math.exp(-x));
+    let r = 0,
+      w = 0;
+    Object.values(s.ps || {}).forEach(h => {
+      if (!Array.isArray(h) || !(h[0] > 0) || !(h[1] > 0)) return;
+      const first = h[1] / h[0];
+      r += h[1];
+      w += first + (h[1] - first) * Math.min(1, e(1) / e(1 - mem[memBucket(h)]));
+    });
+    if (r && w < r) {
+      const f = w / r;
+      s.pg = Math.round(((f * s.pg) / (f * s.pg + 1 - s.pg)) * 1e4) / 1e4;
+    }
+    return true;
   }
   function eloOf(rows) {
     const {P} = eloReplay(rows);
@@ -847,6 +936,12 @@
     TRUST,
     PHOTO_W,
     PLAYER0,
+    MEM,
+    memBucket,
+    memFam,
+    memOf,
+    photoMemOf,
+    memRecalc,
     confusionOf,
     CONF,
     confScore,

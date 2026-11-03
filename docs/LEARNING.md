@@ -503,7 +503,9 @@ is a good mastery criterion.
   time only plans the questions after a break, "Comeback after a break").
 - **Photo difficulty left out** of `w`: simulated as a third factor (0.5 on an easy photo to 1 on a hard one), it only
   slowed everyone (an expert mastered 5 genera in 1000 questions instead of 16), which `A` already sets, and the traps
-  already come as a genus's photos get harder (both follow its Elo ability). One factor less (rule 14f).
+  already come as a genus's photos get harder (both follow its Elo ability). One factor less (rule 14f). Only the part
+  of a right answer that the player's memory of the photo explains is taken off (since 2026-11-03, `pgMemW`: "Photo
+  memory", below); a right answer on a photo new to the player keeps its full weight.
 - **Progress saved before `s.pg`** (`pgOf`, the same in the app, `core.js` and the sheet): BKT's L is ignored; the
   device holds no answer log, only the last 10 results of each genus (`s.h`), so those are replayed from 0, a right
   answer weighed `PROG.OLD` = 0.67 (what it proved is not known: the middle weight), a miss in full. Simulated (the
@@ -518,7 +520,8 @@ is a good mastery criterion.
   Choices): ROADMAP.
 - **Removed**: `BKT` (7 constants), `bktStep`'s guess and slip formula, `bktStart`, the "a miss never raises L" patch,
   the photo familiarity offsets of `answer()` (`bk`: +0.5 for a new photo, −1 for one right twice; the sheet's `stats_`
-  keeps its own copy for the photo ratings, `PHOTO_W`).
+  keeps its own copy for the photo ratings, `PHOTO_W`). They came back on 2026-11-03 as the photo memory estimated from
+  the answers, the same in the sheet and the app ("Photo memory", below).
 
 Simulation (6 seeds: 11, 222, 3333, 44444, 555, 6666; four profiles: a beginner, a lecture-level RA who knows 60% of
 the genera, a quarter more half, a strong RA who knows 60% of the genera well, an expert; the scratch harness of
@@ -563,7 +566,7 @@ learned 9.8 genera in 1000 questions instead of 16.5); 0.8 is the success the ga
 prove something. To recalibrate with real answers: the per-genus success on look-alike questions of
 RAs who then pass the exam.
 
-## Pooled statistics: photo difficulty and confusions (sheet v17-v18, 2026-11-02)
+## Pooled statistics: photo difficulty and confusions (sheet v17-v18, 2026-11-02; photo memory v26, 2026-11-03)
 
 Photo difficulty feeds every player's game (which photos, how hard), and confusions pick the traps. They must reflect
 real learners, not bots, random clicks or test runs (17 anonymous "players" turned out to be `tools/perf.js` runs).
@@ -575,13 +578,210 @@ real learners, not bots, random clicks or test runs (17 anonymous "players" turn
 - **How much an answer weighs** (`PHOTO_W.N`; the sheet also returns the plain count of the answers, v18, which the
   admin's filters use): n / (n + 10) after n answers of the player (n + 30 in v17) (Glicko's idea: an uncertain
   player moves the items little). A beginner's random first answers weigh little, their informed later ones more.
-- **Repeats** (`PHOTO_W.NEW`, `KNOWN`): every answer counts, against the player's own history with the photo, as in
-  Duolingo's half-life regression and PFA: a photo new to the player is expected 0.5 harder, one already right twice 1
-  easier (the rule the app's BKT used until 2026-11-02). Counts grow by the weight too (they damp later steps and are the app's confidence in a
-  rating).
+- **Repeats**: every answer counts, against the player's own history with the photo, as in Duolingo's half-life
+  regression and PFA. v17-v25: a fixed rule (`PHOTO_W.NEW`, `KNOWN`), a photo new to the player expected 0.5 harder, one
+  already right twice 1 easier (the rule the app's BKT used until 2026-11-02), for the photo's step only (the player's
+  level ignored it). Since v26 the photo memory is estimated from the answers and used by the app too ("Photo memory",
+  below). Counts grow by the weight too (they damp later steps and are the app's confidence in a rating).
 - **Everyone starts as a beginner** (`PLAYER0` = −1, about 45% right on an average photo with 4 choices): starting at 0
   (average), a beginner's misses made the photos look harder.
 - A corallites hint left closed is not logged with the answer (not seen when answering). Names are matched case-blind.
+
+### Photo memory (sheet v26, 2026-11-03)
+
+Pierre: in a genus with few photos in the game, the same photos come back, players learn the photos rather than the
+genus, and that skews both the photo difficulty and the player's progress. The number of game photos differs a lot
+from one genus to another (and changes as photos are added): the genera with few photos are where repeats come first.
+
+Measured on about 550 real photo-quiz answers, against the app's logged expectation (Answers column I, which ignored
+memory):
+
+| Photo state | Answers | Right | Expected |
+| --- | --- | --- | --- |
+| never shown to the player | 463 | 83% | 76% |
+| shown, never right | 20 | 85% | 72% |
+| right once before | 64 | 95% | 76% |
+| right twice or more | 9 | 100% | 77% |
+
+22% of the questions of the genera with few photos showed a photo already seen, 6% for the genera with many.
+Over a photo new to the player, memory adds about +0.4 logits once shown and +1.4 once answered right (the 9 answers
+right twice or more cannot say how much more). The app's expectation ignored it; the sheet's photo rating used a fixed
+rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing for right once), for the photo's step only.
+
+**One rule, measured from the data, in the sheet, the admin and the app** (`core.js` `MEM`, `memBucket`, `memFam`,
+`eloReplay`; `Code.gs` `stats_` in step, checked by `tests/core.test.js`):
+
+- **Buckets** of the player's history with a photo, [shown, right] (the sheet's `H`, the app's `s.ps`): new, shown
+  never right, right once, right twice or more. A question's offset is the mean over its photos seen when answering (a
+  corallites hint left closed is not). Four buckets, not a smooth function of the right count: the data have 9 answers
+  beyond right once.
+- **New is the reference** (offset 0): a photo's rating is its difficulty for a player meeting it the first time,
+  which is what the game targets and what the exam shows. Before, the level step ignored memory while the photo step
+  used the fixed rule, so the two pulled the ratings apart; now both move against the same expectation.
+- **Estimated in the replay itself**, on the trusted answers weighed by experience as for the photos (`trusted_`,
+  `PHOTO_W.N`): after each answer, each offset its photos fall in moves by the surprise (right − expected) over the
+  information gathered so far plus the prior's, a Newton step on the log-likelihood (as Glicko moves a rating by what it
+  learns over how sure it already is). **Prior**: the old rule as offsets from a new photo, 0 / −0.5 / −0.5 / −1.5
+  (`PHOTO_W` kept for that only), weighing `MEM.N` = 10 answers at the game's usual chance (80%, 4 choices). Answers on
+  a remembered photo are 90% right or more, where each says little, so the 64 "right once" answers move that bucket
+  about two thirds of the way to what they show (N 30: half way). Tried first: Newton passes over the whole log, the
+  ratings refitted each time. On simulated logs they needed 10 to 25 passes to converge, the photo ratings absorbing part
+  of the offset between passes; the estimate inside the replay matched them in one pass, with no iteration count.
+- **Checked on simulated logs** (`tests/core.test.js`; 12 players, 240 photos): a true memory of 0 / −0.4 / −1.5 / −2
+  comes out −0.73 / −1.38 / −1.83 from 3,000 answers, −0.36 / −1.43 / −1.82 from 20,000; no memory at all gives
+  −0.30 / 0.00 / −0.27. Limit: the "shown never right" bucket picks up about −0.3 of the Elo's own catch-up after a
+  miss (a miss leaves the photo rated a little too hard and the player too low, so the next answer on that photo beats
+  the expectation), and right twice keeps some of the prior while it has few answers.
+- **On the current data** (estimated offline from the table above, every answer of a bucket at its mean expectation,
+  shifted so the "new" row fits): about 0 / −0.44 / −1.1 / −1.7 (without the prior: −0.39 / −1.41 / unbounded). The
+  sheet computes the real values from every answer and serves them in `?stats=1` (`mem`, with `memn`, the trusted
+  answers behind each bucket); the app uses them (`model.js` `PMEM`), the prior with an older sheet or offline.
+
+**In the app** (`quiz.js` `answer`, `model.js` `famOf`, `pgMemW`):
+
+- **The expectation** of a question includes the offset of its photos as the player knew them before answering: the
+  ability step and the global level's, the logged `e` (Answers column I, which the sheet's opening hold replays), the
+  opening hold itself and the comeback's CUSUM all use it. So a right answer on a known photo raises the ability less,
+  and the hold does not count a remembered photo as proof of a good run.
+- **A right answer counts in the progress only for what memory does not explain** (`pgMemW`, the mirror of `pgMissW`,
+  a ratio of chances like it): its weight is multiplied by the chance the player had on the same photos new over the
+  chance they had with their memory, at most 1: the share of such right answers that would have come without the
+  memory. A right answer on a new photo keeps its full weight (the photo-difficulty factor on every right answer only
+  slowed everyone, above). At the game's target (ability 1 above the photo, 4 choices), with the offsets above: × 0.93
+  shown never right, × 0.87 right once, × 0.84 right twice or more; more off where the photo is hard for the player
+  (memory lifts a low chance more). Tried first: the room for surprise left, (1 − chance with memory) / (1 − chance
+  new), × 0.71 / 0.41 / 0.23. Simulated (below, 30 seeds), it over-corrected: the progress of a learner who remembers
+  photos fell 0.1 below that of a learner who does not (memory had lifted it by only 0.03-0.04), and the genera learned
+  by question 600 fell by half (expert 7.6 → 3.6, strong RA entering the exam 12.5 → 5.2). Memory adds most where the
+  chance is middling, and the app's ability, which under-rates the simulated players, put the chance there, so that
+  rule took off far more than memory had added.
+- **Misses on a known photo** (thought through as asked): the miss weight is the chance the player really had over the
+  chance the game aims for, at most 1 (`pgMissW`, Pierre 2026-11-02: a miss must not cost more than it proves); with
+  memory the chance was higher, so a miss on a known photo weighs more than the same miss on a new photo, in full from
+  the target down. That is what it proves: the player had been shown the answer on that very photo (after a miss, the
+  feedback shows the genus; after a right answer, they had found it) and still missed, which says the genus is not
+  held. Lighter (the memory failed, not the genus) was rejected: memory only makes the photo easier, it never makes a
+  miss likelier. Heavier than in full was rejected too (the cap stays). In the Elo the miss is a bigger surprise, so the
+  ability drops more; over many answers the extra drops balance the smaller rises after right answers on known photos,
+  which is what keeps the ability unbiased. The genus wrongly given (rule 13) gets no memory term: the player's memory of
+  a photo is of the genus shown, it says nothing about the other one.
+- **Spread the repeats** (`photoSet`): in ordinary questions a photo already shown weighs × e^offset of its bucket
+  (the odds memory adds to a right answer on it, divided out), × 0.64 / 0.33 / 0.18 with the offsets above (before: × 0.6
+  from right twice only, nothing before). A soft factor in the existing targeting, never a filter: a genus whose photos
+  are all known still shows them, the least remembered first. The photos never shown keep their bonus (× (1 + 1.5 ×
+  recent success), × 1.3 for IMR and Pierre's photos). The targeting distance stays on the photo's difficulty when new:
+  aiming at a known photo's lower effective difficulty would hand a struggling player the photos they remember, the
+  opposite of the point. Measured in the genera with the fewest photos (2026-11-03; 3 colonies of each tried, 1000
+  draws), every photo already shown and right twice but one colony's, shown never right: that colony comes up × 1.45 as often as when all
+  are known alike (median; 1.1-2.5), × 1.1 with the old rule (0.9-2.0); a colony never shown × 2.4 (1.3-4.5) against
+  × 1.7 (1.3-3.2). The floor of 3 colonies in rotation (`VARIETY`) keeps it from more; `tests/draw.smoke.js` checks
+  × 1.25 or more. The exam keeps its own rule (never shown first).
+- **Saved progress recalculated once, silently** (Pierre, 2026-11-03: the replay of the real answer log moved the
+  bars down 1-3 points, and one player lost Advanced on 2 genera, accepted; no pop-up, no message, an exception to
+  AGENTS.md "How to make a change" 12). The device holds no answer log for a signed-in player, only each genus's record,
+  so the correction comes from it (`core.js` `memRecalc`): a uniform factor f on the right answers' weights multiplies
+  the moving average's balance odds by f, so `pg` becomes f·pg / (f·pg + 1 − pg), f the mean memory weight (`pgMemW` at
+  the game's target) of the genus's right answers, read from its photos [shown, right] (`s.ps`: of a photo's r right
+  answers in n shows, r / n count as its first show, the rest as repeats in the bucket the photo has now). It never
+  raises a bar and leaves a learned genus alone (its exam showed photos never seen). Once per genus record: `s.pm`
+  marks it, even when nothing changed, and travels with `s.pg` between devices and accounts (`mergeProgress`,
+  `mergeUsers`), so no record is corrected twice; it runs at load and after each pull of the synced progress
+  (`model.js` `memRecalcAll`, `sync.js`), and `quiz.js` `answer` marks a record before its first answer under the new
+  rule, so a record made since is never corrected. Saved and synced when it changed something; the sheet's leaderboard
+  % follows at the player's next sync. Approximate (no order, misses on known photos not redone): on a made-up log
+  with 55-60% repeats it took off about half of what the full replay does (72% → 70% where the replay gives 68%); with
+  the real repeat rates (6-22%) the difference is about a point. `tools/memreplay.js` prints both, per genus, on the
+  real log. Checked by `tests/core.test.js` (once, never raised, learned left alone, the mark through both merges) and
+  `tests/draw.smoke.js` (applied once at load, saved, no pop-up, not again at the next answer).
+- **What it does to the current players**: `node tools/memreplay.js answers.json [--player id] [--mem ...]` replays
+  the admin's answer log (`readAnswers`, saved to a file) under the old rule and the new one: the offsets these answers
+  give, how far the photo ratings move, and per player the bar of each genus, their overall % and their opening hold,
+  old -> new (each question's difficulty recovered from the expectation and ability the app logged; approximations
+  listed at the top of the tool).
+
+**Simulated** (`tools/learnsim.js`, its learner given a photo memory of 0 / +0.4 / +1.5 / +2 logits, "Learning-outcome
+simulation" below; 30 seeds × 600 questions, the four usual profiles, the photo stats of 2026-11-03 with the offsets
+above as a v26 sheet would serve them, the same seeds in every column). "Without memory" is the learner of before (`--mem
+0`): what the app should read when memory explains nothing. Each cell: genera with few photos / with many (the tool's `LEARNER.FEW` and `MANY` thresholds).
+
+Progress bar minus true knowledge, genera met, at question 600 (below 0: the bar under-claims, as it always has):
+
+| Profile | learner without memory, app before | with memory, before | with memory, after | without memory, after |
+| --- | --- | --- | --- | --- |
+| beginner | −0.25 / −0.23 | −0.22 / −0.19 | −0.27 / −0.24 | −0.30 / −0.24 |
+| lecture RA | −0.22 / −0.18 | −0.18 / −0.15 | −0.22 / −0.17 | −0.25 / −0.20 |
+| strong RA | −0.13 / −0.12 | −0.10 / −0.09 | −0.14 / −0.11 | −0.15 / −0.13 |
+| expert | −0.06 / −0.04 | −0.05 / −0.04 | −0.05 / −0.03 | −0.06 / −0.04 |
+
+Elo ability minus logit(true knowledge), genera met, at question 600 (the Elo under-rates every simulated player,
+"Learning-outcome simulation"):
+
+| Profile | without memory, before | with memory, before | with memory, after | without memory, after |
+| --- | --- | --- | --- | --- |
+| beginner | −1.72 / −1.97 | −1.53 / −1.72 | −1.83 / −2.08 | −2.11 / −2.13 |
+| lecture RA | −1.78 / −1.94 | −1.66 / −1.75 | −1.83 / −1.93 | −2.03 / −2.07 |
+| strong RA | −1.95 / −2.16 | −1.79 / −2.01 | −2.05 / −2.21 | −2.13 / −2.28 |
+| expert | −1.39 / −1.49 | −1.34 / −1.42 | −1.46 / −1.45 | −1.51 / −1.51 |
+
+Questions showing a photo already shown to the player, by question 600 (the right % on those):
+
+| Profile | without memory, before | with memory, before | with memory, after |
+| --- | --- | --- | --- |
+| beginner | 45 / 40% (92 / 93%) | 42 / 38% (97 / 97%) | 42 / 35% (97 / 97%) |
+| lecture RA | 40 / 34% (92 / 95%) | 40 / 33% (97 / 97%) | 36 / 29% (97 / 98%) |
+| strong RA | 36 / 26% (95 / 96%) | 35 / 25% (97 / 98%) | 31 / 21% (98 / 98%) |
+| expert | 30 / 19% (98 / 97%) | 31 / 18% (100 / 99%) | 27 / 14% (99 / 99%) |
+
+Mastery exam by question 600, per run: genera that entered it, and learned; in brackets their true success then on the
+hard reference question (a photo never seen):
+
+| Profile | without memory, before | with memory, before | with memory, after |
+| --- | --- | --- | --- |
+| beginner, entered / learned | 0.7 / 0.7, 0.0 / 0.1 (0.97) | 0.9 / 0.9, 0.1 / 0.1 (0.89 / 0.83) | 0.6 / 0.7, 0.0 / 0.1 (0.92) |
+| lecture RA | 1.0 / 1.4, 0.1 / 0.1 (0.92 / 0.90) | 1.8 / 1.3, 0.2 / 0.2 (0.92 / 0.93) | 0.9 / 1.2, 0.1 / 0.1 (0.93) |
+| strong RA | 3.6 / 3.1, 0.3 / 0.5 (0.97) | 4.4 / 3.8, 0.6 / 0.8 (0.95 / 0.97) | 3.0 / 3.4, 0.2 / 0.5 (0.95 / 0.97) |
+| expert | 8.5 / 5.9, 2.0 / 2.0 (0.94) | 8.9 / 6.4, 2.5 / 2.4 (0.94) | 8.1 / 6.3, 2.3 / 1.9 (0.94) |
+
+Over the slate, with memory, before → after (mean over the 30 seeds; the learner without memory on the old app in
+brackets):
+
+| Profile, question | genera met | learned | progress | true knowledge | right % | entered the exam | true ref. success at entry / learned |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| beginner 300 | 35.4 → 29.9 (32.0) | 0 → 0 | 35 → 31% (32) | 0.60 → 0.55 (0.57) | 85 → 87 | 0.2 → 0.0 | - |
+| beginner 600 | 40 → 39.8 (40) | 0.2 → 0.2 (0.1) | 65 → 60% (61) | 0.86 → 0.84 (0.85) | 88 → 89 | 2.7 → 2.1 (2.2) | 0.85 → 0.85 / 0.87 → 0.92 |
+| lecture RA 300 | 39.2 → 38.3 (39.2) | 0 → 0 | 43 → 41% (42) | 0.74 → 0.73 (0.74) | 85 → 86 | 0.4 → 0.2 | 0.85 → 0.86 / - |
+| lecture RA 600 | 40 → 40 | 0.6 → 0.2 (0.3) | 73 → 70% (70) | 0.90 → 0.90 | 91 → 90 | 5.2 → 3.6 (3.9) | 0.87 → 0.88 / 0.92 → 0.93 |
+| strong RA 300 | 40 → 40 | 0 → 0 | 54 → 53% (53) | 0.85 → 0.85 | 87 → 88 | 1.0 → 0.6 (1.0) | 0.92 → 0.93 / - |
+| strong RA 600 | 40 → 40 | 1.8 → 1.2 (1.3) | 84 → 81% (82) | 0.94 → 0.94 | 94 → 93 | 12.5 → 9.9 (10.2) | 0.92 → 0.93 / 0.96 → 0.97 |
+| expert 300 | 40 → 40 | 0.4 → 0.3 (0.5) | 65 → 65% (65) | 0.95 → 0.95 | 96 → 96 | 3.0 → 3.0 (3.3) | 0.92 → 0.92 / 0.93 → 0.93 |
+| expert 600 | 40 → 40 | 7.6 → 6.3 (6.3) | 93 → 92% (92) | 0.97 → 0.97 | 98 → 98 | 24.2 → 23.1 (22.4) | 0.92 → 0.92 / 0.94 → 0.94 |
+
+What it says, on this learner:
+
+- **Memory inflated the app's reading before**: the progress by +0.03 to +0.04 over the genera met (expert +0.01),
+  the ability by +0.05 to +0.25 logits, and the exam came sooner (strong RA 12.5 genera entered by question 600 against
+  10.2 without memory, expert 7.6 learned against 6.3, lecture RA 5.2 / 0.6 against 3.9 / 0.3); a beginner opened
+  genera faster (35 met by question 300 against 32), the inflated ability making fewer genera look shaky.
+- **After, the progress and the exam match the learner without memory** (within 0.01-0.02 on the bar; exam entries,
+  learned genera, overall progress within the spread): memory no longer counts as knowledge, and no one is slowed
+  beyond that. The ability goes a little past it, up to 0.11 logits below the reference at question 600 (0.16 for
+  the beginner at 300; the Elo step takes the full
+  offset; the simulated players' abilities sit far below their truth, where memory seems to add more than it does),
+  which also slows the beginner's opening a little (29.9 genera met by question 300 against 32.0).
+- **The exam was never fooled**: the true success when learned is the same in every column (0.92-0.97, expert 0.94),
+  because the exam shows photos never seen. What memory moved was when genera reached it.
+- **Few against many photos**: in this simulation memory inflated the two groups about alike, because its own draws
+  repeat photos almost as often in the genera with many photos (38% against 42% for the beginner) as in those with
+  few, against 6% and 22% in the real answers (players have answered far fewer questions per genus than 600
+  simulated questions over 40 genera). Spreading the repeats lowers them by 3 to 4 points in genera with many photos,
+  0 to 4 in those with few (fewer new photos to show there; `tests/draw.smoke.js` checks the effect on one genus).
+- **Cost for a player with no memory at all** (last column): the app still takes the measured memory off, so such a
+  player's bar sits 0.01-0.05 lower and a beginner meets 27.7 genera by question 300 (32.0); real players do remember,
+  which the offsets are measured from.
+- **Soundness** (`tests/profiles.smoke.js`, 6 seeds each side): no genus at 95% before being asked beside a
+  look-alike, every check passing; beginner genera met at question 100 11.5 → 11.3, expert genera half way at 300
+  34.7 → 35.3, lecture RA progress at 300 27.8 → 25.5%. The CI seed's beginner went from 16 genera at question 100 (the
+  limit) to 17, so the limit is 17 (one draw, not a faster opening: 30 learnsim seeds give 16.5 → 15.7).
 
 ## Considered and not adopted
 
@@ -693,10 +893,11 @@ untouched; only the player is simulated) and measures what the simulated players
 estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minutes; numbers for reading).
 
 - **Run**: `node tools/learnsim.js [--seeds 30] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
-  [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...]`. Each run (profile × seed) gets a fresh browser context; seeds
+  [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...] [--mem 0,0.4,1.5,2]`. Each run (profile × seed) gets a fresh browser context; seeds
   are 1..N, the app's `Math.random` and the learner's own generator both seeded from it, so a run is reproducible and
   the same seeds before and after a change give paired comparisons. `--stats` loads a `?stats=1` answer of the sync
-  sheet as the photo ratings (default: none, Pierre's Easy/Medium/Hard sets, as in CI). `--out` writes every run and
+  sheet as the photo ratings (default: none, Pierre's Easy/Medium/Hard sets, as in CI; its `mem`, sheet v26, the app's
+  photo memory offsets). `--out` writes every run and
   the summary as JSON. 30 seeds × 4 profiles × 300 questions: about 9 minutes on 4 cores (with the question planner running between answers, as in the app: Codex review #365).
 - **Profiles**: beginner (knows every genus at 2%, learns 0.12 of the gap per exposure), lecture-level RA (the profiles
   test's RA: 55% on 2 genera in 5, 10% on the others, 0.12), strong RA (85% on 3 genera in 5, 10% on the others, 0.12),
@@ -710,6 +911,13 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   After each answer the genus shown gains rate × (1 − know), 1.5 × that after a miss (the side-by-side montage), the
   genus wrongly picked 0.5 × that; a first-meeting card teaches like one answer. No forgetting, except across a break
   (`--breaks`, below).
+- **Photo memory** (2026-11-03; `LEARNER.MEM`, `--mem`; `--mem 0` is the learner before): the learner remembers each
+  photo it was shown when answering, [shown, right], and recognising gets `MEM` logits more, averaged over the photos
+  shown: new 0, shown never right 0.4, right once 1.5, right twice or more 2. Our assumption, close to the real answers
+  ("Photo memory" above: right once about +1.4 over a new photo, shown never right +0.4, right twice 9 of 9). Memory
+  helps on that photo only: it teaches nothing more about the genus, and the hard reference question (a photo never
+  seen) ignores it, so what memory adds to the answers is exactly what the app must not count as knowledge. It does not
+  fade across `--breaks` (a limit).
 - **Breaks** (`--breaks 10m,30m,1h,3h,8h,3d,1w,1mo [--after 20]`, optional; without it nothing changes): the app runs
   on a virtual clock (10 s an answer); after the first session (`--questions`) the player leaves for each break in turn,
   each from the same state (the generators seeded again per break), forgets, and comes back: the second session runs
@@ -730,6 +938,11 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   entered the mastery exam (`examOn`, first time), and their true reference success at that moment and when learned.
   Per run, the question at which each genus was first met (`metAt`), printed as the median per profile for the genera
   of `--met` (default the five most common at Dauin; a run where it was not met counts as later than the last question).
+  **By photo count** (photo memory): the slate genera with few game photos (at most `LEARNER.FEW`) against those with
+  many (at least `MANY`), at each checkpoint: the questions so far showing a photo
+  the learner had already been shown, the right % on all and on those repeats, progress minus know and θ − logit(know)
+  over the genera met, genera learned; and, pooled over the runs, the genera that entered the exam or were learned, their
+  true reference success then and the median question.
 - **Limits**: the learner is ours, a few round numbers, not fitted to real answers; the photo difficulty it meets is the
   app's own estimate (so photo calibration cannot be judged); learning is per genus only (a duel or a montage teaches
   the two genera, not the pair as such); no forgetting (except across `--breaks`), no fatigue; the RA profiles know a fixed set of genera (every
@@ -811,6 +1024,12 @@ the exam then keeps the genera learned at 0.82-0.93 true reference success.
 - 2026-11-03, Pierre: open the genera "easy and common first": `cm` from iNaturalist near Dauin (geometric mean of
   observations and observers, `tools/commonness.py`), one factor √((1 + cm) / (1 + median)) on the opening weight, no new
   constant ("Common first").
+- 2026-11-03, Pierre: photo memory, points 1 and 2 of the proposal ("Photo memory"): one rule in the sheet (v26) and
+  the app, estimated from the trusted answers with the old fixed rule as prior; the app's expectation includes it, a
+  right answer on a known photo counts in the progress only for what memory does not explain (a ratio of chances, after
+  the room-for-surprise version over-corrected in the simulation), misses weigh the chance the player had; ordinary
+  questions weigh a photo already shown e^offset. Point 3 (more photos for the thinnest genera) stays with Pierre.
+  Then, after the replay of the real log (bars down 1-3 points): everyone's saved progress recalculated once, silently.
 
 ## References
 

@@ -173,6 +173,65 @@ const server = http.createServer((req, res) => {
       far = Object.keys(DATA.gen).find(n => n !== t && pooledConf(t, n) < CONF.TRAP && !isLook(t, n) && !confusable(t, n));
     if (la && far && !(pgWeight(t, [t, la], 2) > pgWeight(t, [t, far], 2) && pgWeight(t, [t, la], 4) > pgWeight(t, [t, la], 2)))
       fails.push(`${t}: progress weights do not favour look-alikes and more choices`);
+    // Photo memory (model.js famOf, pgMemW; docs/LEARNING.md "Photo memory"): a right answer on a photo the player got
+    // right twice before is expected easier (logged e), raises the ability and the progress less than one on a new photo.
+    {
+      const ph = pics.slice(0, 1),
+        log = () => (SYNC ? SYNC.log : store.get(LOG0, [])).slice(-1)[0] || {},
+        one = known => {
+          P[t] = {ok: 10, ko: 2, h: '1101101', th: 1, pg: 0.4, pm: 1, ps: known ? {[ph[0].f]: [2, 2]} : {}};
+          answer('quiz', t, t, ph, false, null);
+          return {pg: P[t].pg, th: P[t].th, e: log().e};
+        },
+        k0 = one(false),
+        k1 = one(true);
+      if (!(k1.pg < k0.pg && k1.th < k0.th && k1.e > k0.e))
+        fails.push(`photo memory: a right answer on a known photo ${JSON.stringify(k1)}, on a new one ${JSON.stringify(k0)}`);
+    }
+    // Progress saved before the photo memory: recalculated once, silently, saved (model.js memRecalcAll, core.js memRecalc);
+    // not again at the next load or pull, nor at the next answer.
+    {
+      const f0 = pics[0].f,
+        f1 = (pics[1] || pics[0]).f;
+      P[t] = {ok: 20, ko: 4, h: '1111011111', th: 1, pg: 0.7, ps: {[f0]: [4, 3], [f1]: [3, 0]}};
+      const ch1 = memRecalcAll(),
+        pg1 = P[t].pg,
+        kept = (store.get('imr-coral-progress', {})[t] || {}).pg,
+        ch2 = memRecalcAll();
+      if (!ch1 || ch2 || !(pg1 < 0.7) || P[t].pm !== 1 || kept !== pg1)
+        fails.push(`silent recalculation: ${JSON.stringify({ch1, ch2, pg1, kept, pm: P[t].pm})}`);
+      if (document.querySelector('.recalc')) fails.push('silent recalculation: a pop-up showed');
+      const before = P[t].pg;
+      answer('quiz', t, t, pics.slice(0, 1), false, null);
+      if (P[t].pm !== 1 || memRecalc(P[t], PMEM) || !(P[t].pg > before))
+        fails.push(`after the recalculation, a right answer: ${before} -> ${P[t].pg} (pm ${P[t].pm})`);
+    }
+    // Spread the repeats: in the genus with the fewest game photos, every photo already shown, all right twice but one
+    // colony's never right: that colony comes up more often than when all are equally known (a soft factor, never a
+    // filter: the photos all known still come up).
+    {
+      const nph = n => new Set(VIEWS.flatMap(([v]) => gamePics(n, v, 'hard').map(x => x.f))).size,
+        n = slateGenera().reduce((a, x) => (nph(x) < nph(a) ? x : a)),
+        files = VIEWS.flatMap(([v]) => gamePics(n, v, 'hard')),
+        cols = [...new Set(files.map(key))],
+        c0 = cols[0],
+        share = ps => {
+          let hit = 0;
+          for (let i = 0; i < 1000; i++) {
+            P[n] = {ok: 20, ko: 4, h: '1101101', th: 0.5, pg: 0.5, ps};
+            if (photoSet(n).shown.some(x => key(x) === c0)) hit++;
+          }
+          return hit / 1000;
+        },
+        all = Object.fromEntries(files.map(x => [x.f, [3, 2]])),
+        even = share(all),
+        favour = share({...all, ...Object.fromEntries(files.filter(x => key(x) === c0).map(x => [x.f, [1, 0]]))});
+      // Measured 2026-11-03 on the genera with the fewest photos: x 1.4-1.5 (the old rule, x 0.6 from right twice: 1.0-1.1).
+      if (cols.length < 2 || !(favour > 1.25 * even) || !(even > 0))
+        fails.push(
+          `${n} (${files.length} photos, ${cols.length} colonies): the least remembered colony came up ${favour} (all known alike: ${even})`
+        );
+    }
     // Exam photos are never-seen ones while some remain.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ps: {}};
     const v0 = examSet(t).shown[0];
