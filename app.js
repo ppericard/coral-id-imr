@@ -473,7 +473,16 @@ addEventListener('popstate', () => {
   else if ((history.state || {}).lb) history.back();
 });
 const VIEW_LABEL = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites', close: 'Close-up'};
+// The enlarge mark on photos that open this viewer (quiz, duels, genus sheet; Pierre, 2026-11-03: almost no player
+// enlarged a quiz photo, 0-2% of answers for all but one, so most did not know they could). A magnifier with a plus in a
+// corner, from the app's SVG set; decorative, the button around it carries the label "Enlarge photo".
+const ZOOMI =
+  '<span class="zic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4M11 8.5v5M8.5 11h5"/></svg></span>';
+// The one-time "Tap a photo to see it bigger" hint (quiz.js zoomHint): 'seen' once shown, 'zoomed' once a photo has been
+// enlarged on this device; either way it is never due again. Per device, not part of the progress.
+const ZHINT_KEY = 'imr-zoomhint';
 function zoom(list, i, opts = {}) {
+  if (store.get(ZHINT_KEY, null) !== 'zoomed') store.set(ZHINT_KEY, 'zoomed');
   const blind = () => (opts.blind ? opts.blind() : false);
   const show = () => {
     const p = list[i],
@@ -999,9 +1008,11 @@ const MODES = {
     ['cmp', 'Look-alikes', 'Classic look-alikes, one pair per screen']
   ],
   practice: [
-    ['quiz', 'Photo → genus', 'Name the genus'],
-    // Phones: "Custom" and "Duels", so the four tabs fit 360 px without scrolling (rule 20).
-    ['quiz-custom', 'Custom<span class="wide"> quiz</span>', 'The photo quiz on the genera you pick'],
+    // "Quiz", not "Photo → genus" (Pierre, 2026-11-03: it is a general quiz now, typed answers and duels slipped in); the
+    // ids and routes stay (#quiz, quiz|… in the answer log). Phones: "Duels", so the four tabs fit 360 px without
+    // scrolling (rule 20): Quiz, Custom quiz, Duels, Memory take 262 of 328 px there; "Look-alike duels" would leave 2 px.
+    ['quiz', 'Quiz', 'Name the genus'],
+    ['quiz-custom', 'Custom quiz', 'The quiz on the genera you pick'],
     ['quiz-duel', '<span class="wide">Look-alike duels</span><span class="narrow">Duels</span>', 'Two genera often confused'],
     ['pairs', 'Memory', 'Match colony and corallites']
   ],
@@ -1173,7 +1184,7 @@ function route() {
   else if (h === 'quiz') quizPhoto();
   // The custom quiz (quiz.js): its selection screen, and the quiz on the genera picked.
   else if (h === 'quiz-custom' || h === 'quiz-custom|play') quizCustom(h);
-  // Lecture photos are now a photo set of Photo -> genus.
+  // Lecture photos are now a photo set of the Quiz.
   else if (h === 'quiz-course')
     location.replace('#quiz'); // the Lecture photo set was removed (Pierre, 2026-10-31)
   else if (h === 'progress' || h === 'quiz-board') quizBoard();

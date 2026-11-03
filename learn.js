@@ -199,8 +199,9 @@ function viewGenus(name) {
       const list = inView(v);
       if (g.levels === 2 && v === 'macro') label = 'Close-up';
       const fig = p => {
-        const i = flat.findIndex(x => x.f === p.f);
-        return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${esc(name)}, ${p.imr ? 'IMR lecture photo' : label.toLowerCase() + ' view'}" loading="lazy"></button><figcaption>${p.imr ? `<b class="lect">IMR lecture</b> · slide ${p.slide}` : credit(p)}</figcaption></figure>`;
+        const i = flat.findIndex(x => x.f === p.f),
+          alt = `${esc(name)}, ${p.imr ? 'IMR lecture photo' : label.toLowerCase() + ' view'}`;
+        return `<figure><button type="button" class="zoom" data-z="${i}" aria-label="Enlarge photo: ${alt}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${alt}" loading="lazy">${ZOOMI}</button><figcaption>${p.imr ? `<b class="lect">IMR lecture</b> · slide ${p.slide}` : credit(p)}</figcaption></figure>`;
       };
       // The cover is already shown at the top: not repeated in its row when the row has other featured photos.
       const feat0 = g.sl[v].feat,
@@ -230,7 +231,7 @@ function viewGenus(name) {
     }
     ${myProg(name)}
     <div class="hero">
-      ${cv ? `<button type="button" class="zoom hero-ph" data-z="${ci}"><img src="${img(cv, fit(Math.min(innerWidth, 640)))}" data-fit alt="${esc(name)}"></button>` : ''}
+      ${cv ? `<button type="button" class="zoom hero-ph" data-z="${ci}" aria-label="Enlarge photo: ${esc(name)}"><img src="${img(cv, fit(Math.min(innerWidth, 640)))}" data-fit alt="${esc(name)}">${ZOOMI}</button>` : ''}
       <div class="idbox">
         ${plainLine(g)}
         ${g.x ? `<div class="tipbox"><h3>ID tips <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3>${tipsList(g)}</div>` : ''}
