@@ -1219,7 +1219,8 @@ async function replayAdoptCheck(base) {
       localStorage.removeItem('imr-rv-msg');
       return d;
     }, C.RV);
-    if (due[0][0].length || due[1][0].length || !due[2][0].includes(C.RV) || !due[2][1].includes('went from 10% to 5%'))
+    // Every version since 0 has the standard card (RV_CARD): it is due once, for the last version (core.js rvMsgs).
+    if (due[0][0].length || due[1][0].length || due[2][0].join() !== String(C.RV) || !due[2][1].includes('went from 10% to 5%'))
       fails.push(`replay: the card's 5-point rule: ${JSON.stringify(due)}`);
     await c.close();
   }
