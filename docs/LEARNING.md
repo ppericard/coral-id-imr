@@ -973,6 +973,33 @@ Coral basics; strong RA with "know": −0.08 to +0.12), beginner with "know" −
 flagged), expert with "new" +0.20 to +0.24 (5 of 5), strong RA with "new" +0.06 to +0.22 (2 of 5): LO 0.1 and HI 0.18
 kept.
 
+**Checked again after #425** (opening pace, easier questions while the hold is on; merged the same day), `main` with
+#425 against this change, same seeds:
+
+| Profile | Run | know 100 / 200 / 300 | met 200 / 300 | right % 1-20 / 51-100 | Elo error 50 / 100 | surprise 1-20 | card |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| beginner | main = new | 0.28 / 0.48 / 0.67 | 29.6 / 39.8 | 77 / 75 | 0.98 / 0.82 | +0.06 | none |
+| beginner | know (card taken) | 0.28 / 0.47 / 0.62 (±0.01) | 27.0 / 34.8 | 73 / 76 | 1.19 / 0.91 | −0.02 | 1 of 5, → imr |
+| lecture RA | main | 0.46 / 0.63 / 0.75 | 33.8 / 40.0 | 88 / 80 | 0.72 / 0.74 | +0.12 | |
+| lecture RA | imr | 0.47 / 0.63 / 0.75 | 33.6 / 39.2 | 79 / 80 | 0.90 / 0.75 | +0.06 | none |
+| strong RA | main | 0.67 / – / 0.85 | – / 40.0 | 88 / 88 | 0.99 / 1.00 | +0.14 | |
+| strong RA | know | 0.68 / – / 0.86 | – / 40.0 | 83 / 84 | 0.86 / 0.89 | +0.04 | none |
+| strong RA | new (card taken) | 0.67 / – / 0.85 | – / 40.0 | 88 / 86 | 1.07 / 1.06 | +0.14 | 2 of 5, → imr |
+| expert | main | 0.94 / 0.95 / 0.95 | 37.8 / 40.0 | 98 / 95 | 0.78 / 0.88 | +0.19 | |
+| expert | know | 0.94 / 0.95 / 0.95 | 38.2 / 40.0 | 98 / 97 | 0.84 / 0.84 | +0.12 | none |
+| expert | new (card taken) | 0.94 / – / 0.95 | – / 40.0 | 98 / 96 | 0.78 / 0.90 | +0.19 | 4 of 5, → imr |
+
+The right answers still keep the outcomes (knowledge within ±0.01, genera met within one) and bring the first-20
+surprise towards 0 (lecture RA +0.12 → +0.06, strong RA +0.14 → +0.04, expert +0.19 → +0.12); the Elo error at 50
+answers is better for the strong RA (0.99 → 0.86), worse for the lecture RA (0.72 → 0.90: its prior lifts the genera it
+does not know; equal from 100 answers). **What #425 changed for a wrong answer**: a beginner who says "I know corals
+well" now loses some knowledge by question 300 (0.62 against 0.67, sd 0.01; 35 genera met against 40): the harder start
+sets the opening hold off more often, which slows the opening. And the fallback card catches it in 1 run of 5 only:
+with the hold on, #425 eases the questions, so the expected success falls with the answers and the surprise stays near
+0 (−0.11 to +0.03, against −0.03 to +0.11 for a beginner who said "new"). The surprise no longer tells this case apart;
+open question for Pierre (ROADMAP): a milder prior for "know well", or a second signal for the fallback (the hold
+during the window). The values and thresholds are kept as they are until he decides.
+
 **Fallback for everyone** (Pierre: "also for those who answered, since they may have picked wrong"). Not the right %:
 the game aims every question at about 80% right, so the right % hardly tells the players apart (it never did: "Offer to
 open all", above). What tells whether the answer fits is how far the answers beat or miss **what the app expected from
