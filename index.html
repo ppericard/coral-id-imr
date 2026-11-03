@@ -26,7 +26,7 @@
 <link rel="preload" href="fonts/source-sans-3-normal.woff2" as="font" type="font/woff2" crossorigin>
 <!-- Slow first visit (beginner RA review, 2026-11-02): data.json, the biggest start-up file, downloads alongside the
      scripts instead of after app.js has run (same URL as the fetch in app.js; crossorigin so the fetch can reuse it). -->
-<link rel="preload" href="data.json?v=36" as="fetch" crossorigin>
+<link rel="preload" href="data.json?v=37" as="fetch" crossorigin>
 <!-- Load order (Pierre, 2026-11-02; field HAR: ~86 kbit/s from the IMR field station, everything asked at once, so every
      file got a sliver of the line and all came at 20-25 s). The files come in tiers, one tier after the other:
      1 Home (preloaded below, with the stylesheets, the main font and data.json; proto/lab.css also holds the layout of
@@ -46,13 +46,13 @@
 <link rel="preload" href="home-art.js?v=4" as="script" data-tier="1">
 <link rel="preload" href="home.js?v=30" as="script" data-tier="1">
 <link rel="preload" href="tour.js?v=18" as="script" data-tier="1">
-<link data-tier="2" href="model.js?v=26">
+<link data-tier="2" href="model.js?v=27">
 <link data-tier="2" href="quiz.js?v=34">
 <link data-tier="2" href="learn.js?v=10">
 <link data-tier="2" href="progress.js?v=16">
 <link data-tier="5" href="flag.js?v=10">
 <link data-tier="5" href="proto/lab.js?v=75">
-<link rel="stylesheet" href="app.css?v=126">
+<link rel="stylesheet" href="app.css?v=127">
 <link rel="stylesheet" href="proto/lab.css?v=54">
 <link rel="stylesheet" href="home.css?v=23">
 </head>
