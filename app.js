@@ -806,10 +806,11 @@ const BENTHIC_NOTE =
 // A genus of the games: the slate (coral and benthic) or a bonus genus.
 const gameGenus = n => !!DATA.gen[n] || isBenthic(n) || isBonus(n);
 const pool = () => [...slateGenera(), ...bonusList()].filter(n => photoSet(n).shown.length);
-// "In plain words" (Pierre, 2026-11-03): one everyday-words line per genus (data.json `plain`, tools/apply_plain_sheets.py)
-// for divers who never had the IMR coral lecture, under the title of its sheet and on its first-meeting card. It adds to
-// the scientific text and replaces none of it; muted, so the RAs can skip it.
-const plainLine = g => (g.plain ? `<p class="plainw"><b>In plain words</b> ${esc(g.plain)}</p>` : '');
+// The plain sentence (Pierre, 2026-11-03): one everyday-words line per genus (data.json `plain`, tools/apply_plain_sheets.py),
+// clear for everyone, beginners included. Right under the photo of the genus sheet and of the first-meeting card, before
+// the ID tips and lecture notes, in body text with no label (Pierre's review: a muted labelled line above the photo was
+// skipped). It adds to the scientific text and replaces none of it.
+const plainLine = g => (g.plain ? `<p class="plainw">${esc(g.plain)}</p>` : '');
 // ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera.
 const tipsLabel = g => (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');
 // What is wrong with the sync, in words, or '' when everything is saved.

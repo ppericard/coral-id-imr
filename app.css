@@ -1350,27 +1350,18 @@ header {
 .sheet .keyid {
   margin: 14px 0;
 }
-/* "In plain words" (app.js plainLine): for beginners, under the sheet's title and on the first-meeting card; muted and
-   small so the RAs can skip it. */
+/* The plain sentence (app.js plainLine): right under the photo of the genus sheet and of the first-meeting card, before
+   the ID tips, in body text (Pierre, 2026-11-03). */
 .plainw {
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   max-width: 70ch;
-  color: var(--muted);
-  font-size: var(--fs-s);
-  line-height: 1.4;
-}
-.plainw b {
-  margin-right: 4px;
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.sheet > .plainw {
-  margin: 12px 0;
+  color: var(--ink);
+  font-size: var(--fs-m);
+  line-height: 1.45;
 }
 .ulcard .plainw {
-  margin: 0 auto 10px;
+  margin: 0 0 12px;
+  text-align: left;
 }
 .fb .imrfb {
   margin: 2px 0 8px;

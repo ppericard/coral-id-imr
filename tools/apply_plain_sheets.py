@@ -1,4 +1,4 @@
-# "In plain words" line per genus (Pierre, 2026-11-03: genus sheets for complete beginners, divers who never had the
+# The plain sentence of each genus (Pierre, 2026-11-03: genus sheets for complete beginners, divers who never had the
 # IMR coral lecture). Each genus of data.json gen and x.gen gets `plain`: 1-2 short sentences (30 words at most) in
 # everyday words, what you notice underwater (overall shape, texture, size, colour caveats, a comparison). It sits
 # beside the scientific text and replaces nothing: the IMR lecture lines, ID tips and Coral Finder features stay as
@@ -8,10 +8,11 @@
 # and references describe each genus for recognising it underwater, checked against at least two of them per genus
 # (tools/plain_sources.json lists them: Corals of the World factsheets, Reef Corals of the Indo-Malayan Seas, the
 # ReefCloud hard coral genera guide, Wikipedia, and a few others where those are thin), plus our IMR lecture notes and
-# ID tips (gen[g].imr, qt, mn), and the genus's own photos, each looked at. Where a source differs from the IMR notes,
-# the line follows the IMR notes (rule 1 of AGENTS.md). Never copied from the Coral Finder book (tests/plain.test.js
+# ID tips (gen[g].imr, qt, mn), and the genus's own photos, each looked at. Where a source differed from the IMR notes,
+# the line followed the IMR notes (rule 1 of AGENTS.md), until Pierre approved four corrections to the IMR wording
+# (2026-11-03: Seriatopora, Lobactis, Heliofungia, Herpolitha; tools/apply_imr_corrections.py). Never copied from the Coral Finder book (tests/plain.test.js
 # checks no 5-word run is shared with the Coral Finder features). A slate genus's line names another genus only when
-# its first card comes after that genus's (core.js starRefs). Shown on the genus sheet under the title and on the
+# its first card comes after that genus's (core.js starRefs). Shown right under the photo of the genus sheet and of the
 # first-meeting card (app.js plainLine). Re-runnable: python3 tools/apply_plain_sheets.py
 import json, os, re, sys
 from datajson import dump  # the one data.json layout (one genus per line)
@@ -25,7 +26,7 @@ PLAIN = {
     'Pocillopora': 'Bushy clumps of short, lumpy branches, all covered in little warts, like cauliflower or popcorn. Tiny pits sit on and between the warts.',
     'Stylophora': 'Stubby branches with blunt, rounded tips, as if squeezed. From a distance the surface looks smooth; up close it is covered in tiny scales.',
     'Anacropora': 'Slim branches ending in rounded or forked tips, with no bigger cup at the very tip. The tiny holes are spread out and look empty.',
-    'Seriatopora': "A tight, tangled bush of very thin twigs, like a bird's nest. Up close, tiny dark holes run in neat lines along each twig.",
+    'Seriatopora': "A tight, tangled bush of very thin twigs, like a bird's nest. Up close, tiny holes run in neat lines along each twig.",
     'Porites': 'Lumpy boulders, domes or fat fingers with a smooth look. Up close the surface is covered in tiny pits packed together like a honeycomb.',
     'Tubastraea': 'Tubes with round open ends, as dark green-black little trees or bright orange clusters. Often in shade under overhangs: it has no algae inside, so needs no sunlight.',
     'Echinopora': 'Untidy tangles of branches, or plates, with a rough, beaded surface like sandpaper. No bigger cup marks the branch tips.',
@@ -47,9 +48,9 @@ PLAIN = {
     'Lithophyllon': 'A loose round disc, flat or gently arched, whose radiating ridges have very fine, even teeth, so it looks neat and smooth.',
     'Danafungia': 'A loose round disc with a raised dome in the middle. Its radiating ridges carry big, uneven teeth, so it looks rough.',
     'Ctenactis': 'A loose oval disc shaped like a slipper or skateboard, with one long groove down the middle and big saw-like teeth on its ridges.',
-    'Lobactis': 'A loose oval disc with a slit in the middle and tall, pale lumps standing up along its radiating ridges.',
-    'Herpolitha': 'A long loose disc, like a tongue or slipper, with a groove running its whole length. Some grow into X or Y shapes.',
-    'Heliofungia': 'Looks like a sea anemone: a loose disc hidden under long tentacles with white tips, out during the day.',
+    'Lobactis': 'A loose oval disc with a slit in the middle and tall lumps standing up along its radiating ridges, frequently green, blue or white.',
+    'Herpolitha': 'A long loose disc, like a tongue or slipper, with a groove running its whole length and many small mouths along it. Some grow into X or Y shapes.',
+    'Heliofungia': 'Looks like a sea anemone: a loose disc hidden under long tentacles, out during the day, their tips white or pink.',
     'Dipsastraea': 'Boulders covered in round or oval cups, each with its own rim and not crowded. Some cups are pinched in the middle as they split in two.',
     'Astrea': 'Boulders packed with round cups, each with its own rim, crowded together. Small new cups squeeze in between the big ones.',
     'Diploastrea': 'Big, smooth-looking domes covered in a very regular pattern of low, thick-rimmed cones, like a neat field of tiny volcanoes.',

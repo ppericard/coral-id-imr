@@ -1,4 +1,4 @@
-// "In plain words" (Pierre, 2026-11-03: genus sheets for complete beginners): one everyday-words line per genus,
+// The plain sentence (Pierre, 2026-11-03: genus sheets clear for complete beginners): one everyday-words line per genus,
 // data.json `plain` (tools/apply_plain_sheets.py), shown by app.js plainLine on the genus sheet and the first card.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -54,14 +54,14 @@ test("a slate genus's line names another genus only when its first card comes af
   }
 });
 
-test('plainLine: the line, escaped, under its label; nothing for a genus without one', () => {
+test('plainLine: the line, escaped, with no label; nothing for a genus without one', () => {
   const src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     line = a => src.slice(src.indexOf(a), src.indexOf('\n', src.indexOf(a))),
     ctx = {};
   vm.createContext(ctx);
   vm.runInContext(`${line('const esc = ')}\n${line('const plainLine = ')}\nthis.plainLine = plainLine;`, ctx);
   const h = ctx.plainLine(G.Acropora);
-  assert.ok(h.startsWith('<p class="plainw"><b>In plain words</b> ') && h.includes(G.Acropora.plain.slice(0, 30)));
-  assert.strictEqual(ctx.plainLine({plain: 'a <b> & c'}), '<p class="plainw"><b>In plain words</b> a &lt;b&gt; &amp; c</p>');
+  assert.strictEqual(h, `<p class="plainw">${G.Acropora.plain}</p>`);
+  assert.strictEqual(ctx.plainLine({plain: 'a <b> & c'}), '<p class="plainw">a &lt;b&gt; &amp; c</p>');
   assert.strictEqual(ctx.plainLine({}), '');
 });

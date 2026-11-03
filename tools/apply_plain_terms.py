@@ -38,7 +38,8 @@ MORE = [
      'Not fixed to the reef: the coral lies loose on the sand or rubble, like most mushroom corals.'],
     ['Solitary', 'Corals composed of single individuals. There is no clear distinction (eg. in fungiids) between single '
      'individuals with many mouths and colonies of individuals with single mouths.', COTW,
-     'One single polyp on its own instead of a colony of many, like many mushroom corals.'],
+     'One coral on its own, not a colony. In the IMR lecture: the free-living mushroom corals, one disc each; a disc with '
+     'many mouths, like Herpolitha, is called colonial by other guides.'],
     ['Separate walls', 'Plocoid colonies: corals whose corallite centres are isolated from one another by separate walls '
      'which are at least slightly exsert.', COTW,
      'Each corallite has its own rim, so you see a gap, a groove or a shadow between neighbouring cups.'],
