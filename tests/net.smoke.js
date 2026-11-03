@@ -384,8 +384,11 @@ const server = http.createServer((req, res) => {
     const sent = await p.evaluate(async () => {
       const f = window.fetch,
         hits = [];
+      // Only writes count (POST), as in check 11: the sheet's reads (leaderboard, achievements) may come at any time.
       window.fetch = (u, o) =>
-        /script\.google/.test(String((u && u.url) || u)) ? (hits.push(String(u)), Promise.reject(new Error('x'))) : f(u, o);
+        /script\.google/.test(String((u && u.url) || u)) && String((o && o.method) || 'GET').toUpperCase() === 'POST'
+          ? (hits.push(String(u)), Promise.reject(new Error('x')))
+          : f(u, o);
       localStorage.setItem('imr-anonq', JSON.stringify([{id: 'a1', t: Date.now(), g: 'Acropora', a: 'Porites', ok: 0}]));
       localStorage.setItem('imr-reports', JSON.stringify([{k: 'photo', m: 'test'}]));
       sendAnon();
@@ -560,8 +563,12 @@ const server = http.createServer((req, res) => {
     const r = await p.evaluate(async () => {
       const f = window.fetch,
         hits = [];
+      // Only writes count (POST: answers, reports, events): Home's own reads (the leaderboard, the achievements' shares)
+      // are GETs, allowed from any copy, and sometimes landed in this window (the check failed now and then).
       window.fetch = (u, o) =>
-        /script\.google/.test(String((u && u.url) || u)) ? (hits.push(String(u)), Promise.reject(new Error('x'))) : f(u, o);
+        /script\.google/.test(String((u && u.url) || u)) && String((o && o.method) || 'GET').toUpperCase() === 'POST'
+          ? (hits.push(String(u)), Promise.reject(new Error('x')))
+          : f(u, o);
       localStorage.setItem('imr-anonq', JSON.stringify([{id: 'w1', t: Date.now(), g: 'Acropora', a: 'Porites', ok: 0}]));
       localStorage.setItem('imr-reports', JSON.stringify([{k: 'photo', m: 'test'}]));
       sendAnon();
