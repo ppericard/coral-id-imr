@@ -17,6 +17,7 @@ const http = require('http'),
   fs = require('fs'),
   path = require('path');
 const {chromium} = require('playwright');
+const slot = require('./slot.js');
 const ROOT = path.join(__dirname, '..');
 const TYPES = {
   '.html': 'text/html',
@@ -38,6 +39,7 @@ const server = http.createServer((req, res) => {
 });
 
 (async () => {
+  await slot('fish.smoke');
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`;
   const b = await chromium.launch();

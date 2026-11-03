@@ -938,6 +938,7 @@ function openTable(runs) {
 }
 
 (async () => {
+  await require('../tests/slot.js')('tools/learnsim.js'); // one Playwright run per 2 cores on this machine (tests/slot.js)
   const t0 = Date.now();
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`;

@@ -2,6 +2,7 @@ const http = require('http'),
   fs = require('fs'),
   path = require('path');
 const {chromium} = require('playwright');
+const slot = require('./slot.js');
 const ROOT = path.join(__dirname, '..');
 const TYPES = {
   '.html': 'text/html',
@@ -38,6 +39,7 @@ const server = http.createServer((req, res) => {
 // keeps a beginner on a few genera at a time, the easier ones first, and keeps opening new ones; gives an expert many
 // genera, hard choices (look-alike traps) and progress well ahead of a beginner's; no genus reaches its exam's entry before it was asked beside a look-alike. Locally: node tests/profiles.smoke.js
 (async () => {
+  await slot('profiles.smoke');
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`;
   const b = await chromium.launch();
