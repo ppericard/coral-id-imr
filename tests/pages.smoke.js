@@ -409,8 +409,9 @@ async function overlays(b, base) {
   // feedback, a reflex Next skipped it), on a phone (390 px) and a desktop: never inline in the feedback; after Next a
   // dialog (role, kicker "Quick question", the item's question as its title, its answers on one row of equal widths, a
   // "Not now"), on screen, nothing wider than the screen, the next question not drawn yet; it logs its showing (shown)
-  // with its item (src). For its first PULSE.WAIT ms its buttons take no tap (a real mouse tap at an answer's centre:
-  // nothing logged, the card stays) and Enter never answers. Then, in turn: an answer tapped (logs its code, once),
+  // with its item (src). Its buttons stay disabled at least PULSE.WAIT ms (timed in the page); on the first prompt, its
+  // wait stretched to 3 s, a real mouse tap at an answer's centre and Enter do nothing (nothing logged, the card stays);
+  // once they are on, Enter still never answers. Then, in turn: an answer tapped (logs its code, once),
   // "Not now" (skip), Escape (skip); the card closes and the next question shows. The last prompt is left by another page
   // (none). The next prompt never asks the same item. After the first, each prompt is made due by moving the device's
   // last-prompt marks back (imr-prompt-at by PROMPT.GAP, imr-pulse by PULSE.EVERY × PULSE.AFTERX), the real code deciding.
@@ -450,7 +451,25 @@ async function overlays(b, base) {
         },
         [i, asked.length > 0]
       );
-      await p.evaluate(() => document.getElementById('next').click());
+      // The buttons' wait is timed in the page (from the tap on Next to the last button enabled), so a busy machine cannot
+      // make it pass or fail. The first prompt's wait is stretched to 3 s, so the reflex tap below surely falls within it.
+      await p.evaluate(
+        slow => {
+          window.W0 = window.W0 || PULSE.WAIT;
+          PULSE.WAIT = slow ? 3000 : W0;
+          const t0 = performance.now();
+          window.WAITED = null;
+          document.getElementById('next').click();
+          const d = document.querySelector('.unlock.pulsecard');
+          if (d)
+            new MutationObserver((m, o) => {
+              if (d.querySelector('[data-pulse]:disabled')) return;
+              WAITED = performance.now() - t0;
+              o.disconnect();
+            }).observe(d, {attributes: true, subtree: true, attributeFilter: ['disabled']});
+        },
+        !asked.some(x => !x.inline)
+      );
       const shown = await p.evaluate(() => {
         const d = document.querySelector('.unlock.pulsecard');
         if (!d) return null;
@@ -488,14 +507,21 @@ async function overlays(b, base) {
         const it = PULSEQ.find(x => x.id === q);
         return it ? [it.q, it.a.map(x => x[0])] : null;
       }, shown.q);
-      // A reflex tap at once (an answer's centre, a real mouse tap) and Enter: nothing happens.
-      const k = asked.length % shown.at.length;
-      await p.mouse.click(...shown.at[k]);
-      const early = await p.evaluate(() => ({
-        up: !!document.querySelector('.unlock.pulsecard'),
-        n: JSON.parse(localStorage.getItem('imr-evq') || '[]').filter(x => x.k === 'pulse').length
-      }));
-      await p.waitForTimeout(700);
+      // On the first prompt, a reflex tap at once (an answer's centre, a real mouse tap) and Enter: nothing happens.
+      const k = asked.length % shown.at.length,
+        slow = !asked.some(x => !x.inline);
+      let early = null;
+      if (slow) {
+        await p.mouse.click(...shown.at[k]);
+        await p.keyboard.press('Enter');
+        early = await p.evaluate(() => ({
+          up: !!document.querySelector('.unlock.pulsecard'),
+          wait: !!document.querySelector('.unlock.pulsecard [data-pulse]:disabled'),
+          n: JSON.parse(localStorage.getItem('imr-evq') || '[]').filter(x => x.k === 'pulse').length
+        }));
+      }
+      await p.waitForFunction(() => WAITED !== null, null, {timeout: 10000}).catch(() => {});
+      const waited = await p.evaluate(() => [WAITED, PULSE.WAIT]);
       await p.keyboard.press('Enter');
       const enter = await p.evaluate(() => ({
         up: !!document.querySelector('.unlock.pulsecard'),
@@ -520,7 +546,7 @@ async function overlays(b, base) {
         h: location.hash
       }));
       const ev = (await pev()).slice(before).map(x => ({r: x.r, src: x.src, m: x.m, lv: typeof x.lv}));
-      asked.push({...shown, at: undefined, it, way, tap, early, enter, after, ev, n0: before});
+      asked.push({...shown, at: undefined, it, way, tap, early, waited, enter, after, ev, n0: before});
       if (way === 'leave') {
         await p.evaluate(() => (location.hash = 'quiz'));
         await p.waitForTimeout(300);
@@ -542,8 +568,8 @@ async function overlays(b, base) {
         !x.inView ||
         x.wide ||
         !x.row ||
-        !x.early.up ||
-        x.early.n !== x.n0 + 1 ||
+        (k === 0 ? !x.early || !x.early.up || !x.early.wait || x.early.n !== x.n0 + 1 : x.early) ||
+        !(x.waited[0] >= x.waited[1] - 5) ||
         !x.enter.up ||
         x.enter.n !== x.n0 + 1 ||
         !x.enter.hit ||
