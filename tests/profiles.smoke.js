@@ -71,7 +71,9 @@ const server = http.createServer((req, res) => {
       expert: [() => Object.fromEntries(G.map(g => [g, 0.93])), 0.05]
     };
     const out = {};
-    for (const [name, [mk, rate]] of Object.entries(profiles)) {
+    // One player of a profile through N questions: the 100-question rows, the genera that reached their exam's entry
+    // too early, the first genera asked.
+    const play = (mk, rate, N) => {
       P = {};
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no comeback
@@ -83,7 +85,7 @@ const server = http.createServer((req, res) => {
         first = [],
         rows = [];
       let blk = {n: 0, ok: 0, traps: 0, tn: 0, ty: 0};
-      for (let i = 0; i < 300; i++) {
+      for (let i = 0; i < N; i++) {
         NEXTQ = null;
         quizPhoto();
         // The player reads the first-meeting cards through (each genus is met when its card shows).
@@ -144,9 +146,17 @@ const server = http.createServer((req, res) => {
           blk = {n: 0, ok: 0, traps: 0, tn: 0, ty: 0};
         }
       }
-      const gd = G.map(genusDiff),
-        mean = L => L.reduce((a, x) => a + x, 0) / L.length;
-      out[name] = {rows, early: [...early], firstEase: +mean(first.slice(0, 8).map(genusDiff)).toFixed(2), allEase: +mean(gd).toFixed(2)};
+      return {rows, early, first};
+    };
+    const mean = L => L.reduce((a, x) => a + x, 0) / L.length;
+    for (const [name, [mk, rate]] of Object.entries(profiles)) {
+      const {rows, early, first} = play(mk, rate, 300);
+      out[name] = {
+        rows,
+        early: [...early],
+        firstEase: +mean(first.slice(0, 8).map(genusDiff)).toFixed(2),
+        allEase: +mean(G.map(genusDiff)).toFixed(2)
+      };
     }
     // Easiest first: with nothing met and the players' answers behind the photo ratings, the easiest genus (genusDiff)
     // is drawn far more often than the hardest. Made-up ratings: one genus's photos rated easy, another's hard.
@@ -231,6 +241,15 @@ const server = http.createServer((req, res) => {
       out.cal = {genus: g, photo: f0, without: shown(false), with: shown(true)};
       PSTAT = keep;
     }
+    // Focus over several players (AGENTS.md rule 14f): the beginner's first 100 questions again with 7 more seeds, the
+    // app's randomness and the player's both, after every other check so their draws stay as they were.
+    out.focus = [out.beginner.rows[0].met];
+    for (let k = 1; k <= 7; k++) {
+      let s = 12345 + 7919 * k;
+      Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+      seed = 7 + 1009 * k;
+      out.focus.push(play(profiles.beginner[0], profiles.beginner[1], 100).rows[0].met);
+    }
     return out;
   });
   await b.close();
@@ -240,6 +259,7 @@ const server = http.createServer((req, res) => {
     [e1, , e3] = R.expert.rows,
     [r1, , r3] = R.RA.rows;
   for (const [k, v] of Object.entries(R)) if (v.rows) console.log(k, JSON.stringify(v));
+  console.log('beginner genera met by question 100, 8 seeds:', R.focus.join(' '));
   console.log(
     'bonus opening chance',
     R.bonusOpen,
@@ -261,7 +281,13 @@ const server = http.createServer((req, res) => {
   // docs/LEARNING.md "Global level and genus", "Beginners and experts"): this seed meets 13 genera by question 100 (main
   // 12; the level's move alone gave 18, when the limit went to 21 for a while). Margin 4. Over 5 seeds
   // (tools/learnsim.js) the beginner meets 20.2 by question 100 (main 19.2), 28.0 by 200 (main 30.4).
-  if (b1.met > 17) fails.push(`beginner met ${b1.met} genera in 100 questions: not focused`);
+  // On the mean of 8 seeds since the candidate refill of 2026-11-03 (f9aae3a: 616 photos the auto-sort added joined
+  // data.json, so every draw changed): this seed went from 12 to 19 with no change to the code, while the 8 seeds gave
+  // 12-16 (mean 13.9) before and 12-19 (mean 14.5) after. One seed sat inside the spread of the seeds and failed on a
+  // data change; the mean of 8 moves with the opening rule, not with one draw. For reference, before #413 the same 8
+  // seeds gave 8-12 (mean 9.8): the watched effect above.
+  const fMean = R.focus.reduce((a, x) => a + x, 0) / R.focus.length;
+  if (fMean > 17) fails.push(`beginner met ${fMean.toFixed(1)} genera on average in 100 questions (${R.focus.join(' ')}): not focused`);
   if (b3.met <= b1.met) fails.push(`beginner stopped opening genera (${b1.met} then ${b3.met})`);
   if (r3.met <= r1.met) fails.push(`RA stopped opening genera (${r1.met} then ${r3.met})`);
   const E = R.easyFirst,
