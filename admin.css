@@ -2785,6 +2785,42 @@ td.cov-c .cov-off {
   font-weight: 700;
 }
 
+/* Who played last (Players' Last column, Activity's Recent sessions): "now" = a last answer under RECENT.NOW minutes
+   old, a small pill in the palette's right-answer colour with a dot; its session row tinted the same way. */
+.adm-ago {
+  white-space: nowrap;
+}
+.adm-ago.now {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  border-radius: var(--pill);
+  background: var(--good-bg);
+  color: var(--good);
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.adm-ago.now::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.adm-recent tr.now td {
+  background: color-mix(in srgb, var(--good) 7%, var(--surface));
+}
+.adm-recent h3 small {
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.adm-recent {
+  margin-bottom: 12px;
+}
+
 /* Users (Stats > Users): one row per player, click for details; Delete in the danger colour, never a default button. */
 /* Players page: every column title sorts (click again to reverse) */
 .adm-utbl .adm-usort {
@@ -3235,4 +3271,139 @@ td.cov-c.cov-over {
   width: 10px;
   height: 10px;
   border-radius: 2px;
+}
+/* Tab row and view switch (navs() in admin.js, 2026-11-03: 9 tabs, each former page a view): the tabs of the header
+   group on the left, the views of the current tab as one segmented switch on the right. Phones: the header menu lists
+   the tabs, the row keeps only the view switch, full width. */
+.adm-sub {
+  gap: 6px 12px;
+}
+.adm-subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.adm-views.adm-qseg {
+  flex: none;
+  margin: 0 0 0 auto;
+}
+.adm-views a {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--fs-s);
+  min-height: 30px;
+  padding: 0 12px;
+  background: var(--surface);
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.adm-views a + a {
+  border-left: 1px solid var(--line);
+}
+.adm-views a[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+@media (hover: hover) and (pointer: fine) {
+  .adm-views a[aria-pressed='false']:hover {
+    color: var(--ink);
+    background: var(--bg);
+  }
+}
+@media (max-width: 599px) {
+  body.admin .adm-sub.has-views:not([hidden]) {
+    display: flex;
+  }
+  body.admin .adm-sub .adm-subtabs {
+    display: none;
+  }
+  body.admin .adm-views.adm-qseg {
+    flex: 1 1 100%;
+    margin: 0;
+  }
+  body.admin .adm-views a {
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 4px;
+    font-size: var(--fs-xs);
+  }
+}
+/* To do › All: Health's red line, only when something is wrong. */
+.adm-hline.warn {
+  max-width: none;
+  margin: 6px 0 4px;
+  border-left-color: var(--bad);
+  background: var(--bad-bg);
+  color: var(--ink);
+}
+.adm-hline a {
+  color: var(--bad);
+}
+.adm-tdhead {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.adm-tderr td:first-child {
+  max-width: 520px;
+  overflow-wrap: anywhere;
+}
+/* Coverage › Games: Where to look as a banner above the grid (lookBanner()). */
+.cov-look:empty {
+  display: none;
+}
+.cov-lookb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin: 6px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  background: var(--surface);
+  font-size: var(--fs-s);
+}
+.cov-lookt {
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+  margin-right: 4px;
+}
+.cov-lk {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 2px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--bg);
+}
+.cov-lk small {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.cov-look.open {
+  margin: 6px 0 4px;
+  padding: 2px 12px 8px;
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+@media (max-width: 599px) {
+  .cov-look.open {
+    padding: 2px 8px 8px;
+  }
+  .cov-look .adm-shead .adm-sseg {
+    flex: 0 1 auto;
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
 }
