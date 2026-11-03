@@ -741,7 +741,7 @@ function pulseAsk() {
     it = pulseItem(pk.q);
   nb.insertAdjacentHTML(
     'beforebegin',
-    `<section class="pulse" role="group" aria-labelledby="pulseq" data-q="${it.id}"><div class="pulseh"><span class="pulsek">Quick question</span><button type="button" class="pulsex" data-pulse="" aria-label="Not now" title="Not now">×</button></div><p class="pulseq" id="pulseq">${esc(it.q)}</p><div class="pulseb">${it.a
+    `<section class="pulse" role="group" aria-labelledby="pulseq" data-pq="${it.id}"><div class="pulseh"><span class="pulsek">Quick question</span><button type="button" class="pulsex" data-pulse="" aria-label="Not now" title="Not now">×</button></div><p class="pulseq" id="pulseq">${esc(it.q)}</p><div class="pulseb">${it.a
       .map(([k, t]) => `<button type="button" data-pulse="${k}">${esc(t)}</button>`)
       .join('')}</div></section>`
   );

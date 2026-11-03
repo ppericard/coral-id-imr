@@ -346,14 +346,14 @@ async function overlays(b, base) {
           if (!box) return null;
           const bs = [...box.querySelectorAll('.pulseb [data-pulse]')],
             b = bs[i % bs.length],
-            it = PULSEQ.find(x => x.id === box.dataset.q),
+            it = PULSEQ.find(x => x.id === box.dataset.pq),
             nx = document.getElementById('next'),
             R = box.getBoundingClientRect(),
             N = nx.getBoundingClientRect(),
             B = bs.map(x => x.getBoundingClientRect());
           const shown = {
             a: answersSoFar(),
-            q: box.dataset.q,
+            q: box.dataset.pq,
             title: box.querySelector('.pulsek')?.textContent,
             text: box.querySelector('.pulseq')?.textContent,
             opts: bs.map(x => x.dataset.pulse),
@@ -368,7 +368,10 @@ async function overlays(b, base) {
             ),
             // One row, equal widths.
             row: B.every(x => Math.abs(x.top - B[0].top) < 2 && Math.abs(x.width - B[0].width) < 2),
-            tap: skip ? '' : b.dataset.pulse
+            tap: skip ? '' : b.dataset.pulse,
+            // A tap on the question's text or the block itself is not a photo tap (Codex review #414: data-q on the block
+            // sent it to the photo handler, which opened an empty enlarged view).
+            panel: (box.querySelector('.pulseq').click(), box.click(), document.getElementById('lightbox').hidden)
           };
           if (!skip) b.click();
           return {...shown, want: it ? [it.q, it.a.map(x => x[0])] : null, thanks: box.textContent.trim()};
@@ -392,6 +395,7 @@ async function overlays(b, base) {
         !x.inView ||
         !x.hit ||
         !x.row ||
+        !x.panel ||
         (x.tap && x.thanks !== 'Thank you!') ||
         x.ev.map(e => e.r).join() !== ['shown', x.tap || 'none'].join() ||
         x.ev.some(e => e.src !== x.q || e.m !== 'quiz' || e.lv !== 'number') ||
