@@ -73,7 +73,7 @@ const server = http.createServer((req, res) => {
             [CF[1]]: {v: 'wide', q: 1, k: 'dup', fm: 'M', n: 'Same colony as 1'},
             [CF[2]]: {v: 'wide', q: 2, g: 'cmp', fm: 'M', n: 'Two genera side by side'},
             [CF[3]]: {v: 'wide', q: 3, k: 'best', fm: 'B', u: ['quality'], n: 'Soft?'},
-            [CHK]: {v: 'wide', q: 2, k: 'best', fm: 'B'}
+            [CHK]: {v: 'wide', q: 2, k: 'best', fm: 'B', c: [0.2, 0.25, 0.8, 0.75]}
           }
         })
       })
@@ -645,6 +645,33 @@ const server = http.createServer((req, res) => {
     if (au.rej !== 'r' || !au.seen) fails.push(`${w}px Auto: the sure near-duplicate was not rejected (${JSON.stringify(au)})`);
     if (au.cmp || au.unsure) fails.push(`${w}px Auto: decided a comparison image or an unsure judgment (${JSON.stringify(au)})`);
     if (au.chk !== '?aw2B' || !au.chkQ) fails.push(`${w}px Auto: the Check is not logged or not in the queue (${JSON.stringify(au)})`);
+    // Source priority in a cell with fewer free slots than sure adds (AGENTS.md rule 7, Codex review #400): Pierre's own
+    // Fair photo takes the last slot ahead of another observer's Good one; quality and sharpness only break ties.
+    const pri = await p.evaluate(() => {
+      const free = m =>
+          cands(m).filter(x => !x.cf && !x.from && !aOf(x.f) && !autoCheck(x.f) && !rejected(x.f) && !(entry(m).add || {})[x.f]),
+        n = [...GAME].find(m => free(m).length >= 2),
+        [a, b] = free(n),
+        keep = Object.values(DATA.cand)
+          .flat()
+          .map(x => [x, {j: x.j, mf: x.mf, own: x.own, imr: x.imr, loc: x.loc, o: x.o}]),
+        cm = CELL_MAX;
+      keep.forEach(([x]) => delete x.j);
+      Object.assign(a, {j: {v: 'wide', q: 3, k: 'best', fm: 'B'}, own: false, imr: false, loc: 'dauin', o: 'test-obs-a'});
+      Object.assign(b, {j: {v: 'wide', q: 2, k: 'best', fm: 'B'}, own: true, imr: false, o: 'test-obs-b'});
+      delete a.mf;
+      delete b.mf;
+      memoReset();
+      CELL_MAX = covOf(n, 'wide').obs + 1;
+      const R = autoRun(),
+        r = {n, R, other: !!(entry(n).add || {})[a.f], mine: !!(entry(n).add || {})[b.f]};
+      if (R && R.add + R.reject + R.exclude + R.check) undo();
+      CELL_MAX = cm;
+      keep.forEach(([x, o]) => Object.entries(o).forEach(([k, v]) => (v === undefined ? delete x[k] : (x[k] = v))));
+      memoReset();
+      return r;
+    });
+    if (!pri.mine || pri.other) fails.push(`${w}px Auto: source priority in a nearly full cell ${JSON.stringify(pri)}`);
     // The Check card: tagged, blind (no judgment line, no suggested view, no dashed quality), answered like any other;
     // rated Good where the pass said Fair, form not given (so not compared).
     await go('~cand');
@@ -664,6 +691,18 @@ const server = http.createServer((req, res) => {
     if (ck.f !== CHK || !ck.tag || ck.judge || ck.sug || ck.q)
       fails.push(`${w}px Auto: Check card not shown blind with its tag (${JSON.stringify(ck)})`);
     else {
+      // Crop on the Check stays blind (Codex review #400): the editor opens on the full photo, not the agent's crop, and
+      // saving it keeps an explicit no-crop, so the add does not write the suggestion behind his back (ACT.addc).
+      await p.click('.adm-sw [data-crop]');
+      await p.click('[data-c="save"]');
+      await settle();
+      const crc = await p.evaluate(C => {
+        const r = JSON.stringify((DRAFT.crop || {})[C]);
+        undo();
+        return r;
+      }, CHK);
+      if (crc !== '[0,0,1,1]') fails.push(`${w}px Auto: crop editor on a Check not blind (saved ${crc})`);
+      await settle();
       await p.click('.adm-swacts [data-q="3"]');
       await p.click('.adm-swbar [data-add="wide"]');
       await settle();

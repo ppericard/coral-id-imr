@@ -168,6 +168,46 @@ test('an auto add Pierre removed (Remove on its genus page: add gone, reject mar
   assert.strictEqual(autoState(C).keep.ok, 0);
 });
 
+test('a photo two devices logged on different days counts once (the latest entry, as autoIdx)', () => {
+  // merge3 keeps both daily maps when two drafts logged the same photo on different days (Codex review #400).
+  const cur = {
+    auto: {'2026-11-03': {c: '?aw2B', a: 'r'}, '2026-11-04': {c: '?aw2B', a: '-r'}},
+    genera: {G: {add: {c: 'wide', a: 'medium'}}},
+    quality: {c: 2},
+    gf: {c: 'B'}
+  };
+  const C = autoCompare(cur);
+  assert.deepStrictEqual(C.map(c => `${c.f}.${c.field}.${c.ok ? 'ok' : 'no'}.${c.how}`).sort(), [
+    'a.keep.no.fix',
+    'c.form.ok.check',
+    'c.keep.ok.check',
+    'c.quality.ok.check',
+    'c.view.ok.check'
+  ]);
+  assert.strictEqual(C.find(c => c.f === 'a').day, '2026-11-04', 'the latest entry is the one compared');
+  assert.strictEqual(autoState(C).keep.n, 2);
+});
+
+test('an auto add sent to another genus ("Not this") and added there is a Keep disagreement', () => {
+  // ACT.out drops the add in its own genus and writes out; Pierre then adds it in the genus it went to (Codex review
+  // #400): the auto added it to the wrong genus, so the add elsewhere is no agreement.
+  const cur = {
+    auto: {'2026-11-03': {a1: 'aw2B', c1: '?aw2B'}},
+    genera: {A: {out: {a1: 'B', c1: 'B'}}, B: {add: {a1: 'wide', c1: 'wide'}}},
+    quality: {a1: 2, c1: 2},
+    gf: {a1: 'B', c1: 'B'}
+  };
+  const ci = curIdx(cur);
+  assert.strictEqual(pierreOf(cur, ci, 'a1').keep, 'reject');
+  assert.deepStrictEqual(
+    autoCompare(cur).map(c => [c.f, c.field, c.ok, c.how]),
+    [
+      ['a1', 'keep', false, 'fix'],
+      ['c1', 'keep', false, 'check']
+    ]
+  );
+});
+
 test('agreement window in the order Pierre answered: a Check of an older run answered now is among the latest', () => {
   assert.strictEqual(autoParse('?aw2B@t5a1kq').t, parseInt('t5a1kq', 36));
   assert.strictEqual(autoParse('-r@1').undone, true);

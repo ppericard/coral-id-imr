@@ -2965,12 +2965,15 @@ function autoRun() {
     });
   });
   if (!plan.length) return null;
-  // Each cell fills up to its cap (capOf, colonies): Good before Fair, then the sharper one (metrics.json, a tie-breaker
-  // only), then a fixed order. The adds that do not fit wait in their full cell, as candidates.
+  // Each cell fills up to its cap (capOf, colonies): source priority first (AGENTS.md rule 7, oIdx: IMR, Pierre's own,
+  // then other observers; Codex review #400: another observer's Good photo took the last slot ahead of Pierre's Fair
+  // one), then Good before Fair, then the sharper one (metrics.json, a tie-breaker only), then a fixed order. The adds
+  // that do not fit wait in their full cell, as candidates.
   const sh = p => (METRICS[p.f] || [0])[0];
   plan.sort(
     (a, b) =>
       (b.s.keep === 'add') - (a.s.keep === 'add') ||
+      oIdx(a.p) - oIdx(b.p) ||
       (b.s.quality || 0) - (a.s.quality || 0) ||
       sh(b.p) - sh(a.p) ||
       (a.p.f < b.p.f ? -1 : 1)
@@ -3562,7 +3565,8 @@ function renderCand() {
         told();
       };
     S.querySelector('[data-zoom]').onclick = () => zoomOne({...pb, genus: n});
-    S.querySelector('[data-crop]').onclick = () => cropEditor(p);
+    // Blind on a Check too: the editor starts from Pierre's own crop or the full photo, not the agent's (Codex review #400).
+    S.querySelector('[data-crop]').onclick = () => cropEditor(pb);
     bindQ();
     bindF(S);
   }
@@ -3702,8 +3706,9 @@ function cropEditor(p) {
           const v = c.map(x => Math.round(x * 1000) / 1000),
             full = v[0] <= 0 && v[1] <= 0 && v[2] >= 1 && v[3] >= 1;
           DRAFT.crop = {...(DRAFT.crop || {})};
-          // Full photo over a suggested crop: kept as an explicit no-crop, so the suggestion does not come back.
-          if (full && !(p.j && p.j.c)) delete DRAFT.crop[p.f];
+          // Full photo over a suggested crop: kept as an explicit no-crop, so the suggestion does not come back (nor
+          // get written with the add, ACT.addc). Read from suggest.json: a Check's card is blind (no j) but has one.
+          if (full && !(((SUG && SUG.cand) || {})[p.f] || {}).c) delete DRAFT.crop[p.f];
           else if (full) DRAFT.crop[p.f] = [0, 0, 1, 1];
           else DRAFT.crop[p.f] = v;
           saveDraft();

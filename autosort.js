@@ -113,7 +113,9 @@
   // Pierre's decision on a photo, read from the curation: keep (add / reject, null = not decided), view, quality, form.
   // Removed (hide), excluded, rejected (seen cand:) and "not this genus" all count as not kept. A photo the auto-sort
   // added and Pierre removed with Remove on its genus page loses its add and gets a reject mark (admin.js ACT.hide), so
-  // that removal counts as not kept too.
+  // that removal counts as not kept too. "Not this genus" wins over an add: the auto-sort only decides a candidate in
+  // its own genus, so a photo sent out of a genus was not kept there, even when Pierre then adds it in the genus it
+  // went to (Codex review #400: that add read as an agreement with the wrong genus's add).
   function curIdx(cur) {
     const add = {},
       out = {};
@@ -125,7 +127,7 @@
   }
   function pierreOf(cur, ci, f) {
     const a = ci.add[f],
-      keep = a ? (a.hid ? 'reject' : 'add') : (cur.exclude || {})[f] || (cur.seen || {})['cand:' + f] || ci.out[f] ? 'reject' : null;
+      keep = ci.out[f] || (a && a.hid) ? 'reject' : a ? 'add' : (cur.exclude || {})[f] || (cur.seen || {})['cand:' + f] ? 'reject' : null;
     return {
       keep,
       view: keep === 'add' ? a.v : undefined,
@@ -141,32 +143,31 @@
   // Oldest first = in the order Pierre answered or corrected (the code's @t, autoStamp), not the order the auto decided:
   // a Check from an older run he answers today is among the latest comparisons (Codex review #400). Entries logged
   // without a time (before the stamps) keep the log's order (day, then photo), before every timed one.
+  // One entry per photo, the one autoIdx keeps (the latest day): two devices' drafts that logged the same photo on
+  // different days are both kept by the Publish merge (merge3), and counting both counted that photo twice (Codex
+  // review #400).
   function autoCompare(cur) {
     const ci = curIdx(cur),
+      I = autoIdx(cur),
       out = [];
-    Object.keys((cur && cur.auto) || {})
-      .sort()
-      .forEach(day =>
-        Object.keys(cur.auto[day] || {})
-          .sort()
-          .forEach(f => {
-            const d = autoParse(cur.auto[day][f]);
-            if (!d) return;
-            const P = pierreOf(cur, ci, f);
-            if (!P.keep) return;
-            const A = {keep: d.kind === 'a' ? 'add' : 'reject', view: d.view, quality: d.q, form: d.fm && fL(d.fm)},
-              L = [['keep', A.keep, P.keep]];
-            if (A.keep === 'add' && P.keep === 'add')
-              L.push(['view', A.view, P.view], ['quality', A.quality, P.quality], ['form', A.form, P.form]);
-            L.forEach(([field, a, p]) => {
-              if (a == null || p == null) return;
-              const ok = a === p,
-                t = d.t == null ? null : d.t;
-              if (d.check) out.push({f, day, field, a, p, ok, how: 'check', t});
-              else if (!ok) out.push({f, day, field, a, p, ok, how: 'fix', t});
-            });
-          })
-      );
+    Object.keys(I)
+      .sort((x, y) => (I[x].day === I[y].day ? (x < y ? -1 : 1) : I[x].day < I[y].day ? -1 : 1))
+      .forEach(f => {
+        const {day, d} = I[f],
+          P = pierreOf(cur, ci, f);
+        if (!P.keep) return;
+        const A = {keep: d.kind === 'a' ? 'add' : 'reject', view: d.view, quality: d.q, form: d.fm && fL(d.fm)},
+          L = [['keep', A.keep, P.keep]];
+        if (A.keep === 'add' && P.keep === 'add')
+          L.push(['view', A.view, P.view], ['quality', A.quality, P.quality], ['form', A.form, P.form]);
+        L.forEach(([field, a, p]) => {
+          if (a == null || p == null) return;
+          const ok = a === p,
+            t = d.t == null ? null : d.t;
+          if (d.check) out.push({f, day, field, a, p, ok, how: 'check', t});
+          else if (!ok) out.push({f, day, field, a, p, ok, how: 'fix', t});
+        });
+      });
     // A stable sort: untimed first in the log's order, then by time.
     return out.sort((x, y) => (x.t == null ? -1 : x.t) - (y.t == null ? -1 : y.t));
   }
