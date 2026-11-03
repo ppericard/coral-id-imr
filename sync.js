@@ -88,10 +88,16 @@ function pendingFrom(q) {
   return isFinite(t) ? t : null;
 }
 const ptParam = q => (pendingFrom(q) === null ? '' : `&pt=${pendingFrom(q)}`);
-function replayAdopt(rp, pending, v) {
+// cut: the progress reset time the request was sent with ('' for none), the cutoff the sheet replayed from (a save's
+// data, an anonymous send's reset). A reset made here while the request was on its way: the replay still holds the
+// progress it discarded, so it is not adopted (nor its version marked applied); the next reply brings it again from
+// the new reset (Codex review #399). A load's reply (mergeSaved) needs none: a reset newer than the sheet's returns
+// before it.
+function replayAdopt(rp, pending, v, cut) {
   if (!(Number(v) >= RV_SHEET)) return false;
   if (!rp || typeof rp.rv !== 'number' || rp.rv <= rvApplied() || !rp.rec || typeof rp.rec !== 'object') return false;
   if (typeof mxRecalc !== 'function') return false; // the quiz tier (model.js) not in yet: the next reply brings it again
+  if (cut !== undefined && cut !== (store.get('imr-coral-reset', '') || '')) return false;
   try {
     const from = rvApplied(),
       played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && (s.ok || 0) + (s.ko || 0) > 0),
@@ -114,6 +120,14 @@ function replayAdopt(rp, pending, v) {
       n => (typeof (before[n] || {}).pg === 'number' ? 'rules' : 'bkt')
     );
     store.set(RVK, rp.rv);
+    // The merge baseline (mergeSaved) becomes the shared history as replayed: the replay without this device's answers
+    // the sheet has not counted yet, which stay this device's own (P minus the base). Left at the saved copy, another
+    // device saving its own adoption of the same log would make this one count the replayed answers twice (Codex review
+    // #399: 2 logged answers, an empty saved copy, became 4).
+    if (SYNC) {
+      SYNC.base = rows.length ? replayedOf({P: rp.rec}, before, rp.rv) : copy(M);
+      store.set('imr-coral-sync', SYNC);
+    }
     save();
     if (played && typeof rvNoticeAdd === 'function') rvNoticeAdd(from, rp.rv);
     if (/^#(progress|quiz-board)$/.test(location.hash)) route();
@@ -185,12 +199,18 @@ function mergeSaved(j) {
   }
   introIn();
   holdIn();
-  // In place: other code holds P by name only, but keep the same object anyway.
-  const M = mergeProgress(SYNC.base || {}, P, R);
-  Object.keys(P).forEach(g => delete P[g]);
-  Object.assign(P, M);
-  // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
-  SYNC.base = copy(R);
+  // A saved copy replayed under older rules than this device applied (its RVK, core.js RVS) predates the replay adopted
+  // here, which already counts every answer of the log: this device's progress stays as it is, against the replayed
+  // baseline (replayAdopt). Merged, its older counts and model would undo the replay. Answers another device saved
+  // under the older rules since are in the log: that device adopts the replay at its next reply and saves them.
+  if ((Number(d[RVK]) || 0) >= rvApplied()) {
+    // In place: other code holds P by name only, but keep the same object anyway.
+    const M = mergeProgress(SYNC.base || {}, P, R);
+    Object.keys(P).forEach(g => delete P[g]);
+    Object.assign(P, M);
+    // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
+    SYNC.base = copy(R);
+  }
   store.set('imr-coral-sync', SYNC);
   store.set('imr-coral-progress', P);
   if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
@@ -221,7 +241,7 @@ function syncPush() {
 // (answers logged all the same) and the whole pull-merge-send runs again, at most twice (code review M1).
 function syncOnce(tries = 0) {
   const me = SYNC;
-  let rev, sent, log;
+  let rev, sent, log, cut;
   // If the device is disconnected or switched to another account meanwhile, drop this sync.
   // Script v11: a name the admin removed or merged answers 'gone' (with the name it joined): recorded below, no send.
   return syncGet(me)
@@ -231,6 +251,7 @@ function syncOnce(tries = 0) {
       if (j.found) mergeSaved(j);
       rev = me.rev;
       sent = copy(P);
+      cut = store.get('imr-coral-reset', '') || ''; // the reset this save's data carries, the replay's cutoff
       log = me.log || [];
       me.pending = progData()['imr-coral-progress'] || '';
       store.set('imr-coral-sync', me);
@@ -288,7 +309,7 @@ function syncOnce(tries = 0) {
         if (typeof holdSync === 'function') holdSync(j.hold, me.log, j.holdIds);
         if (me.rev === rev) delete me.dirty;
         // The full replay over every answer now logged (v28), plus any answer given while this send was on its way.
-        replayAdopt(j.replay, me.log, j.v);
+        replayAdopt(j.replay, me.log, j.v, cut);
         store.set('imr-coral-sync', me);
       } else if (j && SYNC === me) {
         me.err = j.error === 'pin' || j.error === 'wait' || j.error === 'gone' ? j.error : 'net';
@@ -546,7 +567,8 @@ const anonSoon = () => {
 function sendAnon() {
   const q = store.get(ANONQ, []);
   if (SYNC || !SYNC_URL || LOCAL || anonBusy || !q.length) return;
-  const batch = q.slice(0, 100);
+  const batch = q.slice(0, 100),
+    cut = store.get('imr-coral-reset', '') || ''; // the replay's cutoff, as sent (replayAdopt)
   anonBusy = true;
   fetch(SYNC_URL, {
     method: 'POST',
@@ -559,7 +581,7 @@ function sendAnon() {
       av: appVer(),
       rv: rvApplied(),
       ...(pendingFrom(q) === null ? {} : {pt: pendingFrom(q)}),
-      ...(store.get('imr-coral-reset', '') ? {reset: store.get('imr-coral-reset', '')} : {})
+      ...(cut ? {reset: cut} : {})
     })
   })
     .then(r => r.json())
@@ -571,7 +593,7 @@ function sendAnon() {
         left = store.get(ANONQ, []).filter(x => !done.has(x.id));
       store.set(ANONQ, left);
       // A device that never signed in gets its full replay too (sheet v28), its answers still queued on top.
-      replayAdopt(j.replay, left, j.v);
+      replayAdopt(j.replay, left, j.v, cut);
       // More than one batch waiting (played offline): the next one follows; a refused batch ('busy') is not retried here.
       if (left.length) setTimeout(sendAnon, 1000);
     })

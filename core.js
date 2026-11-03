@@ -1413,8 +1413,10 @@
   ];
   // A player's progress as the app holds it after the replay (rep: replayProgress's player; saved: the player's
   // imr-coral-progress, the device's copy in the app, the sheet's copy in the admin). What comes from where:
-  // - from the replay, for every genus the log has replayable answers on: pg, ok, ko, h, ps, off, conf, th, vr, streak,
-  //   at (the later of the two), du (either), pm 1 (the record is under the photo memory rule: memRecalc must never
+  // - from the replay, for every genus the log has replayable answers on: pg, ok, ko, h, off, conf, th, vr, streak,
+  //   at (the later of the two), du (either), the photos seen ps per photo the larger [shown, right] of the two (the
+  //   device also counts as shown a corallites hint revealed after the answer, which the log leaves out: a replay must
+  //   not make it new again for the exam, model.js examSet), pm 1 (the record is under the photo memory rule: memRecalc must never
   //   correct it again), and rv when given (the rules version it was replayed with: mergeProgress then keeps it over
   //   an older copy of the same answers);
   // - from the saved copy, what the log cannot give: the mastery exam passed (mx) or in course (ex), dropped when passed
@@ -1466,6 +1468,14 @@
       }
       const o = {};
       REPLAYED.forEach(f => r[f] !== undefined && (o[f] = dup(r[f])));
+      if (s && isObj(s.ps) && Object.keys(s.ps).length) {
+        o.ps = o.ps || {};
+        Object.keys(s.ps).forEach(f => {
+          const x = o.ps[f] || [0, 0],
+            y = Array.isArray(s.ps[f]) ? s.ps[f] : [];
+          o.ps[f] = [0, 1].map(i => Math.max(Number(x[i]) || 0, Number(y[i]) || 0));
+        });
+      }
       const at = Math.max(Number(r.at) || 0, Number(s && s.at) || 0);
       if (at) o.at = at;
       if (r.du || (s && s.du)) o.du = 1;

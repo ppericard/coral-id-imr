@@ -1110,6 +1110,28 @@ test('v28: the replay ids cover every row from the oldest answer the device stil
   assert.deepStrictEqual(a.replay.ids, ['q1', 'q2']);
 });
 
+test('v28: the hold ids cover every row from the oldest answer the device still queues, as the replay ids (pt; Codex review #399)', () => {
+  // 601 answers sent and logged, the reply lost: all still queued on the device.
+  const s = loadCodeGs(),
+    L = Array.from({length: 601}, (_, i) => qa('h' + i, i)),
+    pt = Date.parse(L[0].t),
+    one = modelHold();
+  L.forEach(a => one.step(a.e, a.ok));
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: L});
+  // An app that sends no pt: the last HOLD.IDS rows (and the cache keeps them).
+  assert.strictEqual(s.get({name: 'Ana', pin: '1234'}).holdIds.length, 500);
+  // A load or a save from the device whose queue starts at the first answer: every row from there, past the cache.
+  const r = s.get({name: 'Ana', pin: '1234', pt: String(pt)});
+  assert.deepStrictEqual([r.holdIds.length, r.holdIds[0]], [601, 'h0']);
+  assert.strictEqual(s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: L.slice(0, 10), pt}).holdIds.length, 601);
+  // A queue that starts later: never fewer than the last HOLD.IDS.
+  assert.strictEqual(s.get({name: 'Ana', pin: '1234', pt: String(Date.parse(L[590].t))}).holdIds.length, 500);
+  // The device adds none of its queued answers again (model.js holdSync): the hold of the 601 answers, once each.
+  const dev = modelHold();
+  dev.sync(r.hold, L, r.holdIds);
+  assert.strictEqual(dev.now(), one.now());
+});
+
 test("v28: an anonymous device's replay counts only the answers after its progress reset (reset; Codex review #399)", () => {
   const s = loadCodeGs(withData()),
     L = Array.from({length: 6}, (_, i) => qa('z' + i, i)),

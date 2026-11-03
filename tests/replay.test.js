@@ -262,7 +262,8 @@ test('replayedOf: what the app takes from the replay and what it keeps from its 
     '~level': {ok: 2, ko: 0, th: 0.2, at: 5}
   };
   const G = C.replayedOf(rep, saved, 3);
-  ['pg', 'ok', 'ko', 'h', 'ps', 'off', 'th', 'vr', 'streak'].forEach(f => assert.deepStrictEqual(G.A[f], rep.P.A[f], f));
+  ['pg', 'ok', 'ko', 'h', 'off', 'th', 'vr', 'streak'].forEach(f => assert.deepStrictEqual(G.A[f], rep.P.A[f], f));
+  assert.deepStrictEqual(G.A.ps, {...rep.P.A.ps, zz: [9, 9]}, 'the photos seen: the replay with the saved ones it lacks');
   assert.deepStrictEqual([G.A.dd, G.A.dl, G.A.ro, G.A.cor, G.A.mx, G.A.pm, G.A.rv], [2, 20400, ['o1'], 1, 5, 1, 3]);
   assert.strictEqual(G.A.at, rep.P.A.at);
   assert.ok(!('u' in G.A) && !('L' in G.A));
@@ -273,6 +274,17 @@ test('replayedOf: what the app takes from the replay and what it keeps from its 
     [G[C.LEVEL].ok, G[C.LEVEL].ko, G[C.LEVEL].th, G[C.LEVEL].at, G[C.LEVEL].rv],
     [3, 0, rep.P[C.LEVEL].th, rep.P[C.LEVEL].at, 3]
   );
+});
+
+test('replayedOf keeps the photos shown that the log leaves out: a corallites hint revealed after the answer (Codex review #399)', () => {
+  // quiz.js answer counts every photo of the question as shown (s.ps), the corallites hint revealed after the answer
+  // too, but logs only the photos seen when answering (ph without it).
+  const rep = C.replayProgress([row('p', 0, 'A', 'A', 'a0', 'A B C D'), row('p', 1, 'A', 'A', 'a0', 'A B C D')], {gen: GEN}).p,
+    saved = {A: {pg: 0.2, ok: 2, ko: 0, h: '11', ps: {a0: [1, 1], 'a-mac': [1, 0]}}},
+    G = C.replayedOf(rep, saved, 1);
+  assert.deepStrictEqual(rep.P.A.ps, {a0: [2, 2]});
+  assert.deepStrictEqual(G.A.ps, {a0: [2, 2], 'a-mac': [1, 0]}, 'the hint stays seen: never a new photo for the mastery exam');
+  assert.strictEqual(G.A.ok, 2);
 });
 
 test('mergeProgress: a record adopted from the replay wins over the copy of the same answers, not over new ones', () => {

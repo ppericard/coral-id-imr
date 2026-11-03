@@ -35,6 +35,7 @@ function storage(init = {}) {
 function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
   const prog = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
     loadData = /const loadData = [\s\S]*?;\n/.exec(prog)[0],
+    progData = /const progData = [\s\S]*?\n};\n/.exec(prog)[0],
     sent = [];
   const answer = (u, o) => {
     const url = new URL(String(u)),
@@ -75,15 +76,31 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     mxRecalc: f => f(),
     answersSoFar: () => 0,
     achMerge: () => {},
-    route: () => {}
+    route: () => {},
+    // What a sync (syncOnce, mergeSaved) touches besides the progress.
+    slateGenera: () => [],
+    level: () => ['new'],
+    progPct: () => 0,
+    boardOn: () => true,
+    BOARD: 'imr-coral-board',
+    boardT: () => 0,
+    showBoardSet: () => {},
+    INTRO: {KEY: 'imr-coral-intro', OFFER: {KEY: 'imr-coral-intro-offer'}},
+    introMerge: () => {},
+    introReset: () => {},
+    Q: {},
+    saveQ: () => {},
+    showBon: () => {},
+    prog: () => {}
   };
   vm.createContext(ctx);
   vm.runInContext(
     `const store = {get(k, d) { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }, set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }};
      const save = () => store.set('imr-coral-progress', P);\n` +
       loadData +
+      progData +
       fs.readFileSync(path.join(ROOT, 'sync.js'), 'utf8') +
-      '\nthis.A = {replayAdopt, rvApplied, syncGet, signIn, sendAnon, store, RVK};',
+      '\nbindSync = () => {};\nthis.A = {replayAdopt, rvApplied, syncGet, syncPush, syncPull, signIn, sendAnon, store, RVK};',
     ctx
   );
   const A = ctx.A;
@@ -157,6 +174,75 @@ test("an anonymous device's replay starts at its progress reset, and its send sa
   assert.deepStrictEqual([a.sent[0].reset, a.sent[0].pt], [T(10), Date.parse(T(20))]);
   assert.strictEqual(a.rvApplied(), C.RV, 'the replay was adopted');
   assert.strictEqual(a.count('Acropora'), 2, 'only the answers since the reset (was 7)');
+});
+
+// A progress reset on the device, as app.js's Reset progress button makes it.
+const resetHere = (a, t) => {
+  a.ctx.P = {};
+  a.store.set('imr-coral-reset', t);
+  a.store.set('imr-coral-progress', {});
+};
+test('a progress reset while a send is on its way: its replay, from the old cutoff, is not adopted (Codex review #399)', async () => {
+  // Anonymous: five answers logged, two more queued here; the player resets while the send carrying them is out.
+  const s = loadCodeGs(withData()),
+    id = 'abcdefghij',
+    before = Array.from({length: 5}, (_, i) => qa('b' + i, i));
+  assert.ok(s.post({anon: id, anonAnswers: before}).log);
+  let during = null;
+  const sheet = {get: q => s.get(q), post: b => (r => (during && during(), (during = null), r))(s.post(b))},
+    a = app({sheet, ls: {'imr-anon-id': JSON.stringify(id), 'imr-anonq': JSON.stringify([qa('c1', 20), qa('c2', 21)])}});
+  during = () => resetHere(a, T(30));
+  a.sendAnon();
+  await settle();
+  assert.ok(a.sent[0].rv === 0 && !a.sent[0].reset, 'sent before the reset');
+  assert.deepStrictEqual([a.count('Acropora'), a.rvApplied()], [0, 0], 'the discarded progress stays out (was 7 and applied)');
+  // The next send carries the new reset: its replay starts there and is adopted.
+  a.store.set('imr-anonq', [qa('d1', 40)]);
+  a.sendAnon();
+  await settle();
+  assert.deepStrictEqual([a.sent[1].reset, a.count('Acropora'), a.rvApplied()], [T(30), 1, C.RV]);
+
+  // Signed in: the load's replay failed (the sheet's lock was busy), the save's reply brings it, the reset came between.
+  const t = loadCodeGs(withData());
+  t.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: before});
+  let strip = true;
+  const sh = {
+      get: q => (r => (strip && delete r.replay, r))(t.get(q)),
+      post: b => (r => (during && during(), (during = null), r))(t.post(b))
+    },
+    d = app({sheet: sh, SYNC: {name: 'Ana', pin: '1234', dirty: true, log: [qa('c1', 20), qa('c2', 21)]}});
+  during = () => resetHere(d, T(30));
+  await d.syncPush();
+  assert.ok(d.sent[1].answers.length === 2 && d.sent[1].rv === 0, 'the save went out before the reset');
+  assert.deepStrictEqual([d.count('Acropora'), d.rvApplied()], [0, 0], 'the discarded progress stays out (was 7 and applied)');
+  strip = false;
+  await d.syncPush();
+  assert.deepStrictEqual([d.count('Acropora'), d.rvApplied()], [0, C.RV], 'the next save, with the reset, gets its replay');
+});
+
+test('two devices adopt the replay of a log ahead of the saved copy: no answer counted twice (Codex review #399)', async () => {
+  // Two answers logged, the progress write lost: the saved copy is empty.
+  const s = loadCodeGs(withData());
+  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
+  const dev = () => app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}}),
+    A = dev(),
+    B = dev();
+  await A.syncPull();
+  await B.syncPull();
+  assert.deepStrictEqual([A.count('Acropora'), B.count('Acropora'), A.rvApplied(), B.rvApplied()], [2, 2, C.RV, C.RV]);
+  // A saves its adoption first; its own load before the save still finds the empty copy of the older rules.
+  await A.syncPush();
+  assert.strictEqual(A.count('Acropora'), 2, 'the older saved copy does not undo the replay');
+  assert.strictEqual(JSON.parse(A.sent[2].data['imr-coral-progress']).Acropora.ok, 2);
+  // B loads A's save: the same two answers, not four.
+  await B.syncPull();
+  assert.strictEqual(B.count('Acropora'), 2, 'was 4');
+  // B answers once more, saves; A loads it: three.
+  B.ctx.SYNC.log = [qa('a2', 2)];
+  B.ctx.P.Acropora.ok++;
+  await B.syncPush();
+  await A.syncPull();
+  assert.deepStrictEqual([B.count('Acropora'), A.count('Acropora')], [3, 3]);
 });
 
 // progress.js achRecheck on stubs: the learned mark taken away (MXL.ach), the snapshot of a player with none learned.

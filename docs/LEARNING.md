@@ -903,9 +903,18 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     anonymous replay adopted on the device (Codex review #399); a device already signed in keeps its own and adopts the replay
     itself once, with its own unsent answers on top), the progress becomes the replayed record, with this device's answers the sheet has not counted
     yet (the unsent log or the anonymous queue, minus the ids the sheet replayed and the answers before a reset)
-    replayed on top by the same engine; then saved and sent. What is taken from where (`core.js` `replayedOf`): **from
-    the replay**, per genus the log has answers on: `pg`, `ok`, `ko`, `h`, `ps`, `off`, `conf`, `th`, `vr`, `streak`,
-    `at` (the later), `du` (either side's), plus `pm` 1 (under the photo memory rule: `memRecalc` never corrects it) and
+    replayed on top by the same engine; then saved and sent. A replay whose request went out before a progress reset
+    made on the device while it was on its way is not adopted (it still counts the answers the reset discarded): the
+    next reply brings it again from the new reset (Codex review #399). Two devices on one account: the merge baseline
+    (`SYNC.base`, `mergeSaved`) becomes the replayed record without the device's own answers not counted yet, so when
+    another device saves its own adoption of the same log, this one adds only its own new answers to it, never the
+    replayed ones a second time; a saved copy replayed under older rules than the device applied (its `imr-coral-rv`)
+    predates the replay, which already counts its answers: the device keeps its progress then (Codex review #399).
+    What is taken from where (`core.js` `replayedOf`): **from
+    the replay**, per genus the log has answers on: `pg`, `ok`, `ko`, `h`, `off`, `conf`, `th`, `vr`, `streak`,
+    `at` (the later), `du` (either side's), the photos seen `ps` per photo the larger [shown, right] of the replay and
+    the device (the device also counts as shown a corallites hint revealed after the answer, which the log leaves out:
+    it must not become new again for the mastery exam, `model.js` `examSet`; Codex review #399), plus `pm` 1 (under the photo memory rule: `memRecalc` never corrects it) and
     `rv` (so `mergeProgress` keeps it over an older copy of the same answers); the global level `~level`: `th`, `vr`,
     the larger answer count, the later `at`. **From the device**, what the log cannot give: the mastery exam passed
     (`mx`) or in course (`ex`; dropped when passed under the former model, a record without `s.pg`: that genus takes the
