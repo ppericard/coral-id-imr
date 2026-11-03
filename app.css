@@ -5823,6 +5823,45 @@ html.touring .unlock {
   align-self: stretch;
   text-align: center;
 }
+/* A "Did you know?" tip (quiz.js tipShow): the photo just answered, small, with its enlarge mark (app.js ZOOMI) ringed in
+   the kind's hue, so the player sees what to tap. Its buttons take no tap for their first moments (quiz.js TIP.WAIT):
+   faded until then, fading in. */
+.tipvis {
+  position: relative;
+  width: 132px;
+  height: 99px;
+  margin: 4px auto 12px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--photo-bg);
+  box-shadow: var(--shadow);
+}
+.tipvis img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.tipvis .zic {
+  right: 6px;
+  bottom: 6px;
+  box-shadow: 0 0 0 3px var(--k);
+}
+.tipcard h3:focus {
+  outline: none;
+}
+.tipcard [data-b] {
+  transition: opacity 0.25s ease-out;
+}
+.tipcard [data-b]:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tipcard [data-b] {
+    transition: none;
+  }
+}
 /* The first meeting with a genus (quiz.js introShow): the photo as a full-width band, at most a third of the screen's
    height (the tips stay in view), the kind's emoji and the kicker on a chip at its edge. */
 .ulcard.band .ulpanel {
