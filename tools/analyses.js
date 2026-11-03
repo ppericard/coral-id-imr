@@ -2,7 +2,7 @@
 // rule 14g "compute once"): runs every analysis of analysis.js on the answer log, at each milestone (the first 1000,
 // 2000, … answers and all of them), and stores the report in the sync sheet, where the admin reads it.
 //   node tools/analyses.js --sheet [--force]   the GitHub Action (.github/workflows/analyses.yml): reads the log with
-//                                             readAnswers and stores the report with analysesPut (sheet v34), both
+//                                             readAnswers and stores the report with analysesPut (sheet v35), both
 //                                             with the admin token in ANALYSES_ADMIN_TOKEN; does nothing until 1000
 //                                             new answers since the stored report (or the code changed), unless --force
 //   node tools/analyses.js --in answers.json --out report.json   a saved readAnswers reply (kept outside the repo)
@@ -16,7 +16,7 @@ const A = require('../analysis.js');
 const ROOT = path.join(__dirname, '..');
 const rd = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 const MAX = 2400000; // under the sheet's 2.5 MB cap (Code.gs AN_MAX)
-const SHEET_V = 34; // analysesGet / analysesPut
+const SHEET_V = 35; // analysesGet / analysesPut
 
 // The photos' features from the public files of this checkout.
 const metaOf = () => ({ph: A.photoMeta(rd('data.json'), rd('curation.json'), rd('quality.json'), rd('metrics.json'))});

@@ -15,9 +15,10 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the current one (v34: the Analyses report; v28: the admin shows the full replay, admin.js replayOn),
-    // or an older one with ?demo&v=27 (tests/admin.smoke.js: the admin then does what it did before; AGENTS.md 7a).
-    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 34,
+    // The script version the demo answers as: the current one (v35: the Analyses report; v30: the pages opened, admin.js loadPages; v28: the admin
+    // shows the full replay, admin.js replayOn), or an older one with ?demo&v=27 or v=28 (tests/admin.smoke.js: the admin
+    // then does what it did before; AGENTS.md 7a).
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 35,
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
@@ -34,7 +35,7 @@
   let S = null; // {names: [{name, pin hash...}], rows: [[name, t, shown, answered, ok, mode, photos, id, e, th, nw, choices]], reports, removed, data}
   // One dataset for every request: concurrent first calls (answers and stats together) wait for the same build.
   let BUILD = null;
-  const build = () => (BUILD = BUILD || make().then(x => (V >= 34 && setTimeout(() => anaReport(true), 0), x)));
+  const build = () => (BUILD = BUILD || make().then(x => (V >= 35 && setTimeout(() => anaReport(true), 0), x)));
   // Moves the last n of one player's rows into one session ending at `end`, about 37 s apart, in their order; the last
   // `typed` plain quiz answers among them become typed ones (quiz|t: no choices offered).
   function live(L, n, end, typed) {
@@ -347,7 +348,58 @@
         data: {'imr-coral-progress': '{}', 'imr-coral-settings': '{}'}
       };
     });
-    S = {rows, users, reports, events, removed: [], list};
+    // Pages opened (sheet v30 'pages', its own Pages tab): a few visits of each player, under their anonymous id (aid,
+    // as Code.gs evWho_ stores it), with the answers so far, the pages and the genus sheets opened. Its own random numbers,
+    // so the rest of the demo stays the same. Ana reads the sheets (one before it was asked, from Learn), Carla from the
+    // quiz feedback, Ben once, Dio never; a device not signed in opened one; one summary has no id (a wrong code).
+    let ps = 7;
+    const prnd = () => (ps = (ps * 1103515245 + 12345) % 2147483648) / 2147483648,
+      pages = [],
+      pageRow = (i, t, who, d) => [
+        'demopg' + i,
+        t,
+        'demodev' + (i % 5),
+        'pages',
+        who,
+        '',
+        'quiz',
+        JSON.stringify(d),
+        '190',
+        'Chrome 140 mobile'
+      ],
+      READS = {'Ana Demo': [3, 'learn'], 'Carla Demo': [2, 'quiz'], 'Ben Demo': [1, 'quiz'], 'Dio Demo': [0, 'quiz']};
+    let pi = 0;
+    PLAYERS.forEach(([name, , n, d0]) => {
+      const [k, from] = READS[name] || [0, 'other'];
+      for (let v = 0; v < 4; v++) {
+        const na = Math.round((n * v) / 4),
+          g = {};
+        if (k && v < 3)
+          G.slice(v * k, v * k + k).forEach(
+            (x, j) => (g[x] = [1 + (j % 2), 8 + Math.round(prnd() * 60), j ? from : 'learn', v || j ? 1 : 0])
+          );
+        const nG = Object.keys(g).length;
+        pages.push(
+          pageRow(pi++, NOW - (d0 - v * (d0 / 4)) * DAY, aid(name), {
+            r: {home: [1, 4 + Math.round(prnd() * 10)], quiz: [1 + nG, 300 + Math.round(prnd() * 900)], ...(nG ? {genus: [nG, 60]} : {})},
+            g,
+            vi: 'demovi' + pi,
+            na
+          })
+        );
+      }
+    });
+    pages.push(
+      pageRow(pi++, NOW - 3 * 3600e3, aid('~anon demo0'), {
+        r: {quiz: [2, 200], genus: [1, 25]},
+        g: {[G[0]]: [1, 25, 'quiz', 1]},
+        vi: 'demovianon',
+        na: 8
+      }),
+      pageRow(pi++, NOW - 4 * 3600e3, '', {r: {home: [1, 3], genera: [1, 40]}, g: {}, vi: 'demovinoid', na: 120})
+    );
+    pages.sort((a, b) => b[1] - a[1]);
+    S = {rows, users, reports, events, pages, removed: [], list};
     // Saved progress as the app saves it now: the full replay of each player's answers (core.js replayProgress, with the
     // memory offsets and confusions this demo's stats serve, as the admin replays them), plus the exams the demo passed
     // and each genus's ability. Two stale copies, as real players who have not opened the app since a recalculation:
@@ -627,11 +679,12 @@
       }
       const p = JSON.parse(opts.body || '{}');
       if (p.readReports) return ok({ok: true, rows: S.reports.map(r => r.slice())});
-      if (p.readEvents) return ok({ok: true, rows: S.events.map(r => r.slice())});
+      // pages: 1 (v30) reads the Pages tab; an older script ignores it and sends the other events.
+      if (p.readEvents) return ok({ok: true, rows: (p.pages && V >= 30 ? S.pages : S.events).map(r => r.slice())});
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
-      // v34: the stored Analyses report. A script before v34 answers 'input' (?demo&v=27: the admin shows no report).
-      if (p.analysesGet) return ok(V < 34 ? {ok: false, error: 'input'} : await anaReport(p.head));
+      // v35: the stored Analyses report. A script before v35 answers 'input' (?demo&v=30: the admin shows no report).
+      if (p.analysesGet) return ok(V < 35 ? {ok: false, error: 'input'} : await anaReport(p.head));
       if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userRename) return ok(users(p));
       return ok({ok: false, error: 'demo'});
     }

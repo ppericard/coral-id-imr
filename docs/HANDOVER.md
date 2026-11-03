@@ -146,5 +146,5 @@ The admin's **Analyses** group shows a report that a GitHub Action computes from
 2. **Store it as a repository secret**: the repository > Settings > Secrets and variables > Actions > **New repository secret**: name `ANALYSES_ADMIN_TOKEN`, value the token. Secrets never show in logs or to forks.
 3. **Check**: the repository > Actions > **Analyses report** > Run workflow (tick *force*) > Run. The log says "Stored: N answers, M milestones …" (counts only). The admin's Analyses group then shows the report. From then on it runs every hour and computes only after 1000 new answers.
 
-If the log says the token was refused: the token has expired or lost access to the repository (make a new one, step 1, and replace the secret). "The sync script answers as v…: needs v34": the sheet script has not updated itself yet (about 15 minutes after a merge; its "Deploy log" tab says).
+If the log says the token was refused: the token has expired or lost access to the repository (make a new one, step 1, and replace the secret). "The sync script answers as v…: needs v35": the sheet script has not updated itself yet (about 15 minutes after a merge; its "Deploy log" tab says).
 
