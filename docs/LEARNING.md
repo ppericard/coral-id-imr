@@ -77,7 +77,8 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
 
 ### What a question shows
 
-- **Photos**: drawn around ability − `PICKD.TARGET_OFF` (1.0), about 80% expected success.
+- **Photos**: drawn around ability − `aimOff(k)`, so that the question is right with the chance `PICKD.P` = 0.8 in its
+  format (one difficulty controller, below; until 2026-11-03 ability − `TARGET_OFF` 1.0 for every format).
 - **Online calibration** (`CAL`, Pierre 2026-11-02: about half the 600 game photos had never been shown to anyone, so
   they could not be rated). Adaptive tests seed new items among the calibrated ones to calibrate them (pretest items,
   online calibration in computerized adaptive testing). Here a photo with few answers from all players (the sheet's
@@ -99,7 +100,7 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
   other observers' photos only filling a short set, so the candidates Pierre validates would have stayed out.
 - All together, simulated as above: photos with an answer 449-461 → 509-519, with 3 or more 214-221 → 239-255,
   right rates unchanged.
-- **Look-alike traps** among the wrong choices: from ability (`TRAP`: one per 0.18 above 0, up to 3), chosen among the
+- **Look-alike traps** among the wrong choices: from ability (`FORMAT`: one per 0.18 above 0, up to 3), chosen among the
   pairs most confused: pooled over every player and declared look-alikes (IMR lecture, Coral Finder) as a prior
   (`CONF`), then the player's own record on the pair (personal path).
 - **Experts keep hard choices** (2026-11-02): when the player's own record clears every pair (an expert confuses
@@ -107,6 +108,56 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
   instead of easy genera. Simulated before this: an expert's traps fell from 1.8 to 0.1 a question.
 - **Easy wrong choices come first from genera the player has met** (2026-11-02): a beginner is not asked to choose
   between names never seen.
+
+### One difficulty controller (2026-11-03)
+
+The independent review's item 4: difficulty was set by three ramps on the genus ability (the photo aimed
+`TARGET_OFF` = 1.0 below it, single views from `singleP` = (ability − 0.5) / 1.5 up to 0.85, traps from `TRAP` {start
+0, step 0.18}), none tied to the 80% target once the choices changed the guess rate (the plausible choices `k` of
+`plausibleK` already changed it for the Elo and the progress, not for the photo). Typed questions (2026-11-03) added a
+fourth format with no guess at all. Now one controller (`model.js` `PICKD.P`, `aimOff`, `FORMAT`, `formatAt`), after
+Papoušek, Pelánek & Stanislav (2014), who choose the format so the predicted success hits one target:
+
+- **The format** of a question comes from the genus ability on one schedule, `FORMAT` = [ability, traps, single-view
+  share] points [0, 0, 0] → [0.54, 3, 0] → [1.8, 3, 0.85], straight lines between: the traps first (Pierre, rule 14c:
+  one after the first right answer, all three after about 5), then single views (rule 14). The same numbers as the two
+  ramps (single views now start at 0.54 instead of 0.5, a hair steeper); `TRAP.start` (a zero offset) went. Typed
+  questions are the third lever, with their own share (`typedP`, being made dynamic on another branch: it plugs in
+  unchanged, its guess rate reaching the photo through `k`).
+- **The photo** then makes up the rest: aimed `aimOff(k)` = logit((P − 1/k) / (1 − 1/k)) below the ability (and
+  `PICKD.SINGLE` lower for one view alone), so that the question, in its format, is right with the chance P = 0.8:
+  1.01 for 4 plausible choices (1.0 before), 0.81 for 3, 0.41 for 2 (easy choices, an Again, a duel), 1.39 for a typed
+  answer. Before, the same photo aim gave about 87% expected success with 2 plausible choices and 73% typed.
+- What read `TARGET_OFF` reads the target: a miss weighs the chance the player had over P (`pgMissW`; for 4 choices
+  0.798 → 0.8, for 2 choices 0.866 → 0.8, typed 0.731 → 0.8), the comeback's rust and My progress's photo band use
+  `aimOff(4)`.
+- 6 numbers (`TARGET_OFF`, `TRAP` start and step, `singleP`'s 0.5, 1.5 and 0.85) → `P` and the schedule's 3 points
+  (0.54, 1.8, 0.85; the 0s and the 3 traps are anchors): about the same count, but one target instead of three
+  independent ramps, and the format's guess rate in the photo's aim. `plausibleK` stays: it measures the guess rate the
+  aim needs.
+
+Simulated (`tools/learnsim.js`, 5 seeds × 600 questions, after items 7 and 6, same seeds), before → after:
+
+| Profile | right % 100 / 300 / 600 | true knowledge 300 / 600 | \|θ − logit k\| 600 | entered the exam by 600 | true ref. success at entry | learned 600 |
+| --- | --- | --- | --- | --- | --- | --- |
+| beginner | 83 / 87 / 88 → 83 / 87 / 87 | 0.53 → 0.54; 0.84 → 0.85 | 2.07 → 1.94 | 2.0 → 2.2 | 0.86 → 0.87 | 0.4 → 0.6 |
+| lecture RA | 85 / 86 / 91 → 87 / 86 / 90 | 0.74 → 0.73; 0.90 → 0.90 | 1.88 → 1.99 | 3.0 → 1.2 (±1.0) | 0.84 → 0.91 | 0.4 → 0 |
+| strong RA | 84 / 89 / 94 → 85 / 89 / 95 | 0.85 → 0.86; 0.94 → 0.94 | 2.18 → 2.09 | 8.0 → 10.6 (±1.2) | 0.93 → 0.91 | 0.4 → 0.4 |
+| expert | 94 / 95 / 97 → 97 / 97 / 97 | 0.95; 0.97 | 1.43 → 1.42 | 25.2 → 26.0 | 0.92 → 0.92 | 6.8 → 5.8 (±1.5) |
+
+Outcomes within the spread: the learning, the Elo error and the exam's quality do not move beyond a standard error or
+two (the lecture RA's and the strong RA's exam entries move in opposite directions). The right % does not come closer
+to 80%, against the review's hope: on this learner the gap comes from the Elo's under-estimate of every profile (1.4 to
+2.2 logits, "Learning-outcome simulation"), which no aim can correct; with real players the format's guess rate now
+leaves the target where it is. The profiles test: an expert's traps at question 300 2.32 → 2.28 a question (CI seed).
+
+**Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): the expectation's formula is unchanged (only which photo is aimed at changes), so its log-loss is the same
+(0.480 overall). What the real answers say about the aim, at the same expectation (the app expected 75-85%): 4 choices
+right 77% (n 231), 2 choices 85% (n 288), duels 93% (n 40). Before, the format moved the target: the 2-choice
+questions were expected about 87% on a photo aimed 1.0 below the ability; now they are aimed at 80%. On these answers a
+2-choice question was right 83-84% whether the app expected 75-85% or 82-92%, so the harder aim should not lower the
+real success much; the 4-choice questions, the bulk of the exam and of strong players' questions, are calibrated
+(expected 76%, right 77%, n 496). Typed: 5 answers, too few.
 
 ### Logged for the admin's player journey (2026-11-02)
 
@@ -123,6 +174,8 @@ the answers already logged.
 
 ### Look-alike duels slipped into the photo quiz (2026-11-02)
 
+(Their spacing rules became one contrast queue on 2026-11-03: "One contrast queue", below.)
+
 The Duel tab had 13 answers in all (2 players); "Again: A or B?" only follows a mix-up. Pierre (1 in 10): from the 20th
 answer on, about 1 photo-quiz question in 10 (`AUTO_DUEL.P` 0.1, `quiz.js`) is a duel on a look-alike pair, picked as the
 Duel tab picks (`duelPick`: the player's own mix-ups first, then pairs players confuse, then the IMR / Coral Finder
@@ -134,6 +187,53 @@ time delayed a genus, and a weak RA met about 3 genera fewer by question 300). P
 apart in the player journey; a win counts for the Look-alike slayer achievement, as in the Duel tab). Simulated over 4 seeds, it does not slow the opening of genera (an expert met 27 genera
 after 100 questions with duels, 26 without, seed 3333); the profiles test now checks an expert's traps at 300
 questions (one or more a question) and more than a beginner's at 100, the mean of the two sitting at the threshold.
+
+### One contrast queue (2026-11-03)
+
+The independent review's item 7: look-alikes were contrasted three ways (traps among the choices, "Again: A or B?" after
+a mix-up, duels slipped into the quiz), the duels under five spacing rules (`AUTO_DUEL` P 0.1, FROM 20, GAP 5, AGAIN 2,
+SAME 20, and never while an Again was due). Its dead knobs (`AUTO_DUEL.LO/HI/SHAKY`, `OPEN.SHAPE`) had already gone. The
+Again and the duel are the same question, a 2-choice contrast of a look-alike pair, so they now follow one rule
+(`quiz.js` `CONTRAST`, `planPhoto`); traps stay part of a question's format (item 4).
+
+- **One queue, one slot**: every mix-up of the photo quiz queues its pair (`rematch`), a contrast question's too (an
+  Again missed comes again, as before; a duel missed now brings its Again, where it used to come back only through the
+  duel draw). The newest mix-up replaces one still waiting, as before.
+- **One gap**: two contrast questions are at least `CONTRAST.GAP` = 2 questions apart, and a queued pair comes 2
+  questions after its mix-up (one question in between, the Again's timing since #251). Counted on the answers at which
+  each planned question will show (`planPhoto(at)`), so the plans made ahead no longer need the spacing reset when a
+  question shows (Codex review #361).
+- **With nothing queued**, a question becomes a duel with the chance `CONTRAST.P` = 0.1 (Pierre's 1 in 10), on a pair
+  `duelPick` draws (own mix-ups first), both genera met and ready, never the pair of the previous contrast question
+  (replaces `SAME`). Still never with a card (opening comes first), never in a comeback.
+- **No first 20 answers without duels** (`FROM` dropped; Pierre, 2026-11-02: "duels help learning early too"). A
+  first version let a genus into duels only from the ability where its questions get a trap for sure (a duel being a
+  one-trap question): simulated, the beginner then had no duel before question 100 (3 before) and learned less (true
+  knowledge of the slate at question 300 0.57 → 0.51, look-alike pairs told apart 0.83 → 0.80), so it went.
+- 5 constants and 3 state variables (`againAt`, `duelLog`, the show-time patches) → 2 constants, one slot and the last
+  contrast question.
+
+Simulated (`tools/learnsim.js`, 5 seeds × 600 questions, the four profiles, the photo sets as in CI, same seeds),
+before → after, mean of the seeds (± the standard error of the paired difference where it matters):
+
+| Profile | duels by 600 | Agains by 600 | true knowledge 300 / 600 | look-alike pairs told apart 600 | genera met 300 | learned 600 | true ref. success at exam entry |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| beginner | 21.8 → 32.6 | 66.6 → 68.4 | 0.57 → 0.55 (±0.02) / 0.85 → 0.82 (±0.02) | 0.945 → 0.937 | 31.6 → 29.6 (±1.2) | 0.6 → 0 | 0.82 → 0.83 |
+| lecture RA | 21.2 → 33.4 | 62.2 → 66.0 | 0.73 → 0.72 / 0.90 → 0.90 | 0.965 → 0.964 | 38.2 → 37.8 | 0.4 → 0.2 | 0.84 → 0.89 |
+| strong RA | 23.4 → 34.4 | 47.8 → 47.8 | 0.85 → 0.85 / 0.94 → 0.94 | 0.981 → 0.982 | 40 → 40 | 1.6 → 1.4 | 0.92 → 0.92 |
+| expert | 28.0 → 46.4 | 15.4 → 14.4 | 0.95 → 0.95 / 0.97 → 0.97 | 0.989 → 0.989 | 40 → 40 | 7.6 → 7.8 | 0.92 → 0.92 |
+
+- Duels come about half as often again (5-8% of the questions, was 4-5%): nearer Pierre's 1 in 10, since a duel no
+  longer waits 5 questions after the last one. Right % unchanged (within 2 points at every checkpoint).
+- The beginner's knowledge is 0.02-0.03 lower, about one standard error: more 2-choice questions raise the ability less
+  (a right answer among 2 proves less), so genera stay shaky a little longer and open a little later (29.6 genera met by
+  question 300 against 31.6). The opening itself is item 6 (below). Everyone else within the spread.
+
+**Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): a replay cannot say which questions the new queue would have asked, only how the contrast questions fare. The
+2-choice questions of the quiz (Agains and easy choices) were right 87% of the time where the app expected 76% (n 653),
+the duels in the quiz 16 of 16 (expected 82%), the Duel tab 93% (82%, n 86): contrast questions are easier for real
+players than the 1-in-2 guess rate says, so more of them cost little success; the expectation itself is unchanged by
+this item.
 
 ### Pierre's Easy / Medium / Hard sets against the players' answers (measured 2026-11-02)
 
@@ -246,7 +346,7 @@ time, each on its card, but never as the answer of the question right after its 
 
 My progress no longer shows "Review" (weak) for a genus with fewer than 5 answers (`REVIEW_MIN`, `shownLevel` in
 model.js): it shows "Learning" until there is enough evidence. The ring counts genera met ("6/40 met") until one is
-learned, then genera learned. The model itself (`level`) is unchanged.
+learned, then genera learned. The model itself (`level`) is unchanged. ("Review" itself is shaky since 2026-11-03: "One draw weight", below.)
 
 ### Comeback after a break (2026-11-02)
 
@@ -274,7 +374,7 @@ and only widens its uncertainty after inactivity).
   progress needs many answers against look-alikes (what was proven, not what is known).
 - **Rust**: the right answers the break is expected to have cost, summed over the genera answered (those in play: the
   slate, and the bonus genera when the player has them on): each loses
-  (1 − 1/4)(1 − R)·sig(`TARGET_OFF` − ln R), the success above chance lost on a usual 4-choice question at the photo a
+  (1 − 1/4)(1 − R)·sig(`aimOff(4)` − ln R), the success above chance lost on a usual 4-choice question at the photo a
   comeback shows. Only the gap since the last answer counts (play itself adds nothing). A comeback starts at a new
   visit (below) whose gap left rust: 30 minutes leave about 0.001 for any player (one easy question ends it), a night
   some tenths for a beginner, less for a strong player, a month several right answers. A first version started one
@@ -360,11 +460,13 @@ Pierre: rather than spamming a beginner with 40 genera, focus on the easiest one
 everything estimated from the data. Before, a genus never seen weighed 10 against 1-4 for one being learned: a beginner
 met the 39 slate genera almost at once.
 
-- **Opening by results**: the genera not met yet share `OPEN.READY` (35%) of the draw while no genus met is *shaky*,
-  down in a straight line to `OPEN.TRICKLE` (3%) at `OPEN.K` (10) shaky genera or more, so a new one still comes now
-  and then. A share, not a weight, so the pace holds as the genera met add up. A slope, not a switch (until 2026-11-02:
-  35% below 6 shaky genera, 3% from 6; K was 3, then 5, then 6): one genus more or less shaky no longer flips the pace,
-  which made the opening a lottery (below).
+- **Opening by results** (one rule since 2026-11-03, below): when the path allows a card (at least `INTRO.EVERY`
+  answers since the last one, no opening hold, not in the floor of a visit or a comeback), the question opens a genus
+  with the chance `openChance` = 1 − shaky / `OPEN.K` (8): the free share of K places for genera met and still
+  *shaky*, a work-in-progress limit with a slope, not a switch. Until 2026-11-03 the genera not met yet shared
+  `OPEN.READY` (35%) of the genus draw while no genus met was shaky, down in a straight line to `OPEN.TRICKLE` (3%) at
+  `OPEN.K` (10) shaky genera or more (a slope since 2026-11-02; before, 35% below 6 shaky genera and 3% from 6, K 3,
+  then 5, then 6: one genus more or less shaky flipped the pace, which made the opening a lottery, below).
 - **Shaky** = met, not mastered, and the player's expected success on an average photo of the genus (4 choices, at its
   difficulty) under `OPEN.P` = 0.6, from the genus ability. That ability allows for how hard the questions were and
   starts from the global level, so the signal is what the player knows, at any level, from the first answer. Tried and
@@ -383,6 +485,101 @@ met the 39 slate genera almost at once.
   and declared look-alikes decide; the answers take over as they come (Pierre expects Acropora and Galaxea to come out
   easy: the data will say).
 
+### One opening rule (2026-11-03)
+
+The independent review's item 6: the opening was throttled twice, by a share of the genus draw for the genera not met
+yet (`OPEN.READY` 35% down to `OPEN.TRICKLE` 3% at `OPEN.K` 10 shaky genera, the share arithmetic in `weighted`) and by
+`INTRO.EVERY` (2 answers between cards); since then the opening hold (`introHold`) and the floor after a break
+(`noOpen`) joined them. The last three are rules about *when* a card may come; the share was a second way of saying
+*how often*. Now one: when a card may come, the question opens a genus with the chance `openChance` = 1 − shaky /
+`OPEN.K` (`model.js`), the genus drawn among those not met yet by `openPick` (easiest first as far as the data are
+trusted, most common first: unchanged). The genus draw (`weighted`) only weighs the genera met. `READY`, `TRICKLE` and
+the share arithmetic went; K was recalibrated, as the review expected (the chance to open with nothing shaky is now 1,
+was 0.35).
+
+Simulated (`tools/learnsim.js`, 5 seeds × 600 questions, after item 7, same seeds), genera met (cards and asked), true
+knowledge of the slate, look-alike pairs told apart, genera learned; before → K 6 / K 8:
+
+| Profile | met at 100 | met at 300 | true knowledge 300 / 600 | look-alike 300 | learned 600 |
+| --- | --- | --- | --- | --- | --- |
+| beginner | 15.0 → 14.8 / 15.6 | 29.6 → 28.0 / 29.0 | 0.55 → 0.51 / 0.53; 0.82 → 0.83 / 0.84 | 0.819 → 0.794 / 0.807 | 0 → 0.2 / 0.4 |
+| lecture RA | 18.0 → 17.6 / 20.8 | 37.8 → 36.8 / 38.2 | 0.72 → 0.72 / 0.74; 0.90 → 0.89 / 0.90 | 0.895 → 0.890 / 0.900 | 0.2 → 0.2 / 0.4 |
+| strong RA | 20.4 → 28.6 / 30.0 | 40 | 0.85 → 0.86 / 0.85; 0.94 | 0.951 → 0.954 / 0.952 | 1.4 → 0.2 / 0.4 |
+| expert | 20.0 → 29.0 / 29.0 | 40 | 0.95; 0.97 | 0.984 | 7.8 → 6.8 / 6.8 |
+
+**K 8**: the beginner keeps their pace (15.6 genera at question 100, the CI limit is 17) and the RAs open a little
+faster (Pierre, 2026-11-02: "600 questions and only twenty-some genera open for the RAs may not be enough"), the
+strong RA and the expert much faster (nothing stays shaky, so a card every `INTRO.EVERY` answers: all 40 met by about
+question 100, was 200); true knowledge within ±0.02 of before everywhere, where K 6 cost the beginner 0.04 at question
+300 (K 10, tried on the first version of item 7, opened 17 genera to the beginner by question 100, at the CI limit). Genera learned by 600 move by about one standard error (strong RA 1.4 → 0.4 ±
+0.8, expert 7.8 → 6.8 ± 1.0): the genera opened sooner share the questions. The right % stays within 3 points except
+the first 100 questions of a strong RA (93 → 84%: more new genera at once).
+
+**Closed genera take no place** (Codex P1 on #408, 2026-11-03): after Open all, "One at a time" closes the genera
+opened at once and keeps their answers and abilities; counted among the shaky genera, 8 or more badly known ones held
+`openChance` at 0 for good, and being closed they are never asked, so they could never come back. Only the genera open
+now (`introduced`) count. `tools/learnsim.js --openall 30 --back one`, 5 seeds × 300 questions: the 2 runs (of 20)
+where the back card came and was taken went from stuck at 34 genera met to 37 by question 300 (beginner) and 37.8 →
+38.6 (lecture RA); the other runs are unchanged to the decimal, and without Open all no genus is ever closed, so the
+rule is the same as before.
+
+**Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): the log holds no record of when a card could have opened, so the opening cannot be replayed; the shaky signal it
+counts is checked with item 8 ("One draw weight", below).
+
+### One draw weight (2026-11-03)
+
+The independent review's item 8, first half (Pierre, 2026-11-03: "one variable computed dynamically, as simple as
+possible"; the second half, no longer updating the genus wrongly picked, is not done: Pierre keeps rule 13, both genera
+are affected, and the weight of that step is being recalibrated on another branch). Which genus a question asks was
+drawn by status weights: never asked 10, learned 0.25, "Review" (2 misses in the last 5) 3 + 2u, learning 1 + 3u,
+u = 1 − progress. Now one quantity (`model.js` `drawW`, `weight`):
+
+- **drawW = 1 − x · c**: x = sig(ability − `genusDiff`), the player's chance to recognise an average photo of the genus
+  (what `shaky`, the opening and the comeback read); c = m / (m + `ELO.n`), how sure the Elo is of that ability after
+  m answers (the share of its uncertainty function, K = kmax / (1 + m / n), already gone). What the model does not yet
+  know the player holds: never asked 1, the most (every genus comes up early, a card's genus soon after its card); badly
+  known or barely measured near 1; known and measured near 1 − x. No new constant.
+- Kept as they were: the exam (a genus ready for its next exam question weighs 1, as one never asked, was at least 3;
+  between two exam questions × 0.05), the last 4 questions held back (× 0.1), the duel draw (`duelPick` adds the two
+  genera's weights).
+- **"Review"** on My progress and the genus sheet is now *shaky* (`level`): met, not learned, and the expected success
+  on an average photo with 4 choices under `OPEN.P` 0.6, the same x. "2 misses in the last 5" was dropped: the game
+  aims every question at 80%, where 2 misses in 5 come one time in four at any level (the reason it was already
+  dropped for the opening). `REVIEW_MIN` (no "Review" under 5 answers) is kept; the sheet text says "Under 60%
+  expected right on a typical photo of it". The sync summary's review list follows.
+- Removed: 4 inline weights (10, 0.25, 3 + 2u, 1 + 3u), the exam's 3, the Review rule (`misses`).
+
+Simulated (`tools/learnsim.js`, 5 seeds × 600 questions, after items 7, 6 and 4, same seeds), before → after (± the
+standard error of the paired difference where it matters):
+
+| Profile | true knowledge 100 / 300 / 600 | genera met 100 | entered the exam by 600 | true ref. success at entry | learned 600 | right % 600 |
+| --- | --- | --- | --- | --- | --- | --- |
+| beginner | 0.26 → 0.27 / 0.54 → 0.55 / 0.85 → 0.86 | 15.2 → 15.8 | 2.2 → 3.0 | 0.87 → 0.86 | 0.6 → 0.8 | 87 → 87 |
+| lecture RA | 0.46 → 0.49 / 0.73 → 0.74 / 0.90 → 0.90 | 19.0 → 23.4 | 1.2 → 5.2 (±1.0) | 0.93 → 0.85 (±0.04) | 0 → 0.6 | 90 → 90 |
+| strong RA | 0.70 / 0.86 → 0.85 / 0.94 | 30.4 → 29.8 | 10.6 → 14.6 (±1.6) | 0.91 → 0.92 | 0.4 → 1.8 (±0.5) | 95 → 94 |
+| expert | 0.94 / 0.95 / 0.97 | 27.8 → 27.0 | 26.0 → 25.8 | 0.92 → 0.92 | 5.8 → 7.4 (±1.3) | 97 → 97 |
+
+- True knowledge the same or 0.01-0.03 higher everywhere; the progress bar's gap to the truth unchanged (±0.03).
+- Genera reach the exam and pass it sooner: the RAs' genera close to the exam's entry were drawn less than before (the
+  old 1 + 3u fell with the progress, u under 0.2), now as much as the model's doubt says. The lecture RA's genera now
+  enter it at a true success of 0.85 on the hard reference question (0.93 before, but on 1.2 genera a run; the review
+  asked for 0.85 or more); the exam then decides, unchanged.
+
+**Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): each signal computed before every answer on a genus the player had already answered (972 answers, 15% missed),
+replayed per player in time order, the ability as logged, the genus difficulty the mean of what its real answers imply:
+
+| Signal before the answer | flagged: answers, missed | not flagged: answers, missed | area under the ROC curve for a miss |
+| --- | --- | --- | --- |
+| old "Review" (2 misses in the last 5) | 331, 18% | 641, 14% | 0.561 (the count of misses in the last 5) |
+| new "Review" (shaky) | 236, 17% | 736, 15% | |
+| `drawW` | | | 0.561 |
+| x alone (1 − x) | | | 0.498 |
+
+The new weight tells a coming miss as well as the old rule (0.561 both, little above chance: the game aims each photo
+at the player's level, which evens the chances out); by quarter of `drawW`, 13%, 12%, 16%, 19% missed. What carries it
+is the uncertainty c (few answers on the genus), not x alone; "Review" (shaky) flags fewer answers (236 against 331)
+for about the same miss rate. Neither moves the app's expectation.
+
 ### Common first (2026-11-03)
 
 Pierre: open the genera "easy and common first". The genera RAs meet all the time on Dauin reefs and in ReefCloud
@@ -398,12 +595,12 @@ the order was difficulty only.
   systematic divers (abundance), and observer counts follow casual divers (who favour spectacular genera). A genus whose
   own `crit` / `imr` lines say "formerly X" also counts X near Dauin (one query over both taxa, so an observer of both
   counts once): one rule, no hand list ("refer to X" lines are not used: *Fungia* is still a valid genus).
-- **The rule** (`commonFactor` in `core.js`, used by `model.js` `weighted`): the opening weight of each genus not met
+- **The rule** (`commonFactor` in `core.js`, used by `model.js` `openPick`, `weighted` until the one opening rule): the opening weight of each genus not met
   yet, exp(−`OPEN.T` × trust × (difficulty − easiest)), is multiplied by √((1 + cm) / (1 + median cm of the genera not
   met yet)). No new constant: the square root damps it, the median makes it relative to what is left to open, and a
   genus without `cm` counts as the median (factor 1). Commonness applies fully from the first question (it does not
   depend on the players' answers), while difficulty fades in with them (`easyTrust`), as before. It weighs the first
-  cards too (they are drawn by `weighted` among the genera not met).
+  cards too (they are drawn by `openPick` among the genera not met).
 - **Biases to keep in mind**: iNaturalist favours spectacular or easy-to-photograph genera (*Plerogyra* 30,
   *Tubastraea* 18, *Lobophyllia* 40 come out more common than an RA's transects would say) and underrates small,
   encrusting or hard-to-name ones; a genus renamed recently is undercounted unless its "formerly" line catches the old
@@ -464,8 +661,9 @@ AGENTS.md rule 6b) opens only once the genus its card compares it to has been me
   *Turbinaria*, *Tubastraea*; *Alveopora* → *Goniopora*; *Merulina* → *Hydnophora*; *Cyphastrea* → *Astreopora*,
   *Echinopora*; *Halomitra* → *Herpolitha*. All of them, not one: the card names them all, and its ID tips compare with
   the first.
-- **The rule** (`core.js` `starWaits`, `model.js` `weighted`): in the opening draw, a ★ genus not met weighs 0 while one
-  of its references is in the list drawn from and not met (a card or an answer). The genera met, the pace (`OPEN`), the
+- **The rule** (`core.js` `starWaits`, `model.js` `openPick`; in `weighted` until the one opening rule of the same day): in
+  the opening pick, a ★ genus not met is left out while one of its references is in the list drawn from and not met (a
+  card or an answer). The genera met, the pace (`OPEN`), the
   easy and common first order are unchanged; the ★ genus simply waits its turn behind its references. It applies
   wherever genera open one at a time: the first 4 cards (`introStart`: a reference drawn earlier among them counts as
   met, so its card shows first), a card of its own, a genus closed again by One at a time. A duel of the Duel tab that
@@ -551,7 +749,7 @@ is a good mastery criterion.
   look-alikes. **A miss weighs what it proves too** (`model.js` `pgMissW`; Pierre, 2026-11-02: "a miss on a very hard
   photo doesn't mean the genus is badly known", and a miss must not cost more than it proves): the Elo chance the
   player had to get it right (ability against the photo's difficulty, k choices) over the chance the game aims for
-  (a photo `PICKD.TARGET_OFF` below the ability: about 80% with 4 choices), at most 1. A photo at the player's level
+  (`PICKD.P`, 0.8, whatever the format; a photo `TARGET_OFF` below the ability, about 80% with 4 choices, before 2026-11-03), at most 1. A photo at the player's level
   or easier: in full; 1 unit harder 0.78, 2 units 0.57, 3 units 0.43 (4 choices; with 2 choices less discount, a guess
   is 1 in 2). No new constant. The choices do not lighten a miss: missing among easy choices says as much about not
   knowing the genus as missing among look-alikes, and with the same light weight a genus answered only on easy
@@ -1203,6 +1401,18 @@ is not in the simulation.
   after Open all; 30 answers + the hold would have come 4 answers before the player quit); One at a time closes every genus
   opened at once, answered or not, until its card reopens it, answers and progress kept ("First meeting with a genus").
   The starting ability of those genera measured, not changed ("Open all: the app's expectation against the truth").
+- 2026-11-03, review item 7 (Pierre: do the review's simplifications still relevant): one contrast queue for the
+  Again and the duels slipped into the quiz, `CONTRAST` {P 0.1, GAP 2} instead of `AUTO_DUEL` {P, FROM, GAP, AGAIN,
+  SAME}; duels from the first answers ("One contrast queue").
+- 2026-11-03, review item 8 (first half, Pierre the same day): one draw weight, `drawW` = 1 − x · c from the Elo's
+  chance and its uncertainty, instead of the status weights; "Review" = shaky instead of 2 misses in the last 5. The
+  wrong-pick update stays (rule 13; its weight is recalibrated elsewhere) ("One draw weight").
+- 2026-11-03, review item 4: one difficulty controller, the photo aimed so every question is right with the chance
+  `PICKD.P` 0.8 in its format (`aimOff(k)`, typed included), the traps and single views on one schedule (`FORMAT`);
+  `TARGET_OFF`, `TRAP` and `singleP`'s ramp removed ("One difficulty controller").
+- 2026-11-03, review item 6: one opening rule, a card with the chance 1 − shaky / `OPEN.K` when the path allows one
+  (`openChance`, `openPick`); `OPEN.READY`, `OPEN.TRICKLE` and the share of the draw removed; `OPEN.K` 10 → 8 ("One
+  opening rule").
 
 - 2026-11-03, Pierre (for everyone): a ★ genus opens only after the genus its card compares it to has been met (a
   beginner met *Duncanopsammia* and *Cyphastrea* before *Turbinaria* and *Astreopora*): the references read from the data
