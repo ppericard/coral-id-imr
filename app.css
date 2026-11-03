@@ -81,6 +81,7 @@
   --bad: #b23a2a;
   --bad-bg: #f7dcd6;
   --warn: #d98b2b;
+  --review: #b86e0f; /* the "to review" dot of My progress (amber, calm; 2026-11-03), on a --surface ring */
   --cf-ink: #8a5a14;
   --photo-bg: #000;
   --on-photo: #fff;
@@ -125,6 +126,7 @@
   --bad: #f19a8b;
   --bad-bg: #45231d;
   --cf-ink: #d9a75c;
+  --review: #e3a649;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3);
   --shadow-hover: 0 4px 16px rgb(0 0 0 / 0.45);
   color-scheme: dark;
@@ -1179,7 +1181,7 @@ header {
 }
 /* A one-card group shares its row: its title stays on at most 2 lines (full title on hover) so the row's titles line up
    (designer re-review 2026-11-01, m2). */
-.gpack > .gblk[data-n='1'] > .gdiv .gt {
+.gpack > .gblk[data-n='1'] > .gdiv .gtitle {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -3547,7 +3549,7 @@ a.lt:hover {
    move from green/red to dark blue / orange. Hue alone is not enough (blue and orange of equal brightness merge for
    monochromats and in grey), so the pair also differs in lightness: luminance ratio 2.8 light, 2.3 dark; simulated
    (Machado 2009) OKLab distance >= 25 for protan, deutan, tritan and greyscale. Text contrast >= 4.5 on its surface.
-   Never colour alone: answers carry a tick or a cross, review carries "!". The level scale differs by lightness. */
+   Never colour alone: answers carry a tick or a cross, review carries a dot. The level scale differs by lightness. */
 :root[data-cvd='1'] {
   --good: #08306b;
   --good-bg: #dbe6f4;
@@ -3573,11 +3575,6 @@ a.lt:hover {
 :root[data-cvd='1'] .ans button.ok::after,
 :root[data-cvd='1'] .ans button.ko::after {
   font-size: var(--fs-l);
-}
-/* Colour-blind mode: "to review" also changes shape (thick dashed border), not only colour. */
-:root[data-cvd='1'] :is(.pslate .ps.weak, .pseg a.weak, .pwall .pw.weak, .plvl .pl-rev) {
-  border-style: dashed;
-  border-width: 3px;
 }
 .s1 {
   --lvc: var(--lv1);
@@ -3618,27 +3615,23 @@ a.lt:hover {
   font-style: normal;
   font-weight: 700;
 }
-.pslate .ps.weak,
-.pseg a.weak {
-  border: 2px solid var(--bad);
-}
+/* "To review": a small amber dot in the corner, on a ring of the page's surface so it shows on every level colour and
+   photo, light and dark (beginner review 2026-11-03: the red border and "!" read as an alarm). A shape, not only a colour,
+   so the colour-blind mode needs nothing more. Same meaning, same tooltip ("to review"). */
 .pslate .ps.weak::after,
 .pseg a.weak::after,
 .pwall .pw.weak::after,
 .plvl .pl-rev::before {
   z-index: 1;
-  content: '!';
+  content: '';
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 14px;
-  height: 14px;
+  top: 5px;
+  right: 5px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--bad);
-  color: var(--surface);
-  font: 700 var(--fs-2xs) / 14px var(--body);
-  text-align: center;
-  font-style: normal;
+  background: var(--review);
+  box-shadow: 0 0 0 2px var(--surface);
 }
 /* Scale legend under the ring: one swatch per step with its count, then the review marker. */
 /* The six levels on one row, "Review" as its own slim row below, at every size (design review 2026-11-01 on phones;
@@ -3679,19 +3672,20 @@ a.lt:hover {
   flex-direction: row;
   justify-content: center;
   gap: 6px;
+  align-items: center;
   padding: 2px 8px;
-  border: 2px solid var(--bad);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
 }
+/* The legend's dot sits before its count, in the line. */
 .plvl .pl-rev::before {
-  top: -7px;
-  right: -7px;
-}
-.plvl .pl-rev.zero {
-  border-color: var(--line);
+  position: static;
+  flex: none;
 }
 .plvl .pl-rev.zero::before {
   display: none;
-} /* nothing to review: the legend stays, without any "!" (a grey one still read as an alarm, RA re-review 2026-11-01) */
+} /* nothing to review: the legend stays, without any dot (a grey "!" still read as an alarm, RA re-review 2026-11-01) */
 /* Progress towards Learned as a number at the right of a tile (with the 5px bar along its bottom). */
 .pslate .ps .pct,
 .pseg a .pct {
@@ -4230,6 +4224,18 @@ a.psrc:focus-visible {
   color: var(--muted);
   font-size: var(--fs-xs);
 }
+/* The sourced definition under the plain-words sentence (data.json terms[i][3], beginner review 2026-11-03). */
+.gpop .gdef {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+}
+/* "Tap an underlined word": said once, on the first card (quiz.js introShow). */
+.gthint {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
 
 /* One muted line under the quiz level buttons: what the chosen photo set holds. */
 
@@ -4690,13 +4696,10 @@ a.psrc:focus-visible {
 }
 
 /* My progress wall: full-colour covers (grey = not seen), each with a name band in its level colour (same scale, mini
-   ring and % as Slate/Groups); learned = tick; review = red border + "!". */
+   ring and % as Slate/Groups); learned = tick; review = an amber dot. */
 .pwall .pw {
   outline: 0;
   border: 2px solid transparent;
-}
-.pwall .pw.weak {
-  border-color: var(--bad);
 }
 .pwall .pw.s0 {
   border: 1px dashed var(--line);

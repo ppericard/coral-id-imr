@@ -881,7 +881,7 @@ function level(n) {
   if (s.mx) return ['ok', 'Learned'];
   return ['mid', 'Learning'];
 }
-// What a player is shown (My progress, the genus sheet): "Review" (red, with "!") only once the genus has REVIEW_MIN
+// What a player is shown (My progress, the genus sheet): "Review" (an amber dot) only once the genus has REVIEW_MIN
 // answers, before that it is still being learned (beginner RA review, Pierre 2026-11-02: after a first session seven
 // red "Review" tiles read as a list of failures). The game itself still gives such a genus more questions (level).
 const REVIEW_MIN = 5;
