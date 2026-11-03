@@ -1,137 +1,190 @@
 {
  "genus": "Turbinaria",
  "photos": {
-  "turbinaria-cand-269459990": {
-   "view": "wide",
-   "quality": 3,
-   "form": "E",
-   "keep": "best",
-   "note": "Plate spreading over rock, smooth surface and well-spaced corallites clear"
-  },
   "turbinaria-cand-269468430": {
    "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "F",
    "keep": "best",
-   "note": "Old film scan, green cast; several plates"
+   "crop": [
+    0.1,
+    0.2,
+    0.95,
+    1.0
+   ],
+   "note": "Crinoid in the middle"
   },
   "turbinaria-cand-269469175": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.25,
+    1.0,
+    1.0
+   ],
+   "unsure": [
+    "keep"
+   ],
+   "note": "Wider than the added wide photo of this colony; green cast"
   },
   "turbinaria-cand-27992723": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "M",
-   "genus": "Diploastrea",
+   "keep": "best",
+   "multi": true,
    "unsure": [
     "genus"
    ],
-   "note": "Massive dome with crowded raised corallites, not Turbinaria; looks like Diploastrea"
+   "note": "Blurred reef scene with fish; subject unclear"
   },
   "turbinaria-cand-174530659": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "note": "1200 px, blue cast, soft at 100%"
   },
   "turbinaria-cand-269471685": {
    "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.2,
+    1.0,
+    1.0
+   ],
+   "note": "Similar to the added wide photo but lower angle"
   },
   "turbinaria-cand-269471620": {
    "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "F",
-   "keep": "alt"
+   "keep": "alt",
+   "crop": [
+    0.0,
+    0.2,
+    1.0,
+    1.0
+   ],
+   "note": "Another plate edge of the same colony"
   },
   "turbinaria-cand-311972096": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "note": "Strong blue cast, soft at 100%"
   },
   "turbinaria-cand-311286597": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.1,
+    1.0,
+    0.8
+   ],
+   "note": "Milky blue cast, soft at 100%"
   },
   "turbinaria-cand-611606937": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Crinoid on top, soft coral at right edge"
+   "crop": [
+    0.25,
+    0.15,
+    1.0,
+    1.0
+   ],
+   "note": "Crinoid and a cable at left; colour cast"
   },
   "turbinaria-cand-611606940": {
-   "view": "medium",
+   "view": "macro",
    "quality": 3,
-   "form": "x",
-   "keep": "alt"
+   "form": "M",
+   "keep": "best"
   },
   "turbinaria-cand-611606941": {
-   "view": "medium",
+   "view": "macro",
    "quality": 3,
-   "form": "x",
-   "keep": "dup"
+   "form": "M",
+   "keep": "dup",
+   "note": "Same corallites; a ruler at the left edge"
   },
   "turbinaria-cand-611606953": {
-   "view": "medium",
+   "view": "macro",
    "quality": 3,
-   "form": "x",
-   "keep": "dup"
+   "form": "M",
+   "keep": "dup",
+   "note": "Same corallites; a pointer at the left"
   },
   "turbinaria-cand-611606955": {
    "view": "medium",
    "quality": 2,
    "form": "M",
    "keep": "alt",
-   "note": "Close view of the dome, corallite pattern"
+   "note": "Upright view with the colony edge; soft on one side"
   },
   "turbinaria-cand-611606954": {
-   "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "view": "macro",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup",
+   "note": "Same surface; pointer and a hole at the edges"
   },
   "turbinaria-cand-194636424": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Turbid green water"
+   "crop": [
+    0.1,
+    0.0,
+    0.85,
+    0.85
+   ],
+   "note": "Strong yellow-green cast; corallites readable at 100%"
   },
   "turbinaria-cand-595763949": {
-   "view": "medium",
-   "quality": 3,
-   "form": "E",
-   "keep": "best"
-  },
-  "turbinaria-cand-595763952": {
-   "view": "medium",
-   "quality": 2,
-   "form": "E",
-   "keep": "alt",
-   "note": "White octocoral polyps at top"
-  },
-  "turbinaria-cand-595763945": {
-   "view": "medium",
-   "quality": 2,
-   "form": "E",
-   "keep": "alt",
-   "multi": true,
-   "note": "Octocoral polyps cover half the frame"
-  },
-  "turbinaria-cand-437171649": {
    "view": "macro",
    "quality": 3,
-   "form": "x",
-   "keep": "alt"
+   "form": "M",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.0,
+    0.9,
+    0.85
+   ]
+  },
+  "turbinaria-cand-595763952": {
+   "view": "macro",
+   "quality": 2,
+   "form": "M",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Tube-like animals and algae take the left half; coral soft"
+  },
+  "turbinaria-cand-595763945": {
+   "view": "macro",
+   "quality": 2,
+   "form": "M",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Soft coral polyps cover the left half and take the eye"
   },
   "turbinaria-cand-437171645": {
    "view": "macro",
@@ -139,275 +192,396 @@
    "form": "x",
    "keep": "best"
   },
-  "turbinaria-cand-713117223": {
-   "view": "medium",
-   "quality": 2,
-   "form": "E",
-   "keep": "alt",
-   "unsure": [
-    "form"
-   ],
-   "note": "Plate edge visible top right, cluttered"
-  },
-  "turbinaria-cand-713117204": {
+  "turbinaria-cand-437171649": {
    "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best"
+   "keep": "dup",
+   "note": "Same surface, a small crab in the middle"
   },
   "turbinaria-cand-713117213": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Tentacles partly out on the corallites"
+  },
+  "turbinaria-cand-713117223": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "crop": [
+    0.0,
+    0.2,
+    1.0,
+    1.0
+   ],
+   "note": "Algae patches; wider part of the colony"
+  },
+  "turbinaria-cand-713117204": {
+   "view": "macro",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Tentacles partly out; shallow focus"
   },
   "turbinaria-cand-336569718": {
-   "view": "wide",
-   "quality": 3,
+   "view": "medium",
+   "quality": 2,
    "form": "E",
-   "keep": "best"
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Several encrusting patches among algae and rubble; soft at 100%"
   },
   "turbinaria-cand-611572444": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.0,
+    0.95,
+    1.0
+   ],
+   "note": "Soft at 100%; fish"
   },
   "turbinaria-cand-611572461": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "dup"
+   "keep": "dup",
+   "note": "Same colony, same framing"
   },
   "turbinaria-cand-611572472": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "alt"
+   "keep": "alt",
+   "note": "Other angle of the same colony; soft"
   },
   "turbinaria-cand-611572507": {
    "view": "medium",
    "quality": 3,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "note": "Close on one plate, corallites crisp"
   },
   "turbinaria-cand-611572478": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "dup"
+   "keep": "dup",
+   "note": "Same colony from farther, soft"
   },
   "turbinaria-cand-611572483": {
    "view": "medium",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "alt"
+   "keep": "alt",
+   "crop": [
+    0.2,
+    0.15,
+    1.0,
+    1.0
+   ],
+   "note": "Algae at left; soft at 100%"
+  },
+  "turbinaria-cand-597647553": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.1,
+    0.95,
+    1.0
+   ],
+   "note": "Soft at 100%"
   },
   "turbinaria-cand-597647549": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
-   "keep": "alt"
-  },
-  "turbinaria-cand-597647553": {
-   "view": "wide",
-   "quality": 3,
-   "form": "S",
-   "keep": "best"
+   "form": "M",
+   "keep": "dup",
+   "note": "Same colony, upright framing, soft"
   },
   "turbinaria-cand-597647554": {
-   "view": "wide",
-   "quality": 3,
-   "form": "S",
-   "keep": "alt"
-  },
-  "turbinaria-cand-597647568": {
-   "view": "wide",
-   "quality": 3,
-   "form": "S",
-   "keep": "alt"
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Tentacles partly out; algae tuft"
   },
   "turbinaria-cand-597647571": {
    "view": "medium",
-   "quality": 3,
-   "form": "S",
-   "keep": "best"
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "note": "Upper surface of the same colony"
   },
-  "turbinaria-cand-597647573": {
+  "turbinaria-cand-597647568": {
    "view": "medium",
    "quality": 2,
-   "form": "S",
-   "keep": "alt"
+   "form": "M",
+   "keep": "dup",
+   "note": "Same surface, partly framed rubble"
+  },
+  "turbinaria-cand-597647573": {
+   "view": "macro",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Soft at 100% at the edges"
   },
   "turbinaria-cand-597647586": {
    "view": "medium",
    "quality": 2,
-   "form": "S",
-   "keep": "dup"
+   "form": "M",
+   "keep": "dup",
+   "note": "Same surface as the other medium photos"
   },
   "turbinaria-cand-437172016": {
    "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
-  },
-  "turbinaria-cand-675778278": {
-   "view": "medium",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "note": "Soft focus, green cast"
+   "note": "Soft at 100%; a colourful worm at the edge"
   },
   "turbinaria-cand-675778332": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Blue cast"
+   "note": "Cyan cast, soft at 100%"
   },
-  "turbinaria-cand-611584776": {
-   "view": "wide",
-   "quality": 2,
-   "form": "E",
+  "turbinaria-cand-675778278": {
+   "view": "macro",
+   "quality": 1,
+   "form": "F",
    "keep": "best",
-   "note": "Small Diploastrea-like neighbour at right edge"
+   "note": "1000 px, cyan cast and soft"
   },
   "turbinaria-cand-611584743": {
    "view": "wide",
    "quality": 2,
-   "form": "E",
-   "keep": "alt"
+   "form": "M",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "A Favites-like colony at the bottom right; soft at 100%"
+  },
+  "turbinaria-cand-611584776": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup",
+   "multi": true,
+   "note": "Same colony; a neighbouring coral at the right"
   },
   "turbinaria-cand-611584774": {
    "view": "wide",
    "quality": 2,
-   "form": "E",
-   "keep": "alt"
+   "form": "M",
+   "keep": "dup",
+   "multi": true,
+   "note": "Same colony; neighbouring corals around"
   },
   "turbinaria-cand-611584751": {
    "view": "medium",
    "quality": 2,
-   "form": "E",
-   "keep": "best"
+   "form": "M",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.0,
+    0.75,
+    1.0
+   ],
+   "note": "Sea squirts at the right; soft at 100%"
   },
   "turbinaria-cand-611584763": {
    "view": "medium",
    "quality": 2,
-   "form": "E",
-   "keep": "alt"
+   "form": "M",
+   "keep": "dup",
+   "note": "Same surface, more sea squirts and algae"
   },
   "turbinaria-cand-577593176": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "F",
    "keep": "best",
-   "note": "Small subject, colour cast"
-  },
-  "turbinaria-cand-598194703": {
-   "view": "wide",
-   "quality": 2,
-   "form": "E",
-   "keep": "best"
+   "note": "Strong cyan-red cast, soft at 100%"
   },
   "turbinaria-cand-598194702": {
    "view": "medium",
-   "quality": 3,
-   "form": "E",
-   "keep": "best"
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.0,
+    1.0,
+    1.0
+   ],
+   "note": "Algae on the surface; soft at 100%"
+  },
+  "turbinaria-cand-598194703": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "alt",
+   "note": "Wider view of the same plate; algae around"
   },
   "turbinaria-cand-409781688": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Divers far in background"
+   "crop": [
+    0.0,
+    0.3,
+    1.0,
+    1.0
+   ],
+   "note": "Divers in the background; cyan cast; soft at 100%"
   },
   "turbinaria-cand-595764608": {
-   "view": "wide",
-   "quality": 2,
-   "form": "E",
+   "view": "medium",
+   "quality": 1,
+   "form": "M",
    "keep": "best",
-   "note": "Strong green cast"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Strong green cast, algae and sea squirts cover much of the frame"
   },
   "turbinaria-cand-595764602": {
    "view": "medium",
    "quality": 1,
-   "form": "x",
-   "keep": "best",
-   "note": "Blurred, strong green cast"
+   "form": "M",
+   "keep": "dup",
+   "note": "Green cast and out of focus"
   },
   "turbinaria-cand-609166877": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "F",
    "keep": "best",
-   "note": "Dark, blue cast"
-  },
-  "turbinaria-cand-611590558": {
-   "view": "wide",
-   "quality": 3,
-   "form": "E",
-   "keep": "best"
-  },
-  "turbinaria-cand-611590560": {
-   "view": "wide",
-   "quality": 2,
-   "form": "E",
-   "keep": "alt",
-   "multi": true,
-   "note": "Massive Porites-like colony takes the left half"
-  },
-  "turbinaria-cand-611590564": {
-   "view": "wide",
-   "quality": 2,
-   "form": "E",
-   "keep": "dup",
-   "multi": true
+   "note": "Strong cyan cast over the whole frame, dark"
   },
   "turbinaria-cand-611590580": {
    "view": "medium",
    "quality": 3,
-   "form": "E",
-   "keep": "best"
+   "form": "M",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.0,
+    1.0,
+    0.85
+   ]
+  },
+  "turbinaria-cand-611590558": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Other corals around the colony; dark"
+  },
+  "turbinaria-cand-611590560": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup",
+   "multi": true,
+   "note": "A large massive coral fills the left; colony small in the middle"
+  },
+  "turbinaria-cand-611590564": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup",
+   "multi": true,
+   "note": "Same framing, massive coral at left"
   },
   "turbinaria-cand-591979716": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Dark background, flash"
+   "crop": [
+    0.15,
+    0.1,
+    0.8,
+    1.0
+   ],
+   "note": "Shrimp on the plate; soft at 100%"
+  },
+  "turbinaria-cand-598202249": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.0,
+    0.88,
+    1.0
+   ],
+   "note": "Cyan cast; crinoid at the top right"
   },
   "turbinaria-cand-598202252": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Blue cast"
-  },
-  "turbinaria-cand-598202249": {
-   "view": "medium",
-   "quality": 2,
-   "form": "F",
-   "keep": "best"
+   "crop": [
+    0.15,
+    0.0,
+    0.8,
+    1.0
+   ],
+   "note": "Cyan cast; crinoid at the top right"
   },
   "turbinaria-cand-598202251": {
    "view": "medium",
    "quality": 2,
    "form": "F",
-   "keep": "alt"
+   "keep": "dup",
+   "note": "Same plate, similar framing"
   },
   "turbinaria-cand-598202263": {
    "view": "wide",
    "quality": 1,
    "form": "F",
-   "keep": "alt",
-   "note": "Blurred"
+   "keep": "dup",
+   "note": "Out of focus with backscatter"
   },
   "turbinaria-cand-545720018": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.1,
+    0.8,
+    0.95
+   ],
+   "note": "Magenta-blue colour cast, soft at 100%"
   }
  }
 }

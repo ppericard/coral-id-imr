@@ -2,161 +2,138 @@
  "genus": "Montipora",
  "photos": {
   "montipora-cand-269472740": {
-   "view": "wide",
-   "quality": 2,
+   "view": "medium",
+   "quality": 3,
    "form": "S",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Lumpy columns on a plate base; submassive chosen"
+   "note": "Closer on the columns than the three added wide photos"
   },
   "montipora-cand-269512959": {
    "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "B",
-   "keep": "alt",
+   "keep": "best",
+   "multi": true,
    "unsure": [
-    "form"
+    "multi"
    ],
-   "note": "Upright branches on plates; branches dominate this frame"
+   "note": "Plating and other corals take much of the frame"
   },
   "montipora-cand-269513127": {
    "view": "wide",
    "quality": 3,
    "form": "F",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Horizontal plates with upright branches; plate form chosen"
+   "keep": "dup",
+   "multi": true,
+   "note": "Same colony, plating coral below fills a large part"
   },
   "montipora-cand-237009512": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "multi": true,
+   "note": "Green anemone-like polyps fill the bottom third; soft at 100%"
   },
   "montipora-cand-237008749": {
-   "view": "medium",
-   "quality": 2,
-   "form": "B",
-   "keep": "best"
-  },
-  "montipora-cand-269730564": {
    "view": "wide",
    "quality": 2,
-   "form": "F",
-   "keep": "alt",
-   "unsure": [
-    "form"
-   ],
-   "note": "Plate with upright columns, closer angle"
+   "form": "B",
+   "keep": "dup",
+   "multi": true,
+   "note": "683 px high; same scene"
   },
   "montipora-cand-269730646": {
    "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Plate with upright columns; plate edges visible"
+   "crop": [
+    0.1,
+    0.1,
+    0.95,
+    0.9
+   ]
+  },
+  "montipora-cand-269730564": {
+   "view": "medium",
+   "quality": 3,
+   "form": "F",
+   "keep": "best"
   },
   "montipora-cand-269730659": {
    "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "F",
    "keep": "dup",
-   "unsure": [
-    "form"
-   ],
-   "note": "Darker repeat of the same colony"
+   "note": "Same colony, darker framing"
   },
   "montipora-cand-269470916": {
    "view": "wide",
    "quality": 3,
    "form": "F",
-   "genus": "Merulina",
-   "unsure": [
-    "genus"
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.15,
+    1.0,
+    0.95
    ],
-   "note": "Plates with valleys fanning out to the margin and upgrowths look like Merulina; iNat says Montipora"
+   "note": "Colony on a dark slope; sponges at the edges"
   },
   "montipora-cand-269473063": {
    "view": "wide",
    "quality": 3,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Plate with upright branches"
+   "crop": [
+    0.15,
+    0.15,
+    0.95,
+    1.0
+   ]
   },
   "montipora-cand-269473162": {
    "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "F",
    "keep": "dup",
-   "unsure": [
-    "form"
-   ],
-   "note": "Same colony from further away"
-  },
-  "montipora-cand-488110949": {
-   "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "note": "Same plate, similar framing"
   },
   "montipora-cand-488110948": {
-   "view": "medium",
+   "view": "macro",
    "quality": 2,
    "form": "S",
-   "keep": "alt",
-   "unsure": [
-    "form"
-   ],
-   "note": "Ridged column or plate tip of the same colony"
+   "keep": "best",
+   "note": "Corallites between papillae readable but soft at 100%"
   },
   "montipora-cand-269514690": {
-   "view": "wide",
-   "quality": 2,
-   "form": "B",
-   "keep": "best"
-  },
-  "montipora-cand-269514898": {
    "view": "medium",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "note": "Polyps partly out cover the corallites"
   },
-  "montipora-cand-596709674": {
-   "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "best"
-  },
-  "montipora-cand-175093855": {
+  "montipora-cand-269514898": {
    "view": "wide",
    "quality": 2,
-   "form": "F",
+   "form": "B",
    "keep": "best",
-   "multi": true,
-   "unsure": [
-    "genus"
+   "crop": [
+    0.15,
+    0.1,
+    1.0,
+    1.0
    ],
-   "note": "Whorled plates plausibly Montipora; branching coral fills the lower left"
+   "note": "Polyps partly out"
   },
   "montipora-cand-27970609": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Whorled smooth plates from above, blue cast; Montipora plausible"
+   "multi": true,
+   "note": "Cyan cast; plates among branching corals; soft at 100%"
   },
   "montipora-cand-110354874": {
    "view": "wide",
@@ -164,302 +141,280 @@
    "form": "F",
    "keep": "best",
    "multi": true,
-   "unsure": [
-    "genus"
-   ],
-   "note": "Field of many plates, strong cast; genus cannot be confirmed"
+   "note": "Strong cyan cast over a reef scene of many plates"
   },
   "montipora-cand-606688600": {
    "view": "medium",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "form"
+   "crop": [
+    0.2,
+    0.1,
+    0.85,
+    1.0
    ],
-   "note": "Flattened lobed plate with tubercles"
+   "note": "Flash, soft at 100%; another coral at left"
   },
   "montipora-cand-606688595": {
    "view": "wide",
    "quality": 2,
-   "form": "B",
-   "keep": "best"
+   "form": "F",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Cluttered reef with gorgonians; colony boundaries unclear"
   },
   "montipora-cand-479441447": {
    "view": "wide",
    "quality": 1,
-   "form": "x",
-   "genus": "exclude",
+   "form": "E",
+   "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "Dark mound with tube holes on sand; looks like sponge or rock, no clear Montipora"
+   "note": "Blue cast, soft; dark crust with large holes may be a sponge"
   },
   "montipora-cand-578451055": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "genus": "Merulina",
-   "note": "Plates with ridges radiating and dividing to the margin: Merulina"
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "crop": [
+    0.2,
+    0.1,
+    1.0,
+    1.0
+   ],
+   "note": "Radiating ridges on the plates may point to Pachyseris or Merulina"
   },
   "montipora-cand-578451073": {
    "view": "medium",
    "quality": 2,
    "form": "F",
-   "genus": "Merulina",
-   "note": "Plates with ridges radiating and dividing to the margin: Merulina"
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Radiating ridges may point to another genus; soft at 100%"
   },
   "montipora-cand-339698792": {
-   "view": "medium",
+   "view": "wide",
    "quality": 3,
    "form": "B",
-   "genus": "Acropora",
-   "note": "White tips with axial corallites and protruding radials: Acropora"
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.0,
+    0.8,
+    0.8
+   ],
+   "unsure": [
+    "genus"
+   ],
+   "note": "Crop removes the logo; white branch tips may point to Acropora"
   },
   "montipora-cand-345339118": {
    "view": "medium",
    "quality": 2,
    "form": "B",
    "keep": "dup",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Burst of the same branches; polyps out hide corallites, Porites not ruled out"
-  },
-  "montipora-cand-345339154": {
-   "view": "medium",
-   "quality": 2,
-   "form": "B",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Polyps out hide corallites; Montipora plausible, Porites not ruled out"
+   "note": "Same branches and framing as the added medium photos"
   },
   "montipora-cand-345339083": {
    "view": "medium",
    "quality": 2,
    "form": "B",
    "keep": "dup",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Burst of the same branches, softer"
-  },
-  "montipora-cand-345339085": {
-   "view": "medium",
-   "quality": 2,
-   "form": "B",
-   "keep": "alt",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Closer on the same branches; polyps out hide corallites"
+   "note": "Same branches as the added medium photos, softer"
   },
   "montipora-cand-269476092": {
    "view": "wide",
    "quality": 3,
    "form": "F",
-   "genus": "Merulina",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Knobby plate with radial ridges at the margin; looks like Merulina scabricula"
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.1,
+    1.0,
+    0.9
+   ]
   },
   "montipora-cand-175093866": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "alt",
+   "keep": "best",
    "multi": true,
    "unsure": [
-    "genus"
+    "multi"
    ],
-   "note": "Massive Porites in the middle; foliose plates plausibly Montipora"
-  },
-  "montipora-cand-175093884": {
-   "view": "wide",
-   "quality": 2,
-   "form": "F",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Foliose plates seen from afar, cast; Montipora plausible"
+   "note": "Field of plates; a massive coral in the middle; colour fringing at 100%"
   },
   "montipora-cand-129414097": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Tiered whorled plates, blue cast; Montipora plausible"
+   "note": "Strong cyan cast, soft over the frame"
   },
   "montipora-cand-586252430": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
-  },
-  "montipora-cand-586252646": {
-   "view": "medium",
-   "quality": 3,
-   "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.1,
+    0.95,
+    0.95
+   ],
+   "unsure": [
+    "keep"
+   ],
+   "note": "Wider than the added medium photo of this colony; soft at 100%"
   },
   "montipora-cand-174426833": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Whorled plates, cast; Montipora plausible"
+   "note": "Cyan cast, soft at 100%"
   },
   "montipora-cand-269475912": {
    "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "F",
-   "genus": "Merulina",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Thin plate with ridges radiating and dividing to the margin; looks like Merulina"
-  },
-  "montipora-cand-269729639": {
-   "view": "wide",
-   "quality": 2,
-   "form": "B",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Upright branches on a plate"
+   "crop": [
+    0.15,
+    0.1,
+    0.85,
+    0.95
+   ]
   },
   "montipora-cand-596512561": {
    "view": "wide",
    "quality": 3,
    "form": "F",
-   "genus": "Merulina",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Tiered plates with radial valleys dividing to the margin; looks like Merulina"
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.15,
+    0.95,
+    0.95
+   ]
+  },
+  "montipora-cand-269468392": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Dark, soft at 100%"
   },
   "montipora-cand-269468184": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Plate with knobby upgrowths, dark; Montipora likely, Merulina scabricula possible"
+   "keep": "dup",
+   "note": "Same plate edge, shallow focus"
   },
   "montipora-cand-269468388": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "dup",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Same framing as the best"
-  },
-  "montipora-cand-269468392": {
-   "view": "wide",
-   "quality": 2,
-   "form": "F",
-   "keep": "alt",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Another angle of the plates and upgrowths"
+   "note": "Same plate edge, shallow focus"
   },
   "montipora-cand-269476007": {
    "view": "wide",
-   "quality": 2,
-   "form": "F",
-   "genus": "Merulina",
-   "multi": true,
-   "note": "Plate with valleys fanning out to the margin: Merulina; Plerogyra bubbles in a corner"
-  },
-  "montipora-cand-269476088": {
-   "view": "wide",
    "quality": 3,
    "form": "F",
-   "genus": "Merulina",
-   "note": "Plate with valleys fanning out to the margin: Merulina"
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.1,
+    0.75,
+    0.75
+   ],
+   "note": "Bubble coral at bottom right and orange sponge; crop keeps the plates"
   },
-  "montipora-cand-269730058": {
-   "view": "wide",
+  "montipora-cand-269476088": {
+   "view": "medium",
    "quality": 2,
    "form": "F",
-   "keep": "alt",
+   "keep": "best",
+   "multi": true,
    "unsure": [
-    "genus"
+    "multi"
    ],
-   "note": "Radial ridges suggest Merulina; tiny pores fit Montipora"
+   "note": "Soft corals with tentacles fill the top"
   },
   "montipora-cand-269730299": {
    "view": "wide",
    "quality": 3,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "genus"
+   "crop": [
+    0.15,
+    0.05,
+    0.85,
+    1.0
+   ]
+  },
+  "montipora-cand-269730058": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "alt",
+   "crop": [
+    0.1,
+    0.2,
+    0.95,
+    0.85
    ],
-   "note": "Radial ridges suggest Merulina; tiny pores fit Montipora"
+   "note": "Another plate group of the colony, side angle"
   },
   "montipora-cand-269730330": {
    "view": "wide",
    "quality": 3,
    "form": "F",
    "keep": "dup",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Same framing as the best"
+   "note": "Same plate, same framing as the best"
   },
   "montipora-cand-269730346": {
    "view": "medium",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Radial ridges suggest Merulina; tiny pores fit Montipora"
+   "note": "Ridges and papillae; soft at 100% with colour fringing"
   },
   "montipora-cand-269467989": {
    "view": "wide",
-   "quality": 2,
-   "form": "F",
-   "keep": "best"
-  },
-  "montipora-cand-588678137": {
-   "view": "wide",
    "quality": 3,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Plate with upright branches"
+   "crop": [
+    0.0,
+    0.1,
+    0.75,
+    1.0
+   ]
   },
   "montipora-cand-227054117": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
-   "keep": "best",
+   "form": "M",
+   "genus": "exclude",
    "unsure": [
-    "genus",
-    "form"
+    "genus"
    ],
-   "note": "Lumpy nodular colony; Montipora plausible, lobed Porites possible"
+   "note": "Bulbous vesicle-like polyps: likely Physogyra or another genus, not Montipora"
   },
   "montipora-cand-230790917": {
    "view": "medium",
@@ -469,7 +424,7 @@
    "unsure": [
     "genus"
    ],
-   "note": "Pale tips with protruding corallites look like Acropora"
+   "note": "Corymbose branches with white tips and axial corallites look like Acropora"
   },
   "montipora-cand-230790926": {
    "view": "wide",
@@ -479,180 +434,228 @@
    "unsure": [
     "genus"
    ],
-   "note": "Pale tips with protruding corallites look like Acropora"
+   "note": "Corymbose branches with white tips look like Acropora"
   },
   "montipora-cand-336210184": {
-   "view": "wide",
-   "quality": 2,
-   "form": "B",
-   "keep": "best"
-  },
-  "montipora-cand-493416551": {
    "view": "wide",
    "quality": 1,
    "form": "B",
    "keep": "best",
-   "note": "Small colony in a hazy tidepool"
+   "note": "928 px, mush at 100%; colony in shallow sand"
+  },
+  "montipora-cand-493416551": {
+   "view": "wide",
+   "quality": 1,
+   "form": "E",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Shallow intertidal sand and algae, no clear coral"
   },
   "montipora-cand-362146808": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "multi": true,
+   "note": "small; murky shallow water, colony small among algae"
   },
   "montipora-cand-602155131": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best",
-   "note": "Fragment held in hand"
+   "genus": "exclude",
+   "note": "Fragment held in a hand out of the water"
   },
   "montipora-cand-177406080": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
    "keep": "best",
-   "multi": true
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Green cast reef scene of Acropora-like tables, blue Millepora-like fingers; subject unclear"
   },
   "montipora-cand-177406085": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
    "keep": "dup",
    "multi": true,
-   "note": "Same colony, smaller in frame"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Same mixed scene with a leather coral; subject unclear"
   },
   "montipora-cand-487806728": {
    "view": "wide",
    "quality": 2,
-   "form": "B",
-   "keep": "best",
+   "form": "S",
+   "keep": "dup",
    "unsure": [
-    "form"
+    "keep"
    ],
-   "note": "Upright branches on a plate"
+   "note": "Close to the live wide photo of this colony; blue water, soft"
   },
   "montipora-cand-57893671": {
-   "view": "wide",
-   "quality": 3,
+   "view": "medium",
+   "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "note": "Green tissue with papillae, soft at 100%"
   },
   "montipora-cand-260012778": {
    "view": "wide",
-   "quality": 2,
-   "form": "F",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.05,
+    1.0,
+    1.0
+   ]
+  },
+  "montipora-cand-66646480": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
    "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "Frilly ridged plates; Montipora plausible, Merulina or Pavona possible"
-  },
-  "montipora-cand-66646480": {
-   "view": "wide",
-   "quality": 2,
-   "form": "B",
-   "keep": "best"
+   "note": "752 px, hazy; branches may be Acropora"
   },
   "montipora-cand-525086168": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "E",
-   "keep": "best"
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus"
+   ],
+   "note": "Night shot, blurred; frilly encrusting colony among other corals"
   },
   "montipora-cand-525086193": {
-   "view": "medium",
-   "quality": 2,
+   "view": "wide",
+   "quality": 1,
    "form": "E",
-   "keep": "best"
+   "keep": "dup",
+   "multi": true,
+   "note": "Night shot, blurred"
   },
   "montipora-cand-541721323": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best",
-   "note": "Fragment held in hand"
+   "genus": "exclude",
+   "note": "Fragment held in a hand out of the water"
   },
   "montipora-cand-175493947": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "genus"
+   "crop": [
+    0.35,
+    0.15,
+    1.0,
+    0.9
    ],
-   "note": "Red ridged plate; Montipora plausible, Merulina possible; crinoid covers part of the frame"
+   "note": "A large crinoid covers the left third; crop keeps the plate; watermark"
   },
   "montipora-cand-64936733": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "note": "Murky shallow water, soft over the frame"
   },
   "montipora-cand-697691497": {
    "view": "wide",
-   "quality": 3,
-   "form": "E",
+   "quality": 2,
+   "form": "F",
    "keep": "best",
-   "unsure": [
-    "form"
+   "crop": [
+    0.0,
+    0.1,
+    1.0,
+    1.0
    ],
-   "note": "Encrusting plate with columns"
-  },
-  "montipora-cand-697691508": {
-   "view": "wide",
-   "quality": 3,
-   "form": "S",
-   "keep": "alt"
+   "note": "Phone noise reduction at 100%"
   },
   "montipora-cand-697691465": {
    "view": "wide",
-   "quality": 3,
-   "form": "E",
-   "keep": "alt"
+   "quality": 2,
+   "form": "F",
+   "keep": "dup",
+   "note": "Same colony farther away, blue water"
   },
   "montipora-cand-697691591": {
    "view": "medium",
-   "quality": 3,
-   "form": "E",
-   "keep": "best"
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Soft at 100%"
   },
   "montipora-cand-697691706": {
    "view": "medium",
-   "quality": 3,
-   "form": "E",
-   "keep": "alt"
+   "quality": 2,
+   "form": "F",
+   "keep": "alt",
+   "note": "Upright part of the colony with ridges"
+  },
+  "montipora-cand-697691508": {
+   "view": "macro",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Papillae and ridges; worm holes"
   },
   "montipora-cand-697691760": {
-   "view": "wide",
-   "quality": 3,
-   "form": "S",
-   "keep": "dup"
+   "view": "macro",
+   "quality": 2,
+   "form": "F",
+   "keep": "dup",
+   "note": "Same surface, similar framing"
   },
   "montipora-cand-697691852": {
-   "view": "medium",
+   "view": "macro",
    "quality": 2,
-   "form": "S",
-   "keep": "alt"
+   "form": "F",
+   "keep": "dup",
+   "note": "Same papillae surface as the other close-up; algae-covered rock at top"
   },
   "montipora-cand-697691921": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
-   "form": "E",
-   "keep": "dup"
+   "form": "F",
+   "keep": "dup",
+   "note": "Similar to the other medium photos, softer"
   },
   "montipora-cand-602636621": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best",
-   "note": "Fragment held in hand"
+   "genus": "exclude",
+   "note": "Colony held in a hand out of the water"
   },
   "montipora-cand-379826266": {
    "view": "medium",
-   "quality": 3,
-   "form": "E",
-   "keep": "best"
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.0,
+    0.8,
+    0.9
+   ],
+   "note": "Blue fringing at plate edges, soft at 100%; feather star at the top"
   },
   "montipora-cand-445166772": {
    "view": "wide",
@@ -662,21 +665,26 @@
    "unsure": [
     "genus"
    ],
-   "note": "Pale tangled branches in murky water; genus hard to confirm"
+   "note": "Murky green water, soft over the frame; branches may be Acropora"
   },
   "montipora-cand-270753223": {
    "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "F",
-   "genus": "Merulina",
-   "note": "Plate with valleys fanning out to the margin: Merulina"
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.1,
+    0.95,
+    1.0
+   ]
   },
   "montipora-cand-270753350": {
    "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "F",
-   "genus": "Merulina",
-   "note": "Plate with valleys fanning out to the margin: Merulina"
+   "keep": "dup",
+   "note": "Same colony, same framing"
   }
  }
 }

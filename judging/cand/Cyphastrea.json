@@ -3,24 +3,15 @@
  "photos": {
   "cyphastrea-cand-606648846": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "S",
    "keep": "best",
    "multi": true,
-   "unsure": [
-    "form"
-   ],
-   "note": "Lobed colony; a large plate coral fills the right third."
-  },
-  "cyphastrea-cand-269733591": {
-   "view": "wide",
-   "quality": 3,
-   "form": "M",
-   "keep": "best"
+   "note": "A plating coral fills the right third"
   },
   "cyphastrea-cand-270771703": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best"
   },
@@ -28,38 +19,28 @@
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "dup",
-   "note": "Darker repeat of the best."
+   "keep": "dup"
   },
   "cyphastrea-cand-725113802": {
    "view": "wide",
    "quality": 3,
    "form": "S",
-   "keep": "best"
-  },
-  "cyphastrea-cand-725113780": {
-   "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "note": "Lobed colony on sand; wider than the live Closer photo"
   },
   "cyphastrea-cand-629092635": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "E",
    "keep": "best",
-   "note": "Blurred red object in the foreground."
+   "note": "766 px"
   },
   "cyphastrea-cand-357894381": {
    "view": "wide",
    "quality": 2,
    "form": "E",
-   "keep": "alt",
-   "multi": true,
-   "unsure": [
-    "genus"
-   ],
-   "note": "Branching coral fills the top; red corallites are unusual for Cyphastrea."
+   "keep": "dup",
+   "note": "Same colony smaller in the frame than in 2"
   },
   "cyphastrea-cand-357894372": {
    "view": "wide",
@@ -69,129 +50,126 @@
    "unsure": [
     "genus"
    ],
-   "note": "Blue cast; red cone corallites, Cyphastrea not certain."
+   "note": "Red polyps; genus not certain from this photo"
   },
   "cyphastrea-cand-605674065": {
    "view": "medium",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Soft; a seagrass blade crosses the colony."
+   "keep": "best"
   },
   "cyphastrea-cand-460472600": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "E",
    "keep": "best",
-   "note": "Green cast; another coral at lower left."
+   "crop": [
+    0.1,
+    0.0,
+    1.0,
+    1.0
+   ],
+   "note": "Green cast; another coral at the bottom left"
   },
   "cyphastrea-cand-460472574": {
-   "view": "medium",
+   "view": "macro",
    "quality": 2,
-   "form": "x",
+   "form": "E",
    "keep": "best",
-   "note": "Green cast."
+   "note": "1200 px, soft"
   },
   "cyphastrea-cand-227054309": {
    "view": "medium",
    "quality": 2,
    "form": "x",
-   "keep": "best",
-   "note": "Dim, green cast."
+   "keep": "best"
   },
   "cyphastrea-cand-566693045": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Dark night photo, corallites half covered"
   },
   "cyphastrea-cand-756299813": {
    "view": "wide",
    "quality": 2,
    "form": "E",
    "keep": "best",
-   "unsure": [
-    "form"
+   "crop": [
+    0.15,
+    0.15,
+    0.85,
+    0.95
    ],
-   "note": "Small colony among seagrass blades."
+   "note": "Seagrass blades across the colony"
   },
   "cyphastrea-cand-110608799": {
    "view": "macro",
-   "quality": 3,
+   "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "note": "1200 px, clean"
   },
   "cyphastrea-cand-270588956": {
    "view": "wide",
    "quality": 2,
    "form": "S",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Dark; crinoids on top."
+   "note": "A feather star in the middle"
   },
   "cyphastrea-cand-566687376": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "E",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.08,
+    0.0,
+    1.0,
+    1.0
+   ]
   },
   "cyphastrea-cand-357894517": {
    "view": "wide",
    "quality": 2,
-   "form": "M",
-   "keep": "alt",
-   "multi": true,
-   "note": "Several corals in frame around the colony."
-  },
-  "cyphastrea-cand-357894527": {
-   "view": "wide",
-   "quality": 3,
-   "form": "M",
-   "keep": "best"
+   "form": "S",
+   "keep": "dup",
+   "note": "Same colony and framing as the live Colony photo"
   },
   "cyphastrea-cand-262126543": {
    "view": "wide",
-   "quality": 3,
-   "form": "M",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Lumpy colony, could read as submassive."
+   "quality": 2,
+   "form": "S",
+   "keep": "best"
   },
   "cyphastrea-cand-566693050": {
-   "view": "medium",
-   "quality": 3,
+   "view": "macro",
+   "quality": 2,
    "form": "x",
    "keep": "best"
   },
   "cyphastrea-cand-357894433": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "E",
    "keep": "best",
-   "note": "Soft."
+   "note": "1314 px, cyan cast"
   },
   "cyphastrea-cand-260323772": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best"
   },
   "cyphastrea-cand-260362796": {
-   "view": "wide",
-   "quality": 3,
+   "view": "medium",
+   "quality": 2,
    "form": "E",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Lobed crust filling the frame."
+   "keep": "best"
   },
   "cyphastrea-cand-260381528": {
    "view": "wide",
@@ -203,8 +181,7 @@
    "view": "wide",
    "quality": 2,
    "form": "E",
-   "keep": "best",
-   "note": "Partly buried in sediment."
+   "keep": "best"
   }
  }
 }

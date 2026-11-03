@@ -3,235 +3,328 @@
  "photos": {
   "pocillopora-cand-588673292": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.15,
+    1.0,
+    0.75
+   ],
+   "note": "Verrucae crisp on the upper branches; busy base with sponges"
   },
   "pocillopora-cand-600517079": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
    "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "Washed-out blue colony on sand; knobby tips look like verrucae but Acropora radial corallites not excluded."
+   "note": "Blue cast, soft at 100%; colony in dark shade at the edge"
   },
   "pocillopora-cand-600517071": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
-   "keep": "alt"
+   "keep": "dup",
+   "note": "Same colony, blurred"
   },
   "pocillopora-cand-600517097": {
    "view": "wide",
    "quality": 1,
    "form": "B",
    "genus": "exclude",
-   "note": "Blurred thin spiky branches, seems a different coral (Seriatopora or Acropora?), not identifiable."
+   "unsure": [
+    "genus"
+   ],
+   "note": "Thin forked branches look like another genus; blurred; cyan cast"
   },
   "pocillopora-cand-47520480": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.25,
+    0.95,
+    0.95
+   ],
+   "note": "Watermark; soft at 100%"
   },
   "pocillopora-cand-47520486": {
    "view": "medium",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "note": "Watermark; soft at 100%, polyps partly out"
   },
   "pocillopora-cand-269293138": {
    "view": "wide",
    "quality": 3,
    "form": "B",
-   "keep": "best"
-  },
-  "pocillopora-cand-269472162": {
-   "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.35,
+    0.8,
+    0.95
+   ]
   },
   "pocillopora-cand-269471932": {
    "view": "wide",
    "quality": 3,
    "form": "B",
-   "keep": "alt"
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.2,
+    1.0,
+    1.0
+   ],
+   "note": "Crinoid on the colony"
+  },
+  "pocillopora-cand-269472162": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "dup",
+   "note": "Same colony, similar framing"
   },
   "pocillopora-cand-129413936": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "multi": true
+   "multi": true,
+   "unsure": [
+    "multi",
+    "genus"
+   ],
+   "note": "Blue finger coral and sea whips take much of the frame; soft"
   },
   "pocillopora-cand-269727977": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "multi": true,
+   "note": "Several colonies and fish across a reef scene; dark"
   },
   "pocillopora-cand-174425388": {
    "view": "medium",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "note": "Pink cast, smeared at 100%"
   },
   "pocillopora-cand-175101514": {
-   "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "best"
-  },
-  "pocillopora-cand-100917718": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
    "multi": true,
-   "note": "Reef scene; two pale branching colonies, the left one probably Pocillopora."
+   "note": "A large green massive coral takes the left and bottom; soft"
+  },
+  "pocillopora-cand-100917718": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "note": "Strong cyan cast, smeared at 100%; reef scene"
   },
   "pocillopora-cand-269728185": {
    "view": "wide",
    "quality": 3,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.1,
+    0.75,
+    0.9
+   ]
   },
   "pocillopora-cand-585934375": {
    "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "best"
-  },
-  "pocillopora-cand-607126019": {
-   "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.1,
+    0.85,
+    1.0
+   ],
+   "note": "Orange cast, soft at 100%"
   },
   "pocillopora-cand-175110817": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Other corals all around; oversharpening halos at 100%"
   },
   "pocillopora-cand-269468533": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Other colonies and crinoids around; soft"
   },
   "pocillopora-cand-100930200": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "note": "Flash glare, smeared at 100%"
   },
   "pocillopora-cand-606689573": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
-   "keep": "best"
-  },
-  "pocillopora-cand-596708533": {
-   "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Hazy shallow water, soft over the frame"
   },
   "pocillopora-cand-262218463": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
+   "crop": [
+    0.1,
+    0.1,
+    0.9,
+    1.0
+   ],
    "unsure": [
     "genus"
    ],
-   "note": "Thin spreading branches on dark sand, verrucae not clear; Stylophora or Seriatopora are look-alikes."
+   "note": "Flattened branches with polyps out; may be another genus"
   },
   "pocillopora-cand-713112109": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.2,
+    0.95,
+    1.0
+   ],
+   "note": "Soft at 100%"
   },
   "pocillopora-cand-713112100": {
    "view": "medium",
-   "quality": 3,
-   "form": "B",
-   "keep": "best"
-  },
-  "pocillopora-cand-713112086": {
-   "view": "macro",
-   "quality": 3,
-   "form": "B",
-   "keep": "best"
-  },
-  "pocillopora-cand-246489765": {
-   "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "dup",
+   "note": "Close to the added medium photo of this colony"
+  },
+  "pocillopora-cand-246489765": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Smeared at 100%; polyps partly out"
   },
   "pocillopora-cand-595777847": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.0,
+    0.9,
+    1.0
+   ],
+   "note": "Soft at 100%; dark colony on pale sand"
   },
   "pocillopora-cand-661955819": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus",
+    "multi"
+   ],
+   "note": "Thin branches among other corals; may be another genus"
   },
   "pocillopora-cand-543961691": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A transect tape lies across the colony and cannot be cropped away"
   },
   "pocillopora-cand-363068234": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.15,
+    0.75,
+    0.75
+   ],
+   "note": "Fish everywhere; soft at 100%"
   },
   "pocillopora-cand-374947140": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
    "keep": "best",
-   "multi": true
+   "note": "Cyan cast, blurred at 100%"
   },
   "pocillopora-cand-227577853": {
-   "view": "wide",
-   "quality": 2,
+   "view": "medium",
+   "quality": 1,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "note": "Strong cyan cast, smeared at 100%"
   },
   "pocillopora-cand-307206147": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "note": "1500 px, soft at 100%"
   },
   "pocillopora-cand-174228876": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "multi": true
+   "note": "Blue cast, soft at 100%"
   },
   "pocillopora-cand-333535848": {
-   "view": "wide",
-   "quality": 2,
+   "view": "medium",
+   "quality": 1,
    "form": "B",
    "keep": "best",
-   "multi": true,
-   "note": "Bleached and brown branching colonies side by side, cluttered."
+   "note": "640 px, mush at 100%"
   },
   "pocillopora-cand-36508900": {
    "view": "wide",
@@ -241,53 +334,73 @@
    "unsure": [
     "genus"
    ],
-   "note": "Strong green cast and blur; branching colony shape only, verrucae not visible."
+   "note": "Strong green cast, blurred over the frame"
   },
   "pocillopora-cand-463668796": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "multi": true,
+   "note": "Hazy, smeared; other colonies and algae around"
   },
   "pocillopora-cand-74808985": {
    "view": "medium",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "note": "Cyan cast, smeared at 100%"
   },
   "pocillopora-cand-509091469": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "note": "1467 px, green cast, soft"
   },
   "pocillopora-cand-46597174": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "note": "Milky veil over the whole frame"
   },
   "pocillopora-cand-57893634": {
    "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "best"
-  },
-  "pocillopora-cand-748240022": {
-   "view": "medium",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
    "keep": "best",
-   "unsure": [
-    "genus"
+   "crop": [
+    0.05,
+    0.1,
+    1.0,
+    0.9
    ],
-   "note": "Spreading flat branches with tentacles out; verrucae not clear, could be another branching genus."
+   "note": "Soft at 100%"
   },
-  "pocillopora-cand-336213085": {
+  "pocillopora-cand-748240022": {
    "view": "wide",
    "quality": 3,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.1,
+    1.0,
+    1.0
+   ],
+   "unsure": [
+    "genus"
+   ],
+   "note": "Thin flattened branches: may be another genus"
+  },
+  "pocillopora-cand-336213085": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "note": "Hazy, soft at 100%; other corals around"
   }
  }
 }

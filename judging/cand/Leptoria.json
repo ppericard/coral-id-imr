@@ -6,95 +6,74 @@
    "quality": 2,
    "form": "M",
    "keep": "dup",
-   "note": "Dark background."
+   "note": "Same colony and framing as the live Colony photos"
   },
   "leptoria-cand-269728665": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "dup"
+   "keep": "dup",
+   "note": "Same colony and framing as the live Colony photos"
   },
   "leptoria-cand-269728670": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "alt",
-   "note": "Wider angle with the reef around."
-  },
-  "leptoria-cand-269728673": {
-   "view": "wide",
-   "quality": 3,
-   "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "note": "A third angle, from the side"
   },
   "leptoria-cand-595782579": {
    "view": "medium",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Valleys well visible between ridges; could be Platygyra."
-  },
-  "leptoria-cand-711355650": {
-   "view": "medium",
-   "quality": 3,
-   "form": "M",
-   "keep": "best"
-  },
-  "leptoria-cand-711355635": {
-   "view": "wide",
-   "quality": 2,
-   "form": "M",
-   "keep": "best",
-   "note": "Dark, backscatter."
-  },
-  "leptoria-cand-711355630": {
-   "view": "medium",
-   "quality": 3,
-   "form": "M",
-   "keep": "alt"
-  },
-  "leptoria-cand-307921812": {
-   "view": "wide",
-   "quality": 2,
-   "form": "E",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Low colony on rock; cast."
+   "note": "Wider than the live Closer photo, other part of the colony"
   },
   "leptoria-cand-270607486": {
    "view": "wide",
    "quality": 3,
-   "form": "S",
-   "keep": "best",
-   "note": "Columns and mounds (IMR cue)."
+   "form": "M",
+   "keep": "best"
   },
   "leptoria-cand-270607277": {
    "view": "wide",
-   "quality": 3,
-   "form": "S",
-   "keep": "alt"
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
   },
   "leptoria-cand-461408893": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "M",
    "keep": "best",
-   "note": "Haze, green cast."
+   "note": "602 px, murky green"
   },
   "leptoria-cand-353986768": {
    "view": "wide",
    "quality": 1,
    "form": "M",
    "keep": "best",
-   "note": "Blurred snorkel shot."
+   "note": "Smeared at 100%, overexposed rock"
   },
   "leptoria-cand-336354495": {
    "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Several corals around, the colony pale"
+  },
+  "leptoria-cand-711355635": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "leptoria-cand-711355630": {
+   "view": "medium",
    "quality": 2,
    "form": "M",
    "keep": "best"
@@ -103,47 +82,41 @@
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Valleys clearly visible between ridges; could be Platygyra."
+   "keep": "best"
   },
   "leptoria-cand-513460124": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
+   "form": "M",
    "keep": "best",
-   "multi": true,
    "unsure": [
     "genus"
    ],
-   "note": "Surface pattern not visible; another massive coral fills the right."
+   "note": "Smooth orange pillars; Platygyra or Leptoria, valleys fine"
   },
   "leptoria-cand-336370402": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Haze, sun flecks."
+   "note": "Light ripples over the surface"
   },
   "leptoria-cand-336370398": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "alt",
+   "keep": "best",
    "multi": true,
-   "note": "Other corals fill the left third."
+   "unsure": [
+    "multi"
+   ],
+   "note": "Other corals at the left"
   },
   "leptoria-cand-260018081": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Valleys clearly visible between ridges; could be Platygyra."
+   "keep": "best"
   },
   "leptoria-cand-260015241": {
    "view": "wide",
@@ -151,31 +124,35 @@
    "form": "M",
    "keep": "best",
    "multi": true,
-   "note": "Diploastrea at left and a tentacled coral in front."
+   "unsure": [
+    "multi"
+   ],
+   "note": "Green cast; another coral at the left and a soft coral at the bottom"
   },
   "leptoria-cand-336370807": {
    "view": "medium",
    "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "note": "A fan worm in the centre; soft at 100%"
   },
   "leptoria-cand-466228998": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
-   "keep": "alt",
-   "multi": true,
-   "unsure": [
-    "genus"
-   ],
-   "note": "Reef scene with tables; brain pattern of the lobed colony not visible."
+   "form": "x",
+   "genus": "exclude",
+   "note": "Reef scene; table and other corals cover the subject"
   },
   "leptoria-cand-466229004": {
    "view": "wide",
-   "quality": 3,
-   "form": "S",
+   "quality": 2,
+   "form": "M",
    "keep": "best",
-   "note": "Meandering ridge-like colony, narrow valleys."
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Many other corals around the meandering colony"
   }
  }
 }

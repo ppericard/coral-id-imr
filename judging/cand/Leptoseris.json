@@ -3,41 +3,53 @@
  "photos": {
   "leptoseris-cand-269476476": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "dup",
+   "note": "Same plate and framing as the live Colony photo"
   },
   "leptoseris-cand-726179149": {
    "view": "wide",
    "quality": 3,
-   "form": "F",
-   "keep": "best"
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Small free disc-like colony with wavy rim"
   },
   "leptoseris-cand-545718850": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.15,
+    0.85,
+    0.75
+   ],
+   "note": "A small plate on dark rock"
   },
   "leptoseris-cand-604391622": {
    "view": "wide",
-   "quality": 3,
-   "form": "E",
-   "keep": "best"
-  },
-  "leptoseris-cand-604391619": {
-   "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "E",
    "keep": "best",
-   "note": "Soft focus"
+   "note": "Sand over part of the colony; wider than the live Closer photo"
   },
   "leptoseris-cand-468201386": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Small colony in the frame"
+   "crop": [
+    0.15,
+    0.2,
+    0.75,
+    0.75
+   ],
+   "note": "small; frilly colony on a rock"
   },
   "leptoseris-cand-247051276": {
    "view": "wide",
@@ -53,37 +65,30 @@
   },
   "leptoseris-cand-260337983": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "E",
-   "keep": "dup",
-   "note": "Same framing as the best, redder flash"
+   "keep": "dup"
   },
   "leptoseris-cand-716183938": {
    "view": "macro",
    "quality": 3,
-   "form": "x",
+   "form": "F",
    "keep": "best",
-   "note": "Photographer watermark at the bottom"
+   "note": "Watermark at the corner"
   },
   "leptoseris-cand-489649926": {
-   "view": "medium",
-   "quality": 3,
-   "form": "F",
-   "keep": "best"
-  },
-  "leptoseris-cand-574279914": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Small colony among other reef life"
+   "note": "640 px, clean"
   },
   "leptoseris-cand-574279930": {
    "view": "wide",
    "quality": 1,
    "form": "F",
-   "keep": "dup",
-   "note": "Colony tiny in a sand scene"
+   "keep": "best",
+   "note": "small; tiny plate in a wide sandy frame, soft"
   },
   "leptoseris-cand-437177540": {
    "view": "wide",
@@ -94,9 +99,13 @@
   "leptoseris-cand-243732023": {
    "view": "wide",
    "quality": 1,
-   "form": "x",
-   "genus": "exclude",
-   "note": "Rubble scene; the small orange lobe is not clearly a coral, let alone Leptoseris"
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "quality"
+   ],
+   "note": "small; small orange patch on rubble, no clear subject"
   },
   "leptoseris-cand-260198249": {
    "view": "wide",
@@ -108,80 +117,82 @@
    "view": "wide",
    "quality": 3,
    "form": "F",
-   "keep": "alt"
+   "keep": "alt",
+   "note": "Another angle of the same colony"
   },
   "leptoseris-cand-468187784": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "note": "Dark sand around"
   },
   "leptoseris-cand-600475537": {
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "genus": "Cycloseris",
+   "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "Round free disc with fine septa and central mouth: a mushroom coral, not Leptoseris"
+   "note": "Disc with a wide pale rim; date stamp; Leptoseris not certain"
   },
   "leptoseris-cand-600475551": {
-   "view": "macro",
+   "view": "medium",
    "quality": 2,
-   "form": "x",
-   "genus": "Cycloseris",
+   "form": "U",
+   "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "Same disc, closer: fine septa radiating from a central mouth, fungiid look"
+   "note": "Closer; date stamp"
   },
   "leptoseris-cand-577737647": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "best"
-  },
-  "leptoseris-cand-716179995": {
-   "view": "wide",
-   "quality": 3,
-   "form": "F",
    "keep": "best",
-   "note": "Photographer watermark at the bottom"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Disc with frilled rim; Leptoseris not certain"
   },
   "leptoseris-cand-468187243": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "note": "Dark, soft at 100%"
   },
   "leptoseris-cand-332262063": {
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "genus": "Cycloseris",
+   "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "Small round solitary disc with radiating septa; looks like a juvenile mushroom coral"
+   "note": "640 px; solitary disc with a white rim; Leptoseris not certain"
   },
   "leptoseris-cand-607291455": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
    "keep": "best"
   },
   "leptoseris-cand-607291478": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "note": "A sponge at the top left"
   },
   "leptoseris-cand-468565732": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "note": "Dark, soft at 100%"
   }
  }
 }

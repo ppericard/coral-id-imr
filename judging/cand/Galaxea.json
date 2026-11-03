@@ -3,67 +3,51 @@
  "photos": {
   "galaxea-cand-588679215": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "note": "Closer than the live photo of the same colony; polyps half out"
   },
   "galaxea-cand-588740804": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best",
    "unsure": [
-    "form"
+    "genus"
    ],
-   "note": "Night shot, tentacles out; small colony on a dark base."
-  },
-  "galaxea-cand-269731314": {
-   "view": "wide",
-   "quality": 2,
-   "form": "M",
-   "keep": "best",
-   "note": "Dark night shot."
-  },
-  "galaxea-cand-269731323": {
-   "view": "macro",
-   "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "note": "Soft and dim."
+   "note": "Tentacles out over the colony; Galaxea not certain"
   },
   "galaxea-cand-269731330": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "alt",
-   "note": "Top of the dome, corallites visible."
+   "keep": "dup",
+   "note": "Same colony as the live Colony photos, dark"
   },
   "galaxea-cand-606651530": {
    "view": "macro",
-   "quality": 3,
-   "form": "M",
+   "quality": 2,
+   "form": "x",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Edge of a rounded colony."
+   "note": "1155 px high; a few shells at the right"
   },
   "galaxea-cand-345338709": {
    "view": "macro",
-   "quality": 3,
+   "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "note": "Fluorescent green tentacles, polyps out"
   },
   "galaxea-cand-345338670": {
    "view": "macro",
    "quality": 2,
    "form": "x",
-   "keep": "dup",
-   "note": "A blurred branch crosses the frame."
+   "keep": "dup"
   },
   "galaxea-cand-269467451": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best"
   },
@@ -72,112 +56,86 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Soft coral and other polyps clutter the foreground."
+   "note": "A mushroom coral at the right edge; tentacles out"
   },
   "galaxea-cand-269730677": {
    "view": "wide",
-   "quality": 3,
-   "form": "S",
-   "keep": "best"
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
   },
   "galaxea-cand-269730851": {
    "view": "wide",
-   "quality": 3,
-   "form": "S",
-   "keep": "dup",
-   "note": "Closer repeat of the same columns."
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
   },
   "galaxea-cand-269730923": {
    "view": "wide",
-   "quality": 3,
-   "form": "S",
-   "keep": "alt",
-   "note": "Closer view of the columns, corallites visible."
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
   },
   "galaxea-cand-345338040": {
    "view": "macro",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "note": "Soft."
+   "note": "Polyps out, soft"
   },
   "galaxea-cand-554575986": {
    "view": "macro",
-   "quality": 3,
+   "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "note": "Tentacles out; a fish at the right"
   },
   "galaxea-cand-269513376": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Dark, cool cast."
-  },
-  "galaxea-cand-345337372": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
-  },
-  "galaxea-cand-345337397": {
-   "view": "wide",
-   "quality": 2,
-   "form": "M",
-   "keep": "best",
-   "note": "Colony edge on sand."
+   "note": "Greenish, polyps out"
   },
   "galaxea-cand-27967888": {
    "view": "wide",
    "quality": 2,
-   "form": "F",
+   "form": "M",
    "keep": "best",
    "unsure": [
-    "form",
     "genus"
    ],
-   "note": "Huge tiered colony, video frame with blue cast; genus hard to confirm at this distance."
+   "note": "Cyan cast, fish in front; Galaxea not certain at this distance"
   },
   "galaxea-cand-175110789": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
+   "form": "M",
    "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "Blue cast; lumpy columns, corallites too small to confirm."
+   "note": "Cyan cast; Galaxea not certain at this distance"
   },
   "galaxea-cand-607127827": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "M",
    "keep": "best",
-   "note": "Snorkel shot, soft."
+   "note": "Milky veil and soft at 100%"
   },
   "galaxea-cand-269513849": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "note": "Dim, green cast."
+   "keep": "best"
   },
   "galaxea-cand-269514233": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
+   "form": "M",
    "keep": "alt",
-   "note": "Columns on the colony; dark."
-  },
-  "galaxea-cand-175108798": {
-   "view": "wide",
-   "quality": 3,
-   "form": "E",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Low lobed colony following the rock."
+   "note": "Dark, closer to the surface"
   },
   "galaxea-cand-585272665": {
    "view": "wide",
@@ -187,62 +145,59 @@
    "unsure": [
     "genus"
    ],
-   "note": "Tentacles out hide the corallites."
+   "note": "Tentacles fully out on sand; genus not certain"
   },
   "galaxea-cand-392975433": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Long tubular polyps out hide the septa; Goniopora-like look, check."
+   "note": "A fish at the left; tentacles out"
   },
   "galaxea-cand-100217153": {
    "view": "macro",
-   "quality": 3,
+   "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "note": "Polyps out; a red worm across the frame"
   },
   "galaxea-cand-675216392": {
    "view": "macro",
-   "quality": 3,
+   "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "note": "1031 px, clean"
   },
   "galaxea-cand-675216468": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Small low colony on sand."
+   "keep": "best"
   },
   "galaxea-cand-177204361": {
    "view": "wide",
    "quality": 2,
-   "form": "E",
+   "form": "M",
    "keep": "best",
+   "multi": true,
    "unsure": [
-    "form"
+    "multi"
    ],
-   "note": "Green cast; a soft coral covers part of the colony."
+   "note": "A gorgonian covers the lower centre of the colony"
   },
   "galaxea-cand-269008537": {
+   "view": "macro",
+   "quality": 1,
+   "form": "x",
+   "keep": "best",
+   "note": "Blurred over the whole frame"
+  },
+  "galaxea-cand-105250967": {
    "view": "macro",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "note": "Green cast, soft."
-  },
-  "galaxea-cand-105250967": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "note": "1200 px, tentacles out"
   },
   "galaxea-cand-693770242": {
    "view": "wide",
@@ -252,77 +207,92 @@
    "unsure": [
     "genus"
    ],
-   "note": "Tentacles out hide the corallites; date stamp."
+   "note": "Green tentacle tips over the colony; date stamp; genus not certain"
   },
   "galaxea-cand-131279860": {
    "view": "macro",
-   "quality": 3,
+   "quality": 2,
    "form": "x",
    "keep": "best"
   },
   "galaxea-cand-363343625": {
-   "view": "wide",
+   "view": "macro",
    "quality": 2,
-   "form": "M",
-   "keep": "best"
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Long sweeper tentacles over the polyps"
   },
   "galaxea-cand-262121205": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Cluttered by algae."
+   "unsure": [
+    "genus"
+   ],
+   "note": "Tentacles fully out at night; genus not certain"
   },
   "galaxea-cand-605608107": {
+   "view": "wide",
+   "quality": 1,
+   "form": "E",
+   "keep": "best",
+   "note": "Blurred algae across the front, soft"
+  },
+  "galaxea-cand-609613534": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup",
+   "note": "Same framing as the live Close-up photo"
+  },
+  "galaxea-cand-609613526": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best"
+  },
+  "galaxea-cand-267614480": {
    "view": "wide",
    "quality": 2,
    "form": "E",
    "keep": "best",
-   "note": "Algae in front, soft."
-  },
-  "galaxea-cand-609613534": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
-  },
-  "galaxea-cand-609613526": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "alt",
-   "note": "Closer, septa clearer."
-  },
-  "galaxea-cand-267614480": {
-   "view": "wide",
-   "quality": 3,
-   "form": "M",
-   "keep": "best"
+   "crop": [
+    0.1,
+    0.15,
+    0.75,
+    0.95
+   ]
   },
   "galaxea-cand-455192154": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "note": "1000 px, clean"
   },
   "galaxea-cand-271269980": {
    "view": "macro",
-   "quality": 3,
+   "quality": 2,
    "form": "x",
    "keep": "best"
   },
   "galaxea-cand-479237101": {
    "view": "macro",
-   "quality": 2,
+   "quality": 1,
    "form": "x",
    "keep": "best",
-   "note": "Dim."
+   "note": "Soft and noisy at 100%"
   },
   "galaxea-cand-498559005": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "note": "Soft at 100%"
   },
   "galaxea-cand-613692058": {
    "view": "wide",
@@ -332,11 +302,11 @@
    "unsure": [
     "genus"
    ],
-   "note": "Soft and small; corallites not visible to confirm the genus."
+   "note": "Soft; orange sponges beside the colony"
   },
   "galaxea-cand-733605186": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best"
   },
@@ -344,19 +314,14 @@
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "alt",
-   "note": "Side view showing the base."
+   "keep": "dup"
   },
   "galaxea-cand-354085389": {
    "view": "wide",
    "quality": 1,
    "form": "E",
    "keep": "best",
-   "unsure": [
-    "genus",
-    "form"
-   ],
-   "note": "Blurred, silted colony; genus cannot be confirmed."
+   "note": "Blurred over the whole frame"
   }
  }
 }

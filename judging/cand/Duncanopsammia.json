@@ -1,181 +1,129 @@
 {
  "genus": "Duncanopsammia",
  "photos": {
-  "duncanopsammia-cand-315467108": {
-   "view": "medium",
-   "quality": 3,
-   "form": "F",
-   "keep": "best",
-   "polyps": true
-  },
   "duncanopsammia-cand-724871517": {
    "view": "macro",
    "quality": 2,
    "form": "x",
-   "keep": "alt"
+   "keep": "best",
+   "note": "Polyps out, shallow focus"
   },
   "duncanopsammia-cand-724871528": {
-   "view": "macro",
-   "quality": 3,
+   "view": "medium",
+   "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "polyps": true
   },
   "duncanopsammia-cand-595463426": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
-   "form": "F",
-   "keep": "best",
+   "form": "E",
+   "keep": "dup",
    "polyps": true,
-   "note": "Blue-green cast"
+   "note": "Same colony and framing as the live Closer photo"
   },
   "duncanopsammia-cand-595463425": {
    "view": "medium",
    "quality": 2,
-   "form": "F",
-   "keep": "alt",
+   "form": "E",
+   "keep": "best",
    "polyps": true,
-   "multi": true,
-   "note": "A white branching octocoral stands in the middle"
+   "note": "A column of polyps on the plate; soft at the edges"
   },
   "duncanopsammia-cand-595463438": {
    "view": "medium",
    "quality": 2,
-   "form": "F",
-   "keep": "best",
-   "polyps": true
-  },
-  "duncanopsammia-cand-260327488": {
-   "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "best",
-   "polyps": true
+   "form": "E",
+   "keep": "alt",
+   "polyps": true,
+   "note": "Closer, polyps out"
   },
   "duncanopsammia-cand-611582024": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "dup"
+   "keep": "dup",
+   "note": "Same colony and angle as the live Colony photo, farther away"
   },
   "duncanopsammia-cand-611582020": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "best",
-   "note": "Dark background, colony well lit"
+   "keep": "dup",
+   "note": "Same colony and angle as the live Colony photo, farther away"
   },
   "duncanopsammia-cand-611582028": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "dup"
+   "keep": "dup",
+   "note": "Same colony and angle as the live Colony photo, farther away"
   },
   "duncanopsammia-cand-611582029": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "dup"
-  },
-  "duncanopsammia-cand-595518078": {
-   "view": "wide",
-   "quality": 2,
-   "form": "S",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Fingers rising from sand, yellow cast"
-  },
-  "duncanopsammia-cand-595518081": {
-   "view": "wide",
-   "quality": 2,
-   "form": "S",
-   "keep": "alt",
-   "unsure": [
-    "form"
-   ],
-   "note": "Fingers rising from sand, few side branches"
+   "keep": "dup",
+   "note": "Same colony and angle as the live Colony photo, farther away"
   },
   "duncanopsammia-cand-595518079": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
-   "keep": "alt",
-   "unsure": [
-    "form"
-   ],
-   "note": "Fingers rising from sand, few side branches"
+   "form": "B",
+   "keep": "dup",
+   "note": "Same branches as the live Colony photos"
   },
   "duncanopsammia-cand-595518100": {
-   "view": "macro",
+   "view": "medium",
    "quality": 2,
-   "form": "x",
-   "keep": "best"
+   "form": "B",
+   "keep": "best",
+   "polyps": true,
+   "note": "Polyps out on a branch"
   },
   "duncanopsammia-cand-41558845": {
    "view": "wide",
    "quality": 2,
-   "form": "F",
+   "form": "E",
    "keep": "best",
-   "note": "Small cup on sand, dark"
-  },
-  "duncanopsammia-cand-230571737": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
-  },
-  "duncanopsammia-cand-230571742": {
-   "view": "medium",
-   "quality": 2,
-   "form": "F",
-   "keep": "best",
-   "polyps": true,
-   "note": "Blue-green cast"
+   "note": "Plate with sediment in its centre; corallites readable"
   },
   "duncanopsammia-cand-260323430": {
    "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "best",
-   "note": "A goby sits in the cup"
-  },
-  "duncanopsammia-cand-437171773": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
-  },
-  "duncanopsammia-cand-593573848": {
-   "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Small fragment on sand"
+   "note": "A nudibranch on the plate edge; the coral fills the frame"
+  },
+  "duncanopsammia-cand-437171773": {
+   "view": "medium",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "note": "Watermark at the corner"
+  },
+  "duncanopsammia-cand-593573848": {
+   "view": "wide",
+   "quality": 1,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Pale coral half buried in sand; the subject is hard to read"
   },
   "duncanopsammia-cand-611581793": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
    "keep": "best"
   },
   "duncanopsammia-cand-611581795": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "alt"
-  },
-  "duncanopsammia-cand-611581829": {
-   "view": "medium",
-   "quality": 3,
-   "form": "F",
-   "keep": "alt"
-  },
-  "duncanopsammia-cand-611581807": {
-   "view": "medium",
-   "quality": 3,
-   "form": "F",
-   "keep": "best"
+   "keep": "dup"
   },
   "duncanopsammia-cand-611581805": {
    "view": "wide",
@@ -189,38 +137,45 @@
    "form": "F",
    "keep": "dup"
   },
-  "duncanopsammia-cand-611581817": {
-   "view": "medium",
-   "quality": 3,
-   "form": "F",
-   "keep": "alt"
-  },
   "duncanopsammia-cand-611581825": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "dup",
-   "note": "Dark, backscatter"
+   "keep": "dup"
   },
   "duncanopsammia-cand-611581827": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
    "keep": "dup"
+  },
+  "duncanopsammia-cand-611581829": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "alt",
+   "note": "Inside of the cup from above"
+  },
+  "duncanopsammia-cand-611581817": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best"
   },
   "duncanopsammia-cand-611581838": {
    "view": "medium",
    "quality": 2,
    "form": "F",
-   "keep": "dup"
+   "keep": "alt",
+   "note": "Another side of the cup"
   },
   "duncanopsammia-cand-596081127": {
    "view": "wide",
-   "quality": 2,
-   "form": "S",
+   "quality": 1,
+   "form": "E",
    "keep": "best",
    "polyps": true,
-   "note": "Turbid water"
+   "note": "Murky veil over the whole frame, polyps out"
   },
   "duncanopsammia-cand-596081133": {
    "view": "medium",
@@ -232,10 +187,9 @@
   "duncanopsammia-cand-452616316": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "E",
    "keep": "best",
-   "polyps": true,
-   "note": "Dark, blue cast"
+   "polyps": true
   },
   "duncanopsammia-cand-586909358": {
    "view": "wide",
@@ -246,63 +200,68 @@
    "unsure": [
     "genus"
    ],
-   "note": "Thin layered plates look like Turbinaria; corallite size hard to judge"
+   "note": "Tiered plates with polyps out; Turbinaria possible"
   },
   "duncanopsammia-cand-227577462": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "polyps": true
+   "polyps": true,
+   "note": "Cyan cast"
   },
   "duncanopsammia-cand-710777889": {
    "view": "wide",
-   "quality": 3,
-   "form": "S",
+   "quality": 2,
+   "form": "B",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Upright column with lobes"
+   "polyps": true
   },
   "duncanopsammia-cand-710777890": {
    "view": "wide",
-   "quality": 3,
-   "form": "S",
-   "keep": "alt",
-   "unsure": [
-    "form"
-   ],
-   "note": "Ruler gives the scale"
+   "quality": 2,
+   "form": "B",
+   "keep": "dup",
+   "note": "Same colony and framing as 1 with a ruler at the bottom"
   },
   "duncanopsammia-cand-239355537": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "multi": true,
-   "note": "Another polyp-covered coral takes the right third"
+   "crop": [
+    0.2,
+    0.05,
+    0.7,
+    1.0
+   ],
+   "note": "A soft coral at the right"
   },
   "duncanopsammia-cand-501745155": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
+   "quality": 2,
+   "form": "E",
    "keep": "best",
-   "polyps": true
+   "polyps": true,
+   "note": "640 px, clean"
   },
   "duncanopsammia-cand-749674403": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "view": "medium",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "polyps": true
   },
   "duncanopsammia-cand-574205151": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "E",
    "keep": "best",
    "polyps": true,
-   "note": "Purple cast"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Blue polyps beside a soft coral; genus not certain"
   },
   "duncanopsammia-cand-574305218": {
    "view": "wide",
@@ -312,7 +271,7 @@
    "unsure": [
     "genus"
    ],
-   "note": "Strong blue cast; thin plate with small corallites, may be Turbinaria"
+   "note": "Strong blue cast; plating colony, Turbinaria possible"
   }
  }
 }

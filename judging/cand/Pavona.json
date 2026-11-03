@@ -1,135 +1,123 @@
 {
  "genus": "Pavona",
  "photos": {
-  "pavona-cand-269667130": {
-   "view": "wide",
-   "quality": 2,
-   "form": "E",
-   "keep": "best",
-   "note": "Dark, cluttered encrusting colony"
-  },
-  "pavona-cand-311709999": {
-   "view": "macro",
+  "pavona-cand-260367266": {
+   "view": "medium",
    "quality": 3,
-   "form": "x",
+   "form": "S",
    "keep": "best"
   },
-  "pavona-cand-315466919": {
-   "view": "wide",
-   "quality": 2,
-   "form": "E",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Small star-like crust growing on a snail shell; could be Psammocora or Leptastrea"
-  },
-  "pavona-cand-260367266": {
+  "pavona-cand-260367768": {
    "view": "wide",
    "quality": 2,
    "form": "S",
    "keep": "dup",
-   "note": "Dark"
-  },
-  "pavona-cand-260367768": {
-   "view": "wide",
-   "quality": 3,
-   "form": "S",
-   "keep": "best"
+   "note": "Near-identical to the live wide photo of these columns"
   },
   "pavona-cand-611189576": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Green cast, soft"
+   "note": "Green cast, sharp on the central frond only"
   },
   "pavona-cand-445142798": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Shallow, algae"
+   "note": "Soft at 100%"
   },
   "pavona-cand-45864914": {
    "view": "wide",
    "quality": 1,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Blurred, shot through the surface"
+   "note": "713 px, oversharpening mush at 100%"
   },
   "pavona-cand-177401237": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
-   "form": "M",
+   "form": "E",
    "keep": "best",
-   "multi": true,
-   "note": "A brain coral takes the right side"
+   "crop": [
+    0.0,
+    0.25,
+    1.0,
+    1.0
+   ],
+   "note": "Soft at 100%"
   },
   "pavona-cand-633454377": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Blue cast; corallites not visible"
+   "note": "Blue cast, soft at 100%"
   },
   "pavona-cand-445143174": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "genus": "Porites",
+   "keep": "best",
+   "multi": true,
    "unsure": [
     "genus"
    ],
-   "note": "Massive Porites-like lobes dominate; Pavona fronds only visible in the gap"
+   "note": "A dark coral with white polyps fills the middle between pale lumps; which one is Pavona is unclear"
   },
   "pavona-cand-45053033": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "F",
    "keep": "best",
-   "note": "Shallow, soft; fish"
+   "note": "1092 px, cyan cast and noise mush at 100%"
   },
   "pavona-cand-445182802": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Soft focus"
+   "crop": [
+    0.12,
+    0.0,
+    0.88,
+    0.95
+   ]
   },
   "pavona-cand-232102879": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.12,
+    0.08,
+    0.92,
+    0.85
+   ]
   },
   "pavona-cand-222901821": {
    "view": "wide",
    "quality": 2,
    "form": "S",
-   "keep": "best",
-   "note": "Columns behind many fish"
+   "genus": "exclude",
+   "note": "A school of fish over the columns takes the eye away from the coral"
   },
   "pavona-cand-380834430": {
    "view": "medium",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "note": "Left third out of focus"
+   "note": "Polyps partly out between the ridges"
   },
   "pavona-cand-174203199": {
    "view": "wide",
    "quality": 1,
-   "form": "F",
+   "form": "M",
    "keep": "best",
    "multi": true,
-   "unsure": [
-    "genus"
-   ],
-   "note": "Reef seen from the surface, cyan; Pavona fronds tiny among many corals"
+   "note": "small; cyan reef scene with many corals, subject unclear"
   },
   "pavona-cand-35096930": {
    "view": "wide",
@@ -139,51 +127,37 @@
    "unsure": [
     "genus"
    ],
-   "note": "Algae-covered rock in shallow water; coral hard to make out"
+   "note": "Murky, coral covered in algae and hard to make out"
   },
   "pavona-cand-35099665": {
    "view": "wide",
    "quality": 1,
    "form": "E",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Hazy; coral subject small and unclear"
+   "note": "Milky veil over everything, coral barely visible"
   },
   "pavona-cand-595593415": {
    "view": "wide",
    "quality": 1,
    "form": "E",
    "keep": "best",
-   "multi": true,
    "unsure": [
     "genus"
    ],
-   "note": "Unclear crusts among sediment and other corals"
-  },
-  "pavona-cand-460748483": {
-   "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "best"
-  },
-  "pavona-cand-437172507": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "note": "Subject hard to find among rubble, soft at 100%"
   },
   "pavona-cand-575527565": {
    "view": "wide",
    "quality": 2,
    "form": "S",
    "keep": "best",
-   "multi": true,
-   "unsure": [
-    "genus"
+   "crop": [
+    0.3,
+    0.0,
+    0.95,
+    0.85
    ],
-   "note": "Columns among many corals; could be Porites"
+   "note": "Soft at 100%"
   },
   "pavona-cand-600474118": {
    "view": "wide",
@@ -191,14 +165,17 @@
    "form": "E",
    "keep": "best",
    "multi": true,
-   "note": "Massive coral at right; date stamp"
+   "unsure": [
+    "multi"
+   ],
+   "note": "A massive coral at right may take a large part of the frame; date stamp"
   },
   "pavona-cand-600474128": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "E",
    "keep": "best",
-   "note": "Date stamp"
+   "note": "Soft at 100%; date stamp"
   }
  }
 }

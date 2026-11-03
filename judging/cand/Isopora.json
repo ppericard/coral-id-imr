@@ -4,107 +4,101 @@
   "isopora-cand-260174194": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
-   "keep": "best",
-   "multi": true,
-   "note": "Dark; soft coral (Clavularia-like) fills the lower centre."
+   "form": "B",
+   "keep": "dup",
+   "note": "Same colony and framing as 2, farther"
   },
   "isopora-cand-260174893": {
    "view": "wide",
-   "quality": 2,
-   "form": "S",
-   "keep": "dup",
-   "multi": true
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "note": "A soft coral at the bottom"
   },
   "isopora-cand-260174906": {
    "view": "medium",
-   "quality": 2,
-   "form": "S",
-   "keep": "best",
-   "note": "Dark; jumbled corallites on thick columns."
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
   },
   "isopora-cand-260175013": {
    "view": "medium",
    "quality": 2,
-   "form": "S",
-   "keep": "alt",
-   "note": "Dark."
+   "form": "B",
+   "keep": "dup"
   },
   "isopora-cand-697680251": {
    "view": "medium",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Green cast, pointer in frame."
+   "note": "A pointer at the bottom left, inside the subject; top view"
   },
   "isopora-cand-697680206": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "best",
-   "note": "Green cast."
+   "keep": "dup"
   },
-  "isopora-cand-697680207": {
+  "isopora-cand-697680208": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "alt",
-   "note": "Distant, a massive coral behind; green cast."
-  },
-  "isopora-cand-697680208": {
-   "view": "medium",
-   "quality": 2,
-   "form": "B",
-   "keep": "alt",
-   "note": "Green cast."
+   "keep": "dup"
   },
   "isopora-cand-697680229": {
    "view": "wide",
    "quality": 2,
    "form": "B",
-   "keep": "alt",
-   "note": "Green cast."
-  },
-  "isopora-cand-697680227": {
-   "view": "wide",
-   "quality": 2,
-   "form": "B",
-   "keep": "dup",
-   "note": "Green cast."
+   "keep": "dup"
   },
   "isopora-cand-697680232": {
    "view": "wide",
    "quality": 2,
    "form": "B",
+   "keep": "dup"
+  },
+  "isopora-cand-697680207": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
    "keep": "dup",
-   "note": "Green cast."
+   "note": "Wider, a table coral behind"
+  },
+  "isopora-cand-697680227": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Cyan cast"
   },
   "isopora-cand-177401179": {
    "view": "wide",
    "quality": 1,
-   "form": "S",
+   "form": "B",
    "keep": "best",
    "multi": true,
-   "note": "Reef scene, subject small, heavy haze."
+   "note": "Murky reef scene, many corals"
   },
   "isopora-cand-265444993": {
    "view": "wide",
    "quality": 2,
    "form": "S",
    "keep": "best",
-   "unsure": [
-    "genus",
-    "form"
-   ],
-   "note": "Lumpy encrusting mass with giant clam; Isopora not certain."
+   "note": "A sea urchin and a clam on the colony"
   },
   "isopora-cand-379745054": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
+   "form": "B",
    "keep": "best",
-   "multi": true,
-   "note": "Acropora table and massive coral behind."
+   "crop": [
+    0.0,
+    0.2,
+    1.0,
+    1.0
+   ],
+   "note": "A table coral behind"
   },
   "isopora-cand-66646230": {
    "view": "wide",
@@ -112,113 +106,124 @@
    "form": "B",
    "keep": "best",
    "multi": true,
-   "unsure": [
-    "genus"
-   ],
-   "note": "Hazy, several branching corals mixed; subject unclear."
+   "note": "643 px, soft; Acropora-like branches mixed"
   },
   "isopora-cand-684022068": {
    "view": "medium",
    "quality": 2,
-   "form": "S",
+   "form": "B",
    "keep": "best",
-   "note": "Single column, narrow crop."
+   "unsure": [
+    "genus"
+   ],
+   "note": "663 px wide; one orange branch, genus not certain"
   },
   "isopora-cand-556396593": {
    "view": "wide",
-   "quality": 3,
-   "form": "S",
+   "quality": 2,
+   "form": "B",
    "keep": "best"
   },
   "isopora-cand-605690215": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
+   "form": "B",
    "keep": "best",
-   "note": "Algae around the colony."
+   "note": "Algae around"
   },
   "isopora-cand-605691891": {
    "view": "medium",
-   "quality": 3,
-   "form": "S",
+   "quality": 2,
+   "form": "B",
    "keep": "best"
   },
   "isopora-cand-675778113": {
-   "view": "wide",
-   "quality": 2,
+   "view": "medium",
+   "quality": 1,
    "form": "B",
    "keep": "best",
-   "note": "Washed-out colours."
+   "note": "Dark and soft over the whole frame"
   },
   "isopora-cand-271269161": {
    "view": "wide",
-   "quality": 3,
-   "form": "S",
+   "quality": 2,
+   "form": "B",
    "keep": "best"
   },
   "isopora-cand-265445083": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
-   "keep": "best"
+   "form": "B",
+   "keep": "best",
+   "note": "Algae around, soft at 100%"
   },
   "isopora-cand-580865538": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
+   "form": "B",
    "keep": "best",
-   "note": "Cyan cast, date stamp."
+   "note": "Cyan cast; date stamp"
   },
   "isopora-cand-305280964": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
+   "form": "B",
    "keep": "best",
-   "note": "Haze."
+   "note": "1500 px, soft at 100%"
   },
   "isopora-cand-33339038": {
    "view": "wide",
-   "quality": 2,
-   "form": "S",
-   "keep": "best",
-   "note": "Snorkel view from above, haze."
-  },
-  "isopora-cand-445476177": {
-   "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
    "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "Pale slender branches; could be Acropora."
+   "note": "Murky green, soft at 100%; Acropora-like"
+  },
+  "isopora-cand-445476177": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Bleached, soft at 100%; Acropora-like"
   },
   "isopora-cand-239866186": {
    "view": "wide",
-   "quality": 3,
-   "form": "S",
+   "quality": 2,
+   "form": "B",
    "keep": "best",
-   "note": "Diver in the background."
+   "crop": [
+    0.0,
+    0.25,
+    1.0,
+    1.0
+   ],
+   "note": "A diver at the top"
   },
   "isopora-cand-305278119": {
    "view": "wide",
-   "quality": 2,
-   "form": "S",
-   "keep": "best"
+   "quality": 1,
+   "form": "B",
+   "keep": "best",
+   "note": "1500 px, soft and smeared"
   },
   "isopora-cand-226446276": {
    "view": "wide",
-   "quality": 3,
-   "form": "S",
+   "quality": 2,
+   "form": "B",
    "keep": "best"
   },
   "isopora-cand-177343107": {
    "view": "wide",
-   "quality": 2,
-   "form": "S",
+   "quality": 1,
+   "form": "B",
    "keep": "best",
    "multi": true,
-   "note": "Plating corals and finger corals around the columns."
+   "note": "Soft; other corals around and in front"
   }
  }
 }

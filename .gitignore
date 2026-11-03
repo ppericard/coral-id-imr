@@ -4,3 +4,4 @@ __pycache__/
 judging/cand/img/
 judging/cand/sheets/
 judging/cand/detail/
+tools/.cache/
