@@ -592,6 +592,19 @@ the share and the exam count are then chosen so a strong RA's typed success stay
 is not passed on picked answers alone), then the players' own `|t` answers once there are a few hundred (typed right %
 against picked right % at the same progress). Any change is recorded here with its numbers.
 
+### Fish on the same model (2026-11-03)
+
+Pierre, 2026-11-03: fish on the same engine as corals (docs/ARCHITECTURE.md "Subjects"). Nothing of the model above changes for fish: the same Elo per unit and global level, progress moving average, mastery exam, typed questions, opening of units, comeback, photo memory, confusion scores. What a fish entry brings in place of a genus's data, and the few settings of its own:
+
+- **Unit** = a level-1 teaching entry of fish.json (the 27 IMR entries of the presentation; species, level 2, later). Its progress is kept apart from the corals' (`reefid-sync-fish-progress`): a strong coral player starts fish at the global level of their fish answers, not of their coral ones.
+- **Easy wrong choices first**: the coral rule "choices sharing no IMR growth form" uses the entry's **IMR shape group** (the presentation's 10 chapters: Small Ovals...), the grouping IMR teaches by shape; the look-alike traps come from the IMR look-alikes (`look`), then the player's own mix-ups. No new rule: the shape group is the entry's "form".
+- **One photo per question**: fish have no zoom levels (one view), so every question is a single-photo one; the single-view offset (`PICKD.SINGLE`) applies to all of them alike, so it cancels out between entries.
+- **Common first**: `cm` = √(Research Grade observations of its species within 40 km of Dauin), the same scale as the corals' (small integers), read by `commonFactor`.
+- **Circles** (`app.js` `UNITS.fish.sets`): circle 1 is the slate. Circle 2 (seen now and then on SVS video) is offered when every IMR entry has been asked, the rule of the coral bonus genera. Circle 3 (beyond IMR, Pierre: "once the player is good on the IMR ones") is offered once the fish progress reaches **`FISH_C3` = 0.5** (the average IMR entry at Open Water): a learning milestone, never time (rule 12), reached after the first IMR entries are well on their way, so the IMR families come first. A placeholder to watch with real players. Neither circle counts in the progress.
+- **Winks** (`quiz.js` `WINK` = {FROM 15, P 0.04, GAP 20}): a surprise card for every fish player, circle 1 included (Pierre, 2026-11-03: "ça sera rigolo" for the people working on the IMR course), never before 15 answers, then 4% of the questions, at least 20 answers apart, never the same wink twice in a visit, never over a card: with two winks, about one per 45 answers at most, a visit of 30-60 answers meets one or two. Never counted: no progress, ability, answer log or photo rating.
+- **Not logged to the sheet yet**: fish answers stay on the device (and in the synced progress): the pooled photo difficulty and confusions start from their priors only for fish (the photo's set prior 0, the IMR look-alikes) until the sheet takes fish answers (ROADMAP).
+- **No timed mode, no size estimation**: video ID and EventMeasure measurement are other tools (ROADMAP).
+
 ## Pooled statistics: photo difficulty and confusions (sheet v17-v18, 2026-11-02; photo memory v26, 2026-11-03)
 
 Photo difficulty feeds every player's game (which photos, how hard), and confusions pick the traps. They must reflect
