@@ -6,7 +6,8 @@
 #
 # - Seriatopora: corallites in neat rows, not "black" (Pierre has seen pale ones at Dauin; Corals of the World,
 #   S. hystrix: "Corallites are arranged in neat rows along branches", colour pink, cream, blue or green; Wikipedia and
-#   Naturalis: rows, no dark colour).
+#   Naturalis: rows, no dark colour). The lecture's mnemonic "Serius Black" (serial black pores) goes too (Pierre: not a
+#   fan, a better one or none): the name itself says it, Latin seriatus "in rows" + pora, so SERIA_MN.
 # - Lobactis: tentacular lobes "often green, blue or white", not "pale" (Corals of the World, Fungia (Lobactis) scutaria:
 #   "Usually brown, blue or yellow, often with bright green, blue or white tentacular lobes").
 # - Heliofungia: tentacle tips "white or pink" (Corals of the World, H. actiniformis: "tentacles with white or pink tips").
@@ -27,7 +28,6 @@ P = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data.json')
 FIX = {
     'Seriatopora': {
         'imr': [('Black corallites arranged in rows.', 'Corallites arranged in neat rows.')],
-        'mn': [('"Serius Black": serial black pores, in rows.', '"Serius Black": serial pores, in rows.')],
     },
     'Lobactis': {
         'imr': [('Regular septal teeth with tall, pale tentacular lobes.',
@@ -44,6 +44,7 @@ FIX = {
         'sum': [('long anemone-like tentacles with white tips', 'long anemone-like tentacles with white or pink tips')],
     },
 }
+SERIA_MN = '"Seria-topora": pores in series, tiny holes lined up in rows along the twigs.'
 HERPO_INFO = ('Solitary or colonial? Both are said, and both are true: the IMR lecture groups it with the solitary '
               'mushroom corals (free-living, one disc), while the Coral Finder (p. 65) and Corals of the World call it '
               'colonial because one disc has many mouths. Hoeksema (1989), the mushroom coral revision, says '
@@ -63,6 +64,9 @@ def main():
                 else:
                     g[k] = g[k].replace(old, new)
                     assert new in g[k], (n, k, new)
+    if d['gen']['Seriatopora'].get('mn', '').startswith('"Serius Black"'):
+        d['gen']['Seriatopora']['mn'] = SERIA_MN
+    assert d['gen']['Seriatopora']['mn'] == SERIA_MN
     h = d['gen']['Herpolitha']
     h.pop('check', None)
     h['info'] = [x for x in h.get('info', []) if not x.startswith('Solitary or colonial?')] + [HERPO_INFO]
