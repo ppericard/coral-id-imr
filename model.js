@@ -261,10 +261,11 @@ const weight = n => {
 // not met yet). It replaced a share of the genus draw given to the genera not met yet (OPEN.READY 35% with no shaky genus
 // down to OPEN.TRICKLE 3% at K, K 10), a second throttle on top of INTRO.EVERY. K 8: simulated, a
 // beginner meets genera at the pace they did, the RAs and an expert faster, learning as much (docs/LEARNING.md).
-const OPEN = {K: 8, P: 0.6, T: 3, CONF: 2, DATA: 300, MAX: 0.5};
+const OPEN = {K: 8, P: 0.6, T: 3, CONF: 2, DATA: 300, MAX: 0.5, UNASKED: 3};
 // Hotfix (2026-11-03, two strong players' runs after #408 and #413): with few shaky genera openChance came close to 1,
 // and one player met 7 new genera in 16 answers, then fell from 83% to 50% right. Until the full fix: the chance never
-// goes above OPEN.MAX, and no genus opens while one opened earlier has not been asked yet.
+// goes above OPEN.MAX, and no genus opens while OPEN.UNASKED genera opened earlier have not been asked yet (with 1, a
+// simulated player met half as many genera by question 300 and learned less: docs/LEARNING.md decision log).
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
 // OPEN.DATA, up to 1. Without them the genus difficulty is only the photo sets and declared look-alikes, which put
 // Acropora and Galaxea among the hardest and Alveopora first (Pierre expects the first two easy): the order then stays
@@ -302,7 +303,7 @@ const shaky = n => {
 // answers and its ability but is never asked until its card reopens it, so counted it would hold the opening at 0 for
 // good (Codex P1 on #408).
 const openChance = list =>
-  list.some(n => introduced(n) && !((P[n] || {}).ok || 0) && !((P[n] || {}).ko || 0))
+  list.filter(n => introduced(n) && !((P[n] || {}).ok || 0) && !((P[n] || {}).ko || 0)).length >= OPEN.UNASKED
     ? 0
     : Math.min(OPEN.MAX, Math.max(0, 1 - list.filter(n => introduced(n) && shaky(n)).length / OPEN.K));
 // The genus to open among those not met yet (fresh): the easiest first, softly (OPEN.T, as far as the data are trusted:

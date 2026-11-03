@@ -1638,10 +1638,25 @@ is not in the simulation.
 ## Decision log
 
 - 2026-11-03, Pierre (hotfix): two strong players' runs collapsed after #408 and #413 (one met 7 new genera in 16
-  answers, then fell from 83% to 50% right): `openChance` is capped at `OPEN.MAX` 0.5, and no genus opens while one
-  opened earlier has not been asked yet. Measured: the beginner's 8 seeds meet 11-14 genera by question 100 (12.1;
-  14.5 before); the expert still opens faster than the beginner. A stopgap until the full fix (opening pace per window,
-  easier questions while the hold is on, the pair confusion term, data look-alikes).
+  answers, three of them never asked, then fell from 83% to 50% right): `openChance` is capped at `OPEN.MAX` 0.5, and
+  no genus opens while `OPEN.UNASKED` (3) genera opened earlier are still unasked. A stopgap until the full fix (opening
+  pace per window, easier questions while the hold is on, the pair confusion term, data look-alikes).
+  `tools/learnsim.js`, 5 seeds x 300 questions, true knowledge of the slate / genera met at questions 100 and 300:
+
+  | Profile | `main` q100 | hotfix q100 | `main` q300 | hotfix q300 |
+  | --- | --- | --- | --- | --- |
+  | beginner | 0.31 / 23.2 | 0.29 / 18.8 | 0.65 / 38.2 | 0.60 / 34.6 |
+  | lecture RA | 0.49 / 24.2 | 0.48 / 21.8 | 0.76 / 40.0 | 0.74 / 39.2 |
+  | strong RA | 0.69 / 32.2 | 0.68 / 22.8 | 0.86 / 40.0 | 0.85 / 39.6 |
+  | expert | 0.94 / 26.4 | 0.94 / 19.8 | 0.95 / 40.0 | 0.95 / 39.8 |
+
+  Right %: within the seeds' spread (beginner 74 / 83 at 100 / 300, main 73 / 80). Tried first: no genus while any
+  opened genus is unasked (`OPEN.UNASKED` 1): genera met by question 300 fell to 24-25 for every profile and true
+  knowledge with them (strong RA 0.77, beginner 0.48): rejected; 2: 33-35 genera, strong RA 0.81: rejected; the cap
+  alone: knowledge as `main`, but nothing stops a run of openings whose genera are never asked. Real log (rule 14g):
+  the rule only changes which question comes, not the Elo's predictions, so the log's log-loss is unchanged by
+  construction; measured instead on the collapsed run's logged sequence: of its 7 cards in 16 answers, the unasked rule
+  lets 4 through (each then at a chance of at most 0.5), the three never-asked genera among the blocked.
 - 2026-11-02, Pierre: anonymous answers do not rate photos; sign in to count (reversed the same day, below); stats only from players above chance;
   developer test answers deleted (admin anonDelete); first-answer-only rejected; experience weight and history-aware
   repeats; players start as beginners.
