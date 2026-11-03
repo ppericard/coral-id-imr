@@ -577,11 +577,14 @@ function startSet(c, via) {
   if (typeof dropPlans === 'function') dropPlans();
   if (typeof syncSoon === 'function') syncSoon();
 }
-// A progress reset: the answer stays (it is about the player, not the progress), its window counts from 0 again.
+// A progress reset: the answer stays (it is about the player, not the progress), its window counts from 0 again, from a
+// new epoch wt (Codex review #428: so a window saved before the reset never wins a merge over the new one).
 function startRestart() {
   const o = startOf();
-  if (o) store.set(CHOICE.KEY, {...o, at: 0, w: [], v: null, hd: 0});
+  if (o) store.set(CHOICE.KEY, {...o, at: 0, w: [], v: null, hd: 0, wt: Math.max(Date.now(), startWt(o) + 1)});
 }
+// The epoch of a record's fallback window: its last reset (wt), else the answer's time.
+const startWt = x => (x && typeof x.wt === 'number' ? x.wt : (x && x.t) || 0);
 // The fallback window (quiz.js answer): each answer after the choice, up to the last of CHOICE.AT, as [its difficulty (dm, as the
 // ability step takes it), the guess rate 1 / k, right, the genus's first answer]; hd once the opening hold has been on
 // at one of them. At each checkpoint (CHOICE.AT: 40 and 60 answers) the verdict (core.js startCheck), on the global level and
@@ -628,7 +631,7 @@ const startShown = d => {
   if (o) store.set(CHOICE.KEY, {...o, v: null, fb: {...(o.fb || {}), [o.c + '-' + d]: [answersSoFar(), Date.now()]}});
 };
 // Another device's answer (sync.js mergeSaved): the latest choice wins; the fallback cards shown on either count; on the
-// same choice the longer window is kept, and the silent ease (startEase) is merged by its own time (Codex review #428:
+// same choice the window of the later reset (wt), then the longer window, is kept, and the silent ease (startEase) is merged by its own time (Codex review #428:
 // taken on one device, it must not be lost to the other's longer window). The questions planned ahead are dropped
 // whenever the start variables in force change.
 function startMerge(json) {
@@ -641,7 +644,10 @@ function startMerge(json) {
     fb = {...(r.fb || {}), ...((o && o.fb) || {})};
   const n = x => (Array.isArray(x.w) ? x.w.length : 0),
     et = x => (x && Array.isArray(x.ease) && typeof x.ease[2] === 'number' ? x.ease[2] : -1);
-  let m = !o || (r.t || 0) > (o.t || 0) || ((r.t || 0) === (o.t || 0) && n(r) > n(o)) ? {...r, fb} : {...o, fb};
+  // The same answer: the later window epoch (a progress reset) wins, then the longer window.
+  const rw = startWt(r),
+    ow = o ? startWt(o) : 0;
+  let m = !o || (r.t || 0) > (o.t || 0) || ((r.t || 0) === (o.t || 0) && (rw > ow || (rw === ow && n(r) > n(o)))) ? {...r, fb} : {...o, fb};
   // The same answer on both: the later ease of the two (an ease belongs to its answer: never carried to another one).
   if (o && r.c === o.c && (r.t || 0) === (o.t || 0)) {
     const e = et(r) >= et(o) ? r.ease : o.ease;

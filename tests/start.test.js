@@ -36,7 +36,7 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F'], basics = false} 
   vm.createContext(ctx);
   vm.runInContext(
     block +
-      '\nthis.M = {INTRO, introAdd, introOffer, introReset, holdStep, setHold: h => (HOLDS = h), startOf, startV, startSet, startEase, startStep, startDue, startShown, startMerge, startResume: typeof startResume === "function" ? startResume : () => {}};',
+      '\nthis.M = {INTRO, introAdd, introOffer, introReset, holdStep, setHold: h => (HOLDS = h), startOf, startV, startSet, startEase, startRestart, startStep, startDue, startShown, startMerge, startResume: typeof startResume === "function" ? startResume : () => {}};',
     ctx
   );
   const M = ctx.M;
@@ -336,6 +336,29 @@ test('synced: the ease is merged by its own time, and a change of the variables 
   const d2 = A.ctx.drops;
   A.startMerge(JSON.stringify(A.startOf()));
   assert.strictEqual(A.ctx.drops, d2);
+});
+
+// Codex review #428 (P2): after a progress reset the window restarts; the account's record saved before the reset (the
+// same answer, a longer window) must not bring the old window back, or the new run never reaches its checkpoints.
+test('synced: a window saved before a progress reset never wins over the new one', () => {
+  const N = CHOICE.AT[0],
+    A = model();
+  A.startSet('know', 'tour');
+  A.play(N, 0, true, true, 0.5);
+  const saved = JSON.stringify(A.startOf()); // the account's copy, before the reset
+  A.startRestart();
+  assert.strictEqual(A.startOf().w.length, 0);
+  A.startMerge(saved);
+  assert.strictEqual(A.startOf().w.length, 0, 'the pre-reset window is not restored');
+  A.play(N, 0, false, true, -0.5);
+  assert.strictEqual(A.startOf().w.length, N, 'the new run reaches its checkpoint');
+  assert.strictEqual(A.startOf().v, 'lo');
+  // The post-reset record reaches another device that still holds the old window: the new window wins there too.
+  const B = model();
+  B.ctx.store.set(CHOICE.KEY, JSON.parse(saved));
+  B.startMerge(JSON.stringify(A.startOf()));
+  assert.strictEqual(B.startOf().w.length, N);
+  assert.strictEqual(B.startOf().wt, A.startOf().wt);
 });
 
 test('synced: the latest answer wins, the cards shown on either device count; a progress reset keeps the answer', () => {
