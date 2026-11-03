@@ -217,7 +217,7 @@ const server = http.createServer((req, res) => {
       out.bonusOff = (bonusSet(false), pool().filter(isBonus).length);
     }
     // Online calibration (CAL): on a genus the player holds, a photo nobody has answered yet comes up more often than its
-    // rated twins (made-up ratings at each photo's own prior difficulty).
+    // rated twins (made-up ratings at each photo's own prior difficulty: its genus offset, model.js photoDiff).
     {
       P = {};
       INTROS = {};
@@ -225,8 +225,8 @@ const server = http.createServer((req, res) => {
       CB = {r: 0, t: 0, ok: 0, f: 0};
       store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
       const keep = PSTAT,
-        g = G.find(n => VIEWS.flatMap(([v]) => gamePics(n, v, 'hard')).length >= 8),
-        L = [...new Set(VIEWS.flatMap(([v]) => gamePics(g, v, 'hard')))],
+        g = G.find(n => VIEWS.flatMap(([v]) => gamePics(n, v)).length >= 8),
+        L = [...new Set(VIEWS.flatMap(([v]) => gamePics(g, v)))],
         f0 = L[L.length - 1].f,
         keepCal = {...CAL},
         shown = on => {
@@ -235,7 +235,7 @@ const server = http.createServer((req, res) => {
           for (let i = 0; i < 3000; i++) if (photoSet(g).shown.some(x => x.f === f0)) k++;
           return k;
         };
-      PSTAT = Object.fromEntries(L.filter(x => x.f !== f0).map(x => [x.f, [photoLvl(g, x) - 1, 40, 30, 40]]));
+      PSTAT = Object.fromEntries(L.filter(x => x.f !== f0).map(x => [x.f, [photoDiff(g, x), 40, 30, 40]]));
       // Calibration questions come on a genus the player already holds (met, not shaky).
       P[g] = {ok: 20, ko: 2, h: '1111111111', th: 1.5, L: 0.9};
       out.cal = {genus: g, photo: f0, without: shown(false), with: shown(true)};
