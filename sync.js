@@ -295,7 +295,7 @@ function mergeSubject(j, d, S, mine) {
   // the fish one).
   const holdIn = () => S.log && holdAdopt(j.hold, SYNC.log, j.holdIds);
   if (rr > lr) {
-    introReset();
+    introReset(Date.parse(rr)); // made on another device: its time (model.js startRestart keeps a window counted since)
     introIn();
     P = R;
     SYNC[BK] = copy(R);

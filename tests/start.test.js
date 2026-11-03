@@ -361,6 +361,54 @@ test('synced: a window saved before a progress reset never wins over the new one
   assert.strictEqual(B.startOf().wt, A.startOf().wt);
 });
 
+// Codex review #428 (P2): a progress reset made on another device and adopted here (sync.js mergeSubject) keeps the
+// window that device has counted since its reset (merged first by startMerge) and takes the reset's time as its epoch,
+// never a newer one: else the empty window would win back on the device that made the reset.
+test('synced: a remote progress reset keeps the window counted since it, with its epoch', () => {
+  const A = model(),
+    B = model();
+  A.startSet('know', 'tour');
+  B.ctx.store.set(CHOICE.KEY, A.startOf()); // the same answer on both devices
+  B.play(30, 0, true, true, 0.5); // B's window before A's reset
+  A.introReset(); // a reset made on A
+  const wt = A.startOf().wt,
+    rr = Date.parse(new Date(wt).toISOString()); // the reset time the sheet carries (sync.js reefid-sync-coral-reset)
+  A.play(39, 0, true, true, 0.5); // 39 answers since the reset
+  B.startMerge(JSON.stringify(A.startOf())); // B syncs: A's record first (sync.js mergeSavedIn)...
+  B.introReset(rr); // ...then A's newer reset (mergeSubject, rr > lr)
+  assert.strictEqual(B.startOf().w.length, 39, 'the window A counted since its reset is kept');
+  assert.strictEqual(B.startOf().wt, wt, "with A's epoch, not a newer one");
+  A.startMerge(JSON.stringify(B.startOf()));
+  assert.strictEqual(A.startOf().w.length, 39, 'nothing emptied back on A');
+  // From a device without the epoch (an older app): the window restarts, from the reset's time.
+  const D = model();
+  D.startSet('know', 'tour');
+  D.play(30, 0, true, true, 0.5);
+  const at = D.startOf().t + 1000;
+  D.introReset(at);
+  assert.strictEqual(D.startOf().w.length, 0);
+  assert.strictEqual(D.startOf().wt, at);
+  // A reset made here always starts a new epoch.
+  D.play(5, 0, true, true, 0.5);
+  D.introReset();
+  assert.ok(D.startOf().wt > at && D.startOf().w.length === 0);
+});
+
+// Codex review #428 (P2): only a coral progress reset restarts the coral window (a fish reset, made here or adopted).
+test('a fish progress reset leaves the coral fallback window as it is', () => {
+  const M = model();
+  M.startSet('know', 'tour');
+  M.play(30, 0, true, true, 0.5);
+  const o = M.startOf();
+  M.ctx.SUBJ = C.subjectOf('fish');
+  M.introReset();
+  M.introReset(Date.now() + 1000);
+  M.ctx.SUBJ = C.subjectOf('coral');
+  assert.deepStrictEqual(M.startOf(), o, 'window and epoch unchanged');
+  M.introReset();
+  assert.strictEqual(M.startOf().w.length, 0, 'a coral reset restarts it');
+});
+
 test('synced: the latest answer wins, the cards shown on either device count; a progress reset keeps the answer', () => {
   const A = model(),
     B = model();

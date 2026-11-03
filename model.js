@@ -529,7 +529,8 @@ function introMerge(m, o) {
     tt = x => Math.max(x.t || 0, x.bt || 0);
   if (o && typeof o === 'object' && (!here || tt(o) > tt(here))) store.set(INTRO.OFFER.KEY, o);
 }
-const introReset = () => {
+// at: a progress reset made on another device (its time, sync.js mergeSubject); none: made here.
+const introReset = at => {
   INTROS = {};
   HOLDS = 0; // the opening hold starts over with the progress (holdStep, below; called after this file has run)
   store.set(HOLDK(), 0);
@@ -537,7 +538,9 @@ const introReset = () => {
   store.set(COMEBACK.KEY, CB);
   store.set(INTRO.KEY, {});
   store.set(INTRO.OFFER.KEY, null);
-  startRestart(); // the first-launch question's answer is kept; its fallback window starts over with the answers
+  // The first-launch question's answer is kept; its fallback window starts over with the answers, on a coral reset only
+  // (the window counts coral answers: a fish reset leaves it; Codex review #428).
+  if (startOn()) startRestart(at);
 };
 // The first-launch question (Pierre, 2026-11-03; core.js CHOICE, docs/LEARNING.md "The first-launch question"): the
 // player's answer in reefid-sync-coral-start (synced with the progress, like every reefid-sync* key): {c the choice, t its time,
@@ -578,10 +581,16 @@ function startSet(c, via) {
   if (typeof syncSoon === 'function') syncSoon();
 }
 // A progress reset: the answer stays (it is about the player, not the progress), its window counts from 0 again, from a
-// new epoch wt (Codex review #428: so a window saved before the reset never wins a merge over the new one).
-function startRestart() {
+// new epoch wt (Codex review #428: so a window saved before the reset never wins a merge over the new one). A reset made
+// here starts a new epoch now; one made on another device (at: its time) takes that time as the epoch, and leaves a
+// window already counted since it (merged from that device by startMerge) as it is: never a newer epoch than the
+// reset's, which would win back on the device that made it and empty the window it has counted since.
+function startRestart(at) {
   const o = startOf();
-  if (o) store.set(CHOICE.KEY, {...o, at: 0, w: [], v: null, hd: 0, wt: Math.max(Date.now(), startWt(o) + 1)});
+  if (!o) return;
+  const e = typeof at === 'number' && isFinite(at) ? at : Math.max(Date.now(), startWt(o) + 1);
+  if (startWt(o) >= e) return; // the window already counts from that reset, or from an answer given after it
+  store.set(CHOICE.KEY, {...o, at: 0, w: [], v: null, hd: 0, wt: e});
 }
 // The epoch of a record's fallback window: its last reset (wt), else the answer's time.
 const startWt = x => (x && typeof x.wt === 'number' ? x.wt : (x && x.t) || 0);
