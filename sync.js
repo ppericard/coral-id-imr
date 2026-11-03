@@ -55,7 +55,17 @@ const syncGet = (a = SYNC) =>
 // Answers taken on this device since then are added on top of the saved record, so neither side's answers
 // are lost. A reset (imr-coral-reset, a time) wins over older progress.
 const copy = o => JSON.parse(JSON.stringify(o));
+// Once everything is merged, a first-launch question card left waiting gets the answer given on another device and the
+// quiz goes on (model.js startResume; Codex review #428: resumed inside the merge, the quiz drew on the progress and
+// cards from before it).
 function mergeSaved(j) {
+  try {
+    return mergeSavedIn(j);
+  } finally {
+    if (typeof startResume === 'function') setTimeout(startResume, 0);
+  }
+}
+function mergeSavedIn(j) {
   if (typeof j.rev === 'number') SYNC.srv = j.rev; // the sheet's revision this merge is based on (sent back as at, v6)
   const d = j.data || {};
   // The leaderboard choice made on another device, if more recent than this one's (else this one's goes with the next send).
@@ -775,6 +785,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         INTRO.KEY,
         INTRO.OFFER.KEY,
         CHOICE.KEY, // the first-launch question's answer is the player's too (model.js startSet)
+        BASICS_KEY, // and their Coral basics (app.js; Codex review #428: done there hid the next beginner's offers)
         CUSTOM.KEY, // model.js: the custom quiz's selection is the player's too
         ACHK,
         'imr-ach-new',

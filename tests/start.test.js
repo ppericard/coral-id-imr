@@ -34,7 +34,7 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F'], basics = false} 
   vm.createContext(ctx);
   vm.runInContext(
     block +
-      '\nthis.M = {INTRO, introAdd, introOffer, introReset, holdStep, startOf, startV, startSet, startStep, startDue, startShown, startMerge};',
+      '\nthis.M = {INTRO, introAdd, introOffer, introReset, holdStep, startOf, startV, startSet, startStep, startDue, startShown, startMerge, startResume: typeof startResume === "function" ? startResume : () => {}};',
     ctx
   );
   const M = ctx.M;
@@ -218,4 +218,53 @@ test('synced: the latest answer wins, the cards shown on either device count; a 
   assert.strictEqual(r.n, 0);
   assert.strictEqual(r.at, 0);
   assert.ok(r.fb['know-lo'] && r.fb['know-hi'], 'the cards shown stay shown');
+});
+
+// Codex review of #428, P2 4457104006: on a shared device, signing out leaves the next player nothing of the last one's,
+// Coral basics included (its completion would hide the next beginner's offers and block their achievement).
+test('sign-out clears the first-launch answer and Coral basics with the progress', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'sync.js'), 'utf8'),
+    i = src.indexOf('const signOff = () => {'),
+    list = src.slice(i, src.indexOf('].forEach', i));
+  assert.ok(i > 0, 'signOff found');
+  assert.match(list, /\bCHOICE\.KEY\b/);
+  assert.match(list, /\bBASICS_KEY\b/);
+});
+
+// Codex review of #428, P2 4457104032: a glossary popup gives the same link before and after the Tools tier is in
+// (Coral basics' step, Corallite anatomy's card, the Words list, or none), from one table in app.js.
+test('glossary links to Coral basics: one mapping, the same before the Tools tier loads', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
+    a = src.indexOf('const BASICS_WORDS'),
+    b = src.indexOf('function showGloss');
+  assert.ok(a > 0 && b > a, 'BASICS_WORDS and basicsHref in app.js, before showGloss');
+  const ctx = {window: {}};
+  vm.createContext(ctx);
+  vm.runInContext(src.slice(a, b) + '\nthis.H = basicsHref;', ctx);
+  assert.strictEqual(ctx.H('Septa'), '#basics|septa');
+  assert.strictEqual(ctx.H('Coenosteum'), '#basics|walls|separate');
+  assert.strictEqual(ctx.H('Columella'), '#lab-anatomy|con|columella', 'an anatomy word: its Corallite anatomy card');
+  assert.strictEqual(ctx.H('Paliform lobes'), '#lab-anatomy|con|pali');
+  assert.strictEqual(ctx.H('Verrucae'), '#basics|words', 'a word with no step: the Words list');
+  assert.strictEqual(ctx.H('Solitary'), '', 'not a Coral basics word: no link');
+});
+
+// Codex review of #428, P2 4457104023: another device's answer arriving while the question card waits must not resume
+// the quiz before the rest of the saved progress is merged (sync.js mergeSaved calls startResume once it is done).
+test("another device's answer: the waiting question card resumes only after the merge, not inside it", () => {
+  const M = model();
+  let resumed = 0;
+  M.ctx.document = {querySelectorAll: () => [{ulDone: () => resumed++}]};
+  const B = model();
+  B.startSet('imr', 'tour');
+  M.startMerge(JSON.stringify(B.startOf()));
+  assert.strictEqual(M.startOf().c, 'imr');
+  assert.strictEqual(resumed, 0, 'not inside startMerge');
+  M.startResume();
+  assert.strictEqual(resumed, 1, 'startResume, once the merge is done');
+  const N = model();
+  let r2 = 0;
+  N.ctx.document = {querySelectorAll: () => [{ulDone: () => r2++}]};
+  N.startResume();
+  assert.strictEqual(r2, 0, 'no answer yet: the card stays');
 });

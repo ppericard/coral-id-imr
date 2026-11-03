@@ -715,11 +715,43 @@ document.body.appendChild($gpop);
 // the sourced definition with its source.
 const termDef = ([, d, src, plain]) =>
   `${plain ? `${esc(plain)} <span class="gdef">${esc(d)}</span>` : esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}`;
+// Coral basics' words (proto/basics.js, its Words list), each with the step that shows it ('<step>' or '<step>|<view>'), a
+// card of Corallite anatomy ('@<card>') or none (''), and the plain line used when data.json terms has none. Here, in
+// the first tier, so a glossary popup links the same way before and after the Tools tier is in (Codex review #428:
+// a deferred '#basics|<term>' opened the last step viewed for an anatomy word or a word with no step).
+const BASICS_WORDS = [
+  ['Colony', 'colony', 'Many polyps living together on one skeleton.'],
+  ['Polyp', 'polyp', 'One tiny coral animal: a soft tube, a mouth, a ring of tentacles.'],
+  ['Mouth', 'polyp', 'In the middle of the polyp. IMR asks: is it raised or embedded?'],
+  ['Corallite', 'corallite', 'The stony cup of one polyp.'],
+  ['Septa', 'septa', 'Thin blades inside the cup, from the rim to the centre.'],
+  ['Costae', 'septa', 'The same blades, carrying on outside the cup’s wall.'],
+  ['Septal teeth', 'teeth', 'Teeth on the top edge of the septa: fine or large.'],
+  ['Wall', 'walls', 'The rim around each cup: separate, shared, forming valleys, or not visible at all.'],
+  ['Separate walls', 'walls|separate', 'Each cup has its own wall, with a gap between cups.'],
+  ['Shared walls', 'walls|shared', 'Neighbouring cups share one wall, like a honeycomb.'],
+  ['Coenosteum', 'walls|separate', 'The skeleton in the gap between cups with separate walls.'],
+  ['Valleys', 'walls|valleys', 'Cups merged into long rows with several mouths (brain corals).'],
+  ['Indistinguishable walls', 'walls|nowall', 'No wall to see: the lines run from one centre to the next.'],
+  ['Septo-costae', 'walls|nowall', 'Those lines, running from one centre to the next when there is no wall.'],
+  ['Growth form', 'forms', 'The colony’s shape: branching, massive, plating…'],
+  ['Paliform lobes', '@con|pali', 'A crown of small knobs around the centre of the cup.'],
+  ['Columella', '@con|columella', 'What fills the very centre of the cup.'],
+  ['Axial corallite', '@con|axial', 'The cup at the tip of a branch, bigger than the others.'],
+  ['Monticules', '@arr|hydno', 'Small cone-shaped mounds of wall between the cups.'],
+  ['Verrucae', '', 'Bumps on the branches, bigger than one cup.'],
+  ['Hooded corallites', '', 'Cups that face downwards, like a hood.'],
+  ['Vesicles', '', 'Grape-like bubbles some corals inflate by day.']
+];
+const basicsWord = term => BASICS_WORDS.find(x => x[0].toLowerCase() === String(term).toLowerCase());
+const basicsListed = term => !!basicsWord(term);
+const basicsRoute = term => {
+  const w = basicsWord(term);
+  return !w || !w[1] ? '' : w[1][0] === '@' ? '#lab-anatomy|' + w[1].slice(1) : '#basics|' + w[1];
+};
 // Where a term is shown on a photo (Pierre, 2026-11-03: the technical words of the genus sheets, first-meeting cards and
-// quiz tips link to Coral basics): its step, else Corallite anatomy's card, else the Words list when it is there
-// (proto/basics.js BASICS); before the Tools tier is in, #basics|<term>, which Coral basics resolves itself.
-const basicsHref = term =>
-  window.BASICS ? BASICS.route(term) || (BASICS.listed(term) ? '#basics|words' : '') : '#basics|' + encodeURIComponent(term);
+// quiz tips link to Coral basics): its step, else Corallite anatomy's card, else the Words list when it is there.
+const basicsHref = term => basicsRoute(term) || (basicsListed(term) ? '#basics|words' : '');
 function showGloss(el) {
   const t = DATA.terms.find(x => x[0] === el.dataset.gt);
   if (!t) return;

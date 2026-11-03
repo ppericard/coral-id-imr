@@ -583,40 +583,11 @@
       }
     }
   ];
-  // Glossary words (data.json terms and plain words) → the step that shows them, or a card of Corallite anatomy.
-  // The plain line here is used only for words the glossary has no plain sentence for (data.json terms[3] wins).
-  const WORDS = [
-    ['Colony', 'colony', 'Many polyps living together on one skeleton.'],
-    ['Polyp', 'polyp', 'One tiny coral animal: a soft tube, a mouth, a ring of tentacles.'],
-    ['Mouth', 'polyp', 'In the middle of the polyp. IMR asks: is it raised or embedded?'],
-    ['Corallite', 'corallite', 'The stony cup of one polyp.'],
-    ['Septa', 'septa', 'Thin blades inside the cup, from the rim to the centre.'],
-    ['Costae', 'septa', 'The same blades, carrying on outside the cup’s wall.'],
-    ['Septal teeth', 'teeth', 'Teeth on the top edge of the septa: fine or large.'],
-    ['Wall', 'walls', 'The rim around each cup: separate, shared, forming valleys, or not visible at all.'],
-    ['Separate walls', 'walls|separate', 'Each cup has its own wall, with a gap between cups.'],
-    ['Shared walls', 'walls|shared', 'Neighbouring cups share one wall, like a honeycomb.'],
-    ['Coenosteum', 'walls|separate', 'The skeleton in the gap between cups with separate walls.'],
-    ['Valleys', 'walls|valleys', 'Cups merged into long rows with several mouths (brain corals).'],
-    ['Indistinguishable walls', 'walls|nowall', 'No wall to see: the lines run from one centre to the next.'],
-    ['Septo-costae', 'walls|nowall', 'Those lines, running from one centre to the next when there is no wall.'],
-    ['Growth form', 'forms', 'The colony’s shape: branching, massive, plating…'],
-    ['Paliform lobes', '@con|pali', 'A crown of small knobs around the centre of the cup.'],
-    ['Columella', '@con|columella', 'What fills the very centre of the cup.'],
-    ['Axial corallite', '@con|axial', 'The cup at the tip of a branch, bigger than the others.'],
-    ['Monticules', '@arr|hydno', 'Small cone-shaped mounds of wall between the cups.'],
-    ['Verrucae', '', 'Bumps on the branches, bigger than one cup.'],
-    ['Hooded corallites', '', 'Cups that face downwards, like a hood.'],
-    ['Vesicles', '', 'Grape-like bubbles some corals inflate by day.']
-  ];
-  // For a link from a glossary popup or quiz feedback: term → route (window.BASICS.route('Septa') = '#basics|septa').
-  const routeOf = term => {
-    const w = WORDS.find(x => x[0].toLowerCase() === String(term).toLowerCase());
-    if (!w || !w[1]) return '';
-    return w[1][0] === '@' ? '#lab-anatomy|' + w[1].slice(1) : '#basics|' + w[1];
-  };
-  // listed: the term is in the Words list (a link there when it has no step of its own).
-  window.BASICS = {route: routeOf, listed: term => WORDS.some(x => x[0].toLowerCase() === String(term).toLowerCase())};
+  // The words, their step and their plain line: app.js BASICS_WORDS (one table, read by the glossary popups before this
+  // file is in too); the route of a term: app.js basicsRoute (Codex review #428).
+  const WORDS = BASICS_WORDS,
+    routeOf = basicsRoute;
+  window.BASICS = {route: routeOf, listed: basicsListed};
   const official = term => (DATA.terms || []).find(x => x[0] === term);
   const KEY = BASICS_KEY; // app.js: 'imr-basics'
   const s0 = id => STEPS.find(s => s.id === id) || {};

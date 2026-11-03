@@ -586,8 +586,11 @@ function startMerge(json) {
     if (!o || r.c !== o.c) typeof dropPlans === 'function' && dropPlans();
     store.set(CHOICE.KEY, {...r, fb});
   } else store.set(CHOICE.KEY, {...o, fb});
-  // The question waiting on its card (quiz.js startAskShow) is answered now: the quiz goes on.
-  document.querySelectorAll('.unlock.startq:not(.basicsq)').forEach(d => d.ulDone && d.ulDone());
+}
+// The question waiting on its card (quiz.js startAskShow) answered on another device: the quiz goes on. Called by
+// sync.js mergeSaved once every record is merged (never from startMerge, which runs before the progress and cards are).
+function startResume() {
+  if (startOf()) document.querySelectorAll('.unlock.startq:not(.basicsq)').forEach(d => d.ulDone && d.ulDone());
 }
 // Opening held while the player does clearly worse than expected (Pierre, 2026-11-02, after an RA at 86% right met 9
 // genera in 21 answers and dropped to 5 right in 10: "when many genera have just opened and the answers suddenly get
