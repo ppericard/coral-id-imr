@@ -573,6 +573,58 @@ test("anonymous answers older than the account's own join it at sign-in: the com
   }
 });
 
+test("an answer logged by a refused save, then saved in another device's replay, is counted once (Codex review #399)", async () => {
+  // A plays and saves two answers (rules version applied), then a third whose save is refused (logged, not saved).
+  const s = loadCodeGs(withData());
+  let refuse = false;
+  const sheetA = {get: q => s.get(q), post: b => s.post(refuse && b.name ? {...b, at: -1} : b)},
+    A = app({sheet: sheetA, SYNC: {name: 'Ana', pin: '1234', log: [qa('a0', 0), qa('a1', 1)], base: {}, dirty: true}});
+  await A.syncPush();
+  await A.syncPush();
+  assert.deepStrictEqual([A.count('Acropora'), A.rvApplied(), savedTotal(s)], [2, C.RV, 2]);
+  refuse = true;
+  A.ctx.SYNC.log = [qa('a2', 2)];
+  A.ctx.P.Acropora.ok++;
+  A.ctx.SYNC.dirty = true;
+  await A.syncPush();
+  refuse = false;
+  assert.deepStrictEqual([rowsOf(s), A.count('Acropora'), A.ctx.SYNC.log.length, savedTotal(s)], [3, 3, 0, 2]);
+  // B, a new device, adopts the replay of the three and saves it; then A syncs, twice.
+  const B = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, dirty: true}});
+  await B.syncPush();
+  assert.strictEqual(savedTotal(s), 3);
+  await A.syncPush();
+  await A.syncPush();
+  await A.syncPull();
+  assert.deepStrictEqual([A.count('Acropora'), savedTotal(s)], [3, 3], "was 4: the logged answer counted again as A's own");
+});
+
+test('an admin merge of two replayed accounts brings the replay of both histories in time order (Codex review #399)', async () => {
+  // Two accounts of one person, each replayed and saved: 20 older right answers, 10 newer misses.
+  const s = loadCodeGs(withData()),
+    TOK = 'ghp_write000000000000000000',
+    dev = (name, log) => app({sheet: s, SYNC: {name, pin: '1234', log, base: {}, dirty: true}}),
+    O = dev('Old', rights(20)),
+    A = dev('Ana', misses(100, 10));
+  for (const d of [O, A]) {
+    await d.syncPush();
+    await d.syncPush();
+  }
+  // The admin merges Old into Ana (admin.js: the two saved copies through core.js mergeUsers, written by the sheet).
+  const into = s.post({userData: 'Ana', token: TOK}),
+    from = s.post({userData: 'Old', token: TOK});
+  assert.ok(s.post({userMerge: {from: 'Old', into: 'Ana', data: C.mergeUsers(from.data, into.data), at: into.rev}, token: TOK}).ok);
+  // Ana's device syncs: the 30 answers replayed in time order (was the merged model kept: pg 0.96, ten right last).
+  await A.syncPull();
+  await A.syncPush();
+  await A.syncPull();
+  const a = A.ctx.P.Acropora,
+    back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora;
+  assert.deepStrictEqual([a.ok, a.ko, a.h, A.rvApplied()], [20, 10, '0000000000', C.RV]);
+  assert.ok(a.pg < 0.5, `pg ${a.pg}`);
+  assert.deepStrictEqual([back.ok + back.ko, back.h], [30, '0000000000']);
+});
+
 test('property: devices, unsent answers, an older client and a reset in flight: every device ends with the rows of the log', async () => {
   // A small deterministic random generator, so a failure replays the same way.
   let seed = 7;

@@ -1851,7 +1851,14 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     signing in to an existing account (queued, or sent under the anonymous id): the sign-in leaves the account's rules
     version unapplied and nothing is adopted until the first save has moved them into the account's log; its reply
     brings the replay of the whole of it (Codex review #399: 20 right answers played before an account's 10 misses kept
-    pg 0.9 and ten right answers last). Except the copy this
+    pg 0.9 and ten right answers last). Answers the sheet logged from a refused save (logged, their progress not saved:
+    `SYNC.lg`) are missing from the device's merge baseline, so a copy another device saved from its replay of the log
+    may already count them, and the merge would add them again as the device's own (Codex review #399: 3 answers, a
+    baseline of 2, a saved replay of the 3: 4, kept for good): until a save succeeds, the device's requests ask for the
+    replay (rv 0) and a replay of the same version is adopted in place of the merge. An admin merge of two accounts
+    (`core.js` `mergeUsers`, `Code.gs` `users_`) saves the merged copy with no rules version: it is no replay of the two
+    logs together, so every device of the account asks for the replay of both histories in time order (Codex review
+    #399: 20 older right answers and 10 newer misses kept the merged model, pg 0.79-0.96, for 0.20). Except the copy this
     device saved or loaded last, unchanged since (the sheet's revision, which every save bumps, an older app's
     included, is still the one this device holds, `sync.js` `mergeSaved` `mine`): it is already part of the device's
     progress, so it is not merged, whatever its rules version. A save carries the rules version applied when it was

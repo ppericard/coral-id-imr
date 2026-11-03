@@ -185,6 +185,11 @@
     const out = {...A, ...B, 'imr-coral-progress': JSON.stringify(P)},
       qa = J(A, 'imr-coral-quiz'),
       qb = J(B, 'imr-coral-quiz');
+    // The rules version the progress was replayed with (sync.js RVK): the merged record is no replay of the two logs
+    // together, so it has none, and every device of the account asks for the replay of both histories in time order
+    // (the sheet relabels the answers; Codex review #399: the merged model of 20 older right answers and 10 newer misses
+    // kept pg 0.96 for good).
+    delete out['imr-coral-rv'];
     if (qa || qb) {
       const q = {...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)};
       if ((qa || {}).bon || (qb || {}).bon) q.bon = true;

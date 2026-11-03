@@ -54,7 +54,7 @@ function syncSummary() {
 // (pendingFrom), so the replay's ids cover every queued answer the sheet already logged.
 const syncGet = (a = SYNC) =>
   sheetFetch(
-    `${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}&rv=${rvApplied()}${ptParam(a.log)}`
+    `${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}&rv=${rvAsk()}${ptParam(a.log)}`
   ).then(r => r.json());
 // The full replay of the answer log by the sheet (Pierre, 2026-11-03: progress recalculated from the whole log,
 // automatically, never by a human click, now and whenever the progress engine changes; docs/LEARNING.md "Full replay").
@@ -76,6 +76,10 @@ const syncGet = (a = SYNC) =>
 // rv field the requests carry is ignored there).
 const RVK = 'imr-coral-rv';
 const rvApplied = () => Number(store.get(RVK, 0)) || 0;
+// The rules version a request says: the one applied here, or 0 while this device holds answers the sheet logged from a
+// refused save (SYNC.lg, syncOnce): its merge baseline lacks them, so a saved copy another device built from the log
+// (a replay) may already count them, and only the replay of the log tells (mergeSaved; Codex review #399).
+const rvAsk = () => (SYNC && SYNC.lg ? 0 : rvApplied());
 // The time (ms) of the oldest answer of a queue, null when it holds none. Sent with the requests that can bring a replay
 // (pt): the sheet (v28) then lists in replay.ids every answer it replayed from that time on, so replayAdopt never counts
 // again an answer the sheet already has, however many a lost reply left queued here (up to 2,000; Codex review #399).
@@ -95,7 +99,9 @@ const ptParam = q => (pendingFrom(q) === null ? '' : `&pt=${pendingFrom(q)}`);
 // before it.
 function replayAdopt(rp, pending, v, cut, pre) {
   if (!(Number(v) >= RV_SHEET)) return false;
-  if (!rp || typeof rp.rv !== 'number' || rp.rv <= rvApplied() || !rp.rec || typeof rp.rec !== 'object') return false;
+  if (!rp || typeof rp.rv !== 'number' || !rp.rec || typeof rp.rec !== 'object') return false;
+  // A newer version, or the same one asked again for answers logged from a refused save (rvAsk).
+  if (rp.rv < rvApplied() || (rp.rv === rvApplied() && !(SYNC && SYNC.lg))) return false;
   if (typeof mxRecalc !== 'function') return false; // the quiz tier (model.js) not in yet: the next reply brings it again
   if (cut !== undefined && cut !== (store.get('imr-coral-reset', '') || '')) return false;
   // Signed in with anonymous answers not moved to the account yet (signIn; the first save's reply clears SYNC.anon before
@@ -137,6 +143,7 @@ function replayAdopt(rp, pending, v, cut, pre) {
     // unsent answer went into the base and was lost at the next merge (Codex review #399: 3 became 2).
     if (SYNC) {
       SYNC.base = replayBase(rp.rec, M, rp.rv, SYNC.base);
+      delete SYNC.lg; // the replay counts every logged answer
       store.set('imr-coral-sync', SYNC);
     }
     save();
@@ -250,7 +257,12 @@ function mergeSaved(j) {
   // whole log again, every answer of every device counted once, this device's unsent ones on top (replayAdopt). The
   // cost: one more replay.
   const rvSaved = Number(d[RVK]) || 0;
-  if (!mine) {
+  // Answers this device had logged from a refused save (SYNC.lg): another device may have saved them already, in its
+  // replay of the log, and the merge would add them again as this device's own (Codex review #399: 3 answers, a baseline
+  // of 2, a saved replay of the 3: 3 + 3 - 2 = 4, kept for good). The replay of the log, which the load asked for
+  // (rvAsk), counts every one once: adopted, it replaces the merge; without it, the merge as usual.
+  const recovered = !!(SYNC.lg && j.replay && replayAdopt(j.replay, SYNC.log, j.v, undefined, pre));
+  if (!mine && !recovered) {
     if (rvSaved >= rvApplied()) {
       // In place: other code holds P by name only, but keep the same object anyway.
       const M = mergeProgress(SYNC.base || {}, P, R);
@@ -320,7 +332,7 @@ function syncOnce(tries = 0) {
           summary: syncSummary(),
           answers: log,
           av: appVer(), // the app's version (sheet v25: a request without it comes from an app before 2026-11-03)
-          rv: rvApplied(), // the rules version applied here (sheet v28: an older one gets the full replay back)
+          rv: rvAsk(), // the rules version applied here (sheet v28: an older one gets the full replay back)
           ...(pendingFrom(log) === null ? {} : {pt: pendingFrom(log)}), // the replay's ids cover every answer sent (pendingFrom)
           // First send after signing in: the answers this device sent anonymously move to this name (script v12).
           ...(me.anon ? {anon: me.anon} : {}),
@@ -334,6 +346,8 @@ function syncOnce(tries = 0) {
       if (j.log && log.length) {
         const done = new Set(log.map(x => x.id));
         me.log = (me.log || []).filter(x => !done.has(x.id));
+        // Logged, but the progress carrying them not saved: the merge baseline lacks answers the log has (rvAsk).
+        if (!j.ok) me.lg = 1;
         store.set('imr-coral-sync', me);
       }
       // The retry is a whole sync of its own: its result skips the steps below (they would apply this round's sent copy).
@@ -349,6 +363,7 @@ function syncOnce(tries = 0) {
       if (j && j.ok && SYNC === me) {
         me.last = new Date().toISOString();
         me.base = sent;
+        delete me.lg; // the saved copy now holds the answers it lacked
         if (typeof j.rev === 'number') me.srv = j.rev;
         delete me.pending;
         delete me.err;

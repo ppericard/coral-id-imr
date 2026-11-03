@@ -766,6 +766,9 @@ function users_(p){
       if (!a || !b || a.r === b.r || !m.data || typeof m.data !== 'object') return {ok: false, error: 'user'};
       const from = String(a.v[0]), into = String(b.v[0]), cur = readData_(into, String(b.v[7] || ''));
       if (typeof m.at === 'number' && m.at !== cur.rev) return {ok: false, error: 'stale', rev: cur.rev};
+      // The merged progress is no replay of both logs (core.js mergeUsers drops it too): no rules version, so the
+      // account's devices ask for the replay of the whole merged history (replay_).
+      delete m.data['imr-coral-rv'];
       const json = JSON.stringify(m.data);
       writeData_(into, json, cur.rev + 1);
       ra.getRange(b.r, 2).setValue(new Date()); ra.getRange(b.r, 8).setValue(json.length < CHUNK ? json : '@' + DATA_TAB);
@@ -1085,6 +1088,11 @@ const CORE_ = (function () { const module = {exports: {}};
     const out = {...A, ...B, 'imr-coral-progress': JSON.stringify(P)},
       qa = J(A, 'imr-coral-quiz'),
       qb = J(B, 'imr-coral-quiz');
+    // The rules version the progress was replayed with (sync.js RVK): the merged record is no replay of the two logs
+    // together, so it has none, and every device of the account asks for the replay of both histories in time order
+    // (the sheet relabels the answers; Codex review #399: the merged model of 20 older right answers and 10 newer misses
+    // kept pg 0.96 for good).
+    delete out['imr-coral-rv'];
     if (qa || qb) {
       const q = {...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)};
       if ((qa || {}).bon || (qb || {}).bon) q.bon = true;
