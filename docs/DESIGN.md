@@ -43,7 +43,9 @@ The visual rules every page follows. They came out of the expert UI review of 20
 
 ## Icons
 
-One SVG set (24 px grid, 1.75 stroke, `currentColor`): see `LAB_ICONS` in `proto/lab.js` for the Tools hub and the inline SVGs in `index.html`. No Unicode pictographs as icons (✺ ⌘ ◐…); plain symbols in text (✓ ✗ ★ ←) are fine.
+One SVG set (24 px grid, 1.75 stroke, `currentColor`): see `LAB_ICONS` in `proto/lab.js` for the Tools hub and the inline SVGs in `index.html`. No Unicode pictographs as icons (✺ ⌘ ◐…); plain symbols in text (✓ ✗ ★ ←) are fine. Icons drawn at 18 px (header buttons, the enlarge mark) take a 2 stroke to stay legible.
+
+- **Enlarge mark** (`ZOOMI` in `app.js`, `.zic` in `app.css`; Pierre, 2026-11-03, after the answer log showed players almost never enlarged a quiz photo): a magnifier with a plus (the Identify tab's magnifier + "+", 18 px) in a 32 px `--scrim` circle, `--on-photo` stroke, 8 px from the bottom-right corner of every photo that opens the enlarged view in the quiz, the duels (also on the mix-up montage from tablets up) and the genus sheet (cover and view rows). Always shown, never animated; decorative (`aria-hidden`): the photo's button carries the label, "Enlarge photo" (on the sheet "Enlarge photo: *genus*, *view*"). It replaces the old ⤢ glyph. The source pill (`.psrc`) sits bottom-left and stops short of it.
 
 ## Screens
 
@@ -55,6 +57,7 @@ One SVG set (24 px grid, 1.75 stroke, `currentColor`): see `LAB_ICONS` in `proto
 - Quiz on desktop: the grid of views (side by side or stacked) is picked from each photo's known shape (data.json `ar`) to show the most photo; the stage keeps its full height (no photo above an empty half screen) and is laid out before the photos load. After an answer, Next spans the side column and is pinned to its bottom, level with the bottom of the photos, so it never moves from one question to the next; a long feedback scrolls under it.
 - Photo files: `img/<f>.webp` is at most 1600 px, `-m` 960 px, `-s` 480 px and `-t` 240 px on the long side; big photos take the smallest file that covers their box (`fit` in `app.js`, Photo quality setting), thumbnails the 240 or 480 px file (`thumb()`). Grids that crop photos to 4:3 (cards, sheet strips, pair cells) declare in `srcset` the width a 4:3 crop really gets from each file (`coverW()` in `app.js`), so a panorama or portrait photo loads the big file instead of a blown-up thumbnail.
 - Learn > Look-alikes: one pair per screen; move with the big round arrows on the photos, a sideways swipe anywhere on the pair, or the keyboard arrows. A one-time "Swipe for the next pair" hint shows on touch screens until the first swipe.
+- Quiz enlarge hint (`.zhint`, `quiz.js` `zoomHint`): once per device, a small coach mark over the first photo of an early question, "Tap a photo to see it bigger" ("Click" with a mouse): a `--surface` bubble with `--ink` 14 px semibold text, `--r-sm` corners and `--shadow-hover`, its caret pointing down at the enlarge mark. It fades in (no motion with reduced motion), lets every tap through and goes at the first tap or key, or after 6 s. Never with the tour, a card or an achievement toast.
 - Memory on phones and tablets: the controls fit one compact row above the grid (Easy/Medium/Hard, Random/Look-alikes, ↻ new game) and the status one short line, so the grid gets the screen. The grid turns to the screen (more columns on a landscape screen, more rows on a portrait one). Desktop keeps the side column.
 - Games wider than the page (`.bleed`, ≥ 1340 px) start on the header's left edge and only grow to the right.
 - ID tips are the key content: never clamp or truncate them on a card; they are boxed (`.tipbox`) wherever they appear (sheet, quiz feedback, pair page).
