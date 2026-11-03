@@ -3,3 +3,4 @@ __pycache__/
 .claude/worktrees/
 judging/cand/img/
 judging/cand/sheets/
+judging/cand/detail/
