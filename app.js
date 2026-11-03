@@ -1000,7 +1000,9 @@ const MODES = {
   ],
   practice: [
     ['quiz', 'Photo → genus', 'Name the genus'],
-    ['quiz-duel', 'Look-alike duels', 'Two genera often confused'],
+    // Phones: "Custom" and "Duels", so the four tabs fit 360 px without scrolling (rule 20).
+    ['quiz-custom', 'Custom<span class="wide"> quiz</span>', 'The photo quiz on the genera you pick'],
+    ['quiz-duel', '<span class="wide">Look-alike duels</span><span class="narrow">Duels</span>', 'Two genera often confused'],
     ['pairs', 'Memory', 'Match colony and corallites']
   ],
   identify: [['finder', 'Coral Finder', 'Tap the clues you see, get a ranked shortlist']]
@@ -1169,6 +1171,8 @@ function route() {
     viewLookalikes(a, b);
   } else if (h.startsWith('cmp-')) viewCompare(...h.slice(4).split('|'));
   else if (h === 'quiz') quizPhoto();
+  // The custom quiz (quiz.js): its selection screen, and the quiz on the genera picked.
+  else if (h === 'quiz-custom' || h === 'quiz-custom|play') quizCustom(h);
   // Lecture photos are now a photo set of Photo -> genus.
   else if (h === 'quiz-course')
     location.replace('#quiz'); // the Lecture photo set was removed (Pierre, 2026-10-31)
