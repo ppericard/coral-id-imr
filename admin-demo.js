@@ -32,6 +32,18 @@
   // One dataset for every request: concurrent first calls (answers and stats together) wait for the same build.
   let BUILD = null;
   const build = () => (BUILD = BUILD || make());
+  // Moves the last n of one player's rows into one session ending at `end`, about 37 s apart, in their order; the last
+  // `typed` plain quiz answers among them become typed ones (quiz|t: no choices offered).
+  function live(L, n, end, typed) {
+    L.sort((a, b) => a[1] - b[1])
+      .slice(-n)
+      .forEach((r, i, M) => (r[1] = end - (M.length - 1 - i) * 37e3));
+    if (typed)
+      L.slice(-n)
+        .filter(r => r[5] === 'quiz')
+        .slice(-typed)
+        .forEach(r => ((r[5] = 'quiz|t'), (r[11] = '')));
+  }
   async function make() {
     const D = await real('data.json', {cache: 'no-cache'}).then(r => r.json());
     const gen = {...D.gen, ...((D.x && D.x.gen) || {})},
@@ -47,7 +59,11 @@
       // Some genera easier than others for everyone (the journey page's easiest / hardest), fixed per genus.
       ease = Object.fromEntries(G.map(g => [g, (rnd() - 0.5) * 0.4]));
     const rows = [],
-      users = {};
+      users = {},
+      // The made-up sessions end 2 hours ago at the latest; then a few recent ones, relative to now, for Players' Last
+      // column and Activity's Recent sessions (Pierre, 2026-11-03): Carla playing now (her last answer 1 minute ago,
+      // quiz, duels and typed answers), a device not signed in that stopped 12 minutes ago.
+      END = NOW - 2 * 3600e3;
     let k = 0;
     PLAYERS.forEach(([name, skill, n, d0, d1]) => {
       const P = {};
@@ -58,11 +74,11 @@
       for (let i = 0; i < n; i++) {
         if (!left) {
           left = 5 + Math.floor(rnd() * 36);
-          start = NOW - (d0 - ((d0 - d1) * i) / Math.max(1, n - 1)) * DAY - Math.floor(rnd() * 3600e3);
+          start = END - (d0 - ((d0 - d1) * i) / Math.max(1, n - 1)) * DAY - Math.floor(rnd() * 3600e3);
           j = 0;
         }
         left--;
-        const t = Math.min(NOW - 60e3, start + j++ * (20e3 + Math.floor(rnd() * 20e3))),
+        const t = Math.min(END, start + j++ * (20e3 + Math.floor(rnd() * 20e3))),
           // Genera open progressively, as in the app: 4 at first, one more every ~8 answers.
           g = pick(G.slice(0, Math.min(G.length, 4 + Math.floor(i / 8)))),
           duel = rnd() < 0.2,
@@ -106,6 +122,14 @@
           k % 7 ? 0 : 1
         ]);
       }
+      // Carla is playing now: her last 24 answers moved to the last 15 minutes, two of them typed (quiz|t, no choices).
+      if (name === 'Carla Demo')
+        live(
+          rows.filter(r => r[0] === name),
+          24,
+          NOW - 60e3,
+          2
+        );
       // First-meeting cards (app model.js INTRO): the first 4 genera together, the others one at a time 2 answers before
       // their first question; Carla opened all from the offer card at answer 40, Ben declined it at answer 50.
       const mine = rows.filter(r => r[0] === name).sort((x, y) => x[1] - y[1]), // in time order, as the journey reads them
@@ -160,6 +184,13 @@
         ''
       ]);
     }
+    // A device not signed in that stopped 12 minutes ago: its last 8 answers.
+    live(
+      rows.filter(r => r[0] === '~anon demo0'),
+      8,
+      NOW - 12 * 60e3,
+      0
+    );
     // Reports: [id, time, reporter, verified, why, expected, answered, suggested, note, mode, photos, where], newest first.
     const rp = (i, who, why, g, a, fix, note, m, f, w) => [
       'demorep' + i,
