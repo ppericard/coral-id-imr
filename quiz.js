@@ -177,6 +177,7 @@ function question(cur, target, choices, prompt, set, kq) {
     if (!z) return;
     const list = hintShown ? [...ph, set.hint] : answered && set.reveal ? [...ph, ...set.reveal] : ph;
     if (!answered) QCLOCK.zm = 1;
+    tipZoomed();
     zoom(
       list.map(p => ({...p, genus: target})),
       Number(z.dataset.q),
@@ -589,6 +590,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
         z =>
           (z.onclick = e => {
             e.stopPropagation();
+            tipZoomed();
             zoom(
               [
                 {...tp, genus: target},
@@ -644,6 +646,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     if (nudgeDue()) (promptMark(), signinNudge());
     else if (pulseDue()) pulseArm(nb);
   }
+  // A "Did you know?" tip may take the break at Next when no prompt above took it (tipAfter; tips.js).
+  tipAfter(nb, cur, !good, tm.zm, exq && s.mx);
 }
 // The answer's feedback, up to the report button (answer): the verdict, the unit's ID tips, why the answer given is
 // another unit, and more behind a fold. A genus: its IMR ID tips and mnemonic, the Coral Finder's criteria, a link to
@@ -783,6 +787,109 @@ function zoomHint() {
   };
   setTimeout(show, ZHINT.DELAY);
 }
+// The break at Next: between an answer and the next question, at most one card. A card that wants this break arms Next
+// (breakArm) unless another one already did: the first one wins (the one-tap question, armed first in answer(), then the
+// tips). At the tap, show() returns true when its card is up (that card then goes on to the next question, or not, as it
+// closes) and false to go on at once, as Next always does.
+function breakArm(nb, show) {
+  if (!nb || nb.onclick !== route) return false;
+  nb.onclick = () => {
+    nb.onclick = route;
+    if (!show()) route();
+  };
+  return true;
+}
+// "Did you know?" tips (tips.js; the owner, 2026-11-04): this device's counters (reefid-tips), the break at Next, the card.
+// The device's answers seed the counters once (tips.js tipsInit): the log of a signed-in player, else LOG0.
+const tipsLoad = (raw = store.get(TIPR.KEY, null)) => {
+  let seed = [];
+  if (!raw)
+    try {
+      seed = (SYNC && SYNC.log) || store.get(LOG0, []);
+    } catch (e) {}
+  return tipsInit(raw, seed);
+};
+// A quiz photo enlarged by the player (question(), the mix-up montage in answer()); a tip's "Show me" is not theirs.
+let tipDemo = false;
+const tipZoomed = () => tipDemo || store.set(TIPR.KEY, tipUse(tipsLoad(), 'z'));
+// After each answer in a game: count it; when a tip is due (tipDue: its target, its moment, at most one a visit, never in
+// the visit's first answers) and the prompt spacing allows (promptOk: never with a card, the tour or a toast, PROMPT.GAP
+// answers from the sign-in card, the one-tap question and the offers, which it then pushes back as they do), it takes
+// the break at Next. Everything is checked again at the tap, and the tip waits for a later break when the next question
+// brings a genus's card (never two cards back to back). hold: the mastery toast is due in a moment.
+const TIP = {WAIT: 600};
+// Whether the planned next question opens with a genus's first-meeting card: the photo quiz's plan carries them (.intro);
+// a duel of the Duel tab shows the cards of its genera not met yet itself (quizDuel), its plan does not.
+const nextCards = (cur, q) => !!q.intro || (cur.split('|')[0] === 'quiz-duel' && q[2].some(n => !introduced(n)));
+function tipAfter(nb, cur, miss, zm, hold) {
+  const raw = store.get(TIPR.KEY, null);
+  let st = tipsLoad(raw);
+  const q0 = st.u.q;
+  st = tipNote(st, Date.now());
+  if (!raw && q0) st = {...st, u: {...st.u, q: q0}}; // just seeded from the log, this answer included
+  store.set(TIPR.KEY, st);
+  const b = {ctx: cur.split('|')[0], miss, zm: !!zm};
+  if (hold || !tipDue(st, b) || !promptOk()) return;
+  breakArm(nb, () => {
+    // The next question is planned 50 ms after the answer (answer, planNext): a Next tapped sooner plans it now, so its
+    // cards are known.
+    if (!(NEXTQ && NEXTQ.k === planKey(cur)) && hashNow() === cur) planNext(cur);
+    const s = tipsLoad(),
+      t = tipDue(s, b),
+      nx = NEXTQ && NEXTQ.k === planKey(cur) && NEXTQ.args;
+    if (!t || !promptOk() || !lb.hidden || (nx && nextCards(cur, nx))) return false;
+    promptMark();
+    tipShow(t, s, cur);
+    return true;
+  });
+}
+// What a tip's "Show me" does (tips.js TIPS act), after its card has closed.
+const TIP_ACT = {
+  // The enlarged view of the photo just answered, the answer shown (after a mix-up, the photo shown, then the one of the
+  // genus answered, as a tap on the montage opens them). The player is back on the feedback when it closes; Next goes on.
+  zoom: () => {
+    const z = $v.querySelector('.q.done .qstage .zoom');
+    if (!z) return route();
+    tipDemo = true;
+    try {
+      z.click();
+    } finally {
+      tipDemo = false;
+    }
+  }
+};
+// The tip's card (cardShow kind 'tip', 💡): kicker "Did you know?", the title, for the zoom tip a small picture (the photo
+// just answered with its enlarge mark, ringed), one line, "Show me" and "Got it". Anti-reflex as the one-tap question:
+// its buttons take no tap for TIP.WAIT ms (faded), the focus is on the title (Enter, Next's key, presses nothing) and a
+// tap outside does nothing; Escape is "Got it". Logged with the one-tap questions' events (ev 'pulse', src "tip:<id>",
+// r shown / show / ok / none: the sheet's v19 events_ keeps only its known kinds, and these rows need no new column; the
+// admin counts them apart): at most 2 events a showing.
+function tipShow(t, st, cur) {
+  store.set(TIPR.KEY, tipShown(st, t.id));
+  const mouse = matchMedia('(hover: hover) and (pointer: fine)').matches,
+    im = $v.querySelector('.q.done .qstage .zoom img'),
+    at = {m: cur.split('|')[0], n: session.n},
+    log = r => ev('pulse', {r, src: 'tip:' + t.id, ...at});
+  log('shown');
+  const d = cardShow({
+    kind: 'tip',
+    cls: 'tipcard',
+    kick: esc(t.card.kick),
+    title: esc(t.card.title({mouse})),
+    body: `${t.act === 'zoom' && im ? `<div class="tipvis" aria-hidden="true"><img src="${esc(im.currentSrc || im.src)}" alt="">${ZOOMI}</div>` : ''}<p>${esc(t.card.body)}</p>`,
+    primary: t.act ? {text: 'Show me', attr: 'disabled'} : null,
+    secondary: {text: 'Got it', attr: 'disabled'},
+    focus: 'h3',
+    enter: () => {},
+    bind: d => (d.querySelector('h3').tabIndex = -1),
+    onClose: how => {
+      log(how === 1 ? 'show' : how === 'route' ? 'none' : 'ok');
+      if (how === 1 && TIP_ACT[t.act]) TIP_ACT[t.act]();
+      else if (how !== 'route') route();
+    }
+  });
+  setTimeout(() => d.querySelectorAll('[data-b]').forEach(b => (b.disabled = false)), TIP.WAIT);
+}
 // One-tap question (Pierre, 2026-11-02: people answer a tap, not "any comments?"): now and then, between an answer and
 // the next question, one question answered in one tap (or "Not now"). First after PULSE.FIRST answers in all (35 since
 // 2026-11-02, was 15: the sign-in card comes at 20 and prompts are PROMPT.GAP apart), then every PULSE.EVERY answers
@@ -820,13 +927,14 @@ const pulseEv = r => pulseOpen && ev('pulse', {r, src: pulseOpen.id, ...pulseOpe
 // run: "in a flow state, used to clicking Next, I don't see them": 3 of his first 4 prompts, shown inline in the
 // feedback, ended with Next and no tap). Due is checked again at the tap (a card or a toast that came meanwhile: the
 // prompt waits for a later answer, nothing is marked); the tap that opens it goes no further.
+// It takes the break at Next first (breakArm): a tip then waits for a later break.
 function pulseArm(nb) {
-  nb.onclick = () => {
-    nb.onclick = null;
-    if (!pulseDue() || overlayBusy()) return route();
+  breakArm(nb, () => {
+    if (!pulseDue() || overlayBusy()) return false;
     promptMark();
     pulseAsk();
-  };
+    return true;
+  });
 }
 // The prompt is a card (cardShow, kind 'feedback'; Pierre, 2026-11-03: feedback questions interrupt at Next, a natural
 // break, instead of a block in the feedback that a reflex Next skipped): "Quick question", the question, its three

@@ -1047,6 +1047,24 @@ const CORE_ = (function () { const module = {exports: {}};
     const o = keyBefore(k);
     return o ? s.getItem(o) : null;
   }
+  // Every key that travels with the player (KEYS.SYNC), from a Storage, as {name: value}: progress files, the sheet's
+  // Data (progress.js progData). A travelling key still under its old name (a migration that could not write it yet)
+  // counts under its new name, the new one winning (Codex review #439: a save must not leave out a record whose move is
+  // pending, nor a backup).
+  function travelData(s) {
+    const raw = {};
+    try {
+      for (let i = 0; i < s.length; i++) {
+        const k = s.key(i);
+        if (k.startsWith(KEYS.SYNC) || (keyRename(k) || '').startsWith(KEYS.SYNC)) raw[k] = s.getItem(k);
+      }
+    } catch (e) {}
+    return keysIn(raw);
+  }
+  // Keys to remove, with their old names (sign-out): a key left under its old name by a migration that could not write
+  // it would otherwise sign the player back in at the next start, or hand their progress to the next player of the
+  // device (Codex review #439).
+  const withOldNames = L => [...new Set(L.flatMap(k => [k, keyBefore(k)].filter(Boolean)))];
   // Both storages of this page (a page with storage blocked moves nothing).
   function migrateStorage() {
     try {
@@ -3381,6 +3399,8 @@ const CORE_ = (function () { const module = {exports: {}};
     keyLegacy,
     keyBefore,
     keyGet,
+    travelData,
+    withOldNames,
     migrateKeys,
     migrateStorage,
     keysIn,

@@ -280,15 +280,13 @@ function showProg() {
   sb.title = bad || `Sign in to save your progress for your ${ORG.short} trainer`;
 }
 // Progress files and the sheet: every key that travels (core.js KEYS.SYNC: quiz progress, settings, achievements...), as JSON.
+// A key whose move to its new name is pending (core.js migrateKeys) counts under its new name (core.js travelData).
 const progData = () => {
-  const d = {};
   try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k.startsWith(KEYS.SYNC)) d[k] = localStorage.getItem(k);
-    }
-  } catch (e) {}
-  return d;
+    return travelData(localStorage);
+  } catch (e) {
+    return {};
+  }
 };
 // A file or a saved account may carry the names from before the rename to IMR Reef ID (core.js keysIn).
 const loadData = d => Object.entries(keysIn(d)).forEach(([k, v]) => k.startsWith(KEYS.SYNC) && localStorage.setItem(k, v));
