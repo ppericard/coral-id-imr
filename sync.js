@@ -93,7 +93,7 @@ const ptParam = q => (pendingFrom(q) === null ? '' : `&pt=${pendingFrom(q)}`);
 // progress it discarded, so it is not adopted (nor its version marked applied); the next reply brings it again from
 // the new reset (Codex review #399). A load's reply (mergeSaved) needs none: a reset newer than the sheet's returns
 // before it.
-function replayAdopt(rp, pending, v, cut) {
+function replayAdopt(rp, pending, v, cut, pre) {
   if (!(Number(v) >= RV_SHEET)) return false;
   if (!rp || typeof rp.rv !== 'number' || rp.rv <= rvApplied() || !rp.rec || typeof rp.rec !== 'object') return false;
   if (typeof mxRecalc !== 'function') return false; // the quiz tier (model.js) not in yet: the next reply brings it again
@@ -130,9 +130,12 @@ function replayAdopt(rp, pending, v, cut) {
       store.set('imr-coral-sync', SYNC);
     }
     save();
-    // The progress % before and after, for a card shown only to the players whose % moved (core.js RVS msg.only).
+    // The progress % before and after, for a card shown only to the players whose % moved (core.js RVS msg.only). pre:
+    // the % this device showed before the sync that brought the replay (mergeSaved), as the pull may already have merged
+    // a copy another device saved after its own adoption (Codex review #399: 83% to 33%, compared as 33 to 33).
     const L = typeof slateGenera === 'function' ? slateGenera() : [];
-    if (played && typeof rvNoticeAdd === 'function') rvNoticeAdd(from, rp.rv, [pctOf(before, L), pctOf(P, L)]);
+    if (played && typeof rvNoticeAdd === 'function')
+      rvNoticeAdd(from, rp.rv, [typeof pre === 'number' ? pre : pctOf(before, L), pctOf(P, L)]);
     if (/^#(progress|quiz-board)$/.test(location.hash)) route();
     return true;
   } catch (e) {
@@ -145,6 +148,8 @@ function replayAdopt(rp, pending, v, cut) {
 // are lost. A reset (imr-coral-reset, a time) wins over older progress.
 const copy = o => JSON.parse(JSON.stringify(o));
 function mergeSaved(j) {
+  // The % shown before this sync, for the recalculation card (replayAdopt).
+  const pre = typeof slateGenera === 'function' ? pctOf(P, slateGenera()) : undefined;
   if (typeof j.rev === 'number') SYNC.srv = j.rev; // the sheet's revision this merge is based on (sent back as at, v6)
   const d = j.data || {};
   // The leaderboard choice made on another device, if more recent than this one's (else this one's goes with the next send).
@@ -211,7 +216,7 @@ function mergeSaved(j) {
     if ((SYNC.log || []).some(a => a && String(a.t || '') > rr) || (Number(d[RVK]) || 0) < rvApplied()) store.set(RVK, 0);
     store.set('imr-coral-progress', P);
     if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
-    replayAdopt(j.replay, SYNC.log, j.v); // the sheet's full replay, when newer than the one applied here (v28)
+    replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
     prog();
     return;
   }
@@ -238,7 +243,7 @@ function mergeSaved(j) {
   store.set('imr-coral-sync', SYNC);
   store.set('imr-coral-progress', P);
   if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
-  replayAdopt(j.replay, SYNC.log, j.v); // the sheet's full replay, when newer than the one applied here (v28)
+  replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
   prog();
 }
 // Pull, merge, then send. Every change bumps SYNC.rev; a send clears SYNC.dirty only if nothing changed
