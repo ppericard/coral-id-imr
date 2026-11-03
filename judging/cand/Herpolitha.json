@@ -6,7 +6,7 @@
    "quality": 3,
    "form": "U",
    "keep": "best",
-   "note": "V-shaped colony."
+   "note": "Another angle than the live photo"
   },
   "herpolitha-cand-629161585": {
    "view": "wide",
@@ -15,47 +15,33 @@
    "keep": "best",
    "multi": true,
    "unsure": [
-    "genus"
+    "multi"
    ],
-   "note": "Partly hidden among other corals; furrow not visible."
+   "note": "A massive coral at the bottom right and branches at the left"
   },
   "herpolitha-cand-611198017": {
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Green cast; tentacles out by day hide the furrow, Polyphyllia possible."
-  },
-  "herpolitha-cand-611198028": {
-   "view": "wide",
-   "quality": 2,
-   "form": "U",
    "keep": "dup",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Repeat of the best from further away."
+   "note": "Same coral and framing as the live photo"
   },
   "herpolitha-cand-355639138": {
    "view": "macro",
-   "quality": 2,
+   "quality": 1,
    "form": "U",
    "keep": "best",
-   "note": "Soft; edge of the colony only."
+   "note": "Part of the coral, blurred at 100%"
   },
   "herpolitha-cand-625680247": {
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "best",
-   "note": "Small, low-resolution image."
+   "keep": "best"
   },
   "herpolitha-cand-600955465": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best"
   },
@@ -64,14 +50,7 @@
    "quality": 1,
    "form": "U",
    "keep": "best",
-   "note": "Strong pink cast; half covered by sand."
-  },
-  "herpolitha-cand-460641873": {
-   "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "best",
-   "note": "X-shaped colony, a clear example."
+   "note": "602 px, strong red cast; half the coral buried"
   },
   "herpolitha-cand-262212977": {
    "view": "wide",
@@ -79,25 +58,12 @@
    "form": "U",
    "keep": "best"
   },
-  "herpolitha-cand-190588837": {
-   "view": "macro",
-   "quality": 2,
-   "form": "U",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Green cast; tentacles out by day hide the furrow, Polyphyllia possible."
-  },
   "herpolitha-cand-190589289": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Dim; tentacles out hide the furrow."
+   "note": "Green cast, soft at 100%"
   },
   "herpolitha-cand-262213783": {
    "view": "wide",
@@ -107,79 +73,76 @@
   },
   "herpolitha-cand-595592341": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "U",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Snorkel shot; tentacles out hide the furrow, Polyphyllia possible."
+   "note": "Murky and soft at 100%"
   },
   "herpolitha-cand-57893731": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Soft, green cast."
+   "note": "Algae around, soft at 100%"
   },
   "herpolitha-cand-59142468": {
-   "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "best"
-  },
-  "herpolitha-cand-682475584": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Hazy."
+   "note": "1159 px high, clean"
+  },
+  "herpolitha-cand-682475584": {
+   "view": "macro",
+   "quality": 1,
+   "form": "U",
+   "keep": "best",
+   "note": "714 px high, milky and soft"
   },
   "herpolitha-cand-270753533": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Night shot, tentacles out."
+   "note": "Tentacles partly out"
   },
   "herpolitha-cand-445317713": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Hazy."
+   "note": "1184 px, soft"
   },
   "herpolitha-cand-445317718": {
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "alt",
-   "multi": true,
-   "note": "Other angle; a large massive coral fills the lower left."
+   "keep": "dup",
+   "note": "Same coral from above, soft"
   },
   "herpolitha-cand-190589591": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "Short oval, no secondary mouths seen; may be Ctenactis."
+   "note": "Short oval with one long groove; Ctenactis or Polyphyllia possible"
   },
   "herpolitha-cand-489767286": {
    "view": "wide",
    "quality": 3,
    "form": "U",
    "keep": "best",
-   "note": "Same image as herpolitha-cand-262212977 (other observation), with watermark."
+   "note": "Same photo as in another observation (watermark)"
   },
   "herpolitha-cand-337139898": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Snorkel shot, soft."
+   "note": "Soft at 100%"
   }
  }
 }

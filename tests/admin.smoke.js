@@ -576,6 +576,22 @@ const server = http.createServer((req, res) => {
       return {aside: !inQ(), note: !!document.querySelector('.adm-caside')};
     }, CF);
     if (!as.aside || !as.note) fails.push(`${w}px Pre-sort: the near-duplicate is not set aside (${JSON.stringify(as)})`);
+    // The rule (same as tools/excluded.py set_aside): several corals and Poor are set aside too, unless unsure.
+    const rule = await p.evaluate(() =>
+      [
+        {g: 'exclude'},
+        {g: 'cmp'},
+        {k: 'dup', q: 2},
+        {k: 'best', q: 2, m: 1},
+        {k: 'best', q: 1},
+        {k: 'best', q: 2},
+        {k: 'alt', q: 3},
+        {g: 'Porites', q: 2},
+        {k: 'best', q: 1, m: 1, u: ['quality']},
+        {g: 'exclude', u: ['genus']}
+      ].map(j => aside({j}))
+    );
+    if (rule.join() !== 'true,true,true,true,true,false,false,false,false,false') fails.push(`${w}px Pre-sort rule: ${rule.join()}`);
     if (as.note) {
       await p.click('[data-caside]');
       await settle();

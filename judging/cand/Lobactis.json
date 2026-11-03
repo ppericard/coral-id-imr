@@ -7,21 +7,33 @@
    "form": "U",
    "keep": "best",
    "unsure": [
-    "genus"
+    "keep"
    ],
-   "note": "Tentacles extended hide the disc; oval shape and lobes hard to confirm"
+   "note": "Tentacles out hide septa; similar to the added wide photo of this disc, higher angle"
   },
   "lobactis-cand-270610410": {
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.04,
+    0.16,
+    1.0,
+    0.92
+   ]
   },
   "lobactis-cand-270610582": {
    "view": "wide",
    "quality": 3,
    "form": "U",
    "keep": "alt",
+   "crop": [
+    0.0,
+    0.15,
+    0.97,
+    0.95
+   ],
    "note": "Other side of the same disc"
   }
  }

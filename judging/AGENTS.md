@@ -125,11 +125,27 @@ the view it would join if added.
 - `exclude`: unusable for good: no coral, a person or diver dominating the frame, a drawing, a diagram, an
   AI-generated image, heavy text overlay, an aquarium or tank, a museum specimen or bare skeleton, a specimen label
   or register page, a coral out of the water (collected, on a boat or a table).
+  Also `exclude` (rules learnt from 85 photos Pierre rejected, 2026-11-03):
+  - a hand covering about a fifth of the frame or more, or a coral held or out of the water;
+  - another animal as the subject (fish, nudibranch, sea star...) with the coral filling less than half the frame,
+    or other animals that take the eye away from the coral even when it fills the frame (several shrimps on it).
+    A single small crab or shrimp at the edge of a coral that fills the frame stays;
+  - labels, scale bars, rulers, markers or arrows over the subject, that a crop cannot remove without cutting the
+    subject (in the note, what they cover), and a photo covered with arrows or markers all over;
+  - Coral Finder book crops (`source: "book"`, the `cf` candidates): a crop with the "1x" skeleton inset, a crop
+    joining two photos (side by side or stacked; Pierre, 2026-11-03: no exception, not even two views of the same
+    specimen), a crop showing the spiral binding.
+
+  Never reasons to exclude or lower a photo (Pierre kept such photos): watermarks, logos, date stamps; species labels
+  on book crops; extended tentacles. Labels, scale bars, rulers, markers or arrows are fine **only when the crop
+  you suggest removes them** without cutting the subject (Pierre kept such photos after cropping them); otherwise
+  `exclude`, above.
 
 **What you set aside, Pierre does not see** (Pierre, 2026-11-03: the pre-sort takes everything obvious off his hands).
-A candidate judged `exclude` or `cmp`, or a near-duplicate (`dup`), with no `unsure`, no longer comes up in the admin's
-Candidates (a count and a Show link keep it reachable). So be sure: at the least doubt, add `"unsure"` and it stays
-in his queue.
+A candidate judged `exclude` or `cmp`, a near-duplicate (`dup`), a photo of several corals (`multi`) or a Poor photo
+(quality 1), with no `unsure`, no longer comes up in the admin's Candidates (a count and a Show link keep it
+reachable). So be sure: at the least doubt, add `"unsure"` and it stays in his queue (an `exclude` with `unsure`
+is not set aside).
 
 Never for IMR lecture photos, except `exclude`. A `note` is required.
 
@@ -138,6 +154,9 @@ Never for IMR lecture photos, except `exclude`. A `note` is required.
 `true` when another coral takes a large part of the frame or could be the answer. Such photos stay out of games
 (they remain on the genus sheet). Not when the main coral sits in the middle and fills most of the frame and the
 others are only small, partly visible bits at the edges (Pierre, 2026-11-01): the answer is obvious there.
+A candidate marked `multi` with no `unsure` is set aside (above): it was 17 of the 85 photos Pierre rejected on
+2026-11-03, and no photo he added was `multi` without doubt. When you are not sure the other coral matters, add
+`"unsure": ["multi"]` and it stays in his queue.
 
 ### `unsure` and `note`
 
@@ -201,7 +220,11 @@ aim: real diversity of colonies and views, so the players learn the genus, not t
      **Exactly one per observation and view**, among the photos that show this genus.
    - `alt`: same observation and view, but it adds something: another part of the colony, another angle, the
      colony shape where the best shows the surface, polyps out vs retracted.
-   - `dup`: adds nothing over the `best` (same framing, a few centimetres apart, a burst).
+   - `dup`: adds nothing over the `best` (same framing, a few centimetres apart, a burst), **or over a photo of the
+     observation that is already live or added** (tiles marked "live" on the sheet, after the numbered candidates;
+     Pierre, 2026-11-03: not only near-duplicates of another candidate). When every candidate of an observation and
+     view is a `dup` of a live photo, that view has no `best`; otherwise give `best` to the best candidate as usual,
+     even when a live photo already covers the view.
    - Omit `keep` when `genus` is set (another genus, `cmp` or `exclude`).
    For a `best` or `alt` photo, **`crop`**: `[left, top, right, bottom]` as fractions of the photo, read off the grid
    of its detail sheet. Trim only what distracts from the subject: another coral, sand, dark water, a diver, a blurred
@@ -211,6 +234,19 @@ aim: real diversity of colonies and views, so the players learn the genus, not t
    An observation often holds several corals (the observer photographed the neighbours too): a photo that shows
    another coral as its subject gets `genus` (that genus if you can tell by the IMR cues, else `exclude` with a
    note), never `keep`.
+   **Rules learnt from Pierre's rejections** (2026-11-03: 85 photos he rejected or excluded, each looked at). Set
+   aside without doubt (he never sees them): a near-duplicate of a candidate or of a live photo of the observation
+   (`dup`); several corals (`multi`, above); Poor quality (1) judged on the 100% crops; and the `exclude` cases of
+   `genus` above (a hand over a fifth of the frame or more, a coral held or out of the water, another animal as the
+   subject or other animals taking the eye off the coral, labels, scales or markers over the subject that no crop can
+   remove, arrows or markers all over, the book crops with the "1x" inset, two photos joined or the spiral binding).
+   Very poor quality stays Poor (1), set aside. Lower in the queue only, not set aside: a subject under about a tenth
+   of the frame gets quality at most Fair (2) and a note "small" (Pierre has kept such photos). Labels, scale bars,
+   rulers, markers or arrows that a crop removes without cutting the subject: suggest that crop and keep the photo
+   (the import keeps each trim at half its size, `CROP_K`, so the box you write must trim twice as far as the label
+   reaches; when that would cut the subject, Pierre can still crop it by hand: `exclude` with `unsure`). Never
+   reasons to reject: watermarks, logos, date stamps, species labels on book crops, extended tentacles. Book crops
+   (`cf`) are not in the pass yet (`cands` skips them); the book rules apply when they are judged.
 3. `python3 tools/judging_cand.py --check <Genus>` until it passes, then `python3 tools/judging_cand.py` imports
    every passing genus into `suggest.json` `"cand"` (admin only: players never download it). Commit only
    `judging/cand/*.json` and `suggest.json`.
