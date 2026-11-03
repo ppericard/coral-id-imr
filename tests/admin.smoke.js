@@ -32,7 +32,8 @@ const server = http.createServer((req, res) => {
 // Admin smoke test in demo mode (admin.html?demo, admin-demo.js; Pierre, 2026-11-01: agents must be able to see and test
 // the admin): every view of the 9 tabs and every old address at 390 and 1280 px with no page error, each landing on its
 // tab and view, the view remembered per tab, then the main actions on made-up data: open a player, merge two names,
-// delete a test account, the reports in To do, Skip and Reject in Candidates, Publish.
+// delete a test account, the reports in To do, Skip and Reject in Candidates, the auto-sort (decisions, a
+// blind Check, the agreement block, undo, the auto tag, a retest), Publish.
 // Checks that nothing leaves the page (no call reaches the sync script or GitHub) and that the demo never writes the real
 // admin storage keys. Needs Playwright like pages.smoke.js. Locally: node tests/admin.smoke.js
 (async () => {
@@ -50,18 +51,30 @@ const server = http.createServer((req, res) => {
         r.abort();
       }
     );
-    // Candidate pass of the judging agent (suggest.json "cand", tools/judging_cand.py): two made-up judgments.
-    const CF = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'cand.json'))).cand)
-      .flat()
-      .filter(x => !x.cf)
-      .slice(0, 2)
-      .map(x => x.f);
+    // Candidate pass of the judging agent (suggest.json "cand", tools/judging_cand.py): made-up judgments. The auto-sort
+    // (autosort.js) decides the sure ones at load: CF[0] a sure add (Good, Corallites), CF[1] a sure near-duplicate
+    // (rejected), CF[2] a comparison image (left set aside, Pierre's), CF[3] unsure (his); CHK, a sure add that the
+    // 1-in-20 draw makes a Check (shown to him blind).
+    const ALL = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'cand.json'))).cand)
+        .flat()
+        .filter(x => !x.cf),
+      {autoCheck} = require('../autosort.js'),
+      CF = ALL.filter(x => !autoCheck(x.f))
+        .slice(0, 4)
+        .map(x => x.f),
+      CHK = ALL.find(x => autoCheck(x.f)).f;
     await ctx.route(base + 'suggest.json', r =>
       r.fulfill({
         contentType: 'application/json',
         body: JSON.stringify({
           v: 1,
-          cand: {[CF[0]]: {v: 'macro', q: 3, k: 'best', fm: 'x'}, [CF[1]]: {v: 'wide', q: 1, k: 'dup', fm: 'M', n: 'Same colony as 1'}}
+          cand: {
+            [CF[0]]: {v: 'macro', q: 3, k: 'best', fm: 'x'},
+            [CF[1]]: {v: 'wide', q: 1, k: 'dup', fm: 'M', n: 'Same colony as 1'},
+            [CF[2]]: {v: 'wide', q: 2, g: 'cmp', fm: 'M', n: 'Two genera side by side'},
+            [CF[3]]: {v: 'wide', q: 3, k: 'best', fm: 'B', u: ['quality'], n: 'Soft?'},
+            [CHK]: {v: 'wide', q: 2, k: 'best', fm: 'B', c: [0.2, 0.25, 0.8, 0.75]}
+          }
         })
       })
     );
@@ -548,10 +561,10 @@ const server = http.createServer((req, res) => {
     if (await p.$('[data-skip]')) {
       await p.click('[data-skip]');
       await settle();
+      const rf = await p.$eval('.adm-sw[data-f]', e => e.dataset.f);
       await p.click('[data-rej]');
       await settle();
-      if (!(await p.evaluate(() => Object.keys(DRAFT.seen || {}).some(k => k.startsWith('cand:')))))
-        fails.push(`${w}px Candidates: Reject left no mark in the draft`);
+      if (!(await p.evaluate(f => (DRAFT.seen || {})['cand:' + f], rf))) fails.push(`${w}px Candidates: Reject left no mark in the draft`);
     } else fails.push(`${w}px Candidates: no candidate to try Skip and Reject on`);
     // Cap per genus x view: candidates of full cells are left out of the queue; adding one asks which colony it replaces,
     // that colony's photos become sheet only, the candidate is added, and one Undo takes both back.
@@ -629,12 +642,13 @@ const server = http.createServer((req, res) => {
       fails.push(`${w}px Suggested crop: not shown or not saved with the add (${JSON.stringify(sc)})`);
     await p.click('#undo');
     await settle();
-    // The pre-sort sets the sure near-duplicate aside (Pierre, 2026-11-03): out of the queue, counted, back on Show.
+    // The pre-sort sets a sure comparison image aside (Pierre, 2026-11-03; the auto-sort leaves those to him): out of
+    // the queue, counted, back on Show.
     const as = await p.evaluate(F => {
-      const inQ = () => candQueue('all').some(x => x.p.f === F[1] && !x.aside);
+      const inQ = () => candQueue('all').some(x => x.p.f === F[2] && !x.aside);
       return {aside: !inQ(), note: !!document.querySelector('.adm-caside')};
     }, CF);
-    if (!as.aside || !as.note) fails.push(`${w}px Pre-sort: the near-duplicate is not set aside (${JSON.stringify(as)})`);
+    if (!as.aside || !as.note) fails.push(`${w}px Pre-sort: the comparison image is not set aside (${JSON.stringify(as)})`);
     // The rule (same as tools/excluded.py set_aside): several corals and Poor are set aside too, unless unsure.
     const rule = await p.evaluate(() =>
       [
@@ -656,11 +670,257 @@ const server = http.createServer((req, res) => {
       await settle();
       if (
         (await p.$eval('.adm-caside', e => e.getAttribute('aria-pressed'))) !== 'true' ||
-        !(await p.evaluate(F => candQueue('all').some(x => x.p.f === F[1]), CF))
+        !(await p.evaluate(F => candQueue('all').some(x => x.p.f === F[2]), CF))
       )
         fails.push(`${w}px Pre-sort: Show did not bring them back`);
       await p.click('[data-caside]');
       await settle();
+    }
+    // Auto-sort (Pierre, 2026-11-03): the sure judgments were decided at load, logged as auto, the Check waits for him.
+    const au = await p.evaluate(
+      ([F, C]) => {
+        const code = f => (aOf(f) || {}).code || null,
+          q = candQueue('all');
+        return {
+          add: code(F[0]),
+          added: !!Object.values(DRAFT.genera).some(k => (k.add || {})[F[0]]),
+          full: q.some(x => x.p.f === F[0] && x.full),
+          rej: code(F[1]),
+          seen: !!(DRAFT.seen || {})['cand:' + F[1]],
+          cmp: code(F[2]),
+          unsure: code(F[3]),
+          chk: code(C),
+          chkQ: q.some(x => x.p.f === C && x.chk)
+        };
+      },
+      [CF, CHK]
+    );
+    if (!((au.add === 'ac3x' && au.added) || (!au.add && au.full)))
+      fails.push(`${w}px Auto: the sure add was not added (${JSON.stringify(au)})`);
+    if (au.rej !== 'r' || !au.seen) fails.push(`${w}px Auto: the sure near-duplicate was not rejected (${JSON.stringify(au)})`);
+    if (au.cmp || au.unsure) fails.push(`${w}px Auto: decided a comparison image or an unsure judgment (${JSON.stringify(au)})`);
+    if (au.chk !== '?aw2B' || !au.chkQ) fails.push(`${w}px Auto: the Check is not logged or not in the queue (${JSON.stringify(au)})`);
+    // Source priority in a cell with fewer free slots than sure adds (AGENTS.md rule 7, Codex review #400): Pierre's own
+    // Fair photo takes the last slot ahead of another observer's Good one; quality and sharpness only break ties.
+    const pri = await p.evaluate(() => {
+      const free = m =>
+          cands(m).filter(x => !x.cf && !x.from && !aOf(x.f) && !autoCheck(x.f) && !rejected(x.f) && !(entry(m).add || {})[x.f]),
+        n = [...GAME].find(m => free(m).length >= 2),
+        [a, b] = free(n),
+        keep = Object.values(DATA.cand)
+          .flat()
+          .map(x => [x, {j: x.j, mf: x.mf, own: x.own, imr: x.imr, loc: x.loc, o: x.o}]),
+        cm = CELL_MAX;
+      keep.forEach(([x]) => delete x.j);
+      Object.assign(a, {j: {v: 'wide', q: 3, k: 'best', fm: 'B'}, own: false, imr: false, loc: 'dauin', o: 'test-obs-a'});
+      Object.assign(b, {j: {v: 'wide', q: 2, k: 'best', fm: 'B'}, own: true, imr: false, o: 'test-obs-b'});
+      delete a.mf;
+      delete b.mf;
+      memoReset();
+      CELL_MAX = covOf(n, 'wide').obs + 1;
+      const R = autoRun(),
+        r = {n, R, other: !!(entry(n).add || {})[a.f], mine: !!(entry(n).add || {})[b.f]};
+      if (R && R.add + R.reject + R.exclude + R.check) undo();
+      CELL_MAX = cm;
+      keep.forEach(([x, o]) => Object.entries(o).forEach(([k, v]) => (v === undefined ? delete x[k] : (x[k] = v))));
+      memoReset();
+      return r;
+    });
+    if (!pri.mine || pri.other) fails.push(`${w}px Auto: source priority in a nearly full cell ${JSON.stringify(pri)}`);
+    // The Check card: tagged, blind (no judgment line, no suggested view, no dashed quality), answered like any other;
+    // rated Good where the pass said Fair, form not given (so not compared).
+    await go('~cand');
+    const ck = await p.evaluate(C => {
+      CSRC = 'all';
+      candQueue('all').forEach(x => x.p.f !== C && CSKIP.add(x.p.f));
+      render();
+      const S = document.querySelector('.adm-sw[data-f]');
+      return {
+        f: S && S.dataset.f,
+        tag: !!S.querySelector('.adm-chk'),
+        judge: !!S.querySelector('.adm-judge'),
+        sug: !!S.querySelector('.adm-swbar .sug'),
+        q: !!S.querySelector('.adm-swacts [data-q][aria-pressed="true"]')
+      };
+    }, CHK);
+    if (ck.f !== CHK || !ck.tag || ck.judge || ck.sug || ck.q)
+      fails.push(`${w}px Auto: Check card not shown blind with its tag (${JSON.stringify(ck)})`);
+    else {
+      // Crop on the Check stays blind (Codex review #400): the editor opens on the full photo, not the agent's crop, and
+      // saving it keeps an explicit no-crop, so the add does not write the suggestion behind his back (ACT.addc).
+      await p.click('.adm-sw [data-crop]');
+      await p.click('[data-c="save"]');
+      await settle();
+      const crc = await p.evaluate(C => {
+        const r = JSON.stringify((DRAFT.crop || {})[C]);
+        undo();
+        return r;
+      }, CHK);
+      if (crc !== '[0,0,1,1]') fails.push(`${w}px Auto: crop editor on a Check not blind (saved ${crc})`);
+      await settle();
+      await p.click('.adm-swacts [data-q="3"]');
+      await p.click('.adm-swbar [data-add="wide"]');
+      await settle();
+      if (await p.$('[data-ranyway]')) {
+        // A full cell: add it anyway (the Check is answered the same way).
+        await p.click('[data-ranyway]');
+        await settle();
+      }
+      const res = await p.evaluate(C => {
+        const L = aCmp().filter(c => c.f === C && c.how === 'check');
+        return {
+          toast: document.querySelector('.adm-toast').textContent,
+          L: L.map(c => c.field + (c.ok ? '+' : '-')).join(' '),
+          t: aOf(C).d.t,
+          last: aCmp().slice(-1)[0].f
+        };
+      }, CHK);
+      if (!/Check: the agent said add/.test(res.toast) || res.L !== 'keep+ view+ quality-')
+        fails.push(`${w}px Auto: Check answer not compared (${JSON.stringify(res)})`);
+      // The time of his answer is logged, and his answer is the latest comparison (Codex review #400).
+      if (!(res.t > Date.now() / 1000 - 600) || res.last !== CHK)
+        fails.push(`${w}px Auto: Check answer not timed (${JSON.stringify(res)})`);
+    }
+    // The agreement block, its details, and one auto decision undone (back in the queue, never applied again), then redone.
+    await p.evaluate(() => {
+      CSKIP.clear();
+      render();
+    });
+    const line = await p.$eval('.adm-auto', e => e.textContent).catch(() => '');
+    if (!/Keep 100%/.test(line) || !/Quality 0%/.test(line)) fails.push(`${w}px Auto: agreement line ${line}`);
+    if (line) await p.click('[data-adet]');
+    await settle();
+    const det = await p.evaluate(
+      F => ({
+        rows: document.querySelectorAll('.adm-autodet tbody tr').length,
+        undo: !!document.querySelector(`[data-af="${F[1]}"] [data-aundo]`),
+        dis: document.querySelectorAll('.adm-autodet [data-af]:not(:has([data-aundo]))').length
+      }),
+      CF
+    );
+    if (det.rows !== 4 || !det.undo || !det.dis) fails.push(`${w}px Auto: details ${JSON.stringify(det)}`);
+    if (det.undo) {
+      await p.click(`[data-af="${CF[1]}"] [data-aundo]`);
+      await settle();
+      const un = await p.evaluate(
+        F => ({
+          code: aOf(F[1]).code,
+          seen: !!(DRAFT.seen || {})['cand:' + F[1]],
+          inQ: candQueue('all').some(x => x.p.f === F[1] && !x.aside)
+        }),
+        CF
+      );
+      if (un.code !== '-r' || un.seen || !un.inQ) fails.push(`${w}px Auto: Undo of an auto decision ${JSON.stringify(un)}`);
+      await p.click('#undo');
+      await settle();
+      if ((await p.evaluate(F => aOf(F[1]).code, CF)) !== 'r') fails.push(`${w}px Auto: Undo did not bring the auto decision back`);
+    }
+    // Undo of an auto add takes back only the add it wrote (Codex review #400): Pierre's approval in the genus he sent the
+    // photo to with Not this genus, or a view he moved it to, stays.
+    const ua = await p.evaluate(F => {
+      const f = F[2],
+        g = PHOTOS[f].genus,
+        to = Object.keys(DATA.gen).find(x => x !== g),
+        day = Object.keys(DRAFT.auto).sort().pop(),
+        one = (mine, view) => {
+          DRAFT.genera[g] = {...(DRAFT.genera[g] || {}), add: {...((DRAFT.genera[g] || {}).add || {}), [f]: view}};
+          if (mine) DRAFT.genera[to] = {...(DRAFT.genera[to] || {}), add: {...((DRAFT.genera[to] || {}).add || {}), [f]: 'medium'}};
+          DRAFT.auto = {...DRAFT.auto, [day]: {...DRAFT.auto[day], [f]: 'aw2B'}};
+          saveDraft();
+          autoUndo(f);
+          const r = {own: ((DRAFT.genera[g] || {}).add || {})[f] || null, other: ((DRAFT.genera[to] || {}).add || {})[f] || null};
+          undo();
+          undo();
+          return r;
+        };
+      return {plain: one(false, 'wide'), notThis: one(true, 'wide'), moved: one(false, 'medium')};
+    }, CF);
+    if (ua.plain.own || ua.notThis.own || ua.notThis.other !== 'medium' || ua.moved.own !== 'medium')
+      fails.push(`${w}px Auto: Undo of an auto add ${JSON.stringify(ua)}`);
+    // Undo of an auto exclusion (Codex review #400): a candidate whose entry is still in the candidate files is back in
+    // Candidates; one whose entry is gone is not, and the toast does not claim it is.
+    const ux = await p.evaluate(F => {
+      const day = Object.keys(DRAFT.auto).sort().pop(),
+        one = f => {
+          DRAFT.exclude = {...(DRAFT.exclude || {}), [f]: 'auto'};
+          DRAFT.auto = {...DRAFT.auto, [day]: {...DRAFT.auto[day], [f]: 'x'}};
+          saveDraft();
+          autoUndo(f);
+          const r = {toast: document.querySelector('.adm-toast').textContent, ex: !!excl(f), inQ: candQueue('all').some(x => x.p.f === f)};
+          undo();
+          undo();
+          return r;
+        };
+      return {here: one(F[3]), gone: PHOTOS['acropora-cand-1'] ? null : one('acropora-cand-1')};
+    }, CF);
+    if (ux.here.ex || !ux.here.inQ || !/back in Candidates/.test(ux.here.toast))
+      fails.push(`${w}px Auto: Undo of an auto exclusion ${JSON.stringify(ux.here)}`);
+    if (!ux.gone || ux.gone.ex || /back in Candidates/.test(ux.gone.toast) || !/no longer in the candidate files/.test(ux.gone.toast))
+      fails.push(`${w}px Auto: Undo of an auto exclusion whose candidate entry is gone ${JSON.stringify(ux.gone)}`);
+    if (line) await p.click('[data-adet]');
+    await settle();
+    // An auto-added photo carries an "auto" tag on its genus page.
+    if (au.added) {
+      const g = await p.evaluate(F => Object.keys(DRAFT.genera).find(n => (DRAFT.genera[n].add || {})[F[0]]), CF);
+      await go(g);
+      if (!(await p.$(`[data-f="${CF[0]}"] .adm-autot`))) fails.push(`${w}px Auto: no auto tag on ${g}`);
+      // Remove on the genus page of a photo the auto-sort added: rejected, a Keep disagreement, timed as the latest
+      // comparison (Codex review #400); Undo takes both back. Remove of a candidate Pierre added himself is unchanged.
+      await p.$eval(`[data-f="${CF[0]}"] [data-act="hide"]`, b => b.click());
+      await settle();
+      const rm = await p.evaluate(
+        ([F, g]) => {
+          const K = aCmp().filter(c => c.field === 'keep');
+          return {
+            added: !!(entry(g).add || {})[F],
+            rej: rejected(F),
+            fix: K.some(c => c.f === F && !c.ok && c.how === 'fix'),
+            last: (K.slice(-1)[0] || {}).f,
+            t: !!aOf(F).d.t
+          };
+        },
+        [CF[0], g]
+      );
+      if (rm.added || !rm.rej || !rm.fix || rm.last !== CF[0] || !rm.t)
+        fails.push(`${w}px Auto: Remove of an auto-added photo is not a Keep disagreement ${JSON.stringify(rm)}`);
+      await p.click('#undo');
+      await settle();
+      const back = await p.evaluate(([F, g]) => ({added: !!(entry(g).add || {})[F], rej: rejected(F), t: !!aOf(F).d.t}), [CF[0], g]);
+      if (!back.added || back.rej || back.t) fails.push(`${w}px Auto: Undo of that Remove ${JSON.stringify(back)}`);
+      const own = await p.evaluate(g => {
+        const c = pending(g).find(x => !aOf(x.f) && !rejected(x.f));
+        if (!c) return null;
+        ACT.addc(g, c.f, null, 'wide');
+        ACT.hide(g, c.f);
+        const r = {rej: rejected(c.f), added: !!(entry(g).add || {})[c.f]};
+        undo();
+        undo();
+        return r;
+      }, g);
+      if (own && (own.rej || own.added)) fails.push(`${w}px Remove of a candidate Pierre added: ${JSON.stringify(own)}`);
+    }
+    // Blind retest: after AUTO.retest decisions, a photo Pierre rated comes back without its rating; his answer is kept apart.
+    await go('~cand');
+    const rt = await p.evaluate(() => {
+      CDONE = AUTO.retest;
+      render();
+      const S = document.querySelector('.adm-blind[data-f]');
+      return (
+        S && {
+          f: S.dataset.f,
+          tag: (S.querySelector('.adm-chk') || {}).textContent,
+          q: (DRAFT.quality || {})[S.dataset.f],
+          pressed: !!S.querySelector('[data-rq][aria-pressed="true"]')
+        }
+      );
+    });
+    if (!rt || rt.tag !== 'Retest' || rt.pressed) fails.push(`${w}px Retest: card ${JSON.stringify(rt)}`);
+    else {
+      await p.click('[data-rq="1"]');
+      await p.click('[data-rtdone]');
+      await settle();
+      const r2 = await p.evaluate(f => ({e: (DRAFT.retest || {})[f], q: DRAFT.quality[f]}), rt.f);
+      if (!r2.e || r2.e.q[0] !== rt.q || r2.e.q[1] !== 1 || r2.q !== rt.q) fails.push(`${w}px Retest: answer ${JSON.stringify(r2)}`);
     }
     errs.length = 0;
     if (await p.isEnabled('#save')) {
@@ -668,6 +928,8 @@ const server = http.createServer((req, res) => {
       await p
         .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 10000})
         .catch(() => fails.push(`${w}px Publish: no "Published" toast`));
+      if (!(await p.evaluate(() => Object.keys(output().auto || {}).length && Object.keys(output().retest || {}).length)))
+        fails.push(`${w}px Publish: the auto-sort log or the retests are not published`);
     } else fails.push(`${w}px Publish: button still disabled after a change`);
     if (errs.length) fails.push(`${w}px actions: ${errs.slice(0, 3).join(' | ')}`);
 
@@ -684,7 +946,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    'Admin demo OK: every tab, view and old address at 390 and 1280 px, merge, delete, reports, health, skip, reject, cap, publish; nothing sent.'
+    'Admin demo OK: every tab, view and old address at 390 and 1280 px, merge, delete, reports, health, skip, reject, cap, auto-sort, retest, publish; nothing sent.'
   );
 })().catch(e => {
   console.error(e);
