@@ -256,20 +256,19 @@ test('core.js: 1 candidate in 20 is a check; Pierre decides first; auto off per 
   );
 });
 
-test('confirmed near Dauin (build_fish near_dauin): Pierre own there, or Research Grade by 2+ observers; one observer is not enough', () => {
+test('confirmed near Dauin (build_fish near_dauin): Pierre own there, 2+ Research Grade observers, or the IMR list; one observer is not enough', () => {
   const out = J(
-    `from build_fish import near_dauin\nprint(json.dumps([near_dauin(0, 1), near_dauin(0, 0), near_dauin(0, 2), near_dauin(1, 0), near_dauin(1, 1), near_dauin(0, 9)]))`
+    `from build_fish import near_dauin\nprint(json.dumps([near_dauin(0, 1), near_dauin(0, 0), near_dauin(0, 2), near_dauin(1, 0), near_dauin(1, 2, True), near_dauin(0, 1, True)]))`
   );
-  // A single Research Grade observation (one observer) no longer opens the whole region (Pierre, 2026-11-03).
-  assert.deepStrictEqual(out, [false, false, true, true, true, true]);
-  // fish.json: near agrees with the rule on every species (dauinU observers; Pierre's own there).
+  // A single Research Grade observation (one observer) no longer opens the whole region (Pierre, 2026-11-03); the
+  // reasons are recorded (present.nearBy).
+  assert.deepStrictEqual(out, [[], [], ['observers'], ['own'], ['own', 'observers', 'imr'], ['imr']]);
+  // fish.json: every species has near, nearBy and dauinU (their agreement with the rule: tests/fish.test.js).
   const F = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8'));
   F.species.forEach(s => {
     const p = s.present || {};
     if (!s.inat) return;
-    assert.ok(typeof p.near === 'boolean' && Number.isInteger(p.dauinU), `${s.id} has near and dauinU`);
-    if (p.dauinU >= 2) assert.ok(p.near, `${s.id}: 2+ observers near Dauin`);
-    if (p.near) assert.ok(p.dauin > 0, `${s.id}: confirmed near Dauin needs observations there`);
+    assert.ok(typeof p.near === 'boolean' && Array.isArray(p.nearBy) && Number.isInteger(p.dauinU), `${s.id} has near, nearBy, dauinU`);
   });
 });
 
