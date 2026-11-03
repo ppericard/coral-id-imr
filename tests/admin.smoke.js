@@ -55,14 +55,51 @@ const server = http.createServer((req, res) => {
     // (autosort.js) decides the sure ones at load: CF[0] a sure add (Good, Corallites), CF[1] a sure near-duplicate
     // (rejected), CF[2] a comparison image (left set aside, Pierre's), CF[3] unsure (his); CHK, a sure add that the
     // 1-in-20 draw makes a Check (shown to him blind).
-    const ALL = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'cand.json'))).cand)
-        .flat()
-        .filter(x => !x.cf),
-      {autoCheck} = require('../autosort.js'),
-      CF = ALL.filter(x => !autoCheck(x.f))
-        .slice(0, 4)
-        .map(x => x.f),
-      CHK = ALL.find(x => autoCheck(x.f)).f;
+    // The auto-sort only decides photos nobody decided, so these are taken among the candidates of a game genus that
+    // Pierre's real curation.json never names (no add, move, hide, Not this genus, reject mark, exclusion, rating, form,
+    // crop or auto-log entry): the first entries of cand.json were often ones he had already decided, and every publish
+    // of his and every candidate refill changed the result (2026-11-03). CF[0] also has metrics that cannot stop a sure
+    // Good add (autosort.js metFlag, with the admin's percentiles).
+    const rd = f => JSON.parse(fs.readFileSync(path.join(ROOT, f))),
+      CUR = rd('curation.json'),
+      CUR_S = JSON.stringify(CUR),
+      named = f => CUR_S.includes(JSON.stringify(f)) || CUR_S.includes(JSON.stringify('cand:' + f)),
+      DJ = rd('data.json'),
+      CJ = rd('cand.json').cand || {},
+      MET = rd('metrics.json').m || {},
+      {autoCheck, metFlag, curIdx, pierreOf} = require('../autosort.js'),
+      GAME = new Set(require('../core.js').gameOf(DJ)),
+      FREE = Object.entries(CJ)
+        .filter(([g]) => GAME.has(g))
+        .flatMap(([, L]) => L)
+        .filter(x => !x.cf && !named(x.f)),
+      SH = [...new Map([...Object.values(DJ.cand || {}), ...Object.values(CJ)].flat().map(x => [x.f, x])).values()]
+        .filter(x => x.r && MET[x.f])
+        .map(x => MET[x.f][0])
+        .sort((a, b) => a - b),
+      REF = SH.length ? {lo: SH[Math.floor(SH.length * 0.05)], hi: SH[Math.floor(SH.length * 0.95)]} : null,
+      CF0 = FREE.find(x => !autoCheck(x.f) && !metFlag({keep: 'add'}, {q: 3}, MET[x.f], REF)),
+      CF = [CF0, ...FREE.filter(x => x !== CF0 && !autoCheck(x.f)).slice(0, 3)].map(x => x && x.f),
+      CHK = (FREE.find(x => autoCheck(x.f)) || {}).f;
+    if (CF.some(f => !f) || !CHK) throw new Error(`not enough undecided candidates for the auto-sort test: ${CF} ${CHK}`);
+    // Pierre's own auto-sort log (curation.json "auto": his checks, corrections and undos) would move the agreement line
+    // and the decisions list under the test, so the admin gets a controlled log in its place: 40 decisions logged earlier
+    // the same day, rejections of photos he rejected too (no comparison, so the agreement is the test's own). The test's
+    // decisions come after them in the day's log, and must still be listed first (the latest 30). The rest of his curation
+    // is served as it is.
+    const ci = curIdx(CUR),
+      now = new Date(),
+      day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`,
+      LOG = Object.fromEntries(
+        Object.keys(CUR.seen || {})
+          .filter(k => k.startsWith('cand:') && pierreOf(CUR, ci, k.slice(5)).keep === 'reject')
+          .slice(0, 40)
+          .map(k => [k.slice(5), 'r'])
+      );
+    await ctx.route(
+      u => u.href.startsWith(base) && u.pathname === '/curation.json',
+      r => r.fulfill({contentType: 'application/json', body: JSON.stringify({...CUR, auto: {[day]: LOG}})})
+    );
     await ctx.route(base + 'suggest.json', r =>
       r.fulfill({
         contentType: 'application/json',

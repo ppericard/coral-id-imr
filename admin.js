@@ -3006,7 +3006,7 @@ const jLine = p => {
 let METRICS = {},
   MREF = null, // sharpness of the candidates measured: sorted list, 5th and 95th percentiles (metFlag, evidence)
   ADET = false, // this tab: Auto details open
-  AALL = false, // this tab: every auto decision listed (else the latest 60)
+  AALL = false, // this tab: every auto decision listed (else the latest 30)
   CDONE = 0, // candidates decided in the swiper since the last Retest card (this tab)
   RTSKIP = new Set(),
   RTA = {}; // the Retest card's answers so far
@@ -3224,7 +3224,10 @@ function autoBlock(det) {
     const dis = aCmp()
       .filter(c => !c.ok)
       .reverse();
-    const dec = applied.sort((a, b) => (a[1].day < b[1].day ? 1 : a[1].day > b[1].day ? -1 : 0));
+    // Newest first: the latest day first and, within a day, the latest run first (a day's log keeps the order the runs
+    // wrote it, oldest first). Sorting by day alone listed the day's first 30 decisions, so a second load the same day
+    // (a new judging pass) showed none of its own decisions until "All".
+    const dec = [...applied].reverse().sort((a, b) => (a[1].day < b[1].day ? 1 : a[1].day > b[1].day ? -1 : 0));
     h += `<div class="adm-autodet">
       <div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Field</th><th title="Agent vs you">Agreement</th><th>n</th><th title="Auto off under">Min</th><th>Auto</th><th title="You vs you, blind retests">Retest</th></tr></thead><tbody>${rows}</tbody></table></div>
       ${
