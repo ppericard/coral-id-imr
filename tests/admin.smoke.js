@@ -286,6 +286,39 @@ const server = http.createServer((req, res) => {
       await settle();
     }
 
+    // Game genera first (Pierre, 2026-11-03; core.js gameOf): Game coverage lists every genus a game asks, Millepora and
+    // the bonus genera included; in Candidates no Finder-only genus comes before a game genus of the same source, none
+    // is proposed for Corallites, and a Finder-only genus is full at CAP.sheet colonies.
+    await go('~cov');
+    const gq = await p.evaluate(() => {
+      const rows = [...document.querySelectorAll('.cov-t tbody tr')].map(tr => tr.dataset.g),
+        game = gameOf(DATA),
+        fo = Object.keys(DATA.x.gen).filter(n => !isGame(n)),
+        order = {};
+      ['dauin', 'ph', 'all'].forEach(s => {
+        const Q = candQueue(s);
+        order[s] = [Q.findIndex(x => !isGame(x.n)), Q.map(x => isGame(x.n)).lastIndexOf(true), Q.length];
+      });
+      return {
+        rows: rows.slice().sort().join() === game.slice().sort().join(),
+        mill: rows.includes('Millepora') && BONUS.every(n => rows.includes(n)),
+        fo: fo.length,
+        order,
+        macro: candQueue('all').filter(x => !isGame(x.n) && cellView(x.n, x.p) === 'macro' && lv(x.n) !== 2).length,
+        cap: fo.every(n => capOf(n) === CAP.sheet) && game.every(n => capOf(n) === CELL_MAX)
+      };
+    });
+    if (!gq.rows || !gq.mill) fails.push(`${w}px Game coverage: rows are not the game genera (Millepora and bonus: ${gq.mill})`);
+    if (!gq.fo) fails.push(`${w}px Game genera: no Finder-only genus in the data`);
+    Object.entries(gq.order).forEach(([s, [first, lastGame, n]]) => {
+      if (first >= 0 && first < lastGame)
+        fails.push(`${w}px Candidates ${s}: a Finder-only genus at ${first}, before a game genus at ${lastGame} (${n})`);
+    });
+    if (gq.macro) fails.push(`${w}px Candidates: ${gq.macro} Corallites candidates for Finder-only genera`);
+    if (!gq.cap) fails.push(`${w}px Cap: not CELL_MAX for the game genera and CAP.sheet for the Finder-only ones`);
+    await go('~stats-needs');
+    if (!(await p.evaluate(() => (NEEDS || []).length && NEEDS.every(r => isGame(r.n)))))
+      fails.push(`${w}px Where to look: empty, or a row for a genus no game asks`);
     // Candidates: Skip sets the photo aside, Reject marks it reviewed (a draft change), then Publish (in memory).
     await go('~cand');
     if (await p.$('[data-skip]')) {
@@ -304,7 +337,7 @@ const server = http.createServer((req, res) => {
       render();
       const cur = document.querySelector('.adm-sw[data-f]'),
         Q = candQueue(CSRC),
-        x = candQueue('all').find(y => y.full);
+        x = candQueue('all').find(y => y.full && isGame(y.n));
       if (!x) return {none: true};
       if (candQueue('all').some(y => y.p.cf && y.full)) return {bookFull: true};
       const shownFull = cur && (Q.find(y => y.p.f === cur.dataset.f) || {}).full;
@@ -321,7 +354,7 @@ const server = http.createServer((req, res) => {
         order: [...document.querySelectorAll('[data-repl]')]
           .map(b => (b.classList.contains('sug') ? 's' : /keep \(/.test(b.textContent) ? 'k' : 'o'))
           .join(''),
-        over: OVER,
+        over: OVER.n,
         warn: /⚠/.test(document.querySelector('#modes [data-mode="todo"]').textContent)
       };
     });

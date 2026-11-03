@@ -696,11 +696,11 @@ let session = {ok: 0, n: 0, h: []},
 // IMR benthic slate (taught in the benthos lecture) and everywhere at Dauin and in ReefCloud photos. A game genus like
 // those of the coral slate (the draw, the opening of genera, progress, My progress, the sync summary, achievements); its
 // data stays in data.json "x" (Coral Finder ID tips, with their pages; Research Grade game photos, as the bonus genera).
-const BENTHIC = ['Millepora'];
+// BENTHIC and BONUS (below) are defined once in core.js, with slateOf / gameOf, which the admin and tools share.
 const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 // The genera the games teach and the progress counts: the IMR coral slate (data.json order, starred genera last) and
-// BENTHIC. "The slate" in the code means this list.
-const slateGenera = () => [...Object.keys(DATA.gen), ...BENTHIC.filter(n => GX(n))];
+// BENTHIC (core.js slateOf). "The slate" in the code means this list.
+const slateGenera = () => slateOf(DATA);
 // Bonus genera (Pierre, 2026-11-01; opt-in since 2026-11-02): genera off the IMR slate that are common at Dauin and
 // easily taken for a slate genus. Picked from the Coral Finder book genera present at Dauin (data.json "x",
 // tools/build_extra.py): 4+ Research Grade iNaturalist observations within 40 km, and a look-alike on the slate named by
@@ -710,7 +710,7 @@ const slateGenera = () => [...Object.keys(DATA.gen), ...BENTHIC.filter(n => GX(n
 // the genera not met yet and open like the others (model.js weighted, OPEN). They never count in the progress (progPct,
 // the slate tiles, the sync summary), and their ID tips come from the Coral Finder, labelled as such.
 // Game photos: Research Grade observations (or Pierre's own) only, never multi-coral (tools/apply_bonus.py).
-const BONUS = ['Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis'];
+// The list: core.js BONUS.
 const isBonus = n => !DATA.gen[n] && BONUS.includes(n) && !!GX(n);
 // Players who had bonus genera unlocked by the former progress thresholds (Q.bu, Millepora counted first) keep them
 // on, so nothing disappears under them; Millepora alone (Q.bu 1) is now a slate genus, so not an opt-in.

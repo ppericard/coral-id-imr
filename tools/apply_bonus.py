@@ -10,9 +10,10 @@ Re-runnable: python3 tools/apply_bonus.py
 """
 import json, re, time, urllib.request
 from datajson import dump  # the one data.json layout (one genus per line)
+from genera import lists  # core.js BENTHIC + BONUS, defined once
 
 MULTI = {'isopora-x-606660716', 'heliopora-x-129398835'}
-BONUS = ['Millepora', 'Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis']  # app.js BENTHIC + BONUS (Millepora is a slate genus since 2026-11-02, same photo rule)
+BONUS = [n for L in lists() for n in L]  # core.js BENTHIC + BONUS (Millepora is a slate genus since 2026-11-02, same photo rule)
 
 d = json.load(open('data.json'))
 X = d['x']['gen']

@@ -908,7 +908,34 @@
     return list && list.length ? Math.round((100 * list.reduce((t, n) => t + scoreOf((P || {})[n]), 0)) / list.length) : 0;
   }
 
+  // The genera the games play, defined once for the app, the admin and tools/fetch_local.py (tools/genera.py reads the
+  // two lists below from this file). data.json "gen" is the IMR coral slate; data.json "x" holds the Coral Finder's extra
+  // genera (in the book, present at Dauin, not on the IMR list), shown only in Identify > Coral Finder, except:
+  // - BENTHIC (Pierre, 2026-11-02): Millepora, fire coral, not a hard coral nor on the IMR coral list but on the IMR
+  //   benthic slate and everywhere at Dauin: a slate genus for the games and the progress (app.js isBenthic);
+  // - BONUS (Pierre, 2026-11-01, opt-in since 2026-11-02): genera off the slate common at Dauin and easily taken for a
+  //   slate genus (app.js bonusList, isBonus). Played once the player turns them on; never counted in the progress.
+  // slateOf(d) = the slate as the games and the progress count it (app.js slateGenera); gameOf(d) = every genus a game
+  // can ask (slate + BONUS), the "game genera" of the admin (candidate queue first, Game coverage, caps). The rest of
+  // data.json "x" are the Finder-only genera. d = data.json as served ({gen, x: {gen}}), or the admin's copy, whose
+  // DATA.gen also holds the "x" genera (admin.js): a genus of d.x.gen is never a slate genus by its key in d.gen.
+  const BENTHIC = ['Millepora'],
+    BONUS = ['Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis'];
+  const xGen = d => (d && d.x && d.x.gen) || {};
+  function slateOf(d) {
+    const X = xGen(d);
+    return [...Object.keys((d && d.gen) || {}).filter(n => !X[n]), ...BENTHIC.filter(n => X[n])];
+  }
+  function gameOf(d) {
+    const X = xGen(d);
+    return [...slateOf(d), ...BONUS.filter(n => X[n])];
+  }
+
   const CORE = {
+    BENTHIC,
+    BONUS,
+    slateOf,
+    gameOf,
     PROG,
     pgStep,
     pgOf,
