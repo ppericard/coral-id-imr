@@ -37,6 +37,7 @@ function model({P = {}, ab = {}} = {}) {
     GX: n => GEN[n],
     imrFormsOf: n => GEN[n].forms,
     ability: n => ab[n] ?? 0,
+    formatAt: a => [Math.min(3, Math.max(0, a / 0.18))], // model.js FORMAT schedule, stubbed (trapsFor's default)
     // app.js helpers
     pick: L => L[Math.floor(Math.random() * L.length)],
     shuffle: L => L.slice().sort(() => Math.random() - 0.5),
@@ -46,7 +47,7 @@ function model({P = {}, ab = {}} = {}) {
   vm.createContext(ctx);
   vm.runInContext(
     pick('function wpick', '// Which genus to ask next') +
-      pick('const TRAP = ', '// Once the whole file is in') +
+      pick('const trapsFor = ', '// Once the whole file is in') +
       '\nthis.M = {CUSTOM, customOf, customDraw, customChoices, distractors, confusable};',
     ctx
   );

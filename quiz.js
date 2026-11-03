@@ -494,7 +494,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     // |x: a question of the mastery exam (never with |k: an exam has every trap), for the admin's player journey.
     // A photo-quiz question with fewer than 4 choices ("Again: A or B?" after a mix-up) says so too: logged plain "quiz",
     // the sheet rated it as a 4-choice one (a 1 in 4 guess instead of 1 in 2; 59 of the first 552 answers, 2026-11-02).
-    // |d: a look-alike duel slipped into the photo quiz (AUTO_DUEL), before |kN (the sheet reads |kN at the end).
+    // |d: a look-alike duel slipped into the photo quiz (CONTRAST), before |kN (the sheet reads |kN at the end).
     // |c: a comeback question after a break (model.js comebackOf), before |kN too; counted in the opening hold like any
     // answer, with its own expectation e. (|w, 2026-11-02 until the comeback: the gentle restart, left out of the hold by
     // the app and the sheet's hold_; old rows only.)
@@ -579,10 +579,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
       );
       fitStage();
     }
-    // Not after a duel slipped into the quiz (AUTO_DUEL): it was already that 2-choice question, and its pair comes back
-    // through duelPick, mix-ups first (Codex review #352: two 2-choice questions two apart).
-    if (photoQuiz(cur) && !AUTOD) {
-      rematch = {pair: [target, c], wait: 1};
+    // Every mix-up of the photo quiz (and of the custom quiz), a contrast question's too (CONTRAST: one queue, one gap).
+    if (photoQuiz(cur)) {
+      rematch = {pair: [target, c], at: answersSoFar() - 1};
       again = true;
     }
   }
@@ -731,15 +730,20 @@ document.addEventListener(
 // tablet the same tab (new tabs there are clumsy, and Back returns to the game).
 // Desktop size class with a mouse: the shared AGENTS rule 19 classes (Codex review #368), no breakpoint of its own.
 const sheetTab = () => (!isStacked() && !matchMedia(MQ.touch).matches ? ' target="_blank" rel="noopener"' : '');
-// A mix-up in the photo quiz comes back once as a duel of the two genera, one question later.
-let rematch = null;
-// GAP: answers between two duels slipped in; AGAIN: answers at least after an "Again" (spacing them from the Agains
-// by GAP left a player who errs 1 time in 10 with 1 duel in 40 questions instead of 1 in 10).
-const AUTO_DUEL = {P: 0.1, FROM: 20, GAP: 5, AGAIN: 2, SAME: 20};
-let twoAt = -Infinity, // answers so far at the last duel slipped in
-  againAt = -Infinity, // ... and at the last "Again"
-  duelLog = [], // [answers so far, pair] of the duels slipped in lately
-  AUTOD = false; // the question on screen is one of them (set by quizPhoto, read by answer)
+// One contrast queue (independent review of 2026-11-02, item 7; docs/LEARNING.md "Contrast questions"): the "Again: A or
+// B?" after a mix-up and the look-alike duels slipped into the photo quiz are the same question, a 2-choice contrast of a
+// look-alike pair, under one rule. A mix-up in the photo quiz puts its pair in the queue (rematch, one slot: the newest
+// mix-up replaces an older one still waiting); with nothing queued, a question becomes a duel with the chance
+// CONTRAST.P (Pierre, 2026-11-02: about 1 in 10), on a pair picked as the Duel tab picks (duelPick: own mix-ups first),
+// both genera met and ready, never the pair of the previous contrast question. Two contrast questions are at least
+// CONTRAST.GAP questions apart, and an Again comes CONTRAST.GAP questions after its mix-up (one question in between, as
+// before). It replaced AUTO_DUEL {P, FROM 20, GAP 5, AGAIN 2, SAME 20}: no first 20 answers without duels (Pierre,
+// 2026-11-02: duels help learning early too), AGAIN and GAP became the one gap, SAME the previous pair.
+const CONTRAST = {P: 0.1, GAP: 2};
+let rematch = null, // the pair queued by a mix-up: {pair, at: answers so far when the missed question showed}
+  twoAt = -Infinity, // answers so far when the last contrast question (an Again or a duel) showed
+  twoPair = '', // and its pair
+  AUTOD = false; // the question on screen is a duel slipped in (set by quizPhoto, read by answer)
 // "This pair comes back as a duel in a moment": said the first 3 times only (RA review 2026-11-02: it came on every
 // wrong answer, about 20 times in 30 questions); the pair still comes back every time.
 const againTold = () => {
@@ -765,9 +769,9 @@ let NEXTQ = null;
 // The genera in play, and the custom quiz's selection: a change of either drops the questions planned with the old ones.
 const planPool = cur => pool().join() + (cur === CUSTOM_H ? '|' + (customSel() || []).join() : '');
 const planKey = (cur, i = 0) => `${cur}|${answersSoFar() + i}|${planPool(cur)}`;
-const planState = () => ({last, lastQs, rematch: rematch && {...rematch}, twoAt, againAt, duelLog});
+const planState = () => ({last, lastQs, rematch: rematch && {...rematch}, twoAt, twoPair});
 function dropPlans() {
-  if (NEXTQ) ({last, lastQs, rematch, twoAt, againAt, duelLog} = NEXTQ.snap);
+  if (NEXTQ) ({last, lastQs, rematch, twoAt, twoPair} = NEXTQ.snap);
   NEXTQ = null;
 }
 const plain = q => !q.intro && !q.auto && !q[4].exam && q[2].length > 2;
@@ -851,7 +855,9 @@ function planNext(cur) {
   for (let x = NEXTQ; x; x = x.next) (n++, (end = x));
   while (n < (photoQuiz(cur) ? AHEAD : 1) && !(end && end.stop)) {
     const snap = planState(),
-      args = photoQuiz(cur) ? planPhoto(cur) : planDuel(),
+      // planPhoto gets the answers count at which the question will show (its place in the queue): the contrast
+      // questions' spacing is counted on it.
+      args = photoQuiz(cur) ? planPhoto(cur, answersSoFar() + o + n) : planDuel(),
       x = {k: key(n++), args, snap, stop: !plain(args), urls: pfUrls(args), held: [], next: null};
     if (end) end.next = x;
     else NEXTQ = x;
@@ -882,13 +888,6 @@ function quizPhoto(cur = 'quiz') {
     q = planPhoto(cur);
   }
   SHOWNQ = q;
-  // The duel spacing counts from when an "Again" or a slipped-in duel shows, not from when it was planned (Codex review
-  // #361: a duel planned 2 questions ahead left the next one 2 answers early).
-  if (q.again) againAt = answersSoFar();
-  if (q.auto) {
-    twoAt = answersSoFar();
-    duelLog = [...duelLog.filter(([, k]) => k !== q.auto), [twoAt, q.auto]];
-  }
   AUTOD = !!q.auto;
   question(...q);
   // A custom-quiz card: the genus is asked with it (ready at once, a card of its own, no Open all offer on it).
@@ -1107,36 +1106,42 @@ function introShow(L, start, kind = start ? 's' : 'c', offerAll = start) {
 }
 // Cards due with the next question (INTRO): the first ones while fewer than INTRO.START slate genera are met (picked by
 // the progressive path's draw, easiest first), else none: planPhoto may add one when its draw falls on a genus not met.
-// The cards drawn before count as met: a ★ genus may follow its reference's card, shown before it (model.js weighted).
+// The cards drawn before count as met: a ★ genus may follow its reference's card, shown before it (model.js openPick).
 function introStart(list) {
   const slate = list.filter(n => !isBonus(n)),
     want = INTRO.START - slate.filter(introduced).length,
     L = [],
     met = n => introduced(n) || L.includes(n);
   for (let fresh = slate.filter(n => !introduced(n)); L.length < want && fresh.length; fresh = fresh.filter(n => n !== L[L.length - 1]))
-    L.push(weighted(fresh, met));
+    L.push(openPick(fresh, fresh, met));
   return L;
 }
 // cur: 'quiz', or the custom quiz (CUSTOM_H): its genus asked and its choices come from the player's selection (model.js
 // customOf, customDraw, customChoices), with no opening path; everything else is the photo quiz's.
-function planPhoto(cur = 'quiz') {
+// at: the answers count at which the question will show (planNext plans up to AHEAD questions ahead).
+function planPhoto(cur = 'quiz', at = answersSoFar()) {
   const play = pool(),
     sel = cur === CUSTOM_H ? customSel() : null,
     list = sel || play;
-  if (rematch && rematch.wait-- <= 0) {
+  // The count went back (progress reset): the contrast spacing starts over.
+  if (at < twoAt) twoAt = -Infinity;
+  if (rematch && !(rematch.at <= at)) rematch = null;
+  // A contrast question (CONTRAST): the pair a mix-up queued, CONTRAST.GAP questions after it and after the last one.
+  const gap = at - twoAt >= CONTRAST.GAP;
+  if (rematch && gap && at - rematch.at >= CONTRAST.GAP) {
     const pair = rematch.pair,
       ask = sel ? pair.filter(n => sel.includes(n)) : pair; // the custom quiz asks only its own genera
     rematch = null;
     // Never on a genus closed again by "One at a time" (model.js introBack): it waits for its card.
     if (ask.length && pair.every(n => play.includes(n) && !closed(n))) {
-      againAt = answersSoFar();
+      twoAt = at;
+      twoPair = pair.slice().sort().join('|');
       const t = pick(ask);
-      // Planned ahead, it shows later than planned: quizPhoto sets againAt again when it shows (Codex review #361).
       // During a comeback an Again still follows a miss (it corrects it), as a comeback question (Codex review #364).
       rustNow();
       const R = cbIn(cur) ? recallAt(t) : 1;
       return Object.assign(
-        [cur, t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t, null, Math.log(R))],
+        [cur, t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t, null, Math.log(R), 2)],
         {again: 1, ...(sel ? {custom: 1} : {}), ...(cbIn(cur) ? {warm: 1, cb: Math.round(R * 1000) / 1000} : {})}
       );
     }
@@ -1158,50 +1163,34 @@ function planPhoto(cur = 'quiz') {
     met = list.filter(ready),
     warmL = start || !cbIn(cur) ? null : comebackOf(met),
     warm = !!warmL,
-    open = !start && !warm && !noOpen() && introSince() >= INTRO.EVERY && !introHold();
-  // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say).
-  let t = sel
-    ? nextTarget(warm ? warmL : sel, customDraw)
-    : nextTarget(start ? cards : warm ? warmL : met.length ? (open ? list.filter(n => ready(n) || !introduced(n)) : met) : list);
-  if (sel) {
-    if (!introduced(t)) cards = [t];
-  } else if (met.length && !known(t)) {
-    cards = [t];
-    t = nextTarget(met);
-  }
-  // Not when the path opens a genus (a card) this question: opening comes first (Pierre, 2026-11-02).
+    // One opening rule (model.js OPEN, openChance): when the path allows a card, this question opens a genus with the
+    // chance of the free places for shaky genera, the genus drawn easiest and most common first (openPick).
+    fresh =
+      !sel && !start && !warm && met.length && !noOpen() && introSince() >= INTRO.EVERY && !introHold()
+        ? list.filter(n => !introduced(n))
+        : [];
+  if (fresh.length && Math.random() < openChance(list)) cards = [openPick(fresh, list)];
+  // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say); with a card of
+  // its own, about a genus already met. The custom quiz: any genus of its selection, one not met with its card.
+  const t = sel ? nextTarget(warm ? warmL : sel, customDraw) : nextTarget(start ? cards : warm ? warmL : met.length ? met : list);
+  if (sel && !introduced(t)) cards = [t];
   // A look-alike duel slipped into the photo quiz (Pierre, 2026-11-02, "a little duel back in the quiz, automatically";
-  // the Duel tab had 13 answers in all): AUTO_DUEL.P of the questions from AUTO_DUEL.FROM answers on, AUTO_DUEL.GAP
-  // questions at least after the last one and AUTO_DUEL.AGAIN after an "Again", on a pair of genera both met and ready, never the same pair within
-  // AUTO_DUEL.SAME answers; picked as the Duel tab picks (own mix-ups first). Logged "quiz|d|k2" (counted apart).
-  const a = answersSoFar();
-  // The count went back (progress reset): the spacing starts over.
-  if (a < twoAt) twoAt = -Infinity;
-  if (a < againAt) againAt = -Infinity;
-  duelLog = duelLog.filter(([at]) => at <= a);
-  // Never while an "Again" is due (it comes next): the duel would sit right before it.
-  if (
-    !cards.length &&
-    !warm &&
-    !rematch &&
-    a >= AUTO_DUEL.FROM &&
-    a - twoAt >= AUTO_DUEL.GAP &&
-    a - againAt >= AUTO_DUEL.AGAIN &&
-    Math.random() < AUTO_DUEL.P
-  ) {
+  // the Duel tab had 13 answers in all): the contrast queue's (CONTRAST, above) when no mix-up is queued. Not when the
+  // path opens a genus (a card) this question: opening comes first (Pierre, 2026-11-02); not in a comeback. Logged
+  // "quiz|d|k2" (counted apart).
+  if (!cards.length && !warm && !rematch && gap && Math.random() < CONTRAST.P) {
     const key = p => p.slice().sort().join('|'),
-      recent = new Set(duelLog.filter(([at]) => a - at < AUTO_DUEL.SAME).map(([, k]) => k)),
-      pair = duelPick(list, p => p.every(introReady) && !recent.has(key(p)));
+      pair = duelPick(list, p => p.every(introReady) && key(p) !== twoPair);
     if (pair) {
-      twoAt = a;
-      duelLog = [...duelLog.filter(([at]) => a - at < AUTO_DUEL.SAME), [a, key(pair)]];
+      twoAt = at;
+      twoPair = key(pair);
       const t = pick(pair);
       last = t; // the genus asked is the duel's, not the one drawn above for the card decision
       lastQs = [...lastQs.slice(0, -1), t];
-      return Object.assign([cur, t, shuffle(pair.slice()), `Look-alikes: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)], {
-        auto: key(pair), // the pair, so its spacing is set again when it shows (quizPhoto)
-        ...(sel ? {custom: 1} : {})
-      });
+      return Object.assign(
+        [cur, t, shuffle(pair.slice()), `Look-alikes: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t, null, 0, 2)],
+        {auto: twoPair, ...(sel ? {custom: 1} : {})}
+      );
     }
   }
   const R = warm ? recallAt(t) : 1,
@@ -1223,7 +1212,10 @@ function planPhoto(cur = 'quiz') {
     // draw is spent there, so a beginner's questions are unchanged); an exam question as examTyped says. Never a
     // comeback question (the player's usual choices, Pierre 2026-11-03), an Again or a duel (2 choices by design).
     typed = !warm && (ex ? examTyped(t) : typedP(t) > 0 && Math.random() < typedP(t)),
-    set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R)),
+    // The difficulty controller (model.js PICKD.P, aimOff): the photo is aimed for the game's target in this format, its
+    // guess rate from the plausible choices (a typed answer has none).
+    kq = typed ? TYPED.k : traps < 2 ? plausibleK(t, ch) : ch.length,
+    set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R), kq),
     // The question asked with its genus's card never shows the card's own photo again (new-player walkthrough 2026-11-02).
     q = [cur, t, ch, typed ? 'Which genus? Type it' : 'Which genus?', typed ? {...set, typed: 1} : set, traps < 2 ? plausibleK(t, ch) : 0];
   if (cards.length) Object.assign(q, {intro: cards, start});
@@ -1276,7 +1268,7 @@ function planDuel(a, b) {
   if (!pair) pair = duelPick(list);
   const t = pick(pair);
   // A genus not met yet gets its card with this duel (quizDuel): not with the card's own photo.
-  const set = photoSet(t, introduced(t) ? null : (cover(GX(t)) || {}).f);
+  const set = photoSet(t, introduced(t) ? null : (cover(GX(t)) || {}).f, 0, 2);
   return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, set];
 }
 // Custom quiz (Pierre, 2026-11-03): the photo quiz on the genera the player picks. #quiz-custom is the selection screen,

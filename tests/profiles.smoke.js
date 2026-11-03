@@ -109,7 +109,7 @@ const server = http.createServer((req, res) => {
           pick = right ? t : typed && rnd() < 0.5 ? '' : ch.filter(c => c !== t)[Math.floor(rnd() * (ch.length - 1))];
         blk.n++;
         blk.ok += right;
-        // Traps of the 4-choice questions only: a look-alike duel slipped into the quiz (AUTO_DUEL) has one wrong choice,
+        // Traps of the 4-choice questions only: a look-alike duel slipped into the quiz (CONTRAST) has one wrong choice,
         // always a look-alike, and is a separate exercise.
         if (!AUTOD && !typed) {
           blk.traps += traps;
@@ -171,7 +171,7 @@ const server = http.createServer((req, res) => {
         hard = byD[byD.length - 1],
         n = {[easy]: 0, [hard]: 0};
       for (let i = 0; i < 4000; i++) {
-        const x = weighted(G);
+        const x = openPick(G);
         if (x in n) n[x]++;
       }
       out.easyFirst = {easy, hard, dEasy: genusDiff(easy), dHard: genusDiff(hard), nEasy: n[easy], nHard: n[hard]};
@@ -183,7 +183,7 @@ const server = http.createServer((req, res) => {
       GX(easy).cm = GX(hard).cm;
       const m = {[easy]: 0, [hard]: 0};
       for (let i = 0; i < 4000; i++) {
-        const x = weighted(G);
+        const x = openPick(G);
         if (x in m) m[x]++;
       }
       [GX(easy).cm, GX(hard).cm] = cms;
@@ -191,9 +191,10 @@ const server = http.createServer((req, res) => {
       PSTAT = keep;
       GDIFF = {};
     }
-    // Bonus genera (opt-in, 2026-11-02; their own weight cap and 15% share went with it): once on, the genera not met
-    // yet, so together they get the opening's share of the draw (OPEN.READY at most, nothing shaky), never more; off,
-    // never drawn. Every slate genus met and half way, none of the bonus genera met.
+    // Bonus genera (opt-in, 2026-11-02; their own weight cap and 15% share went with it): once on, they are the genera
+    // not met yet, which only the opening draws (openPick, when a question opens one: model.js openChance); the genus
+    // draw of the questions themselves never asks them before their card; off, never drawn. Every slate genus met and
+    // half way (nothing shaky: the opening is wide open), none of the bonus genera met.
     const B = BONUS.filter(n => GX(n));
     if (B.length) {
       P = {};
@@ -201,13 +202,9 @@ const server = http.createServer((req, res) => {
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
       G.forEach(g => (P[g] = {ok: 8, ko: 2, h: '1101111011', th: 1.5, pg: 0.5}));
-      const draw = list => {
-        let hit = 0;
-        for (let i = 0; i < 2000; i++) if (isBonus(weighted(list))) hit++;
-        return hit / 2000;
-      };
-      out.bonusShare = draw([...G, ...B]);
-      out.bonusOff = (bonusSet(false), draw(pool()));
+      out.bonusOpen = openChance([...G, ...B]);
+      out.bonusPick = B.includes(openPick([...G, ...B].filter(n => !introduced(n))));
+      out.bonusOff = (bonusSet(false), pool().filter(isBonus).length);
     }
     // Online calibration (CAL): on a genus the player holds, a photo nobody has answered yet comes up more often than its
     // rated twins (made-up ratings at each photo's own prior difficulty).
@@ -244,8 +241,8 @@ const server = http.createServer((req, res) => {
     [r1, , r3] = R.RA.rows;
   for (const [k, v] of Object.entries(R)) if (v.rows) console.log(k, JSON.stringify(v));
   console.log(
-    'bonus share',
-    R.bonusShare,
+    'bonus opening chance',
+    R.bonusOpen,
     'off',
     R.bonusOff,
     'easy first',
@@ -279,8 +276,8 @@ const server = http.createServer((req, res) => {
   if (e3.pct <= b3.pct + 10) fails.push(`expert's progress not clearly above a beginner's (${e3.pct}% vs ${b3.pct}%)`);
   for (const [k, v] of Object.entries(R))
     if (v.early && v.early.length) fails.push(`${k}: ${v.early.join(', ')} at 95% before being asked beside a look-alike`);
-  if (!(R.bonusShare > 0 && R.bonusShare <= 0.4) || R.bonusOff)
-    fails.push(`bonus genera not met took ${Math.round(100 * R.bonusShare)}% of the draws (the opening's 35% at most); off: ${R.bonusOff}`);
+  if (R.bonusOpen !== 1 || !R.bonusPick || R.bonusOff)
+    fails.push(`bonus genera not met: opening chance ${R.bonusOpen} (1 expected), opened: ${R.bonusPick}; off: ${R.bonusOff} in the pool`);
   if (!(R.cal.with > 1.3 * Math.max(10, R.cal.without)))
     fails.push(`calibration: an unrated photo was not drawn more often: ${JSON.stringify(R.cal)}`);
   if (errs.length) fails.push('page errors: ' + errs.slice(0, 3).join(' | '));

@@ -19,7 +19,8 @@ function model({P = {}, th = {}, answers = 0} = {}) {
       P,
       LEVEL: '~level',
       INTRO: {SLACK: 0.1},
-      PICKD: {TARGET_OFF: 1},
+      PICKD: {P: 0.8},
+      aimOff: (k = 4) => Math.log((0.8 - 1 / k) / (1 - 1 / k) / (1 - (0.8 - 1 / k) / (1 - 1 / k))),
       sig: x => 1 / (1 + Math.exp(-x)),
       ability: n => th[n] ?? 0,
       genusDiff: () => 0,
@@ -166,11 +167,12 @@ test('comeback questions: the surest genera until one is right, then the most ru
 
 test('a miss the rust explains costs less progress (pgMissW with the recall)', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    ctx = {PICKD: {TARGET_OFF: 1}, sig: x => 1 / (1 + Math.exp(-x))};
+    ctx = {PICKD: {P: 0.8}, sig: x => 1 / (1 + Math.exp(-x))};
   vm.createContext(ctx);
   vm.runInContext(src.slice(src.indexOf('function pgMissW'), src.indexOf('const knownP')) + '\nthis.f = pgMissW;', ctx);
-  assert.strictEqual(ctx.f(1, 0, 4), 1);
-  assert.strictEqual(ctx.f(1, 0, 4, 1), 1);
+  // A photo at the game's aim (aimOff(4) = 1.01 below the ability) or easier: in full.
+  assert.strictEqual(ctx.f(1.02, 0, 4), 1);
+  assert.strictEqual(ctx.f(1.02, 0, 4, 1), 1);
   const e = x => 0.25 + (0.75 * x) / (1 + Math.exp(-1));
-  assert.ok(Math.abs(ctx.f(1, 0, 4, 0.6) - e(0.6) / e(1)) < 1e-9 && ctx.f(1, 0, 4, 0.6) < 0.75);
+  assert.ok(Math.abs(ctx.f(1, 0, 4, 0.6) - e(0.6) / 0.8) < 1e-9 && ctx.f(1, 0, 4, 0.6) < 0.75);
 });
