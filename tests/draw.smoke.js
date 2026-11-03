@@ -251,18 +251,26 @@ const server = http.createServer((req, res) => {
       g = typedQ();
       const other = hi.find(x => x !== g),
         h0 = (P[other].h || '').length,
-        th0 = ability(g);
+        th0 = ability(g),
+        thO = ability(other),
+        pgO = P[other].pg;
       say(other);
       l = logged();
+      // Against both genera (rule 13): the genus shown in its ability and progress, the genus given in its progress and
+      // recent results only, its Elo ability untouched (docs/LEARNING.md "The genus wrongly given in the Elo").
       if (
         !/^quiz\|t(\|x)?$/.test(l.m) ||
         l.a !== other ||
         l.ok ||
         P[other].h.slice(-1) !== '0' ||
         !(ability(g) < th0) ||
+        ability(other) !== thO ||
+        !(P[other].pg < pgO) ||
         !(P[g].conf || {})[other]
       )
-        fails.push(`typed miss naming ${other} for ${g}: logged ${JSON.stringify(l)}, ${other} h ${P[other].h} (was ${h0} long)`);
+        fails.push(
+          `typed miss naming ${other} for ${g}: logged ${JSON.stringify(l)}, ${other} h ${P[other].h} (was ${h0} long), ability ${thO} -> ${ability(other)}, progress ${pgO} -> ${P[other].pg}`
+        );
       if (!document.querySelector('#after h3.ko')) fails.push('a typed miss: the feedback is not a wrong answer');
       g = typedQ();
       const before = JSON.stringify(Object.fromEntries(Object.entries(P).filter(([k]) => k !== g && k !== LEVEL)));

@@ -256,7 +256,15 @@ const server = http.createServer((req, res) => {
   // 17 (was 16; photo memory, 2026-11-03): this seed went from 16, at the limit, to 17, while 6 other seeds gave 11.5
   // genera on average before and 11.3 after (10-15), and tools/learnsim.js 30 seeds no change either (docs/LEARNING.md
   // "Photo memory"): one draw, not a faster opening.
-  if (b1.met > 17) fails.push(`beginner met ${b1.met} genera in 100 questions: not focused`);
+  // 21 (was 17; 2026-11-03, the genus wrongly given out of the Elo, docs/LEARNING.md "The genus wrongly given in the
+  // Elo"): a real change, not a draw. The old Elo step on every wrong pick dragged many genera under OPEN.P, which held
+  // the opening; with the abilities now near the truth (tools/learnsim.js, 5 seeds: the beginner's θ − logit(know)
+  // −1.31 → −0.05 at question 100), a beginner meets 18.8 genera by question 100 (13.2 before; seeds 14-23, 10-16
+  // before), at 81% right (85%), learning more (true knowledge 0.38 → 0.48 by question 200). This seed: 13 → 19.
+  // Recalibrating OPEN.K did not bring the 5-seed pace back (K 8: 18.4; K 6: 16.2, and the lecture-level RA under its
+  // old pace), so it is not changed (ROADMAP). The bound still catches a beginner flooded with genera (the reason for
+  // the progressive path: all 39 at once before it).
+  if (b1.met > 21) fails.push(`beginner met ${b1.met} genera in 100 questions: not focused`);
   if (b3.met <= b1.met) fails.push(`beginner stopped opening genera (${b1.met} then ${b3.met})`);
   if (r3.met <= r1.met) fails.push(`RA stopped opening genera (${r1.met} then ${r3.met})`);
   const E = R.easyFirst,
