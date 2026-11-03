@@ -752,6 +752,8 @@ const basicsRoute = term => {
 // Where a term is shown on a photo (Pierre, 2026-11-03: the technical words of the genus sheets, first-meeting cards and
 // quiz tips link to Coral basics): its step, else Corallite anatomy's card, else the Words list when it is there.
 const basicsHref = term => basicsRoute(term) || (basicsListed(term) ? '#basics|words' : '');
+// The term whose definition is open, and where it was when the definition was placed next to it (glossMoved).
+let glossAt = null;
 function showGloss(el) {
   const t = DATA.terms.find(x => x[0] === el.dataset.gt);
   if (!t) return;
@@ -767,6 +769,7 @@ function showGloss(el) {
   $gpop.hidden = false;
   const r = el.getBoundingClientRect(),
     w = Math.min(320, innerWidth - 24);
+  glossAt = {el, x: r.left, y: r.top};
   $gpop.style.width = w + 'px';
   $gpop.style.left = Math.max(12, Math.min(r.left, innerWidth - w - 12)) + 'px';
   const below = r.bottom + 8,
@@ -791,10 +794,18 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') $gpop.hidden = true;
   else if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('gt')) showGloss(e.target);
 });
+// A scroll closes the definition, which stays put (fixed), once its term has moved away. Only then: a scroll event comes
+// at the next frame, so a card scrolled to bring the term into view, then tapped, closed the definition it had just
+// opened (pages smoke, 2026-11-03: the term at the foot of a genus card, a few px below the fold).
+const glossMoved = () => {
+  if (!glossAt || !glossAt.el.isConnected) return true;
+  const r = glossAt.el.getBoundingClientRect();
+  return r.left !== glossAt.x || r.top !== glossAt.y;
+};
 addEventListener(
   'scroll',
   () => {
-    $gpop.hidden = true;
+    if (!$gpop.hidden && glossMoved()) $gpop.hidden = true;
   },
   true
 );
@@ -1217,8 +1228,19 @@ addEventListener('hashchange', () => {
 // photo). o: {kind, cls (classes the callers' code and tests look for), kick, title (HTML; none: the first h3 of the body
 // labels it, else o.label), body, photo (genus band URL), visual (medallion HTML), primary / secondary ({text, attr, on,
 // stay}: on runs after the card closes, or instead of closing with stay), note, after, bind(d) after each render,
-// onClose(how: 1, 2, 'esc', 'enter', 'tap', 'route')}. Returns the overlay: d.close(how), d.set(changes) redraws it.
-const CARD_KINDS = {apology: '🙏', update: '🔄', feature: '✨', genus: '🪸', tip: '💡', bonus: '🎁', account: '💾', ach: '🏆'};
+// onClose(how: 1, 2, 'esc', 'enter', 'tap', 'route', or what the caller gave d.close)}. Returns the overlay: d.close(how),
+// d.set(changes) redraws it.
+const CARD_KINDS = {
+  apology: '🙏',
+  update: '🔄',
+  feature: '✨',
+  genus: '🪸',
+  tip: '💡',
+  bonus: '🎁',
+  account: '💾',
+  ach: '🏆',
+  feedback: '💬'
+};
 let cardN = 0;
 function cardShow(o) {
   const d = document.createElement('div'),
