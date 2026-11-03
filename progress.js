@@ -436,8 +436,8 @@ function achMerge(json) {
 // A learned mark taken away by a recalculation (model.js mxRecalc, MXL): the achievements resting on genera learned
 // (core.js ACH_LEARN: Instructor, Coral master, Group complete) that the progress no longer meets are taken back, dated
 // in the record's _gone so no merge brings them back (core.js achRevoke, mergeAch); earned again, they come back as
-// usual. Only then: everywhere else achievements are only added. The ids taken back go to the card (quiz.js
-// mxLostShow) and leave the "new" dots; one sync, so the sheet's copy (achievement shares) follows.
+// usual. Only then: everywhere else achievements are only added. The ids taken back go to the card (mxLostNotice)
+// and leave the "new" dots; one sync, so the sheet's copy (achievement shares) follows.
 function achRecheck() {
   const M = store.get(MXL.KEY, null);
   if (!M || !M.ach) return [];
@@ -757,6 +757,67 @@ function recalcNotice() {
   d.ulClose = () => {
     close(false);
     setTimeout(recalcNotice, 300);
+  };
+  d.querySelector('.next').onclick = () => close(true);
+  setTimeout(() => d.querySelector('.next').focus({preventScroll: true}), 50);
+}
+// A learned mark taken away by a recalculation (model.js mxRecalc, MXL; Pierre, 2026-11-03: players know they test an
+// early beta): told once on this device by an announcement card, like recalcNotice (AGENTS.md rule 12: never held, no
+// visit floor or prompt spacing): at start-up once the progress is in (app.js SETUP 2) and right after a pull or an
+// answer that drops a mark (mxLost), on whatever page is open. Another card or the tour on screen: it waits for it
+// (tried again every 2 s). Names the genera, and the achievements taken back with them (achRecheck). Seen only by OK (or
+// Enter / Escape): those marks go to told and are never told again here; leaving the page closes it unseen and it comes
+// back once the new page is drawn.
+const andList = L => (L.length < 2 ? L.join('') : L.slice(0, -1).join(', ') + ' and ' + L[L.length - 1]);
+function mxLostText(L, nAch) {
+  const one = L.length === 1;
+  return `You passed the mastery exam on ${andList(L.map(n => `<i>${esc(n)}</i>`))} under the beta's first rules, which brought the exam too early. ${one ? 'This genus is back on its progress bar, and its exam' : 'These genera are back on their progress bars, and their exams'} will come again.${nAch ? ` Until then, the ${nAch > 1 ? 'badges' : 'badge'} earned with ${one ? 'it' : 'them'} ${nAch > 1 ? 'are' : 'is'} taken back.` : ''}`;
+}
+let mxLostT = 0;
+function mxLostNotice() {
+  clearTimeout(mxLostT);
+  const M = store.get(MXL.KEY, {}) || {},
+    due = M.due || {},
+    L = Object.keys(due).sort();
+  if (!L.length || document.querySelector('.mxlost')) return;
+  if (document.querySelector('#tour, .unlock')) return void (mxLostT = setTimeout(mxLostNotice, 2000));
+  const d = document.createElement('div');
+  d.className = 'unlock mxlost';
+  d.setAttribute('role', 'dialog');
+  d.setAttribute('aria-modal', 'true');
+  d.setAttribute('aria-label', 'Mastery exam to take again');
+  d.innerHTML = `<div class="ulcard"><p class="ulkick">Early beta</p><h3>${L.length > 1 ? 'Mastery exams' : 'Mastery exam'} to take again</h3>
+    <p>${mxLostText(L, (M.gone || []).length)}</p>
+    <div class="ulbtns"><span></span><button class="next" type="button">OK</button></div></div>`;
+  document.body.appendChild(d);
+  const close = seen => {
+    if (seen) {
+      const N = store.get(MXL.KEY, {}) || {},
+        told = N.told || {},
+        left = {...(N.due || {})};
+      L.forEach(n => {
+        told[n] = due[n];
+        if (left[n] === due[n]) delete left[n];
+      });
+      store.set(MXL.KEY, {...N, due: left, told, gone: []});
+    }
+    d.remove();
+    document.removeEventListener('keydown', key, true);
+    if (typeof qclockAgain === 'function') qclockAgain(); // over a question: its time to answer counts from here
+    if (seen) mxLostNotice(); // a drop that came while it was open
+  };
+  const key = e => {
+    if (e.key === 'Tab') return;
+    e.stopPropagation(); // never the quiz's keys behind the card
+    if (/^\d$/.test(e.key)) e.preventDefault();
+    if (e.key !== 'Escape' && e.key !== 'Enter') return;
+    e.preventDefault();
+    close(true);
+  };
+  document.addEventListener('keydown', key, true);
+  d.ulClose = () => {
+    close(false);
+    mxLostT = setTimeout(mxLostNotice, 300);
   };
   d.querySelector('.next').onclick = () => close(true);
   setTimeout(() => d.querySelector('.next').focus({preventScroll: true}), 50);

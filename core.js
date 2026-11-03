@@ -377,7 +377,7 @@
   // (and any exam in course) is dropped at every call (load, pull, answer: a copy from another device that still has it
   // loses it too); the genus keeps its bar from its record (pgOf, s.h) and takes the exam again. An exam passed since
   // (s.pg kept beside s.mx) is left alone. Not silent (Pierre, 2026-11-03: players know they test an early beta): the
-  // app sees the mark go (model.js mxRecalc), tells the player once with a card (quiz.js mxLostShow) and takes back the
+  // app sees the mark go (model.js mxRecalc), tells the player once with a card (progress.js mxLostNotice) and takes back the
   // learned-based achievements the progress no longer meets (achRevoke, progress.js achRecheck).
   function memRecalc(s, mem) {
     if (!s || typeof s !== 'object') return false;

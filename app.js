@@ -1399,6 +1399,7 @@ const SETUP = {
     achRecheck(); // a learned mark taken away at load (model.js mxRecalc): its achievements first
     achCheck(); // before My progress opens, so its badge counts them
     recalcNotice(); // every player's progress recalculated (2026-11-02): said once, with a pop-up
+    mxLostNotice(); // a learned mark taken away (model.js mxRecalc): said once, after the card above if both are due
     prog();
     window.APP_READY = true; // Home, the quiz and the Learn pages work (tests and tools/perf.js wait for this)
   },

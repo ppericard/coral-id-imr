@@ -653,7 +653,8 @@ function memRecalcAll() {
   return ch;
 }
 // A learned mark taken away by a recalculation (Pierre, 2026-11-03: "players know they test an early beta"): told once
-// with a card, and the learned-based achievements the progress no longer meets are taken back (progress.js achRecheck).
+// with an announcement card (progress.js mxLostNotice: at once, never held), and the learned-based achievements the
+// progress no longer meets are taken back (progress.js achRecheck).
 // Generic: mxRecalc(fn) runs any recalculation of the progress (today core.js memRecalc, at load, after a pull and before
 // an answer; later perhaps a full replay of the sheet's answer log) and reports every genus whose s.mx it removed. A mark
 // lost by misses in play (quiz.js mxKept) never goes through it. Kept on this device only (MXL.KEY, outside the synced
@@ -681,8 +682,8 @@ function mxLost(L) {
     told = M.told || {};
   Object.keys(L).forEach(n => told[n] !== L[n] && (due[n] = L[n]));
   store.set(MXL.KEY, {...M, due, told, ach: 1});
-  // The achievements now if their code is in and set up (progress.js, app.js SETUP 2), else at its set-up.
-  if (typeof achRecheck === 'function' && window.APP_READY) achRecheck();
+  // The achievements and the card now if their code is in and set up (progress.js, app.js SETUP 2), else at its set-up.
+  if (typeof achRecheck === 'function' && window.APP_READY) (achRecheck(), mxLostNotice());
 }
 const famOf = (n, ph) => {
   const ps = (P[n] || {}).ps || {},

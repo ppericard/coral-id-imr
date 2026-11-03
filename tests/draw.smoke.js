@@ -10,9 +10,9 @@
 // - out-of-game prompts at least PROMPT.GAP answers apart (promptOk);
 // - Millepora a slate genus (progress, cards); the bonus genera offered once every slate genus is met and never before,
 //   "Not now" kept, once on opened one card at a time, never counted in the progress, Off out of the draw;
-// - a learned mark from the former model (BKT, no s.pg) taken away at load: one card, its genus named, the learned-based
-//   badge taken back and kept so through a merge, never again after a reload or the next answers; learned with s.pg:
-//   nothing.
+// - a learned mark from the former model (BKT, no s.pg) taken away at load: one card at start-up, never held, its genus
+//   named, the learned-based badge taken back and kept so through a merge, never again after a reload or the next
+//   answers; a drop at a pull shown at once, after a card already open; learned with s.pg: nothing.
 // Like pages.smoke.js it needs Playwright (CI installs it in a temporary folder; no package.json). Locally:
 // node tests/draw.smoke.js
 const http = require('http'),
@@ -682,10 +682,12 @@ const server = http.createServer((req, res) => {
     }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
-  // Learned under the former model (core.js memRecalc, model.js mxRecalc, quiz.js mxLostShow, progress.js achRecheck):
+  // Learned under the former model (core.js memRecalc, model.js mxRecalc, progress.js mxLostNotice and achRecheck):
   // progress saved with a learned genus, then a reload (the drop happens at load, before achievements are set up).
-  // Learned with s.pg (since 2026-11-02): nothing told, nothing taken back. Learned without (BKT): the card once, the
-  // mark and learn1 gone, learn1 not brought back by the sheet's older copy, and not shown again on reload or answers.
+  // Learned with s.pg (since 2026-11-02): nothing told, nothing taken back. Learned without (BKT): an announcement card
+  // at start-up, on the page opened, before any answer and even at the start of a new visit (never held: AGENTS.md rule
+  // 12), once; the mark and learn1 gone, learn1 not brought back by the sheet's older copy, nothing again on reload or
+  // answers. A drop at a pull: the card at once, or right after another card open then.
   {
     const t = await p.evaluate(() => slateGenera()[3]);
     // Two genera answered (a comeback needs two), the last answer `ago` ms back.
@@ -709,13 +711,18 @@ const server = http.createServer((req, res) => {
     const load = async () => {
       await p.reload();
       await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await p.waitForTimeout(500);
     };
-    // Plays n quiz questions, right, the other overlays out of the way; counts the cards (and the answers before each).
+    const card = () =>
+      p.evaluate(() => {
+        const c = document.querySelector('.unlock.mxlost');
+        return c && {h: c.querySelector('h3').textContent, p: c.querySelector('p:not(.ulkick)').textContent, a: answersSoFar()};
+      });
+    // Plays n quiz questions, right, the other overlays out of the way; counts the cards.
     const play = n =>
       p.evaluate(
         ([t, n]) => {
-          const seen = [],
-            a0 = answersSoFar();
+          let seen = 0;
           for (let i = 0; i < n; i++) {
             document.querySelectorAll('.unlock:not(.mxlost), .achpop').forEach(x => x.remove());
             achQ = [];
@@ -723,35 +730,32 @@ const server = http.createServer((req, res) => {
             NEXTQ = null;
             quizPhoto();
             const c = document.querySelector('.unlock.mxlost');
-            if (c) {
-              seen.push([answersSoFar() - a0, c.querySelector('h3').textContent, c.querySelector('p:not(.ulkick)').textContent]);
-              c.querySelector('.next').click();
-            }
+            if (c) (seen++, c.querySelector('.next').click());
             document.querySelectorAll('.unlock').forEach(x => x.remove());
             document.querySelector(`#view [data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
           }
           const A = store.get(ACHK, {}) || {};
-          return {
-            seen,
-            floor: COMEBACK.FLOOR,
-            mx: (P[t] || {}).mx,
-            learn1: A.learn1,
-            gone: (A._gone || {}).learn1,
-            M: store.get(MXL.KEY, null)
-          };
+          return {seen, mx: (P[t] || {}).mx, learn1: A.learn1, gone: (A._gone || {}).learn1, M: store.get(MXL.KEY, null)};
         },
         [t, n]
       );
     const fail = (m, x) => out.fails.push(`learned under the former model: ${m} ${JSON.stringify(x)}`);
     await seed({ok: 30, ko: 2, h: '1111111111', pg: 0.97, mx: 1762150000000, pm: 1}, 0);
     await load();
-    const a = await play(15);
-    if (a.seen.length || a.mx !== 1762150000000 || a.learn1 !== 1000 || a.gone || (a.M && Object.keys(a.M.due || {}).length))
-      fail('learned with s.pg was touched', a);
-    // A new visit (2 hours since the last answer): the card waits for the visit's floor and comeback (noOpen).
+    const a0 = await card(),
+      a = await play(15);
+    if (a0 || a.seen || a.mx !== 1762150000000 || a.learn1 !== 1000 || a.gone || (a.M && Object.keys(a.M.due || {}).length))
+      fail('learned with s.pg was touched', {a0, a});
+    // A new visit (2 hours since the last answer): the card shows anyway, at start-up, over Home.
     await seed({ok: 13, ko: 1, h: '1111111110', L: 0.9997, mx: 1, pm: 1}, 2 * 3600e3);
     await load();
-    const before = await p.evaluate(t => ({mx: P[t].mx, A: store.get(ACHK, {}), M: store.get(MXL.KEY, null)}), t);
+    const c0 = await card(),
+      before = await p.evaluate(
+        t => ({mx: P[t].mx, A: store.get(ACHK, {}), M: store.get(MXL.KEY, null), noOpen: noOpen(), h: hashNow()}),
+        t
+      );
+    if (!c0 || c0.a !== 360 || !before.noOpen || !c0.p.includes(t) || !/badge earned with it is taken back/.test(c0.p))
+      fail('no card at start-up, before any answer', {c0, before});
     if (before.mx || before.A.learn1 || !before.A._gone || !before.A._gone.learn1 || before.A.met10 !== 1000 || !before.M.due[t])
       fail('at load', before);
     // The sheet's copy, from before the drop: learn1 does not come back.
@@ -760,14 +764,28 @@ const server = http.createServer((req, res) => {
       return store.get(ACHK, {});
     });
     if (merged.learn1 || merged.met10 !== 900) fail('a merge brought the badge back', merged);
-    const b1 = await play(30);
-    if (b1.seen.length !== 1 || !b1.seen[0][2].includes(t) || !/badge earned with it is taken back/.test(b1.seen[0][2]) || b1.mx)
-      fail('the card', b1);
-    else if (b1.seen[0][0] < b1.floor) fail('the card in the first answers of a visit', b1.seen);
-    if (b1.M.due[t] || b1.M.told[t] !== 1) fail('not marked told', b1.M);
+    await p.click('.unlock.mxlost .next');
+    const b1 = await play(15);
+    if (b1.seen || b1.mx || b1.M.due[t] || b1.M.told[t] !== 1) fail('after OK', b1);
     await load();
-    const b2 = await play(12);
-    if (b2.seen.length || b2.learn1 || b2.mx) fail('again after a reload', b2);
+    const c2 = await card(),
+      b2 = await play(12);
+    if (c2 || b2.seen || b2.learn1 || b2.mx) fail('again after a reload', {c2, b2});
+    // A drop brought by a pull while another card is open: the card waits for it, then shows on its own.
+    const u = await p.evaluate(() => {
+      const u = slateGenera()[5],
+        d = document.createElement('div');
+      d.className = 'unlock other';
+      document.body.append(d);
+      P[u] = {ok: 12, ko: 0, h: '1111111111', L: 0.999, mx: 1, pm: 1};
+      memRecalcAll();
+      return u;
+    });
+    const c3 = await card();
+    await p.evaluate(() => document.querySelector('.unlock.other').remove());
+    await p.waitForTimeout(2500);
+    const c4 = await card();
+    if (c3 || !c4 || !c4.p.includes(u)) fail('a drop at a pull, behind another card', {c3, c4});
     await p.evaluate(() => localStorage.removeItem(MXL.KEY));
   }
   await b.close();

@@ -702,9 +702,11 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   rules. An exam passed since (`s.pg` beside `s.mx`) is left alone. The sheet's Learned column and leaderboard %
   follow at the player's next sync. The admin shows the player's numbers without waiting for that sync: its full replay (below) keeps a learned mark only on a record with `s.pg` (`core.js` `replayedOf`), and marks "↻ saved …" where the sheet's copy still counts it. **Not silent** (Pierre, 2026-11-03: players know they test an early beta): the
   app sees the mark go (`model.js` `mxRecalc`, which wraps any recalculation and reports every genus whose `s.mx` it
-  removed, to `mxLost`; a mark lost by misses in play never goes through it) and tells the player once, by a card over
-  the quiz (`quiz.js` `mxLostShow`, a prompt like the others: `promptOk`, never in the floor of a visit or a comeback,
-  so it waits): "You passed the mastery exam on *X* under the beta's first rules, which brought the exam too early.
+  removed, to `mxLost`; a mark lost by misses in play never goes through it) and tells the player once, by an
+  announcement card (`progress.js` `mxLostNotice`; Pierre, 2026-11-03: never held, AGENTS.md rule 12): at start-up once
+  the first page is drawn and the progress is in, and right after a pull or an answer that drops a mark, on whatever page
+  is open, even in the floor of a visit or a comeback and with no prompt spacing; it only waits for another card or the
+  tour already on screen: "You passed the mastery exam on *X* under the beta's first rules, which brought the exam too early.
   This genus is back on its progress bar, and its exam will come again. Until then, the badge earned with it is taken
   back." (plural forms for several genera or badges). Once per mark on a device (`imr-mx-lost`, device only: a drop
   that happens through a pull on a second device is told there too). The achievements that rest on genera learned
@@ -712,8 +714,9 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   are taken back (`progress.js` `achRecheck`, `core.js` `achRevoke`), only then (everywhere else achievements are only
   added); each removal is dated in the record's `_gone`, so a copy earned before it (the sheet's, another device's)
   never comes back through a merge (`core.js` `mergeAch`); earned again, it carries a newer date and stays. Checked by
-  `tests/core.test.js` and `tests/draw.smoke.js` (the card once after the visit's floor, the mark and the badge gone,
-  not brought back by the sheet's older copy, nothing again after a reload; learned with `s.pg`: nothing).
+  `tests/core.test.js` and `tests/draw.smoke.js` (the card at start-up over Home, before any answer and in a new
+  visit's floor, once; the mark and the badge gone, not brought back by the sheet's older copy, nothing again after a
+  reload or answers; a drop at a pull shown at once, after a card already open; learned with `s.pg`: nothing).
 - **What it does to the current players**: `node tools/memreplay.js answers.json [--player id] [--mem ...]` replays
   the admin's answer log (`readAnswers`, saved to a file) under the old rule and the new one: the offsets these answers
   give, how far the photo ratings move, and per player the bar of each genus, their overall % and their opening hold,

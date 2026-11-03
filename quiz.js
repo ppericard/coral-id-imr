@@ -783,7 +783,6 @@ function quizPhoto() {
   AUTOD = !!q.auto;
   question(...q);
   if (q.intro) introShow(q.intro, q.start);
-  else if (!noOpen() && promptOk() && mxLostDue()) (promptMark(), mxLostShow());
   else if (!noOpen() && promptOk() && introOffer())
     (promptMark(), introOfferShow()); // never over another card: next question
   else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
@@ -875,60 +874,6 @@ function bonusOfferShow() {
   d.querySelector('[data-bonus]').onclick = () => pick(true);
   d.querySelector('.sec').onclick = () => pick(false);
   setTimeout(() => d.querySelector('[data-bonus]').focus({preventScroll: true}), 50);
-}
-// A learned mark taken away by a recalculation (model.js mxRecalc, MXL; Pierre, 2026-11-03: players know they test an
-// early beta): told once on this device, by a card over the question, a prompt like the others (promptOk, and never in
-// the first answers of a visit or a comeback: noOpen), so it waits until it may show. Names the genera, and the
-// achievements taken back with them (progress.js achRecheck). Seen only by OK (or Enter / Escape); leaving the page closes
-// it unseen, so it comes back. Seen: those marks go to told and are never told again here.
-const mxLostDue = () => Object.keys((store.get(MXL.KEY, {}) || {}).due || {}).length > 0;
-const andList = L => (L.length < 2 ? L.join('') : L.slice(0, -1).join(', ') + ' and ' + L[L.length - 1]);
-function mxLostText(L, nAch) {
-  const one = L.length === 1;
-  return `You passed the mastery exam on ${andList(L.map(n => `<i>${esc(n)}</i>`))} under the beta's first rules, which brought the exam too early. ${one ? 'This genus is back on its progress bar, and its exam' : 'These genera are back on their progress bars, and their exams'} will come again.${nAch ? ` Until then, the ${nAch > 1 ? 'badges' : 'badge'} earned with ${one ? 'it' : 'them'} ${nAch > 1 ? 'are' : 'is'} taken back.` : ''}`;
-}
-function mxLostShow() {
-  const M = store.get(MXL.KEY, {}) || {},
-    due = M.due || {},
-    L = Object.keys(due).sort(),
-    d = document.createElement('div');
-  if (!L.length) return;
-  d.className = 'unlock mxlost';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Mastery exam to take again');
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">Early beta</p><h3>${L.length > 1 ? 'Mastery exams' : 'Mastery exam'} to take again</h3>
-    <p>${mxLostText(L, (M.gone || []).length)}</p>
-    <div class="ulbtns"><span></span><button class="next" type="button">OK</button></div></div>`;
-  document.body.appendChild(d);
-  const close = seen => {
-    if (seen) {
-      const N = store.get(MXL.KEY, {}) || {},
-        told = N.told || {},
-        left = {...(N.due || {})};
-      L.forEach(n => {
-        told[n] = due[n];
-        if (left[n] === due[n]) delete left[n];
-      });
-      store.set(MXL.KEY, {...N, due: left, told, gone: []});
-    }
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-    qclockAgain(); // the time to answer counts from here (QCLOCK)
-    topUp();
-  };
-  const key = e => {
-    if (e.key === 'Tab' || document.getElementById('tour')) return;
-    e.stopPropagation(); // never the quiz's answer keys behind the card
-    if (/^\d$/.test(e.key)) e.preventDefault();
-    if (e.key !== 'Escape' && e.key !== 'Enter') return;
-    e.preventDefault();
-    close(true);
-  };
-  document.addEventListener('keydown', key, true);
-  d.ulClose = () => close(false); // leaving the page closes it unseen (route): it comes back
-  d.querySelector('.next').onclick = () => close(true);
-  setTimeout(() => d.querySelector('.next').focus({preventScroll: true}), 50);
 }
 // The cards of the genera met now (INTRO in model.js), one after the other over the question: the first INTRO.START
 // together ("1 of 4", the first questions are about them), later ones alone (asked a few questions later). Recorded
