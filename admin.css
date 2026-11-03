@@ -977,6 +977,36 @@ kbd {
   color: var(--accent-ink);
   font-size: 0.85rem;
 }
+.adm-fagree {
+  margin: 10px 0 0;
+  font-size: var(--fs-s);
+}
+.adm-fagree summary {
+  cursor: pointer;
+}
+.adm-fagree summary b {
+  font-variant-numeric: tabular-nums;
+}
+.adm-fagree .adm-tscroll {
+  margin: 8px 0 0;
+}
+.adm-fagree .adm-fag-t {
+  width: auto;
+}
+.adm-fag-t th,
+.adm-fag-t td {
+  text-align: center;
+}
+.adm-fag-t th {
+  font-size: var(--fs-xs);
+}
+.adm-fag-t td.ok {
+  background: var(--good-bg);
+  font-weight: 600;
+}
+.adm-fag-t td.ko {
+  background: var(--bad-bg);
+}
 .adm-fok {
   margin-left: 0.6em;
   font: inherit;
@@ -3470,4 +3500,61 @@ button.adm-chip[aria-pressed='true'] {
     max-width: 100%;
     flex-wrap: wrap;
   }
+}
+/* Auto-sort in Candidates (admin.js autoBlock): agreement per field, details, and the Check / Retest / auto tags. */
+.adm-auto {
+  margin: 6px 0 0;
+}
+.adm-auto > .note {
+  margin: 0;
+}
+.adm-af {
+  white-space: nowrap;
+  margin-right: 6px;
+}
+.adm-af small {
+  margin-left: 3px;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.adm-af.off {
+  color: var(--bad);
+  font-weight: 600;
+}
+.adm-autodet {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+.adm-autodet .adm-tscroll {
+  max-width: 560px;
+}
+.adm-autodet h3.label {
+  margin: 4px 0 0;
+}
+.adm-aph {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.adm-aev {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.adm-src.adm-chk {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.adm-src.adm-autot {
+  box-shadow: inset 0 0 0 1px var(--muted);
+  color: var(--muted);
+}
+.adm-atile {
+  margin: 0;
+}
+.adm-aph,
+.adm-aph img {
+  display: block;
+  width: 100%;
 }
