@@ -1637,6 +1637,11 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-03, Pierre (hotfix): two strong players' runs collapsed after #408 and #413 (one met 7 new genera in 16
+  answers, then fell from 83% to 50% right): `openChance` is capped at `OPEN.MAX` 0.5, and no genus opens while one
+  opened earlier has not been asked yet. Measured: the beginner's 8 seeds meet 11-14 genera by question 100 (12.1;
+  14.5 before); the expert still opens faster than the beginner. A stopgap until the full fix (opening pace per window,
+  easier questions while the hold is on, the pair confusion term, data look-alikes).
 - 2026-11-02, Pierre: anonymous answers do not rate photos; sign in to count (reversed the same day, below); stats only from players above chance;
   developer test answers deleted (admin anonDelete); first-answer-only rejected; experience weight and history-aware
   repeats; players start as beginners.
