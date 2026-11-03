@@ -579,11 +579,14 @@ alone, and why the first item ever is the plain one, the same as the v19 answers
 next to each other.
 
 **Seen, then answered** (Pierre, 2026-11-03, from the first screenshots: a row inside the feedback card was easy to
-miss and a big Next was tapped without reading it). The question is a block of its own before Next, tinted, titled
-"Quick question", its three answers on one row of equal widths (360 px and up); one tap answers, × closes, nothing
-waits for it. Each prompt logs its showing, so the admin knows the **response rate** by item, level band and mode
-(shown, answered, Not now, no answer). A low rate in one band would bias that band's answers towards the players who
-care to answer: read it next to the answers.
+miss and a big Next was tapped without reading it; then, after a long run the same day: "in a flow state, chaining
+questions, used to clicking Next, I don't see them": 3 of his first 4 prompts, a block of its own before Next by then,
+ended with Next and no tap). The question is now a card shown at Next, before the next question: a natural break that
+does interrupt, without ambushing the reflex tap (its buttons take no tap for 600 ms, Enter answers nothing; ARCHITECTURE.md
+"One-tap questions"). One tap answers, "Not now" closes. Each prompt logs its showing, so the admin knows the
+**response rate** by item, level band and mode (shown, answered, Not now, no answer). A low rate in one band would bias
+that band's answers towards the players who care to answer: read it next to the answers. Rates from before the card
+(2026-11-03) are lower by design: compare like with like.
 
 **How the answers will be used for the level-dependent target** (not built: ROADMAP "Level-dependent target"). Admin
 To do › Errors shows, for each level band (the overall level when they answered: below −0.5, −0.5 to +0.5, above +0.5)

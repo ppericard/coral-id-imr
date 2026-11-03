@@ -177,7 +177,8 @@ async function overlays(b, base) {
       // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD), and
       // the learned mark taken away (progress.js mxLostNotice), through their real callers.
       ['update', () => (store.set('imr-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
-      ['update', () => (store.set(MXL.KEY, {due: {Acropora: 1}}), mxLostNotice())]
+      ['update', () => (store.set(MXL.KEY, {due: {Acropora: 1}}), mxLostNotice())],
+      ['feedback', () => pulseAsk()]
     ];
     for (let i = 0; i < CASES.length; i++) {
       const [kind] = CASES[i];
@@ -187,7 +188,11 @@ async function overlays(b, base) {
         document.getElementById('smokeopener').focus();
       });
       await p.evaluate(`(${CASES[i][1]})()`);
-      await p.waitForTimeout(150);
+      // The card moves the focus into itself on a timer (cardShow): wait for it, not for a fixed time (a busy page ran the
+      // timer after the 150 ms this waited, and the focus was still outside: pages smoke, 2026-11-03).
+      await p
+        .waitForFunction(() => !!document.querySelector('.unlock')?.contains(document.activeElement), null, {timeout: 5000})
+        .catch(() => {});
       const r = await p.evaluate(() => {
         const d = document.querySelectorAll('.unlock'),
           u = d[0],
@@ -338,8 +343,9 @@ async function overlays(b, base) {
     await c.close();
   }
   // Out-of-game prompts take turns, counted in answers (2026-11-02): the sign-in card at 20 answers (not before), the
-  // one-tap question first at 35, at least 10 answers between two of them, never with an achievement toast or a card on
-  // screen. A new player, mostly right, 60 answers; toasts closed by a tap as they come.
+  // one-tap question first at 35 (a card at Next since 2026-11-03, never inline in the feedback), at least 10 answers
+  // between two of them, never with an achievement toast or another card on screen. A new player, mostly right, 60
+  // answers; toasts closed by a tap as they come.
   {
     const [c, p] = await open({viewport: {width: 390, height: 844}}, () => localStorage.setItem('imr-tour', '"done"'));
     await p.goto(base + '#quiz');
@@ -363,17 +369,29 @@ async function overlays(b, base) {
         return {
           a: answersSoFar(),
           sign: !!document.querySelector('.unlock.signnudge'),
-          pulse: !!document.querySelector('#after .pulse'),
+          inline: !!document.querySelector('#after [data-pulse]'),
           other: !!card && !card.matches('.signnudge'),
           toast
         };
       }, i);
-      if (r.sign || r.pulse) seenP.push({...r, k: r.sign ? 'sign-in' : 'pulse'});
-      await p.evaluate(() => {
+      if (r.sign || r.inline) seenP.push({...r, k: r.sign ? 'sign-in' : 'pulse'});
+      // Next: the one-tap question, when due, comes as a card before the next question; "Not now" (Escape) closes it and
+      // the next question is drawn.
+      const n = await p.evaluate(() => {
         document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
-        document.querySelector('[data-pulse=""]')?.click();
         document.getElementById('next').click();
+        const pc = document.querySelector('.unlock.pulsecard');
+        if (!pc) return null;
+        const out = {
+          a: answersSoFar(),
+          other: [...document.querySelectorAll('.unlock')].some(x => x !== pc),
+          toast: !!document.querySelector('.achpop') || achBusy
+        };
+        document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+        out.gone = !document.querySelector('.unlock.pulsecard');
+        return out;
       });
+      if (n) seenP.push({...n, k: 'pulse'});
     }
     const sign = seenP.find(x => x.k === 'sign-in'),
       pulse = seenP.find(x => x.k === 'pulse'),
@@ -386,33 +404,38 @@ async function overlays(b, base) {
       pulse.a < 35 ||
       pulse.a > 45 ||
       gaps.some(g => g < 10) ||
-      seenP.some(x => x.other || x.toast)
+      seenP.some(x => x.other || x.toast || x.inline || x.gone === false)
     )
       fails.push(`prompt spacing over 60 answers: ${JSON.stringify(seenP)}`);
     await c.close();
   }
-  // The one-tap question's bank (core.js PULSEQ, 2026-11-03), on the narrowest phone (360 px) and on a desktop: the
-  // first prompt at 35 answers asks the plain question; each prompt is a block of its own ("Quick question") on screen
-  // above Next, never under it (a wrong answer now and then makes the feedback long), its answers on one row of equal
-  // widths; it logs its showing (shown) with its item (src); an answer is one tap ("Thank you!" at once) and logs the
-  // code tapped; every third prompt is left unanswered (Next) and logs none; the next prompt never asks the same item.
-  // After the first, each prompt is made due by moving the device's last-prompt marks back (imr-prompt-at by
-  // PROMPT.GAP, imr-pulse by PULSE.EVERY), the real code deciding.
+  // The one-tap question's bank (core.js PULSEQ, 2026-11-03) as a card at Next (Pierre, 2026-11-03: inline in the
+  // feedback, a reflex Next skipped it), on a phone (390 px) and a desktop: never inline in the feedback; after Next a
+  // dialog (role, kicker "Quick question", the item's question as its title, its answers on one row of equal widths, a
+  // "Not now"), on screen, nothing wider than the screen, the next question not drawn yet; it logs its showing (shown)
+  // with its item (src). Its buttons stay disabled at least PULSE.WAIT ms (timed in the page); on the first prompt, its
+  // wait stretched to 3 s, a real mouse tap at an answer's centre and Enter do nothing (nothing logged, the card stays);
+  // once they are on, Enter still never answers. Then, in turn: an answer tapped (logs its code, once),
+  // "Not now" (skip), Escape (skip); the card closes and the next question shows. The last prompt is left by another page
+  // (none). The next prompt never asks the same item. After the first, each prompt is made due by moving the device's
+  // last-prompt marks back (imr-prompt-at by PROMPT.GAP, imr-pulse by PULSE.EVERY × PULSE.AFTERX), the real code deciding.
   for (const [vw, vh] of [
-    [360, 740],
+    [390, 844],
     [1280, 800]
   ]) {
     const [c, p] = await open({viewport: {width: vw, height: vh}}, seen);
     await p.goto(base + '#quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     const asked = [],
+      WAYS = ['tap', 'notnow', 'tap', 'esc'],
+      N = 9,
       pev = () => p.evaluate(() => JSON.parse(localStorage.getItem('imr-evq') || '[]').filter(x => x.k === 'pulse'));
-    for (let i = 0; i < 60 && asked.length < 9; i++) {
+    for (let i = 0; i < 60 && asked.length < N; i++) {
       await p.waitForSelector('#view [data-c]:not([disabled])');
-      const skip = asked.length % 3 === 2,
+      const way = asked.length === N - 1 ? 'leave' : WAYS[asked.length % WAYS.length],
         before = (await pev()).length;
-      const r = await p.evaluate(
-        ([i, due, skip]) => {
+      const inline = await p.evaluate(
+        ([i, due]) => {
           document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
           document.querySelectorAll('.achpop').forEach(x => x.remove());
           achQ.length = 0;
@@ -420,75 +443,151 @@ async function overlays(b, base) {
           if (due) {
             const a = answersSoFar() + 1;
             localStorage.setItem('imr-prompt-at', JSON.stringify(a - PROMPT.GAP));
-            localStorage.setItem('imr-pulse', JSON.stringify({...JSON.parse(localStorage.getItem('imr-pulse')), at: a - PULSE.EVERY}));
+            localStorage.setItem(
+              'imr-pulse',
+              JSON.stringify({...JSON.parse(localStorage.getItem('imr-pulse')), at: a - PULSE.EVERY * PULSE.AFTERX})
+            );
           }
           const t = SHOWNQ[1],
             cs = [...document.querySelectorAll('#view [data-c]')];
           (i % 4 === 3 ? cs.find(x => x.dataset.c !== t) : cs.find(x => x.dataset.c === t)).click();
-          const box = document.querySelector('#after .pulse');
-          if (!box) return null;
-          const bs = [...box.querySelectorAll('.pulseb [data-pulse]')],
-            b = bs[i % bs.length],
-            it = PULSEQ.find(x => x.id === box.dataset.pq),
-            nx = document.getElementById('next'),
-            R = box.getBoundingClientRect(),
-            N = nx.getBoundingClientRect(),
-            B = bs.map(x => x.getBoundingClientRect());
-          const shown = {
-            a: answersSoFar(),
-            q: box.dataset.pq,
-            title: box.querySelector('.pulsek')?.textContent,
-            text: box.querySelector('.pulseq')?.textContent,
-            opts: bs.map(x => x.dataset.pulse),
-            x: !!box.querySelector('.pulsex[data-pulse=""]'),
-            // Before Next in the page and on screen, both in view without scrolling.
-            before: !!(box.compareDocumentPosition(nx) & Node.DOCUMENT_POSITION_FOLLOWING) && R.bottom <= N.top + 1,
-            inView: R.top >= 0 && N.bottom <= innerHeight + 1,
-            // Each answer, and Next, is what a tap at its centre reaches: nothing covers it (Next, the tab bar), and it is
-            // not scrolled out of the phone's sheet or the side column (a long feedback after a wrong answer).
-            hit: [...B.map((x, k) => [bs[k], x]), [nx, N]].every(([el, x]) =>
-              el.contains(document.elementFromPoint(x.left + x.width / 2, x.top + x.height / 2))
-            ),
-            // One row, equal widths.
-            row: B.every(x => Math.abs(x.top - B[0].top) < 2 && Math.abs(x.width - B[0].width) < 2),
-            tap: skip ? '' : b.dataset.pulse,
-            // A tap on the question's text or the block itself is not a photo tap (Codex review #414: data-q on the block
-            // sent it to the photo handler, which opened an empty enlarged view).
-            panel: (box.querySelector('.pulseq').click(), box.click(), document.getElementById('lightbox').hidden)
-          };
-          if (!skip) b.click();
-          return {...shown, want: it ? [it.q, it.a.map(x => x[0])] : null, thanks: box.textContent.trim()};
+          return !!document.querySelector('#after [data-pulse], #after .pulse');
         },
-        [i, asked.length > 0, skip]
+        [i, asked.length > 0]
       );
-      await p.evaluate(() => document.getElementById('next').click());
-      if (!r) continue;
-      // What this prompt queued: its showing, then the code tapped or none (moved on without a tap).
-      r.ev = (await pev()).slice(before).map(x => ({r: x.r, src: x.src, m: x.m, lv: typeof x.lv}));
-      asked.push(r);
+      // The buttons' wait is timed in the page (from the tap on Next to the last button enabled), so a busy machine cannot
+      // make it pass or fail. The first prompt's wait is stretched to 3 s, so the reflex tap below surely falls within it.
+      await p.evaluate(
+        slow => {
+          window.W0 = window.W0 || PULSE.WAIT;
+          PULSE.WAIT = slow ? 3000 : W0;
+          const t0 = performance.now();
+          window.WAITED = null;
+          document.getElementById('next').click();
+          const d = document.querySelector('.unlock.pulsecard');
+          if (d)
+            new MutationObserver((m, o) => {
+              if (d.querySelector('[data-pulse]:disabled')) return;
+              WAITED = performance.now() - t0;
+              o.disconnect();
+            }).observe(d, {attributes: true, subtree: true, attributeFilter: ['disabled']});
+        },
+        !asked.some(x => !x.inline)
+      );
+      const shown = await p.evaluate(() => {
+        const d = document.querySelector('.unlock.pulsecard');
+        if (!d) return null;
+        // Its entrance played out at once (positions measured where they end).
+        d.getAnimations({subtree: true}).forEach(a => a.finish());
+        const bs = [...d.querySelectorAll('.pulseb [data-pulse]')],
+          nn = d.querySelector('.pulsex[data-pulse=""]'),
+          R = d.querySelector('.ulcard').getBoundingClientRect(),
+          B = bs.map(x => x.getBoundingClientRect());
+        return {
+          a: answersSoFar(),
+          q: d.querySelector('.pulseb').dataset.pq,
+          dialog: d.getAttribute('role') === 'dialog' && d.getAttribute('aria-modal') === 'true',
+          kind: d.querySelector('.ulcard').dataset.k,
+          title: d.querySelector('.ulkick')?.textContent,
+          text: d.querySelector('h3')?.textContent,
+          opts: bs.map(x => x.dataset.pulse),
+          notnow: nn?.textContent,
+          // Every button waits (disabled) when the card shows.
+          wait: [...bs, nn].every(x => x.disabled),
+          // The next question is drawn only once the card closes.
+          held: !!document.querySelector('#view .q.done #next'),
+          inView: R.top >= 0 && R.left >= 0 && R.bottom <= innerHeight + 1 && R.right <= innerWidth + 1,
+          wide: document.documentElement.scrollWidth > innerWidth,
+          // One row, equal widths.
+          row: B.every(x => Math.abs(x.top - B[0].top) < 2 && Math.abs(x.width - B[0].width) < 2),
+          at: B.map(x => [x.left + x.width / 2, x.top + x.height / 2])
+        };
+      });
+      if (!shown) {
+        if (inline) asked.push({inline});
+        continue;
+      }
+      const it = await p.evaluate(q => {
+        const it = PULSEQ.find(x => x.id === q);
+        return it ? [it.q, it.a.map(x => x[0])] : null;
+      }, shown.q);
+      // On the first prompt, a reflex tap at once (an answer's centre, a real mouse tap) and Enter: nothing happens.
+      const k = asked.length % shown.at.length,
+        slow = !asked.some(x => !x.inline);
+      let early = null;
+      if (slow) {
+        await p.mouse.click(...shown.at[k]);
+        await p.keyboard.press('Enter');
+        early = await p.evaluate(() => ({
+          up: !!document.querySelector('.unlock.pulsecard'),
+          wait: !!document.querySelector('.unlock.pulsecard [data-pulse]:disabled'),
+          n: JSON.parse(localStorage.getItem('imr-evq') || '[]').filter(x => x.k === 'pulse').length
+        }));
+      }
+      await p.waitForFunction(() => WAITED !== null, null, {timeout: 10000}).catch(() => {});
+      const waited = await p.evaluate(() => [WAITED, PULSE.WAIT]);
+      await p.keyboard.press('Enter');
+      const enter = await p.evaluate(() => ({
+        up: !!document.querySelector('.unlock.pulsecard'),
+        n: JSON.parse(localStorage.getItem('imr-evq') || '[]').filter(x => x.k === 'pulse').length,
+        // After the wait, each button is what a tap at its centre reaches.
+        hit: [...document.querySelectorAll('.unlock.pulsecard [data-pulse]')].every(b => {
+          const r = b.getBoundingClientRect();
+          return !b.disabled && b.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+        })
+      }));
+      let tap = '';
+      if (way === 'tap') {
+        tap = shown.opts[k];
+        await p.mouse.click(...shown.at[k]);
+      } else if (way === 'notnow') await p.click('.unlock.pulsecard .pulsex');
+      else if (way === 'esc') await p.keyboard.press('Escape');
+      else await p.evaluate(() => (location.hash = 'progress'));
+      await p.waitForTimeout(300);
+      const after = await p.evaluate(() => ({
+        up: !!document.querySelector('.unlock.pulsecard'),
+        next: !!document.querySelector('#view .q:not(.done) [data-c]:not([disabled]), #view .q:not(.done) .tyform'),
+        h: location.hash
+      }));
+      const ev = (await pev()).slice(before).map(x => ({r: x.r, src: x.src, m: x.m, lv: typeof x.lv}));
+      asked.push({...shown, at: undefined, it, way, tap, early, waited, enter, after, ev, n0: before});
+      if (way === 'leave') {
+        await p.evaluate(() => (location.hash = 'quiz'));
+        await p.waitForTimeout(300);
+      }
     }
+    const want = x => ['shown', x.way === 'tap' ? x.tap : x.way === 'leave' ? 'none' : 'skip'];
     const bad = asked.filter(
       (x, k) =>
-        !x.want ||
+        x.inline ||
+        !x.it ||
+        !x.dialog ||
+        x.kind !== 'feedback' ||
         x.title !== 'Quick question' ||
-        x.text !== x.want[0] ||
-        x.opts.join() !== x.want[1].join() ||
-        !x.x ||
-        !x.before ||
+        x.text !== x.it[0] ||
+        x.opts.join() !== x.it[1].join() ||
+        x.notnow !== 'Not now' ||
+        !x.wait ||
+        !x.held ||
         !x.inView ||
-        !x.hit ||
+        x.wide ||
         !x.row ||
-        !x.panel ||
-        (x.tap && x.thanks !== 'Thank you!') ||
-        x.ev.map(e => e.r).join() !== ['shown', x.tap || 'none'].join() ||
+        (k === 0 ? !x.early || !x.early.up || !x.early.wait || x.early.n !== x.n0 + 1 : x.early) ||
+        !(x.waited[0] >= x.waited[1] - 5) ||
+        !x.enter.up ||
+        x.enter.n !== x.n0 + 1 ||
+        !x.enter.hit ||
+        x.after.up ||
+        (x.way === 'leave' ? x.after.h !== '#progress' : !x.after.next) ||
+        x.ev.map(e => e.r).join() !== want(x).join() ||
         x.ev.some(e => e.src !== x.q || e.m !== 'quiz' || e.lv !== 'number') ||
         (k && x.q === asked[k - 1].q)
     );
     // The first prompt at 35 answers, or a few later when an achievement toast it waits for came with that answer (the
     // wrong answers here move the toasts; the exact 35 is checked by the new-player run further down).
     const late = !asked.length || asked[0].a < 35 || asked[0].a > 40;
-    if (asked.length < 9 || late || asked[0].q !== 'are' || bad.length || new Set(asked.map(x => x.q)).size < 5)
-      fails.push(`${vw}px one-tap bank: ${JSON.stringify(asked.length < 9 || late ? asked : bad.length ? bad : asked.map(x => x.q))}`);
+    if (asked.length < N || late || asked[0].q !== 'are' || bad.length || new Set(asked.map(x => x.q)).size < 5)
+      fails.push(`${vw}px one-tap card: ${JSON.stringify(asked.length < N || late ? asked : bad.length ? bad : asked.map(x => x.q))}`);
     await c.close();
   }
   // The right answer's celebration (app.css .cheer) plays on the choice and on "✓ Yes", and not at all with
@@ -1736,7 +1835,8 @@ async function basicsTeach(b, base) {
     if (gl.titles || !gl.cards || !gl.def || gl.h !== '#genera') fails.push(`${w}px Genera glossary: ${JSON.stringify(gl)}`);
     // The Coral Finder's "on the slate" count is the app's (slateGenera: Millepora in), not a count of its own.
     await p.evaluate(() => (location.hash = 'finder'));
-    await p.waitForTimeout(600);
+    // The Finder's own files may still be on their way (its tier, app.js need): wait for its start screen, not a fixed time.
+    await p.waitForSelector('#view [data-show]', {timeout: 15000}).catch(() => {});
     const fd = await p.evaluate(() => [document.querySelector('[data-show]')?.textContent || '', slateGenera().length]);
     if (!fd[0].includes(`(${fd[1]} on the slate)`)) fails.push(`${w}px Coral Finder slate count: "${fd[0]}", expected ${fd[1]}`);
     // The one-tap question after 35 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
@@ -1848,8 +1948,10 @@ async function basicsTeach(b, base) {
         });
         await q2.evaluate(() => document.querySelector('#view [data-c]').click());
         await q2.waitForSelector('#next');
-        if (await q2.$('#after .pulse')) at = i;
-        else await q2.evaluate(() => document.getElementById('next').click());
+        // The one-tap question comes as a card at Next (2026-11-03), never inline in the feedback.
+        if (await q2.$('#after [data-pulse]')) at = -i;
+        await q2.evaluate(() => document.getElementById('next').click());
+        if (!at && (await q2.$('.unlock.pulsecard'))) at = i;
       }
       if (at !== 35) fails.push(`${w}px one-tap question: shown at answer ${at}, expected 35`);
       else {
@@ -1936,11 +2038,14 @@ async function basicsTeach(b, base) {
       await q3.close();
       // Coral Finder: the "Compare A and B" button is readable (its text was the colour of its background).
       await q2.evaluate(() => (location.hash = 'finder|form=M'));
-      await q2.waitForTimeout(800);
+      // Waits on the Finder's state, not on time: its list drawn, then each Compare taken (aria-pressed), then the link.
+      await q2.waitForSelector('#view [data-cmpk]', {timeout: 15000}).catch(() => {});
       for (const k of [0, 2]) {
-        await q2.locator('button:has-text("Compare")').nth(k).click();
-        await q2.waitForTimeout(300);
+        const cb = q2.locator('#view button[data-cmpk]').nth(k);
+        await cb.click();
+        await q2.waitForFunction(e => e.getAttribute('aria-pressed') === 'true', await cb.elementHandle(), {timeout: 5000}).catch(() => {});
       }
+      await q2.waitForSelector('.fdcmp .next', {timeout: 5000}).catch(() => {});
       const cc = await q2.evaluate(() => {
         const n = document.querySelector('.fdcmp .next'),
           c = n && getComputedStyle(n);
