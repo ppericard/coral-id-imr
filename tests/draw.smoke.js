@@ -12,7 +12,9 @@
 //   "Not now" kept, once on opened one card at a time, never counted in the progress, Off out of the draw;
 // - typed questions (model.js TYPED): sometimes on a genus well on its way, never under TYPED.from; logged quiz|t with
 //   the genus read as the answer; a typo read, a word that is no genus refused, a typed miss against both genera, "I
-//   don't know" a miss for the genus shown only; the mastery exam needs TYPED.exam typed right answers.
+//   don't know" a miss for the genus shown only; the mastery exam needs TYPED.exam typed right answers;
+// - the custom quiz (quiz.js planPhoto on its selection): only genera picked are asked, one not met with its card, the
+//   choices from the selection, topped up to 4 only under 4 genera picked.
 // Like pages.smoke.js it needs Playwright (CI installs it in a temporary folder; no package.json). Locally:
 // node tests/draw.smoke.js
 const http = require('http'),
@@ -934,6 +936,41 @@ const server = http.createServer((req, res) => {
       rematch = null; // no "Again" left over from the section before
       HOLDS = h0;
     }
+    // Custom quiz (model.js customDraw, customChoices; quiz.js planPhoto on CUSTOM_H): the real draw on the real data,
+    // a new player and a strong one. Every genus asked is one picked, a genus not met yet comes with its own card (it is
+    // the one asked), the choices come from the selection when it has 4 genera or more, and a 2-genus selection is
+    // topped up to 4 distinct choices with the other picked genus among them; the photo quiz's offers never show there.
+    {
+      const sel4 = ['Pocillopora', 'Stylophora', 'Seriatopora', 'Acropora', 'Porites'],
+        sel2 = ['Fungia', 'Danafungia'];
+      for (const strong of [false, true])
+        for (const sel of [sel4, sel2]) {
+          P = strong ? Object.fromEntries(genera.map(n => [n, {ok: 20, ko: 2, h: '1111011111', th: 2, pg: 0.7}])) : {};
+          if (strong) P[LEVEL] = {ok: 400, ko: 40, th: 2};
+          store.set(INTRO.KEY, {});
+          INTROS = null;
+          rematch = null;
+          NEXTQ = null;
+          store.set(CUSTOM.KEY, {g: sel, t: Date.now()});
+          for (let i = 0; i < 40; i++) {
+            const q = planPhoto(CUSTOM_H),
+              [cur, t, ch] = q,
+              tag = `custom quiz (${strong ? 'strong' : 'new'} player, ${sel.length} picked): ${t} [${ch.join(', ')}]`;
+            if (cur !== CUSTOM_H || !sel.includes(t)) fails.push(`${tag}: genus asked not picked`);
+            if (q.intro && (q.intro.join() !== t || !q.custom)) fails.push(`${tag}: card ${q.intro} with the question`);
+            if (!q.intro && !introduced(t)) fails.push(`${tag}: a genus not met asked without its card`);
+            if (q.intro) introAdd(q.intro, true, 'c');
+            if (!ch.includes(t) || new Set(ch).size !== ch.length) fails.push(`${tag}: choices`);
+            if (ch.length === 4 && sel.length >= 4 && ch.some(n => !sel.includes(n))) fails.push(`${tag}: a choice outside the selection`);
+            if (sel.length === 2 && !q.again && !q.auto && (ch.length !== 4 || !sel.every(n => ch.includes(n))))
+              fails.push(`${tag}: a 2-genus selection not topped up to 4 with both genera`);
+            if (!q.again && !q.auto && !q.typed && ch.length !== 4) fails.push(`${tag}: ${ch.length} choices`);
+          }
+        }
+      store.set(CUSTOM.KEY, null);
+      store.set(INTRO.KEY, {});
+      INTROS = null;
+    }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
   await b.close();
@@ -944,7 +981,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, starred genera after their references, prompt spacing.`
+    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, starred genera after their references, prompt spacing, custom quiz.`
   );
 })().catch(e => {
   console.error(e);

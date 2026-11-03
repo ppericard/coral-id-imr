@@ -23,6 +23,8 @@ const ROUTES = [
   'cmp-Pocillopora|Stylophora',
   'quiz',
   'quiz-duel',
+  'quiz-custom',
+  'quiz-custom|play',
   'pairs',
   'finder',
   'progress',
@@ -323,6 +325,90 @@ async function overlays(b, base) {
     });
     const want = reducedMotion === 'reduce' ? ['none', 'none'] : ['cheer', 'tickpop'];
     if (r.btn !== want[0] || r.yes !== want[1] || !r.next) fails.push(`right-answer celebration (${reducedMotion}): ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // Custom quiz (quiz.js viewCustom, quizCustom; 2026-11-03), on a phone: nothing picked at first (Start off), A-Z, photos
+  // picked and Clear all, a quick pick (a genus and its look-alikes), the IMR groups view and the search, the choice kept
+  // after a reload (in the view left), then a dozen questions all on the genera picked, logged quiz|s…; the Practice tabs fit the width.
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 844}}, seen);
+    await p.goto(base + '#quiz-custom');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('.cqtile');
+    const state = () =>
+      p.evaluate(() => ({
+        on: [...new Set([...document.querySelectorAll('.cqtile[aria-pressed="true"]')].map(b => b.dataset.g))].sort(),
+        start: !document.querySelector('[data-start]').disabled,
+        n: document.querySelector('.cqn b').textContent,
+        shown: [...new Set([...document.querySelectorAll('.cqtile:not([hidden])')].map(b => b.dataset.g))],
+        tabs: (m => m.scrollWidth <= m.clientWidth)(document.getElementById('modes')),
+        heads: document.querySelectorAll('.cqg:not([hidden]) .cqh').length,
+        tiles: [...document.querySelectorAll('.cqtile')].map(b => b.dataset.g)
+      }));
+    const s0 = await state();
+    for (const g of ['Acropora', 'Pocillopora', 'Porites']) await p.click(`.cqtile[data-g="${g}"]`);
+    const s1 = await state();
+    await p.click('[data-clear]');
+    const s2 = await state();
+    await p.selectOption('#cqlk', 'Pocillopora');
+    const s3 = await state(),
+      looks = await p.evaluate(() => cqLooks('Pocillopora', pool()).sort());
+    await p.click('[data-cv="imr"]');
+    const s4 = await state();
+    await p.fill('#cqq', 'acro');
+    const s5 = await state();
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('.cqtile');
+    const s6 = await state();
+    if (
+      s0.on.length ||
+      s0.heads || // A-Z by default: one grid, every genus in play once, in order (no grouping by growth form)
+      s0.tiles.join() !== [...s0.tiles].sort((a, b) => a.localeCompare(b)).join() ||
+      new Set(s0.tiles).size !== s0.tiles.length ||
+      s0.start ||
+      !s0.tabs ||
+      s1.on.join() !== 'Acropora,Pocillopora,Porites' ||
+      !s1.start ||
+      s1.n !== '3 genera' ||
+      s2.on.length ||
+      s2.start ||
+      s3.on.join() !== looks.join() ||
+      looks.length < 2 ||
+      s4.on.join() !== s3.on.join() ||
+      s4.heads < 5 || // the IMR lecture groups, their genera in view
+      [...s4.tiles].sort().join() !== [...s0.tiles].sort().join() ||
+      s5.shown.some(g => !/acro/i.test(g)) ||
+      !s5.shown.includes('Acropora') ||
+      s6.on.join() !== looks.join() ||
+      !s6.start
+    )
+      fails.push(`custom quiz selection: ${JSON.stringify({s0, s1, s2, s3, looks, s4, s5, s6})}`);
+    await p.click('[data-start]');
+    const asked = [],
+      modes = [];
+    for (let i = 0; i < 12; i++) {
+      await p.waitForSelector('#view .q:not(.done)');
+      const r = await p.evaluate(i => {
+        document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+        const t = SHOWNQ[1],
+          bs = [...document.querySelectorAll('#view [data-c]')];
+        if (bs.length) (i % 4 === 3 ? bs.find(b => b.dataset.c !== t) : bs.find(b => b.dataset.c === t)).click();
+        else {
+          const f = document.querySelector('#view .tyform');
+          f.querySelector('input').value = t;
+          f.requestSubmit();
+        }
+        const L = store.get(LOG0, []);
+        return {h: location.hash, t, m: (L[L.length - 1] || {}).m};
+      }, i);
+      asked.push(r.t);
+      modes.push(r.m);
+      if (r.h !== '#quiz-custom|play') fails.push(`custom quiz: question ${i + 1} on ${r.h}`);
+      await p.click('#next');
+    }
+    if (asked.some(g => !looks.includes(g)) || modes.some(m => !/^quiz\|s(\||$)/.test(m || '')))
+      fails.push(`custom quiz play: asked ${asked.join(', ')} (picked ${looks.join(', ')}); logged ${modes.join(', ')}`);
     await c.close();
   }
   return fails;

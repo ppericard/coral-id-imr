@@ -638,11 +638,12 @@ function weighted(list, met = introduced) {
   }
   return list[list.length - 1];
 }
-function nextTarget(list) {
+// draw: the photo quiz's progressive path (weighted); the custom quiz draws among its selection with customDraw.
+function nextTarget(list, draw = weighted) {
   let n,
     k = 0;
   do {
-    n = weighted(list);
+    n = draw(list);
   } while (n === last && list.length > 1 && ++k < 10);
   last = n;
   lastQs = [...lastQs, n].slice(-4);
@@ -992,5 +993,38 @@ const plausibleK = (t, choices) => {
   const tf = imrFormsOf(t);
   return Math.max(2, choices.filter(n => n === t || confusable(t, n) || imrFormsOf(n).some(f => tf.includes(f))).length);
 };
+// Custom quiz (Pierre, 2026-11-03): the photo quiz limited to the genera the player picks (quiz.js quizCustom, planPhoto;
+// docs/LEARNING.md "Custom quiz"). Everything else is the photo quiz's (photos, traps, typed questions, Again, duels,
+// the exam, the comeback); only the genus asked and the wrong choices change:
+// - the selection in play (customOf): the genera saved (CUSTOM.KEY, synced like the other imr-coral keys) that are in the
+//   game now (pool: the slate, and the bonus genera when on), in the game's order; fewer than CUSTOM.MIN: no quiz;
+// - the genus asked (customDraw): any selected genus, weighed as the photo quiz weighs the genera met (weight: not
+//   asked yet 10, to review, learning, learned 0.25, the exam's spacing); no opening path: the player chose them, so a
+//   genus not met yet is asked at once, its first-meeting card shown with that question (quiz.js);
+// - the wrong choices (customChoices): from the selection first, with the photo quiz's rules inside it (distractors:
+//   traps by level among the pairs most confused, else easy genera of other growth forms, genera met first), so a
+//   selected look-alike group drills itself; only a selection under 4 genera is topped up from the other genera in play,
+//   with the traps the selection could not give.
+const CUSTOM = {KEY: 'imr-coral-custom', MIN: 2};
+const customOf = (saved, play) => {
+  const S = new Set(Array.isArray(saved) ? saved : []),
+    L = play.filter(n => S.has(n));
+  return L.length >= CUSTOM.MIN ? L : null;
+};
+const customDraw = sel => wpick(sel, weight);
+function customChoices(t, sel, play, traps, known) {
+  const own = distractors(t, sel, traps, known);
+  if (own.length >= 3) return own;
+  const got = own.filter(n => known(n) && confusable(t, n)).length;
+  return [
+    ...own,
+    ...distractors(
+      t,
+      play.filter(n => !sel.includes(n)),
+      Math.max(0, traps - got),
+      known
+    )
+  ].slice(0, 3);
+}
 // Once the whole file is in (save, LEVEL and PMEM above): the progress saved before the photo memory, recalculated.
 memRecalcAll();
