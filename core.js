@@ -1443,10 +1443,10 @@
   // without opening it, which the log leaves out anyway). Answers logged without e and th (before sheet v5) count in
   // ok/ko/h only, and move no ability. The mastery exam is not replayed: replayedOf takes it from the saved copy.
   const MEM_LOGGED = Date.UTC(2026, 10, 3, 4, 46); // PR #387 merged: the app's logged e includes the photo memory
-  // From the known mix-ups (PR #425; 2026-11-04 02:00 Asia/Taipei, the instant of tools/abilityeval.js CF_FROM, which reads
-  // the sheet's wall clock): the app's logged e includes its mix-ups term (model.js confTerm), taken out again here with
-  // the replay's own.
-  const CF_LOGGED = Date.UTC(2026, 10, 3, 18, 0);
+  // From the known mix-ups (PR #425, live 2026-11-03 15:35 UTC: 23:35 Asia/Taipei, the instant of tools/abilityeval.js
+  // CF_FROM, which reads the sheet's wall clock; #426): the app's logged e includes its mix-ups term (model.js confTerm),
+  // taken out again here with the replay's own. An app not yet updated logs a few answers without it after that time.
+  const CF_LOGGED = Date.UTC(2026, 10, 3, 15, 35);
   function replayProgress(rows, o = {}) {
     const gen = o.gen || {},
       mem = memOf(o.mem),

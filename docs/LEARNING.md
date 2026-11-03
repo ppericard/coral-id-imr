@@ -1096,7 +1096,7 @@ of this question are counted after). **Only on a question with 3 or more plausib
 2-choice contrast questions of the pair (the Again right after the side-by-side montage, a duel) and the questions with
 easy choices were right more often than expected, not less. The sheet's full replay applies the same term (`core.js`
 `replayProgress`, rules version 2): from the player's record as replayed (offers and mix-ups per pair) and the pooled
-pairs it is given; from `CF_LOGGED` (2026-11-04 02:00 Taipei) the logged `e` already holds the app's term, taken out
+pairs it is given; from `CF_LOGGED` (2026-11-03 15:35 UTC, #425 live; `abilityeval` `CF_FROM`) the logged `e` already holds the app's term, taken out
 first. One difference: the replay's pooled score starts from the pair's prior without `CONF.FORM` (the sheet does not know
 the genera's growth forms), 0.03 instead of 0.08 for two genera sharing a form and nothing closer, so its term is larger
 on such a pair while its pooled offers are few, and the same as the game's once they are many; on every other pair it is
