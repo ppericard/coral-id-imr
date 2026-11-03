@@ -408,7 +408,6 @@
     "Ctenactis": {
       "add": {
         "ctenactis-cand-746237346": "wide",
-        "ctenactis-cf-65-00": "wide",
         "ctenactis-cand-269391531": "wide",
         "ctenactis-cand-269473492": "wide",
         "ctenactis-cand-269733839": "wide"
@@ -876,7 +875,6 @@
     "lithophyllon-medium-746236878": "U"
   },
   "exclude": {
-    "ctenactis-cand-269392275": "excluded",
     "duncanopsammia-cand-611582033": "excluded",
     "duncanopsammia-cand-611582046": "excluded",
     "fungia-wide-445316156": "excluded",
@@ -884,7 +882,6 @@
     "lithophyllon-macro-746237709": "excluded",
     "pavona-cand-746234999": "excluded",
     "pocillopora-cand-175099231": "excluded",
-    "pocillopora-cand-269469068": "excluded",
     "pocillopora-macro-745206187": "excluded",
     "tubastraea-cand-580500321": "excluded"
   },
