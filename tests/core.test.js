@@ -23,7 +23,8 @@ const {
   memFam,
   memOf,
   photoMemOf,
-  memRecalc
+  memRecalc,
+  scoreOf
 } = require('../core.js');
 const {loadCodeGs} = require('./gas.js');
 
@@ -658,7 +659,7 @@ test('photo memory: estimated from the trusted answers, shrunk to the prior whil
   assert.deepStrictEqual(photoMemOf(bot), {mem: MEM.PRIOR, memn: [0, 0, 0, 0]});
 });
 
-test('memRecalc: progress saved before the photo memory is corrected once, never raised, learned genera left alone', () => {
+test('memRecalc: progress saved before the photo memory is corrected once, never raised, learned genera left alone, BKT-era learned dropped', () => {
   const mem = [0, -0.44, -1.1, -1.7],
     rec = () => ({ok: 20, ko: 4, h: '1111011111', pg: 0.7, ps: {a: [4, 3], b: [3, 0], c: [1, 1], d: [1, 0]}});
   const s = rec();
@@ -682,6 +683,20 @@ test('memRecalc: progress saved before the photo memory is corrected once, never
   assert.deepStrictEqual([fresh.pg, learned.pg, old.pg], [0.5, 0.7, undefined]);
   assert.ok(fresh.pm && learned.pm && old.pm);
   assert.strictEqual(memRecalc(null, mem), false);
+  // Learned under BKT (no s.pg beside s.mx): the mark and any exam in course go, at every call, even on a record already
+  // marked (a copy pulled from another device); the bar falls back to the record's own (pgOf from s.h).
+  const bkt = {ok: 13, ko: 1, h: '1111111110', L: 0.9997, mx: 1, ex: {k: 2, v: [], at: 0}},
+    pulled = {ok: 11, ko: 0, h: '1111111111', L: 0.9996, mx: 1, pm: 1};
+  assert.strictEqual(memRecalc(bkt, mem), true);
+  assert.deepStrictEqual([bkt.mx, bkt.ex, bkt.pm], [undefined, undefined, 1]);
+  assert.ok(scoreOf(bkt) < 0.95, `${scoreOf(bkt)}`);
+  assert.strictEqual(memRecalc(pulled, mem), true);
+  assert.strictEqual(pulled.mx, undefined);
+  assert.strictEqual(memRecalc(pulled, mem), false, 'nothing left to change');
+  // Learned since (s.pg kept beside s.mx): left alone.
+  const now = {ok: 30, ko: 2, pg: 0.82, mx: 1762150000000, pm: 1};
+  assert.strictEqual(memRecalc(now, mem), false);
+  assert.strictEqual(now.mx, 1762150000000);
 });
 
 test('mergeProgress and mergeUsers: the photo memory mark travels with the progress it marks', () => {

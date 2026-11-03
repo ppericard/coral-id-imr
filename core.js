@@ -369,9 +369,23 @@
   // left alone (its exam showed photos never seen). Once per record: s.pm marks it (also set on a record that needed no
   // change) and travels with s.pg between devices (mergeProgress, mergeUsers), so no device corrects a record twice; a
   // record made after the change is marked at its first answer (quiz.js answer) and never corrected. Returns true when
-  // it marked the record now.
+  // it marked the record now or dropped a former learned mark (below).
+  // Learned under the former model (Pierre, 2026-11-03: "I find it hard to believe that the two genera marked as learned
+  // really are"): a genus learned on a record without s.pg passed its exam under BKT (before 2026-11-02), whose
+  // estimate reached 95% after about 4 right answers, so the exam came at once, mostly against easy choices; replayed
+  // with today's rules (tools/memreplay.js) those genera stand at 78-83%, under the exam's entry. Their learned mark
+  // (and any exam in course) is dropped, silently, at every call (load, pull, answer: a copy from another device that
+  // still has it loses it too); the genus keeps its bar from its record (pgOf, s.h) and takes the exam again. An exam
+  // passed since (s.pg kept beside s.mx) is left alone. The achievements it earned stay.
   function memRecalc(s, mem) {
-    if (!s || typeof s !== 'object' || s.pm) return false;
+    if (!s || typeof s !== 'object') return false;
+    let old = false;
+    if (s.mx && typeof s.pg !== 'number') {
+      delete s.mx;
+      delete s.ex;
+      old = true;
+    }
+    if (s.pm) return old;
     s.pm = 1;
     if (s.mx || typeof s.pg !== 'number' || !(s.pg > 0)) return true;
     const e = x => 0.25 + 0.75 / (1 + Math.exp(-x));
@@ -884,7 +898,8 @@
   // (s.h), from 0, a right answer weighed 2/3 (what it proved is not known: the middle weight, a 4-choice question
   // without look-alike or 2 choices with one). Simulated, that is close for a beginner and below the live value for a
   // strong player (never above it by much): 10 right answers in a row give 0.65, 77% on the bar, so no genus enters the
-  // exam on old answers alone. A genus already learned (s.mx, its exam passed) stays learned, at the exam entry.
+  // exam on old answers alone. A genus learned on such a record lost it (memRecalc, 2026-11-03: its exam was passed under
+  // BKT); until that runs, it counts at the exam entry.
   const PROG = {A: 0.15, M: 0.8, LOOK: 0.5, OLD: 0.67};
   const pgStep = (g, good, w) => Math.round((g + PROG.A * w * ((good ? 1 : 0) - g)) * 1e4) / 1e4;
   function pgOf(s) {

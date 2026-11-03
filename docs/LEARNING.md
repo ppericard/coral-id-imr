@@ -512,8 +512,8 @@ is a good mastery criterion.
   replay against the live value after 1000 questions, genera with 10 answers or more, misses there weighed as right
   answers, so in full a little lower still): +0.03 for a beginner, −0.07 for
   a lecture-level RA, −0.11 a strong RA, −0.21 an expert (weight 1 would overstate a beginner by 0.15); 10 right in a
-  row give 0.65, 77% on the bar: no genus enters the exam on old answers alone. A learned genus (`s.mx`) stays learned,
-  at the exam's entry. The record is rewritten at the genus's next answer. On the base runs (BKT, 300 questions, 6
+  row give 0.65, 77% on the bar: no genus enters the exam on old answers alone. A genus learned on such a record passed
+  its exam under BKT and loses it (below, "Learned under the former model"); until then it counts at the exam's entry. The record is rewritten at the genus's next answer. On the base runs (BKT, 300 questions, 6
   seeds) this recalculation moves the overall %: beginner 21-30% → 23-28%, lecture-level RA 35-41% → 33-37%, strong
   RA 32-53% → 27-44%, expert 65-82% → 45-51%; genera at 95% or more before their exam all drop under it. A fuller
   recalculation for signed-in players could replay their whole answer log from the sheet's Answers tab (mode `|kN`,
@@ -693,6 +693,14 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   the real repeat rates (6-22%) the difference is about a point. `tools/memreplay.js` prints both, per genus, on the
   real log. Checked by `tests/core.test.js` (once, never raised, learned left alone, the mark through both merges) and
   `tests/draw.smoke.js` (applied once at load, saved, no pop-up, not again at the next answer).
+- **Learned under the former model** (Pierre, 2026-11-03, doubting that one player's two learned genera really were):
+  a genus learned on a record without `s.pg` passed its exam under BKT (before 2026-11-02). BKT's estimate reached 95%
+  after about 4 right answers, so the exam came at once and mostly against easy choices. Replayed with today's rules
+  (`tools/memreplay.js` on the sheet's log), the only two such genera on the sheet stand at 78% and 83%, under the
+  exam's entry. `memRecalc` drops their `s.mx` (and any `s.ex`) silently, at every call (load, pull, answer), so a
+  copy pulled from another device loses it too; the genus keeps its bar from its record and takes the exam again under
+  today's rules. An exam passed since (`s.pg` beside `s.mx`) is left alone; the achievements it earned stay
+  (`newAch` only adds). The sheet's Learned column and leaderboard % follow at the player's next sync.
 - **What it does to the current players**: `node tools/memreplay.js answers.json [--player id] [--mem ...]` replays
   the admin's answer log (`readAnswers`, saved to a file) under the old rule and the new one: the offsets these answers
   give, how far the photo ratings move, and per player the bar of each genus, their overall % and their opening hold,
