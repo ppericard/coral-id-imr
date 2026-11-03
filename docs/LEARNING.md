@@ -1105,7 +1105,7 @@ error, 95% interval):
 | term > 0, 3-4 choices (88) | 0.78 / 0.67, 0.6974 | p 0.72, −0.0061 ± 0.0236 | p 0.71, −0.0098 ± 0.0264 [−0.062, +0.042] |
 | term > 0, 2 plausible (226) | 0.79 / 0.83, 0.4288 | p 0.73, +0.0369 ± 0.0093 | (not applied) |
 | 4 choices (487) | 0.79 / 0.76, 0.5489 | +0.0018 ± 0.0046 | −0.0008 ± 0.0048 |
-| level ≥ 0.75 (656) | 0.83 / 0.85, 0.4171 | +0.0046 ± 0.0034 | −0.0010 ± 0.0030 |
+| level ≥ 0.75 (645) | 0.83 / 0.85, 0.4189 | +0.0052 ± 0.0037 | −0.0010 ± 0.0031 |
 
 - Where it applies (88 answers) the expectation moves from 0.78 to 0.71 for 0.67 right: calibration clearly better, the
   log-loss better on average but within its noise (few answers). Overall within the noise of the app's (−0.0009 ±
@@ -1114,6 +1114,9 @@ error, 95% interval):
 - On every question (as first proposed) it was worse (+0.0053 ± 0.0026), all of it from the 2-choice questions: right
   83% where it predicted 73%. Kept off there. Also measured: the term on the prediction only, not the steps (`+Y`), and
   summed over the choices (`+Z`): the same picture.
+- The level bands come from the reference level stepped with the difficulty before the term, the same answers for every
+  rule; and from the release on (`tools/abilityeval.js` `CF_FROM`, the sheet's clock) the logged `e` already holds the
+  app's term, which the replay takes out of the recovered difficulty before a rule adds its own (Codex review #425).
 
 **3b. The Again queue** (`quiz.js` `CONTRAST.Q` 3, `rematchAdd`): up to 3 pairs wait, oldest first, each still
 `CONTRAST.GAP` after its mix-up and after the last contrast question; a newer mix-up never pushes an older one out (with

@@ -88,6 +88,9 @@ const kOf = (mode, choices) => {
 // newer ones from another device, so the tab's order is not the time order. A time that cannot be read keeps the
 // position of the row before it.
 const timeOf = x => (typeof x === 'number' ? x : x instanceof Date ? x.getTime() : Date.parse(String(x || '').trim().replace(' ', 'T')));
+// The app logs its own confusion term inside e from the release of the known mix-ups (PR #425; the log's clock, as the
+// sheet tab writes it, Asia/Taipei): before it, e has none. --cf-from moves it.
+let CF_FROM = timeOf('2026-11-04 02:00');
 function normalise(raw) {
   raw = raw.filter(r => r && r[0] && r[0] !== 'Name');
   let last = -Infinity;
@@ -101,8 +104,8 @@ function normalise(raw) {
     .map(x => x[0]);
   return raw.map((r, i) =>
     typeof r[1] === 'number'
-      ? {p: r[0], i, t: r[2], a: r[3], ok: Number(r[4]) ? 1 : 0, mode: r[5], e: r[7], th: r[8], ch: r[10]}
-      : {p: r[0], i, t: r[2], a: r[3], ok: String(r[4]) === '1' ? 1 : 0, mode: r[5], e: r[8], th: r[9], ch: r[11]}
+      ? {p: r[0], i, t: r[2], at: timeOf(r[1]), a: r[3], ok: Number(r[4]) ? 1 : 0, mode: r[5], e: r[7], th: r[8], ch: r[10]}
+      : {p: r[0], i, t: r[2], at: timeOf(r[1]), a: r[3], ok: String(r[4]) === '1' ? 1 : 0, mode: r[5], e: r[8], th: r[9], ch: r[11]}
   );
 }
 const num = x => (x === '' || x === null || x === undefined ? NaN : Number(x));
@@ -125,14 +128,19 @@ function replay(list, variant, pooledOf = null) {
     P = {};
   // The confusion term (+X, +Y, +Z): the most (or the sum) over the choices offered of the player's excess on the pair.
   const cX = flags.includes('X') || flags.includes('Y') || flags.includes('Z'),
-    confTerm = r => {
-      if (!cX || !pooledOf || (flags.includes('M') && kOf(r.mode, r.ch) < 3)) return 0;
+    termOf = (r, sum, min3) => {
+      if (!pooledOf || (min3 && kOf(r.mode, r.ch) < 3)) return 0;
       const gs = String(r.ch || '')
         .split(/\s+/)
         .filter(x => x && x !== r.t && GAME.has(x))
         .map(x => C.confGap(C.pairConf(P, r.t, x), pooledOf(r.t, x)));
-      return !gs.length ? 0 : flags.includes('Z') ? gs.reduce((a, x) => a + x, 0) : Math.max(...gs);
-    };
+      return !gs.length ? 0 : sum ? gs.reduce((a, x) => a + x, 0) : Math.max(0, ...gs);
+    },
+    confTerm = r => (cX ? termOf(r, flags.includes('Z'), flags.includes('M')) : 0),
+    // The term the app itself put in the logged expectation (model.js confTerm: the most over the choices, 3 or more
+    // plausible ones) for the answers logged from CF_FROM on: taken out of the recovered difficulty, so a rule's own
+    // term is not counted twice (Codex review #425). Replayed from the same record as the app keeps it.
+    appTerm = r => (isFinite(r.at) && r.at >= CF_FROM ? termOf(r, false, true) : 0);
   M.P = P;
   const st = g => (P[g] = P[g] || {ok: 0, ko: 0}),
     off = {}, // rule d: genus offsets from the level
@@ -162,7 +170,7 @@ function replay(list, variant, pooledOf = null) {
       k = kOf(r.mode, r.ch),
       g = guess(k);
     if (!isFinite(e) || !isFinite(th0)) return;
-    const d0 = th0 - logit(Math.min(0.995, Math.max(0.005, (e - g) / (1 - g)))),
+    const d0 = th0 - logit(Math.min(0.995, Math.max(0.005, (e - g) / (1 - g)))) - appTerm(r),
       cf = confTerm(r),
       d = d0 + (flags.includes('Y') ? 0 : cf),
       good = r.ok === 1,
@@ -187,7 +195,7 @@ function replay(list, variant, pooledOf = null) {
     // or the rule replayed, so every run puts the same answers in each band (Codex review #415).
     if (!L0.seeded) Object.assign(L0, {ok: P[C.LEVEL].ok, ko: P[C.LEVEL].ko, th: P[C.LEVEL].th, seeded: 1});
     else L0[good ? 'ok' : 'ko']++;
-    refStep(L0, good, d, k);
+    refStep(L0, good, d0, k); // d0: the same difficulty whatever the rule, so every rule's bands hold the same answers (Codex review #425)
     // +L: the global level's step without the floor ELO.kmin (its K keeps shrinking with the answers, Pelánek's
     // uncertainty function; the volatility still lets it catch up with a lasting change).
     // +V: the level's step without the volatility boost (ELO.vg), so a run of misses does not speed its fall.
@@ -352,6 +360,7 @@ const VARIANTS = opt('variants', 'a,b,c,d,e,e+L').split(','),
   MIN = Number(opt('min', 20)),
   OUT = opt('json', null),
   PRIORS = opt('priors', null) ? JSON.parse(fs.readFileSync(opt('priors', null), 'utf8')) : null;
+if (opt('cf-from', null)) CF_FROM = timeOf(opt('cf-from', null));
 if (opt('model', null)) useModel(path.resolve(opt('model', null)));
   const J = JSON.parse(fs.readFileSync(file, 'utf8')),
   {players, res, ref, byPlayer} = evaluate(Array.isArray(J) ? J : J.rows || J.values || [], {variants: VARIANTS, min: MIN, only: ONLY, priors: PRIORS});
