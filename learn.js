@@ -338,20 +338,13 @@ function lookHub(name) {
 }
 // Starred genera are on the slate as look-alikes of surveyed genera. Those the lecture doesn't group are shown
 // in the lecture group most of their Coral Finder look-alikes belong to (ties: the first listed look-alike).
+// Millepora and the bonus genera: no lecture group (0). Both in core.js (lectureGroup, starRefs), where the opening of
+// genera reads the same references (model.js weighted: a ★ genus opens after the genera its card names).
 function shownGroup(n) {
-  const g = DATA.gen[n];
-  if (!g) return 0; // Millepora and the bonus genera: no lecture group
-  if (g.ig) return g.ig;
-  const L = g.look.filter(b => DATA.gen[b] && DATA.gen[b].ig),
-    c = {};
-  L.forEach(b => (c[DATA.gen[b].ig] = (c[DATA.gen[b].ig] || 0) + 1));
-  return L.reduce((best, b) => (c[DATA.gen[b].ig] > c[best] ? DATA.gen[b].ig : best), L.length ? DATA.gen[L[0]].ig : 0) || 0;
+  return lectureGroup(DATA, n);
 }
 const starNote = n => {
-  const g = DATA.gen[n];
-  if (g.n) return '';
-  const k = shownGroup(n),
-    L = g.look.filter(b => DATA.gen[b] && DATA.gen[b].ig === k);
+  const L = starRefs(DATA, n);
   return L.length ? `★ look-alike of ${L.map(b => `<i>${esc(b)}</i>`).join(', ')}` : '';
 };
 function pairs() {
