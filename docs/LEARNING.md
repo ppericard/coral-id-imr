@@ -1601,6 +1601,139 @@ Pierre's decision (2026-11-03): release with these settings ("quickly in product
 following each player's measured recall, no fixed ramp), its variants simulated with 5 seeds (AGENTS.md 14f). Any change
 is recorded here with its numbers.
 
+### Response time (measured 2026-11-03, no change made)
+
+Pierre, 2026-11-03: "the time I take to answer goes with the difficulty, either the photo is hard or the genus is hard
+for me. If I take long, it was harder, even when I got it right. If I enlarge, it is usually the photo (far colony
+shots). Response time is a real indicator; analyse it as a weak signal." Every answer logs its seconds (from the
+question's photos in view to the answer, any time spent on an enlarged photo included) and whether a photo was enlarged
+first since sheet v23 (2026-11-02). Measured here; nothing in the app uses them.
+
+**Data** (the sheet's Answers tab read 2026-11-03, read-only, 1,474 rows; players anonymised P1-P5 by number of timed
+answers): 1,386 answers of 9 players with 20 or more scored by `tools/abilityeval.js`; 662 of them timed, all from 5
+players (229, 133, 131, 85, 84 timed answers; median 4.5-11.5 s by player). z = log(seconds) minus the player's median
+log(seconds); typed questions left out (slower by design). The expectation compared is the replay of the app as it is
+(`abilityeval` rule `e+X+M`: global level + genus, the known mix-ups term), and the `Expected` the app logged. 95%
+intervals by bootstrap, over answers and over players (5 players: the second is rough).
+
+**1. The answer's own time says how it went, beyond the expectation** (654 timed, not typed):
+
+| Speed (z) | answers | right | expected (replay / logged) | right − replay expected [answers] [players] |
+| --- | --- | --- | --- | --- |
+| fast (z < −0.3) | 238 | 0.92 | 0.82 / 0.79 | +0.103 [+0.066, +0.135] [+0.065, +0.138] |
+| mid | 185 | 0.84 | 0.80 / 0.76 | +0.040 [−0.014, +0.088] [−0.027, +0.089] |
+| slow (z > 0.3) | 231 | 0.71 | 0.78 / 0.75 | −0.076 [−0.136, −0.021] [−0.166, +0.010] |
+| slow, no photo enlarged | 191 | 0.69 | 0.78 / 0.75 | −0.091 [−0.154, −0.025] [−0.186, +0.004] |
+
+- As a logistic term on top of the replay's expectation: −0.88 per unit of log time [−1.17, −0.59] (players
+  [−1.29, −0.45]): an answer 2.7 times slower than the player's usual has about 0.4 times the odds of being right. The
+  same with the photo's logged difficulty and the position in the session as controls (−0.92 [−1.24, −0.66]), with the
+  median from the player's earlier answers only, as an app would have it (−0.79 [−1.12, −0.48]), on 2-choice
+  (−0.75 [−1.27, −0.32]) and on 3-4-choice questions (−0.92 [−1.35, −0.52]).
+- **The same sign for all five players**: P1 −1.42 [−2.19, −0.87], P2 −0.40 [−1.11, +0.55], P3 −0.42 [−1.11, +0.23],
+  P4 −1.52 [−2.78, −0.69], P5 −1.02 [−2.24, −0.04]; clear for three, within the noise for two.
+- Time mostly follows the outcome: z = 0.55 − 0.41 × right − 0.08 × logit(expected), residual sd 0.72. The photo's
+  expected difficulty explains little of it (correlation with logit `Expected` −0.17).
+- **No fatigue**: the position in the session (a session ends after 30 minutes without an answer) does not move the
+  success beyond the expectation (−0.01 per log position [−0.25, +0.18]); players get faster as a session goes on
+  (median z +0.20 over its first 20 answers, −0.39 after 100).
+
+**2. What it says about the next answer**, the one an Elo step has to predict:
+
+| Previous answer on the same genus | answers | right | expected | right − expected [answers] [players] |
+| --- | --- | --- | --- | --- |
+| right, fast | 174 | 0.91 | 0.83 | +0.073 [+0.029, +0.117] [+0.030, +0.104] |
+| right, mid | 118 | 0.86 | 0.81 | +0.051 [−0.016, +0.109] [+0.012, +0.116] |
+| right, slow | 121 | 0.79 | 0.81 | −0.023 [−0.100, +0.052] [−0.097, +0.041] |
+| missed (fast / mid / slow) | 15 / 18 / 50 | 0.80 / 0.83 / 0.78 | 0.73 / 0.75 / 0.75 | too few to read |
+
+- A fast right answer is stronger evidence than the Elo's step gives it, a slow right one weaker: the logistic term of
+  the previous right answer's z on the next one on its genus is −0.39 [−0.80, −0.00] (players [−0.70, +0.11]), less
+  than half its weight on the answer itself, and not yet clear across players.
+- **The next answer overall** (any genus, same session): nothing (+0.10 [−0.17, +0.40]): speed tells about the genus,
+  not about a passing state of the player.
+
+**3. Enlarged photos: not usable yet.** 41 timed answers had a photo enlarged, 35 of them from two players, and the
+habit differs hugely by player (P2 25/130, P5 10/84, P1 4/229, P4 2/85, P3 0/126). The visible enlarge mark and its
+one-time hint came at 2026-11-03 20:24 (sheet clock), and too few answers came after it (P1 1/44, P5 3/31; their apps
+may not have updated yet). An enlarged answer is slow (mean z +0.98: the time spent enlarged is in the seconds), and,
+with its time as a control, it went neither better nor worse than expected (+0.68 [−0.13, +1.85]); one player's were
+right more often than expected (P2 +0.08), another's less (P5 −0.21, 10 answers). It can only ever be read against the
+player's own rate of enlarging, and from that release on, never as an absolute signal. The time rules below were also
+replayed with no time effect on an enlarged answer (`+N`): the same result.
+
+**4. Time as a weak signal in the Elo** (`tools/abilityeval.js`, options with a number; the prediction of an answer
+never uses its own time, only the step after it does). z against the median of the player's own earlier timed answers
+(from their 11th; an answer without time, a typed one or one of the first 10: factor 1, as the 4 players without any
+timed answer):
+
+- `+Tk`: a right answer's genus step times w = clamp(1 − k z, 0.5, 1.5) (fast > 1, slow < 1), misses unchanged;
+  `+Sk` the same w on misses (a fast miss steps further down); `+G` the level's step too.
+- `+Hh`: the speed-accuracy score of Math Garden (Klinkenberg et al. 2011, "high speed, high stakes"; Maris & van der
+  Maas 2012): s = (2x − 1)(1 − t/D), whose expectation is coth(c) − 1/c with P(right) = σ(c), step K h (s − E s). The app
+  has no time limit: D is taken as e times the player's median (z capped at 1). It fits the shape roughly (by speed
+  quintile: right 0.93 / 0.88 / 0.83 / 0.83 / 0.64; the score's own expectation given the time 0.86 / 0.84 / 0.82 /
+  0.77 / 0.69; the Elo's 0.82-0.79 throughout).
+- `+Uc`: every right answer's genus step times c, whatever the time: a control, since the app's expectation runs a
+  little low (0.79 for 0.82 right) and any rule that makes the steps up bigger could look good for that alone.
+- k, h and c chosen by **leave one player out**: each player is scored with the value best on the other players
+  (`--grid`), never fitted on the answers scored; each fold replays the other players again with pooled mix-up scores
+  that leave out the held-out player's answers too, and the level bands' reference is seeded the same way whatever the
+  rule (Codex review #431).
+
+Paired log-loss difference per answer against the app (`e+X+M`, log-loss 0.4695 on 1,386 answers), × 10⁻³, ± its
+standard error [95%]:
+
+| Group (answers) | `+T`, k by player out | **`+T+G`** | `+S` (misses too) | `+H` (speed-accuracy) |
+| --- | --- | --- | --- | --- |
+| all (1386) | −1.58 ± 0.60 [−2.75, −0.41] | **−2.15 ± 0.72 [−3.57, −0.73]** | +0.62 ± 0.70 | −2.41 ± 2.37 [−7.05, +2.23] |
+| 5 timed players (1020) | −2.15 ± 0.81 | −2.93 ± 0.98 [−4.85, −1.01] | | |
+| 2 choices (808) | −1.65 ± 0.57 | −2.22 ± 0.69 | +0.19 ± 1.01 | −6.74 ± 2.65 |
+| 3-4 choices (570) | −1.58 ± 1.20 | −2.15 ± 1.45 | +0.92 ± 0.86 | +2.96 ± 4.28 |
+| level < 0 (222) | −0.31 ± 0.54 | −0.03 ± 0.50 | +1.56 ± 1.07 | +6.91 ± 4.22 |
+| level 0-0.75 (398) | −1.69 ± 0.81 | −2.43 ± 1.08 | +0.27 ± 0.56 | −1.91 ± 2.47 |
+| level ≥ 0.75 (766) | −1.89 ± 0.98 | −2.63 ± 1.17 | +0.53 ± 1.19 | −5.36 ± 3.90 |
+| after a false alarm (175) | −1.93 ± 2.75 | −2.59 ± 3.18 | +1.25 ± 2.66 | +4.24 ± 7.09 |
+| after a fast right (141) | −6.34 ± 2.93 | −8.09 ± 3.51 | −2.35 ± 3.18 | −13.75 ± 15.85 |
+| after a slow right (133) | −4.73 ± 3.97 | −6.13 ± 4.74 | +3.06 ± 4.28 | −9.71 ± 11.86 |
+
+- **`+T+G` is the best**: k chosen 1.5 for 8 of the 9 players left out, 2 for one (the weight then mostly sits at its bounds: 1.5 for
+  an answer about 1.3-1.4 times faster than usual or more, 0.5 for one as much slower), the mean expectation unchanged
+  (0.79), no group worse, and all five timed players better (P1 −10.0 ± 3.7, P4 −3.9 ± 2.4, P5 −1.8 ± 1.1, P2
+  −0.3 ± 2.2, P3 −0.1 ± 0.8; bootstrap over players [−5.35, −0.20]). A fixed small k does part of it: k 0.25 −1.09 ±
+  0.31, 0.5 −1.72 ± 0.51, 1 −2.13 ± 0.67.
+- **It is the time, not bigger steps up**: the constant boost alone (`+U`, c 1.5-2 chosen) is within its noise (−2.22 ±
+  2.15) and worse after a slow right (+15.4 ± 11.3); time on top of it still gains −2.02 ± 0.81 [−3.61, −0.44].
+- Scaling the misses too (`+S`) is worse: a fast miss is no stronger evidence (few of them: about 1 in 6 timed
+  misses). The speed-accuracy score (`+H`) helps the 2-choice questions but costs the players below level 0 (+6.9 ±
+  4.2) and is no better overall: kept as a measure, not a candidate.
+- **Small**: −0.0022 per answer is 0.5% of the log-loss, a quarter of the global level + genus change (−0.0085,
+  "Global level and genus"). Several rule families were tried on the same answers, so the best one's interval is a
+  little optimistic.
+
+**Simulation**: `tools/learnsim.js` has no response time (its learner clicks a choice; the app's seconds are not
+modelled), so a time rule changes nothing there (every answer has factor 1) and the AGENTS.md 14g check cannot be run.
+What it would need, before any time rule ships: the learner's time to answer drawn from what it knows, e.g. log t =
+μ_player + a − b × right − c × logit(its true chance on the photo) + noise (sd about 0.7) and, while enlarged, about
++1 log unit, with b, c set so that replaying simulated logs with `abilityeval` gives back the real coefficients above
+(−0.88 on the answer, −0.39 on the next one on the genus); then the time-weighted step on the four profiles, 5 seeds,
+before and after (estimation error, genera learned, right %).
+
+**Conclusion.** Time is informative beyond correctness: on the answer itself clearly and for every player; on the next
+answer on the genus weakly (fast right answers are under-credited). As a weak signal in the Elo step (right answers'
+genus and level steps times clamp(1 − k z, 0.5, 1.5)) it would improve the next-answer prediction by about 0.002 per
+answer (0.5%), carried mostly by two players, on 662 timed answers of 5 players. Not shipped: too few timed answers and
+players, no way to simulate it yet, and the ability would then depend on time, which AGENTS.md rule 12 and "Considered
+and not adopted" rule out today (Pierre's call). Next (ROADMAP "Response-time signal"): measure again at about 5,000
+timed answers (Pierre's threshold for weak photo signals), with at least 10 players of 100 timed answers each: ship
+`+T+G` (k by leave one player out, likely 0.5-1 then) only if the gain holds (95% interval below 0 by answers and by
+players, no level band or format worse), after the learnsim time model above, and with Pierre's OK on rule 12.
+Enlargement: re-read then, against each player's own rate, from the 2026-11-03 20:24 release.
+
+Reproduce: `node tools/abilityeval.js answers.json --variants 'e+X+M,e+X+M+T*,e+X+M+T*+G,e+X+M+S*,e+X+M+H*,e+X+M+U*'
+--grid '0,0.1,0.2,0.3,0.5,0.75,1,1.5,2,3'` (the `+H` row with grid 0-1.5, the `+U` row with 1-2; the answer-level
+tables in sections 1-3 come from a read-only script kept outside the repo).
+
 ## Pooled statistics: photo difficulty and confusions (sheet v17-v18, 2026-11-02; photo memory v26, 2026-11-03)
 
 Photo difficulty feeds every player's game (which photos, how hard), and confusions pick the traps. They must reflect
@@ -2014,7 +2147,9 @@ What it says, on this learner:
 - **Coded tracks or tiers** (beginner / RA / expert modes, a fixed genus order, fixed difficulty per genus): ruled out by
   Pierre. Every threshold above is continuous or performance-driven.
 - **Time criteria** for progress, mastery or ability (response time, spaced-repetition days, decay): ruled out
-  (AGENTS.md rule 12). The one exception, time to plan the questions after a break, is the comeback above.
+  (AGENTS.md rule 12). The one exception, time to plan the questions after a break, is the comeback above. Response
+  time as a weak signal on the Elo step was measured on 2026-11-03 at Pierre's request ("Response time"): informative,
+  a small gain, waiting for more data and for his call on this rule.
 
 ## Simulation (`tests/profiles.smoke.js`, CI)
 
@@ -2426,3 +2561,8 @@ is not in the simulation.
   pp. 1599-1608. ACM. <https://doi.org/10.1145/1518701.1518946>
 - Bolsinova, M. et al. (2025). Keeping Elo alive. *British Journal of Mathematical and Statistical Psychology*.
   <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12784335/>
+- Klinkenberg, S., Straatemeier, M., van der Maas, H. L. J. (2011). Computer adaptive practice of Maths ability using a
+  new item response model for on the fly ability and difficulty estimation. *Computers & Education* 57(2), 1813-1824.
+  <https://doi.org/10.1016/j.compedu.2011.02.003>
+- Maris, G., van der Maas, H. (2012). Speed-accuracy response models: scoring rules based on response time and
+  accuracy. *Psychometrika* 77(4), 615-633. <https://doi.org/10.1007/s11336-012-9288-y>
