@@ -2,7 +2,10 @@
 # elsewhere in the Philippines for genera with few Dauin photos, nearest first: within REGION_KM of Dauin (Negros, Cebu,
 # Bohol, Siquijor, northern Mindanao), then the rest of the country. Never outside the Philippines (Pierre, 2026-11-03:
 # a species never seen in the Philippines must not come in through a wider search).
-# Captive observations (aquariums) are left out at the source (captive=false). Accepted IDs: Research Grade, or a genus-level community
+# Captive observations (aquariums) are left out at the source (captive=false).
+# Last resort (Pierre, 2026-11-03: "si vraiment on est en galère … seulement si l'espèce est confirmée aux Philippines"):
+# when the Philippines tiers leave room (nothing more there), Research Grade photos taken elsewhere, but only of species
+# with Research Grade observations in the Philippines (iNaturalist species counts), at most WORLD_CAP waiting (loc world). Accepted IDs: Research Grade, or a genus-level community
 # ID (Needs ID, at least 2 identifications agreeing on the genus or below: iNat needs 2+ IDs for a community taxon).
 # Caps (Pierre, 2026-10-31, so the pile to sort stays small): at most DAUIN_CAP Dauin observations waiting per genus,
 # Philippines ones only while the genus has fewer than POOR Dauin photos, at most PH_CAP waiting. Each observation brings
@@ -25,7 +28,7 @@ SCLERACTINIA = 47532  # iNaturalist taxon for stony corals; guards against homon
 DAUIN = 'lat=9.19&lng=123.26&radius=40'
 REGION_KM = 250  # Pierre, 2026-11-03: "un rayon de 200 km autour de Dauin ou 300 km", then all the Philippines
 REGION = f'lat=9.19&lng=123.26&radius={REGION_KM}'
-DAUIN_CAP, PH_CAP, PER_OBS = 15, 6, 12
+DAUIN_CAP, PH_CAP, WORLD_CAP, PER_OBS = 15, 6, 6, 12
 # One-off backlog runs (Pierre, 2026-11-01: "fetch a good backlog quickly, mainly for the genera that lack photos"):
 #   python3 tools/fetch_local.py --dauin 30 --ph 20 --ph-all [Genus...]
 # --dauin / --ph raise the caps (observations waiting), --ph-all fetches Philippines candidates whatever the Dauin count.
@@ -65,14 +68,23 @@ for g in GEN:
     T = [t for t in get(f'https://api.inaturalist.org/v1/taxa?q={g}&rank=genus&per_page=10')['results'] if t['name'] == g and (SCLERACTINIA in t.get('ancestor_ids', []) or (g in NONSCL and t.get('iconic_taxon_name') == 'Animalia'))]
     if not T: print('no taxon', g); continue
     # The region around Dauin fills the Philippines room first; the whole country only takes what room is left.
-    for where in (DAUIN, REGION, PHILIPPINES):
+    ph_room = 0
+    for where in (DAUIN, REGION, PHILIPPINES, 'world'):
         if where != DAUIN and dauin_n(g) >= POOR and not PH_ALL: continue
-        loc = 'dauin' if where == DAUIN else 'ph'
+        loc = 'dauin' if where == DAUIN else 'world' if where == 'world' else 'ph'
+        if where == 'world':
+            if ph_room <= 0: continue  # the Philippines still had candidates: no need to look further
+            sp = get(f'https://api.inaturalist.org/v1/observations/species_counts?taxon_id={T[0]["id"]}&{PHILIPPINES}&quality_grade=research&captive=false&per_page=200')['results']
+            sp = [r['taxon']['id'] for r in sp if r['taxon'].get('rank') == 'species']
+            if not sp: continue  # no species confirmed in the Philippines: nothing from abroad
+            where = f'taxon_id={",".join(map(str, sp))}&not_in_place=6873'
         out = cand.setdefault(g, [])
         W = {p.get('o') for p in out if p.get('loc') == loc and waiting(p)}  # observations already waiting
-        room = (DAUIN_CAP if loc == 'dauin' else PH_CAP) - len(W)
+        room = {'dauin': DAUIN_CAP, 'ph': PH_CAP, 'world': WORLD_CAP}[loc] - len(W)
         if room <= 0: continue
-        obs = get(f'https://api.inaturalist.org/v1/observations?taxon_id={T[0]["id"]}&{where}&quality_grade=research,needs_id&captive=false&photos=true&photo_license={LIC}&order_by=votes&per_page=200')['results']
+        q = where if loc == 'world' else f'taxon_id={T[0]["id"]}&{where}'
+        grade = 'research' if loc == 'world' else 'research,needs_id'  # abroad: species-level IDs only
+        obs = get(f'https://api.inaturalist.org/v1/observations?{q}&quality_grade={grade}&captive=false&photos=true&photo_license={LIC}&order_by=votes&per_page=200')['results']
         # Research Grade first, then genus-level community IDs (votes order within each).
         obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if o['quality_grade'] == 'needs_id' and genus_ok(o, T[0]['id'])]
         # Shortlist that varies (Pierre): pick one by one the observation whose species and observer are least represented
@@ -93,6 +105,7 @@ for g in GEN:
             for ph in P:
                 usedp.add(str(ph['id']))
                 out.append(dict(f=f'{g.lower()}-cand-{ph["id"]}', a=ph['attribution'], lic=ph['license_code'], o=url, t=o['taxon']['name'], own=o['user']['login'] == 'ppericard', loc=loc, src=ph['url'].replace('square', 'original'), r=1, **({} if o['quality_grade'] == 'research' else {'gid': 1})))
+        if where == PHILIPPINES: ph_room = room  # room the whole country could not fill: the genus is short
         time.sleep(0.5)
     if not cand[g]: del cand[g]
     print(g, len(cand.get(g, [])))
