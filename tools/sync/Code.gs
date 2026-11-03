@@ -1884,6 +1884,10 @@ const CORE_ = (function () { const module = {exports: {}};
   // exam on old answers alone. A genus learned on such a record lost it (memRecalc, 2026-11-03: its exam was passed under
   // BKT); until that runs, it counts at the exam entry.
   const PROG = {A: 0.15, M: 0.8, LOOK: 0.5, OLD: 0.67};
+  // A learned genus keeps its mark while its progress stays at PROG.M × (1 − PROG.A) or above after a miss (one miss from
+  // PROG.M or above, not two): the game's rule (model.js mxKept, applied in quiz.js answer after each miss) and the
+  // replay's (replayProgress lm, replayedOf).
+  const mxKeeps = pg => pg >= PROG.M * (1 - PROG.A) - 1e-6;
   const pgStep = (g, good, w) => Math.round((g + PROG.A * w * ((good ? 1 : 0) - g)) * 1e4) / 1e4;
   // The fallback for a device that never reaches the sheet: once it does, the sheet's full replay of its log replaces
   // such a record (replayProgress, sync.js replayAdopt).
@@ -2176,7 +2180,7 @@ const CORE_ = (function () { const module = {exports: {}};
     {
       v: 1,
       at: '2026-11-03',
-      why: 'Full replay of each player by the sheet: moving average weighed by what each answer proves, photo memory, former-model learned marks dropped, no Elo step on the genus wrongly given',
+      why: 'Full replay of each player by the sheet: moving average weighed by what each answer proves, photo memory, former-model learned marks dropped, no Elo step on the genus wrongly given, a learned mark kept unless a miss logged after its exam takes it away as the game does',
       // Pierre, 2026-11-03: a card only for the players whose progress % moves (several lose points: the former
       // model's learned marks are dropped), none for the others.
       msg: {
@@ -2225,7 +2229,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // results, the photos [shown, right], the choices offered beside it and the genera given instead (the app's s.off,
   // s.conf), u = answers that moved pg, the ability th and its volatility vr (eloStep, as quiz.js answer steps them: on
   // the genus shown only, never on the genus wrongly given),
-  // the run of right answers (streak), the last answer (at), a look-alike duel won (du); the global level LEVEL as the
+  // the run of right answers (streak), the last answer (at), a look-alike duel won (du), the last miss that took the
+  // progress below the learned mark's keep rule (lm, a time: mxKeeps); the global level LEVEL as the
   // app keeps it (seeded at the first answer by levelSeed, then one step per answer); per player the rows read (n),
   // replayed (used: with e and th) and on a photo already shown (rep).
   // Each question's difficulty d (photo difficulty, + 0.5 for a photo shown alone) is recovered from what the app logged
@@ -2326,6 +2331,10 @@ const CORE_ = (function () { const module = {exports: {}};
         if (replayable) eloStep(pl.P, LEVEL, pl.P[LEVEL], ok, dm, k);
         pl.P[LEVEL].at = r[1];
         s.at = r[1];
+        // The learned mark (not replayed: replayedOf takes it from the saved copy) is lost, in the game, at a miss that
+        // leaves the progress below the keep rule (quiz.js answer, mxKept), on the genus shown as on the genus given: lm,
+        // the time of the last such miss, takes away a mark passed before it.
+        if (!ok && !mxKeeps(s.pg)) s.lm = r[1];
         if (ok && (/^quiz-duel/.test(mode) || /\|d(\||$)/.test(mode))) s.du = 1;
         // Pierre's rule: a wrong answer counts against the genus given too, as quiz.js answer does it after the global
         // level: its progress by the chance the player had on it (its own ability, as replayed so far, against the
@@ -2340,6 +2349,7 @@ const CORE_ = (function () { const module = {exports: {}};
           }
           x.h = (x.h + '0').slice(-10);
           x.streak = 0;
+          if (!mxKeeps(x.pg)) x.lm = r[1];
         }
         s.h = (s.h + (ok ? 1 : 0)).slice(-10);
         fs.forEach(f => {
@@ -2375,7 +2385,10 @@ const CORE_ = (function () { const module = {exports: {}};
   //   an older copy of the same answers);
   // - from the saved copy, what the log cannot give: the mastery exam passed (mx) or in course (ex), dropped when passed
   //   under the former model (a record without s.pg, before 2026-11-02: that genus takes the exam again; memRecalc, commit
-  //   of 2026-11-03); the days answered right (dd, dl: the device's calendar days, for the comeback after a break); the
+  //   of 2026-11-03), and the mark dropped too when the log has a miss after the exam that the game takes it away at
+  //   (r.lm later than s.mx, the time it was passed; 1 before 2026-11-02, so any such miss): misses logged but never in
+  //   the saved copy (a save refused, Codex review #399: 10 misses, pg 0.19, still learned) count as the game counts
+  //   them, and a recalculation alone (no such miss after the exam) keeps the mark; the days answered right (dd, dl: the device's calendar days, for the comeback after a break); the
   //   last observations shown (ro: the log keeps photo files, not observations); right with the corallites in view
   //   (cor: the log does not say which view a photo was shown in);
   // - the saved record as it is (the same mx rule) for a genus the log has no replayable answer on, or fewer answers on
@@ -2383,8 +2396,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // - LEVEL: the replayed ability (th, vr), the larger answer count of the two (answersSoFar keys the exam's gaps, the
   //   cards met and the prompts, so it never goes back), the later at, rv when given.
   // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
-  // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower (the app only
-  // takes it away at a miss, model.js mxKept).
+  // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
+  // after the exam takes it away, as the game does (mxKeeps, lm).
   const REPLAYED = ['pg', 'ok', 'ko', 'h', 'ps', 'off', 'conf', 'th', 'vr', 'streak'];
   function replayedOf(rep, saved, rv) {
     const S = isObj(saved) ? saved : {},
@@ -2437,8 +2450,9 @@ const CORE_ = (function () { const module = {exports: {}};
       if (rv) o.rv = rv;
       if (s) {
         ['dd', 'dl', 'ro', 'cor'].forEach(f => s[f] !== undefined && (o[f] = dup(s[f])));
-        if (typeof s.pg === 'number' && s.mx) o.mx = s.mx;
-        else if (typeof s.pg === 'number' && s.ex) o.ex = dup(s.ex);
+        if (typeof s.pg === 'number' && s.mx) {
+          if (!(r.lm > s.mx)) o.mx = s.mx;
+        } else if (typeof s.pg === 'number' && s.ex) o.ex = dup(s.ex);
       }
       out[g] = o;
     });
@@ -2614,6 +2628,7 @@ const CORE_ = (function () { const module = {exports: {}};
     typeMatchIn,
     typedShare,
     PROG,
+    mxKeeps,
     pgStep,
     pgOf,
     scoreOf,
