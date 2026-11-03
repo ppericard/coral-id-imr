@@ -65,6 +65,7 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     setInterval: () => 0,
     setTimeout: () => 0,
     clearTimeout: () => {},
+    ...require('./subj.stub.js')(), // the corals as the current subject
     SYNC_URL: 'https://script.google.com/macros/s/test/exec',
     LOCAL: false,
     SYNC,
@@ -261,12 +262,17 @@ test('answers saved by a device still on the previous app version, after this on
   assert.deepStrictEqual([A.count('Acropora'), A.rvApplied()], [2, C.RV]);
   // A device on the app before the replay: it loads A's copy, answers once, saves its merge (no rules version in its
   // data: it does not know the key; no rv in its request).
+  // Since the rename to IMR Reef ID, an app from before it saves only the old key names (its own storage), and the
+  // renamed app's saves carry a copy under them (core.js withLegacy) that such an app reads.
+  // rename-app: keep-begin
   const saved = s.get({name: 'Ana', pin: '1234'}).data,
-    Q = JSON.parse(saved['reefid-sync-coral-progress']);
+    Q = JSON.parse(saved['imr-coral-progress']);
   Q.Acropora.ok++;
   Q.Acropora.h += '1';
-  const old = {...saved, 'reefid-sync-coral-progress': JSON.stringify(Q)};
-  delete old['reefid-sync-coral-rv'];
+  const old = Object.fromEntries(Object.entries(saved).filter(([k]) => k.startsWith('imr-coral-')));
+  old['imr-coral-progress'] = JSON.stringify(Q);
+  delete old['imr-coral-rv'];
+  // rename-app: keep-end
   assert.ok(s.post({name: 'Ana', pin: '1234', data: old, summary: {}, answers: [qa('a2', 2)], av: '180'}).ok);
   // A loads it: its copy under older rules is not merged, but A asks for the replay again (rules version back to the
   // copy's, a save due), and the save brings it: three answers, and the sheet's copy keeps them.
@@ -286,12 +292,17 @@ test('after a recovery from an older client, the saved copy reaches the rules ve
   await A.syncPull();
   await A.syncPush();
   // A device on the app before the replay saves one more answer, with no rules version in its data.
+  // Since the rename to IMR Reef ID, an app from before it saves only the old key names (its own storage), and the
+  // renamed app's saves carry a copy under them (core.js withLegacy) that such an app reads.
+  // rename-app: keep-begin
   const saved = s.get({name: 'Ana', pin: '1234'}).data,
-    Q = JSON.parse(saved['reefid-sync-coral-progress']);
+    Q = JSON.parse(saved['imr-coral-progress']);
   Q.Acropora.ok++;
   Q.Acropora.h += '1';
-  const old = {...saved, 'reefid-sync-coral-progress': JSON.stringify(Q)};
-  delete old['reefid-sync-coral-rv'];
+  const old = Object.fromEntries(Object.entries(saved).filter(([k]) => k.startsWith('imr-coral-')));
+  old['imr-coral-progress'] = JSON.stringify(Q);
+  delete old['imr-coral-rv'];
+  // rename-app: keep-end
   assert.ok(s.post({name: 'Ana', pin: '1234', data: old, summary: {}, answers: [qa('a2', 2)], av: '180'}).ok);
   // A recovers it (the replay again), then syncs four more times with nothing new: one save brings its rules version to
   // the saved copy, and no later reply carries a replay (was: the saved copy back to 0 and a full replay at every sync).
@@ -843,4 +854,25 @@ test('achievements taken back: the removals are kept and synced even when this r
   const b = ach({_v: 2, met10: 10, learn1: 20});
   assert.deepStrictEqual(b.achRecheck(), ['learn1']);
   assert.strictEqual(b.rec().learn1, undefined);
+});
+
+// Codex review #444: this device's answers replayed on top of an adopted replay follow the rules of the script that sent
+// it. Before sheet v32 (core.js RT_SHEET) the answer time weighs nothing, as in the live game (model.js rtOn): the
+// replay on top must not weigh it either (AGENTS.md 7a); from v32, it does, as the sheet's own replay would.
+test('a replay adopted from a script before v32 replays the pending answers without the answer time (Codex review #444)', () => {
+  // 20 right answers on Acropora, timed: fast ones first, slower later, so the weights are far from 1 once there is a median.
+  const pending = Array.from({length: 20}, (_, i) => ({...qa('p' + i, i), a: 'Acropora', ok: 1, rt: i < 12 ? 6 : 2.5}));
+  const rows = pending.map(a => C.logRow(a, '~me')),
+    start = {'~me': {P: {}, n: 0, used: 0, rep: 0}},
+    gen = {...DATA.x.gen, ...DATA.gen},
+    th = time => C.replayProgress(rows, {gen, conf: {}, start, time})['~me'].P.Acropora.th;
+  assert.notStrictEqual(th(true), th(false), 'the time changes the ability on these answers');
+  for (const [v, time] of [
+    [C.RT_SHEET - 1, false],
+    [C.RT_SHEET, true]
+  ]) {
+    const a = app();
+    assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: []}, pending, v), true);
+    assert.strictEqual(a.ctx.P.Acropora.th, th(time), `script v${v}: ability ${a.ctx.P.Acropora.th}`);
+  }
 });

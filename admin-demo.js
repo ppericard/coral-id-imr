@@ -15,9 +15,10 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the current one (v28: the admin shows the full replay, admin.js replayOn),
-    // or an older one with ?demo&v=27 (tests/admin.smoke.js: the admin then does what it did before; AGENTS.md 7a).
-    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 28,
+    // The script version the demo answers as: the current one (v35: the Analyses report; v31: ?stats=1 adds the genus offsets gd; v30: the pages
+    // opened, admin.js loadPages; v28: the admin shows the full replay, admin.js replayOn), or an older one with
+    // ?demo&v=27 or v=28 (tests/admin.smoke.js: the admin then does what it did before; AGENTS.md 7a).
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 35,
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
@@ -34,7 +35,7 @@
   let S = null; // {names: [{name, pin hash...}], rows: [[name, t, shown, answered, ok, mode, photos, id, e, th, nw, choices]], reports, removed, data}
   // One dataset for every request: concurrent first calls (answers and stats together) wait for the same build.
   let BUILD = null;
-  const build = () => (BUILD = BUILD || make());
+  const build = () => (BUILD = BUILD || make().then(x => (V >= 35 && setTimeout(() => anaReport(true), 0), x)));
   // Moves the last n of one player's rows into one session ending at `end`, about 37 s apart, in their order; the last
   // `typed` plain quiz answers among them become typed ones (quiz|t: no choices offered).
   function live(L, n, end, typed) {
@@ -264,7 +265,9 @@
       rp(1, 'Carla Demo', 'multi', g2, '', '', 'Demo report: two colonies in this photo.', 'quiz', pics[g2][0].f, '#quiz'),
       rp(2, '', 'photo', g3, '', '', 'Demo report: blurry (sent without signing in).', 'photo', pics[g3][0].f, '#' + g3),
       rp(3, 'Dio Demo', 'info', g2, '', '', 'Demo feedback: a typo on this sheet.', 'sheet', '', '#' + g2),
-      rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', '#home')
+      rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', '#home'),
+      // A report from the fish beta: a teaching id and a remote iNaturalist photo (fish-photos.json).
+      rp(5, 'Eli Demo', 'wrong', 't01', 't05', '', 'Demo fish report: not a damselfish.', 'quiz', 'fi464458713', '#quiz')
     ];
     // Events (sheet v19): [id, time, device, kind, message, where, page, detail, app, browser], newest first.
     // One-tap prompts (core.js PULSEQ): the item in Where, the code in Message; Detail keeps r only for easy / ok / hard,
@@ -347,7 +350,80 @@
       ])
     );
     events.sort((a, b) => b[1] - a[1]);
-    S = {rows, users, reports, events, removed: [], list};
+    // The Analyses group (Pierre, 2026-11-04) needs a few thousand answers with times, enlargements, formats and breaks:
+    // seven more made-up players from analysis.js demoLog (its known effects, on the real photos), their last answer
+    // three days ago.
+    const [cur, qual, met] = await Promise.all(
+      ['curation.json', 'quality.json', 'metrics.json'].map(f => real(f, {cache: 'no-cache'}).then(r => r.json()))
+    );
+    ANA_META = {ph: ANALYSIS.photoMeta(D, cur, qual, met)};
+    const more = ANALYSIS.demoLog(D, NOW - 3 * DAY, {cur, qual, met});
+    more.forEach((r, i) => rows.push([...r.slice(0, 7), 'demoz' + i, ...r.slice(7, 11), r[12], r[13]]));
+    ANALYSIS.DEMO_PLAYERS.forEach(([name]) => {
+      const mine = more.filter(r => r[0] === name);
+      users[name.toLowerCase()] = {
+        name,
+        updated: mine.length ? mine[mine.length - 1][1] : NOW - 3 * DAY,
+        learned: 0,
+        seen: new Set(mine.map(r => r[2])).size,
+        total: list.length,
+        review: '',
+        rev: 1,
+        data: {'reefid-sync-coral-progress': '{}', 'reefid-sync-settings': '{}'}
+      };
+    });
+    // Pages opened (sheet v30 'pages', its own Pages tab): a few visits of each player, under their anonymous id (aid,
+    // as Code.gs evWho_ stores it), with the answers so far, the pages and the genus sheets opened. Its own random numbers,
+    // so the rest of the demo stays the same. Ana reads the sheets (one before it was asked, from Learn), Carla from the
+    // quiz feedback, Ben once, Dio never; a device not signed in opened one; one summary has no id (a wrong code).
+    let ps = 7;
+    const prnd = () => (ps = (ps * 1103515245 + 12345) % 2147483648) / 2147483648,
+      pages = [],
+      pageRow = (i, t, who, d) => [
+        'demopg' + i,
+        t,
+        'demodev' + (i % 5),
+        'pages',
+        who,
+        '',
+        'quiz',
+        JSON.stringify(d),
+        '190',
+        'Chrome 140 mobile'
+      ],
+      READS = {'Ana Demo': [3, 'learn'], 'Carla Demo': [2, 'quiz'], 'Ben Demo': [1, 'quiz'], 'Dio Demo': [0, 'quiz']};
+    let pi = 0;
+    PLAYERS.forEach(([name, , n, d0]) => {
+      const [k, from] = READS[name] || [0, 'other'];
+      for (let v = 0; v < 4; v++) {
+        const na = Math.round((n * v) / 4),
+          g = {};
+        if (k && v < 3)
+          G.slice(v * k, v * k + k).forEach(
+            (x, j) => (g[x] = [1 + (j % 2), 8 + Math.round(prnd() * 60), j ? from : 'learn', v || j ? 1 : 0])
+          );
+        const nG = Object.keys(g).length;
+        pages.push(
+          pageRow(pi++, NOW - (d0 - v * (d0 / 4)) * DAY, aid(name), {
+            r: {home: [1, 4 + Math.round(prnd() * 10)], quiz: [1 + nG, 300 + Math.round(prnd() * 900)], ...(nG ? {genus: [nG, 60]} : {})},
+            g,
+            vi: 'demovi' + pi,
+            na
+          })
+        );
+      }
+    });
+    pages.push(
+      pageRow(pi++, NOW - 3 * 3600e3, aid('~anon demo0'), {
+        r: {quiz: [2, 200], genus: [1, 25]},
+        g: {[G[0]]: [1, 25, 'quiz', 1]},
+        vi: 'demovianon',
+        na: 8
+      }),
+      pageRow(pi++, NOW - 4 * 3600e3, '', {r: {home: [1, 3], genera: [1, 40]}, g: {}, vi: 'demovinoid', na: 120})
+    );
+    pages.sort((a, b) => b[1] - a[1]);
+    S = {rows, users, reports, events, pages, removed: [], list};
     // Saved progress as the app saves it now: the full replay of each player's answers (core.js replayProgress, with the
     // memory offsets and confusions this demo's stats serve, as the admin replays them), plus the exams the demo passed
     // and each genus's ability. Two stale copies, as real players who have not opened the app since a recalculation:
@@ -426,9 +502,13 @@
     return out;
   }
   function stats() {
-    const A = answers().rows,
+    // The Analyses group's made-up players (demoLog) stay out of the photo ratings and confusions: the other pages'
+    // numbers (the full replay on Players, the journeys) stay those of the original demo. They have a level like anyone.
+    const more = new Set(ANALYSIS.DEMO_PLAYERS.map(p => aid(p[0]))),
+      all = answers().rows,
+      A = all.filter(r => !more.has(r[0])),
       ras = {};
-    A.forEach(r => {
+    all.forEach(r => {
       const x = (ras[r[0]] = ras[r[0]] || [0, 0, 0]);
       x[1]++;
       x[2] += r[4];
@@ -438,7 +518,7 @@
         p = (right + 1) / (n + 2);
       ras[k] = [Math.round(Math.log(p / (1 - p)) * 100) / 100, n];
     });
-    return {ok: true, photos: eloOf(A), ras, conf: confusionOf(A).pair, ...photoMemOf(A)};
+    return {ok: true, photos: eloOf(A), ras, conf: confusionOf(A).pair, ...photoMemOf(A), gd: genusOffsetsOf(A)};
   }
   function userList() {
     const by = {};
@@ -586,6 +666,29 @@
     }
     return new Response(JSON.stringify({message: 'Not Found (demo)'}), {status: 404});
   }
+  // The demo's Analyses report, as the GitHub Action would store it (tools/analyses.js): computed once, in a Web Worker,
+  // on the demo's answers (no bootstrap, so it is quick), from the moment the demo is built.
+  let ANA_META = null,
+    ANA = null;
+  const anaReport = head => {
+    ANA =
+      ANA ||
+      new Promise(done => {
+        const w = new Worker(document.querySelector('script[src^="analysis.js"]').getAttribute('src'));
+        w.onmessage = e => {
+          if (e.data && e.data.prog) return;
+          w.terminate();
+          done(e.data && e.data.res ? JSON.stringify(e.data.res) : null);
+        };
+        w.postMessage({id: 1, rows: answers().rows, meta: ANA_META, B: 0, seed: 1});
+      });
+    return ANA.then(text => {
+      const n = S.rows.length,
+        r = text && JSON.parse(text);
+      const stored = r ? {answers: r.answers, made: r.made, av: r.AV, size: text.length, at: r.made} : null;
+      return head || !text ? {ok: true, answers: n, stored} : {ok: true, answers: n, stored, report: text};
+    });
+  };
   window.fetch = async (u, opts = {}) => {
     const url = String(u && u.url ? u.url : u);
     if (url.startsWith('https://api.github.com/user')) return ok({login: 'demo'});
@@ -600,9 +703,12 @@
       }
       const p = JSON.parse(opts.body || '{}');
       if (p.readReports) return ok({ok: true, rows: S.reports.map(r => r.slice())});
-      if (p.readEvents) return ok({ok: true, rows: S.events.map(r => r.slice())});
+      // pages: 1 (v30) reads the Pages tab; an older script ignores it and sends the other events.
+      if (p.readEvents) return ok({ok: true, rows: (p.pages && V >= 30 ? S.pages : S.events).map(r => r.slice())});
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
+      // v35: the stored Analyses report. A script before v35 answers 'input' (?demo&v=30: the admin shows no report).
+      if (p.analysesGet) return ok(V < 35 ? {ok: false, error: 'input'} : await anaReport(p.head));
       if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userRename) return ok(users(p));
       return ok({ok: false, error: 'demo'});
     }

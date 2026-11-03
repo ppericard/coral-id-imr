@@ -1,0 +1,49 @@
+# The admin's Analyses report (Pierre, 2026-11-04: multifactor analyses of the answer log "every 1000 new answers",
+# computed once and stored in the sync sheet, never on a phone; docs/ARCHITECTURE.md "Analyses"). Every hour it asks the
+# sheet how many answers there are (a cheap call) and computes only when 1000 new answers came since the stored report,
+# or when the analysis code changed, or by hand (Run workflow, "force"). Needs the repository secret
+# ANALYSES_ADMIN_TOKEN (Pierre's one-time setup: docs/HANDOVER.md "Analyses report"); without it every run is skipped.
+# Privacy: the report holds per-player results; it goes to the sheet only. The script prints counts only, never an id
+# or a name (the log of a public repository's Actions is public). No artifact, no cache, no upload.
+name: Analyses report
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Compute now, even without 1000 new answers'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: analyses
+  cancel-in-progress: false
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Secret present?
+        id: secret
+        env:
+          TOKEN: ${{ secrets.ANALYSES_ADMIN_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "ANALYSES_ADMIN_TOKEN is not set: skipped (docs/HANDOVER.md, \"Analyses report\")."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.secret.outputs.ok == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.secret.outputs.ok == 'true'
+        with:
+          node-version: '26'
+      - name: Compute and store the report (counts only in this log)
+        if: steps.secret.outputs.ok == 'true'
+        env:
+          ANALYSES_ADMIN_TOKEN: ${{ secrets.ANALYSES_ADMIN_TOKEN }}
+        run: node tools/analyses.js --sheet ${{ inputs.force && '--force' || '' }}

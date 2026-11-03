@@ -3,6 +3,12 @@ const http = require('http'),
   path = require('path');
 const {chromium} = require('playwright');
 const ROOT = path.join(__dirname, '..');
+// Health › Genus sheets opened on the demo's Pages tab (admin-demo.js: 4 visits a player at 0, 1/4, 1/2 and 3/4 of
+// their answers; Ana opens 3 sheets in her first 3 visits, Carla 2, Ben 1; a device not signed in one; one visit with no
+// id is counted by its device): players, share that opened one, visits, share with one.
+const SHEETS_ALL = ['Under 50 answers 8 50% 18 28%', '50-300 answers 6 50% 11 45%', 'Over 300 answers 1 0% 1 0%', 'All 9 44% 30 33%'].join(
+  ' | '
+);
 const TYPES = {
   '.html': 'text/html',
   '.js': 'text/javascript',
@@ -179,6 +185,81 @@ const server = http.createServer((req, res) => {
       if (r.n === 1 && at.views) fails.push(`${w}px #${h}: a view switch on a one-view tab`);
       if (at.wide > 0) fails.push(`${w}px #${h}: page ${at.wide} px wider than the window`);
     }
+    // Analyses (Pierre, 2026-11-04): the stored report (the demo computes it as the GitHub Action would, tools/analyses.js)
+    // drawn in every view, with charts and no sideways scroll; the 4-choice count of Formats equals a direct count of the
+    // demo's answer log; the milestone switch; the verdicts say something for every effect.
+    errs.length = 0;
+    await go('~an');
+    await p
+      .waitForFunction(() => document.querySelector('.adm-an .adm-kpis'), null, {timeout: 90000})
+      .catch(() => fails.push(`${w}px Analyses: no report`));
+    const anv = await p.evaluate(() => ({
+      rows: document.querySelectorAll('.adm-an-eff tbody tr').length,
+      verdicts: [...document.querySelectorAll('.adm-an-eff .adm-an-v')].filter(x => x.textContent.trim()).length,
+      ms: document.querySelectorAll('[data-anm]').length,
+      badge: (document.querySelector('.adm-an-badge') || {}).textContent || ''
+    }));
+    if (anv.rows < 40 || anv.verdicts !== anv.rows || anv.ms < 3 || !/since .* next at/.test(anv.badge))
+      fails.push(`${w}px Analyses overview: ${JSON.stringify(anv)}`);
+    for (const h of ['~an-rt', '~an-zoom', '~an-photo', '~an-fmt', '~an-conf', '~an-learn', '~an-back', '~an-sess']) {
+      await go(h);
+      const v = await p.evaluate(() => ({
+        svg: document.querySelectorAll('#view svg.adm-an-svg').length,
+        thin: /Not enough data yet: \d/.test((document.querySelector('.adm-an') || {}).textContent || ''),
+        none: !document.querySelector('.adm-an') && document.getElementById('view').textContent.slice(0, 80),
+        wide: document.documentElement.scrollWidth - innerWidth,
+        cards: [...document.querySelectorAll('.adm-an .adm-scard')].filter(
+          c => c.scrollWidth > c.clientWidth + 1 && !c.querySelector('.adm-tscroll')
+        ).length
+      }));
+      if (v.svg < 2 || v.thin || v.none || v.wide > 0 || v.cards) fails.push(`${w}px Analyses #${h}: ${JSON.stringify(v)}`);
+    }
+    await go('~an-fmt');
+    const anf = await p.evaluate(async () => {
+      const rows = (await (await fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readAnswers: 1, token: TOKEN})})).json()).rows;
+      // 4 choices, 4 plausible: a photo-quiz answer that is not typed, not a duel, not an exam, with 4 genera offered and
+      // no |k2 or |k3, with the app's expectation logged
+      const direct = rows.filter(
+        r =>
+          /^quiz/.test(r[5]) &&
+          !/^quiz-duel/.test(r[5]) &&
+          !/\|(t|d|x)(\||$)/.test(r[5]) &&
+          !/\|k[123]/.test(r[5]) &&
+          String(r[10] || '')
+            .split(/\s+/)
+            .filter(Boolean).length !== 2 &&
+          r[7] != null
+      ).length;
+      const row = [...document.querySelectorAll('.adm-an tbody tr')].find(
+        tr => tr.cells[0] && tr.cells[0].textContent === '4 choices' && tr.cells.length === 7
+      );
+      return {direct, shown: row ? Number(row.cells[1].textContent.replace(/,/g, '')) : null};
+    });
+    if (anf.shown !== anf.direct) fails.push(`${w}px Analyses Formats: 4 choices ${anf.shown}, direct count ${anf.direct}`);
+    await p.click('[data-anm="1000"]');
+    await settle();
+    const anm = await p.evaluate(() => ({
+      pressed: (document.querySelector('[data-anm][aria-pressed="true"]') || {}).dataset?.anm,
+      kpi: (document.querySelector('.adm-kpis b') || {}).textContent
+    }));
+    await p.click('[data-anm="all"]');
+    await settle();
+    if (anm.pressed !== '1000' || !/^[\d,]+$/.test(anm.kpi || '') || Number(anm.kpi.replace(/,/g, '')) > 1000)
+      fails.push(`${w}px Analyses: the milestone switch ${JSON.stringify(anm)}`);
+    if (errs.length) fails.push(`${w}px Analyses: ${errs.slice(0, 3).join(' | ')}`);
+    // A sync script before v35 has no report: the views say so, nothing breaks (AGENTS.md 7a).
+    if (w === 390) {
+      const aq = await ctx.newPage(),
+        aqe = [];
+      aq.on('pageerror', e => aqe.push(e.message));
+      await aq.goto(base + 'admin.html?demo&v=30#~an-rt');
+      await aq
+        .waitForFunction(() => /No report yet/.test(document.getElementById('view').textContent), null, {timeout: 30000})
+        .catch(() => aqe.push('no "No report yet"'));
+      if (aqe.length) fails.push(`${w}px Analyses with script v30: ${aqe.join(' | ')}`);
+      await aq.close();
+    }
+
     // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs).
     await go('~fcov');
     await go('~triage');
@@ -369,6 +450,12 @@ const server = http.createServer((req, res) => {
       }));
       if (/Progress|↻ saved/.test(j.kpis) || !/ 1\/\d+ Learned/i.test(j.kpis) || j.col || j.learned !== 1)
         fails.push(`${w}px Journey before v28: ${JSON.stringify(j)}`);
+      // Before sheet v30 the pages opened are not read: the section says which script version it waits for.
+      await q
+        .waitForFunction(() => /v30 not running/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''), null, {
+          timeout: 10000
+        })
+        .catch(() => fails.push(`${w}px Journey before v30: no version line for the genus sheets`));
       await q.close();
     }
     await go('~users');
@@ -517,6 +604,47 @@ const server = http.createServer((req, res) => {
     await settle();
     const firstHard = await p.$eval('.adm-jtbl tbody tr td:nth-child(6)', td => td.textContent);
     if (!/-|–/.test(firstHard)) fails.push(`${w}px journey: hardest first starts at ${firstHard}`);
+    // Genus sheets opened (sheet v30 'pages', the demo's Pages tab, under the player's anonymous id): Ana's 9 sheets, the
+    // first opened before it was asked, from Learn; Dio opened none; one device not signed in opened one.
+    const jsheets = () =>
+      p
+        .waitForFunction(
+          () => /visits? recorded|None opened|No visit/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''),
+          null,
+          {
+            timeout: 10000
+          }
+        )
+        .catch(() => {})
+        .then(() =>
+          p.evaluate(() => {
+            const s = document.querySelector('[data-jsheets]');
+            return s ? {rows: s.querySelectorAll('tbody tr').length, t: s.innerText.replace(/\s+/g, ' ')} : null;
+          })
+        );
+    const sa = await jsheets();
+    if (
+      !sa ||
+      sa.rows !== 9 ||
+      !/before asked/.test(sa.t) ||
+      !/after asked/.test(sa.t) ||
+      !/Learn/.test(sa.t) ||
+      !/4 visits recorded/.test(sa.t)
+    )
+      fails.push(`${w}px journey sheets (Ana): ${JSON.stringify(sa)}`);
+    await go('~journey/' + encodeURIComponent('Dio Demo'));
+    const sd = await jsheets();
+    if (!sd || sd.rows || !/None opened/.test(sd.t)) fails.push(`${w}px journey sheets (Dio): ${JSON.stringify(sd)}`);
+    await go('~users');
+    const anonIds = await p.$$eval('a[href^="#~anon/"]', L => [...new Set(L.map(a => a.getAttribute('href').slice(7)))]);
+    const anonSheets = [];
+    for (const id of anonIds) {
+      await go('~anon/' + id);
+      const x = await jsheets();
+      anonSheets.push(x ? x.rows : -1);
+    }
+    if (anonSheets.filter(n => n === 1).length !== 1 || anonSheets.some(n => n > 1))
+      fails.push(`${w}px anonymous journeys' sheets: ${JSON.stringify(anonSheets)}`);
 
     // To do › Reports lists the demo reports; Activity shows the demo players' answers.
     // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
@@ -617,6 +745,22 @@ const server = http.createServer((req, res) => {
     if (proto !== true) fails.push(`${w}px Errors & feedback with a "__proto__" event: ${proto}`);
     await go('~triage');
     if (!/Demo report/.test(await text())) fails.push(`${w}px To do › Reports: demo reports missing`);
+    // A fish report (Codex review #442): the fish entry by its IMR name and its iNaturalist photo, not an empty tile.
+    {
+      const fr = await p
+        .waitForFunction(
+          () => {
+            const c = [...document.querySelectorAll('.adm-rep')].find(x => /Demo fish report/.test(x.textContent));
+            const im = c && c.querySelector('.adm-tile img');
+            return c && im && /Damselfish \(fish\)/.test(c.textContent) ? im.getAttribute('src') : false;
+          },
+          null,
+          {timeout: 10000}
+        )
+        .then(h => h.jsonValue())
+        .catch(() => null);
+      if (!fr || !/inaturalist/.test(fr)) fails.push(`${w}px To do › Reports: the fish report has no fish name or photo (${fr})`);
+    }
     await go('~stats');
     if (/No answers yet/.test(await text())) fails.push(`${w}px Activity: no answers`);
     // Recent sessions (Pierre, 2026-11-03): the last 10 sessions of every player, newest first, by name or anonymous id;
@@ -801,6 +945,9 @@ const server = http.createServer((req, res) => {
       p.evaluate(() => ({
         secs: [...document.querySelectorAll('[data-health]')].map(s => s.dataset.health).join(' '),
         rows: document.querySelectorAll('[data-health="genera"] tbody tr').length,
+        // Genus sheets opened, by experience: the three bands, then the visits whose answers so far are not known (none
+        // in the demo) and All.
+        sheets: [...document.querySelectorAll('[data-health="sheets"] tbody tr')].map(r => r.innerText.replace(/\s+/g, ' ').trim()),
         bars: document.querySelectorAll('[data-health="time"] .adm-cols > div').length,
         wide: document.documentElement.scrollWidth - innerWidth
       }));
@@ -814,10 +961,61 @@ const server = http.createServer((req, res) => {
         await p.click('[data-sf="elo"][data-v="others"]');
         await settle();
       }
+      await p
+        .waitForFunction(() => /Over 300/.test((document.querySelector('[data-health="sheets"]') || {}).innerText || ''), null, {
+          timeout: 10000
+        })
+        .catch(() => {});
       const hs = await health();
-      if (hs.secs !== 'stop photos genera time' || !hs.rows || hs.bars !== 60)
+      if (hs.secs !== 'stop photos genera time sheets' || !hs.rows || hs.bars !== 60)
         fails.push(`${w}px Health (${v}): sections ${JSON.stringify(hs)}`);
       if (hs.wide > 0) fails.push(`${w}px Health (${v}): page ${hs.wide} px wider than the window`);
+      if (v === 'all' && hs.sheets.join(' | ') !== SHEETS_ALL) fails.push(`${w}px Health genus sheets: ${JSON.stringify(hs.sheets)}`);
+    }
+    // The page summaries are read again once stale (Codex review #423): a first read's error (offline, a script before
+    // v30) does not stay on Health; ↻ on Activity reads them again; and a visit reads them once at most (no
+    // render / read loop).
+    {
+      const sheetsText = () => p.evaluate(() => (document.querySelector('[data-health="sheets"]') || {}).innerText || '');
+      await p.evaluate(() => {
+        window.PGREADS = 0;
+        const f = window.fetch;
+        window.fetch = (u, o) => {
+          if (o && /"pages":1/.test(String(o.body || ''))) window.PGREADS++;
+          return f(u, o);
+        };
+      });
+      const stale = async (label, prep) => {
+        await go('~stats');
+        await p.evaluate(prep);
+        if (label === 'reload') {
+          await p.click('[data-sload]');
+          await settle();
+        }
+        await go('~health');
+        await p
+          .waitForFunction(() => /Over 300/.test((document.querySelector('[data-health="sheets"]') || {}).innerText || ''), null, {
+            timeout: 8000
+          })
+          .catch(() => {});
+        await p.waitForTimeout(1500);
+        const t = await sheetsText();
+        if (!/Over 300/.test(t) || /Offline/.test(t)) fails.push(`${w}px Health genus sheets after ${label}: ${t.replace(/\s+/g, ' ')}`);
+      };
+      await stale('a stale error', () => {
+        PGS = {err: 'Offline'};
+        pgsAt = Date.now() - 600000;
+      });
+      await stale('reload', () => {
+        PGS = {err: 'Offline'};
+        pgsAt = Date.now();
+      });
+      const n0 = await p.evaluate(() => PGREADS);
+      await go('~stats');
+      await go('~health');
+      await p.waitForTimeout(1500);
+      const reads = (await p.evaluate(() => PGREADS)) - n0;
+      if (n0 !== 2 || reads) fails.push(`${w}px Health genus sheets reads: ${n0} for two stale caches, then ${reads} on a fresh one`);
     }
     // The enlarged photo's caption links to the photo's source, as in the games (AGENTS.md rule 11; Pierre, 2026-11-03:
     // he opened his own photo everyone misses, to check its identification on iNaturalist, and found no link): an iNat

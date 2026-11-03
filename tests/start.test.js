@@ -15,6 +15,7 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F'], basics = false} 
     block = src.slice(src.indexOf('// First meeting with a genus (Pierre'), src.indexOf('const introSince'));
   const saved = {},
     ctx = {
+      ...require('./subj.stub.js')(), // the corals as the current subject
       P,
       LEVEL,
       CB: {},
@@ -26,6 +27,7 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F'], basics = false} 
       basicsDone: () => basics,
       document: {querySelectorAll: () => []},
       ...C,
+      ...require('./subj.stub.js')(),
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
   ctx.answersSoFar = () => ctx.n;
@@ -364,10 +366,10 @@ test('replay: the prior of the first-launch answer in force at each answer, as t
     step = (g, ok, d) => {
       const s = (app[g] = app[g] || {ok: 0, ko: 0});
       s[ok ? 'ok' : 'ko']++;
-      C.eloStep(app, g, s, ok, d, 4, p);
+      C.eloStep(app, g, s, ok, d, 4, 1, p);
       if (app[C.LEVEL]) app[C.LEVEL][ok ? 'ok' : 'ko']++;
       else app[C.LEVEL] = C.levelSeed(app);
-      C.eloStep(app, C.LEVEL, app[C.LEVEL], ok, d, 4, p);
+      C.eloStep(app, C.LEVEL, app[C.LEVEL], ok, d, 4, 1, p);
     };
   const dOf = (e, th) => th - Math.log((e - 0.25) / 0.75 / (1 - (e - 0.25) / 0.75));
   step('A', true, dOf(0.8, 0));

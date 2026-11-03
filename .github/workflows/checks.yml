@@ -11,10 +11,10 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '26'
       - name: Formatting (Prettier 3.9.10; .prettierrc.json, .prettierignore)
@@ -47,8 +47,8 @@ jobs:
   pages:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '26'
       - name: Install Playwright (temporary folder, nothing added to the repo)
@@ -60,6 +60,8 @@ jobs:
         run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/pages.smoke.js
       - name: Question draw test (photoSet and distractors on the real data, every genus, 4 player levels)
         run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/draw.smoke.js
+      - name: Fish quiz test (the fish subject on the real fish.json, circles opt-in, winks, progress kept apart)
+        run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/fish.smoke.js
       - name: Admin demo test (admin.html?demo, every page and the main actions on made-up data, nothing sent)
         run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/admin.smoke.js
       - name: Learning path test (a beginner, an IMR RA, an expert through the real quiz; docs/LEARNING.md)

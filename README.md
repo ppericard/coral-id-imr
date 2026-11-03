@@ -4,6 +4,8 @@
 
 A static web app for learning the 39 coral genera on the IMR (Institute for Marine Research, Dauin, Philippines) survey slate: 34 surveyed genera plus 5 starred look-alikes, and fire coral (*Millepora*), on the IMR benthic slate.
 
+Named IMR Coral ID until 2026-11-03 (corals now, fish and benthos next); the address and the repository name (`coral-id-imr`) change later, with a migration for players (ROADMAP). The organisation and app names live in one place, `core.js` `ORG`; `tools/rename_app.py` writes them into the static files. <!-- rename-app: keep -->
+
 Live: <https://ppericard.github.io/coral-id-imr/> · Built for the Research Assistants trained at IMR, whose first task is genus-level labelling of benthic photos in ReefCloud.
 
 **Deployment:** [Pages setup and recovery](docs/PAGES.md) (single Actions source; required migration from branch publishing).
@@ -42,7 +44,7 @@ The app is plain HTML/CSS/JS with no build step. `data.json` holds all genus dat
 
 Every click is kept as a draft in the browser; Publish merges the draft key by key onto the latest published `curation.json` (so choices published from another device are kept) and commits it to `main` through the GitHub API with a fine-grained token (this repository only, Contents read and write). The token is stored in the browser, encrypted with the admin password; the password only unlocks the token, the token is what allows writing. Without a token, `admin.html?readonly` opens the page to download the JSON. `index.html?draft` previews unsaved choices in the same browser.
 
-Photo quality: `quality.json` holds a first automatic rating per photo (3 good, 2 fair, 1 poor) from `tools/photo_quality.py` (sharpness of the best-focused area, contrast, colour cast, pixel size). Pierre's corrections are in `curation.json` under `quality` (`{f: level}`); the effective level is the correction, else the automatic one. The admin has a second entry point, "By quality", listing every photo by level across genera. Poor photos (identifiable but low quality, like ReefCloud images) are used at the hard end of games.
+Photo quality: `quality.json` holds a first automatic rating per photo (3 good, 2 fair, 1 poor) from `tools/photo_quality.py` (sharpness of the best-focused area, contrast, colour cast, pixel size). Pierre's corrections are in `curation.json` under `quality` (`{f: level}`); the effective level is the correction, else the automatic one. The admin has a second entry point, "By quality", listing every photo by level across genera. Poor photos (identifiable but low quality, like ReefCloud images) are in games, where the players' answers rate how hard each one is.
 
 Exclusion: `curation.json` `exclude` (`{f: reason}`) removes a photo for good (a person in frame, a drawing, an AI image…): `applyCuration` drops it from every list, and the build scripts skip it (`tools/excluded.py`). Hide, by contrast, is a per-genus choice that can be undone with Show again.
 

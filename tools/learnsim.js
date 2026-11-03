@@ -5,8 +5,9 @@
 // numbers for reading). docs/LEARNING.md, "Learning-outcome simulation".
 //
 //   node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
-//                          [--workers 4] [--out results.json] [--stats stats.json] [--met Acropora,Porites,...]
+//                          [--workers 4] [--out results.json] [--stats stats.json] [--truth truth.json] [--met Acropora,Porites,...]
 //                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20] [--openall offer|N] [--back keep|one]
+//                          [--rt off] [--rtapp off] [--rtlog answers.json]
 //                          [--choice new|imr|know|auto] [--fallback keep|accept] [--vars '{"imr":{"p":0.8}}']
 //
 // --choice (2026-11-03, the first-launch question, model.js START): the answer the simulated player gives before its
@@ -47,7 +48,10 @@
 // The learner (kept simple on purpose; every constant is in LEARNER below):
 // - know[g]: the chance to recognise genus g on a photo of average difficulty with all its views. On a question it
 //   recognises the genus shown t with p = sigmoid(logit(know[t]) - d - 0.5 x single view), d the mean photoDiff of the
-//   photos shown (the app's own photo difficulty: its sets, or --stats), as in profiles.smoke.js. Recognised = right.
+//   photos shown (the app's own photo difficulty, photoDiff: --stats, or 0 for every photo without it), as in
+//   profiles.smoke.js; or, with --truth, each photo's true difficulty from that file, independent of the app's estimate
+//   (2026-11-03, the hierarchical photo Elo: a change to the app's photo difficulty must not change the learner's world
+//   too). truth.json: {photos: {file: difficulty}, gd: {genus: difficulty of a photo not listed}}. Recognised = right.
 // - Otherwise it picks among the choices by how much each looks like the photo: weight 1 + LOOK x s(t, c), with
 //   s(t, t) = 1 and s(t, c) = min(1, pooledConf(t, c) / CONF.LOOK) for another genus (the app's own confusion prior and
 //   pooled mix-ups: about 1 for a declared look-alike, 0.4 same family, 0.27 shared growth form, 0.1 otherwise), times
@@ -66,6 +70,19 @@
 //   teaches nothing more about the genus, and the hard reference question below (a photo never seen) ignores it, so
 //   what memory adds to the answers is exactly what the app must not count as knowledge. --mem 0 turns it off (the
 //   learner before 2026-11-03); --mem 0,0.4,1.5,2 sets the four offsets.
+//
+// - Response time (2026-11-04, docs/LEARNING.md "Response time"): the learner takes t seconds to answer, log t =
+//   log T0 - B x right - C x logit(pTrue) + SD x N(0, 1), pTrue its true chance on the question (below), drawn from a
+//   generator of its own (the answers and the app's draws are the same whatever the time model), rounded to the tenth
+//   as the app logs it (quiz.js qclockRead), and handed to the app's question clock (QCLOCK) before the click. B and C
+//   are set so that the simulated logs replayed by tools/abilityeval.js --rtfit give back the two measures of the real
+//   answers (PR #431: -0.88 per unit of z on the answer itself, -0.39 on the next answer on the genus after a right one);
+//   T0 only sets the scale (z is against the player's own median). No zoom: the learner never enlarges a photo (too
+//   few real answers to model it yet). The app weighs a right answer's steps by its time once the sync script replays
+//   it (core.js RT_SHEET): the tool says so to the app (the sheet version it last saw, reefid-sheet-v); --rtapp off keeps
+//   the app as before that script (every weight 1); --rt off gives no seconds at all (the learner before 2026-11-04).
+//   --rtlog writes the app's own answer log of every run (readAnswers rows, player = profile:seed, then the learner's
+//   pTrue and its time noise) for tools/abilityeval.js.
 //
 // Measures, at each checkpoint (50, 100, 200, 300 questions, then every 300), mean +- sd over the seeds:
 // - knowSlate: true mean know over the slate genera (the 39 of the IMR coral slate and Millepora); knowMet: over the
@@ -136,7 +153,9 @@ const LEARNER = {
   STEP: 10000,
   MEM: [0, 0.4, 1.5, 2],
   FEW: 14,
-  MANY: 20
+  MANY: 20,
+  // Response time (above): log seconds T0, the drop after a right answer B, per logit of the true chance C, noise SD.
+  RT: {T0: 7, B: 0.15, C: 0.3, SD: 0.6}
 };
 
 const arg = (k, d) => {
@@ -149,6 +168,7 @@ const SEEDS = Number(arg('seeds', 5)),
   WORKERS = Number(arg('workers', Math.max(1, Math.min(4, os.cpus().length)))),
   OUT = arg('out', null),
   STATS = arg('stats', null),
+  TRUTH = arg('truth', null),
   AFTER = Number(arg('after', 20)),
   UNIT = {m: 60000, h: 3600000, d: 864e5, w: 7 * 864e5, mo: 30 * 864e5},
   BREAKS = (arg('breaks', '') || '')
@@ -165,7 +185,10 @@ const SEEDS = Number(arg('seeds', 5)),
   VARS = JSON.parse(arg('vars', '{}')),
   AUTO = {beginner: 'new', lectureRA: 'imr', strongRA: 'know', expert: 'know'},
   BACK = arg('back', 'keep'),
-  MET = arg('met', 'Acropora,Porites,Pocillopora,Montipora,Millepora').split(',').filter(Boolean);
+  MET = arg('met', 'Acropora,Porites,Pocillopora,Montipora,Millepora').split(',').filter(Boolean),
+  RTON = arg('rt', 'on') !== 'off',
+  RTAPP = arg('rtapp', 'on') !== 'off',
+  RTLOG = arg('rtlog', null);
 {
   const m = arg('mem', null);
   if (m !== null) {
@@ -185,9 +208,10 @@ const CPS = [
       )
   )
 ].sort((a, b) => a - b);
-// Photo statistics of the sync sheet (?stats=1 answer, or {photos, conf}), to rate the photos as live players do;
-// without it the photo difficulty is Pierre's Easy/Medium/Hard sets, as in CI.
+// Photo statistics of the sync sheet (?stats=1 answer, or {photos, conf, mem, gd, v}), to rate the photos as live
+// players do; without it every photo's difficulty is 0 (no sheet), as in CI (the Easy/Medium/Hard sets before 2026-11-03).
 const STATS_JSON = STATS ? JSON.parse(fs.readFileSync(STATS, 'utf8')) : null;
+const TRUTH_JSON = TRUTH ? JSON.parse(fs.readFileSync(TRUTH, 'utf8')) : null;
 
 const TYPES = {
   '.html': 'text/html',
@@ -218,8 +242,10 @@ const server = http.createServer((req, res) => {
 
 // One player, inside the page: the app's globals (P, quizPhoto, photoDiff, pooledConf, ...) are in scope.
 function play(cfg) {
-  const {prof, seed, N, cps, L, breaks, after, openall, back, choice, fallback, vars} = cfg;
+  const {prof, seed, N, cps, L, breaks, after, openall, back, truth, rton, choice, fallback, vars} = cfg;
   if (typeof CHOICE !== 'undefined') CHOICE.opts.forEach(o => Object.assign(o[3], vars[o[0]] || {}));
+  // The learner's difficulty of a photo of genus t: --truth when given, else the app's own (photoDiff).
+  const trueD = (t, p) => (truth ? (truth.photos || {})[p.f] ?? ((truth.gd || {})[t] || 0) : photoDiff(t, p));
   // With breaks: a virtual clock, STEP an answer (the app reads Date.now for the comeback).
   let T = Date.parse('2026-11-02T08:00:00Z');
   if (breaks.length) Date.now = () => T;
@@ -240,6 +266,10 @@ function play(cfg) {
   };
   Math.random = gen((seed * 2246822519) ^ 0x85ebca6b);
   let rnd = gen((seed * 2654435761) ^ 0x9e3779b9);
+  // The learner's time to answer: a generator of its own (Box-Muller), so the answers never depend on the time model.
+  const trnd = gen((seed * 2246822519) ^ 0x27d4eb2f),
+    tnorm = () => Math.sqrt(-2 * Math.log(1 - trnd())) * Math.cos(2 * Math.PI * trnd()),
+    rtq = []; // per answer: [pTrue, the noise drawn], for --rtlog
   const SL = slateGenera(),
     TRACE = 80,
     know = {};
@@ -286,7 +316,7 @@ function play(cfg) {
     bucket = h => (!h || !h[0] ? 0 : !h[1] ? 1 : h[1] === 1 ? 2 : 3),
     memOn = fs => mean(fs.map(f => L.MEM[bucket(LM[f])])) || 0;
   // Game photos per slate genus (as My progress counts them, seenOf), and its group: few, many, or neither.
-  const NPH = Object.fromEntries(SL.map(g => [g, new Set(VIEWS.flatMap(([v]) => gamePics(g, v, 'hard').map(p => p.f))).size])),
+  const NPH = Object.fromEntries(SL.map(g => [g, new Set(VIEWS.flatMap(([v]) => gamePics(g, v).map(p => p.f))).size])),
     grpOf = g => (!(g in NPH) ? null : NPH[g] <= L.FEW ? 'few' : NPH[g] >= L.MANY ? 'many' : null),
     GRP = {few: SL.filter(g => grpOf(g) === 'few'), many: SL.filter(g => grpOf(g) === 'many')},
     gq = {few: {n: 0, ok: 0, rep: 0, repOk: 0}, many: {n: 0, ok: 0, rep: 0, repOk: 0}};
@@ -411,7 +441,7 @@ function play(cfg) {
       [, t, , , set] = window.__q,
       ch = typed ? window.__q[2] : [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c),
       shown = set.shown || [],
-      d = mean(shown.map(p => photoDiff(t, p))) || 0,
+      d = mean(shown.map(p => trueD(t, p))) || 0,
       single = shown.length === 1,
       fs = shown.map(p => p.f),
       rep = fs.some(f => LM[f] && LM[f][0]),
@@ -434,6 +464,13 @@ function play(cfg) {
     // The learner's true chance on this question: recognised, or (choices only) its guess falls on t.
     const pTrue = typed ? pRec : pRec + (1 - pRec) * (wOf(t, t) / ch.reduce((a, c) => a + wOf(t, c), 0));
     lastE = null;
+    // The time to answer (above), handed to the question's clock just before the answer (quiz.js QCLOCK, qclockRead).
+    if (rton && typeof QCLOCK === 'object') {
+      const eps = tnorm(),
+        sec = Math.round(Math.min(600, Math.max(0.1, Math.exp(Math.log(L.RT.T0) - L.RT.B * good - L.RT.C * logit(pTrue) + L.RT.SD * eps))) * 10) / 10;
+      Object.assign(QCLOCK, {t0: performance.now() - sec * 1000, off: 0, hid: null});
+      rtq.push([pTrue, eps]);
+    } else rtq.push([pTrue, null]);
     if (typed) {
       const f = document.querySelector('#view .tyform');
       if (!pick) f.querySelector('[data-idk]').click();
@@ -556,6 +593,10 @@ function play(cfg) {
       blk = {n: 0, ok: 0};
     }
   }
+  // The app's own answer log of the first session (LOG0: answers of a player not signed in), with the learner's chance
+  // and time noise of each answer, for --rtlog.
+  const log0 = (store.get(LOG0, []) || []).slice(-rtq.length),
+    alog = log0.length === rtq.length ? log0.map((a, i) => [a, ...rtq[i]]) : null;
   // Breaks (--breaks): from the state at the end of the first session, each break in turn.
   const out = [];
   if (breaks.length) {
@@ -662,7 +703,8 @@ function play(cfg) {
     // (1-based) where only the right-answer rule held the opening, with openChance then.
     opens,
     afterMiss,
-    blocked: [...blocked].filter(([a]) => a < N).map(([a, c]) => [a + 1, Math.round(c * 1000) / 1000])
+    blocked: [...blocked].filter(([a]) => a < N).map(([a, c]) => [a + 1, Math.round(c * 1000) / 1000]),
+    alog
   };
 }
 
@@ -672,15 +714,25 @@ async function run(browser, base, name, seed) {
     u => !u.href.startsWith(base),
     r => r.abort()
   );
-  await ctx.addInitScript(st => {
+  await ctx.addInitScript(([st, rtapp]) => {
     localStorage.setItem('reefid-tour', '"done"');
-localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+    // The sync script version the app last saw (sync.js sheetV): one that replays the answer time (core.js RT_SHEET), so
+    // the app weighs its steps by it; --rtapp off: an older one.
+    if (rtapp) localStorage.setItem('reefid-sheet-v', '1000');
+    localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     if (st)
       localStorage.setItem(
         'reefid-photo-stats',
-        JSON.stringify({t: Date.now(), photos: st.photos || {}, conf: st.conf || {}, ...(st.mem ? {mem: st.mem} : {})})
+        JSON.stringify({
+          t: Date.now(),
+          v: st.v,
+          photos: st.photos || {},
+          conf: st.conf || {},
+          ...(st.mem ? {mem: st.mem} : {}),
+          ...(st.gd ? {gd: st.gd} : {})
+        })
       );
-  }, STATS_JSON);
+  }, [STATS_JSON, RTAPP]);
   const p = await ctx.newPage(),
     errs = [];
   p.on('pageerror', e => errs.push(e.message));
@@ -699,6 +751,8 @@ localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     after: AFTER,
     openall: OPENALL,
     back: BACK,
+    rton: RTON,
+    truth: TRUTH_JSON,
     choice: CHOICE === 'auto' ? AUTO[name] : CHOICE,
     fallback: FALLBACK,
     vars: VARS
@@ -1029,6 +1083,32 @@ function openTable(runs) {
     );
   }
   if (errs.length) console.log('\nPage errors: ' + errs.slice(0, 5).join(' | '));
+  // --rtlog: every run's answer log as readAnswers rows [player, time ms, shown, answered, right, mode, photos, e, th, new
+  // photos, choices, 0, seconds, enlarged, pTrue, noise], the player 'profile:seed' (tools/abilityeval.js reads them).
+  if (RTLOG) {
+    const rows = runs.flatMap(r =>
+      (r.alog || []).map(([a, p, eps]) => [
+        `${r.profile}:${r.seed}`,
+        Date.parse(a.t),
+        a.g,
+        a.a,
+        a.ok,
+        a.m,
+        a.ph,
+        a.e,
+        a.th,
+        a.nw,
+        a.ch,
+        0,
+        typeof a.rt === 'number' ? a.rt : null,
+        a.zm,
+        p,
+        eps
+      ])
+    );
+    fs.writeFileSync(RTLOG, JSON.stringify(rows));
+    console.log(`\nAnswer log: ${rows.length} answers written to ${RTLOG}`);
+  }
   if (OUT) {
     fs.writeFileSync(
       OUT,
@@ -1048,6 +1128,7 @@ function openTable(runs) {
           profiles: Object.fromEntries(NAMES.map(n => [n, PROFILES[n]])),
           learner: LEARNER,
           stats: STATS || null,
+          truth: TRUTH || null,
           seconds: secs,
           summary: S,
           byPhotos: GS,

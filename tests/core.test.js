@@ -7,6 +7,8 @@ const {
   mergeProgress,
   replayedOf,
   eloOf,
+  genusOffsetsOf,
+  GENUS_K,
   trustOf,
   confusionOf,
   confScore,
@@ -115,6 +117,23 @@ test('mergeProgress: untouched locally, the pulled record wins', () => {
   assert.deepStrictEqual(mergeProgress(B, P, R), {A: {ok: 4, ko: 1, th: 0.7, streak: 0}});
 });
 
+test('hierarchical photo Elo: a photo nobody answered starts at its genus offset, served as the total (sheet v31)', () => {
+  const R = (t, ok, f, g = 'Acropora', who = 'Ana') => [who, t, g, ok ? g : 'Porites', ok ? 1 : 0, 'quiz', f];
+  // A trusted player (clearly above chance) misses the Acropora photos more than the game expected: the genus offset rises.
+  const rows = [];
+  for (let i = 0; i < 40; i++) rows.push(R(i, i % 2, `acropora-${i % 4}`), R(100 + i, 1, `porites-${i % 4}`, 'Porites'));
+  // A new photo, answered once by a player who does not rate the photos (fewer than 10 answers): it moves nothing, so its
+  // served difficulty is where it starts, its genus offset.
+  rows.push(R(200, 1, 'acropora-new', 'Acropora', 'Zed'));
+  const gd = genusOffsetsOf(rows),
+    E = eloOf(rows);
+  assert.ok(GENUS_K > 0 && gd.Acropora[0] > gd.Porites[0], JSON.stringify(gd));
+  assert.strictEqual(E['acropora-new'][0], gd.Acropora[0]);
+  assert.strictEqual(E['acropora-new'][1], 0);
+  // The weighed answers behind an offset: every trusted answer on the genus, weighed as for its photos (n / (n + 10)).
+  assert.ok(gd.Acropora[1] > 0 && gd.Acropora[1] < 40, JSON.stringify(gd));
+});
+
 test('eloOf gives the same photo ratings as Code.gs stats_', () => {
   const s = loadCodeGs();
   const photos = ['acropora-1', 'acropora-2', 'porites-1', 'porites-2', 'favia-1'];
@@ -131,7 +150,8 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
           {
             id: 'a' + n++,
             t: new Date(Date.UTC(2026, 10, 1, 0, 0, n)).toISOString(),
-            g: 'Acropora',
+            // v31: the genus shown is the photos' genus (one colony a question), whose offset they share.
+            g: ph[0].split('-')[0].replace(/^./, c => c.toUpperCase()),
             a: i % 3 ? 'Acropora' : 'Porites',
             ok: i % 3 ? 1 : 0,
             m: ['quiz-duel', 'quiz', 'quiz|k2', 'quiz|k3', 'quiz'][i % 5],
@@ -146,6 +166,13 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
     rows = s.post({readAnswers: 1, ...T}).rows,
     st = s.get({stats: '1'});
   assert.deepStrictEqual(eloOf(rows), st.photos);
+  // v31: the genus offsets of the hierarchical photo Elo, the same in the sheet and the admin's replay.
+  assert.deepStrictEqual(genusOffsetsOf(rows), st.gd);
+  assert.deepStrictEqual(Object.keys(st.gd).sort(), ['Acropora', 'Favia', 'Porites']);
+  assert.ok(
+    Object.values(st.gd).some(o => o[0] !== 0),
+    'the answers moved the genus offsets'
+  );
   // v26: the photo memory offsets and the answers behind them, the same in the sheet and the admin's replay.
   assert.deepStrictEqual(photoMemOf(rows), {mem: st.mem, memn: st.memn});
   assert.notDeepStrictEqual(st.mem, MEM.PRIOR, 'the answers moved the offsets');
@@ -292,15 +319,18 @@ test("v17: a beginner's answers move the photos more as their level settles; a r
     later = Array.from({length: 40}, (_, i) => R(20 + i, i % 5 ? 1 : 0, 'l-' + i)),
     L = [...early, ...later];
   assert.strictEqual(trustOf(L).Lea, true);
-  const E = eloOf(L);
+  // A photo's own part (sheet v31: the served difficulty less its genus offset, which every Acropora photo shares).
+  const own = (rows, f) => eloOf(rows)[f][0] - genusOffsetsOf(rows).Acropora[0],
+    e1 = own(L, 'e-1'),
+    l5 = own(L, 'l-5');
   // Same outcome (a miss), early (answer 2) and late (answer 25): the late one moves its photo more.
   assert.strictEqual(early[1][4], 0);
   assert.strictEqual(later[5][4], 0);
-  assert.ok(Math.abs(E['e-1'][0]) < Math.abs(E['l-5'][0]) / 2, `early ${E['e-1'][0]} vs late ${E['l-5'][0]}`);
+  assert.ok(Math.abs(e1) < Math.abs(l5) / 2, `early ${e1} vs late ${l5}`);
   // A right answer on a photo already right twice (remembered) moves it less than one on a new photo.
   const base = [...L, R(100, 1, 'k-1'), R(101, 1, 'k-1')],
-    dKnown = eloOf([...base, R(102, 1, 'k-1')])['k-1'][0] - eloOf(base)['k-1'][0],
-    dNew = eloOf([...base, R(102, 1, 'n-1')])['n-1'][0];
+    dKnown = own([...base, R(102, 1, 'k-1')], 'k-1') - own(base, 'k-1'),
+    dNew = own([...base, R(102, 1, 'n-1')], 'n-1');
   assert.ok(Math.abs(dKnown) < Math.abs(dNew), `known ${dKnown} vs new ${dNew}`);
 });
 
@@ -926,3 +956,153 @@ test('quantile and distOf: median and spread', () => {
     assert.ok(d.p25 <= d.med && d.med <= d.p75 && d.min <= d.p25 && d.p75 <= d.max);
   }
 });
+
+// The rename to IMR Reef ID (2026-11-03): the old storage keys move to their new names at start-up (migrateKeys), the
+// sheet's and progress files' old names are read as new (keysIn), and the sheet gets old-name copies (withLegacy).
+// rename-app: keep-begin
+const {KEYS, LEGACY_KEYS, keyRename, keyLegacy, migrateKeys, keysIn, withLegacy, ORG} = require('../core.js');
+// A Storage (localStorage, sessionStorage) in memory, with the same methods and order of keys.
+const fakeStorage = (init = {}, full = () => false) => {
+  const m = new Map(Object.entries(init));
+  return {
+    get length() {
+      return m.size;
+    },
+    key: i => [...m.keys()][i] ?? null,
+    getItem: k => (m.has(k) ? m.get(k) : null),
+    setItem(k, v) {
+      if (full(k)) throw new Error('QuotaExceededError');
+      m.set(k, String(v));
+    },
+    removeItem: k => m.delete(k),
+    dump: () => Object.fromEntries(m)
+  };
+};
+
+test('rename: the key table (travelling keys keep travelling, device keys stay on the device)', () => {
+  assert.strictEqual(keyRename('imr-coral-progress'), 'reefid-sync-coral-progress');
+  assert.strictEqual(keyRename('imr-coral-quiz'), 'reefid-sync-coral-quiz');
+  assert.strictEqual(keyRename('imr-coral-intro'), 'reefid-sync-coral-intro');
+  assert.strictEqual(keyRename('imr-coral-intro-offer'), 'reefid-sync-coral-intro-offer');
+  assert.strictEqual(keyRename('imr-coral-reset'), 'reefid-sync-coral-reset');
+  assert.strictEqual(keyRename('imr-coral-ach'), 'reefid-sync-ach');
+  assert.strictEqual(keyRename('imr-coral-theme'), 'reefid-sync-theme');
+  assert.strictEqual(keyRename('imr-coral-sync'), 'reefid-account', 'the sign-in record never travels');
+  assert.strictEqual(keyRename('imr-coral-loaded'), 'reefid-loaded');
+  assert.strictEqual(keyRename('imr-admin-vault'), 'reefid-admin-vault');
+  assert.strictEqual(keyRename('imr-tour'), 'reefid-tour');
+  ['reefid-tour', 'reefid-sync-coral-progress', 'demo:imr-admin-vault', 'test-sheet-log', 'imr'].forEach(k =>
+    assert.strictEqual(keyRename(k), null, k)
+  );
+  // Every old travelling key still travels, every other one stays on the device; and back for the sheet copies.
+  LEGACY_KEYS.forEach(([o, n]) => {
+    const k = o.endsWith('-') ? o + 'x' : o,
+      nk = keyRename(k);
+    assert.strictEqual(nk.startsWith(KEYS.SYNC), k.startsWith('imr-coral-') && !['imr-coral-sync', 'imr-coral-loaded'].includes(k), k);
+    assert.ok(nk.startsWith(KEYS.APP), k);
+    assert.strictEqual(keyLegacy(nk), nk.startsWith(KEYS.SYNC) ? k : null, k);
+  });
+  assert.strictEqual(ORG.app, 'IMR Reef ID');
+  assert.ok(!/imr/i.test(KEYS.APP + KEYS.SYNC), 'the keys do not name the organisation');
+});
+
+test('rename: migrateKeys moves an old key, keeps a new one, leaves the rest', () => {
+  // Old only: moved.
+  const a = fakeStorage({'imr-coral-progress': '{"Porites":{"ok":3}}', 'imr-coral-sync': '{"name":"Ana"}', 'imr-tour': '"done"'});
+  assert.deepStrictEqual(migrateKeys(a).sort(), ['imr-coral-progress', 'imr-coral-sync', 'imr-tour']);
+  assert.deepStrictEqual(a.dump(), {
+    'reefid-sync-coral-progress': '{"Porites":{"ok":3}}',
+    'reefid-account': '{"name":"Ana"}',
+    'reefid-tour': '"done"'
+  });
+  // Both: the new one is kept, the old one goes.
+  const b = fakeStorage({'imr-coral-progress': 'old', 'reefid-sync-coral-progress': 'new'});
+  migrateKeys(b);
+  assert.deepStrictEqual(b.dump(), {'reefid-sync-coral-progress': 'new'});
+  // None: nothing moves, other keys (a test's, the admin demo's) are left alone.
+  const c = fakeStorage({'reefid-sync-coral-progress': 'p', 'test-own': '1', 'demo:imr-admin-vault': 'x'});
+  assert.deepStrictEqual(migrateKeys(c), []);
+  assert.deepStrictEqual(c.dump(), {'reefid-sync-coral-progress': 'p', 'test-own': '1', 'demo:imr-admin-vault': 'x'});
+  // Again: nothing more to do.
+  assert.deepStrictEqual(migrateKeys(a), []);
+  // A key that cannot be written (storage full) stays under its old name, to be moved at the next start.
+  const d = fakeStorage({'imr-coral-progress': 'big', 'imr-coral-theme': '"dark"'}, k => k === 'reefid-sync-coral-progress');
+  assert.deepStrictEqual(migrateKeys(d), ['imr-coral-theme']);
+  assert.deepStrictEqual(d.dump(), {'imr-coral-progress': 'big', 'reefid-sync-theme': '"dark"'});
+});
+
+test('rename: what travels includes a record whose move is pending, the new name winning (travelData; Codex review #439)', () => {
+  const {travelData} = require('../core.js');
+  // The progress could not be moved (storage full): a save or a backup still carries it, under its new name.
+  const d = fakeStorage(
+    {'imr-coral-progress': 'P', 'reefid-sync-theme': '"dark"', 'imr-coral-sync': '{"name":"Ana"}', 'reefid-tour': '"done"'},
+    k => k === 'reefid-sync-coral-progress'
+  );
+  migrateKeys(d);
+  assert.deepStrictEqual(travelData(d), {'reefid-sync-coral-progress': 'P', 'reefid-sync-theme': '"dark"'});
+  // Both names: the new one wins; device keys (the sign-in record, the tour) never travel.
+  assert.deepStrictEqual(travelData(fakeStorage({'imr-coral-quiz': 'old', 'reefid-sync-coral-quiz': 'new', 'reefid-account': '{}'})), {
+    'reefid-sync-coral-quiz': 'new'
+  });
+});
+
+test('rename: sign-out removes a key under its old name too (withOldNames; Codex review #439)', () => {
+  const {withOldNames} = require('../core.js');
+  const L = withOldNames(['reefid-account', 'reefid-sync-coral-progress', 'reefid-hold', 'reefid-sync-fish-progress']);
+  ['reefid-account', 'imr-coral-sync', 'reefid-sync-coral-progress', 'imr-coral-progress', 'reefid-hold', 'imr-hold'].forEach(k =>
+    assert.ok(L.includes(k), k)
+  );
+  // A sign-in record left under its old name by a migration that could not write it is gone after sign-out.
+  const d = fakeStorage({'imr-coral-sync': '{"name":"Ana"}', 'imr-coral-progress': 'P'}, k => k.startsWith('reefid-'));
+  migrateKeys(d);
+  withOldNames(['reefid-account', 'reefid-sync-coral-progress']).forEach(k => d.removeItem(k));
+  assert.deepStrictEqual(d.dump(), {});
+});
+
+test('rename: a key the migration could not write is still read under its old name (keyGet; Codex review #439)', () => {
+  const {keyGet, keyBefore} = require('../core.js');
+  // Storage full: the progress stays under its old name; the app reads it there, so the player's progress is not empty.
+  const d = fakeStorage({'imr-coral-progress': '{"Porites":{"ok":3}}'}, k => k === 'reefid-sync-coral-progress');
+  migrateKeys(d);
+  assert.strictEqual(d.getItem('reefid-sync-coral-progress'), null);
+  assert.strictEqual(keyGet(d, 'reefid-sync-coral-progress'), '{"Porites":{"ok":3}}');
+  // The new name wins once it exists (written later, or moved at the next start); a key with no old name reads as before.
+  const e = fakeStorage({'imr-coral-progress': 'old', 'reefid-sync-coral-progress': 'new', 'imr-tour': '"done"'});
+  assert.strictEqual(keyGet(e, 'reefid-sync-coral-progress'), 'new');
+  assert.strictEqual(keyGet(e, 'reefid-tour'), '"done"');
+  assert.strictEqual(keyGet(e, 'reefid-sync-coral-quiz'), null);
+  assert.strictEqual(keyGet(e, 'demo:reefid-admin-vault'), null);
+  // keyBefore is keyRename's reverse on every key of the table.
+  LEGACY_KEYS.forEach(([o, n]) => {
+    const k = o.endsWith('-') ? o + 'x' : o;
+    assert.strictEqual(keyBefore(keyRename(k)), k, k);
+  });
+});
+
+test('rename: data from the sheet or a file is read with the new names; the sheet gets old-name copies', () => {
+  // An app from before the rename saved it.
+  assert.deepStrictEqual(keysIn({'imr-coral-progress': 'p', 'imr-coral-ach': 'a', 'imr-coral-intro': 'i'}), {
+    'reefid-sync-coral-progress': 'p',
+    'reefid-sync-ach': 'a',
+    'reefid-sync-coral-intro': 'i'
+  });
+  // Both names: the new one wins.
+  assert.deepStrictEqual(keysIn({'imr-coral-progress': 'old', 'reefid-sync-coral-progress': 'new'}), {'reefid-sync-coral-progress': 'new'});
+  assert.deepStrictEqual(keysIn(null), {});
+  // Sent: the new names, and the old ones for an app from before the rename on another device of the player.
+  const sent = withLegacy({'reefid-sync-coral-progress': 'p', 'reefid-sync-ach': 'a'});
+  assert.deepStrictEqual(sent, {
+    'reefid-sync-coral-progress': 'p',
+    'reefid-sync-ach': 'a',
+    'imr-coral-progress': 'p',
+    'imr-coral-ach': 'a'
+  });
+  // Read back by the renamed app: the same as what it sent.
+  assert.deepStrictEqual(keysIn(sent), {'reefid-sync-coral-progress': 'p', 'reefid-sync-ach': 'a'});
+  // The account merge (admin) reads either.
+  const m = mergeUsers(keysIn({'imr-coral-progress': JSON.stringify({Porites: {ok: 2, ko: 0}})}), {
+    'reefid-sync-coral-progress': JSON.stringify({Porites: {ok: 1, ko: 1}})
+  });
+  assert.strictEqual(JSON.parse(m['reefid-sync-coral-progress']).Porites.ok, 3);
+});
+// rename-app: keep-end

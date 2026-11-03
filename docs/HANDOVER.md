@@ -12,6 +12,7 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 
 ## State of play (2026-11-01)
 
+- The app was renamed **IMR Reef ID** (approved by Pierre on 2026-11-03, shipped 2026-11-04) (IMR Coral ID before; Pierre: corals now, fish and benthos next), internal names with it (storage keys `reefid-`, sheet v33 reads both key names; ARCHITECTURE.md "Names, storage keys and caches"). The address, the repository name, the Google Sheet "IMR Coral ID – RA progress" and the Cloud project "IMR Coral ID sync" kept their names; the address and repository move later with a migration for players (ROADMAP "Domain and repository rename"). <!-- rename-app: keep -->
 - Live app: <https://ppericard.github.io/coral-id-imr/> (GitHub Pages from `main`). Admin: <https://ppericard.github.io/coral-id-imr/admin.html>.
 - About 287 pull requests merged in two days (2026-10-31 and 11-01). Every PR description explains a decision; `git log --oneline` is a good index (squash merges titled `… (#N)`).
 - No open pull requests at handover time.
@@ -33,6 +34,7 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 | Confirm Merulina's placement (shown with Hydnophora, lecture group 7; alternative group 5). | ROADMAP. |
 | Say which Lab tools he marked Keep / Trim (votes live only in his browser). | ROADMAP. |
 | Send the app to the beta RAs; renew the admin GitHub token before it expires (fine-grained, 90-day expiry, created around 2026-10-31, so about late January 2027). | Admin lock screen has the token link. |
+| Create the secret `ANALYSES_ADMIN_TOKEN` so the Analyses report computes itself (2026-11-04). | Below, "Analyses report". |
 | Clean merged branches (Pierre, 2026-11-04: they hide the ones that never got a PR, AGENTS 26b): turn on Settings > General > Pull Requests > "Automatically delete head branches" for the future, and for the ~130 already merged run Actions > **Prune merged branches** (`prune-branches.yml`) once with "dry_run" ticked (it lists), then unticked (it deletes). It deletes only branches whose PR was merged and that got nothing after the merge; a deleted branch can be restored from its PR page. Agents cannot delete branches from their sessions (the git proxy refuses). | GitHub Settings; Actions. |
 
 ## Questions for an IMR trainer
@@ -136,3 +138,14 @@ open PRs and merge them yourself once checks pass; fix review findings without a
 only real choices, one short question each, with your recommendation; update the docs in every
 PR. Save any new lasting rule I give you in AGENTS.md, not only in your memory.
 ```
+
+## Analyses report (one-time setup, 2026-11-04)
+
+The admin's **Analyses** group shows a report that a GitHub Action computes from the answer log every 1000 answers and stores in the sync sheet (docs/ARCHITECTURE.md "Analyses"). The Action reads and writes the sheet with an admin token, the same kind of token as the admin page's: until it exists, every run is skipped (green, with the message "ANALYSES_ADMIN_TOKEN is not set: skipped") and the admin's views say "No report yet". Never paste the token in a chat or a file.
+
+1. **Make a token for the Action** (a separate one from the admin page's, so either can be revoked alone): GitHub > your picture > Settings > Developer settings > Personal access tokens > **Fine-grained tokens** > Generate new token. Name "Coral ID analyses"; expiration up to a year (note the date); Resource owner `ppericard`; Repository access **Only select repositories** > `coral-id-imr`; Repository permissions: **Contents: Read-only** (the sync script only asks GitHub whether the token's owner can write to the repository, which Pierre can; the token itself never needs to write). Generate, copy it.
+2. **Store it as a repository secret**: the repository > Settings > Secrets and variables > Actions > **New repository secret**: name `ANALYSES_ADMIN_TOKEN`, value the token. Secrets never show in logs or to forks.
+3. **Check**: the repository > Actions > **Analyses report** > Run workflow (tick *force*) > Run. The log says "Stored: N answers, M milestones …" (counts only). The admin's Analyses group then shows the report. From then on it runs every hour and computes only after 1000 new answers.
+
+If the log says the token was refused: the token has expired or lost access to the repository (make a new one, step 1, and replace the secret). "The sync script answers as v…: needs v35": the sheet script has not updated itself yet (about 15 minutes after a merge; its "Deploy log" tab says).
+

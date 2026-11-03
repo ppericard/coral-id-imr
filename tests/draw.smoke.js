@@ -380,9 +380,9 @@ const server = http.createServer((req, res) => {
     // colony's never right: that colony comes up more often than when all are equally known (a soft factor, never a
     // filter: the photos all known still come up).
     {
-      const nph = n => new Set(VIEWS.flatMap(([v]) => gamePics(n, v, 'hard').map(x => x.f))).size,
+      const nph = n => new Set(VIEWS.flatMap(([v]) => gamePics(n, v).map(x => x.f))).size,
         n = slateGenera().reduce((a, x) => (nph(x) < nph(a) ? x : a)),
-        files = VIEWS.flatMap(([v]) => gamePics(n, v, 'hard')),
+        files = VIEWS.flatMap(([v]) => gamePics(n, v)),
         cols = [...new Set(files.map(key))],
         c0 = cols[0],
         share = ps => {
@@ -397,7 +397,10 @@ const server = http.createServer((req, res) => {
         even = share(all),
         favour = share({...all, ...Object.fromEntries(files.filter(x => key(x) === c0).map(x => [x.f, [1, 0]]))});
       // Measured 2026-11-03 on the genera with the fewest photos: x 1.4-1.5 (the old rule, x 0.6 from right twice: 1.0-1.1).
-      if (cols.length < 2 || !(favour > 1.25 * even) || !(even > 0))
+      // Since the Easy / Medium / Hard sets went (2026-11-03), every photo here has the same prior difficulty (no sheet
+      // in the test): Astrea x 1.24, the variety floor (the 3 best colonies at least half the top) capping one colony's
+      // lead when its photos are alike; 1.15 stays above the old rule's 1.0-1.1.
+      if (cols.length < 2 || !(favour > 1.15 * even) || !(even > 0))
         fails.push(
           `${n} (${files.length} photos, ${cols.length} colonies): the least remembered colony came up ${favour} (all known alike: ${even})`
         );
@@ -407,7 +410,7 @@ const server = http.createServer((req, res) => {
     const v0 = examSet(t).shown[0];
     P[t].ps[v0.f] = [1, 0];
     for (let i = 0; i < 20; i++)
-      if (examSet(t).shown[0].f === v0.f && gamePics(t, v0.view, 'hard').length > 1) fails.push(`${t}: exam reused a photo already seen`);
+      if (examSet(t).shown[0].f === v0.f && gamePics(t, v0.view).length > 1) fails.push(`${t}: exam reused a photo already seen`);
     // The sheet's leaderboard % (Code.gs pctOf_, a copy of core.js pctOf) from the progress as saved (save()) equals the
     // app's progPct: varied progress, records saved before s.pg (BKT's L, recent results only, learned) among them, then
     // a few answers played through the quiz.
