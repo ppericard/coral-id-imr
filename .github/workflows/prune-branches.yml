@@ -35,24 +35,28 @@ jobs:
             -q '.[] | [.head.ref, .state, (.merged_at // ""), .head.sha, (.number|tostring)] | @tsv' > prs.tsv
           gh api "repos/$REPO/branches?per_page=100" --paginate -q '.[] | [.name, .commit.sha] | @tsv' > heads.tsv
           default=$(gh api "repos/$REPO" -q .default_branch)
-          deleted=0; kept=0
+          deleted=0; kept=0; failed=0
           while IFS=$'\t' read -r name sha; do
             [ "$name" = "$default" ] && continue
             open=$(awk -F'\t' -v b="$name" '$1==b && $2=="open"' prs.tsv | wc -l)
             merged_here=$(awk -F'\t' -v b="$name" -v s="$sha" '$1==b && $3!="" && $4==s' prs.tsv | wc -l)
             if [ "$open" -eq 0 ] && [ "$merged_here" -gt 0 ]; then
-              if [ "$DRY" = "true" ]; then echo "would delete: $name"; else
-                # Atomic: the push deletes the branch only if it still points at the SHA checked above,
-                # so a push made after the listing keeps the branch (Codex review #435).
-                if git push --porcelain --force-with-lease="refs/heads/$name:$sha" origin ":refs/heads/$name" >/dev/null 2>&1; then
-                  echo "deleted: $name"
-                else echo "kept (moved since the listing): $name"; deleted=$((deleted-1)); kept=$((kept+1)); fi
+              if [ "$DRY" = "true" ]; then echo "would delete: $name"; deleted=$((deleted+1)); continue; fi
+              # Atomic: the push deletes the branch only if it still points at the SHA checked above,
+              # so a push made after the listing keeps the branch (Codex review #435). Counted only on success.
+              if out=$(git push --porcelain --force-with-lease="refs/heads/$name:$sha" origin ":refs/heads/$name" 2>&1); then
+                echo "deleted: $name"; deleted=$((deleted+1))
+              elif printf '%s' "$out" | grep -q 'stale info'; then
+                echo "kept (moved since the listing): $name"; kept=$((kept+1))
+              else
+                echo "::error::not deleted: $name: $(printf '%s' "$out" | grep -m1 -iE 'rejected|error|remote:' || printf '%s' "$out" | tail -1)"; failed=$((failed+1))
               fi
-              deleted=$((deleted+1))
             else
               any=$(awk -F'\t' -v b="$name" '$1==b' prs.tsv | wc -l)
               if [ "$open" -gt 0 ]; then why="open pull request"; elif [ "$any" -eq 0 ]; then why="NO pull request"; else why="commits after the merge, or closed unmerged"; fi
               echo "kept ($why): $name"; kept=$((kept+1))
             fi
           done < heads.tsv
-          echo "::notice::$([ "$DRY" = "true" ] && echo 'would delete' || echo 'deleted') $deleted branches, kept $kept"
+          echo "::notice::$([ "$DRY" = "true" ] && echo 'would delete' || echo 'deleted') $deleted branches, kept $kept, failed $failed"
+          # A refused deletion (protected branch, permissions) fails the run, so it is never reported as done.
+          [ "$failed" -eq 0 ]
