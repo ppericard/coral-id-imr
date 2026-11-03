@@ -192,6 +192,20 @@ const server = http.createServer((req, res) => {
     if (at.some((x, i) => i && x - at[i - 1] < EXAM.gap))
       fails.push(`${t}: exam questions closer than ${EXAM.gap} answers: ${at.join(', ')}`);
     if (level(t)[0] !== 'ok' || genScore(t) !== 1) fails.push(`${t}: mastered but not learned at 100%`);
+    // One draw weight (model.js drawW, review item 8): never asked weighs 1, the most; a genus known and measured less
+    // than one badly known; "Review" is shaky, the same chance.
+    {
+      const keep = {...P},
+        [a, b, c] = genera.filter(n => DATA.gen[n] && n !== t);
+      P[a] = {ok: 0, ko: 0};
+      P[b] = {ok: 40, ko: 4, h: '1111111111', th: 2.5};
+      P[c] = {ok: 6, ko: 6, h: '0101010101', th: -1.4};
+      const w = [a, b, c].map(drawW);
+      if (!(w[0] === 1 && w[1] < w[2] && w[2] < 1)) fails.push(`draw weights: never asked ${w[0]}, known ${w[1]}, shaky ${w[2]}`);
+      if (level(c)[0] !== 'weak' || level(b)[0] === 'weak' || shaky(b) || !shaky(c)) fails.push('Review is not shaky');
+      Object.keys(P).forEach(k => delete P[k]);
+      Object.assign(P, keep);
+    }
     // Typed questions (model.js TYPED, quiz.js typeForm): a genus well on its way (here 89%) is sometimes asked typed, a
     // beginner's genus (24%) never; a typed answer is logged quiz|t with the genus read as its answer (never the raw
     // text) and no choices; a typo is read as the genus; a typed miss naming another genus counts against both; "I

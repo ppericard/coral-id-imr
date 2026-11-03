@@ -228,15 +228,25 @@ function wpick(L, f) {
   return L[L.length - 1];
 }
 // Which genus to ask next (Pierre: spread the work, target what is not seen or not mastered yet, keep some chance).
-// Weight by status and by how far the genus still is from its exam (1 - progress s.pg): review 3-5, learning 1-4,
-// learned 0.25 (unseen 10, so every genus comes up early). A genus asked in the last 4 questions is mostly held back so the work spreads across genera.
+// One quantity (independent review of 2026-11-02, item 8; Pierre, 2026-11-03: "one variable computed dynamically, as
+// simple as possible"): a genus weighs what the model does not yet know the player holds, drawW = 1 - x c, with
+// x = sig(ability - genusDiff), the player's chance to recognise an average photo of it (what shaky and the comeback
+// read), and c = m / (m + ELO.n), how sure the Elo is of that ability after m answers (the share of its uncertainty
+// function, K = kmax / (1 + m / n), already gone). Never asked: 1, the most (every genus comes up early, a card's
+// genus soon after it); badly known or barely measured: near 1; known and measured: near 1 - x. It replaced the status
+// weights (never asked 10, learned 0.25, "Review" 3 + 2u, learning 1 + 3u, u = 1 - progress) and the "2 misses in the
+// last 5" rule behind "Review" (docs/LEARNING.md "One draw weight"). The mastery exam: a genus ready for its next exam
+// question weighs 1, as one never asked; between two of them it waits (x 0.05). A genus asked in the last 4 questions
+// is mostly held back (x 0.1) so the work spreads across genera.
 let lastQs = [];
+const drawW = n => {
+  const s = P[n] || {},
+    m = (s.ok || 0) + (s.ko || 0);
+  return 1 - (sig(ability(n) - genusDiff(n)) * m) / (m + ELO.n);
+};
 const weight = n => {
-  const lv = level(n)[0],
-    u = 1 - knownP(n),
-    w1 = lv === 'new' ? 10 : lv === 'ok' ? 0.25 : lv === 'weak' ? 3 + 2 * u : 1 + 3 * u,
-    // The mastery exam: a genus ready for its next exam question comes up as one to review; between two of them, it waits.
-    w = examOn(n) ? (examReady(n) ? Math.max(w1, 3) : w1 * 0.05) : w1;
+  const w1 = drawW(n),
+    w = examOn(n) ? (examReady(n) ? 1 : w1 * 0.05) : w1;
   return lastQs.includes(n) ? w * 0.1 : w;
 };
 // Progressive path (Pierre, 2026-11-02: "rather than spamming a beginner with 40 genera, start with the easiest ones,
@@ -282,7 +292,7 @@ const genusDiff = n => {
 // genus (it held an expert back, each new genus waiting to be drawn again).
 const shaky = n => {
   const s = P[n] || {};
-  return level(n)[0] !== 'new' && !s.mx && 0.25 + 0.75 * sig(ability(n) - genusDiff(n)) < OPEN.P;
+  return ((s.ok || 0) + (s.ko || 0) > 0 || !!s.h) && !s.mx && 0.25 + 0.75 * sig(ability(n) - genusDiff(n)) < OPEN.P;
 };
 // The chance that a question the path allows to open a genus opens one: the free share of OPEN.K places for shaky genera.
 const openChance = list => Math.max(0, 1 - list.filter(shaky).length / OPEN.K);
@@ -692,7 +702,6 @@ const recent = n => {
   const s = P[n] || {};
   return s.h ? s.h.slice(-RECENT) : '';
 };
-const misses = h => [...h].filter(x => x === '0').length;
 // Progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability. A genus never answered
 // starts from the player's global level (core.js playerStart: their abilities on the genera already answered), so a
 // strong player gets traps, single views and harder photos on a new genus from its first question.
@@ -905,7 +914,10 @@ const progPct = (L = slateGenera()) => Math.round((100 * L.reduce((t, n) => t + 
 function level(n) {
   const s = P[n];
   if (!s || (s.ok + s.ko === 0 && !s.h)) return ['new', 'Not seen'];
-  if (misses(recent(n).slice(-5)) >= 2) return ['weak', 'Review'];
+  // "Review" (since 2026-11-03, review item 8): shaky, the same chance x the draw weighs (drawW), under OPEN.P on an
+  // average photo with 4 choices; it was "2 misses in the last 5", which the game's 80% target trips one time in four
+  // at any level.
+  if (shaky(n)) return ['weak', 'Review'];
   if (s.mx) return ['ok', 'Learned'];
   return ['mid', 'Learning'];
 }

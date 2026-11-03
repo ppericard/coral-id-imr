@@ -326,7 +326,7 @@ time, each on its card, but never as the answer of the question right after its 
 
 My progress no longer shows "Review" (weak) for a genus with fewer than 5 answers (`REVIEW_MIN`, `shownLevel` in
 model.js): it shows "Learning" until there is enough evidence. The ring counts genera met ("6/40 met") until one is
-learned, then genera learned. The model itself (`level`) is unchanged.
+learned, then genera learned. The model itself (`level`) is unchanged. ("Review" itself is shaky since 2026-11-03: "One draw weight", below.)
 
 ### Comeback after a break (2026-11-02)
 
@@ -494,6 +494,45 @@ question 100, was 200); true knowledge within ±0.02 of before everywhere, where
 300 (K 10, tried on the first version of item 7, opened 17 genera to the beginner by question 100, at the CI limit). Genera learned by 600 move by about one standard error (strong RA 1.4 → 0.4 ±
 0.8, expert 7.8 → 6.8 ± 1.0): the genera opened sooner share the questions. The right % stays within 3 points except
 the first 100 questions of a strong RA (93 → 84%: more new genera at once).
+
+### One draw weight (2026-11-03)
+
+The independent review's item 8, first half (Pierre, 2026-11-03: "one variable computed dynamically, as simple as
+possible"; the second half, no longer updating the genus wrongly picked, is not done: Pierre keeps rule 13, both genera
+are affected, and the weight of that step is being recalibrated on another branch). Which genus a question asks was
+drawn by status weights: never asked 10, learned 0.25, "Review" (2 misses in the last 5) 3 + 2u, learning 1 + 3u,
+u = 1 − progress. Now one quantity (`model.js` `drawW`, `weight`):
+
+- **drawW = 1 − x · c**: x = sig(ability − `genusDiff`), the player's chance to recognise an average photo of the genus
+  (what `shaky`, the opening and the comeback read); c = m / (m + `ELO.n`), how sure the Elo is of that ability after
+  m answers (the share of its uncertainty function, K = kmax / (1 + m / n), already gone). What the model does not yet
+  know the player holds: never asked 1, the most (every genus comes up early, a card's genus soon after its card); badly
+  known or barely measured near 1; known and measured near 1 − x. No new constant.
+- Kept as they were: the exam (a genus ready for its next exam question weighs 1, as one never asked, was at least 3;
+  between two exam questions × 0.05), the last 4 questions held back (× 0.1), the duel draw (`duelPick` adds the two
+  genera's weights).
+- **"Review"** on My progress and the genus sheet is now *shaky* (`level`): met, not learned, and the expected success
+  on an average photo with 4 choices under `OPEN.P` 0.6, the same x. "2 misses in the last 5" was dropped: the game
+  aims every question at 80%, where 2 misses in 5 come one time in four at any level (the reason it was already
+  dropped for the opening). `REVIEW_MIN` (no "Review" under 5 answers) is kept; the sheet text says "Under 60%
+  expected right on a typical photo of it". The sync summary's review list follows.
+- Removed: 4 inline weights (10, 0.25, 3 + 2u, 1 + 3u), the exam's 3, the Review rule (`misses`).
+
+Simulated (`tools/learnsim.js`, 5 seeds × 600 questions, after items 7, 6 and 4, same seeds), before → after (± the
+standard error of the paired difference where it matters):
+
+| Profile | true knowledge 100 / 300 / 600 | genera met 100 | entered the exam by 600 | true ref. success at entry | learned 600 | right % 600 |
+| --- | --- | --- | --- | --- | --- | --- |
+| beginner | 0.26 → 0.27 / 0.54 → 0.55 / 0.85 → 0.86 | 15.2 → 15.8 | 2.2 → 3.0 | 0.87 → 0.86 | 0.6 → 0.8 | 87 → 87 |
+| lecture RA | 0.46 → 0.49 / 0.73 → 0.74 / 0.90 → 0.90 | 19.0 → 23.4 | 1.2 → 5.2 (±1.0) | 0.93 → 0.85 (±0.04) | 0 → 0.6 | 90 → 90 |
+| strong RA | 0.70 / 0.86 → 0.85 / 0.94 | 30.4 → 29.8 | 10.6 → 14.6 (±1.6) | 0.91 → 0.92 | 0.4 → 1.8 (±0.5) | 95 → 94 |
+| expert | 0.94 / 0.95 / 0.97 | 27.8 → 27.0 | 26.0 → 25.8 | 0.92 → 0.92 | 5.8 → 7.4 (±1.3) | 97 → 97 |
+
+- True knowledge the same or 0.01-0.03 higher everywhere; the progress bar's gap to the truth unchanged (±0.03).
+- Genera reach the exam and pass it sooner: the RAs' genera close to the exam's entry were drawn less than before (the
+  old 1 + 3u fell with the progress, u under 0.2), now as much as the model's doubt says. The lecture RA's genera now
+  enter it at a true success of 0.85 on the hard reference question (0.93 before, but on 1.2 genera a run; the review
+  asked for 0.85 or more); the exam then decides, unchanged.
 
 ### Common first (2026-11-03)
 
@@ -1273,6 +1312,9 @@ is not in the simulation.
 - 2026-11-03, review item 7 (Pierre: do the review's simplifications still relevant): one contrast queue for the
   Again and the duels slipped into the quiz, `CONTRAST` {P 0.1, GAP 2} instead of `AUTO_DUEL` {P, FROM, GAP, AGAIN,
   SAME}; duels from the first answers ("One contrast queue").
+- 2026-11-03, review item 8 (first half, Pierre the same day): one draw weight, `drawW` = 1 − x · c from the Elo's
+  chance and its uncertainty, instead of the status weights; "Review" = shaky instead of 2 misses in the last 5. The
+  wrong-pick update stays (rule 13; its weight is recalibrated elsewhere) ("One draw weight").
 - 2026-11-03, review item 4: one difficulty controller, the photo aimed so every question is right with the chance
   `PICKD.P` 0.8 in its format (`aimOff(k)`, typed included), the traps and single views on one schedule (`FORMAT`);
   `TARGET_OFF`, `TRAP` and `singleP`'s ramp removed ("One difficulty controller").
