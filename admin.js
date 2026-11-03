@@ -153,6 +153,7 @@ let SHOWN_COVER = null,
   FU0,
   PICKS = {},
   PHOTOS = {},
+  FISHA = null, // the fish entries and their photos, for the fish beta's reports (fishAdmin)
   KNOWN = new Set(),
   DATA,
   SAVED = {v: 1, genera: {}},
@@ -2715,6 +2716,27 @@ function bindEv() {
 }
 // Triage: only what needs Pierre's eye. 1) photos he flagged on the site, with where they were seen;
 // 2) Featured photos rated Poor. Views without his own Featured pick are not a task (Pierre): the automatic pick is fine.
+// The fish beta's reports (Codex review #442): a report from a fish question names a teaching id (t01) and remote
+// iNaturalist photos (fi…), none in the coral photo registry. fish.json and fish-photos.json are read once, when To do
+// first shows: {gen: teaching id -> record (core.js fishGen), ph: photo id -> {photo, entry id}}.
+let FISHP_ADM = null;
+function fishAdmin() {
+  return (FISHP_ADM =
+    FISHP_ADM ||
+    Promise.all(['fish.json', 'fish-photos.json'].map(u => fetch(u, {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null))))
+      .then(([f, ph]) => {
+        if (!f || !ph || !ph.photos) return;
+        const F = fishGen(f, ph.photos),
+          P = {};
+        Object.values(F.gen).forEach(g => g.views.wide.forEach(x => (P[x.f] = {...x, entry: g.id})));
+        FISHA = {gen: F.gen, ph: P};
+        if (cur === '~triage') render();
+      })
+      .catch(() => {}));
+}
+// A unit's name in a report: a fish entry by its IMR name (plain, no genus page), a genus in italics with its page link.
+const repUnit = x =>
+  FISHA && FISHA.gen[x] ? `${esc(FISHA.gen[x].name)} <small>(fish)</small>` : `<a class="adm-gen" href="#${esc(x)}"><i>${esc(x)}</i></a>`;
 function renderTriage() {
   status();
   const F = DRAFT.flag || {},
@@ -2752,6 +2774,10 @@ function renderTriage() {
   };
   // A reported photo: every tool of its genus page, like a flagged one; Done is per report.
   const repTile = (f, g0) => {
+    // A fish photo (fishAdmin): the photo, its fish entry and its iNaturalist observation.
+    const fp = FISHA && FISHA.ph[f];
+    if (fp)
+      return `<figure class="adm-tile" data-f="${esc(f)}"><a class="adm-ph" href="${esc(fp.o)}" target="_blank" rel="noopener"><img src="${img(fp, 1)}" alt="" loading="lazy"></a><figcaption>${repUnit(fp.entry)} <small>${esc(fp.t || '')}</small></figcaption></figure>`;
     const n = (PHOTOS[f] || {}).genus || g0,
       q = DATA.gen[n] && [...photos(n), ...pending(n)].find(x => x.f === f);
     if (!q) return tile({...(PHOTOS[f] || {}), f, genus: n}, '', '');
@@ -2762,12 +2788,13 @@ function renderTriage() {
       .replace(GRIP, '')
       .replace('<figcaption>', `<figcaption><a class="adm-gen" href="#${esc(n)}"><i>${esc(n)}</i></a>`);
   };
-  const reps = repsOpen(),
-    repCard = r => {
-      const [id, t, who, ok, why, g, a, fix, note, m, ph, w] = r,
-        play = !/^(photo|sheet|page)$/.test(m);
-      return `<article class="adm-rep" data-rep="${esc(id)}"><div class="adm-rephead"><b class="adm-repwho${ok ? '' : ' unv'}" title="${ok ? 'Verified' : 'Not verified'}">${esc(who || 'Anonymous')}${ok ? '' : ' ?'}</b>
-      <span class="adm-repwhy">${esc(why === 'wrong' && !play ? 'Wrong genus' : REP_WHY[why] || why)}</span>${g ? `<span><a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a>${a && a !== g ? ` · answered <i>${esc(a)}</i>` : ''}</span>` : ''}${fix ? `<span class="adm-repfix">→ <i>${esc(fix)}</i></span>` : ''}
+  const reps = repsOpen();
+  if (!FISHA && reps.some(r => /^fi\d/.test(r[10] || '') || /^t\d/.test(r[5] || ''))) fishAdmin();
+  const repCard = r => {
+    const [id, t, who, ok, why, g, a, fix, note, m, ph, w] = r,
+      play = !/^(photo|sheet|page)$/.test(m);
+    return `<article class="adm-rep" data-rep="${esc(id)}"><div class="adm-rephead"><b class="adm-repwho${ok ? '' : ' unv'}" title="${ok ? 'Verified' : 'Not verified'}">${esc(who || 'Anonymous')}${ok ? '' : ' ?'}</b>
+      <span class="adm-repwhy">${esc(why === 'wrong' && !play ? 'Wrong genus' : REP_WHY[why] || why)}</span>${g ? `<span>${repUnit(g)}${a && a !== g ? ` · answered ${repUnit(a)}` : ''}</span>` : ''}${fix ? `<span class="adm-repfix">→ <i>${esc(fix)}</i></span>` : ''}
       <small class="adm-where">${esc(play ? 'game ' + m : m)}${w ? ` · <a href="index.html#${esc(w)}" target="_blank" rel="noopener">${esc(w)}</a>` : ''} · ${esc(when(t))}</small><button type="button" class="adm-tdone" data-rdone="${esc(id)}">✓ Done</button></div>
       ${note ? `<p class="adm-repnote">${esc(note)}</p>` : ''}${
         ph
@@ -2778,7 +2805,7 @@ function renderTriage() {
               .join('')}</div>`
           : ''
       }</article>`;
-    };
+  };
   const poor = [];
   Object.entries(DRAFT.genera).forEach(([n, k]) =>
     Object.entries(k.feat || {}).forEach(([v, L]) =>

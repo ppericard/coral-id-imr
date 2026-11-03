@@ -243,7 +243,9 @@
       rp(1, 'Carla Demo', 'multi', g2, '', '', 'Demo report: two colonies in this photo.', 'quiz', pics[g2][0].f, '#quiz'),
       rp(2, '', 'photo', g3, '', '', 'Demo report: blurry (sent without signing in).', 'photo', pics[g3][0].f, '#' + g3),
       rp(3, 'Dio Demo', 'info', g2, '', '', 'Demo feedback: a typo on this sheet.', 'sheet', '', '#' + g2),
-      rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', '#home')
+      rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', '#home'),
+      // A report from the fish beta: a teaching id and a remote iNaturalist photo (fish-photos.json).
+      rp(5, 'Eli Demo', 'wrong', 't01', 't05', '', 'Demo fish report: not a damselfish.', 'quiz', 'fi464458713', '#quiz')
     ];
     // Events (sheet v19): [id, time, device, kind, message, where, page, detail, app, browser], newest first.
     // One-tap prompts (core.js PULSEQ): the item in Where, the code in Message; Detail keeps r only for easy / ok / hard,

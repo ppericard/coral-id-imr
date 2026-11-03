@@ -907,6 +907,8 @@ header {
 #cvd,
 #boardset,
 #bonset,
+[data-optin],
+#subjset,
 #theme {
   display: inline-flex;
   padding: 3px;
@@ -922,6 +924,8 @@ header {
 #cvd button,
 #boardset button,
 #bonset button,
+[data-optin] button,
+#subjset button,
 #theme button,
 #size button {
   background: none;
@@ -939,6 +943,8 @@ header {
 #cvd button[aria-pressed='true'],
 #boardset button[aria-pressed='true'],
 #bonset button[aria-pressed='true'],
+[data-optin] button[aria-pressed='true'],
+#subjset button[aria-pressed='true'],
 #theme button[aria-pressed='true'],
 #size button[aria-pressed='true'] {
   background: var(--surface);
@@ -6586,4 +6592,54 @@ html.touring .unlock {
 .pbtxt .lvi,
 .mpl .lvi {
   margin-right: 3px;
+}
+/* Subject (core.js SUBJECTS): the header button shows the current subject's icon and switches to the next one. */
+:root:not([data-subject='fish']) .subjb .sj-fish,
+:root[data-subject='fish'] .subjb .sj-coral {
+  display: none;
+}
+.subjb svg {
+  display: block;
+}
+/* A fish entry's family under its name on its first-meeting card. */
+.ulcard .ulfam {
+  margin: -4px 0 6px;
+  color: var(--muted);
+  font-size: var(--fs-s);
+}
+/* The wink's surprise tag beside the question (quiz.js winkShow). */
+.wink .wtag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: var(--pill);
+  background: var(--accent);
+  color: var(--bg);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  vertical-align: middle;
+}
+/* Phones: the header has no room for the subject button (rule 18: the header never changes size); the subject is on
+   Home and in ⚙ there. */
+@media (max-width: 599.98px) {
+  .hdr-tools .subjb {
+    display: none;
+  }
+}
+/* Choices named by a common name (fish entries, the winks' labels): upright, not the genera's italics. */
+.ans button.plain {
+  font-style: normal;
+}
+/* A subject in beta (core.js SUBJECTS beta): a small tag on its buttons (Home, ⚙ Subject). */
+small.beta {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: var(--pill);
+  background: var(--accent);
+  color: var(--bg);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.5;
+  vertical-align: middle;
 }

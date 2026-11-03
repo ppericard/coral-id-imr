@@ -17,11 +17,15 @@ function badge(ring, pct, sub) {
     G = P[LEVEL];
   return `<div class="pbadge"><div class="pring" style="background:conic-gradient(${ring})"><span><b>${pct}%</b></span></div>
     <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
-    <span><span>${sub}</span><a id="pbrank" href="#board"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a><a href="#ach"${achNew() ? ' class="hasnew"' : ''}>🏅 <b>${got.length}</b>/${ACH.length} ${got
-      .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
-      .slice(0, 3)
-      .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
-      .join('')}</a></span></div></div>`;
+    <span><span>${sub}</span>${SUBJ.board ? `<a id="pbrank" href="#board"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a>` : ''}${
+      SUBJ.ach
+        ? `<a href="#ach"${achNew() ? ' class="hasnew"' : ''}>🏅 <b>${got.length}</b>/${ACH.length} ${got
+            .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
+            .slice(0, 3)
+            .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
+            .join('')}</a>`
+        : ''
+    }</span></div></div>`;
 }
 // A name of 13+ letters (Duncanopsammia) gets a soft hyphen near its middle, between a vowel and a consonant: a phone
 // tile breaks it there with a hyphen instead of anywhere, at the normal size (RA review and Codex review #344).
@@ -34,7 +38,10 @@ const shyName = n => {
   return n;
 };
 function quizBoard() {
-  const list = slateGenera();
+  const list = slateGenera(),
+    // A unit's page: its genus sheet, or the subject's list when it has no sheets (fish); a pair's comparison likewise.
+    href = n => (SUBJ.pages.includes('sheet') ? `#g-${esc(n)}` : '#genera'),
+    hrefPair = (a, b) => (SUBJ.pages.includes('cmp') ? `#cmp-${esc(a)}|${esc(b)}` : '#genera');
   // Bonus genera (off the slate), once on (⚙ or the offer card): tiles after the slate genera (Pierre, 2026-11-01).
   // They stay out of the ring and the counts.
   const BO = bonusList();
@@ -62,7 +69,7 @@ function quizBoard() {
       p = cover(g),
       [cl] = lv[n];
     const b = isBonus(n);
-    return `<a class="pw ${cl} s${st[n]}${b ? ' bonus' : ''}" href="#g-${esc(n)}" title="${b ? 'Bonus genus, not on the IMR list. ' : isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 100px, 165px')} alt="" loading="lazy">` : ''}${b ? '<b class="pbtag">Bonus</b>' : ''}<span class="pwb"><i>${esc(shyName(n))}${g.n || g.x ? '' : ' ★'}</i>${pct(n)}</span></a>`;
+    return `<a class="pw ${cl} s${st[n]}${b ? ' bonus' : ''}" href="${href(n)}" title="${b ? (g.name ? setOf(n).tag + '. ' : 'Bonus genus, not on the IMR list. ') : isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 100px, 165px')} alt="" loading="lazy">` : ''}${b ? `<b class="pbtag">${g.name ? esc(setOf(n).tag) : 'Bonus'}</b>` : ''}<span class="pwb">${g.name ? `<b>${esc(g.name)}</b>` : `<i>${esc(shyName(n))}${g.n || g.x ? '' : ' ★'}</i>`}${pct(n)}</span></a>`;
   };
   // Your mix-ups to review: each pair you mixed up, ranked by your own confusion score (confOf), so a pair you now tell
   // apart sinks and the ones you still confuse lead; the chip opens the side-by-side comparison (with "Drill this pair").
@@ -86,7 +93,7 @@ function quizBoard() {
   const tip = n => {
     const s = P[n] || {ok: 0, ko: 0},
       m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : [];
-    return `${esc(n)}: ${st[n] ? MASTERY[st[n]][0] : 'Not seen'}${lv[n][0] === 'weak' ? ', to review' : ''}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}%)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`;
+    return `${esc(unameT(n))}: ${st[n] ? MASTERY[st[n]][0] : 'Not seen'}${lv[n][0] === 'weak' ? ', to review' : ''}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}%)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`;
   };
   // Learning level: the tile's colour is its step on the scale, and a thin line along its bottom shows the exact progress.
   const fill = () => '';
@@ -141,36 +148,42 @@ function quizBoard() {
   };
   // Slate by default (Pierre, 2026-11-02: compact, and the order of the IMR slate the RAs know); the view switch is at the
   // bottom of the side column.
-  let pv = store.get('reefid-sync-pview', 'slate');
-  if (!VIEWS[pv]) pv = 'slate';
-  $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
+  const PV = SUBJ.progress;
+  let pv = store.get('reefid-sync-pview', PV[0]);
+  if (!PV.includes(pv) || !VIEWS[pv]) pv = PV[0];
+  $v.innerHTML = `${
+    UNITS[SUBJ.id].progHelp
+      ? UNITS[SUBJ.id].progHelp()
+      : `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
   <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Small typos and old names are accepted; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
   <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder. On this page they come after the slate.</p>
-  <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from 95% (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>
+  <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from 95% (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
+  }
   <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the genus: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down, less when the photo was harder than your level. 95% (Divemaster) means it has held up against its look-alikes; Instructor means its mastery exam is passed too.</p>
   <div class="pgame pboard">${badge(ring, progPct(list), lvSummary(list) || `${list.length - count('new')}/${list.length} met`)}<div class="pgwrap"></div>
   <aside class="gside">
-    <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
+    <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} ${SUBJ.many}">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} ${SUBJ.many}"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Instructor</p>
     ${
       introLeft().length
-        ? `<div class="popen"><p><b>Had the IMR coral lecture?</b> ${introLeft().length} genera are not open yet: they come one at a time as you play.</p><button type="button" class="next" id="openall">Open all genera</button></div>`
+        ? `<div class="popen"><p><b>Had ${SUBJ.lecture}?</b> ${introLeft().length} ${SUBJ.many} are not open yet: they come one at a time as you play.</p><button type="button" class="next" id="openall">Open all ${SUBJ.many}</button></div>`
         : ''
     }
     ${
       weak.length
         ? `<div><h3 class="label">Review first</h3><p class="chips">${weak
             .slice(0, 4)
-            .map(n => `<a class="chip" href="#g-${esc(n)}"><i>${esc(n)}</i></a>`)
+            .map(n => `<a class="chip" href="${href(n)}">${uname(n)}</a>`)
             .join('')}</p></div>`
         : ''
     }
-    ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="#cmp-${esc(n)}|${esc(o)}" title="Compare side by side"><i>${esc(n)}</i> ↔ <i>${esc(o)}</i> <small>· ${k}×</small></a>`).join('')}</p></div>` : ''}
+    ${conf.length ? `<div><h3 class="label">Often mixed up</h3><p class="chips">${conf.map(([n, o, k]) => `<a class="chip" href="${hrefPair(n, o)}" title="Compare side by side">${uname(n)} ↔ ${uname(o)} <small>· ${k}×</small></a>`).join('')}</p></div>` : ''}
     <div class="seg pvseg" role="group" aria-label="View">${[
       ['slate', 'Slate'],
       ['photos', 'Photos'],
       ['groups', 'Groups']
     ]
+      .filter(([k]) => PV.length > 1 && PV.includes(k))
       .map(([k, t]) => `<button type="button" data-pv="${k}" aria-pressed="${pv === k}">${t}</button>`)
       .join('')}</div>
   </aside></div>`;
@@ -183,7 +196,7 @@ function quizBoard() {
       save();
       quizBoard();
       // The box goes and little else changes on this page: say it worked (new-player walkthrough 2026-11-02).
-      appToast(`All ${slateGenera().length} genera are open: the quiz now asks any of them.`, 6000);
+      appToast(`All ${slateGenera().length} ${SUBJ.many} are open: the quiz now asks any of them.`, 6000);
     };
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page).
@@ -195,8 +208,10 @@ function quizBoard() {
     a.innerHTML = `🏆 <b>#${i + 1}</b>${elo ? ' · ' + elo : ''}`;
     a.hidden = false;
   };
-  rank(boardCached());
-  loadBoard().then(rank);
+  if (SUBJ.board) {
+    rank(boardCached());
+    loadBoard().then(rank);
+  }
   const wrap = $v.querySelector('.pboard .pgwrap');
   const show = () => {
     wrap.innerHTML = VIEWS[pv]();
@@ -237,7 +252,7 @@ function showProg() {
   if (!DATA) return;
   const n = slateGenera();
   const pt = `${progPct(n)}%`,
-    lt = lvSummary(n, false) || `${n.filter(x => level(x)[0] !== 'new').length}/${n.length} genera met`;
+    lt = lvSummary(n, false) || `${n.filter(x => level(x)[0] !== 'new').length}/${n.length} ${SUBJ.many} met`;
   document.getElementById('progn').textContent = pt;
   $prog.title = `Your progress: ${pt} (${lt})`;
   const p2 = document.getElementById('progn2');
@@ -250,10 +265,10 @@ function showProg() {
   // Status only (design review 2026-11-01): the pill shows progress and nothing else. Its dot (saving trouble) is gone: the
   // "Not saved" pill beside it already says so in words (design re-review p9).
   pill.title = SYNC
-    ? `Signed in as ${SYNC.name}: your progress per genus`
+    ? `Signed in as ${SYNC.name}: your progress per ${SUBJ.one}`
     : out
       ? 'Your progress (not saved online yet: Sign in, top right)'
-      : 'Your progress per genus';
+      : `Your progress per ${SUBJ.one}`;
   // Signing in (Pierre, 2026-11-01): a filled "Sign in" button in the header on every page while signed out; once signed in
   // it disappears and the account (name, Send now, Sign out) is a quiet line at the top of ⚙. Trouble saving brings it
   // back as "Not saved", which opens ⚙ where the problem is explained.
@@ -490,7 +505,10 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
 // locking again those unlocked when they should not have been"): every achievement is tested again on the current
 // progress with the current rules; those still met keep their date, the others go. Feats (runs, corallites, hard photo)
 // stay. Then one sync, so the sheet's copy (leaderboard %, achievement shares) follows.
+// Achievements count one subject (core.js SUBJECTS ach: corals): checked on its progress whatever the subject on screen.
+const ACHS = () => SUBJECTS.find(x => x.ach).id;
 function achMigrate() {
+  if (!SUBJ.ach) return inSubject(ACHS(), achMigrate);
   const A = store.get(ACHK, null);
   if (A && A._v === ACH_V) return;
   const B = {_v: ACH_V};
@@ -502,6 +520,7 @@ function achMigrate() {
   if (SYNC && A) syncSoon();
 }
 function achCheck(silent) {
+  if (!SUBJ.ach) return inSubject(ACHS(), () => achCheck(silent));
   const had = store.get(ACHK, null),
     A = had || {},
     ids = newAch(achSnap(A), A);
@@ -545,6 +564,7 @@ function achDot() {
 }
 // After each answer: the run of right answers and the one-off feats, then the check.
 function achAfter(good, ph) {
+  if (!SUBJ.ach) return; // an answer on another subject earns nothing (fish: no achievements yet)
   if (!store.get(ACHK, null)) achCheck(true); // no record yet on this device: what is already met comes as one recap
   const A = store.get(ACHK, {}) || {},
     solo = ph.length === 1;
@@ -742,6 +762,7 @@ const RECALC = {
   ]
 };
 function recalcNotice() {
+  if (SUBJ !== SUBJECTS[0]) return inSubject(SUBJECTS[0].id, recalcNotice); // the recalculations announced were the corals'
   const L = RECALC.L,
     last = L[L.length - 1].id,
     seen = store.get(RECALC.KEY, ''),
@@ -898,6 +919,7 @@ function rvNotice() {
 // device); leaving the page closes it unseen and it comes back.
 const SORRYK = {KEY: 'reefid-sorry', FIRST: 'reefid-sorry-first'};
 function sorryNotice() {
+  if (!SUBJ.log) return; // the apology is about the corals' opening: it waits until the player is on them
   const now = Date.now();
   let F = store.get(SORRYK.FIRST, null);
   if (!F || typeof F !== 'object') {

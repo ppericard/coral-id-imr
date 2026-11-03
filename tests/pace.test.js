@@ -16,6 +16,7 @@ function model({P = {}} = {}) {
     block = src.slice(src.indexOf('// Progressive path (Pierre'), src.indexOf('const introSince'));
   const saved = {},
     ctx = {
+      ...require('./subj.stub.js')(), // the corals as the current subject
       P,
       LEVEL: '~level',
       n: 0,

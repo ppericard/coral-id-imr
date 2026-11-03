@@ -163,6 +163,21 @@ test('reports: logged once, reporter verified by code, never mistaken for a prog
   );
 });
 
+test('v34: a save from an app that does not know a subject keeps that subject in the saved copy (Codex review #442)', () => {
+  const s = loadCodeGs(),
+    fish = {'reefid-sync-fish-progress': JSON.stringify({t01: {ok: 10, ko: 2}}), 'reefid-sync-fish-quiz': '{"c2":true}'};
+  s.post({name: 'Ana', pin: '1234', data: {...prog(1), ...fish}, summary: {}});
+  // An app from before fish saves its whole record, with no fish key: the fish keys stay.
+  s.post({name: 'Ana', pin: '1234', data: prog(2), summary: {}});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).data, {...prog(2), ...fish});
+  // A fish-aware app's save is taken as it is: a reset fish progress is an empty record, kept as such.
+  s.post({name: 'Ana', pin: '1234', data: {...prog(2), 'reefid-sync-fish-progress': '{}'}, summary: {}});
+  assert.deepStrictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-fish-progress']), {});
+  // The corals' keys are never kept that way: the saving app owns them.
+  s.post({name: 'Ana', pin: '1234', data: {}, summary: {}});
+  assert.ok(!('reefid-sync-coral-progress' in s.get({name: 'Ana', pin: '1234'}).data));
+});
+
 test('reports list: only a GitHub token that can write to the repo, checked once', () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}});
@@ -175,6 +190,10 @@ test('reports list: only a GitHub token that can write to the repo, checked once
   assert.strictEqual(a.rows[0][0], 'r2', 'newest first');
   assert.deepStrictEqual(a.rows[1].slice(2, 9), ['Ana', 1, 'wrong', 'Acropora', 'Montipora', 'Montipora', 'corallites']);
   assert.strictEqual(a.rows[0][11], '', 'where (v8)');
+  // v34: a fish report keeps its teaching ids and its photo (Codex review #442: the ids lost their digits).
+  s.post({rname: 'Ana', rpin: '1234', reports: [rep('r3', {g: 't01', a: 't05', fix: '', ph: 'fi464458713'})]});
+  const f = s.post({readReports: 1, token: 'ghp_write000000000000000000'}).rows.find(r => r[0] === 'r3');
+  assert.deepStrictEqual([f[5], f[6], f[10]], ['t01', 't05', 'fi464458713']);
   const n = s.fetched.length;
   s.post({readReports: 1, token: 'ghp_write000000000000000000'});
   assert.strictEqual(s.fetched.length, n, 'remembered for 10 minutes');
@@ -944,8 +963,13 @@ test('board (v16): the % is computed from the saved progress with the app formul
 function modelHold(saved = {}) {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'model.js'), 'utf8'),
     intro = /const INTRO = \{[\s\S]*?\n\};\n/.exec(src)[0],
-    hold = src.slice(src.indexOf("const HOLDK = 'reefid-hold';"), src.indexOf('const introSince'));
-  const ctx = {store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)}};
+    hold = src.slice(src.indexOf('const HOLDK = '), src.indexOf('const introSince'));
+  // The corals' keys (app.js sKey / sDev for the current subject).
+  const ctx = {
+    store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)},
+    sKey: n => 'reefid-sync-coral-' + n,
+    sDev: n => 'reefid-' + n
+  };
   require('vm').createContext(ctx);
   require('vm').runInContext(intro + hold + '\nthis.step = holdStep; this.sync = holdSync; this.now = () => HOLDS;', ctx);
   return ctx;
