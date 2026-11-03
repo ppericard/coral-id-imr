@@ -25,6 +25,8 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F']} = {}) {
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
   ctx.answersSoFar = () => ctx.n;
+  ctx.drops = 0;
+  ctx.dropPlans = () => ctx.drops++; // quiz.js: the questions planned ahead, dropped
   vm.createContext(ctx);
   vm.runInContext(
     block +
@@ -139,6 +141,7 @@ test('synced: a genus closed on one device closes here, a card shown since reope
   A.introBack(false);
   B.introMerge(JSON.stringify(A.introMap()), JSON.stringify(A.offer()));
   assert.ok(['D', 'E', 'F'].every(n => !B.introduced(n)));
+  assert.strictEqual(B.ctx.drops, 1, 'closing genera from another device drops the questions planned ahead');
   assert.strictEqual(B.offer().bk, 'one');
   assert.strictEqual(B.backDue(), false);
   // B shows D's card later: A pulls it and D is open on A too; E stays closed (A's mark is newer than B's 'a').
@@ -163,6 +166,7 @@ test('synced: a reopening that arrives before an older closing is kept (Codex re
   assert.ok(C.introduced('E'));
   C.introMerge(JSON.stringify({E: [55, 0, t + 200, 'b']}), null);
   assert.ok(C.introduced('E'));
+  assert.strictEqual(C.ctx.drops, 0, 'nothing closed, the planned questions stay');
   // A closing newer than the reopening still closes it.
   C.introMerge(JSON.stringify({E: [70, 0, t + 400, 'b']}), null);
   assert.ok(!C.introduced('E'));

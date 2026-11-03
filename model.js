@@ -385,12 +385,17 @@ function introMerge(m, o) {
     // than an Open all ('a') can only be a reopening after a 'b' mark, so it is kept too: a delayed 'b' older than that
     // reopening must not close the genus again (Codex review #398: a@100, then c@300, then b@200).
     const later = (h, e) => (e[3] === 'b' || h[3] === 'b' || (h[3] === 'a' && e[3] === 'c')) && (e[2] || 0) > (h[2] || 0);
+    let open = false; // a genus closed or reopened here: the questions planned ahead may be about it (or offer it)
     Object.entries(m).forEach(([n, e]) => {
       if (!Array.isArray(e)) return;
       const h = L[n];
+      if (h && later(h, e) && (e[3] === 'b') !== (h[3] === 'b')) open = true;
       if (!h || later(h, e)) ch = L[n] = [e[0] || 0, e[3] === 'b' ? 0 : 1, e[2] || 0, e[3] || (e[1] ? 's' : 'c')];
     });
     if (ch) store.set(INTRO.KEY, L);
+    // Codex review #398: the planned questions (quiz.js takePlan) only check the answer count and the pool, so they are
+    // dropped and drawn again with the genera as they now are.
+    if (open && typeof dropPlans === 'function') dropPlans();
   }
   // The latest decision wins (its time t): declined on one device, then Open all on another, must not go back to the
   // decline at the next sync (Codex review #352). Without times (older), the one already here stays.
