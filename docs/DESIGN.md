@@ -14,7 +14,7 @@ The visual rules every page follows. They came out of the expert UI review of 20
 
 ## Colour
 
-- Surfaces and text: `--bg`, `--surface`, `--surface-2`, `--ink`, `--muted`, `--line`; brand: `--accent` / `--accent-ink`; states: `--good`, `--bad`, `--warn` (+ `-bg`). Each palette (`:root[data-palette]`) and the dark theme redefine them; the colour-blind mode (`[data-cvd]`) redefines `--good` / `--bad`. `--cf-ink` is the "Coral Finder" source tag (light and dark). Text on a `--good` / `--bad` fill is `--surface` (white in light, dark in dark), never a fixed white.
+- Surfaces and text: `--bg`, `--surface`, `--surface-2`, `--ink`, `--muted`, `--line`; brand: `--accent` / `--accent-ink`; states: `--good`, `--bad`, `--warn` (+ `-bg`). Each palette (`:root[data-palette]`) and the dark theme redefine them; the colour-blind mode (`[data-cvd]`) redefines `--good` / `--bad`. `--cf-ink` is the "Coral Finder" source tag (light and dark). `--review` (amber, light and dark) is the "to review" dot of My progress, always on a `--surface` ring (2026-11-03: it replaced a red border and "!"). Text on a `--good` / `--bad` fill is `--surface` (white in light, dark in dark), never a fixed white.
 - **No colour literals outside the token blocks** at the top of `app.css` (`:root`, dark theme, palettes, colour-blind). Over photos, which look the same in both themes: `--photo-bg` (black stage and lightbox behind a photo), `--on-photo` (white text and icons on a photo) and `--scrim` (the translucent dark pill behind them); lighter or darker variants are `color-mix()` of these.
 - **One meaning per hue on a screen.** Strong colour belongs to the learning-level scale (`--lv1`…`--lv5`, white or ink labels at ≥ 4.5:1). IMR lecture groups use muted tints of their hue with dark text (the number and title carry the group). Coral Finder boxes keep their pale tile colours.
 - Right/wrong never by colour alone: tick/cross, and in colour-blind mode a pale fill with a thick solid border (right) vs dashed (wrong); never a solid dark fill, which reads as a pressed button.
@@ -32,6 +32,7 @@ The visual rules every page follows. They came out of the expert UI review of 20
 | Filter or toggle in a list | `.chip` | `aria-pressed` for state. |
 | Section tabs | `.modes` | Slim underlined text tabs. |
 | Yes / No question that narrows a list | `.fdq` with two `.fdans` (Coral Finder) | Question on top, two big answer buttons side by side (≥ 72 px tall, full width), each with its count and photos of what is on that side; "Can't tell" as `.linkish`. Never small text links as answers. |
+| Admin table | `.adm-tbl` | Every cell capped at `--cut` (9 em phones, 16 em from tablets) with "…", full text in the title; a name via `cut()` / `pname()` (`.adm-cut`). No tags that widen a column: state goes in the colour (a hidden player is a muted italic name). |
 | Disclosure | `<details>` with a muted `▸` summary | e.g. "Backup or reset progress" at the bottom of ⚙. |
 
 ## Lab drawings

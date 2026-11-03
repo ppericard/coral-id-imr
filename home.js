@@ -17,12 +17,12 @@
       .slice(0, 12)
       .map(g => `<img ${ph(g, 'macro')} alt="" loading="lazy">`)
       .join('');
-    $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the genera; Identify when you need to name a coral on a ReefCloud photo.</p><div class="home-page">
+    $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the genera; Identify when you need to name a coral on a ReefCloud photo, or one you photographed on a dive.</p><div class="home-page">
       <div class="hdoors">
         <section class="hdoor learn">
           <a class="hdart" href="#quiz" tabindex="-1" aria-hidden="true"><span class="hdtiles">${tiles}</span></a>
           <div class="hdbody">
-            <p class="hdwhen">Learning phase · before ReefCloud</p>
+            <p class="hdwhen">Learning phase · before ReefCloud or your next dive</p>
             <h2>Learn &amp; practise</h2>
             <p class="hddesc">Get to know the genera, then train your eye on photos until you recognise each one at a glance. Your progress is saved as you go.</p>
             <div class="hdacts">
@@ -34,9 +34,9 @@
         <section class="hdoor identify">
           <a class="hdart rc" href="#finder" tabindex="-1" aria-hidden="true"><img src="${photoUrl('img/reefcloud-example-m.webp')}" srcset="${photoUrl('img/reefcloud-example-m.webp')} 760w${saver() ? '' : `, ${photoUrl('img/reefcloud-example.webp')} 1240w`}" sizes="(max-width:599.98px) 92vw, 920px" alt="" loading="lazy"></a>
           <div class="hdbody">
-            <p class="hdwhen">On ReefCloud · when a point stumps you</p>
+            <p class="hdwhen">On ReefCloud · or a photo from your dive</p>
             <h2>Identify a coral</h2>
-            <p class="hddesc">Start from the growth form, add the clues you can see, then compare the candidate genera side by side to name the one under the point.</p>
+            <p class="hddesc">Start from the growth form, add the clues you can see, then compare the candidate genera side by side to name the one under the ReefCloud point, or in your own photo.</p>
             <div class="hdacts">
               <a class="hdbtn main" href="#finder"><b>Open the Coral Finder</b><small>Growth form, clues, then a visual comparison</small></a>
             </div>
