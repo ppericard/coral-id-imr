@@ -1533,6 +1533,20 @@ function pointerDrag(tiles, hover, drop, cancel) {
       };
   });
 }
+// The enlarged photo's caption (zoom, zoomOne: every admin view): genus (opens its sheet, draft applied), what the photo
+// is, the iNat taxon, its credit and its source, as in the games (app.js photoSrc / credit, AGENTS.md rule 11). An iNat
+// photo links to its observation (Pierre, 2026-11-03: he opened his own photo that everyone misses, to check on iNaturalist
+// who identified it, and the caption had no link); IMR lecture and Coral Finder book photos have no public page: their
+// credit line only.
+const inatObs = p => /^https:\/\/(www\.)?inaturalist\.org\/observations\//.test(p.o || '');
+const lbCap = (n, p, what) =>
+  `${DATA.gen[n] ? `<a href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet"><i>${esc(n)}</i></a>` : `<i>${esc(n || '')}</i>`}${what ? ` · ${esc(what)}` : ''} · ${
+    p.cf
+      ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${esc(p.pg)}`
+      : p.imr
+        ? `IMR Lecture 6, slide ${esc(p.slide)}`
+        : `${inatObs(p) && p.t ? `<i>${esc(p.t)}</i> · ` : ''}${esc(p.a || '')}`
+  }${inatObs(p) ? ` · <a class="lb-src" href="${esc(p.o)}" target="_blank" rel="noopener" title="Open the iNaturalist observation">iNat observation ↗</a>` : ''} · <code>${esc(p.f)}</code>`;
 function zoom(n, f) {
   const lb = $('lightbox'),
     L = [...photos(n), ...pending(n).map(p => ({...p, base: 'cand'})), ...outOf(n).map(p => ({...p, base: 'out'}))],
@@ -1540,7 +1554,7 @@ function zoom(n, f) {
   let i = i0;
   const show = () => {
     const p = L[i];
-    lb.innerHTML = `<div class="lb-in"><img ${crSrc(p)} alt=""><p class="lb-cap"><i>${esc(n)}</i> · ${p.base === 'cand' ? 'Candidate' : p.base === 'out' ? 'Not this genus' : label(n, viewOf(n, p))} · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p>
+    lb.innerHTML = `<div class="lb-in"><img ${crSrc(p)} alt=""><p class="lb-cap">${lbCap(n, p, p.base === 'cand' ? 'Candidate' : p.base === 'out' ? 'Not this genus' : label(n, viewOf(n, p)))}</p>
     <div class="lb-nav"><button type="button" data-d="-1" aria-label="Previous">‹</button><span>${i + 1} / ${L.length}</span><button type="button" data-d="1" aria-label="Next">›</button><button type="button" data-x>Close</button></div></div>`;
     lb.querySelectorAll('[data-d]').forEach(
       b =>
@@ -2895,7 +2909,7 @@ function zoomOne(p) {
     key = e => {
       if (e.key === 'Escape') close();
     };
-  lb.innerHTML = `<div class="lb-in"><img ${crSrc(p)} alt=""><p class="lb-cap"><i>${esc(p.genus)}</i> · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p><div class="lb-nav"><button type="button" data-x>Close</button></div></div>`;
+  lb.innerHTML = `<div class="lb-in"><img ${crSrc(p)} alt=""><p class="lb-cap">${lbCap(p.genus, p)}</p><div class="lb-nav"><button type="button" data-x>Close</button></div></div>`;
   lb.querySelector('[data-x]').onclick = close;
   lbFull(lb);
   lb.hidden = false;
