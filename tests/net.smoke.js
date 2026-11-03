@@ -45,6 +45,7 @@ const server = http.createServer((req, res) => {
 //    Auto is Saver on a line the app measures as slow, and Saver never moves a shown photo to a bigger file.
 // 10. Load order (index.html tiers): Home shows before My progress and the Tools files are asked for, the quiz files come
 //    before My progress, which comes before the Tools; a link straight to #quiz, #progress or #lab on a first visit works.
+// 11. A browser driven by a program sends nothing to the sheet on any host name.
 // Speed numbers are measured by tools/perf.js, not here. Locally: node tests/net.smoke.js
 (async () => {
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -488,6 +489,38 @@ const server = http.createServer((req, res) => {
     );
     if (!ok) fails.push('The service worker did not install when each file failed once');
     await ctx.close();
+  }
+  // 11. A browser driven by a program never sends to the sheet, whatever host it opens the app on (app.js LOCAL:
+  // navigator.webdriver; Pierre, 2026-11-03: an agent's test on a made-up host name reached the sheet). The sync
+  // script's hosts are mapped to this computer too, so a request that escaped the check could not reach Google.
+  {
+    const bw = await chromium.launch({
+      args: ['--host-resolver-rules=MAP coral.test 127.0.0.1, MAP script.google.com 127.0.0.1, MAP script.googleusercontent.com 127.0.0.1']
+    });
+    const ctx = await bw.newContext({serviceWorkers: 'block'});
+    await ctx.addInitScript(() => localStorage.setItem('imr-tour', '1'));
+    const p = await ctx.newPage();
+    await p.goto(`http://coral.test:${server.address().port}/#home`);
+    await p.waitForFunction(() => window.APP_READY && typeof sendAnon === 'function' && typeof sendEvents === 'function', null, {
+      timeout: 60000
+    });
+    const r = await p.evaluate(async () => {
+      const f = window.fetch,
+        hits = [];
+      window.fetch = (u, o) =>
+        /script\.google/.test(String((u && u.url) || u)) ? (hits.push(String(u)), Promise.reject(new Error('x'))) : f(u, o);
+      localStorage.setItem('imr-anonq', JSON.stringify([{id: 'w1', t: Date.now(), g: 'Acropora', a: 'Porites', ok: 0}]));
+      localStorage.setItem('imr-reports', JSON.stringify([{k: 'photo', m: 'test'}]));
+      sendAnon();
+      sendReports();
+      sendEvents();
+      await new Promise(ok => setTimeout(ok, 300));
+      window.fetch = f;
+      return {local: LOCAL, hits};
+    });
+    if (!r.local) fails.push('A browser driven by a program on a made-up host name does not count as a local copy');
+    if (r.hits.length) fails.push('A browser driven by a program sent to the sheet: ' + r.hits[0].slice(0, 60));
+    await bw.close();
   }
   await b.close();
   server.close();
