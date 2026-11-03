@@ -415,7 +415,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   else if (SYNC_URL) {
     store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
     // Not signed in: the answer also goes to the sheet anonymously (Pierre, 2026-11-01), see sendAnon.
-    store.set(ANONQ, [...store.get(ANONQ, []), ans].slice(-500));
+    store.set(ANONQ, [...store.get(ANONQ, []), ans].slice(-2000));
     anonSoon();
   }
   save();

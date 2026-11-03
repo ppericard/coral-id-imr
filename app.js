@@ -1382,6 +1382,7 @@ const SETUP = {
   },
   4: () => {
     syncPull();
+    anonResend(); // once: every answer played without an account goes again (the sheet skips those it has)
     sendAnon();
     boardNotice();
     loadBoard();
