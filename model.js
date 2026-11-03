@@ -725,7 +725,8 @@ const EXAM = {n: 5, gap: 8};
 // answers among its EXAM.n (examTyped). A typed answer has no guess rate (TYPED.k: the expected success has no 1/k
 // floor; logged |t, which the sheet rates with no guess, Code.gs guess_ v27, core.js guessOf), so it counts as harder
 // than picking 1 of 4: a right one moves the ability and the photos more, a miss less.
-// The values come from the learnsim study (tools/learnsim.js, 2026-11-03) and may be retuned: placeholders until then.
+// Pierre's brief turned into numbers, simulated before release (docs/LEARNING.md "Typed questions"); to be adjusted on
+// the players' own typed answers.
 const TYPED = {
   from: 0.5,
   at: [
