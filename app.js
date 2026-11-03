@@ -481,22 +481,48 @@ const ZOOMI =
 // The one-time "Tap a photo to see it bigger" hint (quiz.js zoomHint): 'seen' once shown, 'zoomed' once a photo has been
 // enlarged on this device; either way it is never due again. Per device, not part of the progress.
 const ZHINT_KEY = 'imr-zoomhint';
+// opts.over(p): an optional layer drawn over the whole photo (HTML in % of the photo, e.g. the labels of a Coral basics
+// step, proto/basics.js), with a Labels on/off switch; it follows the photo at fit and at actual size.
 function zoom(list, i, opts = {}) {
   if (store.get(ZHINT_KEY, null) !== 'zoomed') store.set(ZHINT_KEY, 'zoomed');
   const blind = () => (opts.blind ? opts.blind() : false);
+  let overOn = true,
+    ro = null;
   const show = () => {
     const p = list[i],
       hide = blind(),
-      vl = p.view ? (VIEWS.find(v => v[0] === p.view) || [0, VIEW_LABEL[p.view]])[1] : '';
+      vl = p.view ? (VIEWS.find(v => v[0] === p.view) || [0, VIEW_LABEL[p.view]])[1] : '',
+      over = !hide && opts.over ? opts.over(p) : '';
     const cap = hide
       ? esc(vl || 'Photo')
       : `${p.genus ? `<b><i>${esc(p.genus)}</i></b> · ` : ''}${vl ? esc(vl) + ' · ' : ''}${credit(p)}${p.src ? ` · <a href="${esc(safeUrl(p.src))}" target="_blank" rel="noopener">original</a>` : ''}`;
     // The 1600 px file, over the 480 px one shown at once (usually already loaded). Saver: 960 px, 1600 on a click.
-    lb.innerHTML = `<div class="lb-in"><img src="${img(p, saver() ? 'm' : '')}" style="background:center / contain no-repeat url('${img(p, 's')}')" alt="${hide ? 'Coral to identify' : esc(p.t || '')}" title="Click for actual size"><p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
-      <div class="lb-nav">${list.length > 1 ? `<button type="button" data-d="-1" aria-label="Previous photo">‹</button><span>${i + 1} / ${list.length}</span><button type="button" data-d="1" aria-label="Next photo">›</button>` : ''}<button type="button" data-x aria-label="Close">Close</button></div></div>`;
+    lb.innerHTML = `<div class="lb-in"><img src="${img(p, saver() ? 'm' : '')}" style="background:center / contain no-repeat url('${img(p, 's')}')" alt="${hide ? 'Coral to identify' : esc(p.t || '')}" title="Click for actual size">${over ? `<div class="lb-over"${overOn ? '' : ' hidden'}>${over}</div>` : ''}<p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
+      <div class="lb-nav">${list.length > 1 ? `<button type="button" data-d="-1" aria-label="Previous photo">‹</button><span>${i + 1} / ${list.length}</span><button type="button" data-d="1" aria-label="Next photo">›</button>` : ''}${over ? `<button type="button" data-ov aria-pressed="${overOn}">Labels</button>` : ''}<button type="button" data-x aria-label="Close">Close</button></div></div>`;
     lb.classList.remove('full');
     const im = lb.querySelector('.lb-in img');
     im.draggable = false;
+    // The layer sits exactly on the photo's box (the photo keeps its ratio, so its box is the picture).
+    if (ro) ro.disconnect();
+    const ov = lb.querySelector('.lb-over');
+    if (ov) {
+      const place = () =>
+        Object.assign(ov.style, {
+          left: im.offsetLeft + 'px',
+          top: im.offsetTop + 'px',
+          width: im.offsetWidth + 'px',
+          height: im.offsetHeight + 'px'
+        });
+      place();
+      im.addEventListener('load', place);
+      if (typeof ResizeObserver === 'function') (ro = new ResizeObserver(place)).observe(im);
+      lb.querySelector('[data-ov]').onclick = e => {
+        e.stopPropagation();
+        overOn = !overOn;
+        ov.hidden = !overOn;
+        e.currentTarget.setAttribute('aria-pressed', overOn);
+      };
+    }
     im.onclick = e => {
       e.stopPropagation();
       if (moved) return; // the end of a drag, not a click
@@ -535,6 +561,7 @@ function zoom(list, i, opts = {}) {
   const close = fromBack => {
     if (lbClose !== close) return;
     lbClose = null;
+    if (ro) ro.disconnect();
     if (!fromBack && history.state && history.state.lb) history.back();
     lb.hidden = true;
     lb.innerHTML = '';
