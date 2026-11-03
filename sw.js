@@ -13,7 +13,7 @@ const SHELL = [
   './',
   'index.html',
   'app.css?v=130',
-  'core.js?v=38',
+  'core.js?v=39',
   'app.js?v=195',
   'sync.js?v=22',
   'progress.js?v=18',
