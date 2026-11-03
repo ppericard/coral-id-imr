@@ -96,7 +96,13 @@ the view it would join if added.
 - Another genus name from `genera`: the photo clearly shows that genus instead (by the IMR cues).
 - `cmp`: a look-alike comparison image showing two genera side by side.
 - `exclude`: unusable for good: no coral, a person or diver dominating the frame, a drawing, a diagram, an
-  AI-generated image, heavy text overlay.
+  AI-generated image, heavy text overlay, an aquarium or tank, a museum specimen or bare skeleton, a specimen label
+  or register page, a coral out of the water (collected, on a boat or a table).
+
+**What you set aside, Pierre does not see** (Pierre, 2026-11-03: the pre-sort takes everything obvious off his hands).
+A candidate judged `exclude` or `cmp`, or a near-duplicate (`dup`), with no `unsure`, no longer comes up in the admin's
+Candidates (a count and a Show link keep it reachable). So be sure: at the least doubt, add `"unsure"` and it stays
+in his queue.
 
 Never for IMR lecture photos, except `exclude`. A `note` is required.
 

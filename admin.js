@@ -2642,6 +2642,7 @@ const CSRCS = [
 let CSRC = store.get('imr-admin-csrc2', 'dauin'),
   CSKIP = new Set(),
   CFULL = false, // this tab: also show the candidates waiting in full cells
+  CASIDE = false, // this tab: also show the candidates the pre-sort set aside
   CREPL = null; // {n, f, w}: adding f to a full cell, choosing the colony it replaces
 // Cap per genus x view: CELL_MAX (top of the file). A full cell's candidates leave the swiper (counted, shown on
 // demand) and come back when it drops below; adding one to a full cell asks which colony it replaces in the games (that
@@ -2666,7 +2667,8 @@ const srcOk = (p, s) => s === 'all' || origin(p) === s;
 // and per device), then no two of the same genus in a row when it can be avoided.
 // Judged candidates (suggest.json "cand", Pierre 2026-11-01: keep real diversity, sort by hand after a pre-sort): the
 // best photo of each view of an observation first, other angles later, near-duplicates, Poor photos, several corals and
-// other genera last. Nothing is removed: every candidate still comes up. Not judged yet = like a best Fair photo.
+// other genera last. Only the sure unusable ones, comparison images and near-duplicates are set aside (aside, below);
+// every other candidate still comes up. Not judged yet = like a best Fair photo.
 const JK = {best: 1, alt: 0.3, dup: 0.04},
   JQ = {3: 1.3, 2: 1, 1: 0.15};
 const jw = p => {
@@ -2680,6 +2682,11 @@ const JKT = {
   alt: 'another angle of its observation',
   dup: 'near-duplicate of another photo of its observation'
 };
+// Set aside by the pre-sort (Pierre, 2026-11-03: "il ne faut pas que je me retrouve à devoir faire des tris sur des choses
+// évidentes"): a candidate the judging agent found unusable (no coral, aquarium, museum specimen or label, drawing…),
+// a comparison image or a near-duplicate of another photo of its observation, without any doubt (no `unsure`), no
+// longer comes up; a count and a Show link keep them reachable.
+const aside = p => !!(p.j && (p.j.g === 'exclude' || p.j.g === 'cmp' || p.j.k === 'dup') && !(p.j.u && p.j.u.length));
 const jLine = p => {
   const j = p.j;
   if (!j) return '';
@@ -2727,7 +2734,7 @@ function candQueue(src) {
       if (!srcOk(p, src) || add[p.f] || rejected(p.f)) return;
       const v = cellView(n, p),
         full = gameable(p) && VIEWS.some(x => x[0] === v) && (cnt(n, v), N[n + '|' + v] >= CELL_MAX && !(p.o && O[n + '|' + v].has(p.o)));
-      L.push({p, n, full, r: -Math.log(uOf(p.f)) / weight(n, p)});
+      L.push({p, n, full, aside: aside(p), r: -Math.log(uOf(p.f)) / weight(n, p)});
     });
   });
   L.sort((a, b) => a.r - b.r);
@@ -2874,7 +2881,7 @@ function renderRepl() {
 function renderCand() {
   status();
   if (CREPL) return renderRepl();
-  const shown = x => !CSKIP.has(x.p.f) && (CFULL || !x.full);
+  const shown = x => !CSKIP.has(x.p.f) && (CFULL || !x.full) && (CASIDE || !x.aside);
   // An empty source (Pierre, 2026-11-02: "Pierre 0" opened on "No candidate left") gives way to the first source, in
   // priority order, that still has candidates to go through. Only a source with no candidate at all: one whose
   // candidates are skipped or wait in full cells stays, so they can still be shown (Codex review #340).
@@ -2884,6 +2891,7 @@ function renderCand() {
   }
   const Q0 = candQueue(CSRC),
     nFull = Q0.filter(x => x.full).length,
+    nAside = Q0.filter(x => x.aside).length,
     nJ = candQueue('all').filter(x => !x.p.cf && !x.p.j).length,
     Q = CFULL ? Q0 : Q0.filter(x => !x.full),
     live = Q0.filter(shown),
@@ -2893,6 +2901,9 @@ function renderCand() {
     `<span class="adm-qseg adm-csrc" role="group" aria-label="Source">${CSRCS.map(([s, t]) => `<button type="button" data-src="${s}" aria-pressed="${s === CSRC}">${t} <b>${s === CSRC ? live.length : candQueue(s).filter(shown).length}</b></button>`).join('')}</span>` +
     (nFull
       ? `<p class="note adm-cfull">${nFull} wait${nFull === 1 ? 's' : ''} in full cells (${CELL_MAX} colonies) · <button type="button" class="adm-link" data-cfull>${CFULL ? 'Hide them' : 'Show them'}</button></p>`
+      : '') +
+    (nAside
+      ? `<p class="note adm-caside">${nAside} set aside by the pre-sort (unusable, comparison image or near-duplicate) · <button type="button" class="adm-link" data-caside>${CASIDE ? 'Hide them' : 'Show them'}</button></p>`
       : '') +
     // Reminder (Pierre: the judging agent runs on demand, "remind me to launch it").
     (nJ
@@ -2972,6 +2983,12 @@ function renderCand() {
         render();
       })
   );
+  const ca = $v.querySelector('[data-caside]');
+  if (ca)
+    ca.onclick = () => {
+      CASIDE = !CASIDE;
+      render();
+    };
   const cf = $v.querySelector('[data-cfull]');
   if (cf)
     cf.onclick = () => {
