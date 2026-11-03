@@ -569,6 +569,26 @@ async function signin(base) {
       await p.waitForTimeout(700);
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
     }
+    // Glossary words (beginner review 2026-11-03): the Genera cards' tips are glossed, and the lecture group titles are no
+    // glossary word (they looked tappable and did nothing); a term in a card opens its definition, not the sheet.
+    await p.evaluate(() => (location.hash = 'genera'));
+    await p.waitForTimeout(600);
+    const gl = await p.evaluate(() => {
+      const t = document.querySelector('#view .card .gt');
+      if (t) t.click();
+      return {
+        titles: document.querySelectorAll('#view .gdiv .gt').length,
+        cards: !!t,
+        def: !document.querySelector('.gpop').hidden && /\S/.test(document.querySelector('.gpop').textContent),
+        h: location.hash
+      };
+    });
+    if (gl.titles || !gl.cards || !gl.def || gl.h !== '#genera') fails.push(`${w}px Genera glossary: ${JSON.stringify(gl)}`);
+    // The Coral Finder's "on the slate" count is the app's (slateGenera: Millepora in), not a count of its own.
+    await p.evaluate(() => (location.hash = 'finder'));
+    await p.waitForTimeout(600);
+    const fd = await p.evaluate(() => [document.querySelector('[data-show]')?.textContent || '', slateGenera().length]);
+    if (!fd[0].includes(`(${fd[1]} on the slate)`)) fails.push(`${w}px Coral Finder slate count: "${fd[0]}", expected ${fd[1]}`);
     // The one-tap question after 35 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
     // A fresh browser that has seen the tour (a tour opened earlier in this context resumes after a reload).
     if (w === 390) {
@@ -599,7 +619,9 @@ async function signin(base) {
             name: document.querySelector('.unlock.intro h3').textContent,
             kick: document.querySelector('.unlock.intro .ulkick').textContent,
             img: !!document.querySelector('.unlock.intro .ulphoto img'),
-            all: !!document.querySelector('.unlock.intro .ulall [data-all]')
+            all: !!document.querySelector('.unlock.intro .ulall [data-all]'),
+            gt: !!document.querySelector('.unlock.intro .ultips .gt'),
+            hint: !!document.querySelector('.unlock.intro .gthint')
           }))
         );
         // A glossary term on a card opens its definition on top of the card (an RA, 2026-11-02: it opened behind it).
@@ -652,6 +674,9 @@ async function signin(base) {
       await q2.waitForTimeout(500);
       if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all && c.kick.includes(`${k + 1} of 4`)))
         fails.push(`${w}px first cards: ${JSON.stringify(seen)}`);
+      // "Tap an underlined word" is said once, on the first card with one (beginner review 2026-11-03).
+      else if (seen.filter(c => c.hint).length !== +seen.some(c => c.gt) || seen.findIndex(c => c.hint) !== seen.findIndex(c => c.gt))
+        fails.push(`${w}px first cards, the tap-a-word line: ${JSON.stringify(seen.map(c => [c.gt, c.hint]))}`);
       else if (!ch.every(c => seen.some(s => s.name === c)))
         fails.push(`${w}px first question not among the first cards: ${ch.join(', ')}`);
       let at = 0;

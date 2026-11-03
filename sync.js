@@ -801,7 +801,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
   // the first name and the surname's initial, and a name taken with another code says so in plain words.
   const tail = name => (/\s/.test(name) ? 'add more of your surname' : `add your surname's initial (${name} B.)`);
   const form = (name = '', pin = '', hint = '') => {
-    box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device.</p>
+    box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device. Learning on your own? Sign in too, to keep your progress on all your devices.</p>
     <form class="sform"><label>Your name <input name="n" required maxlength="40" autocomplete="name" placeholder="First name + initial"></label>
     <label>4-digit code <input name="p" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"></label>
     <button class="${box.classList.contains('tsync') ? 'next' : 'chip go'}" type="submit">Sign in</button> <span class="note" role="status"></span></form>

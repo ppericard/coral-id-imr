@@ -600,7 +600,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   const vs =
     !good && GX(c)
       ? // The answer's own tips, said as such (an RA tester, 2026-11-02: "Why not X:" read as the reasons the photo is not X).
-        `<p class="vs">Your answer, <i>${esc(c)}</i>, would show: ${esc(tipsText(GX(c)))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
+        `<p class="vs">Your answer, <i>${esc(c)}</i>, would show: ${gloss(tipsText(GX(c)))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
       : '';
   document.getElementById('after').innerHTML = `<div class="fb">
     <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}"><span class="v">${good ? '\u2713 Yes' : idk ? 'No worries' : '\u2717 No'},</span> it's <a href="#g-${esc(target)}"${sheetTab()}><i>${esc(target)}</i></a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
@@ -1034,7 +1034,8 @@ function introShow(L, start, kind = start ? 's' : 'c') {
   d.setAttribute('role', 'dialog');
   d.setAttribute('aria-modal', 'true');
   document.body.appendChild(d);
-  let i = 0;
+  let i = 0,
+    told = false; // "tap an underlined word" said (once, on the first card whose tips have one)
   const close = () => {
     d.remove();
     document.removeEventListener('keydown', key, true);
@@ -1048,7 +1049,10 @@ function introShow(L, start, kind = start ? 's' : 'c') {
       g = GX(n),
       p = cover(g),
       star = typeof starNote === 'function' && DATA.gen[n] ? starNote(n) : '',
-      more = i < L.length - 1;
+      more = i < L.length - 1,
+      tips = tipsList(g),
+      hint = start && !told && tips.includes('data-gt');
+    if (hint) told = true;
     // Met when its card is shown (Codex review #350): a sequence left half-way (reload) shows the rest next time.
     introAdd([n], start, kind);
     d.setAttribute('aria-label', `New genus: ${n}`);
@@ -1056,7 +1060,7 @@ function introShow(L, start, kind = start ? 's' : 'c') {
       <p class="ulkick">${isBonus(n) ? 'Bonus genus' : 'New genus'}${L.length > 1 ? ` · ${i + 1} of ${L.length}` : ''}</p><h3><i>${esc(n)}</i></h3>
       ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
       ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : isBonus(n) ? '<p class="ulnote">Not on the IMR list, but common at Dauin.</p>' : ''}
-      <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tipsList(g)}</div>
+      <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tips}${hint ? '<p class="gthint">Tap an underlined word to see what it means.</p>' : ''}</div>
       <p class="ulnote">${start ? (more ? `The first questions are about these ${L.length} genera.` : 'Now, which is which?') : 'It comes up in the questions a little later.'}</p>
       <div class="ulbtns"><span></span><button class="next" type="button">${more ? 'Next' : start ? 'Start' : 'Got it'}</button></div>
       ${start && introLeft().length ? `<div class="ulall"><p><b>Had the IMR coral lecture?</b> Skip the cards and play with all ${slateGenera().length} genera.</p><button class="next sec" type="button" data-all>Open all genera</button></div>` : ''}</div>`;
@@ -1185,7 +1189,9 @@ function planPhoto() {
     // A comeback question keeps the player's usual choices (Pierre, 2026-11-03): look-alikes for a strong player, so a
     // right answer proves something and the rust melts in a few questions.
     traps = ex ? 3 : trapsFor(t),
-    ch = shuffle([t, ...distractors(t, list, traps, known)]),
+    // A genus met on a card of its own now is not among this question's choices either: its card says it comes up a
+    // little later (beginner review 2026-11-03: its name was a choice on the question behind the card).
+    ch = shuffle([t, ...distractors(t, start ? list : list.filter(n => !cards.includes(n)), traps, known)]),
     // Typed (model.js TYPED): with the genus's typed share, from its progress (never on a genus under TYPED.from: no
     // draw is spent there, so a beginner's questions are unchanged); an exam question as examTyped says. Never a
     // comeback question (the player's usual choices, Pierre 2026-11-03), an Again or a duel (2 choices by design).

@@ -72,7 +72,7 @@ function viewGenera() {
         .map(L => {
           const gr = DATA.imrg.find(x => x.n === shownGroup(L[0]));
           const head = gr
-            ? `<h3 class="gdiv" id="grp-${gr.n}" style="--g:${groupHue(gr.n)}" title="${esc(gr.t)}"><span class="gn">${gr.n}</span><span class="gt">${esc(gr.t)}</span></h3>`
+            ? `<h3 class="gdiv" id="grp-${gr.n}" style="--g:${groupHue(gr.n)}" title="${esc(gr.t)}"><span class="gn">${gr.n}</span><span class="gtitle">${esc(gr.t)}</span></h3>`
             : '<h3 class="gdiv"><span class="gn">★</span>Not covered in the lecture</h3>';
           return `<section class="gblk" data-n="${L.length}">${head}${L.map(n => (tips ? tipCard(n) : card(n, 'stripe'))).join('')}</section>`;
         })
