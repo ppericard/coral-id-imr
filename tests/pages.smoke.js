@@ -1004,9 +1004,14 @@ async function basicsFit(b, base) {
             () => p.textContent('#view .zhint'),
             () => null
           );
-        const nextQ = async p => {
+        // toast: an achievement toast is up when the next question shows (as after a duel won as the first question, which
+        // made this check fail in CI on PR #410: the hint was tried once and skipped under the toast); clicked in the page,
+        // so Playwright does not wait for the toast to leave first.
+        const nextQ = async (p, toast) => {
           await p.click('#view [data-c]');
-          await p.click('#next');
+          if (toast)
+            await p.evaluate(() => (achPop({tier: 1, icon: '🧪', title: 'Smoke', desc: 'test'}), document.getElementById('next').click()));
+          else await p.click('#next');
           await p.waitForFunction(() => document.querySelector('#view .qph') && !document.querySelector('#view .q.done'));
         };
         const marks = p =>
@@ -1021,8 +1026,20 @@ async function basicsFit(b, base) {
           }, '#view .qph .zoom, #view .hero-ph, #view .strip .zoom');
         const [c, p] = await hintCtx();
         const r = {mark: await marks(p), q1: await hintIn(p, 1500)};
-        await nextQ(p);
+        await nextQ(p, true);
+        // Never with the toast; once it has gone, on the same question.
+        r.toast = await p.evaluate(() => !!document.querySelector('.achpop'));
+        await p.waitForFunction(
+          () => {
+            if (document.querySelector('.achpop') && document.querySelector('.zhint')) window.__zboth = 1;
+            return !document.querySelector('.achpop') && !(typeof achBusy !== 'undefined' && achBusy);
+          },
+          null,
+          {polling: 100, timeout: 15000}
+        );
+        r.both = await p.evaluate(() => !!window.__zboth);
         r.q2 = await hintIn(p, 3000);
+        r.same = await p.evaluate(() => answersSoFar());
         r.label = await p.getAttribute('#view .qph .zoom', 'aria-label');
         await p.keyboard.press('Shift'); // any key or tap sends it away
         await p.waitForTimeout(500);
@@ -1035,7 +1052,17 @@ async function basicsFit(b, base) {
         await p.evaluate(() => (location.hash = 'g-Acropora'));
         await p.waitForSelector('#view .hero-ph');
         r.sheet = await marks(p);
-        if (r.mark || r.q1 || !/^(Tap|Click) a photo to see it bigger$/.test(r.q2 || '') || r.label !== 'Enlarge photo' || !r.gone)
+        // mark: the number of photo buttons without the mark or the label (0 = all have them; -1 = no photo found).
+        if (
+          r.mark ||
+          r.q1 ||
+          !r.toast ||
+          r.both ||
+          r.same !== 1 ||
+          !/^(Tap|Click) a photo to see it bigger$/.test(r.q2 || '') ||
+          r.label !== 'Enlarge photo' ||
+          !r.gone
+        )
           fails.push(`enlarge mark and hint on a new player's first questions: ${JSON.stringify(r)}`);
         if (r.reload || r.after || r.sheet) fails.push(`enlarge hint shown again, or genus sheet photos unmarked: ${JSON.stringify(r)}`);
         await c.close();

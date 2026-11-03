@@ -652,15 +652,19 @@ const promptMark = () => store.set(PROMPT.KEY, answersSoFar());
 // bubble pointing at the enlarge mark (app.js ZOOMI): "Tap a photo to see it bigger" ("Click" with a mouse). Once per
 // device (app.js ZHINT_KEY, set when it shows), and never once a photo has been enlarged there. Never with the tour, a
 // card or an achievement toast on screen or waiting (overlayBusy, as promptOk; not its spacing: it asks nothing and goes
-// by itself), so it waits for a question without one. It goes at the first tap, click or key, or after ZHINT.MS; it lets
-// every tap through. Nothing else changes: the question, its clock and its answer are untouched.
+// by itself): it waits, looking again every ZHINT.DELAY, until they have gone while the question is still unanswered,
+// else tries the next question (CI, PR #410: a duel won as the first question popped "first duel won", whose toast was
+// still up when the 2nd question showed, and the hint, tried once, was skipped there). It goes at the first tap, click or
+// key, or after ZHINT.MS; it lets every tap through. Nothing else changes: the question, its clock and its answer are
+// untouched.
 const ZHINT = {AT: 1, DELAY: 600, MS: 6000};
 function zoomHint() {
   if (store.get(ZHINT_KEY, null) || answersSoFar() < ZHINT.AT) return;
   const f = $v.querySelector('.q .qstage .qph');
   if (!f) return;
-  setTimeout(() => {
-    if (!f.isConnected || f.closest('.q.done') || !lb.hidden || overlayBusy() || store.get(ZHINT_KEY, null)) return;
+  const show = () => {
+    if (!f.isConnected || f.closest('.q.done') || store.get(ZHINT_KEY, null)) return;
+    if (!lb.hidden || overlayBusy()) return void setTimeout(show, ZHINT.DELAY);
     store.set(ZHINT_KEY, 'seen');
     const mouse = matchMedia('(hover: hover) and (pointer: fine)').matches;
     f.insertAdjacentHTML('beforeend', `<span class="zhint" role="status">${mouse ? 'Click' : 'Tap'} a photo to see it bigger</span>`);
@@ -675,7 +679,8 @@ function zoomHint() {
     addEventListener('pointerdown', off, {capture: true, signal: stop.signal});
     addEventListener('keydown', off, {capture: true, signal: stop.signal});
     setTimeout(off, ZHINT.MS);
-  }, ZHINT.DELAY);
+  };
+  setTimeout(show, ZHINT.DELAY);
 }
 // One-tap question (Pierre, 2026-11-02: people answer a tap, not "any comments?"): now and then, under the answer's
 // feedback, "These questions are: Too easy · About right · Too hard" (or × for not now). First after PULSE.FIRST answers
