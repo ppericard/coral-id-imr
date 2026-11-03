@@ -442,3 +442,31 @@ test('compact: under the cap with 300 milestones', () => {
     'every milestone listed is there'
   );
 });
+
+// Codex review #441: a wrong answer A -> B is a miss for B too (quiz.js counts it against both genera), so B's next
+// answer is "after a miss", and the Again on the pair counts for it.
+test('a mix-up is a miss for the genus given too', () => {
+  const r = (t, g, a, ok, m, ch) => ['p1', t, g, a, ok, m, 'f1', 0.7, 0, 0, ch, 0, 5, 0];
+  const L = A.prep([r(1, 'A', 'B', 0, 'quiz', 'A B C D'), r(2, 'A', 'A', 1, 'quiz|k2', 'A B'), r(3, 'B', 'B', 1, 'quiz', 'A B C D')]);
+  assert.deepStrictEqual([L[2].afterMiss, L[2].afterAgain], [1, 1]);
+});
+
+// Codex review #441: the photos' views are the ones the games use (core.js applyCuration + applySlots): a genus on 2
+// zoom levels has no Close-up view in the games. Found in the real files, no genus named here.
+test('photo views follow the game pipeline (2 zoom levels)', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    rd = f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', f))),
+    data = rd('data.json'),
+    cur = rd('curation.json'),
+    C = require('../core.js'),
+    meta = A.photoMeta(data, cur, rd('quality.json'), rd('metrics.json'));
+  const d = JSON.parse(JSON.stringify(data));
+  C.applyCuration(d, cur);
+  const two = Object.keys(d.gen).filter(g => d.gen[g].levels === 2);
+  assert.ok(two.length, 'some genus on 2 zoom levels');
+  two.forEach(g => {
+    const fs2 = [...Object.values(data.gen[g].views || {}).flat(), ...((data.course || {})[g] || [])].map(p => p.f).filter(f => meta[f]);
+    assert.ok(!fs2.some(f => meta[f][0] === 'medium'), `${g}: no Close-up view in the games`);
+  });
+});

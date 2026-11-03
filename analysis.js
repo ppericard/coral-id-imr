@@ -488,6 +488,13 @@
       G.prev = {t: A.t, y: A.y, x: A.x, E: A.E};
       if (A.f === 'again') G.again = G.again || G.miss;
       else ((G.miss = !A.y), (G.again = false));
+      // A wrong answer is a miss for the genus given too (quiz.js: it counts against both genera, AGENTS.md rule 13), so
+      // its next answers are "after a miss" and an Again on the pair follows it (Codex review #441).
+      if (!A.y && A.a && A.a !== A.g) {
+        const W = (P.g[A.a] = P.g[A.a] || {n: 0, prev: null, miss: false, again: false});
+        W.miss = true;
+        W.again = false;
+      }
       // An Again on a pair also follows a miss on the genus answered for it
       if (A.f === 'again') A.ch.forEach(c => c !== A.g && P.g[c] && P.g[c].miss && (P.g[c].again = true));
       out.push(A);
@@ -1524,18 +1531,40 @@
   // {file: [view, quality 1-3, sharpness or null, source]}: the view after Pierre's moves and adds (curation.json), his
   // quality rating else the automatic one (quality.json; an IMR lecture photo is never rated Poor automatically, as the
   // app's autoQ), the sharpness of metrics.json, and the source (IMR lecture, Pierre's, other iNaturalist, CF book).
-  function photoMeta(data, cur, qual, met) {
+  function photoMeta(data, cur, qual, met, core) {
     const out = {},
       C = (cur && cur.genera) || {},
       CQ = (cur && cur.quality) || {},
       AQ = (qual && qual.q) || {},
       MT = (met && met.m) || {},
-      src = p => (p.cf ? 'book' : p.imr || /^imrl?-/.test(p.f) ? 'imr' : p.own ? 'own' : 'inat'),
-      put = (p, v) => {
-        const a = AQ[p.f] || 2;
-        out[p.f] = [v, CQ[p.f] || (a === 1 && src(p) === 'imr' ? 2 : a), MT[p.f] ? MT[p.f][0] : null, src(p)];
-      };
+      src = p => (p.cf ? 'book' : p.imr || /^imrl?-/.test(p.f) ? 'imr' : p.own ? 'own' : 'inat');
+    let put = (p, v) => {
+      const a = AQ[p.f] || 2;
+      out[p.f] = [v, CQ[p.f] || (a === 1 && src(p) === 'imr' ? 2 : a), MT[p.f] ? MT[p.f][0] : null, src(p)];
+    };
+    // The game's own pipeline when core.js is at hand (Codex review #441): applyCuration then applySlots, so a photo's
+    // view is the one the games show it in (a genus on 2 zoom levels: its close-ups join Colony; its IMR lecture
+    // close-ups count as Corallites), never a copy of those rules here. Then the files' own views for the photos left.
+    const K = core || (typeof module !== 'undefined' && module.exports && typeof require === 'function' ? require('./core.js') : root);
+    if (K && K.applyCuration && K.applySlots && data && data.gen) {
+      const d = JSON.parse(JSON.stringify(data));
+      d.course = d.course || {};
+      try {
+        K.applyCuration(d, cur || {});
+        K.applySlots(d, cur || {}, {autoq: AQ});
+        Object.values(d.gen).forEach(g =>
+          ['wide', 'medium', 'macro'].forEach(v => {
+            const S = (g.sl || {})[v] || {};
+            [...(S.game || []), ...(S.feat || []), ...(S.more || [])].forEach(p => p && p.f && !out[p.f] && put(p, v));
+          })
+        );
+      } catch (e) {
+        void e;
+      }
+    }
     const gen = {...((data && data.gen) || {}), ...((data && data.x && data.x.gen) || {})};
+    const put0 = put;
+    put = (p, v) => out[p.f] || put0(p, v);
     Object.keys(gen).forEach(g => {
       const V = gen[g].views || {},
         mv = (C[g] || {}).move || {};
