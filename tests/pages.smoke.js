@@ -1347,10 +1347,10 @@ async function credits(b, base) {
   return fails;
 }
 
-// Pages opened in a visit (sync.js pagesRoute / pagesSend, core.js PAGES, sheet v29 'pages'): a visit opens the quiz,
+// Pages opened in a visit (sync.js pagesRoute / pagesSend, core.js PAGES, sheet v30 'pages'): a visit opens the quiz,
 // the genus sheet from the answer's feedback, then another sheet from Genera; leaving the app (hidden) queues one
 // summary with the pages, the seconds, the two sheets and how each was reached. Queued only, never sent: a local copy
-// sends nothing to the sheet (app.js LOCAL), and every request off this site is cut. Before the sheet says v29, none.
+// sends nothing to the sheet (app.js LOCAL), and every request off this site is cut. Before the sheet says v30, none.
 async function pagesVisit(b, base) {
   const fails = [],
     hide = p =>
@@ -1390,7 +1390,7 @@ async function pagesVisit(b, base) {
     };
   // A phone: the quiz, the feedback's sheet (same tab), Genera, another sheet.
   {
-    const [c, p, posts] = await open(390, 29);
+    const [c, p, posts] = await open(390, 30);
     const target = await answer(p);
     await p.click('#after h3 a[href^="#g-"]');
     await p.waitForFunction(g => location.hash === '#g-' + encodeURIComponent(g), target);
@@ -1438,7 +1438,7 @@ async function pagesVisit(b, base) {
   }
   // A computer: the feedback's link opens the sheet in a new tab, a visit of its own, still counted as from the quiz.
   {
-    const [c, p, posts] = await open(1280, 29);
+    const [c, p, posts] = await open(1280, 30);
     const target = await answer(p);
     const [tab] = await Promise.all([c.waitForEvent('page'), p.click('#after h3 a[href^="#g-"]')]);
     tab.on('pageerror', e => fails.push(`pages summary: new tab page error: ${e.message}`));
@@ -1455,7 +1455,7 @@ async function pagesVisit(b, base) {
   // the account's at sign-in (as the answers do); queued for Ana and still waiting after she signed out, it is dropped,
   // never sent under the next player's anonymous id.
   {
-    const [c, p] = await open(390, 29);
+    const [c, p] = await open(390, 30);
     const r = await p.evaluate(() => {
       const pq = () => JSON.parse(localStorage.getItem('imr-evq') || '[]').filter(x => x.k === 'pages');
       pagesRoute('genera');
@@ -1491,8 +1491,8 @@ async function pagesVisit(b, base) {
       fails.push(`pages summary owner: ${JSON.stringify(r)}`);
     await c.close();
   }
-  // The app never gets ahead of the sheet script (AGENTS.md 7a): before v29 (or with no version known yet), none queued.
-  for (const v of [28, 0]) {
+  // The app never gets ahead of the sheet script (AGENTS.md 7a): before v30 (or with no version known yet), none queued.
+  for (const v of [28, 29, 0]) {
     const [c, p] = await open(390, v);
     await answer(p);
     await p.click('#after h3 a[href^="#g-"]');

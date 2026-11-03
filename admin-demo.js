@@ -15,10 +15,10 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the current one (v29: the pages opened, admin.js loadPages; v28: the admin
+    // The script version the demo answers as: the current one (v30: the pages opened, admin.js loadPages; v28: the admin
     // shows the full replay, admin.js replayOn), or an older one with ?demo&v=27 or v=28 (tests/admin.smoke.js: the admin
     // then does what it did before; AGENTS.md 7a).
-    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 29,
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 30,
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
@@ -326,7 +326,7 @@
       ])
     );
     events.sort((a, b) => b[1] - a[1]);
-    // Pages opened (sheet v29 'pages', its own Pages tab): a few visits of each player, under their anonymous id (aid,
+    // Pages opened (sheet v30 'pages', its own Pages tab): a few visits of each player, under their anonymous id (aid,
     // as Code.gs evWho_ stores it), with the answers so far, the pages and the genus sheets opened. Its own random numbers,
     // so the rest of the demo stays the same. Ana reads the sheets (one before it was asked, from Learn), Carla from the
     // quiz feedback, Ben once, Dio never; a device not signed in opened one; one summary has no id (a wrong code).
@@ -630,8 +630,8 @@
       }
       const p = JSON.parse(opts.body || '{}');
       if (p.readReports) return ok({ok: true, rows: S.reports.map(r => r.slice())});
-      // pages: 1 (v29) reads the Pages tab; an older script ignores it and sends the other events.
-      if (p.readEvents) return ok({ok: true, rows: (p.pages && V >= 29 ? S.pages : S.events).map(r => r.slice())});
+      // pages: 1 (v30) reads the Pages tab; an older script ignores it and sends the other events.
+      if (p.readEvents) return ok({ok: true, rows: (p.pages && V >= 30 ? S.pages : S.events).map(r => r.slice())});
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
       if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userRename) return ok(users(p));

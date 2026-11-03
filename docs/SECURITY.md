@@ -27,8 +27,8 @@ leak of the Sheet would expose little.
   players; 3000 answers per name; 40 new accounts; 300 report requests; 200 events per device and 3000 in all (v19 error reports and one-tap answers, `events_`, 50 per request). Over a cap the script writes nothing and
   answers `busy` (the app keeps its answers and sends them later). The first refusal of each window is written to the
   Sheet's **Alerts** tab.
-- **Duplicates**: an answer id already in the Answers tab is never logged twice; the same for an event id in the Events tab (v19), and in the Pages tab (v29).
-- **Pages opened** (v29, `pages` events, Pierre 2026-11-03): the summary of the pages a player opened is kept only in
+- **Duplicates**: an answer id already in the Answers tab is never logged twice; the same for an event id in the Events tab (v19), and in the Pages tab (v30).
+- **Pages opened** (v30, `pages` events, Pierre 2026-11-03): the summary of the pages a player opened is kept only in
   the shapes `core.js` `pagesClean` allows (page names by pattern, genus names, counts and seconds clamped, an origin
   from a fixed list; at most 30 pages and 30 genera; no free text, no photo or URL), in its own **Pages** tab. It is
   filed under the admin's anonymous id of the player (`aid_`, the id `readAnswers` and the player list use), never a

@@ -375,12 +375,12 @@ const server = http.createServer((req, res) => {
       }));
       if (/Progress|↻ saved/.test(j.kpis) || !/ 1\/\d+ Learned/i.test(j.kpis) || j.col || j.learned !== 1)
         fails.push(`${w}px Journey before v28: ${JSON.stringify(j)}`);
-      // Before sheet v29 the pages opened are not read: the section says which script version it waits for.
+      // Before sheet v30 the pages opened are not read: the section says which script version it waits for.
       await q
-        .waitForFunction(() => /v29 not running/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''), null, {
+        .waitForFunction(() => /v30 not running/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''), null, {
           timeout: 10000
         })
-        .catch(() => fails.push(`${w}px Journey before v29: no version line for the genus sheets`));
+        .catch(() => fails.push(`${w}px Journey before v30: no version line for the genus sheets`));
       await q.close();
     }
     await go('~users');
@@ -529,7 +529,7 @@ const server = http.createServer((req, res) => {
     await settle();
     const firstHard = await p.$eval('.adm-jtbl tbody tr td:nth-child(6)', td => td.textContent);
     if (!/-|–/.test(firstHard)) fails.push(`${w}px journey: hardest first starts at ${firstHard}`);
-    // Genus sheets opened (sheet v29 'pages', the demo's Pages tab, under the player's anonymous id): Ana's 9 sheets, the
+    // Genus sheets opened (sheet v30 'pages', the demo's Pages tab, under the player's anonymous id): Ana's 9 sheets, the
     // first opened before it was asked, from Learn; Dio opened none; one device not signed in opened one.
     const jsheets = () =>
       p
@@ -760,7 +760,7 @@ const server = http.createServer((req, res) => {
       if (v === 'all' && hs.sheets.join(' | ') !== SHEETS_ALL) fails.push(`${w}px Health genus sheets: ${JSON.stringify(hs.sheets)}`);
     }
     // The page summaries are read again once stale (Codex review #423): a first read's error (offline, a script before
-    // v29) does not stay on Health; ↻ on Activity reads them again; and a visit reads them once at most (no
+    // v30) does not stay on Health; ↻ on Activity reads them again; and a visit reads them once at most (no
     // render / read loop).
     {
       const sheetsText = () => p.evaluate(() => (document.querySelector('[data-health="sheets"]') || {}).innerText || '');

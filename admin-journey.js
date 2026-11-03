@@ -2,7 +2,7 @@
 // easy and less easy for them, when they unlocked each genus, an analysis of a person's path"). Built from the answer
 // log the Players page already loads (ANS.rows, sheet readAnswers: [anonymous id, time, genus shown, answered, right,
 // mode, photos, expected, ability, new photos, choices, anonymous]), joined to the name by the player's anonymous id
-// (USERS, sheet v13); and the genus sheets they opened (sheet v29 'pages', admin.js loadPages, under the same id). Opened
+// (USERS, sheet v13); and the genus sheets they opened (sheet v30 'pages', admin.js loadPages, under the same id). Opened
 // from a row of Players (#~journey/<name>). Loaded after admin.js,
 // whose helpers it uses (esc, pct, kpis, sbar, sgn, loadUsers, loadStats, HEALTH, DATA). The explanations are in the
 // page help (HELP.journey, rule 23).
@@ -448,7 +448,7 @@ function renderJourney(name, anonId = '') {
     <p class="adm-axis"><span class="adm-hkey">fewer${[1, 2, 3, 4, 5].map(k => `<i style="background:var(--lv${k})"></i>`).join('')}more</span><span>busiest hour ${hmx} · local time</span></p>
     <p class="note">${J.S.length} session${J.S.length === 1 ? '' : 's'}${(c => (c ? ` (${c} with the custom quiz)` : ''))(J.S.filter(L => L.some(r => /^quiz\|s(\||$)/.test(r[5]))).length)} · median ${medS} answers · first ${jTime(R[0][1])} · last ${jTime(R[R.length - 1][1])}</p></section>`;
 
-  // 5. Genus sheets opened (sheet v29 'pages', admin.js loadPages, sheetsOf; Pierre, 2026-11-03: do players read the
+  // 5. Genus sheets opened (sheet v30 'pages', admin.js loadPages, sheetsOf; Pierre, 2026-11-03: do players read the
   // sheets, and when?): per genus the times opened and the time spent, whether the first opening came before or after
   // the genus was first asked to them (the app's own record when the sheet was opened), and from where; then the pages
   // they spent their visits on. Read from the sheet's Pages tab under this player's id, never their name.

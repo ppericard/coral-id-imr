@@ -686,7 +686,7 @@ function sendAnon() {
 // Events (Pierre, 2026-11-02: most RAs will not report problems, so the app reports what it can by itself; sheet v19
 // events_): app errors, photos that still fail after their retries, saves that fail while online, and the answers to the
 // occasional one-tap question (pulse). Anonymous: a random device id of its own (EVID, never a name or the answers' id),
-// the app version and a short browser name; only the pages summaries (pagesSend, sheet v29) are tied to the player's
+// the app version and a short browser name; only the pages summaries (pagesSend, sheet v30) are tied to the player's
 // answers, under the admin's id of the player. Queued here (EVQ, at most 50) and sent in small batches; never from a local
 // copy (LOCAL) nor without the sync URL. At most EV_MAX reports a visit, the same message once.
 const EVID = 'imr-dev-id',
@@ -794,7 +794,7 @@ window.addEventListener('unhandledrejection', e => {
   if (navigator.onLine === false || (r && r.name === 'TypeError' && /fetch|network|load failed/i.test(r.message || ''))) return;
   ev('err', {msg: ('Unhandled: ' + (r && (r.message || r)) || '').slice(0, 300), src: String((r && r.stack) || '').split('\n')[1] || ''});
 });
-// Pages opened in a visit (sheet v29 'pages'; Pierre, 2026-11-03: does anyone open the genus sheets, do beginners use
+// Pages opened in a visit (sheet v30 'pages'; Pierre, 2026-11-03: does anyone open the genus sheets, do beginners use
 // them more, do sheet readers progress faster?). First-party, no outside service: the tally of core.js PAGES (pages and
 // genus sheets opened, times, seconds in view, how a sheet was reached, whether its genus had been asked already) and the
 // answers so far (na), queued as one event when the app is left (hidden) and started again if the player comes back

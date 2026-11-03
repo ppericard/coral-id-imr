@@ -1716,7 +1716,7 @@
   }
   const learnedOf = (P, list) => list.filter(n => (P || {})[n] && P[n].mx).length;
 
-  // Pages opened in a visit (sheet v29 event 'pages'; Pierre, 2026-11-03: "most players only play the quiz and never
+  // Pages opened in a visit (sheet v30 event 'pages'; Pierre, 2026-11-03: "most players only play the quiz and never
   // open the genus sheets": does a beginner use them more, does a sheet reader progress faster?). First-party, one
   // summary a visit, no free text: which pages were open, how many times and for how long (seconds visible, the page in
   // view), and the genus sheets opened: how many times, for how long, how the first one was reached (from: the quiz
@@ -1725,7 +1725,7 @@
   // with pagesClean (Code.gs events_, through its embedded copy of this file). SHEET: the sync script version that
   // stores them (AGENTS.md 7a: nothing is queued before the sheet says v >= SHEET).
   const PAGES = {
-    SHEET: 29,
+    SHEET: 30,
     ROUTES: 30, // at most this many page names a summary, the most opened first
     GEN: 30, // at most this many genus sheets a summary
     MAXN: 1000, // openings of one page counted at most
