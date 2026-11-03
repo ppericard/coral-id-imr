@@ -316,7 +316,11 @@ const server = http.createServer((req, res) => {
       t: (document.querySelector('.adm-jcards') || {}).innerText || '',
       line: !!document.querySelector('svg.adm-jl line.o')
     }));
-    if (!/Opened all genera after answer 40.*offer card/.test(carla.t) || !carla.line)
+    if (
+      !/Opened all genera after answer 40.*offer card/.test(carla.t) ||
+      !/Kept all genera when asked after answer 70/.test(carla.t) ||
+      !carla.line
+    )
       fails.push(`${w}px journey (Carla): ${JSON.stringify(carla)}`);
     await go('~journey/' + encodeURIComponent('Ana Demo'));
     await p.click('[data-jsort="hard"]');
