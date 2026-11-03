@@ -768,7 +768,10 @@ function abilityStep(n, s, good, d, k) {
   // (Pelánek's uncertainty function), the volatility still letting it catch up with a lasting change. With the floor a
   // run of early misses sank it (one real player to -0.41 against a fit of 0.56) and dragged the genera with it.
   const K = Math.min(ELO.kmax, Math.max(n === LEVEL ? 0 : ELO.kmin, ELO.kmax / (1 + m / ELO.n)) * (1 + ELO.vg * Math.abs(s.vr)));
-  s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * 100) / 100;
+  // Kept to 4 decimals for the global level (2 for a genus): without the floor its steps fall under 0.005 after a few
+  // hundred answers, and rounding them to 2 decimals lost every one (Codex review #415: 1000 right answers left it at 1).
+  const r = n === LEVEL ? 1e4 : 100;
+  s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * r) / r;
   if (n !== LEVEL && P[LEVEL] && typeof P[LEVEL].th === 'number') s.lt = P[LEVEL].th;
   delete s.lv;
   delete s.run;

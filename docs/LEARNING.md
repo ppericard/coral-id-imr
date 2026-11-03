@@ -290,7 +290,9 @@ answer (no recalculation).
 - Why the band below 0 resists: there the level itself is wrong (players at 83% right with a level under 0, after
   early misses, the `kmin` floor and the volatility); as a predictor the level beats the genus abilities in most groups
   but loses badly there (0.511 against 0.470). A steadier level (no floor) closes most of the gap; without the
-  volatility as well changed nothing more, so only the floor goes.
+  volatility as well changed nothing more, so only the floor goes. Without the floor the level's steps fall under
+  0.005 after a few hundred answers, so it is kept to 4 decimals (a genus to 2): rounded to 2, 1000 right answers left
+  it where it was (Codex review #415; `tests/ability.test.js`).
 
 **On the real answers** (1,183 answers, 9 players with 20 or more; mean predicted / right, log-loss; groups by one
 reference level, `main`'s rule, the same answers in each group for both: `tools/abilityeval.js` `refStep`, Codex review

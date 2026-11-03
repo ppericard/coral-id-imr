@@ -151,6 +151,18 @@ test("the genus's own step takes the level's move in and marks the level it was 
   assert.strictEqual(ability('A'), X.P.A.th, 'no move left once taken in');
 });
 
+test('small steps of the global level add up instead of being rounded away (Codex review #415)', () => {
+  const X = appModel(),
+    {abilityStep} = X.M,
+    L = '~level';
+  X.P = {[L]: {ok: 1500, ko: 0, th: 1, vr: 0}};
+  for (let i = 0; i < 1000; i++) {
+    X.P[L].ok++;
+    abilityStep(L, X.P[L], true, 0, 4);
+  }
+  assert.ok(X.P[L].th > 1.05, `the level stayed at ${X.P[L].th} after 1000 right answers`);
+});
+
 test("the global level's step has no floor: it settles as its answers build up", () => {
   const X = appModel(),
     {abilityStep, ELO} = X.M,
