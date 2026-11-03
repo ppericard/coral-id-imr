@@ -3802,6 +3802,14 @@ button.adm-chip[aria-pressed='true'] {
   color: var(--muted);
   font-weight: 400;
 }
+/* The effects tables: the interval under its estimate, so four columns fit a phone. */
+.adm-an-eff td.n {
+  max-width: none;
+}
+.adm-an-eff td.n small.adm-an-ci {
+  display: block;
+  font-size: var(--fs-xs);
+}
 .adm-an-thumbs {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));

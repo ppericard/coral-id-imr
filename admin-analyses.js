@@ -124,9 +124,10 @@ function forest(rows, o = {}) {
   const X = v => x0 + ((Math.max(a, Math.min(b, v)) - a) / (b - a)) * (x1 - x0),
     tf = o.tf || (v => anNum(v, 1));
   let s = `<line class="an-zero" x1="${X(nul)}" x2="${X(nul)}" y1="4" y2="${h - 24}"/>`;
-  ticks(a, b).forEach(
-    t =>
-      (s += `<line class="an-grid" x1="${X(t)}" x2="${X(t)}" y1="${h - 24}" y2="${h - 20}"/><text class="an-tick" x="${X(t)}" y="${h - 6}" text-anchor="middle">${esc(tf(t))}</text>`)
+  // o.fwd: the axis's values as read (log time -> its % change), so the ticks fall on round numbers of what is read
+  (o.fwd ? ticks(o.fwd(a), o.fwd(b)).map(d => [Math.log(1 + d), d]) : ticks(a, b).map(t => [t, t])).forEach(
+    ([t, d]) =>
+      (s += `<line class="an-grid" x1="${X(t)}" x2="${X(t)}" y1="${h - 24}" y2="${h - 20}"/><text class="an-tick" x="${X(t)}" y="${h - 6}" text-anchor="middle">${esc(o.fwd ? o.df(d) : tf(t))}</text>`)
   );
   rows.forEach((r, i) => {
     const y = i * rh + 14;
@@ -137,6 +138,8 @@ function forest(rows, o = {}) {
   });
   return svg(w, h, o.title || 'Estimates with 95% intervals', s);
 }
+// A log-time axis read as % time.
+const LOGAX = {fwd: v => Math.exp(v) - 1, df: d => anNum(d * 100, 0) + '%'};
 // Lines on a 0-1 (or given) y scale: series [{label, pts: [[x, y]], dash, step, dots}], one axis only.
 function lines(series, o = {}) {
   const w = o.w || anW(),
@@ -220,7 +223,7 @@ function anEffects(a, key, fresh) {
   const E = a.effects || [],
     rows = E.map(
       e =>
-        `<tr data-ek="${esc(key + ':' + e.k)}"><td>${esc(e.label)}</td><td class="n">${anFmt(e, e.est)}</td><td class="n">${anCI(e)}</td><td>${anPill(e, fresh.has(key + ':' + e.k))}</td><td class="n" title="Answers that would resolve it">${anNeed(e)}</td></tr>`
+        `<tr data-ek="${esc(key + ':' + e.k)}"><td>${esc(e.label)}</td><td class="n">${anFmt(e, e.est)}<small class="adm-an-ci">${anCI(e)}</small></td><td>${anPill(e, fresh.has(key + ':' + e.k))}</td><td class="n" title="Answers that would resolve it">${anNeed(e)}</td></tr>`
     );
   const units = [
     ...new Set(E.filter(e => e.est != null && e.unit !== 'n').map(e => (e.sd ? 'sd' : e.unit + (/^g_/.test(e.k) ? 'g' : ''))))
@@ -233,11 +236,16 @@ function anEffects(a, key, fresh) {
       const tf = v => anFmt(L[0], v);
       return forest(
         L.map(e => ({label: e.label, est: e.est, lo: e.lo, hi: e.hi, ref: e.ref, title: `${e.label}: ${anVerdict(e)}`})),
-        {tf, nul: u === 'pg' ? null : 0, title: `${anTitle(key)}: ${u === 'sd' ? 'spread between levels' : 'effects'}`}
+        {
+          tf,
+          nul: u === 'pg' ? null : 0,
+          title: `${anTitle(key)}: ${u === 'sd' ? 'spread between levels' : 'effects'}`,
+          ...(u === 'log' ? LOGAX : {})
+        }
       );
     })
     .join('');
-  return anCard('Effects', plot + anTable(['Effect', '#Estimate', '#95% CI', 'Verdict', '#Needs'], rows, 'adm-an-eff'), 'wide');
+  return anCard('Effects', plot + anTable(['Effect', '#Estimate [95% CI]', 'Verdict', '#Needs'], rows, 'adm-an-eff'), 'wide');
 }
 // How each estimate moved from milestone to milestone (est and its interval), small multiples.
 function anConv(rep, key) {
@@ -294,7 +302,7 @@ function anOverview(rep, R, prevR) {
     all = Object.entries(R.A).flatMap(([k, a]) => (a.effects || []).map(e => [k, e]));
   all.forEach(([k, e]) =>
     rows.push(
-      `<tr><td><a href="#${esc(AN_VIEWS.find(v => v[1] === k)[0])}">${esc(anTitle(k))}</a></td><td>${esc(e.label)}</td><td class="n">${anFmt(e, e.est)} <small class="adm-an-ci">${anCI(e)}</small></td><td>${anPill(e, fresh.has(k + ':' + e.k))}</td><td class="n">${anNeed(e)}</td></tr>`
+      `<tr><td><a href="#${esc(AN_VIEWS.find(v => v[1] === k)[0])}">${esc(anTitle(k))}</a></td><td>${esc(e.label)}</td><td class="n">${anFmt(e, e.est)}<small class="adm-an-ci">${anCI(e)}</small></td><td>${anPill(e, fresh.has(k + ':' + e.k))}</td><td class="n">${anNeed(e)}</td></tr>`
     )
   );
   const clear = all.filter(([, e]) => e.v === 'clear').length;
@@ -384,7 +392,7 @@ const ANV = {
           hi: g.hi,
           title: `${g.k}: ${anNum((Math.exp(g.u) - 1) * 100, 0)}% (${g.n} answers)`
         })),
-        {tf: v => anNum((Math.exp(v) - 1) * 100, 0) + '%', title: 'Time by genus, against the average'}
+        {tf: v => anNum((Math.exp(v) - 1) * 100, 0) + '%', title: 'Time by genus, against the average', ...LOGAX}
       ),
       'wide'
     ),

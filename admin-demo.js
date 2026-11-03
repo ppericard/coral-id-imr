@@ -427,11 +427,12 @@
   }
   function stats() {
     // The Analyses group's made-up players (demoLog) stay out of the photo ratings and confusions: the other pages'
-    // numbers (the full replay on Players, the journeys) stay those of the original demo.
+    // numbers (the full replay on Players, the journeys) stay those of the original demo. They have a level like anyone.
     const more = new Set(ANALYSIS.DEMO_PLAYERS.map(p => aid(p[0]))),
-      A = answers().rows.filter(r => !more.has(r[0])),
+      all = answers().rows,
+      A = all.filter(r => !more.has(r[0])),
       ras = {};
-    A.forEach(r => {
+    all.forEach(r => {
       const x = (ras[r[0]] = ras[r[0]] || [0, 0, 0]);
       x[1]++;
       x[2] += r[4];
