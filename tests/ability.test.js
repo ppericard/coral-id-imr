@@ -407,3 +407,13 @@ test('response time: a player with only answers logged before sheet v5 does not 
   assert.ok(isFinite(res['e+T*'].all.ll));
   ['p1', 'p2', 'p3'].forEach(p => assert.ok(res['e+T*'].picks[p]));
 });
+
+// Codex review #431: --player limits the output, never the players k is chosen on.
+test('response time: with --player, k is still chosen on the other players', () => {
+  const rows = [1, 2, 3].flatMap(i => timedLog(150, 20 + i, 'p' + i)),
+    all = evaluate(rows, {variants: ['e', 'e+T*'], min: 1, grid: [[0, 0.5, 1]]}).res,
+    one = evaluate(rows, {variants: ['e', 'e+T*'], min: 1, grid: [[0, 0.5, 1]], only: 'p1'});
+  assert.deepStrictEqual(one.players, ['p1']);
+  assert.strictEqual(one.res['e+T*'].picks.p1, all['e+T*'].picks.p1);
+  assert.deepStrictEqual(one.res['e+T*'].train.p1, all['e+T*'].train.p1);
+});

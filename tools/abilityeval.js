@@ -403,7 +403,10 @@ const pooledFor = (...out) => (a, b) => {
     n = [...new Set(out)].reduce((t, p) => [t[0] - (c[p] || [0, 0])[0], t[1] - (c[p] || [0, 0])[1]], c.all);
   return C.confScore(n, prior(a, b));
 };
-const players = Object.keys(byPlayer).filter(p => (!only || p === only) && byPlayer[p].length >= min);
+// Every player with min answers or more: the training population of a '*' family (leave one player out); --player
+// (only) limits what is scored and shown, never who k is chosen on (Codex review #431).
+const pool = Object.keys(byPlayer).filter(p => byPlayer[p].length >= min),
+  players = pool.filter(p => !only || p === only);
 const res = {},
   families = {};
 variants = variants.flatMap(v => {
@@ -442,7 +445,7 @@ variants.forEach(v => {
 // player out (the lowest log-loss on the other players' answers), so the score is never fitted on the answers scored.
 // Each training player is replayed again for each fold, its pooled mix-up scores without the answers of the player left
 // out (the app's own term, appTerm, and +X read them), so the outcomes scored never reach the choice (Codex review
-// #431). A player with no answer scored (only answers logged before sheet v5) weighs nothing.
+// #431). A player with no answer scored (only answers logged before sheet v5) weighs nothing (foldLoss 0).
 const foldLoss = (q, v, p) => {
   C.START.W = M.K.START.W = v.split('+').includes('W') ? 1 : W0;
   const {scored} = replay(byPlayer[q], v, pooledFor(q, p));
@@ -458,7 +461,7 @@ Object.keys(families).forEach(F => {
   players.forEach(p => {
     train[p] = {};
     const best = vs.reduce((b, v) => {
-      const t = players.filter(q => q !== p && res[v].per[q].n).reduce((a, q) => a + foldLoss(q, v, p), 0);
+      const t = pool.filter(q => q !== p).reduce((a, q) => a + foldLoss(q, v, p), 0);
       train[p][v] = t;
       return t < b[1] - 1e-12 ? [v, t] : b;
     }, [null, Infinity])[0];
