@@ -439,6 +439,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   if (P[LEVEL]) P[LEVEL][good ? 'ok' : 'ko']++;
   else P[LEVEL] = levelSeed(P);
   abilityStep(LEVEL, P[LEVEL], good, dm, k);
+  // Recent results over every game, newest last: an opening only after a right answer (model.js openRight).
+  P[LEVEL].h = ((P[LEVEL].h || '') + (good ? 1 : 0)).slice(-10);
   // The corallites hint is revealed after the answer when it was not opened: seen, but not recognised.
   ph.forEach(p => {
     const x = (ps[p.f] = ps[p.f] || [0, 0]);
@@ -1085,8 +1087,10 @@ function quizPhoto(cur = 'quiz') {
   // planned before a break, or a comeback question planned before the rust melted, is chosen again too (rustNow: the app
   // may have stayed open across the break). The custom quiz's cards are the player's choice: they never wait.
   // A new break since they were planned: every planned question goes, comeback ones too (their recall is old).
+  // A card of the path planned before a miss is chosen again too (model.js openRight: an opening only after a right
+  // answer; a miss drops the questions planned already, this is the check when one shows).
   const brk = rustNow();
-  if (brk || (q.intro && !q.custom && (noOpen() || (!q.start && introHold()))) || !!q.warm !== cbIn(cur)) {
+  if (brk || (q.intro && !q.custom && (noOpen() || (!q.start && (introHold() || !openRight())))) || !!q.warm !== cbIn(cur)) {
     dropPlans();
     q = planPhoto(cur);
   }
@@ -1338,7 +1342,15 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     // One opening rule (model.js OPEN, openChance): when the path allows a card, this question opens a genus with the
     // chance of the free places for shaky genera, the genus drawn easiest and most common first (openPick).
     fresh =
-      !sel && !start && !warm && met.length && !noOpen() && introSince() >= INTRO.EVERY && !introHold() && openPace(at, soon)
+      !sel &&
+      !start &&
+      !warm &&
+      met.length &&
+      !noOpen() &&
+      introSince() >= INTRO.EVERY &&
+      !introHold() &&
+      openPace(at, soon) &&
+      openRight(at)
         ? list.filter(n => !introduced(n))
         : [];
   if (fresh.length && Math.random() < openChance(list)) cards = [openPick(fresh, list)];

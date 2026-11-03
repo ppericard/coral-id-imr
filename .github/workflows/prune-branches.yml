@@ -1,0 +1,62 @@
+name: Prune merged branches
+# Manual button (Pierre, 2026-11-04: merged branches hide the ones that never got a PR, AGENTS.md 26b).
+# Deletes a branch only when a pull request from it was MERGED and the branch still points at that
+# pull request's last commit (nothing pushed after the merge). Branches with an open pull request,
+# with commits after the merge, or with no pull request at all are kept and listed for a human.
+# "dry_run" (the default) only lists what it would delete. A deleted branch can be restored from
+# its pull request page ("Restore branch"): the commits stay on GitHub. The deletion is a
+# `git push --force-with-lease` on the SHA checked, so a branch that moved meanwhile is kept.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Only list what would be deleted'
+        type: boolean
+        default: true
+permissions:
+  contents: write
+  pull-requests: read
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - name: Delete merged branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          DRY: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$REPO/pulls?state=all&per_page=100" --paginate \
+            -q '.[] | [.head.ref, .state, (.merged_at // ""), .head.sha, (.number|tostring)] | @tsv' > prs.tsv
+          gh api "repos/$REPO/branches?per_page=100" --paginate -q '.[] | [.name, .commit.sha] | @tsv' > heads.tsv
+          default=$(gh api "repos/$REPO" -q .default_branch)
+          deleted=0; kept=0; failed=0
+          while IFS=$'\t' read -r name sha; do
+            [ "$name" = "$default" ] && continue
+            open=$(awk -F'\t' -v b="$name" '$1==b && $2=="open"' prs.tsv | wc -l)
+            merged_here=$(awk -F'\t' -v b="$name" -v s="$sha" '$1==b && $3!="" && $4==s' prs.tsv | wc -l)
+            if [ "$open" -eq 0 ] && [ "$merged_here" -gt 0 ]; then
+              if [ "$DRY" = "true" ]; then echo "would delete: $name"; deleted=$((deleted+1)); continue; fi
+              # Atomic: the push deletes the branch only if it still points at the SHA checked above,
+              # so a push made after the listing keeps the branch (Codex review #435). Counted only on success.
+              if out=$(git push --porcelain --force-with-lease="refs/heads/$name:$sha" origin ":refs/heads/$name" 2>&1); then
+                echo "deleted: $name"; deleted=$((deleted+1))
+              elif printf '%s' "$out" | grep -q 'stale info'; then
+                echo "kept (moved since the listing): $name"; kept=$((kept+1))
+              else
+                echo "::error::not deleted: $name: $(printf '%s' "$out" | grep -m1 -iE 'rejected|error|remote:' || printf '%s' "$out" | tail -1)"; failed=$((failed+1))
+              fi
+            else
+              any=$(awk -F'\t' -v b="$name" '$1==b' prs.tsv | wc -l)
+              if [ "$open" -gt 0 ]; then why="open pull request"; elif [ "$any" -eq 0 ]; then why="NO pull request"; else why="commits after the merge, or closed unmerged"; fi
+              echo "kept ($why): $name"; kept=$((kept+1))
+            fi
+          done < heads.tsv
+          echo "::notice::$([ "$DRY" = "true" ] && echo 'would delete' || echo 'deleted') $deleted branches, kept $kept, failed $failed"
+          # A refused deletion (protected branch, permissions) fails the run, so it is never reported as done.
+          [ "$failed" -eq 0 ]
