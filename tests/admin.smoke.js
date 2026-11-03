@@ -357,6 +357,19 @@ const server = http.createServer((req, res) => {
     if (!/near-duplicate/.test(jd.line) || !/Same colony/.test(jd.line)) fails.push(`${w}px Judged: swiper line ${jd.line}`);
     await go('~cand');
     if (!jd.left || !/not judged yet/.test(await text())) fails.push(`${w}px Judged: no reminder of the candidates not judged`);
+    // The pre-sort sets the sure near-duplicate aside (Pierre, 2026-11-03): out of the queue, counted, back on Show.
+    const as = await p.evaluate(F => {
+      const inQ = () => candQueue('all').some(x => x.p.f === F[1] && !x.aside);
+      return {aside: !inQ(), note: !!document.querySelector('.adm-caside')};
+    }, CF);
+    if (!as.aside || !as.note) fails.push(`${w}px Pre-sort: the near-duplicate is not set aside (${JSON.stringify(as)})`);
+    if (as.note) {
+      await p.click('[data-caside]');
+      await settle();
+      if (!/Hide them/.test(await p.$eval('.adm-caside', e => e.textContent))) fails.push(`${w}px Pre-sort: Show did not bring them back`);
+      await p.click('[data-caside]');
+      await settle();
+    }
     errs.length = 0;
     if (await p.isEnabled('#save')) {
       await p.click('#save');
