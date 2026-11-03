@@ -55,24 +55,32 @@ def kept_views(g, G, cur):
     return ('wide', 'macro') if lv == 2 else ('wide', 'medium')
 
 
+def _forms():
+    """forms.json growth-form guesses {file: form} (admin.js AUTOF); a missing file reads as none."""
+    try: return json.load(open('forms.json')).get('gf') or {}
+    except (OSError, ValueError): return {}
+FORMS = _forms()
+
+
 def colonies(g, G, cand, cur, excl=lambda f: False):
-    """{view: distinct colonies (observations)} of genus g's photos as curated: data.json views, moved (curation move)
-    and the candidates Pierre added (curation add, whichever genus list holds them), without hidden, excluded,
-    sheet-only (use 'ref'), several-corals or Coral Finder book photos. A 2-level genus's medium photos join wide (as the admin's viewOf)."""
+    """{view: distinct colonies (observations)} of genus g's photos as the admin's gamePool counts them (Codex review
+    #390: one rule, mirrored here): data.json views, moved (curation move) and the candidates Pierre added (curation
+    add, whichever genus list holds them), with "Not this genus" (curation out) applied both ways; without hidden,
+    excluded, sheet-only (curation use 'ref'), extra, several-corals or Coral Finder book photos. Views as admin.js
+    viewOf: a genus switched to 2 levels by curation (lv) has its medium photos join wide, a genus with 2 levels in
+    data.json keeps them apart. Colony leaves out a photo whose growth form is not visible ('x', curation gf, else
+    the judging pass's or forms.json's guess, as admin.js fOf) unless the genus has a single growth form."""
     gens = cur.get('genera') or {}
     k = gens.get(g) or {}
     hide, move, add, out = set(k.get('hide') or []), k.get('move') or {}, k.get('add') or {}, k.get('out') or {}
-    # A colony set to "sheet only" (curation use 'ref') no longer counts, as admin.js gamePool (Codex review #390).
     ref = {f for f, u in (cur.get('use') or {}).items() if u == 'ref'}
-    lv2 = kept_views(g, G, cur)[1] == 'macro'
-    by = {}
+    merge = kept_views(g, G, cur)[1] == 'macro' and G[g].get('levels') != 2
+    gf = cur.get('gf') or {}
+    form = lambda f: re.sub('[pn]', '', gf.get(f) or '') or re.sub('[pn]', '', (SUG.get(f) or {}).get('fm') or FORMS.get(f) or '')
+    got = []  # (view, photo): every photo of the genus as curated, before the game filters
     def put(p, v, mv=move):
-        if p.get('multi') or p.get('cf') or p['f'] in hide or p['f'] in ref or excl(p['f']): return
         v = mv.get(p['f'], v)
-        if lv2 and v == 'medium': v = 'wide'
-        by.setdefault(v, set()).add(p.get('o') or p['f'])
-    # "Not this genus" (curation out, as admin.js photos/cands; Codex review #390): a photo sent away leaves the genus,
-    # one sent here from another genus joins it in its view.
+        got.append(('wide' if merge and v == 'medium' else v, p))
     for v, L in (G[g].get('views') or {}).items():
         for p in L:
             if p['f'] not in out: put(p, v)
@@ -90,6 +98,12 @@ def colonies(g, G, cand, cur, excl=lambda f: False):
         for L in cand.values():
             for p in L:
                 if p['f'] in sent and p['f'] in madd: put(p, madd[p['f']], {})
+    one_form = len({form(p['f']) for _, p in got if not p.get('multi') and p['f'] not in hide} - {'', 'x'}) == 1
+    by = {}
+    for v, p in got:
+        if p.get('multi') or p.get('cf') or p.get('extra') or p['f'] in hide or p['f'] in ref or excl(p['f']): continue
+        if v == 'wide' and form(p['f']) == 'x' and not one_form: continue
+        by.setdefault(v, set()).add(p.get('o') or p['f'])
     return {v: len(s) for v, s in by.items()}
 
 

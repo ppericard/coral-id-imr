@@ -7,7 +7,7 @@ opening, with no list of exceptions kept by hand. The app multiplies the opening
 sqrt((1 + cm) / (1 + the median cm of those genera)) (model.js weighted, core.js commonFactor; docs/LEARNING.md).
 Computed once here, never on the phones (AGENTS.md rule 14g).
 
-For every game genus (the slate genera of data.json "gen", and BENTHIC and BONUS of app.js, whose records are in
+For every game genus (the slate genera of data.json "gen", and BENTHIC and BONUS of core.js, whose records are in
 data.json "x.gen"), it asks iNaturalist (read only), within 40 km of Dauin, verifiable observations only:
 - observations: observations of the genus taxon (`total_results`);
 - observers: distinct observers of the same (`/observations/observers`, `total_results`);
@@ -33,6 +33,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import dump, load  # noqa: E402  (the one writer of data.json's layout)
+import genera  # noqa: E402  (the game genera as core.js gameOf)
 
 UA = {"User-Agent": "coral-id-imr/1.0"}
 API = "https://api.inaturalist.org/v1/"
@@ -64,14 +65,10 @@ def taxon(name, inactive=False):
 
 
 def game_genera(d):
-    """[(genus, record)]: the slate genera (data.json "gen"), then BENTHIC and BONUS (app.js) found in "x.gen"."""
-    app = (ROOT / "app.js").read_text(encoding="utf-8")
-    extra = []
-    for const in ("BENTHIC", "BONUS"):
-        m = re.search(rf"^const {const} = \[([^\]]*)\]", app, re.M)
-        extra += re.findall(r"'([^']+)'", m.group(1)) if m else []
+    """[(genus, record)]: the game genera as core.js gameOf (tools/genera.py, which reads BENTHIC and BONUS from core.js):
+    the slate genera (data.json "gen"), then those found in "x.gen"."""
     xg = (d.get("x") or {}).get("gen") or {}
-    return list(d["gen"].items()) + [(g, xg[g]) for g in extra if g in xg]
+    return [(g, d["gen"].get(g) or xg[g]) for g in genera.game_genera(d)]
 
 
 # "formerly X": X a genus ("Favia"), several ("Montastrea / Phymastrea") or a species ("Turbinaria peltata").

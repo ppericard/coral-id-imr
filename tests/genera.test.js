@@ -70,9 +70,10 @@ print(json.dumps({
   assert.deepStrictEqual(out.Aviews, ['wide', 'medium']);
   assert.strictEqual(out.A, 7);
   assert.strictEqual(out.Aex, 8, 'an excluded photo is no colony');
-  // B, 2 levels: its macro photos are its close-ups, its medium ones join Colony: wide 1, 2; macro 3.
+  // B, 2 levels in data.json: its macro photos are its close-ups; its medium ones stay apart (admin.js viewOf merges
+  // them into Colony only for a genus switched to 2 levels by curation; Codex review #390): wide 1; macro 3.
   assert.deepStrictEqual(out.Bviews, ['wide', 'macro']);
-  assert.strictEqual(out.B, 4 + 5);
+  assert.strictEqual(out.B, 5 + 5);
   assert.strictEqual(out.Blv3, 5 + 5, 'curation lv 3: Colony and Close-up (medium)');
   assert.strictEqual(out.full, 0, 'enough colonies: nothing to refill');
   // Game genus: the source cap only; Finder-only: also no more than its need over all sources.
@@ -89,6 +90,24 @@ cur = {'genera': {'A': {'out': {'a2': 'B'}}}}
 print(json.dumps([fl.colonies('A', G, {}, cur), fl.colonies('B', G, {}, cur), fl.colonies('B', G, {}, {**cur, 'use': {'b1': 'ref'}})]))`)
   );
   assert.deepStrictEqual(r, [{wide: 1}, {wide: 2}, {wide: 1}], 'a sheet-only colony (use ref) no longer counts, as admin.js gamePool');
+});
+
+test('fetch_local colonies: the views and the growth-form rule of admin.js viewOf / gamePool (Codex review #390)', () => {
+  const r = JSON.parse(
+    py(`import importlib.util
+sys.argv = ['x']
+s = importlib.util.spec_from_file_location('fl', 'tools/fetch_local.py'); fl = importlib.util.module_from_spec(s); s.loader.exec_module(fl)
+fl.FORMS, fl.SUG = {}, {}
+o = lambda f: {'f': f, 'o': f}
+G = {'C': {'views': {'wide': [o('c1'), o('c2'), o('c3')], 'medium': [o('c4')], 'macro': [o('c5')]}}}
+gf = {'gf': {'c1': 'B', 'c2': 'xn', 'c3': 'E'}}
+print(json.dumps([fl.colonies('C', G, {}, {'genera': {'C': {'lv': 2}}}), fl.colonies('C', G, {}, gf), fl.colonies('C', G, {}, {'gf': {'c1': 'B', 'c2': 'x'}})]))`)
+  );
+  // Switched to 2 levels by curation: medium joins Colony.
+  assert.deepStrictEqual(r[0], {wide: 4, macro: 1});
+  // Growth form not visible ('x'): out of Colony when the genus has several forms, in when it has one.
+  assert.deepStrictEqual(r[1], {wide: 2, medium: 1, macro: 1});
+  assert.deepStrictEqual(r[2], {wide: 3, medium: 1, macro: 1});
 });
 
 test('fetch_local --plan: a waiting candidate of a view that has its colonies holds no room (Codex review #390)', () => {
