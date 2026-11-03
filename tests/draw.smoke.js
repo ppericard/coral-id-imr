@@ -233,7 +233,7 @@ const server = http.createServer((req, res) => {
         document.querySelectorAll('.unlock').forEach(x => x.remove()); // closed by the player before Next
         quizPhoto();
         // The player reads the cards through (each genus is met when its card shows).
-        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)')); ) b.click();
+        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
         const now = Object.keys(INTROS).filter(n => !before.has(n));
         if (now.length) cardsAt.push([a, now.length]);
         now.forEach(n => (at[n] = [a, INTROS[n][1]]));
@@ -294,7 +294,7 @@ const server = http.createServer((req, res) => {
         achQ.length = 0;
         achBusy = false;
         quizPhoto();
-        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)')); ) b.click();
+        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
         const o = document.querySelector('.unlock.intro [data-open]');
         if (o) {
           shownAt = answersSoFar();
@@ -478,7 +478,7 @@ const server = http.createServer((req, res) => {
           const a = answersSoFar(),
             before = new Set(Object.keys(INTROS));
           quizPhoto();
-          for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)')); ) b.click();
+          for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
           if (document.querySelector('.unlock [data-bonus]')) fails.push('bonus offer made again');
           const now = Object.keys(INTROS).filter(n => !before.has(n));
           if (now.length) cards.push([a, now]);

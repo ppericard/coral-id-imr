@@ -85,7 +85,7 @@ const server = http.createServer((req, res) => {
         NEXTQ = null;
         quizPhoto();
         // The player reads the first-meeting cards through (each genus is met when its card shows).
-        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)')); ) b.click();
+        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
         const t = window.__q[1];
         if (!first.includes(t)) first.push(t);
         const ch = [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c),
