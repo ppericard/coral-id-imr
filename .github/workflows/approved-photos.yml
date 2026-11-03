@@ -37,8 +37,13 @@ jobs:
           git pull --rebase origin main
           git push origin HEAD:main
       # Its push starts no other workflow (GITHUB_TOKEN), so the photos go to R2 from here (tools/r2_sync.sh).
+      # Today's main first, in every case: the commit step stops before its pull when there is nothing to commit, and the
+      # sync deletes from the bucket what img/ lacks (Codex review #380). Its own push, if any, is already on main.
       - name: Photos to R2
-        run: tools/r2_sync.sh
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+          tools/r2_sync.sh
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
