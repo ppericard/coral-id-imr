@@ -1388,15 +1388,22 @@ function quizCustom(h) {
   if (h === CUSTOM_H) return customSel() ? quizPhoto(CUSTOM_H) : location.replace('#quiz-custom');
   viewCustom();
 }
-// The selection screen (Pierre, 2026-11-03: "not everyone knows the IMR lecture groups"; then: no grouping by growth
-// form, which is not genus-specific: many genera take 3-4 forms or more). Every genus is in view at once, as a small
-// photo with its name, tapped to pick it (aria-pressed), A-Z by default; the IMR lecture groups are the other view (a
-// switch, for RAs; the genera in view inside each group; ★ genera in the group of their look-alikes, Millepora and the
-// bonus genera apart, All per group). Quick picks that need no knowledge replace the selection: My weakest (genera
-// answered, lowest progress first), Recently missed (a miss in their last 5 answers, latest first), Look-alikes of … (a
-// genus and its look-alikes: declared or confused, model.js isLook, confusable). A search box filters the photos. Clear
-// all, the count and Start (at least CUSTOM.MIN genera) stay in view at the bottom.
-const CQ = {VIEW: 'imr-custom-view', WEAK: 6, MISS: 8};
+// The selection screen (Pierre, 2026-11-03). Every genus is in view, as a small photo with its name, tapped to pick it
+// (aria-pressed), in one of three views (a switch, remembered on this device):
+// - IMR groups, the default ("nobody picks genera alphabetically": the lecture's groups, its genera in the IMR order; ★
+//   genera in the group of their look-alikes, Millepora and the bonus genera apart);
+// - My mix-ups ("you know you make mistakes around these kinds of genera, so you go there"): clusters of the genera the
+//   player confuses, from their own record, most confused first, each with its mix-up count (model.js mixEdges,
+//   mixClusters); with no mix-up yet, the declared look-alike sets, the pairs players confuse most first (lookEdges), and
+//   a line says so;
+// - Progress: To review, Learning, Not seen yet, Learned (shownLevel, as My progress names them).
+// Never grouped by growth form (not genus-specific; AGENTS.md rule 4), no A-Z view (the search finds a name; until
+// 2026-11-03 A-Z was the default: a device that kept it opens on IMR groups once, the choice now under a new key).
+// All / None per group. Quick picks that need no knowledge replace the selection: My weakest (genera answered, lowest
+// progress first), Recently missed (a miss in their last 5 answers, latest first), Look-alikes of … (a genus and its
+// look-alikes: declared or confused, model.js isLook, confusable). Clear all, the count and Start (at least CUSTOM.MIN
+// genera) stay in view at the bottom.
+const CQ = {VIEW: 'imr-custom-view2', OLD: 'imr-custom-view', WEAK: 6, MISS: 8, VIEWS: ['imr', 'mix', 'prog']};
 const cqPicks = play => {
   const done = n => !!(P[n] || {}).mx;
   return {
@@ -1411,42 +1418,79 @@ const cqPicks = play => {
   };
 };
 const cqLooks = (x, play) => [x, ...play.filter(n => n !== x && (isLook(x, n) || confusable(x, n)))];
-function viewCustom() {
-  const play = pool(),
-    on = new Set(customSaved().filter(n => play.includes(n))),
-    qp = cqPicks(play),
-    lk = play.filter(n => cqLooks(n, play).length > 1);
-  let view = store.get(CQ.VIEW, 'az') === 'imr' ? 'imr' : 'az',
-    q = '';
-  const tile = n => {
-    const p = cover(GX(n));
-    return `<button type="button" class="cqtile" data-g="${esc(n)}" aria-pressed="${on.has(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 90px, 120px')} alt="" loading="lazy">` : '<span class="cqnoph"></span>'}<i>${esc(n)}</i>${isBonus(n) ? '<small>Bonus</small>' : ''}</button>`;
-  };
-  // [key, title, subtitle, header mark, genera]
-  const groups = () => {
-    if (view === 'az') return [['az', '', '', '', play.slice().sort((x, y) => x.localeCompare(y))]];
-    const gk = n => (isBonus(n) ? '+' : isBenthic(n) ? 'F' : shownGroup(n) || '★'),
-      ord = k => (typeof k === 'number' ? k : {'★': 100, F: 101, '+': 102}[k]),
-      mk = (m, h) => `<span class="gn" style="--g:${h}" aria-hidden="true">${esc(String(m))}</span>`;
-    return [...new Set(play.map(gk))]
+// The groups of a view: [{k, t: title (HTML), sub, mark (HTML), L: genera}], and a note above them ('' for none).
+function cqGroups(view, play) {
+  const mk = (m, h) => `<span class="gn" style="--g:${h}" aria-hidden="true">${esc(String(m))}</span>`,
+    names = L => L.map(n => `<i>${esc(n)}</i>`).join(' · ');
+  if (view === 'mix') {
+    const own = mixClusters(mixEdges(play)),
+      C = own.length ? own : mixClusters(lookEdges(play)),
+      ord = L => play.filter(n => L.includes(n));
+    return {
+      note: own.length
+        ? ''
+        : 'No mix-ups of yours yet: here are the look-alikes of the IMR lecture and the Coral Finder, those players confuse most first. Your own mix-ups take their place as you play.',
+      G: C.map((c, i) => ({
+        k: 'm' + i,
+        t: names(ord(c.g)),
+        sub: own.length ? `${c.w} mix-up${c.w === 1 ? '' : 's'}` : 'Look-alikes',
+        mark: '',
+        L: ord(c.g)
+      }))
+    };
+  }
+  if (view === 'prog') {
+    const LV = [
+      ['weak', 'To review'],
+      ['mid', 'Learning'],
+      ['new', 'Not seen yet'],
+      ['ok', 'Learned']
+    ];
+    return {
+      note: '',
+      G: LV.map(([k, t]) => ({k, t: esc(t), sub: '', mark: '', L: play.filter(n => shownLevel(n)[0] === k)})).filter(g => g.L.length)
+    };
+  }
+  const gk = n => (isBonus(n) ? '+' : isBenthic(n) ? 'F' : shownGroup(n) || '★'),
+    ord = k => (typeof k === 'number' ? k : {'★': 100, F: 101, '+': 102}[k]);
+  return {
+    note: '',
+    G: [...new Set(play.map(gk))]
       .sort((a, b) => ord(a) - ord(b))
       .map(k => {
         const gr = DATA.imrg.find(x => x.n === k),
           L = play.filter(n => gk(n) === k);
         return gr
-          ? [k, gr.t, 'IMR lecture group ' + gr.n, mk(gr.n, groupHue(gr.n)), L]
+          ? {k, t: esc(gr.t), sub: 'IMR lecture group ' + gr.n, mark: mk(gr.n, groupHue(gr.n)), L}
           : k === 'F'
-            ? [k, 'Fire coral', 'IMR benthic slate, not a hard coral', mk('F', 200), L]
+            ? {k, t: 'Fire coral', sub: 'IMR benthic slate, not a hard coral', mark: mk('F', 200), L}
             : k === '+'
-              ? [k, 'Bonus genera', 'Not on the IMR list', mk('+', 200), L]
-              : [k, 'Not covered in the lecture', '', mk('★', 200), L];
-      });
+              ? {k, t: 'Bonus genera', sub: 'Not on the IMR list', mark: mk('+', 200), L}
+              : {k, t: 'Not covered in the lecture', sub: '', mark: mk('★', 200), L};
+      })
+  };
+}
+function viewCustom() {
+  const play = pool(),
+    on = new Set(customSaved().filter(n => play.includes(n))),
+    qp = cqPicks(play),
+    lk = play.filter(n => cqLooks(n, play).length > 1);
+  try {
+    localStorage.removeItem(CQ.OLD); // the A-Z / IMR groups choice of before 2026-11-03: IMR groups once
+  } catch (e) {}
+  let view = store.get(CQ.VIEW, 'imr'),
+    q = '';
+  if (!CQ.VIEWS.includes(view)) view = 'imr';
+  const tile = n => {
+    const p = cover(GX(n));
+    return `<button type="button" class="cqtile" data-g="${esc(n)}" aria-pressed="${on.has(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 90px, 120px')} alt="" loading="lazy">` : '<span class="cqnoph"></span>'}<i>${esc(n)}</i>${isBonus(n) ? '<small>Bonus</small>' : ''}</button>`;
   };
   $v.innerHTML = `<h2>Custom quiz</h2>
-  <p class="lede">The Quiz on the genera you pick. Tap the photos of the genera you want to work on, then <b>Start</b>. They are listed A–Z; <b>IMR groups</b> shows them in the IMR lecture's groups instead, with All to pick a whole group. <b>Quick picks</b> choose for you: your weakest genera, those you missed lately, or a genus and its look-alikes. Only the genera picked are asked, and the wrong choices come from them too, so look-alikes picked together are drilled together; with fewer than 4 picked, other genera make up the choices. Everything else is as in the Quiz: typed questions, Again after a mix-up, look-alike duels, harder photos as you improve, and every answer counts in <a href="#progress">My progress</a>. A genus you have not met yet shows its card first. Mastery exams only come in the Quiz: a genus that reaches 95% here takes its exam there. Your choice is kept for next time; the Custom quiz tab brings you back here.</p>
-  <div class="tools cqtools"><input type="search" id="cqq" placeholder="Search a genus" aria-label="Search a genus" autocomplete="off"><div class="seg" role="group" aria-label="Group by">${[
-    ['az', 'A–Z'],
-    ['imr', 'IMR groups']
+  <p class="lede">The Quiz on the genera you pick. Tap the photos of the genera you want to work on, then <b>Start</b>. Three ways to see them: <b>IMR groups</b>, the IMR lecture's groups (the genera to tell apart); <b>My mix-ups</b>, the genera you confuse with each other, the most confused first (before you have any, the look-alikes of the IMR lecture and the Coral Finder); <b>Progress</b>, to review, learning, not seen yet, learned. <b>All</b> picks a whole group. <b>Quick picks</b> choose for you: your weakest genera, those you missed lately, or a genus and its look-alikes. Only the genera picked are asked, and the wrong choices come from them too, so look-alikes picked together are drilled together; with fewer than 4 picked, other genera make up the choices. Everything else is the photo quiz: typed questions, Again after a mix-up, look-alike duels, harder photos as you improve, and every answer counts in <a href="#progress">My progress</a>. A genus you have not met yet shows its card first. Mastery exams only come in the Quiz: a genus that reaches 95% here takes its exam there. Your choice is kept for next time; the Custom quiz tab brings you back here.</p>
+  <div class="tools cqtools"><input type="search" id="cqq" placeholder="Search a genus" aria-label="Search a genus" autocomplete="off"><div class="seg" role="group" aria-label="View">${[
+    ['imr', 'IMR groups'],
+    ['mix', 'My mix-ups'],
+    ['prog', 'Progress']
   ]
     .map(([k, t]) => `<button type="button" data-cv="${k}" aria-pressed="${view === k}">${t}</button>`)
     .join('')}</div></div>
@@ -1489,12 +1533,13 @@ function viewCustom() {
     show();
   };
   const draw = () => {
-    box.innerHTML = groups()
-      .map(
-        ([k, t, sub, mark, L]) =>
-          `<section class="cqg" data-k="${esc(String(k))}">${t ? `<div class="cqh">${mark}<span class="cqht">${esc(t)}${sub ? ` <small>${esc(sub)}</small>` : ''}</span><button type="button" class="linkish cqall" aria-label="All or none of ${esc(t)}">All</button></div>` : ''}<div class="cqtiles">${L.map(tile).join('')}</div></section>`
-      )
-      .join('');
+    const {note, G} = cqGroups(view, play);
+    box.innerHTML =
+      (note ? `<p class="note cqnote">${esc(note)}</p>` : '') +
+      G.map(
+        g =>
+          `<section class="cqg" data-k="${esc(String(g.k))}"><div class="cqh">${g.mark}<span class="cqht">${g.t}${g.sub ? ` <small>${esc(g.sub)}</small>` : ''}</span><button type="button" class="linkish cqall" aria-label="All or none of this group">All</button></div><div class="cqtiles">${g.L.map(tile).join('')}</div></section>`
+      ).join('');
     box.querySelectorAll('.cqtile').forEach(b => (b.onclick = () => set([b.dataset.g], !on.has(b.dataset.g))));
     // All of a group (the photos the search leaves in view), or none once they all are.
     box.querySelectorAll('.cqall').forEach(
