@@ -827,3 +827,105 @@ test('a typed answer (quiz|t) has no guess rate, in core.js and in the sheet (v2
   const rows = s.post({readAnswers: 1, token: 'ghp_write000000000000000000'}).rows;
   assert.deepStrictEqual(eloOf(rows), s.get({stats: '1'}).photos);
 });
+
+// The rename to IMR Reef ID (2026-11-03): the old storage keys move to their new names at start-up (migrateKeys), the
+// sheet's and progress files' old names are read as new (keysIn), and the sheet gets old-name copies (withLegacy).
+// rename-app: keep-begin
+const {KEYS, LEGACY_KEYS, keyRename, keyLegacy, migrateKeys, keysIn, withLegacy, ORG} = require('../core.js');
+// A Storage (localStorage, sessionStorage) in memory, with the same methods and order of keys.
+const fakeStorage = (init = {}, full = () => false) => {
+  const m = new Map(Object.entries(init));
+  return {
+    get length() {
+      return m.size;
+    },
+    key: i => [...m.keys()][i] ?? null,
+    getItem: k => (m.has(k) ? m.get(k) : null),
+    setItem(k, v) {
+      if (full(k)) throw new Error('QuotaExceededError');
+      m.set(k, String(v));
+    },
+    removeItem: k => m.delete(k),
+    dump: () => Object.fromEntries(m)
+  };
+};
+
+test('rename: the key table (travelling keys keep travelling, device keys stay on the device)', () => {
+  assert.strictEqual(keyRename('imr-coral-progress'), 'reefid-sync-coral-progress');
+  assert.strictEqual(keyRename('imr-coral-quiz'), 'reefid-sync-coral-quiz');
+  assert.strictEqual(keyRename('imr-coral-intro'), 'reefid-sync-coral-intro');
+  assert.strictEqual(keyRename('imr-coral-intro-offer'), 'reefid-sync-coral-intro-offer');
+  assert.strictEqual(keyRename('imr-coral-reset'), 'reefid-sync-coral-reset');
+  assert.strictEqual(keyRename('imr-coral-ach'), 'reefid-sync-ach');
+  assert.strictEqual(keyRename('imr-coral-theme'), 'reefid-sync-theme');
+  assert.strictEqual(keyRename('imr-coral-sync'), 'reefid-account', 'the sign-in record never travels');
+  assert.strictEqual(keyRename('imr-coral-loaded'), 'reefid-loaded');
+  assert.strictEqual(keyRename('imr-admin-vault'), 'reefid-admin-vault');
+  assert.strictEqual(keyRename('imr-tour'), 'reefid-tour');
+  ['reefid-tour', 'reefid-sync-coral-progress', 'demo:imr-admin-vault', 'test-sheet-log', 'imr'].forEach(k =>
+    assert.strictEqual(keyRename(k), null, k)
+  );
+  // Every old travelling key still travels, every other one stays on the device; and back for the sheet copies.
+  LEGACY_KEYS.forEach(([o, n]) => {
+    const k = o.endsWith('-') ? o + 'x' : o,
+      nk = keyRename(k);
+    assert.strictEqual(nk.startsWith(KEYS.SYNC), k.startsWith('imr-coral-') && !['imr-coral-sync', 'imr-coral-loaded'].includes(k), k);
+    assert.ok(nk.startsWith(KEYS.APP), k);
+    assert.strictEqual(keyLegacy(nk), nk.startsWith(KEYS.SYNC) ? k : null, k);
+  });
+  assert.strictEqual(ORG.app, 'IMR Reef ID');
+  assert.ok(!/imr/i.test(KEYS.APP + KEYS.SYNC), 'the keys do not name the organisation');
+});
+
+test('rename: migrateKeys moves an old key, keeps a new one, leaves the rest', () => {
+  // Old only: moved.
+  const a = fakeStorage({'imr-coral-progress': '{"Porites":{"ok":3}}', 'imr-coral-sync': '{"name":"Ana"}', 'imr-tour': '"done"'});
+  assert.deepStrictEqual(migrateKeys(a).sort(), ['imr-coral-progress', 'imr-coral-sync', 'imr-tour']);
+  assert.deepStrictEqual(a.dump(), {
+    'reefid-sync-coral-progress': '{"Porites":{"ok":3}}',
+    'reefid-account': '{"name":"Ana"}',
+    'reefid-tour': '"done"'
+  });
+  // Both: the new one is kept, the old one goes.
+  const b = fakeStorage({'imr-coral-progress': 'old', 'reefid-sync-coral-progress': 'new'});
+  migrateKeys(b);
+  assert.deepStrictEqual(b.dump(), {'reefid-sync-coral-progress': 'new'});
+  // None: nothing moves, other keys (a test's, the admin demo's) are left alone.
+  const c = fakeStorage({'reefid-sync-coral-progress': 'p', 'test-own': '1', 'demo:imr-admin-vault': 'x'});
+  assert.deepStrictEqual(migrateKeys(c), []);
+  assert.deepStrictEqual(c.dump(), {'reefid-sync-coral-progress': 'p', 'test-own': '1', 'demo:imr-admin-vault': 'x'});
+  // Again: nothing more to do.
+  assert.deepStrictEqual(migrateKeys(a), []);
+  // A key that cannot be written (storage full) stays under its old name, to be moved at the next start.
+  const d = fakeStorage({'imr-coral-progress': 'big', 'imr-coral-theme': '"dark"'}, k => k === 'reefid-sync-coral-progress');
+  assert.deepStrictEqual(migrateKeys(d), ['imr-coral-theme']);
+  assert.deepStrictEqual(d.dump(), {'imr-coral-progress': 'big', 'reefid-sync-theme': '"dark"'});
+});
+
+test('rename: data from the sheet or a file is read with the new names; the sheet gets old-name copies', () => {
+  // An app from before the rename saved it.
+  assert.deepStrictEqual(keysIn({'imr-coral-progress': 'p', 'imr-coral-ach': 'a', 'imr-coral-intro': 'i'}), {
+    'reefid-sync-coral-progress': 'p',
+    'reefid-sync-ach': 'a',
+    'reefid-sync-coral-intro': 'i'
+  });
+  // Both names: the new one wins.
+  assert.deepStrictEqual(keysIn({'imr-coral-progress': 'old', 'reefid-sync-coral-progress': 'new'}), {'reefid-sync-coral-progress': 'new'});
+  assert.deepStrictEqual(keysIn(null), {});
+  // Sent: the new names, and the old ones for an app from before the rename on another device of the player.
+  const sent = withLegacy({'reefid-sync-coral-progress': 'p', 'reefid-sync-ach': 'a'});
+  assert.deepStrictEqual(sent, {
+    'reefid-sync-coral-progress': 'p',
+    'reefid-sync-ach': 'a',
+    'imr-coral-progress': 'p',
+    'imr-coral-ach': 'a'
+  });
+  // Read back by the renamed app: the same as what it sent.
+  assert.deepStrictEqual(keysIn(sent), {'reefid-sync-coral-progress': 'p', 'reefid-sync-ach': 'a'});
+  // The account merge (admin) reads either.
+  const m = mergeUsers(keysIn({'imr-coral-progress': JSON.stringify({Porites: {ok: 2, ko: 0}})}), {
+    'reefid-sync-coral-progress': JSON.stringify({Porites: {ok: 1, ko: 1}})
+  });
+  assert.strictEqual(JSON.parse(m['reefid-sync-coral-progress']).Porites.ok, 3);
+});
+// rename-app: keep-end

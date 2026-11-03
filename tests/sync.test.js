@@ -17,7 +17,7 @@ const ans = (id, extra = {}) => ({
 
 test('new RA, save and load back, with revision', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 27});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 28});
   const r = s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}, answers: [ans('a1')]});
   assert.strictEqual(r.ok, true);
   assert.strictEqual(r.log, true);
@@ -145,7 +145,7 @@ const rep = (id, extra = {}) => ({
 test('reports: logged once, reporter verified by code, never mistaken for a progress write', () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}});
-  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 27});
+  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 28});
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1'), rep('r2', {why: 'multi', fix: ''})]});
   s.post({rname: 'Bob', rpin: '', reports: [rep('r3', {why: 'bogus'}), rep('r4', {why: 'photo', note: '=HYPERLINK("x")'})]});
   const R = s.sheets.Reports;
@@ -205,7 +205,7 @@ test('users: admin token only; one row per player with their numbers', () => {
   assert.strictEqual(s.post({users: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
   const r = s.post({users: 1, token: TOK});
   assert.strictEqual(r.ok, true);
-  assert.strictEqual(r.v, 27);
+  assert.strictEqual(r.v, 28);
   const ana = r.users.find(u => u.name === 'Ana');
   // v13: the anonymous id of ?answers=1, so the admin can put names on the anonymous stats.
   const a = s.post({readAnswers: 1, token: TOK});
@@ -239,7 +239,7 @@ test('userMerge: progress written to into, answers and reports relabelled, from 
     [['Ana B', 'Ana']]
   );
   // The old device of "Ana B": a pull and a send both get 'gone', and its new answers go to Ana.
-  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 27});
+  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 28});
   const w = s.post({name: 'Ana B', pin: '5678', data: prog(9), summary: {}, answers: [ans('b2')]});
   assert.strictEqual(w.error, 'gone');
   assert.strictEqual(w.log, true);
@@ -361,7 +361,7 @@ test('autoUpdate: an interrupted update (code in place, deploy failed) is finish
 // Anonymous answers (v12).
 test('anonymous answers are logged under ~anon <id>, then move to the name at sign-in', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: 27});
+  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: 28});
   assert.strictEqual(s.post({anon: 'Bad Id!', anonAnswers: [ans('z3')]}).error, 'input');
   assert.deepStrictEqual(
     s.sheets.Answers.rows.slice(1).map(r => r[0]),
@@ -459,7 +459,7 @@ test('v19 events: anonymous error reports and one-tap answers, logged once, capp
       ev('e4', {k: 'nope', msg: 'unknown kind'})
     ]
   });
-  assert.deepStrictEqual(r, {ok: true, ev: true, v: 27});
+  assert.deepStrictEqual(r, {ok: true, ev: true, v: 28});
   s.post({dev: 'dev0000001', events: [ev('e1', {k: 'err', msg: 'again'})]});
   const E = s.sheets.Events;
   assert.strictEqual(E.getLastRow(), 4, 'three events, an unknown kind and a resent id are not logged');
@@ -577,7 +577,7 @@ test('board: signed-in players by progress then level; opted-out players and the
   s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {pct: 41.6}, answers: [ans('c2')]});
   const b = s.get({board: '1'});
   assert.strictEqual(b.ok, true);
-  assert.strictEqual(b.v, 27);
+  assert.strictEqual(b.v, 28);
   assert.deepStrictEqual(b.rows.map(r => r[0]).sort(), ['Ana', 'Ben'], 'Ana B opted out');
   assert.ok(
     b.rows.every(r => r.length === 3 && r[1] === 42 && r[2] === null),
@@ -604,7 +604,7 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
   assert.ok(ben());
   assert.strictEqual(s.post({userBoard: 'Ben', hide: true}).error, 'token', 'admin only');
   assert.strictEqual(s.post({userBoard: 'Nobody', hide: true, token: TOK}).error, 'user');
-  assert.deepStrictEqual(s.post({userBoard: 'ben', hide: true, token: TOK}), {ok: true, board: -1, v: 27});
+  assert.deepStrictEqual(s.post({userBoard: 'ben', hide: true, token: TOK}), {ok: true, board: -1, v: 28});
   assert.ok(!ben(), 'hidden at once (cache cleared)');
   assert.ok(
     s.get({board: '1'}).rows.some(r => r[0] === 'Ana'),
@@ -615,7 +615,7 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
   Object.keys(s.cache).forEach(k => delete s.cache[k]);
   assert.ok(!ben(), 'still hidden after his own sync');
   assert.strictEqual(s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ben').board, -1, 'the admin list says so');
-  assert.deepStrictEqual(s.post({userBoard: 'Ben', hide: false, token: TOK}), {ok: true, board: 1, v: 27});
+  assert.deepStrictEqual(s.post({userBoard: 'Ben', hide: false, token: TOK}), {ok: true, board: 1, v: 28});
   assert.ok(ben(), 'shown again');
 });
 
@@ -695,7 +695,7 @@ test('achs: how many signed-in players hold each achievement; counts only', () =
   s.post({name: 'Ben', pin: '1111', data: data({met10: 3}), summary: {}, answers: []});
   s.post({name: 'Cy', pin: '2222', data: prog(1), summary: {}, answers: []});
   const a = s.get({achs: '1'});
-  assert.strictEqual(a.v, 27);
+  assert.strictEqual(a.v, 28);
   assert.strictEqual(a.n, 2, 'players with a record');
   assert.deepStrictEqual(a.counts, {met10: 2, run10: 1}, 'no _ fields');
   assert.ok(!JSON.stringify(a).match(/Ana|Ben/), 'no names');
@@ -978,3 +978,49 @@ test('v25: the old-app log is capped for everyone (Codex review #373)', () => {
   for (let i = 0; i < 400; i++) s.post({anon: 'id' + String(i).padStart(8, '0'), anonAnswers: [ans('c' + i)]});
   assert.ok(s.sheets.Events.rows.filter(r => r[2] === 'old').length <= 300);
 });
+
+// v28 (2026-11-03): the app's keys were renamed with the app (IMR Reef ID, core.js LEGACY_KEYS). An app from before the
+// rename still saves the old names, the renamed app saves the new ones plus a copy under the old ones (core.js
+// withLegacy): the sheet reads the new name first, else the old one. rename-app: keep-begin
+test('v28: saved data is read under the new key names or the old ones (progress, reset, achievements)', () => {
+  const {pctOf, withLegacy} = require('../core.js');
+  const s = loadCodeGs(),
+    P = {Acropora: {ok: 8, ko: 2, pg: 0.5, th: 0.4}, Porites: {ok: 20, ko: 1, pg: 0.7, mx: 1, th: 1.2}},
+    genera = {Acropora: 'mid', Porites: 'ok', Favites: 'new'},
+    oldP = {'imr-coral-progress': JSON.stringify(P)},
+    newP = {'reefid-sync-coral-progress': JSON.stringify(P)};
+  // The leaderboard %: an old app's save, a renamed app's save, and the renamed app's save with its old-name copy.
+  s.post({name: 'Old', pin: '1234', data: oldP, summary: {pct: 1, genera}, answers: [ans('o1')]});
+  s.post({name: 'New', pin: '1234', data: newP, summary: {pct: 1, genera}, answers: [ans('n1')]});
+  s.post({name: 'Both', pin: '1234', data: withLegacy(newP), summary: {pct: 1, genera}, answers: [ans('b1')]});
+  const rows = s.get({board: '1'}).rows,
+    want = pctOf(P, Object.keys(genera));
+  assert.ok(want > 1);
+  ['Old', 'New', 'Both'].forEach(n => assert.strictEqual(rows.find(r => r[0] === n)[1], want, n));
+  // Both names with different values (never sent by the app; a guard): the new one wins.
+  assert.strictEqual(s.ctx.dataKey_({'imr-coral-progress': 'old', 'reefid-sync-coral-progress': 'new'}, 'progress'), 'new');
+  assert.strictEqual(s.ctx.dataKey_({'imr-coral-progress': 'old'}, 'progress'), 'old');
+  assert.strictEqual(s.ctx.dataKey_({}, 'progress'), undefined);
+  // The abilities for the photo statistics (abilities_), and the last progress reset for the opening hold (resetOf_).
+  assert.deepStrictEqual({...s.ctx.abilities_(JSON.stringify(oldP))}, {Acropora: 0.4, Porites: 1.2});
+  assert.deepStrictEqual({...s.ctx.abilities_(JSON.stringify(newP))}, {Acropora: 0.4, Porites: 1.2});
+  const t = '2026-11-01T08:00:20Z';
+  assert.strictEqual(s.ctx.resetOf_({'imr-coral-reset': JSON.stringify(t)}), Date.parse(t));
+  assert.strictEqual(s.ctx.resetOf_({'reefid-sync-coral-reset': JSON.stringify(t)}), Date.parse(t));
+  assert.strictEqual(s.ctx.resetOf_({}), 0);
+  // Achievements: old names, new names, both (new wins: the old copy's extra achievement is not counted).
+  const s2 = loadCodeGs();
+  s2.post({name: 'Ana', pin: '1234', data: {...oldP, 'imr-coral-ach': JSON.stringify({met10: 1})}, summary: {}, answers: []});
+  s2.post({name: 'Ben', pin: '1111', data: {...newP, 'reefid-sync-ach': JSON.stringify({met10: 1, run10: 1})}, summary: {}, answers: []});
+  s2.post({
+    name: 'Cy',
+    pin: '2222',
+    data: {...newP, 'reefid-sync-ach': JSON.stringify({met10: 1}), 'imr-coral-ach': JSON.stringify({cor1: 1})},
+    summary: {},
+    answers: []
+  });
+  const a = s2.get({achs: '1'});
+  assert.strictEqual(a.n, 3);
+  assert.deepStrictEqual(a.counts, {met10: 3, run10: 1});
+});
+// rename-app: keep-end

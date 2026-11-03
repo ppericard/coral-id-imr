@@ -332,13 +332,16 @@ const SHEET = () => {
     const q = new URL(String(u)).searchParams,
       body = o && o.body ? JSON.parse(o.body) : null,
       log = JSON.parse(localStorage.getItem('test-sheet-log') || '[]');
-    log.push(body ? {post: 1, name: body.name || '', data: !!body.data} : {get: 1, name: q.get('name') || ''});
+    log.push(
+      body ? {post: 1, name: body.name || '', data: !!body.data, keys: Object.keys(body.data || {})} : {get: 1, name: q.get('name') || ''}
+    );
     localStorage.setItem('test-sheet-log', JSON.stringify(log));
     const at = Date.parse('2026-10-20T09:30:00Z'),
-      account = {
-        'reefid-sync-coral-progress': JSON.stringify({'~level': {ok: 200, ko: 45, th: 0.4, at}, Acropora: {ok: 30, ko: 5, th: 0.3, at}}),
-        'reefid-sync-coral-quiz': '{"bon":false}'
-      };
+      prog = JSON.stringify({'~level': {ok: 200, ko: 45, th: 0.4, at}, Acropora: {ok: 30, ko: 5, th: 0.3, at}}),
+      // test-sheet-old: the account as an app from before the rename to IMR Reef ID saved it (the old key names).
+      account = localStorage.getItem('test-sheet-old')
+        ? {'imr-coral-progress': prog, 'imr-coral-quiz': '{"bon":false}'} // rename-app: keep
+        : {'reefid-sync-coral-progress': prog, 'reefid-sync-coral-quiz': '{"bon":false}'};
     if (body) return body.name ? {ok: true, log: true, rev: 4} : {ok: false, error: 'input'};
     if (!q.get('name')) return {ok: false};
     if (q.get('name').toLowerCase() !== 'anna') return {ok: true, found: false};
@@ -497,6 +500,53 @@ async function signin(base) {
     if (!n.sync || JSON.parse(n.sync).name !== 'Anna B.' || (await p.$('.signnudge .sconfirm')))
       fails.push('sign-in: a new name did not sign in at once');
   });
+  // A device from before the rename to IMR Reef ID (2026-11-03), signed in as Anna, with only the old key names, and an
+  // account the sheet holds under the old names (an app from before the rename saved it last): the app starts signed in,
+  // with this device's progress and theme, merges the account's, and sends the new names plus the old-name copies.
+  // rename-app: keep-begin
+  await run(
+    () => {
+      if (localStorage.getItem('test-old')) return;
+      localStorage.setItem('test-old', '1');
+      localStorage.setItem('test-sheet-old', '1');
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+      localStorage.setItem('imr-recalc', '"millepora-counts-2026-11"');
+      localStorage.setItem('imr-coral-theme', 'dark');
+      localStorage.setItem('imr-coral-sync', JSON.stringify({name: 'Anna', pin: '1234', dirty: true, log: []}));
+      localStorage.setItem('imr-coral-progress', JSON.stringify({Porites: {ok: 3, ko: 0, th: 0.2}}));
+    },
+    async p => {
+      await p
+        .waitForFunction(() => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.post && x.name === 'Anna'), null, {
+          timeout: 15000
+        })
+        .catch(() => {});
+      const s = await p.evaluate(() => ({
+        old: Object.keys(localStorage).filter(k => k.startsWith('imr-')),
+        account: JSON.parse(localStorage.getItem('reefid-account') || 'null'),
+        prog: JSON.parse(localStorage.getItem('reefid-sync-coral-progress') || '{}'),
+        theme: document.documentElement.dataset.theme,
+        signb: !!document.querySelector('#signb:not([hidden])'),
+        sent:
+          (
+            JSON.parse(localStorage.getItem('test-sheet-log') || '[]')
+              .filter(x => x.post && x.name === 'Anna')
+              .pop() || {}
+          ).keys || []
+      }));
+      if (s.old.length) fails.push('rename: old keys left on the device: ' + s.old.join(', '));
+      if (!s.account || s.account.name !== 'Anna' || s.signb)
+        fails.push('rename: a device signed in before the rename is no longer signed in');
+      if ((s.prog.Porites || {}).ok !== 3)
+        fails.push("rename: this device's progress was not kept: " + JSON.stringify(s.prog).slice(0, 120));
+      if ((s.prog.Acropora || {}).ok !== 30) fails.push("rename: the account's progress saved under the old names was not read");
+      if (s.theme !== 'dark') fails.push(`rename: the theme saved under the old name is not applied (${s.theme})`);
+      if (!s.sent.includes('reefid-sync-coral-progress') || !s.sent.includes('imr-coral-progress') || s.sent.includes('reefid-account'))
+        fails.push('rename: the sync does not send the new names with the old-name copies: ' + s.sent.join(', '));
+    }
+  );
+  // rename-app: keep-end
   // The tour's sign-in step: the same question.
   await run(
     () => localStorage.setItem('reefid-nudge', '1'),
