@@ -497,7 +497,7 @@
 @media (min-width: 600px) {
   .hdart {
     aspect-ratio: auto;
-    height: clamp(250px, calc(100dvh - 420px), 400px); /* 470 px before the footer became the one-line credit */
+    height: clamp(170px, calc(100dvh - 520px), 280px); /* an illustration: the buttons carry the door (Pierre, 2026-11-03) */
   }
 }
 
@@ -506,8 +506,9 @@
    one-line credit grow to fill it, never shrink. A screen too short even for that (320 x 568) scrolls; nothing is
    squeezed or hidden.
    Learn & practise is the primary door, Identify the secondary one (Pierre, 2026-11-03: Identify serves mostly the IMR
-   RAs doing data analysis, every player learns and practises). On phones the Learn photos (4 x 3 tiles) take all the
-   height left (at least 120 px) and Identify is one compact row: a small ReefCloud photo beside its one-line kicker, its
+   RAs doing data analysis, every player learns and practises). On phones the Learn photos (4 x 2 tiles) are an
+   illustration (84 px up to a quarter of the screen), the Learn and Practice buttons are full-width rows with the tab bar's
+   icon and their purpose, and take the height left (60 to 112 px each); Identify is one compact row: a small ReefCloud photo beside its one-line kicker, its
    title and its button (its description shows from tablets up). Tablets and desktops: Learn gets the wider column (3:2).
    Practice is the one filled button of the page; Identify's is outlined. */
 body:has(.home-page) main {
@@ -529,12 +530,56 @@ body:has(.home-page) main {
   overflow: clip; /* not a scroll container: a door is never shrunk below its content */
 }
 .hdoor.learn .hdart {
-  flex: 1 0 120px;
+  flex: 1000 0 84px; /* the height left goes here first (1000 : 1), up to the cap; past it, to the buttons */
   aspect-ratio: auto;
-  min-height: 120px;
+  min-height: 84px;
+  max-height: 28svh; /* an illustration, never more than about a quarter of the screen */
+  container-type: size;
+}
+.hdoor.learn .hdtiles {
+  grid-template-rows: minmax(0, 1fr);
+}
+.hdoor.learn .hdtiles img:nth-child(n + 5) {
+  display: none;
+}
+/* A second row of tiles once the band is tall enough for square-ish tiles. */
+@container (min-height: 150px) {
+  .hdoor.learn .hdtiles {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+  .hdoor.learn .hdtiles img:nth-child(n + 5):nth-child(-n + 8) {
+    display: block;
+  }
 }
 .hdoor.learn .hdbody {
-  flex: none; /* the height left goes to the photos, not to a gap above the buttons */
+  flex: 1 0 auto;
+}
+.hdoor.learn .hddesc {
+  display: none; /* the buttons say what each step is */
+}
+.hdoor.learn .hdacts {
+  flex: 1 0 auto;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: minmax(56px, 1fr);
+}
+/* Learn and Practice: the door's real content, the tab bar's icon beside the label and its one-line purpose. */
+.hdbtn:has(.hdi) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  column-gap: 12px;
+  padding: 10px 14px;
+}
+.hdbtn .hdi {
+  grid-row: span 2;
+  color: var(--accent);
+}
+.hdbtn.main .hdi {
+  color: var(--accent-ink);
+}
+.hdbtn:has(.hdi) small {
+  display: block;
 }
 .hdoor.identify {
   flex-direction: row;
@@ -575,8 +620,28 @@ body:has(.home-page) main {
   .hdoor.identify .hdart.rc {
     flex: none;
   }
+  .hdoor.learn .hdart {
+    max-height: none;
+  }
+  .hdoor.learn .hdtiles {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+  .hdoor.learn .hdtiles img:nth-child(n + 5) {
+    display: block;
+  }
   .hdoor.learn .hdbody {
     flex: 1;
+  }
+  .hdoor.learn .hddesc {
+    display: block;
+  }
+  .hdoor.learn .hdacts {
+    flex: none;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-auto-rows: auto;
+  }
+  .hdbtn:has(.hdi) {
+    padding: 14px 18px;
   }
   .hdoor.identify {
     flex-direction: column;

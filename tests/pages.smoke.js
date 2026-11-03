@@ -692,7 +692,8 @@ async function credits(b, base) {
         link: !!(cr && cr.querySelector('a[href="#about"]')),
         bottom: cr ? Math.round(cr.getBoundingClientRect().bottom) : 0,
         // Learn & practise is the primary door, Identify the secondary one (Pierre, 2026-11-03).
-        doors: ['.hdoor.learn', '.hdoor.identify', '.hdoor.learn .hdart', '.hdoor.identify .hdart'].map(s => {
+        // Phones (Pierre, 2026-11-03, second look): the Learn and Practice buttons carry the door, its photos only illustrate.
+        doors: ['.hdoor.learn', '.hdoor.identify', '.hdoor.learn .hdart', '.hdoor.learn .hdbtn', '.hdoor.identify .hdbtn'].map(s => {
           const b = document.querySelector(s)?.getBoundingClientRect();
           return b ? [Math.round(b.width), Math.round(b.height)] : [0, 0];
         }),
@@ -704,9 +705,10 @@ async function credits(b, base) {
     // border overlaps the page by design: --tabbar-h is 58, the bar 59 with its border).
     if (r.sh > r.ih || r.bottom > r.tabTop + 1 || !r.bottom) fails.push(`${w}x${h} Home is not one screen: ${JSON.stringify(r)}`);
     if (r.sw > r.iw) fails.push(`${w}x${h} Home scrolls sideways: ${JSON.stringify(r)}`);
-    const [ld, id, la, ia] = r.doors;
-    // Phones: Learn's door and photos taller than Identify's; side by side: Learn's column wider.
-    if (w < 600 ? !(ld[1] > id[1] && la[1] > ia[1]) : !(ld[0] > id[0]))
+    const [ld, id, la, lb, ib] = r.doors;
+    // Phones: Learn's door taller than Identify's, its buttons taller than Identify's, its photos at most 28% of the
+    // screen; side by side: Learn's column wider.
+    if (w < 600 ? !(ld[1] > id[1] && lb[1] > ib[1] && la[1] <= 0.28 * h + 1) : !(ld[0] > id[0]))
       fails.push(`${w}x${h} Home: Learn & practise is not the main door: ${JSON.stringify(r.doors)}`);
     if (!/Pierre Pericard/.test(r.text) || !/IMR/.test(r.text) || !r.link || BOOK.test(r.text) || r.footer)
       fails.push(`${w}x${h} Home credit line: ${JSON.stringify(r)}`);
