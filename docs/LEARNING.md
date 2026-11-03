@@ -189,7 +189,11 @@ time, each on its card, but never as the answer of the question right after its 
   ("Comeback after a break", below). It replaced the gentle restart (`WARM`, the same day: 10 easy questions at every
   page load, left out of the hold).
 - **Not right after**: a genus met on a card alone can be asked from `INTRO.GAP` (2) answers on (one question at least
-  in between; the card says "It comes up in the questions a little later"). The first 4 can be asked at once.
+  in between; the card says "It comes up in the questions a little later", and since 2026-11-03 its genus is not
+  among that question's choices either: a beginner saw the name of the card just read as a choice behind it; simulated,
+  `tools/learnsim.js`, 5 seeds x 300 questions, true knowledge of the slate before → after: beginner 0.57 → 0.55
+  (±0.03 / ±0.06), lecture-level RA 0.73 → 0.74, strong RA 0.85 → 0.85, expert 0.95 → 0.95, all within the spread).
+  The first 4 can be asked at once.
 - **Choices among the genera met**: easy wrong choices and traps come from the genera met (a card or an answer); a
   look-alike already met beats a name never seen; genera never met only make up the three when too few are met.
 - **Duels**: both genera are named on the buttons, so the cards of those not met yet come together before the duel.

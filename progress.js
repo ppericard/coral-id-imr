@@ -3,7 +3,7 @@
 // top-level names and is loaded right after sync.js (index.html, in order); app.js waits for every script
 // (window.BOOT) before its first page. Required like app.js: the loader tries it 3 times, the service worker keeps it.
 // Progress board, one screen: a wall of the slate genera's cover photos in slate order (name band in the level colour, grey photo =
-// not seen, red border = review) beside a side column with the overall ring, what to review first and the mix-ups. Signing in
+// not seen, amber dot = review) beside a side column with the overall ring, what to review first and the mix-ups. Signing in
 // and backup/reset live in the header and ⚙ (Pierre, 2026-11-01: the board comes first, nothing unrelated around it).
 // The player's card on My progress (Pierre, 2026-11-01: "a badge, as in video games"; 2026-11-02: one compact element
 // with the ring, at the top of the page, not under the slate tiles): the overall ring with its %, then the name, place and
@@ -56,7 +56,7 @@ function quizBoard() {
     .join(',');
   const STEPS = MASTERY.map(([t], k) => [k, t]);
   // Photo wall: the cover in full colour (grey = not seen) with a name band coloured by the genus's step on the scale,
-  // holding the mini ring + % like the Slate and Groups tiles; review = red border and "!".
+  // holding the mini ring + % like the Slate and Groups tiles; review = an amber dot (app.css, 2026-11-03).
   const tile = n => {
     const g = GX(n),
       p = cover(g),

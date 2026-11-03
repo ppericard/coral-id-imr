@@ -454,7 +454,7 @@ function card(name, group) {
   const im = p
     ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="" loading="lazy">`
     : `<span class="ph none">no photo</span>`;
-  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="fdxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${esc(tipsText(g))}</p></span></a>`;
+  return `<a class="card${ig ? ' grp' : ''}" href="#g-${esc(name)}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="fdxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(g.fam)}</small><p>${gloss(tipsText(g), undefined, true)}</p></span></a>`;
 }
 function bindCards(root = $v) {
   root.querySelectorAll('[data-g]').forEach(b => (b.onclick = () => go('g-' + b.dataset.g)));
@@ -595,30 +595,44 @@ const noteText = x => x.replace(/^(Review slide|Instructor's notes): /, '');
 // Full lecture notes for the genus sheet.
 const notesList = (g, cls = '') =>
   g.imr.length
-    ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${g.imr.map(x => `<li>${gloss(noteText(x))}</li>`).join('')}</ul><p class="tref">IMR Lecture 6${g.sl && g.sl.length ? ', ' + slideRef(g.sl.length > 1 ? 'slides' : 'slide', g.sl) : ''}</p>`
+    ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${glossAll(g.imr.map(noteText))
+        .map(x => `<li>${x}</li>`)
+        .join(
+          ''
+        )}</ul><p class="tref">IMR Lecture 6${g.sl && g.sl.length ? ', ' + slideRef(g.sl.length > 1 ? 'slides' : 'slide', g.sl) : ''}</p>`
     : `<p class="note">Not on the lecture slides: see the Coral Finder below.</p>`;
-// Glossary terms in tips and lecture notes: tap (or focus + Enter) to see the definition and its source.
-// Very common words (wall, corallite, mouth) are left plain. Matching patterns per glossary term:
+// Glossary terms in tips, lecture notes, genus cards, quiz feedback and the Coral Finder: tap (or focus + Enter) to see
+// the definition and its source. Matching patterns per glossary term (Corallite and Polyp glossed too since the beginner
+// review of 2026-11-03: players who never had the IMR lecture; "septal teeth" opens Septa):
 const GLOSS_PAT = {
   'Septo-costae': 'septo-costae',
-  'Septa': 'septa',
+  'Septa': 'septa(?:l(?: teeth)?)?',
   'Costae': 'costae',
   'Coenosteum': 'coenosteum',
   'Paliform lobes': 'paliform lobes?',
   'Axial corallite': 'axial corallites?',
   'Verrucae': 'verrucae',
-  'Hooded corallites': 'hooded',
+  'Hooded corallites': 'hooded(?: corallites?)?',
   'Extra-tentacular budding': 'extra-tentacular(?: budding)?',
   'Intra-tentacular budding': 'intra-tentacular(?: budding)?',
   'Monticules': 'monticules?',
-  'Vesicles': 'vesicles?'
+  'Vesicles': 'vesicles?',
+  'Corallite': 'corallites?',
+  'Polyp': 'polyps?'
 };
 let glossRe = null;
-function gloss(text) {
+// Each term is underlined once per text block, at its first occurrence: a tip saying "corallites" three times gets one
+// underline, not three. seen (a Set) carries that over several calls that make one block (the items of one tips list).
+// btn: the text sits inside a button (a Coral Finder box): the term is tappable but not a focus stop of its own.
+function gloss(text, seen = new Set(), btn = false) {
   const t = esc(text);
   if (!DATA.terms) return t;
   if (!glossRe) {
-    const keys = DATA.terms.map(x => x[0]).filter(k => GLOSS_PAT[k]);
+    // Longer patterns first, so "axial corallite" wins over "corallite" at the same place.
+    const keys = DATA.terms
+      .map(x => x[0])
+      .filter(k => GLOSS_PAT[k])
+      .sort((a, b) => GLOSS_PAT[b].length - GLOSS_PAT[a].length);
     glossRe = keys.length
       ? {keys, re: new RegExp('\\b(?:' + keys.map(k => '(' + GLOSS_PAT[k] + ')').join('|') + ')\\b', 'gi')}
       : {re: null};
@@ -626,18 +640,29 @@ function gloss(text) {
   if (!glossRe.re) return t;
   return t.replace(glossRe.re, (m, ...g) => {
     const k = glossRe.keys[g.slice(0, glossRe.keys.length).findIndex(x => x !== undefined)];
-    return k ? `<span class="gt" tabindex="0" role="button" data-gt="${esc(k)}">${m}</span>` : m;
+    if (!k || seen.has(k)) return m;
+    seen.add(k);
+    return `<span class="gt"${btn ? '' : ' tabindex="0" role="button"'} data-gt="${esc(k)}">${m}</span>`;
   });
 }
+// The items of one list glossed as one block (each term underlined once in the list).
+const glossAll = (L, btn) => {
+  const seen = new Set();
+  return L.map(x => gloss(x, seen, btn));
+};
 const $gpop = document.createElement('div');
 $gpop.className = 'gpop';
 $gpop.hidden = true;
 $gpop.setAttribute('role', 'tooltip');
 document.body.appendChild($gpop);
+// A term's text: the plain-words sentence written for beginners (data.json terms[i][3], tools/apply_plain_terms.py), then
+// the sourced definition with its source.
+const termDef = ([, d, src, plain]) =>
+  `${plain ? `${esc(plain)} <span class="gdef">${esc(d)}</span>` : esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}`;
 function showGloss(el) {
   const t = DATA.terms.find(x => x[0] === el.dataset.gt);
   if (!t) return;
-  $gpop.innerHTML = `<b>${esc(t[0])}</b> ${esc(t[1])}${t[2] ? ` <small>${esc(t[2])}</small>` : ''}`;
+  $gpop.innerHTML = `<b>${esc(t[0])}</b> ${termDef(t)}`;
   $gpop.hidden = false;
   const r = el.getBoundingClientRect(),
     w = Math.min(320, innerWidth - 24);
@@ -673,13 +698,15 @@ addEventListener(
 // Short ID tips; genera the lecture skips fall back to the Coral Finder summary.
 const tipsList = (g, cls = '') =>
   g.qt
-    ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${g.qt.map(x => `<li>${gloss(x)}</li>`).join('')}</ul>`
+    ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${glossAll(g.qt)
+        .map(x => `<li>${x}</li>`)
+        .join('')}</ul>`
     : `<p class="keyid">${gloss(g.sum)}</p>`;
 const tipsText = g => (g.qt ? g.qt.join(' · ') : g.sum);
 // The ID tips view of the Genera page: the 4 lecture questions and the glossary on top, then 2-3 short cues per genus.
 const tipsHead =
   () => `<div class="tiphead"><ol class="qtiles" aria-label="IMR Lecture 6: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
-  <details class="gloss"><summary>Coral anatomy terms</summary><a class="glink" href="#lab-anatomy"><span class="hpv art">${window.homeArt ? homeArt('anatomy') : ''}</span><span><b>Corallite anatomy</b><small>Explore the parts of a corallite on a diagram ›</small></span></a><dl>${DATA.terms.map(([t, d, src]) => `<dt>${esc(t)}</dt><dd>${esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>`;
+  <details class="gloss"><summary>Coral anatomy terms</summary><a class="glink" href="#lab-anatomy"><span class="hpv art">${window.homeArt ? homeArt('anatomy') : ''}</span><span><b>Corallite anatomy</b><small>Explore the parts of a corallite on a diagram ›</small></span></a><dl>${DATA.terms.map(t => `<dt>${esc(t[0])}</dt><dd>${termDef(t)}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>`;
 const tipCard = n => {
   const g = DATA.gen[n],
     p = cover(g);
@@ -1461,7 +1488,7 @@ function need(n) {
   }
 }
 Promise.all([
-  getR('data.json?v=34')
+  getR('data.json?v=35')
     .then(r => (loadMark('pop', String(r.headers.get('x-served-by') || '').slice(0, 60)), r))
     .then(okJson)
     .then(d => (window.bootTick && bootTick(), d)),

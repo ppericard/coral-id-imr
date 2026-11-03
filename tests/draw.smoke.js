@@ -449,6 +449,9 @@ const server = http.createServer((req, res) => {
           fails.push(`question ${i}: ${tg} asked ${a - at[tg][0]} answer(s) after its card`);
         const ch = choices();
         if (Object.keys(INTROS).length >= 4 && !ch.every(introduced)) fails.push(`question ${i}: a choice never met (${ch.join(', ')})`);
+        // A genus met on a card of its own is no choice on the question behind it: its card says it comes up a little
+        // later (beginner review 2026-11-03).
+        if (i && now.length === 1 && ch.includes(now[0])) fails.push(`question ${i}: ${now[0]} a choice behind its own card`);
         // The offer to open all genera: only in its window, at a high enough level, once; declined here.
         const offer = document.querySelector('.unlock.intro [data-open]');
         if (offer) {
