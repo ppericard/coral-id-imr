@@ -3168,11 +3168,11 @@ td.cov-c.cov-over {
 .adm-hours {
   display: grid;
   gap: 2px;
-  font-size: 0.68rem;
+  font-size: var(--fs-xs); /* the 12 px floor (AGENTS.md rule 18) */
 }
 .adm-hrow {
   display: grid;
-  grid-template-columns: 3.6em repeat(24, minmax(0, 1fr)) 2.4em;
+  grid-template-columns: 3.4em repeat(24, minmax(0, 1fr)) 2.2em;
   gap: 2px;
   align-items: center;
 }
