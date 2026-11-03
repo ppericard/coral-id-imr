@@ -12,6 +12,10 @@
 .lab .ko {
   color: var(--bad);
 }
+/* "I don't know" (Type the genus): quiet, never the red of a wrong answer. */
+.lab .idk b {
+  color: var(--muted);
+}
 .lab a {
   color: var(--accent);
 }
@@ -3633,42 +3637,7 @@ body:has(.fdstart:not([hidden])) footer {
   }
 }
 
-/* type the genus (proto/type.js): the photo stays in view above the field while the phone's keyboard is open */
-.tyform {
-  display: grid;
-  gap: 8px;
-}
-.tyform label {
-  font-size: var(--fs-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-}
-.tyform input {
-  font: inherit;
-  font-size: 1.1rem; /* 16 px or more: iOS does not zoom into the field */
-  font-style: italic;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--surface);
-  color: var(--ink);
-  width: 100%;
-}
-.tyform input:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-.tybtns {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.tymsg {
-  min-height: 1.2em;
-  color: var(--bad);
-}
+/* type the genus (proto/type.js; its form is the quiz's, app.css .tyform) */
 /* Phones: the field sits right under a shorter photo, so both stay above the keyboard (about half the screen). */
 @media (max-width: 599px) {
   .tystage {

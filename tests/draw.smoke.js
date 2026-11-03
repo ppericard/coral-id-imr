@@ -9,7 +9,10 @@
 //   player falls behind (introHold);
 // - out-of-game prompts at least PROMPT.GAP answers apart (promptOk);
 // - Millepora a slate genus (progress, cards); the bonus genera offered once every slate genus is met and never before,
-//   "Not now" kept, once on opened one card at a time, never counted in the progress, Off out of the draw.
+//   "Not now" kept, once on opened one card at a time, never counted in the progress, Off out of the draw;
+// - typed questions (model.js TYPED): sometimes on a genus well on its way, never under TYPED.from; logged quiz|t with
+//   the genus read as the answer; a typo read, a word that is no genus refused, a typed miss against both genera, "I
+//   don't know" a miss for the genus shown only; the mastery exam needs TYPED.exam typed right answers.
 // Like pages.smoke.js it needs Playwright (CI installs it in a temporary folder; no package.json). Locally:
 // node tests/draw.smoke.js
 const http = require('http'),
@@ -68,6 +71,20 @@ const server = http.createServer((req, res) => {
   await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
   // Runs inside the page: app.js globals (P, photoSet, distractors, BONUS...) are in scope.
   const out = await p.evaluate(() => {
+    // Answers the question on screen with genus g: its choice, or typed on a typed question (model.js TYPED; '' = I
+    // don't know). The choices of the question: the buttons, or those the draw chose for a typed one (SHOWNQ).
+    const say = g => {
+        const b = document.querySelector(`#view [data-c="${CSS.escape(g)}"]`);
+        if (b) return b.click();
+        const f = document.querySelector('#view .tyform');
+        if (!g) return f.querySelector('[data-idk]').click();
+        f.querySelector('input').value = g;
+        f.requestSubmit();
+      },
+      choices = () => {
+        const L = [...document.querySelectorAll('#view [data-c]')].map(b => b.dataset.c);
+        return L.length ? L : (SHOWNQ && SHOWNQ[2]) || [];
+      };
     const fails = [],
       RUNS = 30,
       key = x => x.o || x.f,
@@ -130,23 +147,138 @@ const server = http.createServer((req, res) => {
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85};
     P[LEVEL] = {ok: 200, ko: 30, th: 1};
     const at = [],
-      qx = question;
-    let shownT = null;
+      qx = question,
+      logged = () => {
+        const L = SYNC ? SYNC.log || [] : store.get(LOG0, []);
+        return L[L.length - 1] || {};
+      };
+    let shownT = null,
+      exTyped = 0;
     question = (...a) => ((shownT = a[1]), qx(...a)); // the genus asked (a duel slipped in is not nextTarget's)
     for (let i = 0; i < 400 && !P[t].mx; i++) {
       quizPhoto();
-      if (EXAMQ === t) {
+      const ex = EXAMQ === t,
+        ty = !!TYPEDQ;
+      if (ex) {
         at.push(answersSoFar());
         if (document.querySelectorAll('.qstage .qph').length !== 1) fails.push('exam question with several photos');
+        exTyped += ty;
       }
-      document.querySelector(`[data-c="${CSS.escape(shownT)}"]`).click();
+      say(shownT);
+      // Typed exam questions are logged |t|x (the sheet reads |x at the end, model.js TYPED).
+      if (ex && (logged().m || '') !== (ty ? 'quiz|t|x' : 'quiz|x')) fails.push(`exam answer logged ${logged().m}, typed ${ty}`);
     }
     question = qx;
     if (!P[t].mx) fails.push(`${t}: not mastered after 400 right answers (exam questions: ${at.length})`);
     if (at.length !== EXAM.n) fails.push(`${t}: ${at.length} exam questions, ${EXAM.n} expected`);
+    // The exam needs TYPED.exam typed right answers among its EXAM.n.
+    if (exTyped < TYPED.exam) fails.push(`${t}: mastered with ${exTyped} typed exam answers, ${TYPED.exam} needed`);
+    // An exam begun before the typed questions (4 right, none typed): its next questions are typed until it has them,
+    // its count held at EXAM.n (never over 100%).
+    {
+      const s0 = P[t];
+      P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ex: {k: 4, v: ['wide'], at: -99}};
+      const L = [];
+      for (let i = 0; i < 3 && !P[t].mx; i++) {
+        const ty = examTyped(t);
+        L.push(ty ? 't' : 'c');
+        question('quiz', t, shuffle([t, ...distractors(t, pool(), 3)]), 'Which genus?', {...examSet(t), ...(ty ? {typed: 1} : {})});
+        say(t);
+        if (genScore(t) > 1) fails.push(`exam begun before typed questions: ${genScore(t)} over 100%`);
+      }
+      if (L.join('') !== 'tt' || !P[t].mx || P[t].ex) fails.push(`exam begun before typed questions: ${L.join('')}, mastered ${!!P[t].mx}`);
+      P[t] = s0;
+    }
     if (at.some((x, i) => i && x - at[i - 1] < EXAM.gap))
       fails.push(`${t}: exam questions closer than ${EXAM.gap} answers: ${at.join(', ')}`);
     if (level(t)[0] !== 'ok' || genScore(t) !== 1) fails.push(`${t}: mastered but not learned at 100%`);
+    // Typed questions (model.js TYPED, quiz.js typeForm): a genus well on its way (here 89%) is sometimes asked typed, a
+    // beginner's genus (24%) never; a typed answer is logged quiz|t with the genus read as its answer (never the raw
+    // text) and no choices; a typo is read as the genus; a typed miss naming another genus counts against both; "I
+    // don't know" is a miss for the genus shown only; a word that is no genus is no answer.
+    {
+      const hi = genera.filter((n, i) => i % 2 && DATA.gen[n]),
+        lo = genera.filter((n, i) => !(i % 2) && DATA.gen[n]);
+      P = Object.fromEntries([
+        ...hi.map(n => [n, {ok: 20, ko: 3, h: '1111011111', th: 1.5, pg: 0.75}]),
+        ...lo.map(n => [n, {ok: 4, ko: 3, h: '1010110', th: 0, pg: 0.2}])
+      ]);
+      P[LEVEL] = {ok: 300, ko: 60, th: 1};
+      const n = {hi: 0, hiT: 0, lo: 0, loT: 0};
+      for (let i = 0; i < 300; i++) {
+        NEXTQ = null;
+        rematch = null;
+        quizPhoto();
+        document.querySelectorAll('.unlock').forEach(x => x.remove());
+        const g = SHOWNQ[1],
+          ty = !!SHOWNQ.typed,
+          dom = !!document.querySelector('#view .tyform') && !document.querySelector('#view [data-c]');
+        if (ty !== dom || ty !== !!TYPEDQ) fails.push(`typed question ${g}: planned ${ty}, form on screen ${dom}`);
+        if (genScore(g) >= 0.85) (n.hi++, (n.hiT += ty)); // a genus near its exam (89% at the start)
+        if (genScore(g) < TYPED.from) (n.lo++, (n.loT += ty)); // a beginner's genus (24% at the start), still under TYPED.from
+        say(g);
+      }
+      if (!n.hiT || n.hiT > 0.8 * n.hi || n.loT || n.lo < 50)
+        fails.push(`typed questions: ${n.hiT} of ${n.hi} on genera from 85%, ${n.loT} of ${n.lo} on genera under ${100 * TYPED.from}%`);
+      // One typed question on screen, answered with a typo, a word that is no genus, then another genus, then I don't know.
+      const typedQ = () => {
+        for (let i = 0; i < 200; i++) {
+          NEXTQ = null;
+          rematch = null;
+          quizPhoto();
+          document.querySelectorAll('.unlock').forEach(x => x.remove());
+          if (SHOWNQ.typed) return SHOWNQ[1];
+          say(SHOWNQ[1]);
+        }
+        fails.push('no typed question in 200');
+      };
+      let g = typedQ();
+      const f = () => document.querySelector('#view .tyform'),
+        typo = g.slice(0, 2) + g[3] + g[2] + g.slice(4), // two neighbouring letters swapped
+        a0 = answersSoFar();
+      f().querySelector('input').value = 'xyzcoral';
+      f().requestSubmit();
+      if (answersSoFar() !== a0 || !/not a genus/.test(f().querySelector('.tymsg').textContent))
+        fails.push('a word that is no genus was taken as an answer');
+      f().querySelector('input').value = typo.toLowerCase();
+      f().requestSubmit();
+      let l = logged();
+      if (answersSoFar() !== a0 + 1 || !/^quiz\|t(\|x)?$/.test(l.m) || l.a !== g || !l.ok || l.ch !== '' || !(l.e > 0 && l.e < 1))
+        fails.push(`typed answer "${typo}" for ${g} logged ${JSON.stringify(l)}`);
+      if (!/read as/.test((document.querySelector('#after .tyread') || {}).textContent || ''))
+        fails.push('a typed answer with a typo does not say how it was read');
+      if (document.querySelector('#tyin:not(.ok)')) fails.push('a right typed answer: the field is not marked right');
+      g = typedQ();
+      const other = hi.find(x => x !== g),
+        h0 = (P[other].h || '').length,
+        th0 = ability(g);
+      say(other);
+      l = logged();
+      if (
+        !/^quiz\|t(\|x)?$/.test(l.m) ||
+        l.a !== other ||
+        l.ok ||
+        P[other].h.slice(-1) !== '0' ||
+        !(ability(g) < th0) ||
+        !(P[g].conf || {})[other]
+      )
+        fails.push(`typed miss naming ${other} for ${g}: logged ${JSON.stringify(l)}, ${other} h ${P[other].h} (was ${h0} long)`);
+      if (!document.querySelector('#after h3.ko')) fails.push('a typed miss: the feedback is not a wrong answer');
+      g = typedQ();
+      const before = JSON.stringify(Object.fromEntries(Object.entries(P).filter(([k]) => k !== g && k !== LEVEL)));
+      f().querySelector('input').value = 'xyzcoral';
+      f().requestSubmit();
+      say('');
+      l = logged();
+      if (!/^quiz\|t(\|x)?$/.test(l.m) || l.a !== '' || l.ok || P[g].h.slice(-1) !== '0')
+        fails.push(`I don't know on ${g}: logged ${JSON.stringify(l)}`);
+      if (JSON.stringify(Object.fromEntries(Object.entries(P).filter(([k]) => k !== g && k !== LEVEL))) !== before)
+        fails.push("I don't know changed another genus");
+      if (f().querySelector('input').value || !document.querySelector('#after h3.idk'))
+        fails.push(`I don't know: field "${f().querySelector('input').value}", feedback ${document.querySelector('#after h3').className}`);
+      NEXTQ = null;
+      rematch = null;
+    }
     // A miss on the genus ends an exam in course.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ex: {k: 3, v: ['wide'], at: answersSoFar()}};
     answer('quiz', 'Porites' === t ? 'Acropora' : 'Porites', t, photoSet(t).shown, false, null);
@@ -260,8 +392,8 @@ const server = http.createServer((req, res) => {
       });
       for (let i = 0; i < 3; i++) {
         quizPhoto();
-        const c = [...document.querySelectorAll('#view [data-c]')].map(b => b.dataset.c);
-        document.querySelector(`[data-c="${CSS.escape(c[(i + r) % c.length])}"]`).click();
+        const c = choices();
+        say(c[(i + r) % c.length]);
       }
       save();
       const saved = store.get('imr-coral-progress', {});
@@ -305,7 +437,7 @@ const server = http.createServer((req, res) => {
           fails.push(`question ${i}: bonus genera offered before every slate genus is met`);
         else if (at[tg] && !at[tg][1] && a < at[tg][0] + INTRO.GAP)
           fails.push(`question ${i}: ${tg} asked ${a - at[tg][0]} answer(s) after its card`);
-        const ch = [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c);
+        const ch = choices();
         if (Object.keys(INTROS).length >= 4 && !ch.every(introduced)) fails.push(`question ${i}: a choice never met (${ch.join(', ')})`);
         // The offer to open all genera: only in its window, at a high enough level, once; declined here.
         const offer = document.querySelector('.unlock.intro [data-open]');
@@ -316,7 +448,7 @@ const server = http.createServer((req, res) => {
           document.querySelector('.unlock.intro .sec').click();
         }
         document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
-        document.querySelector(`[data-c="${CSS.escape(i % 3 ? tg : ch.find(c => c !== tg))}"]`).click();
+        say(i % 3 ? tg : ch.find(c => c !== tg));
       }
       // The same over many first questions (one draw each above would rarely catch it).
       for (let i = 0, same = 0; i < 60; i++) {
@@ -360,7 +492,7 @@ const server = http.createServer((req, res) => {
           o.click();
         }
         document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
-        document.querySelector(`[data-c="${CSS.escape(tg)}"]`).click();
+        say(tg);
       }
       if (!shownAt || shownAt < INTRO.OFFER.AT || introLeft().length)
         fails.push(`all right: offer at ${shownAt} answers, ${introLeft().length} genera left after Open all`);
@@ -423,7 +555,7 @@ const server = http.createServer((req, res) => {
             seen.push([at, k]);
           }
           const won = AUTOD && i % 10;
-          document.querySelector(`[data-c="${CSS.escape(i % 10 ? q[1] : q[2].find(c => c !== q[1]))}"]`).click();
+          say(i % 10 ? q[1] : q[2].find(c => c !== q[1]));
           if (won && !P[q[1]].du) fails.push('a duel won in the quiz does not count for the duel achievement');
           if (AUTOD && !/^quiz\|d\|k2$/.test(((SYNC && SYNC.log && SYNC.log.slice(-1)[0]) || {}).m || 'quiz|d|k2'))
             fails.push('duel in the quiz not logged quiz|d|k2');
@@ -521,7 +653,7 @@ const server = http.createServer((req, res) => {
         }
         if (document.querySelector('.unlock.intro')) fails.push('a card after opening all genera');
         document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
-        document.querySelector(`[data-c="${CSS.escape(tg)}"]`).click();
+        say(tg);
       }
       if (boffers !== 1 || Q.bon !== false || pool().some(isBonus))
         fails.push(`bonus offer after every slate genus met: shown ${boffers} time(s), Q.bon ${Q.bon}`);
@@ -543,7 +675,7 @@ const server = http.createServer((req, res) => {
           if (now.length) cards.push([a, now]);
           if (isBonus(tg) && !introduced(tg)) fails.push(`${tg} asked without its card`);
           document.querySelectorAll('.unlock').forEach(x => x.remove());
-          document.querySelector(`[data-c="${CSS.escape(tg)}"]`).click();
+          say(tg);
         }
         cards.forEach(([a, L], i) => {
           if (L.length !== 1 || !isBonus(L[0])) fails.push(`bonus cards: ${L.join(', ')} at ${a} answers`);
@@ -592,7 +724,7 @@ const server = http.createServer((req, res) => {
           const L = SYNC ? SYNC.log || [] : store.get(LOG0, []);
           return L[L.length - 1] || {};
         },
-        right = () => document.querySelector(`#view [data-c="${CSS.escape(SHOWNQ[1])}"]`).click(),
+        right = () => say(SHOWNQ[1]),
         fresh = () => {
           NEXTQ = null;
           rematch = null;
@@ -663,7 +795,7 @@ const server = http.createServer((req, res) => {
       fresh();
       quizPhoto();
       if (!SHOWNQ.warm) fails.push(`no comeback after a month (rust ${CB.r})`);
-      [...document.querySelectorAll('#view [data-c]')].find(x => x.dataset.c !== SHOWNQ[1]).click();
+      say(choices().find(x => x !== SHOWNQ[1]));
       for (let k = 0; k < 2 && !(SHOWNQ && SHOWNQ.again && k); k++) {
         NEXTQ = null;
         document.querySelectorAll('.unlock').forEach(x => x.remove());
@@ -687,7 +819,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, first meetings, prompt spacing.`
+    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, prompt spacing.`
   );
 })().catch(e => {
   console.error(e);

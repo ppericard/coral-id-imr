@@ -673,8 +673,9 @@ function photoDiff(n, p) {
 // difficulty is left out of a right answer's weight: simulated as a third factor (0.5 on an easy photo to 1 on a hard
 // one), it only slowed everyone (an expert mastered 5 genera in 1000 questions instead of 16), which A already sets, and the
 // traps already come as the genus's photos get harder (both follow the Elo ability).
+// A typed answer (k infinite, TYPED) counts in full: every genus, its look-alikes included, was a possible answer.
 function pgWeight(t, chs, k) {
-  const look = chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >= CONF.TRAP || confusable(t, n)));
+  const look = !isFinite(k) || chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >= CONF.TRAP || confusable(t, n)));
   return Math.min(1, Math.max(0, (1 - 1 / k) / (1 - 1 / 4))) * (look ? 1 : PROG.LOOK);
 }
 // What a miss proves (Pierre, 2026-11-02: "a miss on a very hard photo doesn't necessarily mean the genus is badly
@@ -716,6 +717,33 @@ function pgObs(n, s, good, w) {
 // right: the genus is mastered (s.mx), Learned, 100%. Any miss on the genus, in the exam or not, and any time the genus
 // is given as the answer for another one, ends it (s.ex dropped); it starts again from 0 when s.pg is back at PROG.M.
 const EXAM = {n: 5, gap: 8};
+// Typed questions (Pierre, 2026-11-03; docs/ROADMAP.md "Free-text answers"): the player types the genus instead of picking
+// 1 of 4, recall rather than recognition, what an RA does in front of a colony. They come in progressively as the
+// player's level on the genus rises, never as an on/off mode: a question on genus n is asked typed with the chance
+// typedP(n), from its progress (genScore, the % shown): none below TYPED.from, then a straight line between the points
+// TYPED.at ([progress, share]), flat after the last (core.js typedShare). Its mastery exam needs TYPED.exam typed right
+// answers among its EXAM.n (examTyped). A typed answer has no guess rate (TYPED.k: the expected success has no 1/k
+// floor; logged |t, which the sheet rates with no guess, Code.gs guess_ v27, core.js guessOf), so it counts as harder
+// than picking 1 of 4: a right one moves the ability and the photos more, a miss less.
+// The values come from the learnsim study (tools/learnsim.js, 2026-11-03) and may be retuned: placeholders until then.
+const TYPED = {
+  from: 0.5,
+  at: [
+    [0.5, 0],
+    [0.8, 0.3],
+    [0.95, 0.5]
+  ],
+  exam: 2,
+  k: Infinity
+};
+const typedP = n => typedShare(genScore(n), TYPED);
+// An exam question is typed while the typed answers it still needs fill the questions left (so all EXAM.n right always
+// include TYPED.exam typed ones), else with the genus's usual typed share: the format of an exam question then says
+// nothing a normal question at that level would not (an exam of typed questions only would give the exam away).
+const examTyped = n => {
+  const ex = (P[n] || {}).ex || {k: 0, t: 0};
+  return TYPED.exam - (ex.t || 0) >= EXAM.n - (ex.k || 0) || Math.random() < typedP(n);
+};
 const answersSoFar = () => ((P[LEVEL] || {}).ok || 0) + ((P[LEVEL] || {}).ko || 0);
 const examOn = n => {
   const s = P[n] || {};
@@ -733,7 +761,10 @@ function missing(n) {
   if (s.mx) return m;
   if (knownP(n) < PROG.M)
     m.push(`more right answers, most of all against its look-alikes (about ${Math.round(100 * genScore(n))}% of the way so far)`);
-  else m.push(`the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the photo quiz, all right`);
+  else
+    m.push(
+      `the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the photo quiz, all right, at least ${TYPED.exam} of them typed from memory`
+    );
   return m;
 }
 // Progress of a genus, 0 to 1 (core.js scoreOf): s.pg fills 95% on its way to PROG.M, each exam question passed adds

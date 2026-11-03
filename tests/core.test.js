@@ -735,3 +735,90 @@ test('photos from R2: the R2 address made local again, an element pointed at the
   assert.strictEqual(photoToSite(mk({src: inat})), false, 'nothing to do on a photo not from R2');
   assert.strictEqual(photoToSite(null), false);
 });
+
+test('typed answers: spelling tolerance, old names, a word that is no genus, two genera as close', () => {
+  const {TYPE, typeDist, typeNorm, typeNamesOf, typeMatchIn} = require('../core.js'),
+    D = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'data.json'), 'utf8')),
+    G = {...D.gen, ...((D.x || {}).gen || {})},
+    names = typeNamesOf(Object.keys(G), n => G[n]),
+    M = t => typeMatchIn(names, t);
+  assert.strictEqual(typeNorm('  Acropora sp. '), 'acropora');
+  assert.strictEqual(typeNorm('Pavóna'), 'pavona');
+  assert.strictEqual(typeDist('acorpora', 'acropora'), 1, 'two neighbouring letters swapped: one edit');
+  assert.strictEqual(typeDist('porites', 'porites'), 0);
+  assert.deepStrictEqual([TYPE.tol(6), TYPE.tol(7)], [1, 2]);
+  assert.deepStrictEqual(M('Acropora'), {g: 'Acropora', old: '', exact: true});
+  assert.deepStrictEqual(M('acorpora'), {g: 'Acropora', old: '', exact: false});
+  assert.deepStrictEqual(M('Pocilopora'), {g: 'Pocillopora', old: '', exact: false});
+  // Old names ("formerly X" in the genus's own lines), but not one that is itself a game genus.
+  assert.deepStrictEqual(M('Favia'), {g: 'Dipsastraea', old: 'Favia', exact: true});
+  assert.deepStrictEqual(M('Montastraea'), {g: 'Astrea', old: 'Montastraea', exact: true});
+  assert.strictEqual(M('Turbinaria').g, 'Turbinaria');
+  // Millepora and the bonus genera are names too.
+  assert.strictEqual(M('millepora').g, 'Millepora');
+  // No genus: nothing within the tolerance, or too short to say.
+  assert.strictEqual(M('xyzcoral'), null);
+  assert.strictEqual(M('Ac'), null);
+  assert.strictEqual(M(''), null);
+  // Two genera as close: the player is asked which one.
+  const near = typeMatchIn(
+    [
+      {k: 'abcdef', g: 'Abcdef', old: ''},
+      {k: 'abcdeg', g: 'Abcdeg', old: ''}
+    ],
+    'abcdex'
+  );
+  assert.deepStrictEqual(near, {near: ['Abcdef', 'Abcdeg']});
+});
+
+test('typed share: none below its start, a straight line between the points, flat after the last', () => {
+  const {typedShare} = require('../core.js'),
+    T = {
+      from: 0.5,
+      at: [
+        [0.5, 0],
+        [0.8, 0.3],
+        [0.95, 0.5]
+      ]
+    },
+    S = x => Math.round(typedShare(x, T) * 1000) / 1000;
+  assert.deepStrictEqual([S(0), S(0.3), S(0.49), S(0.5), S(0.65), S(0.8), S(0.875), S(0.95), S(1)], [0, 0, 0, 0, 0.15, 0.3, 0.4, 0.5, 0.5]);
+  assert.strictEqual(typedShare(0.7, {from: 0.75, at: [[0.5, 0.2]]}), 0, 'under from: never typed');
+  assert.strictEqual(typedShare(NaN, T), 0);
+});
+
+test('a typed answer (quiz|t) has no guess rate, in core.js and in the sheet (v27)', () => {
+  const {guessOf} = require('../core.js');
+  assert.strictEqual(guessOf('quiz|t', ''), 0);
+  assert.strictEqual(guessOf('quiz|t|x', ''), 0);
+  assert.strictEqual(guessOf('quiz|k2', ''), 0.5);
+  assert.strictEqual(guessOf('quiz', ''), 0.25);
+  // A right typed answer was less likely than a right pick of 1 in 4 (no guess): it says more, the photo moves more.
+  const past = Array.from({length: 12}, (_, i) => ['Ana', 0, 'Porites', 'Porites', 1, 'quiz', 'porites-' + i]),
+    E = m => eloOf([...past, ['Ana', 1, 'Acropora', 'Acropora', 1, m, 'acropora-1']])['acropora-1'][0];
+  assert.ok(E('quiz|t') < E('quiz'));
+  // The sheet rates it the same way.
+  const s = loadCodeGs();
+  let n = 0;
+  for (let i = 0; i < 30; i++)
+    s.post({
+      name: 'Ana',
+      pin: '1234',
+      data: {},
+      summary: {},
+      answers: [
+        {
+          id: 't' + n++,
+          t: new Date(Date.UTC(2026, 10, 3, 0, 0, n)).toISOString(),
+          g: 'Acropora',
+          a: i % 4 ? 'Acropora' : i % 8 ? 'Porites' : '',
+          ok: i % 4 ? 1 : 0,
+          m: ['quiz|t', 'quiz', 'quiz|t|x', 'quiz|k3'][i % 4],
+          ch: i % 2 ? 'Acropora Porites Favites Montipora' : '',
+          ph: ['acropora-1', 'acropora-2', 'porites-1'][i % 3]
+        }
+      ]
+    });
+  const rows = s.post({readAnswers: 1, token: 'ghp_write000000000000000000'}).rows;
+  assert.deepStrictEqual(eloOf(rows), s.get({stats: '1'}).photos);
+});
