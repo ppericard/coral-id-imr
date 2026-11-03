@@ -287,8 +287,12 @@ const snChanged = () => !same(DRAFT.single || {}, SAVED.single || {});
 // published crop in it (data.json "cr", tools/fetch_approved.py): shown as is while the draft keeps that crop, and the
 // original (iNat) with the draft crop as soon as the draft differs (Pierre, 2026-11-03: the crop just made showed "one
 // time in two", when it was laid over a file cropped already).
+// A candidate's suggested crop (suggest.json cand c, the judging pass; Pierre 2026-11-03: "le crop, tu aurais pu presque
+// le faire de manière automatique"): shown on it until he adds it, then written to his crops when he adds it (ACT.addc),
+// where he can change it as any crop. His own crop, or Full photo ([0, 0, 1, 1]), always wins.
+const sugCrop = p => (p && p.j && p.j.c && !crOf(p.f) ? p.j.c : null);
 const crSrc = (p, s) => {
-  const c = crOf(p.f),
+  const c = crOf(p.f) || sugCrop(p),
     baked = !p.r && p.cr;
   if (baked && same(c, p.cr)) return `src="${img(p, s)}"`;
   const src = baked && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : img(p, s);
@@ -752,6 +756,8 @@ const ACT = {
       }
       k.add = k.add || {};
       k.add[f] = to;
+      const sc = sugCrop(cands(n).find(x => x.f === f));
+      if (sc) DRAFT.crop = {...(DRAFT.crop || {}), [f]: sc}; // saved with the add: one Undo step for both
     }),
   multi: (n, f) => {
     const S = {...(DRAFT.single || {})};
@@ -2691,7 +2697,7 @@ const jLine = p => {
   const j = p.j;
   if (!j) return '';
   const what = j.g === 'exclude' ? 'unusable' : j.g === 'cmp' ? 'comparison image' : j.g ? `looks like <i>${esc(j.g)}</i>` : JKT[j.k] || '';
-  return `<p class="adm-judge${j.g ? ' warn' : ''}" title="Suggestion of the judging agent (suggest.json)">Judged: ${what}${j.m ? ' · several corals' : ''}${j.u ? ` · unsure: ${esc(j.u.join(', '))}` : ''}${j.n ? ` · ${esc(j.n)}` : ''}</p>`;
+  return `<p class="adm-judge${j.g ? ' warn' : ''}" title="Suggestion of the judging agent (suggest.json)">Judged: ${what}${j.m ? ' · several corals' : ''}${j.u ? ` · unsure: ${esc(j.u.join(', '))}` : ''}${j.n ? ` · ${esc(j.n)}` : ''}${sugCrop(p) ? ' · crop suggested (Crop to change it)' : ''}</p>`;
 };
 const cseed = () => {
   let s = store.get('imr-admin-cseed', 0);
@@ -3028,7 +3034,7 @@ function renderCand() {
 // local file, which is already cropped once a crop has been applied (re-editing used to compound the two crops).
 function cropEditor(p) {
   const lb = $('lightbox'),
-    c0 = crOf(p.f) || [0, 0, 1, 1];
+    c0 = crOf(p.f) || sugCrop(p) || [0, 0, 1, 1];
   let c = c0.slice();
   lb.innerHTML = `<div class="adm-crop"><div class="adm-cropbox"><img src="${p.src ? p.src.replace('/original.', '/large.') : img(p)}" alt="" draggable="false"><div class="adm-cropfr"><i data-h="lt"></i><i data-h="rt"></i><i data-h="lb"></i><i data-h="rb"></i></div></div>
     <div class="adm-cropbar"><button type="button" data-c="cancel">Cancel</button><button type="button" data-c="full">Full photo</button><button type="button" class="ok" data-c="save">Save</button></div></div>`;
@@ -3110,7 +3116,9 @@ function cropEditor(p) {
           const v = c.map(x => Math.round(x * 1000) / 1000),
             full = v[0] <= 0 && v[1] <= 0 && v[2] >= 1 && v[3] >= 1;
           DRAFT.crop = {...(DRAFT.crop || {})};
-          if (full) delete DRAFT.crop[p.f];
+          // Full photo over a suggested crop: kept as an explicit no-crop, so the suggestion does not come back.
+          if (full && !(p.j && p.j.c)) delete DRAFT.crop[p.f];
+          else if (full) DRAFT.crop[p.f] = [0, 0, 1, 1];
           else DRAFT.crop[p.f] = v;
           saveDraft();
         }

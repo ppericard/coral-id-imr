@@ -9,12 +9,16 @@
 #                                                      contact sheet per observation (judging/cand/sheets/<Genus>/); prints
 #                                                      the list to judge: sheet, tile number -> photo id
 #   python3 tools/judging_cand.py big <photo id>       download the 1024 px version, for a closer look
+#   python3 tools/judging_cand.py detail <photo id>... full-size photo: one sheet per photo, the whole frame and three
+#                                                      100% crops (the two sharpest areas, the centre), to judge quality
+#                                                      at full size as Pierre does (2026-11-03), and a 10% grid to read
+#                                                      a crop box off (judging/cand/detail/)
 #   python3 tools/judging_cand.py todo                 genera with candidates not judged yet (also shown in the admin)
 #   python3 tools/judging_cand.py --check [Genus ...]  check judging/cand/<Genus>.json, write nothing (exit 1 on error)
 #   python3 tools/judging_cand.py [Genus ...]          check, then import every genus that passes into suggest.json "cand"
 #
 # suggest.json "cand" {photo: {v view, q quality 1-3, k best|alt|dup, g other genus|cmp|exclude, m several corals,
-# fm IMR growth form (+ "p" polyps extended), u unsure fields, n note}}; "by" {genus: {cand: {by, at, n}}}. Read only by
+# fm IMR growth form (+ "p" polyps extended), u unsure fields, n note, c suggested crop [l, t, r, b]}}; "by" {genus: {cand: {by, at, n}}}. Read only by
 # admin.html (players never download it). Re-importing a genus replaces its candidates' entries; the rest is kept.
 import json, os, sys, datetime, urllib.request, io
 from collections import defaultdict, OrderedDict
@@ -36,7 +40,11 @@ VIEWS = ('wide', 'medium', 'macro')
 KEEP = ('best', 'alt', 'dup')
 # AGENTS.md rule 4: the polyps flag only for the Coral Finder "extended by day" genera, never on a macro photo.
 POLYPS = {'Alveopora', 'Duncanopsammia', 'Goniopora', 'Heliofungia', 'Plerogyra', 'Tubastraea'}
-FIELDS = {'view', 'quality', 'keep', 'form', 'polyps', 'multi', 'genus', 'unsure', 'note'}
+FIELDS = {'view', 'quality', 'keep', 'form', 'polyps', 'multi', 'genus', 'unsure', 'note', 'crop'}
+# Crop calibration (2026-11-03, blind test on 79 of Pierre's crops): the agent's boxes cut about twice as much as his
+# (it kept 57% of the area, he keeps about 75%); halving each trim brought the overlap with his box from 0.75 to 0.86.
+# The import applies it; re-measure on his corrections (admin) before changing it.
+CROP_K = 0.5
 X = C.get('exclude', {})
 
 def views(n): return ['wide', 'macro'] if (D['gen'].get(n) or {}).get('levels') == 2 else list(VIEWS)
@@ -59,7 +67,7 @@ def url(p, size):
     return s.replace('/original.', f'/{size}.') if p.get('r') else None
 
 def fetch(p, size='medium'):
-    out = P('judging', 'cand', 'img', f'{p["f"]}{"-l" if size == "large" else ""}.jpg')
+    out = P('judging', 'cand', 'img', f'{p["f"]}{ {"large": "-l", "original": "-o"}.get(size, "")}.jpg')
     if os.path.exists(out) and os.path.getsize(out): return out
     os.makedirs(os.path.dirname(out), exist_ok=True)
     u = url(p, size)
@@ -145,6 +153,9 @@ def check(n):
         if not isinstance(u, list) or set(u) - {'form', 'polyps', 'quality', 'view', 'genus', 'multi', 'keep'}: E.append(f'{at}: unsure must be a list of field names')
         if (g or u) and not x.get('note'): E.append(f'{at}: note required when genus is set or unsure is not empty')
         if len(x.get('note', '')) > 140: E.append(f'{at}: note longer than 140 characters')
+        c = x.get('crop')
+        if c is not None and not (isinstance(c, list) and len(c) == 4 and all(isinstance(v, (int, float)) for v in c) and 0 <= c[0] < c[2] <= 1 and 0 <= c[1] < c[3] <= 1):
+            E.append(f'{at}: crop must be [left, top, right, bottom] fractions of the photo, 0 <= left < right <= 1, 0 <= top < bottom <= 1')
     missing = [f for f in mine if f not in J]
     if missing: E.append(f'{n}: {len(missing)} candidate(s) not judged yet, e.g. {missing[:3]}')
     # Exactly one "best" per observation and view among the photos that show this genus.
@@ -187,12 +198,51 @@ def cmd_import(names, only_check):
             e['fm'] = x['form'] + ('p' if x.get('polyps') else '')
             if x.get('unsure'): e['u'] = sorted(x['unsure'])
             if x.get('note'): e['n'] = x['note']
+            c = x.get('crop')
+            if c and c != [0, 0, 1, 1]:
+                l, t, r, b = c  # calibrated toward Pierre's crops (CROP_K): each trim kept at CROP_K of its size
+                c = [round(l * CROP_K, 3), round(t * CROP_K, 3), round(1 - (1 - r) * CROP_K, 3), round(1 - (1 - b) * CROP_K, 3)]
+                if (c[2] - c[0]) * (c[3] - c[1]) < 0.97: e['c'] = c  # a trim of a few % is no crop
             Sc[f] = e
         S['by'].setdefault(n, {})['cand'] = {'by': BY, 'at': stamp, 'n': len(j['photos'])}
     S['cand'] = dict(sorted(Sc.items()))
     with open(P('suggest.json'), 'w') as fh: json.dump(S, fh, indent=1, ensure_ascii=False); fh.write('\n')
     print(f'Imported {len(ok)} genus file(s): {len(S["cand"])} candidates judged in suggest.json "cand".')
     sys.exit(1 if bad else 0)
+
+def cmd_detail(fs):
+    """Full-size look (Pierre, 2026-11-03: "I open the photo large and look at how sharp it is"): per photo, a sheet with
+    the whole frame (10% grid, to read a crop box off) and three 100% crops: the two sharpest areas and the centre."""
+    from PIL import Image, ImageDraw, ImageFilter, ImageOps, ImageStat
+    Image.MAX_IMAGE_PIXELS = 300_000_000
+    for f in fs:
+        p = next((p for L in (D.get('cand') or {}).values() for p in L if p['f'] == f), None)
+        if not p: print(f'Unknown candidate {f}'); continue
+        im = ImageOps.exif_transpose(Image.open(fetch(p, 'original'))).convert('RGB')
+        W, H = im.size
+        T = 400 if min(W, H) > 1200 else 256
+        edges = im.convert('L').filter(ImageFilter.FIND_EDGES)
+        tiles = sorted(((ImageStat.Stat(edges.crop((x, y, x + T, y + T))).mean[0], x, y)
+                        for y in range(0, max(1, H - T), T // 2) for x in range(0, max(1, W - T), T // 2)), reverse=True)
+        picks = []
+        for v, x, y in tiles:
+            if all(abs(x - a) > T or abs(y - b) > T for _, a, b in picks): picks.append((v, x, y))
+            if len(picks) == 2: break
+        picks.append((0, W // 2 - T // 2, H // 2 - T // 2))
+        ov = im.copy(); ov.thumbnail((1200, 700)); s = ov.width / W
+        d = ImageDraw.Draw(ov)
+        for k in range(1, 10):
+            d.line([(ov.width * k // 10, 0), (ov.width * k // 10, ov.height)], fill=(255, 0, 255))
+            d.line([(0, ov.height * k // 10), (ov.width, ov.height * k // 10)], fill=(255, 0, 255))
+        for (_, x, y), col in zip(picks, [(255, 0, 0), (0, 255, 0), (255, 255, 0)]):
+            d.rectangle([x * s, y * s, (x + T) * s, (y + T) * s], outline=col, width=2)
+        S = Image.new('RGB', (max(ov.width, 3 * T + 20), ov.height + 10 + T), (30, 30, 30))
+        S.paste(ov, (0, 0))
+        for k, (_, x, y) in enumerate(picks): S.paste(im.crop((x, y, x + T, y + T)), (k * (T + 10), ov.height + 10))
+        out = P('judging', 'cand', 'detail', f'{f}.jpg')
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        S.save(out, quality=88)
+        print(os.path.relpath(out, ROOT), f'{W}x{H}')
 
 def cmd_todo():
     Sc = (load('suggest.json', {}) or {}).get('cand', {})
@@ -209,5 +259,6 @@ if __name__ == '__main__':
     elif rest[:1] == ['big']:
         p = next((p for L in (D.get('cand') or {}).values() for p in L if p['f'] == rest[1]), None)
         print(os.path.relpath(fetch(p, 'large'), ROOT) if p else f'Unknown candidate {rest[1]}')
+    elif rest[:1] == ['detail']: cmd_detail(rest[1:])
     elif rest[:1] == ['todo']: cmd_todo()
     else: cmd_import(rest, '--check' in a)

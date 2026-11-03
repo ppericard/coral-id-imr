@@ -161,7 +161,12 @@ aim: real diversity of colonies and views, so the players learn the genus, not t
 1. `python3 tools/judging_cand.py sheets <Genus>` downloads the photos (500 px, `judging/cand/img/`, not in git)
    and builds one contact sheet per observation (`judging/cand/sheets/<Genus>/<observation>.jpg`, tiles numbered
    1, 2, 3...). It prints, per sheet, tile number → photo id. Open every sheet. When a tile is too small to judge
-   (view, quality, genus), open `judging/cand/img/<f>.jpg`, or `python3 tools/judging_cand.py big <f>` for 1024 px.
+   (view, genus), open `judging/cand/img/<f>.jpg`, or `python3 tools/judging_cand.py big <f>` for 1024 px.
+   **Quality and crop are judged at full size** (Pierre, 2026-11-03: "I open the photo large and look at how sharp it
+   is"): for every photo you keep (`best`, `alt`), run `python3 tools/judging_cand.py detail <f>` and open
+   `judging/cand/detail/<f>.jpg`: the whole frame with a 10% grid, and three 100% crops (the two sharpest areas, the
+   centre). Rate `quality` from the 100% crops, never from a sheet tile: on the 500 px sheets the pass agreed with
+   Pierre on 3 photos in 40 (always too generous); at full size, 64%.
 2. Write `judging/cand/<Genus>.json`: `{"genus": "<Genus>", "photos": {"<f>": {...}}}`, one entry per photo listed,
    with the fields and categories defined above (`view`, `quality`, `form`, `polyps`, `multi`, `genus`, `unsure`,
    `note`; `form` required, `x` when not visible) plus **`keep`**:
@@ -171,6 +176,11 @@ aim: real diversity of colonies and views, so the players learn the genus, not t
      colony shape where the best shows the surface, polyps out vs retracted.
    - `dup`: adds nothing over the `best` (same framing, a few centimetres apart, a burst).
    - Omit `keep` when `genus` is set (another genus, `cmp` or `exclude`).
+   For a `best` or `alt` photo, **`crop`**: `[left, top, right, bottom]` as fractions of the photo, read off the grid
+   of its detail sheet. Trim only what distracts from the subject: another coral, sand, dark water, a diver, a blurred
+   foreground; keep the whole subject (the colony for a Colony photo). Omit it when the frame needs nothing. The
+   import keeps each trim at half its size (`CROP_K`: on 79 of Pierre's crops the pass cut twice as much as he does),
+   and the admin shows the result on the candidate and applies it when he adds the photo; he can change it.
    An observation often holds several corals (the observer photographed the neighbours too): a photo that shows
    another coral as its subject gets `genus` (that genus if you can tell by the IMR cues, else `exclude` with a
    note), never `keep`.
