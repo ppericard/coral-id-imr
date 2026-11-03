@@ -1791,7 +1791,8 @@ const HELP = {
   form: `<p>The 7 IMR growth forms (Lecture 6, slides 3-10), one per photo, the main form visible: <b>Br</b> Branching, <b>En</b> Encrusting, <b>Ta</b> Tabulate, <b>Mu</b> Mushroom, <b>Ma</b> Massive, <b>Sm</b> Submassive, <b>Fo</b> Foliose/Plating; <b>∅</b> = form not visible (too close). <b>✿</b> = polyps or vesicles extended (not a form; it fills the Coral Finder "Large daytime polyps" tile).</p>
     <p>The Coral Finder growth-form tiles use them: Branching = Br + Ta, Thin plates and crusts = En + Fo, Massive or thick = Ma + Sm, Columns = Sm, Solitary = Mu, Meandering = any form of the genera it lists. Dashed = a first guess, solid = yours (always wins); a red ? = a guess to double-check.</p>
     <p><b>📌</b> makes a photo a lead photo of its form's tile on the site's Coral Finder start (up to 3 per form, number = place; a 4th drops the oldest); the tile's other places stay automatic. Br leads Branching, En Thin plates and crusts, Ma Massive, Sm Columns, Mu Solitary.</p>
-    <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>`,
+    <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>
+    <p><b>Your forms</b> (the line at the top) measures the automatic detection against your own choices, over the photos the Show, View and genus filters leave: how many forms you set, how often your form is the dashed guess (among the photos that have both; ✿ apart), and how many unsure guesses (red ?) are still waiting. A click on the dashed form counts as agreeing, a click on another form as disagreeing; ✓ Validate N agrees for every photo it sets, so check photo by photo to measure the detection. It updates as you click; nothing extra is saved. Open it for the table guess → your form (diagonal = agreed); hover it for the same as a list. <b>Guesses first</b> puts, in each row, the photos still on a guess first (unsure ones first), then the ones you set.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" in the footer of any page (wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
@@ -1843,7 +1844,64 @@ function toggleHelp() {
 /* ---------- Growth form ---------- */
 // One row per IMR growth form, then "Form not visible" and the photos still to classify (by old Coral Finder letter). Click a letter on a photo (one form per photo; ∅ = form not visible), drag it to another row,
 // or hover it and press the key (b e t u m s f, x or 0 for not visible, p for polyps). The tile stays put until a filter changes.
-const FF = Object.assign({view: 'all', genus: '', todo: false, pol: false}, store.get('imr-admin-ffilter', {}));
+const FF = Object.assign({view: 'all', genus: '', todo: false, pol: false, gfirst: false}, store.get('imr-admin-ffilter', {}));
+// Agreement of the automatic growth form with Pierre's own (Pierre, 2026-11-03: he checks forms by hand to see whether the
+// automatic detection is good, and to help improve it). Nothing new is recorded: his form (the draft's curation gf)
+// against the dashed guess (forms.json gf, or the judging agent's candidate pass for a candidate), form letters only (✿
+// apart), over the photos the Show, View and genus filters leave (FSCOPE, set by renderForm). A click that keeps the
+// dashed form counts as agreement, one that picks another as disagreement. "Unsure" = guesses to double-check (gunsure)
+// still on the guess.
+let FSCOPE = [],
+  FAG_OPEN = false;
+function formAgree(L) {
+  const M = {};
+  let set = 0,
+    both = 0,
+    ok = 0,
+    un = 0;
+  L.forEach(p => {
+    const m = fL(mineF(p.f)),
+      g = fL(AUTOF[p.f]);
+    if (m) {
+      set++;
+      if (g) {
+        both++;
+        if (g === m) ok++;
+        M[g] = M[g] || {};
+        M[g][m] = (M[g][m] || 0) + 1;
+      }
+    } else if (g && FUNSURE.has(p.f)) un++;
+  });
+  return {set, both, ok, un, M};
+}
+// The line, and a guess × yours table behind it (rows = the guess, columns = your form; the diagonal agrees).
+function agreeHTML() {
+  const A = formAgree(FSCOPE),
+    F = [...FORM_ORDER, 'x'],
+    G = F.filter(g => A.M[g]),
+    Y = F.filter(m => G.some(g => A.M[g][m]));
+  const pairs = G.flatMap(g => Y.filter(m => A.M[g][m]).map(m => [g, m, A.M[g][m]])).sort((a, b) => b[2] - a[2]);
+  const tip = pairs.map(([g, m, n]) => `${FABBR[g]} → ${FABBR[m]} ${n}`).join(', ');
+  const head = `<span class="adm-fag-line" title="${esc(tip ? 'Guess → yours: ' + tip : 'No photo with both yet')}">Your forms: <b>${A.set}</b> set · agreement with the automatic guess: <b>${pct(A.ok, A.both)}</b> (of ${A.both} where both exist) · unsure guesses: <b>${A.un}</b></span>`;
+  const th = c => `<th title="${esc(fName(c))}">${FABBR[c]}</th>`;
+  const tbl = G.length
+    ? `<div class="adm-tscroll"><table class="adm-tbl adm-fag-t"><thead><tr><th>Guess ↓ · yours →</th>${Y.map(th).join('')}<th>Agree</th></tr></thead><tbody>${G.map(
+        g => {
+          const R = A.M[g],
+            n = Object.values(R).reduce((a, b) => a + b, 0);
+          return `<tr><th title="${esc(fName(g))}">${FABBR[g]}</th>${Y.map(m => `<td class="${!R[m] ? '' : m === g ? 'ok' : 'ko'}">${R[m] || ''}</td>`).join('')}<td class="n">${pct(R[g] || 0, n)} <small>of ${n}</small></td></tr>`;
+        }
+      ).join('')}</tbody></table></div>`
+    : '<p class="note">No photo with both a guess and your form yet.</p>';
+  return {head, tbl, A};
+}
+function agreeFill(d) {
+  const {head, tbl, A} = agreeHTML();
+  d.innerHTML = `<summary>${head}</summary>${tbl}`;
+  Object.assign(d.dataset, {set: A.set, both: A.both, ok: A.ok, un: A.un});
+}
+// Guesses first: in each row the photos still on a guess, the unsure ones first; the photos you set last.
+const fRank = f => (fSet(f) ? 2 : fL(AUTOF[f]) && FUNSURE.has(f) ? 0 : 1);
 // 📌 (Growth form view): only on photos the Coral Finder tiles can show (colony or close-up view, one coral, not a
 // book photo), so a pin always counts; the number is its place on the tile.
 const pinOK = p => (p.view === 'wide' || p.view === 'medium') && !p.multi && !p.cf;
@@ -1865,8 +1923,13 @@ function formTile(t, v) {
   pinRefresh(t);
   if (cur === '~form') t.classList.add('rated');
   bindF(t);
+  agreeRefresh();
   status();
 }
+const agreeRefresh = () => {
+  const d = cur === '~form' && $('fagree');
+  if (d) agreeFill(d);
+};
 // One form per photo (Pierre): a click picks that form and replaces the previous one; when in doubt, the main form.
 const toggleF = (f, c) => c;
 function polTile(t) {
@@ -1898,15 +1961,8 @@ function renderForm() {
   const names = Object.keys(DATA.gen),
     vl = v => (v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1]);
   // Coral Finder book photos are left out: they never go on the growth-form tiles.
-  const all = allPhotos().filter(
-    p =>
-      !p.cf &&
-      shown(p) &&
-      (FF.view === 'all' || p.view === FF.view) &&
-      (!FF.genus || p.genus === FF.genus) &&
-      (!FF.todo || !fSet(p.f)) &&
-      (!FF.pol || pOf(p.f))
-  );
+  FSCOPE = allPhotos().filter(p => !p.cf && shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus));
+  const all = FSCOPE.filter(p => (!FF.todo || !fSet(p.f)) && (!FF.pol || pOf(p.f)));
   const card =
     p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
@@ -1924,6 +1980,7 @@ function renderForm() {
   ];
   const sec = ([id, t, test]) => {
     const L = all.filter(test);
+    if (FF.gfirst) L.sort((a, b) => fRank(a.f) - fRank(b.f));
     if (!L.length && id === '') return '';
     const todo = id ? L.filter(p => !fSet(p.f)).length : 0;
     return `<section class="adm-row adm-qrow"><h3>${id ? `<b class="adm-fl">${FABBR[id]}</b> ` : ''}${esc(t)} <small>${L.length} photo${L.length === 1 ? '' : 's'}${id === 'x' ? ' · never used on the growth-form tiles' : ''}</small>${todo ? ` <button type="button" class="adm-fok" data-fok="${id}" title="Validate">✓ Validate ${todo}</button>` : ''}</h3>
@@ -1932,13 +1989,17 @@ function renderForm() {
   const opt = (v, t, cur) => `<button type="button" class="adm-fchip plain" data-fv="${v}" aria-pressed="${cur === v}">${t}</button>`;
   $v.innerHTML = `<section class="adm-quality">
     <div class="adm-qhead"><h2>Growth form</h2></div>
+    <details class="adm-fagree" id="fagree"${FAG_OPEN ? ' open' : ''}></details>
     <div class="adm-filter"><span class="label">Show</span>${ORIGINS.filter(([o]) => o !== 'book')
       .map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`)
       .join('')}</div>
     <div class="adm-filter"><span class="label">View</span>${opt('all', 'All', FF.view)}${VIEWS.map(([v, t]) => opt(v, t, FF.view)).join('')}${opt('cand', 'Candidates', FF.view)}
       <select id="fgen" aria-label="Genus"><option value="">All genera</option>${names.map(m => `<option${m === FF.genus ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>
-      <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label><label class="adm-todo"><input type="checkbox" id="fpol"${FF.pol ? ' checked' : ''}> ✿ Polyps out</label></div>
+      <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label><label class="adm-todo"><input type="checkbox" id="fpol"${FF.pol ? ' checked' : ''}> ✿ Polyps out</label><label class="adm-todo"><input type="checkbox" id="fgfirst"${FF.gfirst ? ' checked' : ''}> Guesses first</label></div>
     ${rows.map(sec).join('')}</section>`;
+  const fag = $('fagree');
+  agreeFill(fag);
+  fag.ontoggle = () => (FAG_OPEN = fag.open);
   const saveFF = () => {
     store.set('imr-admin-ffilter', FF);
     renderForm();
@@ -1969,6 +2030,10 @@ function renderForm() {
   };
   $('fpol').onchange = e => {
     FF.pol = e.target.checked;
+    saveFF();
+  };
+  $('fgfirst').onchange = e => {
+    FF.gfirst = e.target.checked;
     saveFF();
   };
   $v.querySelectorAll('[data-act="zoom"]').forEach(

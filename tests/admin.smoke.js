@@ -502,6 +502,71 @@ const server = http.createServer((req, res) => {
       await settle();
     }
 
+    // Photo review › Growth form (Pierre, 2026-11-03: he checks forms by hand to see whether the automatic detection is
+    // good): the agreement line at the top; a click that keeps the dashed guess raises agreement, one that picks another
+    // form lowers it, live; Guesses first puts the photos still on a guess first in each row, the unsure ones first.
+    await go('~form');
+    const fag = () =>
+      p.evaluate(() => {
+        const d = document.getElementById('fagree');
+        if (!d) return null;
+        return {
+          txt: d.querySelector('summary').innerText,
+          set: +d.dataset.set,
+          both: +d.dataset.both,
+          ok: +d.dataset.ok,
+          un: +d.dataset.un
+        };
+      });
+    const a0 = await fag();
+    if (
+      !a0 ||
+      !/^Your forms: \d+ set · agreement with the automatic guess: (\d+%|–) \(of \d+ where both exist\) · unsure guesses: \d+$/.test(a0.txt)
+    )
+      fails.push(`${w}px Growth form: agreement line ${JSON.stringify(a0)}`);
+    const rate = a => (a.both ? a.ok / a.both : 0);
+    // Two tiles still on a guess: the first is confirmed (its dashed form clicked), the second given another form.
+    const gt = await p.evaluate(() =>
+      [...document.querySelectorAll('.adm-qt')]
+        .filter(t => t.querySelector('.adm-fseg.auto [data-fm][aria-pressed="true"]:not([data-fm="x"])'))
+        .slice(0, 2)
+        .map(t => t.dataset.f)
+    );
+    if (a0 && gt.length === 2) {
+      const sel = f => `.adm-qt[data-f="${f}"]`;
+      await p.click(`${sel(gt[0])} .adm-fseg [data-fm][aria-pressed="true"]`);
+      const a1 = await fag();
+      if (a1.set !== a0.set + 1 || a1.both !== a0.both + 1 || a1.ok !== a0.ok + 1 || !(rate(a1) > rate(a0) || rate(a0) === 1))
+        fails.push(`${w}px Growth form: confirming a guess did not raise agreement ${JSON.stringify([a0, a1])}`);
+      await p.click(`${sel(gt[1])} .adm-fseg [data-fm]:not([aria-pressed="true"]):not([data-fm="x"])`);
+      const a2 = await fag();
+      if (a2.both !== a1.both + 1 || a2.ok !== a1.ok || !(rate(a2) < rate(a1)))
+        fails.push(`${w}px Growth form: changing a guess did not lower agreement ${JSON.stringify([a1, a2])}`);
+      if (!(await p.evaluate(() => document.querySelectorAll('#fagree .adm-fag-t td.ko').length)))
+        fails.push(`${w}px Growth form: the guess → yours table shows no disagreement after a change`);
+      await p.evaluate(() => {
+        undo();
+        undo();
+      });
+      await settle();
+      const a3 = await fag();
+      if (a3.ok !== a0.ok || a3.both !== a0.both)
+        fails.push(`${w}px Growth form: Undo did not bring agreement back ${JSON.stringify([a0, a3])}`);
+    } else fails.push(`${w}px Growth form: fewer than 2 photos on a guess`);
+    await p.check('#fgfirst');
+    await settle();
+    const gord = await p.evaluate(() =>
+      [...document.querySelectorAll('.adm-qgrid')].map(g =>
+        [...g.querySelectorAll('.adm-fseg')].map(s => (!s.classList.contains('auto') ? 2 : s.classList.contains('unsure') ? 0 : 1))
+      )
+    );
+    const badRow = gord.findIndex(R => R.some((r, i) => i && r < R[i - 1]));
+    if (badRow >= 0) fails.push(`${w}px Growth form › Guesses first: row ${badRow} not guesses first, unsure first`);
+    if (!gord.some(R => R.length && R[0] < 2 && R.includes(2)))
+      fails.push(`${w}px Growth form › Guesses first: no row with guesses before your forms`);
+    await p.uncheck('#fgfirst');
+    await settle();
+
     // Game genera first (Pierre, 2026-11-03; core.js gameOf): Game coverage lists every genus a game asks, Millepora and
     // the bonus genera included; in Candidates no Finder-only genus comes before a game genus of the same source, none
     // is proposed for Corallites, and a Finder-only genus is full at CAP.sheet colonies.

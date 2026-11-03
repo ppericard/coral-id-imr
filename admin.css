@@ -977,6 +977,36 @@ kbd {
   color: var(--accent-ink);
   font-size: 0.85rem;
 }
+.adm-fagree {
+  margin: 10px 0 0;
+  font-size: var(--fs-s);
+}
+.adm-fagree summary {
+  cursor: pointer;
+}
+.adm-fagree summary b {
+  font-variant-numeric: tabular-nums;
+}
+.adm-fagree .adm-tscroll {
+  margin: 8px 0 0;
+}
+.adm-fagree .adm-fag-t {
+  width: auto;
+}
+.adm-fag-t th,
+.adm-fag-t td {
+  text-align: center;
+}
+.adm-fag-t th {
+  font-size: var(--fs-xs);
+}
+.adm-fag-t td.ok {
+  background: var(--good-bg);
+  font-weight: 600;
+}
+.adm-fag-t td.ko {
+  background: var(--bad-bg);
+}
 .adm-fok {
   margin-left: 0.6em;
   font: inherit;
