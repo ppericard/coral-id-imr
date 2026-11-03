@@ -566,6 +566,31 @@ learned 9.8 genera in 1000 questions instead of 16.5); 0.8 is the success the ga
 prove something. To recalibrate with real answers: the per-genus success on look-alike questions of
 RAs who then pass the exam.
 
+### Typed questions (2026-11-03): why these settings
+
+Recall (typing the genus from memory) instead of recognition (picking 1 of 4): what an RA does in front of a colony,
+and the stronger exercise (retrieval practice: Roediger & Karpicke 2006; a desirable difficulty: Bjork 1994), but also
+the more discouraging one when the genus is barely known. `model.js` `TYPED`, `core.js` `typedShare`. What each value is
+and why; **none of them is measured yet** (no player has answered a typed question), they are Pierre's brief turned
+into numbers, to be calibrated:
+
+- **`from` 0.5, `at` [0.5, 0] → [0.8, 0.3] → [0.95, 0.5]** (share of a genus's questions asked typed, from its progress
+  as the bar shows it): none until the genus is half-way (below that the player still mostly recognises it with the
+  choices' help, and a blank field teaches little); 30% at 80% on the bar, 50% at 95%, the exam's entry (the bar's 95%
+  is `PROG.M`), so a genus about to take its exam is asked typed half of the time. Progressive and per genus, never a switch (Pierre: "introduced progressively by level, no
+  switch"); a straight line between the points so no step is felt.
+- **`exam` 2** typed right answers among the exam's 5: Pierre asked for 2 to 3; 2, the lower bound, until the data say
+  typed exam questions are not much harder than picked ones.
+- **`k` Infinity** (no guess rate): a name typed from memory is not found by chance, so the expected success has no 1/k
+  floor; a right typed answer moves the ability and the photo ratings more than a pick, a miss less, and counts in full
+  in the progress (every genus, its look-alikes included, was a possible answer).
+- Never typed: comeback, "Again: A or B?" and duel questions (each has its own purpose: a quick check, a contrast).
+
+How they will be calibrated: `tools/learnsim.js` (a recall learner, recall weaker than recognition, is being added:
+the share and the exam count are then chosen so a strong RA's typed success stays near the game's target and the exam
+is not passed on picked answers alone), then the players' own `|t` answers once there are a few hundred (typed right %
+against picked right % at the same progress). Any change is recorded here with its numbers.
+
 ## Pooled statistics: photo difficulty and confusions (sheet v17-v18, 2026-11-02; photo memory v26, 2026-11-03)
 
 Photo difficulty feeds every player's game (which photos, how hard), and confusions pick the traps. They must reflect
