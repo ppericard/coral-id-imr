@@ -197,7 +197,7 @@ test('milestones, verdicts and the report: earlier milestones reused only for th
   assert.deepStrictEqual(r1.M, [1000, 1100]);
   assert.strictEqual(r2.R[1000], r1.R[1000], 'milestone 1000 reused');
   assert.notStrictEqual(r2.R[r2.M[r2.M.length - 1]], r1.R[1100]);
-  const small = A.compact(JSON.parse(JSON.stringify(r2)), 1);
+  const small = A.compact(JSON.parse(JSON.stringify(r2)), JSON.stringify(r2).length - 1);
   assert.ok(
     small.R[1000].A.rt.lean && !small.R[1000].A.rt.genus && small.R[1000].A.rt.effects,
     'oldest milestones keep their effects only'
@@ -391,4 +391,54 @@ test('sessions: 200,000 answers do not overflow the stack', () => {
   const r = A.sessRows(A2);
   assert.ok(r.rows.length > 190000 && r.lens.length > 0);
   assert.ok(A.km(r.lens).length > 1);
+});
+
+// Codex review #441: the answers to mastery carry the intercept's uncertainty too (joint with the slope): an intercept
+// above the target but uncertain, with a flat slope, is not "0 [0, 0]".
+test('answers to mastery: the interval comes from the intercept and the slope together', () => {
+  const [lo, hi] = A.masterCI(1.667, -0.05, [
+    [0.785 ** 2, 0],
+    [0, 0.01]
+  ]);
+  assert.strictEqual(lo, 0);
+  assert.strictEqual(hi, 999, 'part of the intercept’s range is below the target with no learning: not reached');
+  const [lo2, hi2] = A.masterCI(-0.5, 0.6, [
+    [0.01, 0],
+    [0, 0.001]
+  ]);
+  assert.ok(lo2 > 0 && hi2 < 999 && lo2 < A.toMaster(-0.5, 0.6, 0) && A.toMaster(-0.5, 0.6, 0) < hi2, `${lo2} ${hi2}`);
+});
+
+// Codex review #441: compaction always ends under the cap, however many milestones (older ones thinned, then only the
+// latest), and keeps the latest whole.
+test('compact: under the cap with 300 milestones', () => {
+  const eff = Array.from({length: 60}, (_, i) => ({
+    k: 'e' + i,
+    label: 'Effect number ' + i,
+    est: 0.1,
+    lo: -0.1,
+    hi: 0.3,
+    v: 'thin',
+    need: 2000
+  }));
+  const one = M => ({
+    M,
+    n: M,
+    at: M,
+    fp: 'x',
+    A: Object.fromEntries(
+      ['rt', 'zoom', 'photo', 'fmt', 'conf', 'learn', 'back', 'sess'].map(k => [k, {n: M, effects: eff, table: 'x'.repeat(2000)}])
+    )
+  });
+  const rep = {AV: 1, M: Array.from({length: 300}, (_, i) => (i + 1) * 1000)};
+  rep.R = Object.fromEntries(rep.M.map(M => [M, one(M)]));
+  const max = 2400000,
+    c = A.compact(rep, max);
+  assert.ok(JSON.stringify(c).length <= max, String(JSON.stringify(c).length));
+  assert.strictEqual(c.M[c.M.length - 1], 300000);
+  assert.ok(c.R[300000].A.rt.table, 'the latest keeps its tables');
+  assert.ok(
+    c.M.every(M => c.R[M]),
+    'every milestone listed is there'
+  );
 });

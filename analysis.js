@@ -1037,6 +1037,23 @@
   }
   // Answers to reach MASTER: 0 when the start is already there, whatever the slope (Codex review #441); 999 = not
   // reached (a flat or falling slope below it).
+  // 95% interval of the answers to MASTER from the joint uncertainty of the intercept and the slope (their covariance in
+  // the fit, V: 2 x 2) and of the genus's own effect (u, its conditional variance cv): seeded draws (Codex review #441:
+  // varying the slope alone gave [0, 0] for an intercept above the target whatever its own uncertainty).
+  function masterCI(b0, b1, V, u = 0, cv = 0, seed = 1) {
+    const R = rng(seed),
+      nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
+      a = Math.sqrt(Math.max(0, V[0][0])),
+      c = a ? V[1][0] / a : 0,
+      d = Math.sqrt(Math.max(0, V[1][1] - c * c)),
+      L = [];
+    for (let k = 0; k < 1000; k++) {
+      const z1 = nrm(),
+        z2 = nrm();
+      L.push(toMaster(b0 + a * z1, b1 + c * z1 + d * z2, u + Math.sqrt(Math.max(0, cv)) * nrm()));
+    }
+    return [q(L, 0.025), q(L, 0.975)];
+  }
   const toMaster = (b0, b1, u) => (b0 + u >= logit(MASTER) ? 0 : b1 > 0 ? clamp(Math.exp((logit(MASTER) - b0 - u) / b1) - 1, 0, 999) : 999);
   function learning(A, B, seed) {
     const D = A;
@@ -1070,11 +1087,15 @@
       c.p.add(a.p);
       c.y += a.y;
     });
+    const V2 = [
+      [M.V[0][0], M.V[0][1]],
+      [M.V[1][0], M.V[1][1]]
+    ];
     const genus = G.L.map((g, j) => {
       const est = toMaster(M.b[0], M.b[1], G.u[j]),
         sdu = Math.sqrt(G.cv[j]);
-      let lo = toMaster(M.b[0], M.b[1], G.u[j] + Z * sdu),
-        hi = toMaster(M.b[0], M.b[1], G.u[j] - Z * sdu);
+      let [lo, hi] = masterCI(M.b[0], M.b[1], V2, G.u[j], G.cv[j], j + 1);
+      void sdu;
       if (bi && bi['n:' + g]) ((lo = Math.min(lo, bi['n:' + g][0])), (hi = Math.max(hi, bi['n:' + g][1])));
       return {k: g, n: cnt[g].n, players: cnt[g].p.size, right: cnt[g].y / cnt[g].n, u: G.u[j], est, lo, hi};
     }).sort((a, b) => a.est - b.est);
@@ -1105,8 +1126,9 @@
       Object.assign(
         {k: 'n_all', label: 'Answers to reach 80% on an average genus', est: all, unit: 'n', n},
         (() => {
-          const lo = bi && bi.n_all ? bi.n_all[0] : toMaster(M.b[0], M.b[1] + Z * M.se[1], 0),
-            hi = bi && bi.n_all ? bi.n_all[1] : toMaster(M.b[0], Math.max(1e-6, M.b[1] - Z * M.se[1]), 0);
+          // the model's own interval (joint intercept and slope), widened by the bootstrap's when there is one
+          let [lo, hi] = masterCI(M.b[0], M.b[1], V2);
+          if (bi && bi.n_all) ((lo = Math.min(lo, bi.n_all[0])), (hi = Math.max(hi, bi.n_all[1])));
           return {lo, hi, v: hi < 999 ? 'clear' : 'thin', need: hi < 999 ? null : nice(n * 2)};
         })()
       )
@@ -1574,6 +1596,7 @@
   // effects, verdicts and counts stay, for the convergence plots and the Overview).
   function compact(rep, max) {
     const J = () => JSON.stringify(rep).length;
+    // 1. the oldest milestones keep their effects only
     for (const M of rep.M.slice(0, -1)) {
       if (J() <= max) break;
       const r = rep.R[M];
@@ -1581,6 +1604,20 @@
         const a = r.A[k];
         r.A[k] = {n: a.n, players: a.players, thin: a.thin, err: a.err, effects: a.effects, lean: 1};
       });
+    }
+    // 2. still too big (hundreds of milestones; Codex review #441): every other older milestone goes, the first and the
+    // last 5 stay, until it fits; then, if need be, only the latest
+    while (J() > max && rep.M.length > 6) {
+      const keep = new Set([rep.M[0], ...rep.M.slice(-5)]),
+        old = rep.M.filter(M => !keep.has(M));
+      old.filter((_, i) => i % 2 === 0).forEach(M => delete rep.R[M]);
+      rep.M = rep.M.filter(M => rep.R[M]);
+      rep.thinned = (rep.thinned || 0) + 1;
+    }
+    if (J() > max) {
+      const last = rep.M[rep.M.length - 1];
+      rep.M.slice(0, -1).forEach(M => delete rep.R[M]);
+      rep.M = [last];
     }
     return rep;
   }
@@ -1606,6 +1643,7 @@
     verdictOf,
     km,
     toMaster,
+    masterCI,
     sessRows,
     TRUTH,
     synth,

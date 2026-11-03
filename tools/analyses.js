@@ -56,6 +56,10 @@ async function sheetRun(io, token, o = {}) {
   const t0 = Date.now(),
     rep = A.compact(A.report(ans.rows, metaOf(), old, {B: o.B, seed: 1}), MAX),
     text = JSON.stringify(rep);
+  if (text.length > MAX) {
+    io.log(`The report is still ${Math.round(text.length / 1000)} kB after compaction, over the sheet's cap: not stored.`);
+    return 'refused';
+  }
   const put = await post({analysesPut: 1, report: text});
   if (!put || !put.ok) {
     io.log(`The sheet did not store the report (${(put && put.error) || 'no reply'}).`);
