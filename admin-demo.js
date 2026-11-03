@@ -345,7 +345,7 @@
         total: list.length,
         review: '',
         rev: 1,
-        data: {'imr-coral-progress': '{}', 'imr-coral-settings': '{}'}
+        data: {'reefid-sync-coral-progress': '{}', 'reefid-sync-settings': '{}'}
       };
     });
     // Pages opened (sheet v30 'pages', its own Pages tab): a few visits of each player, under their anonymous id (aid,

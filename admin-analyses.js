@@ -10,8 +10,8 @@ const AN_V = 35; // sync script version with analysesGet (AGENTS.md 7a: before i
 let ANREP = null, // {st: 'ok' | 'none' | 'old' | 'err', rep, answers, stored}
   ANLOC = null, // a report recomputed in this tab: {rep} once done, {prog} while running
   ANWORK = null;
-const AN = Object.assign({m: 'all', src: 'sheet'}, store.get('imr-admin-an', {}));
-const anSave = () => store.set('imr-admin-an', {m: AN.m});
+const AN = Object.assign({m: 'all', src: 'sheet'}, store.get('reefid-admin-an', {}));
+const anSave = () => store.set('reefid-admin-an', {m: AN.m});
 // Views: [address, analysis key in the report, title]
 const AN_VIEWS = [
   ['~an', null, 'Overview'],
