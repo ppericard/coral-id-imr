@@ -215,6 +215,55 @@ aim: real diversity of colonies and views, so the players learn the genus, not t
    every passing genus into `suggest.json` `"cand"` (admin only: players never download it). Commit only
    `judging/cand/*.json` and `suggest.json`.
 
+## Fish candidate pass (`judging/fish/<species id>.json`, `tools/judging_fish.py`)
+
+The candidate pass adapted to fish (Pierre, 2026-11-03). It pre-sorts the fish candidates of `fish-cand.json`
+(`tools/fetch_fish.py`: iNaturalist photos of the species of `fish.json`, still remote). The unit is the **species**
+(`s091`...), grouped under the teaching entries of `fish.json` (`t01` Damselfish...). Run it on request, like the coral pass.
+
+**What differs from corals: poor photos are kept on purpose.** RAs identify fish on SVS video frames (EventMeasure), so
+a blurred, far, blue or green iNaturalist photo is training material, not waste. Tag the quality and the cast; never
+set a photo aside for being poor. Set aside only what cannot teach this species: another species, unusable, several
+species where the subject is unclear, a near-duplicate.
+
+1. `python3 tools/judging_fish.py sheets <id>` (a species `s091` or a whole entry `t01`) downloads the photos (500 px,
+   `judging/fish/img/`, not in git) and builds contact sheets (`judging/fish/sheets/<species>/1.jpg`..., 12 tiles each,
+   observation by observation). It prints tile number → photo, observation, source, licence and the observer's
+   iNaturalist annotation (`iNat: juvenile`...: a hint, check it on the photo). Open every sheet; open
+   `judging/fish/img/<f>.jpg` or `python3 tools/judging_fish.py big <f>` (1024 px) when a tile is too small. Judge the
+   species with the IMR cues of its entry (`fish.json` `teach[].cues`, `look`, `phase`) and its PDF name; the
+   iNaturalist label (`t`) is Research Grade, or Pierre's own species-level identification (AGENTS.md rule 6a), so
+   "not this species" needs a clear reason in the note.
+2. Write `judging/fish/<species id>.json`: `{"species": "<id>", "photos": {"<f>": {...}}}`, every candidate listed:
+   - `view`: `whole` (the whole fish, enough to see its shape and fins), `part` (a part only: head, half the body, cut
+     by the frame or hidden in coral), `school` (a group of several fish of this species, none of them dominant).
+   - `phase`: one of `juvenile`, `subadult`, `adult`, `intermediate`, `terminal`, `female`, `male` (the phases the IMR
+     fish presentation names, `fish.json` `teach[].phase`), or `unknown` when the photo cannot tell. Species without
+     visible phases: `adult` for an adult, `juvenile` for an obvious juvenile.
+   - `quality`: 3 Good (sharp, the species' marks clear), 2 Fair (readable with an effort: soft, small, partial, a cast
+     that leaves the colours readable), 1 Poor (like a video frame: blurred, far, dark, a strong cast; **still this
+     species to a trained eye**). A photo nobody could identify is `"species": "exclude"`, not Poor. Expect a real
+     spread; do not round up.
+   - `cast`: `blue` or `green` when a colour cast covers the frame (omit when none). It is a tag, not a fault.
+   - `keep`: `best` (exactly one per observation, the most useful photo of it), `alt` (same fish, adds something:
+     another side, another phase or pose, a different light), `dup` (adds nothing over the best: burst, same framing).
+   - `species` (omit when the photo shows this species): `not` (another fish, not identifiable as which), another
+     species id of `fish.json` (only when sure), or `exclude` (unusable: no fish visible, out of the water, dead, on a
+     plate, in a hand, a market stall, an aquarium, a drawing, a screenshot, text over the fish). Omit `keep` then;
+     a `note` is required.
+   - `multi`: `true` when another species takes a large part of the frame or could be the answer (a mixed school, a
+     cleaner at work). Not for small fish at the edges.
+   - `unsure` (the fields you doubt) and `note` (140 characters at most; required with `unsure` or `species`).
+3. `python3 tools/judging_fish.py --check <id>` until it passes, then `python3 tools/judging_fish.py` imports every
+   passing species into `suggest.json` `"fish"` (`{v, ph, q, c, k, g, m, u, n}`). Commit only `judging/fish/*.json`
+   and `suggest.json`.
+
+**Your sure decisions apply by themselves** (Pierre, 2026-11-03, `core.js` `fishState`): without `unsure`, a `best` or
+`alt` photo goes in (with your tags), and a `dup`, `multi`, `not`, other-species or `exclude` photo is set aside, except
+1 candidate in 20, shown to Pierre as a check. His decisions measure your agreement; when it drops under 90% for "in"
+or for "out", that decision stops being automatic. So add `unsure` at the least doubt: it costs Pierre one swipe, a
+wrong sure decision costs the players.
+
 ## Workflow
 
 1. `git pull`, then `python3 tools/judging_manifest.py`.

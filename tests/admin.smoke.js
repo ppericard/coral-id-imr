@@ -55,12 +55,24 @@ const server = http.createServer((req, res) => {
       .filter(x => !x.cf)
       .slice(0, 2)
       .map(x => x.f);
+    // Fish candidates (fish-cand.json, Candidates > Fish): a sure judgment of the fish pre-sort (not a 1-in-20 check),
+    // which goes in by itself, and an unsure one, which stays in the queue.
+    const {fishCheck} = require('../core.js');
+    const FF = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'fish-cand.json'))).cand)
+      .flat()
+      .map(x => x.f)
+      .filter(f => !fishCheck(f))
+      .slice(0, 2);
     await ctx.route(base + 'suggest.json', r =>
       r.fulfill({
         contentType: 'application/json',
         body: JSON.stringify({
           v: 1,
-          cand: {[CF[0]]: {v: 'macro', q: 3, k: 'best', fm: 'x'}, [CF[1]]: {v: 'wide', q: 1, k: 'dup', fm: 'M', n: 'Same colony as 1'}}
+          cand: {[CF[0]]: {v: 'macro', q: 3, k: 'best', fm: 'x'}, [CF[1]]: {v: 'wide', q: 1, k: 'dup', fm: 'M', n: 'Same colony as 1'}},
+          fish: {
+            [FF[0]]: {v: 'whole', ph: 'adult', q: 1, c: 'blue', k: 'best'},
+            [FF[1]]: {v: 'part', ph: 'unknown', q: 2, k: 'best', u: ['phase'], n: 'Too dark to tell'}
+          }
         })
       })
     );
@@ -418,6 +430,37 @@ const server = http.createServer((req, res) => {
       await p.click('[data-caside]');
       await settle();
     }
+    // Fish (Pierre, 2026-11-03): the Fish source swipes fish-cand.json; the sure judgment is in by itself, the unsure one
+    // waits; Reject, Add and × Exclude write curation.json "fish", one Undo step each.
+    await p.click('[data-src="fish"]');
+    await p.waitForFunction(() => FISHC && document.querySelector('.adm-sw[data-fish]'), null, {timeout: 15000}).catch(() => {});
+    const fq = await p.evaluate(F => {
+      const Q = fishQueue().map(x => x.p.f);
+      return {card: !!document.querySelector('.adm-sw[data-fish] .adm-swcard img'), sure: Q.includes(F[0]), unsure: Q.includes(F[1])};
+    }, FF);
+    if (!fq.card) fails.push(`${w}px Fish: no fish candidate card`);
+    if (fq.sure || !fq.unsure)
+      fails.push(`${w}px Fish: the sure judgment should be in by itself, the unsure one queued (${JSON.stringify(fq)})`);
+    if (fq.card) {
+      const f0 = await p.$eval('.adm-sw[data-fish]', e => e.dataset.f);
+      await p.click('.adm-sw[data-fish] [data-rej]');
+      await settle();
+      const f1 = await p.$eval('.adm-sw[data-fish]', e => e.dataset.f).catch(() => null);
+      if (f1) {
+        await p.click('.adm-sw[data-fish] [data-add]');
+        await settle();
+      }
+      const fd = await p.evaluate(
+        ([a, b]) => ({seen: !!((DRAFT.fish || {}).seen || {})[a], add: !b || !!((DRAFT.fish || {}).add || {})[b], ch: fsChanged()}),
+        [f0, f1]
+      );
+      if (!fd.seen || !fd.add || !fd.ch) fails.push(`${w}px Fish: Reject / Add not in the draft (${JSON.stringify(fd)})`);
+      await p.click('#undo');
+      await settle();
+      if (f1 && (await p.evaluate(b => !!((DRAFT.fish || {}).add || {})[b], f1))) fails.push(`${w}px Fish: Undo did not take the add back`);
+    }
+    await p.click('[data-src="dauin"]');
+    await settle();
     errs.length = 0;
     if (await p.isEnabled('#save')) {
       await p.click('#save');

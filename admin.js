@@ -294,6 +294,8 @@ function importFlags() {
 // and import scripts skip it so it never comes back. The Excluded view lists them, to restore one.
 const excl = f => (DRAFT.exclude || {})[f];
 const xChanged = () => !same(DRAFT.exclude || {}, SAVED.exclude || {});
+// Fish candidates sorted in Candidates > Fish (curation.json "fish": add, seen, exclude).
+const fsChanged = () => !same(DRAFT.fish || {}, SAVED.fish || {});
 // Coral Finder book photos on the site (curation.json "book": false switches every one of them off at once).
 const mtChanged = () => !same(DRAFT.mont || {}, SAVED.mont || {});
 // Lead photos of the growth-form tiles on the Coral Finder start (curation.json "tile" {form letter: [f, ...]}, at most
@@ -962,7 +964,8 @@ function status() {
       mtChanged() ? 'look-alike montages' : '',
       crChanged() ? 'crops' : '',
       snChanged() ? 'several corals' : '',
-      tlChanged() ? 'tile photos' : ''
+      tlChanged() ? 'tile photos' : '',
+      fsChanged() ? 'fish candidates' : ''
     ].filter(Boolean);
   const bs = $('booksw');
   if (bs) {
@@ -1693,7 +1696,7 @@ const HELP = {
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" in the footer of any page (wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
-  cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder (Finder-only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Finder-only genus, as many as its sheet and the Coral Finder show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p>`,
+  cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder (Finder-only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Finder-only genus, as many as its sheet and the Coral Finder show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Fish</b>: the fish candidates (iNaturalist, species of the fish game, free licences first, poor photos kept on purpose: they stand in for video frames). Add (1), Reject (←), Skip (→), × excludes. The fish pre-sort decides by itself where it is sure, and shows you 1 candidate in ${FISHCHK.EVERY} it decided, marked Check; when you disagree with it too often, that decision comes back to you. The line on top counts what is in and out and your agreement with it.</p>`,
   health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. <b>Without me</b> drops your answers everywhere on the page: the account this browser is signed in with and those you marked "This is also me" (Players > a player > Manage).</p>
     <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
     <p><b>Photos everyone misses.</b> Photos shown in ${HEALTH.PH_MIN} answers or more with under ${Math.round(HEALTH.PH_LOW * 100)}% right, or a difficulty at least ${HEALTH.PH_FAR} above the median of their genus (+1 = clearly harder; photo Elo, with ${HEALTH.PH_MIN}+ rated answers). They may be mislabelled, show another coral, or be bad photos: click to enlarge, the genus name opens its page. Right % and answers count every answer that showed the photo; the number after them is the difficulty against the genus median.</p>
@@ -2694,7 +2697,8 @@ const CSRCS = [
   ['dauin', 'Dauin'],
   ['ph', 'PH'],
   ['book', 'CF'],
-  ['all', 'All']
+  ['all', 'All'],
+  ['fish', 'Fish'] // fish candidates (fish-cand.json, renderFish): their own swiper, curation.json "fish"
 ];
 let CSRC = store.get('imr-admin-csrc2', 'dauin'),
   CSKIP = new Set(),
@@ -2942,15 +2946,19 @@ function renderRepl() {
     render();
   };
 }
+// The Source segment of Candidates; cnt(s) = the candidates of source s still to go through.
+const csrcSeg = cnt =>
+  `<span class="adm-qseg adm-csrc" role="group" aria-label="Source">${CSRCS.map(([s, t]) => `<button type="button" data-src="${s}" aria-pressed="${s === CSRC}">${t} <b>${cnt(s)}</b></button>`).join('')}</span>`;
 function renderCand() {
   status();
   if (CREPL) return renderRepl();
+  if (CSRC === 'fish') return renderFish();
   const shown = x => !CSKIP.has(x.p.f) && (CFULL || !x.full) && (CASIDE || !x.aside);
   // An empty source (Pierre, 2026-11-02: "Pierre 0" opened on "No candidate left") gives way to the first source, in
   // priority order, that still has candidates to go through. Only a source with no candidate at all: one whose
   // candidates are skipped or wait in full cells stays, so they can still be shown (Codex review #340).
   if (!candQueue(CSRC).length) {
-    const s = CSRCS.map(([k]) => k).find(k => candQueue(k).filter(shown).length);
+    const s = CSRCS.map(([k]) => k).find(k => k !== 'fish' && candQueue(k).filter(shown).length);
     if (s) CSRC = s;
   }
   const Q0 = candQueue(CSRC),
@@ -2962,7 +2970,7 @@ function renderCand() {
     c = live[0],
     nx = live[1];
   const seg =
-    `<span class="adm-qseg adm-csrc" role="group" aria-label="Source">${CSRCS.map(([s, t]) => `<button type="button" data-src="${s}" aria-pressed="${s === CSRC}">${t} <b>${s === CSRC ? live.length : candQueue(s).filter(shown).length}</b></button>`).join('')}</span>` +
+    csrcSeg(s => (s === CSRC ? live.length : s === 'fish' ? fishCount() : candQueue(s).filter(shown).length)) +
     (nFull
       ? `<p class="note adm-cfull">${nFull} wait${nFull === 1 ? 's' : ''} in full cells (${[...new Set(Q0.filter(x => x.full).map(x => capOf(x.n)))].sort((a, b) => b - a).join(' or ')} colonies) · <button type="button" class="adm-link" data-cfull>${CFULL ? 'Hide them' : 'Show them'}</button></p>`
       : '') +
@@ -3065,6 +3073,10 @@ function renderCand() {
       CSKIP.clear();
       render();
     };
+  bindKeysCand();
+}
+// Keys of the swiper (corals and fish): ← Reject, → Skip, 1-3 Add to the first, second, third view.
+function bindKeysCand() {
   if (!candKey) {
     candKey = e => {
       if (cur !== '~cand' || e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input,textarea,select') || !$('lightbox').hidden)
@@ -3086,6 +3098,148 @@ function renderCand() {
     };
     addEventListener('keydown', candKey);
   }
+}
+/* ---------- Fish candidates (Candidates > Fish) ---------- */
+// Fish photos from iNaturalist (tools/fetch_fish.py, fish-cand.json {species id: [photo]}, species and teaching entries
+// from fish.json; Pierre, 2026-11-03), loaded the first time the Fish source opens. The same swiper, minimal: Add,
+// Reject, × Exclude, Skip, written to curation.json "fish" (add / seen / exclude {f}). The pre-sort (suggest.json "fish",
+// tools/judging_fish.py) decides by itself where it is sure, except 1 candidate in 20 shown here as a check; its
+// agreement with Pierre's decisions turns each automatic decision off when it drops (core.js fishState, fishAgree).
+// Species with the fewest photos in come up most often (as coral cells).
+let FISH = null,
+  FISHC = null,
+  FISHL = false;
+const fishSug = () => (SUG && SUG.fish) || {};
+function loadFish() {
+  if (FISHL) return;
+  FISHL = true;
+  const get = u =>
+    fetch(u, {cache: 'no-cache'})
+      .then(r => (r.ok ? r.json() : {}))
+      .catch(() => ({}));
+  Promise.all([get('fish.json'), get('fish-cand.json')]).then(([f, c]) => {
+    FISH = f || {};
+    FISHC = (c && c.cand) || {};
+    if (cur === '~cand') render();
+  });
+}
+const fishAll = () => Object.values(FISHC || {}).flatMap(L => L.map(p => p.f));
+const fishAuto = () => fishAgree(fishAll(), fishSug(), DRAFT.fish).auto;
+function fishQueue() {
+  if (!FISHC) return [];
+  const S = fishSug(),
+    F = DRAFT.fish,
+    auto = fishAuto(),
+    L = [];
+  Object.entries(FISHC).forEach(([sid, P]) => {
+    const st = P.map(p => fishState(p.f, S[p.f], F, auto)),
+      n = st.filter(x => x === 'in' || x === 'auto-in').length;
+    P.forEach((p, i) => {
+      if ((st[i] === 'queue' || st[i] === 'check') && !CSKIP.has(p.f))
+        L.push({p, sid, check: st[i] === 'check', r: -Math.log(uOf(p.f)) * Math.pow(1 + n, 2)});
+    });
+  });
+  return L.sort((a, b) => a.r - b.r);
+}
+const fishCount = () => (FISHC ? fishQueue().length : '…');
+const FV = {whole: 'whole fish', part: 'part of the fish', school: 'school'},
+  FQ = {3: 'Good', 2: 'Fair', 1: 'Poor'};
+const fishLine = (p, check) => {
+  const j = fishSug()[p.f];
+  if (!j) return '<p class="adm-judge" title="Suggestion of the judging agent (suggest.json)">Not judged yet</p>';
+  const v = fishVerdict(j),
+    sp = j.g && j.g !== 'exclude' && j.g !== 'not' ? (FISH.species || []).find(s => s.id === j.g) : null;
+  const what = j.g
+    ? j.g === 'exclude'
+      ? 'unusable'
+      : j.g === 'not'
+        ? 'not this species'
+        : `looks like <i>${esc(sp ? sp.name : j.g)}</i>`
+    : [FV[j.v], j.ph, FQ[j.q], j.c ? j.c + ' cast' : '', JKT[j.k]].filter(Boolean).join(' · ');
+  return `<p class="adm-judge${j.g || j.m ? ' warn' : ''}" title="Suggestion of the judging agent (suggest.json)">${check ? `<b>Check</b>: the pre-sort puts it ${v} · ` : ''}Judged: ${what}${j.m ? ' · several species' : ''}${j.u ? ` · unsure: ${esc(j.u.join(', '))}` : ''}${j.n ? ` · ${esc(j.n)}` : ''}</p>`;
+};
+function fishAct(k, f, v) {
+  const F = {...(DRAFT.fish || {})};
+  F[k] = {...(F[k] || {}), [f]: v};
+  DRAFT.fish = F;
+  CSKIP.delete(f);
+  saveDraft();
+  render();
+}
+function renderFish() {
+  loadFish();
+  const Q = FISHC ? fishQueue() : [],
+    c = Q[0],
+    seg = csrcSeg(s => (s === 'fish' ? fishCount() : candQueue(s).filter(x => !CSKIP.has(x.p.f) && !x.full && !x.aside).length));
+  let body;
+  if (!FISHC) body = '<p class="note">Loading fish…</p>';
+  else {
+    const S = fishSug(),
+      F = DRAFT.fish,
+      all = fishAll(),
+      A = fishAgree(all, S, F),
+      st = {};
+    all.forEach(f => {
+      const x = fishState(f, S[f], F, A.auto);
+      st[x] = (st[x] || 0) + 1;
+    });
+    const pc = a => (a.n ? `${Math.round((a.ok / a.n) * 100)}% of ${a.n}` : 'none yet'),
+      nJ = all.filter(f => !S[f]).length;
+    body =
+      `<p class="note adm-fstat" title="Pre-sort: automatic where sure, 1 in ${FISHCHK.EVERY} shown to you as a check; an automatic decision stops when your agreement with it drops under ${Math.round(FISHCHK.OK * 100)}%">${st.in || 0} added · ${st['auto-in'] || 0} in by the pre-sort${A.auto.in ? '' : ' (off)'} · ${st['auto-out'] || 0} set aside by it${A.auto.out ? '' : ' (off)'} · ${st.out || 0} rejected or excluded · agreement: in ${pc(A.in)}, out ${pc(A.out)}</p>` +
+      (nJ
+        ? `<p class="note adm-cjudge">${nJ} fish candidate${nJ === 1 ? '' : 's'} not judged yet: ask your agent for the fish candidate pass (judging/AGENTS.md).</p>`
+        : '');
+    if (c) {
+      const {p, sid} = c,
+        s = (FISH.species || []).find(x => x.id === sid) || {name: sid},
+        t = (FISH.teach || []).find(x => (x.species || []).includes(sid)) || {};
+      body += `<figure class="adm-swcard">
+        <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img src="${esc(img(p))}" alt=""></button>
+        <span class="adm-swg" title="${esc(s.common || '')}"><i>${esc(s.name)}</i><small>${esc([t.name, s.common].filter(Boolean).join(' · '))}</small></span>
+        <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
+        <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}${p.ni ? ' (your ID)' : ''} · ${esc((p.lic || '').toUpperCase())}</span>${/^https?:/.test(p.o || '') ? `<a class="adm-swlink" href="${esc(p.o)}" target="_blank" rel="noopener" title="iNaturalist">iNat ↗</a>` : ''}</figcaption>
+      </figure>${fishLine(p, c.check)}
+      <div class="adm-acts adm-swacts"><div class="adm-swrow"><button type="button" data-skip>Skip</button></div></div>
+      <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button><button type="button" class="add" data-add="fish" title="Add (1)">+ Add</button></div>`;
+      if (Q[1]) new Image().src = img(Q[1].p);
+    } else
+      body += `<p class="note">${CSKIP.size ? `${CSKIP.size} skipped.` : 'No fish candidate left.'}</p>${CSKIP.size ? '<button type="button" class="adm-btn" data-again>Show the skipped ones</button>' : ''}`;
+  }
+  $v.innerHTML = `<section class="adm-sw${c ? '' : ' adm-swempty'}"${c ? ` data-f="${esc(c.p.f)}" data-fish` : ''}>${seg}${body}</section>`;
+  $v.querySelectorAll('[data-src]').forEach(
+    b =>
+      (b.onclick = () => {
+        CSRC = b.dataset.src;
+        store.set('imr-admin-csrc2', CSRC);
+        render();
+      })
+  );
+  const ag = $v.querySelector('[data-again]');
+  if (ag)
+    ag.onclick = () => {
+      CSKIP.clear();
+      render();
+    };
+  if (!c) return;
+  const f = c.p.f,
+    S = $v.querySelector('.adm-sw');
+  S.querySelector('[data-add]').onclick = () => {
+    fishAct('add', f, 1);
+    toast('Added.');
+  };
+  S.querySelector('[data-rej]').onclick = () => fishAct('seen', f, 1);
+  S.querySelector('[data-x]').onclick = () => {
+    fishAct('exclude', f, 'excluded');
+    toast('Excluded. Undo (Ctrl+Z) brings it back.');
+  };
+  S.querySelector('[data-skip]').onclick = () => {
+    CSKIP.add(f);
+    render();
+  };
+  S.querySelector('[data-zoom]').onclick = () =>
+    zoomOne({...c.p, genus: ((FISH.species || []).find(x => x.id === c.sid) || {}).name || c.sid});
+  bindKeysCand();
 }
 // Crop editor (full screen): drag the frame or its corners; Save keeps it in the draft, Full photo removes it.
 // The frame is in fractions of the ORIGINAL photo, so the editor always shows the original (iNat large), never the
@@ -3313,7 +3467,11 @@ function pubSummary() {
     [nDiff(DRAFT.crop, SAVED.crop), 'crop'],
     [nDiff(DRAFT.single, SAVED.single), 'several-corals mark'],
     [nDiff(DRAFT.mont, SAVED.mont), 'look-alike pair'],
-    [nDiff(DRAFT.tile, SAVED.tile), 'growth-form tile']
+    [nDiff(DRAFT.tile, SAVED.tile), 'growth-form tile'],
+    [
+      ['add', 'seen', 'exclude', 'out'].reduce((t, k) => t + nDiff((DRAFT.fish || {})[k], (SAVED.fish || {})[k]), 0),
+      'fish candidate decision'
+    ]
   ]
     .filter(([c]) => c)
     .map(([c, t]) => `${c} ${t}${c > 1 ? 's' : ''}`);
@@ -3349,8 +3507,9 @@ async function save() {
     mt = mtChanged(),
     cr = crChanged(),
     sn = snChanged(),
-    tl = tlChanged();
-  if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn || tl) || !TOKEN) return;
+    tl = tlChanged(),
+    fs = fsChanged();
+  if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn || tl || fs) || !TOKEN) return;
   if (!confirm(`Publish to the public site?\n\n${pubSummary()}`)) return;
   const b = $('save');
   b.disabled = true;
@@ -3369,7 +3528,7 @@ async function save() {
   };
   try {
     await fresh();
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(fs ? ['fish candidates'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const who = await author(),
       stale = x => /does not match|sha|409/i.test(x.message);
     // A publish from elsewhere between the read and the write: read again, merge, and try once more on our own.

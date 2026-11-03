@@ -102,6 +102,7 @@ These came from Pierre's explicit feedback. When in doubt, follow them over your
 | `data.json` | All genus data and photo lists (the served source of truth). |
 | `curation.json` | Pierre's choices, applied on top of `data.json` at load. Pierre-owned. |
 | `fish.json` | Fish mode content (not read by the app yet): WoRMS reference tree + IMR teaching tree, built by `tools/build_fish.py` from `tools/fish_source.json` (ARCHITECTURE.md "Fish content"). |
+| `fish-cand.json` | Fish candidate photos waiting for Pierre (admin Candidates > Fish only), from `tools/fetch_fish.py`: iNaturalist, nearest first, free licences first, poor photos kept on purpose; still remote, never committed as images (ARCHITECTURE.md "Fish photos"). |
 | `forms.json`, `quality.json`, `picks.json`, `dups.json`, `suggest.json` | Machine suggestions (growth forms, quality, featured picks, duplicates, judging results). |
 | `img/` | WebP photos in four sizes: 1600 px, 960 px `-m`, 480 px `-s`, 240 px `-t` (`tools/photos.py`; every tool that writes photos uses its `save()`, CI checks each photo has all four). No Git LFS. Served from the Cloudflare R2 mirror (`core.js` `PHOTO_BASE`, the one switch), these files as the fallback. |
 | `tools/` | Python build/import scripts; `tools/sync/Code.gs` is the Google Apps Script for progress sync; `tools/commonness.py` measures once how common each game genus is near Dauin (iNaturalist) into `data.json` `cm`, which the opening of genera uses (common first); `tools/learnsim.js` the learning-outcome simulation. |

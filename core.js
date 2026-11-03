@@ -979,6 +979,56 @@
     return true;
   }
 
+  // Fish candidate photos (tools/fetch_fish.py, fish-cand.json {species id: [photo]}; Pierre, 2026-11-03). Pierre's
+  // decisions live in curation.json "fish": add {f: 1}, seen {f: 1} (rejected), exclude {f: reason}, out {f: species id
+  // or 'x'}. The pre-sort (suggest.json "fish", tools/judging_fish.py, judging/AGENTS.md "Fish candidate pass") judges
+  // each photo: v view (whole, part, school), ph phase, q quality 1-3 (Poor kept: they stand in for SVS video frames),
+  // c cast (blue, green), k best / alt / dup within its observation, g exclude / not / another species id, m several
+  // species, u the fields it is unsure of, n note.
+  // Auto where sure, with a check (Pierre, 2026-11-03, the coral pre-sort plan): a decision the pass is sure of (no `u`)
+  // applies by itself, 'in' (best or alt of one species) or 'out' (unusable, not this species, several species, a
+  // near-duplicate), except 1 candidate in FISHCHK.EVERY, which goes to Pierre as a check. His decisions measure the
+  // agreement continuously, per decision; when it drops under FISHCHK.OK (over at least FISHCHK.MIN of his decisions),
+  // that decision is no longer automatic and its candidates come back to him.
+  const FISHCHK = {EVERY: 20, MIN: 10, OK: 0.9};
+  const fishHash = f => {
+    let h = 2166136261;
+    for (let i = 0; i < f.length; i++) h = Math.imul(h ^ f.charCodeAt(i), 16777619);
+    return h >>> 0;
+  };
+  const fishCheck = f => fishHash(String(f)) % FISHCHK.EVERY === 0;
+  // The pass's decision: 'in', 'out', or null (unsure or not judged: Pierre decides). tools/fetch_fish.py sure_out mirrors 'out'.
+  const fishVerdict = j =>
+    !j || (j.u && j.u.length) ? null : j.g || j.m || j.k === 'dup' ? 'out' : j.k === 'best' || j.k === 'alt' ? 'in' : null;
+  // Pierre's decision (curation.json "fish"): 'in' added, 'out' rejected, excluded or sent elsewhere, null not yet.
+  const fishMine = (f, F) => {
+    F = F || {};
+    if ((F.exclude || {})[f] || (F.seen || {})[f] || (F.out || {})[f]) return 'out';
+    return (F.add || {})[f] ? 'in' : null;
+  };
+  // Agreement on every candidate both judged: {in: {n, ok}, out: {n, ok}}, by the pass's decision; and auto on/off per decision.
+  function fishAgree(fs, S, F) {
+    const A = {in: {n: 0, ok: 0}, out: {n: 0, ok: 0}};
+    fs.forEach(f => {
+      const v = fishVerdict((S || {})[f]),
+        m = fishMine(f, F);
+      if (!v || !m) return;
+      A[v].n++;
+      if (v === m) A[v].ok++;
+    });
+    const on = a => a.n < FISHCHK.MIN || a.ok / a.n >= FISHCHK.OK;
+    return {...A, auto: {in: on(A.in), out: on(A.out)}};
+  }
+  // Where a candidate stands: 'in' / 'out' (Pierre decided), 'auto-in' / 'auto-out' (the pass decided, auto on),
+  // 'check' (a sure decision sampled for Pierre), 'queue' (unsure, not judged, or that decision's auto is off).
+  function fishState(f, j, F, auto) {
+    const m = fishMine(f, F);
+    if (m) return m;
+    const v = fishVerdict(j);
+    if (!v || !(auto || {in: true, out: true})[v]) return 'queue';
+    return fishCheck(f) ? 'check' : 'auto-' + v;
+  }
+
   const CORE = {
     BENTHIC,
     BONUS,
@@ -1030,7 +1080,13 @@
     CONF,
     confScore,
     pairConf,
-    mergeUsers
+    mergeUsers,
+    FISHCHK,
+    fishCheck,
+    fishVerdict,
+    fishMine,
+    fishAgree,
+    fishState
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = CORE;
   else Object.assign(root, CORE);
