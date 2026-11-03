@@ -716,7 +716,8 @@ const pump = () => {
     while (pfLive < 2 && x.urls.length) {
       const i = new Image();
       pfLive++;
-      const u = x.urls.shift();
+      // Once R2 has failed, a URL queued before is asked from the site straight away (Codex review #392).
+      const u = R2 ? x.urls.shift() : photoLocal(x.urls.shift());
       i.onload = () => (pfLive--, pump());
       // A preload is no element of the page (app.js photoFail): failed on R2, its file is asked from the site, and so
       // are the next photos.

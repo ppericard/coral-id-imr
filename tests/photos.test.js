@@ -4,7 +4,7 @@ const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
   path = require('path');
-const {applyCuration, applySlots} = require('../core.js');
+const {applyCuration, applySlots, gameOf} = require('../core.js');
 const read = f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'));
 const RAW = read('data.json'),
   CUR = read('curation.json'),
@@ -191,7 +191,8 @@ test('data.json keeps only the candidates curation.json uses; the ones waiting a
 });
 
 test('game photos of the genera off the IMR list (Millepora, bonus genera) are hosted like the others: downloaded, four files', () => {
-  const games = ['Millepora', 'Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis']; // app.js BENTHIC + BONUS
+  const games = gameOf(RAW).filter(n => RAW.x.gen[n]); // core.js BENTHIC + BONUS (AGENTS.md 14a)
+  assert.ok(games.includes('Millepora') && games.length > 1);
   const remote = [],
     missing = [];
   games.forEach(n =>
