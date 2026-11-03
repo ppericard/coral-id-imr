@@ -759,6 +759,51 @@ const server = http.createServer((req, res) => {
       if (hs.wide > 0) fails.push(`${w}px Health (${v}): page ${hs.wide} px wider than the window`);
       if (v === 'all' && hs.sheets.join(' | ') !== SHEETS_ALL) fails.push(`${w}px Health genus sheets: ${JSON.stringify(hs.sheets)}`);
     }
+    // The page summaries are read again once stale (Codex review #423): a first read's error (offline, a script before
+    // v29) does not stay on Health; ↻ on Activity reads them again; and a visit reads them once at most (no
+    // render / read loop).
+    {
+      const sheetsText = () => p.evaluate(() => (document.querySelector('[data-health="sheets"]') || {}).innerText || '');
+      await p.evaluate(() => {
+        window.PGREADS = 0;
+        const f = window.fetch;
+        window.fetch = (u, o) => {
+          if (o && /"pages":1/.test(String(o.body || ''))) window.PGREADS++;
+          return f(u, o);
+        };
+      });
+      const stale = async (label, prep) => {
+        await go('~stats');
+        await p.evaluate(prep);
+        if (label === 'reload') {
+          await p.click('[data-sload]');
+          await settle();
+        }
+        await go('~health');
+        await p
+          .waitForFunction(() => /Over 300/.test((document.querySelector('[data-health="sheets"]') || {}).innerText || ''), null, {
+            timeout: 8000
+          })
+          .catch(() => {});
+        await p.waitForTimeout(1500);
+        const t = await sheetsText();
+        if (!/Over 300/.test(t) || /Offline/.test(t)) fails.push(`${w}px Health genus sheets after ${label}: ${t.replace(/\s+/g, ' ')}`);
+      };
+      await stale('a stale error', () => {
+        PGS = {err: 'Offline'};
+        pgsAt = Date.now() - 600000;
+      });
+      await stale('reload', () => {
+        PGS = {err: 'Offline'};
+        pgsAt = Date.now();
+      });
+      const n0 = await p.evaluate(() => PGREADS);
+      await go('~stats');
+      await go('~health');
+      await p.waitForTimeout(1500);
+      const reads = (await p.evaluate(() => PGREADS)) - n0;
+      if (n0 !== 2 || reads) fails.push(`${w}px Health genus sheets reads: ${n0} for two stale caches, then ${reads} on a fresh one`);
+    }
     // The enlarged photo's caption links to the photo's source, as in the games (AGENTS.md rule 11; Pierre, 2026-11-03:
     // he opened his own photo everyone misses, to check its identification on iNaturalist, and found no link): an iNat
     // photo's observation (new tab, noopener) and the genus sheet; a Coral Finder book photo keeps its © line, no link.

@@ -2295,11 +2295,25 @@ function loadEvents(force) {
 // code), vi: visit, na: answers so far, r: {page: [times, seconds]}, g: {genus: [times, seconds, from, asked]}}.
 // Before sheet v29 (AGENTS.md 7a) nothing is shown but the version line.
 let PGS = null,
-  pgsAt = 0;
+  pgsAt = 0,
+  pgsP = null; // the read on its way
+// Kept 5 minutes, an error 30 s (offline, a script not updated yet). pagesFresh(): the cached read, or a new one whose
+// arrival redraws the page once if it is still the one that asked (Codex review #423: the first read was kept for good,
+// an error too). A new read is a new object, a cached one the same: no redraw, so no render / read loop.
+const pagesStale = () => !PGS || Date.now() - pgsAt >= (PGS.err ? 30000 : 300000);
+function pagesFresh(here) {
+  if (!pagesStale()) return;
+  const was = PGS;
+  loadPages().then(x => x !== was && cur === here && render());
+}
 function loadPages(force) {
-  if (!force && PGS && Date.now() - pgsAt < 300000) return Promise.resolve(PGS);
-  if (!TOKEN) return Promise.resolve((PGS = {err: 'Needs the GitHub token'}));
-  return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readEvents: 1, pages: 1, token: TOKEN})})
+  if (!force && !pagesStale()) return Promise.resolve(PGS);
+  if (!TOKEN) {
+    pgsAt = Date.now();
+    return Promise.resolve((PGS = {err: 'Needs the GitHub token'}));
+  }
+  if (pgsP) return pgsP;
+  return (pgsP = fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readEvents: 1, pages: 1, token: TOKEN})})
     .then(r => r.json())
     .then(j => {
       pgsAt = Date.now();
@@ -2315,7 +2329,11 @@ function loadPages(force) {
                     : 'Not available'
             });
     })
-    .catch(() => (PGS = {err: 'Offline'}));
+    .catch(() => {
+      pgsAt = Date.now();
+      return (PGS = {err: 'Offline'});
+    })
+    .finally(() => (pgsP = null)));
 }
 const pagesRows = rows =>
   rows
@@ -5176,6 +5194,7 @@ function bindStats() {
     rl.onclick = () => {
       ANS = null;
       USERS = null;
+      PGS = null; // the pages opened too (Health, Journey)
       render();
     };
 }
@@ -6335,8 +6354,9 @@ function statsHealth() {
     ]) +
     `<div class="adm-sgrid adm-health">${stopSec}${phSec}${gSec}${tSec}${healthSheets(noMe)}</div>`;
   bindStats();
-  // The pages summaries (sheet v29) come with their own read: the section fills in when they arrive.
-  if (!PGS) loadPages().then(() => cur === '~health' && render());
+  // The pages summaries (sheet v29) come with their own read: the section fills in when they arrive, and is read again
+  // once stale.
+  pagesFresh('~health');
 }
 const VIEW_T = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites', cand: 'Candidate'};
 const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philippines', world: 'iNat world', book: 'CF book'};

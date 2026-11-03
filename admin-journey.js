@@ -524,7 +524,7 @@ function renderJourney(name, anonId = '') {
     ]) +
     `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${sheetsSec}${daysSec}</div>`;
   bindJReload();
-  if (!PGS) loadPages().then(() => cur === here && render());
+  pagesFresh(here); // read again once stale (admin.js)
   $v.querySelectorAll('[data-jsort]').forEach(
     b =>
       (b.onclick = () => {
