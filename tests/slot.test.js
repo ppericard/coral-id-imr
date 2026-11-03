@@ -62,7 +62,7 @@ test("slot: at most SMOKE_SLOTS holders, a dead holder's slot is taken back, giv
     await withEnv({...env, CI: 'true'}, async () => (await fresh()('t'))());
     assert.deepStrictEqual(fs.readdirSync(dir), []);
     // A slot held by a process that is gone (a PID that cannot exist) is taken back at once.
-    fs.writeFileSync(path.join(dir, 'slot0'), '999999999 old 2026-01-01');
+    fs.writeFileSync(path.join(dir, 'slot0'), '999999999 1 someone 2026-01-01T00:00:00Z old\n');
     const free = await withEnv(env, async () => {
       const os2 = require('os'),
         la = os2.loadavg;
@@ -73,7 +73,7 @@ test("slot: at most SMOKE_SLOTS holders, a dead holder's slot is taken back, giv
         os2.loadavg = la;
       }
     });
-    assert.match(fs.readFileSync(path.join(dir, 'slot0'), 'utf8'), new RegExp(`^${process.pid} t1 `));
+    assert.match(fs.readFileSync(path.join(dir, 'slot0'), 'utf8'), new RegExp(`^${process.pid} \\S+ \\S+ \\S+ t1\\n$`));
     // A second process waits while this one holds the only slot, and gets it once it is given back.
     const child = spawn(
       process.execPath,
@@ -97,6 +97,75 @@ test("slot: at most SMOKE_SLOTS holders, a dead holder's slot is taken back, giv
     assert.strictEqual(code, 0);
     assert.strictEqual(out.trim(), 'got');
     assert.deepStrictEqual(fs.readdirSync(dir), [], 'the second process gave its slot back when it ended');
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+// Codex review #450: a slot file whose record is not complete yet (another process publishing it) is a live holder,
+// never a dead one: taking it back let two holders run Chromium at once. Only a record left incomplete for a minute
+// (a crash with an older version mid-write) is taken back. And a record whose PID now belongs to another process (Linux:
+// another start time) is a dead holder.
+test('slot: an incomplete record is not taken back while recent; a reused PID is', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-test-')),
+    env = {CI: undefined, SMOKE_SLOT_DIR: dir, SMOKE_SLOTS: '1', SMOKE_SLOT_POLL: '100'},
+    f = path.join(dir, 'slot0'),
+    take = ms =>
+      withEnv(env, async () => {
+        const os2 = require('os'),
+          la = os2.loadavg;
+        os2.loadavg = () => [0, 0, 0];
+        try {
+          return await fresh()('t', {timeout: ms});
+        } finally {
+          os2.loadavg = la;
+        }
+      });
+  try {
+    for (const rec of ['', String(process.pid)]) {
+      fs.writeFileSync(f, rec);
+      assert.strictEqual(await take(1500), null, `a recent incomplete record ${JSON.stringify(rec)} is not taken back`);
+      assert.strictEqual(fs.readFileSync(f, 'utf8'), rec);
+    }
+    const old = new Date(Date.now() - 5 * 60e3);
+    fs.utimesSync(f, old, old);
+    const free = await take(3000);
+    assert.ok(free, 'an incomplete record left for minutes is taken back');
+    free();
+    if (fs.existsSync('/proc/self/stat')) {
+      fs.writeFileSync(f, `${process.pid} 1 someone 2026-01-01T00:00:00Z old\n`); // this PID, another start time
+      const free2 = await take(3000);
+      assert.ok(free2, 'a record whose PID was reused is taken back');
+      free2();
+    }
+    assert.deepStrictEqual(fs.readdirSync(dir), []);
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+// Codex review #450: six processes racing for one slot never hold it two at a time.
+test('slot: one holder at a time when six processes race for the only slot', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-test-')),
+    log = path.join(dir, 'log'),
+    env = {...process.env, CI: '', SMOKE_SLOT_DIR: path.join(dir, 's'), SMOKE_SLOTS: '1', SMOKE_SLOT_POLL: '20'};
+  try {
+    const code = `require('os').loadavg = () => [0, 0, 0];
+      const fs = require('fs');
+      require(${JSON.stringify(require.resolve('./slot.js'))})('race').then(async () => {
+        fs.appendFileSync(${JSON.stringify(log)}, '+\\n');
+        await new Promise(r => setTimeout(r, 100));
+        fs.appendFileSync(${JSON.stringify(log)}, '-\\n');
+      });`;
+    await Promise.all(
+      Array.from({length: 6}, () => new Promise(r => spawn(process.execPath, ['-e', code], {env, stdio: 'ignore'}).on('exit', r)))
+    );
+    let now = 0,
+      most = 0;
+    const ev = fs.readFileSync(log, 'utf8').trim().split('\n');
+    ev.forEach(e => (most = Math.max(most, (now += e === '+' ? 1 : -1))));
+    assert.deepStrictEqual([ev.length, most], [12, 1]);
+    assert.deepStrictEqual(fs.readdirSync(path.join(dir, 's')), [], 'every slot given back, no file left over');
   } finally {
     fs.rmSync(dir, {recursive: true, force: true});
   }
