@@ -3163,3 +3163,54 @@ td.cov-c.cov-over {
   border-radius: 4px;
   text-align: center;
 }
+
+/* Journey > When they played: one row a day, one cell an hour (admin-journey.js). */
+.adm-hours {
+  display: grid;
+  gap: 2px;
+  font-size: 0.68rem;
+}
+.adm-hrow {
+  display: grid;
+  grid-template-columns: 3.6em repeat(24, minmax(0, 1fr)) 2.4em;
+  gap: 2px;
+  align-items: center;
+}
+.adm-hrow > span {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.adm-hrow > b {
+  text-align: right;
+  font-weight: 600;
+}
+.adm-hrow > i {
+  display: block;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--line);
+  opacity: 0.45;
+}
+.adm-hrow > i.on {
+  opacity: 1;
+}
+.adm-hrow.off > span {
+  opacity: 0.6;
+}
+.adm-hhead > em {
+  font-style: normal;
+  color: var(--muted);
+  overflow: visible;
+  white-space: nowrap;
+}
+.adm-hkey {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.adm-hkey > i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
