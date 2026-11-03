@@ -2559,11 +2559,32 @@ td i {
   display: none;
 }
 .lb-in {
+  position: relative;
   max-width: min(1600px, 100%);
   max-height: 100%;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+/* An optional layer over the whole photo (app.js zoom opts.over: a Coral basics step's labels), placed on the photo's
+   box by app.js; clicks go through to the photo (actual size). */
+.lb-over {
+  position: absolute;
+  pointer-events: none;
+}
+.lb-over[hidden] {
+  display: none;
+}
+/* its drawing (rings, pointers) fills the layer like the labels do (Codex on PR #424: unsized, it drifted off the photo) */
+.lb-over > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.lb-nav button[aria-pressed='false'] {
+  opacity: 0.7;
+  text-decoration: line-through;
 }
 .lb-in img {
   max-width: 100%;
