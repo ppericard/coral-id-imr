@@ -71,8 +71,12 @@
         out = {...r};
       out.ok = Math.max(0, (r.ok || 0) + (l.ok || 0) - (b.ok || 0));
       out.ko = Math.max(0, (r.ko || 0) + (l.ko || 0) - (b.ko || 0));
-      // A record recalculated here for the photo memory (pm, memRecalc) counts as this device's model too.
-      const mine = (l.ok || 0) + (l.ko || 0) !== (b.ok || 0) + (b.ko || 0) || (l.h || '') !== (b.h || '') || (l.pm || 0) !== (b.pm || 0);
+      // A record recalculated here for the photo memory (pm, memRecalc) with no answer of its own counts as this device's
+      // model only while the other side has not moved since B: answers saved from another device win over a mere
+      // recalculation (Codex review #387: an old copy reopened must not undo a passed exam), and the recalculation is
+      // applied to them after the merge (model.js memRecalcAll).
+      const moved = x => (x.ok || 0) + (x.ko || 0) !== (b.ok || 0) + (b.ko || 0) || (x.h || '') !== (b.h || ''),
+        mine = moved(l) || ((l.pm || 0) !== (b.pm || 0) && !moved(r));
       out.streak = mine ? l.streak || 0 : r.streak || 0;
       if (mine && l.h) out.h = l.h;
       if (mine)

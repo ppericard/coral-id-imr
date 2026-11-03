@@ -696,6 +696,11 @@ test('mergeProgress and mergeUsers: the photo memory mark travels with the progr
   const m2 = mergeProgress(base, JSON.parse(JSON.stringify(base)), here);
   assert.deepStrictEqual([m2.A.pg, m2.A.pm], [here.A.pg, 1]);
   assert.strictEqual(memRecalc(m2.A, mem), false);
+  // Recalculated here only, while another device played on (Codex review #387): its model wins, a passed exam
+  // included, and the recalculation is left to memRecalc, which applies to it after the merge.
+  const far = {A: {...JSON.parse(JSON.stringify(base.A)), ok: 30, h: '1111111111', pg: 0.95, mx: 1}},
+    m3 = mergeProgress(base, here, far);
+  assert.deepStrictEqual([m3.A.ok, m3.A.pg, m3.A.mx, m3.A.pm], [30, 0.95, 1, undefined]);
   // Two accounts merged in the admin: the mark comes from the account the progress comes from.
   const U = (P, extra = {}) => ({'imr-coral-progress': JSON.stringify(P), ...extra});
   const big = {A: {ok: 40, ko: 4, pg: 0.8}},
