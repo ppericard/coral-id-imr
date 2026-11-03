@@ -1,4 +1,22 @@
 // Memory pairs: match each colony photo with the corallites of the same genus. Links the two scales in memory.
+// The np genera of a game: those the player has met (met: model.js introduced, a card or an answer) first, genera not met
+// yet only to fill the grid when too few are met (beginner review 2026-11-03: a beginner got names never seen). Look-alike
+// set: a seed and the genera that look like those already in, met ones first too. Pure (tests/pairs.test.js).
+function memoryGenera(names, np, look, met) {
+  const order = [...shuffle(names.filter(met)), ...shuffle(names.filter(n => !met(n)))];
+  if (!look) return order.slice(0, np);
+  const gens = [order[0]],
+    like = n => lookAlikes(n).some(b => gens.includes(b)) || gens.some(b => lookAlikes(b).includes(n));
+  // Met look-alikes, then any genus met, then look-alikes not met, then the rest.
+  for (const keep of [n => met(n) && like(n), met, like, () => true])
+    for (let more = true; more;) {
+      more = false; // again while one comes in: a look-alike of the genus just added may come earlier in the order
+      order.forEach(n => {
+        if (gens.length < np && !gens.includes(n) && keep(n)) more = !!gens.push(n);
+      });
+    }
+  return gens;
+}
 LAB.add({
   id: 'pairs',
   icon: '▚',
@@ -13,18 +31,7 @@ LAB.add({
     const setup = () => {
       const [ga, gb] = LEVELS[level],
         np = (ga * gb) / 2;
-      let gens;
-      if (mode === 'look') {
-        const seed = pick(labNames());
-        gens = [seed, ...lookAlikes(seed)];
-        shuffle(labNames()).forEach(n => {
-          if (gens.length < np && !gens.includes(n) && lookAlikes(n).some(b => gens.includes(b))) gens.push(n);
-        });
-        shuffle(labNames()).forEach(n => {
-          if (gens.length < np && !gens.includes(n)) gens.push(n);
-        });
-        gens = gens.slice(0, np);
-      } else gens = shuffle(labNames()).slice(0, np);
+      const gens = memoryGenera(labNames(), np, mode === 'look', typeof introduced === 'function' ? introduced : () => true);
       const cards = shuffle(
         gens.flatMap(n => [
           {n, v: 'wide'},
