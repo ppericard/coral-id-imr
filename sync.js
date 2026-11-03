@@ -49,7 +49,7 @@ function syncSummary() {
   };
 }
 const syncGet = (a = SYNC) =>
-  fetch(`${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}`).then(r => r.json());
+  sheetFetch(`${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}`).then(r => r.json());
 // Two devices on one account: three-way merge against SYNC.base, the progress as last sent or received.
 // Answers taken on this device since then are added on top of the saved record, so neither side's answers
 // are lost. A reset (imr-coral-reset, a time) wins over older progress.
@@ -159,7 +159,7 @@ function syncOnce(tries = 0) {
       store.set('imr-coral-sync', me);
       const pd = (progData()['imr-coral-progress'] || '').length;
       if (pd > 40000) console.warn(`Progress is ${pd} characters (sheet script v6 stores any size; v5 stops at 50,000).`);
-      return fetch(SYNC_URL, {
+      return sheetFetch(SYNC_URL, {
         method: 'POST',
         body: JSON.stringify({
           name: me.name,
@@ -816,7 +816,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       const name = f.n.value.trim(),
         pin = f.p.value.trim();
       msg('Connecting…');
-      fetch(`${SYNC_URL}?name=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}&av=${appVer()}`)
+      sheetFetch(`${SYNC_URL}?name=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}&av=${appVer()}`)
         .then(r => r.json())
         .then(j => {
           if (!j.ok)
@@ -834,7 +834,13 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
           if (j.found) return isYou(name, pin, j);
           enter(name, pin, j);
         })
-        .catch(() => msg('Could not connect. Check your connection: your progress stays on this phone meanwhile.'));
+        .catch(e =>
+          msg(
+            e && e.local
+              ? 'This is a local copy of the app: signing in is off here, so nothing reaches the sheet.'
+              : 'Could not connect. Check your connection: your progress stays on this phone meanwhile.'
+          )
+        );
     };
   };
   // The achievements' record (progress.js) must be in before an account is merged (Codex review #361: a sign-in from the

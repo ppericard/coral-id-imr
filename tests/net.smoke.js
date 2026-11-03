@@ -385,8 +385,10 @@ const server = http.createServer((req, res) => {
       const f = window.fetch,
         hits = [];
       // Only writes count (POST), as in check 11: the sheet's reads (leaderboard, achievements) may come at any time.
+      // A sign-in (GET with a name) counts too: it opens an account (Pierre, 2026-11-03: signed-in traffic is guarded).
       window.fetch = (u, o) =>
-        /script\.google/.test(String((u && u.url) || u)) && String((o && o.method) || 'GET').toUpperCase() === 'POST'
+        /script\.google/.test(String((u && u.url) || u)) &&
+        (String((o && o.method) || 'GET').toUpperCase() === 'POST' || /[?&]name=/.test(String(u)))
           ? (hits.push(String(u)), Promise.reject(new Error('x')))
           : f(u, o);
       localStorage.setItem('imr-anonq', JSON.stringify([{id: 'a1', t: Date.now(), g: 'Acropora', a: 'Porites', ok: 0}]));
@@ -557,9 +559,13 @@ const server = http.createServer((req, res) => {
     await ctx.addInitScript(() => localStorage.setItem('imr-tour', '1'));
     const p = await ctx.newPage();
     await p.goto(`http://coral.test:${server.address().port}/#home`);
-    await p.waitForFunction(() => window.APP_READY && typeof sendAnon === 'function' && typeof sendEvents === 'function', null, {
-      timeout: 60000
-    });
+    await p.waitForFunction(
+      () => window.APP_READY && typeof sendAnon === 'function' && typeof sendEvents === 'function' && typeof syncPush === 'function',
+      null,
+      {
+        timeout: 60000
+      }
+    );
     const r = await p.evaluate(async () => {
       const f = window.fetch,
         hits = [];
@@ -574,6 +580,11 @@ const server = http.createServer((req, res) => {
       sendAnon();
       sendReports();
       sendEvents();
+      // Signed in (an account saved on this device): neither its save nor its load reaches the sheet.
+      SYNC = {name: 'Local test', pin: '1234', dirty: true, log: [{id: 'w2', t: Date.now(), g: 'Acropora', a: 'Acropora', ok: 1}]};
+      await Promise.resolve(syncPush()).catch(() => {});
+      await Promise.resolve(syncGet()).catch(() => {});
+      SYNC = null;
       await new Promise(ok => setTimeout(ok, 300));
       window.fetch = f;
       return {local: LOCAL, hits};
