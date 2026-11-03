@@ -2514,6 +2514,21 @@ td.cov-c .cov-off {
 .v-cand {
   background: var(--v-cand) !important;
 }
+/* Photo stats › Overview (renderPstats): the genera-by-photos bars lower than the other bar charts, the Fewest and Most
+   tables one under the other, the middle half after a median quiet and inline. */
+.adm-cols.adm-povh {
+  height: 90px;
+  margin-top: 10px;
+}
+.adm-pov .adm-tbl th.n {
+  text-align: right;
+}
+.adm-pov .adm-tbl + .adm-tbl {
+  margin-top: 8px;
+}
+.adm-pov .adm-tbl .note {
+  font-size: inherit;
+}
 .adm-gstrips > div {
   display: grid;
   grid-template-columns: 100px 44px minmax(0, 1fr);
