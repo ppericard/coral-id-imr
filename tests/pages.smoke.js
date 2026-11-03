@@ -6,6 +6,7 @@ const http = require('http'),
   path = require('path'),
   {execFileSync} = require('child_process');
 const {chromium} = require('playwright');
+const slot = require('./slot.js');
 const ROOT = path.join(__dirname, '..');
 const TYPES = {
   '.html': 'text/html',
@@ -2424,20 +2425,21 @@ async function basicsTeach(b, base) {
   return fails;
 }
 
+// The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|rest one of
+// the two halves CI runs on separate runners, SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
+// main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Finder, the new player at 390 and
+// admin.html?readonly; overlays: cards, prompts and the one-tap question (run inside main's 390 pass, as always); start: the
+// first-launch question, its fallback cards and the open-all offer (startSmoke).
+const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'start', 'signin', 'replay'],
+  WIDTHS = [390, 1280];
+
 (async () => {
+  const run = slot.parts(PARTS, {main: ['main', 'overlays'], rest: ['basics', 'credits', 'visit', 'tips', 'start', 'signin', 'replay']}),
+    ws = slot.widths(WIDTHS);
+  await slot('pages.smoke');
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`,
     fails = [];
-  // PAGES_ONLY=replay: only the full replay check (replayAdoptCheck), while working on it.
-  if (process.env.PAGES_ONLY === 'replay') {
-    const f = await replayAdoptCheck(base);
-    server.close();
-    if (f.length) {
-      console.error(f.join('\n'));
-      process.exit(1);
-    }
-    return console.log('Replay adoption OK.');
-  }
   const b = await chromium.launch();
   // The first-encounter card (quiz.js introShow) would cover the quiz in the checks that are not about it: every slate
   // genus (Millepora too, app.js BENTHIC) starts as met on a card, except in a context opened with {intro: true}; the
@@ -2455,20 +2457,7 @@ async function basicsTeach(b, base) {
       }, INTROS);
     return c;
   };
-  // PAGES_ONLY=tips or visit: only the tips check (tipsCheck) or the pages-opened summary check (pagesVisit), while
-  // working on it.
-  const only = {tips: [tipsCheck, 'Tips OK.'], visit: [pagesVisit, 'Pages summary OK.']}[process.env.PAGES_ONLY];
-  if (only) {
-    const f = await only[0](b, base);
-    await b.close();
-    server.close();
-    if (f.length) {
-      console.error(f.join('\n'));
-      process.exit(1);
-    }
-    return console.log(only[1]);
-  }
-  for (const w of [390, 1280]) {
+  for (const w of run.has('main') ? ws : []) {
     const ctx = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
     // Only this site: photos from iNaturalist and the Google sync are cut off, so the test never depends on them.
     await ctx.route(
@@ -3021,7 +3010,7 @@ async function basicsTeach(b, base) {
         if (z.hint || z.key !== '"zoomed"') fails.push(`enlarge hint after a photo was enlarged: ${JSON.stringify(z)}`);
         await c2.close();
       }
-      for (const f of await overlays(b, base)) fails.push(f);
+      if (run.has('overlays')) for (const f of await overlays(b, base)) fails.push(f);
     }
     errs.length = 0;
     await p.goto(base + 'admin.html?readonly');
@@ -3058,22 +3047,27 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
     }
     await ctx.close();
   }
-  for (const f of await basicsFit(b, base)) fails.push(f);
-  for (const f of await credits(b, base)) fails.push(f);
-  for (const f of await pagesVisit(b, base)) fails.push(f);
-  for (const f of await basicsTeach(b, base)) fails.push(f);
-  for (const f of await tipsCheck(b, base)) fails.push(f);
-  for (const f of await startSmoke(b, base)) fails.push(f);
+  // Without the main loop's 390 px pass (SMOKE_ONLY=overlays, or SMOKE_W=1280), the overlays still run when asked for.
+  if (run.has('overlays') && !(run.has('main') && ws.includes(390))) for (const f of await overlays(b, base)) fails.push(f);
+  if (run.has('basics')) for (const f of await basicsFit(b, base)) fails.push(f);
+  if (run.has('credits')) for (const f of await credits(b, base)) fails.push(f);
+  if (run.has('visit')) for (const f of await pagesVisit(b, base)) fails.push(f);
+  if (run.has('basics')) for (const f of await basicsTeach(b, base)) fails.push(f);
+  if (run.has('tips')) for (const f of await tipsCheck(b, base)) fails.push(f);
+  if (run.has('start')) for (const f of await startSmoke(b, base)) fails.push(f);
   await b.close();
-  for (const f of await signin(base)) fails.push(f);
-  for (const f of await replayAdoptCheck(base)) fails.push(f);
+  if (run.has('signin')) for (const f of await signin(base)) fails.push(f);
+  if (run.has('replay')) for (const f of await replayAdoptCheck(base)) fails.push(f);
   server.close();
   if (fails.length) {
     console.error('Page errors:\n' + fails.join('\n'));
     process.exit(1);
   }
+  const part = slot.partial(PARTS, run, WIDTHS, run.has('main') ? ws : WIDTHS);
   console.log(
-    `Pages OK: ${ROUTES.length} routes + admin at 390 and 1280 px, sign-in to an existing account, the sheet's full replay adopted.`
+    part
+      ? 'Pages OK' + part
+      : `Pages OK: ${ROUTES.length} routes + admin at 390 and 1280 px, sign-in to an existing account, the sheet's full replay adopted.`
   );
 })().catch(e => {
   console.error(e);

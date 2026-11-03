@@ -227,6 +227,7 @@ const s1 = ms => (ms / 1000).toFixed(1) + ' s';
 const ms = x => Math.round(x) + ' ms';
 
 (async () => {
+  await require('../tests/slot.js')('tools/perf.js'); // one Playwright run per 2 cores on this machine (tests/slot.js)
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`;
   const only = process.argv[2];
