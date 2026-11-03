@@ -208,16 +208,23 @@ const upsize = (root = $v) =>
     const r = i.getBoundingClientRect();
     upsizeImg(i, Math.max(r.width, r.height));
   });
-// A photo that fails on R2 (core.js PHOTO_BASE) takes the same file from the site at once (src, srcset, its 480 px
-// fallback and the game backdrop), before the retries below, and the next photos of this page come from the site too
+// A photo that fails on R2 (core.js PHOTO_BASE) is asked from R2 once more (core.js photoRetry, PHOTO_RETRY ms later: a
+// passing error), then takes the same file from the site (src, srcset, its 480 px fallback and the game backdrop),
+// before the retries below, and the next photos of this page come from the site too
 // (R2 false): R2 out of reach (a network that blocks it, an outage) costs one failed request, not a missing photo. Under
 // the service worker this is rare: it falls back to the site by itself (sw.js photo). Before every other error listener.
 const photoFail = e => {
   const i = e.target;
-  if (!(i instanceof HTMLImageElement) || !photoToSite(i)) return;
+  if (!(i instanceof HTMLImageElement)) return;
+  // R2 once more first (core.js photoRetry: a passing error), then the site.
+  if (photoRetry(i, toSite)) return e.stopImmediatePropagation();
+  toSite(i) && e.stopImmediatePropagation();
+};
+const toSite = i => {
+  if (!photoToSite(i)) return false;
   R2 = false;
   photoToSite(i.closest('figure'));
-  e.stopImmediatePropagation();
+  return true;
 };
 document.addEventListener('error', photoFail, true);
 // Unstable connection (Pierre, 2026-11-01): a photo that fails is tried again twice (after 1 s, then 4 s); a game photo

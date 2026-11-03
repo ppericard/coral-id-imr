@@ -719,11 +719,16 @@ const pump = () => {
       // Once R2 has failed, a URL queued before is asked from the site straight away (Codex review #392).
       const u = R2 ? x.urls.shift() : photoLocal(x.urls.shift());
       i.onload = () => (pfLive--, pump());
-      // A preload is no element of the page (app.js photoFail): failed on R2, its file is asked from the site, and so
-      // are the next photos.
+      // A preload is no element of the page (app.js photoFail): failed on R2, it is asked from R2 once more after
+      // PHOTO_RETRY ms (core.js photoRetry), then its file is asked from the site, and so are the next photos.
       i.onerror = () => {
         pfLive--;
         if (photoLocal(u) !== u) {
+          x.r2try = x.r2try || new Set();
+          if (!x.r2try.has(u)) {
+            x.r2try.add(u);
+            return setTimeout(() => (x.urls.unshift(u), PF.includes(x) || PF.push(x), pump()), PHOTO_RETRY);
+          }
           R2 = false;
           x.urls.unshift(photoLocal(u));
         }

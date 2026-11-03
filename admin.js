@@ -75,9 +75,10 @@ const img = (p, s) =>
 document.addEventListener(
   'error',
   e => {
-    if (!(e.target instanceof HTMLImageElement) || !photoToSite(e.target)) return;
-    R2 = false;
-    e.stopImmediatePropagation();
+    if (!(e.target instanceof HTMLImageElement)) return;
+    const toSite = i => photoToSite(i) && ((R2 = false), true);
+    // R2 once more first (core.js photoRetry: a passing error), then the site.
+    if (photoRetry(e.target, toSite) || toSite(e.target)) e.stopImmediatePropagation();
   },
   true
 );

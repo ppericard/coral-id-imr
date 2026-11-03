@@ -954,6 +954,31 @@
     return hit;
   }
 
+  // A photo that fails on R2 is asked from R2 once more after PHOTO_RETRY ms before any other source (Pierre,
+  // 2026-11-03: in a 50-player load test 2 requests in 2000 failed, passing network errors a second try gets). An
+  // element whose R2 photo fails for the first time: true, and a probe asks R2 again; if it loads, the element's src
+  // and srcset are set again (the file now comes from the browser's cache), else fallback(el) runs (photoToSite).
+  // The element keeps its attributes meanwhile. False otherwise: the caller falls back at once.
+  const PHOTO_RETRY = 800;
+  function photoRetry(el, fallback) {
+    if (!PHOTO_BASE || !el || !el.getAttribute || !el.dataset || el.dataset.r2try) return false;
+    const src = el.getAttribute('src') || '',
+      set = el.getAttribute('srcset') || '',
+      u = el.currentSrc || src;
+    if (!u.includes(PHOTO_BASE)) return false;
+    el.dataset.r2try = '1';
+    setTimeout(() => {
+      const t = new Image();
+      t.onload = () => {
+        if (set) el.setAttribute('srcset', set);
+        if (src) el.setAttribute('src', src);
+      };
+      t.onerror = () => fallback(el);
+      t.src = u;
+    }, PHOTO_RETRY);
+    return true;
+  }
+
   const CORE = {
     BENTHIC,
     BONUS,
@@ -962,6 +987,8 @@
     PHOTO_BASE,
     photoLocal,
     photoToSite,
+    photoRetry,
+    PHOTO_RETRY,
     PROG,
     pgStep,
     pgOf,

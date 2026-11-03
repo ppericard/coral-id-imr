@@ -6,7 +6,8 @@ const PH = 'imr-photos-v1',
   PH_MAX = 2500;
 // The R2 bucket the pages read the photos from (core.js PHOTO_BASE, where the switch is; this only lets the worker cache
 // them and fall back to the site): same paths as the site's img/.
-const R2 = 'https://pub-934250f83b884a4f890497f2027ce251.r2.dev',
+const PHOTO_RETRY = 800, // as core.js PHOTO_RETRY
+  R2 = 'https://pub-934250f83b884a4f890497f2027ce251.r2.dev',
   SITE = new URL('./', location).href;
 const SHELL = [
   './',
@@ -138,14 +139,17 @@ const photo = async (req, u) => {
     return res;
   };
   if (!r2) return fetch(req).then(keep);
-  try {
-    const res = await fetch(u.href, {mode: 'cors', credentials: 'omit'});
-    if (res.ok) return keep(res);
-    // A file missing on R2 (404: not mirrored yet) is that file's matter; any other error is R2's.
-    if (res.status !== 404) r2Down();
-  } catch (err) {
-    r2Down();
+  // Asked twice, PHOTO_RETRY ms apart (core.js photoRetry: a passing error gets a second try on R2), before the site.
+  for (let k = 0; k < 2; k++) {
+    try {
+      const res = await fetch(u.href, {mode: 'cors', credentials: 'omit'});
+      if (res.ok) return keep(res);
+      // A file missing on R2 (404: not mirrored yet) is that file's matter, not retried; any other error is R2's.
+      if (res.status === 404) return fetch(twin).then(keep);
+    } catch (err) {}
+    if (!k) await new Promise(ok => setTimeout(ok, PHOTO_RETRY));
   }
+  r2Down();
   return fetch(twin).then(keep);
 };
 // R2 failed (Codex review #392): the pages are told, so their next photos are asked from the site straight away (app.js

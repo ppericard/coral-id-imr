@@ -624,6 +624,31 @@ const server = http.createServer((req, res) => {
       if (errs.length) fails.push('R2 cut off: ' + errs.slice(0, 3).join(' | '));
       await ctx.close();
     }
+    // b2. R2 failing once per file (a passing error, Pierre 2026-11-03): each photo is asked from R2 a second time and
+    // shows from R2; the page keeps reading R2 (core.js photoRetry, quiz.js preloads).
+    {
+      const {ctx, p, errs} = await ctxOf();
+      const once = new Set();
+      await ctx.route(
+        u => u.href.startsWith(R2),
+        r => {
+          const url = r.request().url();
+          if (!once.has(url)) return (once.add(url), r.abort());
+          const f = path.join(ROOT, decodeURIComponent(new URL(url).pathname));
+          return fs.existsSync(f)
+            ? r.fulfill({status: 200, contentType: 'image/webp', headers: {'Access-Control-Allow-Origin': '*'}, body: fs.readFileSync(f)})
+            : r.fulfill({status: 404});
+        }
+      );
+      await p.goto(base + '#quiz');
+      await ready(p);
+      const s = ((await shown(p)) || []).filter(u => !/inaturalist/.test(u));
+      if (!s.length || !s.every(u => u.startsWith(R2 + 'img/')) || (await p.$('#qfail')))
+        fails.push(`R2 failing once: the photos did not come from R2 on the second try (${s})`);
+      if (!(await p.evaluate(() => R2))) fails.push('R2 failing once: the page gave R2 up after one passing error');
+      if (errs.length) fails.push('R2 failing once: ' + errs.slice(0, 3).join(' | '));
+      await ctx.close();
+    }
     // c. Under the service worker (a bare page, as in 6).
     {
       const f = fs.readdirSync(path.join(ROOT, 'img')).find(x => x.endsWith('-s.webp')),
