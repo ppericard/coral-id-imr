@@ -247,6 +247,9 @@ const server = http.createServer((req, res) => {
       // Home band thumbnails (~60 px on a phone): the 240 px files (Pierre: no big files for how they are shown).
       // A 480 px file the quiz already fetched (its next questions' photos) may be shown instead: the browser picks a
       // srcset file it already has, at no cost.
+      // The quiz's preloads first: with R2 cut off (as here) they reach the site only after their R2 retry (core.js
+      // PHOTO_RETRY), and a file they bring in later would be taken for one Home asked for.
+      await p.evaluate(() => Promise.race([prefetched(), new Promise(ok => setTimeout(ok, 15000))]));
       const t0 = await p.evaluate(() => ((location.hash = 'home'), performance.now()));
       await p.waitForTimeout(1500);
       const h = await p.evaluate(
