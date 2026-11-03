@@ -141,9 +141,20 @@ const photo = async (req, u) => {
   try {
     const res = await fetch(u.href, {mode: 'cors', credentials: 'omit'});
     if (res.ok) return keep(res);
-  } catch (err) {}
+    // A file missing on R2 (404: not mirrored yet) is that file's matter; any other error is R2's.
+    if (res.status !== 404) r2Down();
+  } catch (err) {
+    r2Down();
+  }
   return fetch(twin).then(keep);
 };
+// R2 failed (Codex review #392): the pages are told, so their next photos are asked from the site straight away (app.js
+// R2 false, as when an <img> fails without the worker) instead of trying R2 first, file after file. A reload tries R2 again.
+const r2Down = () =>
+  self.clients
+    .matchAll({type: 'window'})
+    .then(cs => cs.forEach(c => c.postMessage({t: 'imr-r2-down'})))
+    .catch(() => {});
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET') return;

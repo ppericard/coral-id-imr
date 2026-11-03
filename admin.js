@@ -209,6 +209,10 @@ if ('serviceWorker' in navigator) {
     if (had) UPDATED = true;
     had = true;
   });
+  // The worker could not get a photo from R2 (sw.js r2Down): the next photos come from the site, as app.js does.
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data && e.data.t === 'imr-r2-down') R2 = false;
+  });
 }
 // The draft as this tab last wrote it to, or took it from, localStorage: the common base when another admin tab writes its own.
 // Two admin tabs in one browser share the stored draft (code re-review 2026-11-01, M4). Every write is tagged with this

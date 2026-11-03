@@ -1550,6 +1550,8 @@ const swCheck = () => {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', e => {
     if (e.data && e.data.t === 'imr-ver?' && e.ports && e.ports[0]) e.ports[0].postMessage({v: appVer()});
+    // The worker could not get a photo from R2 (sw.js r2Down): this page's next photos come from the site (photoFail).
+    if (e.data && e.data.t === 'imr-r2-down') R2 = false;
   });
   navigator.serviceWorker.startMessages();
 }
