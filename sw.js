@@ -1,6 +1,6 @@
 // Offline cache: app shell first, then photos as they are viewed.
 // The shell cache is reefid-shell-vN: on activation every other shell cache goes (REPLACES), never the photo cache.
-const V = 'reefid-shell-v316';
+const V = 'reefid-shell-v317';
 // Shell caches this worker replaces: its own name, and the one from before the rename to IMR Reef ID (2026-11-03).
 const REPLACES = ['reefid-shell-', 'imr-coral-id-']; // rename-app: keep
 // The question "your version?" to the open pages (app.js), under its name before the rename too.
@@ -20,9 +20,9 @@ const PHOTO_RETRY = 800, // as core.js PHOTO_RETRY
 const SHELL = [
   './',
   'index.html',
-  'app.css?v=133',
+  'app.css?v=134',
   'core.js?v=44',
-  'app.js?v=200',
+  'app.js?v=201',
   'sync.js?v=27',
   'progress.js?v=20',
   'model.js?v=35',
@@ -42,11 +42,11 @@ const SHELL = [
   'fonts/barlow-condensed-700-normal.woff2',
   'manifest.webmanifest',
   'curation.json',
-  'proto/lab.js?v=79',
-  'proto/lab.css?v=56',
+  'proto/lab.js?v=80',
+  'proto/lab.css?v=57',
   'home-art.js?v=4',
-  'home.js?v=33',
-  'home.css?v=24',
+  'home.js?v=34',
+  'home.css?v=25',
   'tour.js?v=19',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...[
@@ -65,7 +65,7 @@ const SHELL = [
     'pairs',
     'gallery',
     'cards'
-  ].map(f => `proto/${f}.js?v=78`)
+  ].map(f => `proto/${f}.js?v=79`)
 ];
 const get = async (c, u, n = 3) => {
   for (let i = 1; ; i++) {

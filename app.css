@@ -908,7 +908,6 @@ header {
 #boardset,
 #bonset,
 [data-optin],
-#subjset,
 #theme {
   display: inline-flex;
   padding: 3px;
@@ -925,7 +924,6 @@ header {
 #boardset button,
 #bonset button,
 [data-optin] button,
-#subjset button,
 #theme button,
 #size button {
   background: none;
@@ -944,7 +942,6 @@ header {
 #boardset button[aria-pressed='true'],
 #bonset button[aria-pressed='true'],
 [data-optin] button[aria-pressed='true'],
-#subjset button[aria-pressed='true'],
 #theme button[aria-pressed='true'],
 #size button[aria-pressed='true'] {
   background: var(--surface);
@@ -6593,13 +6590,21 @@ html.touring .unlock {
 .mpl .lvi {
   margin-right: 3px;
 }
-/* Subject (core.js SUBJECTS): the header button shows the current subject's icon and switches to the next one. */
-:root:not([data-subject='fish']) .subjb .sj-fish,
-:root[data-subject='fish'] .subjb .sj-coral {
-  display: none;
+/* A subject in beta on screen (the admin's only, app.js showSubj): its emoji on the links to Tools, where it is switched
+   back to the corals. Outside the link's box: the header never changes size. */
+.labgo[data-badge],
+.sections a[data-badge] {
+  position: relative;
 }
-.subjb svg {
-  display: block;
+.labgo[data-badge]::after,
+.sections a[data-badge]::after {
+  content: attr(data-badge);
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  font-size: var(--fs-xs);
+  line-height: 1;
+  pointer-events: none;
 }
 /* A fish entry's family under its name on its first-meeting card. */
 .ulcard .ulfam {
@@ -6619,18 +6624,11 @@ html.touring .unlock {
   font-weight: 600;
   vertical-align: middle;
 }
-/* Phones: the header has no room for the subject button (rule 18: the header never changes size); the subject is on
-   Home and in ⚙ there. */
-@media (max-width: 599.98px) {
-  .hdr-tools .subjb {
-    display: none;
-  }
-}
 /* Choices named by a common name (fish entries, the winks' labels): upright, not the genera's italics. */
 .ans button.plain {
   font-style: normal;
 }
-/* A subject in beta (core.js SUBJECTS beta): a small tag on its buttons (Home, ⚙ Subject). */
+/* A subject in beta (core.js SUBJECTS beta): a small tag on its name (the Tools hub's subject switch, admin only). */
 small.beta {
   display: inline-block;
   margin-left: 4px;
