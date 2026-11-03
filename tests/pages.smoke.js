@@ -1532,7 +1532,9 @@ async function startSmoke(b, base) {
           basics: !!d.querySelector('.ulbtns [data-basics]'),
           keep: (d.querySelector('[data-keep]') || {}).textContent,
           equal: bs.length === 2 && getComputedStyle(bs[0]).backgroundColor === getComputedStyle(bs[1]).backgroundColor,
-          judged: /beginner|below what|you are new|level|gently/i.test(d.textContent)
+          judged: /beginner|below what|you are new|level|gently/i.test(d.textContent),
+          // No count on the card (Pierre, 2026-11-04); "5 minutes" is the length of Coral basics.
+          digits: /\d/.test(d.textContent.replace(/5 minutes/g, ''))
         }
       );
     });
@@ -1544,13 +1546,25 @@ async function startSmoke(b, base) {
       !fb.basics ||
       fb.keep !== 'No thanks, I know the basics' ||
       !fb.equal ||
-      fb.judged
+      fb.judged ||
+      fb.digits
     )
       fails.push(`fallback card: ${JSON.stringify({due, fb})}`);
     if (fb) await p.click('.unlock.startfb [data-keep]');
     const again = await p.evaluate(() => (quizPhoto(), [startDue(), !!document.querySelector('.unlock.startfb'), startOf().c]));
     if (again[0] || again[1]) fails.push(`fallback card shown twice: ${JSON.stringify(again)}`);
     if (again[2] !== 'know') fails.push(`"No thanks" changed the answer: ${again[2]}`);
+    // The open-all offer (a big step) and the "higher" card: no number either (they go stale, or miscount what is open).
+    const nums = await p.evaluate(() =>
+      [() => introOfferShow(), () => startFbShow('hi')].map(f => {
+        document.querySelectorAll('.unlock').forEach(x => x.ulClose());
+        f();
+        const d = document.querySelector('.unlock');
+        return d ? d.textContent.match(/\d+/g) : 'no card';
+      })
+    );
+    if (nums.some(Boolean)) fails.push(`numbers on the open-all or "higher" card: ${JSON.stringify(nums)}`);
+    await p.evaluate(() => document.querySelectorAll('.unlock').forEach(x => x.ulClose()));
     await c.close();
   }
   // 5. Coral basics in Learn: the first Learn tab, the "0" block of Genera, out of the Lab list with a link kept there;

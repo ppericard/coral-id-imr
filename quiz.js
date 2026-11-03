@@ -1309,7 +1309,7 @@ function startFbShow(dir) {
       : {
           kind: 'tip',
           cls: 'startfb',
-          kick: `${(o.w || []).length} answers in`,
+          kick: 'Your start',
           title: 'You know more than you said',
           label: 'Your start',
           body: `<p>Your answers beat what the game expects from someone who ${said}. Move faster? Your answers are kept.</p>${startOptsHtml(null, next)}`,
@@ -1330,12 +1330,10 @@ function startFbShow(dir) {
 // The offer to open all genera (model.js introOffer), over the question, once. A big step, and shown as one (Pierre,
 // 2026-11-04: a beginner who misclicked their level must see it is risky, an expert can confirm calmly): the "step"
 // kind (the warm --warn hue), what changes in three short lines, "Not now" the safe default on top (Escape and Enter),
-// "Open all N genera" under it, outlined in the warn hue. Leaving the page closes it unanswered (route): the offer can
+// "Open all genera" under it, outlined in the warn hue; no number. Leaving the page closes it unanswered (route): the offer can
 // come back.
 function introOfferShow() {
   const a = answersSoFar(),
-    n = slateGenera().length,
-    left = introLeft().length,
     pick = open => {
       store.set(INTRO.OFFER.KEY, {at: a, open: 0, t: Date.now()});
       if (open) {
@@ -1344,14 +1342,15 @@ function introOfferShow() {
       }
       save();
     };
+  // No number on this card (Pierre, 2026-11-04): counts go stale or miscount what the player already has open.
   cardShow({
     kind: 'step',
     cls: 'intro',
-    kick: `${a} answers in · a big step`,
-    title: `Open all ${n} ${SUBJ.many} at once?`,
-    body: `<p>You are doing well. Opening them all is the hard way:</p><ul class="ulchg"><li>${left} new ${SUBJ.many} in the questions at once, without a card for each</li><li>Harder questions sooner: look-alikes side by side</li><li>More mix-ups at first, before it settles</li></ul>`,
+    kick: 'A big step',
+    title: `Open all the ${SUBJ.many} at once?`,
+    body: `<p>You are doing well. Opening them all is the hard way:</p><ul class="ulchg"><li>All the remaining ${SUBJ.many} in the questions at once, without a card for each</li><li>Harder questions sooner: look-alikes side by side</li><li>More mix-ups at first, before it settles</li></ul>`,
     primary: {text: 'Not now, one at a time', attr: 'data-notnow', on: () => pick(false)},
-    secondary: {text: `Open all ${n} ${SUBJ.many}`, attr: 'data-open', on: () => pick(true)},
+    secondary: {text: `Open all ${SUBJ.many}`, attr: 'data-open', on: () => pick(true)},
     esc: 1,
     enter: 1,
     note: 'Also in My progress, any time. If it gets too hard, the game offers to go back.',
