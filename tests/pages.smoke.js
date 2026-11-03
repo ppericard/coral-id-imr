@@ -1741,6 +1741,37 @@ async function basicsTeach(b, base) {
       if (after.tour || !after.shown || !/1 of/.test(after.kick || '') || after.name !== first)
         fails.push(`first cards after the tour (first ${first}): ${JSON.stringify(after)}`);
       await ct.close();
+      // The enlarged quiz photo before the answer: its author by name, never the taxon, the genus or a link (rule 11;
+      // Pierre, 2026-11-03: a photo with no credit at all).
+      const cb = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+      await cb.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await cb.addInitScript(() => localStorage.setItem('imr-tour', '"done"'));
+      const qb = await cb.newPage();
+      await qb.goto(base + '#quiz');
+      await qb.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await qb.waitForSelector('#view [data-q]', {timeout: 10000});
+      await qb.waitForTimeout(400);
+      await qb.evaluate(() => document.querySelector('#view [data-q]').click());
+      const bc = await qb
+        .waitForSelector('#lightbox .lb-cap', {timeout: 5000})
+        .then(() =>
+          qb.evaluate(() => {
+            const c = document.querySelector('#lightbox .lb-cap');
+            return {text: c.textContent, links: c.querySelectorAll('a').length, it: c.querySelectorAll('i').length};
+          })
+        )
+        .catch(e => ({err: String(e)}));
+      const tgt = await qb.evaluate(() => {
+        const t = document.querySelector('#view .q [data-q] img');
+        return t ? t.getAttribute('src') : '';
+      });
+      const gname = ((tgt.match(/img\/([a-z]+)-/) || [])[1] || '').replace(/^./, x => x.toUpperCase());
+      if (bc.err || !/·/.test(bc.text) || bc.links || bc.it || (gname && bc.text.includes(gname)))
+        fails.push(`enlarged quiz photo before the answer: ${JSON.stringify({...bc, gname})}`);
+      await cb.close();
       // Enlarged photo at actual size: a mouse drags it around (an RA, 2026-11-02), a click without moving goes back to fit.
       const cz = await b.newContext({viewport: {width: 1024, height: 600}, serviceWorkers: 'block'});
       await cz.route(
