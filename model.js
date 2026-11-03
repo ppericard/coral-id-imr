@@ -17,7 +17,7 @@ const PICKD = {TARGET_OFF: 1.0, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5
 // the player's level on the genus rises, more and more questions show a single view (colony, closer or corallites
 // alone), up to 85% of them, so each view is learned on its own and each photo's difficulty is measured on its own.
 // A single view counts as harder (SINGLE), so easier photos are picked for it. The other views show after the answer.
-const singleP = n => Math.min(0.85, Math.max(0, (ability(n) - 0.5) / 1.5));
+const singleP = (n, shift = 0) => Math.min(0.85, Math.max(0, (ability(n) + shift - 0.5) / 1.5));
 // Online calibration (Pierre, 2026-11-02: about half the 600 game photos had never been shown to anyone, so they could
 // not be rated): as adaptive tests seed new items among the calibrated ones, a photo with few answers from all the
 // players (the sheet's plain count, v18) is drawn more often: x (1 + CAL.B / (1 + answers / CAL.N)), i.e. x3 with none,
@@ -40,7 +40,8 @@ const nAnswers = p => {
 const calBonus = p => 1 + CAL.B / (1 + nAnswers(p) / CAL.N);
 const calSd = p => Math.sqrt(PICKD.SIGMA ** 2 + CAL.U / (1 + nAnswers(p) / CAL.N));
 // skip: a photo file left out when the colony has others to show (the photo of the genus card just shown, K9).
-function photoSet(n, skip) {
+// shift: added to the ability for this question (a comeback question after a break: ln R, comebackShift, below).
+function photoSet(n, skip, shift = 0) {
   const g = GX(n),
     two = g.levels === 2,
     need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
@@ -58,12 +59,13 @@ function photoSet(n, skip) {
       .filter(gameOk)
       .filter(p => p.f !== skip);
   // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
-  const calQ = level(n)[0] !== 'new' && !shaky(n) && Math.random() < CAL.RATE,
-    single = calQ || Math.random() < singleP(n),
+  // No calibration question in a comeback (shift): one unusual photo alone is not a restart.
+  const calQ = !shift && level(n)[0] !== 'new' && !shaky(n) && Math.random() < CAL.RATE,
+    single = calQ || Math.random() < singleP(n, shift),
     s = P[n] || {},
     seen = s.ps || {},
     ro = s.ro || [],
-    tgt = ability(n) - PICKD.TARGET_OFF - (single ? PICKD.SINGLE : 0);
+    tgt = ability(n) + shift - PICKD.TARGET_OFF - (single ? PICKD.SINGLE : 0);
   const h = [...recent(n).slice(-5)],
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
   // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
@@ -337,6 +339,8 @@ const introReset = () => {
   INTROS = {};
   HOLDS = 0; // the opening hold starts over with the progress (holdStep, below; called after this file has run)
   store.set('imr-hold', 0);
+  CB = {r: 0, t: 0, ok: 0, f: 0}; // and the comeback (below)
+  store.set(COMEBACK.KEY, CB);
   store.set(INTRO.KEY, {});
   store.set(INTRO.OFFER.KEY, null);
 };
@@ -348,8 +352,9 @@ const introReset = () => {
 // a later drop, and right answers pay the debt back by what they beat the expectation by (an easy one, e 0.9, by 0.1).
 // No new card while it is INTRO.HOLD or more. Kept on the device (imr-hold), so it carries from one visit to the next
 // (Pierre: a player who left on a run of misses must not come back to new genera), and for a signed-in player rebuilt by
-// the sync sheet from all their answers (holdSync, below); cleared with the progress (reset, sign-out). The gentle
-// restart's questions do not count (quiz.js WARM). A sliding window of the last 10 answers was tried first: it forgot
+// the sync sheet from all their answers (holdSync, below); cleared with the progress (reset, sign-out). The questions
+// after a break count, with the expectation they really had (comeback, below; logged |c): from 2026-11-02 to the comeback,
+// the gentle restart's were left out (logged |w, still left out here and by the sheet). A sliding window of the last 10 answers was tried first: it forgot
 // the misses at the next visit, and a longer one hid a sudden drop behind earlier good answers (on that RA's answers, 20
 // answers never reached the threshold). SLACK: only a shortfall of more than 0.1 an
 // answer adds up (the CUSUM's allowance), so a player the game slightly overrates (0.85 expected, 0.8 right) is never
@@ -360,7 +365,9 @@ const introReset = () => {
 const HOLDK = 'imr-hold';
 let HOLDS = Number(store.get(HOLDK, 0)) || 0;
 const introHold = () => HOLDS >= INTRO.HOLD;
-const holdNext = (h, e, good) => Math.max(0, Math.round((h + (Number(e) || 0) - (good ? 1 : 0) - INTRO.SLACK) * 1000) / 1000);
+// slack: the allowance an answer (INTRO.SLACK for the hold; the comeback's CUSUM passes the rust a question repairs).
+const holdNext = (h, e, good, slack = INTRO.SLACK) =>
+  Math.max(0, Math.round((h + (Number(e) || 0) - (good ? 1 : 0) - slack) * 1000) / 1000);
 function holdStep(e, good) {
   HOLDS = holdNext(HOLDS, e, good);
   store.set(HOLDK, HOLDS);
@@ -372,7 +379,7 @@ function holdStep(e, good) {
 // that is the hold: the same sum over the same answers on every device, so right answers on one device pay back a hold
 // started on another (on a single device it equals the device's own sum). An older sheet sends no h: the hold stays
 // this device's. Not signed in: this device's only.
-const HOLD_WARM = /\|w(\||$)/; // the mode of a gentle-restart answer (quiz.js answer)
+const HOLD_WARM = /\|w(\||$)/; // the mode of a gentle-restart answer (before the comeback replaced it; old rows only)
 // ids: the answers the sheet counted lately (Codex review #370: a send whose reply was lost stays in the log though the
 // sheet has it; it is not added twice).
 function holdSync(h, log, ids) {
@@ -389,6 +396,143 @@ function holdSync(h, log, ids) {
   }
 }
 const introSince = () => answersSoFar() - Math.max(-Infinity, ...Object.values(introMap()).map(e => e[0]));
+// Comeback after a break (Pierre, 2026-11-02; replaces the fixed gentle restart, 10 easy questions at each visit). Time
+// is used here and only here (AGENTS.md rule 12): to plan the questions after a break. Progress (s.pg), mastery (s.mx)
+// and the Elo ability (s.th) never decay with time; only answers move them. docs/LEARNING.md, "Comeback after a break".
+// - Recall of a genus t days after its last answer (s.at): the FSRS forgetting curve with its standard constants,
+//   R = (1 + F t / S)^C, F 19/81, C -0.5, S the stability in days (R is 0.9 at t = S).
+// - Stability: FSRS's first-rating stabilities, Again S0 0.4 to Easy S1 15.7 days, log-linear in how solid the genus is,
+//   x = the chance to recognise an average photo of it (sig(ability - genusDiff), the signal `shaky` reads; 1 once
+//   learned); FSRS's Hard 1.2 and Good 3.2 days sit at x 0.30 and 0.57. Times G = 2.5 (SM-2's default ease factor; FSRS
+//   multiplies S by 2 to 3.5 at a review when due) for each further day the genus was answered right (s.dd): spaced days
+//   count, a hundred right answers in one sitting count as one day. Ability is the app's estimate of how well the genus
+//   is known from its first answer (an expert's genera start from their global level); progress needs many answers.
+// - Rust: the right answers the break is expected to have cost, summed over the genera answered: each loses
+//   (1 - 1/4) (1 - R) sig(TARGET_OFF - ln R), on a usual 4-choice question with the photo a comeback shows (below). Only
+//   the gap since the last answer counts, so play itself adds nothing. A comeback starts at a new visit (SESSION.GAP,
+//   below) whose gap left rust: 30 minutes leave about 0.001 (one right answer ends it), a month several right answers.
+// - Its questions (quiz.js planPhoto): genera answered right, the surest half (highest R) until one is answered right,
+//   then the most rusted half; the player's usual choices (trapsFor: look-alikes for a strong player, so a right answer
+//   proves something; Pierre, 2026-11-03, the first version's easy choices kept an expert 22 questions after a month),
+//   photos targeted at the rusty ability, ability + ln R (rust multiplies the chance by R, which lowers its log-odds by
+//   at least -ln R: a little easier, never more than the rust explains), no card, duel or exam. Logged |c and counted in
+//   the opening hold with the chance they really had (the plausible choices k as for any question, and the rust: a
+//   miss the rust explains adds less).
+// - It ends by the answers: a CUSUM like the opening hold's (holdNext), rust <- max(0, rust + p - right - l), p the
+//   recall-adjusted chance of the question, l the rust the question itself repairs (its genus is reviewed): doing better
+//   than expected melts it fast, worse keeps it going; it ends at 0. A break during a comeback adds to it.
+// - SESSION.GAP: a new visit starts after 30 minutes without an answer (Pierre, 2026-11-02: the standard session timeout
+//   of web analytics, Google Analytics, also commonly used to cut learning logs into sessions), never at a page
+//   load (a reload or an update is no new visit). From a new visit, and from the start of a comeback, the first
+//   COMEBACK.FLOOR (10) answers open no genus: no card, no open-all or bonus genera offer (Pierre, 2026-11-02:
+//   "reopening a new genus straight away would be a mistake"; his choice, not a cap). A comeback holds openings as long
+//   as it runs. Neither applies with fewer than 2 genera answered right (nothing to come back to).
+// Kept on the device (imr-comeback: r rust, t time accounted, ok right answers in it, f answers count until which no
+// genus opens); the times per genus (s.at, last answer; s.dd, s.dl: days answered right, last one) are in the synced
+// progress (core.js mergeProgress), the player's last answer in P[LEVEL].at.
+const FSRS = {F: 19 / 81, C: -0.5, S0: 0.4, S1: 15.7, G: 2.5};
+const SESSION = {GAP: 30 * 60000};
+const COMEBACK = {KEY: 'imr-comeback', FLOOR: 10};
+const DAY = 864e5;
+let CB = (o => (o && typeof o === 'object' ? {r: +o.r || 0, t: +o.t || 0, ok: +o.ok || 0, f: +o.f || 0} : {r: 0, t: 0, ok: 0, f: 0}))(
+  store.get(COMEBACK.KEY, null)
+);
+const cbSave = () => store.set(COMEBACK.KEY, CB);
+const recallOf = (days, S) => (1 + (FSRS.F * Math.max(0, days)) / S) ** FSRS.C;
+// The local calendar day of a time (days answered right, s.dd).
+const dayNo = (t = Date.now()) => Math.floor((t - new Date(t).getTimezoneOffset() * 60000) / DAY);
+function stability(n) {
+  const s = P[n] || {},
+    x = s.mx ? 1 : sig(ability(n) - genusDiff(n));
+  return FSRS.S0 * (FSRS.S1 / FSRS.S0) ** x * FSRS.G ** Math.max(0, (s.dd || 1) - 1);
+}
+// The player's last answer (P[LEVEL].at, synced); progress saved before it existed: the last answer of the log kept on
+// the device, if any.
+const lastAt = () => {
+  const a = (P[LEVEL] || {}).at;
+  if (a) return a;
+  let L = [];
+  try {
+    L = (typeof SYNC !== 'undefined' && SYNC && SYNC.log) || (typeof LOG0 !== 'undefined' && store.get(LOG0, [])) || [];
+  } catch (e) {}
+  return (L.length && Date.parse(L[L.length - 1].t)) || 0;
+};
+// Recall of genus n at time t (a genus with no time of its own: the player's last answer).
+const recallAt = (n, t = Date.now(), last = lastAt()) => {
+  const a = (P[n] || {}).at || last;
+  return a && t > a ? recallOf((t - a) / DAY, stability(n)) : 1;
+};
+const rustOf = R => (1 - 1 / 4) * (1 - R) * sig(PICKD.TARGET_OFF - Math.log(R));
+// The genera in play (the slate, and the bonus genera when the player has them on): those a comeback measures and asks.
+const cbPlay = () => [...slateGenera(), ...bonusList()];
+const cbGenera = () => cbPlay().filter(n => (P[n] || {}).ok > 0);
+// Brings the comeback up to now (when a question is planned or answered): a new visit sets the floor, and the rust of
+// its gap starts a comeback; a gap during a comeback adds to it.
+// Returns true when a new visit starts here (a gap of SESSION.GAP or more since the last answer): questions planned or
+// shown before it were planned on the old recall (Codex review #374).
+function rustNow(now = Date.now()) {
+  const last = lastAt();
+  if (!last || now <= last) return false;
+  if (cbGenera().length < 2) {
+    if (CB.r || CB.f) ((CB = {r: 0, t: now, ok: 0, f: 0}), cbSave());
+    return false;
+  }
+  const on = CB.r > 0,
+    from = on ? Math.max(last, CB.t) : last,
+    floor = () => (CB.f = Math.max(CB.f, answersSoFar() + COMEBACK.FLOOR));
+  const visit = now - last >= SESSION.GAP;
+  if (visit) floor();
+  if (now > from) {
+    const A = cbPlay().filter(asked),
+      add = A.reduce((t, n) => t + rustOf(recallAt(n, now, last)) - rustOf(recallAt(n, from, last)), 0);
+    if (on) CB.r += add;
+    else if (visit && add > 0) {
+      CB.r = add;
+      CB.ok = 0;
+      floor();
+    }
+  }
+  CB.t = now;
+  cbSave();
+  return visit;
+}
+// No genus opens (card, open-all or bonus genera offer) during the floor of a visit or a comeback.
+const noOpen = () => CB.r > 0 || answersSoFar() < CB.f;
+// The genera a comeback question is drawn from, or null when no comeback runs: genera answered right, the surest half
+// until one is right in this comeback, then the most rusted half. Fewer than 2: no comeback.
+function comebackOf(met) {
+  if (!(CB.r > 0)) return null;
+  const L = met.filter(n => (P[n] || {}).ok > 0);
+  if (L.length < 2) {
+    CB.r = 0;
+    cbSave();
+    return null;
+  }
+  const now = Date.now(),
+    last = lastAt(),
+    R = Object.fromEntries(L.map(n => [n, recallAt(n, now, last)])),
+    h = Math.ceil(L.length / 2);
+  L.sort((a, b) => R[b] - R[a]);
+  return CB.ok ? L.slice(-h) : L.slice(0, h);
+}
+// A comeback answer: right or wrong against the recall-adjusted chance p (R the genus's recall, th its ability, d the
+// photo's difficulty, k the plausible choices); l = the rust it repairs.
+function comebackStep(R, th, d, k, good) {
+  const x = (1 - 1 / k) * sig(th - d),
+    p = 1 / k + x * R;
+  if (good) CB.ok++;
+  CB.r = holdNext(CB.r, p, good, x * (1 - R));
+  cbSave();
+}
+// The times an answer leaves in the progress: the genus's last answer and days answered right, the player's last answer.
+function answeredAt(s, good, now = Date.now()) {
+  s.at = now;
+  if (good && s.dl !== dayNo(now)) {
+    s.dd = (s.dd || 0) + 1;
+    s.dl = dayNo(now);
+  }
+  if (P[LEVEL]) P[LEVEL].at = now;
+}
 function weighted(list) {
   const w = list.map(weight);
   // Not met yet: the genera with no card shown and never asked (a genus met on its card weighs as a new one, 10).
@@ -508,9 +652,11 @@ function pgWeight(t, chs, k) {
 // below the ability, about 80% with 4 choices). A photo at the player's level or easier: the miss counts in full; a
 // harder one: less (1 unit harder: 0.78; 2 units: 0.56). No new constant: the Elo and the photo targeting set it.
 // The right answers keep their weight (pgWeight): simulated, a photo factor on them only slowed everyone.
-function pgMissW(th, d, k) {
-  const e = x => 1 / k + (1 - 1 / k) * sig(x);
-  return Math.min(1, e(th - d) / e(PICKD.TARGET_OFF));
+// R: the recall expected after a break, for a comeback question (comebackOf, below; 1 otherwise): the chance the player
+// had is then the recall-adjusted one, so a miss the rust explains costs less progress (Pierre, 2026-11-02).
+function pgMissW(th, d, k, R = 1) {
+  const e = (x, r = 1) => 1 / k + (1 - 1 / k) * r * sig(x);
+  return Math.min(1, e(th - d, R) / e(PICKD.TARGET_OFF));
 }
 const knownP = n => pgOf(P[n]);
 function pgObs(n, s, good, w) {

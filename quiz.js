@@ -288,6 +288,9 @@ function fitTiles(grid, gap, dims) {
 }
 addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
 function answer(cur, c, target, ph, cor, unseen, tm = {}) {
+  // A break while the question was on screen (model.js rustNow): the next question knows it, before this answer's time;
+  // a comeback question takes its genus's recall as it is now (Codex review #374).
+  if (rustNow() && SHOWNQ && SHOWNQ.warm) SHOWNQ.cb = Math.round(recallAt(target) * 1000) / 1000;
   // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
   // was played since, not progress an older sign-out left on the device.
   if (!SYNC && SYNC_URL && !store.get(LOG0, []).length) store.set(ANONB, P);
@@ -323,7 +326,13 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   const solo = ph.length === 1 ? PICKD.SINGLE : 0; // one view alone is harder than the same photo with the others
   const ps = (s.ps = s.ps || {}),
     d0 = solo + ph.reduce((t, p) => t + photoDiff(target, p), 0) / Math.max(1, ph.length);
-  pgObs(target, s, good, good ? pgWeight(target, chs, k) : pgMissW(th0, d0, k));
+  // A comeback question after a break (model.js comebackOf): the recall planned for its genus (R, 1 otherwise) adjusts
+  // the chance the player had, so a miss the rust explains weighs less (pgMissW), and the expectation logged and fed to
+  // the opening hold is the one the question really had.
+  const warm = !!(cur === 'quiz' && SHOWNQ && SHOWNQ.warm),
+    rT = warm && typeof SHOWNQ.cb === 'number' ? SHOWNQ.cb : 1,
+    rC = warm && !good && GX(c) ? recallAt(c) : 1;
+  pgObs(target, s, good, good ? pgWeight(target, chs, k) : pgMissW(th0, d0, k, rT));
   abilityStep(target, s, good, d0, k);
   // Global level (core.js playerStart): the same Elo step over every answer, kept as the pseudo-genus LEVEL.
   // Made at the first answer from the player's history (levelSeed), whose counts already include this answer.
@@ -341,7 +350,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // Pierre's rule: a wrong answer also shows the genus given is not mastered, so it counts as a miss for it too.
   if (!good && GX(c)) {
     const w = st(c);
-    pgObs(c, w, false, pgMissW(ability(c), d0, k)); // as for the genus shown: the photo's difficulty against its level
+    pgObs(c, w, false, pgMissW(ability(c), d0, k, rC)); // as for the genus shown: the photo's difficulty against its level
     w.h = ((w.h || '') + '0').slice(-10);
     w.streak = 0;
     abilityStep(c, w, false, 0, k);
@@ -376,7 +385,6 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
   // sheet's Answers tab also gets what was played before the account existed (Pierre, 2026-11-01).
-  const warm = !!(cur === 'quiz' && SHOWNQ && SHOWNQ.warm);
   const ans = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     t: new Date().toISOString(),
@@ -387,12 +395,13 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     // A photo-quiz question with fewer than 4 choices ("Again: A or B?" after a mix-up) says so too: logged plain "quiz",
     // the sheet rated it as a 4-choice one (a 1 in 4 guess instead of 1 in 2; 59 of the first 552 answers, 2026-11-02).
     // |d: a look-alike duel slipped into the photo quiz (AUTO_DUEL), before |kN (the sheet reads |kN at the end).
-    // |w: a question of the gentle restart (WARM), left out of the opening hold, here and by the sync sheet (v23,
-    // Code.gs hold_), before |kN too.
+    // |c: a comeback question after a break (model.js comebackOf), before |kN too; counted in the opening hold like any
+    // answer, with its own expectation e. (|w, 2026-11-02 until the comeback: the gentle restart, left out of the hold by
+    // the app and the sheet's hold_; old rows only.)
     m:
       cur +
       (cur === 'quiz' && AUTOD ? '|d' : '') +
-      (warm ? '|w' : '') +
+      (warm ? '|c' : '') +
       (k < (cur === 'quiz' ? 4 : nc) ? '|k' + k : '') +
       (exq ? '|x' : ''),
     // A corallites hint left closed is not logged: it was not seen when answering (Codex review #339; the sheet rates and
@@ -402,15 +411,19 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
       .map(p => p.f)
       .join(' '),
     ch: chs.join(' '),
-    e: Math.round(100 * (1 / k + (1 - 1 / k) * sig(th0 - d0))) / 100,
+    e: Math.round(100 * (1 / k + (1 - 1 / k) * rT * sig(th0 - d0))) / 100,
     th: th0,
     nw,
     // Seconds to answer and a photo enlarged before answering (QCLOCK, in question): logged only (sheet v23).
     ...(typeof tm.rt === 'number' ? {rt: tm.rt} : {}),
     zm: tm.zm ? 1 : 0
   };
-  // The opening hold's record (model.js holdStep), except the gentle restart's easy questions (Pierre: they must not lift it).
-  if (!warm) holdStep(ans.e, good);
+  // The opening hold's record (model.js holdStep), every answer with the expectation it really had: the comeback's
+  // questions too (Pierre, 2026-11-02: the hold gets the full information; e allows for the plausible choices k, as for
+  // any question, and for the rust, so a miss the rust explains adds less).
+  holdStep(ans.e, good);
+  if (warm) comebackStep(rT, th0, d0, k, good);
+  answeredAt(s, good);
   if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
   else if (SYNC_URL) {
     store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
@@ -616,11 +629,7 @@ const AUTO_DUEL = {P: 0.1, FROM: 20, GAP: 5, AGAIN: 2, SAME: 20};
 let twoAt = -Infinity, // answers so far at the last duel slipped in
   againAt = -Infinity, // ... and at the last "Again"
   duelLog = [], // [answers so far, pair] of the duels slipped in lately
-  AUTOD = false, // the question on screen is one of them (set by quizPhoto, read by answer)
-  warmLeft = null; // gentle-restart questions left this visit (planPhoto; null: not decided yet)
-// The gentle restart at a visit (planPhoto): N easy questions for a player with FROM answers or more (10, Pierre
-// 2026-11-02: 5 was short; the second half also brings back the genera to review, still with easy choices).
-const WARM = {N: 10, FROM: 10};
+  AUTOD = false; // the question on screen is one of them (set by quizPhoto, read by answer)
 // "This pair comes back as a duel in a moment": said the first 3 times only (RA review 2026-11-02: it came on every
 // wrong answer, about 20 times in 30 questions); the pair still comes back every time.
 const againTold = () => {
@@ -644,9 +653,9 @@ const againTold = () => {
 const AHEAD = 3;
 let NEXTQ = null;
 const planKey = (cur, i = 0) => `${cur}|${answersSoFar() + i}|${pool().join()}`;
-const planState = () => ({last, lastQs, rematch: rematch && {...rematch}, twoAt, againAt, duelLog, warmLeft});
+const planState = () => ({last, lastQs, rematch: rematch && {...rematch}, twoAt, againAt, duelLog});
 function dropPlans() {
-  if (NEXTQ) ({last, lastQs, rematch, twoAt, againAt, duelLog, warmLeft} = NEXTQ.snap);
+  if (NEXTQ) ({last, lastQs, rematch, twoAt, againAt, duelLog} = NEXTQ.snap);
   NEXTQ = null;
 }
 const plain = q => !q.intro && !q.auto && !q[4].exam && q[2].length > 2;
@@ -732,8 +741,12 @@ let SHOWNQ = null; // the photo-quiz question on screen (planNext)
 function quizPhoto() {
   let q = takePlan('quiz') || planPhoto();
   // A planned card waits while the player falls behind (introHold, Codex review #362: a right answer that starts the
-  // hold leaves the questions planned before it): the plans go and the question is chosen again.
-  if (q.intro && !q.start && introHold()) {
+  // hold leaves the questions planned before it), and during the floor of a visit or a comeback (noOpen); a question
+  // planned before a break, or a comeback question planned before the rust melted, is chosen again too (rustNow: the app
+  // may have stayed open across the break).
+  // A new break since they were planned: every planned question goes, comeback ones too (their recall is old).
+  const brk = rustNow();
+  if (brk || (q.intro && (noOpen() || (!q.start && introHold()))) || !!q.warm !== CB.r > 0) {
     dropPlans();
     q = planPhoto();
   }
@@ -748,9 +761,9 @@ function quizPhoto() {
   AUTOD = !!q.auto;
   question(...q);
   if (q.intro) introShow(q.intro, q.start);
-  else if (promptOk() && introOffer())
+  else if (!noOpen() && promptOk() && introOffer())
     (promptMark(), introOfferShow()); // never over another card: next question
-  else if (promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
+  else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
   topUp(); // the questions after this one, chosen while it is played (planNext)
 }
 // The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now.
@@ -926,36 +939,30 @@ function planPhoto() {
       againAt = answersSoFar();
       const t = pick(pair);
       // Planned ahead, it shows later than planned: quizPhoto sets againAt again when it shows (Codex review #361).
-      // During the gentle restart an Again still follows a miss (it corrects it), counted with the restart: it leaves the
-      // opening hold as it was (Codex review #364).
-      return Object.assign(['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)], {
-        again: 1,
-        ...(warmLeft > 0 ? {warm: 1} : {})
-      });
+      // During a comeback an Again still follows a miss (it corrects it), as a comeback question (Codex review #364).
+      rustNow();
+      const R = CB.r > 0 ? recallAt(t) : 1;
+      return Object.assign(
+        ['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t, null, Math.log(R))],
+        {again: 1, ...(CB.r > 0 ? {warm: 1, cb: Math.round(R * 1000) / 1000} : {})}
+      );
     }
   }
   // The genus asked is one already met (INTRO): ready, or one of the cards shown with this question when they are the
   // first ones. A draw that falls on a genus not met yet (the progressive path opening one, at most one card every
   // INTRO.EVERY answers) shows its card instead, and the question is about another genus.
-  let cards = introStart(list);
-  // A gentle restart (Pierre, 2026-11-02, after an RA left on a run of misses): a player coming back with WARM.FROM
-  // answers or more gets WARM.N questions on genera already answered right, with easy choices, before anything else of
-  // the visit: no card, no duel, no exam. The first half leaves out the genera to review (a positive start), the second
-  // half brings them back. Their answers leave the opening hold as it was (answer()).
-  if (warmLeft === null) warmLeft = answersSoFar() >= WARM.FROM ? WARM.N : 0;
+  // After a break (model.js, "Comeback after a break"): the time since the last answer may start a new visit (no genus
+  // opens in its first answers) or a comeback (questions on genera answered right, the surest first, then the most
+  // rusted, the usual choices, photos at the rusty level: no card, no duel, no exam), which the answers end.
+  rustNow();
+  let cards = noOpen() ? [] : introStart(list);
   const start = cards.length > 0,
     ready = n => cards.includes(n) || introReady(n),
     known = n => cards.includes(n) || introduced(n),
     met = list.filter(ready),
-    // Genera answered right; the first half without those to review, unless fewer than 2 are left (Codex review #364:
-    // a player with only genera to review got no restart at all). Fewer than 2 answered right: no restart.
-    warmAll = warmLeft > 0 && !start ? met.filter(n => (P[n] || {}).ok > 0 && level(n)[0] !== 'new') : [],
-    warmSure = warmAll.filter(n => level(n)[0] !== 'weak'),
-    warmL = warmLeft > WARM.N / 2 && warmSure.length >= 2 ? warmSure : warmAll,
-    warm = warmL.length >= 2,
-    open = !start && !warm && introSince() >= INTRO.EVERY && !introHold();
-  if (warm) warmLeft--;
-  else if (warmLeft > 0 && !start) warmLeft = 0; // not enough genera answered right: no restart this visit
+    warmL = start ? null : comebackOf(met),
+    warm = !!warmL,
+    open = !start && !warm && !noOpen() && introSince() >= INTRO.EVERY && !introHold();
   // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say).
   let t = nextTarget(start ? cards : warm ? warmL : met.length ? (open ? list.filter(n => ready(n) || !introduced(n)) : met) : list);
   if (met.length && !known(t)) {
@@ -999,8 +1006,11 @@ function planPhoto() {
       );
     }
   }
-  const ex = !warm && examReady(t) && examSet(t),
-    traps = ex ? 3 : warm ? 0 : trapsFor(t),
+  const R = warm ? recallAt(t) : 1,
+    ex = !warm && examReady(t) && examSet(t),
+    // A comeback question keeps the player's usual choices (Pierre, 2026-11-03): look-alikes for a strong player, so a
+    // right answer proves something and the rust melts in a few questions.
+    traps = ex ? 3 : trapsFor(t),
     ch = shuffle([t, ...distractors(t, list, traps, known)]),
     // The question asked with its genus's card never shows the card's own photo again (new-player walkthrough 2026-11-02).
     q = [
@@ -1008,11 +1018,11 @@ function planPhoto() {
       t,
       ch,
       'Which genus?',
-      ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null),
+      ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R)),
       traps < 2 ? plausibleK(t, ch) : 0
     ];
   if (cards.length) Object.assign(q, {intro: cards, start});
-  if (warm) q.warm = 1;
+  if (warm) Object.assign(q, {warm: 1, cb: Math.round(R * 1000) / 1000});
   return q;
 }
 function quizDuel(a, b) {

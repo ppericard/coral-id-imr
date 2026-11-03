@@ -215,8 +215,8 @@ const server = http.createServer((req, res) => {
     {
       P = {};
       INTROS = {};
-      HOLDS = 0; // a fresh player: no opening hold, no gentle restart
-      warmLeft = 0;
+      HOLDS = 0; // a fresh player: no opening hold, no comeback
+      CB = {r: 0, t: 0, ok: 0, f: 0};
       rematch = null; // no "Again" left over from the section before
       store.set(INTRO.OFFER.KEY, null);
       NEXTQ = null;
@@ -263,8 +263,8 @@ const server = http.createServer((req, res) => {
       for (let i = 0, same = 0; i < 60; i++) {
         P = {};
         INTROS = {};
-        HOLDS = 0; // a fresh player: no opening hold, no gentle restart
-        warmLeft = 0;
+        HOLDS = 0; // a fresh player: no opening hold, no comeback
+        CB = {r: 0, t: 0, ok: 0, f: 0};
         rematch = null; // no "Again" left over from the section before
         NEXTQ = null;
         document.querySelectorAll('.unlock').forEach(x => x.remove());
@@ -281,8 +281,8 @@ const server = http.createServer((req, res) => {
       // genera opens every genus left.
       P = {};
       INTROS = {};
-      HOLDS = 0; // a fresh player: no opening hold, no gentle restart
-      warmLeft = 0;
+      HOLDS = 0; // a fresh player: no opening hold, no comeback
+      CB = {r: 0, t: 0, ok: 0, f: 0};
       rematch = null; // no "Again" left over from the section before
       store.set(INTRO.OFFER.KEY, null);
       let shownAt = 0;
@@ -309,8 +309,8 @@ const server = http.createServer((req, res) => {
       // another device join this one's (introMerge), ready; a progress reset starts them over.
       {
         INTROS = {};
-        HOLDS = 0; // a fresh player: no opening hold, no gentle restart
-        warmLeft = 0;
+        HOLDS = 0; // a fresh player: no opening hold, no comeback
+        CB = {r: 0, t: 0, ok: 0, f: 0};
         rematch = null; // no "Again" left over from the section before
         store.set(INTRO.KEY, {});
         store.set(INTRO.OFFER.KEY, null);
@@ -501,8 +501,8 @@ const server = http.createServer((req, res) => {
       }
       question = q0;
       INTROS = {};
-      HOLDS = 0; // a fresh player: no opening hold, no gentle restart
-      warmLeft = 0;
+      HOLDS = 0; // a fresh player: no opening hold, no comeback
+      CB = {r: 0, t: 0, ok: 0, f: 0};
       rematch = null; // no "Again" left over from the section before
     }
     // Opening held while the player does clearly worse than expected (introHold, a CUSUM, Pierre 2026-11-02): two
@@ -523,46 +523,98 @@ const server = http.createServer((req, res) => {
       // A player slightly below what the game expects (0.85 expected, 0.8 right) is never held: the slack.
       for (let i = 0; i < 200; i++) holdStep(0.85, i % 5 !== 0);
       if (introHold()) fails.push(`held a player 5 points below expectation: ${HOLDS}`);
-      // The gentle restart: a player with answers gets WARM.N questions on genera already answered right (none to review in
-      // the first half), easy choices,
-      // no card, duel or exam, flagged warm; their answers leave the hold as it was.
-      HOLDS = 2;
-      warmLeft = null;
-      NEXTQ = null;
-      const Qs = [];
-      for (let i = 0; i < WARM.N + 2; i++) {
-        document.querySelectorAll('.unlock').forEach(x => x.remove());
-        quizPhoto();
-        Qs.push(SHOWNQ);
-        const t = SHOWNQ[1];
-        if (i < WARM.N && (!SHOWNQ.warm || SHOWNQ.intro || SHOWNQ.auto || SHOWNQ[4].exam || !(P[t] || {}).ok))
-          fails.push(`gentle restart question ${i}: ${JSON.stringify({t, warm: SHOWNQ.warm, ok: (P[t] || {}).ok})}`);
-        if (i < WARM.N / 2 && level(t)[0] === 'weak') fails.push(`gentle restart question ${i}: ${t} to review in the first half`);
-        if (i >= WARM.N && SHOWNQ.warm) fails.push(`gentle restart longer than ${WARM.N}`);
-        const h = HOLDS;
-        document.querySelector(`[data-c="${CSS.escape(t)}"]`).click();
-        if (i < WARM.N && HOLDS !== h) fails.push(`a gentle-restart answer moved the hold: ${h} -> ${HOLDS}`);
-      }
-      // A miss during the restart still brings its Again, flagged with the restart: the hold does not move.
-      warmLeft = 3;
-      NEXTQ = null;
-      document.querySelectorAll('.unlock').forEach(x => x.remove());
+      // The comeback after a break (model.js, "Comeback after a break"): the progress's times moved back as if the player
+      // had left. 10 minutes: nothing. 40 minutes: a new visit (SESSION.GAP), no genus opens for COMEBACK.FLOOR answers,
+      // a comeback of a question or two (very little rust). A week: comeback questions (flagged warm, the genus's recall cb < 1, no
+      // card, duel or exam, on genera answered right, the surest first), logged |c with the recall-adjusted expectation,
+      // counted in the opening hold; right answers end it; openings come back after the floor.
+      const ago = ms => Object.values(P).forEach(s => s && s.at && (s.at -= ms)),
+        logged = () => {
+          const L = SYNC ? SYNC.log || [] : store.get(LOG0, []);
+          return L[L.length - 1] || {};
+        },
+        right = () => document.querySelector(`#view [data-c="${CSS.escape(SHOWNQ[1])}"]`).click(),
+        fresh = () => {
+          NEXTQ = null;
+          rematch = null;
+          document.querySelectorAll('.unlock').forEach(x => x.remove());
+        };
+      CB = {r: 0, t: 0, ok: 0, f: 0};
+      fresh();
       quizPhoto();
-      const hb = HOLDS,
-        miss = [...document.querySelectorAll('#view [data-c]')].find(b => b.dataset.c !== SHOWNQ[1]);
-      miss.click();
-      // The Again comes one question later.
+      right(); // an answer now: the times are set
+      if (cbGenera().length < 2) fails.push(`comeback test: ${cbGenera().length} genera answered right`);
+      ago(10 * 60000);
+      fresh();
+      quizPhoto();
+      if (SHOWNQ.warm || noOpen() || CB.r) fails.push(`10-minute break: ${JSON.stringify({warm: SHOWNQ.warm, CB})}`);
+      right();
+      ago(40 * 60000);
+      fresh();
+      const a40 = answersSoFar();
+      for (let i = 0; i < COMEBACK.FLOOR + 1; i++) {
+        quizPhoto();
+        if (SHOWNQ.warm && i >= 2) fails.push(`40-minute break: comeback question ${i} (rust ${CB.r})`);
+        if (SHOWNQ.intro || noOpen() !== answersSoFar() < a40 + COMEBACK.FLOOR)
+          fails.push(`40-minute break, answer ${i}: card ${!!SHOWNQ.intro}, openings held ${noOpen()}`);
+        right();
+        fresh();
+      }
+      HOLDS = 2;
+      ago(7 * 864e5);
+      const a7 = answersSoFar();
+      let nCb = 0,
+        firstSure = null;
+      for (let i = 0; i < 80; i++) {
+        fresh();
+        quizPhoto();
+        if (!SHOWNQ.warm) break;
+        nCb++;
+        const t = SHOWNQ[1],
+          ch = [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c);
+        if (SHOWNQ.intro || SHOWNQ.auto || SHOWNQ[4].exam || !(P[t] || {}).ok || !(SHOWNQ.cb < 1) || !noOpen())
+          fails.push(`comeback question ${i}: ${JSON.stringify({t, intro: SHOWNQ.intro, cb: SHOWNQ.cb, ok: (P[t] || {}).ok})}`);
+        if (ch.length !== 4) fails.push(`comeback question ${i}: ${ch.length} choices`);
+        if (firstSure === null) {
+          const R = cbGenera().map(x => recallAt(x)),
+            med = R.slice().sort((x, y) => y - x)[Math.ceil(R.length / 2) - 1];
+          firstSure = recallAt(t) >= med - 1e-9;
+        }
+        const h = HOLDS,
+          r0 = CB.r;
+        right();
+        const l = logged();
+        if (!/^quiz(\|d)?\|c(\||$)/.test(l.m || '') || !(l.e <= 1)) fails.push(`comeback answer ${i} logged ${JSON.stringify(l)}`);
+        if (h > 0 && HOLDS === h) fails.push(`comeback answer ${i} left the hold at ${h}`);
+        if (CB.r >= r0 && r0 > 0) fails.push(`comeback answer ${i}: a right answer did not melt the rust (${r0} -> ${CB.r})`);
+      }
+      if (!nCb || nCb > 60 || CB.r) fails.push(`comeback after a week: ${nCb} questions, rust left ${CB.r}`);
+      if (!firstSure) fails.push('the comeback did not start on the surest genera');
+      // The floor holds openings for COMEBACK.FLOOR answers at least, then they come back.
+      for (let i = answersSoFar(); i < a7 + COMEBACK.FLOOR + 1; i++) {
+        if (!noOpen() && answersSoFar() < a7 + COMEBACK.FLOOR)
+          fails.push(`openings back ${answersSoFar() - a7} answers after a week's break`);
+        fresh();
+        quizPhoto();
+        right();
+      }
+      if (noOpen()) fails.push(`openings still held ${answersSoFar() - a7} answers after a week's break`);
+      // A miss during a comeback brings its Again, still a comeback question.
+      ago(30 * 864e5);
+      fresh();
+      quizPhoto();
+      if (!SHOWNQ.warm) fails.push(`no comeback after a month (rust ${CB.r})`);
+      [...document.querySelectorAll('#view [data-c]')].find(x => x.dataset.c !== SHOWNQ[1]).click();
       for (let k = 0; k < 2 && !(SHOWNQ && SHOWNQ.again && k); k++) {
         NEXTQ = null;
         document.querySelectorAll('.unlock').forEach(x => x.remove());
         quizPhoto();
-        if (!SHOWNQ.again) document.querySelector(`[data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
+        if (!SHOWNQ.again) right();
       }
-      if (!SHOWNQ.again || !SHOWNQ.warm || HOLDS !== hb)
-        fails.push(`Again during the restart: ${JSON.stringify({again: SHOWNQ.again, warm: SHOWNQ.warm, hold: [hb, HOLDS]})}`);
-      document.querySelector(`[data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
-      if (HOLDS !== hb) fails.push('an Again of the restart moved the hold');
-      warmLeft = 0;
+      if (!SHOWNQ.again || !SHOWNQ.warm || !(SHOWNQ.cb <= 1))
+        fails.push(`Again during the comeback: ${JSON.stringify({again: SHOWNQ.again, warm: SHOWNQ.warm, cb: SHOWNQ.cb})}`);
+      right();
+      CB = {r: 0, t: 0, ok: 0, f: 0};
       rematch = null; // no "Again" left over from the section before
       HOLDS = h0;
     }
