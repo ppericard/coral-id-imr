@@ -639,7 +639,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // due in a moment.
   if (!(exq && s.mx) && promptOk()) {
     if (nudgeDue()) (promptMark(), signinNudge());
-    else if (pulseDue()) (promptMark(), pulseAsk());
+    else if (pulseDue()) pulseArm(nb);
   }
 }
 // Out-of-game prompts ("fewer, better pop-ups", Pierre 2026-11-02, after a new-player walkthrough counted an
@@ -694,8 +694,8 @@ function zoomHint() {
   };
   setTimeout(show, ZHINT.DELAY);
 }
-// One-tap question (Pierre, 2026-11-02: people answer a tap, not "any comments?"): now and then, under the answer's
-// feedback, one question answered in one tap (or × for not now). First after PULSE.FIRST answers in all (35 since
+// One-tap question (Pierre, 2026-11-02: people answer a tap, not "any comments?"): now and then, between an answer and
+// the next question, one question answered in one tap (or "Not now"). First after PULSE.FIRST answers in all (35 since
 // 2026-11-02, was 15: the sign-in card comes at 20 and prompts are PROMPT.GAP apart), then every PULSE.EVERY answers
 // (40 since 2026-11-03, was 60: a target that depends on the level needs a few answers per level band from each player;
 // Pierre: "all the more important to ask from time to time"), PULSE.AFTERX times that after a "Not now", never before
@@ -708,7 +708,7 @@ function zoomHint() {
 // what the game knew then: the mode, answers this visit, right % of the last 10, overall level, genera met. Nothing in
 // the game changes with it (yet): it tells Pierre whether the difficulty feels right at each level (docs/LEARNING.md
 // "What the players say about the difficulty").
-const PULSE = {FIRST: 35, EVERY: 40, AFTERX: 2, SESSION: 8},
+const PULSE = {FIRST: 35, EVERY: 40, AFTERX: 2, SESSION: 8, WAIT: 600},
   PULSEK = 'reefid-pulse';
 const pulseDue = (h = hashNow()) => {
   if (!(photoQuiz(h) || h.startsWith('quiz-duel')) || document.querySelector('#tour, .unlock') || session.n < PULSE.SESSION) return false;
@@ -718,39 +718,36 @@ const pulseDue = (h = hashNow()) => {
   return a >= PULSE.FIRST && (a < at || a - at >= PULSE.EVERY * (st.x ? PULSE.AFTERX : 1));
 };
 // Response rate (Pierre, 2026-11-03: how often a prompt is shown against answered): each prompt logs its showing
-// (PULSE_SHOWN), then its answer's code, or PULSE_SKIP for "Not now", or PULSE_NONE when the player moves on without a
-// tap (Next, another page). A prompt left open when the app closes logs nothing more: the admin counts it from its
+// (PULSE_SHOWN), then its answer's code, or PULSE_SKIP for "Not now" (or Escape), or PULSE_NONE when the page is left
+// with the card up (Back, a link). A prompt left open when the app closes logs nothing more: the admin counts it from its
 // showing (shown − answered − Not now). Every event of one prompt carries what the game knew when it showed (pulseOpen),
 // so its showing and its answer fall in the same level band and mode. At most 2 events a prompt, every 40 answers: far
 // within the sheet's caps (200 a device, 3000 in all per 6 hours).
 let pulseOpen = null;
 const pulseEv = r => pulseOpen && ev('pulse', {r, src: pulseOpen.id, ...pulseOpen.at});
-function pulseLeave() {
-  if (!pulseOpen) return;
-  pulseEv(PULSE_NONE);
-  pulseOpen = null;
+// After an answer whose prompt is due, Next asks it before the next question is drawn (Pierre, 2026-11-03, after a long
+// run: "in a flow state, used to clicking Next, I don't see them": 3 of his first 4 prompts, shown inline in the
+// feedback, ended with Next and no tap). Due is checked again at the tap (a card or a toast that came meanwhile: the
+// prompt waits for a later answer, nothing is marked); the tap that opens it goes no further.
+function pulseArm(nb) {
+  nb.onclick = () => {
+    nb.onclick = null;
+    if (!pulseDue() || overlayBusy()) return route();
+    promptMark();
+    pulseAsk();
+  };
 }
-addEventListener('hashchange', pulseLeave);
-// The prompt is a block of its own in the feedback, before Next (Pierre, 2026-11-03, from a 390 px screenshot: a row
-// inside the feedback card was easy to miss, a big Next tapped without reading it, and the buttons wrapped two then
-// one): a tinted panel with a "Quick question" title, the question, then its answers on one row of equal widths
-// (app.css .pulse). One tap answers, × closes; neither holds the game.
+// The prompt is a card (cardShow, kind 'feedback'; Pierre, 2026-11-03: feedback questions interrupt at Next, a natural
+// break, instead of a block in the feedback that a reflex Next skipped): "Quick question", the question, its three
+// answers on one row of equal widths (app.css .pulseb), a quiet "Not now" under them. Its buttons take no tap for the
+// first PULSE.WAIT ms (shown faded: the second tap of a quick double tap on Next, or a reflex one, cannot answer it), and
+// Enter does nothing (the focus is on the question, not a button: Next's Enter key, pressed again, never answers);
+// Escape is "Not now". The next question is drawn when it closes (its clock starts with its photo, as always, so the
+// card's time is not counted). "Not now" makes the next one wait PULSE.AFTERX times longer.
 function pulseAsk() {
-  const nb = document.getElementById('next');
-  if (!nb) return;
-  pulseLeave();
   const pk = pulsePick(store.get(PULSEK, {})),
-    it = pulseItem(pk.q);
-  nb.insertAdjacentHTML(
-    'beforebegin',
-    `<section class="pulse" role="group" aria-labelledby="pulseq" data-pq="${it.id}"><div class="pulseh"><span class="pulsek">Quick question</span><button type="button" class="pulsex" data-pulse="" aria-label="Not now" title="Not now">×</button></div><p class="pulseq" id="pulseq">${esc(it.q)}</p><div class="pulseb">${it.a
-      .map(([k, t]) => `<button type="button" data-pulse="${k}">${esc(t)}</button>`)
-      .join('')}</div></section>`
-  );
-  const box = document.querySelector('#after .pulse'),
+    it = pulseItem(pk.q),
     h = session.h;
-  // Desktop: the block sticks just above Next (app.css), whatever Next's height.
-  document.getElementById('after').style.setProperty('--nexth', nb.offsetHeight + 'px');
   store.set(PULSEK, {at: answersSoFar(), q: pk.q, left: pk.left});
   pulseOpen = {
     id: it.id,
@@ -763,27 +760,38 @@ function pulseAsk() {
     }
   };
   pulseEv(PULSE_SHOWN);
-  // Next with the prompt still open: moved on without a tap (Next's own onclick, route, runs first).
-  nb.addEventListener('click', pulseLeave);
-  // The block makes the phone's feedback sheet taller: the photos above it are sized again (Codex review #343).
-  fitStage();
-  box.querySelectorAll('[data-pulse]').forEach(
-    b =>
-      (b.onclick = e => {
-        e.stopPropagation();
-        const r = b.dataset.pulse;
-        pulseEv(r || PULSE_SKIP);
+  const d = cardShow({
+    kind: 'feedback',
+    cls: 'pulsecard',
+    kick: 'Quick question',
+    title: esc(it.q),
+    body: `<div class="pulseb" data-pq="${it.id}">${it.a
+      .map(([k, t]) => `<button type="button" data-pulse="${k}" disabled>${esc(t)}</button>`)
+      .join('')}</div><button type="button" class="linkish pulsex" data-pulse="" disabled>Not now</button>`,
+    focus: 'h3',
+    enter: () => {},
+    bind: d => {
+      d.querySelector('h3').tabIndex = -1;
+      d.querySelectorAll('[data-pulse]').forEach(
+        b =>
+          (b.onclick = () => {
+            if (!b.dataset.pulse) return d.close('skip');
+            pulseEv(b.dataset.pulse);
+            pulseOpen = null;
+            d.close('answer');
+          })
+      );
+    },
+    onClose: how => {
+      if (pulseOpen) {
+        pulseEv(how === 'route' ? PULSE_NONE : PULSE_SKIP);
+        if (how !== 'route') store.set(PULSEK, {...store.get(PULSEK, {}), x: 1});
         pulseOpen = null;
-        if (r) box.innerHTML = '<p class="pulseok">Thank you!</p>';
-        else {
-          // "Not now": the next one waits PULSE.AFTERX times longer.
-          store.set(PULSEK, {...store.get(PULSEK, {}), x: 1});
-          box.remove();
-        }
-        fitStage();
-        document.getElementById('next')?.focus({preventScroll: true});
-      })
-  );
+      }
+      if (how !== 'route') route();
+    }
+  });
+  setTimeout(() => d.querySelectorAll('[data-pulse]').forEach(b => (b.disabled = false)), PULSE.WAIT);
 }
 // Card photos: the cards sit outside the page view, out of reach of app.js's retries. Here too a photo that fails is
 // tried again twice (after 1 s, then 4 s), and is kept out of sight meanwhile and if it never comes: never a broken-image

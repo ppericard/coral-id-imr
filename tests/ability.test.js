@@ -286,3 +286,134 @@ test("an answer logged with the app's own mix-ups term does not count it twice",
     before.map(o => Math.round(o.p * 1e9))
   );
 });
+
+// Response time as a weak signal (2026-11-03, docs/LEARNING.md "Response time"): tools/abilityeval.js's +T (a right
+// answer's genus step times clamp(1 - k z, 0.5, 1.5), z its log seconds against the player's own median so far), its
+// leave-one-player-out choice of k, and answers without time left alone.
+function timedLog(n, seed, player) {
+  const r = rng(seed),
+    G = ['Acropora', 'Montipora', 'Porites', 'Goniopora', 'Favites', 'Dipsastraea', 'Platygyra', 'Leptoria'],
+    truth = Object.fromEntries(G.map((g, i) => [g, -1.5 + (3.5 * i) / (G.length - 1)])), // genera from weak to known
+    rows = [];
+  for (let i = 0; i < n; i++) {
+    const t = G[Math.floor(r() * G.length)],
+      d = r() - 0.5,
+      p = 1 / 4 + (3 / 4) * sig(truth[t] - d),
+      ok = r() < p,
+      // A right answer comes faster the better the genus is known; a miss is slow (log seconds, noise sd 0.4).
+      sec = Math.exp(1.6 - (ok ? 0.5 * (truth[t] - d) : -0.3) + 0.4 * (r() + r() + r() - 1.5) * 2),
+      e = 1 / 4 + (3 / 4) * sig(0 - d);
+    rows.push([
+      player,
+      1e12 + i * 1e4,
+      t,
+      ok ? t : G[(G.indexOf(t) + 1) % G.length],
+      ok ? 1 : 0,
+      'quiz',
+      'x',
+      Math.round(e * 1000) / 1000,
+      0,
+      1,
+      '',
+      0,
+      Math.round(sec * 10) / 10,
+      0
+    ]);
+  }
+  return rows;
+}
+
+test('response time: no seconds logged, no change; a factor of 1 is the app step exactly', () => {
+  const rows = log(1, 200, 3), // no Seconds column (an app before sheet v23)
+    {res} = evaluate(rows, {variants: ['e', 'e+T1', 'e+S1+G', 'e+H1'], min: 1});
+  ['e+T1', 'e+S1+G', 'e+H1'].forEach(v => assert.strictEqual(res[v].all.ll, res.e.all.ll, v));
+  const t = timedLog(200, 5, 'p1'),
+    r2 = evaluate(t, {variants: ['e', 'e+T0', 'e+U1.000001'], min: 1}).res;
+  assert.strictEqual(r2['e+T0'].all.ll, r2.e.all.ll);
+  assert.strictEqual(r2['e+U1.000001'].per.p1.level, r2.e.per.p1.level);
+  assert.strictEqual(r2['e+U1.000001'].per.p1.genus, r2.e.per.p1.genus);
+});
+
+test('response time: where speed tells knowledge, the weighted step predicts better, k chosen on the other players', () => {
+  const rows = [1, 2, 3, 4].flatMap(i => timedLog(150, 20 + i, 'p' + i)),
+    {res, players} = evaluate(rows, {variants: ['e', 'e+T*'], min: 1, grid: [[0, 0.5, 1]]}),
+    {paired} = require('../tools/abilityeval.js');
+  assert.strictEqual(players.length, 4);
+  // Each player scored with the k best on the three others: here never 0.
+  players.forEach(p => assert.ok(['e+T0.5', 'e+T1'].includes(res['e+T*'].picks[p]), res['e+T*'].picks[p]));
+  const q = paired(res.e, res['e+T*']);
+  assert.strictEqual(q.n, res.e.all.n);
+  assert.ok(q.d < 0, `paired difference ${q.d}`);
+  // The first RT.MIN timed answers of a player have no median yet: no z, factor 1.
+  const {RT} = require('../tools/abilityeval.js');
+  assert.strictEqual(res.e.scored.filter(o => o.r.p === 'p1' && o.z === null).length, RT.MIN);
+});
+
+// Codex review #431. The level bands' seed: a first answer right, stepped bigger by +U or a time rule before the level
+// is seeded, leaves the bands as they are.
+test('response time: the level bands hold the same answers whatever the time rule, from the first answer', () => {
+  const rows = timedLog(120, 7, 'p1');
+  rows[0][4] = 1;
+  rows[0][3] = rows[0][2];
+  rows[0][12] = 1;
+  const {res} = evaluate(rows, {variants: ['e', 'e+U2', 'e+T2+G', 'e+H1'], min: 1}),
+    L = v => res[v].scored.map(o => o.L);
+  ['e+U2', 'e+T2+G', 'e+H1'].forEach(v => assert.deepStrictEqual(L(v), L('e'), v));
+});
+
+// Timed answers with choices (the look-alike first), so the pooled mix-up scores weigh in (+X).
+function timedCh(n, seed, player, force) {
+  const G = ['Acropora', 'Montipora', 'Porites', 'Goniopora', 'Favites', 'Dipsastraea', 'Platygyra', 'Leptoria'],
+    pair = g => G[G.indexOf(g) ^ 1];
+  return timedLog(n, seed, player).map(row => {
+    const t = row[2],
+      ok = force === undefined ? row[4] : force;
+    return [
+      ...row.slice(0, 3),
+      ok ? t : pair(t),
+      ok,
+      'quiz',
+      ...row.slice(6, 10),
+      [t, pair(t), ...G.filter(g => g !== t && g !== pair(t)).slice(0, 2)].join(' '),
+      ...row.slice(11)
+    ];
+  });
+}
+
+test('response time: the player left out never weighs in the choice of k, not even through the pooled mix-ups', () => {
+  const others = [1, 2, 3].flatMap(i => timedCh(80, 40 + i, 'p' + i)),
+    run = force =>
+      evaluate([...others, ...timedCh(80, 50, 'p4', force)], {variants: ['e+X+M', 'e+X+M+T*'], min: 1, grid: [[0, 0.5, 1]]}).res,
+    a = run(1),
+    b = run(0);
+  assert.ok(
+    a['e+X+M'].scored.some(o => o.cf > 0),
+    'the term is not zero on these answers'
+  );
+  // The training losses for p4's fold are the other players' answers only: the same whatever p4 answered.
+  assert.deepStrictEqual(a['e+X+M+T*'].train.p4, b['e+X+M+T*'].train.p4);
+  assert.strictEqual(a['e+X+M+T*'].picks.p4, b['e+X+M+T*'].picks.p4);
+});
+
+test('response time: a player with only answers logged before sheet v5 does not break the choice of k', () => {
+  const rows = [
+      ...timedLog(20, 61, 'p1'),
+      ...timedLog(20, 62, 'p2'),
+      ...timedLog(20, 63, 'p3').map(r => [...r.slice(0, 7), '', '', ...r.slice(9)])
+    ],
+    {res} = evaluate(rows, {variants: ['e', 'e+T*'], min: 1, grid: [[0, 0.5]]});
+  assert.strictEqual(res.e.all.n, 40);
+  assert.strictEqual(res['e+T*'].all.n, 40);
+  assert.ok(isFinite(res['e+T*'].all.ll));
+  ['p1', 'p2', 'p3'].forEach(p => assert.ok(res['e+T*'].picks[p]));
+});
+
+// Codex review #431: --player limits the output, never the players k is chosen on.
+test('response time: with --player, k is still chosen on the other players', () => {
+  const rows = [1, 2, 3].flatMap(i => timedLog(150, 20 + i, 'p' + i)),
+    all = evaluate(rows, {variants: ['e', 'e+T*'], min: 1, grid: [[0, 0.5, 1]]}).res,
+    one = evaluate(rows, {variants: ['e', 'e+T*'], min: 1, grid: [[0, 0.5, 1]], only: 'p1'});
+  assert.deepStrictEqual(one.players, ['p1']);
+  assert.strictEqual(one.res['e+T*'].picks.p1, all['e+T*'].picks.p1);
+  assert.deepStrictEqual(one.res['e+T*'].train.p1, all['e+T*'].train.p1);
+});

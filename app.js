@@ -1155,8 +1155,19 @@ addEventListener('hashchange', () => {
 // photo). o: {kind, cls (classes the callers' code and tests look for), kick, title (HTML; none: the first h3 of the body
 // labels it, else o.label), body, photo (genus band URL), visual (medallion HTML), primary / secondary ({text, attr, on,
 // stay}: on runs after the card closes, or instead of closing with stay), note, after, bind(d) after each render,
-// onClose(how: 1, 2, 'esc', 'enter', 'tap', 'route')}. Returns the overlay: d.close(how), d.set(changes) redraws it.
-const CARD_KINDS = {apology: '🙏', update: '🔄', feature: '✨', genus: '🪸', tip: '💡', bonus: '🎁', account: '💾', ach: '🏆'};
+// onClose(how: 1, 2, 'esc', 'enter', 'tap', 'route', or what the caller gave d.close)}. Returns the overlay: d.close(how),
+// d.set(changes) redraws it.
+const CARD_KINDS = {
+  apology: '🙏',
+  update: '🔄',
+  feature: '✨',
+  genus: '🪸',
+  tip: '💡',
+  bonus: '🎁',
+  account: '💾',
+  ach: '🏆',
+  feedback: '💬'
+};
 let cardN = 0;
 function cardShow(o) {
   const d = document.createElement('div'),
