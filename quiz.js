@@ -421,12 +421,14 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // the opening hold and the comeback. Progress: a right answer counts only for what memory does not explain (pgMemW, 1
   // on new photos); a miss weighs the chance the player really had (pgMissW), so on a known photo it counts in full.
   // A record from before the photo memory is recalculated first, once (core.js memRecalc; a new record is only marked).
-  memRecalc(s, PMEM);
-  if (!good && GX(c)) memRecalc(st(c), PMEM);
+  mxRecalc(() => {
+    memRecalc(s, PMEM);
+    if (!good && GX(c)) memRecalc(st(c), PMEM);
+  });
   const seenPh = ph.filter(p => p !== unseen),
     fam = famOf(target, seenPh),
     dm = d0 + fam + cf;
-  pgObs(target, s, good, good ? pgWeight(target, chs, k) * pgMemW(th0, d0, fam, k, rT) : pgMissW(th0, dm, k, rT));
+  pgObs(target, s, good, good ? pgWeight(target, chs, k) * pgMemW(th0, d0, fam, k, rT) : pgMissW(th0, dm, k, rT, aimP()));
   abilityStep(target, s, good, dm, k);
   // Global level (core.js playerStart): the same Elo step over every answer, kept as the pseudo-genus LEVEL.
   // Made at the first answer from the player's history (levelSeed), whose counts already include this answer.
@@ -452,7 +454,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // (s.conf: traps, duels, Again).
   if (!good && GX(c)) {
     const w = st(c);
-    pgObs(c, w, false, pgMissW(ability(c), d0, k, rC)); // as for the genus shown: the photo's difficulty against its level
+    pgObs(c, w, false, pgMissW(ability(c), d0, k, rC, aimP())); // as for the genus shown: the photo's difficulty against its level
     w.h = ((w.h || '') + '0').slice(-10);
     w.streak = 0;
   }
@@ -467,7 +469,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // typed questions may take one more, its count held at EXAM.n so its % never passes 100).
   if (!good) delete s.ex;
   else if (exq) {
-    const ex = s.ex || {k: 0, v: []};
+    const ex = s.ex || {k: 0, v: [], ts: Date.now()}; // ts: its start, which places it among the logged answers (core.js replayedOf)
     ex.k = Math.min(EXAM.n, ex.k + 1);
     ex.t = (ex.t || 0) + (tq ? 1 : 0);
     ex.v = [...new Set([...ex.v, ph[0].view])];
