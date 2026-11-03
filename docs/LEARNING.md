@@ -1382,7 +1382,8 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   counts only. The mastery exam is not replayed: it comes from the device's copy (below), so an exam still waiting for
   its `TYPED.exam` typed right answers stays at 99% at most (`scoreOf`) until the device has passed it.
   - **Rules versions** (`core.js` `RVS`, `RV`): every change to a progress rule appends `{v, at, why, msg}` (AGENTS.md
-    "How to make a change" 14). v1 (2026-11-03, `msg` null): this replay itself, with the rules of that day (the
+    "How to make a change" 14), each with the standard recalculation card (`msg: RV_CARD`, Pierre 2026-11-03, a
+    standing rule; below). v1 (2026-11-03): this replay itself, with the rules of that day (the
     miss weight over the 0.8 every question aims for, `TARGET_P`; no Elo step on the genus wrongly given; a learned mark
     kept unless a miss logged after its exam takes it away as the game does).
   - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between
@@ -1464,10 +1465,12 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     `bkt`; a mark taken by a later rules version would say "recalculated from all your answers with the app's current
     rules", reason `rules`). Then, at once, the announcement card of every version skipped that has a `msg`
     (`progress.js` `rvNotice`: once per version per device, `imr-rv-msg`; never held, one after another, after
-    `recalcNotice` and `mxLostNotice`; only to a device that had answers). Version 1 (the full replay itself) has
-    one only for the players whose progress % the adoption moved (`msg.only: 'changed'`, Pierre 2026-11-03: several
-    players lose points as the former model's marks are dropped): "Your progress was recalculated with the improved
-    model", saying the % before and after; a player whose % stays the same sees nothing.
+    `recalcNotice` and `mxLostNotice`; only to a device that had answers). Every version has the standard card
+    (`core.js` `RV_CARD`; Pierre, 2026-11-03, a standing rule: "only to the players whose progress the replay moves a
+    lot; if it moves everyone a lot, everyone gets it"): "Your progress was recalculated with the improved model",
+    saying the % before and after, shown only when the adoption moved the player's progress % by 5 points or more,
+    either way (`msg.only: 'changed'`, `msg.min: 5`, `progress.js` `rvNoticeAdd`); a player whose % moved less sees
+    nothing. Pierre is asked only when a version needs a different text.
   - **The device's own recalculations** (`memRecalc` from `s.ps`, `pgOf` from the last 10 results `s.h`) only
     approximate it from what a device keeps: they stay as the fallback for a device that never reached the sheet (a
     device offline, or a local copy), and a record adopted from the replay is never corrected by them.

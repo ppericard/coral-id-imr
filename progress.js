@@ -863,7 +863,8 @@ function mxLostNotice() {
 // the visit floor or the prompt spacing; AGENTS.md "How to make a change" 12). When this device adopts the sheet's full
 // replay of a newer version (sync.js replayAdopt), every version it skipped that has a msg is due, once per version
 // on this device (RVN.KEY, device only: due, the versions still to show; told, those shown; pct, the progress % before
-// and after the adoption, per version, for a msg with only: 'changed', due only when the two differ). One card per version,
+// and after the adoption, per version, for a msg with only: 'changed', due only when the two differ by msg.min points or
+// more, either way: core.js RV_CARD, 5). One card per version,
 // oldest first, the next as soon as one is closed; like recalcNotice and mxLostNotice it only waits for another card
 // or the tour on screen (tried again every 2 s), and a page change closes it unseen to show it again on the new page.
 // At start-up (app.js SETUP 2, after the two cards above) and right after an adoption.
@@ -875,7 +876,7 @@ function rvNoticeAdd(from, to, pct) {
     pc = M.pct || {};
   rvMsgs(from, to).forEach(x => {
     if (told.includes(x.v) || due.includes(x.v)) return;
-    if (x.msg.only === 'changed' && !(pct && pct[0] !== pct[1])) return;
+    if (x.msg.only === 'changed' && !(pct && pct[0] !== pct[1] && Math.abs(pct[1] - pct[0]) >= (x.msg.min || 0))) return;
     if (pct) pc[x.v] = pct;
     due.push(x.v);
   });

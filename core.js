@@ -1236,23 +1236,29 @@
   // now and whenever the progress engine changes). Every change to a rule that moves the progress (what an answer
   // weighs, the moving average, the ability step, the photo memory, what the replay keeps from the device...) appends
   // an entry here: v (the next number), at (the date), why (one line for the docs), msg (null, or the announcement card
-  // {t: title, p: paragraph, in plain words} that every device which skipped this version shows once; Pierre decides
-  // per version, AGENTS.md "How to make a change" 12; with only: 'changed', shown only when the adoption moved the
-  // player's progress %, {from} and {to} in p being the two %). The sync script, which embeds this file (tools/sync_core.py),
-  // replays a player's log again when their stored replay is older than RV, and the app adopts a replay newer than the
-  // one it applied (sync.js replayAdopt). docs/LEARNING.md "Full replay".
+  // {t: title, p: paragraph, in plain words} that every device which skipped this version shows once, AGENTS.md "How to
+  // make a change" 12; with only: 'changed', shown only when the adoption moved the player's progress % by min points or
+  // more, {from} and {to} in p being the two %). Every version takes RV_CARD (Pierre, 2026-11-03, a standing rule: AGENTS.md
+  // "How to make a change" 14); Pierre is asked only for a different text. The sync script, which embeds this file
+  // (tools/sync_core.py), replays a player's log again when their stored replay is older than RV, and the app adopts a
+  // replay newer than the one it applied (sync.js replayAdopt). docs/LEARNING.md "Full replay".
+  // The standard recalculation card (Pierre, 2026-11-03: "only to the players whose progress the replay moves a lot; if
+  // it moves everyone a lot, everyone gets it"): shown to a player whose progress % the adoption moved by 5 points or
+  // more, either way (progress.js rvNoticeAdd), with the two %.
+  const RV_CARD = {
+    t: 'Your progress was recalculated with the improved model',
+    p: 'Your progress is now computed again from all your answers, with the rules the app uses today. It went from {from}% to {to}%. Every answer you gave is kept.',
+    only: 'changed',
+    min: 5
+  };
   const RVS = [
     {
       v: 1,
       at: '2026-11-03',
       why: 'Full replay of each player by the sheet: moving average weighed by what each answer proves, photo memory, former-model learned marks dropped, no Elo step on the genus wrongly given, a learned mark kept unless a miss logged after its exam takes it away as the game does',
-      // Pierre, 2026-11-03: a card only for the players whose progress % moves (several lose points: the former
-      // model's learned marks are dropped), none for the others.
-      msg: {
-        t: 'Your progress was recalculated with the improved model',
-        p: 'Your progress is now computed again from all your answers, with the rules the app uses today. It went from {from}% to {to}%. Every answer you gave is kept.',
-        only: 'changed'
-      }
+      // Pierre, 2026-11-03: the standard card, only for the players whose progress % moves by 5 points or more (several
+      // lose points: the former model's learned marks are dropped).
+      msg: RV_CARD
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -1701,6 +1707,7 @@
     ELO,
     abilityOf,
     eloStep,
+    RV_CARD,
     RVS,
     RV,
     RV_SHEET,

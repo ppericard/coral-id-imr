@@ -584,6 +584,36 @@ test('property: devices, unsent answers, an older client and a reset in flight: 
   }
 });
 
+test('the recalculation card is due only when the progress % moved by 5 points or more, either way (Pierre, 2026-11-03)', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
+    block = src.slice(src.indexOf('const RVN = '), src.indexOf('let rvT = 0;')),
+    saved = {},
+    ctx = {
+      ...C,
+      window: {},
+      store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
+    };
+  vm.createContext(ctx);
+  vm.runInContext(block + '\nthis.add = rvNoticeAdd;', ctx);
+  const due = pct => {
+    delete saved['imr-rv-msg'];
+    ctx.add(0, C.RV, pct);
+    return ctx.store.get('imr-rv-msg', {}).due.includes(C.RV);
+  };
+  assert.deepStrictEqual(
+    [
+      [60, 60],
+      [60, 64],
+      [60, 56],
+      [60, 65],
+      [60, 55],
+      [83, 33]
+    ].map(due),
+    [false, false, false, true, true, true],
+    'a card for 5 points or more only'
+  );
+});
+
 // progress.js achRecheck on stubs: the learned mark taken away (MXL.ach), the snapshot of a player with none learned.
 function ach(A) {
   const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
