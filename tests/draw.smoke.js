@@ -223,7 +223,7 @@ const server = http.createServer((req, res) => {
       const n = {hi: 0, hiT: 0, lo: 0, loT: 0};
       for (let i = 0; i < 300; i++) {
         NEXTQ = null;
-        rematch = null;
+        rematch = [];
         quizPhoto();
         document.querySelectorAll('.unlock').forEach(x => x.remove());
         const g = SHOWNQ[1],
@@ -240,7 +240,7 @@ const server = http.createServer((req, res) => {
       const typedQ = () => {
         for (let i = 0; i < 200; i++) {
           NEXTQ = null;
-          rematch = null;
+          rematch = [];
           quizPhoto();
           document.querySelectorAll('.unlock').forEach(x => x.remove());
           if (SHOWNQ.typed) return SHOWNQ[1];
@@ -309,7 +309,7 @@ const server = http.createServer((req, res) => {
       if (f().querySelector('input').value || !document.querySelector('#after h3.idk'))
         fails.push(`I don't know: field "${f().querySelector('input').value}", feedback ${document.querySelector('#after h3').className}`);
       NEXTQ = null;
-      rematch = null;
+      rematch = [];
     }
     // A miss on the genus ends an exam in course.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ex: {k: 3, v: ['wide'], at: answersSoFar()}};
@@ -440,7 +440,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
-      rematch = null; // no "Again" left over from the section before
+      rematch = []; // no "Again" left over from the section before
       store.set(INTRO.OFFER.KEY, null);
       NEXTQ = null;
       const q0 = question;
@@ -497,7 +497,7 @@ const server = http.createServer((req, res) => {
         INTROS = {};
         HOLDS = 0; // a fresh player: no opening hold, no comeback
         CB = {r: 0, t: 0, ok: 0, f: 0};
-        rematch = null; // no "Again" left over from the section before
+        rematch = []; // no "Again" left over from the section before
         NEXTQ = null;
         document.querySelectorAll('.unlock').forEach(x => x.remove());
         quizPhoto();
@@ -559,7 +559,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
-      rematch = null; // no "Again" left over from the section before
+      rematch = []; // no "Again" left over from the section before
       store.set(INTRO.OFFER.KEY, null);
       let shownAt = 0;
       for (let i = 0; i <= INTRO.OFFER.UNTIL && !shownAt; i++) {
@@ -667,7 +667,7 @@ const server = http.createServer((req, res) => {
         HOLDS = keep.HOLDS;
         if (keep.bon === undefined) delete Q.bon;
         else Q.bon = keep.bon;
-        rematch = null;
+        rematch = [];
         NEXTQ = null;
       }
       // Synced with the progress: the cards and the offer are imr-coral* keys (sent by progData), and the cards seen on
@@ -676,7 +676,7 @@ const server = http.createServer((req, res) => {
         INTROS = {};
         HOLDS = 0; // a fresh player: no opening hold, no comeback
         CB = {r: 0, t: 0, ok: 0, f: 0};
-        rematch = null; // no "Again" left over from the section before
+        rematch = []; // no "Again" left over from the section before
         store.set(INTRO.KEY, {});
         store.set(INTRO.OFFER.KEY, null);
         const g = Object.keys(DATA.gen)[5];
@@ -732,6 +732,116 @@ const server = http.createServer((req, res) => {
         question = q1;
         // Spacing and the draws make the count vary (11 in a CI run, about 15 on average): enough to show they come.
         if (duels < 5 || duels > 50) fails.push(`${duels} duels in the quiz in 300 questions (about 1 in 10 expected)`);
+      }
+      // The Again queue (quiz.js CONTRAST.Q, rematchAdd; 2026-11-04): up to 3 pairs, asked oldest first, each CONTRAST.GAP
+      // after the last contrast question, a newer mix-up never pushing an older one out; an Again never asks a genus not
+      // met yet (the genus shown instead).
+      {
+        const met = pool().filter(introReady),
+          [a, b, c, d, e, f, g, h] = met,
+          at = answersSoFar();
+        dropPlans();
+        NEXTQ = null;
+        rematch = [];
+        twoAt = -Infinity;
+        rematchAdd([a, b], at - 6);
+        rematchAdd([c, d], at - 5);
+        rematchAdd([e, f], at - 4);
+        if (rematchAdd([g, h], at - 3) || rematch.length !== 3) fails.push('Again queue: a fourth pair queued, or an older one pushed out');
+        const got = [];
+        for (let i = 0; i < 12 && rematch.length; i++) {
+          const q = planPhoto('quiz', at + i);
+          if (q.again) got.push([at + i, q[2].slice().sort().join('|')]);
+        }
+        const want = [
+          [a, b],
+          [c, d],
+          [e, f]
+        ].map(x => x.sort().join('|'));
+        if (got.map(x => x[1]).join() !== want.join() || got.some((x, i) => i && x[0] - got[i - 1][0] < CONTRAST.GAP))
+          fails.push(`Again queue: ${JSON.stringify(got)}, want ${want.join(', ')} oldest first`);
+        const never = pool().find(n => !introduced(n));
+        if (never) {
+          rematch = [{pair: [a, never], at: at - 6}];
+          twoAt = -Infinity;
+          const q = planPhoto('quiz', at);
+          if (!q.again || q[1] !== a) fails.push(`Again on a genus never met: asked ${q[1]} (${q.again ? 'Again' : 'no Again'})`);
+        }
+        rematch = [];
+        twoAt = -Infinity;
+        dropPlans();
+        NEXTQ = null;
+      }
+      // Look-alikes from the data (model.js dataLooks, core.js dataLook; 2026-11-04): a pair no source declares that the
+      // players keep mixing up (CONF.N offers or more, pooled score from CONF.TRAP) duels like a declared one.
+      {
+        const met = pool().filter(introReady),
+          un = [];
+        met.forEach((x, i) => met.slice(i + 1).forEach(y => !isLook(x, y) && un.push([x, y].sort())));
+        const [x, y] = un[0],
+          k = x + '|' + y,
+          keep = PCONF[k];
+        PCONF[k] = [40, 14];
+        if (!dataLooks(met).some(p => p.join('|') === k)) fails.push(`${k} mixed up 14 times in 40 not a look-alike from the data`);
+        let n = 0;
+        for (let i = 0; i < 400 && !n; i++) n += (duelPick(met) || []).slice().sort().join('|') === k ? 1 : 0;
+        if (!n) fails.push(`${k}, a look-alike from the data, never drawn for a duel`);
+        PCONF[k] = [40, 2];
+        if (dataLooks(met).some(p => p.join('|') === k)) fails.push(`${k} mixed up 2 times in 40 a look-alike from the data`);
+        if (keep) PCONF[k] = keep;
+        else delete PCONF[k];
+      }
+      // Opening pace (model.js openPace, OPEN.MAX in OPEN.WIN answers; 2026-11-04): a player whose genera met are all solid
+      // (nothing shaky, so openChance is 1) gets at most OPEN.MAX cards in any OPEN.WIN answers, never a card while a genus
+      // carded in the window waits for its question, and each carded genus is asked within a few answers of its card.
+      {
+        const keepP = JSON.stringify(P),
+          keepI = JSON.stringify(introMap());
+        dropPlans();
+        NEXTQ = null;
+        rematch = [];
+        HOLDS = 0;
+        CB = {r: 0, t: 0, ok: 0, f: 0};
+        store.set(INTRO.OFFER.KEY, {at: 0, open: 0}); // the open-all offer declined
+        const S = pool().filter(n => !isBonus(n)),
+          old = S.slice(0, 12),
+          m = {};
+        Object.keys(P).forEach(n => n !== LEVEL && delete P[n]);
+        old.forEach(n => {
+          P[n] = {ok: 30, ko: 1, streak: 5, h: '1111111111', th: 2.8, lt: (P[LEVEL] || {}).th || 0};
+          m[n] = [0, 1, Date.now(), 's'];
+        });
+        store.set(INTRO.KEY, m);
+        INTROS = null;
+        const cards = [],
+          fromCard = {};
+        for (let i = 0; i < 60; i++) {
+          NEXTQ = null;
+          document.querySelectorAll('.unlock:not(.intro)').forEach(x => x.remove());
+          const at = answersSoFar(),
+            waiting = openRecent(at).filter(n => !asked(n));
+          quizPhoto();
+          const q = SHOWNQ;
+          if (q.intro && !q.start) {
+            cards.push(at);
+            q.intro.forEach(n => (fromCard[n] = at));
+            if (waiting.length) fails.push(`opening pace: a card at answer ${at} while ${waiting.join(', ')} waited for its question`);
+          }
+          document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+          say(q[1]);
+        }
+        const most = Math.max(0, ...cards.map(x => cards.filter(y => y >= x && y < x + OPEN.WIN).length)),
+          late = Object.entries(fromCard).filter(([n, at]) => !(P[n] && P[n].ok + P[n].ko > 0) && answersSoFar() - at > INTRO.GAP + 4);
+        if (most > OPEN.MAX || cards.length < 4)
+          fails.push(`opening pace: ${cards.length} cards in 60 answers, ${most} in ${OPEN.WIN} at most`);
+        if (late.length) fails.push(`opening pace: ${late.map(x => x[0]).join(', ')} carded and not asked`);
+        Object.keys(P).forEach(n => delete P[n]);
+        Object.assign(P, JSON.parse(keepP));
+        store.set(INTRO.KEY, JSON.parse(keepI));
+        INTROS = null;
+        rematch = [];
+        dropPlans();
+        NEXTQ = null;
       }
       // Nothing is planned past a question that changes what comes next while it is on screen (Codex review #361: an
       // exam planned behind an unanswered exam broke its spacing); a plain question gets its next ones planned.
@@ -810,7 +920,7 @@ const server = http.createServer((req, res) => {
       // Every slate genus met: the bonus genera are offered once (a prompt: PROMPT.GAP answers after the last one);
       // "Not now" is kept.
       // Until every slate genus has been asked once (bonusOfferDue), then 30 more questions to check "Not now" holds:
-      // how many were asked before opening all depends on the opening pace (OPEN.MAX, 2026-11-03).
+      // how many were asked before opening all depends on the opening pace (model.js openPace).
       let boffers = 0,
         after = 0;
       store.set(PROMPT.KEY, null);
@@ -867,7 +977,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
-      rematch = null; // no "Again" left over from the section before
+      rematch = []; // no "Again" left over from the section before
     }
     // Opening held while the player does clearly worse than expected (introHold, a CUSUM, Pierre 2026-11-02): two
     // misses where 0.8 was expected hold; right answers pay it back by what they beat the expectation by; never below 0.
@@ -900,7 +1010,7 @@ const server = http.createServer((req, res) => {
         right = () => say(SHOWNQ[1]),
         fresh = () => {
           NEXTQ = null;
-          rematch = null;
+          rematch = [];
           document.querySelectorAll('.unlock').forEach(x => x.remove());
         };
       CB = {r: 0, t: 0, ok: 0, f: 0};
@@ -979,7 +1089,7 @@ const server = http.createServer((req, res) => {
         fails.push(`Again during the comeback: ${JSON.stringify({again: SHOWNQ.again, warm: SHOWNQ.warm, cb: SHOWNQ.cb})}`);
       right();
       CB = {r: 0, t: 0, ok: 0, f: 0};
-      rematch = null; // no "Again" left over from the section before
+      rematch = []; // no "Again" left over from the section before
       HOLDS = h0;
     }
     // Custom quiz (model.js customDraw, customChoices; quiz.js planPhoto on CUSTOM_H): the real draw on the real data,
@@ -995,7 +1105,7 @@ const server = http.createServer((req, res) => {
           if (strong) P[LEVEL] = {ok: 400, ko: 40, th: 2};
           store.set(INTRO.KEY, {});
           INTROS = null;
-          rematch = null;
+          rematch = [];
           NEXTQ = null;
           store.set(CUSTOM.KEY, {g: sel, t: Date.now()});
           for (let i = 0; i < 40; i++) {
@@ -1028,7 +1138,7 @@ const server = http.createServer((req, res) => {
           apart = far.length === 4 ? far : pick4((x, n) => !confusable(x, n) && !confusable(n, x));
         P = Object.fromEntries(genera.map(n => [n, {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85}]));
         P[LEVEL] = {ok: 600, ko: 40, th: 2};
-        rematch = null;
+        rematch = [];
         NEXTQ = null;
         store.set(CUSTOM.KEY, {g: apart, t: Date.now()});
         let exams = 0,

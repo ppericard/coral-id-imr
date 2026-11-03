@@ -745,6 +745,42 @@ function recalcNotice() {
     onClose: how => how === 'route' && setTimeout(recalcNotice, 300)
   });
 }
+// An apology, once (Pierre, 2026-11-04; core.js SORRY, sorryOf, sorryFelt, sorryText): to a player who really felt the
+// opening of #408 run unchecked (too many new genera at once, no easier questions after misses), at app open, in plain
+// words, greeted by the first word of their sign-in name (else "Hi!"). Whether they felt it is read once, the first time
+// this version runs on the device (FIRST: the time, and what core.js sorryOf reads then: the answers in the window, the
+// opening hold's sum, the cards opened in it), so playing on changes nothing. A card like recalcNotice's (app.js
+// cardShow, kind apology: 🙏 on the warm --warn tint): one card at a time (it waits while the tour or another card is
+// up), never held, its button, Enter or Escape close it for good on this device (imr-sorry, like imr-recalc, kept on the
+// device); leaving the page closes it unseen and it comes back.
+const SORRYK = {KEY: 'imr-sorry', FIRST: 'imr-sorry-first'};
+function sorryNotice() {
+  const now = Date.now();
+  let F = store.get(SORRYK.FIRST, null);
+  if (!F || typeof F !== 'object') {
+    let log = [];
+    try {
+      log = [...((SYNC && SYNC.log) || []), ...(store.get(LOG0, []) || [])];
+    } catch (e) {}
+    F = {t: now, ...sorryOf({log, cards: introMap(), total: answersSoFar(), h: HOLDS, first: now})};
+    store.set(SORRYK.FIRST, F);
+  }
+  if (!sorryDue({felt: F, now, shown: store.get(SORRYK.KEY, 0)})) return;
+  if (document.querySelector('.sorry')) return; // already on screen
+  if (document.querySelector('#tour, .unlock')) return void setTimeout(sorryNotice, 2000);
+  const x = sorryText(SYNC && SYNC.name, now, new Date(now).getTimezoneOffset());
+  cardShow({
+    kind: 'apology',
+    cls: 'sorry',
+    kick: 'Sorry',
+    title: esc(x.t),
+    body: `<p>${esc(x.p)}</p>`,
+    primary: {text: 'Thanks', on: () => store.set(SORRYK.KEY, Date.now())},
+    esc: 1,
+    enter: 1,
+    onClose: how => how === 'route' && setTimeout(sorryNotice, 300)
+  });
+}
 // A short note at the bottom of the screen (.apptoast, the cards' tint and shadow; html is the app's own text), closed by
 // ✕ or after ms.
 function appToast(html, ms) {

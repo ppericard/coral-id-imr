@@ -677,6 +677,69 @@ async function overlays(b, base) {
     }
     await c.close();
   }
+  // The apology card (core.js SORRY, sorryOf, sorryFelt; progress.js sorryNotice; 2026-11-04): once, at app open, to a
+  // player who felt the broken opening (20 answers or more between #408's merge and the first run of this version, the
+  // opening hold's sum at 3 or more then); "Hi!" signed out (the sign-in name: signin(), below); its button or Escape
+  // close it for good; never to a player of a single answer or whose answers are all from before. The clock is fixed on
+  // the morning after (Manila), so the test does not expire with the card.
+  for (const [lab, at, n, want] of [
+    ['25 answers in the window, the hold at 3.5', '2026-11-03T13:00:00Z', 25, 'Hi! Sorry about your last run.'],
+    ['one answer in the window', '2026-11-03T13:00:00Z', 1, null],
+    ['25 answers before it', '2026-11-03T09:00:00Z', 25, null]
+  ]) {
+    const [c, p] = await open(
+      {viewport: {width: 390, height: 800}, timezoneId: 'Asia/Manila'},
+      ({t, n}) => {
+        localStorage.setItem('imr-tour', '"done"');
+        localStorage.setItem('imr-nudge', '1');
+        localStorage.setItem('imr-recalc', '"typed-questions-2026-11"'); // the last update note: seen
+        if (localStorage.getItem('imr-coral-progress')) return;
+        const last = t + n * 20000;
+        localStorage.setItem(
+          'imr-coral-progress',
+          JSON.stringify({'~level': {ok: n, ko: 0, th: 0.5, at: last}, Acropora: {ok: n, ko: 0, h: '1111', at: last}})
+        );
+        localStorage.setItem('imr-hold', String(n > 1 ? 3.5 : 0.7));
+        localStorage.setItem(
+          'imr-log0',
+          JSON.stringify(
+            Array.from({length: n}, (_, k) => ({
+              id: 'x' + k,
+              t: new Date(t + k * 20000).toISOString(),
+              g: 'Acropora',
+              a: 'Acropora',
+              ok: 1,
+              e: 0.8
+            }))
+          )
+        );
+      },
+      {t: Date.parse(at), n}
+    );
+    await p.clock.setFixedTime(new Date('2026-11-04T03:00:00Z'));
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    if (want) {
+      await p.waitForSelector('.sorry', {timeout: 8000}).catch(() => {});
+      const r = await p.evaluate(() => ({
+        n: document.querySelectorAll('.unlock').length,
+        h: (document.querySelector('.sorry h3') || {}).textContent,
+        t: (document.querySelector('.sorry p:not(.ulkick)') || {}).textContent
+      }));
+      if (r.n !== 1 || r.h !== want || !/^Yesterday evening we adjusted how the app picks your questions/.test(r.t || ''))
+        fails.push(`apology card, ${lab}: ${JSON.stringify(r)}`);
+      await p.keyboard.press('Escape');
+      if (await p.$('.sorry')) fails.push('apology card: Escape does not close it');
+      await p.reload();
+      await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    }
+    await p.waitForTimeout(2500);
+    if (await p.$('.sorry'))
+      fails.push(
+        `apology card, ${lab}: ${want ? 'shown twice' : 'shown'} ${await p.evaluate(() => localStorage.getItem('imr-sorry-first'))}`
+      );
+    await c.close();
+  }
   return fails;
 }
 
@@ -768,6 +831,28 @@ async function signin(base) {
       prog: JSON.parse(localStorage.getItem('imr-coral-progress') || '{}'),
       posts: JSON.parse(localStorage.getItem('test-sheet-log') || '[]').filter(x => x.post && x.name)
     }));
+  // The apology card greets a signed-in player by the first word of their sign-in name (core.js sorryText); asked here
+  // with the clock on the morning after, the device's own answer in the window, the account from the stub sheet.
+  await run(
+    () => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+      localStorage.setItem('imr-recalc', '"typed-questions-2026-11"');
+      // What the device read at this version's first run (core.js sorryOf): 30 answers in the window, the hold at 3.5.
+      localStorage.setItem('imr-sorry-first', JSON.stringify({t: Date.parse('2026-11-04T01:00:00Z'), n: 30, h: 3.5, c: 0}));
+      localStorage.setItem('imr-coral-sync', JSON.stringify({name: 'Anna', pin: '1234'}));
+      const t = Date.parse('2026-11-03T13:00:00Z');
+      localStorage.setItem('imr-coral-progress', JSON.stringify({'~level': {ok: 5, ko: 1, th: 0.5, at: t}, Pavona: {ok: 5, ko: 1, at: t}}));
+    },
+    async p => {
+      await p.clock.setFixedTime(new Date('2026-11-04T03:00:00Z'));
+      await p.evaluate(() => document.querySelectorAll('.sorry').forEach(x => x.remove()));
+      await p.evaluate(() => (localStorage.removeItem('imr-sorry'), sorryNotice()));
+      await p.waitForSelector('.sorry', {timeout: 5000});
+      const h = await p.evaluate(() => document.querySelector('.sorry h3').textContent);
+      if (h !== 'Hi Anna! Sorry about your last run.') fails.push(`apology card, signed in: ${h}`);
+    }
+  );
   // A device with progress of its own (3 answers played signed out).
   await run(
     () => {
