@@ -295,7 +295,10 @@ const shaky = n => {
   return ((s.ok || 0) + (s.ko || 0) > 0 || !!s.h) && !s.mx && 0.25 + 0.75 * sig(ability(n) - genusDiff(n)) < OPEN.P;
 };
 // The chance that a question the path allows to open a genus opens one: the free share of OPEN.K places for shaky genera.
-const openChance = list => Math.max(0, 1 - list.filter(shaky).length / OPEN.K);
+// Only the genera open now take a place (introduced): a genus closed again by "One at a time" (introBack) keeps its
+// answers and its ability but is never asked until its card reopens it, so counted it would hold the opening at 0 for
+// good (Codex P1 on #408).
+const openChance = list => Math.max(0, 1 - list.filter(n => introduced(n) && shaky(n)).length / OPEN.K);
 // The genus to open among those not met yet (fresh): the easiest first, softly (OPEN.T, as far as the data are trusted:
 // easyTrust), and the most common near Dauin (commonFactor). A ★ genus waits while a genus its card compares it to is in
 // the list and not met (Pierre, 2026-11-03, #402; core.js starWaits: a reference not in the list never holds it back,

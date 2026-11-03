@@ -604,6 +604,18 @@ const server = http.createServer((req, res) => {
           shut = allSet.filter(n => INTROS[n] && INTROS[n][3] === 'b');
         if (o.bk !== 'one' || shut.length !== allSet.length || !before.every(introduced) || allSet.some(introduced))
           fails.push(`One at a time: closed ${shut.length} of ${allSet.length}, record ${JSON.stringify(o)}`);
+        // Closed genera hold no place among the shaky ones that stop the opening (Codex P1 on #408): closed with their
+        // answers kept and badly known, they would keep the opening chance at 0, and being closed they are never asked,
+        // so the player could never open them again.
+        {
+          const P0 = JSON.stringify(P);
+          allSet.forEach(n => (P[n] = {...(P[n] || {}), ok: Math.max(1, (P[n] || {}).ok || 0), ko: 3, th: -1.5}));
+          const stuck = allSet.filter(shaky).length;
+          if (stuck >= OPEN.K && !(openChance(pool()) > 0))
+            fails.push(`One at a time: ${stuck} closed genera, badly known, keep the opening chance at ${openChance(pool())}`);
+          if (stuck < OPEN.K) fails.push(`One at a time: only ${stuck} closed genera made shaky for the check`);
+          P = JSON.parse(P0);
+        }
         // The question on screen was chosen again among the genera still open.
         if (!introReady(SHOWNQ[1]) || !choices().every(introduced))
           fails.push(`after One at a time: asked ${SHOWNQ[1]} (was ${t0}), choices ${choices().join(', ')}`);
