@@ -1804,7 +1804,7 @@ const HELP = {
   get journey() {
     return `<p>One player's path, from their answers in the sheet (signed in). <b>Quiz right</b> and <b>Last 50</b> count the Quiz only (the Custom quiz and the look-alike duels slipped into them included); <b>Duels</b> = answers in the Duel tab (2 choices, often on one chosen pair), apart so a burst of them does not read as the player's level. <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. <b>Progress</b> and <b>Learned</b> (numbers and the Genera table's Progress column): replayed from every answer in the log with the current rules, as on Players; ↻ saved = what their saved copy still says. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day, a dashed orange one when they opened all the genera at once. The green curve counts the genera learned (mastery exam passed, still held), each at the answer that passed its mastery exam (★: its last right exam question); genera learned before exam questions were logged (2 Nov 2026) have no such answer and are not on it (the legend says how many). <b>Cards</b> (from their saved progress, read with this page's token): the first cards and when, how many single cards, and whether they opened all the genera at once (after which answer, when, and from where: the first cards, My progress or the offer card) or declined the offer; times are kept from 2 Nov 2026 (before, the time of that answer). <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered. <b>Genera</b>: every genus they were asked, in the order met; Card = when its card showed (first cards, opened all, or after which answer; hover for how many questions later it was asked), First asked = answer number and date of its first question, or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>When they played</b>: one row a day, from their first day to their last (days without an answer included), one cell an hour, in this device's time zone; the darker, the more answers that hour, relative to their busiest hour (hover for the answers and the right share); the total of the day on the right. A session = answers less than ${HEALTH.GAP} minutes apart. <b>Median time</b> and <b>Enlarged</b> (answers from sheet v23 on): median seconds from the photos in view to the answer, and the share of answers where they enlarged a photo first; logged to see later whether they tell a hard photo, not used by the game.</p>`;
   },
-  events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap question "These questions are: Too easy · About right · Too hard" (after 15 answers, then every 60), with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. The games aim at about 80% right, so many "Too hard" from beginners would mean the start is too steep. Last 30 days. Nothing here changes the app by itself.</p>`,
+  events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
   start: `<p><b>Three groups, nine tabs</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health: players' reports, your flags, the errors their devices send, how the app is working for them) and <b>Coverage</b> (Games, Sheets & Finder: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form), <b>Look-alikes</b>, <b>Photo stats</b> (Difficulty, Photo list). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (Activity, Confusions). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Photo review</b>: check the quality and growth form guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Coverage › Games</b>: Where to look, above the grid, says which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
@@ -2326,6 +2326,100 @@ function evSummary() {
       )
       .join('')}</tbody></table></div>${G.length > 8 ? `<p class="note">+${G.length - 8} more in Errors</p>` : ''}`;
 }
+// The one-tap questions (quiz.js pulseAsk; core.js PULSEQ; sheet v19 'pulse' events): the item in Where (empty before
+// 2026-11-03: PULSE0, the only one then; old), its answer's code in Message, what the game knew when it showed in Detail.
+// Since 2026-11-03 a prompt also logs its showing and, unanswered, "Not now" or moving on (PULSE_META: no answer).
+const PULSE_META = {[PULSE_SHOWN]: 1, [PULSE_SKIP]: 1, [PULSE_NONE]: 1};
+function pulseRows(L) {
+  return L.map(r => {
+    let d = {};
+    try {
+      d = JSON.parse(r[7] || '{}');
+    } catch (e) {}
+    const q = String(r[5] || PULSE0),
+      s = pulseScore(q, r[4]);
+    return {...d, r: String(r[4]), q, old: !r[5], ans: !PULSE_META[r[4]], sd: s.d, sf: s.f, t: r[1], dev: r[2]};
+  });
+}
+// Player level bands (the overall level when they answered) and modes, the columns of the one-tap tables.
+const PULSE_BANDS = [
+    ['beg', 'Beginner', 'Level below −0.5'],
+    ['mid', 'Middle', 'Level −0.5 to +0.5'],
+    ['str', 'Strong', 'Level above +0.5'],
+    ['unk', 'Unknown', 'Level not logged']
+  ],
+  pulseBand = lv => (typeof lv !== 'number' ? 'unk' : lv < -0.5 ? 'beg' : lv < 0.5 ? 'mid' : 'str'),
+  PULSE_MODES = {quiz: 'Quiz', 'quiz-duel': 'Duel', 'quiz-custom': 'Custom'};
+// Response (shown, answered, "Not now", no answer = shown − answered − Not now, which also counts a prompt left open
+// when the app closed; answered % of shown) over the prompts that log their showing: rows with an item id.
+function pulseResp(L) {
+  const R = L.filter(x => !x.old),
+    shown = R.filter(x => x.r === PULSE_SHOWN).length,
+    ans = R.filter(x => x.ans).length,
+    skip = R.filter(x => x.r === PULSE_SKIP).length;
+  return {shown, ans, skip, none: Math.max(0, shown - ans - skip), rate: shown ? Math.round((100 * ans) / shown) + '%' : ''};
+}
+// Two tables: the common scales (felt difficulty, −1 too easy to +1 too hard; feel, −1 bad to +1 good; core.js
+// pulseScore) and the response by level band and by mode, then each item's answers and response by band and mode.
+function pulseView(E) {
+  if (!E.length) return '<p class="note">None yet.</p>';
+  const P = E.filter(x => x.ans),
+    cols = [
+      ['', 'All', '', () => true],
+      ...PULSE_BANDS.filter(([k]) => E.some(x => pulseBand(x.lv) === k)).map(([k, t, ti]) => [k, t, ti, x => pulseBand(x.lv) === k]),
+      ...[...new Set(E.map(x => x.m || ''))].sort().map(m => [m, PULSE_MODES[m] || m || '?', 'Mode', x => (x.m || '') === m])
+    ],
+    mean = (L, k) => {
+      const V = L.map(x => x[k]).filter(v => typeof v === 'number'),
+        m = V.length ? Math.round((100 * V.reduce((t, v) => t + v, 0)) / V.length) / 100 : 0;
+      return V.length ? `${m > 0 ? '+' : m < 0 ? '−' : ''}${Math.abs(m).toFixed(2)} <small>${V.length}</small>` : '';
+    },
+    rrOf = L => (L.length ? Math.round(L.reduce((t, x) => t + (x.rr || 0), 0) / L.length) + '%' : ''),
+    scales = `<div class="adm-tscroll"><table class="adm-tbl adm-pscale"><thead><tr><th></th><th class="n">Answers</th><th class="n" title="−1 too easy · +1 too hard">Difficulty</th><th class="n" title="−1 bad · +1 good">Feel</th><th class="n" title="Right % of their last 10 answers, on average">Last 10 right</th><th class="n">Shown</th><th class="n" title="Answered, % of shown">Answered</th><th class="n">Devices</th></tr></thead><tbody>${cols
+      .map(([, t, ti, f]) => {
+        const L = P.filter(f),
+          rs = pulseResp(E.filter(f));
+        return `<tr><td${ti ? ` title="${esc(ti)}"` : ''}>${esc(t)}</td><td class="n">${L.length}</td><td class="n">${mean(L, 'sd')}</td><td class="n">${mean(L, 'sf')}</td><td class="n">${rrOf(L)}</td><td class="n">${rs.shown || ''}</td><td class="n">${rs.rate}</td><td class="n">${new Set(E.filter(f).map(x => x.dev)).size}</td></tr>`;
+      })
+      .join('')}</tbody></table></div>`,
+    // The bank's items in order, then any item a newer app asked that this admin does not know (its codes as they came).
+    items = [...PULSEQ, ...[...new Set(E.map(x => x.q))].filter(q => !pulseItem(q)).map(q => ({id: q, q, a: []}))],
+    head = `<tr><th></th>${cols.map(([, t, ti]) => `<th class="n"${ti ? ` title="${esc(ti)}"` : ''}>${esc(t)}</th>`).join('')}</tr>`,
+    // Under each item's answers (count, % of that column's answers): its "Not now", no answer, and shown with the
+    // answered % (pulseResp), per column.
+    meta = (L, t, cell) =>
+      `<tr class="adm-pmeta"><td>${t}</td>${cols
+        .map(([, , , f]) => {
+          const rs = pulseResp(L.filter(f));
+          return `<td class="n">${cell(rs)}</td>`;
+        })
+        .join('')}</tr>`,
+    body = items
+      .map(it => {
+        const EL = E.filter(x => x.q === it.id),
+          L = EL.filter(x => x.ans),
+          rows = [
+            ...it.a.map(([k, t]) => [k, t]),
+            ...[...new Set(L.map(x => x.r))].filter(k => !it.a.some(a => a[0] === k)).map(k => [k, k])
+          ];
+        return `<tbody><tr class="adm-pq"><th colspan="${cols.length + 1}">${esc(it.q)} <small>${L.length}</small></th></tr>${rows
+          .map(
+            ([k, t]) =>
+              `<tr><td>${esc(t)}</td>${cols
+                .map(([, , , f]) => {
+                  const C = L.filter(f),
+                    n = C.filter(x => x.r === k).length;
+                  return `<td class="n">${n ? `${n} <small>${Math.round((100 * n) / C.length)}%</small>` : ''}</td>`;
+                })
+                .join('')}</tr>`
+          )
+          .join('')}${meta(EL, 'Not now', rs => rs.skip || '')}${meta(EL, 'No answer', rs => rs.none || '')}${meta(EL, 'Shown', rs =>
+          rs.shown ? `${rs.shown} <small>${rs.rate} answered</small>` : ''
+        )}</tbody>`;
+      })
+      .join('');
+  return `${scales}<div class="adm-tscroll"><table class="adm-tbl adm-pitems"><thead>${head}</thead>${body}</table></div>`;
+}
 function renderEvents() {
   status();
   if (!EVS) {
@@ -2344,46 +2438,8 @@ function renderEvents() {
     when = t => days(t),
     group = evGroup,
     few = (S, n = 3) => esc([...S].slice(0, n).join(', ') + (S.size > n ? ` +${S.size - n}` : ''));
-  // The one-tap question: how many said each, overall and by player level (overall level from the answer's detail).
-  const P = of('pulse').map(r => {
-      let d = {};
-      try {
-        d = JSON.parse(r[7] || '{}');
-      } catch (e) {}
-      return {r: r[4], ...d, t: r[1], dev: r[2]};
-    }),
-    RS = [
-      ['easy', 'Too easy'],
-      ['ok', 'About right'],
-      ['hard', 'Too hard']
-    ],
-    band = lv =>
-      typeof lv !== 'number'
-        ? 'unknown'
-        : lv < -0.5
-          ? 'beginner (level below −0.5)'
-          : lv < 0.5
-            ? 'middle (−0.5 to +0.5)'
-            : 'strong (above +0.5)',
-    bands = [...new Set(P.map(x => band(x.lv)))].sort(),
-    pmax = Math.max(1, ...RS.map(([k]) => P.filter(x => x.r === k).length)),
-    rrOf = L => (L.length ? Math.round(L.reduce((t, x) => t + (x.rr || 0), 0) / L.length) + '%' : '–');
-  const pulse = P.length
-    ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Answer</th><th>Times</th><th></th><th title="Right % of their last 10 answers when they answered, on average">Last 10 right</th></tr></thead><tbody>${RS.map(
-        ([k, t]) => {
-          const L = P.filter(x => x.r === k);
-          return `<tr><td>${t}</td><td class="n">${L.length}</td><td>${sbar(L.length, pmax, k === 'ok' ? '' : 'bad')}</td><td class="n">${rrOf(L)}</td></tr>`;
-        }
-      ).join('')}</tbody></table></div>
-      <div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Player level</th>${RS.map(([, t]) => `<th>${t}</th>`).join('')}</tr></thead><tbody>${bands
-        .map(
-          b =>
-            `<tr><td>${esc(b)}</td>${RS.map(([k]) => `<td class="n">${P.filter(x => band(x.lv) === b && x.r === k).length || ''}</td>`).join('')}</tr>`
-        )
-        .join(
-          ''
-        )}</tbody></table><p class="note">${new Set(P.map(x => x.dev)).size} device${new Set(P.map(x => x.dev)).size === 1 ? '' : 's'}</p>`
-    : '<p class="note">None yet.</p>';
+  const P = pulseRows(of('pulse')),
+    pulse = pulseView(P);
   const errs = group(of('err'), r => r[4] + ' @ ' + r[5]),
     errT = errs.length
       ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Error</th><th>Devices</th><th>Times</th><th>Last</th><th>Pages</th><th>App</th><th>Browsers</th></tr></thead><tbody>${errs
@@ -2443,7 +2499,7 @@ function renderEvents() {
   $v.innerHTML =
     head +
     kpis([
-      ['One-tap answers', P.length],
+      ['One-tap answers', P.filter(x => x.ans).length],
       ['App errors', of('err').length],
       ['Photos not loaded', of('photo').length],
       ['Failed saves', of('sync').length],
@@ -2452,7 +2508,7 @@ function renderEvents() {
       ['Installed app', LD.filter(x => x.st).length + ' / ' + LD.length]
     ]) +
     `<div class="adm-sgrid adm-ev">
-    <section class="adm-scard"><h3>"These questions are…" · ${EV_DAYS} days</h3>${pulse}</section>
+    <section class="adm-scard wide adm-pulse"><h3>One-tap questions · ${EV_DAYS} days</h3>${pulse}</section>
     <section class="adm-scard wide"><h3>App errors</h3>${errT}</section>
     <section class="adm-scard"><h3>Photos that did not load</h3>${phT}</section>
     <section class="adm-scard"><h3>Saves that failed</h3>${syT}</section>
