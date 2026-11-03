@@ -2,7 +2,6 @@
 // metric flags (Pierre, 2026-11-03; docs/ARCHITECTURE.md "Auto-sort").
 const test = require('node:test'),
   assert = require('node:assert'),
-  fs = require('fs'),
   path = require('path');
 const {
   AUTO,
@@ -51,20 +50,34 @@ test('sure rule: what the pass is sure of, field by field', () => {
   assert.strictEqual(autoSure({g: 'cmp', q: 2, fm: 'M'}), null);
 });
 
-test('1 in 20 Checks: deterministic per photo, about 5% of the real candidates', () => {
-  const cand = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'cand.json'))).cand,
-    F = Object.values(cand)
-      .flat()
-      .map(p => p.f);
-  assert.ok(F.length > 500);
-  const n = F.filter(autoCheck).length,
-    again = F.filter(autoCheck).length;
-  assert.strictEqual(n, again, 'same photos on a second pass');
-  const r = n / F.length;
-  assert.ok(r > 0.03 && r < 0.07, `checks ${(100 * r).toFixed(1)}% of ${F.length}`);
+// Not measured on the real cand.json: what is left there is not a random sample of names. The auto-sort's adds leave
+// cand.json at the next candidate refill (approved-photos workflow), while its Checks stay there until Pierre answers
+// them, so the share of Checks among the candidates left grows with every run (5.0% of 1746 before the first refill,
+// 7.8% of 1229 after it, 2026-11-03). The hash itself is checked on fixed names and on a large generated set.
+test('1 in 20 Checks: deterministic per photo, 5% of candidate names', () => {
+  assert.strictEqual(AUTO.every, 20);
+  // Fixed names, fixed answers: a change to the hash or the rule would make other photos Checks on Pierre's data.
+  ['montipora-cand-260314187', 'pocillopora-cand-263351328', 'montipora-cand-265341179', 'fungia-cand-266074282'].forEach(f =>
+    assert.strictEqual(autoCheck(f), true, f)
+  );
+  ['acropora-cand-260000000', 'porites-cand-260104729', 'pocillopora-cand-260209458', 'fungia-cand-260418916', 'acropora-cand-1'].forEach(
+    f => assert.strictEqual(autoCheck(f), false, f)
+  );
   // Independent of anything but the name (no device seed, no order).
   assert.strictEqual(autoCheck('acropora-cand-1'), autoCheck('acropora-cand-1'));
-  assert.strictEqual(AUTO.every, 20);
+  // 100,000 names shaped like the real ones (genus-cand-<iNaturalist photo id>) over 8 genera: 1 in 20 overall
+  // (binomial sd 0.07 points) and in each genus (sd 0.2 points), on a second pass too.
+  const G = ['acropora', 'porites', 'pocillopora', 'montipora', 'fungia', 'favites', 'goniopora', 'turbinaria'],
+    F = Array.from({length: 100000}, (_, i) => `${G[i % G.length]}-cand-${100000000 + i * 7919}`),
+    n = F.filter(autoCheck).length,
+    again = F.filter(autoCheck).length;
+  assert.strictEqual(n, again, 'same photos on a second pass');
+  assert.ok(Math.abs(n / F.length - 0.05) < 0.003, `checks ${((100 * n) / F.length).toFixed(2)}% of ${F.length}`);
+  G.forEach(g => {
+    const L = F.filter(f => f.startsWith(g + '-')),
+      r = L.filter(autoCheck).length / L.length;
+    assert.ok(Math.abs(r - 0.05) < 0.006, `${g}: checks ${(100 * r).toFixed(2)}% of ${L.length}`);
+  });
 });
 
 test('log codes: written and read back', () => {
