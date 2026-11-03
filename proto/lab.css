@@ -3560,9 +3560,9 @@ button.fdgc {
   font-weight: 600;
   margin-bottom: 8px;
 }
-/* Phone base (mobile-first); larger screens restore below. */
-body:has(.fdstart:not([hidden])) footer {
-  padding-bottom: 72px;
+/* Phone base (mobile-first); larger screens restore below. Room under the content for the pinned Show button. */
+body:has(.fdstart:not([hidden])) main {
+  margin-bottom: 72px;
 }
 .fdstop {
   margin-bottom: -14px;
@@ -3590,8 +3590,8 @@ body:has(.fdstart:not([hidden])) footer {
 }
 
 @media (min-width: 600px) {
-  body:has(.fdstart:not([hidden])) footer {
-    padding-bottom: 10px;
+  body:has(.fdstart:not([hidden])) main {
+    margin-bottom: 32px;
   }
   .fdstop {
     margin-bottom: 0;
