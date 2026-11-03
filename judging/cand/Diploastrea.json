@@ -1,50 +1,38 @@
 {
  "genus": "Diploastrea",
  "photos": {
-  "diploastrea-cand-588008512": {
-   "view": "wide",
-   "quality": 3,
-   "form": "M",
-   "keep": "best"
-  },
   "diploastrea-cand-269475591": {
-   "view": "wide",
-   "quality": 3,
-   "form": "M",
-   "keep": "dup"
-  },
-  "diploastrea-cand-269475637": {
-   "view": "wide",
-   "quality": 3,
-   "form": "M",
-   "keep": "alt",
-   "note": "closer, corallites larger"
-  },
-  "diploastrea-cand-269475643": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "dup"
+   "keep": "dup",
+   "note": "Same dome and framing as 3 and the live Colony photo"
   },
-  "diploastrea-cand-269475646": {
+  "diploastrea-cand-269475637": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup",
+   "note": "Same dome and framing as 3 and the live Colony photo"
+  },
+  "diploastrea-cand-269475669": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup",
+   "note": "Same dome and framing as 3 and the live Colony photo"
+  },
+  "diploastrea-cand-269475643": {
    "view": "wide",
    "quality": 3,
    "form": "M",
    "keep": "best"
-  },
-  "diploastrea-cand-269475669": {
-   "view": "wide",
-   "quality": 3,
-   "form": "M",
-   "keep": "alt",
-   "note": "wider, colony among neighbours"
   },
   "diploastrea-cand-269396106": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "note": "dark"
+   "keep": "best"
   },
   "diploastrea-cand-269396309": {
    "view": "wide",
@@ -57,40 +45,26 @@
    "quality": 2,
    "form": "M",
    "keep": "alt",
-   "note": "another side of the colony"
+   "note": "The other side of the colony"
   },
   "diploastrea-cand-269471290": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "dup",
+   "note": "Same colony and framing as the live Colony photo"
   },
   "diploastrea-cand-269731427": {
    "view": "medium",
    "quality": 3,
    "form": "M",
-   "keep": "alt",
-   "note": "brown dome, may be a different colony from tiles 3-6"
-  },
-  "diploastrea-cand-269731513": {
-   "view": "medium",
-   "quality": 3,
-   "form": "x",
    "keep": "best"
   },
   "diploastrea-cand-269731522": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "alt",
-   "note": "dark"
-  },
-  "diploastrea-cand-269731529": {
-   "view": "wide",
-   "quality": 2,
-   "form": "M",
-   "keep": "best",
-   "note": "dark"
+   "keep": "dup"
   },
   "diploastrea-cand-269731547": {
    "view": "wide",
@@ -102,26 +76,31 @@
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "alt",
-   "note": "closer, corallites visible"
+   "keep": "dup"
+  },
+  "diploastrea-cand-269731529": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
   },
   "diploastrea-cand-27705653": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "M",
    "keep": "best",
-   "note": "strong green cast"
+   "note": "Green cast"
   },
   "diploastrea-cand-582867258": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
+   "quality": 2,
+   "form": "M",
    "keep": "best"
   },
   "diploastrea-cand-582867265": {
    "view": "macro",
    "quality": 3,
-   "form": "x",
+   "form": "M",
    "keep": "best"
   },
   "diploastrea-cand-260005629": {
@@ -132,176 +111,157 @@
   },
   "diploastrea-cand-260005908": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
+   "quality": 2,
+   "form": "M",
    "keep": "best"
   },
   "diploastrea-cand-268976276": {
    "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "note": "green cast"
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
   },
   "diploastrea-cand-257159388": {
    "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "quality": 1,
+   "form": "M",
+   "keep": "best",
+   "note": "Motion blur over the whole frame"
   },
   "diploastrea-cand-46349804": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
-   "keep": "best",
-   "unsure": [
-    "genus",
-    "form"
-   ],
-   "note": "horseshoe colony with small rounded corallites; Dipsastraea or Astrea not ruled out"
+   "form": "M",
+   "keep": "best"
   },
   "diploastrea-cand-46349808": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "alt",
-   "unsure": [
-    "genus"
-   ],
-   "note": "several colonies; small rounded corallites, genus not certain"
+   "note": "Wider view, the colony curls around"
   },
   "diploastrea-cand-466160591": {
    "view": "wide",
    "quality": 2,
-   "form": "S",
+   "form": "M",
    "keep": "best",
    "multi": true,
-   "unsure": [
-    "genus"
-   ],
-   "note": "Acropora branches and a giant clam fill much of the frame"
+   "note": "Branching Acropora and a clam over the colony"
   },
   "diploastrea-cand-602115777": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
    "keep": "best"
   },
   "diploastrea-cand-661961257": {
    "view": "wide",
-   "quality": 2,
-   "form": "E",
-   "keep": "best",
-   "note": "hazy"
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
   },
   "diploastrea-cand-661962440": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
    "keep": "best",
-   "note": "low cones with broad walls clearly visible"
+   "note": "1118 px"
   },
   "diploastrea-cand-227054368": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "green cast"
+   "note": "Green cast"
   },
   "diploastrea-cand-467605064": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "blue cast"
+   "note": "Blue cast"
   },
   "diploastrea-cand-437170234": {
    "view": "macro",
    "quality": 3,
-   "form": "x",
+   "form": "M",
    "keep": "best"
   },
   "diploastrea-cand-437170253": {
    "view": "macro",
-   "quality": 2,
-   "form": "x",
-   "keep": "alt",
-   "note": "single corallite, very close"
+   "quality": 1,
+   "form": "M",
+   "keep": "dup",
+   "note": "Blurred close-up of one corallite"
   },
   "diploastrea-cand-47823357": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "note": "soft, washed out"
+   "form": "M",
+   "keep": "best"
   },
   "diploastrea-cand-47823430": {
    "view": "macro",
-   "quality": 2,
-   "form": "x",
+   "quality": 1,
+   "form": "M",
    "keep": "best",
-   "note": "soft focus"
+   "note": "Soft and milky over the whole frame"
   },
   "diploastrea-cand-47823577": {
    "view": "medium",
-   "quality": 1,
-   "form": "x",
-   "keep": "dup",
-   "note": "washed out, hazy"
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
   },
   "diploastrea-cand-47823660": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "M",
    "keep": "best",
-   "note": "hazy"
+   "note": "Milky veil, soft at 100%"
   },
   "diploastrea-cand-713115591": {
-   "view": "macro",
+   "view": "medium",
    "quality": 3,
-   "form": "x",
+   "form": "M",
    "keep": "best"
   },
   "diploastrea-cand-713115588": {
    "view": "medium",
-   "quality": 3,
-   "form": "E",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "thick plates with overhanging edges"
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "note": "Colony edge over the reef"
   },
   "diploastrea-cand-713115571": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "alt",
-   "note": "oblique view of the cones"
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
   },
   "diploastrea-cand-752650717": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "note": "top-down; timestamp overlay"
+   "keep": "best"
   },
   "diploastrea-cand-181048041": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best"
   },
   "diploastrea-cand-181048044": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "alt",
-   "note": "top of the dome from below"
+   "note": "Another dome seen from the side, fish above"
   },
   "diploastrea-cand-479233998": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best"
   },
@@ -310,30 +270,26 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "strong green cast; corallites look larger and more separate than usual"
+   "note": "Strong cyan cast; date stamp"
   },
   "diploastrea-cand-694088121": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
+   "quality": 2,
+   "form": "M",
    "keep": "best"
   },
   "diploastrea-cand-694089643": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "alt",
-   "note": "different colour, may be another colony"
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
   },
   "diploastrea-cand-174506272": {
    "view": "medium",
-   "quality": 1,
-   "form": "x",
+   "quality": 2,
+   "form": "M",
    "keep": "best",
-   "note": "heavy cyan cast, low contrast"
+   "note": "Cyan cast"
   }
  }
 }

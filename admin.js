@@ -2727,8 +2727,8 @@ const srcOk = (p, s) => s === 'all' || origin(p) === s;
 // guessed to be a corallite photo (vg macro) is not proposed.
 // Judged candidates (suggest.json "cand", Pierre 2026-11-01: keep real diversity, sort by hand after a pre-sort): the
 // best photo of each view of an observation first, other angles later, near-duplicates, Poor photos, several corals and
-// other genera last. Only the sure unusable ones, comparison images and near-duplicates are set aside (aside, below);
-// every other candidate still comes up. Not judged yet = like a best Fair photo.
+// other genera last. Only the sure unusable ones, several corals, Poor photos, comparison images and near-duplicates are
+// set aside (aside, below); every other candidate still comes up. Not judged yet = like a best Fair photo.
 const JK = {best: 1, alt: 0.3, dup: 0.04},
   JQ = {3: 1.3, 2: 1, 1: 0.15};
 const jw = p => {
@@ -2743,10 +2743,13 @@ const JKT = {
   dup: 'near-duplicate of another photo of its observation'
 };
 // Set aside by the pre-sort (Pierre, 2026-11-03: "il ne faut pas que je me retrouve à devoir faire des tris sur des choses
-// évidentes"): a candidate the judging agent found unusable (no coral, aquarium, museum specimen or label, drawing…),
-// a comparison image or a near-duplicate of another photo of its observation, without any doubt (no `unsure`), no
-// longer comes up; a count and a Show link keep them reachable.
-const aside = p => !!(p.j && (p.j.g === 'exclude' || p.j.g === 'cmp' || p.j.k === 'dup') && !(p.j.u && p.j.u.length));
+// évidentes"): a candidate the judging agent found unusable (no coral, aquarium, museum specimen or label, drawing,
+// hand over the frame…), a comparison image, a near-duplicate of another photo of its observation (candidate or live),
+// a photo of several corals or a Poor one (rules learnt from 85 photos he rejected, judging/AGENTS.md), without any
+// doubt (no `unsure`), no longer comes up; a count and a Show link keep them reachable. Same rule as
+// tools/excluded.py set_aside: keep both identical.
+const aside = p =>
+  !!(p.j && (p.j.g === 'exclude' || p.j.g === 'cmp' || p.j.k === 'dup' || p.j.m || p.j.q === 1) && !(p.j.u && p.j.u.length));
 const jLine = p => {
   const j = p.j;
   if (!j) return '';
@@ -2967,7 +2970,7 @@ function renderCand() {
       ? `<p class="note adm-cfull">${nFull} wait${nFull === 1 ? 's' : ''} in full cells (${[...new Set(Q0.filter(x => x.full).map(x => capOf(x.n)))].sort((a, b) => b - a).join(' or ')} colonies) · <button type="button" class="adm-link" data-cfull>${CFULL ? 'Hide them' : 'Show them'}</button></p>`
       : '') +
     (nAside
-      ? `<p class="note adm-caside">${nAside} set aside by the pre-sort (unusable, comparison image or near-duplicate) · <button type="button" class="adm-link" data-caside>${CASIDE ? 'Hide them' : 'Show them'}</button></p>`
+      ? `<p class="note adm-caside">${nAside} set aside by the pre-sort (unusable, several corals, poor, comparison or near-duplicate) · <button type="button" class="adm-link" data-caside>${CASIDE ? 'Hide them' : 'Show them'}</button></p>`
       : '') +
     // Reminder (Pierre: the judging agent runs on demand, "remind me to launch it").
     (nJ

@@ -6,81 +6,82 @@
    "quality": 2,
    "form": "M",
    "keep": "alt",
-   "note": "UV fluorescence night shot; same colony as tile 2"
+   "note": "Same colony under fluorescence light"
   },
   "dipsastraea-cand-726191130": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best"
   },
   "dipsastraea-cand-697676369": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best"
   },
   "dipsastraea-cand-697676370": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "dup",
-   "note": "same framing with a ruler"
+   "note": "Same framing as 1 with a ruler at the left"
   },
   "dipsastraea-cand-698280706": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "dup",
+   "note": "Same colony and framing as the live Colony photo"
   },
   "dipsastraea-cand-698280700": {
+   "view": "wide",
+   "quality": 3,
+   "form": "M",
+   "keep": "best",
+   "note": "Closer than the live photo; a pointer at the bottom edge"
+  },
+  "dipsastraea-cand-698280718": {
+   "view": "medium",
+   "quality": 3,
+   "form": "M",
+   "keep": "best"
+  },
+  "dipsastraea-cand-698280722": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
+  },
+  "dipsastraea-cand-698280721": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "dup"
   },
-  "dipsastraea-cand-698280718": {
-   "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "dup"
-  },
-  "dipsastraea-cand-698280722": {
-   "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "best"
-  },
-  "dipsastraea-cand-698280721": {
-   "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "alt",
-   "note": "oblique view across the dome"
-  },
   "dipsastraea-cand-698280739": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "M",
    "keep": "dup"
   },
   "dipsastraea-cand-713113335": {
    "view": "medium",
    "quality": 3,
-   "form": "x",
+   "form": "M",
    "keep": "best"
   },
   "dipsastraea-cand-713113316": {
    "view": "macro",
    "quality": 3,
-   "form": "x",
-   "keep": "alt"
+   "form": "M",
+   "keep": "best"
   },
   "dipsastraea-cand-713113337": {
    "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "quality": 2,
+   "form": "M",
+   "keep": "dup"
   },
   "dipsastraea-cand-713113380": {
    "view": "wide",
@@ -89,34 +90,30 @@
    "keep": "best"
   },
   "dipsastraea-cand-488111530": {
-   "view": "macro",
+   "view": "medium",
    "quality": 2,
-   "form": "x",
-   "keep": "best"
+   "form": "M",
+   "keep": "best",
+   "note": "Soft at 100%"
   },
   "dipsastraea-cand-488111495": {
-   "view": "macro",
+   "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "M",
+   "keep": "dup"
+  },
+  "dipsastraea-cand-488111507": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
    "keep": "dup"
   },
   "dipsastraea-cand-488111547": {
    "view": "wide",
    "quality": 2,
-   "form": "E",
+   "form": "M",
    "keep": "best",
-   "unsure": [
-    "form",
-    "genus"
-   ],
-   "note": "thick plate on a wall, blue cast; corallites too small here to confirm the genus"
-  },
-  "dipsastraea-cand-488111507": {
-   "view": "macro",
-   "quality": 2,
-   "form": "x",
-   "keep": "alt",
-   "note": "shows a corallite dividing (intra-tentacular budding)"
+   "note": "Blue cast"
   },
   "dipsastraea-cand-110355037": {
    "view": "wide",
@@ -126,80 +123,39 @@
    "unsure": [
     "genus"
    ],
-   "note": "huge dome, corallites not readable; same image as observation 79030173"
-  },
-  "dipsastraea-cand-269396835": {
-   "view": "medium",
-   "quality": 2,
-   "form": "M",
-   "keep": "best",
-   "note": "dark night photo of the dome surface"
+   "note": "Smooth dome, corallites tiny at 100%; same photo as in another observation"
   },
   "dipsastraea-cand-345338570": {
-   "view": "wide",
-   "quality": 2,
-   "form": "M",
-   "keep": "best",
-   "note": "night photo, dark"
-  },
-  "dipsastraea-cand-345338586": {
    "view": "medium",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "closer crop of the same colony"
-  },
-  "dipsastraea-cand-386568452": {
-   "view": "wide",
-   "quality": 3,
-   "form": "M",
-   "keep": "best"
+   "note": "Close to the live Closer photo but wider"
   },
   "dipsastraea-cand-45488061": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "note": "Name watermark at the corner"
   },
   "dipsastraea-cand-269475303": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "dup",
-   "unsure": [
-    "genus"
-   ],
-   "note": "very large dome; corallites small and crowded, Diploastrea not ruled out"
+   "keep": "dup"
   },
   "dipsastraea-cand-269475283": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "dup",
-   "unsure": [
-    "genus"
-   ],
-   "note": "very large dome; corallites small and crowded, Diploastrea not ruled out"
-  },
-  "dipsastraea-cand-269475139": {
-   "view": "wide",
-   "quality": 3,
-   "form": "M",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "very large dome; corallites not readable at this distance"
+   "keep": "dup"
   },
   "dipsastraea-cand-269475275": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "alt",
-   "unsure": [
-    "genus"
-   ],
-   "note": "very large dome; corallites small and crowded, Diploastrea not ruled out"
+   "keep": "best"
   },
   "dipsastraea-cand-129398779": {
    "view": "wide",
@@ -209,7 +165,7 @@
    "unsure": [
     "genus"
    ],
-   "note": "identical image to observation 68192379; corallites not readable"
+   "note": "Same photo as in another observation; corallites tiny at 100%"
   },
   "dipsastraea-cand-269468748": {
    "view": "wide",
@@ -219,37 +175,32 @@
    "unsure": [
     "genus"
    ],
-   "note": "huge dome, corallites not readable; could be another massive genus"
+   "note": "Large dome with small corallites; Diploastrea or Porites possible"
   },
   "dipsastraea-cand-269396593": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "note": "dark, two-lobed dome"
+   "keep": "best"
   },
   "dipsastraea-cand-588674978": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.2,
+    0.85,
+    1.0
+   ]
   },
   "dipsastraea-cand-606652645": {
-   "view": "medium",
-   "quality": 1,
-   "form": "x",
-   "keep": "best",
-   "note": "a butterflyfish hides most of the coral"
-  },
-  "dipsastraea-cand-746238012": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "corallites crowded, walls hard to read; Favites possible"
+   "genus": "exclude",
+   "note": "A large fish covers the top half of the coral"
   },
   "dipsastraea-cand-307548897": {
    "view": "wide",
@@ -257,118 +208,123 @@
    "form": "M",
    "keep": "best",
    "multi": true,
-   "unsure": [
-    "genus"
-   ],
-   "note": "blurred; a meandroid coral beside it takes half the frame"
+   "note": "Blurred at 100%; a meandroid coral beside it"
   },
   "dipsastraea-cand-270751289": {
    "view": "wide",
    "quality": 2,
-   "form": "E",
-   "keep": "best",
-   "unsure": [
-    "genus",
-    "form"
-   ],
-   "note": "elongated corallites in a flat colony; check walls"
+   "form": "M",
+   "keep": "best"
   },
   "dipsastraea-cand-269242392": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "E",
-   "keep": "best"
+   "keep": "best",
+   "note": "Soft at 100%"
   },
   "dipsastraea-cand-336715881": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "genus": "Favites",
+   "keep": "best",
+   "multi": true,
    "unsure": [
-    "genus"
+    "multi"
    ],
-   "note": "corallites angular with shared walls (Favites by IMR cues), not separate"
+   "note": "Another massive coral fills the right third"
   },
   "dipsastraea-cand-74808937": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "genus": "Favites",
-   "unsure": [
-    "genus"
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.25,
+    0.75,
+    0.85
    ],
-   "note": "deep polygonal corallites with shared walls: Favites by IMR cues"
+   "note": "small"
   },
   "dipsastraea-cand-175359435": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Several colonies around the round one in the centre"
   },
   "dipsastraea-cand-175359423": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "dup",
-   "note": "same colony, wider and busier frame"
+   "keep": "alt",
+   "multi": true,
+   "note": "Wider, several corals in the frame"
   },
   "dipsastraea-cand-47822035": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "small colony, corallites crowded; walls hard to read"
+   "note": "Soft at 100%"
   },
   "dipsastraea-cand-246804236": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "M",
    "keep": "best",
-   "note": "cyan cast"
+   "note": "Cyan cast"
   },
   "dipsastraea-cand-246804256": {
    "view": "wide",
    "quality": 2,
-   "form": "M",
+   "form": "E",
    "keep": "best",
-   "note": "blue cast"
+   "note": "Cyan cast"
   },
   "dipsastraea-cand-589564491": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.1,
+    0.85,
+    0.95
+   ],
+   "note": "Small colony, another coral at the left"
   },
   "dipsastraea-cand-110608800": {
    "view": "macro",
    "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "form": "M",
+   "keep": "best",
+   "note": "1200 px, crisp"
   },
   "dipsastraea-cand-661980365": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
+   "quality": 2,
+   "form": "M",
    "keep": "best"
   },
   "dipsastraea-cand-661980500": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best"
   },
   "dipsastraea-cand-245795103": {
    "view": "wide",
    "quality": 2,
-   "form": "M",
+   "form": "S",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "blue cast; irregular corallites, Favites or Goniastrea possible"
+   "note": "Cyan cast"
   },
   "dipsastraea-cand-566690147": {
    "view": "wide",
@@ -378,22 +334,30 @@
   },
   "dipsastraea-cand-595446227": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Watermark at the corner"
   },
   "dipsastraea-cand-42082665": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "blue cast"
+   "note": "Blue cast"
   },
   "dipsastraea-cand-342263056": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.1,
+    0.75,
+    1.0
+   ],
+   "note": "Noisy at 100%"
   }
  }
 }

@@ -1,145 +1,141 @@
 {
  "genus": "Favites",
  "photos": {
-  "favites-cand-386693010": {
-   "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "note": "Strong green cast"
-  },
   "favites-cand-587999747": {
    "view": "wide",
    "quality": 3,
    "form": "E",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Low mound following the rock, between encrusting and massive"
+   "crop": [
+    0.0,
+    0.15,
+    1.0,
+    1.0
+   ]
   },
   "favites-cand-237008711": {
    "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "note": "Soft focus, small subject"
-  },
-  "favites-cand-269471394": {
-   "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "M",
    "keep": "best",
-   "note": "Dark, colony well lit"
+   "note": "1083 px wide, soft and smeared at 100%"
   },
   "favites-cand-190545677": {
-   "view": "macro",
+   "view": "medium",
    "quality": 3,
-   "form": "x",
+   "form": "M",
    "keep": "best"
   },
   "favites-cand-259410521": {
-   "view": "macro",
-   "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "note": "Dark"
-  },
-  "favites-cand-576310788": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "M",
    "keep": "best",
-   "note": "Dark, soft"
-  },
-  "favites-cand-390531700": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best",
-   "note": "Small shrimp on the colony"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Polyps with long septal teeth; Favites not certain"
   },
   "favites-cand-269006248": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Elongate pale openings; Favites not certain"
   },
   "favites-cand-336735940": {
    "view": "wide",
    "quality": 2,
    "form": "E",
    "keep": "best",
-   "note": "Soft focus, small colony"
+   "note": "1193 px, soft"
   },
   "favites-cand-270770237": {
    "view": "wide",
    "quality": 2,
    "form": "E",
    "keep": "best",
-   "note": "Dark"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Thick meandering walls; Favites not certain"
   },
   "favites-cand-445157390": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "E",
    "keep": "best",
-   "note": "Shallow, partly covered by sand"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Smooth tissue, pale openings; genus not certain"
   },
   "favites-cand-260008437": {
    "view": "wide",
    "quality": 2,
-   "form": "E",
-   "keep": "best",
-   "note": "Dark, algae on the colony"
+   "form": "M",
+   "keep": "best"
   },
   "favites-cand-670759506": {
    "view": "medium",
    "quality": 3,
-   "form": "x",
+   "form": "M",
    "keep": "best"
   },
   "favites-cand-670759570": {
    "view": "wide",
-   "quality": 3,
-   "form": "E",
+   "quality": 2,
+   "form": "M",
    "keep": "best"
   },
   "favites-cand-191091593": {
    "view": "wide",
    "quality": 1,
    "form": "M",
-   "keep": "dup",
-   "note": "Very strong blue cast, same colony as the next photo"
+   "keep": "alt",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Strong blue light over everything, features lost"
   },
   "favites-cand-191091838": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Large uneven corallites with thick walls; genus not certain"
   },
   "favites-cand-576269259": {
    "view": "wide",
    "quality": 2,
    "form": "E",
    "keep": "best",
-   "note": "Blue cast"
+   "unsure": [
+    "genus"
+   ],
+   "note": "1155 px, soft; dark rings around the openings, genus not certain"
   },
   "favites-cand-269239695": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "E",
    "keep": "best"
   },
   "favites-cand-269239706": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "E",
    "keep": "best"
   },
   "favites-cand-269239707": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "E",
    "keep": "dup"
   },
@@ -147,84 +143,89 @@
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "note": "Turbid, algae around"
+   "keep": "best"
   },
   "favites-cand-616646745": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "M",
-   "keep": "dup",
-   "note": "Strong green cast, same framing as the next photo"
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Strong cyan cast; big meandering valleys, genus not certain"
   },
   "favites-cand-616646748": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "alt",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Same colony in natural colour; genus not certain"
   },
   "favites-cand-175031382": {
    "view": "wide",
    "quality": 2,
    "form": "E",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Crinoid hides part of a shelf-like colony"
+   "note": "A feather star over a third of the coral; watermark at the corner"
   },
   "favites-cand-260370004": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "M",
-   "keep": "dup",
-   "note": "Overgrown with algae"
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Night photo, sediment over the colony; genus not certain"
   },
   "favites-cand-260370384": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Overgrown with algae"
+   "note": "Sediment over the colony"
   },
   "favites-cand-725534030": {
    "view": "medium",
    "quality": 3,
-   "form": "x",
+   "form": "M",
    "keep": "best"
   },
   "favites-cand-725534046": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best"
   },
   "favites-cand-661955774": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "note": "Soft focus"
+   "form": "M",
+   "keep": "best"
   },
   "favites-cand-661961296": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best"
   },
   "favites-cand-611191183": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "M",
    "keep": "best",
-   "note": "Cyan cast"
+   "note": "Strong cyan cast; features readable"
   },
   "favites-cand-611191204": {
    "view": "wide",
    "quality": 2,
    "form": "E",
    "keep": "best",
-   "note": "Cyan cast"
+   "note": "Strong cyan cast; features readable"
   }
  }
 }

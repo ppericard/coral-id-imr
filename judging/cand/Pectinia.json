@@ -3,167 +3,209 @@
  "photos": {
   "pectinia-cand-270772123": {
    "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "best"
-  },
-  "pectinia-cand-698277041": {
-   "view": "wide",
-   "quality": 3,
-   "form": "E",
+   "quality": 2,
+   "form": "B",
    "keep": "best",
-   "unsure": [
-    "form"
+   "crop": [
+    0.08,
+    0.12,
+    0.92,
+    0.95
    ],
-   "note": "Low meandering walls on a spreading base; encrusting or plating."
+   "note": "Soft at 100% on most branches"
   },
   "pectinia-cand-698277042": {
-   "view": "wide",
-   "quality": 3,
-   "form": "E",
-   "keep": "alt",
-   "unsure": [
-    "form"
-   ],
-   "note": "Closer view with a ruler and a gloved hand at the edge."
-  },
-  "pectinia-cand-246804781": {
-   "view": "wide",
-   "quality": 2,
-   "form": "F",
-   "keep": "best"
-  },
-  "pectinia-cand-260042846": {
-   "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "best"
-  },
-  "pectinia-cand-246518745": {
-   "view": "wide",
-   "quality": 2,
-   "form": "F",
-   "keep": "best"
-  },
-  "pectinia-cand-175031475": {
-   "view": "wide",
-   "quality": 1,
-   "form": "F",
-   "keep": "best",
-   "note": "Tiny colony beside a nudibranch, with a drawn arrow on the photo."
-  },
-  "pectinia-cand-224931351": {
-   "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "best",
-   "unsure": [
-    "genus",
-    "form"
-   ],
-   "note": "Round young colony with radial ridges and green valleys; young Pectinia likely, Mycedium not excluded."
-  },
-  "pectinia-cand-467331307": {
-   "view": "wide",
-   "quality": 2,
-   "form": "F",
-   "keep": "best"
-  },
-  "pectinia-cand-467331467": {
-   "view": "medium",
-   "quality": 2,
-   "form": "F",
-   "keep": "best"
-  },
-  "pectinia-cand-260331576": {
-   "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "best"
-  },
-  "pectinia-cand-246910184": {
-   "view": "wide",
-   "quality": 2,
-   "form": "F",
-   "keep": "best",
-   "unsure": [
-    "genus",
-    "form"
-   ],
-   "note": "Round young colony with radial ridges; a separate plate coral at the left edge."
-  },
-  "pectinia-cand-710949982": {
-   "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Round young colony of radial ridges, form hard to fit."
-  },
-  "pectinia-cand-710949998": {
-   "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "alt",
-   "unsure": [
-    "form"
-   ],
-   "note": "Seen from above."
-  },
-  "pectinia-cand-710949991": {
    "view": "wide",
    "quality": 3,
    "form": "F",
    "keep": "dup",
    "unsure": [
-    "form"
+    "keep"
    ],
-   "note": "Same framing as the best, a finger at the edge."
+   "note": "Close to the live and added wide photos of this colony; scale bar and hand at left"
   },
-  "pectinia-cand-600476152": {
+  "pectinia-cand-246804781": {
    "view": "wide",
    "quality": 2,
-   "form": "F",
+   "form": "B",
    "keep": "best",
-   "unsure": [
-    "genus",
-    "form"
+   "crop": [
+    0.08,
+    0.15,
+    0.98,
+    0.95
    ],
-   "note": "Small flower-like corallum with one central mouth and broad lobes, green cast; genus unclear."
+   "note": "Cyan cast, soft at 100%"
   },
-  "pectinia-cand-600476160": {
-   "view": "macro",
+  "pectinia-cand-260042846": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.1,
+    0.85,
+    1.0
+   ]
+  },
+  "pectinia-cand-246518745": {
+   "view": "wide",
    "quality": 2,
-   "form": "x",
+   "form": "B",
+   "keep": "best",
+   "crop": [
+    0.08,
+    0.2,
+    0.95,
+    1.0
+   ],
+   "note": "Blue cast, soft at 100%"
+  },
+  "pectinia-cand-175031475": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "genus": "exclude",
+   "note": "A nudibranch and a drawn arrow are the subject; the coral is small"
+  },
+  "pectinia-cand-224931351": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
    "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "Centre of the same corallum, soft and green; genus unclear."
+   "note": "Round single-centred colony with green ridges; could be another genus"
+  },
+  "pectinia-cand-467331467": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Soft at 100%, dark"
+  },
+  "pectinia-cand-467331307": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.1,
+    0.95,
+    0.95
+   ],
+   "note": "Soft at 100%"
+  },
+  "pectinia-cand-260331576": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.05,
+    0.85,
+    1.0
+   ]
+  },
+  "pectinia-cand-246910184": {
+   "view": "wide",
+   "quality": 1,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Strong blue cast and soft over the whole frame"
+  },
+  "pectinia-cand-710949991": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.0,
+    0.95,
+    0.85
+   ],
+   "note": "Crop removes a finger at bottom left"
+  },
+  "pectinia-cand-710949982": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup",
+   "note": "Same colony and framing as the best"
+  },
+  "pectinia-cand-710949998": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.1,
+    1.0,
+    0.9
+   ],
+   "note": "Closer, upright view of the same colony"
+  },
+  "pectinia-cand-600476152": {
+   "view": "wide",
+   "quality": 1,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Strong green cast, soft over the whole frame; date stamp"
+  },
+  "pectinia-cand-600476160": {
+   "view": "medium",
+   "quality": 1,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Strong green cast, soft over the whole frame; date stamp"
   },
   "pectinia-cand-39410068": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.3,
+    1.0,
+    0.85
+   ],
+   "note": "Dark, soft at 100%"
   },
   "pectinia-cand-39410124": {
    "view": "medium",
    "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "note": "Soft at 100%, dark edges"
   },
   "pectinia-cand-181047871": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "form"
+   "crop": [
+    0.1,
+    0.3,
+    1.0,
+    1.0
    ],
-   "note": "Dome of meandering walls; plating or massive."
+   "note": "Watermark"
   },
   "pectinia-cand-660522056": {
    "view": "wide",
@@ -171,70 +213,73 @@
    "form": "B",
    "keep": "best",
    "multi": true,
+   "crop": [
+    0.15,
+    0.15,
+    0.85,
+    0.95
+   ],
    "unsure": [
     "genus"
    ],
-   "note": "Bleached finger-like upright branches among other corals; does not show Pectinia valleys clearly."
+   "note": "Other corals all around; long white fingers look unlike Pectinia"
   },
   "pectinia-cand-260171969": {
    "view": "wide",
    "quality": 3,
    "form": "F",
-   "keep": "best"
-  },
-  "pectinia-cand-574250815": {
-   "view": "wide",
-   "quality": 2,
-   "form": "B",
    "keep": "best",
-   "unsure": [
-    "genus",
-    "form"
-   ],
-   "note": "Upright spires with fine septo-costae; Pectinia spires likely, Hydnophora a look-alike."
-  },
-  "pectinia-cand-574250811": {
-   "view": "medium",
-   "quality": 2,
-   "form": "B",
-   "keep": "best",
-   "unsure": [
-    "genus",
-    "form"
-   ],
-   "note": "Close view of the spires, soft focus."
+   "crop": [
+    0.12,
+    0.1,
+    0.92,
+    1.0
+   ]
   },
   "pectinia-cand-592095008": {
    "view": "wide",
-   "quality": 2,
-   "form": "F",
-   "keep": "best"
-  },
-  "pectinia-cand-710829309": {
-   "view": "wide",
-   "quality": 3,
+   "quality": 1,
    "form": "F",
    "keep": "best",
    "unsure": [
-    "form"
+    "genus"
    ],
-   "note": "Round young colony of radial ridges."
+   "note": "Blurred, flash hot spot; subject hard to make out"
   },
   "pectinia-cand-710829282": {
    "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "dup",
+   "quality": 2,
+   "form": "B",
+   "genus": "exclude",
    "unsure": [
-    "form"
+    "genus"
    ],
-   "note": "Same colony with a ruler in frame."
+   "note": "Ruler lies over the top left of the colony and cannot be cropped away"
+  },
+  "pectinia-cand-710829309": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.05,
+    0.85,
+    0.95
+   ]
   },
   "pectinia-cand-310980908": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.2,
+    1.0,
+    1.0
+   ],
+   "note": "Blue cast, soft at 100%"
   }
  }
 }

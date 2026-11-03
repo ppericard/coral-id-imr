@@ -5,88 +5,80 @@
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Free-living but colonial (many mouths): Mushroom is the closest form. Blue cast."
+   "keep": "dup",
+   "note": "Near-identical to the live wide photo of this colony (same top-down framing on sand)"
   },
   "polyphyllia-cand-464587212": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "U",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Free-living but colonial: Mushroom is the closest form. Hairy look on sand."
-  },
-  "polyphyllia-cand-464587197": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best",
-   "note": "Tentacles with white tips fill the frame."
+   "note": "Strong green-cyan cast, coral soft at 100% while the sand is sharp, tentacles hide it"
   },
   "polyphyllia-cand-638320286": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "unsure": [
-    "form"
+   "crop": [
+    0.05,
+    0.24,
+    0.95,
+    0.9
    ],
-   "note": "Free-living but colonial: Mushroom is the closest form. Pointer in frame."
+   "note": "Tentacles out; crop removes the pointer stick at top left"
   },
   "polyphyllia-cand-335736052": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Free-living but colonial: Mushroom is the closest form. Night, flash."
+   "note": "Tentacles out, soft at 100%"
   },
   "polyphyllia-cand-262218894": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best",
-   "unsure": [
-    "form"
+   "crop": [
+    0.0,
+    0.3,
+    1.0,
+    0.85
    ],
-   "note": "Tentacles retracted: many mouths visible. Mushroom is the closest form."
+   "note": "Tentacles out, side view"
   },
   "polyphyllia-cand-351978729": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Free-living but colonial: Mushroom is the closest form."
+   "crop": [
+    0.1,
+    0.25,
+    0.85,
+    0.85
+   ]
   },
   "polyphyllia-cand-752682172": {
+   "view": "wide",
+   "quality": 1,
+   "form": "U",
+   "keep": "best",
+   "note": "Strong cyan cast over everything, coral surface lost"
+  },
+  "polyphyllia-cand-59208748": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "unsure": [
-    "form"
+   "crop": [
+    0.05,
+    0.25,
+    0.85,
+    0.88
    ],
-   "note": "Free-living but colonial: Mushroom is the closest form. Blue cast."
-  },
-  "polyphyllia-cand-59208748": {
-   "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Free-living but colonial: Mushroom is the closest form."
+   "note": "Tentacles out"
   }
  }
 }

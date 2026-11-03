@@ -2,228 +2,274 @@
  "genus": "Physogyra",
  "photos": {
   "physogyra-cand-611605647": {
-   "view": "wide",
-   "quality": 3,
+   "view": "medium",
+   "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "tentacles extended over the whole dome"
+   "unsure": [
+    "keep"
+   ],
+   "note": "Closer on the surface than the live wide photos; vesicles cover the skeleton"
   },
   "physogyra-cand-270582352": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "dark; small vesicles cover the colony"
+   "crop": [
+    0.1,
+    0.1,
+    0.95,
+    0.85
+   ],
+   "note": "Vesicles cover the skeleton; dark surroundings"
   },
   "physogyra-cand-270582067": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "M",
-   "keep": "dup"
+   "keep": "dup",
+   "note": "Same framing as the best, darker"
   },
   "physogyra-cand-460151297": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "grape-like vesicles; large vesicles would point to Plerogyra, scale unknown"
+   "note": "Large teardrop vesicles may point to Plerogyra"
   },
   "physogyra-cand-93239969": {
    "view": "wide",
-   "quality": 3,
+   "quality": 1,
+   "form": "M",
+   "keep": "best",
+   "note": "Smeared noise reduction at 100%, cyan cast at the edge"
+  },
+  "physogyra-cand-595486798": {
+   "view": "medium",
+   "quality": 2,
    "form": "M",
    "keep": "best",
    "unsure": [
-    "genus"
+    "keep"
    ],
-   "note": "retracted, exsert septa; walls hard to read, Plerogyra not ruled out"
-  },
-  "physogyra-cand-437174309": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best",
-   "note": "blade-like exsert septa, polyp mouth visible"
-  },
-  "physogyra-cand-437174315": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "alt",
-   "note": "meandering valleys with shared walls; cleaner shrimp"
-  },
-  "physogyra-cand-437174311": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "dup"
-  },
-  "physogyra-cand-595486777": {
-   "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "note": "tentacles extended over the surface"
-  },
-  "physogyra-cand-595486798": {
-   "view": "wide",
-   "quality": 2,
-   "form": "M",
-   "keep": "best"
+   "note": "Between the live macro and added medium photos of this colony"
   },
   "physogyra-cand-611579787": {
    "view": "wide",
    "quality": 3,
    "form": "M",
    "keep": "best",
-   "note": "meandering valleys with exsert septa clearly visible"
+   "crop": [
+    0.05,
+    0.1,
+    0.95,
+    1.0
+   ]
   },
   "physogyra-cand-611579798": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "dup"
+   "keep": "dup",
+   "note": "Same colony, same framing as the best"
   },
   "physogyra-cand-611579804": {
-   "view": "wide",
+   "view": "medium",
    "quality": 3,
    "form": "M",
-   "keep": "dup"
+   "keep": "best",
+   "note": "Closer on the meanders of the same colony"
   },
   "physogyra-cand-239860164": {
    "view": "wide",
    "quality": 2,
    "form": "S",
    "keep": "best",
-   "note": "blue cast; meanders visible under tentacles"
+   "crop": [
+    0.05,
+    0.25,
+    0.75,
+    1.0
+   ],
+   "note": "Pink-blue cast, tentacles out"
+  },
+  "physogyra-cand-437174315": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A cleaner shrimp sits in the middle of the frame and takes the eye"
+  },
+  "physogyra-cand-437174311": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A cleaner shrimp fills the centre of the frame"
   },
   "physogyra-cand-598229016": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best",
-   "note": "small vesicles over the meanders"
+   "genus": "Plerogyra",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Large round bubble vesicles look like Plerogyra"
   },
   "physogyra-cand-46597375": {
    "view": "wide",
    "quality": 1,
    "form": "M",
    "keep": "best",
-   "note": "very hazy, washed out"
+   "note": "Milky veil over the whole frame, vesicles barely readable"
   },
   "physogyra-cand-227052436": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
+   "genus": "Plerogyra",
    "unsure": [
     "genus"
    ],
-   "note": "grape-like vesicles; vesicle size could also fit Plerogyra"
+   "note": "Large round bubble vesicles look like Plerogyra; teal cast"
   },
   "physogyra-cand-479514926": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "note": "vesicles in rows along the meandering valleys"
-  },
-  "physogyra-cand-335760128": {
-   "view": "wide",
-   "quality": 3,
    "form": "M",
    "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "partly bleached, tentacles extended; skeleton not visible"
+   "note": "Large striped vesicles may point to Plerogyra; green cast, soft"
+  },
+  "physogyra-cand-335760128": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.1,
+    0.9,
+    0.9
+   ],
+   "note": "Vesicles soft at 100%"
   },
   "physogyra-cand-697259803": {
    "view": "wide",
    "quality": 3,
    "form": "M",
    "keep": "best",
+   "crop": [
+    0.15,
+    0.1,
+    0.85,
+    0.95
+   ],
+   "note": "Skeleton visible with partly retracted vesicles"
+  },
+  "physogyra-cand-460171400": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "retracted, exsert septa; separate walls would mean Plerogyra"
-  },
-  "physogyra-cand-460171400": {
-   "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "note": "vesicles and blade-like septa in the valleys"
+   "note": "Large vesicles may point to Plerogyra; 1200 px"
   },
   "physogyra-cand-460171414": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "green cast; vesicles along the meanders"
+   "crop": [
+    0.05,
+    0.05,
+    0.95,
+    1.0
+   ],
+   "note": "1200 px, green cast"
   },
   "physogyra-cand-332639192": {
-   "view": "medium",
-   "quality": 3,
+   "view": "macro",
+   "quality": 1,
    "form": "x",
    "keep": "best",
-   "note": "night tentacles over vesicles"
+   "note": "640 px, night tentacles hide the coral"
   },
   "physogyra-cand-332639191": {
-   "view": "medium",
-   "quality": 2,
+   "view": "macro",
+   "quality": 1,
    "form": "x",
-   "keep": "dup"
+   "keep": "dup",
+   "note": "Same as the other photo, softer"
   },
   "physogyra-cand-175159089": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "fish in frame but the colony is clear"
+   "crop": [
+    0.3,
+    0.25,
+    1.0,
+    1.0
+   ],
+   "note": "Vesicles soft at 100%; fish in open water; watermark"
   },
   "physogyra-cand-175239336": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Watermark; vesicles soft at 100%"
   },
   "physogyra-cand-600486562": {
    "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "dup",
-   "note": "soft focus; timestamp overlay"
+   "quality": 1,
+   "form": "M",
+   "keep": "best",
+   "note": "Smeared and soft at 100%, milky; date stamp"
   },
   "physogyra-cand-600486592": {
    "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "note": "meandering valleys visible; timestamp overlay"
+   "quality": 1,
+   "form": "M",
+   "keep": "dup",
+   "note": "Smeared and soft at 100%; date stamp"
   },
   "physogyra-cand-326247437": {
-   "view": "medium",
+   "view": "macro",
    "quality": 3,
    "form": "x",
-   "keep": "best",
+   "genus": "Plerogyra",
    "unsure": [
     "genus"
    ],
-   "note": "large patterned vesicles fill the frame; Plerogyra not ruled out"
+   "note": "Large round striped bubble vesicles: classic Plerogyra look"
   },
   "physogyra-cand-608567359": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best",
+   "genus": "Plerogyra",
    "unsure": [
     "genus"
    ],
-   "note": "grape-like vesicles; could be Plerogyra; a massive coral behind it"
+   "note": "Large teardrop striped vesicles look like Plerogyra"
   }
  }
 }

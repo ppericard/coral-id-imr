@@ -6,184 +6,187 @@
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "Smooth branches with pale tips, two damselfish."
+   "note": "Soft at 100%, branch tips smooth"
   },
   "millepora-cand-58955651": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Large stand of upright blades; blue cast."
+   "note": "Blue cast, soft at 100%; small fish"
   },
   "millepora-cand-36510691": {
    "view": "wide",
    "quality": 1,
-   "form": "B",
-   "keep": "alt",
-   "multi": true,
-   "note": "Blurred; a large purple soft coral fills the frame."
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Out of focus over the whole frame, subject unclear"
   },
   "millepora-cand-36510464": {
    "view": "wide",
    "quality": 1,
-   "form": "B",
-   "keep": "best",
-   "note": "Blurred."
+   "form": "E",
+   "keep": "alt",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Out of focus over the whole frame, subject unclear; another angle"
   },
   "millepora-cand-232103195": {
    "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "best",
-   "note": "Pale branch tips, pores visible."
-  },
-  "millepora-cand-45487161": {
-   "view": "wide",
-   "quality": 2,
-   "form": "B",
-   "keep": "best",
-   "note": "Snorkel, cyan cast; sea urchin in the middle."
-  },
-  "millepora-cand-45487142": {
-   "view": "wide",
-   "quality": 2,
-   "form": "B",
-   "keep": "alt",
-   "note": "Cyan cast, fish."
-  },
-  "millepora-cand-45487591": {
-   "view": "wide",
-   "quality": 2,
-   "form": "B",
-   "keep": "alt",
-   "note": "Colony edge over sand."
-  },
-  "millepora-cand-45487576": {
-   "view": "wide",
-   "quality": 2,
-   "form": "B",
-   "keep": "dup"
-  },
-  "millepora-cand-45487586": {
-   "view": "wide",
-   "quality": 2,
-   "form": "B",
-   "keep": "dup"
-  },
-  "millepora-cand-45487599": {
-   "view": "medium",
    "quality": 2,
    "form": "B",
    "keep": "best",
    "multi": true,
-   "note": "Paler branching coral fills the right half."
+   "unsure": [
+    "genus",
+    "multi"
+   ],
+   "note": "Orange branches in a mixed reef scene; may not be Millepora"
   },
-  "millepora-x-35099053": {
+  "millepora-cand-45487161": {
    "view": "wide",
    "quality": 1,
    "form": "B",
    "keep": "best",
-   "unsure": [
-    "form",
-    "genus"
-   ],
-   "note": "Heavy haze, subject hard to make out."
+   "note": "Strong cyan cast, smeared at 100%; fish everywhere"
+  },
+  "millepora-cand-45487142": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "dup",
+   "note": "Cyan cast, fish swim across the colony"
+  },
+  "millepora-cand-45487591": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "dup",
+   "note": "Cyan cast, colony at the bottom right of the frame"
+  },
+  "millepora-cand-45487576": {
+   "view": "medium",
+   "quality": 1,
+   "form": "B",
+   "keep": "best",
+   "note": "Cyan cast, smeared at 100%"
+  },
+  "millepora-cand-45487586": {
+   "view": "wide",
+   "quality": 1,
+   "form": "B",
+   "keep": "dup",
+   "note": "Cyan cast, colony at the bottom with fish"
+  },
+  "millepora-cand-45487599": {
+   "view": "medium",
+   "quality": 1,
+   "form": "B",
+   "keep": "dup",
+   "note": "Cyan cast, smeared; fish across"
+  },
+  "millepora-x-35099053": {
+   "view": "wide",
+   "quality": 1,
+   "form": "E",
+   "genus": "exclude",
+   "note": "Milky murky water, no coral can be read"
   },
   "millepora-cand-262218218": {
    "view": "wide",
    "quality": 3,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.1,
+    1.0,
+    1.0
+   ]
   },
   "millepora-cand-248586653": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Upright plates; cast."
-  },
-  "millepora-cand-583538123": {
-   "view": "medium",
-   "quality": 3,
-   "form": "B",
-   "keep": "best"
-  },
-  "millepora-cand-136990202": {
-   "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "best"
-  },
-  "millepora-cand-245792437": {
-   "view": "medium",
-   "quality": 3,
-   "form": "B",
-   "keep": "best"
+   "note": "Soft at 100%; sea squirts"
   },
   "millepora-cand-47823094": {
    "view": "wide",
-   "quality": 1,
+   "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Subject small and distant, haze."
+   "note": "small; colony small in a wide hazy scene"
   },
   "millepora-cand-460597196": {
    "view": "medium",
-   "quality": 2,
+   "quality": 3,
    "form": "B",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Fine smooth branches; Millepora tenera likely, Seriatopora less so."
+   "keep": "best"
   },
   "millepora-cand-478251214": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
    "keep": "best",
-   "note": "Soft, low resolution."
+   "note": "162 px thumbnail"
   },
   "millepora-cand-260202043": {
    "view": "wide",
    "quality": 3,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "note": "Feather star at left"
   },
   "millepora-cand-174506184": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Green cast."
+   "crop": [
+    0.2,
+    0.1,
+    0.85,
+    0.95
+   ],
+   "note": "Green-cyan cast"
   },
   "millepora-cand-507830806": {
    "view": "wide",
    "quality": 3,
    "form": "B",
    "keep": "best",
-   "note": "Same photo as millepora-cand-262218218 (another observation): keep only one."
+   "note": "Watermark at bottom right"
   },
   "millepora-cand-307922639": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Oversaturated colours."
+   "note": "Cyan water, feather star; flash hot spots"
   },
   "millepora-cand-79182392": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Green cast."
+   "note": "Soft at 100%"
   },
   "millepora-cand-258218936": {
    "view": "wide",
-   "quality": 3,
-   "form": "F",
+   "quality": 2,
+   "form": "B",
    "keep": "best",
-   "note": "Pale blades with finger-like tops."
+   "multi": true,
+   "unsure": [
+    "genus",
+    "multi"
+   ],
+   "note": "Several pale lobed colonies and Acropora; subject unclear"
   }
  }
 }
