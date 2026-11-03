@@ -992,56 +992,97 @@ function fitModes() {
   if (nav.scrollWidth > nav.clientWidth + 1) document.body.classList.add('adm-narrow');
 }
 addEventListener('resize', () => fitModes());
-// Four header tabs, each with its pages in a row under the header (Pierre, 2026-11-01: "regroup the admin menus"):
-// To do (what needs his eye), Photos (curation), Players (people), Photo stats. Every old address still works; each tab
-// opens on the page last used in it (imr-admin-sub). Phones: one menu with every page, grouped by tab.
+// Nine tabs in three header groups (Pierre, 2026-11-03, mockup "Admin tabs: 17 -> 9", after "regroup the admin menus"
+// of 2026-11-01): To do (To do, Coverage), Photos (Genera, Candidates, Photo review, Look-alikes, Photo stats), Players
+// (Players, Activity). Nothing was removed: every former page is a view of a tab, chosen with the segmented switch at
+// the right of the tab row (#subnav, navs()). Each view keeps its old address, so bookmarks and links in the docs still
+// land right; ALIAS maps the two addresses that are not a view of their own. Each header group reopens the tab and view
+// used last in it (imr-admin-sub), each tab its view used last (imr-admin-view). Phones: one menu with every tab.
+// [group key, group name, [[tab key, tab name, [[address, view name], ...]], ...]]; '' = a genus page.
 const genusHash = () => '#' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
 const GROUPS = [
   [
     'todo',
     'To do',
     [
-      ['~triage', 'Triage'],
-      ['~stats-needs', 'Where to look'],
-      ['~cov', 'Game coverage'],
-      ['~fcov', 'Sheet & Finder coverage'],
-      ['~events', 'Errors & feedback'],
-      ['~health', 'Health']
+      [
+        'todo',
+        'To do',
+        [
+          ['~todo', 'All'],
+          ['~triage', 'Reports'],
+          ['~events', 'Errors'],
+          ['~health', 'Health']
+        ]
+      ],
+      [
+        'cov',
+        'Coverage',
+        [
+          ['~cov', 'Games'],
+          ['~fcov', 'Sheets'],
+          ['~finder', 'Coral Finder']
+        ]
+      ]
     ]
   ],
   [
     'photos',
     'Photos',
     [
-      ['', 'Genera'],
-      ['~cand', 'Candidates'],
-      ['~form', 'Growth form'],
-      ['~quality', 'Quality'],
-      ['~look', 'Look-alikes'],
-      ['~excluded', 'Excluded']
+      [
+        'genera',
+        'Genera',
+        [
+          ['', 'Live'],
+          ['~hidden', 'Hidden'],
+          ['~excluded', 'Excluded']
+        ]
+      ],
+      ['cand', 'Candidates', [['~cand', 'Candidates']]],
+      [
+        'review',
+        'Photo review',
+        [
+          ['~quality', 'Quality'],
+          ['~form', 'Growth form']
+        ]
+      ],
+      ['look', 'Look-alikes', [['~look', 'Look-alikes']]],
+      [
+        'pstats',
+        'Photo stats',
+        [
+          ['~stats-photos', 'Difficulty'],
+          ['~diff', 'Photo list']
+        ]
+      ]
     ]
   ],
   [
     'players',
     'Players',
     [
-      ['~users', 'Players'],
-      ['~stats', 'Activity'],
-      ['~stats-conf', 'Confusions']
-    ]
-  ],
-  [
-    'pstats',
-    'Photo stats',
-    [
-      ['~stats-photos', 'Difficulty'],
-      ['~diff', 'Photo list']
+      ['players', 'Players', [['~users', 'Players']]],
+      [
+        'activity',
+        'Activity',
+        [
+          ['~stats', 'Activity'],
+          ['~stats-conf', 'Confusions']
+        ]
+      ]
     ]
   ]
 ];
-const pageOf = () =>
-  cur === '~mont' ? '~look' : cur.startsWith('~journey/') || cur.startsWith('~anon/') ? '~users' : cur[0] === '~' ? cur : ''; // '' = a genus page; a player's journey sits under Players
-const groupKey = () => (GROUPS.find(g => g[2].some(([h]) => h === pageOf())) || GROUPS[1])[0];
+// Every tab as [key, name, views, group key].
+const TABS = GROUPS.flatMap(([g, , L]) => L.map(t => [...t, g]));
+// Old addresses that are not a view of their own: Montages became Look-alikes; Where to look is the banner above the Games
+// grid of Coverage, opened in full.
+const ALIAS = {'~mont': '~look', '~stats-needs': '~cov'};
+const pageOf = () => (cur.startsWith('~journey/') || cur.startsWith('~anon/') ? '~users' : ALIAS[cur] || (cur[0] === '~' ? cur : '')); // '' = a genus page; a player's journey sits under Players
+const tabOf = (h = pageOf()) => TABS.find(t => t[2].some(([x]) => x === h)) || TABS.find(t => t[0] === 'genera');
+const groupKey = () => tabOf()[3];
 // Genus x view cells over their cap (capOf: CELL_MAX colonies for a game genus, CAP.sheet for a Finder-only one; after
 // "Add anyway"): a warning on the To do tab and on the page that shows the cell (Pierre, 2026-11-02: "at least a
 // warning"): Game coverage for a game genus, Sheet & Finder coverage for a Finder-only one. n = both.
@@ -1052,40 +1093,71 @@ const overCap = () => {
   return {...o, n: o['~cov'] + o['~fcov']};
 };
 function navs(tn, xn) {
-  const g = groupKey(),
+  const T = tabOf(),
+    g = T[3],
     page = pageOf(),
-    last = store.get('imr-admin-sub', {}) || {};
+    last = store.get('imr-admin-sub', {}) || {},
+    seen = store.get('imr-admin-view', {}) || {};
   if (last[g] !== page) {
     last[g] = page;
     store.set('imr-admin-sub', last);
   }
-  const href = h => (h ? '#' + h : genusHash()),
-    cnt = h => (h === '~triage' && tn ? ` (${tn})` : h === '~excluded' && xn ? ` (${xn})` : OVER[h] ? ` (⚠ ${OVER[h]} over the cap)` : '');
+  if (seen[T[0]] !== page) {
+    seen[T[0]] = page;
+    store.set('imr-admin-view', seen);
+  }
+  const hn = Object.values(DRAFT.genera || {}).reduce((s, k) => s + (k.hide || []).length, 0),
+    href = h => (h ? '#' + h : genusHash()),
+    has = (t, h) => t[2].some(([x]) => x === h),
+    // A tab opens on its view used last; a header group on its tab used last.
+    tabHash = t => (has(t, seen[t[0]]) ? seen[t[0]] : t[2][0][0]),
+    groupHash = G => (TABS.some(t => t[3] === G[0] && has(t, last[G[0]])) ? last[G[0]] : tabHash(TABS.find(t => t[3] === G[0]))),
+    over = `${OVER.n} genus × view cell${OVER.n === 1 ? '' : 's'} over the cap (${CELL_MAX} colonies, Coverage › Games; ${CAP.sheet} for a Finder-only genus, Coverage › Sheets)`,
+    // Counts: on a view in its switch, on a tab in the tab row and the phone menu.
+    vcnt = h =>
+      (h === '~todo' || h === '~triage') && tn
+        ? ` ${tn}`
+        : h === '~excluded' && xn
+          ? ` ${xn}`
+          : h === '~hidden' && hn
+            ? ` ${hn}`
+            : OVER[h]
+              ? ` ⚠ ${OVER[h]}`
+              : '',
+    tcnt = t => (t[0] === 'todo' && tn ? ` (${tn})` : t[0] === 'cov' && OVER.n ? ' ⚠' : '');
   $('modes').hidden = false;
   document.querySelectorAll('#modes [data-mode]').forEach(a => {
-    const G = GROUPS.find(x => x[0] === a.dataset.mode),
-      h = G[2].some(([x]) => x === last[G[0]]) ? last[G[0]] : G[2][0][0];
-    a.href = href(h);
+    const G = GROUPS.find(x => x[0] === a.dataset.mode);
+    a.href = href(groupHash(G));
     a.textContent = G[1] + (G[0] === 'todo' && tn ? ` (${tn})` : '') + (G[0] === 'todo' && OVER.n ? ' ⚠' : '');
-    if (G[0] === 'todo')
-      a.title = OVER.n
-        ? `${OVER.n} genus × view cell${OVER.n === 1 ? '' : 's'} over the cap (${CELL_MAX} colonies, Game coverage; ${CAP.sheet} for a Finder-only genus, Sheet & Finder coverage)`
-        : '';
+    if (G[0] === 'todo') a.title = OVER.n ? over : '';
     a.setAttribute('aria-current', String(G[0] === g));
   });
-  const sub = $('subnav'),
-    G = GROUPS.find(x => x[0] === g);
+  const sub = $('subnav');
   if (sub) {
-    sub.innerHTML = G[2]
-      .map(([h, t]) => `<a class="adm-fchip plain" href="${href(h)}" aria-pressed="${h === page}">${t}${cnt(h)}</a>`)
-      .join('');
+    const V = T[2].length > 1 ? T[2] : [];
+    sub.innerHTML =
+      `<span class="adm-subtabs">${TABS.filter(t => t[3] === g)
+        .map(
+          t =>
+            `<a class="adm-fchip plain" href="${esc(href(tabHash(t)))}" aria-pressed="${t === T}"${t[0] === 'cov' && OVER.n ? ` title="${esc(over)}"` : ''}>${t[1]}${tcnt(t)}</a>`
+        )
+        .join('')}</span>` +
+      (V.length
+        ? `<span class="adm-qseg adm-lvseg adm-views" role="group" aria-label="${esc(T[1])} view">${V.map(
+            ([h, t]) => `<a href="${esc(href(h))}" data-view="${esc(h)}" aria-pressed="${h === page}">${t}${vcnt(h)}</a>`
+          ).join('')}</span>`
+        : '');
+    sub.classList.toggle('has-views', !!V.length);
     sub.hidden = false;
   }
   const ms = $('modesel');
   if (ms) {
     ms.innerHTML = GROUPS.map(
-      ([k, t, L]) =>
-        `<optgroup label="${t}">${L.map(([h, n]) => `<option value="${esc(href(h))}"${h === page ? ' selected' : ''}>${n}${cnt(h)}</option>`).join('')}</optgroup>`
+      ([k, t]) =>
+        `<optgroup label="${t}">${TABS.filter(x => x[3] === k)
+          .map(x => `<option value="${esc(href(x === T ? page : tabHash(x)))}"${x === T ? ' selected' : ''}>${x[1]}${tcnt(x)}</option>`)
+          .join('')}</optgroup>`
     ).join('');
     ms.hidden = false;
   }
@@ -1094,45 +1166,45 @@ function navs(tn, xn) {
 const modeKey = () =>
   cur.startsWith('~journey/') || cur.startsWith('~anon/')
     ? 'journey'
-    : NEED_TABS.some(([h]) => h === cur)
-      ? 'needs'
-      : cur.startsWith('~stats') || cur === '~diff'
-        ? 'stats'
-        : {
-            '~users': 'users',
-            '~quality': 'quality',
-            '~form': 'form',
-            '~excluded': 'excluded',
-            '~triage': 'triage',
-            '~events': 'events',
-            '~look': 'mont',
-            '~mont': 'mont',
-            '~cand': 'cand'
-          }[cur] || 'genus';
+    : cur.startsWith('~stats') || cur === '~diff'
+      ? 'stats'
+      : {
+          '~users': 'users',
+          '~quality': 'quality',
+          '~form': 'form',
+          '~excluded': 'excluded',
+          '~hidden': 'hidden',
+          '~todo': 'todo',
+          '~triage': 'triage',
+          '~events': 'events',
+          '~health': 'health',
+          '~cov': 'cov',
+          '~fcov': 'fcov',
+          '~finder': 'finder',
+          '~look': 'mont',
+          '~mont': 'mont',
+          '~cand': 'cand'
+        }[cur] || 'genus';
 function render() {
   memoFresh();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
   if (cur === '~quality') return renderQuality();
   if (cur === '~form') return renderForm();
   if (cur === '~excluded') return renderExcluded();
-  if (cur === '~triage') return renderTriage();
+  if (cur === '~hidden') return renderHidden();
+  if (cur === '~todo' || cur === '~triage') return renderTriage();
   if (cur === '~events') return renderEvents();
-  // Every Stats / Needs sub-view keeps its sub-menu on top, whichever function draws it (Pierre, 2026-11-01).
-  if (modeKey() === 'needs') {
-    if (cur === '~cov') renderCov();
-    else if (cur === '~fcov') renderFcov();
-    else renderStats();
-    return withSwitch();
-  }
+  if (cur === '~health') return renderStats();
+  // Game coverage with the Where to look banner above it (folded on ~cov, open in full on ~stats-needs).
+  if (cur === '~cov' || cur === '~stats-needs') return renderCov();
+  if (cur === '~fcov') return renderFcov();
+  if (cur === '~finder') return renderFinder();
   if (cur === '~users') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
   if (cur.startsWith('~journey/')) return renderJourney(cur.slice(9)); // one player's path (admin-journey.js)
   // A device that never signed in, by anonymous id (its own route: a player's name may start with any character).
   if (cur.startsWith('~anon/')) return renderJourney('', cur.slice(6));
-  if (modeKey() === 'stats') {
-    if (cur === '~diff') renderDiff();
-    else renderStats();
-    return withSwitch();
-  }
+  if (cur === '~diff') return renderDiff();
+  if (modeKey() === 'stats') return renderStats();
   if (cur === '~look' || cur === '~mont') return renderMont(); // ~mont = old address, kept for bookmarks
   if (cur === '~cand') return renderCand();
   const names = Object.keys(DATA.gen);
@@ -1666,14 +1738,17 @@ const HELP = {
   },
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap question "These questions are: Too easy · About right · Too hard" (after 15 answers, then every 60), with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. The games aim at about 80% right, so many "Too hard" from beginners would mean the start is too steep. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
-  start: `<p><b>Four tabs</b>: <b>To do</b> (players' reports, your flags, where photos are missing, how the app is working for players), <b>Photos</b> (Genera, Candidates, Growth form, Quality, Look-alikes, Excluded), <b>Players</b> (who plays, their numbers, merge or delete names) and <b>Photo stats</b> (how hard each photo is). The pages of a tab are in the row under the header; each tab reopens the page you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
-    <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Growth form</b> and <b>Quality</b>: check the growth form and quality guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>To do › Where to look</b>: which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
+  start: `<p><b>Three groups, nine tabs</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health: players' reports, your flags, the errors their devices send, how the app is working for them) and <b>Coverage</b> (Games, Sheets, Coral Finder: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form), <b>Look-alikes</b>, <b>Photo stats</b> (Difficulty, Photo list). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (Activity, Confusions). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
+    <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Photo review</b>: check the quality and growth form guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Coverage › Games</b>: Where to look, above the grid, says which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
     <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
-  fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Game coverage). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Finder-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral Finder show), an orange one a cell over it. Click a row to open the genus.</p>`,
-  cov: `<p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Elo = the score players see (1000 + 200 × Level; shown to them from 200 answers), ± its 95% margin: a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. Last = last answer. Quiz = right in the photo quiz (look-alike duels slipped into it included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. Learned and Seen = genera, from their last sync. Reports = problems they reported (Triage). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
+  todo: `<p>Everything that needs your eye, most urgent first: a red <b>Health</b> line when Health finds photos everyone misses or genera players are stuck on (nothing when all is well), the players' <b>reports</b>, the photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days (app errors, photos that did not load, failed saves), Featured photos rated Poor, and last the judging agent's <b>suggestions</b>. Each part works as in its own view: <b>Reports</b> (reports, flags, Poor featured photos and suggestions, the former Triage page), <b>Errors</b> (with the one-tap answers and load times), <b>Health</b>.</p>`,
+  hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
+  finder: `<p>The boxes of the site's Coral Finder (growth form, then box, as in the book) and the book photos that illustrate each one (up to 3, crops of the book's box pages; an excluded crop drops out, and all of them when the CF book is off in the ⋯ menu). Boxes without a photo come first: the site draws a few of them instead, or shows the cover photos of genera found in no other box. Genera = the box's IMR genera, then its Finder-only ones (click to open). Click a photo to enlarge it.</p>`,
+  fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Finder-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral Finder show), an orange one a cell over it. Click a row to open the genus.</p>`,
+  cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Elo = the score players see (1000 + 200 × Level; shown to them from 200 answers), ± its 95% margin: a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. Last = last answer. Quiz = right in the photo quiz (look-alike duels slipped into it included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. Learned and Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
   stats: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). All / Others / Me: everyone, everyone but the name synced in this browser, or only it. Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
@@ -1713,10 +1788,7 @@ function toggleHelp() {
       '~stats-photos': 'statsph',
       '~stats-conf': 'statsconf',
       '~stats-needs': 'statsneeds',
-      '~diff': 'diff',
-      '~cov': 'cov',
-      '~fcov': 'fcov',
-      '~health': 'health'
+      '~diff': 'diff'
     }[cur] || modeKey();
   h = document.createElement('div');
   h.id = 'admhelp';
@@ -2082,6 +2154,43 @@ function loadEvents(force) {
     .catch(() => (EVS = {err: 'Offline'}));
 }
 const EV_DAYS = 30;
+// Events grouped by key(row), the most devices first.
+const evGroup = (L, key) => {
+  // Keys come from the players' devices (Codex review #343: "__proto__" broke the page): no prototype.
+  const O = Object.create(null);
+  L.forEach(r => {
+    const k = key(r),
+      g = (O[k] = O[k] || {k, n: 0, dev: new Set(), last: 0, pg: new Set(), av: new Set(), ua: new Set(), r});
+    g.n++;
+    g.dev.add(r[2]);
+    g.last = Math.max(g.last, r[1]);
+    if (r[6]) g.pg.add(r[6]);
+    if (r[8]) g.av.add(r[8]);
+    if (r[9]) g.ua.add(r[9]);
+  });
+  return Object.values(O).sort((a, b) => b.dev.size - a.dev.size || b.n - a.n || b.last - a.last);
+};
+// To do › All: what went wrong on the players' devices in the last EV_DAYS days (app errors, photos that did not load,
+// failed saves), the most devices first; the one-tap answers and load times stay in Errors.
+function evSummary() {
+  if (!EVS) return '';
+  if (EVS.err) return `<div class="adm-qhead adm-tdhead"><h2>Errors</h2><small class="adm-where">${esc(EVS.err)}</small></div>`;
+  const since = Date.now() - EV_DAYS * 864e5,
+    R = EVS.rows.filter(r => r[1] >= since && ['err', 'photo', 'sync'].includes(r[3])),
+    G = evGroup(R, r => r[3] + '|' + r[4] + (r[3] === 'err' ? ' @ ' + r[5] : '')),
+    K = {err: 'App error', photo: 'Photo not loaded', sync: 'Failed save'};
+  if (!G.length) return '';
+  return `<div class="adm-qhead adm-tdhead"><h2>Errors <small>${R.length}</small></h2><a class="adm-link" href="#~events">All errors ›</a></div>
+    <div class="adm-tscroll"><table class="adm-tbl adm-tderr"><thead><tr><th>What</th><th>Devices</th><th>Times</th><th>Last</th></tr></thead><tbody>${G.slice(
+      0,
+      8
+    )
+      .map(
+        g =>
+          `<tr><td><small>${K[g.r[3]]}</small><br><code>${esc(g.r[4])}</code>${g.r[3] === 'err' && g.r[5] ? ` <small>${esc(g.r[5])}</small>` : ''}</td><td class="n">${g.dev.size}</td><td class="n">${g.n}</td><td>${days(g.last)}</td></tr>`
+      )
+      .join('')}</tbody></table></div>${G.length > 8 ? `<p class="note">+${G.length - 8} more in Errors</p>` : ''}`;
+}
 function renderEvents() {
   status();
   if (!EVS) {
@@ -2098,21 +2207,7 @@ function renderEvents() {
     R = EVS.rows.filter(r => r[1] >= since),
     of = k => R.filter(r => r[3] === k),
     when = t => days(t),
-    group = (L, key) => {
-      // Keys come from the players' devices (Codex review #343: "__proto__" broke the page): no prototype.
-      const O = Object.create(null);
-      L.forEach(r => {
-        const k = key(r),
-          g = (O[k] = O[k] || {k, n: 0, dev: new Set(), last: 0, pg: new Set(), av: new Set(), ua: new Set(), r});
-        g.n++;
-        g.dev.add(r[2]);
-        g.last = Math.max(g.last, r[1]);
-        if (r[6]) g.pg.add(r[6]);
-        if (r[8]) g.av.add(r[8]);
-        if (r[9]) g.ua.add(r[9]);
-      });
-      return Object.values(O).sort((a, b) => b.dev.size - a.dev.size || b.n - a.n || b.last - a.last);
-    },
+    group = evGroup,
     few = (S, n = 3) => esc([...S].slice(0, n).join(', ') + (S.size > n ? ` +${S.size - n}` : ''));
   // The one-tap question: how many said each, overall and by player level (overall level from the answer's detail).
   const P = of('pulse').map(r => {
@@ -2310,11 +2405,18 @@ function renderTriage() {
       })
     )
   );
-  $v.innerHTML = `<section class="adm-quality">
+  // All (To do, Pierre 2026-11-03): by urgency, Health's red line first (only when something is wrong), then the
+  // reports and flags, the devices' errors, Featured photos rated Poor, the judging agent's suggestions last. Reports =
+  // the same without Health and the errors (the old Triage page). Answers and errors load behind the page.
+  const all = cur === '~todo';
+  if (all && !ANS) loadStats().then(() => cur === '~todo' && render());
+  if (all && !EVS) loadEvents().then(() => cur === '~todo' && render());
+  $v.innerHTML = `<section class="adm-quality">${all ? healthLine() : ''}
     <div class="adm-qhead"><h2>Reports and feedback <small>${REPS && REPS.rows ? reps.length : ''}</small></h2>${REPS && REPS.err ? `<small class="adm-where">${esc(REPS.err)}</small>` : ''}<button type="button" class="adm-fchip plain" data-rload title="Reload">↻</button></div>
     ${reps.length ? reps.map(repCard).join('') : REPS && REPS.rows ? '<p class="note">Nothing reported.</p>' : ''}
     <div class="adm-qhead"><h2>Flagged on the site <small>${flagged.length}</small></h2></div>
     ${flagged.length ? `<div class="adm-grid adm-qgrid adm-flagged">${flagged.map(flagTile).join('')}</div>` : '<p class="note">Nothing flagged.</p>'}
+    ${all ? evSummary() : ''}
     ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
     ${sugHtml(tile)}
   </section>`;
@@ -2328,7 +2430,7 @@ function renderTriage() {
       (b.onclick = () => {
         done(b.closest('[data-f]').dataset.f);
         saveDraft();
-        renderTriage();
+        render();
       })
   );
   const FL = $v.querySelectorAll('.adm-flagged');
@@ -2342,18 +2444,18 @@ function renderTriage() {
       (b.onclick = () => {
         DRAFT.seen = {...(DRAFT.seen || {}), ['rep:' + b.dataset.rdone]: 1};
         saveDraft();
-        renderTriage();
+        render();
       })
   );
   const rl = $v.querySelector('[data-rload]');
   if (rl)
     rl.onclick = () =>
       loadReports(true).then(() => {
-        if (cur === '~triage') renderTriage();
+        if (cur === '~triage' || cur === '~todo') render();
       });
   if (!REPS)
     loadReports().then(() => {
-      if (cur === '~triage') renderTriage();
+      if (cur === '~triage' || cur === '~todo') render();
     });
   $v.querySelectorAll('[data-act="tpoor"]').forEach(
     b =>
@@ -2362,7 +2464,7 @@ function renderTriage() {
         DRAFT.quality = {...(DRAFT.quality || {}), [f]: 1};
         done(f);
         saveDraft();
-        renderTriage();
+        render();
       })
   );
   $v.querySelectorAll('[data-act="thide"]').forEach(
@@ -2376,7 +2478,7 @@ function renderTriage() {
         if (!(entry(n).hide || []).includes(f)) ACT.hide(n, f);
         else {
           saveDraft();
-          renderTriage();
+          render();
         }
       })
   );
@@ -2640,14 +2742,14 @@ function bindSug() {
   on('multi', (n, f) => {
     DRAFT.use = {...(DRAFT.use || {}), [f]: 'ref'};
     saveDraft();
-    renderTriage();
+    render();
   });
   $v.querySelectorAll('[data-sg="dismiss"]').forEach(
     b =>
       (b.onclick = () => {
         DRAFT.seen = {...(DRAFT.seen || {}), [b.dataset.k]: 1};
         saveDraft();
-        renderTriage();
+        render();
       })
   );
 }
@@ -3547,7 +3649,7 @@ async function start() {
   // Pierre's clicks in the old Coral Finder letters (curation.json "form") stay as they are, shown as the hint.
   Object.assign(LEGACY, SAVED.form || {}, DRAFT.form || {});
   const nf = importFlags();
-  if (nf) setTimeout(() => toast(`${nf} new photo${nf > 1 ? 's' : ''} flagged on the site: see Triage.`), 50);
+  if (nf) setTimeout(() => toast(`${nf} new photo${nf > 1 ? 's' : ''} flagged on the site: see To do.`), 50);
   addEventListener('storage', e => {
     if (e.key === 'imr-photo-flags' && e.newValue && importFlags()) render();
   });
@@ -3980,7 +4082,7 @@ function renderCov() {
     ['thick', 'Thickest', 'Most photos first'],
     ['lecture', 'Lecture', 'Lecture order']
   ];
-  $v.innerHTML = `<section class="adm-cov">
+  $v.innerHTML = `<section class="adm-cov"><div class="cov-look" id="cov-look"></div>
     <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Order">${seg.map(([k, t, h]) => `<button type="button" data-co="${k}" title="${h}" aria-pressed="${!COVS.col && COV_ORDER === k}">${t}</button>`).join('')}</span>
       <span class="cov-key" aria-label="Colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 colonies">${thin} thin</b><b title="Cells at the cap of ${CELL_MAX} colonies or over: their candidates wait outside the swiper">${R.reduce((s, r) => s + r.cells.filter(c => c && c.obs >= CELL_MAX).length, 0)} full</b>${(k => (k ? `<b class="warnc" title="Cells over the cap of ${CELL_MAX} colonies (added anyway): orange outline below; adding to a full cell suggests a colony to retire">⚠ ${k} over the cap</b>` : ''))(R.reduce((s, r) => s + r.cells.filter(c => c && c.obs > CELL_MAX).length, 0))}<b class="cov-rich" title="Cells with 8+ colonies">${rich} at 8+</b></div>
@@ -4013,12 +4115,44 @@ function renderCov() {
       })
   );
   bindCol(COVS, () => {});
-  $v.querySelectorAll('tbody tr').forEach(
+  $v.querySelectorAll('.cov-t tbody tr').forEach(
     tr =>
       (tr.onclick = e => {
         if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g);
       })
   );
+  lookBanner();
+}
+// Where to look (Pierre, 2026-11-03: a banner above the Games grid, no longer a page of its own): the few genus x view
+// cells most worth a candidate search now, ranked as in the full list (needsOf: most reasons first, then fewest
+// colonies); "All N" opens the full list in the banner (~stats-needs: reason cards, view and genus filters, sort).
+// It needs the answer log: the grid shows at once, the banner once the log is loaded.
+const LOOK_N = 5;
+function lookBanner() {
+  const el = $v.querySelector('#cov-look');
+  if (!el) return;
+  if (!ANS) {
+    el.innerHTML = '<p class="note">Loading…</p>';
+    loadStats().then(() => (cur === '~cov' || cur === '~stats-needs') && lookBanner());
+    return;
+  }
+  if (cur === '~stats-needs') {
+    el.classList.add('open');
+    return statsNeeds(el);
+  }
+  const VO = {wide: 0, medium: 1, macro: 2, zoom: 3},
+    L = (NEEDS = needsOf()).slice().sort((a, b) => b.sc - a.sc || a.c.obs - b.c.obs || a.n.localeCompare(b.n) || VO[a.v] - VO[b.v]);
+  el.innerHTML = L.length
+    ? `<div class="cov-lookb"><a class="cov-lookt" href="#~stats-needs" title="Where to look for photos: the full list">Where to look</a>${L.slice(
+        0,
+        LOOK_N
+      )
+        .map(
+          o =>
+            `<a class="cov-lk" href="#${esc(encodeURIComponent(o.n))}" title="${esc(o.why.map(w => w[1]).join(' · '))}"><i>${esc(o.n)}</i> ${esc(o.vt)} <small>${esc(o.why.map(w => NEED_T[w[0]]).join(', '))}</small></a>`
+        )
+        .join('')}<a class="adm-link" href="#~stats-needs">All ${L.length} ›</a></div>`
+    : '';
 }
 
 // Finder coverage (Pierre 2026-11-01): what the Coral Finder can show per genus, the IMR genera and the book's
@@ -4142,23 +4276,72 @@ function renderFcov() {
   );
 }
 
+// Coral Finder boxes (Coverage › Coral Finder; Pierre, 2026-11-03, mockup: "Finder boxes without a photo"): every box
+// of the Coral Finder path (growth form, then box: data.json key, and x.groups for the corals that are not hard corals)
+// with the book photos that illustrate it on the site (its leaf's "ph", up to 3; an excluded crop or the book switched
+// off drops out, as boxPics in proto/finder.js), boxes without a photo first. The site draws a few of those instead
+// (BOXART), or shows the covers of genera found in no other box. Genera = the box's IMR genera, then its Finder-only ones.
+function renderFinder() {
+  status();
+  const X = DRAFT.exclude || {},
+    on = bookOn(DRAFT),
+    more = (DATA.x && DATA.x.leaf) || {};
+  const B = [...(DATA.key || []), ...((DATA.x && DATA.x.groups) || [])].flatMap(F =>
+    F.leaves.map(l => ({F, l, ph: on ? (l.ph || []).filter(f => !X[f]).slice(0, 3) : [], g: l.g, gx: more[l.id] || []}))
+  );
+  B.sort((a, b) => a.ph.length - b.ph.length);
+  const none = B.filter(b => !b.ph.length).length,
+    gl = (n, x) =>
+      DATA.gen[n]
+        ? `<a class="adm-gen${x ? ' fbox-x' : ''}" href="#${esc(encodeURIComponent(n))}"${x ? ' title="Finder-only"' : ''}><i>${esc(n)}</i></a>`
+        : `<i>${esc(n)}</i>`,
+    gens = b => [...b.g.map(n => gl(n)), ...b.gx.map(n => gl(n, 1))].join(' ') || '–',
+    pic = f => {
+      const p = PHOTOS[f];
+      return `<button type="button" class="adm-ph"${p ? ` data-zf="${esc(f)}" data-g="${esc(p.genus)}"` : ' disabled'} aria-label="Enlarge"><img src="img/${esc(f)}-t.webp" alt="" loading="lazy"></button>`;
+    };
+  $v.innerHTML = `<section class="adm-cov">
+    <div class="adm-filter cov-head"><b class="${none ? 'warnc' : ''}" title="Boxes the site's Coral Finder shows without a book photo">${none} without a photo</b><b>${B.length} boxes</b>${on ? '' : '<b class="warnc" title="⋯ menu: CF book">CF book photos off</b>'}</div>
+    <table class="cov-t fbox-t"><thead><tr><th>Box</th><th>Photos</th><th>Genera</th></tr></thead><tbody>${B.map(
+      b =>
+        `<tr data-box="${esc(b.l.id)}"><th scope="row"><b>${esc(b.F.name)}</b> <small>${esc(b.l.id)}</small><span class="fbox-l">${esc(b.l.t)}${b.l.s ? ` <small>${esc(b.l.s)}</small>` : ''}${b.l.a ? ` <small>p. ${b.l.a}${b.l.b && b.l.b !== b.l.a ? '–' + b.l.b : ''}</small>` : ''}</span><span class="fbox-gm">${gens(b)}</span></th>
+      <td class="cov-c fbox-ph${b.ph.length ? '' : ' cov-0'}">${b.ph.length ? b.ph.map(pic).join('') : '<b>0</b>'}</td><td class="fbox-g">${gens(b)}</td></tr>`
+    ).join('')}</tbody></table></section>`;
+  $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
+}
+
+/* ---------- Hidden: every photo removed from the site (Genera › Hidden) ---------- */
+// Photos taken off the site with Remove (curation.json genera[n].hide), every genus at once (Pierre, 2026-11-03: a view of
+// Genera next to Excluded). Put back returns one to its view, as on its genus page; Undo steps back as everywhere.
+function renderHidden() {
+  status();
+  // A removed photo no longer in the data (the genus page marks it "⚠ check") is listed by name: Put back drops the entry.
+  const L = Object.keys(DATA.gen).flatMap(n => (entry(n).hide || []).map(f => [n, photos(n).find(p => p.f === f) || {f, gone: true}]));
+  $v.innerHTML = `<section class="adm-quality"><div class="adm-qhead"><h2>Removed from the site <small>${L.length}</small></h2></div>
+    ${
+      L.length
+        ? `<div class="adm-grid adm-qgrid">${L.map(
+            ([n, p]) => `<figure class="adm-tile is-hidden" data-f="${esc(p.f)}" data-g="${esc(n)}">
+      ${p.gone ? '<span class="adm-ph"><span class="none">no longer in the data</span></span>' : `<button type="button" class="adm-ph" data-zf="${esc(p.f)}" data-g="${esc(n)}" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button>`}
+      <figcaption><a class="adm-gen" href="#${esc(encodeURIComponent(n))}"><i>${esc(n)}</i></a>${p.gone ? `<code class="adm-t">${esc(p.f)}</code>` : `<span class="adm-src view">${esc(label(n, viewOf(n, p)))}</span>${srcTag(p)}`}</figcaption>
+      <div class="adm-acts"><button type="button" data-unhide>Put back</button></div></figure>`
+          ).join('')}</div>`
+        : '<p class="note">No photo removed.</p>'
+    }</section>`;
+  $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
+  $v.querySelectorAll('[data-unhide]').forEach(
+    b =>
+      (b.onclick = () => {
+        const t = b.closest('[data-f]');
+        ACT.hide(t.dataset.g, t.dataset.f);
+      })
+  );
+}
+
 /* ---------- Stats: players (anonymous) and photo difficulty, from the sync sheet ---------- */
 // ?answers=1 (sheet script v4): every answer, RA replaced by an anonymous id; ?stats=1: Elo difficulty per photo and
 // level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
-// The Stats tab holds the sub-views of STAT_TABS (incl. the photo list, renderDiff). The to-do lists (Needs and the two
-// coverage views) are their own "Needs" tab, NEED_TABS (Pierre, 2026-11-01, admin review rec. 6: work lists, not statistics).
-const STAT_TABS = [
-  ['~stats', 'Players'],
-  ['~stats-photos', 'Photos'],
-  ['~stats-conf', 'Confusions'],
-  ['~diff', 'Photo list']
-];
-const NEED_TABS = [
-  ['~stats-needs', 'Where to look'],
-  ['~cov', 'Game coverage'],
-  ['~fcov', 'Sheet & Finder coverage'],
-  ['~health', 'Health']
-];
+// The views of Activity, Photo stats and To do › Health; their tab and view switch are in #subnav (navs()).
 let ANS = null,
   RAS = {},
   MEID = null,
@@ -4171,10 +4354,6 @@ const ofAns = (k, fn) => {
   if (ANS_MEMO.a !== ANS) ANS_MEMO = {a: ANS, m: {}};
   return k in ANS_MEMO.m ? ANS_MEMO.m[k] : (ANS_MEMO.m[k] = fn());
 };
-// The pages of a tab are listed in #subnav under the header (navs()); the views no longer draw their own switch.
-const statSwitch = () => '';
-// Puts the switch above a view rendered by another function (photo list, coverage).
-const withSwitch = () => {};
 function loadStats() {
   // Script v6 keeps the anonymous-id salt secret and returns the caller's own id (me) for its name and code; the
   // local digest below only matches script v5 and older.
@@ -4619,26 +4798,18 @@ function bindUsers() {
 function renderStats() {
   status();
   if (!ANS) {
-    $v.innerHTML = statSwitch() + '<p class="note">Loading…</p>';
+    $v.innerHTML = '<p class="note">Loading…</p>';
     loadStats().then(() => {
       if (cur.startsWith('~stats') || cur === '~health') render();
     });
     return;
   }
-  return cur === '~stats-photos'
-    ? statsPhotos()
-    : cur === '~stats-conf'
-      ? statsConf()
-      : cur === '~stats-needs'
-        ? statsNeeds()
-        : cur === '~health'
-          ? statsHealth()
-          : statsPlayers();
+  return cur === '~stats-photos' ? statsPhotos() : cur === '~stats-conf' ? statsConf() : cur === '~health' ? statsHealth() : statsPlayers();
 }
 // Rows kept by the player filter (all, others than your accounts, or only them: myIds).
 const statRows = () => ANS.rows.filter(r => SF.who === 'all' || !myIds().size || (SF.who === 'me') === isMe(r[0]));
 function statsPlayers() {
-  const head = `${statSwitch()}<div class="adm-shead"><h2>Activity</h2>${
+  const head = `<div class="adm-shead"><h2>Activity</h2>${
     myIds().size
       ? segBtns('who', [
           ['all', 'All'],
@@ -4792,9 +4963,8 @@ function statsPlayers() {
 }
 // Where to look for more photos (Pierre, 2026-10-31): per genus x view, the reasons the game pool falls short, from
 // coverage (covOf), photo quality and difficulty (STATS Elo), players' levels per genus (sheet v5) and their answers.
-function statsNeeds() {
-  const head = `${statSwitch()}<div class="adm-shead"><h2>Where to look for photos</h2>${eloSeg()}</div>`,
-    OFF = 1.0,
+function needsOf() {
+  const OFF = 1.0,
     PS = photoStats();
   // "Without me" drops this browser's own answers and level everywhere on the page (repeats, mix-ups, too easy), not only from the photo Elo.
   const noMe = SF.elo === 'others' && myIds().size,
@@ -4888,12 +5058,18 @@ function statsNeeds() {
         sc: 3 - m
       });
   });
+  return out;
+}
+// Where to look, in full: into el (the banner above Coverage › Games, open on ~stats-needs).
+function statsNeeds(el) {
+  const head = `<div class="adm-shead"><h2>Where to look for photos</h2>${eloSeg()}<a class="adm-link" href="#~cov">Fold</a></div>`,
+    out = needsOf();
   NEEDS = out;
   NGEN = NGEN || '';
   const VO = {wide: 0, medium: 1, macro: 2, zoom: 3},
     vs = [...new Set(out.map(o => o.v))].sort((a, b) => VO[a] - VO[b]);
   if (SF.nv !== 'all' && !vs.includes(SF.nv)) SF.nv = 'all';
-  $v.innerHTML =
+  el.innerHTML =
     head.replace(
       /<\/div>$/,
       `${segBtns('nv', [['all', 'All views'], ...vs.map(v => [v, out.find(o => o.v === v).vt])])}
@@ -4903,7 +5079,7 @@ function statsNeeds() {
     (!Object.keys(ANS.players || {}).some(id => Object.keys((ANS.players[id] || [])[3] || {}).length)
       ? `<p class="note">"Too easy" needs answers logged by sheet script v5.</p>`
       : '');
-  const inp = $v.querySelector('.adm-nsearch');
+  const inp = el.querySelector('.adm-nsearch');
   inp.oninput = () => {
     NGEN = inp.value;
     needsBody();
@@ -4971,6 +5147,92 @@ function needsBody() {
         if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g);
       })
   );
+}
+// Photos everyone misses (Health): shown in PH_MIN answers or more with under PH_LOW right, or a difficulty PH_FAR or
+// more above the median of their genus's rated photos.
+function healthBad(R) {
+  const H = HEALTH,
+    median = healthMedian;
+  // 2. Photos everyone misses: answers from the log (each answer counts once for every photo it showed), difficulty
+  // from the photo Elo (with or without me) against the median of the genus's rated photos.
+  const PS = photoStats(),
+    META = Object.create(null);
+  allPhotos()
+    .filter(p => p.view !== 'cand')
+    .forEach(p => (META[p.f] = META[p.f] || p));
+  const PH = Object.create(null);
+  R.forEach(r =>
+    new Set(r[6].split(' ').filter(Boolean)).forEach(f => {
+      if (!META[f]) return;
+      const o = (PH[f] = PH[f] || {n: 0, ok: 0});
+      o.n++;
+      o.ok += r[4];
+    })
+  );
+  const GMED = Object.create(null);
+  Object.values(META).forEach(p => {
+    if (nAns(PS[p.f]) >= 3) (GMED[p.genus] = GMED[p.genus] || []).push(PS[p.f][0]);
+  });
+  Object.keys(GMED).forEach(g => (GMED[g] = GMED[g].length >= 3 ? median(GMED[g]) : null));
+  const BAD = Object.entries(PH)
+    .filter(([, o]) => o.n >= H.PH_MIN)
+    .map(([f, o]) => {
+      const p = META[f],
+        s = PS[f],
+        m = GMED[p.genus],
+        far = s && nAns(s) >= H.PH_MIN && m != null ? s[0] - m : null;
+      return {p, ...o, r: o.ok / o.n, far};
+    })
+    .filter(o => o.r < H.PH_LOW || (o.far != null && o.far >= H.PH_FAR))
+    .sort((a, b) => a.r - b.r || b.n - a.n);
+  return BAD;
+}
+// Genera that don't take off (Health), most stuck players first. BY = R by player, oldest first.
+function healthGenera(BY) {
+  const H = HEALTH,
+    median = healthMedian;
+  // 3. Genera that don't take off: per game genus (isGame: the slate, Millepora, the bonus genera once on), each player's right rate on the photos of it (answers where it was
+  // shown); stuck = G_MIN answers or more on it and still under G_LOW over the last G_MIN.
+  const PG = Object.create(null);
+  Object.values(BY).forEach(L =>
+    L.forEach(r => {
+      const k = r[0] + '|' + r[2];
+      (PG[k] = PG[k] || []).push(r[4]);
+    })
+  );
+  const GR = [...GAME]
+    .map(n => {
+      const P = Object.keys(BY)
+        .map(id => PG[id + '|' + n])
+        .filter(Boolean);
+      const rate = P.map(a => a.reduce((t, x) => t + x, 0) / a.length),
+        stuck = P.filter(a => a.length >= H.G_MIN && a.slice(-H.G_MIN).reduce((t, x) => t + x, 0) / H.G_MIN < H.G_LOW).length;
+      return {n, met: P.length, m: median(rate), stuck, long: P.filter(a => a.length >= H.G_MIN).length};
+    })
+    .sort((a, b) => b.stuck - a.stuck || (a.m ?? 2) - (b.m ?? 2) || a.n.localeCompare(b.n));
+  return GR;
+}
+const healthMedian = a => {
+  const b = a.slice().sort((x, y) => x - y),
+    k = b.length >> 1;
+  return !b.length ? null : b.length % 2 ? b[k] : (b[k - 1] + b[k]) / 2;
+};
+// To do › All: one red line at the top when Health finds something wrong (Pierre, 2026-11-03): photos everyone misses,
+// genera players are stuck on. Nothing when all is well, or until the answers are loaded.
+function healthLine() {
+  if (!ANS || ANS.old) return '';
+  const noMe = SF.elo === 'others' && myIds().size,
+    R = (ANS.rows || []).filter(r => !noMe || !isMe(r[0])),
+    BY = Object.create(null);
+  R.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
+  Object.values(BY).forEach(L => L.sort((a, b) => a[1] - b[1]));
+  const bad = R.length ? healthBad(R).length : 0,
+    stuck = R.length ? healthGenera(BY).filter(g => g.stuck).length : 0,
+    L = [
+      bad && `${bad} photo${bad === 1 ? '' : 's'} everyone misses`,
+      stuck && `${stuck} ${stuck === 1 ? 'genus' : 'genera'} players are stuck on`
+    ].filter(Boolean);
+  return L.length ? `<p class="warn adm-hline" data-hline><a href="#~health"><b>Health</b></a>: ${L.join(' · ')}</p>` : '';
 }
 // Health (Pierre, 2026-11-02: "most RAs will not send feedback"): what the answers already logged say about how the
 // app works for players, with no new data. Where players stop (sessions = answers less than GAP minutes apart; how long
@@ -5096,38 +5358,7 @@ function statsHealth() {
         : '<p class="note">None.</p>'
     }</div></div></section>`;
 
-  // 2. Photos everyone misses: answers from the log (each answer counts once for every photo it showed), difficulty
-  // from the photo Elo (with or without me) against the median of the genus's rated photos.
-  const PS = photoStats(),
-    META = Object.create(null);
-  allPhotos()
-    .filter(p => p.view !== 'cand')
-    .forEach(p => (META[p.f] = META[p.f] || p));
-  const PH = Object.create(null);
-  R.forEach(r =>
-    new Set(r[6].split(' ').filter(Boolean)).forEach(f => {
-      if (!META[f]) return;
-      const o = (PH[f] = PH[f] || {n: 0, ok: 0});
-      o.n++;
-      o.ok += r[4];
-    })
-  );
-  const GMED = Object.create(null);
-  Object.values(META).forEach(p => {
-    if (nAns(PS[p.f]) >= 3) (GMED[p.genus] = GMED[p.genus] || []).push(PS[p.f][0]);
-  });
-  Object.keys(GMED).forEach(g => (GMED[g] = GMED[g].length >= 3 ? median(GMED[g]) : null));
-  const BAD = Object.entries(PH)
-    .filter(([, o]) => o.n >= H.PH_MIN)
-    .map(([f, o]) => {
-      const p = META[f],
-        s = PS[f],
-        m = GMED[p.genus],
-        far = s && nAns(s) >= H.PH_MIN && m != null ? s[0] - m : null;
-      return {p, ...o, r: o.ok / o.n, far};
-    })
-    .filter(o => o.r < H.PH_LOW || (o.far != null && o.far >= H.PH_FAR))
-    .sort((a, b) => a.r - b.r || b.n - a.n);
+  const BAD = healthBad(R);
   const MAXPH = 24,
     phTile = o =>
       `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(o.p.f)}" data-g="${esc(o.p.genus)}" aria-label="Enlarge"><img src="${img(o.p, 1)}" alt="" loading="lazy"></button>
@@ -5139,25 +5370,7 @@ function statsHealth() {
       : '<p class="note">None.</p>'
   }</section>`;
 
-  // 3. Genera that don't take off: per game genus (isGame: the slate, Millepora, the bonus genera once on), each player's right rate on the photos of it (answers where it was
-  // shown); stuck = G_MIN answers or more on it and still under G_LOW over the last G_MIN.
-  const PG = Object.create(null);
-  Object.values(BY).forEach(L =>
-    L.forEach(r => {
-      const k = r[0] + '|' + r[2];
-      (PG[k] = PG[k] || []).push(r[4]);
-    })
-  );
-  const GR = [...GAME]
-    .map(n => {
-      const P = Object.keys(BY)
-        .map(id => PG[id + '|' + n])
-        .filter(Boolean);
-      const rate = P.map(a => a.reduce((t, x) => t + x, 0) / a.length),
-        stuck = P.filter(a => a.length >= H.G_MIN && a.slice(-H.G_MIN).reduce((t, x) => t + x, 0) / H.G_MIN < H.G_LOW).length;
-      return {n, met: P.length, m: median(rate), stuck, long: P.filter(a => a.length >= H.G_MIN).length};
-    })
-    .sort((a, b) => b.stuck - a.stuck || (a.m ?? 2) - (b.m ?? 2) || a.n.localeCompare(b.n));
+  const GR = healthGenera(BY);
   const gSec = `<section class="adm-scard adm-hsec g" data-health="genera"><h3>Genera that don't take off</h3><div class="adm-tscroll tall">${tbl(
     [
       'Genus',
@@ -5222,7 +5435,7 @@ function statsConf() {
   const noMe = SF.elo === 'others' && myIds().size,
     R = (ANS.rows || []).filter(r => !noMe || !isMe(r[0])),
     C = ofAns('conf|' + (noMe ? [...myIds()].sort().join(' ') : ''), () => confusionOf(R));
-  const head = `${statSwitch()}<div class="adm-shead"><h2>Confusions</h2>${segBtns('min', [
+  const head = `<div class="adm-shead"><h2>Confusions</h2>${segBtns('min', [
     [1, '≥1'],
     [3, '≥3'],
     [10, '≥10']
@@ -5350,7 +5563,7 @@ function statsPhotos() {
     L = allPhotos()
       .filter(p => PS[p.f] && nAns(PS[p.f]) >= SF.min)
       .map(p => ({...p, d: PS[p.f][0], n: PS[p.f][1], ok: PS[p.f][2], a: nAns(PS[p.f])}));
-  const head = `${statSwitch()}<div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [
+  const head = `<div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [
     [1, '≥1'],
     [3, '≥3'],
     [10, '≥10']

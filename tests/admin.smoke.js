@@ -30,8 +30,9 @@ const server = http.createServer((req, res) => {
 });
 
 // Admin smoke test in demo mode (admin.html?demo, admin-demo.js; Pierre, 2026-11-01: agents must be able to see and test
-// the admin): every page of the 4 tabs at 390 and 1280 px with no page error, then the main actions on made-up data:
-// open a player, merge two names, delete a test account, the reports in Triage, Skip and Reject in Candidates, Publish.
+// the admin): every view of the 9 tabs and every old address at 390 and 1280 px with no page error, each landing on its
+// tab and view, the view remembered per tab, then the main actions on made-up data: open a player, merge two names,
+// delete a test account, the reports in To do, Skip and Reject in Candidates, Publish.
 // Checks that nothing leaves the page (no call reaches the sync script or GitHub) and that the demo never writes the real
 // admin storage keys. Needs Playwright like pages.smoke.js. Locally: node tests/admin.smoke.js
 (async () => {
@@ -75,7 +76,7 @@ const server = http.createServer((req, res) => {
       await p.waitForTimeout(300);
       await p
         .waitForFunction(() => !/^\s*Loading/.test((document.querySelector('#view .note') || {}).textContent || ''), null, {timeout: 15000})
-        .catch(() => fails.push(`${w}px #${location.hash}: still loading`));
+        .catch(async () => fails.push(`${w}px ${await p.evaluate(() => location.hash)}: still loading`));
       await p.waitForTimeout(200);
     };
     const go = async h => {
@@ -89,8 +90,100 @@ const server = http.createServer((req, res) => {
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
     if (!(await p.$('.adm-demo'))) fails.push(`${w}px: no demo banner`);
     if (await p.$('.adm-lock')) fails.push(`${w}px: lock screen shown in demo mode`);
-    const pages = await p.evaluate(() => GROUPS.flatMap(g => g[2].map(x => x[0])).map(h => h || Object.keys(DATA.gen)[0]));
-    for (const h of pages) await go(h);
+    // 9 tabs in 3 groups (Pierre, 2026-11-03), every former page a view: each view and each old address lands on its tab
+    // (pressed in the tab row, or selected in the phone menu) and view (pressed in the view switch), with no page error and
+    // no sideways scroll.
+    const where = () =>
+      p.evaluate(() => ({
+        tab: (document.querySelector('#subnav .adm-subtabs [aria-pressed="true"]') || {}).textContent || '',
+        menu: ((document.getElementById('modesel') || {}).selectedOptions || [])[0]?.textContent || '',
+        view: (document.querySelector('#subnav .adm-views [aria-pressed="true"]') || {}).dataset?.view ?? null,
+        views: document.querySelectorAll('#subnav .adm-views a').length,
+        shown: !!document.querySelector('#subnav .adm-views') && document.querySelector('#subnav .adm-views').offsetParent !== null,
+        wide: document.documentElement.scrollWidth - innerWidth
+      }));
+    const ROUTES = await p.evaluate(() => {
+      const L = TABS.flatMap(t => t[2].map(([h, v]) => ({h, tab: t[1], view: t[2].length > 1 ? h : null, n: t[2].length, name: v})));
+      // Old addresses that are not a view of their own, and a player's journey (under Players).
+      return [
+        ...L,
+        {h: '~mont', tab: 'Look-alikes', view: null, n: 1},
+        {h: '~stats-needs', tab: 'Coverage', view: '~cov', n: 3},
+        {h: '~journey/Ana Demo', tab: 'Players', view: null, n: 1}
+      ];
+    });
+    const OLD = ['~triage', '~stats-needs', '~cov', '~fcov', '~events', '~health', '~cand', '~form', '~quality', '~look', '~excluded'];
+    OLD.push('~users', '~stats', '~stats-conf', '~stats-photos', '~diff', '~mont');
+    const miss = OLD.filter(h => !ROUTES.some(r => r.h === h));
+    if (miss.length) fails.push(`${w}px: old addresses without a tab: ${miss.join(' ')}`);
+    if (ROUTES.filter(r => r.tab && !['~mont', '~stats-needs', '~journey/Ana Demo'].includes(r.h)).length < 17)
+      fails.push(`${w}px: fewer than 17 views`);
+    for (const r of ROUTES) {
+      const h = r.h || (await p.evaluate(() => Object.keys(DATA.gen)[0]));
+      await go(h);
+      const at = await where();
+      const strip = x => x.replace(/ \(\d+\)$| ⚠$/, '');
+      if (strip(at.tab) !== r.tab || strip(at.menu) !== r.tab) fails.push(`${w}px #${h}: tab ${at.tab || at.menu}, not ${r.tab}`);
+      if (r.n > 1 && (at.view !== r.view || at.views !== r.n || !at.shown))
+        fails.push(`${w}px #${h}: view switch ${JSON.stringify(at)}, expected ${r.view} of ${r.n}`);
+      if (r.n === 1 && at.views) fails.push(`${w}px #${h}: a view switch on a one-view tab`);
+      if (at.wide > 0) fails.push(`${w}px #${h}: page ${at.wide} px wider than the window`);
+    }
+    // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs).
+    await go('~finder');
+    await go('~triage');
+    const mem = await p.evaluate(() => ({
+      cov: (document.querySelector('#subnav .adm-subtabs a:nth-child(2)') || {}).getAttribute?.('href'),
+      todo: document.querySelector('#modes [data-mode="todo"]').getAttribute('href'),
+      players: document.querySelector('#modes [data-mode="players"]').getAttribute('href'),
+      kept: (store.get('imr-admin-view', {}) || {}).cov
+    }));
+    if (mem.cov !== '#~finder' || mem.todo !== '#~triage' || mem.kept !== '~finder' || mem.players !== '#~users')
+      fails.push(`${w}px: views not remembered ${JSON.stringify(mem)}`);
+    await p.reload();
+    await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
+    await settle();
+    if ((await p.evaluate(() => document.querySelector('#modes [data-mode="todo"]').getAttribute('href'))) !== '#~triage')
+      fails.push(`${w}px: the To do group forgot its last view after a reload`);
+    // To do › All: Health's red line (the demo has photos everyone misses), the reports, the devices' errors, suggestions last.
+    await go('~todo');
+    await p
+      .waitForFunction(() => document.querySelector('[data-hline]') && /Errors/.test(document.getElementById('view').innerText), null, {
+        timeout: 15000
+      })
+      .catch(() => {});
+    const all = await p.evaluate(() => {
+      const v = document.getElementById('view'),
+        t = v.innerText;
+      return {
+        line: !!v.querySelector('[data-hline] a[href="#~health"]'),
+        rep: /Demo report/.test(t),
+        err: !!v.querySelector('.adm-tderr'),
+        first: v.querySelector('section > *')?.matches('[data-hline]')
+      };
+    });
+    if (!all.line || !all.rep || !all.err || !all.first) fails.push(`${w}px To do › All: ${JSON.stringify(all)}`);
+    // Coverage › Coral Finder: one row per Finder box; Genera › Hidden: Put back takes a removed photo back.
+    await go('~finder');
+    const fb = await p.evaluate(() => ({
+      rows: document.querySelectorAll('[data-box]').length,
+      boxes: [...DATA.key, ...(DATA.x.groups || [])].reduce((s, F) => s + F.leaves.length, 0)
+    }));
+    if (!fb.rows || fb.rows !== fb.boxes) fails.push(`${w}px Coral Finder boxes: ${JSON.stringify(fb)}`);
+    const hid = await p.evaluate(() => {
+      const n = Object.keys(DATA.gen).find(g => photos(g).length > 3),
+        f = photos(n)[0].f;
+      ACT.hide(n, f);
+      location.hash = '~hidden';
+      return {n, f};
+    });
+    await settle();
+    if (!(await p.$(`#view [data-f="${hid.f}"] [data-unhide]`))) fails.push(`${w}px Hidden: the removed photo is not listed`);
+    else {
+      await p.click(`#view [data-f="${hid.f}"] [data-unhide]`);
+      await settle();
+      if (await p.evaluate(h => (entry(h.n).hide || []).includes(h.f), hid)) fails.push(`${w}px Hidden: Put back left the photo removed`);
+    }
 
     // Users: the made-up players, one opened, a merge and a delete.
     await go('~users');
@@ -209,7 +302,7 @@ const server = http.createServer((req, res) => {
     const firstHard = await p.$eval('.adm-jtbl tbody tr td:nth-child(6)', td => td.textContent);
     if (!/-|–/.test(firstHard)) fails.push(`${w}px journey: hardest first starts at ${firstHard}`);
 
-    // Triage lists the demo reports; Activity shows the demo players' answers.
+    // To do › Reports lists the demo reports; Activity shows the demo players' answers.
     // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
     await go('~events');
     await p
@@ -236,7 +329,7 @@ const server = http.createServer((req, res) => {
     });
     if (proto !== true) fails.push(`${w}px Errors & feedback with a "__proto__" event: ${proto}`);
     await go('~triage');
-    if (!/Demo report/.test(await text())) fails.push(`${w}px Triage: demo reports missing`);
+    if (!/Demo report/.test(await text())) fails.push(`${w}px To do › Reports: demo reports missing`);
     await go('~stats');
     if (/No answers yet/.test(await text())) fails.push(`${w}px Activity: no answers`);
     // Photo difficulty by genus: one lane per view, a median bar in every lane that has photos.
@@ -316,9 +409,17 @@ const server = http.createServer((req, res) => {
     });
     if (gq.macro) fails.push(`${w}px Candidates: ${gq.macro} Corallites candidates for Finder-only genera`);
     if (!gq.cap) fails.push(`${w}px Cap: not CELL_MAX for the game genera and CAP.sheet for the Finder-only ones`);
+    // Where to look: a banner above the Games grid (its first cells), open in full on its old address.
+    const lk = await p.evaluate(() => ({
+      links: document.querySelectorAll('#cov-look .cov-lk').length,
+      grid: !!document.querySelector('.cov-t')
+    }));
+    if (!lk.links || !lk.grid) fails.push(`${w}px Coverage › Games: Where to look banner ${JSON.stringify(lk)}`);
     await go('~stats-needs');
     if (!(await p.evaluate(() => (NEEDS || []).length && NEEDS.every(r => isGame(r.n)))))
       fails.push(`${w}px Where to look: empty, or a row for a genus no game asks`);
+    if (!(await p.evaluate(() => !!document.querySelector('#cov-look.open .adm-needs') && !!document.querySelector('.cov-t'))))
+      fails.push(`${w}px Where to look: not open above the Games grid`);
     // Candidates: Skip sets the photo aside, Reject marks it reviewed (a draft change), then Publish (in memory).
     await go('~cand');
     if (await p.$('[data-skip]')) {
@@ -439,7 +540,9 @@ const server = http.createServer((req, res) => {
     console.error(`Admin demo: ${fails.length} problem(s)\n` + fails.join('\n'));
     process.exit(1);
   }
-  console.log('Admin demo OK: every page at 390 and 1280 px, merge, delete, triage, health, skip, reject, cap, publish; nothing sent.');
+  console.log(
+    'Admin demo OK: every tab, view and old address at 390 and 1280 px, merge, delete, reports, health, skip, reject, cap, publish; nothing sent.'
+  );
 })().catch(e => {
   console.error(e);
   process.exit(1);

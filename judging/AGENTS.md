@@ -7,7 +7,7 @@ shows the wrong genus or several corals; and, per genus: near-duplicates, the be
 candidate photos worth adding.
 
 **Everything you produce is a suggestion.** Pierre reviews it in the admin page (`admin.html`): dashed guesses he
-confirms with one click, and a Triage list where he accepts or dismisses each suggestion. Nothing you write
+confirms with one click, and a list in the admin's To do tab (Reports view, formerly Triage) where he accepts or dismisses each suggestion. Nothing you write
 changes the site by itself.
 
 ## Hard rules
