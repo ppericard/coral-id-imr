@@ -2809,11 +2809,24 @@ td.cov-c .cov-off {
   padding: 8px 0 12px;
   background: var(--bg);
 }
-.adm-utbl .adm-udet .adm-sgrid {
-  margin: 0;
+.adm-utbl .adm-udet .adm-ubar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
   position: sticky;
   left: 0;
   max-width: calc(100vw - 50px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 8px 12px;
+}
+.adm-ubar .next {
+  margin: 0;
+}
+.adm-ubar .adm-danger {
+  margin-left: auto;
 }
 .adm-danger {
   font: inherit;
@@ -2829,7 +2842,8 @@ td.cov-c .cov-off {
   background: var(--bad-bg);
 }
 .adm-utbl select,
-.adm-scard select {
+.adm-scard select,
+.adm-ubar select {
   font: inherit;
   font-size: 0.85rem;
   padding: 4px 8px;
