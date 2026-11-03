@@ -238,6 +238,56 @@ const server = http.createServer((req, res) => {
     await checkLast('Last tapped');
     await p.click('[data-usort="name"]');
     await settle();
+    // Full replay (core.js replayProgress; docs/LEARNING.md "Full replay"): Progress and Learned replayed from the log, and
+    // "↻ saved …" where the saved copy differs: Dio's is from the former model (a genus learned under BKT, taken back),
+    // Ben's is 20 answers behind; Ana's matches the replay (no mark). Her journey says the same, Dio's too.
+    await p
+      .waitForFunction(() => !/…/.test(document.querySelector('.adm-utbl').innerText), null, {timeout: 10000})
+      .catch(() => fails.push(`${w}px Players: Progress still reading the saved copies`));
+    const rp = await p.evaluate(() => {
+      const col = k => [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort === k),
+        row = n => [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === n),
+        cell = (n, k) => row(n).querySelectorAll('td')[col(k)];
+      return Object.fromEntries(
+        ['Ana Demo', 'Ben Demo', 'Dio Demo'].map(n => [
+          n,
+          {
+            prog: cell(n, 'prog').innerText.trim(),
+            learned: cell(n, 'learned').innerText.trim(),
+            marks: row(n).querySelectorAll('.adm-saved').length
+          }
+        ])
+      );
+    });
+    if (
+      rp['Ana Demo'].marks ||
+      !/^\d+%$/.test(rp['Ana Demo'].prog) ||
+      !/^\d+%\s*↻ saved \d+%$/.test(rp['Dio Demo'].prog) ||
+      !/^0\/40\s*↻ saved 1\/40$/.test(rp['Dio Demo'].learned) ||
+      !/↻ saved/.test(rp['Ben Demo'].prog)
+    )
+      fails.push(`${w}px Players: replayed progress ${JSON.stringify(rp)}`);
+    await p.click('[data-uopen="Dio Demo"]');
+    await settle();
+    if (!/Progress \d+%\s*↻ saved \d+% · Learned 0\s*↻ saved 1/.test(await p.$eval('.adm-ubar', x => x.innerText)))
+      fails.push(`${w}px Players: Dio's bar without the replayed progress`);
+    for (const [n, mark] of [
+      ['Dio Demo', true],
+      ['Ana Demo', false]
+    ]) {
+      await go('~journey/' + encodeURIComponent(n));
+      await p.waitForFunction(() => !/…/.test(document.querySelector('.adm-kpis').innerText), null, {timeout: 10000}).catch(() => {});
+      const k = await p.evaluate(() => ({
+        kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
+        genus: document.querySelectorAll('.adm-jtbl .adm-saved').length,
+        col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress')
+      }));
+      if (!/\d+% (↻ saved \d+% )?Progress/i.test(k.kpis) || /↻ saved/.test(k.kpis) !== mark || !!k.genus !== mark || !k.col)
+        fails.push(`${w}px journey (${n}) replayed progress: ${JSON.stringify(k)}`);
+    }
+    await go('~users');
+    await p.click('[data-uopen="Dio Demo"]'); // closed again for the steps below
+    await settle();
     // Leaderboard (sheet v20): Hide marks the player hidden, Show puts them back.
     await p.click('[data-uopen="Dio Demo"]');
     await settle();

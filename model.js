@@ -13,7 +13,8 @@
 // last 2 questions on the genus is held back, and at least 3 colonies stay in rotation (VARIETY) whatever the level, so
 // a struggling player still sees new photos.
 // Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
-const PICKD = {TARGET_OFF: 1.0, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
+// TARGET_OFF (1.0) is core.js's: the miss weight (pgMissW) aims at the same chance.
+const PICKD = {TARGET_OFF, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
 // One zoom level per question (Pierre, 2026-10-31): beginners get every view of the colony (lots of information); as
 // the player's level on the genus rises, more and more questions show a single view (colony, closer or corallites
 // alone), up to 85% of them, so each view is learned on its own and each photo's difficulty is measured on its own.
@@ -576,41 +577,20 @@ function nextTarget(list) {
   lastQs = [...lastQs, n].slice(-4);
   return n;
 }
-// Player ability per genus (s.th), on the same scale as photo difficulty (0 = average photo). Elo update after each
-// answer, as in the sync sheet (Code.gs stats_): P(right) = g + (1 - g) * sigmoid(ability - difficulty), g = 1/choices;
-// ability moves by K * (result - P(right)), K shrinking as answers build up (Pelánek 2016) but never below 0.25 so a
-// genus that starts going wrong eases off quickly. Starts at 0 (target = the featured photos); no time criteria.
-const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
-// Learners change (Pierre, 2026-11-02, three players: a complete beginner, an IMR RA after one lecture, an expert): a
-// step that only shrinks with the answers suits a stable skill, and a simulated beginner or RA stayed rated as a beginner
-// (easy photos, no traps) at 80-87% right. As Glicko-2's volatility (Glickman 2012): s.vr follows the recent surprise
-// (result - expected, moving average, rate ELO.vr); while answers keep beating (or missing) the expectation, the step
-// grows by up to ELO.vg x |s.vr|, within kmax, so the rating catches up; it settles back once the player is predictable.
-// docs/LEARNING.md.
+// Player ability per genus (s.th), on the same scale as photo difficulty (0 = average photo): an Elo step after each
+// answer with a volatility (Glicko-2), core.js ELO, abilityOf, eloStep (moved there on 2026-11-03 so the full replay of
+// the answer log steps the ability exactly as the app does; docs/LEARNING.md). Starts at 0 (target = the featured
+// photos), or from the player's global level on a genus never answered (core.js playerStart: their abilities on the
+// genera already answered), so a strong player gets traps, single views and harder photos on a new genus from its first
+// question; no time criteria.
 const RECENT = 10;
 const recent = n => {
   const s = P[n] || {};
   return s.h ? s.h.slice(-RECENT) : '';
 };
 const misses = h => [...h].filter(x => x === '0').length;
-// Progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability. A genus never answered
-// starts from the player's global level (core.js playerStart: their abilities on the genera already answered), so a
-// strong player gets traps, single views and harder photos on a new genus from its first question.
-const ability = n => {
-  const s = P[n] || {};
-  return typeof s.th === 'number' ? s.th : s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n);
-};
-function abilityStep(n, s, good, d, k) {
-  const th = ability(n),
-    g = 1 / k,
-    e = g + (1 - g) * sig(th - d),
-    m = (s.ok || 0) + (s.ko || 0);
-  s.vr = Math.round(((1 - ELO.vr) * (s.vr || 0) + ELO.vr * ((good ? 1 : 0) - e)) * 1000) / 1000;
-  const K = Math.min(ELO.kmax, Math.max(ELO.kmin, ELO.kmax / (1 + m / ELO.n)) * (1 + ELO.vg * Math.abs(s.vr)));
-  s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * 100) / 100;
-  delete s.lv;
-  delete s.run;
-}
+const ability = n => abilityOf(P, n);
+const abilityStep = (n, s, good, d, k) => eloStep(P, n, s, good, d, k);
 // For My progress: where the genus's photo difficulty stands, and how many of its game photos the player has seen.
 const photoBand = n => {
   const t = ability(n) - PICKD.TARGET_OFF;
@@ -643,11 +623,55 @@ let PMEM = memOf((store.get('imr-photo-stats', {}) || {}).mem);
 // changed anything.
 function memRecalcAll() {
   let ch = false;
-  Object.keys(P).forEach(n => {
-    if (n !== LEVEL && memRecalc(P[n], PMEM)) ch = true;
-  });
+  mxRecalc(() =>
+    Object.keys(P).forEach(n => {
+      if (n !== LEVEL && memRecalc(P[n], PMEM)) ch = true;
+    })
+  );
   if (ch) save();
   return ch;
+}
+// A learned mark taken away by a recalculation (Pierre, 2026-11-03: "players know they test an early beta"): told once
+// with an announcement card (progress.js mxLostNotice: at once, never held), and the learned-based achievements the
+// progress no longer meets are taken back (progress.js achRecheck).
+// Generic: mxRecalc(fn) runs any recalculation of the progress (today core.js memRecalc, at load, after a pull and before
+// an answer; later perhaps a full replay of the sheet's answer log) and reports every genus whose s.mx it removed. A mark
+// lost by misses in play (quiz.js mxKept) never goes through it. Kept on this device only (MXL.KEY, outside the synced
+// record: a drop made by a pull on another device is told there too): due {genus: its s.mx}, the drops not told yet;
+// told {genus: s.mx}, those told, so the same mark is never told twice here (a copy pulled again that still has it);
+// ach, achievements still to recheck (progress.js comes after model.js on a first load); gone, the ids taken back, for
+// the card. Cleared at sign-out with the progress (sync.js signOff).
+const MXL = {KEY: 'imr-mx-lost'};
+const mxMarks = () =>
+  Object.fromEntries(
+    Object.keys(P)
+      .filter(n => n !== LEVEL && P[n] && P[n].mx)
+      .map(n => [n, P[n].mx])
+  );
+// why: the reason a mark goes, for the card's words (progress.js mxLostText): 'bkt' (default), an exam passed under the
+// former model (a record without s.pg); 'rules', a recalculation under a newer rules version (the sheet's full replay,
+// sync.js replayAdopt, core.js RVS); a function of the genus for a recalculation that can do both.
+function mxRecalc(fn, why = 'bkt') {
+  const m0 = mxMarks();
+  fn();
+  const lost = Object.keys(m0).filter(n => !(P[n] || {}).mx);
+  if (lost.length)
+    mxLost(Object.fromEntries(lost.map(n => [n, m0[n]])), Object.fromEntries(lost.map(n => [n, typeof why === 'function' ? why(n) : why])));
+  return lost;
+}
+function mxLost(L, why = {}) {
+  const M = store.get(MXL.KEY, {}) || {},
+    due = M.due || {},
+    told = M.told || {},
+    W = M.why || {};
+  Object.keys(L).forEach(n => {
+    if (told[n] === L[n]) return;
+    due[n] = L[n];
+    W[n] = why[n] || 'bkt';
+  });
+  store.set(MXL.KEY, {...M, due, told, why: W, ach: 1});
+  // The achievements and the card now if their code is in and set up (progress.js, app.js SETUP 2), else at its set-up.
+  if (typeof achRecheck === 'function' && window.APP_READY) (achRecheck(), mxLostNotice());
 }
 const famOf = (n, ph) => {
   const ps = (P[n] || {}).ps || {},
@@ -669,39 +693,19 @@ function photoDiff(n, p) {
 // - its look-alikes: in full when a genus it gets confused with is among the choices (pooled over every player with the
 //   declared look-alikes as prior, or the player's own mix-ups: the traps' rule), PROG.LOOK (0.5) when none is.
 // So a right answer between 2 genera of different forms counts a third of one against 3 look-alikes. A miss weighs
-// what it proves too (pgMissW below: in full on a photo at the player's level, less on a harder one). Photo
-// difficulty is left out of a right answer's weight: simulated as a third factor (0.5 on an easy photo to 1 on a hard
-// one), it only slowed everyone (an expert mastered 5 genera in 1000 questions instead of 16), which A already sets, and the
-// traps already come as the genus's photos get harder (both follow the Elo ability).
-// A typed answer (k infinite, TYPED) counts in full: every genus, its look-alikes included, was a possible answer.
+// what it proves too (core.js pgMissW: in full on a photo at the player's level, less on a harder one), and a right
+// answer on a photo the player knows only what memory does not explain (core.js pgMemW). Photo difficulty is left out of
+// a right answer's weight: simulated as a third factor (0.5 on an easy photo to 1 on a hard one), it only slowed
+// everyone (an expert mastered 5 genera in 1000 questions instead of 16), which A already sets, and the traps already
+// come as the genus's photos get harder (both follow the Elo ability). The weights live in core.js (pgRightW, pgMissW,
+// pgMemW, 2026-11-03) so the full replay of the answer log (core.js replayProgress) runs the same rules as the app.
+// A typed answer (k infinite, TYPED) counts in full: every genus, its look-alikes included, was a possible answer
+// (core.js pgRightW).
 function pgWeight(t, chs, k) {
-  const look = !isFinite(k) || chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >= CONF.TRAP || confusable(t, n)));
-  return Math.min(1, Math.max(0, (1 - 1 / k) / (1 - 1 / 4))) * (look ? 1 : PROG.LOOK);
-}
-// What a miss proves (Pierre, 2026-11-02: "a miss on a very hard photo doesn't necessarily mean the genus is badly
-// known"; a miss must not cost more than it proves): the Elo chance the player had to get it right (ability th against
-// the photo's difficulty d, k choices, as abilityStep), over the chance the game aims for (a photo PICKD.TARGET_OFF
-// below the ability, about 80% with 4 choices). A photo at the player's level or easier: the miss counts in full; a
-// harder one: less (1 unit harder: 0.78; 2 units: 0.56). No new constant: the Elo and the photo targeting set it.
-// The right answers keep their weight (pgWeight): simulated, a photo factor on them only slowed everyone.
-// R: the recall expected after a break, for a comeback question (comebackOf, below; 1 otherwise): the chance the player
-// had is then the recall-adjusted one, so a miss the rust explains costs less progress (Pierre, 2026-11-02).
-function pgMissW(th, d, k, R = 1) {
-  const e = (x, r = 1) => 1 / k + (1 - 1 / k) * r * sig(x);
-  return Math.min(1, e(th - d, R) / e(PICKD.TARGET_OFF));
-}
-// What a right answer on a photo the player knows proves (Pierre, 2026-11-03): only what memory does not explain. The
-// mirror of pgMissW (a ratio of chances, like it): the chance the player had on the same photos new over the chance
-// they had with their memory of them (fam, famOf), at most 1: the share of such right answers that would have come
-// without the memory. A new photo (fam 0) keeps its full weight: simulated, a photo-difficulty factor on every right
-// answer only slowed everyone (pgWeight, above), so only the part memory explains is taken off. 4 choices, a photo at
-// the game's target (ability 1 above it): x 0.93 shown never right, x 0.87 right once, x 0.84 right twice or more with
-// the offsets of 2026-11-03. Tried first, the room for surprise left ((1 - chance with memory) / (1 - chance new): x 0.71
-// / 0.41 / 0.23): simulated, it took a third to a half of the genera learned by question 600 and put the progress
-// further below the truth than memory had put it above (docs/LEARNING.md "Photo memory").
-function pgMemW(th, d, fam, k, R = 1) {
-  const e = x => 1 / k + (1 - 1 / k) * R * sig(x);
-  return fam >= 0 ? 1 : Math.min(1, e(th - d) / e(th - d - fam));
+  return pgRightW(
+    k,
+    chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >= CONF.TRAP || confusable(t, n)))
+  );
 }
 const knownP = n => pgOf(P[n]);
 function pgObs(n, s, good, w) {

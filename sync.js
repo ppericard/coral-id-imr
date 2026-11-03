@@ -49,8 +49,63 @@ function syncSummary() {
     board: boardOn() ? 1 : 0
   };
 }
+// rv: the rules version this device's progress was last replayed with (replayAdopt): the sheet (v28) answers with the
+// full replay of the player's log when it is older than its own.
 const syncGet = (a = SYNC) =>
-  sheetFetch(`${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}`).then(r => r.json());
+  sheetFetch(`${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}&rv=${rvApplied()}`).then(r =>
+    r.json()
+  );
+// The full replay of the answer log by the sheet (Pierre, 2026-11-03: progress recalculated from the whole log,
+// automatically, never by a human click, now and whenever the progress engine changes; docs/LEARNING.md "Full replay").
+// The sheet (Code.gs replay_, v28) replays the player's rows with this app's own engine (core.js replayProgress, embedded
+// in the script) when the request says this device applied an older rules version (rv, core.js RVS), and the reply
+// carries replay: {rv, n, rec, ids}. The app adopts it once per version: the progress becomes the replay (rec), with
+// this device's answers the sheet has not counted yet (pending: the unsent log, minus the ids the sheet replayed, and
+// minus the answers before a progress reset) replayed on top by the same engine, then core.js replayedOf keeps from
+// this device's copy only what the log cannot give (the mastery exam, the days answered right, the last observations,
+// the corallites milestone; a genus the log has fewer answers on keeps its record). Run through mxRecalc, so a learned
+// mark taken away is told with its card; saved and synced. The rules version applied (RVK) travels with the progress
+// data: a device that signs in to the account takes it with the account (its progress is the adopted one: no second
+// adoption); a device already signed in keeps its own, so it adopts the replay itself once, with its own unsent answers
+// on top (a pull alone would let those answers keep their older model). Then the announcement card of every version
+// skipped that has one (RVS msg; progress.js rvNotice), at once. The device's own recalculations (core.js memRecalc,
+// pgOf) stay as the fallback for a device that never reaches the sheet. An older sheet sends no replay: nothing happens.
+const RVK = 'imr-coral-rv';
+const rvApplied = () => Number(store.get(RVK, 0)) || 0;
+function replayAdopt(rp, pending) {
+  if (!rp || typeof rp.rv !== 'number' || rp.rv <= rvApplied() || !rp.rec || typeof rp.rec !== 'object') return false;
+  if (typeof mxRecalc !== 'function') return false; // the quiz tier (model.js) not in yet: the next reply brings it again
+  try {
+    const from = rvApplied(),
+      played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && (s.ok || 0) + (s.ko || 0) > 0),
+      had = new Set((rp.ids || []).map(String)),
+      reset = store.get('imr-coral-reset', '') || '',
+      me = '~me',
+      rows = (pending || []).filter(a => a && a.g && !had.has(String(a.id)) && String(a.t || '') > reset).map(a => logRow(a, me)),
+      gen = {...((DATA && DATA.x && DATA.x.gen) || {}), ...((DATA && DATA.gen) || {})},
+      R = rows.length
+        ? replayProgress(rows, {gen, mem: PMEM, conf: PCONF, start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}}})[me].P
+        : rp.rec,
+      before = copy(P),
+      M = replayedOf({P: R}, P, rp.rv);
+    // A mark the replay took away: the former model's (a record learned without s.pg), or a rule of the new version.
+    mxRecalc(
+      () => {
+        Object.keys(P).forEach(g => delete P[g]);
+        Object.assign(P, M);
+      },
+      n => (typeof (before[n] || {}).pg === 'number' ? 'rules' : 'bkt')
+    );
+    store.set(RVK, rp.rv);
+    save();
+    if (played && typeof rvNoticeAdd === 'function') rvNoticeAdd(from, rp.rv);
+    if (/^#(progress|quiz-board)$/.test(location.hash)) route();
+    return true;
+  } catch (e) {
+    ev('err', {msg: 'replay not adopted: ' + String((e && e.message) || e).slice(0, 120)});
+    return false;
+  }
+}
 // Two devices on one account: three-way merge against SYNC.base, the progress as last sent or received.
 // Answers taken on this device since then are added on top of the saved record, so neither side's answers
 // are lost. A reset (imr-coral-reset, a time) wins over older progress.
@@ -107,6 +162,7 @@ function mergeSaved(j) {
     holdIn(); // after the reset time is in: only the answers since then count
     store.set('imr-coral-progress', P);
     if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
+    replayAdopt(j.replay, SYNC.log); // the sheet's full replay, when newer than the one applied here (v28)
     prog();
     return;
   }
@@ -121,6 +177,7 @@ function mergeSaved(j) {
   store.set('imr-coral-sync', SYNC);
   store.set('imr-coral-progress', P);
   if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
+  replayAdopt(j.replay, SYNC.log); // the sheet's full replay, when newer than the one applied here (v28)
   prog();
 }
 // Pull, merge, then send. Every change bumps SYNC.rev; a send clears SYNC.dirty only if nothing changed
@@ -171,6 +228,7 @@ function syncOnce(tries = 0) {
           summary: syncSummary(),
           answers: log,
           av: appVer(), // the app's version (sheet v25: a request without it comes from an app before 2026-11-03)
+          rv: rvApplied(), // the rules version applied here (sheet v28: an older one gets the full replay back)
           // First send after signing in: the answers this device sent anonymously move to this name (script v12).
           ...(me.anon ? {anon: me.anon} : {}),
           ...(typeof me.srv === 'number' ? {at: me.srv} : {})
@@ -211,6 +269,8 @@ function syncOnce(tries = 0) {
         // while this send was on its way.
         if (typeof holdSync === 'function') holdSync(j.hold, me.log, j.holdIds);
         if (me.rev === rev) delete me.dirty;
+        // The full replay over every answer now logged (v28), plus any answer given while this send was on its way.
+        replayAdopt(j.replay, me.log);
         store.set('imr-coral-sync', me);
       } else if (j && SYNC === me) {
         me.err = j.error === 'pin' || j.error === 'wait' || j.error === 'gone' ? j.error : 'net';
@@ -470,7 +530,11 @@ function sendAnon() {
   if (SYNC || !SYNC_URL || LOCAL || anonBusy || !q.length) return;
   const batch = q.slice(0, 100);
   anonBusy = true;
-  fetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({anon: anonId(), anonAnswers: batch, av: appVer()})})
+  fetch(SYNC_URL, {
+    method: 'POST',
+    keepalive: true,
+    body: JSON.stringify({anon: anonId(), anonAnswers: batch, av: appVer(), rv: rvApplied()})
+  })
     .then(r => r.json())
     .then(j => {
       // A refused send is reported like a failed save (it used to fail silently; Pierre, 2026-11-03), then retried at the
@@ -479,6 +543,8 @@ function sendAnon() {
       const done = new Set(batch.map(x => x.id)),
         left = store.get(ANONQ, []).filter(x => !done.has(x.id));
       store.set(ANONQ, left);
+      // A device that never signed in gets its full replay too (sheet v28), its answers still queued on top.
+      replayAdopt(j.replay, left);
       // More than one batch waiting (played offline): the next one follows; a refused batch ('busy') is not retried here.
       if (left.length) setTimeout(sendAnon, 1000);
     })
@@ -773,6 +839,9 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         'imr-ach-new',
         'imr-hold',
         'imr-comeback', // model.js COMEBACK.KEY: the visit floor and the comeback belong to this player (Codex review #374)
+        'imr-mx-lost', // model.js MXL.KEY: learned marks taken away and their card, this player's
+        RVK, // the rules version this player's progress was replayed with (replayAdopt)
+        'imr-rv-msg', // progress.js RVN.KEY: the announcement cards of the rules versions, this player's
         BOARD,
         LOG0,
         NUDGE,

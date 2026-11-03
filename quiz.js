@@ -417,8 +417,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // the opening hold and the comeback. Progress: a right answer counts only for what memory does not explain (pgMemW, 1
   // on new photos); a miss weighs the chance the player really had (pgMissW), so on a known photo it counts in full.
   // A record from before the photo memory is recalculated first, once (core.js memRecalc; a new record is only marked).
-  memRecalc(s, PMEM);
-  if (!good && GX(c)) memRecalc(st(c), PMEM);
+  mxRecalc(() => {
+    memRecalc(s, PMEM);
+    if (!good && GX(c)) memRecalc(st(c), PMEM);
+  });
   const seenPh = ph.filter(p => p !== unseen),
     fam = famOf(target, seenPh),
     dm = d0 + fam;

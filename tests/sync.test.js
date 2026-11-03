@@ -17,7 +17,7 @@ const ans = (id, extra = {}) => ({
 
 test('new RA, save and load back, with revision', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 27});
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}), {ok: true, found: false, v: 28});
   const r = s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}, answers: [ans('a1')]});
   assert.strictEqual(r.ok, true);
   assert.strictEqual(r.log, true);
@@ -145,7 +145,7 @@ const rep = (id, extra = {}) => ({
 test('reports: logged once, reporter verified by code, never mistaken for a progress write', () => {
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}});
-  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 27});
+  assert.deepStrictEqual(s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1')]}), {ok: true, rep: true, v: 28});
   s.post({rname: 'Ana', rpin: '1234', reports: [rep('r1'), rep('r2', {why: 'multi', fix: ''})]});
   s.post({rname: 'Bob', rpin: '', reports: [rep('r3', {why: 'bogus'}), rep('r4', {why: 'photo', note: '=HYPERLINK("x")'})]});
   const R = s.sheets.Reports;
@@ -205,7 +205,7 @@ test('users: admin token only; one row per player with their numbers', () => {
   assert.strictEqual(s.post({users: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
   const r = s.post({users: 1, token: TOK});
   assert.strictEqual(r.ok, true);
-  assert.strictEqual(r.v, 27);
+  assert.strictEqual(r.v, 28);
   const ana = r.users.find(u => u.name === 'Ana');
   // v13: the anonymous id of ?answers=1, so the admin can put names on the anonymous stats.
   const a = s.post({readAnswers: 1, token: TOK});
@@ -239,7 +239,7 @@ test('userMerge: progress written to into, answers and reports relabelled, from 
     [['Ana B', 'Ana']]
   );
   // The old device of "Ana B": a pull and a send both get 'gone', and its new answers go to Ana.
-  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 27});
+  assert.deepStrictEqual(s.get({name: 'Ana B', pin: '5678'}), {ok: false, error: 'gone', into: 'Ana', v: 28});
   const w = s.post({name: 'Ana B', pin: '5678', data: prog(9), summary: {}, answers: [ans('b2')]});
   assert.strictEqual(w.error, 'gone');
   assert.strictEqual(w.log, true);
@@ -361,7 +361,7 @@ test('autoUpdate: an interrupted update (code in place, deploy failed) is finish
 // Anonymous answers (v12).
 test('anonymous answers are logged under ~anon <id>, then move to the name at sign-in', () => {
   const s = loadCodeGs();
-  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: 27});
+  assert.deepStrictEqual(s.post({anon: 'abc123xyz0', anonAnswers: [ans('z1'), ans('z2')]}), {ok: true, log: true, v: 28});
   assert.strictEqual(s.post({anon: 'Bad Id!', anonAnswers: [ans('z3')]}).error, 'input');
   assert.deepStrictEqual(
     s.sheets.Answers.rows.slice(1).map(r => r[0]),
@@ -459,7 +459,7 @@ test('v19 events: anonymous error reports and one-tap answers, logged once, capp
       ev('e4', {k: 'nope', msg: 'unknown kind'})
     ]
   });
-  assert.deepStrictEqual(r, {ok: true, ev: true, v: 27});
+  assert.deepStrictEqual(r, {ok: true, ev: true, v: 28});
   s.post({dev: 'dev0000001', events: [ev('e1', {k: 'err', msg: 'again'})]});
   const E = s.sheets.Events;
   assert.strictEqual(E.getLastRow(), 4, 'three events, an unknown kind and a resent id are not logged');
@@ -577,7 +577,7 @@ test('board: signed-in players by progress then level; opted-out players and the
   s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {pct: 41.6}, answers: [ans('c2')]});
   const b = s.get({board: '1'});
   assert.strictEqual(b.ok, true);
-  assert.strictEqual(b.v, 27);
+  assert.strictEqual(b.v, 28);
   assert.deepStrictEqual(b.rows.map(r => r[0]).sort(), ['Ana', 'Ben'], 'Ana B opted out');
   assert.ok(
     b.rows.every(r => r.length === 3 && r[1] === 42 && r[2] === null),
@@ -604,7 +604,7 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
   assert.ok(ben());
   assert.strictEqual(s.post({userBoard: 'Ben', hide: true}).error, 'token', 'admin only');
   assert.strictEqual(s.post({userBoard: 'Nobody', hide: true, token: TOK}).error, 'user');
-  assert.deepStrictEqual(s.post({userBoard: 'ben', hide: true, token: TOK}), {ok: true, board: -1, v: 27});
+  assert.deepStrictEqual(s.post({userBoard: 'ben', hide: true, token: TOK}), {ok: true, board: -1, v: 28});
   assert.ok(!ben(), 'hidden at once (cache cleared)');
   assert.ok(
     s.get({board: '1'}).rows.some(r => r[0] === 'Ana'),
@@ -615,7 +615,7 @@ test('board (v20): an admin hides a player from the leaderboard; their own syncs
   Object.keys(s.cache).forEach(k => delete s.cache[k]);
   assert.ok(!ben(), 'still hidden after his own sync');
   assert.strictEqual(s.post({users: 1, token: TOK}).users.find(u => u.name === 'Ben').board, -1, 'the admin list says so');
-  assert.deepStrictEqual(s.post({userBoard: 'Ben', hide: false, token: TOK}), {ok: true, board: 1, v: 27});
+  assert.deepStrictEqual(s.post({userBoard: 'Ben', hide: false, token: TOK}), {ok: true, board: 1, v: 28});
   assert.ok(ben(), 'shown again');
 });
 
@@ -695,7 +695,7 @@ test('achs: how many signed-in players hold each achievement; counts only', () =
   s.post({name: 'Ben', pin: '1111', data: data({met10: 3}), summary: {}, answers: []});
   s.post({name: 'Cy', pin: '2222', data: prog(1), summary: {}, answers: []});
   const a = s.get({achs: '1'});
-  assert.strictEqual(a.v, 27);
+  assert.strictEqual(a.v, 28);
   assert.strictEqual(a.n, 2, 'players with a record');
   assert.deepStrictEqual(a.counts, {met10: 2, run10: 1}, 'no _ fields');
   assert.ok(!JSON.stringify(a).match(/Ana|Ben/), 'no names');
@@ -971,4 +971,118 @@ test('v25: the old-app log is capped for everyone (Codex review #373)', () => {
   const s = loadCodeGs();
   for (let i = 0; i < 400; i++) s.post({anon: 'id' + String(i).padStart(8, '0'), anonAnswers: [ans('c' + i)]});
   assert.ok(s.sheets.Events.rows.filter(r => r[2] === 'old').length <= 300);
+});
+
+// Full replay by the sheet (v28, Pierre 2026-11-03: progress recalculated from the whole answer log, automatically): the
+// script embeds core.js (tools/sync_core.py) and replays a player's rows when their app applied an older rules version.
+const C = require('../core.js'),
+  fs = require('fs'),
+  path = require('path'),
+  vm = require('vm'),
+  {execFileSync} = require('child_process');
+const DJSON = fs.readFileSync(path.join(__dirname, '..', 'data.json'), 'utf8'),
+  GEN = (d => {
+    const out = {};
+    [d.gen, d.x.gen].forEach(G => Object.keys(G).forEach(n => out[n] || (out[n] = {look: G[n].look || [], fam: String(G[n].fam || '')})));
+    return out;
+  })(JSON.parse(DJSON));
+// data.json from GitHub, served here (counted); anything else is the default stub.
+const withData = (n = {c: 0}) => ({
+  n,
+  fetch: url => (/\/main\/data\.json$/.test(url) ? (n.c++, {getResponseCode: () => 200, getContentText: () => DJSON}) : null)
+});
+const qa = (id, i, x = {}) =>
+  ans(id, {
+    t: new Date(Date.UTC(2026, 10, 3, 6, 0, i)).toISOString(),
+    g: 'Acropora',
+    a: i % 4 === 3 ? 'Montipora' : 'Acropora',
+    ok: i % 4 === 3 ? 0 : 1,
+    ph: 'acropora-wide-' + (i % 5),
+    ch: 'Acropora Montipora Porites Pocillopora',
+    e: 0.8,
+    th: 1,
+    ...x
+  });
+
+test("v28: core.js embedded in Code.gs is the app's core.js, and keeps its names to itself", () => {
+  execFileSync('python3', [path.join(__dirname, '..', 'tools', 'sync_core.py'), '--check']);
+  const s = loadCodeGs();
+  assert.strictEqual(vm.runInContext('CORE_.RV', s.ctx), C.RV);
+  assert.strictEqual(vm.runInContext('typeof replayProgress', s.ctx), 'undefined', "no core.js name among the script's globals");
+  assert.strictEqual(vm.runInContext('TRUST === CORE_.TRUST', s.ctx), false, 'Code.gs keeps its own constants');
+  assert.strictEqual(vm.runInContext('typeof CORE_.replayProgress', s.ctx), 'function');
+});
+
+test('v28: a player whose app applied an older rules version gets the replay of their log, stored once', () => {
+  const f = withData(),
+    s = loadCodeGs({fetch: f.fetch}),
+    L = Array.from({length: 12}, (_, i) => qa('r' + i, i)),
+    data = prog(9);
+  s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: L.slice(0, 8)}); // an app that sends no rv: no replay
+  assert.ok(!s.sheets.Replayed, 'nothing replayed for an app that cannot adopt it');
+  const r = s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: L.slice(8), rv: 0});
+  assert.ok(r.ok && r.replay, JSON.stringify(r).slice(0, 200));
+  const st = s.get({stats: '1'}),
+    want = C.replayProgress(
+      L.map(a => C.logRow(a, 'ana')),
+      {gen: GEN, mem: st.mem, conf: st.conf}
+    ).ana.P;
+  assert.deepStrictEqual(r.replay.rec, want, 'the same engine over the same rows');
+  assert.deepStrictEqual([r.replay.rv, r.replay.n, r.replay.ids.length], [C.RV, 12, 12]);
+  assert.ok(r.replay.rec.Acropora.pg > 0 && typeof r.replay.rec.Acropora.th === 'number' && r.replay.rec['~level'].ok === 9);
+  // The Replayed tab: Name, Rules, Rows, Since, Updated, Record.
+  const T = s.sheets.Replayed;
+  assert.deepStrictEqual([...T.rows[0]], ['Name', 'Rules', 'Rows', 'Since', 'Updated', 'Record']);
+  assert.deepStrictEqual(
+    Array.from(T.rows.slice(1), x => [x[0], x[1], x[2], x[3]]),
+    [['Ana', C.RV, 12, 0]]
+  );
+  assert.deepStrictEqual(JSON.parse(T.rows[1][5]), want);
+  // The player's own copy is never rewritten by the replay.
+  const g = s.get({name: 'Ana', pin: '1234', rv: '0'});
+  assert.deepStrictEqual(g.data, data);
+  assert.deepStrictEqual(g.replay.rec, want);
+  // Stored: a second request reuses it (a marker put in the tab comes back), data.json read once (cached).
+  T.rows[1][5] = '{"mark":1}';
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234', rv: '0'}).replay.rec, {mark: 1});
+  assert.strictEqual(f.n.c, 1);
+  // An app that applied this version gets nothing.
+  assert.ok(!s.get({name: 'Ana', pin: '1234', rv: String(C.RV)}).replay);
+  assert.ok(!s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [], rv: C.RV}).replay);
+  // A newer rules version than the stored one: replayed again.
+  T.rows[1][1] = C.RV - 1;
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234', rv: '0'}).replay.rec, want);
+  assert.strictEqual(T.rows[1][1], C.RV);
+  // New rows since: replayed again over them, still one row in the tab.
+  const r2 = s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [qa('r12', 12), qa('r13', 13)], rv: 0});
+  assert.strictEqual(r2.replay.n, 14);
+  assert.strictEqual(r2.replay.rec.Acropora.ok + r2.replay.rec.Acropora.ko, 14);
+  assert.deepStrictEqual(
+    Array.from(T.rows.slice(1), x => [x[0], x[2]]),
+    [['Ana', 14]]
+  );
+  // Still the player's own copy, as saved.
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).data, data);
+  assert.deepStrictEqual(JSON.parse(s.sheets['Progress data'].rows[1].slice(2).join('')), data);
+});
+
+test('v28: the replay counts only the answers after a progress reset, and none without data.json', () => {
+  const s = loadCodeGs(withData()),
+    L = Array.from({length: 6}, (_, i) => qa('s' + i, i)),
+    data = {...prog(2), 'imr-coral-reset': JSON.stringify(new Date(Date.UTC(2026, 10, 3, 6, 0, 3, 500)).toISOString())};
+  const r = s.post({name: 'Ben', pin: '1234', data, summary: {}, answers: L, rv: 0});
+  assert.strictEqual(r.replay.n, 2);
+  assert.strictEqual(s.sheets.Replayed.rows[1][3], Date.UTC(2026, 10, 3, 6, 0, 3, 500));
+  const t = loadCodeGs({fetch: url => (/data\.json/.test(url) ? {getResponseCode: () => 404, getContentText: () => ''} : null)});
+  const r2 = t.post({name: 'Ben', pin: '1234', data, summary: {}, answers: L, rv: 0});
+  assert.ok(r2.ok && !r2.replay, 'data.json unreadable: no replay, the save goes through');
+});
+
+test('v28: a device that never signed in gets its replay with its anonymous answers', () => {
+  const s = loadCodeGs(withData()),
+    L = Array.from({length: 5}, (_, i) => qa('n' + i, i));
+  const r = s.post({anon: 'abcd1234ef', anonAnswers: L, rv: 0});
+  assert.ok(r.log && r.replay && r.replay.n === 5 && r.replay.rec.Acropora.ok === 4, JSON.stringify(r).slice(0, 200));
+  assert.strictEqual(s.sheets.Replayed.rows[1][0], '~anon abcd1234ef');
+  assert.ok(!s.post({anon: 'abcd1234ef', anonAnswers: [qa('n9', 9)]}).replay, 'no rv: none');
 });

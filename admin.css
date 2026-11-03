@@ -3211,6 +3211,24 @@ button.adm-chip[aria-pressed='true'] {
   vertical-align: 1px;
 }
 
+/* Full replay (Pierre, 2026-11-03): beside a replayed value, what the player's saved copy in the sheet still says when it
+   differs (↻ saved 44%). Discreet: small, muted, no colour of its own; the tooltip says why. */
+.adm-saved,
+.adm-tbl small.adm-saved {
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--muted);
+  white-space: nowrap;
+  cursor: help;
+}
+.adm-kpis .adm-saved {
+  display: block;
+  line-height: 1.2;
+}
+.adm-uprog {
+  font-variant-numeric: tabular-nums;
+}
 /* Game coverage legend (Pierre, 2026-11-02: "the cryptic notations, I already forgot what they mean"). */
 .cov-legend {
   margin: 4px 0 12px;

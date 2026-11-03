@@ -13,6 +13,10 @@
 // - typed questions (model.js TYPED): sometimes on a genus well on its way, never under TYPED.from; logged quiz|t with
 //   the genus read as the answer; a typo read, a word that is no genus refused, a typed miss against both genera, "I
 //   don't know" a miss for the genus shown only; the mastery exam needs TYPED.exam typed right answers.
+// - a learned mark from the former model (BKT, no s.pg) taken away at load: one card at start-up, never held, its genus
+//   named, the learned-based badge taken back and kept so through a merge, never again after a reload or the next
+//   answers; a drop at a pull shown at once, after a card already open; learned with s.pg: nothing; due at the same
+//   load as an update note (RECALC), the note first, then this card, neither lost.
 // Like pages.smoke.js it needs Playwright (CI installs it in a temporary folder; no package.json). Locally:
 // node tests/draw.smoke.js
 const http = require('http'),
@@ -811,6 +815,136 @@ const server = http.createServer((req, res) => {
     }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
+  // Learned under the former model (core.js memRecalc, model.js mxRecalc, progress.js mxLostNotice and achRecheck):
+  // progress saved with a learned genus, then a reload (the drop happens at load, before achievements are set up).
+  // Learned with s.pg (since 2026-11-02): nothing told, nothing taken back. Learned without (BKT): an announcement card
+  // at start-up, on the page opened, before any answer and even at the start of a new visit (never held: AGENTS.md rule
+  // 12), once; the mark and learn1 gone, learn1 not brought back by the sheet's older copy, nothing again on reload or
+  // answers. A drop at a pull: the card at once, or right after another card open then.
+  {
+    const t = await p.evaluate(() => slateGenera()[3]);
+    // Two genera answered (a comeback needs two), the last answer `ago` ms back.
+    const seed = (rec, ago) =>
+      p.evaluate(
+        ([t, rec, ago]) => {
+          const at = Date.now() - ago,
+            u = slateGenera().find(n => n !== t);
+          store.set('imr-coral-progress', {
+            [t]: {...rec, at},
+            [u]: {ok: 8, ko: 2, h: '11011111', pg: 0.5, pm: 1, at},
+            [LEVEL]: {ok: 300, ko: 60, th: 1, at}
+          });
+          localStorage.removeItem('imr-comeback');
+          store.set(ACHK, {_v: ACH_V, learn1: 1000, met10: 1000});
+          store.set('imr-recalc', RECALC.L[RECALC.L.length - 1].id);
+          localStorage.removeItem(MXL.KEY);
+        },
+        [t, rec, ago]
+      );
+    const load = async () => {
+      await p.reload();
+      await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await p.waitForTimeout(500);
+    };
+    const card = () =>
+      p.evaluate(() => {
+        const c = document.querySelector('.unlock.mxlost');
+        return c && {h: c.querySelector('h3').textContent, p: c.querySelector('p:not(.ulkick)').textContent, a: answersSoFar()};
+      });
+    // Plays n quiz questions, right, the other overlays out of the way; counts the cards.
+    const play = n =>
+      p.evaluate(
+        ([t, n]) => {
+          let seen = 0;
+          for (let i = 0; i < n; i++) {
+            document.querySelectorAll('.unlock:not(.mxlost), .achpop').forEach(x => x.remove());
+            achQ = [];
+            achBusy = false;
+            NEXTQ = null;
+            quizPhoto();
+            const c = document.querySelector('.unlock.mxlost');
+            if (c) (seen++, c.querySelector('.next').click());
+            document.querySelectorAll('.unlock').forEach(x => x.remove());
+            document.querySelector(`#view [data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
+          }
+          const A = store.get(ACHK, {}) || {};
+          return {seen, mx: (P[t] || {}).mx, learn1: A.learn1, gone: (A._gone || {}).learn1, M: store.get(MXL.KEY, null)};
+        },
+        [t, n]
+      );
+    const fail = (m, x) => out.fails.push(`learned under the former model: ${m} ${JSON.stringify(x)}`);
+    await seed({ok: 30, ko: 2, h: '1111111111', pg: 0.97, mx: 1762150000000, pm: 1}, 0);
+    await load();
+    const a0 = await card(),
+      a = await play(15);
+    if (a0 || a.seen || a.mx !== 1762150000000 || a.learn1 !== 1000 || a.gone || (a.M && Object.keys(a.M.due || {}).length))
+      fail('learned with s.pg was touched', {a0, a});
+    // A new visit (2 hours since the last answer): the card shows anyway, at start-up, over Home.
+    await seed({ok: 13, ko: 1, h: '1111111110', L: 0.9997, mx: 1, pm: 1}, 2 * 3600e3);
+    await load();
+    const c0 = await card(),
+      before = await p.evaluate(
+        t => ({mx: P[t].mx, A: store.get(ACHK, {}), M: store.get(MXL.KEY, null), noOpen: noOpen(), h: hashNow()}),
+        t
+      );
+    if (!c0 || c0.a !== 360 || !before.noOpen || !c0.p.includes(t) || !/badge earned with it is taken back/.test(c0.p))
+      fail('no card at start-up, before any answer', {c0, before});
+    if (before.mx || before.A.learn1 || !before.A._gone || !before.A._gone.learn1 || before.A.met10 !== 1000 || !before.M.due[t])
+      fail('at load', before);
+    // The sheet's copy, from before the drop: learn1 does not come back.
+    const merged = await p.evaluate(() => {
+      achMerge(JSON.stringify({_v: ACH_V, learn1: 1000, met10: 900}));
+      return store.get(ACHK, {});
+    });
+    if (merged.learn1 || merged.met10 !== 900) fail('a merge brought the badge back', merged);
+    await p.click('.unlock.mxlost .next');
+    const b1 = await play(15);
+    if (b1.seen || b1.mx || b1.M.due[t] || b1.M.told[t] !== 1) fail('after OK', b1);
+    await load();
+    const c2 = await card(),
+      b2 = await play(12);
+    if (c2 || b2.seen || b2.learn1 || b2.mx) fail('again after a reload', {c2, b2});
+    // With an update note due at the same load (progress.js RECALC, here the typed-questions announcement): both cards,
+    // one after the other, neither lost: the note first (recalcNotice runs first at start-up), the learned card once it
+    // is closed (it waits for any card on screen, tried again every 2 s).
+    await seed({ok: 13, ko: 1, h: '1111111110', L: 0.9997, mx: 1, pm: 1}, 0);
+    await p.evaluate(() => store.set('imr-recalc', RECALC.L[RECALC.L.length - 2].id));
+    await load();
+    const both = () =>
+      p.evaluate(() => ({
+        recalc: [...document.querySelectorAll('.unlock.recalc h3')].map(x => x.textContent),
+        mx: !!document.querySelector('.unlock.mxlost'),
+        n: document.querySelectorAll('.unlock').length
+      }));
+    const d0 = await both();
+    if (d0.recalc.length !== 1 || d0.recalc[0] !== (await p.evaluate(() => RECALC.L[RECALC.L.length - 1].t)) || d0.mx || d0.n !== 1)
+      fail('update note and learned card due together: not the note alone first', d0);
+    await p.click('.unlock.recalc .next');
+    await p.waitForSelector('.unlock.mxlost', {timeout: 5000}).catch(() => {});
+    const d1 = await both(),
+      c5 = await card();
+    if (d1.recalc.length || !d1.mx || d1.n !== 1 || !c5 || !c5.p.includes(t)) fail('the learned card did not follow the note', {d1, c5});
+    await p.click('.unlock.mxlost .next').catch(() => {});
+    await load();
+    const d2 = await both();
+    if (d2.recalc.length || d2.mx) fail('a card came back after both were seen', d2);
+    // A drop brought by a pull while another card is open: the card waits for it, then shows on its own.
+    const u = await p.evaluate(() => {
+      const u = slateGenera()[5],
+        d = document.createElement('div');
+      d.className = 'unlock other';
+      document.body.append(d);
+      P[u] = {ok: 12, ko: 0, h: '1111111111', L: 0.999, mx: 1, pm: 1};
+      memRecalcAll();
+      return u;
+    });
+    const c3 = await card();
+    await p.evaluate(() => document.querySelector('.unlock.other').remove());
+    await p.waitForTimeout(2500);
+    const c4 = await card();
+    if (c3 || !c4 || !c4.p.includes(u)) fail('a drop at a pull, behind another card', {c3, c4});
+    await p.evaluate(() => localStorage.removeItem(MXL.KEY));
+  }
   await b.close();
   server.close();
   if (errs.length) out.fails.push('Page errors: ' + errs.join(' | '));
@@ -819,7 +953,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, prompt spacing.`
+    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, prompt spacing, learned marks of the former model taken back.`
   );
 })().catch(e => {
   console.error(e);
