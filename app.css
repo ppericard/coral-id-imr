@@ -5728,8 +5728,30 @@ html.touring .unlock {
   --kt2: color-mix(in srgb, var(--k) 24%, var(--surface));
   --kink: color-mix(in srgb, var(--k) 62%, var(--ink));
 }
-[data-k='apology'] {
+[data-k='apology'],
+[data-k='step'] {
   --k: var(--warn);
+}
+/* A big step (the open-all offer, quiz.js introOfferShow): what changes as a short list, the step itself the outlined
+   button in the warn hue under the safe "Not now". */
+.ulchg {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  text-align: left;
+  font-size: var(--fs-s);
+}
+.ulchg li + li {
+  margin-top: 4px;
+}
+.ulcard[data-k='step'] .next.sec {
+  color: var(--kink);
+  box-shadow: inset 0 0 0 1.5px var(--k);
+}
+/* The gentle offer (quiz.js startFbShow, 'lo'): Coral basics and "No thanks" carry the same weight, both outlined. */
+.unlock.startfb[data-dir='lo'] .ulbtns .next:not(.sec) {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
 }
 /* The card: a medallion over the top edge of its panel; the panel scrolls when taller than the screen, under the
    medallion, which stays in view. */

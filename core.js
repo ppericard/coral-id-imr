@@ -1242,19 +1242,22 @@
   // isn't enough: with few genera unlocked even a mediocre player gets everything right"; startCheck). The level each
   // answer predicts is a band around its prior, the edges midway between the priors (new under 0.25, IMR course 0.25 to
   // 0.875, know well above). The rule reads the level the game already keeps, the global level (the Elo over every
-  // answer, difficulty allowed for), with its standard error over the window (Pierre's pick, variant "Bh"):
-  // 'lo' (clearly below the band: Coral basics, or a lower answer) when it is below the band's floor with 95%
-  // confidence, or below the floor at all while the opening hold has fired in the window (#425 eases the questions then,
-  // so the misses do not show in the expectation); 'hi' (clearly above the band: a higher answer), with OFFER.MET (10)
-  // genera met, when it is above the band's ceiling with 95% confidence and, as a guard only, the level fitted on each
+  // answer, difficulty allowed for), with its standard error over the window (Pierre's pick, 2026-11-04, variant
+  // "Ba80H", after weighing the errors: a true beginner left on a harder path is the costliest one, so "lower" is
+  // sensitive and its card a gentle offer, cheap when it is wrong): 'lo' (Coral basics, or a lower answer; only for the
+  // answers with a floor, IMR course and know well) when the global level is below the floor with one-sided 80%
+  // confidence (ZL), or the opening hold has fired in the window (#425 eases the questions then, so the misses do not
+  // show in the level); 'hi' (a higher answer), with OFFER.MET (10) genera met, when the global level is above the
+  // band's ceiling with 95% confidence (Z, as the admin's level margin) and, as a guard only, the level fitted on each
   // genus's FIRST answer (before the game has adapted to it; levelFit) is above the ceiling too: a player who did well
-  // only on the few genera they have learned is not moved up. z 1.96, as the admin's level margin. The simulation, the
-  // real log and the variants compared: docs/LEARNING.md "The fallback test, redesigned".
+  // only on the few genera they have learned is not moved up. The simulation, the real log and the variants compared:
+  // docs/LEARNING.md "The fallback test, redesigned".
   const CHOICE = {
     KEY: 'reefid-sync-coral-start',
     ASK: 50,
     AT: [40, 60], // the checkpoints of the fallback window (answers after the choice); the window ends at the last
     Z: 1.96,
+    ZL: 0.84, // "lower": one-sided 80%
     MET: 10, // the slate genera met before a 'hi' verdict: the same as the open-all offer's (model.js INTRO.OFFER.MET)
     SUBJ: 'coral', // the subject the question is about (core.js SUBJECTS): fish keeps its own state
     opts: [
@@ -1300,7 +1303,7 @@
     return [Math.round(bt * 100) / 100, stSe(bt, A)];
   }
   // The verdict at a checkpoint (AT: 40 or 60 answers after the choice), null between them and when consistent: 'lo'
-  // or 'hi' (above). w: the window's answers [d, g, right, first]; lv: the global level now; met: the slate genera met;
+  // or 'hi' (above: the opening hold alone is enough for 'lo'). w: the window's answers [d, g, right, first]; lv: the global level now; met: the slate genera met;
   // held: the opening hold fired in the window.
   function startCheck(w, c, lv, met, held) {
     const n = (w || []).length;
@@ -1308,7 +1311,7 @@
     const [floor, ceil] = startBand(c),
       se = stSe(lv, w),
       z = CHOICE.Z;
-    if (lv + z * se < floor || (held && lv < floor)) return 'lo';
+    if (isFinite(floor) && (held || lv + CHOICE.ZL * se < floor)) return 'lo';
     if (met < CHOICE.MET || lv - z * se <= ceil) return null;
     // The guard: the first answers on each genus above the ceiling too (never a trigger on their own).
     const F = w.filter(a => a[3]);
@@ -1912,7 +1915,7 @@
     {
       v: 5,
       at: '2026-11-04',
-      why: 'The first-launch question (#428): a genus never answered starts from the global level shrunk towards the level the player said (new 0, IMR course 0.5, know well 1.25), the answer in force at each answer (reefid-sync-coral-start, its history h)',
+      why: 'The first-launch question (#428): a genus never answered starts from the global level shrunk towards the level the player said (new 0, IMR course 0.5, know well 1.25), the answer in force at each answer (reefid-sync-coral-start, its history h, or the band below taken with Coral basics on the fallback card, ease)',
       msg: RV_CARD
     }
   ];
@@ -1984,7 +1987,7 @@
   const CF_LOGGED = Date.UTC(2026, 10, 3, 15, 35);
   // The first-launch answer in force at time t (2026-11-03, CHOICE): rec, the player's reefid-sync-coral-start record, keeps
   // every answer given ([c, answers then, time, via] in h); the prior p of the last one given at or before t, 0 before
-  // the first (the player then played as the default player). The replay steps the ability with it (o.starts).
+  // the first (the player then played as the default player), or of the band below taken silently after it (rec.ease). The replay steps the ability with it (o.starts).
   function startPriorAt(rec, t) {
     if (!isObj(rec)) return 0;
     const h = Array.isArray(rec.h) && rec.h.length ? rec.h : startOpt(rec.c) ? [[rec.c, rec.at, rec.t, rec.via]] : [];
@@ -1994,6 +1997,9 @@
       const at = Array.isArray(x) && typeof x[2] === 'number' ? x[2] : -Infinity;
       if (startOpt(x && x[0]) && at <= t && at >= last) ((last = at), (p = startVars(x[0]).p));
     });
+    // The silent band below taken with Coral basics on the "lower" card (model.js startEase), from its time on.
+    const e = rec.ease;
+    if (Array.isArray(e) && startOpt(e[0]) && typeof e[2] === 'number' && e[2] <= t && e[2] >= last) p = startVars(e[0]).p;
     return p;
   }
   function replayProgress(rows, o = {}) {

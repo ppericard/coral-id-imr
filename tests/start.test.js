@@ -36,7 +36,7 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F'], basics = false} 
   vm.createContext(ctx);
   vm.runInContext(
     block +
-      '\nthis.M = {INTRO, introAdd, introOffer, introReset, holdStep, setHold: h => (HOLDS = h), startOf, startV, startSet, startStep, startDue, startShown, startMerge, startResume: typeof startResume === "function" ? startResume : () => {}};',
+      '\nthis.M = {INTRO, introAdd, introOffer, introReset, holdStep, setHold: h => (HOLDS = h), startOf, startV, startSet, startEase, startStep, startDue, startShown, startMerge, startResume: typeof startResume === "function" ? startResume : () => {}};',
     ctx
   );
   const M = ctx.M;
@@ -81,10 +81,11 @@ test('playerStart: the answers are shrunk towards the level said, not towards 0;
   assert.strictEqual(playerStart({}, 'X', 9), START.HI, 'clamped');
 });
 
-test('fallback verdict (Bh): at 40 and 60 answers only; the global level against the band, the first answers only a guard on "higher"', () => {
+test('fallback verdict: at 40 and 60 answers only; "lower" sensitive (80% one-sided, or the hold alone), "higher" at 95% with the first answers as a guard', () => {
   const [A1, A2] = CHOICE.AT,
     {startBand, levelFit, startCheck} = C;
   assert.deepStrictEqual(CHOICE.AT, [40, 60], 'no card before 40 answers (Pierre, 2026-11-04)');
+  assert.strictEqual(CHOICE.ZL, 0.84, '"lower": one-sided 80%');
   assert.deepStrictEqual(startBand('new'), [-Infinity, (startVars('new').p + startVars('imr').p) / 2]);
   assert.deepStrictEqual(startBand('imr'), [(startVars('new').p + startVars('imr').p) / 2, (startVars('imr').p + startVars('know').p) / 2]);
   assert.deepStrictEqual(startBand('know'), [(startVars('imr').p + startVars('know').p) / 2, Infinity]);
@@ -104,27 +105,19 @@ test('fallback verdict (Bh): at 40 and 60 answers only; the global level against
   assert.strictEqual(startCheck(weak(A2 + 1), 'know', -0.5, 6, 0), null, 'nothing after the last checkpoint');
   assert.strictEqual(startCheck(weak(A1), 'new', -1.5, 6, 0), null, 'nothing below "new"... and no "higher" either');
   // "Lower" reads the global level, not the first answers: first answers all right, the level clearly under the floor.
-  assert.strictEqual(
-    startCheck(
-      W(A1, () => true),
-      'imr',
-      -1,
-      6,
-      0
-    ),
-    'lo',
-    'the global level decides "lower"'
-  );
-  // A fast learner (the real log: a lecture-level RA) missing first meetings, the hold fired, the global level inside
-  // the band: no card (the former rule sent her down on the first answers and the hold together).
+  const ok = W(A1, () => true);
+  assert.strictEqual(startCheck(ok, 'imr', -1, 6, 0), 'lo', 'the global level decides "lower"');
+  // One-sided 80%: below the floor at 80% though not at 95% (the former rules: nothing).
+  assert.strictEqual(startCheck(ok, 'imr', -0.3, 6, 0), 'lo', 'below the floor with 80% confidence');
+  assert.strictEqual(startCheck(ok, 'imr', 0.1, 6, 0), null, 'below the floor, not with 80% confidence: nothing');
+  // Poor first answers alone never trigger "lower" (the level inside the band, no hold).
   const firstMiss = W(A1, i => i % 3 === 0);
   assert.ok(levelFit(firstMiss)[0] < startBand('imr')[0], 'first-answer level under the floor');
-  assert.strictEqual(startCheck(firstMiss, 'imr', 0.73, 12, 1), null, 'the first answers never trigger "lower"');
-  // The opening hold: below the floor, not clearly, with the hold fired in the window.
-  const ok = W(A1, () => true);
-  assert.strictEqual(startCheck(ok, 'imr', 0, 6, 0), null, 'below the floor, not clearly: nothing');
-  assert.strictEqual(startCheck(ok, 'imr', 0, 6, 1), 'lo', 'with the opening hold fired in the window');
-  assert.strictEqual(startCheck(ok, 'imr', 0.5, 6, 1), null, 'the hold alone, with the level in the band: nothing');
+  assert.strictEqual(startCheck(firstMiss, 'imr', 0.73, 12, 0), null, 'the first answers never trigger "lower"');
+  // The opening hold fired in the window is enough, the level in the band or above (a gentle offer: Pierre, 2026-11-04).
+  assert.strictEqual(startCheck(ok, 'imr', 0.5, 6, 1), 'lo', 'the hold alone, the level in the band');
+  assert.strictEqual(startCheck(ok, 'know', 2, 12, 1), 'lo', 'the hold alone, the level above the floor');
+  assert.strictEqual(startCheck(weak(A1), 'new', -1.5, 6, 1), null, '"new" has no floor: never "lower", hold or not');
   // "Higher": OFFER.MET genera met, the global level clearly above the band, the first answers above it too (a guard).
   const strong = W(
     A1,
@@ -217,8 +210,13 @@ test('fallback: consistent answers, no card; inconsistent, one card per answer a
   assert.strictEqual(L.startDue(), null, 'not before 40 answers');
   L.play(1, 0, false, true, -0.5);
   assert.strictEqual(L.startDue(), 'lo');
-  L.startShown('lo');
+  const before = JSON.stringify(L.ctx.P);
+  L.startShown('lo'); // shown, then "No thanks, I know the basics" (quiz.js startFbShow: nothing else)
   assert.strictEqual(L.startDue(), null, 'never twice');
+  assert.strictEqual(L.startOf().c, 'know', '"No thanks" keeps the answer');
+  assert.strictEqual(JSON.stringify(L.ctx.P), before, 'and the progress');
+  L.play(CHOICE.AT[1] - N, 0, i => i % 4 === 0, true, -0.5);
+  assert.strictEqual(L.startDue(), null, 'the same direction never comes back on the same answer, at 60 either');
   // Changing the answer starts a new window: a new inconsistency, told once more; never twice about the same answer.
   L.startSet('imr', 'fallback');
   assert.strictEqual(L.startOf().w.length, 0);
@@ -249,7 +247,9 @@ test('fallback: consistent answers, no card; inconsistent, one card per answer a
   assert.strictEqual(U.startDue(), null, 'but not right after moving up on its card');
   U.startSet('know', 'fallback');
   U.startSet('imr', 'fallback');
+  U.setHold(0); // the opening hold off: it alone would say "lower" (still possible after moving down)
   U.play(N, 0.5, true, i => i % 2 === 0, 2.5);
+  assert.strictEqual(U.startOf().v, 'hi', 'the verdict is "higher"');
   assert.strictEqual(U.startDue(), null, 'and not back up after moving down');
   // Inferred (an existing player, never asked): never a card.
   const I = model({slate: Array.from({length: 12}, (_, i) => 'G' + i)});
@@ -266,6 +266,49 @@ test('fallback: consistent answers, no card; inconsistent, one card per answer a
   E.startSet('new', 'card');
   E.play(N, 2, false, true, -1.5);
   assert.strictEqual(E.startDue(), null, 'new: nothing below its band either (the band has no floor)');
+});
+
+test('Coral basics on the "lower" card: the start variables one band down, silently; the answer given stays', () => {
+  const N = CHOICE.AT[0],
+    M = model({slate: Array.from({length: 12}, (_, i) => 'G' + i)});
+  M.introAdd(M.ctx.slateGenera(), true, 's');
+  M.startSet('know', 'tour');
+  M.setHold(2);
+  M.play(N, 0, i => i % 4 === 0, true, 0.5);
+  assert.strictEqual(M.startDue(), 'lo');
+  M.startShown('lo');
+  M.startEase();
+  const o = M.startOf();
+  assert.strictEqual(o.c, 'know', 'the answer given is never relabelled');
+  assert.deepStrictEqual(
+    o.h.map(x => x[0]),
+    ['know'],
+    'nor added to the answers given'
+  );
+  assert.strictEqual(o.ease[0], 'imr');
+  assert.deepStrictEqual(M.startV(), startVars('imr'), "the IMR course's prior and open-all offer");
+  // The replay (core.js startPriorAt) takes the band below from its time on.
+  assert.strictEqual(C.startPriorAt(o, o.ease[2] - 1), startVars('know').p);
+  assert.strictEqual(C.startPriorAt(o, o.ease[2]), startVars('imr').p);
+  // No reversal: no "higher" card after it.
+  const H = model({slate: Array.from({length: 12}, (_, i) => 'G' + i)});
+  H.introAdd(H.ctx.slateGenera(), true, 's');
+  H.startSet('imr', 'tour');
+  H.startEase();
+  assert.deepStrictEqual(H.startV(), startVars('new'));
+  H.play(N, 0.5, true, i => i % 2 === 0, 2.5);
+  assert.strictEqual(H.startOf().v, 'hi');
+  assert.strictEqual(H.startDue(), null, 'never "higher" after the silent move down');
+  // A new answer given drops it.
+  M.startSet('imr', 'card');
+  assert.strictEqual(M.startOf().ease, undefined);
+  // Coral basics done: no "lower" card at all (it is the Coral basics offer).
+  const D = model({basics: true});
+  D.startSet('know', 'tour');
+  D.setHold(2);
+  D.play(N, 0, false, true, -1);
+  assert.strictEqual(D.startOf().v, 'lo');
+  assert.strictEqual(D.startDue(), null);
 });
 
 test('synced: the latest answer wins, the cards shown on either device count; a progress reset keeps the answer', () => {

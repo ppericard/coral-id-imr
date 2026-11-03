@@ -1466,6 +1466,7 @@ addEventListener('hashchange', () => {
 // d.set(changes) redraws it.
 const CARD_KINDS = {
   apology: '🙏',
+  step: '🧗', // a big step the player chooses (the open-all offer): the warm --warn hue, "Not now" on top
   update: '🔄',
   feature: '✨',
   genus: '🪸',

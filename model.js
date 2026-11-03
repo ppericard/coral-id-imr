@@ -541,7 +541,8 @@ const introReset = () => {
 };
 // The first-launch question (Pierre, 2026-11-03; core.js CHOICE, docs/LEARNING.md "The first-launch question"): the
 // player's answer in reefid-sync-coral-start (synced with the progress, like every reefid-sync* key): {c the choice, t its time,
-// at the answers count then, via (tour, card, fallback, inferred), n and s the fallback window (answers counted since
+// at the answers count then, via (tour, card, fallback, inferred), ease the silent band below taken with Coral basics on
+// the "lower" card ([c, answers, time], startEase), n and s the fallback window (answers counted since
 // the choice, up to the last of CHOICE.AT, and the sum of their surprise, right - e), fb the fallback cards shown ({'<choice>-lo' / '-hi': [answers,
 // time]), h the choices made, [c, at, t, via], for the admin's player journey}. Its variables (startV) are read where
 // the model uses them: the level a genus never answered starts from (ability, core.js playerStart) and when the offer
@@ -552,7 +553,20 @@ const startOf = () => {
 };
 // The question is about corals (CHOICE.SUBJ): another subject (fish, its own state) plays as the default player.
 const startOn = () => typeof SUBJ === 'undefined' || !SUBJ || SUBJ.id === CHOICE.SUBJ;
-const startV = () => startVars(startOn() ? (startOf() || {}).c : null);
+// The variables in force: the answer given, or the band below it once the gentle "lower" card's Coral basics was taken
+// (startEase: ease [c, answers, time], kept apart from the answer, which is never relabelled).
+const startEff = o => (o && Array.isArray(o.ease) && startOpt(o.ease[0]) ? o.ease[0] : o && o.c);
+const startV = () => startVars(startOn() ? startEff(startOf()) : null);
+// The gentle "lower" card's Coral basics (quiz.js startFbShow): the start variables move silently one band down from
+// those in force (know -> IMR course values, IMR course -> new: the prior and the open-all offer's at); the answer stays.
+function startEase() {
+  const o = startOf(),
+    d = o && startNext(startEff(o), 'lo')[0];
+  if (!d) return;
+  store.set(CHOICE.KEY, {...o, ease: [d, answersSoFar(), Date.now()]});
+  if (typeof dropPlans === 'function') dropPlans();
+  if (typeof syncSoon === 'function') syncSoon();
+}
 function startSet(c, via) {
   if (!startOpt(c)) return;
   const o = startOf(),
@@ -594,10 +608,13 @@ const startDue = () => {
   // answer changed on a fallback card, never the other way back (simulated, a lecture-level RA moved up at 60 answers was
   // then told to go back down on the harder genera opened next: a contradiction, not a correction).
   if (!d || o.via === 'inferred' || (o.fb || {})[o.c + '-' + d] || startBack(o, d)) return null;
-  return startNext(o.c, d).length || (d === 'lo' && !basicsDone()) ? d : null;
+  // 'lo' is the Coral basics offer (quiz.js startFbShow): none once it is done; 'hi' offers the higher answers.
+  return d === 'lo' ? (basicsDone() ? null : d) : startNext(o.c, d).length ? d : null;
 };
-// The opposite of the last move made on a fallback card ('lo' after moving up, 'hi' after moving down).
+// The opposite of the last move made on a fallback card ('lo' after moving up, 'hi' after moving down, the silent
+// move down of Coral basics on the "lower" card included).
 const startBack = (o, d) => {
+  if (d === 'hi' && Array.isArray(o.ease)) return true;
   const h = Array.isArray(o.h) ? o.h : [],
     i = c => CHOICE.opts.findIndex(x => x[0] === c),
     a = h[h.length - 2],

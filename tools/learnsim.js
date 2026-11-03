@@ -415,13 +415,17 @@ function play(cfg) {
         document.querySelector(`.unlock.intro [data-${back === 'one' ? 'back' : 'keep'}]`).click();
       }
     }
-    // The fallback card (model.js startDue, quiz.js startFbShow): kept, or its first option taken.
+    // The fallback card (model.js startDue, quiz.js startFbShow): kept, or taken: on "higher" its first option; on the
+    // gentle "lower" offer, Coral basics' silent move one band down (model.js startEase; the Coral basics page itself is
+    // not simulated), the card then closed.
     const fb = document.querySelector('.unlock.startfb');
     if (fb) {
       if (!early.fb) early.fb = {at: answersSoFar(), dir: fb.dataset.dir, took: null};
-      const o = fallback === 'accept' && fb.querySelector('[data-start]');
-      if (o) early.fb.took = o.dataset.start;
+      const lo = fb.dataset.dir === 'lo',
+        o = fallback === 'accept' && !lo && fb.querySelector('[data-start]');
+      if (fallback === 'accept' && lo) (startEase(), (early.fb.took = 'ease:' + (startOf().ease || [])[0]));
       (o || fb.querySelector('[data-keep]') || fb.querySelector('.next.sec')).click();
+      if (o) early.fb.took = (startOf() || {}).c;
     }
     planNext('quiz');
     const q = SHOWNQ;
@@ -434,7 +438,7 @@ function play(cfg) {
       if (bon.offer === null && i >= 0) bon.offer = i + 1;
       bo.click();
     }
-    for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-back]):not(.sec)'));) b.click();
+    for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not([data-back]):not(.sec)'));) b.click();
     // A typed question (model.js TYPED, quiz.js typeForm) has no buttons: its choices are the draw's, unseen (Codex
     // review #393). Recall, no guessing: known, the genus is typed; not known, "I don't know" half the time, else a genus
     // it is taken for (the same confusion weights, the genus itself left out).

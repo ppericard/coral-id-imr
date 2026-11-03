@@ -1030,7 +1030,7 @@ them apart is in the traces of the first 80 answers (`tools/learnsim.js` records
 - **The opening hold** fired during the window: it marks the run of misses that #425's easier questions then hide from
   the expectation.
 
-**The rule** (`core.js` `startCheck`; `model.js` `startStep` keeps the window, `startDue` the verdict until its card):
+**The rule** (the redesign's first version, replaced the same day by "The rule since 2026-11-04" below; `core.js` `startCheck`; `model.js` `startStep` keeps the window, `startDue` the verdict until its card):
 
 - Each answer predicts a **band** of levels around its prior, the edges midway between the priors: "new" under 0.25,
   "IMR course" 0.25 to 0.875, "know well" above 0.875 (`startBand`; no new number).
@@ -1145,6 +1145,97 @@ give, 1 of 8 gets a card ("lower" at 40: 9 of their first 14 answers on a genus 
 well" 3 of 8 get "lower"; under "new" 1 of 8 gets "higher". These answers predate the first-meeting cards (2026-11-02)
 for most of them: a first answer without its card is harder, so the real log is a pessimistic test of the first-answer
 level. The first rule (surprise) would have shown "higher" to 3 of 8 as "new", 2 of 8 as "IMR course".
+
+**The rule since 2026-11-04 (Pierre's error costs; variant "Ba80H")**. On the real log the redesign above sent a
+fast-learning lecture-level RA (row 1: 9 of her first 14 first answers right, then 83-90% right in every block of 40, her
+global level 0.45-1.33 over 378 answers, inside or above the IMR band) "lower" at 40 answers as "IMR course": a burst
+of first-meeting misses between look-alikes she had just met, at about 6 s an answer, counted twice (in the
+first-answer level and in the opening hold) while her global level (0.73 ± 0.46) sat inside the band. Pierre then set
+the error costs: **a true beginner left on the harder path (pressed "IMR course" or "know well") is the costliest
+error**; a false "higher" to a true beginner costs a lot; a false "lower" to a truthful RA is made cheap by the card's
+wording; an RA's or an expert's misclick costs little. The variants compared (same traces, checkpoints 40 and 60, 5
+seeds; "caught" = the 40 wrong answers, "false" = cards to the 20 truthful answers):
+
+| Variant | "lower" | caught / 40 | false / 20 | beginner said IMR | beginner said know | false "lower" to a truthful lecture RA |
+|---|---|---|---|---|---|---|
+| C (the redesign above, at 40/60) | first-answer level (95%), or the hold with the first-answer level under the floor | 28 | 2 | 1/5 | 3/5 | 1/5 |
+| Cf (C, the hold on non-first answers only) | as C | 25 | 1 | 0/5 | 2/5 | 0/5 |
+| Bh (the global level, 95%, or under the floor with the hold) | global level | 25 | 1 | 0/5 | 4/5 | 0/5 |
+| **Ba80H (shipped)** | global level under the floor at one-sided 80%, or the hold alone | **36** | **7** | **5/5** | **5/5** | 4/5 |
+
+"Higher" is the same in all four (the global level above the ceiling at 95%, from 40 answers and 10 genera met, the
+first-answer level above it too as a guard only). Earlier checkpoints (20/40/60) or a later one (80) moved the totals
+by 1-3; a direct fit of the level at first meeting and a learning speed (theta + beta log(1 + exposures)) caught 5-20
+of 40 with no false card: too wide on 40-60 answers.
+
+**What 40-60 adaptive answers cannot tell apart**: a true beginner who pressed "IMR course" and a truthful lecture-level
+RA look the same on every signal the rule can read (5 seeds each, at 40 and 60 answers): the global level (beginner
+1.0-1.9, mean 1.5; lecture RA 0.8-2.6, mean 1.5), the first-answer level (both from -1.5 up), the right answers (65-80%
+against 73-85%), the opening hold (fired in 5 of 5 against 4 of 5), the mean surprise (about 0 for both). The game aims
+its questions at the player's level, so their results converge; their true success differs (about 0.54 against 0.68)
+but the window is too short to show it. Lowering the margin alone (90%, 80%) catches no beginner who said "IMR course":
+their global level is far above the IMR floor (0.25). Only the hold alone does, and it fires as often for truthful
+lecture RAs: catching the first costs about one false "lower" to the second. Pierre took that trade, because the
+"lower" card is now a gentle offer (below). The robust fix is a placement test (ROADMAP).
+
+**The rule** (`core.js` `startCheck`, `CHOICE.AT` [40, 60], `CHOICE.ZL` 0.84; `model.js` `startStep` keeps the window up
+to 60 answers, `startDue` the verdict until its card):
+
+- No verdict before 40 answers, in either direction; checkpoints at 40 and 60.
+- **Lower** (only for "IMR course" and "know well": "new" has no floor): the global level is under the band's floor with
+  one-sided 80% confidence (level + 0.84 × its standard error < floor), or the opening hold has fired in the window.
+- **Higher**: as before (95%, 10 genera met, the first-answer level above the ceiling as a guard, never a trigger).
+- Unchanged: once per answer and direction, never with a card or the tour, never for an inferred answer, no move back
+  after a change (`startBack`; the silent move below counts as a move down).
+
+**The "lower" card is a gentle offer** (`quiz.js` `startFbShow`; Pierre, 2026-11-04: an RA or an expert who gets it by
+mistake must not feel judged): 💡 "A tip", "The first genera feel hard?", "They do for most people. Coral basics shows,
+on real photos, the few words the ID tips use: corallites, septa, walls. About 5 minutes."; two buttons of equal weight
+(both outlined): **Coral basics in 5 minutes** and **No thanks, I know the basics** (Escape). Nothing says what the
+player answered or that their level is low. "No thanks" changes nothing (the answer, the variables and the progress
+stay) and the card never comes back in that direction for that answer. **Coral basics** opens Coral basics and, silently,
+moves the start variables one band down (`model.js` `startEase`: know well → the IMR course's, IMR course → new's: the
+prior p and the open-all offer's `at`), kept apart from the answer given (`ease` [answer, answers then, time] in
+`reefid-sync-coral-start`; the answer is never relabelled; the admin's journey shows "Eased"; the full replay applies it
+from its time, `startPriorAt`). Coral basics already done: no "lower" card (it is the Coral basics offer).
+
+**The honest size of the silent move**: p only sets the starting ability of a genus never answered (`playerStart`:
+W (m t + N p) / (m + N), W 0.8, N 10, m the answers in the global level). The prior's weight N / (m + N) is 0.20 at 40
+answers and 0.14 at 60, so the first question of each genus opened afterwards starts lower by W × weight × Δp: know →
+IMR course (Δp 0.75) 0.12 logit at 40, 0.09 at 60; IMR course → new (Δp 0.5) 0.08 at 40, 0.06 at 60: about 1-2 points
+of expected success on a 4-choice question, on new genera only (genera already answered and the global level do not
+move). The open-all offer: know → IMR course moves its earliest answer from 20 to 30, already passed at 40; IMR course →
+new from 30 to 50: an offer not made yet by answer 40 waits up to 10 more answers; none at 60. Small by design: the
+substance of the card is Coral basics itself, which learnsim does not model.
+
+**Matrix on the shipped code** (`tools/fallbackeval.js`, the traces re-run with `tools/learnsim.js --seeds 5
+--questions 300 --choice new|imr|know --fallback keep`):
+
+| Profile (truthful) | Declared | "lower" card | "higher" card | at answer | right direction | knowledge q100 / q300 (truthful) |
+|---|---|---|---|---|---|---|
+| beginner (new) | new (truthful) | 0/5 | 0/5 | – | – | 0.25 / 0.62 |
+| beginner (new) | imr | 5/5 | 0/5 | 40 (×5) | 5/5 lower | 0.26 / 0.62 (0.25 / 0.62) |
+| beginner (new) | know | 5/5 | 0/5 | 40 (×5) | 5/5 lower | 0.26 / 0.65 (0.25 / 0.62) |
+| lecture RA (imr) | new | 0/5 | 4/5 | 60 (×4) | 4/5 higher | 0.46 / 0.76 (0.45 / 0.75) |
+| lecture RA (imr) | imr (truthful) | 4/5 | 0/5 | 40, 40, 40, 60 | – | 0.45 / 0.75 |
+| lecture RA (imr) | know | 5/5 | 0/5 | 40 (×5) | 5/5 lower | 0.46 / 0.76 (0.45 / 0.75) |
+| strong RA (know) | new | 0/5 | 5/5 | 60 (×5) | 5/5 higher | 0.66 / 0.85 (0.67 / 0.85) |
+| strong RA (know) | imr | 1/5 | 2/5 | 60 | 2/5 higher | 0.67 / 0.85 (0.67 / 0.85) |
+| strong RA (know) | know (truthful) | 3/5 | 0/5 | 60 (×3) | – | 0.67 / 0.85 |
+| expert (know) | new | 0/5 | 5/5 | 60 (×5) | 5/5 higher | 0.94 / 0.95 (0.94 / 0.95) |
+| expert (know) | imr | 0/5 | 5/5 | 60 (×5) | 5/5 higher | 0.94 / 0.95 (0.94 / 0.95) |
+| expert (know) | know (truthful) | 0/5 | 0/5 | – | – | 0.94 / 0.95 |
+
+Wrong answers caught in the right direction **36 of 40** (every beginner who claimed the course or more, at 40 answers);
+cards to truthful answers **7 of 20**, all gentle "lower" offers (4 lecture RAs, 3 strong RAs), none "higher" to a
+beginner; one strong RA who said "IMR course" got "lower" instead of "higher". The knowledge stays within 0.03 of the
+truthful answer's whether a wrong answer is corrected at 40, at 60 or never (switch runs at 20-80 answers, same seeds):
+a later correction costs no measurable knowledge in this learner.
+
+**On the real log** with the shipped rule (the 7 players with 40 answers or more; row 8 has 23): as "IMR course" rows 1
+and 3 get the gentle "lower" offer at 40, row 5 at 60; as "know well" the same three; as "new" row 5 gets "higher" at 40;
+rows 2, 4, 6 and 7 nothing. No player started under today's regime (the newest first answer predates #425 and #437)
+and three windows predate the first-meeting cards: a sanity check, not a measure.
 
 **The first rule (2026-11-03, replaced on 2026-11-04)**:
 
@@ -3347,6 +3438,13 @@ is not in the simulation.
   open-all offer from answer 50 / 30 / 20, Coral basics offered first for "new"); existing players under 50 answers are
   asked once, the others inferred silently; a fallback card once per answer and direction when the first 20 answers'
   surprise is below −0.1 or above +0.18 ("The first-launch question").
+- 2026-11-04, Pierre (on #428, after the variants compared): the fallback rule weighs the errors: a true beginner on
+  the harder path is the costliest, so "lower" is sensitive (checkpoints 40 and 60 only; the global level under the
+  band's floor at one-sided 80%, or the opening hold alone; "IMR course" and "know well" only) and its card a gentle
+  offer (Coral basics or "No thanks, I know the basics"; Coral basics also moves the start variables one band down,
+  silently, the answer given kept); "higher" unchanged; the open-all offer card shows the step as a big one ("Not now"
+  on top). 36 of 40 wrong answers caught, 7 of 20 gentle offers to truthful answers; 40-60 adaptive answers cannot tell
+  a beginner who said "IMR course" from a lecture RA: a placement test is the follow-up ("The rule since 2026-11-04").
 - 2026-11-04, Pierre (on #428): the fallback test redesigned: checked at 20, 40 and 60 answers; "lower" from the level
   of the first answers on each genus (or the opening hold fired), "higher" only from 40 answers and 10 genera met, from
   the global level and the first answers together; no move back after a change made on its card; 35 of 40 wrong answers

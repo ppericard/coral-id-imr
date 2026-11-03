@@ -174,7 +174,7 @@ async function overlays(b, base) {
     await p.waitForSelector('#view [data-c]');
     const CASES = [
       ['genus', () => introShow([slateGenera()[1]], false)],
-      ['tip', () => introOfferShow()],
+      ['step', () => introOfferShow()],
       ['tip', () => backShow()],
       ['bonus', () => bonusOfferShow()],
       ['feature', () => (store.set(RECALC.KEY, RECALC.L[RECALC.L.length - 2].id), recalcNotice())],
@@ -1520,21 +1520,37 @@ async function startSmoke(b, base) {
       });
       await p.waitForTimeout(300);
     }
+    // A gentle offer, never a verdict (Pierre, 2026-11-04): Coral basics and "No thanks, I know the basics" as two equal
+    // buttons, no word that labels the player or says the level changed.
     const fb = await p.evaluate(() => {
-      const d = document.querySelector('.unlock.startfb');
+      const d = document.querySelector('.unlock.startfb'),
+        bs = d && [...d.querySelectorAll('.ulbtns .next')];
       return (
         d && {
           dir: d.dataset.dir,
-          opts: [...d.querySelectorAll('[data-start]')].map(x => x.dataset.start),
-          basics: !!d.querySelector('a[href="#basics"]')
+          title: d.querySelector('h3').textContent,
+          basics: !!d.querySelector('.ulbtns [data-basics]'),
+          keep: (d.querySelector('[data-keep]') || {}).textContent,
+          equal: bs.length === 2 && getComputedStyle(bs[0]).backgroundColor === getComputedStyle(bs[1]).backgroundColor,
+          judged: /beginner|below what|you are new|level|gently/i.test(d.textContent)
         }
       );
     });
-    if (due !== 'lo' || !fb || fb.dir !== 'lo' || fb.opts.join() !== 'imr,new' || !fb.basics)
+    if (
+      due !== 'lo' ||
+      !fb ||
+      fb.dir !== 'lo' ||
+      fb.title !== 'The first genera feel hard?' ||
+      !fb.basics ||
+      fb.keep !== 'No thanks, I know the basics' ||
+      !fb.equal ||
+      fb.judged
+    )
       fails.push(`fallback card: ${JSON.stringify({due, fb})}`);
     if (fb) await p.click('.unlock.startfb [data-keep]');
-    const again = await p.evaluate(() => (quizPhoto(), [startDue(), !!document.querySelector('.unlock.startfb')]));
+    const again = await p.evaluate(() => (quizPhoto(), [startDue(), !!document.querySelector('.unlock.startfb'), startOf().c]));
     if (again[0] || again[1]) fails.push(`fallback card shown twice: ${JSON.stringify(again)}`);
+    if (again[2] !== 'know') fails.push(`"No thanks" changed the answer: ${again[2]}`);
     await c.close();
   }
   // 5. Coral basics in Learn: the first Learn tab, the "0" block of Genera, out of the Lab list with a link kept there;

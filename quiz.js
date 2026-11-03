@@ -1281,47 +1281,61 @@ function startBasicsOffer(cur) {
   });
   return true;
 }
-// The fallback card (model.js startDue), once per direction, over a new question: 'lo' the first answers fall clearly
-// below what the choice predicts (Coral basics, or a lower choice), 'hi' clearly above it (a higher choice). Picking a
-// choice re-initialises its variables (startSet); the answers are kept.
+// The fallback card (model.js startDue), once per direction, over a new question. 'lo' (the answers clearly below what
+// the choice predicts) is a gentle offer, never a verdict (Pierre, 2026-11-04: an RA or an expert who gets it by mistake
+// must not feel judged): "The first genera feel hard?", Coral basics in 5 minutes and "No thanks, I know the basics" as
+// two equal buttons. Coral basics also moves the start variables one band down, silently (model.js startEase: the answer
+// given stays, nothing on screen says so); "No thanks" changes nothing, and the card never comes back that way. 'hi'
+// (clearly above): the higher choices to pick from (startOptsHtml), or keep. The answers are kept either way.
 function startFbShow(dir) {
   const o = startOf(),
     next = startNext(o.c, dir),
-    said = `said “${esc(startOpt(o.c)[1])}”`,
-    bas = dir === 'lo' && !basicsDone();
+    said = `said “${esc(startOpt(o.c)[1])}”`;
   startShown(dir);
-  const d = cardShow({
-    kind: 'tip',
-    cls: 'startfb',
-    kick: `${(o.w || []).length} answers in`,
-    title: dir === 'lo' ? (next.length ? 'Harder than expected?' : 'Corals are new to you?') : 'You know more than you said',
-    label: 'Your start',
-    body:
-      (dir === 'lo'
-        ? next.length
-          ? `<p>Your answers are below what the game expects from someone who ${said}. Start more gently? Your answers are kept.</p>`
-          : '<p>Coral basics shows, on real photos, the words the ID tips use: about 5 minutes.</p>'
-        : `<p>Your answers beat what the game expects from someone who ${said}. Move faster? Your answers are kept.</p>`) +
-      (next.length ? startOptsHtml(null, next) : '') +
-      (bas && next.length ? '<p class="ulnote"><a class="linkish" href="#basics">New to corals? Coral basics, 5 min ›</a></p>' : ''),
-    primary: bas && !next.length ? {text: 'Coral basics (5 min)', attr: 'data-basics', on: () => go('basics')} : null,
-    secondary: {text: next.length ? 'Keep my answer' : 'Keep playing', attr: 'data-keep'},
-    onClose: () => topUp(),
-    bind: d =>
-      d.querySelectorAll('[data-start]').forEach(
-        b =>
-          (b.onclick = () => {
-            startSet(b.dataset.start, 'fallback');
-            d.close('pick');
-          })
-      )
-  });
+  const d = cardShow(
+    dir === 'lo'
+      ? {
+          kind: 'tip',
+          cls: 'startfb',
+          kick: 'A tip',
+          title: 'The first genera feel hard?',
+          label: 'Your start',
+          body: '<p>They do for most people. Coral basics shows, on real photos, the few words the ID tips use: corallites, septa, walls. About 5 minutes.</p>',
+          primary: {text: 'Coral basics in 5 minutes', attr: 'data-basics', on: () => (startEase(), go('basics'))},
+          secondary: {text: 'No thanks, I know the basics', attr: 'data-keep'},
+          esc: 2, // Escape: no thanks
+          onClose: () => topUp()
+        }
+      : {
+          kind: 'tip',
+          cls: 'startfb',
+          kick: `${(o.w || []).length} answers in`,
+          title: 'You know more than you said',
+          label: 'Your start',
+          body: `<p>Your answers beat what the game expects from someone who ${said}. Move faster? Your answers are kept.</p>${startOptsHtml(null, next)}`,
+          secondary: {text: 'Keep my answer', attr: 'data-keep'},
+          onClose: () => topUp(),
+          bind: d =>
+            d.querySelectorAll('[data-start]').forEach(
+              b =>
+                (b.onclick = () => {
+                  startSet(b.dataset.start, 'fallback');
+                  d.close('pick');
+                })
+            )
+        }
+  );
   d.dataset.dir = dir;
 }
-// The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now (Escape).
-// Leaving the page closes it unanswered (route): the offer can come back.
+// The offer to open all genera (model.js introOffer), over the question, once. A big step, and shown as one (Pierre,
+// 2026-11-04: a beginner who misclicked their level must see it is risky, an expert can confirm calmly): the "step"
+// kind (the warm --warn hue), what changes in three short lines, "Not now" the safe default on top (Escape and Enter),
+// "Open all N genera" under it, outlined in the warn hue. Leaving the page closes it unanswered (route): the offer can
+// come back.
 function introOfferShow() {
   const a = answersSoFar(),
+    n = slateGenera().length,
+    left = introLeft().length,
     pick = open => {
       store.set(INTRO.OFFER.KEY, {at: a, open: 0, t: Date.now()});
       if (open) {
@@ -1331,15 +1345,16 @@ function introOfferShow() {
       save();
     };
   cardShow({
-    kind: 'tip',
+    kind: 'step',
     cls: 'intro',
-    kick: `${a} answers in`,
-    title: `You seem to know your ${SUBJ.name.toLowerCase()} already`,
-    body: `<p>Open all ${slateGenera().length} ${SUBJ.many} at once, instead of one at a time? ${introLeft().length} are still to come.</p>`,
-    primary: {text: `Open all ${SUBJ.many}`, attr: 'data-open', on: () => pick(true)},
-    secondary: {text: 'Not now', on: () => pick(false)},
-    esc: 2,
-    note: 'Also in My progress, any time.',
+    kick: `${a} answers in · a big step`,
+    title: `Open all ${n} ${SUBJ.many} at once?`,
+    body: `<p>You are doing well. Opening them all is the hard way:</p><ul class="ulchg"><li>${left} new ${SUBJ.many} in the questions at once, without a card for each</li><li>Harder questions sooner: look-alikes side by side</li><li>More mix-ups at first, before it settles</li></ul>`,
+    primary: {text: 'Not now, one at a time', attr: 'data-notnow', on: () => pick(false)},
+    secondary: {text: `Open all ${n} ${SUBJ.many}`, attr: 'data-open', on: () => pick(true)},
+    esc: 1,
+    enter: 1,
+    note: 'Also in My progress, any time. If it gets too hard, the game offers to go back.',
     onClose: topUp
   });
 }

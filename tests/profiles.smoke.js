@@ -90,7 +90,7 @@ const server = http.createServer((req, res) => {
         NEXTQ = null;
         quizPhoto();
         // The player reads the first-meeting cards through (each genus is met when its card shows).
-        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
+        for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not(.sec)'));) b.click();
         const t = window.__q[1];
         if (!first.includes(t)) first.push(t);
         // A typed question (model.js TYPED) has no buttons: its choices are the draw's, unseen; nothing to guess from.
