@@ -3042,15 +3042,18 @@ function autoUndo(f) {
       if (!Object.keys(DRAFT[k]).length) delete DRAFT[k];
     };
   if (d.kind === 'a') {
-    Object.keys(DRAFT.genera).forEach(n => {
-      const k = DRAFT.genera[n];
-      if (!(k.add || {})[f]) return;
+    // Only the add it wrote: in the candidate's own genus (autoRun decides a candidate in its genus only), still in the
+    // view it chose. An add Pierre made since stays his: in the genus he sent the photo to with Not this genus, or in
+    // the view he moved it to (Codex review #400: Undo deleted his approval in the other genus).
+    const n = (PHOTOS[f] || {}).genus,
+      k = n && DRAFT.genera[n];
+    if (k && (k.add || {})[f] === d.view) {
       const c = {...k, add: {...k.add}};
       delete c.add[f];
       if (!Object.keys(c.add).length) delete c.add;
       if (Object.keys(c).length) DRAFT.genera[n] = c;
       else delete DRAFT.genera[n];
-    });
+    }
     if (d.q) drop('quality', f, d.q);
     if (d.fm) drop('gf', f, d.fm);
     const p = PHOTOS[f];

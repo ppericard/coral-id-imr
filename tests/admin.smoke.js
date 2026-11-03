@@ -815,6 +815,28 @@ const server = http.createServer((req, res) => {
       await settle();
       if ((await p.evaluate(F => aOf(F[1]).code, CF)) !== 'r') fails.push(`${w}px Auto: Undo did not bring the auto decision back`);
     }
+    // Undo of an auto add takes back only the add it wrote (Codex review #400): Pierre's approval in the genus he sent the
+    // photo to with Not this genus, or a view he moved it to, stays.
+    const ua = await p.evaluate(F => {
+      const f = F[2],
+        g = PHOTOS[f].genus,
+        to = Object.keys(DATA.gen).find(x => x !== g),
+        day = Object.keys(DRAFT.auto).sort().pop(),
+        one = (mine, view) => {
+          DRAFT.genera[g] = {...(DRAFT.genera[g] || {}), add: {...((DRAFT.genera[g] || {}).add || {}), [f]: view}};
+          if (mine) DRAFT.genera[to] = {...(DRAFT.genera[to] || {}), add: {...((DRAFT.genera[to] || {}).add || {}), [f]: 'medium'}};
+          DRAFT.auto = {...DRAFT.auto, [day]: {...DRAFT.auto[day], [f]: 'aw2B'}};
+          saveDraft();
+          autoUndo(f);
+          const r = {own: ((DRAFT.genera[g] || {}).add || {})[f] || null, other: ((DRAFT.genera[to] || {}).add || {})[f] || null};
+          undo();
+          undo();
+          return r;
+        };
+      return {plain: one(false, 'wide'), notThis: one(true, 'wide'), moved: one(false, 'medium')};
+    }, CF);
+    if (ua.plain.own || ua.notThis.own || ua.notThis.other !== 'medium' || ua.moved.own !== 'medium')
+      fails.push(`${w}px Auto: Undo of an auto add ${JSON.stringify(ua)}`);
     // Undo of an auto exclusion (Codex review #400): a candidate whose entry is still in the candidate files is back in
     // Candidates; one whose entry is gone is not, and the toast does not claim it is.
     const ux = await p.evaluate(F => {
