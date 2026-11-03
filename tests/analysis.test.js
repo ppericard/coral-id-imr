@@ -189,7 +189,8 @@ test('milestones, verdicts and the report: earlier milestones reused only for th
   assert.strictEqual(A.verdictOf({est: 0.4, lo: 0.3, hi: 0.6, nul: 0.5, sesoi: 0.05}, 100).v, 'thin', 'a reference value');
   const fs = require('fs'),
     data = JSON.parse(fs.readFileSync(require('path').join(__dirname, '..', 'data.json'))),
-    rows = A.demoLog(data, Date.UTC(2026, 10, 1), {days: 30, players: A.DEMO_PLAYERS.slice(0, 4).map(p => [p[0], p[1], 300, p[3]])});
+    rows = A.demoLog(data, Date.UTC(2026, 10, 1), {days: 400, players: A.DEMO_PLAYERS.slice(0, 4).map(p => [p[0], p[1], 400, p[3]])});
+  assert.ok(rows.length >= 1100, String(rows.length));
   const meta = {ph: A.photoMeta(data)};
   const r1 = A.report(rows.slice(0, 1100), meta, null, {B: 0}),
     r2 = A.report(rows, meta, r1, {B: 0});
