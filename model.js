@@ -326,6 +326,19 @@ const openPace = (at = answersSoFar(), soon = []) => {
   const L = openRecent(at);
   return L.length < OPEN.MAX && L.every(n => asked(n) || soon.includes(n));
 };
+// An opening only after a right answer (Pierre, 2026-11-03: "new genera open right after a wrong answer: unlocking
+// a new genus feels like a reward given for a wrong answer"; docs/LEARNING.md "An opening only after a right answer").
+// The path opens a genus only when the last graded answer was right, or there was none: after a miss, nothing opens
+// until the player answers right again (a second miss keeps it closed). The opening is deferred, not lost: the next
+// question after a right answer may open it as usual. Every graded answer counts, whatever the game (photo quiz, an
+// "Again", a duel slipped in or in the Duel tab, the custom quiz, a typed "I don't know"): the global record's recent
+// results (P[LEVEL].h, newest last, written by quiz.js answer, synced with the progress like a genus's h).
+// at: the answers count at which the question will show. Planned ahead (at > answersSoFar(): the answer before it is
+// still to come) it may hold a card: a miss drops every question planned (quiz.js answer, dropPlans), and quizPhoto
+// checks again when it shows one.
+function openRight(at = answersSoFar()) {
+  return at > answersSoFar() || !((P[LEVEL] || {}).h || '').endsWith('0');
+}
 // The genus to open among those not met yet (fresh): the easiest first, softly (OPEN.T, as far as the data are trusted:
 // easyTrust), and the most common near Dauin (commonFactor). A ★ genus waits while a genus its card compares it to is in
 // the list and not met (Pierre, 2026-11-03, #402; core.js starWaits: a reference not in the list never holds it back,

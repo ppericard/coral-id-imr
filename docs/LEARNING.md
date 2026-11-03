@@ -807,6 +807,8 @@ time, each on its card, but never as the answer of the question right after its 
   answers, and a comeback planned from the time away and how solid each genus is comes first when the break left rust
   ("Comeback after a break", below). It replaced the gentle restart (`WARM`, the same day: 10 easy questions at every
   page load, left out of the hold).
+- **Only after a right answer** (Pierre, 2026-11-03; `openRight`): no card of the path on the question after a
+  miss, nor until the player answers right again ("An opening only after a right answer", below).
 - **Not right after**: a genus met on a card alone can be asked from `INTRO.GAP` (2) answers on (one question at least
   in between; the card says "It comes up in the questions a little later", and since 2026-11-03 its genus is not
   among that question's choices either: a beginner saw the name of the card just read as a choice behind it; simulated,
@@ -1561,6 +1563,90 @@ in the 40 answers after the comeback; genera opened on their cards in the first 
   cards are not on record; inferred from the first question on each genus (a card `INTRO.GAP` before), 3 of the 5
   genera new in the collapsed run would have waited (one more came through an Again on a genus never met, which the
   new rule also stops).
+
+### An opening only after a right answer (2026-11-03)
+
+Pierre, after playing: "I was surprised that new genera open right after a wrong answer. Unlocking a new genus feels
+like a reward, and it came on a wrong answer." The rule agreed: **the path opens a genus only after a right answer**.
+When the last graded answer was a miss, no genus opens; it stays that way until the player answers right again, so a
+second miss keeps it closed. The opening is put off, not cancelled: the first question after a right answer can open
+it as usual. Nothing else about the pace changes (`openChance`, `openPace` `OPEN.MAX` 3 / `OPEN.WIN` 15, the hold,
+`INTRO.EVERY`).
+
+- **One place** (`model.js` `openRight`): the last of the conditions that let `planPhoto` open a genus (with
+  `INTRO.EVERY`, the hold, the floor of a visit or a comeback, `openPace`). It reads `P['~level'].h`, a new field on the
+  global record: the last 10 results over every game, newest last, written by `answer` and synced and merged with the
+  progress like a genus's `h` (`core.js` `mergeProgress`). A player who has never answered, or whose progress was
+  saved before this field existed, counts as "no miss".
+- **Every graded answer counts**, whatever the game: the photo quiz, an Again, a duel slipped into the quiz, the Duel
+  tab, the custom quiz, a typed question (a typed "I don't know" is a miss). They all go through `answer` and the global
+  record, so a miss in the Duel tab followed by a switch to the photo quiz also holds the first question there.
+- **Questions planned ahead** (`planNext`, up to 3): a question planned while the answer just before it is still to
+  come cannot know that answer, so `openRight(at)` lets it through (`at` > the answers so far). A miss already drops
+  every question planned (`answer`, `dropPlans`), and `quizPhoto` checks again when it shows a question with a card of
+  the path: one planned before a miss is planned again (the same check as the hold's), so a card planned earlier never
+  shows after a miss.
+- **Not openings by the path, unchanged**: the first cards (fewer than `INTRO.START` slate genera met: the game cannot
+  ask anything without them), Open all, the cards that come with a genus the player picked in the custom quiz, and the
+  cards of the Duel tab's pair (both genera are named on its buttons). The Again and the duels slipped into the quiz
+  never ask a genus not met.
+
+Simulated (`tools/learnsim.js`, 5 seeds × 300 questions, the four profiles, `main` and the rule on the same seeds;
+mean ± sd over the seeds): genera met (cards and asked) and true knowledge of the slate:
+
+| Profile | | met q50 | met q100 | met q200 | met q300 | know q50 | know q100 | know q200 | know q300 | right % (1-300) | open/15 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| beginner | main | 10.6 ± 0.5 | 18.4 ± 2.7 | 27.4 ± 3.8 | 38.8 ± 2.2 | 0.16 ± 0.00 | 0.28 ± 0.01 | 0.46 ± 0.04 | 0.65 ± 0.02 | 77.4 ± 0.6 | 3.0 ± 0.0 |
+| | rule | 9.8 ± 0.4 | 16.2 ± 0.8 | 28.0 ± 2.0 | 37.8 ± 2.5 | 0.15 ± 0.00 | 0.26 ± 0.01 | 0.47 ± 0.02 | 0.64 ± 0.02 | 78.5 ± 0.8 | 3.0 ± 0.0 |
+| lecture RA | main | 11.2 ± 0.4 | 20.6 ± 0.5 | 35.6 ± 3.4 | 40.0 ± 0.0 | 0.37 ± 0.01 | 0.46 ± 0.01 | 0.65 ± 0.01 | 0.76 ± 0.01 | 79.7 ± 1.2 | 3.0 ± 0.0 |
+| | rule | 10.8 ± 0.4 | 18.6 ± 1.7 | 33.4 ± 2.2 | 40.0 ± 0.0 | 0.37 ± 0.01 | 0.47 ± 0.02 | 0.63 ± 0.02 | 0.76 ± 0.01 | 79.8 ± 0.8 | 3.0 ± 0.0 |
+| strong RA | main | 10.4 ± 0.9 | 19.8 ± 0.8 | 38.0 ± 1.6 | 40.0 ± 0.0 | 0.61 ± 0.01 | 0.67 ± 0.00 | 0.79 ± 0.01 | 0.85 ± 0.01 | 86.4 ± 1.2 | 3.0 ± 0.0 |
+| | rule | 10.0 ± 0.7 | 18.6 ± 0.5 | 35.6 ± 1.1 | 40.0 ± 0.0 | 0.61 ± 0.01 | 0.66 ± 0.03 | 0.78 ± 0.01 | 0.85 ± 0.01 | 84.9 ± 1.3 | 3.0 ± 0.0 |
+| expert | main | 10.6 ± 0.5 | 19.6 ± 0.5 | 38.0 ± 1.0 | 40.0 ± 0.0 | 0.93 ± 0.00 | 0.94 ± 0.00 | 0.95 ± 0.00 | 0.95 ± 0.00 | 96.0 ± 0.5 | 3.0 ± 0.0 |
+| | rule | 10.6 ± 0.5 | 19.6 ± 0.5 | 37.6 ± 0.9 | 40.0 ± 0.0 | 0.93 ± 0.00 | 0.94 ± 0.00 | 0.95 ± 0.00 | 0.95 ± 0.00 | 95.6 ± 1.0 | 3.0 ± 0.0 |
+
+Questions until 10 / 20 / 30 / 40 slate genera are met (40: the runs that met all of them by question 300):
+
+| Profile | main | rule |
+| --- | --- | --- |
+| beginner | 44.6 / 119.6 / 211.0 / 278.3 (3 of 5) | 49.4 / 122.6 / 229.8 / 294.5 (2 of 5) |
+| lecture RA | 41.6 / 94.4 / 157.2 / 231.8 | 43.2 / 106.0 / 168.0 / 245.2 |
+| strong RA | 45.6 / 98.4 / 152.8 / 208.0 | 47.4 / 105.6 / 165.2 / 223.0 |
+| expert | 45.4 / 100.8 / 155.0 / 209.4 | 45.4 / 100.8 / 155.6 / 210.4 |
+
+How often the rule held an opening (per run, means ± sd; "held": questions where every other condition allowed a card
+and a genus was left to open, so only the rule stopped it; "expected": those questions' `openChance` summed, the
+openings they would have brought on average; "wait": questions from the first held question of a spell of misses to
+the next card):
+
+| Profile | own cards, main / rule | cards right after a miss, main / rule | held | expected | wait (mean, median) |
+| --- | --- | --- | --- | --- | --- |
+| beginner | 36.2 / 34.0 | 7.4 ± 3.0 / 0 | 18.0 ± 3.6 | 5.8 ± 1.9 | 10.6, 5 (89 spells) |
+| lecture RA | 41.0 / 40.8 | 8.4 ± 0.9 / 0 | 12.4 ± 4.9 | 8.8 ± 4.3 | 3.5, 2 (62 spells) |
+| strong RA | 41.0 / 41.0 | 7.4 ± 1.5 / 0 | 8.6 ± 3.1 | 8.2 ± 3.3 | 2.5, 2 (43 spells) |
+| expert | 41.0 / 41.0 | 1.0 ± 1.0 / 0 | 0.8 ± 0.4 | 0.8 ± 0.4 | 2.0, 2 (4 spells) |
+
+On `main` about one card in five (beginner and RAs) came on the question right after a miss; with the rule none. The
+expected slowdown: one to two genera fewer by question 100 for the beginner and the RAs (beginner 18.4 → 16.2, lecture
+RA 20.6 → 18.6, strong RA 19.8 → 18.6), 3 to 19 questions more to reach 20, 30 and 40 genera, nothing for the expert
+(rarely wrong). True knowledge by question 200 and 300 within the seeds' spread for every profile; at question 100 the
+beginner's is 0.02 lower (0.28 → 0.26, sd 0.01: it has met two genera fewer), equal again from question 200. Right %
+within the spread. The beginner's waits are longer (median 5 questions, a long tail): its misses come in runs, and
+its `openChance` is lower. No other constant was touched.
+
+Real answers (rule 14g; a read-only count, by a script kept outside the repo, on the sheet's Answers tab exported 2026-11-03: 1,345 answers of 10
+players, read-only, aggregates only): a replay cannot judge this rule (it changes which question comes, not any
+estimate), and the log records no cards; measured instead how often a genus's first meeting followed a miss. A first
+meeting is a player's first question on a genus (the log's "New photos" column counts photos new to the player, not
+genera), in the photo quiz, after their first 4 genera (the first cards), within the same visit (under 30 minutes
+after the answer before), leaving apart the first questions that come in bursts (two or more others within two
+questions: Open all asks the genera never asked first). Of the 130 first meetings on the path, 22 (17%) came on the
+question right after a miss, and, assuming each genus was asked as soon as ready (its card `INTRO.GAP` questions
+before), 21 of the 130 cards (16%) were shown on the question after a miss: about the players' miss rate (19%), as
+expected when nothing ties the opening to the last answer. Per player (P1-P10 by number of answers; first meetings on
+the path, right after a miss / estimated card after a miss): P1 36, 6 / 8; P2 8, 0 / 2; P3 25, 5 / 5; P4 24, 5 / 5; P5
+13, 2 / 0; P6 11, 1 / 0; P7 9, 3 / 1; P8 4, 0 / 0; P9 and P10 none on the path. So about one opening in six that real
+players met would have been put off until their next right answer.
 
 ### One draw weight (2026-11-03)
 
@@ -2595,6 +2681,10 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   `--after` ones. Profile `strongBack` (not in the default list): a strong player who knows 80% of the genera well and
   the rest hardly (few genera stay shaky), for `--profiles strongBack --questions 60 --breaks 8h --after 40`, the
   situation of the run that collapsed on 2026-11-03.
+- **Openings after a miss** (2026-11-03): per profile, the genera opened on their own cards, those on the question
+  right after a miss (0 with `openRight`), the questions where that rule alone held the opening and the openings they
+  would have brought (`openChance` summed), and the questions from each spell of them to the next card; each run's
+  `opens`, `afterMiss` and `blocked` are in `--out`.
 - **Profiles**: beginner (knows every genus at 2%, learns 0.12 of the gap per exposure), lecture-level RA (the profiles
   test's RA: 55% on 2 genera in 5, 10% on the others, 0.12), strong RA (85% on 3 genera in 5, 10% on the others, 0.12),
   expert (93%, 0.05). The open-all offer is declined (the path is what is measured), unless `--openall`: `offer`
@@ -2702,6 +2792,15 @@ seeing more genera always teaches it more; what the card guards against, a playe
 is not in the simulation.
 
 ## Decision log
+
+- 2026-11-03, Pierre ("new genera open right after a wrong answer: it feels like a reward for it"): an opening only
+  after a right answer (`model.js` `openRight`, `P['~level'].h`): after a miss no genus opens until the player answers
+  right again, in any game; a card planned before the miss is planned again. Nothing else in the pace changes.
+  Simulated (5 seeds x 300 questions): one to two genera fewer by question 100 for the beginner and the RAs (beginner
+  18.4 → 16.2, lecture RA 20.6 → 18.6, strong RA 19.8 → 18.6), the expert unchanged, true knowledge within the spread
+  from question 200 (beginner 0.28 → 0.26 at 100); on `main` about one card in five came right after a miss. Real
+  answers: 22 of 130 first meetings on the path (17%) came on the question right after a miss ("An opening only after
+  a right answer").
 
 - 2026-11-04, Pierre ("I validate all your proposals", after the collapsed runs of 2026-11-03): the opening's pace
   (`openPace`: no card while a genus carded in the last 15 answers waits for its question, at most 3 in any 15, a

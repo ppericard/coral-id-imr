@@ -6,7 +6,8 @@
 // - answer choices: 3 distinct genera of the list, never the target; exactly the asked number of traps (look-alikes /
 //   confused genera) when enough exist, none at the very start (14c);
 // - first meetings: genera met on cards before being asked, never right after their card (INTRO), none while the
-//   player falls behind (introHold); a starred genus never before the genera its card compares it to (core.js starRefs);
+//   player falls behind (introHold), never on the question after a miss, even one planned before it (openRight); a
+//   starred genus never before the genera its card compares it to (core.js starRefs);
 // - out-of-game prompts at least PROMPT.GAP answers apart (promptOk);
 // - Millepora a slate genus (progress, cards); the bonus genera offered once every slate genus is met and never before,
 //   "Not now" kept, once on opened one card at a time, never counted in the progress, Off out of the draw;
@@ -848,6 +849,84 @@ const server = http.createServer((req, res) => {
         dropPlans();
         NEXTQ = null;
       }
+      // An opening only after a right answer (model.js openRight; Pierre, 2026-11-03): the path never opens a genus on
+      // the question after a miss, not even one planned before the miss, and keeps opening after right answers.
+      {
+        const keepP = JSON.stringify(P),
+          keepI = JSON.stringify(introMap()),
+          reset = () => {
+            dropPlans();
+            NEXTQ = null;
+            rematch = [];
+            document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+          };
+        // 12 solid genera met, nothing shaky (openChance 1), no hold, no comeback, the open-all offer declined.
+        const setup = () => {
+          reset();
+          HOLDS = 0;
+          CB = {r: 0, t: 0, ok: 0, f: 0};
+          store.set(INTRO.OFFER.KEY, {at: 0, open: 0});
+          const m = {};
+          Object.keys(P).forEach(n => n !== LEVEL && delete P[n]);
+          pool()
+            .filter(n => !isBonus(n))
+            .slice(0, 12)
+            .forEach(n => {
+              P[n] = {ok: 30, ko: 1, streak: 5, h: '1111111111', th: 2.8, lt: (P[LEVEL] || {}).th || 0};
+              m[n] = [0, 1, Date.now(), 's'];
+            });
+          store.set(INTRO.KEY, m);
+          INTROS = null;
+          if (P[LEVEL]) P[LEVEL].h = '1';
+        };
+        setup();
+        // Through the real game: right or wrong at random (a typed "I don't know" for a miss on a typed question),
+        // the questions planned ahead kept after a right answer as in the app.
+        let prev = null,
+          afterRight = 0,
+          afterMiss = 0,
+          slots = 0;
+        for (let i = 0; i < 120; i++) {
+          document.querySelectorAll('.unlock:not(.intro)').forEach(x => x.remove());
+          HOLDS = 0; // the opening hold apart (introHold): only the last answer decides here
+          quizPhoto();
+          const q = SHOWNQ;
+          document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+          if (prev === false) slots++;
+          if (q.intro && !q.start) prev === false ? afterMiss++ : afterRight++;
+          const good = Math.random() < 0.6,
+            wrong = choices().find(c => c !== q[1]);
+          say(good ? q[1] : document.querySelector('#view .tyform') ? '' : wrong);
+          prev = good;
+          planNext('quiz');
+        }
+        if (afterMiss) fails.push(`only after a right answer: ${afterMiss} cards on the question after a miss (${slots} such questions)`);
+        if (!afterRight) fails.push('only after a right answer: no card after a right answer in 120 answers');
+        // A card planned before a miss (the queue kept, as if the miss had not dropped it) is chosen again when it shows.
+        setup();
+        let x = null;
+        for (let i = 0; i < 200 && !x; i++) {
+          const q = planPhoto('quiz');
+          if (q.intro && !q.start) x = q;
+        }
+        if (!x) fails.push('only after a right answer: no card planned after a right answer');
+        else {
+          NEXTQ = {k: planKey('quiz'), args: x, snap: planState(), stop: true, urls: [], held: [], next: null};
+          P[LEVEL].h = (P[LEVEL].h || '') + '0';
+          quizPhoto();
+          if (SHOWNQ.intro) fails.push('only after a right answer: a card planned before a miss shown after it');
+          document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+          if (openRight()) fails.push('only after a right answer: openRight true after a miss');
+          if (!openRight(answersSoFar() + 1)) fails.push('only after a right answer: a question planned ahead held by the last miss');
+          P[LEVEL].h += '1';
+          if (!openRight()) fails.push('only after a right answer: openRight false after a right answer');
+        }
+        Object.keys(P).forEach(n => delete P[n]);
+        Object.assign(P, JSON.parse(keepP));
+        store.set(INTRO.KEY, JSON.parse(keepI));
+        INTROS = null;
+        reset();
+      }
       // Nothing is planned past a question that changes what comes next while it is on screen (Codex review #361: an
       // exam planned behind an unanswered exam broke its spacing); a plain question gets its next ones planned.
       {
@@ -1328,7 +1407,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, starred genera after their references, prompt spacing, custom quiz, learned marks of the former model taken back.`
+    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, openings only after a right answer, starred genera after their references, prompt spacing, custom quiz, learned marks of the former model taken back.`
   );
 })().catch(e => {
   console.error(e);
