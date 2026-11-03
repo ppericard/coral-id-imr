@@ -143,8 +143,9 @@ the view it would join if added.
 
 **What you set aside, Pierre does not see** (Pierre, 2026-11-03: the pre-sort takes everything obvious off his hands).
 A candidate judged `exclude` or `cmp`, a near-duplicate (`dup`), a photo of several corals (`multi`) or a Poor photo
-(quality 1), with no `unsure`, no longer comes up in the admin's Candidates (a count and a Show link keep it
-reachable). So be sure: at the least doubt, add `"unsure"` and it stays in his queue (an `exclude` with `unsure`
+(quality 1), with no `unsure`, no longer comes up in the admin's Candidates: the auto-sort rejects it (excludes it for
+`exclude`; a `cmp` stays set aside, the "set aside" toggle above the queue keeps it reachable), below "What happens to a sure
+judgment". So be sure: at the least doubt, add `"unsure"` and it stays in his queue (an `exclude` with `unsure`
 is not set aside).
 
 Never for IMR lecture photos, except `exclude`. A `note` is required.
@@ -201,7 +202,8 @@ different from the field photos.
 
 Run on demand when Pierre asks for it (the admin's Candidates tab counts the candidates not judged yet). It covers
 only the iNaturalist candidates waiting in `cand.json` (whole observations), so Pierre's swiper shows the most
-useful photo of each observation and view first. Nothing is removed: he still swipes every photo himself. Pierre's
+useful photo of each observation and view first. Since 2026-11-03 what you are sure of is decided without him (the
+auto-sort, below): he swipes only the doubtful photos and about 1 in 20 sure ones, as a check of your work. Pierre's
 aim: real diversity of colonies and views, so the players learn the genus, not the photos.
 
 1. `python3 tools/judging_cand.py sheets <Genus>` downloads the photos (500 px, `judging/cand/img/`, not in git)
@@ -250,6 +252,32 @@ aim: real diversity of colonies and views, so the players learn the genus, not t
 3. `python3 tools/judging_cand.py --check <Genus>` until it passes, then `python3 tools/judging_cand.py` imports
    every passing genus into `suggest.json` `"cand"` (admin only: players never download it). Commit only
    `judging/cand/*.json` and `suggest.json`.
+
+### What happens to a sure judgment (auto-sort)
+
+Pierre, 2026-11-03: "take the obvious off my hands, so I almost never validate candidates by hand". When he opens the
+admin, every candidate you judged with no `unsure` (and no doubt raised by the photo metrics, below) is decided for
+him in his draft, exactly as his own clicks would, and goes to the site with his next Publish (`autosort.js`
+`autoSure`, admin `autoRun`):
+
+| Your judgment (no `unsure`) | Done | Fields written |
+|---|---|---|
+| `keep: best`, quality 2 or 3, with `view` and `form` | added to that view, up to the cell's cap (Good first) | view, quality, growth form (+ polyps), the suggested crop |
+| `dup`, `multi`, or quality 1 | rejected (his ✕ Reject) | none |
+| `genus: exclude` | excluded (his ×) | none |
+| `alt`, another genus, `cmp` | nothing: Pierre's (a `cmp` stays set aside) | none |
+
+Each field is checked on its own (keep, view, quality, form): about 1 in 20 sure candidates (`autoCheck`, fixed per
+photo) is not applied but shown to Pierre blind with a **Check** tag; his answer, and any later correction of an auto
+decision, measure your agreement with him per field. A field whose agreement over its last 40 comparisons falls under
+its threshold (keep 90%, view 85%, quality 73%, form 80%, after 10 comparisons) is no longer applied until it
+recovers: the photos then wait for him with your guess as usual. So `unsure` matters more than ever: a confident
+wrong answer now reaches the site; a marked doubt costs one swipe.
+
+Objective metrics (`tools/photo_metrics.py`, `metrics.json`: sharpness, size, colour cast) never decide; they only stop
+a sure judgment they contradict (a Good photo under 1000 px or among the 5% softest candidates, a Poor photo among the
+5% sharpest), which then goes to Pierre with the reason, and they order the sure adds of a full cell (sharper first
+within a quality).
 
 ## Workflow
 
