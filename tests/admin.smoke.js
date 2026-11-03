@@ -191,8 +191,32 @@ const server = http.createServer((req, res) => {
       if (!/Not signed in ·[\s\S]*not saved \(not signed in\)/.test(await text())) fails.push(`${w}px ${anon}: anonymous Journey missing`);
       await go('~users');
     }
+    // Who played last (Pierre, 2026-11-03): Last is the second column, to the minute, and the default sort, most recent
+    // first by the exact time of the last answer; Carla (the demo's player now) first, with the "now" pill.
+    const lastCol = () =>
+      p.$$eval('.adm-urow', L =>
+        L.map(tr => ({
+          name: tr.querySelector('td b').textContent,
+          t: Number((tr.querySelector('td:nth-child(2) [data-t]') || {dataset: {t: 0}}).dataset.t),
+          now: !!tr.querySelector('td:nth-child(2) .adm-ago.now'),
+          txt: tr.querySelector('td:nth-child(2)').textContent.trim()
+        }))
+      );
+    const checkLast = async how => {
+      const L = await lastCol();
+      if (!L.length || L[0].name !== 'Carla Demo' || !L[0].now || L[0].txt !== 'now')
+        fails.push(`${w}px Players (${how}): Carla not first and "now" (${JSON.stringify(L[0])})`);
+      if (L.some((x, i) => i && x.t > L[i - 1].t))
+        fails.push(`${w}px Players (${how}): not most recent first ${L.map(x => x.txt).join(', ')}`);
+      if (L.filter(x => x.now).length !== 1)
+        fails.push(`${w}px Players (${how}): ${L.filter(x => x.now).length} players "now", expected 1`);
+      if (!L.slice(1).every(x => /min ago|h ago|yesterday|^\d+ \w+$|^\w+ \d+$/.test(x.txt)))
+        fails.push(`${w}px Players (${how}): Last texts ${L.map(x => x.txt).join(', ')}`);
+    };
+    await checkLast('default sort');
+    if (!/12 min ago/.test(t)) fails.push(`${w}px Players: the device that stopped 12 minutes ago is not "12 min ago"`);
     // Names joined with the anonymous stats: every demo player has a level; sorting by name puts Ana first, reversed last.
-    const lv = await p.$$eval('.adm-urow td:nth-child(2)', L => L.map(td => td.textContent.trim()));
+    const lv = await p.$$eval('.adm-urow td:nth-child(3)', L => L.map(td => td.textContent.trim()));
     if (!lv.length || lv.some(x => x === '–')) fails.push(`${w}px Players: a level is missing (${lv.join(' ')})`);
     if (!/Not signed in \(\d+\)/.test(t)) fails.push(`${w}px Players: no "Not signed in" group`);
     const firstName = () => p.$eval('.adm-urow td b', b => b.textContent);
@@ -208,6 +232,10 @@ const server = http.createServer((req, res) => {
       await settle();
       if (!(await p.$('.adm-urow'))) fails.push(`${w}px Players: sort by ${k} left no rows`);
     }
+    // One tap on Last brings back most recent first.
+    await p.click('[data-usort="last"]');
+    await settle();
+    await checkLast('Last tapped');
     await p.click('[data-usort="name"]');
     await settle();
     // Leaderboard (sheet v20): Hide marks the player hidden, Show puts them back.
@@ -326,6 +354,48 @@ const server = http.createServer((req, res) => {
     if (!/Demo report/.test(await text())) fails.push(`${w}px To do › Reports: demo reports missing`);
     await go('~stats');
     if (/No answers yet/.test(await text())) fails.push(`${w}px Activity: no answers`);
+    // Recent sessions (Pierre, 2026-11-03): the last 10 sessions of every player, newest first, by name or anonymous id;
+    // Carla playing now (quiz, duel and typed answers), the device that stopped 12 minutes ago by its id; ↻ reloads.
+    const recent = () =>
+      p.evaluate(() => {
+        const c = document.querySelector('[data-recent]');
+        if (!c) return null;
+        const R = [...c.querySelectorAll('tbody tr')].map(tr => ({
+          who: tr.cells[0].textContent.trim(),
+          anon: !!tr.cells[0].querySelector('code'),
+          link: (tr.cells[0].querySelector('a') || {}).getAttribute?.('href') || '',
+          t: Number((tr.cells[1].querySelector('[data-t]') || {dataset: {t: 0}}).dataset.t),
+          last: tr.cells[1].textContent.trim(),
+          n: Number(tr.cells[2].textContent),
+          modes: tr.cells[6].textContent,
+          now: tr.classList.contains('now')
+        }));
+        return {first: c === document.querySelector('#view section'), head: c.querySelector('h3').textContent, R};
+      });
+    const rs = await recent();
+    if (!rs) fails.push(`${w}px Activity: no Recent sessions`);
+    else {
+      const R = rs.R,
+        c = R[0] || {},
+        an = R.find(x => x.anon) || {};
+      if (!rs.first || R.length !== 10) fails.push(`${w}px Recent sessions: not first or ${R.length} rows, expected 10`);
+      if (R.some((x, i) => i && x.t > R[i - 1].t)) fails.push(`${w}px Recent sessions: not newest first`);
+      if (c.who !== 'Carla Demo' || !c.now || c.last !== 'now' || c.n !== 24 || !/1 playing now/.test(rs.head))
+        fails.push(`${w}px Recent sessions: Carla not playing now ${JSON.stringify(c)} ${rs.head}`);
+      if (!/quiz/.test(c.modes) || !/duel/.test(c.modes) || !/typed 2/.test(c.modes))
+        fails.push(`${w}px Recent sessions: modes ${c.modes}`);
+      if (R.filter(x => x.now).length !== 1) fails.push(`${w}px Recent sessions: ${R.filter(x => x.now).length} sessions now, expected 1`);
+      if (an.last !== '12 min ago' || an.n !== 8 || !/^#~anon\//.test(an.link) || R[1] !== an)
+        fails.push(`${w}px Recent sessions: the device not signed in ${JSON.stringify(an)}`);
+      if (!R.some(x => /^#~journey\//.test(x.link) && !x.now)) fails.push(`${w}px Recent sessions: no other signed-in player`);
+    }
+    // ↻ reads the answers again (no timer): the page comes back with its sessions.
+    const before = await p.evaluate(() => ANS.at);
+    await p.click('[data-sload]');
+    await settle();
+    const re = await recent();
+    if (!re || re.R.length !== 10 || !(await p.evaluate(b => ANS && ANS.at > b, before)))
+      fails.push(`${w}px Activity ↻: the answers were not read again`);
     // Photo difficulty by genus: one lane per view, a median bar in every lane that has photos.
     await go('~stats-photos');
     const ln = await p.evaluate(() => {

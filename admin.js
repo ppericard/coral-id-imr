@@ -34,7 +34,11 @@ const $v = document.getElementById('view'),
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
 // Dates as toLocaleString([], …) writes them, with one formatter per format (Pierre, 2026-11-03: admin pages load slower
 // and slower; toLocaleString builds a new one at every call, thousands of times on a Journey or in Triage).
-const DTF_O = {dm: {day: 'numeric', month: 'short'}, dmhm: {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}},
+const DTF_O = {
+    dm: {day: 'numeric', month: 'short'},
+    dmhm: {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'},
+    hm: {hour: '2-digit', minute: '2-digit'}
+  },
   DTF = {};
 const dateText = (t, k) => {
   const d = new Date(t);
@@ -1726,6 +1730,30 @@ const HEALTH = {
   G_LOW: 0.5, // right rate over a player's last G_MIN answers on a genus under which they are stuck
   DAYS: 30
 };
+// Sessions, one definition for Health, a player's Journey and Activity's Recent sessions: one player's answers, oldest
+// first, cut where two answers are HEALTH.GAP minutes apart or more. [{id, L: rows in time order}], each player's in
+// time order.
+function sessionsOf(rows) {
+  const BY = Object.create(null),
+    S = [];
+  rows.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
+  Object.entries(BY).forEach(([id, L]) => {
+    L.sort((a, b) => a[1] - b[1]);
+    let s = null;
+    L.forEach(r => {
+      if (!s || r[1] - s.L[s.L.length - 1][1] >= HEALTH.GAP * 6e4) S.push((s = {id, L: []}));
+      s.L.push(r);
+    });
+  });
+  return S;
+}
+// Who played last and who is playing now (Pierre, 2026-11-03): Players' Last column and Activity's Recent sessions.
+// "Now" = a last answer less than NOW minutes old in the log loaded: a signed-in player's answers reach the sheet a few
+// seconds after each answer, a device not signed in sends them 10 at a time (sync.js sendAnon), so a few minutes.
+const RECENT = {
+  NOW: 5, // minutes: a last answer more recent than this = playing now
+  N: 10 // sessions in Recent sessions
+};
 
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
@@ -1744,8 +1772,10 @@ const HELP = {
   hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
   fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Finder-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral Finder show), an orange one a cell over it. Click a row to open the genus.</p>`,
   cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Elo = the score players see (1000 + 200 × Level; shown to them from 200 answers), ± its 95% margin: a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. Last = last answer. Quiz = right in the photo quiz (look-alike duels slipped into it included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. Learned and Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
-  stats: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). All / Others / Me: everyone, everyone but the name synced in this browser, or only it. Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Elo = the score players see (1000 + 200 × Level; shown to them from 200 answers), ± its 95% margin: a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40", then the date (hover for the date and time); sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the photo quiz (look-alike duels slipped into it included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. Learned and Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
+  stats: `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Health and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
+    <p><b>How live is "now"?</b> It shows what the sheet has. A signed-in player's answer is sent about 3 seconds after it is given, so it is here within about 10 seconds (after ↻). A device not signed in sends its answers 10 at a time, or 20 seconds after it stops answering, or as soon as the app is left: while it plays, its last answers here can be up to 9 answers behind (a minute or three), still inside the ${RECENT.NOW} minutes of "now". Answers played offline arrive when the device is back online, with the time they were given. Times are the device's own clock.</p>
+    <p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). All / Others / Me: everyone, everyone but the name synced in this browser, or only it. Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
   statsph: `<p>Photo difficulty (Elo) from the answers of players clearly above chance, signed in or not (sheet v18), each weighed by the player's experience: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (from sheet v18; before, weighed answers, so a photo answered once was hidden); few answers = rough. Genera: one lane per view (colony, close-up, corallites), a dot per photo (bigger and stronger with more answers), the lane's median as a bar, and from 5 photos a box (middle half of the photos) with whiskers; genera sorted by median. Click a dot to see the photo.</p>
@@ -4350,6 +4380,7 @@ function loadStats() {
     ELO_NOME = null;
     if (a && a.me) MEID = a.me;
     ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
+    ANS.at = Date.now(); // when it was read (Recent sessions: "as of")
     if (s) {
       STATS = s.ok ? s.photos || {} : {};
       RAS = s.ok ? s.ras || {} : {};
@@ -4396,6 +4427,26 @@ const days = t => {
   const d = Math.floor((Date.now() - t) / 864e5);
   return d < 1 ? 'today' : d < 2 ? 'yesterday' : d + ' d ago';
 };
+// When, to the minute (Pierre, 2026-11-03: who played most recently): "now" (less than RECENT.NOW minutes), "12 min ago",
+// "3 h ago" (today), "yesterday 18:40", then the date. Its title gives the full date and time. Midnight of this browser.
+const dayStart = (k = 0) => new Date().setHours(0, 0, 0, 0) - k * 864e5,
+  isNow = t => !!t && Date.now() - t < RECENT.NOW * 6e4,
+  agoText = t => {
+    const m = Math.floor((Date.now() - t) / 6e4);
+    return isNow(t)
+      ? 'now'
+      : m < 60
+        ? `${m} min ago`
+        : t >= dayStart()
+          ? `${Math.floor(m / 60)} h ago`
+          : t >= dayStart(1)
+            ? `yesterday ${dateText(t, 'hm')}`
+            : dateText(t, 'dm');
+  },
+  ago = t =>
+    t ? `<span class="adm-ago${isNow(t) ? ' now' : ''}" data-t="${t}" title="${esc(dateText(t, 'dmhm'))}">${agoText(t)}</span>` : '–',
+  // A clock time: "14:05" today, "yesterday 14:05", else the date and time.
+  clock = t => (t >= dayStart() ? dateText(t, 'hm') : t >= dayStart(1) ? `yesterday ${dateText(t, 'hm')}` : dateText(t, 'dmhm'));
 const segBtns = (k, L) =>
   `<span class="adm-qseg adm-sseg" role="group">${L.map(([v, t]) => `<button type="button" data-sf="${k}" data-v="${v}" aria-pressed="${String(SF[k]) === String(v)}">${t}</button>`).join('')}</span>`;
 const kpis = L => `<div class="adm-kpis">${L.map(([t, v]) => `<div><b>${v}</b><span>${t}</span></div>`).join('')}</div>`;
@@ -4412,6 +4463,15 @@ function bindStats() {
       })
   );
   $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
+  // ↻ on Activity: the answer log and the player list read again (who is playing now), the photo ratings kept. A manual
+  // reload only, no timer: each read sends the whole answer log (docs/ARCHITECTURE.md "Recent sessions and who is playing now").
+  const rl = $v.querySelector('[data-sload]');
+  if (rl)
+    rl.onclick = () => {
+      ANS = null;
+      USERS = null;
+      render();
+    };
 }
 // Users, a header tab of its own (Pierre, 2026-11-01: "now that beta testers come, I need to see and manage them"; not under Stats, it manages players): every player who signed in,
 // by name, with their numbers, from sheet script v11 (POST {users: 1, token}; names, so the admin token is checked like
@@ -4470,9 +4530,11 @@ const UCOLS = [
   ['days', 'Days', u => u.days, 0, 'Days with answers'],
   ['learned', 'Learned', u => u.learned, 0],
   ['seen', 'Seen', u => u.seen, 0, 'Genera seen'],
-  ['reports', 'Reports', u => u.reports || 0, 0, 'Reports sent'],
-  ['last', 'Last', u => u.last || u.updated || 0, 0, 'Last answer']
+  ['reports', 'Reports', u => u.reports || 0, 0, 'Reports sent']
 ];
+// Last answer, second column (Pierre, 2026-11-03: who played most recently, seen on a phone without scrolling sideways),
+// to the minute, sorted by its exact time; the default sort, most recent first.
+UCOLS.splice(1, 0, ['last', 'Last', u => u.at || 0, 0, `Last answer (now = less than ${RECENT.NOW} minutes ago)`]);
 function renderUsers() {
   status();
   const head = `<div class="adm-shead"><h2>Players</h2><button type="button" class="adm-fchip plain" data-uload title="Reload">↻</button></div>`;
@@ -4490,26 +4552,38 @@ function renderUsers() {
     bindUsers();
     return;
   }
-  const col = UCOLS.find(c => c[0] === SF.us) || UCOLS[UCOLS.length - 1],
+  const col = UCOLS.find(c => c[0] === SF.us) || UCOLS.find(c => c[0] === 'last'),
     sk = col[0],
     sd = SF.us === sk && SF.ud ? SF.ud : col[3] ? 'asc' : 'desc';
   // Quiz and Duel tab apart (core.js playSplit), on each row before the sort reads them (Codex review #383); a player whose
   // answers did not load keeps the sheet's all-games counts.
   const SPLIT = ofAns('split', () => playSplit(ANS.rows || [])),
-    psOf = u => SPLIT[u.id] || {q: [u.answers, u.right], q50: u.recent, d: [0, 0]};
+    psOf = u => SPLIT[u.id] || {q: [u.answers, u.right], q50: u.recent, d: [0, 0]},
+    // Each player's last answer in the log loaded (ms), fresher than the player list's (kept 2 minutes, loadUsers).
+    LAST = ofAns('last', () => {
+      const o = Object.create(null);
+      (ANS.rows || []).forEach(r => r[1] > (o[r[0]] || 0) && (o[r[0]] = r[1]));
+      return o;
+    });
   const U = USERS.users
       .map(u => {
         const p = psOf(u);
-        return {...u, lv: u.id && RAS[u.id] ? RAS[u.id][0] : null, qz: p.q, q50: p.q50, du: p.d};
+        return {
+          ...u,
+          lv: u.id && RAS[u.id] ? RAS[u.id][0] : null,
+          qz: p.q,
+          q50: p.q50,
+          du: p.d,
+          at: Math.max((u.id && LAST[u.id]) || 0, u.last || 0) || u.updated || 0
+        };
       })
       .sort((a, b) => {
         const x = col[2](a),
           y = col[2](b);
-        return (x < y ? -1 : x > y ? 1 : 0) * (sd === 'asc' ? 1 : -1) || (b.last || 0) - (a.last || 0);
+        return (x < y ? -1 : x > y ? 1 : 0) * (sd === 'asc' ? 1 : -1) || b.at - a.at;
       }),
     total = DATA ? Object.keys(DATA.gen).length : 0;
-  const when = t => (t ? days(t) : '–'),
-    date = t => (t ? dateText(t, 'dm') : '–');
+  const date = t => (t ? dateText(t, 'dm') : '–');
   const opts = n =>
     U.filter(u => u.name !== n)
       .slice()
@@ -4560,7 +4634,7 @@ function renderUsers() {
       learned: `${u.learned}/${u.total || total}`,
       seen: u.seen,
       reports: u.reports || '',
-      last: when(u.last || u.updated)
+      last: ago(u.at)
     })[k];
   $v.innerHTML =
     head +
@@ -4583,14 +4657,14 @@ function renderUsers() {
           `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${isMe(u.id) ? ' me' : ''}" data-uopen="${esc(u.name)}">${UCOLS.map(([k]) => `<td>${cell(k, u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
       ).join('')}</tbody></table></div></section>`) +
     (anon.length
-      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th>Level</th><th>Answers</th><th>Right</th><th>First</th><th>Last</th></tr></thead><tbody>${anon
+      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th>Level</th><th>Answers</th><th>Right</th><th>First</th><th>Last</th></tr></thead><tbody>${anon
           .map(
             ([id, a]) =>
-              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#~anon/${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td><td>${days(a.first)}</td><td>${days(a.last)}</td></tr>`
+              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#~anon/${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td><td>${days(a.first)}</td><td>${ago(a.last)}</td></tr>`
           )
           .join(
             ''
-          )}</tbody></table><p><button type="button" class="adm-danger" data-adel disabled${(USERS.v || 0) < 17 ? ' data-old' : ''}>Delete the answers of the selected ids</button>${(USERS.v || 0) < 17 ? ` <small class="note">Needs the sheet script v17 (live: v${USERS.v || '?'}).</small>` : ''}</p></details>`
+          )}</tbody></table></div><p><button type="button" class="adm-danger" data-adel disabled${(USERS.v || 0) < 17 ? ' data-old' : ''}>Delete the answers of the selected ids</button>${(USERS.v || 0) < 17 ? ` <small class="note">Needs the sheet script v17 (live: v${USERS.v || '?'}).</small>` : ''}</p></details>`
       : '') +
     (USERS.removed.length
       ? `<details class="adm-uremoved"><summary>Removed (${USERS.removed.length})</summary><table class="adm-tbl">${USERS.removed.map(r => `<tr><td>${esc(r.name)}</td><td>${r.into ? `merged into <b>${esc(r.into)}</b>` : 'deleted'}</td><td>${date(r.time)}</td></tr>`).join('')}</table></details>`
@@ -4759,9 +4833,11 @@ function bindUsers() {
 }
 function renderStats() {
   status();
-  if (!ANS) {
+  // Activity's Recent sessions name the signed-in players (USERS); the other views need the answer log only.
+  const named = cur === '~stats' && !USERS;
+  if (!ANS || named) {
     $v.innerHTML = '<p class="note">Loading…</p>';
-    loadStats().then(() => {
+    Promise.all([ANS ? null : loadStats(), named ? loadUsers() : null]).then(() => {
       if (cur.startsWith('~stats') || cur === '~health') render();
     });
     return;
@@ -4770,6 +4846,49 @@ function renderStats() {
 }
 // Rows kept by the player filter (all, others than your accounts, or only them: myIds).
 const statRows = () => ANS.rows.filter(r => SF.who === 'all' || !myIds().size || (SF.who === 'me') === isMe(r[0]));
+// Recent sessions (Pierre, 2026-11-03: who played last, is anyone playing now): the last RECENT.N sessions of every
+// player (sessionsOf), newest first, by name when signed in (USERS ids), else by anonymous id as on Players. Playing
+// now = its last answer less than RECENT.NOW minutes old. Modes: quiz (look-alike duels slipped into it included, as on
+// Players), duel (the Duel tab), typed (|t, logged by the typed answers once they are in the quiz).
+const modeOf = m =>
+  /^quiz-duel/.test(m) ? 'duel' : String(m).split('|').includes('t') ? 'typed' : /^quiz(\||$)/.test(m) ? 'quiz' : 'other';
+function recentSessions(R) {
+  const NM = Object.create(null);
+  ((USERS && USERS.users) || []).forEach(u => u.id && (NM[u.id] = u.name));
+  const S = sessionsOf(R)
+    .sort((a, b) => b.L[b.L.length - 1][1] - a.L[a.L.length - 1][1])
+    .slice(0, RECENT.N);
+  const dur = s => {
+      const m = Math.round((s.L[s.L.length - 1][1] - s.L[0][1]) / 6e4);
+      return m < 1 ? '<1 min' : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`;
+    },
+    modes = s => {
+      const c = {};
+      s.L.forEach(r => (c[modeOf(r[5])] = (c[modeOf(r[5])] || 0) + 1));
+      return ['quiz', 'duel', 'typed', 'other']
+        .filter(k => c[k])
+        .map(k => (Object.keys(c).length > 1 ? `${k} <small>${c[k]}</small>` : k))
+        .join(' · ');
+    },
+    who = id =>
+      NM[id]
+        ? `<a href="#~journey/${encodeURIComponent(NM[id])}"><b>${esc(NM[id])}</b></a>`
+        : `<a href="#~anon/${encodeURIComponent(id)}" title="Not signed in"><code>${esc(id)}</code></a>`;
+  const live = S.filter(s => isNow(s.L[s.L.length - 1][1])).length;
+  return `<section class="adm-scard adm-recent" data-recent><h3>Recent sessions${
+    live ? ` <span class="adm-ago now">${live} playing now</span>` : ''
+  } <small class="note" title="When the answers were loaded (↻ reloads)">as of ${dateText(ANS.at || Date.now(), 'hm')}</small></h3>${
+    S.length
+      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Player</th><th>Last</th><th class="n">Answers</th><th class="n">Right</th><th title="From the first to the last answer">Length</th><th>Started</th><th>Modes</th></tr></thead><tbody>${S.map(
+          s =>
+            `<tr${isNow(s.L[s.L.length - 1][1]) ? ' class="now"' : ''}><td>${who(s.id)}${isMe(s.id) ? ' <small>you</small>' : ''}</td><td>${ago(s.L[s.L.length - 1][1])}</td><td class="n">${s.L.length}</td><td class="n">${pct(
+              s.L.filter(r => r[4]).length,
+              s.L.length
+            )}</td><td>${dur(s)}</td><td>${clock(s.L[0][1])}</td><td>${modes(s)}</td></tr>`
+        ).join('')}</tbody></table></div>`
+      : '<p class="note">No sessions yet.</p>'
+  }</section>`;
+}
 function statsPlayers() {
   const head = `<div class="adm-shead"><h2>Activity</h2>${
     myIds().size
@@ -4779,7 +4898,7 @@ function statsPlayers() {
           ['me', 'Me']
         ])
       : ''
-  }</div>`;
+  }<button type="button" class="adm-fchip plain" data-sload title="Reload the answers">↻</button></div>`;
   if (ANS.old) {
     $v.innerHTML =
       head +
@@ -4889,6 +5008,7 @@ function statsPlayers() {
       ['Right', pct(ok, R.length)],
       ['Active 7 d', wk]
     ]) +
+    (R.length ? recentSessions(R) : '') +
     (!R.length
       ? `<p class="note">${SF.who === 'others' ? noneButMe() : 'No answers yet.'}</p>`
       : `
@@ -5239,22 +5359,19 @@ function statsHealth() {
     gameOf = m => (/^quiz-duel/.test(m) ? 'Duel' : /^quiz/.test(m) ? 'Photo quiz' : m || 'Other');
 
   // 1. Where players stop: one player's answers, oldest first, cut where two answers are GAP minutes apart or more.
-  const BY = Object.create(null);
-  R.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
-  const S = [];
-  Object.entries(BY).forEach(([id, L]) => {
-    L.sort((a, b) => a[1] - b[1]);
-    let s = null;
-    L.forEach(r => {
-      if (!s || r[1] - s.L[s.L.length - 1][1] >= H.GAP * 6e4) S.push((s = {id, L: []}));
-      s.L.push(r);
-    });
+  // BY: each player's answers, oldest first (sessionsOf sorts them; Genera that don't take off reads them too).
+  const S = sessionsOf(R),
+    BY = Object.create(null),
+    nS = Object.create(null);
+  S.forEach(s => {
+    (BY[s.id] = BY[s.id] || []).push(...s.L);
+    nS[s.id] = (nS[s.id] || 0) + 1;
   });
   // A session whose last answer is less than GAP minutes old may still be going: it has not ended yet.
   const ended = S.filter(s => now - s.L[s.L.length - 1][1] >= H.GAP * 6e4),
     going = S.length - ended.length,
     nP = Object.keys(BY).length,
-    perP = Object.values(BY).map(L => S.filter(s => s.id === L[0][0]).length);
+    perP = Object.values(nS);
   const inB = (n, a, b) => n >= a && n <= b,
     LEN = [
       ['1-5', 1, 5],

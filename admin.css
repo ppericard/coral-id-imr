@@ -2785,6 +2785,42 @@ td.cov-c .cov-off {
   font-weight: 700;
 }
 
+/* Who played last (Players' Last column, Activity's Recent sessions): "now" = a last answer under RECENT.NOW minutes
+   old, a small pill in the palette's right-answer colour with a dot; its session row tinted the same way. */
+.adm-ago {
+  white-space: nowrap;
+}
+.adm-ago.now {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  border-radius: var(--pill);
+  background: var(--good-bg);
+  color: var(--good);
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.adm-ago.now::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.adm-recent tr.now td {
+  background: color-mix(in srgb, var(--good) 7%, var(--surface));
+}
+.adm-recent h3 small {
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.adm-recent {
+  margin-bottom: 12px;
+}
+
 /* Users (Stats > Users): one row per player, click for details; Delete in the danger colour, never a default button. */
 /* Players page: every column title sorts (click again to reverse) */
 .adm-utbl .adm-usort {

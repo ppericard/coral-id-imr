@@ -98,12 +98,8 @@ function journeyOf(R) {
     h.n++;
     h.ok += ok;
   });
-  // Sessions: answers less than HEALTH.GAP minutes apart (as the Health page counts them).
-  const S = [];
-  R.forEach((r, i) => {
-    if (!i || r[1] - R[i - 1][1] > HEALTH.GAP * 60e3) S.push([]);
-    S[S.length - 1].push(r);
-  });
+  // Sessions: answers less than HEALTH.GAP minutes apart (admin.js sessionsOf, as Health and Recent sessions count them).
+  const S = sessionsOf(R).map(s => s.L);
   Object.values(G).forEach(s => (s.score = s.en ? s.res / s.en : null));
   return {G, acc, exp, met, marks, mix, perDay, S, slate};
 }
