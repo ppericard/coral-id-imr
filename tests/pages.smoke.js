@@ -159,6 +159,7 @@ async function overlays(b, base) {
   for (const w of [390, 1280]) {
     const [c, p] = await open({viewport: {width: w, height: 844}}, () => {
       localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('imr-nudge', '1');
       localStorage.setItem('imr-recalc', '"typed-questions-2026-11"');
       localStorage.getItem('imr-coral-progress') ||
@@ -528,6 +529,7 @@ async function overlays(b, base) {
   {
     const [c, p] = await open({viewport: {width: 390, height: 844}}, () => {
       localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('imr-nudge', '1');
       if (!sessionStorage.getItem('cq-old')) {
         sessionStorage.setItem('cq-old', '1');
@@ -698,6 +700,7 @@ async function overlays(b, base) {
       {viewport: {width: 390, height: 800}, timezoneId: 'Asia/Manila'},
       ({t, n}) => {
         localStorage.setItem('imr-tour', '"done"');
+        localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
         localStorage.setItem('imr-nudge', '1');
         localStorage.setItem('imr-recalc', '"typed-questions-2026-11"'); // the last update note: seen
         if (localStorage.getItem('imr-coral-progress')) return;
@@ -844,6 +847,7 @@ async function signin(base) {
   await run(
     () => {
       localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('imr-nudge', '1');
       localStorage.setItem('imr-recalc', '"typed-questions-2026-11"');
       // What the device read at this version's first run (core.js sorryOf): 30 answers in the window, the hold at 3.5.
