@@ -33,7 +33,8 @@ const server = http.createServer((req, res) => {
 // Three players through the real photo quiz (Pierre, 2026-11-02; docs/LEARNING.md): a complete beginner, an IMR RA
 // after one lecture (knows some genera a little), an expert. The learner model is the test's, not the app's: know[g] =
 // chance to recognise genus g on a photo of average difficulty, lowered on harder photos and single views; otherwise a
-// guess among the plausible choices; each answer teaches a little. Checks that the app, with nothing set per profile:
+// guess among the plausible choices (none on a typed question, model.js TYPED: "I don't know" or another genus typed);
+// each answer teaches a little. Checks that the app, with nothing set per profile:
 // keeps a beginner on a few genera at a time, the easier ones first, and keeps opening new ones; gives an expert many
 // genera, hard choices (look-alike traps) and progress well ahead of a beginner's; no genus reaches its exam's entry before it was asked beside a look-alike. Locally: node tests/profiles.smoke.js
 (async () => {
@@ -78,9 +79,10 @@ const server = http.createServer((req, res) => {
       store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
       const know = mk(),
         early = new Set(),
+        typedOk = new Set(),
         first = [],
         rows = [];
-      let blk = {n: 0, ok: 0, traps: 0, tn: 0};
+      let blk = {n: 0, ok: 0, traps: 0, tn: 0, ty: 0};
       for (let i = 0; i < 300; i++) {
         NEXTQ = null;
         quizPhoto();
@@ -88,7 +90,9 @@ const server = http.createServer((req, res) => {
         for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
         const t = window.__q[1];
         if (!first.includes(t)) first.push(t);
-        const ch = [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c),
+        // A typed question (model.js TYPED) has no buttons: its choices are the draw's, unseen; nothing to guess from.
+        const typed = !!document.querySelector('#view .tyform'),
+          ch = typed ? window.__q[2] : [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c),
           traps = ch.filter(c => c !== t && (confusable(t, c) || pooledConf(t, c) >= CONF.TRAP)).length,
           all = Object.values(GX(t).views).flat(),
           // By name (data-f, quiz.js): an iNaturalist photo not downloaded yet (r: 1) has a URL that names no file in img/.
@@ -100,26 +104,36 @@ const server = http.createServer((req, res) => {
           diff = pd.length ? pd.reduce((a, x) => a + x, 0) / pd.length : 0,
           kq = Math.min(ch.length, Number((document.querySelector('#view .ans') || {dataset: {}}).dataset.k) || ch.length),
           pk = sig(logit(Math.min(0.995, Math.max(0.005, know[t]))) - diff - (fs.length === 1 ? 0.5 : 0)),
-          right = rnd() < pk || rnd() < 1 / kq,
-          pick = right ? t : ch.filter(c => c !== t)[Math.floor(rnd() * (ch.length - 1))];
+          right = rnd() < pk || (!typed && rnd() < 1 / kq),
+          // A typed miss: "I don't know" half the time, else another genus typed (one of the draw's wrong choices).
+          pick = right ? t : typed && rnd() < 0.5 ? '' : ch.filter(c => c !== t)[Math.floor(rnd() * (ch.length - 1))];
         blk.n++;
         blk.ok += right;
         // Traps of the 4-choice questions only: a look-alike duel slipped into the quiz (AUTO_DUEL) has one wrong choice,
         // always a look-alike, and is a separate exercise.
-        if (!AUTOD) {
+        if (!AUTOD && !typed) {
           blk.traps += traps;
           blk.tn++;
         }
-        document.querySelector(`[data-c="${CSS.escape(pick)}"]`).click();
+        if (typed) {
+          blk.ty++;
+          const f = document.querySelector('#view .tyform');
+          if (!pick) f.querySelector('[data-idk]').click();
+          else ((f.querySelector('input').value = pick), f.requestSubmit());
+          // A typed right answer: every genus, its look-alikes included, was a possible answer (model.js pgWeight).
+          if (right) typedOk.add(t);
+        } else document.querySelector(`[data-c="${CSS.escape(pick)}"]`).click();
         know[t] += rate * (1 - know[t]);
         // Progress (core.js PROG): a genus reaches its exam's entry (95%) only once it has been asked beside one of its
         // look-alikes (Pierre, 2026-11-02: never confirmed before it has been compared with the genera it gets confused with).
-        if (knownP(t) >= PROG.M && !Object.keys(P[t].off || {}).some(n => GX(n) && pooledConf(t, n) >= CONF.TRAP)) early.add(t);
+        if (knownP(t) >= PROG.M && !typedOk.has(t) && !Object.keys(P[t].off || {}).some(n => GX(n) && pooledConf(t, n) >= CONF.TRAP))
+          early.add(t);
         if ((i + 1) % 100 === 0) {
           rows.push({
             q: i + 1,
             right: Math.round((100 * blk.ok) / blk.n),
             traps: +(blk.traps / Math.max(1, blk.tn)).toFixed(2),
+            typed: blk.ty,
             met: G.filter(introduced).length,
             asked: G.filter(asked).length,
             learned: G.filter(g => (P[g] || {}).mx).length,
@@ -127,7 +141,7 @@ const server = http.createServer((req, res) => {
             half: G.filter(g => genScore(g) >= 0.5).length,
             pct: progPct(G)
           });
-          blk = {n: 0, ok: 0, traps: 0, tn: 0};
+          blk = {n: 0, ok: 0, traps: 0, tn: 0, ty: 0};
         }
       }
       const gd = G.map(genusDiff),

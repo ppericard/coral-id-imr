@@ -29,8 +29,70 @@ function bindQuizNav() {
 const gameHelp =
   cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
   Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? '' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="#progress">My progress</a>. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
-  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus fills up to 95% with your right answers, each point a little harder to earn than the last, and a right answer counts most when the genus's look-alikes are among the choices; a mistake takes it back down; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the photo quiz: see ? on <a href="#progress">My progress</a>.</p>`;
+  <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus fills up to 95% with your right answers, each point a little harder to earn than the last, and a right answer counts most when the genus's look-alikes are among the choices; a mistake takes it back down; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the photo quiz: see ? on <a href="#progress">My progress</a>.</p>${
+    cur.startsWith('quiz-duel')
+      ? ''
+      : `
+  <p class="lede"><b>Typed questions</b>: once you know a genus well (from ${Math.round(100 * TYPED.from)}%), some of its questions ask you to type its name instead of picking it, more and more as it gets closer to learned: that is how you will name corals on a dive or in ReefCloud. Small typos and old names are accepted; <b>I don't know</b> shows the answer (it counts as a miss). A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>`
+  }`;
 let EXAMQ = null; // the genus whose exam question is on screen (set by question, read by answer)
+// Typed questions (model.js TYPED; Pierre, 2026-11-03): the player types the genus instead of picking one of the
+// choices. The matching is core.js's (typeMatchIn: spelling tolerance, old names); the form, its messages and the
+// phone keyboard's behaviour are the Lab prototype's, shared with it (proto/type.js): no suggestions while typing,
+// autocorrect and capitals off, "I don't know" (a miss), a word that is no genus asks to check the spelling.
+// TYPEDQ: the typed question on screen and what was typed ({t: genus asked, m: the match or null, text}), read by answer.
+let TYPEDQ = null,
+  TYPEN = null;
+// Every name a player may type: every genus the app knows (the slate's and the extra ones) and their old names.
+const typeNames = () => {
+  if (!TYPEN || TYPEN.d !== DATA)
+    TYPEN = {d: DATA, L: typeNamesOf([...Object.keys(DATA.gen), ...Object.keys((DATA.x || {}).gen || {})], GX)};
+  return TYPEN.L;
+};
+const typeMatch = text => typeMatchIn(typeNames(), text);
+const typeForm = () => `<form class="tyform" autocomplete="off">
+    <label for="tyin">Genus</label>
+    <input id="tyin" name="genus" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" placeholder="Type the genus">
+    <div class="tybtns"><button type="submit" class="next">Check</button><button type="button" class="next sec" data-idk>I don't know</button></div>
+    <p class="tymsg" aria-live="polite"></p></form>`;
+// Binds a typed form: done(m, text) once answered, m the genus read ({g, old, exact}) or null for "I don't know". A
+// word that is no genus (even with the tolerance), or as close to two, is no answer: the player is asked to check it.
+// After the answer the field is locked; after "I don't know" it is emptied (a word rejected earlier is no answer).
+function typeBind(form, done) {
+  const inp = form.querySelector('input'),
+    msg = form.querySelector('.tymsg');
+  let over = false;
+  const end = (m, text) => {
+    over = true;
+    msg.textContent = '';
+    if (!m) inp.value = '';
+    inp.disabled = true;
+    form.querySelectorAll('button').forEach(b => (b.disabled = true));
+    inp.blur(); // the phone's keyboard closes, so the feedback is in view
+    done(m, text);
+  };
+  form.onsubmit = e => {
+    e.preventDefault();
+    if (over) return;
+    const text = inp.value.trim();
+    if (!text) return inp.focus();
+    const m = typeMatch(text);
+    if (!m) msg.textContent = `“${text}” is not a genus in the game: check the spelling.`;
+    else if (m.near) msg.textContent = `Close to ${m.near.join(' and ')}: which one? Check the spelling.`;
+    else return end(m, text);
+    inp.focus();
+  };
+  form.querySelector('[data-idk]').onclick = () => !over && end(null, '');
+  // A hardware keyboard types at once; on a phone the keyboard opens only on a tap (no focus without one).
+  if (!matchMedia('(pointer: coarse)').matches) inp.focus({preventScroll: true});
+}
+// How a typed answer was read, said after it: an old name, or a spelling the tolerance accepted ('' when exact).
+const typeRead = (m, text) =>
+  !m || m.exact
+    ? ''
+    : m.old
+      ? `You wrote the old name, ${esc(m.old)}, read as <i>${esc(m.g)}</i>.`
+      : `You wrote “${esc(text)}”, read as <i>${esc(m.g)}</i>.`;
 // Time to answer and photo enlarged (Pierre, 2026-11-02: a right answer that needed a long look or an enlarged photo says
 // the photo was harder; logged with each answer to be analysed later, nothing uses them yet; sheet v23 Seconds and
 // Enlarged): the clock starts when the question's first photo is in (its load event, or at once if it already was),
@@ -51,6 +113,7 @@ const qclockRead = () =>
   QCLOCK.t0 === null ? null : Math.round(Math.max(0, Math.min(600, (performance.now() - QCLOCK.t0 - QCLOCK.off) / 1000)) * 10) / 10;
 function question(cur, target, choices, prompt, set, kq) {
   EXAMQ = set.exam ? target : null;
+  TYPEDQ = set.typed ? {t: target, m: null, text: ''} : null;
   const ph = set.shown,
     lab = VIEW_LABEL;
   let answered = false,
@@ -64,7 +127,7 @@ function question(cur, target, choices, prompt, set, kq) {
     <div class="qstage">${ph.map((p, k) => fig(p, k)).join('')}</div>
     <aside class="qside">
       <div class="qtop"><p class="prompt">${prompt}</p>${trail()}${quizNav(cur)}</div>
-      <div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>
+      ${set.typed ? `<div class="tyq">${typeForm()}</div>` : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>`}
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
     </aside></div>`;
@@ -123,19 +186,24 @@ function question(cur, target, choices, prompt, set, kq) {
     st.insertAdjacentHTML('beforeend', R.map((p, k) => fig(p, ph.length + k, ph.length + R.length)).join(''));
     fitStage();
   };
-  $v.querySelectorAll('[data-c]').forEach(
-    b =>
-      (b.onclick = () => {
-        const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'),
-          tm = {rt: qclockRead(), zm: QCLOCK.zm};
-        showHint();
-        reveal();
-        answered = true;
-        answer(cur, b.dataset.c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint, tm);
-        const tr = $v.querySelector('.trail');
-        if (tr) tr.outerHTML = trail();
-      })
-  );
+  const go = c => {
+    const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'),
+      tm = {rt: qclockRead(), zm: QCLOCK.zm};
+    showHint();
+    reveal();
+    answered = true;
+    answer(cur, c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint, tm);
+    const tr = $v.querySelector('.trail');
+    if (tr) tr.outerHTML = trail();
+  };
+  $v.querySelectorAll('[data-c]').forEach(b => (b.onclick = () => go(b.dataset.c)));
+  // A typed question: the genus read is the answer ('' for "I don't know"), what was typed goes with it (TYPEDQ).
+  const tf = $v.querySelector('.tyform');
+  if (tf)
+    typeBind(tf, (m, text) => {
+      Object.assign(TYPEDQ || {}, {m, text});
+      go(m ? m.g : '');
+    });
 }
 // The quiz stage fills the window below the header, so photos, choices and feedback fit without scrolling.
 // The photos then take the grid (columns x rows) that shows them largest at 4:3.
@@ -296,9 +364,14 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
   // was played since, not progress an older sign-out left on the device.
   if (!SYNC && SYNC_URL && !store.get(LOG0, []).length) store.set(ANONB, P);
+  // A typed question (TYPEDQ, set by question): c is the genus read from what was typed, '' for "I don't know" (a miss
+  // for the genus shown only). No choices were offered, so no pair counts as offered; a genus typed by mistake counts
+  // against it as a wrong pick does (Pierre's rule), and the mix-up is counted.
+  const tq = TYPEDQ && TYPEDQ.t === target ? TYPEDQ : null;
+  TYPEDQ = null;
   const good = c === target,
     s = st(target),
-    chs = [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c);
+    chs = tq ? [] : [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c);
   // Offers: every wrong choice shown beside the target, so the player's own mix-up rate per pair is known (confOf).
   chs.forEach(x => {
     if (x !== target) {
@@ -317,12 +390,15 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   } else {
     s.ko++;
     s.streak = 0;
-    s.conf = s.conf || {};
-    s.conf[c] = (s.conf[c] || 0) + 1;
+    if (c) {
+      s.conf = s.conf || {};
+      s.conf[c] = (s.conf[c] || 0) + 1;
+    }
   }
   // Progress (pgObs) weighed by what the answer proves: the plausible choices k and the look-alikes among the choices.
+  // A typed answer: no guess rate (TYPED.k, Infinity: the expected success has no 1/k floor).
   const nc = $v.querySelectorAll('[data-c]').length || 4,
-    k = Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
+    k = tq ? TYPED.k : Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
   const th0 = ability(target),
     nw = ph.filter(p => !(s.ps || {})[p.f]).length;
   const solo = ph.length === 1 ? PICKD.SINGLE : 0; // one view alone is harder than the same photo with the others
@@ -376,13 +452,16 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // genus as the answer for another one.
   const exq = EXAMQ === target;
   EXAMQ = null;
+  // It needs TYPED.exam typed right answers among its EXAM.n (model.js examTyped asks them; an exam begun before the
+  // typed questions may take one more, its count held at EXAM.n so its % never passes 100).
   if (!good) delete s.ex;
   else if (exq) {
     const ex = s.ex || {k: 0, v: []};
-    ex.k++;
+    ex.k = Math.min(EXAM.n, ex.k + 1);
+    ex.t = (ex.t || 0) + (tq ? 1 : 0);
     ex.v = [...new Set([...ex.v, ph[0].view])];
     ex.at = answersSoFar();
-    if (ex.k >= EXAM.n) {
+    if (ex.k >= EXAM.n && ex.t >= TYPED.exam) {
       s.mx = Date.now(); // learned, and when (the admin's player journey; was 1 before 2026-11-02, still truthy)
       delete s.ex;
       setTimeout(
@@ -392,7 +471,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
             tier: 3,
             icon: '🎓',
             title: `${target}: Instructor`,
-            desc: `Mastery exam passed (${EXAM.n} hard questions right): you could teach it`
+            desc: `Mastery exam passed (${EXAM.n} hard questions right, ${TYPED.exam} or more typed from memory): you could teach it`
           }),
         600
       );
@@ -423,6 +502,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
       (cur === 'quiz' && AUTOD ? '|d' : '') +
       (warm ? '|c' : '') +
       (k < (cur === 'quiz' ? 4 : nc) ? '|k' + k : '') +
+      // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_ v27). Its
+      // answer a is the genus read ('' for "I don't know"), never the raw text; it offered no choices (ch empty).
+      (tq ? '|t' : '') +
       (exq ? '|x' : ''),
     // A corallites hint left closed is not logged: it was not seen when answering (Codex review #339; the sheet rates and
     // counts as recognised only the photos the player saw).
@@ -509,6 +591,11 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     if (b.dataset.c === target) b.classList.add('ok', ...(good ? ['cheer'] : []));
     else if (b.dataset.c === c) b.classList.add('ko');
   });
+  // A typed answer: the field takes the right / wrong look of a choice, a quiet one after "I don't know".
+  const tyIn = tq && $v.querySelector('#tyin');
+  if (tyIn) tyIn.classList.add(good ? 'ok' : c ? 'ko' : 'idk');
+  const idk = !!tq && !c,
+    read = tq ? typeRead(tq.m, tq.text) : '';
   const g = GX(target);
   const vs =
     !good && GX(c)
@@ -516,7 +603,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
         `<p class="vs">Your answer, <i>${esc(c)}</i>, would show: ${esc(tipsText(GX(c)))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
       : '';
   document.getElementById('after').innerHTML = `<div class="fb">
-    <h3 class="${good ? 'ok cheer' : 'ko'}"><span class="v">${good ? '\u2713 Yes' : '\u2717 No'},</span> it's <a href="#g-${esc(target)}"${sheetTab()}><i>${esc(target)}</i></a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>
+    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}"><span class="v">${good ? '\u2713 Yes' : idk ? 'No worries' : '\u2717 No'},</span> it's <a href="#g-${esc(target)}"${sheetTab()}><i>${esc(target)}</i></a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
     <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
     <details class="more"><summary>Coral Finder</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details>${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: cur})}</div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
@@ -1049,16 +1136,22 @@ function planPhoto() {
     // right answer proves something and the rust melts in a few questions.
     traps = ex ? 3 : trapsFor(t),
     ch = shuffle([t, ...distractors(t, list, traps, known)]),
+    // Typed (model.js TYPED): with the genus's typed share, from its progress (never on a genus under TYPED.from: no
+    // draw is spent there, so a beginner's questions are unchanged); an exam question as examTyped says. Never a
+    // comeback question (the player's usual choices, Pierre 2026-11-03), an Again or a duel (2 choices by design).
+    typed = !warm && (ex ? examTyped(t) : typedP(t) > 0 && Math.random() < typedP(t)),
+    set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R)),
     // The question asked with its genus's card never shows the card's own photo again (new-player walkthrough 2026-11-02).
     q = [
       'quiz',
       t,
       ch,
-      'Which genus?',
-      ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R)),
+      typed ? 'Which genus? Type it' : 'Which genus?',
+      typed ? {...set, typed: 1} : set,
       traps < 2 ? plausibleK(t, ch) : 0
     ];
   if (cards.length) Object.assign(q, {intro: cards, start});
+  if (typed) q.typed = 1;
   if (warm) Object.assign(q, {warm: 1, cb: Math.round(R * 1000) / 1000});
   return q;
 }

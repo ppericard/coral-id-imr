@@ -143,7 +143,8 @@ function quizBoard() {
   // bottom of the side column.
   let pv = store.get('imr-coral-pview', 'slate');
   if (!VIEWS[pv]) pv = 'slate';
-  $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the photo quiz, several questions apart. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
+  $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the photo quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
+  <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Small typos and old names are accepted; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
   <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder. On this page they come after the slate.</p>
   <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from 95% (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>
   <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the genus: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down, less when the photo was harder than your level. 95% (Divemaster) means it has held up against its look-alikes; Instructor means its mastery exam is passed too.</p>
@@ -681,7 +682,8 @@ function boardNotice() {
 // real pop-up, not a discreet note; no algorithm details). Once per device, to a player who already has answers (a new
 // player has nothing recalculated), at the first moment no tour or card is open; marked seen only by its button or
 // Escape, so a card closed by leaving the page comes back on the next one. A later recalculation adds a note at the end
-// of RECALC.L (a new id, a title and a text): a player shown every note but the last sees the last; one who missed
+// of RECALC.L (a new id, a title and a text), and so does a new game mode worth announcing (typed questions,
+// 2026-11-03, with its own kicker and button): a player shown every note but the last sees the last; one who missed
 // several sees them all on one card, latest first. KEY holds the id of the last note seen. Exception: the photo memory
 // recalculation (2026-11-03, core.js memRecalc) is silent, Pierre's choice (the bars only move down 1-3 points).
 const RECALC = {
@@ -696,6 +698,16 @@ const RECALC = {
       id: 'millepora-counts-2026-11',
       t: '<i>Millepora</i> now counts in your progress',
       p: '<i>Millepora</i> (fire coral) is on the IMR benthic slate and very common at Dauin and in ReefCloud photos, so it now counts in your progress, which is now over 40 genera: your % may be a little lower.'
+    },
+    // A new game mode announced the same way (Pierre, 2026-11-03: a card for typed questions, a little tongue-in-cheek;
+    // text validated by Pierre). k, b, a: the card's kicker, button and label when this note is the latest due.
+    {
+      id: 'typed-questions-2026-11',
+      k: 'New',
+      b: 'Bring it on',
+      a: 'New: typed questions',
+      t: 'Think you know your genera? Think again.',
+      p: "New in the quiz: typed questions. No choices, no hints, just the photo and an empty box: type the genus from memory. They show up once you're doing well on a genus, and mastery exams now include them. Picking among four is good; naming it cold is what makes an expert."
     }
   ]
 };
@@ -715,9 +727,9 @@ function recalcNotice() {
   d.className = 'unlock recalc';
   d.setAttribute('role', 'dialog');
   d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Progress recalculated');
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">Update</p>${due.map(x => `<h3>${x.t}</h3><p>${x.p}</p>`).join('')}
-    <div class="ulbtns"><span></span><button class="next" type="button">Got it</button></div></div>`;
+  d.setAttribute('aria-label', due[0].a || 'Progress recalculated');
+  d.innerHTML = `<div class="ulcard"><p class="ulkick">${due[0].k || 'Update'}</p>${due.map(x => `<h3>${x.t}</h3><p>${x.p}</p>`).join('')}
+    <div class="ulbtns"><span></span><button class="next" type="button">${due[0].b || 'Got it'}</button></div></div>`;
   document.body.appendChild(d);
   const close = seen => {
     if (seen) store.set(RECALC.KEY, last);

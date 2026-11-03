@@ -2153,6 +2153,67 @@ kbd {
 #hintb {
   align-self: flex-start;
 }
+/* Typed questions (quiz.js typeForm, model.js TYPED; shared with the Lab's Type the genus): the field and its two
+   buttons in the answer column, the field taking the right / wrong look of a choice once answered. */
+.tyform {
+  display: grid;
+  gap: 8px;
+}
+.tyform label {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.tyform input {
+  font: inherit;
+  font-size: 1.1rem; /* 16 px or more: iOS does not zoom into the field */
+  font-style: italic;
+  font-weight: 600;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  width: 100%;
+}
+.tyform input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.tyform input.ok {
+  background: var(--good-bg);
+  border-color: var(--good);
+  color: var(--good);
+}
+.tyform input.ko {
+  background: var(--bad-bg);
+  border-color: var(--bad);
+  color: var(--bad);
+}
+.tybtns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.tybtns .next {
+  flex: 1 1 auto;
+}
+/* Once answered, Check and I don't know stay in place but read as done. */
+.tybtns .next:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.tymsg {
+  min-height: 1.2em;
+  margin: 0;
+  color: var(--bad);
+  font-size: var(--fs-s);
+}
+.tymsg:empty {
+  min-height: 0;
+}
 .fb {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -2214,6 +2275,13 @@ kbd {
 }
 .fb h3.ko .v {
   color: var(--bad);
+}
+/* "I don't know" on a typed question: quiet, never the red of a wrong answer. */
+.fb h3.idk .v {
+  color: var(--muted);
+}
+.fb .tyread {
+  margin: 0 0 6px;
 }
 .fb .keyid {
   margin: 0;

@@ -1,5 +1,5 @@
 // Offline cache: app shell first, then photos as they are viewed.
-const V = 'imr-coral-id-v281';
+const V = 'imr-coral-id-v282';
 // Photos live in their own cache that no deploy deletes (code review 2026-11-01, H3): bumping V used to wipe every
 // offline photo. Capped at PH_MAX entries, oldest first out (cache keys keep insertion order).
 const PH = 'imr-photos-v1',
@@ -12,13 +12,13 @@ const PHOTO_RETRY = 800, // as core.js PHOTO_RETRY
 const SHELL = [
   './',
   'index.html',
-  'app.css?v=119',
-  'core.js?v=30',
+  'app.css?v=120',
+  'core.js?v=31',
   'app.js?v=182',
   'sync.js?v=17',
-  'progress.js?v=12',
-  'model.js?v=17',
-  'quiz.js?v=22',
+  'progress.js?v=13',
+  'model.js?v=18',
+  'quiz.js?v=23',
   'learn.js?v=4',
   'flag.js?v=10',
   'quality.json?v=3',
@@ -31,15 +31,15 @@ const SHELL = [
   'fonts/barlow-condensed-700-normal.woff2',
   'manifest.webmanifest',
   'curation.json',
-  'proto/lab.js?v=71',
-  'proto/lab.css?v=51',
+  'proto/lab.js?v=72',
+  'proto/lab.css?v=52',
   'home-art.js?v=4',
   'home.js?v=27',
   'home.css?v=22',
   'tour.js?v=14',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'type', 'pairs', 'gallery'].map(
-    f => `proto/${f}.js?v=70`
+    f => `proto/${f}.js?v=71`
   )
 ];
 const get = async (c, u, n = 3) => {
@@ -139,6 +139,9 @@ const photo = async (req, u) => {
     return res;
   };
   if (!r2) return fetch(req).then(keep);
+  // R2 failed twice in a row a moment ago: the site straight away, for R2_PAUSE ms (no request held open on a dead host:
+  // a new worker takes over only once this one has no fetch in flight).
+  if (Date.now() - r2Off < R2_PAUSE) return fetch(twin).then(keep);
   // Asked twice, PHOTO_RETRY ms apart (core.js photoRetry: a passing error gets a second try on R2), before the site.
   for (let k = 0; k < 2; k++) {
     try {
@@ -149,9 +152,12 @@ const photo = async (req, u) => {
     } catch (err) {}
     if (!k) await new Promise(ok => setTimeout(ok, PHOTO_RETRY));
   }
+  r2Off = Date.now();
   r2Down();
   return fetch(twin).then(keep);
 };
+let r2Off = 0;
+const R2_PAUSE = 60e3;
 // R2 failed (Codex review #392): the pages are told, so their next photos are asked from the site straight away (app.js
 // R2 false, as when an <img> fails without the worker) instead of trying R2 first, file after file. A reload tries R2 again.
 const r2Down = () =>

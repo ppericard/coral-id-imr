@@ -3094,15 +3094,23 @@ function renderCand() {
     nx = live[1];
   const seg =
     `<span class="adm-qseg adm-csrc" role="group" aria-label="Source">${CSRCS.map(([s, t]) => `<button type="button" data-src="${s}" aria-pressed="${s === CSRC}">${t} <b>${s === CSRC ? live.length : candQueue(s).filter(shown).length}</b></button>`).join('')}</span>` +
-    (nFull
-      ? `<p class="note adm-cfull">${nFull} wait${nFull === 1 ? 's' : ''} in full cells (${[...new Set(Q0.filter(x => x.full).map(x => capOf(x.n)))].sort((a, b) => b - a).join(' or ')} colonies) · <button type="button" class="adm-link" data-cfull>${CFULL ? 'Hide them' : 'Show them'}</button></p>`
-      : '') +
-    (nAside
-      ? `<p class="note adm-caside">${nAside} set aside by the pre-sort (unusable, several corals, poor, comparison or near-duplicate) · <button type="button" class="adm-link" data-caside>${CASIDE ? 'Hide them' : 'Show them'}</button></p>`
-      : '') +
-    // Reminder (Pierre: the judging agent runs on demand, "remind me to launch it").
-    (nJ
-      ? `<p class="note adm-cjudge">${nJ} candidate${nJ === 1 ? '' : 's'} not judged yet: ask your agent for the candidate pass (judging/AGENTS.md).</p>`
+    // What the queue leaves out, as one row of small toggles (Pierre, 2026-11-03: three lines of notes took the room of
+    // the photo on a phone); each chip's tooltip says what it is.
+    (nFull || nAside || nJ
+      ? `<p class="adm-cflags">${
+          nFull
+            ? `<button type="button" class="adm-chip adm-cfull" data-cfull aria-pressed="${CFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of cells already full (${[...new Set(Q0.filter(x => x.full).map(x => capOf(x.n)))].sort((a, b) => b - a).join(' or ')} colonies): ${CFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} full</button>`
+            : ''
+        }${
+          nAside
+            ? `<button type="button" class="adm-chip adm-caside" data-caside aria-pressed="${CASIDE}" title="${nAside} set aside by the pre-sort (unusable, several corals, poor, comparison image or near-duplicate): ${CASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
+            : ''
+        }${
+          // Reminder (Pierre: the judging agent runs on demand, "remind me to launch it").
+          nJ
+            ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the candidate pass (judging/AGENTS.md)">${nJ} not judged yet</span>`
+            : ''
+        }</p>`
       : '');
   if (!c) {
     $v.innerHTML = `<section class="adm-sw adm-swempty">${seg}<p class="note">${Q.length ? `${Q.length} skipped.` : 'No candidate left.'}</p>${Q.length ? '<button type="button" class="adm-btn" data-again>Show the skipped ones</button>' : ''}</section>`;
@@ -4518,8 +4526,14 @@ const userPost = body => fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({
 // accounts) have no name: they are counted apart, below. Activity keeps the class-wide charts.
 const UCOLS = [
   ['name', 'Name', u => u.name.toLowerCase(), 1],
-  ['lv', 'Level', u => u.lv ?? -99, 0, 'Overall level, on the photo-difficulty scale (photo Elo, every answer)'],
-  ['elo', 'Elo', u => u.lv ?? -99, 0, 'The Elo players see (1000 + 200 × level, shown to them from 200 answers), ± its 95% margin'],
+  // One column for the level (Pierre, 2026-11-03: Level and Elo said the same thing): the Elo players see.
+  [
+    'elo',
+    'Elo',
+    u => u.lv ?? -99,
+    0,
+    'Overall level on the photo-difficulty scale, as the Elo players see (1000 + 200 × level, shown to them from 200 answers), ± its 95% margin'
+  ],
   ['answers', 'Answers', u => u.answers, 0],
   [
     'right',
@@ -4624,7 +4638,6 @@ function renderUsers() {
   const cell = (k, u) =>
     ({
       name: `<b>${esc(u.name)}</b>${isMe(u.id) ? ' <small>you</small>' : ''}${u.board === -1 ? ' <small title="Hidden from the leaderboard">hidden</small>' : ''}`,
-      lv: u.lv == null ? '–' : sgn(u.lv),
       elo:
         u.lv == null
           ? '–'

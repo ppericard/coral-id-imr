@@ -488,8 +488,9 @@ is a good mastery criterion.
   the level: calibration photos, the exam's hardest ones). The misses that say little cost less; the measure loses
   nothing.
 - **The bar** = 0.95 × min(1, `s.pg` / `PROG.M`), `PROG.M` = 0.8 = the mastery exam's entry, shown as 95%; each exam
-  question passed adds 1%, the passed exam makes it 100% (`scoreOf`, `genScore`; the sheet's `pctOf_` is a copy,
-  v22). The draw weight of a genus being learned uses 1 − `s.pg` where it used 1 − L.
+  question passed adds 1%, up to 99% (4 steps: an exam begun before typed questions can hold 5 right answers while it
+  still waits for its typed ones; Codex review #393), and only the passed exam makes it 100% (`scoreOf`, `genScore`; the
+  sheet's `pctOf_` is a copy, v22). The draw weight of a genus being learned uses 1 − `s.pg` where it used 1 − L.
 - **The exam's entry is 0.8, not 0.95**: a moving average sits near the recent success rate, and the game keeps
   everyone near 80-88% right (difficulty targeting), so at 0.95 almost no genus ever reached the exam (table: an
   expert had 0 genera at 95% after 600 questions with A 0.1-0.2). 0.8 of what each answer proved, look-alikes in play,
@@ -565,6 +566,57 @@ genus at 50%+ by question 600 and nearly all learned by 1500. The entry: 0.85 ke
 learned 9.8 genera in 1000 questions instead of 16.5); 0.8 is the success the game aims at, held on questions that
 prove something. To recalibrate with real answers: the per-genus success on look-alike questions of
 RAs who then pass the exam.
+
+### Typed questions (2026-11-03): why these settings
+
+Recall (typing the genus from memory) instead of recognition (picking 1 of 4): what an RA does in front of a colony,
+and the stronger exercise (retrieval practice: Roediger & Karpicke 2006; a desirable difficulty: Bjork 1994), but also
+the more discouraging one when the genus is barely known. `model.js` `TYPED`, `core.js` `typedShare`. What each value is
+and why; no player has answered a typed question yet: they are Pierre's brief turned into numbers, simulated below
+before release:
+
+- **`from` 0.5, `at` [0.5, 0] → [0.8, 0.3] → [0.95, 0.5]** (share of a genus's questions asked typed, from its progress
+  as the bar shows it): none until the genus is half-way (below that the player still mostly recognises it with the
+  choices' help, and a blank field teaches little); 30% at 80% on the bar, 50% at 95%, the exam's entry (the bar's 95%
+  is `PROG.M`), so a genus about to take its exam is asked typed half of the time. Progressive and per genus, never a switch (Pierre: "introduced progressively by level, no
+  switch"); a straight line between the points so no step is felt.
+- **`exam` 2** typed right answers among the exam's 5: Pierre asked for 2 to 3; 2, the lower bound, until the data say
+  typed exam questions are not much harder than picked ones.
+- **`k` Infinity** (no guess rate): a name typed from memory is not found by chance, so the expected success has no 1/k
+  floor; a right typed answer moves the ability and the photo ratings more than a pick, a miss less, and counts in full
+  in the progress (every genus, its look-alikes included, was a possible answer).
+- Never typed: comeback, "Again: A or B?" and duel questions (each has its own purpose: a quick check, a contrast).
+
+Simulated before release (`tools/learnsim.js` with a recall learner, kept on its own branch for the dynamic version:
+a typed question is answered right with the learner's recognition chance lowered by a recall gap; 30 seeds × 600
+questions, the four profiles, the same seeds with and without typed questions). "Default" gap: 2 × (1 − know) logits
+(recall close to recognition once a genus is known); "B": 1.5 logits for the beginner and the lecture-level RA, 0.5 for
+the strong RA and the expert (recall much weaker than recognition for the weaker players). At 600 questions, without →
+default → B (difference ± sd over the seeds where it matters):
+
+| Profile | Progress % (default / B, vs without) | Genera entered in the exam | Genera learned | Typed right % (default / B) |
+|---|---|---|---|---|
+| beginner | −1 ± 4 / −2 ± 4 | 2.2 → 2.0 → 1.2 (−1.0 ± 1.4) | 0.2 → 0.2 → 0.1 | 90 / 78 |
+| lecture-level RA | −0 ± 3 / −2 ± 3 | 4.0 → 3.8 → 2.9 (−1.1 ± 2.3) | 0.3 → 0.4 → 0.2 | 87 / 73 |
+| strong RA | −0 ± 3 / −0 ± 3 | 11.2 → 10.9 → 11.0 | 1.4 → 1.7 → 1.5 | 93 / 91 |
+| expert | −1 ± 1 / −1 ± 1 | 25.4 → 24.7 → 23.7 | 7.8 → 7.2 → 6.7 | 95 / 93 |
+
+- With the default gap, typed questions change nothing beyond the spread; typed right % stays near picked right %.
+- With B, the profiles part ways as Pierre expected: the beginner and the lecture-level RA reach the exam about one genus
+  later by question 600 (typed right 71-77% in the 50-95% bands, overall right % down 1 point), the strong RA and the
+  expert barely move.
+- Typed share of all questions: 4 / 5 / 10 / 18% (beginner → expert); 10-15% of a genus's questions at 50-80%
+  progress, about 35% at 80-95%, about 50% from 95%.
+- Recall of the genera learned (the hard reference question, typed) does not drop: 0.87 / 0.88 / 0.93 / 0.89 with typed
+  questions, 0.80 / 0.87 / 0.90 / 0.89 without. A typed question rarely gives its genus away (a 50% or better chance of
+  guessing it from the context in 0.3-2.9% of them, mostly beginners early on).
+- Limit: with 2 typed of 5 the exam screens weak recall only a little (few genera are learned by question 600 in the
+  weak-recall runs, so this is noisy).
+
+Pierre's decision (2026-11-03): release with these settings ("quickly in production") and adjust on the players' own
+`|t` answers (typed right % against picked right % at the same progress). Next: the dynamic version (the typed share
+following each player's measured recall, no fixed ramp), its variants simulated with 5 seeds (AGENTS.md 14f). Any change
+is recorded here with its numbers.
 
 ## Pooled statistics: photo difficulty and confusions (sheet v17-v18, 2026-11-02; photo memory v26, 2026-11-03)
 
@@ -892,7 +944,7 @@ drives the same real quiz (the app's draw, photos, traps, duels, Again, exam, El
 untouched; only the player is simulated) and measures what the simulated players really learn, and how far the app's
 estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minutes; numbers for reading).
 
-- **Run**: `node tools/learnsim.js [--seeds 30] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
+- **Run**: `node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
   [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...] [--mem 0,0.4,1.5,2]`. Each run (profile × seed) gets a fresh browser context; seeds
   are 1..N, the app's `Math.random` and the learner's own generator both seeded from it, so a run is reproducible and
   the same seeds before and after a change give paired comparisons. `--stats` loads a `?stats=1` answer of the sync
