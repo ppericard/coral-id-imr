@@ -102,7 +102,7 @@ These came from Pierre's explicit feedback. When in doubt, follow them over your
 | `curation.json` | Pierre's choices, applied on top of `data.json` at load. Pierre-owned. |
 | `forms.json`, `quality.json`, `picks.json`, `dups.json`, `suggest.json` | Machine suggestions (growth forms, quality, featured picks, duplicates, judging results). |
 | `img/` | WebP photos in four sizes: 1600 px, 960 px `-m`, 480 px `-s`, 240 px `-t` (`tools/photos.py`; every tool that writes photos uses its `save()`, CI checks each photo has all four). No Git LFS. |
-| `tools/` | Python build/import scripts; `tools/sync/Code.gs` is the Google Apps Script for progress sync. |
+| `tools/` | Python build/import scripts; `tools/sync/Code.gs` is the Google Apps Script for progress sync; `tools/commonness.py` measures once how common each game genus is near Dauin (iNaturalist) into `data.json` `cm`, which the opening of genera uses (common first); `tools/learnsim.js` the learning-outcome simulation. |
 | `judging/` | Package for an outside photo-judging agent. |
 | `.github/workflows/pages.yml` | Single Pages deployer: main pushes, manual dispatch and Candidate photos completion; requires Actions source. Recovery: `docs/PAGES.md`. |
 | `.github/workflows/approved-photos.yml` | After each `curation.json` push: download approved candidates, refill candidate lists. |
