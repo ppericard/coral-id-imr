@@ -908,8 +908,13 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     next reply brings it again from the new reset (Codex review #399). Two devices on one account: the merge baseline
     (`SYNC.base`, `mergeSaved`) becomes the replayed record without the device's own answers not counted yet, so when
     another device saves its own adoption of the same log, this one adds only its own new answers to it, never the
-    replayed ones a second time; a saved copy replayed under older rules than the device applied (its `imr-coral-rv`)
-    predates the replay, which already counts its answers: the device keeps its progress then (Codex review #399).
+    replayed ones a second time; a saved copy under older rules than the device applied (its `imr-coral-rv`) is not
+    merged (it may predate the replay, whose counts it would undo), but it may hold answers saved since by a device on
+    an app from before the replay, which never adopts one: so the device's applied version goes back to the copy's and
+    its next save (asked for at once after a pull) brings the replay of the whole log again, every device's answers
+    counted once (Codex review #399: 2 answers adopted, 1 saved by an older app, gave 2 again). A reply to anonymous
+    answers is ignored once the device has signed in, or changed anonymous id, while it was on its way (Codex review
+    #399: it replaced the account's progress that sign-in had just stored).
     What is taken from where (`core.js` `replayedOf`): **from
     the replay**, per genus the log has answers on: `pg`, `ok`, `ko`, `h`, `off`, `conf`, `th`, `vr`, `streak`,
     `at` (the later), `du` (either side's), the photos seen `ps` per photo the larger [shown, right] of the replay and

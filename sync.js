@@ -199,17 +199,23 @@ function mergeSaved(j) {
   }
   introIn();
   holdIn();
-  // A saved copy replayed under older rules than this device applied (its RVK, core.js RVS) predates the replay adopted
-  // here, which already counts every answer of the log: this device's progress stays as it is, against the replayed
-  // baseline (replayAdopt). Merged, its older counts and model would undo the replay. Answers another device saved
-  // under the older rules since are in the log: that device adopts the replay at its next reply and saves them.
-  if ((Number(d[RVK]) || 0) >= rvApplied()) {
+  // A saved copy under older rules than this device applied (its RVK, core.js RVS) is not merged: it may predate the
+  // replay adopted here, and its older counts and model would undo it. But it may also hold answers saved since by a
+  // device on an app from before the replay, which never adopts one (its data has no RVK; Codex review #399: 2 answers
+  // adopted, then 1 saved by such a device, gave 2 again here, and this device's next save overwrote it). Both are in
+  // the log, which the replay reads: this device's applied version goes back to the saved copy's, so its next request
+  // (the save of this very sync, or one asked for now after a pull) gets the replay of the whole log again, every
+  // answer of every device counted once, this device's unsent ones on top (replayAdopt). The cost: one more replay.
+  const rvSaved = Number(d[RVK]) || 0;
+  if (rvSaved >= rvApplied()) {
     // In place: other code holds P by name only, but keep the same object anyway.
     const M = mergeProgress(SYNC.base || {}, P, R);
     Object.keys(P).forEach(g => delete P[g]);
     Object.assign(P, M);
     // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
     SYNC.base = copy(R);
+  } else {
+    store.set(RVK, rvSaved);
   }
   store.set('imr-coral-sync', SYNC);
   store.set('imr-coral-progress', P);
@@ -363,7 +369,9 @@ function syncPull() {
         }
         return j;
       }
+      const rv0 = rvApplied();
       if (j.found) mergeSaved(j);
+      if (rvApplied() < rv0) syncSoon(); // a saved copy under older rules (mergeSaved): the save brings the replay again
       delete me.err;
       me.last = new Date().toISOString();
       store.set('imr-coral-sync', me);
@@ -568,7 +576,8 @@ function sendAnon() {
   const q = store.get(ANONQ, []);
   if (SYNC || !SYNC_URL || LOCAL || anonBusy || !q.length) return;
   const batch = q.slice(0, 100),
-    cut = store.get('imr-coral-reset', '') || ''; // the replay's cutoff, as sent (replayAdopt)
+    cut = store.get('imr-coral-reset', '') || '', // the replay's cutoff, as sent (replayAdopt)
+    who = anonId(); // the anonymous player the send is for
   anonBusy = true;
   fetch(SYNC_URL, {
     method: 'POST',
@@ -576,7 +585,7 @@ function sendAnon() {
     // pt: the oldest answer of the whole queue (pendingFrom), as answers left in it after a lost reply may be logged already.
     // reset: this device's progress reset (app.js), the replay's cutoff, as a signed-in player's saved data gives it (v28).
     body: JSON.stringify({
-      anon: anonId(),
+      anon: who,
       anonAnswers: batch,
       av: appVer(),
       rv: rvApplied(),
@@ -589,6 +598,10 @@ function sendAnon() {
       // A refused send is reported like a failed save (it used to fail silently; Pierre, 2026-11-03), then retried at the
       // next answer, the next visit or when the app is left.
       if (!j || !j.log) return ev('sync', {msg: 'anonymous send refused: ' + String((j && j.error) || 'no reply')});
+      // Signed in (or signed out, a new anonymous id) while the send was on its way: the queue and the progress are no
+      // longer this anonymous player's, so neither is touched, as the signed-in replies check SYNC (Codex review #399:
+      // the reply came after signIn had stored an account's 20 answers, before its reload, and its replay made them 1).
+      if (SYNC || store.get(ANONID, '') !== who) return;
       const done = new Set(batch.map(x => x.id)),
         left = store.get(ANONQ, []).filter(x => !done.has(x.id));
       store.set(ANONQ, left);

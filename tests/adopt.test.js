@@ -245,6 +245,50 @@ test('two devices adopt the replay of a log ahead of the saved copy: no answer c
   assert.deepStrictEqual([B.count('Acropora'), A.count('Acropora')], [3, 3]);
 });
 
+test('answers saved by a device still on the previous app version, after this one adopted the replay, are kept (Codex review #399)', async () => {
+  const s = loadCodeGs(withData());
+  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
+  const A = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
+  await A.syncPull();
+  await A.syncPush();
+  assert.deepStrictEqual([A.count('Acropora'), A.rvApplied()], [2, C.RV]);
+  // A device on the app before the replay: it loads A's copy, answers once, saves its merge (no rules version in its
+  // data: it does not know the key; no rv in its request).
+  const saved = s.get({name: 'Ana', pin: '1234'}).data,
+    Q = JSON.parse(saved['imr-coral-progress']);
+  Q.Acropora.ok++;
+  Q.Acropora.h += '1';
+  const old = {...saved, 'imr-coral-progress': JSON.stringify(Q)};
+  delete old['imr-coral-rv'];
+  assert.ok(s.post({name: 'Ana', pin: '1234', data: old, summary: {}, answers: [qa('a2', 2)], av: '180'}).ok);
+  // A loads it: its copy under older rules is not merged, but A asks for the replay again (rules version back to the
+  // copy's, a save due), and the save brings it: three answers, and the sheet's copy keeps them.
+  await A.syncPull();
+  assert.deepStrictEqual([A.rvApplied(), A.ctx.SYNC.dirty], [0, true]);
+  await A.syncPush();
+  assert.strictEqual(A.count('Acropora'), 3, "was 2: the older client's answer was dropped, then overwritten");
+  assert.strictEqual(A.rvApplied(), C.RV);
+  const back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora;
+  assert.strictEqual(back.ok + back.ko, 3);
+});
+
+test('an anonymous send whose reply comes after signing in to an account: its replay is not adopted (Codex review #399)', async () => {
+  const s = loadCodeGs(withData()),
+    id = 'abcdefghij',
+    acct = {'imr-coral-progress': JSON.stringify({Acropora: {ok: 15, ko: 5, h: '1111111111', pg: 0.5}}), 'imr-coral-quiz': '{}'};
+  let during = null;
+  const sheet = {get: q => s.get(q), post: b => (r => (during && during(), (during = null), r))(s.post(b))},
+    a = app({sheet, ls: {'imr-anon-id': JSON.stringify(id), 'imr-anonq': JSON.stringify([qa('c1', 20)])}});
+  // The player signs in to an existing account while the anonymous send is on its way (signIn then reloads the page).
+  during = () => a.signIn('Ana', '1234', {found: true, data: acct});
+  a.sendAnon();
+  await settle();
+  const P = a.store.get('imr-coral-progress', {});
+  assert.strictEqual(P.Acropora.ok + P.Acropora.ko, 20, "the account's progress stays (was 1: the anonymous replay)");
+  assert.strictEqual(a.rvApplied(), 0, "the account's rules version stays (its replay must still come)");
+  assert.strictEqual(a.store.get('imr-anonq', null), null, 'no anonymous queue made again');
+});
+
 // progress.js achRecheck on stubs: the learned mark taken away (MXL.ach), the snapshot of a player with none learned.
 function ach(A) {
   const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
