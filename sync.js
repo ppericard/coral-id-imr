@@ -157,7 +157,8 @@ function replayAdopt(rp, pending, v, cut, pre) {
             conf: PCONF,
             start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}},
             time: Number(v) >= RT_SHEET,
-            starts: {[me]: store.get(CHOICE.KEY, null)} // the first-launch answer (core.js startPriorAt)
+            // The first-launch answer (core.js startPriorAt), from the script that replays it (START_SHEET), as the live game.
+            starts: Number(v) >= START_SHEET ? {[me]: store.get(CHOICE.KEY, null)} : {}
           })[me].P
         : rp.rec,
       before = copy(P),

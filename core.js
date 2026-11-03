@@ -1928,6 +1928,11 @@
   // the app weighs a right answer's steps by its time (rtWeight) only once the script's replies say v >= RT_SHEET
   // (sync.js sheetV), so a replay never undoes what the app did live (AGENTS.md 7a); before it, exactly as before.
   const RT_SHEET = 32;
+  // The sync script version that replays the first-launch answer's prior (Code.gs v36 replay_ reads the player's
+  // reefid-sync-coral-start: its answers and the silent ease): the app shrinks a new genus's start towards that prior
+  // (model.js startP) only once the script's replies say v >= START_SHEET, so a replay never undoes it (AGENTS.md 7a,
+  // Codex review #428); before it, the default player's prior 0, exactly as before.
+  const START_SHEET = 36;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
   // several versions sees one recalculation card with its progress before and after the whole jump.
@@ -2609,6 +2614,7 @@
     RV,
     RV_SHEET,
     RT_SHEET,
+    START_SHEET,
     RTIME,
     rtMedian,
     rtWeight,

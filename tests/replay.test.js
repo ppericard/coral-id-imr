@@ -409,6 +409,7 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
       cut('function pgWeight(t, chs, k) {', '\n}') +
       '\n' +
       cut('const aimP = ', ';\n') +
+      cut('const startP = ', ';\n') +
       cut('const ability = ', ';\n') +
       cut('const abilityStep = ', ';\n') +
       cut('const confTerm = ', ';\n') +
@@ -596,7 +597,8 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
     const M = {...C, P: {}, sheetV: () => sheet, startV: () => C.startVars()}; // no first-launch answer: the default prior
     vm.createContext(M);
     vm.runInContext(
-      cut('const ability = ', ';\n') +
+      cut('const startP = ', ';\n') +
+        cut('const ability = ', ';\n') +
         cut('const abilityStep = ', ';\n') +
         cut('const rtOn = ', ';\n') +
         '\nthis.T = {ability, abilityStep, rtOn};',
@@ -721,4 +723,22 @@ test('response time: the median of the earlier times, the weight, and the record
     P = {[C.LEVEL]: {ok: 4, ko: 0, th: 0.3, rt: {50: 2, 60: 1, 45: 1}}},
     R = {[C.LEVEL]: {ok: 4, ko: 1, th: 0.1, rt: {50: 3, 60: 1, 70: 1}}};
   assert.deepStrictEqual(C.mergeProgress(B, P, R)[C.LEVEL].rt, {50: 3, 60: 1, 70: 1, 45: 1});
+});
+
+// Codex review #428 (P1): the live game applies the first-launch prior only once the sync script replays it (core.js
+// START_SHEET, model.js startP): before, a genus never answered starts as the default player's, as the sheet replays it.
+test('the first-launch prior in the live ability only from sheet v36 (Codex review #428)', () => {
+  const vm = require('vm'),
+    src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
+    cut = (a, b) => src.slice(src.indexOf(a), src.indexOf(b, src.indexOf(a)) + b.length);
+  const at = sheet => {
+    const M = {...C, P: {[C.LEVEL]: {ok: 10, ko: 2, th: 0.4}}, sheetV: () => sheet, startV: () => C.startVars('know')};
+    vm.createContext(M);
+    vm.runInContext(cut('const startP = ', ';\n') + cut('const ability = ', ';\n') + '\nthis.T = {ability};', M);
+    return M.T.ability('Pocillopora');
+  };
+  const P = {[C.LEVEL]: {ok: 10, ko: 2, th: 0.4}};
+  assert.strictEqual(at(C.START_SHEET - 1), C.playerStart(P, 'Pocillopora', 0), 'before v36: the default prior');
+  assert.strictEqual(at(C.START_SHEET), C.playerStart(P, 'Pocillopora', C.startVars('know').p), "from v36: the answer's");
+  assert.notStrictEqual(at(C.START_SHEET - 1), at(C.START_SHEET));
 });

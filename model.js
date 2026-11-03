@@ -628,7 +628,9 @@ const startShown = d => {
   if (o) store.set(CHOICE.KEY, {...o, v: null, fb: {...(o.fb || {}), [o.c + '-' + d]: [answersSoFar(), Date.now()]}});
 };
 // Another device's answer (sync.js mergeSaved): the latest choice wins; the fallback cards shown on either count; on the
-// same choice the longer window is kept.
+// same choice the longer window is kept, and the silent ease (startEase) is merged by its own time (Codex review #428:
+// taken on one device, it must not be lost to the other's longer window). The questions planned ahead are dropped
+// whenever the start variables in force change.
 function startMerge(json) {
   let r = null;
   try {
@@ -637,11 +639,17 @@ function startMerge(json) {
   if (!r || typeof r !== 'object' || !startOpt(r.c)) return;
   const o = startOf(),
     fb = {...(r.fb || {}), ...((o && o.fb) || {})};
-  const n = x => (Array.isArray(x.w) ? x.w.length : 0);
-  if (!o || (r.t || 0) > (o.t || 0) || ((r.t || 0) === (o.t || 0) && n(r) > n(o))) {
-    if (!o || r.c !== o.c) typeof dropPlans === 'function' && dropPlans();
-    store.set(CHOICE.KEY, {...r, fb});
-  } else store.set(CHOICE.KEY, {...o, fb});
+  const n = x => (Array.isArray(x.w) ? x.w.length : 0),
+    et = x => (x && Array.isArray(x.ease) && typeof x.ease[2] === 'number' ? x.ease[2] : -1);
+  let m = !o || (r.t || 0) > (o.t || 0) || ((r.t || 0) === (o.t || 0) && n(r) > n(o)) ? {...r, fb} : {...o, fb};
+  // The same answer on both: the later ease of the two (an ease belongs to its answer: never carried to another one).
+  if (o && r.c === o.c && (r.t || 0) === (o.t || 0)) {
+    const e = et(r) >= et(o) ? r.ease : o.ease;
+    m = e ? {...m, ease: e} : m;
+  }
+  const before = o && startEff(o);
+  store.set(CHOICE.KEY, m);
+  if ((!o || before !== startEff(m)) && typeof dropPlans === 'function') dropPlans();
 }
 // The question waiting on its card (quiz.js startAskShow) answered on another device: the quiz goes on. Called by
 // sync.js mergeSaved once every record is merged (never from startMerge, which runs before the progress and cards are).
@@ -895,8 +903,11 @@ const misses = h => [...h].filter(x => x === '0').length;
 // the genus's step marks the level it was taken against, s.lt), shared with the sheet's full replay. A genus never
 // answered starts from the global level shrunk towards the first-launch answer's level (startV().p, core.js
 // playerStart; corals only).
-const ability = n => abilityOf(P, n, startV().p);
-const abilityStep = (n, s, good, d, k, w = 1) => eloStep(P, n, s, good, d, k, w, startV().p);
+// The prior only once the sync script replays it (core.js START_SHEET; AGENTS.md 7a, Codex review #428): before, 0, the
+// default player's, so an adopted replay never takes back what the game did live.
+const startP = () => (typeof sheetV === 'function' && sheetV() >= START_SHEET ? startV().p : 0);
+const ability = n => abilityOf(P, n, startP());
+const abilityStep = (n, s, good, d, k, w = 1) => eloStep(P, n, s, good, d, k, w, startP());
 // The answer time in the ability (core.js RTIME, rtWeight; Pierre, 2026-11-04): on only once the sync script replays it
 // (its replies say v >= RT_SHEET, sync.js sheetV), so the sheet's replay never undoes it (AGENTS.md 7a); before, every
 // step has weight 1, as before. The times are recorded either way (rtAdd), as the replay records them from the log.

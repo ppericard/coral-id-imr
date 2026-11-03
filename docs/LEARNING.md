@@ -1197,7 +1197,7 @@ stay) and the card never comes back in that direction for that answer. **Coral b
 moves the start variables one band down (`model.js` `startEase`: know well → the IMR course's, IMR course → new's: the
 prior p and the open-all offer's `at`), kept apart from the answer given (`ease` [answer, answers then, time] in
 `reefid-sync-coral-start`; the answer is never relabelled; the admin's journey shows "Eased"; the full replay applies it
-from its time, `startPriorAt`). Coral basics already done: no "lower" card (it is the Coral basics offer).
+from its time, `startPriorAt`; the live game applies the prior, eased or not, only once the sheet runs v36, `START_SHEET`, so a replay never takes it back). Coral basics already done: no "lower" card (it is the Coral basics offer).
 
 **The honest size of the silent move**: p only sets the starting ability of a genus never answered (`playerStart`:
 W (m t + N p) / (m + N), W 0.8, N 10, m the answers in the global level). The prior's weight N / (m + N) is 0.20 at 40

@@ -876,3 +876,26 @@ test('a replay adopted from a script before v32 replays the pending answers with
     assert.strictEqual(a.ctx.P.Acropora.th, th(time), `script v${v}: ability ${a.ctx.P.Acropora.th}`);
   }
 });
+
+// Codex review #428 (P1): the first-launch prior follows the script that replays it. Before sheet v36 (core.js
+// START_SHEET) the sheet's replay has no prior, so this device's answers replayed on top of its replay must not apply
+// one either (AGENTS.md 7a); from v36 they do, as the sheet's own replay would.
+test('a replay adopted from a script before v36 replays the pending answers without the first-launch prior (Codex review #428)', () => {
+  // The first answers on a genus never answered: their ability starts from the prior.
+  const pending = Array.from({length: 6}, (_, i) => ({...qa('s' + i, i), g: 'Pocillopora', a: 'Pocillopora', ok: 1}));
+  const rows = pending.map(a => C.logRow(a, '~me')),
+    start = {c: 'know', t: 1, at: 0, via: 'tour', h: [['know', 0, 1, 'tour']]},
+    gen = {...DATA.x.gen, ...DATA.gen},
+    th = on =>
+      C.replayProgress(rows, {gen, conf: {}, start: {'~me': {P: {}, n: 0, used: 0, rep: 0}}, starts: on ? {'~me': start} : {}})['~me'].P
+        .Pocillopora.th;
+  assert.notStrictEqual(th(true), th(false), 'the prior changes the ability on these answers');
+  for (const [v, on] of [
+    [C.START_SHEET - 1, false],
+    [C.START_SHEET, true]
+  ]) {
+    const a = app({ls: {[C.CHOICE.KEY]: JSON.stringify(start)}});
+    assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: []}, pending, v), true);
+    assert.strictEqual(a.ctx.P.Pocillopora.th, th(on), `script v${v}: ability ${a.ctx.P.Pocillopora.th}`);
+  }
+});

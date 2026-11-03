@@ -311,6 +311,33 @@ test('Coral basics on the "lower" card: the start variables one band down, silen
   assert.strictEqual(D.startDue(), null);
 });
 
+// Codex review #428 (P2): the silent ease taken on one device survives a merge with the other device's same answer and
+// longer window; the questions planned ahead are dropped when the start variables in force change.
+test('synced: the ease is merged by its own time, and a change of the variables in force drops the plans', () => {
+  const N = CHOICE.AT[0],
+    A = model(),
+    B = model();
+  A.startSet('know', 'tour');
+  const rec = A.startOf();
+  B.ctx.store.set(CHOICE.KEY, rec); // the same answer on both devices
+  A.play(N, 0, false, true, 0.5); // the longer window on A
+  B.startEase(); // Coral basics taken on B
+  const drops = A.ctx.drops;
+  A.startMerge(JSON.stringify(B.startOf()));
+  assert.strictEqual(A.startOf().w.length, N, "A's longer window kept");
+  assert.deepStrictEqual(A.startOf().ease, B.startOf().ease, "B's ease kept");
+  assert.deepStrictEqual(A.startV(), startVars('imr'));
+  assert.ok(A.ctx.drops > drops, 'the plans dropped: the variables in force changed');
+  // Merged back the other way: B keeps its ease and takes A's longer window.
+  B.startMerge(JSON.stringify(A.startOf()));
+  assert.strictEqual(B.startOf().w.length, N);
+  assert.deepStrictEqual(B.startOf().ease, A.startOf().ease);
+  // No change in force: no drop.
+  const d2 = A.ctx.drops;
+  A.startMerge(JSON.stringify(A.startOf()));
+  assert.strictEqual(A.ctx.drops, d2);
+});
+
 test('synced: the latest answer wins, the cards shown on either device count; a progress reset keeps the answer', () => {
   const A = model(),
     B = model();
