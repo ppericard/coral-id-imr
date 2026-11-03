@@ -515,6 +515,14 @@ question 100, was 200); true knowledge within ±0.02 of before everywhere, where
 0.8, expert 7.8 → 6.8 ± 1.0): the genera opened sooner share the questions. The right % stays within 3 points except
 the first 100 questions of a strong RA (93 → 84%: more new genera at once).
 
+**Closed genera take no place** (Codex P1 on #408, 2026-11-03): after Open all, "One at a time" closes the genera
+opened at once and keeps their answers and abilities; counted among the shaky genera, 8 or more badly known ones held
+`openChance` at 0 for good, and being closed they are never asked, so they could never come back. Only the genera open
+now (`introduced`) count. `tools/learnsim.js --openall 30 --back one`, 5 seeds × 300 questions: the 2 runs (of 20)
+where the back card came and was taken went from stuck at 34 genera met to 37 by question 300 (beginner) and 37.8 →
+38.6 (lecture RA); the other runs are unchanged to the decimal, and without Open all no genus is ever closed, so the
+rule is the same as before.
+
 **Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): the log holds no record of when a card could have opened, so the opening cannot be replayed; the shaky signal it
 counts is checked with item 8 ("One draw weight", below).
 
