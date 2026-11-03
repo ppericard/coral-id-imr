@@ -46,6 +46,8 @@ const server = http.createServer((req, res) => {
 // 10. Load order (index.html tiers): Home shows before My progress and the Tools files are asked for, the quiz files come
 //    before My progress, which comes before the Tools; a link straight to #quiz, #progress or #lab on a first visit works.
 // 11. A browser driven by a program sends nothing to the sheet on any host name.
+// 12. Photos are read from R2 (core.js PHOTO_BASE); R2 out of reach, they come from the site at once (page and service
+//    worker), and the worker keeps them offline under either address.
 // Speed numbers are measured by tools/perf.js, not here. Locally: node tests/net.smoke.js
 (async () => {
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -85,7 +87,7 @@ const server = http.createServer((req, res) => {
     if (opts.hangCuration) await ctx.route(base + 'curation.json', () => {}); // never answers
     if (opts.failFull) {
       await ctx.route(/\/img\/[^/]+(?<!-s)\.webp/, r => r.abort('connectionreset'));
-      // A Millepora photo (iNaturalist, r: 1, app.js img()): its bigger file ('large') fails too and its 480 px one
+      // An iNaturalist photo (r: 1, app.js img(); Millepora's until 2026-11-03): its bigger file ('large') fails too and its 480 px one
       // ('medium') answers, here with a local 480 px file (every other host is cut off, so that check failed whenever
       // the first question was on Millepora).
       const small = fs.readFileSync(
@@ -127,7 +129,7 @@ const server = http.createServer((req, res) => {
         .waitForFunction(() => typeof NEXTQ !== 'undefined' && NEXTQ && NEXTQ.args, null, {timeout: 5000})
         .catch(() => fails.push('No next question planned during the feedback'));
       // The same photos (by name: data-f, quiz.js), each in one of its files. The size is chosen when it shows (the box,
-      // the line measured, Saver): an iNaturalist photo (Millepora's, not downloaded: r: 1) is its 'medium' file for
+      // the line measured, Saver): an iNaturalist photo (not downloaded: r: 1; Millepora's until 2026-11-03) is its 'medium' file for
       // 480 px and 'large' otherwise, names resized() leaves alone, so comparing resized(…, '') failed whenever
       // Millepora came up (#376).
       const want = await p2.evaluate(() =>
@@ -212,7 +214,7 @@ const server = http.createServer((req, res) => {
   // 7. Photo sizes: the file fits the box at the screen's density (up to 2x); Saver (asked, or Auto on a slow connection)
   // one size down, the enlarged view at 960 px then 1600 on a click; Full always 1600 px.
   {
-    // An iNaturalist photo (Millepora's, not downloaded: r: 1) has two files (app.js img()): 'medium' (500 px) for the
+    // An iNaturalist photo (not downloaded: r: 1; Millepora's until 2026-11-03) has two files (app.js img()): 'medium' (500 px) for the
     // 480 px size, 'large' (1024 px) for both 960 and 1600 px ('m+': passes for either). Read as 1600 px, a Millepora
     // question failed the Saver checks (#375).
     const tier = u =>
@@ -492,6 +494,18 @@ const server = http.createServer((req, res) => {
     await p
       .waitForFunction(() => typeof HAVE !== 'undefined' && HAVE >= 5, null, {timeout: 20000})
       .catch(() => fails.push('The last tier never came'));
+    // A file shows in Resource Timing once it is in: lab.js asks for the Lab files as it runs, so they may still be on
+    // their way (with the photos falling back from R2 to the site here, they share the site's connections longer).
+    await p
+      .waitForFunction(
+        () => {
+          const got = performance.getEntriesByType('resource').map(e => new URL(e.name).pathname);
+          return ['/progress.js', '/flag.js', '/proto/lab.js', '/proto/finder.js'].every(f => got.includes(f));
+        },
+        null,
+        {timeout: 20000}
+      )
+      .catch(() => {});
     const [home, at] = await p.evaluate(() => [
       window.__home,
       Object.fromEntries(performance.getEntriesByType('resource').map(e => [new URL(e.name).pathname.slice(1), e.startTime]))
@@ -548,6 +562,120 @@ const server = http.createServer((req, res) => {
     if (!ok) fails.push('The service worker did not install when each file failed once');
     await ctx.close();
   }
+  // 12. Photos from R2 (core.js PHOTO_BASE; ROADMAP "Photos out of the repo", step 2). The app asks R2 for its photos;
+  // R2 out of reach (cut off here, like every outside host: no test needs R2), the same files come from the site at once,
+  // and so do the next ones. Under the service worker, the worker falls back to the site by itself, asks R2 in CORS mode
+  // and keeps the photo offline, under either address.
+  {
+    const R2 = require('../core.js').PHOTO_BASE;
+    // R2 answering, from the local files, with the bucket's CORS header.
+    const fromR2 = ctx =>
+      ctx.route(
+        u => u.href.startsWith(R2),
+        r => {
+          const f = path.join(ROOT, decodeURIComponent(new URL(r.request().url()).pathname));
+          return fs.existsSync(f)
+            ? r.fulfill({status: 200, contentType: 'image/webp', headers: {'Access-Control-Allow-Origin': '*'}, body: fs.readFileSync(f)})
+            : r.fulfill({status: 404});
+        }
+      );
+    const shown = p =>
+      p
+        .waitForFunction(
+          () => {
+            const I = [...document.querySelectorAll('#view .qstage img')];
+            return I.length && I.every(i => i.complete && i.naturalWidth > 0) && I.map(i => i.getAttribute('src'));
+          },
+          null,
+          {timeout: 15000}
+        )
+        .then(h => h.jsonValue())
+        .catch(() => null);
+    // a. R2 answering: the game photos are R2's.
+    {
+      const {ctx, p, errs} = await ctxOf();
+      await fromR2(ctx);
+      await p.goto(base + '#quiz');
+      await ready(p);
+      const s = ((await shown(p)) || []).filter(u => !/inaturalist/.test(u)); // a candidate just added (r: 1) is iNaturalist's
+      if (!s.length || !s.every(u => u.startsWith(R2 + 'img/'))) fails.push(`R2: the game photos are not read from R2 (${s})`);
+      if (errs.length) fails.push('R2: ' + errs.slice(0, 3).join(' | '));
+      await ctx.close();
+    }
+    // b. R2 cut off: R2 was asked, the photos show from the site's img/, no "Another question", and the next question
+    // asks R2 nothing more.
+    {
+      const {ctx, p, errs} = await ctxOf();
+      let asked = 0;
+      p.on('request', r => r.url().startsWith(R2) && asked++);
+      await p.goto(base + '#quiz');
+      await ready(p);
+      const s = ((await shown(p)) || []).filter(u => !/inaturalist/.test(u));
+      if (!asked) fails.push('R2 cut off: R2 was never asked for a photo');
+      if (!s.length || !s.every(u => u.startsWith('img/')) || (await p.$('#qfail')))
+        fails.push(`R2 cut off: the game photos did not fall back to the site (${s})`);
+      const n = asked;
+      await p.click('#view [data-c]');
+      await p.evaluate(() => document.querySelectorAll('.unlock .next, .achpop').forEach(x => x.click && x.click()));
+      await p.click('#next');
+      const s2 = ((await shown(p)) || []).filter(u => !/inaturalist/.test(u));
+      if (!s2.length || !s2.every(u => u.startsWith('img/')) || asked !== n)
+        fails.push(`R2 cut off: the next question asked R2 again (${asked - n} requests) or did not show (${s2})`);
+      if (errs.length) fails.push('R2 cut off: ' + errs.slice(0, 3).join(' | '));
+      await ctx.close();
+    }
+    // c. Under the service worker (a bare page, as in 6).
+    {
+      const f = fs.readdirSync(path.join(ROOT, 'img')).find(x => x.endsWith('-s.webp')),
+        g = f.replace(/-s\.webp$/, '-t.webp');
+      const ctx = await b.newContext({viewport: {width: 390, height: 800}});
+      await ctx.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await ctx.route(base + 'sw-test.html', r => r.fulfill({contentType: 'text/html', body: '<!doctype html><title>t</title>'}));
+      const p = await ctx.newPage();
+      await p.goto(base + 'sw-test.html');
+      await p.evaluate(() =>
+        Promise.race([
+          navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready),
+          new Promise(ok => setTimeout(ok, 30000))
+        ]).catch(() => {})
+      );
+      await p
+        .waitForFunction(() => navigator.serviceWorker.controller, null, {timeout: 20000})
+        .catch(() => fails.push('Service worker: did not take the page over'));
+      const load = u =>
+        p.evaluate(
+          u =>
+            new Promise(ok => {
+              const i = new Image();
+              i.onload = () => ok(i.naturalWidth > 0);
+              i.onerror = () => ok(false);
+              i.src = u;
+            }),
+          u
+        );
+      const cached = () => p.evaluate(() => caches.open('imr-photos-v1').then(c => c.keys().then(K => K.map(k => k.url))));
+      // R2 cut off: the worker serves the site's copy, kept under the R2 address.
+      if (!(await load(R2 + 'img/' + f))) fails.push('Service worker: an R2 photo did not fall back to the site');
+      if (!(await cached()).includes(R2 + 'img/' + f)) fails.push('Service worker: the photo served from the site was not kept');
+      // R2 answering: asked in CORS mode (an opaque reply is never kept), and kept.
+      await fromR2(ctx);
+      if (!(await load(R2 + 'img/' + g))) fails.push('Service worker: an R2 photo did not load from R2');
+      const t = await p.evaluate(u => caches.match(u, {ignoreVary: true}).then(r => r && r.type), R2 + 'img/' + g);
+      if (t !== 'cors') fails.push(`Service worker: the R2 photo was not kept as a CORS reply (${t})`);
+      // Offline: a photo kept under the site's address is served for its R2 address.
+      const h = f.replace(/-s\.webp$/, '-m.webp');
+      await load(base + 'img/' + h);
+      await ctx.route(
+        u => u.href.startsWith(R2) || u.href.startsWith(base + 'img/'),
+        r => r.abort()
+      );
+      if (!(await load(R2 + 'img/' + h))) fails.push('Service worker: offline, a photo kept from the site was not served for R2');
+      await ctx.close();
+    }
+  }
   // 11. A browser driven by a program never sends to the sheet, whatever host it opens the app on (app.js LOCAL:
   // navigator.webdriver; Pierre, 2026-11-03: an agent's test on a made-up host name reached the sheet). The sync
   // script's hosts are mapped to this computer too, so a request that escaped the check could not reach Google.
@@ -600,7 +728,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries, photo sizes, start-up retries, new versions without a manual reload, load order and links straight to a page.'
+    'Poor connection OK: start-up without curation.json, planned and preloaded questions, photo fallback and skip, kept leaderboard, photos dropped on leaving a page, service worker install with retries, photo sizes, start-up retries, new versions without a manual reload, load order and links straight to a page, photos from R2 with the site as the fallback.'
   );
 })().catch(e => {
   console.error(e);

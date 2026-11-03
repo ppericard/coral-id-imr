@@ -55,7 +55,7 @@ function question(cur, target, choices, prompt, set, kq) {
     lab = VIEW_LABEL;
   let answered = false,
     hintShown = false;
-  // data-f names the photo whatever its file: an iNaturalist photo not downloaded yet (r: 1, all of Millepora's) keeps
+  // data-f names the photo whatever its file: an iNaturalist photo not downloaded yet (r: 1, a candidate just added) keeps
   // iNaturalist's file names (app.js img()), which resized() leaves alone (the failed-photo report, tests).
   const fig = (p, k, n = ph.length) =>
     `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${qsrc(p, n)}" data-lo="${img(p, 's')}"${p.f ? ` data-f="${esc(p.f)}"` : ''} alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
@@ -704,7 +704,7 @@ const pfUrls = q => {
       ...later.map(p => img(p, 's')),
       ...later.map(p => qsrc(p, n + later.length))
     ])
-  ].filter(u => u.startsWith('img/')); // the site's own files (an iNaturalist photo waiting to be downloaded loads when shown)
+  ].filter(ownPhoto); // the site's own files, on R2 or the site (an iNaturalist photo waiting to be downloaded loads when shown)
 };
 const pump = () => {
   const kept = new Set([ONQ]);
@@ -716,9 +716,20 @@ const pump = () => {
     while (pfLive < 2 && x.urls.length) {
       const i = new Image();
       pfLive++;
-      i.onload = i.onerror = () => (pfLive--, pump());
+      const u = x.urls.shift();
+      i.onload = () => (pfLive--, pump());
+      // A preload is no element of the page (app.js photoFail): failed on R2, its file is asked from the site, and so
+      // are the next photos.
+      i.onerror = () => {
+        pfLive--;
+        if (photoLocal(u) !== u) {
+          R2 = false;
+          x.urls.unshift(photoLocal(u));
+        }
+        pump();
+      };
       i.decoding = 'async';
-      i.src = x.urls.shift();
+      i.src = u;
       x.held.push(i);
     }
   if (!pfLive && !PF.length) pfWait.splice(0).forEach(ok => ok());

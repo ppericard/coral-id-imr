@@ -91,7 +91,7 @@ const server = http.createServer((req, res) => {
         const ch = [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c),
           traps = ch.filter(c => c !== t && (confusable(t, c) || pooledConf(t, c) >= CONF.TRAP)).length,
           all = Object.values(GX(t).views).flat(),
-          // By name (data-f, quiz.js): Millepora's photos load from iNaturalist, whose URLs name no file in img/.
+          // By name (data-f, quiz.js): an iNaturalist photo not downloaded yet (r: 1) has a URL that names no file in img/.
           fs = [...document.querySelectorAll('#view .qstage img')].map(im => im.dataset.f),
           pd = fs
             .map(f => all.find(x => x.f === f))

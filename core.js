@@ -931,11 +931,37 @@
     return [...slateOf(d), ...BONUS.filter(n => X[n])];
   }
 
+  // Photos out of the repo, step 2 (Pierre, 2026-11-03; docs/ROADMAP.md): the site's photos (img/<f>.webp and its -m, -s,
+  // -t files) are read from the Cloudflare R2 bucket that tools/r2_sync.sh mirrors img/ to, same paths under this base;
+  // the site's own img/ is the fallback (app.js / admin.js photoFail, sw.js photo). The one switch: '' here sends the
+  // app, the admin and the Coral Finder back to img/ (sw.js only caches what it is asked for).
+  const PHOTO_BASE = 'https://pub-934250f83b884a4f890497f2027ce251.r2.dev/';
+  // The same files on the site: every R2 address in s (a URL, a srcset, an inline style) made relative again.
+  const photoLocal = s => (PHOTO_BASE && typeof s === 'string' ? s.split(PHOTO_BASE).join('') : s);
+  // An element whose R2 photo failed (an <img>, or the figure holding a game photo's backdrop): its src, srcset, data-lo
+  // (the 480 px fallback) and inline style point at the site's copies. True when it had an R2 address. srcset before src:
+  // each change starts a new load, and the browser picks from the srcset.
+  function photoToSite(el) {
+    let hit = false;
+    if (PHOTO_BASE && el && el.getAttribute)
+      for (const a of ['data-lo', 'style', 'srcset', 'src']) {
+        const v = el.getAttribute(a);
+        if (v && v.includes(PHOTO_BASE)) {
+          el.setAttribute(a, photoLocal(v));
+          hit = true;
+        }
+      }
+    return hit;
+  }
+
   const CORE = {
     BENTHIC,
     BONUS,
     slateOf,
     gameOf,
+    PHOTO_BASE,
+    photoLocal,
+    photoToSite,
     PROG,
     pgStep,
     pgOf,

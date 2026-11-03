@@ -189,3 +189,22 @@ test('data.json keeps only the candidates curation.json uses; the ones waiting a
     'a candidate is in one file only'
   );
 });
+
+test('game photos of the genera off the IMR list (Millepora, bonus genera) are hosted like the others: downloaded, four files', () => {
+  const games = ['Millepora', 'Isopora', 'Leptoseris', 'Heliopora', 'Sandalolitha', 'Pleuractis']; // app.js BENTHIC + BONUS
+  const remote = [],
+    missing = [];
+  games.forEach(n =>
+    ['views', 'more'].forEach(k =>
+      Object.values(RAW.x.gen[n][k] || {})
+        .flat()
+        .forEach(p => {
+          if (p.r) remote.push(p.f);
+          else if (['', '-m', '-s', '-t'].some(s => !fs.existsSync(path.join(__dirname, '..', 'img', p.f + s + '.webp'))))
+            missing.push(p.f);
+        })
+    )
+  );
+  assert.deepStrictEqual(remote, [], 'still shown from iNaturalist (python3 tools/fetch_approved.py --games)');
+  assert.deepStrictEqual(missing, [], 'a file missing in img/');
+});
