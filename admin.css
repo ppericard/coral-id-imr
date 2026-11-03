@@ -2279,8 +2279,19 @@ td.cov-c .cov-off {
   overflow-wrap: anywhere;
   font-size: 0.8rem;
 }
-.adm-ev td:first-child {
+/* Error messages wrap within a wider cap than other columns (13 em on phones, 36 em from tablets). */
+.adm-ev td:first-child:has(code),
+.adm-tderr td:first-child {
+  --cut: 13em;
   min-width: 13em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 600px) {
+  .adm-ev td:first-child:has(code),
+  .adm-tderr td:first-child {
+    --cut: 36em;
+  }
 }
 .adm-tscroll.tall {
   max-height: 420px;
@@ -2304,6 +2315,40 @@ td.cov-c .cov-off {
   padding: 3px 6px;
   border-top: 1px solid var(--line);
   white-space: nowrap;
+  max-width: var(--cut);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Every admin table: a column never grows without limit (Pierre, 2026-11-03: a long name or "yesterday 05:45 PM" made
+   phones scroll sideways). Each cell stops at --cut (about 9 em on phones, 16 em from tablets) and ends in "…"; the full
+   text is in the title (cut() / pname() in admin.js, or set on hover for any cell cut short). Text meant to wrap
+   (error messages, reasons) wraps within the cap instead. .adm-cut caps a name by itself (every browser honours it on an
+   inline block, not all on a table cell), so its cell keeps room for a "you" beside it. A genus link is never cut: genus
+   names have a known length, and the Journey's "learned" beside it must stay visible. */
+.adm-tbl {
+  --cut: 9em;
+}
+@media (min-width: 600px) {
+  .adm-tbl {
+    --cut: 16em;
+  }
+}
+.adm-cut {
+  display: inline-block;
+  max-width: var(--cut, 16em);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+.adm-tbl td:has(> .adm-cut, > a > .adm-cut, > .adm-gen) {
+  max-width: none;
+}
+/* Players: hidden from the leaderboard = a greyed name (its title says so), no tag. */
+.adm-tbl .adm-uhid {
+  color: var(--muted);
+  font-style: italic;
+  font-weight: 600;
 }
 .adm-tbl td.n {
   color: var(--muted);
@@ -2848,6 +2893,8 @@ td.cov-c .cov-off {
   background: var(--surface-2);
 }
 .adm-utbl .adm-udet > td {
+  max-width: none;
+  overflow: visible;
   white-space: normal;
   padding: 8px 0 12px;
   background: var(--bg);
@@ -3369,10 +3416,6 @@ button.adm-chip[aria-pressed='true'] {
   align-items: baseline;
   flex-wrap: wrap;
   gap: 4px 10px;
-}
-.adm-tderr td:first-child {
-  max-width: 520px;
-  overflow-wrap: anywhere;
 }
 /* Coverage › Games: Where to look as a banner above the grid (lookBanner()). */
 .cov-look:empty {
