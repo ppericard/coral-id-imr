@@ -283,11 +283,18 @@ function togglePin(f, c) {
 const crOf = f => (DRAFT.crop || {})[f],
   crChanged = () => !same(DRAFT.crop || {}, SAVED.crop || {});
 const snChanged = () => !same(DRAFT.single || {}, SAVED.single || {});
-const crStyle = f => {
-  const c = crOf(f);
+// A photo's src and its draft crop as a preview (object-view-box). A downloaded photo's local file already has the
+// published crop in it (data.json "cr", tools/fetch_approved.py): shown as is while the draft keeps that crop, and the
+// original (iNat) with the draft crop as soon as the draft differs (Pierre, 2026-11-03: the crop just made showed "one
+// time in two", when it was laid over a file cropped already).
+const crSrc = (p, s) => {
+  const c = crOf(p.f),
+    baked = !p.r && p.cr;
+  if (baked && same(c, p.cr)) return `src="${img(p, s)}"`;
+  const src = baked && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : img(p, s);
   return c
-    ? ` style="object-view-box:inset(${+(c[1] * 100).toFixed(1)}% ${+((1 - c[2]) * 100).toFixed(1)}% ${+((1 - c[3]) * 100).toFixed(1)}% ${+(c[0] * 100).toFixed(1)}%)"`
-    : '';
+    ? `src="${src}" style="object-view-box:inset(${+(c[1] * 100).toFixed(1)}% ${+((1 - c[2]) * 100).toFixed(1)}% ${+((1 - c[3]) * 100).toFixed(1)}% ${+(c[0] * 100).toFixed(1)}%)"`
+    : `src="${src}"`;
 };
 const bookOn = o => o.book !== false,
   bChanged = () => bookOn(DRAFT) !== bookOn(SAVED);
@@ -866,7 +873,7 @@ function tile(n, p, v, st) {
     .map(([w]) => `<button type="button" data-act="move" data-to="${w}" aria-pressed="${w === v}">${label(n, w)}</button>`)
     .join('');
   return `<figure class="adm-tile ${st.cls || ''}${isCover ? ' is-cover' : ''}" data-f="${esc(p.f)}" data-v="${v}"${st.cls === 'is-hidden' ? '' : ` data-drag${st.num ? ` data-pos="${st.num - 1}"` : ''}`}>
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"${crStyle(p.f)}></button>${st.cls === 'is-hidden' ? XBTN : GRIP + XBTN}
+    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${st.cls === 'is-hidden' ? XBTN : GRIP + XBTN}
     ${st.num ? `<span class="adm-num${st.sheet ? ' sheet' : ''}"${st.sheet ? ' title="Genus sheet"' : ''}>${st.num}</span>` : ''}
     ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
     <figcaption>${p.from ? `<span class="adm-src new" title="From ${esc(p.from)}">from ${esc(p.from)}</span>` : ''}${p.cand ? '<span class="adm-src new" title="Candidate you added">added</span>' : ''}${srcTag(p)}${p.multi || p.wasMulti ? `<button type="button" class="adm-src multi${p.wasMulti ? ' off' : ''}" data-act="multi" title="Several corals" aria-pressed="${!p.wasMulti}">${p.wasMulti ? 'one coral' : 'several corals'}</button>` : ''}<span class="adm-t">${esc(p.imr ? 'slide ' + p.slide : p.t || '')}</span></figcaption>
@@ -1108,7 +1115,7 @@ function render() {
     Ps = P.filter(shown),
     two = lv(n) === 2;
   const candTile =
-    p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"${crStyle(p.f)}></button>${GRIP}${XBTN}
+    p => `<figure class="adm-tile is-cand" data-f="${esc(p.f)}" data-drag><button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
     <figcaption>${srcTag(p)}${rejected(p.f) ? '<span class="adm-src rej" title="Rejected">rejected</span>' : ''}<span class="adm-t">${esc(p.t || '')}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}${fSeg(p)}<span class="adm-qseg adm-vseg" role="group" aria-label="View">${VIEWS.filter(
       ([w]) => !(two && w === 'medium')
@@ -1374,7 +1381,7 @@ function zoom(n, f) {
   let i = i0;
   const show = () => {
     const p = L[i];
-    lb.innerHTML = `<div class="lb-in"><img src="${img(p)}" alt=""><p class="lb-cap"><i>${esc(n)}</i> · ${p.base === 'cand' ? 'Candidate' : p.base === 'out' ? 'Not this genus' : label(n, viewOf(n, p))} · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p>
+    lb.innerHTML = `<div class="lb-in"><img ${crSrc(p)} alt=""><p class="lb-cap"><i>${esc(n)}</i> · ${p.base === 'cand' ? 'Candidate' : p.base === 'out' ? 'Not this genus' : label(n, viewOf(n, p))} · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p>
     <div class="lb-nav"><button type="button" data-d="-1" aria-label="Previous">‹</button><span>${i + 1} / ${L.length}</span><button type="button" data-d="1" aria-label="Next">›</button><button type="button" data-x>Close</button></div></div>`;
     lb.querySelectorAll('[data-d]').forEach(
       b =>
@@ -1483,7 +1490,7 @@ function renderQuality() {
   );
   const card =
     p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" data-drag tabindex="0">
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"${crStyle(p.f)}></button>${GRIP}${XBTN}
+    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
     <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}${p.multi ? '<span class="adm-src multi" title="Several corals in frame">several</span>' : ''}${qTag(p)}</figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
   const sec = ([q, t]) => {
@@ -1746,7 +1753,7 @@ function renderForm() {
   );
   const card =
     p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"${crStyle(p.f)}></button>${GRIP}${XBTN}
+    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
     <figcaption><a class="adm-gen" href="#${esc(p.genus)}" title="Open the genus"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${srcTag(p)}${p.hid ? '<span class="adm-src multi">hidden</span>' : ''}</figcaption>
     <div class="adm-acts">${fSeg(p)}${pinOK(p) ? `<span class="adm-pinw">${pinBtn(p.f)}</span>` : ''}</div></figure>`;
   // Still to classify: grouped by the old Coral Finder letter, as a hint.
@@ -2608,7 +2615,7 @@ function zoomOne(p) {
     key = e => {
       if (e.key === 'Escape') close();
     };
-  lb.innerHTML = `<div class="lb-in"><img src="${img(p)}" alt=""><p class="lb-cap"><i>${esc(p.genus)}</i> · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p><div class="lb-nav"><button type="button" data-x>Close</button></div></div>`;
+  lb.innerHTML = `<div class="lb-in"><img ${crSrc(p)} alt=""><p class="lb-cap"><i>${esc(p.genus)}</i> · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p><div class="lb-nav"><button type="button" data-x>Close</button></div></div>`;
   lb.querySelector('[data-x]').onclick = close;
   lbFull(lb);
   lb.hidden = false;
@@ -2834,7 +2841,7 @@ function renderRepl() {
   $v.innerHTML = `<section class="adm-repl">
     <div class="adm-shead"><h2><i>${esc(n)}</i> · ${esc(label(n, w))} is full</h2></div>
     <p class="note">${cols.length} colonies in the games (cap ${CELL_MAX}) · replace which one?${sug ? ` Suggested: the first one${sug.why.length ? ` (${esc(sug.why.join(', '))})` : ''}, for the most variety; any other works too.` : ' Every colony is one to keep (sheet references, IMR, your photos, a growth form shown once): choose, or add anyway.'}</p>
-    <figure class="adm-repl-new"><img src="${img(p)}" alt=""${crStyle(f)}><figcaption>New: ${esc(p.t || f)}</figcaption></figure>
+    <figure class="adm-repl-new"><img ${crSrc(p)} alt=""><figcaption>New: ${esc(p.t || f)}</figcaption></figure>
     <div class="adm-repl-grid">${cols
       .map(
         c => `<button type="button" class="adm-repl-tile${c === sug ? ' sug' : ''}" data-repl="${esc(c.k)}" title="${esc(c.keep ? 'Kept: ' + c.keep : c.why.join(', ') || 'Nothing against it')}"><img src="${img(c.L[0], 1)}" alt="" loading="lazy">
@@ -2903,7 +2910,7 @@ function renderCand() {
         : '';
     $v.innerHTML = `<section class="adm-sw" data-f="${esc(p.f)}" data-g="${esc(n)}">${seg}
       <figure class="adm-swcard">
-        <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img src="${img(p)}" alt=""${crStyle(p.f)}></button>
+        <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img ${crSrc(p)} alt=""></button>
         <a class="adm-swg" href="#${encodeURIComponent(n)}" title="Genus page"><i>${esc(n)}</i>${p.from ? `<small>from ${esc(p.from)}</small>` : ''}</a>
         <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
         <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
@@ -3679,7 +3686,7 @@ function renderDiff() {
   const card = p => {
     const [d, n, r] = S[p.f];
     return `<figure class="adm-tile adm-qt" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-q="${qOf(p.f)}" tabindex="0">
-    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy" draggable="false"${crStyle(p.f)}></button>
+    <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>
     <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}<span class="adm-src" title="Difficulty · answers that rated it, right (weighed by experience)">${d > 0 ? '+' : ''}${d.toFixed(1)} · ${nAns(S[p.f])} · ${pct(r, n)}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
   };
@@ -4257,14 +4264,15 @@ function renderUsers() {
       .join('');
   // A player's games, mix-ups, genera to review and days played are on their Journey page (Pierre, 2026-11-02: one place
   // for a player's path); the row only opens it and the account tools.
-  const detail = u => `<tr class="adm-udet"><td colspan="${UCOLS.length + 1}"><div class="adm-sgrid">
-      <section class="adm-scard"><p><a class="next" href="#~journey/${encodeURIComponent(u.name)}">Journey →</a></p></section>
-      <section class="adm-scard"><h3>Manage</h3>
-        <p><label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label></p>
-        <p>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></p>
-        ${u.id && u.id !== MEID ? `<p>${isMe(u.id) ? 'Counted as you (left out by Without me / Others)' : 'Another player'} <button type="button" class="adm-fchip" data-ume="${esc(u.id)}">${isMe(u.id) ? 'Not me' : 'This is also me'}</button></p>` : ''}
-        <p><button type="button" class="adm-fchip" data-uren="${esc(u.name)}">Rename…</button></p>
-        <p><button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete</button></p></section></div></td></tr>`;
+  // One compact bar under the row (Pierre, 2026-11-03: a big card for one Journey link and a tall Manage card wasted the
+  // space): Journey first, the account's state with its toggle, then the account tools, Delete last on the right.
+  const detail = u => `<tr class="adm-udet"><td colspan="${UCOLS.length + 1}"><div class="adm-ubar">
+      <a class="next" href="#~journey/${encodeURIComponent(u.name)}">Journey →</a>
+      <span>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></span>
+      ${u.id && u.id !== MEID ? `<span>${isMe(u.id) ? 'Counted as you (left out by Without me / Others)' : 'Another player'} <button type="button" class="adm-fchip" data-ume="${esc(u.id)}">${isMe(u.id) ? 'Not me' : 'This is also me'}</button></span>` : ''}
+      <label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label>
+      <button type="button" class="adm-fchip" data-uren="${esc(u.name)}">Rename…</button>
+      <button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete</button></div></td></tr>`;
   // Answers without a name: devices that never signed in (~anon) and deleted accounts, by anonymous id.
   const LVM = levelMargin(ANS.rows || []), // 95% margin of each player's level (core.js)
     named = new Set(U.map(u => u.id).filter(Boolean)),
