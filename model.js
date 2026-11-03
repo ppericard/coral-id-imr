@@ -14,7 +14,17 @@
 // last 2 questions on the genus is held back, and at least 3 colonies stay in rotation (VARIETY) whatever the level, so
 // a struggling player still sees new photos.
 // Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
-const PICKD = {P: 0.8, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
+const PICKD = {
+  P: 0.8,
+  AIM: [
+    [0.5, 0.85],
+    [1.5, 0.75]
+  ],
+  SIGMA: 0.7,
+  VARIETY: 3,
+  FLOOR: 0.05,
+  SINGLE: 0.5
+};
 // One difficulty controller (independent review of 2026-11-02, item 4, after Papousek, Pelanek & Stanislav 2014, who
 // set the question's format so that the predicted success hits one target; 2026-11-03). Two steps, one target:
 // 1. The format of a question on genus n comes from its ability on one schedule (FORMAT, below): how many of the 3 wrong
@@ -27,8 +37,19 @@ const PICKD = {P: 0.8, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
 //    aimed 1.01 below (TARGET_OFF 1.0 before, for every question), 3 plausible choices 0.81, 2 (easy choices, an Again,
 //    a duel) 0.41, a typed one 1.39: before, a question with 2 plausible choices was right about 87% of the time on its
 //    photo and a typed one 73%, so the target moved with the format. docs/LEARNING.md "One difficulty controller".
+// The success aimed for follows the player's global level (Pierre, 2026-11-03: strong players must find the app
+// challenging quickly, and beginners must not be overwhelmed): PICKD.AIM, points [global level, success], 85% up to a
+// level of 0.5 (a beginner, a lecture-level RA: easy first, to hook them; Papoušek, Stanislav & Pelánek 2016 found
+// easy questions better for staying at first, harder ones for learning and coming back), 75% from 1.5 (a strong RA,
+// an expert), a straight line between, flat outside (no cliff). PICKD.P (0.8, the middle) stays the game's reference.
+// docs/LEARNING.md "Beginners and experts".
+function aimP() {
+  const L = (P[LEVEL] || {}).th || 0,
+    [[l0, p0], [l1, p1]] = PICKD.AIM;
+  return p0 + (p1 - p0) * Math.min(1, Math.max(0, (L - l0) / (l1 - l0)));
+}
 const aimOff = (k = 4) => {
-  const x = (PICKD.P - 1 / k) / (1 - 1 / k);
+  const x = (aimP() - 1 / k) / (1 - 1 / k);
   return Math.log(x / (1 - x));
 };
 // The schedule of the format (step 1): points [ability, look-alike traps, share of single-view questions], a straight
@@ -296,7 +317,10 @@ const genusDiff = n => {
 // genus (it held an expert back, each new genus waiting to be drawn again).
 const shaky = n => {
   const s = P[n] || {};
-  return ((s.ok || 0) + (s.ko || 0) > 0 || !!s.h) && !s.mx && 0.25 + 0.75 * sig(ability(n) - genusDiff(n)) < OPEN.P;
+  // The bar moves with the success aimed for (aimP): OPEN.P at the game's reference (PICKD.P), 0.05 higher for a
+  // beginner aimed at 85%, 0.05 lower for a strong player at 75%, so a beginner opens a new genus only once the genera
+  // met are a little more solid (Pierre, 2026-11-03), and the strong ones hold nobody back.
+  return ((s.ok || 0) + (s.ko || 0) > 0 || !!s.h) && !s.mx && 0.25 + 0.75 * sig(ability(n) - genusDiff(n)) < OPEN.P + aimP() - PICKD.P;
 };
 // The chance that a question the path allows to open a genus opens one: the free share of OPEN.K places for shaky genera.
 // Only the genera open now take a place (introduced): a genus closed again by "One at a time" (introBack) keeps its
@@ -792,18 +816,41 @@ const recent = n => {
 // starts from the player's global level (core.js playerStart: their abilities on the genera already answered, shrunk
 // towards the level their answer to the first-launch question says, startV().p), so a strong player gets traps, single
 // views and harder photos on a new genus from its first question.
+// A genus already answered: its own estimate (s.th, from its last own step) plus the global level's move since then
+// (levelMove), so what the player shows on the other genera moves it too while its own answers are few: the global +
+// concept skill of Pelánek et al. (UMUAI 2017), as a lazy update (2026-11-03, docs/LEARNING.md "Global level and
+// genus").
 const ability = n => {
   const s = P[n] || {};
-  return typeof s.th === 'number' ? s.th : s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n, startV().p);
+  if (typeof s.th !== 'number') return s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n, startV().p);
+  return Math.min(ELO.hi, Math.max(ELO.lo, s.th + levelMove(n, s)));
 };
+// The global level's move since the genus's own last step (s.lt: the level then), weighed by the genus's own
+// uncertainty 1 / (1 + answers / ELO.n), the share its own Elo step gives a new answer: a genus with few answers leans
+// on the level, one with many on itself. Both ways (a one-way rise was tried: biased upward, it over-rated a simulated
+// beginner by 0.5-0.7). No new constant. Taken in at the genus's next own step (abilityStep). Progress saved before
+// (no s.lt): nothing until that step.
+function levelMove(n, s) {
+  const G = P[LEVEL];
+  if (n === LEVEL || typeof s.lt !== 'number' || !G || typeof G.th !== 'number') return 0;
+  return Math.round(((G.th - s.lt) / (1 + ((s.ok || 0) + (s.ko || 0)) / ELO.n)) * 100) / 100;
+}
 function abilityStep(n, s, good, d, k) {
   const th = ability(n),
     g = 1 / k,
     e = g + (1 - g) * sig(th - d),
     m = (s.ok || 0) + (s.ko || 0);
   s.vr = Math.round(((1 - ELO.vr) * (s.vr || 0) + ELO.vr * ((good ? 1 : 0) - e)) * 1000) / 1000;
-  const K = Math.min(ELO.kmax, Math.max(ELO.kmin, ELO.kmax / (1 + m / ELO.n)) * (1 + ELO.vg * Math.abs(s.vr)));
-  s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * 100) / 100;
+  // The global level's step has no floor (ELO.kmin is for a genus, which must ease off quickly when it starts going
+  // wrong): the level pools every answer and now moves every genus (levelMove), so it settles as answers build up
+  // (Pelánek's uncertainty function), the volatility still letting it catch up with a lasting change. With the floor a
+  // run of early misses sank it (one real player to -0.41 against a fit of 0.56) and dragged the genera with it.
+  const K = Math.min(ELO.kmax, Math.max(n === LEVEL ? 0 : ELO.kmin, ELO.kmax / (1 + m / ELO.n)) * (1 + ELO.vg * Math.abs(s.vr)));
+  // Kept to 4 decimals for the global level (2 for a genus): without the floor its steps fall under 0.005 after a few
+  // hundred answers, and rounding them to 2 decimals lost every one (Codex review #415: 1000 right answers left it at 1).
+  const r = n === LEVEL ? 1e4 : 100;
+  s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * r) / r;
+  if (n !== LEVEL && P[LEVEL] && typeof P[LEVEL].th === 'number') s.lt = P[LEVEL].th;
   delete s.lv;
   delete s.run;
 }
@@ -884,7 +931,7 @@ function pgWeight(t, chs, k) {
 // had is then the recall-adjusted one, so a miss the rust explains costs less progress (Pierre, 2026-11-02).
 function pgMissW(th, d, k, R = 1) {
   const e = (x, r = 1) => 1 / k + (1 - 1 / k) * r * sig(x);
-  return Math.min(1, e(th - d, R) / PICKD.P);
+  return Math.min(1, e(th - d, R) / aimP());
 }
 // What a right answer on a photo the player knows proves (Pierre, 2026-11-03): only what memory does not explain. The
 // mirror of pgMissW (a ratio of chances, like it): the chance the player had on the same photos new over the chance
@@ -1151,6 +1198,60 @@ function customChoices(t, sel, play, traps, known) {
       known
     )
   ].slice(0, 3);
+}
+// The custom quiz's "My mix-ups" view (Pierre, 2026-11-03: "you usually know you make mistakes around these kinds of
+// genera, so you go there"): the genera in play grouped by the player's own confusions, most confused first.
+// mixEdges: each pair of genera in play the player mixed up, weighed by how often, both ways (s.conf: the genus given
+// instead of the one shown, typed answers included). lookEdges: the declared look-alikes (data.json look, IMR lecture
+// and Coral Finder; isLook both ways), weighed by how much every player confuses them (pooledConf), for a player with no
+// mix-up yet. mixClusters: greedy clusters, the heaviest pair first: two genera in no cluster start one, a genus joins
+// the cluster of its partner when it is paired with at least half of its genera and it has fewer than CUSTOM.CLUSTER,
+// two clusters never merge (a chain of look-alikes, A like B like C like D, would otherwise make one cluster of genera
+// that do not look alike); each cluster weighs its pairs, heaviest first.
+CUSTOM.CLUSTER = 6;
+const mixEdges = play => {
+  const E = [];
+  play.forEach((a, i) =>
+    play.slice(i + 1).forEach(b => {
+      const w = (((P[a] || {}).conf || {})[b] || 0) + (((P[b] || {}).conf || {})[a] || 0);
+      if (w > 0) E.push([a, b, w]);
+    })
+  );
+  return E;
+};
+const lookEdges = play => {
+  const E = [];
+  play.forEach((a, i) => play.slice(i + 1).forEach(b => isLook(a, b) && E.push([a, b, pooledConf(a, b)])));
+  return E;
+};
+function mixClusters(edges, cap = CUSTOM.CLUSTER) {
+  const of = new Map(),
+    C = [],
+    E = edges.filter(e => e[2] > 0),
+    pair = new Set(E.flatMap(([a, b]) => [a + '|' + b, b + '|' + a]));
+  E.sort((x, y) => y[2] - x[2] || (x[0] + '|' + x[1]).localeCompare(y[0] + '|' + y[1])).forEach(([a, b, w]) => {
+    const ca = of.get(a),
+      cb = of.get(b);
+    if (!ca && !cb) {
+      const c = {g: [a, b], w};
+      C.push(c);
+      of.set(a, c).set(b, c);
+    } else if (ca && cb) {
+      if (ca === cb) ca.w += w;
+    } else {
+      const c = ca || cb,
+        n = ca ? b : a;
+      if (c.g.length < cap && 2 * c.g.filter(x => pair.has(n + '|' + x)).length >= c.g.length) {
+        c.g.push(n);
+        of.set(n, c);
+        c.w += w;
+      }
+    }
+  });
+  // Each cluster's weight once its members are final: every edge inside it, also one met before its second genus joined
+  // (Codex review #417: AD skipped while D could not join yet, then D joined through E: 37 instead of 45).
+  C.forEach(c => (c.w = E.reduce((t, [a, b, w]) => t + (of.get(a) === c && of.get(b) === c ? w : 0), 0)));
+  return C.sort((x, y) => y.w - x.w);
 }
 // Once the whole file is in (save, LEVEL and PMEM above): the progress saved before the photo memory, recalculated.
 memRecalcAll();

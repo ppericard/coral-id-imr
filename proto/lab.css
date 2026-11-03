@@ -3785,6 +3785,19 @@ body:has(.fdstart:not([hidden])) main {
   fill: var(--on-photo);
   stroke: var(--photo-bg);
 }
+/* a hollow ring: points at a small part without hiding it (step 4) */
+.bx-dot.hollow {
+  fill: none;
+  stroke: var(--hl);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 1.5px var(--photo-bg));
+}
+.bx-dot.hollow.cos {
+  stroke: var(--hl2);
+}
+.bx-dot.hollow.ctr {
+  stroke: var(--on-photo);
+}
 /* the rim of one cup (step 4): a thin dashed ring, nothing dimmed */
 .bx-rim {
   fill: none;

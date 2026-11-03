@@ -438,25 +438,52 @@ async function overlays(b, base) {
     if (r.btn !== want[0] || r.yes !== want[1] || !r.next) fails.push(`right-answer celebration (${reducedMotion}): ${JSON.stringify(r)}`);
     await c.close();
   }
-  // Custom quiz (quiz.js viewCustom, quizCustom; 2026-11-03), on a phone: nothing picked at first (Start off), A-Z, photos
-  // picked and Clear all, a quick pick (a genus and its look-alikes), the IMR groups view and the search, the choice kept
-  // after a reload (in the view left), then a dozen questions all on the genera picked, logged quiz|s…; the Practice tabs fit the width.
+  // Custom quiz (quiz.js viewCustom, quizCustom; 2026-11-03), on a phone: nothing picked at first (Start off); IMR groups
+  // by default (Pierre: "nobody picks genera alphabetically"), also on a device that had kept the old A-Z view; My mix-ups
+  // with the declared look-alikes and a note before any mix-up, then the player's own clusters with their counts; the
+  // Progress view; photos picked and Clear all, a quick pick (a genus and its look-alikes), the search, the choice and
+  // the view kept after a reload, then a dozen questions all on the genera picked, logged quiz|s…; nothing wider than
+  // the screen in any view (the Practice tabs included), at 390 and 360 px.
   {
-    const [c, p] = await open({viewport: {width: 390, height: 844}}, seen);
+    const [c, p] = await open({viewport: {width: 390, height: 844}}, () => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+      if (!sessionStorage.getItem('cq-old')) {
+        sessionStorage.setItem('cq-old', '1');
+        localStorage.setItem('imr-custom-view', '"az"'); // the A-Z view kept by a device before 2026-11-03
+      }
+    });
     await p.goto(base + '#quiz-custom');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     await p.waitForSelector('.cqtile');
     const state = () =>
       p.evaluate(() => ({
+        view: document.querySelector('[data-cv][aria-pressed="true"]').dataset.cv,
         on: [...new Set([...document.querySelectorAll('.cqtile[aria-pressed="true"]')].map(b => b.dataset.g))].sort(),
         start: !document.querySelector('[data-start]').disabled,
         n: document.querySelector('.cqn b').textContent,
         shown: [...new Set([...document.querySelectorAll('.cqtile:not([hidden])')].map(b => b.dataset.g))],
         tabs: (m => m.scrollWidth <= m.clientWidth)(document.getElementById('modes')),
-        heads: document.querySelectorAll('.cqg:not([hidden]) .cqh').length,
-        tiles: [...document.querySelectorAll('.cqtile')].map(b => b.dataset.g)
+        wide: [...document.querySelectorAll('#view *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1).length,
+        heads: [...document.querySelectorAll('.cqg:not([hidden]) .cqht')].map(h => h.textContent),
+        first: [...document.querySelectorAll('.cqg:first-of-type .cqtile')].map(b => b.dataset.g),
+        tiles: [...document.querySelectorAll('.cqtile')].map(b => b.dataset.g),
+        note: !!document.querySelector('.cqnote'),
+        play: pool()
       }));
     const s0 = await state();
+    await p.click('[data-cv="mix"]');
+    const m0 = await state();
+    // A player who mixed Pocillopora up with Stylophora 4 times and Seriatopora with Stylophora 3 times.
+    await p.evaluate(() => {
+      P.Pocillopora = {...(P.Pocillopora || {}), ok: 3, ko: 4, conf: {Stylophora: 4}};
+      P.Seriatopora = {...(P.Seriatopora || {}), ok: 2, ko: 3, conf: {Stylophora: 3}};
+    });
+    await p.click('[data-cv="prog"]');
+    const g0 = await state();
+    await p.click('[data-cv="mix"]');
+    const m1 = await state();
+    await p.click('[data-cv="imr"]');
     for (const g of ['Acropora', 'Pocillopora', 'Porites']) await p.click(`.cqtile[data-g="${g}"]`);
     const s1 = await state();
     await p.click('[data-clear]');
@@ -464,21 +491,36 @@ async function overlays(b, base) {
     await p.selectOption('#cqlk', 'Pocillopora');
     const s3 = await state(),
       looks = await p.evaluate(() => cqLooks('Pocillopora', pool()).sort());
-    await p.click('[data-cv="imr"]');
-    const s4 = await state();
     await p.fill('#cqq', 'acro');
     const s5 = await state();
+    await p.click('[data-cv="mix"]'); // the view kept after the reload
     await p.reload();
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     await p.waitForSelector('.cqtile');
     const s6 = await state();
+    const all = L => [...new Set(L)].sort().join(),
+      trio = s0.play.filter(n => ['Pocillopora', 'Stylophora', 'Seriatopora'].includes(n)); // a cluster in the game's order
     if (
+      s0.view !== 'imr' ||
+      s0.heads.length < 5 || // the IMR lecture groups, every genus in play in view, the first group in the IMR order
+      all(s0.tiles) !== all(s0.play) ||
+      s0.first.join() !== s0.play.filter(n => s0.first.includes(n)).join() ||
       s0.on.length ||
-      s0.heads || // A-Z by default: one grid, every genus in play once, in order (no grouping by growth form)
-      s0.tiles.join() !== [...s0.tiles].sort((a, b) => a.localeCompare(b)).join() ||
-      new Set(s0.tiles).size !== s0.tiles.length ||
       s0.start ||
       !s0.tabs ||
+      s0.wide ||
+      m0.view !== 'mix' ||
+      !m0.note || // no mix-up yet: the declared look-alike sets, said so
+      m0.heads.length < 3 ||
+      m0.wide ||
+      g0.view !== 'prog' ||
+      !g0.heads.includes('Not seen yet') ||
+      !g0.heads.some(h => /^(To review|Learning)$/.test(h)) ||
+      g0.wide ||
+      m1.note ||
+      m1.heads[0] !== `${trio.join(' · ')} 7 mix-ups` ||
+      m1.first.join() !== trio.join() ||
+      m1.wide ||
       s1.on.join() !== 'Acropora,Pocillopora,Porites' ||
       !s1.start ||
       s1.n !== '3 genera' ||
@@ -486,15 +528,24 @@ async function overlays(b, base) {
       s2.start ||
       s3.on.join() !== looks.join() ||
       looks.length < 2 ||
-      s4.on.join() !== s3.on.join() ||
-      s4.heads < 5 || // the IMR lecture groups, their genera in view
-      [...s4.tiles].sort().join() !== [...s0.tiles].sort().join() ||
       s5.shown.some(g => !/acro/i.test(g)) ||
       !s5.shown.includes('Acropora') ||
+      s6.view !== 'mix' ||
       s6.on.join() !== looks.join() ||
       !s6.start
     )
-      fails.push(`custom quiz selection: ${JSON.stringify({s0, s1, s2, s3, looks, s4, s5, s6})}`);
+      fails.push(
+        `custom quiz selection: ${JSON.stringify({s0, m0, g0, m1, s1, s2, s3, looks, s5, s6}, (k, v) => (k === 'play' || k === 'tiles' ? undefined : v))}`
+      );
+    // 360 px: every view fits the width.
+    await p.setViewportSize({width: 360, height: 780});
+    for (const v of ['imr', 'mix', 'prog']) {
+      await p.click(`[data-cv="${v}"]`);
+      const w = await state();
+      if (w.wide || !w.tabs) fails.push(`custom quiz at 360 px, view ${v}: ${w.wide} elements wider than the screen, tabs fit ${w.tabs}`);
+    }
+    await p.click('[data-cv="imr"]');
+    await p.setViewportSize({width: 390, height: 844});
     await p.click('[data-start]');
     const asked = [],
       modes = [];
@@ -1196,7 +1247,8 @@ async function basicsTeach(b, base) {
       const q = s => document.querySelector(s),
         rim = q('.bx-fig .bx-rim'),
         at = (e, k) => Number(e.getAttribute(k));
-      const inRim = d => ((at(d, 'cx') - at(rim, 'cx')) / at(rim, 'rx')) ** 2 + ((at(d, 'cy') - at(rim, 'cy')) / at(rim, 'ry')) ** 2;
+      // distance from the rim's centre in rim radii: < 1 inside the rim, 1 on it
+      const inRim = d => Math.hypot((at(d, 'cx') - at(rim, 'cx')) / at(rim, 'rx'), (at(d, 'cy') - at(rim, 'cy')) / at(rim, 'ry'));
       return {
         rim: !!rim,
         sep: q('.bx-fig .bx-dot.sep') && inRim(q('.bx-fig .bx-dot.sep')),
@@ -1210,9 +1262,10 @@ async function basicsTeach(b, base) {
     });
     if (!sp.rim) fails.push(`${W} septa: no rim drawn on the photo`);
     else {
-      if (!(sp.sep < 0.6)) fails.push(`${W} septa: the septa point is not well inside the rim (${sp.sep})`);
-      if (!(sp.cos > 1.1)) fails.push(`${W} septa: the costae point is not outside the rim (${sp.cos})`);
-      if (!(sp.ctr < 0.01)) fails.push(`${W} septa: the centre point is not at the rim's centre (${sp.ctr})`);
+      if (!(sp.sep < 0.75)) fails.push(`${W} septa: the septa point is not well inside the rim (${sp.sep})`);
+      // Costae are immediately outside the wall (Pierre, PR #424): past the rim, by less than a quarter of its radius.
+      if (!(sp.cos > 1.05 && sp.cos < 1.25)) fails.push(`${W} septa: the costae point is not just outside the rim (${sp.cos} rim radii)`);
+      if (!(sp.ctr < 0.4)) fails.push(`${W} septa: the centre point is not near the rim's centre (${sp.ctr})`);
     }
     if (!sp.labs.some(l => /\bsep\b/.test(l) && /septa/.test(l)) || !sp.labs.some(l => /\bcos\b/.test(l) && /costae/.test(l)))
       fails.push(`${W} septa: no septa and costae labels in their colours: ${sp.labs.join(', ')}`);
@@ -1246,6 +1299,35 @@ async function basicsTeach(b, base) {
     });
     if (!lb || lb.d > 2 || lb.labs < 3)
       fails.push(`${W} septa: the enlarged photo has no labels on it, or they are off the photo: ${JSON.stringify(lb)}`);
+    // The drawing of the layer (rim, dots, pointers) fills it like the labels (Codex on PR #424): its box is the layer's and
+    // each dot sits at its photo coordinates, at fit and at actual size.
+    const marks = () =>
+      p.evaluate(() => {
+        const ov = document.querySelector('#lightbox .lb-over'),
+          o = ov.getBoundingClientRect(),
+          sv = ov.querySelector('svg').getBoundingClientRect(),
+          vb = ov.querySelector('svg').viewBox.baseVal;
+        let d = Math.max(
+          Math.abs(sv.left - o.left),
+          Math.abs(sv.top - o.top),
+          Math.abs(sv.width - o.width),
+          Math.abs(sv.height - o.height)
+        );
+        ov.querySelectorAll('.bx-dot').forEach(c => {
+          const r = c.getBoundingClientRect(),
+            x = o.left + (c.cx.baseVal.value / vb.width) * o.width,
+            y = o.top + (c.cy.baseVal.value / vb.height) * o.height;
+          d = Math.max(d, Math.abs(r.left + r.width / 2 - x), Math.abs(r.top + r.height / 2 - y));
+        });
+        return Math.round(d);
+      });
+    const fitD = await marks();
+    if (fitD > 2) fails.push(`${W} septa: the enlarged photo's rings and pointers are ${fitD} px off the photo`);
+    await p.evaluate(() => document.querySelector('#lightbox .lb-in img').click());
+    await p.waitForTimeout(800);
+    const fullD = await marks();
+    if (fullD > 2) fails.push(`${W} septa: at actual size, the rings and pointers are ${fullD} px off the photo`);
+    await p.evaluate(() => document.querySelector('#lightbox .lb-in img').click());
     await p.click('#lightbox [data-ov]').catch(() => fails.push(`${W} septa: no Labels switch in the enlarged view`));
     if (!(await p.evaluate(() => document.querySelector('#lightbox .lb-over').hidden)))
       fails.push(`${W} septa: Labels off left the labels on`);
@@ -1292,7 +1374,16 @@ async function basicsTeach(b, base) {
       const ex = await p.evaluate(() =>
         [...document.querySelectorAll('.bx-fex figure')].map(f => ({
           w: Math.round(f.querySelector('img').getBoundingClientRect().width),
-          g: (f.querySelector('figcaption i') || {}).textContent || ''
+          g: (f.querySelector('figcaption i') || {}).textContent || '',
+          // rule 7: 0 IMR lecture photo, 1 Pierre's own, 2 another observer's
+          r: (n => {
+            const fi = (f
+                .querySelector('img')
+                .getAttribute('src')
+                .match(/img\/([^/?]+?)(?:-[mst])?\.webp/) || [])[1],
+              q = [...Object.values(DATA.gen[n].views).flat(), ...(DATA.course[n] || [])].find(x => x.f === fi) || {};
+            return q.imr ? 0 : q.own ? 1 : 2;
+          })((f.querySelector('figcaption i') || {}).textContent)
         }))
       );
       const name = await p.evaluate(j => document.querySelectorAll('.bx-forms [data-f]')[j].textContent, j);
@@ -1301,6 +1392,10 @@ async function basicsTeach(b, base) {
       if (ex.length && Math.max(...ex.map(e => e.w)) < (w < 600 ? 330 : 400))
         fails.push(`${W} forms ${name}: the largest example is ${Math.max(...ex.map(e => e.w))} px wide`);
       if (ex.some(e => !e.g)) fails.push(`${W} forms ${name}: an example photo without its genus`);
+      if (ex.some((e, i) => i && e.r < ex[i - 1].r))
+        fails.push(
+          `${W} forms ${name}: examples not in rule 7's order (IMR, Pierre's, others): ${ex.map(e => e.g + ':' + e.r).join(', ')}`
+        );
     }
     await p.click('.bx-fex .bx-fx');
     const cap = await p

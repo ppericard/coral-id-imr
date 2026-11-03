@@ -72,7 +72,8 @@
 //   genera met (cards or asked).
 // - thErr / thBias: mean |theta - logit(know)| and mean (theta - logit(know)) over the genera met, theta = ability(g),
 //   the app's Elo estimate (the learner's own model has the same scale: theta = logit(know) means a perfect estimate;
-//   theta is clamped to ELO.lo..hi, so a genus known at 2% cannot be estimated below -1.5).
+//   theta is clamped to ELO.lo..hi, so a genus known at 2% cannot be estimated below -1.5). level: the app's global level
+//   (P['~level'].th).
 // - progGap: mean (genScore(g) - know[g]) over the genera met: > 0 the progress bar over-claims, < 0 it under-claims;
 //   prog / know%: the app's progress over the slate (progPct) next to 100 x knowSlate.
 // - met, learned (s.mx), right % over the questions since the previous checkpoint.
@@ -467,6 +468,7 @@ function play(cfg) {
         knowMet: mean(met.map(g => know[g])),
         thErr: mean(th.map(Math.abs)),
         thBias: mean(th),
+        level: (P[LEVEL] || {}).th || 0,
         progGap: mean(met.map(g => genScore(g) - know[g])),
         prog: progPct(SL),
         met: met.length,
@@ -652,6 +654,7 @@ const KEYS = [
   ['knowMet', 'knowMet', 2, 1],
   ['thErr', '|th-lk|', 2, 1],
   ['thBias', 'th-lk', 2, 1],
+  ['level', 'level', 2, 1],
   ['progGap', 'prog-know', 2, 1],
   ['prog', 'prog%', 0, 1],
   ['met', 'met', 1, 1],

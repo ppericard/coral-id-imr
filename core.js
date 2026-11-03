@@ -80,8 +80,9 @@
       out.streak = mine ? l.streak || 0 : r.streak || 0;
       if (mine && l.h) out.h = l.h;
       if (mine)
-        // vr: the Elo step's volatility (app.js abilityStep), part of the model the device that played updated.
-        ['lv', 'run', 'L', 'pg', 'pm', 'th', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
+        // vr: the Elo step's volatility (app.js abilityStep), part of the model the device that played updated; lt: the
+        // global level at the genus's last own step (model.js levelRise), which goes with its th.
+        ['lv', 'run', 'L', 'pg', 'pm', 'th', 'lt', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
@@ -157,6 +158,9 @@
       // The photo memory mark goes with that progress (memRecalc): the other account's would leave it uncorrected.
       if (main.pm) o.pm = main.pm;
       else delete o.pm;
+      // The level a genus's ability was last stepped against (lt, model.js levelRise) is the old account's: the merged
+      // account's level is another, so the level's rise counts again from the genus's next own answer.
+      delete o.lt;
       o.ok = (x.ok || 0) + (y.ok || 0);
       o.ko = (x.ko || 0) + (y.ko || 0);
       o.streak = main.streak || 0;

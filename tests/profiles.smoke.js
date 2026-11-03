@@ -279,6 +279,11 @@ const server = http.createServer((req, res) => {
   // the Elo"), measured on main after #408 (one opening rule, OPEN.K 8): this seed meets 12 genera by question 100 with
   // and without the change (margin 5). Over 5 seeds (tools/learnsim.js) the change does open faster: 15.6 -> 19.2 genera
   // by question 100 (seeds 12-22 -> 17-24), at 79% right (86%); a watched effect (ROADMAP), not hidden by this bound.
+  // Back to 17 with the global level's move on the genera and the success aimed for by level (2026-11-03,
+  // docs/LEARNING.md "Global level and genus", "Beginners and experts"): this seed meets 13 genera by question 100 (main
+  // 12; the level's move alone gave 18, when the limit went to 21 for a while). Margin 4. Over 5 seeds
+  // (tools/learnsim.js) the beginner meets 20.2 by question 100 (main 19.2), 28.0 by 200 (main 30.4).
+  // On the 8 seeds below: 10-19, mean 12.8 (main 14.5 after the candidate refill).
   // On the mean of 8 seeds since the candidate refill of 2026-11-03 (f9aae3a: 616 photos the auto-sort added joined
   // data.json, so every draw changed): this seed went from 12 to 19 with no change to the code, while the 8 seeds gave
   // 12-16 (mean 13.9) before and 12-19 (mean 14.5) after. One seed sat inside the spread of the seeds and failed on a

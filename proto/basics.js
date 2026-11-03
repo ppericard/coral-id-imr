@@ -20,10 +20,12 @@
     polyp: {g: 'Tubastraea', f: 'imrl-p19_g64', h: 720},
     nowall: {g: 'Pavona', f: 'pavona-macro-745204888', h: 768},
     cups: {g: 'Dipsastraea', f: 'dipsastraea-macro-746236818', h: 720},
-    // Septa inside the rim, costae outside it, the mouth in the centre, all on one corallite seen from above (Pierre,
-    // 2026-11-03: "if you define septa, you must define costae"; none of his or the IMR macro photos shows the two apart
-    // as clearly, so an iNaturalist observer's photo, credited in the enlarged view, fills the gap, rule 7).
-    septa: {g: 'Astrea', f: 'astrea-macro-102598933', h: 720},
+    // Septa inside the rim, costae just outside it, the mouth in the centre, on one corallite seen from above (Pierre,
+    // 2026-11-03: "if you define septa, you must define costae"; then, on an Astrea photo first used here: costae are
+    // immediately outside the wall, the septa carried on past the rim, not the skeleton between the cups). An IMR lecture
+    // photo of Diploastrea, whose corallites are low cones: a small cup in the middle, its rim sharp, short beaded septa
+    // inside it and the same ridges running on down the cone outside it. No photo of Pierre's shows that as sharply.
+    septa: {g: 'Diploastrea', f: 'imrl-p57_g172', h: 639},
     cupsMed: {g: 'Diploastrea', f: 'diploastrea-medium-746238185', h: 768},
     bigTeeth: {g: 'Danafungia', f: 'danafungia-macro-746236636', h: 720},
     fineTeeth: {g: 'Fungia', f: 'fungia-macro-746236363', h: 720},
@@ -40,7 +42,8 @@
 
   // A photo cropped to box b, an SVG layer in the same pixels (marks) and HTML labels (constant text size on any screen).
   // marks: ['ell', cx, cy, rx, ry] (focus: the rest of the photo dims a little), ['rim', cx, cy, rx, ry] (a thin dashed
-  // ring, no dimming), ['line', x1, y1, x2, y2], ['path', d], ['dot', x, y, r, colour class];
+  // ring, no dimming), ['line', x1, y1, x2, y2], ['path', d], ['dot', x, y, r, classes] (a colour, and 'hollow': a
+  // ring that leaves the spot visible);
   // labels: [text, x, y, anchor 'c' | 'l' | 'r', colour class]. Colour classes: 'sep' (septa, --hl), 'cos' (costae).
   const layer = (b, marks, labels, k, extra = '') => {
     const focus = marks.filter(m => m[0] === 'ell');
@@ -96,7 +99,7 @@
   };
   // The key under the step 4 drawing: the same two colours as the photo's labels.
   const sepKey = () =>
-    `<span class="bx-key"><span><i class="sep"></i>septa: inside the wall</span><span><i class="cos"></i>costae: outside it</span></span>`;
+    `<span class="bx-key"><span><i class="sep"></i>septa: inside the wall</span><span><i class="cos"></i>costae: just outside it</span></span>`;
   // A polyp in its cup, cut in half: tentacles, mouth, soft body, the stony cup under it.
   const polypSide = () => {
     const tent = [
@@ -310,8 +313,8 @@
   };
   // The 7 IMR forms (id, name) and 2-3 example photos of each, larger (Pierre, 2026-11-03: "give 2-3 examples on real
   // photos, larger, beautiful photos"). Picked by eye among the game photos of that form (forms.json / curation.json
-  // "gf"), IMR lecture and Pierre's own photos first (rule 7), different genera when the form has several; the clearest
-  // leads, since it is shown largest. Tabulate has two: only Acropora is tabulate on the slate. A photo Pierre later
+  // "gf"), different genera when the form has several. Shown in rule 7's order whatever the order here: IMR lecture
+  // photos first, then Pierre's own, then other observers' (provOrder; Codex on PR #424), the first one largest. Tabulate has two: only Acropora is tabulate on the slate. A photo Pierre later
   // hides or excludes drops out (only photos still in data.json are shown). Never one of the check's photos (FORM_CHECK).
   const FORMS7 = [
     [
@@ -377,6 +380,15 @@
       ]
     ]
   ];
+  // Rule 7: IMR lecture photos, then Pierre's own, then other observers' (a stable sort keeps the order within each).
+  const provRank = ([g, f]) => {
+    const p = pobj({g, f});
+    return p.imr ? 0 : p.own ? 1 : 2;
+  };
+  const provOrder = L =>
+    L.map((x, i) => [x, i])
+      .sort((a, b) => provRank(a[0]) - provRank(b[0]) || a[1] - b[1])
+      .map(x => x[0]);
   const known = (g, f) => !!DATA.gen[g] && [...allPhotos(DATA.gen[g]), ...(DATA.course[g] || [])].some(p => p.f === f);
   const FORM_CHECK = [
     ['B', 'Stylophora', 'stylophora-wide-746236515'],
@@ -474,35 +486,36 @@
       id: 'septa',
       t: 'Septa and costae: blades inside and outside the cup',
       term: 'Septa',
-      // Pierre (2026-11-03): the centre label must sit on the centre, the septa label clearly inside the cup, and costae
-      // need their own definition and pointer. Every point below was placed on the photo by eye (rule 27d): the mouth in
-      // the middle of the cup, a white septum halfway between it and the rim, ridges in the yellow skeleton between two cups.
+      // Pierre (2026-11-03): the centre label on the centre, the septa label clearly inside the cup, the costae label on
+      // costae, immediately outside the wall. Every point was placed on 5-8x crops of the photo (rule 27d): the dashed
+      // ring on the edge of the cup, the centre on the mouth, the septa point on a beaded septum inside the cup, the costae
+      // point on the same blade where it carries on as a ridge just past the rim (both on one line from the centre).
       fig: () =>
         photo(PH.septa, {
-          box: [250, 190, 400, 330],
+          box: [325, 250, 200, 156],
           marks: [
-            ['rim', 431, 394, 108, 89],
-            ['line', 300, 482, 426, 401],
-            ['line', 560, 440, 482, 374],
-            ['line', 610, 236, 566, 288],
-            ['dot', 431, 397, 6, 'ctr'],
-            ['dot', 480, 372, 7, 'sep'],
-            ['dot', 566, 288, 7, 'cos']
+            ['rim', 424, 320, 25, 22],
+            ['line', 362, 384, 418, 332],
+            ['line', 420, 270, 435, 314],
+            ['line', 494, 366, 455, 321],
+            ['dot', 422, 327, 5.5, 'ctr hollow'],
+            ['dot', 436, 318, 3.6, 'sep hollow'],
+            ['dot', 452, 318, 3.6, 'cos hollow']
           ],
           labels: [
-            ['centre', 300, 492],
-            ['septa (inside)', 646, 448, 'r', 'sep'],
-            ['costae (outside)', 612, 222, 'r', 'cos']
+            ['centre', 362, 392],
+            ['septa (inside)', 420, 264, 'c', 'sep'],
+            ['costae (just outside)', 521, 374, 'r', 'cos']
           ],
           zoom: true
-        }) + cap(PH.septa, 'the dashed ring is the rim (wall) of one cup'),
+        }) + cap(PH.septa, 'the dashed ring is the rim of one cup: septa inside it, costae just past it'),
       draw: () => cupTop('both') + sepKey(),
       say: 'Inside each cup, thin upright blades run from the rim to the centre, like the spokes of a wheel: the septa.',
       // Costae as a term of its own (Pierre, 2026-11-03: "if you define septa, you must define costae").
       more: [
         [
           'Costae',
-          'The same blades where they carry on outside the cup, over the rim and down its outer side. Septa are inside the wall, costae outside it.'
+          'The septa carried on just past the rim: the same blades, continuing outside the wall. Septa are inside the wall, costae immediately outside it (not the skeleton further out between the cups).'
         ]
       ],
       also: ['Costae'],
@@ -748,7 +761,7 @@
         // large photos of that form, each enlarged with a tap (genus, credit and report in the enlarged view, rule 11).
         const show = k => {
           const [fid, name, ex] = FORMS7[k],
-            shown = ex.filter(([g, f]) => known(g, f));
+            shown = provOrder(ex.filter(([g, f]) => known(g, f)));
           const L = shown.map(([g, f]) => pobj({g, f}));
           fig.innerHTML = `<div class="bx-forms" role="group" aria-label="The 7 IMR growth forms">${FORMS7.map(
             ([id, nm], j) => `<button type="button" data-f="${j}" aria-pressed="${j === k}">${formIcon(id)}<span>${esc(nm)}</span></button>`

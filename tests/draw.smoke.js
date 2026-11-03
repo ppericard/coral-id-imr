@@ -251,7 +251,9 @@ const server = http.createServer((req, res) => {
       };
       let g = typedQ();
       const f = () => document.querySelector('#view .tyform'),
-        typo = g.slice(0, 2) + g[3] + g[2] + g.slice(4), // two neighbouring letters swapped
+        // two different neighbouring letters swapped, from the third on (Millepora's "ll" swapped is no typo)
+        sw = [...g].findIndex((x, i) => i >= 2 && g[i + 1] && x !== g[i + 1]),
+        typo = g.slice(0, sw) + g[sw + 1] + g[sw] + g.slice(sw + 2),
         a0 = answersSoFar();
       f().querySelector('input').value = 'xyzcoral';
       f().requestSubmit();
@@ -270,18 +272,24 @@ const server = http.createServer((req, res) => {
         h0 = (P[other].h || '').length,
         th0 = ability(g),
         thO = ability(other),
+        ownO = [P[other].th, P[other].lt],
+        lvO = P[LEVEL].th,
         pgO = P[other].pg;
       say(other);
       l = logged();
       // Against both genera (rule 13): the genus shown in its ability and progress, the genus given in its progress and
-      // recent results only, its Elo ability untouched (docs/LEARNING.md "The genus wrongly given in the Elo").
+      // recent results only, no Elo step of its own (docs/LEARNING.md "The genus wrongly given in the Elo"): its own
+      // estimate and the level it was stepped against unchanged; its ability moves only with the global level, as every
+      // genus does ("Global level and genus"), so never by more than the level's own move.
       if (
         !/^quiz\|t(\|x)?$/.test(l.m) ||
         l.a !== other ||
         l.ok ||
         P[other].h.slice(-1) !== '0' ||
         !(ability(g) < th0) ||
-        ability(other) !== thO ||
+        P[other].th !== ownO[0] ||
+        P[other].lt !== ownO[1] ||
+        Math.abs(ability(other) - thO) > Math.abs(P[LEVEL].th - lvO) + 0.011 ||
         !(P[other].pg < pgO) ||
         !(P[g].conf || {})[other]
       )
