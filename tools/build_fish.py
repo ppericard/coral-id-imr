@@ -33,7 +33,12 @@ Pierre's own observations (user ppericard) identified to the species even when N
 very sure, otherwise he stops at the genus; his only, nobody else's (`presence()`). The same rule holds for the future
 fish photo pipeline: his species-level photos are usable as that species. present = {dauin: confirmed observations
 within 40 km of Dauin (9.19, 123.26), dauinNI: the other Needs ID observations there ("not confirmed near Dauin", never
-"never seen"), ph: confirmed in the Philippines (place 6873), own: Pierre's observations of it}. A species not confirmed
+"never seen"), ph: confirmed in the Philippines (place 6873), own: Pierre's observations of it, dauinU: distinct
+observers of the Research Grade observations within 40 km, near: confirmed near Dauin (Pierre, 2026-11-03: one
+misidentified Research Grade observation must not open the gates): one of Pierre's own species-level observations
+within 40 km, or Research Grade observations there by at least 2 distinct observers (`near_dauin()`); `dauin` alone
+says how many were seen, not that the species is confirmed}. --near recomputes dauinU and near on the existing fish.json
+only (the rest of the build and its counts unchanged). A species not confirmed
 in the Philippines leaves the game but stays in fish.json with `out` (a future Fish Finder for EventMeasure must hold
 every PDF species, unfiltered), as does a PDF species whose family is in no circle.
 
@@ -221,7 +226,53 @@ def presence(tid):
     p = {"dauin": rg_d + mine_d, "dauinNI": ni_d - mine_d, "ph": bool(rg_p or mine_p)}
     if own:
         p["own"] = own
+    p.update(near_fields(tid, p))
     return p, (not rg_p and mine_p), (not rg_d and mine_d)
+
+
+def near_dauin(own_d, observers):
+    """Confirmed near Dauin (Pierre, 2026-11-03: one misidentified Research Grade observation must not open the gates):
+    one of Pierre's own species-level observations within 40 km, or Research Grade observations there by at least
+    NEAR_OBSERVERS distinct observers (each one already agreed on by the community: two independent people meeting
+    and identifying the same species). Not used: the identifiers' count (a well-identified rare fish often has two
+    identifiers only) and the date (recency says nothing about the identification); the PDF list (src pdf), which is
+    a country-wide reference, not a record of IMR's Dauin surveys."""
+    return bool(own_d) or observers >= NEAR_OBSERVERS
+
+
+NEAR_OBSERVERS = 2
+
+
+def observers(tid, where):
+    """(distinct observers of Research Grade observations, their logins: the first 10) of a taxon in a place."""
+    d = NET.get(f"{INAT}observations/observers?taxon_id={tid}&quality_grade=research&{where}&per_page=10") or {}
+    return d.get("total_results", 0), [r["user"]["login"] for r in d.get("results") or []]
+
+
+def near_fields(tid, p):
+    """present.dauinU (distinct Research Grade observers within 40 km of Dauin), present.near (near_dauin)."""
+    own_d = inat_count(tid, f"user_login={PIERRE}&{DAUIN}", "research,needs_id") if p.get("own") else 0
+    n, _ = observers(tid, DAUIN) if p.get("dauin") else (0, [])
+    return {"dauinU": n, "near": near_dauin(own_d, n)}
+
+
+def update_near(path=OUT):
+    """--near: (re)compute present.dauinU and present.near on the species of an existing fish.json, nothing else (the
+    rest of the build unchanged, so its WoRMS and iNaturalist counts do not move); prints the species whose status
+    differs from the old rule (at least one confirmed observation)."""
+    o = json.loads(Path(path).read_text(encoding="utf-8"))
+    changed = []
+    for s in o["species"]:
+        p = s.get("present")
+        if not p or not s.get("inat"):
+            continue
+        old = bool(p.get("dauin"))
+        p.update(near_fields(s["inat"], p))
+        if p["near"] != old:
+            _, who = observers(s["inat"], DAUIN) if p.get("dauin") else (0, [])
+            changed.append(f"{s['id']} {s['name']} (circle {s.get('circle', 'out')}): {p['dauin']} confirmed near Dauin, "
+                           f"observers {', '.join(who) or 'none'} -> {'confirmed' if p['near'] else 'not confirmed'}")
+    return o, changed
 
 
 def resolve_ref(x, report):
@@ -247,8 +298,21 @@ def main():
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--refresh", action="store_true")
     ap.add_argument("--dry", action="store_true")
+    ap.add_argument("--near", action="store_true", help="only (re)compute present.near on the existing fish.json")
     a = ap.parse_args()
     NET = Net(a.offline, a.refresh)
+    if a.near:
+        try:
+            o, changed = update_near()
+        finally:
+            NET.save()
+        print(f"species whose 'confirmed near Dauin' changed: {len(changed)}")
+        for x in changed:
+            print("  " + x)
+        if not a.dry:
+            write(o)
+            print(f"wrote {OUT.relative_to(ROOT)}")
+        return
     src = json.loads(SRC.read_text(encoding="utf-8"))
     report = {"refnames": [], "renamed": [], "typo": [], "lumped": [], "empty": [], "pierre": [], "out": [], "drop": [], "mismatch": [], "noinat": [], "pdf": [], "unplaced": []}
     try:
@@ -499,8 +563,8 @@ def show(o, rep):
     for c in (1, 2, 3):
         cs = [s for s in game if s["circle"] == c]
         print(f"  circle {c}: {sum(1 for t in o['teach'] if t['circle'] == c)} teaching nodes, {len(cs)} species, "
-              f"{sum(1 for s in cs if s['present']['dauin'])} confirmed near Dauin, "
-              f"{sum(1 for s in cs if not s['present']['dauin'] and s['present']['dauinNI'])} more with Needs ID only there")
+              f"{sum(1 for s in cs if s['present'].get('near'))} confirmed near Dauin, "
+              f"{sum(1 for s in cs if not s['present'].get('near') and (s['present']['dauin'] or s['present']['dauinNI']))} more seen there, not confirmed")
     for k, title in (("refnames", "teaching refs resolved to another accepted name"),
                      ("renamed", "PDF names WoRMS has since changed (PDF name kept, WoRMS name in `now`)"),
                      ("typo", "likely slips in the PDF, to check against EventMeasure (PDF text kept)"),

@@ -256,15 +256,34 @@ test('core.js: 1 candidate in 20 is a check; Pierre decides first; auto off per 
   );
 });
 
+test('confirmed near Dauin (build_fish near_dauin): Pierre own there, or Research Grade by 2+ observers; one observer is not enough', () => {
+  const out = J(
+    `from build_fish import near_dauin\nprint(json.dumps([near_dauin(0, 1), near_dauin(0, 0), near_dauin(0, 2), near_dauin(1, 0), near_dauin(1, 1), near_dauin(0, 9)]))`
+  );
+  // A single Research Grade observation (one observer) no longer opens the whole region (Pierre, 2026-11-03).
+  assert.deepStrictEqual(out, [false, false, true, true, true, true]);
+  // fish.json: near agrees with the rule on every species (dauinU observers; Pierre's own there).
+  const F = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8'));
+  F.species.forEach(s => {
+    const p = s.present || {};
+    if (!s.inat) return;
+    assert.ok(typeof p.near === 'boolean' && Number.isInteger(p.dauinU), `${s.id} has near and dauinU`);
+    if (p.dauinU >= 2) assert.ok(p.near, `${s.id}: 2+ observers near Dauin`);
+    if (p.near) assert.ok(p.dauin > 0, `${s.id}: confirmed near Dauin needs observations there`);
+  });
+});
+
 test('fetch_fish.py offline on a fixture cache: tiers, licences, presence, record shape; --plan writes nothing', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishphotos-'));
   const fish = {
     species: [
-      {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {dauin: 3, dauinNI: 0, ph: true, own: 1}},
+      {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {dauin: 3, dauinNI: 0, ph: true, own: 1, dauinU: 2, near: true}},
       {id: 's2', name: 'Fishus rarus', inat: 502, circle: 1, present: {dauin: 0, dauinNI: 1, ph: true}},
-      {id: 's3', name: 'Fishus nowhere', inat: 503, out: 'not confirmed in the Philippines on iNaturalist', present: {ph: false}}
+      {id: 's3', name: 'Fishus nowhere', inat: 503, out: 'not confirmed in the Philippines on iNaturalist', present: {ph: false}},
+      // Seen once near Dauin, by a single observer: not confirmed there (Pierre), so the Philippines come first.
+      {id: 's4', name: 'Fishus solus', inat: 504, circle: 1, present: {dauin: 1, dauinNI: 0, ph: true, dauinU: 1, near: false}}
     ],
-    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1', 's2', 's3']}]
+    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1', 's2', 's3', 's4']}]
   };
   fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
   fs.writeFileSync(path.join(dir, 'cur.json'), JSON.stringify({fish: {exclude: {'fish-s1-cand-9990': 'excluded'}}}));
@@ -286,6 +305,11 @@ put(Q['dauin'], [])
 put(Q['region'], [])
 put(Q['ph'], [ob(5, lic='cc0', ll=(14.6, 121.0))])
 put(Q['world'], [ob(6, lic='cc-by-nc', ll=(-8.5, 115.2), inph=False), ob(7, lic='cc-by', ll=(-8.5, 115.2), inph=False)])
+Q = queries(504)
+put(Q['dauin'], [ob(20, lic='cc-by-nc')])
+put(Q['region'], [ob(20, lic='cc-by-nc')])
+put(Q['ph'], [ob(20, lic='cc-by-nc'), ob(21, lic='cc-by', ll=(14.6, 121.0))])
+put(Q['world'], [ob(22, lic='cc0', ll=(-8.5, 115.2), inph=False)])
 json.dump(c, open(d + '/cache.json', 'w'))`,
     dir
   );
@@ -313,7 +337,13 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   run('--offline');
   const C = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8'));
   assert.strictEqual(C.v, 1);
-  assert.deepStrictEqual(Object.keys(C.cand), ['s1', 's2']);
+  assert.deepStrictEqual(Object.keys(C.cand), ['s1', 's2', 's4']);
+  // Not confirmed near Dauin: the Philippines first (CC BY Luzon, then NC Dauin), the CC0 one abroad only once they are
+  // exhausted; a confirmed species would have taken the CC0 one before the NC one.
+  assert.deepStrictEqual(
+    C.cand.s4.map(p => p.o.split('/').pop()),
+    ['21', '20', '22']
+  );
   const s1 = C.cand.s1,
     row = p => [p.o.split('/').pop(), p.lic, p.loc, p.own];
   // Pierre's own first (NC, Needs ID); then CC BY from Luzon and CC0 from abroad before the NC ones of Dauin, which the
@@ -342,6 +372,6 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   // A rerun keeps what is there and adds nothing (the cap counts usable observations); one species per line.
   run('--offline');
   assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')), C);
-  assert.strictEqual(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8').split('\n').length, 8);
+  assert.strictEqual(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8').split('\n').length, 9);
   fs.rmSync(dir, {recursive: true, force: true});
 });

@@ -16,7 +16,7 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   Pierre's own observations abroad too.
 - Order (`select`, Pierre, 2026-11-03): Pierre's own observations FIRST for every species, whatever their licence (his
   are CC BY or CC BY-NC, credited "Pierre Pericard"), in the Philippines or the IWP. Then:
-  - a species confirmed near Dauin (fish.json present.dauin: confirmed within 40 km): photos from anywhere in the
+  - a species confirmed near Dauin (fish.json present.near: one of Pierre's own there, or Research Grade by 2+ observers within 40 km): photos from anywhere in the
     Philippines and the IWP, ordered by licence (CC0 / CC BY before NC), not by distance;
   - any other species: the Philippines first, by licence then nearest (within 40 km of Dauin, within REGION_KM = 250 km,
     the rest of the country), and abroad only for a species confirmed in the Philippines (present.ph), only when the
@@ -371,8 +371,8 @@ def run(args):
                        if f"https://www.inaturalist.org/observations/{o['id']}" not in known and o["id"] not in byid]
                 return [{**x, "tier": "world"} for x in out if x]
 
-            # Confirmed near Dauin (present.dauin): photos from anywhere, by licence (Pierre, 2026-11-03).
-            taken = select(pools, room, more, n, world, anywhere=bool((s.get("present") or {}).get("dauin")))
+            # Confirmed near Dauin (present.near: Pierre's own there, or 2+ Research Grade observers within 40 km): photos from anywhere, by licence (Pierre, 2026-11-03).
+            taken = select(pools, room, more, n, world, anywhere=bool((s.get("present") or {}).get("near")))
             add = Counter(LOC[o["tier"]] for o in taken)
             plan[sid] = {"name": s["name"], "entry": t["id"], "have": len(keep_obs), "room": room, "add": dict(add)}
             if args.plan:
