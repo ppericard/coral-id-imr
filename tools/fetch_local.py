@@ -59,20 +59,35 @@ def colonies(g, G, cand, cur, excl=lambda f: False):
     """{view: distinct colonies (observations)} of genus g's photos as curated: data.json views, moved (curation move)
     and the candidates Pierre added (curation add, whichever genus list holds them), without hidden, excluded,
     several-corals or Coral Finder book photos. A 2-level genus's medium photos join wide (as the admin's viewOf)."""
-    k = (cur.get('genera') or {}).get(g) or {}
-    hide, move, add = set(k.get('hide') or []), k.get('move') or {}, k.get('add') or {}
+    gens = cur.get('genera') or {}
+    k = gens.get(g) or {}
+    hide, move, add, out = set(k.get('hide') or []), k.get('move') or {}, k.get('add') or {}, k.get('out') or {}
     lv2 = kept_views(g, G, cur)[1] == 'macro'
     by = {}
-    def put(p, v):
+    def put(p, v, mv=move):
         if p.get('multi') or p.get('cf') or p['f'] in hide or excl(p['f']): return
-        v = move.get(p['f'], v)
+        v = mv.get(p['f'], v)
         if lv2 and v == 'medium': v = 'wide'
         by.setdefault(v, set()).add(p.get('o') or p['f'])
+    # "Not this genus" (curation out, as admin.js photos/cands; Codex review #390): a photo sent away leaves the genus,
+    # one sent here from another genus joins it in its view.
     for v, L in (G[g].get('views') or {}).items():
-        for p in L: put(p, v)
+        for p in L:
+            if p['f'] not in out: put(p, v)
     for L in cand.values():
         for p in L:
-            if p['f'] in add: put(p, add[p['f']])
+            if p['f'] in add and p['f'] not in out: put(p, add[p['f']])
+    for m, km in gens.items():
+        if m == g or m not in G: continue
+        sent = {f for f, t in (km.get('out') or {}).items() if t == g}
+        if not sent: continue
+        for v, L in (G[m].get('views') or {}).items():
+            for p in L:
+                if p['f'] in sent: put(p, v, km.get('move') or {})
+        madd = km.get('add') or {}
+        for L in cand.values():
+            for p in L:
+                if p['f'] in sent and p['f'] in madd: put(p, madd[p['f']], {})
     return {v: len(s) for v, s in by.items()}
 
 

@@ -79,6 +79,18 @@ print(json.dumps({
   assert.deepStrictEqual(out.room, [12, 1, -2, 0]);
 });
 
+test('fetch_local colonies: a photo sent to another genus ("Not this genus") leaves it and joins the other (Codex review #390)', () => {
+  const r = JSON.parse(
+    py(`import importlib.util
+sys.argv = ['x']
+s = importlib.util.spec_from_file_location('fl', 'tools/fetch_local.py'); fl = importlib.util.module_from_spec(s); s.loader.exec_module(fl)
+G = {'A': {'views': {'wide': [{'f': 'a1', 'o': 'o1'}, {'f': 'a2', 'o': 'o2'}]}}, 'B': {'views': {'wide': [{'f': 'b1', 'o': 'o3'}]}}}
+cur = {'genera': {'A': {'out': {'a2': 'B'}}}}
+print(json.dumps([fl.colonies('A', G, {}, cur), fl.colonies('B', G, {}, cur)]))`)
+  );
+  assert.deepStrictEqual(r, [{wide: 1}, {wide: 2}]);
+});
+
 test('fetch_local --plan on the real data: game genera keep their caps, a Finder-only genus refills only what it lacks', () => {
   const P = JSON.parse(execFileSync('python3', ['tools/fetch_local.py', '--plan'], {cwd: ROOT, encoding: 'utf8'}));
   const game = new Set(gameOf(RAW));

@@ -3786,7 +3786,9 @@ function gamePool(n, v) {
       !p.extra &&
       !p.cf &&
       use[p.f] !== 'ref' &&
-      !(v === 'wide' && fOf(p.f) === 'x' && !oneForm)
+      !(v === 'wide' && fOf(p.f) === 'x' && !oneForm) &&
+      // The games' Research Grade rule for the extra genera (app.js gamePhotoOk; Codex review #390).
+      (!DATA.gen[n].x || p.own || !p.gid)
   );
 }
 function covOf(n, v) {
