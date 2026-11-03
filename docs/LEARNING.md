@@ -1115,8 +1115,10 @@ error, 95% interval):
   83% where it predicted 73%. Kept off there. Also measured: the term on the prediction only, not the steps (`+Y`), and
   summed over the choices (`+Z`): the same picture.
 - The level bands come from the reference level stepped with the difficulty before the term, the same answers for every
-  rule; and from the release on (`tools/abilityeval.js` `CF_FROM`, the sheet's clock) the logged `e` already holds the
-  app's term, which the replay takes out of the recovered difficulty before a rule adds its own (Codex review #425).
+  rule; and from the release on (live 2026-11-03 15:35 UTC, 23:35 in the sheet's clock, Asia/Taipei: `tools/abilityeval.js`
+  `CF_FROM`) the logged `e` already holds the app's term, which the replay takes out of the recovered difficulty before a
+  rule adds its own (Codex review #425). The log has no app version per answer, so an app not yet updated after that
+  time is taken for the new one (a few answers).
 
 **3b. The Again queue** (`quiz.js` `CONTRAST.Q` 3, `rematchAdd`): up to 3 pairs wait, oldest first, each still
 `CONTRAST.GAP` after its mix-up and after the last contrast question; a newer mix-up never pushes an older one out (with
