@@ -797,7 +797,9 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   (`core.js` `ACH_LEARN`: Instructor 1/5/10/20, Coral master, Group complete) and that the progress no longer meets
   are taken back (`progress.js` `achRecheck`, `core.js` `achRevoke`), only then (everywhere else achievements are only
   added); each removal is dated in the record's `_gone`, so a copy earned before it (the sheet's, another device's)
-  never comes back through a merge (`core.js` `mergeAch`); earned again, it carries a newer date and stays. Checked by
+  never comes back through a merge (`core.js` `mergeAch`); earned again, it carries a newer date and stays. The
+  removals are saved and synced even when the device's record held none of them (`achMigrate` dropped them at
+  start-up, or they were earned on another device; Codex review #399). Checked by
   `tests/core.test.js` and `tests/draw.smoke.js` (the card at start-up over Home, before any answer and in a new
   visit's floor, once; the mark and the badge gone, not brought back by the sheet's older copy, nothing again after a
   reload or answers; a drop at a pull shown at once, after a card already open; learned with `s.pg`: nothing).
@@ -838,15 +840,20 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     request's `rv`), it replays the player's rows of the Answers tab since their last progress reset, with the photo
     memory offsets and pooled confusions of `stats_` (cached) and the look-alikes and families of `data.json` (fetched
     from GitHub, cached 6 hours). A device that never signed in gets the same in the reply to its anonymous answers,
-    under its anonymous id. The result is kept in the **Replayed** tab (one row per player: Name, Rules, Rows, Since,
+    under its anonymous id, since the progress reset its request carries (`reset`, its `imr-coral-reset`; Codex review
+    #399). The result is kept in the **Replayed** tab (one row per player: Name, Rules, Rows, Since,
     Updated, Record JSON in 45,000-character chunks), reused while the rules version, the number of the player's rows
     and the reset are unchanged, replayed again otherwise. The player's own saved copy (Progress data, RAs Data) is never
-    rewritten there (no race with a device's save). The reply carries `replay: {rv, n, rec, ids}`.
+    rewritten there (no race with a device's save). The reply carries `replay: {rv, n, rec, ids}`; `ids` are the
+    replayed rows' answer ids from the time of the oldest answer the device still queues (the request's `pt`; at least
+    the last 500), so a lost reply that left up to 2,000 answers already logged in its queue never counts them twice
+    (Codex review #399).
   - **The app adopts it** (`sync.js` `replayAdopt`), once per version, and only from a script that reports `v` >= 28
     (`core.js` `RV_SHEET`; AGENTS.md 7a: the app never gets ahead of the sheet script; before, it does exactly what it did,
     and the `rv` its requests carry is ignored by an older script): when a reply carries a replay newer than the one
     this device applied (`imr-coral-rv`, in the progress data: a device that signs in to the account takes it with
-    the account, whose progress is the adopted one; a device already signed in keeps its own and adopts the replay
+    the account, whose progress is the adopted one, and 0 when the account's data has none, never the version of an
+    anonymous replay adopted on the device (Codex review #399); a device already signed in keeps its own and adopts the replay
     itself once, with its own unsent answers on top), the progress becomes the replayed record, with this device's answers the sheet has not counted
     yet (the unsent log or the anonymous queue, minus the ids the sheet replayed and the answers before a reset)
     replayed on top by the same engine; then saved and sent. What is taken from where (`core.js` `replayedOf`): **from

@@ -1090,3 +1090,34 @@ test('v28: a device that never signed in gets its replay with its anonymous answ
   assert.strictEqual(s.sheets.Replayed.rows[1][0], '~anon abcd1234ef');
   assert.ok(!s.post({anon: 'abcd1234ef', anonAnswers: [qa('n9', 9)]}).replay, 'no rv: none');
 });
+
+test('v28: the replay ids cover every row from the oldest answer the device still queues (pt; Codex review #399)', () => {
+  const s = loadCodeGs(withData()),
+    L = Array.from({length: 601}, (_, i) => qa('p' + i, i)),
+    data = prog(1);
+  s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: L});
+  // An app that sends no pt: the last HOLD.IDS rows, as before.
+  const old = s.get({name: 'Ana', pin: '1234', rv: '0'}).replay.ids;
+  assert.deepStrictEqual([old.length, old[0], old[499]], [500, 'p101', 'p600']);
+  // The device's queue starts at the first answer: every row from there (601), on a load and on a save.
+  assert.strictEqual(s.get({name: 'Ana', pin: '1234', rv: '0', pt: String(Date.parse(L[0].t))}).replay.ids.length, 601);
+  const r = s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: L.slice(0, 50), rv: 0, pt: Date.parse(L[0].t)});
+  assert.strictEqual(r.replay.ids.length, 601);
+  // A queue that starts later: from there on, never fewer than the last HOLD.IDS.
+  assert.strictEqual(s.get({name: 'Ana', pin: '1234', rv: '0', pt: String(Date.parse(L[590].t))}).replay.ids.length, 500);
+  // Anonymous answers too.
+  const a = s.post({anon: 'abcd1234ef', anonAnswers: [qa('q1', 1), qa('q2', 2)], rv: 0, pt: Date.parse(qa('q1', 1).t)});
+  assert.deepStrictEqual(a.replay.ids, ['q1', 'q2']);
+});
+
+test("v28: an anonymous device's replay counts only the answers after its progress reset (reset; Codex review #399)", () => {
+  const s = loadCodeGs(withData()),
+    L = Array.from({length: 6}, (_, i) => qa('z' + i, i)),
+    reset = new Date(Date.UTC(2026, 10, 3, 6, 0, 3, 500)).toISOString();
+  s.post({anon: 'abcd1234ef', anonAnswers: L});
+  const r = s.post({anon: 'abcd1234ef', anonAnswers: [], rv: 0, reset});
+  assert.strictEqual(r.replay.n, 2);
+  assert.strictEqual(s.sheets.Replayed.rows[1][3], Date.parse(reset));
+  // No reset sent (an app before this): every answer, as before.
+  assert.strictEqual(s.post({anon: 'abcd1234ef', anonAnswers: [], rv: 0}).replay.n, 6);
+});

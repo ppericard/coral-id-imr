@@ -437,21 +437,26 @@ function achMerge(json) {
 // A learned mark taken away by a recalculation (model.js mxRecalc, MXL): the achievements resting on genera learned
 // (core.js ACH_LEARN: Instructor, Coral master, Group complete) that the progress no longer meets are taken back, dated
 // in the record's _gone so no merge brings them back (core.js achRevoke, mergeAch); earned again, they come back as
-// usual. Only then: everywhere else achievements are only added. The ids taken back go to the card (mxLostNotice)
-// and leave the "new" dots; one sync, so the sheet's copy (achievement shares) follows.
+// usual. Only then: everywhere else achievements are only added. The removals are kept and synced even when this record
+// held none of them (achMigrate dropped them at start-up, or they were earned on another device): without them the next
+// merge would bring back the sheet's copy (Codex review #399). The ids taken back go to the card (mxLostNotice) and
+// leave the "new" dots; one sync, so the sheet's copy (achievement shares) follows.
 function achRecheck() {
   const M = store.get(MXL.KEY, null);
   if (!M || !M.ach) return [];
   const A = store.get(ACHK, null),
+    was = JSON.stringify(A),
     out = A ? achRevoke(A, achSnap(A), Date.now()) : [];
-  if (out.length) {
+  if (A && JSON.stringify(A) !== was) {
     store.set(ACHK, A);
+    if (SYNC) syncSoon();
+  }
+  if (out.length) {
     store.set(
       ACHNEW,
       achUnseen().filter(id => !out.includes(id))
     );
     achDot();
-    if (SYNC) syncSoon();
   }
   delete M.ach;
   M.gone = Object.keys(M.due || {}).length ? [...new Set([...(M.gone || []), ...out])] : []; // the card names them if it is due

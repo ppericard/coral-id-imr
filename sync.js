@@ -50,11 +50,12 @@ function syncSummary() {
   };
 }
 // rv: the rules version this device's progress was last replayed with (replayAdopt): the sheet (v28) answers with the
-// full replay of the player's log when it is older than its own.
+// full replay of the player's log when it is older than its own. pt: the time of the oldest answer still queued here
+// (pendingFrom), so the replay's ids cover every queued answer the sheet already logged.
 const syncGet = (a = SYNC) =>
-  sheetFetch(`${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}&rv=${rvApplied()}`).then(r =>
-    r.json()
-  );
+  sheetFetch(
+    `${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}&rv=${rvApplied()}${ptParam(a.log)}`
+  ).then(r => r.json());
 // The full replay of the answer log by the sheet (Pierre, 2026-11-03: progress recalculated from the whole log,
 // automatically, never by a human click, now and whenever the progress engine changes; docs/LEARNING.md "Full replay").
 // The sheet (Code.gs replay_, v28) replays the player's rows with this app's own engine (core.js replayProgress, embedded
@@ -75,6 +76,18 @@ const syncGet = (a = SYNC) =>
 // rv field the requests carry is ignored there).
 const RVK = 'imr-coral-rv';
 const rvApplied = () => Number(store.get(RVK, 0)) || 0;
+// The time (ms) of the oldest answer of a queue, null when it holds none. Sent with the requests that can bring a replay
+// (pt): the sheet (v28) then lists in replay.ids every answer it replayed from that time on, so replayAdopt never counts
+// again an answer the sheet already has, however many a lost reply left queued here (up to 2,000; Codex review #399).
+function pendingFrom(q) {
+  let t = Infinity;
+  (q || []).forEach(a => {
+    const x = Date.parse((a && a.t) || '');
+    if (x < t) t = x;
+  });
+  return isFinite(t) ? t : null;
+}
+const ptParam = q => (pendingFrom(q) === null ? '' : `&pt=${pendingFrom(q)}`);
 function replayAdopt(rp, pending, v) {
   if (!(Number(v) >= RV_SHEET)) return false;
   if (!rp || typeof rp.rv !== 'number' || rp.rv <= rvApplied() || !rp.rec || typeof rp.rec !== 'object') return false;
@@ -233,6 +246,7 @@ function syncOnce(tries = 0) {
           answers: log,
           av: appVer(), // the app's version (sheet v25: a request without it comes from an app before 2026-11-03)
           rv: rvApplied(), // the rules version applied here (sheet v28: an older one gets the full replay back)
+          ...(pendingFrom(log) === null ? {} : {pt: pendingFrom(log)}), // the replay's ids cover every answer sent (pendingFrom)
           // First send after signing in: the answers this device sent anonymously move to this name (script v12).
           ...(me.anon ? {anon: me.anon} : {}),
           ...(typeof me.srv === 'number' ? {at: me.srv} : {})
@@ -537,7 +551,16 @@ function sendAnon() {
   fetch(SYNC_URL, {
     method: 'POST',
     keepalive: true,
-    body: JSON.stringify({anon: anonId(), anonAnswers: batch, av: appVer(), rv: rvApplied()})
+    // pt: the oldest answer of the whole queue (pendingFrom), as answers left in it after a lost reply may be logged already.
+    // reset: this device's progress reset (app.js), the replay's cutoff, as a signed-in player's saved data gives it (v28).
+    body: JSON.stringify({
+      anon: anonId(),
+      anonAnswers: batch,
+      av: appVer(),
+      rv: rvApplied(),
+      ...(pendingFrom(q) === null ? {} : {pt: pendingFrom(q)}),
+      ...(store.get('imr-coral-reset', '') ? {reset: store.get('imr-coral-reset', '')} : {})
+    })
   })
     .then(r => r.json())
     .then(j => {
@@ -713,6 +736,11 @@ function signIn(name, pin, j) {
   // The account's settings replace this device's, except the achievements: earned here before signing in, they join the
   // account's (code review #324).
   const mine = store.get(ACHK, null);
+  // The rules version applied (RVK) is the account's, 0 when its data has none: this device's (an anonymous replay adopted
+  // here) would tell the sheet that the account's log was replayed, and its replay would never come (Codex review #399).
+  try {
+    localStorage.removeItem(RVK);
+  } catch (e) {}
   loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => k !== 'imr-coral-progress')));
   if (mine) achMerge(JSON.stringify(mine));
   store.set('imr-coral-progress', M);

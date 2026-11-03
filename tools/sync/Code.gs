@@ -92,7 +92,7 @@ function doGet(e){
   // it out (the app keeps its own progress and asks again next time).
   if (e.parameter.rv !== undefined) {
     const lock = LockService.getScriptLock();
-    if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), Number(e.parameter.rv)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
+    if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), Number(e.parameter.rv), Number(e.parameter.pt)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
   }
   return json_(out);
 }
@@ -169,7 +169,7 @@ function doPost(e){
     const out = {ok: true, log: true, rev: rev + 1};
     try { const o = hold_(name, resetOf_(p.data)); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
     // v28: the full replay, over every answer now logged (replay_).
-    try { const rp = replay_(name, resetOf_(p.data), typeof p.rv === 'number' ? p.rv : NaN); if (rp) out.replay = rp; } catch (err) {}
+    try { const rp = replay_(name, resetOf_(p.data), typeof p.rv === 'number' ? p.rv : NaN, p.pt); if (rp) out.replay = rp; } catch (err) {}
     return json_(out);
   } finally { lock.releaseLock(); }
 }
@@ -218,8 +218,10 @@ const HOLD = {SLACK: 0.1, IDS: 500};
 const holdKey_ = name => 'hold:' + lc_(name);
 function dropHold_(name){ ROWS_ = null; try { CacheService.getScriptCache().remove(holdKey_(name)); } catch (e) {} }
 function resetOf_(data){
-  try { return new Date(JSON.parse((data || {})['imr-coral-reset'] || '""')).getTime() || 0; } catch (e) { return 0; }
+  try { return resetAt_(JSON.parse((data || {})['imr-coral-reset'] || '""')); } catch (e) { return 0; }
 }
+// A progress reset time as the app keeps it (an ISO string) in ms, 0 when there is none.
+const resetAt_ = t => typeof t === 'string' && t ? new Date(t).getTime() || 0 : 0;
 // Returns {h, ids}: ids = the answer ids of the player's last HOLD.IDS rows counted, so the app does not add again the
 // answers of a send whose reply was lost (they are already in h; Codex review #370).
 function hold_(name, since){
@@ -260,7 +262,10 @@ function answerRows_(){
 // computed again otherwise. The player's own saved copy (Progress data, RAs Data) is never rewritten here (no race
 // with a device's save): the app adopts the replay and saves it itself (sync.js replayAdopt). The reply carries
 // replay: {rv, n, rec, ids}: rec the replayed record per genus and '~level' (core.js replayProgress's P), ids the ids of
-// the player's last rows replayed (HOLD.IDS), so the app does not replay again an answer the sheet already counted.
+// the rows replayed that the app may still hold in its queue, so it does not replay again an answer the sheet already
+// counted: every row from pt on (the time of the oldest answer queued on the device, sent with the request; a second of
+// margin for the sheet's dates), at least the last HOLD.IDS rows (an app that sends no pt). Until Codex review #399 only
+// the last HOLD.IDS, while a lost reply can leave up to 2,000 answers already logged in the device's queue.
 // Cost per player: the Answers tab is read once per request anyway (hold_), the replay of a few hundred rows takes
 // milliseconds, data.json is fetched once every 6 hours (cached), stats_ is the cached ?stats=1 computation.
 const RPL = {TAB: 'Replayed', HEAD: ['Name', 'Rules', 'Rows', 'Since', 'Updated', 'Record']};
@@ -283,11 +288,13 @@ function gen_(){
 // new photos, choices]; blank numbers are null (answers before v5).
 const numOrNull_ = x => x === '' || x == null || !isFinite(Number(x)) ? null : Number(x);
 const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6]), numOrNull_(r[8]), numOrNull_(r[9]), numOrNull_(r[10]), String(r[11] || '')];
-function replay_(key, since, appRv){
+function replay_(key, since, appRv, pt){
   if (typeof appRv !== 'number' || !isFinite(appRv) || appRv >= CORE_.RV) return null;
   const who = lc_(key), mine = answerRows_().filter(r => lc_(r[0]) === who && (new Date(r[1]).getTime() || 0) > since);
   const rows = mine.map(r => rowOf_(who, r)), n = rows.length;
-  const ids = mine.slice().sort((a, b) => new Date(a[1]) - new Date(b[1])).slice(-HOLD.IDS).map(r => String(r[7]));
+  const byTime = mine.map(r => [new Date(r[1]).getTime() || 0, String(r[7])]).sort((a, b) => a[0] - b[0]);
+  const from = typeof pt === 'number' && isFinite(pt) ? pt - 1000 : Infinity;
+  const ids = byTime.filter((r, i) => i >= byTime.length - HOLD.IDS || r[0] >= from).map(r => r[1]);
   const sh = sheet_(RPL.TAB, RPL.HEAD), at = find_(sh, key);
   if (at) {
     const row = sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0];
@@ -851,7 +858,7 @@ function autoUpdate(){
 // confusions). POST {anon: random device id, anonAnswers: [...]}: logged like a signed-in player's, under the name
 // "~anon <id>" (no name, no code). Signing in later moves them to the name (doPost, p.anon). Caps: 100 answers per
 // request, 600 per id and 6000 for all anonymous players every 6 hours; over that: {ok: false, error: 'busy'}.
-function anon_(p){
+function anon_(p){  // also p.pt (replay_) and p.reset: the device's progress reset, the replay's cutoff (v28)
   const id = String(p.anon || '');
   if (!/^[a-z0-9]{8,16}$/.test(id)) return {ok: false, error: 'input'};
   const L = p.anonAnswers.slice(0, 100);
@@ -864,7 +871,8 @@ function anon_(p){
     // v28: a device that never signed in gets its full replay too, under its anonymous id (replay_), when its app
     // applied an older rules version.
     const out = {ok: true, log: true};
-    try { const rp = replay_('~anon ' + id, 0, typeof p.rv === 'number' ? p.rv : NaN); if (rp) out.replay = rp; } catch (err) {}
+    // Only the answers after the device's progress reset (p.reset, as resetOf_ reads a signed-in player's; Codex review #399).
+    try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt); if (rp) out.replay = rp; } catch (err) {}
     return out;
   } finally { lock.releaseLock(); }
 }
