@@ -130,7 +130,9 @@ function replayAdopt(rp, pending, v, cut) {
       store.set('imr-coral-sync', SYNC);
     }
     save();
-    if (played && typeof rvNoticeAdd === 'function') rvNoticeAdd(from, rp.rv);
+    // The progress % before and after, for a card shown only to the players whose % moved (core.js RVS msg.only).
+    const L = typeof slateGenera === 'function' ? slateGenera() : [];
+    if (played && typeof rvNoticeAdd === 'function') rvNoticeAdd(from, rp.rv, [pctOf(before, L), pctOf(P, L)]);
     if (/^#(progress|quiz-board)$/.test(location.hash)) route();
     return true;
   } catch (e) {

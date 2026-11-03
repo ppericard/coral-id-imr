@@ -862,17 +862,24 @@ function mxLostNotice() {
 // player opens or reconnects to the app, on whatever page they land on, one after another if several, never held by
 // the visit floor or the prompt spacing; AGENTS.md "How to make a change" 12). When this device adopts the sheet's full
 // replay of a newer version (sync.js replayAdopt), every version it skipped that has a msg is due, once per version
-// on this device (RVN.KEY, device only: due, the versions still to show; told, those shown). One card per version,
+// on this device (RVN.KEY, device only: due, the versions still to show; told, those shown; pct, the progress % before
+// and after the adoption, per version, for a msg with only: 'changed', due only when the two differ). One card per version,
 // oldest first, the next as soon as one is closed; like recalcNotice and mxLostNotice it only waits for another card
 // or the tour on screen (tried again every 2 s), and a page change closes it unseen to show it again on the new page.
 // At start-up (app.js SETUP 2, after the two cards above) and right after an adoption.
 const RVN = {KEY: 'imr-rv-msg'};
-function rvNoticeAdd(from, to) {
+function rvNoticeAdd(from, to, pct) {
   const M = store.get(RVN.KEY, {}) || {},
     told = M.told || [],
-    due = (M.due || []).filter(v => !told.includes(v));
-  rvMsgs(from, to).forEach(x => !told.includes(x.v) && !due.includes(x.v) && due.push(x.v));
-  store.set(RVN.KEY, {due: due.sort((a, b) => a - b), told});
+    due = (M.due || []).filter(v => !told.includes(v)),
+    pc = M.pct || {};
+  rvMsgs(from, to).forEach(x => {
+    if (told.includes(x.v) || due.includes(x.v)) return;
+    if (x.msg.only === 'changed' && !(pct && pct[0] !== pct[1])) return;
+    if (pct) pc[x.v] = pct;
+    due.push(x.v);
+  });
+  store.set(RVN.KEY, {due: due.sort((a, b) => a - b), told, pct: pc});
   if (window.APP_READY) rvNotice();
 }
 let rvT = 0;
@@ -887,13 +894,15 @@ function rvNotice() {
   d.setAttribute('role', 'dialog');
   d.setAttribute('aria-modal', 'true');
   d.setAttribute('aria-label', 'Update');
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">Update</p><h3>${x.msg.t}</h3><p>${x.msg.p}</p>
+  const [pf, pt] = (M.pct || {})[x.v] || [],
+    para = x.msg.p.replace('{from}', pf).replace('{to}', pt);
+  d.innerHTML = `<div class="ulcard"><p class="ulkick">Update</p><h3>${x.msg.t}</h3><p>${para}</p>
     <div class="ulbtns"><span></span><button class="next" type="button">Got it</button></div></div>`;
   document.body.appendChild(d);
   const close = seen => {
     if (seen) {
       const N = store.get(RVN.KEY, {}) || {};
-      store.set(RVN.KEY, {due: (N.due || []).filter(v => v !== x.v), told: [...new Set([...(N.told || []), x.v])]});
+      store.set(RVN.KEY, {...N, due: (N.due || []).filter(v => v !== x.v), told: [...new Set([...(N.told || []), x.v])]});
     }
     d.remove();
     document.removeEventListener('keydown', key, true);

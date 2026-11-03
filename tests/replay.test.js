@@ -181,9 +181,13 @@ test('RVS: one entry per rules version, RV the last; messages of the versions sk
     assert.match(x.at, /^\d{4}-\d{2}-\d{2}$/);
     assert.ok(typeof x.why === 'string' && x.why.length > 10);
     assert.ok(x.msg === null || (typeof x.msg.t === 'string' && typeof x.msg.p === 'string'), 'msg: null or {t, p}');
+    if (x.msg && x.msg.only) assert.strictEqual(x.msg.only, 'changed', 'only: the one condition progress.js rvNoticeAdd knows');
   });
   assert.strictEqual(C.RV, C.RVS[C.RVS.length - 1].v);
-  assert.strictEqual(C.RVS[0].msg, null, 'the first version (the full replay itself) has no card (Pierre)');
+  // The first version (the full replay itself): a card only for the players whose progress % it moved, with the two %
+  // (Pierre, 2026-11-03).
+  assert.strictEqual(C.RVS[0].msg.only, 'changed');
+  assert.match(C.RVS[0].msg.p, /\{from\}%.*\{to\}%/);
   assert.deepStrictEqual(
     C.rvMsgs(0, C.RV),
     C.RVS.filter(x => x.msg)

@@ -1385,7 +1385,10 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     `bkt`; a mark taken by a later rules version would say "recalculated from all your answers with the app's current
     rules", reason `rules`). Then, at once, the announcement card of every version skipped that has a `msg`
     (`progress.js` `rvNotice`: once per version per device, `imr-rv-msg`; never held, one after another, after
-    `recalcNotice` and `mxLostNotice`; only to a device that had answers).
+    `recalcNotice` and `mxLostNotice`; only to a device that had answers). Version 1 (the full replay itself) has
+    one only for the players whose progress % the adoption moved (`msg.only: 'changed'`, Pierre 2026-11-03: several
+    players lose points as the former model's marks are dropped): "Your progress was recalculated with the improved
+    model", saying the % before and after; a player whose % stays the same sees nothing.
   - **The device's own recalculations** (`memRecalc` from `s.ps`, `pgOf` from the last 10 results `s.h`) only
     approximate it from what a device keeps: they stay as the fallback for a device that never reached the sheet (a
     device offline, or a local copy), and a record adopted from the replay is never corrected by them.
