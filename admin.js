@@ -2963,15 +2963,23 @@ function renderCand() {
     nx = live[1];
   const seg =
     `<span class="adm-qseg adm-csrc" role="group" aria-label="Source">${CSRCS.map(([s, t]) => `<button type="button" data-src="${s}" aria-pressed="${s === CSRC}">${t} <b>${s === CSRC ? live.length : candQueue(s).filter(shown).length}</b></button>`).join('')}</span>` +
-    (nFull
-      ? `<p class="note adm-cfull">${nFull} wait${nFull === 1 ? 's' : ''} in full cells (${[...new Set(Q0.filter(x => x.full).map(x => capOf(x.n)))].sort((a, b) => b - a).join(' or ')} colonies) · <button type="button" class="adm-link" data-cfull>${CFULL ? 'Hide them' : 'Show them'}</button></p>`
-      : '') +
-    (nAside
-      ? `<p class="note adm-caside">${nAside} set aside by the pre-sort (unusable, comparison image or near-duplicate) · <button type="button" class="adm-link" data-caside>${CASIDE ? 'Hide them' : 'Show them'}</button></p>`
-      : '') +
-    // Reminder (Pierre: the judging agent runs on demand, "remind me to launch it").
-    (nJ
-      ? `<p class="note adm-cjudge">${nJ} candidate${nJ === 1 ? '' : 's'} not judged yet: ask your agent for the candidate pass (judging/AGENTS.md).</p>`
+    // What the queue leaves out, as one row of small toggles (Pierre, 2026-11-03: three lines of notes took the room of
+    // the photo on a phone); each chip's tooltip says what it is.
+    (nFull || nAside || nJ
+      ? `<p class="adm-cflags">${
+          nFull
+            ? `<button type="button" class="adm-chip adm-cfull" data-cfull aria-pressed="${CFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of cells already full (${[...new Set(Q0.filter(x => x.full).map(x => capOf(x.n)))].sort((a, b) => b - a).join(' or ')} colonies): ${CFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} full</button>`
+            : ''
+        }${
+          nAside
+            ? `<button type="button" class="adm-chip adm-caside" data-caside aria-pressed="${CASIDE}" title="${nAside} set aside by the pre-sort (unusable, several corals, poor, comparison image or near-duplicate): ${CASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
+            : ''
+        }${
+          // Reminder (Pierre: the judging agent runs on demand, "remind me to launch it").
+          nJ
+            ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the candidate pass (judging/AGENTS.md)">${nJ} not judged yet</span>`
+            : ''
+        }</p>`
       : '');
   if (!c) {
     $v.innerHTML = `<section class="adm-sw adm-swempty">${seg}<p class="note">${Q.length ? `${Q.length} skipped.` : 'No candidate left.'}</p>${Q.length ? '<button type="button" class="adm-btn" data-again>Show the skipped ones</button>' : ''}</section>`;

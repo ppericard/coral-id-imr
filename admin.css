@@ -2888,9 +2888,30 @@ td.cov-c.cov-full {
 td.cov-c.cov-over {
   box-shadow: inset 0 0 0 2px var(--warn);
 }
-.adm-cfull,
-.adm-cjudge {
+/* Candidates: what the queue leaves out, one row of small toggles under the sources */
+.adm-cflags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   margin: 6px 0 0;
+}
+.adm-chip {
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--muted);
+}
+button.adm-chip {
+  cursor: pointer;
+}
+button.adm-chip[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
 }
 /* Adding to a full cell: pick the colony it replaces */
 .adm-repl-new {
