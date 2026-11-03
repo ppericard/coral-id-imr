@@ -439,7 +439,8 @@ document.addEventListener('visibilitychange', () => {
 // typed in the dialog). An older script answers without rep: true, so reports stay queued until Pierre redeploys.
 // Nothing changes on the site: Pierre reads reports, with who sent them, in the admin Triage.
 // Also everywhere else it makes sense (Pierre, 2026-11-01): any enlarged photo (lightbox), the bottom of a genus sheet,
-// and "Send feedback" in the footer of every page. The reasons offered depend on where the report comes from (k).
+// and "Send feedback" at the bottom of the ? help of every page (app.js helpEnd) and on About (home.js; no page footer
+// since 2026-11-03). The reasons offered depend on where the report comes from (k).
 const REP_WHY = {
   game: [
     ['wrong', 'Wrong answer'],
@@ -496,10 +497,6 @@ function sendReports() {
     .catch(() => {});
 }
 window.addEventListener('online', sendReports);
-{
-  const ft = document.querySelector('footer p');
-  if (ft) ft.insertAdjacentHTML('beforeend', ` ${repBtn({k: 'page'}, 'Send feedback')}`);
-}
 setTimeout(sendReports, 4000);
 document.addEventListener(
   'click',
