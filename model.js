@@ -882,7 +882,7 @@ function missing(n) {
     m.push(`more right answers, most of all against its look-alikes (about ${Math.round(100 * genScore(n))}% of the way so far)`);
   else
     m.push(
-      `the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the photo quiz, all right, at least ${TYPED.exam} of them typed from memory`
+      `the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the Quiz, all right, at least ${TYPED.exam} of them typed from memory`
     );
   return m;
 }
