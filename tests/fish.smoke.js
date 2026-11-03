@@ -178,8 +178,8 @@ const server = http.createServer((req, res) => {
     await setSubject('coral');
     return {subj: SUBJ.id, slate: slateGenera().length, ac: (P.Acropora || {}).ok, fish: localStorage.getItem('reefid-sync-subject')};
   });
-  // The screens a fish player sees, at 390 and 1280 px (light theme): Home's selector with Fish tagged beta and the beta
-  // line once chosen; a fish question (4 upright names); the enlarged photo before the answer credits its author by name
+  // The screens a fish player sees, at 390 and 1280 px (light theme): Home's selector with Fish tagged beta, the Learn
+  // door saying beta once chosen; a fish question (4 upright names); the enlarged photo before the answer credits its author by name
   // only (blindCredit: no taxon, no link); after the answer the full credit with its iNaturalist link; My progress; a
   // wink once; nothing wider than the screen on any of them.
   const ui = [];
@@ -211,9 +211,12 @@ const server = http.createServer((req, res) => {
     const home = await q.evaluate(() => ({
       fish: (document.querySelector('.hsubj [data-subj="fish"]') || {}).textContent || '',
       on: (document.querySelector('.hsubj [aria-pressed="true"]') || {}).dataset,
-      beta: (document.querySelector('.hbeta') || {}).textContent || ''
+      beta:
+        ((document.querySelector('.hdoor.learn .hdwhen') || {}).textContent || '') +
+        ' | ' +
+        ((document.querySelector('.hdoor.learn .hddesc') || {}).textContent || '')
     }));
-    if (!/Fish\s*beta/.test(home.fish) || !home.on || home.on.subj !== 'fish' || !/Something fishy/.test(home.beta))
+    if (!/Fish\s*beta/.test(home.fish) || !home.on || home.on.subj !== 'fish' || !/Something fishy.*\|.*Fish is in beta/.test(home.beta))
       ui.push(`${width}px Home: selector or beta line ${JSON.stringify(home)}`);
     await wide('Home');
     await q.evaluate(() => (location.hash = '#quiz'));

@@ -658,20 +658,23 @@ body:has(.home-page) main {
   }
 }
 /* The subject selector (Corals / Fish, core.js SUBJECTS), above the two doors. */
-.home-page .hsubj {
+.home-page .hdtop {
   display: flex;
-  width: max-content;
-  margin: 0 auto 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 6px;
+}
+/* The subject switch (home.js), compact: it shares the Learn door's top line with its kicker. */
+.home-page .hsubj {
+  display: inline-flex;
+  padding: 2px;
 }
 .home-page .hsubj button {
-  min-width: 96px;
-  font-size: var(--fs-m);
-}
-/* The line under the selector while a subject in beta is chosen (core.js SUBJECTS beta). */
-.home-page .hbeta {
-  max-width: 640px;
-  margin: -4px auto 12px;
-  color: var(--muted);
+  padding: 2px 8px;
   font-size: var(--fs-s);
-  text-align: center;
+}
+.home-page .hsubj .beta {
+  margin-left: 2px;
+  padding: 0 4px;
 }

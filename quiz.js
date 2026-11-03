@@ -1166,7 +1166,7 @@ function backShow() {
 // One card per opt-in set of the subject (app.js UNITS sets: the coral bonus genera; fish circles 2 and 3), the first due.
 // The card shows their own photos as a row of round crops (each one's cover, a plain disc when it has none or it fails).
 const bonusOfferDue = () => SETS().find(S => Q[S.k] === undefined && S.units().length && S.due()) || null;
-function bonusOfferShow(S = bonusOfferDue()) {
+function bonusOfferShow(S = bonusOfferDue() || SETS()[0]) {
   if (!S) return;
   const L = S.units();
   cardShow({

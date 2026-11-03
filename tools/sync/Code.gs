@@ -1022,8 +1022,8 @@ const CORE_ = (function () { const module = {exports: {}};
   //   base    the sign-in record's fields for the progress last sent or received ([base, pending], sync.js mergeSaved)
   //   name, one, many, what, lecture: words of the interface (Corals; genus, genera; Coral to identify; the IMR coral
   //           lecture). Names of units: app.js uname (a genus in italics, a fish entry by its IMR name)
-  //   beta    a subject still in beta: the line Home shows under the selector once it is chosen (HTML), and a "beta" tag
-  //           on its buttons
+  //   beta    a subject still in beta: {kick, line}, Home's Learn door top line and description once it is chosen (line:
+  //           HTML), and a "beta" tag on its buttons
   //   card    the kind of its first-meeting card (app.js CARD_KINDS: its emoji)
   //   remote  its photos are iNaturalist's, not the site's (the fish stopgap, tools/fish_photos.py): preloaded all the same
   //   views   the views a question may show, [code, label] (one view: one photo per question)
@@ -1067,9 +1067,12 @@ const CORE_ = (function () { const module = {exports: {}};
       card: 'fish',
       lecture: 'the IMR fish presentation',
       remote: true,
-      // In beta (2026-11-04: Pierre promised the beta players "something fishy is coming"): said on its button and once
-      // chosen, on Home (home.js), as the HTML below.
-      beta: 'Something fishy… <b>Fish is in beta</b>: the 27 IMR survey families, iNaturalist photos for now. Feedback welcome.',
+      // In beta (2026-11-04: Pierre promised the beta players "something fishy is coming"): said on its buttons and, once
+      // chosen, on Home (home.js: "Something fishy…" and this line, HTML).
+      beta: {
+        kick: 'Something fishy…',
+        line: '<b>Fish is in beta</b>: the 27 IMR survey families, iNaturalist photos for now. Feedback welcome.'
+      },
       views: [['wide', 'Photo']],
       optin: ['c2', 'c3'],
       log: false,

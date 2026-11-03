@@ -25,20 +25,21 @@
           .slice(0, 12)
           .map(g => `<img ${ph(g, 'macro')} alt="" loading="lazy">`)
           .join('');
-    // The subject (core.js SUBJECTS): what Learn & practise teaches; Identify stays the Coral Finder. A subject in beta
-    // (SUBJECTS beta) says so on its button and, once chosen, in one line under the selector.
+    // The subject (core.js SUBJECTS): what Learn & practise teaches, so its switch sits in that door's top line (Home
+    // stays one screen on a 360 x 640 phone); Identify stays the Coral Finder. A subject in beta (SUBJECTS beta) says so on
+    // its button, in the door's top line (kick) and description (line).
     const subj = `<div class="seg hsubj" role="group" aria-label="Subject">${SUBJECTS.map(
       S =>
         `<button type="button" data-subj="${S.id}" aria-pressed="${S === SUBJ}">${S.name}${S.beta ? ' <small class="beta">beta</small>' : ''}</button>`
-    ).join('')}</div>${SUBJ.beta ? `<p class="hbeta">${SUBJ.beta}</p>` : ''}`;
-    $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name a coral on a ReefCloud photo, or one you photographed on a dive. Corals or Fish at the top: each has its own progress.</p><div class="home-page">${subj}
+    ).join('')}</div>`;
+    $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name a coral on a ReefCloud photo, or one you photographed on a dive. Corals or Fish, in the first door: each has its own progress.</p><div class="home-page">
       <div class="hdoors">
         <section class="hdoor learn">
           <a class="hdart" href="#quiz" tabindex="-1" aria-hidden="true"><span class="hdtiles">${tiles}</span></a>
           <div class="hdbody">
-            <p class="hdwhen">Learning phase<span class="wide"> · before ReefCloud or your next dive</span></p>
+            <div class="hdtop"><p class="hdwhen">${SUBJ.beta ? SUBJ.beta.kick : 'Learning phase<span class="wide"> · before ReefCloud or your next dive</span>'}</p>${subj}</div>
             <h2>Learn &amp; practise</h2>
-            <p class="hddesc">Get to know the ${SUBJ.many}, then train your eye on photos<span class="wide"> until you recognise each one at a glance</span>. Your progress is saved as you go.</p>
+            <p class="hddesc">${SUBJ.beta ? SUBJ.beta.line : `Get to know the ${SUBJ.many}, then train your eye on photos<span class="wide"> until you recognise each one at a glance</span>. Your progress is saved as you go.`}</p>
             <div class="hdacts">
               <a class="hdbtn" href="#genera"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13"/></svg><b><em>1</em> Learn</b><small>${fish ? 'The IMR fish families by shape group, with the IMR cues' : 'One sheet per genus: photos<span class="wide"> at 3 scales</span>, IMR ID tips, look-alikes'}</small></a>
               <a class="hdbtn main" href="#quiz"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg><b><em>2</em> Practice</b><small>${fish ? 'Name the family from photos' : 'Name the genus from photos<span class="wide"> (all genera or the ones you pick)</span>, look-alike duels, memory'}</small></a>

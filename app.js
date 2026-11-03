@@ -963,7 +963,7 @@ const UNITS = {
       {
         k: 'bon',
         units: () => BONUS.filter(n => GX(n)),
-        due: () => slateGenera().every(asked),
+        due: () => slateGenera().every(n => asked(n) && introduced(n)), // a genus closed again by "One at a time" (model.js introBack) waits for its card first
         kick: 'Every genus of the slate met',
         title: n => `${n} more genera?`,
         body: 'Not on the IMR coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.',
@@ -998,7 +998,7 @@ const UNITS = {
       {
         k: 'c2',
         units: () => (FISH ? FISH.c2 : []),
-        due: () => slateGenera().every(asked),
+        due: () => slateGenera().every(n => asked(n) && introduced(n)),
         kick: 'Every IMR family met',
         title: n => (n > 1 ? `${n} more families?` : 'One more family?'),
         body: 'Not an IMR survey family, but seen now and then on the SVS videos.',
