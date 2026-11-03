@@ -2332,6 +2332,128 @@ the spread, so beginner and strong RA were run again on 15 seeds: learned 1.5 ±
 The simulated world is built on the same genus offsets the v31 app is given, so it says the rule is safe, not how
 much it gains; the real-log replay above is the measure of that.
 
+### Response time: genus and photo (measured 2026-11-04, no change made)
+
+Pierre, 2026-11-04: "response time informs on several things at once: the player's knowledge of this genus, the
+intrinsic difficulty of the genus, and the intrinsic difficulty of the photo. It's the combination of the three that
+makes the time longer or shorter. So we need to see how we can use it in each of these three factors, or not." The
+first factor (a right answer's Elo step weighted by its speed against the player's own median) is "Response time"
+(PR #431, 2026-11-03). This section splits the time into its parts and asks whether the other two can use it.
+Nothing in the app changes.
+
+**Data and model** (`tools/rtprep.js`, then `tools/rtdecomp.py`; the sheet's Answers tab read 2026-11-03, read-only,
+the same 654 timed answers, not typed, of the 5 timed players as PR #431, P1-P5 in the same order; the 41 with a photo
+enlarged left out, since the time spent enlarged is in the seconds: 613 answers). log(seconds) = μ + fixed terms +
+u_player + a_genus + b_photo (+ c_player×genus + e_player×photo) + ε, crossed random effects fitted by REML (van der
+Linden's lognormal response-time model, 2006, with the item's time intensity split into genus and photo). The photo is
+the question's first one (the colony view of a multi-view question). Fixed terms: "controls" = 2 choices, number of
+views, share of the photos new to the player, log of the player's answer number (practice); then right; then the gap,
+the logged ability minus the question's difficulty (th − d, from Expected and Ability). Intervals: parametric bootstrap
+(100 refits on data simulated from the fit; 20 for the five-effect model) and, beside them, each player left out.
+
+**1. The decomposition** (share of the variance of log(seconds)):
+
+| Model | fixed | player | genus | photo | player × genus | player × photo | residual |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| controls | 0.05 | 0.28 [0.02, 0.55] | 0.06 [0.00, 0.10] | 0.18 [0.09, 0.30] | | | 0.44 |
+| controls + right + gap | 0.12 | 0.26 [0.03, 0.42] | 0.04 [0.01, 0.10] | 0.15 [0.07, 0.24] | | | 0.43 |
+| controls, five effects | 0.04 | 0.26 | 0.02 [0.00, 0.07] | 0.16 [0.06, 0.29] | 0.11 [0.05, 0.17] | 0.01 [0.00, 0.12] | 0.40 |
+| controls + right + gap, five effects | 0.11 | 0.25 | 0.01 [0.00, 0.05] | 0.15 [0.05, 0.23] | 0.08 [0.01, 0.13] | 0.00 [0.00, 0.13] | 0.41 |
+
+- **The player** comes first: medians from 3.9 to 11.2 seconds. With five players its share is very uncertain (one
+  player left out: 0.04 to 0.33). This is why every time rule reads z, the time against the player's own median.
+- **Correctness and the expectation**: a right answer takes 0.67 times as long (−0.40 ± 0.07 in log), and −0.22 ±
+  0.04 per logit of the gap. With th and d apart: −0.25 per logit of ability on the genus, +0.18 ± 0.06 per logit of
+  the question's difficulty. Together they explain 7 points of the variance (fixed share 0.05 → 0.12; plain
+  regression R² 0.095). Most of the time is not correctness.
+- **The genus**: 4-6% with three effects, but 1-2% once the player × genus term is in. That term, the player's own
+  knowledge of the genus (8-11%), takes most of what looked like a genus effect: Pierre's first factor, PR #431's.
+  The 62 Duel tab answers (two fixed pairs, fast) also make part of it (without them the genus sd is 0.155, not 0.194).
+- **The photo**: 15-18%, a photo one sd slower takes 1.4 times as long (sd 0.35 [0.27, 0.43] in log). It is
+  shared by the players: player × photo is about 0 (a photo slow for one player is slow for the others).
+- So, of what varies inside a player beyond the outcome: photo about a quarter, the player's own knowledge of the
+  genus about a sixth, the genus itself a few percent, the rest noise (about 60%).
+
+**2. Genus: not useful.** The genus effect (BLUP, controls) against what the app uses for the opening order:
+
+- **Correlation over 45 genera** (28 with 10 timed answers or more): with `genusDiff` +0.14 (its photo part −0.07, its
+  confusion part +0.21), with the pooled miss rate +0.46 (+0.51 on the 28), with the miss rate beyond Expected +0.42.
+  A slow genus is a missed one; `genusDiff` itself goes with the miss rate only +0.25. Fastest: *Lobophyllia*,
+  *Ctenactis*, *Acropora*, *Plerogyra*, *Danafungia*; slowest: *Astreopora*, *Montipora*, *Leptoseris*, *Stylophora*.
+- **Not stable across players**: the effect from two players against the other three, over the 10 splits, +0.14 on
+  average (−0.35 to +0.37; +0.07 with right and gap); first half against second half of each player's answers +0.09;
+  odd against even answers of the same players +0.42. What repeats is each player's own genus, not the genus.
+- **Out of sample** (each player's 1,012 scored answers, timed or not, predicted with coefficients fitted on the other
+  players; every genus measure from answers the fold has not seen: the held-out player's from the other four, each
+  training player's from the other three, Codex review #443; log-loss difference per answer × 10⁻³):
+
+| Added to the player's level | all answers | on top of the app's expectation | first answer on each genus (166) |
+| --- | --- | --- | --- |
+| `genusDiff` | +2.8 ± 2.4 | +3.9 ± 2.4 | +3.5 ± 11.8 |
+| genus time effect | +3.0 ± 1.2 | +4.3 ± 1.4 | +1.7 ± 7.1 |
+| time effect on top of `genusDiff` | +3.0 ± 1.0 | +3.9 ± 1.2 | +2.4 ± 5.7 |
+| pooled miss rate of the others | −1.1 ± 2.5 | +0.7 ± 2.4 | +3.9 ± 8.9 |
+
+  The time effect makes every prediction worse (its sign is right: a slower genus is missed more, −0.32 per log
+  unit, but it carries no more signal than noise; before the review's fix, which left each training player's features
+  holding the held-out player's answers, it read +1.1 ± 0.6 on all answers). Nothing measured on four players predicts the fifth player's
+  success on a genus: `genusDiff` neither, and the others' miss rate only within its noise. The part of genus
+  difficulty that players share is small next to each player's own, and time adds nothing to it yet.
+- **When**: the reliability of a genus time effect over m players with n timed answers each (genus sd 0.12, player ×
+  genus 0.27, residual 0.51): 0.38 for 5 players × 5 answers (today), 0.65 for 15 × 5, 0.71 for 20 × 5, 0.76 for 20
+  × 10. So about 15-20 timed players with 5 or more timed answers on most genera (about 4,000-5,000 timed answers),
+  and then only if the out-of-sample test above turns negative.
+
+**3. Photo: not usable yet, the most promising of the two.** The photo effect is the larger and is shared, but:
+
+- **Too few repeats**: 428 photos; 117 with 2 timed answers or more, 50 with 3, 4 with 5; 85 answered by 2 players or
+  more. The reliability of a photo's time effect with n timed answers is 0.26 (1), 0.51 (3), 0.63 (5), 0.77 (10).
+- **Against the photo difficulty**: correlation with the photo Elo (core.js `eloOf`, the sheet's rating) +0.25 on the
+  photos with 2 timed answers or more, +0.33 with 3 (+0.24 with right in the model), with the app's `photoDiff` +0.01.
+  As a covariate of time, the photo Elo is clearly there (+0.52 ± 0.08 log per unit, +0.36 with right) but explains
+  only a fifth of the photo variance (photo sd 0.35 → 0.31): most of what makes a photo slow is not what makes it
+  missed (a far colony, a busy scene, several views to look at).
+- **Cross-player** (419 answers on a photo another player answered with a time): the others' photo time effect makes
+  the prediction worse, +7.4 ± 5.0 × 10⁻³ (on top of `photoDiff` +4.3 ± 5.1; on top of the app's expectation and
+  `photoDiff`, −0.5 ± 6.1): noise.
+- **In the sheet's photo Elo** (`tools/rtprep.js`: core.js `eloReplay` replayed with time on the photo's step, each
+  answer scored before it updates anything, 1,466 trusted answers, 183 of them on a photo timed before): a right
+  answer's photo step × w = clamp(1 − k z, 0.5, 1.5) as PR #431's player rule, k 0.25 / 0.5 / 1 / 2: −0.05 / −0.07 /
+  −0.07 / −0.10 ± 0.05-0.10 × 10⁻³ (nothing, within noise; on the 183, −0.4 to −0.8 ± 0.4-0.8; z against the
+  median of the player's earlier timed answers, the two middle ones averaged for an even count, as
+  `tools/abilityeval.js`); an additive time step instead (the photo harder by c × K × z beyond the player's mean z for
+  the same outcome), c 0.25 / 0.5 / 1: +0.2 / +0.5 / +1.6 ± 0.4-1.5 × 10⁻³ (worse).
+- **When**: to tell a correlation of 0.25 from none (80% power, 5%) takes about 120 photos with a reliable time effect
+  (5 timed answers or more from 2 players or more); with today's spread of the draw (an effective pool of about 800
+  photos, Poisson) that is about 2,500 timed answers, 3,000-3,500 if the draw spreads over all 1,404 game photos, so
+  within Pierre's ~5,000 timed answers for weak photo signals ("Response time" above). Then run the replay again.
+
+**4. What each factor could do with time**
+
+| Factor | Verdict | When | How |
+| --- | --- | --- | --- |
+| Player × genus (knowledge) | usable now | now | PR #431's rule, the other work |
+| Genus (intrinsic difficulty) | not useful now | 15-20 timed players × 5+ timed answers per genus (~4,000-5,000 timed answers), and only if out-of-sample helps | a term in `genusDiff` (below) |
+| Photo (intrinsic difficulty) | not usable yet | ~120 photos with 5+ timed answers from 2+ players (~3,000 timed answers) | the photo's Elo step (below) |
+
+- **Photo, if the replay says so**: in `Code.gs` `stats_` and its copy `core.js` `eloReplay` (tests check they agree),
+  a right answer's photo step × w = clamp(1 − k_P z, 0.5, 1.5), z the time against the median of the player's earlier
+  timed answers (from their 11th; typed or enlarged answers, or none: w 1). The same z and the same form as the
+  player's rule, so a fast right answer says "easy photo" and "known genus" at once, Elo-style (Pelánek 2016: one
+  surprise moves both sides). No new state per photo, no constant per photo or genus; k_P one number chosen by the
+  replay (leave one player out, as PR #431's k). The additive form (a separate time rating, T_f = Σ residual z /
+  (n_f + 3), 3 = residual variance / photo variance, added to the Elo with a weight) was worse today.
+- **Genus, if it ever helps**: the sheet (compute once, AGENTS.md 14g) would serve each genus's time effect, the
+  shrunk mean over players of each player's mean residual z on it, â_g = Σ_p w_p z̄_pg / (Σ_p w_p + 1/τ_g²), w_p =
+  1 / (τ_pg² + σ² / n_pg), the variances refitted by `tools/rtdecomp.py` (today τ_g 0.12, τ_pg 0.27, σ 0.51), and the
+  app would add `OPEN.TIME` × â_g to `genusDiff` only from that sheet version (AGENTS.md 7a); `OPEN.TIME` one number
+  chosen by the out-of-sample test (0 until it helps). With the hierarchical photo Elo (PR #422, a genus offset G in
+  the photo difficulty), the same term would go into G's prior instead.
+- **For the player rule** (PR #431): its z also holds the photo's part (a quarter of the variance inside a player), so
+  a slow right answer on a slow photo now counts as weaker knowledge. Once photos have reliable time effects, z −
+  b̂_photo (the photo's shrunk time effect, from the sheet) would give each factor its own part; today b̂ is shrunk to
+  a third or less (reliability 0.26-0.51), so it would change nothing.
+
 ## Considered and not adopted
 
 - **First answer per photo only** (Papoušek 2014): standard for prior knowledge, where people already know the facts.
@@ -2751,6 +2873,9 @@ is not in the simulation.
   Urnings: a new method for tracking dynamically changing parameters in paired comparison systems.
 - Doebler, P., Alavash, M., Giessing, C. (2014). Adaptive experiments with a multivariate Elo-type algorithm. *Behavior
   Research Methods* 47.
+- van der Linden, W. J. (2006). A lognormal model for response times on test items. *Journal of Educational and
+  Behavioral Statistics* 31, 181-204; van der Linden, W. J. (2007). A hierarchical framework for modeling speed and
+  accuracy on test items. *Psychometrika* 72, 287-308.
 - Bock, R. D. (1972). Estimating item parameters and latent ability when responses are scored in two or more nominal
   categories. *Psychometrika* 37, 29-51. Thissen, D., Steinberg, L. (1984). A response model for multiple choice items.
   *Psychometrika* 49.
