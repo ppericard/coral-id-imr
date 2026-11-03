@@ -1076,6 +1076,14 @@ answer itself costs this learner little (true knowledge within 0.02 of the truth
 it learns from every question and never gives up; what a wrong answer costs a real player (a discouraging start, or a
 slow and boring one) is what the card is for.
 
+**Checked again after #437** (an opening only after a right answer, merged the same day; the same traces re-run on the
+merged code, same seeds): wrong answers caught in the right direction 31 of 40, cards to truthful answers 5 of 20. The
+changes: a beginner who said "IMR course" caught 3 of 5 (was 5), "know well" 5 of 5 (was 4); a lecture-level RA who
+said "new" moved up 2 of 5 (was 4), a strong RA who said "IMR course" 2 of 5 (was 3); a truthful beginner got "higher"
+once (at 60 answers) and a truthful lecture-level RA "lower" twice (at 40). Within the spread of 5 seeds for one
+profile, but the false "higher" to a beginner is the case Pierre warned about: to watch on the first real answers
+(ROADMAP). The real log is unchanged (it replays the logged answers).
+
 **With the card taken** (`--fallback accept`: the first answer the card offers, the nearest; the same seeds, the cards
 shown live through the prompt spacing, so at 30 rather than 20 when the sign-in card takes the 20th answer). A change
 made on a fallback card is never followed by a card the other way (`startBack`): with it allowed, 3 of 4 lecture-level
