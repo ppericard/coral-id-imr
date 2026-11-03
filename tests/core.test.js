@@ -17,7 +17,13 @@ const {
   accountOf,
   levelSeed,
   LEVEL,
-  START
+  START,
+  MEM,
+  memBucket,
+  memFam,
+  memOf,
+  photoMemOf,
+  memRecalc
 } = require('../core.js');
 const {loadCodeGs} = require('./gas.js');
 
@@ -133,8 +139,11 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
     }
   const T = {token: 'ghp_write000000000000000000'},
     rows = s.post({readAnswers: 1, ...T}).rows,
-    sheet = s.get({stats: '1'}).photos;
-  assert.deepStrictEqual(eloOf(rows), sheet);
+    st = s.get({stats: '1'});
+  assert.deepStrictEqual(eloOf(rows), st.photos);
+  // v26: the photo memory offsets and the answers behind them, the same in the sheet and the admin's replay.
+  assert.deepStrictEqual(photoMemOf(rows), {mem: st.mem, memn: st.memn});
+  assert.notDeepStrictEqual(st.mem, MEM.PRIOR, 'the answers moved the offsets');
 });
 
 test('confusionOf counts the same pairs as Code.gs stats_ conf, and keeps the direction', () => {
@@ -570,4 +579,133 @@ test('accountOf: an existing account at sign-in, from the progress the sheet ret
   assert.deepStrictEqual(accountOf({'imr-coral-progress': 'not json'}, 'not a date'), none);
   assert.deepStrictEqual(accountOf({'imr-coral-progress': '[1,2]'}), none);
   assert.deepStrictEqual(accountOf(data({[LEVEL]: {ok: 'x', ko: -3, at: 'y'}, Acropora: null})), none);
+});
+
+// A synthetic answer log with a known photo memory (players and photos of known level, every photo seen many times).
+function memLog(truth, n = 3000, seed = 7) {
+  let a = seed;
+  const rnd = () => {
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    },
+    sig = x => 1 / (1 + Math.exp(-x)),
+    diff = {},
+    H = {},
+    rows = [];
+  for (let g = 0; g < 20; g++) for (let i = 0; i < 12; i++) diff[`g${g}-${i}`] = (rnd() - 0.5) * 2;
+  for (let p = 0; p < 12; p++) {
+    const th = rnd() * 2 - 0.5;
+    for (let q = 0; q < n / 12; q++) {
+      const g = Math.floor(rnd() * 20),
+        f = `g${g}-${Math.floor(rnd() * 12)}`,
+        h = H[p + '|' + f] || [0, 0],
+        ok = rnd() < 0.25 + 0.75 * sig(th - diff[f] - 0.5 - truth[memBucket(h)]) ? 1 : 0;
+      H[p + '|' + f] = [h[0] + 1, h[1] + ok];
+      rows.push(['p' + p, rows.length, 'G' + g, ok ? 'G' + g : 'X', ok, 'quiz', f]);
+    }
+  }
+  return rows;
+}
+
+test('photo memory: buckets of the player history with a photo, the mean offset of a question, a served estimate or the prior', () => {
+  assert.deepStrictEqual(
+    [undefined, [0, 0], [1, 0], [3, 0], [1, 1], [4, 1], [2, 2], [9, 5]].map(memBucket),
+    [0, 0, 1, 1, 2, 2, 3, 3],
+    'new, shown never right, right once, right twice or more'
+  );
+  // The prior is the old fixed rule (a new photo 0.5 harder, right twice 1 easier) as offsets from a new photo.
+  assert.deepStrictEqual(MEM.PRIOR, [0, -0.5, -0.5, -1.5]);
+  const mem = [0, -0.4, -1.2, -2];
+  assert.strictEqual(memFam([], mem), 0);
+  assert.strictEqual(memFam([undefined, [1, 1]], mem), -0.6, 'a colony and a close-up: the mean of their offsets');
+  assert.strictEqual(
+    memFam(
+      [
+        [2, 2],
+        [2, 2]
+      ],
+      mem
+    ),
+    -2
+  );
+  assert.deepStrictEqual(memOf(mem), mem);
+  assert.notStrictEqual(memOf(mem), mem, 'a copy');
+  assert.deepStrictEqual(memOf(undefined), MEM.PRIOR, 'an older sheet: the prior');
+  assert.deepStrictEqual(memOf([0, 'x', 1, 2]), MEM.PRIOR);
+  assert.deepStrictEqual(memOf([0, 1]), MEM.PRIOR);
+});
+
+test('photo memory: estimated from the trusted answers, shrunk to the prior while they are few', () => {
+  assert.deepStrictEqual(photoMemOf([]), {mem: MEM.PRIOR, memn: [0, 0, 0, 0]}, 'no answers: the prior');
+  // A real memory (right once 1.5 easier than new, twice 2): the estimate goes most of the way from the prior.
+  const real = photoMemOf(memLog([0, -0.4, -1.5, -2])).mem;
+  assert.ok(real[2] < -1.1 && real[2] > -1.9, `right once ${real[2]}`);
+  assert.ok(real[3] < -1.6 && real[3] > -2.4, `right twice ${real[3]}`);
+  assert.ok(real[3] < real[2] && real[2] < real[1], `ordered ${real}`);
+  // No memory at all: right once falls back near 0, far from the prior's -0.5 and from the memory case.
+  const none = photoMemOf(memLog([0, 0, 0, 0])).mem;
+  assert.ok(Math.abs(none[2]) < 0.3, `right once without memory ${none[2]}`);
+  assert.ok(none[3] > -0.8, `right twice without memory ${none[3]}`);
+  // Few answers in a bucket: close to the prior (a few hundred answers, right twice almost never reached).
+  const few = photoMemOf(memLog([0, -0.4, -1.5, -2], 300)),
+    n3 = few.memn[3];
+  assert.ok(n3 < 10, `answers right twice ${n3}`);
+  assert.ok(Math.abs(few.mem[3] - MEM.PRIOR[3]) < 0.3, `right twice with ${n3} answers: ${few.mem[3]}`);
+  // Players at chance (not trusted) move nothing: their answers are left out of the estimate, as of the photos.
+  const bot = Array.from({length: 60}, (_, i) => ['Bot', i, 'G0', 'X', i % 4 === 0 ? 1 : 0, 'quiz', 'g0-' + (i % 3)]);
+  assert.deepStrictEqual(photoMemOf(bot), {mem: MEM.PRIOR, memn: [0, 0, 0, 0]});
+});
+
+test('memRecalc: progress saved before the photo memory is corrected once, never raised, learned genera left alone', () => {
+  const mem = [0, -0.44, -1.1, -1.7],
+    rec = () => ({ok: 20, ko: 4, h: '1111011111', pg: 0.7, ps: {a: [4, 3], b: [3, 0], c: [1, 1], d: [1, 0]}});
+  const s = rec();
+  assert.strictEqual(memRecalc(s, mem), true);
+  // Right answers: a 3 in 4 shows (3/4 of one on its first show, the rest repeats right twice or more, x 0.838), c 1 in 1
+  // (its first show); b, never right, and d, missed once, weigh nothing either way.
+  const e = x => 0.25 + 0.75 / (1 + Math.exp(-x)),
+    f = (0.75 + 2.25 * (e(1) / e(2.7)) + 1) / 4;
+  assert.strictEqual(s.pg, Math.round(((f * 0.7) / (f * 0.7 + 0.3)) * 1e4) / 1e4);
+  assert.ok(s.pg < 0.7 && s.pg > 0.66, `${s.pg}`);
+  assert.strictEqual(s.pm, 1);
+  // Once: a second call (another load, a pull of the same record) changes nothing.
+  const once = s.pg;
+  assert.strictEqual(memRecalc(s, mem), false);
+  assert.strictEqual(s.pg, once);
+  // Photos all new (no repeat): marked, unchanged. A learned genus: marked, unchanged. Old BKT record: marked only.
+  const fresh = {ok: 3, ko: 0, pg: 0.5, ps: {a: [1, 1], b: [1, 1]}},
+    learned = {...rec(), mx: 1},
+    old = {ok: 3, ko: 1, h: '1101', L: 0.4};
+  [fresh, learned, old].forEach(x => assert.strictEqual(memRecalc(x, mem), true));
+  assert.deepStrictEqual([fresh.pg, learned.pg, old.pg], [0.5, 0.7, undefined]);
+  assert.ok(fresh.pm && learned.pm && old.pm);
+  assert.strictEqual(memRecalc(null, mem), false);
+});
+
+test('mergeProgress and mergeUsers: the photo memory mark travels with the progress it marks', () => {
+  const mem = [0, -0.44, -1.1, -1.7],
+    base = {A: {ok: 20, ko: 4, h: '1111011111', pg: 0.7, ps: {a: [4, 3], b: [3, 0]}}},
+    here = JSON.parse(JSON.stringify(base));
+  memRecalc(here.A, mem);
+  // Recalculated on this device, nothing else played: this device's record wins, mark and corrected pg together.
+  const m1 = mergeProgress(base, here, JSON.parse(JSON.stringify(base)));
+  assert.deepStrictEqual([m1.A.pg, m1.A.pm], [here.A.pg, 1]);
+  // Recalculated on another device (the sheet's copy): taken with its mark, so this device does not correct it again.
+  const m2 = mergeProgress(base, JSON.parse(JSON.stringify(base)), here);
+  assert.deepStrictEqual([m2.A.pg, m2.A.pm], [here.A.pg, 1]);
+  assert.strictEqual(memRecalc(m2.A, mem), false);
+  // Recalculated here only, while another device played on (Codex review #387): its model wins, a passed exam
+  // included, and the recalculation is left to memRecalc, which applies to it after the merge.
+  const far = {A: {...JSON.parse(JSON.stringify(base.A)), ok: 30, h: '1111111111', pg: 0.95, mx: 1}},
+    m3 = mergeProgress(base, here, far);
+  assert.deepStrictEqual([m3.A.ok, m3.A.pg, m3.A.mx, m3.A.pm], [30, 0.95, 1, undefined]);
+  // Two accounts merged in the admin: the mark comes from the account the progress comes from.
+  const U = (P, extra = {}) => ({'imr-coral-progress': JSON.stringify(P), ...extra});
+  const big = {A: {ok: 40, ko: 4, pg: 0.8}},
+    small = {A: {ok: 2, ko: 0, pg: 0.3, pm: 1}},
+    mu = JSON.parse(mergeUsers(U(small), U(big))['imr-coral-progress']);
+  assert.strictEqual(mu.A.pg, 0.8);
+  assert.strictEqual(mu.A.pm, undefined, 'the busier account was not recalculated yet');
 });

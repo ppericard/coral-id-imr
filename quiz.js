@@ -334,13 +334,25 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   const warm = !!(cur === 'quiz' && SHOWNQ && SHOWNQ.warm),
     rT = warm && typeof SHOWNQ.cb === 'number' ? SHOWNQ.cb : 1,
     rC = warm && !good && GX(c) ? recallAt(c) : 1;
-  pgObs(target, s, good, good ? pgWeight(target, chs, k) : pgMissW(th0, d0, k, rT));
-  abilityStep(target, s, good, d0, k);
+  // Photo memory (model.js famOf, core.js MEM, sheet v26; Pierre, 2026-11-03): the photos seen when answering (a corallites
+  // hint left closed was not), as the player knew them before this answer, make the question that much easier (fam,
+  // logits, 0 when all are new). One expectation for everything this answer moves: the ability (a right answer on a known
+  // photo raises it less, a miss lowers it more), the global level, the logged e (the sheet's opening hold replays it),
+  // the opening hold and the comeback. Progress: a right answer counts only for what memory does not explain (pgMemW, 1
+  // on new photos); a miss weighs the chance the player really had (pgMissW), so on a known photo it counts in full.
+  // A record from before the photo memory is recalculated first, once (core.js memRecalc; a new record is only marked).
+  memRecalc(s, PMEM);
+  if (!good && GX(c)) memRecalc(st(c), PMEM);
+  const seenPh = ph.filter(p => p !== unseen),
+    fam = famOf(target, seenPh),
+    dm = d0 + fam;
+  pgObs(target, s, good, good ? pgWeight(target, chs, k) * pgMemW(th0, d0, fam, k, rT) : pgMissW(th0, dm, k, rT));
+  abilityStep(target, s, good, dm, k);
   // Global level (core.js playerStart): the same Elo step over every answer, kept as the pseudo-genus LEVEL.
   // Made at the first answer from the player's history (levelSeed), whose counts already include this answer.
   if (P[LEVEL]) P[LEVEL][good ? 'ok' : 'ko']++;
   else P[LEVEL] = levelSeed(P);
-  abilityStep(LEVEL, P[LEVEL], good, d0, k);
+  abilityStep(LEVEL, P[LEVEL], good, dm, k);
   // The corallites hint is revealed after the answer when it was not opened: seen, but not recognised.
   ph.forEach(p => {
     const x = (ps[p.f] = ps[p.f] || [0, 0]);
@@ -349,7 +361,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   });
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
   s.h = ((s.h || '') + (good ? 1 : 0)).slice(-10); // recent results, newest last
-  // Pierre's rule: a wrong answer also shows the genus given is not mastered, so it counts as a miss for it too.
+  // Pierre's rule: a wrong answer also shows the genus given is not mastered, so it counts as a miss for it too. Without
+  // the photo memory: the player's memory of a photo is of its own genus, the one shown; it says nothing of genus c.
   if (!good && GX(c)) {
     const w = st(c);
     pgObs(c, w, false, pgMissW(ability(c), d0, k, rC)); // as for the genus shown: the photo's difficulty against its level
@@ -418,7 +431,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
       .map(p => p.f)
       .join(' '),
     ch: chs.join(' '),
-    e: Math.round(100 * (1 / k + (1 - 1 / k) * rT * sig(th0 - d0))) / 100,
+    e: Math.round(100 * (1 / k + (1 - 1 / k) * rT * sig(th0 - dm))) / 100,
     th: th0,
     nw,
     // Seconds to answer and a photo enlarged before answering (QCLOCK, in question): logged only (sheet v23).
@@ -429,7 +442,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // questions too (Pierre, 2026-11-02: the hold gets the full information; e allows for the plausible choices k, as for
   // any question, and for the rust, so a miss the rust explains adds less).
   holdStep(ans.e, good);
-  if (warm) comebackStep(rT, th0, d0, k, good);
+  if (warm) comebackStep(rT, th0, dm, k, good);
   answeredAt(s, good);
   if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
   else if (SYNC_URL) {

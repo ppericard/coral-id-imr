@@ -315,7 +315,7 @@
         p = (right + 1) / (n + 2);
       ras[k] = [Math.round(Math.log(p / (1 - p)) * 100) / 100, n];
     });
-    return {ok: true, photos: eloOf(A), ras, conf: confusionOf(A).pair};
+    return {ok: true, photos: eloOf(A), ras, conf: confusionOf(A).pair, ...photoMemOf(A)};
   }
   function userList() {
     const by = {};

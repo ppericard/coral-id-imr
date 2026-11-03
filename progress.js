@@ -682,7 +682,8 @@ function boardNotice() {
 // player has nothing recalculated), at the first moment no tour or card is open; marked seen only by its button or
 // Escape, so a card closed by leaving the page comes back on the next one. A later recalculation adds a note at the end
 // of RECALC.L (a new id, a title and a text): a player shown every note but the last sees the last; one who missed
-// several sees them all on one card, latest first. KEY holds the id of the last note seen.
+// several sees them all on one card, latest first. KEY holds the id of the last note seen. Exception: the photo memory
+// recalculation (2026-11-03, core.js memRecalc) is silent, Pierre's choice (the bars only move down 1-3 points).
 const RECALC = {
   KEY: 'imr-recalc',
   L: [

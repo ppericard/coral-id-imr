@@ -8,9 +8,10 @@
 // Continuous difficulty (Pierre, 2026-10-31; Elo as in Pelánek 2016 / Duolingo Birdbrain, no time criteria): every
 // question draws from ALL the game photos of the genus, weighted by how close each photo's difficulty (photoDiff) is to
 // the target for this player on this genus (ability(n) - TARGET_OFF, about 80% right in a 4-choice question). On top:
-// photos never seen get a bonus (bigger when the player is doing well; IMR and Pierre's photos first), photos already
-// answered right twice weigh less (they may be memorised), the colony of the last 2 questions on the genus is held back,
-// and at least 3 colonies stay in rotation (VARIETY) whatever the level, so a struggling player still sees new photos.
+// photos never seen get a bonus (bigger when the player is doing well; IMR and Pierre's photos first), photos the player
+// has already been shown weigh less the better they are remembered (photo memory, PMEM: x e^offset), the colony of the
+// last 2 questions on the genus is held back, and at least 3 colonies stay in rotation (VARIETY) whatever the level, so
+// a struggling player still sees new photos.
 // Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
 const PICKD = {TARGET_OFF: 1.0, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
 // One zoom level per question (Pierre, 2026-10-31): beginners get every view of the colony (lots of information); as
@@ -73,8 +74,13 @@ function photoSet(n, skip, shift = 0) {
     const x = (photoDiff(n, p) + off - tgt) / calSd(p),
       k = seen[p.f];
     let r = Math.exp((-x * x) / 2) * calBonus(p);
+    // Spread the repeats (photo memory, Pierre 2026-11-03): a photo already shown weighs e^offset of its memory bucket
+    // (core.js MEM, the sheet's estimate PMEM): the odds memory adds to a right answer on it, divided out. With the
+    // offsets of 2026-11-03, about x 0.64 shown never right, x 0.33 right once, x 0.18 right twice or more (it was x 0.6
+    // from right twice only). Soft: a genus whose photos are all known still shows them, the least remembered first.
+    // It matters most in a genus with few photos, where repeats come soonest.
     if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1);
-    else if (k[1] >= 2) r *= 0.6;
+    else r *= Math.exp(PMEM[memBucket(k)]);
     return r;
   };
   const obs = {};
@@ -626,6 +632,28 @@ function photoLvl(n, p) {
 let PSTAT = (store.get('imr-photo-stats', {}) || {}).photos || {};
 // Pairs of genera offered together and mixed up, every RA pooled (?stats=1 conf, sheet v10): see confOf.
 let PCONF = (store.get('imr-photo-stats', {}) || {}).conf || {};
+// Photo memory (Pierre, 2026-11-03; core.js MEM, sheet v26 ?stats=1 mem): how much easier a photo is for a player who
+// has already been shown it (s.ps: [shown, right]), in logits off its difficulty, by bucket: new 0, shown never right,
+// right once, right twice or more, estimated by the sheet from every trusted answer; the prior (the old fixed rule)
+// with an older sheet or offline. famOf: the offset of the photos of a question, as the player knows them now.
+let PMEM = memOf((store.get('imr-photo-stats', {}) || {}).mem);
+// Progress saved before the photo memory, recalculated once and silently (Pierre, 2026-11-03: no pop-up, the bars move
+// down 1-3 points; core.js memRecalc): every genus record not marked yet (s.pm), at load and after each pull of the
+// synced progress (sync.js mergeSaved), and in quiz.js answer before a record's first answer. Saved and synced when it
+// changed anything.
+function memRecalcAll() {
+  let ch = false;
+  Object.keys(P).forEach(n => {
+    if (n !== LEVEL && memRecalc(P[n], PMEM)) ch = true;
+  });
+  if (ch) save();
+  return ch;
+}
+const famOf = (n, ph) => {
+  const ps = (P[n] || {}).ps || {},
+    hs = ph.map(p => ps[p.f]);
+  return memFam(hs, PMEM);
+};
 const sig = x => 1 / (1 + Math.exp(-x));
 function photoDiff(n, p) {
   const prior = photoLvl(n, p) - 1,
@@ -660,6 +688,19 @@ function pgWeight(t, chs, k) {
 function pgMissW(th, d, k, R = 1) {
   const e = (x, r = 1) => 1 / k + (1 - 1 / k) * r * sig(x);
   return Math.min(1, e(th - d, R) / e(PICKD.TARGET_OFF));
+}
+// What a right answer on a photo the player knows proves (Pierre, 2026-11-03): only what memory does not explain. The
+// mirror of pgMissW (a ratio of chances, like it): the chance the player had on the same photos new over the chance
+// they had with their memory of them (fam, famOf), at most 1: the share of such right answers that would have come
+// without the memory. A new photo (fam 0) keeps its full weight: simulated, a photo-difficulty factor on every right
+// answer only slowed everyone (pgWeight, above), so only the part memory explains is taken off. 4 choices, a photo at
+// the game's target (ability 1 above it): x 0.93 shown never right, x 0.87 right once, x 0.84 right twice or more with
+// the offsets of 2026-11-03. Tried first, the room for surprise left ((1 - chance with memory) / (1 - chance new): x 0.71
+// / 0.41 / 0.23): simulated, it took a third to a half of the genera learned by question 600 and put the progress
+// further below the truth than memory had put it above (docs/LEARNING.md "Photo memory").
+function pgMemW(th, d, fam, k, R = 1) {
+  const e = x => 1 / k + (1 - 1 / k) * R * sig(x);
+  return fam >= 0 ? 1 : Math.min(1, e(th - d) / e(th - d - fam));
 }
 const knownP = n => pgOf(P[n]);
 function pgObs(n, s, good, w) {
@@ -847,3 +888,5 @@ const plausibleK = (t, choices) => {
   const tf = imrFormsOf(t);
   return Math.max(2, choices.filter(n => n === t || confusable(t, n) || imrFormsOf(n).some(f => tf.includes(f))).length);
 };
+// Once the whole file is in (save, LEVEL and PMEM above): the progress saved before the photo memory, recalculated.
+memRecalcAll();
