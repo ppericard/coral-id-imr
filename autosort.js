@@ -15,8 +15,11 @@
 //   quality  1-3, or . when the quality field was off (left as the dashed first guess)
 //   form     the growth form as curation.json gf writes it (B, Mp, x...), or . when the form field was off
 //   #        a suggested crop was written with the add
+//   @t       when Pierre last answered (a Check) or corrected (an applied or undone decision) this photo: Unix seconds in
+//            base 36, written by the admin as he clicks (autoStamp); the agreement window is in that order (autoCompare)
 // Examples: "aw2B" added to Colony, Fair, Branching; "am.Mp#" added to Close-up, quality left to Pierre, Massive with
-// polyps out, cropped; "r" rejected; "?aw3T" a Check of a sure add; "-r" a rejection Pierre undid.
+// polyps out, cropped; "r" rejected; "?aw3T" a Check of a sure add; "-r" a rejection Pierre undid; "?aw3T@t5a1kq" a
+// Check he answered at that time.
 (function (root) {
   const AUTO = {
     // One sure candidate in `every` is a Check (deterministic per photo, autoCheck): about 1 in 20 (Pierre).
@@ -78,7 +81,7 @@
     return (check ? '?' : '') + body;
   }
   function autoParse(code) {
-    const m = /^([?-]?)([arx])(?:([wmc])([1-3.])([A-Za-z.]+)(#?))?$/.exec(code || '');
+    const m = /^([?-]?)([arx])(?:([wmc])([1-3.])([A-Za-z.]+)(#?))?(?:@([0-9a-z]+))?$/.exec(code || '');
     if (!m || (m[2] === 'a') !== !!m[3]) return null;
     return {
       check: m[1] === '?',
@@ -87,9 +90,12 @@
       view: m[3] ? V1R[m[3]] : undefined,
       q: m[4] && m[4] !== '.' ? Number(m[4]) : undefined,
       fm: m[5] && m[5] !== '.' ? m[5] : undefined,
-      crop: m[6] === '#'
+      crop: m[6] === '#',
+      ...(m[7] ? {t: parseInt(m[7], 36)} : {})
     };
   }
+  // A code with its time set to t (seconds), replacing the one it had.
+  const withT = (code, t) => code.replace(/@[0-9a-z]+$/, '') + '@' + Math.floor(t).toString(36);
   // Every logged photo: {f: {day, code, d}} (a photo is logged once; the latest day wins if two tabs ever logged it).
   function autoIdx(cur) {
     const out = {};
@@ -105,7 +111,9 @@
   }
 
   // Pierre's decision on a photo, read from the curation: keep (add / reject, null = not decided), view, quality, form.
-  // Removed (hide), excluded, rejected (seen cand:) and "not this genus" all count as not kept.
+  // Removed (hide), excluded, rejected (seen cand:) and "not this genus" all count as not kept. A photo the auto-sort
+  // added and Pierre removed with Remove on its genus page loses its add and gets a reject mark (admin.js ACT.hide), so
+  // that removal counts as not kept too.
   function curIdx(cur) {
     const add = {},
       out = {};
@@ -130,6 +138,9 @@
   // every later correction of an applied or undone auto decision (a disagreement; a decision he left alone says nothing,
   // so it is not counted as an agreement). Fields compared only where both sides gave one: view, quality and form only
   // when both added the photo, quality only when Pierre rated it, a field the auto left to him (".") never.
+  // Oldest first = in the order Pierre answered or corrected (the code's @t, autoStamp), not the order the auto decided:
+  // a Check from an older run he answers today is among the latest comparisons (Codex review #400). Entries logged
+  // without a time (before the stamps) keep the log's order (day, then photo), before every timed one.
   function autoCompare(cur) {
     const ci = curIdx(cur),
       out = [];
@@ -149,13 +160,37 @@
               L.push(['view', A.view, P.view], ['quality', A.quality, P.quality], ['form', A.form, P.form]);
             L.forEach(([field, a, p]) => {
               if (a == null || p == null) return;
-              const ok = a === p;
-              if (d.check) out.push({f, day, field, a, p, ok, how: 'check'});
-              else if (!ok) out.push({f, day, field, a, p, ok, how: 'fix'});
+              const ok = a === p,
+                t = d.t == null ? null : d.t;
+              if (d.check) out.push({f, day, field, a, p, ok, how: 'check', t});
+              else if (!ok) out.push({f, day, field, a, p, ok, how: 'fix', t});
             });
           })
       );
-    return out;
+    // A stable sort: untimed first in the log's order, then by time.
+    return out.sort((x, y) => (x.t == null ? -1 : x.t) - (y.t == null ? -1 : y.t));
+  }
+  // What Pierre's answer on each compared photo is, as a string per photo ({f: sig}): when it changes, he has just
+  // answered or corrected that photo (autoStamp).
+  function autoSigs(cur) {
+    const S = {};
+    autoCompare(cur).forEach(c => (S[c.f] = (S[c.f] ? S[c.f] + ' ' : '') + `${c.field}=${c.p}`));
+    return S;
+  }
+  // The comparison time: every photo whose comparisons changed since `before` (autoSigs of the previous draft) gets the
+  // time t (seconds) in its log code. Returns the new "auto" map, or null when nothing changed. A photo whose
+  // comparisons went away (his answer undone) keeps its code as it is.
+  function autoStamp(cur, before, t) {
+    const now = autoSigs(cur),
+      I = autoIdx(cur);
+    let A = null;
+    Object.entries(now).forEach(([f, s]) => {
+      if (before[f] === s || !I[f]) return;
+      const {day, code} = I[f];
+      A = A || {...cur.auto};
+      A[day] = {...A[day], [f]: withT(code, t)};
+    });
+    return A;
   }
   // Agreement per field over its last AUTO.win comparisons, and whether its auto is on.
   function autoState(cmp) {
@@ -217,6 +252,8 @@
     curIdx,
     pierreOf,
     autoCompare,
+    autoSigs,
+    autoStamp,
     autoState,
     retestStats,
     metFlag,

@@ -674,10 +674,18 @@ const server = http.createServer((req, res) => {
       }
       const res = await p.evaluate(C => {
         const L = aCmp().filter(c => c.f === C && c.how === 'check');
-        return {toast: document.querySelector('.adm-toast').textContent, L: L.map(c => c.field + (c.ok ? '+' : '-')).join(' ')};
+        return {
+          toast: document.querySelector('.adm-toast').textContent,
+          L: L.map(c => c.field + (c.ok ? '+' : '-')).join(' '),
+          t: aOf(C).d.t,
+          last: aCmp().slice(-1)[0].f
+        };
       }, CHK);
       if (!/Check: the agent said add/.test(res.toast) || res.L !== 'keep+ view+ quality-')
         fails.push(`${w}px Auto: Check answer not compared (${JSON.stringify(res)})`);
+      // The time of his answer is logged, and his answer is the latest comparison (Codex review #400).
+      if (!(res.t > Date.now() / 1000 - 600) || res.last !== CHK)
+        fails.push(`${w}px Auto: Check answer not timed (${JSON.stringify(res)})`);
     }
     // The agreement block, its details, and one auto decision undone (back in the queue, never applied again), then redone.
     await p.evaluate(() => {
@@ -713,6 +721,26 @@ const server = http.createServer((req, res) => {
       await settle();
       if ((await p.evaluate(F => aOf(F[1]).code, CF)) !== 'r') fails.push(`${w}px Auto: Undo did not bring the auto decision back`);
     }
+    // Undo of an auto exclusion (Codex review #400): a candidate whose entry is still in the candidate files is back in
+    // Candidates; one whose entry is gone is not, and the toast does not claim it is.
+    const ux = await p.evaluate(F => {
+      const day = Object.keys(DRAFT.auto).sort().pop(),
+        one = f => {
+          DRAFT.exclude = {...(DRAFT.exclude || {}), [f]: 'auto'};
+          DRAFT.auto = {...DRAFT.auto, [day]: {...DRAFT.auto[day], [f]: 'x'}};
+          saveDraft();
+          autoUndo(f);
+          const r = {toast: document.querySelector('.adm-toast').textContent, ex: !!excl(f), inQ: candQueue('all').some(x => x.p.f === f)};
+          undo();
+          undo();
+          return r;
+        };
+      return {here: one(F[3]), gone: PHOTOS['acropora-cand-1'] ? null : one('acropora-cand-1')};
+    }, CF);
+    if (ux.here.ex || !ux.here.inQ || !/back in Candidates/.test(ux.here.toast))
+      fails.push(`${w}px Auto: Undo of an auto exclusion ${JSON.stringify(ux.here)}`);
+    if (!ux.gone || ux.gone.ex || /back in Candidates/.test(ux.gone.toast) || !/no longer in the candidate files/.test(ux.gone.toast))
+      fails.push(`${w}px Auto: Undo of an auto exclusion whose candidate entry is gone ${JSON.stringify(ux.gone)}`);
     if (line) await p.click('[data-adet]');
     await settle();
     // An auto-added photo carries an "auto" tag on its genus page.
@@ -720,6 +748,40 @@ const server = http.createServer((req, res) => {
       const g = await p.evaluate(F => Object.keys(DRAFT.genera).find(n => (DRAFT.genera[n].add || {})[F[0]]), CF);
       await go(g);
       if (!(await p.$(`[data-f="${CF[0]}"] .adm-autot`))) fails.push(`${w}px Auto: no auto tag on ${g}`);
+      // Remove on the genus page of a photo the auto-sort added: rejected, a Keep disagreement, timed as the latest
+      // comparison (Codex review #400); Undo takes both back. Remove of a candidate Pierre added himself is unchanged.
+      await p.$eval(`[data-f="${CF[0]}"] [data-act="hide"]`, b => b.click());
+      await settle();
+      const rm = await p.evaluate(
+        ([F, g]) => {
+          const K = aCmp().filter(c => c.field === 'keep');
+          return {
+            added: !!(entry(g).add || {})[F],
+            rej: rejected(F),
+            fix: K.some(c => c.f === F && !c.ok && c.how === 'fix'),
+            last: (K.slice(-1)[0] || {}).f,
+            t: !!aOf(F).d.t
+          };
+        },
+        [CF[0], g]
+      );
+      if (rm.added || !rm.rej || !rm.fix || rm.last !== CF[0] || !rm.t)
+        fails.push(`${w}px Auto: Remove of an auto-added photo is not a Keep disagreement ${JSON.stringify(rm)}`);
+      await p.click('#undo');
+      await settle();
+      const back = await p.evaluate(([F, g]) => ({added: !!(entry(g).add || {})[F], rej: rejected(F), t: !!aOf(F).d.t}), [CF[0], g]);
+      if (!back.added || back.rej || back.t) fails.push(`${w}px Auto: Undo of that Remove ${JSON.stringify(back)}`);
+      const own = await p.evaluate(g => {
+        const c = pending(g).find(x => !aOf(x.f) && !rejected(x.f));
+        if (!c) return null;
+        ACT.addc(g, c.f, null, 'wide');
+        ACT.hide(g, c.f);
+        const r = {rej: rejected(c.f), added: !!(entry(g).add || {})[c.f]};
+        undo();
+        undo();
+        return r;
+      }, g);
+      if (own && (own.rej || own.added)) fails.push(`${w}px Remove of a candidate Pierre added: ${JSON.stringify(own)}`);
     }
     // Blind retest: after AUTO.retest decisions, a photo Pierre rated comes back without its rating; his answer is kept apart.
     await go('~cand');

@@ -193,10 +193,14 @@ const keepHist = () => {
 // Read-only (no token): clicks stay in this tab only, nothing is kept as a draft (admin review, 2026-11-01).
 function saveDraft() {
   memoReset();
-  if (snap !== null) HIST.push(snap);
+  if (snap !== null) {
+    autoWhen();
+    HIST.push(snap);
+  }
   if (HIST.length > 300) HIST.shift();
   FUT = [];
   snap = JSON.stringify(DRAFT);
+  if (ASIG) ASIG_OF = snap;
   if (!TOKEN) return;
   draftLost = !putDraft();
   draftAt = new Date();
@@ -264,6 +268,21 @@ function step(from, to, msg) {
   render();
   toast(msg[1]);
 }
+// When Pierre answers a Check or corrects an auto decision, the time goes into its log code (autosort.js autoStamp), so
+// the agreement window follows the order he answered in (Codex review #400). Found by comparing his answers per photo
+// with those of the draft before this click (snap; recomputed only when undo, redo or another tab changed it).
+let ASIG = null,
+  ASIG_OF = null;
+function autoWhen() {
+  if (ASIG_OF !== snap) {
+    ASIG = autoSigs(JSON.parse(snap));
+    ASIG_OF = snap;
+  }
+  const A = autoStamp(DRAFT, ASIG, Date.now() / 1000);
+  if (A) DRAFT.auto = A;
+  ASIG = autoSigs(DRAFT); // of the draft saveDraft is about to keep as snap
+}
+const untimed = L => Object.fromEntries(Object.entries(L).map(([f, c]) => [f, String(c).replace(/@[0-9a-z]+$/, '')]));
 const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']),
   redo = () => step(FUT, HIST, ['Nothing to redo.', 'Redone.']);
 const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
@@ -848,6 +867,11 @@ const ACT = {
   hide: (n, f) =>
     edit(n, k => {
       if (k.add && k.add[f]) {
+        // Removing a photo the auto-sort added also marks it rejected (as ✕ Reject: it stays with the candidates below,
+        // off the Candidates queue), so the removal counts against the auto's Keep (autosort.js pierreOf; Codex review
+        // #400: without it a wrong auto add removed this way was no decision at all). One Undo step for both.
+        const a = aApplied(f);
+        if (a && a.kind === 'a') DRAFT.seen = {...(DRAFT.seen || {}), [CK(f)]: 1};
         delete k.add[f];
         dropFeat(k, f);
         if (k.cover === f) delete k.cover;
@@ -1798,7 +1822,7 @@ const HELP = {
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" in the footer of any page (wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
-  cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder (Finder-only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Finder-only genus, as many as its sheet and the Coral Finder show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
+  cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder (Finder-only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Finder-only genus, as many as its sheet and the Coral Finder show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
   health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. <b>Without me</b> drops your answers everywhere on the page: the account this browser is signed in with and those you marked "This is also me" (Players > a player > Manage).</p>
     <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
     <p><b>Photos everyone misses.</b> Photos shown in ${HEALTH.PH_MIN} answers or more with under ${Math.round(HEALTH.PH_LOW * 100)}% right, or a difficulty at least ${HEALTH.PH_FAR} above the median of their genus (+1 = clearly harder; photo Elo, with ${HEALTH.PH_MIN}+ rated answers). They may be mislabelled, show another coral, or be bad photos: click to enlarge, the genus name opens its page. Right % and answers count every answer that showed the photo; the number after them is the difficulty against the genus median.</p>
@@ -3032,7 +3056,13 @@ function autoUndo(f) {
   DRAFT.auto = {...DRAFT.auto, [x.day]: {...DRAFT.auto[x.day], [f]: '-' + x.code}};
   saveDraft();
   render();
-  toast('Auto decision undone: the photo is back in Candidates.');
+  // An auto exclusion keeps its candidate entry (tools/excluded.py drop_excluded), so the photo comes back; one whose
+  // entry left the candidate files anyway cannot, and the toast says so (Codex review #400).
+  toast(
+    PHOTOS[f]
+      ? 'Auto decision undone: the photo is back in Candidates.'
+      : 'Auto decision undone, but this photo is no longer in the candidate files: it cannot come back to Candidates (a later candidate search may fetch it again).'
+  );
 }
 const FIELD = {keep: 'Keep', view: 'View', quality: 'Quality', form: 'Form'};
 const valText = (field, v, n) =>
@@ -3826,10 +3856,8 @@ function pubSummary() {
     [nDiff(DRAFT.single, SAVED.single), 'several-corals mark'],
     [nDiff(DRAFT.mont, SAVED.mont), 'look-alike pair'],
     [nDiff(DRAFT.tile, SAVED.tile), 'growth-form tile'],
-    [
-      nDiff(Object.assign({}, ...Object.values(DRAFT.auto || {})), Object.assign({}, ...Object.values(SAVED.auto || {}))),
-      'auto-sort decision'
-    ],
+    // Decisions, not the times of Pierre's answers (@t, autoWhen): his answer is counted under its own kind above.
+    [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values(c.auto || {}))))), 'auto-sort decision'],
     [nDiff(DRAFT.retest, SAVED.retest), 'retest']
   ]
     .filter(([c]) => c)
