@@ -1482,9 +1482,13 @@ async function tipsCheck(b, base) {
         const t = Date.now();
         localStorage.setItem('imr-tips', JSON.stringify({u: {q: 25, z: 0}, s: {}, v: {t, n: 2, tip: 0}}));
         localStorage.setItem('imr-coral-progress', JSON.stringify({'~level': {ok: 40, ko: 10, th: 0, at: t}}));
+        // The Open all offer (from 50 answers, a prompt too) answered long ago: it would take the prompt spacing.
+        localStorage.setItem('imr-coral-intro-offer', JSON.stringify({at: 1, open: false, t: t - 864e5}));
       });
       await p.reload();
       await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      // No achievement toast here (one earned at the 8th answer would rightly hold every prompt: checked above).
+      await p.evaluate(() => (achPop = () => {}));
       let early = 0;
       for (let i = 0; i < 7; i++) if ((await play(p)).next) early++;
       await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
@@ -1493,14 +1497,16 @@ async function tipsCheck(b, base) {
         document.querySelectorAll('.achpop').forEach(x => x.remove());
         achQ.length = 0;
         achBusy = false;
-        const t = SHOWNQ[1];
+        const t = SHOWNQ[1],
+          pre = {ok: promptOk(), due: pulseDue(), a: answersSoFar(), at: localStorage.getItem('imr-prompt-at')};
         [...document.querySelectorAll('#view [data-c]')].find(x => x.dataset.c !== t).click();
-        const inline = !!document.querySelector('#after .pulse');
+        const inline = !!document.querySelector('#after .pulse'),
+          armed = document.getElementById('next').onclick !== route;
         document.querySelectorAll('.achpop').forEach(x => x.remove());
         achQ.length = 0;
         achBusy = false;
         document.getElementById('next').click();
-        return {inline, card: !!document.querySelector('.pulsecard'), tip: !!document.querySelector('.tipcard'), n: session.n};
+        return {pre, armed, inline, card: !!document.querySelector('.pulsecard'), tip: !!document.querySelector('.tipcard'), n: session.n};
       });
       if (early || !(r.inline || r.card) || r.tip) fails.push(`${W} with the one-tap question due: ${JSON.stringify({early, ...r})}`);
       await c.close();
