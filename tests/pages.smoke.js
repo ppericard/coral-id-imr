@@ -174,10 +174,10 @@ async function overlays(b, base) {
       ['feature', () => (store.set(RECALC.KEY, RECALC.L[RECALC.L.length - 2].id), recalcNotice())],
       ['account', () => signinNudge(false, false)],
       ['apology', () => cardShow({kind: 'apology', kick: 'Sorry', title: 'Smoke', body: '<p>t</p>', primary: {text: 'Thanks'}, esc: 1})],
-      [
-        'update',
-        () => cardShow({kind: 'update', visual: cardRing(42, 50), kick: 'Update', title: 'Smoke', primary: {text: 'Got it'}, esc: 1})
-      ]
+      // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD), and
+      // the learned mark taken away (progress.js mxLostNotice), through their real callers.
+      ['update', () => (store.set('imr-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
+      ['update', () => (store.set(MXL.KEY, {due: {Acropora: 1}}), mxLostNotice())]
     ];
     for (let i = 0; i < CASES.length; i++) {
       const [kind] = CASES[i];
@@ -961,6 +961,260 @@ async function signin(base) {
   return fails;
 }
 
+// The sheet's full replay adopted by the app (sync.js replayAdopt; Pierre, 2026-11-03: progress recalculated from the
+// whole answer log, automatically). Nothing reaches the sheet (AGENTS.md rule 13): every sync request is answered in the
+// page (a wrapped fetch and SHEET_STUB), a route answers any that escapes, and the script's hosts are mapped to this
+// computer. A stale signed-in device (its copy saved under older rules, one answer of its own not sent yet) loads:
+// it adopts the replay the sheet sends (the replayed record, its own answer replayed on top), saves and sends it, with
+// no card for a version without msg; the next load does not adopt it again. A device that last applied the previous
+// version, served a core.js with one more version that has a msg: the card at once, over Home, once.
+const C = require('../core.js');
+const RGEN = (d => {
+  const out = {};
+  [d.gen, d.x.gen].forEach(G => Object.keys(G).forEach(n => out[n] || (out[n] = {look: G[n].look || [], fam: String(G[n].fam || '')})));
+  return out;
+})(require('../data.json'));
+async function replayAdoptCheck(base) {
+  const fails = [],
+    bs = await chromium.launch({
+      args: ['--host-resolver-rules=MAP script.google.com 127.0.0.1, MAP script.googleusercontent.com 127.0.0.1']
+    });
+  const T = i => new Date(Date.UTC(2026, 10, 3, 5, i)).toISOString(),
+    ch = 'Acropora Montipora Porites Pocillopora',
+    A = (id, i, g, a, ph) => ({id, t: T(i), g, a, ok: g === a ? 1 : 0, m: 'quiz', ph, e: 0.8, th: 1, nw: 1, ch}),
+    sheet = [
+      A('s1', 1, 'Acropora', 'Acropora', 'acropora-wide-745675208'),
+      A('s2', 2, 'Porites', 'Porites', 'porites-wide-1'),
+      A('s3', 3, 'Acropora', 'Montipora', 'acropora-wide-745206089')
+    ],
+    mine = A('m1', 4, 'Acropora', 'Acropora', 'acropora-wide-745675208'),
+    rec = C.replayProgress(
+      sheet.map(a => C.logRow(a, 'ana')),
+      {gen: RGEN}
+    ).ana.P,
+    all = C.replayProgress(
+      [...sheet, mine].map(a => C.logRow(a, 'ana')),
+      {gen: RGEN}
+    ).ana.P,
+    // The sheet's copy, saved under the older rules (wrong bars), and this device's: the same plus its unsent answer.
+    old = {
+      Acropora: {ok: 1, ko: 1, streak: 0, h: '10', pg: 0.5, th: 0.2, at: Date.parse(T(3))},
+      Montipora: {ok: 0, ko: 0, streak: 0, h: '0', pg: 0.1},
+      Porites: {ok: 1, ko: 0, streak: 1, h: '1', pg: 0.6, th: 0.3, dd: 1, dl: 20395},
+      '~level': {ok: 2, ko: 1, th: 0.1, at: Date.parse(T(3))}
+    },
+    dev = JSON.parse(JSON.stringify(old));
+  Object.assign(dev.Acropora, {ok: 2, streak: 1, h: '101', pg: 0.6});
+  Object.assign(dev['~level'], {ok: 3});
+  const STUB = ([rec, data, rv, sv]) => {
+    const f = window.fetch,
+      reply = (u, o) => {
+        const q = new URL(String(u)).searchParams,
+          body = o && o.body ? JSON.parse(o.body) : null,
+          log = JSON.parse(localStorage.getItem('test-sheet-log') || '[]');
+        if (body ? !body.name : q.get('name') !== 'Ana') return {ok: false};
+        log.push(body ? {post: 1, rv: body.rv, data: body.data && body.data['imr-coral-progress']} : {get: 1, rv: q.get('rv')});
+        localStorage.setItem('test-sheet-log', JSON.stringify(log));
+        // The replay comes with every reply, whatever rv the app sends: the app must not adopt it twice. A test can
+        // change it (test-rec) to see whether it is adopted again. The sheet keeps what was last sent.
+        const replay = {rv, n: 3, rec: JSON.parse(localStorage.getItem('test-rec') || 'null') || rec, ids: ['s1', 's2', 's3']},
+          rev = Number(localStorage.getItem('test-rev') || 4);
+        if (body) {
+          localStorage.setItem('test-data', JSON.stringify(body.data));
+          localStorage.setItem('test-rev', String(rev + 1));
+          return {ok: true, log: true, rev: rev + 1, replay, v: sv};
+        }
+        return {
+          ok: true,
+          found: true,
+          updated: '2026-11-03T05:03:00.000Z',
+          rev,
+          data: JSON.parse(localStorage.getItem('test-data') || 'null') || data,
+          replay,
+          v: sv
+        };
+      },
+      answer = (u, o) =>
+        Promise.resolve(new Response(JSON.stringify(reply(String((u && u.url) || u), o)), {headers: {'Content-Type': 'application/json'}}));
+    window.SHEET_STUB = answer;
+    window.fetch = (u, o) => (/script\.google/.test(String((u && u.url) || u)) ? answer(u, o) : f(u, o));
+  };
+  // sv: the sheet script version the stub answers as (the replay from v28, core.js RV_SHEET).
+  const open = async (rv, core, sv = C.RV_SHEET) => {
+    const c = await bs.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
+    await c.addInitScript(STUB, [rec, data, core ? C.RV + 1 : C.RV, sv]);
+    await c.addInitScript(init, [old, dev, mine, rv, data]);
+    await c.route(
+      u => !u.href.startsWith(base),
+      async r => {
+        const u = r.request().url();
+        if (!/script\.google/.test(u)) return r.abort();
+        fails.push('replay: a sync request escaped the wrapped fetch: ' + u.slice(0, 80));
+        r.fulfill({contentType: 'application/json', body: '{"ok":false,"error":"input"}'});
+      }
+    );
+    if (core) await c.route(/\/core\.js(\?|$)/, r => r.fulfill({contentType: 'text/javascript', body: core}));
+    const p = await c.newPage();
+    p.on('pageerror', e => fails.push('replay page error: ' + e.message));
+    p.setDefaultTimeout(8000);
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    return [c, p];
+  };
+  const data = {'imr-coral-progress': JSON.stringify(old), 'imr-coral-quiz': '{"bon":false}'};
+  const init = ([old, dev, mine, rv, data]) => {
+    if (localStorage.getItem('test-init')) return;
+    localStorage.setItem('test-init', '1');
+    localStorage.setItem('imr-tour', '"done"');
+    localStorage.setItem('imr-nudge', '1');
+    localStorage.setItem('imr-recalc', '"millepora-counts-2026-11"');
+    localStorage.setItem('imr-coral-progress', JSON.stringify(dev));
+    localStorage.setItem('imr-coral-sync', JSON.stringify({name: 'Ana', pin: '1234', srv: 4, base: old, log: [mine], dirty: true, rev: 1}));
+    if (rv) localStorage.setItem('imr-coral-rv', String(rv));
+    // The account's saved copy is at that rules version too (sync.js mergeSaved: an older one makes the device adopt
+    // again from 0, with version 1's card when its % moved).
+    if (rv) localStorage.setItem('test-data', JSON.stringify({...data, 'imr-coral-rv': String(rv)}));
+  };
+  const posted = p =>
+    p
+      .waitForFunction(() => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.post), null, {timeout: 15000})
+      .catch(() => {});
+  // The app never gets ahead of the sheet script (AGENTS.md 7a): a script before v28 (even one whose reply carried a
+  // replay) changes nothing: the device keeps its own progress, sends its answer as before, records no rules version
+  // and shows no card.
+  {
+    const [c, p] = await open(0, null, C.RV_SHEET - 1);
+    await posted(p);
+    await p.waitForTimeout(500);
+    const s = await p.evaluate(() => ({
+      P: JSON.parse(localStorage.getItem('imr-coral-progress') || '{}'),
+      rv: localStorage.getItem('imr-coral-rv'),
+      pending: (JSON.parse(localStorage.getItem('imr-coral-sync') || '{}').log || []).length,
+      card: !!document.querySelector('.rvmsg')
+    }));
+    const a = s.P.Acropora || {};
+    if (a.pg !== dev.Acropora.pg || a.ok !== 2 || 'rv' in a || s.rv || s.pending || s.card)
+      fails.push(`replay: adopted from a script before v${C.RV_SHEET}: ${JSON.stringify({a, rv: s.rv, pending: s.pending, card: s.card})}`);
+    // The standard card (core.js RV_CARD, only: 'changed', min 5) is due only when the progress % moved by 5 points or
+    // more, and then shows with the two % (progress.js rvNoticeAdd, rvNotice).
+    const due = await p.evaluate(v => {
+      const d = [];
+      for (const pct of [
+        [10, 10],
+        [10, 14],
+        [10, 5]
+      ]) {
+        localStorage.removeItem('imr-rv-msg');
+        rvNoticeAdd(0, v, pct);
+        // Shown at once when no other card is on screen (rvNotice waits behind one: the update note may be up here).
+        document.querySelectorAll('.unlock, #tour').forEach(e => e.remove());
+        rvNotice();
+        const t = (document.querySelector('.rvmsg p:not(.ulkick)') || {}).textContent || '';
+        d.push([JSON.parse(localStorage.getItem('imr-rv-msg')).due, t]);
+        document.querySelectorAll('.rvmsg').forEach(e => e.remove());
+      }
+      localStorage.removeItem('imr-rv-msg');
+      return d;
+    }, C.RV);
+    if (due[0][0].length || due[1][0].length || !due[2][0].includes(C.RV) || !due[2][1].includes('went from 10% to 5%'))
+      fails.push(`replay: the card's 5-point rule: ${JSON.stringify(due)}`);
+    await c.close();
+  }
+  // A stale device: the replay adopted once, its own answer on top.
+  {
+    const [c, p] = await open(0, null);
+    await posted(p);
+    await p.waitForTimeout(500);
+    const s = await p.evaluate(() => ({
+      P: JSON.parse(localStorage.getItem('imr-coral-progress') || '{}'),
+      rv: localStorage.getItem('imr-coral-rv'),
+      log: JSON.parse(localStorage.getItem('test-sheet-log') || '[]'),
+      pending: (JSON.parse(localStorage.getItem('imr-coral-sync') || '{}').log || []).length,
+      card: !!document.querySelector('.rvmsg'),
+      text: (document.querySelector('.rvmsg p:not(.ulkick)') || {}).textContent || '',
+      rvm: JSON.parse(localStorage.getItem('imr-rv-msg') || '{}'),
+      pct: genScore('Acropora')
+    }));
+    const a = s.P.Acropora || {};
+    if (Math.abs((a.pg || 0) - all.Acropora.pg) > 1e-9 || a.ok !== 2 || a.ko !== 1 || a.th !== all.Acropora.th)
+      fails.push(
+        `replay: the device did not end with the replayed record and its own answer on top: ${JSON.stringify(a)} vs ${all.Acropora.pg}`
+      );
+    if (a.rv !== C.RV || a.pm !== 1 || s.rv !== String(C.RV)) fails.push(`replay: rules version not recorded: ${s.rv} ${a.rv} ${a.pm}`);
+    if (!s.P.Porites || s.P.Porites.dd !== 1 || s.P.Porites.pg !== all.Porites.pg)
+      fails.push('replay: the days answered right were not kept');
+    if ((s.P['~level'] || {}).ok !== 3 || (s.P['~level'] || {}).th !== all['~level'].th) fails.push('replay: global level not replayed');
+    if (Math.abs(s.pct - C.scoreOf(all.Acropora)) > 1e-9) fails.push('replay: the bar does not show the replayed progress');
+    const gets = s.log.filter(x => x.get),
+      last = s.log.filter(x => x.post && x.data).pop();
+    if (!gets.length || gets[0].rv !== '0') fails.push(`replay: the first load did not say rv 0: ${JSON.stringify(gets[0])}`);
+    if (!last || Math.abs(JSON.parse(last.data).Acropora.pg - all.Acropora.pg) > 1e-9)
+      fails.push('replay: the adopted progress was not sent');
+    if (s.pending) fails.push('replay: its own answer was not sent');
+    // Version 1's card is due only when the replay moved the progress % by 5 points or more (Pierre, 2026-11-03), and
+    // says the two % (it may wait behind the learned-mark card).
+    const [pf, pt] = (s.rvm.pct || {})[C.RV] || [];
+    if (
+      (s.rvm.due || []).includes(C.RV) !== (pf !== undefined && Math.abs(pt - pf) >= C.RV_CARD.min) ||
+      (s.card && !s.text.includes(`went from ${pf}% to ${pt}%`))
+    )
+      fails.push(`replay: the recalculation card: ${JSON.stringify({card: s.card, text: s.text, rvm: s.rvm})}`);
+    // The next load: not adopted again (the sheet now sends another record: the progress stays), and the load says the
+    // version applied.
+    await p.evaluate(rec => {
+      rec.Acropora.pg = 0.01;
+      localStorage.setItem('test-rec', JSON.stringify(rec));
+      localStorage.setItem('test-sheet-log', '[]');
+    }, rec);
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p
+      .waitForFunction(() => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.get), null, {timeout: 15000})
+      .catch(() => {});
+    await p.waitForTimeout(800);
+    const t = await p.evaluate(() => ({
+      P: JSON.parse(localStorage.getItem('imr-coral-progress')),
+      log: JSON.parse(localStorage.getItem('test-sheet-log'))
+    }));
+    if (Math.abs(t.P.Acropora.pg - all.Acropora.pg) > 1e-9) fails.push(`replay: adopted again at the next load: ${t.P.Acropora.pg}`);
+    if (!t.log.some(x => x.get && x.rv === String(C.RV)))
+      fails.push(`replay: the next load did not say rv ${C.RV}: ${JSON.stringify(t.log)}`);
+    await c.close();
+  }
+  // A version with a msg, skipped by this device: its card at once, over Home, once. The device has not seen the
+  // last update note (progress.js RECALC, the typed-questions announcement) either: both cards, one after the other,
+  // neither lost (the note first: recalcNotice runs first at start-up; the version's card waits for any card on screen).
+  {
+    const fs = require('fs'),
+      src = fs.readFileSync(path.join(ROOT, 'core.js'), 'utf8'),
+      next = C.RV + 1,
+      core = src.replace(
+        '  const RV = RVS[RVS.length - 1].v;',
+        `  RVS.push({v: ${next}, at: '2099-01-01', why: 'smoke test', msg: {t: 'A test update', p: 'Test words for the card.'}});\n  const RV = RVS[RVS.length - 1].v;`
+      );
+    if (core === src) fails.push('replay: could not add a version to core.js');
+    const [c, p] = await open(C.RV, core);
+    await p.waitForSelector('.unlock.recalc', {timeout: 15000}).catch(() => {});
+    const note = await p.evaluate(() => ({n: document.querySelectorAll('.unlock').length, rv: !!document.querySelector('.rvmsg')}));
+    if (note.n !== 1 || note.rv) fails.push(`replay: the update note and the version's card not one at a time: ${JSON.stringify(note)}`);
+    await p.click('.unlock.recalc .next').catch(() => fails.push('replay: no update note before the version card'));
+    await p.waitForSelector('.unlock.rvmsg', {timeout: 15000}).catch(() => {});
+    const card = await p.evaluate(() => {
+      const d = document.querySelector('.unlock.rvmsg');
+      return d && {t: d.querySelector('h3').textContent, n: document.querySelectorAll('.unlock').length, page: location.hash};
+    });
+    if (!card || card.t !== 'A test update') fails.push(`replay: no card for the version with a msg: ${JSON.stringify(card)}`);
+    if (card) await p.click('.unlock.rvmsg .next');
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForTimeout(2500);
+    if (await p.$('.unlock.rvmsg, .unlock.recalc')) fails.push('replay: a card came back after it was seen');
+    await c.close();
+  }
+  await bs.close();
+  return fails;
+}
+
 // Coral basics on a phone and a tablet (Codex on PR #405): the teaching photo leaves room on screen (at most 45% of its
 // height), each check (photo, answers, feedback) fits between the header and the tab bar once answered (rule 17), and
 // every photo of a check gets the games' clickable source once answered (rule 11, photoSrc). Returns the failures.
@@ -1367,6 +1621,16 @@ async function basicsTeach(b, base) {
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`,
     fails = [];
+  // PAGES_ONLY=replay: only the full replay check (replayAdoptCheck), while working on it.
+  if (process.env.PAGES_ONLY === 'replay') {
+    const f = await replayAdoptCheck(base);
+    server.close();
+    if (f.length) {
+      console.error(f.join('\n'));
+      process.exit(1);
+    }
+    return console.log('Replay adoption OK.');
+  }
   const b = await chromium.launch();
   // The first-encounter card (quiz.js introShow) would cover the quiz in the checks that are not about it: every slate
   // genus (Millepora too, app.js BENTHIC) starts as met on a card, except in a context opened with {intro: true}; the
@@ -1961,12 +2225,15 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   for (const f of await basicsTeach(b, base)) fails.push(f);
   await b.close();
   for (const f of await signin(base)) fails.push(f);
+  for (const f of await replayAdoptCheck(base)) fails.push(f);
   server.close();
   if (fails.length) {
     console.error('Page errors:\n' + fails.join('\n'));
     process.exit(1);
   }
-  console.log(`Pages OK: ${ROUTES.length} routes + admin at 390 and 1280 px, sign-in to an existing account.`);
+  console.log(
+    `Pages OK: ${ROUTES.length} routes + admin at 390 and 1280 px, sign-in to an existing account, the sheet's full replay adopted.`
+  );
 })().catch(e => {
   console.error(e);
   process.exit(1);
