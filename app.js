@@ -323,6 +323,12 @@ const credit = p =>
     : p.imr
       ? `IMR Lecture 6, slide ${esc(p.slide)}`
       : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
+// Before the answer the enlarged quiz photo credits its author by name only (Pierre, 2026-11-03): no taxon and no link,
+// which would give the genus away (rule 11); the full credit comes with the answer.
+const blindCredit = p => {
+  const n = p.cf ? 'R. Kelley / BYOGUIDES' : p.imr ? '' : author(p);
+  return p.imr ? ' · IMR lecture' : n ? ` · © ${esc(n)}` : '';
+};
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
 // Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick, else the first closer view.
 // Default (Pierre): an IMR photo first, the first IMR featured Closer photo, before data.json's pick.
@@ -463,7 +469,8 @@ function bindGo(root = $v) {
   root.querySelectorAll('[data-go]').forEach(b => (b.onclick = () => go(b.dataset.go)));
 }
 
-// Full-size viewer shared by every page. opts.blind() true = quiz before answering: hide genus, credit and source links.
+// Full-size viewer shared by every page. opts.blind() true = quiz before answering: hide the genus, the taxon and the
+// source links; the author's name alone stays (blindCredit).
 const lb = document.getElementById('lightbox');
 let lbClose = null;
 // Back closes the open viewer. A viewer's entry reached with no viewer open (Forward after closing a photo, or Back onto
@@ -494,7 +501,7 @@ function zoom(list, i, opts = {}) {
       vl = p.view ? (VIEWS.find(v => v[0] === p.view) || [0, VIEW_LABEL[p.view]])[1] : '',
       over = !hide && opts.over ? opts.over(p) : '';
     const cap = hide
-      ? esc(vl || 'Photo')
+      ? esc(vl || 'Photo') + blindCredit(p)
       : `${p.genus ? `<b><i>${esc(p.genus)}</i></b> · ` : ''}${vl ? esc(vl) + ' · ' : ''}${credit(p)}${p.src ? ` · <a href="${esc(safeUrl(p.src))}" target="_blank" rel="noopener">original</a>` : ''}`;
     // The 1600 px file, over the 480 px one shown at once (usually already loaded). Saver: 960 px, 1600 on a click.
     lb.innerHTML = `<div class="lb-in"><img src="${img(p, saver() ? 'm' : '')}" style="background:center / contain no-repeat url('${img(p, 's')}')" alt="${hide ? 'Coral to identify' : esc(p.t || '')}" title="Click for actual size">${over ? `<div class="lb-over"${overOn ? '' : ' hidden'}>${over}</div>` : ''}<p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
