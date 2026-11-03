@@ -3,6 +3,12 @@ const http = require('http'),
   path = require('path');
 const {chromium} = require('playwright');
 const ROOT = path.join(__dirname, '..');
+// Health › Genus sheets opened on the demo's Pages tab (admin-demo.js: 4 visits a player at 0, 1/4, 1/2 and 3/4 of
+// their answers; Ana opens 3 sheets in her first 3 visits, Carla 2, Ben 1; a device not signed in one; one visit with no
+// id is counted by its device): players, share that opened one, visits, share with one.
+const SHEETS_ALL = ['Under 50 answers 8 50% 18 28%', '50-300 answers 6 50% 11 45%', 'Over 300 answers 1 0% 1 0%', 'All 9 44% 30 33%'].join(
+  ' | '
+);
 const TYPES = {
   '.html': 'text/html',
   '.js': 'text/javascript',
@@ -369,6 +375,12 @@ const server = http.createServer((req, res) => {
       }));
       if (/Progress|↻ saved/.test(j.kpis) || !/ 1\/\d+ Learned/i.test(j.kpis) || j.col || j.learned !== 1)
         fails.push(`${w}px Journey before v28: ${JSON.stringify(j)}`);
+      // Before sheet v29 the pages opened are not read: the section says which script version it waits for.
+      await q
+        .waitForFunction(() => /v29 not running/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''), null, {
+          timeout: 10000
+        })
+        .catch(() => fails.push(`${w}px Journey before v29: no version line for the genus sheets`));
       await q.close();
     }
     await go('~users');
@@ -517,6 +529,47 @@ const server = http.createServer((req, res) => {
     await settle();
     const firstHard = await p.$eval('.adm-jtbl tbody tr td:nth-child(6)', td => td.textContent);
     if (!/-|–/.test(firstHard)) fails.push(`${w}px journey: hardest first starts at ${firstHard}`);
+    // Genus sheets opened (sheet v29 'pages', the demo's Pages tab, under the player's anonymous id): Ana's 9 sheets, the
+    // first opened before it was asked, from Learn; Dio opened none; one device not signed in opened one.
+    const jsheets = () =>
+      p
+        .waitForFunction(
+          () => /visits? recorded|None opened|No visit/.test((document.querySelector('[data-jsheets]') || {}).innerText || ''),
+          null,
+          {
+            timeout: 10000
+          }
+        )
+        .catch(() => {})
+        .then(() =>
+          p.evaluate(() => {
+            const s = document.querySelector('[data-jsheets]');
+            return s ? {rows: s.querySelectorAll('tbody tr').length, t: s.innerText.replace(/\s+/g, ' ')} : null;
+          })
+        );
+    const sa = await jsheets();
+    if (
+      !sa ||
+      sa.rows !== 9 ||
+      !/before first asked/.test(sa.t) ||
+      !/after first asked/.test(sa.t) ||
+      !/Learn/.test(sa.t) ||
+      !/4 visits recorded/.test(sa.t)
+    )
+      fails.push(`${w}px journey sheets (Ana): ${JSON.stringify(sa)}`);
+    await go('~journey/' + encodeURIComponent('Dio Demo'));
+    const sd = await jsheets();
+    if (!sd || sd.rows || !/None opened/.test(sd.t)) fails.push(`${w}px journey sheets (Dio): ${JSON.stringify(sd)}`);
+    await go('~users');
+    const anonIds = await p.$$eval('a[href^="#~anon/"]', L => [...new Set(L.map(a => a.getAttribute('href').slice(7)))]);
+    const anonSheets = [];
+    for (const id of anonIds) {
+      await go('~anon/' + id);
+      const x = await jsheets();
+      anonSheets.push(x ? x.rows : -1);
+    }
+    if (anonSheets.filter(n => n === 1).length !== 1 || anonSheets.some(n => n > 1))
+      fails.push(`${w}px anonymous journeys' sheets: ${JSON.stringify(anonSheets)}`);
 
     // To do › Reports lists the demo reports; Activity shows the demo players' answers.
     // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
@@ -608,6 +661,9 @@ const server = http.createServer((req, res) => {
       p.evaluate(() => ({
         secs: [...document.querySelectorAll('[data-health]')].map(s => s.dataset.health).join(' '),
         rows: document.querySelectorAll('[data-health="genera"] tbody tr').length,
+        // Genus sheets opened, by experience: the three bands, then the visits whose answers so far are not known (none
+        // in the demo) and All.
+        sheets: [...document.querySelectorAll('[data-health="sheets"] tbody tr')].map(r => r.innerText.replace(/\s+/g, ' ').trim()),
         bars: document.querySelectorAll('[data-health="time"] .adm-cols > div').length,
         wide: document.documentElement.scrollWidth - innerWidth
       }));
@@ -621,10 +677,16 @@ const server = http.createServer((req, res) => {
         await p.click('[data-sf="elo"][data-v="others"]');
         await settle();
       }
+      await p
+        .waitForFunction(() => /Over 300/.test((document.querySelector('[data-health="sheets"]') || {}).innerText || ''), null, {
+          timeout: 10000
+        })
+        .catch(() => {});
       const hs = await health();
-      if (hs.secs !== 'stop photos genera time' || !hs.rows || hs.bars !== 60)
+      if (hs.secs !== 'stop photos genera time sheets' || !hs.rows || hs.bars !== 60)
         fails.push(`${w}px Health (${v}): sections ${JSON.stringify(hs)}`);
       if (hs.wide > 0) fails.push(`${w}px Health (${v}): page ${hs.wide} px wider than the window`);
+      if (v === 'all' && hs.sheets.join(' | ') !== SHEETS_ALL) fails.push(`${w}px Health genus sheets: ${JSON.stringify(hs.sheets)}`);
     }
     // The enlarged photo's caption links to the photo's source, as in the games (AGENTS.md rule 11; Pierre, 2026-11-03:
     // he opened his own photo everyone misses, to check its identification on iNaturalist, and found no link): an iNat

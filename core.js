@@ -1538,6 +1538,121 @@
   }
   const learnedOf = (P, list) => list.filter(n => (P || {})[n] && P[n].mx).length;
 
+  // Pages opened in a visit (sheet v29 event 'pages'; Pierre, 2026-11-03: "most players only play the quiz and never
+  // open the genus sheets": does a beginner use them more, does a sheet reader progress faster?). First-party, one
+  // summary a visit, no free text: which pages were open, how many times and for how long (seconds visible, the page in
+  // view), and the genus sheets opened: how many times, for how long, how the first one was reached (from: the quiz
+  // feedback, a Learn page, My progress, anything else) and whether the genus had already been asked to the player
+  // then (asked). The app keeps the tally (sync.js pagesRoute) with these pure functions; the sheet cleans what arrives
+  // with pagesClean (Code.gs events_, through its embedded copy of this file). SHEET: the sync script version that
+  // stores them (AGENTS.md 7a: nothing is queued before the sheet says v >= SHEET).
+  const PAGES = {
+    SHEET: 29,
+    ROUTES: 30, // at most this many page names a summary, the most opened first
+    GEN: 30, // at most this many genus sheets a summary
+    MAXN: 1000, // openings of one page counted at most
+    MAXS: 86400, // seconds of one page counted at most
+    RE: /^[a-zA-Z0-9~][a-zA-Z0-9~|_.-]{0,39}$/, // a page name (a hash without its parameters)
+    GENUS: /^[A-Z][a-z]{2,30}$/,
+    FROM: ['quiz', 'learn', 'progress', 'other']
+  };
+  // The page name of a hash: its route without the parameters, a genus sheet (g-Acropora) is 'genus', Look-alikes
+  // ('cmp', 'cmp|A|B') 'lookalikes', a side-by-side comparison (cmp-A|B) 'compare', Home 'home'.
+  function pageName(h) {
+    const s = String(h == null ? '' : h).replace(/^#/, '');
+    if (!s || s === 'home') return 'home';
+    if (s.startsWith('g-')) return 'genus';
+    if (s.startsWith('cmp-')) return 'compare';
+    if (s === 'cmp' || s.startsWith('cmp|')) return 'lookalikes';
+    if (s === 'quiz-board') return 'progress';
+    const n = s.split('|')[0].split(';')[0];
+    return PAGES.RE.test(n) ? n : 'other';
+  }
+  // How a genus sheet was reached, from the page it was opened from.
+  function pageFrom(h) {
+    const n = pageName(h);
+    if (/^quiz/.test(n)) return 'quiz';
+    if (['genera', 'genus', 'compare', 'lookalikes', 'pairs'].includes(n)) return 'learn';
+    if (['progress', 'ach', 'board'].includes(n)) return 'progress';
+    return 'other';
+  }
+  const pagesNew = () => ({r: Object.create(null), g: Object.create(null), cur: null, at: 0});
+  // The page in view stops counting time (hidden, or another page opens).
+  function pagesStop(S, now) {
+    const c = S.cur;
+    if (c && S.at) {
+      const ms = Math.max(0, now - S.at);
+      (S.r[c.n] = S.r[c.n] || [0, 0])[1] += ms;
+      if (c.g) (S.g[c.g] = S.g[c.g] || [0, 0, c.from, c.asked])[1] += ms;
+    }
+    S.at = 0;
+  }
+  // A page opened: h its hash; o.genus the genus of a sheet (checked by the caller against the data), o.from how it
+  // was reached (pageFrom), o.asked the genus already asked to the player, o.hidden the app not in view.
+  function pagesOpen(S, h, now, o = {}) {
+    pagesStop(S, now);
+    const n = pageName(h),
+      g = n === 'genus' && PAGES.GENUS.test(String(o.genus || '')) ? o.genus : null;
+    (S.r[n] = S.r[n] || [0, 0])[0]++;
+    if (g) (S.g[g] = S.g[g] || [0, 0, PAGES.FROM.includes(o.from) ? o.from : 'other', o.asked ? 1 : 0])[0]++;
+    S.cur = {n, g, from: g ? S.g[g][2] : '', asked: g ? S.g[g][3] : 0};
+    S.at = o.hidden ? 0 : now;
+  }
+  const pagesResume = (S, now) => {
+    if (S.cur && !S.at) S.at = now;
+  };
+  // The summary: {r: {page: [times, seconds]}, g: {genus: [times, seconds, from, asked]}}, seconds rounded, the most
+  // opened first and capped (ROUTES, GEN); null when nothing was open. Times 0 = the page kept from the previous summary
+  // of the same visit (pagesTake), still in view.
+  function pagesSummary(S) {
+    const sec = ms => Math.min(PAGES.MAXS, Math.round(ms / 1000)),
+      keep = (O, cap) =>
+        Object.keys(O)
+          .filter(k => O[k][0] > 0 || sec(O[k][1]) > 0)
+          .sort((a, b) => O[b][0] - O[a][0] || O[b][1] - O[a][1] || (a < b ? -1 : 1))
+          .slice(0, cap),
+      r = {},
+      g = {};
+    keep(S.r, PAGES.ROUTES).forEach(k => (r[k] = [Math.min(PAGES.MAXN, S.r[k][0]), sec(S.r[k][1])]));
+    keep(S.g, PAGES.GEN).forEach(k => (g[k] = [Math.min(PAGES.MAXN, S.g[k][0]), sec(S.g[k][1]), S.g[k][2], S.g[k][3]]));
+    return Object.keys(r).length ? {r, g} : null;
+  }
+  // The summary so far, and a fresh tally for the rest of the visit (the page in view goes on counting from 0 times).
+  function pagesTake(S, now) {
+    pagesStop(S, now);
+    const out = pagesSummary(S);
+    S.r = Object.create(null);
+    S.g = Object.create(null);
+    return out;
+  }
+  // What the sheet keeps of a 'pages' event (Code.gs events_): known shapes only, numbers clamped, no other field. The
+  // output objects have no prototype (names come from the players' devices: "__proto__" must stay a plain key).
+  function pagesClean(x) {
+    const o = x && typeof x === 'object' ? x : {},
+      n = (v, hi) => {
+        const k = Math.round(Number(v));
+        return isFinite(k) ? Math.max(0, Math.min(hi, k)) : 0;
+      },
+      obj = v => (v && typeof v === 'object' && !Array.isArray(v) ? v : {}),
+      R = obj(o.r),
+      G = obj(o.g),
+      r = Object.create(null),
+      g = Object.create(null);
+    Object.keys(R)
+      .filter(k => PAGES.RE.test(k) && Array.isArray(R[k]))
+      .slice(0, PAGES.ROUTES)
+      .forEach(k => (r[k] = [n(R[k][0], PAGES.MAXN), n(R[k][1], PAGES.MAXS)]));
+    Object.keys(G)
+      .filter(k => PAGES.GENUS.test(k) && Array.isArray(G[k]))
+      .slice(0, PAGES.GEN)
+      .forEach(
+        k => (g[k] = [n(G[k][0], PAGES.MAXN), n(G[k][1], PAGES.MAXS), PAGES.FROM.includes(G[k][2]) ? G[k][2] : 'other', G[k][3] ? 1 : 0])
+      );
+    const out = {r, g, vi: /^[a-z0-9]{1,12}$/.test(String(o.vi || '')) ? String(o.vi) : ''};
+    if (o.na !== undefined && o.na !== null && o.na !== '' && isFinite(Number(o.na))) out.na = n(o.na, 1e6);
+    return out;
+  }
+
   const CORE = {
     BENTHIC,
     BONUS,
@@ -1581,6 +1696,16 @@
     RV_SHEET,
     rvMsgs,
     learnedOf,
+    PAGES,
+    pageName,
+    pageFrom,
+    pagesNew,
+    pagesStop,
+    pagesOpen,
+    pagesResume,
+    pagesSummary,
+    pagesTake,
+    pagesClean,
     ACH,
     newAch,
     ACH_LEARN,

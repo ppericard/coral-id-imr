@@ -1020,6 +1020,122 @@ async function credits(b, base) {
   return fails;
 }
 
+// Pages opened in a visit (sync.js pagesRoute / pagesSend, core.js PAGES, sheet v29 'pages'): a visit opens the quiz,
+// the genus sheet from the answer's feedback, then another sheet from Genera; leaving the app (hidden) queues one
+// summary with the pages, the seconds, the two sheets and how each was reached. Queued only, never sent: a local copy
+// sends nothing to the sheet (app.js LOCAL), and every request off this site is cut. Before the sheet says v29, none.
+async function pagesVisit(b, base) {
+  const fails = [],
+    hide = p =>
+      p.evaluate(() => {
+        Object.defineProperty(document, 'visibilityState', {value: 'hidden', configurable: true});
+        document.dispatchEvent(new Event('visibilitychange'));
+      }),
+    queued = p => p.evaluate(() => JSON.parse(localStorage.getItem('imr-evq') || '[]').filter(x => x.k === 'pages')),
+    open = async (w, v) => {
+      const c = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'}),
+        posts = [];
+      await c.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      c.on('request', r => r.method() === 'POST' && !r.url().startsWith(base) && posts.push(r.url()));
+      await c.addInitScript(v => {
+        try {
+          localStorage.setItem('imr-tour', '"done"');
+          localStorage.setItem('imr-nudge', '1');
+          if (v) localStorage.setItem('imr-sheet-v', String(v)); // the sheet script version the replies said
+        } catch (e) {} // a new tab's first about:blank has no storage
+      }, v);
+      const p = await c.newPage();
+      p.on('pageerror', e => fails.push(`pages summary: page error: ${e.message}`));
+      await p.goto(base);
+      await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      return [c, p, posts];
+    },
+    answer = async p => {
+      await p.evaluate(() => (location.hash = 'quiz'));
+      await p.waitForSelector('#view [data-c]', {timeout: 20000});
+      await p.waitForTimeout(1200);
+      await p.evaluate(() => document.querySelector('#view [data-c]').click());
+      await p.waitForSelector('#after h3 a[href^="#g-"]');
+      return p.$eval('#after h3 a[href^="#g-"]', a => decodeURIComponent(a.getAttribute('href').slice(3)));
+    };
+  // A phone: the quiz, the feedback's sheet (same tab), Genera, another sheet.
+  {
+    const [c, p, posts] = await open(390, 29);
+    const target = await answer(p);
+    await p.click('#after h3 a[href^="#g-"]');
+    await p.waitForFunction(g => location.hash === '#g-' + encodeURIComponent(g), target);
+    await p.waitForTimeout(1500);
+    await p.evaluate(() => (location.hash = 'genera'));
+    await p.waitForSelector('#view a[href^="#g-"]');
+    const other = await p.$$eval(
+      '#view a[href^="#g-"]',
+      (L, t) => L.map(a => decodeURIComponent(a.getAttribute('href').slice(3))).find(g => g !== t),
+      target
+    );
+    await p.click(`#view a[href="#g-${other}"]`);
+    await p.waitForFunction(g => location.hash === '#g-' + g, other);
+    await p.waitForTimeout(1200);
+    if ((await queued(p)).length) fails.push('pages summary queued before the app was left');
+    await hide(p);
+    const Q = await queued(p),
+      e = Q[0] || {};
+    const want = {
+      one: Q.length === 1,
+      pages: ['home', 'quiz', 'genus', 'genera'].every(k => e.r && e.r[k] && e.r[k][0] >= 1) && e.r.genus[0] === 2,
+      quizTime: !!(e.r && e.r.quiz && e.r.quiz[1] >= 1),
+      sheets: !!(e.g && Object.keys(e.g).length === 2),
+      fromQuiz: !!(e.g && e.g[target] && e.g[target][2] === 'quiz' && e.g[target][3] === 1 && e.g[target][1] >= 1),
+      fromLearn: !!(e.g && e.g[other] && e.g[other][2] === 'learn' && e.g[other][0] === 1),
+      answers: e.na === 1,
+      visit: /^[a-z0-9]{8}$/.test(e.vi || ''),
+      small: JSON.stringify(e).length < 1200 && !/https?:|\.webp|\.jpg/.test(JSON.stringify(e)),
+      noName: !('name' in e) && !('ename' in e),
+      sent: !posts.length
+    };
+    if (Object.values(want).some(x => !x)) fails.push(`pages summary (phone): ${JSON.stringify({want, e})}`);
+    // Back in the app: the rest of the visit goes on under the same visit id, the sheet in view counted again for its time only.
+    await p.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', {value: 'visible', configurable: true});
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await p.waitForTimeout(1100);
+    await hide(p);
+    const Q2 = await queued(p),
+      e2 = Q2[1] || {};
+    if (Q2.length !== 2 || e2.vi !== e.vi || !e2.g || !e2.g[other] || e2.g[other][0] !== 0 || !(e2.g[other][1] >= 1))
+      fails.push(`pages summary after coming back: ${JSON.stringify(Q2.slice(1))}`);
+    await c.close();
+  }
+  // A computer: the feedback's link opens the sheet in a new tab, a visit of its own, still counted as from the quiz.
+  {
+    const [c, p, posts] = await open(1280, 29);
+    const target = await answer(p);
+    const [tab] = await Promise.all([c.waitForEvent('page'), p.click('#after h3 a[href^="#g-"]')]);
+    tab.on('pageerror', e => fails.push(`pages summary: new tab page error: ${e.message}`));
+    await tab.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await tab.waitForTimeout(1200);
+    await hide(tab);
+    const Q = await queued(tab),
+      e = Q.find(x => x.g && x.g[target] && !(x.r || {}).quiz) || {};
+    if (!e.g || e.g[target][2] !== 'quiz' || e.g[target][0] !== 1 || posts.length)
+      fails.push(`pages summary, sheet in a new tab: ${JSON.stringify({Q, target, posts})}`);
+    await c.close();
+  }
+  // The app never gets ahead of the sheet script (AGENTS.md 7a): before v29 (or with no version known yet), none queued.
+  for (const v of [28, 0]) {
+    const [c, p] = await open(390, v);
+    await answer(p);
+    await p.click('#after h3 a[href^="#g-"]');
+    await p.waitForTimeout(800);
+    await hide(p);
+    if ((await queued(p)).length) fails.push(`pages summary queued with sheet v${v || 'unknown'}`);
+    await c.close();
+  }
+  return fails;
+}
 async function basicsFit(b, base) {
   const fails = [];
   for (const [w, h] of [
@@ -1105,6 +1221,17 @@ async function basicsFit(b, base) {
       }, INTROS);
     return c;
   };
+  // PAGES_ONLY=visit: only the pages-opened summary check (pagesVisit), while working on it.
+  if (process.env.PAGES_ONLY === 'visit') {
+    const f = await pagesVisit(b, base);
+    await b.close();
+    server.close();
+    if (f.length) {
+      console.error(f.join('\n'));
+      process.exit(1);
+    }
+    return console.log('Pages summary OK.');
+  }
   for (const w of [390, 1280]) {
     const ctx = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
     // Only this site: photos from iNaturalist and the Google sync are cut off, so the test never depends on them.
@@ -1643,6 +1770,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   }
   for (const f of await basicsFit(b, base)) fails.push(f);
   for (const f of await credits(b, base)) fails.push(f);
+  for (const f of await pagesVisit(b, base)) fails.push(f);
   await b.close();
   for (const f of await signin(base)) fails.push(f);
   for (const f of await replayAdoptCheck(base)) fails.push(f);

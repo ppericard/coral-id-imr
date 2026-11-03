@@ -27,7 +27,16 @@ leak of the Sheet would expose little.
   players; 3000 answers per name; 40 new accounts; 300 report requests; 200 events per device and 3000 in all (v19 error reports and one-tap answers, `events_`, 50 per request). Over a cap the script writes nothing and
   answers `busy` (the app keeps its answers and sends them later). The first refusal of each window is written to the
   Sheet's **Alerts** tab.
-- **Duplicates**: an answer id already in the Answers tab is never logged twice; the same for an event id in the Events tab (v19).
+- **Duplicates**: an answer id already in the Answers tab is never logged twice; the same for an event id in the Events tab (v19), and in the Pages tab (v29).
+- **Pages opened** (v29, `pages` events, Pierre 2026-11-03): the summary of the pages a player opened is kept only in
+  the shapes `core.js` `pagesClean` allows (page names by pattern, genus names, counts and seconds clamped, an origin
+  from a fixed list; at most 30 pages and 30 genera; no free text, no photo or URL), in its own **Pages** tab. It is
+  filed under the admin's anonymous id of the player (`aid_`, the id `readAnswers` and the player list use), never a
+  name: a device not signed in sends its anonymous answer id (`eanon`); a signed-in player's request carries the name
+  and code (`ename`, `epin`, never `name`/`pin`, so no other handler takes it for a progress write), which the script
+  checks against the RAs tab and does not keep. A wrong code, an unknown or a locked name store no id; the reply is the
+  same either way (`{ok, ev}`), so the events cannot be used to guess a code, and a wrong code there counts no failure
+  (it never locks the player's account). Read by admins only (`readEvents` with `pages: 1` and the token).
 
 A real class of RAs stays far below every cap. A determined attacker can still add up to ~6000 anonymous answers
 and 40 accounts per 6 hours, but since v17 (2026-11-02, Pierre) the statistics count **only players whose

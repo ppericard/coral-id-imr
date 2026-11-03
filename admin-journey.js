@@ -2,7 +2,8 @@
 // easy and less easy for them, when they unlocked each genus, an analysis of a person's path"). Built from the answer
 // log the Players page already loads (ANS.rows, sheet readAnswers: [anonymous id, time, genus shown, answered, right,
 // mode, photos, expected, ability, new photos, choices, anonymous]), joined to the name by the player's anonymous id
-// (USERS, sheet v13). Nothing new on the sheet. Opened from a row of Players (#~journey/<name>). Loaded after admin.js,
+// (USERS, sheet v13); and the genus sheets they opened (sheet v29 'pages', admin.js loadPages, under the same id). Opened
+// from a row of Players (#~journey/<name>). Loaded after admin.js,
 // whose helpers it uses (esc, pct, kpis, sbar, sgn, loadUsers, loadStats, HEALTH, DATA). The explanations are in the
 // page help (HELP.journey, rule 23).
 const JOURNEY = {
@@ -447,6 +448,49 @@ function renderJourney(name, anonId = '') {
     <p class="adm-axis"><span class="adm-hkey">fewer${[1, 2, 3, 4, 5].map(k => `<i style="background:var(--lv${k})"></i>`).join('')}more</span><span>busiest hour ${hmx} · local time</span></p>
     <p class="note">${J.S.length} session${J.S.length === 1 ? '' : 's'}${(c => (c ? ` (${c} with the custom quiz)` : ''))(J.S.filter(L => L.some(r => /^quiz\|s(\||$)/.test(r[5]))).length)} · median ${medS} answers · first ${jTime(R[0][1])} · last ${jTime(R[R.length - 1][1])}</p></section>`;
 
+  // 5. Genus sheets opened (sheet v29 'pages', admin.js loadPages, sheetsOf; Pierre, 2026-11-03: do players read the
+  // sheets, and when?): per genus the times opened and the time spent, whether the first opening came before or after
+  // the genus was first asked to them (the app's own record when the sheet was opened), and from where; then the pages
+  // they spent their visits on. Read from the sheet's Pages tab under this player's id, never their name.
+  const SH = PGS && PGS.rows ? sheetsOf(PGS.rows.filter(x => x.id === u.id)) : null,
+    secs = n =>
+      n < 60
+        ? `${n} s`
+        : n < 3600
+          ? `${Math.round(n / 60)} min`
+          : `${Math.floor(n / 3600)} h ${String(Math.round((n % 3600) / 60)).padStart(2, '0')}`,
+    FROM_T = {quiz: 'Quiz feedback', learn: 'Learn', progress: 'My progress', other: 'Other'},
+    RT_ = Object.create(null);
+  if (SH)
+    PGS.rows
+      .filter(x => x.id === u.id)
+      .forEach(x =>
+        Object.entries(x.r).forEach(([k, [n, sc]]) => {
+          const o = (RT_[k] = RT_[k] || [0, 0]);
+          o[0] += n;
+          o[1] += sc;
+        })
+      );
+  const pagesTop = Object.entries(RT_)
+    .sort((a, b) => b[1][1] - a[1][1] || b[1][0] - a[1][0])
+    .slice(0, 8);
+  const sheetsSec = `<section class="adm-scard" data-jsheets><h3>Genus sheets opened${SH ? ` <small>${SH.G.length}</small>` : ''}</h3>${
+    !PGS
+      ? '<p class="note">Loading…</p>'
+      : PGS.err
+        ? `<p class="note">${esc(PGS.err)}</p>`
+        : !SH.visits
+          ? '<p class="note">No visit recorded yet.</p>'
+          : `${
+              SH.G.length
+                ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Genus</th><th class="n">Times</th><th class="n">Time</th><th>First opened</th><th>From</th></tr></thead><tbody>${SH.G.map(
+                    o =>
+                      `<tr><td><a class="adm-gen" href="#${esc(o.g)}"><i>${esc(o.g)}</i></a></td><td class="n">${o.n}</td><td class="n">${secs(o.s)}</td><td>${o.asked ? 'after first asked' : '<b>before first asked</b>'} <small>${jTime(o.first)}</small></td><td>${FROM_T[o.from] || 'Other'}</td></tr>`
+                  ).join('')}</tbody></table></div>`
+                : '<p class="note">None opened.</p>'
+            }<p class="note">${SH.visits} visit${SH.visits === 1 ? '' : 's'} recorded · most time on ${pagesTop.map(([k, [n, sc]]) => `${esc(k)} ${secs(sc)} (${n}×)`).join(', ')}</p>`
+  }</section>`;
+
   $v.innerHTML =
     head +
     kpis([
@@ -478,8 +522,9 @@ function renderJourney(name, anonId = '') {
       ...(RT.length ? [['Median time', RT[Math.floor(RT.length / 2)].toFixed(1) + ' s']] : []),
       ...(ZM.length ? [['Enlarged', pct(ZM.filter(Boolean).length, ZM.length)]] : [])
     ]) +
-    `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${daysSec}</div>`;
+    `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${sheetsSec}${daysSec}</div>`;
   bindJReload();
+  if (!PGS) loadPages().then(() => cur === here && render());
   $v.querySelectorAll('[data-jsort]').forEach(
     b =>
       (b.onclick = () => {
@@ -489,7 +534,7 @@ function renderJourney(name, anonId = '') {
   );
 }
 
-// ↻ on the journey: the answers, the players and this player's saved progress read again.
+// ↻ on the journey: the answers, the players, the pages opened and this player's saved progress read again.
 function bindJReload() {
   const b = $v.querySelector('[data-jload]');
   if (b)
@@ -498,6 +543,7 @@ function bindJReload() {
       USERS = null;
       ANS = null;
       STATS = null;
+      PGS = null;
       render();
     };
 }
