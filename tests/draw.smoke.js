@@ -192,6 +192,20 @@ const server = http.createServer((req, res) => {
     if (at.some((x, i) => i && x - at[i - 1] < EXAM.gap))
       fails.push(`${t}: exam questions closer than ${EXAM.gap} answers: ${at.join(', ')}`);
     if (level(t)[0] !== 'ok' || genScore(t) !== 1) fails.push(`${t}: mastered but not learned at 100%`);
+    // One draw weight (model.js drawW, review item 8): never asked weighs 1, the most; a genus known and measured less
+    // than one badly known; "Review" is shaky, the same chance.
+    {
+      const keep = {...P},
+        [a, b, c] = genera.filter(n => DATA.gen[n] && n !== t);
+      P[a] = {ok: 0, ko: 0};
+      P[b] = {ok: 40, ko: 4, h: '1111111111', th: 2.5};
+      P[c] = {ok: 6, ko: 6, h: '0101010101', th: -1.4};
+      const w = [a, b, c].map(drawW);
+      if (!(w[0] === 1 && w[1] < w[2] && w[2] < 1)) fails.push(`draw weights: never asked ${w[0]}, known ${w[1]}, shaky ${w[2]}`);
+      if (level(c)[0] !== 'weak' || level(b)[0] === 'weak' || shaky(b) || !shaky(c)) fails.push('Review is not shaky');
+      Object.keys(P).forEach(k => delete P[k]);
+      Object.assign(P, keep);
+    }
     // Typed questions (model.js TYPED, quiz.js typeForm): a genus well on its way (here 89%) is sometimes asked typed, a
     // beginner's genus (24%) never; a typed answer is logged quiz|t with the genus read as its answer (never the raw
     // text) and no choices; a typo is read as the genus; a typed miss naming another genus counts against both; "I
@@ -480,7 +494,7 @@ const server = http.createServer((req, res) => {
         if (shownF.includes((cover(GX(tg)) || {}).f) && !same++) fails.push(`first question: the photo of ${tg}'s card again`);
       }
       document.querySelectorAll('.unlock').forEach(x => x.remove());
-      // Starred genera after their references (core.js starRefs, model.js weighted; Pierre, 2026-11-03), on many paths:
+      // Starred genera after their references (core.js starRefs, model.js openPick; Pierre, 2026-11-03), on many paths:
       // the first cards from zero, in the order shown, and the opening draw once every other genus is met. A reference
       // missing from the genera in play never holds a starred genus back.
       {
@@ -502,19 +516,24 @@ const server = http.createServer((req, res) => {
         slateGenera()
           .filter(n => !star.includes(n) && !refs.includes(n))
           .forEach(n => (INTROS[n] = [0, 1, 0, 's']));
-        const seen = new Set();
-        for (let i = 0; i < 2000; i++) seen.add(weighted(pool()));
+        const seen = new Set(),
+          openFrom = L =>
+            openPick(
+              L.filter(n => !introduced(n)),
+              L
+            );
+        for (let i = 0; i < 2000; i++) seen.add(openFrom(pool()));
         const early = star.filter(n => seen.has(n));
         if (early.length) fails.push(`opening draw: ★ ${early.join(', ')} drawn before their references`);
         if (!refs.some(r => seen.has(r))) fails.push('opening draw: no reference drawn');
         refs.forEach(r => (INTROS[r] = [0, 1, 0, 's']));
         seen.clear();
-        for (let i = 0; i < 2000; i++) seen.add(weighted(pool()));
+        for (let i = 0; i < 2000; i++) seen.add(openFrom(pool()));
         if (!star.every(n => seen.has(n)))
           fails.push(`opening draw: references met, ★ ${star.filter(n => !seen.has(n)).join(', ')} never drawn`);
         refs.forEach(r => delete INTROS[r]);
         seen.clear();
-        for (let i = 0; i < 2000; i++) seen.add(weighted(pool().filter(n => !refs.includes(n))));
+        for (let i = 0; i < 2000; i++) seen.add(openFrom(pool().filter(n => !refs.includes(n))));
         if (!star.every(n => seen.has(n))) fails.push('opening draw: ★ genera held back by references out of the list');
         P = {};
         INTROS = {};
@@ -593,6 +612,18 @@ const server = http.createServer((req, res) => {
           shut = allSet.filter(n => INTROS[n] && INTROS[n][3] === 'b');
         if (o.bk !== 'one' || shut.length !== allSet.length || !before.every(introduced) || allSet.some(introduced))
           fails.push(`One at a time: closed ${shut.length} of ${allSet.length}, record ${JSON.stringify(o)}`);
+        // Closed genera hold no place among the shaky ones that stop the opening (Codex P1 on #408): closed with their
+        // answers kept and badly known, they would keep the opening chance at 0, and being closed they are never asked,
+        // so the player could never open them again.
+        {
+          const P0 = JSON.stringify(P);
+          allSet.forEach(n => (P[n] = {...(P[n] || {}), ok: Math.max(1, (P[n] || {}).ok || 0), ko: 3, th: -1.5}));
+          const stuck = allSet.filter(shaky).length;
+          if (stuck >= OPEN.K && !(openChance(pool()) > 0))
+            fails.push(`One at a time: ${stuck} closed genera, badly known, keep the opening chance at ${openChance(pool())}`);
+          if (stuck < OPEN.K) fails.push(`One at a time: only ${stuck} closed genera made shaky for the check`);
+          P = JSON.parse(P0);
+        }
         // The question on screen was chosen again among the genera still open.
         if (!introReady(SHOWNQ[1]) || !choices().every(introduced))
           fails.push(`after One at a time: asked ${SHOWNQ[1]} (was ${t0}), choices ${choices().join(', ')}`);
@@ -656,11 +687,11 @@ const server = http.createServer((req, res) => {
         introReset();
         if (g in introMap() || store.get(INTRO.OFFER.KEY, null)) fails.push('progress reset kept the cards');
       }
-      // Look-alike duels slipped into the photo quiz (AUTO_DUEL): about 1 question in 10 once past the first answers,
-      // on pairs of genera met, never the same pair twice within AUTO_DUEL.SAME answers, logged quiz|d|k2.
+      // Contrast questions (quiz.js CONTRAST): look-alike duels slipped into the photo quiz, about 1 question in 10, on
+      // pairs of genera met and ready, never the pair of the previous contrast question,
+      // logged quiz|d|k2; with the Agains, two 2-choice questions are never closer than CONTRAST.GAP.
       {
-        const n0 = answersSoFar(),
-          seen = [];
+        const n0 = answersSoFar();
         let duels = 0,
           lastTwo = null;
         const q1 = question;
@@ -671,21 +702,16 @@ const server = http.createServer((req, res) => {
           quizPhoto();
           document.querySelectorAll('.unlock').forEach(x => x.remove());
           const q = window.__dq;
-          // Two 2-choice questions (a duel slipped in, an Again) never closer than AUTO_DUEL.GAP, Agains after a
-          // normal question's mix-up excepted (they follow it by design).
           if (q[2].length === 2) {
-            const gap = answersSoFar() - (lastTwo == null ? -1e9 : lastTwo[0]),
-              need = lastTwo && lastTwo[1] ? AUTO_DUEL.GAP : AUTO_DUEL.AGAIN;
-            if (AUTOD && gap < need) fails.push(`duel in the quiz ${gap} answers after a 2-choice question`);
-            if (AUTOD || !lastTwo || !lastTwo[1]) lastTwo = [answersSoFar(), AUTOD];
-          }
-          if (AUTOD) {
-            duels++;
-            const k = q[2].slice().sort().join('|'),
-              at = answersSoFar();
-            if (q[2].length !== 2 || !q[2].every(introReady)) fails.push(`duel in the quiz on ${q[2].join(', ')}`);
-            if (seen.some(([a, kk]) => kk === k && at - a < AUTO_DUEL.SAME)) fails.push(`duel ${k} twice within ${AUTO_DUEL.SAME} answers`);
-            seen.push([at, k]);
+            const at = answersSoFar(),
+              k = q[2].slice().sort().join('|');
+            if (lastTwo && at - lastTwo[0] < CONTRAST.GAP) fails.push(`2-choice questions ${at - lastTwo[0]} answers apart`);
+            if (AUTOD) {
+              duels++;
+              if (!q[2].every(introReady)) fails.push(`duel in the quiz on ${q[2].join(', ')}`);
+              if (lastTwo && lastTwo[1] === k) fails.push(`duel ${k} right after a contrast question on the same pair`);
+            }
+            lastTwo = [at, k];
           }
           const won = AUTOD && i % 10;
           say(i % 10 ? q[1] : q[2].find(c => c !== q[1]));
