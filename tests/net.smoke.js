@@ -131,14 +131,21 @@ const server = http.createServer((req, res) => {
       // The same photos (by name: data-f, quiz.js), each in one of its files. The size is chosen when it shows (the box,
       // the line measured, Saver): an iNaturalist photo (not downloaded: r: 1; Millepora's until 2026-11-03) is its 'medium' file for
       // 480 px and 'large' otherwise, names resized() leaves alone, so comparing resized(…, '') failed whenever
-      // Millepora came up (#376).
+      // Millepora came up (#376). The host is chosen when it shows too: R2 is cut off here, and about a second after the
+      // first R2 failure (core.js photoRetry: one more try PHOTO_RETRY ms later) the page reads its photos from the site
+      // (app.js R2 false). Planned while R2 was still on and shown after, the same file came from img/ instead of the
+      // R2 address read with the plan: this check failed about 1 run in 3 on a busy machine (2026-11-03). Both sides
+      // are compared without the R2 base (core.js photoLocal); check 12 is about which host.
       const want = await p2.evaluate(() =>
-        NEXTQ && NEXTQ.args ? NEXTQ.args[4].shown.map(x => ({f: x.f, files: [img(x, 's'), img(x, 'm'), img(x, '')]})) : []
+        NEXTQ && NEXTQ.args ? NEXTQ.args[4].shown.map(x => ({f: x.f, files: [img(x, 's'), img(x, 'm'), img(x, '')].map(photoLocal)})) : []
       );
       await p2.evaluate(() => document.querySelectorAll('.unlock .next, .achpop').forEach(x => x.click && x.click()));
       await p2.click('#next');
       const got = await p2.evaluate(() =>
-        [...document.querySelectorAll('#view .qstage img')].map(i => ({f: i.dataset.f, u: i.getAttribute('src').replace(/#.*$/, '')}))
+        [...document.querySelectorAll('#view .qstage img')].map(i => ({
+          f: i.dataset.f,
+          u: photoLocal(i.getAttribute('src').replace(/#.*$/, ''))
+        }))
       );
       if (!want.length || got.length !== want.length || want.some((w, k) => got[k].f !== w.f || !w.files.includes(got[k].u)))
         fails.push(`Next did not show the planned question (${want.map(w => w.f)} vs ${got.map(g => `${g.f} ${g.u}`)})`);
@@ -711,11 +718,23 @@ const server = http.createServer((req, res) => {
             }),
           u
         );
-      const cached = () => p.evaluate(() => caches.open('imr-photos-v1').then(c => c.keys().then(K => K.map(k => k.url))));
+      // The type of the reply kept for u in the photo cache, once it is there. The worker keeps a photo after handing it
+      // to the page (sw.js photo, keep: the cache write is not awaited, the page does not wait for it), so read at once
+      // after the load it was often not there yet: missing at the image's load event in 73 of 90 loads (2026-11-03), and
+      // "not kept as a CORS reply (undefined)" now and then on a busy machine. Up to 5 s. (Polled in the page:
+      // Playwright's waitForFunction takes a returned Promise as a truthy value at once.)
+      const kept = u =>
+        p.evaluate(async u => {
+          for (let k = 0; k < 100; k++) {
+            const r = await caches.match(u, {ignoreVary: true});
+            if (r) return r.type;
+            await new Promise(ok => setTimeout(ok, 50));
+          }
+        }, u);
       // R2 answering: asked in CORS mode (an opaque reply is never kept), and kept.
       await fromR2(ctx);
       if (!(await load(R2 + 'img/' + g))) fails.push('Service worker: an R2 photo did not load from R2');
-      const t = await p.evaluate(u => caches.match(u, {ignoreVary: true}).then(r => r && r.type), R2 + 'img/' + g);
+      const t = await kept(R2 + 'img/' + g);
       if (t !== 'cors') fails.push(`Service worker: the R2 photo was not kept as a CORS reply (${t})`);
       // R2 cut off: the worker serves the site's copy, kept under the R2 address, and tells the page (sw.js r2Down,
       // Codex review #392), whose next photos then come from the site straight away.
@@ -732,7 +751,7 @@ const server = http.createServer((req, res) => {
       if (!(await load(R2 + 'img/' + f))) fails.push('Service worker: an R2 photo did not fall back to the site');
       if (!(await p.waitForFunction(() => window.R2DOWN > 0, null, {timeout: 3000}).catch(() => null)))
         fails.push('Service worker: R2 failed but the page was not told');
-      if (!(await cached()).includes(R2 + 'img/' + f)) fails.push('Service worker: the photo served from the site was not kept');
+      if (!(await kept(R2 + 'img/' + f))) fails.push('Service worker: the photo served from the site was not kept');
       // R2 failed twice: for a while the worker asks the site straight away (sw.js R2_PAUSE), no request held on R2.
       const n2 = r2hits;
       if (!(await load(R2 + 'img/' + f.replace(/-s\.webp$/, '.webp'))) || r2hits !== n2)
