@@ -4149,16 +4149,27 @@ a.psrc:focus-visible {
   color: inherit;
   background: hsl(var(--g) 32% 58% / 0.18);
 }
-/* Custom quiz, the selection screen (quiz.js viewCustom; Pierre, 2026-11-03): search and the A-Z / IMR groups switch,
-   quick picks, then every genus in view as a small photo with its name (in the IMR groups view, under each group's
-   muted tint on its number), and a bar with the count, Clear all and Start that stays above the phone tab bar.
+/* Custom quiz, the selection screen (quiz.js viewCustom; Pierre, 2026-11-03): search and the IMR groups / My mix-ups /
+   Progress switch, quick picks, then every genus in view as a small photo with its name, under its group's header (the
+   IMR groups' muted tint on their number), and a bar with the count, Clear all and Start that stays above the phone tab bar.
    A picked genus gets the accent ring and a tick (rings mark selection, DESIGN.md). */
+/* Search and the view switch share a row when they fit; on phones the switch goes under the search, full width. */
 .cqtools {
   margin: 4px 0 8px;
-  flex-wrap: nowrap;
 }
 .cqtools input {
-  flex: 1 1 120px;
+  flex: 1 1 240px;
+}
+@media (max-width: 599.98px) {
+  .cqtools .seg {
+    flex: 1 1 100%;
+  }
+  .cqtools .seg button {
+    flex: 1;
+  }
+}
+.cqnote {
+  margin: 0;
 }
 .cqquick {
   display: flex;
