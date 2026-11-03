@@ -1409,7 +1409,7 @@ function need(n) {
   }
 }
 Promise.all([
-  getR('data.json?v=32')
+  getR('data.json?v=33')
     .then(r => (loadMark('pop', String(r.headers.get('x-served-by') || '').slice(0, 60)), r))
     .then(okJson)
     .then(d => (window.bootTick && bootTick(), d)),

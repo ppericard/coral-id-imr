@@ -164,14 +164,18 @@ const server = http.createServer((req, res) => {
         if (x in n) n[x]++;
       }
       out.easyFirst = {easy, hard, dEasy: genusDiff(easy), dHard: genusDiff(hard), nEasy: n[easy], nHard: n[hard]};
-      // Without any rating from the players, no order: the two are drawn about as often.
+      // Without any rating from the players, no difficulty order: the two are drawn about as often. Their iNaturalist
+      // commonness (data.json cm, a separate order: common first) is made equal for this check, then put back.
       PSTAT = {};
       GDIFF = {};
+      const cms = [GX(easy).cm, GX(hard).cm];
+      GX(easy).cm = GX(hard).cm;
       const m = {[easy]: 0, [hard]: 0};
       for (let i = 0; i < 4000; i++) {
         const x = weighted(G);
         if (x in m) m[x]++;
       }
+      [GX(easy).cm, GX(hard).cm] = cms;
       out.noData = m;
       PSTAT = keep;
       GDIFF = {};
