@@ -167,7 +167,7 @@ test('comeback questions: the surest genera until one is right, then the most ru
 
 test('a miss the rust explains costs less progress (pgMissW with the recall)', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    ctx = {PICKD: {P: 0.8}, sig: x => 1 / (1 + Math.exp(-x))};
+    ctx = {PICKD: {P: 0.8}, aimP: () => 0.8, sig: x => 1 / (1 + Math.exp(-x))}; // the reference target (model.js aimP at a middle level)
   vm.createContext(ctx);
   vm.runInContext(src.slice(src.indexOf('function pgMissW'), src.indexOf('const knownP')) + '\nthis.f = pgMissW;', ctx);
   // A photo at the game's aim (aimOff(4) = 1.01 below the ability) or easier: in full.
