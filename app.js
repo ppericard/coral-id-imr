@@ -769,6 +769,16 @@ const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbs
 // unloads escaped them, and 100 made-up answers and 6 events reached the sheet). No player's browser sets it.
 const LOCAL =
   /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])$/.test(location.hostname) || location.protocol === 'file:' || navigator.webdriver === true;
+// Signed-in traffic (signing in, saving, loading a saved account) goes through sheetFetch, so a local copy never reaches
+// the sheet with a name either (Pierre, 2026-11-03: the guard above covered anonymous answers, reports and events, not a
+// test that signs in). A test answers it with window.SHEET_STUB(url, options), set before the app loads (pages.smoke.js);
+// without one a local copy gets an error and stays signed out. Players never run a local copy.
+const sheetFetch = (url, o) =>
+  !LOCAL
+    ? fetch(url, o)
+    : typeof window.SHEET_STUB === 'function'
+      ? window.SHEET_STUB(url, o)
+      : Promise.reject(Object.assign(new Error('local copy: the sheet is off'), {local: true}));
 let SYNC = store.get('imr-coral-sync', null),
   syncTimer = null;
 

@@ -343,13 +343,12 @@ const SHEET = () => {
     if (q.get('pin') !== '1234') return {ok: false, error: 'pin'};
     return {ok: true, found: true, updated: '2026-10-20T10:00:00.000Z', rev: 3, data: account};
   };
-  const f = window.fetch;
-  window.fetch = (u, o) => {
-    const s = String((u && u.url) || u);
-    if (!/script\.google/.test(s)) return f(u, o);
-    const r = reply(s, o);
-    return Promise.resolve(new Response(JSON.stringify(r), {headers: {'Content-Type': 'application/json'}}));
-  };
+  const f = window.fetch,
+    answer = (u, o) =>
+      Promise.resolve(new Response(JSON.stringify(reply(String((u && u.url) || u), o)), {headers: {'Content-Type': 'application/json'}}));
+  // Signing in, saving and loading go through app.js sheetFetch, which a local copy answers only from SHEET_STUB.
+  window.SHEET_STUB = answer;
+  window.fetch = (u, o) => (/script\.google/.test(String((u && u.url) || u)) ? answer(u, o) : f(u, o));
 };
 async function signin(base) {
   const fails = [],
