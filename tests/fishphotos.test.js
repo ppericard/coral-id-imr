@@ -42,6 +42,33 @@ test('tiers: within 40 km of Dauin, within 250 km in the Philippines, the rest o
   assert.deepStrictEqual(out, ['dauin', 'region', 'ph', 'world', 'ph']);
 });
 
+test('abroad = the Indo-West Pacific only (Pierre: regional colour forms): Red Sea, Hawaii, Maldives, Fiji dropped, Pierre own too', () => {
+  const out = J(`${OBS}
+pts = {'Red Sea': (27.9, 34.3), 'Hawaii': (20.8, -156.3), 'Maldives': (4.2, 73.5), 'Fiji': (-17.7, 178.1), 'Bali': (-8.5, 115.2),
+       'Okinawa': (26.3, 127.8), 'Great Barrier Reef': (-16.9, 145.8), 'Raja Ampat': (-0.5, 130.5), 'Andaman Sea': (7.9, 98.3)}
+u = lambda ll, **k: bool(usable_obs(ob(1, ll=ll, inph=False, **k), set(), set()))
+print(json.dumps([{k: u(v) for k, v in pts.items()}, u(pts['Red Sea'], u='ppericard'), u(pts['Bali'], u='ppericard'), u(None),
+                  'swlat=-30&swlng=90&nelat=30&nelng=170' in queries(1)['world'], 'swlat' in queries(1)['ph']]))`);
+  assert.deepStrictEqual(out, [
+    {
+      'Red Sea': false,
+      Hawaii: false,
+      Maldives: false,
+      Fiji: false,
+      Bali: true,
+      Okinawa: true,
+      'Great Barrier Reef': true,
+      'Raja Ampat': true,
+      'Andaman Sea': true
+    },
+    false, // Pierre's own in the Red Sea: dropped too
+    true,
+    false, // abroad without coordinates: not known to be in the region
+    true, // the search abroad asks for the box
+    false // the Philippine ones do not need it
+  ]);
+});
+
 test('usable observations: Research Grade, or Pierre own even Needs ID; no dead fish, no ND, no unlicensed photo of others', () => {
   const out = J(`${OBS}
 u = lambda o, used=set(), ex=set(): (lambda x: x and [x['cls'], x['tier'], x['own'], len(x['P']), x['st']])(usable_obs(o, used, ex))
@@ -253,7 +280,7 @@ put(Q['own'], [ob(1, u='ppericard', g='needs_id', lic='cc-by-nc')])
 put(Q['dauin'], [ob(2, lic='cc-by-nc'), ob(3, lic='cc-by-nc', n=2), ob(999, lic='cc-by')])
 put(Q['region'], [ob(2, lic='cc-by-nc'), ob(3, lic='cc-by-nc', n=2), ob(999, lic='cc-by')])
 put(Q['ph'], [ob(2, lic='cc-by-nc'), ob(3, lic='cc-by-nc', n=2), ob(999, lic='cc-by'), ob(4, lic='cc-by', ll=(14.6, 121.0)), ob(12, lic='cc-by-sa', ll=(14.6, 121.0))], total=50)
-put(Q['world'], [ob(10, lic='cc0', ll=(-8.5, 115.2), inph=False), ob(11, lic='cc-by-sa', ll=(-8.5, 115.2), inph=False)])
+put(Q['world'], [ob(10, lic='cc0', ll=(-8.5, 115.2), inph=False), ob(11, lic='cc-by-sa', ll=(-8.5, 115.2), inph=False), ob(13, lic='cc0', ll=(27.9, 34.3), inph=False), ob(14, lic='cc0', ll=(20.8, -156.3), inph=False)])
 Q = queries(502)
 put(Q['dauin'], [])
 put(Q['region'], [])
@@ -302,6 +329,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   assert.match(p4.f, /^fish-s1-cand-40$/);
   assert.match(p4.src, /\/photos\/40\/original\.jpg$/);
   assert.ok(!/-sa"/.test(JSON.stringify(C)), 'no share-alike photo');
+  assert.ok(!/cand-1[34]0"/.test(JSON.stringify(C)), 'no CC0 photo from the Red Sea or Hawaii (outside the Indo-West Pacific)');
   assert.ok(!JSON.stringify(C).includes('9990'), 'an excluded photo never comes back');
   assert.deepStrictEqual(
     C.cand.s2.map(p => [p.lic, p.loc]),

@@ -11,10 +11,13 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
 - Licences (Pierre, 2026-11-03; fish prefer free licences, corals keep NC): only CC0, CC BY and CC BY-NC. Never a
   share-alike licence (CC BY-SA, CC BY-NC-SA: it would block a later commercial reuse) nor ND (crops are derivatives).
   Each photo keeps its licence (`lic`): a commercial version could keep only CC0 / CC BY and Pierre's own.
-- Order (`select`, Pierre, 2026-11-03): Pierre's own observations FIRST for every species, wherever they were made and
-  whatever their licence (his are CC BY or CC BY-NC, credited "Pierre Pericard"). Then:
-  - a species confirmed near Dauin (fish.json present.dauin: confirmed within 40 km): photos from anywhere, the world
-    included, ordered by licence (CC0 / CC BY before NC), not by distance;
+- Abroad = the Indo-West Pacific only (IWP, a 30 S - 30 N, 90 E - 170 E box around the Coral Triangle; Pierre,
+  2026-11-03: the region of IMR's ID books, other oceans have other colour forms), for every search abroad and for
+  Pierre's own observations abroad too.
+- Order (`select`, Pierre, 2026-11-03): Pierre's own observations FIRST for every species, whatever their licence (his
+  are CC BY or CC BY-NC, credited "Pierre Pericard"), in the Philippines or the IWP. Then:
+  - a species confirmed near Dauin (fish.json present.dauin: confirmed within 40 km): photos from anywhere in the
+    Philippines and the IWP, ordered by licence (CC0 / CC BY before NC), not by distance;
   - any other species: the Philippines first, by licence then nearest (within 40 km of Dauin, within REGION_KM = 250 km,
     the rest of the country), and abroad only for a species confirmed in the Philippines (present.ph), only when the
     Philippines are exhausted (every Philippine observation the search can see is taken and room is left; when the one
@@ -74,7 +77,14 @@ CAP, PER_OBS = 30, 4
 # checked against OK: never share-alike, never ND (Pierre, 2026-11-03).
 LICENCES = "cc0,cc-by,cc-by-sa,cc-by-nc,cc-by-nc-sa"
 OK = ("cc0", "cc-by", "cc-by-nc")
-TIERS = ("dauin", "region", "ph")  # the Philippines, nearest first; then "world"
+TIERS = ("dauin", "region", "ph")  # the Philippines, nearest first; then "world" (abroad, Indo-West Pacific only)
+# Abroad = the Indo-West Pacific around the Coral Triangle only (Pierre, 2026-11-03: the region of the ID books IMR uses;
+# the Red Sea, western Indian Ocean and central-eastern Pacific have other colour forms). A bounding box rather than
+# iNaturalist places: one generic rule, no country list to keep, and iNaturalist's swlat/swlng/nelat/nelng search takes
+# it as is. 30 S - 30 N, 90 E - 170 E: from the Andaman Sea and Sumatra to Vanuatu and New Caledonia, from Taiwan and the
+# Ryukyus to the southern Great Barrier Reef and Western Australia's reefs; it leaves out the Maldives, Sri Lanka, the
+# Red Sea and East Africa (west of 90 E), Fiji, Samoa, Hawaii and French Polynesia (east of 170 E), mainland Japan.
+IWP = {"swlat": -30, "swlng": 90, "nelat": 30, "nelng": 170}
 LOC = {"dauin": "dauin", "region": "ph", "ph": "ph", "world": "world"}
 # iNaturalist annotations: Life Stage (1) Adult 2, Juvenile 8; Sex (9) Female 10, Male 11; Alive or Dead (17) Dead 19.
 STAGE = {(1, 2): "adult", (1, 8): "juvenile", (9, 10): "female", (9, 11): "male"}
@@ -109,6 +119,11 @@ def tier_of(o):
         if d <= REGION_KM and o.get("inph"):
             return "region"
     return "ph" if o.get("inph") else "world"
+
+
+def in_iwp(ll):
+    """A point (lat, lng) is in the Indo-West Pacific box (IWP); no coordinates: not known to be, so no."""
+    return bool(ll) and IWP["swlat"] <= ll[0] <= IWP["nelat"] and IWP["swlng"] <= ll[1] <= IWP["nelng"]
 
 
 def hord(oid):
@@ -154,7 +169,7 @@ class Net:
                 with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=90) as r:
                     d = json.load(r)
                 break
-            except (urllib.error.URLError, TimeoutError, ValueError) as e:
+            except (OSError, ValueError) as e:  # URLError, a reset connection, a timeout, bad JSON: retried
                 print(f"  retry {q[:80]} ({e})", file=sys.stderr)
                 time.sleep(10 * (k + 1))
         else:
@@ -186,7 +201,7 @@ def queries(tid):
         "dauin": f"{rg}&lat={DAUIN[0]}&lng={DAUIN[1]}&radius={DAUIN_KM}",
         "region": f"{rg}&lat={DAUIN[0]}&lng={DAUIN[1]}&radius={REGION_KM}",
         "ph": f"{rg}&place_id={PH}",
-        "world": f"{rg}&not_in_place={PH}",
+        "world": f"{rg}&not_in_place={PH}&" + "&".join(f"{k}={v}" for k, v in IWP.items()),
     }
 
 
@@ -198,6 +213,8 @@ def usable_obs(o, used, excl):
     own = o.get("u") == PIERRE
     if not own and o.get("g") != "research":
         return None
+    if tier_of(o) == "world" and not in_iwp(o.get("ll")):
+        return None  # abroad outside the Indo-West Pacific (Pierre's own too: the colour forms differ there)
     P = [p for p in o["ph"] if lic_ok(p[2], own) and str(p[0]) not in used and str(p[0]) not in excl and p[1]]
     if not P:
         return None
