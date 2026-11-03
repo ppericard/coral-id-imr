@@ -12,10 +12,10 @@ const PHOTO_RETRY = 800, // as core.js PHOTO_RETRY
 const SHELL = [
   './',
   'index.html',
-  'app.css?v=131',
-  'core.js?v=39',
-  'app.js?v=196',
-  'sync.js?v=22',
+  'app.css?v=130',
+  'core.js?v=40',
+  'app.js?v=197',
+  'sync.js?v=23',
   'progress.js?v=18',
   'model.js?v=31',
   'tips.js?v=1',
@@ -35,7 +35,7 @@ const SHELL = [
   'proto/lab.js?v=77',
   'proto/lab.css?v=56',
   'home-art.js?v=4',
-  'home.js?v=30',
+  'home.js?v=31',
   'home.css?v=23',
   'tour.js?v=18',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
