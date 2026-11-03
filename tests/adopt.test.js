@@ -536,6 +536,43 @@ test('answers queued here older than answers another device logged: no replay ad
   assert.strictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora.h, '0000000000');
 });
 
+test("anonymous answers older than the account's own join it at sign-in: the combined replay, in time order (Codex review #399)", async () => {
+  for (const sent of [false, true]) {
+    // The account: 10 misses, played on another device, replayed and saved under the current rules.
+    const s = loadCodeGs(withData()),
+      B = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: misses(100, 10), base: {}, dirty: true}});
+    await B.syncPush();
+    await B.syncPush();
+    assert.strictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-rv']), C.RV);
+    // This device: 20 right answers played earlier without an account (still queued, or already sent anonymously).
+    const id = 'abcdefghij',
+      mine = rights(20),
+      P20 = {Acropora: {ok: 20, ko: 0, h: '1111111111', pg: 0.9}};
+    if (sent) assert.ok(s.post({anon: id, anonAnswers: mine}).log);
+    const A = app({
+      sheet: s,
+      P: copy(P20),
+      ls: {
+        'imr-log0': JSON.stringify(mine),
+        'imr-anon-id': JSON.stringify(id),
+        'imr-anon-base': '{}',
+        'imr-coral-progress': JSON.stringify(P20)
+      }
+    });
+    A.signIn('Ana', '1234', s.get({name: 'Ana', pin: '1234'}));
+    A.ctx.P = A.store.get('imr-coral-progress', {}); // what the page reloads with
+    assert.strictEqual(A.rvApplied(), 0, `${sent ? 'sent' : 'queued'}: the account's version is not this progress's`);
+    await A.syncPush();
+    await A.syncPull();
+    // Replayed in time order: the 20 right answers, then the 10 misses (was pg 0.93 and ten right answers last).
+    const a = A.ctx.P.Acropora,
+      back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora;
+    assert.deepStrictEqual([A.rvApplied(), a.ok, a.ko, a.h], [C.RV, 20, 10, '0000000000'], sent ? 'sent' : 'queued');
+    assert.ok(a.pg < 0.5, `${sent ? 'sent' : 'queued'}: pg ${a.pg}`);
+    assert.deepStrictEqual([back.ok + back.ko, back.h], [30, '0000000000']);
+  }
+});
+
 test('property: devices, unsent answers, an older client and a reset in flight: every device ends with the rows of the log', async () => {
   // A small deterministic random generator, so a failure replays the same way.
   let seed = 7;

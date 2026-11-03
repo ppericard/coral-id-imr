@@ -1845,7 +1845,11 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     queues is newer than the replay's last one: answers played offline before answers another device logged since
     would count after them, out of time order (Codex review #399: 20 right answers then 10 misses gave pg 0.96 and ten
     right answers last, instead of 0.19 and ten misses); the device then adopts nothing and marks no version applied,
-    and the save that logs them brings the replay of the whole log in time order. Except the copy this
+    and the save that logs them brings the replay of the whole log in time order. Likewise for answers played before
+    signing in to an existing account (queued, or sent under the anonymous id): the sign-in leaves the account's rules
+    version unapplied and nothing is adopted until the first save has moved them into the account's log; its reply
+    brings the replay of the whole of it (Codex review #399: 20 right answers played before an account's 10 misses kept
+    pg 0.9 and ten right answers last). Except the copy this
     device saved or loaded last, unchanged since (the sheet's revision, which every save bumps, an older app's
     included, is still the one this device holds, `sync.js` `mergeSaved` `mine`): it is already part of the device's
     progress, so it is not merged, whatever its rules version. A save carries the rules version applied when it was

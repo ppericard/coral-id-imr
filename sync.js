@@ -98,6 +98,9 @@ function replayAdopt(rp, pending, v, cut, pre) {
   if (!rp || typeof rp.rv !== 'number' || rp.rv <= rvApplied() || !rp.rec || typeof rp.rec !== 'object') return false;
   if (typeof mxRecalc !== 'function') return false; // the quiz tier (model.js) not in yet: the next reply brings it again
   if (cut !== undefined && cut !== (store.get('imr-coral-reset', '') || '')) return false;
+  // Signed in with anonymous answers not moved to the account yet (signIn; the first save's reply clears SYNC.anon before
+  // it adopts): a replay of the account's log alone would leave them out.
+  if (SYNC && SYNC.anon) return false;
   try {
     const from = rvApplied(),
       played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && (s.ok || 0) + (s.ko || 0) > 0),
@@ -825,6 +828,15 @@ function signIn(name, pin, j) {
     localStorage.removeItem(RVK);
   } catch (e) {}
   loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => k !== 'imr-coral-progress')));
+  // Answers played here without an account (queued in the log, or already sent under the anonymous id, moved to the name
+  // by the first save: SYNC.anon) join the account's: the account's rules version is not this merged progress's, whose
+  // replay never had them (Codex review #399: 20 right answers played before the account's 10 misses kept pg 0.9 and ten
+  // right answers last, for 0.19 and ten misses in time order). Left unapplied, so the first save, which brings them into
+  // the account's log, gets the replay of the whole of it (replayAdopt adopts nothing before: SYNC.anon).
+  if (anon || SYNC.anon)
+    try {
+      localStorage.removeItem(RVK);
+    } catch (e) {}
   if (mine) achMerge(JSON.stringify(mine));
   store.set('imr-coral-progress', M);
   if (!anon) delete SYNC.dirty;
