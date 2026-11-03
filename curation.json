@@ -91,7 +91,7 @@
         "seriatopora-cand-269736243": "wide",
         "seriatopora-cand-746236532": "medium",
         "seriatopora-cand-746236570": "medium",
-        "seriatopora-cand-600516986": "medium",
+        "seriatopora-cand-600516986": "wide",
         "seriatopora-cand-600516979": "wide"
       }
     },
@@ -636,14 +636,6 @@
     "pocillopora-cand-269469068": "excluded",
     "pocillopora-macro-745206187": "excluded",
     "tubastraea-cand-580500321": "excluded"
-  },
-  "flag": {
-    "seriatopora-cand-600516986": {
-      "genus": "Seriatopora",
-      "view": "medium",
-      "where": "quiz · level auto",
-      "at": "2026-11-02T14:36:40.378Z"
-    }
   },
   "seen": {
     "cand:acropora-cf-2-00": 1,
