@@ -381,12 +381,14 @@ function introMerge(m, o) {
     const L = introMap();
     let ch = false;
     // A genus closed by "One at a time" ('b') on one device is closed here too, and one opened again since by its card
-    // on one device is open here too: between a mark and an opening, the later one (its time) wins.
+    // on one device is open here too: between a mark and an opening, the later one (its time) wins. A card ('c') later
+    // than an Open all ('a') can only be a reopening after a 'b' mark, so it is kept too: a delayed 'b' older than that
+    // reopening must not close the genus again (Codex review #398: a@100, then c@300, then b@200).
+    const later = (h, e) => (e[3] === 'b' || h[3] === 'b' || (h[3] === 'a' && e[3] === 'c')) && (e[2] || 0) > (h[2] || 0);
     Object.entries(m).forEach(([n, e]) => {
       if (!Array.isArray(e)) return;
       const h = L[n];
-      if (!h || ((e[3] === 'b' || h[3] === 'b') && (e[2] || 0) > (h[2] || 0)))
-        ch = L[n] = [e[0] || 0, e[3] === 'b' ? 0 : 1, e[2] || 0, e[3] || (e[1] ? 's' : 'c')];
+      if (!h || later(h, e)) ch = L[n] = [e[0] || 0, e[3] === 'b' ? 0 : 1, e[2] || 0, e[3] || (e[1] ? 's' : 'c')];
     });
     if (ch) store.set(INTRO.KEY, L);
   }

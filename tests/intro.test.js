@@ -153,3 +153,17 @@ test('synced: a genus closed on one device closes here, a card shown since reope
   A.introMerge(null, JSON.stringify({...A.offer(), bk: 'keep', bt: t0 - 5000}));
   assert.strictEqual(A.offer().bk, 'one');
 });
+
+test('synced: a reopening that arrives before an older closing is kept (Codex review #398: a, then c, then b)', () => {
+  const C = opened(),
+    t = C.introMap().E[2];
+  // This device still has E opened at once (a); another device's reopening card (c, later) arrives, then a delayed
+  // closing (b) older than that reopening: E stays open.
+  C.introMerge(JSON.stringify({E: [60, 0, t + 300, 'c']}), null);
+  assert.ok(C.introduced('E'));
+  C.introMerge(JSON.stringify({E: [55, 0, t + 200, 'b']}), null);
+  assert.ok(C.introduced('E'));
+  // A closing newer than the reopening still closes it.
+  C.introMerge(JSON.stringify({E: [70, 0, t + 400, 'b']}), null);
+  assert.ok(!C.introduced('E'));
+});
