@@ -45,7 +45,7 @@ def state(rev=None):
     files = re.findall(r"'(\w+)'", re.search(r'files: \[([^\]]*)\]', lab).group(1))
     m = re.search(r"\.\.\.\[([^\]]*)\]\.map\(\s*f => `proto/\$\{f\}\.js\?v=(\d+)`\s*\)", shell)  # any line breaks (Prettier)
     swlab = (re.findall(r"'(\w+)'", m.group(1)), int(m.group(2))) if m else ([], None)
-    V = int(re.search(r"const V = 'imr-coral-id-v(\d+)';", sw).group(1))
+    V = int(re.search(r"const V = 'reefid-shell-v(\d+)';", sw).group(1))
     return refs, labv, files, swlab, V
 
 
@@ -105,7 +105,7 @@ def main():
             for f, v in fixes.items():
                 s = re.sub(re.escape(f) + r'\?v=\d+', f'{f}?v={v}', s)
             if p == 'sw.js' and newV:
-                s = re.sub(r"imr-coral-id-v\d+", f'imr-coral-id-v{newV}', s, count=1)
+                s = re.sub(r"reefid-shell-v\d+", f'reefid-shell-v{newV}', s, count=1)
             if p == 'sw.js' and newlab:
                 s = re.sub(r"(`proto/\$\{f\}\.js\?v=)\d+", rf'\g<1>{newlab}', s)
             open(p, 'w', encoding='utf-8').write(s)

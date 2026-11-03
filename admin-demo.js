@@ -133,10 +133,10 @@
           .join(', '),
         rev: 3,
         data: {
-          'imr-coral-progress': JSON.stringify(P),
-          'imr-coral-settings': '{}',
-          'imr-coral-intro': JSON.stringify(intro),
-          ...(offer ? {'imr-coral-intro-offer': JSON.stringify(offer)} : {})
+          'reefid-sync-coral-progress': JSON.stringify(P),
+          'reefid-sync-settings': '{}',
+          'reefid-sync-coral-intro': JSON.stringify(intro),
+          ...(offer ? {'reefid-sync-coral-intro-offer': JSON.stringify(offer)} : {})
         }
       };
     });
@@ -295,7 +295,7 @@
       r[13] ?? null
     ]);
     Object.values(S.users).forEach(u => {
-      const P = JSON.parse(u.data['imr-coral-progress'] || '{}'),
+      const P = JSON.parse(u.data['reefid-sync-coral-progress'] || '{}'),
         th = {};
       Object.keys(P).forEach(g => (th[g] = P[g].th));
       out.players[aid(u.name)] = [u.learned, u.seen, u.total, th];

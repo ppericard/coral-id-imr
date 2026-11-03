@@ -13,8 +13,8 @@ const JOURNEY = {
 };
 let JSORT = 'met';
 // First-meeting cards and Open all genera, from the player's saved progress (sheet userData, admin token): the app keeps
-// them as imr-coral-intro {genus: [answers so far, 1 for the first cards or Open all, time shown]} and
-// imr-coral-intro-offer {at, open, via, t} (model.js INTRO; times and via from 2026-11-02). name -> null while loading.
+// them as reefid-sync-coral-intro {genus: [answers so far, 1 for the first cards or Open all, time shown]} and
+// reefid-sync-coral-intro-offer {at, open, via, t} (model.js INTRO; times and via from 2026-11-02). name -> null while loading.
 const JDATA = {};
 function journeyCards(name) {
   // Kept, a failed read too (shown with its error), until Players' ↻ or the journey's clears it: a read is never
@@ -32,14 +32,16 @@ function journeyCards(name) {
           }
         };
       // Learned genera (mx: mastery exam passed; its time from 2026-11-02, 1 before).
-      const prog = P('imr-coral-progress') || {},
+      const prog = P('reefid-sync-coral-progress') || {},
         learned = Object.fromEntries(
           Object.entries(prog)
             .filter(([, s]) => s && s.mx)
             .map(([g, s]) => [g, s.mx])
         );
       JDATA[name] =
-        j && j.ok ? {map: P('imr-coral-intro') || {}, offer: P('imr-coral-intro-offer'), learned} : {err: (j && j.error) || 'unreachable'};
+        j && j.ok
+          ? {map: P('reefid-sync-coral-intro') || {}, offer: P('reefid-sync-coral-intro-offer'), learned}
+          : {err: (j && j.error) || 'unreachable'};
     })
     .catch(() => (JDATA[name] = {err: 'unreachable'}))
     .then(() => cur === '~journey/' + name && render());

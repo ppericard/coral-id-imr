@@ -1,4 +1,4 @@
-// IMR Coral ID: photo curation back-office (admin.html, not linked from the app).
+// IMR Reef ID: photo curation back-office (admin.html, not linked from the app).
 // Edits curation.json: per genus, the cover photo, the featured photos of each view (in order),
 // hidden photos and photos moved to another view. app.js applies it on top of data.json (applyCuration).
 // Saving commits curation.json to the repo through the GitHub API with a fine-grained token. The token is
@@ -110,7 +110,7 @@ function rebase(next) {
   memoReset();
   if (TOKEN) {
     putDraft();
-    store.set('imr-curation-base', SAVED);
+    store.set('reefid-curation-base', SAVED);
     keepHist();
   }
   return conf;
@@ -179,7 +179,7 @@ let HIST = [],
   snap = null;
 // The Undo steps survive a reload of this tab (admin re-review, 2026-11-01): kept in sessionStorage (this tab only,
 // gone when it closes; the last 60 steps), with the draft they lead to, so another tab's draft never picks them up.
-const HKEY = SK('imr-admin-undo');
+const HKEY = SK('reefid-admin-undo');
 const keepHist = () => {
   if (!TOKEN) return;
   try {
@@ -212,7 +212,7 @@ if ('serviceWorker' in navigator) {
   });
   // The worker could not get a photo from R2 (sw.js r2Down): the next photos come from the site, as app.js does.
   navigator.serviceWorker.addEventListener('message', e => {
-    if (e.data && e.data.t === 'imr-r2-down') R2 = false;
+    if (e.data && e.data.t === 'reefid-r2-down') R2 = false;
   });
 }
 // The draft as this tab last wrote it to, or took it from, localStorage: the common base when another admin tab writes its own.
@@ -225,7 +225,7 @@ const TAB = Math.random().toString(36).slice(2, 8),
 let REV = 0,
   SEEN = null;
 function takeOther() {
-  const v = store.get('imr-curation-draft', null);
+  const v = store.get('reefid-curation-draft', null);
   if (!v || !v.genera) return null;
   const m = takeTab(REVS, DRAFT, SAVED, v);
   if (!m) return null;
@@ -242,7 +242,7 @@ function putDraft() {
     keys = Object.keys(REVS);
   if (keys.length > 200) keys.slice(0, 50).forEach(k => delete REVS[k]);
   REVS[rev] = clone(DRAFT);
-  const ok = store.set('imr-curation-draft', Object.assign({}, DRAFT, {_tab: {rev, seen: SEEN}}));
+  const ok = store.set('reefid-curation-draft', Object.assign({}, DRAFT, {_tab: {rev, seen: SEEN}}));
   SEEN = rev;
   return ok;
 }
@@ -263,7 +263,7 @@ function step(from, to, msg) {
 const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']),
   redo = () => step(FUT, HIST, ['Nothing to redo.', 'Redone.']);
 const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
-// "Bad photo" flags Pierre raised on the site (flag.js, localStorage 'imr-photo-flags'): curation.json "flag"
+// "Bad photo" flags Pierre raised on the site (flag.js, localStorage 'reefid-photo-flags'): curation.json "flag"
 // {f: {genus, view, where, at}}. Triage lists them; "Done" removes one (one at a time, never in bulk).
 const flChanged = () => !same(DRAFT.flag || {}, SAVED.flag || {});
 // Suggestions from the outside judging agent (suggest.json, tools/judging_import.py): Triage lists them one at a time.
@@ -274,7 +274,7 @@ const sgChanged = () => !same(seenOf(DRAFT, false), seenOf(SAVED, false)) || !sa
 // Candidates rejected in the Candidates view: curation.json "seen" {'cand:f': 1}. Only a "reviewed" mark: the photo stays a candidate.
 const cdChanged = () => !same(seenOf(DRAFT, true), seenOf(SAVED, true));
 function importFlags() {
-  const L = store.get('imr-photo-flags', []);
+  const L = store.get('reefid-photo-flags', []);
   if (!L || !L.length) return 0;
   DRAFT.flag = {...(DRAFT.flag || {})};
   let n = 0;
@@ -285,7 +285,7 @@ function importFlags() {
       n++;
     }
   });
-  store.set('imr-photo-flags', null);
+  store.set('reefid-photo-flags', null);
   if (n) saveDraft();
   return n;
 }
@@ -418,10 +418,10 @@ async function lockToken(pw, token) {
   const salt = crypto.getRandomValues(new Uint8Array(16)),
     iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, await vaultKey(pw, salt), new TextEncoder().encode(token));
-  store.set('imr-admin-vault', {salt: b64(salt), iv: b64(iv), ct: b64(ct)});
+  store.set('reefid-admin-vault', {salt: b64(salt), iv: b64(iv), ct: b64(ct)});
 }
 async function unlockToken(pw) {
-  const v = store.get('imr-admin-vault', null);
+  const v = store.get('reefid-admin-vault', null);
   const pt = await crypto.subtle.decrypt({name: 'AES-GCM', iv: unb64(v.iv)}, await vaultKey(pw, unb64(v.salt)), unb64(v.ct));
   return new TextDecoder().decode(pt);
 }
@@ -464,7 +464,7 @@ async function loadSaved() {
 
 /* ---------- Lock screen ---------- */
 function lockScreen(msg) {
-  const has = !!store.get('imr-admin-vault', null);
+  const has = !!store.get('reefid-admin-vault', null);
   $v.innerHTML = `<section class="adm-lock">
     <h2>${has ? 'Unlock' : 'Set up this device'}</h2>
     ${
@@ -518,7 +518,7 @@ function lockScreen(msg) {
   if (has)
     $('forget').onclick = () => {
       if (confirm('Remove the stored token from this browser?')) {
-        store.set('imr-admin-vault', null);
+        store.set('reefid-admin-vault', null);
         sess.set(null);
         lockScreen();
       }
@@ -737,7 +737,7 @@ const ORIGINS = [
 const origin = p => (p.cf ? 'book' : p.imr ? 'imr' : p.own ? 'own' : {dauin: 'dauin', ph: 'ph'}[p.loc] || 'world');
 let SHOW = new Set(
   store.get(
-    'imr-admin-origins',
+    'reefid-admin-origins',
     ORIGINS.map(o => o[0])
   )
 );
@@ -994,7 +994,7 @@ function fitModes() {
 addEventListener('resize', () => fitModes());
 // Four header tabs, each with its pages in a row under the header (Pierre, 2026-11-01: "regroup the admin menus"):
 // To do (what needs his eye), Photos (curation), Players (people), Photo stats. Every old address still works; each tab
-// opens on the page last used in it (imr-admin-sub). Phones: one menu with every page, grouped by tab.
+// opens on the page last used in it (reefid-admin-sub). Phones: one menu with every page, grouped by tab.
 const genusHash = () => '#' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
 const GROUPS = [
   [
@@ -1054,10 +1054,10 @@ const overCap = () => {
 function navs(tn, xn) {
   const g = groupKey(),
     page = pageOf(),
-    last = store.get('imr-admin-sub', {}) || {};
+    last = store.get('reefid-admin-sub', {}) || {};
   if (last[g] !== page) {
     last[g] = page;
-    store.set('imr-admin-sub', last);
+    store.set('reefid-admin-sub', last);
   }
   const href = h => (h ? '#' + h : genusHash()),
     cnt = h => (h === '~triage' && tn ? ` (${tn})` : h === '~excluded' && xn ? ` (${xn})` : OVER[h] ? ` (⚠ ${OVER[h]} over the cap)` : '');
@@ -1181,7 +1181,7 @@ function render() {
       .join('')}</span>${p.from ? '' : notThis(n)}</div></figure>`;
   // Candidates: set apart from the views and folded by default (Pierre); open or closed is remembered.
   const candRow = P.length
-    ? `<details class="adm-row adm-cands"${store.get('imr-admin-cands', false) ? ' open' : ''}><summary><h3>Candidates <small>${P.length} photo${P.length > 1 ? 's' : ''} not on the site${P.length - Ps.length ? ` · <b>${P.length - Ps.length} filtered out</b>` : ''}</small></h3></summary>
+    ? `<details class="adm-row adm-cands"${store.get('reefid-admin-cands', false) ? ' open' : ''}><summary><h3>Candidates <small>${P.length} photo${P.length > 1 ? 's' : ''} not on the site${P.length - Ps.length ? ` · <b>${P.length - Ps.length} filtered out</b>` : ''}</small></h3></summary>
     <div class="adm-grid">${Ps.map(candTile).join('')}</div></details>`
     : '';
   const O = outOf(n),
@@ -1217,7 +1217,7 @@ function render() {
         const o = b.dataset.o;
         if (o === 'all') SHOW = new Set(ORIGINS.map(x => x[0]));
         else SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
-        store.set('imr-admin-origins', [...SHOW]);
+        store.set('reefid-admin-origins', [...SHOW]);
         render();
       })
   );
@@ -1277,7 +1277,7 @@ function render() {
       location.hash = e.target.value;
     };
   const cd = $v.querySelector('.adm-cands');
-  if (cd) cd.ontoggle = () => store.set('imr-admin-cands', cd.open);
+  if (cd) cd.ontoggle = () => store.set('reefid-admin-cands', cd.open);
   bindTiles($v, () => n);
   const c = $v.querySelector('.adm-g.cur');
   if (c) c.scrollIntoView({block: 'nearest'});
@@ -1537,7 +1537,7 @@ function allPhotos() {
   });
   return L;
 }
-const QF = Object.assign({view: 'all', genus: '', todo: false}, store.get('imr-admin-qfilter', {}));
+const QF = Object.assign({view: 'all', genus: '', todo: false}, store.get('reefid-admin-qfilter', {}));
 function renderQuality() {
   status();
   const names = Object.keys(DATA.gen),
@@ -1564,7 +1564,7 @@ function renderQuality() {
       <label class="adm-todo"><input type="checkbox" id="qtodo"${QF.todo ? ' checked' : ''}> Not checked yet</label></div>
     ${QUAL.map(sec).join('')}</section>`;
   const saveQF = () => {
-    store.set('imr-admin-qfilter', QF);
+    store.set('reefid-admin-qfilter', QF);
     renderQuality();
   };
   $v.querySelectorAll('[data-o]').forEach(
@@ -1572,7 +1572,7 @@ function renderQuality() {
       (b.onclick = () => {
         const o = b.dataset.o;
         SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
-        store.set('imr-admin-origins', [...SHOW]);
+        store.set('reefid-admin-origins', [...SHOW]);
         renderQuality();
       })
   );
@@ -1724,9 +1724,9 @@ function toggleHelp() {
   h.setAttribute('role', 'dialog');
   h.setAttribute('aria-label', 'Help');
   // Two tabs: this page's help, and "Start here" (shown first until this browser has opened it once).
-  let tab = store.get('imr-admin-started', false) ? 'page' : 'start';
+  let tab = store.get('reefid-admin-started', false) ? 'page' : 'start';
   const draw = () => {
-    if (tab === 'start') store.set('imr-admin-started', true);
+    if (tab === 'start') store.set('reefid-admin-started', true);
     h.innerHTML = `<button type="button" class="adm-link" aria-label="Close help">×</button><span class="adm-qseg adm-htabs" role="group"><button type="button" data-ht="page" aria-pressed="${tab === 'page'}">This page</button><button type="button" data-ht="start" aria-pressed="${tab === 'start'}">Start here</button></span>${HELP[tab === 'start' ? 'start' : m]}`;
     h.querySelector('.adm-link').onclick = () => h.remove();
     h.querySelectorAll('[data-ht]').forEach(
@@ -1744,7 +1744,7 @@ function toggleHelp() {
 /* ---------- Growth form ---------- */
 // One row per IMR growth form, then "Form not visible" and the photos still to classify (by old Coral Finder letter). Click a letter on a photo (one form per photo; ∅ = form not visible), drag it to another row,
 // or hover it and press the key (b e t u m s f, x or 0 for not visible, p for polyps). The tile stays put until a filter changes.
-const FF = Object.assign({view: 'all', genus: '', todo: false, pol: false}, store.get('imr-admin-ffilter', {}));
+const FF = Object.assign({view: 'all', genus: '', todo: false, pol: false}, store.get('reefid-admin-ffilter', {}));
 // 📌 (Growth form view): only on photos the Coral Finder tiles can show (colony or close-up view, one coral, not a
 // book photo), so a pin always counts; the number is its place on the tile.
 const pinOK = p => (p.view === 'wide' || p.view === 'medium') && !p.multi && !p.cf;
@@ -1841,7 +1841,7 @@ function renderForm() {
       <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label><label class="adm-todo"><input type="checkbox" id="fpol"${FF.pol ? ' checked' : ''}> ✿ Polyps out</label></div>
     ${rows.map(sec).join('')}</section>`;
   const saveFF = () => {
-    store.set('imr-admin-ffilter', FF);
+    store.set('reefid-admin-ffilter', FF);
     renderForm();
   };
   $v.querySelectorAll('[data-o]').forEach(
@@ -1849,7 +1849,7 @@ function renderForm() {
       (b.onclick = () => {
         const o = b.dataset.o;
         SHOW.has(o) ? SHOW.delete(o) : SHOW.add(o);
-        store.set('imr-admin-origins', [...SHOW]);
+        store.set('reefid-admin-origins', [...SHOW]);
         renderForm();
       })
   );
@@ -2696,7 +2696,7 @@ const CSRCS = [
   ['book', 'CF'],
   ['all', 'All']
 ];
-let CSRC = store.get('imr-admin-csrc2', 'dauin'),
+let CSRC = store.get('reefid-admin-csrc2', 'dauin'),
   CSKIP = new Set(),
   CFULL = false, // this tab: also show the candidates waiting in full cells
   CASIDE = false, // this tab: also show the candidates the pre-sort set aside
@@ -2754,10 +2754,10 @@ const jLine = p => {
   return `<p class="adm-judge${j.g ? ' warn' : ''}" title="Suggestion of the judging agent (suggest.json)">Judged: ${what}${j.m ? ' · several corals' : ''}${j.u ? ` · unsure: ${esc(j.u.join(', '))}` : ''}${j.n ? ` · ${esc(j.n)}` : ''}${sugCrop(p) ? ' · crop suggested (Crop to change it)' : ''}</p>`;
 };
 const cseed = () => {
-  let s = store.get('imr-admin-cseed', 0);
+  let s = store.get('reefid-admin-cseed', 0);
   if (!s) {
     s = 1 + Math.floor(Math.random() * 2147483645);
-    store.set('imr-admin-cseed', s);
+    store.set('reefid-admin-cseed', s);
   }
   return s;
 };
@@ -3051,7 +3051,7 @@ function renderCand() {
     b =>
       (b.onclick = () => {
         CSRC = b.dataset.src;
-        store.set('imr-admin-csrc2', CSRC);
+        store.set('reefid-admin-csrc2', CSRC);
         render();
       })
   );
@@ -3295,7 +3295,7 @@ const author = async () =>
         (await fetch('https://api.github.com/user', {headers: {Accept: 'application/vnd.github+json', Authorization: `Bearer ${TOKEN}`}})
           .then(r => (r.ok ? r.json() : {}))
           .then(j => j.login || '')
-          .catch(() => '')) || ((store.get('imr-coral-sync', null) || {}).name || '').trim());
+          .catch(() => '')) || ((store.get('reefid-account', null) || {}).name || '').trim());
 // What Publish will send, asked before it goes (admin review, 2026-11-01): counts per kind of change, then the genera
 // touched with what changed in each.
 const nDiff = (a, b) =>
@@ -3402,7 +3402,7 @@ async function save() {
     SAVED = clone(out);
     DRAFT = clone(out);
     saveDraft();
-    store.set('imr-curation-base', SAVED);
+    store.set('reefid-curation-base', SAVED);
     toast('Published. The public site shows it within a minute or two.' + confNote(conf));
   } catch (x) {
     toast(
@@ -3524,8 +3524,8 @@ async function start() {
   // Unsaved edits from an earlier visit are kept, on top of what is saved.
   // The draft only carries the changes made since its base: everything published since then (from another
   // device, or by the candidate refill) comes in underneath. Drafts from before this rule only add, never remove.
-  const old = store.get('imr-curation-draft', null),
-    base = store.get('imr-curation-base', null);
+  const old = store.get('reefid-curation-draft', null),
+    base = store.get('reefid-curation-base', null);
   if (old && old._tab) {
     SEEN = old._tab.rev;
     delete old._tab;
@@ -3549,7 +3549,7 @@ async function start() {
   snap = JSON.stringify(DRAFT);
   if (TOKEN) {
     putDraft();
-    store.set('imr-curation-base', SAVED);
+    store.set('reefid-curation-base', SAVED);
     keepHist();
   }
   // Pierre's clicks in the old Coral Finder letters (curation.json "form") stay as they are, shown as the hint.
@@ -3557,7 +3557,7 @@ async function start() {
   const nf = importFlags();
   if (nf) setTimeout(() => toast(`${nf} new photo${nf > 1 ? 's' : ''} flagged on the site: see Triage.`), 50);
   addEventListener('storage', e => {
-    if (e.key === 'imr-photo-flags' && e.newValue && importFlags()) render();
+    if (e.key === 'reefid-photo-flags' && e.newValue && importFlags()) render();
   });
   // Another admin tab in this browser clicked: merge its draft onto this one instead of overwriting it at the next click,
   // and take the base it published (code re-review 2026-11-01, M4). One Undo step brings back this tab's draft as it was.
@@ -3569,14 +3569,14 @@ async function start() {
     } catch (x) {
       return;
     }
-    if (e.key === 'imr-curation-base' && v) {
+    if (e.key === 'reefid-curation-base' && v) {
       SAVED = v;
       SAVED.genera = SAVED.genera || {};
       memoReset();
       render();
       return;
     }
-    if (e.key !== 'imr-curation-draft') return;
+    if (e.key !== 'reefid-curation-draft') return;
     const was = snap,
       m = takeOther();
     if (!m) return;
@@ -3687,7 +3687,7 @@ async function start() {
 // Stay signed in on this browser after unlocking (survives reloads) until "Sign out".
 // The unlocked token lives in sessionStorage only (Pierre, 2026-11-01, code review H1): it survives reloads in this tab and
 // is gone when the browser closes, so the plain token never stays on disk. localStorage only holds the encrypted vault.
-const SESSION = SK('imr-admin-session');
+const SESSION = SK('reefid-admin-session');
 const sess = {
   get() {
     try {
@@ -3734,11 +3734,11 @@ function signOut() {
   lockScreen();
 })();
 
-// Photo size S/M/L: same control and same per-page store as the site (localStorage imr-coral-size, key "admin").
+// Photo size S/M/L: same control and same per-page store as the site (localStorage reefid-sync-size, key "admin").
 (() => {
   const get = () => {
     try {
-      return JSON.parse(localStorage.getItem('imr-coral-size')) || {};
+      return JSON.parse(localStorage.getItem('reefid-sync-size')) || {};
     } catch (e) {
       return {};
     }
@@ -3754,7 +3754,7 @@ function signOut() {
         const p = get();
         p.admin = b.dataset.size;
         try {
-          localStorage.setItem('imr-coral-size', JSON.stringify(p));
+          localStorage.setItem('reefid-sync-size', JSON.stringify(p));
         } catch (e) {}
         apply();
       })
@@ -3765,7 +3765,7 @@ function signOut() {
 // Photo difficulty from the sync sheet (?stats=1, tools/sync/Code.gs stats_): [difficulty, answers, right] per photo.
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
 let STATS = null,
-  DIFF_ORDER = store.get('imr-admin-diff', 'hard');
+  DIFF_ORDER = store.get('reefid-admin-diff', 'hard');
 function renderDiff() {
   status();
   if (!STATS || !ANS) {
@@ -3798,7 +3798,7 @@ function renderDiff() {
     b =>
       (b.onclick = () => {
         DIFF_ORDER = b.dataset.do;
-        store.set('imr-admin-diff', DIFF_ORDER);
+        store.set('reefid-admin-diff', DIFF_ORDER);
         render();
       })
   );
@@ -4033,7 +4033,7 @@ function renderCov() {
 // extra genera present at Dauin. Pool = every photo of the view not hidden, not multi-coral, approved CF book photos
 // included; colour = distinct colonies with a photo that is not Poor; Forms = growth forms seen (Colony + Closer);
 // Species = distinct species named on the photos.
-let FCOV = Object.assign({set: 'all', order: 'thin', col: '', dir: 'asc'}, store.get('imr-admin-fcov', {}));
+let FCOV = Object.assign({set: 'all', order: 'thin', col: '', dir: 'asc'}, store.get('reefid-admin-fcov', {}));
 function renderFcov() {
   status();
   const isX = n => !!(DATA.x && DATA.x.gen[n]);
@@ -4132,13 +4132,13 @@ function renderFcov() {
         .map(([k, s]) => `<span class="o-${k}">${s} ${r.cby[k]}</span>`)
         .join('')}</td></tr>`
     ).join('')}</tbody></table></section>`;
-  bindCol(FCOV, () => store.set('imr-admin-fcov', FCOV));
+  bindCol(FCOV, () => store.set('reefid-admin-fcov', FCOV));
   $v.querySelectorAll('[data-fc]').forEach(
     b =>
       (b.onclick = () => {
         FCOV[b.dataset.fc] = b.dataset.v;
         if (b.dataset.fc === 'order') FCOV.col = '';
-        store.set('imr-admin-fcov', FCOV);
+        store.set('reefid-admin-fcov', FCOV);
         render();
       })
   );
@@ -4170,7 +4170,7 @@ const NEED_TABS = [
 let ANS = null,
   RAS = {},
   MEID = null,
-  SF = Object.assign({who: 'all', min: 1, elo: 'all', nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('imr-admin-stats', {}));
+  SF = Object.assign({who: 'all', min: 1, elo: 'all', nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('reefid-admin-stats', {}));
 // Numbers replayed over the whole answer log (playSplit, levelMargin, confusionOf): once per log loaded, not at every
 // render, sort or filter click (Pierre, 2026-11-03: admin pages load slower and slower, and the log keeps growing). ANS is
 // replaced, never changed in place, whenever the log is loaded again.
@@ -4186,7 +4186,7 @@ const withSwitch = () => {};
 function loadStats() {
   // Script v6 keeps the anonymous-id salt secret and returns the caller's own id (me) for its name and code; the
   // local digest below only matches script v5 and older.
-  const sy = store.get('imr-coral-sync', null) || {},
+  const sy = store.get('reefid-account', null) || {},
     me = sy.name;
   const digest = me
     ? crypto.subtle
@@ -4226,7 +4226,7 @@ function loadStats() {
 // Your accounts (Pierre, 2026-11-03: his old account, renamed Pierre-test, and the new one): the one this browser is signed
 // in with (MEID) and the others marked "This is also me" in Players > Manage (kept in this browser, ME_KEY). Every
 // "Without me" / "Me" filter and the "you" marks use the whole set. No name is written in the code.
-const ME_KEY = 'imr-admin-me',
+const ME_KEY = 'reefid-admin-me',
   myIds = () => new Set([MEID, ...(store.get(ME_KEY, []) || [])].filter(Boolean)),
   isMe = id => !!id && myIds().has(id);
 // Photo Elo with or without this browser's own answers (Pierre, 2026-11-01: the author knows the photos, so his answers
@@ -4274,7 +4274,7 @@ function bindStats() {
       (b.onclick = () => {
         const k = b.dataset.sf;
         SF[k] = k === 'min' ? Number(b.dataset.v) : b.dataset.v;
-        store.set('imr-admin-stats', SF);
+        store.set('reefid-admin-stats', SF);
         render();
       })
   );
@@ -4477,7 +4477,7 @@ function bindUsers() {
           c = UCOLS.find(x => x[0] === k);
         SF.ud = SF.us === k ? ((SF.ud || (c[3] ? 'asc' : 'desc')) === 'asc' ? 'desc' : 'asc') : c[3] ? 'asc' : 'desc';
         SF.us = k;
-        store.set('imr-admin-stats', SF);
+        store.set('reefid-admin-stats', SF);
         render();
       })
   );
@@ -4959,7 +4959,7 @@ function needsBody() {
       <td>${o.why.map(([k, t]) => `<span class="adm-why w-${k}${SF.nk === k ? ' on' : ''}" title="${T[k]}">${esc(t)}</span>`).join(' ')}</td></tr>`
     ).join('')}</tbody></table>${L.length ? '' : '<p class="note">None.</p>'}</div>`;
   const save = () => {
-    store.set('imr-admin-stats', SF);
+    store.set('reefid-admin-stats', SF);
     needsBody();
   };
   box.querySelectorAll('[data-nk]').forEach(

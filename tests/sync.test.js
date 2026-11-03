@@ -3,7 +3,7 @@ const test = require('node:test'),
   assert = require('node:assert');
 const {loadCodeGs} = require('./gas.js');
 
-const prog = n => ({'imr-coral-progress': JSON.stringify({Acropora: {ok: n, ko: 0}})});
+const prog = n => ({'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: n, ko: 0}})});
 const ans = (id, extra = {}) => ({
   id,
   t: '2026-11-01T00:00:00Z',
@@ -51,7 +51,7 @@ test('progress over 50,000 characters is saved in chunks and read back whole', (
   const s = loadCodeGs(),
     ps = {};
   for (let i = 0; i < 4000; i++) ps['acropora-cand-' + (100000000 + i)] = [3, 2];
-  const data = {'imr-coral-progress': JSON.stringify({Acropora: {ok: 1, ko: 0, ps}})};
+  const data = {'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 1, ko: 0, ps}})};
   assert.ok(JSON.stringify(data).length > 120000);
   assert.strictEqual(s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: []}).ok, true);
   assert.strictEqual(s.sheets.RAs.getRange(2, 8).getValue(), '@Progress data');
@@ -583,7 +583,7 @@ test('board: signed-in players by progress then level; opted-out players and the
     b.rows.every(r => r.length === 3 && r[1] === 42 && r[2] === null),
     'name, progress rounded, no level under 200 answers (v15): nothing else'
   );
-  assert.ok(!JSON.stringify(b).match(/1234|1111|hash|imr-coral/), 'no code, hash or progress data');
+  assert.ok(!JSON.stringify(b).match(/1234|1111|hash|reefid-sync/), 'no code, hash or progress data');
   // An app that sends no board value (older) keeps the saved choice: Ana B stays off.
   s.post({name: 'Ana B', pin: '5678', data: prog(2), summary: {learned: 1, seen: 1, total: 39}, answers: [ans('b2')]});
   // Cached 5 minutes, then the opt-out is seen.
@@ -690,7 +690,7 @@ test('board: the level shows from 200 answers; equal progress ranks by level', (
 
 test('achs: how many signed-in players hold each achievement; counts only', () => {
   const s = loadCodeGs();
-  const data = A => ({...prog(1), 'imr-coral-ach': JSON.stringify(A)});
+  const data = A => ({...prog(1), 'reefid-sync-ach': JSON.stringify(A)});
   s.post({name: 'Ana', pin: '1234', data: data({met10: 1, run10: 2, _best: 12}), summary: {}, answers: []});
   s.post({name: 'Ben', pin: '1111', data: data({met10: 3}), summary: {}, answers: []});
   s.post({name: 'Cy', pin: '2222', data: prog(1), summary: {}, answers: []});
@@ -713,7 +713,13 @@ test('board (v16): the % is computed from the saved progress with the app formul
     '~level': {ok: 40, ko: 4, th: 1}
   };
   // The app sent 5%: the sheet's own computation wins.
-  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': JSON.stringify(P)}, summary: {pct: 5, genera}, answers: [ans('p1')]});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: {'reefid-sync-coral-progress': JSON.stringify(P)},
+    summary: {pct: 5, genera},
+    answers: [ans('p1')]
+  });
   const want = pctOf(P, Object.keys(genera));
   assert.ok(want > 5);
   assert.strictEqual(s.get({board: '1'}).rows.find(r => r[0] === 'Ana')[1], want);
@@ -723,7 +729,7 @@ test('board (v16): the % is computed from the saved progress with the app formul
     Porites: {ok: 9, ko: 0, h: '111111111', L: 0.99, mx: 1},
     Galaxea: {ok: 2, ko: 0, h: '11'}
   };
-  s.post({name: 'Ben', pin: '1111', data: {'imr-coral-progress': JSON.stringify(Q)}, summary: {genera}, answers: [ans('q1')]});
+  s.post({name: 'Ben', pin: '1111', data: {'reefid-sync-coral-progress': JSON.stringify(Q)}, summary: {genera}, answers: [ans('q1')]});
   Object.keys(s.cache).forEach(k => delete s.cache[k]);
   assert.strictEqual(s.get({board: '1'}).rows.find(r => r[0] === 'Ben')[1], pctOf(Q, Object.keys(genera)));
 });
@@ -732,7 +738,7 @@ test('board (v16): the % is computed from the saved progress with the app formul
 function modelHold(saved = {}) {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'model.js'), 'utf8'),
     intro = /const INTRO = \{[\s\S]*?\n\};\n/.exec(src)[0],
-    hold = src.slice(src.indexOf("const HOLDK = 'imr-hold';"), src.indexOf('const introSince'));
+    hold = src.slice(src.indexOf("const HOLDK = 'reefid-hold';"), src.indexOf('const introSince'));
   const ctx = {store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)}};
   require('vm').createContext(ctx);
   require('vm').runInContext(intro + hold + '\nthis.step = holdStep; this.sync = holdSync; this.now = () => HOLDS;', ctx);
@@ -776,11 +782,11 @@ test('v23 hold: the sheet replays the opening hold of model.js over the answers 
   // Another player's answers never count: a player without answers has no hold.
   s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {}, answers: []});
   assert.strictEqual(s.get({name: 'Ben', pin: '1111'}).hold, 0);
-  // Only the answers since the last progress reset count (imr-coral-reset: the app's reset starts the hold over).
+  // Only the answers since the last progress reset count (reefid-sync-coral-reset: the app's reset starts the hold over).
   s.post({
     name: 'Ana',
     pin: '1234',
-    data: {...prog(0), 'imr-coral-reset': JSON.stringify('2026-11-01T08:00:20Z')},
+    data: {...prog(0), 'reefid-sync-coral-reset': JSON.stringify('2026-11-01T08:00:20Z')},
     summary: {},
     answers: []
   });
@@ -804,17 +810,17 @@ test("v23 hold: the sheet's sum plus the unconfirmed answers is the hold on ever
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: all.slice(0, 4).map(a => ans(a.id, a))});
   const h = s.get({name: 'Ana', pin: '1234'}).hold,
-    saved = {'imr-hold': 0},
+    saved = {'reefid-hold': 0},
     dev = modelHold(saved);
   dev.sync(h, all.slice(4));
   assert.strictEqual(dev.now(), one.now());
-  assert.strictEqual(saved['imr-hold'], one.now(), 'saved on the device');
+  assert.strictEqual(saved['reefid-hold'], one.now(), 'saved on the device');
   // A device held by answers paid back on another device follows the sheet (the same answers everywhere); a warm
   // answer, or one from before the reset, in the log is not added; an older sheet (no hold) changes nothing.
-  const hi = modelHold({'imr-hold': 9});
+  const hi = modelHold({'reefid-hold': 9});
   hi.sync(0, []);
   assert.strictEqual(hi.now(), 0);
-  const w = modelHold({'imr-coral-reset': '2026-11-01T08:00:04Z'});
+  const w = modelHold({'reefid-sync-coral-reset': '2026-11-01T08:00:04Z'});
   w.sync(1, [
     {t: '2026-11-01T08:00:03Z', e: 0.9, ok: 0, m: 'quiz'},
     {t: '2026-11-01T08:00:05Z', e: 0.9, ok: 0, m: 'quiz|w|k2'},
@@ -829,7 +835,7 @@ test("v23 hold: the sheet's sum plus the unconfirmed answers is the hold on ever
   const sc = loadCodeGs();
   sc.post({name: 'Cy', pin: '1234', data: prog(1), summary: {}, answers: [ans('c1', {e: 0.62, ok: 0, m: 'quiz|c|k2'})]});
   assert.strictEqual(sc.get({name: 'Cy', pin: '1234'}).hold, 0.52);
-  const old = modelHold({'imr-hold': 0.5});
+  const old = modelHold({'reefid-hold': 0.5});
   old.sync(undefined, all);
   assert.strictEqual(old.now(), 0.5);
   // A send whose reply was lost: its answers are on the sheet and still in the log; the reply's ids keep them from
@@ -837,7 +843,7 @@ test("v23 hold: the sheet's sum plus the unconfirmed answers is the hold on ever
   const lost = loadCodeGs();
   lost.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: all.map(a => ans(a.id, a))});
   const r = lost.get({name: 'Ana', pin: '1234'}),
-    again = modelHold({'imr-hold': 0});
+    again = modelHold({'reefid-hold': 0});
   assert.ok(r.holdIds.includes('u5'));
   again.sync(r.hold, all, r.holdIds);
   assert.strictEqual(again.now(), one.now());
@@ -862,7 +868,7 @@ test("v23 hold: a send of answers older than another device's gets the hold in t
     answers: [0, 1, 2].map(i => ans('b' + i, {t: at(1 + i), e: 0.8, ok: 0, a: 'Montipora'}))
   });
   assert.strictEqual(r.hold, 0, 'three misses, then eight right answers: paid back');
-  const dev = modelHold({'imr-hold': 2.1});
+  const dev = modelHold({'reefid-hold': 2.1});
   dev.sync(r.hold, [], r.holdIds);
   assert.strictEqual(dev.now(), 0);
 });

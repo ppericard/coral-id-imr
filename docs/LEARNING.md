@@ -161,7 +161,7 @@ time, each on its card, but never as the answer of the question right after its 
   far the answers fall below the success the game expected for them (each answer's `e`), less an allowance
   `INTRO.SLACK` (0.1) an answer, never below 0, is `INTRO.HOLD` (1.5) or more. A CUSUM (Page 1954, the standard detector of a lasting drop): a run of misses adds up however long it
   lasts, a spell above expectation is not banked against a later drop, and right answers pay the debt back by what they
-  beat the expectation by (an easy one, e 0.9, by 0.1). Kept on the device (`imr-hold`), so a player who left on a run
+  beat the expectation by (an easy one, e 0.9, by 0.1). Kept on the device (`reefid-hold`), so a player who left on a run
   of misses does not come back to new genera, and, for a signed-in player, synced through the sheet (sheet v23, Pierre
   2026-11-02: it follows the player from one device to another, and is rebuilt from the answers given before it
   existed, an RA having left on a run of misses before it was built): each load of the saved progress carries the same
@@ -201,9 +201,9 @@ time, each on its card, but never as the answer of the question right after its 
   Simulated at 50 answers: a beginner -0.9, an RA who knows 60% of the genera -0.2, 80% +0.8, an expert +1.2. The
   correct-answer rate does not tell them apart (the game keeps everyone near 80%: 68%, 76%, 86%, 88%). A card, not an
   automatic opening, so a wrong guess costs a tap.
-- Synced with the progress: the cards (`imr-coral-intro`: genus -> [answers when shown, 1 when ready at once (first cards, Open all,
-  a duel's), time shown, kind: s first cards / c a card of its own / a Open all]) and the offer (`imr-coral-intro-offer`: {at, open, via: card / progress / offer, t}, also written by Open
-  all genera, for the admin's player journey) are `imr-coral*` keys, which the sheet keeps; on a pull, the cards seen on another
+- Synced with the progress: the cards (`reefid-sync-coral-intro`: genus -> [answers when shown, 1 when ready at once (first cards, Open all,
+  a duel's), time shown, kind: s first cards / c a card of its own / a Open all]) and the offer (`reefid-sync-coral-intro-offer`: {at, open, via: card / progress / offer, t}, also written by Open
+  all genera, for the admin's player journey) are `reefid-sync*` keys, which the sheet keeps; on a pull, the cards seen on another
   device join this one's (`introMerge`), and a progress reset starts them over (`introReset`). A genus already asked
   counts as met; the bonus genera, once on, get a first-meeting card like the others. Checked in CI (`tests/draw.smoke.js`, first meetings, offer,
   sync; `tests/pages.smoke.js`, the 4 cards and My progress).
@@ -274,7 +274,7 @@ and only widens its uncertainty after inactivity).
 - **Not for a newcomer**: neither the floor nor a comeback with fewer than 2 genera answered right, nor before any
   answer time is known (progress saved before this change: the last answer of the device's log, else nothing until the
   next answer).
-- **Kept**: on the device, `imr-comeback` {r rust, t time accounted, ok right answers in the comeback, f the answer count
+- **Kept**: on the device, `reefid-comeback` {r rust, t time accounted, ok right answers in the comeback, f the answer count
   until which no genus opens}, cleared with the progress; in the synced progress, `s.at` (last answer, ms), `s.dd`
   (days answered right), `s.dl` (the last of them, local day number), and `P['~level'].at` (the player's last answer);
   `core.js` `mergeProgress` keeps the latest `at` and `dl` and the larger `dd` of two devices.

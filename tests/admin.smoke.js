@@ -432,7 +432,7 @@ const server = http.createServer((req, res) => {
     if (errs.length) fails.push(`${w}px actions: ${errs.slice(0, 3).join(' | ')}`);
 
     const keys = await p.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage)]);
-    const real = keys.filter(k => /^imr-(curation|admin)/.test(k));
+    const real = keys.filter(k => /^reefid-(curation|admin)/.test(k));
     if (real.length) fails.push(`${w}px: demo wrote real admin keys: ${real.join(', ')}`);
     await ctx.close();
   }

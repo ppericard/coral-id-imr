@@ -1,4 +1,4 @@
-// IMR Coral ID: the learning model, split out of app.js (2026-11-02, code review L1: one file per part, one piece at a
+// IMR Reef ID: the learning model, split out of app.js (2026-11-02, code review L1: one file per part, one piece at a
 // time). Which genus comes next (weighted, the progressive opening OPEN, the easiest first), which photos (photoSet,
 // PICKD, online calibration CAL), how hard they are (photoDiff, the sheet's PSTAT), the player's ability per genus (Elo,
 // ELO, abilityStep), their progress (pgWeight, knownP; core.js PROG), the mastery exam (EXAM), and the wrong choices (TRAP, distractors,
@@ -254,20 +254,20 @@ const shaky = n => {
 // card can be asked from INTRO.GAP answers on, and a new card waits INTRO.EVERY answers after the last one (and while
 // introHold, below). Which genus
 // opens and when stays the progressive path's (weighted, OPEN): a draw that falls on a genus not met yet shows its card
-// and asks about a genus already met. Kept on the device (imr-intro: genus -> [answers when shown, 1 if one of the
+// and asks about a genus already met. Kept on the device (reefid-intro: genus -> [answers when shown, 1 if one of the
 // first cards]); a genus already asked (another device, progress from before the cards) counts as met. Bonus genera
 // (once on, app.js Q.bon) open the same way, on their own card. docs/LEARNING.md.
 // OFFER: after a few dozen answers, a player whose overall level (Elo, P[LEVEL].th) is already high knows their corals
 // (an RA after the lecture): a card offers to open all the genera at once (introOffer). Synced with the progress (the
-// sheet keeps every imr-coral* key; sync.js introMerge).
+// sheet keeps every reefid-sync* key; sync.js introMerge).
 const INTRO = {
-  KEY: 'imr-coral-intro',
+  KEY: 'reefid-sync-coral-intro',
   START: 4,
   GAP: 2,
   EVERY: 2,
   HOLD: 1.5,
   SLACK: 0.1,
-  OFFER: {KEY: 'imr-coral-intro-offer', AT: 50, UNTIL: 150, MET: 10, TH: 0.5}
+  OFFER: {KEY: 'reefid-sync-coral-intro-offer', AT: 50, UNTIL: 150, MET: 10, TH: 0.5}
 };
 let INTROS = null;
 const introMap = () => {
@@ -346,7 +346,7 @@ function introMerge(m, o) {
 const introReset = () => {
   INTROS = {};
   HOLDS = 0; // the opening hold starts over with the progress (holdStep, below; called after this file has run)
-  store.set('imr-hold', 0);
+  store.set('reefid-hold', 0);
   CB = {r: 0, t: 0, ok: 0, f: 0}; // and the comeback (below)
   store.set(COMEBACK.KEY, CB);
   store.set(INTRO.KEY, {});
@@ -358,7 +358,7 @@ const introReset = () => {
 // success the game expected (each answer's e), never below 0: a CUSUM (Page 1954, the standard detector of a lasting
 // drop), so a run of misses adds up however long it lasts, a spell of answers above expectation is not banked against
 // a later drop, and right answers pay the debt back by what they beat the expectation by (an easy one, e 0.9, by 0.1).
-// No new card while it is INTRO.HOLD or more. Kept on the device (imr-hold), so it carries from one visit to the next
+// No new card while it is INTRO.HOLD or more. Kept on the device (reefid-hold), so it carries from one visit to the next
 // (Pierre: a player who left on a run of misses must not come back to new genera), and for a signed-in player rebuilt by
 // the sync sheet from all their answers (holdSync, below); cleared with the progress (reset, sign-out). The questions
 // after a break count, with the expectation they really had (comeback, below; logged |c): from 2026-11-02 to the comeback,
@@ -370,7 +370,7 @@ const introReset = () => {
 // on that RA's answers it holds at answers 11-12 (three misses in a row) and from answer 67 on, off and on (the window:
 // 73); simulated (6 seeds, 200 questions, genera met, without -> with), a beginner 15 -> 13, a lecture-level RA
 // 14 -> 13, a strong RA 22 -> 23, an expert 27 -> 28.
-const HOLDK = 'imr-hold';
+const HOLDK = 'reefid-hold';
 let HOLDS = Number(store.get(HOLDK, 0)) || 0;
 const introHold = () => HOLDS >= INTRO.HOLD;
 // slack: the allowance an answer (INTRO.SLACK for the hold; the comeback's CUSUM passes the rust a question repairs).
@@ -392,7 +392,7 @@ const HOLD_WARM = /\|w(\||$)/; // the mode of a gentle-restart answer (before th
 // sheet has it; it is not added twice).
 function holdSync(h, log, ids) {
   if (typeof h !== 'number' || !isFinite(h)) return;
-  const reset = store.get('imr-coral-reset', '') || '',
+  const reset = store.get('reefid-sync-coral-reset', '') || '',
     had = new Set(Array.isArray(ids) ? ids.map(String) : []);
   const x = (log || []).reduce(
     (t, a) => (a && !had.has(String(a.id)) && !HOLD_WARM.test(a.m || '') && String(a.t || '') > reset ? holdNext(t, a.e, a.ok) : t),
@@ -435,12 +435,12 @@ const introSince = () => answersSoFar() - Math.max(-Infinity, ...Object.values(i
 //   COMEBACK.FLOOR (10) answers open no genus: no card, no open-all or bonus genera offer (Pierre, 2026-11-02:
 //   "reopening a new genus straight away would be a mistake"; his choice, not a cap). A comeback holds openings as long
 //   as it runs. Neither applies with fewer than 2 genera answered right (nothing to come back to).
-// Kept on the device (imr-comeback: r rust, t time accounted, ok right answers in it, f answers count until which no
+// Kept on the device (reefid-comeback: r rust, t time accounted, ok right answers in it, f answers count until which no
 // genus opens); the times per genus (s.at, last answer; s.dd, s.dl: days answered right, last one) are in the synced
 // progress (core.js mergeProgress), the player's last answer in P[LEVEL].at.
 const FSRS = {F: 19 / 81, C: -0.5, S0: 0.4, S1: 15.7, G: 2.5};
 const SESSION = {GAP: 30 * 60000};
-const COMEBACK = {KEY: 'imr-comeback', FLOOR: 10};
+const COMEBACK = {KEY: 'reefid-comeback', FLOOR: 10};
 const DAY = 864e5;
 let CB = (o => (o && typeof o === 'object' ? {r: +o.r || 0, t: +o.t || 0, ok: +o.ok || 0, f: +o.f || 0} : {r: 0, t: 0, ok: 0, f: 0}))(
   store.get(COMEBACK.KEY, null)
@@ -629,14 +629,14 @@ function photoLvl(n, p) {
 }
 // Photo difficulty (Elo): every RA's answers, rated by the sync sheet (?stats=1, tools/sync/Code.gs stats_). 0 = average
 // photo, +1 = clearly harder. Few answers: pulled towards the photo's game set (Easy -1, Medium 0, Hard +1).
-let PSTAT = (store.get('imr-photo-stats', {}) || {}).photos || {};
+let PSTAT = (store.get('reefid-photo-stats', {}) || {}).photos || {};
 // Pairs of genera offered together and mixed up, every RA pooled (?stats=1 conf, sheet v10): see confOf.
-let PCONF = (store.get('imr-photo-stats', {}) || {}).conf || {};
+let PCONF = (store.get('reefid-photo-stats', {}) || {}).conf || {};
 // Photo memory (Pierre, 2026-11-03; core.js MEM, sheet v26 ?stats=1 mem): how much easier a photo is for a player who
 // has already been shown it (s.ps: [shown, right]), in logits off its difficulty, by bucket: new 0, shown never right,
 // right once, right twice or more, estimated by the sheet from every trusted answer; the prior (the old fixed rule)
 // with an older sheet or offline. famOf: the offset of the photos of a question, as the player knows them now.
-let PMEM = memOf((store.get('imr-photo-stats', {}) || {}).mem);
+let PMEM = memOf((store.get('reefid-photo-stats', {}) || {}).mem);
 // Progress saved before the photo memory, recalculated once and silently (Pierre, 2026-11-03: no pop-up, the bars move
 // down 1-3 points; core.js memRecalc): every genus record not marked yet (s.pm), at load and after each pull of the
 // synced progress (sync.js mergeSaved), and in quiz.js answer before a record's first answer. Saved and synced when it

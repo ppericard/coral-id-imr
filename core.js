@@ -229,8 +229,8 @@
         return null;
       }
     };
-    const a = J(A, 'imr-coral-progress') || {},
-      b = J(B, 'imr-coral-progress') || {},
+    const a = J(A, 'reefid-sync-coral-progress') || {},
+      b = J(B, 'reefid-sync-coral-progress') || {},
       P = {};
     const n = s => (s.ok || 0) + (s.ko || 0),
       add = (x, y) => {
@@ -270,13 +270,13 @@
       if (x.du || y.du) o.du = 1;
       if (o.ok + o.ko || o.h) P[g] = o;
     });
-    const out = {...A, ...B, 'imr-coral-progress': JSON.stringify(P)},
-      qa = J(A, 'imr-coral-quiz'),
-      qb = J(B, 'imr-coral-quiz');
+    const out = {...A, ...B, 'reefid-sync-coral-progress': JSON.stringify(P)},
+      qa = J(A, 'reefid-sync-coral-quiz'),
+      qb = J(B, 'reefid-sync-coral-quiz');
     if (qa || qb) {
       const q = {...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)};
       if ((qa || {}).bon || (qb || {}).bon) q.bon = true;
-      out['imr-coral-quiz'] = JSON.stringify(q);
+      out['reefid-sync-coral-quiz'] = JSON.stringify(q);
     }
     return out;
   }
@@ -897,7 +897,7 @@
   function accountOf(data, updated) {
     let R = {};
     try {
-      R = JSON.parse((data && data['imr-coral-progress']) || '{}');
+      R = JSON.parse((data && data['reefid-sync-coral-progress']) || '{}');
     } catch (e) {}
     if (!isObj(R)) R = {};
     const num = x => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 0),

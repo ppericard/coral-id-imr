@@ -1,4 +1,4 @@
-// IMR Coral ID: the quiz screens, split out of app.js (2026-11-02, code review L1: one file per part, one piece at a
+// IMR Reef ID: the quiz screens, split out of app.js (2026-11-02, code review L1: one file per part, one piece at a
 // time). A question on screen (question, the session trail, the hint), the stage fitted to the screen (fitStage,
 // fitTiles, fitLow), the answer and its feedback (answer), the one-tap question (pulse), the bonus genera offer,
 // the next question planned and preloaded while the feedback is read (planNext, NEXTQ), the photo quiz (quizPhoto) and
@@ -637,7 +637,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
 // never shown with a card, the tour or an achievement toast on screen or waiting: one that falls too close waits until
 // the gap is met. Counted in answers, never time. One value for all three: the answers count when the last one showed
 // (this device; a count that went back, a progress reset, starts the spacing over).
-const PROMPT = {KEY: 'imr-prompt-at', GAP: 10};
+const PROMPT = {KEY: 'reefid-prompt-at', GAP: 10};
 const promptOk = () => {
   if (document.querySelector('#tour, .unlock, .achpop') || (typeof achBusy !== 'undefined' && achBusy)) return false;
   const a = answersSoFar(),
@@ -653,7 +653,7 @@ const promptMark = () => store.set(PROMPT.KEY, answersSoFar());
 // % of the last 10, overall level, genera met. Nothing in the game changes with it (yet): it tells Pierre whether the
 // adaptive difficulty feels right to the players.
 const PULSE = {FIRST: 35, EVERY: 60, SESSION: 8},
-  PULSEK = 'imr-pulse';
+  PULSEK = 'reefid-pulse';
 const pulseDue = (h = hashNow()) =>
   (h === 'quiz' || h.startsWith('quiz-duel')) &&
   !document.querySelector('#tour, .unlock') &&
@@ -740,9 +740,9 @@ let twoAt = -Infinity, // answers so far at the last duel slipped in
 // "This pair comes back as a duel in a moment": said the first 3 times only (RA review 2026-11-02: it came on every
 // wrong answer, about 20 times in 30 questions); the pair still comes back every time.
 const againTold = () => {
-  const n = store.get('imr-again-told', 0);
+  const n = store.get('reefid-again-told', 0);
   if (n >= 3) return false;
-  store.set('imr-again-told', n + 1);
+  store.set('reefid-again-told', n + 1);
   return true;
 };
 // The next questions are chosen ahead and their photos fetched meanwhile, so Next shows one at once even on a slow

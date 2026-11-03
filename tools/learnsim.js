@@ -538,10 +538,10 @@ async function run(browser, base, name, seed) {
     r => r.abort()
   );
   await ctx.addInitScript(st => {
-    localStorage.setItem('imr-tour', '"done"');
+    localStorage.setItem('reefid-tour', '"done"');
     if (st)
       localStorage.setItem(
-        'imr-photo-stats',
+        'reefid-photo-stats',
         JSON.stringify({t: Date.now(), photos: st.photos || {}, conf: st.conf || {}, ...(st.mem ? {mem: st.mem} : {})})
       );
   }, STATS_JSON);

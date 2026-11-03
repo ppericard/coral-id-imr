@@ -1,4 +1,4 @@
-// IMR Coral ID: the Learn pages, split out of app.js (2026-11-02, code review L1: one file per part). Genera (the list,
+// IMR Reef ID: the Learn pages, split out of app.js (2026-11-02, code review L1: one file per part). Genera (the list,
 // its filters and groups: viewGenera), a genus sheet (viewGenus, myProg), Look-alikes (viewLookalikes, the montage
 // deck, classics, pairs) and Compare side by side (viewCompare). The shared helpers they use (photos, ID tips,
 // glossary) stay in app.js. A classic script like app.js, loaded right after quiz.js (index.html, in order); app.js
@@ -10,7 +10,7 @@ let azFam = null,
 // Genera order: 'lecture' (IMR Lecture 6 groups, default) or 'slate' (numbers on the IMR slate).
 let azOrder = (() => {
   try {
-    return localStorage.getItem('imr-coral-order') || 'lecture';
+    return localStorage.getItem('reefid-sync-order') || 'lecture';
   } catch (e) {
     return 'lecture';
   }
@@ -18,7 +18,7 @@ let azOrder = (() => {
 // Genera view: 'photos' (cards) or 'tips' (the ID tips list, formerly its own page).
 let azView = (() => {
   try {
-    return localStorage.getItem('imr-coral-gview') || 'photos';
+    return localStorage.getItem('reefid-sync-gview') || 'photos';
   } catch (e) {
     return 'photos';
   }
@@ -131,7 +131,7 @@ function viewGenera() {
       (b.onclick = () => {
         azOrder = b.dataset.o;
         try {
-          localStorage.setItem('imr-coral-order', azOrder);
+          localStorage.setItem('reefid-sync-order', azOrder);
         } catch (e) {}
         viewGenera();
       })
@@ -149,7 +149,7 @@ function viewGenera() {
       (b.onclick = () => {
         azView = b.dataset.gv;
         try {
-          localStorage.setItem('imr-coral-gview', azView);
+          localStorage.setItem('reefid-sync-gview', azView);
         } catch (e) {}
         viewGenera();
         pageHelp();
@@ -293,7 +293,7 @@ function viewShot(n, v) {
     : '<span class="none">no photo</span>';
 }
 const mixedUp = (a, b) => ((P[a] && P[a].conf && P[a].conf[b]) || 0) + ((P[b] && P[b].conf && P[b].conf[a]) || 0);
-let cmpView = store.get('imr-coral-cmpview', 'medium');
+let cmpView = store.get('reefid-sync-cmpview', 'medium');
 const viewSeg = () =>
   `<div class="seg" role="group" aria-label="View">${VIEWS.map(([v, t]) => `<button type="button" data-cv="${v}" aria-pressed="${cmpView === v}">${t}</button>`).join('')}</div>`;
 const bindViewSeg = redraw =>
@@ -301,7 +301,7 @@ const bindViewSeg = redraw =>
     b =>
       (b.onclick = () => {
         cmpView = b.dataset.cv;
-        store.set('imr-coral-cmpview', cmpView);
+        store.set('reefid-sync-cmpview', cmpView);
         redraw();
       })
   );
@@ -450,7 +450,7 @@ function viewLookalikes(a, b) {
   let i = Math.max(0, a && b ? L.findIndex(m => m.k === pairKey(a, b)) : 0),
     drawn = false,
     dir = 0;
-  let hint = matchMedia('(pointer: coarse)').matches && !store.get('imr-coral-lkswiped', 0);
+  let hint = matchMedia('(pointer: coarse)').matches && !store.get('reefid-sync-lkswiped', 0);
   const draw = () => {
     const m = L[i],
       gA = DATA.gen[m.A],
@@ -525,7 +525,7 @@ function viewLookalikes(a, b) {
     dir = k > i ? 1 : -1;
     if (swiped && hint) {
       hint = false;
-      store.set('imr-coral-lkswiped', 1);
+      store.set('reefid-sync-lkswiped', 1);
     }
     i = (k + L.length) % L.length;
     history.replaceState({d: pageDepth}, '', `#cmp|${L[i].A}|${L[i].B}`);

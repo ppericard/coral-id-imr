@@ -304,21 +304,21 @@ test("v17: a beginner's answers move the photos more as their level settles; a r
 
 test('mergeUsers: two accounts of one person add up; the busier account model wins per genus', () => {
   const A = {
-    'imr-coral-progress': JSON.stringify({
+    'reefid-sync-coral-progress': JSON.stringify({
       Acropora: {ok: 8, ko: 2, th: 1.2, L: 0.8, h: '1101', cor: 1, conf: {Montipora: 1}, ps: {p1: [3, 2]}},
       Porites: {ok: 1, ko: 0, th: 0.1}
     }),
-    'imr-coral-quiz': JSON.stringify({bu: 2})
+    'reefid-sync-coral-quiz': JSON.stringify({bu: 2})
   };
   const B = {
-    'imr-coral-progress': JSON.stringify({
+    'reefid-sync-coral-progress': JSON.stringify({
       Acropora: {ok: 1, ko: 1, th: 0.2, L: 0.3, h: '10', du: 1, conf: {Montipora: 2}, off: {Montipora: 3}, ps: {p1: [1, 1], p2: [1, 0]}}
     }),
-    'imr-coral-quiz': JSON.stringify({bu: 1, view: 'any'}),
-    'imr-coral-theme': '"dark"'
+    'reefid-sync-coral-quiz': JSON.stringify({bu: 1, view: 'any'}),
+    'reefid-sync-theme': '"dark"'
   };
   const M = mergeUsers(A, B),
-    P = JSON.parse(M['imr-coral-progress']);
+    P = JSON.parse(M['reefid-sync-coral-progress']);
   assert.strictEqual(P.Acropora.ok, 9);
   assert.strictEqual(P.Acropora.ko, 3);
   assert.strictEqual(P.Acropora.th, 1.2, 'A answered Acropora more: its ability is kept');
@@ -328,12 +328,14 @@ test('mergeUsers: two accounts of one person add up; the busier account model wi
   assert.deepStrictEqual(P.Acropora.off, {Montipora: 3});
   assert.deepStrictEqual(P.Acropora.ps, {p1: [4, 3], p2: [1, 0]});
   assert.deepStrictEqual(P.Porites, {ok: 1, ko: 0, th: 0.1, streak: 0});
-  assert.deepStrictEqual(JSON.parse(M['imr-coral-quiz']), {bu: 2, view: 'any'});
-  assert.strictEqual(M['imr-coral-theme'], '"dark"');
+  assert.deepStrictEqual(JSON.parse(M['reefid-sync-coral-quiz']), {bu: 2, view: 'any'});
+  assert.strictEqual(M['reefid-sync-theme'], '"dark"');
 });
 test('mergeUsers: bonus genera on for either account stay on (Q.bon)', () => {
   const q = (a, b) =>
-    JSON.parse(mergeUsers({'imr-coral-quiz': JSON.stringify(a)}, {'imr-coral-quiz': JSON.stringify(b)})['imr-coral-quiz']);
+    JSON.parse(
+      mergeUsers({'reefid-sync-coral-quiz': JSON.stringify(a)}, {'reefid-sync-coral-quiz': JSON.stringify(b)})['reefid-sync-coral-quiz']
+    );
   assert.strictEqual(q({bon: true}, {bon: false}).bon, true);
   assert.strictEqual(q({bon: false}, {}).bon, false, 'a "Not now" is kept: the offer is not made again');
   assert.strictEqual(q({}, {}).bon, undefined, 'no choice yet: the offer stays due');
@@ -341,9 +343,9 @@ test('mergeUsers: bonus genera on for either account stay on (Q.bon)', () => {
 
 test('mergeUsers: the progress (pg) comes from the busier account, recomputed if it was saved before pg', () => {
   const {pgOf} = require('../core.js');
-  const A = {'imr-coral-progress': JSON.stringify({Acropora: {ok: 40, ko: 1, h: '1111111111', L: 0.99}})},
-    B = {'imr-coral-progress': JSON.stringify({Acropora: {ok: 1, ko: 0, h: '1', pg: 0.1}})};
-  const P = JSON.parse(mergeUsers(A, B)['imr-coral-progress']);
+  const A = {'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 40, ko: 1, h: '1111111111', L: 0.99}})},
+    B = {'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 1, ko: 0, h: '1', pg: 0.1}})};
+  const P = JSON.parse(mergeUsers(A, B)['reefid-sync-coral-progress']);
   assert.strictEqual(P.Acropora.pg, pgOf({h: '1111111111', L: 0.99}));
   assert.ok(P.Acropora.pg > 0.6, "not the less-played account's 0.1");
 });
@@ -555,7 +557,7 @@ test('playSplit: the photo quiz apart from the Duel tab, last 50 quiz answers, o
 
 test('accountOf: an existing account at sign-in, from the progress the sheet returns; missing fields count as nothing', () => {
   const at = Date.parse('2026-11-02T09:30:00Z'),
-    data = R => ({'imr-coral-progress': JSON.stringify(R)});
+    data = R => ({'reefid-sync-coral-progress': JSON.stringify(R)});
   assert.deepStrictEqual(
     accountOf(data({[LEVEL]: {ok: 200, ko: 45, th: 0.4, at}, Acropora: {ok: 30, ko: 5, at: at - 1}}), '2026-11-02T10:00:00Z'),
     {
@@ -582,8 +584,8 @@ test('accountOf: an existing account at sign-in, from the progress the sheet ret
   const none = {n: 0, genera: 0, at: 0, saved: false};
   assert.deepStrictEqual(accountOf({}), none);
   assert.deepStrictEqual(accountOf(undefined, undefined), none);
-  assert.deepStrictEqual(accountOf({'imr-coral-progress': 'not json'}, 'not a date'), none);
-  assert.deepStrictEqual(accountOf({'imr-coral-progress': '[1,2]'}), none);
+  assert.deepStrictEqual(accountOf({'reefid-sync-coral-progress': 'not json'}, 'not a date'), none);
+  assert.deepStrictEqual(accountOf({'reefid-sync-coral-progress': '[1,2]'}), none);
   assert.deepStrictEqual(accountOf(data({[LEVEL]: {ok: 'x', ko: -3, at: 'y'}, Acropora: null})), none);
 });
 
@@ -708,10 +710,10 @@ test('mergeProgress and mergeUsers: the photo memory mark travels with the progr
     m3 = mergeProgress(base, here, far);
   assert.deepStrictEqual([m3.A.ok, m3.A.pg, m3.A.mx, m3.A.pm], [30, 0.95, 1, undefined]);
   // Two accounts merged in the admin: the mark comes from the account the progress comes from.
-  const U = (P, extra = {}) => ({'imr-coral-progress': JSON.stringify(P), ...extra});
+  const U = (P, extra = {}) => ({'reefid-sync-coral-progress': JSON.stringify(P), ...extra});
   const big = {A: {ok: 40, ko: 4, pg: 0.8}},
     small = {A: {ok: 2, ko: 0, pg: 0.3, pm: 1}},
-    mu = JSON.parse(mergeUsers(U(small), U(big))['imr-coral-progress']);
+    mu = JSON.parse(mergeUsers(U(small), U(big))['reefid-sync-coral-progress']);
   assert.strictEqual(mu.A.pg, 0.8);
   assert.strictEqual(mu.A.pm, undefined, 'the busier account was not recalculated yet');
 });
