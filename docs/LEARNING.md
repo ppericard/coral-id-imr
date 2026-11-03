@@ -151,6 +151,14 @@ to 80%, against the review's hope: on this learner the gap comes from the Elo's 
 2.2 logits, "Learning-outcome simulation"), which no aim can correct; with real players the format's guess rate now
 leaves the target where it is. The profiles test: an expert's traps at question 300 2.32 → 2.28 a question (CI seed).
 
+**Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): the expectation's formula is unchanged (only which photo is aimed at changes), so its log-loss is the same
+(0.480 overall). What the real answers say about the aim, at the same expectation (the app expected 75-85%): 4 choices
+right 77% (n 231), 2 choices 85% (n 288), duels 93% (n 40). Before, the format moved the target: the 2-choice
+questions were expected about 87% on a photo aimed 1.0 below the ability; now they are aimed at 80%. On these answers a
+2-choice question was right 83-84% whether the app expected 75-85% or 82-92%, so the harder aim should not lower the
+real success much; the 4-choice questions, the bulk of the exam and of strong players' questions, are calibrated
+(expected 76%, right 77%, n 496). Typed: 5 answers, too few.
+
 ### Logged for the admin's player journey (2026-11-02)
 
 A mastery exam question is logged with mode `quiz|x` (exams have every trap, so never `|kN`; the sheet's guess rate and
@@ -220,6 +228,12 @@ before → after, mean of the seeds (± the standard error of the paired differe
 - The beginner's knowledge is 0.02-0.03 lower, about one standard error: more 2-choice questions raise the ability less
   (a right answer among 2 proves less), so genera stay shaky a little longer and open a little later (29.6 genera met by
   question 300 against 31.6). The opening itself is item 6 (below). Everyone else within the spread.
+
+**Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): a replay cannot say which questions the new queue would have asked, only how the contrast questions fare. The
+2-choice questions of the quiz (Agains and easy choices) were right 87% of the time where the app expected 76% (n 653),
+the duels in the quiz 16 of 16 (expected 82%), the Duel tab 93% (82%, n 86): contrast questions are easier for real
+players than the 1-in-2 guess rate says, so more of them cost little success; the expectation itself is unchanged by
+this item.
 
 ### Pierre's Easy / Medium / Hard sets against the players' answers (measured 2026-11-02)
 
@@ -497,6 +511,9 @@ question 100, was 200); true knowledge within ±0.02 of before everywhere, where
 0.8, expert 7.8 → 6.8 ± 1.0): the genera opened sooner share the questions. The right % stays within 3 points except
 the first 100 questions of a strong RA (93 → 84%: more new genera at once).
 
+**Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): the log holds no record of when a card could have opened, so the opening cannot be replayed; the shaky signal it
+counts is checked with item 8 ("One draw weight", below).
+
 ### One draw weight (2026-11-03)
 
 The independent review's item 8, first half (Pierre, 2026-11-03: "one variable computed dynamically, as simple as
@@ -535,6 +552,21 @@ standard error of the paired difference where it matters):
   old 1 + 3u fell with the progress, u under 0.2), now as much as the model's doubt says. The lecture RA's genera now
   enter it at a true success of 0.85 on the hard reference question (0.93 before, but on 1.2 genera a run; the review
   asked for 0.85 or more); the exam then decides, unchanged.
+
+**Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): each signal computed before every answer on a genus the player had already answered (972 answers, 15% missed),
+replayed per player in time order, the ability as logged, the genus difficulty the mean of what its real answers imply:
+
+| Signal before the answer | flagged: answers, missed | not flagged: answers, missed | area under the ROC curve for a miss |
+| --- | --- | --- | --- |
+| old "Review" (2 misses in the last 5) | 331, 18% | 641, 14% | 0.561 (the count of misses in the last 5) |
+| new "Review" (shaky) | 236, 17% | 736, 15% | |
+| `drawW` | | | 0.561 |
+| x alone (1 − x) | | | 0.498 |
+
+The new weight tells a coming miss as well as the old rule (0.561 both, little above chance: the game aims each photo
+at the player's level, which evens the chances out); by quarter of `drawW`, 13%, 12%, 16%, 19% missed. What carries it
+is the uncertainty c (few answers on the genus), not x alone; "Review" (shaky) flags fewer answers (236 against 331)
+for about the same miss rate. Neither moves the app's expectation.
 
 ### Common first (2026-11-03)
 
