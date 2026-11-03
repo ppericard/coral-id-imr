@@ -17,7 +17,7 @@
       sel: '.hdoors',
       tall: 'end',
       t: 'Two ways in',
-      d: 'Learn & practise while you learn the genera. Identify when you need to name a coral on a ReefCloud photo.'
+      d: 'Learn & practise while you learn the genera. Identify when you need to name a coral on a ReefCloud photo, or one you photographed on a dive.'
     },
     {h: '', signin: true},
     {
@@ -33,7 +33,7 @@
       sel: '#prog',
       alt: 'nav [data-tab=progress]',
       t: 'Your progress',
-      d: 'Each genus fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. Tap to see every genus.'
+      d: 'Each genus fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. Tap to see every genus of the IMR slate: the coral genera IMR records on its reef surveys, plus a few look-alikes.'
     },
     {
       h: 'quiz',
