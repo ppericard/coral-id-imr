@@ -38,7 +38,7 @@ const server = http.createServer((req, res) => {
 // Admin smoke test in demo mode (admin.html?demo, admin-demo.js; Pierre, 2026-11-01: agents must be able to see and test
 // the admin): every view of the 9 tabs and every old address at 390 and 1280 px with no page error, each landing on its
 // tab and view, the view remembered per tab, then the main actions on made-up data: open a player, merge two names,
-// delete a test account, the reports in To do, Skip and Reject in Candidates, the auto-sort (decisions, a
+// delete a test account, the reports in To do, the Photo stats Overview's numbers, Skip and Reject in Candidates, the auto-sort (decisions, a
 // blind Check, the agreement block, undo, the auto tag, a retest), Publish.
 // Checks that nothing leaves the page (no call reaches the sync script or GitHub) and that the demo never writes the real
 // admin storage keys. Needs Playwright like pages.smoke.js. Locally: node tests/admin.smoke.js
@@ -172,8 +172,8 @@ const server = http.createServer((req, res) => {
     OLD.push('~users', '~stats', '~stats-conf', '~stats-photos', '~diff', '~mont');
     const miss = OLD.filter(h => !ROUTES.some(r => r.h === h));
     if (miss.length) fails.push(`${w}px: old addresses without a tab: ${miss.join(' ')}`);
-    if (ROUTES.filter(r => r.tab && !['~mont', '~stats-needs', '~journey/Ana Demo'].includes(r.h)).length < 17)
-      fails.push(`${w}px: fewer than 17 views`);
+    if (ROUTES.filter(r => r.tab && !['~mont', '~stats-needs', '~journey/Ana Demo'].includes(r.h)).length < 18)
+      fails.push(`${w}px: fewer than 18 views`);
     for (const r of ROUTES) {
       const h = r.h || (await p.evaluate(() => Object.keys(DATA.gen)[0]));
       await go(h);
@@ -726,6 +726,128 @@ const server = http.createServer((req, res) => {
       };
     });
     if (!ln.rows || ln.lanes < 2 || ln.noMedian) fails.push(`${w}px Photo difficulty: lanes per view missing ${JSON.stringify(ln)}`);
+    // Photo stats › Overview (Pierre, 2026-11-03: general stats on every photo): its numbers against a direct count made
+    // here with the Coverage page's own covOf (photos and colonies per genus x view), the candidates and the rejected
+    // marks, and a plain median (sort, middle value); nothing wider than the window.
+    await go('~pstats');
+    const ov = await p.evaluate(() => {
+      const cells = sel => [...document.querySelectorAll(sel)].map(r => [...r.children].map(c => c.innerText.trim()));
+      const med = L => {
+          const a = L.slice().sort((x, y) => x - y),
+            h = a.length >> 1;
+          return a.length % 2 ? a[h] : (a[h - 1] + a[h]) / 2;
+        },
+        txt = x => (Number.isInteger(x) ? String(x) : x.toFixed(1));
+      let play = 0,
+        cols = 0;
+      const per = [],
+        perV = {wide: [], medium: [], macro: []},
+        tot = {wide: 0, medium: 0, macro: 0},
+        F = [];
+      [...GAME].forEach(n => {
+        let k = 0;
+        const O = new Set();
+        covViews(n).forEach(([v]) => {
+          const c = covOf(n, v);
+          k += c.n;
+          tot[v] += c.n;
+          perV[v].push(c.n);
+          c.L.forEach(x => (O.add(x.o || x.f), F.push(x.f)));
+        });
+        play += k;
+        cols += O.size;
+        per.push(k);
+      });
+      let wait = 0,
+        rej = 0;
+      Object.keys(DATA.gen).forEach(n =>
+        cands(n)
+          .filter(x => !(entry(n).add || {})[x.f])
+          .forEach(x => (rejected(x.f) ? rej++ : wait++))
+      );
+      const pool = Object.fromEntries(cells('[data-pov="pool"] tbody tr').map(r => [r[0], Number(r[1])]));
+      const views = Object.fromEntries(cells('[data-pov="views"] tbody tr').map(r => [r[0], r]));
+      return {
+        kpi: [...document.querySelectorAll('.adm-pov .adm-kpis b')].map(b => b.innerText.trim()),
+        want: [String(play), String(cols), String(per.filter(Boolean).length), String(wait)],
+        pool,
+        rej,
+        sum: ['In play', 'Not in games', 'Comparison only', 'Removed', 'Candidates', 'Rejected', 'Excluded'].reduce(
+          (t, k) => t + pool[k],
+          0
+        ),
+        genus: cells('[data-pov="genus"] tbody tr')[0],
+        wantMed: txt(med(per)),
+        wantRange: `${Math.min(...per)}–${Math.max(...per)}`,
+        views: [
+          ['Colony', 'wide'],
+          ['Close-up', 'medium'],
+          ['Corallites', 'macro']
+        ].map(([t, v]) => [views[t] && views[t][1], String(tot[v]), views[t] && views[t][3].split(' ')[0], txt(med(perV[v]))]),
+        never: Number(cells('[data-pov="answers"] tbody tr')[0][1]),
+        wantNever: F.filter(f => !nAns(STATS[f])).length,
+        ends: document.querySelectorAll('[data-pov="ends"] a.adm-gen').length,
+        wide: document.documentElement.scrollWidth - innerWidth
+      };
+    });
+    if (ov.kpi.join() !== ov.want.join()) fails.push(`${w}px Overview: headline ${ov.kpi} instead of ${ov.want}`);
+    if (ov.pool['In play'] !== Number(ov.want[0]) || ov.pool.Rejected !== ov.rej || ov.pool.Total !== ov.sum)
+      fails.push(`${w}px Overview: All photos ${JSON.stringify(ov.pool)}, rejected ${ov.rej}`);
+    if (!ov.genus || ov.genus[1].split(' ')[0] !== ov.wantMed || ov.genus[2] !== ov.wantRange)
+      fails.push(`${w}px Overview: per genus ${ov.genus} instead of median ${ov.wantMed}, range ${ov.wantRange}`);
+    if (ov.views.some(([a, b, c, d]) => a !== b || c !== d)) fails.push(`${w}px Overview: views ${JSON.stringify(ov.views)}`);
+    if (ov.never !== ov.wantNever) fails.push(`${w}px Overview: ${ov.never} photos never rated instead of ${ov.wantNever}`);
+    if (ov.ends !== 10) fails.push(`${w}px Overview: ${ov.ends} genus links in Fewest and most`);
+    if (ov.wide > 0) fails.push(`${w}px Overview: page ${ov.wide} px wider than the window`);
+    // A photo in play and a candidate sent to Not this genus › Look-alike comparison (curation out 'cmp') leave their genus
+    // for no other one: they move to the Comparison only row, once each, and the total stays (Codex review #430: they fell
+    // out of the inventory). Two Undo steps put them back.
+    const poolRows = () =>
+      p.evaluate(() =>
+        Object.fromEntries(
+          [...document.querySelectorAll('[data-pov="pool"] tbody tr')].map(r => [
+            r.children[0].innerText.trim(),
+            Number(r.children[1].innerText)
+          ])
+        )
+      );
+    const cm0 = await poolRows(),
+      cmp = await p.evaluate(() => {
+        const n = [...GAME].find(m => covOf(m, 'wide').L.some(x => !x.from && !x.cand) && pending(m).some(x => !x.from)),
+          f = covOf(n, 'wide').L.find(x => !x.from && !x.cand).f,
+          c = pending(n).find(x => !x.from);
+        ACT.out(n, f, null, 'cmp');
+        ACT.out(n, c.f, null, 'cmp');
+        return {n, f, c: c.f, rej: rejected(c.f)};
+      });
+    await settle();
+    const cm1 = await poolRows();
+    if (
+      cm1.Total !== cm0.Total ||
+      cm1['Comparison only'] !== cm0['Comparison only'] + 2 ||
+      cm1['In play'] !== cm0['In play'] - 1 ||
+      cm1[cmp.rej ? 'Rejected' : 'Candidates'] !== cm0[cmp.rej ? 'Rejected' : 'Candidates'] - 1
+    )
+      fails.push(`${w}px Overview: comparison only ${JSON.stringify({cmp, before: cm0, after: cm1})}`);
+    await p.evaluate(() => (undo(), undo()));
+    await settle();
+    const cm2 = await poolRows();
+    if (JSON.stringify(cm2) !== JSON.stringify(cm0)) fails.push(`${w}px Overview: undo of comparison only ${JSON.stringify(cm2)}`);
+    // Photo list moved to Photo review (By difficulty) and kept its address; the Photo stats tab opens on Overview, also
+    // in a browser that remembered Photo list as its view.
+    const mv = await p.evaluate(() => ({
+      diff: tabOf('~diff')[1],
+      diffs: tabOf('~stats-photos')[1],
+      first: TABS.find(t => t[0] === 'pstats')[2][0][0]
+    }));
+    if (mv.diff !== 'Photo review' || mv.diffs !== 'Photo stats' || mv.first !== '~pstats')
+      fails.push(`${w}px Photo stats tabs: ${JSON.stringify(mv)}`);
+    await p.evaluate(() => store.set('imr-admin-view', {...store.get('imr-admin-view', {}), pstats: '~diff'}));
+    await go('~quality');
+    const ps = await p.evaluate(() =>
+      [...document.querySelectorAll('#subnav .adm-subtabs a')].find(a => /Photo stats/.test(a.textContent)).getAttribute('href')
+    );
+    if (ps !== '#~pstats') fails.push(`${w}px Photo stats: a remembered Photo list view opens ${ps}, not Overview`);
     // Health (To do): its four sections from the demo answers, with and without this browser's own answers, no sideways
     // page scroll; a photo everyone misses opens in the lightbox.
     const health = () =>

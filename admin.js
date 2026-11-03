@@ -1077,7 +1077,8 @@ const GROUPS = [
         'Photo review',
         [
           ['~quality', 'Quality'],
-          ['~form', 'Growth form']
+          ['~form', 'Growth form'],
+          ['~diff', 'By difficulty']
         ]
       ],
       ['look', 'Look-alikes', [['~look', 'Look-alikes']]],
@@ -1085,8 +1086,8 @@ const GROUPS = [
         'pstats',
         'Photo stats',
         [
-          ['~stats-photos', 'Difficulty'],
-          ['~diff', 'Photo list']
+          ['~pstats', 'Overview'],
+          ['~stats-photos', 'Difficulty']
         ]
       ]
     ]
@@ -1234,6 +1235,7 @@ function render() {
   // A device that never signed in, by anonymous id (its own route: a player's name may start with any character).
   if (cur.startsWith('~anon/')) return renderJourney('', cur.slice(6));
   if (cur === '~diff') return renderDiff();
+  if (cur === '~pstats') return renderPstats();
   if (modeKey() === 'stats') return renderStats();
   if (cur === '~look' || cur === '~mont') return renderMont(); // ~mont = old address, kept for bookmarks
   if (cur === '~cand') return renderCand();
@@ -1806,7 +1808,7 @@ const HELP = {
   },
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
-  start: `<p><b>Three groups, nine tabs</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health: players' reports, your flags, the errors their devices send, how the app is working for them) and <b>Coverage</b> (Games, Sheets & Finder: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form), <b>Look-alikes</b>, <b>Photo stats</b> (Difficulty, Photo list). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (Activity, Confusions). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
+  start: `<p><b>Three groups, nine tabs</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health: players' reports, your flags, the errors their devices send, how the app is working for them) and <b>Coverage</b> (Games, Sheets & Finder: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (Activity, Confusions). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Photo review</b>: check the quality and growth form guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Coverage › Games</b>: Where to look, above the grid, says which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
     <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
@@ -1821,10 +1823,13 @@ const HELP = {
     <p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). All / Others / Me: everyone, everyone but the name synced in this browser, or only it. Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
   statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Look-alike from the data</b>: a pair no source declares, offered together ${CONF.N} times or more with a score of ${CONF.TRAP} or more: the duels, the Again after a mix-up and the genus sheets treat it as a declared look-alike (the app adds a shared growth form to the start, so its count may differ by a pair at the edge). <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
+  pstats: `<p>General numbers on every photo, from data.json and your draft (unpublished changes included) and the sheet's photo ratings. <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (field and IMR lecture photos of the game genera: the IMR slate, Millepora, the bonus genera; no Coral Finder book, several-corals, removed or sheet-only photo, no Colony photo whose form is not visible). <b>Colonies</b> = distinct iNaturalist observations (or lecture photos), as a question shows one colony. <b>Genera in play</b> = game genera with at least one photo in play (out of all of them when some have none).</p>
+    <p><b>All photos</b>: every photo the admin knows, each in one row, so the rows add up to the total. <b>Not in games</b>: on the genus sheets and the Coral Finder only, with the first reason that applies (the line under the table). <b>Comparison only</b>: photos (or candidates) you sent to Not this genus › Look-alike comparison: they left their genus and are shown only in the site's look-alike comparisons. <b>Removed</b>: taken off the site (Genera › Hidden), back with the candidates. <b>Candidates</b> = waiting for a decision: not added and not rejected (Coral Finder book pages included; hover the row for how many). <b>Rejected</b> = candidates you rejected (they stay candidates). <b>Excluded</b> = excluded for good (Genera › Excluded).</p>
+    <p><b>Median [middle half]</b>: half the genera have fewer, half more; the brackets hold the middle half of the genera (25th to 75th percentile), a spread that a few very rich or very poor genera do not pull. <b>Per genus</b> counts every game genus (the IMR slate, Millepora, the bonus genera), a genus without any counting 0. The bars: how many genera have each band of photos in play, from 0 (hover a bar for its genera). <b>Views</b> counts only the genera that have the view (a 2-level genus has no Close-up view); <b>None</b> = genera without a single photo in that view, out of those that have it. <b>Sources</b>: the photos in play by where they come from (Coral Finder book photos are never in games, so they have no row); <b>Genera</b> = genera with at least one photo in play from that source. <b>Answers per photo</b>: answers that rated each photo in play (sheet v18, as Difficulty; everyone's answers, yours included); under the table, the median of every photo in play, then of those rated at least once. Nothing here changes anything.</p>`,
   statsph: `<p>Photo difficulty (Elo) from the answers of players clearly above chance, signed in or not (sheet v18), each weighed by the player's experience: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (from sheet v18; before, weighed answers, so a photo answered once was hidden); few answers = rough. Genera: one lane per view (colony, close-up, corallites), a dot per photo (bigger and stronger with more answers), the lane's median as a bar, and from 5 photos a box (middle half of the photos) with whiskers; genera sorted by median. Click a dot to see the photo.</p>
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (players' level on the genus is above what the hardest photo of the view can challenge: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
-  diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
+  diff: `<p>Every photo with answers, hardest (or easiest) first, with its quality to re-rate (the former Photo stats › Photo list). How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time.</p>
     <p>The first 3 photos of each view are its featured photos (top of the genus sheet, Coral Finder). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. <b>Remove</b> takes a photo off the site (games included) and lists it with the candidates below, where you can add it back.</p>
     <p><b>Which no?</b> <b>Remove</b>: off the site, back with the candidates. <b>Reject</b> (Candidates): reviewed and not wanted, it stays a candidate. <b>Skip</b>: decide later. <b>Not this</b>: wrong genus, or only fit for a look-alike comparison. <b>×</b>: excluded for good (a person, a drawing, unusable).</p>
@@ -1857,6 +1862,7 @@ function toggleHelp() {
     {
       '~users': 'users',
       '~stats-photos': 'statsph',
+      '~pstats': 'pstats',
       '~stats-conf': 'statsconf',
       '~stats-needs': 'statsneeds',
       '~diff': 'diff'
@@ -4612,7 +4618,7 @@ function renderDiff() {
     <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}<span class="adm-src" title="Difficulty · answers that rated it, right (weighed by experience)">${d > 0 ? '+' : ''}${d.toFixed(1)} · ${nAns(S[p.f])} · ${pct(r, n)}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
   };
-  $v.innerHTML = `<section class="adm-quality"><div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [
+  $v.innerHTML = `<section class="adm-quality"><div class="adm-shead"><h2>Photos by difficulty</h2>${segBtns('min', [
     [1, '≥1'],
     [3, '≥3'],
     [10, '≥10']
@@ -4636,6 +4642,202 @@ function renderDiff() {
   );
   bindQ();
   bindStats();
+}
+
+/* ---------- Photo stats › Overview ---------- */
+// General numbers on every photo (Pierre, 2026-11-03: "how many photos are in play right now, roughly how many per genus
+// and per zoom level, with a median and a spread, not a box plot; if it says Photo stats, it must be stats"). Computed
+// in the browser from what the admin already has: data.json and the draft curation (in play = gamePool, what the games
+// can draw, as Coverage › Games), the candidates (cands, rejected marks, exclusions) and the sheet's photo ratings
+// (?stats=1, as Difficulty) for the answers per photo. A spread is "median [p25–p75]" (core.js distOf): the middle half
+// of the genera lies in the brackets. Per genus = over every game genus (the IMR slate, Millepora, the bonus genera),
+// zeros included; per view, over the genera that have the view (a 2-level genus has no Close-up view).
+// Why a photo of the site is not in the games (first reason that applies), as on Coverage (covOff) plus the genera the
+// games never ask and the Research Grade rule of the extra genera.
+const POOL_OFF = [
+  ['finder', 'Finder-only genus'],
+  ['cf', 'CF book'],
+  ['multi', 'several corals'],
+  ['ref', 'sheet only'],
+  ['x', 'form not visible'],
+  ['rg', 'not Research Grade'],
+  ['other', 'other']
+];
+function poolStats() {
+  const use = DRAFT.use || {},
+    G = [...GAME],
+    per = Object.create(null),
+    play = [],
+    inPlay = new Set();
+  G.forEach(n => {
+    const r = (per[n] = {n, k: 0, obs: new Set(), v: {}, s: {}, views: covViews(n).map(x => x[0])});
+    r.views.forEach(v =>
+      gamePool(n, v).forEach(p => {
+        r.k++;
+        r.obs.add(p.o || p.f);
+        r.v[v] = (r.v[v] || 0) + 1;
+        const o = origin(p);
+        r.s[o] = (r.s[o] || 0) + 1;
+        play.push({...p, genus: n, view: v});
+        inPlay.add(n + '|' + p.f);
+      })
+    );
+  });
+  // Photos kept only for the look-alike comparison (Not this genus › Look-alike comparison, curation out 'cmp'): they leave
+  // their genus (photos and cands skip them) for no other one, so they are counted here, once each, from the genus they
+  // left (Codex review #430: they fell out of the inventory). A candidate sent there counts here too, rejected or not.
+  const cmp = [...(sentTo('own', own).cmp || []), ...(sentTo('cand', rawCands).cmp || [])].length;
+  const st = {
+      play: play.length,
+      off: 0,
+      cmp,
+      removed: 0,
+      wait: 0,
+      waitBook: 0,
+      rej: 0,
+      excl: Object.keys(DRAFT.exclude || {}).length
+    },
+    off = {};
+  Object.keys(DATA.gen).forEach(n => {
+    photos(n).forEach(p => {
+      if (inPlay.has(n + '|' + p.f)) return;
+      if (hidden(n, p)) return st.removed++;
+      st.off++;
+      const why = !isGame(n)
+        ? 'finder'
+        : p.cf
+          ? 'cf'
+          : p.multi
+            ? 'multi'
+            : use[p.f] === 'ref'
+              ? 'ref'
+              : viewOf(n, p) === 'wide' && fOf(p.f) === 'x'
+                ? 'x'
+                : DATA.gen[n].x && !p.own && p.gid
+                  ? 'rg'
+                  : 'other';
+      off[why] = (off[why] || 0) + 1;
+    });
+    const add = entry(n).add || {};
+    cands(n)
+      .filter(p => !add[p.f])
+      .forEach(p => (rejected(p.f) ? st.rej++ : (st.wait++, p.cf && st.waitBook++)));
+  });
+  return {G, per, play, st, off};
+}
+// A number as the page writes it: whole numbers plain, others to one decimal (a median of an even count may be x.5).
+const numTxt = x => (x == null ? '–' : Math.abs(x - Math.round(x)) < 1e-9 ? String(Math.round(x)) : x.toFixed(1));
+// "median [p25–p75]" of a distOf result.
+const iqrTxt = d => (d.n ? `${numTxt(d.med)} <span class="note">[${numTxt(d.p25)}–${numTxt(d.p75)}]</span>` : '–');
+function renderPstats() {
+  status();
+  if (!STATS) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    loadStats(true).then(() => {
+      if (cur === '~pstats') render();
+    });
+    return;
+  }
+  const {G, per, play, st, off} = poolStats(),
+    R = G.map(n => per[n]),
+    gk = distOf(R.map(r => r.k)),
+    go = distOf(R.map(r => r.obs.size)),
+    colonies = R.reduce((t, r) => t + r.obs.size, 0),
+    withAny = R.filter(r => r.k).length,
+    gen = n => `<a class="adm-gen" href="#${esc(n)}"><i>${esc(n)}</i></a>`;
+  // Every photo the admin knows, by state, each counted once (what each row means: the ? help).
+  const total = st.play + st.off + st.cmp + st.removed + st.wait + st.rej + st.excl,
+    S = [
+      ['In play', st.play],
+      ['Not in games', st.off],
+      ['Comparison only', st.cmp],
+      ['Removed', st.removed],
+      ['Candidates', st.wait, st.waitBook ? `${st.waitBook} Coral Finder book photos` : ''],
+      ['Rejected', st.rej],
+      ['Excluded', st.excl]
+    ],
+    sm = Math.max(1, ...S.map(x => x[1]));
+  const offLine = POOL_OFF.filter(([k]) => off[k])
+    .map(([k, t]) => `${off[k]} ${t}`)
+    .join(' · ');
+  // Genera by photos in play: bars of a round width, about 10 of them.
+  const top = gk.max || 0,
+    bw = [1, 2, 5, 10, 20, 25, 50, 100, 200].find(w => top / w <= 12) || 500,
+    H = Array.from({length: Math.floor(top / bw) + 1}, (_, i) => ({lo: i * bw, hi: i * bw + bw - 1, L: []}));
+  R.forEach(r => H[Math.floor(r.k / bw)].L.push(r.n));
+  const hm = Math.max(1, ...H.map(h => h.L.length)),
+    byK = R.slice().sort((a, b) => a.k - b.k || a.obs.size - b.obs.size || a.n.localeCompare(b.n)),
+    gtab = (t, L) =>
+      `<table class="adm-tbl"><thead><tr><th>${t}</th><th class="n">Photos</th><th class="n">Colonies</th></tr></thead><tbody>${L.map(
+        r => `<tr><td>${gen(r.n)}</td><td class="n">${r.k}</td><td class="n">${r.obs.size}</td></tr>`
+      ).join('')}</tbody></table>`;
+  // Per view and per source: total, share, per genus spread, genera without (views) or with (sources).
+  const V = VIEWS.map(([v, t]) => {
+      const has = R.filter(r => r.views.includes(v));
+      return {
+        t,
+        k: play.filter(p => p.view === v).length,
+        d: distOf(has.map(r => r.v[v] || 0)),
+        none: has.filter(r => !r.v[v]).length,
+        of: has.length
+      };
+    }),
+    O = ORIGINS.filter(([o]) => o !== 'book').map(([o, t]) => ({
+      t,
+      k: play.filter(p => origin(p) === o).length,
+      d: distOf(R.map(r => r.s[o] || 0)),
+      with: R.filter(r => r.s[o]).length
+    }));
+  // Answers that rated each photo in play (sheet ?stats=1, as Difficulty), in bands.
+  const A = play.map(p => nAns(STATS[p.f])),
+    da = distOf(A),
+    dr = distOf(A.filter(x => x > 0)),
+    B = [
+      ['None', 0, 0],
+      ['1–2', 1, 2],
+      ['3–9', 3, 9],
+      ['10–29', 10, 29],
+      ['30+', 30, Infinity]
+    ].map(([t, a, b]) => [t, A.filter(x => x >= a && x <= b).length]),
+    bm = Math.max(1, ...B.map(b => b[1]));
+  $v.innerHTML =
+    `<section class="adm-pov"><div class="adm-shead"><h2>Photo overview</h2></div>` +
+    kpis([
+      ['Photos in play', st.play],
+      ['Colonies in play', colonies],
+      ['Genera in play', withAny === G.length ? withAny : `${withAny} / ${G.length}`],
+      ['Candidates', st.wait]
+    ]) +
+    `<div class="adm-sgrid">
+    <section class="adm-scard" data-pov="pool"><h3>All photos</h3><table class="adm-tbl"><tbody>${S.map(
+      ([t, k, d]) =>
+        `<tr${d ? ` title="${esc(d)}"` : ''}><td>${t}</td><td class="n">${k}</td><td class="n">${pct(k, total)}</td><td>${sbar(k, sm)}</td></tr>`
+    ).join('')}<tr><td><b>Total</b></td><td class="n"><b>${total}</b></td><td></td><td></td></tr></tbody></table>${
+      offLine ? `<p class="note">Not in games: ${offLine}.</p>` : ''
+    }</section>
+    <section class="adm-scard" data-pov="genus"><h3>Per genus</h3><table class="adm-tbl"><thead><tr><th></th><th>Median [middle half]</th><th>Range</th><th class="n">Mean</th></tr></thead><tbody>
+      <tr><td>Photos</td><td>${iqrTxt(gk)}</td><td>${numTxt(gk.min)}–${numTxt(gk.max)}</td><td class="n">${numTxt(gk.mean)}</td></tr>
+      <tr><td>Colonies</td><td>${iqrTxt(go)}</td><td>${numTxt(go.min)}–${numTxt(go.max)}</td><td class="n">${numTxt(go.mean)}</td></tr></tbody></table>
+      <div class="adm-cols adm-povh">${H.map(
+        h =>
+          `<div title="${h.lo === h.hi ? h.lo : `${h.lo}–${h.hi}`} photos: ${h.L.length} genus${h.L.length === 1 ? '' : 'es'}${h.L.length ? ' (' + esc(h.L.join(', ')) + ')' : ''}"><i style="height:${(100 * h.L.length) / hm}%"></i></div>`
+      ).join('')}</div>
+      <p class="adm-axis"><span>0</span><span>genera by photos in play, ${bw} per bar</span><span>${H.length * bw}</span></p></section>
+    <section class="adm-scard" data-pov="ends"><h3>Fewest and most</h3>${gtab('Fewest', byK.slice(0, 5))}${gtab('Most', byK.slice(-5).reverse())}</section>
+    <section class="adm-scard" data-pov="views"><h3>Views</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>View</th><th class="n">Photos</th><th class="n">Share</th><th>Per genus</th><th class="n">None</th></tr></thead><tbody>${V.map(
+      r =>
+        `<tr><td>${r.t}</td><td class="n">${r.k}</td><td class="n">${pct(r.k, st.play)}</td><td>${iqrTxt(r.d)}</td><td class="n">${r.none} / ${r.of}</td></tr>`
+    ).join('')}</tbody></table></div></section>
+    <section class="adm-scard" data-pov="sources"><h3>Sources</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Source</th><th class="n">Photos</th><th class="n">Share</th><th>Per genus</th><th class="n">Genera</th></tr></thead><tbody>${O.map(
+      r =>
+        `<tr><td>${r.t}</td><td class="n">${r.k}</td><td class="n">${pct(r.k, st.play)}</td><td>${iqrTxt(r.d)}</td><td class="n">${r.with}</td></tr>`
+    ).join('')}</tbody></table></div></section>
+    <section class="adm-scard" data-pov="answers"><h3>Answers per photo</h3><table class="adm-tbl"><thead><tr><th>Answers</th><th class="n">Photos</th><th class="n">Share</th><th></th></tr></thead><tbody>${B.map(
+      ([t, k]) => `<tr><td>${t}</td><td class="n">${k}</td><td class="n">${pct(k, A.length)}</td><td>${sbar(k, bm)}</td></tr>`
+    ).join(
+      ''
+    )}</tbody></table><p class="note">Median ${iqrTxt(da)}, mean ${numTxt(da.mean)}${dr.n ? `; the ${dr.n} rated: median ${iqrTxt(dr)}` : ''}.</p></section>
+    </div></section>`;
 }
 
 /* ---------- Photo coverage ---------- */
@@ -5053,7 +5255,8 @@ const ofAns = (k, fn) => {
   if (ANS_MEMO.a !== ANS) ANS_MEMO = {a: ANS, m: {}};
   return k in ANS_MEMO.m ? ANS_MEMO.m[k] : (ANS_MEMO.m[k] = fn());
 };
-function loadStats() {
+// ratingsOnly (Photo stats › Overview): the photo ratings alone (?stats=1), not the whole answer log.
+function loadStats(ratingsOnly) {
   // Script v6 keeps the anonymous-id salt secret and returns the caller's own id (me) for its name and code; the
   // local digest below only matches script v5 and older.
   const sy = store.get('imr-coral-sync', null) || {},
@@ -5079,15 +5282,19 @@ function loadStats() {
       .catch(() => ({}));
   const who = me && sy.pin ? `&name=${encodeURIComponent(me)}&pin=${encodeURIComponent(sy.pin)}` : '';
   const old = (j, q) => (j && j.error === 'input' ? get(q) : j);
-  const ga = TOKEN
-      ? post({readAnswers: 1, ...(me && sy.pin ? {aname: me, apin: sy.pin} : {})}).then(j => old(j, '?answers=1' + who))
-      : Promise.resolve({ok: false, error: 'token'}),
+  const ga = ratingsOnly
+      ? null
+      : TOKEN
+        ? post({readAnswers: 1, ...(me && sy.pin ? {aname: me, apin: sy.pin} : {})}).then(j => old(j, '?answers=1' + who))
+        : Promise.resolve({ok: false, error: 'token'}),
     gs = STATS ? null : TOKEN ? post({readStats: 1}).then(j => old(j, '?stats=1')) : get('?stats=1');
   return Promise.all([ga, gs, digest]).then(([a, s]) => {
-    ELO_NOME = null;
-    if (a && a.me) MEID = a.me;
-    ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
-    ANS.at = Date.now(); // when it was read (Recent sessions: "as of")
+    if (!ratingsOnly) {
+      ELO_NOME = null;
+      if (a && a.me) MEID = a.me;
+      ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
+      ANS.at = Date.now(); // when it was read (Recent sessions: "as of")
+    }
     if (s) {
       STATS = s.ok ? s.photos || {} : {};
       RAS = s.ok ? s.ras || {} : {};
@@ -6512,12 +6719,8 @@ function statsPhotos() {
   }
   const ds = L.map(p => p.d).sort((a, b) => a - b),
     mean = a => a.reduce((t, x) => t + x, 0) / a.length,
-    // Quantile q of a sorted list, linear between neighbours (the median at 0.5).
-    qtl = (a, q) => {
-      const i = (a.length - 1) * q,
-        k = Math.floor(i);
-      return a[k] + (a[Math.min(k + 1, a.length - 1)] - a[k]) * (i - k);
-    },
+    // Quantile q of a sorted list, linear between neighbours (the median at 0.5; core.js).
+    qtl = quantile,
     median = a =>
       qtl(
         a.slice().sort((x, y) => x - y),
