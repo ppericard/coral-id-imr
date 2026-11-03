@@ -2,222 +2,256 @@
  "genus": "Pachyseris",
  "photos": {
   "pachyseris-cand-269512598": {
-   "view": "wide",
+   "view": "medium",
    "quality": 3,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "note": "Surface closer than the added wide photo of this plate"
   },
   "pachyseris-cand-269459897": {
    "view": "wide",
    "quality": 3,
    "form": "F",
-   "keep": "best"
-  },
-  "pachyseris-cand-588678495": {
-   "view": "wide",
-   "quality": 3,
-   "form": "F",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Upright crests on a broad base."
+   "crop": [
+    0.12,
+    0.12,
+    1.0,
+    1.0
+   ]
   },
   "pachyseris-cand-607141022": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
-   "form": "M",
+   "form": "F",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Contorted massive colony; green cast."
+   "note": "Cyan cast; closer than the live wide photo of this colony"
   },
   "pachyseris-cand-711360173": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "F",
    "keep": "best",
-   "note": "Small, low-resolution image."
+   "note": "Smooth noise reduction at 100%"
   },
   "pachyseris-cand-224932507": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.05,
+    0.8,
+    0.95
+   ],
+   "note": "Green cast, soft at 100%"
   },
   "pachyseris-cand-379744927": {
    "view": "medium",
    "quality": 3,
-   "form": "x",
+   "form": "F",
    "keep": "best"
   },
   "pachyseris-cand-379744937": {
    "view": "wide",
-   "quality": 3,
-   "form": "M",
+   "quality": 2,
+   "form": "S",
    "keep": "best",
-   "note": "Crinoids on top."
+   "crop": [
+    0.1,
+    0.1,
+    0.85,
+    1.0
+   ],
+   "note": "Sea urchin spines in the middle; soft at 100%"
   },
   "pachyseris-cand-260366830": {
    "view": "wide",
    "quality": 3,
-   "form": "M",
-   "keep": "best"
-  },
-  "pachyseris-cand-710825351": {
-   "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "form": "S",
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.1,
+    0.85,
+    1.0
+   ]
   },
   "pachyseris-cand-713091469": {
    "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "best"
-  },
-  "pachyseris-cand-713091470": {
-   "view": "medium",
    "quality": 2,
    "form": "F",
-   "keep": "alt",
-   "note": "Plate margins; soft."
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.1,
+    0.95,
+    0.95
+   ],
+   "note": "Sharp in the centre only"
   },
   "pachyseris-cand-713091491": {
    "view": "medium",
    "quality": 3,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.15,
+    1.0,
+    1.0
+   ]
+  },
+  "pachyseris-cand-713091470": {
+   "view": "medium",
+   "quality": 3,
+   "form": "F",
+   "keep": "alt",
+   "note": "Underside and edge of other plates of the same colony"
   },
   "pachyseris-cand-358992994": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "F",
-   "keep": "best",
-   "multi": true,
-   "note": "Small plate in a busy reef scene with soft corals."
+   "keep": "dup",
+   "note": "Same reef scene as the live wide photo, smeared at 100%"
   },
   "pachyseris-cand-260323953": {
-   "view": "medium",
-   "quality": 2,
+   "view": "wide",
+   "quality": 3,
    "form": "M",
-   "keep": "best",
-   "note": "Dark."
+   "keep": "best"
   },
   "pachyseris-cand-260324288": {
    "view": "wide",
    "quality": 3,
    "form": "M",
-   "keep": "best"
+   "keep": "dup",
+   "note": "Same colony, same framing as the best"
   },
   "pachyseris-cand-89709405": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.05,
+    0.85,
+    1.0
+   ],
+   "unsure": [
+    "genus"
+   ],
+   "note": "A pink Pachyseris-like plate meets a grey meandroid colony; which is the subject is unclear"
   },
   "pachyseris-cand-710949483": {
-   "view": "wide",
+   "view": "medium",
    "quality": 3,
-   "form": "E",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Leafy crust spreading over rock."
+   "form": "S",
+   "keep": "best"
   },
   "pachyseris-cand-710949499": {
    "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "note": "A finger in the frame."
+   "quality": 3,
+   "form": "S",
+   "keep": "dup",
+   "note": "Same surface as the best; a finger at the bottom edge"
   },
   "pachyseris-cand-710949496": {
    "view": "medium",
-   "quality": 2,
-   "form": "x",
+   "quality": 3,
+   "form": "S",
    "keep": "dup",
-   "note": "Same framing as the best, finger in frame."
+   "note": "Same surface as the best; a finger at the bottom edge"
   },
   "pachyseris-cand-93255691": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Small in frame, blue cast."
-  },
-  "pachyseris-cand-661955988": {
-   "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "crop": [
+    0.05,
+    0.15,
+    0.95,
+    0.95
+   ],
+   "note": "Cyan cast, soft at 100%"
   },
   "pachyseris-cand-661965606": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "unsure": [
-    "form"
+   "crop": [
+    0.05,
+    0.1,
+    0.85,
+    0.95
    ],
-   "note": "Hazy."
+   "note": "Soft at 100%"
   },
-  "pachyseris-cand-630781047": {
-   "view": "wide",
-   "quality": 3,
-   "form": "E",
-   "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Small laminar colony."
-  },
-  "pachyseris-cand-410837026": {
-   "view": "wide",
-   "quality": 2,
-   "form": "F",
-   "keep": "best",
-   "note": "Blue cast."
-  },
-  "pachyseris-cand-175359409": {
-   "view": "wide",
-   "quality": 2,
-   "form": "F",
-   "keep": "best",
-   "multi": true,
-   "note": "Reef scene with an arrow overlay; several corals in frame."
-  },
-  "pachyseris-cand-195933655": {
-   "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "best"
-  },
-  "pachyseris-cand-589699283": {
-   "view": "wide",
+  "pachyseris-cand-661955988": {
+   "view": "medium",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "unsure": [
-    "form"
+   "note": "Soft, painted look at 100%"
+  },
+  "pachyseris-cand-630781047": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.1,
+    0.9,
+    0.85
    ],
-   "note": "Cyan cast, date stamp."
+   "note": "Soft at 100%"
+  },
+  "pachyseris-cand-410837026": {
+   "view": "wide",
+   "quality": 1,
+   "form": "F",
+   "keep": "best",
+   "note": "Strong blue cast over everything, ridges smeared at 100%"
+  },
+  "pachyseris-cand-195933655": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.15,
+    1.0,
+    0.92
+   ],
+   "note": "Soft at 100%"
+  },
+  "pachyseris-cand-589699283": {
+   "view": "wide",
+   "quality": 1,
+   "form": "S",
+   "keep": "best",
+   "note": "Strong cyan cast and soft over the frame; date stamp"
   },
   "pachyseris-cand-39413644": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Green cast."
+   "note": "Blue-green cast, soft at 100%"
   },
   "pachyseris-cand-479235371": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
+   "form": "F",
    "keep": "best",
-   "note": "Dark, cool cast."
+   "note": "Blue cast, soft at 100%"
   }
  }
 }

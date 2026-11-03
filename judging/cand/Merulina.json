@@ -2,80 +2,98 @@
  "genus": "Merulina",
  "photos": {
   "merulina-cand-488111018": {
-   "view": "medium",
-   "quality": 3,
+   "view": "macro",
+   "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "note": "Soft at 100%"
   },
   "merulina-cand-488111015": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.05,
+    0.92,
+    1.0
+   ],
+   "unsure": [
+    "keep"
+   ],
+   "note": "Wider than the added medium photo of this colony"
   },
   "merulina-cand-269469318": {
    "view": "wide",
-   "quality": 2,
-   "form": "F",
-   "keep": "best"
-  },
-  "merulina-cand-488110891": {
-   "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Plate with faint radial ridges; valleys hard to see"
+   "crop": [
+    0.1,
+    0.1,
+    1.0,
+    1.0
+   ]
   },
   "merulina-cand-269466897": {
    "view": "wide",
    "quality": 3,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.1,
+    0.98,
+    0.95
+   ],
+   "note": "Mushroom coral tentacles at right"
   },
   "merulina-cand-588432586": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
    "keep": "best",
+   "multi": true,
    "unsure": [
-    "form"
+    "multi"
    ],
-   "note": "Tiered plates with branching upgrowths"
+   "note": "Reef scene with many plating and branching colonies; brittle star; watermark"
   },
   "merulina-cand-588015497": {
-   "view": "wide",
-   "quality": 2,
+   "view": "medium",
+   "quality": 3,
    "form": "E",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Large flat encrusting plate with short white-flecked valleys; Merulina ampliata likely"
+   "note": "Closer than the added wide photo of this colony"
   },
   "merulina-cand-269472276": {
    "view": "wide",
    "quality": 2,
-   "form": "F",
+   "form": "B",
    "keep": "best",
    "multi": true,
-   "note": "Soft corals crowd the frame around the plate"
+   "note": "Branching Pocillopora-like heads and a crinoid fill much of the frame"
   },
   "merulina-cand-177256044": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "F",
    "keep": "best",
    "multi": true,
-   "note": "Tiered plates top left; many other corals in frame"
+   "note": "Smeared at 100%; reef scene with many corals and a fish"
   },
   "merulina-cand-260007385": {
    "view": "wide",
    "quality": 3,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.08,
+    0.95,
+    1.0
+   ]
   },
   "merulina-cand-336614774": {
    "view": "medium",
@@ -85,74 +103,117 @@
    "unsure": [
     "genus"
    ],
-   "note": "Knobby branch tips; Merulina scabricula plausible, Pocillopora not ruled out"
+   "note": "Soft at 100%; knobby branches may be another genus"
+  },
+  "merulina-cand-385445372": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Soft at 100%"
   },
   "merulina-cand-385445363": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "alt"
-  },
-  "merulina-cand-385445372": {
-   "view": "medium",
-   "quality": 3,
-   "form": "F",
-   "keep": "best"
+   "keep": "alt",
+   "crop": [
+    0.0,
+    0.05,
+    1.0,
+    0.85
+   ],
+   "unsure": [
+    "keep"
+   ],
+   "note": "Same colony, lower angle, green veil"
   },
   "merulina-cand-385445384": {
    "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "best"
-  },
-  "merulina-cand-604391549": {
-   "view": "wide",
    "quality": 2,
-   "form": "B",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Bushy colony of frilly branches; Merulina scabricula plausible"
+   "form": "F",
+   "keep": "dup",
+   "note": "Same colony from above, similar to the best"
   },
   "merulina-cand-604391543": {
    "view": "wide",
    "quality": 2,
    "form": "B",
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.0,
+    0.95,
+    0.85
+   ],
+   "note": "Moorish idol at bottom"
+  },
+  "merulina-cand-604391549": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
    "keep": "dup",
-   "note": "Same framing as the best"
+   "note": "Same colony and framing; Moorish idol in the middle"
   },
   "merulina-cand-91232487": {
    "view": "medium",
    "quality": 3,
-   "form": "B",
-   "keep": "best"
+   "form": "F",
+   "keep": "best",
+   "note": "Watermark"
+  },
+  "merulina-cand-662430617": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.08,
+    0.95,
+    1.0
+   ],
+   "note": "Soft at 100%"
   },
   "merulina-cand-662430524": {
    "view": "medium",
    "quality": 2,
-   "form": "x",
-   "keep": "best"
-  },
-  "merulina-cand-662430617": {
-   "view": "wide",
-   "quality": 3,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "note": "Painted look at 100%, 1264 px"
   },
   "merulina-cand-336570577": {
    "view": "wide",
    "quality": 2,
-   "form": "B",
-   "keep": "best"
-  },
-  "merulina-cand-607269648": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "form": "F",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.0,
+    0.9,
+    1.0
+   ],
+   "note": "Soft at 100%"
   },
   "merulina-cand-607269689": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Soft corals at left take a large part of the frame"
+  },
+  "merulina-cand-607269648": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Bleached patch in the centre; shallow focus"
+  },
+  "merulina-cand-260014440": {
    "view": "wide",
    "quality": 3,
    "form": "F",
@@ -160,71 +221,63 @@
   },
   "merulina-cand-260014103": {
    "view": "wide",
-   "quality": 2,
-   "form": "B",
-   "keep": "alt"
+   "quality": 3,
+   "form": "F",
+   "keep": "dup",
+   "note": "Close to the live wide photo of this colony"
   },
   "merulina-cand-260014330": {
    "view": "medium",
    "quality": 3,
-   "form": "B",
+   "form": "F",
    "keep": "best"
-  },
-  "merulina-cand-260014440": {
-   "view": "wide",
-   "quality": 2,
-   "form": "B",
-   "keep": "dup"
   },
   "merulina-cand-260014521": {
    "view": "wide",
    "quality": 3,
-   "form": "B",
-   "keep": "best"
+   "form": "F",
+   "keep": "dup",
+   "note": "Same colony, framing like the best"
   },
   "merulina-cand-260014709": {
-   "view": "medium",
+   "view": "wide",
    "quality": 3,
    "form": "F",
-   "keep": "alt"
-  },
-  "merulina-cand-566697902": {
-   "view": "medium",
-   "quality": 2,
-   "form": "F",
-   "keep": "best"
+   "keep": "alt",
+   "crop": [
+    0.0,
+    0.1,
+    1.0,
+    0.85
+   ],
+   "note": "Side view showing the plate base under the branches"
   },
   "merulina-cand-661956026": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Small cup-shaped plate with bumps but no clear valleys; juvenile, genus hard to confirm"
-  },
-  "merulina-cand-335951855": {
-   "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Mound of short knobby branches; valleys not clear at this size"
-  },
-  "merulina-cand-607143562": {
-   "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "best"
+   "note": "Soft at 100%"
   },
   "merulina-cand-607143567": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.08,
+    0.0,
+    0.92,
+    1.0
+   ],
+   "note": "Green cast, soft at 100%"
+  },
+  "merulina-cand-607143562": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Green cast, soft at 100%"
   },
   "merulina-cand-260021817": {
    "view": "wide",
@@ -237,44 +290,60 @@
    "quality": 3,
    "form": "F",
    "keep": "dup",
-   "note": "Same colony, slightly wider framing"
+   "note": "Same colony, algae tuft in the centre"
   },
   "merulina-cand-684021118": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Soft over the whole frame, algae-covered; genus hard to confirm"
   },
   "merulina-cand-335952469": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "note": "908 px but readable"
   },
   "merulina-cand-260153979": {
    "view": "wide",
    "quality": 3,
    "form": "F",
-   "keep": "best"
-  },
-  "merulina-cand-662429079": {
-   "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.25,
+    0.1,
+    0.85,
+    0.95
+   ]
   },
   "merulina-cand-662429176": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "note": "Soft at 100%"
+  },
+  "merulina-cand-662429079": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "1197 px, soft at 100%"
   },
   "merulina-cand-260403003": {
    "view": "wide",
-   "quality": 2,
-   "form": "S",
-   "keep": "best",
-   "note": "Crinoid crosses the colony"
+   "quality": 3,
+   "form": "F",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "A pipefish lies across the middle and a crinoid at left take the eye"
   }
  }
 }

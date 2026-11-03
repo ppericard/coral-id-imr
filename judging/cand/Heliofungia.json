@@ -3,28 +3,26 @@
  "photos": {
   "heliofungia-cand-269732453": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
-   "keep": "best",
-   "polyps": true,
-   "note": "Short tentacles over the septa (fralinae type); other fungiids at top edge."
+   "keep": "dup",
+   "note": "Same disc and framing as the live Colony photos"
   },
   "heliofungia-cand-269734323": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
    "multi": true,
-   "note": "Several fungiids; the left one looks like Fungia. Dark."
+   "note": "Three mushroom corals side by side"
   },
   "heliofungia-cand-269395867": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
+   "quality": 2,
+   "form": "U",
    "keep": "best",
    "polyps": true,
-   "note": "Long tentacles with white tips around the mouth."
+   "note": "Closer than the live photos: tentacles and mouth"
   },
   "heliofungia-cand-269734274": {
    "view": "wide",
@@ -32,191 +30,157 @@
    "form": "U",
    "keep": "best",
    "polyps": true,
-   "note": "Two individuals with tentacles out."
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Two discs, the second at the lower left"
   },
   "heliofungia-cand-579366106": {
-   "view": "medium",
+   "view": "wide",
    "quality": 2,
-   "form": "x",
+   "form": "U",
    "keep": "best",
    "polyps": true,
-   "note": "Long white-tipped tentacles; blue cast; small retracted fungiid at left."
+   "multi": true,
+   "unsure": [
+    "multi",
+    "quality"
+   ],
+   "note": "Blue cast; another mushroom coral under the tentacles"
   },
   "heliofungia-cand-579366115": {
-   "view": "medium",
+   "view": "wide",
    "quality": 2,
-   "form": "x",
+   "form": "U",
    "keep": "dup",
    "polyps": true
   },
   "heliofungia-cand-579366118": {
-   "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "dup",
-   "polyps": true
-  },
-  "heliofungia-cand-453587801": {
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "best",
-   "polyps": true,
-   "note": "Whole individual, tentacles out; blue cast."
-  },
-  "heliofungia-cand-453587788": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best",
-   "note": "Mouth and white-tipped tentacles."
+   "keep": "dup",
+   "polyps": true
   },
   "heliofungia-cand-459714959": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
-   "note": "Tentacles contracted; disc edge with septa visible."
+   "polyps": true
   },
   "heliofungia-cand-269294424": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
-   "note": "Disc hidden by white-tipped tentacles; side view."
+   "polyps": true
   },
   "heliofungia-cand-269294579": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "alt",
    "polyps": true,
-   "note": "Top view."
+   "note": "From above"
   },
   "heliofungia-cand-269733993": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
-   "keep": "alt",
-   "polyps": true,
-   "note": "Tentacles nearly retracted, septa visible."
+   "keep": "best",
+   "note": "Tentacles retracted, septa visible; live photos show them out"
   },
   "heliofungia-cand-269734170": {
    "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "alt",
-   "polyps": true,
-   "note": "Tentacles extended; a Fungia at the left edge."
-  },
-  "heliofungia-cand-269734178": {
-   "view": "medium",
    "quality": 2,
-   "form": "x",
-   "keep": "best",
+   "form": "U",
+   "keep": "dup",
    "polyps": true,
-   "note": "Tentacles over the septa; disc edge cut."
+   "note": "Same disc and angle as the live Colony photos"
   },
   "heliofungia-cand-269734201": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
-   "keep": "best",
+   "keep": "dup",
    "polyps": true,
-   "note": "Whole disc, short tentacles over the septa."
-  },
-  "heliofungia-cand-269734223": {
-   "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "alt",
-   "polyps": true,
-   "note": "Tentacles out, top view."
+   "note": "Same disc and angle as the live Colony photos"
   },
   "heliofungia-cand-538874372": {
-   "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "polyps": true,
-   "note": "Long white-tipped tentacles; vignette."
-  },
-  "heliofungia-cand-538874377": {
-   "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "dup",
-   "polyps": true
-  },
-  "heliofungia-cand-538874380": {
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "best",
+   "keep": "dup",
    "polyps": true,
-   "note": "Whole individual, tentacles radiating; vignette, cyan cast."
+   "note": "Same disc and framing as the live Colony photo"
+  },
+  "heliofungia-cand-538874377": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "dup",
+   "polyps": true,
+   "note": "Same disc and framing as the live Colony photo"
   },
   "heliofungia-cand-543305818": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
+   "quality": 2,
+   "form": "U",
    "keep": "best",
-   "polyps": true
+   "polyps": true,
+   "note": "Sharp tentacles"
   },
   "heliofungia-cand-238276672": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best",
    "polyps": true,
    "unsure": [
     "genus"
    ],
-   "note": "Small individual, short knobbed tentacles over septa; could be another fungiid."
+   "note": "Small orange polyp, smooth tentacles; Heliofungia not certain"
   },
   "heliofungia-cand-437182912": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
    "unsure": [
     "genus"
    ],
-   "note": "Small orange individual with short purple-tipped tentacles; could be another fungiid."
+   "note": "Orange disc with red-tipped short tentacles; watermark; genus not certain"
   },
   "heliofungia-cand-474990317": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
+   "view": "medium",
+   "quality": 2,
+   "form": "U",
    "keep": "best",
-   "note": "White-tipped tentacles over the striped oral disc."
+   "polyps": true,
+   "note": "Tentacles over the striped septa; other framing than the live photo"
   },
   "heliofungia-cand-475151021": {
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "best",
-   "polyps": true,
-   "note": "Held in a hand; hazy."
+   "genus": "exclude",
+   "note": "Coral held in a hand"
   },
   "heliofungia-cand-475152351": {
-   "view": "medium",
+   "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "best",
-   "polyps": true,
-   "note": "Underside of the disc showing the skeleton, held in a hand."
+   "genus": "exclude",
+   "note": "Bleached disc held by a hand"
   },
   "heliofungia-cand-469859056": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
-   "note": "Dark tentacles on sand; dim."
+   "polyps": true
   },
   "heliofungia-cand-469859057": {
    "view": "wide",
@@ -227,43 +191,46 @@
   },
   "heliofungia-cand-708442907": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "polyps": true
+  },
+  "heliofungia-cand-706289880": {
+   "view": "wide",
+   "quality": 2,
    "form": "U",
    "keep": "best",
    "polyps": true,
-   "note": "Red-brown tentacles with white tips."
-  },
-  "heliofungia-cand-706289880": {
-   "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "polyps": true,
-   "note": "Part of the individual on sand."
+   "crop": [
+    0.0,
+    0.0,
+    0.85,
+    0.85
+   ]
   },
   "heliofungia-cand-268983444": {
    "view": "medium",
    "quality": 1,
-   "form": "x",
-   "keep": "best",
-   "polyps": true,
-   "note": "Very dark, green cast."
-  },
-  "heliofungia-cand-64941914": {
-   "view": "wide",
-   "quality": 3,
    "form": "U",
    "keep": "best",
    "polyps": true,
-   "note": "Long tentacles; slight cast."
+   "note": "Very dark green frame"
+  },
+  "heliofungia-cand-64941914": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "keep": "best",
+   "polyps": true
   },
   "heliofungia-cand-611605452": {
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "alt",
+   "keep": "dup",
    "polyps": true,
-   "note": "Side angle; survey pencil and hand."
+   "note": "Same as 3 with a hand holding a ruler"
   },
   "heliofungia-cand-611605459": {
    "view": "wide",
@@ -271,7 +238,7 @@
    "form": "U",
    "keep": "dup",
    "polyps": true,
-   "note": "Hand with pencil."
+   "note": "Same as 3 with a hand holding a ruler"
   },
   "heliofungia-cand-611605462": {
    "view": "wide",
@@ -279,7 +246,13 @@
    "form": "U",
    "keep": "best",
    "polyps": true,
-   "note": "Top view on sand; pencil tip at the edge."
+   "crop": [
+    0.4,
+    0.0,
+    1.0,
+    1.0
+   ],
+   "note": "A ruler at the bottom left, trimmed by the crop"
   },
   "heliofungia-cand-696290593": {
    "view": "wide",
@@ -287,85 +260,74 @@
    "form": "U",
    "keep": "best",
    "polyps": true,
-   "note": "Small, green tentacles, a brittle star on it."
+   "note": "Dark arms of a brittle star across the centre"
   },
   "heliofungia-cand-436633343": {
+   "view": "wide",
+   "quality": 2,
+   "form": "U",
+   "genus": "exclude",
+   "note": "A long-spined sea urchin takes half the frame"
+  },
+  "heliofungia-cand-693755221": {
    "view": "wide",
    "quality": 1,
    "form": "U",
    "keep": "best",
    "polyps": true,
-   "note": "Half hidden by a sea urchin."
+   "note": "Dark green cast, soft at 100%; date stamp"
   },
-  "heliofungia-cand-693755221": {
+  "heliofungia-cand-247740503": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
-   "note": "Green cast, date stamp."
-  },
-  "heliofungia-cand-247740503": {
-   "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "best",
-   "polyps": true,
-   "note": "Long white-tipped tentacles fill the frame."
+   "polyps": true
   },
   "heliofungia-cand-604393486": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
-   "note": "A small white fungiid lies on top; other fungiids at the edges."
+   "polyps": true
   },
   "heliofungia-cand-575525885": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "U",
    "keep": "best",
    "polyps": true,
-   "note": "Small in frame, dark; another one at the right edge."
+   "note": "Small polyp, soft and noisy at 100%"
   },
   "heliofungia-cand-698883534": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best",
-   "polyps": true,
-   "note": "Round individual on sand."
+   "polyps": true
   },
   "heliofungia-cand-698883531": {
-   "view": "medium",
+   "view": "wide",
    "quality": 2,
-   "form": "x",
-   "keep": "best",
+   "form": "U",
+   "keep": "dup",
    "polyps": true,
-   "note": "Closer; a finger touches the tentacles."
+   "note": "Closer, a finger on the tentacles"
   },
   "heliofungia-cand-698883533": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "dup",
    "polyps": true
   },
   "heliofungia-cand-519529275": {
-   "view": "medium",
-   "quality": 2,
-   "form": "x",
+   "view": "wide",
+   "quality": 1,
+   "form": "U",
    "keep": "best",
    "polyps": true,
-   "note": "Dim, green cast; fungiid at top right edge."
-  },
-  "heliofungia-cand-628796267": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best",
-   "note": "Tentacles with a shrimp; cyan cast."
+   "note": "1200 px, milky green veil, soft"
   }
  }
 }

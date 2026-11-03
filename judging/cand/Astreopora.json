@@ -6,7 +6,7 @@
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Algae patch over part of the colony"
+   "note": "Algae tuft on the colony"
   },
   "astreopora-cand-245795180": {
    "view": "wide",
@@ -19,44 +19,41 @@
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "dup"
+   "keep": "dup",
+   "note": "Same colony and framing as the live Colony photo"
   },
   "astreopora-cand-270765530": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "dup",
+   "note": "Same colony and framing as the live Colony photo"
   },
   "astreopora-cand-465407783": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "note": "Slightly soft"
+   "keep": "best"
   },
   "astreopora-cand-465408369": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "note": "Soft, washed out"
+   "keep": "best"
   },
   "astreopora-cand-270763520": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Dark"
+   "note": "Wider than the live Closer photo"
   },
   "astreopora-cand-269667674": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Dark tiered plates; corallites too small to confirm Astreopora (Montipora?)"
+   "keep": "dup",
+   "note": "Same plates as the live Colony and Closer photos"
   },
   "astreopora-cand-269006897": {
    "view": "wide",
@@ -64,89 +61,66 @@
    "form": "M",
    "keep": "best"
   },
-  "astreopora-cand-654478554": {
-   "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Corallites show clear septa; could be Cyphastrea or another genus"
-  },
   "astreopora-cand-445299203": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "note": "Hazy"
+   "keep": "best"
   },
   "astreopora-cand-195947110": {
    "view": "medium",
    "quality": 1,
    "form": "x",
    "keep": "best",
-   "note": "Blurred, green cast"
+   "note": "Blurred green surface, corallites hard to read"
   },
   "astreopora-cand-195947408": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Corallites not visible at this distance"
+   "keep": "best"
   },
   "astreopora-cand-675216286": {
    "view": "wide",
    "quality": 2,
-   "form": "B",
+   "form": "x",
    "genus": "exclude",
-   "note": "Soft coral (not a stony coral)"
+   "note": "A soft coral is the subject; the coral at right is small"
   },
   "astreopora-cand-57893669": {
-   "view": "medium",
+   "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Purple crust; septa visible, could be Cyphastrea"
+   "keep": "best"
   },
   "astreopora-cand-260020468": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "note": "Green cast, dark"
+   "keep": "best"
   },
   "astreopora-cand-260020620": {
    "view": "medium",
    "quality": 3,
-   "form": "x",
+   "form": "M",
    "keep": "best"
   },
   "astreopora-cand-260020757": {
    "view": "medium",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
-   "keep": "alt"
+   "keep": "alt",
+   "note": "Another part of the colony, side light"
   },
   "astreopora-cand-473241285": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Boulder; corallites not visible, genus hard to confirm"
+   "keep": "best"
   },
   "astreopora-cand-2249876": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best"
   },
@@ -161,7 +135,7 @@
    "quality": 2,
    "form": "M",
    "keep": "alt",
-   "note": "Blue cast"
+   "note": "Another part of the colony"
   },
   "astreopora-cand-269008516": {
    "view": "wide",
@@ -173,32 +147,33 @@
    "view": "medium",
    "quality": 2,
    "form": "M",
-   "keep": "alt"
-  },
-  "astreopora-cand-605674087": {
-   "view": "medium",
-   "quality": 3,
-   "form": "M",
    "keep": "best"
   },
-  "astreopora-cand-725536633": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
+  "astreopora-cand-605674087": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
    "keep": "best"
   },
   "astreopora-cand-725536647": {
-   "view": "wide",
-   "quality": 3,
+   "view": "medium",
+   "quality": 2,
    "form": "M",
-   "keep": "best"
+   "keep": "best",
+   "note": "Wider than the live Corallites photo"
   },
   "astreopora-cand-57893636": {
    "view": "wide",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Half of the colony dead, algae"
+   "crop": [
+    0.15,
+    0.0,
+    0.75,
+    1.0
+   ],
+   "note": "Half the colony overgrown by algae"
   }
  }
 }

@@ -1,67 +1,42 @@
 {
  "genus": "Euphyllia",
  "photos": {
-  "euphyllia-cand-34785125": {
-   "view": "wide",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
-  },
-  "euphyllia-cand-269514982": {
-   "view": "wide",
-   "quality": 2,
-   "form": "x",
-   "keep": "best"
-  },
-  "euphyllia-cand-269516718": {
-   "view": "wide",
-   "quality": 2,
-   "form": "x",
-   "keep": "best"
-  },
-  "euphyllia-cand-310596948": {
+  "euphyllia-cand-230308818": {
    "view": "medium",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Few tentacles in a crevice; Euphyllia plausible but colony not visible"
-  },
-  "euphyllia-cand-577328093": {
-   "view": "wide",
-   "quality": 2,
-   "form": "x",
-   "keep": "best"
-  },
-  "euphyllia-cand-230308818": {
-   "view": "macro",
-   "quality": 2,
-   "form": "x",
-   "keep": "best"
+   "note": "Tentacles out, soft at 100%"
   },
   "euphyllia-cand-230308857": {
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "note": "Tentacles out"
   },
   "euphyllia-cand-224932847": {
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "note": "Tentacles out; a small shrimp among them"
   },
   "euphyllia-cand-714339907": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.0,
+    0.85,
+    1.0
+   ]
   },
   "euphyllia-cand-335732087": {
-   "view": "medium",
-   "quality": 3,
+   "view": "wide",
+   "quality": 2,
    "form": "x",
    "keep": "best"
   },
@@ -70,7 +45,12 @@
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "note": "Dark background"
+   "crop": [
+    0.15,
+    0.0,
+    0.85,
+    0.9
+   ]
   },
   "euphyllia-cand-634469211": {
    "view": "wide",
@@ -78,13 +58,20 @@
    "form": "x",
    "keep": "best",
    "multi": true,
-   "note": "Soft corals take a large part of the frame"
+   "unsure": [
+    "multi"
+   ],
+   "note": "Soft corals fill the lower half"
   },
   "euphyllia-cand-600484912": {
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Rounded tentacle tips; date stamp; Plerogyra possible"
   },
   "euphyllia-cand-600484917": {
    "view": "wide",
@@ -94,7 +81,7 @@
    "unsure": [
     "genus"
    ],
-   "note": "Bulbous contracted tentacles; same colony as the best, but could suggest Plerogyra"
+   "note": "Bubble-like tips, date stamp; Plerogyra possible"
   },
   "euphyllia-cand-385444281": {
    "view": "wide",
@@ -113,43 +100,37 @@
    "quality": 1,
    "form": "x",
    "keep": "best",
-   "multi": true,
-   "note": "Dark and blurred; Euphyllia among branching coral"
-  },
-  "euphyllia-cand-742225701": {
-   "view": "wide",
-   "quality": 2,
-   "form": "x",
-   "keep": "best"
+   "note": "Cyan cast and soft over the whole frame"
   },
   "euphyllia-cand-267307332": {
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "note": "Soft at 100%"
   },
   "euphyllia-cand-267307337": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "x",
    "keep": "alt",
-   "note": "Same colony from another angle, with neighbours"
+   "note": "Motion blur over the whole frame"
   },
   "euphyllia-cand-566741813": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "x",
    "keep": "best"
   },
   "euphyllia-cand-566741828": {
    "view": "medium",
-   "quality": 3,
+   "quality": 2,
    "form": "x",
    "keep": "best"
   },
   "euphyllia-cand-604391103": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "x",
    "keep": "best"
   },
@@ -157,7 +138,13 @@
    "view": "wide",
    "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.15,
+    0.85,
+    1.0
+   ]
   },
   "euphyllia-cand-662428407": {
    "view": "wide",
@@ -173,13 +160,14 @@
    "unsure": [
     "genus"
    ],
-   "note": "Small phaceloid colony with green tentacles; Euphyllia likely"
+   "note": "Separate small green polyps; genus not certain"
   },
   "euphyllia-cand-559719436": {
-   "view": "macro",
+   "view": "medium",
    "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "note": "Skeleton visible among the tentacles"
   }
  }
 }

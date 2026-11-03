@@ -3,119 +3,125 @@
  "photos": {
   "lithophyllon-cand-270770473": {
    "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "E",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "attached plate (L. undulatum type), dark busy frame; a tunicate at the top"
-  },
-  "lithophyllon-cand-270611264": {
-   "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "domed disc with smooth septa; arch looks high for Lithophyllon"
+   "note": "Sea squirt at the top edge"
   },
   "lithophyllon-cand-270611371": {
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "alt",
-   "unsure": [
-    "genus"
-   ],
-   "note": "closer; domed disc with smooth septa"
+   "keep": "best",
+   "crop": [
+    0.05,
+    0.1,
+    0.95,
+    0.92
+   ]
+  },
+  "lithophyllon-cand-270611264": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "dup",
+   "note": "Same disc, same framing as the best"
   },
   "lithophyllon-cand-270611436": {
    "view": "wide",
    "quality": 3,
    "form": "U",
    "keep": "dup",
-   "unsure": [
-    "genus"
-   ],
-   "note": "same disc, same framing"
+   "note": "Same disc, same framing as the best"
   },
   "lithophyllon-cand-661978419": {
    "view": "wide",
    "quality": 3,
    "form": "U",
    "keep": "best",
-   "note": "flat round disc with fine regular septa"
+   "crop": [
+    0.15,
+    0.1,
+    0.85,
+    0.95
+   ]
   },
   "lithophyllon-cand-335901635": {
+   "view": "wide",
+   "quality": 1,
+   "form": "U",
+   "keep": "best",
+   "note": "Whole frame soft, disc edges doubled"
+  },
+  "lithophyllon-cand-386539540": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "soft focus; small disc, septal teeth not readable"
-  },
-  "lithophyllon-cand-386539540": {
-   "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "best",
    "multi": true,
-   "note": "several free-living discs in frame"
+   "unsure": [
+    "multi"
+   ],
+   "note": "Several similar mushroom discs fill the frame; green cast"
   },
   "lithophyllon-cand-262219693": {
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "septa look coarse and ragged; Danafungia not ruled out"
+   "keep": "best"
   },
   "lithophyllon-cand-262219762": {
    "view": "wide",
    "quality": 3,
    "form": "U",
    "keep": "dup",
-   "unsure": [
-    "genus"
-   ],
-   "note": "same disc, same framing"
+   "note": "Same disc, same framing as the best"
   },
   "lithophyllon-cand-265912736": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "slightly soft; damselfish-free frame with rubble"
+   "multi": true,
+   "note": "Branching corals take much of the frame around the disc; soft"
   },
   "lithophyllon-cand-358993100": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "blue cast; fish around the disc"
+   "crop": [
+    0.1,
+    0.25,
+    0.65,
+    0.9
+   ],
+   "note": "Magenta flash on the disc, cyan background"
   },
   "lithophyllon-cand-247048928": {
-   "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "domed disc with thick wavy septa; Fungia or Danafungia possible"
-  },
-  "lithophyllon-cand-239672518": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "blue cast; second smaller disc below"
+   "crop": [
+    0.15,
+    0.1,
+    0.85,
+    0.98
+   ]
+  },
+  "lithophyllon-cand-239672518": {
+   "view": "wide",
+   "quality": 3,
+   "form": "U",
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.2,
+    0.85,
+    1.0
+   ],
+   "note": "A second small disc below"
   },
   "lithophyllon-cand-177050047": {
    "view": "wide",
@@ -123,7 +129,10 @@
    "form": "U",
    "keep": "best",
    "multi": true,
-   "note": "several discs, hydroid branches over them"
+   "unsure": [
+    "multi"
+   ],
+   "note": "Two mushroom discs and other growth; which one is the subject is unclear"
   },
   "lithophyllon-cand-337148456": {
    "view": "wide",
@@ -131,56 +140,61 @@
    "form": "U",
    "keep": "best",
    "multi": true,
-   "note": "disc is small among large massive corals"
+   "note": "Reef scene: the disc is small among massive corals"
   },
   "lithophyllon-cand-654655104": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "disc small in the frame"
+   "note": "small"
   },
   "lithophyllon-cand-224931252": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best",
    "multi": true,
    "unsure": [
-    "genus"
+    "multi"
    ],
-   "note": "two fungiids; left one has tentacles out and may be another genus"
+   "note": "Two discs side by side, tentacles out"
   },
   "lithophyllon-cand-712507513": {
    "view": "wide",
    "quality": 3,
    "form": "U",
    "keep": "best",
-   "note": "pale disc; septa visible"
+   "crop": [
+    0.15,
+    0.1,
+    0.9,
+    0.95
+   ]
   },
   "lithophyllon-cand-66646142": {
+   "view": "wide",
+   "quality": 1,
+   "form": "U",
+   "keep": "best",
+   "unsure": [
+    "quality"
+   ],
+   "note": "551 px, soft; disc still readable"
+  },
+  "lithophyllon-cand-247135106": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "hazy green water"
-  },
-  "lithophyllon-cand-247135106": {
-   "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "thick lobed septa on a domed disc; Danafungia possible"
+   "note": "Smooth painted look at 100%"
   },
   "lithophyllon-cand-661982219": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "fine regular septa, flat disc"
+   "note": "Blue-grey cast, soft at 100%"
   },
   "lithophyllon-cand-175677841": {
    "view": "wide",
@@ -188,15 +202,14 @@
    "form": "U",
    "keep": "best",
    "multi": true,
-   "note": "rubble field with many fungiids and branching corals"
+   "note": "Many mushroom discs among branching corals, subject unclear"
   },
   "lithophyllon-cand-445317217": {
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "best",
-   "multi": true,
-   "note": "two Heliofungia take most of the frame; disc at top centre"
+   "genus": "exclude",
+   "note": "A sea urchin, a sponge and tentacles cover most of the frame; the disc is small"
   }
  }
 }
