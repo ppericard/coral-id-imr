@@ -105,7 +105,8 @@ These came from Pierre's explicit feedback. When in doubt, follow them over your
 | `tools/` | Python build/import scripts; `tools/sync/Code.gs` is the Google Apps Script for progress sync; `tools/commonness.py` measures once how common each game genus is near Dauin (iNaturalist) into `data.json` `cm`, which the opening of genera uses (common first); `tools/learnsim.js` the learning-outcome simulation. |
 | `judging/` | Package for an outside photo-judging agent. |
 | `.github/workflows/pages.yml` | Single Pages deployer: main pushes, manual dispatch and Candidate photos completion; requires Actions source. Recovery: `docs/PAGES.md`. |
-| `.github/workflows/approved-photos.yml` | After each `curation.json` push: download approved candidates, refill candidate lists. |
+| `.github/workflows/approved-photos.yml` | After each `curation.json` push: download approved candidates, refill candidate lists, then mirror `img/` to R2. |
+| `.github/workflows/photos-r2.yml`, `tools/r2_sync.sh` | Mirror `img/` to the Cloudflare R2 bucket (rclone, checksums: only changed files go up) on a push that changes `img/`, or by hand. Secrets `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` and variable `R2_BUCKET`, set by Pierre; without them it does nothing. |
 
 Details in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
