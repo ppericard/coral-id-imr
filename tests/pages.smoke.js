@@ -318,6 +318,203 @@ async function overlays(b, base) {
   return fails;
 }
 
+// Signing in to an existing account (Pierre, 2026-11-03: players type only their first name, so two of them can pick the
+// same name, even the same simple code). The sheet is never reached (AGENTS.md rule 13): every request to the sync
+// script is answered inside the page by a wrapped fetch (SHEET below), a route answers the same way, and the script's
+// hosts are mapped to this computer. Checks: a name taken with another code says so and suggests the initial; an
+// existing account asks "Is it you?" with its answers and last play, on a device with progress of its own and on a fresh
+// one; No merges, saves and sends nothing and puts the cursor back in the name; Yes signs in and merges; a new name
+// signs in at once; the tour's sign-in step asks the same. Returns the failures.
+const SHEET = () => {
+  const reply = (u, o) => {
+    const q = new URL(String(u)).searchParams,
+      body = o && o.body ? JSON.parse(o.body) : null,
+      log = JSON.parse(localStorage.getItem('test-sheet-log') || '[]');
+    log.push(body ? {post: 1, name: body.name || '', data: !!body.data} : {get: 1, name: q.get('name') || ''});
+    localStorage.setItem('test-sheet-log', JSON.stringify(log));
+    const at = Date.parse('2026-10-20T09:30:00Z'),
+      account = {
+        'imr-coral-progress': JSON.stringify({'~level': {ok: 200, ko: 45, th: 0.4, at}, Acropora: {ok: 30, ko: 5, th: 0.3, at}}),
+        'imr-coral-quiz': '{"bon":false}'
+      };
+    if (body) return body.name ? {ok: true, log: true, rev: 4} : {ok: false, error: 'input'};
+    if (!q.get('name')) return {ok: false};
+    if (q.get('name').toLowerCase() !== 'anna') return {ok: true, found: false};
+    if (q.get('pin') !== '1234') return {ok: false, error: 'pin'};
+    return {ok: true, found: true, updated: '2026-10-20T10:00:00.000Z', rev: 3, data: account};
+  };
+  const f = window.fetch;
+  window.fetch = (u, o) => {
+    const s = String((u && u.url) || u);
+    if (!/script\.google/.test(s)) return f(u, o);
+    const r = reply(s, o);
+    return Promise.resolve(new Response(JSON.stringify(r), {headers: {'Content-Type': 'application/json'}}));
+  };
+};
+async function signin(base) {
+  const fails = [],
+    bs = await chromium.launch({
+      args: ['--host-resolver-rules=MAP script.google.com 127.0.0.1, MAP script.googleusercontent.com 127.0.0.1']
+    });
+  const open = async (init, hash = '') => {
+    const c = await bs.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
+    await c.addInitScript(SHEET);
+    await c.addInitScript(init || (() => {}));
+    await c.route(
+      u => !u.href.startsWith(base),
+      async r => {
+        const u = r.request().url();
+        if (!/script\.google/.test(u)) return r.abort();
+        fails.push('sign-in: a sync request escaped the wrapped fetch: ' + u.slice(0, 80));
+        r.fulfill({contentType: 'application/json', body: '{"ok":false,"error":"input"}'});
+      }
+    );
+    const p = await c.newPage();
+    p.on('pageerror', e => fails.push('sign-in page error: ' + e.message));
+    p.setDefaultTimeout(8000);
+    await p.goto(base + hash);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    return [c, p];
+  };
+  // One scenario in a fresh browser context; a step that cannot run (a button missing) is a failure, not a crash.
+  const run = async (init, fn) => {
+    const [c, p] = await open(init);
+    try {
+      await fn(p);
+    } catch (e) {
+      fails.push('sign-in: ' + String(e.message).split('\n')[0]);
+    }
+    await c.close();
+  };
+  const seen = () => {
+    if (!localStorage.getItem('imr-tour')) localStorage.setItem('imr-tour', '"done"');
+    localStorage.setItem('imr-nudge', '1');
+  };
+  const card = async p => {
+    await p.evaluate(() => document.querySelectorAll('.recalc .next').forEach(x => x.click())); // a later note, if any
+    await p.click('#signb');
+    await p.waitForSelector('.signnudge form.sform', {timeout: 5000});
+  };
+  const submit = async (p, name, pin) => {
+    await p.fill('.signnudge input[name=n]', name);
+    await p.fill('.signnudge input[name=p]', pin);
+    await p.click('.signnudge form.sform button[type=submit]');
+  };
+  const state = p =>
+    p.evaluate(() => ({
+      sync: localStorage.getItem('imr-coral-sync'),
+      log0: JSON.parse(localStorage.getItem('imr-log0') || '[]').length,
+      prog: JSON.parse(localStorage.getItem('imr-coral-progress') || '{}'),
+      posts: JSON.parse(localStorage.getItem('test-sheet-log') || '[]').filter(x => x.post && x.name)
+    }));
+  // A device with progress of its own (3 answers played signed out).
+  await run(
+    () => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+      localStorage.setItem('imr-recalc', '"millepora-counts-2026-11"'); // the last "progress recalculated" note: seen
+      if (localStorage.getItem('test-own')) return;
+      localStorage.setItem('test-own', '1');
+      const t = new Date().toISOString();
+      localStorage.setItem(
+        'imr-log0',
+        JSON.stringify([1, 2, 3].map(i => ({id: 'own' + i, t, g: 'Porites', a: 'Porites', ok: 1, m: 'quiz'})))
+      );
+      localStorage.setItem('imr-coral-progress', JSON.stringify({Porites: {ok: 3, ko: 0, th: 0.2}}));
+    },
+    async p => {
+      await card(p);
+      const ph = await p.getAttribute('.signnudge input[name=n]', 'placeholder');
+      if (!/initial/i.test(ph || '')) fails.push(`sign-in: the name field does not ask for the initial (placeholder "${ph}")`);
+      // A name taken with another code.
+      await submit(p, 'Anna', '9999');
+      await p
+        .waitForFunction(() => /Someone already uses/.test(document.querySelector('.signnudge [role=status]').textContent), null, {
+          timeout: 5000
+        })
+        .catch(() => {});
+      const pin = await p.textContent('.signnudge [role=status]');
+      if (!/Someone already uses the name Anna\. If it isn't you, add your surname's initial \(Anna B\.\)/.test(pin))
+        fails.push(`sign-in: name taken with another code says "${pin}"`);
+      // The right code: "Is it you?" with the account's numbers, nothing merged yet.
+      await submit(p, 'Anna', '1234');
+      await p.waitForSelector('.signnudge .sconfirm', {timeout: 5000}).catch(() => {});
+      const ask = await p.evaluate(() => (document.querySelector('.signnudge .tsync') || {}).textContent || '');
+      if (!/Is it you\?/.test(ask) || !/An account named Anna already exists: 245 answers, last played 20 Oct( 2026)?\./.test(ask))
+        fails.push(`sign-in: no "Is it you?" with the account's numbers: "${ask.replace(/\s+/g, ' ').slice(0, 200)}"`);
+      if (!/3 answers played on this device join it/.test(ask))
+        fails.push('sign-in: the question does not say this device has 3 answers to add');
+      let s = await state(p);
+      if (s.sync || s.posts.length) fails.push('sign-in: something was saved or sent before the answer to "Is it you?"');
+      // No: nothing merged, saved or sent; the form again, the name focused, the hint.
+      await p.click('.signnudge .sconfirm button[type=button]');
+      await p.waitForTimeout(1500);
+      s = await state(p);
+      const back = await p.evaluate(() => ({
+        focus: document.activeElement && document.activeElement.name,
+        name: (document.querySelector('.signnudge input[name=n]') || {}).value,
+        hint: (document.querySelector('.signnudge [role=status]') || {}).textContent
+      }));
+      if (s.sync || s.posts.length || s.log0 !== 3 || Object.keys(s.prog).join() !== 'Porites' || s.prog.Porites.ok !== 3)
+        fails.push(`sign-in: "No, it's someone else" changed this device or sent progress: ${JSON.stringify(s).slice(0, 200)}`);
+      if (back.focus !== 'n' || back.name !== 'Anna' || !/Anna B\./.test(back.hint || ''))
+        fails.push(`sign-in: after "No", not back on the name with the hint: ${JSON.stringify(back)}`);
+      // Yes: signed in, this device's answers merged into the account, then sent.
+      await submit(p, 'Anna', '1234');
+      await p.waitForSelector('.signnudge .sconfirm', {timeout: 5000}).catch(() => {});
+      await Promise.all([p.waitForNavigation({timeout: 15000}).catch(() => {}), p.click('.signnudge .sconfirm button[type=submit]')]);
+      await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000}).catch(() => {});
+      await p
+        .waitForFunction(() => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.post && x.name === 'Anna'), null, {
+          timeout: 15000
+        })
+        .catch(() => {});
+      s = await state(p);
+      const sy = JSON.parse(s.sync || 'null');
+      if (!sy || sy.name !== 'Anna' || !s.prog.Porites || !s.prog.Acropora || (s.prog['~level'] || {}).ok !== 200 || !s.posts.length)
+        fails.push(
+          `sign-in: "Yes, it's me" did not sign in and merge: ${JSON.stringify({sync: !!sy, prog: Object.keys(s.prog), posts: s.posts.length})}`
+        );
+    }
+  );
+  // A fresh device: the question too (Pierre, 2026-11-03: everyone confirms the account), with no "this device" line.
+  await run(seen, async p => {
+    await card(p);
+    await submit(p, 'anna', '1234');
+    await p.waitForSelector('.signnudge .sconfirm', {timeout: 5000}).catch(() => {});
+    const ask = await p.evaluate(() => (document.querySelector('.signnudge .tsync') || {}).textContent || '');
+    if (!/Is it you\?/.test(ask)) fails.push('sign-in: a fresh device entered an existing account without "Is it you?"');
+    if (/on this device/.test(ask)) fails.push('sign-in: a fresh device is told it has answers to add');
+    await p.click('.signnudge .sconfirm button[type=button]');
+    await p.waitForTimeout(1000);
+    const s = await state(p);
+    if (s.sync || s.posts.length || Object.keys(s.prog).length) fails.push('sign-in: "No" on a fresh device saved or sent something');
+    // A new name: signed in at once, no question.
+    await submit(p, 'Anna B.', '1234');
+    await p.waitForFunction(() => !!localStorage.getItem('imr-coral-sync'), null, {timeout: 10000}).catch(() => {});
+    const n = await state(p);
+    if (!n.sync || JSON.parse(n.sync).name !== 'Anna B.' || (await p.$('.signnudge .sconfirm')))
+      fails.push('sign-in: a new name did not sign in at once');
+  });
+  // The tour's sign-in step: the same question.
+  await run(
+    () => localStorage.setItem('imr-nudge', '1'),
+    async p => {
+      await p.waitForSelector('#tour .tnext', {timeout: 10000}).catch(() => {});
+      for (let k = 0; k < 4 && !(await p.$('#tour .tsync form')); k++) await p.click('#tour .tnext');
+      if (await p.$('#tour .tsync form')) {
+        await p.fill('#tour .tsync input[name=n]', 'Anna');
+        await p.fill('#tour .tsync input[name=p]', '1234');
+        await p.click('#tour .tsync button[type=submit]');
+        await p.waitForSelector('#tour .tsync .sconfirm', {timeout: 5000}).catch(() => {});
+        if (!(await p.$('#tour .tsync .sconfirm'))) fails.push('sign-in: the tour\'s sign-in step does not ask "Is it you?"');
+      } else fails.push("sign-in: the tour's sign-in step was not found");
+    }
+  );
+  await bs.close();
+  return fails;
+}
+
 (async () => {
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`,
@@ -672,12 +869,13 @@ async function overlays(b, base) {
     await ctx.close();
   }
   await b.close();
+  for (const f of await signin(base)) fails.push(f);
   server.close();
   if (fails.length) {
     console.error('Page errors:\n' + fails.join('\n'));
     process.exit(1);
   }
-  console.log(`Pages OK: ${ROUTES.length} routes + admin at 390 and 1280 px.`);
+  console.log(`Pages OK: ${ROUTES.length} routes + admin at 390 and 1280 px, sign-in to an existing account.`);
 })().catch(e => {
   console.error(e);
   process.exit(1);

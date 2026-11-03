@@ -698,6 +698,29 @@
   // yet (model.js weighted) is multiplied by sqrt((1 + cm) / (1 + median cm of those genera)), cm = how common the genus
   // is near Dauin on iNaturalist (data.json, tools/commonness.py). No constant: the square root damps it, the median
   // makes it relative to the genera still to open. A genus without cm counts as the median (factor 1).
+  // An existing account at sign-in (Pierre, 2026-11-03: players type only their first name, so two of them can pick the
+  // same name and code; sync.js bindSync asks "Is it you?" before entering it): what its saved progress, as the sheet's
+  // sign-in reply carries it (data, updated), says about it. n: answers (the LEVEL record's ok + ko; 0 for progress saved
+  // before LEVEL existed), genera: genera answered, at: the last answer (LEVEL.at, else the latest genus s.at, else the
+  // sheet's last save, then saved is true). A missing or broken field counts as nothing, never as an error.
+  function accountOf(data, updated) {
+    let R = {};
+    try {
+      R = JSON.parse((data && data['imr-coral-progress']) || '{}');
+    } catch (e) {}
+    if (!isObj(R)) R = {};
+    const num = x => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 0),
+      L = isObj(R[LEVEL]) ? R[LEVEL] : {},
+      gs = Object.keys(R).filter(g => g !== LEVEL && isObj(R[g]) && num(R[g].ok) + num(R[g].ko) > 0);
+    let at = num(L.at) || Math.max(0, ...gs.map(g => num(R[g].at))),
+      saved = false;
+    if (!at) {
+      at = num(typeof updated === 'number' ? updated : Date.parse(String(updated || '')));
+      saved = !!at;
+    }
+    return {n: num(L.ok) + num(L.ko), genera: gs.length, at, saved};
+  }
+
   function commonFactor(cms) {
     const v = (cms || []).filter(x => typeof x === 'number' && x >= 0).sort((a, b) => a - b),
       h = v.length >> 1,
@@ -804,6 +827,7 @@
     START,
     playerStart,
     levelSeed,
+    accountOf,
     commonFactor,
     applyCuration,
     applySlots,

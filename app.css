@@ -2890,6 +2890,18 @@ footer {
   width: 6em;
   letter-spacing: 0.2em;
 }
+/* The form's message (a name taken, "pick a name of your own"): a line of its own in body colour, apart from the help below. */
+.sform [role='status']:not(:empty) {
+  flex-basis: 100%;
+  color: var(--ink);
+}
+.sform + .note {
+  margin-top: 10px;
+}
+/* "Is it you?" (sync.js, an existing account): Yes and No share the row, or each takes a full row when they wrap. */
+.sconfirm button {
+  flex: 1 1 auto;
+}
 /* Look-alikes: families (Look-alikes page) and the "Don't confuse with" section of a genus sheet.
    Every genus at the same size and in the same view, so they can be compared at a glance. */
 .lfam {
