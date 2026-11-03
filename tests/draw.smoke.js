@@ -1112,7 +1112,12 @@ const server = http.createServer((req, res) => {
             const c = document.querySelector('.unlock.mxlost');
             if (c) (seen++, c.querySelector('.next').click());
             document.querySelectorAll('.unlock').forEach(x => x.remove());
-            document.querySelector(`#view [data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
+            // Right: its choice, or typed on a typed question (model.js TYPED: a genus well on its way is sometimes
+            // asked typed).
+            const b = document.querySelector(`#view [data-c="${CSS.escape(SHOWNQ[1])}"]`),
+              f = document.querySelector('#view .tyform');
+            if (b) b.click();
+            else ((f.querySelector('input').value = SHOWNQ[1]), f.requestSubmit());
           }
           const A = store.get(ACHK, {}) || {};
           return {seen, mx: (P[t] || {}).mx, learn1: A.learn1, gone: (A._gone || {}).learn1, M: store.get(MXL.KEY, null)};
