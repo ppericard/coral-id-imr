@@ -476,3 +476,30 @@ test('mergeProgress: the comeback times (last answer, days answered right) keep 
   assert.deepStrictEqual([r.Acropora.at, r.Acropora.dd, r.Acropora.dl], [400, 4, 20005]);
   assert.strictEqual(mergeProgress({}, {Acropora: {ok: 1, ko: 0, h: '1'}}, {}).Acropora.at, undefined);
 });
+
+test('levelMargin: the 95% margin of a level, on the replay of the level, shrinks with answers and stays wide after easy runs', () => {
+  const {levelMargin} = require('../core.js');
+  let t = 0;
+  const row = (id, ok, mode = 'quiz') => [
+    id,
+    ++t,
+    'Acropora',
+    ok ? 'Acropora' : 'Porites',
+    ok,
+    mode,
+    'p' + (t % 40),
+    null,
+    0,
+    0,
+    'Acropora Porites Montipora Pocillopora'
+  ];
+  const few = [...Array(35)].map(() => row('a', 1)),
+    many = [...Array(245)].map((_, i) => row('b', i % 5 ? 1 : 0)),
+    m = levelMargin([...few, ...many]);
+  assert.ok(m.a > 1.5 * m.b, `${m.a} vs ${m.b}`);
+  assert.ok(m.b > 0.1 && m.b < 0.6, String(m.b));
+  // A 2-choice answer tells less than a 4-choice one.
+  const two = levelMargin([...Array(50)].map((_, i) => row('d', i % 5 ? 1 : 0, 'quiz|k2'))).d,
+    four = levelMargin([...Array(50)].map((_, i) => row('e', i % 5 ? 1 : 0))).e;
+  assert.ok(two > four, `${two} vs ${four}`);
+});

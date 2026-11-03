@@ -193,6 +193,14 @@
       .filter(Boolean).length;
     return n >= 2 && n < 4 ? 1 / n : 0.25;
   };
+  // How sure a player's level is (Pierre, 2026-11-03: a level from 35 answers at 97% right sat above one from 245):
+  // {player id: 95% margin, in level units}, 1.96 / sqrt(Fisher information) gathered on the same replay as the level
+  // itself (eloReplay, Code.gs stats_ ras; Codex review #375): an answer that was a near-sure success tells little, so a
+  // run of easy right answers keeps the margin wide.
+  function levelMargin(rows) {
+    const {R} = eloReplay(rows || []);
+    return Object.fromEntries(Object.entries(R).map(([k, r]) => [k, r[2] > 0 ? 1.96 / Math.sqrt(r[2]) : Infinity]));
+  }
   function trustOf(rows) {
     const T = {},
       out = {};
@@ -221,7 +229,8 @@
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
   // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them). Every answer
   // moves the player's level; the photos move on trusted players' answers only (trustOf, v17), weighed as above.
-  function eloOf(rows) {
+  // The replay behind eloOf (Code.gs stats_): photo ratings P and player levels R ([level, answers, information]).
+  function eloReplay(rows) {
     const P = {},
       R = {},
       H = {},
@@ -252,6 +261,10 @@
             p[3]++;
           });
         }
+        // Fisher information about the level from this answer, on the same model as the level's step (levelMargin).
+        const s = sig(ra[0] - b),
+          p = g + (1 - g) * s;
+        ra[2] = (ra[2] || 0) + ((1 - g) * s * (1 - s)) ** 2 / Math.max(1e-6, p * (1 - p));
         ra[0] += (0.6 / (1 + n / 40)) * d;
         ra[1]++;
         hs.forEach(h => {
@@ -259,6 +272,10 @@
           h[1] += ok;
         });
       });
+    return {P, R};
+  }
+  function eloOf(rows) {
+    const {P} = eloReplay(rows);
     const out = {};
     Object.keys(P).forEach(
       f => (out[f] = [Math.round(P[f][0] * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]])
@@ -765,6 +782,7 @@
     mergeOld,
     mergeProgress,
     eloOf,
+    levelMargin,
     trustOf,
     TRUST,
     PHOTO_W,
