@@ -128,12 +128,26 @@ const server = http.createServer((req, res) => {
       if (m.type() === 'error' && !/Failed to load resource|net::ERR_/.test(m.text())) errs.push(m.text());
     });
     p.on('dialog', d => d.accept());
+    // Waits for the page's state, not a fixed time (test-suite review, 2026-11-04: 300 + 200 ms at each of ~90 steps per
+    // width): no demo call in flight (admin-demo.js DEMO_PENDING), no "Loading…" note, both for three frames in a row
+    // (the hash change and the render a reply starts land within a frame).
     const settle = async () => {
-      await p.waitForTimeout(300);
+      await p.evaluate(() => (window.__calm = 0));
       await p
-        .waitForFunction(() => !/^\s*Loading/.test((document.querySelector('#view .note') || {}).textContent || ''), null, {timeout: 15000})
-        .catch(async () => fails.push(`${w}px ${await p.evaluate(() => location.hash)}: still loading`));
-      await p.waitForTimeout(200);
+        .waitForFunction(
+          () => {
+            const busy = window.DEMO_PENDING > 0 || /^\s*Loading/.test((document.querySelector('#view .note') || {}).textContent || '');
+            window.__calm = busy ? 0 : (window.__calm || 0) + 1;
+            return window.__calm >= 3;
+          },
+          null,
+          {timeout: 15000, polling: 'raf'}
+        )
+        .catch(async () =>
+          fails.push(
+            `${w}px ${await p.evaluate(() => location.hash)}: still loading (${await p.evaluate(() => window.DEMO_PENDING)} demo call(s) in flight)`
+          )
+        );
     };
     const go = async h => {
       errs.length = 0;
@@ -477,6 +491,9 @@ const server = http.createServer((req, res) => {
     await p.evaluate(() => (window.prompt = (q, def) => def)); // the suggested name (Playwright accepts a prompt empty)
     await p.click('[data-uren="Ben Demo"]');
     await p.waitForFunction(() => /Ben Demo-test/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
+    // The rename reloads the players, their answers and stats, and the table is drawn again as each comes in: read it
+    // once all are in (a row read in between was missing, and reported as "Carla's name is greyed").
+    await settle();
     const ren = await text();
     if (!/Ben Demo-test/.test(ren) || /Ben Demo\s/.test(ren.replace(/Ben Demo-test/g, '')))
       fails.push(`${w}px Players: rename Ben Demo → Ben Demo-test not shown`);
@@ -503,11 +520,14 @@ const server = http.createServer((req, res) => {
         .catch(() => null);
     for (const n of ['Ben Demo-test', 'Test Demo']) {
       const h = await nameOf(n);
-      if (!h || h.tag || h.color !== h.muted || h.italic !== 'italic' || !h.title.includes(n) || !/hidden/i.test(h.title))
+      if (!h) fails.push(`${w}px Players: hidden player ${n}: row not found`);
+      else if (h.tag || h.color !== h.muted || h.italic !== 'italic' || !h.title.includes(n) || !/hidden/i.test(h.title))
         fails.push(`${w}px Players: hidden player ${n} not greyed without a tag (${JSON.stringify(h)})`);
     }
     const shown = await nameOf('Carla Demo');
-    if (!shown || shown.color === shown.muted || shown.italic === 'italic') fails.push(`${w}px Players: Carla's name is greyed`);
+    if (!shown) fails.push(`${w}px Players: Carla's row not found`);
+    else if (shown.color === shown.muted || shown.italic === 'italic')
+      fails.push(`${w}px Players: Carla's name is greyed (${JSON.stringify(shown)})`);
     // A very long name never widens the table on a phone (Pierre, 2026-11-03): only the Name column grows, up to its cap
     // (admin.css --cut), the name ends in "…" and its title holds it whole.
     if (w === 390) {

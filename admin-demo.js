@@ -667,7 +667,7 @@
       return head || !text ? {ok: true, answers: n, stored} : {ok: true, answers: n, stored, report: text};
     });
   };
-  window.fetch = async (u, opts = {}) => {
+  const demoFetch = async (u, opts) => {
     const url = String(u && u.url ? u.url : u);
     if (url.startsWith('https://api.github.com/user')) return ok({login: 'demo'});
     if (url.startsWith('https://api.github.com/repos/'))
@@ -692,6 +692,17 @@
     }
     if (/^https?:/.test(url) && !url.startsWith(location.origin)) return Promise.reject(new TypeError('Blocked in demo mode'));
     return real(u, opts);
+  };
+  // Calls in flight through the demo (its sync script and GitHub answers, and the site's own files): tests/admin.smoke.js
+  // waits for none before reading a page, the way the app's tests wait for APP_READY, instead of a fixed time.
+  window.DEMO_PENDING = 0;
+  window.fetch = async (u, opts = {}) => {
+    window.DEMO_PENDING++;
+    try {
+      return await demoFetch(u, opts);
+    } finally {
+      window.DEMO_PENDING--;
+    }
   };
   // A banner on every page: this is not the real admin.
   const bar = document.createElement('p');
