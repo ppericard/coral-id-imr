@@ -878,7 +878,7 @@ const examReady = n => examOn(n) && (!(P[n] || {}).ex || answersSoFar() - P[n].e
 // least) and is lost on a second one before right answers bring it back up: with the moving average a single miss
 // already takes 15% off, so losing it at once took learned genera away from a simulated expert at every slip (rule of
 // code review #327: kept only while the genus stays known).
-const mxKept = n => knownP(n) >= PROG.M * (1 - PROG.A) - 1e-6;
+const mxKept = n => mxKeeps(knownP(n)); // core.js mxKeeps, the replay's rule too (replayProgress lm)
 function missing(n) {
   const s = P[n] || {},
     m = [];

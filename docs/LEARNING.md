@@ -1383,7 +1383,8 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   its `TYPED.exam` typed right answers stays at 99% at most (`scoreOf`) until the device has passed it.
   - **Rules versions** (`core.js` `RVS`, `RV`): every change to a progress rule appends `{v, at, why, msg}` (AGENTS.md
     "How to make a change" 14). v1 (2026-11-03, `msg` null): this replay itself, with the rules of that day (the
-    miss weight over the 0.8 every question aims for, `TARGET_P`; no Elo step on the genus wrongly given).
+    miss weight over the 0.8 every question aims for, `TARGET_P`; no Elo step on the genus wrongly given; a learned mark
+    kept unless a miss logged after its exam takes it away as the game does).
   - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between
     `// BEGIN core.js` and `// END core.js`, kept identical by `tools/sync_core.py`, checked in CI; its own `module`
     object keeps its names out of the script's globals, reached as `CORE_`), so the self-updater installs the engine
@@ -1450,7 +1451,11 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     `rv` (so `mergeProgress` keeps it over an older copy of the same answers); the global level `~level`: `th`, `vr`,
     the larger answer count, the later `at`. **From the device**, what the log cannot give: the mastery exam passed
     (`mx`) or in course (`ex`; dropped when passed under the former model, a record without `s.pg`: that genus takes the
-    exam again), the days answered right (`dd`, `dl`: the device's calendar days, for the comeback), the last
+    exam again), the passed exam also dropped when the log has a miss after it that leaves the replayed progress below
+    the keep rule, the game's own (`core.js` `mxKeeps`, `model.js` `mxKept`: the replay records `lm`, the time of the
+    last such miss, and a mark passed before it goes, reason `rules`; Codex review #399: 10 misses logged by a save
+    refused after a passed exam left the genus at 100%, its exam never coming back, at a bar of 0.19), so a
+    recalculation alone keeps it, the days answered right (`dd`, `dl`: the device's calendar days, for the comeback), the last
     observations shown (`ro`: the log keeps photo files, not observations), right with the corallites in view (`cor`:
     the log does not say which view a photo was in); and the whole record of a genus the log has fewer answers on than
     the device (answers that never reached the log: a replay never loses progress). The opening hold is not in the

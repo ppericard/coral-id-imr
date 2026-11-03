@@ -428,6 +428,40 @@ test('an unsent answer is left out of the replay baseline: another device saving
   assert.strictEqual(B.count('Acropora'), 3);
 });
 
+test('misses logged after the exam take the learned mark away as the game would, a mere recalculation keeps it (Codex review #399)', async () => {
+  // A record learned at answer 30 (30 right answers on new photos: the replayed bar about 0.9; the exam passed then),
+  // saved; then answers logged by a save refused as stale (in the log, never in the saved copy). The device adopts the
+  // replay.
+  const right = Array.from({length: 30}, (_, i) => ({...qa('r' + i, i), a: 'Acropora', ok: 1, ph: 'acropora-wide-' + i})),
+    exam = Date.parse(T(30)),
+    miss = (i, n) =>
+      Array.from({length: n}, (_, j) => ({...qa('m' + i + j, i + j), a: 'Montipora', ok: 0, ph: 'acropora-close-' + (i + j)}));
+  const run = async later => {
+    const s = loadCodeGs(withData()),
+      rec = {Acropora: {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: exam}};
+    s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': JSON.stringify(rec)}, summary: {}, answers: right});
+    if (later.length) assert.strictEqual(s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, at: -1, answers: later}).error, 'stale');
+    const A = app({sheet: s, P: copy(rec), SYNC: {name: 'Ana', pin: '1234', log: [], base: copy(rec)}}),
+      why = [];
+    A.ctx.mxRecalc = (fn, w) => {
+      fn();
+      if (!A.ctx.P.Acropora.mx) why.push(w('Acropora'));
+    };
+    await A.syncPull();
+    assert.strictEqual(A.rvApplied(), C.RV);
+    return [A.ctx.P.Acropora.mx, why];
+  };
+  // Lost as in the game (quiz.js answer, mxKept), with the rules card: 10 misses after the exam (was: pg 0.19 and still
+  // learned, its exam never coming back), and already two in a row.
+  assert.deepStrictEqual(await run(miss(40, 10)), [undefined, ['rules']], '10 misses after the exam');
+  assert.deepStrictEqual(await run(miss(40, 2)), [undefined, ['rules']], '2 misses after the exam');
+  // Kept: no answer after the exam (a recalculation alone), one miss after it (the game keeps the mark through one), and
+  // misses before the exam (the bar was won back before it).
+  assert.deepStrictEqual(await run([]), [exam, []], 'no answer after the exam');
+  assert.deepStrictEqual(await run(miss(40, 1)), [exam, []], 'one miss after the exam');
+  assert.deepStrictEqual(await run(miss(10, 2)), [exam, []], 'two misses before the exam');
+});
+
 test('property: devices, unsent answers, an older client and a reset in flight: every device ends with the rows of the log', async () => {
   // A small deterministic random generator, so a failure replays the same way.
   let seed = 7;
