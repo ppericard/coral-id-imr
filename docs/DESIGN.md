@@ -32,6 +32,7 @@ The visual rules every page follows. They came out of the expert UI review of 20
 | Filter or toggle in a list | `.chip` | `aria-pressed` for state. |
 | Section tabs | `.modes` | Slim underlined text tabs. |
 | Yes / No question that narrows a list | `.fdq` with two `.fdans` (Coral Finder) | Question on top, two big answer buttons side by side (≥ 72 px tall, full width), each with its count and photos of what is on that side; "Can't tell" as `.linkish`. Never small text links as answers. |
+| Admin table | `.adm-tbl` | Every cell capped at `--cut` (9 em phones, 16 em from tablets) with "…", full text in the title; a name via `cut()` / `pname()` (`.adm-cut`). No tags that widen a column: state goes in the colour (a hidden player is a muted italic name). |
 | Disclosure | `<details>` with a muted `▸` summary | e.g. "Backup or reset progress" at the bottom of ⚙. |
 
 ## Lab drawings
