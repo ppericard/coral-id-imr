@@ -240,7 +240,11 @@ one difficulty target `aimOff(k)`, one draw weight; same measures and seeds; a: 
   beginner, K 6 brought it partway back and slowed the lecture RA under its old pace. The opening hold (`introHold`)
   still stops new cards while a player falls behind. To decide on the players' answers (ROADMAP).
 - `tests/profiles.smoke.js` (one seeded run, the same on every run): its beginner meets 12 genera by question 100
-  with and without the change; its limit stays 17. (Before #408 the same seed read 13 → 19.)
+  with and without the change; its limit stays 17. (Before #408 the same seed read 13 → 19.) Since the candidate
+  refill of 2026-11-03 (f9aae3a: 616 photos the auto-sort added joined `data.json`, so every draw changed), that one
+  seed read 19 with no change to the code, so the limit now applies to the mean of 8 seeds (the first one, then 7
+  more on the beginner's first 100 questions): 8 seeds before #413 8-12 (mean 9.8), after it 12-16 (13.9), after the
+  refill 12-19 (14.5). The single seed sat inside the spread of the seeds; the mean moves with the opening rule.
 
 Not changed: the sheet (`Code.gs` `stats_`) and `core.js` `eloReplay` rate the photos and the player's global level,
 never the genus wrongly given, so they need nothing and the app does not wait for a sheet version. Abilities already
