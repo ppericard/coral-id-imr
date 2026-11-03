@@ -249,3 +249,40 @@ test('the level bands are the same answers whatever the model or the rule', () =
     b.e.scored.map(o => o.pl)
   );
 });
+
+// Codex review #425: the known mix-ups' term in the replay. Rows with choices, misses on the look-alike, so the term is
+// not zero.
+function logCh(n, seed, t0) {
+  const G = ['Acropora', 'Montipora', 'Porites', 'Goniopora', 'Favites', 'Dipsastraea', 'Platygyra', 'Leptoria'],
+    r = rng(seed),
+    pair = g => G[G.indexOf(g) ^ 1];
+  return log(0.8, n, seed).map((row, i) => {
+    const t = row[2],
+      ch = [t, pair(t), ...G.filter(g => g !== t && g !== pair(t)).slice(0, 2)].join(' ');
+    return [row[0], t0 + i * 1e4, t, row[3], row[4], 'quiz', row[6], Math.round((1 / 4 + (3 / 4) * sig(r() - 1)) * 1000) / 1000, 0, 1, ch];
+  });
+}
+
+test('the level bands hold the same answers with or without the known mix-ups term', () => {
+  const {res} = evaluate(logCh(300, 9, 1e12), {variants: ['e', 'e+X+M'], min: 1});
+  assert.ok(res['e+X+M'].per.p1 && res['e+X+M'].scored.some(o => o.cf > 0), 'the term is not zero on these answers');
+  assert.deepStrictEqual(
+    res['e+X+M'].scored.map(o => o.L),
+    res.e.scored.map(o => o.L)
+  );
+});
+
+test("an answer logged with the app's own mix-ups term does not count it twice", () => {
+  // The same expectations logged before the release (no term in e) under rule e, and after it (the app's term in e)
+  // under rule e+X+M (the app's rule): the term recovered from the log is the rule's own, so the replays agree.
+  const before = evaluate(logCh(300, 9, 1e12), {variants: ['e'], min: 1}).res.e.scored,
+    after = evaluate(logCh(300, 9, Date.parse('2027-01-01T00:00:00Z')), {variants: ['e+X+M'], min: 1}).res['e+X+M'].scored;
+  assert.ok(
+    after.some(o => o.cf > 0),
+    'the term is not zero on these answers'
+  );
+  assert.deepStrictEqual(
+    after.map(o => Math.round(o.p * 1e9)),
+    before.map(o => Math.round(o.p * 1e9))
+  );
+});

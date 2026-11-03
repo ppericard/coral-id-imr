@@ -926,6 +926,60 @@ function rvNotice() {
   d.querySelector('.next').onclick = () => close(true);
   setTimeout(() => d.querySelector('.next').focus({preventScroll: true}), 50);
 }
+// An apology, once (Pierre, 2026-11-04; core.js SORRY, sorryOf, sorryFelt, sorryText): to a player who really felt the
+// opening of #408 run unchecked (too many new genera at once, no easier questions after misses), at app open, in plain
+// words, greeted by the first word of their sign-in name (else "Hi!"). Whether they felt it is read once, the first time
+// this version runs on the device (FIRST: the time, and what core.js sorryOf reads then: the answers in the window, the
+// opening hold's sum, the cards opened in it), so playing on changes nothing. The same card as recalcNotice: one card at
+// a time (it waits while the tour or another card is up), never held, its button or Escape close it for good on this
+// device (imr-sorry, like imr-recalc, kept on the device); leaving the page closes it unseen and it comes back.
+const SORRYK = {KEY: 'imr-sorry', FIRST: 'imr-sorry-first'};
+function sorryNotice() {
+  const now = Date.now();
+  let F = store.get(SORRYK.FIRST, null);
+  if (!F || typeof F !== 'object') {
+    let log = [];
+    try {
+      log = [...((SYNC && SYNC.log) || []), ...(store.get(LOG0, []) || [])];
+    } catch (e) {}
+    F = {t: now, ...sorryOf({log, cards: introMap(), total: answersSoFar(), h: HOLDS, first: now})};
+    store.set(SORRYK.FIRST, F);
+  }
+  if (!sorryDue({felt: F, now, shown: store.get(SORRYK.KEY, 0)})) return;
+  if (document.querySelector('.sorry')) return; // already on screen
+  if (document.querySelector('#tour, .unlock')) return void setTimeout(sorryNotice, 2000);
+  const x = sorryText(SYNC && SYNC.name, now, new Date(now).getTimezoneOffset()),
+    d = document.createElement('div');
+  d.className = 'unlock sorry';
+  d.setAttribute('role', 'dialog');
+  d.setAttribute('aria-modal', 'true');
+  d.setAttribute('aria-label', 'Sorry');
+  d.innerHTML = `<div class="ulcard"><p class="ulkick">Sorry</p><h3>${esc(x.t)}</h3><p>${esc(x.p)}</p>
+    <div class="ulbtns"><span></span><button class="next" type="button">Thanks</button></div></div>`;
+  document.body.appendChild(d);
+  const close = seen => {
+    if (seen) store.set(SORRYK.KEY, Date.now());
+    d.remove();
+    document.removeEventListener('keydown', key, true);
+    if (typeof qclockAgain === 'function') qclockAgain(); // over a question: its time to answer counts from here
+  };
+  const key = e => {
+    if (e.key === 'Tab') return;
+    e.stopPropagation(); // never the quiz's keys behind the card
+    if (/^\d$/.test(e.key)) e.preventDefault();
+    if (e.key === 'Escape' || e.key === 'Enter') {
+      e.preventDefault();
+      close(true);
+    }
+  };
+  document.addEventListener('keydown', key, true);
+  d.ulClose = () => {
+    close(false);
+    setTimeout(sorryNotice, 300);
+  };
+  d.querySelector('.next').onclick = () => close(true);
+  setTimeout(() => d.querySelector('.next').focus({preventScroll: true}), 50);
+}
 // A short note at the bottom of the screen (.apptoast; html is the app's own text), closed by ✕ or after ms.
 function appToast(html, ms) {
   const t = document.createElement('div');

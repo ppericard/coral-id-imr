@@ -464,8 +464,26 @@
   }
   // Confusion score of a pair: its mix-up rate when offered together, starting from a prior rate worth CONF.W offers (the
   // declared look-alikes of the IMR lecture and the Coral Finder start high), then following the players' real answers.
-  const CONF = {W: 8, LOOK: 0.3, FAM: 0.12, FORM: 0.08, BASE: 0.03, TRAP: 0.2};
+  // N (2026-11-04): the offers a pair needs before the data can make it a look-alike (dataLook, below).
+  const CONF = {W: 8, LOOK: 0.3, FAM: 0.12, FORM: 0.08, BASE: 0.03, TRAP: 0.2, N: 20};
   const confScore = (c, prior) => ((c ? c[1] : 0) + CONF.W * prior) / ((c ? c[0] : 0) + CONF.W);
+  // A look-alike from the data (Pierre, 2026-11-04: "if the data says people constantly confuse two genera, they become
+  // look-alikes by force; that was the point of the confusion data: to find look-alikes the courses never named"): a
+  // pair offered together CONF.N times or more (c, the pooled [offered, mixed up]) whose pooled score (score, confScore
+  // on the pair's own prior: same family, a shared growth form or neither) reaches CONF.TRAP. The prior's weight (CONF.W
+  // offers at a low rate) is what makes it clear: at 20 offers a pair of unrelated genera needs 6 mix-ups (30%), when
+  // the declared look-alikes were mixed up 13% of the time they were offered (the real answers of 2026-11-03).
+  const dataLook = (c, score) => !!c && c[0] >= CONF.N && score >= CONF.TRAP;
+  // How much harder a question is for a player who mixes up its genus with one of its choices more than everyone does
+  // (2026-11-04, docs/LEARNING.md "Known mix-ups"): the player's own score of the pair (own, pairConf, shrunk toward the
+  // pooled score as confOf does) against the pooled score, in logits, when higher; 0 for a pair the player mixes up no
+  // more than everyone. The pooled score already shows in the photos' difficulty (every player's answers); this is the
+  // player's own excess, so it is never counted twice. No constant: confScore's own prior weight sets how fast it grows.
+  const logitOf = p => Math.log(p / (1 - p));
+  const confGap = (own, pooled) => {
+    const q = Math.min(0.99, Math.max(0.01, pooled));
+    return Math.max(0, logitOf(Math.min(0.99, confScore(own, q))) - logitOf(q));
+  };
   // One player's own record on a pair (progress P): [times the two were offered together, times mixed up], both directions.
   // Offers are counted since 2026-11-01 (P[g].off); mix-ups logged before that count as offered at least once each.
   function pairConf(P, a, b) {
@@ -474,6 +492,68 @@
       mix = ((x.conf || {})[b] || 0) + ((y.conf || {})[a] || 0);
     return [Math.max(mix, ((x.off || {})[b] || 0) + ((y.off || {})[a] || 0)), mix];
   }
+
+  // An apology, once (Pierre, 2026-11-04): from the opening rule of #408 (merged FROM) to this fix, the app opened too
+  // many genera at once to strong players and did not ease the questions after misses. Only to the players who really
+  // felt it (Pierre: "a player who answered a single question then must not get it"), read from the device's own data
+  // when this version first runs on it (progress.js sorryNotice keeps it, so later play changes nothing):
+  // - n: their answers in the window, at least SORRY.N (20). Exact from the answers the device still keeps (signed out:
+  //   all of them); else the answers since the last card shown before FROM (the cards keep the answers count and time).
+  // - h: the opening hold's sum then (model.js holdStep: a CUSUM of the shortfall against each answer's expected
+  //   success e, 0.1 allowed per answer), so where their last run ended: SORRY.H (3, 2 x INTRO.HOLD, the evidence the
+  //   back-to-one-at-a-time card asks for) or more; or half of it with SORRY.CARDS (4, one more than OPEN.MAX now allows)
+  //   genera or more opened on cards within OPEN.WIN answers in the window (c, the most in any 15).
+  // On the real answers (2026-11-03) it selects both collapsed runs (44 answers, h 3.22, 7 cards in 16 answers; 31
+  // answers, h 4.31) and nobody else; a run at the expected success ends at 3 or more about 2-5% of the time
+  // (simulated, 20-80 answers at e 0.7-0.9). Not after UNTIL: a player back weeks later would not know what it is about.
+  const SORRY = {FROM: Date.parse('2026-11-03T11:34:11Z'), UNTIL: Date.parse('2026-11-17T00:00:00Z'), N: 20, H: 3, CARDS: 4, WIN: 15};
+  const sorryFelt = ({n, h, c}) =>
+    (Number(n) || 0) >= SORRY.N && ((Number(h) || 0) >= SORRY.H || ((Number(c) || 0) >= SORRY.CARDS && h >= SORRY.H / 2));
+  // The inputs from the device's data at its first run (first: that time): log, the answers it keeps ({t ISO, ok, e});
+  // cards, the intro map ({genus: [answers, ready, time, kind]}); total, the player's answers count; h, the hold's sum.
+  const sorryOf = ({log, cards, total, h, first}) => {
+    const inW = t => typeof t === 'number' && t >= SORRY.FROM && t < first,
+      nLog = (log || []).filter(a => a && inW(Date.parse(a.t))).length,
+      E = Object.values(cards || {}).filter(e => Array.isArray(e)),
+      before = E.filter(e => typeof e[2] === 'number' && e[2] < SORRY.FROM).map(e => Number(e[0]) || 0), // cards with no time (older) say nothing
+      win = E.filter(e => inW(e[2]) && (e[3] || 'c') === 'c').map(e => Number(e[0]) || 0),
+      // Answers since the last card shown before the window; with no card before it, every answer was in it only when
+      // the cards in it show the player started there.
+      est = before.length ? total - Math.max(...before) : win.length ? total : 0;
+    return {
+      n: Math.max(nLog, est),
+      h: Number(h) || 0,
+      c: Math.max(0, ...win.map(x => win.filter(y => y >= x && y < x + SORRY.WIN).length))
+    };
+  };
+  const sorryDue = ({felt, now, shown}) => !shown && now < SORRY.UNTIL && !!felt && sorryFelt(felt);
+  // The first name to greet a player with, from their sign-in name (Pierre, 2026-11-04, for every personalised card,
+  // AGENTS.md rule 20e): the first word ("Ana Lopez" -> "Ana", "Ana B." -> "Ana"), its first letter capitalised;
+  // only the letters it starts with (an apostrophe or a hyphen inside kept: "O'Neil", "Jean-Luc"), so a name with no
+  // letter first ("~a12", "123") gives '' and the card says a plain "Hi!".
+  const firstName = name => {
+    const m = /^\p{L}[\p{L}\p{M}'’-]*/u.exec(String(name || '').trim()),
+      w = m ? m[0].replace(/['’-]+$/, '') : '';
+    return w ? w[0].toUpperCase() + w.slice(1) : '';
+  };
+  const sorryHi = name => (firstName(name) ? `Hi ${firstName(name)}!` : 'Hi!');
+  // When it happened, as the player's clock says it (tz: minutes behind UTC, Date's getTimezoneOffset): this evening,
+  // yesterday evening (afternoon, morning), else the date.
+  const sorryWhen = (now, tz = 0) => {
+    const loc = t => new Date(t - tz * 60000),
+      f = loc(SORRY.FROM),
+      day = t => Math.floor((t - tz * 60000) / 864e5),
+      h = f.getUTCHours(),
+      part = h >= 17 ? 'evening' : h >= 12 ? 'afternoon' : 'morning',
+      d = day(now) - day(SORRY.FROM);
+    if (d <= 0) return `This ${part}`;
+    if (d === 1) return `Yesterday ${part}`;
+    return `On ${f.getUTCDate()} ${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][f.getUTCMonth()]}`;
+  };
+  const sorryText = (name, now, tz) => ({
+    t: `${sorryHi(name)} Sorry about your last run.`,
+    p: `${sorryWhen(now, tz)} we adjusted how the app picks your questions, and some of it wasn't right yet: too many new genera came at once, and the questions didn't get easier after misses. It's fixed now. Sorry for the rough ride!`
+  });
 
   // Two admin tabs in one browser share the stored draft. Each write carries _tab: {rev, seen}: its own revision and the
   // revision of the stored draft that tab had last seen. `revs` maps the revisions this tab wrote or took in to their drafts,
@@ -1299,6 +1379,12 @@
       // Pierre, 2026-11-03: the standard card, only for the players whose progress % moves by 5 points or more (several
       // lose points: the former model's learned marks are dropped).
       msg: RV_CARD
+    },
+    {
+      v: 2,
+      at: '2026-11-04',
+      why: 'The opening pace and known mix-ups (#425): a question whose choices hold a genus the player mixes up with the one shown more than everyone does (3 or more plausible choices) counts as that much harder, for the ability, the global level and the weight of a miss',
+      msg: RV_CARD
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -1307,8 +1393,10 @@
   // values (admin.js progOf) only when the script's replies say v >= RV_SHEET; otherwise both do what they did before.
   const RV_SHEET = 28;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
-  // has one, oldest first.
-  const rvMsgs = (from, to) => RVS.filter(x => x.v > (from || 0) && x.v <= to && x.msg);
+  // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
+  // several versions sees one recalculation card with its progress before and after the whole jump.
+  const rvMsgs = (from, to) =>
+    RVS.filter(x => x.v > (from || 0) && x.v <= to && x.msg).filter((x, i, L) => !L.slice(i + 1).some(y => y.msg === x.msg));
 
   // Full replay (Pierre, 2026-11-03: "why recalculate on the phones when the phone doesn't have the full log? Recalculate
   // from all the results"): every player's progress rebuilt from the sheet's answer log, in time order, with today's rules
@@ -1324,7 +1412,7 @@
   // ?stats=1 mem; the prior without), conf (the pooled pairs, ?stats=1 conf, as the app's PCONF), since ({id: time ms}:
   // only the answers after a progress reset), memory (false: the rule before the photo memory, tools/memreplay.js),
   // start ({id: player}: a replay to go on from, as returned here, e.g. the sheet's, with this device's answers not in
-  // the sheet yet on top; copied, never changed), onAnswer(row, {d, fam, k, w, look}).
+  // the sheet yet on top; copied, never changed), onAnswer(row, {d, fam, cf, k, w, look}).
   // Returns {id: {P: {genus: {pg, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm}, '~level': {ok, ko, th, vr, at}},
   // n, used, rep}}: per genus the moving average pg (what the app keeps as s.pg), right / wrong answers, the last 10
   // results, the photos [shown, right], the choices offered beside it and the genera given instead (the app's s.off,
@@ -1339,18 +1427,26 @@
   // then: e = 1/k + (1 - 1/k) sig(th - d), th the player's ability on the genus at that moment. A typed answer (|t,
   // 2026-11-03; kOf) has no guess rate (k infinite: e = sig(th - d)), counts in full when right (pgRightW) and was
   // logged with no choices, as quiz.js answer scores it. Since the photo memory
-  // (MEM_LOGGED) the logged e includes the memory of the photos (fam), taken out again here with the replay's own fam.
+  // (MEM_LOGGED) the logged e includes the memory of the photos (fam), taken out again here with the replay's own fam;
+  // since the known mix-ups (CF_LOGGED) it includes the app's mix-ups term too (cf, model.js confTerm), taken out the
+  // same way, and the replay adds its own to every answer, older ones included (today's rule).
   // Approximations, explicit: the ability th and the photos are those the app logged (the game would have drawn others
   // under other rules; the weights use the logged th, the replayed th is the app's step over the recovered
   // difficulties); a comeback question's recall is taken as 1 (its e logged with it reads as a harder photo); the
-  // look-alike test is the app's (declared look-alikes or confusions over CONF.TRAP, pooled and the player's own) with a
-  // prior from the look-alikes and the family only (the app also gives CONF.FORM to genera sharing an IMR growth form);
+  // look-alike test and the mix-ups term are the app's (declared look-alikes or confusions over CONF.TRAP, pooled and the
+  // player's own; confGap) with a prior from the look-alikes and the family only (the app also gives CONF.FORM to genera
+  // sharing an IMR growth form, which the sheet does not know: on such a pair the pooled score starts from 0.03 instead
+  // of 0.08, so the replayed term is larger while the pair's pooled offers are few, the same once they are many);
   // a miss on the genus wrongly given weighs the chance the player had on it with its ability as replayed (the app's own
   // at that moment is not logged; the same when the replay goes on from the app's record, sync.js); every photo of a
   // right answer counts as recognised (the app does not count a corallites photo answered
   // without opening it, which the log leaves out anyway). Answers logged without e and th (before sheet v5) count in
   // ok/ko/h only, and move no ability. The mastery exam is not replayed: replayedOf takes it from the saved copy.
   const MEM_LOGGED = Date.UTC(2026, 10, 3, 4, 46); // PR #387 merged: the app's logged e includes the photo memory
+  // From the known mix-ups (PR #425; 2026-11-04 02:00 Asia/Taipei, the instant of tools/abilityeval.js CF_FROM, which reads
+  // the sheet's wall clock): the app's logged e includes its mix-ups term (model.js confTerm), taken out again here with
+  // the replay's own.
+  const CF_LOGGED = Date.UTC(2026, 10, 3, 18, 0);
   function replayProgress(rows, o = {}) {
     const gen = o.gen || {},
       mem = memOf(o.mem),
@@ -1363,10 +1459,16 @@
         b = gen[n] || {};
       return (a.look || []).includes(n) || (b.look || []).includes(t) ? CONF.LOOK : a.fam && a.fam === b.fam ? CONF.FAM : CONF.BASE;
     };
+    const pooledOf = (t, n) => confScore(conf[t < n ? t + '|' + n : n + '|' + t], prior(t, n));
+    // Known mix-ups (model.js confTerm, #425): the most, over the choices, of the player's own score of the pair above
+    // the pooled one (confGap), on the record before this answer, on a question with 3 or more plausible choices; it adds
+    // to the question's difficulty for the ability, the level and a miss's weight, as quiz.js answer adds it to dm.
+    const confTermOf = (P, t, chs, k) =>
+      k >= 3 ? Math.max(0, ...chs.filter(n => n !== t && gen[n]).map(n => confGap(pairConf(P, t, n), pooledOf(t, n)))) : 0;
     // model.js pgWeight: a genus among the choices that the player gets confused with (pooled, then their own record).
     const lookOf = (P, t, n) => {
       if (n === t || !gen[n]) return false;
-      const pooled = confScore(conf[t < n ? t + '|' + n : n + '|' + t], prior(t, n));
+      const pooled = pooledOf(t, n);
       return pooled >= CONF.TRAP || confScore(pairConf(P, t, n), pooled) >= CONF.TRAP;
     };
     const split = x =>
@@ -1402,6 +1504,8 @@
           wrong = !ok && c && c !== t && gen[c];
         pl.n++;
         if (hs.some(h => h && h[0])) pl.rep++;
+        // The mix-ups term, on the record before this answer (quiz.js answer scores it before the offers).
+        const cf = confTermOf(pl.P, t, chs, k);
         // The choices offered and the genus given instead, before the weight (as quiz.js answer counts them).
         chs.forEach(x => x !== t && ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1));
         s[ok ? 'ok' : 'ko']++;
@@ -1415,16 +1519,17 @@
           const fam = memFam(hs, mem),
             q = Math.min(0.995, Math.max(0.005, (e - 1 / k) / (1 - 1 / k))),
             dl = th - Math.log(q / (1 - q)), // the difficulty in the logged expectation
-            d = r[1] >= MEM_LOGGED ? dl - fam : dl,
+            // d: the photo's difficulty alone (quiz.js d0), without the memory and the mix-ups term the app logged in e.
+            d = dl - (r[1] >= MEM_LOGGED ? fam : 0) - (r[1] >= CF_LOGGED ? cf : 0),
             fm = memory ? fam : 0,
             look = chs.some(x => lookOf(pl.P, t, x)),
             // The aim at the player's level before this answer's own step on it, as quiz.js answer weighs the miss.
-            w = ok ? pgRightW(k, look) * pgMemW(th, d, fm, k) : pgMissW(th, d + fm, k, 1, aimOf((pl.P[LEVEL] || {}).th));
-          dm = d + fm;
+            w = ok ? pgRightW(k, look) * pgMemW(th, d, fm, k) : pgMissW(th, d + fm + cf, k, 1, aimOf((pl.P[LEVEL] || {}).th));
+          dm = d + fm + cf;
           d0 = d;
           s.pg = pgStep(s.pg, ok, w);
           s.u++;
-          if (o.onAnswer) o.onAnswer(r, {d, fam: fm, k, w, look});
+          if (o.onAnswer) o.onAnswer(r, {d, fam: fm, cf, k, w, look});
           // The ability, as quiz.js answer steps it: the genus shown against the question's difficulty with the memory.
           eloStep(pl.P, t, s, ok, dm, k);
         }
@@ -1749,6 +1854,7 @@
     pgMemW,
     kOf,
     MEM_LOGGED,
+    CF_LOGGED,
     replayProgress,
     replayedOf,
     replayBase,
@@ -1769,6 +1875,13 @@
     achRevoke,
     mergeAch,
     LEVEL,
+    SORRY,
+    firstName,
+    sorryFelt,
+    sorryOf,
+    sorryDue,
+    sorryHi,
+    sorryText,
     START,
     playerStart,
     levelSeed,
@@ -1802,6 +1915,8 @@
     confusionOf,
     CONF,
     confScore,
+    confGap,
+    dataLook,
     pairConf,
     mergeUsers,
     PULSEQ,

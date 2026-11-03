@@ -195,9 +195,19 @@ test('RVS: one entry per rules version, RV the last; messages of the versions sk
   // The first version (the full replay itself): a card only for the players whose progress % it moved, with the two %
   // (Pierre, 2026-11-03).
   assert.strictEqual(C.RVS[0].msg, C.RV_CARD);
+  // A device that skips several versions with the standard card sees it once, at the last of them.
   assert.deepStrictEqual(
     C.rvMsgs(0, C.RV),
-    C.RVS.filter(x => x.msg)
+    C.RVS.filter((x, i) => x.msg && !C.RVS.slice(i + 1).some(y => y.msg === x.msg))
+  );
+  assert.deepStrictEqual(
+    C.rvMsgs(0, C.RV).map(x => x.v),
+    [C.RV],
+    'every version so far has the standard card: one card'
+  );
+  assert.deepStrictEqual(
+    C.rvMsgs(C.RV - 1, C.RV).map(x => x.v),
+    [C.RV]
   );
   assert.deepStrictEqual(C.rvMsgs(C.RV, C.RV), []);
 });
@@ -211,23 +221,38 @@ test('replayProgress: the ability, the run, the global level and the times, as q
     [...row('p', 4, 'A', 'A', 'a3', 'A B'), ...[]].map((x, i) => (i === 5 ? 'quiz-duel' : x))
   ];
   const R = C.replayProgress(rows, {gen: GEN}).p.P;
-  // The same steps by hand, in the app's order (quiz.js answer: the genus shown, the global level, the genus given).
+  // The same steps by hand, in the app's order (quiz.js answer: the mix-ups term on the record before the answer, the
+  // offers and the mix-up, the genus shown, the global level, the genus given).
   const P = {},
-    st = n => (P[n] = P[n] || {ok: 0, ko: 0, streak: 0});
+    st = n => (P[n] = P[n] || {ok: 0, ko: 0, streak: 0}),
+    prior = (a, b) =>
+      GEN[a].look.includes(b) || GEN[b].look.includes(a) ? C.CONF.LOOK : GEN[a].fam === GEN[b].fam ? C.CONF.FAM : C.CONF.BASE;
+  let cfs = 0;
   rows.forEach(r => {
     const t = r[2],
+      c = r[3],
       ok = !!r[4],
       s = st(t),
       k = C.kOf(r[5], r[10]),
+      chs = r[10].split(' '),
       q = (r[7] - 1 / k) / (1 - 1 / k),
-      d = r[8] - Math.log(q / (1 - q));
+      d = r[8] - Math.log(q / (1 - q)),
+      // model.js confTerm with no pooled data (the pooled score is the pair's prior).
+      cf =
+        k >= 3
+          ? Math.max(0, ...chs.filter(n => n !== t && GEN[n]).map(n => C.confGap(C.pairConf(P, t, n), C.confScore(undefined, prior(t, n)))))
+          : 0;
+    cfs += cf;
+    chs.forEach(x => x !== t && ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1));
+    if (!ok && c) (s.conf = s.conf || {})[c] = (s.conf[c] || 0) + 1;
     s[ok ? 'ok' : 'ko']++;
-    C.eloStep(P, t, s, ok, d, k);
+    C.eloStep(P, t, s, ok, d + cf, k);
     if (P[C.LEVEL]) P[C.LEVEL][ok ? 'ok' : 'ko']++;
     else P[C.LEVEL] = C.levelSeed(P);
-    C.eloStep(P, C.LEVEL, P[C.LEVEL], ok, d, k);
+    C.eloStep(P, C.LEVEL, P[C.LEVEL], ok, d + cf, k);
     // The genus given: no Elo step (2026-11-03, docs/LEARNING.md "The genus wrongly given in the Elo").
   });
+  assert.ok(cfs > 0, 'the mix-up of A with B makes the next question on A harder for this player');
   assert.deepStrictEqual([R.A.th, R.A.vr, R.B.th, R.C.th], [P.A.th, P.A.vr, undefined, P.C.th], 'B, only given wrongly: no ability');
   assert.deepStrictEqual([R[C.LEVEL].ok, R[C.LEVEL].ko, R[C.LEVEL].th, R[C.LEVEL].at], [4, 1, P[C.LEVEL].th, rows[4][1]]);
   assert.deepStrictEqual([R.A.streak, R.B.streak, R.A.at, R.A.du], [2, 0, rows[4][1], 1]);
@@ -330,7 +355,17 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
   const vm = require('vm'),
     src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
     cut = (a, b) => src.slice(src.indexOf(a), src.indexOf(b, src.indexOf(a)) + b.length),
-    M = {...C, GX: n => GEN[n], pooledConf: () => 0, confusable: (t, n) => GEN[t].look.includes(n), P: {}};
+    // The pooled score of a pair with no pooled data: its prior (the replay's: look-alikes, family; these genera share no
+    // IMR growth form, so model.js pooledConf gives the same).
+    prior = (a, b) =>
+      GEN[a].look.includes(b) || GEN[b].look.includes(a) ? C.CONF.LOOK : GEN[a].fam === GEN[b].fam ? C.CONF.FAM : C.CONF.BASE,
+    M = {
+      ...C,
+      GX: n => GEN[n],
+      pooledConf: (a, b) => C.confScore(undefined, prior(a, b)),
+      confusable: (t, n) => GEN[t].look.includes(n),
+      P: {}
+    };
   vm.createContext(M);
   vm.runInContext(
     cut('const TYPED = {', '\n};') +
@@ -340,15 +375,16 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
       cut('const aimP = ', ';\n') +
       cut('const ability = ', ';\n') +
       cut('const abilityStep = ', ';\n') +
-      '\nthis.T = {TYPED, pgWeight, aimP, ability, abilityStep};',
+      cut('const confTerm = ', ';\n') +
+      '\nthis.T = {TYPED, pgWeight, aimP, ability, abilityStep, confTerm};',
     M
   );
-  const {TYPED, pgWeight, aimP, ability, abilityStep} = M.T,
+  const {TYPED, pgWeight, aimP, ability, abilityStep, confTerm} = M.T,
     EXAM = {n: 5};
   assert.strictEqual(TYPED.k, Infinity);
   assert.strictEqual(pgWeight('A', [], TYPED.k), 1, 'a typed right answer counts in full');
   const mem = [0, -0.44, -1.1, -1.7],
-    t0 = C.MEM_LOGGED + 3600e3, // the logged e includes the photo memory
+    t0 = C.CF_LOGGED + 3600e3, // the logged e includes the photo memory and the mix-ups term, as today's app logs it
     // The app's record: A near its exam with 3 exam questions passed, B and C met, the global level.
     P0 = {
       A: {pg: C.PROG.M + 0.01, ok: 30, ko: 2, h: '1111111111', th: 2, ps: {}, streak: 6, ex: {k: 3, v: ['wide'], at: 40}},
@@ -358,6 +394,7 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
     },
     P = (M.P = JSON.parse(JSON.stringify(P0))),
     log = [],
+    cfs = [],
     sig1 = x => 1 / (1 + Math.exp(-x)),
     logit = p => Math.log(p / (1 - p)),
     st = n => (P[n] = P[n] || {ok: 0, ko: 0, h: '', streak: 0});
@@ -366,7 +403,11 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
   // so the e logged with 2 decimals is exact and the comparison below can be strict).
   const answer = (t, c, ph, {typed = false, chs = [], exam = false, p = 0.7} = {}) => {
     const good = c === t,
-      s = st(t);
+      s = st(t),
+      k = typed ? TYPED.k : 4,
+      // Known mix-ups (model.js confTerm), on the record before this answer, as quiz.js answer scores it.
+      cf = confTerm(t, chs, k);
+    cfs.push(cf);
     chs.forEach(x => x !== t && ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1));
     if (good) (s.ok++, s.streak++);
     else {
@@ -374,15 +415,14 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
       s.streak = 0;
       if (c) (s.conf = s.conf || {})[c] = (s.conf[c] || 0) + 1;
     }
-    const k = typed ? TYPED.k : 4,
-      th0 = ability(t),
+    const th0 = ability(t),
       fam = C.memFam(
         ph.map(f => (s.ps || {})[f]),
         mem
       ),
       x = k === 4 ? logit((p - 0.25) / 0.75) : logit(p),
       dm = th0 - x,
-      d0 = dm - fam;
+      d0 = dm - fam - cf;
     s.pg = C.pgStep(C.pgOf(s), good, good ? pgWeight(t, chs, k) * C.pgMemW(th0, d0, fam, k) : C.pgMissW(th0, dm, k, 1, aimP()));
     abilityStep(t, s, good, dm, k);
     if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
@@ -453,6 +493,14 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
   answer('B', 'C', ['b2'], {typed: true, p: 0.7}); // B typed as C: against both, C by its own ability
   answer('C', 'C', ['c2'], {chs: ['C', 'D', 'E', 'A'], p: 0.85}); // a pick among 4 easy choices, between typed ones
   answer('A', 'A', ['a1'], {exam: true, chs: ['A', 'B', 'C', 'D'], p: 0.6}); // the 4th exam question, picked
+  // B among 4 choices with C, after B was typed as C: a known mix-up, the question harder for this player (confTerm);
+  // a right answer, then a miss on the same pair.
+  answer('B', 'B', ['b3'], {chs: ['B', 'C', 'D', 'E'], p: 0.6});
+  answer('B', 'C', ['b4'], {chs: ['B', 'C', 'D', 'E'], p: 0.65});
+  assert.ok(
+    cfs.slice(-2).every(x => x > 0),
+    `the mix-ups term on B: ${cfs.slice(-2)}`
+  );
   answer('A', 'A', ['a2'], {exam: true, typed: true, p: 0.55}); // 5 right, 1 typed: not passed, 99% at most
   assert.deepStrictEqual([P.A.ex.k, P.A.ex.t, !!P.A.mx], [5, 1, false]);
   // Every genus answered was stepped against the level (lt), and the level moved after (levelMove).
@@ -470,7 +518,7 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
   // and its expectation would have had a 1/4 floor: the replay reads |t as the app scored it.
   assert.deepStrictEqual(
     log.map(a => C.kOf(a.m, a.ch)),
-    [Infinity, Infinity, Infinity, Infinity, 4, 4, Infinity, Infinity]
+    [Infinity, Infinity, Infinity, Infinity, 4, 4, 4, 4, Infinity, Infinity]
   );
   assert.strictEqual(C.guessOf('quiz|t|x', ''), 0);
 });
