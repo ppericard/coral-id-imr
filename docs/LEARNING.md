@@ -1072,7 +1072,10 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   (`pgRightW`: every genus was a possible answer), no choices offered, "I don't know" a miss for the genus shown
   only; `tests/replay.test.js` replays a device's log of typed and picked answers, exam included, and finds the record
   the app scored live. The genus wrongly given is weighed, as in the app, by the chance the player had on it: its
-  own ability as replayed so far, after the global level's step (`quiz.js` `answer` order).
+  own ability as replayed so far, after the global level's step (`quiz.js` `answer` order); it gets a miss in its
+  recent results and its run reset, and no Elo step (as the app since 2026-11-03, "The genus wrongly given in the
+  Elo": the replay would otherwise put that penalty back on every player; `tests/replay.test.js` checks its ability
+  does not move while its progress drops).
   Approximations, listed with the function: the abilities and photos are those the app logged (other rules would have
   drawn other photos; the weights use the logged ability, the replayed ability is the app's step over the recovered
   difficulties), a comeback answer's recall is taken as 1, the look-alike prior leaves out the IMR growth forms, the
@@ -1081,7 +1084,8 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   counts only. The mastery exam is not replayed: it comes from the device's copy (below), so an exam still waiting for
   its `TYPED.exam` typed right answers stays at 99% at most (`scoreOf`) until the device has passed it.
   - **Rules versions** (`core.js` `RVS`, `RV`): every change to a progress rule appends `{v, at, why, msg}` (AGENTS.md
-    "How to make a change" 14). v1 (2026-11-03, `msg` null): this replay itself.
+    "How to make a change" 14). v1 (2026-11-03, `msg` null): this replay itself, with the rules of that day (the
+    miss weight over the 0.8 every question aims for, `TARGET_P`; no Elo step on the genus wrongly given).
   - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between
     `// BEGIN core.js` and `// END core.js`, kept identical by `tools/sync_core.py`, checked in CI; its own `module`
     object keeps its names out of the script's globals, reached as `CORE_`), so the self-updater installs the engine
@@ -1108,9 +1112,21 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     replayed on top by the same engine; then saved and sent. A replay whose request went out before a progress reset
     made on the device while it was on its way is not adopted (it still counts the answers the reset discarded): the
     next reply brings it again from the new reset (Codex review #399). Two devices on one account: the merge baseline
-    (`SYNC.base`, `mergeSaved`) becomes the replayed record without the device's own answers not counted yet, so when
-    another device saves its own adoption of the same log, this one adds only its own new answers to it, never the
-    replayed ones a second time; a saved copy under older rules than the device applied (its `imr-coral-rv`) is not
+    (`SYNC.base`, `mergeSaved`) becomes the shared history and nothing else (`core.js` `replayBase`): the sheet's replay
+    itself (`rec`, as the app holds it), never mixed with this device's counts; this device's answers the sheet has not
+    counted yet stay the difference between its progress and the baseline, so the next three-way merge puts them on top
+    of whatever another device saved (Codex review #399, the third case on the baseline: 2 logged answers and 1 unsent
+    gave a baseline of 3, and the next merge with another device's replay of the 2 lost the third). Per genus kept from
+    the device (the log has fewer answers on it), the baseline stays the shared copy's record; the photos shown take,
+    per photo, the larger of the replay's and the shared copy's (exposure the log leaves out that was already synced),
+    never this device's own. When another device saves its own adoption of the same log, this one adds only its own new
+    answers to it, never the replayed ones a second time. A copy that may lack answers in the log makes the device ask
+    for the replay again (its rules version back to 0; the next save brings it): a reset made on this device that the
+    sheet's copy does not have yet (other devices, an older app among them, may have answered after the reset time), a
+    reset from another device while this one has answers after it not sent yet, a copy with that reset under older
+    rules than this device applied. `tests/adopt.test.js` plays two devices, refused saves, unsent answers, an older
+    app and a reset in flight at random (40 runs; 600 more with other seeds while building it) and checks that every
+    device and the saved copy end with exactly the answers in the log since the reset. A saved copy under older rules than the device applied (its `imr-coral-rv`) is not
     merged (it may predate the replay, whose counts it would undo), but it may hold answers saved since by a device on
     an app from before the replay, which never adopts one: so the device's applied version goes back to the copy's and
     its next save (asked for at once after a pull) brings the replay of the whole log again, every device's answers

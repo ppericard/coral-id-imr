@@ -120,12 +120,13 @@ function replayAdopt(rp, pending, v, cut) {
       n => (typeof (before[n] || {}).pg === 'number' ? 'rules' : 'bkt')
     );
     store.set(RVK, rp.rv);
-    // The merge baseline (mergeSaved) becomes the shared history as replayed: the replay without this device's answers
-    // the sheet has not counted yet, which stay this device's own (P minus the base). Left at the saved copy, another
-    // device saving its own adoption of the same log would make this one count the replayed answers twice (Codex review
-    // #399: 2 logged answers, an empty saved copy, became 4).
+    // The merge baseline (mergeSaved) becomes the shared history: the sheet's replay itself, never mixed with this
+    // device's answers the sheet has not counted yet, which stay this device's own (P minus the base) and go on top at
+    // the next merge (core.js replayBase). Left at the saved copy, another device saving its own adoption of the same log
+    // made this one count the replayed answers twice (Codex review #399: 2 became 4); built from this device's copy, an
+    // unsent answer went into the base and was lost at the next merge (Codex review #399: 3 became 2).
     if (SYNC) {
-      SYNC.base = rows.length ? replayedOf({P: rp.rec}, before, rp.rv) : copy(M);
+      SYNC.base = replayBase(rp.rec, M, rp.rv, SYNC.base);
       store.set('imr-coral-sync', SYNC);
     }
     save();
@@ -163,7 +164,11 @@ function mergeSaved(j) {
   // A send whose reply was lost but which did reach the sheet: the saved record is exactly what was sent.
   if (SYNC.pending && d['imr-coral-progress'] === SYNC.pending) SYNC.base = R;
   delete SYNC.pending;
-  if (lr > rr) return; // the sheet's hold too counts from its older reset: this device's stays
+  // A reset made here that the sheet's copy does not have yet: this device's progress stays (the sheet's hold too counts
+  // from its older reset), and the replay since the reset is asked for with the save that brings it (the rules version
+  // back to 0): other devices, an older app among them, may have answered after the reset time from a copy without it,
+  // and those answers count (they are in the log after the reset).
+  if (lr > rr) return void store.set(RVK, 0);
   // The Bonus genera choice made on another device, if more recent than this one's (or made there only; Codex review #371);
   // after the reset check, so a choice saved before this device's newer reset does not come back.
   try {
@@ -191,6 +196,10 @@ function mergeSaved(j) {
     store.set('imr-coral-sync', SYNC);
     store.set('imr-coral-reset', rr);
     holdIn(); // after the reset time is in: only the answers since then count
+    // The sheet's replay since the reset is asked for again (the rules version back to 0) when this copy may lack
+    // answers: answers played here after that reset and not in the sheet yet (the save that follows logs them), or a
+    // copy under older rules than this device applied (saved by an older app, or before its device's replay came back).
+    if ((SYNC.log || []).some(a => a && String(a.t || '') > rr) || (Number(d[RVK]) || 0) < rvApplied()) store.set(RVK, 0);
     store.set('imr-coral-progress', P);
     if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
     replayAdopt(j.replay, SYNC.log, j.v); // the sheet's full replay, when newer than the one applied here (v28)

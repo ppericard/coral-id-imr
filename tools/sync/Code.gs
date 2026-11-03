@@ -2140,7 +2140,7 @@ const CORE_ = (function () { const module = {exports: {}};
     {
       v: 1,
       at: '2026-11-03',
-      why: 'Full replay of each player by the sheet: moving average weighed by what each answer proves, photo memory, former-model learned marks dropped',
+      why: 'Full replay of each player by the sheet: moving average weighed by what each answer proves, photo memory, former-model learned marks dropped, no Elo step on the genus wrongly given',
       msg: null
     }
   ];
@@ -2171,7 +2171,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // Returns {id: {P: {genus: {pg, ok, ko, h, ps, off, conf, u, th, vr, streak, at, du}, '~level': {ok, ko, th, vr, at}},
   // n, used, rep}}: per genus the moving average pg (what the app keeps as s.pg), right / wrong answers, the last 10
   // results, the photos [shown, right], the choices offered beside it and the genera given instead (the app's s.off,
-  // s.conf), u = answers that moved pg, the ability th and its volatility vr (eloStep, as quiz.js answer steps them),
+  // s.conf), u = answers that moved pg, the ability th and its volatility vr (eloStep, as quiz.js answer steps them: on
+  // the genus shown only, never on the genus wrongly given),
   // the run of right answers (streak), the last answer (at), a look-alike duel won (du); the global level LEVEL as the
   // app keeps it (seeded at the first answer by levelSeed, then one step per answer); per player the rows read (n),
   // replayed (used: with e and th) and on a photo already shown (rep).
@@ -2276,7 +2277,9 @@ const CORE_ = (function () { const module = {exports: {}};
         if (ok && (/^quiz-duel/.test(mode) || /\|d(\||$)/.test(mode))) s.du = 1;
         // Pierre's rule: a wrong answer counts against the genus given too, as quiz.js answer does it after the global
         // level: its progress by the chance the player had on it (its own ability, as replayed so far, against the
-        // photo's difficulty without the photo memory: the memory is of the genus shown), then its ability at 0.
+        // photo's difficulty without the photo memory: the memory is of the genus shown), a miss in its recent results,
+        // its run reset. Not its ability (2026-11-03, docs/LEARNING.md "The genus wrongly given in the Elo"): the Elo
+        // moves on the questions about the genus itself, as quiz.js answer does since then.
         if (wrong) {
           const x = rec(c);
           if (replayable) {
@@ -2285,7 +2288,6 @@ const CORE_ = (function () { const module = {exports: {}};
           }
           x.h = (x.h + '0').slice(-10);
           x.streak = 0;
-          if (replayable) eloStep(pl.P, c, x, false, 0, k); // quiz.js: the genus given, at difficulty 0
         }
         s.h = (s.h + (ok ? 1 : 0)).slice(-10);
         fs.forEach(f => {
@@ -2363,7 +2365,7 @@ const CORE_ = (function () { const module = {exports: {}};
       }
       if (!r || !r.u || (s && n(s) > n(r))) {
         if (s) out[g] = kept(s);
-        else if (r) out[g] = {pg: r.pg || 0, ok: r.ok || 0, ko: r.ko || 0, h: r.h || ''};
+        else if (r) out[g] = {pg: r.pg || 0, ok: r.ok || 0, ko: r.ko || 0, h: r.h || '', ...(rv ? {rv} : {})};
         return;
       }
       const o = {};
@@ -2387,6 +2389,43 @@ const CORE_ = (function () { const module = {exports: {}};
         else if (typeof s.pg === 'number' && s.ex) o.ex = dup(s.ex);
       }
       out[g] = o;
+    });
+    return out;
+  }
+  // The merge baseline once a replay is adopted (sync.js replayAdopt, mergeProgress's B): the history every device of the
+  // account shares, never mixed with this device's own answers not in the sheet yet, which stay the difference P - B and
+  // so go on top in the next three-way merge (Codex review #399, three cases: two devices adopting the same log counted it
+  // twice, an older app's answers were dropped, an unsent answer was taken into the baseline and lost). rec: the sheet's
+  // replay (replay.rec), M: the record adopted (replayedOf), rv: its rules version, B: the baseline before (the shared
+  // saved copy). Per genus:
+  // - adopted from the replay (M[g].rv is rv): the replayed record as the app holds it without this device's copy
+  //   (replayedOf of rec alone), its photos shown per photo the larger of the replay's and B's (exposure the log leaves
+  //   out, a corallites hint revealed after the answer, that a device already synced: shared too);
+  // - kept from this device's copy (the log has fewer answers on it): B's record, as before;
+  // - the global level: the replay's, with B's answer count when larger (replayedOf keeps the larger count).
+  function replayBase(rec, M, rv, B) {
+    const R = replayedOf({P: rec}, {}, rv),
+      B0 = isObj(B) ? B : {},
+      out = {},
+      n = x => ((x && x.ok) || 0) + ((x && x.ko) || 0),
+      dup = x => JSON.parse(JSON.stringify(x));
+    Object.keys(M || {}).forEach(g => {
+      const b = isObj(B0[g]) ? B0[g] : null,
+        r = R[g];
+      if (g === LEVEL) {
+        if (!r) return b && (out[g] = dup(b));
+        const o = dup(r);
+        if (b && n(b) > n(r)) [o.ok, o.ko] = [b.ok || 0, b.ko || 0];
+        out[g] = o;
+      } else if (r && M[g] && M[g].rv === rv) {
+        const o = dup(r);
+        Object.keys((b && b.ps) || {}).forEach(f => {
+          const x = (o.ps = o.ps || {})[f] || [0, 0],
+            y = b.ps[f];
+          if (Array.isArray(y)) o.ps[f] = [Math.max(x[0], Number(y[0]) || 0), Math.max(x[1], Number(y[1]) || 0)];
+        });
+        out[g] = o;
+      } else if (b) out[g] = dup(b);
     });
     return out;
   }
@@ -2425,6 +2464,7 @@ const CORE_ = (function () { const module = {exports: {}};
     MEM_LOGGED,
     replayProgress,
     replayedOf,
+    replayBase,
     logRow,
     ELO,
     abilityOf,

@@ -289,6 +289,139 @@ test('an anonymous send whose reply comes after signing in to an account: its re
   assert.strictEqual(a.store.get('imr-anonq', null), null, 'no anonymous queue made again');
 });
 
+// What every device must end with: the player's answers in the sheet's Answers tab (since their last reset), each once.
+const rowsOf = (s, since = '') => s.sheets.Answers.rows.slice(1).filter(r => r[0] === 'Ana' && new Date(r[1]).toISOString() > since).length;
+const total = P => Object.keys(P || {}).reduce((t, g) => (g === C.LEVEL ? t : t + (P[g].ok || 0) + (P[g].ko || 0)), 0);
+const savedTotal = s => total(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress'] || '{}'));
+
+test('the merge baseline after an adoption is the shared history: an unsent answer stays on top (Codex review #399)', async () => {
+  // Two answers logged and saved under the older rules; A played them and has a third, not sent yet.
+  const s = loadCodeGs(withData());
+  const old = {Acropora: {ok: 2, ko: 0, h: '11', pg: 0.3}};
+  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': JSON.stringify(old)}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
+  let busy = 1;
+  const flaky = {get: q => s.get(q), post: b => (b.name && busy-- > 0 ? {ok: false, error: 'busy'} : s.post(b))},
+    A = app({
+      sheet: flaky,
+      SYNC: {name: 'Ana', pin: '1234', log: [qa('a2', 2)], base: old},
+      P: {Acropora: {ok: 3, ko: 0, h: '111', pg: 0.4}}
+    }),
+    B = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
+  // A adopts the replay at its load, its save is refused: its answer stays unsent, on top of the replay.
+  await A.syncPush();
+  assert.deepStrictEqual([A.count('Acropora'), A.ctx.SYNC.log.length], [3, 1]);
+  assert.strictEqual(A.ctx.SYNC.base.Acropora.ok + A.ctx.SYNC.base.Acropora.ko, 2, 'the baseline is the replay alone (was 3)');
+  // B adopts the replay of the two and saves it; then A syncs, and B again.
+  await B.syncPull();
+  await B.syncPush();
+  await A.syncPush();
+  await B.syncPull();
+  await B.syncPush();
+  assert.strictEqual(rowsOf(s), 3);
+  assert.deepStrictEqual([A.count('Acropora'), B.count('Acropora'), savedTotal(s)], [3, 3, 3], 'was 2: the third answer lost');
+});
+
+test('property: devices, unsent answers, an older client and a reset in flight: every device ends with the rows of the log', async () => {
+  // A small deterministic random generator, so a failure replays the same way.
+  let seed = 7;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const G = ['Acropora', 'Porites', 'Montipora', 'Pocillopora'];
+  for (let run = 0; run < 40; run++) {
+    const s = loadCodeGs(withData());
+    let clock = 0,
+      during = null,
+      calm = false,
+      resetAt = '';
+    const tick = () => new Date(Date.UTC(2026, 10, 3, 6, 0, 0) + 1000 * ++clock).toISOString();
+    const ans = (id, g, ok) => ({
+      id,
+      t: tick(),
+      g,
+      a: ok ? g : G[(G.indexOf(g) + 1) % G.length],
+      ok: ok ? 1 : 0,
+      m: 'quiz',
+      ph: g.toLowerCase() + '-wide-' + Math.floor(rnd() * 5),
+      ch: G.join(' '),
+      e: 0.8,
+      th: 1,
+      nw: 1
+    });
+    // Answers logged before any device here, with the progress write lost.
+    const first = Array.from({length: 1 + Math.floor(rnd() * 3)}, (_, i) => ans('f' + run + i, G[i % 4], rnd() < 0.8));
+    s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: first});
+    // Two devices on this app; a save may be refused (busy) and a reset may come while a save is on its way.
+    const sheetFor = () => ({
+      get: q => s.get(q),
+      post: b => {
+        if (b.name && !calm && rnd() < 0.2) return {ok: false, error: 'busy'};
+        const r = s.post(b);
+        if (during) (during(), (during = null));
+        return r;
+      }
+    });
+    const devs = [0, 1].map(() => app({sheet: sheetFor(), SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}}));
+    let n = 0;
+    const play = d => {
+      const g = G[Math.floor(rnd() * 4)],
+        ok = rnd() < 0.75,
+        a = ans('d' + run + 'x' + n++, g, ok),
+        P = d.ctx.P,
+        x = (P[g] = P[g] || {ok: 0, ko: 0, h: ''});
+      x[ok ? 'ok' : 'ko']++;
+      x.h = ((x.h || '') + (ok ? 1 : 0)).slice(-10);
+      d.ctx.SYNC.log = [...(d.ctx.SYNC.log || []), a];
+      d.store.set('imr-coral-progress', P);
+    };
+    // A device still on the app from before the replay: it loads the saved copy, answers once, saves (no rules version).
+    const older = () => {
+      const g = G[Math.floor(rnd() * 4)],
+        ok = rnd() < 0.75,
+        j = s.get({name: 'Ana', pin: '1234'}),
+        data = {...(j.data || {})},
+        P = JSON.parse(data['imr-coral-progress'] || '{}'),
+        x = (P[g] = P[g] || {ok: 0, ko: 0, h: ''}),
+        a = ans('o' + run + 'x' + n++, g, ok);
+      x[ok ? 'ok' : 'ko']++;
+      x.h = ((x.h || '') + (ok ? 1 : 0)).slice(-10);
+      delete data['imr-coral-rv'];
+      data['imr-coral-progress'] = JSON.stringify(P);
+      s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [a], av: '180'});
+    };
+    for (let step = 0; step < 25; step++) {
+      const x = rnd(),
+        d = devs[Math.floor(rnd() * 2)];
+      if (x < 0.45) play(d);
+      else if (x < 0.7) await d.syncPush();
+      else if (x < 0.85) await d.syncPull();
+      else if (x < 0.95) older();
+      else if (!resetAt) {
+        // A reset on device d while its save is on its way.
+        during = () => {
+          resetAt = tick();
+          d.ctx.P = {};
+          d.store.set('imr-coral-reset', resetAt);
+          d.store.set('imr-coral-progress', {});
+        };
+        play(d);
+        await d.syncPush();
+      }
+    }
+    // Every device syncs until nothing changes (saves no longer refused).
+    calm = true;
+    for (let round = 0; round < 4; round++)
+      for (const d of devs) {
+        d.ctx.SYNC.dirty = true;
+        await d.syncPush();
+        await d.syncPull();
+      }
+    const want = rowsOf(s, resetAt);
+    devs.forEach((d, i) =>
+      assert.strictEqual(total(d.ctx.P), want, `run ${run}: device ${i} counts ${total(d.ctx.P)} answers, the log ${want}`)
+    );
+    assert.strictEqual(savedTotal(s), want, `run ${run}: the saved copy`);
+  }
+});
+
 // progress.js achRecheck on stubs: the learned mark taken away (MXL.ach), the snapshot of a player with none learned.
 function ach(A) {
   const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),

@@ -215,12 +215,24 @@ test('replayProgress: the ability, the run, the global level and the times, as q
     if (P[C.LEVEL]) P[C.LEVEL][ok ? 'ok' : 'ko']++;
     else P[C.LEVEL] = C.levelSeed(P);
     C.eloStep(P, C.LEVEL, P[C.LEVEL], ok, d, k);
-    if (!ok) C.eloStep(P, r[3], st(r[3]), false, 0, k);
+    // The genus given: no Elo step (2026-11-03, docs/LEARNING.md "The genus wrongly given in the Elo").
   });
-  assert.deepStrictEqual([R.A.th, R.A.vr, R.B.th, R.C.th], [P.A.th, P.A.vr, P.B.th, P.C.th]);
+  assert.deepStrictEqual([R.A.th, R.A.vr, R.B.th, R.C.th], [P.A.th, P.A.vr, undefined, P.C.th], 'B, only given wrongly: no ability');
   assert.deepStrictEqual([R[C.LEVEL].ok, R[C.LEVEL].ko, R[C.LEVEL].th, R[C.LEVEL].at], [4, 1, P[C.LEVEL].th, rows[4][1]]);
   assert.deepStrictEqual([R.A.streak, R.B.streak, R.A.at, R.A.du], [2, 0, rows[4][1], 1]);
   assert.strictEqual(C.abilityOf({}, 'A'), 0, 'a genus never answered, no global level: 0');
+});
+
+test('replayProgress: the genus wrongly given loses progress, gets a miss and its run reset, but its ability does not move', () => {
+  // B is answered right twice, then given for a photo of A three times.
+  const rows = [row('p', 0, 'B', 'B', 'b0', 'B A C D'), row('p', 1, 'B', 'B', 'b1', 'B A C D')];
+  for (let i = 2; i < 5; i++) rows.push(row('p', i, 'A', 'B', 'a' + i, 'A B C D'));
+  const before = C.replayProgress(rows.slice(0, 2), {gen: GEN}).p.P.B,
+    R = C.replayProgress(rows, {gen: GEN}).p.P;
+  assert.deepStrictEqual([R.B.th, R.B.vr], [before.th, before.vr], 'the Elo of the genus given is left alone');
+  assert.ok(R.B.pg < before.pg, `its progress drops (${before.pg} -> ${R.B.pg})`);
+  assert.deepStrictEqual([R.B.h, R.B.streak, R.B.ok, R.B.ko, R.B.u], ['11000', 0, 2, 0, 5]);
+  assert.ok(R.A.th < 1 && R.A.ko === 3, 'the genus shown takes the misses in its Elo');
 });
 
 test("replayProgress goes on from a replay: the sheet's, then this device's answers on top, as one replay", () => {
@@ -367,7 +379,6 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
       w.pg = C.pgStep(C.pgOf(w), false, C.pgMissW(C.abilityOf(P, c), d0, k));
       w.h = (w.h + '0').slice(-10);
       w.streak = 0;
-      C.eloStep(P, c, w, false, 0, k);
     }
     if (!good) delete s.ex;
     else if (exam) {
@@ -436,4 +447,23 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
     [Infinity, Infinity, Infinity, Infinity, 4, 4, Infinity, Infinity]
   );
   assert.strictEqual(C.guessOf('quiz|t|x', ''), 0);
+});
+
+test("replayBase: the shared history only, never this device's unsent answers (Codex review #399)", () => {
+  const rec = C.replayProgress([row('p', 0, 'A', 'A', 'a0', 'A B C D'), row('p', 1, 'A', 'A', 'a1', 'A B C D')], {gen: GEN}).p.P,
+    // This device: the two answers, a third not sent yet, a photo shown once more than the log says (a hint revealed),
+    // and a genus the log does not have.
+    before = {A: {ok: 3, ko: 0, h: '111', pg: 0.4, ps: {a0: [2, 1], a1: [1, 1], a9: [1, 1]}}, E: {ok: 4, ko: 0, h: '1111', pg: 0.5}},
+    R = C.replayProgress(
+      [row('p', 0, 'A', 'A', 'a0', 'A B C D'), row('p', 1, 'A', 'A', 'a1', 'A B C D'), row('p', 2, 'A', 'A', 'a9', 'A B C D')],
+      {gen: GEN}
+    ).p.P,
+    M = C.replayedOf({P: R}, before, 1),
+    B = {A: {ok: 2, ko: 0, h: '11', ps: {a0: [2, 1]}}, E: {ok: 4, ko: 0, h: '1111', pg: 0.5}},
+    base = C.replayBase(rec, M, 1, B);
+  assert.deepStrictEqual([M.A.ok, base.A.ok], [3, 2], 'the unsent answer is in the progress, not in the baseline');
+  assert.deepStrictEqual(base.A.ps, {a0: [2, 1], a1: [1, 1]}, "per photo the larger of the replay's and the shared copy's");
+  assert.deepStrictEqual(base.E, B.E, 'a genus the log lacks: the shared copy');
+  assert.strictEqual(base.A.pg, rec.A.pg);
+  assert.strictEqual(base[C.LEVEL].ok, 2);
 });
