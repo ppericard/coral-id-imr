@@ -1338,7 +1338,7 @@ async function startSmoke(b, base) {
     await c.close();
   }
   // 4. The fallback card: once over a new question when the first CHOICE.N answers fall clearly below the answer's
-  // prediction; Keep my answer; never again.
+  // band (core.js startCheck); Keep my answer; never again.
   {
     const [c, p] = await open(() => {
       localStorage.setItem('imr-tour', '"done"');
@@ -1349,12 +1349,19 @@ async function startSmoke(b, base) {
     await p.waitForSelector('.unlock.intro', {timeout: 8000}).catch(() => {});
     while (await p.$('.unlock.intro')) await p.click('.unlock.intro .ulbtns .next:not(.sec)');
     const due = await p.evaluate(() => {
-      for (let i = 0; i < CHOICE.N; i++) holdStep(0.85, false); // 20 misses where 0.85 was expected
-      const d = startDue();
-      quizPhoto();
-      return d;
+      // 20 answers, the first on each genus, one in four right on average photos: clearly below "know well".
+      P[LEVEL] = {ok: 5, ko: 15, th: 0.3}; // the global level the window is checked against
+      for (let i = 0; i < CHOICE.N; i++) startStep(0, 4, i % 4 === 0, true);
+      return startDue();
     });
-    await p.waitForTimeout(400);
+    // The next questions until the card shows (a question that opens a genus shows its card first; the prompt waits).
+    for (let k = 0; k < 6 && !(await p.$('.unlock.startfb')); k++) {
+      await p.evaluate(() => {
+        document.querySelectorAll('.unlock.intro').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+        quizPhoto();
+      });
+      await p.waitForTimeout(300);
+    }
     const fb = await p.evaluate(() => {
       const d = document.querySelector('.unlock.startfb');
       return (

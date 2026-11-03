@@ -363,7 +363,7 @@ const INTRO = {
   HOLD: 1.5,
   SLACK: 0.1,
   // AT: the default player's (core.js CHOICE 'new'); each answer to the first-launch question sets its own (startV).
-  OFFER: {KEY: 'imr-coral-intro-offer', AT: startVars('new').at, UNTIL: 150, MET: 10, TH: 0.5}
+  OFFER: {KEY: 'imr-coral-intro-offer', AT: startVars('new').at, UNTIL: 150, MET: CHOICE.MET, TH: 0.5}
 };
 let INTROS = null;
 const introMap = () => {
@@ -528,7 +528,7 @@ function startSet(c, via) {
   const o = startOf(),
     a = answersSoFar(),
     t = Date.now();
-  store.set(CHOICE.KEY, {c, t, at: a, via, n: 0, s: 0, fb: (o && o.fb) || {}, h: [...((o && o.h) || []), [c, a, t, via]].slice(-10)});
+  store.set(CHOICE.KEY, {c, t, at: a, via, w: [], fb: (o && o.fb) || {}, h: [...((o && o.h) || []), [c, a, t, via]].slice(-10)});
   // The questions chosen ahead were planned with the old starting level.
   if (typeof dropPlans === 'function') dropPlans();
   if (typeof syncSoon === 'function') syncSoon();
@@ -536,13 +536,21 @@ function startSet(c, via) {
 // A progress reset: the answer stays (it is about the player, not the progress), its window counts from 0 again.
 function startRestart() {
   const o = startOf();
-  if (o) store.set(CHOICE.KEY, {...o, at: 0, n: 0, s: 0});
+  if (o) store.set(CHOICE.KEY, {...o, at: 0, w: [], v: null, hd: 0});
 }
-// The fallback window: each answer after the choice, until CHOICE.N, with the expectation it really had (holdStep).
-function startStep(e, good) {
+// The fallback window (quiz.js answer): each answer after the choice, up to 3 CHOICE.N, as [its difficulty (dm, as the
+// ability step takes it), the guess rate 1 / k, right, the genus's first answer]; hd once the opening hold has been on
+// at one of them. At each checkpoint (N, 2 N, 3 N answers) the verdict (core.js startCheck), on the global level and
+// the slate genera met then, is kept as v until its card shows (startDue).
+function startStep(d, k, good, first) {
   const o = startOf();
-  if (!o || !(o.n < CHOICE.N) || typeof e !== 'number') return;
-  store.set(CHOICE.KEY, {...o, n: o.n + 1, s: Math.round((o.s + (good ? 1 : 0) - e) * 1000) / 1000});
+  if (!o || typeof d !== 'number' || !isFinite(d)) return;
+  const w = Array.isArray(o.w) ? o.w : [];
+  if (w.length >= 3 * CHOICE.N) return;
+  const W = [...w, [Math.round(d * 100) / 100, k > 0 && isFinite(k) ? Math.round(1000 / k) / 1000 : 0, good ? 1 : 0, first ? 1 : 0]],
+    hd = o.hd || (introHold() ? 1 : 0),
+    v = startCheck(W, o.c, (P[LEVEL] || {}).th, slateGenera().filter(introduced).length, hd);
+  store.set(CHOICE.KEY, {...o, w: W, hd, ...(v ? {v} : {})});
 }
 // The fallback card due: 'lo' (clearly harder than the choice predicts) or 'hi' (clearly easier), once per inconsistency:
 // once per answer and direction (fb '<choice>-lo'), so a player who moved from "I know corals well" to "I had the IMR
@@ -550,15 +558,26 @@ function startStep(e, good) {
 // something to offer: a lower choice or Coral basics not done yet ('lo'), a higher choice ('hi').
 const startDue = () => {
   const o = startOf(),
-    d = o && startCheck(o.n, o.s);
-  // An inferred answer (an existing player, never asked) is not checked: the player said nothing to correct.
-  if (!d || o.via === 'inferred' || (o.fb || {})[o.c + '-' + d]) return null;
+    d = o && o.v;
+  // An inferred answer (an existing player, never asked) is not checked: the player said nothing to correct. After an
+  // answer changed on a fallback card, never the other way back (simulated, a lecture-level RA moved up at 60 answers was
+  // then told to go back down on the harder genera opened next: a contradiction, not a correction).
+  if (!d || o.via === 'inferred' || (o.fb || {})[o.c + '-' + d] || startBack(o, d)) return null;
   return startNext(o.c, d).length || (d === 'lo' && !basicsDone()) ? d : null;
+};
+// The opposite of the last move made on a fallback card ('lo' after moving up, 'hi' after moving down).
+const startBack = (o, d) => {
+  const h = Array.isArray(o.h) ? o.h : [],
+    i = c => CHOICE.opts.findIndex(x => x[0] === c),
+    a = h[h.length - 2],
+    b = h[h.length - 1];
+  if (!a || !b || b[3] !== 'fallback') return false;
+  return d === (i(b[0]) > i(a[0]) ? 'lo' : 'hi');
 };
 // Marked when shown, so it never comes again even if left unanswered.
 const startShown = d => {
   const o = startOf();
-  if (o) store.set(CHOICE.KEY, {...o, fb: {...(o.fb || {}), [o.c + '-' + d]: [answersSoFar(), Date.now()]}});
+  if (o) store.set(CHOICE.KEY, {...o, v: null, fb: {...(o.fb || {}), [o.c + '-' + d]: [answersSoFar(), Date.now()]}});
 };
 // Another device's answer (sync.js mergeSaved): the latest choice wins; the fallback cards shown on either count; on the
 // same choice the longer window is kept.
@@ -570,7 +589,8 @@ function startMerge(json) {
   if (!r || typeof r !== 'object' || !startOpt(r.c)) return;
   const o = startOf(),
     fb = {...(r.fb || {}), ...((o && o.fb) || {})};
-  if (!o || (r.t || 0) > (o.t || 0) || ((r.t || 0) === (o.t || 0) && (r.n || 0) > (o.n || 0))) {
+  const n = x => (Array.isArray(x.w) ? x.w.length : 0);
+  if (!o || (r.t || 0) > (o.t || 0) || ((r.t || 0) === (o.t || 0) && n(r) > n(o))) {
     if (!o || r.c !== o.c) typeof dropPlans === 'function' && dropPlans();
     store.set(CHOICE.KEY, {...r, fb});
   } else store.set(CHOICE.KEY, {...o, fb});
@@ -618,7 +638,6 @@ function holdStep(e, good) {
   // answers (the record goes with the progress; a newer decision replaces it).
   const o = store.get(INTRO.OFFER.KEY, null);
   if (o && o.open && !o.bk) store.set(INTRO.OFFER.KEY, {...o, h: holdNext(Number(o.h) || 0, e, good)});
-  startStep(e, good); // the first-launch question's fallback window (above)
 }
 // Synced (sheet v23, Pierre 2026-11-02: the hold follows a signed-in player from one device to another, and is rebuilt
 // from the answers given before it existed). Each load of the saved progress (sync.js mergeSaved) brings h, the same sum

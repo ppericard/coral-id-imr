@@ -999,10 +999,129 @@ well" now loses some knowledge by question 300 (0.62 against 0.67, sd 0.01; 35 g
 sets the opening hold off more often, which slows the opening. And the fallback card catches it in 1 run of 5 only:
 with the hold on, #425 eases the questions, so the expected success falls with the answers and the surprise stays near
 0 (−0.11 to +0.03, against −0.03 to +0.11 for a beginner who said "new"). The surprise no longer tells this case apart;
-open question for Pierre (ROADMAP): a milder prior for "know well", or a second signal for the fallback (the hold
-during the window). The values and thresholds are kept as they are until he decides.
+open question then, answered on 2026-11-04 by the redesigned fallback test below (the first answers on each genus and
+the hold during the window); the prior of "know well" kept.
 
-**Fallback for everyone** (Pierre: "also for those who answered, since they may have picked wrong"). Not the right %:
+**The fallback test, redesigned (2026-11-04)**, Pierre on the first rule (below): "a really weak player shows quickly
+in 20 answers, but maybe re-assess at 40-50. An expert (better than declared): 20 answers isn't enough; with few genera
+unlocked, even a mediocre player can get everything right by chance. How do we tell a beginner who claimed expert and is
+failing from a real expert whose difficulty the game raises quickly?" The mean surprise could not: the game adapts
+(the Elo moves fast since #415, and #425 eases the questions while the opening hold is on), so the expectation follows
+the answers and the surprise stays near 0 for a beginner who claimed "know well" (caught in 1 run of 5). What tells
+them apart is in the traces of the first 80 answers (`tools/learnsim.js` records them; profiles × answers, 5 seeds):
+
+- **The first answer on each genus** (before the game has adapted to that genus, after its card): real experts 91-100%
+  right, beginners 25-75%, whatever they declared. Fitted on the scale of the ability with each question's difficulty
+  and guess rate (`core.js` `levelFit`: the level that best explains those answers, over `ELO.lo..hi`, and its
+  standard error 1 / √information), it is the level of what the player knew before the game taught them.
+- **The global level** (`P[LEVEL].th`, the Elo over every answer, difficulty allowed for): a beginner's climbs above
+  the "new" band within 40-60 answers on the few easy genera they have learned (Pierre's "mediocre player gets
+  everything right"); an expert's is far above every band.
+- **The opening hold** fired during the window: it marks the run of misses that #425's easier questions then hide from
+  the expectation.
+
+**The rule** (`core.js` `startCheck`; `model.js` `startStep` keeps the window, `startDue` the verdict until its card):
+
+- Each answer predicts a **band** of levels around its prior, the edges midway between the priors: "new" under 0.25,
+  "IMR course" 0.25 to 0.875, "know well" above 0.875 (`startBand`; no new number).
+- The window: the answers after the answer, up to 3 × `CHOICE.N` (60), as [difficulty, guess rate, right, first answer
+  on its genus]; the verdict is taken at 20, 40 and 60 answers.
+- **Lower** (Coral basics, or the lower answers, nearest first): the first-answer level is below the band's floor with
+  95% confidence (level + 1.96 × its standard error < floor), or below the floor at all while the opening hold has
+  fired in the window and the global level is not clearly above the floor (global level < floor + 1.96 × its standard
+  error). From 20 answers: a weak player shows quickly.
+- **Higher** (the higher answers): only from 40 answers and `CHOICE.MET` = `INTRO.OFFER.MET` = 10 slate genera met (the
+  same evidence as the open-all offer), the global level above the band's ceiling with 95% confidence and the
+  first-answer level above the ceiling too: a player who does well only on the genera they have learned does not count.
+- 1.96: the admin's 95% level margin (`levelMargin`). No new constant (`CHOICE.LO` and `CHOICE.HI` are gone); unchanged
+  as they were: once per answer and direction, never with a card or the tour, never for an inferred answer, "Keep my
+  answer" always. "New" has no floor: a struggling new player has Coral basics offered first and on Home already.
+- Tried and dropped (same traces): the global level alone against the band (a beginner's climbs; 24/40 wrong answers
+  caught, 3/20 cards to truthful answers, "higher" to 2 of 5 truthful beginners); the global level with the hold
+  (31/40, 4/20); a level fitted on the whole window (24/40, 3/20); the first-answer level alone (1/40; too few first
+  answers for 95% confidence without the hold) or with the hold (14/40, 4/20); the minimum of first answers and the
+  bounds of the fit change nothing. The first rule (mean surprise over 20, below): 10/40, 0/20.
+
+**Confusion matrix** (`node tools/fallbackeval.js <dir> answers.json`: the app's own `startCheck` on the traces of `tools/learnsim.js --seeds 5
+--questions 300 --choice new|imr|know --fallback keep`, every profile; the truthful answers: beginner new, lecture RA
+IMR course, strong RA and expert know well). "At answer": the checkpoint of the verdict; the card itself shows at the
+next question the prompt spacing allows. True knowledge of the slate with the card kept, the truthful answer's in
+brackets:
+
+| Profile (truthful) | Declared | "lower" card | "higher" card | at answer | right direction | knowledge q100 / q300 (truthful) |
+|---|---|---|---|---|---|---|
+| beginner (new) | new (truthful) | 0/5 | 0/5 | – | – | 0.28 / 0.65 |
+| beginner (new) | imr | 5/5 | 0/5 | 20, 20, 40, 40, 60 | 5/5 lower | 0.26 / 0.63 (0.28 / 0.65) |
+| beginner (new) | know | 4/5 | 0/5 | 20, 20, 40, 60 | 4/5 lower | 0.28 / 0.67 (0.28 / 0.65) |
+| lecture RA (imr) | new | 0/5 | 4/5 | 40, 60, 60, 60 | 4/5 higher | 0.46 / 0.76 (0.46 / 0.75) |
+| lecture RA (imr) | imr (truthful) | 1/5 | 0/5 | 40 | – | 0.46 / 0.75 |
+| lecture RA (imr) | know | 5/5 | 0/5 | 20, 20, 40, 60, 60 | 5/5 lower | 0.48 / 0.76 (0.46 / 0.75) |
+| strong RA (know) | new | 0/5 | 4/5 | 60, 60, 60, 60 | 4/5 higher | 0.67 / 0.85 (0.67 / 0.85) |
+| strong RA (know) | imr | 0/5 | 3/5 | 60, 60, 60 | 3/5 higher | 0.67 / 0.85 (0.67 / 0.85) |
+| strong RA (know) | know (truthful) | 2/5 | 0/5 | 20, 40 | – | 0.67 / 0.85 |
+| expert (know) | new | 0/5 | 5/5 | 60 (×5) | 5/5 higher | 0.94 / 0.95 (0.94 / 0.95) |
+| expert (know) | imr | 0/5 | 5/5 | 60 (×5) | 5/5 higher | 0.94 / 0.95 (0.94 / 0.95) |
+| expert (know) | know (truthful) | 0/5 | 0/5 | – | – | 0.94 / 0.95 |
+
+Wrong answers caught in the right direction: **35 of 40** (the first rule: 10); cards to truthful answers: **3 of 20**
+(the first rule: 0): one "lower" to a lecture RA, two to strong RAs, who know 60% of the genera well and the others at
+10%: on their first answers they are an IMR-course player, so "I had the IMR coral course" is not a wrong suggestion.
+No "higher" to a truthful player. An expert's "higher" waits for 10 genera met, so it comes at 60 answers. The wrong
+answer itself costs this learner little (true knowledge within 0.02 of the truthful answer's when the card is kept):
+it learns from every question and never gives up; what a wrong answer costs a real player (a discouraging start, or a
+slow and boring one) is what the card is for.
+
+**With the card taken** (`--fallback accept`: the first answer the card offers, the nearest; the same seeds, the cards
+shown live through the prompt spacing, so at 30 rather than 20 when the sign-in card takes the 20th answer). A change
+made on a fallback card is never followed by a card the other way (`startBack`): with it allowed, 3 of 4 lecture-level
+RAs who had said "new" were moved up at 60 answers and told to go back down on the next window (their first answers on
+the harder genera opened next are an IMR-course player's at best, as they know 40% of the genera), a contradiction:
+
+| Profile (truthful) | Declared | first card (taken) | at answer | answer at q300 | knowledge q100 / q300, taken | kept | truthful |
+|---|---|---|---|---|---|---|---|
+| beginner (new) | new (truthful) | 0/5 | – | new ×5 | 0.28 / 0.65 | 0.28 / 0.65 | 0.28 / 0.65 |
+| beginner (new) | imr | 5/5 lower | 30, 30, 40, 40, 60 | new ×5 | 0.26 / 0.64 | 0.26 / 0.63 | 0.28 / 0.65 |
+| beginner (new) | know | 4/5 lower | 30, 31, 40, 60 | new ×4, know ×1 | 0.28 / 0.65 | 0.28 / 0.67 | 0.28 / 0.65 |
+| lecture RA (imr) | new | 4/5 higher | 40, 60, 60, 60 | imr ×3, know ×1, new ×1 | 0.47 / 0.75 | 0.46 / 0.76 | 0.46 / 0.75 |
+| lecture RA (imr) | imr (truthful) | 1/5 lower | 40 | imr ×4, new ×1 | 0.46 / 0.75 | 0.46 / 0.75 | 0.46 / 0.75 |
+| lecture RA (imr) | know | 5/5 lower | 30, 30, 40, 60, 60 | new ×3, imr ×2 | 0.48 / 0.76 | 0.48 / 0.76 | 0.46 / 0.75 |
+| strong RA (know) | new | 4/5 higher | 60 (×4) | know ×4, new ×1 | 0.66 / 0.85 | 0.67 / 0.85 | 0.67 / 0.85 |
+| strong RA (know) | imr | 3/5 higher | 60, 60, 61 | know ×3, imr ×2 | 0.67 / 0.85 | 0.67 / 0.85 | 0.67 / 0.85 |
+| strong RA (know) | know (truthful) | 2/5 lower | 30, 40 | know ×3, imr ×2 | 0.67 / 0.85 | 0.67 / 0.85 | 0.67 / 0.85 |
+| expert (know) | new | 5/5 higher | 60, 60, 60, 61, 61 | know ×5 | 0.94 / 0.95 | 0.94 / 0.95 | 0.94 / 0.95 |
+| expert (know) | imr | 5/5 higher | 60, 60, 60, 61, 61 | know ×5 | 0.94 / 0.95 | 0.94 / 0.95 | 0.94 / 0.95 |
+| expert (know) | know (truthful) | 0/5 | – | know ×5 | 0.94 / 0.95 | 0.94 / 0.95 | 0.94 / 0.95 |
+
+Of the 40 wrong answers, 31 end at the truthful answer (every expert at "know well", every beginner who said "IMR
+course" at "new"), 5 keep their answer (no card), and 4 lecture-level RAs overshoot by one ("know well" or "new": on
+their first answers they sit between the two bands, knowing 40% of the genera). The knowledge moves within 0.02 either
+way (this learner learns from every question whatever it said).
+
+**On the real log** (the export of 2026-11-03, read-only): the 8 players whose first 20 answers carry the logged
+expectation, each one's first 60 answers replayed under each answer (the global level by `replayProgress` with the
+answer's prior; the genera met counted as the genera answered so far, fewer than the app's, which also counts cards; the
+hold recomputed from the logged e as the sheet's `hold_`):
+
+| Player | Answers | first answers right (first 60) | as "new" | as "IMR course" | as "know well" |
+|---|---|---|---|---|---|
+| 1 | 378 | 9/14 | none | lower at 40 | lower at 40 |
+| 2 | 230 | 7/8 | none | none | none |
+| 3 | 159 | 11/14 | none | none | lower at 20 |
+| 4 | 112 | 8/10 | none | none | none |
+| 5 | 85 | 16/20 | higher at 40 | none | lower at 60 |
+| 6 | 67 | 28/33 | none | none | none |
+| 7 | 40 | 7/8 | none | none | none |
+| 8 | 23 | 18/20 | none | none | none |
+
+All are IMR people (RAs after the course and a test account of Pierre's). Under "IMR course", the answer they would
+give, 1 of 8 gets a card ("lower" at 40: 9 of their first 14 answers on a genus right); under "know
+well" 3 of 8 get "lower"; under "new" 1 of 8 gets "higher". These answers predate the first-meeting cards (2026-11-02)
+for most of them: a first answer without its card is harder, so the real log is a pessimistic test of the first-answer
+level. The first rule (surprise) would have shown "higher" to 3 of 8 as "new", 2 of 8 as "IMR course".
+
+**The first rule (2026-11-03, replaced on 2026-11-04)**:
+
+Fallback for everyone (Pierre: "also for those who answered, since they may have picked wrong"). Not the right %:
 the game aims every question at about 80% right, so the right % hardly tells the players apart (it never did: "Offer to
 open all", above). What tells whether the answer fits is how far the answers beat or miss **what the app expected from
 that answer**: the mean surprise (right 1 / wrong 0 − the logged expected success `e`) over the first `CHOICE.N` = 20
@@ -1070,10 +1189,12 @@ more come out know well 3, IMR course 2, new 2 (the estimate is rough: one test 
 It changes little for them: at 50+ answers the prior weighs a sixth or less, the offer window has opened, and no
 fallback card comes for an inferred answer; it is shown as "inferred" in the admin's player journey.
 
-**Rules version**: the prior moves the expected success of a genus's first answers, hence what a right answer or a miss
-weighs in its progress (`pgMemW`, `pgMissW`); the sheet's full replay of the answer log (`core.js` `RVS`, AGENTS.md rule
-14) was not on `main` when this was built: when it lands, the replay must read the player's `imr-coral-start` and a rules
-version be appended (ROADMAP).
+**Rules version 3** (2026-11-04, after the full replay #399): the prior moves the ability of a genus's first answers,
+hence the progress, so the replay applies it: `core.js` `replayProgress` takes each player's `imr-coral-start` record
+(`starts`) and, at each answer, the prior of the answer then in force (`startPriorAt`, from its history `h`; 0 before the
+first, the player then played as the default player); `abilityOf` and `eloStep` take the prior. The sheet (v29) reads it
+from the saved data or an anonymous device's send, the admin from the saved copy, the app from its store. RVS v3 with
+the standard card (`RV_CARD`).
 
 ### Comeback after a break (2026-11-02)
 
@@ -2325,7 +2446,7 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...] [--mem 0,0.4,1.5,2]
   [--openall offer|N] [--back keep|one] [--choice new|imr|know|auto] [--fallback keep|accept] [--vars JSON]` (the
   first-launch answer, its fallback card and, for calibration only, other values of its variables: "The first-launch
-  question"). Each run (profile × seed) gets a fresh browser context; seeds
+  question"); each run's first 80 answers are kept as a trace for `tools/fallbackeval.js`). Each run (profile × seed) gets a fresh browser context; seeds
   are 1..N, the app's `Math.random` and the learner's own generator both seeded from it, so a run is reproducible and
   the same seeds before and after a change give paired comparisons. `--stats` loads a `?stats=1` answer of the sync
   sheet as the photo ratings (default: none, Pierre's Easy/Medium/Hard sets, as in CI; its `mem`, sheet v26, the app's
@@ -2576,6 +2697,10 @@ is not in the simulation.
   open-all offer from answer 50 / 30 / 20, Coral basics offered first for "new"); existing players under 50 answers are
   asked once, the others inferred silently; a fallback card once per answer and direction when the first 20 answers'
   surprise is below −0.1 or above +0.18 ("The first-launch question").
+- 2026-11-04, Pierre (on #428): the fallback test redesigned: checked at 20, 40 and 60 answers; "lower" from the level
+  of the first answers on each genus (or the opening hold fired), "higher" only from 40 answers and 10 genera met, from
+  the global level and the first answers together; no move back after a change made on its card; 35 of 40 wrong answers
+  caught instead of 10 ("The fallback test, redesigned"). The full replay applies the first-launch prior (RVS v3).
 - 2026-11-03, Pierre: a custom quiz, the photo quiz on the genera the player picks: the genus asked drawn among them by
   the usual weights with no opening path (a genus not met yet is asked with its card), the choices from them first
   (the trap rules inside the selection), topped up from the slate only under 4 genera; every answer counts as a

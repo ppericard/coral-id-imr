@@ -779,6 +779,7 @@ function modelHold(saved = {}) {
   const ctx = {
     store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)},
     startVars: require('../core.js').startVars, // INTRO.OFFER.AT (core.js CHOICE)
+    CHOICE: require('../core.js').CHOICE, // INTRO.OFFER.MET (CHOICE.MET)
     startStep: () => {} // the first-launch question's window (tests/start.test.js)
   };
   require('vm').createContext(ctx);

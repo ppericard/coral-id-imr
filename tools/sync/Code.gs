@@ -1801,18 +1801,26 @@ const CORE_ = (function () { const module = {exports: {}};
   // the shaky signal that paces the opening of genera); v.at, the answer from which the offer to open all genera can come
   // (model.js introOffer, INTRO.OFFER.AT for everyone before); v.basics, Coral basics offered first. "new" is the
   // default player of before (a new player is a beginner). Values and their simulation: docs/LEARNING.md "The first-
-  // launch question". Stored in imr-coral-start (synced with the progress): {c, t, at, via, n, s, fb, h}.
-  // Fallback (for everyone, also those who answered: they may have picked wrong): over the first N answers after the
-  // choice, s sums each answer's surprise (right 1 / wrong 0, minus the success the app expected, e); its mean below -LO
-  // says the game is clearly harder than the choice predicts ('lo': Coral basics, or a lower choice), above HI clearly
-  // easier ('hi': a higher choice). One card per direction, ever (fb). LO and HI from the simulated players and the real
-  // answer log (docs/LEARNING.md).
+  // launch question". Stored in imr-coral-start (synced with the progress): {c, t, at, via, w, v, hd, fb, h}.
+  // Fallback (for everyone, also those who answered: they may have picked wrong; Pierre, 2026-11-04: "a really weak
+  // player shows quickly in 20 answers; an expert, 20 answers isn't enough: with few genera unlocked even a mediocre
+  // player gets everything right"): the answers after the choice (w: [difficulty, guess rate, right, first answer on its
+  // genus], kept up to 3 N) are checked at N, 2 N and 3 N answers (startCheck). The level each answer predicts is a band
+  // around its prior, the edges midway between the priors (new under 0.25, IMR course 0.25 to 0.875, know well above).
+  // 'lo' (clearly below the band: Coral basics, or a lower answer): the level fitted on each genus's FIRST answer (before
+  // the game has adapted to that genus; difficulty allowed for; levelFit) is below the band's floor with 95% confidence,
+  // or below it at all while the opening hold has fired in the window (#425 eases the questions then, so the misses do
+  // not show in the expectation) and the global level is not clearly above the floor. 'hi' (clearly above the band: a
+  // higher answer), only from 2 N answers and OFFER.MET (10) genera met: the global level (the Elo over every answer,
+  // difficulty allowed for) is above the band's ceiling with 95% confidence, and the first-answer level is above it too
+  // (a player who did well only on the few genera they have learned does not count). z 1.96, as the admin's level
+  // margin. The simulation and the real log: docs/LEARNING.md "The first-launch question".
   const CHOICE = {
     KEY: 'imr-coral-start',
     ASK: 50,
     N: 20,
-    LO: 0.1,
-    HI: 0.18,
+    Z: 1.96,
+    MET: 10, // the slate genera met before a 'hi' verdict: the same as the open-all offer's (model.js INTRO.OFFER.MET)
     opts: [
       ['new', 'I’m new to corals', 'Start from scratch: the app shows you the basics first.', {p: 0, at: 50, basics: 1}],
       ['imr', 'I had the IMR coral course', 'You have met the genera in the IMR lecture.', {p: 0.5, at: 30, basics: 0}],
@@ -1822,8 +1830,55 @@ const CORE_ = (function () { const module = {exports: {}};
   const startOpt = c => CHOICE.opts.find(o => o[0] === c) || null;
   // The variables of a choice (none yet, or an unknown one: the default player's).
   const startVars = c => (startOpt(c) || CHOICE.opts[0])[3];
-  // The verdict on the first N answers after the choice: null (not yet, or consistent), 'lo' or 'hi'.
-  const startCheck = (n, s) => (!(n >= CHOICE.N) ? null : s / n < -CHOICE.LO ? 'lo' : s / n > CHOICE.HI ? 'hi' : null);
+  // The band of levels an answer predicts: [floor, ceiling], the edges midway between its prior and its neighbours'.
+  function startBand(c) {
+    const i = CHOICE.opts.findIndex(o => o[0] === c),
+      p = j => CHOICE.opts[j][3].p;
+    return [i > 0 ? (p(i - 1) + p(i)) / 2 : -Infinity, i >= 0 && i < CHOICE.opts.length - 1 ? (p(i) + p(i + 1)) / 2 : Infinity];
+  }
+  // The level that best explains answers A ([difficulty, guess rate, right]) on the ability scale (the app's
+  // g + (1 - g) sigmoid(level - difficulty)), searched over ELO.lo..hi, and its standard error 1 / sqrt(information).
+  const stSig = x => 1 / (1 + Math.exp(-x));
+  const stP = (th, d, g) => g + (1 - g) * stSig(th - d);
+  const stInfo = (th, d, g) => {
+    const q = stSig(th - d),
+      pr = stP(th, d, g);
+    return ((1 - g) * q * (1 - q)) ** 2 / Math.max(1e-9, pr * (1 - pr));
+  };
+  const stSe = (th, A) =>
+    1 /
+    Math.sqrt(
+      Math.max(
+        1e-9,
+        A.reduce((t, a) => t + stInfo(th, a[0], a[1]), 0)
+      )
+    );
+  function levelFit(A) {
+    let best = -Infinity,
+      bt = 0;
+    for (let i = 0, lo = -1.5, hi = 3; lo + i * 0.02 <= hi + 1e-9; i++) {
+      const th = lo + i * 0.02,
+        ll = A.reduce((t, a) => t + Math.log(a[2] ? stP(th, a[0], a[1]) : 1 - stP(th, a[0], a[1])), 0);
+      if (ll > best) ((best = ll), (bt = th));
+    }
+    return [Math.round(bt * 100) / 100, stSe(bt, A)];
+  }
+  // The verdict at a checkpoint (N, 2 N or 3 N answers after the choice), null between them, when consistent or with
+  // too little evidence: 'lo' or 'hi' (above). w: the window's answers [d, g, right, first]; lv: the global level now;
+  // met: the slate genera met; held: the opening hold fired in the window.
+  function startCheck(w, c, lv, met, held) {
+    const n = (w || []).length;
+    if (!n || n % CHOICE.N || n > 3 * CHOICE.N || !startOpt(c)) return null;
+    const [floor, ceil] = startBand(c),
+      F = w.filter(a => a[3]);
+    if (!F.length || typeof lv !== 'number') return null;
+    const [fl, fse] = levelFit(F),
+      se = stSe(lv, w),
+      z = CHOICE.Z;
+    if (fl + z * fse < floor || (held && fl < floor && lv < floor + z * se)) return 'lo';
+    if (n >= 2 * CHOICE.N && met >= CHOICE.MET && lv - z * se > ceil && fl > ceil) return 'hi';
+    return null;
+  }
   // The choices a fallback card offers: below the current one ('lo') or above it ('hi').
   const startNext = (c, dir) => {
     const i = CHOICE.opts.findIndex(o => o[0] === c);
@@ -2881,6 +2936,8 @@ const CORE_ = (function () { const module = {exports: {}};
     startOpt,
     startVars,
     startCheck,
+    startBand,
+    levelFit,
     startNext,
     startInfer,
     levelSeed,

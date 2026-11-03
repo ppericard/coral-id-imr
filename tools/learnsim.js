@@ -238,6 +238,7 @@ function play(cfg) {
   Math.random = gen((seed * 2246822519) ^ 0x85ebca6b);
   let rnd = gen((seed * 2654435761) ^ 0x9e3779b9);
   const SL = slateGenera(),
+    TRACE = 80,
     know = {};
   SL.forEach((g, i) => (know[g] = i % 5 < prof.m ? prof.hi : prof.lo));
   BONUS.forEach(g => (know[g] = prof.lo));
@@ -318,7 +319,7 @@ function play(cfg) {
   // The first-launch question (--choice), answered before the first question; the first answers measured, and the
   // fallback card that may follow them.
   if (typeof startSet === 'function') startSet(choice, 'tour');
-  const early = {n: 0, s: 0, ok: 0, lvl: null, fb: null};
+  const early = {n: 0, s: 0, ok: 0, lvl: null, fb: null, tr: []};
   const q0 = question;
   question = (...a) => ((window.__q = a), q0(...a));
 
@@ -441,10 +442,26 @@ function play(cfg) {
       }
     }
     T += L.STEP;
-    return {q, t, good, set, e: lastE};
+    return {q, t, good, set, e: lastE, first};
   };
   for (let i = 0; i < N; i++) {
-    const {q, t, good, set, e} = ask(null, i);
+    const {q, t, good, set, e, first} = ask(null, i);
+    // The first TRACE answers, for the fallback rules (tools/fallback.py): what the app logged with each answer (e, th,
+    // mode), whether it was the genus's first answer, and the global level, the opening hold and the genera met after it.
+    if (i < TRACE) {
+      const lg = (store.get(LOG0, []) || []).slice(-1)[0] || {};
+      early.tr.push({
+        ok: good ? 1 : 0,
+        e: typeof lg.e === 'number' ? lg.e : null,
+        th: typeof lg.th === 'number' ? lg.th : null,
+        m: lg.m || '',
+        first: first ? 1 : 0,
+        lv: (P[LEVEL] || {}).th,
+        held: introHold() ? 1 : 0,
+        met: SL.filter(introduced).length,
+        p: know[t]
+      });
+    }
     if (early.n < 20 && typeof e === 'number') {
       early.n++;
       early.s += (good ? 1 : 0) - e;

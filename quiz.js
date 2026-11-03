@@ -373,6 +373,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   const good = c === target,
     s = st(target),
     chs = tq ? [] : [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c);
+  const first = !((s.ok || 0) + (s.ko || 0)); // the genus's first answer (model.js startStep)
   // Progress (pgObs) weighed by what the answer proves: the plausible choices k and the look-alikes among the choices.
   // A typed answer: no guess rate (TYPED.k, Infinity: the expected success has no 1/k floor).
   const nc = $v.querySelectorAll('[data-c]').length || 4,
@@ -539,6 +540,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // questions too (Pierre, 2026-11-02: the hold gets the full information; e allows for the plausible choices k, as for
   // any question, and for the rust, so a miss the rust explains adds less).
   holdStep(ans.e, good);
+  startStep(dm, k, good, first); // the first-launch question's fallback window (model.js)
   if (warm) comebackStep(rT, th0, dm, k, good);
   answeredAt(s, good);
   if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
@@ -1072,7 +1074,7 @@ function startFbShow(dir) {
   const d = cardShow({
     kind: 'tip',
     cls: 'startfb',
-    kick: `${o.n} answers in`,
+    kick: `${(o.w || []).length} answers in`,
     title: dir === 'lo' ? (next.length ? 'Harder than expected?' : 'Corals are new to you?') : 'You know more than you said',
     label: 'Your start',
     body:
