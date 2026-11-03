@@ -687,9 +687,10 @@
   // "well spread out": learning a whole genus takes ~300-430 questions, so most rungs are the quarters on the way there).
   // Learning milestones only, never time or days played (the learning model's rule). Each has a family, a tier
   // (1 bronze, 2 silver, 3 gold) and a test on a snapshot the app builds (app.js achSnap):
-  //   {total, met, q: [genera at >= 25%, >= 50%, >= 75%], learned, pct, streak (best run of right answers), duel, cor,
+  //   {total, met, q: [genera at Open Water (>= 50%), Advanced (>= 80%), Divemaster (>= 95%) or above; model.js MASTERY,
+  //   2026-11-03, were the quarters 25/50/75% before], learned (Instructor), pct, streak (best run of right answers), duel, cor,
   //    hard, elo (0 until 200 answers, app.js ELO_MIN: it moves a lot before), group (an IMR lecture group fully learned), bonus (bonus genera met)}.
-  // Median questions to reach the quarter rungs, simulated with the real game (2026-11-01, 75% / 90% right): 5 at 25%
+  // Median questions to reach the old quarter rungs, simulated with the real game (2026-11-01, before the levels; 75% / 90% right): 5 at 25%
   // 76 / 57, 10 at 50% 231 / 137, 5 at 75% 363 / 203, first learned ~430 / ~300.
   // Descriptions say what the player can now do (Pierre, 2026-11-02: informational feedback motivates, Deci, Koestner &
   // Ryan 1999; counts stay counts: genera met, progress %, Elo).
@@ -697,18 +698,18 @@
     ['met10', 'Explorer', 'Met 10 genera', 1, '🧭', s => s.met >= 10],
     ['met20', 'Wide eyes', 'Met 20 genera', 1, '🧭', s => s.met >= 20],
     ['metall', 'Whole slate', 'Met every genus of the list', 2, '🧭', s => s.total && s.met >= s.total],
-    ['q25a', 'Getting there', "You're a quarter of the way to knowing 5 genera", 1, '🌱', s => s.q[0] >= 5],
-    ['q25b', 'Growing', "You're a quarter of the way to knowing 10 genera", 1, '🌱', s => s.q[0] >= 10],
-    ['q25c', 'Spreading', "You're a quarter of the way to knowing 20 genera", 2, '🌱', s => s.q[0] >= 20],
-    ['q50a', 'Halfway', "You're halfway to knowing 5 genera", 1, '🌿', s => s.q[1] >= 5],
-    ['q50b', 'Half a reef', "You're halfway to knowing 10 genera", 2, '🌿', s => s.q[1] >= 10],
-    ['q50c', 'Thriving', "You're halfway to knowing 20 genera", 2, '🌿', s => s.q[1] >= 20],
-    ['q75a', 'Nearly there', 'You nearly know 5 genera (three quarters of the way)', 2, '🪸', s => s.q[2] >= 5],
-    ['q75b', 'Reef builder', 'You nearly know 10 genera (three quarters of the way)', 2, '🪸', s => s.q[2] >= 10],
-    ['learn1', 'First genus learned', "You passed a genus's mastery exam: you know it for sure", 2, '🎓', s => s.learned >= 1],
-    ['learn5', 'Five learned', 'You know 5 genera for sure (mastery exam passed)', 3, '🎓', s => s.learned >= 5],
-    ['learn10', 'Ten learned', 'You know 10 genera for sure', 3, '🎓', s => s.learned >= 10],
-    ['learn20', 'Twenty learned', 'You know 20 genera for sure', 3, '🎓', s => s.learned >= 20],
+    ['q25a', 'Open Water: 5 genera', '5 genera at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 5],
+    ['q25b', 'Open Water: 10 genera', '10 genera at Open Water level or above', 1, '🌱', s => s.q[0] >= 10],
+    ['q25c', 'Open Water: 20 genera', '20 genera at Open Water level or above', 2, '🌱', s => s.q[0] >= 20],
+    ['q50a', 'Advanced: 5 genera', '5 genera at Advanced level or above (80%+)', 1, '🌿', s => s.q[1] >= 5],
+    ['q50b', 'Advanced: 10 genera', '10 genera at Advanced level or above', 2, '🌿', s => s.q[1] >= 10],
+    ['q50c', 'Advanced: 20 genera', '20 genera at Advanced level or above', 2, '🌿', s => s.q[1] >= 20],
+    ['q75a', 'Divemaster: 5 genera', '5 genera at Divemaster level or above (95%: their mastery exam is on)', 2, '🪸', s => s.q[2] >= 5],
+    ['q75b', 'Divemaster: 10 genera', '10 genera at Divemaster level or above', 2, '🪸', s => s.q[2] >= 10],
+    ['learn1', 'First Instructor', "You passed a genus's mastery exam: you could teach it", 2, '🎓', s => s.learned >= 1],
+    ['learn5', 'Instructor: 5 genera', 'Mastery exam passed on 5 genera', 3, '🎓', s => s.learned >= 5],
+    ['learn10', 'Instructor: 10 genera', 'Mastery exam passed on 10 genera', 3, '🎓', s => s.learned >= 10],
+    ['learn20', 'Instructor: 20 genera', 'Mastery exam passed on 20 genera', 3, '🎓', s => s.learned >= 20],
     ['learnall', 'Coral master', 'You know every genus of the list for sure', 3, '👑', s => s.total && s.learned >= s.total],
     ['pct5', 'First steps', '5% progress', 1, '📈', s => s.pct >= 5],
     ['pct10', 'On the way', '10% progress', 1, '📈', s => s.pct >= 10],

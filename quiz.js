@@ -373,7 +373,12 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
       setTimeout(
         () =>
           typeof achPop === 'function' &&
-          achPop({tier: 3, icon: '🎓', title: `${target} mastered`, desc: `${EXAM.n} hard questions right, slipped into the quiz`}),
+          achPop({
+            tier: 3,
+            icon: '🎓',
+            title: `${target}: Instructor`,
+            desc: `Mastery exam passed (${EXAM.n} hard questions right): you could teach it`
+          }),
         600
       );
     } else s.ex = ex;
