@@ -644,8 +644,10 @@ async function signin(base) {
         if (!/All \d+ genera are open/.test(said)) fails.push(`${w}px open all genera: no confirmation (${said})`);
       }
       // Every slate genus is now met, so the bonus genera offer (a prompt, tested in draw.smoke.js) would come at 30 and
-      // move the one-tap question to 40: this player has already chosen (⚙ Bonus genera: Off).
-      await q2.evaluate(() => bonusSet(false));
+      // move the one-tap question to 40: this player has already chosen (⚙ Bonus genera: Off). Likewise the card offering
+      // to go back to one at a time after Open all (model.js backDue: this player's answers fall below expectation):
+      // answered Keep them all.
+      await q2.evaluate(() => (bonusSet(false), introBack(true)));
       await q2.evaluate(() => (location.hash = 'quiz'));
       await q2.waitForTimeout(500);
       if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all && c.kick.includes(`${k + 1} of 4`)))

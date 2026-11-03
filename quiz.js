@@ -28,7 +28,7 @@ function bindQuizNav() {
 // The game rules (behind the ? button).
 const gameHelp =
   cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
-  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? '' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="#progress">My progress</a>. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
+  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? '' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="#progress">My progress</a>. New genera come one at a time, each on its card; <b>Open all genera</b> (My progress) opens them all at once, and if the questions then get much harder for you, a card offers once to go back to one at a time. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
   <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus fills up to 95% with your right answers, each point a little harder to earn than the last, and a right answer counts most when the genus's look-alikes are among the choices; a mistake takes it back down; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the photo quiz: see ? on <a href="#progress">My progress</a>.</p>${
     cur.startsWith('quiz-duel')
       ? ''
@@ -887,6 +887,7 @@ function quizPhoto() {
   if (q.intro) introShow(q.intro, q.start);
   else if (!noOpen() && promptOk() && introOffer())
     (promptMark(), introOfferShow()); // never over another card: next question
+  else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
   else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
   topUp(); // the questions after this one, chosen while it is played (planNext)
 }
@@ -932,13 +933,59 @@ function introOfferShow() {
   d.querySelector('.sec').onclick = () => pick(false);
   setTimeout(() => d.querySelector('[data-open]').focus({preventScroll: true}), 50);
 }
+// Back to one at a time (model.js backDue, introBack), over the question, once: after Open all genera, when the answers
+// since have fallen clearly below what the game expected. "One at a time" closes the genera opened at once; the question
+// on screen is chosen again (it may be about one of them, or offer one as a choice). Escape: Keep them all.
+function backShow() {
+  const d = document.createElement('div'),
+    n = backOpen().length,
+    pick = keep => {
+      const L = introBack(keep);
+      save();
+      close();
+      if (L.length) {
+        dropPlans();
+        NEXTQ = null;
+        quizPhoto();
+      }
+    };
+  d.className = 'unlock intro';
+  d.setAttribute('role', 'dialog');
+  d.setAttribute('aria-modal', 'true');
+  d.setAttribute('aria-label', 'Keep all genera?');
+  d.innerHTML = `<div class="ulcard"><p class="ulkick">Lots of new genera at once</p><h3>Keep them all, or go back to one at a time?</h3>
+    <p>Since you opened all genera, the questions have been harder for you. With one at a time, the ${n} genera opened at once go back in the queue and come back one by one, each on its card. Your answers are kept.</p>
+    <div class="ulbtns ulstack"><button class="next" type="button" data-back>One at a time</button><button class="next sec" type="button" data-keep>Keep them all</button></div>
+    <p class="note">My progress can open them all again, any time.</p></div>`;
+  document.body.appendChild(d);
+  const close = () => {
+    d.remove();
+    document.removeEventListener('keydown', key, true);
+    qclockAgain(); // the time to answer counts from here (QCLOCK)
+    topUp();
+  };
+  const key = e => {
+    if (e.key === 'Tab' || document.getElementById('tour')) return; // the tour's keys while the card waits under it
+    e.stopPropagation(); // never the quiz's answer keys behind the card
+    if (/^\d$/.test(e.key)) e.preventDefault();
+    if (e.key !== 'Escape') return;
+    e.preventDefault();
+    pick(true);
+  };
+  document.addEventListener('keydown', key, true);
+  d.ulClose = close; // leaving the page closes it unanswered (route): the card can come back
+  d.querySelector('[data-back]').onclick = () => pick(false);
+  d.querySelector('[data-keep]').onclick = () => pick(true);
+  setTimeout(() => d.querySelector('[data-back]').focus({preventScroll: true}), 50);
+}
 // The bonus genera (app.js BONUS), offered once (Pierre, 2026-11-02): when every slate genus has been met (introduced:
 // its card shown or asked) and the player has not chosen yet (Q.bon undefined). "Add them": they join the genera not
 // met yet and open one at a time like the others; "Not now": never offered again, ⚙ Bonus genera turns them on any time.
 // A prompt like the others (promptOk: never with a card, the tour or an achievement, PROMPT.GAP answers apart).
 // Every slate genus asked at least once, not just met (Pierre, 2026-11-02: an RA who taps Open all genera would otherwise get the offer a
 // question later, before having seen the IMR genera in the quiz; an RA tester: "after all IMR ones have been introduced/reviewed").
-const bonusOfferDue = () => Q.bon === undefined && BONUS.some(n => GX(n)) && slateGenera().every(asked);
+// A genus closed again by "One at a time" (model.js introBack) waits for its card first.
+const bonusOfferDue = () => Q.bon === undefined && BONUS.some(n => GX(n)) && slateGenera().every(n => asked(n) && introduced(n));
 function bonusOfferShow() {
   const d = document.createElement('div'),
     pick = on => {
@@ -1059,7 +1106,8 @@ function planPhoto() {
   if (rematch && rematch.wait-- <= 0) {
     const pair = rematch.pair;
     rematch = null;
-    if (pair.every(n => list.includes(n))) {
+    // Never on a genus closed again by "One at a time" (model.js introBack): it waits for its card.
+    if (pair.every(n => list.includes(n) && !closed(n))) {
       againAt = answersSoFar();
       const t = pick(pair);
       // Planned ahead, it shows later than planned: quizPhoto sets againAt again when it shows (Codex review #361).
