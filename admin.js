@@ -347,8 +347,9 @@ const qTag = p => {
   const q = qOf(p.f);
   return `<span class="adm-q q${q}${qSet(p.f) ? '' : ' auto'}" title="${qSet(p.f) ? 'Quality set by you' : 'Automatic first guess'}">${QUAL.find(x => x[0] === q)[1]}</span>`;
 };
-const qSeg = p =>
-  `<span class="adm-qseg" role="group" aria-label="Quality">${QUAL.map(([q, t]) => `<button type="button" data-q="${q}" aria-pressed="${qOf(p.f) === q}" class="q${q}">${t}</button>`).join('')}</span>`;
+// blind (a Check in Candidates): only Pierre's own rating shows, never the automatic guess.
+const qSeg = (p, blind) =>
+  `<span class="adm-qseg" role="group" aria-label="Quality">${QUAL.map(([q, t]) => `<button type="button" data-q="${q}" aria-pressed="${(blind ? (DRAFT.quality || {})[p.f] : qOf(p.f)) === q}" class="q${q}">${t}</button>`).join('')}</span>`;
 function setQ(f, q) {
   DRAFT.quality = DRAFT.quality || {};
   // Always recorded, even when it matches the automatic guess: a later re-run of photo_quality.py must never change it.
@@ -401,11 +402,11 @@ function putF(f, letter, pol) {
 }
 const setF = (f, c) => putF(f, c, fP(mineF(f)));
 const setP = (f, on) => putF(f, fL(mineF(f)), on);
-const fSeg = p => {
-  const v = fOf(p.f),
-    un = !fSet(p.f) && FUNSURE.has(p.f),
-    po = pOf(p.f);
-  return `<span class="adm-qseg adm-fseg${fSet(p.f) ? '' : ' auto'}${un ? ' unsure' : ''}" role="group" aria-label="Growth form" title="Growth form">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v === c}" title="${esc(fName(c))}">${FABBR[c]}</button>`).join('')}<button type="button" class="adm-pol${pSet(p.f) ? '' : ' auto'}" data-pol aria-pressed="${po}" title="Polyps or vesicles extended">✿</button></span>`;
+const fSeg = (p, blind) => {
+  const v = blind ? fL(mineF(p.f)) : fOf(p.f),
+    un = !blind && !fSet(p.f) && FUNSURE.has(p.f),
+    po = blind ? fP(mineF(p.f)) === true : pOf(p.f);
+  return `<span class="adm-qseg adm-fseg${fSet(p.f) || blind ? '' : ' auto'}${un ? ' unsure' : ''}" role="group" aria-label="Growth form" title="Growth form">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v === c}" title="${esc(fName(c))}">${FABBR[c]}</button>`).join('')}<button type="button" class="adm-pol${pSet(p.f) ? '' : ' auto'}" data-pol aria-pressed="${po}" title="Polyps or vesicles extended">✿</button></span>`;
 };
 
 /* ---------- Token vault: AES-GCM key derived from the password (PBKDF2) ---------- */
@@ -746,9 +747,11 @@ let SHOW = new Set(
   )
 );
 const shown = p => SHOW.has(origin(p));
+// A photo the auto-sort added carries an "auto" tag next to its source (undo it in Candidates › Auto › Details).
 const srcTag = p => {
-  const o = origin(p);
-  return `<span class="adm-src o-${o}">${ORIGINS.find(x => x[0] === o)[1]}</span>`;
+  const o = origin(p),
+    a = aApplied(p.f);
+  return `<span class="adm-src o-${o}">${ORIGINS.find(x => x[0] === o)[1]}</span>${a && a.kind === 'a' ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}`;
 };
 
 /* ---------- Edits ---------- */
@@ -966,7 +969,8 @@ function status() {
       mtChanged() ? 'look-alike montages' : '',
       crChanged() ? 'crops' : '',
       snChanged() ? 'several corals' : '',
-      tlChanged() ? 'tile photos' : ''
+      tlChanged() ? 'tile photos' : '',
+      auChanged() ? 'auto-sort' : ''
     ].filter(Boolean);
   const bs = $('booksw');
   if (bs) {
@@ -1794,7 +1798,7 @@ const HELP = {
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
   triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" in the footer of any page (wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
-  cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder (Finder-only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Finder-only genus, as many as its sheet and the Coral Finder show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p>`,
+  cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder (Finder-only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Finder-only genus, as many as its sheet and the Coral Finder show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
   health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. <b>Without me</b> drops your answers everywhere on the page: the account this browser is signed in with and those you marked "This is also me" (Players > a player > Manage).</p>
     <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
     <p><b>Photos everyone misses.</b> Photos shown in ${HEALTH.PH_MIN} answers or more with under ${Math.round(HEALTH.PH_LOW * 100)}% right, or a difficulty at least ${HEALTH.PH_FAR} above the median of their genus (+1 = clearly harder; photo Elo, with ${HEALTH.PH_MIN}+ rated answers). They may be mislabelled, show another coral, or be bad photos: click to enlarge, the genus name opens its page. Right % and answers count every answer that showed the photo; the number after them is the difficulty against the genus median.</p>
@@ -1860,7 +1864,7 @@ const pinRefresh = t => {
 function formTile(t, v) {
   setF(t.dataset.f, v);
   const p = {f: t.dataset.f};
-  t.querySelector('.adm-fseg').outerHTML = fSeg(p);
+  t.querySelector('.adm-fseg').outerHTML = fSeg(p, !!t.closest('.adm-blind'));
   pinRefresh(t);
   if (cur === '~form') t.classList.add('rated');
   bindF(t);
@@ -1869,8 +1873,9 @@ function formTile(t, v) {
 // One form per photo (Pierre): a click picks that form and replaces the previous one; when in doubt, the main form.
 const toggleF = (f, c) => c;
 function polTile(t) {
-  setP(t.dataset.f, !pOf(t.dataset.f));
-  t.querySelector('.adm-fseg').outerHTML = fSeg({f: t.dataset.f});
+  const blind = !!t.closest('.adm-blind');
+  setP(t.dataset.f, !(blind ? fP(mineF(t.dataset.f)) === true : pOf(t.dataset.f)));
+  t.querySelector('.adm-fseg').outerHTML = fSeg({f: t.dataset.f}, blind);
   pinRefresh(t);
   bindF(t);
   status();
@@ -2882,8 +2887,338 @@ const jLine = p => {
   const j = p.j;
   if (!j) return '';
   const what = j.g === 'exclude' ? 'unusable' : j.g === 'cmp' ? 'comparison image' : j.g ? `looks like <i>${esc(j.g)}</i>` : JKT[j.k] || '';
-  return `<p class="adm-judge${j.g ? ' warn' : ''}" title="Suggestion of the judging agent (suggest.json)">Judged: ${what}${j.m ? ' · several corals' : ''}${j.u ? ` · unsure: ${esc(j.u.join(', '))}` : ''}${j.n ? ` · ${esc(j.n)}` : ''}${sugCrop(p) ? ' · crop suggested (Crop to change it)' : ''}</p>`;
+  return `<p class="adm-judge${j.g ? ' warn' : ''}" title="Suggestion of the judging agent (suggest.json)">Judged: ${what}${j.m ? ' · several corals' : ''}${j.u ? ` · unsure: ${esc(j.u.join(', '))}` : ''}${j.n ? ` · ${esc(j.n)}` : ''}${sugCrop(p) ? ' · crop suggested (Crop to change it)' : ''}${p.mf ? ` · metrics: ${esc(p.mf)}` : ''}</p>`;
 };
+
+/* ---------- Auto-sort (autosort.js; Pierre, 2026-11-03: "take the obvious off my hands") ---------- */
+// What the candidate pass is sure of is decided without him: at each load of this page, autoRun() writes the sure
+// judgments into the draft exactly as his clicks would (add with the view, quality, growth form and suggested crop; ✕
+// Reject; × exclude), and logs each one in curation.json "auto" (autosort.js has the format). Publish sends them like any
+// draft, merged key by key (merge3); Undo takes the whole run back in one step; Auto › Undo on one decision sends that
+// photo back to Candidates for good. About 1 in 20 sure candidates is not applied but shown to him, blind, with a Check
+// tag (autoCheck); his answer against the judgment, and any later correction of an auto decision, give the agreement
+// per field (autoCompare, autoState); a field under its threshold stops being applied until it recovers. Once every
+// AUTO.retest candidates he decides, a photo he rated before comes back blind (Retest): his consistency, the ceiling.
+let METRICS = {},
+  MREF = null, // sharpness of the candidates measured: sorted list, 5th and 95th percentiles (metFlag, evidence)
+  ADET = false, // this tab: Auto details open
+  AALL = false, // this tab: every auto decision listed (else the latest 60)
+  CDONE = 0, // candidates decided in the swiper since the last Retest card (this tab)
+  RTSKIP = new Set(),
+  RTA = {}; // the Retest card's answers so far
+const aIdx = () => MEMO.aidx || (MEMO.aidx = autoIdx(DRAFT)),
+  aCmp = () => MEMO.acmp || (MEMO.acmp = autoCompare(DRAFT)),
+  aState = () => MEMO.ast || (MEMO.ast = autoState(aCmp())),
+  aOf = f => aIdx()[f],
+  // Applied by the auto-sort and still standing (not a Check, not undone).
+  aApplied = f => {
+    const x = aOf(f);
+    return x && !x.d.check && !x.d.undone ? x.d : null;
+  },
+  auChanged = () => !same(DRAFT.auto || {}, SAVED.auto || {}) || !same(DRAFT.retest || {}, SAVED.retest || {});
+const localDay = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+function autoRun() {
+  if (!DATA || !DRAFT || !Object.keys((SUG && SUG.cand) || {}).length) return null;
+  const ST = aState(),
+    idx = aIdx(),
+    plan = [];
+  Object.keys(DATA.gen).forEach(n => {
+    const add = entry(n).add || {},
+      vs = capViews(n).map(x => x[0]);
+    cands(n).forEach(p => {
+      // Not a book crop, not a photo Pierre sent here from another genus, judged, not stopped by the metrics, not decided.
+      if (p.cf || p.from || !p.j || p.mf || add[p.f] || rejected(p.f) || idx[p.f]) return;
+      const s = autoSure(p.j);
+      if (!s) return;
+      if (s.keep === 'add') {
+        s.view = cellView(n, {vg: s.view});
+        if (!vs.includes(s.view)) return; // a Finder-only genus takes no Corallites candidates (capViews)
+      }
+      plan.push({n, p, s, check: autoCheck(p.f)});
+    });
+  });
+  if (!plan.length) return null;
+  // Each cell fills up to its cap (capOf, colonies): Good before Fair, then the sharper one (metrics.json, a tie-breaker
+  // only), then a fixed order. The adds that do not fit wait in their full cell, as candidates.
+  const sh = p => (METRICS[p.f] || [0])[0];
+  plan.sort(
+    (a, b) =>
+      (b.s.keep === 'add') - (a.s.keep === 'add') ||
+      (b.s.quality || 0) - (a.s.quality || 0) ||
+      sh(b.p) - sh(a.p) ||
+      (a.p.f < b.p.f ? -1 : 1)
+  );
+  const room = {},
+    fits = (n, v, p) => {
+      if (!gameable(p)) return true;
+      const k = n + '|' + v,
+        o = p.o || p.f;
+      if (!room[k]) room[k] = new Set(covOf(n, v).L.map(q => q.o || q.f));
+      if (room[k].has(o)) return true;
+      if (room[k].size >= capOf(n)) return false;
+      room[k].add(o);
+      return true;
+    };
+  const day = localDay(),
+    L = {...((DRAFT.auto || {})[day] || {})},
+    R = {add: 0, reject: 0, exclude: 0, check: 0, full: 0, off: 0},
+    on = {quality: ST.quality.on, form: ST.form.on};
+  plan.forEach(({n, p, s, check}) => {
+    const f = p.f;
+    if (check) {
+      L[f] = autoCode(s, null, true);
+      R.check++;
+    } else if (!ST.keep.on || (s.keep === 'add' && !ST.view.on)) R.off++;
+    else if (s.keep === 'add') {
+      if (!fits(n, s.view, p)) return R.full++;
+      const k = (DRAFT.genera[n] = {...entry(n)});
+      k.add = {...(k.add || {}), [f]: s.view};
+      // A rating, form or crop Pierre already gave this candidate stays his (logged "." : not an auto value).
+      const set = {quality: on.quality && !qSet(f), form: on.form && !mineF(f)};
+      if (set.quality) DRAFT.quality = {...(DRAFT.quality || {}), [f]: s.quality};
+      if (set.form) DRAFT.gf = {...(DRAFT.gf || {}), [f]: s.form};
+      const crop = !!(s.crop && !crOf(f));
+      if (crop) DRAFT.crop = {...(DRAFT.crop || {}), [f]: s.crop};
+      L[f] = autoCode(s, set, false, crop);
+      R.add++;
+    } else if (s.keep === 'exclude') {
+      DRAFT.exclude = {...(DRAFT.exclude || {}), [f]: 'auto'};
+      L[f] = 'x';
+      R.exclude++;
+    } else {
+      DRAFT.seen = {...(DRAFT.seen || {}), [CK(f)]: 1};
+      L[f] = 'r';
+      R.reject++;
+    }
+  });
+  if (!(R.add + R.reject + R.exclude + R.check)) return R;
+  DRAFT.auto = {...(DRAFT.auto || {}), [day]: L};
+  saveDraft();
+  return R;
+}
+const autoToast = R =>
+  `Auto-sort: ${R.add} added, ${R.reject + R.exclude} set aside${R.check ? `, ${R.check} to check in Candidates` : ''}${R.full ? ` (${R.full} wait in full cells)` : ''}. Publish sends them.`;
+// One auto decision taken back (Auto › Undo): what it wrote leaves the draft (a value Pierre changed since stays his),
+// the log keeps it marked undone so it is never applied again, and the photo is a candidate again. One Undo step.
+function autoUndo(f) {
+  const x = aOf(f);
+  if (!x || x.d.check || x.d.undone) return;
+  const d = x.d,
+    drop = (k, key, v) => {
+      if (!DRAFT[k] || (v !== undefined && !same(DRAFT[k][key], v))) return;
+      DRAFT[k] = {...DRAFT[k]};
+      delete DRAFT[k][key];
+      if (!Object.keys(DRAFT[k]).length) delete DRAFT[k];
+    };
+  if (d.kind === 'a') {
+    Object.keys(DRAFT.genera).forEach(n => {
+      const k = DRAFT.genera[n];
+      if (!(k.add || {})[f]) return;
+      const c = {...k, add: {...k.add}};
+      delete c.add[f];
+      if (!Object.keys(c.add).length) delete c.add;
+      if (Object.keys(c).length) DRAFT.genera[n] = c;
+      else delete DRAFT.genera[n];
+    });
+    if (d.q) drop('quality', f, d.q);
+    if (d.fm) drop('gf', f, d.fm);
+    const p = PHOTOS[f];
+    if (d.crop && p && p.j && p.j.c) drop('crop', f, p.j.c);
+  } else if (d.kind === 'x') drop('exclude', f, 'auto');
+  else drop('seen', CK(f), 1);
+  DRAFT.auto = {...DRAFT.auto, [x.day]: {...DRAFT.auto[x.day], [f]: '-' + x.code}};
+  saveDraft();
+  render();
+  toast('Auto decision undone: the photo is back in Candidates.');
+}
+const FIELD = {keep: 'Keep', view: 'View', quality: 'Quality', form: 'Form'};
+const valText = (field, v, n) =>
+  v == null
+    ? '–'
+    : field === 'keep'
+      ? v === 'add'
+        ? 'add'
+        : 'reject'
+      : field === 'view'
+        ? label(n, v)
+        : field === 'quality'
+          ? (QUAL.find(x => x[0] === v) || [, v])[1]
+          : fName(v);
+const pctR = r => (r == null ? '–' : Math.round(100 * r) + '%');
+// The agent's decision in words: "add · Colony · Good · Branching", "reject", "exclude".
+const autoText = (d, n) =>
+  d.kind === 'a'
+    ? ['add', label(n, d.view), d.q ? valText('quality', d.q) : '', d.fm ? fName(fL(d.fm)) : ''].filter(Boolean).join(' · ')
+    : d.kind === 'x'
+      ? 'exclude'
+      : 'reject';
+// The evidence next to a disagreement: the agent's note (while suggest.json still has it) and the metrics.
+const evid = f => {
+  const m = METRICS[f],
+    j = (PHOTOS[f] || {}).j;
+  return [
+    j && j.n ? esc(j.n) : '',
+    m ? `sharpness ${MREF && MREF.all.length ? rankPct(MREF.all, m[0]) + 'th pct' : m[0]} · ${m[2]} px · cast ${m[3]}%` : ''
+  ]
+    .filter(Boolean)
+    .join(' · ');
+};
+// After Pierre answers a Check: the agent's answer, and where they differ.
+function checkToast(f) {
+  const x = aOf(f);
+  if (!x || !x.d.check) return;
+  memoReset();
+  const n = (PHOTOS[f] || {}).genus,
+    D = aCmp().filter(c => c.f === f),
+    bad = D.filter(c => !c.ok).map(c => FIELD[c.field].toLowerCase());
+  toast(`Check: the agent said ${autoText(x.d, n)}${D.length ? (bad.length ? ` (differs: ${bad.join(', ')})` : ' (same)') : ''}.`);
+}
+// Agreement line at the top of Candidates (every source), and its details (det).
+function autoBlock(det) {
+  const A = aIdx(),
+    E = Object.entries(A);
+  if (!E.length && !Object.keys(DRAFT.retest || {}).length) return '';
+  const ST = aState(),
+    RT = retestStats(DRAFT),
+    applied = E.filter(([, x]) => !x.d.check && !x.d.undone),
+    nAdd = applied.filter(([, x]) => x.d.kind === 'a').length,
+    nOut = applied.length - nAdd,
+    ci = curIdx(DRAFT),
+    nChk = E.filter(([f, x]) => x.d.check && !excl(f) && !pierreOf(DRAFT, ci, f).keep).length;
+  const fld = k =>
+    `<span class="adm-af${ST[k].on ? '' : ' off'}" title="${FIELD[k]}: agreement with you over the last ${ST[k].n} checks and corrections; auto ${ST[k].on ? 'on' : 'off'} under ${pctR(ST[k].min)}">${FIELD[k]} ${pctR(ST[k].rate)}${ST[k].n ? `<small>n ${ST[k].n}</small>` : ''}${ST[k].on ? '' : ' · off'}</span>`;
+  // The line goes above the card, the details (det) below it, so the card stays in view.
+  if (!det)
+    return `<div class="adm-auto"><p class="note"><b>Auto</b> ${nAdd} added · ${nOut} set aside · ${nChk} to check · agreement ${AUTO.fields.map(fld).join(' ')} <button type="button" class="adm-link" data-adet aria-expanded="${ADET}">${ADET ? 'Hide' : 'Details'}</button></p></div>`;
+  let h = '';
+  if (ADET) {
+    const rows = AUTO.fields
+      .map(k => {
+        const r = RT[k];
+        return `<tr><td>${FIELD[k]}</td><td class="n">${pctR(ST[k].rate)}</td><td class="n">${ST[k].n}</td><td class="n">${pctR(ST[k].min)}</td><td>${ST[k].on ? 'on' : '<b>off</b>'}</td><td class="n">${r && r.n ? `${pctR(r.rate)} <small>${r.n}</small>` : ''}</td></tr>`;
+      })
+      .join('');
+    const tile = (f, cap, extra = '') => {
+      const p = PHOTOS[f] || {f};
+      return `<figure class="adm-repl-tile adm-atile" data-af="${esc(f)}"><button type="button" class="adm-aph" data-azoom aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button><figcaption><i>${esc(p.genus || '')}</i> · ${cap}</figcaption>${extra}</figure>`;
+    };
+    const dis = aCmp()
+      .filter(c => !c.ok)
+      .reverse();
+    const dec = applied.sort((a, b) => (a[1].day < b[1].day ? 1 : a[1].day > b[1].day ? -1 : 0));
+    h += `<div class="adm-autodet">
+      <div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Field</th><th title="Agent vs you">Agreement</th><th>n</th><th title="Auto off under">Min</th><th>Auto</th><th title="You vs you, blind retests">Retest</th></tr></thead><tbody>${rows}</tbody></table></div>
+      ${
+        dis.length
+          ? `<h3 class="label">Disagreements · ${dis.length}</h3><div class="adm-repl-grid">${dis
+              .slice(0, 40)
+              .map(c => {
+                const n = (PHOTOS[c.f] || {}).genus;
+                return tile(
+                  c.f,
+                  `${FIELD[c.field]} · you <b>${esc(valText(c.field, c.p, n))}</b> · agent <b>${esc(valText(c.field, c.a, n))}</b> · ${c.how === 'check' ? 'check' : 'correction'}`,
+                  `<small class="adm-aev">${evid(c.f)}</small>`
+                );
+              })
+              .join('')}</div>`
+          : ''
+      }
+      ${
+        dec.length
+          ? `<h3 class="label">Auto decisions · ${dec.length}</h3><div class="adm-repl-grid">${(AALL ? dec : dec.slice(0, 30))
+              .map(([f, x]) =>
+                tile(
+                  f,
+                  `${esc(autoText(x.d, (PHOTOS[f] || {}).genus))} · ${x.day}`,
+                  '<button type="button" class="adm-link" data-aundo>Undo</button>'
+                )
+              )
+              .join(
+                ''
+              )}</div>${dec.length > 30 && !AALL ? `<button type="button" class="adm-link" data-aall>All ${dec.length}</button>` : ''}`
+          : ''
+      }</div>`;
+  }
+  return h;
+}
+function bindAuto(scope) {
+  const t = scope.querySelector('[data-adet]');
+  if (t)
+    t.onclick = () => {
+      ADET = !ADET;
+      render();
+    };
+  const al = scope.querySelector('[data-aall]');
+  if (al)
+    al.onclick = () => {
+      AALL = true;
+      render();
+    };
+  scope.querySelectorAll('[data-af]').forEach(el => {
+    const f = el.dataset.af,
+      u = el.querySelector('[data-aundo]'),
+      z = el.querySelector('[data-azoom]');
+    if (u) u.onclick = () => autoUndo(f);
+    if (z) z.onclick = () => PHOTOS[f] && zoomOne(PHOTOS[f]);
+  });
+}
+// Blind retest (test-retest of Pierre's own ratings): a photo he rated himself (not by the auto-sort), never retested,
+// in a fixed order per photo; quality, and growth form when he gave one. His second answer goes to curation.json
+// "retest" only: his first rating stays as it is.
+function retestNext() {
+  if (CDONE < AUTO.retest) return null;
+  const R = DRAFT.retest || {},
+    Q = DRAFT.quality || {};
+  const L = Object.keys(Q)
+    .filter(f => PHOTOS[f] && !R[f] && !RTSKIP.has(f) && !excl(f) && !(aApplied(f) && aApplied(f).q === Q[f]))
+    .sort((a, b) => fnv('retest|' + a) - fnv('retest|' + b));
+  return L[0] || null;
+}
+function renderRetest(f, seg) {
+  const p = PHOTOS[f],
+    gfm = fL(mineF(f)),
+    hasF = gfm && !(aApplied(f) && fL(aApplied(f).fm) === gfm);
+  $v.innerHTML = `<section class="adm-sw adm-blind" data-f="${esc(f)}">${seg}
+    <figure class="adm-swcard">
+      <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img src="${img(p)}" alt=""></button>
+      <span class="adm-swg"><i>${esc(p.genus)}</i></span>
+      <figcaption><span class="adm-src adm-chk">Retest</span><span class="adm-t">${esc(p.t || '')}</span></figcaption>
+    </figure>
+    <div class="adm-acts adm-swacts"><span class="adm-qseg" role="group" aria-label="Quality">${QUAL.map(([q, t]) => `<button type="button" data-rq="${q}" aria-pressed="${RTA.q === q}" class="q${q}">${t}</button>`).join('')}</span>${
+      hasF
+        ? `<span class="adm-qseg adm-fseg" role="group" aria-label="Growth form">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-rfm="${c}" aria-pressed="${RTA.fm === c}" title="${esc(fName(c))}">${FABBR[c]}</button>`).join('')}</span>`
+        : ''
+    }</div>
+    <div class="adm-swbar"><button type="button" data-rtskip>Skip</button><button type="button" class="add" data-rtdone ${RTA.q ? '' : 'disabled'}>Done</button></div>
+  </section>${autoBlock(true)}`;
+  const S = $v.querySelector('.adm-sw');
+  S.querySelector('[data-zoom]').onclick = () => zoomOne(p);
+  S.querySelectorAll('[data-rq]').forEach(b => (b.onclick = () => ((RTA.q = Number(b.dataset.rq)), render())));
+  S.querySelectorAll('[data-rfm]').forEach(b => (b.onclick = () => ((RTA.fm = b.dataset.rfm), render())));
+  S.querySelector('[data-rtskip]').onclick = () => {
+    RTSKIP.add(f);
+    RTA = {};
+    CDONE = 0;
+    render();
+  };
+  S.querySelector('[data-rtdone]').onclick = () => {
+    const was = DRAFT.quality[f],
+      e = {q: [was, RTA.q]};
+    if (hasF && RTA.fm) e.fm = [gfm, RTA.fm];
+    DRAFT.retest = {...(DRAFT.retest || {}), [f]: e};
+    RTA = {};
+    CDONE = 0;
+    saveDraft();
+    render();
+    toast(
+      `Retest: first ${valText('quality', was)}${e.fm ? ` · ${fName(gfm)}` : ''}, now ${valText('quality', e.q[1])}${e.fm ? ` · ${fName(e.fm[1])}` : ''}.`
+    );
+  };
+  bindAuto($v);
+}
 const cseed = () => {
   let s = store.get('imr-admin-cseed', 0);
   if (!s) {
@@ -2909,14 +3244,15 @@ function candQueue(src) {
       }
       return N[k];
     };
-  const weight = (n, p) => {
+  // A Check is drawn like a candidate nobody judged (weight 1): the pass's verdict must not decide when it comes up.
+  const weight = (n, p, chk) => {
     const vs = capViews(n).map(x => x[0]);
     let v = p.vg || p.view;
     if (v === 'medium' && lv(n) === 2) v = 'wide';
     // A candidate from a colony already in games at another zoom counts 3x (Pierre, 2026-11-01): game questions only
     // show views of one colony, so completing a colony adds a several-zoom question.
     const sib = p.o && vs.some(w => w !== v && (cnt(n, w), O[n + '|' + w].has(p.o))) ? 3 : 1;
-    return (jw(p) * sib) / Math.pow(1 + (vs.includes(v) ? cnt(n, v) : Math.min(...vs.map(w => cnt(n, w)))), 3);
+    return ((chk ? 1 : jw(p)) * sib) / Math.pow(1 + (vs.includes(v) ? cnt(n, v) : Math.min(...vs.map(w => cnt(n, w)))), 3);
   };
   const L = [];
   Object.keys(DATA.gen).forEach(n => {
@@ -2928,8 +3264,13 @@ function candQueue(src) {
       const v = cellView(n, p);
       if (v && VIEWS.some(x => x[0] === v) && !vs.includes(v)) return;
       const full =
-        gameable(p) && VIEWS.some(x => x[0] === v) && (cnt(n, v), N[n + '|' + v] >= capOf(n) && !(p.o && O[n + '|' + v].has(p.o)));
-      L.push({p, n, game, full, aside: aside(p), r: -Math.log(uOf(p.f)) / weight(n, p)});
+          gameable(p) && VIEWS.some(x => x[0] === v) && (cnt(n, v), N[n + '|' + v] >= capOf(n) && !(p.o && O[n + '|' + v].has(p.o))),
+        // The auto-sort (autoRun): a Check waiting for Pierre always comes up (full cell or set aside, it is his to
+        // answer); an auto decision he undid, or a sure judgment the metrics contradict (p.mf), is never set aside.
+        ax = aOf(p.f),
+        chk = !!(ax && ax.d.check),
+        und = !!(ax && ax.d.undone);
+      L.push({p, n, game, chk, full: full && !chk, aside: aside(p) && !chk && !und && !p.mf, r: -Math.log(uOf(p.f)) / weight(n, p, chk)});
     });
   });
   L.sort((a, b) => b.game - a.game || a.r - b.r);
@@ -3061,12 +3402,14 @@ function renderRepl() {
         done();
         ACT.addc(n, f, null, w); // one draft save, so one Undo step for both
         toast(`Added to ${n}, ${label(n, w)}; the colony it replaces is now on the sheet only.`);
+        checkToast(f); // a Check answered here: the agent's answer
       })
   );
   $v.querySelector('[data-ranyway]').onclick = () => {
     done();
     ACT.addc(n, f, null, w);
     toast(`Added: ${n}, ${label(n, w)} (${cols.length + 1} colonies, over the cap).`);
+    checkToast(f); // a Check answered here: the agent's answer
   };
   $v.querySelector('[data-rcancel]').onclick = () => {
     CREPL = null;
@@ -3111,33 +3454,43 @@ function renderCand() {
             ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the candidate pass (judging/AGENTS.md)">${nJ} not judged yet</span>`
             : ''
         }</p>`
-      : '');
+      : '') +
+    autoBlock();
+  const rt = retestNext();
+  if (rt) return renderRetest(rt, seg);
   if (!c) {
-    $v.innerHTML = `<section class="adm-sw adm-swempty">${seg}<p class="note">${Q.length ? `${Q.length} skipped.` : 'No candidate left.'}</p>${Q.length ? '<button type="button" class="adm-btn" data-again>Show the skipped ones</button>' : ''}</section>`;
+    $v.innerHTML = `<section class="adm-sw adm-swempty">${seg}<p class="note">${Q.length ? `${Q.length} skipped.` : 'No candidate left.'}</p>${Q.length ? '<button type="button" class="adm-btn" data-again>Show the skipped ones</button>' : ''}</section>${autoBlock(true)}`;
   } else {
-    const {p, n} = c,
-      views = capViews(n);
+    const {p, n, chk} = c,
+      views = capViews(n),
+      // A Check is blind (Pierre's answer is compared with the judgment): no judgment line, no dashed guesses, no
+      // suggested view or crop; a Check tag instead.
+      pb = chk ? {...p, j: null} : p,
+      sug = w => !chk && (p.vg || p.view) === w;
     const link = /^https?:/.test(p.o || '')
       ? `<a class="adm-swlink" href="${esc(p.o)}" target="_blank" rel="noopener" title="iNaturalist">iNat ↗</a>`
       : p.pg
         ? `<span class="adm-swlink">p. ${esc(p.pg)}</span>`
         : '';
-    $v.innerHTML = `<section class="adm-sw" data-f="${esc(p.f)}" data-g="${esc(n)}">${seg}
+    $v.innerHTML = `<section class="adm-sw${chk ? ' adm-blind' : ''}" data-f="${esc(p.f)}" data-g="${esc(n)}">${seg}
       <figure class="adm-swcard">
-        <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img ${crSrc(p)} alt=""></button>
+        <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img ${crSrc(pb)} alt=""></button>
         <a class="adm-swg" href="#${encodeURIComponent(n)}" title="Genus page"><i>${esc(n)}</i>${p.from ? `<small>from ${esc(p.from)}</small>` : ''}</a>
         <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
-        <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
-      </figure>${jLine(p)}
-      <div class="adm-acts adm-swacts">${qSeg(p)}${fSeg(p)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOf(p.f) ? ' on' : ''}" data-crop aria-pressed="${!!crOf(p.f)}">Crop</button><button type="button" data-skip>Skip</button></div></div>
-      <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${(p.vg || p.view) === w ? ' sug' : ''}" data-add="${w}" title="${(p.vg || p.view) === w ? 'Suggested · ' : ''}Add (${i + 1})">+ ${label(n, w)}</button>`).join('')}</div>
-    </section>`;
+        <figcaption>${chk ? '<span class="adm-src adm-chk" title="Check">Check</span>' : ''}${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
+      </figure>${chk ? '' : jLine(p)}
+      <div class="adm-acts adm-swacts">${qSeg(p, chk)}${fSeg(p, chk)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOf(p.f) ? ' on' : ''}" data-crop aria-pressed="${!!crOf(p.f)}">Crop</button><button type="button" data-skip>Skip</button></div></div>
+      <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${sug(w) ? ' sug' : ''}" data-add="${w}" title="${sug(w) ? 'Suggested · ' : ''}Add (${i + 1})">+ ${label(n, w)}</button>`).join('')}</div>
+    </section>${autoBlock(true)}`;
     if (nx) new Image().src = img(nx.p);
     const S = $v.querySelector('.adm-sw'),
       f = p.f,
       go = () => {
         CSKIP.delete(f);
-      };
+        CDONE++;
+      },
+      // After his answer to a Check, the agent's (once the action has drawn the next card).
+      told = () => chk && checkToast(f);
     S.querySelectorAll('[data-add]').forEach(
       b =>
         (b.onclick = () => {
@@ -3149,6 +3502,7 @@ function renderCand() {
           go();
           ACT.addc(n, f, null, w);
           toast(`Added: ${n}, ${label(n, w)}.`);
+          told();
         })
     );
     S.querySelector('[data-rej]').onclick = () => {
@@ -3156,6 +3510,7 @@ function renderCand() {
       DRAFT.seen = {...(DRAFT.seen || {}), [CK(f)]: 1};
       saveDraft();
       render();
+      told();
     };
     S.querySelector('[data-skip]').onclick = () => {
       CSKIP.add(f);
@@ -3164,16 +3519,19 @@ function renderCand() {
     S.querySelector('[data-x]').onclick = () => {
       go();
       ACT.exclude(n, f);
+      told();
     };
     const sel = S.querySelector('select[data-act="out"]');
     if (sel)
       sel.onchange = () => {
         if (!sel.value) return;
         const to = sel.value;
+        CDONE++;
         ACT.out(n, f, null, to);
         toast(to === 'cmp' ? 'Kept for the look-alike comparison.' : `Sent to ${to}.`);
+        told();
       };
-    S.querySelector('[data-zoom]').onclick = () => zoomOne({...p, genus: n});
+    S.querySelector('[data-zoom]').onclick = () => zoomOne({...pb, genus: n});
     S.querySelector('[data-crop]').onclick = () => cropEditor(p);
     bindQ();
     bindF(S);
@@ -3192,6 +3550,7 @@ function renderCand() {
       CASIDE = !CASIDE;
       render();
     };
+  bindAuto($v);
   const cf = $v.querySelector('[data-cfull]');
   if (cf)
     cf.onclick = () => {
@@ -3399,6 +3758,18 @@ const output = () => {
     .forEach(k => {
       if ((DRAFT.tile[k] || []).length) tile[k] = DRAFT.tile[k];
     });
+  // The auto-sort's log, one map per day, and the blind retests (autosort.js).
+  const sorted = o =>
+    Object.keys(o || {})
+      .sort()
+      .reduce((a, k) => ((a[k] = o[k]), a), {});
+  const auto = {};
+  Object.keys(DRAFT.auto || {})
+    .sort()
+    .forEach(d => {
+      if (Object.keys(DRAFT.auto[d] || {}).length) auto[d] = sorted(DRAFT.auto[d]);
+    });
+  const retest = sorted(DRAFT.retest);
   return {
     v: 1,
     ...(bookOn(DRAFT) ? {} : {book: false}),
@@ -3413,7 +3784,9 @@ const output = () => {
     ...(Object.keys(seen).length ? {seen} : {}),
     ...(Object.keys(mont).length ? {mont} : {}),
     ...(Object.keys(crop).length ? {crop} : {}),
-    ...(Object.keys(tile).length ? {tile} : {})
+    ...(Object.keys(tile).length ? {tile} : {}),
+    ...(Object.keys(auto).length ? {auto} : {}),
+    ...(Object.keys(retest).length ? {retest} : {})
   };
 };
 // Who publishes, shown in the commit message (Pierre, 2026-11-01, admin review): the token's GitHub login, else the
@@ -3452,7 +3825,12 @@ function pubSummary() {
     [nDiff(DRAFT.crop, SAVED.crop), 'crop'],
     [nDiff(DRAFT.single, SAVED.single), 'several-corals mark'],
     [nDiff(DRAFT.mont, SAVED.mont), 'look-alike pair'],
-    [nDiff(DRAFT.tile, SAVED.tile), 'growth-form tile']
+    [nDiff(DRAFT.tile, SAVED.tile), 'growth-form tile'],
+    [
+      nDiff(Object.assign({}, ...Object.values(DRAFT.auto || {})), Object.assign({}, ...Object.values(SAVED.auto || {}))),
+      'auto-sort decision'
+    ],
+    [nDiff(DRAFT.retest, SAVED.retest), 'retest']
   ]
     .filter(([c]) => c)
     .map(([c, t]) => `${c} ${t}${c > 1 ? 's' : ''}`);
@@ -3488,8 +3866,9 @@ async function save() {
     mt = mtChanged(),
     cr = crChanged(),
     sn = snChanged(),
-    tl = tlChanged();
-  if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn || tl) || !TOKEN) return;
+    tl = tlChanged(),
+    au = auChanged();
+  if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn || tl || au) || !TOKEN) return;
   if (!confirm(`Publish to the public site?\n\n${pubSummary()}`)) return;
   const b = $('save');
   b.disabled = true;
@@ -3508,7 +3887,7 @@ async function save() {
   };
   try {
     await fresh();
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const who = await author(),
       stale = x => /does not match|sha|409/i.test(x.message);
     // A publish from elsewhere between the read and the write: read again, merge, and try once more on our own.
@@ -3580,7 +3959,7 @@ async function start() {
           })).then(j => (j && j[k]) || {});
   let CJ;
   try {
-    [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG, , DUPS, CJ] = await Promise.all([
+    [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG, , DUPS, CJ, METRICS] = await Promise.all([
       fetch('data.json', {cache: 'no-cache'}).then(r => r.json()),
       side('quality.json', 'q'),
       side('forms.json', 'gf'),
@@ -3593,7 +3972,9 @@ async function start() {
       side('dups.json', 'dup').then(x => (Array.isArray(x) ? x : [])),
       // Candidates waiting live in cand.json (tools/datajson.py; data.json, which every player downloads, keeps only those
       // curation.json names): merged in here, as one list per genus.
-      side('cand.json', 'cand')
+      side('cand.json', 'cand'),
+      // Objective metrics (tools/photo_metrics.py): tie-breakers and sanity flags for the auto-sort only.
+      side('metrics.json', 'm')
     ]);
     DATA.cand = DATA.cand || {};
     Object.entries(CJ || {}).forEach(([g, L]) => {
@@ -3621,6 +4002,19 @@ async function start() {
         AUTOF[p.f] = j.fm;
         (j.u || []).some(x => x === 'form' || x === 'polyps') ? FUNSURE.add(p.f) : FUNSURE.delete(p.f);
       }
+    });
+  // Sanity flags of the metrics on the sure judgments (metFlag): such a candidate is left to Pierre, with the reason.
+  const SH = Object.values(DATA.cand)
+    .flat()
+    .filter(p => p.r && METRICS[p.f])
+    .map(p => METRICS[p.f][0])
+    .sort((a, b) => a - b);
+  MREF = SH.length ? {all: SH, lo: SH[Math.floor(SH.length * 0.05)], hi: SH[Math.floor(SH.length * 0.95)]} : null;
+  Object.values(DATA.cand)
+    .flat()
+    .forEach(p => {
+      const mf = p.j && metFlag(autoSure(p.j), p.j, METRICS[p.f], MREF);
+      if (mf) p.mf = mf;
     });
   // The Coral Finder's extra genera (data.json x: in the book, present at Dauin, not on the IMR list) are curated here
   // like the others, listed after them; curation.json keys them by name as usual.
@@ -3720,6 +4114,10 @@ async function start() {
   });
   const keep = changed().length;
   if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? 'genera' : 'genus'} not published yet.`);
+  // The auto-sort: what the candidate pass is sure of goes into the draft (autoRun), one Undo step for the whole run.
+  // Only for an admin who can publish (read-only shows the published curation as it is).
+  const ar = TOKEN && autoRun();
+  if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
   $('tools').hidden = false;
   $('save').onclick = save;
   $('download').onclick = download;
