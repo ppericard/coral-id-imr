@@ -145,7 +145,7 @@ async function field() {
       );
       await ctx.addInitScript(() => {
         try {
-          localStorage.setItem('imr-tour', '1');
+          localStorage.setItem('reefid-tour', '1');
         } catch (e) {}
       });
       const p = await ctx.newPage();
@@ -280,7 +280,7 @@ const ms = x => Math.round(x) + ' ms';
       } catch (e) {}
       // The welcome tour would cover the pages: marked as seen.
       try {
-        localStorage.setItem('imr-tour', '1');
+        localStorage.setItem('reefid-tour', '1');
       } catch (e) {}
     });
     const out = [];

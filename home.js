@@ -43,7 +43,7 @@
           </div>
         </section>
       </div>
-      <p class="hcred">By Pierre Pericard · for IMR · <a href="#about">Credits</a></p>
+      <p class="hcred">By Pierre Pericard · for ${esc(ORG.short)} · <a href="#about">Credits</a></p>
     </div>`;
   };
   // About and credits (Pierre, 2026-11-03): no credits block on the pages, only the one-line credit at the bottom of Home
@@ -55,7 +55,7 @@
     $v.innerHTML = `<h2 class="vh">About and credits</h2><div class="about">
       <section>
         <h3>Who made it</h3>
-        <p>IMR Coral ID is made by <b>Pierre Pericard</b> (website and interface), to train the Research Assistants of the Institute for Marine Research (IMR), Dauin, Philippines, to name coral genera on photos and on dives.</p>
+        <p>${esc(ORG.app)} is made by <b>Pierre Pericard</b> (website and interface), to train the Research Assistants of the ${esc(ORG.name)} (${esc(ORG.short)}), Dauin, Philippines, to name coral genera on photos and on dives.</p>
       </section>
       <section>
         <h3>Course content</h3>

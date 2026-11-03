@@ -1,9 +1,9 @@
 // Guided tour: walks a new RA through the real pages (Home doors, sign-in, the Practice games, My progress, help),
-// spotlighting one element per step with a short bubble. Shown once per browser (localStorage imr-tour, outside the
-// imr-coral-* progress keys so backups and resets leave it alone), never on its own for the admin browser, and
+// spotlighting one element per step with a short bubble. Shown once per browser (localStorage reefid-tour, outside the
+// reefid-sync-* progress keys so backups and resets leave it alone), never on its own for the admin browser, and
 // replayable from the ? help of any page (or ?tour in the URL). The sign-in step holds the real sign-in form.
 (function () {
-  const KEY = 'imr-tour';
+  const KEY = 'reefid-tour';
   // Five steps (Pierre, 2026-11-01: beta testers must sign in early and start playing fast): the two doors, signing in
   // (the form is in the bubble itself, same on phone and desktop), the three games, progress, help; the last button
   // starts the photo quiz. Details (genus sheets, answers, corallites, Coral Finder) are behind each page's ?.

@@ -610,7 +610,7 @@
   };
   window.BASICS = {route: routeOf};
   const official = term => (DATA.terms || []).find(x => x[0] === term);
-  const KEY = 'imr-basics';
+  const KEY = 'reefid-basics';
 
   LAB.add({
     id: 'basics',

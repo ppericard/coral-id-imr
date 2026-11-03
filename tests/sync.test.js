@@ -3,7 +3,7 @@ const test = require('node:test'),
   assert = require('node:assert');
 const {loadCodeGs} = require('./gas.js');
 
-const prog = n => ({'imr-coral-progress': JSON.stringify({Acropora: {ok: n, ko: 0}})});
+const prog = n => ({'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: n, ko: 0}})});
 const ans = (id, extra = {}) => ({
   id,
   t: '2026-11-01T00:00:00Z',
@@ -51,7 +51,7 @@ test('progress over 50,000 characters is saved in chunks and read back whole', (
   const s = loadCodeGs(),
     ps = {};
   for (let i = 0; i < 4000; i++) ps['acropora-cand-' + (100000000 + i)] = [3, 2];
-  const data = {'imr-coral-progress': JSON.stringify({Acropora: {ok: 1, ko: 0, ps}})};
+  const data = {'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 1, ko: 0, ps}})};
   assert.ok(JSON.stringify(data).length > 120000);
   assert.strictEqual(s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: []}).ok, true);
   assert.strictEqual(s.sheets.RAs.getRange(2, 8).getValue(), '@Progress data');
@@ -789,7 +789,7 @@ test('board: signed-in players by progress then level; opted-out players and the
     b.rows.every(r => r.length === 3 && r[1] === 42 && r[2] === null),
     'name, progress rounded, no level under 200 answers (v15): nothing else'
   );
-  assert.ok(!JSON.stringify(b).match(/1234|1111|hash|imr-coral/), 'no code, hash or progress data');
+  assert.ok(!JSON.stringify(b).match(/1234|1111|hash|reefid-sync/), 'no code, hash or progress data');
   // An app that sends no board value (older) keeps the saved choice: Ana B stays off.
   s.post({name: 'Ana B', pin: '5678', data: prog(2), summary: {learned: 1, seen: 1, total: 39}, answers: [ans('b2')]});
   // Cached 5 minutes, then the opt-out is seen.
@@ -896,7 +896,7 @@ test('board: the level shows from 200 answers; equal progress ranks by level', (
 
 test('achs: how many signed-in players hold each achievement; counts only', () => {
   const s = loadCodeGs();
-  const data = A => ({...prog(1), 'imr-coral-ach': JSON.stringify(A)});
+  const data = A => ({...prog(1), 'reefid-sync-ach': JSON.stringify(A)});
   s.post({name: 'Ana', pin: '1234', data: data({met10: 1, run10: 2, _best: 12}), summary: {}, answers: []});
   s.post({name: 'Ben', pin: '1111', data: data({met10: 3}), summary: {}, answers: []});
   s.post({name: 'Cy', pin: '2222', data: prog(1), summary: {}, answers: []});
@@ -919,7 +919,13 @@ test('board (v16): the % is computed from the saved progress with the app formul
     '~level': {ok: 40, ko: 4, th: 1}
   };
   // The app sent 5%: the sheet's own computation wins.
-  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': JSON.stringify(P)}, summary: {pct: 5, genera}, answers: [ans('p1')]});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: {'reefid-sync-coral-progress': JSON.stringify(P)},
+    summary: {pct: 5, genera},
+    answers: [ans('p1')]
+  });
   const want = pctOf(P, Object.keys(genera));
   assert.ok(want > 5);
   assert.strictEqual(s.get({board: '1'}).rows.find(r => r[0] === 'Ana')[1], want);
@@ -929,7 +935,7 @@ test('board (v16): the % is computed from the saved progress with the app formul
     Porites: {ok: 9, ko: 0, h: '111111111', L: 0.99, mx: 1},
     Galaxea: {ok: 2, ko: 0, h: '11'}
   };
-  s.post({name: 'Ben', pin: '1111', data: {'imr-coral-progress': JSON.stringify(Q)}, summary: {genera}, answers: [ans('q1')]});
+  s.post({name: 'Ben', pin: '1111', data: {'reefid-sync-coral-progress': JSON.stringify(Q)}, summary: {genera}, answers: [ans('q1')]});
   Object.keys(s.cache).forEach(k => delete s.cache[k]);
   assert.strictEqual(s.get({board: '1'}).rows.find(r => r[0] === 'Ben')[1], pctOf(Q, Object.keys(genera)));
 });
@@ -938,7 +944,7 @@ test('board (v16): the % is computed from the saved progress with the app formul
 function modelHold(saved = {}) {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'model.js'), 'utf8'),
     intro = /const INTRO = \{[\s\S]*?\n\};\n/.exec(src)[0],
-    hold = src.slice(src.indexOf("const HOLDK = 'imr-hold';"), src.indexOf('const introSince'));
+    hold = src.slice(src.indexOf("const HOLDK = 'reefid-hold';"), src.indexOf('const introSince'));
   const ctx = {store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)}};
   require('vm').createContext(ctx);
   require('vm').runInContext(intro + hold + '\nthis.step = holdStep; this.sync = holdSync; this.now = () => HOLDS;', ctx);
@@ -982,11 +988,11 @@ test('v23 hold: the sheet replays the opening hold of model.js over the answers 
   // Another player's answers never count: a player without answers has no hold.
   s.post({name: 'Ben', pin: '1111', data: prog(1), summary: {}, answers: []});
   assert.strictEqual(s.get({name: 'Ben', pin: '1111'}).hold, 0);
-  // Only the answers since the last progress reset count (imr-coral-reset: the app's reset starts the hold over).
+  // Only the answers since the last progress reset count (reefid-sync-coral-reset: the app's reset starts the hold over).
   s.post({
     name: 'Ana',
     pin: '1234',
-    data: {...prog(0), 'imr-coral-reset': JSON.stringify('2026-11-01T08:00:20Z')},
+    data: {...prog(0), 'reefid-sync-coral-reset': JSON.stringify('2026-11-01T08:00:20Z')},
     summary: {},
     answers: []
   });
@@ -1010,17 +1016,17 @@ test("v23 hold: the sheet's sum plus the unconfirmed answers is the hold on ever
   const s = loadCodeGs();
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: all.slice(0, 4).map(a => ans(a.id, a))});
   const h = s.get({name: 'Ana', pin: '1234'}).hold,
-    saved = {'imr-hold': 0},
+    saved = {'reefid-hold': 0},
     dev = modelHold(saved);
   dev.sync(h, all.slice(4));
   assert.strictEqual(dev.now(), one.now());
-  assert.strictEqual(saved['imr-hold'], one.now(), 'saved on the device');
+  assert.strictEqual(saved['reefid-hold'], one.now(), 'saved on the device');
   // A device held by answers paid back on another device follows the sheet (the same answers everywhere); a warm
   // answer, or one from before the reset, in the log is not added; an older sheet (no hold) changes nothing.
-  const hi = modelHold({'imr-hold': 9});
+  const hi = modelHold({'reefid-hold': 9});
   hi.sync(0, []);
   assert.strictEqual(hi.now(), 0);
-  const w = modelHold({'imr-coral-reset': '2026-11-01T08:00:04Z'});
+  const w = modelHold({'reefid-sync-coral-reset': '2026-11-01T08:00:04Z'});
   w.sync(1, [
     {t: '2026-11-01T08:00:03Z', e: 0.9, ok: 0, m: 'quiz'},
     {t: '2026-11-01T08:00:05Z', e: 0.9, ok: 0, m: 'quiz|w|k2'},
@@ -1035,7 +1041,7 @@ test("v23 hold: the sheet's sum plus the unconfirmed answers is the hold on ever
   const sc = loadCodeGs();
   sc.post({name: 'Cy', pin: '1234', data: prog(1), summary: {}, answers: [ans('c1', {e: 0.62, ok: 0, m: 'quiz|c|k2'})]});
   assert.strictEqual(sc.get({name: 'Cy', pin: '1234'}).hold, 0.52);
-  const old = modelHold({'imr-hold': 0.5});
+  const old = modelHold({'reefid-hold': 0.5});
   old.sync(undefined, all);
   assert.strictEqual(old.now(), 0.5);
   // A send whose reply was lost: its answers are on the sheet and still in the log; the reply's ids keep them from
@@ -1043,7 +1049,7 @@ test("v23 hold: the sheet's sum plus the unconfirmed answers is the hold on ever
   const lost = loadCodeGs();
   lost.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: all.map(a => ans(a.id, a))});
   const r = lost.get({name: 'Ana', pin: '1234'}),
-    again = modelHold({'imr-hold': 0});
+    again = modelHold({'reefid-hold': 0});
   assert.ok(r.holdIds.includes('u5'));
   again.sync(r.hold, all, r.holdIds);
   assert.strictEqual(again.now(), one.now());
@@ -1068,7 +1074,7 @@ test("v23 hold: a send of answers older than another device's gets the hold in t
     answers: [0, 1, 2].map(i => ans('b' + i, {t: at(1 + i), e: 0.8, ok: 0, a: 'Montipora'}))
   });
   assert.strictEqual(r.hold, 0, 'three misses, then eight right answers: paid back');
-  const dev = modelHold({'imr-hold': 2.1});
+  const dev = modelHold({'reefid-hold': 2.1});
   dev.sync(r.hold, [], r.holdIds);
   assert.strictEqual(dev.now(), 0);
 });
@@ -1279,7 +1285,7 @@ test('v28: a player whose app applied an older rules version gets the replay of 
 test('v28: the replay counts only the answers after a progress reset, and none without data.json', () => {
   const s = loadCodeGs(withData()),
     L = Array.from({length: 6}, (_, i) => qa('s' + i, i)),
-    data = {...prog(2), 'imr-coral-reset': JSON.stringify(new Date(Date.UTC(2026, 10, 3, 6, 0, 3, 500)).toISOString())};
+    data = {...prog(2), 'reefid-sync-coral-reset': JSON.stringify(new Date(Date.UTC(2026, 10, 3, 6, 0, 3, 500)).toISOString())};
   const r = s.post({name: 'Ben', pin: '1234', data, summary: {}, answers: L, rv: 0});
   assert.strictEqual(r.replay.n, 2);
   assert.strictEqual(s.sheets.Replayed.rows[1][3], Date.UTC(2026, 10, 3, 6, 0, 3, 500));
@@ -1350,33 +1356,48 @@ test("v28: an anonymous device's replay counts only the answers after its progre
   assert.strictEqual(s.post({anon: 'abcd1234ef', anonAnswers: [], rv: 0}).replay.n, 6);
 });
 
-// v35: the Analyses report (tools/analyses.js, run by a GitHub Action) is stored and read back with the admin token only,
-// in parts under the 50,000-character cell limit; a shorter report blanks the parts left over; size and shape capped.
-test('analyses report: admin token only, chunked, replaced whole, capped', () => {
+// v33 (rename of 2026-11-03, shipped with sheet v33): the app's keys were renamed with the app (IMR Reef ID, core.js LEGACY_KEYS). An app from before the
+// rename still saves the old names, the renamed app saves the new ones plus a copy under the old ones (core.js
+// withLegacy): the sheet reads the new name first, else the old one. rename-app: keep-begin
+test('v33: saved data is read under the new key names or the old ones (progress, reset, achievements)', () => {
+  const {pctOf, withLegacy} = require('../core.js');
   const s = loadCodeGs(),
-    T = 'ghp_write000000000000000000';
-  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [ans('n1'), ans('n2')]});
-  assert.strictEqual(s.post({analysesGet: 1}).error, 'token');
-  assert.strictEqual(s.post({analysesGet: 1, token: 'ghp_readonly0000000000000'}).error, 'token');
-  assert.strictEqual(s.post({analysesPut: 1, token: 'ghp_readonly0000000000000', report: '{"R":{}}'}).error, 'token');
-  const h = s.post({analysesGet: 1, token: T, head: 1});
-  assert.strictEqual(h.ok, true);
-  assert.strictEqual(h.answers, 2);
-  assert.strictEqual(h.stored, null);
-  // a report of about 120,000 characters, starting with characters a sheet would read as a formula in some parts
-  const big = {AV: 1, made: 5, answers: 2, M: [2], R: {2: {pad: '=+-@'.repeat(30000)}}},
-    text = JSON.stringify(big);
-  const put = s.post({analysesPut: 1, token: T, report: text});
-  assert.strictEqual(put.ok, true);
-  assert.deepStrictEqual([put.stored.answers, put.stored.av, put.stored.size], [2, 1, text.length]);
-  const g = s.post({analysesGet: 1, token: T});
-  assert.strictEqual(g.report, text);
-  assert.strictEqual(g.stored.answers, 2);
-  assert.strictEqual(s.post({analysesGet: 1, token: T, head: 1}).report, undefined, 'head: no report text');
-  const small = JSON.stringify({AV: 1, made: 6, answers: 2, M: [2], R: {}});
-  s.post({analysesPut: 1, token: T, report: small});
-  assert.strictEqual(s.post({analysesGet: 1, token: T}).report, small, 'the parts of the longer report are gone');
-  assert.strictEqual(s.post({analysesPut: 1, token: T, report: 'not json'}).error, 'input');
-  assert.strictEqual(s.post({analysesPut: 1, token: T, report: '{"no": "R"}'}).error, 'input');
-  assert.strictEqual(s.post({analysesPut: 1, token: T, report: 'x'.repeat(2500001)}).error, 'size');
+    P = {Acropora: {ok: 8, ko: 2, pg: 0.5, th: 0.4}, Porites: {ok: 20, ko: 1, pg: 0.7, mx: 1, th: 1.2}},
+    genera = {Acropora: 'mid', Porites: 'ok', Favites: 'new'},
+    oldP = {'imr-coral-progress': JSON.stringify(P)},
+    newP = {'reefid-sync-coral-progress': JSON.stringify(P)};
+  // The leaderboard %: an old app's save, a renamed app's save, and the renamed app's save with its old-name copy.
+  s.post({name: 'Old', pin: '1234', data: oldP, summary: {pct: 1, genera}, answers: [ans('o1')]});
+  s.post({name: 'New', pin: '1234', data: newP, summary: {pct: 1, genera}, answers: [ans('n1')]});
+  s.post({name: 'Both', pin: '1234', data: withLegacy(newP), summary: {pct: 1, genera}, answers: [ans('b1')]});
+  const rows = s.get({board: '1'}).rows,
+    want = pctOf(P, Object.keys(genera));
+  assert.ok(want > 1);
+  ['Old', 'New', 'Both'].forEach(n => assert.strictEqual(rows.find(r => r[0] === n)[1], want, n));
+  // Both names with different values (never sent by the app; a guard): the new one wins.
+  assert.strictEqual(s.ctx.dataKey_({'imr-coral-progress': 'old', 'reefid-sync-coral-progress': 'new'}, 'progress'), 'new');
+  assert.strictEqual(s.ctx.dataKey_({'imr-coral-progress': 'old'}, 'progress'), 'old');
+  assert.strictEqual(s.ctx.dataKey_({}, 'progress'), undefined);
+  // The abilities for the photo statistics (abilities_), and the last progress reset for the opening hold (resetOf_).
+  assert.deepStrictEqual({...s.ctx.abilities_(JSON.stringify(oldP))}, {Acropora: 0.4, Porites: 1.2});
+  assert.deepStrictEqual({...s.ctx.abilities_(JSON.stringify(newP))}, {Acropora: 0.4, Porites: 1.2});
+  const t = '2026-11-01T08:00:20Z';
+  assert.strictEqual(s.ctx.resetOf_({'imr-coral-reset': JSON.stringify(t)}), Date.parse(t));
+  assert.strictEqual(s.ctx.resetOf_({'reefid-sync-coral-reset': JSON.stringify(t)}), Date.parse(t));
+  assert.strictEqual(s.ctx.resetOf_({}), 0);
+  // Achievements: old names, new names, both (new wins: the old copy's extra achievement is not counted).
+  const s2 = loadCodeGs();
+  s2.post({name: 'Ana', pin: '1234', data: {...oldP, 'imr-coral-ach': JSON.stringify({met10: 1})}, summary: {}, answers: []});
+  s2.post({name: 'Ben', pin: '1111', data: {...newP, 'reefid-sync-ach': JSON.stringify({met10: 1, run10: 1})}, summary: {}, answers: []});
+  s2.post({
+    name: 'Cy',
+    pin: '2222',
+    data: {...newP, 'reefid-sync-ach': JSON.stringify({met10: 1}), 'imr-coral-ach': JSON.stringify({cor1: 1})},
+    summary: {},
+    answers: []
+  });
+  const a = s2.get({achs: '1'});
+  assert.strictEqual(a.n, 3);
+  assert.deepStrictEqual(a.counts, {met10: 3, run10: 1});
 });
+// rename-app: keep-end

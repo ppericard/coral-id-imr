@@ -1,4 +1,4 @@
-# Handover: picking up IMR Coral ID in a new Claude account
+# Handover: picking up IMR Reef ID in a new Claude account
 
 Written 2026-11-01 when Pierre moved development to another Claude Code account. Until then the project ran in a Claude "project" with a shared memory, many parallel threads and private claude.ai docs. **None of that is reachable from the new account.** Everything that mattered has been copied into this repository; this file is the map.
 
@@ -12,6 +12,7 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 
 ## State of play (2026-11-01)
 
+- The app was renamed **IMR Reef ID** (approved by Pierre on 2026-11-03, shipped 2026-11-04) (IMR Coral ID before; Pierre: corals now, fish and benthos next), internal names with it (storage keys `reefid-`, sheet v33 reads both key names; ARCHITECTURE.md "Names, storage keys and caches"). The address, the repository name, the Google Sheet "IMR Coral ID – RA progress" and the Cloud project "IMR Coral ID sync" kept their names; the address and repository move later with a migration for players (ROADMAP "Domain and repository rename"). <!-- rename-app: keep -->
 - Live app: <https://ppericard.github.io/coral-id-imr/> (GitHub Pages from `main`). Admin: <https://ppericard.github.io/coral-id-imr/admin.html>.
 - About 287 pull requests merged in two days (2026-10-31 and 11-01). Every PR description explains a decision; `git log --oneline` is a good index (squash merges titled `… (#N)`).
 - No open pull requests at handover time.

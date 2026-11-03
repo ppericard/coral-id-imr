@@ -1,7 +1,15 @@
 // Offline cache: app shell first, then photos as they are viewed.
-const V = 'imr-coral-id-v314';
+// The shell cache is reefid-shell-vN: on activation every other shell cache goes (REPLACES), never the photo cache.
+const V = 'reefid-shell-v314';
+// Shell caches this worker replaces: its own name, and the one from before the rename to IMR Reef ID (2026-11-03).
+const REPLACES = ['reefid-shell-', 'imr-coral-id-']; // rename-app: keep
+// The question "your version?" to the open pages (app.js), under its name before the rename too.
+const VER_ASK = ['reefid-ver?', 'imr-ver?']; // rename-app: keep
 // Photos live in their own cache that no deploy deletes (code review 2026-11-01, H3): bumping V used to wipe every
 // offline photo. Capped at PH_MAX entries, oldest first out (cache keys keep insertion order).
+// Its name did not follow the rename to IMR Reef ID (2026-11-03): a new name would have thrown away, or copied while the
+// app waits, up to PH_MAX offline photos per phone. It gets one with the domain move, on a new origin whose caches
+// start empty anyway (docs/ROADMAP.md).
 const PH = 'imr-photos-v1',
   PH_MAX = 2500;
 // The R2 bucket the pages read the photos from (core.js PHOTO_BASE, where the switch is; this only lets the worker cache
@@ -12,16 +20,16 @@ const PHOTO_RETRY = 800, // as core.js PHOTO_RETRY
 const SHELL = [
   './',
   'index.html',
-  'app.css?v=131',
-  'core.js?v=42',
-  'app.js?v=198',
-  'sync.js?v=25',
-  'progress.js?v=18',
-  'model.js?v=33',
-  'tips.js?v=1',
-  'quiz.js?v=41',
-  'learn.js?v=11',
-  'flag.js?v=10',
+  'app.css?v=132',
+  'core.js?v=43',
+  'app.js?v=199',
+  'sync.js?v=26',
+  'progress.js?v=19',
+  'model.js?v=34',
+  'tips.js?v=2',
+  'quiz.js?v=42',
+  'learn.js?v=12',
+  'flag.js?v=11',
   'quality.json?v=3',
   'picks.json?v=1',
   'data.json?v=37',
@@ -32,12 +40,12 @@ const SHELL = [
   'fonts/barlow-condensed-700-normal.woff2',
   'manifest.webmanifest',
   'curation.json',
-  'proto/lab.js?v=77',
+  'proto/lab.js?v=78',
   'proto/lab.css?v=56',
   'home-art.js?v=4',
-  'home.js?v=31',
+  'home.js?v=32',
   'home.css?v=23',
-  'tour.js?v=18',
+  'tour.js?v=19',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...[
     'finder',
@@ -55,7 +63,7 @@ const SHELL = [
     'pairs',
     'gallery',
     'cards'
-  ].map(f => `proto/${f}.js?v=76`)
+  ].map(f => `proto/${f}.js?v=77`)
 ];
 const get = async (c, u, n = 3) => {
   for (let i = 1; ; i++) {
@@ -83,7 +91,7 @@ self.addEventListener('install', e =>
 self.addEventListener('activate', e =>
   e.waitUntil(
     (async () => {
-      const old = (await caches.keys()).filter(k => k.startsWith('imr-coral-id-') && k !== V),
+      const old = (await caches.keys()).filter(k => REPLACES.some(s => k.startsWith(s)) && k !== V),
         ph = await caches.open(PH);
       for (const k of old) {
         const c = await caches.open(k);
@@ -105,21 +113,25 @@ self.addEventListener('activate', e =>
         pages.map(
           c =>
             new Promise(done => {
-              const ch = new MessageChannel(),
-                t = setTimeout(() => {
-                  c.navigate(c.url).catch(() => {});
+              const t = setTimeout(() => {
+                c.navigate(c.url).catch(() => {});
+                done();
+              }, 3000);
+              // Asked under both names: a page from before the rename to IMR Reef ID (2026-11-03) knows only the old
+              // one, and must not be reloaded in the middle of a question for that.
+              VER_ASK.forEach(q => {
+                const ch = new MessageChannel();
+                ch.port1.onmessage = () => {
+                  clearTimeout(t);
                   done();
-                }, 3000);
-              ch.port1.onmessage = () => {
-                clearTimeout(t);
-                done();
-              };
-              try {
-                c.postMessage({t: 'imr-ver?'}, [ch.port2]);
-              } catch (err) {
-                clearTimeout(t);
-                done();
-              }
+                };
+                try {
+                  c.postMessage({t: q}, [ch.port2]);
+                } catch (err) {
+                  clearTimeout(t);
+                  done();
+                }
+              });
             })
         )
       );
@@ -178,7 +190,7 @@ const R2_PAUSE = 60e3;
 const r2Down = () =>
   self.clients
     .matchAll({type: 'window'})
-    .then(cs => cs.forEach(c => c.postMessage({t: 'imr-r2-down'})))
+    .then(cs => cs.forEach(c => c.postMessage({t: 'reefid-r2-down'})))
     .catch(() => {});
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
