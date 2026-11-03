@@ -46,7 +46,8 @@ const DATA = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),
 function model() {
   const src = fs.readFileSync(path.join(ROOT, 'model.js'), 'utf8'),
     pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
-    ctx = {P: {}, playerStart: C.playerStart, LEVEL: C.LEVEL, sig: x => 1 / (1 + Math.exp(-x))};
+    // startV: the first-launch answer's variables (core.js CHOICE); the logged players never answered it: the default's.
+    ctx = {P: {}, playerStart: C.playerStart, LEVEL: C.LEVEL, startV: () => C.startVars(), sig: x => 1 / (1 + Math.exp(-x))};
   vm.createContext(ctx);
   vm.runInContext(pick('const ELO =', '// For My progress') + '\nthis.M = {ELO, ability, abilityStep};', ctx);
   return ctx;

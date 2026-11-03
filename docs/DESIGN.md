@@ -35,6 +35,7 @@ The visual rules every page follows. They came out of the expert UI review of 20
 | One-tap question after an answer | `.pulse` (quiz.js `pulseAsk`) | A block of its own before Next, tinted with the accent (`color-mix` of `--accent` and `--surface`, accent border), a "Quick question" title (`.pulsek`), the question (`.pulseq`), its three answers on one row of equal widths (`.pulseb`, outlined pills, labels wrap inside them), × to close. Sticks above Next when the feedback scrolls. |
 | Admin table | `.adm-tbl` | Every cell capped at `--cut` (9 em phones, 16 em from tablets) with "…", full text in the title; a name via `cut()` / `pname()` (`.adm-cut`). No tags that widen a column: state goes in the colour (a hidden player is a muted italic name). |
 | Disclosure | `<details>` with a muted `▸` summary | e.g. "Backup or reset progress" at the bottom of ⚙. |
+| A question whose answers need a line each (first-launch question) | `.startopts` with one `.startopt` per answer (`app.js` `startOptsHtml`) | Full-width buttons, one per row, ≥ 56 px tall, the answer in bold and a muted line under it; the current answer has the accent ring (`aria-pressed`). Same component in the tour bubble, its card and the fallback card. |
 
 ## Lab drawings
 

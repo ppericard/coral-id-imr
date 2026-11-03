@@ -13,13 +13,17 @@
     document.documentElement.dataset.page = 'lab'; // full width, like the Lab (lab.css)
     const names = Object.keys(DATA.gen);
     // Door 1 art: a band of corallite close-ups, an illustration only (Pierre, 2026-11-03): its two buttons carry the door. Door 2 art: a real ReefCloud photo with its 5 points (Pierre's, 2026-10-31), centred on the active point.
+    // A quiet line in the Learn & practise door (Pierre, 2026-11-03): Coral basics for a player who has not done it and
+    // has few answers (under CHOICE.ASK, core.js, the same bar as the first-launch question); gone once it is done.
+    const G = P[LEVEL] || {},
+      newb = !basicsDone() && (G.ok || 0) + (G.ko || 0) < CHOICE.ASK;
     const tiles = shuffle(names)
       .slice(0, 12)
       .map(g => `<img ${ph(g, 'macro')} alt="" loading="lazy">`)
       .join('');
     $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the genera; Identify when you need to name a coral on a ReefCloud photo, or one you photographed on a dive.</p><div class="home-page">
       <div class="hdoors">
-        <section class="hdoor learn">
+        <section class="hdoor learn${newb ? ' newb' : ''}">
           <a class="hdart" href="#quiz" tabindex="-1" aria-hidden="true"><span class="hdtiles">${tiles}</span></a>
           <div class="hdbody">
             <p class="hdwhen">Learning phase<span class="wide"> · before ReefCloud or your next dive</span></p>
@@ -28,7 +32,7 @@
             <div class="hdacts">
               <a class="hdbtn" href="#genera"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13"/></svg><b><em>1</em> Learn</b><small>One sheet per genus: photos<span class="wide"> at 3 scales</span>, IMR ID tips, look-alikes</small></a>
               <a class="hdbtn main" href="#quiz"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg><b><em>2</em> Practice</b><small>Name the genus from photos<span class="wide"> (all genera or the ones you pick)</span>, look-alike duels, memory</small></a>
-            </div>
+            </div>${newb ? '<p class="hdnew"><a href="#basics">New to corals? Start with the basics (5 min) ›</a></p>' : ''}
           </div>
         </section>
         <section class="hdoor identify">

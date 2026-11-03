@@ -964,6 +964,9 @@ const takePlan = cur => {
 };
 let SHOWNQ = null; // the photo-quiz question on screen (planNext)
 function quizPhoto(cur = 'quiz') {
+  // The first-launch question first (model.js startOf): a player with no answer to it (tour skipped, or an existing
+  // player) is asked on a card before the next quiz question; from CHOICE.ASK answers on it is inferred, silently.
+  if (cur === 'quiz' && startGate()) return startAskShow(cur);
   let q = takePlan(cur) || planPhoto(cur);
   // A planned card waits while the player falls behind (introHold, Codex review #362: a right answer that starts the
   // hold leaves the questions planned before it), and during the floor of a visit or a comeback (noOpen); a question
@@ -982,12 +985,146 @@ function quizPhoto(cur = 'quiz') {
   if (q.intro) q.custom ? introShow(q.intro, true, 'c', false) : introShow(q.intro, q.start);
   // The offers about which genera are in play (open all, back to one at a time, bonus genera) belong to the photo quiz.
   else if (cur !== 'quiz') {
-  } else if (!noOpen() && promptOk() && introOffer())
+  } else if (!noOpen() && promptOk() && startDue())
+    (promptMark(), startFbShow(startDue())); // the first answers do not fit the first-launch answer (model.js startDue)
+  else if (!noOpen() && promptOk() && introOffer())
     (promptMark(), introOfferShow()); // never over another card: next question
   else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
   else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
   zoomHint(); // once per device, never over a card or offer shown just above
   topUp(); // the questions after this one, chosen while it is played (planNext)
+}
+// The first-launch question's cards (Pierre, 2026-11-03; core.js CHOICE, model.js startSet). startCard draws a card from
+// the same fields as app.js cardShow on the card restyling branch (kind, cls, kick, title, body, primary / secondary
+// {text, attr, on}, note, esc, bind, onClose), so each of these cards moves to cardShow by renaming the call.
+function startCard(o) {
+  const d = document.createElement('div');
+  let shut = false;
+  d.className = 'unlock ' + (o.cls || '');
+  d.setAttribute('role', 'dialog');
+  d.setAttribute('aria-modal', 'true');
+  d.setAttribute('aria-label', o.label || o.kick || '');
+  const btn = (b, n) =>
+    b ? `<button class="next${n === 2 ? ' sec' : ''}" type="button" data-b="${n}"${b.attr ? ' ' + b.attr : ''}>${b.text}</button>` : '';
+  d.innerHTML = `<div class="ulcard startcard" tabindex="-1"><p class="ulkick">${o.kick || ''}</p><h3>${o.title}</h3>${o.body || ''}${
+    o.primary || o.secondary ? `<div class="ulbtns ulstack">${btn(o.primary, 1)}${btn(o.secondary, 2)}</div>` : ''
+  }${o.note ? `<p class="note">${o.note}</p>` : ''}</div>`;
+  const close = how => {
+    if (shut) return;
+    shut = true;
+    d.remove();
+    document.removeEventListener('keydown', key, true);
+    if (typeof qclockAgain === 'function') qclockAgain(); // reading a card is not looking at the photo (QCLOCK)
+    if (o.onClose) o.onClose(how);
+  };
+  const act = w => {
+    const b = o[w === 1 ? 'primary' : 'secondary'];
+    close(w);
+    if (b && b.on) b.on();
+  };
+  const key = e => {
+    if (e.key === 'Tab' || document.getElementById('tour')) return; // the tour's keys while the card waits under it
+    e.stopPropagation(); // never the quiz's answer keys behind the card
+    if (/^\d$/.test(e.key)) e.preventDefault();
+    if (e.key !== 'Escape') return;
+    e.preventDefault();
+    typeof o.esc === 'function' ? (close('esc'), o.esc()) : act(o.esc || 2);
+  };
+  document.addEventListener('keydown', key, true);
+  d.querySelectorAll('[data-b]').forEach(b => (b.onclick = () => act(Number(b.dataset.b))));
+  d.close = close;
+  d.ulClose = () => close('route'); // leaving the page closes it (route)
+  if (o.bind) o.bind(d);
+  document.body.appendChild(d);
+  // The focus: the main button, else the card itself, never an answer (it would look chosen already).
+  setTimeout(() => !shut && (d.querySelector(o.focus || '[data-b="1"]') || d.querySelector('.ulcard')).focus({preventScroll: true}), 50);
+  return d;
+}
+// Asked on a card when the quiz opens (the tour asks it as its first step): no answer yet, fewer than CHOICE.ASK answers.
+// From CHOICE.ASK answers on (an existing player, Pierre 2026-11-03), the choice is inferred from the global level
+// (core.js startInfer) and recorded as "inferred", never asked.
+const startGate = () => {
+  if (startOf()) return false;
+  if (answersSoFar() >= CHOICE.ASK) return (startSet(startInfer(P), 'inferred'), false);
+  return true;
+};
+// Forced: the three answers and nothing else (Escape goes back to Home; the quiz asks again next time). Another device's
+// answer arriving meanwhile (sync, model.js startMerge) closes it and the quiz goes on.
+function startAskShow(cur) {
+  if (document.querySelector('.unlock.startq')) return;
+  $v.innerHTML = '';
+  const d = startCard({
+    kind: 'feature',
+    cls: 'startq',
+    kick: 'Before you start',
+    title: 'How well do you know corals?',
+    label: 'How well do you know corals?',
+    body: `<p>Your answer sets where the game starts; from there it follows your answers.</p>${startOptsHtml(null)}`,
+    esc: () => go(''),
+    bind: d =>
+      d.querySelectorAll('[data-start]').forEach(
+        b =>
+          (b.onclick = () => {
+            startSet(b.dataset.start, 'card');
+            d.close('pick');
+            startBasicsOffer(cur) || quizPhoto(cur);
+          })
+      )
+  });
+  d.ulDone = () => (d.close('sync'), quizPhoto(cur));
+}
+// "I'm new to corals" (CHOICE v.basics): Coral basics offered first, about 5 minutes, then the quiz. Only while the module
+// is not done (app.js basicsDone). Returns whether it showed.
+function startBasicsOffer(cur) {
+  if (!startV().basics || basicsDone()) return false;
+  startCard({
+    kind: 'tip',
+    cls: 'startq basicsq',
+    kick: 'New to corals',
+    title: 'Start with Coral basics?',
+    body: '<p>Seven short steps on real photos, about 5 minutes: a polyp, a corallite, septa and walls, the words the ID tips use. Then the quiz.</p>',
+    primary: {text: 'Coral basics (5 min)', attr: 'data-basics', on: () => go('basics')},
+    secondary: {text: 'Start the quiz', on: () => quizPhoto(cur)},
+    note: 'Learn › Coral basics, any time.'
+  });
+  return true;
+}
+// The fallback card (model.js startDue), once per direction, over a new question: 'lo' the first answers fall clearly
+// below what the choice predicts (Coral basics, or a lower choice), 'hi' clearly above it (a higher choice). Picking a
+// choice re-initialises its variables (startSet); the answers are kept.
+function startFbShow(dir) {
+  const o = startOf(),
+    next = startNext(o.c, dir),
+    said = `said “${esc(startOpt(o.c)[1])}”`,
+    bas = dir === 'lo' && !basicsDone();
+  startShown(dir);
+  const d = startCard({
+    kind: 'tip',
+    cls: 'startfb',
+    kick: `${o.n} answers in`,
+    title: dir === 'lo' ? (next.length ? 'Harder than expected?' : 'Corals are new to you?') : 'You know more than you said',
+    label: 'Your start',
+    body:
+      (dir === 'lo'
+        ? next.length
+          ? `<p>Your answers are below what the game expects from someone who ${said}. Start more gently? Your answers are kept.</p>`
+          : '<p>Coral basics shows, on real photos, the words the ID tips use: about 5 minutes.</p>'
+        : `<p>Your answers beat what the game expects from someone who ${said}. Move faster? Your answers are kept.</p>`) +
+      (next.length ? startOptsHtml(null, next) : '') +
+      (bas && next.length ? '<p class="ulnote"><a class="linkish" href="#basics">New to corals? Coral basics, 5 min ›</a></p>' : ''),
+    primary: bas && !next.length ? {text: 'Coral basics (5 min)', attr: 'data-basics', on: () => go('basics')} : null,
+    secondary: {text: next.length ? 'Keep my answer' : 'Keep playing', attr: 'data-keep'},
+    onClose: () => topUp(),
+    bind: d =>
+      d.querySelectorAll('[data-start]').forEach(
+        b =>
+          (b.onclick = () => {
+            startSet(b.dataset.start, 'fallback');
+            d.close('pick');
+          })
+      )
+  });
+  d.dataset.dir = dir;
 }
 // The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now.
 function introOfferShow() {

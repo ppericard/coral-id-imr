@@ -3,7 +3,12 @@
 // only where none shows the point) or a drawing of ours, one plain sentence and an optional one-question check. Nothing
 // is forced: every step can be skipped, the checks are optional, and nothing here is shown to a player who did not
 // open it (IMR RAs stay the main audience, Pierre 2026-11-03).
-// Routes: #lab-basics (resume), #lab-basics|<step id>, #lab-basics|<glossary term> (e.g. |Septa), #lab-basics|words.
+// Routes: #basics (resume), #basics|<step id>, #basics|<glossary term> (e.g. |Septa), #basics|words. Graduated from the
+// Lab into Learn (Pierre, 2026-11-03): the first step of the Learn path ("0 · Coral basics" before the genus sheets, the
+// first Learn tab); the old #lab-basics links land here (proto/lab.js GRADUATED), and the Tools page keeps a link.
+// Done (Pierre, 2026-11-03: completion recognised): every step seen (the walls step: its four wall types), the checks
+// stay optional; kept in imr-basics (fin), and as the achievement "Coral basics" (feat _basics, synced with the
+// achievements record, progress.js), which the Home line and the first-launch offers read (app.js basicsDone).
 // Add |edit to print photo coordinates on a tap and show the tap targets (for placing labels).
 (() => {
   /* ---------- photos: coordinates are pixels of the 960 px file (w 960, h given), crops are [x, y, w, h] ---------- */
@@ -576,6 +581,8 @@
     ['Costae', 'septa', 'The same blades, carrying on outside the cup’s wall.'],
     ['Septal teeth', 'teeth', 'Teeth on the top edge of the septa: fine or large.'],
     ['Wall', 'walls', 'The rim around each cup: separate, shared, forming valleys, or not visible at all.'],
+    ['Separate walls', 'walls|separate', 'Each cup has its own wall, with a gap between cups.'],
+    ['Shared walls', 'walls|shared', 'Neighbouring cups share one wall, like a honeycomb.'],
     ['Coenosteum', 'walls|separate', 'The skeleton in the gap between cups with separate walls.'],
     ['Valleys', 'walls|valleys', 'Cups merged into long rows with several mouths (brain corals).'],
     ['Indistinguishable walls', 'walls|nowall', 'No wall to see: the lines run from one centre to the next.'],
@@ -589,15 +596,25 @@
     ['Hooded corallites', '', 'Cups that face downwards, like a hood.'],
     ['Vesicles', '', 'Grape-like bubbles some corals inflate by day.']
   ];
-  // For a link from a glossary popup or quiz feedback: term → route (window.BASICS.route('Septa') = '#lab-basics|septa').
+  // For a link from a glossary popup or quiz feedback: term → route (window.BASICS.route('Septa') = '#basics|septa').
   const routeOf = term => {
     const w = WORDS.find(x => x[0].toLowerCase() === String(term).toLowerCase());
     if (!w || !w[1]) return '';
-    return w[1][0] === '@' ? '#lab-anatomy|' + w[1].slice(1) : '#lab-basics|' + w[1];
+    return w[1][0] === '@' ? '#lab-anatomy|' + w[1].slice(1) : '#basics|' + w[1];
   };
-  window.BASICS = {route: routeOf};
+  // listed: the term is in the Words list (a link there when it has no step of its own).
+  window.BASICS = {route: routeOf, listed: term => WORDS.some(x => x[0].toLowerCase() === String(term).toLowerCase())};
   const official = term => (DATA.terms || []).find(x => x[0] === term);
-  const KEY = 'imr-basics';
+  const KEY = BASICS_KEY; // app.js: 'imr-basics'
+  const s0 = id => STEPS.find(s => s.id === id) || {};
+  // A step seen (the walls step once its four types are), and the module done once every step is.
+  const seenStep = id => {
+    const st = store.get(KEY, {}) || {},
+      seen = {...(st.seen || {}), [id]: 1},
+      fin = st.fin || (STEPS.every(s => seen[s.id]) ? Date.now() : 0);
+    store.set(KEY, {...st, seen, ...(fin ? {fin} : {})});
+    if (fin && !st.fin && typeof achBasics === 'function') achBasics();
+  };
 
   LAB.add({
     id: 'basics',
@@ -617,11 +634,14 @@
       const [tId, tSub] = byTerm ? byTerm[1].split('|') : [];
       const id = arg === 'words' ? 'words' : STEPS.some(s => s.id === arg) ? arg : tId || st.last || STEPS[0].id;
       const sub = rest[1] || tSub || '';
-      if (id !== 'words') store.set(KEY, {...st, last: id});
+      if (id !== 'words') {
+        store.set(KEY, {...st, last: id});
+        if (!s0(id).walls) seenStep(id);
+      }
       const steps = `<nav class="bx-steps" aria-label="Steps">${STEPS.map(
         (s, i) =>
-          `<a href="#lab-basics|${s.id}${sfx}"${s.id === id ? ' aria-current="step"' : ''}${done[s.id] ? ' class="done"' : ''} title="${esc(s.t)}"><span>${i + 1}</span></a>`
-      ).join('')}<a href="#lab-basics|words${sfx}" class="bx-wl"${id === 'words' ? ' aria-current="page"' : ''}>Words</a></nav>`;
+          `<a href="#basics|${s.id}${sfx}"${s.id === id ? ' aria-current="step"' : ''}${done[s.id] ? ' class="done"' : ''} title="${esc(s.t)}"><span>${i + 1}</span></a>`
+      ).join('')}<a href="#basics|words${sfx}" class="bx-wl"${id === 'words' ? ' aria-current="page"' : ''}>Words</a></nav>`;
       const list = [];
       if (id === 'words') {
         root.innerHTML = `<div class="bx">${steps}<dl class="bx-words">${WORDS.map(([t, r, plain]) => {
@@ -642,8 +662,8 @@
         .join('');
       const more = (s.more || []).map(([t, d]) => `<p class="bx-more"><b>${esc(t)}</b>: ${esc(d)}</p>`).join('');
       const nextA = next
-        ? `<a class="next" href="#lab-basics|${next.id}${sfx}">Next: ${esc(next.t.split(':')[0])} ›</a>`
-        : `<a class="next" href="#lab-basics|words${sfx}">All the words ›</a> <a class="next sec" href="#quiz">Practise ›</a>`;
+        ? `<a class="next" href="#basics|${next.id}${sfx}">Next: ${esc(next.t.split(':')[0])} ›</a>`
+        : `<a class="next" href="#basics|words${sfx}">All the words ›</a> <a class="next sec" href="#quiz">Practise ›</a>`;
       root.innerHTML = `<div class="bx">${steps}<div class="bx-lay">
         <figure class="bx-fig">${s.walls ? '' : s.forms ? '' : s.fig()}</figure>
         <div class="bx-side"><h3 class="bx-t"><small>Step ${i + 1} of ${STEPS.length}</small>${esc(s.t)}</h3>
@@ -656,7 +676,7 @@
       const markDone = () => {
         const cur = store.get(KEY, {}) || {};
         store.set(KEY, {...cur, done: {...(cur.done || {}), [s.id]: 1}});
-        root.querySelector(`.bx-steps a[href^="#lab-basics|${s.id}"]`).classList.add('done');
+        root.querySelector(`.bx-steps a[href^="#basics|${s.id}"]`).classList.add('done');
       };
       // A teaching photo opens the enlarged view when tapped (Enter or Space from the keyboard): the whole photo, with
       // the step's labels on it and a Labels switch to see it bare (app.js zoom opts.over).
@@ -688,6 +708,7 @@
           seen.add(k);
           const cur = store.get(KEY, {}) || {};
           store.set(KEY, {...cur, walls: Object.fromEntries([...seen].map(x => [x, 1]))});
+          if (keys.every(x => seen.has(x))) seenStep(s.id);
           fig.innerHTML = `<div class="seg bx-wtabs" role="group" aria-label="Wall types, ${keys.length} to see">${keys
             .map(
               (kk, n) =>

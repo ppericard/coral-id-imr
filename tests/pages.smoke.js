@@ -31,8 +31,8 @@ const ROUTES = [
   'board',
   'ach',
   'lab',
-  'lab-basics|walls',
-  'lab-basics|words',
+  'basics|walls',
+  'basics|words',
   'about',
   'credits',
   'quiz-duel|Foo|Bar',
@@ -71,6 +71,7 @@ async function overlays(b, base) {
   };
   const seen = () => {
     localStorage.setItem('imr-tour', '"done"');
+    localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
     localStorage.setItem('imr-nudge', '1');
   };
   // C2: Back from the quiz closes the first genus card (it stayed over Home, its Next going on there). The cards shown
@@ -160,6 +161,7 @@ async function overlays(b, base) {
       {viewport: {width: 390, height: 800}, intro: true},
       ({r, u}) => {
         localStorage.setItem('imr-tour', '"done"');
+        localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
         localStorage.setItem('imr-nudge', '1');
         if (r && !localStorage.getItem('imr-recalc')) localStorage.setItem('imr-recalc', JSON.stringify(r));
         localStorage.getItem('imr-coral-progress') ||
@@ -245,6 +247,8 @@ async function overlays(b, base) {
     const [c, p] = await open({viewport: {width: 1280, height: 860}}, () => localStorage.setItem('imr-nudge', '1'));
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
+    await p.click('#tour [data-start="imr"]'); // the first-launch question first (tour.js ask): it moves on by itself
+    await p.waitForTimeout(300);
     for (let k = 0; k < at; k++) {
       await p.keyboard.press('ArrowRight');
       await p.waitForTimeout(300);
@@ -260,7 +264,10 @@ async function overlays(b, base) {
   // one-tap question first at 35, at least 10 answers between two of them, never with an achievement toast or a card on
   // screen. A new player, mostly right, 60 answers; toasts closed by a tap as they come.
   {
-    const [c, p] = await open({viewport: {width: 390, height: 844}}, () => localStorage.setItem('imr-tour', '"done"'));
+    const [c, p] = await open(
+      {viewport: {width: 390, height: 844}},
+      () => (localStorage.setItem('imr-tour', '"done"'), localStorage.setItem('imr-coral-start', '{"c":"new","t":1}'))
+    );
     await p.goto(base + '#quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     const seenP = [];
@@ -617,6 +624,7 @@ async function signin(base) {
   };
   const seen = () => {
     if (!localStorage.getItem('imr-tour')) localStorage.setItem('imr-tour', '"done"');
+    localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
     localStorage.setItem('imr-nudge', '1');
   };
   const card = async p => {
@@ -640,6 +648,7 @@ async function signin(base) {
   await run(
     () => {
       localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('imr-nudge', '1');
       localStorage.setItem('imr-recalc', '"typed-questions-2026-11"'); // the last update note: seen
       if (localStorage.getItem('test-own')) return;
@@ -729,6 +738,8 @@ async function signin(base) {
   await run(
     () => localStorage.setItem('imr-nudge', '1'),
     async p => {
+      await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
+      if (await p.$('#tour [data-start]')) await p.click('#tour [data-start="imr"]'); // the first-launch question
       await p.waitForSelector('#tour .tnext', {timeout: 10000}).catch(() => {});
       for (let k = 0; k < 4 && !(await p.$('#tour .tsync form')); k++) await p.click('#tour .tnext');
       if (await p.$('#tour .tsync form')) {
@@ -741,6 +752,215 @@ async function signin(base) {
     }
   );
   await bs.close();
+  return fails;
+}
+
+// The first-launch question (Pierre, 2026-11-03; core.js CHOICE, tour.js ask, quiz.js startAskShow / startFbShow) and
+// Coral basics in Learn: forced in the tour (no Skip, no Next, no arrow key until answered), stored with how it was
+// given; a skipped tour asks it on a card before the quiz (Escape goes Home, the quiz asks again); "new" offers Coral
+// basics first; an existing player with CHOICE.ASK answers or more is never asked (inferred); the fallback card shows
+// once over a new question when the first answers do not fit, never twice; Coral basics is the first Learn tab and the
+// "0" block of Genera, out of the Lab list with a link kept there; the Home line until it is done; a glossary term
+// links to its step; done = every step seen, with its achievement. Returns the failures.
+async function startSmoke(b, base) {
+  const fails = [],
+    errs = [];
+  const open = async (init, vp = {width: 390, height: 844}) => {
+    const c = await b.newContext({viewport: vp, serviceWorkers: 'block', intro: true});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(init || (() => {}));
+    const p = await c.newPage();
+    p.on('pageerror', e => errs.push(e.message));
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    return [c, p];
+  };
+  const rec = p => p.evaluate(() => JSON.parse(localStorage.getItem('imr-coral-start') || 'null'));
+  // 1. The tour: the question first, forced; "new" ends the tour on Coral basics.
+  {
+    const [c, p] = await open(() => localStorage.setItem('imr-nudge', '1'));
+    await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
+    const q = await p.evaluate(() => ({
+      opts: document.querySelectorAll('#tour [data-start]').length,
+      skip: !!document.querySelector('#tour .tskip'),
+      next: !!document.querySelector('#tour .tnext')
+    }));
+    await p.keyboard.press('ArrowRight');
+    await p.waitForTimeout(300);
+    const still = await p.evaluate(() => !!document.querySelector('#tour [data-start]'));
+    if (q.opts !== 3 || q.skip || q.next || !still) fails.push(`tour question not forced: ${JSON.stringify({...q, still})}`);
+    await p.click('#tour [data-start="new"]');
+    await p.waitForTimeout(500);
+    const r = await rec(p);
+    if (!r || r.c !== 'new' || r.via !== 'tour' || r.at !== 0) fails.push(`tour answer not stored: ${JSON.stringify(r)}`);
+    for (let k = 0; k < 8 && (await p.$('#tour .tnext')) && !/basics/.test(await p.textContent('#tour .tnext')); k++) {
+      await p.click('#tour .tnext');
+      await p.waitForTimeout(300);
+    }
+    const last = await p.textContent('#tour .tnext').catch(() => '');
+    if (!/Coral basics/.test(last || '')) fails.push(`tour, new to corals: last button "${last}"`);
+    await p.click('#tour .tnext');
+    await p
+      .waitForFunction(() => location.hash.startsWith('#basics') && document.querySelector('.bx'), null, {timeout: 15000})
+      .catch(() => {});
+    const at = await p.evaluate(() => ({
+      h: location.hash,
+      tour: !!document.getElementById('tour'),
+      tab: document.querySelector('#modes [aria-current]')?.textContent
+    }));
+    if (!at.h.startsWith('#basics') || at.tour || !/basics/i.test(at.tab || ''))
+      fails.push(`tour, new to corals: not on Coral basics in Learn: ${JSON.stringify(at)}`);
+    await c.close();
+  }
+  // 2. Tour skipped: a card before the quiz, forced; Escape goes Home and the quiz asks again; "new" offers Coral basics,
+  // "Start the quiz" goes on to the first cards.
+  {
+    const [c, p] = await open(() => (localStorage.setItem('imr-tour', '"done"'), localStorage.setItem('imr-nudge', '1')));
+    await p.evaluate(() => (location.hash = 'quiz'));
+    await p.waitForSelector('.unlock.startq', {timeout: 8000}).catch(() => {});
+    const card = await p.evaluate(() => ({
+      opts: document.querySelectorAll('.unlock.startq [data-start]').length,
+      btns: document.querySelectorAll('.unlock.startq .next').length,
+      q: !!document.querySelector('#view .q'),
+      intro: !!document.querySelector('.unlock.intro')
+    }));
+    if (card.opts !== 3 || card.btns || card.q || card.intro) fails.push(`question card before the quiz: ${JSON.stringify(card)}`);
+    await p.keyboard.press('Escape');
+    await p.waitForTimeout(400);
+    const esc = await p.evaluate(() => ({h: location.hash, card: !!document.querySelector('.unlock')}));
+    if (esc.h !== '' || esc.card) fails.push(`question card, Escape: ${JSON.stringify(esc)}`);
+    await p.evaluate(() => (location.hash = 'quiz'));
+    await p.waitForSelector('.unlock.startq [data-start="new"]', {timeout: 8000}).catch(() => fails.push('question card not asked again'));
+    await p.click('.unlock.startq [data-start="new"]');
+    await p.waitForSelector('.unlock.basicsq', {timeout: 5000}).catch(() => fails.push('new to corals: no Coral basics offer'));
+    await p.click('.unlock.basicsq .next.sec');
+    await p.waitForSelector('.unlock.intro', {timeout: 8000}).catch(() => fails.push('after the question card: no first cards'));
+    const r = await rec(p);
+    if (!r || r.c !== 'new' || r.via !== 'card') fails.push(`question card answer: ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // 3. Existing players: 50 answers or more, inferred and never asked; fewer, asked.
+  for (const [n, th, ask] of [
+    [60, 1.2, false],
+    [30, 0.1, true]
+  ]) {
+    const [c, p] = await open(() => (localStorage.setItem('imr-tour', '"done"'), localStorage.setItem('imr-nudge', '1')));
+    await p.evaluate(
+      ([n, th]) => {
+        P['~level'] = {ok: n - 10, ko: 10, th, at: Date.now()};
+        location.hash = 'quiz';
+      },
+      [n, th]
+    );
+    await p.waitForTimeout(1500);
+    const r = await rec(p),
+      asked = !!(await p.$('.unlock.startq'));
+    if (asked !== ask || (!ask && (!r || r.via !== 'inferred' || r.c !== 'know')))
+      fails.push(`existing player with ${n} answers: asked ${asked}, record ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // 4. The fallback card: once over a new question when the first CHOICE.N answers fall clearly below the answer's
+  // prediction; Keep my answer; never again.
+  {
+    const [c, p] = await open(() => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+      localStorage.setItem('imr-coral-start', JSON.stringify({c: 'know', t: 1, at: 0, via: 'tour', n: 0, s: 0, fb: {}, h: []}));
+    });
+    await p.evaluate(() => (location.hash = 'quiz'));
+    await p.waitForSelector('.unlock.intro', {timeout: 8000}).catch(() => {});
+    while (await p.$('.unlock.intro')) await p.click('.unlock.intro .ulbtns .next:not(.sec)');
+    const due = await p.evaluate(() => {
+      for (let i = 0; i < CHOICE.N; i++) holdStep(0.85, false); // 20 misses where 0.85 was expected
+      const d = startDue();
+      quizPhoto();
+      return d;
+    });
+    await p.waitForTimeout(400);
+    const fb = await p.evaluate(() => {
+      const d = document.querySelector('.unlock.startfb');
+      return (
+        d && {
+          dir: d.dataset.dir,
+          opts: [...d.querySelectorAll('[data-start]')].map(x => x.dataset.start),
+          basics: !!d.querySelector('a[href="#basics"]')
+        }
+      );
+    });
+    if (due !== 'lo' || !fb || fb.dir !== 'lo' || fb.opts.join() !== 'imr,new' || !fb.basics)
+      fails.push(`fallback card: ${JSON.stringify({due, fb})}`);
+    if (fb) await p.click('.unlock.startfb [data-keep]');
+    const again = await p.evaluate(() => (quizPhoto(), [startDue(), !!document.querySelector('.unlock.startfb')]));
+    if (again[0] || again[1]) fails.push(`fallback card shown twice: ${JSON.stringify(again)}`);
+    await c.close();
+  }
+  // 5. Coral basics in Learn: the first Learn tab, the "0" block of Genera, out of the Lab list with a link kept there;
+  // the Home line until it is done; a glossary term links to its step; every step seen = done, with its achievement.
+  {
+    const [c, p] = await open(
+      () => (localStorage.setItem('imr-tour', '"done"'), localStorage.setItem('imr-coral-start', '{"c":"new","t":1}')),
+      {width: 1280, height: 860}
+    );
+    const home = await p.evaluate(() => !!document.querySelector('.hdoor.learn .hdnew a[href="#basics"]'));
+    await p.evaluate(() => (location.hash = 'genera'));
+    await p.waitForSelector('#azgrid .card', {timeout: 8000});
+    const g = await p.evaluate(() => ({
+      tabs: [...document.querySelectorAll('#modes a')].map(a => a.getAttribute('href')),
+      first: document.querySelector('#azgrid > :first-child')?.textContent.replace(/\s+/g, ' ').trim().slice(0, 40),
+      link: !!document.querySelector('#azgrid a.bxcard[href="#basics"]')
+    }));
+    if (!home) fails.push('Home: no "New to corals?" line for a new player');
+    if (g.tabs[0] !== '#basics' || !/^0\s*Coral basics/.test(g.first || '') || !g.link) fails.push(`Learn path: ${JSON.stringify(g)}`);
+    await p.evaluate(() => window.loadTier && window.loadTier(5));
+    await p.evaluate(() => (location.hash = 'lab'));
+    await p.waitForSelector('.labhub', {timeout: 15000}).catch(() => {});
+    const lab = await p.evaluate(() => ({
+      tile: !!document.querySelector('.labhub a[href="#lab-basics"]'),
+      kept: !!document.querySelector('.labgrad a[href="#basics"]')
+    }));
+    if (lab.tile || !lab.kept) fails.push(`Tools page: Coral basics ${JSON.stringify(lab)}`);
+    // An old Lab link lands on its new home.
+    await p.evaluate(() => (location.hash = 'lab-basics|septa'));
+    await p
+      .waitForFunction(() => location.hash === '#basics|septa', null, {timeout: 8000})
+      .catch(() => fails.push('#lab-basics|septa does not land on #basics|septa'));
+    // A glossary term (an underlined word of the ID tips, a genus sheet) links to its Coral basics step.
+    await p.evaluate(() => (location.hash = 'g-Astrea'));
+    await p.waitForSelector('.gt[data-gt="Septa"], .gt', {timeout: 8000});
+    const term = await p.evaluate(() => {
+      const t = document.querySelector('.gt[data-gt="Septa"]') || document.querySelector('.gt');
+      t.click();
+      const a = document.querySelector('.gpop:not([hidden]) a.gbx');
+      return {term: t.dataset.gt, href: a && a.getAttribute('href')};
+    });
+    if (!term.href || !/^#(basics|lab-anatomy)/.test(term.href))
+      fails.push(`glossary term without its Coral basics link: ${JSON.stringify(term)}`);
+    // Done: every step seen (the walls step, its four types).
+    const done = await p.evaluate(async () => {
+      const ids = ['colony', 'polyp', 'corallite', 'septa', 'teeth', 'walls', 'forms'];
+      for (const id of ids) {
+        location.hash = 'basics|' + id;
+        await new Promise(r => setTimeout(r, 150));
+        if (id === 'walls') for (const b of [...document.querySelectorAll('.bx-wtabs [data-w]')]) b.click();
+      }
+      const st = JSON.parse(localStorage.getItem('imr-basics') || '{}'),
+        a = JSON.parse(localStorage.getItem('imr-coral-ach') || '{}');
+      return {fin: !!st.fin, ach: !!a.basics, feat: !!a._basics, done: basicsDone()};
+    });
+    if (!done.fin || !done.ach || !done.feat || !done.done) fails.push(`Coral basics done: ${JSON.stringify(done)}`);
+    await p.evaluate(() => (location.hash = ''));
+    await p.waitForSelector('.hdoor.learn', {timeout: 8000});
+    if (await p.$('.hdoor.learn .hdnew')) fails.push('Home: the Coral basics line stays once it is done');
+    await p.evaluate(() => (location.hash = 'genera'));
+    await p.waitForSelector('#azgrid .bxcard', {timeout: 8000});
+    if (!(await p.evaluate(() => /Done/.test(document.querySelector('#azgrid .bxcard small').textContent))))
+      fails.push('Genera: Coral basics not shown as done');
+    await c.close();
+  }
+  if (errs.length) fails.push(`first-launch question: ${[...new Set(errs)].slice(0, 3).join(' | ')}`);
   return fails;
 }
 
@@ -762,6 +982,7 @@ async function credits(b, base) {
     );
     await c.addInitScript(() => {
       localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('imr-nudge', '1');
     });
     const p = await c.newPage();
@@ -889,6 +1110,7 @@ async function basicsFit(b, base) {
     );
     await c.addInitScript(() => {
       localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('imr-nudge', '1');
     });
     const p = await c.newPage();
@@ -898,7 +1120,7 @@ async function basicsFit(b, base) {
       // The walls check opens once the four wall types have been seen (basicsTeach checks that part).
       await p.evaluate(s => {
         localStorage.setItem('imr-basics', JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {}));
-        location.hash = 'lab-basics|' + s;
+        location.hash = 'basics|' + s;
       }, st);
       await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
       const r = await p.evaluate(st => {
@@ -949,6 +1171,7 @@ async function basicsTeach(b, base) {
     );
     await c.addInitScript(() => {
       localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('imr-nudge', '1');
     });
     const p = await c.newPage(),
@@ -958,7 +1181,7 @@ async function basicsTeach(b, base) {
       await p.evaluate(
         ([s, v]) => {
           localStorage.setItem('imr-basics', JSON.stringify(v));
-          location.hash = 'lab-basics|' + s;
+          location.hash = 'basics|' + s;
         },
         [st, seen]
       );
@@ -1088,11 +1311,11 @@ async function basicsTeach(b, base) {
       fails.push(`${W} forms: the enlarged example has no genus or credit: "${cap}"`);
     await p.click('#lightbox [data-x]').catch(() => {});
     // Words lists Costae and opens step 4.
-    await p.evaluate(() => (location.hash = 'lab-basics|words'));
+    await p.evaluate(() => (location.hash = 'basics|words'));
     await p.waitForSelector('.bx-words', {timeout: 5000});
     const cw = await p.evaluate(() =>
       [...document.querySelectorAll('.bx-words dt a')].some(
-        a => a.textContent === 'Costae' && a.getAttribute('href') === '#lab-basics|septa'
+        a => a.textContent === 'Costae' && a.getAttribute('href') === '#basics|septa'
       )
     );
     if (!cw) fails.push(`${W} words: no Costae entry linking to step 4`);
@@ -1174,7 +1397,7 @@ async function basicsTeach(b, base) {
       // The walls check opens once the four wall types have been seen (basicsTeach checks that part).
       await p.evaluate(s => {
         localStorage.setItem('imr-basics', JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {}));
-        location.hash = 'lab-basics|' + s;
+        location.hash = 'basics|' + s;
       }, st);
       await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
       if (st === 'corallite')
@@ -1224,6 +1447,7 @@ async function basicsTeach(b, base) {
       );
       await c2.addInitScript(() => {
         localStorage.setItem('imr-tour', '"done"');
+        localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
         localStorage.setItem('imr-nudge', '1');
       });
       const q2 = await c2.newPage(),
@@ -1436,6 +1660,8 @@ async function basicsTeach(b, base) {
       const qt = await ct.newPage();
       await qt.goto(base);
       await qt.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
+      await qt.click('#tour [data-start="imr"]'); // the first-launch question, the tour's first step
+      await qt.waitForTimeout(400);
       for (let k = 0; k < 4 && (await qt.evaluate(() => location.hash !== '#quiz')); k++) {
         await qt.keyboard.press('ArrowRight');
         await qt.waitForTimeout(400);
@@ -1486,7 +1712,9 @@ async function basicsTeach(b, base) {
         u => !u.href.startsWith(base),
         r => r.abort()
       );
-      await cz.addInitScript(() => localStorage.setItem('imr-tour', '"done"'));
+      await cz.addInitScript(
+        () => (localStorage.setItem('imr-tour', '"done"'), localStorage.setItem('imr-coral-start', '{"c":"new","t":1}'))
+      );
       const qz = await cz.newPage();
       await qz.goto(base + '#g-Acropora');
       await qz.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
@@ -1543,6 +1771,7 @@ async function basicsTeach(b, base) {
           );
           await c.addInitScript(() => {
             localStorage.setItem('imr-tour', '"done"');
+            localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
             localStorage.setItem('imr-nudge', '1');
           });
           const p = await c.newPage();
@@ -1667,6 +1896,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   for (const f of await basicsFit(b, base)) fails.push(f);
   for (const f of await credits(b, base)) fails.push(f);
   for (const f of await basicsTeach(b, base)) fails.push(f);
+  for (const f of await startSmoke(b, base)) fails.push(f);
   await b.close();
   for (const f of await signin(base)) fails.push(f);
   server.close();

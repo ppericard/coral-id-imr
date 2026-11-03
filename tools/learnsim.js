@@ -7,7 +7,15 @@
 //   node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
 //                          [--workers 4] [--out results.json] [--stats stats.json] [--met Acropora,Porites,...]
 //                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20] [--openall offer|N] [--back keep|one]
+//                          [--choice new|imr|know|auto] [--fallback keep|accept] [--vars '{"imr":{"p":0.8}}']
 //
+// --choice (2026-11-03, the first-launch question, model.js START): the answer the simulated player gives before its
+// first question: new (default: the variables of today's default player), imr, know, or auto (beginner new, lecture RA
+// imr, strong RA and expert know). --fallback: how the player answers the one-time card that comes when the first
+// CHOICE.N answers do not fit the choice (model.js startDue): keep (default) or accept (the first option it offers). Per
+// run: the first CHOICE.N answers' mean surprise (right - the app's expected success), right %, the global level then,
+// and the fallback card (answer, direction lo / hi). --vars (calibration only): other values for a choice's variables
+// (core.js CHOICE opts), e.g. '{"know":{"p":1.5,"at":20}}'.
 // --openall (optional; without it the open-all offer is declined, as before): 'offer' accepts the offer card when it shows
 // (model.js introOffer: 50-150 answers, 10 genera met, level 0.5); N opens all at question N if the offer has not come
 // by then (introAll, as the offer's button). The back card that may follow (model.js backDue) is answered --back: 'keep'
@@ -141,6 +149,10 @@ const SEEDS = Number(arg('seeds', 5)),
       return [b, Number(m[1]) * UNIT[m[2]]];
     }),
   OPENALL = arg('openall', ''),
+  CHOICE = arg('choice', 'new'),
+  FALLBACK = arg('fallback', 'keep'),
+  VARS = JSON.parse(arg('vars', '{}')),
+  AUTO = {beginner: 'new', lectureRA: 'imr', strongRA: 'know', expert: 'know'},
   BACK = arg('back', 'keep'),
   MET = arg('met', 'Acropora,Porites,Pocillopora,Montipora,Millepora').split(',').filter(Boolean);
 {
@@ -195,7 +207,8 @@ const server = http.createServer((req, res) => {
 
 // One player, inside the page: the app's globals (P, quizPhoto, photoDiff, pooledConf, ...) are in scope.
 function play(cfg) {
-  const {prof, seed, N, cps, L, breaks, after, openall, back} = cfg;
+  const {prof, seed, N, cps, L, breaks, after, openall, back, choice, fallback, vars} = cfg;
+  if (typeof CHOICE !== 'undefined') CHOICE.opts.forEach(o => Object.assign(o[3], vars[o[0]] || {}));
   // With breaks: a virtual clock, STEP an answer (the app reads Date.now for the comeback).
   let T = Date.parse('2026-11-02T08:00:00Z');
   if (breaks.length) Date.now = () => T;
@@ -292,6 +305,10 @@ function play(cfg) {
   const hs0 = holdStep;
   holdStep = (e, good) => ((lastE = e), hs0(e, good));
   const oa = {at: null, set: [], back: null, ans: []};
+  // The first-launch question (--choice), answered before the first question; the first answers measured, and the
+  // fallback card that may follow them.
+  if (typeof startSet === 'function') startSet(choice, 'tour');
+  const early = {n: 0, s: 0, ok: 0, lvl: null, fb: null};
   const q0 = question;
   question = (...a) => ((window.__q = a), q0(...a));
 
@@ -336,6 +353,14 @@ function play(cfg) {
         oa.h = (store.get(INTRO.OFFER.KEY, {}) || {}).h;
         document.querySelector(`.unlock.intro [data-${back === 'one' ? 'back' : 'keep'}]`).click();
       }
+    }
+    // The fallback card (model.js startDue, quiz.js startFbShow): kept, or its first option taken.
+    const fb = document.querySelector('.unlock.startfb');
+    if (fb) {
+      if (!early.fb) early.fb = {at: answersSoFar(), dir: fb.dataset.dir, took: null};
+      const o = fallback === 'accept' && fb.querySelector('[data-start]');
+      if (o) early.fb.took = o.dataset.start;
+      (o || fb.querySelector('[data-keep]') || fb.querySelector('.next.sec')).click();
     }
     planNext('quiz');
     const q = SHOWNQ;
@@ -405,10 +430,16 @@ function play(cfg) {
       }
     }
     T += L.STEP;
-    return {q, t, good, set};
+    return {q, t, good, set, e: lastE};
   };
   for (let i = 0; i < N; i++) {
-    const {q, t, good, set} = ask(null, i);
+    const {q, t, good, set, e} = ask(null, i);
+    if (early.n < 20 && typeof e === 'number') {
+      early.n++;
+      early.s += (good ? 1 : 0) - e;
+      early.ok += good ? 1 : 0;
+      if (early.n === 20) early.lvl = (P[LEVEL] || {}).th;
+    }
     if (set.exam) nEx++;
     if (q.auto) nDuel++;
     if (q.again) nAgain++;
@@ -569,7 +600,9 @@ function play(cfg) {
     bonusOffer: bon.offer,
     bonusShare: bon.q ? bon.n / bon.q : null,
     bonusMet: BONUS.filter(introduced).length,
-    openAll: openall ? oa : null
+    openAll: openall ? oa : null,
+    choice,
+    early
   };
 }
 
@@ -581,6 +614,7 @@ async function run(browser, base, name, seed) {
   );
   await ctx.addInitScript(st => {
     localStorage.setItem('imr-tour', '"done"');
+localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
     if (st)
       localStorage.setItem(
         'imr-photo-stats',
@@ -604,7 +638,10 @@ async function run(browser, base, name, seed) {
     breaks: BREAKS,
     after: AFTER,
     openall: OPENALL,
-    back: BACK
+    back: BACK,
+    choice: CHOICE === 'auto' ? AUTO[name] : CHOICE,
+    fallback: FALLBACK,
+    vars: VARS
   });
   await ctx.close();
   return {profile: name, seed, errs, ...r};
@@ -890,6 +927,20 @@ function openTable(runs) {
     console.log(`  ${name}: ${MET.map(cell).join(', ')}`);
   }
   if (OPENALL) console.log(openTable(runs));
+  // The first-launch question: the first 20 answers against the app's expectation, and the fallback card.
+  console.log(`\nChoice ${CHOICE} (fallback card ${FALLBACK}); first 20 answers: surprise = mean(right - e), right %, global level at 20; fallback card:`);
+  for (const name of NAMES) {
+    const R = runs.filter(r => r.profile === name && r.early),
+      ms = v => {
+        const m = v.reduce((a, x) => a + x, 0) / Math.max(1, v.length),
+          sd = Math.sqrt(v.reduce((a, x) => a + (x - m) ** 2, 0) / Math.max(1, v.length - 1));
+        return `${m.toFixed(2)}±${sd.toFixed(2)}`;
+      },
+      F = R.filter(r => r.early.fb);
+    console.log(
+      `  ${name} (${R[0] ? R[0].choice : '-'}): surprise ${ms(R.map(r => r.early.s / Math.max(1, r.early.n)))} [${R.map(r => (r.early.s / Math.max(1, r.early.n)).toFixed(2)).join(' ')}], right ${ms(R.map(r => (100 * r.early.ok) / Math.max(1, r.early.n)))}%, level ${ms(R.map(r => r.early.lvl || 0))}; card in ${F.length}/${R.length} runs${F.length ? ' (' + F.map(r => `${r.early.fb.dir}@${r.early.fb.at}${r.early.fb.took ? '->' + r.early.fb.took : ''}`).join(', ') + ')' : ''}`
+    );
+  }
   if (errs.length) console.log('\nPage errors: ' + errs.slice(0, 5).join(' | '));
   if (OUT) {
     fs.writeFileSync(

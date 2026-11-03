@@ -748,9 +748,12 @@
   // not everything, about Porites), then clamped to [LO, HI]: a strong player's first question on a new genus has traps
   // and harder photos but is never the hardest, a struggling player's starts a little easier. Taken once: the first answer
   // on the genus saves its own ability (s.th) from there.
+  // p (2026-11-03, the first-launch question, CHOICE below): the level the player said they start from. The answers are
+  // shrunk towards it instead of towards 0, with the same weight N: (m t + N p) / (m + N). No answers: W x p; p 0 (the
+  // default, "I'm new to corals") is the rule as it was. No new constant.
   const LEVEL = '~level',
     START = {W: 0.8, N: 10, LO: -0.5, HI: 1.5};
-  function playerStart(P, skip) {
+  function playerStart(P, skip, p = 0) {
     P = P || {};
     const n = s => ((s && s.ok) || 0) + ((s && s.ko) || 0),
       G = P[LEVEL];
@@ -766,9 +769,55 @@
         m += n(s);
         t += n(s) * s.th;
       });
-    if (!m) return 0;
-    const v = START.W * (t / m) * (m / (m + START.N));
+    p = typeof p === 'number' && isFinite(p) ? p : 0;
+    if (!m && !p) return 0;
+    const v = (START.W * (t + START.N * p)) / (m + START.N);
     return Math.round(Math.min(START.HI, Math.max(START.LO, v)) * 100) / 100;
+  }
+
+  // The first-launch question (Pierre, 2026-11-03): a forced choice among three, in the welcome tour before the first
+  // question (or on a card before the next quiz question for a player who skipped the tour, and once for an existing
+  // player with fewer than ASK answers; from ASK answers on the choice is inferred silently: startInfer). It initialises
+  // a few variables of the existing model, never a coded path: v.p, the level the answers are shrunk towards (playerStart:
+  // the starting ability of a genus never answered, hence the photos, traps and single views of its first questions, and
+  // the shaky signal that paces the opening of genera); v.at, the answer from which the offer to open all genera can come
+  // (model.js introOffer, INTRO.OFFER.AT for everyone before); v.basics, Coral basics offered first. "new" is the
+  // default player of before (a new player is a beginner). Values and their simulation: docs/LEARNING.md "The first-
+  // launch question". Stored in imr-coral-start (synced with the progress): {c, t, at, via, n, s, fb, h}.
+  // Fallback (for everyone, also those who answered: they may have picked wrong): over the first N answers after the
+  // choice, s sums each answer's surprise (right 1 / wrong 0, minus the success the app expected, e); its mean below -LO
+  // says the game is clearly harder than the choice predicts ('lo': Coral basics, or a lower choice), above HI clearly
+  // easier ('hi': a higher choice). One card per direction, ever (fb). LO and HI from the simulated players and the real
+  // answer log (docs/LEARNING.md).
+  const CHOICE = {
+    KEY: 'imr-coral-start',
+    ASK: 50,
+    N: 20,
+    LO: 0.1,
+    HI: 0.18,
+    opts: [
+      ['new', 'I’m new to corals', 'Start from scratch: the app shows you the basics first.', {p: 0, at: 50, basics: 1}],
+      ['imr', 'I had the IMR coral course', 'You have met the genera in the IMR lecture.', {p: 0.5, at: 30, basics: 0}],
+      ['know', 'I know corals well', 'At IMR or elsewhere: you can already name many genera.', {p: 1.25, at: 20, basics: 0}]
+    ]
+  };
+  const startOpt = c => CHOICE.opts.find(o => o[0] === c) || null;
+  // The variables of a choice (none yet, or an unknown one: the default player's).
+  const startVars = c => (startOpt(c) || CHOICE.opts[0])[3];
+  // The verdict on the first N answers after the choice: null (not yet, or consistent), 'lo' or 'hi'.
+  const startCheck = (n, s) => (!(n >= CHOICE.N) ? null : s / n < -CHOICE.LO ? 'lo' : s / n > CHOICE.HI ? 'hi' : null);
+  // The choices a fallback card offers: below the current one ('lo') or above it ('hi').
+  const startNext = (c, dir) => {
+    const i = CHOICE.opts.findIndex(o => o[0] === c);
+    return (dir === 'lo' ? CHOICE.opts.slice(0, Math.max(0, i)).reverse() : CHOICE.opts.slice(i + 1)).map(o => o[0]);
+  };
+  // An existing player with ASK answers or more is not asked: the choice is inferred from their global level (the Elo
+  // over all their answers, LEVEL), the choice whose starting level W x p is nearest (midpoints: under 0.2 new, under 0.7
+  // imr, else know). Shown as "inferred" in the admin's player journey.
+  function startInfer(P) {
+    const G = (P || {})[LEVEL],
+      t = G && typeof G.th === 'number' ? G.th : 0;
+    return CHOICE.opts.reduce((b, o) => (Math.abs(START.W * o[3].p - t) < Math.abs(START.W * b[3].p - t) ? o : b))[0];
   }
   // The global record made at the first answer after this change: it starts from the player's history (every answer so
   // far, the answer-weighted mean ability of the genera), so their earlier answers keep counting (code review, #320).
@@ -831,7 +880,8 @@
   // (1 bronze, 2 silver, 3 gold) and a test on a snapshot the app builds (app.js achSnap):
   //   {total, met, q: [genera at Open Water (>= 50%), Advanced (>= 80%), Divemaster (>= 95%) or above; model.js MASTERY,
   //   2026-11-03, were the quarters 25/50/75% before], learned (Instructor), pct, streak (best run of right answers), duel, cor,
-  //    hard, elo (0 until 200 answers, app.js ELO_MIN: it moves a lot before), group (an IMR lecture group fully learned), bonus (bonus genera met)}.
+  //    hard, elo (0 until 200 answers, app.js ELO_MIN: it moves a lot before), group (an IMR lecture group fully learned), bonus (bonus genera met),
+  //    basics (Coral basics done)}.
   // Median questions to reach the old quarter rungs, simulated with the real game (2026-11-01, before the levels; 75% / 90% right): 5 at 25%
   // 76 / 57, 10 at 50% 231 / 137, 5 at 75% 363 / 203, first learned ~430 / ~300.
   // Descriptions say what the player can now do (Pierre, 2026-11-02: informational feedback motivates, Deci, Koestner &
@@ -869,7 +919,10 @@
     ['elo1300', 'Elo 1300', 'Reached an Elo of 1300', 3, '⭐', s => s.elo >= 1300],
     ['elo1400', 'Elo 1400', 'Reached an Elo of 1400', 3, '🌟', s => s.elo >= 1400],
     ['group', 'Group complete', 'You know a whole IMR lecture group', 3, '🧩', s => s.group],
-    ['bonus', 'Off the list', 'You met a bonus genus, off the IMR list', 2, '🔓', s => s.bonus >= 1]
+    ['bonus', 'Off the list', 'You met a bonus genus, off the IMR list', 2, '🔓', s => s.bonus >= 1],
+    // Coral basics done (Pierre, 2026-11-03: completion recognised): every step of the module seen (proto/basics.js), a
+    // learning milestone like the others (the words the ID tips use), reached in about 5 minutes by those who take it.
+    ['basics', 'Coral basics', 'You know the words the ID tips use: polyp, corallite, septa, walls, growth forms', 1, '📖', s => s.basics]
   ].map(([id, title, desc, tier, icon, test]) => ({id, title, desc, tier, icon, test}));
   // The achievements a snapshot meets that `have` ({id: time}) does not hold yet, in list order.
   const newAch = (snap, have) => ACH.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);
@@ -1230,6 +1283,12 @@
     LEVEL,
     START,
     playerStart,
+    CHOICE,
+    startOpt,
+    startVars,
+    startCheck,
+    startNext,
+    startInfer,
     levelSeed,
     accountOf,
     commonFactor,

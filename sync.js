@@ -74,6 +74,7 @@ function mergeSaved(j) {
     if (rc && Array.isArray(rc.g) && (rc.t || 0) > ((lc && lc.t) || 0)) store.set('imr-coral-custom', rc);
   } catch (e) {}
   achMerge(d[ACHK]); // achievements earned on another device join this one's
+  startMerge(d[CHOICE.KEY]); // the first-launch question answered on another device (model.js; the latest answer wins)
   const introIn = () => introMerge(d[INTRO.KEY], d[INTRO.OFFER.KEY]); // first-meeting cards seen on another device
   let R = {};
   try {
@@ -773,6 +774,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         'imr-coral-reset',
         INTRO.KEY,
         INTRO.OFFER.KEY,
+        CHOICE.KEY, // the first-launch question's answer is the player's too (model.js startSet)
         CUSTOM.KEY, // model.js: the custom quiz's selection is the player's too
         ACHK,
         'imr-ach-new',

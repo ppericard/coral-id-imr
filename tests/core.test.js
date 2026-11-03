@@ -407,7 +407,8 @@ test('achievements: unique ids, tiers 1-3; a snapshot unlocks only what it meets
     hard: true,
     elo: 1500,
     group: true,
-    bonus: 3
+    bonus: 3,
+    basics: true
   };
   assert.strictEqual(newAch(all, {}).length, ACH.length, 'every achievement is reachable');
 });

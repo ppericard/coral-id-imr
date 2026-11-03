@@ -776,7 +776,11 @@ function modelHold(saved = {}) {
   const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'model.js'), 'utf8'),
     intro = /const INTRO = \{[\s\S]*?\n\};\n/.exec(src)[0],
     hold = src.slice(src.indexOf("const HOLDK = 'imr-hold';"), src.indexOf('const introSince'));
-  const ctx = {store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)}};
+  const ctx = {
+    store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)},
+    startVars: require('../core.js').startVars, // INTRO.OFFER.AT (core.js CHOICE)
+    startStep: () => {} // the first-launch question's window (tests/start.test.js)
+  };
   require('vm').createContext(ctx);
   require('vm').runInContext(intro + hold + '\nthis.step = holdStep; this.sync = holdSync; this.now = () => HOLDS;', ctx);
   return ctx;

@@ -342,7 +342,8 @@ const INTRO = {
   EVERY: 2,
   HOLD: 1.5,
   SLACK: 0.1,
-  OFFER: {KEY: 'imr-coral-intro-offer', AT: 50, UNTIL: 150, MET: 10, TH: 0.5}
+  // AT: the default player's (core.js CHOICE 'new'); each answer to the first-launch question sets its own (startV).
+  OFFER: {KEY: 'imr-coral-intro-offer', AT: startVars('new').at, UNTIL: 150, MET: 10, TH: 0.5}
 };
 let INTROS = null;
 const introMap = () => {
@@ -428,14 +429,15 @@ const introBack = keep => {
 };
 // The offer to open all genera (Pierre, 2026-11-02: 10 answers on 4 genera are too few to decide; after about 50
 // questions and some 10 genera met, a card says the player seems to know their corals and offers to open them all).
-// Due once, between OFFER.AT and OFFER.UNTIL answers, with OFFER.MET slate genera met and a level of OFFER.TH or more:
+// Due once, between the choice's at (startV: OFFER.AT, 50, for the default player; core.js CHOICE) and OFFER.UNTIL
+// answers, with OFFER.MET slate genera met and a level of OFFER.TH or more:
 // simulated at 50 answers, a beginner -0.9, an RA who knows 60% of the genera -0.2, 80% +0.8, an expert +1.2
 // (docs/LEARNING.md). A card, not an automatic opening: "Not now" keeps one at a time; My progress still offers it.
 const introOffer = () => {
   const a = answersSoFar(),
     O = INTRO.OFFER;
   return (
-    a >= O.AT &&
+    a >= startV().at &&
     a <= O.UNTIL &&
     !store.get(O.KEY, null) &&
     introLeft().length > 0 &&
@@ -487,7 +489,74 @@ const introReset = () => {
   store.set(COMEBACK.KEY, CB);
   store.set(INTRO.KEY, {});
   store.set(INTRO.OFFER.KEY, null);
+  startRestart(); // the first-launch question's answer is kept; its fallback window starts over with the answers
 };
+// The first-launch question (Pierre, 2026-11-03; core.js CHOICE, docs/LEARNING.md "The first-launch question"): the
+// player's answer in imr-coral-start (synced with the progress, like every imr-coral* key): {c the choice, t its time,
+// at the answers count then, via (tour, card, fallback, inferred), n and s the fallback window (answers counted since
+// the choice, up to CHOICE.N, and the sum of their surprise, right - e), fb the fallback cards shown ({'<choice>-lo' / '-hi': [answers,
+// time]), h the choices made, [c, at, t, via], for the admin's player journey}. Its variables (startV) are read where
+// the model uses them: the level a genus never answered starts from (ability, core.js playerStart) and when the offer
+// to open all genera can come (introOffer). Nothing else is coded per choice.
+const startOf = () => {
+  const o = store.get(CHOICE.KEY, null);
+  return o && typeof o === 'object' && startOpt(o.c) ? o : null;
+};
+const startV = () => startVars((startOf() || {}).c);
+function startSet(c, via) {
+  if (!startOpt(c)) return;
+  const o = startOf(),
+    a = answersSoFar(),
+    t = Date.now();
+  store.set(CHOICE.KEY, {c, t, at: a, via, n: 0, s: 0, fb: (o && o.fb) || {}, h: [...((o && o.h) || []), [c, a, t, via]].slice(-10)});
+  // The questions chosen ahead were planned with the old starting level.
+  if (typeof dropPlans === 'function') dropPlans();
+  if (typeof syncSoon === 'function') syncSoon();
+}
+// A progress reset: the answer stays (it is about the player, not the progress), its window counts from 0 again.
+function startRestart() {
+  const o = startOf();
+  if (o) store.set(CHOICE.KEY, {...o, at: 0, n: 0, s: 0});
+}
+// The fallback window: each answer after the choice, until CHOICE.N, with the expectation it really had (holdStep).
+function startStep(e, good) {
+  const o = startOf();
+  if (!o || !(o.n < CHOICE.N) || typeof e !== 'number') return;
+  store.set(CHOICE.KEY, {...o, n: o.n + 1, s: Math.round((o.s + (good ? 1 : 0) - e) * 1000) / 1000});
+}
+// The fallback card due: 'lo' (clearly harder than the choice predicts) or 'hi' (clearly easier), once per inconsistency:
+// once per answer and direction (fb '<choice>-lo'), so a player who moved from "I know corals well" to "I had the IMR
+// coral course" and still struggles is told once more, never twice about the same answer; and only when it has
+// something to offer: a lower choice or Coral basics not done yet ('lo'), a higher choice ('hi').
+const startDue = () => {
+  const o = startOf(),
+    d = o && startCheck(o.n, o.s);
+  // An inferred answer (an existing player, never asked) is not checked: the player said nothing to correct.
+  if (!d || o.via === 'inferred' || (o.fb || {})[o.c + '-' + d]) return null;
+  return startNext(o.c, d).length || (d === 'lo' && !basicsDone()) ? d : null;
+};
+// Marked when shown, so it never comes again even if left unanswered.
+const startShown = d => {
+  const o = startOf();
+  if (o) store.set(CHOICE.KEY, {...o, fb: {...(o.fb || {}), [o.c + '-' + d]: [answersSoFar(), Date.now()]}});
+};
+// Another device's answer (sync.js mergeSaved): the latest choice wins; the fallback cards shown on either count; on the
+// same choice the longer window is kept.
+function startMerge(json) {
+  let r = null;
+  try {
+    r = JSON.parse(json || 'null');
+  } catch (e) {}
+  if (!r || typeof r !== 'object' || !startOpt(r.c)) return;
+  const o = startOf(),
+    fb = {...(r.fb || {}), ...((o && o.fb) || {})};
+  if (!o || (r.t || 0) > (o.t || 0) || ((r.t || 0) === (o.t || 0) && (r.n || 0) > (o.n || 0))) {
+    if (!o || r.c !== o.c) typeof dropPlans === 'function' && dropPlans();
+    store.set(CHOICE.KEY, {...r, fb});
+  } else store.set(CHOICE.KEY, {...o, fb});
+  // The question waiting on its card (quiz.js startAskShow) is answered now: the quiz goes on.
+  document.querySelectorAll('.unlock.startq:not(.basicsq)').forEach(d => d.ulDone && d.ulDone());
+}
 // Opening held while the player does clearly worse than expected (Pierre, 2026-11-02, after an RA at 86% right met 9
 // genera in 21 answers and dropped to 5 right in 10: "when many genera have just opened and the answers suddenly get
 // worse, space the new ones; an expert keeps opening regularly"). A running sum of how far the answers fall below the
@@ -519,6 +588,7 @@ function holdStep(e, good) {
   // answers (the record goes with the progress; a newer decision replaces it).
   const o = store.get(INTRO.OFFER.KEY, null);
   if (o && o.open && !o.bk) store.set(INTRO.OFFER.KEY, {...o, h: holdNext(Number(o.h) || 0, e, good)});
+  startStep(e, good); // the first-launch question's fallback window (above)
 }
 // Synced (sheet v23, Pierre 2026-11-02: the hold follows a signed-in player from one device to another, and is rebuilt
 // from the answers given before it existed). Each load of the saved progress (sync.js mergeSaved) brings h, the same sum
@@ -719,11 +789,12 @@ const recent = n => {
   return s.h ? s.h.slice(-RECENT) : '';
 };
 // Progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability. A genus never answered
-// starts from the player's global level (core.js playerStart: their abilities on the genera already answered), so a
-// strong player gets traps, single views and harder photos on a new genus from its first question.
+// starts from the player's global level (core.js playerStart: their abilities on the genera already answered, shrunk
+// towards the level their answer to the first-launch question says, startV().p), so a strong player gets traps, single
+// views and harder photos on a new genus from its first question.
 const ability = n => {
   const s = P[n] || {};
-  return typeof s.th === 'number' ? s.th : s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n);
+  return typeof s.th === 'number' ? s.th : s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n, startV().p);
 };
 function abilityStep(n, s, good, d, k) {
   const th = ability(n),

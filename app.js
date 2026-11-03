@@ -664,7 +664,10 @@ const GLOSS_PAT = {
   'Radial corallites': 'radial corallites?',
   'Tentacular lobes': 'tentacular lobes?',
   'Axial furrow': 'axial furrow',
-  'Spinules': 'spinules?'
+  'Spinules': 'spinules?',
+  // The wall around each cup (Pierre, 2026-11-03: "wall" is one of the words that link to Coral basics); "separate walls"
+  // and "shared walls" keep their own entries (longer patterns win at the same place).
+  'Wall': 'walls?'
 };
 let glossRe = null;
 // Each term is underlined once per text block, at its first occurrence: a tip saying "corallites" three times gets one
@@ -705,10 +708,23 @@ document.body.appendChild($gpop);
 // the sourced definition with its source.
 const termDef = ([, d, src, plain]) =>
   `${plain ? `${esc(plain)} <span class="gdef">${esc(d)}</span>` : esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}`;
+// Where a term is shown on a photo (Pierre, 2026-11-03: the technical words of the genus sheets, first-meeting cards and
+// quiz tips link to Coral basics): its step, else Corallite anatomy's card, else the Words list when it is there
+// (proto/basics.js BASICS); before the Tools tier is in, #basics|<term>, which Coral basics resolves itself.
+const basicsHref = term =>
+  window.BASICS ? BASICS.route(term) || (BASICS.listed(term) ? '#basics|words' : '') : '#basics|' + encodeURIComponent(term);
 function showGloss(el) {
   const t = DATA.terms.find(x => x[0] === el.dataset.gt);
   if (!t) return;
-  $gpop.innerHTML = `<b>${esc(t[0])}</b> ${termDef(t)}`;
+  const bh = basicsHref(t[0]),
+    to = !bh
+      ? ''
+      : bh.startsWith('#lab-anatomy')
+        ? 'Corallite anatomy'
+        : bh === '#basics|words'
+          ? 'Coral basics: all the words'
+          : 'Coral basics: on a photo';
+  $gpop.innerHTML = `<b>${esc(t[0])}</b> ${termDef(t)}${bh ? `<a class="gbx" href="${esc(bh)}">${to} ›</a>` : ''}`;
   $gpop.hidden = false;
   const r = el.getBoundingClientRect(),
     w = Math.min(320, innerWidth - 24);
@@ -888,6 +904,23 @@ const sheetFetch = (url, o) =>
 let SYNC = store.get('imr-coral-sync', null),
   syncTimer = null;
 
+// Coral basics finished (proto/basics.js: every step seen), on this device or on another one (the achievement's feat
+// _basics in the synced achievements record, progress.js). The Home line and the first-launch offers read it.
+const BASICS_KEY = 'imr-basics';
+// Its icon (a polyp on its cup; the Tools hub's too, proto/lab.js LAB_ICONS).
+const BASICS_ICON =
+  '<path d="M5 21h14M8.5 21v-5.5h7V21"/><path d="M12 15.5V8.3M10.5 15.5 6 9.3M13.5 15.5 18 9.3"/><circle cx="12" cy="6.5" r="1.7"/><circle cx="5" cy="7.8" r="1.7"/><circle cx="19" cy="7.8" r="1.7"/>';
+const basicsDone = () => !!((store.get(BASICS_KEY, {}) || {}).fin || (store.get('imr-coral-ach', {}) || {})._basics);
+// The answers to the first-launch question (core.js CHOICE) as big buttons, one per row, with a line each: the tour, the
+// card that asks it, and the fallback card (only: the choices it offers). cur: the current answer, marked.
+const startOptsHtml = (cur, only) =>
+  `<div class="startopts" role="group" aria-label="How well do you know corals?">${(only ? only.map(startOpt).filter(Boolean) : CHOICE.opts)
+    .map(
+      ([c, t, d]) =>
+        `<button type="button" class="startopt" data-start="${c}" aria-pressed="${c === cur}"><b>${esc(t)}</b><small>${esc(d)}</small></button>`
+    )
+    .join('')}</div>`;
+
 /* ---------- routing ---------- */
 function go(h) {
   if (hashNow() === h) route();
@@ -1031,6 +1064,8 @@ showCvd();
 // Entries without a view in this file (anatomy, size, elim, pairs…) are tools that graduated from the Lab (proto/).
 const MODES = {
   learn: [
+    // Coral basics (proto/basics.js), graduated from the Lab (Pierre, 2026-11-03): step 0 of the Learn path.
+    ['basics', '<span class="wide">Coral basics</span><span class="narrow">Basics</span>', 'The words of the ID tips, on real photos'],
     ['genera', 'Genera', 'Every genus, as photos or ID tips'],
     ['cmp', 'Look-alikes', 'Classic look-alikes, one pair per screen']
   ],
@@ -1558,7 +1593,7 @@ function need(n) {
   }
 }
 Promise.all([
-  getR('data.json?v=36')
+  getR('data.json?v=38')
     .then(r => (loadMark('pop', String(r.headers.get('x-served-by') || '').slice(0, 60)), r))
     .then(okJson)
     .then(d => (window.bootTick && bootTick(), d)),
