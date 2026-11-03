@@ -712,6 +712,8 @@ document.body.appendChild($gpop);
 // the sourced definition with its source.
 const termDef = ([, d, src, plain]) =>
   `${plain ? `${esc(plain)} <span class="gdef">${esc(d)}</span>` : esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}`;
+// The term whose definition is open, and where it was when the definition was placed next to it (glossMoved).
+let glossAt = null;
 function showGloss(el) {
   const t = DATA.terms.find(x => x[0] === el.dataset.gt);
   if (!t) return;
@@ -719,6 +721,7 @@ function showGloss(el) {
   $gpop.hidden = false;
   const r = el.getBoundingClientRect(),
     w = Math.min(320, innerWidth - 24);
+  glossAt = {el, x: r.left, y: r.top};
   $gpop.style.width = w + 'px';
   $gpop.style.left = Math.max(12, Math.min(r.left, innerWidth - w - 12)) + 'px';
   const below = r.bottom + 8,
@@ -743,10 +746,18 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') $gpop.hidden = true;
   else if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('gt')) showGloss(e.target);
 });
+// A scroll closes the definition, which stays put (fixed), once its term has moved away. Only then: a scroll event comes
+// at the next frame, so a card scrolled to bring the term into view, then tapped, closed the definition it had just
+// opened (pages smoke, 2026-11-03: the term at the foot of a genus card, a few px below the fold).
+const glossMoved = () => {
+  if (!glossAt || !glossAt.el.isConnected) return true;
+  const r = glossAt.el.getBoundingClientRect();
+  return r.left !== glossAt.x || r.top !== glossAt.y;
+};
 addEventListener(
   'scroll',
   () => {
-    $gpop.hidden = true;
+    if (!$gpop.hidden && glossMoved()) $gpop.hidden = true;
   },
   true
 );
