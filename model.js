@@ -468,12 +468,14 @@ const cbPlay = () => [...slateGenera(), ...bonusList()];
 const cbGenera = () => cbPlay().filter(n => (P[n] || {}).ok > 0);
 // Brings the comeback up to now (when a question is planned or answered): a new visit sets the floor, and the rust of
 // its gap starts a comeback; a gap during a comeback adds to it.
+// Returns true when a new visit starts here (a gap of SESSION.GAP or more since the last answer): questions planned or
+// shown before it were planned on the old recall (Codex review #374).
 function rustNow(now = Date.now()) {
   const last = lastAt();
-  if (!last || now <= last) return;
+  if (!last || now <= last) return false;
   if (cbGenera().length < 2) {
     if (CB.r || CB.f) ((CB = {r: 0, t: now, ok: 0, f: 0}), cbSave());
-    return;
+    return false;
   }
   const on = CB.r > 0,
     from = on ? Math.max(last, CB.t) : last,
@@ -492,6 +494,7 @@ function rustNow(now = Date.now()) {
   }
   CB.t = now;
   cbSave();
+  return visit;
 }
 // No genus opens (card, open-all or bonus genera offer) during the floor of a visit or a comeback.
 const noOpen = () => CB.r > 0 || answersSoFar() < CB.f;

@@ -288,8 +288,9 @@ function fitTiles(grid, gap, dims) {
 }
 addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
 function answer(cur, c, target, ph, cor, unseen, tm = {}) {
-  // A break while the question was on screen (model.js rustNow): the next question knows it, before this answer's time.
-  rustNow();
+  // A break while the question was on screen (model.js rustNow): the next question knows it, before this answer's time;
+  // a comeback question takes its genus's recall as it is now (Codex review #374).
+  if (rustNow() && SHOWNQ && SHOWNQ.warm) SHOWNQ.cb = Math.round(recallAt(target) * 1000) / 1000;
   // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
   // was played since, not progress an older sign-out left on the device.
   if (!SYNC && SYNC_URL && !store.get(LOG0, []).length) store.set(ANONB, P);
@@ -743,8 +744,9 @@ function quizPhoto() {
   // hold leaves the questions planned before it), and during the floor of a visit or a comeback (noOpen); a question
   // planned before a break, or a comeback question planned before the rust melted, is chosen again too (rustNow: the app
   // may have stayed open across the break).
-  rustNow();
-  if ((q.intro && (noOpen() || (!q.start && introHold()))) || !!q.warm !== CB.r > 0) {
+  // A new break since they were planned: every planned question goes, comeback ones too (their recall is old).
+  const brk = rustNow();
+  if (brk || (q.intro && (noOpen() || (!q.start && introHold()))) || !!q.warm !== CB.r > 0) {
     dropPlans();
     q = planPhoto();
   }

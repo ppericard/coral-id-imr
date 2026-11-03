@@ -100,7 +100,8 @@ test('a visit starts after 30 minutes without an answer: the floor of 10 answers
     [40 * MIN, true]
   ]) {
     const M = model({P: player(5, ago), answers: 50});
-    M.rustNow();
+    // rustNow says when a new visit starts, so quiz.js replans the questions planned before the break (Codex review #374).
+    assert.strictEqual(M.rustNow(), floor);
     assert.ok(floor ? M.cb().r > 0 && M.cb().r < 0.05 : M.cb().r === 0, M.cb().r); // a tiny comeback at a new visit
     assert.strictEqual(M.noOpen(), floor);
     // The floor outlasts a comeback that one right answer ends.
