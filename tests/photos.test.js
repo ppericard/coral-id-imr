@@ -11,7 +11,7 @@ const RAW = read('data.json'),
   PICKS = read('picks.json'),
   AUTOQ = read('quality.json').q || {};
 const VIEWS = ['wide', 'medium', 'macro'],
-  GAME = ['easy', 'medium', 'hard'];
+  GAME = ['game']; // one game list per view since 2026-11-03 (the Easy / Medium / Hard sets went)
 function build(cur = CUR) {
   const d = structuredClone(RAW);
   applyCuration(d, cur);
@@ -156,9 +156,22 @@ test("games take every kept field photo, other observers' too, with no cap (Pier
   assert.strictEqual(new Set(GAME.flatMap(k => d.gen[n].sl.wide[k]).map(p => p.f)).size, 12);
 });
 
+test('one game list per view: each photo once, the featured game photos first, Poor photos last', () => {
+  const q = f => (CUR.quality || {})[f] || (AUTOQ[f] === 1 && !/^imrl?-/.test(f) ? 1 : 2);
+  each(D, (n, g, v, s) => {
+    const F = s.game.map(p => p.f);
+    assert.strictEqual(new Set(F).size, F.length, `${n} ${v}: a photo twice`);
+    const lead = s.feat.filter(p => s.game.includes(p)).map(p => p.f);
+    assert.deepStrictEqual(F.slice(0, lead.length), lead, `${n} ${v}: featured first`);
+    const rest = F.slice(lead.length).map(q),
+      firstPoor = rest.indexOf(1);
+    assert.ok(firstPoor < 0 || rest.slice(firstPoor).every(x => x === 1), `${n} ${v}: Poor photos last`);
+  });
+});
+
 test('excluding or hiding a game photo removes it at once (synthetic curation)', () => {
-  const [n, g] = Object.entries(D.gen).find(([, g]) => g.sl.wide && g.sl.wide.easy.length),
-    f = g.sl.wide.easy[0].f;
+  const [n, g] = Object.entries(D.gen).find(([, g]) => g.sl.wide && g.sl.wide.game.length),
+    f = g.sl.wide.game[0].f;
   const gone = (d, why) =>
     VIEWS.forEach(v => {
       const s = d.gen[n].sl[v];

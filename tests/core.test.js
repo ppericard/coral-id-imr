@@ -6,6 +6,8 @@ const {
   mergeOld,
   mergeProgress,
   eloOf,
+  genusOffsetsOf,
+  GENUS_K,
   trustOf,
   confusionOf,
   confScore,
@@ -114,6 +116,23 @@ test('mergeProgress: untouched locally, the pulled record wins', () => {
   assert.deepStrictEqual(mergeProgress(B, P, R), {A: {ok: 4, ko: 1, th: 0.7, streak: 0}});
 });
 
+test('hierarchical photo Elo: a photo nobody answered starts at its genus offset, served as the total (sheet v29)', () => {
+  const R = (t, ok, f, g = 'Acropora', who = 'Ana') => [who, t, g, ok ? g : 'Porites', ok ? 1 : 0, 'quiz', f];
+  // A trusted player (clearly above chance) misses the Acropora photos more than the game expected: the genus offset rises.
+  const rows = [];
+  for (let i = 0; i < 40; i++) rows.push(R(i, i % 2, `acropora-${i % 4}`), R(100 + i, 1, `porites-${i % 4}`, 'Porites'));
+  // A new photo, answered once by a player who does not rate the photos (fewer than 10 answers): it moves nothing, so its
+  // served difficulty is where it starts, its genus offset.
+  rows.push(R(200, 1, 'acropora-new', 'Acropora', 'Zed'));
+  const gd = genusOffsetsOf(rows),
+    E = eloOf(rows);
+  assert.ok(GENUS_K > 0 && gd.Acropora[0] > gd.Porites[0], JSON.stringify(gd));
+  assert.strictEqual(E['acropora-new'][0], gd.Acropora[0]);
+  assert.strictEqual(E['acropora-new'][1], 0);
+  // The weighed answers behind an offset: every trusted answer on the genus, weighed as for its photos (n / (n + 10)).
+  assert.ok(gd.Acropora[1] > 0 && gd.Acropora[1] < 40, JSON.stringify(gd));
+});
+
 test('eloOf gives the same photo ratings as Code.gs stats_', () => {
   const s = loadCodeGs();
   const photos = ['acropora-1', 'acropora-2', 'porites-1', 'porites-2', 'favia-1'];
@@ -130,7 +149,8 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
           {
             id: 'a' + n++,
             t: new Date(Date.UTC(2026, 10, 1, 0, 0, n)).toISOString(),
-            g: 'Acropora',
+            // v29: the genus shown is the photos' genus (one colony a question), whose offset they share.
+            g: ph[0].split('-')[0].replace(/^./, c => c.toUpperCase()),
             a: i % 3 ? 'Acropora' : 'Porites',
             ok: i % 3 ? 1 : 0,
             m: ['quiz-duel', 'quiz', 'quiz|k2', 'quiz|k3', 'quiz'][i % 5],
@@ -145,6 +165,13 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
     rows = s.post({readAnswers: 1, ...T}).rows,
     st = s.get({stats: '1'});
   assert.deepStrictEqual(eloOf(rows), st.photos);
+  // v29: the genus offsets of the hierarchical photo Elo, the same in the sheet and the admin's replay.
+  assert.deepStrictEqual(genusOffsetsOf(rows), st.gd);
+  assert.deepStrictEqual(Object.keys(st.gd).sort(), ['Acropora', 'Favia', 'Porites']);
+  assert.ok(
+    Object.values(st.gd).some(o => o[0] !== 0),
+    'the answers moved the genus offsets'
+  );
   // v26: the photo memory offsets and the answers behind them, the same in the sheet and the admin's replay.
   assert.deepStrictEqual(photoMemOf(rows), {mem: st.mem, memn: st.memn});
   assert.notDeepStrictEqual(st.mem, MEM.PRIOR, 'the answers moved the offsets');
@@ -291,15 +318,18 @@ test("v17: a beginner's answers move the photos more as their level settles; a r
     later = Array.from({length: 40}, (_, i) => R(20 + i, i % 5 ? 1 : 0, 'l-' + i)),
     L = [...early, ...later];
   assert.strictEqual(trustOf(L).Lea, true);
-  const E = eloOf(L);
+  // A photo's own part (sheet v29: the served difficulty less its genus offset, which every Acropora photo shares).
+  const own = (rows, f) => eloOf(rows)[f][0] - genusOffsetsOf(rows).Acropora[0],
+    e1 = own(L, 'e-1'),
+    l5 = own(L, 'l-5');
   // Same outcome (a miss), early (answer 2) and late (answer 25): the late one moves its photo more.
   assert.strictEqual(early[1][4], 0);
   assert.strictEqual(later[5][4], 0);
-  assert.ok(Math.abs(E['e-1'][0]) < Math.abs(E['l-5'][0]) / 2, `early ${E['e-1'][0]} vs late ${E['l-5'][0]}`);
+  assert.ok(Math.abs(e1) < Math.abs(l5) / 2, `early ${e1} vs late ${l5}`);
   // A right answer on a photo already right twice (remembered) moves it less than one on a new photo.
   const base = [...L, R(100, 1, 'k-1'), R(101, 1, 'k-1')],
-    dKnown = eloOf([...base, R(102, 1, 'k-1')])['k-1'][0] - eloOf(base)['k-1'][0],
-    dNew = eloOf([...base, R(102, 1, 'n-1')])['n-1'][0];
+    dKnown = own([...base, R(102, 1, 'k-1')], 'k-1') - own(base, 'k-1'),
+    dNew = own([...base, R(102, 1, 'n-1')], 'n-1');
   assert.ok(Math.abs(dKnown) < Math.abs(dNew), `known ${dKnown} vs new ${dNew}`);
 });
 
