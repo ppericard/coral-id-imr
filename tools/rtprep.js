@@ -196,6 +196,7 @@ const server = http.createServer((req, res) => {
 });
 (async () => {
   const {chromium} = require('playwright');
+  await require('../tests/slot.js')('tools/rtprep.js'); // one Playwright run per 2 cores on this machine (tests/slot.js)
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const site = `http://127.0.0.1:${server.address().port}/`;
   const browser = await chromium.launch(process.env.CHROME ? {executablePath: process.env.CHROME} : {});

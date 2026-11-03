@@ -2,6 +2,7 @@ const http = require('http'),
   fs = require('fs'),
   path = require('path');
 const {chromium} = require('playwright');
+const slot = require('./slot.js');
 const ROOT = path.join(__dirname, '..');
 // Health › Genus sheets opened on the demo's Pages tab (admin-demo.js: 4 visits a player at 0, 1/4, 1/2 and 3/4 of
 // their answers; Ana opens 3 sheets in her first 3 visits, Carla 2, Ben 1; a device not signed in one; one visit with no
@@ -42,13 +43,17 @@ const server = http.createServer((req, res) => {
 // blind Check, the agreement block, undo, the auto tag, a retest), Publish.
 // Checks that nothing leaves the page (no call reaches the sync script or GitHub) and that the demo never writes the real
 // admin storage keys. Needs Playwright like pages.smoke.js. Locally: node tests/admin.smoke.js
+// SMOKE_W=390 or 1280: one width only (tests/slot.js; default: both).
+const WIDTHS = [390, 1280];
 (async () => {
+  const ws = slot.widths(WIDTHS);
+  await slot('admin.smoke');
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`;
   const b = await chromium.launch(),
     fails = [],
     out = [];
-  for (const w of [390, 1280]) {
+  for (const w of ws) {
     const ctx = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
     await ctx.route(
       u => !u.href.startsWith(base),
@@ -1584,8 +1589,11 @@ const server = http.createServer((req, res) => {
     console.error(`Admin demo: ${fails.length} problem(s)\n` + fails.join('\n'));
     process.exit(1);
   }
+  const part = slot.partial([], null, WIDTHS, ws);
   console.log(
-    'Admin demo OK: every tab, view and old address at 390 and 1280 px, merge, delete, reports, health, skip, reject, cap, auto-sort, retest, publish; nothing sent.'
+    part
+      ? 'Admin demo OK' + part + '; nothing sent.'
+      : 'Admin demo OK: every tab, view and old address at 390 and 1280 px, merge, delete, reports, health, skip, reject, cap, auto-sort, retest, publish; nothing sent.'
   );
 })().catch(e => {
   console.error(e);

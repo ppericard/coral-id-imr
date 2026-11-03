@@ -5,6 +5,7 @@
 const path = require('path');
 const { chromium } = require('playwright');
 (async () => {
+  await require('../../tests/slot.js')('tools/og/make_og.js'); // one Playwright run per 2 cores on this machine (tests/slot.js)
   const b = await chromium.launch(), p = await b.newPage({viewport: {width: 1200, height: 630}});
   await p.goto('file://' + path.join(__dirname, 'og.html')); await p.waitForLoadState('networkidle');
   await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(300);
