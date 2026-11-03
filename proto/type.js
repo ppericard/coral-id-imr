@@ -30,18 +30,19 @@ const typeNorm = s =>
     .replace(/[^a-z]/g, '');
 // Every name a player may type, current genera and the old names of their own "formerly X" lines (an old name that is
 // itself a game genus is left out: Duncanopsammia peltata was "formerly Turbinaria peltata", Turbinaria is still valid).
+// Every genus the app knows counts, the slate's and the extra ones (Millepora, the bonus genera: DATA.x, GX).
 function typeNames() {
-  const cur = Object.keys(DATA.gen),
+  const cur = [...Object.keys(DATA.gen), ...Object.keys((DATA.x || {}).gen || {})],
     out = cur.map(n => ({k: typeNorm(n), g: n, old: ''}));
   cur.forEach(n => {
-    const g = DATA.gen[n],
+    const g = GX(n),
       txt = [...(g.crit || []), ...(g.imr || [])].join(' ');
     for (const m of txt.matchAll(/formerly ((?:[A-Z][a-z]+)(?:\s*\/\s*[A-Z][a-z]+)*)/g))
       m[1]
         .split('/')
         .map(x => x.trim())
         .forEach(o => {
-          if (!DATA.gen[o] && !out.some(x => x.k === typeNorm(o))) out.push({k: typeNorm(o), g: n, old: o});
+          if (!GX(o) && !out.some(x => x.k === typeNorm(o))) out.push({k: typeNorm(o), g: n, old: o});
         });
   });
   return out;
@@ -69,7 +70,8 @@ LAB.add({
   blurb: 'Name the coral by typing its genus, with no choices to pick from: proves you recognise it, not just tell 4 apart.',
   lede: 'Type the genus and press Enter. Small typos and old names are accepted; no suggestions while you type.',
   render(root) {
-    const score = {ok: 0, n: 0, streak: 0};
+    const score = {ok: 0, n: 0, streak: 0},
+      scoreLine = () => `${score.ok}/${score.n} right · streak ${score.streak}`;
     let view = 'any';
     const chips = () =>
       `<div class="chips">${[
@@ -83,7 +85,7 @@ LAB.add({
     root.innerHTML = '<div id="tybody"></div>';
     const body = root.querySelector('#tybody');
     const round = () => {
-      const pool = (typeof slateGenera === 'function' ? slateGenera() : labNames()).filter(n => DATA.gen[n]),
+      const pool = (typeof slateGenera === 'function' ? slateGenera() : labNames()).filter(n => GX(n)), // Millepora too (Codex review #379)
         t = pick(pool),
         v = view === 'any' ? pick(['wide', 'medium', 'macro']) : view,
         L = gamePics(t, v),
@@ -96,7 +98,7 @@ LAB.add({
             <div class="tybtns"><button type="submit" class="next">Check</button><button type="button" class="chip" id="tyidk">I don't know</button></div>
           </form>
           <p class="tymsg" aria-live="polite"></p><div id="tyres"></div>
-          <p class="note">${score.ok}/${score.n} right · streak ${score.streak}</p>${chips()}</div></div>`;
+          <p class="note tyscore">${scoreLine()}</p>${chips()}</div></div>`;
       const form = body.querySelector('.tyform'),
         inp = body.querySelector('#tyin'),
         msg = body.querySelector('.tymsg');
@@ -106,6 +108,7 @@ LAB.add({
         score.n++;
         score.ok += ok ? 1 : 0;
         score.streak = ok ? score.streak + 1 : 0;
+        body.querySelector('.tyscore').textContent = scoreLine(); // the answer just counted (Codex review #379)
         inp.disabled = true;
         form.querySelectorAll('button').forEach(b => (b.disabled = true));
         inp.blur();
@@ -122,7 +125,7 @@ LAB.add({
         msg.textContent = '';
         body.querySelector('#tyres').innerHTML =
           `<p class="${ok ? 'ok' : 'ko'}"><b>${ok ? 'Right' : said == null ? 'No worries' : 'Missed'}</b>: ${how} <a href="${genLink(t)}">Genus sheet</a></p>
-          <p>${esc(tipsText(DATA.gen[t]))}</p><p class="credit">${credit(p)}</p><button type="button" class="next" id="tynext">Next</button>`;
+          <p>${esc(tipsText(GX(t)))}</p><p class="credit">${credit(p)}</p>${typeof repBtn === 'function' ? repBtn({g: t, a: said ? said.g : '', ph: [p.f], m: 'type'}) : ''}<button type="button" class="next" id="tynext">Next</button>`;
         const nx = body.querySelector('#tynext');
         nx.onclick = round;
         nx.focus({preventScroll: true});
