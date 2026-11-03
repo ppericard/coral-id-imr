@@ -569,7 +569,7 @@ async function replayAdoptCheck(base) {
     dev = JSON.parse(JSON.stringify(old));
   Object.assign(dev.Acropora, {ok: 2, streak: 1, h: '101', pg: 0.6});
   Object.assign(dev['~level'], {ok: 3});
-  const STUB = ([rec, data, rv]) => {
+  const STUB = ([rec, data, rv, sv]) => {
     const f = window.fetch,
       reply = (u, o) => {
         const q = new URL(String(u)).searchParams,
@@ -585,7 +585,7 @@ async function replayAdoptCheck(base) {
         if (body) {
           localStorage.setItem('test-data', JSON.stringify(body.data));
           localStorage.setItem('test-rev', String(rev + 1));
-          return {ok: true, log: true, rev: rev + 1, replay};
+          return {ok: true, log: true, rev: rev + 1, replay, v: sv};
         }
         return {
           ok: true,
@@ -593,7 +593,8 @@ async function replayAdoptCheck(base) {
           updated: '2026-11-03T05:03:00.000Z',
           rev,
           data: JSON.parse(localStorage.getItem('test-data') || 'null') || data,
-          replay
+          replay,
+          v: sv
         };
       },
       answer = (u, o) =>
@@ -601,9 +602,10 @@ async function replayAdoptCheck(base) {
     window.SHEET_STUB = answer;
     window.fetch = (u, o) => (/script\.google/.test(String((u && u.url) || u)) ? answer(u, o) : f(u, o));
   };
-  const open = async (rv, core) => {
+  // sv: the sheet script version the stub answers as (the replay from v28, core.js RV_SHEET).
+  const open = async (rv, core, sv = C.RV_SHEET) => {
     const c = await bs.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
-    await c.addInitScript(STUB, [rec, data, core ? C.RV + 1 : C.RV]);
+    await c.addInitScript(STUB, [rec, data, core ? C.RV + 1 : C.RV, sv]);
     await c.addInitScript(init, [old, dev, mine, rv]);
     await c.route(
       u => !u.href.startsWith(base),
@@ -637,6 +639,24 @@ async function replayAdoptCheck(base) {
     p
       .waitForFunction(() => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.post), null, {timeout: 15000})
       .catch(() => {});
+  // The app never gets ahead of the sheet script (AGENTS.md 7a): a script before v28 (even one whose reply carried a
+  // replay) changes nothing: the device keeps its own progress, sends its answer as before, records no rules version
+  // and shows no card.
+  {
+    const [c, p] = await open(0, null, C.RV_SHEET - 1);
+    await posted(p);
+    await p.waitForTimeout(500);
+    const s = await p.evaluate(() => ({
+      P: JSON.parse(localStorage.getItem('imr-coral-progress') || '{}'),
+      rv: localStorage.getItem('imr-coral-rv'),
+      pending: (JSON.parse(localStorage.getItem('imr-coral-sync') || '{}').log || []).length,
+      card: !!document.querySelector('.rvmsg')
+    }));
+    const a = s.P.Acropora || {};
+    if (a.pg !== dev.Acropora.pg || a.ok !== 2 || 'rv' in a || s.rv || s.pending || s.card)
+      fails.push(`replay: adopted from a script before v${C.RV_SHEET}: ${JSON.stringify({a, rv: s.rv, pending: s.pending, card: s.card})}`);
+    await c.close();
+  }
   // A stale device: the replay adopted once, its own answer on top.
   {
     const [c, p] = await open(0, null);

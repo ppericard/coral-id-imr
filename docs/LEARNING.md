@@ -812,7 +812,9 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     Updated, Record JSON in 45,000-character chunks), reused while the rules version, the number of the player's rows
     and the reset are unchanged, replayed again otherwise. The player's own saved copy (Progress data, RAs Data) is never
     rewritten there (no race with a device's save). The reply carries `replay: {rv, n, rec, ids}`.
-  - **The app adopts it** (`sync.js` `replayAdopt`), once per version: when a reply carries a replay newer than the one
+  - **The app adopts it** (`sync.js` `replayAdopt`), once per version, and only from a script that reports `v` >= 28
+    (`core.js` `RV_SHEET`; AGENTS.md 7a: the app never gets ahead of the sheet script; before, it does exactly what it did,
+    and the `rv` its requests carry is ignored by an older script): when a reply carries a replay newer than the one
     this device applied (`imr-coral-rv`, in the progress data: a device that signs in to the account takes it with
     the account, whose progress is the adopted one; a device already signed in keeps its own and adopts the replay
     itself once, with its own unsent answers on top), the progress becomes the replayed record, with this device's answers the sheet has not counted

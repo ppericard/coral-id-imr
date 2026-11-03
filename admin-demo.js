@@ -15,7 +15,10 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    ok = o => new Response(JSON.stringify({v: 19, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
+    // The script version the demo answers as: the current one (v28: the admin shows the full replay, admin.js replayOn),
+    // or an older one with ?demo&v=27 (tests/admin.smoke.js: the admin then does what it did before; AGENTS.md 7a).
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 28,
+    ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
   const PLAYERS = [

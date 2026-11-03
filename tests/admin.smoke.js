@@ -285,6 +285,40 @@ const server = http.createServer((req, res) => {
       if (!/\d+% (↻ saved \d+% )?Progress/i.test(k.kpis) || /↻ saved/.test(k.kpis) !== mark || !!k.genus !== mark || !k.col)
         fails.push(`${w}px journey (${n}) replayed progress: ${JSON.stringify(k)}`);
     }
+    // The admin never gets ahead of the sheet script (AGENTS.md 7a): answering as v27, the demo's Players and Journey
+    // show what they did before the full replay (no Progress column, no "↻ saved" mark, the sheet's Learned column, the
+    // Journey's learned genera from the saved copy).
+    {
+      const q = await p.context().newPage();
+      q.on('pageerror', e => fails.push(`${w}px v27 page error: ${e.message}`));
+      await q.goto(base + 'admin.html?demo&v=27#~users');
+      await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+      await q.waitForTimeout(1500);
+      const o = await q.evaluate(() => {
+        const col = k => [...document.querySelectorAll('.adm-utbl thead button')].findIndex(b => b.dataset.usort === k),
+          row = [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === 'Dio Demo');
+        return {
+          prog: col('prog'),
+          marks: document.querySelectorAll('.adm-saved').length,
+          learned: row && row.querySelectorAll('td')[col('learned')].innerText.trim(),
+          anonProg: [...document.querySelectorAll('.adm-uremoved th')].some(t => t.textContent === 'Progress')
+        };
+      });
+      if (o.prog !== -1 || o.marks || !/^1\/\d+$/.test(o.learned) || o.anonProg)
+        fails.push(`${w}px Players before v28: ${JSON.stringify(o)}`);
+      await q.goto(base + 'admin.html?demo&v=27#~journey/' + encodeURIComponent('Dio Demo'));
+      await q.waitForSelector('.adm-kpis', {timeout: 20000}).catch(() => {});
+      // The learned genus (under BKT) comes with the saved copy, read after the page is drawn.
+      await q.waitForSelector('.adm-jlearn', {timeout: 10000}).catch(() => {});
+      const j = await q.evaluate(() => ({
+        kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
+        col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress'),
+        learned: document.querySelectorAll('.adm-jlearn').length
+      }));
+      if (/Progress|↻ saved/.test(j.kpis) || !/ 1\/\d+ Learned/i.test(j.kpis) || j.col || j.learned !== 1)
+        fails.push(`${w}px Journey before v28: ${JSON.stringify(j)}`);
+      await q.close();
+    }
     await go('~users');
     await p.click('[data-uopen="Dio Demo"]'); // closed again for the steps below
     await settle();

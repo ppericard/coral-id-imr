@@ -69,10 +69,14 @@ const syncGet = (a = SYNC) =>
 // adoption); a device already signed in keeps its own, so it adopts the replay itself once, with its own unsent answers
 // on top (a pull alone would let those answers keep their older model). Then the announcement card of every version
 // skipped that has one (RVS msg; progress.js rvNotice), at once. The device's own recalculations (core.js memRecalc,
-// pgOf) stay as the fallback for a device that never reaches the sheet. An older sheet sends no replay: nothing happens.
+// pgOf) stay as the fallback for a device that never reaches the sheet. The app never gets ahead of the sheet script
+// (AGENTS.md 7a): v, the script version of the reply; a reply from a script before core.js RV_SHEET (28) is never
+// adopted, whatever it carries, so the app does exactly what it did before (an older script sends no replay, and the
+// rv field the requests carry is ignored there).
 const RVK = 'imr-coral-rv';
 const rvApplied = () => Number(store.get(RVK, 0)) || 0;
-function replayAdopt(rp, pending) {
+function replayAdopt(rp, pending, v) {
+  if (!(Number(v) >= RV_SHEET)) return false;
   if (!rp || typeof rp.rv !== 'number' || rp.rv <= rvApplied() || !rp.rec || typeof rp.rec !== 'object') return false;
   if (typeof mxRecalc !== 'function') return false; // the quiz tier (model.js) not in yet: the next reply brings it again
   try {
@@ -162,7 +166,7 @@ function mergeSaved(j) {
     holdIn(); // after the reset time is in: only the answers since then count
     store.set('imr-coral-progress', P);
     if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
-    replayAdopt(j.replay, SYNC.log); // the sheet's full replay, when newer than the one applied here (v28)
+    replayAdopt(j.replay, SYNC.log, j.v); // the sheet's full replay, when newer than the one applied here (v28)
     prog();
     return;
   }
@@ -177,7 +181,7 @@ function mergeSaved(j) {
   store.set('imr-coral-sync', SYNC);
   store.set('imr-coral-progress', P);
   if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
-  replayAdopt(j.replay, SYNC.log); // the sheet's full replay, when newer than the one applied here (v28)
+  replayAdopt(j.replay, SYNC.log, j.v); // the sheet's full replay, when newer than the one applied here (v28)
   prog();
 }
 // Pull, merge, then send. Every change bumps SYNC.rev; a send clears SYNC.dirty only if nothing changed
@@ -270,7 +274,7 @@ function syncOnce(tries = 0) {
         if (typeof holdSync === 'function') holdSync(j.hold, me.log, j.holdIds);
         if (me.rev === rev) delete me.dirty;
         // The full replay over every answer now logged (v28), plus any answer given while this send was on its way.
-        replayAdopt(j.replay, me.log);
+        replayAdopt(j.replay, me.log, j.v);
         store.set('imr-coral-sync', me);
       } else if (j && SYNC === me) {
         me.err = j.error === 'pin' || j.error === 'wait' || j.error === 'gone' ? j.error : 'net';
@@ -544,7 +548,7 @@ function sendAnon() {
         left = store.get(ANONQ, []).filter(x => !done.has(x.id));
       store.set(ANONQ, left);
       // A device that never signed in gets its full replay too (sheet v28), its answers still queued on top.
-      replayAdopt(j.replay, left);
+      replayAdopt(j.replay, left, j.v);
       // More than one batch waiting (played offline): the next one follows; a refused batch ('busy') is not retried here.
       if (left.length) setTimeout(sendAnon, 1000);
     })

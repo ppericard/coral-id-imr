@@ -174,7 +174,9 @@ function renderJourney(name, anonId = '') {
   const C = anonId ? {anon: 1, map: {}, offer: null} : journeyCards(name),
     // Progress replayed from the whole log (admin.js progOf, docs/LEARNING.md "Full replay"), with the saved copy's
     // mastery exams; beside it what the saved copy says when it differs. null while the saved copy is read.
+    // Before sheet script v28 (admin.js replayOn): {off: 1}, the saved copy as it is, and no replayed value shown.
     PG = progOf(anonId ? {id: anonId, anon: 1} : u),
+    RP = replayOn(),
     offer = C && C.offer,
     openAt = offer && offer.open ? offer.at : null,
     // A card shown after the player's a-th answer: its time, else that answer's (cards saved before times were kept).
@@ -355,14 +357,14 @@ function renderJourney(name, anonId = '') {
   const dots = h => `<span class="adm-jdots">${[...h].map(c => `<i class="${c === '1' ? 'ok' : 'ko'}"></i>`).join('')}</span>`,
     sortBtn = (k, t) => `<button type="button" data-jsort="${k}" aria-pressed="${JSORT === k}">${t}</button>`;
   const table = `<section class="adm-scard adm-jwide"><div class="adm-shead"><h3>Genera <small>${rows.length}</small></h3><span class="adm-qseg adm-sseg" role="group">${sortBtn('met', 'Order met')}${sortBtn('easy', 'Easiest')}${sortBtn('hard', 'Hardest')}${sortBtn('n', 'Most asked')}</span></div>
-    <div class="adm-tscroll"><table class="adm-tbl adm-jtbl"><thead><tr><th>Genus</th><th title="When its card showed: after which answer">Card</th><th title="Its first question">First asked</th><th>Answers</th><th>Right</th><th title="Right answers against the chance the game expected">vs expected</th><th title="The genus's bar, replayed from every answer in the log with the current rules (↻ saved: what the copy in the sheet still says)">Progress</th><th>Last 10</th><th>Answered instead</th></tr></thead><tbody>${rows
+    <div class="adm-tscroll"><table class="adm-tbl adm-jtbl"><thead><tr><th>Genus</th><th title="When its card showed: after which answer">Card</th><th title="Its first question">First asked</th><th>Answers</th><th>Right</th><th title="Right answers against the chance the game expected">vs expected</th>${RP ? `<th title="The genus's bar, replayed from every answer in the log with the current rules (↻ saved: what the copy in the sheet still says)">Progress</th>` : ''}<th>Last 10</th><th>Answered instead</th></tr></thead><tbody>${rows
       .map(([g, s]) => {
         const inst = Object.entries(s.inst)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 2)
           .map(([x, n]) => `<i>${esc(x)}</i> ${n}×`)
           .join(', ');
-        return `<tr><td><a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a>${g in LRN ? ` <span class="adm-jlearn" title="Learned (mastery exam passed)${lrnAt[g] != null ? ': ' + esc(jTime(R[lrnAt[g]][1])) : ''}">learned</span>` : ''}${J.slate.has(g) ? '' : ' <small>bonus</small>'}</td><td class="n">${cardCell(g, s)}</td><td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td><td class="n">${genProg(g)}</td><td>${dots(s.h)}</td><td>${inst}</td></tr>`;
+        return `<tr><td><a class="adm-gen" href="#${esc(g)}"><i>${esc(g)}</i></a>${g in LRN ? ` <span class="adm-jlearn" title="Learned (mastery exam passed)${lrnAt[g] != null ? ': ' + esc(jTime(R[lrnAt[g]][1])) : ''}">learned</span>` : ''}${J.slate.has(g) ? '' : ' <small>bonus</small>'}</td><td class="n">${cardCell(g, s)}</td><td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td>${RP ? `<td class="n">${genProg(g)}</td>` : ''}<td>${dots(s.h)}</td><td>${inst}</td></tr>`;
       })
       .join('')}</tbody></table></div></section>`;
 
@@ -443,17 +445,19 @@ function renderJourney(name, anonId = '') {
       ['Genera met', `${J.marks.length}/${total}`],
       // Replayed from the whole log (progOf); Learned needs the saved copy (the mastery exams): not for a device that never
       // signed in.
-      ['Progress', !PG ? '…' : withSaved(PG.pct + '%', PG.saved && PG.saved.pct + '%')],
+      ...(RP ? [['Progress', !PG ? '…' : withSaved(PG.pct + '%', PG.saved && PG.saved.pct + '%')]] : []),
       ...(anonId
         ? []
         : [
             [
               'Learned',
-              !PG
-                ? '…'
-                : PG.err
-                  ? `${u.learned}/${u.total || total}`
-                  : withSaved(`${PG.learned}/${PG.total}`, PG.saved && `${PG.saved.learned}/${PG.total}`)
+              !RP
+                ? `${u.learned}/${u.total || total}`
+                : !PG
+                  ? '…'
+                  : PG.err
+                    ? `${u.learned}/${u.total || total}`
+                    : withSaved(`${PG.learned}/${PG.total}`, PG.saved && `${PG.saved.learned}/${PG.total}`)
             ]
           ]),
       ['Days', dayKeys.length],

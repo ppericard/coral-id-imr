@@ -1217,6 +1217,10 @@
     }
   ];
   const RV = RVS[RVS.length - 1].v;
+  // The sync script version from which the sheet replays (Code.gs replay_, v28). The app never gets ahead of the sheet
+  // script (AGENTS.md 7a, Pierre 2026-11-03): it adopts a replay (sync.js replayAdopt) and the admin shows replayed
+  // values (admin.js progOf) only when the script's replies say v >= RV_SHEET; otherwise both do what they did before.
+  const RV_SHEET = 28;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first.
   const rvMsgs = (from, to) => RVS.filter(x => x.v > (from || 0) && x.v <= to && x.msg);
@@ -1486,6 +1490,7 @@
     eloStep,
     RVS,
     RV,
+    RV_SHEET,
     rvMsgs,
     learnedOf,
     ACH,

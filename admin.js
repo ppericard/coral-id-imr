@@ -4585,12 +4585,17 @@ function savedClear() {
 // has not opened the app since a recalculation, or whose last answers are not saved yet). Signed-in players by name,
 // devices that never signed in by anonymous id (no saved copy: nothing to compare). null while the saved copy is read.
 // Computed once per data load (the answer log, the stats, the saved copy), memoized.
+// Only from sheet script v28 (core.js RV_SHEET; AGENTS.md 7a: the admin never gets ahead of the script): before it the
+// players' apps keep their own progress, so the admin shows what it did before: the sheet's Learned column, no Progress
+// column, and the Journey's learned genera from the saved copy as it is ({off: 1, G: the saved progress}).
+const replayOn = () => Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= RV_SHEET;
 const PROGM = new Map();
 let ROWSBY = null;
 function progOf(u) {
   if (!ANS || !DATA || !u || !u.id) return null;
   const S = u.anon ? {P: {}} : savedOf(u.name);
   if (!S) return null;
+  if (!replayOn()) return {off: 1, G: S.err ? {} : S.P || {}, err: S.err};
   const m = PROGM.get(u.id);
   if (m && m.ans === ANS && m.S === S && m.mem === SMEM && m.learned === u.learned) return m.v;
   if (!ROWSBY || ROWSBY.ans !== ANS) {
@@ -4670,7 +4675,9 @@ function renderUsers() {
     bindUsers();
     return;
   }
-  const col = UCOLS.find(c => c[0] === SF.us) || UCOLS.find(c => c[0] === 'last'),
+  // The Progress column only from sheet script v28 (replayOn).
+  const COLS = UCOLS.filter(c => c[0] !== 'prog' || replayOn()),
+    col = COLS.find(c => c[0] === SF.us) || COLS.find(c => c[0] === 'last'),
     sk = col[0],
     sd = SF.us === sk && SF.ud ? SF.ud : col[3] ? 'asc' : 'desc';
   // Quiz and Duel tab apart (core.js playSplit), on each row before the sort reads them (Codex review #383); a player whose
@@ -4693,7 +4700,7 @@ function renderUsers() {
           q50: p.q50,
           du: p.d,
           at: Math.max((u.id && LAST[u.id]) || 0, u.last || 0) || u.updated || 0,
-          pg: progOf(u)
+          pg: replayOn() ? progOf(u) : null
         };
       })
       .sort((a, b) => {
@@ -4713,7 +4720,7 @@ function renderUsers() {
   // for a player's path); the row only opens it and the account tools.
   // One compact bar under the row (Pierre, 2026-11-03: a big card for one Journey link and a tall Manage card wasted the
   // space): Journey first, the account's state with its toggle, then the account tools, Delete last on the right.
-  const detail = u => `<tr class="adm-udet"><td colspan="${UCOLS.length + 1}"><div class="adm-ubar">
+  const detail = u => `<tr class="adm-udet"><td colspan="${COLS.length + 1}"><div class="adm-ubar">
       <a class="next" href="#~journey/${encodeURIComponent(u.name)}">Journey →</a>
       ${u.pg ? `<span class="adm-uprog">Progress ${withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')} · Learned ${withSaved(`${u.pg.learned}`, u.pg.saved && `${u.pg.saved.learned}`)}${u.pg.err ? ` <small title="Their saved copy could not be read (${esc(u.pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}</span>` : ''}
       <span>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></span>
@@ -4751,11 +4758,13 @@ function renderUsers() {
       duels: u.du[0] ? `${u.du[0]} <small>${pct(u.du[1], u.du[0])}</small>` : '',
       days: u.days,
       prog: !u.pg ? '…' : withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%'),
-      learned: !u.pg
-        ? '…'
-        : u.pg.err
-          ? `${u.learned}/${u.total || total}`
-          : withSaved(`${u.pg.learned}/${u.pg.total}`, u.pg.saved && `${u.pg.saved.learned}/${u.pg.total}`),
+      learned: !replayOn()
+        ? `${u.learned}/${u.total || total}`
+        : !u.pg
+          ? '…'
+          : u.pg.err
+            ? `${u.learned}/${u.total || total}`
+            : withSaved(`${u.pg.learned}/${u.pg.total}`, u.pg.saved && `${u.pg.saved.learned}/${u.pg.total}`),
       seen: u.seen,
       reports: u.reports || '',
       last: ago(u.at)
@@ -4772,19 +4781,19 @@ function renderUsers() {
     (!U.length
       ? '<p class="note">Nobody has signed in yet.</p>'
       : `
-    <section class="adm-scard adm-ucard"><div class="adm-tscroll"><table class="adm-tbl adm-utbl"><thead><tr>${UCOLS.map(
+    <section class="adm-scard adm-ucard"><div class="adm-tscroll"><table class="adm-tbl adm-utbl"><thead><tr>${COLS.map(
       ([k, t, , , tip]) =>
         `<th${tip ? ` title="${esc(tip)}"` : ''}><button type="button" class="adm-usort" data-usort="${k}" aria-pressed="${k === sk}">${t}${k === sk ? (sd === 'asc' ? ' ▴' : ' ▾') : ''}</button></th>`
     ).join('')}<th></th></tr></thead><tbody>
       ${U.map(
         u =>
-          `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${isMe(u.id) ? ' me' : ''}" data-uopen="${esc(u.name)}">${UCOLS.map(([k]) => `<td>${cell(k, u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
+          `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${isMe(u.id) ? ' me' : ''}" data-uopen="${esc(u.name)}">${COLS.map(([k]) => `<td>${cell(k, u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
       ).join('')}</tbody></table></div></section>`) +
     (anon.length
-      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th>Level</th><th>Answers</th><th>Right</th><th title="Replayed from their answers with the current rules">Progress</th><th>First</th><th>Last</th></tr></thead><tbody>${anon
+      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th>Level</th><th>Answers</th><th>Right</th>${replayOn() ? '<th title="Replayed from their answers with the current rules">Progress</th>' : ''}<th>First</th><th>Last</th></tr></thead><tbody>${anon
           .map(
             ([id, a]) =>
-              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#~anon/${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td><td>${progOf({id, anon: 1}).pct}%</td><td>${days(a.first)}</td><td>${ago(a.last)}</td></tr>`
+              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#~anon/${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td>${replayOn() ? `<td>${progOf({id, anon: 1}).pct}%</td>` : ''}<td>${days(a.first)}</td><td>${ago(a.last)}</td></tr>`
           )
           .join(
             ''

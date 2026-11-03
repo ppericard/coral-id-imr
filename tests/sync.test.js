@@ -1011,6 +1011,10 @@ test("v28: core.js embedded in Code.gs is the app's core.js, and keeps its names
   assert.strictEqual(vm.runInContext('typeof replayProgress', s.ctx), 'undefined', "no core.js name among the script's globals");
   assert.strictEqual(vm.runInContext('TRUST === CORE_.TRUST', s.ctx), false, 'Code.gs keeps its own constants');
   assert.strictEqual(vm.runInContext('typeof CORE_.replayProgress', s.ctx), 'function');
+  // The app and the admin wait for this script version before they rely on the replay (core.js RV_SHEET; AGENTS.md 7a):
+  // the script that serves it says so in every reply.
+  assert.strictEqual(C.RV_SHEET, 28);
+  assert.ok(vm.runInContext('VERSION', s.ctx) >= C.RV_SHEET);
 });
 
 test('v28: a player whose app applied an older rules version gets the replay of their log, stored once', () => {
