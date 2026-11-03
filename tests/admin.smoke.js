@@ -433,11 +433,38 @@ const server = http.createServer((req, res) => {
           for (const [h, n] of Object.entries(want))
             if (cell(it.q, t, col(h)) !== n) bad.push(`${it.q} ${t} ${h}: ${cell(it.q, t, col(h))} ≠ ${n}`);
         }
+      // The response under each item (2026-11-03): shown, Not now, and no answer = shown − answered − Not now, counted
+      // over the rows with an item id, by band and mode as above.
+      const codes = new Set(PULSEQ.flatMap(it => it.a.map(a => a[0])));
+      let ign = 0;
+      for (const it of PULSEQ) {
+        const L = R.filter(r => r[5] === it.id),
+          per = f => {
+            const C = L.filter(r => f(JSON.parse(r[7]))),
+              sh = C.filter(r => r[4] === PULSE_SHOWN).length,
+              an = C.filter(r => codes.has(r[4])).length,
+              sk = C.filter(r => r[4] === PULSE_SKIP).length;
+            return {Shown: sh, 'Not now': sk, 'No answer': Math.max(0, sh - an - sk)};
+          },
+          cols = {All: () => true, Beginner: d => bandOf(d.lv) === 'Beginner', Duel: d => d.m === 'quiz-duel'};
+        for (const [h, f] of Object.entries(cols))
+          for (const [label, n] of Object.entries(per(f))) {
+            if (h === 'All' && label === 'No answer') ign += n;
+            if (cell(it.q, label, col(h)) !== n) bad.push(`${it.q} ${label} ${h}: ${cell(it.q, label, col(h))} ≠ ${n}`);
+          }
+      }
       const sc = document.querySelector('.adm-pscale');
       return {
         heads,
         bad,
-        scale: !!sc && /Difficulty/.test(sc.textContent) && /Feel/.test(sc.textContent) && /Beginner/.test(sc.textContent),
+        ign,
+        scale:
+          !!sc &&
+          /Difficulty/.test(sc.textContent) &&
+          /Feel/.test(sc.textContent) &&
+          /Beginner/.test(sc.textContent) &&
+          /Shown/.test(sc.textContent) &&
+          /Answered/.test(sc.textContent),
         title: document.querySelector('.adm-pulse h3')?.textContent || ''
       };
     });
@@ -445,7 +472,8 @@ const server = http.createServer((req, res) => {
       !pq.scale ||
       !/One-tap questions/i.test(pq.title) ||
       ['All', 'Beginner', 'Middle', 'Strong', 'Quiz', 'Duel'].some(h => !pq.heads.includes(h)) ||
-      pq.bad.length
+      pq.bad.length ||
+      !pq.ign
     )
       fails.push(`${w}px Errors & feedback, one-tap questions: ${JSON.stringify(pq)}`);
     // Load times (sheet v21): the demo's three visits, their median line and the CDN server.
@@ -470,7 +498,7 @@ const server = http.createServer((req, res) => {
     await go('~stats');
     if (/No answers yet/.test(await text())) fails.push(`${w}px Activity: no answers`);
     // Recent sessions (Pierre, 2026-11-03): the last 10 sessions of every player, newest first, by name or anonymous id;
-    // Carla playing now (quiz, duel and typed answers), the device that stopped 12 minutes ago by its id; ↻ reloads.
+    // Carla playing now (quiz, custom quiz, duel and typed answers), the device that stopped 12 minutes ago by its id; ↻ reloads.
     const recent = () =>
       p.evaluate(() => {
         const c = document.querySelector('[data-recent]');
@@ -497,7 +525,7 @@ const server = http.createServer((req, res) => {
       if (R.some((x, i) => i && x.t > R[i - 1].t)) fails.push(`${w}px Recent sessions: not newest first`);
       if (c.who !== 'Carla Demo' || !c.now || c.last !== 'now' || c.n !== 24 || !/1 playing now/.test(rs.head))
         fails.push(`${w}px Recent sessions: Carla not playing now ${JSON.stringify(c)} ${rs.head}`);
-      if (!/quiz/.test(c.modes) || !/duel/.test(c.modes) || !/typed 2/.test(c.modes))
+      if (!/quiz/.test(c.modes) || !/duel/.test(c.modes) || !/typed 2/.test(c.modes) || !/custom 8/.test(c.modes))
         fails.push(`${w}px Recent sessions: modes ${c.modes}`);
       if (R.filter(x => x.now).length !== 1) fails.push(`${w}px Recent sessions: ${R.filter(x => x.now).length} sessions now, expected 1`);
       if (an.last !== '12 min ago' || an.n !== 8 || !/^#~anon\//.test(an.link) || R[1] !== an)

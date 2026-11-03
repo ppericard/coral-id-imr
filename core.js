@@ -1099,9 +1099,15 @@
   // meaning on the difficulty scale (the sheet's Detail keeps only those three); an item's other codes ride as they
   // come (Message column) and its id in the Where column: no new sheet version (v19 stores both as text).
   // Sources (docs/LEARNING.md "What the players say about the difficulty"): are, the app's question since v19 (the
-  // too easy / appropriate / too hard rating of Papoušek, Stanislav & Pelánek 2016); fit, the demand item of the flow
-  // short scale (Rheinberg, Vollmeyer & Engeser 2003); more, the same balance asked as a wish; fun, frus, bored, the
-  // in-game GEQ's positive affect, tension and negative affect items (IJsselsteijn, de Kort & Poels 2013).
+  // Too Easy / Appropriate / Too Difficult rating of Papoušek, Stanislav & Pelánek 2016); zone, flow's three channels
+  // (boredom, flow, anxiety: Csikszentmihalyi 1975), the balance the flow short scale's item 16 asks as demands too
+  // little / just right / too high (Rheinberg, Vollmeyer & Engeser 2003); more, the same balance asked as a wish; fun,
+  // frus, bored, the in-game GEQ's positive affect, tension and negative affect items (IJsselsteijn, de Kort & Poels 2013).
+  // Besides the answers, every prompt logs its showing (PULSE_SHOWN) and, when it ends without an answer, a "Not now"
+  // (PULSE_SKIP) or moving on without a tap (PULSE_NONE): the admin's response rates.
+  const PULSE_SHOWN = 'shown',
+    PULSE_SKIP = 'skip',
+    PULSE_NONE = 'none';
   const PULSEQ = [
     {
       id: 'are',
@@ -1112,13 +1118,15 @@
         ['hard', 'Too hard', 1, null]
       ]
     },
+    // The challenge-skill balance as the flow channels, said as states (Pierre, 2026-11-03: "the challenge is too low /
+    // too high" left non-native speakers unsure whether low meant easy or hard).
     {
-      id: 'fit',
-      q: 'For me, the challenge is',
+      id: 'zone',
+      q: 'Right now I feel',
       a: [
-        ['easy', 'Too low', -1, null],
-        ['ok', 'Just right', 0, null],
-        ['hard', 'Too high', 1, null]
+        ['easy', 'Bored', -1, null],
+        ['ok', 'In the zone', 0, null],
+        ['hard', 'Struggling', 1, null]
       ]
     },
     {
@@ -1257,6 +1265,9 @@
     mergeUsers,
     PULSEQ,
     PULSE0,
+    PULSE_SHOWN,
+    PULSE_SKIP,
+    PULSE_NONE,
     pulseItem,
     pulseScore,
     pulsePick

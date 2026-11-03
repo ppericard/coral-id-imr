@@ -23,6 +23,8 @@ const ROUTES = [
   'cmp-Pocillopora|Stylophora',
   'quiz',
   'quiz-duel',
+  'quiz-custom',
+  'quiz-custom|play',
   'pairs',
   'finder',
   'progress',
@@ -306,19 +308,24 @@ async function overlays(b, base) {
       fails.push(`prompt spacing over 60 answers: ${JSON.stringify(seenP)}`);
     await c.close();
   }
-  // The one-tap question's bank (core.js PULSEQ, 2026-11-03): the first prompt at 35 answers asks the plain question;
-  // each prompt is one row, answered in one tap ("Thank you!" at once), and queues a pulse event with its item (src) and
-  // the code tapped; the next prompt never asks the same item. After the first, each prompt is made due by moving the
-  // device's last-prompt marks back (imr-prompt-at by PROMPT.GAP, imr-pulse by PULSE.EVERY), the real code deciding.
+  // The one-tap question's bank (core.js PULSEQ, 2026-11-03), on the narrowest phone (360 px): the first prompt at 35
+  // answers asks the plain question; each prompt is a block of its own ("Quick question") on screen above Next, its
+  // answers on one row of equal widths; it logs its showing (shown) with its item (src); an answer is one tap ("Thank
+  // you!" at once) and logs the code tapped; every third prompt is left unanswered (Next) and logs none; the next prompt
+  // never asks the same item. After the first, each prompt is made due by moving the device's last-prompt marks back
+  // (imr-prompt-at by PROMPT.GAP, imr-pulse by PULSE.EVERY), the real code deciding.
   {
-    const [c, p] = await open({viewport: {width: 390, height: 844}}, seen);
+    const [c, p] = await open({viewport: {width: 360, height: 740}}, seen);
     await p.goto(base + '#quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-    const asked = [];
-    for (let i = 0; i < 60 && asked.length < 8; i++) {
+    const asked = [],
+      pev = () => p.evaluate(() => JSON.parse(localStorage.getItem('imr-evq') || '[]').filter(x => x.k === 'pulse'));
+    for (let i = 0; i < 60 && asked.length < 9; i++) {
       await p.waitForSelector('#view [data-c]:not([disabled])');
+      const skip = asked.length % 3 === 2,
+        before = (await pev()).length;
       const r = await p.evaluate(
-        ([i, due]) => {
+        ([i, due, skip]) => {
           document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
           document.querySelectorAll('.achpop').forEach(x => x.remove());
           achQ.length = 0;
@@ -332,49 +339,55 @@ async function overlays(b, base) {
           document.querySelector(`#view [data-c="${CSS.escape(t)}"]`).click();
           const box = document.querySelector('#after .pulse');
           if (!box) return null;
-          const bs = [...box.querySelectorAll('[data-pulse]:not([data-pulse=""])')],
+          const bs = [...box.querySelectorAll('.pulseb [data-pulse]')],
             b = bs[i % bs.length],
-            it = PULSEQ.find(x => x.id === box.dataset.q);
+            it = PULSEQ.find(x => x.id === box.dataset.q),
+            nx = document.getElementById('next'),
+            R = box.getBoundingClientRect(),
+            N = nx.getBoundingClientRect(),
+            B = bs.map(x => x.getBoundingClientRect());
           const shown = {
             a: answersSoFar(),
             q: box.dataset.q,
-            text: box.querySelector('span').textContent,
+            title: box.querySelector('.pulsek')?.textContent,
+            text: box.querySelector('.pulseq')?.textContent,
             opts: bs.map(x => x.dataset.pulse),
-            x: !!box.querySelector('[data-pulse=""]'),
-            tap: b.dataset.pulse
+            x: !!box.querySelector('.pulsex[data-pulse=""]'),
+            // Before Next in the page and on screen, both in view without scrolling.
+            before: !!(box.compareDocumentPosition(nx) & Node.DOCUMENT_POSITION_FOLLOWING) && R.bottom <= N.top + 1,
+            inView: R.top >= 0 && N.bottom <= innerHeight + 1,
+            // One row, equal widths.
+            row: B.every(x => Math.abs(x.top - B[0].top) < 2 && Math.abs(x.width - B[0].width) < 2),
+            tap: skip ? '' : b.dataset.pulse
           };
-          b.click();
-          const ev = JSON.parse(localStorage.getItem('imr-evq') || '[]')
-            .filter(x => x.k === 'pulse')
-            .pop();
-          return {
-            ...shown,
-            want: it ? [it.q, it.a.map(x => x[0])] : null,
-            thanks: box.textContent.trim(),
-            ev: ev && {r: ev.r, src: ev.src, m: ev.m, lv: typeof ev.lv}
-          };
+          if (!skip) b.click();
+          return {...shown, want: it ? [it.q, it.a.map(x => x[0])] : null, thanks: box.textContent.trim()};
         },
-        [i, asked.length > 0]
+        [i, asked.length > 0, skip]
       );
-      if (r) asked.push(r);
       await p.evaluate(() => document.getElementById('next').click());
+      if (!r) continue;
+      // What this prompt queued: its showing, then the code tapped or none (moved on without a tap).
+      r.ev = (await pev()).slice(before).map(x => ({r: x.r, src: x.src, m: x.m, lv: typeof x.lv}));
+      asked.push(r);
     }
     const bad = asked.filter(
       (x, k) =>
         !x.want ||
+        x.title !== 'Quick question' ||
         x.text !== x.want[0] ||
         x.opts.join() !== x.want[1].join() ||
         !x.x ||
-        x.thanks !== 'Thank you!' ||
-        !x.ev ||
-        x.ev.src !== x.q ||
-        x.ev.r !== x.tap ||
-        x.ev.m !== 'quiz' ||
-        x.ev.lv !== 'number' ||
+        !x.before ||
+        !x.inView ||
+        !x.row ||
+        (x.tap && x.thanks !== 'Thank you!') ||
+        x.ev.map(e => e.r).join() !== ['shown', x.tap || 'none'].join() ||
+        x.ev.some(e => e.src !== x.q || e.m !== 'quiz' || e.lv !== 'number') ||
         (k && x.q === asked[k - 1].q)
     );
-    if (asked.length < 8 || asked[0].a !== 35 || asked[0].q !== 'are' || bad.length || new Set(asked.map(x => x.q)).size < 5)
-      fails.push(`one-tap bank: ${JSON.stringify(asked.length < 8 || asked[0].a !== 35 ? asked : bad.length ? bad : asked.map(x => x.q))}`);
+    if (asked.length < 9 || asked[0].a !== 35 || asked[0].q !== 'are' || bad.length || new Set(asked.map(x => x.q)).size < 5)
+      fails.push(`one-tap bank: ${JSON.stringify(asked.length < 9 || asked[0].a !== 35 ? asked : bad.length ? bad : asked.map(x => x.q))}`);
     await c.close();
   }
   // The right answer's celebration (app.css .cheer) plays on the choice and on "✓ Yes", and not at all with
@@ -396,6 +409,90 @@ async function overlays(b, base) {
     });
     const want = reducedMotion === 'reduce' ? ['none', 'none'] : ['cheer', 'tickpop'];
     if (r.btn !== want[0] || r.yes !== want[1] || !r.next) fails.push(`right-answer celebration (${reducedMotion}): ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // Custom quiz (quiz.js viewCustom, quizCustom; 2026-11-03), on a phone: nothing picked at first (Start off), A-Z, photos
+  // picked and Clear all, a quick pick (a genus and its look-alikes), the IMR groups view and the search, the choice kept
+  // after a reload (in the view left), then a dozen questions all on the genera picked, logged quiz|s…; the Practice tabs fit the width.
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 844}}, seen);
+    await p.goto(base + '#quiz-custom');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('.cqtile');
+    const state = () =>
+      p.evaluate(() => ({
+        on: [...new Set([...document.querySelectorAll('.cqtile[aria-pressed="true"]')].map(b => b.dataset.g))].sort(),
+        start: !document.querySelector('[data-start]').disabled,
+        n: document.querySelector('.cqn b').textContent,
+        shown: [...new Set([...document.querySelectorAll('.cqtile:not([hidden])')].map(b => b.dataset.g))],
+        tabs: (m => m.scrollWidth <= m.clientWidth)(document.getElementById('modes')),
+        heads: document.querySelectorAll('.cqg:not([hidden]) .cqh').length,
+        tiles: [...document.querySelectorAll('.cqtile')].map(b => b.dataset.g)
+      }));
+    const s0 = await state();
+    for (const g of ['Acropora', 'Pocillopora', 'Porites']) await p.click(`.cqtile[data-g="${g}"]`);
+    const s1 = await state();
+    await p.click('[data-clear]');
+    const s2 = await state();
+    await p.selectOption('#cqlk', 'Pocillopora');
+    const s3 = await state(),
+      looks = await p.evaluate(() => cqLooks('Pocillopora', pool()).sort());
+    await p.click('[data-cv="imr"]');
+    const s4 = await state();
+    await p.fill('#cqq', 'acro');
+    const s5 = await state();
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('.cqtile');
+    const s6 = await state();
+    if (
+      s0.on.length ||
+      s0.heads || // A-Z by default: one grid, every genus in play once, in order (no grouping by growth form)
+      s0.tiles.join() !== [...s0.tiles].sort((a, b) => a.localeCompare(b)).join() ||
+      new Set(s0.tiles).size !== s0.tiles.length ||
+      s0.start ||
+      !s0.tabs ||
+      s1.on.join() !== 'Acropora,Pocillopora,Porites' ||
+      !s1.start ||
+      s1.n !== '3 genera' ||
+      s2.on.length ||
+      s2.start ||
+      s3.on.join() !== looks.join() ||
+      looks.length < 2 ||
+      s4.on.join() !== s3.on.join() ||
+      s4.heads < 5 || // the IMR lecture groups, their genera in view
+      [...s4.tiles].sort().join() !== [...s0.tiles].sort().join() ||
+      s5.shown.some(g => !/acro/i.test(g)) ||
+      !s5.shown.includes('Acropora') ||
+      s6.on.join() !== looks.join() ||
+      !s6.start
+    )
+      fails.push(`custom quiz selection: ${JSON.stringify({s0, s1, s2, s3, looks, s4, s5, s6})}`);
+    await p.click('[data-start]');
+    const asked = [],
+      modes = [];
+    for (let i = 0; i < 12; i++) {
+      await p.waitForSelector('#view .q:not(.done)');
+      const r = await p.evaluate(i => {
+        document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+        const t = SHOWNQ[1],
+          bs = [...document.querySelectorAll('#view [data-c]')];
+        if (bs.length) (i % 4 === 3 ? bs.find(b => b.dataset.c !== t) : bs.find(b => b.dataset.c === t)).click();
+        else {
+          const f = document.querySelector('#view .tyform');
+          f.querySelector('input').value = t;
+          f.requestSubmit();
+        }
+        const L = store.get(LOG0, []);
+        return {h: location.hash, t, m: (L[L.length - 1] || {}).m};
+      }, i);
+      asked.push(r.t);
+      modes.push(r.m);
+      if (r.h !== '#quiz-custom|play') fails.push(`custom quiz: question ${i + 1} on ${r.h}`);
+      await p.click('#next');
+    }
+    if (asked.some(g => !looks.includes(g)) || modes.some(m => !/^quiz\|s(\||$)/.test(m || '')))
+      fails.push(`custom quiz play: asked ${asked.join(', ')} (picked ${looks.join(', ')}); logged ${modes.join(', ')}`);
     await c.close();
   }
   return fails;

@@ -2329,6 +2329,11 @@ td.cov-c .cov-off {
 .adm-pscale {
   margin-bottom: 10px;
 }
+/* Under an item's answers: its Not now, no answer and shown rows (the response), quieter than the answers. */
+.adm-pitems .adm-pmeta td {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
 /* Errors & feedback: long error messages and photo names wrap inside their cell. */
 .adm-ev code {
   white-space: normal;

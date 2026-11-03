@@ -66,6 +66,13 @@ function mergeSaved(j) {
       showBoardSet();
     }
   } catch (e) {}
+  // The custom quiz's selection made on another device, if more recent than this one's (model.js CUSTOM.KEY, quiz.js
+  // viewCustom: {g, t}).
+  try {
+    const rc = JSON.parse(d['imr-coral-custom'] || 'null'),
+      lc = store.get('imr-coral-custom', null);
+    if (rc && Array.isArray(rc.g) && (rc.t || 0) > ((lc && lc.t) || 0)) store.set('imr-coral-custom', rc);
+  } catch (e) {}
   achMerge(d[ACHK]); // achievements earned on another device join this one's
   const introIn = () => introMerge(d[INTRO.KEY], d[INTRO.OFFER.KEY]); // first-meeting cards seen on another device
   let R = {};
@@ -769,6 +776,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         'imr-coral-reset',
         INTRO.KEY,
         INTRO.OFFER.KEY,
+        CUSTOM.KEY, // model.js: the custom quiz's selection is the player's too
         ACHK,
         'imr-ach-new',
         'imr-hold',

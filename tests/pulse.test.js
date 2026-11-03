@@ -6,7 +6,7 @@ const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
-const {PULSEQ, PULSE0, pulseItem, pulseScore, pulsePick} = require('../core.js');
+const {PULSEQ, PULSE0, PULSE_SHOWN, PULSE_SKIP, PULSE_NONE, pulseItem, pulseScore, pulsePick} = require('../core.js');
 
 // A seeded generator (mulberry32), so a failure can be replayed.
 const rng = seed => () => {
@@ -59,6 +59,11 @@ test('the bank: 4 to 6 one-tap items, each answer on the difficulty or the feel 
   assert.deepStrictEqual(pulseScore('', 'hard'), {d: 1, f: null});
   assert.deepStrictEqual(pulseScore('nope', 'hard'), {d: null, f: null});
   assert.deepStrictEqual(pulseScore('fun', 'hard'), {d: null, f: null});
+  // The prompt's own events (shown, Not now, moved on without a tap) are never an answer of any item, nor scored.
+  for (const k of [PULSE_SHOWN, PULSE_SKIP, PULSE_NONE]) {
+    assert.match(k, /^[a-z]{4,5}$/);
+    for (const it of PULSEQ) assert.deepStrictEqual(pulseScore(it.id, k), {d: null, f: null}, `${it.id} ${k}`);
+  }
 });
 
 test('rotation: the first ask is the plain question, never the same wording twice in a row, each item as often', () => {
@@ -92,7 +97,7 @@ test('rotation from what an older app stored, or a broken store', () => {
 // quiz.js's prompt spacing, on stubs: the answers so far, this visit's answers, the page, what is on screen.
 function quiz() {
   const src = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8'),
-    block = src.slice(src.indexOf('// Out-of-game prompts ("fewer, better pop-ups"'), src.indexOf('function pulseAsk()'));
+    block = src.slice(src.indexOf('// Out-of-game prompts ("fewer, better pop-ups"'), src.indexOf('// Response rate (Pierre'));
   assert.ok(block.length > 500, 'the spacing block is found in quiz.js');
   const saved = {},
     ctx = {
@@ -105,6 +110,8 @@ function quiz() {
     };
   ctx.answersSoFar = () => ctx.a;
   ctx.hashNow = () => ctx.h;
+  // quiz.js photoQuiz: the photo quiz and the custom quiz on the genera the player picks (CUSTOM_H).
+  ctx.photoQuiz = h => h === 'quiz' || h === 'quiz-custom|play';
   ctx.document = {querySelector: sel => (sel.split(',').some(s => ctx.onScreen.has(s.trim())) ? {} : null)};
   vm.createContext(ctx);
   vm.runInContext(block + '\nthis.Q = {PROMPT, promptOk, promptMark, PULSE, PULSEK, pulseDue};', ctx);
@@ -136,6 +143,7 @@ test('spacing: first at PULSE.FIRST answers, then every PULSE.EVERY, longer afte
   c.session.n = Q.PULSE.SESSION;
   assert.strictEqual(Q.pulseDue(), true);
   assert.strictEqual(Q.pulseDue('quiz-duel|Porites|Goniopora'), true);
+  assert.strictEqual(Q.pulseDue('quiz-custom|play'), true, 'the custom quiz is a photo quiz');
   for (const h of ['dquiz', 'type', 'g-Porites', 'home']) assert.strictEqual(Q.pulseDue(h), false, h);
   for (const s of ['#tour', '.unlock']) {
     c.onScreen = new Set([s]);

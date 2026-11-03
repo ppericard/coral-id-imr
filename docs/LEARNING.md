@@ -333,9 +333,13 @@ real success much; the 4-choice questions, the bulk of the exam and of strong pl
 
 ### What the players say about the difficulty (one-tap questions, 2026-11-03)
 
-Why: the success target is moving to one that depends on the player's level. Papoušek, Stanislav & Pelánek (2016)
-found that easier questions keep learners answering at first while harder ones bring them back and teach more, and
-most of their learners judged about 30% errors appropriate. Whether that holds for a given level here is what the
+Why: the success target is moving to one that depends on the player's level. Papoušek, Stanislav & Pelánek (2016;
+geography practice, conditions aiming at 5, 20, 35 and 50% errors) found that easier questions keep learners
+answering at first while harder ones bring them back and teach more. After 30 answers their system asked "What is the
+difficulty of asked questions?" (Too Easy / Appropriate / Too Difficult; over 40,000 ratings): most learners answered
+Appropriate when their own error rate was around 30%, the 35% condition had the most Appropriate ratings (66%), yet at
+least a third still wanted easier or harder questions, and they name changing the target from the learners' ratings
+as future work (extended report FIMU-RS-2016-02, section "Explicit Feedback"). Whether that holds for a given level here is what the
 players can tell us, as they play (Pierre, 2026-11-03: "all the more important to ask from time to time whether it's
 too hard or not hard enough … am I having fun, is it too frustrating, too easy, too hard … slightly different questions
 about roughly the same concept"). The main players are IMR RAs: the challenge must suit strong players without
@@ -347,12 +351,12 @@ too easy, 0 right, +1 too hard) and **feel** f (−1 bad, 0 neutral, +1 good).
 
 | Item | Answers (d / f) | Construct | Source |
 | --- | --- | --- | --- |
-| These questions are | Too easy −1 · About right 0 · Too hard +1 (d) | perceived difficulty | the app's item since sheet v19; the too easy / appropriate / too difficult rating of Papoušek, Stanislav & Pelánek (2016); single-item difficulty ratings hold up against longer scales (Single Ease Question, Sauro & Dumas 2009) |
-| For me, the challenge is | Too low −1 · Just right 0 · Too high +1 (d) | challenge-skill balance | the demand item of the flow short scale (FKS, Rheinberg, Vollmeyer & Engeser 2003: the current demands are "too low / just right / too high"); flow's channel model (Csikszentmihalyi 1990) |
+| These questions are | Too easy −1 · About right 0 · Too hard +1 (d) | perceived difficulty | the app's item since sheet v19; the same three answers as Papoušek, Stanislav & Pelánek's (2016) "What is the difficulty of asked questions?" (Too Easy / Appropriate / Too Difficult); one question on difficulty is a usable measure: Sauro & Dumas (2009) compared three one-question post-task ratings, and the 7-point "Overall, this task was: Very Easy … Very Difficult" (later named the Single Ease Question) was as sensitive as the best of them and correlated with task time and the SUS |
+| For me, the challenge is | Too low −1 · Just right 0 · Too high +1 (d) | challenge-skill balance | item 16 of the flow short scale, one of its three extra items on the fit between skills and demands (FKS, Rheinberg, Vollmeyer & Engeser 2003: "Für mich persönlich sind die jetzigen Anforderungen…", "zu wenig" · "gerade richtig" · "zu hoch", 9 points; here 3 points, "too little" said "too low"); flow's channel model (Csikszentmihalyi 1990) |
 | Want harder photos? | Yes −1 · Keep it 0 · Easier +1 (d) | challenge-skill balance, asked as a wish | the same balance phrased as what to change (a design choice, no published item); a wish and a judgement can differ, so its own counts stay visible |
-| Having fun? | Not really −1 · It's OK 0 · Yes! +1 (f) | enjoyment | positive affect of the in-game GEQ ("I felt good", "I felt content"; IJsselsteijn, de Kort & Poels 2013) |
-| Frustrating? | Not at all 0/0 · A bit +0.5/−0.5 · Very +1/−1 (d, f) | frustration | tension of the in-game GEQ ("I felt frustrated"); flow's anxiety channel, challenge above skill |
-| Getting boring? | Not at all 0/0 · A bit −0.5/−0.5 · Yes −1/−1 (d, f) | boredom | negative affect of the in-game GEQ ("I felt bored"); flow's boredom channel, skill above challenge |
+| Having fun? | Not really −1 · It's OK 0 · Yes! +1 (f) | enjoyment | positive affect of the in-game GEQ (items 11 "I felt content" and 14 "I felt good"; IJsselsteijn, de Kort & Poels 2013; 14 items, two per component, "not at all" 0 to "extremely" 4, made to be asked several times during play) |
+| Frustrating? | Not at all 0/0 · A bit +0.5/−0.5 · Very +1/−1 (d, f) | frustration | tension of the in-game GEQ (items 6 "I felt frustrated" and 8 "I felt irritable"); flow's anxiety channel, challenge above skill |
+| Getting boring? | Not at all 0/0 · A bit −0.5/−0.5 · Yes −1/−1 (d, f) | boredom | negative affect of the in-game GEQ (items 3 "I felt bored" and 7 "I found it tiresome"); flow's boredom channel, skill above challenge |
 
 Choices: three answers, never a 5- or 7-point scale (one tap on a phone row, Pierre: "people answer a tap"); words, not
 emoji faces (DESIGN.md: no pictographs as icons). The two one-sided items say nothing on the other side: a "not at all"
@@ -377,7 +381,8 @@ their feel does not drop. The duels are easier by design (2 choices): read the p
 ### Logged for the admin's player journey (2026-11-02)
 
 A mastery exam question is logged with mode `quiz|x` (exams have every trap, so never `|kN`; the sheet's guess rate and
-mode split read it as `quiz`), and a passed exam keeps its time (`s.mx` = time, was 1; still truthy everywhere).
+mode split read it as `quiz`), and a passed exam keeps its time (`s.mx` = time, was 1; still truthy everywhere). A
+custom-quiz answer (2026-11-03, below) is logged `quiz|s…`, the journey's "Custom quiz" row and Activity's "custom".
 
 ### "Again: A or B?" rated as 2 choices (2026-11-02)
 
@@ -402,6 +407,68 @@ time delayed a genus, and a weak RA met about 3 genera fewer by question 300). P
 apart in the player journey; a win counts for the Look-alike slayer achievement, as in the Duel tab). Simulated over 4 seeds, it does not slow the opening of genera (an expert met 27 genera
 after 100 questions with duels, 26 without, seed 3333); the profiles test now checks an expert's traps at 300
 questions (one or more a question) and more than a beginner's at 100, the mean of the two sitting at the threshold.
+
+### Custom quiz: the photo quiz on the genera the player picks (2026-11-03)
+
+Pierre: a game mode next to the quiz where the player selects the genera to work on, and the quiz is exactly the photo
+quiz, all its formats included, limited to them. Code: `model.js` `CUSTOM`, `customOf`, `customDraw`, `customChoices`;
+`quiz.js` `quizCustom`, `viewCustom`, `planPhoto(cur)`; tests `tests/custom.test.js`, `tests/pages.smoke.js`.
+
+- **What changes** is only the genus asked and the wrong choices. Photos (level, calibration, memory, one colony),
+  typed questions, "Again: A or B?" after a mix-up, the duels slipped in (`duelPick` among the selection), the comeback
+  and every scoring rule are the photo quiz's. At least `CUSTOM.MIN` = 2 genera.
+- **No mastery exam in the custom quiz** (Codex review #411, rule 14e; Pierre's decision, 2026-11-03: exams happen
+  only in the normal quiz): an exam question has every look-alike trap, and the custom quiz's choices come from the
+  selection, which may hold none of the genus's look-alikes, so a Learned earned there would not prove what the exam
+  proves. So the custom quiz never asks an exam question (`planPhoto`: no `examSet` with a selection) and never credits
+  the exam or `s.mx` from its answers (`answer`: `exq` is never true there). Its answers still move the progress bar,
+  up to the exam's entry (95%); the exam then comes in Photo → genus. A genus ready for its exam is still drawn in the
+  custom quiz, as a normal question, and a miss there still restarts an exam begun (any miss on the genus does, rule
+  14e). The help says so (the selection screen and the quiz's ?). `tests/draw.smoke.js` plays a custom session on
+  genera one exam question from Learned, all right: no exam question, no `s.mx`.
+- **Scored with the choices really shown** (Codex review #411): the photo quiz counts every choice from 2 traps on,
+  because it shows the traps its level asks for; a selection may not hold them (4 unrelated genera picked for a strong
+  player), so in the custom quiz the look-alikes among the choices decide: fewer than 2 there, and the guess rate is
+  1 / `plausibleK` (the target and the choices it could be taken for: look-alikes, confused or sharing a growth form),
+  as for a beginner's easy choices. Measured on the real draw (`tests/draw.smoke.js`): *Acropora*, *Astreopora*,
+  *Fungia*, *Alveopora* picked by a strong player were scored as 4-choice questions; `plausibleK` gives 2.
+- **The genus asked** (`customDraw`): any genus of the selection, weighed by the photo quiz's `weight()` (`drawW`: what
+  the model does not yet know the player holds; the last 4 held back). **No opening path**: no first cards,
+  no opening chance (`openChance`, `openPick`), no opening hold, no visit floor, no ★ wait (rules for the order the game opens genera in, while the
+  player chose these). A genus not met yet is asked at once, with its first-meeting card shown over that question (kind
+  `c`, ready at once, the card's photo not reused: as the Duel tab does for a genus named on its buttons); the card is
+  shown once, and the genus then counts as met in the photo quiz too. The offers about which genera are in play (open
+  all, back to one at a time, bonus genera) are not made in the custom quiz.
+- **The wrong choices** (`customChoices`): `distractors()` run on the selection, so its rules work inside it: traps by
+  level among the pairs most confused, else easy genera of other growth forms, genera met first. A selection of
+  look-alikes therefore drills itself (with nothing easier picked, its own look-alikes are the choices even at 0 traps,
+  and `plausibleK` counts them: a right answer proves more). Only a selection of fewer than 4 genera is topped up from
+  the other genera in play (the slate, and the bonus genera when on), by the same rules, asking for the traps the
+  selection could not give (`traps` − the selection's own confusable choices). An "Again" after a mix-up with a genus
+  outside the selection (a top-up choice, or a typed answer) asks the selected genus of the pair.
+- **What counts**: every answer is a photo-quiz answer: progress, ability, the global level, photo ratings and
+  confusions in the sheet, the opening hold (each answer with the expectation it had; a selection the player finds hard
+  holds new cards in the photo quiz, as any run of misses would), achievements. Logged with the mode `quiz|s` before
+  any other tag (`quiz|s|d|k2`, `quiz|s|k3`, `quiz|s|t`): the sheet's `guess_` reads `|kN`
+  at the end and `|t` anywhere, and its mode split keeps `quiz`, so the deployed script (v27) stores and rates it as any
+  photo-quiz answer, no new version needed (AGENTS.md 7a; `tests/custom.test.js` compares the two modes).
+- **Comeback**: during a comeback the custom quiz asks the comeback's genera of its selection when at least 2 of them
+  were answered right; otherwise it plays as usual and leaves the comeback (`CB`) to the photo quiz rather than ending
+  it (`quiz.js` `cbIn`).
+- **Picking** (Pierre, 2026-11-03: "not everyone knows the IMR lecture groups"; then "do not group genera by growth
+  form": it is not genus-specific, many genera take 3-4 forms or more, only the mushroom corals keep one): every genus
+  is in view as a small photo with its name, A-Z by default, the IMR lecture groups as the other view (for RAs, the
+  genera in view inside each group); quick picks that need no knowledge, My weakest (genera answered, lowest progress
+  first, 6), Recently missed (a miss in the last 5 answers, latest first, 8) and Look-alikes of … (a genus and its
+  declared or confused look-alikes, `isLook`, `confusable`); a search box. The selection is saved at each change
+  (`imr-coral-custom`, synced, the latest wins) and preselected next time.
+- **Checked** (AGENTS.md 14g): `tools/learnsim.js --seeds 5 --questions 300`, the four profiles, `main` (ed0ee83)
+  against this change, same seeds: every number of every table identical (true knowledge, |th-lk|, prog-know, progress,
+  genera met, right %, look-alike accuracy, exams, first met), as expected: the photo quiz's path is the same code with
+  no selection (`planPhoto('quiz')`), and learnsim plays the photo quiz only. The real answer log cannot judge it: no
+  answer exists in the new mode yet, and a custom-quiz answer is scored by the photo quiz's own functions (expected
+  success, Elo, progress weight, hold); to compare once players use it: the Expected against actual of `quiz|s…`
+  answers beside plain `quiz` ones (a selection of look-alikes should come out harder, and `plausibleK` count it so).
 
 ### One contrast queue (2026-11-03)
 
@@ -1639,6 +1706,10 @@ is not in the simulation.
   beginner met *Duncanopsammia* and *Cyphastrea* before *Turbinaria* and *Astreopora*): the references read from the data
   (`core.js` `starRefs`, the genera of the card's "★ look-alike of …" line), a weight of 0 in the opening draw until
   they are met, Open all unchanged, no new constant ("Starred genera after their reference").
+- 2026-11-03, Pierre: a custom quiz, the photo quiz on the genera the player picks: the genus asked drawn among them by
+  the usual weights with no opening path (a genus not met yet is asked with its card), the choices from them first
+  (the trap rules inside the selection), topped up from the slate only under 4 genera; every answer counts as a
+  photo-quiz answer, logged `quiz|s…` ("Custom quiz: the photo quiz on the genera the player picks").
 
 - 2026-11-03, Pierre: the one-tap question varies (six items on felt difficulty, fun, frustration and boredom, in
   rounds, never twice in a row) and comes every 40 answers instead of 60 (twice that after a "Not now"), so the
@@ -1674,16 +1745,23 @@ is not in the simulation.
   *Psychometrika* 49.
 - Ghosh, A., Raspat, J., Lan, A. (2021). Option tracing: beyond correctness analysis in knowledge tracing. *AIED 2021*.
   <https://arxiv.org/abs/2104.09043>
-- Papoušek, J., Stanislav, V., Pelánek, R. (2016). Impact of question difficulty on engagement and learning. *ITS 2016*
-  (Intelligent Tutoring Systems, LNCS 9684).
+- Papoušek, J., Stanislav, V., Pelánek, R. (2016). Impact of question difficulty on engagement and learning. In
+  *Intelligent Tutoring Systems (ITS 2016)*, LNCS 9684, pp. 267-272. Springer. <https://doi.org/10.1007/978-3-319-39583-8_28>;
+  extended version: Evaluation of the impact of question difficulty on engagement and learning, FI MU Report Series
+  FIMU-RS-2016-02, Masaryk University, March 2016 (the difficulty question and its results).
+  <https://www.fi.muni.cz/reports/files/2016/FIMU-RS-2016-02.pdf>
 - Rheinberg, F., Vollmeyer, R., Engeser, S. (2003). Die Erfassung des Flow-Erlebens [The flow short scale, FKS]. In
-  Stiensmeier-Pelster, J., Rheinberg, F. (eds.), *Diagnostik von Motivation und Selbstkonzept*. Hogrefe.
-- IJsselsteijn, W. A., de Kort, Y. A. W., Poels, K. (2013). *The Game Experience Questionnaire* (in-game module, iGEQ).
-  Technische Universiteit Eindhoven.
+  Stiensmeier-Pelster, J., Rheinberg, F. (eds.), *Diagnostik von Motivation und Selbstkonzept* (pp. 261-279).
+  Göttingen: Hogrefe. Items in Rheinberg, Vollmeyer & Engeser (2019), FKS. Flow-Kurzskala [Verfahrensdokumentation],
+  Open Test Archive, ZPID. <https://doi.org/10.23668/psycharchives.4488>
+- IJsselsteijn, W. A., de Kort, Y. A. W., Poels, K. (2013). *The Game Experience Questionnaire*. Technische Universiteit
+  Eindhoven (FUGA project; section 3, In-game GEQ, and its scoring guidelines).
+  <https://pure.tue.nl/ws/files/21666907/Game_Experience_Questionnaire_English.pdf>
 - Ryan, R. M., Rigby, C. S., Przybylski, A. (2006). The motivational pull of video games: a self-determination theory
   approach (PENS). *Motivation and Emotion* 30.
 - Csikszentmihalyi, M. (1990). *Flow: the psychology of optimal experience*. Harper & Row; Csikszentmihalyi, M., Larson,
   R. (1987). Validity and reliability of the experience-sampling method. *Journal of Nervous and Mental Disease* 175.
-- Sauro, J., Dumas, J. S. (2009). Comparison of three one-question, post-task usability questionnaires. *CHI 2009*.
+- Sauro, J., Dumas, J. S. (2009). Comparison of three one-question, post-task usability questionnaires. *CHI 2009*,
+  pp. 1599-1608. ACM. <https://doi.org/10.1145/1518701.1518946>
 - Bolsinova, M. et al. (2025). Keeping Elo alive. *British Journal of Mathematical and Statistical Psychology*.
   <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12784335/>

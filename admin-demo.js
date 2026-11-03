@@ -123,13 +123,20 @@
         ]);
       }
       // Carla is playing now: her last 24 answers moved to the last 15 minutes, two of them typed (quiz|t, no choices).
-      if (name === 'Carla Demo')
+      if (name === 'Carla Demo') {
         live(
           rows.filter(r => r[0] === name),
           24,
           NOW - 60e3,
           2
         );
+        // ... her last 8 photo-quiz answers in the custom quiz (quiz|s…, the genera she picked; app quiz.js quizCustom).
+        rows
+          .filter(r => r[0] === name && r[5] === 'quiz')
+          .sort((x, y) => x[1] - y[1])
+          .slice(-8)
+          .forEach(r => (r[5] = r[5].replace(/^quiz/, 'quiz|s')));
+      }
       // First-meeting cards (app model.js INTRO): the first 4 genera together, the others one at a time 2 answers before
       // their first question; Carla opened all from the offer card at answer 40, Ben declined it at answer 50.
       const mine = rows.filter(r => r[0] === name).sort((x, y) => x[1] - y[1]), // in time order, as the journey reads them
@@ -235,32 +242,37 @@
       rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', '#home')
     ];
     // Events (sheet v19): [id, time, device, kind, message, where, page, detail, app, browser], newest first.
-    // One-tap answers (core.js PULSEQ): the item in Where (empty = the first item, as in rows from before the bank), its
-    // code in Message; Detail keeps r only for easy / ok / hard, as the sheet does.
+    // One-tap prompts (core.js PULSEQ): the item in Where, the code in Message; Detail keeps r only for easy / ok / hard,
+    // as the sheet does. Each prompt logs its showing, then an answer, "Not now" (skip), moving on (none) or nothing (the
+    // app closed); the first prompt is an answer from before the bank (no item id, no showing logged).
     const events = [];
-    for (let i = 0; i < 36; i++) {
+    for (let i = 0; i < 48; i++) {
       const it = PULSEQ[i % PULSEQ.length],
-        r = it.a[[1, 1, 2, 0, 1, 2, 0][i % 7]][0],
-        m = i % 4 === 3 ? 'quiz-duel' : 'quiz';
-      events.push([
-        'demoev' + i,
-        NOW - i * 5 * 3600e3,
-        'demodev' + (i % 5),
-        'pulse',
-        r,
-        i < 6 && it.id === PULSE0 ? '' : it.id,
-        m,
-        JSON.stringify({
-          r: ['easy', 'ok', 'hard'].includes(r) ? r : '',
+        out = i % 8,
+        r = out === 5 ? PULSE_SKIP : out === 6 ? PULSE_NONE : out === 7 ? '' : it.a[[1, 1, 2, 0, 1][out]][0],
+        m = i % 4 === 3 ? 'quiz-duel' : 'quiz',
+        old = i === 0,
+        row = (k, code) => [
+          'demoev' + i + k,
+          NOW - i * 4 * 3600e3 + (k === 'b' ? 30e3 : 0),
+          'demodev' + (i % 5),
+          'pulse',
+          code,
+          old ? '' : it.id,
           m,
-          n: 10 + i,
-          rr: r === 'hard' || r === 'yes' ? 40 : r === 'easy' ? 100 : 80,
-          lv: -1.2 + (i % 5) * 0.5,
-          met: 6 + i
-        }),
-        '159',
-        'Chrome 140 mobile'
-      ]);
+          JSON.stringify({
+            r: ['easy', 'ok', 'hard'].includes(code) ? code : '',
+            m,
+            n: 10 + i,
+            rr: code === 'hard' || code === 'yes' ? 40 : code === 'easy' ? 100 : 80,
+            lv: -1.2 + (i % 5) * 0.5,
+            met: 6 + i
+          }),
+          '159',
+          'Chrome 140 mobile'
+        ];
+      if (!old) events.push(row('a', PULSE_SHOWN));
+      if (r) events.push(row('b', r));
     }
     events.push(
       [

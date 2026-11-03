@@ -489,9 +489,10 @@ test('v19 events: anonymous error reports and one-tap answers, logged once, capp
 // column) and the answer's code in r (Message column), both kept as text since v19; Detail keeps r only for easy / ok /
 // hard, as before. What the admin reads back (readEvents) is what the app sent, for every item and code of the bank.
 test('v19 events carry the one-tap bank: item id in Where, answer code in Message, as they came', () => {
-  const {PULSEQ, pulseScore} = require('../core.js'),
+  const {PULSEQ, PULSE_SHOWN, PULSE_SKIP, PULSE_NONE, pulseScore} = require('../core.js'),
     s = loadCodeGs(),
-    sent = PULSEQ.flatMap(it => it.a.map(([r]) => ({q: it.id, r}))),
+    // Every answer of every item, and each item's prompt events (shown, Not now, moved on without a tap: 2026-11-03).
+    sent = PULSEQ.flatMap(it => [...it.a.map(([r]) => r), PULSE_SHOWN, PULSE_SKIP, PULSE_NONE].map(r => ({q: it.id, r}))),
     events = sent.map((x, i) => ({
       id: 'p' + i,
       t: '2026-11-03T00:00:00Z',
@@ -521,7 +522,9 @@ test('v19 events carry the one-tap bank: item id in Where, answer code in Messag
     assert.strictEqual(d.r, ['easy', 'ok', 'hard'].includes(sent[i].r) ? sent[i].r : '');
     assert.strictEqual(d.m, i % 2 ? 'quiz-duel' : 'quiz');
     assert.strictEqual(d.lv, 0.3);
-    assert.ok(pulseScore(x[5], x[4]).d !== null || pulseScore(x[5], x[4]).f !== null, 'scored by the admin');
+    const sc = pulseScore(x[5], x[4]);
+    if ([PULSE_SHOWN, PULSE_SKIP, PULSE_NONE].includes(x[4])) assert.deepStrictEqual(sc, {d: null, f: null}, 'no answer');
+    else assert.ok(sc.d !== null || sc.f !== null, 'scored by the admin');
   });
 });
 
