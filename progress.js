@@ -41,8 +41,8 @@ function quizBoard() {
   const lv = Object.fromEntries([...list, ...BO].map(n => [n, shownLevel(n)]));
   const count = k => list.filter(n => lv[n][0] === k).length;
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
-  // Learning level on a 6-step scale (one colour ramp, light to dark): 0 = not seen, 1-4 = quarters of the genus's
-  // progress (genScore), 5 = learned. "Review" is a separate marker, so it never hides the level.
+  // Mastery level on a 6-step scale (one colour ramp, light to dark; model.js MASTERY: Not seen, Snorkeler, Open Water,
+  // Advanced, Divemaster, Instructor). "Review" is a separate marker, so it never hides the level.
   const st = Object.fromEntries([...list, ...BO].map(n => [n, lvStep(n)])),
     nst = k => list.filter(n => st[n] === k).length;
   let deg = 0;
@@ -54,14 +54,7 @@ function quizBoard() {
       return c;
     })
     .join(',');
-  const STEPS = [
-    [0, 'Not seen'],
-    [1, '< 25%'],
-    [2, '25-50%'],
-    [3, '50-75%'],
-    [4, '75%+'],
-    [5, 'Learned']
-  ];
+  const STEPS = MASTERY.map(([t], k) => [k, t]);
   // Photo wall: the cover in full colour (grey = not seen) with a name band coloured by the genus's step on the scale,
   // holding the mini ring + % like the Slate and Groups tiles; review = red border and "!".
   const tile = n => {
@@ -93,7 +86,7 @@ function quizBoard() {
   const tip = n => {
     const s = P[n] || {ok: 0, ko: 0},
       m = lv[n][0] === 'mid' || lv[n][0] === 'weak' ? missing(n) : [];
-    return `${esc(n)}: ${lv[n][1]}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}% of the way)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`;
+    return `${esc(n)}: ${st[n] ? MASTERY[st[n]][0] : 'Not seen'}${lv[n][0] === 'weak' ? ', to review' : ''}${st[n] > 0 && st[n] < 5 ? ` (${Math.round(100 * genScore(n))}%)` : ''}${s.ok + s.ko ? ` (${s.ok}/${s.ok + s.ko} right). Photos: ${photoBand(n)}, ${seenOf(n)}` : ''}${m.length ? '. Still needed: ' + esc(m.join('; ')) : ''}`;
   };
   // Learning level: the tile's colour is its step on the scale, and a thin line along its bottom shows the exact progress.
   const fill = () => '';
@@ -150,14 +143,14 @@ function quizBoard() {
   // bottom of the side column.
   let pv = store.get('imr-coral-pview', 'slate');
   if (!VIEWS[pv]) pv = 'slate';
-  $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the photo quiz, several questions apart. All ${EXAM.n} right and the genus is learned (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
+  $v.innerHTML = `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the photo quiz, several questions apart. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
   <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder. On this page they come after the slate.</p>
-  <p class="lede"><b>Colours</b>: white with a dashed border = not seen; then from pale to dark, one step per quarter of the way; the darkest, with a tick = learned. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>
-  <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the genus: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down, less when the photo was harder than your level. 95% means it has held up against its look-alikes; learned means its mastery exam is passed too.</p>
-  <div class="pgame pboard">${badge(ring, progPct(list), count('ok') ? `${count('ok')}/${list.length} learned` : `${list.length - count('new')}/${list.length} met`)}<div class="pgwrap"></div>
+  <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from 95% (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>
+  <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the genus: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down, less when the photo was harder than your level. 95% (Divemaster) means it has held up against its look-alikes; Instructor means its mastery exam is passed too.</p>
+  <div class="pgame pboard">${badge(ring, progPct(list), lvSummary(list) || `${list.length - count('new')}/${list.length} met`)}<div class="pgwrap"></div>
   <aside class="gside">
-    <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera"><b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
-    <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Learned</p>
+    <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} genera">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} genera"><b>${count('weak')}</b><small>Review</small></span></div>
+    <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Instructor</p>
     ${
       introLeft().length
         ? `<div class="popen"><p><b>Had the IMR coral lecture?</b> ${introLeft().length} genera are not open yet: they come one at a time as you play.</p><button type="button" class="next" id="openall">Open all genera</button></div>`
@@ -226,13 +219,24 @@ function quizBoard() {
   show();
 }
 
-// Header progress pill: genera learned, always in view; the page itself is #progress.
+// The two highest levels reached, with their counts, for the card and the header pill (Pierre, 2026-11-03: "0/39
+// learned" for weeks was discouraging): "3 Divemaster · 12 Open Water". From Open Water up; '' before any genus reaches Open Water.
+function lvSummary(list = slateGenera(), icons = true) {
+  const st = list.map(lvStep);
+  return [5, 4, 3, 2]
+    .map(k => [k, st.filter(x => x === k).length])
+    .filter(([, c]) => c)
+    .slice(0, 2)
+    .map(([k, c]) => `${icons ? lvIcon(k) : ''}${c} ${MASTERY[k][0]}`)
+    .join(' · ');
+}
+// Header progress pill: always in view; the page itself is #progress.
 const $prog = document.getElementById('prog');
 function showProg() {
   if (!DATA) return;
   const n = slateGenera();
   const pt = `${progPct(n)}%`,
-    lt = `${n.filter(x => level(x)[0] === 'ok').length}/${n.length} genera learned`;
+    lt = lvSummary(n, false) || `${n.filter(x => level(x)[0] !== 'new').length}/${n.length} genera met`;
   document.getElementById('progn').textContent = pt;
   $prog.title = `Your progress: ${pt} (${lt})`;
   const p2 = document.getElementById('progn2');
@@ -645,7 +649,7 @@ function viewAch() {
     };
     const card = (a, on) =>
       `<li class="achc${on ? ' on' : ''}${fresh.has(a.id) ? ' new' : ''} t${a.tier}"><span class="achic" aria-hidden="true">${a.icon}</span><span><b>${esc(a.title)} ${on ? TIER[a.tier] : ''}</b><small>${esc(a.desc)}${on ? ` · ${new Date(A[a.id]).toLocaleDateString([], {day: 'numeric', month: 'short'})}` : ''}</small>${share(a)}</span></li>`;
-    $v.innerHTML = `<p class="lede">Achievements mark milestones of your learning: genera met, a quarter, half, three quarters of the way to learned, learned, your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo (from ${ELO_MIN} answers). Never time spent. The share of players counts everyone who signed in.</p>
+    $v.innerHTML = `<p class="lede">Achievements mark milestones of your learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo (from ${ELO_MIN} answers). Never time spent. The share of players counts everyone who signed in.</p>
   <div class="board">${boardTabs('ach')}<h2 class="btitle">${got.length}/${ACH.length} earned</h2>
   <ul class="achl">${got.map(a => card(a, true)).join('')}${left.map(a => card(a, false)).join('')}</ul></div>`;
   };

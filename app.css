@@ -5610,6 +5610,12 @@ footer .rep:hover {
 }
 .pbtxt > span {
   color: var(--muted);
+  /* The levels line can be long ("2 Instructor · 3 Advanced diver"): its parts go to a second line instead of out of the
+     card (the parts have no space between them, so plain text would never break). */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  white-space: pre;
 }
 .pbtxt > span > * {
   white-space: nowrap;
@@ -5871,4 +5877,21 @@ footer .rep:hover {
   display: block;
   font-size: var(--fs-xs);
   color: var(--muted);
+}
+
+/* Mastery level icons (model.js LEVELS, lvIcon): the diver's ladder, in the legend, the card and the genus sheet. */
+.lvi {
+  width: 1.15em;
+  height: 1.15em;
+  flex: none;
+  vertical-align: -0.2em;
+}
+.plvl .lvi {
+  width: 18px;
+  height: 18px;
+  margin-bottom: 1px;
+}
+.pbtxt .lvi,
+.mpl .lvi {
+  margin-right: 3px;
 }
