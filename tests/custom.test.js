@@ -202,6 +202,20 @@ test('mixClusters: heaviest pairs first, a genus joins its partner up to CUSTOM.
     {g: ['E', 'F'], w: 4},
     {g: ['G', 'H'], w: 1}
   ]);
+  // The weight counts every edge inside the final cluster, also one met before its genus could join (Codex review #417):
+  // AD is skipped while D pairs with only A, D joins later through E, and AD counts: 45, not 37.
+  const W = M.mixClusters([
+    ['A', 'B', 10],
+    ['A', 'C', 9],
+    ['A', 'D', 8],
+    ['C', 'E', 7],
+    ['D', 'E', 6],
+    ['A', 'E', 5]
+  ]);
+  assert.deepStrictEqual(
+    W.map(c => [[...c.g].sort().join(''), c.w]),
+    [['ABCDE', 45]]
+  );
   // A pair inside one cluster adds to its weight; a full cluster takes no one (cap 3 here): D stays out, then pairs with L.
   // A genus paired with fewer than half a cluster's genera stays out: a chain A-B-C-D-E-F makes two clusters.
   const D = M.mixClusters(

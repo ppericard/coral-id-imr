@@ -1123,6 +1123,9 @@ function mixClusters(edges, cap = CUSTOM.CLUSTER) {
       }
     }
   });
+  // Each cluster's weight once its members are final: every edge inside it, also one met before its second genus joined
+  // (Codex review #417: AD skipped while D could not join yet, then D joined through E: 37 instead of 45).
+  C.forEach(c => (c.w = E.reduce((t, [a, b, w]) => t + (of.get(a) === c && of.get(b) === c ? w : 0), 0)));
   return C.sort((x, y) => y.w - x.w);
 }
 // Once the whole file is in (save, LEVEL and PMEM above): the progress saved before the photo memory, recalculated.
