@@ -682,7 +682,8 @@ function boardNotice() {
 // real pop-up, not a discreet note; no algorithm details). Once per device, to a player who already has answers (a new
 // player has nothing recalculated), at the first moment no tour or card is open; marked seen only by its button or
 // Escape, so a card closed by leaving the page comes back on the next one. A later recalculation adds a note at the end
-// of RECALC.L (a new id, a title and a text): a player shown every note but the last sees the last; one who missed
+// of RECALC.L (a new id, a title and a text), and so does a new game mode worth announcing (typed questions,
+// 2026-11-03, with its own kicker and button): a player shown every note but the last sees the last; one who missed
 // several sees them all on one card, latest first. KEY holds the id of the last note seen. Exception: the photo memory
 // recalculation (2026-11-03, core.js memRecalc) is silent, Pierre's choice (the bars only move down 1-3 points).
 const RECALC = {
@@ -697,6 +698,16 @@ const RECALC = {
       id: 'millepora-counts-2026-11',
       t: '<i>Millepora</i> now counts in your progress',
       p: '<i>Millepora</i> (fire coral) is on the IMR benthic slate and very common at Dauin and in ReefCloud photos, so it now counts in your progress, which is now over 40 genera: your % may be a little lower.'
+    },
+    // A new game mode announced the same way (Pierre, 2026-11-03: a card for typed questions, a little tongue-in-cheek;
+    // text validated by Pierre). k, b, a: the card's kicker, button and label when this note is the latest due.
+    {
+      id: 'typed-questions-2026-11',
+      k: 'New',
+      b: 'Bring it on',
+      a: 'New: typed questions',
+      t: 'Think you know your genera? Think again.',
+      p: "New in the quiz: typed questions. No choices, no hints, just the photo and an empty box: type the genus from memory. They show up once you're doing well on a genus, and mastery exams now include them. Picking among four is good; naming it cold is what makes an expert."
     }
   ]
 };
@@ -716,9 +727,9 @@ function recalcNotice() {
   d.className = 'unlock recalc';
   d.setAttribute('role', 'dialog');
   d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Progress recalculated');
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">Update</p>${due.map(x => `<h3>${x.t}</h3><p>${x.p}</p>`).join('')}
-    <div class="ulbtns"><span></span><button class="next" type="button">Got it</button></div></div>`;
+  d.setAttribute('aria-label', due[0].a || 'Progress recalculated');
+  d.innerHTML = `<div class="ulcard"><p class="ulkick">${due[0].k || 'Update'}</p>${due.map(x => `<h3>${x.t}</h3><p>${x.p}</p>`).join('')}
+    <div class="ulbtns"><span></span><button class="next" type="button">${due[0].b || 'Got it'}</button></div></div>`;
   document.body.appendChild(d);
   const close = seen => {
     if (seen) store.set(RECALC.KEY, last);
