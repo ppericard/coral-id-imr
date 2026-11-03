@@ -67,10 +67,13 @@
 //   genera met (cards or asked).
 // - thErr / thBias: mean |theta - logit(know)| and mean (theta - logit(know)) over the genera met, theta = ability(g),
 //   the app's Elo estimate (the learner's own model has the same scale: theta = logit(know) means a perfect estimate;
-//   theta is clamped to ELO.lo..hi, so a genus known at 2% cannot be estimated below -1.5).
+//   theta is clamped to ELO.lo..hi, so a genus known at 2% cannot be estimated below -1.5). level: the app's global level
+//   (P['~level'].th).
 // - progGap: mean (genScore(g) - know[g]) over the genera met: > 0 the progress bar over-claims, < 0 it under-claims;
 //   prog / know%: the app's progress over the slate (progPct) next to 100 x knowSlate.
 // - met, learned (s.mx), right % over the questions since the previous checkpoint.
+// - open/15: the most genera opened on their own cards (the path's pace, the first cards left out) in any 15
+//   consecutive questions so far (2026-11-04: a strong player was opened 7 genera in 16 answers).
 // - look: true chance to tell a declared look-alike pair apart (IMR lecture / Coral Finder, `look`, both genera on the
 //   slate), in a 2-choice question on an average photo, both directions averaged, over every declared pair.
 // - refTrue: genera whose true success on the hard reference question is 0.9 or more (one photo alone, photo
@@ -100,7 +103,12 @@ const PROFILES = {
   beginner: {m: 0, hi: 0.02, lo: 0.02, rate: 0.12},
   lectureRA: {m: 2, hi: 0.55, lo: 0.1, rate: 0.12},
   strongRA: {m: 3, hi: 0.85, lo: 0.1, rate: 0.12},
-  expert: {m: 5, hi: 0.93, lo: 0.93, rate: 0.05}
+  expert: {m: 5, hi: 0.93, lo: 0.93, rate: 0.05},
+  // A strong player who knows 80% of the genera well and the rest hardly: few genera stay shaky, so the opening runs at
+  // full speed, and a genus never answered starts from their high global level (2026-11-04, the run of 2026-11-03 that
+  // fell from 83% to 50% right after 7 genera opened in 16 answers). Not in the default list: run it with --profiles
+  // strongBack --questions 60 --breaks 8h --after 40 (that player came back from an 8-hour break).
+  strongBack: {m: 4, hi: 0.9, lo: 0.1, rate: 0.12}
 };
 // The learner's constants (above). LOOK 3: a declared look-alike draws an unrecognised photo as much as the genus
 // itself (a coin toss in a look-alike duel), an unrelated genus 1.3 against 4. ELIM 0.5: a genus known for sure is
@@ -129,7 +137,7 @@ const arg = (k, d) => {
 };
 const SEEDS = Number(arg('seeds', 5)),
   QN = Number(arg('questions', 300)),
-  NAMES = arg('profiles', Object.keys(PROFILES).join(',')).split(','),
+  NAMES = arg('profiles', 'beginner,lectureRA,strongRA,expert').split(','),
   WORKERS = Number(arg('workers', Math.max(1, Math.min(4, os.cpus().length)))),
   OUT = arg('out', null),
   STATS = arg('stats', null),
@@ -211,6 +219,8 @@ function play(cfg) {
     cl = q => Math.min(0.995, Math.max(0.005, q)),
     logit = q => Math.log(cl(q) / (1 - cl(q))),
     mean = A => (A.length ? A.reduce((a, x) => a + x, 0) / A.length : null);
+  // The most genera opened on their own cards in any 15 consecutive questions (Q: the questions that opened one).
+  const per15 = Q => Math.max(0, ...Q.map(q => Q.filter(x => x >= q && x < q + 15).length));
   // Two generators (mulberry32) seeded from the run's seed: the app's Math.random, seeded again here because the page
   // load draws a varying number of times (photos and timers come in their own order), and the learner's own.
   const gen = a => () => {
@@ -290,7 +300,7 @@ function play(cfg) {
   SHOWNQ = null;
   last = null;
   lastQs = [];
-  rematch = null;
+  rematch = Array.isArray(rematch) ? [] : null; // the Again queue (a list since 2026-11-04; one slot before)
   twoAt = -Infinity;
   twoPair = '';
   store.set(INTRO.OFFER.KEY, openall ? null : {open: 0});
@@ -307,6 +317,7 @@ function play(cfg) {
     learnedAt = {},
     metAt = {};
   let blk = {n: 0, ok: 0},
+    opens = [], // the questions (1-based) that opened a genus on its own card (the path's pace; not the first cards)
     nEx = 0,
     nDuel = 0,
     nAgain = 0,
@@ -419,6 +430,7 @@ function play(cfg) {
     if (set.exam) nEx++;
     if (q.auto) nDuel++;
     if (q.again) nAgain++;
+    if ((q.intro || []).length && !q.start) opens.push(i + 1);
     blk.n++;
     blk.ok += good;
     if (mill.met === null && introduced('Millepora')) mill.met = i + 1;
@@ -443,11 +455,13 @@ function play(cfg) {
         knowMet: mean(met.map(g => know[g])),
         thErr: mean(th.map(Math.abs)),
         thBias: mean(th),
+        level: (P[LEVEL] || {}).th || 0,
         progGap: mean(met.map(g => genScore(g) - know[g])),
         prog: progPct(SL),
         met: met.length,
         learned: SL.filter(g => (P[g] || {}).mx).length,
         right: (100 * blk.ok) / blk.n,
+        o15: per15(opens),
         look: lookAcc(),
         refTrue: SL.filter(g => ref(g) >= L.REF_OK).length,
         exam: en.length,
@@ -537,6 +551,7 @@ function play(cfg) {
         holdCb: 0,
         holdAfter: 0,
         hold0: HOLDS,
+        opens: [], // the --after questions (1-based, from the end of the comeback) that opened a genus on its card
         rust0: null,
         loss: before - mean(metB.map(g => know[g]))
       };
@@ -557,6 +572,7 @@ function play(cfg) {
           inCb = false;
           r.after++;
           r.afterOk += good;
+          if ((q.intro || []).length && !q.start) r.opens.push(r.after);
           if (introHold()) r.holdAfter++;
         }
       }
@@ -630,11 +646,13 @@ const KEYS = [
   ['knowMet', 'knowMet', 2, 1],
   ['thErr', '|th-lk|', 2, 1],
   ['thBias', 'th-lk', 2, 1],
+  ['level', 'level', 2, 1],
   ['progGap', 'prog-know', 2, 1],
   ['prog', 'prog%', 0, 1],
   ['met', 'met', 1, 1],
   ['learned', 'learned', 1, 1],
   ['right', 'right%', 0, 1],
+  ['o15', 'open/15', 1, 1],
   ['look', 'look', 2, 1],
   ['refTrue', 'ref>=.9', 1, 1],
   ['exam', 'exam', 1, 1],
@@ -782,6 +800,10 @@ function breakSummary(runs) {
         held: {med: quant(held, 0.5), min: Math.min(...held), max: Math.max(...held)},
         cbRight: m(r => (r.cbLen ? (100 * r.cbOk) / r.cbLen : NaN)),
         afterRight: m(r => (100 * r.afterOk) / r.after),
+        // The opening's pace after the comeback: genera opened in the first 15 answers, and the most in any 15.
+        open15: m(r => r.opens.filter(x => x <= 15).length),
+        open15max: m(r => Math.max(0, ...r.opens.map(q => r.opens.filter(x => x >= q && x < q + 15).length))),
+        opened: m(r => r.opens.length),
         holdCbRuns: R.filter(r => r.holdCb > 0).length,
         holdCb: m(r => r.holdCb),
         holdAfterRuns: R.filter(r => r.holdAfter > 0).length,
@@ -799,16 +821,19 @@ function breakTable(BS) {
     `\nAfter a break (${QN} questions first, then the comeback and ${AFTER} more; ${SEEDS} seeds)`,
     'len: comeback questions, median [quartiles] min-max; held: answers with no genus opening, median min-max; right%: during the comeback / the ' +
       AFTER +
-      ' after;\nhold: runs with the opening hold on during the comeback / after it (mean answers held), and already on at the break; rust: app, start; loss: true mean know lost (genera met).'
+      ' after;\nopened: genera opened on their cards in the first 15 answers after the comeback / the most in any 15 / in all ' +
+      AFTER +
+      ';\nhold: runs with the opening hold on during the comeback / after it (mean answers held), and already on at the break; rust: app, start; loss: true mean know lost (genera met).'
   ];
   for (const name of NAMES) {
     lines.push(`\n${name}`);
-    const head = ['break', 'len', 'held', 'right% cb/after', 'hold cb', 'hold after', 'hold@0', 'rust', 'loss'],
+    const head = ['break', 'len', 'held', 'right% cb/after', 'opened 1st 15/max 15/all', 'hold cb', 'hold after', 'hold@0', 'rust', 'loss'],
       body = BS[name].map(r => [
         r.brk,
         `${f(r.len.med, 1)} [${f(r.len.q1, 1)}-${f(r.len.q3, 1)}] ${r.len.min}-${r.len.max}`,
         `${f(r.held.med, 1)} ${r.held.min}-${r.held.max}`,
         `${f(r.cbRight)} / ${f(r.afterRight)}`,
+        `${f(r.open15, 1)} / ${f(r.open15max, 1)} / ${f(r.opened, 1)}`,
         `${r.holdCbRuns}/${r.n} (${f(r.holdCb, 1)})`,
         `${r.holdAfterRuns}/${r.n} (${f(r.holdAfter, 1)})`,
         `${r.hold0Runs}/${r.n}`,

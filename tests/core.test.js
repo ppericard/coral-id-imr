@@ -116,7 +116,7 @@ test('mergeProgress: untouched locally, the pulled record wins', () => {
   assert.deepStrictEqual(mergeProgress(B, P, R), {A: {ok: 4, ko: 1, th: 0.7, streak: 0}});
 });
 
-test('hierarchical photo Elo: a photo nobody answered starts at its genus offset, served as the total (sheet v29)', () => {
+test('hierarchical photo Elo: a photo nobody answered starts at its genus offset, served as the total (sheet v31)', () => {
   const R = (t, ok, f, g = 'Acropora', who = 'Ana') => [who, t, g, ok ? g : 'Porites', ok ? 1 : 0, 'quiz', f];
   // A trusted player (clearly above chance) misses the Acropora photos more than the game expected: the genus offset rises.
   const rows = [];
@@ -149,7 +149,7 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
           {
             id: 'a' + n++,
             t: new Date(Date.UTC(2026, 10, 1, 0, 0, n)).toISOString(),
-            // v29: the genus shown is the photos' genus (one colony a question), whose offset they share.
+            // v31: the genus shown is the photos' genus (one colony a question), whose offset they share.
             g: ph[0].split('-')[0].replace(/^./, c => c.toUpperCase()),
             a: i % 3 ? 'Acropora' : 'Porites',
             ok: i % 3 ? 1 : 0,
@@ -165,7 +165,7 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
     rows = s.post({readAnswers: 1, ...T}).rows,
     st = s.get({stats: '1'});
   assert.deepStrictEqual(eloOf(rows), st.photos);
-  // v29: the genus offsets of the hierarchical photo Elo, the same in the sheet and the admin's replay.
+  // v31: the genus offsets of the hierarchical photo Elo, the same in the sheet and the admin's replay.
   assert.deepStrictEqual(genusOffsetsOf(rows), st.gd);
   assert.deepStrictEqual(Object.keys(st.gd).sort(), ['Acropora', 'Favia', 'Porites']);
   assert.ok(
@@ -318,7 +318,7 @@ test("v17: a beginner's answers move the photos more as their level settles; a r
     later = Array.from({length: 40}, (_, i) => R(20 + i, i % 5 ? 1 : 0, 'l-' + i)),
     L = [...early, ...later];
   assert.strictEqual(trustOf(L).Lea, true);
-  // A photo's own part (sheet v29: the served difficulty less its genus offset, which every Acropora photo shares).
+  // A photo's own part (sheet v31: the served difficulty less its genus offset, which every Acropora photo shares).
   const own = (rows, f) => eloOf(rows)[f][0] - genusOffsetsOf(rows).Acropora[0],
     e1 = own(L, 'e-1'),
     l5 = own(L, 'l-5');

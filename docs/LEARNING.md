@@ -71,7 +71,9 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
   `ELO.vr`); the step grows by up to `ELO.vg` × |vr|, within kmax. Why: simulated, a beginner or an RA at 80-87% right
   stayed rated as a beginner, because a shrinking step assumes a stable skill. A first version (vr 0.2, vg 3) made the
   global level swing; softened.
-- **Global level** `P['~level']`: the same Elo over every answer. A genus never answered starts from it
+- **Global level** `P['~level']`: the same Elo over every answer, without the `kmin` floor (since 2026-11-03: it
+  settles as its answers build up). A genus already answered moves with it, weighed by its own uncertainty ("Global level
+  and genus", below). A genus never answered starts from it
   (`core.js playerStart`: 0.8 × global × M / (M + 10), clamped to [−0.5, 1.5]), so a strong player gets traps, single
   views and harder photos on a new genus from its first question.
 - **The genus wrongly given** (rule 13) counts in its progress, its recent results and its runs, not in its Elo ability
@@ -251,6 +253,206 @@ never the genus wrongly given, so they need nothing and the app does not wait fo
 saved keep the drag they took until their genus is answered again (a replay of the sheet's log would correct them:
 ROADMAP).
 
+### Global level and genus (2026-11-03)
+
+Pierre: strong players must find the app challenging quickly (IMR staff will try it once), and beginners must not be
+overwhelmed. After the fix above, the genus abilities of strong players still sat 0.3-0.6 below the static fit of
+their answers, while their global level was about right: each genus learns only from its own answers, a few dozen at
+most, through an Elo that lags. The global level pools every answer.
+
+**The rule** (`core.js` `abilityOf`, `levelMove`, `eloStep`, which `model.js` `ability` and `abilityStep` call and
+the sheet's full replay runs the same way, `tests/replay.test.js`): the ability of a genus already answered is its own
+estimate plus the global level's move since its own last step,
+
+  θ_g = s.th + (L − s.lt) / (1 + answers_g / `ELO.n`),
+
+`s.lt` the level when the genus was last stepped (saved and merged with `th`, `core.js` `mergeProgress`; dropped when
+two accounts are merged, `mergeUsers`). The weight is the genus's own uncertainty, the share its own Elo step gives a
+new answer: a genus with 3 answers takes 83% of the level's move, one with 15 half, one with 45 a quarter. At the
+genus's next own step the move is taken in (`s.th`) and `s.lt` resets. The global level's step loses its `kmin` floor
+(it pools every answer and now moves every genus, so it settles as answers build up, Pelánek's uncertainty function;
+the volatility still lets it catch up). No new constant. This is the global + concept skill model of Pelánek et al.
+(UMUAI 2017, §4: P = σ(θ_global + θ_concept − d), both updated on every answer), as a lazy update. A genus never
+answered still starts from `playerStart`; progress saved before has no `s.lt`, so nothing moves until the genus's next
+answer (no recalculation).
+
+**What was tried** (real answers, `tools/abilityeval.js --model`, paired log-loss difference against `main` per answer,
+± its standard error; simulation 5 seeds):
+
+- Level + offset with every move in full (`H0`): −0.0096 ± 0.0034 overall with the level's steadier step, but worse
+  below level 0 and after a false alarm; in the simulation a beginner over-rated at first (+0.46 at question 50).
+- Weighed by the level's certainty (M / (M + `START.N`), 1 − K_L / kmax, squared...): the same picture, the band below
+  0 still worse (0.473-0.488 against 0.470).
+- Rises only (the level's falls not passed on): the best on the real answers (0.455; below 0, −0.015 ± 0.006), but
+  biased upward, since a level that fluctuates has a positive average rise: a simulated beginner rated +0.49 / +0.70 /
+  +0.20 above the truth at questions 50 / 100 / 300, a synthetic weak player +1.1 (`tests/ability.test.js`). It only
+  looked good because real players are under-rated. Rejected.
+- Shrinking each genus toward its level-based start, (m θ + N0 start) / (m + N0): 0.464, below 0 worse (0.484-0.490).
+- Why the band below 0 resists: there the level itself is wrong (players at 83% right with a level under 0, after
+  early misses, the `kmin` floor and the volatility); as a predictor the level beats the genus abilities in most groups
+  but loses badly there (0.511 against 0.470). A steadier level (no floor) closes most of the gap; without the
+  volatility as well changed nothing more, so only the floor goes. Without the floor the level's steps fall under
+  0.005 after a few hundred answers, so it is kept to 4 decimals (a genus to 2): rounded to 2, 1000 right answers left
+  it where it was (Codex review #415; `tests/ability.test.js`).
+
+**On the real answers** (1,183 answers, 9 players with 20 or more; mean predicted / right, log-loss; groups by one
+reference level, `main`'s rule, the same answers in each group for both: `tools/abilityeval.js` `refStep`, Codex review
+#415):
+
+| Group (answers) | `main` | global level + genus | paired difference ± se |
+| --- | --- | --- | --- |
+| all (1183) | 0.79 / 0.83, 0.465 | 0.80 / 0.83, 0.457 | −0.0085 ± 0.0032 |
+| 2 choices (727) | 0.80 / 0.87, 0.412 | 0.80 / 0.87, 0.410 | −0.0014 ± 0.0033 |
+| 4 choices (451) | 0.77 / 0.78, 0.551 | 0.79 / 0.78, 0.531 | −0.0197 ± 0.0063 |
+| Duel tab (86) | 0.85 / 0.93, 0.298 | 0.86 / 0.93, 0.286 | −0.0122 ± 0.0075 |
+| level < 0 (203) | 0.74 / 0.83, 0.470 | 0.74 / 0.83, 0.476 | +0.0063 ± 0.0087 |
+| level 0-0.75 (363) | 0.77 / 0.80, 0.524 | 0.77 / 0.80, 0.529 | +0.0050 ± 0.0063 |
+| level ≥ 0.75 (617) | 0.81 / 0.86, 0.429 | 0.83 / 0.86, 0.408 | −0.0214 ± 0.0038 |
+| after a false alarm (141) | 0.81 / 0.81, 0.466 | 0.81 / 0.81, 0.483 | +0.0168 ± 0.0084 |
+
+- Better overall (2.7 standard errors) and clearly for the strong players' answers (level ≥ 0.75) and the 4-choice
+  questions; every player's own log-loss is the same or better. The strong RA's genera 0.59 → 0.62 on average (fit
+  0.73), the other strong players 0.82 → 1.21 and 0.81 → 1.37 (fits 1.29 and 1.91).
+- Below level 0 and between 0 and 0.75: within the noise (+0.006 ± 0.009, +0.005 ± 0.006). After a false alarm,
+  slightly worse (+0.017 ± 0.008): the level's fall after a miss now reaches the genus wrongly given too, a little, as
+  it reaches every genus.
+
+**Simulated** (`tools/learnsim.js`, 5 seeds × 600 questions, `main` after #413; cells: θ − logit(true know) / |θ −
+logit k| / right % / genera met / learned / entered the exam / true knowledge; "rises only" for the record):
+
+| Profile, question | `main` | **global level + genus** | rises only (rejected) |
+| --- | --- | --- | --- |
+| beginner 50 | 0.04 / 1.00 / 72 / 15.6 / 0.0 / 0.0 / 0.19 | 0.05 / 0.89 / 70 / 14.6 / 0.0 / 0.0 / 0.18 | 0.49 / 0.81 / 71 / 16.0 / 0.0 / 0.0 / 0.19 |
+| beginner 100 | −0.44 / 1.04 / 79 / 19.2 / 0.0 / 0.0 / 0.29 | 0.13 / 0.87 / 80 / 22.4 / 0.0 / 0.0 / 0.30 | 0.70 / 0.98 / 76 / 27.0 / 0.0 / 0.0 / 0.33 |
+| beginner 300 | −0.45 / 1.21 / 83 / 39.6 / 0.0 / 0.4 / 0.64 | −0.37 / 0.84 / 83 / 40.0 / 0.0 / 0.2 / 0.68 | 0.20 / 0.71 / 79 / 40.0 / 0.0 / 0.2 / 0.70 |
+| beginner 600 | −1.44 / 1.50 / 88 / 40.0 / 0.6 / 5.0 / 0.87 | −1.06 / 1.12 / 88 / 40.0 / 0.2 / 3.8 / 0.88 | 0.09 / 0.62 / 87 / 40.0 / 0.2 / 3.8 / 0.88 |
+| lecture RA 50 | 0.05 / 0.73 / 81 / 18.8 / 0.0 / 0.0 / 0.42 | 0.23 / 0.83 / 80 / 17.8 / 0.0 / 0.0 / 0.41 | 0.41 / 0.74 / 77 / 19.0 / 0.0 / 0.0 / 0.42 |
+| lecture RA 100 | 0.01 / 0.81 / 79 / 33.4 / 0.0 / 0.0 / 0.53 | 0.07 / 0.86 / 79 / 30.8 / 0.0 / 0.0 / 0.51 | 0.24 / 0.76 / 77 / 31.8 / 0.0 / 0.0 / 0.53 |
+| lecture RA 300 | −0.79 / 0.93 / 87 / 40.0 / 0.0 / 0.0 / 0.77 | −0.55 / 0.80 / 84 / 40.0 / 0.0 / 1.0 / 0.77 | 0.29 / 0.67 / 84 / 40.0 / 0.0 / 0.0 / 0.78 |
+| lecture RA 600 | −1.45 / 1.47 / 91 / 40.0 / 1.0 / 8.4 / 0.90 | −1.27 / 1.29 / 89 / 40.0 / 1.0 / 8.2 / 0.91 | −0.15 / 0.58 / 90 / 40.0 / 0.2 / 9.2 / 0.91 |
+| strong RA 50 | −0.59 / 1.37 / 89 / 17.4 / 0.0 / 0.0 / 0.63 | −0.41 / 1.22 / 85 / 19.0 / 0.0 / 0.0 / 0.64 | −0.18 / 1.13 / 86 / 18.6 / 0.0 / 0.0 / 0.63 |
+| strong RA 100 | −0.48 / 1.31 / 84 / 30.6 / 0.0 / 0.0 / 0.70 | −0.46 / 1.15 / 86 / 32.6 / 0.0 / 0.0 / 0.71 | 0.04 / 1.04 / 86 / 32.0 / 0.0 / 0.0 / 0.71 |
+| strong RA 300 | −1.10 / 1.30 / 91 / 40.0 / 0.0 / 0.2 / 0.86 | −0.92 / 1.14 / 88 / 40.0 / 0.0 / 1.2 / 0.86 | 0.11 / 0.64 / 90 / 40.0 / 0.0 / 0.6 / 0.86 |
+| strong RA 600 | −1.71 / 1.72 / 93 / 40.0 / 1.8 / 16.4 / 0.94 | −1.43 / 1.47 / 94 / 40.0 / 2.4 / 14.4 / 0.94 | −0.56 / 0.82 / 92 / 40.0 / 2.4 / 15.0 / 0.94 |
+| expert 50 | −1.47 / 1.47 / 98 / 14.6 / 0.0 / 0.0 / 0.94 | −0.96 / 0.96 / 98 / 15.2 / 0.0 / 0.0 / 0.94 | −0.89 / 0.89 / 98 / 15.0 / 0.0 / 0.0 / 0.94 |
+| expert 100 | −1.26 / 1.26 / 96 / 27.8 / 0.0 / 0.0 / 0.94 | −0.94 / 0.94 / 96 / 27.6 / 0.0 / 0.2 / 0.94 | −0.87 / 0.87 / 95 / 27.8 / 0.0 / 0.4 / 0.94 |
+| expert 300 | −1.20 / 1.20 / 96 / 40.0 / 0.0 / 2.6 / 0.95 | −1.08 / 1.08 / 97 / 40.0 / 0.4 / 4.0 / 0.95 | −0.72 / 0.72 / 97 / 40.0 / 0.6 / 3.0 / 0.95 |
+| expert 600 | −1.25 / 1.25 / 97 / 40.0 / 6.2 / 26.2 / 0.97 | −1.25 / 1.25 / 97 / 40.0 / 8.6 / 24.6 / 0.97 | −0.72 / 0.72 / 98 / 40.0 / 7.6 / 27.0 / 0.97 |
+
+- **Strong players recognised sooner**: the expert's error 1.47 → 0.96 at question 50 and 1.26 → 0.94 at 100; the
+  strong RA 1.37 → 1.22, 1.31 → 1.15, 1.30 → 1.14, 1.72 → 1.47; the lecture RA 0.93 → 0.80 at 300.
+- **The beginner is not over-rated**: θ − logit(know) +0.05 / +0.13 / −0.37 at questions 50 / 100 / 300 (`main` +0.04 /
+  −0.44 / −0.45), |θ − logit k| lower at every checkpoint.
+- **No path breaks**: right % within 3 points of `main` everywhere (beginner 70 / 80 / 83 / 88, `main` 72 / 79 / 83 /
+  88; the expert's 96-98% and the first 50 questions' low 70s are `main`'s too); the beginner opens a little faster
+  (22.4 genera by question 100 against 19.2, at 80% right), the lecture RA a little slower (30.8 against 33.4);
+  exams within the spread (strong RA entered 14.4 ± 3.4 against 16.4 ± 2.3, expert learned 8.6 against 6.2). The
+  remaining under-estimation at 600 is mostly the ceiling `ELO.hi` (3) against learners at 0.9-0.97.
+- `tests/profiles.smoke.js`: its seed's beginner met 18 genera by question 100 (12) with this alone; with the target by
+  level ("Beginners and experts", below) 13, the limit stays 17.
+- Its opening pace for a beginner (22.4 genera by question 100) was too fast for Pierre: "Beginners and experts",
+  below.
+
+**The sheet and the admin**: `Code.gs` `stats_` and `core.js` `eloReplay` rate the photos and each player's own level
+from the answer log, never from the app's genus abilities, so they do not change and the app waits for no sheet
+version (AGENTS.md 7a). The Answers log's ability column is the ability the app used (with the level's move), so the
+logged expectation and the sheet's opening hold stay consistent. The admin's per-genus abilities (`readStats`, from
+the saved `th`) show each genus's own estimate without the level's move since its last answer: a little behind for a
+player whose level is still rising (ROADMAP). `replayProgress` (PR #399, not merged) replays progress, not the Elo; if
+it comes to replay the abilities, it must replay `s.lt` the same way.
+
+### Beginners and experts (2026-11-03)
+
+Pierre, on "Global level and genus": the gains for strong players and experts are what he wants, but 22 genera met by
+question 100 is too many for a beginner, and many beginners are arriving now; with a success target that follows the
+level, a beginner would be aimed at about 85% right, not 80%. Both must be calibrated, with the parameters that can
+treat a beginner and an expert differently.
+
+**The rule** (`model.js` `aimP`, `aimOff`, `shaky`; `core.js` `AIM`, `aimOf`, `pgMissW`, which the full replay weighs the
+misses with too, at the replayed level):
+
+- **The success aimed for follows the global level** (`core.js` `AIM`, `PICKD.AIM`, points [level, success]): 85% up to a level of 0.5,
+  75% from 1.5, a straight line between, flat outside, no cliff. In the simulation the levels reached are: a beginner
+  −0.05 to 0.6 over its first 300 questions, a lecture-level RA 0.4-0.7, a strong RA 1.0-1.5, an expert 2.5-2.8; so a
+  beginner and a lecture-level RA are aimed at about 85%, a strong RA at 75-80%, an expert at 75%. Papoušek, Stanislav
+  & Pelánek (2016, the geography system, target error rates 5-50%): easy questions keep more learners at first, harder
+  ones bring more of them back and teach more; "start with easy questions to hook learners up and then switch to more
+  difficult questions". The photo's aim (`aimOff`), the miss weight (`pgMissW`: a miss weighs the chance the player had
+  over the chance the game aimed for) and the comeback's rust (`rustOf`) follow it; `PICKD.P` (0.8, the middle) stays
+  the reference.
+- **A genus is shaky against the same target**: OPEN.P + (aimed − `PICKD.P`), so 0.65 for a beginner, 0.55 for a strong
+  player. A beginner opens a new genus only once the genera met are a little more solid; nobody else is held back.
+- No other constant. The global level's move on the genera ("Global level and genus") is unchanged.
+
+**What was tried** (`tools/learnsim.js`, 5 seeds, the four profiles, 300 questions; T: the target from the level, 85% at
+0 to 75% at 1.5; T2: 85% up to 0.5, 75% from 1.5 (the rule); O: the shaky bar moved with the target; K: the opening's
+capacity `OPEN.K` × (1 − aimed) / (1 − `PICKD.P`); S: the level's move on the genera only while the level is above 0):
+
+| Variant | beginner met q100 / q200 | beginner right % q50 / q100 / q200 / q300 | beginner θ − logit k q100 | strong RA \|θ − logit k\| q100 / q300 | expert q50 / q100 |
+| --- | --- | --- | --- | --- | --- |
+| `main` | 19.2 / 30.4 | 72 / 79 / 82 / 83 | −0.44 | 1.31 / 1.30 | 1.47 / 1.26 |
+| level + genus alone (before) | 24.6 / 35.6 | 72 / 78 / 77 / 86 | +0.15 | 1.17 / 1.04 | 0.96 / 0.91 |
+| T2 | 26.4 / 37.6 | 70 / 79 / 79 / 83 | +0.30 | 1.18 / 1.05 | 0.90 / 0.93 |
+| T + O | 19.8 / 33.8 | 69 / 81 / 79 / 82 | −0.16 | 1.15 / 1.10 | 0.96 / 1.00 |
+| T + O + K | 20.0 / 31.8 | 72 / 77 / 81 / 80 | −0.28 | 1.28 / 1.14 | 0.96 / 1.00 |
+| T2 + O + K | 20.2 / 31.0 | 73 / 80 / 81 / 80 | −0.00 | 1.25 / 1.11 | 0.89 / 0.92 |
+| T + O + S | 17.8 / 37.2 | 72 / 81 / 80 / 80 | −0.31 | 1.29 / 1.11 | 0.97 / 1.00 |
+| **T2 + O (now)** | **20.2 / 28.0** | 73 / 78 / 80 / 83 | −0.11 | 1.20 / 1.10 | 0.89 / 0.92 |
+| T2 + O + S | 19.4 / 30.8 | 75 / 80 / 80 / 82 | −0.09 | 1.22 / 1.17 | 0.88 / 0.93 |
+
+- **The target alone does not slow a beginner** (T2: 26.4 genera by question 100): easier photos raise the abilities,
+  fewer genera look shaky, more open, and the brand-new genera's near-guesses pull the right % down. The opening is
+  what sets a beginner's pace and success; the shaky bar moved with the target (O) brings it back.
+- **K** (the opening's capacity) adds little to O; **S** (no move below level 0) is better on the real answers (log-loss
+  −0.0099 ± 0.0030 against `main`, below level 0 +0.004 ± 0.007) but has a step at level 0 (a genus stepped while the
+  level was below 0 takes its whole move at once when the level crosses 0) and keeps less of the strong RA's gain.
+- **T2 rather than T**: T lowers the target from level 0, where beginners and lecture-level RAs sit, so they get 80%
+  and open faster (33.8 by question 200); T2 holds 85% for them.
+
+**The rule shipped** (5 seeds × 600 questions; cells: θ − logit k / |θ − logit k| / right % / genera met / learned /
+entered the exam / true knowledge):
+
+| Profile, question | `main` | level + genus alone | **level + genus, target by level (now)** |
+| --- | --- | --- | --- |
+| beginner 50 | 0.04 / 1.00 / 72 / 15.6 / 0.0 / 0.0 / 0.19 | 0.05 / 0.89 / 70 / 14.6 / 0.0 / 0.0 / 0.18 | 0.30 / 1.00 / 73 / 14.0 / 0.0 / 0.0 / 0.18 |
+| beginner 100 | −0.44 / 1.04 / 79 / 19.2 / 0.0 / 0.0 / 0.29 | 0.13 / 0.87 / 80 / 22.4 / 0.0 / 0.0 / 0.30 | −0.11 / 0.88 / 78 / 20.2 / 0.0 / 0.0 / 0.29 |
+| beginner 200 | −0.37 / 1.28 / 82 / 30.4 / 0.0 / 0.2 / 0.47 | −0.07 / 0.91 / 79 / 37.0 / 0.0 / 0.2 / 0.53 | −0.43 / 0.98 / 80 / 28.0 / 0.0 / 0.2 / 0.47 |
+| beginner 300 | −0.45 / 1.21 / 83 / 39.6 / 0.0 / 0.4 / 0.64 | −0.37 / 0.84 / 83 / 40.0 / 0.0 / 0.2 / 0.68 | −0.44 / 1.02 / 83 / 37.2 / 0.0 / 0.4 / 0.63 |
+| beginner 600 | −1.44 / 1.50 / 88 / 40.0 / 0.6 / 5.0 / 0.87 | −1.06 / 1.12 / 88 / 40.0 / 0.2 / 3.8 / 0.88 | −1.22 / 1.27 / 87 / 40.0 / 0.2 / 6.0 / 0.87 |
+| lecture RA 50 | 0.05 / 0.73 / 81 / 18.8 / 0.0 / 0.0 / 0.42 | 0.23 / 0.83 / 80 / 17.8 / 0.0 / 0.0 / 0.41 | 0.07 / 0.77 / 78 / 17.6 / 0.0 / 0.0 / 0.41 |
+| lecture RA 100 | 0.01 / 0.81 / 79 / 33.4 / 0.0 / 0.0 / 0.53 | 0.07 / 0.86 / 79 / 30.8 / 0.0 / 0.0 / 0.51 | −0.07 / 0.73 / 82 / 26.4 / 0.0 / 0.0 / 0.50 |
+| lecture RA 200 | −0.48 / 0.79 / 80 / 40.0 / 0.0 / 0.0 / 0.69 | −0.28 / 0.76 / 82 / 39.2 / 0.0 / 0.4 / 0.67 | −0.48 / 0.84 / 79 / 39.2 / 0.0 / 0.0 / 0.67 |
+| lecture RA 300 | −0.79 / 0.93 / 87 / 40.0 / 0.0 / 0.0 / 0.77 | −0.55 / 0.80 / 84 / 40.0 / 0.0 / 1.0 / 0.77 | −0.50 / 0.78 / 87 / 40.0 / 0.0 / 0.4 / 0.76 |
+| lecture RA 600 | −1.45 / 1.47 / 91 / 40.0 / 1.0 / 8.4 / 0.90 | −1.27 / 1.29 / 89 / 40.0 / 1.0 / 8.2 / 0.91 | −1.20 / 1.23 / 88 / 40.0 / 0.8 / 7.6 / 0.91 |
+| strong RA 50 | −0.59 / 1.37 / 89 / 17.4 / 0.0 / 0.0 / 0.63 | −0.41 / 1.22 / 85 / 19.0 / 0.0 / 0.0 / 0.64 | −0.33 / 1.22 / 85 / 17.2 / 0.0 / 0.0 / 0.63 |
+| strong RA 100 | −0.48 / 1.31 / 84 / 30.6 / 0.0 / 0.0 / 0.70 | −0.46 / 1.15 / 86 / 32.6 / 0.0 / 0.0 / 0.71 | −0.55 / 1.20 / 83 / 29.0 / 0.0 / 0.0 / 0.70 |
+| strong RA 200 | −0.82 / 1.28 / 87 / 40.0 / 0.0 / 0.0 / 0.80 | −0.71 / 1.11 / 86 / 40.0 / 0.0 / 0.2 / 0.81 | −0.73 / 1.13 / 86 / 40.0 / 0.0 / 0.2 / 0.80 |
+| strong RA 300 | −1.10 / 1.30 / 91 / 40.0 / 0.0 / 0.2 / 0.86 | −0.92 / 1.14 / 88 / 40.0 / 0.0 / 1.2 / 0.86 | −0.88 / 1.10 / 89 / 40.0 / 0.0 / 0.4 / 0.86 |
+| strong RA 600 | −1.71 / 1.72 / 93 / 40.0 / 1.8 / 16.4 / 0.94 | −1.43 / 1.47 / 94 / 40.0 / 2.4 / 14.4 / 0.94 | −1.39 / 1.43 / 93 / 40.0 / 2.2 / 14.8 / 0.95 |
+| expert 50 | −1.47 / 1.47 / 98 / 14.6 / 0.0 / 0.0 / 0.94 | −0.96 / 0.96 / 98 / 15.2 / 0.0 / 0.0 / 0.94 | −0.89 / 0.89 / 98 / 14.4 / 0.0 / 0.0 / 0.94 |
+| expert 100 | −1.26 / 1.26 / 96 / 27.8 / 0.0 / 0.0 / 0.94 | −0.94 / 0.94 / 96 / 27.6 / 0.0 / 0.2 / 0.94 | −0.92 / 0.92 / 96 / 26.6 / 0.0 / 0.2 / 0.94 |
+| expert 200 | −1.19 / 1.19 / 96 / 40.0 / 0.0 / 0.6 / 0.95 | −1.02 / 1.02 / 96 / 40.0 / 0.0 / 1.4 / 0.95 | −1.02 / 1.02 / 96 / 40.0 / 0.2 / 1.2 / 0.95 |
+| expert 300 | −1.20 / 1.20 / 96 / 40.0 / 0.0 / 2.6 / 0.95 | −1.08 / 1.08 / 97 / 40.0 / 0.4 / 4.0 / 0.95 | −1.10 / 1.10 / 96 / 40.0 / 0.2 / 4.0 / 0.95 |
+| expert 600 | −1.25 / 1.25 / 97 / 40.0 / 6.2 / 26.2 / 0.97 | −1.25 / 1.25 / 97 / 40.0 / 8.6 / 24.6 / 0.97 | −1.30 / 1.30 / 97 / 40.0 / 6.2 / 24.4 / 0.97 |
+
+- **The beginner back to `main`'s pace or slower**: 14.0 / 20.2 / 28.0 / 37.2 genera met by questions 50 / 100 / 200 /
+  300 (`main` 15.6 / 19.2 / 30.4 / 39.6), not over-rated (θ − logit k −0.11 / −0.43 / −0.44 at 100 / 200 / 300; +0.30
+  ± 0.47 at 50, `main` +0.04), right 73 / 78 / 80 / 83 / 87% (`main` 72 / 79 / 82 / 83 / 88). The 83-86% Pierre asked
+  for over questions 50-300 is reached from 300 only, in every variant and in `main`: in its first 100 questions this
+  simulated beginner (2% at the start) answers genera it has just met mostly by guessing, at the easiest photos already;
+  only a slower opening raises it, and the opening is already at `main`'s pace or slower.
+- **The lecture-level RA opens more slowly** (26.4 genera by question 100 against 33.4; all 40 by 200 in both), at 82%
+  right (79%).
+- **The strong players' gains are kept**: the strong RA's error 1.22 / 1.20 / 1.13 / 1.10 / 1.43 at 50-600 (`main`
+  1.37 / 1.31 / 1.28 / 1.30 / 1.72), the expert's 0.89 / 0.92 at 50 / 100 (`main` 1.47 / 1.26; equal from 300, the
+  ceiling `ELO.hi`).
+- **No path breaks**: exams within the spread (strong RA entered 14.8 ± 1.5 against 16.4 ± 2.3, beginner 6.0 against
+  5.0), true knowledge the same.
+- **On the real answers**: nothing changes (the target and the shaky bar choose questions, they do not change the Elo's
+  prediction): log-loss 0.457 against `main`'s 0.465, below level 0 +0.006 ± 0.009 (within the noise), as in "Global
+  level and genus". The real answers cannot judge a different draw (AGENTS.md 14g); they were played under `main`'s.
+- `tests/profiles.smoke.js`: its beginner meets 13 genera by question 100 (`main` 12), the limit back to 17.
+
 ### What a question shows
 
 - **Photos**: drawn around ability − `aimOff(k)`, so that the question is right with the chance `PICKD.P` = 0.8 in its
@@ -288,6 +490,9 @@ ROADMAP).
   between names never seen.
 
 ### One difficulty controller (2026-11-03)
+
+Since "Beginners and experts" (above, the same day) the success aimed for is not one 80% but follows the global level
+(`aimP`, `PICKD.AIM`: 85% up to 0.5, 75% from 1.5); the controller below is unchanged otherwise.
 
 The independent review's item 4: difficulty was set by three ramps on the genus ability (the photo aimed
 `TARGET_OFF` = 1.0 below it, single views from `singleP` = (ability − 0.5) / 1.5 up to 0.85, traps from `TRAP` {start
@@ -475,8 +680,20 @@ quiz, all its formats included, limited to them. Code: `model.js` `CUSTOM`, `cus
   it (`quiz.js` `cbIn`).
 - **Picking** (Pierre, 2026-11-03: "not everyone knows the IMR lecture groups"; then "do not group genera by growth
   form": it is not genus-specific, many genera take 3-4 forms or more, only the mushroom corals keep one): every genus
-  is in view as a small photo with its name, A-Z by default, the IMR lecture groups as the other view (for RAs, the
-  genera in view inside each group); quick picks that need no knowledge, My weakest (genera answered, lowest progress
+  is in view as a small photo with its name. Three views (Pierre, the same day: "nobody picks genera alphabetically;
+  you usually know you make mistakes around these kinds of genera, so you go there"):
+  - **IMR groups**, the default: the lecture's groups, their genera in the IMR order, All / None per group;
+  - **My mix-ups**: the genera the player confuses, in clusters, the most confused first, each with its mix-up count
+    (`model.js` `mixEdges`: each pair the player mixed up, both ways, from `s.conf`, the genus given instead of the one
+    shown; `mixClusters`: greedy, the heaviest pair first, two genera in no cluster start one, a genus joins its
+    partner's cluster when it is paired with at least half of it and it has fewer than `CUSTOM.CLUSTER` = 6, clusters
+    never merge, so a chain A like B like C like D does not make one cluster of genera that do not look alike). A player
+    with no mix-up yet gets the same clusters from the declared look-alikes (`lookEdges`: `look`, IMR lecture and Coral
+    Finder, weighed by how much every player confuses each pair, `pooledConf`), and a line says so. It generalises the
+    Look-alikes of … pick, which stays for one genus;
+  - **Progress**: To review, Learning, Not seen yet, Learned (`shownLevel`, the names of My progress).
+  No A-Z view (the search finds a name; it was the default for a few hours on 2026-11-03: a device that kept it, under
+  the old key `imr-custom-view`, opens on IMR groups once, the choice now in `imr-custom-view2`). Quick picks that need no knowledge, My weakest (genera answered, lowest progress
   first, 6), Recently missed (a miss in the last 5 answers, latest first, 8) and Look-alikes of … (a genus and its
   declared or confused look-alikes, `isLook`, `confusable`); a search box. The selection is saved at each change
   (`imr-coral-custom`, synced, the latest wins) and preselected next time.
@@ -498,7 +715,8 @@ Again and the duel are the same question, a 2-choice contrast of a look-alike pa
 
 - **One queue, one slot**: every mix-up of the photo quiz queues its pair (`rematch`), a contrast question's too (an
   Again missed comes again, as before; a duel missed now brings its Again, where it used to come back only through the
-  duel draw). The newest mix-up replaces one still waiting, as before.
+  duel draw). The newest mix-up replaced one still waiting, as before; since 2026-11-04 the queue holds up to
+  `CONTRAST.Q` = 3 pairs, oldest first ("After the collapsed runs of 2026-11-03", below).
 - **One gap**: two contrast questions are at least `CONTRAST.GAP` = 2 questions apart, and a queued pair comes 2
   questions after its mix-up (one question in between, the Again's timing since #251). Counted on the answers at which
   each planned question will show (`planPhoto(at)`), so the plans made ahead no longer need the spacing reset when a
@@ -783,7 +1001,7 @@ met the 39 slate genera almost at once.
   2026-11-03) and declared look-alikes put Acropora and Galaxea among the hardest and Alveopora first, against Pierre's
   experience: the opening order stays random (still a few genera at a time) until the answers can say.
 - **Genus difficulty from the data** (`genusDiff`), never set by hand: the mean difficulty of its game photos
-  (`photoDiff`: the players' answers; from sheet v29 a photo with few or no answers leans on its genus's offset, learned
+  (`photoDiff`: the players' answers; from sheet v31 a photo with few or no answers leans on its genus's offset, learned
   from every answer on the genus, "Hierarchical photo Elo") + `OPEN.CONF` (2) × how much it gets confused (its two
   highest pooled confusion scores above `CONF.TRAP`). With no answers only the declared look-alikes decide (the Easy /
   Medium / Hard photo sets did too until 2026-11-03); the answers take over as they come. On the answers of 2026-11-03
@@ -829,6 +1047,191 @@ rule is the same as before.
 
 **Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): the log holds no record of when a card could have opened, so the opening cannot be replayed; the shaky signal it
 counts is checked with item 8 ("One draw weight", below).
+
+### After the collapsed runs of 2026-11-03 (2026-11-04)
+
+Two players' runs collapsed on the evening of 2026-11-03, after #408 (one opening rule, merged 11:34 UTC) and #413 (no
+Elo step on the genus wrongly given). A strong player, right after a comeback ended, was opened 7 new genera in 16
+answers (nearly every `INTRO.EVERY` slot: with few genera shaky, `openChance` = 1 − shaky / `OPEN.K` was near 1, and
+#413 left fewer genera looking shaky), then fell from 83% right to 50% while the expected success `e` stayed about 0.76:
+each new genus was asked once or twice, so its misses never lowered `e` on its next question; the global level fell
+from 1.49 to −0.08 but then only seeded the genera not met; the opening hold only stopped the cards; the "Again" kept
+one pair, the newest mix-up replacing the waiting one, so a real two-way mix-up (5 misses) never came back as a drill;
+and since #413 picking the wrong genus lowered nothing. A second player's run after the same deploy fell to 48% right
+where 70% was expected. The hotfix #421 capped the opening chance at 0.5 and held the opening while 3 genera opened
+were unasked; this is the full fix, approved by Pierre ("I validate all your proposals"), and it replaces the hotfix.
+#415 (the global level moves every genus, the success aimed for follows the level) was already part of the answer: with
+it, the falling level would have lowered `e` on every genus.
+
+**1. Opening pace** (`model.js` `openRecent`, `openPace`, `OPEN.MAX` 3, `OPEN.WIN` 15; `quiz.js` `planPhoto`):
+
+- No new genus while a genus opened on a card (the first cards or one of its own) in the last `OPEN.WIN` answers has not
+  been asked yet, and none once `OPEN.MAX` of them have opened in that window: about 3 new genera per 15 answers at
+  most. The question already on screen or planned before counts as asked (`soon`), else planning ahead (3 questions)
+  would hold every card two questions longer. Open all and a genus closed again ("One at a time") take no place.
+- A genus carded in the window and not asked yet is asked as soon as it is ready (after its `INTRO.GAP`): the block
+  alone, waiting for the weighted draw to come round to it among 20-40 genera met, slowed every profile to about one
+  card per 8-12 answers (genera met by question 100: strong RA 33.4 → 14.0, expert 27.2 → 12.8) and cost knowledge
+  (strong RA at 300: 0.86 → 0.78). With it the pace is the ceiling's.
+- An "Again" never asks a genus not met yet: a genus never met, offered to make up the three wrong choices and picked,
+  was asked by its Again with no card (the second player met a bonus genus that way): it asks the genus shown instead.
+- `openChance` (1 − shaky / `OPEN.K`) and the level-tied shaky bar of #415 are kept; the hotfix's cap (0.5) and
+  `OPEN.UNASKED` (3) go: measured against both below.
+- `OPEN.MAX` 4 was tried: nothing changed for the expert (15.4 genera by question 100 either way) and little for the
+  others; the window's unasked rule and the planning set the pace below the ceiling, which binds in bursts (the
+  `open/15` column: 3.0, the most in any 15 answers).
+
+**2. Easier questions while the opening hold is on** (`model.js` `holdEase`; `quiz.js` `planPhoto`): the ability the
+photos and the format (traps, single views: `trapsFor(t, shift)`, `formatAt`) aim at is lowered by h − `INTRO.HOLD`
+logits while the hold's sum h is past `INTRO.HOLD` (1.5): 0 at the threshold (no cliff), one logit for each answer's
+worth of misses beyond it, back to 0 as right answers pay h back. Every question but an exam (the Again and the duels
+too). No new constant: h is already in success units, on the scale the Elo steps the ability on. On the real answers
+(read-only replay of the logged `e`) the strong player's h crossed 1.5 at the 27th answer of the collapsed run (44 answers) and
+peaked at 3.22, the second player's at the 13th of 31, peaking at 4.31; the ease would have been 0.8-0.9 logits on average
+over the 17-18 answers held (a 4-choice question aimed at 80% right is then aimed at about 88% for the same ability).
+A replay cannot say how those players would have answered easier photos (rule 14g).
+
+**3a. Known mix-ups** (`core.js` `confGap`; `model.js` `confTerm`; `quiz.js` `answer`, `planPhoto`): on a question
+whose choices hold a genus the player mixes up with the one asked more than everyone does, the question counts that much
+harder for them: c = logit(confOf) − logit(pooledConf), the player's own score of the pair (`pairConf`, shrunk toward
+the pooled score with `CONF.W` offers, as for the traps) against the pooled one, the most over the choices, 0 when
+lower. The expected success, the Elo steps (genus and level), the miss weight of the progress, the logged `e`, the
+opening hold and the photo's aim (`photoSet` shift − c) all take it: the signal the wrong pick's Elo step gave before
+#413, now on the pair, without stepping the genus wrongly given. Scored before the answer updates anything (the offers
+of this question are counted after). **Only on a question with 3 or more plausible choices**: on the real answers the
+2-choice contrast questions of the pair (the Again right after the side-by-side montage, a duel) and the questions with
+easy choices were right more often than expected, not less. The sheet's full replay applies the same term (`core.js`
+`replayProgress`, rules version 2): from the player's record as replayed (offers and mix-ups per pair) and the pooled
+pairs it is given; from `CF_LOGGED` (2026-11-03 15:35 UTC, #425 live; `abilityeval` `CF_FROM`) the logged `e` already holds the app's term, taken out
+first. One difference: the replay's pooled score starts from the pair's prior without `CONF.FORM` (the sheet does not know
+the genera's growth forms), 0.03 instead of 0.08 for two genera sharing a form and nothing closer, so its term is larger
+on such a pair while its pooled offers are few, and the same as the game's once they are many; on every other pair it is
+the game's (`tests/replay.test.js` replays a log with mix-ups to the live game's ability, level and progress).
+
+Real answers (`node tools/abilityeval.js answers.json --variants e,e+X,e+X+M --priors priors.json`, the sheet's
+Answers tab read 2026-11-03, read-only: 1,258 answers of 9 players with 20 or more; `e` the app with #415; the pooled
+score from the other players' answers on the app's own priors; paired log-loss difference per answer, ± its standard
+error, 95% interval):
+
+| Group (answers) | app (#415) mean p / right, log-loss | term on every question | **term, 3+ plausible choices (shipped)** |
+| --- | --- | --- | --- |
+| all (1258) | 0.79 / 0.82, 0.4728 | +0.0053 ± 0.0026 [+0.0002, +0.0105] | −0.0009 ± 0.0019 [−0.0047, +0.0028] |
+| term > 0, 3-4 choices (88) | 0.78 / 0.67, 0.6974 | p 0.72, −0.0061 ± 0.0236 | p 0.71, −0.0098 ± 0.0264 [−0.062, +0.042] |
+| term > 0, 2 plausible (226) | 0.79 / 0.83, 0.4288 | p 0.73, +0.0369 ± 0.0093 | (not applied) |
+| 4 choices (487) | 0.79 / 0.76, 0.5489 | +0.0018 ± 0.0046 | −0.0008 ± 0.0048 |
+| level ≥ 0.75 (645) | 0.83 / 0.85, 0.4189 | +0.0052 ± 0.0037 | −0.0010 ± 0.0031 |
+
+- Where it applies (88 answers) the expectation moves from 0.78 to 0.71 for 0.67 right: calibration clearly better, the
+  log-loss better on average but within its noise (few answers). Overall within the noise of the app's (−0.0009 ±
+  0.0019): it does not move the estimates away from what players do, and corrects the one place where they were too
+  high.
+- On every question (as first proposed) it was worse (+0.0053 ± 0.0026), all of it from the 2-choice questions: right
+  83% where it predicted 73%. Kept off there. Also measured: the term on the prediction only, not the steps (`+Y`), and
+  summed over the choices (`+Z`): the same picture.
+- The level bands come from the reference level stepped with the difficulty before the term, the same answers for every
+  rule; and from the release on (live 2026-11-03 15:35 UTC, 23:35 in the sheet's clock, Asia/Taipei: `tools/abilityeval.js`
+  `CF_FROM`) the logged `e` already holds the app's term, which the replay takes out of the recovered difficulty before a
+  rule adds its own (Codex review #425). The log has no app version per answer, so an app not yet updated after that
+  time is taken for the new one (a few answers).
+
+**3b. The Again queue** (`quiz.js` `CONTRAST.Q` 3, `rematchAdd`): up to 3 pairs wait, oldest first, each still
+`CONTRAST.GAP` after its mix-up and after the last contrast question; a newer mix-up never pushes an older one out (with
+the queue full it waits for its next miss); a pair already waiting is not queued twice. The player of 2026-11-03 mixed
+two genera up both ways 5 times; with one slot each newer mix-up replaced the pair, so it never came back as a drill.
+
+**4. Look-alikes from the data** (`core.js` `dataLook`, `CONF.N` 20; `model.js` `isDataLook`, `dataLooks`): Pierre: "if
+the data says people constantly confuse two genera, they become look-alikes by force; that was the point of the
+confusion data: to find look-alikes the courses never named". A pair no source declares is a look-alike from the data
+once offered together `CONF.N` times or more with a pooled score (`pooledConf`: the players' mix-ups on the pair's own
+prior, same family 0.12, a shared growth form 0.08, else 0.03, worth `CONF.W` 8 offers) of `CONF.TRAP` (0.2) or more:
+the prior's weight makes it clear (at 20 offers two unrelated genera need 6 mix-ups, 30%; the declared look-alikes were
+mixed up 13% of the times they were offered, other pairs 5%). Such pairs join the declared ones in the duels slipped
+into the quiz and the Duel tab (`duelPick`), on the genus sheet's "Don't confuse with" (labelled "Often mixed up by
+players"), and in admin Confusions ("look-alike from the data"); the traps and the progress's look-alike weight
+(`pgWeight`) already followed the same pooled score, and any mix-up already queued its Again. The declared look-alikes
+stay the prior (`isLook`): a pair from the data does not raise its own prior. On the real answers (2026-11-03, trusted
+players, as `?stats=1` computes it) one pair qualifies: *Alveopora* and *Tubastraea*, offered together 30 times and mixed
+up 8 (27%; 3 of 18 one way, 5 of 12 the other), pooled score 0.227; it is the diagnosis's two-way pair. Close, with
+too few offers yet: *Heliopora* / *Isopora* (15 offers, 6 mix-ups), *Merulina* / *Millepora* (18, 5), *Herpolitha* /
+*Lobactis* (16, 4); *Millepora* / *Pachyseris* has 34 offers but scores 0.18.
+
+**5. The apology card**: "The apology card" in ARCHITECTURE.md; the rule (`core.js` `sorryFelt`), at Pierre's request,
+goes only to the players who felt it: 20 answers or more in the window and the opening hold's sum at 3 or more (2 ×
+`INTRO.HOLD`, the evidence the back-to-one-at-a-time card asks for) when the fixed version first runs, or 1.5 with 4
+genera or more carded within 15 answers in the window. On the real answers it selects the two collapsed runs (44
+answers, 68% right where 76% was expected, the hold at 3.22, 7 cards in 16 answers; 31 answers, 48% against 70%, the
+hold at 4.31) and no other player (they were the only two who answered in the window). A run at its expected success
+ends with the hold at 3 or more about 2-5% of the time (simulated, 20-80 answers at e 0.7-0.9); a right % 10 points
+under `e` alone would have missed the first run (8 points).
+
+**Simulated** (`tools/learnsim.js`, 5 seeds × 600 questions, the same seeds; cells: true knowledge of the slate /
+genera met / right % since the previous row / the most genera carded in any 15 answers / learned / entered the exam;
+`hier` = this branch's base, #415 before the hotfix; `hotfix` = #415 with #421; `now` = this change on #415 with main
+merged, the hotfix replaced):
+
+| Profile, question | `hier` | `hotfix` | **now** |
+| --- | --- | --- | --- |
+| beginner 50 | 0.17 / 10.8 / 70 / 4.8 / 0.0 / 0.0 | 0.17 / 11.0 / 73 / 4.8 / 0.0 / 0.0 | 0.16 / 10.6 / 76 / 3.0 / 0.0 / 0.0 |
+| beginner 100 | 0.28 / 18.8 / 78 / 5.4 / 0.0 / 0.0 | 0.27 / 18.0 / 79 / 4.8 / 0.0 / 0.2 | 0.28 / 18.2 / 75 / 3.0 / 0.0 / 0.0 |
+| beginner 200 | 0.46 / 27.2 / 77 / 5.4 / 0.0 / 0.0 | 0.45 / 28.2 / 81 / 4.8 / 0.0 / 0.2 | 0.48 / 29.4 / 78 / 3.0 / 0.0 / 0.0 |
+| beginner 300 | 0.61 / 36.4 / 81 / 5.6 / 0.0 / 0.6 | 0.62 / 37.4 / 81 / 4.8 / 0.0 / 1.0 | 0.66 / 38.8 / 78 / 3.0 / 0.0 / 0.2 |
+| beginner 600 | 0.87 / 40.0 / 84 / 5.6 / 0.4 / 4.8 | 0.87 / 40.0 / 84 / 4.8 / 0.8 / 5.8 | 0.87 / 40.0 / 85 / 3.0 / 0.2 / 3.6 |
+| lectureRA 50 | 0.40 / 16.0 / 81 / 5.6 / 0.0 / 0.0 | 0.39 / 13.2 / 82 / 4.0 / 0.0 / 0.0 | 0.37 / 10.6 / 85 / 3.0 / 0.0 / 0.0 |
+| lectureRA 100 | 0.49 / 24.8 / 81 / 5.8 / 0.0 / 0.0 | 0.47 / 19.2 / 80 / 4.2 / 0.0 / 0.0 | 0.45 / 19.0 / 84 / 3.0 / 0.0 / 0.4 |
+| lectureRA 200 | 0.65 / 38.4 / 80 / 6.0 / 0.0 / 0.0 | 0.62 / 31.0 / 79 / 4.2 / 0.0 / 0.4 | 0.63 / 34.4 / 80 / 3.0 / 0.0 / 0.4 |
+| lectureRA 300 | 0.76 / 40.0 / 80 / 6.4 / 0.0 / 0.0 | 0.75 / 40.0 / 83 / 4.2 / 0.0 / 0.4 | 0.75 / 40.0 / 80 / 3.0 / 0.0 / 1.0 |
+| lectureRA 600 | 0.91 / 40.0 / 88 / 6.4 / 0.4 / 6.4 | 0.91 / 40.0 / 87 / 4.2 / 1.0 / 7.6 | 0.90 / 40.0 / 87 / 3.0 / 1.0 / 6.0 |
+| strongRA 50 | 0.62 / 19.0 / 88 / 6.8 / 0.0 / 0.0 | 0.62 / 14.4 / 85 / 5.0 / 0.0 / 0.0 | 0.61 / 10.2 / 87 / 3.0 / 0.0 / 0.0 |
+| strongRA 100 | 0.69 / 33.4 / 85 / 7.0 / 0.0 / 0.2 | 0.67 / 21.0 / 88 / 5.2 / 0.0 / 0.0 | 0.67 / 19.2 / 86 / 3.0 / 0.0 / 0.4 |
+| strongRA 200 | 0.81 / 40.0 / 80 / 7.0 / 0.0 / 0.4 | 0.76 / 32.6 / 89 / 5.2 / 0.0 / 0.4 | 0.80 / 37.4 / 83 / 3.0 / 0.0 / 0.4 |
+| strongRA 300 | 0.86 / 40.0 / 88 / 7.0 / 0.0 / 0.8 | 0.84 / 40.0 / 87 / 5.2 / 0.0 / 2.4 | 0.86 / 40.0 / 86 / 3.0 / 0.2 / 1.2 |
+| strongRA 600 | 0.94 / 40.0 / 92 / 7.0 / 2.6 / 14.2 | 0.94 / 40.0 / 90 / 5.2 / 4.2 / 16.0 | 0.94 / 40.0 / 92 / 3.0 / 1.8 / 12.2 |
+| expert 50 | 0.94 / 15.0 / 98 / 4.6 / 0.0 / 0.0 | 0.93 / 12.0 / 98 / 3.8 / 0.0 / 0.0 | 0.93 / 10.8 / 96 / 3.0 / 0.0 / 0.0 |
+| expert 100 | 0.94 / 27.2 / 96 / 5.0 / 0.0 / 0.2 | 0.94 / 20.4 / 94 / 4.0 / 0.0 / 0.6 | 0.94 / 19.4 / 96 / 3.0 / 0.0 / 0.4 |
+| expert 200 | 0.95 / 40.0 / 96 / 5.4 / 0.0 / 1.4 | 0.95 / 31.4 / 95 / 4.0 / 0.4 / 2.4 | 0.95 / 37.8 / 95 / 3.0 / 0.0 / 1.6 |
+| expert 300 | 0.95 / 40.0 / 97 / 5.4 / 0.2 / 3.2 | 0.95 / 39.4 / 96 / 4.0 / 0.8 / 5.8 | 0.95 / 40.0 / 95 / 3.0 / 0.6 / 2.8 |
+| expert 600 | 0.97 / 40.0 / 96 / 5.4 / 5.6 / 24.0 | 0.97 / 40.0 / 96 / 4.2 / 7.0 / 24.6 | 0.97 / 40.0 / 97 / 3.0 / 6.6 / 22.0 |
+
+- **The pace is bounded**: never more than 3 genera carded in 15 answers (`hier` up to 5-7, the hotfix up to 4-5);
+  genera met by question 100: beginner 18.2 (`hier` 18.8, hotfix 18.0), lecture RA 19.0 (24.8, 19.2), strong RA 19.2
+  (33.4, 21.0), expert 19.4 (27.2, 20.4); every profile meets all 40 by about question 230-300, the hotfix's strong RA
+  and expert later (32.6 and 31.4 by question 200, now 37.4 and 37.8).
+- **Nobody learns less**: true knowledge of the slate as `hier` or better at every checkpoint (beginner 0.48 / 0.66 at
+  200 / 300 against 0.46 / 0.61; strong RA 0.80 / 0.86 against 0.81 / 0.86), above the hotfix's at 200 for the strong
+  RA (0.80 against 0.76); equal at 600 everywhere. Right % within the seeds' spread of `hier` (the strong RA 83-87%
+  over 100-300 where `hier` dipped to 80% at 200, its burst of openings).
+- **Genera learned by 600** (the mastery exam passed) are fewer than the hotfix's for the strong RA (1.8 ± 0.8 against
+  4.2 ± 2.0; `hier` 2.6 ± 2.1) and within the spread elsewhere: the hotfix, slower to open, puts more answers on fewer
+  genera early. Neither the Again queue (`CONTRAST.Q` 1: 2.2 ± 0.8) nor the confusion term (off: 1.8 ± 1.3) explains
+  it; the knowledge, the measure that decides (14f), is the same at 600.
+- The hotfix's cap of the chance at 0.5 on top of this rule (5 seeds × 300) slowed the strong players further (strong RA
+  32.0 genera by question 200, knowledge 0.76 instead of 0.80): not kept. `OPEN.UNASKED` 3 is subsumed by the
+  window's rule (no card while any genus carded in it waits for its question, asked as soon as ready).
+- The Elo's error |θ − logit k| is a little lower than both at 600 (strong RA 1.25 against 1.35 / 1.43, beginner 1.03
+  against 1.20 / 1.19).
+
+After a break (the diagnosis's situation: `--profiles strongBack,strongRA,lectureRA --questions 60 --breaks 8h --after
+40`; `strongBack` a strong player who knows 80% of the genera well and the rest hardly, so few genera stay shaky; right %
+in the 40 answers after the comeback; genera opened on their cards in the first 15 of them / the most in any 15 / in all
+40):
+
+| Profile | `hier` right % / opened | `hotfix` | **now** |
+| --- | --- | --- | --- |
+| strongBack | 90 / 1.8 · 5.0 · 8.4 | 95 / 1.6 · 3.4 · 5.2 | 94 / 1.2 · 3.0 · 6.0 |
+| strong RA | 87 / 1.8 · 4.8 · 8.2 | 89 / 1.2 · 3.4 · 4.2 | 86 / 1.6 · 3.0 · 6.0 |
+| lecture RA | 84 / 1.6 · 5.2 · 8.2 | 83 / 1.0 · 3.0 · 5.0 | 80 / 1.4 · 3.0 · 5.8 |
+
+- The simulated learner does not collapse as the real players did (it is right 87-90% after the comeback with the old
+  pace too): new genera are learned from their card and their easy first questions, faster than real players learn
+  them. So learnsim measures the pace (5 genera in 15 answers before, 3 now) and that nobody learns less; whether the
+  easier questions would have saved those runs, it cannot say (ROADMAP).
+- On the collapsed runs' logged sequences (`scratchpad` replay, read-only): with the strong player's own cards (the
+  device's record of when each opened), 6 of the 7 cards of answers 199-215 would not have opened when they did (the
+  first, at 199, waited for its question, which the run never asked: under the new rule it is asked two answers later
+  and holds the next card until then); over the whole log 17 of its 34 cards would have waited. The second player's
+  cards are not on record; inferred from the first question on each genus (a card `INTRO.GAP` before), 3 of the 5
+  genera new in the collapsed run would have waited (one more came through an Again on a genus never met, which the
+  new rule also stops).
 
 ### One draw weight (2026-11-03)
 
@@ -1389,15 +1792,20 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   its `TYPED.exam` typed right answers stays at 99% at most (`scoreOf`) until the device has passed it.
   - **Rules versions** (`core.js` `RVS`, `RV`): every change to a progress rule appends `{v, at, why, msg}` (AGENTS.md
     "How to make a change" 14), each with the standard recalculation card (`msg: RV_CARD`, Pierre 2026-11-03, a
-    standing rule; below). v1 (2026-11-03): this replay itself, with the rules of that day (the
-    miss weight over the 0.8 every question aims for, `TARGET_P`; no Elo step on the genus wrongly given; a learned mark
-    kept unless a miss logged after its exam takes it away as the game does). v2
-    (2026-11-03, `RV_CARD`; a device adopting both at once shows the card once, for the last version, `progress.js`
-    `rvNoticeAdd`): the hierarchical photo Elo (sheet v29) puts the genus offset
-    into the expectation the photo memory offsets (`mem`) are fitted against, and `replay_` replays with the sheet's
-    `mem`, so the same log gives other bars (Codex P1 on #422; `tests/replay.test.js` "RVS v2": on a synthetic log
-    with repeated photos the offsets go from 0.47 / −0.79 / −1.66 to 0.41 / −0.77 / −1.60 and the replayed progress
-    moves with them). A change to `stats_` that moves what the replay reads from it needs a rules version too.
+    standing rule; below). A version is not a frozen engine: the sheet always replays with the code's current rules
+    (`core.js`, embedded in `Code.gs`), and a new version only makes every device take that replay again. So v1
+    (2026-11-03, not deployed yet when these were added) replays with every rule merged before it goes live: the miss
+    weighed against the success aimed for at the player's global level (`aimOf`, 85% to 75%), no Elo step on the genus
+    wrongly given, a genus's ability moving with the global level (`levelMove`, `lt`; the level's step without a floor,
+    4 decimals; Calibration step 2, #415), a learned mark kept unless a miss logged after its exam takes it away as the
+    game does. v2 (2026-11-04): the opening pace and known mix-ups (#425): the mix-ups term in the question's difficulty
+    for the ability, the global level and a miss's weight ("Known mix-ups" above). v3 (2026-11-04): the hierarchical
+    photo Elo (sheet v31) puts the genus offset into the expectation the photo memory offsets (`mem`) are fitted
+    against, and `replay_` replays with the sheet's `mem`, so the same log gives other bars (Codex P1 on #422;
+    `tests/replay.test.js` "RVS v3": on a synthetic log with repeated photos the offsets go from 0.47 / −0.79 / −1.66
+    to 0.41 / −0.77 / −1.60 and the replayed progress moves with them). A change to `stats_` that moves what the replay
+    reads from it needs a rules version too. A device that skips several versions sees the standard card once, at the
+    last of them, with its progress before and after the whole jump (`core.js` `rvMsgs`).
   - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between
     `// BEGIN core.js` and `// END core.js`, kept identical by `tools/sync_core.py`, checked in CI; its own `module`
     object keeps its names out of the script's globals, reached as `CORE_`), so the self-updater installs the engine
@@ -1442,7 +1850,25 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     merged (it may predate the replay, whose counts it would undo), but it may hold answers saved since by a device on
     an app from before the replay, which never adopts one: so the device's applied version goes back to the copy's and
     its next save (asked for at once after a pull) brings the replay of the whole log again, every device's answers
-    counted once (Codex review #399: 2 answers adopted, 1 saved by an older app, gave 2 again). Except the copy this
+    counted once (Codex review #399: 2 answers adopted, 1 saved by an older app, gave 2 again). A copy under newer
+    rules than the device applied (another device adopted them) is merged, but a learned mark it lacks is not taken
+    away by the merge: the device's own adoption of the same replay decides it, with this device's card (Codex review
+    #399: the merge took the mark first, so no card here). A replay is adopted only if every answer the device still
+    queues is newer than the replay's last one: answers played offline before answers another device logged since
+    would count after them, out of time order (Codex review #399: 20 right answers then 10 misses gave pg 0.96 and ten
+    right answers last, instead of 0.19 and ten misses); the device then adopts nothing and marks no version applied,
+    and the save that logs them brings the replay of the whole log in time order. Likewise for answers played before
+    signing in to an existing account (queued, or sent under the anonymous id): the sign-in leaves the account's rules
+    version unapplied and nothing is adopted until the first save has moved them into the account's log; its reply
+    brings the replay of the whole of it (Codex review #399: 20 right answers played before an account's 10 misses kept
+    pg 0.9 and ten right answers last). Answers the sheet logged from a refused save (logged, their progress not saved:
+    `SYNC.lg`) are missing from the device's merge baseline, so a copy another device saved from its replay of the log
+    may already count them, and the merge would add them again as the device's own (Codex review #399: 3 answers, a
+    baseline of 2, a saved replay of the 3: 4, kept for good): until a save succeeds, the device's requests ask for the
+    replay (rv 0) and a replay of the same version is adopted in place of the merge. An admin merge of two accounts
+    (`core.js` `mergeUsers`, `Code.gs` `users_`) saves the merged copy with no rules version: it is no replay of the two
+    logs together, so every device of the account asks for the replay of both histories in time order (Codex review
+    #399: 20 older right answers and 10 newer misses kept the merged model, pg 0.79-0.96, for 0.20). Except the copy this
     device saved or loaded last, unchanged since (the sheet's revision, which every save bumps, an older app's
     included, is still the one this device holds, `sync.js` `mergeSaved` `mine`): it is already part of the device's
     progress, so it is not merged, whatever its rules version. A save carries the rules version applied when it was
@@ -1457,7 +1883,7 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     answers is ignored once the device has signed in, or changed anonymous id, while it was on its way (Codex review
     #399: it replaced the account's progress that sign-in had just stored).
     What is taken from where (`core.js` `replayedOf`): **from
-    the replay**, per genus the log has answers on: `pg`, `ok`, `ko`, `h`, `off`, `conf`, `th`, `vr`, `streak`,
+    the replay**, per genus the log has answers on: `pg`, `ok`, `ko`, `h`, `off`, `conf`, `th`, `lt`, `vr`, `streak`,
     `at` (the later), `du` (either side's), the photos seen `ps` per photo the larger [shown, right] of the replay and
     the device (the device also counts as shown a corallites hint revealed after the answer, which the log leaves out:
     it must not become new again for the mastery exam, `model.js` `examSet`; Codex review #399), plus `pm` 1 (under the photo memory rule: `memRecalc` never corrects it) and
@@ -1468,7 +1894,10 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     the keep rule, the game's own (`core.js` `mxKeeps`, `model.js` `mxKept`: the replay records `lm`, the time of the
     last such miss, and a mark passed before it goes, reason `rules`; Codex review #399: 10 misses logged by a save
     refused after a passed exam left the genus at 100%, its exam never coming back, at a bar of 0.19), so a
-    recalculation alone keeps it, the days answered right (`dd`, `dl`: the device's calendar days, for the comeback), the last
+    recalculation alone keeps it; the exam in course likewise ends at any miss on the genus, shown or given, logged
+    after it began (`lx`, the time of the last miss, against `s.ex.ts`, or the genus's last answer `s.at` for an exam
+    saved before it had a start time), as the game ends it (Codex review #399: a miss over 4 questions passed kept
+    them), the days answered right (`dd`, `dl`: the device's calendar days, for the comeback), the last
     observations shown (`ro`: the log keeps photo files, not observations), right with the corallites in view (`cor`:
     the log does not say which view a photo was in); and the whole record of a genus the log has fewer answers on than
     the device (answers that never reached the log: a replay never loses progress). The opening hold is not in the
@@ -1476,7 +1905,8 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     adoption runs through `model.js` `mxRecalc`: a learned mark it takes away is told with the card above (reason
     `bkt`; a mark taken by a later rules version would say "recalculated from all your answers with the app's current
     rules", reason `rules`). Then, at once, the announcement card of every version skipped that has a `msg`
-    (`progress.js` `rvNotice`: once per version per device, `imr-rv-msg`; never held, one after another, after
+    (`progress.js` `rvNotice`, an update card of `app.js` `cardShow` with the progress ring before and after: once per
+    version per device, `imr-rv-msg`; never held, one after another, after
     `recalcNotice` and `mxLostNotice`; only to a device that had answers). Every version has the standard card
     (`core.js` `RV_CARD`; Pierre, 2026-11-03, a standing rule: "only to the players whose progress the replay moves a
     lot; if it moves everyone a lot, everyone gets it"): "Your progress was recalculated with the improved model",
@@ -1581,7 +2011,7 @@ What it says, on this learner:
   34.7 → 35.3, lecture RA progress at 300 27.8 → 25.5%. The CI seed's beginner went from 16 genera at question 100 (the
   limit) to 17, so the limit is 17 (one draw, not a faster opening: 30 learnsim seeds give 16.5 → 15.7).
 
-### Hierarchical photo Elo (sheet v29, 2026-11-03)
+### Hierarchical photo Elo (sheet v31, 2026-11-03)
 
 Pierre asked whether part of a photo's difficulty can be shared, so that a new photo starts from what similar photos
 already show. A read-only study of the answer log (1,262 trusted answers, 9 players, 2026-10-31 to 11-03) answered:
@@ -1607,15 +2037,15 @@ already show. A read-only study of the answer log (1,262 trusted answers, 9 play
   [offset, weighed answers]}`; `core.js` `genusOffsetsOf`). The genus of a photo is the genus shown (one colony a
   question, rule 14b), so no data file and no per-genus code.
 - **The app** (`model.js` `photoDiff`): (n × rating + 5 × gd[genus]) / (n + 5), and gd[genus] for a photo nobody has
-  answered; `gd` is read only from a sheet that reports v ≥ 29 (`PGD_SHEET`, AGENTS.md 7a, stored with the stats and
+  answered; `gd` is read only from a sheet that reports v ≥ 31 (`PGD_SHEET`, AGENTS.md 7a, stored with the stats and
   their `v`). With an older sheet, or for a genus with no offset, the prior is 0, which the replay below shows is
   already better than the sets. The genus difficulty that orders the opening (`genusDiff`, the mean `photoDiff` of a
   genus's photos) becomes data-driven through it with no code of its own.
 - **`GENUS_K` 0.4**: on the real log, 0.2 and 0.4 score alike and both beat the photo-only Elo; 0.8 moves too fast
   (below). 0.4 learns a new genus's offset sooner (a few answers) at the same accuracy.
 - **Blend weight 5 kept**: 2, 5, 10 and 20 score within 0.0004.
-- **Rules version 2** (`core.js` `RVS`): the genus offset also enters the expectation the photo memory offsets are fitted
-  against, and the sheet's full replay uses those offsets, so every player is replayed again once v29 is live ("Full
+- **Rules version 3** (`core.js` `RVS`; v2 is #425's known mix-ups): the genus offset also enters the expectation the photo memory offsets are fitted
+  against, and the sheet's full replay uses those offsets, so every player is replayed again once v31 is live ("Full
   replay").
 
 **Real answers** (read-only replay of the sheet's Answers tab read on 2026-11-03, 1,346 rows: the study's export plus
@@ -1628,10 +2058,10 @@ reproduces `core.js` `eloOf` before and after to the hundredth). Log-loss, lower
 | sheet v28 (photos start at 0) | 0.4853 | 0.4972 | 0.4640 | 79.3% |
 | **app before** (blend with the set prior, W 5) | **0.4976** | 0.5100 | 0.4740 | 83.9% |
 | app new with a v28 sheet (prior 0) | 0.4864 | 0.4981 | 0.4643 | 79.2% |
-| sheet v29, `GENUS_K` 0.2 | 0.4819 | 0.4932 | 0.4614 | 79.3% |
-| sheet v29, `GENUS_K` 0.4 | 0.4814 | 0.4925 | 0.4620 | 79.3% |
-| sheet v29, `GENUS_K` 0.8 | 0.4837 | 0.4950 | 0.4664 | 79.4% |
-| **app new** (v29, `GENUS_K` 0.4, gd prior, W 5) | **0.4812** | 0.4922 | 0.4610 | 79.3% |
+| sheet v31, `GENUS_K` 0.2 | 0.4819 | 0.4932 | 0.4614 | 79.3% |
+| sheet v31, `GENUS_K` 0.4 | 0.4814 | 0.4925 | 0.4620 | 79.3% |
+| sheet v31, `GENUS_K` 0.8 | 0.4837 | 0.4950 | 0.4664 | 79.4% |
+| **app new** (v31, `GENUS_K` 0.4, gd prior, W 5) | **0.4812** | 0.4922 | 0.4610 | 79.3% |
 | app new, W 2 / 10 / 20 | 0.4811 / 0.4814 / 0.4815 | | | |
 
 Paired differences, 95% bootstrap over blocks of 25 answers in time order:
@@ -1639,7 +2069,7 @@ Paired differences, 95% bootstrap over blocks of 25 answers in time order:
 - app new vs app before: −0.0164 [−0.0284, −0.0060]; photos with < 3 answers −0.0178 [−0.0330, −0.0043]; without
   Pierre −0.0130 [−0.0275, −0.0000].
 - app new with a v28 sheet (prior 0) vs app before: −0.0112 [−0.0223, −0.0021] (the gate's fallback is safe).
-- sheet v29 vs sheet v28: −0.0039 [−0.0087, +0.0009]; photos with < 3 answers −0.0046 [−0.0100, +0.0004]. The online
+- sheet v31 vs sheet v28: −0.0039 [−0.0087, +0.0009]; photos with < 3 answers −0.0046 [−0.0100, +0.0004]. The online
   offsets start at 0 and learn as the log runs, so this is a lower bound over this history; for photos added from now
   on, with offsets learned from about 1,300 answers, the study's out-of-fold estimate puts the gain between −0.004 and
   −0.012.
@@ -1658,8 +2088,8 @@ Acropora −0.54; hardest Isopora +0.53, Leptoseris +0.54, Favites +0.65, Heliop
 before and after). The learner's photos must not change with the app's estimate, so this run gives the learner a fixed
 world (`--truth`, new): each game photo's true difficulty = its genus's offset learned from the real log + a residual
 drawn once per photo (sd 0.5, the study's measure), the same before and after. Before: the app of PR #399 with its sets.
-After: the new app with a v29 sheet serving those genus offsets and no photo ratings (cold start), and with an older
-sheet (prior 0). Mean ± sd over 5 seeds, before / after v29 / after with an older sheet:
+After: the new app with a v31 sheet serving those genus offsets and no photo ratings (cold start), and with an older
+sheet (prior 0). Mean ± sd over 5 seeds, before / after v31 / after with an older sheet:
 
 | Profile, question | knowSlate | \|th−lk\| | prog−know | prog% | met | exam | learned | ref ≥ .9 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -1677,7 +2107,7 @@ ability is nearer the truth at 600 questions for the three learning profiles (|t
 progress bar a little less pessimistic. The strong RA's learned genera at 600 (1.6 → 0.4, sd 0.5) differed by more than
 the spread, so beginner and strong RA were run again on 15 seeds: learned 1.5 ± 0.7 → 1.2 ± 1.2 (strong RA) and
 0.3 → 0.5 (beginner), knowSlate 0.95 → 0.94 and 0.87 → 0.87, |th − lk| 1.70 → 1.65 and 1.56 → 1.43: within the spread.
-The simulated world is built on the same genus offsets the v29 app is given, so it says the rule is safe, not how
+The simulated world is built on the same genus offsets the v31 app is given, so it says the rule is safe, not how
 much it gains; the real-log replay above is the measure of that.
 
 ## Considered and not adopted
@@ -1778,7 +2208,7 @@ The beginner and the RA open at about the same pace here because the learner mod
 near the `OPEN.P` threshold, and its beginner learns fast; with real players, recalibrate.
 
 Known limits: with little real data, the genus difficulty is mostly the declared look-alikes (and the photo sets until
-2026-11-03; since then the genus offsets of the sheet's photo Elo, v29), so "easiest first" is weak until answers come
+2026-11-03; since then the genus offsets of the sheet's photo Elo, v31), so "easiest first" is weak until answers come
 in. Learners are still rated cautiously (abilities around −0.5 at 80-90% right in the
 simulation); recalibrate `ELO` and `OPEN` once a few RA cohorts have played.
 
@@ -1796,11 +2226,16 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   are 1..N, the app's `Math.random` and the learner's own generator both seeded from it, so a run is reproducible and
   the same seeds before and after a change give paired comparisons. `--stats` loads a `?stats=1` answer of the sync
   sheet as the photo ratings (default: none, every photo's difficulty 0, as in CI; Pierre's Easy/Medium/Hard sets until
-  2026-11-03; its `mem`, sheet v26, the app's photo memory offsets; its `gd` and `v`, sheet v29, the genus offsets).
+  2026-11-03; its `mem`, sheet v26, the app's photo memory offsets; its `gd` and `v`, sheet v31, the genus offsets).
   `--truth truth.json` (2026-11-03) gives the learner each photo's true difficulty (`{photos: {file: d}, gd: {genus:
   d}}`), independent of the app's estimate; without it the learner takes the app's own `photoDiff`, so a change to the
   app's photo difficulty would change the learner's world too. `--out` writes every run and
   the summary as JSON. 30 seeds × 4 profiles × 300 questions: about 9 minutes on 4 cores (with the question planner running between answers, as in the app: Codex review #365).
+- **Opening pace** (2026-11-04): `open/15`, the most genera opened on their own cards in any 15 consecutive questions so
+  far; with `--breaks`, the genera opened in the first 15 answers after the comeback, the most in any 15 and in all the
+  `--after` ones. Profile `strongBack` (not in the default list): a strong player who knows 80% of the genera well and
+  the rest hardly (few genera stay shaky), for `--profiles strongBack --questions 60 --breaks 8h --after 40`, the
+  situation of the run that collapsed on 2026-11-03.
 - **Profiles**: beginner (knows every genus at 2%, learns 0.12 of the gap per exposure), lecture-level RA (the profiles
   test's RA: 55% on 2 genera in 5, 10% on the others, 0.12), strong RA (85% on 3 genera in 5, 10% on the others, 0.12),
   expert (93%, 0.05). The open-all offer is declined (the path is what is measured), unless `--openall`: `offer`
@@ -1909,6 +2344,18 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-04, Pierre ("I validate all your proposals", after the collapsed runs of 2026-11-03): the opening's pace
+  (`openPace`: no card while a genus carded in the last 15 answers waits for its question, at most 3 in any 15, a
+  carded genus asked as soon as ready; replaces the hotfix's cap and `OPEN.UNASKED`), easier questions while the hold
+  is on (`holdEase`, h − `INTRO.HOLD` logits), the player's own mix-ups in the expectation (`confTerm`, on 3 or more
+  plausible choices only: worse on the 2-choice questions on the real answers), the Again queue of 3 pairs, look-alikes
+  from the data (`dataLook`: 20 offers, pooled score 0.2; one pair today, *Alveopora* / *Tubastraea*), an Again never
+  on a genus not met, and a one-time apology card, only to the players who felt it (Pierre: not to a player of a
+  single answer; 20 answers in the window and the hold at 3). Simulated: the pace bounded, knowledge as before or
+  better, genera learned by 600 within the spread except the strong RA against the hotfix; real answers: the
+  confusion term neutral overall (−0.0009 ± 0.0019) and better calibrated where it applies ("After the collapsed runs
+  of 2026-11-03").
+
 - 2026-11-03, Pierre (hotfix): two strong players' runs collapsed after #408 and #413 (one met 7 new genera in 16
   answers, three of them never asked, then fell from 83% to 50% right): `openChance` is capped at `OPEN.MAX` 0.5, and
   no genus opens while `OPEN.UNASKED` (3) genera opened earlier are still unasked. A stopgap until the full fix (opening
@@ -2009,10 +2456,20 @@ is not in the simulation.
   recent results and runs, as before), as in the Elo learner models of adaptive practice (Pelánek et al. 2017); on the
   real answers the next answer is predicted better (log-loss 0.481 → 0.465) and a strong RA's genera move from 0.11 to
   0.59 (fit 0.73); simulated, the error of the ability falls for every profile ("The genus wrongly given in the Elo").
+- 2026-11-03, Pierre (strong players remain the priority): a genus moves with the global level since its own last
+  step, weighed by its own uncertainty, both ways, and the level's step loses its `kmin` floor (Pelánek et al. 2017's
+  global + concept skill). Real answers: log-loss 0.465 → 0.457, strong players' band −0.021; simulated, strong players
+  recognised sooner and a beginner not over-rated. A one-way version (rises only) was rejected: biased upward ("Global
+  level and genus").
+- 2026-11-03, Pierre (22 genera by question 100 too many for a beginner; aim a beginner at about 85%): the success
+  aimed for follows the global level, `PICKD.AIM` 85% up to 0.5 → 75% from 1.5, a straight line between; a genus is
+  shaky against the same target (OPEN.P + aimed − 0.8). Simulated: the beginner back to `main`'s pace (20.2 / 28.0
+  genera by questions 100 / 200), not over-rated, the strong players' gains kept; the opening's capacity by level and a
+  sign gate on the level's move measured, not adopted ("Beginners and experts").
 
 - 2026-11-03, Pierre: the Easy / Medium / Hard photo sets removed (one game list per view, the same photos), and the
   photo difficulty made hierarchical: a genus offset learned from every answer on the genus + the photo's own residual
-  (sheet v29, `GENUS_K` 0.4, `?stats=1` `gd`), the app's prior for a photo with few answers the genus offset (0 with an
+  (sheet v31, `GENUS_K` 0.4, `?stats=1` `gd`), the app's prior for a photo with few answers the genus offset (0 with an
   older sheet). On the real log the app's next-answer log-loss goes from 0.4976 to 0.4812 (−0.016 [−0.028, −0.006]);
   simulated, no learning path changes beyond the seeds' spread ("Hierarchical photo Elo").
 - 2026-11-03, Pierre (for everyone): a ★ genus opens only after the genus its card compares it to has been met (a

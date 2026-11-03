@@ -14,8 +14,8 @@
 // last 2 questions on the genus is held back, and at least 3 colonies stay in rotation (VARIETY) whatever the level, so
 // a struggling player still sees new photos.
 // Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
-// PICKD.P is core.js TARGET_P (0.8): the miss weight (core.js pgMissW) aims at the same chance.
-const PICKD = {P: TARGET_P, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
+// PICKD.P is core.js TARGET_P (0.8), the game's reference; PICKD.AIM is core.js AIM (aimP, below).
+const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
 // One difficulty controller (independent review of 2026-11-02, item 4, after Papousek, Pelanek & Stanislav 2014, who
 // set the question's format so that the predicted success hits one target; 2026-11-03). Two steps, one target:
 // 1. The format of a question on genus n comes from its ability on one schedule (FORMAT, below): how many of the 3 wrong
@@ -28,8 +28,16 @@ const PICKD = {P: TARGET_P, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
 //    aimed 1.01 below (TARGET_OFF 1.0 before, for every question), 3 plausible choices 0.81, 2 (easy choices, an Again,
 //    a duel) 0.41, a typed one 1.39: before, a question with 2 plausible choices was right about 87% of the time on its
 //    photo and a typed one 73%, so the target moved with the format. docs/LEARNING.md "One difficulty controller".
+// The success aimed for follows the player's global level (Pierre, 2026-11-03: strong players must find the app
+// challenging quickly, and beginners must not be overwhelmed): PICKD.AIM, points [global level, success], 85% up to a
+// level of 0.5 (a beginner, a lecture-level RA: easy first, to hook them; Papoušek, Stanislav & Pelánek 2016 found
+// easy questions better for staying at first, harder ones for learning and coming back), 75% from 1.5 (a strong RA,
+// an expert), a straight line between, flat outside (no cliff). PICKD.P (0.8, the middle) stays the game's reference.
+// docs/LEARNING.md "Beginners and experts".
+// core.js aimOf: the miss weight (core.js pgMissW) and the sheet's full replay take the same aim.
+const aimP = () => aimOf((P[LEVEL] || {}).th || 0);
 const aimOff = (k = 4) => {
-  const x = (PICKD.P - 1 / k) / (1 - 1 / k);
+  const x = (aimP() - 1 / k) / (1 - 1 / k);
   return Math.log(x / (1 - x));
 };
 // The schedule of the format (step 1): points [ability, look-alike traps, share of single-view questions], a straight
@@ -264,18 +272,14 @@ const weight = n => {
 // not met yet). It replaced a share of the genus draw given to the genera not met yet (OPEN.READY 35% with no shaky genus
 // down to OPEN.TRICKLE 3% at K, K 10), a second throttle on top of INTRO.EVERY. K 8: simulated, a
 // beginner meets genera at the pace they did, the RAs and an expert faster, learning as much (docs/LEARNING.md).
-const OPEN = {K: 8, P: 0.6, T: 3, CONF: 2, DATA: 300, MAX: 0.5, UNASKED: 3};
-// Hotfix (2026-11-03, two strong players' runs after #408 and #413): with few shaky genera openChance came close to 1,
-// and one player met 7 new genera in 16 answers, then fell from 83% to 50% right. Until the full fix: the chance never
-// goes above OPEN.MAX, and no genus opens while OPEN.UNASKED genera opened earlier have not been asked yet (with 1, a
-// simulated player met half as many genera by question 300 and learned less: docs/LEARNING.md decision log).
+const OPEN = {K: 8, P: 0.6, T: 3, CONF: 2, DATA: 300, MAX: 3, WIN: 15};
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
 // OPEN.DATA, up to 1. Without them the genus difficulty is only the declared look-alikes (until 2026-11-03 the photo
 // sets too, which put Acropora and Galaxea among the hardest and Alveopora first, where Pierre expects the first two
 // easy): the order then stays random until the answers can say (2026-11-02).
 const easyTrust = () => Math.min(1, Object.values(PSTAT).reduce((t, o) => t + (o[1] || 0), 0) / OPEN.DATA);
 // Difficulty of a genus from the data, never set by hand: the mean difficulty of its game photos (photoDiff: the
-// players' answers, sheet v17; from sheet v29 a photo with few or no answers leans on its genus's offset, learned from
+// players' answers, sheet v17; from sheet v31 a photo with few or no answers leans on its genus's offset, learned from
 // every answer on the genus, so the genus difficulty is data-driven from the first answers on it) plus how much it gets
 // confused (its two highest pooled confusion scores over CONF.TRAP, x OPEN.CONF). Cleared when the data or the photo
 // stats change.
@@ -301,16 +305,31 @@ const genusDiff = n => {
 // genus (it held an expert back, each new genus waiting to be drawn again).
 const shaky = n => {
   const s = P[n] || {};
-  return ((s.ok || 0) + (s.ko || 0) > 0 || !!s.h) && !s.mx && 0.25 + 0.75 * sig(ability(n) - genusDiff(n)) < OPEN.P;
+  // The bar moves with the success aimed for (aimP): OPEN.P at the game's reference (PICKD.P), 0.05 higher for a
+  // beginner aimed at 85%, 0.05 lower for a strong player at 75%, so a beginner opens a new genus only once the genera
+  // met are a little more solid (Pierre, 2026-11-03), and the strong ones hold nobody back.
+  return ((s.ok || 0) + (s.ko || 0) > 0 || !!s.h) && !s.mx && 0.25 + 0.75 * sig(ability(n) - genusDiff(n)) < OPEN.P + aimP() - PICKD.P;
 };
 // The chance that a question the path allows to open a genus opens one: the free share of OPEN.K places for shaky genera.
 // Only the genera open now take a place (introduced): a genus closed again by "One at a time" (introBack) keeps its
 // answers and its ability but is never asked until its card reopens it, so counted it would hold the opening at 0 for
 // good (Codex P1 on #408).
-const openChance = list =>
-  list.filter(n => introduced(n) && !((P[n] || {}).ok || 0) && !((P[n] || {}).ko || 0)).length >= OPEN.UNASKED
-    ? 0
-    : Math.min(OPEN.MAX, Math.max(0, 1 - list.filter(n => introduced(n) && shaky(n)).length / OPEN.K));
+const openChance = list => Math.max(0, 1 - list.filter(n => introduced(n) && shaky(n)).length / OPEN.K);
+// The opening's pace (2026-11-04, Pierre, after a strong player was opened 7 genera in 16 answers right after a comeback,
+// and fell from 83% to 50% right: docs/LEARNING.md "Opening pace"): the genera opened on a card (the first cards, or one
+// of their own) in the last OPEN.WIN answers, as at (the answers count at which the question will show).
+const openRecent = (at = answersSoFar()) =>
+  Object.entries(introMap())
+    .filter(([n, e]) => /^[sc]$/.test(e[3] || (e[1] ? 's' : 'c')) && !closed(n) && at - (Number(e[0]) || 0) < OPEN.WIN)
+    .map(([n]) => n);
+// No new genus while one opened in the last OPEN.WIN answers has not been asked yet (its card read, its question still
+// to come), nor once OPEN.MAX of them have opened: about 3 new genera per 15 answers at most, whatever openChance says.
+// Both read the same window, so a genus whose question is slow to come holds the next card OPEN.WIN answers at most.
+// soon: the genera of the questions already on screen or planned before this one (quiz.js planNext), asked by then.
+const openPace = (at = answersSoFar(), soon = []) => {
+  const L = openRecent(at);
+  return L.length < OPEN.MAX && L.every(n => asked(n) || soon.includes(n));
+};
 // The genus to open among those not met yet (fresh): the easiest first, softly (OPEN.T, as far as the data are trusted:
 // easyTrust), and the most common near Dauin (commonFactor). A ★ genus waits while a genus its card compares it to is in
 // the list and not met (Pierre, 2026-11-03, #402; core.js starWaits: a reference not in the list never holds it back,
@@ -514,6 +533,13 @@ const introReset = () => {
 const HOLDK = 'imr-hold';
 let HOLDS = Number(store.get(HOLDK, 0)) || 0;
 const introHold = () => HOLDS >= INTRO.HOLD;
+// Easier questions while the hold is on (2026-11-04, Pierre: a run that goes wrong must not only stop the cards, the
+// questions must get easier too; docs/LEARNING.md "Easier questions when a run goes wrong"): the ability the photos and
+// the format (traps, single views) aim at is lowered by how far the sum h has gone past INTRO.HOLD, in logits, so 0 at
+// the threshold (no cliff) and 1 for each answer's worth of misses beyond it; the right answers that pay h back bring it
+// back. No new constant: h is already in success units, the scale the Elo steps the ability on. Never on an exam
+// question (as hard as the game gets).
+const holdEase = () => Math.min(0, INTRO.HOLD - HOLDS);
 // slack: the allowance an answer (INTRO.SLACK for the hold; the comeback's CUSUM passes the rust a question repairs).
 const holdNext = (h, e, good, slack = INTRO.SLACK) =>
   Math.max(0, Math.round((h + (Number(e) || 0) - (good ? 1 : 0) - slack) * 1000) / 1000);
@@ -719,6 +745,10 @@ const recent = n => {
   return s.h ? s.h.slice(-RECENT) : '';
 };
 const misses = h => [...h].filter(x => x === '0').length;
+// The ability: core.js ELO, abilityOf (a genus already answered: its own estimate s.th plus the global level's move since
+// its last own step, levelMove; the global + concept skill of Pelánek et al. 2017, as a lazy update; 2026-11-03,
+// docs/LEARNING.md "Global level and genus") and eloStep (the level's step without the kmin floor, kept to 4 decimals;
+// the genus's step marks the level it was taken against, s.lt), shared with the sheet's full replay.
 const ability = n => abilityOf(P, n);
 const abilityStep = (n, s, good, d, k) => eloStep(P, n, s, good, d, k);
 // For My progress: where the genus's photo difficulty stands, and how many of its game photos the player has seen.
@@ -734,11 +764,11 @@ const seenOf = n => {
 // Photo difficulty (Elo): every RA's answers, rated by the sync sheet (?stats=1, tools/sync/Code.gs stats_). 0 = average
 // photo, +1 = clearly harder. Few answers: pulled towards its genus's offset (photoDiff).
 let PSTAT = (store.get('imr-photo-stats', {}) || {}).photos || {};
-// Genus offsets of the hierarchical photo Elo (Pierre, 2026-11-03; sheet v29 ?stats=1 gd, core.js GENUS_K): {genus:
+// Genus offsets of the hierarchical photo Elo (Pierre, 2026-11-03; sheet v31 ?stats=1 gd, core.js GENUS_K): {genus:
 // [offset, weighed answers]}, the part of a photo's difficulty its genus shares, learned from every answer on the genus.
-// Read only from a sheet that reports v >= PGD_SHEET (AGENTS.md 7a): with an older sheet, or offline before a v29
+// Read only from a sheet that reports v >= PGD_SHEET (AGENTS.md 7a): with an older sheet, or offline before a v31
 // reply, every prior is 0 (a constant prior predicts the answers better than the Easy / Medium / Hard sets did).
-const PGD_SHEET = 29;
+const PGD_SHEET = 31;
 const gdOf = j => (j && j.v >= PGD_SHEET && j.gd && typeof j.gd === 'object' ? j.gd : {});
 let PGD = gdOf(store.get('imr-photo-stats', {}));
 // Pairs of genera offered together and mixed up, every RA pooled (?stats=1 conf, sheet v10): see confOf.
@@ -810,7 +840,7 @@ const famOf = (n, ph) => {
   return memFam(hs, PMEM);
 };
 const sig = x => 1 / (1 + Math.exp(-x));
-// A photo's difficulty: the sheet's rating (its genus's offset + its own residual, sheet v29) blended with the genus's
+// A photo's difficulty: the sheet's rating (its genus's offset + its own residual, sheet v31) blended with the genus's
 // offset as prior, weighing PDIFF.W answers (partial pooling: the photo keeps n / (n + W) of its own residual). A photo
 // nobody has answered is its genus's offset; 0 with an older sheet. W 5: the real answer log scores 2 to 20 alike
 // (docs/LEARNING.md "Hierarchical photo Elo").
@@ -970,8 +1000,8 @@ const shownLevel = n => {
 // between. A mistake drops the ability by about 0.5, so the choices ease off again. The other
 // wrong choices are easy ones while traps are few: genera sharing no IMR growth form with the target (imrFormsOf),
 // other IMR lecture groups first; once two traps are in, the last one is any genus (family first), as before.
-const trapsFor = t => {
-  const x = formatAt(ability(t))[0];
+const trapsFor = (t, shift = 0) => {
+  const x = formatAt(ability(t) + shift)[0];
   return Math.floor(x) + (Math.random() < x % 1 ? 1 : 0);
 };
 // Confusion score of genus n beside target t (Pierre, 2026-11-01): how often players mix the two up when both are offered
@@ -999,6 +1029,33 @@ function confOf(t, n) {
 }
 // Traps = the genera most confused with the target (a little shuffle among close scores, so every likely pair gets tried).
 const confusable = (t, n) => confOf(t, n) >= CONF.TRAP;
+// Known mix-ups (2026-11-04, Pierre; docs/LEARNING.md "Known mix-ups"): a question on t among choices that hold a genus
+// this player mixes up with t more than everyone does is that much harder for them (core.js confGap, in logits: the
+// player's own score of the pair against the pooled one; the most over the choices). The expected success, the Elo
+// step, the progress and the photo's aim all take it, so the question is aimed easier and a miss there costs less: the
+// signal the wrong pick's Elo step gave before #413, now on the pair, without stepping the genus wrongly given. Only on
+// a question with 3 or more plausible choices (k): on the real answers a 2-choice contrast question of the pair (an
+// Again, a duel, right after the side-by-side) or easy choices were right more often than expected, not less, and the
+// term made the prediction worse there (log-loss +0.037 ± 0.009); with 3 or more it brought the expectation of those
+// answers from 0.78 to 0.71, 0.67 right.
+const confTerm = (t, chs, k) =>
+  k >= 3 ? Math.max(0, ...chs.filter(n => n !== t && GX(n)).map(n => confGap(pairConf(P, t, n), pooledConf(t, n)))) : 0;
+// Look-alikes from the data (2026-11-04, Pierre: "if the data says people constantly confuse two genera, they become
+// look-alikes by force; that was the point of the confusion data": core.js dataLook): a pair no source declares, offered
+// together CONF.N times or more and mixed up so often that its pooled score (pooledConf) reaches CONF.TRAP. Such pairs
+// join the declared ones in the duels and the Again (quiz.js duelPick) and on the genus sheet's "Don't confuse with"
+// (learn.js lookHub); the traps and the progress's look-alike weight already follow the same pooled score.
+const isDataLook = (a, b) => {
+  const c = PCONF[a < b ? a + '|' + b : b + '|' + a];
+  return !!c && c[0] >= CONF.N && a !== b && !!GX(a) && !!GX(b) && !isLook(a, b) && dataLook(c, pooledConf(a, b));
+};
+// The pairs of the list L that are look-alikes from the data, each [A, B] in alphabetical order (the pooled pairs only:
+// a pair never offered together cannot qualify).
+const dataLooks = (L = [...slateGenera(), ...bonusList()]) =>
+  Object.keys(PCONF)
+    .map(k => k.split('|'))
+    .filter(([a, b]) => L.includes(a) && L.includes(b) && isDataLook(a, b))
+    .map(p => p.sort());
 function distractors(t, list, traps = trapsFor(t), known = introduced) {
   const ranked = list
     .filter(n => n !== t)
@@ -1095,6 +1152,60 @@ function customChoices(t, sel, play, traps, known) {
       known
     )
   ].slice(0, 3);
+}
+// The custom quiz's "My mix-ups" view (Pierre, 2026-11-03: "you usually know you make mistakes around these kinds of
+// genera, so you go there"): the genera in play grouped by the player's own confusions, most confused first.
+// mixEdges: each pair of genera in play the player mixed up, weighed by how often, both ways (s.conf: the genus given
+// instead of the one shown, typed answers included). lookEdges: the declared look-alikes (data.json look, IMR lecture
+// and Coral Finder; isLook both ways), weighed by how much every player confuses them (pooledConf), for a player with no
+// mix-up yet. mixClusters: greedy clusters, the heaviest pair first: two genera in no cluster start one, a genus joins
+// the cluster of its partner when it is paired with at least half of its genera and it has fewer than CUSTOM.CLUSTER,
+// two clusters never merge (a chain of look-alikes, A like B like C like D, would otherwise make one cluster of genera
+// that do not look alike); each cluster weighs its pairs, heaviest first.
+CUSTOM.CLUSTER = 6;
+const mixEdges = play => {
+  const E = [];
+  play.forEach((a, i) =>
+    play.slice(i + 1).forEach(b => {
+      const w = (((P[a] || {}).conf || {})[b] || 0) + (((P[b] || {}).conf || {})[a] || 0);
+      if (w > 0) E.push([a, b, w]);
+    })
+  );
+  return E;
+};
+const lookEdges = play => {
+  const E = [];
+  play.forEach((a, i) => play.slice(i + 1).forEach(b => isLook(a, b) && E.push([a, b, pooledConf(a, b)])));
+  return E;
+};
+function mixClusters(edges, cap = CUSTOM.CLUSTER) {
+  const of = new Map(),
+    C = [],
+    E = edges.filter(e => e[2] > 0),
+    pair = new Set(E.flatMap(([a, b]) => [a + '|' + b, b + '|' + a]));
+  E.sort((x, y) => y[2] - x[2] || (x[0] + '|' + x[1]).localeCompare(y[0] + '|' + y[1])).forEach(([a, b, w]) => {
+    const ca = of.get(a),
+      cb = of.get(b);
+    if (!ca && !cb) {
+      const c = {g: [a, b], w};
+      C.push(c);
+      of.set(a, c).set(b, c);
+    } else if (ca && cb) {
+      if (ca === cb) ca.w += w;
+    } else {
+      const c = ca || cb,
+        n = ca ? b : a;
+      if (c.g.length < cap && 2 * c.g.filter(x => pair.has(n + '|' + x)).length >= c.g.length) {
+        c.g.push(n);
+        of.set(n, c);
+        c.w += w;
+      }
+    }
+  });
+  // Each cluster's weight once its members are final: every edge inside it, also one met before its second genus joined
+  // (Codex review #417: AD skipped while D could not join yet, then D joined through E: 37 instead of 45).
+  C.forEach(c => (c.w = E.reduce((t, [a, b, w]) => t + (of.get(a) === c && of.get(b) === c ? w : 0), 0)));
+  return C.sort((x, y) => y.w - x.w);
 }
 // Once the whole file is in (save, LEVEL and PMEM above): the progress saved before the photo memory, recalculated.
 memRecalcAll();

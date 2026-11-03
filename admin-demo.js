@@ -15,10 +15,10 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the current one (v29: ?stats=1 adds the genus offsets gd; v28: the admin
+    // The script version the demo answers as: the current one (v31: ?stats=1 adds the genus offsets gd; v28: the admin
     // shows the full replay, admin.js replayOn), or an older one with ?demo&v=27 (tests/admin.smoke.js: the admin then
     // does what it did before; AGENTS.md 7a).
-    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 29,
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 31,
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.

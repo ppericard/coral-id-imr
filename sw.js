@@ -1,5 +1,5 @@
 // Offline cache: app shell first, then photos as they are viewed.
-const V = 'imr-coral-id-v301';
+const V = 'imr-coral-id-v307';
 // Photos live in their own cache that no deploy deletes (code review 2026-11-01, H3): bumping V used to wipe every
 // offline photo. Capped at PH_MAX entries, oldest first out (cache keys keep insertion order).
 const PH = 'imr-photos-v1',
@@ -12,18 +12,18 @@ const PHOTO_RETRY = 800, // as core.js PHOTO_RETRY
 const SHELL = [
   './',
   'index.html',
-  'app.css?v=126',
-  'core.js?v=37',
-  'app.js?v=190',
-  'sync.js?v=22',
-  'progress.js?v=17',
-  'model.js?v=27',
-  'quiz.js?v=34',
-  'learn.js?v=9',
+  'app.css?v=129',
+  'core.js?v=39',
+  'app.js?v=195',
+  'sync.js?v=23',
+  'progress.js?v=18',
+  'model.js?v=31',
+  'quiz.js?v=37',
+  'learn.js?v=11',
   'flag.js?v=10',
   'quality.json?v=3',
   'picks.json?v=1',
-  'data.json?v=36',
+  'data.json?v=37',
   'forms.json?v=7',
   'icon.svg',
   'fonts/source-sans-3-normal.woff2',
@@ -31,16 +31,30 @@ const SHELL = [
   'fonts/barlow-condensed-700-normal.woff2',
   'manifest.webmanifest',
   'curation.json',
-  'proto/lab.js?v=75',
-  'proto/lab.css?v=54',
+  'proto/lab.js?v=77',
+  'proto/lab.css?v=56',
   'home-art.js?v=4',
   'home.js?v=30',
   'home.css?v=23',
   'tour.js?v=18',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
-  ...['finder', 'basics', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'type', 'pairs', 'gallery'].map(
-    f => `proto/${f}.js?v=74`
-  )
+  ...[
+    'finder',
+    'basics',
+    'map',
+    'anatomy',
+    'zoom',
+    'elim',
+    'matrix',
+    'web',
+    'size',
+    'reveal',
+    'spot',
+    'type',
+    'pairs',
+    'gallery',
+    'cards'
+  ].map(f => `proto/${f}.js?v=76`)
 ];
 const get = async (c, u, n = 3) => {
   for (let i = 1; ; i++) {
