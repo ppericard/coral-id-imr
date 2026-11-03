@@ -291,7 +291,7 @@
 .hdart {
   position: relative;
   display: block;
-  aspect-ratio: 6/1;
+  aspect-ratio: 8/1;
   overflow: hidden;
   background: #0b1a1f;
 }
@@ -314,12 +314,13 @@
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  grid-template-rows: 1fr;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
   gap: 2px;
 }
 @media (min-width: 600px) {
   .hdtiles {
+    grid-template-columns: repeat(6, 1fr);
     grid-template-rows: repeat(2, 1fr);
   }
 }
@@ -351,7 +352,7 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  padding: 10px 14px 14px;
+  padding: 8px 14px 12px;
 }
 @media (min-width: 600px) {
   .hdbody {
@@ -466,17 +467,11 @@
 }
 
 /* Phone base (mobile-first); larger screens restore below. */
-.hdtiles img:nth-child(n + 7) {
-  display: none;
-}
 .hddesc {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 @media (min-width: 600px) {
-  .hdtiles img:nth-child(n + 7) {
-    display: block;
-  }
   .hddesc {
     margin-bottom: 16px;
   }
@@ -502,7 +497,164 @@
 @media (min-width: 600px) {
   .hdart {
     aspect-ratio: auto;
-    height: clamp(250px, calc(100dvh - 470px), 400px);
+    height: clamp(170px, calc(100dvh - 520px), 280px); /* an illustration: the buttons carry the door (Pierre, 2026-11-03) */
+  }
+}
+
+/* Home fits one screen (Pierre, 2026-11-03: the credits footer pushed Home below the fold, and the doors had fixed
+   heights whatever the screen). The page column (.wrap) is at least the screen above the phone tab bar; the doors and the
+   one-line credit grow to fill it, never shrink. A screen too short even for that (320 x 568) scrolls; nothing is
+   squeezed or hidden.
+   Learn & practise is the primary door, Identify the secondary one (Pierre, 2026-11-03: Identify serves mostly the IMR
+   RAs doing data analysis, every player learns and practises). On phones the Learn photos (4 x 2 tiles) are an
+   illustration (84 px up to a quarter of the screen), the Learn and Practice buttons are full-width rows with the tab bar's
+   icon and their purpose, and take the height left (60 to 112 px each); Identify is one compact row: a small ReefCloud photo beside its one-line kicker, its
+   title and its button (its description shows from tablets up). Tablets and desktops: Learn gets the wider column (3:2).
+   Practice is the one filled button of the page; Identify's is outlined. */
+body:has(.home-page) main {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+.home-page {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+.hdoors {
+  flex: 1 0 auto;
+  grid-template-rows: 1fr auto;
+}
+.hdoor {
+  overflow: clip; /* not a scroll container: a door is never shrunk below its content */
+}
+.hdoor.learn .hdart {
+  flex: 1000 0 84px; /* the height left goes here first (1000 : 1), up to the cap; past it, to the buttons */
+  aspect-ratio: auto;
+  min-height: 84px;
+  max-height: 28svh; /* an illustration, never more than about a quarter of the screen */
+  container-type: size;
+}
+.hdoor.learn .hdtiles {
+  grid-template-rows: minmax(0, 1fr);
+}
+.hdoor.learn .hdtiles img:nth-child(n + 5) {
+  display: none;
+}
+/* A second row of tiles once the band is tall enough for square-ish tiles. */
+@container (min-height: 150px) {
+  .hdoor.learn .hdtiles {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+  .hdoor.learn .hdtiles img:nth-child(n + 5):nth-child(-n + 8) {
+    display: block;
+  }
+}
+.hdoor.learn .hdbody {
+  flex: 1 0 auto;
+}
+.hdoor.learn .hddesc {
+  display: none; /* the buttons say what each step is */
+}
+.hdoor.learn .hdacts {
+  flex: 1 0 auto;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: minmax(56px, 1fr);
+}
+/* Learn and Practice: the door's real content, the tab bar's icon beside the label and its one-line purpose. */
+.hdbtn:has(.hdi) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  column-gap: 12px;
+  padding: 10px 14px;
+}
+.hdbtn .hdi {
+  grid-row: span 2;
+  color: var(--accent);
+}
+.hdbtn.main .hdi {
+  color: var(--accent-ink);
+}
+.hdbtn:has(.hdi) small {
+  display: block;
+}
+.hdoor.identify {
+  flex-direction: row;
+}
+.hdoor.identify .hdart.rc {
+  flex: 0 0 96px;
+  aspect-ratio: auto;
+}
+.hdoor.identify .hdbody {
+  padding-inline: 12px;
+}
+.hdoor.identify .hddesc {
+  display: none;
+}
+.hdart.rc > img {
+  position: absolute;
+  inset: 0;
+}
+/* The one-line credit (Pierre, 2026-11-03): who made it, for whom, and the About and credits page. */
+.hcred {
+  margin: 8px 0 0;
+  max-width: none;
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.hcred a {
+  color: inherit;
+  text-underline-offset: 2px;
+}
+@media (min-width: 600px) {
+  .hdoors {
+    flex: none;
+    grid-template-rows: none;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+  .hdoor.learn .hdart,
+  .hdoor.identify .hdart.rc {
+    flex: none;
+  }
+  .hdoor.learn .hdart {
+    max-height: none;
+  }
+  .hdoor.learn .hdtiles {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+  .hdoor.learn .hdtiles img:nth-child(n + 5) {
+    display: block;
+  }
+  .hdoor.learn .hdbody {
+    flex: 1;
+  }
+  .hdoor.learn .hddesc {
+    display: block;
+  }
+  .hdoor.learn .hdacts {
+    flex: none;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-auto-rows: auto;
+  }
+  .hdbtn:has(.hdi) {
+    padding: 14px 18px;
+  }
+  .hdoor.identify {
+    flex-direction: column;
+  }
+  .hdoor.identify .hdbody {
+    padding-inline: 22px;
+  }
+  .hdoor.identify .hddesc {
+    display: block;
+  }
+  .hcred {
+    margin-top: auto;
+    padding-top: 10px;
   }
 }
 /* The subject selector (Corals / Fish, core.js SUBJECTS), above the two doors. */
@@ -514,4 +666,12 @@
 .home-page .hsubj button {
   min-width: 96px;
   font-size: var(--fs-m);
+}
+/* The line under the selector while a subject in beta is chosen (core.js SUBJECTS beta). */
+.home-page .hbeta {
+  max-width: 640px;
+  margin: -4px auto 12px;
+  color: var(--muted);
+  font-size: var(--fs-s);
+  text-align: center;
 }

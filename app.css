@@ -81,6 +81,7 @@
   --bad: #b23a2a;
   --bad-bg: #f7dcd6;
   --warn: #d98b2b;
+  --review: #b86e0f; /* the "to review" dot of My progress (amber, calm; 2026-11-03), on a --surface ring */
   --cf-ink: #8a5a14;
   --photo-bg: #000;
   --on-photo: #fff;
@@ -125,6 +126,7 @@
   --bad: #f19a8b;
   --bad-bg: #45231d;
   --cf-ink: #d9a75c;
+  --review: #e3a649;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3);
   --shadow-hover: 0 4px 16px rgb(0 0 0 / 0.45);
   color-scheme: dark;
@@ -170,7 +172,9 @@ body::before {
 .wrap {
   max-width: var(--page);
   margin: 0 auto;
-  min-height: calc(100dvh - var(--tabbar-h, 0px));
+  /* The phone tab bar is --tabbar-h plus the bottom safe area (home indicator) tall, and the body pads both: leaving the
+     safe area out here made every page on such a phone 34 px taller than the screen (Pierre's Home scroll, 2026-11-03). */
+  min-height: calc(100dvh - var(--tabbar-h, 0px) - env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
 }
@@ -269,18 +273,8 @@ h2 {
   font-size: var(--fs-l);
   margin: 4px 0 12px;
 }
-/* Credits: one small line pinned to the bottom of the page (the .wrap column fills the window), full page width. */
-footer {
-  margin-top: auto;
-  font-size: var(--fs-xs);
-  color: var(--muted);
-  border-top: 1px solid var(--line);
-  padding: 8px 0 10px;
-}
-footer p {
-  max-width: none;
-  margin: 0;
-}
+/* No page footer (Pierre, 2026-11-03): the credits are one line at the bottom of Home and the About page (#about);
+   About, Privacy and Send feedback end the ? help of every page (.hend). */
 main {
   margin-bottom: 32px;
 }
@@ -1185,7 +1179,7 @@ header {
 }
 /* A one-card group shares its row: its title stays on at most 2 lines (full title on hover) so the row's titles line up
    (designer re-review 2026-11-01, m2). */
-.gpack > .gblk[data-n='1'] > .gdiv .gt {
+.gpack > .gblk[data-n='1'] > .gdiv .gtitle {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -1354,6 +1348,19 @@ header {
 .sheet .keyid {
   margin: 14px 0;
 }
+/* The plain sentence (app.js plainLine): right under the photo of the genus sheet and of the first-meeting card, before
+   the ID tips, in body text (Pierre, 2026-11-03). */
+.plainw {
+  margin: 0 0 14px;
+  max-width: 70ch;
+  color: var(--ink);
+  font-size: var(--fs-m);
+  line-height: 1.45;
+}
+.ulcard .plainw {
+  margin: 0 0 12px;
+  text-align: left;
+}
 .fb .imrfb {
   margin: 2px 0 8px;
   padding-left: 18px;
@@ -1405,15 +1412,16 @@ header {
     grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
   }
 }
+/* Relative on phones only as the frame of its enlarge mark (.zic): its top offset is for the sticky cover from tablets up. */
 .hero-ph {
-  position: static;
-  top: calc(var(--hdr-h, 56px) + 60px);
+  position: relative;
   overflow: hidden;
   box-shadow: var(--shadow);
 }
 @media (min-width: 600px) {
   .hero-ph {
     position: sticky;
+    top: calc(var(--hdr-h, 56px) + 60px);
   }
 }
 .hero-ph img {
@@ -1902,7 +1910,7 @@ header {
     min-height: 0;
   }
 }
-/* Screen-fitting pages: no footer, but still room for the phone tab bar (0 on wider screens). */
+/* Screen-fitting pages: room for the phone tab bar (0 on wider screens). */
 body:has(.q),
 body:has(.pgrid),
 body:has(.rvstage),
@@ -1910,14 +1918,6 @@ body:has(.pgroups),
 body:has(.pslate),
 body:has(.lk) {
   padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
-}
-body:has(.q) footer,
-body:has(.pgrid) footer,
-body:has(.rvstage) footer,
-body:has(.pgroups) footer,
-body:has(.pslate) footer,
-body:has(.lk) footer {
-  display: none;
 }
 body:has(.q) main,
 body:has(.pgrid) main,
@@ -1964,21 +1964,77 @@ body:has(.lk) main {
   background: var(--qbg, var(--photo-bg)) center/cover;
   filter: blur(22px) brightness(0.55);
 }
-.qph .zoom::after {
-  content: '⤢';
+/* The enlarge mark (app.js ZOOMI) in the bottom-right corner of a photo that opens the enlarged view: quiz, duels, genus
+   sheet (Pierre, 2026-11-03: players almost never enlarged a quiz photo). Always there, quiet: the scrim pill of the
+   other marks on photos; the source pill (.psrc) keeps clear of it on the left. */
+.zic {
   position: absolute;
   right: 8px;
   bottom: 8px;
-  width: 30px;
-  height: 30px;
+  z-index: 1;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
   border-radius: var(--pill);
   background: var(--scrim);
   color: var(--on-photo);
-  font-size: var(--fs-m);
-  opacity: 0.8;
   pointer-events: none;
+}
+.zic svg {
+  display: block;
+}
+@media (hover: hover) {
+  .zoom:hover .zic {
+    background: color-mix(in srgb, var(--photo-bg) 80%, transparent);
+  }
+}
+.strip .zoom {
+  position: relative;
+}
+/* One-time coach mark over the first photo of an early quiz question (quiz.js zoomHint): a bubble pointing at the enlarge
+   mark below it. It lets every tap through and goes at the first one, or after ZHINT.MS. */
+.zhint {
+  position: absolute;
+  right: 6px;
+  bottom: 50px;
+  z-index: 3;
+  max-width: calc(100% - 12px);
+  padding: 6px 12px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-hover);
+  font-size: var(--fs-s);
+  font-weight: 600;
+  line-height: 1.3;
+  pointer-events: none;
+  animation: zhint 0.25s ease-out;
+}
+.zhint::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  background: var(--surface);
+  transform: rotate(45deg);
+}
+.zhint.out {
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+@keyframes zhint {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zhint {
+    animation: none;
+  }
 }
 .qph figcaption {
   position: absolute;
@@ -2234,43 +2290,85 @@ kbd {
 .fb h3 a {
   color: inherit;
 }
-/* One-tap question (pulse, app.js): a quiet row under the feedback, above Next; wraps on narrow phones. */
+/* One-tap question (quiz.js pulseAsk; Pierre 2026-11-03: a quiet row inside the feedback was missed): a block of its
+   own between the feedback and Next, tinted with the palette's accent, a "Quick question" title, the question, then
+   its three answers on one row of equal widths down to 360 px (labels wrap inside their button, never the row). */
 .pulse {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
   margin: 10px 0 0;
-  padding: 8px 10px;
+  padding: 8px 10px 10px;
   border-radius: var(--r);
-  background: var(--surface-2);
-  font-size: var(--fs-s);
-  color: var(--muted);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--ink);
 }
-.pulse span {
-  margin-right: 2px;
+.pulseh {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-.pulse button {
+.pulsek {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.pulseq {
+  margin: 0 0 8px;
+  font-size: var(--fs-m);
+  font-weight: 600;
+}
+.pulseb {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.pulseb button {
   font: inherit;
+  font-size: var(--fs-s);
+  line-height: 1.2;
   color: var(--ink);
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 6px 12px;
-  min-height: 36px;
+  border: 1px solid var(--accent);
+  border-radius: var(--pill);
+  padding: 6px 4px;
+  min-height: 40px;
   cursor: pointer;
 }
 @media (hover: hover) {
-  .pulse button:hover {
-    border-color: var(--accent);
+  .pulseb button:hover {
+    background: color-mix(in srgb, var(--accent) 22%, var(--surface));
   }
 }
 .pulse .pulsex {
-  margin-left: auto;
+  font: inherit;
+  font-size: var(--fs-l);
+  line-height: 1;
   border: none;
   background: none;
   color: var(--muted);
-  padding: 6px 8px;
+  padding: 2px 6px;
+  min-width: 32px;
+  min-height: 32px;
+  cursor: pointer;
+}
+.pulseok {
+  margin: 0;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  color: var(--accent);
+}
+/* When a long feedback makes the phone's sheet or the desktop's side column scroll (a mix-up's lines, 4 choices), Next
+   and the one-tap question stay in view at its bottom and the feedback scrolls under them (desktop pinned Next already,
+   design re-review p2; --nexth: Next's height, set by quiz.js pulseAsk). Nothing moves when everything fits. */
+.q.done #after #next {
+  position: sticky;
+  bottom: 0;
+}
+.q.done #after .pulse {
+  position: sticky;
+  bottom: calc(var(--nexth, 44px) + 6px);
+  z-index: 1;
 }
 /* Only "Yes"/"No" takes the right/wrong colour: the genus to remember stays in ink (designer re-review 2026-11-01, N3). */
 .fb h3 a {
@@ -2467,11 +2565,32 @@ td i {
   display: none;
 }
 .lb-in {
+  position: relative;
   max-width: min(1600px, 100%);
   max-height: 100%;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+/* An optional layer over the whole photo (app.js zoom opts.over: a Coral basics step's labels), placed on the photo's
+   box by app.js; clicks go through to the photo (actual size). */
+.lb-over {
+  position: absolute;
+  pointer-events: none;
+}
+.lb-over[hidden] {
+  display: none;
+}
+/* its drawing (rings, pointers) fills the layer like the labels do (Codex on PR #424: unsized, it drifted off the photo) */
+.lb-over > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.lb-nav button[aria-pressed='false'] {
+  opacity: 0.7;
+  text-decoration: line-through;
 }
 .lb-in img {
   max-width: 100%;
@@ -2588,9 +2707,24 @@ header {
 }
 .hdr-tools {
   grid-area: tools;
+  gap: 4px;
 }
 .prog .pl {
   display: none;
+}
+/* Narrow phones (under 380 px, e.g. 360 and 320): while the Sign in (or Not saved) pill is in the header, the five
+   controls and the logotype don't fit one line (the ⚙ was cut off and every page scrolled sideways, 2026-11-03). The
+   logotype then steps aside, still the home link's name for screen readers; the logo stays, and no control is dropped.
+   The one width query outside the three size classes (AGENTS.md rule 19), for the header only. */
+@media (max-width: 379.98px) {
+  header:has(#signb:not([hidden])) .brand .home span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 .helpbox {
   grid-area: help;
@@ -2629,9 +2763,6 @@ header {
 }
 body {
   padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
-}
-footer {
-  padding-bottom: 12px;
 }
 .modes.ctx a {
   flex: none;
@@ -2702,6 +2833,7 @@ footer {
   }
   .hdr-tools {
     grid-area: revert;
+    gap: 6px;
   }
   .helpbox {
     grid-area: revert;
@@ -2738,9 +2870,6 @@ footer {
   }
   body {
     padding-bottom: 0;
-  }
-  footer {
-    padding-bottom: 10px;
   }
   .modes.ctx a {
     flex: 0 0 auto;
@@ -2786,6 +2915,10 @@ footer {
   }
   .wide {
     display: revert;
+  }
+  /* Its phone-only counterpart (a short tab name, app.js MODES). */
+  .narrow {
+    display: none;
   }
 }
 
@@ -3553,7 +3686,7 @@ a.lt:hover {
    move from green/red to dark blue / orange. Hue alone is not enough (blue and orange of equal brightness merge for
    monochromats and in grey), so the pair also differs in lightness: luminance ratio 2.8 light, 2.3 dark; simulated
    (Machado 2009) OKLab distance >= 25 for protan, deutan, tritan and greyscale. Text contrast >= 4.5 on its surface.
-   Never colour alone: answers carry a tick or a cross, review carries "!". The level scale differs by lightness. */
+   Never colour alone: answers carry a tick or a cross, review carries a dot. The level scale differs by lightness. */
 :root[data-cvd='1'] {
   --good: #08306b;
   --good-bg: #dbe6f4;
@@ -3579,11 +3712,6 @@ a.lt:hover {
 :root[data-cvd='1'] .ans button.ok::after,
 :root[data-cvd='1'] .ans button.ko::after {
   font-size: var(--fs-l);
-}
-/* Colour-blind mode: "to review" also changes shape (thick dashed border), not only colour. */
-:root[data-cvd='1'] :is(.pslate .ps.weak, .pseg a.weak, .pwall .pw.weak, .plvl .pl-rev) {
-  border-style: dashed;
-  border-width: 3px;
 }
 .s1 {
   --lvc: var(--lv1);
@@ -3624,27 +3752,23 @@ a.lt:hover {
   font-style: normal;
   font-weight: 700;
 }
-.pslate .ps.weak,
-.pseg a.weak {
-  border: 2px solid var(--bad);
-}
+/* "To review": a small amber dot in the corner, on a ring of the page's surface so it shows on every level colour and
+   photo, light and dark (beginner review 2026-11-03: the red border and "!" read as an alarm). A shape, not only a colour,
+   so the colour-blind mode needs nothing more. Same meaning, same tooltip ("to review"). */
 .pslate .ps.weak::after,
 .pseg a.weak::after,
 .pwall .pw.weak::after,
 .plvl .pl-rev::before {
   z-index: 1;
-  content: '!';
+  content: '';
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 14px;
-  height: 14px;
+  top: 5px;
+  right: 5px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--bad);
-  color: var(--surface);
-  font: 700 var(--fs-2xs) / 14px var(--body);
-  text-align: center;
-  font-style: normal;
+  background: var(--review);
+  box-shadow: 0 0 0 2px var(--surface);
 }
 /* Scale legend under the ring: one swatch per step with its count, then the review marker. */
 /* The six levels on one row, "Review" as its own slim row below, at every size (design review 2026-11-01 on phones;
@@ -3685,19 +3809,20 @@ a.lt:hover {
   flex-direction: row;
   justify-content: center;
   gap: 6px;
+  align-items: center;
   padding: 2px 8px;
-  border: 2px solid var(--bad);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
 }
+/* The legend's dot sits before its count, in the line. */
 .plvl .pl-rev::before {
-  top: -7px;
-  right: -7px;
-}
-.plvl .pl-rev.zero {
-  border-color: var(--line);
+  position: static;
+  flex: none;
 }
 .plvl .pl-rev.zero::before {
   display: none;
-} /* nothing to review: the legend stays, without any "!" (a grey one still read as an alarm, RA re-review 2026-11-01) */
+} /* nothing to review: the legend stays, without any dot (a grey "!" still read as an alarm, RA re-review 2026-11-01) */
 /* Progress towards Learned as a number at the right of a tile (with the 5px bar along its bottom). */
 .pslate .ps .pct,
 .pseg a .pct {
@@ -4011,7 +4136,7 @@ a.psrc:focus-visible {
 }
 /* IMR group colours are muted tints (design review 2026-11-01): the number and title carry the group; strong colour is kept
    for the learning-level scale, so the same hue never means two things on one screen. Dark text keeps contrast >= 4.5. */
-:root[data-theme='dark'] :is(.gdiv .gn, .pgr .gn) {
+:root[data-theme='dark'] :is(.gdiv .gn, .pgr .gn, .cqh .gn) {
   background: hsl(var(--g, 200) 25% 24%);
   color: hsl(var(--g, 200) 55% 84%);
   box-shadow: inset 0 0 0 1px hsl(var(--g, 200) 25% 40%);
@@ -4029,6 +4154,203 @@ a.psrc:focus-visible {
 .fdopt.gchip[aria-pressed='true'] {
   color: inherit;
   background: hsl(var(--g) 32% 58% / 0.18);
+}
+/* Custom quiz, the selection screen (quiz.js viewCustom; Pierre, 2026-11-03): search and the IMR groups / My mix-ups /
+   Progress switch, quick picks, then every genus in view as a small photo with its name, under its group's header (the
+   IMR groups' muted tint on their number), and a bar with the count, Clear all and Start that stays above the phone tab bar.
+   A picked genus gets the accent ring and a tick (rings mark selection, DESIGN.md). */
+/* Search and the view switch share a row when they fit; on phones the switch goes under the search, full width. */
+.cqtools {
+  margin: 4px 0 8px;
+}
+.cqtools input {
+  flex: 1 1 240px;
+}
+@media (max-width: 599.98px) {
+  .cqtools .seg {
+    flex: 1 1 100%;
+  }
+  .cqtools .seg button {
+    flex: 1;
+  }
+}
+.cqnote {
+  margin: 0;
+}
+.cqquick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.cqquick .label {
+  margin-right: 2px;
+}
+.cqquick .chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.cqquick select.chip {
+  max-width: 100%;
+  color: var(--accent);
+}
+.cq {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0 0 12px;
+}
+.cqg[hidden] {
+  display: none;
+}
+.cqh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.cqh .gn {
+  flex: none;
+  border-radius: var(--pill);
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  background: hsl(var(--g, 200) 40% 88%);
+  color: hsl(var(--g, 200) 50% 24%);
+  box-shadow: inset 0 0 0 1px hsl(var(--g, 200) 30% 68%);
+}
+.cqht {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.cqht small {
+  display: block;
+  font-weight: 400;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.cqall {
+  flex: none;
+  font-size: var(--fs-s);
+  padding: 6px 0;
+}
+.cqtiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+  gap: 6px;
+}
+@media (min-width: 600px) {
+  .cqtiles {
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    gap: 8px;
+  }
+}
+.cqtile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  cursor: pointer;
+}
+.cqtile[hidden] {
+  display: none;
+}
+.cqtile img,
+.cqtile .cqnoph {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--surface-2);
+}
+.cqtile i {
+  padding: 3px 4px 4px;
+  font-size: var(--fs-xs);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.cqtile small {
+  margin: -2px 0 4px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.cqtile[aria-pressed='true'] {
+  border-color: var(--accent);
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+}
+.cqtile[aria-pressed='true'] i {
+  font-weight: 600;
+}
+.cqtile[aria-pressed='true']::after {
+  content: '✓';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+@media (hover: hover) {
+  .cqtile:hover {
+    border-color: var(--accent);
+  }
+}
+.cqbar {
+  position: sticky;
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+.cqn {
+  flex: 1;
+  min-width: 0;
+}
+.cqn small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.cqbar .next {
+  align-self: center;
+}
+.cqbar .next:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+}
+.cqbar .linkish:disabled {
+  color: var(--muted);
+  cursor: default;
+  text-decoration: none;
 }
 /* ID tips: two genera per row (one on phones), larger photos. */
 .tipsec,
@@ -4233,6 +4555,18 @@ a.psrc:focus-visible {
 .gpop small {
   display: block;
   margin-top: 4px;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+/* The sourced definition under the plain-words sentence (data.json terms[i][3], beginner review 2026-11-03). */
+.gpop .gdef {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+}
+/* "Tap an underlined word": said once, on the first card (quiz.js introShow). */
+.gthint {
+  margin: 6px 0 0;
   color: var(--muted);
   font-size: var(--fs-xs);
 }
@@ -4662,7 +4996,7 @@ a.psrc:focus-visible {
   pointer-events: none;
 }
 /* Phone base (mobile-first); larger screens restore below. */
-.q .qstage.qvs .qph .zoom::after {
+.q .qstage.qvs .qph .zic {
   display: none;
 }
 .q .qstage.qvs .qph figcaption {
@@ -4681,7 +5015,7 @@ a.psrc:focus-visible {
 }
 
 @media (min-width: 1024px) {
-  .q .qstage.qvs .qph .zoom::after {
+  .q .qstage.qvs .qph .zic {
     display: grid;
   }
   .q .qstage.qvs .qph figcaption {
@@ -4696,13 +5030,10 @@ a.psrc:focus-visible {
 }
 
 /* My progress wall: full-colour covers (grey = not seen), each with a name band in its level colour (same scale, mini
-   ring and % as Slate/Groups); learned = tick; review = red border + "!". */
+   ring and % as Slate/Groups); learned = tick; review = an amber dot. */
 .pwall .pw {
   outline: 0;
   border: 2px solid transparent;
-}
-.pwall .pw.weak {
-  border-color: var(--bad);
 }
 .pwall .pw.s0 {
   border: 1px dashed var(--line);
@@ -4891,6 +5222,45 @@ html.touring body::after {
 }
 .htour {
   margin-top: 8px;
+}
+/* The last line of every ? help: About & credits · Privacy · Send feedback (app.js helpEnd). */
+.helpbox .hend {
+  margin-top: 8px;
+}
+.helpbox > .hend:first-child {
+  margin-top: 0;
+}
+/* About and credits (#about, home.js viewAbout): a calm text page, one quiet card per topic. */
+.about {
+  max-width: 68ch;
+  margin: 12px 0 0;
+  display: grid;
+  gap: 12px;
+}
+.about section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 16px;
+}
+.about h3 {
+  font-family: var(--display);
+  font-size: var(--fs-l);
+  margin: 0 0 4px;
+}
+.about p {
+  margin: 0 0 6px;
+}
+.about p:last-child,
+.about ul:last-child {
+  margin-bottom: 0;
+}
+.about ul {
+  margin: 0 0 6px;
+  padding-left: 1.2em;
+}
+.about > .note {
+  margin: 0;
 }
 /* Phone base (mobile-first); larger screens restore below. */
 #tour .tbub {
@@ -5326,7 +5696,8 @@ html.touring body::after {
   border: 1.5px dashed var(--line);
   color: var(--muted);
 }
-/* A card or offer due while the guided tour runs waits under it, out of sight, and shows once the tour closes (an RA,
+/* ---------- Cards (app.js cardShow; Pierre, 2026-11-03: direction B, Medallion, docs/DESIGN.md "Cards") ----------
+   A card or offer due while the guided tour runs waits under it, out of sight, and shows once the tour closes (an RA,
    2026-11-02: the first genus card sat on top of the tour's step 3). */
 html.touring .unlock {
   display: none;
@@ -5338,66 +5709,204 @@ html.touring .unlock {
   display: grid;
   place-items: center;
   padding: 16px;
-  background: rgb(0 0 0 / 0.5);
+  background: color-mix(in srgb, var(--photo-bg) 50%, transparent);
   animation: ulfade 0.25s ease-out;
 }
+/* One grammar for every card and toast: --k is the kind's hue (the accent; the warm --warn for an apology), --kt its pale
+   tint, --kt2 a stronger one, --kink its text colour (mixed with the ink: readable on the tint in both themes). */
+.ulcard,
+.achin,
+.apptoast {
+  --k: var(--accent);
+  --kt: color-mix(in srgb, var(--k) 13%, var(--surface));
+  --kt2: color-mix(in srgb, var(--k) 24%, var(--surface));
+  --kink: color-mix(in srgb, var(--k) 62%, var(--ink));
+}
+[data-k='apology'] {
+  --k: var(--warn);
+}
+/* The card: a medallion over the top edge of its panel; the panel scrolls when taller than the screen, under the
+   medallion, which stays in view. */
 .ulcard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: min(380px, 100%);
   max-height: calc(100dvh - 32px);
-  overflow: auto;
-  background: var(--surface);
   color: var(--ink);
-  border-radius: var(--r);
-  padding: 20px;
+  font-size: var(--fs-m);
+  line-height: 1.45;
   text-align: center;
+  animation: ulrise 0.34s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.ulmed {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 88px;
+  height: 88px;
+  margin-bottom: -44px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--kt);
+  border: 4px solid var(--surface);
   box-shadow: var(--shadow-hover);
-  animation: ulpop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+  animation: ulmedal 0.5s 0.12s cubic-bezier(0.2, 1.5, 0.4, 1) both;
 }
-/* A card photo that did not load (quiz.js): a plain tile, never a broken-image icon. */
-.unlock img.fail {
-  visibility: hidden;
+.ulmed .e {
+  font-size: var(--fs-2xl);
+  line-height: 1;
+  animation: ulwig 0.6s 0.55s ease-in-out both;
 }
-.ulphoto {
-  background: var(--surface-2);
+/* A visual in the medallion (the progress ring): a little larger, on the card's surface. */
+.ulmed.vis {
+  width: 100px;
+  height: 100px;
+  margin-bottom: -50px;
+  background: var(--surface);
 }
-/* First-encounter card (quiz.js introShow): the genus's cover photo, no flip. */
-.ulphoto {
-  width: min(260px, 72vw);
-  aspect-ratio: 4/3;
-  margin: 0 auto 14px;
-  border-radius: var(--r);
-  overflow: hidden;
-}
-.ulphoto img {
+.ulpanel {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  padding: 56px 20px 20px;
+  border-radius: var(--r);
+  background: linear-gradient(to bottom, var(--kt), var(--surface) 150px);
+  box-shadow: var(--shadow-hover);
+}
+.ulmed.vis + .ulpanel {
+  padding-top: 62px;
 }
 .ulkick {
   margin: 0;
-  color: var(--accent);
+  color: var(--kink);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   font-size: var(--fs-xs);
 }
 .ulcard h3 {
-  margin: 2px 0 6px;
+  margin: 6px 0 8px;
+  font-family: var(--display);
   font-size: var(--fs-xl);
+  line-height: 1.12;
+}
+/* Several notes on one card (progress.js recalcNotice, latest first): the older ones under a rule. */
+.ulpanel h3 ~ h3 {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-l);
+}
+.ulpanel p {
+  margin: 0 0 10px;
 }
 .ulnote {
   margin: 0 0 10px;
   color: var(--muted);
   font-size: var(--fs-s);
 }
+.ulpanel .note {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.ulfoot {
+  margin: 10px 0 0 !important;
+}
+/* Buttons stacked full width, the main one on top. */
+.ulbtns {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 16px;
+}
+.ulbtns .next {
+  align-self: stretch;
+  text-align: center;
+}
+/* The first meeting with a genus (quiz.js introShow): the photo as a full-width band, at most a third of the screen's
+   height (the tips stay in view), the kind's emoji and the kicker on a chip at its edge. */
+.ulcard.band .ulpanel {
+  padding-top: 0;
+  background: var(--surface);
+}
+.ulphoto {
+  position: relative;
+  margin: 0 -20px;
+  aspect-ratio: 16/10;
+  max-height: 34dvh;
+  overflow: hidden;
+  border-radius: var(--r) var(--r) 0 0;
+  background: var(--surface-2);
+}
+.ulphoto img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.band .ulkick {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: -13px;
+  padding: 3px 10px 3px 7px;
+  border-radius: var(--pill);
+  background: var(--kt);
+  box-shadow: 0 0 0 3px var(--surface);
+  line-height: 1.4;
+}
+.band .ulkick .e {
+  font-size: var(--fs-s);
+  letter-spacing: 0;
+}
+/* A card photo that did not load (quiz.js): a plain tile, never a broken-image icon. */
+.unlock img.fail {
+  visibility: hidden;
+}
 .ultips,
 .ulcard .warn {
   text-align: left;
   margin: 0 0 12px;
 }
+/* ID tips boxed, as everywhere else they appear (.tipbox), on the kind's tint. */
+.ultips {
+  padding: 10px 12px 4px;
+  border-radius: var(--r-sm);
+  background: var(--kt);
+}
 .ultips .label {
   margin: 0 0 4px;
+}
+.ultips ul {
+  margin: 0 0 6px;
+}
+/* The bonus genera offer: their own photos as a row of round crops. */
+.ulthumbs {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0 8px;
+}
+.ulthumbs > * {
+  width: 52px;
+  height: 52px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface-2);
+  border: 3px solid var(--surface);
+  box-shadow: var(--shadow);
+}
+.ulthumbs > * + * {
+  margin-left: -8px;
 }
 /* "Open all genera" (model.js introAll): a tinted band at the foot of the first cards and a box in My progress, with a
    real button (Pierre, 2026-11-02: a white chip on white was easy to miss). */
@@ -5421,36 +5930,67 @@ html.touring .unlock {
   width: 100%;
   text-align: center;
 }
-.ulstack {
-  flex-direction: column;
-  align-items: stretch;
+/* The progress ring in a medallion (app.js cardRing): the % now strong, a former % faint behind it. */
+.ulring {
+  width: 80px;
+  height: 80px;
+  display: block;
 }
-.ulstack .next {
-  align-self: stretch;
-  text-align: center;
+.ulring circle {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
 }
-.ulbtns {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.ulring .tr {
+  stroke: var(--kt2);
+}
+.ulring .gh {
+  stroke: color-mix(in srgb, var(--k) 38%, var(--surface));
+}
+.ulring .ar {
+  stroke: var(--k);
+  animation: ulfill 0.8s 0.3s ease-out both;
+}
+.ulring text {
+  fill: var(--ink);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 17px;
 }
 @keyframes ulfade {
   from {
     opacity: 0;
   }
 }
-@keyframes ulpop {
+@keyframes ulrise {
   from {
-    transform: scale(0.7);
     opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+}
+@keyframes ulmedal {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+@keyframes ulwig {
+  30% {
+    transform: rotate(-10deg);
+  }
+  65% {
+    transform: rotate(8deg);
+  }
+}
+@keyframes ulfill {
+  from {
+    stroke-dasharray: 0 999;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .unlock,
-  .ulcard {
-    animation-duration: 0.01s;
-    animation-delay: 0s;
+  .unlock * {
+    animation: none !important;
   }
 }
 .psbonus {
@@ -5478,7 +6018,8 @@ html.touring .unlock {
   }
 }
 .lb-cap .rep,
-footer .rep {
+.hend .rep,
+.about .rep {
   display: inline;
   margin: 0;
   font-size: inherit;
@@ -5488,7 +6029,14 @@ footer .rep {
   opacity: 0.85;
 }
 .lb-cap .rep:hover,
-footer .rep:hover {
+.hend .rep:hover,
+.about .rep:hover {
+  opacity: 1;
+}
+/* Send feedback beside the other links of the ? help and of About: the same link colour. */
+.hend .rep,
+.about .rep {
+  color: var(--accent);
   opacity: 1;
 }
 .repline {
@@ -5513,8 +6061,18 @@ footer .rep:hover {
   margin: 0 0 4px;
   line-height: 1.15;
 }
-.signnudge .ulcard {
+.signnudge .ulpanel {
   text-align: left;
+}
+/* The sign-in card: its title and first line centred like every card, the form's Sign in full width like a card's main
+   button (Yes / No of "Is it you?" keep their row). */
+.signnudge .tsync.sync > h3,
+.signnudge .tsync.sync > h3 + p {
+  text-align: center;
+}
+.signnudge .sform:not(.sconfirm) button[type='submit'] {
+  flex-basis: 100%;
+  text-align: center;
 }
 
 /* ---------- Leaderboard (Pierre, 2026-11-01): 🏆 in the header, #board page, rank in My progress ---------- */
@@ -5630,6 +6188,7 @@ footer .rep:hover {
 .pboardl:hover {
   text-decoration: underline;
 }
+/* A short note (progress.js appToast): the cards' look, the kind's tint at its left. */
 .apptoast {
   position: fixed;
   left: 50%;
@@ -5641,20 +6200,34 @@ footer .rep:hover {
   align-items: center;
   width: max-content; /* centred by left 50%: without it the note shrinks to half the screen (a 4-line note on phones) */
   max-width: min(92vw, 520px);
-  padding: 10px 14px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--surface);
+  box-sizing: border-box;
+  padding: 10px 8px 10px 16px;
+  border-radius: var(--r);
+  background: linear-gradient(to right, var(--kt), var(--surface) 70%);
   color: var(--ink);
-  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+  box-shadow: var(--shadow-hover);
   font-size: var(--fs-s);
+  animation: ulrise 0.34s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.apptoast a {
+  color: var(--kink);
 }
 .apptoast button {
+  flex: none;
+  width: 32px;
+  height: 32px;
   border: 0;
+  border-radius: 50%;
   background: none;
-  color: inherit;
+  color: var(--muted);
   font: inherit;
   cursor: pointer;
+}
+@media (hover: hover) {
+  .apptoast button:hover {
+    background: var(--kt);
+    color: var(--ink);
+  }
 }
 .btitle {
   margin: 4px 0 12px;
@@ -5841,35 +6414,58 @@ footer .rep:hover {
   width: min(92vw, 380px);
   animation: achin 0.45s cubic-bezier(0.2, 1.3, 0.4, 1) both;
 }
+/* The achievement toast: the cards' look (docs/DESIGN.md "Cards") as a pill, the achievement's emoji in a small
+   medallion with its tier at the edge, on the kind's tint fading to the surface. */
 .achin {
   display: flex;
   gap: 12px;
   align-items: center;
-  padding: 12px 14px;
-  border: 2px solid var(--accent);
-  border-radius: 14px;
-  background: var(--surface);
+  padding: 8px 22px 8px 8px;
+  border-radius: var(--pill);
+  background: linear-gradient(to right, var(--kt), var(--surface) 60%);
   color: var(--ink);
   text-decoration: none;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.22);
+  box-shadow: var(--shadow-hover);
+  line-height: 1.35;
 }
 .achin .achic {
-  font-size: 2.2rem;
+  position: relative;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--kt);
+  border: 3px solid var(--surface);
+  box-shadow: var(--shadow);
+  font-size: var(--fs-xl);
+}
+.achin .achic > span:first-child {
   animation: achpulse 0.9s ease-out 0.3s both;
+}
+.achin .tier {
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  font-size: var(--fs-m);
 }
 .achin small {
   display: block;
-  color: var(--muted);
+  color: var(--kink);
   font-size: var(--fs-xs);
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 .achin b {
   display: block;
   font-size: var(--fs-m);
 }
-.achin span > span {
+.achin > span:last-child > span {
   font-size: var(--fs-s);
+  color: var(--muted);
 }
 .confetti {
   position: absolute;
@@ -5894,7 +6490,7 @@ footer .rep:hover {
   background: var(--lv1);
 }
 .achpop.calm,
-.achpop.calm .achic {
+.achpop.calm .achic > span {
   animation: none;
 }
 @keyframes achin {
@@ -5930,7 +6526,8 @@ footer .rep:hover {
 }
 @media (prefers-reduced-motion: reduce) {
   .achpop,
-  .achin .achic,
+  .achin .achic > span,
+  .apptoast,
   .confetti i {
     animation: none;
   }
@@ -6017,4 +6614,17 @@ footer .rep:hover {
 /* Choices named by a common name (fish entries, the winks' labels): upright, not the genera's italics. */
 .ans button.plain {
   font-style: normal;
+}
+/* A subject in beta (core.js SUBJECTS beta): a small tag on its buttons (Home, ⚙ Subject). */
+small.beta {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: var(--pill);
+  background: var(--accent);
+  color: var(--bg);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.5;
+  vertical-align: middle;
 }

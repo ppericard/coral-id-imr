@@ -72,7 +72,7 @@ function viewGenera() {
         .map(L => {
           const gr = DATA.imrg.find(x => x.n === shownGroup(L[0]));
           const head = gr
-            ? `<h3 class="gdiv" id="grp-${gr.n}" style="--g:${groupHue(gr.n)}" title="${esc(gr.t)}"><span class="gn">${gr.n}</span><span class="gt">${esc(gr.t)}</span></h3>`
+            ? `<h3 class="gdiv" id="grp-${gr.n}" style="--g:${groupHue(gr.n)}" title="${esc(gr.t)}"><span class="gn">${gr.n}</span><span class="gtitle">${esc(gr.t)}</span></h3>`
             : '<h3 class="gdiv"><span class="gn">★</span>Not covered in the lecture</h3>';
           return `<section class="gblk" data-n="${L.length}">${head}${L.map(n => (tips ? tipCard(n) : card(n, 'stripe'))).join('')}</section>`;
         })
@@ -199,8 +199,9 @@ function viewGenus(name) {
       const list = inView(v);
       if (g.levels === 2 && v === 'macro') label = 'Close-up';
       const fig = p => {
-        const i = flat.findIndex(x => x.f === p.f);
-        return `<figure><button type="button" class="zoom" data-z="${i}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${esc(name)}, ${p.imr ? 'IMR lecture photo' : label.toLowerCase() + ' view'}" loading="lazy"></button><figcaption>${p.imr ? `<b class="lect">IMR lecture</b> · slide ${p.slide}` : credit(p)}</figcaption></figure>`;
+        const i = flat.findIndex(x => x.f === p.f),
+          alt = `${esc(name)}, ${p.imr ? 'IMR lecture photo' : label.toLowerCase() + ' view'}`;
+        return `<figure><button type="button" class="zoom" data-z="${i}" aria-label="Enlarge photo: ${alt}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${alt}" loading="lazy">${ZOOMI}</button><figcaption>${p.imr ? `<b class="lect">IMR lecture</b> · slide ${p.slide}` : credit(p)}</figcaption></figure>`;
       };
       // The cover is already shown at the top: not repeated in its row when the row has other featured photos.
       const feat0 = g.sl[v].feat,
@@ -230,8 +231,9 @@ function viewGenus(name) {
     }
     ${myProg(name)}
     <div class="hero">
-      ${cv ? `<button type="button" class="zoom hero-ph" data-z="${ci}"><img src="${img(cv, fit(Math.min(innerWidth, 640)))}" data-fit alt="${esc(name)}"></button>` : ''}
+      ${cv ? `<button type="button" class="zoom hero-ph" data-z="${ci}" aria-label="Enlarge photo: ${esc(name)}"><img src="${img(cv, fit(Math.min(innerWidth, 640)))}" data-fit alt="${esc(name)}">${ZOOMI}</button>` : ''}
       <div class="idbox">
+        ${plainLine(g)}
         ${g.x ? `<div class="tipbox"><h3>ID tips <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3>${tipsList(g)}</div>` : ''}
         ${imr.length || g.mn ? `<div class="tipbox">${imr.length ? `<h3>ID tips (IMR) <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span></h3>${tipsList(g)}` : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>` : ''}
         ${imr.length ? `<div class="lnotes"><h3>IMR lecture notes</h3>${notesList(g)}</div>` : ''}
@@ -271,7 +273,7 @@ function myProg(n) {
     m = k === 'ok' ? [] : missing(n);
   return (
     `<p class="myprog"><a class="mpl s${st}${k === 'weak' ? ' weak' : ''}" href="#progress" title="My progress">${lvIcon(st)}${MASTERY[st][0]}${k === 'weak' ? ' · ' + t : ''}${st > 0 && st < 5 ? ` <small class="pct" style="--p:${pc}%">${pc}%</small>` : st === 5 ? ' ✓' : ''}</a>` +
-    `<span>${k === 'weak' ? '2 or more mistakes in its last 5 answers. ' : ''}${m.length ? 'Still needed: ' + esc(m.join('; ')) + '.' : 'You know this genus.'}</span></p>`
+    `<span>${k === 'weak' ? `Under ${Math.round(100 * OPEN.P)}% expected right on a typical photo of it. ` : ''}${m.length ? 'Still needed: ' + esc(m.join('; ')) + '.' : 'You know this genus.'}</span></p>`
   );
 }
 
@@ -325,33 +327,34 @@ document.addEventListener('click', e => {
 // Bottom of a genus sheet: the genus and each of its look-alikes at the same size and in the same view,
 // each with its deciding feature and a link to the side-by-side comparison.
 function lookHub(name) {
-  const L = lookOf(name).sort((a, b) => mixedUp(name, b) - mixedUp(name, a));
+  // The declared look-alikes, then those from the players' answers (model.js dataLooks: pairs no source names that
+  // players keep mixing up; 2026-11-04), said as such.
+  const D = new Set(
+      dataLooks()
+        .filter(p => p.includes(name))
+        .map(p => (p[0] === name ? p[1] : p[0]))
+        .filter(n => !lookOf(name).includes(n))
+    ),
+    L = [...lookOf(name), ...D].sort((a, b) => mixedUp(name, b) - mixedUp(name, a));
   return `<h3>Don't confuse with</h3>
     <div class="seg-row"><span class="label">Show</span>${viewSeg()}</div>
     <div class="lrow"><div class="lt self">${viewShot(name, cmpView)}<span><i>${esc(name)}</i><small>this genus</small><span class="psum">${esc(tipsText(GX(name)))}</span></span></div>
     ${L.map(n => {
       const m = mixedUp(name, n),
         side = DATA.gen[name] && DATA.gen[n];
-      return `<a class="lt" href="${side ? `#cmp-${esc(name)}|${esc(n)}` : `#g-${esc(n)}`}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(tipsText(GX(n)))}</span>${(GX(name).lsrc || {})[n] ? `<small class="lsrc">${esc(GX(name).lsrc[n])}</small>` : ''}<b class="cmpgo">${side ? 'Compare side by side →' : 'Open the sheet →'}</b></span></a>`;
+      return `<a class="lt" href="${side ? `#cmp-${esc(name)}|${esc(n)}` : `#g-${esc(n)}`}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(tipsText(GX(n)))}</span>${(GX(name).lsrc || {})[n] ? `<small class="lsrc">${esc(GX(name).lsrc[n])}</small>` : D.has(n) ? '<small class="lsrc">Often mixed up by players</small>' : ''}<b class="cmpgo">${side ? 'Compare side by side →' : 'Open the sheet →'}</b></span></a>`;
     }).join('')}</div>
     ${cmpShots([name])}`;
 }
 // Starred genera are on the slate as look-alikes of surveyed genera. Those the lecture doesn't group are shown
 // in the lecture group most of their Coral Finder look-alikes belong to (ties: the first listed look-alike).
+// Millepora and the bonus genera: no lecture group (0). Both in core.js (lectureGroup, starRefs), where the opening of
+// genera reads the same references (model.js weighted: a ★ genus opens after the genera its card names).
 function shownGroup(n) {
-  const g = DATA.gen[n];
-  if (!g) return 0; // Millepora and the bonus genera: no lecture group
-  if (g.ig) return g.ig;
-  const L = g.look.filter(b => DATA.gen[b] && DATA.gen[b].ig),
-    c = {};
-  L.forEach(b => (c[DATA.gen[b].ig] = (c[DATA.gen[b].ig] || 0) + 1));
-  return L.reduce((best, b) => (c[DATA.gen[b].ig] > c[best] ? DATA.gen[b].ig : best), L.length ? DATA.gen[L[0]].ig : 0) || 0;
+  return lectureGroup(DATA, n);
 }
 const starNote = n => {
-  const g = DATA.gen[n];
-  if (g.n) return '';
-  const k = shownGroup(n),
-    L = g.look.filter(b => DATA.gen[b] && DATA.gen[b].ig === k);
+  const L = starRefs(DATA, n);
   return L.length ? `★ look-alike of ${L.map(b => `<i>${esc(b)}</i>`).join(', ')}` : '';
 };
 function pairs() {

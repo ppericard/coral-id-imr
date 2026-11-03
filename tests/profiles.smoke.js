@@ -71,7 +71,9 @@ const server = http.createServer((req, res) => {
       expert: [() => Object.fromEntries(G.map(g => [g, 0.93])), 0.05]
     };
     const out = {};
-    for (const [name, [mk, rate]] of Object.entries(profiles)) {
+    // One player of a profile through N questions: the 100-question rows, the genera that reached their exam's entry
+    // too early, the first genera asked.
+    const play = (mk, rate, N) => {
       P = {};
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no comeback
@@ -83,7 +85,7 @@ const server = http.createServer((req, res) => {
         first = [],
         rows = [];
       let blk = {n: 0, ok: 0, traps: 0, tn: 0, ty: 0};
-      for (let i = 0; i < 300; i++) {
+      for (let i = 0; i < N; i++) {
         NEXTQ = null;
         quizPhoto();
         // The player reads the first-meeting cards through (each genus is met when its card shows).
@@ -109,7 +111,7 @@ const server = http.createServer((req, res) => {
           pick = right ? t : typed && rnd() < 0.5 ? '' : ch.filter(c => c !== t)[Math.floor(rnd() * (ch.length - 1))];
         blk.n++;
         blk.ok += right;
-        // Traps of the 4-choice questions only: a look-alike duel slipped into the quiz (AUTO_DUEL) has one wrong choice,
+        // Traps of the 4-choice questions only: a look-alike duel slipped into the quiz (CONTRAST) has one wrong choice,
         // always a look-alike, and is a separate exercise.
         if (!AUTOD && !typed) {
           blk.traps += traps;
@@ -144,9 +146,17 @@ const server = http.createServer((req, res) => {
           blk = {n: 0, ok: 0, traps: 0, tn: 0, ty: 0};
         }
       }
-      const gd = G.map(genusDiff),
-        mean = L => L.reduce((a, x) => a + x, 0) / L.length;
-      out[name] = {rows, early: [...early], firstEase: +mean(first.slice(0, 8).map(genusDiff)).toFixed(2), allEase: +mean(gd).toFixed(2)};
+      return {rows, early, first};
+    };
+    const mean = L => L.reduce((a, x) => a + x, 0) / L.length;
+    for (const [name, [mk, rate]] of Object.entries(profiles)) {
+      const {rows, early, first} = play(mk, rate, 300);
+      out[name] = {
+        rows,
+        early: [...early],
+        firstEase: +mean(first.slice(0, 8).map(genusDiff)).toFixed(2),
+        allEase: +mean(G.map(genusDiff)).toFixed(2)
+      };
     }
     // Easiest first: with nothing met and the players' answers behind the photo ratings, the easiest genus (genusDiff)
     // is drawn far more often than the hardest. Made-up ratings: one genus's photos rated easy, another's hard.
@@ -171,7 +181,7 @@ const server = http.createServer((req, res) => {
         hard = byD[byD.length - 1],
         n = {[easy]: 0, [hard]: 0};
       for (let i = 0; i < 4000; i++) {
-        const x = weighted(G);
+        const x = openPick(G);
         if (x in n) n[x]++;
       }
       out.easyFirst = {easy, hard, dEasy: genusDiff(easy), dHard: genusDiff(hard), nEasy: n[easy], nHard: n[hard]};
@@ -183,7 +193,7 @@ const server = http.createServer((req, res) => {
       GX(easy).cm = GX(hard).cm;
       const m = {[easy]: 0, [hard]: 0};
       for (let i = 0; i < 4000; i++) {
-        const x = weighted(G);
+        const x = openPick(G);
         if (x in m) m[x]++;
       }
       [GX(easy).cm, GX(hard).cm] = cms;
@@ -191,9 +201,10 @@ const server = http.createServer((req, res) => {
       PSTAT = keep;
       GDIFF = {};
     }
-    // Bonus genera (opt-in, 2026-11-02; their own weight cap and 15% share went with it): once on, the genera not met
-    // yet, so together they get the opening's share of the draw (OPEN.READY at most, nothing shaky), never more; off,
-    // never drawn. Every slate genus met and half way, none of the bonus genera met.
+    // Bonus genera (opt-in, 2026-11-02; their own weight cap and 15% share went with it): once on, they are the genera
+    // not met yet, which only the opening draws (openPick, when a question opens one: model.js openChance); the genus
+    // draw of the questions themselves never asks them before their card; off, never drawn. Every slate genus met and
+    // half way (nothing shaky: the opening is wide open), none of the bonus genera met.
     const B = BONUS.filter(n => GX(n));
     if (B.length) {
       P = {};
@@ -201,13 +212,9 @@ const server = http.createServer((req, res) => {
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
       G.forEach(g => (P[g] = {ok: 8, ko: 2, h: '1101111011', th: 1.5, pg: 0.5}));
-      const draw = list => {
-        let hit = 0;
-        for (let i = 0; i < 2000; i++) if (isBonus(weighted(list))) hit++;
-        return hit / 2000;
-      };
-      out.bonusShare = draw([...G, ...B]);
-      out.bonusOff = (bonusSet(false), draw(pool()));
+      out.bonusOpen = openChance([...G, ...B]);
+      out.bonusPick = B.includes(openPick([...G, ...B].filter(n => !introduced(n))));
+      out.bonusOff = (bonusSet(false), pool().filter(isBonus).length);
     }
     // Online calibration (CAL): on a genus the player holds, a photo nobody has answered yet comes up more often than its
     // rated twins (made-up ratings at each photo's own prior difficulty).
@@ -234,6 +241,15 @@ const server = http.createServer((req, res) => {
       out.cal = {genus: g, photo: f0, without: shown(false), with: shown(true)};
       PSTAT = keep;
     }
+    // Focus over several players (AGENTS.md rule 14f): the beginner's first 100 questions again with 7 more seeds, the
+    // app's randomness and the player's both, after every other check so their draws stay as they were.
+    out.focus = [out.beginner.rows[0].met];
+    for (let k = 1; k <= 7; k++) {
+      let s = 12345 + 7919 * k;
+      Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+      seed = 7 + 1009 * k;
+      out.focus.push(play(profiles.beginner[0], profiles.beginner[1], 100).rows[0].met);
+    }
     return out;
   });
   await b.close();
@@ -243,9 +259,10 @@ const server = http.createServer((req, res) => {
     [e1, , e3] = R.expert.rows,
     [r1, , r3] = R.RA.rows;
   for (const [k, v] of Object.entries(R)) if (v.rows) console.log(k, JSON.stringify(v));
+  console.log('beginner genera met by question 100, 8 seeds:', R.focus.join(' '));
   console.log(
-    'bonus share',
-    R.bonusShare,
+    'bonus opening chance',
+    R.bonusOpen,
     'off',
     R.bonusOff,
     'easy first',
@@ -256,7 +273,22 @@ const server = http.createServer((req, res) => {
   // 17 (was 16; photo memory, 2026-11-03): this seed went from 16, at the limit, to 17, while 6 other seeds gave 11.5
   // genera on average before and 11.3 after (10-15), and tools/learnsim.js 30 seeds no change either (docs/LEARNING.md
   // "Photo memory"): one draw, not a faster opening.
-  if (b1.met > 17) fails.push(`beginner met ${b1.met} genera in 100 questions: not focused`);
+  // Kept at 17 with the genus wrongly given out of the Elo (2026-11-03, docs/LEARNING.md "The genus wrongly given in
+  // the Elo"), measured on main after #408 (one opening rule, OPEN.K 8): this seed meets 12 genera by question 100 with
+  // and without the change (margin 5). Over 5 seeds (tools/learnsim.js) the change does open faster: 15.6 -> 19.2 genera
+  // by question 100 (seeds 12-22 -> 17-24), at 79% right (86%); a watched effect (ROADMAP), not hidden by this bound.
+  // Back to 17 with the global level's move on the genera and the success aimed for by level (2026-11-03,
+  // docs/LEARNING.md "Global level and genus", "Beginners and experts"): this seed meets 13 genera by question 100 (main
+  // 12; the level's move alone gave 18, when the limit went to 21 for a while). Margin 4. Over 5 seeds
+  // (tools/learnsim.js) the beginner meets 20.2 by question 100 (main 19.2), 28.0 by 200 (main 30.4).
+  // On the 8 seeds below: 10-19, mean 12.8 (main 14.5 after the candidate refill).
+  // On the mean of 8 seeds since the candidate refill of 2026-11-03 (f9aae3a: 616 photos the auto-sort added joined
+  // data.json, so every draw changed): this seed went from 12 to 19 with no change to the code, while the 8 seeds gave
+  // 12-16 (mean 13.9) before and 12-19 (mean 14.5) after. One seed sat inside the spread of the seeds and failed on a
+  // data change; the mean of 8 moves with the opening rule, not with one draw. For reference, before #413 the same 8
+  // seeds gave 8-12 (mean 9.8): the watched effect above.
+  const fMean = R.focus.reduce((a, x) => a + x, 0) / R.focus.length;
+  if (fMean > 17) fails.push(`beginner met ${fMean.toFixed(1)} genera on average in 100 questions (${R.focus.join(' ')}): not focused`);
   if (b3.met <= b1.met) fails.push(`beginner stopped opening genera (${b1.met} then ${b3.met})`);
   if (r3.met <= r1.met) fails.push(`RA stopped opening genera (${r1.met} then ${r3.met})`);
   const E = R.easyFirst,
@@ -279,8 +311,10 @@ const server = http.createServer((req, res) => {
   if (e3.pct <= b3.pct + 10) fails.push(`expert's progress not clearly above a beginner's (${e3.pct}% vs ${b3.pct}%)`);
   for (const [k, v] of Object.entries(R))
     if (v.early && v.early.length) fails.push(`${k}: ${v.early.join(', ')} at 95% before being asked beside a look-alike`);
-  if (!(R.bonusShare > 0 && R.bonusShare <= 0.4) || R.bonusOff)
-    fails.push(`bonus genera not met took ${Math.round(100 * R.bonusShare)}% of the draws (the opening's 35% at most); off: ${R.bonusOff}`);
+  // Nothing shaky: the opening chance is 1 (its pace is then openPace's: at most OPEN.MAX genera in OPEN.WIN answers,
+  // 2026-11-04; the hotfix of 2026-11-03 capped the chance itself at 0.5).
+  if (R.bonusOpen !== 1 || !R.bonusPick || R.bonusOff)
+    fails.push(`bonus genera not met: opening chance ${R.bonusOpen} (1 expected), opened: ${R.bonusPick}; off: ${R.bonusOff} in the pool`);
   if (!(R.cal.with > 1.3 * Math.max(10, R.cal.without)))
     fails.push(`calibration: an unrated photo was not drawn more often: ${JSON.stringify(R.cal)}`);
   if (errs.length) fails.push('page errors: ' + errs.slice(0, 3).join(' | '));

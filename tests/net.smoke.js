@@ -1,6 +1,7 @@
 const http = require('http'),
   fs = require('fs'),
-  path = require('path');
+  path = require('path'),
+  zlib = require('zlib');
 const {chromium} = require('playwright');
 const ROOT = path.join(__dirname, '..');
 const TYPES = {
@@ -26,8 +27,16 @@ const server = http.createServer((req, res) => {
       res.writeHead(404);
       return res.end();
     }
-    res.writeHead(200, {'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream'});
-    res.end(u === '/sw.js' && SWV ? b + `\n// deploy ${SWV}\n` : b); // test 9: a new deploy changes sw.js
+    const type = TYPES[path.extname(f)] || 'application/octet-stream',
+      body = u === '/sw.js' && SWV ? Buffer.from(b + `\n// deploy ${SWV}\n`) : b; // test 9: a new deploy changes sw.js
+    // Text files gzipped when the browser accepts it, as the real host serves them (GitHub Pages): on the throttled
+    // lines below, the start-up time is what a player waits, not what an uncompressed data.json would cost.
+    if (/^(text\/|application\/(json|manifest)|image\/svg)/.test(type) && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
+      res.writeHead(200, {'Content-Type': type, 'Content-Encoding': 'gzip', Vary: 'Accept-Encoding'});
+      return res.end(zlib.gzipSync(body));
+    }
+    res.writeHead(200, {'Content-Type': type});
+    res.end(body);
   });
 });
 
@@ -131,14 +140,21 @@ const server = http.createServer((req, res) => {
       // The same photos (by name: data-f, quiz.js), each in one of its files. The size is chosen when it shows (the box,
       // the line measured, Saver): an iNaturalist photo (not downloaded: r: 1; Millepora's until 2026-11-03) is its 'medium' file for
       // 480 px and 'large' otherwise, names resized() leaves alone, so comparing resized(…, '') failed whenever
-      // Millepora came up (#376).
+      // Millepora came up (#376). The host is chosen when it shows too: R2 is cut off here, and about a second after the
+      // first R2 failure (core.js photoRetry: one more try PHOTO_RETRY ms later) the page reads its photos from the site
+      // (app.js R2 false). Planned while R2 was still on and shown after, the same file came from img/ instead of the
+      // R2 address read with the plan: this check failed about 1 run in 3 on a busy machine (2026-11-03). Both sides
+      // are compared without the R2 base (core.js photoLocal); check 12 is about which host.
       const want = await p2.evaluate(() =>
-        NEXTQ && NEXTQ.args ? NEXTQ.args[4].shown.map(x => ({f: x.f, files: [img(x, 's'), img(x, 'm'), img(x, '')]})) : []
+        NEXTQ && NEXTQ.args ? NEXTQ.args[4].shown.map(x => ({f: x.f, files: [img(x, 's'), img(x, 'm'), img(x, '')].map(photoLocal)})) : []
       );
       await p2.evaluate(() => document.querySelectorAll('.unlock .next, .achpop').forEach(x => x.click && x.click()));
       await p2.click('#next');
       const got = await p2.evaluate(() =>
-        [...document.querySelectorAll('#view .qstage img')].map(i => ({f: i.dataset.f, u: i.getAttribute('src').replace(/#.*$/, '')}))
+        [...document.querySelectorAll('#view .qstage img')].map(i => ({
+          f: i.dataset.f,
+          u: photoLocal(i.getAttribute('src').replace(/#.*$/, ''))
+        }))
       );
       if (!want.length || got.length !== want.length || want.some((w, k) => got[k].f !== w.f || !w.files.includes(got[k].u)))
         fails.push(`Next did not show the planned question (${want.map(w => w.f)} vs ${got.map(g => `${g.f} ${g.u}`)})`);
@@ -247,6 +263,9 @@ const server = http.createServer((req, res) => {
       // Home band thumbnails (~60 px on a phone): the 240 px files (Pierre: no big files for how they are shown).
       // A 480 px file the quiz already fetched (its next questions' photos) may be shown instead: the browser picks a
       // srcset file it already has, at no cost.
+      // The quiz's preloads first: with R2 cut off (as here) they reach the site only after their R2 retry (core.js
+      // PHOTO_RETRY), and a file they bring in later would be taken for one Home asked for.
+      await p.evaluate(() => Promise.race([prefetched(), new Promise(ok => setTimeout(ok, 15000))]));
       const t0 = await p.evaluate(() => ((location.hash = 'home'), performance.now()));
       await p.waitForTimeout(1500);
       const h = await p.evaluate(
@@ -292,8 +311,17 @@ const server = http.createServer((req, res) => {
         cdp = await ctx.newCDPSession(p);
       await cdp.send('Network.enable');
       await cdp.send('Network.emulateNetworkConditions', {offline: false, downloadThroughput: 4e4, uploadThroughput: 4e4, latency: 50});
-      await p.goto(base + '#quiz');
-      await p.waitForFunction(() => window.APP_READY && document.querySelector('#view .qstage img'), null, {timeout: 60000});
+      // Not the load event (Playwright's 30 s default): on this line the page loads its first two tiers (the scripts, the
+      // stylesheets and fonts, data.json, forms.json...: about 830 KB, 2026-11-03) before it fires, 29 s on main and 30 s
+      // with the full replay's code (+45 KB), so the check failed on bytes, not on what it checks. What it needs is the
+      // quiz and its photo, timed here on their own.
+      const t0 = Date.now();
+      await p.goto(base + '#quiz', {waitUntil: 'commit'});
+      const shown = await p
+        .waitForFunction(() => window.APP_READY && document.querySelector('#view .qstage img'), null, {timeout: 90000})
+        .then(() => true)
+        .catch(() => false);
+      if (!shown) fails.push(`a ~320 kbit/s line: no quiz photo ${Math.round((Date.now() - t0) / 1000)} s after opening #quiz`);
       await p.waitForTimeout(1500);
       const t = await p.evaluate(() => [...document.querySelectorAll('#view .qstage img')].map(i => i.getAttribute('src')));
       const kb = await p.evaluate(() => Math.round(linkMeasure() / 1000));
@@ -365,6 +393,25 @@ const server = http.createServer((req, res) => {
   }
   // 9. A new version (Pierre, 2026-11-02: players never reload by hand): once it has taken over in the background, the
   // page reloads itself at the next page change.
+  // Each new version is published only while the page is quiet (no request for 500 ms). Chromium swaps a busy old
+  // worker for a waiting one that called skipWaiting() by stopping the old one the moment it is idle; a request that
+  // comes while it stops starts the old version again, and that copy is not asked to stop early: the swap then waits
+  // until it has been idle 30 s, and with DevTools attached (Playwright) until the 5 min "lame duck" timer
+  // (content/browser/service_worker: TriggerIdleTerminationAsap, OnStoppedInternal, kMaxLameDuckTime). Published while
+  // the tab below still loaded its last tier, with photos held ~1 s by the worker's R2 retry, the old worker was busy
+  // when the new one installed and the next file asked for restarted it: no takeover within 30 s in 7 of 55 runs of this
+  // check (2026-11-03, timestamps of both workers: the old version started twice in each failing run, in no passing one).
+  // A player meets the same delay, not a lost version (docs/ARCHITECTURE.md).
+  const track = pg => {
+    const s = {n: 0, at: Date.now()},
+      end = () => ((s.n = Math.max(0, s.n - 1)), (s.at = Date.now()));
+    pg.on('request', () => (s.n++, (s.at = Date.now())));
+    pg.on('requestfinished', end);
+    pg.on('requestfailed', end);
+    return async () => {
+      for (const t = Date.now(); (s.n || Date.now() - s.at < 500) && Date.now() - t < 20000;) await pg.waitForTimeout(100);
+    };
+  };
   {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}});
     await ctx.addInitScript(() => localStorage.setItem('reefid-tour', '1'));
@@ -372,7 +419,8 @@ const server = http.createServer((req, res) => {
       u => !u.href.startsWith(base),
       r => r.abort()
     );
-    const p = await ctx.newPage();
+    const p = await ctx.newPage(),
+      pQuiet = track(p);
     await p.goto(base);
     await ready(p);
     await p.evaluate(() => navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready)); // https only in the app
@@ -403,6 +451,7 @@ const server = http.createServer((req, res) => {
     });
     if (sent.length) fails.push('A local copy sent answers or reports to the sheet: ' + sent[0].slice(0, 60));
     await p.evaluate(() => (window.__old = 1));
+    await pQuiet();
     SWV = 1;
     await p.evaluate(() => swCheck());
     await p
@@ -420,7 +469,8 @@ const server = http.createServer((req, res) => {
       u => !u.href.startsWith(base),
       x => x.abort()
     );
-    const f = await r.newPage();
+    const f = await r.newPage(),
+      fQuiet = track(f);
     await f.goto(base);
     await ready(f);
     await f.evaluate(() =>
@@ -435,6 +485,9 @@ const server = http.createServer((req, res) => {
         )
     );
     if (await f.evaluate(() => UPDATED)) fails.push('The first install was taken for an update');
+    // Left open: every tier in, and quiet (see above).
+    await f.waitForFunction(() => typeof HAVE !== 'undefined' && HAVE >= 5, null, {timeout: 20000});
+    await fQuiet();
     SWV = 9;
     await f.evaluate(() => swCheck());
     await f
@@ -442,15 +495,17 @@ const server = http.createServer((req, res) => {
       .catch(() => fails.push('A tab first opened before any install missed the next version'));
     await r.close();
     // The admin page does the same (its demo mode: no token, nothing sent).
-    const q = await ctx.newPage();
+    const q = await ctx.newPage(),
+      qQuiet = track(q);
     await q.goto(base + 'admin.html?demo');
-    // Loaded first (DRAFT is set after the last of its files), and its first page's photos in: a new worker takes over only
-    // once the old one has no fetch in flight. Published while start() still fetched cand.json, the new worker now and
-    // then stayed waiting past the 30 s below (Chromium, about 1 run in 8, 2026-11-03); that case is checked next.
+    // Loaded first (DRAFT is set after the last of its files), its first page's photos in, and quiet (see above; Playwright's
+    // 'networkidle' is reached once per load, then never waited for again). Published while start() still fetched cand.json, the
+    // new worker now and then stayed waiting past the 30 s below (about 1 run in 8, 2026-11-03), likely the same restart
+    // of the old worker; a version that takes over while the admin loads is checked next.
     await q.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera && navigator.serviceWorker.controller, null, {
       timeout: 20000
     });
-    await q.waitForLoadState('networkidle');
+    await qQuiet();
     await q.evaluate(() => (window.__old = 1));
     SWV = 2;
     await q.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
@@ -462,9 +517,9 @@ const server = http.createServer((req, res) => {
       .waitForFunction(() => !window.__old && location.hash === '#~cand', null, {timeout: 20000})
       .catch(() => fails.push('Admin: the page did not reload onto the new version at the next page change'));
     // A version that takes over while the admin is still loading is seen too: the new worker waits for the old one's
-    // fetches still in flight, then takes over the moment the last ends, before start() goes on. admin.js listened only
-    // from the end of start() and missed it; whether it did depended on which came first, so what is checked is that it
-    // listens while start() still waits for its files (here cand.json never answers).
+    // fetches still in flight, then takes over once the old one is idle (or later, see above), maybe before start() goes
+    // on. admin.js listened only from the end of start() and missed it; whether it did depended on which came first, so
+    // what is checked is that it listens while start() still waits for its files (here cand.json never answers).
     await ctx.route(/cand\.json/, () => {});
     const q2 = await ctx.newPage();
     await q2.addInitScript(() => {
@@ -681,11 +736,23 @@ const server = http.createServer((req, res) => {
             }),
           u
         );
-      const cached = () => p.evaluate(() => caches.open('imr-photos-v1').then(c => c.keys().then(K => K.map(k => k.url))));
+      // The type of the reply kept for u in the photo cache, once it is there. The worker keeps a photo after handing it
+      // to the page (sw.js photo, keep: the cache write is not awaited, the page does not wait for it), so read at once
+      // after the load it was often not there yet: missing at the image's load event in 73 of 90 loads (2026-11-03), and
+      // "not kept as a CORS reply (undefined)" now and then on a busy machine. Up to 5 s. (Polled in the page:
+      // Playwright's waitForFunction takes a returned Promise as a truthy value at once.)
+      const kept = u =>
+        p.evaluate(async u => {
+          for (let k = 0; k < 100; k++) {
+            const r = await caches.match(u, {ignoreVary: true});
+            if (r) return r.type;
+            await new Promise(ok => setTimeout(ok, 50));
+          }
+        }, u);
       // R2 answering: asked in CORS mode (an opaque reply is never kept), and kept.
       await fromR2(ctx);
       if (!(await load(R2 + 'img/' + g))) fails.push('Service worker: an R2 photo did not load from R2');
-      const t = await p.evaluate(u => caches.match(u, {ignoreVary: true}).then(r => r && r.type), R2 + 'img/' + g);
+      const t = await kept(R2 + 'img/' + g);
       if (t !== 'cors') fails.push(`Service worker: the R2 photo was not kept as a CORS reply (${t})`);
       // R2 cut off: the worker serves the site's copy, kept under the R2 address, and tells the page (sw.js r2Down,
       // Codex review #392), whose next photos then come from the site straight away.
@@ -702,7 +769,7 @@ const server = http.createServer((req, res) => {
       if (!(await load(R2 + 'img/' + f))) fails.push('Service worker: an R2 photo did not fall back to the site');
       if (!(await p.waitForFunction(() => window.R2DOWN > 0, null, {timeout: 3000}).catch(() => null)))
         fails.push('Service worker: R2 failed but the page was not told');
-      if (!(await cached()).includes(R2 + 'img/' + f)) fails.push('Service worker: the photo served from the site was not kept');
+      if (!(await kept(R2 + 'img/' + f))) fails.push('Service worker: the photo served from the site was not kept');
       // R2 failed twice: for a while the worker asks the site straight away (sw.js R2_PAUSE), no request held on R2.
       const n2 = r2hits;
       if (!(await load(R2 + 'img/' + f.replace(/-s\.webp$/, '.webp'))) || r2hits !== n2)

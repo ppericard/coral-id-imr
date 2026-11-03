@@ -11,8 +11,8 @@ For each level-1 teaching entry of fish.json (every circle, winks too), the obse
 (species without `out`), in this order (AGENTS.md rules 6a and 7):
   1. Pierre's own observations (iNaturalist user ppericard) identified to the species, even Needs ID (Pierre,
      2026-11-03: he names a species only when very sure; his only, nobody else's), whatever their licence (his photos);
-  2. Research Grade observations in the Philippines with a CC0 or CC BY photo, then CC BY-NC (and the -SA variants);
-     no ND licence (a crop is a derivative);
+  2. Research Grade observations in the Philippines with a CC0 or CC BY photo, then CC BY-NC; never a share-alike
+     licence nor an ND one (Pierre's rules, 2026-11-03; a crop is a derivative);
   3. when that leaves an entry short: Research Grade observations anywhere, same licence order (its species are all
      confirmed in the Philippines: fish.json keeps the others out of the game).
 Within each step the species take turns in fish.json order (the PDF cheatsheet's most sighted first), so an entry's
@@ -42,7 +42,8 @@ bf.CACHE = ROOT / "tools" / ".cache" / "fish-photos.json"
 V = 1
 PER = 24
 DAUIN = (9.19, 123.26)
-LIC1, LIC2 = "cc0,cc-by", "cc-by-sa,cc-by-nc,cc-by-nc-sa"
+# Pierre's licence rules (2026-11-03, the fish photo lists): never share-alike, never ND (a crop is a derivative).
+LIC1, LIC2 = "cc0,cc-by", "cc-by-nc"
 
 
 def km(a, b):

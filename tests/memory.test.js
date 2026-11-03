@@ -1,20 +1,9 @@
-// Photo memory in the app (model.js pgMemW, pgMissW; core.js MEM; docs/LEARNING.md "Photo memory"): model.js's own
-// functions run in Node on stubs, as tests/comeback.test.js does.
+// Photo memory in the app (core.js pgMemW, pgMissW, MEM; docs/LEARNING.md "Photo memory"): the weights model.js and quiz.js
+// use, in core.js since 2026-11-03 so the full replay (core.js replayProgress) runs the same rules.
 const test = require('node:test');
 const assert = require('node:assert');
-const fs = require('fs'),
-  path = require('path'),
-  vm = require('vm');
-const {MEM, memFam} = require('../core.js');
-
-function model() {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
-    ctx = {PICKD: {TARGET_OFF: 1}, sig: x => 1 / (1 + Math.exp(-x))};
-  vm.createContext(ctx);
-  vm.runInContext(pick('function pgMissW', 'const knownP') + '\nthis.M = {pgMissW, pgMemW};', ctx);
-  return ctx.M;
-}
+const {MEM, memFam, pgMissW, pgMemW} = require('../core.js');
+const model = () => ({pgMissW, pgMemW});
 const near = (a, b, t = 0.01) => assert.ok(Math.abs(a - b) < t, `${a} vs ${b}`);
 // The offsets estimated offline from the first ~550 real photo-quiz answers (docs/LEARNING.md), and the prior.
 const EST = [0, -0.44, -1.1, -1.7];

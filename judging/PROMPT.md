@@ -43,5 +43,5 @@ and report how many photos you judged, how many you marked unsure or another gen
 ## After the agent's pull request is merged
 
 Open `admin.html`: the growth forms (IMR forms, polyps flag) and quality ratings appear as dashed guesses (one click confirms or corrects), the
-Featured suggestions fill the views you haven't picked, and **Triage** lists the rest (move to another view, not
+Featured suggestions fill the views you haven't picked, and **To do** (Reports view, formerly Triage) lists the rest (move to another view, not
 this genus, several corals, near-duplicates, candidates to add), each with Accept or Dismiss.

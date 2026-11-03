@@ -23,12 +23,20 @@ const ROUTES = [
   'cmp-Pocillopora|Stylophora',
   'quiz',
   'quiz-duel',
+  'quiz-custom',
+  'quiz-custom|play',
   'pairs',
   'finder',
   'progress',
   'board',
   'ach',
   'lab',
+  'lab-basics|walls',
+  'lab-basics|words',
+  'about',
+  'credits',
+  'lab-cards',
+  'lab-cards|update',
   'quiz-duel|Foo|Bar',
   'g-%E0'
 ]; // the last two are malformed links: they must not crash a page
@@ -143,6 +151,85 @@ async function overlays(b, base) {
     }
     await c.close();
   }
+  // Cards (2026-11-03, app.js cardShow): every kind comes from the one builder, through its real caller where it has one
+  // (the apology and the update card with a former %, which wait on other branches, through cardShow itself): one
+  // overlay, role dialog, aria-modal, labelled by its title (an h3), the kind's medallion (or the genus photo band), the
+  // focus inside and kept there on Tab, Escape closes it and the focus goes back where it was.
+  for (const w of [390, 1280]) {
+    const [c, p] = await open({viewport: {width: w, height: 844}}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"');
+      localStorage.getItem('reefid-sync-coral-progress') ||
+        localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({Acropora: {ok: 3, ko: 1, h: '1101'}}));
+    });
+    await p.goto(base + '#quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('#view [data-c]');
+    const CASES = [
+      ['genus', () => introShow([slateGenera()[1]], false)],
+      ['tip', () => introOfferShow()],
+      ['tip', () => backShow()],
+      ['bonus', () => bonusOfferShow()],
+      ['feature', () => (store.set(RECALC.KEY, RECALC.L[RECALC.L.length - 2].id), recalcNotice())],
+      ['account', () => signinNudge(false, false)],
+      ['apology', () => cardShow({kind: 'apology', kick: 'Sorry', title: 'Smoke', body: '<p>t</p>', primary: {text: 'Thanks'}, esc: 1})],
+      // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD), and
+      // the learned mark taken away (progress.js mxLostNotice), through their real callers.
+      ['update', () => (store.set('reefid-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
+      ['update', () => (store.set(MXL.KEY, {due: {Acropora: 1}}), mxLostNotice())]
+    ];
+    for (let i = 0; i < CASES.length; i++) {
+      const [kind] = CASES[i];
+      await p.evaluate(() => {
+        document.querySelectorAll('.unlock').forEach(x => x.ulClose());
+        document.getElementById('smokeopener') || document.body.insertAdjacentHTML('beforeend', '<button id="smokeopener">x</button>');
+        document.getElementById('smokeopener').focus();
+      });
+      await p.evaluate(`(${CASES[i][1]})()`);
+      await p.waitForTimeout(150);
+      const r = await p.evaluate(() => {
+        const d = document.querySelectorAll('.unlock'),
+          u = d[0],
+          ids = ((u && u.getAttribute('aria-labelledby')) || '').split(' ').filter(Boolean),
+          h = ids.map(x => document.getElementById(x)).filter(Boolean);
+        return {
+          n: d.length,
+          role: u && u.getAttribute('role'),
+          modal: u && u.getAttribute('aria-modal'),
+          title: h.some(x => x.tagName === 'H3' && x.textContent.trim() && u.contains(x)),
+          kind: u && u.querySelector('.ulcard').dataset.k,
+          look: !!(u && (u.querySelector('.ulmed') || u.querySelector('.ulphoto img'))),
+          focus: !!(u && u.contains(document.activeElement))
+        };
+      });
+      let kept = true;
+      for (let t = 0; t < 8; t++) {
+        await p.keyboard.press(t % 3 === 2 ? 'Shift+Tab' : 'Tab');
+        kept = kept && (await p.evaluate(() => !!document.querySelector('.unlock')?.contains(document.activeElement)));
+      }
+      await p.keyboard.press('Escape');
+      await p.waitForTimeout(100);
+      const after = await p.evaluate(() => ({
+        gone: !document.querySelector('.unlock'),
+        back: document.activeElement?.id === 'smokeopener'
+      }));
+      if (
+        r.n !== 1 ||
+        r.role !== 'dialog' ||
+        r.modal !== 'true' ||
+        !r.title ||
+        r.kind !== kind ||
+        !r.look ||
+        !r.focus ||
+        !kept ||
+        !after.gone ||
+        !after.back
+      )
+        fails.push(`${w}px card ${i} (${kind}) through cardShow: ${JSON.stringify({...r, kept, ...after})}`);
+    }
+    await c.close();
+  }
   // Millepora a slate genus (Pierre, 2026-11-02): a returning player who saw the earlier recalculation pop-up gets the
   // Millepora one, once (AGENTS rule 12); one who missed both gets both on one card. Bonus genera unlocked by the
   // former thresholds (Q.bu 2+) stay on; Millepora alone (Q.bu 1) is no opt-in. Millepora's first card and sheet warn.
@@ -175,8 +262,16 @@ async function overlays(b, base) {
       n: slateGenera().length,
       mill: genScore('Millepora') > 0
     }));
-    const want = recalc ? 1 : 2;
-    if (r.h.length !== want || !/^Millepora now counts/.test(r.h[0]) || r.bon !== (bu > 1 ? true : undefined) || r.n !== 40 || !r.mill)
+    // Latest first: the typed-questions announcement (2026-11-03), then Millepora, then the moving average if missed.
+    const want = recalc ? 2 : 3;
+    if (
+      r.h.length !== want ||
+      !/^Think you know your genera/.test(r.h[0]) ||
+      !/^Millepora now counts/.test(r.h[1]) ||
+      r.bon !== (bu > 1 ? true : undefined) ||
+      r.n !== 40 ||
+      !r.mill
+    )
       fails.push(`returning player (seen ${recalc || 'none'}, bu ${bu}): ${JSON.stringify(r)}`);
     await p.click('.recalc .next').catch(() => {});
     await p.reload();
@@ -296,6 +391,109 @@ async function overlays(b, base) {
       fails.push(`prompt spacing over 60 answers: ${JSON.stringify(seenP)}`);
     await c.close();
   }
+  // The one-tap question's bank (core.js PULSEQ, 2026-11-03), on the narrowest phone (360 px) and on a desktop: the
+  // first prompt at 35 answers asks the plain question; each prompt is a block of its own ("Quick question") on screen
+  // above Next, never under it (a wrong answer now and then makes the feedback long), its answers on one row of equal
+  // widths; it logs its showing (shown) with its item (src); an answer is one tap ("Thank you!" at once) and logs the
+  // code tapped; every third prompt is left unanswered (Next) and logs none; the next prompt never asks the same item.
+  // After the first, each prompt is made due by moving the device's last-prompt marks back (reefid-prompt-at by
+  // PROMPT.GAP, reefid-pulse by PULSE.EVERY), the real code deciding.
+  for (const [vw, vh] of [
+    [360, 740],
+    [1280, 800]
+  ]) {
+    const [c, p] = await open({viewport: {width: vw, height: vh}}, seen);
+    await p.goto(base + '#quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const asked = [],
+      pev = () => p.evaluate(() => JSON.parse(localStorage.getItem('reefid-evq') || '[]').filter(x => x.k === 'pulse'));
+    for (let i = 0; i < 60 && asked.length < 9; i++) {
+      await p.waitForSelector('#view [data-c]:not([disabled])');
+      const skip = asked.length % 3 === 2,
+        before = (await pev()).length;
+      const r = await p.evaluate(
+        ([i, due, skip]) => {
+          document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+          document.querySelectorAll('.achpop').forEach(x => x.remove());
+          achQ.length = 0;
+          achBusy = false;
+          if (due) {
+            const a = answersSoFar() + 1;
+            localStorage.setItem('reefid-prompt-at', JSON.stringify(a - PROMPT.GAP));
+            localStorage.setItem(
+              'reefid-pulse',
+              JSON.stringify({...JSON.parse(localStorage.getItem('reefid-pulse')), at: a - PULSE.EVERY})
+            );
+          }
+          const t = SHOWNQ[1],
+            cs = [...document.querySelectorAll('#view [data-c]')];
+          (i % 4 === 3 ? cs.find(x => x.dataset.c !== t) : cs.find(x => x.dataset.c === t)).click();
+          const box = document.querySelector('#after .pulse');
+          if (!box) return null;
+          const bs = [...box.querySelectorAll('.pulseb [data-pulse]')],
+            b = bs[i % bs.length],
+            it = PULSEQ.find(x => x.id === box.dataset.pq),
+            nx = document.getElementById('next'),
+            R = box.getBoundingClientRect(),
+            N = nx.getBoundingClientRect(),
+            B = bs.map(x => x.getBoundingClientRect());
+          const shown = {
+            a: answersSoFar(),
+            q: box.dataset.pq,
+            title: box.querySelector('.pulsek')?.textContent,
+            text: box.querySelector('.pulseq')?.textContent,
+            opts: bs.map(x => x.dataset.pulse),
+            x: !!box.querySelector('.pulsex[data-pulse=""]'),
+            // Before Next in the page and on screen, both in view without scrolling.
+            before: !!(box.compareDocumentPosition(nx) & Node.DOCUMENT_POSITION_FOLLOWING) && R.bottom <= N.top + 1,
+            inView: R.top >= 0 && N.bottom <= innerHeight + 1,
+            // Each answer, and Next, is what a tap at its centre reaches: nothing covers it (Next, the tab bar), and it is
+            // not scrolled out of the phone's sheet or the side column (a long feedback after a wrong answer).
+            hit: [...B.map((x, k) => [bs[k], x]), [nx, N]].every(([el, x]) =>
+              el.contains(document.elementFromPoint(x.left + x.width / 2, x.top + x.height / 2))
+            ),
+            // One row, equal widths.
+            row: B.every(x => Math.abs(x.top - B[0].top) < 2 && Math.abs(x.width - B[0].width) < 2),
+            tap: skip ? '' : b.dataset.pulse,
+            // A tap on the question's text or the block itself is not a photo tap (Codex review #414: data-q on the block
+            // sent it to the photo handler, which opened an empty enlarged view).
+            panel: (box.querySelector('.pulseq').click(), box.click(), document.getElementById('lightbox').hidden)
+          };
+          if (!skip) b.click();
+          return {...shown, want: it ? [it.q, it.a.map(x => x[0])] : null, thanks: box.textContent.trim()};
+        },
+        [i, asked.length > 0, skip]
+      );
+      await p.evaluate(() => document.getElementById('next').click());
+      if (!r) continue;
+      // What this prompt queued: its showing, then the code tapped or none (moved on without a tap).
+      r.ev = (await pev()).slice(before).map(x => ({r: x.r, src: x.src, m: x.m, lv: typeof x.lv}));
+      asked.push(r);
+    }
+    const bad = asked.filter(
+      (x, k) =>
+        !x.want ||
+        x.title !== 'Quick question' ||
+        x.text !== x.want[0] ||
+        x.opts.join() !== x.want[1].join() ||
+        !x.x ||
+        !x.before ||
+        !x.inView ||
+        !x.hit ||
+        !x.row ||
+        !x.panel ||
+        (x.tap && x.thanks !== 'Thank you!') ||
+        x.ev.map(e => e.r).join() !== ['shown', x.tap || 'none'].join() ||
+        x.ev.some(e => e.src !== x.q || e.m !== 'quiz' || e.lv !== 'number') ||
+        (k && x.q === asked[k - 1].q)
+    );
+    // The first prompt at 35 answers, or a few later when an achievement toast it waits for came with that answer (the
+    // wrong answers here move the toasts; the exact 35 is checked by the new-player run further down).
+    const late = !asked.length || asked[0].a < 35 || asked[0].a > 40;
+    if (asked.length < 9 || late || asked[0].q !== 'are' || bad.length || new Set(asked.map(x => x.q)).size < 5)
+      fails.push(`${vw}px one-tap bank: ${JSON.stringify(asked.length < 9 || late ? asked : bad.length ? bad : asked.map(x => x.q))}`);
+    await c.close();
+  }
   // The right answer's celebration (app.css .cheer) plays on the choice and on "✓ Yes", and not at all with
   // prefers-reduced-motion; Next is there and focused at once.
   for (const reducedMotion of ['no-preference', 'reduce']) {
@@ -315,6 +513,234 @@ async function overlays(b, base) {
     });
     const want = reducedMotion === 'reduce' ? ['none', 'none'] : ['cheer', 'tickpop'];
     if (r.btn !== want[0] || r.yes !== want[1] || !r.next) fails.push(`right-answer celebration (${reducedMotion}): ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // Custom quiz (quiz.js viewCustom, quizCustom; 2026-11-03), on a phone: nothing picked at first (Start off); IMR groups
+  // by default (Pierre: "nobody picks genera alphabetically"), also on a device that had kept the old A-Z view; My mix-ups
+  // with the declared look-alikes and a note before any mix-up, then the player's own clusters with their counts; the
+  // Progress view; photos picked and Clear all, a quick pick (a genus and its look-alikes), the search, the choice and
+  // the view kept after a reload, then a dozen questions all on the genera picked, logged quiz|s…; nothing wider than
+  // the screen in any view (the Practice tabs included), at 390 and 360 px.
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 844}}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+      if (!sessionStorage.getItem('cq-old')) {
+        sessionStorage.setItem('cq-old', '1');
+        localStorage.setItem('reefid-custom-view', '"az"'); // the A-Z view kept by a device before 2026-11-03
+      }
+    });
+    await p.goto(base + '#quiz-custom');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('.cqtile');
+    const state = () =>
+      p.evaluate(() => ({
+        view: document.querySelector('[data-cv][aria-pressed="true"]').dataset.cv,
+        on: [...new Set([...document.querySelectorAll('.cqtile[aria-pressed="true"]')].map(b => b.dataset.g))].sort(),
+        start: !document.querySelector('[data-start]').disabled,
+        n: document.querySelector('.cqn b').textContent,
+        shown: [...new Set([...document.querySelectorAll('.cqtile:not([hidden])')].map(b => b.dataset.g))],
+        tabs: (m => m.scrollWidth <= m.clientWidth)(document.getElementById('modes')),
+        wide: [...document.querySelectorAll('#view *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1).length,
+        heads: [...document.querySelectorAll('.cqg:not([hidden]) .cqht')].map(h => h.textContent),
+        first: [...document.querySelectorAll('.cqg:first-of-type .cqtile')].map(b => b.dataset.g),
+        tiles: [...document.querySelectorAll('.cqtile')].map(b => b.dataset.g),
+        note: !!document.querySelector('.cqnote'),
+        play: pool()
+      }));
+    const s0 = await state();
+    await p.click('[data-cv="mix"]');
+    const m0 = await state();
+    // A player who mixed Pocillopora up with Stylophora 4 times and Seriatopora with Stylophora 3 times.
+    await p.evaluate(() => {
+      P.Pocillopora = {...(P.Pocillopora || {}), ok: 3, ko: 4, conf: {Stylophora: 4}};
+      P.Seriatopora = {...(P.Seriatopora || {}), ok: 2, ko: 3, conf: {Stylophora: 3}};
+    });
+    await p.click('[data-cv="prog"]');
+    const g0 = await state();
+    await p.click('[data-cv="mix"]');
+    const m1 = await state();
+    await p.click('[data-cv="imr"]');
+    for (const g of ['Acropora', 'Pocillopora', 'Porites']) await p.click(`.cqtile[data-g="${g}"]`);
+    const s1 = await state();
+    await p.click('[data-clear]');
+    const s2 = await state();
+    await p.selectOption('#cqlk', 'Pocillopora');
+    const s3 = await state(),
+      looks = await p.evaluate(() => cqLooks('Pocillopora', pool()).sort());
+    await p.fill('#cqq', 'acro');
+    const s5 = await state();
+    await p.click('[data-cv="mix"]'); // the view kept after the reload
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('.cqtile');
+    const s6 = await state();
+    const all = L => [...new Set(L)].sort().join(),
+      trio = s0.play.filter(n => ['Pocillopora', 'Stylophora', 'Seriatopora'].includes(n)); // a cluster in the game's order
+    if (
+      s0.view !== 'imr' ||
+      s0.heads.length < 5 || // the IMR lecture groups, every genus in play in view, the first group in the IMR order
+      all(s0.tiles) !== all(s0.play) ||
+      s0.first.join() !== s0.play.filter(n => s0.first.includes(n)).join() ||
+      s0.on.length ||
+      s0.start ||
+      !s0.tabs ||
+      s0.wide ||
+      m0.view !== 'mix' ||
+      !m0.note || // no mix-up yet: the declared look-alike sets, said so
+      m0.heads.length < 3 ||
+      m0.wide ||
+      g0.view !== 'prog' ||
+      !g0.heads.includes('Not seen yet') ||
+      !g0.heads.some(h => /^(To review|Learning)$/.test(h)) ||
+      g0.wide ||
+      m1.note ||
+      m1.heads[0] !== `${trio.join(' · ')} 7 mix-ups` ||
+      m1.first.join() !== trio.join() ||
+      m1.wide ||
+      s1.on.join() !== 'Acropora,Pocillopora,Porites' ||
+      !s1.start ||
+      s1.n !== '3 genera' ||
+      s2.on.length ||
+      s2.start ||
+      s3.on.join() !== looks.join() ||
+      looks.length < 2 ||
+      s5.shown.some(g => !/acro/i.test(g)) ||
+      !s5.shown.includes('Acropora') ||
+      s6.view !== 'mix' ||
+      s6.on.join() !== looks.join() ||
+      !s6.start
+    )
+      fails.push(
+        `custom quiz selection: ${JSON.stringify({s0, m0, g0, m1, s1, s2, s3, looks, s5, s6}, (k, v) => (k === 'play' || k === 'tiles' ? undefined : v))}`
+      );
+    // 360 px: every view fits the width.
+    await p.setViewportSize({width: 360, height: 780});
+    for (const v of ['imr', 'mix', 'prog']) {
+      await p.click(`[data-cv="${v}"]`);
+      const w = await state();
+      if (w.wide || !w.tabs) fails.push(`custom quiz at 360 px, view ${v}: ${w.wide} elements wider than the screen, tabs fit ${w.tabs}`);
+    }
+    await p.click('[data-cv="imr"]');
+    await p.setViewportSize({width: 390, height: 844});
+    await p.click('[data-start]');
+    const asked = [],
+      modes = [];
+    for (let i = 0; i < 12; i++) {
+      await p.waitForSelector('#view .q:not(.done)');
+      const r = await p.evaluate(i => {
+        document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+        const t = SHOWNQ[1],
+          bs = [...document.querySelectorAll('#view [data-c]')];
+        if (bs.length) (i % 4 === 3 ? bs.find(b => b.dataset.c !== t) : bs.find(b => b.dataset.c === t)).click();
+        else {
+          const f = document.querySelector('#view .tyform');
+          f.querySelector('input').value = t;
+          f.requestSubmit();
+        }
+        const L = store.get(LOG0, []);
+        return {h: location.hash, t, m: (L[L.length - 1] || {}).m};
+      }, i);
+      asked.push(r.t);
+      modes.push(r.m);
+      if (r.h !== '#quiz-custom|play') fails.push(`custom quiz: question ${i + 1} on ${r.h}`);
+      await p.click('#next');
+    }
+    if (asked.some(g => !looks.includes(g)) || modes.some(m => !/^quiz\|s(\||$)/.test(m || '')))
+      fails.push(`custom quiz play: asked ${asked.join(', ')} (picked ${looks.join(', ')}); logged ${modes.join(', ')}`);
+    await c.close();
+  }
+  // The Practice tabs (app.js MODES; Pierre, 2026-11-03: "Photo → genus" became Quiz, "Custom" Custom quiz): their names
+  // at each size class, all four in the bar without scrolling it at 360 and 390 px (rule 20), the tab of the page
+  // marked, and the old addresses (#quiz, #quiz-custom|play) still landing on their tab.
+  for (const [w, want] of [
+    [360, 'Quiz|Custom quiz|Duels|Memory'],
+    [390, 'Quiz|Custom quiz|Duels|Memory'],
+    [1280, 'Quiz|Custom quiz|Look-alike duels|Memory']
+  ]) {
+    const [c, p] = await open({viewport: {width: w, height: 800}}, seen);
+    for (const [h, on] of [
+      ['quiz', 'Quiz'],
+      ['quiz-custom|play', 'Custom quiz']
+    ]) {
+      await p.goto(base + '#' + h);
+      await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await p.evaluate(() => document.fonts.ready);
+      const t = await p.evaluate(() => {
+        const m = document.getElementById('modes'),
+          A = [...m.querySelectorAll('a')];
+        return {
+          names: A.map(a => a.innerText.trim()).join('|'),
+          on: (m.querySelector('[aria-current="page"]') || {}).innerText,
+          fit: m.scrollWidth <= m.clientWidth && A.every(a => a.getBoundingClientRect().right <= innerWidth),
+          w: [m.scrollWidth, m.clientWidth]
+        };
+      });
+      if (t.names !== want || t.on !== on || !t.fit) fails.push(`${w}px Practice tabs on #${h}: ${JSON.stringify(t)}`);
+    }
+    await c.close();
+  }
+  // The apology card (core.js SORRY, sorryOf, sorryFelt; progress.js sorryNotice; 2026-11-04): once, at app open, to a
+  // player who felt the broken opening (20 answers or more between #408's merge and the first run of this version, the
+  // opening hold's sum at 3 or more then); "Hi!" signed out (the sign-in name: signin(), below); its button or Escape
+  // close it for good; never to a player of a single answer or whose answers are all from before. The clock is fixed on
+  // the morning after (Manila), so the test does not expire with the card.
+  for (const [lab, at, n, want] of [
+    ['25 answers in the window, the hold at 3.5', '2026-11-03T13:00:00Z', 25, 'Hi! Sorry about your last run.'],
+    ['one answer in the window', '2026-11-03T13:00:00Z', 1, null],
+    ['25 answers before it', '2026-11-03T09:00:00Z', 25, null]
+  ]) {
+    const [c, p] = await open(
+      {viewport: {width: 390, height: 800}, timezoneId: 'Asia/Manila'},
+      ({t, n}) => {
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-nudge', '1');
+        localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"'); // the last update note: seen
+        if (localStorage.getItem('reefid-sync-coral-progress')) return;
+        const last = t + n * 20000;
+        localStorage.setItem(
+          'reefid-sync-coral-progress',
+          JSON.stringify({'~level': {ok: n, ko: 0, th: 0.5, at: last}, Acropora: {ok: n, ko: 0, h: '1111', at: last}})
+        );
+        localStorage.setItem('reefid-hold', String(n > 1 ? 3.5 : 0.7));
+        localStorage.setItem(
+          'reefid-log0',
+          JSON.stringify(
+            Array.from({length: n}, (_, k) => ({
+              id: 'x' + k,
+              t: new Date(t + k * 20000).toISOString(),
+              g: 'Acropora',
+              a: 'Acropora',
+              ok: 1,
+              e: 0.8
+            }))
+          )
+        );
+      },
+      {t: Date.parse(at), n}
+    );
+    await p.clock.setFixedTime(new Date('2026-11-04T03:00:00Z'));
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    if (want) {
+      await p.waitForSelector('.sorry', {timeout: 8000}).catch(() => {});
+      const r = await p.evaluate(() => ({
+        n: document.querySelectorAll('.unlock').length,
+        h: (document.querySelector('.sorry h3') || {}).textContent,
+        t: (document.querySelector('.sorry p:not(.ulkick)') || {}).textContent
+      }));
+      if (r.n !== 1 || r.h !== want || !/^Yesterday evening we adjusted how the app picks your questions/.test(r.t || ''))
+        fails.push(`apology card, ${lab}: ${JSON.stringify(r)}`);
+      await p.keyboard.press('Escape');
+      if (await p.$('.sorry')) fails.push('apology card: Escape does not close it');
+      await p.reload();
+      await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    }
+    await p.waitForTimeout(2500);
+    if (await p.$('.sorry'))
+      fails.push(
+        `apology card, ${lab}: ${want ? 'shown twice' : 'shown'} ${await p.evaluate(() => localStorage.getItem('reefid-sorry-first'))}`
+      );
     await c.close();
   }
   return fails;
@@ -411,12 +837,37 @@ async function signin(base) {
       prog: JSON.parse(localStorage.getItem('reefid-sync-coral-progress') || '{}'),
       posts: JSON.parse(localStorage.getItem('test-sheet-log') || '[]').filter(x => x.post && x.name)
     }));
+  // The apology card greets a signed-in player by the first word of their sign-in name (core.js sorryText); asked here
+  // with the clock on the morning after, the device's own answer in the window, the account from the stub sheet.
+  await run(
+    () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"');
+      // What the device read at this version's first run (core.js sorryOf): 30 answers in the window, the hold at 3.5.
+      localStorage.setItem('reefid-sorry-first', JSON.stringify({t: Date.parse('2026-11-04T01:00:00Z'), n: 30, h: 3.5, c: 0}));
+      localStorage.setItem('reefid-account', JSON.stringify({name: 'Anna', pin: '1234'}));
+      const t = Date.parse('2026-11-03T13:00:00Z');
+      localStorage.setItem(
+        'reefid-sync-coral-progress',
+        JSON.stringify({'~level': {ok: 5, ko: 1, th: 0.5, at: t}, Pavona: {ok: 5, ko: 1, at: t}})
+      );
+    },
+    async p => {
+      await p.clock.setFixedTime(new Date('2026-11-04T03:00:00Z'));
+      await p.evaluate(() => document.querySelectorAll('.sorry').forEach(x => x.remove()));
+      await p.evaluate(() => (localStorage.removeItem('reefid-sorry'), sorryNotice()));
+      await p.waitForSelector('.sorry', {timeout: 5000});
+      const h = await p.evaluate(() => document.querySelector('.sorry h3').textContent);
+      if (h !== 'Hi Anna! Sorry about your last run.') fails.push(`apology card, signed in: ${h}`);
+    }
+  );
   // A device with progress of its own (3 answers played signed out).
   await run(
     () => {
       localStorage.setItem('reefid-tour', '"done"');
       localStorage.setItem('reefid-nudge', '1');
-      localStorage.setItem('reefid-recalc', '"millepora-counts-2026-11"'); // the last "progress recalculated" note: seen
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"'); // the last update note: seen
       if (localStorage.getItem('test-own')) return;
       localStorage.setItem('test-own', '1');
       const t = new Date().toISOString();
@@ -566,10 +1017,679 @@ async function signin(base) {
   return fails;
 }
 
+// The sheet's full replay adopted by the app (sync.js replayAdopt; Pierre, 2026-11-03: progress recalculated from the
+// whole answer log, automatically). Nothing reaches the sheet (AGENTS.md rule 13): every sync request is answered in the
+// page (a wrapped fetch and SHEET_STUB), a route answers any that escapes, and the script's hosts are mapped to this
+// computer. A stale signed-in device (its copy saved under older rules, one answer of its own not sent yet) loads:
+// it adopts the replay the sheet sends (the replayed record, its own answer replayed on top), saves and sends it, with
+// no card for a version without msg; the next load does not adopt it again. A device that last applied the previous
+// version, served a core.js with one more version that has a msg: the card at once, over Home, once.
+const C = require('../core.js');
+const RGEN = (d => {
+  const out = {};
+  [d.gen, d.x.gen].forEach(G => Object.keys(G).forEach(n => out[n] || (out[n] = {look: G[n].look || [], fam: String(G[n].fam || '')})));
+  return out;
+})(require('../data.json'));
+async function replayAdoptCheck(base) {
+  const fails = [],
+    bs = await chromium.launch({
+      args: ['--host-resolver-rules=MAP script.google.com 127.0.0.1, MAP script.googleusercontent.com 127.0.0.1']
+    });
+  const T = i => new Date(Date.UTC(2026, 10, 3, 5, i)).toISOString(),
+    ch = 'Acropora Montipora Porites Pocillopora',
+    A = (id, i, g, a, ph) => ({id, t: T(i), g, a, ok: g === a ? 1 : 0, m: 'quiz', ph, e: 0.8, th: 1, nw: 1, ch}),
+    sheet = [
+      A('s1', 1, 'Acropora', 'Acropora', 'acropora-wide-745675208'),
+      A('s2', 2, 'Porites', 'Porites', 'porites-wide-1'),
+      A('s3', 3, 'Acropora', 'Montipora', 'acropora-wide-745206089')
+    ],
+    mine = A('m1', 4, 'Acropora', 'Acropora', 'acropora-wide-745675208'),
+    rec = C.replayProgress(
+      sheet.map(a => C.logRow(a, 'ana')),
+      {gen: RGEN}
+    ).ana.P,
+    all = C.replayProgress(
+      [...sheet, mine].map(a => C.logRow(a, 'ana')),
+      {gen: RGEN}
+    ).ana.P,
+    // The sheet's copy, saved under the older rules (wrong bars), and this device's: the same plus its unsent answer.
+    old = {
+      Acropora: {ok: 1, ko: 1, streak: 0, h: '10', pg: 0.5, th: 0.2, at: Date.parse(T(3))},
+      Montipora: {ok: 0, ko: 0, streak: 0, h: '0', pg: 0.1},
+      Porites: {ok: 1, ko: 0, streak: 1, h: '1', pg: 0.6, th: 0.3, dd: 1, dl: 20395},
+      '~level': {ok: 2, ko: 1, th: 0.1, at: Date.parse(T(3))}
+    },
+    dev = JSON.parse(JSON.stringify(old));
+  Object.assign(dev.Acropora, {ok: 2, streak: 1, h: '101', pg: 0.6});
+  Object.assign(dev['~level'], {ok: 3});
+  const STUB = ([rec, data, rv, sv]) => {
+    const f = window.fetch,
+      reply = (u, o) => {
+        const q = new URL(String(u)).searchParams,
+          body = o && o.body ? JSON.parse(o.body) : null,
+          log = JSON.parse(localStorage.getItem('test-sheet-log') || '[]');
+        if (body ? !body.name : q.get('name') !== 'Ana') return {ok: false};
+        log.push(body ? {post: 1, rv: body.rv, data: body.data && body.data['reefid-sync-coral-progress']} : {get: 1, rv: q.get('rv')});
+        localStorage.setItem('test-sheet-log', JSON.stringify(log));
+        // The replay comes with every reply, whatever rv the app sends: the app must not adopt it twice. A test can
+        // change it (test-rec) to see whether it is adopted again. The sheet keeps what was last sent.
+        const replay = {rv, n: 3, rec: JSON.parse(localStorage.getItem('test-rec') || 'null') || rec, ids: ['s1', 's2', 's3']},
+          rev = Number(localStorage.getItem('test-rev') || 4);
+        if (body) {
+          localStorage.setItem('test-data', JSON.stringify(body.data));
+          localStorage.setItem('test-rev', String(rev + 1));
+          return {ok: true, log: true, rev: rev + 1, replay, v: sv};
+        }
+        return {
+          ok: true,
+          found: true,
+          updated: '2026-11-03T05:03:00.000Z',
+          rev,
+          data: JSON.parse(localStorage.getItem('test-data') || 'null') || data,
+          replay,
+          v: sv
+        };
+      },
+      answer = (u, o) =>
+        Promise.resolve(new Response(JSON.stringify(reply(String((u && u.url) || u), o)), {headers: {'Content-Type': 'application/json'}}));
+    window.SHEET_STUB = answer;
+    window.fetch = (u, o) => (/script\.google/.test(String((u && u.url) || u)) ? answer(u, o) : f(u, o));
+  };
+  // sv: the sheet script version the stub answers as (the replay from v28, core.js RV_SHEET).
+  const open = async (rv, core, sv = C.RV_SHEET) => {
+    const c = await bs.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
+    await c.addInitScript(STUB, [rec, data, core ? C.RV + 1 : C.RV, sv]);
+    await c.addInitScript(init, [old, dev, mine, rv, data]);
+    await c.route(
+      u => !u.href.startsWith(base),
+      async r => {
+        const u = r.request().url();
+        if (!/script\.google/.test(u)) return r.abort();
+        fails.push('replay: a sync request escaped the wrapped fetch: ' + u.slice(0, 80));
+        r.fulfill({contentType: 'application/json', body: '{"ok":false,"error":"input"}'});
+      }
+    );
+    if (core) await c.route(/\/core\.js(\?|$)/, r => r.fulfill({contentType: 'text/javascript', body: core}));
+    const p = await c.newPage();
+    p.on('pageerror', e => fails.push('replay page error: ' + e.message));
+    p.setDefaultTimeout(8000);
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    return [c, p];
+  };
+  const data = {'reefid-sync-coral-progress': JSON.stringify(old), 'reefid-sync-coral-quiz': '{"bon":false}'};
+  const init = ([old, dev, mine, rv, data]) => {
+    if (localStorage.getItem('test-init')) return;
+    localStorage.setItem('test-init', '1');
+    localStorage.setItem('reefid-tour', '"done"');
+    localStorage.setItem('reefid-nudge', '1');
+    localStorage.setItem('reefid-recalc', '"millepora-counts-2026-11"');
+    localStorage.setItem('reefid-sync-coral-progress', JSON.stringify(dev));
+    localStorage.setItem('reefid-account', JSON.stringify({name: 'Ana', pin: '1234', srv: 4, base: old, log: [mine], dirty: true, rev: 1}));
+    if (rv) localStorage.setItem('reefid-sync-coral-rv', String(rv));
+    // The account's saved copy is at that rules version too (sync.js mergeSaved: an older one makes the device adopt
+    // again from 0, with version 1's card when its % moved).
+    if (rv) localStorage.setItem('test-data', JSON.stringify({...data, 'reefid-sync-coral-rv': String(rv)}));
+  };
+  const posted = p =>
+    p
+      .waitForFunction(() => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.post), null, {timeout: 15000})
+      .catch(() => {});
+  // The app never gets ahead of the sheet script (AGENTS.md 7a): a script before v28 (even one whose reply carried a
+  // replay) changes nothing: the device keeps its own progress, sends its answer as before, records no rules version
+  // and shows no card.
+  {
+    const [c, p] = await open(0, null, C.RV_SHEET - 1);
+    await posted(p);
+    await p.waitForTimeout(500);
+    const s = await p.evaluate(() => ({
+      P: JSON.parse(localStorage.getItem('reefid-sync-coral-progress') || '{}'),
+      rv: localStorage.getItem('reefid-sync-coral-rv'),
+      pending: (JSON.parse(localStorage.getItem('reefid-account') || '{}').log || []).length,
+      card: !!document.querySelector('.rvmsg')
+    }));
+    const a = s.P.Acropora || {};
+    if (a.pg !== dev.Acropora.pg || a.ok !== 2 || 'rv' in a || s.rv || s.pending || s.card)
+      fails.push(`replay: adopted from a script before v${C.RV_SHEET}: ${JSON.stringify({a, rv: s.rv, pending: s.pending, card: s.card})}`);
+    // The standard card (core.js RV_CARD, only: 'changed', min 5) is due only when the progress % moved by 5 points or
+    // more, and then shows with the two % (progress.js rvNoticeAdd, rvNotice).
+    const due = await p.evaluate(v => {
+      const d = [];
+      for (const pct of [
+        [10, 10],
+        [10, 14],
+        [10, 5]
+      ]) {
+        localStorage.removeItem('reefid-rv-msg');
+        rvNoticeAdd(0, v, pct);
+        // Shown at once when no other card is on screen (rvNotice waits behind one: the update note may be up here).
+        document.querySelectorAll('.unlock, #tour').forEach(e => e.remove());
+        rvNotice();
+        const t = (document.querySelector('.rvmsg p:not(.ulkick)') || {}).textContent || '';
+        d.push([JSON.parse(localStorage.getItem('reefid-rv-msg')).due, t]);
+        document.querySelectorAll('.rvmsg').forEach(e => e.remove());
+      }
+      localStorage.removeItem('reefid-rv-msg');
+      return d;
+    }, C.RV);
+    if (due[0][0].length || due[1][0].length || !due[2][0].includes(C.RV) || !due[2][1].includes('went from 10% to 5%'))
+      fails.push(`replay: the card's 5-point rule: ${JSON.stringify(due)}`);
+    await c.close();
+  }
+  // A stale device: the replay adopted once, its own answer on top.
+  {
+    const [c, p] = await open(0, null);
+    await posted(p);
+    await p.waitForTimeout(500);
+    const s = await p.evaluate(() => ({
+      P: JSON.parse(localStorage.getItem('reefid-sync-coral-progress') || '{}'),
+      rv: localStorage.getItem('reefid-sync-coral-rv'),
+      log: JSON.parse(localStorage.getItem('test-sheet-log') || '[]'),
+      pending: (JSON.parse(localStorage.getItem('reefid-account') || '{}').log || []).length,
+      card: !!document.querySelector('.rvmsg'),
+      text: (document.querySelector('.rvmsg p:not(.ulkick)') || {}).textContent || '',
+      rvm: JSON.parse(localStorage.getItem('reefid-rv-msg') || '{}'),
+      pct: genScore('Acropora')
+    }));
+    const a = s.P.Acropora || {};
+    if (Math.abs((a.pg || 0) - all.Acropora.pg) > 1e-9 || a.ok !== 2 || a.ko !== 1 || a.th !== all.Acropora.th)
+      fails.push(
+        `replay: the device did not end with the replayed record and its own answer on top: ${JSON.stringify(a)} vs ${all.Acropora.pg}`
+      );
+    if (a.rv !== C.RV || a.pm !== 1 || s.rv !== String(C.RV)) fails.push(`replay: rules version not recorded: ${s.rv} ${a.rv} ${a.pm}`);
+    if (!s.P.Porites || s.P.Porites.dd !== 1 || s.P.Porites.pg !== all.Porites.pg)
+      fails.push('replay: the days answered right were not kept');
+    if ((s.P['~level'] || {}).ok !== 3 || (s.P['~level'] || {}).th !== all['~level'].th) fails.push('replay: global level not replayed');
+    if (Math.abs(s.pct - C.scoreOf(all.Acropora)) > 1e-9) fails.push('replay: the bar does not show the replayed progress');
+    const gets = s.log.filter(x => x.get),
+      last = s.log.filter(x => x.post && x.data).pop();
+    if (!gets.length || gets[0].rv !== '0') fails.push(`replay: the first load did not say rv 0: ${JSON.stringify(gets[0])}`);
+    if (!last || Math.abs(JSON.parse(last.data).Acropora.pg - all.Acropora.pg) > 1e-9)
+      fails.push('replay: the adopted progress was not sent');
+    if (s.pending) fails.push('replay: its own answer was not sent');
+    // Version 1's card is due only when the replay moved the progress % by 5 points or more (Pierre, 2026-11-03), and
+    // says the two % (it may wait behind the learned-mark card).
+    const [pf, pt] = (s.rvm.pct || {})[C.RV] || [];
+    if (
+      (s.rvm.due || []).includes(C.RV) !== (pf !== undefined && Math.abs(pt - pf) >= C.RV_CARD.min) ||
+      (s.card && !s.text.includes(`went from ${pf}% to ${pt}%`))
+    )
+      fails.push(`replay: the recalculation card: ${JSON.stringify({card: s.card, text: s.text, rvm: s.rvm})}`);
+    // The next load: not adopted again (the sheet now sends another record: the progress stays), and the load says the
+    // version applied.
+    await p.evaluate(rec => {
+      rec.Acropora.pg = 0.01;
+      localStorage.setItem('test-rec', JSON.stringify(rec));
+      localStorage.setItem('test-sheet-log', '[]');
+    }, rec);
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p
+      .waitForFunction(() => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.get), null, {timeout: 15000})
+      .catch(() => {});
+    await p.waitForTimeout(800);
+    const t = await p.evaluate(() => ({
+      P: JSON.parse(localStorage.getItem('reefid-sync-coral-progress')),
+      log: JSON.parse(localStorage.getItem('test-sheet-log'))
+    }));
+    if (Math.abs(t.P.Acropora.pg - all.Acropora.pg) > 1e-9) fails.push(`replay: adopted again at the next load: ${t.P.Acropora.pg}`);
+    if (!t.log.some(x => x.get && x.rv === String(C.RV)))
+      fails.push(`replay: the next load did not say rv ${C.RV}: ${JSON.stringify(t.log)}`);
+    await c.close();
+  }
+  // A version with a msg, skipped by this device: its card at once, over Home, once. The device has not seen the
+  // last update note (progress.js RECALC, the typed-questions announcement) either: both cards, one after the other,
+  // neither lost (the note first: recalcNotice runs first at start-up; the version's card waits for any card on screen).
+  {
+    const fs = require('fs'),
+      src = fs.readFileSync(path.join(ROOT, 'core.js'), 'utf8'),
+      next = C.RV + 1,
+      core = src.replace(
+        '  const RV = RVS[RVS.length - 1].v;',
+        `  RVS.push({v: ${next}, at: '2099-01-01', why: 'smoke test', msg: {t: 'A test update', p: 'Test words for the card.'}});\n  const RV = RVS[RVS.length - 1].v;`
+      );
+    if (core === src) fails.push('replay: could not add a version to core.js');
+    const [c, p] = await open(C.RV, core);
+    await p.waitForSelector('.unlock.recalc', {timeout: 15000}).catch(() => {});
+    const note = await p.evaluate(() => ({n: document.querySelectorAll('.unlock').length, rv: !!document.querySelector('.rvmsg')}));
+    if (note.n !== 1 || note.rv) fails.push(`replay: the update note and the version's card not one at a time: ${JSON.stringify(note)}`);
+    await p.click('.unlock.recalc .next').catch(() => fails.push('replay: no update note before the version card'));
+    await p.waitForSelector('.unlock.rvmsg', {timeout: 15000}).catch(() => {});
+    const card = await p.evaluate(() => {
+      const d = document.querySelector('.unlock.rvmsg');
+      return d && {t: d.querySelector('h3').textContent, n: document.querySelectorAll('.unlock').length, page: location.hash};
+    });
+    if (!card || card.t !== 'A test update') fails.push(`replay: no card for the version with a msg: ${JSON.stringify(card)}`);
+    if (card) await p.click('.unlock.rvmsg .next');
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForTimeout(2500);
+    if (await p.$('.unlock.rvmsg, .unlock.recalc')) fails.push('replay: a card came back after it was seen');
+    await c.close();
+  }
+  await bs.close();
+  return fails;
+}
+
+// Coral basics on a phone and a tablet (Codex on PR #405): the teaching photo leaves room on screen (at most 45% of its
+// height), each check (photo, answers, feedback) fits between the header and the tab bar once answered (rule 17), and
+// every photo of a check gets the games' clickable source once answered (rule 11, photoSrc). Returns the failures.
+// Credits and Home's fit (Pierre, 2026-11-03): no page footer; Home is one screen with a one-line credit (Pierre, IMR, a
+// link to About and credits); About exists, is linked from Home and from the ? help of every page with Privacy and Send
+// feedback, and the Coral Finder book is never credited (only cited under References); the header fits the narrowest
+// phones, signed out, without a sideways scroll.
+async function credits(b, base) {
+  const fails = [],
+    BOOK = /Coral Finder|Kelley|BYOGUIDES/i;
+  const open = async (w, h, hash = '') => {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+    });
+    const p = await c.newPage();
+    await p.goto(base + hash);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForTimeout(500);
+    return [c, p];
+  };
+  for (const [w, h] of [
+    [360, 640],
+    [390, 750],
+    [390, 844],
+    [412, 915],
+    [768, 1024],
+    [1280, 800]
+  ]) {
+    const [c, p] = await open(w, h);
+    const r = await p.evaluate(() => {
+      const cr = document.querySelector('#view .hcred'),
+        tab = document.querySelector('nav.sections'),
+        tabTop = getComputedStyle(tab).position === 'fixed' ? tab.getBoundingClientRect().top : innerHeight;
+      return {
+        sh: document.documentElement.scrollHeight,
+        ih: innerHeight,
+        sw: document.documentElement.scrollWidth,
+        iw: innerWidth,
+        text: cr ? cr.textContent : '',
+        link: !!(cr && cr.querySelector('a[href="#about"]')),
+        bottom: cr ? Math.round(cr.getBoundingClientRect().bottom) : 0,
+        // Learn & practise is the primary door, Identify the secondary one (Pierre, 2026-11-03).
+        // Phones (Pierre, 2026-11-03, second look): the Learn and Practice buttons carry the door, its photos only illustrate.
+        doors: ['.hdoor.learn', '.hdoor.identify', '.hdoor.learn .hdart', '.hdoor.learn .hdbtn', '.hdoor.identify .hdbtn'].map(s => {
+          const b = document.querySelector(s)?.getBoundingClientRect();
+          return b ? [Math.round(b.width), Math.round(b.height)] : [0, 0];
+        }),
+        tabTop: Math.round(tabTop),
+        footer: !!document.querySelector('footer')
+      };
+    });
+    // No vertical scroll, and the credit line in view above the phone tab bar (not hidden under it; the bar's 1 px top
+    // border overlaps the page by design: --tabbar-h is 58, the bar 59 with its border).
+    if (r.sh > r.ih || r.bottom > r.tabTop + 1 || !r.bottom) fails.push(`${w}x${h} Home is not one screen: ${JSON.stringify(r)}`);
+    if (r.sw > r.iw) fails.push(`${w}x${h} Home scrolls sideways: ${JSON.stringify(r)}`);
+    const [ld, id, la, lb, ib] = r.doors;
+    // Phones: Learn's door taller than Identify's, its buttons taller than Identify's, its photos at most 28% of the
+    // screen; side by side: Learn's column wider.
+    if (w < 600 ? !(ld[1] > id[1] && lb[1] > ib[1] && la[1] <= 0.28 * h + 1) : !(ld[0] > id[0]))
+      fails.push(`${w}x${h} Home: Learn & practise is not the main door: ${JSON.stringify(r.doors)}`);
+    if (!/Pierre Pericard/.test(r.text) || !/IMR/.test(r.text) || !r.link || BOOK.test(r.text) || r.footer)
+      fails.push(`${w}x${h} Home credit line: ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // The header fits one line at 360 and 320 px, signed out (the Sign in pill shown): no sideways scroll.
+  for (const w of [320, 360]) {
+    const [c, p] = await open(w, 640);
+    for (const hash of ['', 'genera', 'about']) {
+      await p.evaluate(x => (location.hash = x), hash);
+      await p.waitForTimeout(400);
+      const r = await p.evaluate(() => ({
+        sw: document.documentElement.scrollWidth,
+        iw: innerWidth,
+        signb: !document.getElementById('signb').hidden,
+        set: Math.round(document.getElementById('setb').getBoundingClientRect().right)
+      }));
+      if (!r.signb || r.sw > r.iw || r.set > r.iw)
+        fails.push(`${w}px #${hash || 'home'} signed out, header too wide: ${JSON.stringify(r)}`);
+    }
+    await c.close();
+  }
+  // About and credits, and the ? help line on another page.
+  {
+    const [c, p] = await open(390, 844, '#about');
+    const r = await p.evaluate(() => {
+      const a = document.querySelector('#view .about'),
+        secs = a ? [...a.querySelectorAll('section')] : [],
+        refs = secs.find(s => /References/.test(s.querySelector('h3')?.textContent || ''));
+      return {
+        about: !!a,
+        who: !!a && /Pierre Pericard/.test(a.textContent) && /IMR/.test(a.textContent),
+        privacy: !!(a && a.querySelector('a[href="privacy.html"]')),
+        feedback: !!(a && a.querySelector('[data-rep]')),
+        licences: !!a && /CC BY/.test(a.textContent),
+        // The book may be cited under References only, never in the credits around it.
+        credited: secs.filter(s => s !== refs).some(s => /Coral Finder|Kelley|BYOGUIDES/i.test(s.textContent)),
+        bar: document.querySelector('#modes.ctx .ctx-t')?.textContent || ''
+      };
+    });
+    if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || r.credited || !/About/.test(r.bar))
+      fails.push(`About and credits page: ${JSON.stringify(r)}`);
+    await p.evaluate(() => (location.hash = 'g-Acropora'));
+    await p.waitForTimeout(500);
+    await p.click('#help');
+    await p.waitForTimeout(150);
+    const hp = await p.evaluate(() => {
+      const e = document.querySelector('#helpbox .hend');
+      return {
+        open: !document.getElementById('helpbox').hidden,
+        about: !!(e && e.querySelector('a[href="#about"]')),
+        privacy: !!(e && e.querySelector('a[href="privacy.html"]')),
+        feedback: !!(e && e.querySelector('[data-rep]'))
+      };
+    });
+    if (!hp.open || !hp.about || !hp.privacy || !hp.feedback)
+      fails.push(`? help without About, Privacy and Send feedback: ${JSON.stringify(hp)}`);
+    else {
+      await p.click('#helpbox .hend a[href="#about"]');
+      await p.waitForTimeout(400);
+      if (!(await p.$('#view .about'))) fails.push('the ? help link does not open About and credits');
+    }
+    await c.close();
+  }
+  return fails;
+}
+
+async function basicsFit(b, base) {
+  const fails = [];
+  for (const [w, h] of [
+    [390, 844],
+    [768, 1024]
+  ]) {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+    });
+    const p = await c.newPage();
+    await p.goto(base + '#lab');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    for (const st of ['colony', 'polyp', 'corallite', 'septa', 'teeth', 'walls', 'forms']) {
+      // The walls check opens once the four wall types have been seen (basicsTeach checks that part).
+      await p.evaluate(s => {
+        localStorage.setItem(
+          'reefid-basics',
+          JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {})
+        );
+        location.hash = 'lab-basics|' + s;
+      }, st);
+      await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
+      const r = await p.evaluate(st => {
+        const q = document.querySelector('.bx-q');
+        if (st === 'corallite') {
+          const ph = q.querySelector('.bx-tap'),
+            r = ph.getBoundingClientRect();
+          ph.dispatchEvent(new MouseEvent('click', {clientX: r.left + r.width * 0.587, clientY: r.top + r.height * 0.485, bubbles: true}));
+        } else q.querySelector('.choice').click();
+        const top = document.querySelector('header').getBoundingClientRect().bottom,
+          tabs = document.querySelector('nav.sections'),
+          tb = tabs && getComputedStyle(tabs).position === 'fixed' ? tabs.getBoundingClientRect().top : innerHeight;
+        const sum = document.querySelector('.bx-check summary').getBoundingClientRect(),
+          fb = q.querySelector('.bx-fb').getBoundingClientRect();
+        return {
+          photo: Math.max(0, ...[...document.querySelectorAll('.bx-fig .bx-ph')].map(e => e.getBoundingClientRect().height)),
+          check: Math.round(fb.bottom - sum.top),
+          room: Math.round(tb - top),
+          photos: q.querySelectorAll('img').length,
+          srcs: q.querySelectorAll('.psrc').length
+        };
+      }, st);
+      if (r.photo > 0.45 * h)
+        fails.push(`${w}x${h} Coral basics ${st}: teaching photo ${Math.round(r.photo)} px tall, over 45% of the screen`);
+      if (r.check > r.room) fails.push(`${w}x${h} Coral basics ${st}: the answered check takes ${r.check} px, only ${r.room} px on screen`);
+      if (r.srcs < r.photos) fails.push(`${w}x${h} Coral basics ${st}: ${r.photos} check photos, ${r.srcs} source pills after the answer`);
+    }
+    await c.close();
+  }
+  return fails;
+}
+
+// Coral basics, Pierre's feedback of 2026-11-03: step 4 defines costae beside septa (a term of its own, a label in its own
+// colour outside the cup's rim, the septa label inside it, the centre on the cup's centre); step 6 shows the four wall
+// types one after the other, "Next: Growth forms" only after the fourth, the check opening then; step 7 picks a form on a
+// drawn icon and shows 2-3 large photos of it, each enlarged with its genus; every teaching photo opens the enlarged
+// view when tapped, with its labels over the whole photo and a Labels switch. Returns the failures.
+async function basicsTeach(b, base) {
+  const fails = [];
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+    });
+    const p = await c.newPage(),
+      errs = [];
+    p.on('pageerror', e => errs.push(e.message));
+    const go = async (st, seen = {}) => {
+      await p.evaluate(
+        ([s, v]) => {
+          localStorage.setItem('reefid-basics', JSON.stringify(v));
+          location.hash = 'lab-basics|' + s;
+        },
+        [st, seen]
+      );
+      await p.waitForSelector('.bx-fig .bx-zoom, .bx-forms', {timeout: 15000});
+    };
+    const W = `${w}px Coral basics`;
+    await p.goto(base + '#lab');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    // Step 4: septa inside the rim, costae outside it, the centre on the rim's centre; Costae defined as its own term.
+    await go('septa');
+    const sp = await p.evaluate(() => {
+      const q = s => document.querySelector(s),
+        rim = q('.bx-fig .bx-rim'),
+        at = (e, k) => Number(e.getAttribute(k));
+      // distance from the rim's centre in rim radii: < 1 inside the rim, 1 on it
+      const inRim = d => Math.hypot((at(d, 'cx') - at(rim, 'cx')) / at(rim, 'rx'), (at(d, 'cy') - at(rim, 'cy')) / at(rim, 'ry'));
+      return {
+        rim: !!rim,
+        sep: q('.bx-fig .bx-dot.sep') && inRim(q('.bx-fig .bx-dot.sep')),
+        cos: q('.bx-fig .bx-dot.cos') && inRim(q('.bx-fig .bx-dot.cos')),
+        ctr: q('.bx-fig .bx-dot.ctr') && inRim(q('.bx-fig .bx-dot.ctr')),
+        labs: [...document.querySelectorAll('.bx-fig .bx-lab')].map(e => e.className + ':' + e.textContent),
+        more: (q('.bx-more') || {}).textContent || '',
+        key: (q('.bx-key') || {}).textContent || '',
+        off: [...document.querySelectorAll('.bx-side .bx-off')].map(e => e.textContent).join(' | ')
+      };
+    });
+    if (!sp.rim) fails.push(`${W} septa: no rim drawn on the photo`);
+    else {
+      if (!(sp.sep < 0.75)) fails.push(`${W} septa: the septa point is not well inside the rim (${sp.sep})`);
+      // Costae are immediately outside the wall (Pierre, PR #424): past the rim, by less than a quarter of its radius.
+      if (!(sp.cos > 1.05 && sp.cos < 1.25)) fails.push(`${W} septa: the costae point is not just outside the rim (${sp.cos} rim radii)`);
+      if (!(sp.ctr < 0.4)) fails.push(`${W} septa: the centre point is not near the rim's centre (${sp.ctr})`);
+    }
+    if (!sp.labs.some(l => /\bsep\b/.test(l) && /septa/.test(l)) || !sp.labs.some(l => /\bcos\b/.test(l) && /costae/.test(l)))
+      fails.push(`${W} septa: no septa and costae labels in their colours: ${sp.labs.join(', ')}`);
+    if (!/^Costae: /.test(sp.more) || !/costae/.test(sp.key) || !/slide 13: “When septa cross the wall/.test(sp.off))
+      fails.push(`${W} septa: costae not defined as a term of its own with IMR Lecture 6 slide 13`);
+    // Tapping the photo enlarges it with the step's labels over the whole photo, and a Labels switch.
+    await p.click('.bx-fig .bx-zoom');
+    await p.waitForSelector('#lightbox .lb-over .bx-lab', {timeout: 5000}).catch(() => {});
+    // the photo has loaded (here from the local fallback) and the layer has followed it
+    await p
+      .waitForFunction(
+        () => {
+          const a = document.querySelector('#lightbox .lb-in img').getBoundingClientRect(),
+            o = document.querySelector('#lightbox .lb-over').getBoundingClientRect();
+          return a.width > 200 && Math.abs(a.width - o.width) < 2 && Math.abs(a.top - o.top) < 2;
+        },
+        null,
+        {timeout: 8000}
+      )
+      .catch(() => {});
+    const lb = await p.evaluate(() => {
+      const im = document.querySelector('#lightbox .lb-in img'),
+        ov = document.querySelector('#lightbox .lb-over');
+      if (!im || !ov) return null;
+      const a = im.getBoundingClientRect(),
+        o = ov.getBoundingClientRect();
+      return {
+        d: Math.max(Math.abs(a.left - o.left), Math.abs(a.top - o.top), Math.abs(a.width - o.width), Math.abs(a.height - o.height)),
+        labs: ov.querySelectorAll('.bx-lab').length
+      };
+    });
+    if (!lb || lb.d > 2 || lb.labs < 3)
+      fails.push(`${W} septa: the enlarged photo has no labels on it, or they are off the photo: ${JSON.stringify(lb)}`);
+    // The drawing of the layer (rim, dots, pointers) fills it like the labels (Codex on PR #424): its box is the layer's and
+    // each dot sits at its photo coordinates, at fit and at actual size.
+    const marks = () =>
+      p.evaluate(() => {
+        const ov = document.querySelector('#lightbox .lb-over'),
+          o = ov.getBoundingClientRect(),
+          sv = ov.querySelector('svg').getBoundingClientRect(),
+          vb = ov.querySelector('svg').viewBox.baseVal;
+        let d = Math.max(
+          Math.abs(sv.left - o.left),
+          Math.abs(sv.top - o.top),
+          Math.abs(sv.width - o.width),
+          Math.abs(sv.height - o.height)
+        );
+        ov.querySelectorAll('.bx-dot').forEach(c => {
+          const r = c.getBoundingClientRect(),
+            x = o.left + (c.cx.baseVal.value / vb.width) * o.width,
+            y = o.top + (c.cy.baseVal.value / vb.height) * o.height;
+          d = Math.max(d, Math.abs(r.left + r.width / 2 - x), Math.abs(r.top + r.height / 2 - y));
+        });
+        return Math.round(d);
+      });
+    const fitD = await marks();
+    if (fitD > 2) fails.push(`${W} septa: the enlarged photo's rings and pointers are ${fitD} px off the photo`);
+    await p.evaluate(() => document.querySelector('#lightbox .lb-in img').click());
+    await p.waitForTimeout(800);
+    const fullD = await marks();
+    if (fullD > 2) fails.push(`${W} septa: at actual size, the rings and pointers are ${fullD} px off the photo`);
+    await p.evaluate(() => document.querySelector('#lightbox .lb-in img').click());
+    await p.click('#lightbox [data-ov]').catch(() => fails.push(`${W} septa: no Labels switch in the enlarged view`));
+    if (!(await p.evaluate(() => document.querySelector('#lightbox .lb-over').hidden)))
+      fails.push(`${W} septa: Labels off left the labels on`);
+    await p.click('#lightbox [data-x]');
+    // Every step's teaching photo is the enlarge button (no small "Enlarge" link any more).
+    for (const st of ['colony', 'polyp', 'corallite', 'teeth']) {
+      await go(st);
+      const z = await p.evaluate(() => ({
+        n: document.querySelectorAll('.bx-fig .bx-zoom .zic').length,
+        link: [...document.querySelectorAll('.bx-fig button')].some(b => b.textContent === 'Enlarge')
+      }));
+      if (!z.n || z.link) fails.push(`${W} ${st}: the photo is not the enlarge button (${JSON.stringify(z)})`);
+      await p.click('.bx-fig .bx-zoom');
+      if (!(await p.waitForSelector('#lightbox .lb-over', {timeout: 5000}).catch(() => null)))
+        fails.push(`${W} ${st}: tapping the photo does not enlarge it with its labels`);
+      await p.click('#lightbox [data-x]').catch(() => {});
+    }
+    // Step 6: the four wall types in turn; the next step only after the fourth; the check opens then.
+    await go('walls');
+    const seen = [];
+    for (let k = 0; k < 6; k++) {
+      const st = await p.evaluate(() => ({
+        on: (document.querySelector('.bx-wtabs [aria-pressed="true"]') || {}).dataset?.w,
+        next: (document.querySelector('.bx-nav .next') || {}).textContent || '',
+        open: document.querySelector('.bx-check').open
+      }));
+      seen.push(st.on);
+      if (/Growth forms/.test(st.next) && new Set(seen).size < 4)
+        fails.push(`${W} walls: "Next: Growth forms" after only ${seen.join(', ')}`);
+      if (st.open && new Set(seen).size < 4) fails.push(`${W} walls: the check is open before the four types were seen`);
+      if (!/Next wall type/.test(st.next)) {
+        if (new Set(seen).size !== 4 || !st.open) fails.push(`${W} walls: ended after ${seen.join(', ')}, check open ${st.open}`);
+        break;
+      }
+      await p.click('.bx-nav .bx-wnext');
+    }
+    if (new Set(seen).size !== 4) fails.push(`${W} walls: the four wall types were not all shown: ${seen.join(', ')}`);
+    // Step 7: 7 drawn form icons; each shows 2-3 large example photos, each enlarged with its genus named.
+    await go('forms');
+    const nf = await p.evaluate(() => document.querySelectorAll('.bx-forms [data-f] svg.bx-fi').length);
+    if (nf !== 7) fails.push(`${W} forms: ${nf} drawn form icons, not 7`);
+    for (let j = 0; j < 7; j++) {
+      await p.click(`.bx-forms [data-f="${j}"]`);
+      const ex = await p.evaluate(() =>
+        [...document.querySelectorAll('.bx-fex figure')].map(f => ({
+          w: Math.round(f.querySelector('img').getBoundingClientRect().width),
+          g: (f.querySelector('figcaption i') || {}).textContent || '',
+          // rule 7: 0 IMR lecture photo, 1 Pierre's own, 2 another observer's
+          r: (n => {
+            const fi = (f
+                .querySelector('img')
+                .getAttribute('src')
+                .match(/img\/([^/?]+?)(?:-[mst])?\.webp/) || [])[1],
+              q = [...Object.values(DATA.gen[n].views).flat(), ...(DATA.course[n] || [])].find(x => x.f === fi) || {};
+            return q.imr ? 0 : q.own ? 1 : 2;
+          })((f.querySelector('figcaption i') || {}).textContent)
+        }))
+      );
+      const name = await p.evaluate(j => document.querySelectorAll('.bx-forms [data-f]')[j].textContent, j);
+      if (ex.length < 2 || ex.length > 3) fails.push(`${W} forms ${name}: ${ex.length} example photos`);
+      // Larger than the old 4-per-row thumbnails (about a quarter of the column).
+      if (ex.length && Math.max(...ex.map(e => e.w)) < (w < 600 ? 330 : 400))
+        fails.push(`${W} forms ${name}: the largest example is ${Math.max(...ex.map(e => e.w))} px wide`);
+      if (ex.some(e => !e.g)) fails.push(`${W} forms ${name}: an example photo without its genus`);
+      if (ex.some((e, i) => i && e.r < ex[i - 1].r))
+        fails.push(
+          `${W} forms ${name}: examples not in rule 7's order (IMR, Pierre's, others): ${ex.map(e => e.g + ':' + e.r).join(', ')}`
+        );
+    }
+    await p.click('.bx-fex .bx-fx');
+    const cap = await p
+      .waitForSelector('#lightbox .lb-cap', {timeout: 5000})
+      .then(e => e.textContent())
+      .catch(() => '');
+    if (!/Mushroom|Danafungia|Herpolitha|Fungia/.test(cap) || !/·/.test(cap))
+      fails.push(`${W} forms: the enlarged example has no genus or credit: "${cap}"`);
+    await p.click('#lightbox [data-x]').catch(() => {});
+    // Words lists Costae and opens step 4.
+    await p.evaluate(() => (location.hash = 'lab-basics|words'));
+    await p.waitForSelector('.bx-words', {timeout: 5000});
+    const cw = await p.evaluate(() =>
+      [...document.querySelectorAll('.bx-words dt a')].some(
+        a => a.textContent === 'Costae' && a.getAttribute('href') === '#lab-basics|septa'
+      )
+    );
+    if (!cw) fails.push(`${W} words: no Costae entry linking to step 4`);
+    if (errs.length) fails.push(`${W}: ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  return fails;
+}
+
 (async () => {
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${server.address().port}/`,
     fails = [];
+  // PAGES_ONLY=replay: only the full replay check (replayAdoptCheck), while working on it.
+  if (process.env.PAGES_ONLY === 'replay') {
+    const f = await replayAdoptCheck(base);
+    server.close();
+    if (f.length) {
+      console.error(f.join('\n'));
+      process.exit(1);
+    }
+    return console.log('Replay adoption OK.');
+  }
   const b = await chromium.launch();
   // The first-encounter card (quiz.js introShow) would cover the quiz in the checks that are not about it: every slate
   // genus (Millepora too, app.js BENTHIC) starts as met on a card, except in a context opened with {intro: true}; the
@@ -603,6 +1723,24 @@ async function signin(base) {
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     if (errs.length) fails.push(`${w}px start: ${errs.join(' | ')}`);
+    // The plain sentence (Pierre, 2026-11-03): on a genus sheet, right after the photo and before the ID tips, with no label.
+    await p.evaluate(() => (location.hash = 'g-Goniastrea'));
+    await p.waitForTimeout(700);
+    const pl = await p.evaluate(() => {
+      const e = document.querySelector('#view .sheet .plainw'),
+        ph = document.querySelector('#view .sheet .hero-ph'),
+        tips = document.querySelector('#view .sheet .tipbox'),
+        after = (a, b) => !!(a && b && a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+      return {
+        text: e ? e.textContent : '',
+        want: DATA.gen.Goniastrea.plain,
+        afterPhoto: after(ph, e),
+        beforeTips: after(e, tips),
+        label: !!(e && e.querySelector('b'))
+      };
+    });
+    if (pl.text !== pl.want || !pl.afterPhoto || !pl.beforeTips || pl.label)
+      fails.push(`${w}px genus sheet plain line: ${JSON.stringify(pl)}`);
     for (const h of ROUTES) {
       errs.length = 0;
       await p.evaluate(h => {
@@ -610,7 +1748,59 @@ async function signin(base) {
       }, h);
       await p.waitForTimeout(700);
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
+      // No credits block on any page but Home (Pierre, 2026-11-03): no footer, no Home credit line.
+      if (await p.evaluate(() => !!document.querySelector('footer, #view .hcred'))) fails.push(`${w}px #${h}: a credits footer or line`);
     }
+    // Coral basics: every kind of check offers the app's report once answered (rule 11b; Codex on PR #405), and a
+    // classified photo opens the enlarged view.
+    for (const st of ['colony', 'septa', 'teeth', 'walls', 'forms', 'corallite']) {
+      errs.length = 0;
+      // The walls check opens once the four wall types have been seen (basicsTeach checks that part).
+      await p.evaluate(s => {
+        localStorage.setItem(
+          'reefid-basics',
+          JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {})
+        );
+        location.hash = 'lab-basics|' + s;
+      }, st);
+      await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
+      if (st === 'corallite')
+        await p.evaluate(() => {
+          const ph = document.querySelector('.bx-tap'),
+            r = ph.getBoundingClientRect();
+          ph.dispatchEvent(new MouseEvent('click', {clientX: r.left + r.width * 0.587, clientY: r.top + r.height * 0.485, bubbles: true}));
+        });
+      // DOM clicks: in this context the welcome tour may still be open over the page.
+      else await p.evaluate(() => document.querySelector('.bx-q .choice').click());
+      if (!(await p.$('.bx-q .bx-fb [data-rep]'))) fails.push(`${w}px Coral basics ${st}: no report button after the answer`);
+      if (st === 'walls') {
+        await p.evaluate(() => document.querySelector('.bx-q .bx-cph').click());
+        const lb = await p.evaluate(() => !document.getElementById('lightbox').hidden && !!document.querySelector('#lightbox [data-rep]'));
+        if (!lb) fails.push(`${w}px Coral basics walls: the check photo does not open the enlarged view with its report`);
+        await p.evaluate(() => document.querySelector('#lightbox [data-x]')?.click());
+      }
+      if (errs.length) fails.push(`${w}px Coral basics ${st}: ${errs.slice(0, 3).join(' | ')}`);
+    }
+    // Glossary words (beginner review 2026-11-03): the Genera cards' tips are glossed, and the lecture group titles are no
+    // glossary word (they looked tappable and did nothing); a term in a card opens its definition, not the sheet.
+    await p.evaluate(() => (location.hash = 'genera'));
+    await p.waitForTimeout(600);
+    const gl = await p.evaluate(() => {
+      const t = document.querySelector('#view .card .gt');
+      if (t) t.click();
+      return {
+        titles: document.querySelectorAll('#view .gdiv .gt').length,
+        cards: !!t,
+        def: !document.querySelector('.gpop').hidden && /\S/.test(document.querySelector('.gpop').textContent),
+        h: location.hash
+      };
+    });
+    if (gl.titles || !gl.cards || !gl.def || gl.h !== '#genera') fails.push(`${w}px Genera glossary: ${JSON.stringify(gl)}`);
+    // The Coral Finder's "on the slate" count is the app's (slateGenera: Millepora in), not a count of its own.
+    await p.evaluate(() => (location.hash = 'finder'));
+    await p.waitForTimeout(600);
+    const fd = await p.evaluate(() => [document.querySelector('[data-show]')?.textContent || '', slateGenera().length]);
+    if (!fd[0].includes(`(${fd[1]} on the slate)`)) fails.push(`${w}px Coral Finder slate count: "${fd[0]}", expected ${fd[1]}`);
     // The one-tap question after 35 answers, and app errors queued for the sheet but never sent from a local copy (LOCAL).
     // A fresh browser that has seen the tour (a tour opened earlier in this context resumes after a reload).
     if (w === 390) {
@@ -641,7 +1831,16 @@ async function signin(base) {
             name: document.querySelector('.unlock.intro h3').textContent,
             kick: document.querySelector('.unlock.intro .ulkick').textContent,
             img: !!document.querySelector('.unlock.intro .ulphoto img'),
-            all: !!document.querySelector('.unlock.intro .ulall [data-all]')
+            all: !!document.querySelector('.unlock.intro .ulall [data-all]'),
+            gt: !!document.querySelector('.unlock.intro .ultips .gt'),
+            hint: !!document.querySelector('.unlock.intro .gthint'),
+            // The plain sentence: after the photo, before the tips, no label (Pierre, 2026-11-03).
+            plain: (() => {
+              const c = document.querySelector('.unlock.intro'),
+                e = c.querySelector('.plainw'),
+                after = (a, b) => !!(a && b && a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+              return !!e && !e.querySelector('b') && after(c.querySelector('.ulphoto'), e) && after(e, c.querySelector('.ultips'));
+            })()
           }))
         );
         // A glossary term on a card opens its definition on top of the card (an RA, 2026-11-02: it opened behind it).
@@ -686,12 +1885,17 @@ async function signin(base) {
         if (!/All \d+ genera are open/.test(said)) fails.push(`${w}px open all genera: no confirmation (${said})`);
       }
       // Every slate genus is now met, so the bonus genera offer (a prompt, tested in draw.smoke.js) would come at 30 and
-      // move the one-tap question to 40: this player has already chosen (⚙ Bonus genera: Off).
-      await q2.evaluate(() => bonusSet(false));
+      // move the one-tap question to 40: this player has already chosen (⚙ Bonus genera: Off). Likewise the card offering
+      // to go back to one at a time after Open all (model.js backDue: this player's answers fall below expectation):
+      // answered Keep them all.
+      await q2.evaluate(() => (bonusSet(false), introBack(true)));
       await q2.evaluate(() => (location.hash = 'quiz'));
       await q2.waitForTimeout(500);
-      if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all && c.kick.includes(`${k + 1} of 4`)))
+      if (seen.length !== 4 || !seen.every((c, k) => c.img && c.all && c.plain && c.kick.includes(`${k + 1} of 4`)))
         fails.push(`${w}px first cards: ${JSON.stringify(seen)}`);
+      // "Tap an underlined word" is said once, on the first card with one (beginner review 2026-11-03).
+      else if (seen.filter(c => c.hint).length !== +seen.some(c => c.gt) || seen.findIndex(c => c.hint) !== seen.findIndex(c => c.gt))
+        fails.push(`${w}px first cards, the tap-a-word line: ${JSON.stringify(seen.map(c => [c.gt, c.hint]))}`);
       else if (!ch.every(c => seen.some(s => s.name === c)))
         fails.push(`${w}px first question not among the first cards: ${ch.join(', ')}`);
       let at = 0;
@@ -723,8 +1927,12 @@ async function signin(base) {
           err('ResizeObserver loop completed with undelivered notifications.', dir + 'app.js');
         });
         await q2.waitForTimeout(300);
-        const q = await q2.evaluate(() => JSON.parse(localStorage.getItem('reefid-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg)));
-        if (!q.includes('pulse:hard') || !q.some(x => /smoke test error/.test(x))) fails.push(`${w}px events not queued: ${q.join(' | ')}`);
+        const q = await q2.evaluate(() =>
+          JSON.parse(localStorage.getItem('reefid-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg) + (x.src ? '@' + x.src : ''))
+        );
+        // The first one-tap question ever is the plain one (core.js PULSE0), logged with its item id.
+        if (!q.includes('pulse:hard@are') || !q.some(x => /smoke test error/.test(x)))
+          fails.push(`${w}px events not queued: ${q.join(' | ')}`);
         if (q.some(x => /__firefox__|Script error|ResizeObserver/.test(x))) fails.push(`${w}px noise errors queued: ${q.join(' | ')}`);
       }
       // Back closes an enlarged photo and stays on the page (RA review 2026-11-02).
@@ -859,6 +2067,37 @@ async function signin(base) {
       if (after.tour || !after.shown || !/1 of/.test(after.kick || '') || after.name !== first)
         fails.push(`first cards after the tour (first ${first}): ${JSON.stringify(after)}`);
       await ct.close();
+      // The enlarged quiz photo before the answer: its author by name, never the taxon, the genus or a link (rule 11;
+      // Pierre, 2026-11-03: a photo with no credit at all).
+      const cb = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+      await cb.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await cb.addInitScript(() => localStorage.setItem('reefid-tour', '"done"'));
+      const qb = await cb.newPage();
+      await qb.goto(base + '#quiz');
+      await qb.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await qb.waitForSelector('#view [data-q]', {timeout: 10000});
+      await qb.waitForTimeout(400);
+      await qb.evaluate(() => document.querySelector('#view [data-q]').click());
+      const bc = await qb
+        .waitForSelector('#lightbox .lb-cap', {timeout: 5000})
+        .then(() =>
+          qb.evaluate(() => {
+            const c = document.querySelector('#lightbox .lb-cap');
+            return {text: c.textContent, links: c.querySelectorAll('a').length, it: c.querySelectorAll('i').length};
+          })
+        )
+        .catch(e => ({err: String(e)}));
+      const tgt = await qb.evaluate(() => {
+        const t = document.querySelector('#view .q [data-q] img');
+        return t ? t.getAttribute('src') : '';
+      });
+      const gname = ((tgt.match(/img\/([a-z]+)-/) || [])[1] || '').replace(/^./, x => x.toUpperCase());
+      if (bc.err || !/·/.test(bc.text) || bc.links || bc.it || (gname && bc.text.includes(gname)))
+        fails.push(`enlarged quiz photo before the answer: ${JSON.stringify({...bc, gname})}`);
+      await cb.close();
       // Enlarged photo at actual size: a mouse drags it around (an RA, 2026-11-02), a click without moving goes back to fit.
       const cz = await b.newContext({viewport: {width: 1024, height: 600}, serviceWorkers: 'block'});
       await cz.route(
@@ -910,6 +2149,102 @@ async function signin(base) {
       if (!z0.full || !z0.over || !z1.full || !z1.open || z1.t <= z0.t || z2.full || !z2.open)
         fails.push(`enlarged photo drag: ${JSON.stringify({z0, z1, z2})}`);
       await cz.close();
+      // The enlarge mark and the one-time hint (Pierre, 2026-11-03: players almost never enlarged a quiz photo). Every quiz
+      // and genus sheet photo shows the mark, its button labelled "Enlarge photo"; a new player gets "… a photo to see it
+      // bigger" on their 2nd question, once (not on the 1st, not again after a reload), and never once a photo was enlarged.
+      {
+        const hintCtx = async () => {
+          const c = await b.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
+          await c.route(
+            u => !u.href.startsWith(base),
+            r => r.abort()
+          );
+          await c.addInitScript(() => {
+            localStorage.setItem('reefid-tour', '"done"');
+            localStorage.setItem('reefid-nudge', '1');
+          });
+          const p = await c.newPage();
+          await p.goto(base + '#quiz');
+          await p.waitForFunction(() => window.APP_READY && document.querySelector('#view .qph'), null, {timeout: 30000});
+          return [c, p];
+        };
+        const hintIn = (p, ms) =>
+          p.waitForSelector('#view .zhint', {timeout: ms}).then(
+            () => p.textContent('#view .zhint'),
+            () => null
+          );
+        // toast: an achievement toast is up when the next question shows (as after a duel won as the first question, which
+        // made this check fail in CI on PR #410: the hint was tried once and skipped under the toast); clicked in the page,
+        // so Playwright does not wait for the toast to leave first.
+        const nextQ = async (p, toast) => {
+          await p.click('#view [data-c]');
+          if (toast)
+            await p.evaluate(() => (achPop({tier: 1, icon: '🧪', title: 'Smoke', desc: 'test'}), document.getElementById('next').click()));
+          else await p.click('#next');
+          await p.waitForFunction(() => document.querySelector('#view .qph') && !document.querySelector('#view .q.done'));
+        };
+        const marks = p =>
+          p.evaluate(sel => {
+            const z = [...document.querySelectorAll(sel)];
+            const ok = b => {
+              const i = b.querySelector('.zic svg'),
+                r = i && i.closest('.zic').getBoundingClientRect();
+              return /^Enlarge photo/.test(b.getAttribute('aria-label') || '') && !!r && r.width >= 24 && r.height >= 24;
+            };
+            return z.length ? z.filter(b => !ok(b)).length : -1;
+          }, '#view .qph .zoom, #view .hero-ph, #view .strip .zoom');
+        const [c, p] = await hintCtx();
+        const r = {mark: await marks(p), q1: await hintIn(p, 1500)};
+        await nextQ(p, true);
+        // Never with the toast; once it has gone, on the same question.
+        r.toast = await p.evaluate(() => !!document.querySelector('.achpop'));
+        await p.waitForFunction(
+          () => {
+            if (document.querySelector('.achpop') && document.querySelector('.zhint')) window.__zboth = 1;
+            return !document.querySelector('.achpop') && !(typeof achBusy !== 'undefined' && achBusy);
+          },
+          null,
+          {polling: 100, timeout: 15000}
+        );
+        r.both = await p.evaluate(() => !!window.__zboth);
+        r.q2 = await hintIn(p, 3000);
+        r.same = await p.evaluate(() => answersSoFar());
+        r.label = await p.getAttribute('#view .qph .zoom', 'aria-label');
+        await p.keyboard.press('Shift'); // any key or tap sends it away
+        await p.waitForTimeout(500);
+        r.gone = !(await p.$('#view .zhint'));
+        await p.reload();
+        await p.waitForFunction(() => window.APP_READY && document.querySelector('#view .qph'), null, {timeout: 30000});
+        r.reload = await hintIn(p, 2000);
+        await nextQ(p);
+        r.after = await hintIn(p, 1500);
+        await p.evaluate(() => (location.hash = 'g-Acropora'));
+        await p.waitForSelector('#view .hero-ph');
+        r.sheet = await marks(p);
+        // mark: the number of photo buttons without the mark or the label (0 = all have them; -1 = no photo found).
+        if (
+          r.mark ||
+          r.q1 ||
+          !r.toast ||
+          r.both ||
+          r.same !== 1 ||
+          !/^(Tap|Click) a photo to see it bigger$/.test(r.q2 || '') ||
+          r.label !== 'Enlarge photo' ||
+          !r.gone
+        )
+          fails.push(`enlarge mark and hint on a new player's first questions: ${JSON.stringify(r)}`);
+        if (r.reload || r.after || r.sheet) fails.push(`enlarge hint shown again, or genus sheet photos unmarked: ${JSON.stringify(r)}`);
+        await c.close();
+        // A player who already enlarged a photo never gets it.
+        const [c2, p2] = await hintCtx();
+        await p2.click('#view .qph .zoom');
+        await p2.waitForSelector('#lightbox:not([hidden])');
+        await p2.keyboard.press('Escape');
+        await nextQ(p2);
+        const z = {hint: await hintIn(p2, 2500), key: await p2.evaluate(() => localStorage.getItem('reefid-zoomhint'))};
+        if (z.hint || z.key !== '"zoomed"') fails.push(`enlarge hint after a photo was enlarged: ${JSON.stringify(z)}`);
+        await c2.close();
+      }
       for (const f of await overlays(b, base)) fails.push(f);
     }
     errs.length = 0;
@@ -947,14 +2282,20 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
     }
     await ctx.close();
   }
+  for (const f of await basicsFit(b, base)) fails.push(f);
+  for (const f of await credits(b, base)) fails.push(f);
+  for (const f of await basicsTeach(b, base)) fails.push(f);
   await b.close();
   for (const f of await signin(base)) fails.push(f);
+  for (const f of await replayAdoptCheck(base)) fails.push(f);
   server.close();
   if (fails.length) {
     console.error('Page errors:\n' + fails.join('\n'));
     process.exit(1);
   }
-  console.log(`Pages OK: ${ROUTES.length} routes + admin at 390 and 1280 px, sign-in to an existing account.`);
+  console.log(
+    `Pages OK: ${ROUTES.length} routes + admin at 390 and 1280 px, sign-in to an existing account, the sheet's full replay adopted.`
+  );
 })().catch(e => {
   console.error(e);
   process.exit(1);

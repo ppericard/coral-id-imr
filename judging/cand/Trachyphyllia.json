@@ -4,161 +4,216 @@
   "trachyphyllia-cand-260201207": {
    "view": "wide",
    "quality": 3,
-   "form": "U",
+   "form": "M",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "Free-living hourglass corallite; U chosen as closest IMR form"
+   "crop": [
+    0.15,
+    0.1,
+    0.85,
+    1.0
+   ]
   },
   "trachyphyllia-cand-260201043": {
    "view": "wide",
    "quality": 3,
-   "form": "U",
-   "keep": "alt",
-   "note": "Another angle on the same individual"
+   "form": "M",
+   "keep": "dup",
+   "note": "Same coral, same framing as the best"
   },
   "trachyphyllia-cand-239232960": {
    "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "best"
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Smooth at 100%; tentacles partly out"
   },
   "trachyphyllia-cand-500445515": {
    "view": "wide",
    "quality": 2,
-   "form": "U",
+   "form": "M",
    "keep": "best",
-   "note": "Partly cut by the left edge"
+   "unsure": [
+    "quality"
+   ],
+   "note": "640 px but clean"
   },
   "trachyphyllia-cand-600484570": {
    "view": "wide",
    "quality": 2,
-   "form": "U",
+   "form": "M",
    "keep": "best",
-   "note": "Date stamp in corner"
+   "crop": [
+    0.15,
+    0.1,
+    0.85,
+    0.88
+   ],
+   "note": "Soft at 100%; crop removes the date stamp"
   },
   "trachyphyllia-cand-467377467": {
    "view": "wide",
    "quality": 2,
-   "form": "U",
-   "keep": "best"
+   "form": "M",
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.15,
+    0.8,
+    0.95
+   ],
+   "note": "Cyan cast, soft at 100%"
   },
   "trachyphyllia-cand-270765109": {
    "view": "wide",
    "quality": 3,
-   "form": "U",
-   "keep": "best"
+   "form": "M",
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.1,
+    0.85,
+    1.0
+   ]
   },
   "trachyphyllia-cand-270765202": {
    "view": "wide",
-   "quality": 2,
-   "form": "U",
+   "quality": 3,
+   "form": "M",
    "keep": "dup",
-   "note": "Darker repeat of the same framing"
+   "note": "Same coral, same framing as the best"
   },
   "trachyphyllia-cand-467334912": {
    "view": "wide",
    "quality": 2,
-   "form": "U",
-   "keep": "best"
+   "form": "M",
+   "keep": "best",
+   "note": "small; cyan cast"
   },
   "trachyphyllia-cand-227579541": {
    "view": "wide",
+   "quality": 1,
+   "form": "M",
+   "keep": "best",
+   "note": "Strong cyan cast and smeared at 100%, algae over the coral"
+  },
+  "trachyphyllia-cand-270860181": {
+   "view": "wide",
    "quality": 2,
-   "form": "U",
+   "form": "M",
+   "keep": "best",
+   "note": "1024 px, soft at 100%"
+  },
+  "trachyphyllia-cand-297051426": {
+   "view": "wide",
+   "quality": 1,
+   "form": "M",
    "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "Pale lobed meandroid colony; Trachyphyllia plausible, Lobophyllia not ruled out"
+   "note": "1440 px, flash glare and soft at 100%; tissue swollen, features hidden"
   },
-  "trachyphyllia-cand-270860181": {
-   "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "best"
-  },
-  "trachyphyllia-cand-693417397": {
+  "trachyphyllia-cand-460442366": {
    "view": "macro",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "note": "Close part of the meandering valleys"
-  },
-  "trachyphyllia-cand-297051426": {
-   "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "best"
-  },
-  "trachyphyllia-cand-460442366": {
-   "view": "wide",
-   "quality": 2,
-   "form": "U",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Side view with tentacles out at night; Trachyphyllia plausible"
+   "note": "Tentacles out over the coral; watermark"
   },
   "trachyphyllia-cand-468187522": {
    "view": "wide",
-   "quality": 2,
-   "form": "U",
+   "quality": 3,
+   "form": "M",
    "keep": "best",
-   "note": "Dark"
+   "crop": [
+    0.2,
+    0.1,
+    0.8,
+    0.95
+   ]
   },
   "trachyphyllia-cand-297051516": {
    "view": "wide",
    "quality": 3,
-   "form": "U",
+   "form": "M",
    "keep": "best"
   },
   "trachyphyllia-cand-260323479": {
    "view": "wide",
    "quality": 3,
-   "form": "U",
-   "keep": "best"
+   "form": "M",
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.1,
+    0.85,
+    1.0
+   ],
+   "note": "Orange brittle star arm at the bottom"
   },
   "trachyphyllia-cand-468177430": {
    "view": "wide",
    "quality": 3,
-   "form": "U",
-   "keep": "best"
+   "form": "M",
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.15,
+    0.8,
+    0.95
+   ]
   },
   "trachyphyllia-cand-260201512": {
    "view": "wide",
    "quality": 3,
-   "form": "U",
-   "keep": "best"
+   "form": "M",
+   "keep": "best",
+   "crop": [
+    0.2,
+    0.1,
+    0.85,
+    1.0
+   ],
+   "note": "Small blenny on the coral"
   },
   "trachyphyllia-cand-260201747": {
    "view": "wide",
    "quality": 3,
-   "form": "U",
-   "keep": "dup",
-   "note": "Same framing, a little closer"
+   "form": "M",
+   "keep": "alt",
+   "note": "Upright frame, closer on the same coral"
   },
   "trachyphyllia-cand-468565986": {
    "view": "wide",
    "quality": 2,
-   "form": "U",
+   "form": "M",
    "keep": "best",
-   "note": "Blue cast"
+   "note": "Blue cast, soft at 100%"
   },
   "trachyphyllia-cand-489216594": {
    "view": "wide",
    "quality": 3,
-   "form": "U",
+   "form": "M",
    "keep": "best",
-   "note": "Looks like the same individual as observation 150855950"
+   "crop": [
+    0.15,
+    0.1,
+    0.82,
+    1.0
+   ],
+   "note": "Watermark"
   },
   "trachyphyllia-cand-260016280": {
    "view": "wide",
    "quality": 3,
-   "form": "U",
-   "keep": "best"
+   "form": "M",
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.15,
+    0.85,
+    1.0
+   ]
   }
  }
 }

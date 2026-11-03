@@ -3,113 +3,88 @@
  "photos": {
   "goniastrea-cand-661983655": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "short valleys and angular corallites (G. pectinata type)"
+   "crop": [
+    0.1,
+    0.25,
+    0.85,
+    1.0
+   ],
+   "note": "Algae and a sponge above the colony"
   },
   "goniastrea-cand-661984968": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
+   "quality": 2,
+   "form": "M",
    "keep": "best",
-   "note": "thin shared walls, short valleys, septa clear"
+   "note": "Soft at 100%"
   },
   "goniastrea-cand-357894695": {
-   "view": "medium",
+   "view": "wide",
    "quality": 2,
    "form": "x",
+   "genus": "exclude",
+   "note": "Sea squirts and red algae take the centre; the corals are behind"
+  },
+  "goniastrea-cand-357893806": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
    "keep": "best",
    "multi": true,
    "unsure": [
     "genus"
    ],
-   "note": "tunicates fill the centre; meandroid coral at left and a red massive coral below"
-  },
-  "goniastrea-cand-357893806": {
-   "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "dup",
-   "multi": true,
-   "unsure": [
-    "genus"
-   ],
-   "note": "crop of the same scene"
+   "note": "Meandroid coral beside another; genus not certain"
   },
   "goniastrea-cand-245792470": {
    "view": "wide",
    "quality": 2,
    "form": "M",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "pale angular corallites, looks bleached; Favites not ruled out"
-  },
-  "goniastrea-cand-605672064": {
-   "view": "wide",
-   "quality": 2,
-   "form": "M",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "very small corallites (G. retiformis type?); could be another genus"
+   "keep": "best"
   },
   "goniastrea-cand-260382189": {
    "view": "wide",
    "quality": 3,
-   "form": "E",
+   "form": "M",
    "keep": "best",
-   "unsure": [
-    "form"
-   ],
-   "note": "night; short valleys with thin walls on an encrusting edge"
+   "note": "A small shrimp and algae near the top"
   },
   "goniastrea-cand-593380437": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "M",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "strong cyan cast; small damaged colony"
+   "note": "1133 px, strong cyan cast, soft"
   },
   "goniastrea-cand-684020884": {
    "view": "wide",
-   "quality": 2,
-   "form": "E",
+   "quality": 1,
+   "form": "M",
    "keep": "best",
-   "note": "soft focus, warm cast"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Murky yellow veil, soft at 100%"
   },
   "goniastrea-cand-684020873": {
-   "view": "macro",
-   "quality": 2,
-   "form": "x",
+   "view": "medium",
+   "quality": 1,
+   "form": "M",
    "keep": "best",
-   "note": "soft focus; paliform crowns faint"
+   "unsure": [
+    "genus"
+   ],
+   "note": "807 px, murky and soft"
   },
   "goniastrea-cand-260210180": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "M",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "green angular corallites at night; Favites possible"
-  },
-  "goniastrea-cand-260381321": {
-   "view": "wide",
-   "quality": 3,
-   "form": "M",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "corallites large and deep; Favites possible"
+   "note": "Soft corals around the colony"
   }
  }
 }

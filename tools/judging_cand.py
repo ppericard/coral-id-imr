@@ -7,7 +7,9 @@
 #
 #   python3 tools/judging_cand.py sheets [Genus ...]   download the photos (judging/cand/img/, not in git) and build one
 #                                                      contact sheet per observation (judging/cand/sheets/<Genus>/); prints
-#                                                      the list to judge: sheet, tile number -> photo id
+#                                                      the list to judge: sheet, tile number -> photo id. The photos of the
+#                                                      observation already live or added follow, marked "live" (not to
+#                                                      judge: a candidate near-identical to one is a dup, Pierre 2026-11-03)
 #   python3 tools/judging_cand.py big <photo id>       download the 1024 px version, for a closer look
 #   python3 tools/judging_cand.py detail <photo id>... full-size photo: one sheet per photo, the whole frame and three
 #                                                      100% crops (the two sharpest areas, the centre), to judge quality
@@ -57,6 +59,23 @@ def cands(n):
 
 def obs_of(p): return p.get('o') or p['f']
 
+LIVE = None
+def live(o):
+    """Photos of observation o already live (data.json views, any genus) or added from the candidates (curation add):
+    on the observation's sheet so that a candidate near-identical to one of them is marked dup (rule R1, 2026-11-03)."""
+    global LIVE
+    if LIVE is None:
+        LIVE = defaultdict(dict)
+        for n, g in D['gen'].items():
+            for k in ('views', 'more'):
+                for v, L in (g.get(k) or {}).items():
+                    for p in L:
+                        if p.get('o') and p['f'] not in X: LIVE[p['o']].setdefault(p['f'], (p, v))
+            add = ((C.get('genera') or {}).get(n) or {}).get('add') or {}
+            for p in (D.get('cand') or {}).get(n, []):
+                if p['f'] in add and p.get('o') and p['f'] not in X: LIVE[p['o']].setdefault(p['f'], (p, add[p['f']] or p.get('vg') or '?'))
+    return list(LIVE.get(o, {}).values())
+
 def groups(n):
     G = OrderedDict()
     for p in cands(n): G.setdefault(obs_of(p), []).append(p)
@@ -71,6 +90,8 @@ def fetch(p, size='medium'):
     if os.path.exists(out) and os.path.getsize(out): return out
     os.makedirs(os.path.dirname(out), exist_ok=True)
     u = url(p, size)
+    if not u and not os.path.exists(P('img', f'{p["f"]}.webp')) and p.get('src'):  # an added photo not downloaded here
+        u = p['src'].replace('/original.', f'/{size}.')
     if u:
         with urllib.request.urlopen(u, timeout=60) as r: b = r.read()
         open(out, 'wb').write(b)
@@ -79,8 +100,9 @@ def fetch(p, size='medium'):
         Image.open(P('img', f'{p["f"]}.webp')).convert('RGB').save(out, quality=88)
     return out
 
-def sheet(n, o, L):
-    """One contact sheet per observation: tiles 1, 2, 3... (at most 3 per row), each 440 px high."""
+def sheet(n, o, L, nlive=0):
+    """One contact sheet per observation: tiles 1, 2, 3... (at most 3 per row), each 440 px high; the last nlive tiles
+    are photos already live or added, marked "live" instead of a number."""
     from PIL import Image, ImageDraw, ImageFont
     H, GAP = 440, 8
     ims = []
@@ -101,8 +123,12 @@ def sheet(n, o, L):
         for im in r:
             k += 1
             S.paste(im, (x, y * (H + GAP)))
-            d.rectangle([x, y * (H + GAP), x + 54, y * (H + GAP) + 52], fill=(0, 0, 0))
-            d.text((x + 14, y * (H + GAP) + 4), str(k), fill=(255, 255, 0), font=font)
+            if k > len(L) - nlive:
+                d.rectangle([x, y * (H + GAP), x + 104, y * (H + GAP) + 52], fill=(200, 0, 0))
+                d.text((x + 10, y * (H + GAP) + 4), 'live', fill=(255, 255, 255), font=font)
+            else:
+                d.rectangle([x, y * (H + GAP), x + 54, y * (H + GAP) + 52], fill=(0, 0, 0))
+                d.text((x + 14, y * (H + GAP) + 4), str(k), fill=(255, 255, 0), font=font)
             x += im.width + GAP
     out = P('judging', 'cand', 'sheets', n, f'{o.rsplit("/", 1)[-1]}.jpg')
     os.makedirs(os.path.dirname(out), exist_ok=True)
@@ -115,10 +141,12 @@ def cmd_sheets(names):
         if not G: continue
         print(f'## {n}: {sum(len(L) for L in G.values())} photos in {len(G)} observations; views {views(n)}')
         for o, L in G.items():
-            s = sheet(n, o, L)
+            Lv = live(o)
+            s = sheet(n, o, L + [p for p, _ in Lv], len(Lv))
             print(f'{s}  {o}')
             for i, p in enumerate(L, 1):
                 print(f'  {i} {p["f"]}  ({p.get("loc", "")}{", iNat label " + p["t"] if p.get("t") and p.get("t") != n else ""})')
+            for p, v in Lv: print(f'  live {p["f"]}  ({v})')
 
 def check(n):
     E, W = [], []
@@ -158,12 +186,14 @@ def check(n):
             E.append(f'{at}: crop must be [left, top, right, bottom] fractions of the photo, 0 <= left < right <= 1, 0 <= top < bottom <= 1')
     missing = [f for f in mine if f not in J]
     if missing: E.append(f'{n}: {len(missing)} candidate(s) not judged yet, e.g. {missing[:3]}')
-    # Exactly one "best" per observation and view among the photos that show this genus.
+    # Exactly one "best" per observation and view among the candidates that show this genus; none only when every one of
+    # them is a dup and the observation has photos already live or added (a near-duplicate of a live photo, rule R1).
     grp = defaultdict(list)
     for f, x in J.items():
         if f in mine and isinstance(x, dict) and not x.get('genus') and x.get('view') in vs: grp[(obs_of(mine[f]), x['view'])].append(f)
     for k, L in grp.items():
         b = best.get(k, [])
+        if not b and live(k[0]) and all(J[f].get('keep') == 'dup' for f in L): continue
         if len(b) != 1: E.append(f'{n}: observation {k[0]}, view {k[1]}: {len(b)} photos marked best ({", ".join(b) or "none"}); exactly one: {", ".join(L)}')
     return E, W, j
 

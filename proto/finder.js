@@ -16,7 +16,8 @@ LAB.add({
     // Genera not on the IMR list but in the Coral Finder book and present at Dauin (data.json "x"): on by default, switch in ⚙.
     // They join the ranking after the IMR genera of the same rank, with their own boxes (book A-Z index) and tag.
     const XG = XON && DATA.x ? DATA.x.gen : {},
-      notIMR = n => !DATA.gen[n];
+      notIMR = n => !DATA.gen[n],
+      slate = new Set(slateGenera()); // the slate as the games count it (Millepora too): the same number everywhere
     const names = [...labNames(), ...Object.keys(XG)],
       G = {...DATA.gen, ...XG};
     const addX = k => ({...k, leaves: k.leaves.map(l => ({...l, g: [...l.g, ...(XON && DATA.x ? DATA.x.leaf[l.id] || [] : [])]}))});
@@ -348,7 +349,7 @@ LAB.add({
         const L = yes ? x.yes : x.no;
         return `<button type="button" class="fdans ${yes ? 'yes' : 'no'}" data-${yes ? 'yes' : 'no'}="${x.f.id}.${x.o.id}" aria-label="${yes ? 'Yes' : 'No'}: ${L.length} genera"><span class="fdal">${yes ? 'Yes' : 'No'} <span class="fdc">${L.length}</span></span><span class="fdat">${side(L, x)}</span></button>`;
       };
-      return `<div class="fdnext">${cands.map(x => `<div class="fdq"><div class="fdqh"><b${x.o.s ? ` title="${esc(x.o.s)}"` : ''}>${esc(q(x))}</b><button type="button" class="linkish fdskip" data-skip="${x.f.id}.${x.o.id}">Can't tell</button></div><div class="fdqa">${ans(x, true)}${ans(x, false)}</div></div>`).join('')}</div>`;
+      return `<div class="fdnext">${cands.map(x => `<div class="fdq"><div class="fdqh"><b${x.o.s ? ` title="${esc(x.o.s)}"` : ''}>${gloss(q(x))}</b><button type="button" class="linkish fdskip" data-skip="${x.f.id}.${x.o.id}">Can't tell</button></div><div class="fdqa">${ans(x, true)}${ans(x, false)}</div></div>`).join('')}</div>`;
     }
 
     // Where a photo comes from (same split as the admin's origin tags), for the Dauin count; the credit itself is in the lightbox.
@@ -422,7 +423,7 @@ LAB.add({
       };
       const mosaic = n => {
         const g = G[n];
-        return `<article class="fdrow"><div class="fdinfo">${head(n)}<p class="fdtip">${esc(tipsText(g))}</p>${tools(n)}${more(n)}</div>
+        return `<article class="fdrow"><div class="fdinfo">${head(n)}<p class="fdtip">${gloss(tipsText(g))}</p>${tools(n)}${more(n)}</div>
           <div class="fdmos">${varied(g, 8, n)
             .map(p => ph(n, p, p.view))
             .join('')}</div></article>`;
@@ -432,7 +433,11 @@ LAB.add({
       const big = (n, off) => {
         const g = G[n];
         return `<article class="fdbig${off ? ' off' : ''}"><div class="fdinfo fdbigside">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}
-          <p class="fdcue fdtip">${esc(tipsText(g))}</p><details class="fdcrit"${notIMR(n) ? ' open' : ''}><summary>Coral Finder${notIMR(n) ? ` <small>p. ${g.pages.join(', ')}</small>` : ''}</summary><ul>${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details>${tools(n)}</div>
+          <p class="fdcue fdtip">${gloss(tipsText(g))}</p><details class="fdcrit"${notIMR(n) ? ' open' : ''}><summary>Coral Finder${notIMR(n) ? ` <small>p. ${g.pages.join(', ')}</small>` : ''}</summary><ul>${glossAll(
+            g.crit
+          )
+            .map(c => `<li>${c}</li>`)
+            .join('')}</ul></details>${tools(n)}</div>
           <div class="fdbigph">${varied(g, 99, n)
             .map(p => ph(n, p, p.view))
             .join('')}</div></article>`;
@@ -451,7 +456,7 @@ LAB.add({
         const g = G[n],
           v = pv === 'mix' ? null : pv,
           p = v ? (g.views[v] || [])[0] || cover(g) : formCover(n) || cover(g);
-        return `<article class="fdtile${off ? ' off' : ''}">${p ? ph(n, p, v && (g.views[v] || [])[0] ? v : p.view || 'medium') : '<span class="none">no photo</span>'}<div class="fdinfo">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}<p class="fdtip">${esc(tipsText(g))}</p>${tools(n)}</div></article>`;
+        return `<article class="fdtile${off ? ' off' : ''}">${p ? ph(n, p, v && (g.views[v] || [])[0] ? v : p.view || 'medium') : '<span class="none">no photo</span>'}<div class="fdinfo">${head(n)}${off ? `<small class="fdmiss">Off: ${misses(n, F).map(esc).join(', ')}</small>` : ''}<p class="fdtip">${gloss(tipsText(g))}</p>${tools(n)}</div></article>`;
       };
       // Look-alikes outside the shortlist: worth a glance before deciding.
       const near =
@@ -597,7 +602,7 @@ LAB.add({
           })
       );
     const optBtn = (f, o, on, n) =>
-      `<button type="button" class="fdbigopt" data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}"><span>${esc(o.t)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="fdc">${n}</span></button>`;
+      `<button type="button" class="fdbigopt" data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}"><span>${gloss(o.t, undefined, true)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="fdc">${n}</span></button>`;
     // Coral Finder box illustrations (Pierre 2026-11-01: the photos must show the box's criterion, or use a drawing).
     // 1. The book's own photos of that box: crops of its box pages picked by eye (data.json key leaves "ph",
     //    tools/box_photos.txt), at most 3 (one large + two small); a crop Pierre excluded or the book switched off drops out.
@@ -658,7 +663,7 @@ LAB.add({
       // Once a form is picked, the form tiles shrink to compact chips so the next clues and the shortlist move up (phones and desktop).
       const forms = f =>
         `<div class="fdforms${S[f.id].size ? ' mini' : ''}">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>${andSw(f.id)}`;
-      const show = `<button type="button" class="next fdshow${used(F).length ? '' : ' sec'}" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera${left.some(notIMR) ? ` (${left.filter(n => !notIMR(n)).length} on the slate)` : ''}`} →</button>`;
+      const show = `<button type="button" class="next fdshow${used(F).length ? '' : ' sec'}" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera${left.some(n => !slate.has(n)) ? ` (${left.filter(n => slate.has(n)).length} on the slate)` : ''}`} →</button>`;
       // Two entry points: the paper Coral Finder's path (default) or the IMR forms, as a discreet link at the bottom (Pierre: it took room for nothing).
       const switcher = `<button type="button" class="linkish fdsv" data-sv="${startV === 'c' ? 'a' : 'c'}">${startV === 'c' ? '← IMR growth forms' : 'Coral Finder path →'}</button>`;
       let body;
@@ -670,7 +675,7 @@ LAB.add({
             ? `<div class="fdsrow stack"><h3 title="${esc(fb.note)}">${esc(fb.name)}</h3><div class="fdforms boxes">${fb.opts
                 .map(o => {
                   const P = boxPics(o);
-                  return `<button type="button" class="fdtileb fdboxt" data-o="box|${o.id}" aria-pressed="${S.box.has(o.id)}"${!cnt(fb, o) && !S.box.has(o.id) ? ' data-zero' : ''}><span class="fdtq n${P.length || 1}">${P.length ? P.map(u => `<img src="${u}" alt="" loading="lazy">`).join('') : boxArt(o.id)}</span><span class="fdtt"><b>${esc(o.t)}</b>${o.pg ? `<small>${o.pg}</small>` : ''}</span><span class="fdc">${cnt(fb, o)}</span></button>`;
+                  return `<button type="button" class="fdtileb fdboxt" data-o="box|${o.id}" aria-pressed="${S.box.has(o.id)}"${!cnt(fb, o) && !S.box.has(o.id) ? ' data-zero' : ''}><span class="fdtq n${P.length || 1}">${P.length ? P.map(u => `<img src="${u}" alt="" loading="lazy">`).join('') : boxArt(o.id)}</span><span class="fdtt"><b>${gloss(o.t, undefined, true)}</b>${o.pg ? `<small>${o.pg}</small>` : ''}</span><span class="fdc">${cnt(fb, o)}</span></button>`;
                 })
                 .join('')}</div></div>`
             : ''

@@ -6,39 +6,26 @@
    "quality": 2,
    "form": "S",
    "keep": "best",
-   "note": "columns on an encrusting base; busy frame"
+   "note": "Tentacles out; watermark"
   },
   "hydnophora-cand-227576142": {
    "view": "wide",
-   "quality": 3,
-   "form": "E",
+   "quality": 2,
+   "form": "M",
    "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "monticules lined with costae, tentacles extended between them; looks like H. exesa"
+   "note": "Rounded corallites ringed by green tentacles; no monticules seen"
   },
   "hydnophora-cand-336219882": {
    "view": "wide",
    "quality": 2,
    "form": "B",
    "keep": "best",
-   "note": "soft focus"
+   "note": "2048x1152, soft at 100%"
   },
   "hydnophora-cand-260155545": {
-   "view": "medium",
-   "quality": 3,
-   "form": "B",
-   "keep": "best",
-   "note": "branch tips at night, small tentacles out"
-  },
-  "hydnophora-cand-609866605": {
-   "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "best"
-  },
-  "hydnophora-cand-609866614": {
    "view": "medium",
    "quality": 3,
    "form": "B",
@@ -47,114 +34,113 @@
   "hydnophora-cand-726161729": {
    "view": "wide",
    "quality": 2,
-   "form": "M",
+   "form": "x",
    "keep": "best",
    "unsure": [
-    "genus",
-    "form"
+    "genus"
    ],
-   "note": "UV fluorescence, shaggy tentacles hide the skeleton; genus not checkable"
+   "note": "Fluorescence photo, tentacles out; genus not readable"
   },
   "hydnophora-cand-726161741": {
    "view": "wide",
    "quality": 1,
-   "form": "M",
-   "keep": "dup",
+   "form": "x",
+   "keep": "alt",
    "unsure": [
     "genus"
    ],
-   "note": "blurred; shaggy tentacles hide the skeleton"
+   "note": "Murky orange cast, soft; genus not readable"
   },
   "hydnophora-cand-600484639": {
    "view": "wide",
    "quality": 1,
    "form": "M",
    "keep": "best",
-   "note": "hazy; shaggy polyps extended over the colony"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Soft and murky, tentacles out; date stamp"
   },
   "hydnophora-cand-600484653": {
    "view": "medium",
    "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "monticule ridges visible between extended tentacles"
-  },
-  "hydnophora-cand-697670527": {
-   "view": "wide",
-   "quality": 3,
-   "form": "B",
-   "keep": "best"
-  },
-  "hydnophora-cand-47820198": {
-   "view": "wide",
-   "quality": 2,
-   "form": "E",
-   "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "small bumpy crust; bumps could be monticules but too soft to confirm"
+   "note": "Tentacles out, soft; date stamp"
+  },
+  "hydnophora-cand-697670527": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Monticules visible on the branches"
+  },
+  "hydnophora-cand-47820198": {
+   "view": "medium",
+   "quality": 1,
+   "form": "x",
+   "keep": "best",
+   "note": "Blurred over the whole frame"
   },
   "hydnophora-cand-260021055": {
    "view": "wide",
    "quality": 2,
    "form": "S",
    "keep": "best",
-   "note": "dark; lumpy colony covered in monticules"
+   "note": "Soft at 100%"
   },
   "hydnophora-cand-247738205": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
+   "multi": true,
    "unsure": [
-    "form"
+    "multi"
    ],
-   "note": "plates with upright columns; a soft coral and another massive coral beside it"
+   "note": "Other corals at the right and a soft coral at the top"
   },
   "hydnophora-cand-445454403": {
    "view": "wide",
-   "quality": 2,
+   "quality": 1,
    "form": "B",
    "keep": "best",
-   "note": "pale, bleached-looking branches"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Bleached branches, smeared at 100%"
   },
   "hydnophora-cand-445454407": {
-   "view": "medium",
-   "quality": 2,
+   "view": "wide",
+   "quality": 1,
    "form": "B",
-   "keep": "best",
-   "note": "pale, bleached-looking branches"
+   "keep": "alt",
+   "note": "Bleached branches, smeared at 100%"
   },
   "hydnophora-cand-445454405": {
-   "view": "medium",
-   "quality": 2,
+   "view": "wide",
+   "quality": 1,
    "form": "B",
    "keep": "dup"
   },
   "hydnophora-cand-335773128": {
    "view": "wide",
-   "quality": 3,
-   "form": "S",
+   "quality": 2,
+   "form": "M",
    "keep": "best",
    "unsure": [
     "genus"
    ],
-   "note": "lumpy colony on seagrass; monticules not visible at this distance"
+   "note": "Massive lobed colony in seagrass; Porites possible"
   },
   "hydnophora-cand-270745405": {
    "view": "wide",
    "quality": 2,
    "form": "E",
-   "keep": "alt",
-   "note": "dark, other angle"
-  },
-  "hydnophora-cand-270745757": {
-   "view": "wide",
-   "quality": 2,
-   "form": "E",
-   "keep": "best",
-   "note": "night, green-tipped tentacles extended; small fungiid at the edge"
+   "keep": "dup"
   },
   "hydnophora-cand-270745770": {
    "view": "wide",
@@ -166,34 +152,54 @@
    "view": "wide",
    "quality": 2,
    "form": "E",
-   "keep": "alt",
-   "note": "closer, tentacles and monticules visible"
+   "keep": "dup"
+  },
+  "hydnophora-cand-270745757": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Tentacles out over the colony; genus not readable"
   },
   "hydnophora-cand-662429151": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
+   "quality": 2,
+   "form": "M",
    "keep": "best",
-   "note": "monticules fused into short ridges, costae visible"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Meandering valleys; no monticules seen; looks like a faviid"
   },
   "hydnophora-cand-662429275": {
    "view": "wide",
-   "quality": 3,
-   "form": "E",
-   "keep": "best"
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Same colony as 1, meandering valleys"
   },
   "hydnophora-cand-607141593": {
    "view": "wide",
-   "quality": 3,
+   "quality": 1,
    "form": "B",
-   "keep": "best"
+   "keep": "best",
+   "note": "Soft and noisy at 100%; feather star at the left"
   },
   "hydnophora-cand-245795063": {
    "view": "wide",
    "quality": 2,
    "form": "S",
    "keep": "best",
-   "note": "blue cast; shaggy polyps extended on lobes"
+   "unsure": [
+    "genus"
+   ],
+   "note": "Tentacles out over a pillar; genus not certain"
   },
   "hydnophora-cand-261938914": {
    "view": "wide",
@@ -203,13 +209,13 @@
   },
   "hydnophora-cand-261938973": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
    "keep": "dup"
   },
   "hydnophora-cand-261938980": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "B",
    "keep": "dup"
   },
@@ -218,34 +224,34 @@
    "quality": 2,
    "form": "E",
    "keep": "best",
-   "note": "strong blue cast"
+   "note": "Tentacles out; cyan cast"
   },
   "hydnophora-cand-245794698": {
    "view": "wide",
    "quality": 2,
    "form": "E",
    "keep": "best",
-   "note": "blue cast"
+   "note": "Cyan cast, tentacles out"
   },
   "hydnophora-cand-245794783": {
    "view": "medium",
    "quality": 2,
    "form": "x",
    "keep": "best",
-   "note": "tentacles extended hide the monticules"
+   "note": "Tentacles out"
   },
   "hydnophora-cand-245794742": {
    "view": "medium",
    "quality": 2,
    "form": "x",
-   "keep": "alt",
-   "note": "wider surface, tentacles extended"
+   "keep": "dup"
   },
   "hydnophora-cand-260016130": {
    "view": "wide",
    "quality": 3,
    "form": "E",
-   "keep": "best"
+   "keep": "best",
+   "note": "Monticules clear; a fan worm at the left"
   }
  }
 }

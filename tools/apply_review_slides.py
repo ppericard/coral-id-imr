@@ -4,9 +4,9 @@ import json
 from datajson import dump  # the one data.json layout (one genus per line)
 P='data.json'; d=json.load(open(P)); G=d['gen']
 REVIEW={'Fungia':'Round disc; septal teeth alternate between regular & saw-like; weakly domed; pale tentacular lobes.',
- 'Heliofungia':'Round disc; daytime extended polyps; white tips on tentacles.',
+ 'Heliofungia':'Round disc; daytime extended polyps; white or pink tips on tentacles.',  # corrected 2026-11-03 (apply_imr_corrections.py)
  'Danafungia':'Round disc; dome shaped / central arch; septal teeth.',
- 'Lobactis':'Oval disc; pale tentacular lobes; regular septa.',
+ 'Lobactis':'Oval disc; tentacular lobes (often green, blue or white); regular septa.',  # corrected 2026-11-03 (apply_imr_corrections.py)
  'Lithophyllon':'Round disc; flat / weak arch; regular septa.',
  'Astrea':'Separate walls; rounded and crowded corallites (extra-tentacular budding); septa alternate in size.',
  'Dipsastraea':'Separate walls; intra-tentacular budding; oval-shaped corallites; colony does not appear crowded.',

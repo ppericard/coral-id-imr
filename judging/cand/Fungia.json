@@ -9,46 +9,58 @@
   },
   "fungia-cand-576362380": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.0,
+    0.85,
+    0.75
+   ]
   },
   "fungia-cand-445309853": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Tentacles partly out; a shell and a massive coral share the frame"
+   "crop": [
+    0.1,
+    0.1,
+    0.85,
+    1.0
+   ],
+   "note": "A pale twisted coral in front"
   },
   "fungia-cand-445309848": {
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "alt"
+   "keep": "alt",
+   "note": "1773 px, soft; the disc from another angle"
   },
   "fungia-cand-633440248": {
    "view": "wide",
    "quality": 1,
    "form": "U",
    "keep": "best",
-   "multi": true,
-   "note": "Disc cut off at the top edge, cluttered frame with other mushroom corals"
+   "note": "Mostly rubble; the disc is cut at the top edge and soft"
   },
   "fungia-cand-64926742": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best",
    "multi": true,
-   "note": "Field of many mushroom corals; not one clear subject"
+   "note": "A bed of many mushroom corals; no single subject"
   },
   "fungia-cand-64926691": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
-   "keep": "alt",
+   "keep": "dup",
    "multi": true,
-   "note": "Field of many mushroom corals; not one clear subject"
+   "note": "Same bed of mushroom corals as 1"
   },
   "fungia-cand-696290010": {
    "view": "wide",
@@ -61,20 +73,20 @@
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "note": "Blue cast"
+   "note": "1152 px high, clean"
   },
   "fungia-cand-633453525": {
    "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best",
-   "note": "Saw-like septal teeth sharp"
+   "quality": 2,
+   "form": "U",
+   "keep": "best"
   },
   "fungia-cand-460641851": {
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "best"
+   "keep": "best",
+   "note": "1200 px; tentacles partly out"
   },
   "fungia-cand-613378897": {
    "view": "wide",
@@ -82,44 +94,37 @@
    "form": "U",
    "keep": "best"
   },
-  "fungia-cand-558791724": {
-   "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "best"
-  },
   "fungia-cand-629914325": {
    "view": "wide",
-   "quality": 1,
-   "form": "x",
+   "quality": 2,
+   "form": "U",
    "genus": "exclude",
-   "note": "Broken dry skeleton on a table, not a live coral underwater"
+   "note": "Bare skeleton on a wooden table"
   },
   "fungia-cand-262217911": {
    "view": "wide",
    "quality": 3,
    "form": "U",
-   "keep": "best"
+   "keep": "best",
+   "note": "Another mushroom coral at the bottom left"
   },
   "fungia-cand-576268809": {
+   "view": "wide",
+   "quality": 1,
+   "form": "U",
+   "keep": "best",
+   "note": "small; dark and soft, the disc is a small part of the frame"
+  },
+  "fungia-cand-25468899": {
    "view": "wide",
    "quality": 2,
    "form": "U",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Small juvenile disc on red substrate, small in frame; genus hard to confirm"
-  },
-  "fungia-cand-25468899": {
-   "view": "wide",
-   "quality": 3,
-   "form": "U",
-   "keep": "best"
+   "note": "Another mushroom coral at the left"
   },
   "fungia-cand-191091402": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best"
   },
@@ -127,13 +132,8 @@
    "view": "wide",
    "quality": 2,
    "form": "U",
-   "keep": "best"
-  },
-  "fungia-cand-467090578": {
-   "view": "macro",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "note": "Soft at 100%, between rocks"
   },
   "fungia-cand-445316158": {
    "view": "wide",
@@ -141,34 +141,31 @@
    "form": "U",
    "keep": "best",
    "multi": true,
-   "note": "Two large discs side by side, hazy shallow shot"
+   "unsure": [
+    "multi"
+   ],
+   "note": "Two mushroom corals of similar size"
   },
   "fungia-cand-246530574": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "U",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Pink disc with coarse, widely spaced septa; check against Cycloseris"
+   "note": "1830 px, soft at 100%"
   },
   "fungia-cand-337151886": {
    "view": "wide",
    "quality": 1,
    "form": "U",
    "keep": "best",
-   "note": "Blurred"
+   "note": "Soft and murky over the whole frame"
   },
   "fungia-cand-466164923": {
    "view": "wide",
    "quality": 1,
    "form": "U",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Dark, hazy, disc partly hidden; genus hard to confirm"
+   "note": "Disc half hidden, murky water and particles"
   }
  }
 }

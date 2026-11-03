@@ -17,7 +17,7 @@
       sel: '.hdoors',
       tall: 'end',
       t: 'Two ways in',
-      d: 'Learn & practise while you learn the genera. Identify when you need to name a coral on a ReefCloud photo.'
+      d: 'Learn & practise while you learn the genera. Identify when you need to name a coral on a ReefCloud photo, or one you photographed on a dive.'
     },
     {h: '', signin: true},
     {
@@ -25,21 +25,21 @@
       sel: '#modes',
       plus: 'nav [data-tab=practice]',
       arrows: true,
-      t: 'Three games',
-      d: 'Practice in the menu opens the games. Photo → genus: name the genus from photos. Look-alike duels: two genera often confused. Memory: match colony and corallites. Switch games here at any time.'
+      t: 'Four games',
+      d: 'Practice in the menu opens the games. Quiz: name the genus from photos. Custom quiz: the same on the genera you pick. Look-alike duels: two genera often confused. Memory: match colony and corallites. Switch games here at any time.'
     },
     {
       h: 'quiz',
       sel: '#prog',
       alt: 'nav [data-tab=progress]',
       t: 'Your progress',
-      d: 'Each genus fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. Tap to see every genus.'
+      d: 'Each genus fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. Tap to see every genus of the IMR slate: the coral genera IMR records on its reef surveys, plus a few look-alikes.'
     },
     {
       h: 'quiz',
       sel: '#help',
       t: 'Help on every page',
-      d: 'Tap ? for what a page does. ⚙ sets the theme and colours. Replay this tour from ?.',
+      d: 'Tap ? for what a page does, to send feedback, and for the credits. ⚙ sets the theme and colours. Replay this tour from ?.',
       also: '#setb'
     }
   ].filter(s => !s.signin || SYNC_URL);

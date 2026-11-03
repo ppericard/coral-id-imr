@@ -5,6 +5,7 @@ const assert = require('node:assert');
 const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
+const {pgMissW} = require('../core.js');
 
 const DAY = 864e5,
   MIN = 60000;
@@ -12,14 +13,15 @@ function model({P = {}, th = {}, answers = 0} = {}) {
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
     pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
     hold = /const holdNext = [\s\S]*?;\n/.exec(src.slice(src.indexOf('const holdNext')))[0],
-    miss = pick('function pgMissW', 'const knownP'),
-    block = pick('// Comeback after a break (Pierre', 'function weighted(list)');
+    block = pick('// Comeback after a break (Pierre', 'function weighted(');
   const saved = {},
     ctx = {
       P,
       LEVEL: '~level',
       INTRO: {SLACK: 0.1},
-      PICKD: {TARGET_OFF: 1},
+      PICKD: {P: 0.8},
+      aimOff: (k = 4) => Math.log((0.8 - 1 / k) / (1 - 1 / k) / (1 - (0.8 - 1 / k) / (1 - 1 / k))),
+      pgMissW, // core.js (shared with the full replay since 2026-11-03)
       sig: x => 1 / (1 + Math.exp(-x)),
       ability: n => th[n] ?? 0,
       genusDiff: () => 0,
@@ -34,7 +36,6 @@ function model({P = {}, th = {}, answers = 0} = {}) {
   vm.createContext(ctx);
   vm.runInContext(
     hold +
-      miss +
       block +
       '\nthis.M = {FSRS, SESSION, COMEBACK, recallOf, stability, recallAt, rustOf, rustNow, noOpen, comebackOf, comebackStep, answeredAt, dayNo, cb: () => CB, setCb: x => (CB = x)};',
     ctx
@@ -166,12 +167,10 @@ test('comeback questions: the surest genera until one is right, then the most ru
 });
 
 test('a miss the rust explains costs less progress (pgMissW with the recall)', () => {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    ctx = {PICKD: {TARGET_OFF: 1}, sig: x => 1 / (1 + Math.exp(-x))};
-  vm.createContext(ctx);
-  vm.runInContext(src.slice(src.indexOf('function pgMissW'), src.indexOf('const knownP')) + '\nthis.f = pgMissW;', ctx);
-  assert.strictEqual(ctx.f(1, 0, 4), 1);
-  assert.strictEqual(ctx.f(1, 0, 4, 1), 1);
+  const f = pgMissW; // core.js (shared with the full replay)
+  // A photo at the game's aim (aimOff(4) = 1.01 below the ability) or easier: in full.
+  assert.strictEqual(f(1.02, 0, 4), 1);
+  assert.strictEqual(f(1.02, 0, 4, 1), 1);
   const e = x => 0.25 + (0.75 * x) / (1 + Math.exp(-1));
-  assert.ok(Math.abs(ctx.f(1, 0, 4, 0.6) - e(0.6) / e(1)) < 1e-9 && ctx.f(1, 0, 4, 0.6) < 0.75);
+  assert.ok(Math.abs(f(1, 0, 4, 0.6) - e(0.6) / 0.8) < 1e-9 && f(1, 0, 4, 0.6) < 0.75);
 });

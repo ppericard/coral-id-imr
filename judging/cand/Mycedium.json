@@ -3,32 +3,30 @@
  "photos": {
   "mycedium-cand-472828496": {
    "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "F",
    "keep": "best",
-   "note": "Blue cast"
+   "crop": [
+    0.15,
+    0.1,
+    0.85,
+    0.95
+   ]
   },
   "mycedium-cand-269466828": {
    "view": "wide",
    "quality": 3,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.08,
+    0.12,
+    0.92,
+    1.0
+   ],
+   "note": "Feather duster worm at the right edge"
   },
   "mycedium-cand-269474254": {
-   "view": "wide",
-   "quality": 2,
-   "form": "F",
-   "keep": "best",
-   "note": "Dark"
-  },
-  "mycedium-cand-269517515": {
-   "view": "wide",
-   "quality": 2,
-   "form": "F",
-   "keep": "best",
-   "note": "Dark"
-  },
-  "mycedium-cand-269517791": {
    "view": "medium",
    "quality": 3,
    "form": "F",
@@ -36,195 +34,237 @@
   },
   "mycedium-cand-386512341": {
    "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "best"
-  },
-  "mycedium-cand-386512391": {
-   "view": "wide",
-   "quality": 3,
-   "form": "F",
-   "keep": "dup"
-  },
-  "mycedium-cand-247610741": {
-   "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Small upright frilly plates, corallites hard to see"
+   "crop": [
+    0.05,
+    0.08,
+    1.0,
+    1.0
+   ],
+   "note": "Cyan cast, soft at 100%"
+  },
+  "mycedium-cand-386512391": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "dup",
+   "note": "Same colony, similar framing, cyan cast"
+  },
+  "mycedium-cand-247610741": {
+   "view": "wide",
+   "quality": 1,
+   "form": "F",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Out of focus over the whole frame; plates hard to read"
   },
   "mycedium-cand-574251240": {
    "view": "wide",
    "quality": 2,
-   "form": "E",
+   "form": "F",
    "keep": "best",
-   "note": "Blue cast"
+   "note": "Cyan cast, smeared at 100%"
   },
   "mycedium-cand-260005211": {
    "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Dark"
+   "crop": [
+    0.03,
+    0.1,
+    0.95,
+    1.0
+   ],
+   "note": "Soft at 100%"
   },
   "mycedium-cand-655854837": {
    "view": "wide",
    "quality": 1,
-   "form": "E",
+   "form": "F",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Tiny washed-out colony; genus hard to confirm"
+   "note": "small; washed-out white frame, subject small in the centre"
   },
   "mycedium-cand-246482407": {
    "view": "wide",
-   "quality": 3,
-   "form": "F",
+   "quality": 2,
+   "form": "U",
    "keep": "best",
    "unsure": [
-    "genus"
+    "genus",
+    "form"
    ],
-   "note": "Cup with radial rows of elongate corallites; check against Pectinia or Echinophyllia"
-  },
-  "mycedium-cand-39390717": {
-   "view": "medium",
-   "quality": 2,
-   "form": "F",
-   "keep": "alt",
-   "note": "Cyan cast"
+   "note": "Disc with orange streaks looks unlike Mycedium; soft at 100%"
   },
   "mycedium-cand-39390768": {
-   "view": "medium",
+   "view": "wide",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Cyan cast"
+   "crop": [
+    0.03,
+    0.03,
+    0.85,
+    1.0
+   ],
+   "note": "Cyan cast, soft at 100%"
   },
   "mycedium-cand-39390769": {
    "view": "wide",
    "quality": 2,
    "form": "F",
+   "keep": "dup",
+   "note": "Same colony, similar framing, cyan cast"
+  },
+  "mycedium-cand-39390717": {
+   "view": "medium",
+   "quality": 2,
+   "form": "F",
    "keep": "best",
-   "note": "Cyan cast"
+   "note": "Cyan cast, soft at 100%"
   },
   "mycedium-cand-297051327": {
    "view": "medium",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
    "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Corallites not clearly nose-shaped; could be Echinophyllia"
+   "note": "1600 px, blue cast, soft at 100%"
   },
   "mycedium-cand-453153495": {
    "view": "medium",
-   "quality": 2,
-   "form": "x",
-   "keep": "best",
-   "unsure": [
-    "genus"
-   ],
-   "note": "Dense swollen corallites, none inclined; could be Echinophyllia or another genus"
-  },
-  "mycedium-cand-711368720": {
-   "view": "macro",
    "quality": 3,
    "form": "F",
    "keep": "best"
+  },
+  "mycedium-cand-711368724": {
+   "view": "wide",
+   "quality": 3,
+   "form": "F",
+   "keep": "best",
+   "crop": [
+    0.0,
+    0.15,
+    0.75,
+    1.0
+   ]
   },
   "mycedium-cand-711368725": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "best",
-   "note": "Small plate in a cluttered frame with soft corals"
+   "keep": "alt",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Whole small colony, but soft corals surround it and take much of the frame"
   },
-  "mycedium-cand-711368724": {
+  "mycedium-cand-711368720": {
    "view": "medium",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "note": "Soft at 100%"
   },
   "mycedium-cand-487409672": {
-   "view": "wide",
+   "view": "medium",
    "quality": 2,
    "form": "F",
    "keep": "best",
-   "note": "Cyan cast"
+   "note": "Blue-green cast, soft at 100%; small fish"
   },
   "mycedium-cand-224931995": {
-   "view": "wide",
-   "quality": 2,
-   "form": "E",
-   "keep": "best",
-   "note": "Dark, strong colours"
-  },
-  "mycedium-cand-662428731": {
    "view": "medium",
-   "quality": 3,
-   "form": "x",
-   "keep": "best"
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Dark, red-green cast, soft at 100%"
   },
   "mycedium-cand-662428875": {
    "view": "wide",
    "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.1,
+    0.95,
+    1.0
+   ],
+   "note": "Soft at 100%"
+  },
+  "mycedium-cand-662428731": {
+   "view": "macro",
+   "quality": 1,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "quality"
+   ],
+   "note": "713 px and soft"
   },
   "mycedium-cand-362800347": {
    "view": "wide",
    "quality": 1,
-   "form": "E",
+   "form": "F",
    "keep": "best",
-   "multi": true,
-   "note": "Heavy cyan cast, cluttered with crinoid and other corals"
+   "note": "Strong cyan cast over everything, coral surface lost"
   },
   "mycedium-cand-655353744": {
    "view": "wide",
-   "quality": 3,
+   "quality": 2,
    "form": "F",
-   "keep": "best"
+   "keep": "best",
+   "crop": [
+    0.15,
+    0.1,
+    0.85,
+    0.95
+   ],
+   "note": "Feather stars at the edges"
   },
   "mycedium-cand-575793340": {
    "view": "wide",
-   "quality": 2,
-   "form": "E",
+   "quality": 1,
+   "form": "F",
    "keep": "best",
-   "note": "Slightly soft"
+   "note": "Murky and blurred over the whole frame"
   },
   "mycedium-cand-661767588": {
    "view": "wide",
-   "quality": 2,
-   "form": "E",
-   "keep": "best"
+   "quality": 1,
+   "form": "F",
+   "keep": "best",
+   "note": "984 px, mush at 100%"
   },
   "mycedium-cand-517032559": {
    "view": "macro",
-   "quality": 3,
+   "quality": 2,
    "form": "x",
-   "keep": "best"
+   "keep": "best",
+   "note": "1200 px, clean"
   },
   "mycedium-cand-270746517": {
    "view": "wide",
-   "quality": 2,
+   "quality": 3,
    "form": "F",
    "keep": "best",
-   "note": "Dark"
+   "crop": [
+    0.08,
+    0.1,
+    0.85,
+    1.0
+   ]
   },
   "mycedium-cand-270746618": {
-   "view": "wide",
-   "quality": 2,
+   "view": "medium",
+   "quality": 3,
    "form": "F",
-   "keep": "dup"
-  },
-  "mycedium-cand-39409420": {
-   "view": "wide",
-   "quality": 2,
-   "form": "E",
-   "keep": "best",
-   "note": "Cyan cast"
+   "keep": "best"
   }
  }
 }

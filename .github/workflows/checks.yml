@@ -38,6 +38,9 @@ jobs:
       - name: Photo sizes (every photo in 1600, 960, 480 and 240 px, tools/photos.py)
         run: |
           python3 tools/photos.py --check
+      - name: core.js embedded in the sync script (tools/sync_core.py; the sheet replays progress with the app's engine)
+        run: |
+          python3 tools/sync_core.py --check
       - name: Cache-busting versions
         run: |
           python3 tools/check_versions.py ${{ github.base_ref && format('--base origin/{0}', github.base_ref) || '' }}

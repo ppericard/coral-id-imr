@@ -36,8 +36,13 @@ const $v = document.getElementById('view'),
   $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
 // Dates as toLocaleString([], …) writes them, with one formatter per format (Pierre, 2026-11-03: admin pages load slower
-// and slower; toLocaleString builds a new one at every call, thousands of times on a Journey or in Triage).
-const DTF_O = {dm: {day: 'numeric', month: 'short'}, dmhm: {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}},
+// and slower; toLocaleString builds a new one at every call, thousands of times on a Journey or in Triage). Times are
+// always 24 h ("17:45", never "05:45 PM", whatever the browser's language; Pierre, 2026-11-03: narrower columns).
+const DTF_O = {
+    dm: {day: 'numeric', month: 'short'},
+    dmhm: {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'},
+    hm: {hour: '2-digit', minute: '2-digit', hourCycle: 'h23'}
+  },
   DTF = {};
 const dateText = (t, k) => {
   const d = new Date(t);
@@ -192,10 +197,14 @@ const keepHist = () => {
 // Read-only (no token): clicks stay in this tab only, nothing is kept as a draft (admin review, 2026-11-01).
 function saveDraft() {
   memoReset();
-  if (snap !== null) HIST.push(snap);
+  if (snap !== null) {
+    autoWhen();
+    HIST.push(snap);
+  }
   if (HIST.length > 300) HIST.shift();
   FUT = [];
   snap = JSON.stringify(DRAFT);
+  if (ASIG) ASIG_OF = snap;
   if (!TOKEN) return;
   draftLost = !putDraft();
   draftAt = new Date();
@@ -263,6 +272,21 @@ function step(from, to, msg) {
   render();
   toast(msg[1]);
 }
+// When Pierre answers a Check or corrects an auto decision, the time goes into its log code (autosort.js autoStamp), so
+// the agreement window follows the order he answered in (Codex review #400). Found by comparing his answers per photo
+// with those of the draft before this click (snap; recomputed only when undo, redo or another tab changed it).
+let ASIG = null,
+  ASIG_OF = null;
+function autoWhen() {
+  if (ASIG_OF !== snap) {
+    ASIG = autoSigs(JSON.parse(snap));
+    ASIG_OF = snap;
+  }
+  const A = autoStamp(DRAFT, ASIG, Date.now() / 1000);
+  if (A) DRAFT.auto = A;
+  ASIG = autoSigs(DRAFT); // of the draft saveDraft is about to keep as snap
+}
+const untimed = L => Object.fromEntries(Object.entries(L).map(([f, c]) => [f, String(c).replace(/@[0-9a-z]+$/, '')]));
 const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']),
   redo = () => step(FUT, HIST, ['Nothing to redo.', 'Redone.']);
 const qChanged = () => !same(DRAFT.quality || {}, SAVED.quality || {});
@@ -346,8 +370,9 @@ const qTag = p => {
   const q = qOf(p.f);
   return `<span class="adm-q q${q}${qSet(p.f) ? '' : ' auto'}" title="${qSet(p.f) ? 'Quality set by you' : 'Automatic first guess'}">${QUAL.find(x => x[0] === q)[1]}</span>`;
 };
-const qSeg = p =>
-  `<span class="adm-qseg" role="group" aria-label="Quality">${QUAL.map(([q, t]) => `<button type="button" data-q="${q}" aria-pressed="${qOf(p.f) === q}" class="q${q}">${t}</button>`).join('')}</span>`;
+// blind (a Check in Candidates): only Pierre's own rating shows, never the automatic guess.
+const qSeg = (p, blind) =>
+  `<span class="adm-qseg" role="group" aria-label="Quality">${QUAL.map(([q, t]) => `<button type="button" data-q="${q}" aria-pressed="${(blind ? (DRAFT.quality || {})[p.f] : qOf(p.f)) === q}" class="q${q}">${t}</button>`).join('')}</span>`;
 function setQ(f, q) {
   DRAFT.quality = DRAFT.quality || {};
   // Always recorded, even when it matches the automatic guess: a later re-run of photo_quality.py must never change it.
@@ -400,11 +425,11 @@ function putF(f, letter, pol) {
 }
 const setF = (f, c) => putF(f, c, fP(mineF(f)));
 const setP = (f, on) => putF(f, fL(mineF(f)), on);
-const fSeg = p => {
-  const v = fOf(p.f),
-    un = !fSet(p.f) && FUNSURE.has(p.f),
-    po = pOf(p.f);
-  return `<span class="adm-qseg adm-fseg${fSet(p.f) ? '' : ' auto'}${un ? ' unsure' : ''}" role="group" aria-label="Growth form" title="Growth form">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v === c}" title="${esc(fName(c))}">${FABBR[c]}</button>`).join('')}<button type="button" class="adm-pol${pSet(p.f) ? '' : ' auto'}" data-pol aria-pressed="${po}" title="Polyps or vesicles extended">✿</button></span>`;
+const fSeg = (p, blind) => {
+  const v = blind ? fL(mineF(p.f)) : fOf(p.f),
+    un = !blind && !fSet(p.f) && FUNSURE.has(p.f),
+    po = blind ? fP(mineF(p.f)) === true : pOf(p.f);
+  return `<span class="adm-qseg adm-fseg${fSet(p.f) || blind ? '' : ' auto'}${un ? ' unsure' : ''}" role="group" aria-label="Growth form" title="Growth form">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-fm="${c}" aria-pressed="${v === c}" title="${esc(fName(c))}">${FABBR[c]}</button>`).join('')}<button type="button" class="adm-pol${pSet(p.f) ? '' : ' auto'}" data-pol aria-pressed="${po}" title="Polyps or vesicles extended">✿</button></span>`;
 };
 
 /* ---------- Token vault: AES-GCM key derived from the password (PBKDF2) ---------- */
@@ -745,9 +770,11 @@ let SHOW = new Set(
   )
 );
 const shown = p => SHOW.has(origin(p));
+// A photo the auto-sort added carries an "auto" tag next to its source (undo it in Candidates › Auto › Details).
 const srcTag = p => {
-  const o = origin(p);
-  return `<span class="adm-src o-${o}">${ORIGINS.find(x => x[0] === o)[1]}</span>`;
+  const o = origin(p),
+    a = aApplied(p.f);
+  return `<span class="adm-src o-${o}">${ORIGINS.find(x => x[0] === o)[1]}</span>${a && a.kind === 'a' ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}`;
 };
 
 /* ---------- Edits ---------- */
@@ -844,6 +871,11 @@ const ACT = {
   hide: (n, f) =>
     edit(n, k => {
       if (k.add && k.add[f]) {
+        // Removing a photo the auto-sort added also marks it rejected (as ✕ Reject: it stays with the candidates below,
+        // off the Candidates queue), so the removal counts against the auto's Keep (autosort.js pierreOf; Codex review
+        // #400: without it a wrong auto add removed this way was no decision at all). One Undo step for both.
+        const a = aApplied(f);
+        if (a && a.kind === 'a') DRAFT.seen = {...(DRAFT.seen || {}), [CK(f)]: 1};
         delete k.add[f];
         dropFeat(k, f);
         if (k.cover === f) delete k.cover;
@@ -965,7 +997,8 @@ function status() {
       mtChanged() ? 'look-alike montages' : '',
       crChanged() ? 'crops' : '',
       snChanged() ? 'several corals' : '',
-      tlChanged() ? 'tile photos' : ''
+      tlChanged() ? 'tile photos' : '',
+      auChanged() ? 'auto-sort' : ''
     ].filter(Boolean);
   const bs = $('booksw');
   if (bs) {
@@ -975,7 +1008,7 @@ function status() {
   const tn = Object.keys(DRAFT.flag || {}).length + sugCount() + repsOpen().length,
     xn = Object.keys(DRAFT.exclude || {}).length;
   OVER = overCap();
-  const t = draftAt ? ` (saved ${draftAt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})})` : '';
+  const t = draftAt ? ` (saved ${dateText(draftAt, 'hm')})` : '';
   // Publish carries the status (no separate status text): "● Publish" with a draft, "Published" when clean.
   const sv = $('save');
   if (sv.textContent !== 'Publishing…') sv.textContent = !TOKEN ? 'Read-only' : parts.length ? '● Publish' : 'Published';
@@ -995,56 +1028,97 @@ function fitModes() {
   if (nav.scrollWidth > nav.clientWidth + 1) document.body.classList.add('adm-narrow');
 }
 addEventListener('resize', () => fitModes());
-// Four header tabs, each with its pages in a row under the header (Pierre, 2026-11-01: "regroup the admin menus"):
-// To do (what needs his eye), Photos (curation), Players (people), Photo stats. Every old address still works; each tab
-// opens on the page last used in it (reefid-admin-sub). Phones: one menu with every page, grouped by tab.
+// Nine tabs in three header groups (Pierre, 2026-11-03, mockup "Admin tabs: 17 -> 9", after "regroup the admin menus"
+// of 2026-11-01): To do (To do, Coverage), Photos (Genera, Candidates, Photo review, Look-alikes, Photo stats), Players
+// (Players, Activity). Nothing was removed: every former page is a view of a tab, chosen with the segmented switch at
+// the right of the tab row (#subnav, navs()). Each view keeps its old address, so bookmarks and links in the docs still
+// land right; ALIAS maps the two addresses that are not a view of their own. Each header group reopens the tab and view
+// used last in it (reefid-admin-sub), each tab its view used last (reefid-admin-view). Phones: one menu with every tab.
+// [group key, group name, [[tab key, tab name, [[address, view name], ...]], ...]]; '' = a genus page.
 const genusHash = () => '#' + encodeURIComponent(lastGenus || Object.keys(DATA.gen)[0]);
 const GROUPS = [
   [
     'todo',
     'To do',
     [
-      ['~triage', 'Triage'],
-      ['~stats-needs', 'Where to look'],
-      ['~cov', 'Game coverage'],
-      ['~fcov', 'Sheet & Finder coverage'],
-      ['~events', 'Errors & feedback'],
-      ['~health', 'Health']
+      [
+        'todo',
+        'To do',
+        [
+          ['~todo', 'All'],
+          ['~triage', 'Reports'],
+          ['~events', 'Errors'],
+          ['~health', 'Health']
+        ]
+      ],
+      [
+        'cov',
+        'Coverage',
+        [
+          ['~cov', 'Games'],
+          ['~fcov', 'Sheets & Finder']
+        ]
+      ]
     ]
   ],
   [
     'photos',
     'Photos',
     [
-      ['', 'Genera'],
-      ['~cand', 'Candidates'],
-      ['~form', 'Growth form'],
-      ['~quality', 'Quality'],
-      ['~look', 'Look-alikes'],
-      ['~excluded', 'Excluded']
+      [
+        'genera',
+        'Genera',
+        [
+          ['', 'Live'],
+          ['~hidden', 'Hidden'],
+          ['~excluded', 'Excluded']
+        ]
+      ],
+      ['cand', 'Candidates', [['~cand', 'Candidates']]],
+      [
+        'review',
+        'Photo review',
+        [
+          ['~quality', 'Quality'],
+          ['~form', 'Growth form'],
+          ['~diff', 'By difficulty']
+        ]
+      ],
+      ['look', 'Look-alikes', [['~look', 'Look-alikes']]],
+      [
+        'pstats',
+        'Photo stats',
+        [
+          ['~pstats', 'Overview'],
+          ['~stats-photos', 'Difficulty']
+        ]
+      ]
     ]
   ],
   [
     'players',
     'Players',
     [
-      ['~users', 'Players'],
-      ['~stats', 'Activity'],
-      ['~stats-conf', 'Confusions']
-    ]
-  ],
-  [
-    'pstats',
-    'Photo stats',
-    [
-      ['~stats-photos', 'Difficulty'],
-      ['~diff', 'Photo list']
+      ['players', 'Players', [['~users', 'Players']]],
+      [
+        'activity',
+        'Activity',
+        [
+          ['~stats', 'Activity'],
+          ['~stats-conf', 'Confusions']
+        ]
+      ]
     ]
   ]
 ];
-const pageOf = () =>
-  cur === '~mont' ? '~look' : cur.startsWith('~journey/') || cur.startsWith('~anon/') ? '~users' : cur[0] === '~' ? cur : ''; // '' = a genus page; a player's journey sits under Players
-const groupKey = () => (GROUPS.find(g => g[2].some(([h]) => h === pageOf())) || GROUPS[1])[0];
+// Every tab as [key, name, views, group key].
+const TABS = GROUPS.flatMap(([g, , L]) => L.map(t => [...t, g]));
+// Old addresses that are not a view of their own: Montages became Look-alikes; Where to look is the banner above the Games
+// grid of Coverage, opened in full.
+const ALIAS = {'~mont': '~look', '~stats-needs': '~cov'};
+const pageOf = () => (cur.startsWith('~journey/') || cur.startsWith('~anon/') ? '~users' : ALIAS[cur] || (cur[0] === '~' ? cur : '')); // '' = a genus page; a player's journey sits under Players
+const tabOf = (h = pageOf()) => TABS.find(t => t[2].some(([x]) => x === h)) || TABS.find(t => t[0] === 'genera');
+const groupKey = () => tabOf()[3];
 // Genus x view cells over their cap (capOf: CELL_MAX colonies for a game genus, CAP.sheet for a Finder-only one; after
 // "Add anyway"): a warning on the To do tab and on the page that shows the cell (Pierre, 2026-11-02: "at least a
 // warning"): Game coverage for a game genus, Sheet & Finder coverage for a Finder-only one. n = both.
@@ -1055,40 +1129,71 @@ const overCap = () => {
   return {...o, n: o['~cov'] + o['~fcov']};
 };
 function navs(tn, xn) {
-  const g = groupKey(),
+  const T = tabOf(),
+    g = T[3],
     page = pageOf(),
-    last = store.get('reefid-admin-sub', {}) || {};
+    last = store.get('reefid-admin-sub', {}) || {},
+    seen = store.get('reefid-admin-view', {}) || {};
   if (last[g] !== page) {
     last[g] = page;
     store.set('reefid-admin-sub', last);
   }
-  const href = h => (h ? '#' + h : genusHash()),
-    cnt = h => (h === '~triage' && tn ? ` (${tn})` : h === '~excluded' && xn ? ` (${xn})` : OVER[h] ? ` (⚠ ${OVER[h]} over the cap)` : '');
+  if (seen[T[0]] !== page) {
+    seen[T[0]] = page;
+    store.set('reefid-admin-view', seen);
+  }
+  const hn = Object.values(DRAFT.genera || {}).reduce((s, k) => s + (k.hide || []).length, 0),
+    href = h => (h ? '#' + h : genusHash()),
+    has = (t, h) => t[2].some(([x]) => x === h),
+    // A tab opens on its view used last; a header group on its tab used last.
+    tabHash = t => (has(t, seen[t[0]]) ? seen[t[0]] : t[2][0][0]),
+    groupHash = G => (TABS.some(t => t[3] === G[0] && has(t, last[G[0]])) ? last[G[0]] : tabHash(TABS.find(t => t[3] === G[0]))),
+    over = `${OVER.n} genus × view cell${OVER.n === 1 ? '' : 's'} over the cap (${CELL_MAX} colonies, Coverage › Games; ${CAP.sheet} for a Finder-only genus, Coverage › Sheets & Finder)`,
+    // Counts: on a view in its switch, on a tab in the tab row and the phone menu.
+    vcnt = h =>
+      (h === '~todo' || h === '~triage') && tn
+        ? ` ${tn}`
+        : h === '~excluded' && xn
+          ? ` ${xn}`
+          : h === '~hidden' && hn
+            ? ` ${hn}`
+            : OVER[h]
+              ? ` ⚠ ${OVER[h]}`
+              : '',
+    tcnt = t => (t[0] === 'todo' && tn ? ` (${tn})` : t[0] === 'cov' && OVER.n ? ' ⚠' : '');
   $('modes').hidden = false;
   document.querySelectorAll('#modes [data-mode]').forEach(a => {
-    const G = GROUPS.find(x => x[0] === a.dataset.mode),
-      h = G[2].some(([x]) => x === last[G[0]]) ? last[G[0]] : G[2][0][0];
-    a.href = href(h);
+    const G = GROUPS.find(x => x[0] === a.dataset.mode);
+    a.href = href(groupHash(G));
     a.textContent = G[1] + (G[0] === 'todo' && tn ? ` (${tn})` : '') + (G[0] === 'todo' && OVER.n ? ' ⚠' : '');
-    if (G[0] === 'todo')
-      a.title = OVER.n
-        ? `${OVER.n} genus × view cell${OVER.n === 1 ? '' : 's'} over the cap (${CELL_MAX} colonies, Game coverage; ${CAP.sheet} for a Finder-only genus, Sheet & Finder coverage)`
-        : '';
+    if (G[0] === 'todo') a.title = OVER.n ? over : '';
     a.setAttribute('aria-current', String(G[0] === g));
   });
-  const sub = $('subnav'),
-    G = GROUPS.find(x => x[0] === g);
+  const sub = $('subnav');
   if (sub) {
-    sub.innerHTML = G[2]
-      .map(([h, t]) => `<a class="adm-fchip plain" href="${href(h)}" aria-pressed="${h === page}">${t}${cnt(h)}</a>`)
-      .join('');
+    const V = T[2].length > 1 ? T[2] : [];
+    sub.innerHTML =
+      `<span class="adm-subtabs">${TABS.filter(t => t[3] === g)
+        .map(
+          t =>
+            `<a class="adm-fchip plain" href="${esc(href(tabHash(t)))}" aria-pressed="${t === T}"${t[0] === 'cov' && OVER.n ? ` title="${esc(over)}"` : ''}>${t[1]}${tcnt(t)}</a>`
+        )
+        .join('')}</span>` +
+      (V.length
+        ? `<span class="adm-qseg adm-lvseg adm-views" role="group" aria-label="${esc(T[1])} view">${V.map(
+            ([h, t]) => `<a href="${esc(href(h))}" data-view="${esc(h)}" aria-pressed="${h === page}">${t}${vcnt(h)}</a>`
+          ).join('')}</span>`
+        : '');
+    sub.classList.toggle('has-views', !!V.length);
     sub.hidden = false;
   }
   const ms = $('modesel');
   if (ms) {
     ms.innerHTML = GROUPS.map(
-      ([k, t, L]) =>
-        `<optgroup label="${t}">${L.map(([h, n]) => `<option value="${esc(href(h))}"${h === page ? ' selected' : ''}>${n}${cnt(h)}</option>`).join('')}</optgroup>`
+      ([k, t]) =>
+        `<optgroup label="${t}">${TABS.filter(x => x[3] === k)
+          .map(x => `<option value="${esc(href(x === T ? page : tabHash(x)))}"${x === T ? ' selected' : ''}>${x[1]}${tcnt(x)}</option>`)
+          .join('')}</optgroup>`
     ).join('');
     ms.hidden = false;
   }
@@ -1097,45 +1202,44 @@ function navs(tn, xn) {
 const modeKey = () =>
   cur.startsWith('~journey/') || cur.startsWith('~anon/')
     ? 'journey'
-    : NEED_TABS.some(([h]) => h === cur)
-      ? 'needs'
-      : cur.startsWith('~stats') || cur === '~diff'
-        ? 'stats'
-        : {
-            '~users': 'users',
-            '~quality': 'quality',
-            '~form': 'form',
-            '~excluded': 'excluded',
-            '~triage': 'triage',
-            '~events': 'events',
-            '~look': 'mont',
-            '~mont': 'mont',
-            '~cand': 'cand'
-          }[cur] || 'genus';
+    : cur.startsWith('~stats') || cur === '~diff'
+      ? 'stats'
+      : {
+          '~users': 'users',
+          '~quality': 'quality',
+          '~form': 'form',
+          '~excluded': 'excluded',
+          '~hidden': 'hidden',
+          '~todo': 'todo',
+          '~triage': 'triage',
+          '~events': 'events',
+          '~health': 'health',
+          '~cov': 'cov',
+          '~fcov': 'fcov',
+          '~look': 'mont',
+          '~mont': 'mont',
+          '~cand': 'cand'
+        }[cur] || 'genus';
 function render() {
   memoFresh();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
   if (cur === '~quality') return renderQuality();
   if (cur === '~form') return renderForm();
   if (cur === '~excluded') return renderExcluded();
-  if (cur === '~triage') return renderTriage();
+  if (cur === '~hidden') return renderHidden();
+  if (cur === '~todo' || cur === '~triage') return renderTriage();
   if (cur === '~events') return renderEvents();
-  // Every Stats / Needs sub-view keeps its sub-menu on top, whichever function draws it (Pierre, 2026-11-01).
-  if (modeKey() === 'needs') {
-    if (cur === '~cov') renderCov();
-    else if (cur === '~fcov') renderFcov();
-    else renderStats();
-    return withSwitch();
-  }
+  if (cur === '~health') return renderStats();
+  // Game coverage with the Where to look banner above it (folded on ~cov, open in full on ~stats-needs).
+  if (cur === '~cov' || cur === '~stats-needs') return renderCov();
+  if (cur === '~fcov') return renderFcov();
   if (cur === '~users') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
   if (cur.startsWith('~journey/')) return renderJourney(cur.slice(9)); // one player's path (admin-journey.js)
   // A device that never signed in, by anonymous id (its own route: a player's name may start with any character).
   if (cur.startsWith('~anon/')) return renderJourney('', cur.slice(6));
-  if (modeKey() === 'stats') {
-    if (cur === '~diff') renderDiff();
-    else renderStats();
-    return withSwitch();
-  }
+  if (cur === '~diff') return renderDiff();
+  if (cur === '~pstats') return renderPstats();
+  if (modeKey() === 'stats') return renderStats();
   if (cur === '~look' || cur === '~mont') return renderMont(); // ~mont = old address, kept for bookmarks
   if (cur === '~cand') return renderCand();
   const names = Object.keys(DATA.gen);
@@ -1434,6 +1538,20 @@ function pointerDrag(tiles, hover, drop, cancel) {
       };
   });
 }
+// The enlarged photo's caption (zoom, zoomOne: every admin view): genus (opens its sheet, draft applied), what the photo
+// is, the iNat taxon, its credit and its source, as in the games (app.js photoSrc / credit, AGENTS.md rule 11). An iNat
+// photo links to its observation (Pierre, 2026-11-03: he opened his own photo that everyone misses, to check on iNaturalist
+// who identified it, and the caption had no link); IMR lecture and Coral Finder book photos have no public page: their
+// credit line only.
+const inatObs = p => /^https:\/\/(www\.)?inaturalist\.org\/observations\//.test(p.o || '');
+const lbCap = (n, p, what) =>
+  `${DATA.gen[n] ? `<a href="./?draft#g-${encodeURIComponent(n)}" target="_blank" rel="noopener" title="Genus sheet"><i>${esc(n)}</i></a>` : `<i>${esc(n || '')}</i>`}${what ? ` · ${esc(what)}` : ''} · ${
+    p.cf
+      ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${esc(p.pg)}`
+      : p.imr
+        ? `IMR Lecture 6, slide ${esc(p.slide)}`
+        : `${inatObs(p) && p.t ? `<i>${esc(p.t)}</i> · ` : ''}${esc(p.a || '')}`
+  }${inatObs(p) ? ` · <a class="lb-src" href="${esc(p.o)}" target="_blank" rel="noopener" title="Open the iNaturalist observation">iNat observation ↗</a>` : ''} · <code>${esc(p.f)}</code>`;
 function zoom(n, f) {
   const lb = $('lightbox'),
     L = [...photos(n), ...pending(n).map(p => ({...p, base: 'cand'})), ...outOf(n).map(p => ({...p, base: 'out'}))],
@@ -1441,7 +1559,7 @@ function zoom(n, f) {
   let i = i0;
   const show = () => {
     const p = L[i];
-    lb.innerHTML = `<div class="lb-in"><img ${crSrc(p)} alt=""><p class="lb-cap"><i>${esc(n)}</i> · ${p.base === 'cand' ? 'Candidate' : p.base === 'out' ? 'Not this genus' : label(n, viewOf(n, p))} · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p>
+    lb.innerHTML = `<div class="lb-in"><img ${crSrc(p)} alt=""><p class="lb-cap">${lbCap(n, p, p.base === 'cand' ? 'Candidate' : p.base === 'out' ? 'Not this genus' : label(n, viewOf(n, p)))}</p>
     <div class="lb-nav"><button type="button" data-d="-1" aria-label="Previous">‹</button><span>${i + 1} / ${L.length}</span><button type="button" data-d="1" aria-label="Next">›</button><button type="button" data-x>Close</button></div></div>`;
     lb.querySelectorAll('[data-d]').forEach(
       b =>
@@ -1660,30 +1778,61 @@ const HEALTH = {
   G_LOW: 0.5, // right rate over a player's last G_MIN answers on a genus under which they are stuck
   DAYS: 30
 };
+// Sessions, one definition for Health, a player's Journey and Activity's Recent sessions: one player's answers, oldest
+// first, cut where two answers are HEALTH.GAP minutes apart or more. [{id, L: rows in time order}], each player's in
+// time order.
+function sessionsOf(rows) {
+  const BY = Object.create(null),
+    S = [];
+  rows.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
+  Object.entries(BY).forEach(([id, L]) => {
+    L.sort((a, b) => a[1] - b[1]);
+    let s = null;
+    L.forEach(r => {
+      if (!s || r[1] - s.L[s.L.length - 1][1] >= HEALTH.GAP * 6e4) S.push((s = {id, L: []}));
+      s.L.push(r);
+    });
+  });
+  return S;
+}
+// Who played last and who is playing now (Pierre, 2026-11-03): Players' Last column and Activity's Recent sessions.
+// "Now" = a last answer less than NOW minutes old in the log loaded: a signed-in player's answers reach the sheet a few
+// seconds after each answer, a device not signed in sends them 10 at a time (sync.js sendAnon), so a few minutes.
+const RECENT = {
+  NOW: 5, // minutes: a last answer more recent than this = playing now
+  N: 10 // sessions in Recent sessions
+};
 
 /* ---------- Help ("?" in the header): the explanations, kept off the pages ---------- */
 const HELP = {
   // A getter: JOURNEY is in admin-journey.js, loaded after this file.
   get journey() {
-    return `<p>One player's path, from their answers in the sheet (signed in). <b>Quiz right</b> and <b>Last 50</b> count the photo quiz only (look-alike duels slipped into it included); <b>Duels</b> = answers in the Duel tab (2 choices, often on one chosen pair), apart so a burst of them does not read as the player's level. <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day, a dashed orange one when they opened all the genera at once. The green curve counts the genera learned (mastery exam passed, still held), each at the answer that passed its mastery exam (★: its last right exam question); genera learned before exam questions were logged (2 Nov 2026) have no such answer and are not on it (the legend says how many). <b>Cards</b> (from their saved progress, read with this page's token): the first cards and when, how many single cards, and whether they opened all the genera at once (after which answer, when, and from where: the first cards, My progress or the offer card) or declined the offer; times are kept from 2 Nov 2026 (before, the time of that answer). <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered. <b>Genera</b>: every genus they were asked, in the order met; Card = when its card showed (first cards, opened all, or after which answer; hover for how many questions later it was asked), First asked = answer number and date of its first question, or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>When they played</b>: one row a day, from their first day to their last (days without an answer included), one cell an hour, in this device's time zone; the darker, the more answers that hour, relative to their busiest hour (hover for the answers and the right share); the total of the day on the right. A session = answers less than ${HEALTH.GAP} minutes apart. <b>Median time</b> and <b>Enlarged</b> (answers from sheet v23 on): median seconds from the photos in view to the answer, and the share of answers where they enlarged a photo first; logged to see later whether they tell a hard photo, not used by the game.</p>`;
+    return `<p>One player's path, from their answers in the sheet (signed in). <b>Quiz right</b> and <b>Last 50</b> count the Quiz only (the Custom quiz and the look-alike duels slipped into them included); <b>Duels</b> = answers in the Duel tab (2 choices, often on one chosen pair), apart so a burst of them does not read as the player's level. <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. <b>Progress</b> and <b>Learned</b> (numbers and the Genera table's Progress column): replayed from every answer in the log with the current rules, as on Players; ↻ saved = what their saved copy still says. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day, a dashed orange one when they opened all the genera at once. The green curve counts the genera learned (mastery exam passed, still held), each at the answer that passed its mastery exam (★: its last right exam question); genera learned before exam questions were logged (2 Nov 2026) have no such answer and are not on it (the legend says how many). <b>Cards</b> (from their saved progress, read with this page's token): the first cards and when, how many single cards, and whether they opened all the genera at once (after which answer, when, and from where: the first cards, My progress or the offer card) or declined the offer; times are kept from 2 Nov 2026 (before, the time of that answer). <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered. <b>Genera</b>: every genus they were asked, in the order met; Card = when its card showed (first cards, opened all, or after which answer; hover for how many questions later it was asked), First asked = answer number and date of its first question, or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>When they played</b>: one row a day, from their first day to their last (days without an answer included), one cell an hour, in this device's time zone; the darker, the more answers that hour, relative to their busiest hour (hover for the answers and the right share); the total of the day on the right. A session = answers less than ${HEALTH.GAP} minutes apart. <b>Median time</b> and <b>Enlarged</b> (answers from sheet v23 on): median seconds from the photos in view to the answer, and the share of answers where they enlarged a photo first; logged to see later whether they tell a hard photo, not used by the game.</p>`;
   },
-  events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap question "These questions are: Too easy · About right · Too hard" (after 15 answers, then every 60), with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. The games aim at about 80% right, so many "Too hard" from beginners would mean the start is too steep. Last 30 days. Nothing here changes the app by itself.</p>`,
+  events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
-  start: `<p><b>Four tabs</b>: <b>To do</b> (players' reports, your flags, where photos are missing, how the app is working for players), <b>Photos</b> (Genera, Candidates, Growth form, Quality, Look-alikes, Excluded), <b>Players</b> (who plays, their numbers, merge or delete names) and <b>Photo stats</b> (how hard each photo is). The pages of a tab are in the row under the header; each tab reopens the page you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
-    <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Growth form</b> and <b>Quality</b>: check the growth form and quality guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>To do › Where to look</b>: which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
+  start: `<p><b>Three groups, nine tabs</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health: players' reports, your flags, the errors their devices send, how the app is working for them) and <b>Coverage</b> (Games, Sheets & Finder: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (Activity, Confusions). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
+    <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Photo review</b>: check the quality and growth form guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Coverage › Games</b>: Where to look, above the grid, says which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
     <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
-  fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Game coverage). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Finder-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral Finder show), an orange one a cell over it. Click a row to open the genus.</p>`,
-  cov: `<p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Elo = the score players see (1000 + 200 × Level; shown to them from 200 answers), ± its 95% margin: a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. Last = last answer. Quiz = right in the photo quiz (look-alike duels slipped into it included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. Learned and Seen = genera, from their last sync. Reports = problems they reported (Triage). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
-  stats: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). All / Others / Me: everyone, everyone but the name synced in this browser, or only it. Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
+  todo: `<p>Everything that needs your eye, most urgent first: a red <b>Health</b> line when Health finds photos everyone misses or genera players are stuck on (nothing when all is well), the players' <b>reports</b>, the photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days (app errors, photos that did not load, failed saves), Featured photos rated Poor, and last the judging agent's <b>suggestions</b>. Each part works as in its own view: <b>Reports</b> (reports, flags, Poor featured photos and suggestions, the former Triage page), <b>Errors</b> (with the one-tap answers and load times), <b>Health</b>.</p>`,
+  hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
+  fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Finder-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral Finder show), an orange one a cell over it. Click a row to open the genus.</p>`,
+  cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Elo = the score players see (1000 + 200 × Level; shown to them from 200 answers), ± its 95% margin: a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. <b>Last</b> = their last answer, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. Quiz = right in the Quiz (the Custom quiz and the look-alike duels slipped into them included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. <b>Progress</b> and <b>Learned</b>: replayed from every answer in the log with the current rules (what the app will show the player), the mastery exams taken from their saved progress; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says (the player has not opened the app since a recalculation, or their last answers are not saved yet). Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
+  stats: `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Health and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
+    <p><b>How live is "now"?</b> It shows what the sheet has. A signed-in player's answer is sent about 3 seconds after it is given, so it is here within about 10 seconds (after ↻). A device not signed in sends its answers 10 at a time, or 20 seconds after it stops answering, or as soon as the app is left: while it plays, its last answers here can be up to 9 answers behind (a minute or three), still inside the ${RECENT.NOW} minutes of "now". Answers played offline arrive when the device is back online, with the time they were given. Times are the device's own clock.</p>
+    <p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). All / Others / Me: everyone, everyone but the name synced in this browser, or only it. Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Level = median player ability on the genus (same scale as photo difficulty).</p>
     <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
-  statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
+  statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Look-alike from the data</b>: a pair no source declares, offered together ${CONF.N} times or more with a score of ${CONF.TRAP} or more: the duels, the Again after a mix-up and the genus sheets treat it as a declared look-alike (the app adds a shared growth form to the start, so its count may differ by a pair at the edge). <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
+  pstats: `<p>General numbers on every photo, from data.json and your draft (unpublished changes included) and the sheet's photo ratings. <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (field and IMR lecture photos of the game genera: the IMR slate, Millepora, the bonus genera; no Coral Finder book, several-corals, removed or sheet-only photo, no Colony photo whose form is not visible). <b>Colonies</b> = distinct iNaturalist observations (or lecture photos), as a question shows one colony. <b>Genera in play</b> = game genera with at least one photo in play (out of all of them when some have none).</p>
+    <p><b>All photos</b>: every photo the admin knows, each in one row, so the rows add up to the total. <b>Not in games</b>: on the genus sheets and the Coral Finder only, with the first reason that applies (the line under the table). <b>Comparison only</b>: photos (or candidates) you sent to Not this genus › Look-alike comparison: they left their genus and are shown only in the site's look-alike comparisons. <b>Removed</b>: taken off the site (Genera › Hidden), back with the candidates. <b>Candidates</b> = waiting for a decision: not added and not rejected (Coral Finder book pages included; hover the row for how many). <b>Rejected</b> = candidates you rejected (they stay candidates). <b>Excluded</b> = excluded for good (Genera › Excluded).</p>
+    <p><b>Median [middle half]</b>: half the genera have fewer, half more; the brackets hold the middle half of the genera (25th to 75th percentile), a spread that a few very rich or very poor genera do not pull. <b>Per genus</b> counts every game genus (the IMR slate, Millepora, the bonus genera), a genus without any counting 0. The bars: how many genera have each band of photos in play, from 0 (hover a bar for its genera). <b>Views</b> counts only the genera that have the view (a 2-level genus has no Close-up view); <b>None</b> = genera without a single photo in that view, out of those that have it. <b>Sources</b>: the photos in play by where they come from (Coral Finder book photos are never in games, so they have no row); <b>Genera</b> = genera with at least one photo in play from that source. <b>Answers per photo</b>: answers that rated each photo in play (sheet v18, as Difficulty; everyone's answers, yours included); under the table, the median of every photo in play, then of those rated at least once. Nothing here changes anything.</p>`,
   statsph: `<p>Photo difficulty (Elo) from the answers of players clearly above chance, signed in or not (sheet v18), each weighed by the player's experience: 0 = average photo, +1 = clearly harder. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (from sheet v18; before, weighed answers, so a photo answered once was hidden); few answers = rough. Genera: one lane per view (colony, close-up, corallites), a dot per photo (bigger and stronger with more answers), the lane's median as a bar, and from 5 photos a box (middle half of the photos) with whiskers; genera sorted by median. Click a dot to see the photo.</p>
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (players' level on the genus is above what the hardest photo of the view can challenge: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
-  diff: `<p>How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
+  diff: `<p>Every photo with answers, hardest (or easiest) first, with its quality to re-rate (the former Photo stats › Photo list). How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo). 0 = an average photo, +1 = clearly harder, -1 = clearly easier; the count is right answers / answers, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
   genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time.</p>
     <p>The first 3 photos of each view are its featured photos (top of the genus sheet, Coral Finder). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. <b>Remove</b> takes a photo off the site (games included) and lists it with the candidates below, where you can add it back.</p>
     <p><b>Which no?</b> <b>Remove</b>: off the site, back with the candidates. <b>Reject</b> (Candidates): reviewed and not wanted, it stays a candidate. <b>Skip</b>: decide later. <b>Not this</b>: wrong genus, or only fit for a look-alike comparison. <b>×</b>: excluded for good (a person, a drawing, unusable).</p>
@@ -1692,11 +1841,12 @@ const HELP = {
   form: `<p>The 7 IMR growth forms (Lecture 6, slides 3-10), one per photo, the main form visible: <b>Br</b> Branching, <b>En</b> Encrusting, <b>Ta</b> Tabulate, <b>Mu</b> Mushroom, <b>Ma</b> Massive, <b>Sm</b> Submassive, <b>Fo</b> Foliose/Plating; <b>∅</b> = form not visible (too close). <b>✿</b> = polyps or vesicles extended (not a form; it fills the Coral Finder "Large daytime polyps" tile).</p>
     <p>The Coral Finder growth-form tiles use them: Branching = Br + Ta, Thin plates and crusts = En + Fo, Massive or thick = Ma + Sm, Columns = Sm, Solitary = Mu, Meandering = any form of the genera it lists. Dashed = a first guess, solid = yours (always wins); a red ? = a guess to double-check.</p>
     <p><b>📌</b> makes a photo a lead photo of its form's tile on the site's Coral Finder start (up to 3 per form, number = place; a 4th drops the oldest); the tile's other places stay automatic. Br leads Branching, En Thin plates and crusts, Ma Massive, Sm Columns, Mu Solitary.</p>
-    <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>`,
+    <p>Click, drag a photo to another row, or hover it and press B E T U M S F, X for not visible, P for polyps. "To classify" rows group the photos without a guess by their old Coral Finder letter. Coral Finder book photos are left out.</p>
+    <p><b>Your forms</b> (the line at the top) measures the automatic detection against your own choices, over the photos the Show, View and genus filters leave: how many forms you set, how often your form is the dashed guess (among the photos that have both; ✿ apart), and how many unsure guesses (red ?) are still waiting. A click on the dashed form counts as agreeing, a click on another form as disagreeing; ✓ Validate N agrees for every photo it sets, so check photo by photo to measure the detection. It updates as you click; nothing extra is saved. Open it for the table guess → your form (diagonal = agreed); hover it for the same as a list. <b>Guesses first</b> puts, in each row, the photos still on a guess first (unsure ones first), then the ones you set.</p>`,
   quality: `<p>Quality 3 good, 2 fair, 1 poor. Dashed tags are an automatic guess (sharpness, contrast, colour cast, size). Click, drag to another level, or hover a photo and press 1, 2 or 3.</p>`,
-  triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" in the footer of any page (wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
+  triage: `<p>Only what needs your eye. First, what players reported: after an answer in a game (wrong answer with the genus they suggest, several corals, bad photo, other), from an enlarged photo, from the bottom of a genus sheet, or with "Send feedback" (at the bottom of the ? help of any page, or on About; wrong information, bug, suggestion), with the page it came from and who sent it: a name with ? did not sign in to the sync, so anyone could have typed it. Each photo has the tools of its genus page; ✓ Done clears one report. Reports come from the Reports tab of the sync sheet (script v8); every admin can read them: the sheet checks this page's GitHub token. ↻ reloads.</p><p>Then, on the site, the ⚑ on any photo (shown only in this browser) sends it here with where you saw it. Hide, Poor or Done clear one flag at a time.</p><p>Then Featured photos rated Poor.</p><p>Last, the suggestions of the photo judging agent (suggest.json): wrong genus, view, several corals, near-duplicates, candidates to add. Accept does the usual action (Undo works), Dismiss hides the suggestion for good. Its growth forms and quality ratings show as dashed guesses on each photo, its Featured picks fill the views you haven't picked.</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
-  cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder (Finder-only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Finder-only genus, as many as its sheet and the Coral Finder show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p>`,
+  cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder (Finder-only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Finder-only genus, as many as its sheet and the Coral Finder show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
   health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. <b>Without me</b> drops your answers everywhere on the page: the account this browser is signed in with and those you marked "This is also me" (Players > a player > Manage).</p>
     <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
     <p><b>Photos everyone misses.</b> Photos shown in ${HEALTH.PH_MIN} answers or more with under ${Math.round(HEALTH.PH_LOW * 100)}% right, or a difficulty at least ${HEALTH.PH_FAR} above the median of their genus (+1 = clearly harder; photo Elo, with ${HEALTH.PH_MIN}+ rated answers). They may be mislabelled, show another coral, or be bad photos: click to enlarge, the genus name opens its page. Right % and answers count every answer that showed the photo; the number after them is the difficulty against the genus median.</p>
@@ -1714,12 +1864,10 @@ function toggleHelp() {
     {
       '~users': 'users',
       '~stats-photos': 'statsph',
+      '~pstats': 'pstats',
       '~stats-conf': 'statsconf',
       '~stats-needs': 'statsneeds',
-      '~diff': 'diff',
-      '~cov': 'cov',
-      '~fcov': 'fcov',
-      '~health': 'health'
+      '~diff': 'diff'
     }[cur] || modeKey();
   h = document.createElement('div');
   h.id = 'admhelp';
@@ -1747,7 +1895,64 @@ function toggleHelp() {
 /* ---------- Growth form ---------- */
 // One row per IMR growth form, then "Form not visible" and the photos still to classify (by old Coral Finder letter). Click a letter on a photo (one form per photo; ∅ = form not visible), drag it to another row,
 // or hover it and press the key (b e t u m s f, x or 0 for not visible, p for polyps). The tile stays put until a filter changes.
-const FF = Object.assign({view: 'all', genus: '', todo: false, pol: false}, store.get('reefid-admin-ffilter', {}));
+const FF = Object.assign({view: 'all', genus: '', todo: false, pol: false, gfirst: false}, store.get('reefid-admin-ffilter', {}));
+// Agreement of the automatic growth form with Pierre's own (Pierre, 2026-11-03: he checks forms by hand to see whether the
+// automatic detection is good, and to help improve it). Nothing new is recorded: his form (the draft's curation gf)
+// against the dashed guess (forms.json gf, or the judging agent's candidate pass for a candidate), form letters only (✿
+// apart), over the photos the Show, View and genus filters leave (FSCOPE, set by renderForm). A click that keeps the
+// dashed form counts as agreement, one that picks another as disagreement. "Unsure" = guesses to double-check (gunsure)
+// still on the guess.
+let FSCOPE = [],
+  FAG_OPEN = false;
+function formAgree(L) {
+  const M = {};
+  let set = 0,
+    both = 0,
+    ok = 0,
+    un = 0;
+  L.forEach(p => {
+    const m = fL(mineF(p.f)),
+      g = fL(AUTOF[p.f]);
+    if (m) {
+      set++;
+      if (g) {
+        both++;
+        if (g === m) ok++;
+        M[g] = M[g] || {};
+        M[g][m] = (M[g][m] || 0) + 1;
+      }
+    } else if (g && FUNSURE.has(p.f)) un++;
+  });
+  return {set, both, ok, un, M};
+}
+// The line, and a guess × yours table behind it (rows = the guess, columns = your form; the diagonal agrees).
+function agreeHTML() {
+  const A = formAgree(FSCOPE),
+    F = [...FORM_ORDER, 'x'],
+    G = F.filter(g => A.M[g]),
+    Y = F.filter(m => G.some(g => A.M[g][m]));
+  const pairs = G.flatMap(g => Y.filter(m => A.M[g][m]).map(m => [g, m, A.M[g][m]])).sort((a, b) => b[2] - a[2]);
+  const tip = pairs.map(([g, m, n]) => `${FABBR[g]} → ${FABBR[m]} ${n}`).join(', ');
+  const head = `<span class="adm-fag-line" title="${esc(tip ? 'Guess → yours: ' + tip : 'No photo with both yet')}">Your forms: <b>${A.set}</b> set · agreement with the automatic guess: <b>${pct(A.ok, A.both)}</b> (of ${A.both} where both exist) · unsure guesses: <b>${A.un}</b></span>`;
+  const th = c => `<th title="${esc(fName(c))}">${FABBR[c]}</th>`;
+  const tbl = G.length
+    ? `<div class="adm-tscroll"><table class="adm-tbl adm-fag-t"><thead><tr><th>Guess ↓ · yours →</th>${Y.map(th).join('')}<th>Agree</th></tr></thead><tbody>${G.map(
+        g => {
+          const R = A.M[g],
+            n = Object.values(R).reduce((a, b) => a + b, 0);
+          return `<tr><th title="${esc(fName(g))}">${FABBR[g]}</th>${Y.map(m => `<td class="${!R[m] ? '' : m === g ? 'ok' : 'ko'}">${R[m] || ''}</td>`).join('')}<td class="n">${pct(R[g] || 0, n)} <small>of ${n}</small></td></tr>`;
+        }
+      ).join('')}</tbody></table></div>`
+    : '<p class="note">No photo with both a guess and your form yet.</p>';
+  return {head, tbl, A};
+}
+function agreeFill(d) {
+  const {head, tbl, A} = agreeHTML();
+  d.innerHTML = `<summary>${head}</summary>${tbl}`;
+  Object.assign(d.dataset, {set: A.set, both: A.both, ok: A.ok, un: A.un});
+}
+// Guesses first: in each row the photos still on a guess, the unsure ones first; the photos you set last.
+const fRank = f => (fSet(f) ? 2 : fL(AUTOF[f]) && FUNSURE.has(f) ? 0 : 1);
 // 📌 (Growth form view): only on photos the Coral Finder tiles can show (colony or close-up view, one coral, not a
 // book photo), so a pin always counts; the number is its place on the tile.
 const pinOK = p => (p.view === 'wide' || p.view === 'medium') && !p.multi && !p.cf;
@@ -1765,17 +1970,23 @@ const pinRefresh = t => {
 function formTile(t, v) {
   setF(t.dataset.f, v);
   const p = {f: t.dataset.f};
-  t.querySelector('.adm-fseg').outerHTML = fSeg(p);
+  t.querySelector('.adm-fseg').outerHTML = fSeg(p, !!t.closest('.adm-blind'));
   pinRefresh(t);
   if (cur === '~form') t.classList.add('rated');
   bindF(t);
+  agreeRefresh();
   status();
 }
+const agreeRefresh = () => {
+  const d = cur === '~form' && $('fagree');
+  if (d) agreeFill(d);
+};
 // One form per photo (Pierre): a click picks that form and replaces the previous one; when in doubt, the main form.
 const toggleF = (f, c) => c;
 function polTile(t) {
-  setP(t.dataset.f, !pOf(t.dataset.f));
-  t.querySelector('.adm-fseg').outerHTML = fSeg({f: t.dataset.f});
+  const blind = !!t.closest('.adm-blind');
+  setP(t.dataset.f, !(blind ? fP(mineF(t.dataset.f)) === true : pOf(t.dataset.f)));
+  t.querySelector('.adm-fseg').outerHTML = fSeg({f: t.dataset.f}, blind);
   pinRefresh(t);
   bindF(t);
   status();
@@ -1802,15 +2013,8 @@ function renderForm() {
   const names = Object.keys(DATA.gen),
     vl = v => (v === 'cand' ? 'Candidate' : VIEWS.find(x => x[0] === v)[1]);
   // Coral Finder book photos are left out: they never go on the growth-form tiles.
-  const all = allPhotos().filter(
-    p =>
-      !p.cf &&
-      shown(p) &&
-      (FF.view === 'all' || p.view === FF.view) &&
-      (!FF.genus || p.genus === FF.genus) &&
-      (!FF.todo || !fSet(p.f)) &&
-      (!FF.pol || pOf(p.f))
-  );
+  FSCOPE = allPhotos().filter(p => !p.cf && shown(p) && (FF.view === 'all' || p.view === FF.view) && (!FF.genus || p.genus === FF.genus));
+  const all = FSCOPE.filter(p => (!FF.todo || !fSet(p.f)) && (!FF.pol || pOf(p.f)));
   const card =
     p => `<figure class="adm-tile adm-qt${p.hid ? ' is-hidden' : ''}" data-f="${esc(p.f)}" data-g="${esc(p.genus)}" data-drag tabindex="0">
     <button type="button" class="adm-ph" data-act="zoom" aria-label="Enlarge"><img ${crSrc(p, 1)} alt="" loading="lazy" draggable="false"></button>${GRIP}${XBTN}
@@ -1828,6 +2032,7 @@ function renderForm() {
   ];
   const sec = ([id, t, test]) => {
     const L = all.filter(test);
+    if (FF.gfirst) L.sort((a, b) => fRank(a.f) - fRank(b.f));
     if (!L.length && id === '') return '';
     const todo = id ? L.filter(p => !fSet(p.f)).length : 0;
     return `<section class="adm-row adm-qrow"><h3>${id ? `<b class="adm-fl">${FABBR[id]}</b> ` : ''}${esc(t)} <small>${L.length} photo${L.length === 1 ? '' : 's'}${id === 'x' ? ' · never used on the growth-form tiles' : ''}</small>${todo ? ` <button type="button" class="adm-fok" data-fok="${id}" title="Validate">✓ Validate ${todo}</button>` : ''}</h3>
@@ -1836,13 +2041,17 @@ function renderForm() {
   const opt = (v, t, cur) => `<button type="button" class="adm-fchip plain" data-fv="${v}" aria-pressed="${cur === v}">${t}</button>`;
   $v.innerHTML = `<section class="adm-quality">
     <div class="adm-qhead"><h2>Growth form</h2></div>
+    <details class="adm-fagree" id="fagree"${FAG_OPEN ? ' open' : ''}></details>
     <div class="adm-filter"><span class="label">Show</span>${ORIGINS.filter(([o]) => o !== 'book')
       .map(([o, t]) => `<button type="button" class="adm-fchip o-${o}" data-o="${o}" aria-pressed="${SHOW.has(o)}">${t}</button>`)
       .join('')}</div>
     <div class="adm-filter"><span class="label">View</span>${opt('all', 'All', FF.view)}${VIEWS.map(([v, t]) => opt(v, t, FF.view)).join('')}${opt('cand', 'Candidates', FF.view)}
       <select id="fgen" aria-label="Genus"><option value="">All genera</option>${names.map(m => `<option${m === FF.genus ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>
-      <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label><label class="adm-todo"><input type="checkbox" id="fpol"${FF.pol ? ' checked' : ''}> ✿ Polyps out</label></div>
+      <label class="adm-todo"><input type="checkbox" id="ftodo"${FF.todo ? ' checked' : ''}> Not checked yet</label><label class="adm-todo"><input type="checkbox" id="fpol"${FF.pol ? ' checked' : ''}> ✿ Polyps out</label><label class="adm-todo"><input type="checkbox" id="fgfirst"${FF.gfirst ? ' checked' : ''}> Guesses first</label></div>
     ${rows.map(sec).join('')}</section>`;
+  const fag = $('fagree');
+  agreeFill(fag);
+  fag.ontoggle = () => (FAG_OPEN = fag.open);
   const saveFF = () => {
     store.set('reefid-admin-ffilter', FF);
     renderForm();
@@ -1873,6 +2082,10 @@ function renderForm() {
   };
   $('fpol').onchange = e => {
     FF.pol = e.target.checked;
+    saveFF();
+  };
+  $('fgfirst').onchange = e => {
+    FF.gfirst = e.target.checked;
     saveFF();
   };
   $v.querySelectorAll('[data-act="zoom"]').forEach(
@@ -2085,6 +2298,137 @@ function loadEvents(force) {
     .catch(() => (EVS = {err: 'Offline'}));
 }
 const EV_DAYS = 30;
+// Events grouped by key(row), the most devices first.
+const evGroup = (L, key) => {
+  // Keys come from the players' devices (Codex review #343: "__proto__" broke the page): no prototype.
+  const O = Object.create(null);
+  L.forEach(r => {
+    const k = key(r),
+      g = (O[k] = O[k] || {k, n: 0, dev: new Set(), last: 0, pg: new Set(), av: new Set(), ua: new Set(), r});
+    g.n++;
+    g.dev.add(r[2]);
+    g.last = Math.max(g.last, r[1]);
+    if (r[6]) g.pg.add(r[6]);
+    if (r[8]) g.av.add(r[8]);
+    if (r[9]) g.ua.add(r[9]);
+  });
+  return Object.values(O).sort((a, b) => b.dev.size - a.dev.size || b.n - a.n || b.last - a.last);
+};
+// To do › All: what went wrong on the players' devices in the last EV_DAYS days (app errors, photos that did not load,
+// failed saves), the most devices first; the one-tap answers and load times stay in Errors.
+function evSummary() {
+  if (!EVS) return '';
+  if (EVS.err) return `<div class="adm-qhead adm-tdhead"><h2>Errors</h2><small class="adm-where">${esc(EVS.err)}</small></div>`;
+  const since = Date.now() - EV_DAYS * 864e5,
+    R = EVS.rows.filter(r => r[1] >= since && ['err', 'photo', 'sync'].includes(r[3])),
+    G = evGroup(R, r => r[3] + '|' + r[4] + (r[3] === 'err' ? ' @ ' + r[5] : '')),
+    K = {err: 'App error', photo: 'Photo not loaded', sync: 'Failed save'};
+  if (!G.length) return '';
+  return `<div class="adm-qhead adm-tdhead"><h2>Errors <small>${R.length}</small></h2><a class="adm-link" href="#~events">All errors ›</a></div>
+    <div class="adm-tscroll"><table class="adm-tbl adm-tderr"><thead><tr><th>What</th><th>Devices</th><th>Times</th><th>Last</th></tr></thead><tbody>${G.slice(
+      0,
+      8
+    )
+      .map(
+        g =>
+          `<tr><td><small>${K[g.r[3]]}</small><br><code>${esc(g.r[4])}</code>${g.r[3] === 'err' && g.r[5] ? ` <small>${esc(g.r[5])}</small>` : ''}</td><td class="n">${g.dev.size}</td><td class="n">${g.n}</td><td>${days(g.last)}</td></tr>`
+      )
+      .join('')}</tbody></table></div>${G.length > 8 ? `<p class="note">+${G.length - 8} more in Errors</p>` : ''}`;
+}
+// The one-tap questions (quiz.js pulseAsk; core.js PULSEQ; sheet v19 'pulse' events): the item in Where (empty before
+// 2026-11-03: PULSE0, the only one then; old), its answer's code in Message, what the game knew when it showed in Detail.
+// Since 2026-11-03 a prompt also logs its showing and, unanswered, "Not now" or moving on (PULSE_META: no answer).
+const PULSE_META = {[PULSE_SHOWN]: 1, [PULSE_SKIP]: 1, [PULSE_NONE]: 1};
+function pulseRows(L) {
+  return L.map(r => {
+    let d = {};
+    try {
+      d = JSON.parse(r[7] || '{}');
+    } catch (e) {}
+    const q = String(r[5] || PULSE0),
+      s = pulseScore(q, r[4]);
+    return {...d, r: String(r[4]), q, old: !r[5], ans: !PULSE_META[r[4]], sd: s.d, sf: s.f, t: r[1], dev: r[2]};
+  });
+}
+// Player level bands (the overall level when they answered) and modes, the columns of the one-tap tables.
+const PULSE_BANDS = [
+    ['beg', 'Beginner', 'Level below −0.5'],
+    ['mid', 'Middle', 'Level −0.5 to +0.5'],
+    ['str', 'Strong', 'Level above +0.5'],
+    ['unk', 'Unknown', 'Level not logged']
+  ],
+  pulseBand = lv => (typeof lv !== 'number' ? 'unk' : lv < -0.5 ? 'beg' : lv < 0.5 ? 'mid' : 'str'),
+  PULSE_MODES = {quiz: 'Quiz', 'quiz-duel': 'Duel', 'quiz-custom': 'Custom'};
+// Response (shown, answered, "Not now", no answer = shown − answered − Not now, which also counts a prompt left open
+// when the app closed; answered % of shown) over the prompts that log their showing: rows with an item id.
+function pulseResp(L) {
+  const R = L.filter(x => !x.old),
+    shown = R.filter(x => x.r === PULSE_SHOWN).length,
+    ans = R.filter(x => x.ans).length,
+    skip = R.filter(x => x.r === PULSE_SKIP).length;
+  return {shown, ans, skip, none: Math.max(0, shown - ans - skip), rate: shown ? Math.round((100 * ans) / shown) + '%' : ''};
+}
+// Two tables: the common scales (felt difficulty, −1 too easy to +1 too hard; feel, −1 bad to +1 good; core.js
+// pulseScore) and the response by level band and by mode, then each item's answers and response by band and mode.
+function pulseView(E) {
+  if (!E.length) return '<p class="note">None yet.</p>';
+  const P = E.filter(x => x.ans),
+    cols = [
+      ['', 'All', '', () => true],
+      ...PULSE_BANDS.filter(([k]) => E.some(x => pulseBand(x.lv) === k)).map(([k, t, ti]) => [k, t, ti, x => pulseBand(x.lv) === k]),
+      ...[...new Set(E.map(x => x.m || ''))].sort().map(m => [m, PULSE_MODES[m] || m || '?', 'Mode', x => (x.m || '') === m])
+    ],
+    mean = (L, k) => {
+      const V = L.map(x => x[k]).filter(v => typeof v === 'number'),
+        m = V.length ? Math.round((100 * V.reduce((t, v) => t + v, 0)) / V.length) / 100 : 0;
+      return V.length ? `${m > 0 ? '+' : m < 0 ? '−' : ''}${Math.abs(m).toFixed(2)} <small>${V.length}</small>` : '';
+    },
+    rrOf = L => (L.length ? Math.round(L.reduce((t, x) => t + (x.rr || 0), 0) / L.length) + '%' : ''),
+    scales = `<div class="adm-tscroll"><table class="adm-tbl adm-pscale"><thead><tr><th></th><th class="n">Answers</th><th class="n" title="−1 too easy · +1 too hard">Difficulty</th><th class="n" title="−1 bad · +1 good">Feel</th><th class="n" title="Right % of their last 10 answers, on average">Last 10 right</th><th class="n">Shown</th><th class="n" title="Answered, % of shown">Answered</th><th class="n">Devices</th></tr></thead><tbody>${cols
+      .map(([, t, ti, f]) => {
+        const L = P.filter(f),
+          rs = pulseResp(E.filter(f));
+        return `<tr><td${ti ? ` title="${esc(ti)}"` : ''}>${esc(t)}</td><td class="n">${L.length}</td><td class="n">${mean(L, 'sd')}</td><td class="n">${mean(L, 'sf')}</td><td class="n">${rrOf(L)}</td><td class="n">${rs.shown || ''}</td><td class="n">${rs.rate}</td><td class="n">${new Set(E.filter(f).map(x => x.dev)).size}</td></tr>`;
+      })
+      .join('')}</tbody></table></div>`,
+    // The bank's items in order, then any item a newer app asked that this admin does not know (its codes as they came).
+    items = [...PULSEQ, ...[...new Set(E.map(x => x.q))].filter(q => !pulseItem(q)).map(q => ({id: q, q, a: []}))],
+    head = `<tr><th></th>${cols.map(([, t, ti]) => `<th class="n"${ti ? ` title="${esc(ti)}"` : ''}>${esc(t)}</th>`).join('')}</tr>`,
+    // Under each item's answers (count, % of that column's answers): its "Not now", no answer, and shown with the
+    // answered % (pulseResp), per column.
+    meta = (L, t, cell) =>
+      `<tr class="adm-pmeta"><td>${t}</td>${cols
+        .map(([, , , f]) => {
+          const rs = pulseResp(L.filter(f));
+          return `<td class="n">${cell(rs)}</td>`;
+        })
+        .join('')}</tr>`,
+    body = items
+      .map(it => {
+        const EL = E.filter(x => x.q === it.id),
+          L = EL.filter(x => x.ans),
+          rows = [
+            ...it.a.map(([k, t]) => [k, t]),
+            ...[...new Set(L.map(x => x.r))].filter(k => !it.a.some(a => a[0] === k)).map(k => [k, k])
+          ];
+        return `<tbody><tr class="adm-pq"><th colspan="${cols.length + 1}">${esc(it.q)} <small>${L.length}</small></th></tr>${rows
+          .map(
+            ([k, t]) =>
+              `<tr><td>${esc(t)}</td>${cols
+                .map(([, , , f]) => {
+                  const C = L.filter(f),
+                    n = C.filter(x => x.r === k).length;
+                  return `<td class="n">${n ? `${n} <small>${Math.round((100 * n) / C.length)}%</small>` : ''}</td>`;
+                })
+                .join('')}</tr>`
+          )
+          .join('')}${meta(EL, 'Not now', rs => rs.skip || '')}${meta(EL, 'No answer', rs => rs.none || '')}${meta(EL, 'Shown', rs =>
+          rs.shown ? `${rs.shown} <small>${rs.rate} answered</small>` : ''
+        )}</tbody>`;
+      })
+      .join('');
+  return `${scales}<div class="adm-tscroll"><table class="adm-tbl adm-pitems"><thead>${head}</thead>${body}</table></div>`;
+}
 function renderEvents() {
   status();
   if (!EVS) {
@@ -2101,62 +2445,10 @@ function renderEvents() {
     R = EVS.rows.filter(r => r[1] >= since),
     of = k => R.filter(r => r[3] === k),
     when = t => days(t),
-    group = (L, key) => {
-      // Keys come from the players' devices (Codex review #343: "__proto__" broke the page): no prototype.
-      const O = Object.create(null);
-      L.forEach(r => {
-        const k = key(r),
-          g = (O[k] = O[k] || {k, n: 0, dev: new Set(), last: 0, pg: new Set(), av: new Set(), ua: new Set(), r});
-        g.n++;
-        g.dev.add(r[2]);
-        g.last = Math.max(g.last, r[1]);
-        if (r[6]) g.pg.add(r[6]);
-        if (r[8]) g.av.add(r[8]);
-        if (r[9]) g.ua.add(r[9]);
-      });
-      return Object.values(O).sort((a, b) => b.dev.size - a.dev.size || b.n - a.n || b.last - a.last);
-    },
+    group = evGroup,
     few = (S, n = 3) => esc([...S].slice(0, n).join(', ') + (S.size > n ? ` +${S.size - n}` : ''));
-  // The one-tap question: how many said each, overall and by player level (overall level from the answer's detail).
-  const P = of('pulse').map(r => {
-      let d = {};
-      try {
-        d = JSON.parse(r[7] || '{}');
-      } catch (e) {}
-      return {r: r[4], ...d, t: r[1], dev: r[2]};
-    }),
-    RS = [
-      ['easy', 'Too easy'],
-      ['ok', 'About right'],
-      ['hard', 'Too hard']
-    ],
-    band = lv =>
-      typeof lv !== 'number'
-        ? 'unknown'
-        : lv < -0.5
-          ? 'beginner (level below −0.5)'
-          : lv < 0.5
-            ? 'middle (−0.5 to +0.5)'
-            : 'strong (above +0.5)',
-    bands = [...new Set(P.map(x => band(x.lv)))].sort(),
-    pmax = Math.max(1, ...RS.map(([k]) => P.filter(x => x.r === k).length)),
-    rrOf = L => (L.length ? Math.round(L.reduce((t, x) => t + (x.rr || 0), 0) / L.length) + '%' : '–');
-  const pulse = P.length
-    ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Answer</th><th>Times</th><th></th><th title="Right % of their last 10 answers when they answered, on average">Last 10 right</th></tr></thead><tbody>${RS.map(
-        ([k, t]) => {
-          const L = P.filter(x => x.r === k);
-          return `<tr><td>${t}</td><td class="n">${L.length}</td><td>${sbar(L.length, pmax, k === 'ok' ? '' : 'bad')}</td><td class="n">${rrOf(L)}</td></tr>`;
-        }
-      ).join('')}</tbody></table></div>
-      <div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Player level</th>${RS.map(([, t]) => `<th>${t}</th>`).join('')}</tr></thead><tbody>${bands
-        .map(
-          b =>
-            `<tr><td>${esc(b)}</td>${RS.map(([k]) => `<td class="n">${P.filter(x => band(x.lv) === b && x.r === k).length || ''}</td>`).join('')}</tr>`
-        )
-        .join(
-          ''
-        )}</tbody></table><p class="note">${new Set(P.map(x => x.dev)).size} device${new Set(P.map(x => x.dev)).size === 1 ? '' : 's'}</p>`
-    : '<p class="note">None yet.</p>';
+  const P = pulseRows(of('pulse')),
+    pulse = pulseView(P);
   const errs = group(of('err'), r => r[4] + ' @ ' + r[5]),
     errT = errs.length
       ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Error</th><th>Devices</th><th>Times</th><th>Last</th><th>Pages</th><th>App</th><th>Browsers</th></tr></thead><tbody>${errs
@@ -2216,7 +2508,7 @@ function renderEvents() {
   $v.innerHTML =
     head +
     kpis([
-      ['One-tap answers', P.length],
+      ['One-tap answers', P.filter(x => x.ans).length],
       ['App errors', of('err').length],
       ['Photos not loaded', of('photo').length],
       ['Failed saves', of('sync').length],
@@ -2225,7 +2517,7 @@ function renderEvents() {
       ['Installed app', LD.filter(x => x.st).length + ' / ' + LD.length]
     ]) +
     `<div class="adm-sgrid adm-ev">
-    <section class="adm-scard"><h3>"These questions are…" · ${EV_DAYS} days</h3>${pulse}</section>
+    <section class="adm-scard wide adm-pulse"><h3>One-tap questions · ${EV_DAYS} days</h3>${pulse}</section>
     <section class="adm-scard wide"><h3>App errors</h3>${errT}</section>
     <section class="adm-scard"><h3>Photos that did not load</h3>${phT}</section>
     <section class="adm-scard"><h3>Saves that failed</h3>${syT}</section>
@@ -2313,11 +2605,18 @@ function renderTriage() {
       })
     )
   );
-  $v.innerHTML = `<section class="adm-quality">
+  // All (To do, Pierre 2026-11-03): by urgency, Health's red line first (only when something is wrong), then the
+  // reports and flags, the devices' errors, Featured photos rated Poor, the judging agent's suggestions last. Reports =
+  // the same without Health and the errors (the old Triage page). Answers and errors load behind the page.
+  const all = cur === '~todo';
+  if (all && !ANS) loadStats().then(() => cur === '~todo' && render());
+  if (all && !EVS) loadEvents().then(() => cur === '~todo' && render());
+  $v.innerHTML = `<section class="adm-quality">${all ? healthLine() : ''}
     <div class="adm-qhead"><h2>Reports and feedback <small>${REPS && REPS.rows ? reps.length : ''}</small></h2>${REPS && REPS.err ? `<small class="adm-where">${esc(REPS.err)}</small>` : ''}<button type="button" class="adm-fchip plain" data-rload title="Reload">↻</button></div>
     ${reps.length ? reps.map(repCard).join('') : REPS && REPS.rows ? '<p class="note">Nothing reported.</p>' : ''}
     <div class="adm-qhead"><h2>Flagged on the site <small>${flagged.length}</small></h2></div>
     ${flagged.length ? `<div class="adm-grid adm-qgrid adm-flagged">${flagged.map(flagTile).join('')}</div>` : '<p class="note">Nothing flagged.</p>'}
+    ${all ? evSummary() : ''}
     ${poor.length ? `<div class="adm-qhead"><h2>Featured but rated Poor <small>${poor.length}</small></h2></div><div class="adm-grid adm-qgrid">${poor.map(p => tile(p, '<a class="chip" href="#' + esc(p.genus) + '">Open genus</a>', `<span class="adm-src view">${esc((VIEWS.find(x => x[0] === p.fv) || [, p.fv])[1])}</span>`)).join('')}</div>` : ''}
     ${sugHtml(tile)}
   </section>`;
@@ -2331,7 +2630,7 @@ function renderTriage() {
       (b.onclick = () => {
         done(b.closest('[data-f]').dataset.f);
         saveDraft();
-        renderTriage();
+        render();
       })
   );
   const FL = $v.querySelectorAll('.adm-flagged');
@@ -2345,18 +2644,18 @@ function renderTriage() {
       (b.onclick = () => {
         DRAFT.seen = {...(DRAFT.seen || {}), ['rep:' + b.dataset.rdone]: 1};
         saveDraft();
-        renderTriage();
+        render();
       })
   );
   const rl = $v.querySelector('[data-rload]');
   if (rl)
     rl.onclick = () =>
       loadReports(true).then(() => {
-        if (cur === '~triage') renderTriage();
+        if (cur === '~triage' || cur === '~todo') render();
       });
   if (!REPS)
     loadReports().then(() => {
-      if (cur === '~triage') renderTriage();
+      if (cur === '~triage' || cur === '~todo') render();
     });
   $v.querySelectorAll('[data-act="tpoor"]').forEach(
     b =>
@@ -2365,7 +2664,7 @@ function renderTriage() {
         DRAFT.quality = {...(DRAFT.quality || {}), [f]: 1};
         done(f);
         saveDraft();
-        renderTriage();
+        render();
       })
   );
   $v.querySelectorAll('[data-act="thide"]').forEach(
@@ -2379,7 +2678,7 @@ function renderTriage() {
         if (!(entry(n).hide || []).includes(f)) ACT.hide(n, f);
         else {
           saveDraft();
-          renderTriage();
+          render();
         }
       })
   );
@@ -2643,14 +2942,14 @@ function bindSug() {
   on('multi', (n, f) => {
     DRAFT.use = {...(DRAFT.use || {}), [f]: 'ref'};
     saveDraft();
-    renderTriage();
+    render();
   });
   $v.querySelectorAll('[data-sg="dismiss"]').forEach(
     b =>
       (b.onclick = () => {
         DRAFT.seen = {...(DRAFT.seen || {}), [b.dataset.k]: 1};
         saveDraft();
-        renderTriage();
+        render();
       })
   );
 }
@@ -2675,7 +2974,7 @@ function zoomOne(p) {
     key = e => {
       if (e.key === 'Escape') close();
     };
-  lb.innerHTML = `<div class="lb-in"><img ${crSrc(p)} alt=""><p class="lb-cap"><i>${esc(p.genus)}</i> · ${p.imr ? 'IMR Lecture 6, slide ' + p.slide : esc(p.a || '')} · <code>${esc(p.f)}</code></p><div class="lb-nav"><button type="button" data-x>Close</button></div></div>`;
+  lb.innerHTML = `<div class="lb-in"><img ${crSrc(p)} alt=""><p class="lb-cap">${lbCap(p.genus, p)}</p><div class="lb-nav"><button type="button" data-x>Close</button></div></div>`;
   lb.querySelector('[data-x]').onclick = close;
   lbFull(lb);
   lb.hidden = false;
@@ -2730,8 +3029,8 @@ const srcOk = (p, s) => s === 'all' || origin(p) === s;
 // guessed to be a corallite photo (vg macro) is not proposed.
 // Judged candidates (suggest.json "cand", Pierre 2026-11-01: keep real diversity, sort by hand after a pre-sort): the
 // best photo of each view of an observation first, other angles later, near-duplicates, Poor photos, several corals and
-// other genera last. Only the sure unusable ones, comparison images and near-duplicates are set aside (aside, below);
-// every other candidate still comes up. Not judged yet = like a best Fair photo.
+// other genera last. Only the sure unusable ones, several corals, Poor photos, comparison images and near-duplicates are
+// set aside (aside, below); every other candidate still comes up. Not judged yet = like a best Fair photo.
 const JK = {best: 1, alt: 0.3, dup: 0.04},
   JQ = {3: 1.3, 2: 1, 1: 0.15};
 const jw = p => {
@@ -2746,16 +3045,364 @@ const JKT = {
   dup: 'near-duplicate of another photo of its observation'
 };
 // Set aside by the pre-sort (Pierre, 2026-11-03: "il ne faut pas que je me retrouve à devoir faire des tris sur des choses
-// évidentes"): a candidate the judging agent found unusable (no coral, aquarium, museum specimen or label, drawing…),
-// a comparison image or a near-duplicate of another photo of its observation, without any doubt (no `unsure`), no
-// longer comes up; a count and a Show link keep them reachable.
-const aside = p => !!(p.j && (p.j.g === 'exclude' || p.j.g === 'cmp' || p.j.k === 'dup') && !(p.j.u && p.j.u.length));
+// évidentes"): a candidate the judging agent found unusable (no coral, aquarium, museum specimen or label, drawing,
+// hand over the frame…), a comparison image, a near-duplicate of another photo of its observation (candidate or live),
+// a photo of several corals or a Poor one (rules learnt from 85 photos he rejected, judging/AGENTS.md), without any
+// doubt (no `unsure`), no longer comes up; a count and a Show link keep them reachable. Same rule as
+// tools/excluded.py set_aside: keep both identical.
+const aside = p =>
+  !!(p.j && (p.j.g === 'exclude' || p.j.g === 'cmp' || p.j.k === 'dup' || p.j.m || p.j.q === 1) && !(p.j.u && p.j.u.length));
 const jLine = p => {
   const j = p.j;
   if (!j) return '';
   const what = j.g === 'exclude' ? 'unusable' : j.g === 'cmp' ? 'comparison image' : j.g ? `looks like <i>${esc(j.g)}</i>` : JKT[j.k] || '';
-  return `<p class="adm-judge${j.g ? ' warn' : ''}" title="Suggestion of the judging agent (suggest.json)">Judged: ${what}${j.m ? ' · several corals' : ''}${j.u ? ` · unsure: ${esc(j.u.join(', '))}` : ''}${j.n ? ` · ${esc(j.n)}` : ''}${sugCrop(p) ? ' · crop suggested (Crop to change it)' : ''}</p>`;
+  return `<p class="adm-judge${j.g ? ' warn' : ''}" title="Suggestion of the judging agent (suggest.json)">Judged: ${what}${j.m ? ' · several corals' : ''}${j.u ? ` · unsure: ${esc(j.u.join(', '))}` : ''}${j.n ? ` · ${esc(j.n)}` : ''}${sugCrop(p) ? ' · crop suggested (Crop to change it)' : ''}${p.mf ? ` · metrics: ${esc(p.mf)}` : ''}</p>`;
 };
+
+/* ---------- Auto-sort (autosort.js; Pierre, 2026-11-03: "take the obvious off my hands") ---------- */
+// What the candidate pass is sure of is decided without him: at each load of this page, autoRun() writes the sure
+// judgments into the draft exactly as his clicks would (add with the view, quality, growth form and suggested crop; ✕
+// Reject; × exclude), and logs each one in curation.json "auto" (autosort.js has the format). Publish sends them like any
+// draft, merged key by key (merge3); Undo takes the whole run back in one step; Auto › Undo on one decision sends that
+// photo back to Candidates for good. About 1 in 20 sure candidates is not applied but shown to him, blind, with a Check
+// tag (autoCheck); his answer against the judgment, and any later correction of an auto decision, give the agreement
+// per field (autoCompare, autoState); a field under its threshold stops being applied until it recovers. Once every
+// AUTO.retest candidates he decides, a photo he rated before comes back blind (Retest): his consistency, the ceiling.
+let METRICS = {},
+  MREF = null, // sharpness of the candidates measured: sorted list, 5th and 95th percentiles (metFlag, evidence)
+  ADET = false, // this tab: Auto details open
+  AALL = false, // this tab: every auto decision listed (else the latest 30)
+  CDONE = 0, // candidates decided in the swiper since the last Retest card (this tab)
+  RTSKIP = new Set(),
+  RTA = {}; // the Retest card's answers so far
+const aIdx = () => MEMO.aidx || (MEMO.aidx = autoIdx(DRAFT)),
+  aCmp = () => MEMO.acmp || (MEMO.acmp = autoCompare(DRAFT)),
+  aState = () => MEMO.ast || (MEMO.ast = autoState(aCmp())),
+  aOf = f => aIdx()[f],
+  // Applied by the auto-sort and still standing (not a Check, not undone).
+  aApplied = f => {
+    const x = aOf(f);
+    return x && !x.d.check && !x.d.undone ? x.d : null;
+  },
+  auChanged = () => !same(DRAFT.auto || {}, SAVED.auto || {}) || !same(DRAFT.retest || {}, SAVED.retest || {});
+const localDay = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+function autoRun() {
+  if (!DATA || !DRAFT || !Object.keys((SUG && SUG.cand) || {}).length) return null;
+  const ST = aState(),
+    idx = aIdx(),
+    plan = [];
+  Object.keys(DATA.gen).forEach(n => {
+    const add = entry(n).add || {},
+      vs = capViews(n).map(x => x[0]);
+    cands(n).forEach(p => {
+      // Not a book crop, not a photo Pierre sent here from another genus, judged, not stopped by the metrics, not decided.
+      if (p.cf || p.from || !p.j || p.mf || add[p.f] || rejected(p.f) || idx[p.f]) return;
+      const s = autoSure(p.j);
+      if (!s) return;
+      if (s.keep === 'add') {
+        s.view = cellView(n, {vg: s.view});
+        if (!vs.includes(s.view)) return; // a Finder-only genus takes no Corallites candidates (capViews)
+      }
+      plan.push({n, p, s, check: autoCheck(p.f)});
+    });
+  });
+  if (!plan.length) return null;
+  // Each cell fills up to its cap (capOf, colonies): source priority first (AGENTS.md rule 7, oIdx: IMR, Pierre's own,
+  // then other observers; Codex review #400: another observer's Good photo took the last slot ahead of Pierre's Fair
+  // one), then Good before Fair, then the sharper one (metrics.json, a tie-breaker only), then a fixed order. The adds
+  // that do not fit wait in their full cell, as candidates.
+  const sh = p => (METRICS[p.f] || [0])[0];
+  plan.sort(
+    (a, b) =>
+      (b.s.keep === 'add') - (a.s.keep === 'add') ||
+      oIdx(a.p) - oIdx(b.p) ||
+      (b.s.quality || 0) - (a.s.quality || 0) ||
+      sh(b.p) - sh(a.p) ||
+      (a.p.f < b.p.f ? -1 : 1)
+  );
+  const room = {},
+    fits = (n, v, p) => {
+      if (!gameable(p)) return true;
+      const k = n + '|' + v,
+        o = p.o || p.f;
+      if (!room[k]) room[k] = new Set(covOf(n, v).L.map(q => q.o || q.f));
+      if (room[k].has(o)) return true;
+      if (room[k].size >= capOf(n)) return false;
+      room[k].add(o);
+      return true;
+    };
+  const day = localDay(),
+    L = {...((DRAFT.auto || {})[day] || {})},
+    R = {add: 0, reject: 0, exclude: 0, check: 0, full: 0, off: 0},
+    on = {quality: ST.quality.on, form: ST.form.on};
+  plan.forEach(({n, p, s, check}) => {
+    const f = p.f;
+    if (check) {
+      L[f] = autoCode(s, null, true);
+      R.check++;
+    } else if (!ST.keep.on || (s.keep === 'add' && !ST.view.on)) R.off++;
+    else if (s.keep === 'add') {
+      if (!fits(n, s.view, p)) return R.full++;
+      const k = (DRAFT.genera[n] = {...entry(n)});
+      k.add = {...(k.add || {}), [f]: s.view};
+      // A rating, form or crop Pierre already gave this candidate stays his (logged "." : not an auto value).
+      const set = {quality: on.quality && !qSet(f), form: on.form && !mineF(f)};
+      if (set.quality) DRAFT.quality = {...(DRAFT.quality || {}), [f]: s.quality};
+      if (set.form) DRAFT.gf = {...(DRAFT.gf || {}), [f]: s.form};
+      const crop = !!(s.crop && !crOf(f));
+      if (crop) DRAFT.crop = {...(DRAFT.crop || {}), [f]: s.crop};
+      L[f] = autoCode(s, set, false, crop);
+      R.add++;
+    } else if (s.keep === 'exclude') {
+      DRAFT.exclude = {...(DRAFT.exclude || {}), [f]: 'auto'};
+      L[f] = 'x';
+      R.exclude++;
+    } else {
+      DRAFT.seen = {...(DRAFT.seen || {}), [CK(f)]: 1};
+      L[f] = 'r';
+      R.reject++;
+    }
+  });
+  if (!(R.add + R.reject + R.exclude + R.check)) return R;
+  DRAFT.auto = {...(DRAFT.auto || {}), [day]: L};
+  saveDraft();
+  return R;
+}
+const autoToast = R =>
+  `Auto-sort: ${R.add} added, ${R.reject + R.exclude} set aside${R.check ? `, ${R.check} to check in Candidates` : ''}${R.full ? ` (${R.full} wait in full cells)` : ''}. Publish sends them.`;
+// One auto decision taken back (Auto › Undo): what it wrote leaves the draft (a value Pierre changed since stays his),
+// the log keeps it marked undone so it is never applied again, and the photo is a candidate again. One Undo step.
+function autoUndo(f) {
+  const x = aOf(f);
+  if (!x || x.d.check || x.d.undone) return;
+  const d = x.d,
+    drop = (k, key, v) => {
+      if (!DRAFT[k] || (v !== undefined && !same(DRAFT[k][key], v))) return;
+      DRAFT[k] = {...DRAFT[k]};
+      delete DRAFT[k][key];
+      if (!Object.keys(DRAFT[k]).length) delete DRAFT[k];
+    };
+  if (d.kind === 'a') {
+    // Only the add it wrote: in the candidate's own genus (autoRun decides a candidate in its genus only), still in the
+    // view it chose. An add Pierre made since stays his: in the genus he sent the photo to with Not this genus, or in
+    // the view he moved it to (Codex review #400: Undo deleted his approval in the other genus).
+    const n = (PHOTOS[f] || {}).genus,
+      k = n && DRAFT.genera[n];
+    if (k && (k.add || {})[f] === d.view) {
+      const c = {...k, add: {...k.add}};
+      delete c.add[f];
+      if (!Object.keys(c.add).length) delete c.add;
+      if (Object.keys(c).length) DRAFT.genera[n] = c;
+      else delete DRAFT.genera[n];
+    }
+    if (d.q) drop('quality', f, d.q);
+    if (d.fm) drop('gf', f, d.fm);
+    const p = PHOTOS[f];
+    if (d.crop && p && p.j && p.j.c) drop('crop', f, p.j.c);
+  } else if (d.kind === 'x') drop('exclude', f, 'auto');
+  else drop('seen', CK(f), 1);
+  DRAFT.auto = {...DRAFT.auto, [x.day]: {...DRAFT.auto[x.day], [f]: '-' + x.code}};
+  saveDraft();
+  render();
+  // An auto exclusion keeps its candidate entry (tools/excluded.py drop_excluded), so the photo comes back; one whose
+  // entry left the candidate files anyway cannot, and the toast says so (Codex review #400).
+  toast(
+    PHOTOS[f]
+      ? 'Auto decision undone: the photo is back in Candidates.'
+      : 'Auto decision undone, but this photo is no longer in the candidate files: it cannot come back to Candidates (a later candidate search may fetch it again).'
+  );
+}
+const FIELD = {keep: 'Keep', view: 'View', quality: 'Quality', form: 'Form'};
+const valText = (field, v, n) =>
+  v == null
+    ? '–'
+    : field === 'keep'
+      ? v === 'add'
+        ? 'add'
+        : 'reject'
+      : field === 'view'
+        ? label(n, v)
+        : field === 'quality'
+          ? (QUAL.find(x => x[0] === v) || [, v])[1]
+          : fName(v);
+const pctR = r => (r == null ? '–' : Math.round(100 * r) + '%');
+// The agent's decision in words: "add · Colony · Good · Branching", "reject", "exclude".
+const autoText = (d, n) =>
+  d.kind === 'a'
+    ? ['add', label(n, d.view), d.q ? valText('quality', d.q) : '', d.fm ? fName(fL(d.fm)) : ''].filter(Boolean).join(' · ')
+    : d.kind === 'x'
+      ? 'exclude'
+      : 'reject';
+// The evidence next to a disagreement: the agent's note (while suggest.json still has it) and the metrics.
+const evid = f => {
+  const m = METRICS[f],
+    j = (PHOTOS[f] || {}).j;
+  return [
+    j && j.n ? esc(j.n) : '',
+    m ? `sharpness ${MREF && MREF.all.length ? rankPct(MREF.all, m[0]) + 'th pct' : m[0]} · ${m[2]} px · cast ${m[3]}%` : ''
+  ]
+    .filter(Boolean)
+    .join(' · ');
+};
+// After Pierre answers a Check: the agent's answer, and where they differ.
+function checkToast(f) {
+  const x = aOf(f);
+  if (!x || !x.d.check) return;
+  memoReset();
+  const n = (PHOTOS[f] || {}).genus,
+    D = aCmp().filter(c => c.f === f),
+    bad = D.filter(c => !c.ok).map(c => FIELD[c.field].toLowerCase());
+  toast(`Check: the agent said ${autoText(x.d, n)}${D.length ? (bad.length ? ` (differs: ${bad.join(', ')})` : ' (same)') : ''}.`);
+}
+// Agreement line at the top of Candidates (every source), and its details (det).
+function autoBlock(det) {
+  const A = aIdx(),
+    E = Object.entries(A);
+  if (!E.length && !Object.keys(DRAFT.retest || {}).length) return '';
+  const ST = aState(),
+    RT = retestStats(DRAFT),
+    applied = E.filter(([, x]) => !x.d.check && !x.d.undone),
+    nAdd = applied.filter(([, x]) => x.d.kind === 'a').length,
+    nOut = applied.length - nAdd,
+    ci = curIdx(DRAFT),
+    nChk = E.filter(([f, x]) => x.d.check && !excl(f) && !pierreOf(DRAFT, ci, f).keep).length;
+  const fld = k =>
+    `<span class="adm-af${ST[k].on ? '' : ' off'}" title="${FIELD[k]}: agreement with you over the last ${ST[k].n} checks and corrections; auto ${ST[k].on ? 'on' : 'off'} under ${pctR(ST[k].min)}">${FIELD[k]} ${pctR(ST[k].rate)}${ST[k].n ? `<small>n ${ST[k].n}</small>` : ''}${ST[k].on ? '' : ' · off'}</span>`;
+  // The line goes above the card, the details (det) below it, so the card stays in view.
+  if (!det)
+    return `<div class="adm-auto"><p class="note"><b>Auto</b> ${nAdd} added · ${nOut} set aside · ${nChk} to check · agreement ${AUTO.fields.map(fld).join(' ')} <button type="button" class="adm-link" data-adet aria-expanded="${ADET}">${ADET ? 'Hide' : 'Details'}</button></p></div>`;
+  let h = '';
+  if (ADET) {
+    const rows = AUTO.fields
+      .map(k => {
+        const r = RT[k];
+        return `<tr><td>${FIELD[k]}</td><td class="n">${pctR(ST[k].rate)}</td><td class="n">${ST[k].n}</td><td class="n">${pctR(ST[k].min)}</td><td>${ST[k].on ? 'on' : '<b>off</b>'}</td><td class="n">${r && r.n ? `${pctR(r.rate)} <small>${r.n}</small>` : ''}</td></tr>`;
+      })
+      .join('');
+    const tile = (f, cap, extra = '') => {
+      const p = PHOTOS[f] || {f};
+      return `<figure class="adm-repl-tile adm-atile" data-af="${esc(f)}"><button type="button" class="adm-aph" data-azoom aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button><figcaption><i>${esc(p.genus || '')}</i> · ${cap}</figcaption>${extra}</figure>`;
+    };
+    const dis = aCmp()
+      .filter(c => !c.ok)
+      .reverse();
+    // Newest first: the latest day first and, within a day, the latest run first (a day's log keeps the order the runs
+    // wrote it, oldest first). Sorting by day alone listed the day's first 30 decisions, so a second load the same day
+    // (a new judging pass) showed none of its own decisions until "All".
+    const dec = [...applied].reverse().sort((a, b) => (a[1].day < b[1].day ? 1 : a[1].day > b[1].day ? -1 : 0));
+    h += `<div class="adm-autodet">
+      <div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Field</th><th title="Agent vs you">Agreement</th><th>n</th><th title="Auto off under">Min</th><th>Auto</th><th title="You vs you, blind retests">Retest</th></tr></thead><tbody>${rows}</tbody></table></div>
+      ${
+        dis.length
+          ? `<h3 class="label">Disagreements · ${dis.length}</h3><div class="adm-repl-grid">${dis
+              .slice(0, 40)
+              .map(c => {
+                const n = (PHOTOS[c.f] || {}).genus;
+                return tile(
+                  c.f,
+                  `${FIELD[c.field]} · you <b>${esc(valText(c.field, c.p, n))}</b> · agent <b>${esc(valText(c.field, c.a, n))}</b> · ${c.how === 'check' ? 'check' : 'correction'}`,
+                  `<small class="adm-aev">${evid(c.f)}</small>`
+                );
+              })
+              .join('')}</div>`
+          : ''
+      }
+      ${
+        dec.length
+          ? `<h3 class="label">Auto decisions · ${dec.length}</h3><div class="adm-repl-grid">${(AALL ? dec : dec.slice(0, 30))
+              .map(([f, x]) =>
+                tile(
+                  f,
+                  `${esc(autoText(x.d, (PHOTOS[f] || {}).genus))} · ${x.day}`,
+                  '<button type="button" class="adm-link" data-aundo>Undo</button>'
+                )
+              )
+              .join(
+                ''
+              )}</div>${dec.length > 30 && !AALL ? `<button type="button" class="adm-link" data-aall>All ${dec.length}</button>` : ''}`
+          : ''
+      }</div>`;
+  }
+  return h;
+}
+function bindAuto(scope) {
+  const t = scope.querySelector('[data-adet]');
+  if (t)
+    t.onclick = () => {
+      ADET = !ADET;
+      render();
+    };
+  const al = scope.querySelector('[data-aall]');
+  if (al)
+    al.onclick = () => {
+      AALL = true;
+      render();
+    };
+  scope.querySelectorAll('[data-af]').forEach(el => {
+    const f = el.dataset.af,
+      u = el.querySelector('[data-aundo]'),
+      z = el.querySelector('[data-azoom]');
+    if (u) u.onclick = () => autoUndo(f);
+    if (z) z.onclick = () => PHOTOS[f] && zoomOne(PHOTOS[f]);
+  });
+}
+// Blind retest (test-retest of Pierre's own ratings): a photo he rated himself (not by the auto-sort), never retested,
+// in a fixed order per photo; quality, and growth form when he gave one. His second answer goes to curation.json
+// "retest" only: his first rating stays as it is.
+function retestNext() {
+  if (CDONE < AUTO.retest) return null;
+  const R = DRAFT.retest || {},
+    Q = DRAFT.quality || {};
+  const L = Object.keys(Q)
+    .filter(f => PHOTOS[f] && !R[f] && !RTSKIP.has(f) && !excl(f) && !(aApplied(f) && aApplied(f).q === Q[f]))
+    .sort((a, b) => fnv('retest|' + a) - fnv('retest|' + b));
+  return L[0] || null;
+}
+function renderRetest(f, seg) {
+  const p = PHOTOS[f],
+    gfm = fL(mineF(f)),
+    hasF = gfm && !(aApplied(f) && fL(aApplied(f).fm) === gfm);
+  $v.innerHTML = `<section class="adm-sw adm-blind" data-f="${esc(f)}">${seg}
+    <figure class="adm-swcard">
+      <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img src="${img(p)}" alt=""></button>
+      <span class="adm-swg"><i>${esc(p.genus)}</i></span>
+      <figcaption><span class="adm-src adm-chk">Retest</span><span class="adm-t">${esc(p.t || '')}</span></figcaption>
+    </figure>
+    <div class="adm-acts adm-swacts"><span class="adm-qseg" role="group" aria-label="Quality">${QUAL.map(([q, t]) => `<button type="button" data-rq="${q}" aria-pressed="${RTA.q === q}" class="q${q}">${t}</button>`).join('')}</span>${
+      hasF
+        ? `<span class="adm-qseg adm-fseg" role="group" aria-label="Growth form">${[...FORM_ORDER, 'x'].map(c => `<button type="button" data-rfm="${c}" aria-pressed="${RTA.fm === c}" title="${esc(fName(c))}">${FABBR[c]}</button>`).join('')}</span>`
+        : ''
+    }</div>
+    <div class="adm-swbar"><button type="button" data-rtskip>Skip</button><button type="button" class="add" data-rtdone ${RTA.q ? '' : 'disabled'}>Done</button></div>
+  </section>${autoBlock(true)}`;
+  const S = $v.querySelector('.adm-sw');
+  S.querySelector('[data-zoom]').onclick = () => zoomOne(p);
+  S.querySelectorAll('[data-rq]').forEach(b => (b.onclick = () => ((RTA.q = Number(b.dataset.rq)), render())));
+  S.querySelectorAll('[data-rfm]').forEach(b => (b.onclick = () => ((RTA.fm = b.dataset.rfm), render())));
+  S.querySelector('[data-rtskip]').onclick = () => {
+    RTSKIP.add(f);
+    RTA = {};
+    CDONE = 0;
+    render();
+  };
+  S.querySelector('[data-rtdone]').onclick = () => {
+    const was = DRAFT.quality[f],
+      e = {q: [was, RTA.q]};
+    if (hasF && RTA.fm) e.fm = [gfm, RTA.fm];
+    DRAFT.retest = {...(DRAFT.retest || {}), [f]: e};
+    RTA = {};
+    CDONE = 0;
+    saveDraft();
+    render();
+    toast(
+      `Retest: first ${valText('quality', was)}${e.fm ? ` · ${fName(gfm)}` : ''}, now ${valText('quality', e.q[1])}${e.fm ? ` · ${fName(e.fm[1])}` : ''}.`
+    );
+  };
+  bindAuto($v);
+}
 const cseed = () => {
   let s = store.get('reefid-admin-cseed', 0);
   if (!s) {
@@ -2781,14 +3428,15 @@ function candQueue(src) {
       }
       return N[k];
     };
-  const weight = (n, p) => {
+  // A Check is drawn like a candidate nobody judged (weight 1): the pass's verdict must not decide when it comes up.
+  const weight = (n, p, chk) => {
     const vs = capViews(n).map(x => x[0]);
     let v = p.vg || p.view;
     if (v === 'medium' && lv(n) === 2) v = 'wide';
     // A candidate from a colony already in games at another zoom counts 3x (Pierre, 2026-11-01): game questions only
     // show views of one colony, so completing a colony adds a several-zoom question.
     const sib = p.o && vs.some(w => w !== v && (cnt(n, w), O[n + '|' + w].has(p.o))) ? 3 : 1;
-    return (jw(p) * sib) / Math.pow(1 + (vs.includes(v) ? cnt(n, v) : Math.min(...vs.map(w => cnt(n, w)))), 3);
+    return ((chk ? 1 : jw(p)) * sib) / Math.pow(1 + (vs.includes(v) ? cnt(n, v) : Math.min(...vs.map(w => cnt(n, w)))), 3);
   };
   const L = [];
   Object.keys(DATA.gen).forEach(n => {
@@ -2800,8 +3448,13 @@ function candQueue(src) {
       const v = cellView(n, p);
       if (v && VIEWS.some(x => x[0] === v) && !vs.includes(v)) return;
       const full =
-        gameable(p) && VIEWS.some(x => x[0] === v) && (cnt(n, v), N[n + '|' + v] >= capOf(n) && !(p.o && O[n + '|' + v].has(p.o)));
-      L.push({p, n, game, full, aside: aside(p), r: -Math.log(uOf(p.f)) / weight(n, p)});
+          gameable(p) && VIEWS.some(x => x[0] === v) && (cnt(n, v), N[n + '|' + v] >= capOf(n) && !(p.o && O[n + '|' + v].has(p.o))),
+        // The auto-sort (autoRun): a Check waiting for Pierre always comes up (full cell or set aside, it is his to
+        // answer); an auto decision he undid, or a sure judgment the metrics contradict (p.mf), is never set aside.
+        ax = aOf(p.f),
+        chk = !!(ax && ax.d.check),
+        und = !!(ax && ax.d.undone);
+      L.push({p, n, game, chk, full: full && !chk, aside: aside(p) && !chk && !und && !p.mf, r: -Math.log(uOf(p.f)) / weight(n, p, chk)});
     });
   });
   L.sort((a, b) => b.game - a.game || a.r - b.r);
@@ -2933,12 +3586,14 @@ function renderRepl() {
         done();
         ACT.addc(n, f, null, w); // one draft save, so one Undo step for both
         toast(`Added to ${n}, ${label(n, w)}; the colony it replaces is now on the sheet only.`);
+        checkToast(f); // a Check answered here: the agent's answer
       })
   );
   $v.querySelector('[data-ranyway]').onclick = () => {
     done();
     ACT.addc(n, f, null, w);
     toast(`Added: ${n}, ${label(n, w)} (${cols.length + 1} colonies, over the cap).`);
+    checkToast(f); // a Check answered here: the agent's answer
   };
   $v.querySelector('[data-rcancel]').onclick = () => {
     CREPL = null;
@@ -2983,33 +3638,43 @@ function renderCand() {
             ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the candidate pass (judging/AGENTS.md)">${nJ} not judged yet</span>`
             : ''
         }</p>`
-      : '');
+      : '') +
+    autoBlock();
+  const rt = retestNext();
+  if (rt) return renderRetest(rt, seg);
   if (!c) {
-    $v.innerHTML = `<section class="adm-sw adm-swempty">${seg}<p class="note">${Q.length ? `${Q.length} skipped.` : 'No candidate left.'}</p>${Q.length ? '<button type="button" class="adm-btn" data-again>Show the skipped ones</button>' : ''}</section>`;
+    $v.innerHTML = `<section class="adm-sw adm-swempty">${seg}<p class="note">${Q.length ? `${Q.length} skipped.` : 'No candidate left.'}</p>${Q.length ? '<button type="button" class="adm-btn" data-again>Show the skipped ones</button>' : ''}</section>${autoBlock(true)}`;
   } else {
-    const {p, n} = c,
-      views = capViews(n);
+    const {p, n, chk} = c,
+      views = capViews(n),
+      // A Check is blind (Pierre's answer is compared with the judgment): no judgment line, no dashed guesses, no
+      // suggested view or crop; a Check tag instead.
+      pb = chk ? {...p, j: null} : p,
+      sug = w => !chk && (p.vg || p.view) === w;
     const link = /^https?:/.test(p.o || '')
       ? `<a class="adm-swlink" href="${esc(p.o)}" target="_blank" rel="noopener" title="iNaturalist">iNat ↗</a>`
       : p.pg
         ? `<span class="adm-swlink">p. ${esc(p.pg)}</span>`
         : '';
-    $v.innerHTML = `<section class="adm-sw" data-f="${esc(p.f)}" data-g="${esc(n)}">${seg}
+    $v.innerHTML = `<section class="adm-sw${chk ? ' adm-blind' : ''}" data-f="${esc(p.f)}" data-g="${esc(n)}">${seg}
       <figure class="adm-swcard">
-        <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img ${crSrc(p)} alt=""></button>
+        <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img ${crSrc(pb)} alt=""></button>
         <a class="adm-swg" href="#${encodeURIComponent(n)}" title="Genus page"><i>${esc(n)}</i>${p.from ? `<small>from ${esc(p.from)}</small>` : ''}</a>
         <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
-        <figcaption>${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
-      </figure>${jLine(p)}
-      <div class="adm-acts adm-swacts">${qSeg(p)}${fSeg(p)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOf(p.f) ? ' on' : ''}" data-crop aria-pressed="${!!crOf(p.f)}">Crop</button><button type="button" data-skip>Skip</button></div></div>
-      <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${(p.vg || p.view) === w ? ' sug' : ''}" data-add="${w}" title="${(p.vg || p.view) === w ? 'Suggested · ' : ''}Add (${i + 1})">+ ${label(n, w)}</button>`).join('')}</div>
-    </section>`;
+        <figcaption>${chk ? '<span class="adm-src adm-chk" title="Check">Check</span>' : ''}${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
+      </figure>${chk ? '' : jLine(p)}
+      <div class="adm-acts adm-swacts">${qSeg(p, chk)}${fSeg(p, chk)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOf(p.f) ? ' on' : ''}" data-crop aria-pressed="${!!crOf(p.f)}">Crop</button><button type="button" data-skip>Skip</button></div></div>
+      <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${sug(w) ? ' sug' : ''}" data-add="${w}" title="${sug(w) ? 'Suggested · ' : ''}Add (${i + 1})">+ ${label(n, w)}</button>`).join('')}</div>
+    </section>${autoBlock(true)}`;
     if (nx) new Image().src = img(nx.p);
     const S = $v.querySelector('.adm-sw'),
       f = p.f,
       go = () => {
         CSKIP.delete(f);
-      };
+        CDONE++;
+      },
+      // After his answer to a Check, the agent's (once the action has drawn the next card).
+      told = () => chk && checkToast(f);
     S.querySelectorAll('[data-add]').forEach(
       b =>
         (b.onclick = () => {
@@ -3021,6 +3686,7 @@ function renderCand() {
           go();
           ACT.addc(n, f, null, w);
           toast(`Added: ${n}, ${label(n, w)}.`);
+          told();
         })
     );
     S.querySelector('[data-rej]').onclick = () => {
@@ -3028,6 +3694,7 @@ function renderCand() {
       DRAFT.seen = {...(DRAFT.seen || {}), [CK(f)]: 1};
       saveDraft();
       render();
+      told();
     };
     S.querySelector('[data-skip]').onclick = () => {
       CSKIP.add(f);
@@ -3036,17 +3703,21 @@ function renderCand() {
     S.querySelector('[data-x]').onclick = () => {
       go();
       ACT.exclude(n, f);
+      told();
     };
     const sel = S.querySelector('select[data-act="out"]');
     if (sel)
       sel.onchange = () => {
         if (!sel.value) return;
         const to = sel.value;
+        CDONE++;
         ACT.out(n, f, null, to);
         toast(to === 'cmp' ? 'Kept for the look-alike comparison.' : `Sent to ${to}.`);
+        told();
       };
-    S.querySelector('[data-zoom]').onclick = () => zoomOne({...p, genus: n});
-    S.querySelector('[data-crop]').onclick = () => cropEditor(p);
+    S.querySelector('[data-zoom]').onclick = () => zoomOne({...pb, genus: n});
+    // Blind on a Check too: the editor starts from Pierre's own crop or the full photo, not the agent's (Codex review #400).
+    S.querySelector('[data-crop]').onclick = () => cropEditor(pb);
     bindQ();
     bindF(S);
   }
@@ -3064,6 +3735,7 @@ function renderCand() {
       CASIDE = !CASIDE;
       render();
     };
+  bindAuto($v);
   const cf = $v.querySelector('[data-cfull]');
   if (cf)
     cf.onclick = () => {
@@ -3185,8 +3857,9 @@ function cropEditor(p) {
           const v = c.map(x => Math.round(x * 1000) / 1000),
             full = v[0] <= 0 && v[1] <= 0 && v[2] >= 1 && v[3] >= 1;
           DRAFT.crop = {...(DRAFT.crop || {})};
-          // Full photo over a suggested crop: kept as an explicit no-crop, so the suggestion does not come back.
-          if (full && !(p.j && p.j.c)) delete DRAFT.crop[p.f];
+          // Full photo over a suggested crop: kept as an explicit no-crop, so the suggestion does not come back (nor
+          // get written with the add, ACT.addc). Read from suggest.json: a Check's card is blind (no j) but has one.
+          if (full && !(((SUG && SUG.cand) || {})[p.f] || {}).c) delete DRAFT.crop[p.f];
           else if (full) DRAFT.crop[p.f] = [0, 0, 1, 1];
           else DRAFT.crop[p.f] = v;
           saveDraft();
@@ -3271,6 +3944,18 @@ const output = () => {
     .forEach(k => {
       if ((DRAFT.tile[k] || []).length) tile[k] = DRAFT.tile[k];
     });
+  // The auto-sort's log, one map per day, and the blind retests (autosort.js).
+  const sorted = o =>
+    Object.keys(o || {})
+      .sort()
+      .reduce((a, k) => ((a[k] = o[k]), a), {});
+  const auto = {};
+  Object.keys(DRAFT.auto || {})
+    .sort()
+    .forEach(d => {
+      if (Object.keys(DRAFT.auto[d] || {}).length) auto[d] = sorted(DRAFT.auto[d]);
+    });
+  const retest = sorted(DRAFT.retest);
   return {
     v: 1,
     ...(bookOn(DRAFT) ? {} : {book: false}),
@@ -3285,7 +3970,9 @@ const output = () => {
     ...(Object.keys(seen).length ? {seen} : {}),
     ...(Object.keys(mont).length ? {mont} : {}),
     ...(Object.keys(crop).length ? {crop} : {}),
-    ...(Object.keys(tile).length ? {tile} : {})
+    ...(Object.keys(tile).length ? {tile} : {}),
+    ...(Object.keys(auto).length ? {auto} : {}),
+    ...(Object.keys(retest).length ? {retest} : {})
   };
 };
 // Who publishes, shown in the commit message (Pierre, 2026-11-01, admin review): the token's GitHub login, else the
@@ -3324,7 +4011,10 @@ function pubSummary() {
     [nDiff(DRAFT.crop, SAVED.crop), 'crop'],
     [nDiff(DRAFT.single, SAVED.single), 'several-corals mark'],
     [nDiff(DRAFT.mont, SAVED.mont), 'look-alike pair'],
-    [nDiff(DRAFT.tile, SAVED.tile), 'growth-form tile']
+    [nDiff(DRAFT.tile, SAVED.tile), 'growth-form tile'],
+    // Decisions, not the times of Pierre's answers (@t, autoWhen): his answer is counted under its own kind above.
+    [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values(c.auto || {}))))), 'auto-sort decision'],
+    [nDiff(DRAFT.retest, SAVED.retest), 'retest']
   ]
     .filter(([c]) => c)
     .map(([c, t]) => `${c} ${t}${c > 1 ? 's' : ''}`);
@@ -3360,8 +4050,9 @@ async function save() {
     mt = mtChanged(),
     cr = crChanged(),
     sn = snChanged(),
-    tl = tlChanged();
-  if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn || tl) || !TOKEN) return;
+    tl = tlChanged(),
+    au = auChanged();
+  if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn || tl || au) || !TOKEN) return;
   if (!confirm(`Publish to the public site?\n\n${pubSummary()}`)) return;
   const b = $('save');
   b.disabled = true;
@@ -3380,7 +4071,7 @@ async function save() {
   };
   try {
     await fresh();
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(bk ? [`Coral Finder book photos ${bookOn(DRAFT) ? 'on' : 'off'}`] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const who = await author(),
       stale = x => /does not match|sha|409/i.test(x.message);
     // A publish from elsewhere between the read and the write: read again, merge, and try once more on our own.
@@ -3452,7 +4143,7 @@ async function start() {
           })).then(j => (j && j[k]) || {});
   let CJ;
   try {
-    [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG, , DUPS, CJ] = await Promise.all([
+    [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG, , DUPS, CJ, METRICS] = await Promise.all([
       fetch('data.json', {cache: 'no-cache'}).then(r => r.json()),
       side('quality.json', 'q'),
       side('forms.json', 'gf'),
@@ -3465,7 +4156,9 @@ async function start() {
       side('dups.json', 'dup').then(x => (Array.isArray(x) ? x : [])),
       // Candidates waiting live in cand.json (tools/datajson.py; data.json, which every player downloads, keeps only those
       // curation.json names): merged in here, as one list per genus.
-      side('cand.json', 'cand')
+      side('cand.json', 'cand'),
+      // Objective metrics (tools/photo_metrics.py): tie-breakers and sanity flags for the auto-sort only.
+      side('metrics.json', 'm')
     ]);
     DATA.cand = DATA.cand || {};
     Object.entries(CJ || {}).forEach(([g, L]) => {
@@ -3493,6 +4186,19 @@ async function start() {
         AUTOF[p.f] = j.fm;
         (j.u || []).some(x => x === 'form' || x === 'polyps') ? FUNSURE.add(p.f) : FUNSURE.delete(p.f);
       }
+    });
+  // Sanity flags of the metrics on the sure judgments (metFlag): such a candidate is left to Pierre, with the reason.
+  const SH = Object.values(DATA.cand)
+    .flat()
+    .filter(p => p.r && METRICS[p.f])
+    .map(p => METRICS[p.f][0])
+    .sort((a, b) => a - b);
+  MREF = SH.length ? {all: SH, lo: SH[Math.floor(SH.length * 0.05)], hi: SH[Math.floor(SH.length * 0.95)]} : null;
+  Object.values(DATA.cand)
+    .flat()
+    .forEach(p => {
+      const mf = p.j && metFlag(autoSure(p.j), p.j, METRICS[p.f], MREF);
+      if (mf) p.mf = mf;
     });
   // The Coral Finder's extra genera (data.json x: in the book, present at Dauin, not on the IMR list) are curated here
   // like the others, listed after them; curation.json keys them by name as usual.
@@ -3558,7 +4264,7 @@ async function start() {
   // Pierre's clicks in the old Coral Finder letters (curation.json "form") stay as they are, shown as the hint.
   Object.assign(LEGACY, SAVED.form || {}, DRAFT.form || {});
   const nf = importFlags();
-  if (nf) setTimeout(() => toast(`${nf} new photo${nf > 1 ? 's' : ''} flagged on the site: see Triage.`), 50);
+  if (nf) setTimeout(() => toast(`${nf} new photo${nf > 1 ? 's' : ''} flagged on the site: see To do.`), 50);
   addEventListener('storage', e => {
     if (e.key === 'reefid-photo-flags' && e.newValue && importFlags()) render();
   });
@@ -3592,6 +4298,10 @@ async function start() {
   });
   const keep = changed().length;
   if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? 'genera' : 'genus'} not published yet.`);
+  // The auto-sort: what the candidate pass is sure of goes into the draft (autoRun), one Undo step for the whole run.
+  // Only for an admin who can publish (read-only shows the published curation as it is).
+  const ar = TOKEN && autoRun();
+  if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
   $('tools').hidden = false;
   $('save').onclick = save;
   $('download').onclick = download;
@@ -3790,7 +4500,7 @@ function renderDiff() {
     <figcaption><a class="adm-gen" href="#${esc(p.genus)}"><i>${esc(p.genus)}</i></a><span class="adm-src view">${vl(p.view)}</span>${qTag(p)}<span class="adm-src" title="Difficulty · answers that rated it, right (weighed by experience)">${d > 0 ? '+' : ''}${d.toFixed(1)} · ${nAns(S[p.f])} · ${pct(r, n)}</span></figcaption>
     <div class="adm-acts">${qSeg(p)}</div></figure>`;
   };
-  $v.innerHTML = `<section class="adm-quality"><div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [
+  $v.innerHTML = `<section class="adm-quality"><div class="adm-shead"><h2>Photos by difficulty</h2>${segBtns('min', [
     [1, '≥1'],
     [3, '≥3'],
     [10, '≥10']
@@ -3814,6 +4524,202 @@ function renderDiff() {
   );
   bindQ();
   bindStats();
+}
+
+/* ---------- Photo stats › Overview ---------- */
+// General numbers on every photo (Pierre, 2026-11-03: "how many photos are in play right now, roughly how many per genus
+// and per zoom level, with a median and a spread, not a box plot; if it says Photo stats, it must be stats"). Computed
+// in the browser from what the admin already has: data.json and the draft curation (in play = gamePool, what the games
+// can draw, as Coverage › Games), the candidates (cands, rejected marks, exclusions) and the sheet's photo ratings
+// (?stats=1, as Difficulty) for the answers per photo. A spread is "median [p25–p75]" (core.js distOf): the middle half
+// of the genera lies in the brackets. Per genus = over every game genus (the IMR slate, Millepora, the bonus genera),
+// zeros included; per view, over the genera that have the view (a 2-level genus has no Close-up view).
+// Why a photo of the site is not in the games (first reason that applies), as on Coverage (covOff) plus the genera the
+// games never ask and the Research Grade rule of the extra genera.
+const POOL_OFF = [
+  ['finder', 'Finder-only genus'],
+  ['cf', 'CF book'],
+  ['multi', 'several corals'],
+  ['ref', 'sheet only'],
+  ['x', 'form not visible'],
+  ['rg', 'not Research Grade'],
+  ['other', 'other']
+];
+function poolStats() {
+  const use = DRAFT.use || {},
+    G = [...GAME],
+    per = Object.create(null),
+    play = [],
+    inPlay = new Set();
+  G.forEach(n => {
+    const r = (per[n] = {n, k: 0, obs: new Set(), v: {}, s: {}, views: covViews(n).map(x => x[0])});
+    r.views.forEach(v =>
+      gamePool(n, v).forEach(p => {
+        r.k++;
+        r.obs.add(p.o || p.f);
+        r.v[v] = (r.v[v] || 0) + 1;
+        const o = origin(p);
+        r.s[o] = (r.s[o] || 0) + 1;
+        play.push({...p, genus: n, view: v});
+        inPlay.add(n + '|' + p.f);
+      })
+    );
+  });
+  // Photos kept only for the look-alike comparison (Not this genus › Look-alike comparison, curation out 'cmp'): they leave
+  // their genus (photos and cands skip them) for no other one, so they are counted here, once each, from the genus they
+  // left (Codex review #430: they fell out of the inventory). A candidate sent there counts here too, rejected or not.
+  const cmp = [...(sentTo('own', own).cmp || []), ...(sentTo('cand', rawCands).cmp || [])].length;
+  const st = {
+      play: play.length,
+      off: 0,
+      cmp,
+      removed: 0,
+      wait: 0,
+      waitBook: 0,
+      rej: 0,
+      excl: Object.keys(DRAFT.exclude || {}).length
+    },
+    off = {};
+  Object.keys(DATA.gen).forEach(n => {
+    photos(n).forEach(p => {
+      if (inPlay.has(n + '|' + p.f)) return;
+      if (hidden(n, p)) return st.removed++;
+      st.off++;
+      const why = !isGame(n)
+        ? 'finder'
+        : p.cf
+          ? 'cf'
+          : p.multi
+            ? 'multi'
+            : use[p.f] === 'ref'
+              ? 'ref'
+              : viewOf(n, p) === 'wide' && fOf(p.f) === 'x'
+                ? 'x'
+                : DATA.gen[n].x && !p.own && p.gid
+                  ? 'rg'
+                  : 'other';
+      off[why] = (off[why] || 0) + 1;
+    });
+    const add = entry(n).add || {};
+    cands(n)
+      .filter(p => !add[p.f])
+      .forEach(p => (rejected(p.f) ? st.rej++ : (st.wait++, p.cf && st.waitBook++)));
+  });
+  return {G, per, play, st, off};
+}
+// A number as the page writes it: whole numbers plain, others to one decimal (a median of an even count may be x.5).
+const numTxt = x => (x == null ? '–' : Math.abs(x - Math.round(x)) < 1e-9 ? String(Math.round(x)) : x.toFixed(1));
+// "median [p25–p75]" of a distOf result.
+const iqrTxt = d => (d.n ? `${numTxt(d.med)} <span class="note">[${numTxt(d.p25)}–${numTxt(d.p75)}]</span>` : '–');
+function renderPstats() {
+  status();
+  if (!STATS) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    loadStats(true).then(() => {
+      if (cur === '~pstats') render();
+    });
+    return;
+  }
+  const {G, per, play, st, off} = poolStats(),
+    R = G.map(n => per[n]),
+    gk = distOf(R.map(r => r.k)),
+    go = distOf(R.map(r => r.obs.size)),
+    colonies = R.reduce((t, r) => t + r.obs.size, 0),
+    withAny = R.filter(r => r.k).length,
+    gen = n => `<a class="adm-gen" href="#${esc(n)}"><i>${esc(n)}</i></a>`;
+  // Every photo the admin knows, by state, each counted once (what each row means: the ? help).
+  const total = st.play + st.off + st.cmp + st.removed + st.wait + st.rej + st.excl,
+    S = [
+      ['In play', st.play],
+      ['Not in games', st.off],
+      ['Comparison only', st.cmp],
+      ['Removed', st.removed],
+      ['Candidates', st.wait, st.waitBook ? `${st.waitBook} Coral Finder book photos` : ''],
+      ['Rejected', st.rej],
+      ['Excluded', st.excl]
+    ],
+    sm = Math.max(1, ...S.map(x => x[1]));
+  const offLine = POOL_OFF.filter(([k]) => off[k])
+    .map(([k, t]) => `${off[k]} ${t}`)
+    .join(' · ');
+  // Genera by photos in play: bars of a round width, about 10 of them.
+  const top = gk.max || 0,
+    bw = [1, 2, 5, 10, 20, 25, 50, 100, 200].find(w => top / w <= 12) || 500,
+    H = Array.from({length: Math.floor(top / bw) + 1}, (_, i) => ({lo: i * bw, hi: i * bw + bw - 1, L: []}));
+  R.forEach(r => H[Math.floor(r.k / bw)].L.push(r.n));
+  const hm = Math.max(1, ...H.map(h => h.L.length)),
+    byK = R.slice().sort((a, b) => a.k - b.k || a.obs.size - b.obs.size || a.n.localeCompare(b.n)),
+    gtab = (t, L) =>
+      `<table class="adm-tbl"><thead><tr><th>${t}</th><th class="n">Photos</th><th class="n">Colonies</th></tr></thead><tbody>${L.map(
+        r => `<tr><td>${gen(r.n)}</td><td class="n">${r.k}</td><td class="n">${r.obs.size}</td></tr>`
+      ).join('')}</tbody></table>`;
+  // Per view and per source: total, share, per genus spread, genera without (views) or with (sources).
+  const V = VIEWS.map(([v, t]) => {
+      const has = R.filter(r => r.views.includes(v));
+      return {
+        t,
+        k: play.filter(p => p.view === v).length,
+        d: distOf(has.map(r => r.v[v] || 0)),
+        none: has.filter(r => !r.v[v]).length,
+        of: has.length
+      };
+    }),
+    O = ORIGINS.filter(([o]) => o !== 'book').map(([o, t]) => ({
+      t,
+      k: play.filter(p => origin(p) === o).length,
+      d: distOf(R.map(r => r.s[o] || 0)),
+      with: R.filter(r => r.s[o]).length
+    }));
+  // Answers that rated each photo in play (sheet ?stats=1, as Difficulty), in bands.
+  const A = play.map(p => nAns(STATS[p.f])),
+    da = distOf(A),
+    dr = distOf(A.filter(x => x > 0)),
+    B = [
+      ['None', 0, 0],
+      ['1–2', 1, 2],
+      ['3–9', 3, 9],
+      ['10–29', 10, 29],
+      ['30+', 30, Infinity]
+    ].map(([t, a, b]) => [t, A.filter(x => x >= a && x <= b).length]),
+    bm = Math.max(1, ...B.map(b => b[1]));
+  $v.innerHTML =
+    `<section class="adm-pov"><div class="adm-shead"><h2>Photo overview</h2></div>` +
+    kpis([
+      ['Photos in play', st.play],
+      ['Colonies in play', colonies],
+      ['Genera in play', withAny === G.length ? withAny : `${withAny} / ${G.length}`],
+      ['Candidates', st.wait]
+    ]) +
+    `<div class="adm-sgrid">
+    <section class="adm-scard" data-pov="pool"><h3>All photos</h3><table class="adm-tbl"><tbody>${S.map(
+      ([t, k, d]) =>
+        `<tr${d ? ` title="${esc(d)}"` : ''}><td>${t}</td><td class="n">${k}</td><td class="n">${pct(k, total)}</td><td>${sbar(k, sm)}</td></tr>`
+    ).join('')}<tr><td><b>Total</b></td><td class="n"><b>${total}</b></td><td></td><td></td></tr></tbody></table>${
+      offLine ? `<p class="note">Not in games: ${offLine}.</p>` : ''
+    }</section>
+    <section class="adm-scard" data-pov="genus"><h3>Per genus</h3><table class="adm-tbl"><thead><tr><th></th><th>Median [middle half]</th><th>Range</th><th class="n">Mean</th></tr></thead><tbody>
+      <tr><td>Photos</td><td>${iqrTxt(gk)}</td><td>${numTxt(gk.min)}–${numTxt(gk.max)}</td><td class="n">${numTxt(gk.mean)}</td></tr>
+      <tr><td>Colonies</td><td>${iqrTxt(go)}</td><td>${numTxt(go.min)}–${numTxt(go.max)}</td><td class="n">${numTxt(go.mean)}</td></tr></tbody></table>
+      <div class="adm-cols adm-povh">${H.map(
+        h =>
+          `<div title="${h.lo === h.hi ? h.lo : `${h.lo}–${h.hi}`} photos: ${h.L.length} genus${h.L.length === 1 ? '' : 'es'}${h.L.length ? ' (' + esc(h.L.join(', ')) + ')' : ''}"><i style="height:${(100 * h.L.length) / hm}%"></i></div>`
+      ).join('')}</div>
+      <p class="adm-axis"><span>0</span><span>genera by photos in play, ${bw} per bar</span><span>${H.length * bw}</span></p></section>
+    <section class="adm-scard" data-pov="ends"><h3>Fewest and most</h3>${gtab('Fewest', byK.slice(0, 5))}${gtab('Most', byK.slice(-5).reverse())}</section>
+    <section class="adm-scard" data-pov="views"><h3>Views</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>View</th><th class="n">Photos</th><th class="n">Share</th><th>Per genus</th><th class="n">None</th></tr></thead><tbody>${V.map(
+      r =>
+        `<tr><td>${r.t}</td><td class="n">${r.k}</td><td class="n">${pct(r.k, st.play)}</td><td>${iqrTxt(r.d)}</td><td class="n">${r.none} / ${r.of}</td></tr>`
+    ).join('')}</tbody></table></div></section>
+    <section class="adm-scard" data-pov="sources"><h3>Sources</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Source</th><th class="n">Photos</th><th class="n">Share</th><th>Per genus</th><th class="n">Genera</th></tr></thead><tbody>${O.map(
+      r =>
+        `<tr><td>${r.t}</td><td class="n">${r.k}</td><td class="n">${pct(r.k, st.play)}</td><td>${iqrTxt(r.d)}</td><td class="n">${r.with}</td></tr>`
+    ).join('')}</tbody></table></div></section>
+    <section class="adm-scard" data-pov="answers"><h3>Answers per photo</h3><table class="adm-tbl"><thead><tr><th>Answers</th><th class="n">Photos</th><th class="n">Share</th><th></th></tr></thead><tbody>${B.map(
+      ([t, k]) => `<tr><td>${t}</td><td class="n">${k}</td><td class="n">${pct(k, A.length)}</td><td>${sbar(k, bm)}</td></tr>`
+    ).join(
+      ''
+    )}</tbody></table><p class="note">Median ${iqrTxt(da)}, mean ${numTxt(da.mean)}${dr.n ? `; the ${dr.n} rated: median ${iqrTxt(dr)}` : ''}.</p></section>
+    </div></section>`;
 }
 
 /* ---------- Photo coverage ---------- */
@@ -3991,7 +4897,7 @@ function renderCov() {
     ['thick', 'Thickest', 'Most photos first'],
     ['lecture', 'Lecture', 'Lecture order']
   ];
-  $v.innerHTML = `<section class="adm-cov">
+  $v.innerHTML = `<section class="adm-cov"><div class="cov-look" id="cov-look"></div>
     <div class="adm-filter cov-head"><span class="adm-qseg adm-lvseg" role="group" aria-label="Order">${seg.map(([k, t, h]) => `<button type="button" data-co="${k}" title="${h}" aria-pressed="${!COVS.col && COV_ORDER === k}">${t}</button>`).join('')}</span>
       <span class="cov-key" aria-label="Colonies"><span class="cov-c cov-0">0</span>${COV.map((k, i) => `<span class="cov-c cov-${i + 1}">${COV[i + 1] ? (COV[i + 1] - 1 > k ? `${k}–${COV[i + 1] - 1}` : k) : k + '+'}</span>`).join('')}</span>
       <b class="${thin ? 'warnc' : ''}" title="Cells with 0-2 colonies">${thin} thin</b><b title="Cells at the cap of ${CELL_MAX} colonies or over: their candidates wait outside the swiper">${R.reduce((s, r) => s + r.cells.filter(c => c && c.obs >= CELL_MAX).length, 0)} full</b>${(k => (k ? `<b class="warnc" title="Cells over the cap of ${CELL_MAX} colonies (added anyway): orange outline below; adding to a full cell suggests a colony to retire">⚠ ${k} over the cap</b>` : ''))(R.reduce((s, r) => s + r.cells.filter(c => c && c.obs > CELL_MAX).length, 0))}<b class="cov-rich" title="Cells with 8+ colonies">${rich} at 8+</b></div>
@@ -4024,12 +4930,44 @@ function renderCov() {
       })
   );
   bindCol(COVS, () => {});
-  $v.querySelectorAll('tbody tr').forEach(
+  $v.querySelectorAll('.cov-t tbody tr').forEach(
     tr =>
       (tr.onclick = e => {
         if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g);
       })
   );
+  lookBanner();
+}
+// Where to look (Pierre, 2026-11-03: a banner above the Games grid, no longer a page of its own): the few genus x view
+// cells most worth a candidate search now, ranked as in the full list (needsOf: most reasons first, then fewest
+// colonies); "All N" opens the full list in the banner (~stats-needs: reason cards, view and genus filters, sort).
+// It needs the answer log: the grid shows at once, the banner once the log is loaded.
+const LOOK_N = 5;
+function lookBanner() {
+  const el = $v.querySelector('#cov-look');
+  if (!el) return;
+  if (!ANS) {
+    el.innerHTML = '<p class="note">Loading…</p>';
+    loadStats().then(() => (cur === '~cov' || cur === '~stats-needs') && lookBanner());
+    return;
+  }
+  if (cur === '~stats-needs') {
+    el.classList.add('open');
+    return statsNeeds(el);
+  }
+  const VO = {wide: 0, medium: 1, macro: 2, zoom: 3},
+    L = (NEEDS = needsOf()).slice().sort((a, b) => b.sc - a.sc || a.c.obs - b.c.obs || a.n.localeCompare(b.n) || VO[a.v] - VO[b.v]);
+  el.innerHTML = L.length
+    ? `<div class="cov-lookb"><a class="cov-lookt" href="#~stats-needs" title="Where to look for photos: the full list">Where to look</a>${L.slice(
+        0,
+        LOOK_N
+      )
+        .map(
+          o =>
+            `<a class="cov-lk" href="#${esc(encodeURIComponent(o.n))}" title="${esc(o.why.map(w => w[1]).join(' · '))}"><i>${esc(o.n)}</i> ${esc(o.vt)} <small>${esc(o.why.map(w => NEED_T[w[0]]).join(', '))}</small></a>`
+        )
+        .join('')}<a class="adm-link" href="#~stats-needs">All ${L.length} ›</a></div>`
+    : '';
 }
 
 // Finder coverage (Pierre 2026-11-01): what the Coral Finder can show per genus, the IMR genera and the book's
@@ -4153,25 +5091,42 @@ function renderFcov() {
   );
 }
 
+/* ---------- Hidden: every photo removed from the site (Genera › Hidden) ---------- */
+// Photos taken off the site with Remove (curation.json genera[n].hide), every genus at once (Pierre, 2026-11-03: a view of
+// Genera next to Excluded). Put back returns one to its view, as on its genus page; Undo steps back as everywhere.
+function renderHidden() {
+  status();
+  // A removed photo no longer in the data (the genus page marks it "⚠ check") is listed by name: Put back drops the entry.
+  const L = Object.keys(DATA.gen).flatMap(n => (entry(n).hide || []).map(f => [n, photos(n).find(p => p.f === f) || {f, gone: true}]));
+  $v.innerHTML = `<section class="adm-quality"><div class="adm-qhead"><h2>Removed from the site <small>${L.length}</small></h2></div>
+    ${
+      L.length
+        ? `<div class="adm-grid adm-qgrid">${L.map(
+            ([n, p]) => `<figure class="adm-tile is-hidden" data-f="${esc(p.f)}" data-g="${esc(n)}">
+      ${p.gone ? '<span class="adm-ph"><span class="none">no longer in the data</span></span>' : `<button type="button" class="adm-ph" data-zf="${esc(p.f)}" data-g="${esc(n)}" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button>`}
+      <figcaption><a class="adm-gen" href="#${esc(encodeURIComponent(n))}"><i>${esc(n)}</i></a>${p.gone ? `<code class="adm-t">${esc(p.f)}</code>` : `<span class="adm-src view">${esc(label(n, viewOf(n, p)))}</span>${srcTag(p)}`}</figcaption>
+      <div class="adm-acts"><button type="button" data-unhide>Put back</button></div></figure>`
+          ).join('')}</div>`
+        : '<p class="note">No photo removed.</p>'
+    }</section>`;
+  $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
+  $v.querySelectorAll('[data-unhide]').forEach(
+    b =>
+      (b.onclick = () => {
+        const t = b.closest('[data-f]');
+        ACT.hide(t.dataset.g, t.dataset.f);
+      })
+  );
+}
+
 /* ---------- Stats: players (anonymous) and photo difficulty, from the sync sheet ---------- */
 // ?answers=1 (sheet script v4): every answer, RA replaced by an anonymous id; ?stats=1: Elo difficulty per photo and
 // level per RA (same scale: a player whose level equals a photo's difficulty gets it right about half the time beyond chance).
-// The Stats tab holds the sub-views of STAT_TABS (incl. the photo list, renderDiff). The to-do lists (Needs and the two
-// coverage views) are their own "Needs" tab, NEED_TABS (Pierre, 2026-11-01, admin review rec. 6: work lists, not statistics).
-const STAT_TABS = [
-  ['~stats', 'Players'],
-  ['~stats-photos', 'Photos'],
-  ['~stats-conf', 'Confusions'],
-  ['~diff', 'Photo list']
-];
-const NEED_TABS = [
-  ['~stats-needs', 'Where to look'],
-  ['~cov', 'Game coverage'],
-  ['~fcov', 'Sheet & Finder coverage'],
-  ['~health', 'Health']
-];
+// The views of Activity, Photo stats and To do › Health; their tab and view switch are in #subnav (navs()).
 let ANS = null,
   RAS = {},
+  SMEM = memOf(null),
+  SCONF = {},
   MEID = null,
   SF = Object.assign({who: 'all', min: 1, elo: 'all', nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('reefid-admin-stats', {}));
 // Numbers replayed over the whole answer log (playSplit, levelMargin, confusionOf): once per log loaded, not at every
@@ -4182,11 +5137,8 @@ const ofAns = (k, fn) => {
   if (ANS_MEMO.a !== ANS) ANS_MEMO = {a: ANS, m: {}};
   return k in ANS_MEMO.m ? ANS_MEMO.m[k] : (ANS_MEMO.m[k] = fn());
 };
-// The pages of a tab are listed in #subnav under the header (navs()); the views no longer draw their own switch.
-const statSwitch = () => '';
-// Puts the switch above a view rendered by another function (photo list, coverage).
-const withSwitch = () => {};
-function loadStats() {
+// ratingsOnly (Photo stats › Overview): the photo ratings alone (?stats=1), not the whole answer log.
+function loadStats(ratingsOnly) {
   // Script v6 keeps the anonymous-id salt secret and returns the caller's own id (me) for its name and code; the
   // local digest below only matches script v5 and older.
   const sy = store.get('reefid-account', null) || {},
@@ -4213,17 +5165,25 @@ function loadStats() {
       .catch(() => ({}));
   const who = me && sy.pin ? `&name=${encodeURIComponent(me)}&pin=${encodeURIComponent(sy.pin)}` : '';
   const old = (j, q) => (j && j.error === 'input' ? get(q) : j);
-  const ga = TOKEN
-      ? post({readAnswers: 1, ...(me && sy.pin ? {aname: me, apin: sy.pin} : {})}).then(j => old(j, '?answers=1' + who))
-      : Promise.resolve({ok: false, error: 'token'}),
+  const ga = ratingsOnly
+      ? null
+      : TOKEN
+        ? post({readAnswers: 1, ...(me && sy.pin ? {aname: me, apin: sy.pin} : {})}).then(j => old(j, '?answers=1' + who))
+        : Promise.resolve({ok: false, error: 'token'}),
     gs = STATS ? null : TOKEN ? post({readStats: 1}).then(j => old(j, '?stats=1')) : get('?stats=1');
   return Promise.all([ga, gs, digest]).then(([a, s]) => {
-    ELO_NOME = null;
-    if (a && a.me) MEID = a.me;
-    ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
+    if (!ratingsOnly) {
+      ELO_NOME = null;
+      if (a && a.me) MEID = a.me;
+      ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
+      ANS.at = Date.now(); // when it was read (Recent sessions: "as of")
+    }
     if (s) {
       STATS = s.ok ? s.photos || {} : {};
       RAS = s.ok ? s.ras || {} : {};
+      // The photo memory offsets and pooled confusions the app plays with (its PMEM, PCONF), for the full replay.
+      SMEM = memOf(s.ok && s.mem);
+      SCONF = (s.ok && s.conf) || {};
     }
   });
 }
@@ -4267,6 +5227,40 @@ const days = t => {
   const d = Math.floor((Date.now() - t) / 864e5);
   return d < 1 ? 'today' : d < 2 ? 'yesterday' : d + ' d ago';
 };
+// When, to the minute (Pierre, 2026-11-03: who played most recently): "now" (less than RECENT.NOW minutes), "12 min ago",
+// "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on phones, a narrower Last column; Pierre, 2026-11-03), then the
+// date. Its title gives the full date and time. Midnight of this browser.
+const PHONE = matchMedia('(max-width: 599.98px)'),
+  yest = t => `${PHONE.matches ? 'yest.' : 'yesterday'} ${dateText(t, 'hm')}`;
+const dayStart = (k = 0) => new Date().setHours(0, 0, 0, 0) - k * 864e5,
+  isNow = t => !!t && Date.now() - t < RECENT.NOW * 6e4,
+  agoText = t => {
+    const m = Math.floor((Date.now() - t) / 6e4);
+    return isNow(t)
+      ? 'now'
+      : m < 60
+        ? `${m} min ago`
+        : t >= dayStart()
+          ? `${Math.floor(m / 60)} h ago`
+          : t >= dayStart(1)
+            ? yest(t)
+            : dateText(t, 'dm');
+  },
+  // A name or other free text in a table cell: never wider than the column cap (.adm-cut, admin.css), the full text in
+  // its title. A player hidden from the leaderboard is greyed (Pierre, 2026-11-03: the "hidden" tag widened Name).
+  cut = s => `<span class="adm-cut" title="${esc(s)}">${esc(s)}</span>`,
+  pname = (n, hid) =>
+    `<b class="adm-cut${hid ? ' adm-uhid' : ''}" title="${esc(n)}${hid ? ' (hidden from the leaderboard)' : ''}">${esc(n)}</b>`,
+  ago = t =>
+    t ? `<span class="adm-ago${isNow(t) ? ' now' : ''}" data-t="${t}" title="${esc(dateText(t, 'dmhm'))}">${agoText(t)}</span>` : '–',
+  // A clock time: "14:05" today, "yesterday 14:05" (phones "yest. 14:05"), else the date and time.
+  clock = t => (t >= dayStart() ? dateText(t, 'hm') : t >= dayStart(1) ? yest(t) : dateText(t, 'dmhm'));
+// Any table cell cut short by the column cap (admin.css .adm-tbl td) shows its full text on hover, in every table
+// without per-table code: the title is set the first time the pointer goes over it.
+$v.addEventListener('mouseover', e => {
+  const td = e.target.closest && e.target.closest('.adm-tbl td');
+  if (td && !td.title && td.scrollWidth > td.clientWidth + 1) td.title = td.innerText.trim();
+});
 const segBtns = (k, L) =>
   `<span class="adm-qseg adm-sseg" role="group">${L.map(([v, t]) => `<button type="button" data-sf="${k}" data-v="${v}" aria-pressed="${String(SF[k]) === String(v)}">${t}</button>`).join('')}</span>`;
 const kpis = L => `<div class="adm-kpis">${L.map(([t, v]) => `<div><b>${v}</b><span>${t}</span></div>`).join('')}</div>`;
@@ -4283,6 +5277,15 @@ function bindStats() {
       })
   );
   $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
+  // ↻ on Activity: the answer log and the player list read again (who is playing now), the photo ratings kept. A manual
+  // reload only, no timer: each read sends the whole answer log (docs/ARCHITECTURE.md "Recent sessions and who is playing now").
+  const rl = $v.querySelector('[data-sload]');
+  if (rl)
+    rl.onclick = () => {
+      ANS = null;
+      USERS = null;
+      render();
+    };
 }
 // Users, a header tab of its own (Pierre, 2026-11-01: "now that beta testers come, I need to see and manage them"; not under Stats, it manages players): every player who signed in,
 // by name, with their numbers, from sheet script v11 (POST {users: 1, token}; names, so the admin token is checked like
@@ -4327,6 +5330,100 @@ const userPost = body =>
       if (j && j.data) j.data = keysIn(j.data);
       return j;
     });
+// Players' saved progress (sheet userData, this page's token; Code.gs users_ gives only its summary columns): read once
+// per data load, 4 at a time, for the full replay's mastery exams and the saved copy's numbers (progOf) and the
+// journey's cards (admin-journey.js). name -> null while reading, then {P, intro, offer, reset} or {err}. Kept, a failed
+// read too, until ↻ (savedClear): a read is never started again by itself (Codex review #352: an error re-read at once
+// looped). The page is drawn again when the last read is in (Players) or when the player's own is (their Journey).
+const PSAVED = {};
+let savedQ = [],
+  savedRun = 0,
+  savedGen = 0;
+function savedOf(name) {
+  if (name in PSAVED) return PSAVED[name];
+  PSAVED[name] = null;
+  savedQ.push(name);
+  savedPump();
+  return null;
+}
+function savedPump() {
+  while (savedRun < 4 && savedQ.length) {
+    const name = savedQ.shift(),
+      gen = savedGen;
+    savedRun++;
+    userPost({userData: name})
+      .then(j => {
+        if (gen !== savedGen) return;
+        if (!(j && j.ok)) return (PSAVED[name] = {err: (j && j.error) || 'unreachable'});
+        const d = j.data || {},
+          P = k => {
+            try {
+              return JSON.parse(d[k] || 'null');
+            } catch (e) {
+              return null;
+            }
+          };
+        PSAVED[name] = {
+          P: P('reefid-sync-coral-progress') || {},
+          intro: P('reefid-sync-coral-intro') || {},
+          offer: P('reefid-sync-coral-intro-offer'),
+          reset: P('reefid-sync-coral-reset')
+        };
+      })
+      .catch(() => gen === savedGen && (PSAVED[name] = {err: 'unreachable'}))
+      .then(() => {
+        savedRun--;
+        savedPump();
+        if (gen === savedGen && (cur === '~journey/' + name || (cur === '~users' && !savedRun && !savedQ.length))) render();
+      });
+  }
+}
+function savedClear() {
+  savedGen++;
+  savedQ = [];
+  Object.keys(PSAVED).forEach(k => delete PSAVED[k]);
+}
+// Full replay (Pierre, 2026-11-03: "recalculate from all the results"; docs/LEARNING.md "Full replay"): one player's
+// progress rebuilt from the answer log with today's rules (core.js replayProgress: the app's weights, photo memory from
+// their own history, the sheet's memory offsets SMEM and pooled confusions SCONF), with what only their saved copy holds
+// (core.js replayedOf: the mastery exam, dropped when passed under the former model). Beside it, the saved copy's own
+// numbers: its % (core.js pctOf, the leaderboard's) and the sheet's Learned column; stale when they differ (a player who
+// has not opened the app since a recalculation, or whose last answers are not saved yet). Signed-in players by name,
+// devices that never signed in by anonymous id (no saved copy: nothing to compare). null while the saved copy is read.
+// Computed once per data load (the answer log, the stats, the saved copy), memoized.
+// Only from sheet script v28 (core.js RV_SHEET; AGENTS.md 7a: the admin never gets ahead of the script): before it the
+// players' apps keep their own progress, so the admin shows what it did before: the sheet's Learned column, no Progress
+// column, and the Journey's learned genera from the saved copy as it is ({off: 1, G: the saved progress}).
+const replayOn = () => Math.max((ANS && ANS.v) || 0, (USERS && USERS.v) || 0) >= RV_SHEET;
+const PROGM = new Map();
+let ROWSBY = null;
+function progOf(u) {
+  if (!ANS || !DATA || !u || !u.id) return null;
+  const S = u.anon ? {P: {}} : savedOf(u.name);
+  if (!S) return null;
+  if (!replayOn()) return {off: 1, G: S.err ? {} : S.P || {}, err: S.err};
+  const m = PROGM.get(u.id);
+  if (m && m.ans === ANS && m.S === S && m.mem === SMEM && m.learned === u.learned) return m.v;
+  if (!ROWSBY || ROWSBY.ans !== ANS) {
+    ROWSBY = {ans: ANS, by: {}};
+    (ANS.rows || []).forEach(r => (ROWSBY.by[r[0]] = ROWSBY.by[r[0]] || []).push(r));
+  }
+  const reset = !S.err && S.reset ? Date.parse(S.reset) : 0,
+    rep = replayProgress(ROWSBY.by[u.id] || [], {gen: DATA.gen, mem: SMEM, conf: SCONF, since: reset ? {[u.id]: reset} : {}})[u.id],
+    L = slateOf(DATA), // the slate as the app counts it (core.js slateOf): the progress % and Learned are over it
+    G = replayedOf(rep, S.err ? {} : S.P),
+    v = {G, pct: pctOf(G, L), learned: learnedOf(G, L), total: L.length, err: S.err};
+  if (!u.anon && !S.err) {
+    v.saved = {pct: pctOf(S.P, L), learned: u.learned};
+    v.stale = v.saved.pct !== v.pct || v.saved.learned !== v.learned;
+  }
+  PROGM.set(u.id, {ans: ANS, S, mem: SMEM, learned: u.learned, v});
+  return v;
+}
+// The replayed value, and discreetly what the saved copy says when it differs (↻ saved …: the copy in the sheet is stale).
+const staleTip =
+  'Replayed from every answer in the log with the current rules. The copy saved in the sheet says otherwise: the player has not opened the app since.';
+const withSaved = (v, sv) => (sv == null || sv === v ? v : `${v} <small class="adm-saved" title="${staleTip}">↻ saved ${sv}</small>`);
 // Players page (Pierre, 2026-11-01: "one page, sort the players by name or by score, and act on them there"): the Users
 // list (names, from the token-guarded sheet call, v11) joined with the anonymous answer stats (?answers=1, ?stats=1) by
 // each player's anonymous id (users_ id, sheet v13). One row per signed-in player, sortable by any column; a row opens
@@ -4348,16 +5445,25 @@ const UCOLS = [
     'Quiz',
     u => (u.qz[0] ? u.qz[1] / u.qz[0] : -1),
     0,
-    'Right in the photo quiz (duels slipped into it included; not the Duel tab)'
+    'Right in the Quiz and the Custom quiz (duels slipped into them included; not the Duels tab)'
   ],
-  ['recent', 'Last 50', u => (u.q50[0] ? u.q50[1] / u.q50[0] : -1), 0, 'Right among their last 50 photo-quiz answers'],
+  ['recent', 'Last 50', u => (u.q50[0] ? u.q50[1] / u.q50[0] : -1), 0, 'Right among their last 50 Quiz answers'],
   ['duels', 'Duels', u => u.du[0], 0, 'Answers in the Duel tab (2 choices), with their right share'],
   ['days', 'Days', u => u.days, 0, 'Days with answers'],
-  ['learned', 'Learned', u => u.learned, 0],
+  [
+    'prog',
+    'Progress',
+    u => (u.pg ? u.pg.pct : -1),
+    0,
+    'Progress %, replayed from every answer in the log with the current rules (↻ saved: what the copy in the sheet still says)'
+  ],
+  ['learned', 'Learned', u => (u.pg && !u.pg.err ? u.pg.learned : u.learned), 0, 'Genera learned (mastery exam passed)'],
   ['seen', 'Seen', u => u.seen, 0, 'Genera seen'],
-  ['reports', 'Reports', u => u.reports || 0, 0, 'Reports sent'],
-  ['last', 'Last', u => u.last || u.updated || 0, 0, 'Last answer']
+  ['reports', 'Reports', u => u.reports || 0, 0, 'Reports sent']
 ];
+// Last answer, second column (Pierre, 2026-11-03: who played most recently, seen on a phone without scrolling sideways),
+// to the minute, sorted by its exact time; the default sort, most recent first.
+UCOLS.splice(1, 0, ['last', 'Last', u => u.at || 0, 0, `Last answer (now = less than ${RECENT.NOW} minutes ago)`]);
 function renderUsers() {
   status();
   const head = `<div class="adm-shead"><h2>Players</h2><button type="button" class="adm-fchip plain" data-uload title="Reload">↻</button></div>`;
@@ -4375,26 +5481,41 @@ function renderUsers() {
     bindUsers();
     return;
   }
-  const col = UCOLS.find(c => c[0] === SF.us) || UCOLS[UCOLS.length - 1],
+  // The Progress column only from sheet script v28 (replayOn).
+  const COLS = UCOLS.filter(c => c[0] !== 'prog' || replayOn()),
+    col = COLS.find(c => c[0] === SF.us) || COLS.find(c => c[0] === 'last'),
     sk = col[0],
     sd = SF.us === sk && SF.ud ? SF.ud : col[3] ? 'asc' : 'desc';
   // Quiz and Duel tab apart (core.js playSplit), on each row before the sort reads them (Codex review #383); a player whose
   // answers did not load keeps the sheet's all-games counts.
   const SPLIT = ofAns('split', () => playSplit(ANS.rows || [])),
-    psOf = u => SPLIT[u.id] || {q: [u.answers, u.right], q50: u.recent, d: [0, 0]};
+    psOf = u => SPLIT[u.id] || {q: [u.answers, u.right], q50: u.recent, d: [0, 0]},
+    // Each player's last answer in the log loaded (ms), fresher than the player list's (kept 2 minutes, loadUsers).
+    LAST = ofAns('last', () => {
+      const o = Object.create(null);
+      (ANS.rows || []).forEach(r => r[1] > (o[r[0]] || 0) && (o[r[0]] = r[1]));
+      return o;
+    });
   const U = USERS.users
       .map(u => {
         const p = psOf(u);
-        return {...u, lv: u.id && RAS[u.id] ? RAS[u.id][0] : null, qz: p.q, q50: p.q50, du: p.d};
+        return {
+          ...u,
+          lv: u.id && RAS[u.id] ? RAS[u.id][0] : null,
+          qz: p.q,
+          q50: p.q50,
+          du: p.d,
+          at: Math.max((u.id && LAST[u.id]) || 0, u.last || 0) || u.updated || 0,
+          pg: replayOn() ? progOf(u) : null
+        };
       })
       .sort((a, b) => {
         const x = col[2](a),
           y = col[2](b);
-        return (x < y ? -1 : x > y ? 1 : 0) * (sd === 'asc' ? 1 : -1) || (b.last || 0) - (a.last || 0);
+        return (x < y ? -1 : x > y ? 1 : 0) * (sd === 'asc' ? 1 : -1) || b.at - a.at;
       }),
     total = DATA ? Object.keys(DATA.gen).length : 0;
-  const when = t => (t ? days(t) : '–'),
-    date = t => (t ? dateText(t, 'dm') : '–');
+  const date = t => (t ? dateText(t, 'dm') : '–');
   const opts = n =>
     U.filter(u => u.name !== n)
       .slice()
@@ -4405,8 +5526,9 @@ function renderUsers() {
   // for a player's path); the row only opens it and the account tools.
   // One compact bar under the row (Pierre, 2026-11-03: a big card for one Journey link and a tall Manage card wasted the
   // space): Journey first, the account's state with its toggle, then the account tools, Delete last on the right.
-  const detail = u => `<tr class="adm-udet"><td colspan="${UCOLS.length + 1}"><div class="adm-ubar">
+  const detail = u => `<tr class="adm-udet"><td colspan="${COLS.length + 1}"><div class="adm-ubar">
       <a class="next" href="#~journey/${encodeURIComponent(u.name)}">Journey →</a>
+      ${u.pg ? `<span class="adm-uprog">Progress ${withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')} · Learned ${withSaved(`${u.pg.learned}`, u.pg.saved && `${u.pg.saved.learned}`)}${u.pg.err ? ` <small title="Their saved copy could not be read (${esc(u.pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}</span>` : ''}
       <span>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></span>
       ${u.id && u.id !== MEID ? `<span>${isMe(u.id) ? 'Counted as you (left out by Without me / Others)' : 'Another player'} <button type="button" class="adm-fchip" data-ume="${esc(u.id)}">${isMe(u.id) ? 'Not me' : 'This is also me'}</button></span>` : ''}
       <label>Merge into <select data-umerge="${esc(u.name)}"><option value="">…</option>${opts(u.name)}</select></label>
@@ -4431,7 +5553,7 @@ function renderUsers() {
     ans = U.reduce((t, u) => t + u.answers, 0);
   const cell = (k, u) =>
     ({
-      name: `<b>${esc(u.name)}</b>${isMe(u.id) ? ' <small>you</small>' : ''}${u.board === -1 ? ' <small title="Hidden from the leaderboard">hidden</small>' : ''}`,
+      name: `${pname(u.name, u.board === -1)}${isMe(u.id) ? ' <small>you</small>' : ''}`,
       elo:
         u.lv == null
           ? '–'
@@ -4441,10 +5563,17 @@ function renderUsers() {
       recent: pct(u.q50[1], u.q50[0]),
       duels: u.du[0] ? `${u.du[0]} <small>${pct(u.du[1], u.du[0])}</small>` : '',
       days: u.days,
-      learned: `${u.learned}/${u.total || total}`,
+      prog: !u.pg ? '…' : withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%'),
+      learned: !replayOn()
+        ? `${u.learned}/${u.total || total}`
+        : !u.pg
+          ? '…'
+          : u.pg.err
+            ? `${u.learned}/${u.total || total}`
+            : withSaved(`${u.pg.learned}/${u.pg.total}`, u.pg.saved && `${u.pg.saved.learned}/${u.pg.total}`),
       seen: u.seen,
       reports: u.reports || '',
-      last: when(u.last || u.updated)
+      last: ago(u.at)
     })[k];
   $v.innerHTML =
     head +
@@ -4458,26 +5587,26 @@ function renderUsers() {
     (!U.length
       ? '<p class="note">Nobody has signed in yet.</p>'
       : `
-    <section class="adm-scard adm-ucard"><div class="adm-tscroll"><table class="adm-tbl adm-utbl"><thead><tr>${UCOLS.map(
+    <section class="adm-scard adm-ucard"><div class="adm-tscroll"><table class="adm-tbl adm-utbl"><thead><tr>${COLS.map(
       ([k, t, , , tip]) =>
         `<th${tip ? ` title="${esc(tip)}"` : ''}><button type="button" class="adm-usort" data-usort="${k}" aria-pressed="${k === sk}">${t}${k === sk ? (sd === 'asc' ? ' ▴' : ' ▾') : ''}</button></th>`
     ).join('')}<th></th></tr></thead><tbody>
       ${U.map(
         u =>
-          `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${isMe(u.id) ? ' me' : ''}" data-uopen="${esc(u.name)}">${UCOLS.map(([k]) => `<td>${cell(k, u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
+          `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${isMe(u.id) ? ' me' : ''}" data-uopen="${esc(u.name)}">${COLS.map(([k]) => `<td>${cell(k, u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
       ).join('')}</tbody></table></div></section>`) +
     (anon.length
-      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th>Level</th><th>Answers</th><th>Right</th><th>First</th><th>Last</th></tr></thead><tbody>${anon
+      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th>Level</th><th>Answers</th><th>Right</th>${replayOn() ? '<th title="Replayed from their answers with the current rules">Progress</th>' : ''}<th>First</th><th>Last</th></tr></thead><tbody>${anon
           .map(
             ([id, a]) =>
-              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#~anon/${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td><td>${days(a.first)}</td><td>${days(a.last)}</td></tr>`
+              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#~anon/${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td>${replayOn() ? `<td>${progOf({id, anon: 1}).pct}%</td>` : ''}<td>${days(a.first)}</td><td>${ago(a.last)}</td></tr>`
           )
           .join(
             ''
-          )}</tbody></table><p><button type="button" class="adm-danger" data-adel disabled${(USERS.v || 0) < 17 ? ' data-old' : ''}>Delete the answers of the selected ids</button>${(USERS.v || 0) < 17 ? ` <small class="note">Needs the sheet script v17 (live: v${USERS.v || '?'}).</small>` : ''}</p></details>`
+          )}</tbody></table></div><p><button type="button" class="adm-danger" data-adel disabled${(USERS.v || 0) < 17 ? ' data-old' : ''}>Delete the answers of the selected ids</button>${(USERS.v || 0) < 17 ? ` <small class="note">Needs the sheet script v17 (live: v${USERS.v || '?'}).</small>` : ''}</p></details>`
       : '') +
     (USERS.removed.length
-      ? `<details class="adm-uremoved"><summary>Removed (${USERS.removed.length})</summary><table class="adm-tbl">${USERS.removed.map(r => `<tr><td>${esc(r.name)}</td><td>${r.into ? `merged into <b>${esc(r.into)}</b>` : 'deleted'}</td><td>${date(r.time)}</td></tr>`).join('')}</table></details>`
+      ? `<details class="adm-uremoved"><summary>Removed (${USERS.removed.length})</summary><table class="adm-tbl">${USERS.removed.map(r => `<tr><td>${cut(r.name)}</td><td>${r.into ? `merged into <b>${cut(r.into)}</b>` : 'deleted'}</td><td>${date(r.time)}</td></tr>`).join('')}</table></details>`
       : '');
   bindUsers();
 }
@@ -4499,7 +5628,7 @@ function bindUsers() {
       USERS = null;
       ANS = null;
       STATS = null; // levels (ras) too, not only the counts
-      Object.keys(JDATA).forEach(k => delete JDATA[k]); // the journeys' saved progress (admin-journey.js) too
+      savedClear(); // the players' saved progress (Progress, Learned, the journeys' cards) too
       render();
     };
   $v.querySelectorAll('[data-uopen]').forEach(
@@ -4515,6 +5644,7 @@ function bindUsers() {
       USERS = null;
       ANS = null; // answers moved to another name or deleted: the levels and counts change
       STATS = null;
+      savedClear(); // progress merged, renamed or deleted
       uOpen = null;
       render();
     } else toast(j && j.error === 'stale' ? 'The player just synced: try again.' : `Not done (${(j && j.error) || 'offline'}).`);
@@ -4643,27 +5773,73 @@ function bindUsers() {
 }
 function renderStats() {
   status();
-  if (!ANS) {
-    $v.innerHTML = statSwitch() + '<p class="note">Loading…</p>';
-    loadStats().then(() => {
+  // Activity's Recent sessions name the signed-in players (USERS); the other views need the answer log only.
+  const named = cur === '~stats' && !USERS;
+  if (!ANS || named) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    Promise.all([ANS ? null : loadStats(), named ? loadUsers() : null]).then(() => {
       if (cur.startsWith('~stats') || cur === '~health') render();
     });
     return;
   }
-  return cur === '~stats-photos'
-    ? statsPhotos()
-    : cur === '~stats-conf'
-      ? statsConf()
-      : cur === '~stats-needs'
-        ? statsNeeds()
-        : cur === '~health'
-          ? statsHealth()
-          : statsPlayers();
+  return cur === '~stats-photos' ? statsPhotos() : cur === '~stats-conf' ? statsConf() : cur === '~health' ? statsHealth() : statsPlayers();
 }
 // Rows kept by the player filter (all, others than your accounts, or only them: myIds).
 const statRows = () => ANS.rows.filter(r => SF.who === 'all' || !myIds().size || (SF.who === 'me') === isMe(r[0]));
+// Recent sessions (Pierre, 2026-11-03: who played last, is anyone playing now): the last RECENT.N sessions of every
+// player (sessionsOf), newest first, by name when signed in (USERS ids), else by anonymous id as on Players. Playing
+// now = its last answer less than RECENT.NOW minutes old. Modes: quiz (look-alike duels slipped into it included, as on
+// Players), custom (the custom quiz, quiz|s…, its typed answers included: the genera picked by the player, 2026-11-03),
+// duel (the Duel tab), typed (|t, logged by the typed answers once they are in the quiz).
+const modeOf = m =>
+  /^quiz-duel/.test(m)
+    ? 'duel'
+    : /^quiz\|s(\||$)/.test(m)
+      ? 'custom'
+      : String(m).split('|').includes('t')
+        ? 'typed'
+        : /^quiz(\||$)/.test(m)
+          ? 'quiz'
+          : 'other';
+function recentSessions(R) {
+  const NM = Object.create(null);
+  ((USERS && USERS.users) || []).forEach(u => u.id && (NM[u.id] = u));
+  const S = sessionsOf(R)
+    .sort((a, b) => b.L[b.L.length - 1][1] - a.L[a.L.length - 1][1])
+    .slice(0, RECENT.N);
+  const dur = s => {
+      const m = Math.round((s.L[s.L.length - 1][1] - s.L[0][1]) / 6e4);
+      return m < 1 ? '<1 min' : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`;
+    },
+    modes = s => {
+      const c = {};
+      s.L.forEach(r => (c[modeOf(r[5])] = (c[modeOf(r[5])] || 0) + 1));
+      return ['quiz', 'custom', 'duel', 'typed', 'other']
+        .filter(k => c[k])
+        .map(k => (Object.keys(c).length > 1 ? `${k} <small>${c[k]}</small>` : k))
+        .join(' · ');
+    },
+    who = id =>
+      NM[id]
+        ? `<a href="#~journey/${encodeURIComponent(NM[id].name)}">${pname(NM[id].name, NM[id].board === -1)}</a>`
+        : `<a href="#~anon/${encodeURIComponent(id)}" title="Not signed in"><code>${esc(id)}</code></a>`;
+  const live = S.filter(s => isNow(s.L[s.L.length - 1][1])).length;
+  return `<section class="adm-scard adm-recent" data-recent><h3>Recent sessions${
+    live ? ` <span class="adm-ago now">${live} playing now</span>` : ''
+  } <small class="note" title="When the answers were loaded (↻ reloads)">as of ${dateText(ANS.at || Date.now(), 'hm')}</small></h3>${
+    S.length
+      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Player</th><th>Last</th><th class="n">Answers</th><th class="n">Right</th><th title="From the first to the last answer">Length</th><th>Started</th><th>Modes</th></tr></thead><tbody>${S.map(
+          s =>
+            `<tr${isNow(s.L[s.L.length - 1][1]) ? ' class="now"' : ''}><td>${who(s.id)}${isMe(s.id) ? ' <small>you</small>' : ''}</td><td>${ago(s.L[s.L.length - 1][1])}</td><td class="n">${s.L.length}</td><td class="n">${pct(
+              s.L.filter(r => r[4]).length,
+              s.L.length
+            )}</td><td>${dur(s)}</td><td>${clock(s.L[0][1])}</td><td>${modes(s)}</td></tr>`
+        ).join('')}</tbody></table></div>`
+      : '<p class="note">No sessions yet.</p>'
+  }</section>`;
+}
 function statsPlayers() {
-  const head = `${statSwitch()}<div class="adm-shead"><h2>Activity</h2>${
+  const head = `<div class="adm-shead"><h2>Activity</h2>${
     myIds().size
       ? segBtns('who', [
           ['all', 'All'],
@@ -4671,7 +5847,7 @@ function statsPlayers() {
           ['me', 'Me']
         ])
       : ''
-  }</div>`;
+  }<button type="button" class="adm-fchip plain" data-sload title="Reload the answers">↻</button></div>`;
   if (ANS.old) {
     $v.innerHTML =
       head +
@@ -4781,6 +5957,7 @@ function statsPlayers() {
       ['Right', pct(ok, R.length)],
       ['Active 7 d', wk]
     ]) +
+    (R.length ? recentSessions(R) : '') +
     (!R.length
       ? `<p class="note">${SF.who === 'others' ? noneButMe() : 'No answers yet.'}</p>`
       : `
@@ -4817,9 +5994,8 @@ function statsPlayers() {
 }
 // Where to look for more photos (Pierre, 2026-10-31): per genus x view, the reasons the game pool falls short, from
 // coverage (covOf), photo quality and difficulty (STATS Elo), players' levels per genus (sheet v5) and their answers.
-function statsNeeds() {
-  const head = `${statSwitch()}<div class="adm-shead"><h2>Where to look for photos</h2>${eloSeg()}</div>`,
-    OFF = 1.0,
+function needsOf() {
+  const OFF = 1.0,
     PS = photoStats();
   // "Without me" drops this browser's own answers and level everywhere on the page (repeats, mix-ups, too easy), not only from the photo Elo.
   const noMe = SF.elo === 'others' && myIds().size,
@@ -4913,12 +6089,18 @@ function statsNeeds() {
         sc: 3 - m
       });
   });
+  return out;
+}
+// Where to look, in full: into el (the banner above Coverage › Games, open on ~stats-needs).
+function statsNeeds(el) {
+  const head = `<div class="adm-shead"><h2>Where to look for photos</h2>${eloSeg()}<a class="adm-link" href="#~cov">Fold</a></div>`,
+    out = needsOf();
   NEEDS = out;
   NGEN = NGEN || '';
   const VO = {wide: 0, medium: 1, macro: 2, zoom: 3},
     vs = [...new Set(out.map(o => o.v))].sort((a, b) => VO[a] - VO[b]);
   if (SF.nv !== 'all' && !vs.includes(SF.nv)) SF.nv = 'all';
-  $v.innerHTML =
+  el.innerHTML =
     head.replace(
       /<\/div>$/,
       `${segBtns('nv', [['all', 'All views'], ...vs.map(v => [v, out.find(o => o.v === v).vt])])}
@@ -4928,7 +6110,7 @@ function statsNeeds() {
     (!Object.keys(ANS.players || {}).some(id => Object.keys((ANS.players[id] || [])[3] || {}).length)
       ? `<p class="note">"Too easy" needs answers logged by sheet script v5.</p>`
       : '');
-  const inp = $v.querySelector('.adm-nsearch');
+  const inp = el.querySelector('.adm-nsearch');
   inp.oninput = () => {
     NGEN = inp.value;
     needsBody();
@@ -4997,6 +6179,92 @@ function needsBody() {
       })
   );
 }
+// Photos everyone misses (Health): shown in PH_MIN answers or more with under PH_LOW right, or a difficulty PH_FAR or
+// more above the median of their genus's rated photos.
+function healthBad(R) {
+  const H = HEALTH,
+    median = healthMedian;
+  // 2. Photos everyone misses: answers from the log (each answer counts once for every photo it showed), difficulty
+  // from the photo Elo (with or without me) against the median of the genus's rated photos.
+  const PS = photoStats(),
+    META = Object.create(null);
+  allPhotos()
+    .filter(p => p.view !== 'cand')
+    .forEach(p => (META[p.f] = META[p.f] || p));
+  const PH = Object.create(null);
+  R.forEach(r =>
+    new Set(r[6].split(' ').filter(Boolean)).forEach(f => {
+      if (!META[f]) return;
+      const o = (PH[f] = PH[f] || {n: 0, ok: 0});
+      o.n++;
+      o.ok += r[4];
+    })
+  );
+  const GMED = Object.create(null);
+  Object.values(META).forEach(p => {
+    if (nAns(PS[p.f]) >= 3) (GMED[p.genus] = GMED[p.genus] || []).push(PS[p.f][0]);
+  });
+  Object.keys(GMED).forEach(g => (GMED[g] = GMED[g].length >= 3 ? median(GMED[g]) : null));
+  const BAD = Object.entries(PH)
+    .filter(([, o]) => o.n >= H.PH_MIN)
+    .map(([f, o]) => {
+      const p = META[f],
+        s = PS[f],
+        m = GMED[p.genus],
+        far = s && nAns(s) >= H.PH_MIN && m != null ? s[0] - m : null;
+      return {p, ...o, r: o.ok / o.n, far};
+    })
+    .filter(o => o.r < H.PH_LOW || (o.far != null && o.far >= H.PH_FAR))
+    .sort((a, b) => a.r - b.r || b.n - a.n);
+  return BAD;
+}
+// Genera that don't take off (Health), most stuck players first. BY = R by player, oldest first.
+function healthGenera(BY) {
+  const H = HEALTH,
+    median = healthMedian;
+  // 3. Genera that don't take off: per game genus (isGame: the slate, Millepora, the bonus genera once on), each player's right rate on the photos of it (answers where it was
+  // shown); stuck = G_MIN answers or more on it and still under G_LOW over the last G_MIN.
+  const PG = Object.create(null);
+  Object.values(BY).forEach(L =>
+    L.forEach(r => {
+      const k = r[0] + '|' + r[2];
+      (PG[k] = PG[k] || []).push(r[4]);
+    })
+  );
+  const GR = [...GAME]
+    .map(n => {
+      const P = Object.keys(BY)
+        .map(id => PG[id + '|' + n])
+        .filter(Boolean);
+      const rate = P.map(a => a.reduce((t, x) => t + x, 0) / a.length),
+        stuck = P.filter(a => a.length >= H.G_MIN && a.slice(-H.G_MIN).reduce((t, x) => t + x, 0) / H.G_MIN < H.G_LOW).length;
+      return {n, met: P.length, m: median(rate), stuck, long: P.filter(a => a.length >= H.G_MIN).length};
+    })
+    .sort((a, b) => b.stuck - a.stuck || (a.m ?? 2) - (b.m ?? 2) || a.n.localeCompare(b.n));
+  return GR;
+}
+const healthMedian = a => {
+  const b = a.slice().sort((x, y) => x - y),
+    k = b.length >> 1;
+  return !b.length ? null : b.length % 2 ? b[k] : (b[k - 1] + b[k]) / 2;
+};
+// To do › All: one red line at the top when Health finds something wrong (Pierre, 2026-11-03): photos everyone misses,
+// genera players are stuck on. Nothing when all is well, or until the answers are loaded.
+function healthLine() {
+  if (!ANS || ANS.old) return '';
+  const noMe = SF.elo === 'others' && myIds().size,
+    R = (ANS.rows || []).filter(r => !noMe || !isMe(r[0])),
+    BY = Object.create(null);
+  R.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
+  Object.values(BY).forEach(L => L.sort((a, b) => a[1] - b[1]));
+  const bad = R.length ? healthBad(R).length : 0,
+    stuck = R.length ? healthGenera(BY).filter(g => g.stuck).length : 0,
+    L = [
+      bad && `${bad} photo${bad === 1 ? '' : 's'} everyone misses`,
+      stuck && `${stuck} ${stuck === 1 ? 'genus' : 'genera'} players are stuck on`
+    ].filter(Boolean);
+  return L.length ? `<p class="warn adm-hline" data-hline><a href="#~health"><b>Health</b></a>: ${L.join(' · ')}</p>` : '';
+}
 // Health (Pierre, 2026-11-02: "most RAs will not send feedback"): what the answers already logged say about how the
 // app works for players, with no new data. Where players stop (sessions = answers less than GAP minutes apart; how long
 // they last; what the short ones ended on), photos everyone misses (maybe mislabelled or bad: a link to the genus page),
@@ -5037,25 +6305,22 @@ function statsHealth() {
           `<tr><td>${t}</td><td>${sbar(n, mx, bad && bad(i) ? 'bad' : '')}</td><td class="n">${n}</td><td class="n">${pct(n, tot)}</td></tr>`
       );
     },
-    gameOf = m => (/^quiz-duel/.test(m) ? 'Duel' : /^quiz/.test(m) ? 'Photo quiz' : m || 'Other');
+    gameOf = m => (/^quiz-duel/.test(m) ? 'Duel' : /^quiz/.test(m) ? 'Quiz' : m || 'Other');
 
   // 1. Where players stop: one player's answers, oldest first, cut where two answers are GAP minutes apart or more.
-  const BY = Object.create(null);
-  R.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
-  const S = [];
-  Object.entries(BY).forEach(([id, L]) => {
-    L.sort((a, b) => a[1] - b[1]);
-    let s = null;
-    L.forEach(r => {
-      if (!s || r[1] - s.L[s.L.length - 1][1] >= H.GAP * 6e4) S.push((s = {id, L: []}));
-      s.L.push(r);
-    });
+  // BY: each player's answers, oldest first (sessionsOf sorts them; Genera that don't take off reads them too).
+  const S = sessionsOf(R),
+    BY = Object.create(null),
+    nS = Object.create(null);
+  S.forEach(s => {
+    (BY[s.id] = BY[s.id] || []).push(...s.L);
+    nS[s.id] = (nS[s.id] || 0) + 1;
   });
   // A session whose last answer is less than GAP minutes old may still be going: it has not ended yet.
   const ended = S.filter(s => now - s.L[s.L.length - 1][1] >= H.GAP * 6e4),
     going = S.length - ended.length,
     nP = Object.keys(BY).length,
-    perP = Object.values(BY).map(L => S.filter(s => s.id === L[0][0]).length);
+    perP = Object.values(nS);
   const inB = (n, a, b) => n >= a && n <= b,
     LEN = [
       ['1-5', 1, 5],
@@ -5121,38 +6386,7 @@ function statsHealth() {
         : '<p class="note">None.</p>'
     }</div></div></section>`;
 
-  // 2. Photos everyone misses: answers from the log (each answer counts once for every photo it showed), difficulty
-  // from the photo Elo (with or without me) against the median of the genus's rated photos.
-  const PS = photoStats(),
-    META = Object.create(null);
-  allPhotos()
-    .filter(p => p.view !== 'cand')
-    .forEach(p => (META[p.f] = META[p.f] || p));
-  const PH = Object.create(null);
-  R.forEach(r =>
-    new Set(r[6].split(' ').filter(Boolean)).forEach(f => {
-      if (!META[f]) return;
-      const o = (PH[f] = PH[f] || {n: 0, ok: 0});
-      o.n++;
-      o.ok += r[4];
-    })
-  );
-  const GMED = Object.create(null);
-  Object.values(META).forEach(p => {
-    if (nAns(PS[p.f]) >= 3) (GMED[p.genus] = GMED[p.genus] || []).push(PS[p.f][0]);
-  });
-  Object.keys(GMED).forEach(g => (GMED[g] = GMED[g].length >= 3 ? median(GMED[g]) : null));
-  const BAD = Object.entries(PH)
-    .filter(([, o]) => o.n >= H.PH_MIN)
-    .map(([f, o]) => {
-      const p = META[f],
-        s = PS[f],
-        m = GMED[p.genus],
-        far = s && nAns(s) >= H.PH_MIN && m != null ? s[0] - m : null;
-      return {p, ...o, r: o.ok / o.n, far};
-    })
-    .filter(o => o.r < H.PH_LOW || (o.far != null && o.far >= H.PH_FAR))
-    .sort((a, b) => a.r - b.r || b.n - a.n);
+  const BAD = healthBad(R);
   const MAXPH = 24,
     phTile = o =>
       `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(o.p.f)}" data-g="${esc(o.p.genus)}" aria-label="Enlarge"><img src="${img(o.p, 1)}" alt="" loading="lazy"></button>
@@ -5164,25 +6398,7 @@ function statsHealth() {
       : '<p class="note">None.</p>'
   }</section>`;
 
-  // 3. Genera that don't take off: per game genus (isGame: the slate, Millepora, the bonus genera once on), each player's right rate on the photos of it (answers where it was
-  // shown); stuck = G_MIN answers or more on it and still under G_LOW over the last G_MIN.
-  const PG = Object.create(null);
-  Object.values(BY).forEach(L =>
-    L.forEach(r => {
-      const k = r[0] + '|' + r[2];
-      (PG[k] = PG[k] || []).push(r[4]);
-    })
-  );
-  const GR = [...GAME]
-    .map(n => {
-      const P = Object.keys(BY)
-        .map(id => PG[id + '|' + n])
-        .filter(Boolean);
-      const rate = P.map(a => a.reduce((t, x) => t + x, 0) / a.length),
-        stuck = P.filter(a => a.length >= H.G_MIN && a.slice(-H.G_MIN).reduce((t, x) => t + x, 0) / H.G_MIN < H.G_LOW).length;
-      return {n, met: P.length, m: median(rate), stuck, long: P.filter(a => a.length >= H.G_MIN).length};
-    })
-    .sort((a, b) => b.stuck - a.stuck || (a.m ?? 2) - (b.m ?? 2) || a.n.localeCompare(b.n));
+  const GR = healthGenera(BY);
   const gSec = `<section class="adm-scard adm-hsec g" data-health="genera"><h3>Genera that don't take off</h3><div class="adm-tscroll tall">${tbl(
     [
       'Genus',
@@ -5247,7 +6463,7 @@ function statsConf() {
   const noMe = SF.elo === 'others' && myIds().size,
     R = (ANS.rows || []).filter(r => !noMe || !isMe(r[0])),
     C = ofAns('conf|' + (noMe ? [...myIds()].sort().join(' ') : ''), () => confusionOf(R));
-  const head = `${statSwitch()}<div class="adm-shead"><h2>Confusions</h2>${segBtns('min', [
+  const head = `<div class="adm-shead"><h2>Confusions</h2>${segBtns('min', [
     [1, '≥1'],
     [3, '≥3'],
     [10, '≥10']
@@ -5276,7 +6492,9 @@ function statsConf() {
         ab: (C.dir[a + '|' + b] || [0, 0])[1],
         ba: (C.dir[b + '|' + a] || [0, 0])[1],
         pt,
-        sc: confScore(c, pv)
+        sc: confScore(c, pv),
+        // A look-alike from the data (core.js dataLook, 2026-11-04): the games treat it as a declared one.
+        dl: pt !== 'Look-alike' && dataLook(c, confScore(c, pv))
       };
     })
     .sort((x, y) => y.sc - x.sc || y.mix - x.mix);
@@ -5339,7 +6557,8 @@ function statsConf() {
       ['Answers with choices', `${withCh}/${R.length}`],
       ['Pairs', PR.length],
       ['Traps (score ≥ ' + CONF.TRAP + ')', PR.filter(p => p.sc >= CONF.TRAP).length],
-      ['Not declared', surprise]
+      ['Not declared', surprise],
+      ['Look-alikes from the data', PR.filter(p => p.dl).length]
     ]) +
     `
     <div class="adm-sgrid">
@@ -5349,7 +6568,7 @@ function statsConf() {
       ${PR.slice(0, 60)
         .map(
           p =>
-            `<tr><td>${cmp(p.a, p.b)}</td><td>${p.pt}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td>${pct(p.mix, p.off)}</td><td>${sbar(p.sc, 0.6, p.sc >= CONF.TRAP ? 'bad' : '')}</td><td class="n">${p.sc.toFixed(2)}</td><td class="n">${p.ab || ''}</td><td class="n">${p.ba || ''}</td></tr>`
+            `<tr><td>${cmp(p.a, p.b)}</td><td>${p.pt}${p.dl ? ' · <b title="Offered together ' + CONF.N + ' times or more, score ' + CONF.TRAP + ' or more: duels, Again and genus sheets treat it as a look-alike">look-alike from the data</b>' : ''}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td>${pct(p.mix, p.off)}</td><td>${sbar(p.sc, 0.6, p.sc >= CONF.TRAP ? 'bad' : '')}</td><td class="n">${p.sc.toFixed(2)}</td><td class="n">${p.ab || ''}</td><td class="n">${p.ba || ''}</td></tr>`
         )
         .join('')}</tbody></table></div>`
         : `<p class="note">No answer with its choices yet: sheet script v10 logs them${ANS.v >= 10 ? '' : ` (now v${esc(ANS.v || '?')})`}.</p>`
@@ -5375,7 +6594,7 @@ function statsPhotos() {
     L = allPhotos()
       .filter(p => PS[p.f] && nAns(PS[p.f]) >= SF.min)
       .map(p => ({...p, d: PS[p.f][0], n: PS[p.f][1], ok: PS[p.f][2], a: nAns(PS[p.f])}));
-  const head = `${statSwitch()}<div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [
+  const head = `<div class="adm-shead"><h2>Photo difficulty</h2>${segBtns('min', [
     [1, '≥1'],
     [3, '≥3'],
     [10, '≥10']
@@ -5387,12 +6606,8 @@ function statsPhotos() {
   }
   const ds = L.map(p => p.d).sort((a, b) => a - b),
     mean = a => a.reduce((t, x) => t + x, 0) / a.length,
-    // Quantile q of a sorted list, linear between neighbours (the median at 0.5).
-    qtl = (a, q) => {
-      const i = (a.length - 1) * q,
-        k = Math.floor(i);
-      return a[k] + (a[Math.min(k + 1, a.length - 1)] - a[k]) * (i - k);
-    },
+    // Quantile q of a sorted list, linear between neighbours (the median at 0.5; core.js).
+    qtl = quantile,
     median = a =>
       qtl(
         a.slice().sort((x, y) => x - y),

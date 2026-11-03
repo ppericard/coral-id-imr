@@ -2,11 +2,17 @@
  "genus": "Plesiastrea",
  "photos": {
   "plesiastrea-cand-270598438": {
-   "view": "wide",
-   "quality": 3,
+   "view": "medium",
+   "quality": 2,
    "form": "M",
    "keep": "best",
-   "note": "Shallow round corallites; a soft coral at top left"
+   "crop": [
+    0.1,
+    0.05,
+    1.0,
+    1.0
+   ],
+   "note": "Closer than the two live wide photos of this colony"
   }
  }
 }
