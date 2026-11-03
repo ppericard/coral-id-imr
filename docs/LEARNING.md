@@ -807,6 +807,8 @@ time, each on its card, but never as the answer of the question right after its 
   answers, and a comeback planned from the time away and how solid each genus is comes first when the break left rust
   ("Comeback after a break", below). It replaced the gentle restart (`WARM`, the same day: 10 easy questions at every
   page load, left out of the hold).
+- **Only after a right answer** (Pierre, 2026-11-03; `openRight`): no card of the path on the question after a
+  miss, nor until the player answers right again ("An opening only after a right answer", below).
 - **Not right after**: a genus met on a card alone can be asked from `INTRO.GAP` (2) answers on (one question at least
   in between; the card says "It comes up in the questions a little later", and since 2026-11-03 its genus is not
   among that question's choices either: a beginner saw the name of the card just read as a choice behind it; simulated,
@@ -1229,6 +1231,90 @@ in the 40 answers after the comeback; genera opened on their cards in the first 
   cards are not on record; inferred from the first question on each genus (a card `INTRO.GAP` before), 3 of the 5
   genera new in the collapsed run would have waited (one more came through an Again on a genus never met, which the
   new rule also stops).
+
+### An opening only after a right answer (2026-11-03)
+
+Pierre, after playing: "I was surprised that new genera open right after a wrong answer. Unlocking a new genus feels
+like a reward, and it came on a wrong answer." The rule agreed: **the path opens a genus only after a right answer**.
+When the last graded answer was a miss, no genus opens; it stays that way until the player answers right again, so a
+second miss keeps it closed. The opening is put off, not cancelled: the first question after a right answer can open
+it as usual. Nothing else about the pace changes (`openChance`, `openPace` `OPEN.MAX` 3 / `OPEN.WIN` 15, the hold,
+`INTRO.EVERY`).
+
+- **One place** (`model.js` `openRight`): the last of the conditions that let `planPhoto` open a genus (with
+  `INTRO.EVERY`, the hold, the floor of a visit or a comeback, `openPace`). It reads `P['~level'].h`, a new field on the
+  global record: the last 10 results over every game, newest last, written by `answer` and synced and merged with the
+  progress like a genus's `h` (`core.js` `mergeProgress`). A player who has never answered, or whose progress was
+  saved before this field existed, counts as "no miss".
+- **Every graded answer counts**, whatever the game: the photo quiz, an Again, a duel slipped into the quiz, the Duel
+  tab, the custom quiz, a typed question (a typed "I don't know" is a miss). They all go through `answer` and the global
+  record, so a miss in the Duel tab followed by a switch to the photo quiz also holds the first question there.
+- **Questions planned ahead** (`planNext`, up to 3): a question planned while the answer just before it is still to
+  come cannot know that answer, so `openRight(at)` lets it through (`at` > the answers so far). A miss already drops
+  every question planned (`answer`, `dropPlans`), and `quizPhoto` checks again when it shows a question with a card of
+  the path: one planned before a miss is planned again (the same check as the hold's), so a card planned earlier never
+  shows after a miss.
+- **Not openings by the path, unchanged**: the first cards (fewer than `INTRO.START` slate genera met: the game cannot
+  ask anything without them), Open all, the cards that come with a genus the player picked in the custom quiz, and the
+  cards of the Duel tab's pair (both genera are named on its buttons). The Again and the duels slipped into the quiz
+  never ask a genus not met.
+
+Simulated (`tools/learnsim.js`, 5 seeds × 300 questions, the four profiles, `main` and the rule on the same seeds;
+mean ± sd over the seeds): genera met (cards and asked) and true knowledge of the slate:
+
+| Profile | | met q50 | met q100 | met q200 | met q300 | know q50 | know q100 | know q200 | know q300 | right % (1-300) | open/15 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| beginner | main | 10.6 ± 0.5 | 18.4 ± 2.7 | 27.4 ± 3.8 | 38.8 ± 2.2 | 0.16 ± 0.00 | 0.28 ± 0.01 | 0.46 ± 0.04 | 0.65 ± 0.02 | 77.4 ± 0.6 | 3.0 ± 0.0 |
+| | rule | 9.8 ± 0.4 | 16.2 ± 0.8 | 28.0 ± 2.0 | 37.8 ± 2.5 | 0.15 ± 0.00 | 0.26 ± 0.01 | 0.47 ± 0.02 | 0.64 ± 0.02 | 78.5 ± 0.8 | 3.0 ± 0.0 |
+| lecture RA | main | 11.2 ± 0.4 | 20.6 ± 0.5 | 35.6 ± 3.4 | 40.0 ± 0.0 | 0.37 ± 0.01 | 0.46 ± 0.01 | 0.65 ± 0.01 | 0.76 ± 0.01 | 79.7 ± 1.2 | 3.0 ± 0.0 |
+| | rule | 10.8 ± 0.4 | 18.6 ± 1.7 | 33.4 ± 2.2 | 40.0 ± 0.0 | 0.37 ± 0.01 | 0.47 ± 0.02 | 0.63 ± 0.02 | 0.76 ± 0.01 | 79.8 ± 0.8 | 3.0 ± 0.0 |
+| strong RA | main | 10.4 ± 0.9 | 19.8 ± 0.8 | 38.0 ± 1.6 | 40.0 ± 0.0 | 0.61 ± 0.01 | 0.67 ± 0.00 | 0.79 ± 0.01 | 0.85 ± 0.01 | 86.4 ± 1.2 | 3.0 ± 0.0 |
+| | rule | 10.0 ± 0.7 | 18.6 ± 0.5 | 35.6 ± 1.1 | 40.0 ± 0.0 | 0.61 ± 0.01 | 0.66 ± 0.03 | 0.78 ± 0.01 | 0.85 ± 0.01 | 84.9 ± 1.3 | 3.0 ± 0.0 |
+| expert | main | 10.6 ± 0.5 | 19.6 ± 0.5 | 38.0 ± 1.0 | 40.0 ± 0.0 | 0.93 ± 0.00 | 0.94 ± 0.00 | 0.95 ± 0.00 | 0.95 ± 0.00 | 96.0 ± 0.5 | 3.0 ± 0.0 |
+| | rule | 10.6 ± 0.5 | 19.6 ± 0.5 | 37.6 ± 0.9 | 40.0 ± 0.0 | 0.93 ± 0.00 | 0.94 ± 0.00 | 0.95 ± 0.00 | 0.95 ± 0.00 | 95.6 ± 1.0 | 3.0 ± 0.0 |
+
+Questions until 10 / 20 / 30 / 40 slate genera are met (40: the runs that met all of them by question 300):
+
+| Profile | main | rule |
+| --- | --- | --- |
+| beginner | 44.6 / 119.6 / 211.0 / 278.3 (3 of 5) | 49.4 / 122.6 / 229.8 / 294.5 (2 of 5) |
+| lecture RA | 41.6 / 94.4 / 157.2 / 231.8 | 43.2 / 106.0 / 168.0 / 245.2 |
+| strong RA | 45.6 / 98.4 / 152.8 / 208.0 | 47.4 / 105.6 / 165.2 / 223.0 |
+| expert | 45.4 / 100.8 / 155.0 / 209.4 | 45.4 / 100.8 / 155.6 / 210.4 |
+
+How often the rule held an opening (per run, means ± sd; "held": questions where every other condition allowed a card
+and a genus was left to open, so only the rule stopped it; "expected": those questions' `openChance` summed, the
+openings they would have brought on average; "wait": questions from the first held question of a spell of misses to
+the next card):
+
+| Profile | own cards, main / rule | cards right after a miss, main / rule | held | expected | wait (mean, median) |
+| --- | --- | --- | --- | --- | --- |
+| beginner | 36.2 / 34.0 | 7.4 ± 3.0 / 0 | 18.0 ± 3.6 | 5.8 ± 1.9 | 10.6, 5 (89 spells) |
+| lecture RA | 41.0 / 40.8 | 8.4 ± 0.9 / 0 | 12.4 ± 4.9 | 8.8 ± 4.3 | 3.5, 2 (62 spells) |
+| strong RA | 41.0 / 41.0 | 7.4 ± 1.5 / 0 | 8.6 ± 3.1 | 8.2 ± 3.3 | 2.5, 2 (43 spells) |
+| expert | 41.0 / 41.0 | 1.0 ± 1.0 / 0 | 0.8 ± 0.4 | 0.8 ± 0.4 | 2.0, 2 (4 spells) |
+
+On `main` about one card in five (beginner and RAs) came on the question right after a miss; with the rule none. The
+expected slowdown: one to two genera fewer by question 100 for the beginner and the RAs (beginner 18.4 → 16.2, lecture
+RA 20.6 → 18.6, strong RA 19.8 → 18.6), 3 to 19 questions more to reach 20, 30 and 40 genera, nothing for the expert
+(rarely wrong). True knowledge by question 200 and 300 within the seeds' spread for every profile; at question 100 the
+beginner's is 0.02 lower (0.28 → 0.26, sd 0.01: it has met two genera fewer), equal again from question 200. Right %
+within the spread. The beginner's waits are longer (median 5 questions, a long tail): its misses come in runs, and
+its `openChance` is lower. No other constant was touched.
+
+Real answers (rule 14g; a read-only count, by a script kept outside the repo, on the sheet's Answers tab exported 2026-11-03: 1,345 answers of 10
+players, read-only, aggregates only): a replay cannot judge this rule (it changes which question comes, not any
+estimate), and the log records no cards; measured instead how often a genus's first meeting followed a miss. A first
+meeting is a player's first question on a genus (the log's "New photos" column counts photos new to the player, not
+genera), in the photo quiz, after their first 4 genera (the first cards), within the same visit (under 30 minutes
+after the answer before), leaving apart the first questions that come in bursts (two or more others within two
+questions: Open all asks the genera never asked first). Of the 130 first meetings on the path, 22 (17%) came on the
+question right after a miss, and, assuming each genus was asked as soon as ready (its card `INTRO.GAP` questions
+before), 21 of the 130 cards (16%) were shown on the question after a miss: about the players' miss rate (19%), as
+expected when nothing ties the opening to the last answer. Per player (P1-P10 by number of answers; first meetings on
+the path, right after a miss / estimated card after a miss): P1 36, 6 / 8; P2 8, 0 / 2; P3 25, 5 / 5; P4 24, 5 / 5; P5
+13, 2 / 0; P6 11, 1 / 0; P7 9, 3 / 1; P8 4, 0 / 0; P9 and P10 none on the path. So about one opening in six that real
+players met would have been put off until their next right answer.
 
 ### One draw weight (2026-11-03)
 
@@ -1804,34 +1890,38 @@ candidate from each answer's pTrue and noise, `--rtlog`) so that `abilityeval --
 Other values fit one measure but not all: with noise sd 0.7 (the first guess) both terms need B 0.2-0.25, C 0.45, and
 the residual sd is 0.84; with B 0.4, C 0.1 the next-answer term is −0.04. T0 only sets the scale (z is against the
 player's own median). No zoom model: the learner never enlarges a photo (41 real enlarged answers, too player-specific
-to model yet). On the simulated logs the app's rule gains less than on the real ones (−0.8 ± 0.5 × 10⁻³ per answer
-replayed from main's logs; leave one player out would choose K 0.5-1 there) and costs after a slow right answer
+to model yet). The run of `main` with #437 below, with these constants, gives −0.87 ± 0.06 and −0.42 ± 0.07 again.
+On the simulated logs the app's rule gains less than on the real ones (−0.8 ± 0.5 × 10⁻³ per answer replayed from
+main's logs, −0.5 ± 0.5 with #437; leave one player out would choose K 0.5-1 there) and costs after a slow right answer
 (+4.0 ± 1.2, against −6.3 ± 4.7 on the real answers): the learner's time carries its knowledge only through pTrue.
 
-**learnsim, main against this** (5 seeds, the four profiles, 300 questions, the same seeds; mean main → this, (paired
-difference ± its sd over the seeds); right % over the answers since the previous checkpoint; |th − lk| the Elo error
-over the genera met; strong RA and expert again with 15 seeds, where the 5-seed differences were within their spread):
+**learnsim, main against this** (`main` with #437, the opening only after a right answer; 5 seeds, the four
+profiles, 300 questions, the same seeds; mean main → this, (paired difference ± its sd over the seeds); right % over
+the answers since the previous checkpoint; |th − lk| the Elo error over the genera met; the beginner and the expert
+again with 15 seeds, where the 5-seed Elo error moved by about its spread):
 
 | Profile | q | knowSlate | met | right % | \|th − lk\| | learned |
 | --- | --- | --- | --- | --- | --- | --- |
-| beginner | 100 | 0.276 → 0.280 (+0.005 ± 0.017) | 18.4 → 18.6 (+0.2 ± 2.3) | 74.4 → 74.4 (+0.0 ± 2.4) | 0.93 → 0.86 (−0.08 ± 0.19) | 0 → 0 |
-| beginner | 300 | 0.651 → 0.646 (−0.006 ± 0.023) | 38.8 → 38.0 (−0.8 ± 4.3) | 77.2 → 79.6 (+2.4 ± 1.1) | 0.84 → 0.86 (+0.02 ± 0.15) | 0 → 0 |
-| lecture RA | 100 | 0.463 → 0.470 (+0.006 ± 0.008) | 20.6 → 19.8 (−0.8 ± 1.3) | 78.4 → 80.4 (+2.0 ± 4.5) | 0.82 → 0.77 (−0.05 ± 0.10) | 0 → 0 |
-| lecture RA | 300 | 0.757 → 0.759 (+0.001 ± 0.009) | 40 → 40 | 80.4 → 80.6 (+0.2 ± 1.3) | 0.85 → 0.77 (−0.08 ± 0.12) | 0 → 0 |
-| strong RA | 100 | 0.668 → 0.656 (−0.011 ± 0.017) | 19.8 → 20.2 (+0.4 ± 1.1) | 86.8 → 88.0 (+1.2 ± 3.0) | 0.98 → 0.89 (−0.09 ± 0.18) | 0 → 0 |
-| strong RA | 300 | 0.849 → 0.845 (−0.004 ± 0.017) | 40 → 40 | 87.0 → 84.6 (−2.4 ± 2.1) | 1.04 → 1.09 (+0.05 ± 0.09) | 0.2 → 0.0 (−0.2 ± 0.4) |
-| expert | 100 | 0.939 → 0.939 | 19.6 → 20.0 (+0.4 ± 1.1) | 96.4 → 95.6 (−0.8 ± 3.3) | 0.81 → 0.91 (+0.10 ± 0.09) | 0 → 0 |
-| expert | 300 | 0.954 → 0.954 | 40 → 40 | 95.4 → 95.6 (+0.2 ± 2.8) | 0.96 → 0.95 (−0.01 ± 0.07) | 0.4 → 0.4 (+0.0 ± 0.7) |
-| strong RA, 15 seeds | 100 | 0.668 → 0.661 (−0.007 ± 0.017) | 20.0 → 19.9 (−0.1 ± 1.0) | 86.9 → 88.8 (+1.9 ± 5.7) | 0.92 → 0.89 (−0.02 ± 0.14) | 0 → 0 |
-| strong RA, 15 seeds | 300 | 0.851 → 0.846 (−0.004 ± 0.013) | 40 → 40 | 85.0 → 84.6 (−0.4 ± 3.7) | 1.06 → 1.07 (+0.01 ± 0.18) | 0.2 → 0.1 (−0.1 ± 0.4) |
-| expert, 15 seeds | 100 | 0.939 → 0.939 | 19.5 → 19.7 (+0.1 ± 0.8) | 96.5 → 95.9 (−0.7 ± 3.2) | 0.84 → 0.90 (+0.06 ± 0.11) | 0 → 0 |
-| expert, 15 seeds | 300 | 0.953 → 0.954 | 40 → 40 | 95.9 → 95.7 (−0.2 ± 2.2) | 0.94 → 0.96 (+0.01 ± 0.07) | 0.5 → 0.3 (−0.2 ± 0.8) |
+| beginner | 100 | 0.263 → 0.265 (+0.002 ± 0.023) | 16.2 → 17.2 (+1.0 ± 3.7) | 75.2 → 77.2 (+2.0 ± 8.2) | 0.83 → 1.01 (+0.18 ± 0.11) | 0.0 → 0.0 |
+| beginner | 300 | 0.636 → 0.665 (+0.029 ± 0.036) | 37.8 → 39.0 (+1.2 ± 3.3) | 81.4 → 76.2 (−5.2 ± 3.8) | 1.00 → 0.88 (−0.12 ± 0.12) | 0.0 → 0.0 |
+| lecture RA | 100 | 0.465 → 0.461 (−0.004 ± 0.007) | 18.6 → 17.8 (−0.8 ± 1.9) | 77.2 → 79.2 (+2.0 ± 5.1) | 0.77 → 0.73 (−0.04 ± 0.15) | 0.0 → 0.0 |
+| lecture RA | 300 | 0.759 → 0.752 (−0.008 ± 0.009) | 40.0 → 40.0 (+0.0 ± 0.0) | 78.8 → 81.2 (+2.4 ± 3.0) | 0.81 → 0.80 (−0.01 ± 0.09) | 0.0 → 0.0 |
+| strong RA | 100 | 0.659 → 0.656 (−0.003 ± 0.017) | 18.6 → 19.0 (+0.4 ± 1.1) | 85.2 → 88.8 (+3.6 ± 4.3) | 1.01 → 1.00 (−0.01 ± 0.19) | 0.0 → 0.0 |
+| strong RA | 300 | 0.854 → 0.848 (−0.007 ± 0.007) | 40.0 → 40.0 (+0.0 ± 0.0) | 85.0 → 86.6 (+1.6 ± 7.4) | 1.17 → 1.08 (−0.09 ± 0.26) | 0.4 → 0.0 (−0.4 ± 0.9) |
+| expert | 100 | 0.939 → 0.939 (+0.000 ± 0.000) | 19.6 → 19.6 (+0.0 ± 1.0) | 96.4 → 95.2 (−1.2 ± 3.6) | 0.81 → 0.94 (+0.13 ± 0.11) | 0.0 → 0.0 |
+| expert | 300 | 0.954 → 0.954 (−0.000 ± 0.000) | 40.0 → 40.0 (+0.0 ± 0.0) | 94.6 → 95.8 (+1.2 ± 2.9) | 0.99 → 0.96 (−0.03 ± 0.14) | 0.0 → 0.2 (+0.2 ± 0.4) |
+| beginner, 15 seeds | 100 | 0.267 → 0.269 (+0.002 ± 0.015) | 17.0 → 17.3 (+0.3 ± 2.6) | 76.5 → 75.2 (−1.3 ± 7.0) | 0.85 → 0.87 (+0.03 ± 0.22) | 0.0 → 0.0 |
+| beginner, 15 seeds | 300 | 0.627 → 0.651 (+0.025 ± 0.048) | 36.1 → 37.4 (+1.3 ± 4.4) | 80.0 → 77.1 (−2.9 ± 3.5) | 0.96 → 0.86 (−0.10 ± 0.15) | 0.1 → 0.0 (−0.1 ± 0.3) |
+| expert, 15 seeds | 100 | 0.939 → 0.939 (+0.000 ± 0.000) | 19.3 → 19.3 (−0.1 ± 0.7) | 96.8 → 96.0 (−0.8 ± 2.9) | 0.83 → 0.89 (+0.06 ± 0.10) | 0.0 → 0.0 |
+| expert, 15 seeds | 300 | 0.954 → 0.954 (−0.000 ± 0.000) | 40.0 → 40.0 (+0.0 ± 0.0) | 94.9 → 95.7 (+0.8 ± 2.5) | 1.00 → 0.98 (−0.02 ± 0.12) | 0.3 → 0.4 (+0.1 ± 0.6) |
 
-No profile learns less: knowledge and genera met move by less than their spread everywhere; the Elo error is lower
-for the beginner and the lecture RA at both checkpoints, and within its spread for the strong RA and the expert (with
-15 seeds, +0.01 and +0.06 at most; the expert's level runs 0.05-0.1 lower, near the top of the scale, ELO.hi 3).
-Learned genera by 300 questions: too few in any profile to compare (0-0.5 a run). Reproduce: `node tools/learnsim.js
---seeds 5 --rtlog log.json` on each version (main's learnsim has no time model: run this one's `tools/learnsim.js`
+No profile learns less: knowledge and genera met move by less than their spread everywhere (the beginner +0.025 of
+true knowledge by 300 questions with 15 seeds, within it). The Elo error is within its spread or lower: with 15 seeds
+the beginner +0.03 at 100 questions and −0.10 at 300, the expert +0.06 at 100 (its level climbs a little more slowly
+early: in the simulated learner a slow right answer is the one with the lower true chance, the most surprising, so its
+step is the one shrunk) and −0.02 at 300. The same comparison against `main` before #437 gave the same picture (the
+strong RA and the expert with 15 seeds: Elo error +0.01 and +0.06 at most). Learned genera by 300 questions: too few
+in any profile to compare (0-0.5 a run). Reproduce: `node tools/learnsim.js --seeds 5 --rtlog log.json` on each version (main's learnsim has no time model: run this one's `tools/learnsim.js`
 from a main checkout, its app ignoring the seconds), `node tools/abilityeval.js log.json --variants e+X+M,e+X+M+A
 --rtfit`; real answers: `node tools/abilityeval.js answers.json --variants e+X+M --model main-core.js` against
 `--variants e+X+M+A` (paired by a short script; the two runs score the same answers in the same order).
@@ -2371,6 +2461,10 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   measures), handed to the app's question clock; the app weighs its steps by it (the sheet version it sees is set to
   one that replays the time). `--rtapp off`: the app as with an older script (weights 1); `--rt off`: no seconds;
   `--rtlog`: the app's answer log of every run, with the learner's chance and time noise, for `tools/abilityeval.js`.
+- **Openings after a miss** (2026-11-03): per profile, the genera opened on their own cards, those on the question
+  right after a miss (0 with `openRight`), the questions where that rule alone held the opening and the openings they
+  would have brought (`openChance` summed), and the questions from each spell of them to the next card; each run's
+  `opens`, `afterMiss` and `blocked` are in `--out`.
 - **Profiles**: beginner (knows every genus at 2%, learns 0.12 of the gap per exposure), lecture-level RA (the profiles
   test's RA: 55% on 2 genera in 5, 10% on the others, 0.12), strong RA (85% on 3 genera in 5, 10% on the others, 0.12),
   expert (93%, 0.05). The open-all offer is declined (the path is what is measured), unless `--openall`: `offer`
@@ -2487,6 +2581,15 @@ is not in the simulation.
   Real answers: −2.20 ± 0.72 × 10⁻³ log-loss per answer against main, every timed player better, no group worse.
   learnsim (a time model calibrated on the two real measures, −0.88 and −0.39): no profile learns less, Elo error
   lower or within its spread ("Response time", section 5). AGENTS.md rule 12 reworded.
+- 2026-11-03, Pierre ("new genera open right after a wrong answer: it feels like a reward for it"): an opening only
+  after a right answer (`model.js` `openRight`, `P['~level'].h`): after a miss no genus opens until the player answers
+  right again, in any game; a card planned before the miss is planned again. Nothing else in the pace changes.
+  Simulated (5 seeds x 300 questions): one to two genera fewer by question 100 for the beginner and the RAs (beginner
+  18.4 → 16.2, lecture RA 20.6 → 18.6, strong RA 19.8 → 18.6), the expert unchanged, true knowledge within the spread
+  from question 200 (beginner 0.28 → 0.26 at 100); on `main` about one card in five came right after a miss. Real
+  answers: 22 of 130 first meetings on the path (17%) came on the question right after a miss ("An opening only after
+  a right answer").
+
 - 2026-11-04, Pierre ("I validate all your proposals", after the collapsed runs of 2026-11-03): the opening's pace
   (`openPace`: no card while a genus carded in the last 15 answers waits for its question, at most 3 in any 15, a
   carded genus asked as soon as ready; replaces the hotfix's cap and `OPEN.UNASKED`), easier questions while the hold
