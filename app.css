@@ -2311,6 +2311,18 @@ kbd {
   font-weight: 600;
   color: var(--accent);
 }
+/* When a long feedback makes the phone's sheet or the desktop's side column scroll (a mix-up's lines, 4 choices), Next
+   and the one-tap question stay in view at its bottom and the feedback scrolls under them (desktop pinned Next already,
+   design re-review p2; --nexth: Next's height, set by quiz.js pulseAsk). Nothing moves when everything fits. */
+.q.done #after #next {
+  position: sticky;
+  bottom: 0;
+}
+.q.done #after .pulse {
+  position: sticky;
+  bottom: calc(var(--nexth, 44px) + 6px);
+  z-index: 1;
+}
 /* Only "Yes"/"No" takes the right/wrong colour: the genus to remember stays in ink (designer re-review 2026-11-01, N3). */
 .fb h3 a {
   text-decoration-color: var(--line);

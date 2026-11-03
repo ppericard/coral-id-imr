@@ -709,6 +709,8 @@ function pulseAsk() {
   );
   const box = document.querySelector('#after .pulse'),
     h = session.h;
+  // Desktop: the block sticks just above Next (app.css), whatever Next's height.
+  document.getElementById('after').style.setProperty('--nexth', nb.offsetHeight + 'px');
   store.set(PULSEK, {at: answersSoFar(), q: pk.q, left: pk.left});
   pulseOpen = {
     id: it.id,

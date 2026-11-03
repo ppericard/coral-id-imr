@@ -352,7 +352,7 @@ too easy, 0 right, +1 too hard) and **feel** f (−1 bad, 0 neutral, +1 good).
 | Item | Answers (d / f) | Construct | Source |
 | --- | --- | --- | --- |
 | These questions are | Too easy −1 · About right 0 · Too hard +1 (d) | perceived difficulty | the app's item since sheet v19; the same three answers as Papoušek, Stanislav & Pelánek's (2016) "What is the difficulty of asked questions?" (Too Easy / Appropriate / Too Difficult); one question on difficulty is a usable measure: Sauro & Dumas (2009) compared three one-question post-task ratings, and the 7-point "Overall, this task was: Very Easy … Very Difficult" (later named the Single Ease Question) was as sensitive as the best of them and correlated with task time and the SUS |
-| For me, the challenge is | Too low −1 · Just right 0 · Too high +1 (d) | challenge-skill balance | item 16 of the flow short scale, one of its three extra items on the fit between skills and demands (FKS, Rheinberg, Vollmeyer & Engeser 2003: "Für mich persönlich sind die jetzigen Anforderungen…", "zu wenig" · "gerade richtig" · "zu hoch", 9 points; here 3 points, "too little" said "too low"); flow's channel model (Csikszentmihalyi 1990) |
+| Right now I feel | Bored −1 · In the zone 0 · Struggling +1 (d) | challenge-skill balance, as a state | flow's three channels, boredom (skill above challenge), flow, anxiety (challenge above skill) (Csikszentmihalyi 1975); the words are ours, no published item. The same balance as item 16 of the flow short scale (FKS, Rheinberg, Vollmeyer & Engeser 2003: "Für mich persönlich sind die jetzigen Anforderungen…", "zu wenig" · "gerade richtig" · "zu hoch", 9 points), which the first version used as "For me, the challenge is: Too low · Just right · Too high"; replaced before release (Pierre, 2026-11-03): non-native speakers could not tell whether "low" meant easy or hard. No feel value: being in the zone is not the same as having fun, which "Having fun?" asks |
 | Want harder photos? | Yes −1 · Keep it 0 · Easier +1 (d) | challenge-skill balance, asked as a wish | the same balance phrased as what to change (a design choice, no published item); a wish and a judgement can differ, so its own counts stay visible |
 | Having fun? | Not really −1 · It's OK 0 · Yes! +1 (f) | enjoyment | positive affect of the in-game GEQ (items 11 "I felt content" and 14 "I felt good"; IJsselsteijn, de Kort & Poels 2013; 14 items, two per component, "not at all" 0 to "extremely" 4, made to be asked several times during play) |
 | Frustrating? | Not at all 0/0 · A bit +0.5/−0.5 · Very +1/−1 (d, f) | frustration | tension of the in-game GEQ (items 6 "I felt frustrated" and 8 "I felt irritable"); flow's anxiety channel, challenge above skill |
@@ -365,18 +365,30 @@ tilting it; read each item's own counts beside the mean. PENS (Ryan, Rigby & Prz
 competence and autonomy items measure need satisfaction over a session, not whether the difficulty suits the player
 now. Varied wording costs strict comparability (experience sampling usually repeats one item: Csikszentmihalyi & Larson
 1987); it is the price of not wearing the players out, and why every item is mapped to a common scale and still shown
-alone, and why the first item ever is the plain one, the same as the v19 answers.
+alone, and why the first item ever is the plain one, the same as the v19 answers. "Right now I feel" shares a word with
+"Getting boring?" (Bored): one picks a state among three, the other rates boredom alone; the rounds never put them
+next to each other.
+
+**Seen, then answered** (Pierre, 2026-11-03, from the first screenshots: a row inside the feedback card was easy to
+miss and a big Next was tapped without reading it). The question is a block of its own before Next, tinted, titled
+"Quick question", its three answers on one row of equal widths (360 px and up); one tap answers, × closes, nothing
+waits for it. Each prompt logs its showing, so the admin knows the **response rate** by item, level band and mode
+(shown, answered, Not now, no answer). A low rate in one band would bias that band's answers towards the players who
+care to answer: read it next to the answers.
 
 **How the answers will be used for the level-dependent target** (not built: ROADMAP "Level-dependent target"). Admin
 To do › Errors shows, for each level band (the overall level when they answered: below −0.5, −0.5 to +0.5, above +0.5)
-and each mode, the mean felt difficulty and feel, the answers and devices behind them and the right % of the last 10
-answers. The target is right for a band when its mean felt difficulty sits near 0 with feel not negative. Proposed
-rule, to agree with Pierre once there are answers: read a band only from about 20 answers from 5 devices or more (one
-talkative device must not decide: compare with the mean of each device's mean); a band whose felt difficulty stays
-beyond ±0.25 moves its target success by 0.05 at a time (towards easier for "too hard", towards harder for "too easy",
-the research's ~70% for strong players as the likely end), each move checked in `tools/learnsim.js` and on the real
-answer log as for any change to the algorithm (AGENTS.md rule 14g); a harder target for strong players stands only if
-their feel does not drop. The duels are easier by design (2 choices): read the photo quiz first.
+and each mode, the mean felt difficulty and feel, the answers and devices behind them, the response rate and the right
+% of the last 10 answers. The target is right for a band when its mean felt difficulty sits near 0 with feel not
+negative. The rule, **approved by Pierre on 2026-11-03**, to build once the data exists: read a band only from about 20
+answers from 5 devices or more (one talkative device must not decide: compare with the mean of each device's mean); a
+band whose felt difficulty stays beyond ±0.25 moves its target success by 0.05 at a time (towards easier for "too
+hard", towards harder for "too easy", the research's ~70% for strong players as the likely end), each move checked in
+`tools/learnsim.js` and on the real answer log as for any change to the algorithm (AGENTS.md rule 14g); a harder target
+for strong players stands only if their feel does not drop. The duels are easier by design (2 choices): read the photo
+quiz first. Pierre's caution with the approval: felt difficulty is subjective, so no move before a band reaches those
+thresholds, and the answers check the target, they never steer it answer by answer. The prompt every 40 answers was
+approved the same day.
 
 ### Logged for the admin's player journey (2026-11-02)
 
@@ -1715,6 +1727,10 @@ is not in the simulation.
   rounds, never twice in a row) and comes every 40 answers instead of 60 (twice that after a "Not now"), so the
   level-dependent target can be checked by level band; logged in the existing v19 events, no new sheet version; nothing
   in the game reads the answers yet ("What the players say about the difficulty").
+- 2026-11-03, Pierre (reviewing that PR): every 40 answers approved; the rule that turns the answers into the
+  level-dependent target approved, with the caution that felt difficulty is subjective (no move before the thresholds;
+  built later, once data exists); "For me, the challenge is: Too low / Too high" replaced by "Right now I feel: Bored /
+  In the zone / Struggling"; the question made a block of its own before Next; the response rate logged.
 
 ## References
 
@@ -1759,6 +1775,8 @@ is not in the simulation.
   <https://pure.tue.nl/ws/files/21666907/Game_Experience_Questionnaire_English.pdf>
 - Ryan, R. M., Rigby, C. S., Przybylski, A. (2006). The motivational pull of video games: a self-determination theory
   approach (PENS). *Motivation and Emotion* 30.
+- Csikszentmihalyi, M. (1975). *Beyond boredom and anxiety*. Jossey-Bass (the flow channel between boredom and
+  anxiety; 25th anniversary edition 2000, *Beyond boredom and anxiety: experiencing flow in work and play*).
 - Csikszentmihalyi, M. (1990). *Flow: the psychology of optimal experience*. Harper & Row; Csikszentmihalyi, M., Larson,
   R. (1987). Validity and reliability of the experience-sampling method. *Journal of Nervous and Mental Disease* 175.
 - Sauro, J., Dumas, J. S. (2009). Comparison of three one-question, post-task usability questionnaires. *CHI 2009*,

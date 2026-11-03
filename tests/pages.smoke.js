@@ -308,14 +308,18 @@ async function overlays(b, base) {
       fails.push(`prompt spacing over 60 answers: ${JSON.stringify(seenP)}`);
     await c.close();
   }
-  // The one-tap question's bank (core.js PULSEQ, 2026-11-03), on the narrowest phone (360 px): the first prompt at 35
-  // answers asks the plain question; each prompt is a block of its own ("Quick question") on screen above Next, its
-  // answers on one row of equal widths; it logs its showing (shown) with its item (src); an answer is one tap ("Thank
-  // you!" at once) and logs the code tapped; every third prompt is left unanswered (Next) and logs none; the next prompt
-  // never asks the same item. After the first, each prompt is made due by moving the device's last-prompt marks back
-  // (imr-prompt-at by PROMPT.GAP, imr-pulse by PULSE.EVERY), the real code deciding.
-  {
-    const [c, p] = await open({viewport: {width: 360, height: 740}}, seen);
+  // The one-tap question's bank (core.js PULSEQ, 2026-11-03), on the narrowest phone (360 px) and on a desktop: the
+  // first prompt at 35 answers asks the plain question; each prompt is a block of its own ("Quick question") on screen
+  // above Next, never under it (a wrong answer now and then makes the feedback long), its answers on one row of equal
+  // widths; it logs its showing (shown) with its item (src); an answer is one tap ("Thank you!" at once) and logs the
+  // code tapped; every third prompt is left unanswered (Next) and logs none; the next prompt never asks the same item.
+  // After the first, each prompt is made due by moving the device's last-prompt marks back (imr-prompt-at by
+  // PROMPT.GAP, imr-pulse by PULSE.EVERY), the real code deciding.
+  for (const [vw, vh] of [
+    [360, 740],
+    [1280, 800]
+  ]) {
+    const [c, p] = await open({viewport: {width: vw, height: vh}}, seen);
     await p.goto(base + '#quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     const asked = [],
@@ -335,8 +339,9 @@ async function overlays(b, base) {
             localStorage.setItem('imr-prompt-at', JSON.stringify(a - PROMPT.GAP));
             localStorage.setItem('imr-pulse', JSON.stringify({...JSON.parse(localStorage.getItem('imr-pulse')), at: a - PULSE.EVERY}));
           }
-          const t = SHOWNQ[1];
-          document.querySelector(`#view [data-c="${CSS.escape(t)}"]`).click();
+          const t = SHOWNQ[1],
+            cs = [...document.querySelectorAll('#view [data-c]')];
+          (i % 4 === 3 ? cs.find(x => x.dataset.c !== t) : cs.find(x => x.dataset.c === t)).click();
           const box = document.querySelector('#after .pulse');
           if (!box) return null;
           const bs = [...box.querySelectorAll('.pulseb [data-pulse]')],
@@ -356,6 +361,11 @@ async function overlays(b, base) {
             // Before Next in the page and on screen, both in view without scrolling.
             before: !!(box.compareDocumentPosition(nx) & Node.DOCUMENT_POSITION_FOLLOWING) && R.bottom <= N.top + 1,
             inView: R.top >= 0 && N.bottom <= innerHeight + 1,
+            // Each answer, and Next, is what a tap at its centre reaches: nothing covers it (Next, the tab bar), and it is
+            // not scrolled out of the phone's sheet or the side column (a long feedback after a wrong answer).
+            hit: [...B.map((x, k) => [bs[k], x]), [nx, N]].every(([el, x]) =>
+              el.contains(document.elementFromPoint(x.left + x.width / 2, x.top + x.height / 2))
+            ),
             // One row, equal widths.
             row: B.every(x => Math.abs(x.top - B[0].top) < 2 && Math.abs(x.width - B[0].width) < 2),
             tap: skip ? '' : b.dataset.pulse
@@ -380,14 +390,18 @@ async function overlays(b, base) {
         !x.x ||
         !x.before ||
         !x.inView ||
+        !x.hit ||
         !x.row ||
         (x.tap && x.thanks !== 'Thank you!') ||
         x.ev.map(e => e.r).join() !== ['shown', x.tap || 'none'].join() ||
         x.ev.some(e => e.src !== x.q || e.m !== 'quiz' || e.lv !== 'number') ||
         (k && x.q === asked[k - 1].q)
     );
-    if (asked.length < 9 || asked[0].a !== 35 || asked[0].q !== 'are' || bad.length || new Set(asked.map(x => x.q)).size < 5)
-      fails.push(`one-tap bank: ${JSON.stringify(asked.length < 9 || asked[0].a !== 35 ? asked : bad.length ? bad : asked.map(x => x.q))}`);
+    // The first prompt at 35 answers, or a few later when an achievement toast it waits for came with that answer (the
+    // wrong answers here move the toasts; the exact 35 is checked by the new-player run further down).
+    const late = !asked.length || asked[0].a < 35 || asked[0].a > 40;
+    if (asked.length < 9 || late || asked[0].q !== 'are' || bad.length || new Set(asked.map(x => x.q)).size < 5)
+      fails.push(`${vw}px one-tap bank: ${JSON.stringify(asked.length < 9 || late ? asked : bad.length ? bad : asked.map(x => x.q))}`);
     await c.close();
   }
   // The right answer's celebration (app.css .cheer) plays on the choice and on "✓ Yes", and not at all with
