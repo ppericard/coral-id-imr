@@ -337,6 +337,10 @@ const LEVELS = [
   ['medium', 'Medium'],
   ['hard', 'Hard']
 ];
+// A photo the games may teach from: an extra genus's (DATA.x: Millepora, the bonus genera) only if Pierre's own or
+// Research Grade on iNaturalist (no gid), as the extra genera were chosen (tools/build_extra.py). One rule for every
+// game (the quiz, the exam, the mix-up card, the Lab's typed game: Codex review #379).
+const gamePhotoOk = (n, p) => !GX(n).x || p.own || !p.gid;
 const gamePics = (n, v, lvl = 'hard') => {
   const s = (GX(n).sl || {})[v];
   if (!s) return GX(n).views[v] || [];

@@ -88,8 +88,12 @@ LAB.add({
       const pool = (typeof slateGenera === 'function' ? slateGenera() : labNames()).filter(n => GX(n)), // Millepora too (Codex review #379)
         t = pick(pool),
         v = view === 'any' ? pick(['wide', 'medium', 'macro']) : view,
-        L = gamePics(t, v),
-        p = L.length ? pick(L) : viewPhoto(t, v);
+        // Only photos the games may teach from (app.js gamePhotoOk: Research Grade for the extra genera), in the view
+        // asked for, else in any view (Codex review #379: no fallback around the rule).
+        ok = w => gamePics(t, w).filter(x => gamePhotoOk(t, x)),
+        L = ok(v).length ? ok(v) : ['wide', 'medium', 'macro'].flatMap(ok),
+        p = pick(L);
+      if (!p) return round(); // a genus with no eligible photo at all: draw another
       body.innerHTML = `<div class="rvlayout tylayout"><div class="rvstage tystage"><img src="${img(p, fit(Math.min(innerWidth, 800)))}" alt="Coral to identify"></div>
         <div class="gside">
           <form class="tyform" autocomplete="off">
@@ -112,6 +116,9 @@ LAB.add({
         inp.disabled = true;
         form.querySelectorAll('button').forEach(b => (b.disabled = true));
         inp.blur();
+        // The photo's source pill, only now: before the answer it would give the genus away (as Blur reveal).
+        const im = body.querySelector('.tystage img');
+        if (im && typeof photoSrc === 'function') im.insertAdjacentHTML('afterend', photoSrc(p));
         const how =
           said == null
             ? `It was <i>${esc(t)}</i>.`
