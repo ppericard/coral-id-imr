@@ -398,7 +398,10 @@
         P = {};
       Object.entries(R).forEach(([g, r]) => {
         if (g === LEVEL) return; // the replay's global level: the demo's copies keep none
-        const o = old[g] || {};
+        // A mark the game would have taken away at a later miss (core.js mxKeeps; the replay's lm) is not in the copy the
+        // app saved.
+        const o = {...(old[g] || {})};
+        if (o.mx && r.lm > o.mx) delete o.mx;
         P[g] =
           u.name === 'Dio Demo'
             ? {ok: r.ok, ko: r.ko, h: r.h, th: o.th || 0, L: Math.round(Math.min(0.97, 0.2 + 0.12 * r.ok) * 100) / 100}

@@ -1382,8 +1382,10 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   counts only. The mastery exam is not replayed: it comes from the device's copy (below), so an exam still waiting for
   its `TYPED.exam` typed right answers stays at 99% at most (`scoreOf`) until the device has passed it.
   - **Rules versions** (`core.js` `RVS`, `RV`): every change to a progress rule appends `{v, at, why, msg}` (AGENTS.md
-    "How to make a change" 14). v1 (2026-11-03, `msg` null): this replay itself, with the rules of that day (the
-    miss weight over the 0.8 every question aims for, `TARGET_P`; no Elo step on the genus wrongly given).
+    "How to make a change" 14), each with the standard recalculation card (`msg: RV_CARD`, Pierre 2026-11-03, a
+    standing rule; below). v1 (2026-11-03): this replay itself, with the rules of that day (the
+    miss weight over the 0.8 every question aims for, `TARGET_P`; no Elo step on the genus wrongly given; a learned mark
+    kept unless a miss logged after its exam takes it away as the game does).
   - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between
     `// BEGIN core.js` and `// END core.js`, kept identical by `tools/sync_core.py`, checked in CI; its own `module`
     object keeps its names out of the script's globals, reached as `CORE_`), so the self-updater installs the engine
@@ -1450,7 +1452,11 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     `rv` (so `mergeProgress` keeps it over an older copy of the same answers); the global level `~level`: `th`, `vr`,
     the larger answer count, the later `at`. **From the device**, what the log cannot give: the mastery exam passed
     (`mx`) or in course (`ex`; dropped when passed under the former model, a record without `s.pg`: that genus takes the
-    exam again), the days answered right (`dd`, `dl`: the device's calendar days, for the comeback), the last
+    exam again), the passed exam also dropped when the log has a miss after it that leaves the replayed progress below
+    the keep rule, the game's own (`core.js` `mxKeeps`, `model.js` `mxKept`: the replay records `lm`, the time of the
+    last such miss, and a mark passed before it goes, reason `rules`; Codex review #399: 10 misses logged by a save
+    refused after a passed exam left the genus at 100%, its exam never coming back, at a bar of 0.19), so a
+    recalculation alone keeps it, the days answered right (`dd`, `dl`: the device's calendar days, for the comeback), the last
     observations shown (`ro`: the log keeps photo files, not observations), right with the corallites in view (`cor`:
     the log does not say which view a photo was in); and the whole record of a genus the log has fewer answers on than
     the device (answers that never reached the log: a replay never loses progress). The opening hold is not in the
@@ -1459,10 +1465,12 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     `bkt`; a mark taken by a later rules version would say "recalculated from all your answers with the app's current
     rules", reason `rules`). Then, at once, the announcement card of every version skipped that has a `msg`
     (`progress.js` `rvNotice`: once per version per device, `imr-rv-msg`; never held, one after another, after
-    `recalcNotice` and `mxLostNotice`; only to a device that had answers). Version 1 (the full replay itself) has
-    one only for the players whose progress % the adoption moved (`msg.only: 'changed'`, Pierre 2026-11-03: several
-    players lose points as the former model's marks are dropped): "Your progress was recalculated with the improved
-    model", saying the % before and after; a player whose % stays the same sees nothing.
+    `recalcNotice` and `mxLostNotice`; only to a device that had answers). Every version has the standard card
+    (`core.js` `RV_CARD`; Pierre, 2026-11-03, a standing rule: "only to the players whose progress the replay moves a
+    lot; if it moves everyone a lot, everyone gets it"): "Your progress was recalculated with the improved model",
+    saying the % before and after, shown only when the adoption moved the player's progress % by 5 points or more,
+    either way (`msg.only: 'changed'`, `msg.min: 5`, `progress.js` `rvNoticeAdd`); a player whose % moved less sees
+    nothing. Pierre is asked only when a version needs a different text.
   - **The device's own recalculations** (`memRecalc` from `s.ps`, `pgOf` from the last 10 results `s.h`) only
     approximate it from what a device keeps: they stay as the fallback for a device that never reached the sheet (a
     device offline, or a local copy), and a record adopted from the replay is never corrected by them.
@@ -1786,6 +1794,26 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-03, Pierre (hotfix): two strong players' runs collapsed after #408 and #413 (one met 7 new genera in 16
+  answers, three of them never asked, then fell from 83% to 50% right): `openChance` is capped at `OPEN.MAX` 0.5, and
+  no genus opens while `OPEN.UNASKED` (3) genera opened earlier are still unasked. A stopgap until the full fix (opening
+  pace per window, easier questions while the hold is on, the pair confusion term, data look-alikes).
+  `tools/learnsim.js`, 5 seeds x 300 questions, true knowledge of the slate / genera met at questions 100 and 300:
+
+  | Profile | `main` q100 | hotfix q100 | `main` q300 | hotfix q300 |
+  | --- | --- | --- | --- | --- |
+  | beginner | 0.31 / 23.2 | 0.29 / 18.8 | 0.65 / 38.2 | 0.60 / 34.6 |
+  | lecture RA | 0.49 / 24.2 | 0.48 / 21.8 | 0.76 / 40.0 | 0.74 / 39.2 |
+  | strong RA | 0.69 / 32.2 | 0.68 / 22.8 | 0.86 / 40.0 | 0.85 / 39.6 |
+  | expert | 0.94 / 26.4 | 0.94 / 19.8 | 0.95 / 40.0 | 0.95 / 39.8 |
+
+  Right %: within the seeds' spread (beginner 74 / 83 at 100 / 300, main 73 / 80). Tried first: no genus while any
+  opened genus is unasked (`OPEN.UNASKED` 1): genera met by question 300 fell to 24-25 for every profile and true
+  knowledge with them (strong RA 0.77, beginner 0.48): rejected; 2: 33-35 genera, strong RA 0.81: rejected; the cap
+  alone: knowledge as `main`, but nothing stops a run of openings whose genera are never asked. Real log (rule 14g):
+  the rule only changes which question comes, not the Elo's predictions, so the log's log-loss is unchanged by
+  construction; measured instead on the collapsed run's logged sequence: of its 7 cards in 16 answers, 4 pass the
+  unasked rule (each then at a chance of at most 0.5) and 3 are blocked, 2 of them genera the run never asked.
 - 2026-11-02, Pierre: anonymous answers do not rate photos; sign in to count (reversed the same day, below); stats only from players above chance;
   developer test answers deleted (admin anonDelete); first-answer-only rejected; experience weight and history-aware
   repeats; players start as beginners.

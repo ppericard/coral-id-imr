@@ -182,12 +182,15 @@ test('RVS: one entry per rules version, RV the last; messages of the versions sk
     assert.ok(typeof x.why === 'string' && x.why.length > 10);
     assert.ok(x.msg === null || (typeof x.msg.t === 'string' && typeof x.msg.p === 'string'), 'msg: null or {t, p}');
     if (x.msg && x.msg.only) assert.strictEqual(x.msg.only, 'changed', 'only: the one condition progress.js rvNoticeAdd knows');
+    if (x.msg && x.msg.min !== undefined) assert.ok(x.msg.min >= 0, 'min: points of progress %');
   });
+  // The standard card every version takes (Pierre, 2026-11-03): only to the players whose % moves by 5 points or more.
+  assert.deepStrictEqual([C.RV_CARD.only, C.RV_CARD.min], ['changed', 5]);
+  assert.match(C.RV_CARD.p, /\{from\}%.*\{to\}%/);
   assert.strictEqual(C.RV, C.RVS[C.RVS.length - 1].v);
   // The first version (the full replay itself): a card only for the players whose progress % it moved, with the two %
   // (Pierre, 2026-11-03).
-  assert.strictEqual(C.RVS[0].msg.only, 'changed');
-  assert.match(C.RVS[0].msg.p, /\{from\}%.*\{to\}%/);
+  assert.strictEqual(C.RVS[0].msg, C.RV_CARD);
   assert.deepStrictEqual(
     C.rvMsgs(0, C.RV),
     C.RVS.filter(x => x.msg)
