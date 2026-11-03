@@ -419,10 +419,11 @@ function inSubject(id, fn) {
     prog(); // the pill shows the subject on screen again (a visit may have saved, which shows its own)
   }
 }
-// The Corals / Fish selector (Home, header, ⚙): the subject's data first, then everything reloads for it. Remembered on
-// this device and synced (SUBJECT_KEY, a reefid-sync key).
+// The subject switch (Tools, the admin's only while a subject is in beta: proto/lab.js): the subject's data first, then
+// everything reloads for it. Remembered on this device and synced (SUBJECT_KEY, a reefid-sync key). A subject the player
+// may not have (subjAt) brings the corals.
 function setSubject(id) {
-  const S = subjectOf(id);
+  const S = subjAt(id);
   if (S === SUBJ) return Promise.resolve();
   return UNITS[S.id].load().then(() => {
     store.set(SUBJECT_KEY, S.id);
@@ -439,23 +440,27 @@ function setSubject(id) {
     route();
   });
 }
-// Everything that names the subject on screen: the switches (Home, header, ⚙: [data-subj] buttons), ⚙ rows of one
-// subject only (setrow[data-for]), the section tabs' words.
+// Everything that names the subject on screen: the switches (Tools: [data-subj] buttons), ⚙ rows of one subject only
+// (setrow[data-for]), the section tabs' words. A subject in beta on screen (the admin's only) puts its card emoji on the
+// links to Tools (the header's Tools tab, the phones' hammer), where it is switched back.
 function showSubj() {
   document.documentElement.dataset.subject = SUBJ.id;
   document.querySelectorAll('[data-subj]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.subj === SUBJ.id)));
   document.querySelectorAll('[data-for]').forEach(r => (r.hidden = r.dataset.for !== SUBJ.id));
-  const hb = document.getElementById('subjb');
-  if (hb) {
-    hb.title = `${SUBJ.name}: switch subject`;
-    hb.setAttribute('aria-label', `Subject: ${SUBJ.name}. Switch`);
-  }
+  document.querySelectorAll('.labgo, .sections a[data-tab="lab"]').forEach(a => {
+    if (SUBJ.beta) {
+      a.dataset.badge = CARD_KINDS[SUBJ.card] || '•';
+      a.title = `Tools · ${SUBJ.name} (beta) on`;
+    } else {
+      delete a.dataset.badge;
+      a.title = 'Tools';
+    }
+  });
 }
-// Every subject switch on any page (Home's, ⚙'s: [data-subj]); the header's button goes to the next subject.
+// Every subject switch on any page ([data-subj]: the Tools hub's, admin only).
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-subj]');
   if (b) setSubject(b.dataset.subj);
-  else if (e.target.closest('#subjb')) setSubject(SUBJECTS[(SUBJECTS.indexOf(SUBJ) + 1) % SUBJECTS.length].id);
 });
 // A page of the Learn or Practice section that the subject does not have (core.js SUBJECTS pages: fish have no genus
 // sheets, look-alike pages, duels or Memory yet) opens the subject's first page of that section instead. Identify (the
@@ -894,11 +899,17 @@ const pg = l => (l.a === l.b ? 'p.' + l.a : 'p.' + l.a + '-' + l.b);
 const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 
 /* ---------- quiz ---------- */
-// The subject the player is on (core.js SUBJECTS: Corals, Fish), chosen on Home or in the header, remembered on the
-// device and synced (SUBJECT_KEY). Everything below (P, Q, the slate, the cards, the comeback...) is the current
+// The subject the player is on (core.js SUBJECTS: Corals, Fish), chosen in Tools (the admin, while Fish is in beta),
+// remembered on the device and synced (SUBJECT_KEY). Everything below (P, Q, the slate, the cards, the comeback...) is the current
 // subject's; code that must read another subject's state runs inside inSubject() (sync.js: the sheet's summary and
 // the merge of every subject's progress). setSubject() switches (subjectLoad: each file's per-subject state).
-let SUBJ = subjectOf(store.get(SUBJECT_KEY, SUBJECTS[0].id));
+// A subject in beta (core.js SUBJECTS beta: fish) is the admin's only (Pierre, 2026-11-04: "take it off Home, some things
+// clearly aren't ready; in Tools, visible only to admins"): anyone else opens on the corals whatever this device or the
+// account saved, and nothing switches them to it (setSubject, a link to a sheet: subjAt). The saved choice and that
+// subject's progress stay as they are (synced, merged: inSubject), back on screen if the admin view comes back.
+const subjOpen = S => !S.beta || IS_ADMIN;
+const subjAt = id => (subjOpen(subjectOf(id)) ? subjectOf(id) : SUBJECTS[0]);
+let SUBJ = subjAt(store.get(SUBJECT_KEY, SUBJECTS[0].id));
 const sKey = name => subjKey(SUBJ.id, name); // reefid-sync-<subject>-<name>: travels with the player
 const sDev = name => subjDev(SUBJ.id, name); // reefid-<dev><name>: stays on this device
 // Progress per genus (per unit of the subject) {ok, ko, streak, conf}, kept in this browser and synced once signed in.
@@ -1540,7 +1551,7 @@ function route() {
   if (sp !== h) {
     // A genus sheet or a comparison of another subject (opened from Identify, the Coral Finder, with Fish chosen; Codex
     // review #442): that subject comes on screen (setSubject routes again), never the subject's list instead.
-    const S = /^(g|cmp)-./.test(h) && SUBJECTS.find(x => x.pages.includes(h.startsWith('g-') ? 'sheet' : 'cmp'));
+    const S = /^(g|cmp)-./.test(h) && SUBJECTS.find(x => subjOpen(x) && x.pages.includes(h.startsWith('g-') ? 'sheet' : 'cmp'));
     if (S && S !== SUBJ) return void setSubject(S.id);
     return location.replace('#' + sp);
   }
