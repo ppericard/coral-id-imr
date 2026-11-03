@@ -577,41 +577,20 @@ function nextTarget(list) {
   lastQs = [...lastQs, n].slice(-4);
   return n;
 }
-// Player ability per genus (s.th), on the same scale as photo difficulty (0 = average photo). Elo update after each
-// answer, as in the sync sheet (Code.gs stats_): P(right) = g + (1 - g) * sigmoid(ability - difficulty), g = 1/choices;
-// ability moves by K * (result - P(right)), K shrinking as answers build up (Pelánek 2016) but never below 0.25 so a
-// genus that starts going wrong eases off quickly. Starts at 0 (target = the featured photos); no time criteria.
-const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
-// Learners change (Pierre, 2026-11-02, three players: a complete beginner, an IMR RA after one lecture, an expert): a
-// step that only shrinks with the answers suits a stable skill, and a simulated beginner or RA stayed rated as a beginner
-// (easy photos, no traps) at 80-87% right. As Glicko-2's volatility (Glickman 2012): s.vr follows the recent surprise
-// (result - expected, moving average, rate ELO.vr); while answers keep beating (or missing) the expectation, the step
-// grows by up to ELO.vg x |s.vr|, within kmax, so the rating catches up; it settles back once the player is predictable.
-// docs/LEARNING.md.
+// Player ability per genus (s.th), on the same scale as photo difficulty (0 = average photo): an Elo step after each
+// answer with a volatility (Glicko-2), core.js ELO, abilityOf, eloStep (moved there on 2026-11-03 so the full replay of
+// the answer log steps the ability exactly as the app does; docs/LEARNING.md). Starts at 0 (target = the featured
+// photos), or from the player's global level on a genus never answered (core.js playerStart: their abilities on the
+// genera already answered), so a strong player gets traps, single views and harder photos on a new genus from its first
+// question; no time criteria.
 const RECENT = 10;
 const recent = n => {
   const s = P[n] || {};
   return s.h ? s.h.slice(-RECENT) : '';
 };
 const misses = h => [...h].filter(x => x === '0').length;
-// Progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability. A genus never answered
-// starts from the player's global level (core.js playerStart: their abilities on the genera already answered), so a
-// strong player gets traps, single views and harder photos on a new genus from its first question.
-const ability = n => {
-  const s = P[n] || {};
-  return typeof s.th === 'number' ? s.th : s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n);
-};
-function abilityStep(n, s, good, d, k) {
-  const th = ability(n),
-    g = 1 / k,
-    e = g + (1 - g) * sig(th - d),
-    m = (s.ok || 0) + (s.ko || 0);
-  s.vr = Math.round(((1 - ELO.vr) * (s.vr || 0) + ELO.vr * ((good ? 1 : 0) - e)) * 1000) / 1000;
-  const K = Math.min(ELO.kmax, Math.max(ELO.kmin, ELO.kmax / (1 + m / ELO.n)) * (1 + ELO.vg * Math.abs(s.vr)));
-  s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * 100) / 100;
-  delete s.lv;
-  delete s.run;
-}
+const ability = n => abilityOf(P, n);
+const abilityStep = (n, s, good, d, k) => eloStep(P, n, s, good, d, k);
 // For My progress: where the genus's photo difficulty stands, and how many of its game photos the player has seen.
 const photoBand = n => {
   const t = ability(n) - PICKD.TARGET_OFF;
@@ -669,19 +648,28 @@ const mxMarks = () =>
       .filter(n => n !== LEVEL && P[n] && P[n].mx)
       .map(n => [n, P[n].mx])
   );
-function mxRecalc(fn) {
+// why: the reason a mark goes, for the card's words (progress.js mxLostText): 'bkt' (default), an exam passed under the
+// former model (a record without s.pg); 'rules', a recalculation under a newer rules version (the sheet's full replay,
+// sync.js replayAdopt, core.js RVS); a function of the genus for a recalculation that can do both.
+function mxRecalc(fn, why = 'bkt') {
   const m0 = mxMarks();
   fn();
   const lost = Object.keys(m0).filter(n => !(P[n] || {}).mx);
-  if (lost.length) mxLost(Object.fromEntries(lost.map(n => [n, m0[n]])));
+  if (lost.length)
+    mxLost(Object.fromEntries(lost.map(n => [n, m0[n]])), Object.fromEntries(lost.map(n => [n, typeof why === 'function' ? why(n) : why])));
   return lost;
 }
-function mxLost(L) {
+function mxLost(L, why = {}) {
   const M = store.get(MXL.KEY, {}) || {},
     due = M.due || {},
-    told = M.told || {};
-  Object.keys(L).forEach(n => told[n] !== L[n] && (due[n] = L[n]));
-  store.set(MXL.KEY, {...M, due, told, ach: 1});
+    told = M.told || {},
+    W = M.why || {};
+  Object.keys(L).forEach(n => {
+    if (told[n] === L[n]) return;
+    due[n] = L[n];
+    W[n] = why[n] || 'bkt';
+  });
+  store.set(MXL.KEY, {...M, due, told, why: W, ach: 1});
   // The achievements and the card now if their code is in and set up (progress.js, app.js SETUP 2), else at its set-up.
   if (typeof achRecheck === 'function' && window.APP_READY) (achRecheck(), mxLostNotice());
 }

@@ -769,9 +769,28 @@ function recalcNotice() {
 // Enter / Escape): those marks go to told and are never told again here; leaving the page closes it unseen and it comes
 // back once the new page is drawn.
 const andList = L => (L.length < 2 ? L.join('') : L.slice(0, -1).join(', ') + ' and ' + L[L.length - 1]);
-function mxLostText(L, nAch) {
-  const one = L.length === 1;
-  return `You passed the mastery exam on ${andList(L.map(n => `<i>${esc(n)}</i>`))} under the beta's first rules, which brought the exam too early. ${one ? 'This genus is back on its progress bar, and its exam' : 'These genera are back on their progress bars, and their exams'} will come again.${nAch ? ` Until then, the ${nAch > 1 ? 'badges' : 'badge'} earned with ${one ? 'it' : 'them'} ${nAch > 1 ? 'are' : 'is'} taken back.` : ''}`;
+// why: the reason per genus (model.js mxRecalc): 'bkt' an exam passed under the former model, 'rules' a recalculation of
+// the whole log under newer rules (the sheet's full replay, sync.js replayAdopt).
+function mxLostText(L, nAch, why = {}) {
+  const one = L.length === 1,
+    it = x => andList(x.map(n => `<i>${esc(n)}</i>`)),
+    B = L.filter(n => (why[n] || 'bkt') === 'bkt'),
+    N = L.filter(n => (why[n] || 'bkt') !== 'bkt'),
+    back = x =>
+      x.length === 1
+        ? 'This genus is back on its progress bar, and its exam'
+        : 'These genera are back on their progress bars, and their exams';
+  return [
+    B.length
+      ? `You passed the mastery exam on ${it(B)} under the beta's first rules, which brought the exam too early. ${back(B)} will come again.`
+      : '',
+    N.length
+      ? `Your progress was recalculated from all your answers with the app's current rules, and the mastery exam you passed on ${it(N)} no longer stands. ${back(N)} will come again.`
+      : '',
+    nAch ? `Until then, the ${nAch > 1 ? 'badges' : 'badge'} earned with ${one ? 'it' : 'them'} ${nAch > 1 ? 'are' : 'is'} taken back.` : ''
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 let mxLostT = 0;
 function mxLostNotice() {
@@ -787,7 +806,7 @@ function mxLostNotice() {
   d.setAttribute('aria-modal', 'true');
   d.setAttribute('aria-label', 'Mastery exam to take again');
   d.innerHTML = `<div class="ulcard"><p class="ulkick">Early beta</p><h3>${L.length > 1 ? 'Mastery exams' : 'Mastery exam'} to take again</h3>
-    <p>${mxLostText(L, (M.gone || []).length)}</p>
+    <p>${mxLostText(L, (M.gone || []).length, M.why || {})}</p>
     <div class="ulbtns"><span></span><button class="next" type="button">OK</button></div></div>`;
   document.body.appendChild(d);
   const close = seen => {
@@ -818,6 +837,64 @@ function mxLostNotice() {
   d.ulClose = () => {
     close(false);
     mxLostT = setTimeout(mxLostNotice, 300);
+  };
+  d.querySelector('.next').onclick = () => close(true);
+  setTimeout(() => d.querySelector('.next').focus({preventScroll: true}), 50);
+}
+// The announcement card of a rules version (core.js RVS msg; Pierre, 2026-11-03: announcement cards show as soon as the
+// player opens or reconnects to the app, on whatever page they land on, one after another if several, never held by
+// the visit floor or the prompt spacing; AGENTS.md "How to make a change" 12). When this device adopts the sheet's full
+// replay of a newer version (sync.js replayAdopt), every version it skipped that has a msg is due, once per version
+// on this device (RVN.KEY, device only: due, the versions still to show; told, those shown). One card per version,
+// oldest first, the next as soon as one is closed; like recalcNotice and mxLostNotice it only waits for another card
+// or the tour on screen (tried again every 2 s), and a page change closes it unseen to show it again on the new page.
+// At start-up (app.js SETUP 2, after the two cards above) and right after an adoption.
+const RVN = {KEY: 'imr-rv-msg'};
+function rvNoticeAdd(from, to) {
+  const M = store.get(RVN.KEY, {}) || {},
+    told = M.told || [],
+    due = (M.due || []).filter(v => !told.includes(v));
+  rvMsgs(from, to).forEach(x => !told.includes(x.v) && !due.includes(x.v) && due.push(x.v));
+  store.set(RVN.KEY, {due: due.sort((a, b) => a - b), told});
+  if (window.APP_READY) rvNotice();
+}
+let rvT = 0;
+function rvNotice() {
+  clearTimeout(rvT);
+  const M = store.get(RVN.KEY, {}) || {},
+    x = RVS.find(r => (M.due || []).includes(r.v) && r.msg && !(M.told || []).includes(r.v));
+  if (!x || document.querySelector('.rvmsg')) return;
+  if (document.querySelector('#tour, .unlock')) return void (rvT = setTimeout(rvNotice, 2000));
+  const d = document.createElement('div');
+  d.className = 'unlock rvmsg';
+  d.setAttribute('role', 'dialog');
+  d.setAttribute('aria-modal', 'true');
+  d.setAttribute('aria-label', 'Update');
+  d.innerHTML = `<div class="ulcard"><p class="ulkick">Update</p><h3>${x.msg.t}</h3><p>${x.msg.p}</p>
+    <div class="ulbtns"><span></span><button class="next" type="button">Got it</button></div></div>`;
+  document.body.appendChild(d);
+  const close = seen => {
+    if (seen) {
+      const N = store.get(RVN.KEY, {}) || {};
+      store.set(RVN.KEY, {due: (N.due || []).filter(v => v !== x.v), told: [...new Set([...(N.told || []), x.v])]});
+    }
+    d.remove();
+    document.removeEventListener('keydown', key, true);
+    if (typeof qclockAgain === 'function') qclockAgain(); // over a question: its time to answer counts from here
+    if (seen) rvNotice(); // the next version's card, if any
+  };
+  const key = e => {
+    if (e.key === 'Tab') return;
+    e.stopPropagation(); // never the quiz's keys behind the card
+    if (/^\d$/.test(e.key)) e.preventDefault();
+    if (e.key !== 'Escape' && e.key !== 'Enter') return;
+    e.preventDefault();
+    close(true);
+  };
+  document.addEventListener('keydown', key, true);
+  d.ulClose = () => {
+    close(false);
+    rvT = setTimeout(rvNotice, 300);
   };
   d.querySelector('.next').onclick = () => close(true);
   setTimeout(() => d.querySelector('.next').focus({preventScroll: true}), 50);

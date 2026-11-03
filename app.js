@@ -1400,6 +1400,7 @@ const SETUP = {
     achCheck(); // before My progress opens, so its badge counts them
     recalcNotice(); // every player's progress recalculated (2026-11-02): said once, with a pop-up
     mxLostNotice(); // a learned mark taken away (model.js mxRecalc): said once, after the card above if both are due
+    rvNotice(); // the cards of the rules versions skipped (core.js RVS msg, sync.js replayAdopt): after those above
     prog();
     window.APP_READY = true; // Home, the quiz and the Learn pages work (tests and tools/perf.js wait for this)
   },

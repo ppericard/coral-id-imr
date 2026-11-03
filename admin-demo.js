@@ -281,6 +281,7 @@
         R = (rep[aid(u.name)] || {P: {}}).P,
         P = {};
       Object.entries(R).forEach(([g, r]) => {
+        if (g === LEVEL) return; // the replay's global level: the demo's copies keep none
         const o = old[g] || {};
         P[g] =
           u.name === 'Dio Demo'

@@ -75,13 +75,15 @@
       // model only while the other side has not moved since B: answers saved from another device win over a mere
       // recalculation (Codex review #387: an old copy reopened must not undo a passed exam), and the recalculation is
       // applied to them after the merge (model.js memRecalcAll).
+      // The same for a record this device adopted from the sheet's full replay (rv, the rules version: sync.js
+      // replayAdopt): it replaces the copy of the same answers, unless the other side has answered since.
       const moved = x => (x.ok || 0) + (x.ko || 0) !== (b.ok || 0) + (b.ko || 0) || (x.h || '') !== (b.h || ''),
-        mine = moved(l) || ((l.pm || 0) !== (b.pm || 0) && !moved(r));
+        mine = moved(l) || (((l.pm || 0) !== (b.pm || 0) || (l.rv || 0) !== (b.rv || 0)) && !moved(r));
       out.streak = mine ? l.streak || 0 : r.streak || 0;
       if (mine && l.h) out.h = l.h;
       if (mine)
         // vr: the Elo step's volatility (app.js abilityStep), part of the model the device that played updated.
-        ['lv', 'run', 'L', 'pg', 'pm', 'th', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
+        ['lv', 'run', 'L', 'pg', 'pm', 'rv', 'th', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
@@ -379,6 +381,8 @@
   // (s.pg kept beside s.mx) is left alone. Not silent (Pierre, 2026-11-03: players know they test an early beta): the
   // app sees the mark go (model.js mxRecalc), tells the player once with a card (progress.js mxLostNotice) and takes back the
   // learned-based achievements the progress no longer meets (achRevoke, progress.js achRecheck).
+  // Since the sheet's full replay (replayProgress, RVS; 2026-11-03) this is only the fallback for a device that never
+  // reaches the sheet: a record adopted from the replay carries pm 1, so it is never corrected here.
   function memRecalc(s, mem) {
     if (!s || typeof s !== 'object') return false;
     let old = false;
@@ -942,6 +946,8 @@
   // BKT); until that runs, it counts at the exam entry.
   const PROG = {A: 0.15, M: 0.8, LOOK: 0.5, OLD: 0.67};
   const pgStep = (g, good, w) => Math.round((g + PROG.A * w * ((good ? 1 : 0) - g)) * 1e4) / 1e4;
+  // The fallback for a device that never reaches the sheet: once it does, the sheet's full replay of its log replaces
+  // such a record (replayProgress, sync.js replayAdopt).
   function pgOf(s) {
     if (!s) return 0;
     if (typeof s.pg === 'number') return s.pg;
@@ -1009,31 +1015,88 @@
     return n >= 2 && n < 4 ? n : 4;
   };
 
+  // Player ability per genus (s.th), on the same scale as photo difficulty (0 = average photo): an Elo step after each
+  // answer, as in the sync sheet (Code.gs stats_): P(right) = g + (1 - g) * sigmoid(ability - difficulty), g = 1/choices;
+  // ability moves by K * (result - P(right)), K shrinking as answers build up (Pelánek 2016) but never below kmin, so a
+  // genus that starts going wrong eases off quickly. Learners change (Pierre, 2026-11-02): as Glicko-2's volatility
+  // (Glickman 2012), s.vr follows the recent surprise (result - expected, moving average, rate vr); while answers keep
+  // beating (or missing) the expectation, the step grows by up to vg x |s.vr|, within kmax. docs/LEARNING.md. Moved here
+  // from model.js (2026-11-03) so the full replay (replayProgress) rebuilds the ability with the app's own step;
+  // model.js ability / abilityStep call these on the app's P.
+  // abilityOf(P, n): s.th; progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability; a
+  // genus never answered starts from the player's global level (playerStart).
+  const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
+  const abilityOf = (P, n) => {
+    const s = (P || {})[n] || {};
+    return typeof s.th === 'number' ? s.th : s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n);
+  };
+  function eloStep(P, n, s, good, d, k) {
+    const th = abilityOf(P, n),
+      g = 1 / k,
+      e = g + (1 - g) * sigm(th - d),
+      m = (s.ok || 0) + (s.ko || 0);
+    s.vr = Math.round(((1 - ELO.vr) * (s.vr || 0) + ELO.vr * ((good ? 1 : 0) - e)) * 1000) / 1000;
+    const K = Math.min(ELO.kmax, Math.max(ELO.kmin, ELO.kmax / (1 + m / ELO.n)) * (1 + ELO.vg * Math.abs(s.vr)));
+    s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * 100) / 100;
+    delete s.lv;
+    delete s.run;
+  }
+
+  // Rules versions (Pierre, 2026-11-03: progress is recalculated from the whole answer log, by the sheet, automatically,
+  // now and whenever the progress engine changes). Every change to a rule that moves the progress (what an answer
+  // weighs, the moving average, the ability step, the photo memory, what the replay keeps from the device...) appends
+  // an entry here: v (the next number), at (the date), why (one line for the docs), msg (null, or the announcement card
+  // {t: title, p: paragraph, in plain words} that every device which skipped this version shows once; Pierre decides
+  // per version, AGENTS.md "How to make a change" 12). The sync script, which embeds this file (tools/sync_core.py),
+  // replays a player's log again when their stored replay is older than RV, and the app adopts a replay newer than the
+  // one it applied (sync.js replayAdopt). docs/LEARNING.md "Full replay".
+  const RVS = [
+    {
+      v: 1,
+      at: '2026-11-03',
+      why: 'Full replay of each player by the sheet: moving average weighed by what each answer proves, photo memory, former-model learned marks dropped',
+      msg: null
+    }
+  ];
+  const RV = RVS[RVS.length - 1].v;
+  // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
+  // has one, oldest first.
+  const rvMsgs = (from, to) => RVS.filter(x => x.v > (from || 0) && x.v <= to && x.msg);
+
   // Full replay (Pierre, 2026-11-03: "why recalculate on the phones when the phone doesn't have the full log? Recalculate
   // from all the results"): every player's progress rebuilt from the sheet's answer log, in time order, with today's rules
-  // (the weights above, pgStep, the photo memory), as if every answer had been played under them. The reference
-  // recalculation: the device's own (memRecalc from s.ps, pgOf from the last 10 results s.h) only approximate it from
-  // what a device keeps. docs/LEARNING.md "Full replay".
-  // rows: the admin's answer log (sheet readAnswers: [anonymous id, time ms, genus shown, answered, right 0|1, mode,
-  // photos, expected e, ability th, new photos, choices, ...]). o: gen (data.json genera, Millepora and the bonus genera
-  // included: look-alikes `look`, family `fam`), mem (photo memory offsets, ?stats=1 mem; the prior without), conf (the
-  // pooled pairs, ?stats=1 conf, as the app's PCONF), since ({id: time ms}: only the answers after a progress reset),
-  // memory (false: the rule before the photo memory, tools/memreplay.js), onAnswer(row, {d, fam, k, w, look}).
-  // Returns {id: {P: {genus: {pg, ok, ko, h, ps, off, conf, u}}, n, used, rep}}: per genus the moving average pg (what the
-  // app keeps as s.pg), right / wrong answers, the last 10 results, the photos [shown, right], the choices offered beside
-  // it and the genera given instead (the app's s.off, s.conf), u = answers that moved pg; per player the rows read (n),
+  // (the weights above, pgStep, the photo memory, the ability step), as if every answer had been played under them. The
+  // reference recalculation, done by the sync sheet itself (Code.gs replay_, in the reply to a sign-in, load or save
+  // when the player's stored replay is older than RV or covers fewer rows than the log has) and adopted by the app
+  // (sync.js replayAdopt). The device's own recalculations (memRecalc from s.ps, pgOf from the last 10 results s.h) only
+  // approximate it from what a device keeps: they remain the fallback for a device that never reaches the sheet.
+  // docs/LEARNING.md "Full replay".
+  // rows: the answer log (sheet readAnswers rows, Code.gs rowsOf_, or the app's own log through logRow: [id, time ms,
+  // genus shown, answered, right 0|1, mode, photos, expected e, ability th, new photos, choices, ...]). o: gen (data.json
+  // genera, Millepora and the bonus genera included: look-alikes `look`, family `fam`), mem (photo memory offsets,
+  // ?stats=1 mem; the prior without), conf (the pooled pairs, ?stats=1 conf, as the app's PCONF), since ({id: time ms}:
+  // only the answers after a progress reset), memory (false: the rule before the photo memory, tools/memreplay.js),
+  // start ({id: player}: a replay to go on from, as returned here, e.g. the sheet's, with this device's answers not in
+  // the sheet yet on top; copied, never changed), onAnswer(row, {d, fam, k, w, look}).
+  // Returns {id: {P: {genus: {pg, ok, ko, h, ps, off, conf, u, th, vr, streak, at, du}, '~level': {ok, ko, th, vr, at}},
+  // n, used, rep}}: per genus the moving average pg (what the app keeps as s.pg), right / wrong answers, the last 10
+  // results, the photos [shown, right], the choices offered beside it and the genera given instead (the app's s.off,
+  // s.conf), u = answers that moved pg, the ability th and its volatility vr (eloStep, as quiz.js answer steps them),
+  // the run of right answers (streak), the last answer (at), a look-alike duel won (du); the global level LEVEL as the
+  // app keeps it (seeded at the first answer by levelSeed, then one step per answer); per player the rows read (n),
   // replayed (used: with e and th) and on a photo already shown (rep).
   // Each question's difficulty d (photo difficulty, + 0.5 for a photo shown alone) is recovered from what the app logged
   // then: e = 1/k + (1 - 1/k) sig(th - d), th the player's ability on the genus at that moment. Since the photo memory
   // (MEM_LOGGED) the logged e includes the memory of the photos (fam), taken out again here with the replay's own fam.
   // Approximations, explicit: the ability th and the photos are those the app logged (the game would have drawn others
-  // under other rules); a comeback question's recall is taken as 1 (its e logged with it reads as a harder photo); the
+  // under other rules; the weights use the logged th, the replayed th is the app's step over the recovered
+  // difficulties); a comeback question's recall is taken as 1 (its e logged with it reads as a harder photo); the
   // look-alike test is the app's (declared look-alikes or confusions over CONF.TRAP, pooled and the player's own) with a
   // prior from the look-alikes and the family only (the app also gives CONF.FORM to genera sharing an IMR growth form);
   // a miss on the genus wrongly given weighs the chance the player had on the genus shown (its own ability is not
   // logged); every photo of a right answer counts as recognised (the app does not count a corallites photo answered
   // without opening it, which the log leaves out anyway). Answers logged without e and th (before sheet v5) count in
-  // ok/ko/h only. The mastery exam is not replayed: replayedOf takes it from the saved copy.
+  // ok/ko/h only, and move no ability. The mastery exam is not replayed: replayedOf takes it from the saved copy.
   const MEM_LOGGED = Date.UTC(2026, 10, 3, 4, 46); // PR #387 merged: the app's logged e includes the photo memory
   function replayProgress(rows, o = {}) {
     const gen = o.gen || {},
@@ -1041,7 +1104,7 @@
       conf = o.conf || {},
       since = o.since || {},
       memory = o.memory !== false,
-      out = {};
+      out = o.start ? JSON.parse(JSON.stringify(o.start)) : {};
     const prior = (t, n) => {
       const a = gen[t] || {},
         b = gen[n] || {};
@@ -1064,24 +1127,36 @@
         const id = r[0];
         if (since[id] && !(r[1] > since[id])) return;
         const pl = (out[id] = out[id] || {P: {}, n: 0, used: 0, rep: 0}),
-          rec = g => (pl.P[g] = pl.P[g] || {pg: 0, ok: 0, ko: 0, h: '', ps: {}, u: 0}),
+          rec = g => {
+            const x = (pl.P[g] = pl.P[g] || {pg: 0, ok: 0, ko: 0, h: '', ps: {}, u: 0});
+            if (!x.ps) x.ps = {};
+            if (typeof x.pg !== 'number') x.pg = 0;
+            x.h = x.h || '';
+            x.u = x.u || 0;
+            return x;
+          },
           t = String(r[2]),
           c = String(r[3] || ''),
           ok = !!r[4],
+          mode = String(r[5] || ''),
           fs = split(r[6]),
           e = r[7],
           th = r[8],
           chs = split(r[10]),
-          k = kOf(r[5], r[10]),
+          k = kOf(mode, r[10]),
           s = rec(t),
-          hs = fs.map(f => s.ps[f]);
+          hs = fs.map(f => s.ps[f]),
+          wrong = !ok && c && c !== t && gen[c];
         pl.n++;
         if (hs.some(h => h && h[0])) pl.rep++;
         // The choices offered and the genus given instead, before the weight (as quiz.js answer counts them).
         chs.forEach(x => x !== t && ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1));
         s[ok ? 'ok' : 'ko']++;
+        s.streak = ok ? (s.streak || 0) + 1 : 0;
         if (!ok && c) (s.conf = s.conf || {})[c] = (s.conf[c] || 0) + 1;
-        if (typeof e === 'number' && typeof th === 'number' && fs.length && k > 1) {
+        const replayable = typeof e === 'number' && typeof th === 'number' && fs.length && k > 1;
+        let dm = 0;
+        if (replayable) {
           pl.used++;
           const fam = memFam(hs, mem),
             q = Math.min(0.995, Math.max(0.005, (e - 1 / k) / (1 - 1 / k))),
@@ -1090,18 +1165,33 @@
             fm = memory ? fam : 0,
             look = chs.some(x => lookOf(pl.P, t, x)),
             w = ok ? pgRightW(k, look) * pgMemW(th, d, fm, k) : pgMissW(th, d + fm, k);
+          dm = d + fm;
           s.pg = pgStep(s.pg, ok, w);
           s.u++;
           // Pierre's rule: a wrong answer counts against the genus given too (without the photo memory: it is of the
           // genus shown). Its own ability is not logged: the chance on the genus shown stands for it.
-          if (!ok && c && c !== t && gen[c]) {
+          if (wrong) {
             const x = rec(c);
             x.pg = pgStep(x.pg, false, pgMissW(th, d, k));
             x.u++;
           }
           if (o.onAnswer) o.onAnswer(r, {d, fam: fm, k, w, look});
+          // The ability, as quiz.js answer steps it: the genus shown against the question's difficulty with the memory.
+          eloStep(pl.P, t, s, ok, dm, k);
         }
-        if (!ok && c && c !== t && gen[c]) rec(c).h = (rec(c).h + '0').slice(-10);
+        // The global level (quiz.js answer): made at the first answer from the player's history, then one step each.
+        if (pl.P[LEVEL]) pl.P[LEVEL][ok ? 'ok' : 'ko']++;
+        else pl.P[LEVEL] = levelSeed(pl.P);
+        if (replayable) eloStep(pl.P, LEVEL, pl.P[LEVEL], ok, dm, k);
+        pl.P[LEVEL].at = r[1];
+        s.at = r[1];
+        if (ok && (/^quiz-duel/.test(mode) || /\|d(\||$)/.test(mode))) s.du = 1;
+        if (wrong) {
+          const x = rec(c);
+          x.h = (x.h + '0').slice(-10);
+          x.streak = 0;
+          if (replayable) eloStep(pl.P, c, x, false, 0, k); // quiz.js: the genus given, at difficulty 0
+        }
         s.h = (s.h + (ok ? 1 : 0)).slice(-10);
         fs.forEach(f => {
           const x = (s.ps[f] = s.ps[f] || [0, 0]);
@@ -1111,29 +1201,86 @@
       });
     return out;
   }
-  // A player's progress as the app would hold it after the replay: per genus, the replayed s.pg (the saved copy's own,
-  // read as the app reads it, pgOf, for a genus the log has no replayable answer on), and from the saved copy what the log
-  // cannot give: the mastery exam passed (s.mx) and the one in course (s.ex). Not for an exam passed under the former
-  // model (a record without s.pg, before 2026-11-02; memRecalc drops it, commit of 2026-11-03): its genus takes the exam
-  // again. The replay does not decide the exam; a genus learned keeps it here even if its replayed bar is lower (the app
-  // only takes it away at a miss, model.js mxKept). saved: the player's imr-coral-progress; rep: replayProgress's player.
-  function replayedOf(rep, saved) {
-    const S = saved && typeof saved === 'object' ? saved : {},
+  // An answer of the app's own log (quiz.js answer: {id, t, g, a, ok, m, ph, e, th, nw, ch}) as a replay row for player
+  // id: this device's answers the sheet has not confirmed yet, replayed on top of the sheet's replay (sync.js).
+  const logRow = (a, id) => [
+    id,
+    Date.parse(a.t) || 0,
+    String(a.g || ''),
+    String(a.a || ''),
+    a.ok ? 1 : 0,
+    String(a.m || ''),
+    String(a.ph || ''),
+    typeof a.e === 'number' ? a.e : null,
+    typeof a.th === 'number' ? a.th : null,
+    typeof a.nw === 'number' ? a.nw : null,
+    String(a.ch || '')
+  ];
+  // A player's progress as the app holds it after the replay (rep: replayProgress's player; saved: the player's
+  // imr-coral-progress, the device's copy in the app, the sheet's copy in the admin). What comes from where:
+  // - from the replay, for every genus the log has replayable answers on: pg, ok, ko, h, ps, off, conf, th, vr, streak,
+  //   at (the later of the two), du (either), pm 1 (the record is under the photo memory rule: memRecalc must never
+  //   correct it again), and rv when given (the rules version it was replayed with: mergeProgress then keeps it over
+  //   an older copy of the same answers);
+  // - from the saved copy, what the log cannot give: the mastery exam passed (mx) or in course (ex), dropped when passed
+  //   under the former model (a record without s.pg, before 2026-11-02: that genus takes the exam again; memRecalc, commit
+  //   of 2026-11-03); the days answered right (dd, dl: the device's calendar days, for the comeback after a break); the
+  //   last observations shown (ro: the log keeps photo files, not observations); right with the corallites in view
+  //   (cor: the log does not say which view a photo was shown in);
+  // - the saved record as it is (the same mx rule) for a genus the log has no replayable answer on, or fewer answers on
+  //   than the saved copy (answers that never reached the log: a replay must never lose progress);
+  // - LEVEL: the replayed ability (th, vr), the larger answer count of the two (answersSoFar keys the exam's gaps, the
+  //   cards met and the prompts, so it never goes back), the later at, rv when given.
+  // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
+  // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower (the app only
+  // takes it away at a miss, model.js mxKept).
+  const REPLAYED = ['pg', 'ok', 'ko', 'h', 'ps', 'off', 'conf', 'th', 'vr', 'streak'];
+  function replayedOf(rep, saved, rv) {
+    const S = isObj(saved) ? saved : {},
       R = (rep && rep.P) || {},
-      out = {};
+      out = {},
+      n = x => ((x && x.ok) || 0) + ((x && x.ko) || 0),
+      dup = x => JSON.parse(JSON.stringify(x)),
+      kept = s => {
+        const o = dup(s);
+        if (typeof o.pg !== 'number') {
+          delete o.mx;
+          delete o.ex;
+        }
+        return o;
+      };
     new Set([...Object.keys(S), ...Object.keys(R)]).forEach(g => {
-      if (g === LEVEL) return;
-      const s = S[g] && typeof S[g] === 'object' ? S[g] : null,
-        r = R[g],
-        cur = !!s && typeof s.pg === 'number',
-        o = {
-          pg: r && r.u ? r.pg : pgOf(s),
-          ok: r ? r.ok : (s && s.ok) || 0,
-          ko: r ? r.ko : (s && s.ko) || 0,
-          h: r ? r.h : (s && s.h) || ''
-        };
-      if (cur && s.mx) o.mx = s.mx;
-      else if (cur && s.ex) o.ex = s.ex;
+      const s = isObj(S[g]) ? S[g] : null,
+        r = isObj(R[g]) ? R[g] : null;
+      if (g === LEVEL) {
+        const o = s ? dup(s) : {};
+        if (r) {
+          if (typeof r.th === 'number') o.th = r.th;
+          if (typeof r.vr === 'number') o.vr = r.vr;
+          if (!s || n(r) >= n(s)) [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
+          if (r.at) o.at = Math.max(r.at, Number(o.at) || 0);
+          if (rv) o.rv = rv;
+        }
+        out[g] = o;
+        return;
+      }
+      if (!r || !r.u || (s && n(s) > n(r))) {
+        if (s) out[g] = kept(s);
+        else if (r) out[g] = {pg: r.pg || 0, ok: r.ok || 0, ko: r.ko || 0, h: r.h || ''};
+        return;
+      }
+      const o = {};
+      REPLAYED.forEach(f => r[f] !== undefined && (o[f] = dup(r[f])));
+      const at = Math.max(Number(r.at) || 0, Number(s && s.at) || 0);
+      if (at) o.at = at;
+      if (r.du || (s && s.du)) o.du = 1;
+      o.pm = 1;
+      if (rv) o.rv = rv;
+      if (s) {
+        ['dd', 'dl', 'ro', 'cor'].forEach(f => s[f] !== undefined && (o[f] = dup(s[f])));
+        if (typeof s.pg === 'number' && s.mx) o.mx = s.mx;
+        else if (typeof s.pg === 'number' && s.ex) o.ex = dup(s.ex);
+      }
       out[g] = o;
     });
     return out;
@@ -1154,6 +1301,13 @@
     MEM_LOGGED,
     replayProgress,
     replayedOf,
+    logRow,
+    ELO,
+    abilityOf,
+    eloStep,
+    RVS,
+    RV,
+    rvMsgs,
     learnedOf,
     ACH,
     newAch,

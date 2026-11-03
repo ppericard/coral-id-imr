@@ -125,15 +125,15 @@ test('since the photo memory the logged expectation includes it: the replay take
 test('a progress reset: only the answers after it', () => {
   const rows = [row('p', 0, 'A', 'A', 'a0', 'A B C D'), row('p', 1, 'A', 'A', 'a1', 'A B C D'), row('p', 2, 'C', 'C', 'c0', 'C D E A')];
   const R = C.replayProgress(rows, {gen: GEN, since: {p: rows[1][1]}}).p;
-  assert.deepStrictEqual(Object.keys(R.P), ['C']);
+  assert.deepStrictEqual(Object.keys(R.P), ['C', C.LEVEL]);
   assert.strictEqual(R.n, 1);
 });
 
 test('replayedOf: the replayed bars with the saved exams, not one passed under the former model', () => {
   const rep = C.replayProgress([row('p', 0, 'A', 'A', 'a0', 'A B C D'), row('p', 1, 'C', 'C', 'c0', 'C D E A')], {gen: GEN}).p;
   const saved = {
-    A: {pg: 0.9, mx: 1762000000000, ok: 30, ko: 1, h: '1111111111'}, // learned since 2026-11-02: kept
-    C: {L: 0.97, mx: 1, ok: 12, ko: 0, h: '1111111111'}, // learned under BKT: dropped
+    A: {pg: 0.9, mx: 1762000000000, ok: 1, ko: 0, h: '1'}, // learned since 2026-11-02: kept
+    C: {L: 0.97, mx: 1, ok: 1, ko: 0, h: '1'}, // learned under BKT: dropped
     D: {pg: 0.82, ex: {k: 2, v: ['wide'], at: 40}, ok: 9, ko: 0, h: '111111111'}, // no answer in the log: its own bar, its exam
     '~level': {ok: 5, ko: 1, th: 0.3}
   };
@@ -143,7 +143,8 @@ test('replayedOf: the replayed bars with the saved exams, not one passed under t
   assert.strictEqual(G.A.mx, saved.A.mx);
   assert.ok(!G.C.mx && G.C.pg === rep.P.C.pg, 'an exam passed under BKT is taken again');
   assert.deepStrictEqual([G.D.pg, G.D.ex], [0.82, saved.D.ex]);
-  assert.ok(!('~level' in G));
+  assert.deepStrictEqual([G[C.LEVEL].ok, G[C.LEVEL].ko], [5, 1], 'the larger answer count of the two');
+  assert.strictEqual(G[C.LEVEL].th, rep.P[C.LEVEL].th, 'the replayed global level');
   assert.strictEqual(C.learnedOf(G, L), 1);
   assert.strictEqual(C.learnedOf(saved, L), 2);
   assert.ok(C.pctOf(G, L) < C.pctOf(saved, L));
@@ -170,4 +171,115 @@ test('tools/memreplay.js prints the replay of a sample log', () => {
   assert.match(out, /12 answers, 1 players/);
   assert.match(out, /p1: 12 answers \(12 replayed\), \d+% on a photo already shown; mean bar over the 3 genera answered \d+% -> \d+%/);
   assert.match(out, /Acropora\s+6 answers {2}bar \d+% -> \d+% \(silent recalculation \d+%\)/);
+});
+
+// The sheet's full replay, adopted by the app (2026-11-03): the rules versions, the complete record, going on from a replay.
+test('RVS: one entry per rules version, RV the last; messages of the versions skipped', () => {
+  assert.ok(C.RVS.length >= 1);
+  C.RVS.forEach((x, i) => {
+    assert.strictEqual(x.v, i + 1, 'versions numbered 1, 2, 3...');
+    assert.match(x.at, /^\d{4}-\d{2}-\d{2}$/);
+    assert.ok(typeof x.why === 'string' && x.why.length > 10);
+    assert.ok(x.msg === null || (typeof x.msg.t === 'string' && typeof x.msg.p === 'string'), 'msg: null or {t, p}');
+  });
+  assert.strictEqual(C.RV, C.RVS[C.RVS.length - 1].v);
+  assert.strictEqual(C.RVS[0].msg, null, 'the first version (the full replay itself) has no card (Pierre)');
+  assert.deepStrictEqual(
+    C.rvMsgs(0, C.RV),
+    C.RVS.filter(x => x.msg)
+  );
+  assert.deepStrictEqual(C.rvMsgs(C.RV, C.RV), []);
+});
+
+test('replayProgress: the ability, the run, the global level and the times, as quiz.js answer keeps them', () => {
+  const rows = [
+    row('p', 0, 'A', 'A', 'a0', 'A B C D'),
+    row('p', 1, 'A', 'B', 'a1', 'A B C D'),
+    row('p', 2, 'A', 'A', 'a2', 'A B C D'),
+    row('p', 3, 'C', 'C', 'c0', 'C D E A'),
+    [...row('p', 4, 'A', 'A', 'a3', 'A B'), ...[]].map((x, i) => (i === 5 ? 'quiz-duel' : x))
+  ];
+  const R = C.replayProgress(rows, {gen: GEN}).p.P;
+  // The same steps by hand, in the app's order (quiz.js answer: the genus shown, the global level, the genus given).
+  const P = {},
+    st = n => (P[n] = P[n] || {ok: 0, ko: 0, streak: 0});
+  rows.forEach(r => {
+    const t = r[2],
+      ok = !!r[4],
+      s = st(t),
+      k = C.kOf(r[5], r[10]),
+      q = (r[7] - 1 / k) / (1 - 1 / k),
+      d = r[8] - Math.log(q / (1 - q));
+    s[ok ? 'ok' : 'ko']++;
+    C.eloStep(P, t, s, ok, d, k);
+    if (P[C.LEVEL]) P[C.LEVEL][ok ? 'ok' : 'ko']++;
+    else P[C.LEVEL] = C.levelSeed(P);
+    C.eloStep(P, C.LEVEL, P[C.LEVEL], ok, d, k);
+    if (!ok) C.eloStep(P, r[3], st(r[3]), false, 0, k);
+  });
+  assert.deepStrictEqual([R.A.th, R.A.vr, R.B.th, R.C.th], [P.A.th, P.A.vr, P.B.th, P.C.th]);
+  assert.deepStrictEqual([R[C.LEVEL].ok, R[C.LEVEL].ko, R[C.LEVEL].th, R[C.LEVEL].at], [4, 1, P[C.LEVEL].th, rows[4][1]]);
+  assert.deepStrictEqual([R.A.streak, R.B.streak, R.A.at, R.A.du], [2, 0, rows[4][1], 1]);
+  assert.strictEqual(C.abilityOf({}, 'A'), 0, 'a genus never answered, no global level: 0');
+});
+
+test("replayProgress goes on from a replay: the sheet's, then this device's answers on top, as one replay", () => {
+  const rows = [];
+  for (let i = 0; i < 9; i++) rows.push(row('p', i, i % 3 ? 'A' : 'C', i % 4 ? (i % 3 ? 'A' : 'C') : 'B', 'f' + (i % 4), 'A B C D'));
+  const all = C.replayProgress(rows, {gen: GEN}).p,
+    head = C.replayProgress(rows.slice(0, 6), {gen: GEN}),
+    frozen = JSON.stringify(head),
+    on = C.replayProgress(rows.slice(6), {gen: GEN, start: head}).p;
+  assert.deepStrictEqual(on.P, all.P);
+  assert.strictEqual(JSON.stringify(head), frozen, 'the start is copied, never changed');
+  // The app's own log entry as a row (sync.js replayAdopt).
+  const a = {
+    id: 'x1',
+    t: '2026-11-03T08:00:00.000Z',
+    g: 'A',
+    a: 'B',
+    ok: 0,
+    m: 'quiz|k3',
+    ph: 'f1 f2',
+    e: 0.7,
+    th: 0.4,
+    nw: 1,
+    ch: 'A B C'
+  };
+  assert.deepStrictEqual(C.logRow(a, 'me'), ['me', Date.parse(a.t), 'A', 'B', 0, 'quiz|k3', 'f1 f2', 0.7, 0.4, 1, 'A B C']);
+  assert.deepStrictEqual(C.logRow({id: 'y', t: 'x', g: 'A', a: 'A', ok: 1}, 'me').slice(7), [null, null, null, '']);
+});
+
+test('replayedOf: what the app takes from the replay and what it keeps from its own copy', () => {
+  const rep = C.replayProgress(
+    [row('p', 0, 'A', 'A', 'a0', 'A B C D'), row('p', 1, 'A', 'A', 'a1', 'A B C D'), row('p', 2, 'C', 'C', 'c0', 'C D E A')],
+    {gen: GEN}
+  ).p;
+  const saved = {
+    A: {pg: 0.3, ok: 2, ko: 0, h: '11', th: 0.1, ps: {zz: [9, 9]}, dd: 2, dl: 20400, ro: ['o1'], cor: 1, mx: 5, at: 1, pm: 1},
+    C: {pg: 0.5, ok: 4, ko: 0, h: '1111', ex: {k: 1, v: ['wide'], at: 3}}, // more answers than the log: kept as it is
+    E: {L: 0.9, mx: 1, ok: 1, ko: 0, h: '1'}, // not in the log, learned under the former model: the mark goes
+    '~level': {ok: 2, ko: 0, th: 0.2, at: 5}
+  };
+  const G = C.replayedOf(rep, saved, 3);
+  ['pg', 'ok', 'ko', 'h', 'ps', 'off', 'th', 'vr', 'streak'].forEach(f => assert.deepStrictEqual(G.A[f], rep.P.A[f], f));
+  assert.deepStrictEqual([G.A.dd, G.A.dl, G.A.ro, G.A.cor, G.A.mx, G.A.pm, G.A.rv], [2, 20400, ['o1'], 1, 5, 1, 3]);
+  assert.strictEqual(G.A.at, rep.P.A.at);
+  assert.ok(!('u' in G.A) && !('L' in G.A));
+  assert.deepStrictEqual(G.C, saved.C, 'the log has fewer answers on it: the saved record');
+  assert.ok(G.C !== saved.C);
+  assert.deepStrictEqual(G.E, {L: 0.9, ok: 1, ko: 0, h: '1'});
+  assert.deepStrictEqual(
+    [G[C.LEVEL].ok, G[C.LEVEL].ko, G[C.LEVEL].th, G[C.LEVEL].at, G[C.LEVEL].rv],
+    [3, 0, rep.P[C.LEVEL].th, rep.P[C.LEVEL].at, 3]
+  );
+});
+
+test('mergeProgress: a record adopted from the replay wins over the copy of the same answers, not over new ones', () => {
+  const B = {A: {ok: 2, ko: 0, h: '11', pg: 0.2, th: 0.1}},
+    P = {A: {ok: 2, ko: 0, h: '11', pg: 0.25, th: 0.3, pm: 1, rv: 1}},
+    same = C.mergeProgress(B, P, JSON.parse(JSON.stringify(B))),
+    moved = C.mergeProgress(B, P, {A: {ok: 3, ko: 0, h: '111', pg: 0.3, th: 0.2}});
+  assert.deepStrictEqual([same.A.pg, same.A.th, same.A.rv], [0.25, 0.3, 1]);
+  assert.deepStrictEqual([moved.A.pg, moved.A.ok, moved.A.rv], [0.3, 3, undefined]);
 });

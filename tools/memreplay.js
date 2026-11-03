@@ -135,7 +135,9 @@ const opts = {gen: GEN, mem: MEMV, conf: C.confusionOf(rows).pair},
 const bar = pg => Math.round(95 * Math.min(1, pg / C.PROG.M));
 for (const [id, pl] of Object.entries(NEW)) {
   if ((ONLY && id !== ONLY) || pl.used < MIN) continue;
-  const gs = Object.entries(pl.P).map(([name, g]) => {
+  const gs = Object.entries(pl.P)
+    .filter(([name]) => name !== C.LEVEL)
+    .map(([name, g]) => {
       const o = OLD[id].P[name];
       // What the app's silent recalculation (core.js memRecalc) makes of the old-rule progress, from the genus's photos alone.
       const rc = (x => (C.memRecalc(x, MEMV), x.pg))({pg: o.pg, ps: JSON.parse(JSON.stringify(o.ps))});
