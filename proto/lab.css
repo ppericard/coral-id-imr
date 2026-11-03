@@ -3644,3 +3644,396 @@ body:has(.fdstart:not([hidden])) footer {
     max-height: 32vh;
   }
 }
+
+/* Coral basics (proto/basics.js): a guided path for beginners. Phone first: steps, the photo, then a row with the
+   drawing beside the plain sentence, then the optional check; on desktop the photo sits left, the rest right. */
+.bx-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0 0 12px;
+}
+.bx-steps a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+  background: var(--surface);
+  color: var(--ink) !important;
+  font-weight: 600;
+  text-decoration: none;
+}
+.bx-steps a[aria-current] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg) !important;
+}
+.bx-steps a.done::after {
+  content: '✓';
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--good);
+  color: var(--surface);
+  font-size: var(--fs-2xs);
+  line-height: 16px;
+  text-align: center;
+}
+.bx-steps .bx-wl {
+  margin-left: auto;
+}
+/* .lab a paints links in the accent: the step's Next buttons keep the button colours */
+.lab .bx-nav a.next {
+  color: var(--accent-ink);
+}
+.lab .bx-nav a.next.sec {
+  color: var(--accent);
+}
+.bx-lay {
+  display: grid;
+  gap: 4px;
+  max-width: 640px;
+}
+@media (min-width: 1024px) {
+  .bx-lay {
+    max-width: none;
+    grid-template-columns: minmax(0, 1.25fr) minmax(340px, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+}
+.bx-fig {
+  margin: 0;
+}
+.bx-fig figcaption {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  margin-top: 4px;
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
+.bx-ph {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r);
+  background: var(--photo-bg);
+}
+.bx-ph img {
+  position: absolute;
+  max-width: none;
+  user-select: none;
+}
+.bx-ph svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.bx-dim {
+  fill: var(--photo-bg);
+  opacity: 0.4;
+}
+.bx-ring,
+.bx-out {
+  fill: none;
+  stroke: var(--hl);
+  stroke-width: 3.5;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 1.5px var(--photo-bg));
+}
+.bx-out {
+  stroke-dasharray: 9 6;
+}
+.bx-lead {
+  stroke: var(--on-photo);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 1.5px var(--photo-bg));
+}
+.bx-dot {
+  fill: var(--hl);
+  stroke: var(--on-photo);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.bx-hit {
+  fill: none;
+  stroke: var(--warn);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.bx-lab {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 2px 9px;
+  border-radius: var(--pill);
+  background: var(--scrim);
+  color: var(--on-photo);
+  font-size: var(--fs-s);
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.bx-lab.bx-l {
+  transform: translate(0, -50%);
+}
+.bx-lab.bx-r {
+  transform: translate(-100%, -50%);
+}
+.bx-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.lab h3.bx-t {
+  margin: 10px 0 8px;
+}
+.bx-t small {
+  display: block;
+  font-family: var(--body);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+@media (min-width: 1024px) {
+  .lab h3.bx-t {
+    margin-top: 0;
+  }
+}
+.bx-say {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.bx-say p {
+  margin: 0;
+}
+.bx-draw {
+  flex: 0 0 120px;
+}
+.bx-draw svg,
+.bx-dch svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+@media (min-width: 600px) {
+  .bx-draw {
+    flex-basis: 140px;
+  }
+}
+.bx-off {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.bx-check {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.bx-check summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+.bx-qt {
+  margin: 8px 0 4px;
+  font-weight: 600;
+}
+.lab .bx-q .choices {
+  margin: 6px 0;
+}
+.bx-fb {
+  min-height: 1.4em;
+  margin: 6px 0;
+}
+.lab .bx-dch {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.lab .bx-dch .choice,
+.lab .bx-pick .choice {
+  padding: 4px;
+}
+.bx-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 6px 0;
+}
+.bx-pick img,
+.bx-cph img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+}
+.bx-cph img {
+  max-height: 34vh;
+  border-radius: var(--r);
+}
+.bx-tap {
+  max-width: 460px;
+  cursor: crosshair;
+}
+.bx-tapm {
+  stroke: var(--on-photo);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.bx-tapm.ok {
+  fill: var(--good);
+}
+.bx-tapm.ko {
+  fill: var(--bad);
+}
+.bx-seg {
+  margin-bottom: 8px;
+}
+.bx-forms {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.bx-forms button {
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.bx-forms button[aria-pressed='true'] {
+  border-color: var(--hl);
+  box-shadow: inset 0 0 0 2px var(--hl);
+}
+.bx-forms img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+.bx-forms span {
+  display: block;
+  padding: 3px 2px;
+  font-size: var(--fs-xs);
+  line-height: 1.2;
+}
+.bx-fdef {
+  margin: 8px 0 0;
+  font-size: var(--fs-s);
+}
+.bx-fdef small {
+  color: var(--muted);
+}
+.bx-words {
+  display: grid;
+  max-width: 720px;
+  margin: 0;
+}
+.bx-words > div {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.bx-words dt {
+  font-weight: 600;
+}
+.bx-words dt small {
+  color: var(--muted);
+  font-weight: 400;
+}
+.bx-words dd {
+  margin: 0;
+}
+/* the drawings: quiet greys, the part being taught in --hl */
+.bxd .bg {
+  fill: var(--surface);
+}
+.bxd .sk,
+.bxd .cupf {
+  fill: color-mix(in srgb, var(--muted) 22%, var(--surface));
+  stroke: color-mix(in srgb, var(--muted) 70%, var(--surface));
+  stroke-width: 1.5;
+}
+.bxd .cupf {
+  stroke: none;
+}
+.bxd .gap {
+  fill: color-mix(in srgb, var(--muted) 8%, var(--surface));
+}
+.bxd .ln,
+.bxd .wl {
+  fill: none;
+  stroke: color-mix(in srgb, var(--muted) 70%, var(--surface));
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.bxd .ctr {
+  fill: color-mix(in srgb, var(--muted) 65%, var(--surface));
+}
+.bxd .cr {
+  fill: color-mix(in srgb, var(--muted) 55%, var(--surface));
+}
+.bxd .ts {
+  fill: color-mix(in srgb, var(--accent) 20%, var(--surface));
+  stroke: var(--accent);
+  stroke-width: 1.2;
+}
+.bxd .tn {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 65%, var(--surface));
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.bxd .tk {
+  fill: color-mix(in srgb, var(--accent) 65%, var(--surface));
+}
+.bxd .mo {
+  fill: var(--ink);
+}
+.bxd .lb {
+  fill: var(--ink);
+  font-family: var(--body);
+  font-size: 12px;
+}
+.bxd .lb.hlt {
+  fill: var(--hl);
+  font-weight: 700;
+}
+.bxd .lt {
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+.bxd .mag {
+  fill: var(--surface);
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+.bxd .hl {
+  stroke: var(--hl);
+  stroke-width: 2.6;
+}
+.bxd .wl.hl {
+  stroke-width: 3;
+}
+.bxd .hlf,
+.bxd .gap.hl {
+  fill: var(--hl-soft);
+}
+.bxd .ctr.hl {
+  fill: var(--hl);
+}
