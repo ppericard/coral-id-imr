@@ -1483,6 +1483,7 @@ const SETUP = {
     achMigrate();
     achCheck(); // before My progress opens, so its badge counts them
     recalcNotice(); // every player's progress recalculated (2026-11-02): said once, with a pop-up
+    sorryNotice(); // an apology to the players of the broken opening (2026-11-03/04): once, after any recalculation note
     prog();
     window.APP_READY = true; // Home, the quiz and the Learn pages work (tests and tools/perf.js wait for this)
   },

@@ -282,7 +282,7 @@ const weight = n => {
 // not met yet). It replaced a share of the genus draw given to the genera not met yet (OPEN.READY 35% with no shaky genus
 // down to OPEN.TRICKLE 3% at K, K 10), a second throttle on top of INTRO.EVERY. K 8: simulated, a
 // beginner meets genera at the pace they did, the RAs and an expert faster, learning as much (docs/LEARNING.md).
-const OPEN = {K: 8, P: 0.6, T: 3, CONF: 2, DATA: 300};
+const OPEN = {K: 8, P: 0.6, T: 3, CONF: 2, DATA: 300, MAX: 3, WIN: 15};
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
 // OPEN.DATA, up to 1. Without them the genus difficulty is only the photo sets and declared look-alikes, which put
 // Acropora and Galaxea among the hardest and Alveopora first (Pierre expects the first two easy): the order then stays
@@ -323,6 +323,21 @@ const shaky = n => {
 // answers and its ability but is never asked until its card reopens it, so counted it would hold the opening at 0 for
 // good (Codex P1 on #408).
 const openChance = list => Math.max(0, 1 - list.filter(n => introduced(n) && shaky(n)).length / OPEN.K);
+// The opening's pace (2026-11-04, Pierre, after a strong player was opened 7 genera in 16 answers right after a comeback,
+// and fell from 83% to 50% right: docs/LEARNING.md "Opening pace"): the genera opened on a card (the first cards, or one
+// of their own) in the last OPEN.WIN answers, as at (the answers count at which the question will show).
+const openRecent = (at = answersSoFar()) =>
+  Object.entries(introMap())
+    .filter(([n, e]) => /^[sc]$/.test(e[3] || (e[1] ? 's' : 'c')) && !closed(n) && at - (Number(e[0]) || 0) < OPEN.WIN)
+    .map(([n]) => n);
+// No new genus while one opened in the last OPEN.WIN answers has not been asked yet (its card read, its question still
+// to come), nor once OPEN.MAX of them have opened: about 3 new genera per 15 answers at most, whatever openChance says.
+// Both read the same window, so a genus whose question is slow to come holds the next card OPEN.WIN answers at most.
+// soon: the genera of the questions already on screen or planned before this one (quiz.js planNext), asked by then.
+const openPace = (at = answersSoFar(), soon = []) => {
+  const L = openRecent(at);
+  return L.length < OPEN.MAX && L.every(n => asked(n) || soon.includes(n));
+};
 // The genus to open among those not met yet (fresh): the easiest first, softly (OPEN.T, as far as the data are trusted:
 // easyTrust), and the most common near Dauin (commonFactor). A ★ genus waits while a genus its card compares it to is in
 // the list and not met (Pierre, 2026-11-03, #402; core.js starWaits: a reference not in the list never holds it back,
@@ -526,6 +541,13 @@ const introReset = () => {
 const HOLDK = 'imr-hold';
 let HOLDS = Number(store.get(HOLDK, 0)) || 0;
 const introHold = () => HOLDS >= INTRO.HOLD;
+// Easier questions while the hold is on (2026-11-04, Pierre: a run that goes wrong must not only stop the cards, the
+// questions must get easier too; docs/LEARNING.md "Easier questions when a run goes wrong"): the ability the photos and
+// the format (traps, single views) aim at is lowered by how far the sum h has gone past INTRO.HOLD, in logits, so 0 at
+// the threshold (no cliff) and 1 for each answer's worth of misses beyond it; the right answers that pay h back bring it
+// back. No new constant: h is already in success units, the scale the Elo steps the ability on. Never on an exam
+// question (as hard as the game gets).
+const holdEase = () => Math.min(0, INTRO.HOLD - HOLDS);
 // slack: the allowance an answer (INTRO.SLACK for the hold; the comeback's CUSUM passes the rust a question repairs).
 const holdNext = (h, e, good, slack = INTRO.SLACK) =>
   Math.max(0, Math.round((h + (Number(e) || 0) - (good ? 1 : 0) - slack) * 1000) / 1000);
@@ -995,8 +1017,8 @@ const shownLevel = n => {
 // between. A mistake drops the ability by about 0.5, so the choices ease off again. The other
 // wrong choices are easy ones while traps are few: genera sharing no IMR growth form with the target (imrFormsOf),
 // other IMR lecture groups first; once two traps are in, the last one is any genus (family first), as before.
-const trapsFor = t => {
-  const x = formatAt(ability(t))[0];
+const trapsFor = (t, shift = 0) => {
+  const x = formatAt(ability(t) + shift)[0];
   return Math.floor(x) + (Math.random() < x % 1 ? 1 : 0);
 };
 // Confusion score of genus n beside target t (Pierre, 2026-11-01): how often players mix the two up when both are offered
@@ -1024,6 +1046,33 @@ function confOf(t, n) {
 }
 // Traps = the genera most confused with the target (a little shuffle among close scores, so every likely pair gets tried).
 const confusable = (t, n) => confOf(t, n) >= CONF.TRAP;
+// Known mix-ups (2026-11-04, Pierre; docs/LEARNING.md "Known mix-ups"): a question on t among choices that hold a genus
+// this player mixes up with t more than everyone does is that much harder for them (core.js confGap, in logits: the
+// player's own score of the pair against the pooled one; the most over the choices). The expected success, the Elo
+// step, the progress and the photo's aim all take it, so the question is aimed easier and a miss there costs less: the
+// signal the wrong pick's Elo step gave before #413, now on the pair, without stepping the genus wrongly given. Only on
+// a question with 3 or more plausible choices (k): on the real answers a 2-choice contrast question of the pair (an
+// Again, a duel, right after the side-by-side) or easy choices were right more often than expected, not less, and the
+// term made the prediction worse there (log-loss +0.037 ± 0.009); with 3 or more it brought the expectation of those
+// answers from 0.78 to 0.71, 0.67 right.
+const confTerm = (t, chs, k) =>
+  k >= 3 ? Math.max(0, ...chs.filter(n => n !== t && GX(n)).map(n => confGap(pairConf(P, t, n), pooledConf(t, n)))) : 0;
+// Look-alikes from the data (2026-11-04, Pierre: "if the data says people constantly confuse two genera, they become
+// look-alikes by force; that was the point of the confusion data": core.js dataLook): a pair no source declares, offered
+// together CONF.N times or more and mixed up so often that its pooled score (pooledConf) reaches CONF.TRAP. Such pairs
+// join the declared ones in the duels and the Again (quiz.js duelPick) and on the genus sheet's "Don't confuse with"
+// (learn.js lookHub); the traps and the progress's look-alike weight already follow the same pooled score.
+const isDataLook = (a, b) => {
+  const c = PCONF[a < b ? a + '|' + b : b + '|' + a];
+  return !!c && c[0] >= CONF.N && a !== b && !!GX(a) && !!GX(b) && !isLook(a, b) && dataLook(c, pooledConf(a, b));
+};
+// The pairs of the list L that are look-alikes from the data, each [A, B] in alphabetical order (the pooled pairs only:
+// a pair never offered together cannot qualify).
+const dataLooks = (L = [...slateGenera(), ...bonusList()]) =>
+  Object.keys(PCONF)
+    .map(k => k.split('|'))
+    .filter(([a, b]) => L.includes(a) && L.includes(b) && isDataLook(a, b))
+    .map(p => p.sort());
 function distractors(t, list, traps = trapsFor(t), known = introduced) {
   const ranked = list
     .filter(n => n !== t)

@@ -444,8 +444,26 @@
   }
   // Confusion score of a pair: its mix-up rate when offered together, starting from a prior rate worth CONF.W offers (the
   // declared look-alikes of the IMR lecture and the Coral Finder start high), then following the players' real answers.
-  const CONF = {W: 8, LOOK: 0.3, FAM: 0.12, FORM: 0.08, BASE: 0.03, TRAP: 0.2};
+  // N (2026-11-04): the offers a pair needs before the data can make it a look-alike (dataLook, below).
+  const CONF = {W: 8, LOOK: 0.3, FAM: 0.12, FORM: 0.08, BASE: 0.03, TRAP: 0.2, N: 20};
   const confScore = (c, prior) => ((c ? c[1] : 0) + CONF.W * prior) / ((c ? c[0] : 0) + CONF.W);
+  // A look-alike from the data (Pierre, 2026-11-04: "if the data says people constantly confuse two genera, they become
+  // look-alikes by force; that was the point of the confusion data: to find look-alikes the courses never named"): a
+  // pair offered together CONF.N times or more (c, the pooled [offered, mixed up]) whose pooled score (score, confScore
+  // on the pair's own prior: same family, a shared growth form or neither) reaches CONF.TRAP. The prior's weight (CONF.W
+  // offers at a low rate) is what makes it clear: at 20 offers a pair of unrelated genera needs 6 mix-ups (30%), when
+  // the declared look-alikes were mixed up 13% of the time they were offered (the real answers of 2026-11-03).
+  const dataLook = (c, score) => !!c && c[0] >= CONF.N && score >= CONF.TRAP;
+  // How much harder a question is for a player who mixes up its genus with one of its choices more than everyone does
+  // (2026-11-04, docs/LEARNING.md "Known mix-ups"): the player's own score of the pair (own, pairConf, shrunk toward the
+  // pooled score as confOf does) against the pooled score, in logits, when higher; 0 for a pair the player mixes up no
+  // more than everyone. The pooled score already shows in the photos' difficulty (every player's answers); this is the
+  // player's own excess, so it is never counted twice. No constant: confScore's own prior weight sets how fast it grows.
+  const logitOf = p => Math.log(p / (1 - p));
+  const confGap = (own, pooled) => {
+    const q = Math.min(0.99, Math.max(0.01, pooled));
+    return Math.max(0, logitOf(Math.min(0.99, confScore(own, q))) - logitOf(q));
+  };
   // One player's own record on a pair (progress P): [times the two were offered together, times mixed up], both directions.
   // Offers are counted since 2026-11-01 (P[g].off); mix-ups logged before that count as offered at least once each.
   function pairConf(P, a, b) {
@@ -454,6 +472,65 @@
       mix = ((x.conf || {})[b] || 0) + ((y.conf || {})[a] || 0);
     return [Math.max(mix, ((x.off || {})[b] || 0) + ((y.off || {})[a] || 0)), mix];
   }
+
+  // An apology, once (Pierre, 2026-11-04): from the opening rule of #408 (merged FROM) to this fix, the app opened too
+  // many genera at once to strong players and did not ease the questions after misses. Only to the players who really
+  // felt it (Pierre: "a player who answered a single question then must not get it"), read from the device's own data
+  // when this version first runs on it (progress.js sorryNotice keeps it, so later play changes nothing):
+  // - n: their answers in the window, at least SORRY.N (20). Exact from the answers the device still keeps (signed out:
+  //   all of them); else the answers since the last card shown before FROM (the cards keep the answers count and time).
+  // - h: the opening hold's sum then (model.js holdStep: a CUSUM of the shortfall against each answer's expected
+  //   success e, 0.1 allowed per answer), so where their last run ended: SORRY.H (3, 2 x INTRO.HOLD, the evidence the
+  //   back-to-one-at-a-time card asks for) or more; or half of it with SORRY.CARDS (4, one more than OPEN.MAX now allows)
+  //   genera or more opened on cards within OPEN.WIN answers in the window (c, the most in any 15).
+  // On the real answers (2026-11-03) it selects both collapsed runs (44 answers, h 3.22, 7 cards in 16 answers; 31
+  // answers, h 4.31) and nobody else; a run at the expected success ends at 3 or more about 2-5% of the time
+  // (simulated, 20-80 answers at e 0.7-0.9). Not after UNTIL: a player back weeks later would not know what it is about.
+  const SORRY = {FROM: Date.parse('2026-11-03T11:34:11Z'), UNTIL: Date.parse('2026-11-17T00:00:00Z'), N: 20, H: 3, CARDS: 4, WIN: 15};
+  const sorryFelt = ({n, h, c}) =>
+    (Number(n) || 0) >= SORRY.N && ((Number(h) || 0) >= SORRY.H || ((Number(c) || 0) >= SORRY.CARDS && h >= SORRY.H / 2));
+  // The inputs from the device's data at its first run (first: that time): log, the answers it keeps ({t ISO, ok, e});
+  // cards, the intro map ({genus: [answers, ready, time, kind]}); total, the player's answers count; h, the hold's sum.
+  const sorryOf = ({log, cards, total, h, first}) => {
+    const inW = t => typeof t === 'number' && t >= SORRY.FROM && t < first,
+      nLog = (log || []).filter(a => a && inW(Date.parse(a.t))).length,
+      E = Object.values(cards || {}).filter(e => Array.isArray(e)),
+      before = E.filter(e => typeof e[2] === 'number' && e[2] < SORRY.FROM).map(e => Number(e[0]) || 0), // cards with no time (older) say nothing
+      win = E.filter(e => inW(e[2]) && (e[3] || 'c') === 'c').map(e => Number(e[0]) || 0),
+      // Answers since the last card shown before the window; with no card before it, every answer was in it only when
+      // the cards in it show the player started there.
+      est = before.length ? total - Math.max(...before) : win.length ? total : 0;
+    return {
+      n: Math.max(nLog, est),
+      h: Number(h) || 0,
+      c: Math.max(0, ...win.map(x => win.filter(y => y >= x && y < x + SORRY.WIN).length))
+    };
+  };
+  const sorryDue = ({felt, now, shown}) => !shown && now < SORRY.UNTIL && !!felt && sorryFelt(felt);
+  // The greeting: the first word of the sign-in name, else a plain "Hi!".
+  const sorryHi = name => {
+    const w = String(name || '')
+      .trim()
+      .split(/\s+/)[0];
+    return w ? `Hi ${w}!` : 'Hi!';
+  };
+  // When it happened, as the player's clock says it (tz: minutes behind UTC, Date's getTimezoneOffset): this evening,
+  // yesterday evening (afternoon, morning), else the date.
+  const sorryWhen = (now, tz = 0) => {
+    const loc = t => new Date(t - tz * 60000),
+      f = loc(SORRY.FROM),
+      day = t => Math.floor((t - tz * 60000) / 864e5),
+      h = f.getUTCHours(),
+      part = h >= 17 ? 'evening' : h >= 12 ? 'afternoon' : 'morning',
+      d = day(now) - day(SORRY.FROM);
+    if (d <= 0) return `This ${part}`;
+    if (d === 1) return `Yesterday ${part}`;
+    return `On ${f.getUTCDate()} ${['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][f.getUTCMonth()]}`;
+  };
+  const sorryText = (name, now, tz) => ({
+    t: `${sorryHi(name)} Sorry about your last run.`,
+    p: `${sorryWhen(now, tz)} we adjusted how the app picks your questions, and some of it wasn't right yet: too many new genera came at once, and the questions didn't get easier after misses. It's fixed now. Sorry for the rough ride!`
+  });
 
   // Two admin tabs in one browser share the stored draft. Each write carries _tab: {rev, seen}: its own revision and the
   // revision of the stored draft that tab had last seen. `revs` maps the revisions this tab wrote or took in to their drafts,
@@ -1122,6 +1199,12 @@
     ACH,
     newAch,
     LEVEL,
+    SORRY,
+    sorryFelt,
+    sorryOf,
+    sorryDue,
+    sorryHi,
+    sorryText,
     START,
     playerStart,
     levelSeed,
@@ -1155,6 +1238,8 @@
     confusionOf,
     CONF,
     confScore,
+    confGap,
+    dataLook,
     pairConf,
     mergeUsers
   };

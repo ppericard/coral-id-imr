@@ -4,6 +4,7 @@
 // Offline, reads a file, sends nothing (docs/LEARNING.md "The genus wrongly given in the Elo").
 //
 //   node tools/abilityeval.js answers.json [--variants a,e,e+L] [--player <name or id>] [--min 20] [--json out.json]
+//                             [--priors priors.json]
 //                             [--model other/model.js]
 //
 // answers.json: the answer log, either the admin's readAnswers rows [id, time ms, genus shown, answered, right 0|1, mode,
@@ -19,6 +20,13 @@
 //      skill): every answer moves the level, the offset of the genus shown moves by its own K
 //   e  no step on c (Pelánek et al. 2017, Papoušek et al. 2014: the learner's knowledge of an item is not updated when it
 //      is a distractor); rule 13 stays in the progress (the app since 2026-11-03)
+// +X (2026-11-04, docs/LEARNING.md "Known mix-ups"): the confusion term, the question taken that much harder (core.js
+// confGap, the most over its choices: the player's own score of the pair, replayed from their answers as the app keeps
+// it, s.off and s.conf, against the pooled score) for the prediction and the step; +Y the prediction only; +Z the sum
+// over the choices instead of the most; +M only on a question with 3 or more plausible choices (the app's rule: on a
+// 2-choice contrast question or easy choices the term made the prediction worse). The pooled score: the other players' answers (the whole log, as ?stats=1 would
+// give them, without the player's own) on the prior of each pair, from --priors (the app's pooledConf with no answers,
+// {"A|B": prior}; without it: declared look-alikes CONF.LOOK, same family CONF.FAM, else CONF.FORM).
 // Options added with +, e.g. e+W+L: W, a genus never answered starts from the full global level (core.js START.W 1, not
 // 0.8); L, the global level's step without the floor ELO.kmin (its K keeps shrinking with the answers; the volatility
 // still lets it catch up with a lasting change). The level bands of a rule with L are those of its own level.
@@ -112,9 +120,19 @@ function refStep(s, good, d, k) {
   s.th = Math.round(Math.min(REF.hi, Math.max(REF.lo, s.th + K * ((good ? 1 : 0) - e))) * 100) / 100;
 }
 // One player's replay under one rule. Returns the scored answers and the final model.
-function replay(list, variant) {
+function replay(list, variant, pooledOf = null) {
   const [v, ...flags] = variant.split('+'),
     P = {};
+  // The confusion term (+X, +Y, +Z): the most (or the sum) over the choices offered of the player's excess on the pair.
+  const cX = flags.includes('X') || flags.includes('Y') || flags.includes('Z'),
+    confTerm = r => {
+      if (!cX || !pooledOf || (flags.includes('M') && kOf(r.mode, r.ch) < 3)) return 0;
+      const gs = String(r.ch || '')
+        .split(/\s+/)
+        .filter(x => x && x !== r.t && GAME.has(x))
+        .map(x => C.confGap(C.pairConf(P, r.t, x), pooledOf(r.t, x)));
+      return !gs.length ? 0 : flags.includes('Z') ? gs.reduce((a, x) => a + x, 0) : Math.max(...gs);
+    };
   M.P = P;
   const st = g => (P[g] = P[g] || {ok: 0, ko: 0}),
     off = {}, // rule d: genus offsets from the level
@@ -144,15 +162,23 @@ function replay(list, variant) {
       k = kOf(r.mode, r.ch),
       g = guess(k);
     if (!isFinite(e) || !isFinite(th0)) return;
-    const d = th0 - logit(Math.min(0.995, Math.max(0.005, (e - g) / (1 - g)))),
+    const d0 = th0 - logit(Math.min(0.995, Math.max(0.005, (e - g) / (1 - g)))),
+      cf = confTerm(r),
+      d = d0 + (flags.includes('Y') ? 0 : cf),
       good = r.ok === 1,
       L = (P[C.LEVEL] || {}).th || 0,
       th = plan(r.t);
-    scored.push({y: good ? 1 : 0, p: g + (1 - g) * sig(th - d), pl: g + (1 - g) * sig(L - d), k, L: L0.th, mode: r.mode, fa: fa.has(r.t)});
+    scored.push({y: good ? 1 : 0, p: g + (1 - g) * sig(th - d0 - cf), cf, pl: g + (1 - g) * sig(L - d), k, L: L0.th, mode: r.mode, fa: fa.has(r.t)});
     fa.delete(r.t);
     const s = st(r.t);
     if (good) s.ok++;
     else s.ko++;
+    // The player's own record on the pairs, as the app keeps it (quiz.js answer): offers, and the genus given in a mix-up.
+    String(r.ch || '')
+      .split(/\s+/)
+      .filter(x => x && x !== r.t)
+      .forEach(x => ((s.off = s.off || {}), (s.off[x] = (s.off[x] || 0) + 1)));
+    if (!good && r.a && r.a !== r.t) (s.conf = s.conf || {}), (s.conf[r.a] = (s.conf[r.a] || 0) + 1);
     if (v === 'd') offStep(r.t, s, good, d, k);
     else M.M.abilityStep(r.t, s, good, d, k);
     if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
@@ -230,9 +256,39 @@ function score(list) {
 }
 
 // Every rule on every player with min answers or more: {players, res: {rule: {all, groups, per}}, ref}.
-function evaluate(raw, {variants = ['a', 'e'], min = 20, only = null} = {}) {
+function evaluate(raw, {variants = ['a', 'e'], min = 20, only = null, priors = null} = {}) {
 const byPlayer = {};
 normalise(raw).forEach(r => (byPlayer[r.p] = byPlayer[r.p] || []).push(r));
+// Pooled confusions (+X/+Y/+Z): [offered together, mixed up] per pair, per player, so each player's own answers can be
+// left out of their pooled score (core.js confusionOf's counts, without its trust filter).
+const pc = {},
+  pkey = (a, b) => (a < b ? a + '|' + b : b + '|' + a);
+Object.entries(byPlayer).forEach(([p, L]) =>
+  L.forEach(r =>
+    String(r.ch || '')
+      .split(/\s+/)
+      .filter(x => x && x !== r.t)
+      .forEach(x => {
+        const k = pkey(r.t, x),
+          c = ((pc[k] = pc[k] || {all: [0, 0]})[p] = pc[k][p] || [0, 0]);
+        c[0]++;
+        pc[k].all[0]++;
+        if (!r.ok && r.a === x) (c[1]++, pc[k].all[1]++);
+      })
+  )
+);
+const prior = (a, b) => {
+  if (priors && pkey(a, b) in priors) return priors[pkey(a, b)];
+  const A = DATA.gen[a] || (DATA.x || {}).gen[a] || {},
+    B = DATA.gen[b] || (DATA.x || {}).gen[b] || {};
+  return (A.look || []).includes(b) || (B.look || []).includes(a) ? C.CONF.LOOK : A.fam && A.fam === B.fam ? C.CONF.FAM : C.CONF.FORM;
+};
+const pooledFor = p => (a, b) => {
+  const k = pkey(a, b),
+    c = pc[k] || {all: [0, 0]},
+    own = c[p] || [0, 0];
+  return C.confScore([c.all[0] - own[0], c.all[1] - own[1]], prior(a, b));
+};
 const players = Object.keys(byPlayer).filter(p => (!only || p === only) && byPlayer[p].length >= min);
 const res = {};
 variants.forEach(v => {
@@ -242,7 +298,7 @@ variants.forEach(v => {
   const all = [],
     per = {};
   players.forEach(p => {
-    const {scored, P, plan} = replay(byPlayer[p], v);
+    const {scored, P, plan} = replay(byPlayer[p], v, pooledFor(p));
     all.push(...scored);
     const gs = Object.keys(P).filter(g => g !== C.LEVEL && (P[g].ok || 0) + (P[g].ko || 0) > 0),
       w = gs.reduce((t, g) => t + P[g].ok + P[g].ko, 0);
@@ -294,10 +350,11 @@ if (!file) {
 const VARIANTS = opt('variants', 'a,b,c,d,e,e+L').split(','),
   ONLY = opt('player', null),
   MIN = Number(opt('min', 20)),
-  OUT = opt('json', null);
+  OUT = opt('json', null),
+  PRIORS = opt('priors', null) ? JSON.parse(fs.readFileSync(opt('priors', null), 'utf8')) : null;
 if (opt('model', null)) useModel(path.resolve(opt('model', null)));
   const J = JSON.parse(fs.readFileSync(file, 'utf8')),
-  {players, res, ref, byPlayer} = evaluate(Array.isArray(J) ? J : J.rows || J.values || [], {variants: VARIANTS, min: MIN, only: ONLY});
+  {players, res, ref, byPlayer} = evaluate(Array.isArray(J) ? J : J.rows || J.values || [], {variants: VARIANTS, min: MIN, only: ONLY, priors: PRIORS});
 const f = (x, n = 3) => (typeof x === 'number' && isFinite(x) ? x.toFixed(n) : '-');
 console.log(`Players with ${MIN}+ answers: ${players.length}; answers scored: ${res[VARIANTS[0]].all.n}`);
 console.log('\nNext-answer prediction (log-loss, Brier; lower is better):');
