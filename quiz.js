@@ -731,6 +731,9 @@ const tipZoomed = () => tipDemo || store.set(TIPR.KEY, tipUse(tipsLoad(), 'z'));
 // the break at Next. Everything is checked again at the tap, and the tip waits for a later break when the next question
 // brings a genus's card (never two cards back to back). hold: the mastery toast is due in a moment.
 const TIP = {WAIT: 600};
+// Whether the planned next question opens with a genus's first-meeting card: the photo quiz's plan carries them (.intro);
+// a duel of the Duel tab shows the cards of its genera not met yet itself (quizDuel), its plan does not.
+const nextCards = (cur, q) => !!q.intro || (cur.split('|')[0] === 'quiz-duel' && q[2].some(n => !introduced(n)));
 function tipAfter(nb, cur, miss, zm, hold) {
   const raw = store.get(TIPR.KEY, null);
   let st = tipsLoad(raw);
@@ -741,10 +744,13 @@ function tipAfter(nb, cur, miss, zm, hold) {
   const b = {ctx: cur.split('|')[0], miss, zm: !!zm};
   if (hold || !tipDue(st, b) || !promptOk()) return;
   breakArm(nb, () => {
+    // The next question is planned 50 ms after the answer (answer, planNext): a Next tapped sooner plans it now, so its
+    // cards are known.
+    if (!(NEXTQ && NEXTQ.k === planKey(cur)) && hashNow() === cur) planNext(cur);
     const s = tipsLoad(),
       t = tipDue(s, b),
       nx = NEXTQ && NEXTQ.k === planKey(cur) && NEXTQ.args;
-    if (!t || !promptOk() || !lb.hidden || (nx && nx.intro)) return false;
+    if (!t || !promptOk() || !lb.hidden || (nx && nextCards(cur, nx))) return false;
     promptMark();
     tipShow(t, s, cur);
     return true;

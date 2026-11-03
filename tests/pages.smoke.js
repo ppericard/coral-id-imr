@@ -1336,8 +1336,8 @@ async function replayAdoptCheck(base) {
 // before 20 questions; never with 3 photos enlarged. Nothing wider than the screen. Returns the failures.
 async function tipsCheck(b, base) {
   const fails = [];
-  const open = async (w, h, u) => {
-    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
+  const open = async (w, h, u, at = '#quiz', intro = false) => {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block', intro});
     await c.route(
       x => !x.href.startsWith(base),
       r => r.abort()
@@ -1351,7 +1351,7 @@ async function tipsCheck(b, base) {
     const p = await c.newPage();
     const errs = [];
     p.on('pageerror', e => errs.push(String(e)));
-    await p.goto(base + '#quiz');
+    await p.goto(base + at);
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     return [c, p, errs];
   };
@@ -1361,7 +1361,7 @@ async function tipsCheck(b, base) {
     await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
     const at = await p.evaluate(right => {
       document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
-      const t = SHOWNQ[1],
+      const t = SHOWNQ ? SHOWNQ[1] : null, // the Duel tab has no SHOWNQ: its first choice, right or wrong
         bs = [...document.querySelectorAll('#view [data-c]')];
       (right ? bs.find(x => x.dataset.c === t) : bs.find(x => x.dataset.c !== t)).click();
       return !!document.querySelector('.tipcard');
@@ -1513,6 +1513,28 @@ async function tipsCheck(b, base) {
         return {pre, armed, inline, card: !!document.querySelector('.pulsecard'), tip: !!document.querySelector('.tipcard'), n: session.n};
       });
       if (early || !(r.inline || r.card) || r.tip) fails.push(`${W} with the one-tap question due: ${JSON.stringify({early, ...r})}`);
+      await c.close();
+    }
+    // The Duel tab, no genus met yet: a duel whose genera are not all met brings their cards itself (quizDuel, not in its
+    // plan): the tip waits for a later break, never a genus card right after it (Codex review of PR #440).
+    {
+      const [c, p, errs] = await open(w, h, {q: 60, z: 0}, '#quiz-duel', true); // q 60: any break will do
+      let shown = 0;
+      for (let i = 0; i < 10; i++) {
+        const r = await play(p);
+        if (!r.next) continue;
+        shown++;
+        await p.waitForTimeout(700);
+        await p.evaluate(() => [...document.querySelectorAll('.tipcard [data-b]')].find(x => x.textContent === 'Got it').click());
+        await p.waitForTimeout(300);
+        const after = await p.evaluate(() => ({
+          intro: !!document.querySelector('.unlock.intro'),
+          tip: !!document.querySelector('.tipcard')
+        }));
+        if (after.intro || after.tip) fails.push(`${W} duel: a card right after the tip: ${JSON.stringify(after)}`);
+        break;
+      }
+      if (errs.length) fails.push(`${W} duel: page errors ${errs.join(' | ')}`);
       await c.close();
     }
     // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged.
@@ -1939,6 +1961,7 @@ async function basicsTeach(b, base) {
     return console.log('Replay adoption OK.');
   }
   const b = await chromium.launch();
+  const tipsOnly = process.env.PAGES_ONLY === 'tips';
   // The first-encounter card (quiz.js introShow) would cover the quiz in the checks that are not about it: every slate
   // genus (Millepora too, app.js BENTHIC) starts as met on a card, except in a context opened with {intro: true}; the
   // bonus genera offer that then comes (every slate genus met) is answered "Not now" (Q.bon false).
@@ -1955,6 +1978,17 @@ async function basicsTeach(b, base) {
       }, INTROS);
     return c;
   };
+  // PAGES_ONLY=tips: only the tips check (tipsCheck), while working on it.
+  if (tipsOnly) {
+    const f = await tipsCheck(b, base);
+    await b.close();
+    server.close();
+    if (f.length) {
+      console.error(f.join('\n'));
+      process.exit(1);
+    }
+    return console.log('Tips OK.');
+  }
   for (const w of [390, 1280]) {
     const ctx = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
     // Only this site: photos from iNaturalist and the Google sync are cut off, so the test never depends on them.
