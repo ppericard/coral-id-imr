@@ -177,7 +177,7 @@ function renderJourney(name, anonId = '') {
     return;
   }
   const R = (ANS.rows || []).filter(r => r[0] === u.id).sort((a, b) => a[1] - b[1]);
-  const head = `<div class="adm-shead">${back}<h2>${esc(u.name)}</h2>${u.id === MEID ? '<small class="note">you</small>' : ''}</div>`;
+  const head = `<div class="adm-shead">${back}<h2>${esc(u.name)}</h2>${isMe(u.id) ? '<small class="note">you</small>' : ''}</div>`;
   if (!R.length) {
     $v.innerHTML = head + '<p class="note">No answers yet.</p>';
     bindJReload();
