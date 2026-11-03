@@ -1,4 +1,7 @@
-// IMR Coral ID: hash-routed single page. Data comes from data.json (written by tools/datajson.py, one genus per line).
+// IMR Reef ID: hash-routed single page. Data comes from data.json (written by tools/datajson.py, one genus per line).
+// First of all, the storage keys from before the rename to IMR Reef ID (2026-11-03) move to their new names (core.js
+// migrateKeys): nothing below may read a key before this line. The theme script of index.html reads both names itself.
+migrateStorage();
 let DATA;
 const $v = document.getElementById('view');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
@@ -56,11 +59,11 @@ const shuffle = a => {
 };
 // Pierre-only controls (Lab keep/trim, finder start-screen switch, ⚑ flag) show only in the browser where the
 // admin page holds his token, the same test flag.js uses. RAs never see them.
-// Pierre's browser holds the admin token (imr-admin-vault). ⚙ View: Admin | User (imr-admin-view) hides every
+// Pierre's browser holds the admin token (reefid-admin-vault). ⚙ View: Admin | User (reefid-admin-view) hides every
 // admin-only control without touching the token, so he sees the site exactly as RAs do.
 const HAS_ADMIN_TOKEN = (() => {
   try {
-    return !!localStorage.getItem('imr-admin-vault');
+    return !!localStorage.getItem('reefid-admin-vault');
   } catch (e) {
     return false;
   }
@@ -69,7 +72,7 @@ const IS_ADMIN =
   HAS_ADMIN_TOKEN &&
   (() => {
     try {
-      return localStorage.getItem('imr-admin-view') !== 'user';
+      return localStorage.getItem('reefid-admin-view') !== 'user';
     } catch (e) {
       return true;
     }
@@ -77,7 +80,7 @@ const IS_ADMIN =
 const store = {
   get(k, d) {
     try {
-      const v = localStorage.getItem(k);
+      const v = keyGet(localStorage, k); // the key's old name too while a migration waits (core.js keyGet)
       return v === null ? d : JSON.parse(v);
     } catch (e) {
       return d;
@@ -115,16 +118,16 @@ const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'larg
 // Saver takes the 480 px file for game photos and stage photos whatever the box; Full always takes the 1600 px file. Auto is Saver when the browser reports
 // the data saver or a slow connection (Network Information API: Chrome on Android), or when the app measures a slow line
 // itself (linkBps). The enlarged view always loads the 1600 px file (Saver: on a click).
-let PQ = store.get('imr-photo-q', 'auto');
+let PQ = store.get('reefid-photo-q', 'auto');
 // The line as measured by the app (field HAR, 2026-11-02: at ~86 kbit/s Chrome's estimate did not flag the link, so Auto
 // loaded the 960 px quiz photo, 62 KB in 19 s; Safari and Firefox have no Network Information API at all): the bytes
 // this page got from the network over the time spent receiving them (Resource Timing; overlapping downloads count once,
 // files from a cache count nothing), once LINK.MIN bytes are in. Under LINK.SLOW bit/s, Auto works as Saver. The last
-// measure is kept (imr-link): a launch served from the cache measures nothing and starts from it.
+// measure is kept (reefid-link): a launch served from the cache measures nothing and starts from it.
 // LINK.SLOW 500 kbit/s (Pierre, 2026-11-02; 1 Mbit/s at first): 480 px photos on a 1080p or 4K desktop screen are a real
 // loss, so only a line where the 960 px pair of a question (~170 KB) takes over ~3 s gets them. Not yet measured on the
 // players' links: to recalibrate once real link speeds are logged.
-const LINK = {SLOW: 5e5, MIN: 40000, KEY: 'imr-link'};
+const LINK = {SLOW: 5e5, MIN: 40000, KEY: 'reefid-link'};
 let linkBps = store.get(LINK.KEY, 0),
   linkAt = 0;
 const linkMeasure = () => {
@@ -349,7 +352,7 @@ let RAW,
 // Genera not on the IMR slate but in the Coral Finder book and present at Dauin (data.json "x", tools/build_extra.py):
 // Identify > Coral Finder only (Pierre, 2026-10-31), on by default, switch in ⚙ on that page. Same photo pipeline,
 // kept out of DATA.gen so games, quizzes, progress and the Genera pages never see them.
-let XON = store.get('imr-finder-x', true);
+let XON = store.get('reefid-finder-x', true);
 function build() {
   GDIFF = {};
   NEXTQ = null; // a question planned on the old curation could show a photo it now excludes or moves
@@ -482,7 +485,7 @@ const ZOOMI =
   '<span class="zic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4M11 8.5v5M8.5 11h5"/></svg></span>';
 // The one-time "Tap a photo to see it bigger" hint (quiz.js zoomHint): 'seen' once shown, 'zoomed' once a photo has been
 // enlarged on this device; either way it is never due again. Per device, not part of the progress.
-const ZHINT_KEY = 'imr-zoomhint';
+const ZHINT_KEY = 'reefid-zoomhint';
 // opts.over(p): an optional layer drawn over the whole photo (HTML in % of the photo, e.g. the labels of a Coral basics
 // step, proto/basics.js), with a Labels on/off switch; it follows the photo at fit and at actual size.
 function zoom(list, i, opts = {}) {
@@ -788,9 +791,9 @@ const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 
 /* ---------- quiz ---------- */
 // Progress per genus {ok, ko, streak, conf}, kept in this browser only.
-let P = store.get('imr-coral-progress', {}) || {};
+let P = store.get('reefid-sync-coral-progress', {}) || {};
 const save = () => {
-  store.set('imr-coral-progress', P);
+  store.set('reefid-sync-coral-progress', P);
   prog();
   syncSoon();
 };
@@ -798,13 +801,13 @@ const save = () => {
 // visit, so the pill keeps its 0% until then.
 const prog = () => typeof showProg === 'function' && showProg();
 const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
-const Q = Object.assign({view: 'any', level: 'auto'}, store.get('imr-coral-quiz', {}), {stars: true}); // starred genera are always asked (Pierre)
+const Q = Object.assign({view: 'any', level: 'auto'}, store.get('reefid-sync-coral-quiz', {}), {stars: true}); // starred genera are always asked (Pierre)
 if (Q.lvv !== 3) {
   Q.level = 'auto';
   Q.course = false;
   Q.lvv = 3;
 } // Auto only: no level selector, no Lecture set (Pierre, 2026-10-31)
-const saveQ = () => store.set('imr-coral-quiz', Q);
+const saveQ = () => store.set('reefid-sync-coral-quiz', Q);
 let session = {ok: 0, n: 0, h: []},
   last = null,
   duelPair = null;
@@ -882,6 +885,8 @@ function syncTrouble() {
 // The sync sheet's address and this device's sign-in: state that many pages read, kept here with the pages; the code
 // that talks to the sheet is in sync.js.
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
+// How a message names it ("Progress loaded from the IMR sheet.").
+const SHEET_NAME = `the ${ORG.short} sheet`;
 // A copy run on this computer (tests, tools/perf.js, a developer) never sends anonymous answers or reports to the real
 // sheet (Pierre, 2026-11-02: 17 "players" in the admin were tools/perf.js runs: once the service worker was in, its
 // requests passed by the test's network mocks and reached the sheet). A browser driven by a program (Playwright,
@@ -900,7 +905,7 @@ const sheetFetch = (url, o) =>
     : typeof window.SHEET_STUB === 'function'
       ? window.SHEET_STUB(url, o)
       : Promise.reject(Object.assign(new Error('local copy: the sheet is off'), {local: true}));
-let SYNC = store.get('imr-coral-sync', null),
+let SYNC = store.get('reefid-account', null),
   syncTimer = null;
 
 /* ---------- routing ---------- */
@@ -909,7 +914,7 @@ function go(h) {
   else location.hash = h;
 }
 
-// Photo size (small / medium / large), remembered per page in localStorage (key imr-coral-size).
+// Photo size (small / medium / large), remembered per page in localStorage (key reefid-sync-size).
 // Each page reads :root[data-size] in its own CSS; pages where it means nothing (games that fill the screen,
 // home, progress) hide the S/M/L buttons, keeping their room so the header never changes size.
 const SIZE_PAGES = ['genera', 'tips', 'genus', 'pair', 'finder', 'lab-gallery', 'lab-elim'];
@@ -919,7 +924,7 @@ function pageKey() {
 }
 function sizePrefs() {
   try {
-    return JSON.parse(localStorage.getItem('imr-coral-size')) || {};
+    return JSON.parse(localStorage.getItem('reefid-sync-size')) || {};
   } catch (e) {
     return {};
   }
@@ -952,7 +957,7 @@ document.querySelectorAll('#xgen button').forEach(
   b =>
     (b.onclick = () => {
       XON = b.dataset.x === '1';
-      store.set('imr-finder-x', XON);
+      store.set('reefid-finder-x', XON);
       showX();
       if (RAW) route();
     })
@@ -964,7 +969,7 @@ document.querySelectorAll('#pq button').forEach(
   b =>
     (b.onclick = () => {
       PQ = b.dataset.pq;
-      store.set('imr-photo-q', PQ);
+      store.set('reefid-photo-q', PQ);
       NEXTQ = null;
       showPQ();
       if (typeof fitStage === 'function') fitStage();
@@ -979,7 +984,7 @@ document.querySelectorAll('#size button').forEach(
       const p = sizePrefs();
       p[pageKey()] = b.dataset.size;
       try {
-        localStorage.setItem('imr-coral-size', JSON.stringify(p));
+        localStorage.setItem('reefid-sync-size', JSON.stringify(p));
       } catch (e) {}
       applySize();
     })
@@ -999,7 +1004,7 @@ document.querySelectorAll('#theme button').forEach(
       const t = b.dataset.th;
       document.documentElement.dataset.theme = t;
       try {
-        localStorage.setItem('imr-coral-theme', t);
+        localStorage.setItem('reefid-sync-theme', t);
       } catch (e) {}
       showTheme();
     })
@@ -1017,7 +1022,7 @@ document.querySelectorAll('#palette button').forEach(
       const p = b.dataset.pal;
       document.documentElement.dataset.palette = p;
       try {
-        localStorage.setItem('imr-coral-palette', p);
+        localStorage.setItem('reefid-sync-palette', p);
       } catch (e) {}
       showPal();
     })
@@ -1035,7 +1040,7 @@ document.querySelectorAll('#cvd button').forEach(
       if (on) document.documentElement.dataset.cvd = '1';
       else delete document.documentElement.dataset.cvd;
       try {
-        localStorage.setItem('imr-coral-cvd', on ? '1' : '0');
+        localStorage.setItem('reefid-sync-cvd', on ? '1' : '0');
       } catch (e) {}
       showCvd();
     })
@@ -1462,7 +1467,7 @@ document.getElementById('signb').onclick = e => {
         delete Q.bon; // the bonus genera are offered again once every slate genus is asked
         delete Q.bonT;
         saveQ();
-        store.set('imr-coral-reset', new Date().toISOString());
+        store.set('reefid-sync-coral-reset', new Date().toISOString());
         introReset();
         save();
         delete rb.dataset.armed;
@@ -1537,7 +1542,7 @@ if (HAS_ADMIN_TOKEN) {
     b.onclick = () => {
       if ((b.dataset.view === 'admin') === IS_ADMIN) return;
       try {
-        localStorage.setItem('imr-admin-view', b.dataset.view);
+        localStorage.setItem('reefid-admin-view', b.dataset.view);
       } catch (e) {}
       location.reload();
     };
@@ -1578,16 +1583,16 @@ const getR = (u, o, n = 3) =>
     e => (n <= 1 ? Promise.reject(e) : new Promise(ok => setTimeout(ok, 1000 * (4 - n))).then(() => getR(u, o, n - 1)))
   );
 // ?draft previews the unsaved curation from the admin page (same browser) instead of curation.json.
-// Pierre's curation, also kept in localStorage (imr-curation-last): if curation.json can't be read (offline, and not in the
+// Pierre's curation, also kept in localStorage (reefid-curation-last): if curation.json can't be read (offline, and not in the
 // service worker cache), the app uses the last copy it saw instead of none, so excluded or moved photos never come back
 // into the games (code re-review 2026-11-01, H1).
-const CUR_LAST = 'imr-curation-last';
+const CUR_LAST = 'reefid-curation-last';
 // Start-up never waits for it when a copy is kept (Pierre, 2026-11-01: fluid on poor connections; it was a round trip
 // before every first screen, up to the service worker's timeout): the kept copy is used, and curRefresh reads the
 // published one right after; a change applies at the next screen, as for a tab left open.
 let CUR_KEPT = false;
 const curation = () => {
-  const dr = /[?&]draft\b/.test(location.search) && store.get('imr-curation-draft', null),
+  const dr = /[?&]draft\b/.test(location.search) && store.get('reefid-curation-draft', null),
     kept = !dr && store.get(CUR_LAST, null);
   if (kept && kept.genera) {
     CUR_KEPT = true;
@@ -1807,9 +1812,9 @@ const swCheck = () => {
 // reload by itself at the next page change (UPDATED); a page too old to answer is reloaded by the worker.
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', e => {
-    if (e.data && e.data.t === 'imr-ver?' && e.ports && e.ports[0]) e.ports[0].postMessage({v: appVer()});
+    if (e.data && e.data.t === 'reefid-ver?' && e.ports && e.ports[0]) e.ports[0].postMessage({v: appVer()});
     // The worker could not get a photo from R2 (sw.js r2Down): this page's next photos come from the site (photoFail).
-    if (e.data && e.data.t === 'imr-r2-down') R2 = false;
+    if (e.data && e.data.t === 'reefid-r2-down') R2 = false;
   });
   navigator.serviceWorker.startMessages();
 }

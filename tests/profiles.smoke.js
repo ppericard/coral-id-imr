@@ -47,7 +47,7 @@ const server = http.createServer((req, res) => {
     r => r.abort()
   );
   await ctx.addInitScript(() => {
-    localStorage.setItem('imr-tour', '"done"');
+    localStorage.setItem('reefid-tour', '"done"');
     // Same draws every run: the app's own randomness is seeded too.
     let s = 12345;
     Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;

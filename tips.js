@@ -6,8 +6,8 @@
 // 'tip'). No DOM here: loaded with the quiz (index.html tier 2) and tested in Node (tests/tips.test.js). Rules and the
 // state: docs/ARCHITECTURE.md "Did you know? tips"; the card: docs/DESIGN.md "Cards".
 //
-// State, on this device only (localStorage imr-tips, outside the imr-coral-* progress keys, kept on sign-out like
-// imr-zoomhint): what a tip targets is how this person uses this device, and a tip shown twice on two devices is no harm.
+// State, on this device only (localStorage reefid-tips, outside the reefid-sync-* progress keys, kept on sign-out like
+// reefid-zoomhint): what a tip targets is how this person uses this device, and a tip shown twice on two devices is no harm.
 //   u  usage counters: q game questions answered here (photo quiz, custom quiz, duels), z quiz photos enlarged here (on
 //      a question or its mix-up montage; a tip's own "Show me" is not counted). Seeded once, when the state is first made,
 //      from the answers the device still holds (LOG0 / SYNC.log: their count and their zm flags), so a player who has
@@ -23,7 +23,7 @@
 (function (root) {
   // Global rules: at most one tip a visit, never in its first FLOOR answers (plus, in quiz.js: one card a break, within
   // the prompt spacing, never over another card, the tour or a toast).
-  const TIPR = {KEY: 'imr-tips', GAP: 30 * 60000, FLOOR: 10};
+  const TIPR = {KEY: 'reefid-tips', GAP: 30 * 60000, FLOOR: 10};
   const TIPS = [
     {
       // Photo enlargement (the owner, 2026-11-04; in the logged answers one player enlarged a quiz photo on ~20-25% of

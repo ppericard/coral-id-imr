@@ -37,7 +37,7 @@ LAB.add({
       .map(f => ({id: f.id, t: f.name, s: f.def, g: names.filter(n => imrFormsOf(n).includes(f.id)), color: IMRCOL[f.id] || 'massive'}));
     // Two entry points: the paper Coral Finder's path (default: Pierre, 2026-10-31, it is the reference for ReefCloud)
     // or the IMR Lecture 6 growth forms. New key so the new default reaches browsers that stored the old one.
-    let startV = store.get('imr-finder-start2', 'c');
+    let startV = store.get('reefid-finder-start2', 'c');
     if (startV !== 'a') startV = 'c';
     const facets = () => {
       // Each family's note shows as a tooltip on its title (Pierre: no explanatory text on the page).
@@ -100,8 +100,8 @@ LAB.add({
     FIDS.forEach(f => (S[f] = new Set()));
     // Two display controls that combine: layout (Auto = Mosaic up to 12 genera, Cards beyond; Cards = one photo per genus; Mosaic;
     // Contact sheet) and which photos (Mix of colony / closer / corallites, or one view only).
-    let lay = store.get('imr-finder-lay', 'auto'),
-      pv = store.get('imr-finder-pv', 'mix');
+    let lay = store.get('reefid-finder-lay', 'auto'),
+      pv = store.get('reefid-finder-pv', 'mix');
     (arg || '').split(';').forEach(kv => {
       const [k, v] = kv.split('=');
       if (!v) return;
@@ -503,7 +503,7 @@ LAB.add({
         b =>
           (b.onclick = () => {
             lay = b.dataset.lay;
-            store.set('imr-finder-lay', lay);
+            store.set('reefid-finder-lay', lay);
             draw();
           })
       );
@@ -511,7 +511,7 @@ LAB.add({
         b =>
           (b.onclick = () => {
             pv = b.dataset.pv;
-            store.set('imr-finder-pv', pv);
+            store.set('reefid-finder-pv', pv);
             draw();
           })
       );
@@ -705,7 +705,7 @@ LAB.add({
         b =>
           (b.onclick = () => {
             startV = b.dataset.sv;
-            store.set('imr-finder-start2', startV);
+            store.set('reefid-finder-start2', startV);
             FIDS.forEach(f => S[f].clear());
             draw();
           })

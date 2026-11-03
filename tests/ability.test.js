@@ -185,10 +185,10 @@ test('the level a genus was stepped against travels with its ability between dev
   assert.strictEqual(m.A.th, 0.5);
   assert.strictEqual(m.A.lt, 0.4);
   const u = mergeUsers(
-    {'imr-coral-progress': JSON.stringify({A: {ok: 9, ko: 1, th: 1, lt: 0.8}})},
-    {'imr-coral-progress': JSON.stringify({A: {ok: 1, ko: 0, th: 0, lt: 0}})}
+    {'reefid-sync-coral-progress': JSON.stringify({A: {ok: 9, ko: 1, th: 1, lt: 0.8}})},
+    {'reefid-sync-coral-progress': JSON.stringify({A: {ok: 1, ko: 0, th: 0, lt: 0}})}
   );
-  const prog = JSON.parse(u['imr-coral-progress']);
+  const prog = JSON.parse(u['reefid-sync-coral-progress']);
   assert.strictEqual(prog.A.th, 1);
   assert.strictEqual(prog.A.lt, undefined);
 });
