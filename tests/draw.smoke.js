@@ -993,6 +993,57 @@ const server = http.createServer((req, res) => {
             if (!q.again && !q.auto && !q.typed && ch.length !== 4) fails.push(`${tag}: ${ch.length} choices`);
           }
         }
+      // Codex review #411 (1): a selection of genera nobody confuses can't give the traps a strong player's level asks
+      // for; the question is scored with the choices really shown (plausibleK), never as a 4-choice one with traps.
+      // (2): no mastery exam question in the custom quiz (rule 14e: its choices could hold no look-alike); the exam
+      // comes in the photo quiz.
+      {
+        // Four genera no pair of which is confusable, sharing no IMR growth form if the data allows (then plausibleK < 4).
+        const pick4 = ok => {
+          const L = [];
+          for (const n of pool()) if (L.length < 4 && L.every(x => ok(x, n))) L.push(n);
+          return L;
+        };
+        const far = pick4((x, n) => !confusable(x, n) && !confusable(n, x) && !imrFormsOf(x).some(f => imrFormsOf(n).includes(f))),
+          apart = far.length === 4 ? far : pick4((x, n) => !confusable(x, n) && !confusable(n, x));
+        P = Object.fromEntries(genera.map(n => [n, {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85}]));
+        P[LEVEL] = {ok: 600, ko: 40, th: 2};
+        rematch = null;
+        NEXTQ = null;
+        store.set(CUSTOM.KEY, {g: apart, t: Date.now()});
+        let exams = 0,
+          scored = 0;
+        for (let i = 0; i < 60; i++) {
+          const q = planPhoto(CUSTOM_H),
+            [, t, ch, , set, kq] = q;
+          if (set.exam) exams++;
+          if (q.again || q.auto || q.typed) continue;
+          scored++;
+          // The k the answer uses (quiz.js answer: 0 = every choice counts).
+          const want = ch.filter(n => n !== t && confusable(t, n)).length < 2 ? plausibleK(t, ch) : ch.length;
+          if ((kq || ch.length) !== want)
+            fails.push(`custom quiz on ${apart.join(', ')}: ${t} [${ch.join(', ')}] scored k ${kq}, ${want} expected`);
+        }
+        if (apart.length < 4 || !scored) fails.push(`custom quiz scoring check did not run (${apart.join(', ')}, ${scored})`);
+        if (exams) fails.push(`custom quiz: ${exams} mastery exam questions in 60 (the exam belongs to the photo quiz)`);
+        // A played custom session (Pierre, 2026-11-03: exams only in the normal quiz): genera one exam question from
+        // Learned, every answer right, typed ones too; never an exam question on screen, never s.mx from it.
+        P = Object.fromEntries(
+          genera.map(n => [n, {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.9, ex: {k: EXAM.n - 1, t: TYPED.exam, v: ['wide'], at: -99}}])
+        );
+        P[LEVEL] = {ok: 600, ko: 40, th: 2};
+        NEXTQ = null;
+        let shown = 0;
+        for (let i = 0; i < 30; i++) {
+          document.querySelectorAll('.unlock').forEach(x => x.remove());
+          quizPhoto(CUSTOM_H);
+          if (EXAMQ || SHOWNQ[4].exam) shown++;
+          say(SHOWNQ[1]);
+        }
+        const mx = apart.filter(n => P[n].mx);
+        if (shown || mx.length) fails.push(`custom quiz session: ${shown} exam questions shown, mastery credited on ${mx.join(', ')}`);
+        if (!(answersSoFar() > 600)) fails.push('custom quiz session: the answers were not counted');
+      }
       store.set(CUSTOM.KEY, null);
       store.set(INTRO.KEY, {});
       INTROS = null;

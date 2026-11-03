@@ -29,7 +29,7 @@ function bindQuizNav() {
 const gameHelp =
   cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
   Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? '' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="#progress">My progress</a>. New genera come one at a time, each on its card; <b>Open all genera</b> (My progress) opens them all at once, and if the questions then get much harder for you, a card offers once to go back to one at a time. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
-  ${cur === CUSTOM_H ? `<p class="lede"><b>Custom quiz</b>: only the genera you picked are asked (the Custom quiz tab changes them), and the wrong choices come from them too, from other genera only when you picked fewer than 4. A genus you have not met yet comes with its card. The rest works as in Photo → genus, and every answer counts the same.</p>` : ''}
+  ${cur === CUSTOM_H ? `<p class="lede"><b>Custom quiz</b>: only the genera you picked are asked (the Custom quiz tab changes them), and the wrong choices come from them too, from other genera only when you picked fewer than 4. A genus you have not met yet comes with its card. The rest works as in Photo → genus, and every answer counts the same, except the mastery exam: its questions only come in Photo → genus, so a genus that reaches 95% here takes its exam there.</p>` : ''}
   <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus fills up to 95% with your right answers, each point a little harder to earn than the last, and a right answer counts most when the genus's look-alikes are among the choices; a mistake takes it back down; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the photo quiz: see ? on <a href="#progress">My progress</a>.</p>${
     cur.startsWith('quiz-duel')
       ? ''
@@ -451,7 +451,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   if (good && (cur.startsWith('quiz-duel') || (photoQuiz(cur) && AUTOD))) s.du = 1; // won a look-alike duel, in the Duel tab or slipped into the quiz (the duel achievement)
   // Mastery exam (EXAM): count an exam question passed; any miss on the genus ends its exam, and so does giving the
   // genus as the answer for another one.
-  const exq = EXAMQ === target;
+  // Never from the custom quiz, which serves no exam question (Pierre, 2026-11-03: exams only in the photo quiz).
+  const exq = EXAMQ === target && cur !== CUSTOM_H;
   EXAMQ = null;
   // It needs TYPED.exam typed right answers among its EXAM.n (model.js examTyped asks them; an exam begun before the
   // typed questions may take one more, its count held at EXAM.n so its % never passes 100).
@@ -1193,8 +1194,10 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       );
     }
   }
+  // No mastery exam question in the custom quiz (rule 14e, Codex review #411): its choices come from the selection,
+  // which may hold none of the genus's look-alikes, so passing there would not prove it; the exam comes in the photo quiz.
   const R = warm ? recallAt(t) : 1,
-    ex = !warm && examReady(t) && examSet(t),
+    ex = !sel && !warm && examReady(t) && examSet(t),
     // A comeback question keeps the player's usual choices (Pierre, 2026-11-03): look-alikes for a strong player, so a
     // right answer proves something and the rust melts in a few questions.
     traps = ex ? 3 : trapsFor(t),
@@ -1214,10 +1217,14 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     typed = !warm && (ex ? examTyped(t) : typedP(t) > 0 && Math.random() < typedP(t)),
     // The difficulty controller (model.js PICKD.P, aimOff): the photo is aimed for the game's target in this format, its
     // guess rate from the plausible choices (a typed answer has none).
-    kq = typed ? TYPED.k : traps < 2 ? plausibleK(t, ch) : ch.length,
+    // Scored with the choices really shown: the photo quiz shows the traps its level asks for (from 2, every choice
+    // counts); the custom quiz's selection may not hold them, so there the look-alikes among the choices decide
+    // (Codex review #411: 4 unrelated genera picked were scored as a 4-choice question with traps).
+    few = sel ? ch.filter(n => n !== t && confusable(t, n)).length < 2 : traps < 2,
+    kq = typed ? TYPED.k : few ? plausibleK(t, ch) : ch.length,
     set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R), kq),
     // The question asked with its genus's card never shows the card's own photo again (new-player walkthrough 2026-11-02).
-    q = [cur, t, ch, typed ? 'Which genus? Type it' : 'Which genus?', typed ? {...set, typed: 1} : set, traps < 2 ? plausibleK(t, ch) : 0];
+    q = [cur, t, ch, typed ? 'Which genus? Type it' : 'Which genus?', typed ? {...set, typed: 1} : set, few ? plausibleK(t, ch) : 0];
   if (cards.length) Object.assign(q, {intro: cards, start});
   if (typed) q.typed = 1;
   if (warm) Object.assign(q, {warm: 1, cb: Math.round(R * 1000) / 1000});
@@ -1273,7 +1280,7 @@ function planDuel(a, b) {
 }
 // Custom quiz (Pierre, 2026-11-03): the photo quiz on the genera the player picks. #quiz-custom is the selection screen,
 // #quiz-custom|play (CUSTOM_H) the quiz itself, every format of the photo quiz in it (typed questions, Again, duels
-// slipped in, traps, the photos' level, the exam, the comeback); the draw is model.js's (CUSTOM, customOf, customDraw,
+// slipped in, traps, the photos' level, the comeback; not the mastery exam, left to the photo quiz); the draw is model.js's (CUSTOM, customOf, customDraw,
 // customChoices; docs/LEARNING.md "Custom quiz"). The selection is saved at each change ({g: genera, t: when}, an
 // imr-coral key: it travels with the progress, the latest wins between devices, sync.js mergeSaved) and preselected
 // next time. Its answers count as any photo-quiz answer, logged quiz|s… (answer).
@@ -1347,7 +1354,7 @@ function viewCustom() {
       });
   };
   $v.innerHTML = `<h2>Custom quiz</h2>
-  <p class="lede">The photo quiz on the genera you pick. Tap the photos of the genera you want to work on, then <b>Start</b>. They are listed A–Z; <b>IMR groups</b> shows them in the IMR lecture's groups instead, with All to pick a whole group. <b>Quick picks</b> choose for you: your weakest genera, those you missed lately, or a genus and its look-alikes. Only the genera picked are asked, and the wrong choices come from them too, so look-alikes picked together are drilled together; with fewer than 4 picked, other genera make up the choices. Everything else is the photo quiz: typed questions, Again after a mix-up, look-alike duels, harder photos as you improve, and every answer counts in <a href="#progress">My progress</a>. A genus you have not met yet shows its card first. Your choice is kept for next time; the Custom quiz tab brings you back here.</p>
+  <p class="lede">The photo quiz on the genera you pick. Tap the photos of the genera you want to work on, then <b>Start</b>. They are listed A–Z; <b>IMR groups</b> shows them in the IMR lecture's groups instead, with All to pick a whole group. <b>Quick picks</b> choose for you: your weakest genera, those you missed lately, or a genus and its look-alikes. Only the genera picked are asked, and the wrong choices come from them too, so look-alikes picked together are drilled together; with fewer than 4 picked, other genera make up the choices. Everything else is the photo quiz: typed questions, Again after a mix-up, look-alike duels, harder photos as you improve, and every answer counts in <a href="#progress">My progress</a>. A genus you have not met yet shows its card first. Mastery exams only come in Photo → genus: a genus that reaches 95% here takes its exam there. Your choice is kept for next time; the Custom quiz tab brings you back here.</p>
   <div class="tools cqtools"><input type="search" id="cqq" placeholder="Search a genus" aria-label="Search a genus" autocomplete="off"><div class="seg" role="group" aria-label="Group by">${[
     ['az', 'A–Z'],
     ['imr', 'IMR groups']

@@ -1042,7 +1042,8 @@ const plausibleK = (t, choices) => {
 };
 // Custom quiz (Pierre, 2026-11-03): the photo quiz limited to the genera the player picks (quiz.js quizCustom, planPhoto;
 // docs/LEARNING.md "Custom quiz"). Everything else is the photo quiz's (photos, traps, typed questions, Again, duels,
-// the exam, the comeback); only the genus asked and the wrong choices change:
+// the comeback), but for the mastery exam, left to the photo quiz (rule 14e: the selection may hold no look-alike); only
+// the genus asked and the wrong choices change, and a question is scored with the look-alikes its choices really hold:
 // - the selection in play (customOf): the genera saved (CUSTOM.KEY, synced like the other imr-coral keys) that are in the
 //   game now (pool: the slate, and the bonus genera when on), in the game's order; fewer than CUSTOM.MIN: no quiz;
 // - the genus asked (customDraw): any selected genus, weighed as the photo quiz weighs the genera met (weight:

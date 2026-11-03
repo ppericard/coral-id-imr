@@ -196,8 +196,23 @@ quiz, all its formats included, limited to them. Code: `model.js` `CUSTOM`, `cus
 `quiz.js` `quizCustom`, `viewCustom`, `planPhoto(cur)`; tests `tests/custom.test.js`, `tests/pages.smoke.js`.
 
 - **What changes** is only the genus asked and the wrong choices. Photos (level, calibration, memory, one colony),
-  typed questions, "Again: A or B?" after a mix-up, the duels slipped in (`duelPick` among the selection), the mastery
-  exam, the comeback and every scoring rule are the photo quiz's. At least `CUSTOM.MIN` = 2 genera.
+  typed questions, "Again: A or B?" after a mix-up, the duels slipped in (`duelPick` among the selection), the comeback
+  and every scoring rule are the photo quiz's. At least `CUSTOM.MIN` = 2 genera.
+- **No mastery exam in the custom quiz** (Codex review #411, rule 14e; Pierre's decision, 2026-11-03: exams happen
+  only in the normal quiz): an exam question has every look-alike trap, and the custom quiz's choices come from the
+  selection, which may hold none of the genus's look-alikes, so a Learned earned there would not prove what the exam
+  proves. So the custom quiz never asks an exam question (`planPhoto`: no `examSet` with a selection) and never credits
+  the exam or `s.mx` from its answers (`answer`: `exq` is never true there). Its answers still move the progress bar,
+  up to the exam's entry (95%); the exam then comes in Photo → genus. A genus ready for its exam is still drawn in the
+  custom quiz, as a normal question, and a miss there still restarts an exam begun (any miss on the genus does, rule
+  14e). The help says so (the selection screen and the quiz's ?). `tests/draw.smoke.js` plays a custom session on
+  genera one exam question from Learned, all right: no exam question, no `s.mx`.
+- **Scored with the choices really shown** (Codex review #411): the photo quiz counts every choice from 2 traps on,
+  because it shows the traps its level asks for; a selection may not hold them (4 unrelated genera picked for a strong
+  player), so in the custom quiz the look-alikes among the choices decide: fewer than 2 there, and the guess rate is
+  1 / `plausibleK` (the target and the choices it could be taken for: look-alikes, confused or sharing a growth form),
+  as for a beginner's easy choices. Measured on the real draw (`tests/draw.smoke.js`): *Acropora*, *Astreopora*,
+  *Fungia*, *Alveopora* picked by a strong player were scored as 4-choice questions; `plausibleK` gives 2.
 - **The genus asked** (`customDraw`): any genus of the selection, weighed by the photo quiz's `weight()` (`drawW`: what
   the model does not yet know the player holds; the last 4 held back). **No opening path**: no first cards,
   no opening chance (`openChance`, `openPick`), no opening hold, no visit floor, no ★ wait (rules for the order the game opens genera in, while the
@@ -214,8 +229,8 @@ quiz, all its formats included, limited to them. Code: `model.js` `CUSTOM`, `cus
   outside the selection (a top-up choice, or a typed answer) asks the selected genus of the pair.
 - **What counts**: every answer is a photo-quiz answer: progress, ability, the global level, photo ratings and
   confusions in the sheet, the opening hold (each answer with the expectation it had; a selection the player finds hard
-  holds new cards in the photo quiz, as any run of misses would), achievements, the mastery exam. Logged with the mode
-  `quiz|s` before any other tag (`quiz|s|d|k2`, `quiz|s|k3`, `quiz|s|t`, `quiz|s|x`): the sheet's `guess_` reads `|kN`
+  holds new cards in the photo quiz, as any run of misses would), achievements. Logged with the mode `quiz|s` before
+  any other tag (`quiz|s|d|k2`, `quiz|s|k3`, `quiz|s|t`): the sheet's `guess_` reads `|kN`
   at the end and `|t` anywhere, and its mode split keeps `quiz`, so the deployed script (v27) stores and rates it as any
   photo-quiz answer, no new version needed (AGENTS.md 7a; `tests/custom.test.js` compares the two modes).
 - **Comeback**: during a comeback the custom quiz asks the comeback's genera of its selection when at least 2 of them
