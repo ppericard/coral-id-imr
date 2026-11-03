@@ -627,7 +627,17 @@ const GLOSS_PAT = {
   'Monticules': 'monticules?',
   'Vesicles': 'vesicles?',
   'Corallite': 'corallites?',
-  'Polyp': 'polyps?'
+  'Polyp': 'polyps?',
+  // The most frequent words of the genus sheets with no entry until 2026-11-03 (tools/apply_plain_terms.py MORE).
+  'Free-living': 'free-living',
+  'Solitary': 'solitary',
+  'Separate walls': 'separate(?:[- ]walls?|-walled)|plocoid',
+  'Shared walls': 'shared walls?|cerioid',
+  'Phaceloid': 'phaceloid',
+  'Radial corallites': 'radial corallites?',
+  'Tentacular lobes': 'tentacular lobes?',
+  'Axial furrow': 'axial furrow',
+  'Spinules': 'spinules?'
 };
 let glossRe = null;
 // Each term is underlined once per text block, at its first occurrence: a tip saying "corallites" three times gets one
@@ -805,6 +815,11 @@ const BENTHIC_NOTE =
 // A genus of the games: the slate (coral and benthic) or a bonus genus.
 const gameGenus = n => !!DATA.gen[n] || isBenthic(n) || isBonus(n);
 const pool = () => [...slateGenera(), ...bonusList()].filter(n => photoSet(n).shown.length);
+// The plain sentence (Pierre, 2026-11-03): one everyday-words line per genus (data.json `plain`, tools/apply_plain_sheets.py),
+// clear for everyone, beginners included. Right under the photo of the genus sheet and of the first-meeting card, before
+// the ID tips and lecture notes, in body text with no label (Pierre's review: a muted labelled line above the photo was
+// skipped). It adds to the scientific text and replaces none of it.
+const plainLine = g => (g.plain ? `<p class="plainw">${esc(g.plain)}</p>` : '');
 // ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera.
 const tipsLabel = g => (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');
 // What is wrong with the sync, in words, or '' when everything is saved.
@@ -1498,7 +1513,7 @@ function need(n) {
   }
 }
 Promise.all([
-  getR('data.json?v=35')
+  getR('data.json?v=36')
     .then(r => (loadMark('pop', String(r.headers.get('x-served-by') || '').slice(0, 60)), r))
     .then(okJson)
     .then(d => (window.bootTick && bootTick(), d)),

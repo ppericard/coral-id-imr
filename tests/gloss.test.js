@@ -39,7 +39,7 @@ test('corallite, polyp and septal teeth are glossed; each term once per block, a
   assert.deepStrictEqual(terms(gloss('Large, spiky septal teeth')), [['Septa', 'septal teeth']]);
   assert.deepStrictEqual(terms(gloss('Long polyps out by day')), [['Polyp', 'polyps']]);
   // The longer term wins where both start ("axial corallite", "hooded corallites"); plain "corallites" later still counts.
-  assert.deepStrictEqual(terms(gloss('Axial corallite at branch tips · Cup-shaped radial corallites')), [
+  assert.deepStrictEqual(terms(gloss('Axial corallite at branch tips · Cup-shaped corallites around it')), [
     ['Axial corallite', 'Axial corallite'],
     ['Corallite', 'corallites']
   ]);
@@ -67,4 +67,37 @@ test('a plain-words sentence comes first, the sourced definition and its source 
     assert.ok(h.indexOf(t[3].slice(0, 20)) < h.indexOf('class="gdef"'), k);
     assert.ok(h.includes(t[2]), k);
   }
+});
+
+// The most frequent words of the genus sheets that had no entry (plain words on the genus sheets, 2026-11-03).
+test("the genus sheets' frequent words: glossed where the lecture and ID tips use them, plain sentence first", () => {
+  const {gloss, termDef} = app(),
+    G = {...DATA.gen, ...DATA.x.gen},
+    added = [
+      'Free-living',
+      'Solitary',
+      'Separate walls',
+      'Shared walls',
+      'Phaceloid',
+      'Radial corallites',
+      'Tentacular lobes',
+      'Axial furrow',
+      'Spinules'
+    ];
+  for (const k of added) {
+    const t = DATA.terms.find(x => x[0] === k);
+    assert.ok(t && t[1] && t[2] === 'Corals of the World glossary' && t[3], k);
+    assert.ok(termDef(t).indexOf(t[3].slice(0, 20)) < termDef(t).indexOf('class="gdef"'), k);
+    // Each is used by at least one genus's lecture notes, ID tips or Coral Finder features, and glossed there.
+    const used = Object.values(G).some(g =>
+      [...(g.imr || []), ...(g.qt || []), ...(g.crit || [])].some(x => terms(gloss(x)).some(([n]) => n === k))
+    );
+    assert.ok(used, `${k}: not found in any genus text`);
+  }
+  assert.deepStrictEqual(terms(gloss('Cup-shaped radial corallites')), [['Radial corallites', 'radial corallites']]);
+  assert.deepStrictEqual(terms(gloss('Shared or separate walls; separate-walled')), [['Separate walls', 'separate walls']]);
+  assert.deepStrictEqual(terms(gloss('Long axial furrow; free-living')), [
+    ['Axial furrow', 'axial furrow'],
+    ['Free-living', 'free-living']
+  ]);
 });

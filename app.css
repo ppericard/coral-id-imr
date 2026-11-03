@@ -1350,6 +1350,19 @@ header {
 .sheet .keyid {
   margin: 14px 0;
 }
+/* The plain sentence (app.js plainLine): right under the photo of the genus sheet and of the first-meeting card, before
+   the ID tips, in body text (Pierre, 2026-11-03). */
+.plainw {
+  margin: 0 0 14px;
+  max-width: 70ch;
+  color: var(--ink);
+  font-size: var(--fs-m);
+  line-height: 1.45;
+}
+.ulcard .plainw {
+  margin: 0 0 12px;
+  text-align: left;
+}
 .fb .imrfb {
   margin: 2px 0 8px;
   padding-left: 18px;
