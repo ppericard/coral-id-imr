@@ -171,7 +171,8 @@
       log: true,
       ach: true,
       board: true,
-      pages: ['genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
+      // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
+      pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       progress: ['slate', 'photos', 'groups']
     },
     {

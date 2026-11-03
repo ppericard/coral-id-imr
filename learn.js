@@ -94,9 +94,12 @@ function viewGenera() {
           return `<section class="gblk" data-n="${L.length}">${head}${L.map(n => (tips ? tipCard(n) : card(n, 'stripe'))).join('')}</section>`;
         })
         .join('');
-      if (html && !q && !azFam)
+      if (html && !q && !azFam && SUBJ.pages.includes('basics'))
         html = `<section class="gblk gbasics" data-n="1"><h3 class="gdiv" title="Before the genera"><span class="gn">0</span><span class="gtitle">Coral basics</span></h3>${basicsCard(tips)}</section>${html}`;
-    } else html = (!q && !azFam && names.length ? basicsCard(tips) : '') + names.map(n => (tips ? tipCard(n) : card(n, true))).join('');
+    } else
+      html =
+        (!q && !azFam && names.length && SUBJ.pages.includes('basics') ? basicsCard(tips) : '') +
+        names.map(n => (tips ? tipCard(n) : card(n, true))).join('');
     const grid = document.getElementById('azgrid');
     // The Coral Finder's extra genera (not on the IMR list, seen at Dauin): one folded line under the 39 (Pierre).
     const X = Object.keys((DATA.x || {}).gen || {}).filter(n => !q || (n + ' ' + GX(n).crit.join(' ')).toLowerCase().includes(q));

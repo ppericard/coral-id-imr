@@ -387,3 +387,19 @@ test('rules version: the first-launch prior has its RVS entry, with RV_CARD', ()
   assert.strictEqual(x.msg, C.RV_CARD);
   assert.strictEqual(C.RV, C.RVS[C.RVS.length - 1].v);
 });
+
+// The question is about corals (CHOICE.SUBJ): on another subject (fish, its own state) the player plays as the default
+// player, and no window, verdict or card runs (model.js startOn).
+test('corals only: on the fish subject the default prior, no window, no card', () => {
+  const M = model();
+  M.startSet('know', 'tour');
+  assert.deepStrictEqual(M.startV(), startVars('know'), "corals: the answer's prior");
+  M.ctx.SUBJ = C.subjectOf('fish');
+  assert.notStrictEqual(M.ctx.SUBJ.id, CHOICE.SUBJ);
+  assert.deepStrictEqual(M.startV(), startVars('new'), 'fish: the default player');
+  M.play(CHOICE.N, 0, false, true, -1);
+  assert.strictEqual((M.startOf().w || []).length, 0, 'no window on fish answers');
+  assert.strictEqual(M.startDue(), null);
+  M.ctx.SUBJ = C.subjectOf('coral');
+  assert.ok(C.subjectOf('coral').pages.includes('basics') && !C.subjectOf('fish').pages.includes('basics'), 'Coral basics: corals only');
+});

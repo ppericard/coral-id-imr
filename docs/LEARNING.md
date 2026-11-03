@@ -1089,6 +1089,15 @@ once (at 60 answers) and a truthful lecture-level RA "lower" twice (at 40). With
 profile, but the false "higher" to a beginner is the case Pierre warned about: to watch on the first real answers
 (ROADMAP). The real log is unchanged (it replays the logged answers).
 
+**Checked again after #422-#444** (hierarchical photo Elo, answer time in the ability, the rename, fish; the same traces
+re-run on the merged code, same seeds): wrong answers caught in the right direction **32 of 40**, cards to truthful
+answers **3 of 20**, none of them "higher" to a beginner (the false one of the #437 run is gone): two "lower" (at 20 and
+40) and one "higher" (at 60) to truthful lecture-level RAs. By cell: beginner who said "IMR course" 3/5 lower (at 20),
+"know well" 3/5 lower (20-40); lecture RA who said "new" 4/5 higher, "know well" 5/5 lower; strong RA who said "new"
+5/5 higher, "IMR course" 2/5; expert who said "new" or "IMR course" 5/5 higher (all at 60); no card to a truthful
+beginner, strong RA or expert. True knowledge with the card kept within 0.03 of the truthful answer's. The real log is
+unchanged.
+
 **With the card taken** (`--fallback accept`: the first answer the card offers, the nearest; the same seeds, the cards
 shown live through the prompt spacing, so at 30 rather than 20 when the sign-in card takes the 20th answer). A change
 made on a fallback card is never followed by a card the other way (`startBack`): with it allowed, 3 of 4 lecture-level
