@@ -600,11 +600,11 @@ const server = http.createServer((req, res) => {
         introReset();
         if (g in introMap() || store.get(INTRO.OFFER.KEY, null)) fails.push('progress reset kept the cards');
       }
-      // Look-alike duels slipped into the photo quiz (AUTO_DUEL): about 1 question in 10 once past the first answers,
-      // on pairs of genera met, never the same pair twice within AUTO_DUEL.SAME answers, logged quiz|d|k2.
+      // Contrast questions (quiz.js CONTRAST): look-alike duels slipped into the photo quiz, about 1 question in 10, on
+      // pairs of genera met and ready, never the pair of the previous contrast question,
+      // logged quiz|d|k2; with the Agains, two 2-choice questions are never closer than CONTRAST.GAP.
       {
-        const n0 = answersSoFar(),
-          seen = [];
+        const n0 = answersSoFar();
         let duels = 0,
           lastTwo = null;
         const q1 = question;
@@ -615,21 +615,16 @@ const server = http.createServer((req, res) => {
           quizPhoto();
           document.querySelectorAll('.unlock').forEach(x => x.remove());
           const q = window.__dq;
-          // Two 2-choice questions (a duel slipped in, an Again) never closer than AUTO_DUEL.GAP, Agains after a
-          // normal question's mix-up excepted (they follow it by design).
           if (q[2].length === 2) {
-            const gap = answersSoFar() - (lastTwo == null ? -1e9 : lastTwo[0]),
-              need = lastTwo && lastTwo[1] ? AUTO_DUEL.GAP : AUTO_DUEL.AGAIN;
-            if (AUTOD && gap < need) fails.push(`duel in the quiz ${gap} answers after a 2-choice question`);
-            if (AUTOD || !lastTwo || !lastTwo[1]) lastTwo = [answersSoFar(), AUTOD];
-          }
-          if (AUTOD) {
-            duels++;
-            const k = q[2].slice().sort().join('|'),
-              at = answersSoFar();
-            if (q[2].length !== 2 || !q[2].every(introReady)) fails.push(`duel in the quiz on ${q[2].join(', ')}`);
-            if (seen.some(([a, kk]) => kk === k && at - a < AUTO_DUEL.SAME)) fails.push(`duel ${k} twice within ${AUTO_DUEL.SAME} answers`);
-            seen.push([at, k]);
+            const at = answersSoFar(),
+              k = q[2].slice().sort().join('|');
+            if (lastTwo && at - lastTwo[0] < CONTRAST.GAP) fails.push(`2-choice questions ${at - lastTwo[0]} answers apart`);
+            if (AUTOD) {
+              duels++;
+              if (!q[2].every(introReady)) fails.push(`duel in the quiz on ${q[2].join(', ')}`);
+              if (lastTwo && lastTwo[1] === k) fails.push(`duel ${k} right after a contrast question on the same pair`);
+            }
+            lastTwo = [at, k];
           }
           const won = AUTOD && i % 10;
           say(i % 10 ? q[1] : q[2].find(c => c !== q[1]));

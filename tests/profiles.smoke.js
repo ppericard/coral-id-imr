@@ -109,7 +109,7 @@ const server = http.createServer((req, res) => {
           pick = right ? t : typed && rnd() < 0.5 ? '' : ch.filter(c => c !== t)[Math.floor(rnd() * (ch.length - 1))];
         blk.n++;
         blk.ok += right;
-        // Traps of the 4-choice questions only: a look-alike duel slipped into the quiz (AUTO_DUEL) has one wrong choice,
+        // Traps of the 4-choice questions only: a look-alike duel slipped into the quiz (CONTRAST) has one wrong choice,
         // always a look-alike, and is a separate exercise.
         if (!AUTOD && !typed) {
           blk.traps += traps;

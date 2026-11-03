@@ -123,6 +123,8 @@ the answers already logged.
 
 ### Look-alike duels slipped into the photo quiz (2026-11-02)
 
+(Their spacing rules became one contrast queue on 2026-11-03: "One contrast queue", below.)
+
 The Duel tab had 13 answers in all (2 players); "Again: A or B?" only follows a mix-up. Pierre (1 in 10): from the 20th
 answer on, about 1 photo-quiz question in 10 (`AUTO_DUEL.P` 0.1, `quiz.js`) is a duel on a look-alike pair, picked as the
 Duel tab picks (`duelPick`: the player's own mix-ups first, then pairs players confuse, then the IMR / Coral Finder
@@ -134,6 +136,47 @@ time delayed a genus, and a weak RA met about 3 genera fewer by question 300). P
 apart in the player journey; a win counts for the Look-alike slayer achievement, as in the Duel tab). Simulated over 4 seeds, it does not slow the opening of genera (an expert met 27 genera
 after 100 questions with duels, 26 without, seed 3333); the profiles test now checks an expert's traps at 300
 questions (one or more a question) and more than a beginner's at 100, the mean of the two sitting at the threshold.
+
+### One contrast queue (2026-11-03)
+
+The independent review's item 7: look-alikes were contrasted three ways (traps among the choices, "Again: A or B?" after
+a mix-up, duels slipped into the quiz), the duels under five spacing rules (`AUTO_DUEL` P 0.1, FROM 20, GAP 5, AGAIN 2,
+SAME 20, and never while an Again was due). Its dead knobs (`AUTO_DUEL.LO/HI/SHAKY`, `OPEN.SHAPE`) had already gone. The
+Again and the duel are the same question, a 2-choice contrast of a look-alike pair, so they now follow one rule
+(`quiz.js` `CONTRAST`, `planPhoto`); traps stay part of a question's format (item 4).
+
+- **One queue, one slot**: every mix-up of the photo quiz queues its pair (`rematch`), a contrast question's too (an
+  Again missed comes again, as before; a duel missed now brings its Again, where it used to come back only through the
+  duel draw). The newest mix-up replaces one still waiting, as before.
+- **One gap**: two contrast questions are at least `CONTRAST.GAP` = 2 questions apart, and a queued pair comes 2
+  questions after its mix-up (one question in between, the Again's timing since #251). Counted on the answers at which
+  each planned question will show (`planPhoto(at)`), so the plans made ahead no longer need the spacing reset when a
+  question shows (Codex review #361).
+- **With nothing queued**, a question becomes a duel with the chance `CONTRAST.P` = 0.1 (Pierre's 1 in 10), on a pair
+  `duelPick` draws (own mix-ups first), both genera met and ready, never the pair of the previous contrast question
+  (replaces `SAME`). Still never with a card (opening comes first), never in a comeback.
+- **No first 20 answers without duels** (`FROM` dropped; Pierre, 2026-11-02: "duels help learning early too"). A
+  first version let a genus into duels only from the ability where its questions get a trap for sure (a duel being a
+  one-trap question): simulated, the beginner then had no duel before question 100 (3 before) and learned less (true
+  knowledge of the slate at question 300 0.57 → 0.51, look-alike pairs told apart 0.83 → 0.80), so it went.
+- 5 constants and 3 state variables (`againAt`, `duelLog`, the show-time patches) → 2 constants, one slot and the last
+  contrast question.
+
+Simulated (`tools/learnsim.js`, 5 seeds × 600 questions, the four profiles, the photo sets as in CI, same seeds),
+before → after, mean of the seeds (± the standard error of the paired difference where it matters):
+
+| Profile | duels by 600 | Agains by 600 | true knowledge 300 / 600 | look-alike pairs told apart 600 | genera met 300 | learned 600 | true ref. success at exam entry |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| beginner | 21.8 → 32.6 | 66.6 → 68.4 | 0.57 → 0.55 (±0.02) / 0.85 → 0.82 (±0.02) | 0.945 → 0.937 | 31.6 → 29.6 (±1.2) | 0.6 → 0 | 0.82 → 0.83 |
+| lecture RA | 21.2 → 33.4 | 62.2 → 66.0 | 0.73 → 0.72 / 0.90 → 0.90 | 0.965 → 0.964 | 38.2 → 37.8 | 0.4 → 0.2 | 0.84 → 0.89 |
+| strong RA | 23.4 → 34.4 | 47.8 → 47.8 | 0.85 → 0.85 / 0.94 → 0.94 | 0.981 → 0.982 | 40 → 40 | 1.6 → 1.4 | 0.92 → 0.92 |
+| expert | 28.0 → 46.4 | 15.4 → 14.4 | 0.95 → 0.95 / 0.97 → 0.97 | 0.989 → 0.989 | 40 → 40 | 7.6 → 7.8 | 0.92 → 0.92 |
+
+- Duels come about half as often again (5-8% of the questions, was 4-5%): nearer Pierre's 1 in 10, since a duel no
+  longer waits 5 questions after the last one. Right % unchanged (within 2 points at every checkpoint).
+- The beginner's knowledge is 0.02-0.03 lower, about one standard error: more 2-choice questions raise the ability less
+  (a right answer among 2 proves less), so genera stay shaky a little longer and open a little later (29.6 genera met by
+  question 300 against 31.6). The opening itself is item 6 (below). Everyone else within the spread.
 
 ### Pierre's Easy / Medium / Hard sets against the players' answers (measured 2026-11-02)
 
@@ -1152,6 +1195,9 @@ is not in the simulation.
   after Open all; 30 answers + the hold would have come 4 answers before the player quit); One at a time closes every genus
   opened at once, answered or not, until its card reopens it, answers and progress kept ("First meeting with a genus").
   The starting ability of those genera measured, not changed ("Open all: the app's expectation against the truth").
+- 2026-11-03, review item 7 (Pierre: do the review's simplifications still relevant): one contrast queue for the
+  Again and the duels slipped into the quiz, `CONTRAST` {P 0.1, GAP 2} instead of `AUTO_DUEL` {P, FROM, GAP, AGAIN,
+  SAME}; duels from the first answers ("One contrast queue").
 
 ## References
 
