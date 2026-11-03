@@ -542,9 +542,50 @@ const server = http.createServer((req, res) => {
         fails.push(`${w}px Health (${v}): sections ${JSON.stringify(hs)}`);
       if (hs.wide > 0) fails.push(`${w}px Health (${v}): page ${hs.wide} px wider than the window`);
     }
+    // The enlarged photo's caption links to the photo's source, as in the games (AGENTS.md rule 11; Pierre, 2026-11-03:
+    // he opened his own photo everyone misses, to check its identification on iNaturalist, and found no link): an iNat
+    // photo's observation (new tab, noopener) and the genus sheet; a Coral Finder book photo keeps its © line, no link.
+    const lbSrc = f =>
+      p.evaluate(f => {
+        const ph = PHOTOS[f],
+          cap = document.querySelector('#lightbox:not([hidden]) .lb-cap');
+        if (!cap) return 'no lightbox';
+        if (!cap.querySelector(`code`) || cap.querySelector('code').textContent !== f) return 'caption names another photo';
+        const a = [...cap.querySelectorAll('a.lb-src')];
+        if (ph.cf)
+          return a.length ? 'a book photo has a source link' : /Coral Finder/.test(cap.textContent) ? '' : 'book photo without its © line';
+        if (!/inaturalist\.org\/observations\//.test(ph.o || '')) return a.length ? 'a link on a photo with no iNat page' : '';
+        if (a.length !== 1 || a[0].href !== ph.o) return `no link to ${ph.o}`;
+        if (a[0].target !== '_blank' || !/noopener/.test(a[0].rel)) return 'source link not in a new tab with noopener';
+        if (!cap.querySelector(`a[href$="#g-${encodeURIComponent(ph.genus)}"]`)) return 'genus not linked to its sheet';
+        return '';
+      }, f);
     if (await p.$('[data-health="photos"] [data-zf]')) {
       await p.click('[data-health="photos"] [data-zf]');
       if (await p.evaluate(() => document.getElementById('lightbox').hidden)) fails.push(`${w}px Health: a photo click opened nothing`);
+      else {
+        const e = await lbSrc(await p.$eval('[data-health="photos"] [data-zf]', b => b.dataset.zf));
+        if (e) fails.push(`${w}px Health lightbox: ${e}`);
+      }
+      await p.keyboard.press('Escape');
+    }
+    // Both admin lightboxes (zoom: a genus's photos; zoomOne: Excluded, Flags, Candidates, auto-sort), on Pierre's photo
+    // of the report, a candidate and a Coral Finder book photo.
+    for (const [how, f] of await p.evaluate(() => {
+      const own = 'lobactis-medium-746236519',
+        cand = Object.values(DATA.cand)
+          .flat()
+          .find(x => !x.cf),
+        book = Object.values(PHOTOS).find(x => x.cf);
+      return [
+        ['zoom', PHOTOS[own] ? own : Object.values(PHOTOS).find(x => x.own).f],
+        ['zoomOne', cand.f],
+        ['zoomOne', book.f]
+      ];
+    })) {
+      await p.evaluate(([how, f]) => (how === 'zoom' ? zoom(PHOTOS[f].genus, f) : zoomOne(PHOTOS[f])), [how, f]);
+      const e = await lbSrc(f);
+      if (e) fails.push(`${w}px Lightbox (${how}, ${f}): ${e}`);
       await p.keyboard.press('Escape');
     }
     if (errs.length) fails.push(`${w}px Health: ${errs.slice(0, 3).join(' | ')}`);
