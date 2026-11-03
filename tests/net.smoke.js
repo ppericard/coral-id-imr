@@ -368,6 +368,25 @@ const server = http.createServer((req, res) => {
   }
   // 9. A new version (Pierre, 2026-11-02: players never reload by hand): once it has taken over in the background, the
   // page reloads itself at the next page change.
+  // Each new version is published only while the page is quiet (no request for 500 ms). Chromium swaps a busy old
+  // worker for a waiting one that called skipWaiting() by stopping the old one the moment it is idle; a request that
+  // comes while it stops starts the old version again, and that copy is not asked to stop early: the swap then waits
+  // until it has been idle 30 s, and with DevTools attached (Playwright) until the 5 min "lame duck" timer
+  // (content/browser/service_worker: TriggerIdleTerminationAsap, OnStoppedInternal, kMaxLameDuckTime). Published while
+  // the tab below still loaded its last tier, with photos held ~1 s by the worker's R2 retry, the old worker was busy
+  // when the new one installed and the next file asked for restarted it: no takeover within 30 s in 7 of 55 runs of this
+  // check (2026-11-03, timestamps of both workers: the old version started twice in each failing run, in no passing one).
+  // A player meets the same delay, not a lost version (docs/ARCHITECTURE.md).
+  const track = pg => {
+    const s = {n: 0, at: Date.now()},
+      end = () => ((s.n = Math.max(0, s.n - 1)), (s.at = Date.now()));
+    pg.on('request', () => (s.n++, (s.at = Date.now())));
+    pg.on('requestfinished', end);
+    pg.on('requestfailed', end);
+    return async () => {
+      for (const t = Date.now(); (s.n || Date.now() - s.at < 500) && Date.now() - t < 20000;) await pg.waitForTimeout(100);
+    };
+  };
   {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}});
     await ctx.addInitScript(() => localStorage.setItem('imr-tour', '1'));
@@ -375,7 +394,8 @@ const server = http.createServer((req, res) => {
       u => !u.href.startsWith(base),
       r => r.abort()
     );
-    const p = await ctx.newPage();
+    const p = await ctx.newPage(),
+      pQuiet = track(p);
     await p.goto(base);
     await ready(p);
     await p.evaluate(() => navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready)); // https only in the app
@@ -406,6 +426,7 @@ const server = http.createServer((req, res) => {
     });
     if (sent.length) fails.push('A local copy sent answers or reports to the sheet: ' + sent[0].slice(0, 60));
     await p.evaluate(() => (window.__old = 1));
+    await pQuiet();
     SWV = 1;
     await p.evaluate(() => swCheck());
     await p
@@ -423,7 +444,8 @@ const server = http.createServer((req, res) => {
       u => !u.href.startsWith(base),
       x => x.abort()
     );
-    const f = await r.newPage();
+    const f = await r.newPage(),
+      fQuiet = track(f);
     await f.goto(base);
     await ready(f);
     await f.evaluate(() =>
@@ -438,6 +460,9 @@ const server = http.createServer((req, res) => {
         )
     );
     if (await f.evaluate(() => UPDATED)) fails.push('The first install was taken for an update');
+    // Left open: every tier in, and quiet (see above).
+    await f.waitForFunction(() => typeof HAVE !== 'undefined' && HAVE >= 5, null, {timeout: 20000});
+    await fQuiet();
     SWV = 9;
     await f.evaluate(() => swCheck());
     await f
@@ -445,15 +470,17 @@ const server = http.createServer((req, res) => {
       .catch(() => fails.push('A tab first opened before any install missed the next version'));
     await r.close();
     // The admin page does the same (its demo mode: no token, nothing sent).
-    const q = await ctx.newPage();
+    const q = await ctx.newPage(),
+      qQuiet = track(q);
     await q.goto(base + 'admin.html?demo');
-    // Loaded first (DRAFT is set after the last of its files), and its first page's photos in: a new worker takes over only
-    // once the old one has no fetch in flight. Published while start() still fetched cand.json, the new worker now and
-    // then stayed waiting past the 30 s below (Chromium, about 1 run in 8, 2026-11-03); that case is checked next.
+    // Loaded first (DRAFT is set after the last of its files), its first page's photos in, and quiet (see above; Playwright's
+    // 'networkidle' is reached once per load, then never waited for again). Published while start() still fetched cand.json, the
+    // new worker now and then stayed waiting past the 30 s below (about 1 run in 8, 2026-11-03), likely the same restart
+    // of the old worker; a version that takes over while the admin loads is checked next.
     await q.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera && navigator.serviceWorker.controller, null, {
       timeout: 20000
     });
-    await q.waitForLoadState('networkidle');
+    await qQuiet();
     await q.evaluate(() => (window.__old = 1));
     SWV = 2;
     await q.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
@@ -465,9 +492,9 @@ const server = http.createServer((req, res) => {
       .waitForFunction(() => !window.__old && location.hash === '#~cand', null, {timeout: 20000})
       .catch(() => fails.push('Admin: the page did not reload onto the new version at the next page change'));
     // A version that takes over while the admin is still loading is seen too: the new worker waits for the old one's
-    // fetches still in flight, then takes over the moment the last ends, before start() goes on. admin.js listened only
-    // from the end of start() and missed it; whether it did depended on which came first, so what is checked is that it
-    // listens while start() still waits for its files (here cand.json never answers).
+    // fetches still in flight, then takes over once the old one is idle (or later, see above), maybe before start() goes
+    // on. admin.js listened only from the end of start() and missed it; whether it did depended on which came first, so
+    // what is checked is that it listens while start() still waits for its files (here cand.json never answers).
     await ctx.route(/cand\.json/, () => {});
     const q2 = await ctx.newPage();
     await q2.addInitScript(() => {
