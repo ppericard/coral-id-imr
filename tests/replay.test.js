@@ -294,8 +294,10 @@ test("replayProgress goes on from a replay: the sheet's, then this device's answ
     nw: 1,
     ch: 'A B C'
   };
-  assert.deepStrictEqual(C.logRow(a, 'me'), ['me', Date.parse(a.t), 'A', 'B', 0, 'quiz|k3', 'f1 f2', 0.7, 0.4, 1, 'A B C']);
-  assert.deepStrictEqual(C.logRow({id: 'y', t: 'x', g: 'A', a: 'A', ok: 1}, 'me').slice(7), [null, null, null, '']);
+  assert.deepStrictEqual(C.logRow(a, 'me'), ['me', Date.parse(a.t), 'A', 'B', 0, 'quiz|k3', 'f1 f2', 0.7, 0.4, 1, 'A B C', null, null]);
+  // The seconds to answer (rt) at 12, as in the sheet's readAnswers rows (response time, rules version 5).
+  assert.strictEqual(C.logRow({...a, rt: 4.5}, 'me')[12], 4.5);
+  assert.deepStrictEqual(C.logRow({id: 'y', t: 'x', g: 'A', a: 'A', ok: 1}, 'me').slice(7), [null, null, null, '', null, null]);
 });
 
 test('replayedOf: what the app takes from the replay and what it keeps from its own copy', () => {
@@ -540,4 +542,149 @@ test("replayBase: the shared history only, never this device's unsent answers (C
   assert.deepStrictEqual(base.E, B.E, 'a genus the log lacks: the shared copy');
   assert.strictEqual(base.A.pg, rec.A.pg);
   assert.strictEqual(base[C.LEVEL].ok, 2);
+});
+
+// Response time (rules version 5, 2026-11-04; core.js RTIME, rtWeight, rtAdd; docs/LEARNING.md "Response time"): the
+// app weighs a right answer's two ability steps by its seconds against the player's earlier timed answers, kept in the
+// global level's record (P[LEVEL].rt); the sheet's replay of the log, which reads the same seconds, rebuilds the same
+// abilities and the same record, from scratch or going on from an earlier replay.
+test('response time: the replay of the log rebuilds the abilities the app stepped live with the seconds, and its time record', () => {
+  const vm = require('vm'),
+    src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
+    quiz = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8'),
+    cut = (a, b) => src.slice(src.indexOf(a), src.indexOf(b, src.indexOf(a)) + b.length);
+  // quiz.js answer steps the genus shown and the level with the same weight, then records the time.
+  assert.ok(quiz.includes('const rw = rtOn() ? rtWeight(P[LEVEL], tm.rt, k, good) : 1;'));
+  assert.ok(quiz.includes('abilityStep(target, s, good, dm, k, rw);'));
+  assert.ok(quiz.includes('abilityStep(LEVEL, P[LEVEL], good, dm, k, rw);'));
+  assert.ok(quiz.includes('rtAdd(P[LEVEL], tm.rt, k);'));
+  const live = sheet => {
+    const M = {...C, P: {}, sheetV: () => sheet};
+    vm.createContext(M);
+    vm.runInContext(
+      cut('const ability = ', ';\n') +
+        cut('const abilityStep = ', ';\n') +
+        cut('const rtOn = ', ';\n') +
+        '\nthis.T = {ability, abilityStep, rtOn};',
+      M
+    );
+    const {ability, abilityStep, rtOn} = M.T,
+      P = M.P,
+      log = [],
+      ws = [],
+      r = (a => () => ((a = (a * 16807) % 2147483647), a / 2147483647))(7),
+      G = ['A', 'B', 'C', 'D'],
+      sig1 = x => 1 / (1 + Math.exp(-x)),
+      logit = p => Math.log(p / (1 - p));
+    for (let i = 0; i < 80; i++) {
+      const t = G[Math.floor(r() * 4)],
+        typed = i % 9 === 4, // typed: its seconds are left out (slower by design)
+        other = G[(G.indexOf(t) + 1 + Math.floor(r() * 3)) % 4],
+        k = typed ? Infinity : 2,
+        p = Math.round((typed ? 0.4 + 0.5 * r() : 0.55 + 0.4 * r()) * 100) / 100,
+        good = r() < p,
+        // Seconds as the app logs them (tenths); none on some answers (a clock that never started).
+        rt = i % 13 === 6 ? undefined : Math.round(Math.exp(1.8 - (good ? 0.4 : 0) + 0.7 * (r() + r() - 1)) * 10) / 10,
+        s = (P[t] = P[t] || {ok: 0, ko: 0}),
+        th0 = ability(t),
+        dm = th0 - (typed ? logit(p) : logit((p - 0.5) / 0.5));
+      s[good ? 'ok' : 'ko']++;
+      const rw = rtOn() ? C.rtWeight(P[C.LEVEL], rt, k, good) : 1;
+      ws.push(rw);
+      abilityStep(t, s, good, dm, k, rw);
+      if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
+      else P[C.LEVEL] = C.levelSeed(P);
+      abilityStep(C.LEVEL, P[C.LEVEL], good, dm, k, rw);
+      C.rtAdd(P[C.LEVEL], rt, k);
+      log.push({
+        id: 'a' + i,
+        t: new Date(T0 + i * 60e3).toISOString(),
+        g: t,
+        a: good ? t : typed ? '' : other,
+        ok: good ? 1 : 0,
+        m: typed ? 'quiz|t' : 'quiz|k2',
+        ph: t.toLowerCase() + i,
+        ch: typed ? '' : [t, other].join(' '),
+        e: Math.round(100 * (typed ? sig1(th0 - dm) : 0.5 + 0.5 * sig1(th0 - dm))) / 100,
+        th: th0,
+        nw: 1,
+        ...(rt === undefined ? {} : {rt})
+      });
+    }
+    return {P, log, ws};
+  };
+  const same = (R, P, why, rt = true) => {
+    for (const n of ['A', 'B', 'C', 'D'])
+      for (const f of ['th', 'vr', 'lt']) assert.ok(Math.abs(R[n][f] - P[n][f]) < 1e-9, `${why}: ${n}.${f} ${R[n][f]} vs app ${P[n][f]}`);
+    for (const f of ['th', 'vr']) assert.ok(Math.abs(R[C.LEVEL][f] - P[C.LEVEL][f]) < 1e-9, `${why}: level ${f}`);
+    assert.deepStrictEqual([R[C.LEVEL].ok, R[C.LEVEL].ko], [P[C.LEVEL].ok, P[C.LEVEL].ko], why);
+    if (rt) assert.deepStrictEqual(R[C.LEVEL].rt, P[C.LEVEL].rt, why);
+  };
+  // Script v32 or later: the app weighs its steps by the time.
+  const on = live(C.RT_SHEET),
+    rows = on.log.map(a => C.logRow(a, 'me'));
+  assert.ok(on.ws.filter(w => w !== 1).length > 20, 'many right answers weighed by their time');
+  assert.ok(on.ws.some(w => w === C.RTIME.HI) && on.ws.some(w => w === C.RTIME.LO) && on.ws.some(w => w > 1 && w < C.RTIME.HI));
+  assert.ok(
+    on.ws.slice(0, C.RTIME.MIN).every(w => w === 1),
+    'the first timed answers: no median yet'
+  );
+  // Typed answers and answers without seconds are not counted in the record.
+  const n = Object.values(on.P[C.LEVEL].rt).reduce((a, x) => a + x, 0);
+  assert.strictEqual(n, on.log.filter(a => a.rt !== undefined && !/\|t/.test(a.m)).length);
+  same(C.replayProgress(rows, {gen: GEN}).me.P, on.P, 'the whole log');
+  // The sheet's replay of the first answers, then this device's on top (sync.js replayAdopt).
+  const head = C.replayProgress(rows.slice(0, 50), {gen: GEN});
+  same(C.replayProgress(rows.slice(50), {gen: GEN, start: head}).me.P, on.P, 'going on from a replay');
+  // What the app adopts keeps the replay's time record (replayedOf), and the merge baseline too (replayBase).
+  const rep = C.replayProgress(rows, {gen: GEN}).me;
+  assert.deepStrictEqual(C.replayedOf(rep, {}, C.RV)[C.LEVEL].rt, on.P[C.LEVEL].rt);
+  assert.deepStrictEqual(C.replayBase(rep.P, C.replayedOf(rep, {}, C.RV), C.RV, {})[C.LEVEL].rt, on.P[C.LEVEL].rt);
+  // An older script (AGENTS.md 7a): the app does exactly what it did before, every weight 1, the replay without time.
+  const off = live(C.RT_SHEET - 1);
+  assert.ok(off.ws.every(w => w === 1));
+  // (The app still records the times, which the replay without time leaves out.)
+  same(
+    C.replayProgress(
+      off.log.map(a => C.logRow(a, 'me')),
+      {gen: GEN, time: false}
+    ).me.P,
+    off.P,
+    'before the script replays the time',
+    false
+  );
+  assert.deepStrictEqual(off.P[C.LEVEL].rt, on.P[C.LEVEL].rt, 'the times are recorded either way');
+  assert.notStrictEqual(off.P[C.LEVEL].th, on.P[C.LEVEL].th);
+});
+
+test('response time: the median of the earlier times, the weight, and the record two devices add up', () => {
+  const G = {};
+  [4.5, 5, 6, 3.2, 8, 5, 4.1, 7.7, 5, 6.3].forEach(x => {
+    assert.strictEqual(C.rtMedian(G.rt), null, 'fewer than RTIME.MIN timed answers: no median');
+    assert.strictEqual(C.rtWeight(G, 2, 4, true), 1);
+    C.rtAdd(G, x, 4);
+  });
+  C.rtAdd(G, 9, Infinity); // typed: not counted
+  C.rtAdd(G, undefined, 4); // no seconds
+  C.rtAdd(G, 0, 4); // a clock at 0
+  assert.deepStrictEqual(G.rt, {32: 1, 41: 1, 45: 1, 50: 3, 60: 1, 63: 1, 77: 1, 80: 1});
+  // Ten times: the mean of the 5th and 6th (5 and 5) in logs.
+  assert.strictEqual(C.rtMedian(G.rt), Math.log(5));
+  C.rtAdd(G, 6, 4);
+  assert.strictEqual(C.rtMedian(G.rt), Math.log(5), 'eleven: the 6th');
+  C.rtAdd(G, 6.3, 4);
+  assert.strictEqual(C.rtMedian(G.rt), (Math.log(5) + Math.log(6)) / 2);
+  const m = C.rtMedian(G.rt),
+    w = x => Math.min(1.5, Math.max(0.5, 1 - C.RTIME.K * (Math.log(x) - m)));
+  assert.strictEqual(C.rtWeight(G, 5.4, 4, true), w(5.4));
+  assert.strictEqual(C.rtWeight(G, 2, 4, true), C.RTIME.HI, 'much faster: the most');
+  assert.strictEqual(C.rtWeight(G, 30, 4, true), C.RTIME.LO, 'much slower: the least');
+  assert.strictEqual(C.rtWeight(G, 2, 4, false), 1, 'a miss: unchanged');
+  assert.strictEqual(C.rtWeight(G, 2, Infinity, true), 1, 'typed: unchanged');
+  assert.strictEqual(C.rtWeight(G, null, 4, true), 1, 'no seconds: unchanged');
+  // Two devices (mergeProgress): the times each added since the shared copy add up, as the answer counts.
+  const B = {[C.LEVEL]: {ok: 3, ko: 0, th: 0.2, rt: {50: 2, 60: 1}}},
+    P = {[C.LEVEL]: {ok: 4, ko: 0, th: 0.3, rt: {50: 2, 60: 1, 45: 1}}},
+    R = {[C.LEVEL]: {ok: 4, ko: 1, th: 0.1, rt: {50: 3, 60: 1, 70: 1}}};
+  assert.deepStrictEqual(C.mergeProgress(B, P, R)[C.LEVEL].rt, {50: 3, 60: 1, 70: 1, 45: 1});
 });

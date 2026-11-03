@@ -97,8 +97,9 @@
       });
       if (l.cor || r.cor) out.cor = 1;
       if (l.du || r.du) out.du = 1;
-      // Mix-ups (conf: genus answered instead) and offers (off: genus offered as a wrong choice) add up across devices.
-      ['conf', 'off'].forEach(f => {
+      // Mix-ups (conf: genus answered instead) and offers (off: genus offered as a wrong choice) add up across devices, and
+      // so do the global level's answer times (rt, rtWeight: how many timed answers took each tenth of a second).
+      ['conf', 'off', 'rt'].forEach(f => {
         const c = {...(r[f] || {})};
         Object.keys(l[f] || {}).forEach(k => {
           const v = (c[k] || 0) + l[f][k] - ((b[f] || {})[k] || 0);
@@ -166,7 +167,8 @@
       o.ok = (x.ok || 0) + (y.ok || 0);
       o.ko = (x.ko || 0) + (y.ko || 0);
       o.streak = main.streak || 0;
-      ['conf', 'off'].forEach(f => {
+      // Answer times (rt, the global level's) add up like the mix-ups: the same person's.
+      ['conf', 'off', 'rt'].forEach(f => {
         const c = add(x[f], y[f]);
         if (Object.keys(c).length) o[f] = c;
         else delete o[f];
@@ -1336,7 +1338,9 @@
     if (n === LEVEL || !s || typeof s.lt !== 'number' || !G || typeof G.th !== 'number') return 0;
     return Math.round(((G.th - s.lt) / (1 + ((s.ok || 0) + (s.ko || 0)) / ELO.n)) * 100) / 100;
   }
-  function eloStep(P, n, s, good, d, k) {
+  // w (response time, 2026-11-04, rtWeight): the step's size times w; 1 by default. The volatility follows the plain
+  // surprise either way.
+  function eloStep(P, n, s, good, d, k, w = 1) {
     const th = abilityOf(P, n),
       g = 1 / k,
       e = g + (1 - g) * sigm(th - d),
@@ -1350,11 +1354,55 @@
     // Kept to 4 decimals for the global level (2 for a genus): without the floor its steps fall under 0.005 after a few
     // hundred answers, and rounding them to 2 decimals lost every one (Codex review #415: 1000 right answers left it at 1).
     const r = n === LEVEL ? 1e4 : 100;
-    s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * r) / r;
+    s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + w * K * ((good ? 1 : 0) - e))) * r) / r;
     // The level this step was taken against (the level before this answer's own step on it, as quiz.js answer orders them).
     if (n !== LEVEL && P && P[LEVEL] && typeof P[LEVEL].th === 'number') s.lt = P[LEVEL].th;
     delete s.lv;
     delete s.run;
+  }
+
+  // Response time (Pierre, 2026-11-04: "the signal is already very clear on few players; the question is how to
+  // integrate it"; AGENTS.md rule 12: the seconds taken to answer are evidence about that answer, never a decay; docs/
+  // LEARNING.md "Response time"). A right answer given faster than the player's usual is stronger evidence that they know
+  // the genus, a slow one weaker: its two ability steps (the genus shown and the global level) are taken times
+  // w = clamp(1 - K z, LO, HI), z = log(seconds) minus the median log(seconds) of the player's own earlier timed answers.
+  // A miss, an answer without seconds (an app before sheet v23, a clock that never started), a typed answer (slower by
+  // design) and the player's first MIN timed answers: w 1. The answer's own time never changes its prediction, only the
+  // step after it. K 1.5: the value chosen by leave one player out on the real answers for 8 of 9 players (2 for one;
+  // tools/abilityeval.js +T*+G, PR #431); LO, HI and MIN are #431's rule as measured. The seconds are those logged (to the
+  // tenth, at most 600: quiz.js qclockRead, Code.gs secs_), so the sheet's replay of the log meets exactly the same ones.
+  // The earlier times live in the global level's record (P[LEVEL].rt: how many timed answers took each number of tenths
+  // of a second, {"45": 3, ...}; a few hundred keys at most), so the median is exact, the record compact, two devices'
+  // records add up (mergeProgress) and the full replay rebuilds it from the log (replayProgress).
+  const RTIME = {K: 1.5, LO: 0.5, HI: 1.5, MIN: 10};
+  // The tenths of a second of a timed answer, or 0 when it does not count (no seconds, 0, a typed answer: k infinite).
+  const rtTenths = (sec, k) => (typeof sec === 'number' && isFinite(sec) && isFinite(k) ? Math.round(Math.min(600, sec) * 10) : 0);
+  // The median log(seconds) of the times in rt, null with fewer than RTIME.MIN (the mean of the two middle ones when even).
+  function rtMedian(rt) {
+    const ks = Object.keys(rt || {})
+        .map(Number)
+        .filter(x => x > 0 && rt[x] > 0)
+        .sort((a, b) => a - b),
+      n = ks.reduce((t, x) => t + rt[x], 0);
+    if (n < RTIME.MIN) return null;
+    const at = i => {
+      let c = 0;
+      for (const x of ks) if ((c += rt[x]) > i) return Math.log(x / 10);
+    };
+    return n % 2 ? at((n - 1) / 2) : (at(n / 2 - 1) + at(n / 2)) / 2;
+  }
+  // The weight of a right answer's ability steps from its seconds, against the player's earlier times (G: P[LEVEL]).
+  function rtWeight(G, sec, k, good) {
+    const x = rtTenths(sec, k),
+      m = good && x > 0 ? rtMedian(G && G.rt) : null;
+    return m === null ? 1 : Math.min(RTIME.HI, Math.max(RTIME.LO, 1 - RTIME.K * (Math.log(x / 10) - m)));
+  }
+  // The answer's seconds added to the player's times (after its own steps: z is against the earlier answers only).
+  function rtAdd(G, sec, k) {
+    const x = rtTenths(sec, k);
+    if (!G || x <= 0) return;
+    G.rt = G.rt || {};
+    G.rt[x] = (G.rt[x] || 0) + 1;
   }
 
   // Rules versions (Pierre, 2026-11-03: progress is recalculated from the whole answer log, by the sheet, automatically,
@@ -1391,6 +1439,12 @@
       at: '2026-11-04',
       why: 'The opening pace and known mix-ups (#425): a question whose choices hold a genus the player mixes up with the one shown more than everyone does (3 or more plausible choices) counts as that much harder, for the ability, the global level and the weight of a miss',
       msg: RV_CARD
+    },
+    {
+      v: 5,
+      at: '2026-11-04',
+      why: "Answer time weighs right answers (Pierre, 2026-11-04): a right answer's ability steps, on the genus and the global level, times clamp(1 - 1.5 z, 0.5, 1.5), z its log seconds against the player's own median over their earlier timed answers (RTIME, rtWeight)",
+      msg: RV_CARD
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -1398,6 +1452,10 @@
   // script (AGENTS.md 7a, Pierre 2026-11-03): it adopts a replay (sync.js replayAdopt) and the admin shows replayed
   // values (admin.js progOf) only when the script's replies say v >= RV_SHEET; otherwise both do what they did before.
   const RV_SHEET = 28;
+  // The sync script version that replays the answer time (Code.gs v32 reads the Seconds column into the replay rows):
+  // the app weighs a right answer's steps by its time (rtWeight) only once the script's replies say v >= RT_SHEET
+  // (sync.js sheetV), so a replay never undoes what the app did live (AGENTS.md 7a); before it, exactly as before.
+  const RT_SHEET = 32;
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
   // several versions sees one recalculation card with its progress before and after the whole jump.
@@ -1412,14 +1470,16 @@
   // (sync.js replayAdopt). The device's own recalculations (memRecalc from s.ps, pgOf from the last 10 results s.h) only
   // approximate it from what a device keeps: they remain the fallback for a device that never reaches the sheet.
   // docs/LEARNING.md "Full replay".
-  // rows: the answer log (sheet readAnswers rows, Code.gs rowsOf_, or the app's own log through logRow: [id, time ms,
-  // genus shown, answered, right 0|1, mode, photos, expected e, ability th, new photos, choices, ...]). o: gen (data.json
+  // rows: the answer log (sheet readAnswers rows, Code.gs rowOf_, or the app's own log through logRow: [id, time ms,
+  // genus shown, answered, right 0|1, mode, photos, expected e, ability th, new photos, choices, (11: unused here),
+  // seconds to answer (null without)]; the seconds weigh a right answer's ability steps, rtWeight). o: gen (data.json
   // genera, Millepora and the bonus genera included: look-alikes `look`, family `fam`), mem (photo memory offsets,
   // ?stats=1 mem; the prior without), conf (the pooled pairs, ?stats=1 conf, as the app's PCONF), since ({id: time ms}:
-  // only the answers after a progress reset), memory (false: the rule before the photo memory, tools/memreplay.js),
+  // only the answers after a progress reset), memory (false: the rule before the photo memory, tools/memreplay.js), time
+  // (false: no response time, the rule before rules version 5),
   // start ({id: player}: a replay to go on from, as returned here, e.g. the sheet's, with this device's answers not in
   // the sheet yet on top; copied, never changed), onAnswer(row, {d, fam, cf, k, w, look}).
-  // Returns {id: {P: {genus: {pg, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm}, '~level': {ok, ko, th, vr, at}},
+  // Returns {id: {P: {genus: {pg, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm}, '~level': {ok, ko, th, vr, at, rt}},
   // n, used, rep}}: per genus the moving average pg (what the app keeps as s.pg), right / wrong answers, the last 10
   // results, the photos [shown, right], the choices offered beside it and the genera given instead (the app's s.off,
   // s.conf), u = answers that moved pg, the ability th and its volatility vr (eloStep, as quiz.js answer steps them: on
@@ -1459,6 +1519,7 @@
       conf = o.conf || {},
       since = o.since || {},
       memory = o.memory !== false,
+      time = o.time !== false,
       out = o.start ? JSON.parse(JSON.stringify(o.start)) : {};
     const prior = (t, n) => {
       const a = gen[t] || {},
@@ -1505,6 +1566,7 @@
           th = r[8],
           chs = split(r[10]),
           k = kOf(mode, r[10]),
+          sec = typeof r[12] === 'number' ? r[12] : null,
           s = rec(t),
           hs = fs.map(f => s.ps[f]),
           wrong = !ok && c && c !== t && gen[c];
@@ -1519,7 +1581,8 @@
         if (!ok && c) (s.conf = s.conf || {})[c] = (s.conf[c] || 0) + 1;
         const replayable = typeof e === 'number' && typeof th === 'number' && fs.length && k > 1;
         let dm = 0,
-          d0 = 0;
+          d0 = 0,
+          rw = 1;
         if (replayable) {
           pl.used++;
           const fam = memFam(hs, mem),
@@ -1536,13 +1599,18 @@
           s.pg = pgStep(s.pg, ok, w);
           s.u++;
           if (o.onAnswer) o.onAnswer(r, {d, fam: fm, cf, k, w, look});
-          // The ability, as quiz.js answer steps it: the genus shown against the question's difficulty with the memory.
-          eloStep(pl.P, t, s, ok, dm, k);
+          // The ability, as quiz.js answer steps it: the genus shown against the question's difficulty with the memory,
+          // a right answer's step weighed by its time against the player's earlier ones (rtWeight; time: false, without).
+          rw = time ? rtWeight(pl.P[LEVEL], sec, k, ok) : 1;
+          eloStep(pl.P, t, s, ok, dm, k, rw);
         }
         // The global level (quiz.js answer): made at the first answer from the player's history, then one step each.
         if (pl.P[LEVEL]) pl.P[LEVEL][ok ? 'ok' : 'ko']++;
         else pl.P[LEVEL] = levelSeed(pl.P);
-        if (replayable) eloStep(pl.P, LEVEL, pl.P[LEVEL], ok, dm, k);
+        if (replayable) {
+          eloStep(pl.P, LEVEL, pl.P[LEVEL], ok, dm, k, rw);
+          if (time) rtAdd(pl.P[LEVEL], sec, k);
+        }
         pl.P[LEVEL].at = r[1];
         s.at = r[1];
         // The learned mark (not replayed: replayedOf takes it from the saved copy) is lost, in the game, at a miss that
@@ -1576,8 +1644,9 @@
       });
     return out;
   }
-  // An answer of the app's own log (quiz.js answer: {id, t, g, a, ok, m, ph, e, th, nw, ch}) as a replay row for player
-  // id: this device's answers the sheet has not confirmed yet, replayed on top of the sheet's replay (sync.js).
+  // An answer of the app's own log (quiz.js answer: {id, t, g, a, ok, m, ph, e, th, nw, ch, rt}) as a replay row for
+  // player id: this device's answers the sheet has not confirmed yet, replayed on top of the sheet's replay (sync.js).
+  // The seconds rt at index 12, as in the sheet's readAnswers rows (11, their anonymous flag, unused here).
   const logRow = (a, id) => [
     id,
     Date.parse(a.t) || 0,
@@ -1589,7 +1658,9 @@
     typeof a.e === 'number' ? a.e : null,
     typeof a.th === 'number' ? a.th : null,
     typeof a.nw === 'number' ? a.nw : null,
-    String(a.ch || '')
+    String(a.ch || ''),
+    null,
+    typeof a.rt === 'number' ? a.rt : null
   ];
   // A player's progress as the app holds it after the replay (rep: replayProgress's player; saved: the player's
   // imr-coral-progress, the device's copy in the app, the sheet's copy in the admin). What comes from where:
@@ -1613,7 +1684,8 @@
   // - the saved record as it is (the same mx rule) for a genus the log has no replayable answer on, or fewer answers on
   //   than the saved copy (answers that never reached the log: a replay must never lose progress);
   // - LEVEL: the replayed ability (th, vr), the larger answer count of the two (answersSoFar keys the exam's gaps, the
-  //   cards met and the prompts, so it never goes back), the later at, rv when given.
+  //   cards met and the prompts, so it never goes back) with the answer times (rt) of the same side, the later at, rv
+  //   when given.
   // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
   // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
   // after the exam takes it away, as the game does (mxKeeps, lm).
@@ -1640,7 +1712,12 @@
         if (r) {
           if (typeof r.th === 'number') o.th = r.th;
           if (typeof r.vr === 'number') o.vr = r.vr;
-          if (!s || n(r) >= n(s)) [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
+          // The answer times (rt) go with the count: the replay's when it has every answer the device has.
+          if (!s || n(r) >= n(s)) {
+            [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
+            if (isObj(r.rt)) o.rt = dup(r.rt);
+            else delete o.rt;
+          }
           if (r.at) o.at = Math.max(r.at, Number(o.at) || 0);
           if (rv) o.rv = rv;
         }
@@ -1687,7 +1764,8 @@
   //   (replayedOf of rec alone), its photos shown per photo the larger of the replay's and B's (exposure the log leaves
   //   out, a corallites hint revealed after the answer, that a device already synced: shared too);
   // - kept from this device's copy (the log has fewer answers on it): B's record, as before;
-  // - the global level: the replay's, with B's answer count when larger (replayedOf keeps the larger count).
+  // - the global level: the replay's, with B's answer count and answer times (rt) when its count is larger (replayedOf
+  //   keeps the larger count).
   function replayBase(rec, M, rv, B) {
     const R = replayedOf({P: rec}, {}, rv),
       B0 = isObj(B) ? B : {},
@@ -1700,7 +1778,11 @@
       if (g === LEVEL) {
         if (!r) return b && (out[g] = dup(b));
         const o = dup(r);
-        if (b && n(b) > n(r)) [o.ok, o.ko] = [b.ok || 0, b.ko || 0];
+        if (b && n(b) > n(r)) {
+          [o.ok, o.ko] = [b.ok || 0, b.ko || 0];
+          if (isObj(b.rt)) o.rt = dup(b.rt);
+          else delete o.rt;
+        }
         out[g] = o;
       } else if (r && M[g] && M[g].rv === rv) {
         const o = dup(r);
@@ -1900,6 +1982,11 @@
     RVS,
     RV,
     RV_SHEET,
+    RT_SHEET,
+    RTIME,
+    rtMedian,
+    rtWeight,
+    rtAdd,
     rvMsgs,
     learnedOf,
     ACH,

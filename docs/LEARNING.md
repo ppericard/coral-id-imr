@@ -1598,13 +1598,14 @@ Pierre's decision (2026-11-03): release with these settings ("quickly in product
 following each player's measured recall, no fixed ramp), its variants simulated with 5 seeds (AGENTS.md 14f). Any change
 is recorded here with its numbers.
 
-### Response time (measured 2026-11-03, no change made)
+### Response time (measured 2026-11-03; in the ability since 2026-11-04, rules version 5)
 
 Pierre, 2026-11-03: "the time I take to answer goes with the difficulty, either the photo is hard or the genus is hard
 for me. If I take long, it was harder, even when I got it right. If I enlarge, it is usually the photo (far colony
 shots). Response time is a real indicator; analyse it as a weak signal." Every answer logs its seconds (from the
 question's photos in view to the answer, any time spent on an enlarged photo included) and whether a photo was enlarged
-first since sheet v23 (2026-11-02). Measured here; nothing in the app uses them.
+first since sheet v23 (2026-11-02). Measured in sections 1-4 (2026-11-03); since 2026-11-04 the seconds weigh a right
+answer's ability steps (section 5, Pierre's decision); the enlarged mark is still logged only.
 
 **Data** (the sheet's Answers tab read 2026-11-03, read-only, 1,474 rows; players anonymised P1-P5 by number of timed
 answers): 1,386 answers of 9 players with 20 or more scored by `tools/abilityeval.js`; 662 of them timed, all from 5
@@ -1708,15 +1709,9 @@ standard error [95%]:
   "Global level and genus"). Several rule families were tried on the same answers, so the best one's interval is a
   little optimistic.
 
-**Simulation**: `tools/learnsim.js` has no response time (its learner clicks a choice; the app's seconds are not
-modelled), so a time rule changes nothing there (every answer has factor 1) and the AGENTS.md 14g check cannot be run.
-What it would need, before any time rule ships: the learner's time to answer drawn from what it knows, e.g. log t =
-μ_player + a − b × right − c × logit(its true chance on the photo) + noise (sd about 0.7) and, while enlarged, about
-+1 log unit, with b, c set so that replaying simulated logs with `abilityeval` gives back the real coefficients above
-(−0.88 on the answer, −0.39 on the next one on the genus); then the time-weighted step on the four profiles, 5 seeds,
-before and after (estimation error, genera learned, right %).
+**Simulation** (2026-11-03): `tools/learnsim.js` had no response time then; it has one since 2026-11-04 (section 5).
 
-**Conclusion.** Time is informative beyond correctness: on the answer itself clearly and for every player; on the next
+**Conclusion of the measure (2026-11-03).** Time is informative beyond correctness: on the answer itself clearly and for every player; on the next
 answer on the genus weakly (fast right answers are under-credited). As a weak signal in the Elo step (right answers'
 genus and level steps times clamp(1 − k z, 0.5, 1.5)) it would improve the next-answer prediction by about 0.002 per
 answer (0.5%), carried mostly by two players, on 662 timed answers of 5 players. Not shipped: too few timed answers and
@@ -1725,11 +1720,118 @@ and not adopted" rule out today (Pierre's call). Next (ROADMAP "Response-time si
 timed answers (Pierre's threshold for weak photo signals), with at least 10 players of 100 timed answers each: ship
 `+T+G` (k by leave one player out, likely 0.5-1 then) only if the gain holds (95% interval below 0 by answers and by
 players, no level band or format worse), after the learnsim time model above, and with Pierre's OK on rule 12.
-Enlargement: re-read then, against each player's own rate, from the 2026-11-03 20:24 release.
+Enlargement: re-read then, against each player's own rate, from the 2026-11-03 20:24 release. Pierre decided
+otherwise the next day (section 5).
 
 Reproduce: `node tools/abilityeval.js answers.json --variants 'e+X+M,e+X+M+T*,e+X+M+T*+G,e+X+M+S*,e+X+M+H*,e+X+M+U*'
 --grid '0,0.1,0.2,0.3,0.5,0.75,1,1.5,2,3'` (the `+H` row with grid 0-1.5, the `+U` row with 1-2; the answer-level
 tables in sections 1-3 come from a read-only script kept outside the repo).
+
+**5. In the ability (2026-11-04, rules version 5).** Pierre, 2026-11-04: "the signal is already very clear on few
+players; the question is how to integrate it", and AGENTS.md rule 12 was about the time between sessions (days, a
+Duolingo-style decay), not the seconds an answer takes: reworded, those seconds are evidence about that answer and
+may weigh how much it moves the ability, never a decay nor a penalty for being slow on its own.
+
+- **The rule** (`core.js` `RTIME`, `rtWeight`, `rtAdd`; `quiz.js` `answer`; `replayProgress`): `+T+G` as measured. A
+  right answer's two Elo steps, on the genus shown and on the global level, are taken times w = clamp(1 − K z, 0.5,
+  1.5) (`eloStep`'s new weight; the volatility follows the plain surprise). z = log(seconds) − the median log(seconds)
+  of the player's own earlier timed answers. w = 1 for a miss, an answer without seconds (an app before sheet v23, a
+  clock that never started), a typed question (slower by design; `k` infinite) and the player's first 10 timed
+  answers (`RTIME.MIN`). Exam questions are weighed like any other: the exam is scored on its right answers, which
+  the weight does not touch (it moves only the ability, so the difficulty of later questions). The answer's own time
+  never enters its prediction.
+- **K = 1.5**: the value leave one player out chose on the real answers for 8 of the 9 players (2 for one; grid 0-3,
+  `abilityeval` `+T*+G` after the Codex review fixes of #431), a round number in the selected range 1.5-2. No other
+  new constant: 0.5, 1.5 and 10 are #431's rule as measured.
+- **Where the median lives**: in the global level's record, `P['~level'].rt` = {tenths of a second: how many timed
+  answers took that long}, e.g. `{"45": 3, "52": 1}`. The seconds are those the app logs (to the tenth, at most 600:
+  `quiz.js` `qclockRead`, `Code.gs` `secs_`), so the median is exact (`rtMedian`: the middle one, or the mean of the
+  two middle logs), the record compact (a few hundred keys at most: the real players have 60-111 distinct values over
+  84-229 timed answers, under 1 KB), and deterministic from the answer log: the sheet's replay rebuilds it answer by
+  answer (`replayProgress` reads the seconds at row index 12; `Code.gs` v32 reads the Seconds column, `rowOf_`), and
+  so reproduces the app's steps exactly (`tests/replay.test.js`: a device's log of picked, typed and untimed answers
+  replayed from scratch and on top of an earlier replay gives the same abilities, volatilities and record as the app
+  stepped live). Two devices' records add up (`mergeProgress`, like the mix-ups), two accounts merged too
+  (`mergeUsers`), and the replay's record goes with the level's answer count (`replayedOf`, `replayBase`). The times
+  are recorded whatever the sheet's version.
+- **The app never gets ahead of the sheet** (AGENTS.md 7a): the weight is on only once the sync script's replies say
+  v ≥ `RT_SHEET` (32; `sync.js` `sheetV`, the last reply's `v` kept on the device as `imr-sheet-v`; `model.js`
+  `rtOn`); before it every weight is 1, exactly as before. A device then adopts the v32 replay of its whole log under
+  rules version 5 (standard card `RV_CARD`).
+
+**Real answers, the app's implementation against main** (`tools/abilityeval.js`, `e+X+M` on main's `core.js` through
+`--model` against `e+X+M+A` on this one: `+A` replays `core.js` `rtWeight` / `rtAdd` as the app runs them, and gives
+exactly `+T1.5+G`'s predictions; the same export as above, 1,386 answers of 9 players, 662 timed from 5; paired
+log-loss per answer × 10⁻³, ± its standard error [95%]; mean predicted main / this / right; the level bands are the
+same answers in both):
+
+| Group (answers) | this − main | mean p main / this / right |
+| --- | --- | --- |
+| all (1386) | −2.20 ± 0.72 [−3.61, −0.78] | 0.793 / 0.793 / 0.820 |
+| 5 timed players (1020) | −2.98 ± 0.98 [−4.90, −1.06] | 0.798 / 0.798 / 0.824 |
+| 2 choices (808) | −2.24 ± 0.69 [−3.60, −0.89] | 0.805 / 0.806 / 0.855 |
+| 3-4 choices (570) | −2.21 ± 1.45 [−5.05, +0.62] | 0.776 / 0.775 / 0.772 |
+| typed (8) | +3.79 ± 12.67 | 0.775 / 0.786 / 0.750 |
+| level < 0 (222) | −0.03 ± 0.50 | 0.739 / 0.739 / 0.797 |
+| level 0-0.75 (398) | −2.41 ± 1.08 [−4.52, −0.30] | 0.774 / 0.773 / 0.781 |
+| level ≥ 0.75 (766) | −2.71 ± 1.17 [−5.01, −0.42] | 0.819 / 0.820 / 0.847 |
+| Duel tab (86) | −13.39 ± 2.07 | 0.859 / 0.870 / 0.930 |
+| after a false alarm (175) | −2.64 ± 3.18 | 0.800 / 0.798 / 0.789 |
+| after a fast right (141) | −8.05 ± 3.50 | 0.832 / 0.845 / 0.908 |
+| after a mid right (96) | −8.98 ± 4.71 | 0.822 / 0.823 / 0.844 |
+| after a slow right (133) | −6.28 ± 4.74 | 0.811 / 0.800 / 0.789 |
+
+Log-loss 0.4695 → 0.4673; the mean expectation unchanged; every timed player better (P1 −10.0 ± 3.7, P4 −3.9 ± 2.4,
+P5 −1.8 ± 1.1, P2 −0.6 ± 2.1, P3 −0.1 ± 0.8); no group worse beyond its noise (the 8 typed answers, whose own steps
+are not weighed, +3.8 ± 12.7). K was chosen on these same answers (by leave one player out: −2.15 ± 0.72 with each
+player's own fold value), so the fixed K's figure is a little optimistic.
+
+**learnsim's time model** (`tools/learnsim.js` `LEARNER.RT`, AGENTS.md 14f): the learner takes t seconds, log t =
+log 7 − 0.15 × right − 0.3 × logit(pTrue) + 0.6 × N(0, 1), pTrue its true chance on the question, drawn from a
+generator of its own (the answers do not depend on it), to the tenth, handed to the app's question clock. Calibrated
+on main's simulated logs (4 profiles × 5 seeds × 300 questions, 6,000 answers; the seconds recomputed for each
+candidate from each answer's pTrue and noise, `--rtlog`) so that `abilityeval --rtfit` gives back the real measures:
+
+| Measure (against `e+X+M`'s expectation) | real answers | simulated (B 0.15, C 0.3, SD 0.6) |
+| --- | --- | --- |
+| logistic term of z on the answer itself | −0.88 ± 0.16 (654) | −0.88 ± 0.06 (5,760) |
+| logistic term of a genus's last right answer's z on its next one | −0.39 ± 0.21 (413) | −0.38 ± 0.07 (4,153) |
+| linear fit z = a + b right + c logit(expected), residual sd | 0.55 − 0.41 right − 0.08, 0.72 | 0.48 − 0.39 right − 0.10, 0.68 |
+
+Other values fit one measure but not all: with noise sd 0.7 (the first guess) both terms need B 0.2-0.25, C 0.45, and
+the residual sd is 0.84; with B 0.4, C 0.1 the next-answer term is −0.04. T0 only sets the scale (z is against the
+player's own median). No zoom model: the learner never enlarges a photo (41 real enlarged answers, too player-specific
+to model yet). On the simulated logs the app's rule gains less than on the real ones (−0.8 ± 0.5 × 10⁻³ per answer
+replayed from main's logs; leave one player out would choose K 0.5-1 there) and costs after a slow right answer
+(+4.0 ± 1.2, against −6.3 ± 4.7 on the real answers): the learner's time carries its knowledge only through pTrue.
+
+**learnsim, main against this** (5 seeds, the four profiles, 300 questions, the same seeds; mean main → this, (paired
+difference ± its sd over the seeds); right % over the answers since the previous checkpoint; |th − lk| the Elo error
+over the genera met; strong RA and expert again with 15 seeds, where the 5-seed differences were within their spread):
+
+| Profile | q | knowSlate | met | right % | \|th − lk\| | learned |
+| --- | --- | --- | --- | --- | --- | --- |
+| beginner | 100 | 0.276 → 0.280 (+0.005 ± 0.017) | 18.4 → 18.6 (+0.2 ± 2.3) | 74.4 → 74.4 (+0.0 ± 2.4) | 0.93 → 0.86 (−0.08 ± 0.19) | 0 → 0 |
+| beginner | 300 | 0.651 → 0.646 (−0.006 ± 0.023) | 38.8 → 38.0 (−0.8 ± 4.3) | 77.2 → 79.6 (+2.4 ± 1.1) | 0.84 → 0.86 (+0.02 ± 0.15) | 0 → 0 |
+| lecture RA | 100 | 0.463 → 0.470 (+0.006 ± 0.008) | 20.6 → 19.8 (−0.8 ± 1.3) | 78.4 → 80.4 (+2.0 ± 4.5) | 0.82 → 0.77 (−0.05 ± 0.10) | 0 → 0 |
+| lecture RA | 300 | 0.757 → 0.759 (+0.001 ± 0.009) | 40 → 40 | 80.4 → 80.6 (+0.2 ± 1.3) | 0.85 → 0.77 (−0.08 ± 0.12) | 0 → 0 |
+| strong RA | 100 | 0.668 → 0.656 (−0.011 ± 0.017) | 19.8 → 20.2 (+0.4 ± 1.1) | 86.8 → 88.0 (+1.2 ± 3.0) | 0.98 → 0.89 (−0.09 ± 0.18) | 0 → 0 |
+| strong RA | 300 | 0.849 → 0.845 (−0.004 ± 0.017) | 40 → 40 | 87.0 → 84.6 (−2.4 ± 2.1) | 1.04 → 1.09 (+0.05 ± 0.09) | 0.2 → 0.0 (−0.2 ± 0.4) |
+| expert | 100 | 0.939 → 0.939 | 19.6 → 20.0 (+0.4 ± 1.1) | 96.4 → 95.6 (−0.8 ± 3.3) | 0.81 → 0.91 (+0.10 ± 0.09) | 0 → 0 |
+| expert | 300 | 0.954 → 0.954 | 40 → 40 | 95.4 → 95.6 (+0.2 ± 2.8) | 0.96 → 0.95 (−0.01 ± 0.07) | 0.4 → 0.4 (+0.0 ± 0.7) |
+| strong RA, 15 seeds | 100 | 0.668 → 0.661 (−0.007 ± 0.017) | 20.0 → 19.9 (−0.1 ± 1.0) | 86.9 → 88.8 (+1.9 ± 5.7) | 0.92 → 0.89 (−0.02 ± 0.14) | 0 → 0 |
+| strong RA, 15 seeds | 300 | 0.851 → 0.846 (−0.004 ± 0.013) | 40 → 40 | 85.0 → 84.6 (−0.4 ± 3.7) | 1.06 → 1.07 (+0.01 ± 0.18) | 0.2 → 0.1 (−0.1 ± 0.4) |
+| expert, 15 seeds | 100 | 0.939 → 0.939 | 19.5 → 19.7 (+0.1 ± 0.8) | 96.5 → 95.9 (−0.7 ± 3.2) | 0.84 → 0.90 (+0.06 ± 0.11) | 0 → 0 |
+| expert, 15 seeds | 300 | 0.953 → 0.954 | 40 → 40 | 95.9 → 95.7 (−0.2 ± 2.2) | 0.94 → 0.96 (+0.01 ± 0.07) | 0.5 → 0.3 (−0.2 ± 0.8) |
+
+No profile learns less: knowledge and genera met move by less than their spread everywhere; the Elo error is lower
+for the beginner and the lecture RA at both checkpoints, and within its spread for the strong RA and the expert (with
+15 seeds, +0.01 and +0.06 at most; the expert's level runs 0.05-0.1 lower, near the top of the scale, ELO.hi 3).
+Learned genera by 300 questions: too few in any profile to compare (0-0.5 a run). Reproduce: `node tools/learnsim.js
+--seeds 5 --rtlog log.json` on each version (main's learnsim has no time model: run this one's `tools/learnsim.js`
+from a main checkout, its app ignoring the seconds), `node tools/abilityeval.js log.json --variants e+X+M,e+X+M+A
+--rtfit`; real answers: `node tools/abilityeval.js answers.json --variants e+X+M --model main-core.js` against
+`--variants e+X+M+A` (paired by a short script; the two runs score the same answers in the same order).
 
 ## Pooled statistics: photo difficulty and confusions (sheet v17-v18, 2026-11-02; photo memory v26, 2026-11-03)
 
@@ -1926,7 +2028,9 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     wrongly given, a genus's ability moving with the global level (`levelMove`, `lt`; the level's step without a floor,
     4 decimals; Calibration step 2, #415), a learned mark kept unless a miss logged after its exam takes it away as the
     game does. v2 (2026-11-04): the opening pace and known mix-ups (#425): the mix-ups term in the question's difficulty
-    for the ability, the global level and a miss's weight ("Known mix-ups" above). A device that skips several versions
+    for the ability, the global level and a miss's weight ("Known mix-ups" above). v5 (2026-11-04): answer time weighs
+    right answers ("Response time": a right answer's genus and level steps times clamp(1 − 1.5 z, 0.5, 1.5); the
+    sheet replays it from v32, which reads the Seconds column). A device that skips several versions
     sees the standard card once, at the last of them, with its progress before and after the whole jump (`core.js`
     `rvMsgs`).
   - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between
@@ -2143,10 +2247,11 @@ What it says, on this learner:
   script. To revisit if the photo ratings drift (the variance inflation "Keeping Elo alive" describes).
 - **Coded tracks or tiers** (beginner / RA / expert modes, a fixed genus order, fixed difficulty per genus): ruled out by
   Pierre. Every threshold above is continuous or performance-driven.
-- **Time criteria** for progress, mastery or ability (response time, spaced-repetition days, decay): ruled out
-  (AGENTS.md rule 12). The one exception, time to plan the questions after a break, is the comeback above. Response
-  time as a weak signal on the Elo step was measured on 2026-11-03 at Pierre's request ("Response time"): informative,
-  a small gain, waiting for more data and for his call on this rule.
+- **Time between sessions** for progress, mastery or ability (spaced-repetition days, decay, a "refresh"): ruled out
+  (AGENTS.md rule 12). The one exception, time to plan the questions after a break, is the comeback above. The seconds
+  taken to answer are not time between sessions (Pierre, 2026-11-04, rewording rule 12): they are evidence about that
+  answer, and since rules version 5 they weigh how much a right answer moves the ability ("Response time"); never a
+  decay, never a penalty for being slow on its own.
 
 ## Simulation (`tests/profiles.smoke.js`, CI)
 
@@ -2247,7 +2352,7 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
 
 - **Run**: `node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
   [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...] [--mem 0,0.4,1.5,2]
-  [--openall offer|N] [--back keep|one]`. Each run (profile × seed) gets a fresh browser context; seeds
+  [--openall offer|N] [--back keep|one] [--rt off] [--rtapp off] [--rtlog log.json]`. Each run (profile × seed) gets a fresh browser context; seeds
   are 1..N, the app's `Math.random` and the learner's own generator both seeded from it, so a run is reproducible and
   the same seeds before and after a change give paired comparisons. `--stats` loads a `?stats=1` answer of the sync
   sheet as the photo ratings (default: none, Pierre's Easy/Medium/Hard sets, as in CI; its `mem`, sheet v26, the app's
@@ -2258,6 +2363,11 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   `--after` ones. Profile `strongBack` (not in the default list): a strong player who knows 80% of the genera well and
   the rest hardly (few genera stay shaky), for `--profiles strongBack --questions 60 --breaks 8h --after 40`, the
   situation of the run that collapsed on 2026-11-03.
+- **Response time** (2026-11-04, "Response time" section 5): the learner takes log t = log 7 − 0.15 × right − 0.3 ×
+  logit(its true chance) + 0.6 × N(0, 1) seconds (`LEARNER.RT`, calibrated so that its logs give back the two real
+  measures), handed to the app's question clock; the app weighs its steps by it (the sheet version it sees is set to
+  one that replays the time). `--rtapp off`: the app as with an older script (weights 1); `--rt off`: no seconds;
+  `--rtlog`: the app's answer log of every run, with the learner's chance and time noise, for `tools/abilityeval.js`.
 - **Profiles**: beginner (knows every genus at 2%, learns 0.12 of the gap per exposure), lecture-level RA (the profiles
   test's RA: 55% on 2 genera in 5, 10% on the others, 0.12), strong RA (85% on 3 genera in 5, 10% on the others, 0.12),
   expert (93%, 0.05). The open-all offer is declined (the path is what is measured), unless `--openall`: `offer`
@@ -2366,6 +2476,14 @@ is not in the simulation.
 
 ## Decision log
 
+- 2026-11-04, Pierre ("the signal is already very clear on few players; the question is how to integrate it"; rule 12
+  was about days between sessions, not the seconds an answer takes): **answer time weighs right answers** (rules
+  version 5, sheet v32): a right answer's genus and level steps times clamp(1 − 1.5 z, 0.5, 1.5), z its log seconds
+  against the median of the player's own earlier timed answers (kept exactly in `P['~level'].rt`, replayed from the
+  log); misses, typed, untimed and the first 10 timed answers unchanged; on in the app only once the script is v32.
+  Real answers: −2.20 ± 0.72 × 10⁻³ log-loss per answer against main, every timed player better, no group worse.
+  learnsim (a time model calibrated on the two real measures, −0.88 and −0.39): no profile learns less, Elo error
+  lower or within its spread ("Response time", section 5). AGENTS.md rule 12 reworded.
 - 2026-11-04, Pierre ("I validate all your proposals", after the collapsed runs of 2026-11-03): the opening's pace
   (`openPace`: no card while a genus carded in the last 15 answers waits for its question, at most 3 in any 15, a
   carded genus asked as soon as ready; replaces the hotfix's cap and `OPEN.UNASKED`), easier questions while the hold

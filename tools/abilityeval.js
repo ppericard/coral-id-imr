@@ -36,6 +36,12 @@
 // times w = clamp(1 - k z, 0.5, 1.5), z its log(seconds) against the player's own median so far; +Sk misses too; +Hh the
 // speed-accuracy score of Math Garden instead of right / wrong; +Uc every right answer's step times c (a control); +G
 // the level's step too; +N no time effect when a photo was enlarged. The prediction never uses the answer's own time.
+// +A (2026-11-04): the app's own rule (core.js RTIME, rtWeight, rtAdd: +T1.5+G, the times kept as the app keeps them);
+// with --model and a core.js before it, no change, so `e+X+M+A` replays the app as it is on either version.
+// --rtfit: the two measures of PR #431 on the first rule's expectation (a check of tools/learnsim.js's time model on
+// simulated logs, docs/LEARNING.md "Response time"): the logistic term of z (log seconds minus the player's median over
+// all their timed answers, typed ones left out) on the answer itself, and of the z of a genus's last own answer, when it
+// was right, on its next one; each on top of the expectation (offset logit p, with an intercept).
 // A '*' in place of a number (e.g. e+X+M+T*+G) replays every value of --grid (one list per '*', ';' between lists) and
 // chooses it per player by leave one player out: each player is scored with the value best on the other players.
 // After the tables, every rule's paired log-loss difference per answer against the first one, ± its standard error.
@@ -71,7 +77,7 @@ function model(file = path.join(ROOT, 'core.js')) {
     ctx.K = ctx.module.exports;
   }
   const K = ctx.K;
-  ctx.M = {ELO: K.ELO, ability: n => K.abilityOf(ctx.P, n), abilityStep: (n, s, good, d, k) => K.eloStep(ctx.P, n, s, good, d, k)};
+  ctx.M = {ELO: K.ELO, ability: n => K.abilityOf(ctx.P, n), abilityStep: (n, s, good, d, k, w) => K.eloStep(ctx.P, n, s, good, d, k, w)};
   return ctx;
 }
 let M = model(),
@@ -259,10 +265,14 @@ function replay(list, variant, pooledOf = null) {
     // For the groups: this answer's speed, and the speed of the genus's last own answer when it was right.
     Object.assign(scored[scored.length - 1], {z: zr, pz: lastZ[r.t] ?? null});
     lastZ[r.t] = good ? zr : null;
+    // +A: the app's own answer-time rule (core.js rtWeight and rtAdd, as quiz.js answer and replayProgress run them,
+    // since rules version 5; a core.js without them, e.g. main's before it through --model: no change).
+    const appRT = flags.includes('A') && typeof M.K.rtWeight === 'function',
+      wA = appRT ? M.K.rtWeight(P[C.LEVEL], r.sec, k, good) : 1;
     if (v === 'd') offStep(r.t, s, good, d, k);
     else {
       const th1 = M.M.ability(r.t); // what abilityStep starts from (its answer count already holds this answer)
-      M.M.abilityStep(r.t, s, good, d, k);
+      M.M.abilityStep(r.t, s, good, d, k, wA);
       timeStep(r.t, s, th1);
     }
     if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
@@ -284,7 +294,8 @@ function replay(list, variant, pooledOf = null) {
     if (flags.includes('L')) M.M.ELO.kmin = 0;
     if (flags.includes('V')) M.M.ELO.vg = 0;
     const thL = P[C.LEVEL].th;
-    M.M.abilityStep(C.LEVEL, P[C.LEVEL], good, d, k);
+    M.M.abilityStep(C.LEVEL, P[C.LEVEL], good, d, k, wA);
+    if (appRT) M.K.rtAdd(P[C.LEVEL], r.sec, k);
     if (flags.includes('G')) timeStep(C.LEVEL, P[C.LEVEL], thL);
     M.M.ELO.kmin = KMIN;
     M.M.ELO.vg = VG;
@@ -494,7 +505,52 @@ players.forEach(p => {
 return {players, res, ref, byPlayer};
 }
 const groupsOf = (res, variants) => [...new Set(variants.flatMap(v => Object.keys(res[v].groups)))].sort();
-module.exports = {evaluate, normalise, kOf, groupsOf, paired, GAME, useModel, RT};
+// --rtfit: the logistic term b of x on y on top of the prediction p (offset logit p, with an intercept a, which takes
+// up a prediction running low or high overall, as PR #431 fitted it), with its standard error.
+function logitTerm(obs) {
+  let a = 0,
+    b = 0,
+    Hbb = 1,
+    Haa = 1,
+    Hab = 0;
+  for (let it = 0; it < 50; it++) {
+    let Ga = 0,
+      Gb = 0;
+    Haa = Hab = Hbb = 0;
+    obs.forEach(({y, p, x}) => {
+      const q = sig(logit(Math.min(0.999, Math.max(0.001, p))) + a + b * x),
+        w = q * (1 - q);
+      Ga += y - q;
+      Gb += (y - q) * x;
+      Haa += w;
+      Hab += w * x;
+      Hbb += w * x * x;
+    });
+    const det = Haa * Hbb - Hab * Hab;
+    a += (Hbb * Ga - Hab * Gb) / det;
+    b += (Haa * Gb - Hab * Ga) / det;
+  }
+  return {a, b, se: Math.sqrt(Haa / (Haa * Hbb - Hab * Hab)), n: obs.length};
+}
+// z against each player's median over all their timed answers (not typed), as PR #431 measured; per scored answer.
+function rtFit(scored) {
+  const by = {};
+  scored.forEach(o => isFinite(o.r.sec) && o.r.sec > 0 && isFinite(o.k) && (by[o.r.p] = by[o.r.p] || []).push(Math.log(o.r.sec)));
+  const med = Object.fromEntries(Object.entries(by).map(([p, l]) => [p, median(l)])),
+    zOf = o => (isFinite(o.r.sec) && o.r.sec > 0 && isFinite(o.k) ? Math.log(o.r.sec) - med[o.r.p] : null),
+    own = [],
+    next = [],
+    last = {};
+  scored.forEach(o => {
+    const z = zOf(o),
+      key = o.r.p + '|' + o.r.t;
+    if (z !== null) own.push({y: o.y, p: o.p, x: z});
+    if (last[key] !== undefined && last[key] !== null) next.push({y: o.y, p: o.p, x: last[key]});
+    last[key] = o.y && z !== null ? z : null;
+  });
+  return {own: logitTerm(own), next: logitTerm(next)};
+}
+module.exports = {evaluate, normalise, kOf, groupsOf, paired, GAME, useModel, RT, rtFit};
 if (require.main === module) {
 const args = process.argv.slice(2),
   opt = (k, d) => {
@@ -569,6 +625,12 @@ if (VARIANTS.length > 1) {
           .join('')
     );
   });
+}
+if (args.includes('--rtfit')) {
+  const q = rtFit(res[VARIANTS[0]].scored),
+    t = x => `${f(x.b, 2)} ± ${f(x.se, 2)} (${x.n} answers)`;
+  console.log(`\nResponse time against ${VARIANTS[0]}'s expectation (logistic term per unit of z): on the answer itself ${t(q.own)}; ` +
+    `the z of a genus's last own answer, right, on its next one ${t(q.next)}`);
 }
 if (OUT) fs.writeFileSync(OUT, JSON.stringify({res, ref}, null, 1));
 }

@@ -19,12 +19,19 @@ setInterval(() => {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && Date.now() - statsAt > 600000) loadStats();
 });
+// The sync script version of the last reply read (every reply carries it as v): what the app may rely on (AGENTS.md
+// 7a). Kept on the device, so a visit offline does what the last one did. Read by the answer time (model.js rtOn, core.js
+// RT_SHEET); the full replay checks each reply's own v (replayAdopt).
+const SHEETV_KEY = 'imr-sheet-v';
+const sheetV = () => Number(store.get(SHEETV_KEY, 0)) || 0;
+const sheetSeen = v => typeof v === 'number' && isFinite(v) && v !== sheetV() && store.set(SHEETV_KEY, v);
 function loadStats() {
   if (!SYNC_URL || !DATA) return;
   statsAt = Date.now();
   fetch(SYNC_URL + '?stats=1&av=' + appVer())
     .then(r => r.json())
     .then(j => {
+      if (j) sheetSeen(j.v);
       if (j && j.ok && j.photos) {
         PSTAT = j.photos;
         GDIFF = {}; // genus difficulties follow the new photo stats and confusions
@@ -98,6 +105,7 @@ const ptParam = q => (pendingFrom(q) === null ? '' : `&pt=${pendingFrom(q)}`);
 // the new reset (Codex review #399). A load's reply (mergeSaved) needs none: a reset newer than the sheet's returns
 // before it.
 function replayAdopt(rp, pending, v, cut, pre) {
+  sheetSeen(v);
   if (!(Number(v) >= RV_SHEET)) return false;
   if (!rp || typeof rp.rv !== 'number' || !rp.rec || typeof rp.rec !== 'object') return false;
   // A newer version, or the same one asked again for answers logged from a refused save (rvAsk).
