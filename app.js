@@ -325,7 +325,7 @@ const credit = p =>
     ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${esc(p.pg)}`
     : p.imr
       ? `IMR Lecture 6, slide ${esc(p.slide)}`
-      : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
+      : `<i>${esc(p.t)}</i>${p.own && !p.nd ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
 // Before the answer the enlarged quiz photo credits its author by name only (Pierre, 2026-11-03): no taxon and no link,
 // which would give the genus away (rule 11); the full credit comes with the answer.
 const blindCredit = p => {
@@ -368,8 +368,110 @@ function build() {
   }
   DATA = d;
 }
-// A genus of the list or of the extra genera.
-const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n];
+// A unit's record: a genus of the list or of the extra genera, or a fish entry (FISH, by its teaching id: ids and genus
+// names never meet). The engine reads every subject's units through it.
+const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen[n] : undefined);
+// Fish (core.js fishGen over fish.json and fish-photos.json): fetched the first time the fish subject is needed.
+// fish-photos.json is the stopgap photo list (remote iNaturalist photos, tools/fish_photos.py) until the fish photo
+// pipeline exists.
+let FISH = null,
+  FISHP = null;
+const fishLoad = () =>
+  FISHP ||
+  (FISHP = Promise.all([json('fish.json?v=1'), json('fish-photos.json?v=2')])
+    .then(([f, ph]) => {
+      // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
+      // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals).
+      if (!f || !Array.isArray(f.teach) || !f.teach.length || !ph || !ph.photos) throw new Error('fish data not loaded');
+      return (FISH = fishGen(f, ph.photos));
+    })
+    .catch(e => {
+      FISHP = null;
+      throw e;
+    }));
+// Per-subject state of the other files (model.js: the first-meeting cards, the opening hold, the comeback; quiz.js: the
+// questions planned ahead), reloaded on a switch: each file registers a function here. keep = true for a short visit
+// to another subject (inSubject): what can be read again from the device, nothing that is in play.
+const SUBJ_HOOKS = [];
+function subjectLoad(S, keep) {
+  SUBJ = S;
+  P = store.get(sKey('progress'), {}) || {};
+  Q = qLoad();
+  SUBJ_HOOKS.forEach(f => f(keep));
+}
+// fn() run as if S were the current subject, then back (the sync's summary and merge, sign-in, sign-out). Synchronous.
+// SUBJ_VISIT: how many visits are under way (nothing may redraw the page meanwhile: it shows the subject on screen).
+let SUBJ_VISIT = 0;
+function inSubject(id, fn) {
+  const S = subjectOf(id),
+    was = {S: SUBJ, P, Q};
+  if (S === SUBJ) return fn();
+  SUBJ_VISIT++;
+  subjectLoad(S, true);
+  try {
+    return fn();
+  } finally {
+    SUBJ_VISIT--;
+    SUBJ = was.S;
+    SUBJ_HOOKS.forEach(f => f(true));
+    P = was.P;
+    Q = was.Q;
+    prog(); // the pill shows the subject on screen again (a visit may have saved, which shows its own)
+  }
+}
+// The Corals / Fish selector (Home, header, ⚙): the subject's data first, then everything reloads for it. Remembered on
+// this device and synced (SUBJECT_KEY, a reefid-sync key).
+function setSubject(id) {
+  const S = subjectOf(id);
+  if (S === SUBJ) return Promise.resolve();
+  return UNITS[S.id].load().then(() => {
+    store.set(SUBJECT_KEY, S.id);
+    subjectLoad(S);
+    showSubj();
+    showBon();
+    prog();
+    if (typeof syncSoon === 'function') syncSoon();
+    // A page the new subject does not have (Fish chosen on a coral genus sheet): its section's page for the subject, so the
+    // route does not hand the player straight back (Codex review #442; the hand-off in route is for links only).
+    const h = hashNow(),
+      sp = subjPage(h);
+    if (sp !== h) history.replaceState(history.state, '', '#' + sp);
+    route();
+  });
+}
+// Everything that names the subject on screen: the switches (Home, header, ⚙: [data-subj] buttons), ⚙ rows of one
+// subject only (setrow[data-for]), the section tabs' words.
+function showSubj() {
+  document.documentElement.dataset.subject = SUBJ.id;
+  document.querySelectorAll('[data-subj]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.subj === SUBJ.id)));
+  document.querySelectorAll('[data-for]').forEach(r => (r.hidden = r.dataset.for !== SUBJ.id));
+  const hb = document.getElementById('subjb');
+  if (hb) {
+    hb.title = `${SUBJ.name}: switch subject`;
+    hb.setAttribute('aria-label', `Subject: ${SUBJ.name}. Switch`);
+  }
+}
+// Every subject switch on any page (Home's, ⚙'s: [data-subj]); the header's button goes to the next subject.
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-subj]');
+  if (b) setSubject(b.dataset.subj);
+  else if (e.target.closest('#subjb')) setSubject(SUBJECTS[(SUBJECTS.indexOf(SUBJ) + 1) % SUBJECTS.length].id);
+});
+// A page of the Learn or Practice section that the subject does not have (core.js SUBJECTS pages: fish have no genus
+// sheets, look-alike pages, duels or Memory yet) opens the subject's first page of that section instead. Identify (the
+// Coral Finder) and the Tools are the corals' whatever the subject.
+const subjPage = h => {
+  const tab = sectionOf(h),
+    m = h.startsWith('g-') ? 'sheet' : modeOf(h);
+  if ((tab !== 'learn' && tab !== 'practice') || SUBJ.pages.includes(m) || !(m === 'sheet' || MODES[tab].some(x => x[0] === m))) return h;
+  return MODES[tab].map(x => x[0]).find(k => SUBJ.pages.includes(k)) || '';
+};
+// A tab's words for the subject ("Photo → genus" for corals, "Photo → family" for fish).
+const subjWords = t =>
+  t
+    .replace(/\bgenus\b/g, SUBJ.one)
+    .replace(/\bGenera\b/g, SUBJ.many[0].toUpperCase() + SUBJ.many.slice(1))
+    .replace(/\bgenera\b/g, SUBJ.many);
 const isCore = p => !!(p.imr || p.own);
 // A photo the games may teach from: an extra genus's (DATA.x: Millepora, the bonus genera) only if Pierre's own or
 // Research Grade on iNaturalist (no gid), as the extra genera were chosen (tools/build_extra.py). One rule for every
@@ -427,10 +529,12 @@ const imrFormPhotos = (n, id) => {
 // IMR growth forms a genus takes (IMR Lecture 6 forms, forms.json "forms"): those seen on its classified photos (one
 // photo Pierre or the first guess is sure of, or two unsure ones), plus those the Coral Finder front page gives it
 // (forms.json "cf" maps each front-page box to IMR forms; Meandering, which maps to every form, is left out).
+// A unit with forms of its own (a fish entry: its IMR shape group, core.js fishGen) takes them as they are.
 const imrFormsOf = n => {
   const g = GX(n),
     cnt = {},
     sure = {};
+  if (g.forms) return g.forms;
   [...Object.values(g.views).flat(), ...(DATA.course[n] || [])].forEach(p => {
     if (!p.form || p.form === 'x' || p.multi) return;
     cnt[p.form] = (cnt[p.form] || 0) + 1;
@@ -496,13 +600,13 @@ function zoom(list, i, opts = {}) {
   const show = () => {
     const p = list[i],
       hide = blind(),
-      vl = p.view ? (VIEWS.find(v => v[0] === p.view) || [0, VIEW_LABEL[p.view]])[1] : '',
+      vl = p.view ? (SUBJ.views.find(v => v[0] === p.view) || VIEWS.find(v => v[0] === p.view) || [0, VIEW_LABEL[p.view]])[1] : '',
       over = !hide && opts.over ? opts.over(p) : '';
     const cap = hide
       ? esc(vl || 'Photo') + blindCredit(p)
-      : `${p.genus ? `<b><i>${esc(p.genus)}</i></b> · ` : ''}${vl ? esc(vl) + ' · ' : ''}${credit(p)}${p.src ? ` · <a href="${esc(safeUrl(p.src))}" target="_blank" rel="noopener">original</a>` : ''}`;
+      : `${p.genus ? `<b>${uname(p.genus)}</b> · ` : ''}${vl ? esc(vl) + ' · ' : ''}${credit(p)}${p.src ? ` · <a href="${esc(safeUrl(p.src))}" target="_blank" rel="noopener">original</a>` : ''}`;
     // The 1600 px file, over the 480 px one shown at once (usually already loaded). Saver: 960 px, 1600 on a click.
-    lb.innerHTML = `<div class="lb-in"><img src="${img(p, saver() ? 'm' : '')}" style="background:center / contain no-repeat url('${img(p, 's')}')" alt="${hide ? 'Coral to identify' : esc(p.t || '')}" title="Click for actual size">${over ? `<div class="lb-over"${overOn ? '' : ' hidden'}>${over}</div>` : ''}<p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
+    lb.innerHTML = `<div class="lb-in"><img src="${img(p, saver() ? 'm' : '')}" style="background:center / contain no-repeat url('${img(p, 's')}')" alt="${hide ? `${SUBJ.what} to identify` : esc(p.t || '')}" title="Click for actual size">${over ? `<div class="lb-over"${overOn ? '' : ' hidden'}>${over}</div>` : ''}<p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
       <div class="lb-nav">${list.length > 1 ? `<button type="button" data-d="-1" aria-label="Previous photo">‹</button><span>${i + 1} / ${list.length}</span><button type="button" data-d="1" aria-label="Next photo">›</button>` : ''}${over ? `<button type="button" data-ov aria-pressed="${overOn}">Labels</button>` : ''}<button type="button" data-x aria-label="Close">Close</button></div></div>`;
     lb.classList.remove('full');
     const im = lb.querySelector('.lb-in img');
@@ -790,10 +894,17 @@ const pg = l => (l.a === l.b ? 'p.' + l.a : 'p.' + l.a + '-' + l.b);
 const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 
 /* ---------- quiz ---------- */
-// Progress per genus {ok, ko, streak, conf}, kept in this browser only.
-let P = store.get('reefid-sync-coral-progress', {}) || {};
+// The subject the player is on (core.js SUBJECTS: Corals, Fish), chosen on Home or in the header, remembered on the
+// device and synced (SUBJECT_KEY). Everything below (P, Q, the slate, the cards, the comeback...) is the current
+// subject's; code that must read another subject's state runs inside inSubject() (sync.js: the sheet's summary and
+// the merge of every subject's progress). setSubject() switches (subjectLoad: each file's per-subject state).
+let SUBJ = subjectOf(store.get(SUBJECT_KEY, SUBJECTS[0].id));
+const sKey = name => subjKey(SUBJ.id, name); // reefid-sync-<subject>-<name>: travels with the player
+const sDev = name => subjDev(SUBJ.id, name); // reefid-<dev><name>: stays on this device
+// Progress per genus (per unit of the subject) {ok, ko, streak, conf}, kept in this browser and synced once signed in.
+let P = store.get(sKey('progress'), {}) || {};
 const save = () => {
-  store.set('reefid-sync-coral-progress', P);
+  store.set(sKey('progress'), P);
   prog();
   syncSoon();
 };
@@ -801,13 +912,17 @@ const save = () => {
 // visit, so the pill keeps its 0% until then.
 const prog = () => typeof showProg === 'function' && showProg();
 const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
-const Q = Object.assign({view: 'any', level: 'auto'}, store.get('reefid-sync-coral-quiz', {}), {stars: true}); // starred genera are always asked (Pierre)
-if (Q.lvv !== 3) {
-  Q.level = 'auto';
-  Q.course = false;
-  Q.lvv = 3;
-} // Auto only: no level selector, no Lecture set (Pierre, 2026-10-31)
-const saveQ = () => store.set('reefid-sync-coral-quiz', Q);
+const qLoad = () => {
+  const q = Object.assign({view: 'any', level: 'auto'}, store.get(sKey('quiz'), {}), {stars: true}); // starred genera are always asked (Pierre)
+  if (q.lvv !== 3) {
+    q.level = 'auto';
+    q.course = false;
+    q.lvv = 3;
+  } // Auto only: no level selector, no Lecture set (Pierre, 2026-10-31)
+  return q;
+};
+let Q = qLoad();
+const saveQ = () => store.set(sKey('quiz'), Q);
 let session = {ok: 0, n: 0, h: []},
   last = null,
   duelPair = null;
@@ -817,42 +932,145 @@ let session = {ok: 0, n: 0, h: []},
 // data stays in data.json "x" (Coral Finder ID tips, with their pages; Research Grade game photos, as the bonus genera).
 // BENTHIC and BONUS (below) are defined once in core.js, with slateOf / gameOf, which the admin and tools share.
 const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
-// The genera the games teach and the progress counts: the IMR coral slate (data.json order, starred genera last) and
-// BENTHIC (core.js slateOf). "The slate" in the code means this list.
-const slateGenera = () => slateOf(DATA);
+// What each subject's units are, read from its data (core.js SUBJECTS holds the rest of the taxon model):
+//   load()   its data, before its pages open (corals: data.json, always loaded; fish: fishLoad)
+//   slate()  the units the games teach and the progress counts ("the slate" in the code): for corals the IMR coral slate
+//            (data.json order, starred genera last) and BENTHIC (core.js slateOf); for fish the IMR entries (circle 1)
+//   sets     the opt-in sets (core.js SUBJECTS optin), offered once by a card (quiz.js bonusOfferShow) when due() and
+//            switched in ⚙ ([data-optin] rows): units() once on, the card's words, tag (cards, My progress)
 // Bonus genera (Pierre, 2026-11-01; opt-in since 2026-11-02): genera off the IMR slate that are common at Dauin and
 // easily taken for a slate genus. Picked from the Coral Finder book genera present at Dauin (data.json "x",
 // tools/build_extra.py): 4+ Research Grade iNaturalist observations within 40 km, and a look-alike on the slate named by
 // the Coral Finder (Isopora / Acropora, Leptoseris / Pavona, Sandalolitha / Halomitra, Pleuractis / Lobactis), or not a
-// hard coral at all (Heliopora). Offered once, by a card, when the player has met every slate genus (quiz.js
+// hard coral at all (Heliopora). Offered once, by a card, when the player has asked every slate genus (quiz.js
 // bonusOfferShow); ⚙ Bonus genera On / Off changes it any time (Q.bon; Off keeps their progress). Once on, they join
 // the genera not met yet and open like the others (model.js weighted, OPEN). They never count in the progress (progPct,
 // the slate tiles, the sync summary), and their ID tips come from the Coral Finder, labelled as such.
 // Game photos: Research Grade observations (or Pierre's own) only, never multi-coral (tools/apply_bonus.py).
 // The list: core.js BONUS.
-const isBonus = n => !DATA.gen[n] && BONUS.includes(n) && !!GX(n);
+// Fish circles (fish.json, Pierre 2026-11-03): circle 1 (the 27 IMR entries) is the slate; circle 2 (seen now and then
+// on SVS video: barracudas) is offered once every IMR entry has been asked, as the coral bonus genera are; circle 3
+// ("beyond IMR": the families divers want to recognise, muck diving above all) once the player is good on the IMR
+// entries (FISH_C3 of the progress: 50%, "Open Water" on average). Neither counts in the progress.
+const FISH_C3 = 0.5;
+const UNITS = {
+  coral: {
+    load: () => Promise.resolve(),
+    slate: () => slateOf(DATA),
+    // Every name a player may type (quiz.js typeNames) and how a typed text is read (core.js typeMatchIn).
+    names: () => typeNamesOf([...Object.keys(DATA.gen), ...Object.keys((DATA.x || {}).gen || {})], GX),
+    norm: typeNorm,
+    // Look-alike pairs for the duels (quiz.js duelPick): the classic pairs (learn.js pairs), and Millepora and the bonus
+    // genera with the slate look-alike the Coral Finder names.
+    pairs: () => [
+      ...pairs(),
+      ...[...BENTHIC, ...BONUS]
+        .filter(b => GX(b))
+        .flatMap(b =>
+          GX(b)
+            .look.filter(a => DATA.gen[a])
+            .map(a => [a, b])
+        )
+    ],
+    winks: () => [],
+    // The Learn page (#genera): the Genera page (learn.js).
+    list: () => viewGenera(),
+    sets: [
+      {
+        k: 'bon',
+        units: () => BONUS.filter(n => GX(n)),
+        due: () => slateGenera().every(n => asked(n) && introduced(n)), // a genus closed again by "One at a time" (model.js introBack) waits for its card first
+        kick: 'Every genus of the slate met',
+        title: n => `${n} more genera?`,
+        body: 'Not on the IMR coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.',
+        note: "⚙ Settings, Bonus genera, any time. They don't count in your progress.",
+        tag: 'Bonus genus',
+        name: 'Bonus genera',
+        card: 'Not on the IMR list, but common at Dauin.'
+      }
+    ]
+  },
+  fish: {
+    load: () => fishLoad(),
+    slate: () => (FISH ? FISH.c1 : []),
+    names: () => fishTypeNames(FISH ? FISH.gen : {}),
+    norm: typeNormAll,
+    // The look-alikes the IMR presentation names, each pair once.
+    pairs: () =>
+      Object.values(FISH ? FISH.gen : {}).flatMap(g =>
+        g.look.filter(o => FISH.gen[o] && (g.id < o || !FISH.gen[o].look.includes(g.id))).map(o => [g.id, o])
+      ),
+    // The winks (quiz.js winkShow): for every fish player, from circle 1 on (Pierre, 2026-11-03: "ça sera rigolo" for the
+    // people working on the IMR course), whatever opt-in circles are on.
+    winks: () => (FISH ? FISH.winks.filter(n => FISH.gen[n].views.wide.length) : []),
+    list: () => viewFishList(),
+    // My progress's ? text (progress.js quizBoard).
+    progHelp: () =>
+      `<p class="lede"><b>To learn a fish family</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%. Then comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from 95%, Instructor once the exam is passed. The IMR families count in your progress; the SVS video extras and the families beyond IMR (⚙ Settings) and the surprise cards don't. The leaderboard and the achievements count the corals only, for now.</p>`,
+    // The quiz's ? text (quiz.js gameHelp).
+    help: () => `<p class="lede">Name the fish family in the photo, as IMR names it on the survey slate. Pick an answer (or press 1-4); after answering you get the IMR cues and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other IMR shape groups and the look-alikes come in as you get a family right.</p>
+  <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the IMR name, the family's scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Once every IMR family is met, the barracudas seen on the SVS videos can be added; once you are good on the IMR families, the families divers look for at Dauin (⚙ Settings, any time). Neither counts in your progress. <b>Photos</b>: iNaturalist observations for now (Pierre's first), as iNaturalist ranks them.</p>`,
+    sets: [
+      {
+        k: 'c2',
+        units: () => (FISH ? FISH.c2 : []),
+        due: () => slateGenera().every(n => asked(n) && introduced(n)),
+        kick: 'Every IMR family met',
+        title: n => (n > 1 ? `${n} more families?` : 'One more family?'),
+        body: 'Not an IMR survey family, but seen now and then on the SVS videos.',
+        note: "⚙ Settings, SVS video extras, any time. It doesn't count in your progress.",
+        tag: 'SVS video extra',
+        name: 'SVS video extras',
+        card: 'Not an IMR survey family, but seen now and then on the SVS videos.'
+      },
+      {
+        k: 'c3',
+        units: () => (FISH ? FISH.c3 : []),
+        due: () => progPct() >= 100 * FISH_C3,
+        kick: 'Good on the IMR families',
+        title: n => `${n} families beyond IMR?`,
+        body: 'The fish divers want to recognise at Dauin, muck diving above all: frogfishes, ghost pipefishes, seahorses, morays…',
+        note: "⚙ Settings, Beyond IMR, any time. They don't count in your progress.",
+        tag: 'Beyond IMR',
+        name: 'Beyond IMR',
+        card: 'Beyond IMR: a family divers look for at Dauin.'
+      }
+    ]
+  }
+};
+const SETS = () => UNITS[SUBJ.id].sets;
+// The genera the games teach and the progress counts (the units of the subject): "the slate" in the code means this list.
+const slateGenera = () => UNITS[SUBJ.id].slate();
+// The opt-in set a unit belongs to (bonus genera, fish circles 2 and 3), or null.
+const setOf = n => SETS().find(S => S.units().includes(n)) || null;
+const isBonus = n => !!setOf(n);
 // Players who had bonus genera unlocked by the former progress thresholds (Q.bu, Millepora counted first) keep them
 // on, so nothing disappears under them; Millepora alone (Q.bu 1) is now a slate genus, so not an opt-in.
 if (Q.bon === undefined && Q.bu > 1) {
   Q.bon = true;
   saveQ();
 }
-const bonusList = () => (Q.bon ? BONUS.filter(n => GX(n)) : []);
-// ⚙ Bonus genera On / Off, and the offer card (quiz.js bonusOfferShow): saved in the quiz settings, synced with them.
-// Off takes them out of the photo quiz and the duels; their progress is kept. Questions planned ahead with the old
-// genera are dropped by themselves (planKey names the genera in play).
+// The units of the opt-in sets the player has on.
+const bonusList = () => SETS().flatMap(S => (Q[S.k] ? S.units() : []));
+// ⚙ Bonus genera On / Off (fish: SVS video extras, Beyond IMR), and the offer card (quiz.js bonusOfferShow): saved in the
+// quiz settings, synced with them. Off takes them out of the photo quiz and the duels; their progress is kept. Questions
+// planned ahead with the old units are dropped by themselves (planKey names the units in play).
 const showBon = () =>
-  document.querySelectorAll('#bonset button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.bon === '1') === !!Q.bon)));
-// Q.bonT: when the choice was made, so the latest choice wins across devices (sync.js mergeSaved; Codex review #371).
-function bonusSet(on) {
-  Q.bon = !!on;
-  Q.bonT = Date.now();
+  document
+    .querySelectorAll('[data-optin] button')
+    .forEach(b => b.setAttribute('aria-pressed', String((b.dataset.on === '1') === !!Q[b.closest('[data-optin]').dataset.optin])));
+// Q[k + 'T']: when the choice was made, so the latest choice wins across devices (sync.js mergeSaved; Codex review #371).
+function bonusSet(on, k = SETS()[0].k) {
+  Q[k] = !!on;
+  Q[k + 'T'] = Date.now();
   saveQ();
   showBon();
   if (typeof syncSoon === 'function') syncSoon();
   if (RAW && /^(progress|quiz-board)$/.test(hashNow())) route();
 }
-document.querySelectorAll('#bonset button').forEach(b => (b.onclick = () => bonusSet(b.dataset.bon === '1')));
+document
+  .querySelectorAll('[data-optin] button')
+  .forEach(b => (b.onclick = () => bonusSet(b.dataset.on === '1', b.closest('[data-optin]').dataset.optin)));
 showBon();
 // The warning on Millepora's first-meeting card and genus sheet (Pierre, 2026-11-02).
 const BENTHIC_NOTE =
@@ -865,6 +1083,10 @@ const pool = () => [...slateGenera(), ...bonusList()].filter(n => photoSet(n).sh
 // the ID tips and lecture notes, in body text with no label (Pierre's review: a muted labelled line above the photo was
 // skipped). It adds to the scientific text and replaces none of it.
 const plainLine = g => (g.plain ? `<p class="plainw">${esc(g.plain)}</p>` : '');
+// A unit's name as shown: a genus (its key is its name) in italics, a fish entry (its key is a stable id, fish.json) by
+// its IMR name. unameT: the plain text (tooltips, aria labels).
+const unameT = n => (GX(n) || {}).name || n;
+const uname = n => ((GX(n) || {}).name ? esc(GX(n).name) : `<i>${esc(n)}</i>`);
 // ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera.
 const tipsLabel = g => (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');
 // What is wrong with the sync, in words, or '' when everything is saved.
@@ -1117,8 +1339,9 @@ function showModes(tab, h) {
       pageDepth > 0 ? history.back() : go(h.startsWith('g-') ? 'genera' : h === 'about' ? 'home' : 'cmp');
     return;
   }
-  // A section with a single tool needs no tab bar.
-  const L = MODES[tab] && MODES[tab].length > 1 ? MODES[tab] : null;
+  // A section with a single tool needs no tab bar. Learn and Practice show the subject's pages only (SUBJECTS pages).
+  const M = MODES[tab] && (tab === 'learn' || tab === 'practice') ? MODES[tab].filter(x => SUBJ.pages.includes(x[0])) : MODES[tab];
+  const L = M && M.length > 1 ? M : null;
   $modes.hidden = !L;
   if (!L) {
     $modes.innerHTML = '';
@@ -1127,7 +1350,7 @@ function showModes(tab, h) {
   const cur = modeOf(h);
   $modes.setAttribute('aria-label', MODE_LABEL[tab]);
   $modes.innerHTML = L.map(
-    ([k, t, d]) => `<a href="#${k}" title="${esc(d)}"${k === cur ? ' aria-current="page"' : ''}><b>${t}</b></a>`
+    ([k, t, d]) => `<a href="#${k}" title="${esc(subjWords(d))}"${k === cur ? ' aria-current="page"' : ''}><b>${subjWords(t)}</b></a>`
   ).join('');
   const on = $modes.querySelector('[aria-current]');
   if (on && $modes.scrollWidth > $modes.clientWidth) $modes.scrollLeft = on.offsetLeft - ($modes.clientWidth - on.offsetWidth) / 2;
@@ -1168,6 +1391,7 @@ const CARD_KINDS = {
   update: '🔄',
   feature: '✨',
   genus: '🪸',
+  fish: '🐟',
   tip: '💡',
   bonus: '🎁',
   account: '💾',
@@ -1311,6 +1535,15 @@ function route() {
   }
   applySize();
   const h = hashNow();
+  // A page the subject does not have: its section's first page for the subject.
+  const sp = subjPage(h);
+  if (sp !== h) {
+    // A genus sheet or a comparison of another subject (opened from Identify, the Coral Finder, with Fish chosen; Codex
+    // review #442): that subject comes on screen (setSubject routes again), never the subject's list instead.
+    const S = /^(g|cmp)-./.test(h) && SUBJECTS.find(x => x.pages.includes(h.startsWith('g-') ? 'sheet' : 'cmp'));
+    if (S && S !== SUBJ) return void setSubject(S.id);
+    return location.replace('#' + sp);
+  }
   // Genera list → a genus sheet → back: the list opens where it was left (RA review 2026-11-02: an 8000 px list came back
   // at the top). The genus at the top of the screen is kept when leaving it (not the scroll: the photos above it are not
   // loaded yet on the way back), and brought back to the same place only when coming back from a sheet.
@@ -1379,7 +1612,7 @@ function route() {
   } else if (h.startsWith('lab') && window.viewLab) viewLab(h);
   else if (window.labTool && labTool(h)) {
   } else if ((!h || h === 'home') && window.viewHome) viewHome();
-  else viewGenera();
+  else UNITS[SUBJ.id].list();
   window.scrollTo(0, 0);
   if (h === 'genera' && fromSheet && generaY) {
     const a = $v.querySelector(`a[href="${CSS.escape(generaY[0])}"]`);
@@ -1464,16 +1697,19 @@ document.getElementById('signb').onclick = e => {
         P = {};
         delete Q.bu;
         delete Q.ba;
-        delete Q.bon; // the bonus genera are offered again once every slate genus is asked
-        delete Q.bonT;
+        // the bonus genera (fish: circles 2 and 3) are offered again once due
+        SUBJ.optin.forEach(k => {
+          delete Q[k];
+          delete Q[k + 'T'];
+        });
         saveQ();
-        store.set('reefid-sync-coral-reset', new Date().toISOString());
+        store.set(sKey('reset'), new Date().toISOString());
         introReset();
         save();
         delete rb.dataset.armed;
         rb.disabled = false;
         rb.textContent = 'Reset progress';
-        document.getElementById('pmsg').textContent = 'Progress reset.';
+        document.getElementById('pmsg').textContent = SUBJECTS.length > 1 ? `${SUBJ.name}: progress reset.` : 'Progress reset.';
         route();
       });
     } else {
@@ -1720,7 +1956,9 @@ Promise.all([
     .then(d => (window.bootTick && bootTick(), d)),
   curation(),
   draftCand(),
-  domReady
+  domReady,
+  // The subject's own data (fish: fish.json): if it cannot come, the app opens on the first subject (corals).
+  UNITS[SUBJ.id].load().catch(() => subjectLoad(SUBJECTS[0]))
 ])
   .then(([d, c, dc]) => {
     Object.entries(dc).forEach(([g, L]) => {
@@ -1731,6 +1969,7 @@ Promise.all([
     RAW = d;
     CUR = c;
     build();
+    showSubj();
     route();
     started();
     if (CUR_KEPT) curRefresh();

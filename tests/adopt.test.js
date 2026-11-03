@@ -65,6 +65,7 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     setInterval: () => 0,
     setTimeout: () => 0,
     clearTimeout: () => {},
+    ...require('./subj.stub.js')(), // the corals as the current subject
     SYNC_URL: 'https://script.google.com/macros/s/test/exec',
     LOCAL: false,
     SYNC,

@@ -374,13 +374,23 @@ function openPick(fresh, list = fresh, met = introduced) {
 // (an RA after the lecture): a card offers to open all the genera at once (introOffer). Synced with the progress (the
 // sheet keeps every reefid-sync* key; sync.js introMerge).
 const INTRO = {
-  KEY: 'reefid-sync-coral-intro',
+  get KEY() {
+    return sKey('intro'); // reefid-sync-<subject>-intro (app.js SUBJ)
+  },
   START: 4,
   GAP: 2,
   EVERY: 2,
   HOLD: 1.5,
   SLACK: 0.1,
-  OFFER: {KEY: 'reefid-sync-coral-intro-offer', AT: 50, UNTIL: 150, MET: 10, TH: 0.5}
+  OFFER: {
+    get KEY() {
+      return sKey('intro-offer');
+    },
+    AT: 50,
+    UNTIL: 150,
+    MET: 10,
+    TH: 0.5
+  }
 };
 let INTROS = null;
 const introMap = () => {
@@ -520,7 +530,7 @@ function introMerge(m, o) {
 const introReset = () => {
   INTROS = {};
   HOLDS = 0; // the opening hold starts over with the progress (holdStep, below; called after this file has run)
-  store.set('reefid-hold', 0);
+  store.set(HOLDK(), 0);
   CB = {r: 0, t: 0, ok: 0, f: 0}; // and the comeback (below)
   store.set(COMEBACK.KEY, CB);
   store.set(INTRO.KEY, {});
@@ -544,8 +554,8 @@ const introReset = () => {
 // on that RA's answers it holds at answers 11-12 (three misses in a row) and from answer 67 on, off and on (the window:
 // 73); simulated (6 seeds, 200 questions, genera met, without -> with), a beginner 15 -> 13, a lecture-level RA
 // 14 -> 13, a strong RA 22 -> 23, an expert 27 -> 28.
-const HOLDK = 'reefid-hold';
-let HOLDS = Number(store.get(HOLDK, 0)) || 0;
+const HOLDK = () => sDev('hold'); // reefid-hold for corals (core.js subjDev)
+let HOLDS = Number(store.get(HOLDK(), 0)) || 0;
 const introHold = () => HOLDS >= INTRO.HOLD;
 // Easier questions while the hold is on (2026-11-04, Pierre: a run that goes wrong must not only stop the cards, the
 // questions must get easier too; docs/LEARNING.md "Easier questions when a run goes wrong"): the ability the photos and
@@ -559,7 +569,7 @@ const holdNext = (h, e, good, slack = INTRO.SLACK) =>
   Math.max(0, Math.round((h + (Number(e) || 0) - (good ? 1 : 0) - slack) * 1000) / 1000);
 function holdStep(e, good) {
   HOLDS = holdNext(HOLDS, e, good);
-  store.set(HOLDK, HOLDS);
+  store.set(HOLDK(), HOLDS);
   // The same sum since Open all, from 0, until the back card is answered (backDue, above). Each device counts its own
   // answers (the record goes with the progress; a newer decision replaces it).
   const o = store.get(INTRO.OFFER.KEY, null);
@@ -577,7 +587,7 @@ const HOLD_WARM = /\|w(\||$)/; // the mode of a gentle-restart answer (before th
 // sheet has it; it is not added twice).
 function holdSync(h, log, ids) {
   if (typeof h !== 'number' || !isFinite(h)) return;
-  const reset = store.get('reefid-sync-coral-reset', '') || '',
+  const reset = store.get(sKey('reset'), '') || '',
     had = new Set(Array.isArray(ids) ? ids.map(String) : []);
   const x = (log || []).reduce(
     (t, a) => (a && !had.has(String(a.id)) && !HOLD_WARM.test(a.m || '') && String(a.t || '') > reset ? holdNext(t, a.e, a.ok) : t),
@@ -585,7 +595,7 @@ function holdSync(h, log, ids) {
   );
   if (x !== HOLDS) {
     HOLDS = x;
-    store.set(HOLDK, HOLDS);
+    store.set(HOLDK(), HOLDS);
   }
 }
 const introSince = () => answersSoFar() - Math.max(-Infinity, ...Object.values(introMap()).map(e => e[0]));
@@ -625,11 +635,18 @@ const introSince = () => answersSoFar() - Math.max(-Infinity, ...Object.values(i
 // progress (core.js mergeProgress), the player's last answer in P[LEVEL].at.
 const FSRS = {F: 19 / 81, C: -0.5, S0: 0.4, S1: 15.7, G: 2.5};
 const SESSION = {GAP: 30 * 60000};
-const COMEBACK = {KEY: 'reefid-comeback', FLOOR: 10};
+const COMEBACK = {
+  get KEY() {
+    return sDev('comeback'); // reefid-comeback for corals
+  },
+  FLOOR: 10
+};
 const DAY = 864e5;
-let CB = (o => (o && typeof o === 'object' ? {r: +o.r || 0, t: +o.t || 0, ok: +o.ok || 0, f: +o.f || 0} : {r: 0, t: 0, ok: 0, f: 0}))(
-  store.get(COMEBACK.KEY, null)
-);
+const cbLoad = () =>
+  (o => (o && typeof o === 'object' ? {r: +o.r || 0, t: +o.t || 0, ok: +o.ok || 0, f: +o.f || 0} : {r: 0, t: 0, ok: 0, f: 0}))(
+    store.get(COMEBACK.KEY, null)
+  );
+let CB = cbLoad();
 const cbSave = () => store.set(COMEBACK.KEY, CB);
 const recallOf = (days, S) => (1 + (FSRS.F * Math.max(0, days)) / S) ** FSRS.C;
 // The local calendar day of a time (days answered right, s.dd).
@@ -1228,3 +1245,17 @@ function mixClusters(edges, cap = CUSTOM.CLUSTER) {
 }
 // Once the whole file is in (save, LEVEL and PMEM above): the progress saved before the photo memory, recalculated.
 memRecalcAll();
+// A switch of subject (app.js subjectLoad): this file's state is the subject's (its cards, opening hold and comeback, kept
+// on the device under its keys; the genera's difficulty and the last ones asked). A record from before the photo memory
+// is recalculated, as at start-up, unless the visit is a short one (keep: sync.js reading another subject).
+if (typeof SUBJ_HOOKS !== 'undefined')
+  SUBJ_HOOKS.push(keep => {
+    INTROS = null;
+    HOLDS = Number(store.get(HOLDK(), 0)) || 0;
+    CB = cbLoad();
+    GDIFF = {};
+    if (keep) return;
+    lastQs = [];
+    last = null;
+    memRecalcAll();
+  });

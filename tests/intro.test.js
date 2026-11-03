@@ -14,6 +14,7 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F']} = {}) {
     block = src.slice(src.indexOf('// First meeting with a genus (Pierre'), src.indexOf('const introSince'));
   const saved = {},
     ctx = {
+      ...require('./subj.stub.js')(), // the corals as the current subject
       P,
       LEVEL: '~level',
       CB: {},

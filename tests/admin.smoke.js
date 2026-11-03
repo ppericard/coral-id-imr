@@ -670,6 +670,22 @@ const server = http.createServer((req, res) => {
     if (proto !== true) fails.push(`${w}px Errors & feedback with a "__proto__" event: ${proto}`);
     await go('~triage');
     if (!/Demo report/.test(await text())) fails.push(`${w}px To do › Reports: demo reports missing`);
+    // A fish report (Codex review #442): the fish entry by its IMR name and its iNaturalist photo, not an empty tile.
+    {
+      const fr = await p
+        .waitForFunction(
+          () => {
+            const c = [...document.querySelectorAll('.adm-rep')].find(x => /Demo fish report/.test(x.textContent));
+            const im = c && c.querySelector('.adm-tile img');
+            return c && im && /Damselfish \(fish\)/.test(c.textContent) ? im.getAttribute('src') : false;
+          },
+          null,
+          {timeout: 10000}
+        )
+        .then(h => h.jsonValue())
+        .catch(() => null);
+      if (!fr || !/inaturalist/.test(fr)) fails.push(`${w}px To do › Reports: the fish report has no fish name or photo (${fr})`);
+    }
     await go('~stats');
     if (/No answers yet/.test(await text())) fails.push(`${w}px Activity: no answers`);
     // Recent sessions (Pierre, 2026-11-03): the last 10 sessions of every player, newest first, by name or anonymous id;
