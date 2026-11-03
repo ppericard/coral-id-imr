@@ -1,0 +1,277 @@
+{
+ "species": "s057",
+ "photos": {
+  "fish-s057-cand-606736106": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best",
+   "note": "Hazy, soft"
+  },
+  "fish-s057-cand-648854313": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best"
+  },
+  "fish-s057-cand-467755839": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best"
+  },
+  "fish-s057-cand-604826585": {
+   "view": "part",
+   "phase": "adult",
+   "quality": 1,
+   "keep": "alt",
+   "cast": "green",
+   "note": "Close, cut by the frame, heavy processing"
+  },
+  "fish-s057-cand-605661612": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 1,
+   "keep": "best",
+   "cast": "green",
+   "note": "Heavy processing, colours off"
+  },
+  "fish-s057-cand-604828157": {
+   "species": "exclude",
+   "note": "Fish a speck in a wide green scene"
+  },
+  "fish-s057-cand-45640371": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 3,
+   "keep": "best",
+   "cast": "blue"
+  },
+  "fish-s057-cand-602364407": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best",
+   "note": "Hazy"
+  },
+  "fish-s057-cand-58900492": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 3,
+   "keep": "best",
+   "cast": "blue"
+  },
+  "fish-s057-cand-614420723": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 1,
+   "keep": "best",
+   "cast": "green",
+   "note": "Two fish, far, murky"
+  },
+  "fish-s057-cand-370248212": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 1,
+   "keep": "best",
+   "note": "Small in a reef scene"
+  },
+  "fish-s057-cand-681585479": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best",
+   "cast": "blue"
+  },
+  "fish-s057-cand-265911976": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best"
+  },
+  "fish-s057-cand-525978551": {
+   "view": "school",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best",
+   "cast": "blue"
+  },
+  "fish-s057-cand-358993073": {
+   "view": "part",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best",
+   "cast": "blue",
+   "note": "Cut by the top edge"
+  },
+  "fish-s057-cand-612626227": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best",
+   "cast": "green"
+  },
+  "fish-s057-cand-265911705": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 1,
+   "keep": "dup",
+   "note": "Same fish as the best, blurrier"
+  },
+  "fish-s057-cand-265911716": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "alt",
+   "note": "Another pose"
+  },
+  "fish-s057-cand-265911822": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best"
+  },
+  "fish-s057-cand-607425974": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best"
+  },
+  "fish-s057-cand-358993038": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 1,
+   "keep": "best",
+   "note": "Small in a busy reef scene"
+  },
+  "fish-s057-cand-358993027": {
+   "view": "part",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "alt",
+   "note": "Half hidden behind the coral"
+  },
+  "fish-s057-cand-332301505": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best"
+  },
+  "fish-s057-cand-332301015": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best"
+  },
+  "fish-s057-cand-596752050": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best",
+   "cast": "blue"
+  },
+  "fish-s057-cand-595840514": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 1,
+   "keep": "best",
+   "note": "Murky, faint: like a poor video frame"
+  },
+  "fish-s057-cand-696138456": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best"
+  },
+  "fish-s057-cand-696138439": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "alt",
+   "note": "Head-on view"
+  },
+  "fish-s057-cand-557992878": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 1,
+   "keep": "dup",
+   "note": "Same scene as the best"
+  },
+  "fish-s057-cand-557992890": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 1,
+   "keep": "best",
+   "note": "Tiny in a reef scene"
+  },
+  "fish-s057-cand-469859639": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 3,
+   "keep": "best"
+  },
+  "fish-s057-cand-634092498": {
+   "view": "part",
+   "phase": "adult",
+   "quality": 1,
+   "keep": "dup",
+   "cast": "green",
+   "note": "Same blurred close shot as the next one"
+  },
+  "fish-s057-cand-634092508": {
+   "view": "part",
+   "phase": "adult",
+   "quality": 1,
+   "keep": "dup",
+   "cast": "green",
+   "note": "Same blurred close shot as the previous one"
+  },
+  "fish-s057-cand-634092520": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 1,
+   "keep": "best",
+   "cast": "green",
+   "note": "Motion blur, still readable"
+  },
+  "fish-s057-cand-557861472": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best"
+  },
+  "fish-s057-cand-557861468": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "dup",
+   "note": "Same framing as the best"
+  },
+  "fish-s057-cand-427602188": {
+   "species": "exclude",
+   "unsure": [
+    "species"
+   ],
+   "cast": "blue",
+   "note": "Fish barely visible under a strong blue cast"
+  },
+  "fish-s057-cand-464458728": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best"
+  },
+  "fish-s057-cand-464458904": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best"
+  },
+  "fish-s057-cand-356813940": {
+   "view": "whole",
+   "phase": "adult",
+   "quality": 2,
+   "keep": "best"
+  }
+ }
+}
