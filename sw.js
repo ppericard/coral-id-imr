@@ -1,6 +1,6 @@
 // Offline cache: app shell first, then photos as they are viewed.
 // The shell cache is reefid-shell-vN: on activation every other shell cache goes (REPLACES), never the photo cache.
-const V = 'reefid-shell-v309';
+const V = 'reefid-shell-v310';
 // Shell caches this worker replaces: its own name, and the one from before the rename to IMR Reef ID (2026-11-03).
 const REPLACES = ['reefid-shell-', 'imr-coral-id-']; // rename-app: keep
 // The question "your version?" to the open pages (app.js), under its name before the rename too.
@@ -22,11 +22,11 @@ const SHELL = [
   'index.html',
   'app.css?v=131',
   'core.js?v=40',
-  'app.js?v=196',
+  'app.js?v=197',
   'sync.js?v=23',
   'progress.js?v=19',
-  'model.js?v=31',
-  'quiz.js?v=39',
+  'model.js?v=32',
+  'quiz.js?v=40',
   'learn.js?v=12',
   'flag.js?v=11',
   'quality.json?v=3',
