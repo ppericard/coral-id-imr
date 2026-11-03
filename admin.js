@@ -4322,8 +4322,14 @@ const userPost = body => fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({
 // accounts) have no name: they are counted apart, below. Activity keeps the class-wide charts.
 const UCOLS = [
   ['name', 'Name', u => u.name.toLowerCase(), 1],
-  ['lv', 'Level', u => u.lv ?? -99, 0, 'Overall level, on the photo-difficulty scale (photo Elo, every answer)'],
-  ['elo', 'Elo', u => u.lv ?? -99, 0, 'The Elo players see (1000 + 200 × level, shown to them from 200 answers), ± its 95% margin'],
+  // One column for the level (Pierre, 2026-11-03: Level and Elo said the same thing): the Elo players see.
+  [
+    'elo',
+    'Elo',
+    u => u.lv ?? -99,
+    0,
+    'Overall level on the photo-difficulty scale, as the Elo players see (1000 + 200 × level, shown to them from 200 answers), ± its 95% margin'
+  ],
   ['answers', 'Answers', u => u.answers, 0],
   [
     'right',
@@ -4414,7 +4420,6 @@ function renderUsers() {
   const cell = (k, u) =>
     ({
       name: `<b>${esc(u.name)}</b>${isMe(u.id) ? ' <small>you</small>' : ''}${u.board === -1 ? ' <small title="Hidden from the leaderboard">hidden</small>' : ''}`,
-      lv: u.lv == null ? '–' : sgn(u.lv),
       elo:
         u.lv == null
           ? '–'

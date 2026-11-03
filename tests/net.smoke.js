@@ -682,8 +682,18 @@ const server = http.createServer((req, res) => {
           u
         );
       const cached = () => p.evaluate(() => caches.open('imr-photos-v1').then(c => c.keys().then(K => K.map(k => k.url))));
+      // R2 answering: asked in CORS mode (an opaque reply is never kept), and kept.
+      await fromR2(ctx);
+      if (!(await load(R2 + 'img/' + g))) fails.push('Service worker: an R2 photo did not load from R2');
+      const t = await p.evaluate(u => caches.match(u, {ignoreVary: true}).then(r => r && r.type), R2 + 'img/' + g);
+      if (t !== 'cors') fails.push(`Service worker: the R2 photo was not kept as a CORS reply (${t})`);
       // R2 cut off: the worker serves the site's copy, kept under the R2 address, and tells the page (sw.js r2Down,
       // Codex review #392), whose next photos then come from the site straight away.
+      let r2hits = 0;
+      await ctx.route(
+        u => u.href.startsWith(R2),
+        r => (r2hits++, r.abort())
+      );
       await p.evaluate(() => {
         window.R2DOWN = 0;
         navigator.serviceWorker.addEventListener('message', e => e.data && e.data.t === 'imr-r2-down' && window.R2DOWN++);
@@ -693,11 +703,10 @@ const server = http.createServer((req, res) => {
       if (!(await p.waitForFunction(() => window.R2DOWN > 0, null, {timeout: 3000}).catch(() => null)))
         fails.push('Service worker: R2 failed but the page was not told');
       if (!(await cached()).includes(R2 + 'img/' + f)) fails.push('Service worker: the photo served from the site was not kept');
-      // R2 answering: asked in CORS mode (an opaque reply is never kept), and kept.
-      await fromR2(ctx);
-      if (!(await load(R2 + 'img/' + g))) fails.push('Service worker: an R2 photo did not load from R2');
-      const t = await p.evaluate(u => caches.match(u, {ignoreVary: true}).then(r => r && r.type), R2 + 'img/' + g);
-      if (t !== 'cors') fails.push(`Service worker: the R2 photo was not kept as a CORS reply (${t})`);
+      // R2 failed twice: for a while the worker asks the site straight away (sw.js R2_PAUSE), no request held on R2.
+      const n2 = r2hits;
+      if (!(await load(R2 + 'img/' + f.replace(/-s\.webp$/, '.webp'))) || r2hits !== n2)
+        fails.push(`Service worker: after R2 failed, the next photo asked R2 again (${r2hits - n2}) or did not load`);
       // Offline: a photo kept under the site's address is served for its R2 address.
       const h = f.replace(/-s\.webp$/, '-m.webp');
       await load(base + 'img/' + h);

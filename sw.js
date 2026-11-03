@@ -139,6 +139,9 @@ const photo = async (req, u) => {
     return res;
   };
   if (!r2) return fetch(req).then(keep);
+  // R2 failed twice in a row a moment ago: the site straight away, for R2_PAUSE ms (no request held open on a dead host:
+  // a new worker takes over only once this one has no fetch in flight).
+  if (Date.now() - r2Off < R2_PAUSE) return fetch(twin).then(keep);
   // Asked twice, PHOTO_RETRY ms apart (core.js photoRetry: a passing error gets a second try on R2), before the site.
   for (let k = 0; k < 2; k++) {
     try {
@@ -149,9 +152,12 @@ const photo = async (req, u) => {
     } catch (err) {}
     if (!k) await new Promise(ok => setTimeout(ok, PHOTO_RETRY));
   }
+  r2Off = Date.now();
   r2Down();
   return fetch(twin).then(keep);
 };
+let r2Off = 0;
+const R2_PAUSE = 60e3;
 // R2 failed (Codex review #392): the pages are told, so their next photos are asked from the site straight away (app.js
 // R2 false, as when an <img> fails without the worker) instead of trying R2 first, file after file. A reload tries R2 again.
 const r2Down = () =>
