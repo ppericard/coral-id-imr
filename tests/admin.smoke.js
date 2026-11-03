@@ -635,7 +635,10 @@ const server = http.createServer((req, res) => {
         want: [String(play), String(cols), String(per.filter(Boolean).length), String(wait)],
         pool,
         rej,
-        sum: ['In play', 'Not in games', 'Removed', 'Candidates', 'Rejected', 'Excluded'].reduce((t, k) => t + pool[k], 0),
+        sum: ['In play', 'Not in games', 'Comparison only', 'Removed', 'Candidates', 'Rejected', 'Excluded'].reduce(
+          (t, k) => t + pool[k],
+          0
+        ),
         genus: cells('[data-pov="genus"] tbody tr')[0],
         wantMed: txt(med(per)),
         wantRange: `${Math.min(...per)}–${Math.max(...per)}`,
@@ -659,6 +662,40 @@ const server = http.createServer((req, res) => {
     if (ov.never !== ov.wantNever) fails.push(`${w}px Overview: ${ov.never} photos never rated instead of ${ov.wantNever}`);
     if (ov.ends !== 10) fails.push(`${w}px Overview: ${ov.ends} genus links in Fewest and most`);
     if (ov.wide > 0) fails.push(`${w}px Overview: page ${ov.wide} px wider than the window`);
+    // A photo in play and a candidate sent to Not this genus › Look-alike comparison (curation out 'cmp') leave their genus
+    // for no other one: they move to the Comparison only row, once each, and the total stays (Codex review #430: they fell
+    // out of the inventory). Two Undo steps put them back.
+    const poolRows = () =>
+      p.evaluate(() =>
+        Object.fromEntries(
+          [...document.querySelectorAll('[data-pov="pool"] tbody tr')].map(r => [
+            r.children[0].innerText.trim(),
+            Number(r.children[1].innerText)
+          ])
+        )
+      );
+    const cm0 = await poolRows(),
+      cmp = await p.evaluate(() => {
+        const n = [...GAME].find(m => covOf(m, 'wide').L.some(x => !x.from && !x.cand) && pending(m).some(x => !x.from)),
+          f = covOf(n, 'wide').L.find(x => !x.from && !x.cand).f,
+          c = pending(n).find(x => !x.from);
+        ACT.out(n, f, null, 'cmp');
+        ACT.out(n, c.f, null, 'cmp');
+        return {n, f, c: c.f, rej: rejected(c.f)};
+      });
+    await settle();
+    const cm1 = await poolRows();
+    if (
+      cm1.Total !== cm0.Total ||
+      cm1['Comparison only'] !== cm0['Comparison only'] + 2 ||
+      cm1['In play'] !== cm0['In play'] - 1 ||
+      cm1[cmp.rej ? 'Rejected' : 'Candidates'] !== cm0[cmp.rej ? 'Rejected' : 'Candidates'] - 1
+    )
+      fails.push(`${w}px Overview: comparison only ${JSON.stringify({cmp, before: cm0, after: cm1})}`);
+    await p.evaluate(() => (undo(), undo()));
+    await settle();
+    const cm2 = await poolRows();
+    if (JSON.stringify(cm2) !== JSON.stringify(cm0)) fails.push(`${w}px Overview: undo of comparison only ${JSON.stringify(cm2)}`);
     // Photo list moved to Photo review (By difficulty) and kept its address; the Photo stats tab opens on Overview, also
     // in a browser that remembered Photo list as its view.
     const mv = await p.evaluate(() => ({
