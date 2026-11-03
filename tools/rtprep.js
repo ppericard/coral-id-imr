@@ -9,7 +9,7 @@
 // Photos, Id, Expected, Ability, New photos, Choices, Seconds, Enlarged], ...]}, the sheet clock Asia/Taipei).
 // out.json (keep it outside the repo: it holds the players' names): the rows in time order, as core.js rows plus Seconds
 // and Enlarged; the photo ratings and pooled confusions (core.js eloOf, confusionOf: what ?stats=1 would serve) on the
-// whole log and with each timed player (20 timed answers or more) left out; and, for each of those stats, the app's own
+// whole log, with each timed player (20 timed answers or more) left out and with each pair of them left out; and, for each of those stats, the app's own
 // genusDiff and photoDiff (model.js), evaluated in the real app page.
 // Printed: the photo Elo (core.js eloReplay, as Code.gs stats_) replayed with a right answer's photo step weighted by
 // its speed, w = clamp(1 - k z, 0.5, 1.5), z = log(seconds) minus the median of the player's earlier timed answers
@@ -91,7 +91,8 @@ function photoReplay(rule) {
     let z = null;
     if (isT && tz.L.length >= 10) {
       const L = tz.L.slice().sort((x, y) => x - y);
-      z = Math.log(Math.max(0.5, Number(r[11]))) - L[L.length >> 1];
+      // the median as tools/abilityeval.js median(): the two middle values averaged for an even count (Codex review #443)
+      z = Math.log(Math.max(0.5, Number(r[11]))) - (L.length % 2 ? L[(L.length - 1) / 2] : (L[L.length / 2 - 1] + L[L.length / 2]) / 2);
     }
     out.push({y: ok, e: Math.min(1 - 1e-6, Math.max(1e-6, e)), tr: !!trust[r[0]], prevT: ph.some(p => p[4] > 0)});
     if (trust[r[0]]) {
@@ -177,6 +178,11 @@ for (const [name, rule] of Object.entries(RULES)) {
 // ---- genusDiff and photoDiff as the app computes them, for each set of stats ----
 const sets = {all: statsOf(rows)};
 PLAYERS.forEach(p => (sets['-' + p] = statsOf(rows.filter(r => r[0] !== p))));
+// Every pair left out too ('-p-q', p before q in PLAYERS): when player p is held out, the training rows of player q get
+// their features from the answers of neither (Codex review #443: else q's features hold p's outcomes).
+PLAYERS.forEach((p, i) =>
+  PLAYERS.slice(i + 1).forEach(q => (sets['-' + p + '-' + q] = statsOf(rows.filter(r => r[0] !== p && r[0] !== q))))
+);
 const TYPES = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml'};
 const server = http.createServer((req, res) => {
   const u = decodeURIComponent(new URL(req.url, 'http://x').pathname),

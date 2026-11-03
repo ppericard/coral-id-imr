@@ -2275,17 +2275,19 @@ the logged ability minus the question's difficulty (th − d, from Expected and 
   average (−0.35 to +0.37; +0.07 with right and gap); first half against second half of each player's answers +0.09;
   odd against even answers of the same players +0.42. What repeats is each player's own genus, not the genus.
 - **Out of sample** (each player's 1,012 scored answers, timed or not, predicted with coefficients fitted on the other
-  players, and genus measures from the other players only; log-loss difference per answer × 10⁻³):
+  players; every genus measure from answers the fold has not seen: the held-out player's from the other four, each
+  training player's from the other three, Codex review #443; log-loss difference per answer × 10⁻³):
 
 | Added to the player's level | all answers | on top of the app's expectation | first answer on each genus (166) |
 | --- | --- | --- | --- |
-| `genusDiff` | +2.5 ± 2.4 | +3.2 ± 2.4 | +4.0 ± 13.8 |
-| genus time effect | +1.1 ± 0.6 | +1.1 ± 0.5 | +0.7 ± 7.3 |
-| time effect on top of `genusDiff` | +1.6 ± 0.7 | +1.1 ± 0.4 | +2.7 ± 6.1 |
-| pooled miss rate of the others | −1.7 ± 2.7 | −0.2 ± 2.5 | +0.3 ± 7.8 |
+| `genusDiff` | +2.8 ± 2.4 | +3.9 ± 2.4 | +3.5 ± 11.8 |
+| genus time effect | +3.0 ± 1.2 | +4.3 ± 1.4 | +1.7 ± 7.1 |
+| time effect on top of `genusDiff` | +3.0 ± 1.0 | +3.9 ± 1.2 | +2.4 ± 5.7 |
+| pooled miss rate of the others | −1.1 ± 2.5 | +0.7 ± 2.4 | +3.9 ± 8.9 |
 
-  The time effect makes every prediction a little worse (its sign is right: a slower genus is missed more, −0.24 per
-  log unit, but it carries no more signal than noise). Nothing measured on four players predicts the fifth player's
+  The time effect makes every prediction worse (its sign is right: a slower genus is missed more, −0.32 per log
+  unit, but it carries no more signal than noise; before the review's fix, which left each training player's features
+  holding the held-out player's answers, it read +1.1 ± 0.6 on all answers). Nothing measured on four players predicts the fifth player's
   success on a genus: `genusDiff` neither, and the others' miss rate only within its noise. The part of genus
   difficulty that players share is small next to each player's own, and time adds nothing to it yet.
 - **When**: the reliability of a genus time effect over m players with n timed answers each (genus sd 0.12, player ×
@@ -2303,13 +2305,15 @@ the logged ability minus the question's difficulty (th − d, from Expected and 
   only a fifth of the photo variance (photo sd 0.35 → 0.31): most of what makes a photo slow is not what makes it
   missed (a far colony, a busy scene, several views to look at).
 - **Cross-player** (419 answers on a photo another player answered with a time): the others' photo time effect makes
-  the prediction worse, +5.8 ± 7.0 × 10⁻³ (on top of `photoDiff` +6.0 ± 8.3): noise.
+  the prediction worse, +7.4 ± 5.0 × 10⁻³ (on top of `photoDiff` +4.3 ± 5.1; on top of the app's expectation and
+  `photoDiff`, −0.5 ± 6.1): noise.
 - **In the sheet's photo Elo** (`tools/rtprep.js`: core.js `eloReplay` replayed with time on the photo's step, each
   answer scored before it updates anything, 1,466 trusted answers, 183 of them on a photo timed before): a right
   answer's photo step × w = clamp(1 − k z, 0.5, 1.5) as PR #431's player rule, k 0.25 / 0.5 / 1 / 2: −0.05 / −0.07 /
-  −0.07 / −0.10 ± 0.05-0.10 × 10⁻³ (nothing, within noise; on the 183, −0.4 to −0.7 ± 0.4-0.8); an additive time step
-  instead (the photo harder by c × K × z beyond the player's mean z for the same outcome), c 0.25 / 0.5 / 1: +0.2 /
-  +0.5 / +1.6 ± 0.4-1.5 × 10⁻³ (worse).
+  −0.07 / −0.10 ± 0.05-0.10 × 10⁻³ (nothing, within noise; on the 183, −0.4 to −0.8 ± 0.4-0.8; z against the
+  median of the player's earlier timed answers, the two middle ones averaged for an even count, as
+  `tools/abilityeval.js`); an additive time step instead (the photo harder by c × K × z beyond the player's mean z for
+  the same outcome), c 0.25 / 0.5 / 1: +0.2 / +0.5 / +1.6 ± 0.4-1.5 × 10⁻³ (worse).
 - **When**: to tell a correlation of 0.25 from none (80% power, 5%) takes about 120 photos with a reliable time effect
   (5 timed answers or more from 2 players or more); with today's spread of the draw (an effective pool of about 800
   photos, Poisson) that is about 2,500 timed answers, 3,000-3,500 if the draw spreads over all 1,404 game photos, so

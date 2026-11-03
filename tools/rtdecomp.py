@@ -260,7 +260,7 @@ for r in D['rows']:
 def pooled(skip=None):
     n, ko, ex = {}, {}, {}
     for r in D['rows']:
-        if cntp[r[0]] < 20 or 'test' in r[0] or r[0] == skip or '|t' in r[5]:
+        if cntp[r[0]] < 20 or 'test' in r[0] or r[0] in (skip or ()) or '|t' in r[5]:
             continue
         n[r[2]] = n.get(r[2], 0) + 1
         ko[r[2]] = ko.get(r[2], 0) + 1 - r[4]
@@ -367,24 +367,38 @@ def fitlog(rows, feats, off):
 OFFS = {'the player\'s level only': lambda r: 0.0, 'the app\'s expectation (logged)': lambda r: r['gap']}
 
 
-def cv(rows, models, offname):
-    """Each player predicted with coefficients fitted on the other players (their own features left them out too)."""
+def cv(rows, models, offname, keep=None):
+    """Each player p predicted with coefficients fitted on the other players. Every feature comes from answers the fold
+    has not seen (Codex review #443): p's rows from the answers of everyone but p (F[{p}]), the training rows of each
+    other player q from the answers of everyone but p and q (F[{p, q}]), so no training feature holds p's outcomes.
+    keep: which rows take part, judged on those same features (e.g. a photo another player answered)."""
     off, res = OFFS[offname], {}
+    folds = {}
+    for p in PL:
+        te = [(i, {**r, **r['F'][frozenset([p])]}) for i, r in enumerate(rows) if r['p'] == p]
+        tr = [{**r, **r['F'][frozenset([p, r['p']])]} for r in rows if r['p'] != p]
+        if keep:
+            te = [(i, r) for i, r in te if keep(r)]
+            tr = [r for r in tr if keep(r)]
+        folds[p] = (te, tr)
+    idx_all = sorted(i for te, _ in folds.values() for i, _ in te)
+    pos = {i: j for j, i in enumerate(idx_all)}
     for name, feats in models.items():
-        ll, coefs = np.zeros(len(rows)), []
+        ll, coefs = np.zeros(len(idx_all)), []
         for p in PL:
-            b = fitlog([r for r in rows if r['p'] != p], feats, off)
+            te, tr = folds[p]
+            b = fitlog(tr, feats, off)
             coefs.append(b)
-            idx = [i for i, r in enumerate(rows) if r['p'] == p]
-            te = [rows[i] for i in idx]
-            y = np.array([r['ok'] for r in te])
-            cp = minimize(lambda w: nll(y, predict(te, feats, off, w[0], b)).sum(), [0.0], method='L-BFGS-B').x[0]
-            ll[idx] = nll(y, predict(te, feats, off, cp, b))
+            rs = [r for _, r in te]
+            y = np.array([r['ok'] for r in rs])
+            cp = minimize(lambda w: nll(y, predict(rs, feats, off, w[0], b)).sum(), [0.0], method='L-BFGS-B').x[0]
+            ll[[pos[i] for i, _ in te]] = nll(y, predict(rs, feats, off, cp, b))
         res[name] = (ll, np.mean(coefs, 0) if feats else [])
-    return res
+    return res, [rows[i] for i in idx_all]
 
 
-def show(rows, res, pairs):
+def show(cvres, pairs):
+    res, rows = cvres
     base = res['base'][0]
     out('     base log-loss %.4f (%d answers)' % (base.mean(), len(base)))
     for name, (ll, b) in res.items():
@@ -400,31 +414,48 @@ def show(rows, res, pairs):
 
 
 SC = ALL  # every scored answer of the timed players with Expected logged, timed or not, not typed
-for p in PL:
-    rest = [r for r in NOZ if r['p'] != p]
+
+
+def setkey(E):
+    return '-' + '-'.join(p for p in PL if p in E)  # tools/rtprep.js names: '-p' and '-p-q' in the players' order
+
+
+EXCL = [frozenset([p]) for p in PL] + [frozenset(c) for c in itertools.combinations(PL, 2)]
+for r in SC:
+    r['F'] = {}
+for E in EXCL:
+    # Every feature of a row of player q under exclusion E (q in E) from the answers of the players outside E only.
+    rest = [r for r in NOZ if r['p'] not in E]
     a0 = effects(fit(rest, CTRL), 'genus')[0]
     a2 = effects(fit(rest, FULL), 'genus')[0]
-    gd = S['-' + p]['gd']
-    n_, k_, _ = pooled(skip=p)
+    b0 = effects(fit(rest, CTRL), 'photo')[0]
+    b1 = effects(fit(rest, RIGHT), 'photo')[0]
+    st = S[setkey(E)]
+    n_, k_, _ = pooled(skip=E)
     tot = sum(k_.values()) / sum(n_.values())
+    no = {}
+    for r in rest:
+        no[r['main']] = no.get(r['main'], 0) + 1
     for r in SC:
-        if r['p'] == p:
-            r.update(x_gd=gd.get(r['g'], 0.0), x_a0=a0.get(r['g'], 0.0), x_a2=a2.get(r['g'], 0.0),
-                     x_miss=logit((k_.get(r['g'], 0) + 5 * tot) / (n_.get(r['g'], 0) + 5)))
+        if r['p'] in E:
+            f = r['ph'][0] if r['ph'] else ''
+            r['F'][E] = dict(x_gd=st['gd'].get(r['g'], 0.0), x_a0=a0.get(r['g'], 0.0), x_a2=a2.get(r['g'], 0.0),
+                             x_miss=logit((k_.get(r['g'], 0) + 5 * tot) / (n_.get(r['g'], 0) + 5)),
+                             x_b0=b0.get(f, 0.0), x_b1=b1.get(f, 0.0), x_pd=st['pd'].get(f, 0.0), n_other=no.get(f, 0))
 GM = {'base': [], '+gd': ['x_gd'], '+a0': ['x_a0'], '+gd+a0': ['x_gd', 'x_a0'], '+a2': ['x_a2'],
       '+gd+a2': ['x_gd', 'x_a2'], '+miss': ['x_miss'], '+miss+a0': ['x_miss', 'x_a0']}
 out('## Out of sample (log-loss difference per answer against the base; gd = genusDiff, miss = logit of the pooled miss rate'
     ' shrunk with 5 answers, a0 / a2 = the genus time effect, controls / +right+gap, all three from the other players)')
 for offname in OFFS:
     out('   offset: %s' % offname)
-    show(SC, cv(SC, GM, offname), [('+gd+a0', '+gd'), ('+gd+a2', '+gd'), ('+miss+a0', '+miss')])
+    show(cv(SC, GM, offname), [('+gd+a0', '+gd'), ('+gd+a2', '+gd'), ('+miss+a0', '+miss')])
 seen, FM = set(), []
 for r in sorted(SC, key=lambda r: (r['p'], r['t'])):
     if (r['p'], r['g']) not in seen:
         seen.add((r['p'], r['g']))
         FM.append(r)
 out('   first answer of each player on each genus only (what the opening order is about):')
-show(FM, cv(FM, {k: GM[k] for k in ['base', '+gd', '+a0', '+gd+a0', '+miss', '+miss+a0']}, 'the player\'s level only'),
+show(cv(FM, {k: GM[k] for k in ['base', '+gd', '+a0', '+gd+a0', '+miss', '+miss+a0']}, 'the player\'s level only'),
      [('+gd+a0', '+gd')])
 
 # ---------- 3. photo ----------
@@ -451,25 +482,13 @@ for lab in ['controls', '+right']:
         m = fit(NOZ, {**FIXED[lab], key: lambda r, src=src: src.get(r['main'], 0.0)})
         out('## %s + %s as a covariate of time: %+.3f ± %.3f per unit; photo sd %.3f (without it %.3f)' % (
             lab, key, m['b'][-1], m['se_b'][-1], math.sqrt(m['s'][2]), math.sqrt(M[lab]['s'][2])))
-for p in PL:
-    rest = [r for r in NOZ if r['p'] != p]
-    b0 = effects(fit(rest, CTRL), 'photo')[0]
-    b1 = effects(fit(rest, RIGHT), 'photo')[0]
-    no = {}
-    for r in rest:
-        no[r['main']] = no.get(r['main'], 0) + 1
-    pdl = S['-' + p]['pd']
-    for r in SC:
-        if r['p'] == p:
-            f = r['ph'][0] if r['ph'] else ''
-            r.update(x_b0=b0.get(f, 0.0), x_b1=b1.get(f, 0.0), x_pd=pdl.get(f, 0.0), n_other=no.get(f, 0))
-PS = [r for r in SC if r['n_other'] >= 1]
+PS = [r for r in SC if r['F'][frozenset([r['p']])]['n_other'] >= 1]
 out('## Cross-player: answers on a photo another player answered with a time: %d (%s)' % (
     len(PS), ', '.join('%s %d' % (ANON[p], sum(r['p'] == p for r in PS)) for p in PL)))
 PM = {'base': [], '+pd': ['x_pd'], '+b0': ['x_b0'], '+pd+b0': ['x_pd', 'x_b0'], '+b1': ['x_b1'], '+pd+b1': ['x_pd', 'x_b1']}
 for offname in OFFS:
     out('   offset: %s (pd = photoDiff, b0 / b1 = the photo time effect, controls / +right, from the other players)' % offname)
-    show(PS, cv(PS, PM, offname), [('+pd+b0', '+pd'), ('+pd+b1', '+pd')])
+    show(cv(SC, PM, offname, keep=lambda r: r['n_other'] >= 1), [('+pd+b0', '+pd'), ('+pd+b1', '+pd')])
 
 # ---------- 4. thresholds ----------
 out('\n# 4. How much data')
