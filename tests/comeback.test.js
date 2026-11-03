@@ -159,7 +159,9 @@ test('comeback questions: the surest genera until one is right, then the most ru
     dd = s.dd;
   M.answeredAt(s, true);
   M.answeredAt(s, true);
-  assert.ok(M.recallAt('g3') === 1 && s.dd === dd + (s.dl === M.dayNo() ? 1 : 0) && s.dl === M.dayNo());
+  // Recall right after the answer: 1 at the same millisecond, a hair under it one tick later (recallAt reads the clock
+  // again; CI failed on PR #380 when it ticked between the two calls).
+  assert.ok(M.recallAt('g3') > 1 - 1e-6 && s.dd === dd + (s.dl === M.dayNo() ? 1 : 0) && s.dl === M.dayNo());
 });
 
 test('a miss the rust explains costs less progress (pgMissW with the recall)', () => {
