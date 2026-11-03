@@ -97,3 +97,156 @@ test('the group table takes the union of the groups of every rule', () => {
   const res = {a: {groups: {k2: {}, 'level>=0.75': {}}}, 'e+L': {groups: {k2: {}, 'level 0-0.75': {}}}};
   assert.deepStrictEqual(groupsOf(res, ['a', 'e+L']), ['k2', 'level 0-0.75', 'level>=0.75']);
 });
+
+// Global level and genus (2026-11-03, docs/LEARNING.md "Global level and genus"): model.js's ability, levelMove and
+// abilityStep run on stubs, as tests/memory.test.js does.
+function appModel() {
+  const fs = require('fs'),
+    path = require('path'),
+    vm = require('vm'),
+    C = require('../core.js');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
+    pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
+    ctx = {P: {}, playerStart: C.playerStart, LEVEL: C.LEVEL, sig: x => 1 / (1 + Math.exp(-x))};
+  vm.createContext(ctx);
+  vm.runInContext(pick('const ELO =', '// For My progress') + '\nthis.M = {ELO, ability, abilityStep, levelMove};', ctx);
+  return ctx;
+}
+
+test('a genus moves with the global level since its own last step, weighed by its own uncertainty, both ways', () => {
+  const X = appModel(),
+    {ability, levelMove, ELO} = X.M,
+    L = '~level';
+  X.P = {
+    [L]: {ok: 100, ko: 20, th: 1.2},
+    A: {ok: 3, ko: 0, th: 0.5, lt: 0.6},
+    B: {ok: 30, ko: 0, th: 0.5, lt: 0.6},
+    C: {ok: 3, ko: 0, th: 0.5}
+  };
+  // The level rose 0.6 since A's and B's last step: A (3 answers) takes 0.6 / (1 + 3/15) = 0.5, B (30) 0.6 / 3 = 0.2.
+  assert.strictEqual(levelMove('A', X.P.A), 0.5);
+  assert.strictEqual(ability('A'), 1);
+  assert.strictEqual(ability('B'), 0.7);
+  // Progress saved before (no lt): its own estimate only; the level itself never moves with itself.
+  assert.strictEqual(ability('C'), 0.5);
+  assert.strictEqual(ability(L), 1.2);
+  // A fall moves it down the same way (a one-way rise was biased upward).
+  X.P[L].th = 0;
+  assert.strictEqual(ability('A'), 0);
+  // Within the Elo's bounds.
+  X.P[L].th = 9;
+  assert.strictEqual(ability('A'), ELO.hi);
+});
+
+test("the genus's own step takes the level's move in and marks the level it was taken against", () => {
+  const X = appModel(),
+    {ability, abilityStep} = X.M,
+    L = '~level';
+  X.P = {[L]: {ok: 50, ko: 10, th: 1}, A: {ok: 4, ko: 1, th: 0.2, lt: 0}};
+  const before = ability('A');
+  X.P.A.ok++;
+  abilityStep('A', X.P.A, true, 0, 4);
+  assert.strictEqual(X.P.A.lt, 1);
+  assert.ok(X.P.A.th > before, `${X.P.A.th} after ${before}`);
+  assert.strictEqual(ability('A'), X.P.A.th, 'no move left once taken in');
+});
+
+test('small steps of the global level add up instead of being rounded away (Codex review #415)', () => {
+  const X = appModel(),
+    {abilityStep} = X.M,
+    L = '~level';
+  X.P = {[L]: {ok: 1500, ko: 0, th: 1, vr: 0}};
+  for (let i = 0; i < 1000; i++) {
+    X.P[L].ok++;
+    abilityStep(L, X.P[L], true, 0, 4);
+  }
+  assert.ok(X.P[L].th > 1.05, `the level stayed at ${X.P[L].th} after 1000 right answers`);
+});
+
+test("the global level's step has no floor: it settles as its answers build up", () => {
+  const X = appModel(),
+    {abilityStep, ELO} = X.M,
+    L = '~level';
+  // 600 answers, predictable (vr 0): a genus still steps by about kmin, the level by about kmax / (1 + 600/15).
+  X.P = {[L]: {ok: 500, ko: 100, th: 1, vr: 0}, A: {ok: 500, ko: 100, th: 1, vr: 0}};
+  abilityStep(L, X.P[L], false, 0, 4);
+  abilityStep('A', X.P.A, false, 0, 4);
+  const dL = 1 - X.P[L].th,
+    dA = 1 - X.P.A.th;
+  assert.ok(dL < dA / 2, `level step ${dL}, genus step ${dA}`);
+  assert.ok(dA >= ELO.kmin * 0.5, `genus step ${dA}`);
+});
+
+test('the level a genus was stepped against travels with its ability between devices, not between accounts', () => {
+  const {mergeProgress, mergeUsers} = require('../core.js');
+  const B = {A: {ok: 2, ko: 0, th: 0.3, lt: 0.1}},
+    P = {A: {ok: 3, ko: 0, th: 0.5, lt: 0.4}},
+    R = {A: {ok: 2, ko: 0, th: 0.3, lt: 0.1}};
+  const m = mergeProgress(B, P, R);
+  assert.strictEqual(m.A.th, 0.5);
+  assert.strictEqual(m.A.lt, 0.4);
+  const u = mergeUsers(
+    {'imr-coral-progress': JSON.stringify({A: {ok: 9, ko: 1, th: 1, lt: 0.8}})},
+    {'imr-coral-progress': JSON.stringify({A: {ok: 1, ko: 0, th: 0, lt: 0}})}
+  );
+  const prog = JSON.parse(u['imr-coral-progress']);
+  assert.strictEqual(prog.A.th, 1);
+  assert.strictEqual(prog.A.lt, undefined);
+});
+
+// Beginners and experts (2026-11-03, docs/LEARNING.md "Beginners and experts"): the success aimed for follows the global
+// level, 85% up to 0.5, 75% from 1.5, a straight line between, flat outside; the photo's aim (aimOff) follows it.
+test('the success aimed for follows the global level, with no cliff', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    vm = require('vm');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
+    pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
+    ctx = {P: {}, LEVEL: '~level'};
+  vm.createContext(ctx);
+  vm.runInContext(pick('const PICKD =', '// The schedule of the format') + '\nthis.M = {aimP, aimOff, PICKD};', ctx);
+  const at = L => ((ctx.P = {'~level': {th: L}}), ctx.M.aimP()),
+    near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} vs ${b}`);
+  near(at(-1), 0.85);
+  near(at(0.5), 0.85);
+  near(at(1), 0.8);
+  near(at(1.5), 0.75);
+  near(at(3), 0.75);
+  ctx.P = {};
+  near(ctx.M.aimP(), 0.85, 'a new player is aimed at 85%');
+  // Continuous: no step anywhere between.
+  for (let L = -1; L < 3; L += 0.01) assert.ok(Math.abs(at(L + 0.01) - at(L)) <= 0.001 + 1e-9, `step at ${L}`);
+  // The photo is aimed further below the ability for a beginner (easier) than for a strong player.
+  ctx.P = {'~level': {th: 0}};
+  const easy = ctx.M.aimOff(4);
+  ctx.P = {'~level': {th: 2}};
+  assert.ok(easy > ctx.M.aimOff(4) + 0.5, `${easy} vs ${ctx.M.aimOff(4)}`);
+});
+
+// Codex review #415: the level bands come from one reference level, whatever the model replayed (--model) or the rule
+// (+L): two models whose levels step differently put the same answers in each band.
+test('the level bands are the same answers whatever the model or the rule', () => {
+  const fs = require('fs'),
+    os = require('os'),
+    path = require('path'),
+    E = require('../tools/abilityeval.js');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
+    floored = src.replace('Math.max(n === LEVEL ? 0 : ELO.kmin,', 'Math.max(ELO.kmin,'),
+    file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'abilityeval-')), 'model.js');
+  assert.notStrictEqual(floored, src, 'the level step is found');
+  fs.writeFileSync(file, floored);
+  const rows = log(1.2, 300, 5),
+    L = res => res.scored.map(o => o.L);
+  E.useModel(path.join(__dirname, '..', 'model.js'));
+  const a = E.evaluate(rows, {variants: ['e', 'e+L'], min: 1}).res;
+  E.useModel(file);
+  const b = E.evaluate(rows, {variants: ['e'], min: 1}).res;
+  E.useModel(path.join(__dirname, '..', 'model.js'));
+  assert.deepStrictEqual(L(a.e), L(b.e));
+  assert.deepStrictEqual(L(a['e+L']), L(a.e));
+  // ... while the two models' own levels do differ.
+  assert.notDeepStrictEqual(
+    a.e.scored.map(o => o.pl),
+    b.e.scored.map(o => o.pl)
+  );
+});
