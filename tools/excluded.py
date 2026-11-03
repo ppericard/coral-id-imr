@@ -22,12 +22,17 @@ def set_aside(f):
 def excluded(f=None, photo_id=None):
     return f in EX or (photo_id is not None and str(photo_id) in IDS) or (f is not None and pid(f) in IDS)
 def drop_excluded(d):
-    """Removes excluded photos from every photo list in data.json (views, more, course, cand, cmp)."""
+    """Removes excluded photos from every photo list in data.json (views, more, course, cand, cmp). A candidate the
+    auto-sort excluded (reason 'auto', admin.js autoRun) keeps its entry in the candidate lists (cand.json, which players
+    never download): Pierre can undo each auto decision one by one (AGENTS.md rule 8), and its Undo brings the candidate
+    back only if its genus, source URL and credit are still there (Codex review #400). Excluded, it is never shown nor
+    counted as waiting (admin.js rawCands, fetch_local.py waiting)."""
     keep = lambda L: [p for p in L if not excluded(p.get('f'))]
+    keep_cand = lambda L: [p for p in L if not excluded(p.get('f')) or EX.get(p.get('f')) == 'auto']
     for g in [*d.get('gen', {}).values(), *((d.get('x') or {}).get('gen') or {}).values()]:
         for k in ('views', 'more'):
             for v, L in (g.get(k) or {}).items(): g[k][v] = keep(L)
     for k in ('course', 'cand'):
-        for g, L in (d.get(k) or {}).items(): d[k][g] = keep(L)
+        for g, L in (d.get(k) or {}).items(): d[k][g] = (keep_cand if k == 'cand' else keep)(L)
     if 'cmp' in d: d['cmp'] = keep(d['cmp'])
     return d
