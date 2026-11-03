@@ -22,7 +22,7 @@ document.addEventListener('visibilitychange', () => {
 function loadStats() {
   if (!SYNC_URL || !DATA) return;
   statsAt = Date.now();
-  fetch(SYNC_URL + '?stats=1')
+  fetch(SYNC_URL + '?stats=1&av=' + appVer())
     .then(r => r.json())
     .then(j => {
       if (j && j.ok && j.photos) {
@@ -48,7 +48,8 @@ function syncSummary() {
     board: boardOn() ? 1 : 0
   };
 }
-const syncGet = (a = SYNC) => fetch(`${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}`).then(r => r.json());
+const syncGet = (a = SYNC) =>
+  fetch(`${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}`).then(r => r.json());
 // Two devices on one account: three-way merge against SYNC.base, the progress as last sent or received.
 // Answers taken on this device since then are added on top of the saved record, so neither side's answers
 // are lost. A reset (imr-coral-reset, a time) wins over older progress.
@@ -166,6 +167,7 @@ function syncOnce(tries = 0) {
           data: progData(),
           summary: syncSummary(),
           answers: log,
+          av: appVer(), // the app's version (sheet v25: a request without it comes from an app before 2026-11-03)
           // First send after signing in: the answers this device sent anonymously move to this name (script v12).
           ...(me.anon ? {anon: me.anon} : {}),
           ...(typeof me.srv === 'number' ? {at: me.srv} : {})
@@ -465,7 +467,7 @@ function sendAnon() {
   if (SYNC || !SYNC_URL || LOCAL || anonBusy || !q.length) return;
   const batch = q.slice(0, 100);
   anonBusy = true;
-  fetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({anon: anonId(), anonAnswers: batch})})
+  fetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({anon: anonId(), anonAnswers: batch, av: appVer()})})
     .then(r => r.json())
     .then(j => {
       // A refused send is reported like a failed save (it used to fail silently; Pierre, 2026-11-03), then retried at the
@@ -802,7 +804,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       name = f.n.value.trim(),
       pin = f.p.value.trim();
     msg('Connecting…');
-    fetch(`${SYNC_URL}?name=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}`)
+    fetch(`${SYNC_URL}?name=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}&av=${appVer()}`)
       .then(r => r.json())
       .then(j => {
         if (!j.ok)
