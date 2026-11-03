@@ -22,10 +22,12 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import load_all  # noqa: E402  (data.json + cand.json, as fetch_local.py reads them)
 from excluded import excluded, set_aside  # noqa: E402  (photos Pierre excluded for good, set aside by the pre-sort)
+from genera import game_genera  # noqa: E402  (core.js gameOf: the slate, Millepora, the bonus genera)
 
 
 def short(minimum=5):
-    """[(genus, candidates waiting, {view guess: count})] for the slate genera under `minimum`, fewest first."""
+    """[(genus, candidates waiting, {view guess: count})] for the game genera under `minimum`, fewest first. The
+    Finder-only genera are left out: tools/fetch_local.py refills them only up to what their sheet can show."""
     d = load_all()
     cand = d.get("cand") or {}
     # Waiting = not decided yet, as fetch_local.py counts them (Codex review #365): not added, not rejected
@@ -35,7 +37,7 @@ def short(minimum=5):
     added = {f for k in gens for f in (k.get("add") or {})}
     gone = {f for k in gens for f in (k.get("out") or {})} | {k[5:] for k in (cur.get("seen") or {}) if k.startswith("cand:")}
     out = []
-    for g in d["gen"]:
+    for g in game_genera(d):
         waiting = [p for p in cand.get(g, []) if p["f"] not in added and p["f"] not in gone and not excluded(p["f"]) and not set_aside(p["f"])]
         if len(waiting) < minimum:
             out.append((g, len(waiting), dict(collections.Counter(p.get("vg", "unsorted") for p in waiting))))
@@ -63,7 +65,8 @@ def findable(g):
     gen = {**d["gen"], **((d.get("x") or {}).get("gen") or {})}
     used = {re.sub(r"\D", "", p["f"].split("-")[-1]) for x in gen.values() for L in [*x["views"].values(), *(x.get("more") or {}).values()] for p in L}
     used |= {p["f"].split("-")[-1] for L in (d.get("cand") or {}).values() for p in L}
-    T = [t for t in _get(f"https://api.inaturalist.org/v1/taxa?q={g}&rank=genus&per_page=10")["results"] if t["name"] == g and SCLERACTINIA in t.get("ancestor_ids", [])]
+    nonscl = ((gen.get(g) or {}).get("x") or {}).get("nonscl")  # fire and blue coral: matched as animals, as fetch_local.py
+    T = [t for t in _get(f"https://api.inaturalist.org/v1/taxa?q={g}&rank=genus&per_page=10")["results"] if t["name"] == g and (SCLERACTINIA in t.get("ancestor_ids", []) or (nonscl and t.get("iconic_taxon_name") == "Animalia"))]
     if not T:
         return 0, 0
     tid, found = T[0]["id"], {DAUIN: set(), PHILIPPINES: set()}

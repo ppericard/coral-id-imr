@@ -2680,7 +2680,7 @@ td.cov-c .cov-off {
   color: var(--good);
   font-weight: 600;
 }
-.fcov-t .fcov-x {
+.cov-t .fcov-x {
   color: var(--muted);
   font-size: 0.7rem;
 }
@@ -2873,7 +2873,8 @@ td.cov-c .cov-off {
   color: inherit;
   text-decoration: underline;
 }
-/* Cap per genus x view (CELL_MAX, admin.js): full and over-the-cap cells on Game coverage */
+/* Cap per genus x view (capOf, admin.js): full and over-the-cap cells on Game coverage, and on Sheet & Finder
+   coverage for a Finder-only genus */
 td.cov-c.cov-full {
   box-shadow: inset 0 0 0 2px var(--ink);
 }

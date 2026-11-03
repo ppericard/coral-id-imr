@@ -52,8 +52,8 @@ const jDate = t => new Date(t).toLocaleDateString([], {day: 'numeric', month: 's
 
 // Everything the page shows, from one player's answers in time order.
 function journeyOf(R) {
-  // The slate as the app counts it (app.js slateGenera): the IMR coral slate (x = genera off it) and Millepora (BENTHIC).
-  const slate = new Set(Object.keys(DATA.gen).filter(n => !DATA.gen[n].x || n === 'Millepora')),
+  // The slate as the app counts it (core.js slateOf, as app.js slateGenera): the IMR coral slate and BENTHIC (Millepora).
+  const slate = new Set(slateOf(DATA)),
     G = {},
     acc = [],
     exp = [],
