@@ -172,7 +172,9 @@ body::before {
 .wrap {
   max-width: var(--page);
   margin: 0 auto;
-  min-height: calc(100dvh - var(--tabbar-h, 0px));
+  /* The phone tab bar is --tabbar-h plus the bottom safe area (home indicator) tall, and the body pads both: leaving the
+     safe area out here made every page on such a phone 34 px taller than the screen (Pierre's Home scroll, 2026-11-03). */
+  min-height: calc(100dvh - var(--tabbar-h, 0px) - env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
 }
@@ -271,18 +273,8 @@ h2 {
   font-size: var(--fs-l);
   margin: 4px 0 12px;
 }
-/* Credits: one small line pinned to the bottom of the page (the .wrap column fills the window), full page width. */
-footer {
-  margin-top: auto;
-  font-size: var(--fs-xs);
-  color: var(--muted);
-  border-top: 1px solid var(--line);
-  padding: 8px 0 10px;
-}
-footer p {
-  max-width: none;
-  margin: 0;
-}
+/* No page footer (Pierre, 2026-11-03): the credits are one line at the bottom of Home and the About page (#about);
+   About, Privacy and Send feedback end the ? help of every page (.hend). */
 main {
   margin-bottom: 32px;
 }
@@ -1912,7 +1904,7 @@ header {
     min-height: 0;
   }
 }
-/* Screen-fitting pages: no footer, but still room for the phone tab bar (0 on wider screens). */
+/* Screen-fitting pages: room for the phone tab bar (0 on wider screens). */
 body:has(.q),
 body:has(.pgrid),
 body:has(.rvstage),
@@ -1920,14 +1912,6 @@ body:has(.pgroups),
 body:has(.pslate),
 body:has(.lk) {
   padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
-}
-body:has(.q) footer,
-body:has(.pgrid) footer,
-body:has(.rvstage) footer,
-body:has(.pgroups) footer,
-body:has(.pslate) footer,
-body:has(.lk) footer {
-  display: none;
 }
 body:has(.q) main,
 body:has(.pgrid) main,
@@ -2300,43 +2284,85 @@ kbd {
 .fb h3 a {
   color: inherit;
 }
-/* One-tap question (pulse, app.js): a quiet row under the feedback, above Next; wraps on narrow phones. */
+/* One-tap question (quiz.js pulseAsk; Pierre 2026-11-03: a quiet row inside the feedback was missed): a block of its
+   own between the feedback and Next, tinted with the palette's accent, a "Quick question" title, the question, then
+   its three answers on one row of equal widths down to 360 px (labels wrap inside their button, never the row). */
 .pulse {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
   margin: 10px 0 0;
-  padding: 8px 10px;
+  padding: 8px 10px 10px;
   border-radius: var(--r);
-  background: var(--surface-2);
-  font-size: var(--fs-s);
-  color: var(--muted);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--ink);
 }
-.pulse span {
-  margin-right: 2px;
+.pulseh {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-.pulse button {
+.pulsek {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.pulseq {
+  margin: 0 0 8px;
+  font-size: var(--fs-m);
+  font-weight: 600;
+}
+.pulseb {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.pulseb button {
   font: inherit;
+  font-size: var(--fs-s);
+  line-height: 1.2;
   color: var(--ink);
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 6px 12px;
-  min-height: 36px;
+  border: 1px solid var(--accent);
+  border-radius: var(--pill);
+  padding: 6px 4px;
+  min-height: 40px;
   cursor: pointer;
 }
 @media (hover: hover) {
-  .pulse button:hover {
-    border-color: var(--accent);
+  .pulseb button:hover {
+    background: color-mix(in srgb, var(--accent) 22%, var(--surface));
   }
 }
 .pulse .pulsex {
-  margin-left: auto;
+  font: inherit;
+  font-size: var(--fs-l);
+  line-height: 1;
   border: none;
   background: none;
   color: var(--muted);
-  padding: 6px 8px;
+  padding: 2px 6px;
+  min-width: 32px;
+  min-height: 32px;
+  cursor: pointer;
+}
+.pulseok {
+  margin: 0;
+  font-size: var(--fs-s);
+  font-weight: 600;
+  color: var(--accent);
+}
+/* When a long feedback makes the phone's sheet or the desktop's side column scroll (a mix-up's lines, 4 choices), Next
+   and the one-tap question stay in view at its bottom and the feedback scrolls under them (desktop pinned Next already,
+   design re-review p2; --nexth: Next's height, set by quiz.js pulseAsk). Nothing moves when everything fits. */
+.q.done #after #next {
+  position: sticky;
+  bottom: 0;
+}
+.q.done #after .pulse {
+  position: sticky;
+  bottom: calc(var(--nexth, 44px) + 6px);
+  z-index: 1;
 }
 /* Only "Yes"/"No" takes the right/wrong colour: the genus to remember stays in ink (designer re-review 2026-11-01, N3). */
 .fb h3 a {
@@ -2654,9 +2680,24 @@ header {
 }
 .hdr-tools {
   grid-area: tools;
+  gap: 4px;
 }
 .prog .pl {
   display: none;
+}
+/* Narrow phones (under 380 px, e.g. 360 and 320): while the Sign in (or Not saved) pill is in the header, the five
+   controls and the logotype don't fit one line (the ⚙ was cut off and every page scrolled sideways, 2026-11-03). The
+   logotype then steps aside, still the home link's name for screen readers; the logo stays, and no control is dropped.
+   The one width query outside the three size classes (AGENTS.md rule 19), for the header only. */
+@media (max-width: 379.98px) {
+  header:has(#signb:not([hidden])) .brand .home span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 .helpbox {
   grid-area: help;
@@ -2695,9 +2736,6 @@ header {
 }
 body {
   padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
-}
-footer {
-  padding-bottom: 12px;
 }
 .modes.ctx a {
   flex: none;
@@ -2768,6 +2806,7 @@ footer {
   }
   .hdr-tools {
     grid-area: revert;
+    gap: 6px;
   }
   .helpbox {
     grid-area: revert;
@@ -2804,9 +2843,6 @@ footer {
   }
   body {
     padding-bottom: 0;
-  }
-  footer {
-    padding-bottom: 10px;
   }
   .modes.ctx a {
     flex: 0 0 auto;
@@ -5149,6 +5185,45 @@ html.touring body::after {
 .htour {
   margin-top: 8px;
 }
+/* The last line of every ? help: About & credits · Privacy · Send feedback (app.js helpEnd). */
+.helpbox .hend {
+  margin-top: 8px;
+}
+.helpbox > .hend:first-child {
+  margin-top: 0;
+}
+/* About and credits (#about, home.js viewAbout): a calm text page, one quiet card per topic. */
+.about {
+  max-width: 68ch;
+  margin: 12px 0 0;
+  display: grid;
+  gap: 12px;
+}
+.about section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 16px;
+}
+.about h3 {
+  font-family: var(--display);
+  font-size: var(--fs-l);
+  margin: 0 0 4px;
+}
+.about p {
+  margin: 0 0 6px;
+}
+.about p:last-child,
+.about ul:last-child {
+  margin-bottom: 0;
+}
+.about ul {
+  margin: 0 0 6px;
+  padding-left: 1.2em;
+}
+.about > .note {
+  margin: 0;
+}
 /* Phone base (mobile-first); larger screens restore below. */
 #tour .tbub {
   left: 8px;
@@ -5735,7 +5810,8 @@ html.touring .unlock {
   }
 }
 .lb-cap .rep,
-footer .rep {
+.hend .rep,
+.about .rep {
   display: inline;
   margin: 0;
   font-size: inherit;
@@ -5745,7 +5821,14 @@ footer .rep {
   opacity: 0.85;
 }
 .lb-cap .rep:hover,
-footer .rep:hover {
+.hend .rep:hover,
+.about .rep:hover {
+  opacity: 1;
+}
+/* Send feedback beside the other links of the ? help and of About: the same link colour. */
+.hend .rep,
+.about .rep {
+  color: var(--accent);
   opacity: 1;
 }
 .repline {

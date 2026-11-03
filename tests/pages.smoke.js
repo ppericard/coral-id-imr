@@ -33,6 +33,8 @@ const ROUTES = [
   'lab',
   'lab-basics|walls',
   'lab-basics|words',
+  'about',
+  'credits',
   'quiz-duel|Foo|Bar',
   'g-%E0'
 ]; // the last two are malformed links: they must not crash a page
@@ -306,6 +308,106 @@ async function overlays(b, base) {
       seenP.some(x => x.other || x.toast)
     )
       fails.push(`prompt spacing over 60 answers: ${JSON.stringify(seenP)}`);
+    await c.close();
+  }
+  // The one-tap question's bank (core.js PULSEQ, 2026-11-03), on the narrowest phone (360 px) and on a desktop: the
+  // first prompt at 35 answers asks the plain question; each prompt is a block of its own ("Quick question") on screen
+  // above Next, never under it (a wrong answer now and then makes the feedback long), its answers on one row of equal
+  // widths; it logs its showing (shown) with its item (src); an answer is one tap ("Thank you!" at once) and logs the
+  // code tapped; every third prompt is left unanswered (Next) and logs none; the next prompt never asks the same item.
+  // After the first, each prompt is made due by moving the device's last-prompt marks back (imr-prompt-at by
+  // PROMPT.GAP, imr-pulse by PULSE.EVERY), the real code deciding.
+  for (const [vw, vh] of [
+    [360, 740],
+    [1280, 800]
+  ]) {
+    const [c, p] = await open({viewport: {width: vw, height: vh}}, seen);
+    await p.goto(base + '#quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    const asked = [],
+      pev = () => p.evaluate(() => JSON.parse(localStorage.getItem('imr-evq') || '[]').filter(x => x.k === 'pulse'));
+    for (let i = 0; i < 60 && asked.length < 9; i++) {
+      await p.waitForSelector('#view [data-c]:not([disabled])');
+      const skip = asked.length % 3 === 2,
+        before = (await pev()).length;
+      const r = await p.evaluate(
+        ([i, due, skip]) => {
+          document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+          document.querySelectorAll('.achpop').forEach(x => x.remove());
+          achQ.length = 0;
+          achBusy = false;
+          if (due) {
+            const a = answersSoFar() + 1;
+            localStorage.setItem('imr-prompt-at', JSON.stringify(a - PROMPT.GAP));
+            localStorage.setItem('imr-pulse', JSON.stringify({...JSON.parse(localStorage.getItem('imr-pulse')), at: a - PULSE.EVERY}));
+          }
+          const t = SHOWNQ[1],
+            cs = [...document.querySelectorAll('#view [data-c]')];
+          (i % 4 === 3 ? cs.find(x => x.dataset.c !== t) : cs.find(x => x.dataset.c === t)).click();
+          const box = document.querySelector('#after .pulse');
+          if (!box) return null;
+          const bs = [...box.querySelectorAll('.pulseb [data-pulse]')],
+            b = bs[i % bs.length],
+            it = PULSEQ.find(x => x.id === box.dataset.pq),
+            nx = document.getElementById('next'),
+            R = box.getBoundingClientRect(),
+            N = nx.getBoundingClientRect(),
+            B = bs.map(x => x.getBoundingClientRect());
+          const shown = {
+            a: answersSoFar(),
+            q: box.dataset.pq,
+            title: box.querySelector('.pulsek')?.textContent,
+            text: box.querySelector('.pulseq')?.textContent,
+            opts: bs.map(x => x.dataset.pulse),
+            x: !!box.querySelector('.pulsex[data-pulse=""]'),
+            // Before Next in the page and on screen, both in view without scrolling.
+            before: !!(box.compareDocumentPosition(nx) & Node.DOCUMENT_POSITION_FOLLOWING) && R.bottom <= N.top + 1,
+            inView: R.top >= 0 && N.bottom <= innerHeight + 1,
+            // Each answer, and Next, is what a tap at its centre reaches: nothing covers it (Next, the tab bar), and it is
+            // not scrolled out of the phone's sheet or the side column (a long feedback after a wrong answer).
+            hit: [...B.map((x, k) => [bs[k], x]), [nx, N]].every(([el, x]) =>
+              el.contains(document.elementFromPoint(x.left + x.width / 2, x.top + x.height / 2))
+            ),
+            // One row, equal widths.
+            row: B.every(x => Math.abs(x.top - B[0].top) < 2 && Math.abs(x.width - B[0].width) < 2),
+            tap: skip ? '' : b.dataset.pulse,
+            // A tap on the question's text or the block itself is not a photo tap (Codex review #414: data-q on the block
+            // sent it to the photo handler, which opened an empty enlarged view).
+            panel: (box.querySelector('.pulseq').click(), box.click(), document.getElementById('lightbox').hidden)
+          };
+          if (!skip) b.click();
+          return {...shown, want: it ? [it.q, it.a.map(x => x[0])] : null, thanks: box.textContent.trim()};
+        },
+        [i, asked.length > 0, skip]
+      );
+      await p.evaluate(() => document.getElementById('next').click());
+      if (!r) continue;
+      // What this prompt queued: its showing, then the code tapped or none (moved on without a tap).
+      r.ev = (await pev()).slice(before).map(x => ({r: x.r, src: x.src, m: x.m, lv: typeof x.lv}));
+      asked.push(r);
+    }
+    const bad = asked.filter(
+      (x, k) =>
+        !x.want ||
+        x.title !== 'Quick question' ||
+        x.text !== x.want[0] ||
+        x.opts.join() !== x.want[1].join() ||
+        !x.x ||
+        !x.before ||
+        !x.inView ||
+        !x.hit ||
+        !x.row ||
+        !x.panel ||
+        (x.tap && x.thanks !== 'Thank you!') ||
+        x.ev.map(e => e.r).join() !== ['shown', x.tap || 'none'].join() ||
+        x.ev.some(e => e.src !== x.q || e.m !== 'quiz' || e.lv !== 'number') ||
+        (k && x.q === asked[k - 1].q)
+    );
+    // The first prompt at 35 answers, or a few later when an achievement toast it waits for came with that answer (the
+    // wrong answers here move the toasts; the exact 35 is checked by the new-player run further down).
+    const late = !asked.length || asked[0].a < 35 || asked[0].a > 40;
+    if (asked.length < 9 || late || asked[0].q !== 'are' || bad.length || new Set(asked.map(x => x.q)).size < 5)
+      fails.push(`${vw}px one-tap bank: ${JSON.stringify(asked.length < 9 || late ? asked : bad.length ? bad : asked.map(x => x.q))}`);
     await c.close();
   }
   // The right answer's celebration (app.css .cheer) plays on the choice and on "✓ Yes", and not at all with
@@ -645,6 +747,135 @@ async function signin(base) {
 // Coral basics on a phone and a tablet (Codex on PR #405): the teaching photo leaves room on screen (at most 45% of its
 // height), each check (photo, answers, feedback) fits between the header and the tab bar once answered (rule 17), and
 // every photo of a check gets the games' clickable source once answered (rule 11, photoSrc). Returns the failures.
+// Credits and Home's fit (Pierre, 2026-11-03): no page footer; Home is one screen with a one-line credit (Pierre, IMR, a
+// link to About and credits); About exists, is linked from Home and from the ? help of every page with Privacy and Send
+// feedback, and the Coral Finder book is never credited (only cited under References); the header fits the narrowest
+// phones, signed out, without a sideways scroll.
+async function credits(b, base) {
+  const fails = [],
+    BOOK = /Coral Finder|Kelley|BYOGUIDES/i;
+  const open = async (w, h, hash = '') => {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+    });
+    const p = await c.newPage();
+    await p.goto(base + hash);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForTimeout(500);
+    return [c, p];
+  };
+  for (const [w, h] of [
+    [360, 640],
+    [390, 750],
+    [390, 844],
+    [412, 915],
+    [768, 1024],
+    [1280, 800]
+  ]) {
+    const [c, p] = await open(w, h);
+    const r = await p.evaluate(() => {
+      const cr = document.querySelector('#view .hcred'),
+        tab = document.querySelector('nav.sections'),
+        tabTop = getComputedStyle(tab).position === 'fixed' ? tab.getBoundingClientRect().top : innerHeight;
+      return {
+        sh: document.documentElement.scrollHeight,
+        ih: innerHeight,
+        sw: document.documentElement.scrollWidth,
+        iw: innerWidth,
+        text: cr ? cr.textContent : '',
+        link: !!(cr && cr.querySelector('a[href="#about"]')),
+        bottom: cr ? Math.round(cr.getBoundingClientRect().bottom) : 0,
+        // Learn & practise is the primary door, Identify the secondary one (Pierre, 2026-11-03).
+        // Phones (Pierre, 2026-11-03, second look): the Learn and Practice buttons carry the door, its photos only illustrate.
+        doors: ['.hdoor.learn', '.hdoor.identify', '.hdoor.learn .hdart', '.hdoor.learn .hdbtn', '.hdoor.identify .hdbtn'].map(s => {
+          const b = document.querySelector(s)?.getBoundingClientRect();
+          return b ? [Math.round(b.width), Math.round(b.height)] : [0, 0];
+        }),
+        tabTop: Math.round(tabTop),
+        footer: !!document.querySelector('footer')
+      };
+    });
+    // No vertical scroll, and the credit line in view above the phone tab bar (not hidden under it; the bar's 1 px top
+    // border overlaps the page by design: --tabbar-h is 58, the bar 59 with its border).
+    if (r.sh > r.ih || r.bottom > r.tabTop + 1 || !r.bottom) fails.push(`${w}x${h} Home is not one screen: ${JSON.stringify(r)}`);
+    if (r.sw > r.iw) fails.push(`${w}x${h} Home scrolls sideways: ${JSON.stringify(r)}`);
+    const [ld, id, la, lb, ib] = r.doors;
+    // Phones: Learn's door taller than Identify's, its buttons taller than Identify's, its photos at most 28% of the
+    // screen; side by side: Learn's column wider.
+    if (w < 600 ? !(ld[1] > id[1] && lb[1] > ib[1] && la[1] <= 0.28 * h + 1) : !(ld[0] > id[0]))
+      fails.push(`${w}x${h} Home: Learn & practise is not the main door: ${JSON.stringify(r.doors)}`);
+    if (!/Pierre Pericard/.test(r.text) || !/IMR/.test(r.text) || !r.link || BOOK.test(r.text) || r.footer)
+      fails.push(`${w}x${h} Home credit line: ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // The header fits one line at 360 and 320 px, signed out (the Sign in pill shown): no sideways scroll.
+  for (const w of [320, 360]) {
+    const [c, p] = await open(w, 640);
+    for (const hash of ['', 'genera', 'about']) {
+      await p.evaluate(x => (location.hash = x), hash);
+      await p.waitForTimeout(400);
+      const r = await p.evaluate(() => ({
+        sw: document.documentElement.scrollWidth,
+        iw: innerWidth,
+        signb: !document.getElementById('signb').hidden,
+        set: Math.round(document.getElementById('setb').getBoundingClientRect().right)
+      }));
+      if (!r.signb || r.sw > r.iw || r.set > r.iw)
+        fails.push(`${w}px #${hash || 'home'} signed out, header too wide: ${JSON.stringify(r)}`);
+    }
+    await c.close();
+  }
+  // About and credits, and the ? help line on another page.
+  {
+    const [c, p] = await open(390, 844, '#about');
+    const r = await p.evaluate(() => {
+      const a = document.querySelector('#view .about'),
+        secs = a ? [...a.querySelectorAll('section')] : [],
+        refs = secs.find(s => /References/.test(s.querySelector('h3')?.textContent || ''));
+      return {
+        about: !!a,
+        who: !!a && /Pierre Pericard/.test(a.textContent) && /IMR/.test(a.textContent),
+        privacy: !!(a && a.querySelector('a[href="privacy.html"]')),
+        feedback: !!(a && a.querySelector('[data-rep]')),
+        licences: !!a && /CC BY/.test(a.textContent),
+        // The book may be cited under References only, never in the credits around it.
+        credited: secs.filter(s => s !== refs).some(s => /Coral Finder|Kelley|BYOGUIDES/i.test(s.textContent)),
+        bar: document.querySelector('#modes.ctx .ctx-t')?.textContent || ''
+      };
+    });
+    if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || r.credited || !/About/.test(r.bar))
+      fails.push(`About and credits page: ${JSON.stringify(r)}`);
+    await p.evaluate(() => (location.hash = 'g-Acropora'));
+    await p.waitForTimeout(500);
+    await p.click('#help');
+    await p.waitForTimeout(150);
+    const hp = await p.evaluate(() => {
+      const e = document.querySelector('#helpbox .hend');
+      return {
+        open: !document.getElementById('helpbox').hidden,
+        about: !!(e && e.querySelector('a[href="#about"]')),
+        privacy: !!(e && e.querySelector('a[href="privacy.html"]')),
+        feedback: !!(e && e.querySelector('[data-rep]'))
+      };
+    });
+    if (!hp.open || !hp.about || !hp.privacy || !hp.feedback)
+      fails.push(`? help without About, Privacy and Send feedback: ${JSON.stringify(hp)}`);
+    else {
+      await p.click('#helpbox .hend a[href="#about"]');
+      await p.waitForTimeout(400);
+      if (!(await p.$('#view .about'))) fails.push('the ? help link does not open About and credits');
+    }
+    await c.close();
+  }
+  return fails;
+}
+
 async function basicsFit(b, base) {
   const fails = [];
   for (const [w, h] of [
@@ -761,6 +992,8 @@ async function basicsFit(b, base) {
       }, h);
       await p.waitForTimeout(700);
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
+      // No credits block on any page but Home (Pierre, 2026-11-03): no footer, no Home credit line.
+      if (await p.evaluate(() => !!document.querySelector('footer, #view .hcred'))) fails.push(`${w}px #${h}: a credits footer or line`);
     }
     // Coral basics: every kind of check offers the app's report once answered (rule 11b; Codex on PR #405), and a
     // classified photo opens the enlarged view.
@@ -934,8 +1167,12 @@ async function basicsFit(b, base) {
           err('ResizeObserver loop completed with undelivered notifications.', dir + 'app.js');
         });
         await q2.waitForTimeout(300);
-        const q = await q2.evaluate(() => JSON.parse(localStorage.getItem('imr-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg)));
-        if (!q.includes('pulse:hard') || !q.some(x => /smoke test error/.test(x))) fails.push(`${w}px events not queued: ${q.join(' | ')}`);
+        const q = await q2.evaluate(() =>
+          JSON.parse(localStorage.getItem('imr-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg) + (x.src ? '@' + x.src : ''))
+        );
+        // The first one-tap question ever is the plain one (core.js PULSE0), logged with its item id.
+        if (!q.includes('pulse:hard@are') || !q.some(x => /smoke test error/.test(x)))
+          fails.push(`${w}px events not queued: ${q.join(' | ')}`);
         if (q.some(x => /__firefox__|Script error|ResizeObserver/.test(x))) fails.push(`${w}px noise errors queued: ${q.join(' | ')}`);
       }
       // Back closes an enlarged photo and stays on the page (RA review 2026-11-02).
@@ -1255,6 +1492,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
     await ctx.close();
   }
   for (const f of await basicsFit(b, base)) fails.push(f);
+  for (const f of await credits(b, base)) fails.push(f);
   await b.close();
   for (const f of await signin(base)) fails.push(f);
   server.close();
