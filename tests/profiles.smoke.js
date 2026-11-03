@@ -213,7 +213,6 @@ const server = http.createServer((req, res) => {
       CB = {r: 0, t: 0, ok: 0, f: 0};
       G.forEach(g => (P[g] = {ok: 8, ko: 2, h: '1101111011', th: 1.5, pg: 0.5}));
       out.bonusOpen = openChance([...G, ...B]);
-      out.openMax = OPEN.MAX;
       out.bonusPick = B.includes(openPick([...G, ...B].filter(n => !introduced(n))));
       out.bonusOff = (bonusSet(false), pool().filter(isBonus).length);
     }
@@ -278,6 +277,11 @@ const server = http.createServer((req, res) => {
   // the Elo"), measured on main after #408 (one opening rule, OPEN.K 8): this seed meets 12 genera by question 100 with
   // and without the change (margin 5). Over 5 seeds (tools/learnsim.js) the change does open faster: 15.6 -> 19.2 genera
   // by question 100 (seeds 12-22 -> 17-24), at 79% right (86%); a watched effect (ROADMAP), not hidden by this bound.
+  // Back to 17 with the global level's move on the genera and the success aimed for by level (2026-11-03,
+  // docs/LEARNING.md "Global level and genus", "Beginners and experts"): this seed meets 13 genera by question 100 (main
+  // 12; the level's move alone gave 18, when the limit went to 21 for a while). Margin 4. Over 5 seeds
+  // (tools/learnsim.js) the beginner meets 20.2 by question 100 (main 19.2), 28.0 by 200 (main 30.4).
+  // On the 8 seeds below: 10-19, mean 12.8 (main 14.5 after the candidate refill).
   // On the mean of 8 seeds since the candidate refill of 2026-11-03 (f9aae3a: 616 photos the auto-sort added joined
   // data.json, so every draw changed): this seed went from 12 to 19 with no change to the code, while the 8 seeds gave
   // 12-16 (mean 13.9) before and 12-19 (mean 14.5) after. One seed sat inside the spread of the seeds and failed on a
@@ -307,11 +311,10 @@ const server = http.createServer((req, res) => {
   if (e3.pct <= b3.pct + 10) fails.push(`expert's progress not clearly above a beginner's (${e3.pct}% vs ${b3.pct}%)`);
   for (const [k, v] of Object.entries(R))
     if (v.early && v.early.length) fails.push(`${k}: ${v.early.join(', ')} at 95% before being asked beside a look-alike`);
-  // Nothing shaky: the opening is as wide as it goes, OPEN.MAX (the hotfix's ceiling, 2026-11-03).
-  if (R.bonusOpen !== R.openMax || !R.bonusPick || R.bonusOff)
-    fails.push(
-      `bonus genera not met: opening chance ${R.bonusOpen} (${R.openMax} expected), opened: ${R.bonusPick}; off: ${R.bonusOff} in the pool`
-    );
+  // Nothing shaky: the opening chance is 1 (its pace is then openPace's: at most OPEN.MAX genera in OPEN.WIN answers,
+  // 2026-11-04; the hotfix of 2026-11-03 capped the chance itself at 0.5).
+  if (R.bonusOpen !== 1 || !R.bonusPick || R.bonusOff)
+    fails.push(`bonus genera not met: opening chance ${R.bonusOpen} (1 expected), opened: ${R.bonusPick}; off: ${R.bonusOff} in the pool`);
   if (!(R.cal.with > 1.3 * Math.max(10, R.cal.without)))
     fails.push(`calibration: an unrated photo was not drawn more often: ${JSON.stringify(R.cal)}`);
   if (errs.length) fails.push('page errors: ' + errs.slice(0, 3).join(' | '));

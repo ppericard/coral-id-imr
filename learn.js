@@ -327,14 +327,22 @@ document.addEventListener('click', e => {
 // Bottom of a genus sheet: the genus and each of its look-alikes at the same size and in the same view,
 // each with its deciding feature and a link to the side-by-side comparison.
 function lookHub(name) {
-  const L = lookOf(name).sort((a, b) => mixedUp(name, b) - mixedUp(name, a));
+  // The declared look-alikes, then those from the players' answers (model.js dataLooks: pairs no source names that
+  // players keep mixing up; 2026-11-04), said as such.
+  const D = new Set(
+      dataLooks()
+        .filter(p => p.includes(name))
+        .map(p => (p[0] === name ? p[1] : p[0]))
+        .filter(n => !lookOf(name).includes(n))
+    ),
+    L = [...lookOf(name), ...D].sort((a, b) => mixedUp(name, b) - mixedUp(name, a));
   return `<h3>Don't confuse with</h3>
     <div class="seg-row"><span class="label">Show</span>${viewSeg()}</div>
     <div class="lrow"><div class="lt self">${viewShot(name, cmpView)}<span><i>${esc(name)}</i><small>this genus</small><span class="psum">${esc(tipsText(GX(name)))}</span></span></div>
     ${L.map(n => {
       const m = mixedUp(name, n),
         side = DATA.gen[name] && DATA.gen[n];
-      return `<a class="lt" href="${side ? `#cmp-${esc(name)}|${esc(n)}` : `#g-${esc(n)}`}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(tipsText(GX(n)))}</span>${(GX(name).lsrc || {})[n] ? `<small class="lsrc">${esc(GX(name).lsrc[n])}</small>` : ''}<b class="cmpgo">${side ? 'Compare side by side →' : 'Open the sheet →'}</b></span></a>`;
+      return `<a class="lt" href="${side ? `#cmp-${esc(name)}|${esc(n)}` : `#g-${esc(n)}`}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(tipsText(GX(n)))}</span>${(GX(name).lsrc || {})[n] ? `<small class="lsrc">${esc(GX(name).lsrc[n])}</small>` : D.has(n) ? '<small class="lsrc">Often mixed up by players</small>' : ''}<b class="cmpgo">${side ? 'Compare side by side →' : 'Open the sheet →'}</b></span></a>`;
     }).join('')}</div>
     ${cmpShots([name])}`;
 }

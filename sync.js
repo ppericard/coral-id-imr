@@ -55,7 +55,7 @@ function syncSummary() {
 // (pendingFrom), so the replay's ids cover every queued answer the sheet already logged.
 const syncGet = (a = SYNC) =>
   sheetFetch(
-    `${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}&rv=${rvApplied()}${ptParam(a.log)}`
+    `${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}&rv=${rvAsk()}${ptParam(a.log)}`
   ).then(r => r.json());
 // The full replay of the answer log by the sheet (Pierre, 2026-11-03: progress recalculated from the whole log,
 // automatically, never by a human click, now and whenever the progress engine changes; docs/LEARNING.md "Full replay").
@@ -77,6 +77,10 @@ const syncGet = (a = SYNC) =>
 // rv field the requests carry is ignored there).
 const RVK = 'imr-coral-rv';
 const rvApplied = () => Number(store.get(RVK, 0)) || 0;
+// The rules version a request says: the one applied here, or 0 while this device holds answers the sheet logged from a
+// refused save (SYNC.lg, syncOnce): its merge baseline lacks them, so a saved copy another device built from the log
+// (a replay) may already count them, and only the replay of the log tells (mergeSaved; Codex review #399).
+const rvAsk = () => (SYNC && SYNC.lg ? 0 : rvApplied());
 // The time (ms) of the oldest answer of a queue, null when it holds none. Sent with the requests that can bring a replay
 // (pt): the sheet (v28) then lists in replay.ids every answer it replayed from that time on, so replayAdopt never counts
 // again an answer the sheet already has, however many a lost reply left queued here (up to 2,000; Codex review #399).
@@ -96,9 +100,14 @@ const ptParam = q => (pendingFrom(q) === null ? '' : `&pt=${pendingFrom(q)}`);
 // before it.
 function replayAdopt(rp, pending, v, cut, pre) {
   if (!(Number(v) >= RV_SHEET)) return false;
-  if (!rp || typeof rp.rv !== 'number' || rp.rv <= rvApplied() || !rp.rec || typeof rp.rec !== 'object') return false;
+  if (!rp || typeof rp.rv !== 'number' || !rp.rec || typeof rp.rec !== 'object') return false;
+  // A newer version, or the same one asked again for answers logged from a refused save (rvAsk).
+  if (rp.rv < rvApplied() || (rp.rv === rvApplied() && !(SYNC && SYNC.lg))) return false;
   if (typeof mxRecalc !== 'function') return false; // the quiz tier (model.js) not in yet: the next reply brings it again
   if (cut !== undefined && cut !== (store.get('imr-coral-reset', '') || '')) return false;
+  // Signed in with anonymous answers not moved to the account yet (signIn; the first save's reply clears SYNC.anon before
+  // it adopts): a replay of the account's log alone would leave them out.
+  if (SYNC && SYNC.anon) return false;
   try {
     const from = rvApplied(),
       played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && (s.ok || 0) + (s.ko || 0) > 0),
@@ -106,12 +115,19 @@ function replayAdopt(rp, pending, v, cut, pre) {
       reset = store.get('imr-coral-reset', '') || '',
       me = '~me',
       rows = (pending || []).filter(a => a && a.g && !had.has(String(a.id)) && String(a.t || '') > reset).map(a => logRow(a, me)),
+      last = Number((rp.rec[LEVEL] || {}).at) || 0,
       gen = {...((DATA && DATA.x && DATA.x.gen) || {}), ...((DATA && DATA.gen) || {})},
       R = rows.length
         ? replayProgress(rows, {gen, mem: PMEM, conf: PCONF, start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}}})[me].P
         : rp.rec,
       before = copy(P),
       M = replayedOf({P: R}, P, rp.rv);
+    // Answers of this device's queue older than the replay's last one (an offline device, another one logging since):
+    // on top of the replay they would count after newer answers, out of time order (Codex review #399: 20 right answers
+    // played offline before 10 misses logged elsewhere gave pg 0.96 and ten right answers last, for 0.19 and ten
+    // misses in time order). Not adopted, nor the version marked applied: the save that follows logs them, and its
+    // reply brings the replay of the whole log in time order.
+    if (rows.some(r => r[1] < last)) return false;
     // A mark the replay took away: the former model's (a record learned without s.pg), or a rule of the new version.
     mxRecalc(
       () => {
@@ -128,6 +144,7 @@ function replayAdopt(rp, pending, v, cut, pre) {
     // unsent answer went into the base and was lost at the next merge (Codex review #399: 3 became 2).
     if (SYNC) {
       SYNC.base = replayBase(rp.rec, M, rp.rv, SYNC.base);
+      delete SYNC.lg; // the replay counts every logged answer
       store.set('imr-coral-sync', SYNC);
     }
     save();
@@ -241,10 +258,20 @@ function mergeSaved(j) {
   // whole log again, every answer of every device counted once, this device's unsent ones on top (replayAdopt). The
   // cost: one more replay.
   const rvSaved = Number(d[RVK]) || 0;
-  if (!mine) {
+  // Answers this device had logged from a refused save (SYNC.lg): another device may have saved them already, in its
+  // replay of the log, and the merge would add them again as this device's own (Codex review #399: 3 answers, a baseline
+  // of 2, a saved replay of the 3: 3 + 3 - 2 = 4, kept for good). The replay of the log, which the load asked for
+  // (rvAsk), counts every one once: adopted, it replaces the merge; without it, the merge as usual.
+  const recovered = !!(SYNC.lg && j.replay && replayAdopt(j.replay, SYNC.log, j.v, undefined, pre));
+  if (!mine && !recovered) {
     if (rvSaved >= rvApplied()) {
       // In place: other code holds P by name only, but keep the same object anyway.
       const M = mergeProgress(SYNC.base || {}, P, R);
+      // A copy under newer rules than this device applied (another device adopted their replay): a learned mark that
+      // replay took away is not taken here by the merge, which would tell nothing (the mark gone before mxRecalc sees it;
+      // Codex review #399). It stays until this device adopts the same replay (replayAdopt, in this very sync when the
+      // reply carries it, else at the next), which decides it with this device's own card (the cards are per device).
+      if (rvSaved > rvApplied()) Object.keys(M).forEach(g => g !== LEVEL && P[g] && P[g].mx && M[g] && !M[g].mx && (M[g].mx = P[g].mx));
       Object.keys(P).forEach(g => delete P[g]);
       Object.assign(P, M);
       // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
@@ -306,7 +333,7 @@ function syncOnce(tries = 0) {
           summary: syncSummary(),
           answers: log,
           av: appVer(), // the app's version (sheet v25: a request without it comes from an app before 2026-11-03)
-          rv: rvApplied(), // the rules version applied here (sheet v28: an older one gets the full replay back)
+          rv: rvAsk(), // the rules version applied here (sheet v28: an older one gets the full replay back)
           ...(pendingFrom(log) === null ? {} : {pt: pendingFrom(log)}), // the replay's ids cover every answer sent (pendingFrom)
           // First send after signing in: the answers this device sent anonymously move to this name (script v12).
           ...(me.anon ? {anon: me.anon} : {}),
@@ -320,6 +347,8 @@ function syncOnce(tries = 0) {
       if (j.log && log.length) {
         const done = new Set(log.map(x => x.id));
         me.log = (me.log || []).filter(x => !done.has(x.id));
+        // Logged, but the progress carrying them not saved: the merge baseline lacks answers the log has (rvAsk).
+        if (!j.ok) me.lg = 1;
         store.set('imr-coral-sync', me);
       }
       // The retry is a whole sync of its own: its result skips the steps below (they would apply this round's sent copy).
@@ -335,6 +364,7 @@ function syncOnce(tries = 0) {
       if (j && j.ok && SYNC === me) {
         me.last = new Date().toISOString();
         me.base = sent;
+        delete me.lg; // the saved copy now holds the answers it lacked
         if (typeof j.rev === 'number') me.srv = j.rev;
         delete me.pending;
         delete me.err;
@@ -899,6 +929,15 @@ function signIn(name, pin, j) {
     localStorage.removeItem(RVK);
   } catch (e) {}
   loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => k !== 'imr-coral-progress')));
+  // Answers played here without an account (queued in the log, or already sent under the anonymous id, moved to the name
+  // by the first save: SYNC.anon) join the account's: the account's rules version is not this merged progress's, whose
+  // replay never had them (Codex review #399: 20 right answers played before the account's 10 misses kept pg 0.9 and ten
+  // right answers last, for 0.19 and ten misses in time order). Left unapplied, so the first save, which brings them into
+  // the account's log, gets the replay of the whole of it (replayAdopt adopts nothing before: SYNC.anon).
+  if (anon || SYNC.anon)
+    try {
+      localStorage.removeItem(RVK);
+    } catch (e) {}
   if (mine) achMerge(JSON.stringify(mine));
   store.set('imr-coral-progress', M);
   if (!anon) delete SYNC.dirty;
@@ -922,50 +961,36 @@ const nudgeDue = () =>
   store.get(LOG0, []).length >= NUDGE_AT;
 // once = the one-time card (marks it used); play = once signed in, its button opens the photo quiz (skipped tour).
 // The header's Sign in button opens it with neither: it closes with "Close" or "Done".
+// The card (app.js cardShow) holds the account box (bindSync), which draws its own title and redraws itself as the player
+// signs in; its one button reads Later / Close, then Done or Start playing once signed in. Escape, Enter outside the form
+// and a tap outside close it; the focus goes back to the question's Next when there is one.
 function signinNudge(once = true, play = !once) {
   if (once) store.set(NUDGE, 1);
-  const d = document.createElement('div');
-  d.className = 'unlock signnudge';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Sign in');
-  d.innerHTML = `<div class="ulcard"><section class="sync tsync"></section><div class="ulbtns"><span></span><button class="next sec" type="button">Later</button></div></div>`;
-  document.body.appendChild(d);
+  const d = cardShow({
+    kind: 'account',
+    cls: 'signnudge',
+    label: 'Sign in',
+    body: '<section class="sync tsync"></section>',
+    secondary: {text: 'Later', on: () => play && SYNC && go('quiz')}, // from a skipped tour: once signed in, the photo quiz
+    esc: 'esc',
+    enter: 'enter',
+    tap: 'tap',
+    focus: '.ulbtns button', // its button, not the name field: no keyboard popping up on a phone
+    onClose: () => {
+      bindSync();
+      const nb = document.getElementById('next');
+      if (nb) nb.focus({preventScroll: true});
+    }
+  });
   const box = d.querySelector('.tsync'),
     btn = d.querySelector('.ulbtns button');
-  const close = () => {
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-    bindSync();
-    const nb = document.getElementById('next');
-    if (nb) nb.focus({preventScroll: true});
-  };
-  const key = e => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      close();
-    } else if (e.key === 'Enter' && !(e.target.closest && e.target.closest('form'))) {
-      e.stopPropagation();
-      e.preventDefault();
-      close();
-    }
-  };
-  document.addEventListener('keydown', key, true);
-  d.ulClose = close; // leaving the page closes it (route)
-  // From a skipped tour, the card ends on the games: once signed in, its button starts the photo quiz.
-  btn.onclick = () => {
-    close();
-    if (play && SYNC) go('quiz');
-  };
-  d.addEventListener('click', e => {
-    if (e.target === d) close();
-  });
   const label = () => {
     btn.textContent = SYNC ? (play ? 'Start playing' : 'Done') : once || play ? 'Later' : 'Close';
     btn.classList.toggle('sec', !SYNC);
+    d.relabel();
   };
-  label();
   bindSync(box);
+  label();
   new MutationObserver(label).observe(box, {childList: true});
 }
 // The account box: the top of ⚙ (#sync), or the sign-in card (tour, nudge, header button) while one is open.

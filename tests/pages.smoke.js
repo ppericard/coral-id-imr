@@ -35,6 +35,8 @@ const ROUTES = [
   'lab-basics|words',
   'about',
   'credits',
+  'lab-cards',
+  'lab-cards|update',
   'quiz-duel|Foo|Bar',
   'g-%E0'
 ]; // the last two are malformed links: they must not crash a page
@@ -146,6 +148,85 @@ async function overlays(b, base) {
       });
       if (!v) fails.push(`broken-image icon on the card of ${off}`);
       await p.keyboard.press('Escape');
+    }
+    await c.close();
+  }
+  // Cards (2026-11-03, app.js cardShow): every kind comes from the one builder, through its real caller where it has one
+  // (the apology and the update card with a former %, which wait on other branches, through cardShow itself): one
+  // overlay, role dialog, aria-modal, labelled by its title (an h3), the kind's medallion (or the genus photo band), the
+  // focus inside and kept there on Tab, Escape closes it and the focus goes back where it was.
+  for (const w of [390, 1280]) {
+    const [c, p] = await open({viewport: {width: w, height: 844}}, () => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+      localStorage.setItem('imr-recalc', '"typed-questions-2026-11"');
+      localStorage.getItem('imr-coral-progress') ||
+        localStorage.setItem('imr-coral-progress', JSON.stringify({Acropora: {ok: 3, ko: 1, h: '1101'}}));
+    });
+    await p.goto(base + '#quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('#view [data-c]');
+    const CASES = [
+      ['genus', () => introShow([slateGenera()[1]], false)],
+      ['tip', () => introOfferShow()],
+      ['tip', () => backShow()],
+      ['bonus', () => bonusOfferShow()],
+      ['feature', () => (store.set(RECALC.KEY, RECALC.L[RECALC.L.length - 2].id), recalcNotice())],
+      ['account', () => signinNudge(false, false)],
+      ['apology', () => cardShow({kind: 'apology', kick: 'Sorry', title: 'Smoke', body: '<p>t</p>', primary: {text: 'Thanks'}, esc: 1})],
+      // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD), and
+      // the learned mark taken away (progress.js mxLostNotice), through their real callers.
+      ['update', () => (store.set('imr-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
+      ['update', () => (store.set(MXL.KEY, {due: {Acropora: 1}}), mxLostNotice())]
+    ];
+    for (let i = 0; i < CASES.length; i++) {
+      const [kind] = CASES[i];
+      await p.evaluate(() => {
+        document.querySelectorAll('.unlock').forEach(x => x.ulClose());
+        document.getElementById('smokeopener') || document.body.insertAdjacentHTML('beforeend', '<button id="smokeopener">x</button>');
+        document.getElementById('smokeopener').focus();
+      });
+      await p.evaluate(`(${CASES[i][1]})()`);
+      await p.waitForTimeout(150);
+      const r = await p.evaluate(() => {
+        const d = document.querySelectorAll('.unlock'),
+          u = d[0],
+          ids = ((u && u.getAttribute('aria-labelledby')) || '').split(' ').filter(Boolean),
+          h = ids.map(x => document.getElementById(x)).filter(Boolean);
+        return {
+          n: d.length,
+          role: u && u.getAttribute('role'),
+          modal: u && u.getAttribute('aria-modal'),
+          title: h.some(x => x.tagName === 'H3' && x.textContent.trim() && u.contains(x)),
+          kind: u && u.querySelector('.ulcard').dataset.k,
+          look: !!(u && (u.querySelector('.ulmed') || u.querySelector('.ulphoto img'))),
+          focus: !!(u && u.contains(document.activeElement))
+        };
+      });
+      let kept = true;
+      for (let t = 0; t < 8; t++) {
+        await p.keyboard.press(t % 3 === 2 ? 'Shift+Tab' : 'Tab');
+        kept = kept && (await p.evaluate(() => !!document.querySelector('.unlock')?.contains(document.activeElement)));
+      }
+      await p.keyboard.press('Escape');
+      await p.waitForTimeout(100);
+      const after = await p.evaluate(() => ({
+        gone: !document.querySelector('.unlock'),
+        back: document.activeElement?.id === 'smokeopener'
+      }));
+      if (
+        r.n !== 1 ||
+        r.role !== 'dialog' ||
+        r.modal !== 'true' ||
+        !r.title ||
+        r.kind !== kind ||
+        !r.look ||
+        !r.focus ||
+        !kept ||
+        !after.gone ||
+        !after.back
+      )
+        fails.push(`${w}px card ${i} (${kind}) through cardShow: ${JSON.stringify({...r, kept, ...after})}`);
     }
     await c.close();
   }
@@ -431,25 +512,52 @@ async function overlays(b, base) {
     if (r.btn !== want[0] || r.yes !== want[1] || !r.next) fails.push(`right-answer celebration (${reducedMotion}): ${JSON.stringify(r)}`);
     await c.close();
   }
-  // Custom quiz (quiz.js viewCustom, quizCustom; 2026-11-03), on a phone: nothing picked at first (Start off), A-Z, photos
-  // picked and Clear all, a quick pick (a genus and its look-alikes), the IMR groups view and the search, the choice kept
-  // after a reload (in the view left), then a dozen questions all on the genera picked, logged quiz|s…; the Practice tabs fit the width.
+  // Custom quiz (quiz.js viewCustom, quizCustom; 2026-11-03), on a phone: nothing picked at first (Start off); IMR groups
+  // by default (Pierre: "nobody picks genera alphabetically"), also on a device that had kept the old A-Z view; My mix-ups
+  // with the declared look-alikes and a note before any mix-up, then the player's own clusters with their counts; the
+  // Progress view; photos picked and Clear all, a quick pick (a genus and its look-alikes), the search, the choice and
+  // the view kept after a reload, then a dozen questions all on the genera picked, logged quiz|s…; nothing wider than
+  // the screen in any view (the Practice tabs included), at 390 and 360 px.
   {
-    const [c, p] = await open({viewport: {width: 390, height: 844}}, seen);
+    const [c, p] = await open({viewport: {width: 390, height: 844}}, () => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+      if (!sessionStorage.getItem('cq-old')) {
+        sessionStorage.setItem('cq-old', '1');
+        localStorage.setItem('imr-custom-view', '"az"'); // the A-Z view kept by a device before 2026-11-03
+      }
+    });
     await p.goto(base + '#quiz-custom');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     await p.waitForSelector('.cqtile');
     const state = () =>
       p.evaluate(() => ({
+        view: document.querySelector('[data-cv][aria-pressed="true"]').dataset.cv,
         on: [...new Set([...document.querySelectorAll('.cqtile[aria-pressed="true"]')].map(b => b.dataset.g))].sort(),
         start: !document.querySelector('[data-start]').disabled,
         n: document.querySelector('.cqn b').textContent,
         shown: [...new Set([...document.querySelectorAll('.cqtile:not([hidden])')].map(b => b.dataset.g))],
         tabs: (m => m.scrollWidth <= m.clientWidth)(document.getElementById('modes')),
-        heads: document.querySelectorAll('.cqg:not([hidden]) .cqh').length,
-        tiles: [...document.querySelectorAll('.cqtile')].map(b => b.dataset.g)
+        wide: [...document.querySelectorAll('#view *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1).length,
+        heads: [...document.querySelectorAll('.cqg:not([hidden]) .cqht')].map(h => h.textContent),
+        first: [...document.querySelectorAll('.cqg:first-of-type .cqtile')].map(b => b.dataset.g),
+        tiles: [...document.querySelectorAll('.cqtile')].map(b => b.dataset.g),
+        note: !!document.querySelector('.cqnote'),
+        play: pool()
       }));
     const s0 = await state();
+    await p.click('[data-cv="mix"]');
+    const m0 = await state();
+    // A player who mixed Pocillopora up with Stylophora 4 times and Seriatopora with Stylophora 3 times.
+    await p.evaluate(() => {
+      P.Pocillopora = {...(P.Pocillopora || {}), ok: 3, ko: 4, conf: {Stylophora: 4}};
+      P.Seriatopora = {...(P.Seriatopora || {}), ok: 2, ko: 3, conf: {Stylophora: 3}};
+    });
+    await p.click('[data-cv="prog"]');
+    const g0 = await state();
+    await p.click('[data-cv="mix"]');
+    const m1 = await state();
+    await p.click('[data-cv="imr"]');
     for (const g of ['Acropora', 'Pocillopora', 'Porites']) await p.click(`.cqtile[data-g="${g}"]`);
     const s1 = await state();
     await p.click('[data-clear]');
@@ -457,21 +565,36 @@ async function overlays(b, base) {
     await p.selectOption('#cqlk', 'Pocillopora');
     const s3 = await state(),
       looks = await p.evaluate(() => cqLooks('Pocillopora', pool()).sort());
-    await p.click('[data-cv="imr"]');
-    const s4 = await state();
     await p.fill('#cqq', 'acro');
     const s5 = await state();
+    await p.click('[data-cv="mix"]'); // the view kept after the reload
     await p.reload();
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     await p.waitForSelector('.cqtile');
     const s6 = await state();
+    const all = L => [...new Set(L)].sort().join(),
+      trio = s0.play.filter(n => ['Pocillopora', 'Stylophora', 'Seriatopora'].includes(n)); // a cluster in the game's order
     if (
+      s0.view !== 'imr' ||
+      s0.heads.length < 5 || // the IMR lecture groups, every genus in play in view, the first group in the IMR order
+      all(s0.tiles) !== all(s0.play) ||
+      s0.first.join() !== s0.play.filter(n => s0.first.includes(n)).join() ||
       s0.on.length ||
-      s0.heads || // A-Z by default: one grid, every genus in play once, in order (no grouping by growth form)
-      s0.tiles.join() !== [...s0.tiles].sort((a, b) => a.localeCompare(b)).join() ||
-      new Set(s0.tiles).size !== s0.tiles.length ||
       s0.start ||
       !s0.tabs ||
+      s0.wide ||
+      m0.view !== 'mix' ||
+      !m0.note || // no mix-up yet: the declared look-alike sets, said so
+      m0.heads.length < 3 ||
+      m0.wide ||
+      g0.view !== 'prog' ||
+      !g0.heads.includes('Not seen yet') ||
+      !g0.heads.some(h => /^(To review|Learning)$/.test(h)) ||
+      g0.wide ||
+      m1.note ||
+      m1.heads[0] !== `${trio.join(' · ')} 7 mix-ups` ||
+      m1.first.join() !== trio.join() ||
+      m1.wide ||
       s1.on.join() !== 'Acropora,Pocillopora,Porites' ||
       !s1.start ||
       s1.n !== '3 genera' ||
@@ -479,15 +602,24 @@ async function overlays(b, base) {
       s2.start ||
       s3.on.join() !== looks.join() ||
       looks.length < 2 ||
-      s4.on.join() !== s3.on.join() ||
-      s4.heads < 5 || // the IMR lecture groups, their genera in view
-      [...s4.tiles].sort().join() !== [...s0.tiles].sort().join() ||
       s5.shown.some(g => !/acro/i.test(g)) ||
       !s5.shown.includes('Acropora') ||
+      s6.view !== 'mix' ||
       s6.on.join() !== looks.join() ||
       !s6.start
     )
-      fails.push(`custom quiz selection: ${JSON.stringify({s0, s1, s2, s3, looks, s4, s5, s6})}`);
+      fails.push(
+        `custom quiz selection: ${JSON.stringify({s0, m0, g0, m1, s1, s2, s3, looks, s5, s6}, (k, v) => (k === 'play' || k === 'tiles' ? undefined : v))}`
+      );
+    // 360 px: every view fits the width.
+    await p.setViewportSize({width: 360, height: 780});
+    for (const v of ['imr', 'mix', 'prog']) {
+      await p.click(`[data-cv="${v}"]`);
+      const w = await state();
+      if (w.wide || !w.tabs) fails.push(`custom quiz at 360 px, view ${v}: ${w.wide} elements wider than the screen, tabs fit ${w.tabs}`);
+    }
+    await p.click('[data-cv="imr"]');
+    await p.setViewportSize({width: 390, height: 844});
     await p.click('[data-start]');
     const asked = [],
       modes = [];
@@ -543,6 +675,69 @@ async function overlays(b, base) {
       });
       if (t.names !== want || t.on !== on || !t.fit) fails.push(`${w}px Practice tabs on #${h}: ${JSON.stringify(t)}`);
     }
+    await c.close();
+  }
+  // The apology card (core.js SORRY, sorryOf, sorryFelt; progress.js sorryNotice; 2026-11-04): once, at app open, to a
+  // player who felt the broken opening (20 answers or more between #408's merge and the first run of this version, the
+  // opening hold's sum at 3 or more then); "Hi!" signed out (the sign-in name: signin(), below); its button or Escape
+  // close it for good; never to a player of a single answer or whose answers are all from before. The clock is fixed on
+  // the morning after (Manila), so the test does not expire with the card.
+  for (const [lab, at, n, want] of [
+    ['25 answers in the window, the hold at 3.5', '2026-11-03T13:00:00Z', 25, 'Hi! Sorry about your last run.'],
+    ['one answer in the window', '2026-11-03T13:00:00Z', 1, null],
+    ['25 answers before it', '2026-11-03T09:00:00Z', 25, null]
+  ]) {
+    const [c, p] = await open(
+      {viewport: {width: 390, height: 800}, timezoneId: 'Asia/Manila'},
+      ({t, n}) => {
+        localStorage.setItem('imr-tour', '"done"');
+        localStorage.setItem('imr-nudge', '1');
+        localStorage.setItem('imr-recalc', '"typed-questions-2026-11"'); // the last update note: seen
+        if (localStorage.getItem('imr-coral-progress')) return;
+        const last = t + n * 20000;
+        localStorage.setItem(
+          'imr-coral-progress',
+          JSON.stringify({'~level': {ok: n, ko: 0, th: 0.5, at: last}, Acropora: {ok: n, ko: 0, h: '1111', at: last}})
+        );
+        localStorage.setItem('imr-hold', String(n > 1 ? 3.5 : 0.7));
+        localStorage.setItem(
+          'imr-log0',
+          JSON.stringify(
+            Array.from({length: n}, (_, k) => ({
+              id: 'x' + k,
+              t: new Date(t + k * 20000).toISOString(),
+              g: 'Acropora',
+              a: 'Acropora',
+              ok: 1,
+              e: 0.8
+            }))
+          )
+        );
+      },
+      {t: Date.parse(at), n}
+    );
+    await p.clock.setFixedTime(new Date('2026-11-04T03:00:00Z'));
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    if (want) {
+      await p.waitForSelector('.sorry', {timeout: 8000}).catch(() => {});
+      const r = await p.evaluate(() => ({
+        n: document.querySelectorAll('.unlock').length,
+        h: (document.querySelector('.sorry h3') || {}).textContent,
+        t: (document.querySelector('.sorry p:not(.ulkick)') || {}).textContent
+      }));
+      if (r.n !== 1 || r.h !== want || !/^Yesterday evening we adjusted how the app picks your questions/.test(r.t || ''))
+        fails.push(`apology card, ${lab}: ${JSON.stringify(r)}`);
+      await p.keyboard.press('Escape');
+      if (await p.$('.sorry')) fails.push('apology card: Escape does not close it');
+      await p.reload();
+      await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    }
+    await p.waitForTimeout(2500);
+    if (await p.$('.sorry'))
+      fails.push(
+        `apology card, ${lab}: ${want ? 'shown twice' : 'shown'} ${await p.evaluate(() => localStorage.getItem('imr-sorry-first'))}`
+      );
     await c.close();
   }
   return fails;
@@ -636,6 +831,28 @@ async function signin(base) {
       prog: JSON.parse(localStorage.getItem('imr-coral-progress') || '{}'),
       posts: JSON.parse(localStorage.getItem('test-sheet-log') || '[]').filter(x => x.post && x.name)
     }));
+  // The apology card greets a signed-in player by the first word of their sign-in name (core.js sorryText); asked here
+  // with the clock on the morning after, the device's own answer in the window, the account from the stub sheet.
+  await run(
+    () => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+      localStorage.setItem('imr-recalc', '"typed-questions-2026-11"');
+      // What the device read at this version's first run (core.js sorryOf): 30 answers in the window, the hold at 3.5.
+      localStorage.setItem('imr-sorry-first', JSON.stringify({t: Date.parse('2026-11-04T01:00:00Z'), n: 30, h: 3.5, c: 0}));
+      localStorage.setItem('imr-coral-sync', JSON.stringify({name: 'Anna', pin: '1234'}));
+      const t = Date.parse('2026-11-03T13:00:00Z');
+      localStorage.setItem('imr-coral-progress', JSON.stringify({'~level': {ok: 5, ko: 1, th: 0.5, at: t}, Pavona: {ok: 5, ko: 1, at: t}}));
+    },
+    async p => {
+      await p.clock.setFixedTime(new Date('2026-11-04T03:00:00Z'));
+      await p.evaluate(() => document.querySelectorAll('.sorry').forEach(x => x.remove()));
+      await p.evaluate(() => (localStorage.removeItem('imr-sorry'), sorryNotice()));
+      await p.waitForSelector('.sorry', {timeout: 5000});
+      const h = await p.evaluate(() => document.querySelector('.sorry h3').textContent);
+      if (h !== 'Hi Anna! Sorry about your last run.') fails.push(`apology card, signed in: ${h}`);
+    }
+  );
   // A device with progress of its own (3 answers played signed out).
   await run(
     () => {
@@ -1305,8 +1522,9 @@ async function basicsFit(b, base) {
     await p.goto(base + '#lab');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     for (const st of ['colony', 'polyp', 'corallite', 'septa', 'teeth', 'walls', 'forms']) {
+      // The walls check opens once the four wall types have been seen (basicsTeach checks that part).
       await p.evaluate(s => {
-        localStorage.removeItem('imr-basics');
+        localStorage.setItem('imr-basics', JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {}));
         location.hash = 'lab-basics|' + s;
       }, st);
       await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
@@ -1335,6 +1553,221 @@ async function basicsFit(b, base) {
       if (r.check > r.room) fails.push(`${w}x${h} Coral basics ${st}: the answered check takes ${r.check} px, only ${r.room} px on screen`);
       if (r.srcs < r.photos) fails.push(`${w}x${h} Coral basics ${st}: ${r.photos} check photos, ${r.srcs} source pills after the answer`);
     }
+    await c.close();
+  }
+  return fails;
+}
+
+// Coral basics, Pierre's feedback of 2026-11-03: step 4 defines costae beside septa (a term of its own, a label in its own
+// colour outside the cup's rim, the septa label inside it, the centre on the cup's centre); step 6 shows the four wall
+// types one after the other, "Next: Growth forms" only after the fourth, the check opening then; step 7 picks a form on a
+// drawn icon and shows 2-3 large photos of it, each enlarged with its genus; every teaching photo opens the enlarged
+// view when tapped, with its labels over the whole photo and a Labels switch. Returns the failures.
+async function basicsTeach(b, base) {
+  const fails = [];
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+    });
+    const p = await c.newPage(),
+      errs = [];
+    p.on('pageerror', e => errs.push(e.message));
+    const go = async (st, seen = {}) => {
+      await p.evaluate(
+        ([s, v]) => {
+          localStorage.setItem('imr-basics', JSON.stringify(v));
+          location.hash = 'lab-basics|' + s;
+        },
+        [st, seen]
+      );
+      await p.waitForSelector('.bx-fig .bx-zoom, .bx-forms', {timeout: 15000});
+    };
+    const W = `${w}px Coral basics`;
+    await p.goto(base + '#lab');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    // Step 4: septa inside the rim, costae outside it, the centre on the rim's centre; Costae defined as its own term.
+    await go('septa');
+    const sp = await p.evaluate(() => {
+      const q = s => document.querySelector(s),
+        rim = q('.bx-fig .bx-rim'),
+        at = (e, k) => Number(e.getAttribute(k));
+      // distance from the rim's centre in rim radii: < 1 inside the rim, 1 on it
+      const inRim = d => Math.hypot((at(d, 'cx') - at(rim, 'cx')) / at(rim, 'rx'), (at(d, 'cy') - at(rim, 'cy')) / at(rim, 'ry'));
+      return {
+        rim: !!rim,
+        sep: q('.bx-fig .bx-dot.sep') && inRim(q('.bx-fig .bx-dot.sep')),
+        cos: q('.bx-fig .bx-dot.cos') && inRim(q('.bx-fig .bx-dot.cos')),
+        ctr: q('.bx-fig .bx-dot.ctr') && inRim(q('.bx-fig .bx-dot.ctr')),
+        labs: [...document.querySelectorAll('.bx-fig .bx-lab')].map(e => e.className + ':' + e.textContent),
+        more: (q('.bx-more') || {}).textContent || '',
+        key: (q('.bx-key') || {}).textContent || '',
+        off: [...document.querySelectorAll('.bx-side .bx-off')].map(e => e.textContent).join(' | ')
+      };
+    });
+    if (!sp.rim) fails.push(`${W} septa: no rim drawn on the photo`);
+    else {
+      if (!(sp.sep < 0.75)) fails.push(`${W} septa: the septa point is not well inside the rim (${sp.sep})`);
+      // Costae are immediately outside the wall (Pierre, PR #424): past the rim, by less than a quarter of its radius.
+      if (!(sp.cos > 1.05 && sp.cos < 1.25)) fails.push(`${W} septa: the costae point is not just outside the rim (${sp.cos} rim radii)`);
+      if (!(sp.ctr < 0.4)) fails.push(`${W} septa: the centre point is not near the rim's centre (${sp.ctr})`);
+    }
+    if (!sp.labs.some(l => /\bsep\b/.test(l) && /septa/.test(l)) || !sp.labs.some(l => /\bcos\b/.test(l) && /costae/.test(l)))
+      fails.push(`${W} septa: no septa and costae labels in their colours: ${sp.labs.join(', ')}`);
+    if (!/^Costae: /.test(sp.more) || !/costae/.test(sp.key) || !/slide 13: “When septa cross the wall/.test(sp.off))
+      fails.push(`${W} septa: costae not defined as a term of its own with IMR Lecture 6 slide 13`);
+    // Tapping the photo enlarges it with the step's labels over the whole photo, and a Labels switch.
+    await p.click('.bx-fig .bx-zoom');
+    await p.waitForSelector('#lightbox .lb-over .bx-lab', {timeout: 5000}).catch(() => {});
+    // the photo has loaded (here from the local fallback) and the layer has followed it
+    await p
+      .waitForFunction(
+        () => {
+          const a = document.querySelector('#lightbox .lb-in img').getBoundingClientRect(),
+            o = document.querySelector('#lightbox .lb-over').getBoundingClientRect();
+          return a.width > 200 && Math.abs(a.width - o.width) < 2 && Math.abs(a.top - o.top) < 2;
+        },
+        null,
+        {timeout: 8000}
+      )
+      .catch(() => {});
+    const lb = await p.evaluate(() => {
+      const im = document.querySelector('#lightbox .lb-in img'),
+        ov = document.querySelector('#lightbox .lb-over');
+      if (!im || !ov) return null;
+      const a = im.getBoundingClientRect(),
+        o = ov.getBoundingClientRect();
+      return {
+        d: Math.max(Math.abs(a.left - o.left), Math.abs(a.top - o.top), Math.abs(a.width - o.width), Math.abs(a.height - o.height)),
+        labs: ov.querySelectorAll('.bx-lab').length
+      };
+    });
+    if (!lb || lb.d > 2 || lb.labs < 3)
+      fails.push(`${W} septa: the enlarged photo has no labels on it, or they are off the photo: ${JSON.stringify(lb)}`);
+    // The drawing of the layer (rim, dots, pointers) fills it like the labels (Codex on PR #424): its box is the layer's and
+    // each dot sits at its photo coordinates, at fit and at actual size.
+    const marks = () =>
+      p.evaluate(() => {
+        const ov = document.querySelector('#lightbox .lb-over'),
+          o = ov.getBoundingClientRect(),
+          sv = ov.querySelector('svg').getBoundingClientRect(),
+          vb = ov.querySelector('svg').viewBox.baseVal;
+        let d = Math.max(
+          Math.abs(sv.left - o.left),
+          Math.abs(sv.top - o.top),
+          Math.abs(sv.width - o.width),
+          Math.abs(sv.height - o.height)
+        );
+        ov.querySelectorAll('.bx-dot').forEach(c => {
+          const r = c.getBoundingClientRect(),
+            x = o.left + (c.cx.baseVal.value / vb.width) * o.width,
+            y = o.top + (c.cy.baseVal.value / vb.height) * o.height;
+          d = Math.max(d, Math.abs(r.left + r.width / 2 - x), Math.abs(r.top + r.height / 2 - y));
+        });
+        return Math.round(d);
+      });
+    const fitD = await marks();
+    if (fitD > 2) fails.push(`${W} septa: the enlarged photo's rings and pointers are ${fitD} px off the photo`);
+    await p.evaluate(() => document.querySelector('#lightbox .lb-in img').click());
+    await p.waitForTimeout(800);
+    const fullD = await marks();
+    if (fullD > 2) fails.push(`${W} septa: at actual size, the rings and pointers are ${fullD} px off the photo`);
+    await p.evaluate(() => document.querySelector('#lightbox .lb-in img').click());
+    await p.click('#lightbox [data-ov]').catch(() => fails.push(`${W} septa: no Labels switch in the enlarged view`));
+    if (!(await p.evaluate(() => document.querySelector('#lightbox .lb-over').hidden)))
+      fails.push(`${W} septa: Labels off left the labels on`);
+    await p.click('#lightbox [data-x]');
+    // Every step's teaching photo is the enlarge button (no small "Enlarge" link any more).
+    for (const st of ['colony', 'polyp', 'corallite', 'teeth']) {
+      await go(st);
+      const z = await p.evaluate(() => ({
+        n: document.querySelectorAll('.bx-fig .bx-zoom .zic').length,
+        link: [...document.querySelectorAll('.bx-fig button')].some(b => b.textContent === 'Enlarge')
+      }));
+      if (!z.n || z.link) fails.push(`${W} ${st}: the photo is not the enlarge button (${JSON.stringify(z)})`);
+      await p.click('.bx-fig .bx-zoom');
+      if (!(await p.waitForSelector('#lightbox .lb-over', {timeout: 5000}).catch(() => null)))
+        fails.push(`${W} ${st}: tapping the photo does not enlarge it with its labels`);
+      await p.click('#lightbox [data-x]').catch(() => {});
+    }
+    // Step 6: the four wall types in turn; the next step only after the fourth; the check opens then.
+    await go('walls');
+    const seen = [];
+    for (let k = 0; k < 6; k++) {
+      const st = await p.evaluate(() => ({
+        on: (document.querySelector('.bx-wtabs [aria-pressed="true"]') || {}).dataset?.w,
+        next: (document.querySelector('.bx-nav .next') || {}).textContent || '',
+        open: document.querySelector('.bx-check').open
+      }));
+      seen.push(st.on);
+      if (/Growth forms/.test(st.next) && new Set(seen).size < 4)
+        fails.push(`${W} walls: "Next: Growth forms" after only ${seen.join(', ')}`);
+      if (st.open && new Set(seen).size < 4) fails.push(`${W} walls: the check is open before the four types were seen`);
+      if (!/Next wall type/.test(st.next)) {
+        if (new Set(seen).size !== 4 || !st.open) fails.push(`${W} walls: ended after ${seen.join(', ')}, check open ${st.open}`);
+        break;
+      }
+      await p.click('.bx-nav .bx-wnext');
+    }
+    if (new Set(seen).size !== 4) fails.push(`${W} walls: the four wall types were not all shown: ${seen.join(', ')}`);
+    // Step 7: 7 drawn form icons; each shows 2-3 large example photos, each enlarged with its genus named.
+    await go('forms');
+    const nf = await p.evaluate(() => document.querySelectorAll('.bx-forms [data-f] svg.bx-fi').length);
+    if (nf !== 7) fails.push(`${W} forms: ${nf} drawn form icons, not 7`);
+    for (let j = 0; j < 7; j++) {
+      await p.click(`.bx-forms [data-f="${j}"]`);
+      const ex = await p.evaluate(() =>
+        [...document.querySelectorAll('.bx-fex figure')].map(f => ({
+          w: Math.round(f.querySelector('img').getBoundingClientRect().width),
+          g: (f.querySelector('figcaption i') || {}).textContent || '',
+          // rule 7: 0 IMR lecture photo, 1 Pierre's own, 2 another observer's
+          r: (n => {
+            const fi = (f
+                .querySelector('img')
+                .getAttribute('src')
+                .match(/img\/([^/?]+?)(?:-[mst])?\.webp/) || [])[1],
+              q = [...Object.values(DATA.gen[n].views).flat(), ...(DATA.course[n] || [])].find(x => x.f === fi) || {};
+            return q.imr ? 0 : q.own ? 1 : 2;
+          })((f.querySelector('figcaption i') || {}).textContent)
+        }))
+      );
+      const name = await p.evaluate(j => document.querySelectorAll('.bx-forms [data-f]')[j].textContent, j);
+      if (ex.length < 2 || ex.length > 3) fails.push(`${W} forms ${name}: ${ex.length} example photos`);
+      // Larger than the old 4-per-row thumbnails (about a quarter of the column).
+      if (ex.length && Math.max(...ex.map(e => e.w)) < (w < 600 ? 330 : 400))
+        fails.push(`${W} forms ${name}: the largest example is ${Math.max(...ex.map(e => e.w))} px wide`);
+      if (ex.some(e => !e.g)) fails.push(`${W} forms ${name}: an example photo without its genus`);
+      if (ex.some((e, i) => i && e.r < ex[i - 1].r))
+        fails.push(
+          `${W} forms ${name}: examples not in rule 7's order (IMR, Pierre's, others): ${ex.map(e => e.g + ':' + e.r).join(', ')}`
+        );
+    }
+    await p.click('.bx-fex .bx-fx');
+    const cap = await p
+      .waitForSelector('#lightbox .lb-cap', {timeout: 5000})
+      .then(e => e.textContent())
+      .catch(() => '');
+    if (!/Mushroom|Danafungia|Herpolitha|Fungia/.test(cap) || !/·/.test(cap))
+      fails.push(`${W} forms: the enlarged example has no genus or credit: "${cap}"`);
+    await p.click('#lightbox [data-x]').catch(() => {});
+    // Words lists Costae and opens step 4.
+    await p.evaluate(() => (location.hash = 'lab-basics|words'));
+    await p.waitForSelector('.bx-words', {timeout: 5000});
+    const cw = await p.evaluate(() =>
+      [...document.querySelectorAll('.bx-words dt a')].some(
+        a => a.textContent === 'Costae' && a.getAttribute('href') === '#lab-basics|septa'
+      )
+    );
+    if (!cw) fails.push(`${W} words: no Costae entry linking to step 4`);
+    if (errs.length) fails.push(`${W}: ${errs.slice(0, 3).join(' | ')}`);
     await c.close();
   }
   return fails;
@@ -1430,8 +1863,9 @@ async function basicsFit(b, base) {
     // classified photo opens the enlarged view.
     for (const st of ['colony', 'septa', 'teeth', 'walls', 'forms', 'corallite']) {
       errs.length = 0;
+      // The walls check opens once the four wall types have been seen (basicsTeach checks that part).
       await p.evaluate(s => {
-        localStorage.removeItem('imr-basics');
+        localStorage.setItem('imr-basics', JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {}));
         location.hash = 'lab-basics|' + s;
       }, st);
       await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
@@ -1738,6 +2172,37 @@ async function basicsFit(b, base) {
       if (after.tour || !after.shown || !/1 of/.test(after.kick || '') || after.name !== first)
         fails.push(`first cards after the tour (first ${first}): ${JSON.stringify(after)}`);
       await ct.close();
+      // The enlarged quiz photo before the answer: its author by name, never the taxon, the genus or a link (rule 11;
+      // Pierre, 2026-11-03: a photo with no credit at all).
+      const cb = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+      await cb.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await cb.addInitScript(() => localStorage.setItem('imr-tour', '"done"'));
+      const qb = await cb.newPage();
+      await qb.goto(base + '#quiz');
+      await qb.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await qb.waitForSelector('#view [data-q]', {timeout: 10000});
+      await qb.waitForTimeout(400);
+      await qb.evaluate(() => document.querySelector('#view [data-q]').click());
+      const bc = await qb
+        .waitForSelector('#lightbox .lb-cap', {timeout: 5000})
+        .then(() =>
+          qb.evaluate(() => {
+            const c = document.querySelector('#lightbox .lb-cap');
+            return {text: c.textContent, links: c.querySelectorAll('a').length, it: c.querySelectorAll('i').length};
+          })
+        )
+        .catch(e => ({err: String(e)}));
+      const tgt = await qb.evaluate(() => {
+        const t = document.querySelector('#view .q [data-q] img');
+        return t ? t.getAttribute('src') : '';
+      });
+      const gname = ((tgt.match(/img\/([a-z]+)-/) || [])[1] || '').replace(/^./, x => x.toUpperCase());
+      if (bc.err || !/·/.test(bc.text) || bc.links || bc.it || (gname && bc.text.includes(gname)))
+        fails.push(`enlarged quiz photo before the answer: ${JSON.stringify({...bc, gname})}`);
+      await cb.close();
       // Enlarged photo at actual size: a mouse drags it around (an RA, 2026-11-02), a click without moving goes back to fit.
       const cz = await b.newContext({viewport: {width: 1024, height: 600}, serviceWorkers: 'block'});
       await cz.route(
@@ -1925,6 +2390,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   for (const f of await basicsFit(b, base)) fails.push(f);
   for (const f of await credits(b, base)) fails.push(f);
   for (const f of await pagesVisit(b, base)) fails.push(f);
+  for (const f of await basicsTeach(b, base)) fails.push(f);
   await b.close();
   for (const f of await signin(base)) fails.push(f);
   for (const f of await replayAdoptCheck(base)) fails.push(f);

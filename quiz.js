@@ -373,6 +373,13 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   const good = c === target,
     s = st(target),
     chs = tq ? [] : [...$v.querySelectorAll('[data-c]')].map(b => b.dataset.c);
+  // Progress (pgObs) weighed by what the answer proves: the plausible choices k and the look-alikes among the choices.
+  // A typed answer: no guess rate (TYPED.k, Infinity: the expected success has no 1/k floor).
+  const nc = $v.querySelectorAll('[data-c]').length || 4,
+    k = tq ? TYPED.k : Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
+  // Known mix-ups (model.js confTerm): the question was that much harder for this player, on their record before this
+  // answer (scored before it updates anything, offers included).
+  const cf = confTerm(target, chs, k);
   // Offers: every wrong choice shown beside the target, so the player's own mix-up rate per pair is known (confOf).
   chs.forEach(x => {
     if (x !== target) {
@@ -396,10 +403,6 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
       s.conf[c] = (s.conf[c] || 0) + 1;
     }
   }
-  // Progress (pgObs) weighed by what the answer proves: the plausible choices k and the look-alikes among the choices.
-  // A typed answer: no guess rate (TYPED.k, Infinity: the expected success has no 1/k floor).
-  const nc = $v.querySelectorAll('[data-c]').length || 4,
-    k = tq ? TYPED.k : Math.min(nc, Number(($v.querySelector('.ans') || {dataset: {}}).dataset.k) || nc);
   const th0 = ability(target),
     nw = ph.filter(p => !(s.ps || {})[p.f]).length;
   const solo = ph.length === 1 ? PICKD.SINGLE : 0; // one view alone is harder than the same photo with the others
@@ -424,8 +427,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   });
   const seenPh = ph.filter(p => p !== unseen),
     fam = famOf(target, seenPh),
-    dm = d0 + fam;
-  pgObs(target, s, good, good ? pgWeight(target, chs, k) * pgMemW(th0, d0, fam, k, rT) : pgMissW(th0, dm, k, rT));
+    dm = d0 + fam + cf;
+  pgObs(target, s, good, good ? pgWeight(target, chs, k) * pgMemW(th0, d0, fam, k, rT) : pgMissW(th0, dm, k, rT, aimP()));
   abilityStep(target, s, good, dm, k);
   // Global level (core.js playerStart): the same Elo step over every answer, kept as the pseudo-genus LEVEL.
   // Made at the first answer from the player's history (levelSeed), whose counts already include this answer.
@@ -451,7 +454,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // (s.conf: traps, duels, Again).
   if (!good && GX(c)) {
     const w = st(c);
-    pgObs(c, w, false, pgMissW(ability(c), d0, k, rC)); // as for the genus shown: the photo's difficulty against its level
+    pgObs(c, w, false, pgMissW(ability(c), d0, k, rC, aimP())); // as for the genus shown: the photo's difficulty against its level
     w.h = ((w.h || '') + '0').slice(-10);
     w.streak = 0;
   }
@@ -466,7 +469,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // typed questions may take one more, its count held at EXAM.n so its % never passes 100).
   if (!good) delete s.ex;
   else if (exq) {
-    const ex = s.ex || {k: 0, v: []};
+    const ex = s.ex || {k: 0, v: [], ts: Date.now()}; // ts: its start, which places it among the logged answers (core.js replayedOf)
     ex.k = Math.min(EXAM.n, ex.k + 1);
     ex.t = (ex.t || 0) + (tq ? 1 : 0);
     ex.v = [...new Set([...ex.v, ph[0].view])];
@@ -589,10 +592,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
       fitStage();
     }
     // Every mix-up of the photo quiz (and of the custom quiz), a contrast question's too (CONTRAST: one queue, one gap).
-    if (photoQuiz(cur)) {
-      rematch = {pair: [target, c], at: answersSoFar() - 1};
-      again = true;
-    }
+    if (photoQuiz(cur)) again = rematchAdd([target, c], answersSoFar() - 1);
   }
   // A right answer gets a short celebration on the choice itself and on "✓ Yes" (app.css .cheer: a pulse and the tick
   // popping, ~400 ms, none with prefers-reduced-motion; "fewer, better pop-ups", Pierre 2026-11-02: the reward is on the
@@ -822,20 +822,32 @@ document.addEventListener(
 const sheetTab = () => (!isStacked() && !matchMedia(MQ.touch).matches ? ' target="_blank" rel="noopener"' : '');
 // One contrast queue (independent review of 2026-11-02, item 7; docs/LEARNING.md "Contrast questions"): the "Again: A or
 // B?" after a mix-up and the look-alike duels slipped into the photo quiz are the same question, a 2-choice contrast of a
-// look-alike pair, under one rule. A mix-up in the photo quiz puts its pair in the queue (rematch, one slot: the newest
-// mix-up replaces an older one still waiting); with nothing queued, a question becomes a duel with the chance
+// look-alike pair, under one rule. A mix-up in the photo quiz puts its pair in the queue (rematch: up to CONTRAST.Q pairs,
+// the oldest first, a newer mix-up never pushing out an older one; 2026-11-04, Pierre, after a player's genuine
+// two-way mix-up waited behind newer ones and never came back: before, one slot, the newest replacing it; a pair
+// already waiting is not queued twice, and with the queue full a new mix-up waits for its next miss); with nothing
+// queued, a question becomes a duel with the chance
 // CONTRAST.P (Pierre, 2026-11-02: about 1 in 10), on a pair picked as the Duel tab picks (duelPick: own mix-ups first),
 // both genera met and ready, never the pair of the previous contrast question. Two contrast questions are at least
 // CONTRAST.GAP questions apart, and an Again comes CONTRAST.GAP questions after its mix-up (one question in between, as
 // before). It replaced AUTO_DUEL {P, FROM 20, GAP 5, AGAIN 2, SAME 20}: no first 20 answers without duels (Pierre,
 // 2026-11-02: duels help learning early too), AGAIN and GAP became the one gap, SAME the previous pair.
-const CONTRAST = {P: 0.1, GAP: 2};
-let rematch = null, // the pair queued by a mix-up: {pair, at: answers so far when the missed question showed}
+const CONTRAST = {P: 0.1, GAP: 2, Q: 3};
+let rematch = [], // the pairs queued by mix-ups, oldest first: {pair, at: answers so far when the missed question showed}
   twoAt = -Infinity, // answers so far when the last contrast question (an Again or a duel) showed
   twoPair = '', // and its pair
   AUTOD = false; // the question on screen is a duel slipped in (set by quizPhoto, read by answer)
 // "This pair comes back as a duel in a moment": said the first 3 times only (RA review 2026-11-02: it came on every
 // wrong answer, about 20 times in 30 questions); the pair still comes back every time.
+// Queues the pair of a mix-up (CONTRAST.Q at most, a pair already waiting not twice). True when it is in the queue.
+const rematchAdd = (pair, at) => {
+  if (!Array.isArray(rematch)) rematch = rematch ? [rematch] : [];
+  const k = pair.slice().sort().join('|');
+  if (rematch.some(r => r.pair.slice().sort().join('|') === k)) return true;
+  if (rematch.length >= CONTRAST.Q) return false;
+  rematch = [...rematch, {pair, at}];
+  return true;
+};
 const againTold = () => {
   const n = store.get('imr-again-told', 0);
   if (n >= 3) return false;
@@ -859,7 +871,7 @@ let NEXTQ = null;
 // The genera in play, and the custom quiz's selection: a change of either drops the questions planned with the old ones.
 const planPool = cur => pool().join() + (cur === CUSTOM_H ? '|' + (customSel() || []).join() : '');
 const planKey = (cur, i = 0) => `${cur}|${answersSoFar() + i}|${planPool(cur)}`;
-const planState = () => ({last, lastQs, rematch: rematch && {...rematch}, twoAt, twoPair});
+const planState = () => ({last, lastQs, rematch: (Array.isArray(rematch) ? rematch : []).map(r => ({...r})), twoAt, twoPair});
 function dropPlans() {
   if (NEXTQ) ({last, lastQs, rematch, twoAt, twoPair} = NEXTQ.snap);
   NEXTQ = null;
@@ -991,10 +1003,10 @@ function quizPhoto(cur = 'quiz') {
   zoomHint(); // once per device, never over a card or offer shown just above
   topUp(); // the questions after this one, chosen while it is played (planNext)
 }
-// The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now.
+// The offer to open all genera (model.js introOffer), over the question, once: Open all genera, or Not now (Escape).
+// Leaving the page closes it unanswered (route): the offer can come back.
 function introOfferShow() {
-  const d = document.createElement('div'),
-    a = answersSoFar(),
+  const a = answersSoFar(),
     pick = open => {
       store.set(INTRO.OFFER.KEY, {at: a, open: 0, t: Date.now()});
       if (open) {
@@ -1002,81 +1014,46 @@ function introOfferShow() {
         NEXTQ = null;
       }
       save();
-      close();
     };
-  d.className = 'unlock intro';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Open all genera?');
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">${a} answers in</p><h3>You seem to know your corals already</h3>
-    <p>Open all ${slateGenera().length} genera at once, instead of one at a time? ${introLeft().length} are still to come.</p>
-    <div class="ulbtns ulstack"><button class="next" type="button" data-open>Open all genera</button><button class="next sec" type="button">Not now</button></div>
-    <p class="note">Also in My progress, any time.</p></div>`;
-  document.body.appendChild(d);
-  const close = () => {
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-    qclockAgain(); // the time to answer counts from here (QCLOCK)
-    topUp();
-  };
-  const key = e => {
-    if (e.key === 'Tab' || document.getElementById('tour')) return; // the tour's keys while the card waits under it
-    e.stopPropagation(); // never the quiz's answer keys behind the card
-    if (/^\d$/.test(e.key)) e.preventDefault();
-    if (e.key !== 'Escape') return;
-    e.preventDefault();
-    pick(false);
-  };
-  document.addEventListener('keydown', key, true);
-  d.ulClose = close; // leaving the page closes it unanswered (route): the offer can come back
-  d.querySelector('[data-open]').onclick = () => pick(true);
-  d.querySelector('.sec').onclick = () => pick(false);
-  setTimeout(() => d.querySelector('[data-open]').focus({preventScroll: true}), 50);
+  cardShow({
+    kind: 'tip',
+    cls: 'intro',
+    kick: `${a} answers in`,
+    title: 'You seem to know your corals already',
+    body: `<p>Open all ${slateGenera().length} genera at once, instead of one at a time? ${introLeft().length} are still to come.</p>`,
+    primary: {text: 'Open all genera', attr: 'data-open', on: () => pick(true)},
+    secondary: {text: 'Not now', on: () => pick(false)},
+    esc: 2,
+    note: 'Also in My progress, any time.',
+    onClose: topUp
+  });
 }
 // Back to one at a time (model.js backDue, introBack), over the question, once: after Open all genera, when the answers
 // since have fallen clearly below what the game expected. "One at a time" closes the genera opened at once; the question
-// on screen is chosen again (it may be about one of them, or offer one as a choice). Escape: Keep them all.
+// on screen is chosen again (it may be about one of them, or offer one as a choice). Escape: Keep them all. Leaving the
+// page closes it unanswered (route): the card can come back.
 function backShow() {
-  const d = document.createElement('div'),
-    n = backOpen().length,
-    pick = keep => {
-      const L = introBack(keep);
-      save();
-      close();
-      if (L.length) {
-        dropPlans();
-        NEXTQ = null;
-        quizPhoto();
-      }
-    };
-  d.className = 'unlock intro';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Keep all genera?');
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">Lots of new genera at once</p><h3>Keep them all, or go back to one at a time?</h3>
-    <p>Since you opened all genera, the questions have been harder for you. With one at a time, the ${n} genera opened at once go back in the queue and come back one by one, each on its card. Your answers are kept.</p>
-    <div class="ulbtns ulstack"><button class="next" type="button" data-back>One at a time</button><button class="next sec" type="button" data-keep>Keep them all</button></div>
-    <p class="note">My progress can open them all again, any time.</p></div>`;
-  document.body.appendChild(d);
-  const close = () => {
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-    qclockAgain(); // the time to answer counts from here (QCLOCK)
-    topUp();
+  const pick = keep => {
+    const L = introBack(keep);
+    save();
+    if (L.length) {
+      dropPlans();
+      NEXTQ = null;
+      quizPhoto();
+    }
   };
-  const key = e => {
-    if (e.key === 'Tab' || document.getElementById('tour')) return; // the tour's keys while the card waits under it
-    e.stopPropagation(); // never the quiz's answer keys behind the card
-    if (/^\d$/.test(e.key)) e.preventDefault();
-    if (e.key !== 'Escape') return;
-    e.preventDefault();
-    pick(true);
-  };
-  document.addEventListener('keydown', key, true);
-  d.ulClose = close; // leaving the page closes it unanswered (route): the card can come back
-  d.querySelector('[data-back]').onclick = () => pick(false);
-  d.querySelector('[data-keep]').onclick = () => pick(true);
-  setTimeout(() => d.querySelector('[data-back]').focus({preventScroll: true}), 50);
+  cardShow({
+    kind: 'tip',
+    cls: 'intro',
+    kick: 'Lots of new genera at once',
+    title: 'Keep them all, or go back to one at a time?',
+    body: `<p>Since you opened all genera, the questions have been harder for you. With one at a time, the ${backOpen().length} genera opened at once go back in the queue and come back one by one, each on its card. Your answers are kept.</p>`,
+    primary: {text: 'One at a time', attr: 'data-back', on: () => pick(false)},
+    secondary: {text: 'Keep them all', attr: 'data-keep', on: () => pick(true)},
+    esc: 2,
+    note: 'My progress can open them all again, any time.',
+    onClose: topUp
+  });
 }
 // The bonus genera (app.js BONUS), offered once (Pierre, 2026-11-02): when every slate genus has been met (introduced:
 // its card shown or asked) and the player has not chosen yet (Q.bon undefined). "Add them": they join the genera not
@@ -1085,116 +1062,102 @@ function backShow() {
 // Every slate genus asked at least once, not just met (Pierre, 2026-11-02: an RA who taps Open all genera would otherwise get the offer a
 // question later, before having seen the IMR genera in the quiz; an RA tester: "after all IMR ones have been introduced/reviewed").
 // A genus closed again by "One at a time" (model.js introBack) waits for its card first.
+// The card shows their own photos as a row of round crops (each genus's cover, a plain disc when it has none or it fails).
 const bonusOfferDue = () => Q.bon === undefined && BONUS.some(n => GX(n)) && slateGenera().every(n => asked(n) && introduced(n));
 function bonusOfferShow() {
-  const d = document.createElement('div'),
-    pick = on => {
-      bonusSet(on);
-      close();
-    };
-  d.className = 'unlock intro';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Bonus genera');
-  const n = BONUS.filter(x => GX(x)).length;
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">Every genus of the slate met</p><h3>${n} more genera?</h3>
-    <p>Not on the IMR coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.</p>
-    <p class="ulnote">${BONUS.filter(x => GX(x))
-      .map(x => `<i>${esc(x)}</i>`)
-      .join(', ')}</p>
-    <div class="ulbtns ulstack"><button class="next" type="button" data-bonus>Add them</button><button class="next sec" type="button">Not now</button></div>
-    <p class="note">⚙ Settings, Bonus genera, any time. They don't count in your progress.</p></div>`;
-  document.body.appendChild(d);
-  const close = () => {
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-    topUp();
-  };
-  const key = e => {
-    if (e.key === 'Tab' || document.getElementById('tour')) return; // the tour's keys while the card waits under it
-    e.stopPropagation(); // never the quiz's answer keys behind the card
-    if (/^\d$/.test(e.key)) e.preventDefault();
-    if (e.key !== 'Escape') return;
-    e.preventDefault();
-    pick(false);
-  };
-  document.addEventListener('keydown', key, true);
-  d.ulClose = close; // leaving the page closes it unanswered (route): the offer comes back
-  d.querySelector('[data-bonus]').onclick = () => pick(true);
-  d.querySelector('.sec').onclick = () => pick(false);
-  setTimeout(() => d.querySelector('[data-bonus]').focus({preventScroll: true}), 50);
+  const L = BONUS.filter(x => GX(x));
+  cardShow({
+    kind: 'bonus',
+    cls: 'intro',
+    kick: 'Every genus of the slate met',
+    title: `${L.length} more genera?`,
+    body: `<p>Not on the IMR coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.</p>${bonusThumbs(L)}
+    <p class="ulnote">${L.map(x => `<i>${esc(x)}</i>`).join(', ')}</p>`,
+    primary: {text: 'Add them', attr: 'data-bonus', on: () => bonusSet(true)},
+    secondary: {text: 'Not now', on: () => bonusSet(false)},
+    esc: 2,
+    note: "⚙ Settings, Bonus genera, any time. They don't count in your progress.",
+    onClose: topUp // leaving the page closes it unanswered (route): the offer comes back
+  });
 }
+const bonusThumbs = L =>
+  `<div class="ulthumbs">${L.map(n => {
+    const p = cover(GX(n));
+    return p ? `<img src="${img(p, 's')}" alt="">` : '<span></span>';
+  }).join('')}</div>`;
 // The cards of the genera met now (INTRO in model.js), one after the other over the question: the first INTRO.START
 // together ("1 of 4", the first questions are about them), later ones alone (asked a few questions later). Recorded
 // when shown, so a planned question never played leaves no genus met without its card.
 function introShow(L, start, kind = start ? 's' : 'c', offerAll = start) {
   document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove())); // with its keys
-  const d = document.createElement('div');
-  d.className = 'unlock intro';
-  d.setAttribute('role', 'dialog');
-  d.setAttribute('aria-modal', 'true');
-  document.body.appendChild(d);
   let i = 0,
     told = false; // "tap an underlined word" said (once, on the first card whose tips have one)
-  const close = () => {
-    d.remove();
-    document.removeEventListener('keydown', key, true);
-    qclockAgain(); // the time to answer counts from here (QCLOCK)
-    topUp();
-  };
-  d.ulClose = close; // leaving the page closes it (route); the genera of the cards not shown yet come next time
-  const next = () => (++i < L.length ? show() : close());
-  const show = () => {
+  const card = () => {
     const n = L[i],
-      g = GX(n),
-      p = cover(g),
-      star = typeof starNote === 'function' && DATA.gen[n] ? starNote(n) : '',
-      more = i < L.length - 1,
-      tips = tipsList(g),
-      hint = start && !told && tips.includes('data-gt');
-    if (hint) told = true;
+      more = i < L.length - 1;
     // Met when its card is shown (Codex review #350): a sequence left half-way (reload) shows the rest next time.
     introAdd([n], start, kind);
-    d.setAttribute('aria-label', `New genus: ${n}`);
-    d.innerHTML = `<div class="ulcard">${p ? `<div class="ulphoto"><img src="${img(p, 's')}" alt=""></div>` : ''}
-      <p class="ulkick">${isBonus(n) ? 'Bonus genus' : 'New genus'}${L.length > 1 ? ` · ${i + 1} of ${L.length}` : ''}</p><h3><i>${esc(n)}</i></h3>
-      ${plainLine(g)}
-      ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
-      ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : isBonus(n) ? '<p class="ulnote">Not on the IMR list, but common at Dauin.</p>' : ''}
-      <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tips}${hint ? '<p class="gthint">Tap an underlined word to see what it means.</p>' : ''}</div>
-      <p class="ulnote">${start ? (more ? `The first questions are about these ${L.length} genera.` : 'Now, which is which?') : 'It comes up in the questions a little later.'}</p>
-      <div class="ulbtns"><span></span><button class="next" type="button">${more ? 'Next' : start ? 'Start' : 'Got it'}</button></div>
-      ${offerAll && introLeft().length ? `<div class="ulall"><p><b>Had the IMR coral lecture?</b> Skip the cards and play with all ${slateGenera().length} genera.</p><button class="next sec" type="button" data-all>Open all genera</button></div>` : ''}</div>`;
-    d.querySelector('.next').onclick = next;
-    const all = d.querySelector('[data-all]');
-    if (all)
-      all.onclick = () => {
+    const c = introCard(n, {
+      pos: L.length > 1 ? `${i + 1} of ${L.length}` : '',
+      hint: start && !told,
+      note: start
+        ? more
+          ? `The first questions are about these ${L.length} genera.`
+          : 'Now, which is which?'
+        : 'It comes up in the questions a little later.',
+      btn: more ? 'Next' : start ? 'Start' : 'Got it',
+      all: offerAll && introLeft().length > 0
+    });
+    if (c.hinted) told = true;
+    c.primary = {...c.primary, stay: true, on: next};
+    return c;
+  };
+  const next = () => (++i < L.length ? d.set(card()) : d.close(1));
+  // Enter outside a button, Escape and a tap outside move on (the first cards are not skipped: each is met when shown).
+  const on = () => (start ? next() : d.close('esc'));
+  const d = cardShow({
+    ...card(),
+    esc: on,
+    enter: on,
+    tap: on,
+    // Open all genera (model.js introAll) from the first cards.
+    bind: d =>
+      d.querySelector('[data-all]') &&
+      (d.querySelector('[data-all]').onclick = () => {
         introAll('card');
         NEXTQ = null;
         save();
-        close();
-      };
-    setTimeout(() => {
-      const b = d.querySelector('.next');
-      if (b) b.focus({preventScroll: true});
-    }, 50);
-  };
-  // The quiz's keys (1-4 answer) never reach the question behind the card (Codex review #350). Enter on a focused
-  // button presses it; elsewhere Enter, and Escape, move on (the first cards are not skipped: each is met when shown).
-  const key = e => {
-    if (e.key === 'Tab' || document.getElementById('tour')) return; // the tour's keys while the card waits under it
-    e.stopPropagation();
-    if (e.key === 'Enter' && document.activeElement && d.contains(document.activeElement)) return;
-    if (/^\d$/.test(e.key)) e.preventDefault();
-    if (e.key !== 'Escape' && e.key !== 'Enter') return;
-    e.preventDefault();
-    start ? next() : close();
-  };
-  document.addEventListener('keydown', key, true);
-  d.addEventListener('click', e => {
-    if (e.target === d) start ? next() : close();
+        d.close('all');
+      }),
+    onClose: topUp // leaving the page closes it (route); the genera of the cards not shown yet come next time
   });
-  show();
+}
+// One genus's first-meeting card (introShow; the Lab's cards page shows one with nothing recorded): its photo as a band,
+// the plain sentence, the ID tips. o: pos ("1 of 4"), note, btn, all (the Open all genera box), hint (the glossary hint,
+// said when the tips hold a term: hinted).
+function introCard(n, o = {}) {
+  const g = GX(n),
+    p = cover(g),
+    star = typeof starNote === 'function' && DATA.gen[n] ? starNote(n) : '',
+    tips = tipsList(g),
+    hinted = !!o.hint && tips.includes('data-gt');
+  return {
+    kind: 'genus',
+    cls: 'intro',
+    photo: p ? img(p, 's') : '',
+    kick: `${isBonus(n) ? 'Bonus genus' : 'New genus'}${o.pos ? ` · ${o.pos}` : ''}`,
+    title: `<i>${esc(n)}</i>`,
+    body: `${plainLine(g)}
+      ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
+      ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : isBonus(n) ? '<p class="ulnote">Not on the IMR list, but common at Dauin.</p>' : ''}
+      <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tips}${hinted ? '<p class="gthint">Tap an underlined word to see what it means.</p>' : ''}</div>
+      ${o.note ? `<p class="ulnote">${o.note}</p>` : ''}`,
+    primary: {text: o.btn || 'Got it'},
+    after: o.all
+      ? `<div class="ulall"><p><b>Had the IMR coral lecture?</b> Skip the cards and play with all ${slateGenera().length} genera.</p><button class="next sec" type="button" data-all>Open all genera</button></div>`
+      : '',
+    hinted
+  };
 }
 // Cards due with the next question (INTRO): the first ones while fewer than INTRO.START slate genera are met (picked by
 // the progressive path's draw, easiest first), else none: planPhoto may add one when its draw falls on a genus not met.
@@ -1217,13 +1180,18 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     list = sel || play;
   // The count went back (progress reset): the contrast spacing starts over.
   if (at < twoAt) twoAt = -Infinity;
-  if (rematch && !(rematch.at <= at)) rematch = null;
-  // A contrast question (CONTRAST): the pair a mix-up queued, CONTRAST.GAP questions after it and after the last one.
+  if (!Array.isArray(rematch)) rematch = rematch ? [rematch] : [];
+  rematch = rematch.filter(r => r.at <= at);
+  // Easier questions while the opening hold is on (model.js holdEase): the photos and the format aim lower.
+  const ease = holdEase();
+  // A contrast question (CONTRAST): the oldest pair a mix-up queued, CONTRAST.GAP questions after it and after the last one.
   const gap = at - twoAt >= CONTRAST.GAP;
-  if (rematch && gap && at - rematch.at >= CONTRAST.GAP) {
-    const pair = rematch.pair,
-      ask = sel ? pair.filter(n => sel.includes(n)) : pair; // the custom quiz asks only its own genera
-    rematch = null;
+  if (rematch.length && gap && at - rematch[0].at >= CONTRAST.GAP) {
+    const pair = rematch[0].pair,
+      // The custom quiz asks only its own genera; and never a genus not met yet (2026-11-04: a genus never met, offered
+      // to make up the choices and picked, was asked by its Again with no card, a genus opened by the side door).
+      ask = (sel ? pair.filter(n => sel.includes(n)) : pair).filter(n => introReady(n) || (sel && sel.includes(n)));
+    rematch = rematch.slice(1);
     // Never on a genus closed again by "One at a time" (model.js introBack): it waits for its card.
     if (ask.length && pair.every(n => play.includes(n) && !closed(n))) {
       twoAt = at;
@@ -1233,7 +1201,13 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       rustNow();
       const R = cbIn(cur) ? recallAt(t) : 1;
       return Object.assign(
-        [cur, t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t, null, Math.log(R), 2)],
+        [
+          cur,
+          t,
+          shuffle(pair.slice()),
+          `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`,
+          photoSet(t, null, Math.log(R) + ease, 2)
+        ],
         {again: 1, ...(sel ? {custom: 1} : {}), ...(cbIn(cur) ? {warm: 1, cb: Math.round(R * 1000) / 1000} : {})}
       );
     }
@@ -1248,6 +1222,15 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
   // yet is asked with its card (ready at once, as the Duel tab does). During a comeback it asks the comeback's genera of
   // its selection (cbIn: at least 2 of them answered right; else it asks as usual and leaves the comeback to the quiz).
   rustNow();
+  // The genera of the questions on screen or planned before this one: asked by the time this one shows (model.js openPace).
+  const soon = [
+    SHOWNQ,
+    ...(function* () {
+      for (let x = NEXTQ; x; x = x.next) yield x.args;
+    })()
+  ]
+    .filter(Boolean)
+    .map(q => q[1]);
   let cards = sel || noOpen() ? [] : introStart(list);
   const start = cards.length > 0,
     ready = n => cards.includes(n) || introReady(n),
@@ -1258,19 +1241,25 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     // One opening rule (model.js OPEN, openChance): when the path allows a card, this question opens a genus with the
     // chance of the free places for shaky genera, the genus drawn easiest and most common first (openPick).
     fresh =
-      !sel && !start && !warm && met.length && !noOpen() && introSince() >= INTRO.EVERY && !introHold()
+      !sel && !start && !warm && met.length && !noOpen() && introSince() >= INTRO.EVERY && !introHold() && openPace(at, soon)
         ? list.filter(n => !introduced(n))
         : [];
   if (fresh.length && Math.random() < openChance(list)) cards = [openPick(fresh, list)];
   // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say); with a card of
   // its own, about a genus already met. The custom quiz: any genus of its selection, one not met with its card.
-  const t = sel ? nextTarget(warm ? warmL : sel, customDraw) : nextTarget(start ? cards : warm ? warmL : met.length ? met : list);
+  // A genus opened on a card in the last OPEN.WIN answers and not asked yet is asked as soon as it is ready (model.js
+  // openPace holds the next card until it is): its card's question comes right after its INTRO.GAP, and the opening's
+  // pace is the ceiling's, not the luck of the draw among every genus met.
+  const due = start || warm ? [] : openRecent(at).filter(n => !asked(n) && !soon.includes(n) && introReady(n) && list.includes(n));
+  const t = sel
+    ? nextTarget(warm ? warmL : sel, customDraw)
+    : nextTarget(start ? cards : warm ? warmL : due.length ? due : met.length ? met : list);
   if (sel && !introduced(t)) cards = [t];
   // A look-alike duel slipped into the photo quiz (Pierre, 2026-11-02, "a little duel back in the quiz, automatically";
   // the Duel tab had 13 answers in all): the contrast queue's (CONTRAST, above) when no mix-up is queued. Not when the
   // path opens a genus (a card) this question: opening comes first (Pierre, 2026-11-02); not in a comeback. Logged
   // "quiz|d|k2" (counted apart).
-  if (!cards.length && !warm && !rematch && gap && Math.random() < CONTRAST.P) {
+  if (!cards.length && !warm && !rematch.length && gap && Math.random() < CONTRAST.P) {
     const key = p => p.slice().sort().join('|'),
       pair = duelPick(list, p => p.every(introReady) && key(p) !== twoPair);
     if (pair) {
@@ -1280,7 +1269,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       last = t; // the genus asked is the duel's, not the one drawn above for the card decision
       lastQs = [...lastQs.slice(0, -1), t];
       return Object.assign(
-        [cur, t, shuffle(pair.slice()), `Look-alikes: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t, null, 0, 2)],
+        [cur, t, shuffle(pair.slice()), `Look-alikes: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t, null, ease, 2)],
         {auto: twoPair, ...(sel ? {custom: 1} : {})}
       );
     }
@@ -1291,7 +1280,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     ex = !sel && !warm && examReady(t) && examSet(t),
     // A comeback question keeps the player's usual choices (Pierre, 2026-11-03): look-alikes for a strong player, so a
     // right answer proves something and the rust melts in a few questions.
-    traps = ex ? 3 : trapsFor(t),
+    traps = ex ? 3 : trapsFor(t, ease),
     // A genus met on a card of its own now is not among this question's choices either: its card says it comes up a
     // little later (beginner review 2026-11-03: its name was a choice on the question behind the card). The custom
     // quiz: from its selection first, topped up from the other genera in play under 4 (customChoices); its card's genus
@@ -1313,7 +1302,9 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     // (Codex review #411: 4 unrelated genera picked were scored as a 4-choice question with traps).
     few = sel ? ch.filter(n => n !== t && confusable(t, n)).length < 2 : traps < 2,
     kq = typed ? TYPED.k : few ? plausibleK(t, ch) : ch.length,
-    set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R), kq),
+    // Aimed lower by the hold's ease and by this player's own mix-ups among the choices (model.js confTerm; none typed).
+    cf = typed ? 0 : confTerm(t, ch, kq),
+    set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R) + ease - cf, kq),
     // The question asked with its genus's card never shows the card's own photo again (new-player walkthrough 2026-11-02).
     q = [cur, t, ch, typed ? 'Which genus? Type it' : 'Which genus?', typed ? {...set, typed: 1} : set, few ? plausibleK(t, ch) : 0];
   if (cards.length) Object.assign(q, {intro: cards, start});
@@ -1333,9 +1324,11 @@ function quizDuel(a, b) {
 // A look-alike pair for a duel (the Duel tab, and the duels slipped into the photo quiz): among the pairs whose two
 // genera are in the list and pass keep. Null when none.
 function duelPick(list, keep = () => true) {
-  // Millepora and the bonus genera duel with the slate look-alike the Coral Finder names (when they are in the list).
+  // Millepora and the bonus genera duel with the slate look-alike the Coral Finder names (when they are in the list); the
+  // look-alikes from the data (model.js dataLooks) duel like the declared ones.
   const ps = [
     ...pairs(),
+    ...dataLooks(list),
     ...[...BENTHIC, ...BONUS]
       .filter(b => GX(b))
       .flatMap(b =>
@@ -1390,15 +1383,22 @@ function quizCustom(h) {
   if (h === CUSTOM_H) return customSel() ? quizPhoto(CUSTOM_H) : location.replace('#quiz-custom');
   viewCustom();
 }
-// The selection screen (Pierre, 2026-11-03: "not everyone knows the IMR lecture groups"; then: no grouping by growth
-// form, which is not genus-specific: many genera take 3-4 forms or more). Every genus is in view at once, as a small
-// photo with its name, tapped to pick it (aria-pressed), A-Z by default; the IMR lecture groups are the other view (a
-// switch, for RAs; the genera in view inside each group; ★ genera in the group of their look-alikes, Millepora and the
-// bonus genera apart, All per group). Quick picks that need no knowledge replace the selection: My weakest (genera
-// answered, lowest progress first), Recently missed (a miss in their last 5 answers, latest first), Look-alikes of … (a
-// genus and its look-alikes: declared or confused, model.js isLook, confusable). A search box filters the photos. Clear
-// all, the count and Start (at least CUSTOM.MIN genera) stay in view at the bottom.
-const CQ = {VIEW: 'imr-custom-view', WEAK: 6, MISS: 8};
+// The selection screen (Pierre, 2026-11-03). Every genus is in view, as a small photo with its name, tapped to pick it
+// (aria-pressed), in one of three views (a switch, remembered on this device):
+// - IMR groups, the default ("nobody picks genera alphabetically": the lecture's groups, its genera in the IMR order; ★
+//   genera in the group of their look-alikes, Millepora and the bonus genera apart);
+// - My mix-ups ("you know you make mistakes around these kinds of genera, so you go there"): clusters of the genera the
+//   player confuses, from their own record, most confused first, each with its mix-up count (model.js mixEdges,
+//   mixClusters); with no mix-up yet, the declared look-alike sets, the pairs players confuse most first (lookEdges), and
+//   a line says so;
+// - Progress: To review, Learning, Not seen yet, Learned (shownLevel, as My progress names them).
+// Never grouped by growth form (not genus-specific; AGENTS.md rule 4), no A-Z view (the search finds a name; until
+// 2026-11-03 A-Z was the default: a device that kept it opens on IMR groups once, the choice now under a new key).
+// All / None per group. Quick picks that need no knowledge replace the selection: My weakest (genera answered, lowest
+// progress first), Recently missed (a miss in their last 5 answers, latest first), Look-alikes of … (a genus and its
+// look-alikes: declared or confused, model.js isLook, confusable). Clear all, the count and Start (at least CUSTOM.MIN
+// genera) stay in view at the bottom.
+const CQ = {VIEW: 'imr-custom-view2', OLD: 'imr-custom-view', WEAK: 6, MISS: 8, VIEWS: ['imr', 'mix', 'prog']};
 const cqPicks = play => {
   const done = n => !!(P[n] || {}).mx;
   return {
@@ -1413,42 +1413,79 @@ const cqPicks = play => {
   };
 };
 const cqLooks = (x, play) => [x, ...play.filter(n => n !== x && (isLook(x, n) || confusable(x, n)))];
-function viewCustom() {
-  const play = pool(),
-    on = new Set(customSaved().filter(n => play.includes(n))),
-    qp = cqPicks(play),
-    lk = play.filter(n => cqLooks(n, play).length > 1);
-  let view = store.get(CQ.VIEW, 'az') === 'imr' ? 'imr' : 'az',
-    q = '';
-  const tile = n => {
-    const p = cover(GX(n));
-    return `<button type="button" class="cqtile" data-g="${esc(n)}" aria-pressed="${on.has(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 90px, 120px')} alt="" loading="lazy">` : '<span class="cqnoph"></span>'}<i>${esc(n)}</i>${isBonus(n) ? '<small>Bonus</small>' : ''}</button>`;
-  };
-  // [key, title, subtitle, header mark, genera]
-  const groups = () => {
-    if (view === 'az') return [['az', '', '', '', play.slice().sort((x, y) => x.localeCompare(y))]];
-    const gk = n => (isBonus(n) ? '+' : isBenthic(n) ? 'F' : shownGroup(n) || '★'),
-      ord = k => (typeof k === 'number' ? k : {'★': 100, F: 101, '+': 102}[k]),
-      mk = (m, h) => `<span class="gn" style="--g:${h}" aria-hidden="true">${esc(String(m))}</span>`;
-    return [...new Set(play.map(gk))]
+// The groups of a view: [{k, t: title (HTML), sub, mark (HTML), L: genera}], and a note above them ('' for none).
+function cqGroups(view, play) {
+  const mk = (m, h) => `<span class="gn" style="--g:${h}" aria-hidden="true">${esc(String(m))}</span>`,
+    names = L => L.map(n => `<i>${esc(n)}</i>`).join(' · ');
+  if (view === 'mix') {
+    const own = mixClusters(mixEdges(play)),
+      C = own.length ? own : mixClusters(lookEdges(play)),
+      ord = L => play.filter(n => L.includes(n));
+    return {
+      note: own.length
+        ? ''
+        : 'No mix-ups of yours yet: here are the look-alikes of the IMR lecture and the Coral Finder, those players confuse most first. Your own mix-ups take their place as you play.',
+      G: C.map((c, i) => ({
+        k: 'm' + i,
+        t: names(ord(c.g)),
+        sub: own.length ? `${c.w} mix-up${c.w === 1 ? '' : 's'}` : 'Look-alikes',
+        mark: '',
+        L: ord(c.g)
+      }))
+    };
+  }
+  if (view === 'prog') {
+    const LV = [
+      ['weak', 'To review'],
+      ['mid', 'Learning'],
+      ['new', 'Not seen yet'],
+      ['ok', 'Learned']
+    ];
+    return {
+      note: '',
+      G: LV.map(([k, t]) => ({k, t: esc(t), sub: '', mark: '', L: play.filter(n => shownLevel(n)[0] === k)})).filter(g => g.L.length)
+    };
+  }
+  const gk = n => (isBonus(n) ? '+' : isBenthic(n) ? 'F' : shownGroup(n) || '★'),
+    ord = k => (typeof k === 'number' ? k : {'★': 100, F: 101, '+': 102}[k]);
+  return {
+    note: '',
+    G: [...new Set(play.map(gk))]
       .sort((a, b) => ord(a) - ord(b))
       .map(k => {
         const gr = DATA.imrg.find(x => x.n === k),
           L = play.filter(n => gk(n) === k);
         return gr
-          ? [k, gr.t, 'IMR lecture group ' + gr.n, mk(gr.n, groupHue(gr.n)), L]
+          ? {k, t: esc(gr.t), sub: 'IMR lecture group ' + gr.n, mark: mk(gr.n, groupHue(gr.n)), L}
           : k === 'F'
-            ? [k, 'Fire coral', 'IMR benthic slate, not a hard coral', mk('F', 200), L]
+            ? {k, t: 'Fire coral', sub: 'IMR benthic slate, not a hard coral', mark: mk('F', 200), L}
             : k === '+'
-              ? [k, 'Bonus genera', 'Not on the IMR list', mk('+', 200), L]
-              : [k, 'Not covered in the lecture', '', mk('★', 200), L];
-      });
+              ? {k, t: 'Bonus genera', sub: 'Not on the IMR list', mark: mk('+', 200), L}
+              : {k, t: 'Not covered in the lecture', sub: '', mark: mk('★', 200), L};
+      })
+  };
+}
+function viewCustom() {
+  const play = pool(),
+    on = new Set(customSaved().filter(n => play.includes(n))),
+    qp = cqPicks(play),
+    lk = play.filter(n => cqLooks(n, play).length > 1);
+  try {
+    localStorage.removeItem(CQ.OLD); // the A-Z / IMR groups choice of before 2026-11-03: IMR groups once
+  } catch (e) {}
+  let view = store.get(CQ.VIEW, 'imr'),
+    q = '';
+  if (!CQ.VIEWS.includes(view)) view = 'imr';
+  const tile = n => {
+    const p = cover(GX(n));
+    return `<button type="button" class="cqtile" data-g="${esc(n)}" aria-pressed="${on.has(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 90px, 120px')} alt="" loading="lazy">` : '<span class="cqnoph"></span>'}<i>${esc(n)}</i>${isBonus(n) ? '<small>Bonus</small>' : ''}</button>`;
   };
   $v.innerHTML = `<h2>Custom quiz</h2>
-  <p class="lede">The Quiz on the genera you pick. Tap the photos of the genera you want to work on, then <b>Start</b>. They are listed A–Z; <b>IMR groups</b> shows them in the IMR lecture's groups instead, with All to pick a whole group. <b>Quick picks</b> choose for you: your weakest genera, those you missed lately, or a genus and its look-alikes. Only the genera picked are asked, and the wrong choices come from them too, so look-alikes picked together are drilled together; with fewer than 4 picked, other genera make up the choices. Everything else is as in the Quiz: typed questions, Again after a mix-up, look-alike duels, harder photos as you improve, and every answer counts in <a href="#progress">My progress</a>. A genus you have not met yet shows its card first. Mastery exams only come in the Quiz: a genus that reaches 95% here takes its exam there. Your choice is kept for next time; the Custom quiz tab brings you back here.</p>
-  <div class="tools cqtools"><input type="search" id="cqq" placeholder="Search a genus" aria-label="Search a genus" autocomplete="off"><div class="seg" role="group" aria-label="Group by">${[
-    ['az', 'A–Z'],
-    ['imr', 'IMR groups']
+  <p class="lede">The Quiz on the genera you pick. Tap the photos of the genera you want to work on, then <b>Start</b>. Three ways to see them: <b>IMR groups</b>, the IMR lecture's groups (the genera to tell apart); <b>My mix-ups</b>, the genera you confuse with each other, the most confused first (before you have any, the look-alikes of the IMR lecture and the Coral Finder); <b>Progress</b>, to review, learning, not seen yet, learned. <b>All</b> picks a whole group. <b>Quick picks</b> choose for you: your weakest genera, those you missed lately, or a genus and its look-alikes. Only the genera picked are asked, and the wrong choices come from them too, so look-alikes picked together are drilled together; with fewer than 4 picked, other genera make up the choices. Everything else is the photo quiz: typed questions, Again after a mix-up, look-alike duels, harder photos as you improve, and every answer counts in <a href="#progress">My progress</a>. A genus you have not met yet shows its card first. Mastery exams only come in the Quiz: a genus that reaches 95% here takes its exam there. Your choice is kept for next time; the Custom quiz tab brings you back here.</p>
+  <div class="tools cqtools"><input type="search" id="cqq" placeholder="Search a genus" aria-label="Search a genus" autocomplete="off"><div class="seg" role="group" aria-label="View">${[
+    ['imr', 'IMR groups'],
+    ['mix', 'My mix-ups'],
+    ['prog', 'Progress']
   ]
     .map(([k, t]) => `<button type="button" data-cv="${k}" aria-pressed="${view === k}">${t}</button>`)
     .join('')}</div></div>
@@ -1491,12 +1528,13 @@ function viewCustom() {
     show();
   };
   const draw = () => {
-    box.innerHTML = groups()
-      .map(
-        ([k, t, sub, mark, L]) =>
-          `<section class="cqg" data-k="${esc(String(k))}">${t ? `<div class="cqh">${mark}<span class="cqht">${esc(t)}${sub ? ` <small>${esc(sub)}</small>` : ''}</span><button type="button" class="linkish cqall" aria-label="All or none of ${esc(t)}">All</button></div>` : ''}<div class="cqtiles">${L.map(tile).join('')}</div></section>`
-      )
-      .join('');
+    const {note, G} = cqGroups(view, play);
+    box.innerHTML =
+      (note ? `<p class="note cqnote">${esc(note)}</p>` : '') +
+      G.map(
+        g =>
+          `<section class="cqg" data-k="${esc(String(g.k))}"><div class="cqh">${g.mark}<span class="cqht">${g.t}${g.sub ? ` <small>${esc(g.sub)}</small>` : ''}</span><button type="button" class="linkish cqall" aria-label="All or none of this group">All</button></div><div class="cqtiles">${g.L.map(tile).join('')}</div></section>`
+      ).join('');
     box.querySelectorAll('.cqtile').forEach(b => (b.onclick = () => set([b.dataset.g], !on.has(b.dataset.g))));
     // All of a group (the photos the search leaves in view), or none once they all are.
     box.querySelectorAll('.cqall').forEach(

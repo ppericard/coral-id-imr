@@ -462,6 +462,169 @@ test('misses logged after the exam take the learned mark away as the game would,
   assert.deepStrictEqual(await run(miss(10, 2)), [exam, []], 'two misses before the exam');
 });
 
+// A device's learned marks lost in a sync, with the reason mxRecalc gave (the card this device shows).
+const watchMarks = A => {
+  const lost = [];
+  A.ctx.mxRecalc = (fn, w) => {
+    const m0 = Object.keys(A.ctx.P).filter(g => A.ctx.P[g] && A.ctx.P[g].mx);
+    fn();
+    m0.filter(g => !(A.ctx.P[g] || {}).mx).forEach(g => lost.push([g, typeof w === 'function' ? w(g) : w || 'bkt']));
+  };
+  return lost;
+};
+const rights = n => Array.from({length: n}, (_, i) => ({...qa('r' + i, i), a: 'Acropora', ok: 1, ph: 'acropora-wide-' + i}));
+const misses = (i, n) =>
+  Array.from({length: n}, (_, j) => ({...qa('m' + i + j, i + j), a: 'Montipora', ok: 0, ph: 'acropora-close-' + (i + j)}));
+
+test("a learned mark that another device's saved replay revoked is announced on this device too (Codex review #399)", async () => {
+  // Learned at answer 30; 10 misses after it logged by a refused save. B adopts the replay (the mark goes, its card)
+  // and saves it; A, still on the older rules with the mark, loads that copy.
+  const s = loadCodeGs(withData()),
+    rec = {Acropora: {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: Date.parse(T(30))}};
+  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': JSON.stringify(rec)}, summary: {}, answers: rights(30)});
+  s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, at: -1, answers: misses(40, 10)});
+  const dev = () => app({sheet: s, P: copy(rec), SYNC: {name: 'Ana', pin: '1234', log: [], base: copy(rec)}}),
+    B = dev(),
+    A = dev(),
+    lb = watchMarks(B),
+    la = watchMarks(A);
+  await B.syncPull();
+  B.ctx.SYNC.dirty = true;
+  await B.syncPush();
+  assert.deepStrictEqual(lb, [['Acropora', 'rules']]);
+  assert.strictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-rv']), C.RV);
+  await A.syncPull();
+  assert.strictEqual(A.ctx.P.Acropora.mx, undefined);
+  assert.deepStrictEqual(la, [['Acropora', 'rules']], 'the merge took the mark before mxRecalc saw it: no card here');
+});
+
+test('an exam in course ends at a miss logged after it began, as the game ends it (Codex review #399)', async () => {
+  // 30 right answers, then an exam begun at answer 25 with 4 questions passed (saved); misses logged by a refused save.
+  const run = async (later, ex) => {
+    const s = loadCodeGs(withData()),
+      rec = {Acropora: {ok: 30, ko: 0, h: '1111111111', pg: 0.9, at: Date.parse(T(29)), ex}};
+    s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': JSON.stringify(rec)}, summary: {}, answers: rights(30)});
+    if (later.length) s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, at: -1, answers: later});
+    const A = app({sheet: s, P: copy(rec), SYNC: {name: 'Ana', pin: '1234', log: [], base: copy(rec)}});
+    await A.syncPull();
+    assert.strictEqual(A.rvApplied(), C.RV);
+    return (A.ctx.P.Acropora.ex || {}).k;
+  };
+  const ex = {k: 4, v: ['wide'], at: 28, ts: Date.parse(T(25))},
+    old = {k: 4, v: ['wide'], at: 28}; // saved before the exam had its start time: the genus's last answer instead
+  assert.strictEqual(await run(misses(40, 1), ex), undefined, 'a miss after the exam began: was still 4 of 5');
+  assert.strictEqual(await run(misses(40, 1), old), undefined, 'the same, an exam saved without its start');
+  assert.strictEqual(await run([], ex), 4, 'no miss: kept');
+  assert.strictEqual(await run(misses(10, 1), ex), 4, 'a miss before the exam began: kept');
+});
+
+test('answers queued here older than answers another device logged: no replay adopted until they are in the log (Codex review #399)', async () => {
+  // 10 misses logged by another device at answers 100-109; this device, offline, played 20 right answers before them.
+  const s = loadCodeGs(withData()),
+    later = misses(100, 10);
+  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: later});
+  const mine = rights(20),
+    P = {Acropora: {ok: 20, ko: 0, h: '1111111111', pg: 0.9}},
+    A = app({sheet: s, P: copy(P), SYNC: {name: 'Ana', pin: '1234', log: mine, base: {}}});
+  await A.syncPush();
+  await A.syncPull();
+  // The chronological replay of the 30: the 20 right answers, then the 10 misses.
+  const a = A.ctx.P.Acropora;
+  assert.deepStrictEqual([A.ctx.SYNC.log.length, A.rvApplied(), a.ok, a.ko], [0, C.RV, 20, 10]);
+  assert.strictEqual(a.h, '0000000000', 'the misses are the latest results (was ten right answers on top)');
+  assert.ok(a.pg < 0.5, `pg ${a.pg} (was 0.96)`);
+  assert.strictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora.h, '0000000000');
+});
+
+test("anonymous answers older than the account's own join it at sign-in: the combined replay, in time order (Codex review #399)", async () => {
+  for (const sent of [false, true]) {
+    // The account: 10 misses, played on another device, replayed and saved under the current rules.
+    const s = loadCodeGs(withData()),
+      B = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: misses(100, 10), base: {}, dirty: true}});
+    await B.syncPush();
+    await B.syncPush();
+    assert.strictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-rv']), C.RV);
+    // This device: 20 right answers played earlier without an account (still queued, or already sent anonymously).
+    const id = 'abcdefghij',
+      mine = rights(20),
+      P20 = {Acropora: {ok: 20, ko: 0, h: '1111111111', pg: 0.9}};
+    if (sent) assert.ok(s.post({anon: id, anonAnswers: mine}).log);
+    const A = app({
+      sheet: s,
+      P: copy(P20),
+      ls: {
+        'imr-log0': JSON.stringify(mine),
+        'imr-anon-id': JSON.stringify(id),
+        'imr-anon-base': '{}',
+        'imr-coral-progress': JSON.stringify(P20)
+      }
+    });
+    A.signIn('Ana', '1234', s.get({name: 'Ana', pin: '1234'}));
+    A.ctx.P = A.store.get('imr-coral-progress', {}); // what the page reloads with
+    assert.strictEqual(A.rvApplied(), 0, `${sent ? 'sent' : 'queued'}: the account's version is not this progress's`);
+    await A.syncPush();
+    await A.syncPull();
+    // Replayed in time order: the 20 right answers, then the 10 misses (was pg 0.93 and ten right answers last).
+    const a = A.ctx.P.Acropora,
+      back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora;
+    assert.deepStrictEqual([A.rvApplied(), a.ok, a.ko, a.h], [C.RV, 20, 10, '0000000000'], sent ? 'sent' : 'queued');
+    assert.ok(a.pg < 0.5, `${sent ? 'sent' : 'queued'}: pg ${a.pg}`);
+    assert.deepStrictEqual([back.ok + back.ko, back.h], [30, '0000000000']);
+  }
+});
+
+test("an answer logged by a refused save, then saved in another device's replay, is counted once (Codex review #399)", async () => {
+  // A plays and saves two answers (rules version applied), then a third whose save is refused (logged, not saved).
+  const s = loadCodeGs(withData());
+  let refuse = false;
+  const sheetA = {get: q => s.get(q), post: b => s.post(refuse && b.name ? {...b, at: -1} : b)},
+    A = app({sheet: sheetA, SYNC: {name: 'Ana', pin: '1234', log: [qa('a0', 0), qa('a1', 1)], base: {}, dirty: true}});
+  await A.syncPush();
+  await A.syncPush();
+  assert.deepStrictEqual([A.count('Acropora'), A.rvApplied(), savedTotal(s)], [2, C.RV, 2]);
+  refuse = true;
+  A.ctx.SYNC.log = [qa('a2', 2)];
+  A.ctx.P.Acropora.ok++;
+  A.ctx.SYNC.dirty = true;
+  await A.syncPush();
+  refuse = false;
+  assert.deepStrictEqual([rowsOf(s), A.count('Acropora'), A.ctx.SYNC.log.length, savedTotal(s)], [3, 3, 0, 2]);
+  // B, a new device, adopts the replay of the three and saves it; then A syncs, twice.
+  const B = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, dirty: true}});
+  await B.syncPush();
+  assert.strictEqual(savedTotal(s), 3);
+  await A.syncPush();
+  await A.syncPush();
+  await A.syncPull();
+  assert.deepStrictEqual([A.count('Acropora'), savedTotal(s)], [3, 3], "was 4: the logged answer counted again as A's own");
+});
+
+test('an admin merge of two replayed accounts brings the replay of both histories in time order (Codex review #399)', async () => {
+  // Two accounts of one person, each replayed and saved: 20 older right answers, 10 newer misses.
+  const s = loadCodeGs(withData()),
+    TOK = 'ghp_write000000000000000000',
+    dev = (name, log) => app({sheet: s, SYNC: {name, pin: '1234', log, base: {}, dirty: true}}),
+    O = dev('Old', rights(20)),
+    A = dev('Ana', misses(100, 10));
+  for (const d of [O, A]) {
+    await d.syncPush();
+    await d.syncPush();
+  }
+  // The admin merges Old into Ana (admin.js: the two saved copies through core.js mergeUsers, written by the sheet).
+  const into = s.post({userData: 'Ana', token: TOK}),
+    from = s.post({userData: 'Old', token: TOK});
+  assert.ok(s.post({userMerge: {from: 'Old', into: 'Ana', data: C.mergeUsers(from.data, into.data), at: into.rev}, token: TOK}).ok);
+  // Ana's device syncs: the 30 answers replayed in time order (was the merged model kept: pg 0.96, ten right last).
+  await A.syncPull();
+  await A.syncPush();
+  await A.syncPull();
+  const a = A.ctx.P.Acropora,
+    back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora;
+  assert.deepStrictEqual([a.ok, a.ko, a.h, A.rvApplied()], [20, 10, '0000000000', C.RV]);
+  assert.ok(a.pg < 0.5, `pg ${a.pg}`);
+  assert.deepStrictEqual([back.ok + back.ko, back.h], [30, '0000000000']);
+});
+
 test('property: devices, unsent answers, an older client and a reset in flight: every device ends with the rows of the log', async () => {
   // A small deterministic random generator, so a failure replays the same way.
   let seed = 7;

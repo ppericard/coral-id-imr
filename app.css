@@ -2559,11 +2559,32 @@ td i {
   display: none;
 }
 .lb-in {
+  position: relative;
   max-width: min(1600px, 100%);
   max-height: 100%;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+/* An optional layer over the whole photo (app.js zoom opts.over: a Coral basics step's labels), placed on the photo's
+   box by app.js; clicks go through to the photo (actual size). */
+.lb-over {
+  position: absolute;
+  pointer-events: none;
+}
+.lb-over[hidden] {
+  display: none;
+}
+/* its drawing (rings, pointers) fills the layer like the labels do (Codex on PR #424: unsized, it drifted off the photo) */
+.lb-over > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.lb-nav button[aria-pressed='false'] {
+  opacity: 0.7;
+  text-decoration: line-through;
 }
 .lb-in img {
   max-width: 100%;
@@ -4128,16 +4149,27 @@ a.psrc:focus-visible {
   color: inherit;
   background: hsl(var(--g) 32% 58% / 0.18);
 }
-/* Custom quiz, the selection screen (quiz.js viewCustom; Pierre, 2026-11-03): search and the A-Z / IMR groups switch,
-   quick picks, then every genus in view as a small photo with its name (in the IMR groups view, under each group's
-   muted tint on its number), and a bar with the count, Clear all and Start that stays above the phone tab bar.
+/* Custom quiz, the selection screen (quiz.js viewCustom; Pierre, 2026-11-03): search and the IMR groups / My mix-ups /
+   Progress switch, quick picks, then every genus in view as a small photo with its name, under its group's header (the
+   IMR groups' muted tint on their number), and a bar with the count, Clear all and Start that stays above the phone tab bar.
    A picked genus gets the accent ring and a tick (rings mark selection, DESIGN.md). */
+/* Search and the view switch share a row when they fit; on phones the switch goes under the search, full width. */
 .cqtools {
   margin: 4px 0 8px;
-  flex-wrap: nowrap;
 }
 .cqtools input {
-  flex: 1 1 120px;
+  flex: 1 1 240px;
+}
+@media (max-width: 599.98px) {
+  .cqtools .seg {
+    flex: 1 1 100%;
+  }
+  .cqtools .seg button {
+    flex: 1;
+  }
+}
+.cqnote {
+  margin: 0;
 }
 .cqquick {
   display: flex;
@@ -5658,7 +5690,8 @@ html.touring body::after {
   border: 1.5px dashed var(--line);
   color: var(--muted);
 }
-/* A card or offer due while the guided tour runs waits under it, out of sight, and shows once the tour closes (an RA,
+/* ---------- Cards (app.js cardShow; Pierre, 2026-11-03: direction B, Medallion, docs/DESIGN.md "Cards") ----------
+   A card or offer due while the guided tour runs waits under it, out of sight, and shows once the tour closes (an RA,
    2026-11-02: the first genus card sat on top of the tour's step 3). */
 html.touring .unlock {
   display: none;
@@ -5670,66 +5703,204 @@ html.touring .unlock {
   display: grid;
   place-items: center;
   padding: 16px;
-  background: rgb(0 0 0 / 0.5);
+  background: color-mix(in srgb, var(--photo-bg) 50%, transparent);
   animation: ulfade 0.25s ease-out;
 }
+/* One grammar for every card and toast: --k is the kind's hue (the accent; the warm --warn for an apology), --kt its pale
+   tint, --kt2 a stronger one, --kink its text colour (mixed with the ink: readable on the tint in both themes). */
+.ulcard,
+.achin,
+.apptoast {
+  --k: var(--accent);
+  --kt: color-mix(in srgb, var(--k) 13%, var(--surface));
+  --kt2: color-mix(in srgb, var(--k) 24%, var(--surface));
+  --kink: color-mix(in srgb, var(--k) 62%, var(--ink));
+}
+[data-k='apology'] {
+  --k: var(--warn);
+}
+/* The card: a medallion over the top edge of its panel; the panel scrolls when taller than the screen, under the
+   medallion, which stays in view. */
 .ulcard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: min(380px, 100%);
   max-height: calc(100dvh - 32px);
-  overflow: auto;
-  background: var(--surface);
   color: var(--ink);
-  border-radius: var(--r);
-  padding: 20px;
+  font-size: var(--fs-m);
+  line-height: 1.45;
   text-align: center;
+  animation: ulrise 0.34s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.ulmed {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 88px;
+  height: 88px;
+  margin-bottom: -44px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--kt);
+  border: 4px solid var(--surface);
   box-shadow: var(--shadow-hover);
-  animation: ulpop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+  animation: ulmedal 0.5s 0.12s cubic-bezier(0.2, 1.5, 0.4, 1) both;
 }
-/* A card photo that did not load (quiz.js): a plain tile, never a broken-image icon. */
-.unlock img.fail {
-  visibility: hidden;
+.ulmed .e {
+  font-size: var(--fs-2xl);
+  line-height: 1;
+  animation: ulwig 0.6s 0.55s ease-in-out both;
 }
-.ulphoto {
-  background: var(--surface-2);
+/* A visual in the medallion (the progress ring): a little larger, on the card's surface. */
+.ulmed.vis {
+  width: 100px;
+  height: 100px;
+  margin-bottom: -50px;
+  background: var(--surface);
 }
-/* First-encounter card (quiz.js introShow): the genus's cover photo, no flip. */
-.ulphoto {
-  width: min(260px, 72vw);
-  aspect-ratio: 4/3;
-  margin: 0 auto 14px;
-  border-radius: var(--r);
-  overflow: hidden;
-}
-.ulphoto img {
+.ulpanel {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  padding: 56px 20px 20px;
+  border-radius: var(--r);
+  background: linear-gradient(to bottom, var(--kt), var(--surface) 150px);
+  box-shadow: var(--shadow-hover);
+}
+.ulmed.vis + .ulpanel {
+  padding-top: 62px;
 }
 .ulkick {
   margin: 0;
-  color: var(--accent);
+  color: var(--kink);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   font-size: var(--fs-xs);
 }
 .ulcard h3 {
-  margin: 2px 0 6px;
+  margin: 6px 0 8px;
+  font-family: var(--display);
   font-size: var(--fs-xl);
+  line-height: 1.12;
+}
+/* Several notes on one card (progress.js recalcNotice, latest first): the older ones under a rule. */
+.ulpanel h3 ~ h3 {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-l);
+}
+.ulpanel p {
+  margin: 0 0 10px;
 }
 .ulnote {
   margin: 0 0 10px;
   color: var(--muted);
   font-size: var(--fs-s);
 }
+.ulpanel .note {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.ulfoot {
+  margin: 10px 0 0 !important;
+}
+/* Buttons stacked full width, the main one on top. */
+.ulbtns {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 16px;
+}
+.ulbtns .next {
+  align-self: stretch;
+  text-align: center;
+}
+/* The first meeting with a genus (quiz.js introShow): the photo as a full-width band, at most a third of the screen's
+   height (the tips stay in view), the kind's emoji and the kicker on a chip at its edge. */
+.ulcard.band .ulpanel {
+  padding-top: 0;
+  background: var(--surface);
+}
+.ulphoto {
+  position: relative;
+  margin: 0 -20px;
+  aspect-ratio: 16/10;
+  max-height: 34dvh;
+  overflow: hidden;
+  border-radius: var(--r) var(--r) 0 0;
+  background: var(--surface-2);
+}
+.ulphoto img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.band .ulkick {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: -13px;
+  padding: 3px 10px 3px 7px;
+  border-radius: var(--pill);
+  background: var(--kt);
+  box-shadow: 0 0 0 3px var(--surface);
+  line-height: 1.4;
+}
+.band .ulkick .e {
+  font-size: var(--fs-s);
+  letter-spacing: 0;
+}
+/* A card photo that did not load (quiz.js): a plain tile, never a broken-image icon. */
+.unlock img.fail {
+  visibility: hidden;
+}
 .ultips,
 .ulcard .warn {
   text-align: left;
   margin: 0 0 12px;
 }
+/* ID tips boxed, as everywhere else they appear (.tipbox), on the kind's tint. */
+.ultips {
+  padding: 10px 12px 4px;
+  border-radius: var(--r-sm);
+  background: var(--kt);
+}
 .ultips .label {
   margin: 0 0 4px;
+}
+.ultips ul {
+  margin: 0 0 6px;
+}
+/* The bonus genera offer: their own photos as a row of round crops. */
+.ulthumbs {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0 8px;
+}
+.ulthumbs > * {
+  width: 52px;
+  height: 52px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface-2);
+  border: 3px solid var(--surface);
+  box-shadow: var(--shadow);
+}
+.ulthumbs > * + * {
+  margin-left: -8px;
 }
 /* "Open all genera" (model.js introAll): a tinted band at the foot of the first cards and a box in My progress, with a
    real button (Pierre, 2026-11-02: a white chip on white was easy to miss). */
@@ -5753,36 +5924,67 @@ html.touring .unlock {
   width: 100%;
   text-align: center;
 }
-.ulstack {
-  flex-direction: column;
-  align-items: stretch;
+/* The progress ring in a medallion (app.js cardRing): the % now strong, a former % faint behind it. */
+.ulring {
+  width: 80px;
+  height: 80px;
+  display: block;
 }
-.ulstack .next {
-  align-self: stretch;
-  text-align: center;
+.ulring circle {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
 }
-.ulbtns {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.ulring .tr {
+  stroke: var(--kt2);
+}
+.ulring .gh {
+  stroke: color-mix(in srgb, var(--k) 38%, var(--surface));
+}
+.ulring .ar {
+  stroke: var(--k);
+  animation: ulfill 0.8s 0.3s ease-out both;
+}
+.ulring text {
+  fill: var(--ink);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 17px;
 }
 @keyframes ulfade {
   from {
     opacity: 0;
   }
 }
-@keyframes ulpop {
+@keyframes ulrise {
   from {
-    transform: scale(0.7);
     opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+}
+@keyframes ulmedal {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+@keyframes ulwig {
+  30% {
+    transform: rotate(-10deg);
+  }
+  65% {
+    transform: rotate(8deg);
+  }
+}
+@keyframes ulfill {
+  from {
+    stroke-dasharray: 0 999;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .unlock,
-  .ulcard {
-    animation-duration: 0.01s;
-    animation-delay: 0s;
+  .unlock * {
+    animation: none !important;
   }
 }
 .psbonus {
@@ -5853,8 +6055,18 @@ html.touring .unlock {
   margin: 0 0 4px;
   line-height: 1.15;
 }
-.signnudge .ulcard {
+.signnudge .ulpanel {
   text-align: left;
+}
+/* The sign-in card: its title and first line centred like every card, the form's Sign in full width like a card's main
+   button (Yes / No of "Is it you?" keep their row). */
+.signnudge .tsync.sync > h3,
+.signnudge .tsync.sync > h3 + p {
+  text-align: center;
+}
+.signnudge .sform:not(.sconfirm) button[type='submit'] {
+  flex-basis: 100%;
+  text-align: center;
 }
 
 /* ---------- Leaderboard (Pierre, 2026-11-01): 🏆 in the header, #board page, rank in My progress ---------- */
@@ -5970,6 +6182,7 @@ html.touring .unlock {
 .pboardl:hover {
   text-decoration: underline;
 }
+/* A short note (progress.js appToast): the cards' look, the kind's tint at its left. */
 .apptoast {
   position: fixed;
   left: 50%;
@@ -5981,20 +6194,34 @@ html.touring .unlock {
   align-items: center;
   width: max-content; /* centred by left 50%: without it the note shrinks to half the screen (a 4-line note on phones) */
   max-width: min(92vw, 520px);
-  padding: 10px 14px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--surface);
+  box-sizing: border-box;
+  padding: 10px 8px 10px 16px;
+  border-radius: var(--r);
+  background: linear-gradient(to right, var(--kt), var(--surface) 70%);
   color: var(--ink);
-  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+  box-shadow: var(--shadow-hover);
   font-size: var(--fs-s);
+  animation: ulrise 0.34s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.apptoast a {
+  color: var(--kink);
 }
 .apptoast button {
+  flex: none;
+  width: 32px;
+  height: 32px;
   border: 0;
+  border-radius: 50%;
   background: none;
-  color: inherit;
+  color: var(--muted);
   font: inherit;
   cursor: pointer;
+}
+@media (hover: hover) {
+  .apptoast button:hover {
+    background: var(--kt);
+    color: var(--ink);
+  }
 }
 .btitle {
   margin: 4px 0 12px;
@@ -6181,35 +6408,58 @@ html.touring .unlock {
   width: min(92vw, 380px);
   animation: achin 0.45s cubic-bezier(0.2, 1.3, 0.4, 1) both;
 }
+/* The achievement toast: the cards' look (docs/DESIGN.md "Cards") as a pill, the achievement's emoji in a small
+   medallion with its tier at the edge, on the kind's tint fading to the surface. */
 .achin {
   display: flex;
   gap: 12px;
   align-items: center;
-  padding: 12px 14px;
-  border: 2px solid var(--accent);
-  border-radius: 14px;
-  background: var(--surface);
+  padding: 8px 22px 8px 8px;
+  border-radius: var(--pill);
+  background: linear-gradient(to right, var(--kt), var(--surface) 60%);
   color: var(--ink);
   text-decoration: none;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.22);
+  box-shadow: var(--shadow-hover);
+  line-height: 1.35;
 }
 .achin .achic {
-  font-size: 2.2rem;
+  position: relative;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--kt);
+  border: 3px solid var(--surface);
+  box-shadow: var(--shadow);
+  font-size: var(--fs-xl);
+}
+.achin .achic > span:first-child {
   animation: achpulse 0.9s ease-out 0.3s both;
+}
+.achin .tier {
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  font-size: var(--fs-m);
 }
 .achin small {
   display: block;
-  color: var(--muted);
+  color: var(--kink);
   font-size: var(--fs-xs);
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 .achin b {
   display: block;
   font-size: var(--fs-m);
 }
-.achin span > span {
+.achin > span:last-child > span {
   font-size: var(--fs-s);
+  color: var(--muted);
 }
 .confetti {
   position: absolute;
@@ -6234,7 +6484,7 @@ html.touring .unlock {
   background: var(--lv1);
 }
 .achpop.calm,
-.achpop.calm .achic {
+.achpop.calm .achic > span {
   animation: none;
 }
 @keyframes achin {
@@ -6270,7 +6520,8 @@ html.touring .unlock {
 }
 @media (prefers-reduced-motion: reduce) {
   .achpop,
-  .achin .achic,
+  .achin .achic > span,
+  .apptoast,
   .confetti i {
     animation: none;
   }

@@ -323,6 +323,12 @@ const credit = p =>
     : p.imr
       ? `IMR Lecture 6, slide ${esc(p.slide)}`
       : `<i>${esc(p.t)}</i>${p.own ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
+// Before the answer the enlarged quiz photo credits its author by name only (Pierre, 2026-11-03): no taxon and no link,
+// which would give the genus away (rule 11); the full credit comes with the answer.
+const blindCredit = p => {
+  const n = p.cf ? 'R. Kelley / BYOGUIDES' : p.imr ? '' : author(p);
+  return p.imr ? ' · IMR lecture' : n ? ` · © ${esc(n)}` : '';
+};
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
 // Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick, else the first closer view.
 // Default (Pierre): an IMR photo first, the first IMR featured Closer photo, before data.json's pick.
@@ -463,7 +469,8 @@ function bindGo(root = $v) {
   root.querySelectorAll('[data-go]').forEach(b => (b.onclick = () => go(b.dataset.go)));
 }
 
-// Full-size viewer shared by every page. opts.blind() true = quiz before answering: hide genus, credit and source links.
+// Full-size viewer shared by every page. opts.blind() true = quiz before answering: hide the genus, the taxon and the
+// source links; the author's name alone stays (blindCredit).
 const lb = document.getElementById('lightbox');
 let lbClose = null;
 // Back closes the open viewer. A viewer's entry reached with no viewer open (Forward after closing a photo, or Back onto
@@ -481,22 +488,48 @@ const ZOOMI =
 // The one-time "Tap a photo to see it bigger" hint (quiz.js zoomHint): 'seen' once shown, 'zoomed' once a photo has been
 // enlarged on this device; either way it is never due again. Per device, not part of the progress.
 const ZHINT_KEY = 'imr-zoomhint';
+// opts.over(p): an optional layer drawn over the whole photo (HTML in % of the photo, e.g. the labels of a Coral basics
+// step, proto/basics.js), with a Labels on/off switch; it follows the photo at fit and at actual size.
 function zoom(list, i, opts = {}) {
   if (store.get(ZHINT_KEY, null) !== 'zoomed') store.set(ZHINT_KEY, 'zoomed');
   const blind = () => (opts.blind ? opts.blind() : false);
+  let overOn = true,
+    ro = null;
   const show = () => {
     const p = list[i],
       hide = blind(),
-      vl = p.view ? (VIEWS.find(v => v[0] === p.view) || [0, VIEW_LABEL[p.view]])[1] : '';
+      vl = p.view ? (VIEWS.find(v => v[0] === p.view) || [0, VIEW_LABEL[p.view]])[1] : '',
+      over = !hide && opts.over ? opts.over(p) : '';
     const cap = hide
-      ? esc(vl || 'Photo')
+      ? esc(vl || 'Photo') + blindCredit(p)
       : `${p.genus ? `<b><i>${esc(p.genus)}</i></b> · ` : ''}${vl ? esc(vl) + ' · ' : ''}${credit(p)}${p.src ? ` · <a href="${esc(safeUrl(p.src))}" target="_blank" rel="noopener">original</a>` : ''}`;
     // The 1600 px file, over the 480 px one shown at once (usually already loaded). Saver: 960 px, 1600 on a click.
-    lb.innerHTML = `<div class="lb-in"><img src="${img(p, saver() ? 'm' : '')}" style="background:center / contain no-repeat url('${img(p, 's')}')" alt="${hide ? 'Coral to identify' : esc(p.t || '')}" title="Click for actual size"><p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
-      <div class="lb-nav">${list.length > 1 ? `<button type="button" data-d="-1" aria-label="Previous photo">‹</button><span>${i + 1} / ${list.length}</span><button type="button" data-d="1" aria-label="Next photo">›</button>` : ''}<button type="button" data-x aria-label="Close">Close</button></div></div>`;
+    lb.innerHTML = `<div class="lb-in"><img src="${img(p, saver() ? 'm' : '')}" style="background:center / contain no-repeat url('${img(p, 's')}')" alt="${hide ? 'Coral to identify' : esc(p.t || '')}" title="Click for actual size">${over ? `<div class="lb-over"${overOn ? '' : ' hidden'}>${over}</div>` : ''}<p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
+      <div class="lb-nav">${list.length > 1 ? `<button type="button" data-d="-1" aria-label="Previous photo">‹</button><span>${i + 1} / ${list.length}</span><button type="button" data-d="1" aria-label="Next photo">›</button>` : ''}${over ? `<button type="button" data-ov aria-pressed="${overOn}">Labels</button>` : ''}<button type="button" data-x aria-label="Close">Close</button></div></div>`;
     lb.classList.remove('full');
     const im = lb.querySelector('.lb-in img');
     im.draggable = false;
+    // The layer sits exactly on the photo's box (the photo keeps its ratio, so its box is the picture).
+    if (ro) ro.disconnect();
+    const ov = lb.querySelector('.lb-over');
+    if (ov) {
+      const place = () =>
+        Object.assign(ov.style, {
+          left: im.offsetLeft + 'px',
+          top: im.offsetTop + 'px',
+          width: im.offsetWidth + 'px',
+          height: im.offsetHeight + 'px'
+        });
+      place();
+      im.addEventListener('load', place);
+      if (typeof ResizeObserver === 'function') (ro = new ResizeObserver(place)).observe(im);
+      lb.querySelector('[data-ov]').onclick = e => {
+        e.stopPropagation();
+        overOn = !overOn;
+        ov.hidden = !overOn;
+        e.currentTarget.setAttribute('aria-pressed', overOn);
+      };
+    }
     im.onclick = e => {
       e.stopPropagation();
       if (moved) return; // the end of a drag, not a click
@@ -535,6 +568,7 @@ function zoom(list, i, opts = {}) {
   const close = fromBack => {
     if (lbClose !== close) return;
     lbClose = null;
+    if (ro) ro.disconnect();
     if (!fromBack && history.state && history.state.lb) history.back();
     lb.hidden = true;
     lb.innerHTML = '';
@@ -689,7 +723,9 @@ function showGloss(el) {
   $gpop.style.left = Math.max(12, Math.min(r.left, innerWidth - w - 12)) + 'px';
   const below = r.bottom + 8,
     h = $gpop.offsetHeight;
-  $gpop.style.top = (below + h > innerHeight - 8 ? r.top - h - 8 : below) + 'px';
+  // Below the term, else above it, and always inside the screen (a term high on a tall card, whose definition did not
+  // fit above it, went off the top: pages smoke, 2026-11-03).
+  $gpop.style.top = Math.max(8, Math.min(below + h > innerHeight - 8 ? r.top - h - 8 : below, innerHeight - h - 8)) + 'px';
 }
 document.addEventListener(
   'click',
@@ -1100,6 +1136,125 @@ addEventListener('hashchange', () => {
   if (typeof s.d === 'number') pageDepth = s.d;
   else history.replaceState({...s, d: ++pageDepth}, '');
 });
+// Cards (Pierre, 2026-11-03: direction B, Medallion, of the Lab mock-up, for the whole family; docs/DESIGN.md "Cards").
+// Every card over the page comes from cardShow: a round medallion over the card's top edge holds the kind's emoji
+// (CARD_KINDS) or a visual (cardRing, the progress ring), then a kicker, the title, the text and the buttons stacked full
+// width, the main one on top, centred on a pale tint of the kind's hue (the accent; the warm --warn for an apology). The
+// first meeting with a genus keeps its photo as a full-width band instead (its photo is there to be learned), the emoji
+// on a chip at the band's edge. One overlay at a time stays the callers' job (they wait while '#tour, .unlock' is up);
+// cardShow owns the rest: the .unlock overlay (hidden under the tour, closed by route() through ulClose when its page is
+// left), role dialog, aria-modal, labelled by its kicker and title, the focus (main button, or o.focus, kept inside on
+// Tab, given back on close), the keys (Escape / Enter outside a button or field / a tap outside: o.esc / o.enter / o.tap,
+// 1 or 2 = as that button, or a function; the quiz's answer keys never reach the page behind; the tour's pass while the
+// card waits under it), and on close the question's clock (quiz.js qclockAgain: reading a card is not looking at the
+// photo). o: {kind, cls (classes the callers' code and tests look for), kick, title (HTML; none: the first h3 of the body
+// labels it, else o.label), body, photo (genus band URL), visual (medallion HTML), primary / secondary ({text, attr, on,
+// stay}: on runs after the card closes, or instead of closing with stay), note, after, bind(d) after each render,
+// onClose(how: 1, 2, 'esc', 'enter', 'tap', 'route')}. Returns the overlay: d.close(how), d.set(changes) redraws it.
+const CARD_KINDS = {apology: '🙏', update: '🔄', feature: '✨', genus: '🪸', tip: '💡', bonus: '🎁', account: '💾', ach: '🏆'};
+let cardN = 0;
+function cardShow(o) {
+  const d = document.createElement('div'),
+    from = document.activeElement,
+    id = 'ulh' + ++cardN;
+  d.className = ('unlock ' + (o.cls || '')).trim();
+  d.setAttribute('role', 'dialog');
+  d.setAttribute('aria-modal', 'true');
+  let shut = false;
+  const close = how => {
+    if (shut) return;
+    shut = true;
+    d.remove();
+    document.removeEventListener('keydown', key, true);
+    if (from && from !== document.body && from.isConnected && !document.querySelector('.unlock')) from.focus({preventScroll: true});
+    if (typeof qclockAgain === 'function') qclockAgain();
+    if (o.onClose) o.onClose(how);
+  };
+  const act = (w, how) => {
+    if (typeof w === 'function') return w();
+    const b = (w === 1 || w === 2) && o[w === 1 ? 'primary' : 'secondary'];
+    if (!b) return close(how);
+    if (!b.stay) close(w);
+    if (b.on) b.on();
+  };
+  // The labels: the kicker and title, or a title the body draws itself (the sign-in box, redrawn as it changes).
+  d.relabel = () => {
+    const h = d.querySelector('.ulpanel h3');
+    if (h && !h.id) h.id = id + 'h';
+    const k = d.querySelector('.ulkick');
+    if (h) (d.setAttribute('aria-labelledby', (k ? k.id + ' ' : '') + h.id), d.removeAttribute('aria-label'));
+    else (d.setAttribute('aria-label', o.label || o.kick || ''), d.removeAttribute('aria-labelledby'));
+  };
+  const btn = (b, n) =>
+    b ? `<button class="next${n === 2 ? ' sec' : ''}" type="button" data-b="${n}"${b.attr ? ' ' + b.attr : ''}>${b.text}</button>` : '';
+  const draw = () => {
+    const e = `<span class="e" aria-hidden="true">${CARD_KINDS[o.kind] || ''}</span>`,
+      band = !!o.photo;
+    d.innerHTML = `<div class="ulcard${band ? ' band' : ''}" data-k="${o.kind || ''}">${
+      band ? '' : `<div class="ulmed${o.visual ? ' vis' : ''}" aria-hidden="true">${o.visual || e}</div>`
+    }<div class="ulpanel">${band ? `<div class="ulphoto"><img src="${o.photo}" alt=""></div>` : ''}${
+      o.kick ? `<p class="ulkick" id="${id}k">${band ? e : ''}${o.kick}</p>` : ''
+    }${o.title ? `<h3 id="${id}h">${o.title}</h3>` : ''}${o.body || ''}${
+      o.primary || o.secondary ? `<div class="ulbtns">${btn(o.primary, 1)}${btn(o.secondary, 2)}</div>` : ''
+    }${o.note ? `<p class="note ulfoot">${o.note}</p>` : ''}${o.after || ''}</div></div>`;
+    d.querySelectorAll('[data-b]').forEach(b => (b.onclick = () => act(Number(b.dataset.b))));
+    d.relabel();
+    if (o.bind) o.bind(d);
+    if (o.focus !== false)
+      setTimeout(() => {
+        const f = d.querySelector(o.focus || '[data-b="1"]') || d.querySelector('[data-b]');
+        if (f && !shut) f.focus({preventScroll: true});
+      }, 50);
+  };
+  const tabbable = () =>
+    [...d.querySelectorAll('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])')].filter(
+      x => !x.disabled && x.getClientRects().length
+    );
+  const key = e => {
+    if (document.getElementById('tour')) return; // the card waits under the tour: the tour's keys
+    const t = e.target,
+      inside = t instanceof Element && d.contains(t);
+    if (e.key === 'Tab') {
+      // The focus stays in the card.
+      const f = tabbable(),
+        i = f.indexOf(document.activeElement);
+      if (!f.length) return e.preventDefault();
+      if (e.shiftKey ? i <= 0 : i < 0 || i === f.length - 1) {
+        e.preventDefault();
+        f[e.shiftKey ? f.length - 1 : 0].focus();
+      }
+      return;
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      return act(o.esc === undefined ? 'esc' : o.esc, 'esc');
+    }
+    if (inside && t.matches('input, textarea, select')) return; // typing in the card's form (sign-in)
+    e.stopPropagation(); // never the quiz's answer keys behind the card
+    if (/^\d$/.test(e.key)) e.preventDefault();
+    if (e.key !== 'Enter' || (inside && t.closest('button, a[href], [tabindex]')) || o.enter === undefined) return; // Enter presses it
+    e.preventDefault();
+    act(o.enter, 'enter');
+  };
+  document.addEventListener('keydown', key, true);
+  d.addEventListener('click', e => {
+    if (e.target === d && o.tap !== undefined) act(o.tap, 'tap');
+  });
+  d.close = close;
+  d.ulClose = () => close('route');
+  d.set = c => (Object.assign(o, c), draw());
+  draw();
+  document.body.appendChild(d);
+  return d;
+}
+// A progress ring for a card's medallion: pct strong, was (a former value) faint behind it.
+function cardRing(pct, was) {
+  const C = 2 * Math.PI * 26,
+    arc = (p, c) =>
+      `<circle class="${c}" cx="32" cy="32" r="26" stroke-dasharray="${((C * Math.max(0, Math.min(100, p))) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 32 32)"/>`;
+  return `<svg class="ulring" viewBox="0 0 64 64"><circle class="tr" cx="32" cy="32" r="26"/>${was != null && was !== pct ? arc(was, 'gh') : ''}${pct > 0 ? arc(pct, 'ar') : ''}<text x="32" y="38.5" text-anchor="middle">${pct}%</text></svg>`;
+}
 function route() {
   // A new version took over in the background (see UPDATED): the page reloads on the way to the next page.
   if (UPDATED) return location.reload();
@@ -1504,6 +1659,7 @@ const SETUP = {
     recalcNotice(); // every player's progress recalculated (2026-11-02): said once, with a pop-up
     mxLostNotice(); // a learned mark taken away (model.js mxRecalc): said once, after the card above if both are due
     rvNotice(); // the cards of the rules versions skipped (core.js RVS msg, sync.js replayAdopt): after those above
+    sorryNotice(); // an apology to the players of the broken opening (2026-11-03/04): once, after any recalculation note
     prog();
     window.APP_READY = true; // Home, the quiz and the Learn pages work (tests and tools/perf.js wait for this)
   },
@@ -1536,7 +1692,7 @@ function need(n) {
   }
 }
 Promise.all([
-  getR('data.json?v=36')
+  getR('data.json?v=37')
     .then(r => (loadMark('pop', String(r.headers.get('x-served-by') || '').slice(0, 60)), r))
     .then(okJson)
     .then(d => (window.bootTick && bootTick(), d)),
