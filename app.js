@@ -716,7 +716,9 @@ function showGloss(el) {
   $gpop.style.left = Math.max(12, Math.min(r.left, innerWidth - w - 12)) + 'px';
   const below = r.bottom + 8,
     h = $gpop.offsetHeight;
-  $gpop.style.top = (below + h > innerHeight - 8 ? r.top - h - 8 : below) + 'px';
+  // Below the term, else above it, and always inside the screen (a term high on a tall card, whose definition did not
+  // fit above it, went off the top: pages smoke, 2026-11-03).
+  $gpop.style.top = Math.max(8, Math.min(below + h > innerHeight - 8 ? r.top - h - 8 : below, innerHeight - h - 8)) + 'px';
 }
 document.addEventListener(
   'click',
