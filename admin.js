@@ -1,4 +1,7 @@
 // IMR Reef ID: photo curation back-office (admin.html, not linked from the app).
+// First, the storage keys from before the rename (2026-11-03) move to their new names (core.js migrateKeys): the admin's
+// token, draft and Undo history included. Before anything reads them.
+migrateStorage();
 // Edits curation.json: per genus, the cover photo, the featured photos of each view (in order),
 // hidden photos and photos moved to another view. app.js applies it on top of data.json (applyCuration).
 // Saving commits curation.json to the repo through the GitHub API with a fine-grained token. The token is
@@ -4190,7 +4193,8 @@ function loadStats() {
     me = sy.name;
   const digest = me
     ? crypto.subtle
-        .digest('SHA-256', new TextEncoder().encode(`imr-coral-id|anon|${me.trim().toLowerCase()}`))
+        // The app's old id is the anonymous ids' salt (Code.gs SALT), kept through the rename: the ids must not change.
+        .digest('SHA-256', new TextEncoder().encode(`imr-coral-id|anon|${me.trim().toLowerCase()}`)) // rename-app: keep
         .then(b => {
           MEID = btoa(String.fromCharCode(...new Uint8Array(b))).slice(0, 8);
         })
@@ -4314,7 +4318,15 @@ function loadUsers(force) {
     })
     .catch(() => (USERS = {err: 'Offline'}));
 }
-const userPost = body => fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({...body, token: TOKEN})}).then(r => r.json());
+// A player's saved data (userData) is read with the new key names whichever app saved it (core.js keysIn, rename to
+// IMR Reef ID 2026-11-03); a merged record goes back with the old names too (withLegacy), as the app sends it.
+const userPost = body =>
+  fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({...body, token: TOKEN})})
+    .then(r => r.json())
+    .then(j => {
+      if (j && j.data) j.data = keysIn(j.data);
+      return j;
+    });
 // Players page (Pierre, 2026-11-01: "one page, sort the players by name or by score, and act on them there"): the Users
 // list (names, from the token-guarded sheet call, v11) joined with the anonymous answer stats (?answers=1, ?stats=1) by
 // each player's anonymous id (users_ id, sheet v13). One row per signed-in player, sortable by any column; a row opens
@@ -4580,7 +4592,7 @@ function bindUsers() {
         Promise.all([userPost({userData: from}), userPost({userData: into})])
           .then(([a, b]) => {
             if (!(a && a.ok && b && b.ok)) return done('', a && !a.ok ? a : b);
-            return userPost({userMerge: {from, into, data: mergeUsers(a.data, b.data), at: b.rev}}).then(j =>
+            return userPost({userMerge: {from, into, data: withLegacy(mergeUsers(a.data, b.data)), at: b.rev}}).then(j =>
               done(`"${from}" merged into "${into}".`, j)
             );
           })

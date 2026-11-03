@@ -45,7 +45,8 @@ def state(rev=None):
     files = re.findall(r"'(\w+)'", re.search(r'files: \[([^\]]*)\]', lab).group(1))
     m = re.search(r"\.\.\.\[([^\]]*)\]\.map\(\s*f => `proto/\$\{f\}\.js\?v=(\d+)`\s*\)", shell)  # any line breaks (Prettier)
     swlab = (re.findall(r"'(\w+)'", m.group(1)), int(m.group(2))) if m else ([], None)
-    V = int(re.search(r"const V = 'reefid-shell-v(\d+)';", sw).group(1))
+    # The base may be from before the rename to IMR Reef ID (2026-11-03), when the shell cache was named otherwise.
+    V = int(re.search(r"const V = '(?:reefid-shell|imr-coral-id)-v(\d+)';", sw).group(1))  # rename-app: keep
     return refs, labv, files, swlab, V
 
 

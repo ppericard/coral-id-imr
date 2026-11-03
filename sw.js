@@ -1,7 +1,15 @@
 // Offline cache: app shell first, then photos as they are viewed.
+// The shell cache is reefid-shell-vN: on activation every other shell cache goes (REPLACES), never the photo cache.
 const V = 'reefid-shell-v280';
+// Shell caches this worker replaces: its own name, and the one from before the rename to IMR Reef ID (2026-11-03).
+const REPLACES = ['reefid-shell-', 'imr-coral-id-']; // rename-app: keep
+// The question "your version?" to the open pages (app.js), under its name before the rename too.
+const VER_ASK = ['reefid-ver?', 'imr-ver?']; // rename-app: keep
 // Photos live in their own cache that no deploy deletes (code review 2026-11-01, H3): bumping V used to wipe every
 // offline photo. Capped at PH_MAX entries, oldest first out (cache keys keep insertion order).
+// Its name did not follow the rename to IMR Reef ID (2026-11-03): a new name would have thrown away, or copied while the
+// app waits, up to PH_MAX offline photos per phone. It gets one with the domain move, on a new origin whose caches
+// start empty anyway (docs/ROADMAP.md).
 const PH = 'imr-photos-v1',
   PH_MAX = 2500;
 // The R2 bucket the pages read the photos from (core.js PHOTO_BASE, where the switch is; this only lets the worker cache
@@ -14,13 +22,13 @@ const SHELL = [
   'index.html',
   'app.css?v=120',
   'core.js?v=31',
-  'app.js?v=182',
-  'sync.js?v=17',
+  'app.js?v=183',
+  'sync.js?v=18',
   'progress.js?v=13',
   'model.js?v=18',
   'quiz.js?v=23',
-  'learn.js?v=4',
-  'flag.js?v=9',
+  'learn.js?v=5',
+  'flag.js?v=10',
   'quality.json?v=3',
   'picks.json?v=1',
   'data.json?v=34',
@@ -36,7 +44,7 @@ const SHELL = [
   'home-art.js?v=4',
   'home.js?v=27',
   'home.css?v=22',
-  'tour.js?v=14',
+  'tour.js?v=15',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'type', 'pairs', 'gallery'].map(
     f => `proto/${f}.js?v=71`
@@ -68,7 +76,7 @@ self.addEventListener('install', e =>
 self.addEventListener('activate', e =>
   e.waitUntil(
     (async () => {
-      const old = (await caches.keys()).filter(k => k.startsWith('reefid-shell-') && k !== V),
+      const old = (await caches.keys()).filter(k => REPLACES.some(s => k.startsWith(s)) && k !== V),
         ph = await caches.open(PH);
       for (const k of old) {
         const c = await caches.open(k);
@@ -90,21 +98,25 @@ self.addEventListener('activate', e =>
         pages.map(
           c =>
             new Promise(done => {
-              const ch = new MessageChannel(),
-                t = setTimeout(() => {
-                  c.navigate(c.url).catch(() => {});
+              const t = setTimeout(() => {
+                c.navigate(c.url).catch(() => {});
+                done();
+              }, 3000);
+              // Asked under both names: a page from before the rename to IMR Reef ID (2026-11-03) knows only the old
+              // one, and must not be reloaded in the middle of a question for that.
+              VER_ASK.forEach(q => {
+                const ch = new MessageChannel();
+                ch.port1.onmessage = () => {
+                  clearTimeout(t);
                   done();
-                }, 3000);
-              ch.port1.onmessage = () => {
-                clearTimeout(t);
-                done();
-              };
-              try {
-                c.postMessage({t: 'reefid-ver?'}, [ch.port2]);
-              } catch (err) {
-                clearTimeout(t);
-                done();
-              }
+                };
+                try {
+                  c.postMessage({t: q}, [ch.port2]);
+                } catch (err) {
+                  clearTimeout(t);
+                  done();
+                }
+              });
             })
         )
       );

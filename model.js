@@ -254,7 +254,7 @@ const shaky = n => {
 // card can be asked from INTRO.GAP answers on, and a new card waits INTRO.EVERY answers after the last one (and while
 // introHold, below). Which genus
 // opens and when stays the progressive path's (weighted, OPEN): a draw that falls on a genus not met yet shows its card
-// and asks about a genus already met. Kept on the device (reefid-intro: genus -> [answers when shown, 1 if one of the
+// and asks about a genus already met. Kept on the device (reefid-sync-coral-intro: genus -> [answers when shown, 1 if one of the
 // first cards]); a genus already asked (another device, progress from before the cards) counts as met. Bonus genera
 // (once on, app.js Q.bon) open the same way, on their own card. docs/LEARNING.md.
 // OFFER: after a few dozen answers, a player whose overall level (Elo, P[LEVEL].th) is already high knows their corals

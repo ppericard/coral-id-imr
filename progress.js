@@ -262,25 +262,27 @@ function showProg() {
   sb.hidden = !SYNC_URL || (!!SYNC && !bad);
   sb.textContent = bad ? 'Not saved' : 'Sign in';
   sb.classList.toggle('warn', !!bad);
-  sb.title = bad || 'Sign in to save your progress for your IMR trainer';
+  sb.title = bad || `Sign in to save your progress for your ${ORG.short} trainer`;
 }
-// Progress files: every reefid-sync-* key in localStorage (quiz progress, settings, Lab scores), as JSON.
+// Progress files and the sheet: every key that travels (core.js KEYS.SYNC: quiz progress, settings, achievements...), as JSON.
 const progData = () => {
   const d = {};
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k.startsWith('reefid-sync') && k !== 'reefid-account') d[k] = localStorage.getItem(k);
+      if (k.startsWith(KEYS.SYNC)) d[k] = localStorage.getItem(k);
     }
   } catch (e) {}
   return d;
 };
-const loadData = d =>
-  Object.entries(d || {}).forEach(([k, v]) => k.startsWith('reefid-sync') && k !== 'reefid-account' && localStorage.setItem(k, v));
+// A file or a saved account may carry the names from before the rename to IMR Reef ID (core.js keysIn).
+const loadData = d => Object.entries(keysIn(d)).forEach(([k, v]) => k.startsWith(KEYS.SYNC) && localStorage.setItem(k, v));
+// A progress file says which app wrote it: 'reefid', or before the rename (2026-11-03) the old id, still read.
+const PROG_APP = ['reefid', 'imr-coral-id']; // rename-app: keep
 function bindProgFile() {
   const msg = t => (document.getElementById('pmsg').textContent = t);
   document.getElementById('pexp').onclick = () => {
-    const out = {app: 'imr-coral-id', saved: new Date().toISOString(), data: progData()};
+    const out = {app: PROG_APP[0], saved: new Date().toISOString(), data: progData()};
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 1)], {type: 'application/json'}));
     a.download = `reefid-progress-${out.saved.slice(0, 10)}.json`;
@@ -296,7 +298,7 @@ function bindProgFile() {
     if (done) {
       sessionStorage.removeItem('reefid-loaded');
       msg('Progress loaded from ' + done + '.');
-      if (done !== 'the IMR sheet') {
+      if (done !== SHEET_NAME) {
         document.querySelector('#settings .saveprog').open = true;
         setOpen(true);
       }
@@ -308,7 +310,7 @@ function bindProgFile() {
     f.text()
       .then(t => {
         const j = JSON.parse(t);
-        if (j.app !== 'imr-coral-id' || !j.data) throw 0;
+        if (!PROG_APP.includes(j.app) || !j.data) throw 0;
         loadData(j.data);
         // Reload so every setting held in memory (quiz options, list order, Lab state) picks up the file.
         try {
@@ -316,7 +318,7 @@ function bindProgFile() {
         } catch (e) {}
         location.reload();
       })
-      .catch(() => msg('This file is not an IMR Reef ID progress file.'));
+      .catch(() => msg(`This file is not an ${ORG.app} progress file.`));
   };
 }
 

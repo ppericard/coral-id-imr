@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <!-- CSP (code review 2026-11-01, L2): scripts only from this site; the inline theme script is allowed by its hash, checked by tests/csp.test.js. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-OAtX2ifOLb+6yvI2++IEM2Jm0S6f0E/gSF6qaoucY1c='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://pub-934250f83b884a4f890497f2027ce251.r2.dev https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org; connect-src 'self' https://pub-934250f83b884a4f890497f2027ce251.r2.dev https://script.google.com https://script.googleusercontent.com https://api.github.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-33B3gm26eU7bsLh+VKMawLw29HnIFyczdWQ/VoEvREY='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://pub-934250f83b884a4f890497f2027ce251.r2.dev https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org; connect-src 'self' https://pub-934250f83b884a4f890497f2027ce251.r2.dev https://script.google.com https://script.googleusercontent.com https://api.github.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>IMR Reef ID Admin</title>
@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="admin.css?v=80">
 </head>
 <body class="admin">
-<script>try{var t=localStorage.getItem("reefid-sync-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>/* rename-app: keep (the name before the rename too: admin.js moves it after this runs) */try{var t=localStorage.getItem("reefid-sync-theme")||localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <div class="wrap">
   <header>
     <h1 class="brand"><a class="home" href="./" title="IMR Reef ID"><img src="icon.svg" alt="" width="30" height="30"><span class="adm-name">Admin</span></a></h1>
@@ -40,7 +40,7 @@
 </div>
 <div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>
 <script src="core.js?v=31"></script>
-<script src="admin-demo.js?v=12"></script>
+<script src="admin-demo.js?v=13"></script>
 <script src="admin.js?v=134"></script>
 <script src="admin-journey.js?v=11"></script>
 </body>

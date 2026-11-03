@@ -49,8 +49,15 @@ function syncSummary() {
     board: boardOn() ? 1 : 0
   };
 }
+// The saved data comes with the key names of the app that saved it (core.js keysIn: an app from before the rename to
+// IMR Reef ID, 2026-11-03, saves the old ones): read with the new names only.
 const syncGet = (a = SYNC) =>
-  sheetFetch(`${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}`).then(r => r.json());
+  sheetFetch(`${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}`)
+    .then(r => r.json())
+    .then(j => {
+      if (j && j.data) j.data = keysIn(j.data);
+      return j;
+    });
 // Two devices on one account: three-way merge against SYNC.base, the progress as last sent or received.
 // Answers taken on this device since then are added on top of the saved record, so neither side's answers
 // are lost. A reset (reefid-sync-coral-reset, a time) wins over older progress.
@@ -167,7 +174,7 @@ function syncOnce(tries = 0) {
         body: JSON.stringify({
           name: me.name,
           pin: me.pin,
-          data: progData(),
+          data: withLegacy(progData()), // + the old names, for a device still on an app from before the rename (core.js)
           summary: syncSummary(),
           answers: log,
           av: appVer(), // the app's version (sheet v25: a request without it comes from an app before 2026-11-03)
@@ -649,7 +656,7 @@ function signIn(name, pin, j) {
   if (!anon) delete SYNC.dirty;
   store.set('reefid-account', SYNC);
   try {
-    sessionStorage.setItem('reefid-loaded', 'the IMR sheet');
+    sessionStorage.setItem('reefid-loaded', SHEET_NAME);
   } catch (e) {}
   location.reload();
 }
@@ -819,8 +826,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       const name = f.n.value.trim(),
         pin = f.p.value.trim();
       msg('Connecting…');
-      sheetFetch(`${SYNC_URL}?name=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}&av=${appVer()}`)
-        .then(r => r.json())
+      syncGet({name, pin})
         .then(j => {
           if (!j.ok)
             return msg(
