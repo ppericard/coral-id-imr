@@ -498,7 +498,7 @@ function pctOf_(P, list){
     const g = String(s.h || '').split('').reduce((x, c) => x + A * (c === '1' ? OLD : 1) * ((c === '1' ? 1 : 0) - x), 0);
     return s.mx ? Math.max(g, M) : g; };
   const score = s => { if (!s) return 0; if (s.mx) return 1; const g = pg(s);
-    return 0.95 * Math.min(1, g / M) + (g >= M && s.ex ? 0.05 * (s.ex.k || 0) / 5 : 0); };
+    return 0.95 * Math.min(1, g / M) + (g >= M && s.ex ? 0.05 * Math.min(4, s.ex.k || 0) / 5 : 0); }; // never 100% before the exam is passed (core.js scoreOf)
   return list && list.length ? Math.round(100 * list.reduce((t, n) => t + score((P || {})[n]), 0) / list.length) : 0;
 }
 const ELO_MIN = 200;

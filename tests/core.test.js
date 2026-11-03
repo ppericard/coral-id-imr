@@ -455,6 +455,9 @@ test('progress (PROG): a moving average weighed by what each answer proves; old 
   // The bar: 95% at the exam's entry, the exam questions passed on top, 100% once learned.
   assert.strictEqual(scoreOf({pg: PROG.M}), 0.95);
   assert.strictEqual(scoreOf({pg: PROG.M, ex: {k: 2}}), 0.97);
+  // An exam with its 5 right answers but not passed yet (begun before typed questions, waiting for its typed ones):
+  // never 100% before s.mx (Codex review #393).
+  assert.strictEqual(scoreOf({pg: PROG.M, ex: {k: 5, t: 1}}), 0.99);
   assert.strictEqual(scoreOf({pg: 0.5, mx: 1}), 1);
   // Saved before s.pg: BKT's L is ignored, the last results replay from 0 (a right answer 2/3), never to the exam's entry;
   // a learned genus stays learned, at the entry.

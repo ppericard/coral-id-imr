@@ -488,8 +488,9 @@ is a good mastery criterion.
   the level: calibration photos, the exam's hardest ones). The misses that say little cost less; the measure loses
   nothing.
 - **The bar** = 0.95 × min(1, `s.pg` / `PROG.M`), `PROG.M` = 0.8 = the mastery exam's entry, shown as 95%; each exam
-  question passed adds 1%, the passed exam makes it 100% (`scoreOf`, `genScore`; the sheet's `pctOf_` is a copy,
-  v22). The draw weight of a genus being learned uses 1 − `s.pg` where it used 1 − L.
+  question passed adds 1%, up to 99% (4 steps: an exam begun before typed questions can hold 5 right answers while it
+  still waits for its typed ones; Codex review #393), and only the passed exam makes it 100% (`scoreOf`, `genScore`; the
+  sheet's `pctOf_` is a copy, v22). The draw weight of a genus being learned uses 1 − `s.pg` where it used 1 − L.
 - **The exam's entry is 0.8, not 0.95**: a moving average sits near the recent success rate, and the game keeps
   everyone near 80-88% right (difficulty targeting), so at 0.95 almost no genus ever reached the exam (table: an
   expert had 0 genera at 95% after 600 questions with A 0.1-0.2). 0.8 of what each answer proved, look-alikes in play,

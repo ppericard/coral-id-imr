@@ -903,7 +903,9 @@
     if (!s) return 0;
     if (s.mx) return 1;
     const g = pgOf(s);
-    return 0.95 * Math.min(1, g / PROG.M) + (g >= PROG.M && s.ex ? (0.05 * (s.ex.k || 0)) / 5 : 0);
+    // At most 4 of the 5 exam steps before the exam is passed (Codex review #393): an exam begun before typed questions
+    // can have 5 right answers still waiting for its typed ones, and only a passed exam (s.mx) makes 100%.
+    return 0.95 * Math.min(1, g / PROG.M) + (g >= PROG.M && s.ex ? (0.05 * Math.min(4, s.ex.k || 0)) / 5 : 0);
   }
   // Progress % of a saved progress P over a list of genera, as the app shows it (genScore / progPct). The sync sheet
   // computes the leaderboard % with a copy (Code.gs pctOf_, v16; s.pg from v22): keep the two in step
