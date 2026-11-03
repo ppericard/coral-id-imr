@@ -154,22 +154,22 @@ function journeyChart(series, top, opt = {}) {
     .join('')}${marks}${dots}${stars}${xt}</svg>`;
 }
 
-function renderJourney(name) {
+function renderJourney(name, anonId = '') {
+  const here = anonId ? '~anon/' + anonId : '~journey/' + name;
   status();
   const back = `<a class="adm-fchip plain" href="#~users">← Players</a><button type="button" class="adm-fchip plain" data-jload title="Reload">↻</button>`;
   if (!USERS || !ANS) {
-    $v.innerHTML = `<div class="adm-shead">${back}<h2>${esc(name)}</h2></div><p class="note">Loading…</p>`;
+    $v.innerHTML = `<div class="adm-shead">${back}<h2>${esc(anonId ? 'Not signed in · ' + anonId : name)}</h2></div><p class="note">Loading…</p>`;
     Promise.all([USERS ? null : loadUsers(), ANS ? null : loadStats()]).then(() => {
-      if (cur === '~journey/' + name) render();
+      if (cur === here) render();
     });
     return;
   }
-  // A device that never signed in (Pierre, 2026-11-03): '@' + its anonymous id, from Players > Not signed in. Its
+  // A device that never signed in (Pierre, 2026-11-03): #~anon/<its anonymous id>, from Players > Not signed in. Its
   // answers are all there is: no saved progress, so no cards and no learned genera.
-  const anonId = name[0] === '@' ? name.slice(1) : '',
-    u = anonId ? {name: 'Not signed in · ' + anonId, id: anonId} : (USERS.users || []).find(x => x.name === name);
+  const u = anonId ? {name: 'Not signed in · ' + anonId, id: anonId} : (USERS.users || []).find(x => x.name === name);
   if (!u || !u.id) {
-    $v.innerHTML = `<div class="adm-shead">${back}<h2>${esc(name)}</h2></div><p class="note">${u ? 'No anonymous id for this player yet (sheet script v13).' : 'No player by this name.'}</p>`;
+    $v.innerHTML = `<div class="adm-shead">${back}<h2>${esc(anonId ? 'Not signed in · ' + anonId : name)}</h2></div><p class="note">${u ? 'No anonymous id for this player yet (sheet script v13).' : 'No player by this name.'}</p>`;
     bindJReload();
     return;
   }

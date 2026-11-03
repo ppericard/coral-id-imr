@@ -967,7 +967,8 @@ const GROUPS = [
     ]
   ]
 ];
-const pageOf = () => (cur === '~mont' ? '~look' : cur.startsWith('~journey/') ? '~users' : cur[0] === '~' ? cur : ''); // '' = a genus page; a player's journey sits under Players
+const pageOf = () =>
+  cur === '~mont' ? '~look' : cur.startsWith('~journey/') || cur.startsWith('~anon/') ? '~users' : cur[0] === '~' ? cur : ''; // '' = a genus page; a player's journey sits under Players
 const groupKey = () => (GROUPS.find(g => g[2].some(([h]) => h === pageOf())) || GROUPS[1])[0];
 // Genus x view cells over the cap (CELL_MAX colonies in the games, after "Add anyway"): a warning on the To do tab and
 // on Game coverage (Pierre, 2026-11-02: "at least a warning").
@@ -1016,7 +1017,7 @@ function navs(tn, xn) {
 }
 // Which kind of page this is (help text, the Stats-style views): not the header tab, see groupKey().
 const modeKey = () =>
-  cur.startsWith('~journey/')
+  cur.startsWith('~journey/') || cur.startsWith('~anon/')
     ? 'journey'
     : NEED_TABS.some(([h]) => h === cur)
       ? 'needs'
@@ -1050,6 +1051,8 @@ function render() {
   }
   if (cur === '~users') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
   if (cur.startsWith('~journey/')) return renderJourney(cur.slice(9)); // one player's path (admin-journey.js)
+  // A device that never signed in, by anonymous id (its own route: a player's name may start with any character).
+  if (cur.startsWith('~anon/')) return renderJourney('', cur.slice(6));
   if (modeKey() === 'stats') {
     if (cur === '~diff') renderDiff();
     else renderStats();
@@ -4261,7 +4264,7 @@ function renderUsers() {
       elo:
         u.lv == null
           ? '–'
-          : `${Math.round(1000 + 200 * u.lv)}${u.id && LVM[u.id] ? ` <small>±${Math.round((200 * LVM[u.id]) / 10) * 10}</small>` : ''}`,
+          : `${Math.round(1000 + 200 * u.lv)}${u.id && isFinite(LVM[u.id]) ? ` <small>±${Math.round((200 * LVM[u.id]) / 10) * 10}</small>` : ''}`,
       answers: u.answers,
       right: pct(u.right, u.answers),
       recent: pct(u.recent[1], u.recent[0]),
@@ -4295,7 +4298,7 @@ function renderUsers() {
       ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th>Level</th><th>Answers</th><th>Right</th><th>First</th><th>Last</th></tr></thead><tbody>${anon
           .map(
             ([id, a]) =>
-              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#~journey/@${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td><td>${days(a.first)}</td><td>${days(a.last)}</td></tr>`
+              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#~anon/${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td><td>${days(a.first)}</td><td>${days(a.last)}</td></tr>`
           )
           .join(
             ''

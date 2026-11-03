@@ -96,6 +96,14 @@ const server = http.createServer((req, res) => {
     await go('~users');
     let t = await text();
     if (!/Ana Demo/.test(t) || !/mara demo2/.test(t)) fails.push(`${w}px Users: demo players missing`);
+    // Each anonymous id opens its own Journey (#~anon/<id>, so a name starting with @ keeps its own; Codex review #375).
+    const anon = await p.$eval('a[href^="#~anon/"]', a => a.getAttribute('href')).catch(() => null);
+    if (!anon) fails.push(`${w}px Users: no Journey link on the anonymous ids`);
+    else {
+      await go(anon.slice(1));
+      if (!/Not signed in ·[\s\S]*not saved \(not signed in\)/.test(await text())) fails.push(`${w}px ${anon}: anonymous Journey missing`);
+      await go('~users');
+    }
     // Names joined with the anonymous stats: every demo player has a level; sorting by name puts Ana first, reversed last.
     const lv = await p.$$eval('.adm-urow td:nth-child(2)', L => L.map(td => td.textContent.trim()));
     if (!lv.length || lv.some(x => x === '–')) fails.push(`${w}px Players: a level is missing (${lv.join(' ')})`);
