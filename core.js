@@ -192,7 +192,11 @@
   const TRUST = {N: 10, Z: 1.645}; // answers per player, not per photo
   // As Code.gs guess_ (v20): without |kN, a photo-quiz question with 2 or 3 genera in its choices (readAnswers row
   // index 10) is rated with 1 / choices ("Again: A or B?", logged plain "quiz" until 2026-11-02).
+  // A typed answer (|t, 2026-11-03: the player types the genus instead of picking one of the choices) has no guess rate:
+  // nothing to pick from, so the expected success has no 1/k floor (Code.gs guess_ v27; model.js TYPED.k).
+  const TYPED_RE = /\|t(\||$)/;
   const guessOf = (mode, choices) => {
+    if (TYPED_RE.test(mode)) return 0;
     const kq = /\|k(\d)$/.exec(mode);
     if (kq) return 1 / Number(kq[1]);
     if (mode.indexOf('quiz-duel') === 0) return 0.5;
@@ -899,7 +903,9 @@
     if (!s) return 0;
     if (s.mx) return 1;
     const g = pgOf(s);
-    return 0.95 * Math.min(1, g / PROG.M) + (g >= PROG.M && s.ex ? (0.05 * (s.ex.k || 0)) / 5 : 0);
+    // At most 4 of the 5 exam steps before the exam is passed (Codex review #393): an exam begun before typed questions
+    // can have 5 right answers still waiting for its typed ones, and only a passed exam (s.mx) makes 100%.
+    return 0.95 * Math.min(1, g / PROG.M) + (g >= PROG.M && s.ex ? (0.05 * Math.min(4, s.ex.k || 0)) / 5 : 0);
   }
   // Progress % of a saved progress P over a list of genera, as the app shows it (genScore / progPct). The sync sheet
   // computes the leaderboard % with a copy (Code.gs pctOf_, v16; s.pg from v22): keep the two in step
@@ -979,6 +985,83 @@
     return true;
   }
 
+  // Typed answers (Pierre, 2026-11-03; first the Lab prototype proto/type.js, then the quiz, quiz.js): the player types
+  // the genus instead of picking 1 of 4 (recall, not recognition). What Pierre agreed: light spelling tolerance (1 letter
+  // on a short name, 2 on a long one), old names accepted ("formerly X" in the genus's own lines), no suggestions while
+  // typing, the phone's autocorrect and capitals off, an "I don't know" button (a miss), the right spelling shown after
+  // the answer. A word that is no game genus, even with the tolerance, is no answer: the player is asked to check it.
+  const TYPE = {
+    // Edits allowed: one for a name of up to 6 letters, two beyond (Porites, Pocillopora).
+    tol: n => (n <= 6 ? 1 : 2)
+  };
+  // Optimal string alignment distance (Levenshtein + a swap of two neighbouring letters, the commonest typo).
+  function typeDist(a, b) {
+    const d = Array.from({length: a.length + 1}, (_, i) => [i, ...Array(b.length).fill(0)]);
+    for (let j = 1; j <= b.length; j++) d[0][j] = j;
+    for (let i = 1; i <= a.length; i++)
+      for (let j = 1; j <= b.length; j++) {
+        const c = a[i - 1] === b[j - 1] ? 0 : 1;
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + c);
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+      }
+    return d[a.length][b.length];
+  }
+  const typeNorm = s =>
+    String(s || '')
+      .trim()
+      .split(/\s+/)[0] // "Acropora sp." or a species: the genus is the first word
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[^a-z]/g, '');
+  // Every name a player may type: the genera cur (every genus the app knows, the slate's and the extra ones) and the old
+  // names of their own "formerly X" lines (gx(name): the genus's record, its crit and imr lines). An old name that is
+  // itself a game genus is left out: Duncanopsammia peltata was "formerly Turbinaria peltata", Turbinaria is still valid.
+  // Returns [{k: normalised name, g: genus, old: the old name or ''}].
+  function typeNamesOf(cur, gx) {
+    const out = cur.map(n => ({k: typeNorm(n), g: n, old: ''}));
+    cur.forEach(n => {
+      const g = gx(n) || {},
+        txt = [...(g.crit || []), ...(g.imr || [])].join(' ');
+      for (const m of txt.matchAll(/formerly ((?:[A-Z][a-z]+)(?:\s*\/\s*[A-Z][a-z]+)*)/g))
+        m[1]
+          .split('/')
+          .map(x => x.trim())
+          .forEach(o => {
+            if (!gx(o) && !out.some(x => x.k === typeNorm(o))) out.push({k: typeNorm(o), g: n, old: o});
+          });
+    });
+    return out;
+  }
+  // What the typed text names among names (typeNamesOf): {g, old, exact} for one genus within the tolerance, {near:
+  // [genera]} when two are as close (the player is asked to check the spelling), null when nothing is close.
+  function typeMatchIn(names, text) {
+    const t = typeNorm(text);
+    if (t.length < 3) return null;
+    const all = names
+      .map(x => ({...x, d: typeDist(t, x.k)}))
+      .filter(x => x.d <= TYPE.tol(x.k.length))
+      .sort((a, b) => a.d - b.d);
+    if (!all.length) return null;
+    const best = all.filter(x => x.d === all[0].d),
+      gs = [...new Set(best.map(x => x.g))];
+    if (gs.length > 1) return {near: gs};
+    return {g: best[0].g, old: best[0].old, exact: best[0].d === 0};
+  }
+  // The share of a genus's questions asked as typed ones, from its progress x (0 to 1, the % shown): none below T.from,
+  // then a straight line between the points T.at ([progress, share], in order), flat after the last (model.js TYPED).
+  function typedShare(x, T) {
+    const at = T.at || [];
+    if (!(x >= T.from) || !at.length) return 0;
+    if (x <= at[0][0]) return at[0][1];
+    for (let i = 1; i < at.length; i++)
+      if (x <= at[i][0]) {
+        const [x0, y0] = at[i - 1],
+          [x1, y1] = at[i];
+        return y0 + ((y1 - y0) * (x - x0)) / (x1 - x0);
+      }
+    return at[at.length - 1][1];
+  }
+
   const CORE = {
     BENTHIC,
     BONUS,
@@ -989,6 +1072,13 @@
     photoToSite,
     photoRetry,
     PHOTO_RETRY,
+    TYPE,
+    TYPED_RE,
+    typeDist,
+    typeNorm,
+    typeNamesOf,
+    typeMatchIn,
+    typedShare,
     PROG,
     pgStep,
     pgOf,
@@ -1017,6 +1107,7 @@
     levelMargin,
     playSplit,
     trustOf,
+    guessOf,
     TRUST,
     PHOTO_W,
     PLAYER0,

@@ -47,8 +47,10 @@ const DATA = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),
   look = (a, b) => ((GEN[a] || {}).look || []).includes(b) || ((GEN[b] || {}).look || []).includes(a);
 const sig = x => 1 / (1 + Math.exp(-x)),
   TARGET_OFF = 1; // model.js PICKD.TARGET_OFF
-// Number of choices as the app scored it: |kN in the mode, a duel 2, else the genera in the choices (2-3), else 4.
+// Number of choices as the app scored it: a typed answer (|t) none to guess from (Infinity, model.js TYPED.k), |kN in
+// the mode, a duel 2, else the genera in the choices (2-3), else 4.
 const kOf = (mode, choices) => {
+  if (C.TYPED_RE.test(mode)) return Infinity;
   const kq = /\|k(\d)/.exec(mode);
   if (kq) return Number(kq[1]);
   if (/duel|\|d/.test(mode)) return 2;
@@ -163,7 +165,7 @@ for (const [id, L] of Object.entries(players)) {
         chs = String(r[10] || '')
           .split(/\s+/)
           .filter(Boolean),
-        w = Math.min(1, (1 - 1 / k) / (1 - 1 / 4)) * (chs.some(x => x !== t && look(t, x)) ? 1 : C.PROG.LOOK);
+        w = Math.min(1, (1 - 1 / k) / (1 - 1 / 4)) * (!isFinite(k) || chs.some(x => x !== t && look(t, x)) ? 1 : C.PROG.LOOK);
       g.n++;
       g.old = C.pgStep(g.old, ok, ok ? w : pgMissW(th, d, k));
       g.new = C.pgStep(g.new, ok, ok ? w * pgMemW(th, d, fam, k) : pgMissW(th, d + fam, k));

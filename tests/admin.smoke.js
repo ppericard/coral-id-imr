@@ -595,7 +595,11 @@ const server = http.createServer((req, res) => {
     if (as.note) {
       await p.click('[data-caside]');
       await settle();
-      if (!/Hide them/.test(await p.$eval('.adm-caside', e => e.textContent))) fails.push(`${w}px Pre-sort: Show did not bring them back`);
+      if (
+        (await p.$eval('.adm-caside', e => e.getAttribute('aria-pressed'))) !== 'true' ||
+        !(await p.evaluate(F => candQueue('all').some(x => x.p.f === F[1]), CF))
+      )
+        fails.push(`${w}px Pre-sort: Show did not bring them back`);
       await p.click('[data-caside]');
       await settle();
     }

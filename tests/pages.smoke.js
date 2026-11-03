@@ -175,8 +175,16 @@ async function overlays(b, base) {
       n: slateGenera().length,
       mill: genScore('Millepora') > 0
     }));
-    const want = recalc ? 1 : 2;
-    if (r.h.length !== want || !/^Millepora now counts/.test(r.h[0]) || r.bon !== (bu > 1 ? true : undefined) || r.n !== 40 || !r.mill)
+    // Latest first: the typed-questions announcement (2026-11-03), then Millepora, then the moving average if missed.
+    const want = recalc ? 2 : 3;
+    if (
+      r.h.length !== want ||
+      !/^Think you know your genera/.test(r.h[0]) ||
+      !/^Millepora now counts/.test(r.h[1]) ||
+      r.bon !== (bu > 1 ? true : undefined) ||
+      r.n !== 40 ||
+      !r.mill
+    )
       fails.push(`returning player (seen ${recalc || 'none'}, bu ${bu}): ${JSON.stringify(r)}`);
     await p.click('.recalc .next').catch(() => {});
     await p.reload();
@@ -413,7 +421,7 @@ async function signin(base) {
     () => {
       localStorage.setItem('imr-tour', '"done"');
       localStorage.setItem('imr-nudge', '1');
-      localStorage.setItem('imr-recalc', '"millepora-counts-2026-11"'); // the last "progress recalculated" note: seen
+      localStorage.setItem('imr-recalc', '"typed-questions-2026-11"'); // the last update note: seen
       if (localStorage.getItem('test-own')) return;
       localStorage.setItem('test-own', '1');
       const t = new Date().toISOString();

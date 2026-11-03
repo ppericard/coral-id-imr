@@ -382,7 +382,7 @@ function renderJourney(name, anonId = '') {
         'Photo quiz',
         r =>
           /^quiz(\||$)/.test(r[5]) &&
-          !/\|[xd](\||$)/.test(r[5]) &&
+          !/\|[xdt](\||$)/.test(r[5]) &&
           String(r[10] || '')
             .split(' ')
             .filter(Boolean).length !== 2
@@ -391,12 +391,14 @@ function renderJourney(name, anonId = '') {
         'Again: A or B? (after a mix-up)',
         r =>
           /^quiz(\||$)/.test(r[5]) &&
-          !/\|d(\||$)/.test(r[5]) &&
+          !/\|[dt](\||$)/.test(r[5]) &&
           String(r[10] || '')
             .split(' ')
             .filter(Boolean).length === 2
       ],
       ['Look-alike duel in the quiz', r => /^quiz\|d(\||$)/.test(r[5])],
+      // Typed questions (quiz.js, model.js TYPED, logged |t; their exam questions too, also counted under Mastery exam).
+      ['Typed (recall)', r => /^quiz\|(.*\|)?t(\||$)/.test(r[5])],
       ['Mastery exam', r => /\|x$/.test(r[5])],
       ['Look-alike duels (tab)', r => /^quiz-duel/.test(r[5])],
       ['Other', r => !/^quiz/.test(r[5])]

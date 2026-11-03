@@ -4,7 +4,7 @@
 // truth, over many seeds, so a change to the algorithm can be judged on outcomes with a spread. Not run by CI (minutes,
 // numbers for reading). docs/LEARNING.md, "Learning-outcome simulation".
 //
-//   node tools/learnsim.js [--seeds 30] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
+//   node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
 //                          [--workers 4] [--out results.json] [--stats stats.json] [--met Acropora,Porites,...]
 //                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20]
 //
@@ -115,7 +115,7 @@ const arg = (k, d) => {
   const i = process.argv.indexOf('--' + k);
   return i > 0 && process.argv[i + 1] !== undefined ? process.argv[i + 1] : d;
 };
-const SEEDS = Number(arg('seeds', 30)),
+const SEEDS = Number(arg('seeds', 5)),
   QN = Number(arg('questions', 300)),
   NAMES = arg('profiles', Object.keys(PROFILES).join(',')).split(','),
   WORKERS = Number(arg('workers', Math.max(1, Math.min(4, os.cpus().length)))),
@@ -313,8 +313,12 @@ function play(cfg) {
       bo.click();
     }
     for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
-    const [, t, , , set] = window.__q,
-      ch = [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c),
+    // A typed question (model.js TYPED, quiz.js typeForm) has no buttons: its choices are the draw's, unseen (Codex
+    // review #393). Recall, no guessing: known, the genus is typed; not known, "I don't know" half the time, else a genus
+    // it is taken for (the same confusion weights, the genus itself left out).
+    const typed = !!document.querySelector('#view .tyform'),
+      [, t, , , set] = window.__q,
+      ch = typed ? window.__q[2] : [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c),
       shown = set.shown || [],
       d = mean(shown.map(p => photoDiff(t, p))) || 0,
       single = shown.length === 1,
@@ -322,20 +326,26 @@ function play(cfg) {
       rep = fs.some(f => LM[f] && LM[f][0]);
     let pick = t;
     if (!(rnd() < sig(logit(kn(t)) - d - (single ? L.SINGLE : 0) + memOn(fs)))) {
-      const ws = ch.map(c => wOf(t, c));
+      const pool = typed ? ch.filter(c => c !== t) : ch,
+        ws = pool.map(c => wOf(t, c));
       let r = rnd() * ws.reduce((a, x) => a + x, 0);
-      pick = ch[ch.length - 1];
-      for (let k = 0; k < ch.length; k++)
+      pick = pool[pool.length - 1];
+      for (let k = 0; k < pool.length; k++)
         if ((r -= ws[k]) <= 0) {
-          pick = ch[k];
+          pick = pool[k];
           break;
         }
+      if (typed && rnd() < 0.5) pick = ''; // "I don't know"
     }
     const good = pick === t;
-    document.querySelector(`#view [data-c="${CSS.escape(pick)}"]`).click();
+    if (typed) {
+      const f = document.querySelector('#view .tyform');
+      if (!pick) f.querySelector('[data-idk]').click();
+      else ((f.querySelector('input').value = pick), f.requestSubmit());
+    } else document.querySelector(`#view [data-c="${CSS.escape(pick)}"]`).click();
     planNext('quiz'); // answer()'s top-up after the feedback
     teach(t, prof.rate * (good ? 1 : L.MISS));
-    if (!good) teach(pick, prof.rate * L.PICKED);
+    if (!good && pick) teach(pick, prof.rate * L.PICKED);
     if (good) spaced(t);
     fs.forEach(f => {
       const h = (LM[f] = LM[f] || [0, 0]);
