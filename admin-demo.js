@@ -126,13 +126,20 @@
         ]);
       }
       // Carla is playing now: her last 24 answers moved to the last 15 minutes, two of them typed (quiz|t, no choices).
-      if (name === 'Carla Demo')
+      if (name === 'Carla Demo') {
         live(
           rows.filter(r => r[0] === name),
           24,
           NOW - 60e3,
           2
         );
+        // ... her last 8 photo-quiz answers in the custom quiz (quiz|s…, the genera she picked; app quiz.js quizCustom).
+        rows
+          .filter(r => r[0] === name && r[5] === 'quiz')
+          .sort((x, y) => x[1] - y[1])
+          .slice(-8)
+          .forEach(r => (r[5] = r[5].replace(/^quiz/, 'quiz|s')));
+      }
       // First-meeting cards (app model.js INTRO): the first 4 genera together, the others one at a time 2 answers before
       // their first question; Carla opened all from the offer card at answer 40, Ben declined it at answer 50.
       const mine = rows.filter(r => r[0] === name).sort((x, y) => x[1] - y[1]), // in time order, as the journey reads them

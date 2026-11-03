@@ -27,7 +27,7 @@
             <p class="hddesc">Get to know the genera, then train your eye on photos until you recognise each one at a glance. Your progress is saved as you go.</p>
             <div class="hdacts">
               <a class="hdbtn" href="#genera"><b><em>1</em> Learn</b><small>One sheet per genus: photos at 3 scales, IMR ID tips, look-alikes</small></a>
-              <a class="hdbtn main" href="#quiz"><b><em>2</em> Practice</b><small>Name the genus from photos, look-alike duels, memory</small></a>
+              <a class="hdbtn main" href="#quiz"><b><em>2</em> Practice</b><small>Name the genus from photos (all genera or the ones you pick), look-alike duels, memory</small></a>
             </div>
           </div>
         </section>

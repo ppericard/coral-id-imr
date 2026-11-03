@@ -511,7 +511,7 @@ const server = http.createServer((req, res) => {
     await go('~stats');
     if (/No answers yet/.test(await text())) fails.push(`${w}px Activity: no answers`);
     // Recent sessions (Pierre, 2026-11-03): the last 10 sessions of every player, newest first, by name or anonymous id;
-    // Carla playing now (quiz, duel and typed answers), the device that stopped 12 minutes ago by its id; ↻ reloads.
+    // Carla playing now (quiz, custom quiz, duel and typed answers), the device that stopped 12 minutes ago by its id; ↻ reloads.
     const recent = () =>
       p.evaluate(() => {
         const c = document.querySelector('[data-recent]');
@@ -538,7 +538,7 @@ const server = http.createServer((req, res) => {
       if (R.some((x, i) => i && x.t > R[i - 1].t)) fails.push(`${w}px Recent sessions: not newest first`);
       if (c.who !== 'Carla Demo' || !c.now || c.last !== 'now' || c.n !== 24 || !/1 playing now/.test(rs.head))
         fails.push(`${w}px Recent sessions: Carla not playing now ${JSON.stringify(c)} ${rs.head}`);
-      if (!/quiz/.test(c.modes) || !/duel/.test(c.modes) || !/typed 2/.test(c.modes))
+      if (!/quiz/.test(c.modes) || !/duel/.test(c.modes) || !/typed 2/.test(c.modes) || !/custom 8/.test(c.modes))
         fails.push(`${w}px Recent sessions: modes ${c.modes}`);
       if (R.filter(x => x.now).length !== 1) fails.push(`${w}px Recent sessions: ${R.filter(x => x.now).length} sessions now, expected 1`);
       if (an.last !== '12 min ago' || an.n !== 8 || !/^#~anon\//.test(an.link) || R[1] !== an)
