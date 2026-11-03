@@ -1314,9 +1314,7 @@ async function basicsTeach(b, base) {
     await p.evaluate(() => (location.hash = 'basics|words'));
     await p.waitForSelector('.bx-words', {timeout: 5000});
     const cw = await p.evaluate(() =>
-      [...document.querySelectorAll('.bx-words dt a')].some(
-        a => a.textContent === 'Costae' && a.getAttribute('href') === '#basics|septa'
-      )
+      [...document.querySelectorAll('.bx-words dt a')].some(a => a.textContent === 'Costae' && a.getAttribute('href') === '#basics|septa')
     );
     if (!cw) fails.push(`${W} words: no Costae entry linking to step 4`);
     if (errs.length) fails.push(`${W}: ${errs.slice(0, 3).join(' | ')}`);
