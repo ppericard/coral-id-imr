@@ -644,11 +644,45 @@ let PMEM = memOf((store.get('imr-photo-stats', {}) || {}).mem);
 // changed anything.
 function memRecalcAll() {
   let ch = false;
-  Object.keys(P).forEach(n => {
-    if (n !== LEVEL && memRecalc(P[n], PMEM)) ch = true;
-  });
+  mxRecalc(() =>
+    Object.keys(P).forEach(n => {
+      if (n !== LEVEL && memRecalc(P[n], PMEM)) ch = true;
+    })
+  );
   if (ch) save();
   return ch;
+}
+// A learned mark taken away by a recalculation (Pierre, 2026-11-03: "players know they test an early beta"): told once
+// with a card, and the learned-based achievements the progress no longer meets are taken back (progress.js achRecheck).
+// Generic: mxRecalc(fn) runs any recalculation of the progress (today core.js memRecalc, at load, after a pull and before
+// an answer; later perhaps a full replay of the sheet's answer log) and reports every genus whose s.mx it removed. A mark
+// lost by misses in play (quiz.js mxKept) never goes through it. Kept on this device only (MXL.KEY, outside the synced
+// record: a drop made by a pull on another device is told there too): due {genus: its s.mx}, the drops not told yet;
+// told {genus: s.mx}, those told, so the same mark is never told twice here (a copy pulled again that still has it);
+// ach, achievements still to recheck (progress.js comes after model.js on a first load); gone, the ids taken back, for
+// the card. Cleared at sign-out with the progress (sync.js signOff).
+const MXL = {KEY: 'imr-mx-lost'};
+const mxMarks = () =>
+  Object.fromEntries(
+    Object.keys(P)
+      .filter(n => n !== LEVEL && P[n] && P[n].mx)
+      .map(n => [n, P[n].mx])
+  );
+function mxRecalc(fn) {
+  const m0 = mxMarks();
+  fn();
+  const lost = Object.keys(m0).filter(n => !(P[n] || {}).mx);
+  if (lost.length) mxLost(Object.fromEntries(lost.map(n => [n, m0[n]])));
+  return lost;
+}
+function mxLost(L) {
+  const M = store.get(MXL.KEY, {}) || {},
+    due = M.due || {},
+    told = M.told || {};
+  Object.keys(L).forEach(n => told[n] !== L[n] && (due[n] = L[n]));
+  store.set(MXL.KEY, {...M, due, told, ach: 1});
+  // The achievements now if their code is in and set up (progress.js, app.js SETUP 2), else at its set-up.
+  if (typeof achRecheck === 'function' && window.APP_READY) achRecheck();
 }
 const famOf = (n, ph) => {
   const ps = (P[n] || {}).ps || {},

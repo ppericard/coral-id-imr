@@ -773,6 +773,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         'imr-ach-new',
         'imr-hold',
         'imr-comeback', // model.js COMEBACK.KEY: the visit floor and the comeback belong to this player (Codex review #374)
+        'imr-mx-lost', // model.js MXL.KEY: learned marks taken away and their card, this player's
         BOARD,
         LOG0,
         NUDGE,

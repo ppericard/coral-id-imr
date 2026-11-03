@@ -697,12 +697,23 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   a genus learned on a record without `s.pg` passed its exam under BKT (before 2026-11-02). BKT's estimate reached 95%
   after about 4 right answers, so the exam came at once and mostly against easy choices. Replayed with today's rules
   (`tools/memreplay.js` on the sheet's log), the only two such genera on the sheet stand at 78% and 83%, under the
-  exam's entry. `memRecalc` drops their `s.mx` (and any `s.ex`) silently, at every call (load, pull, answer), so a
-  copy pulled from another device loses it too; the genus keeps its bar from its record and takes the exam again under
-  today's rules. An exam passed since (`s.pg` beside `s.mx`) is left alone; the achievements it earned stay
-  (`newAch` only adds). The sheet's Learned column and leaderboard % follow at the player's next sync. The admin
-  shows the player's numbers without waiting for that sync: its full replay (below) keeps a learned mark only on a
-  record with `s.pg` (`core.js` `replayedOf`), and marks "↻ saved …" where the sheet's copy still counts it.
+  exam's entry. `memRecalc` drops their `s.mx` (and any `s.ex`) at every call (load, pull, answer), so a copy pulled
+  from another device loses it too; the genus keeps its bar from its record and takes the exam again under today's
+  rules. An exam passed since (`s.pg` beside `s.mx`) is left alone. The sheet's Learned column and leaderboard %
+  follow at the player's next sync. The admin shows the player's numbers without waiting for that sync: its full replay (below) keeps a learned mark only on a record with `s.pg` (`core.js` `replayedOf`), and marks "↻ saved …" where the sheet's copy still counts it. **Not silent** (Pierre, 2026-11-03: players know they test an early beta): the
+  app sees the mark go (`model.js` `mxRecalc`, which wraps any recalculation and reports every genus whose `s.mx` it
+  removed, to `mxLost`; a mark lost by misses in play never goes through it) and tells the player once, by a card over
+  the quiz (`quiz.js` `mxLostShow`, a prompt like the others: `promptOk`, never in the floor of a visit or a comeback,
+  so it waits): "You passed the mastery exam on *X* under the beta's first rules, which brought the exam too early.
+  This genus is back on its progress bar, and its exam will come again. Until then, the badge earned with it is taken
+  back." (plural forms for several genera or badges). Once per mark on a device (`imr-mx-lost`, device only: a drop
+  that happens through a pull on a second device is told there too). The achievements that rest on genera learned
+  (`core.js` `ACH_LEARN`: Instructor 1/5/10/20, Coral master, Group complete) and that the progress no longer meets
+  are taken back (`progress.js` `achRecheck`, `core.js` `achRevoke`), only then (everywhere else achievements are only
+  added); each removal is dated in the record's `_gone`, so a copy earned before it (the sheet's, another device's)
+  never comes back through a merge (`core.js` `mergeAch`); earned again, it carries a newer date and stays. Checked by
+  `tests/core.test.js` and `tests/draw.smoke.js` (the card once after the visit's floor, the mark and the badge gone,
+  not brought back by the sheet's older copy, nothing again after a reload; learned with `s.pg`: nothing).
 - **What it does to the current players**: `node tools/memreplay.js answers.json [--player id] [--mem ...]` replays
   the admin's answer log (`readAnswers`, saved to a file) under the old rule and the new one: the offsets these answers
   give, how far the photo ratings move, and per player the bar of each genus, their overall % and their opening hold,

@@ -421,7 +421,8 @@ function paintBoard(B) {
 // check on a device with progress but no record yet (the feature arriving) grants what is already met in one recap.
 const ACHK = 'imr-coral-ach';
 // Two records of one player (another device, or this device before signing in): every achievement kept with its
-// earliest date, the best run kept; the current run stays this device's.
+// earliest date, the best run kept; the current run stays this device's; an achievement taken back (A._gone, achRecheck)
+// never comes back from a copy earned before (core.js mergeAch).
 // Version of the record (ACH_V): a record from before the full recount (2026-11-01, mastery exam) brings its feats
 // (best run, corallites, hard photo) but not its achievements, which were counted on the old rules.
 const ACH_V = 2;
@@ -429,14 +430,32 @@ function achMerge(json) {
   try {
     const ra = JSON.parse(json || 'null');
     if (!ra || typeof ra !== 'object') return;
-    const A = store.get(ACHK, {}) || {},
-      old = ra._v !== ACH_V;
-    Object.keys(ra).forEach(k => {
-      if (k === '_run' || k === '_v' || (old && k[0] !== '_')) return;
-      A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] ? Math.min(A[k], ra[k]) : ra[k];
-    });
-    store.set(ACHK, A);
+    store.set(ACHK, mergeAch(store.get(ACHK, {}) || {}, ra, ACH_V));
   } catch (e) {}
+}
+// A learned mark taken away by a recalculation (model.js mxRecalc, MXL): the achievements resting on genera learned
+// (core.js ACH_LEARN: Instructor, Coral master, Group complete) that the progress no longer meets are taken back, dated
+// in the record's _gone so no merge brings them back (core.js achRevoke, mergeAch); earned again, they come back as
+// usual. Only then: everywhere else achievements are only added. The ids taken back go to the card (quiz.js
+// mxLostShow) and leave the "new" dots; one sync, so the sheet's copy (achievement shares) follows.
+function achRecheck() {
+  const M = store.get(MXL.KEY, null);
+  if (!M || !M.ach) return [];
+  const A = store.get(ACHK, null),
+    out = A ? achRevoke(A, achSnap(A), Date.now()) : [];
+  if (out.length) {
+    store.set(ACHK, A);
+    store.set(
+      ACHNEW,
+      achUnseen().filter(id => !out.includes(id))
+    );
+    achDot();
+    if (SYNC) syncSoon();
+  }
+  delete M.ach;
+  M.gone = Object.keys(M.due || {}).length ? [...new Set([...(M.gone || []), ...out])] : []; // the card names them if it is due
+  store.set(MXL.KEY, M);
+  return out;
 }
 const achList = () => slateGenera();
 function achSnap(A = store.get(ACHK, {}) || {}) {
@@ -469,7 +488,7 @@ function achMigrate() {
   const A = store.get(ACHK, null);
   if (A && A._v === ACH_V) return;
   const B = {_v: ACH_V};
-  if (A) ['_run', '_best', '_cor', '_hard'].forEach(k => A[k] && (B[k] = A[k]));
+  if (A) ['_run', '_best', '_cor', '_hard', '_gone'].forEach(k => A[k] && (B[k] = A[k]));
   const snap = achSnap(B),
     t = Date.now();
   ACH.filter(a => a.test(snap)).forEach(a => (B[a.id] = (A && A[a.id]) || t));

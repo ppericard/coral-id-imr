@@ -374,9 +374,11 @@
   // really are"): a genus learned on a record without s.pg passed its exam under BKT (before 2026-11-02), whose
   // estimate reached 95% after about 4 right answers, so the exam came at once, mostly against easy choices; replayed
   // with today's rules (tools/memreplay.js) those genera stand at 78-83%, under the exam's entry. Their learned mark
-  // (and any exam in course) is dropped, silently, at every call (load, pull, answer: a copy from another device that
-  // still has it loses it too); the genus keeps its bar from its record (pgOf, s.h) and takes the exam again. An exam
-  // passed since (s.pg kept beside s.mx) is left alone. The achievements it earned stay.
+  // (and any exam in course) is dropped at every call (load, pull, answer: a copy from another device that still has it
+  // loses it too); the genus keeps its bar from its record (pgOf, s.h) and takes the exam again. An exam passed since
+  // (s.pg kept beside s.mx) is left alone. Not silent (Pierre, 2026-11-03: players know they test an early beta): the
+  // app sees the mark go (model.js mxRecalc), tells the player once with a card (quiz.js mxLostShow) and takes back the
+  // learned-based achievements the progress no longer meets (achRevoke, progress.js achRecheck).
   function memRecalc(s, mem) {
     if (!s || typeof s !== 'object') return false;
     let old = false;
@@ -883,6 +885,44 @@
   ].map(([id, title, desc, tier, icon, test]) => ({id, title, desc, tier, icon, test}));
   // The achievements a snapshot meets that `have` ({id: time}) does not hold yet, in list order.
   const newAch = (snap, have) => ACH.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);
+  // Achievements taken back (Pierre, 2026-11-03): only those that rest on genera learned, and only when a recalculation
+  // takes a learned mark away (model.js mxRecalc, progress.js achRecheck); anywhere else achievements are only added.
+  // achRevoke removes from A ({id: time}) those of ACH_LEARN that the snapshot no longer meets, and dates in A._gone
+  // {id: time} every one of them the snapshot does not meet, held here or not: the tombstone keeps a copy earned before
+  // (the sheet's, another device's not merged yet) from coming back through a merge (mergeAch); earned again later, the
+  // achievement carries a newer time and stays. Returns the ids removed.
+  const ACH_LEARN = ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group'];
+  function achRevoke(A, snap, t) {
+    if (!A || typeof A !== 'object') return [];
+    const off = ACH.filter(a => ACH_LEARN.includes(a.id) && !a.test(snap)).map(a => a.id),
+      out = off.filter(id => A[id]);
+    if (off.length) A._gone = {...(A._gone || {})};
+    off.forEach(id => {
+      delete A[id];
+      A._gone[id] = Math.max(t, A._gone[id] || 0);
+    });
+    return out;
+  }
+  // Two achievement records of one player (progress.js achMerge: another device's, the sheet's, this device's before
+  // signing in): every achievement with its earliest date, the best run kept; the current run (_run) stays A's. A record of
+  // another version than v (progress.js ACH_V: counted on older rules) brings its feats (keys starting with _) but not its
+  // achievements. Removals (_gone) join, the latest per id; an achievement dated at or before its removal, on either side,
+  // is dropped (taken back, it must be earned again). Changes and returns A.
+  function mergeAch(A, ra, v) {
+    A = A && typeof A === 'object' ? A : {};
+    if (!ra || typeof ra !== 'object') return A;
+    const old = ra._v !== v,
+      gone = {...(A._gone || {})};
+    Object.entries(ra._gone || {}).forEach(([k, t]) => typeof t === 'number' && !(gone[k] >= t) && (gone[k] = t));
+    const off = (k, t) => typeof gone[k] === 'number' && !(t > gone[k]);
+    Object.keys(ra).forEach(k => {
+      if (k === '_run' || k === '_v' || k === '_gone' || (old && k[0] !== '_') || off(k, ra[k])) return;
+      A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] && !off(k, A[k]) ? Math.min(A[k], ra[k]) : ra[k];
+    });
+    Object.keys(gone).forEach(k => off(k, A[k]) && delete A[k]);
+    if (Object.keys(gone).length) A._gone = gone;
+    return A;
+  }
 
   // Progress of a genus (2026-11-02, Pierre: BKT climbed too fast, and a right answer among a few genera counted
   // almost as much as one against the genus's look-alikes; Pelánek & Řihák 2017 recommend a moving average as the
@@ -1117,6 +1157,9 @@
     learnedOf,
     ACH,
     newAch,
+    ACH_LEARN,
+    achRevoke,
+    mergeAch,
     LEVEL,
     START,
     playerStart,

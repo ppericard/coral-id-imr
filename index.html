@@ -42,14 +42,14 @@
 <script>(function(){addEventListener("error",function(e){var t=e.target,n;if(!t||t.tagName!=="LINK"||t.rel!=="stylesheet")return;n=+(t.dataset.r||0);if(n<3)setTimeout(function(){var c=t.cloneNode();c.dataset.r=n+1;t.replaceWith(c)},1000*(n+1))},true);var D=0,T={},dom=new Promise(function(r){addEventListener("DOMContentLoaded",r)});function tick(){var p=document.getElementById("bootp");D++;if(p)p.value=D}tick.n=function(){return D};window.bootTick=tick;function go(L,i,n,ok){if(i>=L.length)return ok();var s=document.createElement("script");s.src=L[i];s.onload=function(){tick();go(L,i+1,0,ok)};s.onerror=function(){s.remove();n<3?setTimeout(function(){go(L,i,n+1,ok)},1000*(n+1)):go(L,i+1,0,ok)};document.body.appendChild(s)}function tier(k){if(T[k])return T[k];var got=dom.then(function(){return[].map.call(document.querySelectorAll('link[data-tier="'+k+'"]'),function(l){if(k>1){var c=document.createElement("link");c.rel="preload";c.as="script";c.href=l.href;document.head.appendChild(c)}return l.href})});return T[k]=Promise.all([got,k>1?tier(k-1):dom]).then(function(a){return new Promise(function(ok){go(a[0],0,0,ok)})})}window.loadTier=tier;dom.then(function(){var p=document.getElementById("bootp");if(p)p.max=document.querySelectorAll('link[data-tier="1"]').length+1;setTimeout(function(){var s=document.getElementById("boots");if(s)s.hidden=false},6000)});window.BOOT=tier(1)})()</script>
 <link rel="preload" href="core.js?v=30" as="script" data-tier="1">
 <link rel="preload" href="app.js?v=182" as="script" data-tier="1">
-<link rel="preload" href="sync.js?v=17" as="script" data-tier="1">
+<link rel="preload" href="sync.js?v=18" as="script" data-tier="1">
 <link rel="preload" href="home-art.js?v=4" as="script" data-tier="1">
 <link rel="preload" href="home.js?v=26" as="script" data-tier="1">
 <link rel="preload" href="tour.js?v=14" as="script" data-tier="1">
 <link data-tier="2" href="model.js?v=18">
-<link data-tier="2" href="quiz.js?v=21">
+<link data-tier="2" href="quiz.js?v=22">
 <link data-tier="2" href="learn.js?v=4">
-<link data-tier="2" href="progress.js?v=12">
+<link data-tier="2" href="progress.js?v=13">
 <link data-tier="5" href="flag.js?v=9">
 <link data-tier="5" href="proto/lab.js?v=70">
 <link rel="stylesheet" href="app.css?v=119">

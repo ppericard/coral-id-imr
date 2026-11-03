@@ -410,6 +410,56 @@ test('achievements: unique ids, tiers 1-3; a snapshot unlocks only what it meets
   assert.strictEqual(newAch(all, {}).length, ACH.length, 'every achievement is reachable');
 });
 
+test('achRevoke and mergeAch: learned-based achievements taken back stay so through merges, until earned again', () => {
+  const {ACH_LEARN, achRevoke, mergeAch} = require('../core.js');
+  assert.deepStrictEqual(ACH_LEARN, ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group']);
+  const snap = (learned, group = false) => ({
+    total: 40,
+    met: 40,
+    q: [30, 20, 10],
+    learned,
+    pct: 60,
+    streak: 12,
+    duel: true,
+    cor: true,
+    hard: true,
+    elo: 1250,
+    group,
+    bonus: 0
+  });
+  // Two genera learned (learn1, group with them), one taken away: learn1 stays met, group goes; the others were never held.
+  const A = {_v: 2, met10: 10, learn1: 20, group: 30, pct50: 40, _best: 12, _run: 3};
+  assert.deepStrictEqual(achRevoke(A, snap(1), 100), ['group']);
+  assert.deepStrictEqual(A, {
+    _v: 2,
+    met10: 10,
+    learn1: 20,
+    pct50: 40,
+    _best: 12,
+    _run: 3,
+    _gone: {learn5: 100, learn10: 100, learn20: 100, learnall: 100, group: 100}
+  });
+  // None learned left: learn1 goes too; nothing outside ACH_LEARN is ever taken back, whatever the snapshot.
+  assert.deepStrictEqual(achRevoke(A, {...snap(0), met: 0, pct: 0, elo: 0}, 200), ['learn1']);
+  assert.deepStrictEqual([A.met10, A.pct50, A._gone.learn1, A._gone.group], [10, 40, 200, 200]);
+  assert.deepStrictEqual(achRevoke(null, snap(0), 1), []);
+  // The sheet's copy, earned before the removal: never brought back; its other achievements and feats still join.
+  const sheet = {_v: 2, met10: 5, learn1: 20, group: 30, run10: 50, _best: 15, _run: 9};
+  const M = mergeAch({...A, _gone: {...A._gone}}, sheet, 2);
+  assert.deepStrictEqual([M.learn1, M.group, M.met10, M.run10, M._best, M._run], [undefined, undefined, 5, 50, 15, 3]);
+  // Earned again since (a newer time): kept here, and taken from another device's record too, with its own date.
+  const again = mergeAch({...M, learn1: 300}, sheet, 2);
+  assert.strictEqual(again.learn1, 300);
+  const there = mergeAch({...M, _gone: {...M._gone}}, {_v: 2, learn1: 250, _gone: {learn1: 200}}, 2);
+  assert.strictEqual(there.learn1, 250);
+  // A removal made on another device joins this one's and takes its old copy away; the latest removal date wins.
+  const here = mergeAch({_v: 2, learn1: 20, met10: 10, _gone: {group: 500}}, {_v: 2, _gone: {learn1: 200, group: 100}}, 2);
+  assert.deepStrictEqual(here, {_v: 2, met10: 10, _gone: {group: 500, learn1: 200}});
+  // As before: an older version brings feats only; nothing to merge leaves the record alone.
+  assert.deepStrictEqual(mergeAch({met10: 1}, {_v: 1, met20: 2, _cor: 1}, 2), {met10: 1, _cor: 1});
+  assert.deepStrictEqual(mergeAch({met10: 1}, null, 2), {met10: 1});
+});
+
 test('mergeProgress: the mastery exam (passed or in course) follows the device that played, as the knowledge itself', () => {
   const B = {Acropora: {ok: 10, ko: 1, L: 0.96, ex: {k: 2, v: ['wide'], at: 50}}};
   const mine = {Acropora: {ok: 11, ko: 1, L: 0.97, ex: {k: 3, v: ['wide', 'macro'], at: 60}}};

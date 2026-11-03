@@ -9,7 +9,10 @@
 //   player falls behind (introHold);
 // - out-of-game prompts at least PROMPT.GAP answers apart (promptOk);
 // - Millepora a slate genus (progress, cards); the bonus genera offered once every slate genus is met and never before,
-//   "Not now" kept, once on opened one card at a time, never counted in the progress, Off out of the draw.
+//   "Not now" kept, once on opened one card at a time, never counted in the progress, Off out of the draw;
+// - a learned mark from the former model (BKT, no s.pg) taken away at load: one card, its genus named, the learned-based
+//   badge taken back and kept so through a merge, never again after a reload or the next answers; learned with s.pg:
+//   nothing.
 // Like pages.smoke.js it needs Playwright (CI installs it in a temporary folder; no package.json). Locally:
 // node tests/draw.smoke.js
 const http = require('http'),
@@ -679,6 +682,94 @@ const server = http.createServer((req, res) => {
     }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
+  // Learned under the former model (core.js memRecalc, model.js mxRecalc, quiz.js mxLostShow, progress.js achRecheck):
+  // progress saved with a learned genus, then a reload (the drop happens at load, before achievements are set up).
+  // Learned with s.pg (since 2026-11-02): nothing told, nothing taken back. Learned without (BKT): the card once, the
+  // mark and learn1 gone, learn1 not brought back by the sheet's older copy, and not shown again on reload or answers.
+  {
+    const t = await p.evaluate(() => slateGenera()[3]);
+    // Two genera answered (a comeback needs two), the last answer `ago` ms back.
+    const seed = (rec, ago) =>
+      p.evaluate(
+        ([t, rec, ago]) => {
+          const at = Date.now() - ago,
+            u = slateGenera().find(n => n !== t);
+          store.set('imr-coral-progress', {
+            [t]: {...rec, at},
+            [u]: {ok: 8, ko: 2, h: '11011111', pg: 0.5, pm: 1, at},
+            [LEVEL]: {ok: 300, ko: 60, th: 1, at}
+          });
+          localStorage.removeItem('imr-comeback');
+          store.set(ACHK, {_v: ACH_V, learn1: 1000, met10: 1000});
+          store.set('imr-recalc', RECALC.L[RECALC.L.length - 1].id);
+          localStorage.removeItem(MXL.KEY);
+        },
+        [t, rec, ago]
+      );
+    const load = async () => {
+      await p.reload();
+      await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    };
+    // Plays n quiz questions, right, the other overlays out of the way; counts the cards (and the answers before each).
+    const play = n =>
+      p.evaluate(
+        ([t, n]) => {
+          const seen = [],
+            a0 = answersSoFar();
+          for (let i = 0; i < n; i++) {
+            document.querySelectorAll('.unlock:not(.mxlost), .achpop').forEach(x => x.remove());
+            achQ = [];
+            achBusy = false;
+            NEXTQ = null;
+            quizPhoto();
+            const c = document.querySelector('.unlock.mxlost');
+            if (c) {
+              seen.push([answersSoFar() - a0, c.querySelector('h3').textContent, c.querySelector('p:not(.ulkick)').textContent]);
+              c.querySelector('.next').click();
+            }
+            document.querySelectorAll('.unlock').forEach(x => x.remove());
+            document.querySelector(`#view [data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
+          }
+          const A = store.get(ACHK, {}) || {};
+          return {
+            seen,
+            floor: COMEBACK.FLOOR,
+            mx: (P[t] || {}).mx,
+            learn1: A.learn1,
+            gone: (A._gone || {}).learn1,
+            M: store.get(MXL.KEY, null)
+          };
+        },
+        [t, n]
+      );
+    const fail = (m, x) => out.fails.push(`learned under the former model: ${m} ${JSON.stringify(x)}`);
+    await seed({ok: 30, ko: 2, h: '1111111111', pg: 0.97, mx: 1762150000000, pm: 1}, 0);
+    await load();
+    const a = await play(15);
+    if (a.seen.length || a.mx !== 1762150000000 || a.learn1 !== 1000 || a.gone || (a.M && Object.keys(a.M.due || {}).length))
+      fail('learned with s.pg was touched', a);
+    // A new visit (2 hours since the last answer): the card waits for the visit's floor and comeback (noOpen).
+    await seed({ok: 13, ko: 1, h: '1111111110', L: 0.9997, mx: 1, pm: 1}, 2 * 3600e3);
+    await load();
+    const before = await p.evaluate(t => ({mx: P[t].mx, A: store.get(ACHK, {}), M: store.get(MXL.KEY, null)}), t);
+    if (before.mx || before.A.learn1 || !before.A._gone || !before.A._gone.learn1 || before.A.met10 !== 1000 || !before.M.due[t])
+      fail('at load', before);
+    // The sheet's copy, from before the drop: learn1 does not come back.
+    const merged = await p.evaluate(() => {
+      achMerge(JSON.stringify({_v: ACH_V, learn1: 1000, met10: 900}));
+      return store.get(ACHK, {});
+    });
+    if (merged.learn1 || merged.met10 !== 900) fail('a merge brought the badge back', merged);
+    const b1 = await play(30);
+    if (b1.seen.length !== 1 || !b1.seen[0][2].includes(t) || !/badge earned with it is taken back/.test(b1.seen[0][2]) || b1.mx)
+      fail('the card', b1);
+    else if (b1.seen[0][0] < b1.floor) fail('the card in the first answers of a visit', b1.seen);
+    if (b1.M.due[t] || b1.M.told[t] !== 1) fail('not marked told', b1.M);
+    await load();
+    const b2 = await play(12);
+    if (b2.seen.length || b2.learn1 || b2.mx) fail('again after a reload', b2);
+    await p.evaluate(() => localStorage.removeItem(MXL.KEY));
+  }
   await b.close();
   server.close();
   if (errs.length) out.fails.push('Page errors: ' + errs.join(' | '));
@@ -687,7 +778,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, first meetings, prompt spacing.`
+    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, first meetings, prompt spacing, learned marks of the former model taken back.`
   );
 })().catch(e => {
   console.error(e);
