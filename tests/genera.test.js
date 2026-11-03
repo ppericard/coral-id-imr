@@ -6,7 +6,7 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path'),
   {execFileSync} = require('child_process');
-const {BENTHIC, BONUS, slateOf, gameOf, CAP} = require('../core.js');
+const {BENTHIC, BONUS, slateOf, gameOf, CAP, lectureGroup, starRefs, starWaits} = require('../core.js');
 const ROOT = path.join(__dirname, '..');
 const RAW = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8'));
 const py = (code, ...args) =>
@@ -148,4 +148,53 @@ test('fetch_local --plan on the real data: game genera keep their caps, a Finder
       assert.ok(r.dauin <= r.need && r.ph <= r.need, `${g}: refills more than it lacks`);
     }
   });
+});
+
+// The starred genera open after the genera their card compares them to (Pierre, 2026-11-03; core.js starRefs, starWaits,
+// model.js weighted; docs/LEARNING.md "Starred genera after their reference").
+test('starRefs: every starred genus of the real data has the surveyed references its card names; no other genus has any', () => {
+  const slate = slateOf(RAW),
+    star = slate.filter(n => RAW.gen[n] && !RAW.gen[n].n);
+  assert.ok(star.length > 0);
+  star.forEach(n => {
+    const R = starRefs(RAW, n);
+    assert.ok(R.length > 0, `${n}: no reference`);
+    R.forEach(r => {
+      assert.ok(RAW.gen[r].n > 0, `${n}: reference ${r} is not a surveyed genus`);
+      assert.ok(RAW.gen[n].look.includes(r), `${n}: reference ${r} is not one of its look-alikes`);
+      assert.strictEqual(RAW.gen[r].ig, lectureGroup(RAW, n), `${n}: reference ${r} outside its lecture group`);
+    });
+  });
+  slate.filter(n => !star.includes(n)).forEach(n => assert.deepStrictEqual(starRefs(RAW, n), [], n));
+  BONUS.forEach(n => assert.deepStrictEqual(starRefs(RAW, n), [], n));
+  // The card's example: Duncanopsammia ("Like Turbinaria, but corallites about 6 mm") waits for Turbinaria.
+  assert.ok(starRefs(RAW, 'Duncanopsammia').includes('Turbinaria'));
+});
+
+test('starWaits: a starred genus is not eligible before its references are met, is after; a missing reference never blocks', () => {
+  const D = {
+      gen: {
+        S: {n: 0, ig: 0, look: ['R1', 'R2', 'O']}, // starred, shown in group 1 (two look-alikes there)
+        R1: {n: 1, ig: 1, look: ['S']},
+        R2: {n: 2, ig: 1, look: []},
+        O: {n: 3, ig: 2, look: []},
+        T: {n: 0, ig: 1, look: ['S', 'U']}, // starred, looks like another starred genus (S) and a genus missing from the data
+        V: {n: 0, ig: 0, look: ['W']} // starred, its only look-alike not on the slate
+      },
+      x: {gen: {W: {look: []}}}
+    },
+    list = Object.keys(D.gen);
+  assert.deepStrictEqual(starRefs(D, 'S'), ['R1', 'R2']);
+  const met = M => n => M.includes(n);
+  assert.strictEqual(starWaits(D, 'S', list, met([])), true, 'no reference met: waits');
+  assert.strictEqual(starWaits(D, 'S', list, met(['R1'])), true, 'one of two references met: still waits');
+  assert.strictEqual(starWaits(D, 'S', list, met(['R1', 'R2'])), false, 'every reference met: eligible');
+  assert.strictEqual(starWaits(D, 'S', ['S', 'R1'], met(['R1'])), false, 'a reference not in the list never holds it back');
+  assert.strictEqual(starWaits(D, 'S', ['S'], met([])), false, 'no reference in the list: eligible');
+  // Never a starred genus as a reference (no cycle), nor a genus missing from the data or off the slate.
+  assert.deepStrictEqual(starRefs(D, 'T'), []);
+  assert.strictEqual(starWaits(D, 'T', list, met([])), false);
+  assert.deepStrictEqual(starRefs(D, 'V'), []);
+  // A reference never waits itself; nor does a genus unknown to the data.
+  ['R1', 'R2', 'O', 'W', 'Z'].forEach(n => assert.strictEqual(starWaits(D, n, list, met([])), false, n));
 });

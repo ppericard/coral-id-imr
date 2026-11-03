@@ -13,7 +13,7 @@ function model({P = {}, th = {}, answers = 0} = {}) {
     pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
     hold = /const holdNext = [\s\S]*?;\n/.exec(src.slice(src.indexOf('const holdNext')))[0],
     miss = pick('function pgMissW', 'const knownP'),
-    block = pick('// Comeback after a break (Pierre', 'function weighted(list)');
+    block = pick('// Comeback after a break (Pierre', 'function weighted(');
   const saved = {},
     ctx = {
       P,
