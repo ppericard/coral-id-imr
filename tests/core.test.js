@@ -519,3 +519,20 @@ test('commonFactor: common first, relative to the median of the genera not met y
   assert.deepStrictEqual(commonFactor([]), []);
   assert.strictEqual(commonFactor([0, 0, 2, 4])[1], Math.sqrt(1 / 2), 'even count: the mean of the two middle values');
 });
+
+test('playSplit: the photo quiz apart from the Duel tab, last 50 quiz answers, other games in neither', () => {
+  const {playSplit} = require('../core.js');
+  let t = 0;
+  const r = (id, ok, mode) => [id, ++t, 'A', ok ? 'A' : 'B', ok, mode];
+  const rows = [
+    ...[...Array(45)].map((_, i) => r('j', i % 9 ? 1 : 0, i % 3 ? 'quiz' : 'quiz|k2')),
+    ...[...Array(31)].map(() => r('j', 1, 'quiz-duel|Halomitra|Danafungia')),
+    r('j', 1, 'quiz|d|k2'),
+    r('j', 0, 'reveal')
+  ];
+  const s = playSplit(rows).j;
+  assert.deepStrictEqual(s.q, [46, 41]);
+  assert.deepStrictEqual(s.d, [31, 31]);
+  assert.deepStrictEqual(s.q50, [46, 41]);
+  assert.deepStrictEqual(playSplit([...Array(60)].map((_, i) => r('k', i < 10 ? 0 : 1, 'quiz'))).k.q50, [50, 50]);
+});

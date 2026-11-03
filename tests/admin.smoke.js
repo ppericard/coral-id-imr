@@ -115,6 +115,14 @@ const server = http.createServer((req, res) => {
     await p.click('[data-usort="name"]');
     await settle();
     if ((await firstName()) !== 'Test Demo') fails.push(`${w}px Players: reversed sort by name, first is ${await firstName()}`);
+    // The quiz / Duel-tab columns sort too (Codex review #383: they were filled after the sort, which threw).
+    for (const k of ['right', 'recent', 'duels']) {
+      await p.click(`[data-usort="${k}"]`);
+      await settle();
+      if (!(await p.$('.adm-urow'))) fails.push(`${w}px Players: sort by ${k} left no rows`);
+    }
+    await p.click('[data-usort="name"]');
+    await settle();
     // Leaderboard (sheet v20): Hide marks the player hidden, Show puts them back.
     await p.click('[data-uopen="Dio Demo"]');
     await settle();
