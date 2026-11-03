@@ -94,6 +94,9 @@ function journeyOf(R) {
       o = (perDay[dk] = perDay[dk] || {n: 0, ok: 0});
     o.n++;
     o.ok += ok;
+    const h = (o.h = o.h || {})[new Date(t).getHours()] || (o.h[new Date(t).getHours()] = {n: 0, ok: 0});
+    h.n++;
+    h.ok += ok;
   });
   // Sessions: answers less than HEALTH.GAP minutes apart (as the Health page counts them).
   const S = [];
@@ -411,12 +414,32 @@ function renderJourney(name, anonId = '') {
       )
       .join('')}</table></section>`;
 
-  // 4. Days played: answers per day, right share in the title.
-  const D = dayKeys.slice(-JOURNEY.DAYS),
-    mx = Math.max(1, ...D.map(k => J.perDay[k].n));
-  const daysSec = `<section class="adm-scard"><h3>Days played <small>${dayKeys.length}</small></h3>
-    <div class="adm-cols adm-hcols">${D.map(k => `<div title="${jDate(k)}: ${J.perDay[k].n} answers, ${pct(J.perDay[k].ok, J.perDay[k].n)} right"><i style="height:${((100 * J.perDay[k].n) / mx).toFixed(1)}%"></i></div>`).join('')}</div>
-    <p class="adm-axis"><span>${jDate(D[0])}</span><span>max ${mx}</span><span>${jDate(D[D.length - 1])}</span></p>
+  // 4. When they played (Pierre, 2026-11-03: by the hour, not only by the day): one row a day from the first day to
+  // the last, days without an answer included, one cell an hour (this device's time zone); the shade is the answers that
+  // hour against the busiest hour, in 5 steps of the app's level ramp (--lv1..--lv5); answers and right share on hover.
+  const DAY = 864e5,
+    d0 = Number(dayKeys[0]),
+    dN = Number(dayKeys[dayKeys.length - 1]),
+    allDays = [];
+  for (let d = new Date(d0); d.getTime() <= dN; d.setDate(d.getDate() + 1)) allDays.push(d.getTime()); // DST-safe
+  const D = allDays.slice(-JOURNEY.DAYS),
+    hmx = Math.max(1, ...D.flatMap(k => Object.values((J.perDay[k] || {}).h || {}).map(h => h.n))),
+    hh = h => String(h).padStart(2, '0') + ':00',
+    cell = (k, h) => {
+      const o = ((J.perDay[k] || {}).h || {})[h];
+      if (!o) return `<i title="${jDate(k)}, ${hh(h)}: no answer"></i>`;
+      return `<i class="on" style="background:var(--lv${Math.max(1, Math.ceil((5 * o.n) / hmx))})" title="${jDate(k)}, ${hh(h)}-${hh((h + 1) % 24)}: ${o.n} answer${o.n === 1 ? '' : 's'}, ${pct(o.ok, o.n)} right"></i>`;
+    },
+    rowOf = k => {
+      const o = J.perDay[k];
+      return `<div class="adm-hrow${o ? '' : ' off'}"><span>${jDate(k)}</span>${[...Array(24)].map((_, h) => cell(k, h)).join('')}<b>${o ? o.n : ''}</b></div>`;
+    };
+  const daysSec = `<section class="adm-scard wide"><h3>When they played <small>${dayKeys.length} day${dayKeys.length === 1 ? '' : 's'}${allDays.length > D.length ? ` · last ${D.length}` : ''}</small></h3>
+    <div class="adm-hours" role="img" aria-label="Answers per hour, one row a day">
+      <div class="adm-hrow adm-hhead"><span></span>${[...Array(24)].map((_, h) => `<em>${h % 6 ? '' : h}</em>`).join('')}<b>Σ</b></div>
+      ${D.map(rowOf).join('')}
+    </div>
+    <p class="adm-axis"><span class="adm-hkey">fewer${[1, 2, 3, 4, 5].map(k => `<i style="background:var(--lv${k})"></i>`).join('')}more</span><span>busiest hour ${hmx} · local time</span></p>
     <p class="note">${J.S.length} session${J.S.length === 1 ? '' : 's'} · median ${medS} answers · first ${jTime(R[0][1])} · last ${jTime(R[R.length - 1][1])}</p></section>`;
 
   $v.innerHTML =
