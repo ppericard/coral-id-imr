@@ -58,6 +58,9 @@ const server = http.createServer((req, res) => {
   });
 });
 
+// "Did you know?" tips off (tips.js): a player who has enlarged 3 photos is never targeted. For the tests of the other
+// cards and prompts, which play dozens of questions and click Next; tipsCheck (below) checks the tips with them.
+const TIPS_OFF = () => localStorage.getItem('imr-tips') || localStorage.setItem('imr-tips', '{"u":{"q":0,"z":3}}');
 // One overlay at a time, and each one closable (new-player walkthrough 2026-11-02). Returns the failures.
 async function overlays(b, base) {
   const fails = [];
@@ -67,6 +70,7 @@ async function overlays(b, base) {
       u => !u.href.startsWith(base),
       r => r.abort()
     );
+    await c.addInitScript(TIPS_OFF);
     await c.addInitScript(init || (() => {}), arg);
     const p = await c.newPage();
     return [c, p];
@@ -1321,6 +1325,232 @@ async function replayAdoptCheck(base) {
 // link to About and credits); About exists, is linked from Home and from the ? help of every page with Privacy and Send
 // feedback, and the Coral Finder book is never credited (only cited under References); the header fits the narrowest
 // phones, signed out, without a sideways scroll.
+// "Did you know?" tips (tips.js, quiz.js tipAfter / tipShow; the owner, 2026-11-04), the zoom tip on a phone and a
+// desktop. The device's counters (imr-tips) are set as a player's would be: q questions answered here, z photos
+// enlarged, a visit of 12 answers going on. Checks: a targeted player (25 questions, nothing enlarged) gets it at the Next
+// right after a miss on a photo they did not enlarge, never with the answer itself; one card on screen; its buttons take
+// no tap in their first moments; "Show me" opens the enlarged view of the photo just answered with the answer shown, and
+// is not counted as their enlargement; the events logged (shown, show; item tip:zoom); then never again in the visit;
+// an achievement toast up at the tap holds it, unmarked, for a later break; a one-tap question due at the same answer
+// takes the break, not the tip; "Got it" goes on to the next question; never
+// before 20 questions; never with 3 photos enlarged. Nothing wider than the screen. Returns the failures.
+async function tipsCheck(b, base) {
+  const fails = [];
+  const open = async (w, h, u, at = '#quiz', intro = false) => {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block', intro});
+    await c.route(
+      x => !x.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(u => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+      if (!localStorage.getItem('imr-tips'))
+        localStorage.setItem('imr-tips', JSON.stringify({u, s: {}, v: {t: Date.now(), n: 12, tip: 0}}));
+    }, u);
+    const p = await c.newPage();
+    const errs = [];
+    p.on('pageerror', e => errs.push(String(e)));
+    await p.goto(base + at);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    return [c, p, errs];
+  };
+  // One question answered (wrong unless right), toasts and genus cards closed as a player would; then Next, unless
+  // toast. Returns whether the tip was there after the answer and after Next.
+  const play = async (p, {right = false, toast = false} = {}) => {
+    await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
+    const at = await p.evaluate(right => {
+      document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+      const t = SHOWNQ ? SHOWNQ[1] : null, // the Duel tab has no SHOWNQ: its first choice, right or wrong
+        bs = [...document.querySelectorAll('#view [data-c]')];
+      (right ? bs.find(x => x.dataset.c === t) : bs.find(x => x.dataset.c !== t)).click();
+      return !!document.querySelector('.tipcard');
+    }, right);
+    // dis: the card's buttons, at once, take no tap (a tap on a disabled button does nothing).
+    const dis = await p.evaluate(toast => {
+      document.querySelectorAll('.achpop').forEach(x => x.remove());
+      achQ.length = 0;
+      achBusy = false;
+      if (toast) achPop({tier: 1, icon: '🧪', title: 'Smoke tip', desc: 'test'});
+      document.getElementById('next').click();
+      const B = [...document.querySelectorAll('.tipcard [data-b]')];
+      return B.length > 0 && B.every(x => x.disabled);
+    }, toast);
+    await p.waitForTimeout(150);
+    return {at, dis, next: !!(await p.$('.tipcard'))};
+  };
+  const tips = p => p.evaluate(() => JSON.parse(localStorage.getItem('imr-tips')));
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    const W = `${w}px tip:`;
+    {
+      const [c, p, errs] = await open(w, h, {q: 25, z: 0});
+      // A toast up at the tap: no tip, nothing marked (it waits for a later break); the next question comes.
+      const held = await play(p, {toast: true});
+      const st0 = await tips(p);
+      await p.evaluate(() => document.querySelectorAll('.achpop').forEach(x => x.remove()));
+      if (held.at || held.next || (st0.s.zoom || []).length)
+        fails.push(`${W} shown over an achievement toast: ${JSON.stringify({held, st0})}`);
+      // Misses until it shows (a break whose next question brings a genus card passes, as a player's would).
+      let got = null,
+        dis = false;
+      for (let i = 0; i < 15 && !got; i++) {
+        const r = await play(p);
+        if (r.at) fails.push(`${W} shown with the answer, before Next`);
+        if (r.next) ((got = i + 1), (dis = r.dis));
+      }
+      if (!got) fails.push(`${W} never shown to a targeted player in 15 misses`);
+      else {
+        const r = await p.evaluate(() => {
+          const d = document.querySelector('.tipcard'),
+            card = d.querySelector('.ulcard').getBoundingClientRect();
+          return {
+            n: document.querySelectorAll('.unlock').length,
+            kind: d.querySelector('.ulcard').dataset.k,
+            kick: d.querySelector('.ulkick').textContent,
+            title: d.querySelector('h3').textContent,
+            vis: !!d.querySelector('.tipvis img') && !!d.querySelector('.tipvis .zic'),
+            btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+            done: !!document.querySelector('#view .q.done'),
+            wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+          };
+        });
+        if (
+          r.n !== 1 ||
+          r.kind !== 'tip' ||
+          r.kick !== 'Did you know?' ||
+          !/^(Tap|Click) a photo to see it bigger$/.test(r.title) ||
+          !r.vis ||
+          r.btns.join() !== 'Show me,Got it' ||
+          !dis ||
+          !r.done ||
+          r.wide
+        )
+          fails.push(`${W} the card: ${JSON.stringify({...r, dis})}`);
+        await p.waitForTimeout(700);
+        const z0 = (await tips(p)).u.z;
+        await p.click('.tipcard [data-b="1"]');
+        await p.waitForSelector('#lightbox:not([hidden])', {timeout: 3000}).catch(() => {});
+        const lbx = await p.evaluate(() => ({
+          open: !document.getElementById('lightbox').hidden,
+          card: !!document.querySelector('.unlock'),
+          genus: !!document.querySelector('#lightbox .lb-cap i'),
+          done: !!document.querySelector('#view .q.done')
+        }));
+        const st = await tips(p);
+        if (!lbx.open || lbx.card || !lbx.genus || !lbx.done || st.u.z !== z0)
+          fails.push(`${W} Show me: ${JSON.stringify({...lbx, z0, z: st.u.z})}`);
+        const ev = await p.evaluate(() =>
+          JSON.parse(localStorage.getItem('imr-evq') || '[]')
+            .filter(x => /^tip:/.test(x.src || ''))
+            .map(x => `${x.k}:${x.src}:${x.r}`)
+        );
+        if (ev.join() !== 'pulse:tip:zoom:shown,pulse:tip:zoom:show') fails.push(`${W} events: ${JSON.stringify(ev)}`);
+        if ((st.s.zoom || []).length !== 1 || !st.v.tip) fails.push(`${W} not marked shown: ${JSON.stringify(st)}`);
+        await p.keyboard.press('Escape');
+        await p.waitForTimeout(200);
+        // Back on the feedback: Next goes on; then never again in this visit.
+        await p.evaluate(() => document.getElementById('next').click());
+        let again = 0;
+        for (let i = 0; i < 12; i++) if ((await play(p)).next) again++;
+        if (again) fails.push(`${W} shown again in the same visit (${again} times)`);
+      }
+      if (errs.length) fails.push(`${W} page errors: ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // "Got it" goes on to the next question.
+    {
+      const [c, p] = await open(w, h, {q: 60, z: 1});
+      let r = {};
+      for (let i = 0; i < 10 && !r.next; i++) r = await play(p, {right: true});
+      if (!r.next) fails.push(`${W} not shown at a break from 40 questions`);
+      else {
+        await p.waitForTimeout(700);
+        await p.click('.tipcard [data-b="2"]');
+        const nx = await p
+          .waitForSelector('#view .q:not(.done) [data-c]', {timeout: 5000})
+          .then(() => true)
+          .catch(() => false);
+        if (!nx || (await p.$('.unlock.tipcard'))) fails.push(`${W} Got it did not go on to the next question`);
+      }
+      await c.close();
+    }
+    // The one-tap question due at the same answer takes the break: no tip there (it waits for a later break). A targeted
+    // player whose visit reaches its 10th answer on this page's 8th, when the one-tap question is first due (PULSE.FIRST
+    // answers in all, PULSE.SESSION on the page); the question shows (in the feedback, or as a card at Next), the tip not.
+    {
+      const [c, p] = await open(w, h, {q: 25, z: 0});
+      await p.evaluate(() => {
+        const t = Date.now();
+        localStorage.setItem('imr-tips', JSON.stringify({u: {q: 25, z: 0}, s: {}, v: {t, n: 2, tip: 0}}));
+        localStorage.setItem('imr-coral-progress', JSON.stringify({'~level': {ok: 40, ko: 10, th: 0, at: t}}));
+        // The Open all offer (from 50 answers, a prompt too) answered long ago: it would take the prompt spacing.
+        localStorage.setItem('imr-coral-intro-offer', JSON.stringify({at: 1, open: false, t: t - 864e5}));
+      });
+      await p.reload();
+      await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      // No achievement toast here (one earned at the 8th answer would rightly hold every prompt: checked above).
+      await p.evaluate(() => (achPop = () => {}));
+      let early = 0;
+      for (let i = 0; i < 7; i++) if ((await play(p)).next) early++;
+      await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
+      const r = await p.evaluate(() => {
+        document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+        document.querySelectorAll('.achpop').forEach(x => x.remove());
+        achQ.length = 0;
+        achBusy = false;
+        const t = SHOWNQ[1],
+          pre = {ok: promptOk(), due: pulseDue(), a: answersSoFar(), at: localStorage.getItem('imr-prompt-at')};
+        [...document.querySelectorAll('#view [data-c]')].find(x => x.dataset.c !== t).click();
+        const inline = !!document.querySelector('#after .pulse'),
+          armed = document.getElementById('next').onclick !== route;
+        document.querySelectorAll('.achpop').forEach(x => x.remove());
+        achQ.length = 0;
+        achBusy = false;
+        document.getElementById('next').click();
+        return {pre, armed, inline, card: !!document.querySelector('.pulsecard'), tip: !!document.querySelector('.tipcard'), n: session.n};
+      });
+      if (early || !(r.inline || r.card) || r.tip) fails.push(`${W} with the one-tap question due: ${JSON.stringify({early, ...r})}`);
+      await c.close();
+    }
+    // The Duel tab, no genus met yet: a duel whose genera are not all met brings their cards itself (quizDuel, not in its
+    // plan): the tip waits for a later break, never a genus card right after it (Codex review of PR #440).
+    {
+      const [c, p, errs] = await open(w, h, {q: 60, z: 0}, '#quiz-duel', true); // q 60: any break will do
+      let shown = 0;
+      for (let i = 0; i < 10; i++) {
+        const r = await play(p);
+        if (!r.next) continue;
+        shown++;
+        await p.waitForTimeout(700);
+        await p.evaluate(() => [...document.querySelectorAll('.tipcard [data-b]')].find(x => x.textContent === 'Got it').click());
+        await p.waitForTimeout(300);
+        const after = await p.evaluate(() => ({
+          intro: !!document.querySelector('.unlock.intro'),
+          tip: !!document.querySelector('.tipcard')
+        }));
+        if (after.intro || after.tip) fails.push(`${W} duel: a card right after the tip: ${JSON.stringify(after)}`);
+        break;
+      }
+      if (errs.length) fails.push(`${W} duel: page errors ${errs.join(' | ')}`);
+      await c.close();
+    }
+    // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged.
+    for (const u of [
+      {q: 5, z: 0},
+      {q: 80, z: 3}
+    ]) {
+      const [c, p] = await open(w, h, u);
+      let n = 0;
+      for (let i = 0; i < 12; i++) if ((await play(p)).next) n++;
+      if (n) fails.push(`${W} shown to ${JSON.stringify(u)}`);
+      await c.close();
+    }
+  }
+  return fails;
+}
 async function credits(b, base) {
   const fails = [],
     BOOK = /Coral Finder|Kelley|BYOGUIDES/i;
@@ -1903,16 +2133,18 @@ async function basicsTeach(b, base) {
       }, INTROS);
     return c;
   };
-  // PAGES_ONLY=visit: only the pages-opened summary check (pagesVisit), while working on it.
-  if (process.env.PAGES_ONLY === 'visit') {
-    const f = await pagesVisit(b, base);
+  // PAGES_ONLY=tips or visit: only the tips check (tipsCheck) or the pages-opened summary check (pagesVisit), while
+  // working on it.
+  const only = {tips: [tipsCheck, 'Tips OK.'], visit: [pagesVisit, 'Pages summary OK.']}[process.env.PAGES_ONLY];
+  if (only) {
+    const f = await only[0](b, base);
     await b.close();
     server.close();
     if (f.length) {
       console.error(f.join('\n'));
       process.exit(1);
     }
-    return console.log('Pages summary OK.');
+    return console.log(only[1]);
   }
   for (const w of [390, 1280]) {
     const ctx = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
@@ -2014,6 +2246,7 @@ async function basicsTeach(b, base) {
         u => !u.href.startsWith(base),
         r => r.abort()
       );
+      await c2.addInitScript(TIPS_OFF);
       await c2.addInitScript(() => {
         localStorage.setItem('imr-tour', '"done"');
         localStorage.setItem('imr-nudge', '1');
@@ -2496,6 +2729,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   for (const f of await credits(b, base)) fails.push(f);
   for (const f of await pagesVisit(b, base)) fails.push(f);
   for (const f of await basicsTeach(b, base)) fails.push(f);
+  for (const f of await tipsCheck(b, base)) fails.push(f);
   await b.close();
   for (const f of await signin(base)) fails.push(f);
   for (const f of await replayAdoptCheck(base)) fails.push(f);
