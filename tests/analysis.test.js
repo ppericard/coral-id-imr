@@ -443,6 +443,77 @@ test('compact: under the cap with 300 milestones', () => {
   );
 });
 
+// Test-suite review, 2026-11-04: compact() keeps a running size instead of measuring the whole report at every step. Same
+// result as the measuring version (kept here as the reference) at every cap, from "fits as it is" through each of its
+// three steps down to "not even the latest fits"; the labels carry non-ASCII text (the size is in UTF-16 units, as before).
+test('compact: the running size gives the same report as measuring it at every step', () => {
+  const sizes = new Set(), // every size the reference compares with its cap: the caps at, just under and just over them
+    reference = (rep, max) => {
+      const J = () => {
+        const n = JSON.stringify(rep).length;
+        sizes.add(n);
+        return n;
+      };
+      for (const M of rep.M.slice(0, -1)) {
+        if (J() <= max) break;
+        const r = rep.R[M];
+        Object.keys(r.A).forEach(k => {
+          const a = r.A[k];
+          r.A[k] = {n: a.n, players: a.players, thin: a.thin, err: a.err, effects: a.effects, lean: 1};
+        });
+      }
+      while (J() > max && rep.M.length > 6) {
+        const keep = new Set([rep.M[0], ...rep.M.slice(-5)]),
+          old = rep.M.filter(M => !keep.has(M));
+        old.filter((_, i) => i % 2 === 0).forEach(M => delete rep.R[M]);
+        rep.M = rep.M.filter(M => rep.R[M]);
+        rep.thinned = (rep.thinned || 0) + 1;
+      }
+      if (J() > max) {
+        const last = rep.M[rep.M.length - 1];
+        rep.M.slice(0, -1).forEach(M => delete rep.R[M]);
+        rep.M = [last];
+      }
+      return rep;
+    };
+  const make = n => {
+    const rep = {AV: 3, made: 1762300000000, answers: n * 1000, M: Array.from({length: n}, (_, i) => (i + 1) * 1000)};
+    rep.R = Object.fromEntries(
+      rep.M.map((M, j) => [
+        M,
+        {
+          M,
+          n: M,
+          fp: 'fp' + j,
+          A: Object.fromEntries(
+            ['rt', 'zoom', 'photo', 'conf'].map((k, i) => [
+              k,
+              {
+                n: M,
+                players: 4,
+                thin: j % 3 === 0,
+                effects: [{k: 'e' + i, label: 'Effet « mémoire » ' + j, est: 0.1 * i, lo: -0.1, hi: 0.3}],
+                table: 'x'.repeat(200 + ((j * 37 + i * 11) % 300)),
+                genus: {Acropora: [j, i]}
+              }
+            ])
+          )
+        }
+      ])
+    );
+    return rep;
+  };
+  for (const n of [1, 5, 6, 7, 30]) {
+    sizes.clear();
+    const full = JSON.stringify(make(n)).length;
+    for (let c = 0; c <= full + 10; c += Math.max(1, Math.round(full / 50))) reference(make(n), c);
+    const caps = new Set([0, full + 10]);
+    sizes.forEach(z => [z - 1, z, z + 1].forEach(c => caps.add(c)));
+    for (const max of caps)
+      assert.strictEqual(JSON.stringify(A.compact(make(n), max)), JSON.stringify(reference(make(n), max)), `n ${n}, max ${max}`);
+  }
+});
+
 // Codex review #441: a wrong answer A -> B is a miss for B too (quiz.js counts it against both genera), so B's next
 // answer is "after a miss", and the Again on the pair counts for it.
 test('a mix-up is a miss for the genus given too', () => {
