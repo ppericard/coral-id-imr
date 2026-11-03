@@ -435,7 +435,7 @@ def build(src, report):
             o["circle"] = u.get("circle", 1)
             o["src"] = u.get("src", "imr")
             if u.get("wink"):
-                o["wink"] = True
+                o["wink"] = u["wink"]
             if u.get("sign") is False:
                 o["sign"] = False
         o["ref"] = u["_ref"]

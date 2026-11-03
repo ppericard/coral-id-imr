@@ -115,6 +115,13 @@ test('circle 3: beyond IMR, each family with its reason; winks marked, with a no
     });
   const winks = F.teach.filter(t => t.wink);
   winks.forEach(t => assert.ok(t.circle === 3 && t.note && t.species.length, t.name));
+  // The surprise card: 3 absurd distractors from our own teaching entries, a label each, two short feedback lines.
+  const tids = new Set(F.teach.map(t => t.id));
+  winks.forEach(t => {
+    assert.strictEqual(t.wink.choices.length, 3, t.name);
+    t.wink.choices.forEach(([id, label]) => assert.ok(tids.has(id) && id !== t.id && label, `${t.name}: choice ${id}`));
+    ['right', 'wrong'].forEach(k => assert.ok(t.wink[k] && t.wink[k].length <= 80, `${t.name}: ${k}`));
+  });
   const names = winks.flatMap(t => t.species.map(id => SP.get(id).name));
   ['Rhincodon typus', 'Alopias pelagicus'].forEach(n => assert.ok(names.includes(n), `${n} not a wink`));
   // Sources of circle 3 are listed in the source file.

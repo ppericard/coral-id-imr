@@ -1,7 +1,7 @@
 {
 "_doc": [
   "Hand-maintained source of fish.json (built by tools/build_fish.py; see its header). Edit this file, then re-run the build.",
-  "sources: where circle 3 comes from (teaching nodes cite them in srcs). retired: ids taken out; never reuse them.",
+  "sources: where circle 3 comes from (teaching nodes cite them in srcs). leftOut: families decided out of circle 3, with why. retired: ids taken out; never reuse them.",
   "groups: the 10 shape groups (chapters) of the IMR fish presentation, titles as on the slides; sl = first and last slide.",
   "teach: the teaching tree, in game order: the 27 IMR entries (circle 1) in group order, then circle 2, then circle 3.",
   "  id: stable id, never the name; never reuse or renumber. name: as IMR names it. fam: the family as IMR writes it.",
@@ -9,7 +9,7 @@
   "  Circle 3 is not PDF-based (Pierre, 2026-11-03): the fish families divers want to recognise, muck diving above all (why, srcs),",
   "  with their species seen near Dauin (at least 2 Research Grade observations within 40 km), plus winks.",
   "  src: imr (the presentation), pdf (a family of the EventMeasure reference PDF), diver (circle 3), wink.",
-  "  wink: true for a wink (Pierre): an unmistakable species, fun to meet, a light bonus rather than ID training; note says why.",
+  "  wink (Pierre): an unmistakable species, fun to meet, a light bonus rather than ID training (note says why), shown as a rare surprise card: choices = [teach id, tongue-in-cheek label] absurd distractors from our own entries, right / wrong = feedback lines.",
   "  sign: false when the entry is taught but not on the presentation's dive-sign list.",
   "  ref: WoRMS names (or AphiaIDs) of the reference nodes it covers; not: reference nodes inside them that it leaves out.",
   "  A species belongs to the teaching node whose ref holds its nearest ancestor (most specific wins, not excludes),",
@@ -37,6 +37,7 @@
  "divernet": "Divernet, Atlantis Dumaguete muck diving: https://divernet.com/world-dives/asia/discovering-atlantis-dumaguete-world-class-muck-diving-in-the-philippines/",
  "inat": "iNaturalist, Research Grade observations within 40 km of Dauin (species kept: at least 2)"
  },
+"leftOut": {"Gobiidae": "Gobies: not in circle 3 (Pierre, 2026-11-03): tiny, hard to find on dives, of little interest to most divers. The PDF gobies stay in fish.json out of the game, for the Fish Finder."},
 "retired": {"teach": ["t30", "t31", "t32", "t33", "t34", "t35", "t36", "t37", "t38", "t39", "t40", "t41", "t53", "t55", "t56"], "species": ["s404", "s405", "s406", "s407", "s411", "s412", "s413", "s471", "s476", "s477"]},
 "groups": [
   {"n": 1, "name": "Small Ovals", "sl": [7, 9]},
@@ -97,8 +98,8 @@
   {"id": "t63", "name": "Reef sharks", "fam": "Carcharhinidae", "circle": 3, "src": "diver", "ref": ["Carcharhinidae"], "why": "reef sharks", "srcs": ["pierre"]},
   {"id": "t50", "name": "Porcupinefishes", "fam": "Diodontidae", "circle": 3, "src": "diver", "ref": ["Diodontidae"], "why": "porcupinefishes and burrfishes", "srcs": ["pierre"]},
   {"id": "t29", "name": "Jacks", "fam": "Carangidae", "circle": 3, "src": "diver", "ref": ["Carangidae"], "pdf": ["CARANGIDAE"], "why": "schools of jacks and trevallies", "srcs": ["dtw"]},
-  {"id": "t51", "name": "Whale shark", "fam": "Rhincodontidae", "circle": 3, "src": "wink", "ref": ["Rhincodontidae"], "wink": true, "note": "A wink, not ID training: unmistakable and fun to meet (whale shark trips from Dauin)."},
-  {"id": "t60", "name": "Thresher sharks", "fam": "Alopiidae", "circle": 3, "src": "wink", "wink": true, "note": "A wink, not ID training: unmistakable and fun to meet (pelagic thresher, Malapascua).", "ref": ["Alopiidae"]}
+  {"id": "t51", "name": "Whale shark", "fam": "Rhincodontidae", "circle": 3, "src": "wink", "ref": ["Rhincodontidae"], "wink": {"choices": [["t01", "Damselfish (a well-fed one)"], ["t20", "Pufferfish (fully inflated)"], ["t46", "Seahorse (lying down)"]], "right": "Correct. The 12 m giveaway helped.", "wrong": "Bold choice. It's a whale shark, the biggest fish in the sea."}, "note": "A wink, not ID training: unmistakable and fun to meet (whale shark trips from Dauin)."},
+  {"id": "t60", "name": "Thresher sharks", "fam": "Alopiidae", "circle": 3, "src": "wink", "wink": {"choices": [["t05", "Moorish idol (banner on the wrong end)"], ["t57", "Seamoth (all grown up)"], ["t26", "Lizardfish (on holiday)"]], "right": "Correct. That tail was a strong hint.", "wrong": "Brave. It's a pelagic thresher: the tail is half the shark."}, "note": "A wink, not ID training: unmistakable and fun to meet (pelagic thresher, Malapascua).", "ref": ["Alopiidae"]}
 ],
 "species": [
   {"id": "s001", "name": "Chaetodon vagabundus", "common": "Vagabond butterflyfish", "sec": "CHAETODONTIDAE", "pdf": "6", "sl": 10},
