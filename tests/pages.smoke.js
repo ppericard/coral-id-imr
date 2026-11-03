@@ -889,6 +889,9 @@ async function replayAdoptCheck(base) {
       ]) {
         localStorage.removeItem('imr-rv-msg');
         rvNoticeAdd(0, v, pct);
+        // Shown at once when no other card is on screen (rvNotice waits behind one: the update note may be up here).
+        document.querySelectorAll('.unlock, #tour').forEach(e => e.remove());
+        rvNotice();
         const t = (document.querySelector('.rvmsg p:not(.ulkick)') || {}).textContent || '';
         d.push([JSON.parse(localStorage.getItem('imr-rv-msg')).due, t]);
         document.querySelectorAll('.rvmsg').forEach(e => e.remove());
