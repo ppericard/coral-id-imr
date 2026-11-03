@@ -1,11 +1,11 @@
 // Per-genus ability on real answers (2026-11-03): replays the answer log, player by player in time order, with the
-// app's own Elo (model.js ELO, ability, abilityStep, run here on stubs; core.js playerStart, levelSeed) under several
+// app's own Elo (core.js ELO, abilityOf, eloStep, as model.js runs them; core.js playerStart, levelSeed) under several
 // rules for the genus wrongly given (AGENTS.md rule 13), and scores how well each rule predicts the next answer.
 // Offline, reads a file, sends nothing (docs/LEARNING.md "The genus wrongly given in the Elo").
 //
 //   node tools/abilityeval.js answers.json [--variants a,e,e+L] [--player <name or id>] [--min 20] [--json out.json]
 //                             [--priors priors.json]
-//                             [--model other/model.js]
+//                             [--model other/core.js]
 //                             [--grid 0,0.5,1;1,1.5]
 //
 // answers.json: the answer log, either the admin's readAnswers rows [id, time ms, genus shown, answered, right 0|1, mode,
@@ -59,20 +59,25 @@ const ROOT = path.join(__dirname, '..');
 const DATA = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),
   GAME = new Set(C.gameOf(DATA)); // the game genera: slate, Millepora (BENTHIC), bonus genera (the app's GX)
 
-// model.js's ELO, ability and abilityStep, as the app runs them (P is this context's global, set per player).
-// --model <file>: another model.js (e.g. main's, from git show) to compare the same rules on two versions of the app.
-function model(file = path.join(ROOT, 'model.js')) {
-  const src = fs.readFileSync(file, 'utf8'),
-    pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
-    ctx = {P: {}, playerStart: C.playerStart, LEVEL: C.LEVEL, START: C.START, sig: x => 1 / (1 + Math.exp(-x))};
-  vm.createContext(ctx);
-  vm.runInContext(pick('const ELO =', '// For My progress') + '\nthis.M = {ELO, ability, abilityStep};', ctx);
+// The app's ELO, ability and abilityStep (core.js ELO, abilityOf, eloStep since 2026-11-03: model.js calls them on its P,
+// and the sheet's full replay steps the ability with them too); P is this context's, set per player.
+// --model <file>: another core.js (e.g. main's, from git show) to compare the same rules on two versions of the app.
+function model(file = path.join(ROOT, 'core.js')) {
+  const ctx = {P: {}, module: {exports: {}}};
+  if (path.resolve(file) === path.join(ROOT, 'core.js')) ctx.K = C;
+  else {
+    vm.createContext(ctx);
+    vm.runInContext(fs.readFileSync(file, 'utf8'), ctx);
+    ctx.K = ctx.module.exports;
+  }
+  const K = ctx.K;
+  ctx.M = {ELO: K.ELO, ability: n => K.abilityOf(ctx.P, n), abilityStep: (n, s, good, d, k) => K.eloStep(ctx.P, n, s, good, d, k)};
   return ctx;
 }
 let M = model(),
   KMIN = M.M.ELO.kmin;
 const W0 = C.START.W;
-// Replays with another model.js from now on (the CLI's --model, tests).
+// Replays with another core.js from now on (the CLI's --model, tests).
 function useModel(file) {
   M = model(file);
   KMIN = M.M.ELO.kmin;
@@ -418,7 +423,7 @@ variants = [...new Set(variants)];
 variants.forEach(v => {
   // +W: a genus never answered starts from the full global level (core.js START.W 1 instead of 0.8; the shrinkage
   // M / (M + START.N) still fades with the answers).
-  C.START.W = v.split('+').includes('W') ? 1 : W0;
+  C.START.W = M.K.START.W = v.split('+').includes('W') ? 1 : W0;
   const all = [],
     per = {};
   players.forEach(p => {
@@ -429,7 +434,7 @@ variants.forEach(v => {
     M.P = P;
     per[p] = {n: scored.length, level: (P[C.LEVEL] || {}).th, genus: gs.reduce((t, g) => t + (P[g].ok + P[g].ko) * plan(g), 0) / (w || 1), ...score(scored)};
   });
-  C.START.W = W0;
+  C.START.W = M.K.START.W = W0;
   res[v] = {all: score(all), groups: groupScores(all), per};
   Object.defineProperty(res[v], "scored", {value: all}); // every scored answer, for paired comparisons (not in --json)
 });
@@ -439,9 +444,9 @@ variants.forEach(v => {
 // out (the app's own term, appTerm, and +X read them), so the outcomes scored never reach the choice (Codex review
 // #431). A player with no answer scored (only answers logged before sheet v5) weighs nothing.
 const foldLoss = (q, v, p) => {
-  C.START.W = v.split('+').includes('W') ? 1 : W0;
+  C.START.W = M.K.START.W = v.split('+').includes('W') ? 1 : W0;
   const {scored} = replay(byPlayer[q], v, pooledFor(q, p));
-  C.START.W = W0;
+  C.START.W = M.K.START.W = W0;
   return scored.length ? score(scored).ll * scored.length : 0;
 };
 Object.keys(families).forEach(F => {

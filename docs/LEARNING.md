@@ -260,7 +260,8 @@ overwhelmed. After the fix above, the genus abilities of strong players still sa
 their answers, while their global level was about right: each genus learns only from its own answers, a few dozen at
 most, through an Elo that lags. The global level pools every answer.
 
-**The rule** (`model.js` `ability`, `levelMove`, `abilityStep`): the ability of a genus already answered is its own
+**The rule** (`core.js` `abilityOf`, `levelMove`, `eloStep`, which `model.js` `ability` and `abilityStep` call and
+the sheet's full replay runs the same way, `tests/replay.test.js`): the ability of a genus already answered is its own
 estimate plus the global level's move since its own last step,
 
   θ_g = s.th + (L − s.lt) / (1 + answers_g / `ELO.n`),
@@ -367,9 +368,10 @@ question 100 is too many for a beginner, and many beginners are arriving now; wi
 level, a beginner would be aimed at about 85% right, not 80%. Both must be calibrated, with the parameters that can
 treat a beginner and an expert differently.
 
-**The rule** (`model.js` `aimP`, `aimOff`, `pgMissW`, `shaky`):
+**The rule** (`model.js` `aimP`, `aimOff`, `shaky`; `core.js` `AIM`, `aimOf`, `pgMissW`, which the full replay weighs the
+misses with too, at the replayed level):
 
-- **The success aimed for follows the global level** (`PICKD.AIM`, points [level, success]): 85% up to a level of 0.5,
+- **The success aimed for follows the global level** (`core.js` `AIM`, `PICKD.AIM`, points [level, success]): 85% up to a level of 0.5,
   75% from 1.5, a straight line between, flat outside, no cliff. In the simulation the levels reached are: a beginner
   −0.05 to 0.6 over its first 300 questions, a lecture-level RA 0.4-0.7, a strong RA 1.0-1.5, an expert 2.5-2.8; so a
   beginner and a lecture-level RA are aimed at about 85%, a strong RA at 75-80%, an expert at 75%. Papoušek, Stanislav
@@ -1092,7 +1094,13 @@ opening hold and the photo's aim (`photoSet` shift − c) all take it: the signa
 #413, now on the pair, without stepping the genus wrongly given. Scored before the answer updates anything (the offers
 of this question are counted after). **Only on a question with 3 or more plausible choices**: on the real answers the
 2-choice contrast questions of the pair (the Again right after the side-by-side montage, a duel) and the questions with
-easy choices were right more often than expected, not less.
+easy choices were right more often than expected, not less. The sheet's full replay applies the same term (`core.js`
+`replayProgress`, rules version 2): from the player's record as replayed (offers and mix-ups per pair) and the pooled
+pairs it is given; from `CF_LOGGED` (2026-11-03 15:35 UTC, #425 live; `abilityeval` `CF_FROM`) the logged `e` already holds the app's term, taken out
+first. One difference: the replay's pooled score starts from the pair's prior without `CONF.FORM` (the sheet does not know
+the genera's growth forms), 0.03 instead of 0.08 for two genera sharing a form and nothing closer, so its term is larger
+on such a pair while its pooled offers are few, and the same as the game's once they are many; on every other pair it is
+the game's (`tests/replay.test.js` replays a log with mix-ups to the live game's ability, level and progress).
 
 Real answers (`node tools/abilityeval.js answers.json --variants e,e+X,e+X+M --priors priors.json`, the sheet's
 Answers tab read 2026-11-03, read-only: 1,258 answers of 9 players with 20 or more; `e` the app with #415; the pooled
@@ -1485,12 +1493,12 @@ is a good mastery criterion.
   replay against the live value after 1000 questions, genera with 10 answers or more, misses there weighed as right
   answers, so in full a little lower still): +0.03 for a beginner, −0.07 for
   a lecture-level RA, −0.11 a strong RA, −0.21 an expert (weight 1 would overstate a beginner by 0.15); 10 right in a
-  row give 0.65, 77% on the bar: no genus enters the exam on old answers alone. A learned genus (`s.mx`) stays learned,
-  at the exam's entry. The record is rewritten at the genus's next answer. On the base runs (BKT, 300 questions, 6
+  row give 0.65, 77% on the bar: no genus enters the exam on old answers alone. A genus learned on such a record passed
+  its exam under BKT and loses it (below, "Learned under the former model"); until then it counts at the exam's entry. The record is rewritten at the genus's next answer. On the base runs (BKT, 300 questions, 6
   seeds) this recalculation moves the overall %: beginner 21-30% → 23-28%, lecture-level RA 35-41% → 33-37%, strong
-  RA 32-53% → 27-44%, expert 65-82% → 45-51%; genera at 95% or more before their exam all drop under it. A fuller
-  recalculation for signed-in players could replay their whole answer log from the sheet's Answers tab (mode `|kN`,
-  Choices): ROADMAP.
+  RA 32-53% → 27-44%, expert 65-82% → 45-51%; genera at 95% or more before their exam all drop under it. The full
+  recalculation replays each player's whole answer log from the sheet's Answers tab (mode `|kN`, Choices): "Full
+  replay", below (2026-11-03).
 - **Removed**: `BKT` (7 constants), `bktStep`'s guess and slip formula, `bktStart`, the "a miss never raises L" patch,
   the photo familiarity offsets of `answer()` (`bk`: +0.5 for a new photo, −1 for one right twice; the sheet's `stats_`
   keeps its own copy for the photo ratings, `PHOTO_W`). They came back on 2026-11-03 as the photo memory estimated from
@@ -1849,12 +1857,198 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   with 55-60% repeats it took off about half of what the full replay does (72% → 70% where the replay gives 68%); with
   the real repeat rates (6-22%) the difference is about a point. `tools/memreplay.js` prints both, per genus, on the
   real log. Checked by `tests/core.test.js` (once, never raised, learned left alone, the mark through both merges) and
-  `tests/draw.smoke.js` (applied once at load, saved, no pop-up, not again at the next answer).
+  `tests/draw.smoke.js` (applied once at load, saved, no pop-up, not again at the next answer). Since the sheet's full
+  replay (below) reaches the devices, this is only the fallback for a device that never reached the sheet: a record
+  adopted from the replay carries `s.pm` and is never corrected here.
+- **Learned under the former model** (Pierre, 2026-11-03, doubting that one player's two learned genera really were):
+  a genus learned on a record without `s.pg` passed its exam under BKT (before 2026-11-02). BKT's estimate reached 95%
+  after about 4 right answers, so the exam came at once and mostly against easy choices. Replayed with today's rules
+  (`tools/memreplay.js` on the sheet's log), the only two such genera on the sheet stand at 78% and 83%, under the
+  exam's entry. `memRecalc` drops their `s.mx` (and any `s.ex`) at every call (load, pull, answer), so a copy pulled
+  from another device loses it too; the genus keeps its bar from its record and takes the exam again under today's
+  rules. An exam passed since (`s.pg` beside `s.mx`) is left alone. The sheet's Learned column and leaderboard %
+  follow at the player's next sync. The sheet's full replay (below), adopted by the app, keeps a learned mark only on a record with `s.pg` (`core.js` `replayedOf`); the admin shows the replayed numbers and marks "↻ saved …" where the sheet's copy still counts it. **Not silent** (Pierre, 2026-11-03: players know they test an early beta): the
+  app sees the mark go (`model.js` `mxRecalc`, which wraps any recalculation and reports every genus whose `s.mx` it
+  removed, to `mxLost`; a mark lost by misses in play never goes through it) and tells the player once, by an
+  announcement card (`progress.js` `mxLostNotice`; Pierre, 2026-11-03: never held, AGENTS.md rule 12): at start-up once
+  the first page is drawn and the progress is in, and right after a pull or an answer that drops a mark, on whatever page
+  is open, even in the floor of a visit or a comeback and with no prompt spacing; it only waits for another card or the
+  tour already on screen: "You passed the mastery exam on *X* under the beta's first rules, which brought the exam too early.
+  This genus is back on its progress bar, and its exam will come again. Until then, the badge earned with it is taken
+  back." (plural forms for several genera or badges). Once per mark on a device (`imr-mx-lost`, device only: a drop
+  that happens through a pull on a second device is told there too). The achievements that rest on genera learned
+  (`core.js` `ACH_LEARN`: Instructor 1/5/10/20, Coral master, Group complete) and that the progress no longer meets
+  are taken back (`progress.js` `achRecheck`, `core.js` `achRevoke`), only then (everywhere else achievements are only
+  added); each removal is dated in the record's `_gone`, so a copy earned before it (the sheet's, another device's)
+  never comes back through a merge (`core.js` `mergeAch`); earned again, it carries a newer date and stays. The
+  removals are saved and synced even when the device's record held none of them (`achMigrate` dropped them at
+  start-up, or they were earned on another device; Codex review #399). Checked by
+  `tests/core.test.js` and `tests/draw.smoke.js` (the card at start-up over Home, before any answer and in a new
+  visit's floor, once; the mark and the badge gone, not brought back by the sheet's older copy, nothing again after a
+  reload or answers; a drop at a pull shown at once, after a card already open; learned with `s.pg`: nothing).
 - **What it does to the current players**: `node tools/memreplay.js answers.json [--player id] [--mem ...]` replays
   the admin's answer log (`readAnswers`, saved to a file) under the old rule and the new one: the offsets these answers
   give, how far the photo ratings move, and per player the bar of each genus, their overall % and their opening hold,
   old -> new (each question's difficulty recovered from the expectation and ability the app logged; approximations
   listed at the top of the tool).
+- **Full replay** (Pierre, 2026-11-03: "why recalculate on the phones when the phone doesn't have the full log?
+  Recalculate from all the results"; then: automatically, never by a human click, now and whenever the progress engine
+  changes): **the reference** for a player's progress is the replay of their whole answer log, in time order, with
+  today's rules (`core.js` `replayProgress`), **done by the sync sheet itself and pushed to the app**. Each answer is
+  weighed as the app weighs it now (`pgRightW` with the app's look-alike test, `pgMemW` with the photo memory from the
+  player's own history in the log and the sheet's offsets, `pgMissW`, `pgStep`), and the ability steps as the app's
+  (`eloStep`, moved from `model.js` into `core.js` for this), as if every answer had been played under these rules. The
+  weights and the step live in `core.js`, and `model.js` / `quiz.js` call the same functions, so a rule changed for the
+  app is changed for the replay. Each question's difficulty is recovered from what the app logged (`e`, `th`, the
+  choices; since the photo memory, `MEM_LOGGED`, the logged `e` includes it and the replay takes it out again).
+  **Typed answers** (`quiz|t`, `quiz|t|x` in the exam; "Typed questions" above) are replayed as the app scores them:
+  no guess rate (`core.js` `kOf` gives k infinite, as `model.js` `TYPED.k`; `e` = sig(th − d)), a right one in full
+  (`pgRightW`: every genus was a possible answer), no choices offered, "I don't know" a miss for the genus shown
+  only; `tests/replay.test.js` replays a device's log of typed and picked answers, exam included, and finds the record
+  the app scored live. The genus wrongly given is weighed, as in the app, by the chance the player had on it: its
+  own ability as replayed so far, after the global level's step (`quiz.js` `answer` order); it gets a miss in its
+  recent results and its run reset, and no Elo step (as the app since 2026-11-03, "The genus wrongly given in the
+  Elo": the replay would otherwise put that penalty back on every player; `tests/replay.test.js` checks its ability
+  does not move while its progress drops).
+  Approximations, listed with the function: the abilities and photos are those the app logged (other rules would have
+  drawn other photos; the weights use the logged ability, the replayed ability is the app's step over the recovered
+  difficulties), a comeback answer's recall is taken as 1, the look-alike prior leaves out the IMR growth forms, the
+  ability of the genus wrongly given is the replayed one (the app's own at that moment is not logged; the same as the
+  app's when the replay goes on from the device's record), answers logged before sheet v5 (no `e`, `th`) count in the
+  counts only. The mastery exam is not replayed: it comes from the device's copy (below), so an exam still waiting for
+  its `TYPED.exam` typed right answers stays at 99% at most (`scoreOf`) until the device has passed it.
+  - **Rules versions** (`core.js` `RVS`, `RV`): every change to a progress rule appends `{v, at, why, msg}` (AGENTS.md
+    "How to make a change" 14), each with the standard recalculation card (`msg: RV_CARD`, Pierre 2026-11-03, a
+    standing rule; below). A version is not a frozen engine: the sheet always replays with the code's current rules
+    (`core.js`, embedded in `Code.gs`), and a new version only makes every device take that replay again. So v1
+    (2026-11-03, not deployed yet when these were added) replays with every rule merged before it goes live: the miss
+    weighed against the success aimed for at the player's global level (`aimOf`, 85% to 75%), no Elo step on the genus
+    wrongly given, a genus's ability moving with the global level (`levelMove`, `lt`; the level's step without a floor,
+    4 decimals; Calibration step 2, #415), a learned mark kept unless a miss logged after its exam takes it away as the
+    game does. v2 (2026-11-04): the opening pace and known mix-ups (#425): the mix-ups term in the question's difficulty
+    for the ability, the global level and a miss's weight ("Known mix-ups" above). A device that skips several versions
+    sees the standard card once, at the last of them, with its progress before and after the whole jump (`core.js`
+    `rvMsgs`).
+  - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between
+    `// BEGIN core.js` and `// END core.js`, kept identical by `tools/sync_core.py`, checked in CI; its own `module`
+    object keeps its names out of the script's globals, reached as `CORE_`), so the self-updater installs the engine
+    with the script. In the reply to a sign-in, a load or a save whose app applied an older version than `RV` (the
+    request's `rv`), it replays the player's rows of the Answers tab since their last progress reset, with the photo
+    memory offsets and pooled confusions of `stats_` (cached) and the look-alikes and families of `data.json` (fetched
+    from GitHub, cached 6 hours). A device that never signed in gets the same in the reply to its anonymous answers,
+    under its anonymous id, since the progress reset its request carries (`reset`, its `imr-coral-reset`; Codex review
+    #399). The result is kept in the **Replayed** tab (one row per player: Name, Rules, Rows, Since,
+    Updated, Record JSON in 45,000-character chunks), reused while the rules version, the number of the player's rows
+    and the reset are unchanged, replayed again otherwise. The player's own saved copy (Progress data, RAs Data) is never
+    rewritten there (no race with a device's save). The reply carries `replay: {rv, n, rec, ids}`; `ids` are the
+    replayed rows' answer ids from the time of the oldest answer the device still queues (the request's `pt`; at least
+    the last 500), so a lost reply that left up to 2,000 answers already logged in its queue never counts them twice
+    (Codex review #399).
+  - **The app adopts it** (`sync.js` `replayAdopt`), once per version, and only from a script that reports `v` >= 28
+    (`core.js` `RV_SHEET`; AGENTS.md 7a: the app never gets ahead of the sheet script; before, it does exactly what it did,
+    and the `rv` its requests carry is ignored by an older script): when a reply carries a replay newer than the one
+    this device applied (`imr-coral-rv`, in the progress data: a device that signs in to the account takes it with
+    the account, whose progress is the adopted one, and 0 when the account's data has none, never the version of an
+    anonymous replay adopted on the device (Codex review #399); a device already signed in keeps its own and adopts the replay
+    itself once, with its own unsent answers on top), the progress becomes the replayed record, with this device's answers the sheet has not counted
+    yet (the unsent log or the anonymous queue, minus the ids the sheet replayed and the answers before a reset)
+    replayed on top by the same engine; then saved and sent. A replay whose request went out before a progress reset
+    made on the device while it was on its way is not adopted (it still counts the answers the reset discarded): the
+    next reply brings it again from the new reset (Codex review #399). Two devices on one account: the merge baseline
+    (`SYNC.base`, `mergeSaved`) becomes the shared history and nothing else (`core.js` `replayBase`): the sheet's replay
+    itself (`rec`, as the app holds it), never mixed with this device's counts; this device's answers the sheet has not
+    counted yet stay the difference between its progress and the baseline, so the next three-way merge puts them on top
+    of whatever another device saved (Codex review #399, the third case on the baseline: 2 logged answers and 1 unsent
+    gave a baseline of 3, and the next merge with another device's replay of the 2 lost the third). Per genus kept from
+    the device (the log has fewer answers on it), the baseline stays the shared copy's record; the photos shown take,
+    per photo, the larger of the replay's and the shared copy's (exposure the log leaves out that was already synced),
+    never this device's own. When another device saves its own adoption of the same log, this one adds only its own new
+    answers to it, never the replayed ones a second time. A copy that may lack answers in the log makes the device ask
+    for the replay again (its rules version back to 0; the next save brings it): a reset made on this device that the
+    sheet's copy does not have yet (other devices, an older app among them, may have answered after the reset time), a
+    reset from another device while this one has answers after it not sent yet, a copy with that reset under older
+    rules than this device applied. `tests/adopt.test.js` plays two devices, refused saves, unsent answers, an older
+    app and a reset in flight at random (40 runs; 600 more with other seeds while building it) and checks that every
+    device and the saved copy end with exactly the answers in the log since the reset. A saved copy under older rules than the device applied (its `imr-coral-rv`) is not
+    merged (it may predate the replay, whose counts it would undo), but it may hold answers saved since by a device on
+    an app from before the replay, which never adopts one: so the device's applied version goes back to the copy's and
+    its next save (asked for at once after a pull) brings the replay of the whole log again, every device's answers
+    counted once (Codex review #399: 2 answers adopted, 1 saved by an older app, gave 2 again). A copy under newer
+    rules than the device applied (another device adopted them) is merged, but a learned mark it lacks is not taken
+    away by the merge: the device's own adoption of the same replay decides it, with this device's card (Codex review
+    #399: the merge took the mark first, so no card here). A replay is adopted only if every answer the device still
+    queues is newer than the replay's last one: answers played offline before answers another device logged since
+    would count after them, out of time order (Codex review #399: 20 right answers then 10 misses gave pg 0.96 and ten
+    right answers last, instead of 0.19 and ten misses); the device then adopts nothing and marks no version applied,
+    and the save that logs them brings the replay of the whole log in time order. Likewise for answers played before
+    signing in to an existing account (queued, or sent under the anonymous id): the sign-in leaves the account's rules
+    version unapplied and nothing is adopted until the first save has moved them into the account's log; its reply
+    brings the replay of the whole of it (Codex review #399: 20 right answers played before an account's 10 misses kept
+    pg 0.9 and ten right answers last). Answers the sheet logged from a refused save (logged, their progress not saved:
+    `SYNC.lg`) are missing from the device's merge baseline, so a copy another device saved from its replay of the log
+    may already count them, and the merge would add them again as the device's own (Codex review #399: 3 answers, a
+    baseline of 2, a saved replay of the 3: 4, kept for good): until a save succeeds, the device's requests ask for the
+    replay (rv 0) and a replay of the same version is adopted in place of the merge. An admin merge of two accounts
+    (`core.js` `mergeUsers`, `Code.gs` `users_`) saves the merged copy with no rules version: it is no replay of the two
+    logs together, so every device of the account asks for the replay of both histories in time order (Codex review
+    #399: 20 older right answers and 10 newer misses kept the merged model, pg 0.79-0.96, for 0.20). Except the copy this
+    device saved or loaded last, unchanged since (the sheet's revision, which every save bumps, an older app's
+    included, is still the one this device holds, `sync.js` `mergeSaved` `mine`): it is already part of the device's
+    progress, so it is not merged, whatever its rules version. A save carries the rules version applied when it was
+    sent, so a replay adopted from a save's reply leaves the copy one version behind with nothing the replay lacks;
+    asking for the replay again then looped, at every sync, the save of version 0, its reply's replay, the same copy at
+    the next load (Codex review #399: four saves in a row, the saved version 0 throughout, a full replay in every save's
+    reply); and merged against the baseline the replay set, a copy behind the log read as answers taken away. A replay
+    adopted from a save's reply is followed at once by one more save (`syncOnce`), which brings the adopted version to
+    the copy: otherwise the other device took that copy for an older app's, asked for the replay again and left its
+    own copy so, each in turn. The random test also checks that, after the devices have synced, the saved copy and
+    every device are at the rules version and no reply carries a replay any more, saves and loads in any order. A reply to anonymous
+    answers is ignored once the device has signed in, or changed anonymous id, while it was on its way (Codex review
+    #399: it replaced the account's progress that sign-in had just stored).
+    What is taken from where (`core.js` `replayedOf`): **from
+    the replay**, per genus the log has answers on: `pg`, `ok`, `ko`, `h`, `off`, `conf`, `th`, `lt`, `vr`, `streak`,
+    `at` (the later), `du` (either side's), the photos seen `ps` per photo the larger [shown, right] of the replay and
+    the device (the device also counts as shown a corallites hint revealed after the answer, which the log leaves out:
+    it must not become new again for the mastery exam, `model.js` `examSet`; Codex review #399), plus `pm` 1 (under the photo memory rule: `memRecalc` never corrects it) and
+    `rv` (so `mergeProgress` keeps it over an older copy of the same answers); the global level `~level`: `th`, `vr`,
+    the larger answer count, the later `at`. **From the device**, what the log cannot give: the mastery exam passed
+    (`mx`) or in course (`ex`; dropped when passed under the former model, a record without `s.pg`: that genus takes the
+    exam again), the passed exam also dropped when the log has a miss after it that leaves the replayed progress below
+    the keep rule, the game's own (`core.js` `mxKeeps`, `model.js` `mxKept`: the replay records `lm`, the time of the
+    last such miss, and a mark passed before it goes, reason `rules`; Codex review #399: 10 misses logged by a save
+    refused after a passed exam left the genus at 100%, its exam never coming back, at a bar of 0.19), so a
+    recalculation alone keeps it; the exam in course likewise ends at any miss on the genus, shown or given, logged
+    after it began (`lx`, the time of the last miss, against `s.ex.ts`, or the genus's last answer `s.at` for an exam
+    saved before it had a start time), as the game ends it (Codex review #399: a miss over 4 questions passed kept
+    them), the days answered right (`dd`, `dl`: the device's calendar days, for the comeback), the last
+    observations shown (`ro`: the log keeps photo files, not observations), right with the corallites in view (`cor`:
+    the log does not say which view a photo was in); and the whole record of a genus the log has fewer answers on than
+    the device (answers that never reached the log: a replay never loses progress). The opening hold is not in the
+    record: the sheet already replays it from the same log (`hold_`, "Held while the player falls behind"). The
+    adoption runs through `model.js` `mxRecalc`: a learned mark it takes away is told with the card above (reason
+    `bkt`; a mark taken by a later rules version would say "recalculated from all your answers with the app's current
+    rules", reason `rules`). Then, at once, the announcement card of every version skipped that has a `msg`
+    (`progress.js` `rvNotice`, an update card of `app.js` `cardShow` with the progress ring before and after: once per
+    version per device, `imr-rv-msg`; never held, one after another, after
+    `recalcNotice` and `mxLostNotice`; only to a device that had answers). Every version has the standard card
+    (`core.js` `RV_CARD`; Pierre, 2026-11-03, a standing rule: "only to the players whose progress the replay moves a
+    lot; if it moves everyone a lot, everyone gets it"): "Your progress was recalculated with the improved model",
+    saying the % before and after, shown only when the adoption moved the player's progress % by 5 points or more,
+    either way (`msg.only: 'changed'`, `msg.min: 5`, `progress.js` `rvNoticeAdd`); a player whose % moved less sees
+    nothing. Pierre is asked only when a version needs a different text.
+  - **The device's own recalculations** (`memRecalc` from `s.ps`, `pgOf` from the last 10 results `s.h`) only
+    approximate it from what a device keeps: they stay as the fallback for a device that never reached the sheet (a
+    device offline, or a local copy), and a record adopted from the replay is never corrected by them.
+  - **The admin** shows the same replay, computed in the browser once per data load (about 10 ms for the demo's 1200
+    answers): Players (Progress, Learned, the player's bar) and Journey (Progress, Learned, each genus's bar, the
+    learned genera), and "↻ saved 44%" beside one when the sheet's saved copy says otherwise (a player who has not
+    opened the app since a recalculation, or whose last answers are not saved yet).
+  - Checked by `tests/replay.test.js` (the weights, the ability and level steps against the app's order, a replay
+    going on from another, what `replayedOf` takes from where, the merge), `tests/sync.test.js` (the embedded engine is
+    `core.js`; a player replayed once and stored; replayed again on a new rules version and on new rows; the reset;
+    anonymous devices; the saved copy untouched) and `tests/pages.smoke.js` (a stale device adopts the replay with its
+    own unsent answer on top, sends it, does not adopt it twice; a version with a `msg` shows its card once at load,
+    one without shows nothing). `tools/memreplay.js` prints the same replay under the old rule and the new one.
 
 **Simulated** (`tools/learnsim.js`, its learner given a photo memory of 0 / +0.4 / +1.5 / +2 logits, "Learning-outcome
 simulation" below; 30 seeds × 600 questions, the four usual profiles, the photo stats of 2026-11-03 with the offsets

@@ -422,7 +422,8 @@ function paintBoard(B) {
 // check on a device with progress but no record yet (the feature arriving) grants what is already met in one recap.
 const ACHK = 'imr-coral-ach';
 // Two records of one player (another device, or this device before signing in): every achievement kept with its
-// earliest date, the best run kept; the current run stays this device's.
+// earliest date, the best run kept; the current run stays this device's; an achievement taken back (A._gone, achRecheck)
+// never comes back from a copy earned before (core.js mergeAch).
 // Version of the record (ACH_V): a record from before the full recount (2026-11-01, mastery exam) brings its feats
 // (best run, corallites, hard photo) but not its achievements, which were counted on the old rules.
 const ACH_V = 2;
@@ -430,14 +431,37 @@ function achMerge(json) {
   try {
     const ra = JSON.parse(json || 'null');
     if (!ra || typeof ra !== 'object') return;
-    const A = store.get(ACHK, {}) || {},
-      old = ra._v !== ACH_V;
-    Object.keys(ra).forEach(k => {
-      if (k === '_run' || k === '_v' || (old && k[0] !== '_')) return;
-      A[k] = k === '_best' ? Math.max(A[k] || 0, ra[k] || 0) : A[k] ? Math.min(A[k], ra[k]) : ra[k];
-    });
-    store.set(ACHK, A);
+    store.set(ACHK, mergeAch(store.get(ACHK, {}) || {}, ra, ACH_V));
   } catch (e) {}
+}
+// A learned mark taken away by a recalculation (model.js mxRecalc, MXL): the achievements resting on genera learned
+// (core.js ACH_LEARN: Instructor, Coral master, Group complete) that the progress no longer meets are taken back, dated
+// in the record's _gone so no merge brings them back (core.js achRevoke, mergeAch); earned again, they come back as
+// usual. Only then: everywhere else achievements are only added. The removals are kept and synced even when this record
+// held none of them (achMigrate dropped them at start-up, or they were earned on another device): without them the next
+// merge would bring back the sheet's copy (Codex review #399). The ids taken back go to the card (mxLostNotice) and
+// leave the "new" dots; one sync, so the sheet's copy (achievement shares) follows.
+function achRecheck() {
+  const M = store.get(MXL.KEY, null);
+  if (!M || !M.ach) return [];
+  const A = store.get(ACHK, null),
+    was = JSON.stringify(A),
+    out = A ? achRevoke(A, achSnap(A), Date.now()) : [];
+  if (A && JSON.stringify(A) !== was) {
+    store.set(ACHK, A);
+    if (SYNC) syncSoon();
+  }
+  if (out.length) {
+    store.set(
+      ACHNEW,
+      achUnseen().filter(id => !out.includes(id))
+    );
+    achDot();
+  }
+  delete M.ach;
+  M.gone = Object.keys(M.due || {}).length ? [...new Set([...(M.gone || []), ...out])] : []; // the card names them if it is due
+  store.set(MXL.KEY, M);
+  return out;
 }
 const achList = () => slateGenera();
 function achSnap(A = store.get(ACHK, {}) || {}) {
@@ -470,7 +494,7 @@ function achMigrate() {
   const A = store.get(ACHK, null);
   if (A && A._v === ACH_V) return;
   const B = {_v: ACH_V};
-  if (A) ['_run', '_best', '_cor', '_hard'].forEach(k => A[k] && (B[k] = A[k]));
+  if (A) ['_run', '_best', '_cor', '_hard', '_gone'].forEach(k => A[k] && (B[k] = A[k]));
   const snap = achSnap(B),
     t = Date.now();
   ACH.filter(a => a.test(snap)).forEach(a => (B[a.id] = (A && A[a.id]) || t));
@@ -743,6 +767,125 @@ function recalcNotice() {
     // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (Codex review #367: a returning
     // player opening straight at #quiz had it closed by the first route, before ever seeing it).
     onClose: how => how === 'route' && setTimeout(recalcNotice, 300)
+  });
+}
+// A learned mark taken away by a recalculation (model.js mxRecalc, MXL; Pierre, 2026-11-03: players know they test an
+// early beta): told once on this device by an announcement card, like recalcNotice (AGENTS.md rule 12: never held, no
+// visit floor or prompt spacing): at start-up once the progress is in (app.js SETUP 2) and right after a pull or an
+// answer that drops a mark (mxLost), on whatever page is open. Another card or the tour on screen: it waits for it
+// (tried again every 2 s). Names the genera, and the achievements taken back with them (achRecheck). Seen only by OK (or
+// Enter / Escape): those marks go to told and are never told again here; leaving the page closes it unseen and it comes
+// back once the new page is drawn.
+const andList = L => (L.length < 2 ? L.join('') : L.slice(0, -1).join(', ') + ' and ' + L[L.length - 1]);
+// why: the reason per genus (model.js mxRecalc): 'bkt' an exam passed under the former model, 'rules' a recalculation of
+// the whole log under newer rules (the sheet's full replay, sync.js replayAdopt).
+function mxLostText(L, nAch, why = {}) {
+  const one = L.length === 1,
+    it = x => andList(x.map(n => `<i>${esc(n)}</i>`)),
+    B = L.filter(n => (why[n] || 'bkt') === 'bkt'),
+    N = L.filter(n => (why[n] || 'bkt') !== 'bkt'),
+    back = x =>
+      x.length === 1
+        ? 'This genus is back on its progress bar, and its exam'
+        : 'These genera are back on their progress bars, and their exams';
+  return [
+    B.length
+      ? `You passed the mastery exam on ${it(B)} under the beta's first rules, which brought the exam too early. ${back(B)} will come again.`
+      : '',
+    N.length
+      ? `Your progress was recalculated from all your answers with the app's current rules, and the mastery exam you passed on ${it(N)} no longer stands. ${back(N)} will come again.`
+      : '',
+    nAch ? `Until then, the ${nAch > 1 ? 'badges' : 'badge'} earned with ${one ? 'it' : 'them'} ${nAch > 1 ? 'are' : 'is'} taken back.` : ''
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+let mxLostT = 0;
+function mxLostNotice() {
+  clearTimeout(mxLostT);
+  const M = store.get(MXL.KEY, {}) || {},
+    due = M.due || {},
+    L = Object.keys(due).sort();
+  if (!L.length || document.querySelector('.mxlost')) return;
+  if (document.querySelector('#tour, .unlock')) return void (mxLostT = setTimeout(mxLostNotice, 2000));
+  cardShow({
+    kind: 'update',
+    cls: 'mxlost',
+    kick: 'Early beta',
+    title: `${L.length > 1 ? 'Mastery exams' : 'Mastery exam'} to take again`,
+    body: `<p>${mxLostText(L, (M.gone || []).length, M.why || {})}</p>`,
+    primary: {
+      text: 'OK',
+      on: () => {
+        // Seen: those marks go to told; a drop that came while the card was open shows next.
+        const N = store.get(MXL.KEY, {}) || {},
+          told = N.told || {},
+          left = {...(N.due || {})};
+        L.forEach(n => {
+          told[n] = due[n];
+          if (left[n] === due[n]) delete left[n];
+        });
+        store.set(MXL.KEY, {...N, due: left, told, gone: []});
+        mxLostNotice();
+      }
+    },
+    esc: 1,
+    enter: 1,
+    onClose: how => how === 'route' && (mxLostT = setTimeout(mxLostNotice, 300))
+  });
+}
+// The announcement card of a rules version (core.js RVS msg; Pierre, 2026-11-03: announcement cards show as soon as the
+// player opens or reconnects to the app, on whatever page they land on, one after another if several, never held by
+// the visit floor or the prompt spacing; AGENTS.md "How to make a change" 12). When this device adopts the sheet's full
+// replay of a newer version (sync.js replayAdopt), every version it skipped that has a msg is due, once per version
+// on this device (RVN.KEY, device only: due, the versions still to show; told, those shown; pct, the progress % before
+// and after the adoption, per version, for a msg with only: 'changed', due only when the two differ by msg.min points or
+// more, either way: core.js RV_CARD, 5). One card per version,
+// oldest first, the next as soon as one is closed; like recalcNotice and mxLostNotice it only waits for another card
+// or the tour on screen (tried again every 2 s), and a page change closes it unseen to show it again on the new page.
+// At start-up (app.js SETUP 2, after the two cards above) and right after an adoption.
+const RVN = {KEY: 'imr-rv-msg'};
+function rvNoticeAdd(from, to, pct) {
+  const M = store.get(RVN.KEY, {}) || {},
+    told = M.told || [],
+    due = (M.due || []).filter(v => !told.includes(v)),
+    pc = M.pct || {};
+  rvMsgs(from, to).forEach(x => {
+    if (told.includes(x.v) || due.includes(x.v)) return;
+    if (x.msg.only === 'changed' && !(pct && pct[0] !== pct[1] && Math.abs(pct[1] - pct[0]) >= (x.msg.min || 0))) return;
+    if (pct) pc[x.v] = pct;
+    due.push(x.v);
+  });
+  store.set(RVN.KEY, {due: due.sort((a, b) => a - b), told, pct: pc});
+  if (window.APP_READY) rvNotice();
+}
+let rvT = 0;
+function rvNotice() {
+  clearTimeout(rvT);
+  const M = store.get(RVN.KEY, {}) || {},
+    x = RVS.find(r => (M.due || []).includes(r.v) && r.msg && !(M.told || []).includes(r.v));
+  if (!x || document.querySelector('.rvmsg')) return;
+  if (document.querySelector('#tour, .unlock')) return void (rvT = setTimeout(rvNotice, 2000));
+  // The progress ring in the medallion: the % after the recalculation, the one before faint behind it (app.js cardRing).
+  const [pf, pt] = (M.pct || {})[x.v] || [];
+  cardShow({
+    kind: x.msg.kind || 'update',
+    cls: 'rvmsg',
+    kick: 'Update',
+    title: x.msg.t,
+    visual: pt != null ? cardRing(pt, pf) : '',
+    body: `<p>${x.msg.p.replace('{from}', pf).replace('{to}', pt)}</p>`,
+    primary: {
+      text: 'Got it',
+      on: () => {
+        const N = store.get(RVN.KEY, {}) || {};
+        store.set(RVN.KEY, {...N, due: (N.due || []).filter(v => v !== x.v), told: [...new Set([...(N.told || []), x.v])]});
+        rvNotice(); // the next version's card, if any
+      }
+    },
+    esc: 1,
+    enter: 1,
+    onClose: how => how === 'route' && (rvT = setTimeout(rvNotice, 300))
   });
 }
 // An apology, once (Pierre, 2026-11-04; core.js SORRY, sorryOf, sorryFelt, sorryText): to a player who really felt the

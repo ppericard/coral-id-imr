@@ -1,5 +1,5 @@
 // The genus wrongly given in the Elo (2026-11-03, docs/LEARNING.md "The genus wrongly given in the Elo"): the app's
-// own Elo (model.js abilityStep, run by tools/abilityeval.js on stubs) replayed on a made-up answer log of a strong
+// own Elo (core.js eloStep, as model.js abilityStep runs it, replayed by tools/abilityeval.js) replayed on a made-up answer log of a strong
 // player whose misses fall on look-alikes. The old rule (a: a full miss step on the genus given, at difficulty 0,
 // its uncertainty never shrinking) drags every genus the player confuses down; the rule the app now follows (e: no
 // step on the genus given, rule 13 kept in the progress) leaves the abilities near the truth and predicts the next
@@ -98,18 +98,17 @@ test('the group table takes the union of the groups of every rule', () => {
   assert.deepStrictEqual(groupsOf(res, ['a', 'e+L']), ['k2', 'level 0-0.75', 'level>=0.75']);
 });
 
-// Global level and genus (2026-11-03, docs/LEARNING.md "Global level and genus"): model.js's ability, levelMove and
-// abilityStep run on stubs, as tests/memory.test.js does.
+// Global level and genus (2026-11-03, docs/LEARNING.md "Global level and genus"): the app's ability, levelMove and
+// abilityStep (core.js abilityOf, levelMove, eloStep, as model.js calls them on its P; shared with the full replay).
 function appModel() {
-  const fs = require('fs'),
-    path = require('path'),
-    vm = require('vm'),
-    C = require('../core.js');
-  const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
-    ctx = {P: {}, playerStart: C.playerStart, LEVEL: C.LEVEL, sig: x => 1 / (1 + Math.exp(-x))};
-  vm.createContext(ctx);
-  vm.runInContext(pick('const ELO =', '// For My progress') + '\nthis.M = {ELO, ability, abilityStep, levelMove};', ctx);
+  const C = require('../core.js'),
+    ctx = {P: {}};
+  ctx.M = {
+    ELO: C.ELO,
+    ability: n => C.abilityOf(ctx.P, n),
+    abilityStep: (n, s, good, d, k) => C.eloStep(ctx.P, n, s, good, d, k),
+    levelMove: (n, s) => C.levelMove(ctx.P, n, s)
+  };
   return ctx;
 }
 
@@ -202,7 +201,7 @@ test('the success aimed for follows the global level, with no cliff', () => {
     vm = require('vm');
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
     pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
-    ctx = {P: {}, LEVEL: '~level'};
+    ctx = {...require('../core.js'), P: {}};
   vm.createContext(ctx);
   vm.runInContext(pick('const PICKD =', '// The schedule of the format') + '\nthis.M = {aimP, aimOff, PICKD};', ctx);
   const at = L => ((ctx.P = {'~level': {th: L}}), ctx.M.aimP()),
@@ -230,18 +229,18 @@ test('the level bands are the same answers whatever the model or the rule', () =
     os = require('os'),
     path = require('path'),
     E = require('../tools/abilityeval.js');
-  const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
+  const src = fs.readFileSync(path.join(__dirname, '..', 'core.js'), 'utf8'),
     floored = src.replace('Math.max(n === LEVEL ? 0 : ELO.kmin,', 'Math.max(ELO.kmin,'),
-    file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'abilityeval-')), 'model.js');
+    file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'abilityeval-')), 'core.js');
   assert.notStrictEqual(floored, src, 'the level step is found');
   fs.writeFileSync(file, floored);
   const rows = log(1.2, 300, 5),
     L = res => res.scored.map(o => o.L);
-  E.useModel(path.join(__dirname, '..', 'model.js'));
+  E.useModel(path.join(__dirname, '..', 'core.js'));
   const a = E.evaluate(rows, {variants: ['e', 'e+L'], min: 1}).res;
   E.useModel(file);
   const b = E.evaluate(rows, {variants: ['e'], min: 1}).res;
-  E.useModel(path.join(__dirname, '..', 'model.js'));
+  E.useModel(path.join(__dirname, '..', 'core.js'));
   assert.deepStrictEqual(L(a.e), L(b.e));
   assert.deepStrictEqual(L(a['e+L']), L(a.e));
   // ... while the two models' own levels do differ.
