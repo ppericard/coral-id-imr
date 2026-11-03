@@ -3,7 +3,8 @@
 // npm into a temporary folder (no package.json in this repo). Locally: node tests/pages.smoke.js (Playwright installed).
 const http = require('http'),
   fs = require('fs'),
-  path = require('path');
+  path = require('path'),
+  {execFileSync} = require('child_process');
 const {chromium} = require('playwright');
 const ROOT = path.join(__dirname, '..');
 const TYPES = {
@@ -865,6 +866,34 @@ async function signin(base) {
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
     await p.waitForTimeout(500);
     if (errs.length) fails.push(`${w}px admin.html?readonly: ${errs.slice(0, 3).join(' | ')}`);
+    // One count of a Finder-only genus's colonies (Codex review #390, found apart five times): the refill
+    // (tools/fetch_local.py colonies) and the admin (covOf, which the Candidates swiper's full test reads) agree on the
+    // real data and curation, view by view.
+    if (w === 390) {
+      const adm = await p.evaluate(() =>
+        Object.fromEntries(
+          Object.keys(DATA.gen)
+            .filter(n => !isGame(n))
+            .map(n => [n, Object.fromEntries(capViews(n).map(([v]) => [v, covOf(n, v).obs]))])
+        )
+      );
+      const py = JSON.parse(
+        execFileSync(
+          'python3',
+          [
+            '-c',
+            `import sys, json, importlib.util; sys.path.insert(0, 'tools'); sys.argv = ['x']
+s = importlib.util.spec_from_file_location('fl', 'tools/fetch_local.py'); fl = importlib.util.module_from_spec(s); s.loader.exec_module(fl)
+from datajson import load_all
+d = load_all(); G = {**d['gen'], **d['x']['gen']}; cur = json.load(open('curation.json'))
+print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded).get(v, 0) for v in fl.kept_views(g, G, cur)} for g in fl.finder_only(d)}))`
+          ],
+          {cwd: ROOT, encoding: 'utf8'}
+        )
+      );
+      if (JSON.stringify(adm) !== JSON.stringify(py))
+        fails.push(`Finder-only colonies, admin covOf vs tools/fetch_local.py colonies: ${JSON.stringify(adm)} vs ${JSON.stringify(py)}`);
+    }
     await ctx.close();
   }
   await b.close();
