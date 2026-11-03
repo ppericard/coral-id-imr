@@ -210,7 +210,9 @@ const server = http.createServer((req, res) => {
         fails.push(`${w}px Players (${how}): not most recent first ${L.map(x => x.txt).join(', ')}`);
       if (L.filter(x => x.now).length !== 1)
         fails.push(`${w}px Players (${how}): ${L.filter(x => x.now).length} players "now", expected 1`);
-      if (!L.slice(1).every(x => /min ago|h ago|yesterday|^\d+ \w+$|^\w+ \d+$/.test(x.txt)))
+      // 24 h times, "yest." on phones (Pierre, 2026-11-03: a narrower Last column).
+      const yest = w < 600 ? /^yest\. \d\d:\d\d$/ : /^yesterday \d\d:\d\d$/;
+      if (!L.slice(1).every(x => /min ago|h ago|^\d+ \w+$|^\w+ \d+$/.test(x.txt) || yest.test(x.txt)) || L.some(x => /AM|PM/.test(x.txt)))
         fails.push(`${w}px Players (${how}): Last texts ${L.map(x => x.txt).join(', ')}`);
     };
     await checkLast('default sort');
@@ -339,8 +341,61 @@ const server = http.createServer((req, res) => {
     await p.click('[data-uren="Ben Demo"]');
     await p.waitForFunction(() => /Ben Demo-test/.test(document.getElementById('view').innerText), null, {timeout: 10000}).catch(() => {});
     const ren = await text();
-    if (!/Ben Demo-test\s+hidden/.test(ren) || /Ben Demo\s/.test(ren.replace(/Ben Demo-test/g, '')))
-      fails.push(`${w}px Players: rename Ben Demo → Ben Demo-test (hidden) not shown`);
+    if (!/Ben Demo-test/.test(ren) || /Ben Demo\s/.test(ren.replace(/Ben Demo-test/g, '')))
+      fails.push(`${w}px Players: rename Ben Demo → Ben Demo-test not shown`);
+    // Hidden from the leaderboard (Pierre, 2026-11-03): no "hidden" tag, the name greyed (muted, italic), the full name
+    // and the meaning in its title; a name shown on the leaderboard keeps the ink colour.
+    const nameOf = n =>
+      p
+        .$eval(`.adm-urow[data-uopen="${n}"]`, tr => {
+          const b = tr.querySelector('td:first-child .adm-cut'),
+            cs = b && getComputedStyle(b),
+            probe = document.createElement('span');
+          probe.style.color = 'var(--muted)';
+          tr.appendChild(probe);
+          const muted = getComputedStyle(probe).color;
+          probe.remove();
+          return {
+            tag: /\bhidden\b/.test(tr.cells[0].innerText),
+            color: cs && cs.color,
+            muted,
+            italic: cs && cs.fontStyle,
+            title: b && b.title
+          };
+        })
+        .catch(() => null);
+    for (const n of ['Ben Demo-test', 'Test Demo']) {
+      const h = await nameOf(n);
+      if (!h || h.tag || h.color !== h.muted || h.italic !== 'italic' || !h.title.includes(n) || !/hidden/i.test(h.title))
+        fails.push(`${w}px Players: hidden player ${n} not greyed without a tag (${JSON.stringify(h)})`);
+    }
+    const shown = await nameOf('Carla Demo');
+    if (!shown || shown.color === shown.muted || shown.italic === 'italic') fails.push(`${w}px Players: Carla's name is greyed`);
+    // A very long name never widens the table on a phone (Pierre, 2026-11-03): only the Name column grows, up to its cap
+    // (admin.css --cut), the name ends in "…" and its title holds it whole.
+    if (w === 390) {
+      const size = () =>
+        p.evaluate(() => {
+          const t = document.querySelector('.adm-utbl'),
+            th = t.querySelector('thead th');
+          return {table: t.offsetWidth, name: th.offsetWidth, cap: 9 * parseFloat(getComputedStyle(t).fontSize) + 12 + 1};
+        });
+      const LONG = 'Bartholomew Alexander Montgomery-Fitzgerald Demo LongName-60';
+      const before = await size();
+      await p.click('[data-uopen="Ben Demo-test"]');
+      await settle();
+      await p.evaluate(n => (window.prompt = () => n), LONG);
+      await p.click('[data-uren="Ben Demo-test"]');
+      await p.waitForFunction(n => document.querySelector(`[data-uopen="${n}"]`), LONG, {timeout: 10000}).catch(() => {});
+      const after = await size(),
+        cut = await p
+          .$eval(`.adm-urow[data-uopen="${LONG}"] .adm-cut`, b => ({title: b.title, cut: b.scrollWidth > b.clientWidth}))
+          .catch(() => null);
+      if (LONG.length !== 60 || after.name > after.cap || after.table - before.table > after.name - before.name + 1)
+        fails.push(`${w}px Players: a 60-character name widened the table (${JSON.stringify({before, after})})`);
+      if (!cut || !cut.cut || !cut.title.startsWith(LONG))
+        fails.push(`${w}px Players: the 60-character name is not cut with its title (${JSON.stringify(cut)})`);
+    }
     await p.click('[data-uopen="mara demo2"]');
     await settle();
     await p.selectOption('[data-umerge="mara demo2"]', 'Mara Demo');

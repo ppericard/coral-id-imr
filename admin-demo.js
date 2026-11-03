@@ -155,6 +155,8 @@
       const learned = Object.values(P).filter(s => s.pg >= 0.6).length;
       users[name.toLowerCase()] = {
         name,
+        // Test Demo is hidden from the leaderboard (Players greys its name), as a renamed test account would be.
+        ...(name === 'Test Demo' ? {board: -1} : {}),
         updated: NOW - d1 * DAY,
         learned,
         seen: Object.keys(P).length,
