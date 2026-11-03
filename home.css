@@ -314,8 +314,8 @@
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: 1fr;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
   gap: 2px;
 }
 @media (min-width: 600px) {
@@ -467,17 +467,11 @@
 }
 
 /* Phone base (mobile-first); larger screens restore below. */
-.hdtiles img:nth-child(n + 9) {
-  display: none;
-}
 .hddesc {
   margin-bottom: 8px;
 }
 
 @media (min-width: 600px) {
-  .hdtiles img:nth-child(n + 9) {
-    display: block;
-  }
   .hddesc {
     margin-bottom: 16px;
   }
@@ -509,9 +503,13 @@
 
 /* Home fits one screen (Pierre, 2026-11-03: the credits footer pushed Home below the fold, and the doors had fixed
    heights whatever the screen). The page column (.wrap) is at least the screen above the phone tab bar; the doors and the
-   one-line credit grow to fill it, never shrink. On phones the Learn band is one 8:1 row of square tiles and the ReefCloud
-   photo takes the height left (at least 32 px), so the two doors and the credit fit a 360 x 640 screen and a tall phone
-   gets a bigger photo, not a scroll. A screen too short even for that (320 x 568) scrolls; nothing is squeezed or hidden. */
+   one-line credit grow to fill it, never shrink. A screen too short even for that (320 x 568) scrolls; nothing is
+   squeezed or hidden.
+   Learn & practise is the primary door, Identify the secondary one (Pierre, 2026-11-03: Identify serves mostly the IMR
+   RAs doing data analysis, every player learns and practises). On phones the Learn photos (4 x 3 tiles) take all the
+   height left (at least 120 px) and Identify is one compact row: a small ReefCloud photo beside its one-line kicker, its
+   title and its button (its description shows from tablets up). Tablets and desktops: Learn gets the wider column (3:2).
+   Practice is the one filled button of the page; Identify's is outlined. */
 body:has(.home-page) main {
   flex: 1 0 auto;
   display: flex;
@@ -525,15 +523,31 @@ body:has(.home-page) main {
 }
 .hdoors {
   flex: 1 0 auto;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: 1fr auto;
 }
 .hdoor {
   overflow: clip; /* not a scroll container: a door is never shrunk below its content */
 }
-.hdoor.identify .hdart.rc {
-  flex: 1 0 32px;
+.hdoor.learn .hdart {
+  flex: 1 0 120px;
   aspect-ratio: auto;
-  min-height: 32px;
+  min-height: 120px;
+}
+.hdoor.learn .hdbody {
+  flex: none; /* the height left goes to the photos, not to a gap above the buttons */
+}
+.hdoor.identify {
+  flex-direction: row;
+}
+.hdoor.identify .hdart.rc {
+  flex: 0 0 96px;
+  aspect-ratio: auto;
+}
+.hdoor.identify .hdbody {
+  padding-inline: 12px;
+}
+.hdoor.identify .hddesc {
+  display: none;
 }
 .hdart.rc > img {
   position: absolute;
@@ -555,9 +569,23 @@ body:has(.home-page) main {
   .hdoors {
     flex: none;
     grid-template-rows: none;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   }
+  .hdoor.learn .hdart,
   .hdoor.identify .hdart.rc {
     flex: none;
+  }
+  .hdoor.learn .hdbody {
+    flex: 1;
+  }
+  .hdoor.identify {
+    flex-direction: column;
+  }
+  .hdoor.identify .hdbody {
+    padding-inline: 22px;
+  }
+  .hdoor.identify .hddesc {
+    display: block;
   }
   .hcred {
     margin-top: auto;

@@ -7,7 +7,7 @@
     const g = DATA.gen[n];
     if (!g) return '';
     const p = (g.views[v] || [])[0] || (g.views.macro || [])[0] || cover(g);
-    return p ? thumb(p, '(max-width:599.98px) 80px, 270px') : '';
+    return p ? thumb(p, '(max-width:599.98px) 100px, 270px') : '';
   };
   window.viewHome = function () {
     document.documentElement.dataset.page = 'lab'; // full width, like the Lab (lab.css)
@@ -38,7 +38,7 @@
             <h2>Identify a coral</h2>
             <p class="hddesc">Start from the growth form, add the clues you can see, then compare the candidate genera side by side to name the one under the ReefCloud point, or in your own photo.</p>
             <div class="hdacts">
-              <a class="hdbtn main" href="#finder"><b>Open the Coral Finder</b><small>Growth form, clues, then a visual comparison</small></a>
+              <a class="hdbtn" href="#finder"><b>Open the Coral Finder</b><small>Growth form, clues, then a visual comparison</small></a>
             </div>
           </div>
         </section>
