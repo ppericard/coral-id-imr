@@ -1389,7 +1389,13 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   its `TYPED.exam` typed right answers stays at 99% at most (`scoreOf`) until the device has passed it.
   - **Rules versions** (`core.js` `RVS`, `RV`): every change to a progress rule appends `{v, at, why, msg}` (AGENTS.md
     "How to make a change" 14). v1 (2026-11-03, `msg` null): this replay itself, with the rules of that day (the
-    miss weight over the 0.8 every question aims for, `TARGET_P`; no Elo step on the genus wrongly given).
+    miss weight over the 0.8 every question aims for, `TARGET_P`; no Elo step on the genus wrongly given). v2
+    (2026-11-03; `msg` null for now, the standard recalculation card once #399 adds it: Pierre's rule, every rules
+    version shows it to the players whose progress % moves by 5 points or more): the hierarchical photo Elo (sheet v29) puts the genus offset
+    into the expectation the photo memory offsets (`mem`) are fitted against, and `replay_` replays with the sheet's
+    `mem`, so the same log gives other bars (Codex P1 on #422; `tests/replay.test.js` "RVS v2": on a synthetic log
+    with repeated photos the offsets go from 0.47 / −0.79 / −1.66 to 0.41 / −0.77 / −1.60 and the replayed progress
+    moves with them). A change to `stats_` that moves what the replay reads from it needs a rules version too.
   - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between
     `// BEGIN core.js` and `// END core.js`, kept identical by `tools/sync_core.py`, checked in CI; its own `module`
     object keeps its names out of the script's globals, reached as `CORE_`), so the self-updater installs the engine
@@ -1600,6 +1606,9 @@ already show. A read-only study of the answer log (1,262 trusted answers, 9 play
 - **`GENUS_K` 0.4**: on the real log, 0.2 and 0.4 score alike and both beat the photo-only Elo; 0.8 moves too fast
   (below). 0.4 learns a new genus's offset sooner (a few answers) at the same accuracy.
 - **Blend weight 5 kept**: 2, 5, 10 and 20 score within 0.0004.
+- **Rules version 2** (`core.js` `RVS`): the genus offset also enters the expectation the photo memory offsets are fitted
+  against, and the sheet's full replay uses those offsets, so every player is replayed again once v29 is live ("Full
+  replay").
 
 **Real answers** (read-only replay of the sheet's Answers tab read on 2026-11-03, 1,346 rows: the study's export plus
 76 rows read with the connector; 1,338 trusted answers scored, 9 players, each scored before it moves anything; the

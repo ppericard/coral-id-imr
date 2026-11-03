@@ -1271,6 +1271,16 @@
         p: 'Your progress is now computed again from all your answers, with the rules the app uses today. It went from {from}% to {to}%. Every answer you gave is kept.',
         only: 'changed'
       }
+    },
+    {
+      v: 2,
+      at: '2026-11-03',
+      why: 'Hierarchical photo Elo (sheet v29): the genus offset enters the expectation the photo memory offsets are fitted against, so the memory offsets the replay uses change',
+      // Codex P1 on #422: mem (?stats=1, Code.gs stats_) feeds replayProgress, so a log replayed under v1 gives other
+      // bars than under v2. Pierre's standing rule (2026-11-03): every rules version gets the standard recalculation
+      // card, only for players whose progress % moves by 5 points or more; null until the full replay branch (#399)
+      // adds that card (RV_CARD).
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;

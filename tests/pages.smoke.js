@@ -823,6 +823,9 @@ async function replayAdoptCheck(base) {
     window.fetch = (u, o) => (/script\.google/.test(String((u && u.url) || u)) ? answer(u, o) : f(u, o));
   };
   // sv: the sheet script version the stub answers as (the replay from v28, core.js RV_SHEET).
+  // The rules version whose card shows only when the replay moved the progress % (v1; the later ones, v2 the photo Elo
+  // of sheet v29, have no card so far).
+  const CV = (C.RVS.filter(x => x.msg && x.msg.only === 'changed').pop() || {}).v;
   const open = async (rv, core, sv = C.RV_SHEET) => {
     const c = await bs.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
     await c.addInitScript(STUB, [rec, data, core ? C.RV + 1 : C.RV, sv]);
@@ -893,7 +896,7 @@ async function replayAdoptCheck(base) {
       localStorage.removeItem('imr-rv-msg');
       return d;
     }, C.RV);
-    if (due[0].length || !due[1].includes(C.RV)) fails.push(`replay: the card's only-when-changed rule: ${JSON.stringify(due)}`);
+    if (due[0].length || !due[1].includes(CV)) fails.push(`replay: the card's only-when-changed rule: ${JSON.stringify(due)}`);
     await c.close();
   }
   // A stale device: the replay adopted once, its own answer on top.
@@ -929,8 +932,8 @@ async function replayAdoptCheck(base) {
     if (s.pending) fails.push('replay: its own answer was not sent');
     // Version 1's card is due only when the replay moved the progress % (Pierre, 2026-11-03), and says the two % (it
     // may wait behind the learned-mark card).
-    const [pf, pt] = (s.rvm.pct || {})[C.RV] || [];
-    if ((s.rvm.due || []).includes(C.RV) !== (pf !== undefined && pf !== pt) || (s.card && !s.text.includes(`went from ${pf}% to ${pt}%`)))
+    const [pf, pt] = (s.rvm.pct || {})[CV] || [];
+    if ((s.rvm.due || []).includes(CV) !== (pf !== undefined && pf !== pt) || (s.card && !s.text.includes(`went from ${pf}% to ${pt}%`)))
       fails.push(`replay: the recalculation card: ${JSON.stringify({card: s.card, text: s.text, rvm: s.rvm})}`);
     // The next load: not adopted again (the sheet now sends another record: the progress stays), and the load says the
     // version applied.

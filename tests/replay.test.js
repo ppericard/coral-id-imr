@@ -195,6 +195,39 @@ test('RVS: one entry per rules version, RV the last; messages of the versions sk
   assert.deepStrictEqual(C.rvMsgs(C.RV, C.RV), []);
 });
 
+// Rules version 2 (Codex P1 on #422): the hierarchical photo Elo (sheet v29) adds the genus offset to the expectation the
+// photo memory offsets are fitted against, so the offsets the sheet hands replayProgress move, and with them the bars of a
+// log with repeated photos. Hence a new rules version, so every player adopted under v1 is replayed again.
+test('RVS v2: the genus offset moves the memory offsets, and the replayed progress with them', () => {
+  const rows = [];
+  let t = Date.UTC(2026, 10, 3, 6, 0, 0);
+  for (let i = 0; i < 60; i++) {
+    const g = i % 3 ? 'Acropora' : 'Porites',
+      ok = g === 'Acropora' ? (i % 5 ? 1 : 0) : i % 2;
+    rows.push([
+      'ana',
+      (t += 60000),
+      g,
+      ok ? g : g === 'Acropora' ? 'Porites' : 'Acropora',
+      ok,
+      'quiz',
+      `${g.toLowerCase()}-${i % 4}`,
+      0.75,
+      0.5,
+      null,
+      'Acropora Porites Favites Montipora'
+    ]);
+  }
+  // The offsets this log gave before the genus offset (core.js of #399, rules version 1), measured once.
+  const before = [0, 0.47, -0.79, -1.66],
+    now = C.photoMemOf(rows).mem;
+  assert.notDeepStrictEqual(now, before, 'the genus offset changes the memory offsets');
+  const pg = mem => C.replayProgress(rows, {mem}).ana.P.Acropora.pg;
+  assert.notStrictEqual(pg(now), pg(before), 'and the replayed progress');
+  const v2 = C.RVS.find(x => x.v === 2);
+  assert.ok(v2 && C.RV >= 2, 'rules version 2');
+});
+
 test('replayProgress: the ability, the run, the global level and the times, as quiz.js answer keeps them', () => {
   const rows = [
     row('p', 0, 'A', 'A', 'a0', 'A B C D'),
