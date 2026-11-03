@@ -561,6 +561,20 @@ async function signin(base) {
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     if (errs.length) fails.push(`${w}px start: ${errs.join(' | ')}`);
+    // "In plain words" (Pierre, 2026-11-03): a genus sheet shows its plain line, under the title, before the photo and tips.
+    await p.evaluate(() => (location.hash = 'g-Goniastrea'));
+    await p.waitForTimeout(700);
+    const pl = await p.evaluate(() => {
+      const e = document.querySelector('#view .sheet .plainw'),
+        hero = document.querySelector('#view .sheet .hero');
+      return {
+        text: e ? e.textContent : '',
+        want: DATA.gen.Goniastrea.plain,
+        before: !!(e && hero && e.compareDocumentPosition(hero) & Node.DOCUMENT_POSITION_FOLLOWING)
+      };
+    });
+    if (!pl.text.startsWith('In plain words') || !pl.text.includes(pl.want) || !pl.before)
+      fails.push(`${w}px genus sheet plain line: ${JSON.stringify(pl)}`);
     for (const h of ROUTES) {
       errs.length = 0;
       await p.evaluate(h => {
