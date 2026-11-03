@@ -65,7 +65,7 @@ backend cause remains unknown.
 
 | Workflow | Trigger / commits | Publishes Pages? |
 |---|---|---|
-| `checks.yml` — Checks | Pull requests and manual dispatch. Its jobs named `smoke (<name>)` run the Playwright smoke tests, one per file, in parallel. | No |
+| `checks.yml` — Checks | Pull requests and manual dispatch. Its jobs named `smoke (<name>)` run the Playwright smoke tests in parallel, one per file, pages and admin in two halves each. | No |
 | `approved-photos.yml` — Candidate photos | Push to `main` changing `curation.json`, including admin Publish or a PR merge touching it; also manual dispatch. Commits `Candidate photos: …` changes to `data.json` and `img/` using `GITHUB_TOKEN`. | No |
 | GitHub-generated pages build and deployment (old source) | Branch publication after eligible pushes to `main`: PR merges, direct pushes, admin PAT commits `Photo curation: …`. Bot `GITHUB_TOKEN` pushes do not trigger branch Pages builds. | Yes, until source is switched |
 | `pages.yml` — Deploy Pages (new source) | Every eligible push to `main`, manual dispatch on `main`, and completion of Candidate photos on `main` (any conclusion). No path filter, so curation-only publishes deploy too. | **The only deployer after migration** |

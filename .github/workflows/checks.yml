@@ -55,24 +55,42 @@ jobs:
         run: |
           python3 tools/check_versions.py ${{ github.base_ref && format('--base origin/{0}', github.base_ref) || '' }}
   smoke:
-    name: smoke (${{ matrix.smoke }})
+    name: smoke (${{ matrix.name }})
     runs-on: ubuntu-latest
     strategy:
       # Every smoke reports: one failing smoke no longer hides the others (the old single job stopped at its first failure).
       fail-fast: false
+      # The two longest smokes run in two halves each (tests/slot.js: SMOKE_PART for pages.smoke.js, whose parts the two
+      # groups cover between them, or the run fails; SMOKE_W for admin.smoke.js, one width each), so no job is the long pole.
       matrix:
         include:
-          - smoke: pages
-            what: Page smoke test (main routes and admin, 390 and 1280 px, fails on any page error)
-          - smoke: draw
+          - name: pages main
+            smoke: pages
+            part: main
+            what: Page smoke test, main half (the routes at 390 and 1280 px, sheets, history, new player, cards and prompts)
+          - name: pages rest
+            smoke: pages
+            part: rest
+            what: Page smoke test, other half (Coral basics, credits, pages opened, tips, sign-in, the sheet's replay)
+          - name: draw
+            smoke: draw
             what: Question draw test (photoSet and distractors on the real data, every genus, 4 player levels)
-          - smoke: fish
+          - name: fish
+            smoke: fish
             what: Fish quiz test (the fish subject on the real fish.json, circles opt-in, winks, progress kept apart)
-          - smoke: admin
-            what: Admin demo test (admin.html?demo, every page and the main actions on made-up data, nothing sent)
-          - smoke: profiles
+          - name: admin 390
+            smoke: admin
+            w: '390'
+            what: Admin demo test at 390 px (admin.html?demo, every page and the main actions on made-up data, nothing sent)
+          - name: admin 1280
+            smoke: admin
+            w: '1280'
+            what: Admin demo test at 1280 px (admin.html?demo, every page and the main actions on made-up data, nothing sent)
+          - name: profiles
+            smoke: profiles
             what: Learning path test (a beginner, an IMR RA, an expert through the real quiz; docs/LEARNING.md)
-          - smoke: net
+          - name: net
+            smoke: net
             what: Poor connection test (start-up without curation.json, preloaded next question, photo fallback, kept leaderboard)
     steps:
       - uses: actions/checkout@v7
@@ -90,4 +108,7 @@ jobs:
           npm install --no-save --no-audit --no-fund playwright@1.64.1
           npx playwright install --with-deps chromium
       - name: ${{ matrix.what }}
+        env:
+          SMOKE_PART: ${{ matrix.part }}
+          SMOKE_W: ${{ matrix.w }}
         run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/${{ matrix.smoke }}.smoke.js

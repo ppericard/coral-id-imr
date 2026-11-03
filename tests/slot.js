@@ -87,7 +87,10 @@ async function slot(name) {
 }
 
 // The parts of a smoke to run: a Set of names out of all (in order), from SMOKE_ONLY / PAGES_ONLY / SMOKE_PART.
+// The groups (SMOKE_PART, the CI shards) must cover every part between them: a part in no group would run on no runner.
 function parts(all, groups = {}) {
+  const lost = Object.keys(groups).length ? all.filter(p => !Object.values(groups).some(g => g.includes(p))) : [];
+  if (lost.length) throw new Error(`SMOKE_PART: the groups (${Object.keys(groups).join(', ')}) leave out ${lost.join(', ')}`);
   const only = process.env.SMOKE_ONLY || process.env.PAGES_ONLY,
     part = process.env.SMOKE_PART;
   let pick = all;
