@@ -951,7 +951,16 @@ test('v25: a request without av (an app before 2026-11-03) is logged as old, onc
   s.post({anon: 'abcd1234ef', anonAnswers: [ans('o2')], av: '180'});
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: []});
   s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [], av: '180'});
+  // A load with a made-up name, or a wrong code, logs nothing (Codex review #373); a global cap holds the rest.
+  for (let i = 0; i < 20; i++) s.get({name: 'Nobody' + i, pin: '1234'});
+  s.get({name: 'Ana', pin: '9999'});
   const m = old().map(r => String(r[3]));
   assert.strictEqual(m.length, 3, m.join(' | '));
   assert.ok(m.some(x => /photo stats/.test(x)) && m.some(x => /~anon abcd1234ef/.test(x)) && m.some(x => /save \(Ana\)/.test(x)));
+});
+
+test('v25: the old-app log is capped for everyone (Codex review #373)', () => {
+  const s = loadCodeGs();
+  for (let i = 0; i < 400; i++) s.post({anon: 'id' + String(i).padStart(8, '0'), anonAnswers: [ans('c' + i)]});
+  assert.ok(s.sheets.Events.rows.filter(r => r[2] === 'old').length <= 300);
 });

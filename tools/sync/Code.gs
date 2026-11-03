@@ -76,12 +76,12 @@ function doGet(e){
   if (e.parameter.achs) return json_(achs_());
   const {name, pin} = clean_(e.parameter);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
-  if (!e.parameter.av) oldApp_('load', name);
   const sh = sheet_('RAs', HEAD), r = find_(sh, name);
   if (!r) { const g = gone_(name, hash_(name, pin)); return json_(g ? {ok: false, error: 'gone', into: g.into} : {ok: true, found: false}); }
   if (blocked_(name)) return json_({ok: false, error: 'wait'});
   const row = sh.getRange(r, 1, 1, HEAD.length).getValues()[0];
   if (row[6] !== hash_(name, pin)) { failed_(name); return json_({ok: false, error: 'pin'}); }
+  if (!e.parameter.av) oldApp_('load', name);  // only for a real account with its code (Codex review #373)
   const d = readData_(name, String(row[7] || '')), data = JSON.parse(d.json), out = {ok: true, found: true, updated: row[1], rev: d.rev, data: data};
   // v23: the player's opening hold from their answers (hold_). An app before v23 ignores it; a failure leaves it out
   // (the app keeps its own).
@@ -110,7 +110,6 @@ function doPost(e){
   if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userRename) return json_(users_(p));  // admin user management (v11, see users_)
   const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
-  if (!p.av) oldApp_('save', name);
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
     const sh = sheet_('RAs', HEAD), h = hash_(name, pin), s = p.summary || {};
@@ -132,6 +131,7 @@ function doPost(e){
     // existing account (code checked above) as for a new one (before logAnswers_, which skips the resent ids).
     if (/^[a-z0-9]{8,16}$/.test(String(p.anon || ''))) relabel_('Answers', 1, '~anon ' + p.anon, name);
     logAnswers_(name, f.fresh, f.seen);
+    if (!p.av) oldApp_('save', name);  // after the code check (Codex review #373)
     const rev = r ? readData_(name, String(sh.getRange(r, 8).getValue() || '')).rev : 0;
     if (typeof p.at === 'number' && p.at !== rev) return json_({ok: false, error: 'stale', log: true, rev: rev});
     const json = JSON.stringify(p.data || {});
@@ -418,6 +418,8 @@ function oldApp_(what, who){
     const c = CacheService.getScriptCache(), k = 'old:' + what + ':' + lc_(who || '');
     if (c.get(k)) return;
     c.put(k, '1', 3600);
+    // A global cap too (Codex review #373: names or ids made up by the thousand must not fill the tab): 300 per 6 hours.
+    if (over_('old', 300, 1)) return;
     sheet_('Events', EVH).appendRow([new Date(), '', 'old', safe_('app before 2026-11-03: ' + what + (who ? ' (' + who + ')' : '')), '', '', '', '', '', 'old' + Date.now().toString(36)]);
   } catch (e) {}
 }

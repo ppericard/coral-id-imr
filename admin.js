@@ -2103,6 +2103,13 @@ function renderEvents() {
           )
           .join('')}</tbody></table></div>`
       : '<p class="note">No failed save while online.</p>';
+  // Requests from an app version before 2026-11-03 (sheet v25 'old'): who, how often, last seen.
+  const od = group(of('old'), r => r[4]),
+    oldT = od.length
+      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Request</th><th>Times</th><th>Last</th></tr></thead><tbody>${od
+          .map(g => `<tr><td><code>${esc(g.k)}</code></td><td class="n">${g.n}</td><td>${when(g.last)}</td></tr>`)
+          .join('')}</tbody></table></div>`
+      : '<p class="note">None.</p>';
   // Load times (sheet v21 'load', one a visit): the newest 40, and the median of each column.
   const LD = of('load')
       .map(r => {
@@ -2132,6 +2139,7 @@ function renderEvents() {
       ['App errors', of('err').length],
       ['Photos not loaded', of('photo').length],
       ['Failed saves', of('sync').length],
+      ['Old app versions', of('old').length],
       ['Visits timed', of('load').length],
       ['Installed app', LD.filter(x => x.st).length + ' / ' + LD.length]
     ]) +
@@ -2140,6 +2148,7 @@ function renderEvents() {
     <section class="adm-scard wide"><h3>App errors</h3>${errT}</section>
     <section class="adm-scard"><h3>Photos that did not load</h3>${phT}</section>
     <section class="adm-scard"><h3>Saves that failed</h3>${syT}</section>
+    <section class="adm-scard"><h3>Old app versions</h3>${oldT}</section>
     <section class="adm-scard wide"><h3>Load times</h3>${ldT}</section>
     </div>`;
   bindEv();
