@@ -1110,6 +1110,41 @@ const GROUPS = [
         ]
       ]
     ]
+  ],
+  // Analyses (Pierre, 2026-11-04: "a new section with several sub-pages" for the multifactor analyses of the answer log,
+  // every 1000 answers): the one group added after the nine tabs (AGENTS.md rule 23); drawn by admin-analyses.js.
+  [
+    'analyses',
+    'Analyses',
+    [
+      ['an', 'Overview', [['~an', 'Overview']]],
+      [
+        'anspeed',
+        'Speed',
+        [
+          ['~an-rt', 'Response time'],
+          ['~an-zoom', 'Zoom']
+        ]
+      ],
+      [
+        'andiff',
+        'Difficulty',
+        [
+          ['~an-photo', 'Photo factors'],
+          ['~an-fmt', 'Formats'],
+          ['~an-conf', 'Confusions']
+        ]
+      ],
+      [
+        'anlearn',
+        'Learning',
+        [
+          ['~an-learn', 'Curves'],
+          ['~an-back', 'Comeback'],
+          ['~an-sess', 'Sessions']
+        ]
+      ]
+    ]
   ]
 ];
 // Every tab as [key, name, views, group key].
@@ -1203,24 +1238,26 @@ function navs(tn, xn) {
 const modeKey = () =>
   cur.startsWith('~journey/') || cur.startsWith('~anon/')
     ? 'journey'
-    : cur.startsWith('~stats') || cur === '~diff'
-      ? 'stats'
-      : {
-          '~users': 'users',
-          '~quality': 'quality',
-          '~form': 'form',
-          '~excluded': 'excluded',
-          '~hidden': 'hidden',
-          '~todo': 'todo',
-          '~triage': 'triage',
-          '~events': 'events',
-          '~health': 'health',
-          '~cov': 'cov',
-          '~fcov': 'fcov',
-          '~look': 'mont',
-          '~mont': 'mont',
-          '~cand': 'cand'
-        }[cur] || 'genus';
+    : /^~an(-|$)/.test(cur)
+      ? cur.slice(1)
+      : cur.startsWith('~stats') || cur === '~diff'
+        ? 'stats'
+        : {
+            '~users': 'users',
+            '~quality': 'quality',
+            '~form': 'form',
+            '~excluded': 'excluded',
+            '~hidden': 'hidden',
+            '~todo': 'todo',
+            '~triage': 'triage',
+            '~events': 'events',
+            '~health': 'health',
+            '~cov': 'cov',
+            '~fcov': 'fcov',
+            '~look': 'mont',
+            '~mont': 'mont',
+            '~cand': 'cand'
+          }[cur] || 'genus';
 function render() {
   memoFresh();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
@@ -1236,6 +1273,8 @@ function render() {
   if (cur === '~fcov') return renderFcov();
   if (cur === '~users') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
   if (cur.startsWith('~journey/')) return renderJourney(cur.slice(9)); // one player's path (admin-journey.js)
+  if (/^~an(-|$)/.test(cur))
+    return typeof renderAnalyses === 'function' ? renderAnalyses() : ($v.innerHTML = '<p class="note">Loading…</p>'); // the Analyses group (admin-analyses.js)
   // A device that never signed in, by anonymous id (its own route: a player's name may start with any character).
   if (cur.startsWith('~anon/')) return renderJourney('', cur.slice(6));
   if (cur === '~diff') return renderDiff();
@@ -1812,7 +1851,7 @@ const HELP = {
   },
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. <b>Did you know? tips</b>: a card at Next for a player who seems not to know a feature (so far: enlarging a photo, for players with at most 2 photos enlarged in 20 questions or more; twice at most), logged with the one-tap questions but counted apart: per tip, the devices it showed on, <b>Shown</b>, <b>Show me</b> (they tried it), <b>Got it</b> (or Escape) and <b>Left</b> (another page opened with it up); shown − the rest = the app closed with it up. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
-  start: `<p><b>Three groups, nine tabs</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health: players' reports, your flags, the errors their devices send, how the app is working for them) and <b>Coverage</b> (Games, Sheets & Finder: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (Activity, Confusions). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
+  start: `<p><b>Four groups</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health: players' reports, your flags, the errors their devices send, how the app is working for them) and <b>Coverage</b> (Games, Sheets & Finder: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (Activity, Confusions). <b>Analyses</b>: what the answer log says, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Response time, Zoom), <b>Difficulty</b> (Photo factors, Formats, Confusions), <b>Learning</b> (Curves, Comeback, Sessions). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Photo review</b>: check the quality and growth form guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Coverage › Games</b>: Where to look, above the grid, says which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
     <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
