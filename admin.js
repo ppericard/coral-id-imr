@@ -55,7 +55,7 @@ const DEMO = !!window.ADMIN_DEMO,
 const store = {
   get(k, d) {
     try {
-      const v = localStorage.getItem(SK(k));
+      const v = DEMO ? localStorage.getItem(SK(k)) : keyGet(localStorage, k); // the key's old name too while a migration waits (core.js keyGet)
       return v === null ? d : JSON.parse(v);
     } catch (e) {
       return d;

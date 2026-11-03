@@ -80,7 +80,7 @@ const IS_ADMIN =
 const store = {
   get(k, d) {
     try {
-      const v = localStorage.getItem(k);
+      const v = keyGet(localStorage, k); // the key's old name too while a migration waits (core.js keyGet)
       return v === null ? d : JSON.parse(v);
     } catch (e) {
       return d;

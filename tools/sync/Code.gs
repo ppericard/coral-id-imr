@@ -977,6 +977,21 @@ const CORE_ = (function () { const module = {exports: {}};
       }
     });
   }
+  // The name a key had before the rename, or null (any key: the reverse of keyRename; a name that never existed, e.g. a
+  // key added since, gives a name nothing holds).
+  const keyBefore = k => {
+    for (const [o, n] of LEGACY_KEYS) if (n.endsWith('-') ? k.startsWith(n) : k === n) return n.endsWith('-') ? o + k.slice(n.length) : o;
+    return null;
+  };
+  // A key's value read from a Storage, under its old name when the new one is absent (Codex review #439): a key the
+  // migration could not write (storage full) stays under its old name until a later start moves it, and the player's
+  // progress must not look empty meanwhile. The app's and the admin's store.get read through it.
+  function keyGet(s, k) {
+    const v = s.getItem(k);
+    if (v !== null) return v;
+    const o = keyBefore(k);
+    return o ? s.getItem(o) : null;
+  }
   // Both storages of this page (a page with storage blocked moves nothing).
   function migrateStorage() {
     try {
@@ -2976,6 +2991,8 @@ const CORE_ = (function () { const module = {exports: {}};
     LEGACY_KEYS,
     keyRename,
     keyLegacy,
+    keyBefore,
+    keyGet,
     migrateKeys,
     migrateStorage,
     keysIn,
