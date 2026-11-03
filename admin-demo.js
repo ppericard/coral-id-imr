@@ -15,9 +15,10 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the current one (v28: the admin shows the full replay, admin.js replayOn),
-    // or an older one with ?demo&v=27 (tests/admin.smoke.js: the admin then does what it did before; AGENTS.md 7a).
-    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 28,
+    // The script version the demo answers as: the current one (v31: ?stats=1 adds the genus offsets gd; v30: the pages
+    // opened, admin.js loadPages; v28: the admin shows the full replay, admin.js replayOn), or an older one with
+    // ?demo&v=27 or v=28 (tests/admin.smoke.js: the admin then does what it did before; AGENTS.md 7a).
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 31,
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
@@ -325,7 +326,58 @@
       ])
     );
     events.sort((a, b) => b[1] - a[1]);
-    S = {rows, users, reports, events, removed: [], list};
+    // Pages opened (sheet v30 'pages', its own Pages tab): a few visits of each player, under their anonymous id (aid,
+    // as Code.gs evWho_ stores it), with the answers so far, the pages and the genus sheets opened. Its own random numbers,
+    // so the rest of the demo stays the same. Ana reads the sheets (one before it was asked, from Learn), Carla from the
+    // quiz feedback, Ben once, Dio never; a device not signed in opened one; one summary has no id (a wrong code).
+    let ps = 7;
+    const prnd = () => (ps = (ps * 1103515245 + 12345) % 2147483648) / 2147483648,
+      pages = [],
+      pageRow = (i, t, who, d) => [
+        'demopg' + i,
+        t,
+        'demodev' + (i % 5),
+        'pages',
+        who,
+        '',
+        'quiz',
+        JSON.stringify(d),
+        '190',
+        'Chrome 140 mobile'
+      ],
+      READS = {'Ana Demo': [3, 'learn'], 'Carla Demo': [2, 'quiz'], 'Ben Demo': [1, 'quiz'], 'Dio Demo': [0, 'quiz']};
+    let pi = 0;
+    PLAYERS.forEach(([name, , n, d0]) => {
+      const [k, from] = READS[name] || [0, 'other'];
+      for (let v = 0; v < 4; v++) {
+        const na = Math.round((n * v) / 4),
+          g = {};
+        if (k && v < 3)
+          G.slice(v * k, v * k + k).forEach(
+            (x, j) => (g[x] = [1 + (j % 2), 8 + Math.round(prnd() * 60), j ? from : 'learn', v || j ? 1 : 0])
+          );
+        const nG = Object.keys(g).length;
+        pages.push(
+          pageRow(pi++, NOW - (d0 - v * (d0 / 4)) * DAY, aid(name), {
+            r: {home: [1, 4 + Math.round(prnd() * 10)], quiz: [1 + nG, 300 + Math.round(prnd() * 900)], ...(nG ? {genus: [nG, 60]} : {})},
+            g,
+            vi: 'demovi' + pi,
+            na
+          })
+        );
+      }
+    });
+    pages.push(
+      pageRow(pi++, NOW - 3 * 3600e3, aid('~anon demo0'), {
+        r: {quiz: [2, 200], genus: [1, 25]},
+        g: {[G[0]]: [1, 25, 'quiz', 1]},
+        vi: 'demovianon',
+        na: 8
+      }),
+      pageRow(pi++, NOW - 4 * 3600e3, '', {r: {home: [1, 3], genera: [1, 40]}, g: {}, vi: 'demovinoid', na: 120})
+    );
+    pages.sort((a, b) => b[1] - a[1]);
+    S = {rows, users, reports, events, pages, removed: [], list};
     // Saved progress as the app saves it now: the full replay of each player's answers (core.js replayProgress, with the
     // memory offsets and confusions this demo's stats serve, as the admin replays them), plus the exams the demo passed
     // and each genus's ability. Two stale copies, as real players who have not opened the app since a recalculation:
@@ -416,7 +468,7 @@
         p = (right + 1) / (n + 2);
       ras[k] = [Math.round(Math.log(p / (1 - p)) * 100) / 100, n];
     });
-    return {ok: true, photos: eloOf(A), ras, conf: confusionOf(A).pair, ...photoMemOf(A)};
+    return {ok: true, photos: eloOf(A), ras, conf: confusionOf(A).pair, ...photoMemOf(A), gd: genusOffsetsOf(A)};
   }
   function userList() {
     const by = {};
@@ -578,7 +630,8 @@
       }
       const p = JSON.parse(opts.body || '{}');
       if (p.readReports) return ok({ok: true, rows: S.reports.map(r => r.slice())});
-      if (p.readEvents) return ok({ok: true, rows: S.events.map(r => r.slice())});
+      // pages: 1 (v30) reads the Pages tab; an older script ignores it and sends the other events.
+      if (p.readEvents) return ok({ok: true, rows: (p.pages && V >= 30 ? S.pages : S.events).map(r => r.slice())});
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
       if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userRename) return ok(users(p));

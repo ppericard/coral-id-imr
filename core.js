@@ -303,16 +303,27 @@
       p = 1 / k + (1 - 1 / k) * s;
     return ((1 - 1 / k) * s * (1 - s)) ** 2 / (p * (1 - p));
   };
+  // Hierarchical photo Elo (Pierre, 2026-11-03; docs/LEARNING.md "Hierarchical photo Elo"): a photo's difficulty is its
+  // genus's offset plus its own residual, the player rule "global level + genus" (Pelánek et al. 2017) applied to the
+  // photos. Both move on every trusted answer by the same surprise: the residual as the photo rating always did, the
+  // genus offset by GENUS_K / (1 + its weighed answers / 10), the photos' damping form. A photo nobody has answered starts
+  // at its genus's offset instead of 0. GENUS_K 0.4: on the real answer log, replayed with each answer scored before it
+  // moves anything, 0.2 and 0.4 both beat a photo-only Elo and the Easy / Medium / Hard prior, 0.8 moves too fast.
+  // Code.gs GENUS_K in step; ?stats=1 serves the offsets as gd (sheet v31), the photos' ratings as totals.
+  const GENUS_K = 0.4;
   // Photo Elo replayed over the answer log (rows [id, time ms, genus shown, answered, right 0|1, mode, photos…]), as
   // tools/sync/Code.gs stats_ does in the sheet: keep the two in step (tests/core.test.js compares them). Every answer
   // moves the player's level; the photos and the memory offsets move on trusted players' answers only (trustOf, v17),
   // weighed as above. All against the same expectation, photo memory included (until v25 the level ignored memory
   // and the photos used the fixed rule, so the two pulled apart).
-  // Returns the photo ratings P, the player levels R ([level, answers, information]), the memory offsets mem (rounded
-  // as served) and memn, the trusted answers behind each bucket (a question with several photos shares its answer
-  // between their buckets).
+  // Returns the photo ratings P (the residual, [rating, weighed answers, weighed right, answers]), the genus of each photo
+  // PG, the genus offsets G ([offset, weighed answers]), the player levels R ([level, answers, information]), the memory
+  // offsets mem (rounded as served) and memn, the trusted answers behind each bucket (a question with several photos
+  // shares its answer between their buckets). Every photo of a question is of the genus shown (one colony, rule 14b).
   function eloReplay(rows) {
     const P = {},
+      PG = {},
+      G = {},
       R = {},
       H = {},
       trust = trustOf(rows),
@@ -330,8 +341,10 @@
         const ok = r[4] ? 1 : 0,
           g = guessOf(r[5], r[10]),
           ra = (R[r[0]] = R[r[0]] || [PLAYER0, 0]);
-        const ph = fs.map(f => (P[f] = P[f] || [0, 0, 0, 0])),
-          b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
+        const gs = String(r[2] || ''),
+          go = (G[gs] = G[gs] || [0, 0]),
+          ph = fs.map(f => ((PG[f] = gs), (P[f] = P[f] || [0, 0, 0, 0]))),
+          b = go[0] + ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);
         const hs = fs.map(f => (H[r[0] + '|' + f] = H[r[0] + '|' + f] || [0, 0])),
           s = sig(ra[0] - b - memFam(hs, mem)),
           e = g + (1 - g) * s,
@@ -348,6 +361,8 @@
             p[1] += ok * w;
             p[3]++;
           });
+          go[0] -= (GENUS_K / (1 + go[1] / 10)) * d * w;
+          go[1] += w;
           hs.forEach(h => (A[memBucket(h)] += 1 / hs.length));
           for (let j = 1; j < 4; j++)
             if (A[j]) {
@@ -366,7 +381,7 @@
           h[1] += ok;
         });
       });
-    return {P, R, mem: mem.map(x => Math.round(x * 100) / 100), memn: N.map(x => Math.round(x * 10) / 10)};
+    return {P, PG, G, R, mem: mem.map(x => Math.round(x * 100) / 100), memn: N.map(x => Math.round(x * 10) / 10)};
   }
   // The photo memory offsets estimated from the answer log, as Code.gs ?stats=1 mem and memn.
   function photoMemOf(rows) {
@@ -424,13 +439,21 @@
     }
     return true;
   }
+  // The photo ratings as Code.gs ?stats=1 photos: [difficulty (genus offset + residual), weighed answers, weighed right,
+  // answers].
   function eloOf(rows) {
-    const {P} = eloReplay(rows);
+    const {P, PG, G} = eloReplay(rows);
     const out = {};
     Object.keys(P).forEach(
-      f => (out[f] = [Math.round(P[f][0] * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]])
+      f =>
+        (out[f] = [Math.round((G[PG[f]][0] + P[f][0]) * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]])
     );
     return out;
+  }
+  // The genus offsets as Code.gs ?stats=1 gd (v31): {genus: [offset, weighed answers]}.
+  function genusOffsetsOf(rows) {
+    const {G} = eloReplay(rows);
+    return Object.fromEntries(Object.entries(G).map(([n, o]) => [n, [Math.round(o[0] * 100) / 100, Math.round(o[1] * 10) / 10]]));
   }
 
   // Confusions between genera (Pierre, 2026-11-01): from the answer log rows (as eloOf; row[10] = the genera offered,
@@ -739,8 +762,9 @@
   }
   // Photos per context (applySlots). Pierre's rule: every IMR photo and every photo of his own is used, with no cap;
   // photos from other iNat observers and approved Coral Finder book photos only fill a set that is short. Per genus
-  // and view: sheet = 3 featured + the other IMR/own photos (filled up to 6 in all); games = Easy (the featured),
-  // Medium (every other good photo), Hard (the poor ones), levels adding up: since 2026-11-02 (Pierre: new photos must
+  // and view: sheet = 3 featured + the other IMR/own photos (filled up to 6 in all); games = one list, every photo kept
+  // (game: the featured first, then IMR/own, each by quality, Poor last; until 2026-11-03 it was split into Easy / Medium
+  // / Hard sets that gave a new photo its starting difficulty, docs/LEARNING.md): since 2026-11-02 (Pierre: new photos must
   // come into the games, the players' answers rate them) games take every photo kept, IMR/own first; they were capped
   // at 4 Medium and 4 Hard, other observers' photos only filling a short set, so newly validated candidates stayed out; Coral
   // Finder (needs variety) = featured + 2 photos from other iNat observers + 3 approved book photos. Pierre's picks (feat, hide, quality, use) always win; Claude's suggestions
@@ -825,17 +849,15 @@
         const gm = byQ([...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'ref')),
           core = gm.filter(isCore),
           rest = gm.filter(p => !isCore(p));
-        const easy = feat.filter(p => gm.includes(p)),
-          left = p => !easy.includes(p);
-        const medium = [...core, ...rest].filter(p => left(p) && q(p) >= 2);
-        const hard = [...core, ...rest].filter(p => left(p) && !medium.includes(p));
+        // One list per view (Pierre, 2026-11-03: the Easy / Medium / Hard sets went, docs/LEARNING.md "Hierarchical
+        // photo Elo"): the featured game photos first, then IMR / own before other observers, each by quality, Poor last.
+        const lead = feat.filter(p => gm.includes(p)),
+          after = [...core, ...rest].filter(p => !lead.includes(p));
         const book = bk.filter(p => !feat.includes(p)).slice(0, CAP.book);
         g.sl[v] = {
           feat,
           more,
-          easy: easy.length ? easy : take(gm, 3),
-          medium,
-          hard,
+          game: [...lead, ...after.filter(p => q(p) >= 2), ...after.filter(p => q(p) < 2)],
           finder: [
             ...feat,
             ...take(
@@ -1441,6 +1463,15 @@
       msg: RV_CARD
     },
     {
+      v: 3,
+      at: '2026-11-04',
+      why: 'Hierarchical photo Elo (sheet v31): the genus offset enters the expectation the photo memory offsets are fitted against, so the memory offsets the replay uses change',
+      // Codex P1 on #422: mem (?stats=1, Code.gs stats_) feeds replayProgress, so a log replayed under v2 gives other
+      // bars than under v3. Pierre's standing rule (2026-11-03): every rules version gets the standard recalculation
+      // card, only for the players whose progress % moves by 5 points or more.
+      msg: RV_CARD
+    },
+    {
       v: 4,
       at: '2026-11-04',
       why: "Answer time weighs right answers (Pierre, 2026-11-04): a right answer's ability steps, on the genus and the global level, times clamp(1 - 1.5 z, 0.5, 1.5), z its log seconds against the player's own median over their earlier timed answers (RTIME, rtWeight)",
@@ -1798,6 +1829,140 @@
   }
   const learnedOf = (P, list) => list.filter(n => (P || {})[n] && P[n].mx).length;
 
+  // Pages opened in a visit (sheet v30 event 'pages'; Pierre, 2026-11-03: "most players only play the quiz and never
+  // open the genus sheets": does a beginner use them more, does a sheet reader progress faster?). First-party, one
+  // summary a visit, no free text: which pages were open, how many times and for how long (seconds visible, the page in
+  // view), and the genus sheets opened: how many times, for how long, how the first one was reached (from: the quiz
+  // feedback, a Learn page, My progress, anything else) and whether the genus had already been asked to the player
+  // then (asked). The app keeps the tally (sync.js pagesRoute) with these pure functions; the sheet cleans what arrives
+  // with pagesClean (Code.gs events_, through its embedded copy of this file). SHEET: the sync script version that
+  // stores them (AGENTS.md 7a: nothing is queued before the sheet says v >= SHEET).
+  const PAGES = {
+    SHEET: 30,
+    ROUTES: 30, // at most this many page names a summary, the most opened first
+    GEN: 30, // at most this many genus sheets a summary
+    MAXN: 1000, // openings of one page counted at most
+    MAXS: 86400, // seconds of one page counted at most
+    RE: /^[a-zA-Z0-9~][a-zA-Z0-9~|_.-]{0,39}$/, // a page name (a hash without its parameters)
+    GENUS: /^[A-Z][a-z]{2,30}$/,
+    FROM: ['quiz', 'learn', 'progress', 'other']
+  };
+  // The page name of a hash: its route without the parameters, a genus sheet (g-Acropora) is 'genus', Look-alikes
+  // ('cmp', 'cmp|A|B') 'lookalikes', a side-by-side comparison (cmp-A|B) 'compare', Home 'home'.
+  function pageName(h) {
+    const s = String(h == null ? '' : h).replace(/^#/, '');
+    if (!s || s === 'home') return 'home';
+    if (s.startsWith('g-')) return 'genus';
+    if (s.startsWith('cmp-')) return 'compare';
+    if (s === 'cmp' || s.startsWith('cmp|')) return 'lookalikes';
+    if (s === 'quiz-board') return 'progress';
+    const n = s.split('|')[0].split(';')[0];
+    return PAGES.RE.test(n) ? n : 'other';
+  }
+  // How a genus sheet was reached, from the page it was opened from.
+  function pageFrom(h) {
+    const n = pageName(h);
+    if (/^quiz/.test(n)) return 'quiz';
+    if (['genera', 'genus', 'compare', 'lookalikes', 'pairs'].includes(n)) return 'learn';
+    if (['progress', 'ach', 'board'].includes(n)) return 'progress';
+    return 'other';
+  }
+  const pagesNew = () => ({r: Object.create(null), g: Object.create(null), cur: null, at: 0});
+  // The page in view stops counting time (hidden, or another page opens).
+  function pagesStop(S, now) {
+    const c = S.cur;
+    if (c && S.at) {
+      const ms = Math.max(0, now - S.at);
+      (S.r[c.n] = S.r[c.n] || [0, 0])[1] += ms;
+      if (c.g) (S.g[c.g] = S.g[c.g] || [0, 0, c.from, c.asked])[1] += ms;
+    }
+    S.at = 0;
+  }
+  // A page opened: h its hash; o.genus the genus of a sheet (checked by the caller against the data), o.from how it
+  // was reached (pageFrom), o.asked the genus already asked to the player, o.hidden the app not in view.
+  function pagesOpen(S, h, now, o = {}) {
+    pagesStop(S, now);
+    const n = pageName(h),
+      g = n === 'genus' && PAGES.GENUS.test(String(o.genus || '')) ? o.genus : null;
+    (S.r[n] = S.r[n] || [0, 0])[0]++;
+    if (g) (S.g[g] = S.g[g] || [0, 0, PAGES.FROM.includes(o.from) ? o.from : 'other', o.asked ? 1 : 0])[0]++;
+    S.cur = {n, g, from: g ? S.g[g][2] : '', asked: g ? S.g[g][3] : 0};
+    S.at = o.hidden ? 0 : now;
+  }
+  const pagesResume = (S, now) => {
+    if (S.cur && !S.at) S.at = now;
+  };
+  // The summary: {r: {page: [times, seconds]}, g: {genus: [times, seconds, from, asked]}}, seconds rounded, the most
+  // opened first and capped (ROUTES, GEN); null when nothing was open. Times 0 = the page kept from the previous summary
+  // of the same visit (pagesTake), still in view.
+  function pagesSummary(S) {
+    const sec = ms => Math.min(PAGES.MAXS, Math.round(ms / 1000)),
+      keep = (O, cap) =>
+        Object.keys(O)
+          .filter(k => O[k][0] > 0 || sec(O[k][1]) > 0)
+          .sort((a, b) => O[b][0] - O[a][0] || O[b][1] - O[a][1] || (a < b ? -1 : 1))
+          .slice(0, cap),
+      r = {},
+      g = {};
+    keep(S.r, PAGES.ROUTES).forEach(k => (r[k] = [Math.min(PAGES.MAXN, S.r[k][0]), sec(S.r[k][1])]));
+    keep(S.g, PAGES.GEN).forEach(k => (g[k] = [Math.min(PAGES.MAXN, S.g[k][0]), sec(S.g[k][1]), S.g[k][2], S.g[k][3]]));
+    return Object.keys(r).length ? {r, g} : null;
+  }
+  // The summary so far, and a fresh tally for the rest of the visit (the page in view goes on counting from 0 times).
+  function pagesTake(S, now) {
+    pagesStop(S, now);
+    const out = pagesSummary(S);
+    S.r = Object.create(null);
+    S.g = Object.create(null);
+    return out;
+  }
+  // Whose summary it is (Codex review #423): set when it is queued, so a summary left in the queue (offline, a failed
+  // send) is never sent under whoever is active later. 'n:<name, lower case>' signed in, 'a:<anonymous answer id>' else.
+  // It stays on the device (pagesBatch strips it).
+  const pagesOwner = (sync, anon) => (sync && sync.name && sync.pin ? 'n:' + String(sync.name).trim().toLowerCase() : 'a:' + anon);
+  // The events a request sends for the player active now (owner): every other event, and the summaries queued for
+  // this owner (without their owner field); the ids of the summaries queued for another owner (or none), to drop.
+  function pagesBatch(q, owner) {
+    const send = [],
+      drop = [];
+    (q || []).forEach(x => {
+      if (!x || x.k !== 'pages') return send.push(x);
+      if (x.o !== owner) return drop.push(x.id);
+      const {o, ...y} = x;
+      send.push(y);
+    });
+    return {send, drop};
+  }
+  // At sign-in the device's anonymous summaries become the account's, as its anonymous answers do (sync.js signIn).
+  const pagesOwn = (q, from, into) => (q || []).map(x => (x && x.k === 'pages' && x.o === from ? {...x, o: into} : x));
+  // What the sheet keeps of a 'pages' event (Code.gs events_): known shapes only, numbers clamped, no other field. The
+  // output objects have no prototype (names come from the players' devices: "__proto__" must stay a plain key).
+  function pagesClean(x) {
+    const o = x && typeof x === 'object' ? x : {},
+      n = (v, hi) => {
+        const k = Math.round(Number(v));
+        return isFinite(k) ? Math.max(0, Math.min(hi, k)) : 0;
+      },
+      obj = v => (v && typeof v === 'object' && !Array.isArray(v) ? v : {}),
+      R = obj(o.r),
+      G = obj(o.g),
+      r = Object.create(null),
+      g = Object.create(null);
+    Object.keys(R)
+      .filter(k => PAGES.RE.test(k) && Array.isArray(R[k]))
+      .slice(0, PAGES.ROUTES)
+      .forEach(k => (r[k] = [n(R[k][0], PAGES.MAXN), n(R[k][1], PAGES.MAXS)]));
+    Object.keys(G)
+      .filter(k => PAGES.GENUS.test(k) && Array.isArray(G[k]))
+      .slice(0, PAGES.GEN)
+      .forEach(
+        k => (g[k] = [n(G[k][0], PAGES.MAXN), n(G[k][1], PAGES.MAXS), PAGES.FROM.includes(G[k][2]) ? G[k][2] : 'other', G[k][3] ? 1 : 0])
+      );
+    const out = {r, g, vi: /^[a-z0-9]{1,12}$/.test(String(o.vi || '')) ? String(o.vi) : ''};
+    if (o.na !== undefined && o.na !== null && o.na !== '' && isFinite(Number(o.na))) out.na = n(o.na, 1e6);
+    return out;
+  }
+
   // The one-tap question's bank (Pierre, 2026-11-03: "ask slightly different questions about roughly the same
   // concept", so the players say as they go whether the difficulty suits their level; quiz.js pulseAsk, admin Errors).
   // Each item is answered in one tap; each answer sits on one or two common scales: d, felt difficulty (−1 too easy,
@@ -1989,6 +2154,19 @@
     rtAdd,
     rvMsgs,
     learnedOf,
+    PAGES,
+    pageName,
+    pageFrom,
+    pagesNew,
+    pagesStop,
+    pagesOpen,
+    pagesResume,
+    pagesSummary,
+    pagesTake,
+    pagesClean,
+    pagesOwner,
+    pagesBatch,
+    pagesOwn,
     ACH,
     newAch,
     ACH_LEARN,
@@ -2019,6 +2197,8 @@
     mergeOld,
     mergeProgress,
     eloOf,
+    genusOffsetsOf,
+    GENUS_K,
     levelMargin,
     playSplit,
     trustOf,

@@ -471,9 +471,11 @@ entered the exam / true knowledge):
   answers.
 - **Calibration questions only on a genus the player holds** (met, not shaky): a single, perhaps unusual, photo does
   not help on a genus still being learned (and a simulated beginner opened genera faster than intended with them).
-- **A new photo's set is only a guess** (`CAL.U` = 1): the targeting's width grows to √(0.7² + U / (1 + answers / 2))
-  for a photo with few answers, so a photo placed in Medium or Hard by hand is not kept away from a player whose target
-  is lower; it narrows back to 0.7 as answers come.
+- **A new photo's prior is only a guess** (`CAL.U` = 1): the targeting's width grows to √(0.7² + U / (1 + answers /
+  2)) for a photo with few answers, so a photo whose prior is off (its genus's offset since 2026-11-03; a set placed by
+  hand before) is not kept away from a player whose target is lower; it narrows back to 0.7 as answers come. U was set
+  for the Easy / Medium / Hard sets; the residual around the genus offset is smaller (sd about 0.3-0.6), so U could
+  shrink, only after a `learnsim` check (ROADMAP).
 - **Every kept photo is in the games** (`applySlots`, 2026-11-02): Medium and Hard were capped at 4 per genus and view,
   other observers' photos only filling a short set, so the candidates Pierre validates would have stayed out.
 - All together, simulated as above: photos with an answer 449-461 → 509-519, with 3 or more 214-221 → 239-255,
@@ -756,6 +758,9 @@ this item.
 
 ### Pierre's Easy / Medium / Hard sets against the players' answers (measured 2026-11-02)
 
+(Superseded on 2026-11-03: measured again on 1,262 trusted answers, the sets predicted the answers worse than no prior
+at all, and they were removed: "Hierarchical photo Elo", below.)
+
 The sets only give a photo's starting difficulty in the app (`photoDiff`: -1 / 0 / +1, weighing 5 answers); the sheet's
 Elo never uses them. On the live data (552 answers, 438 photos rated): 342 of the 499 game photos in a set have answers;
 Hard photos have 7 (they go to strong players); Easy and Medium are right 78% and 77% of the time. Rank correlation
@@ -997,14 +1002,15 @@ met the 39 slate genera almost at once.
   an expert back, each new genus waiting to be drawn again.
 - **Easiest first, softly**: among the genera not met, weight exp(−`OPEN.T` × (difficulty − easiest)), `OPEN.T` = 3 (1.5 was too weak to show with the narrow spread of difficulties before real data).
 - **Trusted only as far as the data goes** (`easyTrust`): the easy-first preference is scaled by the players' answers
-  behind the photo ratings, over `OPEN.DATA` = 300 (weighed), up to 1. Before real answers, the photo sets and declared
-  look-alikes put Acropora and Galaxea among the hardest and Alveopora first, against Pierre's experience: the opening
-  order stays random (still a few genera at a time) until the answers can say.
+  behind the photo ratings, over `OPEN.DATA` = 300 (weighed), up to 1. Before real answers, the photo sets (removed
+  2026-11-03) and declared look-alikes put Acropora and Galaxea among the hardest and Alveopora first, against Pierre's
+  experience: the opening order stays random (still a few genera at a time) until the answers can say.
 - **Genus difficulty from the data** (`genusDiff`), never set by hand: the mean difficulty of its game photos
-  (`photoDiff`: Pierre's Easy/Medium/Hard photo sets at first, the players' answers as they come) + `OPEN.CONF` (2) ×
-  how much it gets confused (its two highest pooled confusion scores above `CONF.TRAP`). With little data the photo sets
-  and declared look-alikes decide; the answers take over as they come (Pierre expects Acropora and Galaxea to come out
-  easy: the data will say).
+  (`photoDiff`: the players' answers; from sheet v31 a photo with few or no answers leans on its genus's offset, learned
+  from every answer on the genus, "Hierarchical photo Elo") + `OPEN.CONF` (2) × how much it gets confused (its two
+  highest pooled confusion scores above `CONF.TRAP`). With no answers only the declared look-alikes decide (the Easy /
+  Medium / Hard photo sets did too until 2026-11-03); the answers take over as they come. On the answers of 2026-11-03
+  the genus offsets put Acropora (−0.54) and Galaxea (−0.56) among the easiest, as Pierre expected.
 
 ### One opening rule (2026-11-03)
 
@@ -2122,11 +2128,15 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     wrongly given, a genus's ability moving with the global level (`levelMove`, `lt`; the level's step without a floor,
     4 decimals; Calibration step 2, #415), a learned mark kept unless a miss logged after its exam takes it away as the
     game does. v2 (2026-11-04): the opening pace and known mix-ups (#425): the mix-ups term in the question's difficulty
-    for the ability, the global level and a miss's weight ("Known mix-ups" above). v4 (2026-11-04): answer time weighs
-    right answers ("Response time": a right answer's genus and level steps times clamp(1 − 1.5 z, 0.5, 1.5); the
-    sheet replays it from v32, which reads the Seconds column). A device that skips several versions
-    sees the standard card once, at the last of them, with its progress before and after the whole jump (`core.js`
-    `rvMsgs`).
+    for the ability, the global level and a miss's weight ("Known mix-ups" above). v3 (2026-11-04): the hierarchical
+    photo Elo (sheet v31) puts the genus offset into the expectation the photo memory offsets (`mem`) are fitted
+    against, and `replay_` replays with the sheet's `mem`, so the same log gives other bars (Codex P1 on #422;
+    `tests/replay.test.js` "RVS v3": on a synthetic log with repeated photos the offsets go from 0.47 / −0.79 / −1.66
+    to 0.41 / −0.77 / −1.60 and the replayed progress moves with them). A change to `stats_` that moves what the replay
+    reads from it needs a rules version too. v4 (2026-11-04): answer time weighs right answers
+    ("Response time": a right answer's genus and level steps times clamp(1 − 1.5 z, 0.5, 1.5); the sheet replays it from
+    v32, which reads the Seconds column). A device that skips several versions sees the standard card once, at the
+    last of them, with its progress before and after the whole jump (`core.js` `rvMsgs`).
   - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between
     `// BEGIN core.js` and `// END core.js`, kept identical by `tools/sync_core.py`, checked in CI; its own `module`
     object keeps its names out of the script's globals, reached as `CORE_`), so the self-updater installs the engine
@@ -2332,6 +2342,227 @@ What it says, on this learner:
   34.7 → 35.3, lecture RA progress at 300 27.8 → 25.5%. The CI seed's beginner went from 16 genera at question 100 (the
   limit) to 17, so the limit is 17 (one draw, not a faster opening: 30 learnsim seeds give 16.5 → 15.7).
 
+### Hierarchical photo Elo (sheet v31, 2026-11-03)
+
+Pierre asked whether part of a photo's difficulty can be shared, so that a new photo starts from what similar photos
+already show. A read-only study of the answer log (1,262 trusted answers, 9 players, 2026-10-31 to 11-03) answered:
+
+- **The Easy / Medium / Hard sets were worse than no prior at all.** As the app used them (−1 / 0 / +1, weighing 5
+  answers in `photoDiff`), they predicted held-out answers worse than a constant: cold-start log-loss +0.016 [+0.008,
+  +0.024] by colony, cross-validated; rank correlation with the photos' Elo 0.04 (295 photos with 3+ answers). They
+  were made automatically (featured = Easy, other good = Medium, Poor = Hard), so they encoded "featured" and "quality",
+  neither of which says how hard a photo is for the players. Pierre: "drop the Easy/Medium/Hard classification, it's
+  useless; if it isn't relevant, don't keep it at all: it simplifies the code and the model." `applySlots` now gives
+  each view one game list (`game`: the same photos in the same order as the three sets one after the other, checked on
+  the real data: 198 genus × view lists, 1,706 photos, identical), `gamePics` returns it, `LEVELS` and `photoLvl` went.
+- **The genus carries about half of a photo's difficulty**: pooling by genus was the only grouping that helped out of
+  sample (−0.006 [−0.011, −0.001]); view, quality, sharpness, source, growth form and colony views explained nothing
+  measurable yet (ROADMAP: refit offline at about 5,000 trusted answers).
+- **The rule**: the player rule "global level + genus" (Pelánek et al. 2017) applied to the photos, partial pooling of
+  an item family (Glas & van der Linden 2003; Mislevy 1988). A photo's difficulty = its genus's offset G + its own
+  residual P. Each trusted answer, with its surprise d = right − expected and its weight w (as before), moves both:
+  P by 0.8 / (1 + n_photo / 10) / photos shown × d × w (unchanged), G by `GENUS_K` / (1 + n_genus / 10) × d × w, n the
+  weighed answers. G starts at 0, so does P: a photo nobody has answered sits at its genus's offset. In `Code.gs`
+  `stats_` and `core.js` `eloReplay` (`tests/core.test.js` compares them); `?stats=1` serves each photo's total G + P in
+  `photos` (so everything reading it, the admin included, reads it as before) and the offsets in `gd` (`{genus:
+  [offset, weighed answers]}`; `core.js` `genusOffsetsOf`). The genus of a photo is the genus shown (one colony a
+  question, rule 14b), so no data file and no per-genus code.
+- **The app** (`model.js` `photoDiff`): (n × rating + 5 × gd[genus]) / (n + 5), and gd[genus] for a photo nobody has
+  answered; `gd` is read only from a sheet that reports v ≥ 31 (`PGD_SHEET`, AGENTS.md 7a, stored with the stats and
+  their `v`). With an older sheet, or for a genus with no offset, the prior is 0, which the replay below shows is
+  already better than the sets. The genus difficulty that orders the opening (`genusDiff`, the mean `photoDiff` of a
+  genus's photos) becomes data-driven through it with no code of its own.
+- **`GENUS_K` 0.4**: on the real log, 0.2 and 0.4 score alike and both beat the photo-only Elo; 0.8 moves too fast
+  (below). 0.4 learns a new genus's offset sooner (a few answers) at the same accuracy.
+- **Blend weight 5 kept**: 2, 5, 10 and 20 score within 0.0004.
+- **Rules version 3** (`core.js` `RVS`; v2 is #425's known mix-ups): the genus offset also enters the expectation the photo memory offsets are fitted
+  against, and the sheet's full replay uses those offsets, so every player is replayed again once v31 is live ("Full
+  replay").
+
+**Real answers** (read-only replay of the sheet's Answers tab read on 2026-11-03, 1,346 rows: the study's export plus
+76 rows read with the connector; 1,338 trusted answers scored, 9 players, each scored before it moves anything; the
+expectation g + (1 − g) σ(level − difficulty − memory), the sheet's player level and photo memory; the replay
+reproduces `core.js` `eloOf` before and after to the hundredth). Log-loss, lower is better:
+
+| Rule | all | photo with < 3 earlier answers (1,058) | without Pierre (1,054) | mean expected (right 81.2%) |
+| --- | --- | --- | --- | --- |
+| sheet v28 (photos start at 0) | 0.4853 | 0.4972 | 0.4640 | 79.3% |
+| **app before** (blend with the set prior, W 5) | **0.4976** | 0.5100 | 0.4740 | 83.9% |
+| app new with a v28 sheet (prior 0) | 0.4864 | 0.4981 | 0.4643 | 79.2% |
+| sheet v31, `GENUS_K` 0.2 | 0.4819 | 0.4932 | 0.4614 | 79.3% |
+| sheet v31, `GENUS_K` 0.4 | 0.4814 | 0.4925 | 0.4620 | 79.3% |
+| sheet v31, `GENUS_K` 0.8 | 0.4837 | 0.4950 | 0.4664 | 79.4% |
+| **app new** (v31, `GENUS_K` 0.4, gd prior, W 5) | **0.4812** | 0.4922 | 0.4610 | 79.3% |
+| app new, W 2 / 10 / 20 | 0.4811 / 0.4814 / 0.4815 | | | |
+
+Paired differences, 95% bootstrap over blocks of 25 answers in time order:
+
+- app new vs app before: −0.0164 [−0.0284, −0.0060]; photos with < 3 answers −0.0178 [−0.0330, −0.0043]; without
+  Pierre −0.0130 [−0.0275, −0.0000].
+- app new with a v28 sheet (prior 0) vs app before: −0.0112 [−0.0223, −0.0021] (the gate's fallback is safe).
+- sheet v31 vs sheet v28: −0.0039 [−0.0087, +0.0009]; photos with < 3 answers −0.0046 [−0.0100, +0.0004]. The online
+  offsets start at 0 and learn as the log runs, so this is a lower bound over this history; for photos added from now
+  on, with offsets learned from about 1,300 answers, the study's out-of-fold estimate puts the gain between −0.004 and
+  −0.012.
+- `GENUS_K` 0.2 vs 0.4: +0.0005 [−0.0016, +0.0027]; 0.8 vs 0.4: +0.0022 [−0.0010, +0.0058].
+
+By format and level band (app before → app new; expected before / new / right): 4 choices 0.609 → 0.577 (n 549; 81% /
+76% / 74%); 2 choices 0.419 → 0.414 (766; 86% / 82% / 86%); 3 choices 0.379 → 0.405 (18); typed 0.679 → 0.661 (5);
+sheet level < 0 0.548 → 0.582 (136; 70% / 62% / 79%); 0-1 0.532 → 0.505 (562; 82% / 77% / 79%); ≥ 1 0.457 → 0.439
+(640; 88% / 85% / 84%). The set prior over-expected (83.9% for 81.2% right), mostly on 4-choice questions; the new rule
+is close overall and under-expects players below 0 (n 136, not explained yet; worth a look as the log grows). Calibration (expected / right, n): before 54/84 (31), 66/76
+(90), 76/77 (257), 85/80 (562), 93/87 (398); new 54/69 (77), 66/81 (179), 75/74 (348), 85/85 (549), 93/90 (185).
+Genus offsets at the end of the log: 45 genera, sd 0.40, easiest Plerogyra −0.98, Lobophyllia −0.89, Galaxea −0.56,
+Acropora −0.54; hardest Isopora +0.53, Leptoseris +0.54, Favites +0.65, Heliopora +0.85.
+
+**Simulated** (`node tools/learnsim.js --seeds 5 --questions 600 --truth truth.json`, the four profiles, the same seeds
+before and after). The learner's photos must not change with the app's estimate, so this run gives the learner a fixed
+world (`--truth`, new): each game photo's true difficulty = its genus's offset learned from the real log + a residual
+drawn once per photo (sd 0.5, the study's measure), the same before and after. Before: the app of PR #399 with its sets.
+After: the new app with a v31 sheet serving those genus offsets and no photo ratings (cold start), and with an older
+sheet (prior 0). Mean ± sd over 5 seeds, before / after v31 / after with an older sheet:
+
+| Profile, question | knowSlate | \|th−lk\| | prog−know | prog% | met | exam | learned | ref ≥ .9 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| beginner, 300 | 0.64 / 0.63 / 0.63 | 1.12 / 1.30 / 1.23 | −0.31 / −0.27 / −0.26 | 35 / 37 / 38 | 37.2 / 38.6 / 37.6 | 0.0 / 0.6 / 0.4 | 0 / 0 / 0 | 0.6 / 0.8 / 0.2 |
+| beginner, 600 | 0.87 / 0.88 / 0.88 | 1.62 / 1.45 / 1.35 | −0.24 / −0.21 / −0.20 | 64 / 66 / 67 | 40 / 40 / 40 | 3.2 / 3.8 / 4.8 | 0.2 / 0.4 / 0.2 | 5.8 / 6.4 / 7.2 |
+| lecture RA, 300 | 0.76 / 0.76 / 0.76 | 1.11 / 1.00 / 0.92 | −0.32 / −0.32 / −0.27 | 44 / 45 / 49 | 39.0 / 39.4 / 39.8 | 0.0 / 0.4 / 0.2 | 0 / 0 / 0 | 0.2 / 1.0 / 0.2 |
+| lecture RA, 600 | 0.91 / 0.91 / 0.91 | 1.64 / 1.44 / 1.29 | −0.22 / −0.17 / −0.14 | 70 / 74 / 76 | 40 / 40 / 40 | 4.6 / 5.0 / 7.6 | 0.4 / 0.4 / 0.4 | 8.2 / 9.6 / 9.4 |
+| strong RA, 300 | 0.86 / 0.86 / 0.86 | 1.28 / 1.21 / 1.10 | −0.31 / −0.30 / −0.27 | 55 / 56 / 59 | 40 / 40 / 40 | 1.4 / 0.0 / 0.6 | 0 / 0 / 0 | 7.6 / 8.8 / 9.0 |
+| strong RA, 600 | 0.94 / 0.95 / 0.94 | 1.71 / 1.62 / 1.52 | −0.13 / −0.10 / −0.10 | 81 / 85 / 84 | 40 / 40 / 40 | 11.2 / 14.2 / 12.6 | 1.6 / 0.4 / 1.6 | 24.4 / 24.8 / 24.2 |
+| expert, 300 | 0.95 / 0.95 / 0.95 | 1.14 / 1.17 / 1.09 | −0.26 / −0.26 / −0.27 | 69 / 69 / 69 | 40 / 40 / 40 | 4.0 / 3.8 / 3.6 | 0.2 / 0 / 0 | 14.8 / 14.8 / 15.8 |
+| expert, 600 | 0.97 / 0.97 / 0.97 | 1.20 / 1.23 / 1.17 | −0.05 / −0.06 / −0.06 | 92 / 91 / 91 | 40 / 40 / 40 | 24.8 / 23.2 / 22.8 | 7.0 / 6.4 / 7.2 | 38.8 / 38.2 / 38.6 |
+
+What the learners really know (knowSlate) does not move, no path breaks (no page error in 60 runs), and the app's
+ability is nearer the truth at 600 questions for the three learning profiles (|th − lk| 1.62-1.71 → 1.35-1.62), its
+progress bar a little less pessimistic. The strong RA's learned genera at 600 (1.6 → 0.4, sd 0.5) differed by more than
+the spread, so beginner and strong RA were run again on 15 seeds: learned 1.5 ± 0.7 → 1.2 ± 1.2 (strong RA) and
+0.3 → 0.5 (beginner), knowSlate 0.95 → 0.94 and 0.87 → 0.87, |th − lk| 1.70 → 1.65 and 1.56 → 1.43: within the spread.
+The simulated world is built on the same genus offsets the v31 app is given, so it says the rule is safe, not how
+much it gains; the real-log replay above is the measure of that.
+
+### Response time: genus and photo (measured 2026-11-04, no change made)
+
+Pierre, 2026-11-04: "response time informs on several things at once: the player's knowledge of this genus, the
+intrinsic difficulty of the genus, and the intrinsic difficulty of the photo. It's the combination of the three that
+makes the time longer or shorter. So we need to see how we can use it in each of these three factors, or not." The
+first factor (a right answer's Elo step weighted by its speed against the player's own median) is "Response time"
+(PR #431, 2026-11-03). This section splits the time into its parts and asks whether the other two can use it.
+Nothing in the app changes.
+
+**Data and model** (`tools/rtprep.js`, then `tools/rtdecomp.py`; the sheet's Answers tab read 2026-11-03, read-only,
+the same 654 timed answers, not typed, of the 5 timed players as PR #431, P1-P5 in the same order; the 41 with a photo
+enlarged left out, since the time spent enlarged is in the seconds: 613 answers). log(seconds) = μ + fixed terms +
+u_player + a_genus + b_photo (+ c_player×genus + e_player×photo) + ε, crossed random effects fitted by REML (van der
+Linden's lognormal response-time model, 2006, with the item's time intensity split into genus and photo). The photo is
+the question's first one (the colony view of a multi-view question). Fixed terms: "controls" = 2 choices, number of
+views, share of the photos new to the player, log of the player's answer number (practice); then right; then the gap,
+the logged ability minus the question's difficulty (th − d, from Expected and Ability). Intervals: parametric bootstrap
+(100 refits on data simulated from the fit; 20 for the five-effect model) and, beside them, each player left out.
+
+**1. The decomposition** (share of the variance of log(seconds)):
+
+| Model | fixed | player | genus | photo | player × genus | player × photo | residual |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| controls | 0.05 | 0.28 [0.02, 0.55] | 0.06 [0.00, 0.10] | 0.18 [0.09, 0.30] | | | 0.44 |
+| controls + right + gap | 0.12 | 0.26 [0.03, 0.42] | 0.04 [0.01, 0.10] | 0.15 [0.07, 0.24] | | | 0.43 |
+| controls, five effects | 0.04 | 0.26 | 0.02 [0.00, 0.07] | 0.16 [0.06, 0.29] | 0.11 [0.05, 0.17] | 0.01 [0.00, 0.12] | 0.40 |
+| controls + right + gap, five effects | 0.11 | 0.25 | 0.01 [0.00, 0.05] | 0.15 [0.05, 0.23] | 0.08 [0.01, 0.13] | 0.00 [0.00, 0.13] | 0.41 |
+
+- **The player** comes first: medians from 3.9 to 11.2 seconds. With five players its share is very uncertain (one
+  player left out: 0.04 to 0.33). This is why every time rule reads z, the time against the player's own median.
+- **Correctness and the expectation**: a right answer takes 0.67 times as long (−0.40 ± 0.07 in log), and −0.22 ±
+  0.04 per logit of the gap. With th and d apart: −0.25 per logit of ability on the genus, +0.18 ± 0.06 per logit of
+  the question's difficulty. Together they explain 7 points of the variance (fixed share 0.05 → 0.12; plain
+  regression R² 0.095). Most of the time is not correctness.
+- **The genus**: 4-6% with three effects, but 1-2% once the player × genus term is in. That term, the player's own
+  knowledge of the genus (8-11%), takes most of what looked like a genus effect: Pierre's first factor, PR #431's.
+  The 62 Duel tab answers (two fixed pairs, fast) also make part of it (without them the genus sd is 0.155, not 0.194).
+- **The photo**: 15-18%, a photo one sd slower takes 1.4 times as long (sd 0.35 [0.27, 0.43] in log). It is
+  shared by the players: player × photo is about 0 (a photo slow for one player is slow for the others).
+- So, of what varies inside a player beyond the outcome: photo about a quarter, the player's own knowledge of the
+  genus about a sixth, the genus itself a few percent, the rest noise (about 60%).
+
+**2. Genus: not useful.** The genus effect (BLUP, controls) against what the app uses for the opening order:
+
+- **Correlation over 45 genera** (28 with 10 timed answers or more): with `genusDiff` +0.14 (its photo part −0.07, its
+  confusion part +0.21), with the pooled miss rate +0.46 (+0.51 on the 28), with the miss rate beyond Expected +0.42.
+  A slow genus is a missed one; `genusDiff` itself goes with the miss rate only +0.25. Fastest: *Lobophyllia*,
+  *Ctenactis*, *Acropora*, *Plerogyra*, *Danafungia*; slowest: *Astreopora*, *Montipora*, *Leptoseris*, *Stylophora*.
+- **Not stable across players**: the effect from two players against the other three, over the 10 splits, +0.14 on
+  average (−0.35 to +0.37; +0.07 with right and gap); first half against second half of each player's answers +0.09;
+  odd against even answers of the same players +0.42. What repeats is each player's own genus, not the genus.
+- **Out of sample** (each player's 1,012 scored answers, timed or not, predicted with coefficients fitted on the other
+  players; every genus measure from answers the fold has not seen: the held-out player's from the other four, each
+  training player's from the other three, Codex review #443; log-loss difference per answer × 10⁻³):
+
+| Added to the player's level | all answers | on top of the app's expectation | first answer on each genus (166) |
+| --- | --- | --- | --- |
+| `genusDiff` | +2.8 ± 2.4 | +3.9 ± 2.4 | +3.5 ± 11.8 |
+| genus time effect | +3.0 ± 1.2 | +4.3 ± 1.4 | +1.7 ± 7.1 |
+| time effect on top of `genusDiff` | +3.0 ± 1.0 | +3.9 ± 1.2 | +2.4 ± 5.7 |
+| pooled miss rate of the others | −1.1 ± 2.5 | +0.7 ± 2.4 | +3.9 ± 8.9 |
+
+  The time effect makes every prediction worse (its sign is right: a slower genus is missed more, −0.32 per log
+  unit, but it carries no more signal than noise; before the review's fix, which left each training player's features
+  holding the held-out player's answers, it read +1.1 ± 0.6 on all answers). Nothing measured on four players predicts the fifth player's
+  success on a genus: `genusDiff` neither, and the others' miss rate only within its noise. The part of genus
+  difficulty that players share is small next to each player's own, and time adds nothing to it yet.
+- **When**: the reliability of a genus time effect over m players with n timed answers each (genus sd 0.12, player ×
+  genus 0.27, residual 0.51): 0.38 for 5 players × 5 answers (today), 0.65 for 15 × 5, 0.71 for 20 × 5, 0.76 for 20
+  × 10. So about 15-20 timed players with 5 or more timed answers on most genera (about 4,000-5,000 timed answers),
+  and then only if the out-of-sample test above turns negative.
+
+**3. Photo: not usable yet, the most promising of the two.** The photo effect is the larger and is shared, but:
+
+- **Too few repeats**: 428 photos; 117 with 2 timed answers or more, 50 with 3, 4 with 5; 85 answered by 2 players or
+  more. The reliability of a photo's time effect with n timed answers is 0.26 (1), 0.51 (3), 0.63 (5), 0.77 (10).
+- **Against the photo difficulty**: correlation with the photo Elo (core.js `eloOf`, the sheet's rating) +0.25 on the
+  photos with 2 timed answers or more, +0.33 with 3 (+0.24 with right in the model), with the app's `photoDiff` +0.01.
+  As a covariate of time, the photo Elo is clearly there (+0.52 ± 0.08 log per unit, +0.36 with right) but explains
+  only a fifth of the photo variance (photo sd 0.35 → 0.31): most of what makes a photo slow is not what makes it
+  missed (a far colony, a busy scene, several views to look at).
+- **Cross-player** (419 answers on a photo another player answered with a time): the others' photo time effect makes
+  the prediction worse, +7.4 ± 5.0 × 10⁻³ (on top of `photoDiff` +4.3 ± 5.1; on top of the app's expectation and
+  `photoDiff`, −0.5 ± 6.1): noise.
+- **In the sheet's photo Elo** (`tools/rtprep.js`: core.js `eloReplay` replayed with time on the photo's step, each
+  answer scored before it updates anything, 1,466 trusted answers, 183 of them on a photo timed before): a right
+  answer's photo step × w = clamp(1 − k z, 0.5, 1.5) as PR #431's player rule, k 0.25 / 0.5 / 1 / 2: −0.05 / −0.07 /
+  −0.07 / −0.10 ± 0.05-0.10 × 10⁻³ (nothing, within noise; on the 183, −0.4 to −0.8 ± 0.4-0.8; z against the
+  median of the player's earlier timed answers, the two middle ones averaged for an even count, as
+  `tools/abilityeval.js`); an additive time step instead (the photo harder by c × K × z beyond the player's mean z for
+  the same outcome), c 0.25 / 0.5 / 1: +0.2 / +0.5 / +1.6 ± 0.4-1.5 × 10⁻³ (worse).
+- **When**: to tell a correlation of 0.25 from none (80% power, 5%) takes about 120 photos with a reliable time effect
+  (5 timed answers or more from 2 players or more); with today's spread of the draw (an effective pool of about 800
+  photos, Poisson) that is about 2,500 timed answers, 3,000-3,500 if the draw spreads over all 1,404 game photos, so
+  within Pierre's ~5,000 timed answers for weak photo signals ("Response time" above). Then run the replay again.
+
+**4. What each factor could do with time**
+
+| Factor | Verdict | When | How |
+| --- | --- | --- | --- |
+| Player × genus (knowledge) | usable now | now | PR #431's rule, the other work |
+| Genus (intrinsic difficulty) | not useful now | 15-20 timed players × 5+ timed answers per genus (~4,000-5,000 timed answers), and only if out-of-sample helps | a term in `genusDiff` (below) |
+| Photo (intrinsic difficulty) | not usable yet | ~120 photos with 5+ timed answers from 2+ players (~3,000 timed answers) | the photo's Elo step (below) |
+
+- **Photo, if the replay says so**: in `Code.gs` `stats_` and its copy `core.js` `eloReplay` (tests check they agree),
+  a right answer's photo step × w = clamp(1 − k_P z, 0.5, 1.5), z the time against the median of the player's earlier
+  timed answers (from their 11th; typed or enlarged answers, or none: w 1). The same z and the same form as the
+  player's rule, so a fast right answer says "easy photo" and "known genus" at once, Elo-style (Pelánek 2016: one
+  surprise moves both sides). No new state per photo, no constant per photo or genus; k_P one number chosen by the
+  replay (leave one player out, as PR #431's k). The additive form (a separate time rating, T_f = Σ residual z /
+  (n_f + 3), 3 = residual variance / photo variance, added to the Elo with a weight) was worse today.
+- **Genus, if it ever helps**: the sheet (compute once, AGENTS.md 14g) would serve each genus's time effect, the
+  shrunk mean over players of each player's mean residual z on it, â_g = Σ_p w_p z̄_pg / (Σ_p w_p + 1/τ_g²), w_p =
+  1 / (τ_pg² + σ² / n_pg), the variances refitted by `tools/rtdecomp.py` (today τ_g 0.12, τ_pg 0.27, σ 0.51), and the
+  app would add `OPEN.TIME` × â_g to `genusDiff` only from that sheet version (AGENTS.md 7a); `OPEN.TIME` one number
+  chosen by the out-of-sample test (0 until it helps). With the hierarchical photo Elo (PR #422, a genus offset G in
+  the photo difficulty), the same term would go into G's prior instead.
+- **For the player rule** (PR #431): its z also holds the photo's part (a quarter of the variance inside a player), so
+  a slow right answer on a slow photo now counts as weaker knowledge. Once photos have reliable time effects, z −
+  b̂_photo (the photo's shrunk time effect, from the sheet) would give each factor its own part; today b̂ is shrunk to
+  a third or less (reliability 0.26-0.51), so it would change nothing.
+
 ## Considered and not adopted
 
 - **First answer per photo only** (Papoušek 2014): standard for prior knowledge, where people already know the facts.
@@ -2432,8 +2663,9 @@ Exploration of the first setting (K 3), 600 questions, 4 seeds:
 The beginner and the RA open at about the same pace here because the learner model's RA knows its genera only at 55%,
 near the `OPEN.P` threshold, and its beginner learns fast; with real players, recalibrate.
 
-Known limits: with little real data, the genus difficulty is mostly the photo sets and declared look-alikes, so "easiest
-first" is weak until answers come in. Learners are still rated cautiously (abilities around −0.5 at 80-90% right in the
+Known limits: with little real data, the genus difficulty is mostly the declared look-alikes (and the photo sets until
+2026-11-03; since then the genus offsets of the sheet's photo Elo, v31), so "easiest first" is weak until answers come
+in. Learners are still rated cautiously (abilities around −0.5 at 80-90% right in the
 simulation); recalibrate `ELO` and `OPEN` once a few RA cohorts have played.
 
 ### Learning-outcome simulation (`tools/learnsim.js`)
@@ -2449,8 +2681,11 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   [--openall offer|N] [--back keep|one] [--rt off] [--rtapp off] [--rtlog log.json]`. Each run (profile × seed) gets a fresh browser context; seeds
   are 1..N, the app's `Math.random` and the learner's own generator both seeded from it, so a run is reproducible and
   the same seeds before and after a change give paired comparisons. `--stats` loads a `?stats=1` answer of the sync
-  sheet as the photo ratings (default: none, Pierre's Easy/Medium/Hard sets, as in CI; its `mem`, sheet v26, the app's
-  photo memory offsets). `--out` writes every run and
+  sheet as the photo ratings (default: none, every photo's difficulty 0, as in CI; Pierre's Easy/Medium/Hard sets until
+  2026-11-03; its `mem`, sheet v26, the app's photo memory offsets; its `gd` and `v`, sheet v31, the genus offsets).
+  `--truth truth.json` (2026-11-03) gives the learner each photo's true difficulty (`{photos: {file: d}, gd: {genus:
+  d}}`), independent of the app's estimate; without it the learner takes the app's own `photoDiff`, so a change to the
+  app's photo difficulty would change the learner's world too. `--out` writes every run and
   the summary as JSON. 30 seeds × 4 profiles × 300 questions: about 9 minutes on 4 cores (with the question planner running between answers, as in the app: Codex review #365).
 - **Opening pace** (2026-11-04): `open/15`, the most genera opened on their own cards in any 15 consecutive questions so
   far; with `--breaks`, the genera opened in the first 15 answers after the comeback, the most in any 15 and in all the
@@ -2514,7 +2749,7 @@ estimates are from that truth, as a mean ± sd over many seeds. Not in CI (minut
   over the genera met, genera learned; and, pooled over the runs, the genera that entered the exam or were learned, their
   true reference success then and the median question.
 - **Limits**: the learner is ours, a few round numbers, not fitted to real answers; the photo difficulty it meets is the
-  app's own estimate (so photo calibration cannot be judged); learning is per genus only (a duel or a montage teaches
+  app's own estimate (so photo calibration cannot be judged), unless `--truth` gives it a fixed world (2026-11-03); learning is per genus only (a duel or a montage teaches
   the two genera, not the pair as such); no forgetting (except across `--breaks`), no fatigue; the RA profiles know a fixed set of genera (every
   5th genus in data.json order), so the spread is that of the draws, not of who knows what. θ is clamped to
   `ELO.lo`..`hi` (−1.5..3), so a genus known at 2% always shows an error of about 2.4 there. Since the learner's
@@ -2714,6 +2949,11 @@ is not in the simulation.
   genera by questions 100 / 200), not over-rated, the strong players' gains kept; the opening's capacity by level and a
   sign gate on the level's move measured, not adopted ("Beginners and experts").
 
+- 2026-11-03, Pierre: the Easy / Medium / Hard photo sets removed (one game list per view, the same photos), and the
+  photo difficulty made hierarchical: a genus offset learned from every answer on the genus + the photo's own residual
+  (sheet v31, `GENUS_K` 0.4, `?stats=1` `gd`), the app's prior for a photo with few answers the genus offset (0 with an
+  older sheet). On the real log the app's next-answer log-loss goes from 0.4976 to 0.4812 (−0.016 [−0.028, −0.006]);
+  simulated, no learning path changes beyond the seeds' spread ("Hierarchical photo Elo").
 - 2026-11-03, Pierre (for everyone): a ★ genus opens only after the genus its card compares it to has been met (a
   beginner met *Duncanopsammia* and *Cyphastrea* before *Turbinaria* and *Astreopora*): the references read from the data
   (`core.js` `starRefs`, the genera of the card's "★ look-alike of …" line), a weight of 0 in the opening draw until
@@ -2756,6 +2996,9 @@ is not in the simulation.
   Urnings: a new method for tracking dynamically changing parameters in paired comparison systems.
 - Doebler, P., Alavash, M., Giessing, C. (2014). Adaptive experiments with a multivariate Elo-type algorithm. *Behavior
   Research Methods* 47.
+- van der Linden, W. J. (2006). A lognormal model for response times on test items. *Journal of Educational and
+  Behavioral Statistics* 31, 181-204; van der Linden, W. J. (2007). A hierarchical framework for modeling speed and
+  accuracy on test items. *Psychometrika* 72, 287-308.
 - Bock, R. D. (1972). Estimating item parameters and latent ability when responses are scored in two or more nominal
   categories. *Psychometrika* 37, 29-51. Thissen, D., Steinberg, L. (1984). A response model for multiple choice items.
   *Psychometrika* 49.
