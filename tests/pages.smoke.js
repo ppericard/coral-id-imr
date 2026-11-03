@@ -33,6 +33,8 @@ const ROUTES = [
   'lab',
   'lab-basics|walls',
   'lab-basics|words',
+  'about',
+  'credits',
   'quiz-duel|Foo|Bar',
   'g-%E0'
 ]; // the last two are malformed links: they must not crash a page
@@ -615,6 +617,123 @@ async function signin(base) {
 // Coral basics on a phone and a tablet (Codex on PR #405): the teaching photo leaves room on screen (at most 45% of its
 // height), each check (photo, answers, feedback) fits between the header and the tab bar once answered (rule 17), and
 // every photo of a check gets the games' clickable source once answered (rule 11, photoSrc). Returns the failures.
+// Credits and Home's fit (Pierre, 2026-11-03): no page footer; Home is one screen with a one-line credit (Pierre, IMR, a
+// link to About and credits); About exists, is linked from Home and from the ? help of every page with Privacy and Send
+// feedback, and the Coral Finder book is never credited (only cited under References); the header fits the narrowest
+// phones, signed out, without a sideways scroll.
+async function credits(b, base) {
+  const fails = [],
+    BOOK = /Coral Finder|Kelley|BYOGUIDES/i;
+  const open = async (w, h, hash = '') => {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+    });
+    const p = await c.newPage();
+    await p.goto(base + hash);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForTimeout(500);
+    return [c, p];
+  };
+  for (const [w, h] of [
+    [360, 640],
+    [390, 844],
+    [412, 915],
+    [768, 1024],
+    [1280, 800]
+  ]) {
+    const [c, p] = await open(w, h);
+    const r = await p.evaluate(() => {
+      const cr = document.querySelector('#view .hcred'),
+        tab = document.querySelector('nav.sections'),
+        tabTop = getComputedStyle(tab).position === 'fixed' ? tab.getBoundingClientRect().top : innerHeight;
+      return {
+        sh: document.documentElement.scrollHeight,
+        ih: innerHeight,
+        sw: document.documentElement.scrollWidth,
+        iw: innerWidth,
+        text: cr ? cr.textContent : '',
+        link: !!(cr && cr.querySelector('a[href="#about"]')),
+        bottom: cr ? Math.round(cr.getBoundingClientRect().bottom) : 0,
+        tabTop: Math.round(tabTop),
+        footer: !!document.querySelector('footer')
+      };
+    });
+    // No vertical scroll, and the credit line in view above the phone tab bar (not hidden under it; the bar's 1 px top
+    // border overlaps the page by design: --tabbar-h is 58, the bar 59 with its border).
+    if (r.sh > r.ih || r.bottom > r.tabTop + 1 || !r.bottom) fails.push(`${w}x${h} Home is not one screen: ${JSON.stringify(r)}`);
+    if (r.sw > r.iw) fails.push(`${w}x${h} Home scrolls sideways: ${JSON.stringify(r)}`);
+    if (!/Pierre Pericard/.test(r.text) || !/IMR/.test(r.text) || !r.link || BOOK.test(r.text) || r.footer)
+      fails.push(`${w}x${h} Home credit line: ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // The header fits one line at 360 and 320 px, signed out (the Sign in pill shown): no sideways scroll.
+  for (const w of [320, 360]) {
+    const [c, p] = await open(w, 640);
+    for (const hash of ['', 'genera', 'about']) {
+      await p.evaluate(x => (location.hash = x), hash);
+      await p.waitForTimeout(400);
+      const r = await p.evaluate(() => ({
+        sw: document.documentElement.scrollWidth,
+        iw: innerWidth,
+        signb: !document.getElementById('signb').hidden,
+        set: Math.round(document.getElementById('setb').getBoundingClientRect().right)
+      }));
+      if (!r.signb || r.sw > r.iw || r.set > r.iw)
+        fails.push(`${w}px #${hash || 'home'} signed out, header too wide: ${JSON.stringify(r)}`);
+    }
+    await c.close();
+  }
+  // About and credits, and the ? help line on another page.
+  {
+    const [c, p] = await open(390, 844, '#about');
+    const r = await p.evaluate(() => {
+      const a = document.querySelector('#view .about'),
+        secs = a ? [...a.querySelectorAll('section')] : [],
+        refs = secs.find(s => /References/.test(s.querySelector('h3')?.textContent || ''));
+      return {
+        about: !!a,
+        who: !!a && /Pierre Pericard/.test(a.textContent) && /IMR/.test(a.textContent),
+        privacy: !!(a && a.querySelector('a[href="privacy.html"]')),
+        feedback: !!(a && a.querySelector('[data-rep]')),
+        licences: !!a && /CC BY/.test(a.textContent),
+        // The book may be cited under References only, never in the credits around it.
+        credited: secs.filter(s => s !== refs).some(s => /Coral Finder|Kelley|BYOGUIDES/i.test(s.textContent)),
+        bar: document.querySelector('#modes.ctx .ctx-t')?.textContent || ''
+      };
+    });
+    if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || r.credited || !/About/.test(r.bar))
+      fails.push(`About and credits page: ${JSON.stringify(r)}`);
+    await p.evaluate(() => (location.hash = 'g-Acropora'));
+    await p.waitForTimeout(500);
+    await p.click('#help');
+    await p.waitForTimeout(150);
+    const hp = await p.evaluate(() => {
+      const e = document.querySelector('#helpbox .hend');
+      return {
+        open: !document.getElementById('helpbox').hidden,
+        about: !!(e && e.querySelector('a[href="#about"]')),
+        privacy: !!(e && e.querySelector('a[href="privacy.html"]')),
+        feedback: !!(e && e.querySelector('[data-rep]'))
+      };
+    });
+    if (!hp.open || !hp.about || !hp.privacy || !hp.feedback)
+      fails.push(`? help without About, Privacy and Send feedback: ${JSON.stringify(hp)}`);
+    else {
+      await p.click('#helpbox .hend a[href="#about"]');
+      await p.waitForTimeout(400);
+      if (!(await p.$('#view .about'))) fails.push('the ? help link does not open About and credits');
+    }
+    await c.close();
+  }
+  return fails;
+}
+
 async function basicsFit(b, base) {
   const fails = [];
   for (const [w, h] of [
@@ -731,6 +850,8 @@ async function basicsFit(b, base) {
       }, h);
       await p.waitForTimeout(700);
       if (errs.length) fails.push(`${w}px #${h}: ${errs.slice(0, 3).join(' | ')}`);
+      // No credits block on any page but Home (Pierre, 2026-11-03): no footer, no Home credit line.
+      if (await p.evaluate(() => !!document.querySelector('footer, #view .hcred'))) fails.push(`${w}px #${h}: a credits footer or line`);
     }
     // Coral basics: every kind of check offers the app's report once answered (rule 11b; Codex on PR #405), and a
     // classified photo opens the enlarged view.
@@ -1225,6 +1346,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
     await ctx.close();
   }
   for (const f of await basicsFit(b, base)) fails.push(f);
+  for (const f of await credits(b, base)) fails.push(f);
   await b.close();
   for (const f of await signin(base)) fails.push(f);
   server.close();

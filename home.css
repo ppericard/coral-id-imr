@@ -291,7 +291,7 @@
 .hdart {
   position: relative;
   display: block;
-  aspect-ratio: 6/1;
+  aspect-ratio: 8/1;
   overflow: hidden;
   background: #0b1a1f;
 }
@@ -314,12 +314,13 @@
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(8, 1fr);
   grid-template-rows: 1fr;
   gap: 2px;
 }
 @media (min-width: 600px) {
   .hdtiles {
+    grid-template-columns: repeat(6, 1fr);
     grid-template-rows: repeat(2, 1fr);
   }
 }
@@ -351,7 +352,7 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  padding: 10px 14px 14px;
+  padding: 8px 14px 12px;
 }
 @media (min-width: 600px) {
   .hdbody {
@@ -466,15 +467,15 @@
 }
 
 /* Phone base (mobile-first); larger screens restore below. */
-.hdtiles img:nth-child(n + 7) {
+.hdtiles img:nth-child(n + 9) {
   display: none;
 }
 .hddesc {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 @media (min-width: 600px) {
-  .hdtiles img:nth-child(n + 7) {
+  .hdtiles img:nth-child(n + 9) {
     display: block;
   }
   .hddesc {
@@ -502,6 +503,64 @@
 @media (min-width: 600px) {
   .hdart {
     aspect-ratio: auto;
-    height: clamp(250px, calc(100dvh - 470px), 400px);
+    height: clamp(250px, calc(100dvh - 420px), 400px); /* 470 px before the footer became the one-line credit */
+  }
+}
+
+/* Home fits one screen (Pierre, 2026-11-03: the credits footer pushed Home below the fold, and the doors had fixed
+   heights whatever the screen). The page column (.wrap) is at least the screen above the phone tab bar; the doors and the
+   one-line credit grow to fill it, never shrink. On phones the Learn band is one 8:1 row of square tiles and the ReefCloud
+   photo takes the height left (at least 32 px), so the two doors and the credit fit a 360 x 640 screen and a tall phone
+   gets a bigger photo, not a scroll. A screen too short even for that (320 x 568) scrolls; nothing is squeezed or hidden. */
+body:has(.home-page) main {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+.home-page {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+.hdoors {
+  flex: 1 0 auto;
+  grid-template-rows: auto 1fr;
+}
+.hdoor {
+  overflow: clip; /* not a scroll container: a door is never shrunk below its content */
+}
+.hdoor.identify .hdart.rc {
+  flex: 1 0 32px;
+  aspect-ratio: auto;
+  min-height: 32px;
+}
+.hdart.rc > img {
+  position: absolute;
+  inset: 0;
+}
+/* The one-line credit (Pierre, 2026-11-03): who made it, for whom, and the About and credits page. */
+.hcred {
+  margin: 8px 0 0;
+  max-width: none;
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.hcred a {
+  color: inherit;
+  text-underline-offset: 2px;
+}
+@media (min-width: 600px) {
+  .hdoors {
+    flex: none;
+    grid-template-rows: none;
+  }
+  .hdoor.identify .hdart.rc {
+    flex: none;
+  }
+  .hcred {
+    margin-top: auto;
+    padding-top: 10px;
   }
 }

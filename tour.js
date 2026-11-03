@@ -39,7 +39,7 @@
       h: 'quiz',
       sel: '#help',
       t: 'Help on every page',
-      d: 'Tap ? for what a page does. ⚙ sets the theme and colours. Replay this tour from ?.',
+      d: 'Tap ? for what a page does, to send feedback, and for the credits. ⚙ sets the theme and colours. Replay this tour from ?.',
       also: '#setb'
     }
   ].filter(s => !s.signin || SYNC_URL);
