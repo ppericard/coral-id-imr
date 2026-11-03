@@ -91,6 +91,32 @@ print(json.dumps([fl.colonies('A', G, {}, cur), fl.colonies('B', G, {}, cur)]))`
   assert.deepStrictEqual(r, [{wide: 1}, {wide: 2}]);
 });
 
+test('fetch_local --plan: a waiting candidate of a view that has its colonies holds no room (Codex review #390)', () => {
+  // Finder-only A: Colony full (6 colonies), Close-up 5 of 6. One candidate waits, guessed Colony: the admin hides it
+  // (full cell), so it must not use the one place Close-up still needs.
+  const r = JSON.parse(
+    py(`import importlib.util, io, contextlib
+sys.argv = ['x', '--plan']
+s = importlib.util.spec_from_file_location('fl', 'tools/fetch_local.py'); fl = importlib.util.module_from_spec(s); s.loader.exec_module(fl)
+o = lambda f, obs, v=None: dict(f=f, o=obs, own=False, loc='dauin', **({'vg': v} if v else {}))
+G = {'A': {'views': {'wide': [o(f'w{i}', f'w{i}') for i in range(6)], 'medium': [o(f'm{i}', f'm{i}') for i in range(5)]}}}
+def run(c):
+    fl.load_all = lambda: {'gen': {}, 'x': {'gen': G}, 'cand': {'A': c}}
+    fl.finder_only = lambda d: ['A']
+    fl.open = lambda *a, **k: io.StringIO('{}')
+    fl.excluded = lambda *a, **k: False
+    fl.set_aside = lambda f: False
+    fl.SUG = {}
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out): fl.main()
+    return json.loads(out.getvalue())['A']
+print(json.dumps([run([o('c1', 'c1', 'wide')]), run([o('c1', 'c1', 'medium')]), run([o('c1', 'c1')])]))`)
+  );
+  assert.deepStrictEqual(r[0], {finder: true, need: 1, dauin: 1, ph: 1}, "a full view's candidate holds no room");
+  assert.deepStrictEqual(r[1], {finder: true, need: 1, dauin: 0, ph: 0}, 'a candidate of the view that lacks one does');
+  assert.deepStrictEqual(r[2], {finder: true, need: 1, dauin: 0, ph: 0}, 'no guessed view: it may fill the gap, it counts');
+});
+
 test('fetch_local --plan on the real data: game genera keep their caps, a Finder-only genus refills only what it lacks', () => {
   const P = JSON.parse(execFileSync('python3', ['tools/fetch_local.py', '--plan'], {cwd: ROOT, encoding: 'utf8'}));
   const game = new Set(gameOf(RAW));

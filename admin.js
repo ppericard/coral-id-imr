@@ -3787,8 +3787,9 @@ function gamePool(n, v) {
       !p.cf &&
       use[p.f] !== 'ref' &&
       !(v === 'wide' && fOf(p.f) === 'x' && !oneForm) &&
-      // The games' Research Grade rule for the extra genera (app.js gamePhotoOk; Codex review #390).
-      (!DATA.gen[n].x || p.own || !p.gid)
+      // The games' Research Grade rule for the extra genera that are played (app.js gamePhotoOk; Codex review #390). A
+      // Finder-only genus is not played: its Needs ID colonies count, as in tools/fetch_local.py colonies().
+      (!DATA.gen[n].x || !isGame(n) || p.own || !p.gid)
   );
 }
 function covOf(n, v) {

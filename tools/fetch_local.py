@@ -136,12 +136,17 @@ def main():
     # Observations waiting for genus g: from one source (loc) or all.
     # A Finder-only genus's candidates guessed to be in a view it does not keep (Corallites) are not shown (admin.js
     # candQueue, capViews): they do not count as waiting either (Codex review #390), or they would hold the room.
+    # Nor do those of a view that already has its colonies (Codex review #390): admin.js candQueue marks them full and
+    # hides them, and they would hold the room another view lacks.
+    HAVE, CAPS = {}, cap_sheet()
     def shown(g, p):
         if g not in FINDER: return True
         v = (SUG.get(p['f']) or {}).get('v') or p.get('vg')
         keep = kept_views(g, GEN, CUR)
         if keep[1] == 'macro' and v == 'medium': v = 'wide'
-        return not v or v in keep
+        if not v: return True
+        if g not in HAVE: HAVE[g] = colonies(g, GEN, cand, CUR, excluded)
+        return v in keep and HAVE[g].get(v, 0) < CAPS
     def waiting_obs(g, loc=None):
         return {p.get('o') for p in cand.get(g, []) if (loc is None or p.get('loc') == loc) and waiting(p) and shown(g, p)}
     need = lambda g: finder_need(g, GEN, cand, CUR, excluded) if g in FINDER else None
