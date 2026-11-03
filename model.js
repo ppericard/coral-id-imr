@@ -1,6 +1,6 @@
 // IMR Reef ID: the learning model, split out of app.js (2026-11-02, code review L1: one file per part, one piece at a
 // time). Which genus comes next (weighted, the progressive opening OPEN, the easiest first), which photos (photoSet,
-// PICKD, online calibration CAL), how hard they are (photoDiff, the sheet's PSTAT), the player's ability per genus (Elo,
+// PICKD, online calibration CAL), how hard they are (photoDiff, the sheet's PSTAT and genus offsets PGD), the player's ability per genus (Elo,
 // ELO, abilityStep), their progress (pgWeight, knownP; core.js PROG), the mastery exam (EXAM), and the wrong choices (TRAP, distractors,
 // pooledConf). docs/LEARNING.md explains every rule. A classic script like app.js, loaded right after progress.js
 // (index.html, in order); app.js waits for every script (window.BOOT) before its first page. Required like app.js.
@@ -77,9 +77,11 @@ const singleP = (n, shift = 0) => formatAt(ability(n) + shift)[1];
 // items being pretested: the colony is chosen on the difficulty targeting and the bonus alone, a single view then
 // showing alone. Only on a genus the player already holds (met, not shaky, as the opening of genera reads it): one
 // photo alone, perhaps unusual, would not help on a genus still being learned. docs/LEARNING.md.
-// CAL.U: how unsure the difficulty of a photo nobody has answered is (variance, in difficulty units; its set only says
-// Easy -1, Medium 0, Hard +1): the targeting is that much wider for it, narrowing as answers come (U / (1 + answers /
-// CAL.N)), so a new photo is not kept away by a set placed by hand. Pierre, 2026-11-02: "relax the arbitrary thresholds
+// CAL.U: how unsure the difficulty of a photo nobody has answered is (variance, in difficulty units; until its answers
+// come it only has its genus's offset, photoDiff): the targeting is that much wider for it, narrowing as answers come
+// (U / (1 + answers / CAL.N)), so a new photo is not kept away by a prior. (Written for the Easy / Medium / Hard sets of
+// before 2026-11-03; the residual around the genus offset is smaller, sd about 0.3-0.6, but U stays 1 until a learnsim
+// check says otherwise: ROADMAP.) Pierre, 2026-11-02: "relax the arbitrary thresholds
 // so new photos come in, and their answers inform the dynamic algorithm".
 const CAL = {B: 2, N: 2, RATE: 0.2, U: 1};
 const nAnswers = p => {
@@ -105,7 +107,7 @@ function photoSet(n, skip, shift = 0, k = 4) {
   // tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is reachable.
   const gameOk = p => gamePhotoOk(n, p);
   const pics = v =>
-    [...gamePics(n, v, 'hard'), ...(two && v === 'macro' ? gamePics(n, 'medium', 'hard') : [])]
+    [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])]
       .filter(ok(v))
       .filter(gameOk)
       .filter(p => p.f !== skip);
@@ -204,7 +206,7 @@ function examSet(n) {
     gameOk = p => gamePhotoOk(n, p) && !p.multi;
   const lab = v => (two && v === 'macro' ? 'close' : v);
   const pics = v =>
-    [...gamePics(n, v, 'hard'), ...(two && v === 'macro' ? gamePics(n, 'medium', 'hard') : [])]
+    [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])]
       .filter(p => v !== 'wide' || p.form !== 'x' || oneForm)
       .filter(gameOk);
   const vs = need.filter(v => pics(v).length),
@@ -272,17 +274,19 @@ const weight = n => {
 // beginner meets genera at the pace they did, the RAs and an expert faster, learning as much (docs/LEARNING.md).
 const OPEN = {K: 8, P: 0.6, T: 3, CONF: 2, DATA: 300, MAX: 3, WIN: 15};
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
-// OPEN.DATA, up to 1. Without them the genus difficulty is only the photo sets and declared look-alikes, which put
-// Acropora and Galaxea among the hardest and Alveopora first (Pierre expects the first two easy): the order then stays
-// random until the answers can say (2026-11-02).
+// OPEN.DATA, up to 1. Without them the genus difficulty is only the declared look-alikes (until 2026-11-03 the photo
+// sets too, which put Acropora and Galaxea among the hardest and Alveopora first, where Pierre expects the first two
+// easy): the order then stays random until the answers can say (2026-11-02).
 const easyTrust = () => Math.min(1, Object.values(PSTAT).reduce((t, o) => t + (o[1] || 0), 0) / OPEN.DATA);
-// Difficulty of a genus from the data, never set by hand: the mean difficulty of its game photos (photoDiff: Pierre's
-// Easy/Medium/Hard sets at first, the players' answers as they come, sheet v17) plus how much it gets confused (its two
-// highest pooled confusion scores over CONF.TRAP, x OPEN.CONF). Cleared when the data or the photo stats change.
+// Difficulty of a genus from the data, never set by hand: the mean difficulty of its game photos (photoDiff: the
+// players' answers, sheet v17; from sheet v31 a photo with few or no answers leans on its genus's offset, learned from
+// every answer on the genus, so the genus difficulty is data-driven from the first answers on it) plus how much it gets
+// confused (its two highest pooled confusion scores over CONF.TRAP, x OPEN.CONF). Cleared when the data or the photo
+// stats change.
 let GDIFF = {};
 const genusDiff = n => {
   if (n in GDIFF) return GDIFF[n];
-  const ps = [...new Set(VIEWS.flatMap(([v]) => gamePics(n, v, 'hard')))],
+  const ps = [...new Set(VIEWS.flatMap(([v]) => gamePics(n, v)))],
     pd = ps.length ? ps.reduce((t, p) => t + photoDiff(n, p), 0) / ps.length : 0,
     cs = slateGenera()
       .filter(x => x !== n)
@@ -766,19 +770,20 @@ const photoBand = n => {
   return t < -0.5 ? 'easy' : t < 0.5 ? 'medium' : 'hard';
 };
 const seenOf = n => {
-  const all = new Set(VIEWS.flatMap(([v]) => gamePics(n, v, 'hard').map(p => p.f))),
+  const all = new Set(VIEWS.flatMap(([v]) => gamePics(n, v).map(p => p.f))),
     ps = (P[n] || {}).ps || {};
   return `${[...all].filter(f => ps[f]).length} of ${all.size} seen`;
 };
-// Game set (Easy/Medium/Hard) of a photo of genus n, the prior of its difficulty; lecture or unlisted photos = Easy.
-function photoLvl(n, p) {
-  const sl = GX(n).sl || {};
-  for (const v of Object.keys(sl)) for (let i = 2; i >= 0; i--) if ((sl[v][LEVELS[i][0]] || []).some(x => x.f === p.f)) return i;
-  return 0;
-}
 // Photo difficulty (Elo): every RA's answers, rated by the sync sheet (?stats=1, tools/sync/Code.gs stats_). 0 = average
-// photo, +1 = clearly harder. Few answers: pulled towards the photo's game set (Easy -1, Medium 0, Hard +1).
+// photo, +1 = clearly harder. Few answers: pulled towards its genus's offset (photoDiff).
 let PSTAT = (store.get('reefid-photo-stats', {}) || {}).photos || {};
+// Genus offsets of the hierarchical photo Elo (Pierre, 2026-11-03; sheet v31 ?stats=1 gd, core.js GENUS_K): {genus:
+// [offset, weighed answers]}, the part of a photo's difficulty its genus shares, learned from every answer on the genus.
+// Read only from a sheet that reports v >= PGD_SHEET (AGENTS.md 7a): with an older sheet, or offline before a v31
+// reply, every prior is 0 (a constant prior predicts the answers better than the Easy / Medium / Hard sets did).
+const PGD_SHEET = 31;
+const gdOf = j => (j && j.v >= PGD_SHEET && j.gd && typeof j.gd === 'object' ? j.gd : {});
+let PGD = gdOf(store.get('reefid-photo-stats', {}));
 // Pairs of genera offered together and mixed up, every RA pooled (?stats=1 conf, sheet v10): see confOf.
 let PCONF = (store.get('reefid-photo-stats', {}) || {}).conf || {};
 // Photo memory (Pierre, 2026-11-03; core.js MEM, sheet v26 ?stats=1 mem): how much easier a photo is for a player who
@@ -848,10 +853,15 @@ const famOf = (n, ph) => {
   return memFam(hs, PMEM);
 };
 const sig = x => 1 / (1 + Math.exp(-x));
+// A photo's difficulty: the sheet's rating (its genus's offset + its own residual, sheet v31) blended with the genus's
+// offset as prior, weighing PDIFF.W answers (partial pooling: the photo keeps n / (n + W) of its own residual). A photo
+// nobody has answered is its genus's offset; 0 with an older sheet. W 5: the real answer log scores 2 to 20 alike
+// (docs/LEARNING.md "Hierarchical photo Elo").
+const PDIFF = {W: 5};
 function photoDiff(n, p) {
-  const prior = photoLvl(n, p) - 1,
+  const prior = (PGD[n] || [0])[0] || 0,
     o = PSTAT[p.f];
-  return o ? (o[1] * o[0] + 5 * prior) / (o[1] + 5) : prior;
+  return o ? (o[1] * o[0] + PDIFF.W * prior) / (o[1] + PDIFF.W) : prior;
 }
 // Progress of a genus (2026-11-02, replaces Bayesian Knowledge Tracing): s.pg, a moving average of its answers, each
 // weighed by what it proves (core.js PROG, pgStep, pgOf; docs/LEARNING.md "Progress (moving average) and mastery").

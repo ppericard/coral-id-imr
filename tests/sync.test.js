@@ -395,7 +395,9 @@ test('v18: a device that never signed in rates the photos once its answers are c
   const B = Array.from({length: 12}, (_, i) => ans('b' + i, {ph: 'bot-' + i, ok: 0, a: 'Porites', t: at(20 + i)}));
   s.post({anon: 'clicker001', anonAnswers: B});
   for (const k of Object.keys(s.cache)) delete s.cache[k];
-  assert.deepStrictEqual(s.get({stats: '1'}).photos['bot-0'], [0, 0, 0, 0], 'answers at chance move nothing');
+  // v31: a photo nobody rated sits at its genus offset (moved by the real player's answers on the genus above).
+  const st = s.get({stats: '1'});
+  assert.deepStrictEqual(st.photos['bot-0'], [st.gd.Acropora[0], 0, 0, 0], 'answers at chance move nothing');
 });
 
 test('v17: one player whatever the capitalisation of the name (trust and history per photo)', () => {
