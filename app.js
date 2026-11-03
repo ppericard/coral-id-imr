@@ -368,20 +368,15 @@ function build() {
 // A genus of the list or of the extra genera.
 const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n];
 const isCore = p => !!(p.imr || p.own);
-// Game photos of genus n in view v at a level (levels add up: Medium = Easy + Medium photos).
-const LEVELS = [
-  ['easy', 'Easy'],
-  ['medium', 'Medium'],
-  ['hard', 'Hard']
-];
 // A photo the games may teach from: an extra genus's (DATA.x: Millepora, the bonus genera) only if Pierre's own or
 // Research Grade on iNaturalist (no gid), as the extra genera were chosen (tools/build_extra.py). One rule for every
 // game (the quiz, the exam, the mix-up card, the Lab's typed game: Codex review #379).
 const gamePhotoOk = (n, p) => !GX(n).x || p.own || !p.gid;
-const gamePics = (n, v, lvl = 'hard') => {
+// Game photos of genus n in view v: one list (core.js applySlots, the featured first), rated by the players' answers
+// (model.js photoDiff); the Easy / Medium / Hard sets went on 2026-11-03 (docs/LEARNING.md "Hierarchical photo Elo").
+const gamePics = (n, v) => {
   const s = (GX(n).sl || {})[v];
-  if (!s) return GX(n).views[v] || [];
-  return LEVELS.slice(0, LEVELS.findIndex(([k]) => k === lvl) + 1).flatMap(([k]) => s[k]);
+  return s ? s.game : GX(n).views[v] || [];
 };
 // Growth form of each photo: one of the 7 IMR growth forms (forms.json "forms"; x = form not visible) as p.form, and
 // p.polyps when polyps or vesicles are extended. Pierre's choice in curation.json "gf" wins over the first guess in
