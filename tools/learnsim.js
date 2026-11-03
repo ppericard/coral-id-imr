@@ -40,6 +40,15 @@
 // - After each answer, feedback teaches: know[t] += RATE x (1 - know[t]) after a right answer, x MISS after a miss
 //   (the side-by-side montage shows the difference); the genus wrongly picked gains RATE x PICKED (its photo is in the
 //   montage). A first-meeting card teaches like one right answer. No forgetting, except across --breaks (above).
+// - Photo memory (2026-11-03, Pierre: in a genus with few photos the same ones come back, and players learn the photos
+//   rather than the genus): the learner remembers each photo it was shown when answering, [seen, right]. Recognising
+//   adds LEARNER.MEM[bucket] logits, averaged over the photos shown: new 0, seen but never right 0.4, right once 1.5,
+//   right twice or more 2 (our assumption, close to what about 550 real photo-quiz answers showed against the app's
+//   logged expectation: 83% right on photos new to the player where 76% was expected, 85% / 72% seen never right, 95% /
+//   76% right once, 9 of 9 right twice or more; docs/LEARNING.md "Photo memory"). Memory helps on that photo only: it
+//   teaches nothing more about the genus, and the hard reference question below (a photo never seen) ignores it, so
+//   what memory adds to the answers is exactly what the app must not count as knowledge. --mem 0 turns it off (the
+//   learner before 2026-11-03); --mem 0,0.4,1.5,2 sets the four offsets.
 //
 // Measures, at each checkpoint (50, 100, 200, 300 questions, then every 300), mean +- sd over the seeds:
 // - knowSlate: true mean know over the slate genera (the 39 of the IMR coral slate and Millepora); knowMet: over the
@@ -60,6 +69,11 @@
 //   simulated player accepts, "Add them"), and the share of the questions on bonus genera after that.
 // - Per run, metAt: the question at which each genus was first met (card or asked); printed as the median question per
 //   profile for the genera of --met (a genus not met counts as later than the last question, shown ">N").
+// - By photo count (photo memory): the slate genera with few game photos (FEW, 14 or fewer) against those with many
+//   (MANY, 20 or more), at each checkpoint: questions so far showing a photo the learner had already been shown (rep%),
+//   right % on all of them and on those repeats, mean progress bar against true know (prog-know) and Elo against
+//   logit(know) (th-lk) over the genera met, genera learned; and, per genus that entered the exam or was learned, the
+//   true reference success then (ref@exam, ref@learn) and the question it happened.
 const http = require('http'),
   fs = require('fs'),
   os = require('os'),
@@ -79,7 +93,23 @@ const PROFILES = {
 // The learner's constants (above). LOOK 3: a declared look-alike draws an unrecognised photo as much as the genus
 // itself (a coin toss in a look-alike duel), an unrelated genus 1.3 against 4. ELIM 0.5: a genus known for sure is
 // half as tempting. MISS 1.5, PICKED 0.5: feedback after a miss teaches more, and a little about the genus picked.
-const LEARNER = {LOOK: 3, ELIM: 0.5, MISS: 1.5, PICKED: 0.5, SINGLE: 0.5, REF_D: 1, REF_OK: 0.9, S0: 2, G: 2.5, STEP: 10000};
+// MEM: the photo memory above (logits added to recognising, by bucket: new, seen never right, right once, right 2+).
+// FEW / MANY: the photo-count groups of the measures by photo count (game photos of the genus).
+const LEARNER = {
+  LOOK: 3,
+  ELIM: 0.5,
+  MISS: 1.5,
+  PICKED: 0.5,
+  SINGLE: 0.5,
+  REF_D: 1,
+  REF_OK: 0.9,
+  S0: 2,
+  G: 2.5,
+  STEP: 10000,
+  MEM: [0, 0.4, 1.5, 2],
+  FEW: 14,
+  MANY: 20
+};
 
 const arg = (k, d) => {
   const i = process.argv.indexOf('--' + k);
@@ -102,6 +132,14 @@ const SEEDS = Number(arg('seeds', 30)),
       return [b, Number(m[1]) * UNIT[m[2]]];
     }),
   MET = arg('met', 'Acropora,Porites,Pocillopora,Montipora,Millepora').split(',').filter(Boolean);
+{
+  const m = arg('mem', null);
+  if (m !== null) {
+    const v = m.split(',').map(Number);
+    if (v.some(isNaN) || (v.length !== 1 && v.length !== 4)) throw new Error('--mem 0 (no photo memory) or four offsets, e.g. 0,0.4,1.5,2');
+    LEARNER.MEM = v.length === 1 ? [v[0], v[0], v[0], v[0]] : v;
+  }
+}
 for (const n of NAMES) if (!PROFILES[n]) throw new Error(`unknown profile ${n} (${Object.keys(PROFILES).join(', ')})`);
 const CPS = [
   ...new Set(
@@ -205,6 +243,15 @@ function play(cfg) {
     ])
   );
   const ref = g => pRight(g, [g, ...REF[g]], L.REF_D, true);
+  // Photo memory: [seen, right] per photo file the learner was shown when answering, and the logits it adds.
+  const LM = {},
+    bucket = h => (!h || !h[0] ? 0 : !h[1] ? 1 : h[1] === 1 ? 2 : 3),
+    memOn = fs => mean(fs.map(f => L.MEM[bucket(LM[f])])) || 0;
+  // Game photos per slate genus (as My progress counts them, seenOf), and its group: few, many, or neither.
+  const NPH = Object.fromEntries(SL.map(g => [g, new Set(VIEWS.flatMap(([v]) => gamePics(g, v, 'hard').map(p => p.f))).size])),
+    grpOf = g => (!(g in NPH) ? null : NPH[g] <= L.FEW ? 'few' : NPH[g] >= L.MANY ? 'many' : null),
+    GRP = {few: SL.filter(g => grpOf(g) === 'few'), many: SL.filter(g => grpOf(g) === 'many')},
+    gq = {few: {n: 0, ok: 0, rep: 0, repOk: 0}, many: {n: 0, ok: 0, rep: 0, repOk: 0}};
   const PAIRS = [];
   SL.forEach(a => SL.forEach(b => a < b && isLook(a, b) && PAIRS.push([a, b])));
   const lookAcc = () => mean(PAIRS.map(([a, b]) => (pRight(a, [a, b], 0, false) + pRight(b, [a, b], 0, false)) / 2));
@@ -270,9 +317,11 @@ function play(cfg) {
       ch = [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c),
       shown = set.shown || [],
       d = mean(shown.map(p => photoDiff(t, p))) || 0,
-      single = shown.length === 1;
+      single = shown.length === 1,
+      fs = shown.map(p => p.f),
+      rep = fs.some(f => LM[f] && LM[f][0]);
     let pick = t;
-    if (!(rnd() < sig(logit(kn(t)) - d - (single ? L.SINGLE : 0)))) {
+    if (!(rnd() < sig(logit(kn(t)) - d - (single ? L.SINGLE : 0) + memOn(fs)))) {
       const ws = ch.map(c => wOf(t, c));
       let r = rnd() * ws.reduce((a, x) => a + x, 0);
       pick = ch[ch.length - 1];
@@ -288,6 +337,20 @@ function play(cfg) {
     teach(t, prof.rate * (good ? 1 : L.MISS));
     if (!good) teach(pick, prof.rate * L.PICKED);
     if (good) spaced(t);
+    fs.forEach(f => {
+      const h = (LM[f] = LM[f] || [0, 0]);
+      h[0]++;
+      h[1] += good ? 1 : 0;
+    });
+    const gr = gq[grpOf(t)];
+    if (gr) {
+      gr.n++;
+      gr.ok += good;
+      if (rep) {
+        gr.rep++;
+        gr.repOk += good;
+      }
+    }
     T += L.STEP;
     return {q, t, good, set};
   };
@@ -333,7 +396,25 @@ function play(cfg) {
         examQs: nEx,
         duels: nDuel,
         agains: nAgain,
-        cards: nCards
+        cards: nCards,
+        // By photo count (photo memory): cumulative questions on the group's genera, their genera met.
+        grp: Object.fromEntries(
+          Object.entries(GRP).map(([k, G]) => {
+            const gm = G.filter(introduced),
+              c = gq[k];
+            return [
+              k,
+              {
+                rep: c.n ? (100 * c.rep) / c.n : null,
+                right: c.n ? (100 * c.ok) / c.n : null,
+                repRight: c.rep ? (100 * c.repOk) / c.rep : null,
+                progGap: mean(gm.map(g => genScore(g) - know[g])),
+                thBias: mean(gm.map(g => ability(g) - logit(know[g]))),
+                learned: G.filter(g => (P[g] || {}).mx).length
+              }
+            ];
+          })
+        )
       });
       blk = {n: 0, ok: 0};
     }
@@ -348,6 +429,7 @@ function play(cfg) {
         HOLDS,
         know: {...know},
         LS: JSON.stringify(LS),
+        LM: JSON.stringify(LM),
         T,
         last,
         lastQs: [...lastQs],
@@ -367,6 +449,9 @@ function play(cfg) {
       Object.assign(know, snap.know);
       Object.keys(LS).forEach(k => delete LS[k]);
       Object.assign(LS, JSON.parse(snap.LS));
+      // The photo memory comes back as it was (it does not fade across a break: a limit of this learner).
+      Object.keys(LM).forEach(k => delete LM[k]);
+      Object.assign(LM, JSON.parse(snap.LM));
       dropPlans();
       NEXTQ = null;
       SHOWNQ = null;
@@ -425,6 +510,7 @@ function play(cfg) {
     entry,
     learnedAt,
     metAt,
+    nph: NPH,
     pairs: PAIRS.length,
     breaks: out,
     millMet: mill.met,
@@ -443,7 +529,11 @@ async function run(browser, base, name, seed) {
   );
   await ctx.addInitScript(st => {
     localStorage.setItem('imr-tour', '"done"');
-    if (st) localStorage.setItem('imr-photo-stats', JSON.stringify({t: Date.now(), photos: st.photos || {}, conf: st.conf || {}}));
+    if (st)
+      localStorage.setItem(
+        'imr-photo-stats',
+        JSON.stringify({t: Date.now(), photos: st.photos || {}, conf: st.conf || {}, ...(st.mem ? {mem: st.mem} : {})})
+      );
   }, STATS_JSON);
   const p = await ctx.newPage(),
     errs = [];
@@ -504,6 +594,84 @@ function table(S) {
       w = head.map((h, j) => Math.max(h.length, ...body.map(b => b[j].length)));
     lines.push(head.map((h, j) => h.padStart(w[j])).join(' '));
     body.forEach(b => lines.push(b.map((x, j) => x.padStart(w[j])).join(' ')));
+  }
+  return lines.join('\n');
+}
+
+// By photo count (photo memory): per profile, checkpoint and group (few / many game photos), the mean over the runs of
+// each run's cumulative figures; then, pooled over every run, the genera of the group that entered the exam or were
+// learned by the last question: how many a run, their mean true reference success then, the median question.
+const GKEYS = [
+  ['rep', 'rep%', 0],
+  ['right', 'right%', 0],
+  ['repRight', 'right% rep', 0],
+  ['progGap', 'prog-know', 2],
+  ['thBias', 'th-lk', 2],
+  ['learned', 'learned', 1]
+];
+function grpSummary(runs) {
+  const out = {};
+  for (const name of NAMES) {
+    const R = runs.filter(r => r.profile === name),
+      m = v => (v.length ? v.reduce((a, x) => a + x, 0) / v.length : null),
+      med = v => quant(v, 0.5);
+    out[name] = {
+      rows: CPS.map((q, i) =>
+        Object.fromEntries(
+          ['few', 'many'].map(gk => [
+            gk,
+            Object.fromEntries(
+              GKEYS.map(([k]) => [
+                k,
+                m(R.map(r => r.rows[i] && r.rows[i].grp && r.rows[i].grp[gk][k]).filter(x => typeof x === 'number' && !isNaN(x)))
+              ])
+            )
+          ])
+        )
+      ),
+      ev: Object.fromEntries(
+        ['few', 'many'].map(gk => {
+          const inG = (r, g) => (gk === 'few' ? r.nph[g] <= LEARNER.FEW : r.nph[g] >= LEARNER.MANY),
+            pool = key => R.flatMap(r => Object.entries(r[key] || {}).filter(([g]) => r.nph && g in r.nph && inG(r, g)).map(([, e]) => e));
+          const en = pool('entry'),
+            le = pool('learnedAt');
+          return [
+            gk,
+            {
+              genera: R.length ? Object.keys(R[0].nph || {}).filter(g => inG(R[0], g)).length : 0,
+              entry: en.length / Math.max(1, R.length),
+              refEntry: m(en.map(e => e.ref)),
+              qEntry: med(en.map(e => e.q)),
+              learned: le.length / Math.max(1, R.length),
+              refLearned: m(le.map(e => e.ref)),
+              qLearned: med(le.map(e => e.q))
+            }
+          ];
+        })
+      )
+    };
+  }
+  return out;
+}
+function grpTable(GS) {
+  const f = (x, d) => (x === null || x === undefined ? '-' : x.toFixed(d));
+  const lines = [
+    `\nBy photo count (few: ${LEARNER.FEW} game photos or fewer; many: ${LEARNER.MANY} or more); learner photo memory ${LEARNER.MEM.join(' / ')}`,
+    'rep%: questions showing a photo already shown to the player; right% on all / on those repeats; prog-know, th-lk: over the genera met; learned: genera.'
+  ];
+  for (const name of NAMES) {
+    lines.push(`\n${name}`);
+    const head = ['q', ...['few', 'many'].flatMap(g => GKEYS.map(k => `${g} ${k[1]}`))],
+      body = CPS.map((q, i) => [String(q), ...['few', 'many'].flatMap(g => GKEYS.map(([k, , d]) => f(GS[name].rows[i][g][k], d)))]),
+      w = head.map((h, j) => Math.max(h.length, ...body.map(b => b[j].length)));
+    lines.push(head.map((h, j) => h.padStart(w[j])).join(' '));
+    body.forEach(b => lines.push(b.map((x, j) => x.padStart(w[j])).join(' ')));
+    ['few', 'many'].forEach(g => {
+      const e = GS[name].ev[g];
+      lines.push(
+        `  ${g} (${e.genera} genera): entered the exam ${f(e.entry, 1)} a run, ref@exam ${f(e.refEntry, 2)}, median question ${f(e.qEntry, 0)}; learned ${f(e.learned, 1)} a run, ref@learn ${f(e.refLearned, 2)}, median question ${f(e.qLearned, 0)}`
+      );
+    });
   }
   return lines.join('\n');
 }
@@ -621,6 +789,8 @@ function breakTable(BS) {
       `  ${name}: met ${med(R.map(r => r.millMet))} (${n('millMet')}/${R.length}), asked ${med(R.map(r => r.millAsked))} (${n('millAsked')}/${R.length}), offer ${med(R.map(r => r.bonusOffer))} (${n('bonusOffer')}/${R.length}), share ${R.some(r => r.bonusShare !== null) ? (100 * med(R.map(r => r.bonusShare))).toFixed(0) + '%' : '-'}, bonus met ${med(R.map(r => r.bonusMet))}`
     );
   }
+  const GS = grpSummary(runs);
+  console.log(grpTable(GS));
   const BS = BREAKS.length ? breakSummary(runs) : null;
   if (BS) console.log(breakTable(BS));
   // First met, per genus of --met: median question over every run, a run where it was not met counting as after QN.
@@ -655,6 +825,7 @@ function breakTable(BS) {
           stats: STATS || null,
           seconds: secs,
           summary: S,
+          byPhotos: GS,
           breaks: BS,
           runs
         },

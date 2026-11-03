@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 25 (2026-11-03: v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 26 (2026-11-03: v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -26,7 +26,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 25;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 26;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -63,14 +63,15 @@ function writeData_(name, json, rev){
   d.sh.getRange(r, 1, 1, row.length).setValues([row]);
 }
 
-// GET ?stats=1 → photo difficulty learned from every answer (Elo, see stats_), cached 10 minutes: photos and conf only.
+// GET ?stats=1 → photo difficulty learned from every answer (Elo, see stats_), cached 10 minutes: photos, conf and the
+// photo memory offsets (mem, memn, v26) only.
 // Per-player numbers are admin-only from v14 (the public leaderboard names players: a public per-id ability or answer log
 // could be matched to a name): POST {readStats: 1, token} → stats_ with ras; POST {readAnswers: 1, token, aname, apin}
 // → answers_ (aname/apin, never name/pin: an older script must not take it for a progress write). GET ?answers=1 → 'token'.
 // GET ?name=…&pin=… → the saved progress for that RA, if the code matches, and (v23) their opening hold (hold_).
 function doGet(e){
   if (e.parameter.stats && !e.parameter.av) oldApp_('photo stats');
-  if (e.parameter.stats) { const st = stats_(); return json_({ok: st.ok, photos: st.photos, conf: st.conf}); }
+  if (e.parameter.stats) { const st = stats_(); return json_({ok: st.ok, photos: st.photos, conf: st.conf, mem: st.mem, memn: st.memn}); }
   if (e.parameter.answers) return json_({ok: false, error: 'token'});
   if (e.parameter.board) return json_(board_());
   if (e.parameter.achs) return json_(achs_());
@@ -267,10 +268,11 @@ function abilities_(data){
 
 // Elo over the Answers tab, oldest first. Each answer: P(right) = g + (1 - g) * sigmoid(ability - difficulty), with
 // g = 1/choices (4 in the quiz, 2 in a duel), ability = the RA's, difficulty = mean of the photos shown, +0.5 when a
-// single view was shown alone (harder than the same photo with the other views). Ratings move
-// by K * (result - P(right)), K shrinking as a photo or an RA gathers answers. Returns {ok, photos: {file: [difficulty,
-// answers, right]}, ras: {anonymous id: [ability, answers]}, conf: {"A|B": [offered, mixed up]}}. Difficulty 0 = average
-// photo; +1 = clearly harder. conf (v10): per pair of genera (A before B alphabetically), how often one was shown with the
+// single view was shown alone (harder than the same photo with the other views), minus the player's photo memory (MEM,
+// v26). Ratings move by K * (result - P(right)), K shrinking as a photo or an RA gathers answers. Returns {ok, photos:
+// {file: [difficulty, answers, right]}, ras: {anonymous id: [ability, answers]}, conf: {"A|B": [offered, mixed up]},
+// mem: [offsets by memory bucket], memn: [trusted answers in each]}. Difficulty 0 = average photo, met for the first
+// time; +1 = clearly harder. conf (v10): per pair of genera (A before B alphabetically), how often one was shown with the
 // other among the choices, and how often the other was answered; only answers that logged their choices (v10) count.
 // The app turns it into confusion scores (core.js confScore) to pick the look-alike traps; core.js confusionOf counts the same.
 // admin.js eloOf replays the same rules in the browser (photo Elo with or without the author's answers): keep both in step.
@@ -285,10 +287,26 @@ const TRUST = {N: 10, Z: 1.645};
 // answers (Glicko's idea: a player whose level is still uncertain moves the items little; a beginner answering at
 // random at first counts more and more as their level settles). Every answer counts, repeats too, but against what the
 // player is expected to remember of that photo (Duolingo half-life regression and PFA: the item's difficulty is fitted
-// beside the player's own history with it): a photo new to the player is PHOTO_W.NEW harder, one they already got right
-// twice PHOTO_W.KNOWN easier, the app's own rule (app.js answer: bk).
+// beside the player's own history with it): v17-v25 a fixed rule, a photo new to the player PHOTO_W.NEW harder, one
+// they already got right twice PHOTO_W.KNOWN easier; from v26 the prior of the estimated photo memory (MEM).
 // N 10 (was 30; v18, Pierre, same reason): the 10th answer weighs 0.5, the 30th 0.75 (were 0.25 and 0.5).
 const PHOTO_W = {N: 10, NEW: 0.5, KNOWN: -1};
+// Photo memory (v26, Pierre 2026-11-03: in a genus with few photos the same ones come back, players learn the photos
+// rather than the genus, and that skewed the photo difficulty and the player's progress). An answer on a photo is
+// expected easier by an offset (logits off its difficulty) from the player's own history with that photo, [shown,
+// right]: bucket 0 new (the reference, 0: a photo's rating is what a player meets on it the first time), 1 shown never
+// right, 2 right once, 3 right twice or more; a question with several photos takes the mean of its photos' offsets.
+// Buckets 1-3 are rated in the replay itself, on the trusted answers weighed as for the photos: after each answer each
+// one its photos fall in moves by the surprise over the information gathered so far plus the prior's (a Newton step on
+// the log-likelihood, as Glicko moves a rating by what it learns over how sure it is). Prior: the old rule as offsets
+// from a new photo (0, -0.5, -0.5, -1.5), weighing MEM.N answers at the game's usual chance (80%, 4 choices). Served by
+// ?stats=1 (mem; memn the answers behind each bucket); the app (model.js) expects every question with them.
+// core.js MEM, memBucket, memFam and eloReplay are the same: keep them in step (tests/core.test.js compares them).
+const MEM = {N: 10, PRIOR: [0, -PHOTO_W.NEW, -PHOTO_W.NEW, PHOTO_W.KNOWN - PHOTO_W.NEW]};
+const memBucket_ = h => (!h || !h[0] ? 0 : !h[1] ? 1 : h[1] === 1 ? 2 : 3);
+const memFam_ = (hs, mem) => (hs.length ? hs.reduce((t, h) => t + mem[memBucket_(h)], 0) / hs.length : 0);
+// Fisher information of one answer at ability - difficulty x with k choices (the prior's weight: MEM.N at x 1, k 4).
+function infoAt_(x, k){ const s = 1 / (1 + Math.exp(-x)), p = 1 / k + (1 - 1 / k) * s; return ((1 - 1 / k) * s * (1 - s)) ** 2 / (p * (1 - p)); }
 // Every player starts as a beginner, not an average player (Pierre, 2026-11-02: the RAs play from the first day of
 // their course, others know even less): level PLAYER0 = -1, i.e. about 45% right on a photo of average difficulty with
 // 4 choices. Starting at 0 (average), a beginner's misses made the photos look harder than they are.
@@ -309,12 +327,13 @@ function trusted_(rows){  // rows: [who, right 0|1, mode, anonymous, choices]
   return out;
 }
 function stats_(){
-  const cache = CacheService.getScriptCache(), hit = cache.get('stats12');
+  const cache = CacheService.getScriptCache(), hit = cache.get('stats13');
   if (hit) return JSON.parse(hit);
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: {}, ras: {}, conf: {}};
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: {}, ras: {}, conf: {}, mem: MEM.PRIOR.slice(), memn: [0, 0, 0, 0]};
   if (!sh || sh.getLastRow() < 2) return out;
   const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 12).getValues().filter(r => r[0]).sort((a, b) => new Date(a[1]) - new Date(b[1]));
   const P = {}, R = {}, H = {}, sig = x => 1 / (1 + Math.exp(-x));
+  const mem = MEM.PRIOR.slice(), I = [0, 0, 0, 0], N = [0, 0, 0, 0], tau = MEM.N * infoAt_(1, 4);
   // One player whatever the capitalisation of the name (find_ and hash_ match names case-blind; aid_ lowercases too).
   const trust = trusted_(rows.map(r => [lc_(r[0]), Number(r[4]) ? 1 : 0, String(r[5]), lc_(r[0]).indexOf('~anon ') === 0, String(r[11] || '')]));
   rows.forEach(r => {
@@ -324,14 +343,17 @@ function stats_(){
     if (!fs.length) return;
     const g = guess_(mode, r[11]), ra = R[who] = R[who] || [PLAYER0, 0];
     const ph = fs.map(f => P[f] = P[f] || [0, 0, 0, 0]), b = ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);  // one view alone is harder (app.js PICKD.SINGLE)
-    const e = g + (1 - g) * sig(ra[0] - b), d = ok - e, n = ra[1];
-    // The photos move on trusted players' answers, weighed by their experience, against their own history with each photo.
+    // One expectation for the photos and the player, with the player's memory of these photos (v26).
     const hs = fs.map(f => H[who + '|' + f] = H[who + '|' + f] || [0, 0]);
+    const s = sig(ra[0] - b - memFam_(hs, mem)), e = g + (1 - g) * s, d = ok - e, n = ra[1];
+    // The photos and the memory offsets move on trusted players' answers, weighed by their experience.
     if (trust[who]) {
-      const fam = hs.reduce((t, h) => t + (!h[0] ? PHOTO_W.NEW : h[1] >= 2 ? PHOTO_W.KNOWN : 0), 0) / hs.length;
-      const dp = ok - (g + (1 - g) * sig(ra[0] - b - fam)), w = n / (n + PHOTO_W.N);
+      const w = n / (n + PHOTO_W.N), D = (1 - g) * s * (1 - s), v = Math.max(1e-6, e * (1 - e)), A = [0, 0, 0, 0];
       // Counts are weighed too: they damp later steps and tell the app how sure the rating is (photoDiff).
-      ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * dp * w; p[2] += w; p[1] += ok * w; p[3]++; });
+      ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * d * w; p[2] += w; p[1] += ok * w; p[3]++; });
+      hs.forEach(h => A[memBucket_(h)] += 1 / hs.length);
+      for (let j = 1; j < 4; j++) if (A[j]) { I[j] += w * (D * A[j]) ** 2 / v; mem[j] -= w * d * D * A[j] / v / (tau + I[j]); N[j] += A[j]; }
+      N[0] += A[0];
     }
     ra[0] += 0.6 / (1 + n / 40) * d; ra[1]++;
     hs.forEach(h => { h[0]++; h[1] += ok; });
@@ -341,7 +363,9 @@ function stats_(){
   Object.keys(P).forEach(f => out.photos[f] = [Math.round(P[f][0] * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]]);
   const salt = anonSalt_();
   Object.keys(R).forEach(n => out.ras[aid_(n, salt)] = [Math.round(R[n][0] * 100) / 100, R[n][1]]);
-  try { cache.put('stats12', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
+  out.mem = mem.map(x => Math.round(x * 100) / 100);
+  out.memn = N.map(x => Math.round(x * 10) / 10);
+  try { cache.put('stats13', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
   return out;
 }
 
@@ -610,7 +634,7 @@ function users_(p){
         if (!(w in hit)) hit[w] = ids.has(aid_(w, salt));
         if (hit[w]) { sh.deleteRow(i + 2); n++; }
       }
-      try { CacheService.getScriptCache().remove('stats12'); } catch (e) {}
+      try { CacheService.getScriptCache().remove('stats13'); } catch (e) {}
       return {ok: true, answers: n};
     } finally { lock.releaseLock(); }
   }
@@ -635,7 +659,7 @@ function users_(p){
         // Names merged into it before point to the archive too (Removed's Into): a device still signed in with one of
         // them must not log into the new account under the old name (Codex review #352).
         relabel_('Removed', 3, from, into);
-        ['board14', 'stats12'].forEach(k => { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
+        ['board14', 'stats13'].forEach(k => { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
         return {ok: true, answers: answers, reports: reports};
       }
       if (p.userDelete) {
