@@ -1430,7 +1430,14 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     merged (it may predate the replay, whose counts it would undo), but it may hold answers saved since by a device on
     an app from before the replay, which never adopts one: so the device's applied version goes back to the copy's and
     its next save (asked for at once after a pull) brings the replay of the whole log again, every device's answers
-    counted once (Codex review #399: 2 answers adopted, 1 saved by an older app, gave 2 again). Except the copy this
+    counted once (Codex review #399: 2 answers adopted, 1 saved by an older app, gave 2 again). A copy under newer
+    rules than the device applied (another device adopted them) is merged, but a learned mark it lacks is not taken
+    away by the merge: the device's own adoption of the same replay decides it, with this device's card (Codex review
+    #399: the merge took the mark first, so no card here). A replay is adopted only if every answer the device still
+    queues is newer than the replay's last one: answers played offline before answers another device logged since
+    would count after them, out of time order (Codex review #399: 20 right answers then 10 misses gave pg 0.96 and ten
+    right answers last, instead of 0.19 and ten misses); the device then adopts nothing and marks no version applied,
+    and the save that logs them brings the replay of the whole log in time order. Except the copy this
     device saved or loaded last, unchanged since (the sheet's revision, which every save bumps, an older app's
     included, is still the one this device holds, `sync.js` `mergeSaved` `mine`): it is already part of the device's
     progress, so it is not merged, whatever its rules version. A save carries the rules version applied when it was
@@ -1456,7 +1463,10 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     the keep rule, the game's own (`core.js` `mxKeeps`, `model.js` `mxKept`: the replay records `lm`, the time of the
     last such miss, and a mark passed before it goes, reason `rules`; Codex review #399: 10 misses logged by a save
     refused after a passed exam left the genus at 100%, its exam never coming back, at a bar of 0.19), so a
-    recalculation alone keeps it, the days answered right (`dd`, `dl`: the device's calendar days, for the comeback), the last
+    recalculation alone keeps it; the exam in course likewise ends at any miss on the genus, shown or given, logged
+    after it began (`lx`, the time of the last miss, against `s.ex.ts`, or the genus's last answer `s.at` for an exam
+    saved before it had a start time), as the game ends it (Codex review #399: a miss over 4 questions passed kept
+    them), the days answered right (`dd`, `dl`: the device's calendar days, for the comeback), the last
     observations shown (`ro`: the log keeps photo files, not observations), right with the corallites in view (`cor`:
     the log does not say which view a photo was in); and the whole record of a genus the log has fewer answers on than
     the device (answers that never reached the log: a replay never loses progress). The opening hold is not in the

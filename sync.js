@@ -105,12 +105,19 @@ function replayAdopt(rp, pending, v, cut, pre) {
       reset = store.get('imr-coral-reset', '') || '',
       me = '~me',
       rows = (pending || []).filter(a => a && a.g && !had.has(String(a.id)) && String(a.t || '') > reset).map(a => logRow(a, me)),
+      last = Number((rp.rec[LEVEL] || {}).at) || 0,
       gen = {...((DATA && DATA.x && DATA.x.gen) || {}), ...((DATA && DATA.gen) || {})},
       R = rows.length
         ? replayProgress(rows, {gen, mem: PMEM, conf: PCONF, start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}}})[me].P
         : rp.rec,
       before = copy(P),
       M = replayedOf({P: R}, P, rp.rv);
+    // Answers of this device's queue older than the replay's last one (an offline device, another one logging since):
+    // on top of the replay they would count after newer answers, out of time order (Codex review #399: 20 right answers
+    // played offline before 10 misses logged elsewhere gave pg 0.96 and ten right answers last, for 0.19 and ten
+    // misses in time order). Not adopted, nor the version marked applied: the save that follows logs them, and its
+    // reply brings the replay of the whole log in time order.
+    if (rows.some(r => r[1] < last)) return false;
     // A mark the replay took away: the former model's (a record learned without s.pg), or a rule of the new version.
     mxRecalc(
       () => {
@@ -244,6 +251,11 @@ function mergeSaved(j) {
     if (rvSaved >= rvApplied()) {
       // In place: other code holds P by name only, but keep the same object anyway.
       const M = mergeProgress(SYNC.base || {}, P, R);
+      // A copy under newer rules than this device applied (another device adopted their replay): a learned mark that
+      // replay took away is not taken here by the merge, which would tell nothing (the mark gone before mxRecalc sees it;
+      // Codex review #399). It stays until this device adopts the same replay (replayAdopt, in this very sync when the
+      // reply carries it, else at the next), which decides it with this device's own card (the cards are per device).
+      if (rvSaved > rvApplied()) Object.keys(M).forEach(g => g !== LEVEL && P[g] && P[g].mx && M[g] && !M[g].mx && (M[g].mx = P[g].mx));
       Object.keys(P).forEach(g => delete P[g]);
       Object.assign(P, M);
       // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.

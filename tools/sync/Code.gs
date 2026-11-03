@@ -2190,8 +2190,9 @@ const CORE_ = (function () { const module = {exports: {}};
   // results, the photos [shown, right], the choices offered beside it and the genera given instead (the app's s.off,
   // s.conf), u = answers that moved pg, the ability th and its volatility vr (eloStep, as quiz.js answer steps them: on
   // the genus shown only, never on the genus wrongly given),
-  // the run of right answers (streak), the last answer (at), a look-alike duel won (du), the last miss that took the
-  // progress below the learned mark's keep rule (lm, a time: mxKeeps); the global level LEVEL as the
+  // the run of right answers (streak), the last answer (at), a look-alike duel won (du), the last miss on it, shown or
+  // given (lx, a time: it ends an exam in course), the last one that took the progress below the learned mark's keep
+  // rule (lm, a time: mxKeeps); the global level LEVEL as the
   // app keeps it (seeded at the first answer by levelSeed, then one step per answer); per player the rows read (n),
   // replayed (used: with e and th) and on a photo already shown (rep).
   // Each question's difficulty d (photo difficulty, + 0.5 for a photo shown alone) is recovered from what the app logged
@@ -2295,6 +2296,7 @@ const CORE_ = (function () { const module = {exports: {}};
         // The learned mark (not replayed: replayedOf takes it from the saved copy) is lost, in the game, at a miss that
         // leaves the progress below the keep rule (quiz.js answer, mxKept), on the genus shown as on the genus given: lm,
         // the time of the last such miss, takes away a mark passed before it.
+        if (!ok) s.lx = r[1];
         if (!ok && !mxKeeps(s.pg)) s.lm = r[1];
         if (ok && (/^quiz-duel/.test(mode) || /\|d(\||$)/.test(mode))) s.du = 1;
         // Pierre's rule: a wrong answer counts against the genus given too, as quiz.js answer does it after the global
@@ -2310,6 +2312,7 @@ const CORE_ = (function () { const module = {exports: {}};
           }
           x.h = (x.h + '0').slice(-10);
           x.streak = 0;
+          x.lx = r[1];
           if (!mxKeeps(x.pg)) x.lm = r[1];
         }
         s.h = (s.h + (ok ? 1 : 0)).slice(-10);
@@ -2349,7 +2352,10 @@ const CORE_ = (function () { const module = {exports: {}};
   //   of 2026-11-03), and the mark dropped too when the log has a miss after the exam that the game takes it away at
   //   (r.lm later than s.mx, the time it was passed; 1 before 2026-11-02, so any such miss): misses logged but never in
   //   the saved copy (a save refused, Codex review #399: 10 misses, pg 0.19, still learned) count as the game counts
-  //   them, and a recalculation alone (no such miss after the exam) keeps the mark; the days answered right (dd, dl: the device's calendar days, for the comeback after a break); the
+  //   them, and a recalculation alone (no such miss after the exam) keeps the mark; likewise the exam in course ends at
+  //   any miss on the genus, shown or given, later than its start (r.lx after s.ex.ts; an exam saved before it had its
+  //   start time: after the genus's last answer, s.at), as quiz.js answer ends it (Codex review #399: a miss logged over
+  //   a saved exam of 4 questions passed kept its 4); the days answered right (dd, dl: the device's calendar days, for the comeback after a break); the
   //   last observations shown (ro: the log keeps photo files, not observations); right with the corallites in view
   //   (cor: the log does not say which view a photo was shown in);
   // - the saved record as it is (the same mx rule) for a genus the log has no replayable answer on, or fewer answers on
@@ -2413,7 +2419,7 @@ const CORE_ = (function () { const module = {exports: {}};
         ['dd', 'dl', 'ro', 'cor'].forEach(f => s[f] !== undefined && (o[f] = dup(s[f])));
         if (typeof s.pg === 'number' && s.mx) {
           if (!(r.lm > s.mx)) o.mx = s.mx;
-        } else if (typeof s.pg === 'number' && s.ex) o.ex = dup(s.ex);
+        } else if (typeof s.pg === 'number' && s.ex && !(r.lx > (s.ex.ts || s.at || 0))) o.ex = dup(s.ex);
       }
       out[g] = o;
     });

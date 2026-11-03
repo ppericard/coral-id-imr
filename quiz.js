@@ -466,7 +466,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // typed questions may take one more, its count held at EXAM.n so its % never passes 100).
   if (!good) delete s.ex;
   else if (exq) {
-    const ex = s.ex || {k: 0, v: []};
+    const ex = s.ex || {k: 0, v: [], ts: Date.now()}; // ts: its start, which places it among the logged answers (core.js replayedOf)
     ex.k = Math.min(EXAM.n, ex.k + 1);
     ex.t = (ex.t || 0) + (tq ? 1 : 0);
     ex.v = [...new Set([...ex.v, ph[0].view])];
