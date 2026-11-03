@@ -164,14 +164,17 @@ function renderJourney(name) {
     });
     return;
   }
-  const u = (USERS.users || []).find(x => x.name === name);
+  // A device that never signed in (Pierre, 2026-11-03): '@' + its anonymous id, from Players > Not signed in. Its
+  // answers are all there is: no saved progress, so no cards and no learned genera.
+  const anonId = name[0] === '@' ? name.slice(1) : '',
+    u = anonId ? {name: 'Not signed in · ' + anonId, id: anonId} : (USERS.users || []).find(x => x.name === name);
   if (!u || !u.id) {
     $v.innerHTML = `<div class="adm-shead">${back}<h2>${esc(name)}</h2></div><p class="note">${u ? 'No anonymous id for this player yet (sheet script v13).' : 'No player by this name.'}</p>`;
     bindJReload();
     return;
   }
   const R = (ANS.rows || []).filter(r => r[0] === u.id).sort((a, b) => a[1] - b[1]);
-  const head = `<div class="adm-shead">${back}<h2>${esc(name)}</h2>${u.id === MEID ? '<small class="note">you</small>' : ''}</div>`;
+  const head = `<div class="adm-shead">${back}<h2>${esc(u.name)}</h2>${u.id === MEID ? '<small class="note">you</small>' : ''}</div>`;
   if (!R.length) {
     $v.innerHTML = head + '<p class="note">No answers yet.</p>';
     bindJReload();
@@ -194,7 +197,7 @@ function renderJourney(name) {
       .sort((a, b) => a - b);
 
   // 0. The cards: when each genus was shown, and whether (and how) all were opened at once.
-  const C = journeyCards(name),
+  const C = anonId ? {anon: 1, map: {}, offer: null, learned: {}} : journeyCards(name),
     offer = C && C.offer,
     openAt = offer && offer.open ? offer.at : null,
     // A card shown after the player's a-th answer: its time, else that answer's (cards saved before times were kept).
@@ -221,19 +224,21 @@ function renderJourney(name) {
     alls = byKind('all');
   const cardsLine = !C
     ? '<p class="note">Cards: loading…</p>'
-    : C.err
-      ? `<p class="note">Cards: the player's saved progress could not be read (${esc(C.err)}); ↻ to try again.</p>`
-      : `<ul class="adm-jcards">${
-          first.length
-            ? `<li><b>First cards</b> ${first.map(g => `<i>${esc(g)}</i>`).join(', ')} · ${jTime(cardT(CM[first[0]]))}</li>`
-            : '<li><b>First cards</b> none saved (progress from before the cards, or played on another device not synced yet)</li>'
-        }<li><b>Cards one at a time</b> ${singles.length}</li>${
-          openAt != null
-            ? `<li><b>Opened all genera</b> after answer ${openN} · ${jTime(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${alls.length} genera at once</li>`
-            : offer
-              ? `<li><b>Offer to open all</b> declined after answer ${offer.at}${offer.t ? ' · ' + jTime(offer.t) : ''}</li>`
-              : '<li><b>Open all genera</b> not used</li>'
-        }</ul>`;
+    : C.anon
+      ? '<p class="note">Cards: not saved (not signed in).</p>'
+      : C.err
+        ? `<p class="note">Cards: the player's saved progress could not be read (${esc(C.err)}); ↻ to try again.</p>`
+        : `<ul class="adm-jcards">${
+            first.length
+              ? `<li><b>First cards</b> ${first.map(g => `<i>${esc(g)}</i>`).join(', ')} · ${jTime(cardT(CM[first[0]]))}</li>`
+              : '<li><b>First cards</b> none saved (progress from before the cards, or played on another device not synced yet)</li>'
+          }<li><b>Cards one at a time</b> ${singles.length}</li>${
+            openAt != null
+              ? `<li><b>Opened all genera</b> after answer ${openN} · ${jTime(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${alls.length} genera at once</li>`
+              : offer
+                ? `<li><b>Offer to open all</b> declined after answer ${offer.at}${offer.t ? ' · ' + jTime(offer.t) : ''}</li>`
+                : '<li><b>Open all genera</b> not used</li>'
+          }</ul>`;
 
   // Learned genera and when: the answer that passed the exam, i.e. the last right exam question (|x) on the genus
   // (Pierre, 2026-11-02: "you know which question validated the exam"). Once learned a genus gets no more exam
@@ -428,7 +433,7 @@ function renderJourney(name) {
       ],
       ['Level', lv == null ? '–' : sgn(lv)],
       ['Genera met', `${J.marks.length}/${total}`],
-      ['Learned', `${u.learned}/${u.total || total}`],
+      ...(anonId ? [] : [['Learned', `${u.learned}/${u.total || total}`]]), // not saved for a device that never signed in
       ['Days', dayKeys.length],
       ['Sessions', J.S.length],
       ...(RT.length ? [['Median time', RT[Math.floor(RT.length / 2)].toFixed(1) + ' s']] : []),

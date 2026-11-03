@@ -4292,10 +4292,10 @@ function renderUsers() {
           `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${u.id && u.id === MEID ? ' me' : ''}" data-uopen="${esc(u.name)}">${UCOLS.map(([k]) => `<td>${cell(k, u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
       ).join('')}</tbody></table></div></section>`) +
     (anon.length
-      ? `<details class="adm-uremoved"><summary>Not signed in (${anon.length})</summary><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th>Level</th><th>Answers</th><th>Right</th><th>First</th><th>Last</th></tr></thead><tbody>${anon
+      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th><th>Level</th><th>Answers</th><th>Right</th><th>First</th><th>Last</th></tr></thead><tbody>${anon
           .map(
             ([id, a]) =>
-              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><code>${esc(id)}</code></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td><td>${days(a.first)}</td><td>${days(a.last)}</td></tr>`
+              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#~journey/@${encodeURIComponent(id)}" title="Journey"><code>${esc(id)}</code></a></td><td>${RAS[id] ? sgn(RAS[id][0]) : '–'}</td><td>${a.n}</td><td>${pct(a.ok, a.n)}</td><td>${days(a.first)}</td><td>${days(a.last)}</td></tr>`
           )
           .join(
             ''
