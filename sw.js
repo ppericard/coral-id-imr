@@ -1,24 +1,29 @@
 // Offline cache: app shell first, then photos as they are viewed.
-const V = 'imr-coral-id-v278';
+const V = 'imr-coral-id-v279';
 // Photos live in their own cache that no deploy deletes (code review 2026-11-01, H3): bumping V used to wipe every
 // offline photo. Capped at PH_MAX entries, oldest first out (cache keys keep insertion order).
 const PH = 'imr-photos-v1',
   PH_MAX = 2500;
+// The R2 bucket the pages read the photos from (core.js PHOTO_BASE, where the switch is; this only lets the worker cache
+// them and fall back to the site): same paths as the site's img/.
+const PHOTO_RETRY = 800, // as core.js PHOTO_RETRY
+  R2 = 'https://pub-934250f83b884a4f890497f2027ce251.r2.dev',
+  SITE = new URL('./', location).href;
 const SHELL = [
   './',
   'index.html',
   'app.css?v=119',
-  'core.js?v=29',
-  'app.js?v=181',
+  'core.js?v=30',
+  'app.js?v=182',
   'sync.js?v=17',
   'progress.js?v=12',
   'model.js?v=17',
-  'quiz.js?v=21',
+  'quiz.js?v=22',
   'learn.js?v=4',
   'flag.js?v=9',
   'quality.json?v=3',
   'picks.json?v=1',
-  'data.json?v=33',
+  'data.json?v=34',
   'forms.json?v=7',
   'icon.svg',
   'fonts/source-sans-3-normal.woff2',
@@ -26,15 +31,15 @@ const SHELL = [
   'fonts/barlow-condensed-700-normal.woff2',
   'manifest.webmanifest',
   'curation.json',
-  'proto/lab.js?v=70',
+  'proto/lab.js?v=71',
   'proto/lab.css?v=51',
   'home-art.js?v=4',
-  'home.js?v=26',
+  'home.js?v=27',
   'home.css?v=22',
   'tour.js?v=14',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...['finder', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'type', 'pairs', 'gallery'].map(
-    f => `proto/${f}.js?v=69`
+    f => `proto/${f}.js?v=70`
   )
 ];
 const get = async (c, u, n = 3) => {
@@ -114,26 +119,52 @@ const trim = async c => {
   const ks = await c.keys();
   for (const k of ks.slice(0, Math.max(0, ks.length - PH_MAX))) await c.delete(k);
 };
+// Photos: cache first; only good replies are kept, so a passing 404 is not stored for good. A photo is the same file on
+// R2 and on the site, so each is looked up under both addresses (photos cached from the site before the switch to R2
+// stay offline, and back again if the switch is undone). From R2 it is asked in CORS mode whatever the page asked: an
+// <img> asks no-cors, whose opaque reply cannot be checked (a 404 would be kept) and weighs ~7 MB of quota each in
+// Chrome; the bucket allows the site (CORS). If R2 fails (out of reach, an error), the site's copy is served instead.
+const photo = async (req, u) => {
+  const c = await caches.open(PH),
+    r2 = u.origin === R2,
+    path = r2 ? u.pathname.slice(1) + u.search : u.href.startsWith(SITE + 'img/') ? u.href.slice(SITE.length).replace(/#.*$/, '') : '',
+    twin = path && (r2 ? SITE : R2 + '/') + path,
+    hit = (await c.match(req, {ignoreVary: true})) || (twin && (await c.match(twin, {ignoreVary: true})));
+  if (hit) return hit;
+  const keep = res => {
+    if (res.ok) {
+      const cl = res.clone();
+      c.put(req.url, cl).then(() => trim(c));
+    }
+    return res;
+  };
+  if (!r2) return fetch(req).then(keep);
+  // Asked twice, PHOTO_RETRY ms apart (core.js photoRetry: a passing error gets a second try on R2), before the site.
+  for (let k = 0; k < 2; k++) {
+    try {
+      const res = await fetch(u.href, {mode: 'cors', credentials: 'omit'});
+      if (res.ok) return keep(res);
+      // A file missing on R2 (404: not mirrored yet) is that file's matter, not retried; any other error is R2's.
+      if (res.status === 404) return fetch(twin).then(keep);
+    } catch (err) {}
+    if (!k) await new Promise(ok => setTimeout(ok, PHOTO_RETRY));
+  }
+  r2Down();
+  return fetch(twin).then(keep);
+};
+// R2 failed (Codex review #392): the pages are told, so their next photos are asked from the site straight away (app.js
+// R2 false, as when an <img> fails without the worker) instead of trying R2 first, file after file. A reload tries R2 again.
+const r2Down = () =>
+  self.clients
+    .matchAll({type: 'window'})
+    .then(cs => cs.forEach(c => c.postMessage({t: 'imr-r2-down'})))
+    .catch(() => {});
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
-  if (u.origin !== location.origin || e.request.method !== 'GET') return;
-  // Photos: cache first; only good replies are kept, so a passing 404 is not stored for good.
-  if (u.pathname.includes('/img/'))
-    e.respondWith(
-      caches.open(PH).then(c =>
-        c.match(e.request).then(
-          r =>
-            r ||
-            fetch(e.request).then(res => {
-              if (res.ok) {
-                const cl = res.clone();
-                c.put(e.request, cl).then(() => trim(c));
-              }
-              return res;
-            })
-        )
-      )
-    );
+  if (e.request.method !== 'GET') return;
+  if (u.origin === R2 ? u.pathname.startsWith('/img/') : u.origin === location.origin && u.pathname.includes('/img/'))
+    e.respondWith(photo(e.request, u));
+  else if (u.origin !== location.origin) return;
   // Versioned files (?v= in the URL: a new version is a new URL) and the fonts never change: cache first, no network at
   // all once cached (Pierre, 2026-11-01: fluid on poor connections; each launch used to revalidate every file).
   else if (u.searchParams.has('v') || u.pathname.includes('/fonts/'))

@@ -123,15 +123,16 @@ async function overlays(b, base) {
       b4 !== 'Smoke B'
     )
       fails.push(`achievement toast over a card: ${JSON.stringify([s1, s2, s3, s4, b4])}`);
-    // K10: a card photo that fails (here every outside host is cut off, as offline) never shows a broken-image icon.
-    const off = await p.evaluate(() => {
-      const L = [...BENTHIC, ...BONUS, ...Object.keys(DATA.gen)].filter(
-        n => GX(n) && cover(GX(n)) && !img(cover(GX(n)), 's').startsWith('img/')
-      );
-      if (L.length) introShow([L[0]], false);
-      return L[0];
-    });
-    if (off) {
+    // K10: a card photo that fails (as offline: here its files are cut off on R2 and on the site; Millepora's used to
+    // come from iNaturalist, cut off like every outside host) never shows a broken-image icon.
+    const off = await p.evaluate(() => BENTHIC[0]),
+      offF = await p.evaluate(n => cover(GX(n)).f, off);
+    await c.route(
+      u => u.pathname.includes(`/img/${offF}`),
+      r => r.abort()
+    );
+    await p.evaluate(n => introShow([n], false), off);
+    {
       await p.waitForTimeout(500);
       const v = await p.evaluate(() => {
         const i = document.querySelector('.unlock img');

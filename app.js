@@ -99,9 +99,16 @@ const inat = (p, sz) => p.src.replace('/original.', `/${sz}.`);
 // A recropped photo keeps its file name, so its URL carries the crop (cr) and rewrite count (iv): without it the
 // service worker (photos cache-first) and the browser kept the old file for some sizes (-s 480 px vs 1600 px).
 const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '');
+// The site's photos come from Cloudflare R2 (core.js PHOTO_BASE) while R2 answers: false once an R2 photo failed on this
+// page (photoFail below), then the site's own img/ for the rest of the visit.
+let R2 = !!PHOTO_BASE;
+// A file of img/ (a photo, page art), where this page reads it.
+const photoUrl = path => (R2 ? PHOTO_BASE : '') + path;
+// One of the site's photo files, on R2 or on the site (not an iNaturalist photo).
+const ownPhoto = u => photoLocal(u || '').startsWith('img/');
 // Four files per photo (tools/photos.py): 240 ('t'), 480 ('s'), 960 ('m') and 1600 px (none) on the long side.
 // iNaturalist serves 500 (medium) and 1024 px (large).
-const loc = (p, s) => `img/${p.f}${s ? '-' + s : ''}.webp${ver(p)}`;
+const loc = (p, s) => photoUrl(`img/${p.f}${s ? '-' + s : ''}.webp${ver(p)}`);
 const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size));
 // Photo quality (Pierre, 2026-11-01: slow, unstable connections in the Philippines): a big photo (game, sheet cover)
 // gets the smallest file that covers its box at the screen's density, counted up to 2x (a 3x phone sees no difference).
@@ -179,8 +186,10 @@ const fit = px => {
 // chosen (and preloaded) before its layout exists.
 const QBOX = {};
 const qsrc = (p, n = 1) => img(p, fit(QBOX[n] || Math.min(innerWidth, 900) / Math.sqrt(n)));
-// A shown site photo moved to another size: same name, -s / -m / no suffix (iNaturalist photos keep theirs).
-const resized = (u, size) => u.replace(/^(img\/.+?)(-[tsm])?\.webp/, `$1${size ? '-' + size : ''}.webp`);
+// A shown site photo moved to another size: same name, -s / -m / no suffix (iNaturalist photos keep theirs). On the site
+// once R2 has failed on this page.
+const resized = (u, size) =>
+  (R2 ? u : photoLocal(u)).replace(/^((?:https:\/\/[^/]+\/)?img\/.+?)(-[tsm])?\.webp/, `$1${size ? '-' + size : ''}.webp`);
 const PXR = {s: 0, m: 1, '': 2}; // rank of each file size
 const tierOf = u => (/-[ts]\.webp/.test(u) ? 's' : /-m\.webp/.test(u) ? 'm' : '');
 // A photo shown bigger than its file was chosen for gets the bigger file (never a smaller one: it is already loaded); the
@@ -192,13 +201,32 @@ const upsizeImg = (i, px) => {
   if (saver()) return;
   const u = i.getAttribute('src') || '',
     want = fit(px);
-  if (px && !i.dataset.low && u.startsWith('img/') && PXR[want] > PXR[tierOf(u)]) i.src = resized(u, want);
+  if (px && !i.dataset.low && ownPhoto(u) && PXR[want] > PXR[tierOf(u)]) i.src = resized(u, want);
 };
 const upsize = (root = $v) =>
   root.querySelectorAll('img[data-fit]').forEach(i => {
     const r = i.getBoundingClientRect();
     upsizeImg(i, Math.max(r.width, r.height));
   });
+// A photo that fails on R2 (core.js PHOTO_BASE) is asked from R2 once more (core.js photoRetry, PHOTO_RETRY ms later: a
+// passing error), then takes the same file from the site (src, srcset, its 480 px fallback and the game backdrop),
+// before the retries below, and the next photos of this page come from the site too
+// (R2 false): R2 out of reach (a network that blocks it, an outage) costs one failed request, not a missing photo. Under
+// the service worker this is rare: it falls back to the site by itself (sw.js photo). Before every other error listener.
+const photoFail = e => {
+  const i = e.target;
+  if (!(i instanceof HTMLImageElement)) return;
+  // R2 once more first (core.js photoRetry: a passing error), then the site.
+  if (photoRetry(i, toSite)) return e.stopImmediatePropagation();
+  toSite(i) && e.stopImmediatePropagation();
+};
+const toSite = i => {
+  if (!photoToSite(i)) return false;
+  R2 = false;
+  photoToSite(i.closest('figure'));
+  return true;
+};
+document.addEventListener('error', photoFail, true);
 // Unstable connection (Pierre, 2026-11-01): a photo that fails is tried again twice (after 1 s, then 4 s); a game photo
 // then falls back to its small version (data-lo, 480 px), already behind it as a placeholder. If that fails too, the
 // question offers another one instead of a blank frame (nothing is counted).
@@ -223,11 +251,11 @@ $v.addEventListener(
       i.src = i.dataset.lo;
     } else if (i.closest('.qstage') && !$v.querySelector('.q.done, #qfail')) {
       if (navigator.onLine !== false)
-        // By the photo's name (data-f, quiz.js): an iNaturalist URL (Millepora's photos) is not one admin can look up.
+        // By the photo's name (data-f, quiz.js): an iNaturalist URL (a candidate just added, r: 1) is not one admin can look up.
         ev('photo', {
           f:
             i.dataset.f ||
-            resized(u, '')
+            photoLocal(resized(u, ''))
               .replace(/^img\//, '')
               .replace(/\.webp.*$/, '')
         });
@@ -468,7 +496,7 @@ function zoom(list, i, opts = {}) {
         ry = e.offsetY / im.clientHeight;
       lb.classList.toggle('full');
       const u = im.getAttribute('src') || '';
-      if (u.startsWith('img/') && tierOf(u)) im.src = resized(u, '');
+      if (ownPhoto(u) && tierOf(u)) im.src = resized(u, '');
       if (lb.classList.contains('full')) {
         const at = () => {
           lb.scrollLeft = rx * im.clientWidth - lb.clientWidth / 2;
@@ -1430,7 +1458,7 @@ function need(n) {
   }
 }
 Promise.all([
-  getR('data.json?v=33')
+  getR('data.json?v=34')
     .then(r => (loadMark('pop', String(r.headers.get('x-served-by') || '').slice(0, 60)), r))
     .then(okJson)
     .then(d => (window.bootTick && bootTick(), d)),
@@ -1529,6 +1557,8 @@ const swCheck = () => {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', e => {
     if (e.data && e.data.t === 'imr-ver?' && e.ports && e.ports[0]) e.ports[0].postMessage({v: appVer()});
+    // The worker could not get a photo from R2 (sw.js r2Down): this page's next photos come from the site (photoFail).
+    if (e.data && e.data.t === 'imr-r2-down') R2 = false;
   });
   navigator.serviceWorker.startMessages();
 }

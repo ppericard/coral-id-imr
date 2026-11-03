@@ -4,11 +4,12 @@
 # is applied on the way, from the original; a photo already downloaded is redone when its crop changes (data.json "cr").
 # Site photos (not candidates) are recropped from their original the same way when Pierre crops them (Triage, genus page).
 # Run from the repo root; the GitHub Action .github/workflows/approved-photos.yml runs it after every curation.json
-# publish and commits the result. Option --all-remote-unused deletes the local files of candidates nobody added.
+# publish and commits the result (with --games, below). Option --all-remote-unused deletes the local files of candidates nobody added.
 import json, os, sys, urllib.request, urllib.parse, concurrent.futures as cf
 from datajson import load_all, dump_all  # data.json + cand.json (candidates waiting live in cand.json)
 from PIL import Image
 import photos  # the three photo sizes
+from genera import game_genera  # the game genera, as core.js gameOf
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 d = load_all()
 cur = json.load(open('curation.json'))
@@ -19,6 +20,15 @@ todo = [p for L in (d.get('cand') or {}).values() for p in L if p['f'] in added 
 # Site photos (genus views and "more") get Pierre's crop too, redone from their original when it changes.
 todo += [p for g in [*d['gen'].values(), *((d.get('x') or {}).get('gen') or {}).values()] for L in [*g['views'].values(), *(g.get('more') or {}).values()] for p in L
          if p['f'] not in excl and p.get('src') and p.get('cr') != CROP.get(p['f'])]
+# The genera off the IMR list that the games use (Millepora and the bonus genera: core.js BENTHIC + BONUS, read through
+# tools/genera.py, AGENTS.md 14a) were imported as remote photos (r: 1, tools/build_extra.py), shown straight from iNaturalist.
+# --games downloads them like the others, so they are mirrored to R2 too (Photos out of the repo, step 2, 2026-11-03);
+# their credit fields stay as they are. The other extra Dauin genera of data.json "x" (Coral Finder only) stay remote.
+GAMES = [g for g in game_genera(d) if g in ((d.get('x') or {}).get('gen') or {})]
+if '--games' in sys.argv:
+    seen = {id(p) for p in todo}
+    todo += [p for g in GAMES for L in [*d['x']['gen'][g]['views'].values(), *(d['x']['gen'][g].get('more') or {}).values()] for p in L
+             if p.get('r') and p['f'] not in excl and p.get('src') and id(p) not in seen]
 # Only iNaturalist photo hosts (code review 2026-11-01, L8): this runs in a GitHub Action that can write to main.
 HOSTS = ('inaturalist-open-data.s3.amazonaws.com', 'static.inaturalist.org')
 def get(p):
