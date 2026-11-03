@@ -213,7 +213,6 @@ const server = http.createServer((req, res) => {
       CB = {r: 0, t: 0, ok: 0, f: 0};
       G.forEach(g => (P[g] = {ok: 8, ko: 2, h: '1101111011', th: 1.5, pg: 0.5}));
       out.bonusOpen = openChance([...G, ...B]);
-      out.openMax = OPEN.MAX;
       out.bonusPick = B.includes(openPick([...G, ...B].filter(n => !introduced(n))));
       out.bonusOff = (bonusSet(false), pool().filter(isBonus).length);
     }
@@ -312,11 +311,10 @@ const server = http.createServer((req, res) => {
   if (e3.pct <= b3.pct + 10) fails.push(`expert's progress not clearly above a beginner's (${e3.pct}% vs ${b3.pct}%)`);
   for (const [k, v] of Object.entries(R))
     if (v.early && v.early.length) fails.push(`${k}: ${v.early.join(', ')} at 95% before being asked beside a look-alike`);
-  // Nothing shaky: the opening is as wide as it goes, OPEN.MAX (the hotfix's ceiling, 2026-11-03).
-  if (R.bonusOpen !== R.openMax || !R.bonusPick || R.bonusOff)
-    fails.push(
-      `bonus genera not met: opening chance ${R.bonusOpen} (${R.openMax} expected), opened: ${R.bonusPick}; off: ${R.bonusOff} in the pool`
-    );
+  // Nothing shaky: the opening chance is 1 (its pace is then openPace's: at most OPEN.MAX genera in OPEN.WIN answers,
+  // 2026-11-04; the hotfix of 2026-11-03 capped the chance itself at 0.5).
+  if (R.bonusOpen !== 1 || !R.bonusPick || R.bonusOff)
+    fails.push(`bonus genera not met: opening chance ${R.bonusOpen} (1 expected), opened: ${R.bonusPick}; off: ${R.bonusOff} in the pool`);
   if (!(R.cal.with > 1.3 * Math.max(10, R.cal.without)))
     fails.push(`calibration: an unrated photo was not drawn more often: ${JSON.stringify(R.cal)}`);
   if (errs.length) fails.push('page errors: ' + errs.slice(0, 3).join(' | '));
