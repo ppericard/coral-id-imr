@@ -349,3 +349,62 @@ test('response time: where speed tells knowledge, the weighted step predicts bet
   const {RT} = require('../tools/abilityeval.js');
   assert.strictEqual(res.e.scored.filter(o => o.r.p === 'p1' && o.z === null).length, RT.MIN);
 });
+
+// Codex review #431. The level bands' seed: a first answer right, stepped bigger by +U or a time rule before the level
+// is seeded, leaves the bands as they are.
+test('response time: the level bands hold the same answers whatever the time rule, from the first answer', () => {
+  const rows = timedLog(120, 7, 'p1');
+  rows[0][4] = 1;
+  rows[0][3] = rows[0][2];
+  rows[0][12] = 1;
+  const {res} = evaluate(rows, {variants: ['e', 'e+U2', 'e+T2+G', 'e+H1'], min: 1}),
+    L = v => res[v].scored.map(o => o.L);
+  ['e+U2', 'e+T2+G', 'e+H1'].forEach(v => assert.deepStrictEqual(L(v), L('e'), v));
+});
+
+// Timed answers with choices (the look-alike first), so the pooled mix-up scores weigh in (+X).
+function timedCh(n, seed, player, force) {
+  const G = ['Acropora', 'Montipora', 'Porites', 'Goniopora', 'Favites', 'Dipsastraea', 'Platygyra', 'Leptoria'],
+    pair = g => G[G.indexOf(g) ^ 1];
+  return timedLog(n, seed, player).map(row => {
+    const t = row[2],
+      ok = force === undefined ? row[4] : force;
+    return [
+      ...row.slice(0, 3),
+      ok ? t : pair(t),
+      ok,
+      'quiz',
+      ...row.slice(6, 10),
+      [t, pair(t), ...G.filter(g => g !== t && g !== pair(t)).slice(0, 2)].join(' '),
+      ...row.slice(11)
+    ];
+  });
+}
+
+test('response time: the player left out never weighs in the choice of k, not even through the pooled mix-ups', () => {
+  const others = [1, 2, 3].flatMap(i => timedCh(80, 40 + i, 'p' + i)),
+    run = force =>
+      evaluate([...others, ...timedCh(80, 50, 'p4', force)], {variants: ['e+X+M', 'e+X+M+T*'], min: 1, grid: [[0, 0.5, 1]]}).res,
+    a = run(1),
+    b = run(0);
+  assert.ok(
+    a['e+X+M'].scored.some(o => o.cf > 0),
+    'the term is not zero on these answers'
+  );
+  // The training losses for p4's fold are the other players' answers only: the same whatever p4 answered.
+  assert.deepStrictEqual(a['e+X+M+T*'].train.p4, b['e+X+M+T*'].train.p4);
+  assert.strictEqual(a['e+X+M+T*'].picks.p4, b['e+X+M+T*'].picks.p4);
+});
+
+test('response time: a player with only answers logged before sheet v5 does not break the choice of k', () => {
+  const rows = [
+      ...timedLog(20, 61, 'p1'),
+      ...timedLog(20, 62, 'p2'),
+      ...timedLog(20, 63, 'p3').map(r => [...r.slice(0, 7), '', '', ...r.slice(9)])
+    ],
+    {res} = evaluate(rows, {variants: ['e', 'e+T*'], min: 1, grid: [[0, 0.5]]});
+  assert.strictEqual(res.e.all.n, 40);
+  assert.strictEqual(res['e+T*'].all.n, 40);
+  assert.ok(isFinite(res['e+T*'].all.ll));
+  ['p1', 'p2', 'p3'].forEach(p => assert.ok(res['e+T*'].picks[p]));
+});

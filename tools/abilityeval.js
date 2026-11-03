@@ -263,9 +263,14 @@ function replay(list, variant, pooledOf = null) {
     if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
     else P[C.LEVEL] = C.levelSeed(P);
     // The level bands come from a reference level stepped by one fixed rule (refStep), whatever the model (--model)
-    // or the rule replayed, so every run puts the same answers in each band (Codex review #415).
-    if (!L0.seeded) Object.assign(L0, {ok: P[C.LEVEL].ok, ko: P[C.LEVEL].ko, th: P[C.LEVEL].th, seeded: 1});
-    else L0[good ? 'ok' : 'ko']++;
+    // or the rule replayed, so every run puts the same answers in each band (Codex review #415). Its seed too: the
+    // first answer's genus stepped by refStep from where it started (th, before any rule touched it), not the rule's
+    // own step (a time rule or +U moves it before the level is seeded; Codex review #431).
+    if (!L0.seeded) {
+      const g0 = {ok: good ? 1 : 0, ko: good ? 0 : 1, th};
+      refStep(g0, good, d0, k);
+      Object.assign(L0, C.levelSeed({[r.t]: g0}), {seeded: 1});
+    } else L0[good ? 'ok' : 'ko']++;
     refStep(L0, good, d0, k); // d0: the same difficulty whatever the rule, so every rule's bands hold the same answers (Codex review #425)
     // +L: the global level's step without the floor ELO.kmin (its K keeps shrinking with the answers, Pelánek's
     // uncertainty function; the volatility still lets it catch up with a lasting change).
@@ -385,11 +390,13 @@ const prior = (a, b) => {
     B = DATA.gen[b] || (DATA.x || {}).gen[b] || {};
   return (A.look || []).includes(b) || (B.look || []).includes(a) ? C.CONF.LOOK : A.fam && A.fam === B.fam ? C.CONF.FAM : C.CONF.FORM;
 };
-const pooledFor = p => (a, b) => {
+// The pooled score of a pair without the answers of the players named (the player replayed; in a leave-one-player-out
+// fold, the player left out too).
+const pooledFor = (...out) => (a, b) => {
   const k = pkey(a, b),
     c = pc[k] || {all: [0, 0]},
-    own = c[p] || [0, 0];
-  return C.confScore([c.all[0] - own[0], c.all[1] - own[1]], prior(a, b));
+    n = [...new Set(out)].reduce((t, p) => [t[0] - (c[p] || [0, 0])[0], t[1] - (c[p] || [0, 0])[1]], c.all);
+  return C.confScore(n, prior(a, b));
 };
 const players = Object.keys(byPlayer).filter(p => (!only || p === only) && byPlayer[p].length >= min);
 const res = {},
@@ -428,23 +435,34 @@ variants.forEach(v => {
 });
 // A family with '*' (e.g. e+X+M+T*): each value of its grid replayed, the value chosen for each player by leave one
 // player out (the lowest log-loss on the other players' answers), so the score is never fitted on the answers scored.
+// Each training player is replayed again for each fold, its pooled mix-up scores without the answers of the player left
+// out (the app's own term, appTerm, and +X read them), so the outcomes scored never reach the choice (Codex review
+// #431). A player with no answer scored (only answers logged before sheet v5) weighs nothing.
+const foldLoss = (q, v, p) => {
+  C.START.W = v.split('+').includes('W') ? 1 : W0;
+  const {scored} = replay(byPlayer[q], v, pooledFor(q, p));
+  C.START.W = W0;
+  return scored.length ? score(scored).ll * scored.length : 0;
+};
 Object.keys(families).forEach(F => {
   const vs = families[F],
-    ll = (v, p) => res[v].per[p].ll * res[v].per[p].n,
     picks = {},
     per = {},
+    train = {},
     all = [];
   players.forEach(p => {
+    train[p] = {};
     const best = vs.reduce((b, v) => {
-      const t = players.filter(q => q !== p).reduce((a, q) => a + ll(v, q), 0);
+      const t = players.filter(q => q !== p && res[v].per[q].n).reduce((a, q) => a + foldLoss(q, v, p), 0);
+      train[p][v] = t;
       return t < b[1] - 1e-12 ? [v, t] : b;
     }, [null, Infinity])[0];
-    picks[p] = best;
-    per[p] = res[best].per[p];
+    picks[p] = best || vs[0];
+    per[p] = res[picks[p]].per[p];
   });
   // In the order of the other rules' scored answers (player by player), so paired differences line up.
   players.forEach(p => all.push(...res[picks[p]].scored.filter(o => o.r.p === p)));
-  res[F] = {all: score(all), groups: groupScores(all), per, picks};
+  res[F] = {all: score(all), groups: groupScores(all), per, picks, train};
   Object.defineProperty(res[F], 'scored', {value: all});
 });
 // Static reference per player (variant-independent).

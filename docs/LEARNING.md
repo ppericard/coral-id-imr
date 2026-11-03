@@ -1666,7 +1666,9 @@ timed answer):
 - `+Uc`: every right answer's genus step times c, whatever the time: a control, since the app's expectation runs a
   little low (0.79 for 0.82 right) and any rule that makes the steps up bigger could look good for that alone.
 - k, h and c chosen by **leave one player out**: each player is scored with the value best on the other players
-  (`--grid`), never fitted on the answers scored.
+  (`--grid`), never fitted on the answers scored; each fold replays the other players again with pooled mix-up scores
+  that leave out the held-out player's answers too, and the level bands' reference is seeded the same way whatever the
+  rule (Codex review #431).
 
 Paired log-loss difference per answer against the app (`e+X+M`, log-loss 0.4695 on 1,386 answers), × 10⁻³, ± its
 standard error [95%]:
@@ -1674,19 +1676,19 @@ standard error [95%]:
 | Group (answers) | `+T`, k by player out | **`+T+G`** | `+S` (misses too) | `+H` (speed-accuracy) |
 | --- | --- | --- | --- | --- |
 | all (1386) | −1.58 ± 0.60 [−2.75, −0.41] | **−2.15 ± 0.72 [−3.57, −0.73]** | +0.62 ± 0.70 | −2.41 ± 2.37 [−7.05, +2.23] |
-| 5 timed players (1020) | −2.15 ± 0.81 | −2.92 ± 0.98 [−4.84, −1.00] | | |
-| 2 choices (808) | −1.64 ± 0.57 | −2.22 ± 0.69 | +0.19 ± 1.01 | −6.74 ± 2.65 |
-| 3-4 choices (570) | −1.60 ± 1.20 | −2.14 ± 1.45 | +0.92 ± 0.86 | +2.96 ± 4.28 |
-| level < 0 (222) | −0.34 ± 0.53 | +0.01 ± 0.51 | +1.56 ± 1.07 | +6.91 ± 4.22 |
+| 5 timed players (1020) | −2.15 ± 0.81 | −2.93 ± 0.98 [−4.85, −1.01] | | |
+| 2 choices (808) | −1.65 ± 0.57 | −2.22 ± 0.69 | +0.19 ± 1.01 | −6.74 ± 2.65 |
+| 3-4 choices (570) | −1.58 ± 1.20 | −2.15 ± 1.45 | +0.92 ± 0.86 | +2.96 ± 4.28 |
+| level < 0 (222) | −0.31 ± 0.54 | −0.03 ± 0.50 | +1.56 ± 1.07 | +6.91 ± 4.22 |
 | level 0-0.75 (398) | −1.69 ± 0.81 | −2.43 ± 1.08 | +0.27 ± 0.56 | −1.91 ± 2.47 |
-| level ≥ 0.75 (766) | −1.88 ± 0.98 | −2.63 ± 1.17 | +0.53 ± 1.19 | −5.36 ± 3.90 |
-| after a false alarm (175) | −1.93 ± 2.75 | −2.56 ± 3.17 | +1.25 ± 2.66 | +4.24 ± 7.09 |
-| after a fast right (141) | −6.32 ± 2.93 | −8.13 ± 3.51 | −2.35 ± 3.18 | −13.75 ± 15.85 |
-| after a slow right (133) | −4.71 ± 3.97 | −6.10 ± 4.73 | +3.06 ± 4.28 | −9.71 ± 11.86 |
+| level ≥ 0.75 (766) | −1.89 ± 0.98 | −2.63 ± 1.17 | +0.53 ± 1.19 | −5.36 ± 3.90 |
+| after a false alarm (175) | −1.93 ± 2.75 | −2.59 ± 3.18 | +1.25 ± 2.66 | +4.24 ± 7.09 |
+| after a fast right (141) | −6.34 ± 2.93 | −8.09 ± 3.51 | −2.35 ± 3.18 | −13.75 ± 15.85 |
+| after a slow right (133) | −4.73 ± 3.97 | −6.13 ± 4.74 | +3.06 ± 4.28 | −9.71 ± 11.86 |
 
-- **`+T+G` is the best**: k chosen 1.5-2 for every player left out (the weight then mostly sits at its bounds: 1.5 for
+- **`+T+G` is the best**: k chosen 1.5 for 8 of the 9 players left out, 2 for one (the weight then mostly sits at its bounds: 1.5 for
   an answer about 1.3-1.4 times faster than usual or more, 0.5 for one as much slower), the mean expectation unchanged
-  (0.79), no group worse, and all five timed players better (P1 −10.0 ± 3.7, P4 −3.9 ± 2.4, P5 −1.7 ± 1.1, P2
+  (0.79), no group worse, and all five timed players better (P1 −10.0 ± 3.7, P4 −3.9 ± 2.4, P5 −1.8 ± 1.1, P2
   −0.3 ± 2.2, P3 −0.1 ± 0.8; bootstrap over players [−5.35, −0.20]). A fixed small k does part of it: k 0.25 −1.09 ±
   0.31, 0.5 −1.72 ± 0.51, 1 −2.13 ± 0.67.
 - **It is the time, not bigger steps up**: the constant boost alone (`+U`, c 1.5-2 chosen) is within its noise (−2.22 ±
