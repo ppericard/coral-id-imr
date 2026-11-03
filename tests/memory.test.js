@@ -10,7 +10,7 @@ const {MEM, memFam} = require('../core.js');
 function model() {
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
     pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
-    ctx = {PICKD: {P: 0.8}, sig: x => 1 / (1 + Math.exp(-x))};
+    ctx = {PICKD: {P: 0.8}, aimP: () => 0.8, sig: x => 1 / (1 + Math.exp(-x))}; // the reference target (model.js aimP at a middle level)
   vm.createContext(ctx);
   vm.runInContext(pick('function pgMissW', 'const knownP') + '\nthis.M = {pgMissW, pgMemW};', ctx);
   return ctx.M;

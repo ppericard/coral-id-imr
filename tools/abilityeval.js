@@ -29,7 +29,7 @@
 // replayed ability of its genus before it (a genus never answered: playerStart from the replayed progress) against d,
 // with the guess rate of its k choices (typed: none). Scores: log-loss and Brier (lower is better), and calibration,
 // mean predicted against mean right, by the number of choices (2; 3-4; typed) and by the player's replayed global level
-// then (the app's usual level, whatever the rule does to it). Per player: the global level and the answer-weighted mean ability of the genera answered at the end, and, as a
+// then (a reference level stepped by one fixed rule, refStep, so every model and rule has the same answers in each band). Per player: the global level and the answer-weighted mean ability of the genera answered at the end, and, as a
 // reference, a static fit of the same answers (maximum likelihood per genus with a normal prior of sd 1 around the
 // player's own fit over every answer).
 // Approximations: a comeback question's recall is taken as 1; the global level ignores nothing (as the app);
@@ -99,6 +99,18 @@ function normalise(raw) {
 }
 const num = x => (x === '' || x === null || x === undefined ? NaN : Number(x));
 
+// The reference for the level bands: the app's global level as #413 stepped it (model.js abilityStep of 2026-11-03,
+// ELO {kmax 0.8, kmin 0.25, n 15, vr 0.1, vg 2}, with the kmin floor), kept here so that the bands never depend on the
+// model or the rule being replayed.
+const REF = {kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
+function refStep(s, good, d, k) {
+  const g = isFinite(k) ? 1 / k : 0,
+    e = g + (1 - g) * sig(s.th - d),
+    m = (s.ok || 0) + (s.ko || 0);
+  s.vr = Math.round(((1 - REF.vr) * (s.vr || 0) + REF.vr * ((good ? 1 : 0) - e)) * 1000) / 1000;
+  const K = Math.min(REF.kmax, Math.max(REF.kmin, REF.kmax / (1 + m / REF.n)) * (1 + REF.vg * Math.abs(s.vr)));
+  s.th = Math.round(Math.min(REF.hi, Math.max(REF.lo, s.th + K * ((good ? 1 : 0) - e))) * 100) / 100;
+}
 // One player's replay under one rule. Returns the scored answers and the final model.
 function replay(list, variant) {
   const [v, ...flags] = variant.split('+'),
@@ -145,13 +157,11 @@ function replay(list, variant) {
     else M.M.abilityStep(r.t, s, good, d, k);
     if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
     else P[C.LEVEL] = C.levelSeed(P);
-    // The level bands follow the app's level as it is (a shadow record stepped by the usual rule), so a rule that
-    // changes the level (+L, +V) is compared on the same answers in each band.
-    if (!L0.seeded) Object.assign(L0, P[C.LEVEL], {seeded: 1});
+    // The level bands come from a reference level stepped by one fixed rule (refStep), whatever the model (--model)
+    // or the rule replayed, so every run puts the same answers in each band (Codex review #415).
+    if (!L0.seeded) Object.assign(L0, {ok: P[C.LEVEL].ok, ko: P[C.LEVEL].ko, th: P[C.LEVEL].th, seeded: 1});
     else L0[good ? 'ok' : 'ko']++;
-    M.P = {[C.LEVEL]: L0};
-    M.M.abilityStep(C.LEVEL, L0, good, d, k);
-    M.P = P;
+    refStep(L0, good, d, k);
     // +L: the global level's step without the floor ELO.kmin (its K keeps shrinking with the answers, Pelánek's
     // uncertainty function; the volatility still lets it catch up with a lasting change).
     // +V: the level's step without the volatility boost (ELO.vg), so a run of misses does not speed its fall.

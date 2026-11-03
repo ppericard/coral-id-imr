@@ -14,7 +14,17 @@
 // last 2 questions on the genus is held back, and at least 3 colonies stay in rotation (VARIETY) whatever the level, so
 // a struggling player still sees new photos.
 // Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
-const PICKD = {P: 0.8, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
+const PICKD = {
+  P: 0.8,
+  AIM: [
+    [0.5, 0.85],
+    [1.5, 0.75]
+  ],
+  SIGMA: 0.7,
+  VARIETY: 3,
+  FLOOR: 0.05,
+  SINGLE: 0.5
+};
 // One difficulty controller (independent review of 2026-11-02, item 4, after Papousek, Pelanek & Stanislav 2014, who
 // set the question's format so that the predicted success hits one target; 2026-11-03). Two steps, one target:
 // 1. The format of a question on genus n comes from its ability on one schedule (FORMAT, below): how many of the 3 wrong
@@ -27,8 +37,19 @@ const PICKD = {P: 0.8, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
 //    aimed 1.01 below (TARGET_OFF 1.0 before, for every question), 3 plausible choices 0.81, 2 (easy choices, an Again,
 //    a duel) 0.41, a typed one 1.39: before, a question with 2 plausible choices was right about 87% of the time on its
 //    photo and a typed one 73%, so the target moved with the format. docs/LEARNING.md "One difficulty controller".
+// The success aimed for follows the player's global level (Pierre, 2026-11-03: strong players must find the app
+// challenging quickly, and beginners must not be overwhelmed): PICKD.AIM, points [global level, success], 85% up to a
+// level of 0.5 (a beginner, a lecture-level RA: easy first, to hook them; Papoušek, Stanislav & Pelánek 2016 found
+// easy questions better for staying at first, harder ones for learning and coming back), 75% from 1.5 (a strong RA,
+// an expert), a straight line between, flat outside (no cliff). PICKD.P (0.8, the middle) stays the game's reference.
+// docs/LEARNING.md "Beginners and experts".
+function aimP() {
+  const L = (P[LEVEL] || {}).th || 0,
+    [[l0, p0], [l1, p1]] = PICKD.AIM;
+  return p0 + (p1 - p0) * Math.min(1, Math.max(0, (L - l0) / (l1 - l0)));
+}
 const aimOff = (k = 4) => {
-  const x = (PICKD.P - 1 / k) / (1 - 1 / k);
+  const x = (aimP() - 1 / k) / (1 - 1 / k);
   return Math.log(x / (1 - x));
 };
 // The schedule of the format (step 1): points [ability, look-alike traps, share of single-view questions], a straight
@@ -292,7 +313,10 @@ const genusDiff = n => {
 // genus (it held an expert back, each new genus waiting to be drawn again).
 const shaky = n => {
   const s = P[n] || {};
-  return ((s.ok || 0) + (s.ko || 0) > 0 || !!s.h) && !s.mx && 0.25 + 0.75 * sig(ability(n) - genusDiff(n)) < OPEN.P;
+  // The bar moves with the success aimed for (aimP): OPEN.P at the game's reference (PICKD.P), 0.05 higher for a
+  // beginner aimed at 85%, 0.05 lower for a strong player at 75%, so a beginner opens a new genus only once the genera
+  // met are a little more solid (Pierre, 2026-11-03), and the strong ones hold nobody back.
+  return ((s.ok || 0) + (s.ko || 0) > 0 || !!s.h) && !s.mx && 0.25 + 0.75 * sig(ability(n) - genusDiff(n)) < OPEN.P + aimP() - PICKD.P;
 };
 // The chance that a question the path allows to open a genus opens one: the free share of OPEN.K places for shaky genera.
 // Only the genera open now take a place (introduced): a genus closed again by "One at a time" (introBack) keeps its
@@ -826,7 +850,7 @@ function pgWeight(t, chs, k) {
 // had is then the recall-adjusted one, so a miss the rust explains costs less progress (Pierre, 2026-11-02).
 function pgMissW(th, d, k, R = 1) {
   const e = (x, r = 1) => 1 / k + (1 - 1 / k) * r * sig(x);
-  return Math.min(1, e(th - d, R) / PICKD.P);
+  return Math.min(1, e(th - d, R) / aimP());
 }
 // What a right answer on a photo the player knows proves (Pierre, 2026-11-03): only what memory does not explain. The
 // mirror of pgMissW (a ratio of chances, like it): the chance the player had on the same photos new over the chance

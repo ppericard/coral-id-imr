@@ -181,3 +181,60 @@ test('the level a genus was stepped against travels with its ability between dev
   assert.strictEqual(prog.A.th, 1);
   assert.strictEqual(prog.A.lt, undefined);
 });
+
+// Beginners and experts (2026-11-03, docs/LEARNING.md "Beginners and experts"): the success aimed for follows the global
+// level, 85% up to 0.5, 75% from 1.5, a straight line between, flat outside; the photo's aim (aimOff) follows it.
+test('the success aimed for follows the global level, with no cliff', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    vm = require('vm');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
+    pick = (a, b) => src.slice(src.indexOf(a), src.indexOf(b)),
+    ctx = {P: {}, LEVEL: '~level'};
+  vm.createContext(ctx);
+  vm.runInContext(pick('const PICKD =', '// The schedule of the format') + '\nthis.M = {aimP, aimOff, PICKD};', ctx);
+  const at = L => ((ctx.P = {'~level': {th: L}}), ctx.M.aimP()),
+    near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} vs ${b}`);
+  near(at(-1), 0.85);
+  near(at(0.5), 0.85);
+  near(at(1), 0.8);
+  near(at(1.5), 0.75);
+  near(at(3), 0.75);
+  ctx.P = {};
+  near(ctx.M.aimP(), 0.85, 'a new player is aimed at 85%');
+  // Continuous: no step anywhere between.
+  for (let L = -1; L < 3; L += 0.01) assert.ok(Math.abs(at(L + 0.01) - at(L)) <= 0.001 + 1e-9, `step at ${L}`);
+  // The photo is aimed further below the ability for a beginner (easier) than for a strong player.
+  ctx.P = {'~level': {th: 0}};
+  const easy = ctx.M.aimOff(4);
+  ctx.P = {'~level': {th: 2}};
+  assert.ok(easy > ctx.M.aimOff(4) + 0.5, `${easy} vs ${ctx.M.aimOff(4)}`);
+});
+
+// Codex review #415: the level bands come from one reference level, whatever the model replayed (--model) or the rule
+// (+L): two models whose levels step differently put the same answers in each band.
+test('the level bands are the same answers whatever the model or the rule', () => {
+  const fs = require('fs'),
+    os = require('os'),
+    path = require('path'),
+    E = require('../tools/abilityeval.js');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
+    floored = src.replace('Math.max(n === LEVEL ? 0 : ELO.kmin,', 'Math.max(ELO.kmin,'),
+    file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'abilityeval-')), 'model.js');
+  assert.notStrictEqual(floored, src, 'the level step is found');
+  fs.writeFileSync(file, floored);
+  const rows = log(1.2, 300, 5),
+    L = res => res.scored.map(o => o.L);
+  E.useModel(path.join(__dirname, '..', 'model.js'));
+  const a = E.evaluate(rows, {variants: ['e', 'e+L'], min: 1}).res;
+  E.useModel(file);
+  const b = E.evaluate(rows, {variants: ['e'], min: 1}).res;
+  E.useModel(path.join(__dirname, '..', 'model.js'));
+  assert.deepStrictEqual(L(a.e), L(b.e));
+  assert.deepStrictEqual(L(a['e+L']), L(a.e));
+  // ... while the two models' own levels do differ.
+  assert.notDeepStrictEqual(
+    a.e.scored.map(o => o.pl),
+    b.e.scored.map(o => o.pl)
+  );
+});
