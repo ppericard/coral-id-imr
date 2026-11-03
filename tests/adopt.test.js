@@ -852,3 +852,24 @@ test('achievements taken back: the removals are kept and synced even when this r
   assert.deepStrictEqual(b.achRecheck(), ['learn1']);
   assert.strictEqual(b.rec().learn1, undefined);
 });
+
+// Codex review #444: this device's answers replayed on top of an adopted replay follow the rules of the script that sent
+// it. Before sheet v32 (core.js RT_SHEET) the answer time weighs nothing, as in the live game (model.js rtOn): the
+// replay on top must not weigh it either (AGENTS.md 7a); from v32, it does, as the sheet's own replay would.
+test('a replay adopted from a script before v32 replays the pending answers without the answer time (Codex review #444)', () => {
+  // 20 right answers on Acropora, timed: fast ones first, slower later, so the weights are far from 1 once there is a median.
+  const pending = Array.from({length: 20}, (_, i) => ({...qa('p' + i, i), a: 'Acropora', ok: 1, rt: i < 12 ? 6 : 2.5}));
+  const rows = pending.map(a => C.logRow(a, '~me')),
+    start = {'~me': {P: {}, n: 0, used: 0, rep: 0}},
+    gen = {...DATA.x.gen, ...DATA.gen},
+    th = time => C.replayProgress(rows, {gen, conf: {}, start, time})['~me'].P.Acropora.th;
+  assert.notStrictEqual(th(true), th(false), 'the time changes the ability on these answers');
+  for (const [v, time] of [
+    [C.RT_SHEET - 1, false],
+    [C.RT_SHEET, true]
+  ]) {
+    const a = app();
+    assert.strictEqual(a.replayAdopt({rv: C.RV, n: 0, rec: {}, ids: []}, pending, v), true);
+    assert.strictEqual(a.ctx.P.Acropora.th, th(time), `script v${v}: ability ${a.ctx.P.Acropora.th}`);
+  }
+});

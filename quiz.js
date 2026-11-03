@@ -99,9 +99,9 @@ const typeRead = (m, text) =>
         : `You wrote the old name, ${esc(m.old)}, read as ${uname(m.g)}.`
       : `You wrote “${esc(text)}”, read as ${uname(m.g)}.`;
 // Time to answer and photo enlarged (Pierre, 2026-11-02: a right answer that needed a long look or an enlarged photo says
-// the photo was harder; logged with each answer to be analysed later, nothing uses them yet; sheet v23 Seconds and
-// Enlarged): the clock starts when the question's first photo is in (its load event, or at once if it already was),
-// starts again when a card or the offer over the question closes (quiz.js introShow, introOfferShow: reading a card is
+// the photo was harder; sheet v23 Seconds and Enlarged; since 2026-11-04 the seconds weigh a right answer's ability
+// steps, core.js rtWeight, the enlarged mark is logged only): the clock starts when the question's first photo is in
+// (its load event, or at once if it already was), starts again when a card or the offer over the question closes (quiz.js introShow, introOfferShow: reading a card is
 // not looking at the photo), and stops while the app is hidden; zm is 1 once a photo of the question is enlarged.
 const QCLOCK = {n: 0, t0: null, off: 0, hid: null, zm: 0};
 const qclockStart = () => {
@@ -434,12 +434,16 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     fam = famOf(target, seenPh),
     dm = d0 + fam + cf;
   pgObs(target, s, good, good ? pgWeight(target, chs, k) * pgMemW(th0, d0, fam, k, rT) : pgMissW(th0, dm, k, rT, aimP()));
-  abilityStep(target, s, good, dm, k);
+  // The answer time (core.js rtWeight, model.js rtOn): a right answer faster than the player's usual moves the genus and
+  // the global level further, a slow one less; against their earlier timed answers (P[LEVEL].rt), the seconds logged.
+  const rw = rtOn() ? rtWeight(P[LEVEL], tm.rt, k, good) : 1;
+  abilityStep(target, s, good, dm, k, rw);
   // Global level (core.js playerStart): the same Elo step over every answer, kept as the pseudo-genus LEVEL.
   // Made at the first answer from the player's history (levelSeed), whose counts already include this answer.
   if (P[LEVEL]) P[LEVEL][good ? 'ok' : 'ko']++;
   else P[LEVEL] = levelSeed(P);
-  abilityStep(LEVEL, P[LEVEL], good, dm, k);
+  abilityStep(LEVEL, P[LEVEL], good, dm, k, rw);
+  rtAdd(P[LEVEL], tm.rt, k); // this answer's time, for the next ones
   // Recent results over every game, newest last: an opening only after a right answer (model.js openRight).
   P[LEVEL].h = ((P[LEVEL].h || '') + (good ? 1 : 0)).slice(-10);
   // The corallites hint is revealed after the answer when it was not opened: seen, but not recognised.
@@ -538,7 +542,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     e: Math.round(100 * (1 / k + (1 - 1 / k) * rT * sig(th0 - dm))) / 100,
     th: th0,
     nw,
-    // Seconds to answer and a photo enlarged before answering (QCLOCK, in question): logged only (sheet v23).
+    // Seconds to answer (they weighed the steps above: rtWeight; the replay reads them back from the log, Code.gs v32)
+    // and a photo enlarged before answering (logged only), QCLOCK in question (sheet v23).
     ...(typeof tm.rt === 'number' ? {rt: tm.rt} : {}),
     zm: tm.zm ? 1 : 0
   };

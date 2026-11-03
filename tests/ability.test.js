@@ -417,3 +417,25 @@ test('response time: with --player, k is still chosen on the other players', () 
   assert.strictEqual(one.res['e+T*'].picks.p1, all['e+T*'].picks.p1);
   assert.deepStrictEqual(one.res['e+T*'].train.p1, all['e+T*'].train.p1);
 });
+
+// The app's own rule (core.js RTIME, rtWeight, rtAdd; rules version 4, 2026-11-04), replayed by +A, is the rule measured
+// as +T1.5+G: the same predictions answer by answer, so the real-log figures of +T*+G stand for what the app does.
+test('response time: the app rule (+A) replays exactly as the measured +T1.5+G, and --rtfit reads the time terms', () => {
+  const C = require('../core.js'),
+    rows = [1, 2, 3].flatMap(i => timedLog(150, 30 + i, 'p' + i)),
+    E = require('../tools/abilityeval.js'),
+    {res} = evaluate(rows, {variants: ['e', 'e+A', 'e+T1.5+G'], min: 1});
+  assert.strictEqual(C.RTIME.K, 1.5);
+  assert.deepStrictEqual(
+    res['e+A'].scored.map(o => o.p),
+    res['e+T1.5+G'].scored.map(o => o.p)
+  );
+  assert.notDeepStrictEqual(
+    res['e+A'].scored.map(o => o.p),
+    res.e.scored.map(o => o.p)
+  );
+  // In timedLog a right answer comes faster than a miss: a clear negative term on the answer itself.
+  const q = E.rtFit(res.e.scored);
+  assert.ok(q.own.b < -0.5 && q.own.n > 300, JSON.stringify(q.own));
+  assert.ok(isFinite(q.next.b) && q.next.n > 100);
+});

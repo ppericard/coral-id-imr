@@ -5,7 +5,8 @@
 // pooledConf). docs/LEARNING.md explains every rule. A classic script like app.js, loaded right after progress.js
 // (index.html, in order); app.js waits for every script (window.BOOT) before its first page. Required like app.js.
 // A quiz question shows the views of ONE colony: colony and closer views, the corallites as a hint (or one view alone).
-// Continuous difficulty (Pierre, 2026-10-31; Elo as in Pelánek 2016 / Duolingo Birdbrain, no time criteria): every
+// Continuous difficulty (Pierre, 2026-10-31; Elo as in Pelánek 2016 / Duolingo Birdbrain, no time between sessions;
+// the seconds of a right answer weigh its step, core.js rtWeight): every
 // question draws from ALL the game photos of the genus, weighted by how close each photo's difficulty (photoDiff) is to
 // the target for this player on this genus and this question's format (aimed so the question is right with the chance
 // PICKD.P whatever its format: the difficulty controller, below). On top:
@@ -768,7 +769,8 @@ function nextTarget(list, draw = weighted) {
 // the answer log steps the ability exactly as the app does; docs/LEARNING.md). Starts at 0 (target = the featured
 // photos), or from the player's global level on a genus never answered (core.js playerStart: their abilities on the
 // genera already answered), so a strong player gets traps, single views and harder photos on a new genus from its first
-// question; no time criteria.
+// question. No time between sessions; the seconds taken to answer weigh a right answer's step (core.js rtWeight, rtOn
+// below; AGENTS.md rule 12).
 const RECENT = 10;
 const recent = n => {
   const s = P[n] || {};
@@ -780,7 +782,11 @@ const misses = h => [...h].filter(x => x === '0').length;
 // docs/LEARNING.md "Global level and genus") and eloStep (the level's step without the kmin floor, kept to 4 decimals;
 // the genus's step marks the level it was taken against, s.lt), shared with the sheet's full replay.
 const ability = n => abilityOf(P, n);
-const abilityStep = (n, s, good, d, k) => eloStep(P, n, s, good, d, k);
+const abilityStep = (n, s, good, d, k, w = 1) => eloStep(P, n, s, good, d, k, w);
+// The answer time in the ability (core.js RTIME, rtWeight; Pierre, 2026-11-04): on only once the sync script replays it
+// (its replies say v >= RT_SHEET, sync.js sheetV), so the sheet's replay never undoes it (AGENTS.md 7a); before, every
+// step has weight 1, as before. The times are recorded either way (rtAdd), as the replay records them from the log.
+const rtOn = () => typeof sheetV === 'function' && sheetV() >= RT_SHEET;
 // For My progress: where the genus's photo difficulty stands, and how many of its game photos the player has seen.
 const photoBand = n => {
   const t = ability(n) - aimOff(4);

@@ -127,6 +127,7 @@ function holdAdopt(h, log, ids) {
 // The replay is the progress of the subject whose answers the sheet logs (core.js SUBJECTS log: the corals): adopted as
 // that subject whatever the subject on screen (inSubject; the fish progress is never replayed, its answers are not logged).
 function replayAdopt(rp, pending, v, cut, pre) {
+  sheetSeen({v});
   const LS = SUBJECTS.find(x => x.log);
   if (LS && LS !== SUBJ) return inSubject(LS.id, () => replayAdopt(rp, pending, v, cut));
   if (!(Number(v) >= RV_SHEET)) return false;
@@ -147,8 +148,16 @@ function replayAdopt(rp, pending, v, cut, pre) {
       rows = (pending || []).filter(a => a && a.g && !had.has(String(a.id)) && String(a.t || '') > reset).map(a => logRow(a, me)),
       last = Number((rp.rec[LEVEL] || {}).at) || 0,
       gen = {...((DATA && DATA.x && DATA.x.gen) || {}), ...((DATA && DATA.gen) || {})},
+      // This device's answers on top, under the rules of the script that sent the replay: the answer time only from
+      // core.js RT_SHEET, as the live game (model.js rtOn; AGENTS.md 7a, Codex review #444).
       R = rows.length
-        ? replayProgress(rows, {gen, mem: PMEM, conf: PCONF, start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}}})[me].P
+        ? replayProgress(rows, {
+            gen,
+            mem: PMEM,
+            conf: PCONF,
+            start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}},
+            time: Number(v) >= RT_SHEET
+          })[me].P
         : rp.rec,
       before = copy(P),
       M = replayedOf({P: R}, P, rp.rv);
@@ -864,6 +873,10 @@ let pvLast = null;
 function sheetSeen(j) {
   if (j && Number(j.v) > 0 && Number(j.v) !== Number(store.get(SHEETV, 0))) store.set(SHEETV, Number(j.v));
 }
+// The script version last seen (0 before any reply): what the app may rely on (AGENTS.md 7a), so a visit offline does
+// what the last one did. Also read by the answer time (model.js rtOn, core.js RT_SHEET); the full replay checks each
+// reply's own v (replayAdopt).
+const sheetV = () => Number(store.get(SHEETV, 0)) || 0;
 const pvGenus = h => {
   const g = String(h || '').replace(/^#/, '');
   let n = g.slice(2);
