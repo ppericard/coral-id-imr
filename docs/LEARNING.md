@@ -1655,8 +1655,8 @@ is not in the simulation.
   knowledge with them (strong RA 0.77, beginner 0.48): rejected; 2: 33-35 genera, strong RA 0.81: rejected; the cap
   alone: knowledge as `main`, but nothing stops a run of openings whose genera are never asked. Real log (rule 14g):
   the rule only changes which question comes, not the Elo's predictions, so the log's log-loss is unchanged by
-  construction; measured instead on the collapsed run's logged sequence: of its 7 cards in 16 answers, the unasked rule
-  lets 4 through (each then at a chance of at most 0.5), the three never-asked genera among the blocked.
+  construction; measured instead on the collapsed run's logged sequence: of its 7 cards in 16 answers, 4 pass the
+  unasked rule (each then at a chance of at most 0.5) and 3 are blocked, 2 of them genera the run never asked.
 - 2026-11-02, Pierre: anonymous answers do not rate photos; sign in to count (reversed the same day, below); stats only from players above chance;
   developer test answers deleted (admin anonDelete); first-answer-only rejected; experience weight and history-aware
   repeats; players start as beginners.
