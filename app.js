@@ -1566,12 +1566,13 @@ function route() {
   // A card (.unlock: new genus, bonus genus, the offer to open all, sign-in) belongs to the page it opened on: leaving that
   // page (Back, a tab, a link) closes it and its keys (new-player walkthrough 2026-11-02: phone Back from the quiz left the
   // card over Home). A redraw of the same page keeps it. First-meeting cards are met when shown: the rest come next time.
-  if (h !== routeFrom) document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+  const left = h !== routeFrom;
+  if (left) document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
   // Load times (loadMark): the first page drawn, the quiz opened, the first other page.
   if (!('p0' in LOADM)) {
     loadMark('p0', h || 'home');
     loadMark('t0');
-  } else if (h !== routeFrom && (h || 'home') !== LOADM.p0) loadMark('nx', h || 'home');
+  } else if (left && (h || 'home') !== LOADM.p0) loadMark('nx', h || 'home');
   routeFrom = h;
   // Home lives at the clean URL; an old #home link is rewritten to it.
   if (h === 'home') history.replaceState({d: pageDepth}, '', location.pathname + location.search);
@@ -1619,7 +1620,7 @@ function route() {
   else if (h === 'about' && window.viewAbout) viewAbout();
   else if (h.startsWith('quiz-duel')) {
     const [, a, b] = h.split('|');
-    quizDuel(a, b);
+    quizDuel(a, b, left); // a page just opened starts a new duel run (quiz.js DUELRUN)
   } else if (h.startsWith('lab') && window.viewLab) viewLab(h);
   else if (window.labTool && labTool(h)) {
   } else if ((!h || h === 'home') && window.viewHome) viewHome();

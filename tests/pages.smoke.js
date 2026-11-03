@@ -175,6 +175,7 @@ async function overlays(b, base) {
       ['genus', () => introShow([slateGenera()[1]], false)],
       ['tip', () => introOfferShow()],
       ['tip', () => backShow()],
+      ['tip', () => reliefShow('quiz-duel', ['Pocillopora', 'Stylophora'])],
       ['bonus', () => bonusOfferShow()],
       ['feature', () => (store.set(RECALC.KEY, RECALC.L[RECALC.L.length - 2].id), recalcNotice())],
       ['account', () => signinNudge(false, false)],
@@ -1574,6 +1575,9 @@ async function tipsCheck(b, base) {
     // plan): the tip waits for a later break, never a genus card right after it (Codex review of PR #440).
     {
       const [c, p, errs] = await open(w, h, {q: 60, z: 0}, '#quiz-duel', true); // q 60: any break will do
+      // The hold already on: these misses never take it across INTRO.HOLD, so the Duel tab's relief card (checked in
+      // duelReliefCheck) does not take the break before the tip.
+      await p.evaluate(() => (HOLDS = 9));
       let shown = 0;
       for (let i = 0; i < 10; i++) {
         const r = await play(p);
@@ -1601,6 +1605,247 @@ async function tipsCheck(b, base) {
       let n = 0;
       for (let i = 0; i < 12; i++) if ((await play(p)).next) n++;
       if (n) fails.push(`${W} shown to ${JSON.stringify(u)}`);
+      await c.close();
+    }
+  }
+  return fails;
+}
+// The Duel tab's relief card (quiz.js reliefNote / reliefArm / reliefShow; Pierre, 2026-11-04), on a phone and a desktop,
+// on "Drill this pair" (#quiz-duel|Pocillopora|Stylophora). The hold's sum is set just under INTRO.HOLD, as a run of misses
+// would leave it. Checks: the miss that takes it across shows the card at Next, never with the answer itself; one card
+// on screen, its kind, words (no number) and buttons, faded at first; Keep drilling goes on to the next duel and the card
+// never comes again in that run, even when the hold falls back under INTRO.HOLD and crosses it again; Compare them opens
+// the side-by-side comparison of the two genera, Mix in other genera the photo quiz; each showing logged with its
+// choice (item tip:duelhold); a new run that starts with the hold already on gets none (no crossing from below); never
+// in the photo quiz; never over an achievement toast (it waits for the next break while the hold is on). The photo of
+// a duel aims lower while the hold is on (quiz.js planDuel, model.js holdEase). Returns the failures.
+async function duelReliefCheck(b, base) {
+  const fails = [],
+    PAIR = '#quiz-duel|Pocillopora|Stylophora';
+  const open = async (w, h, at = PAIR) => {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
+    await c.route(
+      x => !x.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(() => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+    });
+    await c.addInitScript(TIPS_OFF);
+    const p = await c.newPage();
+    const errs = [];
+    p.on('pageerror', e => errs.push(String(e)));
+    await p.goto(base + at);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    // The genus asked, for the checks below to answer right or wrong on purpose (quizDuel draws it).
+    await p.evaluate(() => {
+      const q0 = question;
+      question = (...a) => ((window.__T = a[1]), q0(...a));
+    });
+    return [c, p, errs];
+  };
+  // The question on screen redrawn so its genus is known (__T), then answered right or wrong; toasts closed unless
+  // toast (one is then raised before Next); then Next. Returns whether the card was up after the answer and after Next.
+  const play = async (p, {right = false, toast = false, next = true} = {}) => {
+    await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
+    if (!(await p.evaluate(() => !!window.__T))) {
+      await p.evaluate(() => route());
+      await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
+    }
+    const at = await p.evaluate(right => {
+      document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+      const t = window.__T,
+        bs = [...document.querySelectorAll('#view [data-c]')];
+      window.__T = null;
+      (right ? bs.find(x => x.dataset.c === t) : bs.find(x => x.dataset.c !== t)).click();
+      return !!document.querySelector('.reliefcard');
+    }, right);
+    if (!next) return {at};
+    const dis = await p.evaluate(toast => {
+      document.querySelectorAll('.achpop').forEach(x => x.remove());
+      achQ.length = 0;
+      achBusy = false;
+      if (toast) achPop({tier: 1, icon: '🧪', title: 'Smoke relief', desc: 'test'});
+      document.getElementById('next').click();
+      const B = [...document.querySelectorAll('.reliefcard [data-b], .reliefcard [data-keep]')];
+      return B.length === 3 && B.every(x => x.disabled);
+    }, toast);
+    await p.waitForTimeout(150);
+    return {at, dis, next: !!(await p.$('.reliefcard'))};
+  };
+  // One question played; 1 when the card came at its Next (then closed with Escape, Keep drilling: the run goes on).
+  const shown = async (p, o) => {
+    if (!(await play(p, o)).next) return 0;
+    await p.keyboard.press('Escape');
+    await p.waitForTimeout(300);
+    return 1;
+  };
+  const evs = p =>
+    p.evaluate(() =>
+      JSON.parse(localStorage.getItem('reefid-evq') || '[]')
+        .filter(x => x.src === 'tip:duelhold')
+        .map(x => `${x.k}:${x.r}:${x.m}`)
+    );
+  const card = p =>
+    p.evaluate(() => {
+      const d = document.querySelector('.reliefcard'),
+        u = d.querySelector('.ulcard').getBoundingClientRect();
+      return {
+        n: document.querySelectorAll('.unlock').length,
+        kind: d.querySelector('.ulcard').dataset.k,
+        kick: d.querySelector('.ulkick').textContent,
+        title: d.querySelector('h3').textContent,
+        body: d.querySelector('.ulpanel p:not(.ulkick)').textContent,
+        btns: [...d.querySelectorAll('[data-b], [data-keep]')].map(x => x.textContent),
+        digits: /\d/.test(d.textContent),
+        done: !!document.querySelector('#view .q.done'),
+        wide: document.documentElement.scrollWidth > innerWidth || u.left < 0 || u.right > innerWidth || u.bottom > innerHeight
+      };
+    });
+  const pick = async (p, sel) => {
+    await p.waitForTimeout(700); // the buttons' first moments (TIP.WAIT)
+    await p.click(`.reliefcard ${sel}`);
+    await p.waitForTimeout(400);
+  };
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    const W = `${w}px duel relief:`;
+    // Keep drilling, then once a run.
+    {
+      const [c, p, errs] = await open(w, h);
+      await p.evaluate(() => (HOLDS = 0));
+      for (let i = 0; i < 2; i++) if ((await play(p, {right: true})).next) fails.push(`${W} shown with the hold off`);
+      // The duel's photo aims lower with the hold on: the same pair drawn 300 times each way for a player well on the way
+      // on both genera (whose duels show single views often), the photo difficulty as the answer counts it (one view alone
+      // harder by PICKD.SINGLE).
+      const aim = await p.evaluate(() => {
+        const P0 = JSON.stringify(P);
+        ['Pocillopora', 'Stylophora'].forEach(n => (P[n] = {...(P[n] || {}), ok: 10, ko: 2, h: '1101101111', th: 1, pg: 0.5}));
+        const d = h => {
+          HOLDS = h;
+          let s = 0;
+          for (let i = 0; i < 300; i++) {
+            const q = planDuel('Pocillopora', 'Stylophora'),
+              L = q[4].shown;
+            s += (L.length === 1 ? PICKD.SINGLE : 0) + L.reduce((t, x) => t + photoDiff(q[1], x), 0) / L.length;
+          }
+          return s / 300;
+        };
+        const r = {off: d(0), on: d(INTRO.HOLD + 3)};
+        HOLDS = 0;
+        P = JSON.parse(P0);
+        return r;
+      });
+      if (!(aim.on < aim.off - 0.05)) fails.push(`${W} the duel's photo not aimed lower with the hold on: ${JSON.stringify(aim)}`);
+      await p.evaluate(() => (HOLDS = INTRO.HOLD - 0.05));
+      const r = await play(p);
+      const h1 = await p.evaluate(() => HOLDS);
+      if (!(h1 >= 1.5)) fails.push(`${W} the miss did not take the hold across: ${h1}`);
+      if (r.at) fails.push(`${W} shown with the answer, before Next`);
+      if (!r.next) fails.push(`${W} not shown at the Next after the hold set in`);
+      else {
+        const k = await card(p);
+        if (
+          k.n !== 1 ||
+          k.kind !== 'tip' ||
+          k.kick !== 'Tough pair today' ||
+          k.title !== 'Take a step back?' ||
+          k.body !== 'These two are hard right now. Seeing them side by side often helps more than more photos.' ||
+          k.btns.join() !== 'Compare them,Mix in other genera,Keep drilling' ||
+          k.digits ||
+          !r.dis ||
+          !k.done ||
+          k.wide
+        )
+          fails.push(`${W} the card: ${JSON.stringify({...k, dis: r.dis})}`);
+        await pick(p, '[data-keep]');
+        const nx = await p.evaluate(() => ({
+          q: !!document.querySelector('#view .q:not(.done) [data-c]'),
+          card: !!document.querySelector('.unlock')
+        }));
+        if (!nx.q || nx.card) fails.push(`${W} Keep drilling: ${JSON.stringify(nx)}`);
+        const ev = await evs(p);
+        if (ev.join() !== 'pulse:shown:quiz-duel,pulse:keep:quiz-duel') fails.push(`${W} events: ${JSON.stringify(ev)}`);
+        // Right answers bring the hold back under INTRO.HOLD, misses take it across again: no second card in the run (the
+        // prompt spacing cleared, so it is the run that holds the card back).
+        let again = 0;
+        for (let i = 0; i < 20 && (await p.evaluate(() => introHold())); i++) again += await shown(p, {right: true});
+        await p.evaluate(() => (localStorage.removeItem('reefid-prompt-at'), (HOLDS = INTRO.HOLD - 0.05)));
+        for (let i = 0; i < 3; i++) again += await shown(p);
+        if (again) fails.push(`${W} shown again in the same run (${again} times)`);
+      }
+      if (errs.length) fails.push(`${W} page errors: ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // Compare them; then back in the Duel tab with the hold still on: a new run, no crossing, no card.
+    {
+      const [c, p, errs] = await open(w, h);
+      await p.evaluate(() => (HOLDS = INTRO.HOLD - 0.05));
+      const r = await play(p);
+      if (!r.next) fails.push(`${W} (compare) not shown`);
+      else {
+        await pick(p, '[data-b="1"]');
+        const at = await p.evaluate(() => ({h: decodeURIComponent(location.hash), cmp: !!document.querySelector('#view .cmprow')}));
+        if (!['#cmp-Pocillopora|Stylophora', '#cmp-Stylophora|Pocillopora'].includes(at.h) || !at.cmp || (await p.$('.unlock')))
+          fails.push(`${W} Compare them: ${JSON.stringify(at)}`);
+        const ev = await evs(p);
+        if (ev.join() !== 'pulse:shown:quiz-duel,pulse:cmp:quiz-duel') fails.push(`${W} compare events: ${JSON.stringify(ev)}`);
+        await p.goBack();
+        await p.waitForTimeout(500);
+        await p.evaluate(() => localStorage.removeItem('reefid-prompt-at')); // the run, not the prompt spacing, decides
+        let n = 0;
+        for (let i = 0; i < 3; i++) n += await shown(p);
+        if (n || (await p.evaluate(() => !introHold()))) fails.push(`${W} a new run with the hold already on: ${n} card(s)`);
+      }
+      if (errs.length) fails.push(`${W} page errors: ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // Mix in other genera; a toast up at the Next holds the card for the next break of the run.
+    {
+      const [c, p, errs] = await open(w, h, '#quiz-duel');
+      await p.evaluate(() => (HOLDS = INTRO.HOLD - 0.05));
+      const held = await play(p, {toast: true});
+      if (held.next) fails.push(`${W} shown over an achievement toast`);
+      await p.evaluate(() => document.querySelectorAll('.achpop').forEach(x => x.remove()));
+      let got = false;
+      for (let i = 0; i < 3 && !got; i++) got = (await play(p)).next;
+      if (!got) fails.push(`${W} (mix) not shown at a later break while the hold is on`);
+      else {
+        await pick(p, '[data-b="2"]');
+        const at = await p.evaluate(() => ({
+          h: location.hash,
+          q: !!document.querySelector('#view [data-c]'),
+          card: !!document.querySelector('.reliefcard')
+        }));
+        if (at.h !== '#quiz' || at.card) fails.push(`${W} Mix in other genera: ${JSON.stringify(at)}`);
+        const ev = await evs(p);
+        if (ev.join() !== 'pulse:shown:quiz-duel,pulse:mix:quiz-duel') fails.push(`${W} mix events: ${JSON.stringify(ev)}`);
+      }
+      if (errs.length) fails.push(`${W} page errors: ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // Never in the photo quiz.
+    {
+      const [c, p] = await open(w, h, '#quiz');
+      await p.evaluate(() => (HOLDS = INTRO.HOLD - 0.05));
+      let n = 0;
+      for (let i = 0; i < 3; i++) {
+        await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
+        n += await p.evaluate(() => {
+          const t = SHOWNQ[1];
+          [...document.querySelectorAll('#view [data-c]')].find(x => x.dataset.c !== t).click();
+          document.querySelectorAll('.achpop').forEach(x => x.remove());
+          achQ.length = 0;
+          achBusy = false;
+          document.getElementById('next').click();
+          return document.querySelector('.reliefcard') ? 1 : 0;
+        });
+        await p.evaluate(() => document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove())));
+      }
+      if (n) fails.push(`${W} shown in the photo quiz`);
       await c.close();
     }
   }
@@ -2163,12 +2408,13 @@ async function basicsTeach(b, base) {
 // The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|rest one of
 // the two halves CI runs on separate runners, SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
 // main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Finder, the new player at 390 and
-// admin.html?readonly; overlays: cards, prompts and the one-tap question (run inside main's 390 pass, as always).
-const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'signin', 'replay'],
+// admin.html?readonly; overlays: cards, prompts and the one-tap question (run inside main's 390 pass, as always); relief:
+// the Duel tab's relief card (duelReliefCheck).
+const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief', 'signin', 'replay'],
   WIDTHS = [390, 1280];
 
 (async () => {
-  const run = slot.parts(PARTS, {main: ['main', 'overlays'], rest: ['basics', 'credits', 'visit', 'tips', 'signin', 'replay']}),
+  const run = slot.parts(PARTS, {main: ['main', 'overlays'], rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'signin', 'replay']}),
     ws = slot.widths(WIDTHS);
   await slot('pages.smoke');
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -2780,6 +3026,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('visit')) for (const f of await pagesVisit(b, base)) fails.push(f);
   if (run.has('basics')) for (const f of await basicsTeach(b, base)) fails.push(f);
   if (run.has('tips')) for (const f of await tipsCheck(b, base)) fails.push(f);
+  if (run.has('relief')) for (const f of await duelReliefCheck(b, base)) fails.push(f);
   await b.close();
   if (run.has('signin')) for (const f of await signin(base)) fails.push(f);
   if (run.has('replay')) for (const f of await replayAdoptCheck(base)) fails.push(f);

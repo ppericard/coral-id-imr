@@ -160,6 +160,78 @@ test('look-alikes from the data: core.js dataLook, CONF.N offers and a pooled sc
   assert.strictEqual(C.dataLook(null, 0.5), false);
 });
 
+test('the Duel tab: its photo eased by the opening hold, as every question of the photo quiz but an exam (planDuel)', () => {
+  const src = read('quiz.js'),
+    calls = [],
+    ctx = {
+      pool: () => ['A', 'B', 'C'],
+      GX: n => ({n}),
+      photoSet: (...a) => (calls.push(a), {shown: [{f: 'x'}]}),
+      duelPick: () => ['A', 'B'],
+      pick: L => L[0],
+      introduced: () => true,
+      cover: () => null,
+      uname: n => n,
+      ease: 0,
+      holdEase: () => ctx.ease
+    };
+  vm.createContext(ctx);
+  vm.runInContext(/function planDuel\(a, b\) \{[\s\S]*?\n\}\n/.exec(src)[0] + 'this.planDuel = planDuel;', ctx);
+  for (const [ease, args] of [
+    [0, []],
+    [-0.8, []],
+    [-2.5, ['A', 'B']]
+  ]) {
+    ctx.ease = ease;
+    calls.length = 0;
+    const q = ctx.planDuel(...args);
+    // The duel's own photo: the last photoSet call (a pair from a link is checked with plain calls first).
+    const [t, , shift, k] = calls[calls.length - 1];
+    assert.deepStrictEqual([t, shift, k], ['A', ease, 2], `ease ${ease}`);
+    assert.strictEqual(q[1], 'A');
+  }
+});
+
+test('the Duel tab relief card: due after an answer takes the hold across INTRO.HOLD from below, once a run', () => {
+  const src = read('quiz.js'),
+    ctx = {INTRO: {HOLD: 1.5}, h: 0};
+  ctx.introHold = () => ctx.h >= ctx.INTRO.HOLD;
+  vm.createContext(ctx);
+  vm.runInContext(
+    /let DUELRUN = .*\n/.exec(src)[0] +
+      /const reliefNote = .*\n/.exec(src)[0] +
+      /const reliefDue = .*\n/.exec(src)[0] +
+      'this.R = {note: reliefNote, due: reliefDue, run: () => DUELRUN};',
+    ctx
+  );
+  const {note, due, run} = ctx.R;
+  const step = (r, h1) => {
+    const x = note(r, ctx.h, h1);
+    ctx.h = h1;
+    return x;
+  };
+  let r = run();
+  assert.deepStrictEqual({...r}, {up: 0, shown: 0}, 'a run starts empty');
+  r = step(r, 1.2);
+  assert.strictEqual(due(r), false, 'under INTRO.HOLD');
+  r = step(r, 1.5);
+  assert.strictEqual(due(r), true, 'crossed from below: due');
+  // A break it could not take: still due at the next one while the hold is on, not once it is off.
+  r = step(r, 1.9);
+  assert.strictEqual(due(r), true);
+  r = step(r, 1.4);
+  assert.strictEqual(due(r), false, 'the hold fell back under INTRO.HOLD');
+  r = step(r, 1.6);
+  assert.strictEqual(due(r), true, 'crossed again before it showed');
+  r = {...r, shown: 1};
+  r = step(step(r, 1), 2);
+  assert.strictEqual(due(r), false, 'shown: never again in the run');
+  // A run that starts with the hold already on: no crossing, no card, whatever the misses.
+  ctx.h = 2;
+  r = step(step({up: 0, shown: 0}, 2.7), 3.4);
+  assert.strictEqual(due(r), false);
+});
+
 test('the Again queue: up to CONTRAST.Q pairs, oldest first, none pushed out by a newer one, none twice', () => {
   const src = read('quiz.js'),
     ctx = {};
