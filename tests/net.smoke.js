@@ -83,7 +83,22 @@ const server = http.createServer((req, res) => {
       }
     );
     if (opts.hangCuration) await ctx.route(base + 'curation.json', () => {}); // never answers
-    if (opts.failFull) await ctx.route(/\/img\/[^/]+(?<!-s)\.webp/, r => r.abort('connectionreset'));
+    if (opts.failFull) {
+      await ctx.route(/\/img\/[^/]+(?<!-s)\.webp/, r => r.abort('connectionreset'));
+      // A Millepora photo (iNaturalist, r: 1, app.js img()): its bigger file ('large') fails too and its 480 px one
+      // ('medium') answers, here with a local 480 px file (every other host is cut off, so that check failed whenever
+      // the first question was on Millepora).
+      const small = fs.readFileSync(
+        path.join(
+          ROOT,
+          'img',
+          fs.readdirSync(path.join(ROOT, 'img')).find(f => f.endsWith('-s.webp'))
+        )
+      );
+      await ctx.route(/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/\d+\/(large|medium)\./, r =>
+        /\/large\./.test(r.request().url()) ? r.abort('connectionreset') : r.fulfill({contentType: 'image/webp', body: small})
+      );
+    }
     if (opts.failAll) await ctx.route(/\/img\/.*\.webp/, r => r.abort('connectionreset'));
     const p = await ctx.newPage(),
       errs = [];
