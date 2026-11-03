@@ -47,8 +47,8 @@ const server = http.createServer((req, res) => {
     r => r.abort()
   );
   await ctx.addInitScript(() => {
-    localStorage.setItem('imr-tour', '"done"');
-    localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
+    localStorage.setItem('reefid-tour', '"done"');
+    localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     // Same draws every run: the app's own randomness is seeded too.
     let s = 12345;
     Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;

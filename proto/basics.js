@@ -7,7 +7,7 @@
 // Lab into Learn (Pierre, 2026-11-03): the first step of the Learn path ("0 · Coral basics" before the genus sheets, the
 // first Learn tab); the old #lab-basics links land here (proto/lab.js GRADUATED), and the Tools page keeps a link.
 // Done (Pierre, 2026-11-03: completion recognised): every step seen (the walls step: its four wall types), the checks
-// stay optional; kept in imr-basics (fin), and as the achievement "Coral basics" (feat _basics, synced with the
+// stay optional; kept in reefid-basics (fin), and as the achievement "Coral basics" (feat _basics, synced with the
 // achievements record, progress.js), which the Home line and the first-launch offers read (app.js basicsDone).
 // Add |edit to print photo coordinates on a tap and show the tap targets (for placing labels).
 (() => {
@@ -589,7 +589,7 @@
     routeOf = basicsRoute;
   window.BASICS = {route: routeOf, listed: basicsListed};
   const official = term => (DATA.terms || []).find(x => x[0] === term);
-  const KEY = BASICS_KEY; // app.js: 'imr-basics'
+  const KEY = BASICS_KEY; // app.js: 'reefid-basics'
   const s0 = id => STEPS.find(s => s.id === id) || {};
   // A step seen (the walls step once its four types are), and the module done once every step is.
   const seenStep = id => {

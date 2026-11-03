@@ -186,7 +186,7 @@ const server = http.createServer((req, res) => {
       cov: (document.querySelector('#subnav .adm-subtabs a:nth-child(2)') || {}).getAttribute?.('href'),
       todo: document.querySelector('#modes [data-mode="todo"]').getAttribute('href'),
       players: document.querySelector('#modes [data-mode="players"]').getAttribute('href'),
-      kept: (store.get('imr-admin-view', {}) || {}).cov
+      kept: (store.get('reefid-admin-view', {}) || {}).cov
     }));
     if (mem.cov !== '#~fcov' || mem.todo !== '#~triage' || mem.kept !== '~fcov' || mem.players !== '#~users')
       fails.push(`${w}px: views not remembered ${JSON.stringify(mem)}`);
@@ -789,7 +789,7 @@ const server = http.createServer((req, res) => {
     }));
     if (mv.diff !== 'Photo review' || mv.diffs !== 'Photo stats' || mv.first !== '~pstats')
       fails.push(`${w}px Photo stats tabs: ${JSON.stringify(mv)}`);
-    await p.evaluate(() => store.set('imr-admin-view', {...store.get('imr-admin-view', {}), pstats: '~diff'}));
+    await p.evaluate(() => store.set('reefid-admin-view', {...store.get('reefid-admin-view', {}), pstats: '~diff'}));
     await go('~quality');
     const ps = await p.evaluate(() =>
       [...document.querySelectorAll('#subnav .adm-subtabs a')].find(a => /Photo stats/.test(a.textContent)).getAttribute('href')
@@ -1355,7 +1355,7 @@ const server = http.createServer((req, res) => {
     if (errs.length) fails.push(`${w}px actions: ${errs.slice(0, 3).join(' | ')}`);
 
     const keys = await p.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage)]);
-    const real = keys.filter(k => /^imr-(curation|admin)/.test(k));
+    const real = keys.filter(k => /^reefid-(curation|admin)/.test(k));
     if (real.length) fails.push(`${w}px: demo wrote real admin keys: ${real.join(', ')}`);
     await ctx.close();
   }

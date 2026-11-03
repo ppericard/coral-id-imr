@@ -673,11 +673,11 @@ async function run(browser, base, name, seed) {
     r => r.abort()
   );
   await ctx.addInitScript(st => {
-    localStorage.setItem('imr-tour', '"done"');
-localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
+    localStorage.setItem('reefid-tour', '"done"');
+localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     if (st)
       localStorage.setItem(
-        'imr-photo-stats',
+        'reefid-photo-stats',
         JSON.stringify({t: Date.now(), photos: st.photos || {}, conf: st.conf || {}, ...(st.mem ? {mem: st.mem} : {})})
       );
   }, STATS_JSON);

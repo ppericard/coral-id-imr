@@ -13,10 +13,10 @@ const JOURNEY = {
 };
 let JSORT = 'met';
 // First-meeting cards and Open all genera, from the player's saved progress (sheet userData, admin token): the app keeps
-// them as imr-coral-intro {genus: [answers so far, 1 for the first cards or Open all, time shown, kind]} and
-// imr-coral-intro-offer {at, open, via, t, n} (model.js INTRO; times and via from 2026-11-02), with the back card's choice
+// them as reefid-sync-coral-intro {genus: [answers so far, 1 for the first cards or Open all, time shown, kind]} and
+// reefid-sync-coral-intro-offer {at, open, via, t, n} (model.js INTRO; times and via from 2026-11-02), with the back card's choice
 // (bk keep / one, after answer bat, bn genera closed, time bt; from 2026-11-03), and the first-launch question
-// imr-coral-start {c, t, at, via, n, s, fb, h} (core.js CHOICE, model.js startSet; 2026-11-03). name -> null while loading.
+// reefid-sync-coral-start {c, t, at, via, n, s, fb, h} (core.js CHOICE, model.js startSet; 2026-11-03). name -> null while loading.
 // The learned genera come from the full replay (admin.js progOf), which takes the mastery exams from the same copy.
 const JDATA = {};
 function journeyCards(name) {

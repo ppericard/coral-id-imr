@@ -1,4 +1,4 @@
-// IMR Coral ID: the quiz screens, split out of app.js (2026-11-02, code review L1: one file per part, one piece at a
+// IMR Reef ID: the quiz screens, split out of app.js (2026-11-02, code review L1: one file per part, one piece at a
 // time). A question on screen (question, the session trail, the hint), the stage fitted to the screen (fitStage,
 // fitTiles, fitLow), the answer and its feedback (answer), the one-tap question (pulse), the bonus genera offer,
 // the next question planned and preloaded while the feedback is read (planNext, NEXTQ), the photo quiz (quizPhoto) and
@@ -652,7 +652,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
 // never shown with a card, the tour or an achievement toast on screen or waiting: one that falls too close waits until
 // the gap is met. Counted in answers, never time. One value for all three: the answers count when the last one showed
 // (this device; a count that went back, a progress reset, starts the spacing over).
-const PROMPT = {KEY: 'imr-prompt-at', GAP: 10};
+const PROMPT = {KEY: 'reefid-prompt-at', GAP: 10};
 // The tour, a card or an achievement toast on screen or waiting (cards wait under the tour, toasts under a card).
 const overlayBusy = () => !!document.querySelector('#tour, .unlock, .achpop') || (typeof achBusy !== 'undefined' && achBusy);
 const promptOk = () => {
@@ -713,7 +713,7 @@ function zoomHint() {
 // the game changes with it (yet): it tells Pierre whether the difficulty feels right at each level (docs/LEARNING.md
 // "What the players say about the difficulty").
 const PULSE = {FIRST: 35, EVERY: 40, AFTERX: 2, SESSION: 8, WAIT: 600},
-  PULSEK = 'imr-pulse';
+  PULSEK = 'reefid-pulse';
 const pulseDue = (h = hashNow()) => {
   if (!(photoQuiz(h) || h.startsWith('quiz-duel')) || document.querySelector('#tour, .unlock') || session.n < PULSE.SESSION) return false;
   const a = answersSoFar(),
@@ -861,9 +861,9 @@ const rematchAdd = (pair, at) => {
   return true;
 };
 const againTold = () => {
-  const n = store.get('imr-again-told', 0);
+  const n = store.get('reefid-again-told', 0);
   if (n >= 3) return false;
-  store.set('imr-again-told', n + 1);
+  store.set('reefid-again-told', n + 1);
   return true;
 };
 // The next questions are chosen ahead and their photos fetched meanwhile, so Next shows one at once even on a slow
@@ -1482,7 +1482,7 @@ function planDuel(a, b) {
 // #quiz-custom|play (CUSTOM_H) the quiz itself, every format of the photo quiz in it (typed questions, Again, duels
 // slipped in, traps, the photos' level, the comeback; not the mastery exam, left to the photo quiz); the draw is model.js's (CUSTOM, customOf, customDraw,
 // customChoices; docs/LEARNING.md "Custom quiz"). The selection is saved at each change ({g: genera, t: when}, an
-// imr-coral key: it travels with the progress, the latest wins between devices, sync.js mergeSaved) and preselected
+// reefid-sync key: it travels with the progress, the latest wins between devices, sync.js mergeSaved) and preselected
 // next time. Its answers count as any photo-quiz answer, logged quiz|s… (answer).
 const CUSTOM_H = 'quiz-custom|play';
 const photoQuiz = cur => cur === 'quiz' || cur === CUSTOM_H;
@@ -1514,7 +1514,7 @@ function quizCustom(h) {
 // progress first), Recently missed (a miss in their last 5 answers, latest first), Look-alikes of … (a genus and its
 // look-alikes: declared or confused, model.js isLook, confusable). Clear all, the count and Start (at least CUSTOM.MIN
 // genera) stay in view at the bottom.
-const CQ = {VIEW: 'imr-custom-view2', OLD: 'imr-custom-view', WEAK: 6, MISS: 8, VIEWS: ['imr', 'mix', 'prog']};
+const CQ = {VIEW: 'reefid-custom-view2', OLD: 'reefid-custom-view', WEAK: 6, MISS: 8, VIEWS: ['imr', 'mix', 'prog']};
 const cqPicks = play => {
   const done = n => !!(P[n] || {}).mx;
   return {

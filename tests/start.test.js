@@ -18,7 +18,7 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F'], basics = false} 
       P,
       LEVEL,
       CB: {},
-      COMEBACK: {KEY: 'imr-comeback'},
+      COMEBACK: {KEY: 'reefid-comeback'},
       n: 0,
       Date: {now: () => ++CLOCK},
       slateGenera: () => slate,

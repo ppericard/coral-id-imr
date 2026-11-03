@@ -138,8 +138,8 @@
         return null;
       }
     };
-    const a = J(A, 'imr-coral-progress') || {},
-      b = J(B, 'imr-coral-progress') || {},
+    const a = J(A, 'reefid-sync-coral-progress') || {},
+      b = J(B, 'reefid-sync-coral-progress') || {},
       P = {};
     const n = s => (s.ok || 0) + (s.ko || 0),
       add = (x, y) => {
@@ -182,18 +182,18 @@
       if (x.du || y.du) o.du = 1;
       if (o.ok + o.ko || o.h) P[g] = o;
     });
-    const out = {...A, ...B, 'imr-coral-progress': JSON.stringify(P)},
-      qa = J(A, 'imr-coral-quiz'),
-      qb = J(B, 'imr-coral-quiz');
+    const out = {...A, ...B, 'reefid-sync-coral-progress': JSON.stringify(P)},
+      qa = J(A, 'reefid-sync-coral-quiz'),
+      qb = J(B, 'reefid-sync-coral-quiz');
     // The rules version the progress was replayed with (sync.js RVK): the merged record is no replay of the two logs
     // together, so it has none, and every device of the account asks for the replay of both histories in time order
     // (the sheet relabels the answers; Codex review #399: the merged model of 20 older right answers and 10 newer misses
     // kept pg 0.96 for good).
-    delete out['imr-coral-rv'];
+    delete out['reefid-sync-coral-rv'];
     if (qa || qb) {
       const q = {...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)};
       if ((qa || {}).bon || (qb || {}).bon) q.bon = true;
-      out['imr-coral-quiz'] = JSON.stringify(q);
+      out['reefid-sync-coral-quiz'] = JSON.stringify(q);
     }
     return out;
   }
@@ -892,7 +892,7 @@
   // the shaky signal that paces the opening of genera); v.at, the answer from which the offer to open all genera can come
   // (model.js introOffer, INTRO.OFFER.AT for everyone before); v.basics, Coral basics offered first. "new" is the
   // default player of before (a new player is a beginner). Values and their simulation: docs/LEARNING.md "The first-
-  // launch question". Stored in imr-coral-start (synced with the progress): {c, t, at, via, w, v, hd, fb, h}.
+  // launch question". Stored in reefid-sync-coral-start (synced with the progress): {c, t, at, via, w, v, hd, fb, h}.
   // Fallback (for everyone, also those who answered: they may have picked wrong; Pierre, 2026-11-04: "a really weak
   // player shows quickly in 20 answers; an expert, 20 answers isn't enough: with few genera unlocked even a mediocre
   // player gets everything right"): the answers after the choice (w: [difficulty, guess rate, right, first answer on its
@@ -907,7 +907,7 @@
   // (a player who did well only on the few genera they have learned does not count). z 1.96, as the admin's level
   // margin. The simulation and the real log: docs/LEARNING.md "The first-launch question".
   const CHOICE = {
-    KEY: 'imr-coral-start',
+    KEY: 'reefid-sync-coral-start',
     ASK: 50,
     N: 20,
     Z: 1.96,
@@ -1016,7 +1016,7 @@
   function accountOf(data, updated) {
     let R = {};
     try {
-      R = JSON.parse((data && data['imr-coral-progress']) || '{}');
+      R = JSON.parse((data && data['reefid-sync-coral-progress']) || '{}');
     } catch (e) {}
     if (!isObj(R)) R = {};
     const num = x => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 0),
@@ -1505,7 +1505,7 @@
     {
       v: 3,
       at: '2026-11-04',
-      why: 'The first-launch question (#428): a genus never answered starts from the global level shrunk towards the level the player said (new 0, IMR course 0.5, know well 1.25), the answer in force at each answer (imr-coral-start, its history h)',
+      why: 'The first-launch question (#428): a genus never answered starts from the global level shrunk towards the level the player said (new 0, IMR course 0.5, know well 1.25), the answer in force at each answer (reefid-sync-coral-start, its history h)',
       msg: RV_CARD
     }
   ];
@@ -1569,7 +1569,7 @@
   // CF_FROM, which reads the sheet's wall clock; #426): the app's logged e includes its mix-ups term (model.js confTerm),
   // taken out again here with the replay's own. An app not yet updated logs a few answers without it after that time.
   const CF_LOGGED = Date.UTC(2026, 10, 3, 15, 35);
-  // The first-launch answer in force at time t (2026-11-03, CHOICE): rec, the player's imr-coral-start record, keeps
+  // The first-launch answer in force at time t (2026-11-03, CHOICE): rec, the player's reefid-sync-coral-start record, keeps
   // every answer given ([c, answers then, time, via] in h); the prior p of the last one given at or before t, 0 before
   // the first (the player then played as the default player). The replay steps the ability with it (o.starts).
   function startPriorAt(rec, t) {
@@ -1724,7 +1724,7 @@
     String(a.ch || '')
   ];
   // A player's progress as the app holds it after the replay (rep: replayProgress's player; saved: the player's
-  // imr-coral-progress, the device's copy in the app, the sheet's copy in the admin). What comes from where:
+  // reefid-sync-coral-progress, the device's copy in the app, the sheet's copy in the admin). What comes from where:
   // - from the replay, for every genus the log has replayable answers on: pg, ok, ko, h, off, conf, th, lt, vr, streak,
   //   at (the later of the two), du (either), the photos seen ps per photo the larger [shown, right] of the two (the
   //   device also counts as shown a corallites hint revealed after the answer, which the log leaves out: a replay must

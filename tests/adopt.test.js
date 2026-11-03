@@ -72,7 +72,7 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     P,
     PMEM: undefined,
     PCONF: {},
-    ACHK: 'imr-coral-ach',
+    ACHK: 'reefid-sync-ach',
     sheetFetch: answer,
     fetch: answer,
     mxRecalc: f => f(),
@@ -84,15 +84,15 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     level: () => ['new'],
     progPct: () => 0,
     boardOn: () => true,
-    BOARD: 'imr-coral-board',
+    BOARD: 'reefid-sync-board',
     boardT: () => 0,
     showBoardSet: () => {},
-    INTRO: {KEY: 'imr-coral-intro', OFFER: {KEY: 'imr-coral-intro-offer'}},
+    INTRO: {KEY: 'reefid-sync-coral-intro', OFFER: {KEY: 'reefid-sync-coral-intro-offer'}},
     introMerge: () => {},
     introReset: () => {},
     // The first-launch question (model.js startMerge; its record goes to the replay as starts, app.js BASICS_KEY).
     startMerge: () => {},
-    BASICS_KEY: 'imr-basics',
+    BASICS_KEY: 'reefid-basics',
     Q: {},
     saveQ: () => {},
     showBon: () => {},
@@ -101,7 +101,7 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
   vm.createContext(ctx);
   vm.runInContext(
     `const store = {get(k, d) { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }, set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }};
-     const save = () => store.set('imr-coral-progress', P);\n` +
+     const save = () => store.set('reefid-sync-coral-progress', P);\n` +
       loadData +
       progData +
       fs.readFileSync(path.join(ROOT, 'sync.js'), 'utf8') +
@@ -134,18 +134,18 @@ const settle = () => new Promise(r => setImmediate(r)).then(() => new Promise(r 
 
 test("signing in to an existing account takes the account's rules version, 0 when its data has none (Codex review #399)", () => {
   // A device that adopted its anonymous replay (rv = RV), then signs in to an account never replayed.
-  const a = app({ls: {'imr-coral-rv': String(C.RV)}});
+  const a = app({ls: {'reefid-sync-coral-rv': String(C.RV)}});
   assert.strictEqual(a.rvApplied(), C.RV);
-  a.signIn('Ana', '1234', {found: true, data: {'imr-coral-progress': '{}', 'imr-coral-quiz': '{}'}});
+  a.signIn('Ana', '1234', {found: true, data: {'reefid-sync-coral-progress': '{}', 'reefid-sync-coral-quiz': '{}'}});
   assert.strictEqual(a.rvApplied(), 0, 'the anonymous marker would stop the account from ever getting its replay');
   a.syncGet();
   assert.strictEqual(a.sent[0].rv, '0', 'the next load asks for the replay');
   // An account replayed on another device brings its own version.
-  const b = app({ls: {'imr-coral-rv': '0'}});
-  b.signIn('Ana', '1234', {found: true, data: {'imr-coral-progress': '{}', 'imr-coral-rv': String(C.RV)}});
+  const b = app({ls: {'reefid-sync-coral-rv': '0'}});
+  b.signIn('Ana', '1234', {found: true, data: {'reefid-sync-coral-progress': '{}', 'reefid-sync-coral-rv': String(C.RV)}});
   assert.strictEqual(b.rvApplied(), C.RV);
   // A new account keeps this device's (its progress is the one adopted here, and goes to the new name as it is).
-  const c = app({ls: {'imr-coral-rv': String(C.RV)}});
+  const c = app({ls: {'reefid-sync-coral-rv': String(C.RV)}});
   c.signIn('Ana', '1234', {found: false});
   assert.strictEqual(c.rvApplied(), C.RV);
 });
@@ -155,7 +155,7 @@ test('a load after a lost reply: the replay covers every queued answer the sheet
   const s = loadCodeGs(withData()),
     L = Array.from({length: 601}, (_, i) => qa('r' + i, i)),
     fresh = qa('r601', 601);
-  assert.ok(s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: L}).log);
+  assert.ok(s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: L}).log);
   const SYNC = {name: 'Ana', pin: '1234', log: [...L, fresh]},
     a = app({sheet: s, SYNC});
   const j = await a.syncGet();
@@ -174,7 +174,7 @@ test("an anonymous device's replay starts at its progress reset, and its send sa
   assert.ok(s.post({anon: id, anonAnswers: before}).log);
   const a = app({
     sheet: s,
-    ls: {'imr-anon-id': JSON.stringify(id), 'imr-anonq': JSON.stringify(after), 'imr-coral-reset': JSON.stringify(T(10))}
+    ls: {'reefid-anon-id': JSON.stringify(id), 'reefid-anonq': JSON.stringify(after), 'reefid-sync-coral-reset': JSON.stringify(T(10))}
   });
   a.sendAnon();
   await settle();
@@ -186,8 +186,8 @@ test("an anonymous device's replay starts at its progress reset, and its send sa
 // A progress reset on the device, as app.js's Reset progress button makes it.
 const resetHere = (a, t) => {
   a.ctx.P = {};
-  a.store.set('imr-coral-reset', t);
-  a.store.set('imr-coral-progress', {});
+  a.store.set('reefid-sync-coral-reset', t);
+  a.store.set('reefid-sync-coral-progress', {});
 };
 test('a progress reset while a send is on its way: its replay, from the old cutoff, is not adopted (Codex review #399)', async () => {
   // Anonymous: five answers logged, two more queued here; the player resets while the send carrying them is out.
@@ -197,21 +197,21 @@ test('a progress reset while a send is on its way: its replay, from the old cuto
   assert.ok(s.post({anon: id, anonAnswers: before}).log);
   let during = null;
   const sheet = {get: q => s.get(q), post: b => (r => (during && during(), (during = null), r))(s.post(b))},
-    a = app({sheet, ls: {'imr-anon-id': JSON.stringify(id), 'imr-anonq': JSON.stringify([qa('c1', 20), qa('c2', 21)])}});
+    a = app({sheet, ls: {'reefid-anon-id': JSON.stringify(id), 'reefid-anonq': JSON.stringify([qa('c1', 20), qa('c2', 21)])}});
   during = () => resetHere(a, T(30));
   a.sendAnon();
   await settle();
   assert.ok(a.sent[0].rv === 0 && !a.sent[0].reset, 'sent before the reset');
   assert.deepStrictEqual([a.count('Acropora'), a.rvApplied()], [0, 0], 'the discarded progress stays out (was 7 and applied)');
   // The next send carries the new reset: its replay starts there and is adopted.
-  a.store.set('imr-anonq', [qa('d1', 40)]);
+  a.store.set('reefid-anonq', [qa('d1', 40)]);
   a.sendAnon();
   await settle();
   assert.deepStrictEqual([a.sent[1].reset, a.count('Acropora'), a.rvApplied()], [T(30), 1, C.RV]);
 
   // Signed in: the load's replay failed (the sheet's lock was busy), the save's reply brings it, the reset came between.
   const t = loadCodeGs(withData());
-  t.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: before});
+  t.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: before});
   let strip = true;
   const sh = {
       get: q => (r => (strip && delete r.replay, r))(t.get(q)),
@@ -230,7 +230,7 @@ test('a progress reset while a send is on its way: its replay, from the old cuto
 test('two devices adopt the replay of a log ahead of the saved copy: no answer counted twice (Codex review #399)', async () => {
   // Two answers logged, the progress write lost: the saved copy is empty.
   const s = loadCodeGs(withData());
-  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
+  s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
   const dev = () => app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}}),
     A = dev(),
     B = dev();
@@ -240,7 +240,7 @@ test('two devices adopt the replay of a log ahead of the saved copy: no answer c
   // A saves its adoption first; its own load before the save still finds the empty copy of the older rules.
   await A.syncPush();
   assert.strictEqual(A.count('Acropora'), 2, 'the older saved copy does not undo the replay');
-  assert.strictEqual(JSON.parse(A.sent[2].data['imr-coral-progress']).Acropora.ok, 2);
+  assert.strictEqual(JSON.parse(A.sent[2].data['reefid-sync-coral-progress']).Acropora.ok, 2);
   // B loads A's save: the same two answers, not four.
   await B.syncPull();
   assert.strictEqual(B.count('Acropora'), 2, 'was 4');
@@ -254,7 +254,7 @@ test('two devices adopt the replay of a log ahead of the saved copy: no answer c
 
 test('answers saved by a device still on the previous app version, after this one adopted the replay, are kept (Codex review #399)', async () => {
   const s = loadCodeGs(withData());
-  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
+  s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
   const A = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
   await A.syncPull();
   await A.syncPush();
@@ -262,11 +262,11 @@ test('answers saved by a device still on the previous app version, after this on
   // A device on the app before the replay: it loads A's copy, answers once, saves its merge (no rules version in its
   // data: it does not know the key; no rv in its request).
   const saved = s.get({name: 'Ana', pin: '1234'}).data,
-    Q = JSON.parse(saved['imr-coral-progress']);
+    Q = JSON.parse(saved['reefid-sync-coral-progress']);
   Q.Acropora.ok++;
   Q.Acropora.h += '1';
-  const old = {...saved, 'imr-coral-progress': JSON.stringify(Q)};
-  delete old['imr-coral-rv'];
+  const old = {...saved, 'reefid-sync-coral-progress': JSON.stringify(Q)};
+  delete old['reefid-sync-coral-rv'];
   assert.ok(s.post({name: 'Ana', pin: '1234', data: old, summary: {}, answers: [qa('a2', 2)], av: '180'}).ok);
   // A loads it: its copy under older rules is not merged, but A asks for the replay again (rules version back to the
   // copy's, a save due), and the save brings it: three answers, and the sheet's copy keeps them.
@@ -275,23 +275,23 @@ test('answers saved by a device still on the previous app version, after this on
   await A.syncPush();
   assert.strictEqual(A.count('Acropora'), 3, "was 2: the older client's answer was dropped, then overwritten");
   assert.strictEqual(A.rvApplied(), C.RV);
-  const back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora;
+  const back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-progress']).Acropora;
   assert.strictEqual(back.ok + back.ko, 3);
 });
 
 test('after a recovery from an older client, the saved copy reaches the rules version and the replays stop (Codex review #399)', async () => {
   const s = loadCodeGs(withData());
-  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
+  s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
   const A = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
   await A.syncPull();
   await A.syncPush();
   // A device on the app before the replay saves one more answer, with no rules version in its data.
   const saved = s.get({name: 'Ana', pin: '1234'}).data,
-    Q = JSON.parse(saved['imr-coral-progress']);
+    Q = JSON.parse(saved['reefid-sync-coral-progress']);
   Q.Acropora.ok++;
   Q.Acropora.h += '1';
-  const old = {...saved, 'imr-coral-progress': JSON.stringify(Q)};
-  delete old['imr-coral-rv'];
+  const old = {...saved, 'reefid-sync-coral-progress': JSON.stringify(Q)};
+  delete old['reefid-sync-coral-rv'];
   assert.ok(s.post({name: 'Ana', pin: '1234', data: old, summary: {}, answers: [qa('a2', 2)], av: '180'}).ok);
   // A recovers it (the replay again), then syncs four more times with nothing new: one save brings its rules version to
   // the saved copy, and no later reply carries a replay (was: the saved copy back to 0 and a full replay at every sync).
@@ -302,7 +302,7 @@ test('after a recovery from an older client, the saved copy reaches the rules ve
     A.ctx.SYNC.dirty = true;
     await A.syncPush();
   }
-  const savedRv = () => JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-rv'] || '0');
+  const savedRv = () => JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-rv'] || '0');
   assert.strictEqual(savedRv(), C.RV, 'the saved copy stayed at rules version 0');
   assert.deepStrictEqual(
     A.got.slice(from).map(j => !!j.replay),
@@ -310,7 +310,7 @@ test('after a recovery from an older client, the saved copy reaches the rules ve
     'a replay sent again at every sync'
   );
   assert.deepStrictEqual([A.count('Acropora'), A.rvApplied()], [3, C.RV]);
-  const back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora;
+  const back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-progress']).Acropora;
   assert.strictEqual(back.ok + back.ko, 3);
 });
 
@@ -318,7 +318,7 @@ test('a saved copy of the same rules version but behind the log does not undo th
   // Two answers adopted and saved (rules version 1) by A; a third logged by a save refused as stale: in the log, not in
   // the saved copy.
   const s = loadCodeGs(withData());
-  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
+  s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
   const A = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
   await A.syncPull();
   await A.syncPush();
@@ -332,14 +332,20 @@ test('a saved copy of the same rules version but behind the log does not undo th
   await B.syncPush();
   await B.syncPush();
   assert.strictEqual(B.count('Acropora'), 3, 'was 2: the copy behind the log took the third answer away');
-  const back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora;
+  const back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-progress']).Acropora;
   assert.strictEqual(back.ok + back.ko, 3);
 });
 
 test('the recalculation card compares the progress before the sync, even when the pull brings the recalculated copy (Codex review #399)', async () => {
   // A adopts and saves the replay of 4 answers; B still holds a progress from the former model (95% on Acropora).
   const s = loadCodeGs(withData());
-  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: [0, 1, 2, 3].map(i => qa('a' + i, i))});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: {'reefid-sync-coral-progress': '{}'},
+    summary: {},
+    answers: [0, 1, 2, 3].map(i => qa('a' + i, i))
+  });
   const A = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
   await A.syncPull();
   await A.syncPush();
@@ -359,30 +365,39 @@ test('the recalculation card compares the progress before the sync, even when th
 test('an anonymous send whose reply comes after signing in to an account: its replay is not adopted (Codex review #399)', async () => {
   const s = loadCodeGs(withData()),
     id = 'abcdefghij',
-    acct = {'imr-coral-progress': JSON.stringify({Acropora: {ok: 15, ko: 5, h: '1111111111', pg: 0.5}}), 'imr-coral-quiz': '{}'};
+    acct = {
+      'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 15, ko: 5, h: '1111111111', pg: 0.5}}),
+      'reefid-sync-coral-quiz': '{}'
+    };
   let during = null;
   const sheet = {get: q => s.get(q), post: b => (r => (during && during(), (during = null), r))(s.post(b))},
-    a = app({sheet, ls: {'imr-anon-id': JSON.stringify(id), 'imr-anonq': JSON.stringify([qa('c1', 20)])}});
+    a = app({sheet, ls: {'reefid-anon-id': JSON.stringify(id), 'reefid-anonq': JSON.stringify([qa('c1', 20)])}});
   // The player signs in to an existing account while the anonymous send is on its way (signIn then reloads the page).
   during = () => a.signIn('Ana', '1234', {found: true, data: acct});
   a.sendAnon();
   await settle();
-  const P = a.store.get('imr-coral-progress', {});
+  const P = a.store.get('reefid-sync-coral-progress', {});
   assert.strictEqual(P.Acropora.ok + P.Acropora.ko, 20, "the account's progress stays (was 1: the anonymous replay)");
   assert.strictEqual(a.rvApplied(), 0, "the account's rules version stays (its replay must still come)");
-  assert.strictEqual(a.store.get('imr-anonq', null), null, 'no anonymous queue made again');
+  assert.strictEqual(a.store.get('reefid-anonq', null), null, 'no anonymous queue made again');
 });
 
 // What every device must end with: the player's answers in the sheet's Answers tab (since their last reset), each once.
 const rowsOf = (s, since = '') => s.sheets.Answers.rows.slice(1).filter(r => r[0] === 'Ana' && new Date(r[1]).toISOString() > since).length;
 const total = P => Object.keys(P || {}).reduce((t, g) => (g === C.LEVEL ? t : t + (P[g].ok || 0) + (P[g].ko || 0)), 0);
-const savedTotal = s => total(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress'] || '{}'));
+const savedTotal = s => total(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-progress'] || '{}'));
 
 test('the merge baseline after an adoption is the shared history: an unsent answer stays on top (Codex review #399)', async () => {
   // Two answers logged and saved under the older rules; A played them and has a third, not sent yet.
   const s = loadCodeGs(withData());
   const old = {Acropora: {ok: 2, ko: 0, h: '11', pg: 0.3}};
-  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': JSON.stringify(old)}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: {'reefid-sync-coral-progress': JSON.stringify(old)},
+    summary: {},
+    answers: [qa('a0', 0), qa('a1', 1)]
+  });
   let busy = 1;
   const flaky = {get: q => s.get(q), post: b => (b.name && busy-- > 0 ? {ok: false, error: 'busy'} : s.post(b))},
     A = app({
@@ -410,7 +425,13 @@ test('an unsent answer is left out of the replay baseline: another device saving
   // here and not sent yet. This device adopts the replay at a load: 3 here, the baseline the 2 of the log (was 3 and 3).
   const s = loadCodeGs(withData()),
     old = {Acropora: {ok: 2, ko: 0, h: '11', pg: 0.3}};
-  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': JSON.stringify(old)}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: {'reefid-sync-coral-progress': JSON.stringify(old)},
+    summary: {},
+    answers: [qa('a0', 0), qa('a1', 1)]
+  });
   const A = app({
     sheet: s,
     SYNC: {name: 'Ana', pin: '1234', log: [qa('a2', 2)], base: copy(old)},
@@ -442,7 +463,7 @@ test('misses logged after the exam take the learned mark away as the game would,
   const run = async later => {
     const s = loadCodeGs(withData()),
       rec = {Acropora: {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: exam}};
-    s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': JSON.stringify(rec)}, summary: {}, answers: right});
+    s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': JSON.stringify(rec)}, summary: {}, answers: right});
     if (later.length) assert.strictEqual(s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, at: -1, answers: later}).error, 'stale');
     const A = app({sheet: s, P: copy(rec), SYNC: {name: 'Ana', pin: '1234', log: [], base: copy(rec)}}),
       why = [];
@@ -484,7 +505,7 @@ test("a learned mark that another device's saved replay revoked is announced on 
   // and saves it; A, still on the older rules with the mark, loads that copy.
   const s = loadCodeGs(withData()),
     rec = {Acropora: {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: Date.parse(T(30))}};
-  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': JSON.stringify(rec)}, summary: {}, answers: rights(30)});
+  s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': JSON.stringify(rec)}, summary: {}, answers: rights(30)});
   s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, at: -1, answers: misses(40, 10)});
   const dev = () => app({sheet: s, P: copy(rec), SYNC: {name: 'Ana', pin: '1234', log: [], base: copy(rec)}}),
     B = dev(),
@@ -495,7 +516,7 @@ test("a learned mark that another device's saved replay revoked is announced on 
   B.ctx.SYNC.dirty = true;
   await B.syncPush();
   assert.deepStrictEqual(lb, [['Acropora', 'rules']]);
-  assert.strictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-rv']), C.RV);
+  assert.strictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-rv']), C.RV);
   await A.syncPull();
   assert.strictEqual(A.ctx.P.Acropora.mx, undefined);
   assert.deepStrictEqual(la, [['Acropora', 'rules']], 'the merge took the mark before mxRecalc saw it: no card here');
@@ -506,7 +527,7 @@ test('an exam in course ends at a miss logged after it began, as the game ends i
   const run = async (later, ex) => {
     const s = loadCodeGs(withData()),
       rec = {Acropora: {ok: 30, ko: 0, h: '1111111111', pg: 0.9, at: Date.parse(T(29)), ex}};
-    s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': JSON.stringify(rec)}, summary: {}, answers: rights(30)});
+    s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': JSON.stringify(rec)}, summary: {}, answers: rights(30)});
     if (later.length) s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, at: -1, answers: later});
     const A = app({sheet: s, P: copy(rec), SYNC: {name: 'Ana', pin: '1234', log: [], base: copy(rec)}});
     await A.syncPull();
@@ -525,7 +546,7 @@ test('answers queued here older than answers another device logged: no replay ad
   // 10 misses logged by another device at answers 100-109; this device, offline, played 20 right answers before them.
   const s = loadCodeGs(withData()),
     later = misses(100, 10);
-  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: later});
+  s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: later});
   const mine = rights(20),
     P = {Acropora: {ok: 20, ko: 0, h: '1111111111', pg: 0.9}},
     A = app({sheet: s, P: copy(P), SYNC: {name: 'Ana', pin: '1234', log: mine, base: {}}});
@@ -536,7 +557,7 @@ test('answers queued here older than answers another device logged: no replay ad
   assert.deepStrictEqual([A.ctx.SYNC.log.length, A.rvApplied(), a.ok, a.ko], [0, C.RV, 20, 10]);
   assert.strictEqual(a.h, '0000000000', 'the misses are the latest results (was ten right answers on top)');
   assert.ok(a.pg < 0.5, `pg ${a.pg} (was 0.96)`);
-  assert.strictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora.h, '0000000000');
+  assert.strictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-progress']).Acropora.h, '0000000000');
 });
 
 test("anonymous answers older than the account's own join it at sign-in: the combined replay, in time order (Codex review #399)", async () => {
@@ -546,7 +567,7 @@ test("anonymous answers older than the account's own join it at sign-in: the com
       B = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: misses(100, 10), base: {}, dirty: true}});
     await B.syncPush();
     await B.syncPush();
-    assert.strictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-rv']), C.RV);
+    assert.strictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-rv']), C.RV);
     // This device: 20 right answers played earlier without an account (still queued, or already sent anonymously).
     const id = 'abcdefghij',
       mine = rights(20),
@@ -556,20 +577,20 @@ test("anonymous answers older than the account's own join it at sign-in: the com
       sheet: s,
       P: copy(P20),
       ls: {
-        'imr-log0': JSON.stringify(mine),
-        'imr-anon-id': JSON.stringify(id),
-        'imr-anon-base': '{}',
-        'imr-coral-progress': JSON.stringify(P20)
+        'reefid-log0': JSON.stringify(mine),
+        'reefid-anon-id': JSON.stringify(id),
+        'reefid-anon-base': '{}',
+        'reefid-sync-coral-progress': JSON.stringify(P20)
       }
     });
     A.signIn('Ana', '1234', s.get({name: 'Ana', pin: '1234'}));
-    A.ctx.P = A.store.get('imr-coral-progress', {}); // what the page reloads with
+    A.ctx.P = A.store.get('reefid-sync-coral-progress', {}); // what the page reloads with
     assert.strictEqual(A.rvApplied(), 0, `${sent ? 'sent' : 'queued'}: the account's version is not this progress's`);
     await A.syncPush();
     await A.syncPull();
     // Replayed in time order: the 20 right answers, then the 10 misses (was pg 0.93 and ten right answers last).
     const a = A.ctx.P.Acropora,
-      back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora;
+      back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-progress']).Acropora;
     assert.deepStrictEqual([A.rvApplied(), a.ok, a.ko, a.h], [C.RV, 20, 10, '0000000000'], sent ? 'sent' : 'queued');
     assert.ok(a.pg < 0.5, `${sent ? 'sent' : 'queued'}: pg ${a.pg}`);
     assert.deepStrictEqual([back.ok + back.ko, back.h], [30, '0000000000']);
@@ -622,7 +643,7 @@ test('an admin merge of two replayed accounts brings the replay of both historie
   await A.syncPush();
   await A.syncPull();
   const a = A.ctx.P.Acropora,
-    back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora;
+    back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-progress']).Acropora;
   assert.deepStrictEqual([a.ok, a.ko, a.h, A.rvApplied()], [20, 10, '0000000000', C.RV]);
   assert.ok(a.pg < 0.5, `pg ${a.pg}`);
   assert.deepStrictEqual([back.ok + back.ko, back.h], [30, '0000000000']);
@@ -655,7 +676,7 @@ test('property: devices, unsent answers, an older client and a reset in flight: 
     });
     // Answers logged before any device here, with the progress write lost.
     const first = Array.from({length: 1 + Math.floor(rnd() * 3)}, (_, i) => ans('f' + run + i, G[i % 4], rnd() < 0.8));
-    s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: first});
+    s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: first});
     // Two devices on this app; a save may be refused (busy) and a reset may come while a save is on its way.
     const sheetFor = () => ({
       get: q => s.get(q),
@@ -677,7 +698,7 @@ test('property: devices, unsent answers, an older client and a reset in flight: 
       x[ok ? 'ok' : 'ko']++;
       x.h = ((x.h || '') + (ok ? 1 : 0)).slice(-10);
       d.ctx.SYNC.log = [...(d.ctx.SYNC.log || []), a];
-      d.store.set('imr-coral-progress', P);
+      d.store.set('reefid-sync-coral-progress', P);
     };
     // A device still on the app from before the replay: it loads the saved copy, answers once, saves (no rules version).
     const older = () => {
@@ -685,13 +706,13 @@ test('property: devices, unsent answers, an older client and a reset in flight: 
         ok = rnd() < 0.75,
         j = s.get({name: 'Ana', pin: '1234'}),
         data = {...(j.data || {})},
-        P = JSON.parse(data['imr-coral-progress'] || '{}'),
+        P = JSON.parse(data['reefid-sync-coral-progress'] || '{}'),
         x = (P[g] = P[g] || {ok: 0, ko: 0, h: ''}),
         a = ans('o' + run + 'x' + n++, g, ok);
       x[ok ? 'ok' : 'ko']++;
       x.h = ((x.h || '') + (ok ? 1 : 0)).slice(-10);
-      delete data['imr-coral-rv'];
-      data['imr-coral-progress'] = JSON.stringify(P);
+      delete data['reefid-sync-coral-rv'];
+      data['reefid-sync-coral-progress'] = JSON.stringify(P);
       s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [a], av: '180'});
     };
     for (let step = 0; step < 25; step++) {
@@ -706,8 +727,8 @@ test('property: devices, unsent answers, an older client and a reset in flight: 
         during = () => {
           resetAt = tick();
           d.ctx.P = {};
-          d.store.set('imr-coral-reset', resetAt);
-          d.store.set('imr-coral-progress', {});
+          d.store.set('reefid-sync-coral-reset', resetAt);
+          d.store.set('reefid-sync-coral-progress', {});
         };
         play(d);
         await d.syncPush();
@@ -730,7 +751,7 @@ test('property: devices, unsent answers, an older client and a reset in flight: 
     assert.strictEqual(savedTotal(s), want, `run ${run}: the saved copy`);
     // Converged: the saved copy and every device at the rules version, and no more replay in any reply (Codex review #399:
     // the saved version stayed 0 and every save's reply carried the full replay again).
-    const savedRv = Number(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-rv'] || '0'));
+    const savedRv = Number(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-coral-rv'] || '0'));
     assert.deepStrictEqual([savedRv, ...devs.map(d => d.rvApplied())], [C.RV, C.RV, C.RV], `run ${run}: the rules versions`);
     // Then saves and loads in any order.
     const from = devs.map(d => d.got.length);
@@ -762,9 +783,9 @@ test('the recalculation card is due only when the progress % moved by 5 points o
   vm.createContext(ctx);
   vm.runInContext(block + '\nthis.add = rvNoticeAdd;', ctx);
   const due = pct => {
-    delete saved['imr-rv-msg'];
+    delete saved['reefid-rv-msg'];
     ctx.add(0, C.RV, pct);
-    return ctx.store.get('imr-rv-msg', {}).due.includes(C.RV);
+    return ctx.store.get('reefid-rv-msg', {}).due.includes(C.RV);
   };
   assert.deepStrictEqual(
     [
@@ -789,8 +810,8 @@ function ach(A) {
       ...C,
       SYNC: {name: 'Ana'},
       synced: 0,
-      MXL: {KEY: 'imr-mx-lost'},
-      ACHNEW: 'imr-ach-new',
+      MXL: {KEY: 'reefid-mx-lost'},
+      ACHNEW: 'reefid-ach-new',
       achUnseen: () => [],
       achDot: () => {},
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
@@ -799,12 +820,12 @@ function ach(A) {
   ctx.achSnap = () => ({total: 40, met: 40, q: [30, 20, 10], learned: 0, pct: 60, streak: 0, elo: 0, group: false, bonus: 0});
   vm.createContext(ctx);
   vm.runInContext(block + '\nthis.M = {achRecheck, achMerge, ACHK};', ctx);
-  ctx.store.set('imr-coral-ach', A);
-  ctx.store.set('imr-mx-lost', {ach: 1, due: {Acropora: 1}});
+  ctx.store.set('reefid-sync-ach', A);
+  ctx.store.set('reefid-mx-lost', {ach: 1, due: {Acropora: 1}});
   return {
     ...ctx.M,
     ctx,
-    rec: () => ctx.store.get('imr-coral-ach', null)
+    rec: () => ctx.store.get('reefid-sync-ach', null)
   };
 }
 

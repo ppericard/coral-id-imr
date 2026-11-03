@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8">
 <!-- CSP (code review 2026-11-01, L2): scripts only from this site; the inline theme script is allowed by its hash, checked by tests/csp.test.js. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-cR2EVOpO/DHVmWGdEdvYkONfQqYeod7u+TvChPyU2G4=' 'sha256-X/v0Mr+YT/Fgy6ZPABgbzrjNdjq1Cp0y9h7WoVOuyDg='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://pub-934250f83b884a4f890497f2027ce251.r2.dev https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org; connect-src 'self' https://pub-934250f83b884a4f890497f2027ce251.r2.dev https://script.google.com https://script.googleusercontent.com https://api.github.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-cR2EVOpO/DHVmWGdEdvYkONfQqYeod7u+TvChPyU2G4=' 'sha256-FenNFk/WQMb6t6BEaggeJhhPqRGvxudtF6AuugvlF/w='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://pub-934250f83b884a4f890497f2027ce251.r2.dev https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org; connect-src 'self' https://pub-934250f83b884a4f890497f2027ce251.r2.dev https://script.google.com https://script.googleusercontent.com https://api.github.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="author" content="Pierre Pericard">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>IMR Coral ID</title>
+<title>IMR Reef ID</title>
 <meta name="description" content="Learn to identify the coral genera on the IMR Dauin list: genus sheets with colony, close and corallite views, a key, look-alike comparisons and a quiz.">
 <!-- Link preview when the app is shared (WhatsApp, Messenger, Slack...): og.jpg is made by tools/og/make_og.js. Absolute URLs: crawlers need them. -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="IMR Coral ID">
-<meta property="og:title" content="IMR Coral ID">
+<meta property="og:site_name" content="IMR Reef ID">
+<meta property="og:title" content="IMR Reef ID">
 <meta property="og:description" content="Learn to identify the coral genera on the IMR Dauin list: genus sheets with colony, close and corallite views, a key, look-alike comparisons and a quiz.">
 <meta property="og:url" content="https://ppericard.github.io/coral-id-imr/">
 <meta property="og:image" content="https://ppericard.github.io/coral-id-imr/og.jpg">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="IMR Coral ID over six coral photos: branching, mushroom, meandering, plating, brain and knobby corals.">
+<meta property="og:image:alt" content="IMR Reef ID over six coral photos: branching, mushroom, meandering, plating, brain and knobby corals.">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -57,10 +57,10 @@
 <link rel="stylesheet" href="home.css?v=24">
 </head>
 <body>
-<script>try{var t=localStorage.getItem("imr-coral-theme");if(t)document.documentElement.dataset.theme=t;var p=localStorage.getItem("imr-coral-palette");document.documentElement.dataset.palette=p&&p!=="reef"?p:"depth";if(localStorage.getItem("imr-coral-cvd")==="1")document.documentElement.dataset.cvd="1"}catch(e){document.documentElement.dataset.palette="depth"}</script>
+<script>try{var t=localStorage.getItem("reefid-sync-theme");if(t)document.documentElement.dataset.theme=t;var p=localStorage.getItem("reefid-sync-palette");document.documentElement.dataset.palette=p&&p!=="reef"?p:"depth";if(localStorage.getItem("reefid-sync-cvd")==="1")document.documentElement.dataset.cvd="1"}catch(e){document.documentElement.dataset.palette="depth"}</script>
 <div class="wrap">
   <header>
-    <h1 class="brand"><a class="home" href="#home"><img src="icon.svg" alt="" width="30" height="30"><span>IMR Coral ID</span></a></h1>
+    <h1 class="brand"><a class="home" href="#home"><img src="icon.svg" alt="" width="30" height="30"><span>IMR Reef ID</span></a></h1>
     <nav class="sections" aria-label="Sections">
       <a data-tab="learn" href="#genera"><svg class="tabi" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13"/></svg>Learn</a>
       <a data-tab="practice" href="#quiz"><svg class="tabi" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>Practice</a>

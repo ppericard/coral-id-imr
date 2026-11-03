@@ -14,7 +14,7 @@ Companion docs:
 
 ## The project in five lines
 
-- **IMR Coral ID** is a static web app (plain HTML/CSS/JS, no build step, GitHub Pages) live at <https://ppericard.github.io/coral-id-imr/>.
+- **IMR Reef ID** is a static web app (plain HTML/CSS/JS, no build step, GitHub Pages) live at <https://ppericard.github.io/coral-id-imr/>.
 - It teaches the **39 coral genera on the IMR slate** (Institute for Marine Research, Dauin, Philippines): 34 numbered genera that IMR surveys track, plus 5 starred look-alikes (Duncanopsammia, Alveopora, Merulina, Cyphastrea, Halomitra) that are not tracked but must be told apart; and, since 2026-11-02, **Millepora** (fire coral: not a hard coral, so not on the IMR coral list, but on the IMR benthic slate and very common at Dauin and in ReefCloud photos), which counts like them: 40 genera in the games and the progress (`slateGenera()` in `app.js`).
 - Owner: **Pierre Pericard** (GitHub `ppericard`), Research Fellow at IMR since October 2026. Users: Pierre and the Research Assistants (RAs) he trains, most of them on phones.
 - RAs' first job is genus-level labelling of top-down benthic photos in **ReefCloud**, so growth form alone is never enough: the app must teach genus recognition.

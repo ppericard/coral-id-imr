@@ -694,10 +694,10 @@ quiz, all its formats included, limited to them. Code: `model.js` `CUSTOM`, `cus
     Look-alikes of … pick, which stays for one genus;
   - **Progress**: To review, Learning, Not seen yet, Learned (`shownLevel`, the names of My progress).
   No A-Z view (the search finds a name; it was the default for a few hours on 2026-11-03: a device that kept it, under
-  the old key `imr-custom-view`, opens on IMR groups once, the choice now in `imr-custom-view2`). Quick picks that need no knowledge, My weakest (genera answered, lowest progress
+  the old key `reefid-custom-view`, opens on IMR groups once, the choice now in `reefid-custom-view2`). Quick picks that need no knowledge, My weakest (genera answered, lowest progress
   first, 6), Recently missed (a miss in the last 5 answers, latest first, 8) and Look-alikes of … (a genus and its
   declared or confused look-alikes, `isLook`, `confusable`); a search box. The selection is saved at each change
-  (`imr-coral-custom`, synced, the latest wins) and preselected next time.
+  (`reefid-sync-coral-custom`, synced, the latest wins) and preselected next time.
 - **Checked** (AGENTS.md 14g): `tools/learnsim.js --seeds 5 --questions 300`, the four profiles, `main` (ed0ee83)
   against this change, same seeds: every number of every table identical (true knowledge, |th-lk|, prog-know, progress,
   genera met, right %, look-alike accuracy, exams, first met), as expected: the photo quiz's path is the same code with
@@ -782,7 +782,7 @@ time, each on its card, but never as the answer of the question right after its 
   far the answers fall below the success the game expected for them (each answer's `e`), less an allowance
   `INTRO.SLACK` (0.1) an answer, never below 0, is `INTRO.HOLD` (1.5) or more. A CUSUM (Page 1954, the standard detector of a lasting drop): a run of misses adds up however long it
   lasts, a spell above expectation is not banked against a later drop, and right answers pay the debt back by what they
-  beat the expectation by (an easy one, e 0.9, by 0.1). Kept on the device (`imr-hold`), so a player who left on a run
+  beat the expectation by (an easy one, e 0.9, by 0.1). Kept on the device (`reefid-hold`), so a player who left on a run
   of misses does not come back to new genera, and, for a signed-in player, synced through the sheet (sheet v23, Pierre
   2026-11-02: it follows the player from one device to another, and is rebuilt from the answers given before it
   existed, an RA having left on a run of misses before it was built): each load of the saved progress carries the same
@@ -854,11 +854,11 @@ time, each on its card, but never as the answer of the question right after its 
   kept by a later Open all). Simulated (5 seeds, Open all at about answer 50, see "Open all: the app's expectation
   against the truth" below): the card showed to a beginner in 5 runs of 5 (10-19 answers after Open all), a
   lecture-level RA in 2 of 5 (26 and 66), a strong RA and an expert never.
-- Synced with the progress: the cards (`imr-coral-intro`: genus -> [answers when shown, 1 when ready at once (first cards, Open all,
+- Synced with the progress: the cards (`reefid-sync-coral-intro`: genus -> [answers when shown, 1 when ready at once (first cards, Open all,
   a duel's), time shown, kind: s first cards / c a card of its own / a Open all / b closed again by One at a time]) and the offer
-  (`imr-coral-intro-offer`: {at, open, via: card / progress / offer, t, n genera opened at once, h the drop since; the
+  (`reefid-sync-coral-intro-offer`: {at, open, via: card / progress / offer, t, n genera opened at once, h the drop since; the
   back card's choice bk keep / one, after answer bat, bn genera closed, time bt}, also written by Open
-  all genera, for the admin's player journey) are `imr-coral*` keys, which the sheet keeps; on a pull, the cards seen on another
+  all genera, for the admin's player journey) are `reefid-sync*` keys, which the sheet keeps; on a pull, the cards seen on another
   device join this one's (`introMerge`; between a closed mark and an opening of the same genus the later one wins, so a
   genus closed on one device is closed on the other, and one reopened since by its card is open on both), the offer record
   goes by its latest decision (`t` or `bt`; `h` counts each device's own answers), and a progress reset starts them over (`introReset`). A genus already asked
@@ -1203,7 +1203,7 @@ It changes little for them: at 50+ answers the prior weighs a sixth or less, the
 fallback card comes for an inferred answer; it is shown as "inferred" in the admin's player journey.
 
 **Rules version 3** (2026-11-04, after the full replay #399): the prior moves the ability of a genus's first answers,
-hence the progress, so the replay applies it: `core.js` `replayProgress` takes each player's `imr-coral-start` record
+hence the progress, so the replay applies it: `core.js` `replayProgress` takes each player's `reefid-sync-coral-start` record
 (`starts`) and, at each answer, the prior of the answer then in force (`startPriorAt`, from its history `h`; 0 before the
 first, the player then played as the default player); `abilityOf` and `eloStep` take the prior. The sheet (v29) reads it
 from the saved data or an anonymous device's send, the admin from the saved copy, the app from its store. RVS v3 with
@@ -1271,7 +1271,7 @@ and only widens its uncertainty after inactivity).
 - **Not for a newcomer**: neither the floor nor a comeback with fewer than 2 genera answered right, nor before any
   answer time is known (progress saved before this change: the last answer of the device's log, else nothing until the
   next answer).
-- **Kept**: on the device, `imr-comeback` {r rust, t time accounted, ok right answers in the comeback, f the answer count
+- **Kept**: on the device, `reefid-comeback` {r rust, t time accounted, ok right answers in the comeback, f the answer count
   until which no genus opens}, cleared with the progress; in the synced progress, `s.at` (last answer, ms), `s.dd`
   (days answered right), `s.dl` (the last of them, local day number), and `P['~level'].at` (the player's last answer);
   `core.js` `mergeProgress` keeps the latest `at` and `dl` and the larger `dd` of two devices.
@@ -2304,7 +2304,7 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   is open, even in the floor of a visit or a comeback and with no prompt spacing; it only waits for another card or the
   tour already on screen: "You passed the mastery exam on *X* under the beta's first rules, which brought the exam too early.
   This genus is back on its progress bar, and its exam will come again. Until then, the badge earned with it is taken
-  back." (plural forms for several genera or badges). Once per mark on a device (`imr-mx-lost`, device only: a drop
+  back." (plural forms for several genera or badges). Once per mark on a device (`reefid-mx-lost`, device only: a drop
   that happens through a pull on a second device is told there too). The achievements that rest on genera learned
   (`core.js` `ACH_LEARN`: Instructor 1/5/10/20, Coral master, Group complete) and that the progress no longer meets
   are taken back (`progress.js` `achRecheck`, `core.js` `achRevoke`), only then (everywhere else achievements are only
@@ -2365,7 +2365,7 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     request's `rv`), it replays the player's rows of the Answers tab since their last progress reset, with the photo
     memory offsets and pooled confusions of `stats_` (cached) and the look-alikes and families of `data.json` (fetched
     from GitHub, cached 6 hours). A device that never signed in gets the same in the reply to its anonymous answers,
-    under its anonymous id, since the progress reset its request carries (`reset`, its `imr-coral-reset`; Codex review
+    under its anonymous id, since the progress reset its request carries (`reset`, its `reefid-sync-coral-reset`; Codex review
     #399). The result is kept in the **Replayed** tab (one row per player: Name, Rules, Rows, Since,
     Updated, Record JSON in 45,000-character chunks), reused while the rules version, the number of the player's rows
     and the reset are unchanged, replayed again otherwise. The player's own saved copy (Progress data, RAs Data) is never
@@ -2376,7 +2376,7 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   - **The app adopts it** (`sync.js` `replayAdopt`), once per version, and only from a script that reports `v` >= 28
     (`core.js` `RV_SHEET`; AGENTS.md 7a: the app never gets ahead of the sheet script; before, it does exactly what it did,
     and the `rv` its requests carry is ignored by an older script): when a reply carries a replay newer than the one
-    this device applied (`imr-coral-rv`, in the progress data: a device that signs in to the account takes it with
+    this device applied (`reefid-sync-coral-rv`, in the progress data: a device that signs in to the account takes it with
     the account, whose progress is the adopted one, and 0 when the account's data has none, never the version of an
     anonymous replay adopted on the device (Codex review #399); a device already signed in keeps its own and adopts the replay
     itself once, with its own unsent answers on top), the progress becomes the replayed record, with this device's answers the sheet has not counted
@@ -2398,7 +2398,7 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     reset from another device while this one has answers after it not sent yet, a copy with that reset under older
     rules than this device applied. `tests/adopt.test.js` plays two devices, refused saves, unsent answers, an older
     app and a reset in flight at random (40 runs; 600 more with other seeds while building it) and checks that every
-    device and the saved copy end with exactly the answers in the log since the reset. A saved copy under older rules than the device applied (its `imr-coral-rv`) is not
+    device and the saved copy end with exactly the answers in the log since the reset. A saved copy under older rules than the device applied (its `reefid-sync-coral-rv`) is not
     merged (it may predate the replay, whose counts it would undo), but it may hold answers saved since by a device on
     an app from before the replay, which never adopts one: so the device's applied version goes back to the copy's and
     its next save (asked for at once after a pull) brings the replay of the whole log again, every device's answers
@@ -2458,7 +2458,7 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     `bkt`; a mark taken by a later rules version would say "recalculated from all your answers with the app's current
     rules", reason `rules`). Then, at once, the announcement card of every version skipped that has a `msg`
     (`progress.js` `rvNotice`, an update card of `app.js` `cardShow` with the progress ring before and after: once per
-    version per device, `imr-rv-msg`; never held, one after another, after
+    version per device, `reefid-rv-msg`; never held, one after another, after
     `recalcNotice` and `mxLostNotice`; only to a device that had answers). Every version has the standard card
     (`core.js` `RV_CARD`; Pierre, 2026-11-03, a standing rule: "only to the players whose progress the replay moves a
     lot; if it moves everyone a lot, everyone gets it"): "Your progress was recalculated with the improved model",

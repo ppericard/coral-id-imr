@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 30 (2026-11-04: v30: the full replay applies the player's first-launch answer (imr-coral-start in their saved data, or start in an anonymous device's send): a genus never answered starts from the global level shrunk towards the level the answer says, the answer in force at each answer (core.js startPriorAt), as the app does; v29: the embedded core.js gains the admin's quantile and distOf helpers (Photo stats Overview), unused by the script; v28: progress replayed from the whole answer log by this script: the app's own progress engine (core.js, embedded at the end of this file by tools/sync_core.py) replays a player's answers in the reply to a sign-in, load or save (or to a device's anonymous answers) when their app applied an older rules version, the result kept in a new Replayed tab and sent as replay: {rv, n, rec, ids}; the app adopts it, the player's saved copy is never rewritten here; the hold's ids, like the replay's, cover every answer from the request's pt (the oldest answer the device still queues); v27: typed answers (mode |t, the player types the genus instead of picking one of the choices) are rated with no guess rate (guess_ 0), stats cache stats14; v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 30 (2026-11-04: v30: the full replay applies the player's first-launch answer (reefid-sync-coral-start in their saved data, or start in an anonymous device's send): a genus never answered starts from the global level shrunk towards the level the answer says, the answer in force at each answer (core.js startPriorAt), as the app does; v29: the embedded core.js gains the admin's quantile and distOf helpers (Photo stats Overview), unused by the script; v28: progress replayed from the whole answer log by this script: the app's own progress engine (core.js, embedded at the end of this file by tools/sync_core.py) replays a player's answers in the reply to a sign-in, load or save (or to a device's anonymous answers) when their app applied an older rules version, the result kept in a new Replayed tab and sent as replay: {rv, n, rec, ids}; the app adopts it, the player's saved copy is never rewritten here; the hold's ids, like the replay's, cover every answer from the request's pt (the oldest answer the device still queues); v27: typed answers (mode |t, the player types the genus instead of picking one of the choices) are rated with no guess rate (guess_ 0), stats cache stats14; v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -210,19 +210,19 @@ const flag_ = x => x === 1 || x === true ? 1 : x === 0 || x === false ? 0 : '';
 // (model.js holdStep, docs/LEARNING.md "Held while the player falls behind"): over the answers in time order, h = max(0,
 // h + expected - right - SLACK), rounded to 1/1000 at each step as the app does; no new genus card while h is 1.5 or
 // more (the app decides that). Answers of the gentle restart (mode with |w, from v23) do not count, older rows do; only
-// the answers since the player's last progress reset count (imr-coral-reset, as the app starts the hold over then).
+// the answers since the player's last progress reset count (reefid-sync-coral-reset, as the app starts the hold over then).
 // HOLD.SLACK is model.js INTRO.SLACK: keep both in step (tests/sync.test.js replays model.js on the same answers).
 // The app takes it and adds its own answers the sheet has not confirmed yet (model.js holdSync). Cached per player
 // until their next answers are logged or moved (logAnswers_, relabel_, dropRows_).
 const HOLD = {SLACK: 0.1, IDS: 500};
 const holdKey_ = name => 'hold:' + lc_(name);
 function dropHold_(name){ ROWS_ = null; try { CacheService.getScriptCache().remove(holdKey_(name)); } catch (e) {} }
-// The first-launch answer in a player's saved data (imr-coral-start, v29), null when there is none or it is broken.
+// The first-launch answer in a player's saved data (reefid-sync-coral-start, v29), null when there is none or it is broken.
 function startOf_(data){
-  try { const o = JSON.parse((data || {})['imr-coral-start'] || 'null'); return o && typeof o === 'object' ? o : null; } catch (e) { return null; }
+  try { const o = JSON.parse((data || {})['reefid-sync-coral-start'] || 'null'); return o && typeof o === 'object' ? o : null; } catch (e) { return null; }
 }
 function resetOf_(data){
-  try { return resetAt_(JSON.parse((data || {})['imr-coral-reset'] || '""')); } catch (e) { return 0; }
+  try { return resetAt_(JSON.parse((data || {})['reefid-sync-coral-reset'] || '""')); } catch (e) { return 0; }
 }
 // A progress reset time as the app keeps it (an ISO string) in ms, 0 when there is none.
 const resetAt_ = t => typeof t === 'string' && t ? new Date(t).getTime() || 0 : 0;
@@ -296,7 +296,7 @@ function gen_(){
 // new photos, choices]; blank numbers are null (answers before v5).
 const numOrNull_ = x => x === '' || x == null || !isFinite(Number(x)) ? null : Number(x);
 const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6]), numOrNull_(r[8]), numOrNull_(r[9]), numOrNull_(r[10]), String(r[11] || '')];
-// start: the player's first-launch answer (the app's imr-coral-start record; v29): the replay steps the ability with the
+// start: the player's first-launch answer (the app's reefid-sync-coral-start record; v29): the replay steps the ability with the
 // prior it says, as the app does (core.js startPriorAt).
 function replay_(key, since, appRv, pt, start){
   if (typeof appRv !== 'number' || !isFinite(appRv) || appRv >= CORE_.RV) return null;
@@ -357,7 +357,7 @@ function answers_(q){
 // Per-genus ability (th) from an RA's saved progress, nothing else from it.
 function abilities_(data){
   const out = {};
-  try { const P = JSON.parse(JSON.parse(data || '{}')['imr-coral-progress'] || '{}'); Object.keys(P).forEach(g => { if (typeof P[g].th === 'number') out[g] = P[g].th; }); } catch (e) {}
+  try { const P = JSON.parse(JSON.parse(data || '{}')['reefid-sync-coral-progress'] || '{}'); Object.keys(P).forEach(g => { if (typeof P[g].th === 'number') out[g] = P[g].th; }); } catch (e) {}
   return out;
 }
 
@@ -614,7 +614,7 @@ function board_(){
       list = bg && bg.getLastColumn() > 2 ? bg.getRange(1, 3, 1, bg.getLastColumn() - 2).getValues()[0].map(String).filter(Boolean) : [];
     const pctFrom = r => {
       if (!list.length) return null;
-      try { return pctOf_(JSON.parse(JSON.parse(readData_(String(r[0]), String(r[7] || '')).json || '{}')['imr-coral-progress'] || '{}'), list); } catch (e) { return null; }
+      try { return pctOf_(JSON.parse(JSON.parse(readData_(String(r[0]), String(r[7] || '')).json || '{}')['reefid-sync-coral-progress'] || '{}'), list); } catch (e) { return null; }
     };
     out.rows = ra.getRange(2, 1, ra.getLastRow() - 1, HEAD.length).getValues()
       .filter(r => r[0] && !(r[9] !== '' && Number(r[9]) <= 0))  // 0 the player's opt-out, -1 hidden by an admin (v20)
@@ -631,7 +631,7 @@ function board_(){
 }
 
 // Achievements, as on Steam (v15; Pierre, 2026-11-01): GET ?achs=1 → {ok, n: signed-in players with an achievement
-// record, counts: {achievement id: players holding it}}, from each player's saved progress (its imr-coral-ach key, app.js).
+// record, counts: {achievement id: players holding it}}, from each player's saved progress (its reefid-sync-ach key, app.js).
 // Counts only, no name. Cached 10 minutes.
 function achs_(){
   const cache = CacheService.getScriptCache(), hit = cache.get('achs15');
@@ -639,7 +639,7 @@ function achs_(){
   const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), out = {ok: true, n: 0, counts: {}};
   if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, HEAD.length).getValues().filter(r => r[0]).forEach(r => {
     let A = null;
-    try { A = JSON.parse(JSON.parse(readData_(String(r[0]), String(r[7] || '')).json || '{}')['imr-coral-ach'] || 'null'); } catch (e) {}
+    try { A = JSON.parse(JSON.parse(readData_(String(r[0]), String(r[7] || '')).json || '{}')['reefid-sync-ach'] || 'null'); } catch (e) {}
     if (!A || typeof A !== 'object') return;
     out.n++;
     Object.keys(A).forEach(k => { if (k[0] !== '_' && /^[a-z0-9]{1,20}$/.test(k)) out.counts[k] = (out.counts[k] || 0) + 1; });
@@ -774,7 +774,7 @@ function users_(p){
       if (typeof m.at === 'number' && m.at !== cur.rev) return {ok: false, error: 'stale', rev: cur.rev};
       // The merged progress is no replay of both logs (core.js mergeUsers drops it too): no rules version, so the
       // account's devices ask for the replay of the whole merged history (replay_).
-      delete m.data['imr-coral-rv'];
+      delete m.data['reefid-sync-coral-rv'];
       const json = JSON.stringify(m.data);
       writeData_(into, json, cur.rev + 1);
       ra.getRange(b.r, 2).setValue(new Date()); ra.getRange(b.r, 8).setValue(json.length < CHUNK ? json : '@' + DATA_TAB);
@@ -1047,8 +1047,8 @@ const CORE_ = (function () { const module = {exports: {}};
         return null;
       }
     };
-    const a = J(A, 'imr-coral-progress') || {},
-      b = J(B, 'imr-coral-progress') || {},
+    const a = J(A, 'reefid-sync-coral-progress') || {},
+      b = J(B, 'reefid-sync-coral-progress') || {},
       P = {};
     const n = s => (s.ok || 0) + (s.ko || 0),
       add = (x, y) => {
@@ -1091,18 +1091,18 @@ const CORE_ = (function () { const module = {exports: {}};
       if (x.du || y.du) o.du = 1;
       if (o.ok + o.ko || o.h) P[g] = o;
     });
-    const out = {...A, ...B, 'imr-coral-progress': JSON.stringify(P)},
-      qa = J(A, 'imr-coral-quiz'),
-      qb = J(B, 'imr-coral-quiz');
+    const out = {...A, ...B, 'reefid-sync-coral-progress': JSON.stringify(P)},
+      qa = J(A, 'reefid-sync-coral-quiz'),
+      qb = J(B, 'reefid-sync-coral-quiz');
     // The rules version the progress was replayed with (sync.js RVK): the merged record is no replay of the two logs
     // together, so it has none, and every device of the account asks for the replay of both histories in time order
     // (the sheet relabels the answers; Codex review #399: the merged model of 20 older right answers and 10 newer misses
     // kept pg 0.96 for good).
-    delete out['imr-coral-rv'];
+    delete out['reefid-sync-coral-rv'];
     if (qa || qb) {
       const q = {...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)};
       if ((qa || {}).bon || (qb || {}).bon) q.bon = true;
-      out['imr-coral-quiz'] = JSON.stringify(q);
+      out['reefid-sync-coral-quiz'] = JSON.stringify(q);
     }
     return out;
   }
@@ -1801,7 +1801,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // the shaky signal that paces the opening of genera); v.at, the answer from which the offer to open all genera can come
   // (model.js introOffer, INTRO.OFFER.AT for everyone before); v.basics, Coral basics offered first. "new" is the
   // default player of before (a new player is a beginner). Values and their simulation: docs/LEARNING.md "The first-
-  // launch question". Stored in imr-coral-start (synced with the progress): {c, t, at, via, w, v, hd, fb, h}.
+  // launch question". Stored in reefid-sync-coral-start (synced with the progress): {c, t, at, via, w, v, hd, fb, h}.
   // Fallback (for everyone, also those who answered: they may have picked wrong; Pierre, 2026-11-04: "a really weak
   // player shows quickly in 20 answers; an expert, 20 answers isn't enough: with few genera unlocked even a mediocre
   // player gets everything right"): the answers after the choice (w: [difficulty, guess rate, right, first answer on its
@@ -1816,7 +1816,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // (a player who did well only on the few genera they have learned does not count). z 1.96, as the admin's level
   // margin. The simulation and the real log: docs/LEARNING.md "The first-launch question".
   const CHOICE = {
-    KEY: 'imr-coral-start',
+    KEY: 'reefid-sync-coral-start',
     ASK: 50,
     N: 20,
     Z: 1.96,
@@ -1925,7 +1925,7 @@ const CORE_ = (function () { const module = {exports: {}};
   function accountOf(data, updated) {
     let R = {};
     try {
-      R = JSON.parse((data && data['imr-coral-progress']) || '{}');
+      R = JSON.parse((data && data['reefid-sync-coral-progress']) || '{}');
     } catch (e) {}
     if (!isObj(R)) R = {};
     const num = x => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 0),
@@ -2414,7 +2414,7 @@ const CORE_ = (function () { const module = {exports: {}};
     {
       v: 3,
       at: '2026-11-04',
-      why: 'The first-launch question (#428): a genus never answered starts from the global level shrunk towards the level the player said (new 0, IMR course 0.5, know well 1.25), the answer in force at each answer (imr-coral-start, its history h)',
+      why: 'The first-launch question (#428): a genus never answered starts from the global level shrunk towards the level the player said (new 0, IMR course 0.5, know well 1.25), the answer in force at each answer (reefid-sync-coral-start, its history h)',
       msg: RV_CARD
     }
   ];
@@ -2478,7 +2478,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // CF_FROM, which reads the sheet's wall clock; #426): the app's logged e includes its mix-ups term (model.js confTerm),
   // taken out again here with the replay's own. An app not yet updated logs a few answers without it after that time.
   const CF_LOGGED = Date.UTC(2026, 10, 3, 15, 35);
-  // The first-launch answer in force at time t (2026-11-03, CHOICE): rec, the player's imr-coral-start record, keeps
+  // The first-launch answer in force at time t (2026-11-03, CHOICE): rec, the player's reefid-sync-coral-start record, keeps
   // every answer given ([c, answers then, time, via] in h); the prior p of the last one given at or before t, 0 before
   // the first (the player then played as the default player). The replay steps the ability with it (o.starts).
   function startPriorAt(rec, t) {
@@ -2633,7 +2633,7 @@ const CORE_ = (function () { const module = {exports: {}};
     String(a.ch || '')
   ];
   // A player's progress as the app holds it after the replay (rep: replayProgress's player; saved: the player's
-  // imr-coral-progress, the device's copy in the app, the sheet's copy in the admin). What comes from where:
+  // reefid-sync-coral-progress, the device's copy in the app, the sheet's copy in the admin). What comes from where:
   // - from the replay, for every genus the log has replayable answers on: pg, ok, ko, h, off, conf, th, lt, vr, streak,
   //   at (the later of the two), du (either), the photos seen ps per photo the larger [shown, right] of the two (the
   //   device also counts as shown a corallites hint revealed after the answer, which the log leaves out: a replay must

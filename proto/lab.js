@@ -131,7 +131,7 @@ function labChoices(t, k = 4) {
 const labHead = (title, lede) =>
   `<div class="crumbs"><a href="#lab">Tools</a> › ${esc(title)}</div><h2>${esc(title)}</h2>${lede ? `<p class="lede">${lede}</p>` : ''}`;
 // Keep / trim votes, so Pierre can tell which prototypes to keep.
-const labVotes = () => store.get('imr-lab-votes', {}) || {};
+const labVotes = () => store.get('reefid-lab-votes', {}) || {};
 
 function viewLab(h) {
   // Lab pages use the full window width (see lab.css).
@@ -188,7 +188,7 @@ function viewLab(h) {
         const [id, v] = b.dataset.vote.split('|'),
           all = labVotes();
         all[id] = all[id] === v ? undefined : v;
-        store.set('imr-lab-votes', all);
+        store.set('reefid-lab-votes', all);
         b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.vote === id + '|' + all[id])));
       })
   );

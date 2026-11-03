@@ -64,8 +64,8 @@ const server = http.createServer((req, res) => {
   );
   await ctx.addInitScript(() => {
     try {
-      localStorage.setItem('imr-tour', '"done"');
-      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     } catch (e) {}
     // Same draws every run (as profiles.smoke.js): unseeded, the mastery-exam check failed once on CI (PR #362: the 5th
     // exam question of a 97% genus, drawn rarely, did not come within the 400 answers; not reproduced in 48 local runs).
@@ -366,7 +366,7 @@ const server = http.createServer((req, res) => {
       P[t] = {ok: 20, ko: 4, h: '1111011111', th: 1, pg: 0.7, ps: {[f0]: [4, 3], [f1]: [3, 0]}};
       const ch1 = memRecalcAll(),
         pg1 = P[t].pg,
-        kept = (store.get('imr-coral-progress', {})[t] || {}).pg,
+        kept = (store.get('reefid-sync-coral-progress', {})[t] || {}).pg,
         ch2 = memRecalcAll();
       if (!ch1 || ch2 || !(pg1 < 0.7) || P[t].pm !== 1 || kept !== pg1)
         fails.push(`silent recalculation: ${JSON.stringify({ch1, ch2, pg1, kept, pm: P[t].pm})}`);
@@ -434,7 +434,7 @@ const server = http.createServer((req, res) => {
         say(c[(i + r) % c.length]);
       }
       save();
-      const saved = store.get('imr-coral-progress', {});
+      const saved = store.get('reefid-sync-coral-progress', {});
       if (progPct() !== pctOf(saved, slateGenera()))
         fails.push(`progress %: app ${progPct()} vs core pctOf of the saved progress ${pctOf(saved, slateGenera())}`);
     }
@@ -676,7 +676,7 @@ const server = http.createServer((req, res) => {
         rematch = [];
         NEXTQ = null;
       }
-      // Synced with the progress: the cards and the offer are imr-coral* keys (sent by progData), and the cards seen on
+      // Synced with the progress: the cards and the offer are reefid-sync* keys (sent by progData), and the cards seen on
       // another device join this one's (introMerge), ready; a progress reset starts them over.
       {
         INTROS = {};
@@ -957,7 +957,7 @@ const server = http.createServer((req, res) => {
           const q0 = achQ.length;
           achCheck();
           const B = store.get(ACHK, {}) || {},
-            nw = store.get('imr-ach-new', []),
+            nw = store.get('reefid-ach-new', []),
             popped =
               achQ.slice(q0).some(a => a.id === 'met20') ||
               [...document.querySelectorAll('.achpop b')].some(b => /Wide eyes/.test(b.textContent));
@@ -968,7 +968,7 @@ const server = http.createServer((req, res) => {
           viewAch();
           if (
             !document.querySelector('.achc.new') ||
-            store.get('imr-ach-new', []).length ||
+            store.get('reefid-ach-new', []).length ||
             document.getElementById('boardgo').classList.contains('hasnew')
           )
             fails.push('the achievements page did not show and clear the new achievement');
@@ -1278,14 +1278,14 @@ const server = http.createServer((req, res) => {
         ([t, rec, ago]) => {
           const at = Date.now() - ago,
             u = slateGenera().find(n => n !== t);
-          store.set('imr-coral-progress', {
+          store.set('reefid-sync-coral-progress', {
             [t]: {...rec, at},
             [u]: {ok: 8, ko: 2, h: '11011111', pg: 0.5, pm: 1, at},
             [LEVEL]: {ok: 300, ko: 60, th: 1, at}
           });
-          localStorage.removeItem('imr-comeback');
+          localStorage.removeItem('reefid-comeback');
           store.set(ACHK, {_v: ACH_V, learn1: 1000, met10: 1000});
-          store.set('imr-recalc', RECALC.L[RECALC.L.length - 1].id);
+          store.set('reefid-recalc', RECALC.L[RECALC.L.length - 1].id);
           localStorage.removeItem(MXL.KEY);
         },
         [t, rec, ago]
@@ -1362,7 +1362,7 @@ const server = http.createServer((req, res) => {
     // one after the other, neither lost: the note first (recalcNotice runs first at start-up), the learned card once it
     // is closed (it waits for any card on screen, tried again every 2 s).
     await seed({ok: 13, ko: 1, h: '1111111110', L: 0.9997, mx: 1, pm: 1}, 0);
-    await p.evaluate(() => store.set('imr-recalc', RECALC.L[RECALC.L.length - 2].id));
+    await p.evaluate(() => store.set('reefid-recalc', RECALC.L[RECALC.L.length - 2].id));
     await load();
     const both = () =>
       p.evaluate(() => ({

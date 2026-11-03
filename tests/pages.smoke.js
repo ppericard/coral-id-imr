@@ -72,9 +72,9 @@ async function overlays(b, base) {
     return [c, p];
   };
   const seen = () => {
-    localStorage.setItem('imr-tour', '"done"');
-    localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-    localStorage.setItem('imr-nudge', '1');
+    localStorage.setItem('reefid-tour', '"done"');
+    localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+    localStorage.setItem('reefid-nudge', '1');
   };
   // C2: Back from the quiz closes the first genus card (it stayed over Home, its Next going on there). The cards shown
   // are met; the rest come next time, as "1 of 2".
@@ -158,12 +158,12 @@ async function overlays(b, base) {
   // focus inside and kept there on Tab, Escape closes it and the focus goes back where it was.
   for (const w of [390, 1280]) {
     const [c, p] = await open({viewport: {width: w, height: 844}}, () => {
-      localStorage.setItem('imr-tour', '"done"');
-      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-      localStorage.setItem('imr-nudge', '1');
-      localStorage.setItem('imr-recalc', '"typed-questions-2026-11"');
-      localStorage.getItem('imr-coral-progress') ||
-        localStorage.setItem('imr-coral-progress', JSON.stringify({Acropora: {ok: 3, ko: 1, h: '1101'}}));
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"');
+      localStorage.getItem('reefid-sync-coral-progress') ||
+        localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({Acropora: {ok: 3, ko: 1, h: '1101'}}));
     });
     await p.goto(base + '#quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
@@ -178,7 +178,7 @@ async function overlays(b, base) {
       ['apology', () => cardShow({kind: 'apology', kick: 'Sorry', title: 'Smoke', body: '<p>t</p>', primary: {text: 'Thanks'}, esc: 1})],
       // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD), and
       // the learned mark taken away (progress.js mxLostNotice), through their real callers.
-      ['update', () => (store.set('imr-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
+      ['update', () => (store.set('reefid-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
       ['update', () => (store.set(MXL.KEY, {due: {Acropora: 1}}), mxLostNotice())],
       ['feedback', () => pulseAsk()]
     ];
@@ -247,16 +247,16 @@ async function overlays(b, base) {
     const [c, p] = await open(
       {viewport: {width: 390, height: 800}, intro: true},
       ({r, u}) => {
-        localStorage.setItem('imr-tour', '"done"');
-        localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-        localStorage.setItem('imr-nudge', '1');
-        if (r && !localStorage.getItem('imr-recalc')) localStorage.setItem('imr-recalc', JSON.stringify(r));
-        localStorage.getItem('imr-coral-progress') ||
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-nudge', '1');
+        if (r && !localStorage.getItem('reefid-recalc')) localStorage.setItem('reefid-recalc', JSON.stringify(r));
+        localStorage.getItem('reefid-sync-coral-progress') ||
           localStorage.setItem(
-            'imr-coral-progress',
+            'reefid-sync-coral-progress',
             JSON.stringify({Acropora: {ok: 3, ko: 1, h: '1101'}, Millepora: {ok: 2, ko: 0, h: '11'}})
           );
-        localStorage.getItem('imr-coral-quiz') || localStorage.setItem('imr-coral-quiz', JSON.stringify({bu: u}));
+        localStorage.getItem('reefid-sync-coral-quiz') || localStorage.setItem('reefid-sync-coral-quiz', JSON.stringify({bu: u}));
       },
       {r: recalc, u: bu}
     );
@@ -331,7 +331,7 @@ async function overlays(b, base) {
   }
   // C7: Escape on the tour's sign-in step closes it for good; Escape before that step still offers sign-in once.
   for (const at of [0, 1]) {
-    const [c, p] = await open({viewport: {width: 1280, height: 860}}, () => localStorage.setItem('imr-nudge', '1'));
+    const [c, p] = await open({viewport: {width: 1280, height: 860}}, () => localStorage.setItem('reefid-nudge', '1'));
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
     await p.click('#tour [data-start="imr"]'); // the first-launch question first (tour.js ask): it moves on by itself
@@ -354,7 +354,7 @@ async function overlays(b, base) {
   {
     const [c, p] = await open(
       {viewport: {width: 390, height: 844}},
-      () => (localStorage.setItem('imr-tour', '"done"'), localStorage.setItem('imr-coral-start', '{"c":"new","t":1}'))
+      () => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
     );
     await p.goto(base + '#quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
@@ -426,7 +426,7 @@ async function overlays(b, base) {
   // once they are on, Enter still never answers. Then, in turn: an answer tapped (logs its code, once),
   // "Not now" (skip), Escape (skip); the card closes and the next question shows. The last prompt is left by another page
   // (none). The next prompt never asks the same item. After the first, each prompt is made due by moving the device's
-  // last-prompt marks back (imr-prompt-at by PROMPT.GAP, imr-pulse by PULSE.EVERY × PULSE.AFTERX), the real code deciding.
+  // last-prompt marks back (reefid-prompt-at by PROMPT.GAP, reefid-pulse by PULSE.EVERY × PULSE.AFTERX), the real code deciding.
   for (const [vw, vh] of [
     [390, 844],
     [1280, 800]
@@ -437,7 +437,7 @@ async function overlays(b, base) {
     const asked = [],
       WAYS = ['tap', 'notnow', 'tap', 'esc'],
       N = 9,
-      pev = () => p.evaluate(() => JSON.parse(localStorage.getItem('imr-evq') || '[]').filter(x => x.k === 'pulse'));
+      pev = () => p.evaluate(() => JSON.parse(localStorage.getItem('reefid-evq') || '[]').filter(x => x.k === 'pulse'));
     for (let i = 0; i < 60 && asked.length < N; i++) {
       await p.waitForSelector('#view [data-c]:not([disabled])');
       const way = asked.length === N - 1 ? 'leave' : WAYS[asked.length % WAYS.length],
@@ -450,10 +450,10 @@ async function overlays(b, base) {
           achBusy = false;
           if (due) {
             const a = answersSoFar() + 1;
-            localStorage.setItem('imr-prompt-at', JSON.stringify(a - PROMPT.GAP));
+            localStorage.setItem('reefid-prompt-at', JSON.stringify(a - PROMPT.GAP));
             localStorage.setItem(
-              'imr-pulse',
-              JSON.stringify({...JSON.parse(localStorage.getItem('imr-pulse')), at: a - PULSE.EVERY * PULSE.AFTERX})
+              'reefid-pulse',
+              JSON.stringify({...JSON.parse(localStorage.getItem('reefid-pulse')), at: a - PULSE.EVERY * PULSE.AFTERX})
             );
           }
           const t = SHOWNQ[1],
@@ -529,7 +529,7 @@ async function overlays(b, base) {
         early = await p.evaluate(() => ({
           up: !!document.querySelector('.unlock.pulsecard'),
           wait: !!document.querySelector('.unlock.pulsecard [data-pulse]:disabled'),
-          n: JSON.parse(localStorage.getItem('imr-evq') || '[]').filter(x => x.k === 'pulse').length
+          n: JSON.parse(localStorage.getItem('reefid-evq') || '[]').filter(x => x.k === 'pulse').length
         }));
       }
       await p.waitForFunction(() => WAITED !== null, null, {timeout: 10000}).catch(() => {});
@@ -537,7 +537,7 @@ async function overlays(b, base) {
       await p.keyboard.press('Enter');
       const enter = await p.evaluate(() => ({
         up: !!document.querySelector('.unlock.pulsecard'),
-        n: JSON.parse(localStorage.getItem('imr-evq') || '[]').filter(x => x.k === 'pulse').length,
+        n: JSON.parse(localStorage.getItem('reefid-evq') || '[]').filter(x => x.k === 'pulse').length,
         // After the wait, each button is what a tap at its centre reaches.
         hit: [...document.querySelectorAll('.unlock.pulsecard [data-pulse]')].every(b => {
           const r = b.getBoundingClientRect();
@@ -627,12 +627,12 @@ async function overlays(b, base) {
   // the screen in any view (the Practice tabs included), at 390 and 360 px.
   {
     const [c, p] = await open({viewport: {width: 390, height: 844}}, () => {
-      localStorage.setItem('imr-tour', '"done"');
-      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-      localStorage.setItem('imr-nudge', '1');
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
       if (!sessionStorage.getItem('cq-old')) {
         sessionStorage.setItem('cq-old', '1');
-        localStorage.setItem('imr-custom-view', '"az"'); // the A-Z view kept by a device before 2026-11-03
+        localStorage.setItem('reefid-custom-view', '"az"'); // the A-Z view kept by a device before 2026-11-03
       }
     });
     await p.goto(base + '#quiz-custom');
@@ -798,19 +798,19 @@ async function overlays(b, base) {
     const [c, p] = await open(
       {viewport: {width: 390, height: 800}, timezoneId: 'Asia/Manila'},
       ({t, n}) => {
-        localStorage.setItem('imr-tour', '"done"');
-        localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-        localStorage.setItem('imr-nudge', '1');
-        localStorage.setItem('imr-recalc', '"typed-questions-2026-11"'); // the last update note: seen
-        if (localStorage.getItem('imr-coral-progress')) return;
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-nudge', '1');
+        localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"'); // the last update note: seen
+        if (localStorage.getItem('reefid-sync-coral-progress')) return;
         const last = t + n * 20000;
         localStorage.setItem(
-          'imr-coral-progress',
+          'reefid-sync-coral-progress',
           JSON.stringify({'~level': {ok: n, ko: 0, th: 0.5, at: last}, Acropora: {ok: n, ko: 0, h: '1111', at: last}})
         );
-        localStorage.setItem('imr-hold', String(n > 1 ? 3.5 : 0.7));
+        localStorage.setItem('reefid-hold', String(n > 1 ? 3.5 : 0.7));
         localStorage.setItem(
-          'imr-log0',
+          'reefid-log0',
           JSON.stringify(
             Array.from({length: n}, (_, k) => ({
               id: 'x' + k,
@@ -845,7 +845,7 @@ async function overlays(b, base) {
     await p.waitForTimeout(2500);
     if (await p.$('.sorry'))
       fails.push(
-        `apology card, ${lab}: ${want ? 'shown twice' : 'shown'} ${await p.evaluate(() => localStorage.getItem('imr-sorry-first'))}`
+        `apology card, ${lab}: ${want ? 'shown twice' : 'shown'} ${await p.evaluate(() => localStorage.getItem('reefid-sorry-first'))}`
       );
     await c.close();
   }
@@ -868,8 +868,8 @@ const SHEET = () => {
     localStorage.setItem('test-sheet-log', JSON.stringify(log));
     const at = Date.parse('2026-10-20T09:30:00Z'),
       account = {
-        'imr-coral-progress': JSON.stringify({'~level': {ok: 200, ko: 45, th: 0.4, at}, Acropora: {ok: 30, ko: 5, th: 0.3, at}}),
-        'imr-coral-quiz': '{"bon":false}'
+        'reefid-sync-coral-progress': JSON.stringify({'~level': {ok: 200, ko: 45, th: 0.4, at}, Acropora: {ok: 30, ko: 5, th: 0.3, at}}),
+        'reefid-sync-coral-quiz': '{"bon":false}'
       };
     if (body) return body.name ? {ok: true, log: true, rev: 4} : {ok: false, error: 'input'};
     if (!q.get('name')) return {ok: false};
@@ -920,9 +920,9 @@ async function signin(base) {
     await c.close();
   };
   const seen = () => {
-    if (!localStorage.getItem('imr-tour')) localStorage.setItem('imr-tour', '"done"');
-    localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-    localStorage.setItem('imr-nudge', '1');
+    if (!localStorage.getItem('reefid-tour')) localStorage.setItem('reefid-tour', '"done"');
+    localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+    localStorage.setItem('reefid-nudge', '1');
   };
   const card = async p => {
     await p.evaluate(() => document.querySelectorAll('.recalc .next').forEach(x => x.click())); // a later note, if any
@@ -936,29 +936,32 @@ async function signin(base) {
   };
   const state = p =>
     p.evaluate(() => ({
-      sync: localStorage.getItem('imr-coral-sync'),
-      log0: JSON.parse(localStorage.getItem('imr-log0') || '[]').length,
-      prog: JSON.parse(localStorage.getItem('imr-coral-progress') || '{}'),
+      sync: localStorage.getItem('reefid-account'),
+      log0: JSON.parse(localStorage.getItem('reefid-log0') || '[]').length,
+      prog: JSON.parse(localStorage.getItem('reefid-sync-coral-progress') || '{}'),
       posts: JSON.parse(localStorage.getItem('test-sheet-log') || '[]').filter(x => x.post && x.name)
     }));
   // The apology card greets a signed-in player by the first word of their sign-in name (core.js sorryText); asked here
   // with the clock on the morning after, the device's own answer in the window, the account from the stub sheet.
   await run(
     () => {
-      localStorage.setItem('imr-tour', '"done"');
-      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-      localStorage.setItem('imr-nudge', '1');
-      localStorage.setItem('imr-recalc', '"typed-questions-2026-11"');
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"');
       // What the device read at this version's first run (core.js sorryOf): 30 answers in the window, the hold at 3.5.
-      localStorage.setItem('imr-sorry-first', JSON.stringify({t: Date.parse('2026-11-04T01:00:00Z'), n: 30, h: 3.5, c: 0}));
-      localStorage.setItem('imr-coral-sync', JSON.stringify({name: 'Anna', pin: '1234'}));
+      localStorage.setItem('reefid-sorry-first', JSON.stringify({t: Date.parse('2026-11-04T01:00:00Z'), n: 30, h: 3.5, c: 0}));
+      localStorage.setItem('reefid-account', JSON.stringify({name: 'Anna', pin: '1234'}));
       const t = Date.parse('2026-11-03T13:00:00Z');
-      localStorage.setItem('imr-coral-progress', JSON.stringify({'~level': {ok: 5, ko: 1, th: 0.5, at: t}, Pavona: {ok: 5, ko: 1, at: t}}));
+      localStorage.setItem(
+        'reefid-sync-coral-progress',
+        JSON.stringify({'~level': {ok: 5, ko: 1, th: 0.5, at: t}, Pavona: {ok: 5, ko: 1, at: t}})
+      );
     },
     async p => {
       await p.clock.setFixedTime(new Date('2026-11-04T03:00:00Z'));
       await p.evaluate(() => document.querySelectorAll('.sorry').forEach(x => x.remove()));
-      await p.evaluate(() => (localStorage.removeItem('imr-sorry'), sorryNotice()));
+      await p.evaluate(() => (localStorage.removeItem('reefid-sorry'), sorryNotice()));
       await p.waitForSelector('.sorry', {timeout: 5000});
       const h = await p.evaluate(() => document.querySelector('.sorry h3').textContent);
       if (h !== 'Hi Anna! Sorry about your last run.') fails.push(`apology card, signed in: ${h}`);
@@ -967,18 +970,18 @@ async function signin(base) {
   // A device with progress of its own (3 answers played signed out).
   await run(
     () => {
-      localStorage.setItem('imr-tour', '"done"');
-      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-      localStorage.setItem('imr-nudge', '1');
-      localStorage.setItem('imr-recalc', '"typed-questions-2026-11"'); // the last update note: seen
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"'); // the last update note: seen
       if (localStorage.getItem('test-own')) return;
       localStorage.setItem('test-own', '1');
       const t = new Date().toISOString();
       localStorage.setItem(
-        'imr-log0',
+        'reefid-log0',
         JSON.stringify([1, 2, 3].map(i => ({id: 'own' + i, t, g: 'Porites', a: 'Porites', ok: 1, m: 'quiz'})))
       );
-      localStorage.setItem('imr-coral-progress', JSON.stringify({Porites: {ok: 3, ko: 0, th: 0.2}}));
+      localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({Porites: {ok: 3, ko: 0, th: 0.2}}));
     },
     async p => {
       await card(p);
@@ -1049,14 +1052,14 @@ async function signin(base) {
     if (s.sync || s.posts.length || Object.keys(s.prog).length) fails.push('sign-in: "No" on a fresh device saved or sent something');
     // A new name: signed in at once, no question.
     await submit(p, 'Anna B.', '1234');
-    await p.waitForFunction(() => !!localStorage.getItem('imr-coral-sync'), null, {timeout: 10000}).catch(() => {});
+    await p.waitForFunction(() => !!localStorage.getItem('reefid-account'), null, {timeout: 10000}).catch(() => {});
     const n = await state(p);
     if (!n.sync || JSON.parse(n.sync).name !== 'Anna B.' || (await p.$('.signnudge .sconfirm')))
       fails.push('sign-in: a new name did not sign in at once');
   });
   // The tour's sign-in step: the same question.
   await run(
-    () => localStorage.setItem('imr-nudge', '1'),
+    () => localStorage.setItem('reefid-nudge', '1'),
     async p => {
       await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
       if (await p.$('#tour [data-start]')) await p.click('#tour [data-start="imr"]'); // the first-launch question
@@ -1127,7 +1130,7 @@ async function replayAdoptCheck(base) {
           body = o && o.body ? JSON.parse(o.body) : null,
           log = JSON.parse(localStorage.getItem('test-sheet-log') || '[]');
         if (body ? !body.name : q.get('name') !== 'Ana') return {ok: false};
-        log.push(body ? {post: 1, rv: body.rv, data: body.data && body.data['imr-coral-progress']} : {get: 1, rv: q.get('rv')});
+        log.push(body ? {post: 1, rv: body.rv, data: body.data && body.data['reefid-sync-coral-progress']} : {get: 1, rv: q.get('rv')});
         localStorage.setItem('test-sheet-log', JSON.stringify(log));
         // The replay comes with every reply, whatever rv the app sends: the app must not adopt it twice. A test can
         // change it (test-rec) to see whether it is adopted again. The sheet keeps what was last sent.
@@ -1175,19 +1178,19 @@ async function replayAdoptCheck(base) {
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     return [c, p];
   };
-  const data = {'imr-coral-progress': JSON.stringify(old), 'imr-coral-quiz': '{"bon":false}'};
+  const data = {'reefid-sync-coral-progress': JSON.stringify(old), 'reefid-sync-coral-quiz': '{"bon":false}'};
   const init = ([old, dev, mine, rv, data]) => {
     if (localStorage.getItem('test-init')) return;
     localStorage.setItem('test-init', '1');
-    localStorage.setItem('imr-tour', '"done"');
-    localStorage.setItem('imr-nudge', '1');
-    localStorage.setItem('imr-recalc', '"millepora-counts-2026-11"');
-    localStorage.setItem('imr-coral-progress', JSON.stringify(dev));
-    localStorage.setItem('imr-coral-sync', JSON.stringify({name: 'Ana', pin: '1234', srv: 4, base: old, log: [mine], dirty: true, rev: 1}));
-    if (rv) localStorage.setItem('imr-coral-rv', String(rv));
+    localStorage.setItem('reefid-tour', '"done"');
+    localStorage.setItem('reefid-nudge', '1');
+    localStorage.setItem('reefid-recalc', '"millepora-counts-2026-11"');
+    localStorage.setItem('reefid-sync-coral-progress', JSON.stringify(dev));
+    localStorage.setItem('reefid-account', JSON.stringify({name: 'Ana', pin: '1234', srv: 4, base: old, log: [mine], dirty: true, rev: 1}));
+    if (rv) localStorage.setItem('reefid-sync-coral-rv', String(rv));
     // The account's saved copy is at that rules version too (sync.js mergeSaved: an older one makes the device adopt
     // again from 0, with version 1's card when its % moved).
-    if (rv) localStorage.setItem('test-data', JSON.stringify({...data, 'imr-coral-rv': String(rv)}));
+    if (rv) localStorage.setItem('test-data', JSON.stringify({...data, 'reefid-sync-coral-rv': String(rv)}));
   };
   const posted = p =>
     p
@@ -1201,9 +1204,9 @@ async function replayAdoptCheck(base) {
     await posted(p);
     await p.waitForTimeout(500);
     const s = await p.evaluate(() => ({
-      P: JSON.parse(localStorage.getItem('imr-coral-progress') || '{}'),
-      rv: localStorage.getItem('imr-coral-rv'),
-      pending: (JSON.parse(localStorage.getItem('imr-coral-sync') || '{}').log || []).length,
+      P: JSON.parse(localStorage.getItem('reefid-sync-coral-progress') || '{}'),
+      rv: localStorage.getItem('reefid-sync-coral-rv'),
+      pending: (JSON.parse(localStorage.getItem('reefid-account') || '{}').log || []).length,
       card: !!document.querySelector('.rvmsg')
     }));
     const a = s.P.Acropora || {};
@@ -1218,16 +1221,16 @@ async function replayAdoptCheck(base) {
         [10, 14],
         [10, 5]
       ]) {
-        localStorage.removeItem('imr-rv-msg');
+        localStorage.removeItem('reefid-rv-msg');
         rvNoticeAdd(0, v, pct);
         // Shown at once when no other card is on screen (rvNotice waits behind one: the update note may be up here).
         document.querySelectorAll('.unlock, #tour').forEach(e => e.remove());
         rvNotice();
         const t = (document.querySelector('.rvmsg p:not(.ulkick)') || {}).textContent || '';
-        d.push([JSON.parse(localStorage.getItem('imr-rv-msg')).due, t]);
+        d.push([JSON.parse(localStorage.getItem('reefid-rv-msg')).due, t]);
         document.querySelectorAll('.rvmsg').forEach(e => e.remove());
       }
-      localStorage.removeItem('imr-rv-msg');
+      localStorage.removeItem('reefid-rv-msg');
       return d;
     }, C.RV);
     if (due[0][0].length || due[1][0].length || !due[2][0].includes(C.RV) || !due[2][1].includes('went from 10% to 5%'))
@@ -1240,13 +1243,13 @@ async function replayAdoptCheck(base) {
     await posted(p);
     await p.waitForTimeout(500);
     const s = await p.evaluate(() => ({
-      P: JSON.parse(localStorage.getItem('imr-coral-progress') || '{}'),
-      rv: localStorage.getItem('imr-coral-rv'),
+      P: JSON.parse(localStorage.getItem('reefid-sync-coral-progress') || '{}'),
+      rv: localStorage.getItem('reefid-sync-coral-rv'),
       log: JSON.parse(localStorage.getItem('test-sheet-log') || '[]'),
-      pending: (JSON.parse(localStorage.getItem('imr-coral-sync') || '{}').log || []).length,
+      pending: (JSON.parse(localStorage.getItem('reefid-account') || '{}').log || []).length,
       card: !!document.querySelector('.rvmsg'),
       text: (document.querySelector('.rvmsg p:not(.ulkick)') || {}).textContent || '',
-      rvm: JSON.parse(localStorage.getItem('imr-rv-msg') || '{}'),
+      rvm: JSON.parse(localStorage.getItem('reefid-rv-msg') || '{}'),
       pct: genScore('Acropora')
     }));
     const a = s.P.Acropora || {};
@@ -1287,7 +1290,7 @@ async function replayAdoptCheck(base) {
       .catch(() => {});
     await p.waitForTimeout(800);
     const t = await p.evaluate(() => ({
-      P: JSON.parse(localStorage.getItem('imr-coral-progress')),
+      P: JSON.parse(localStorage.getItem('reefid-sync-coral-progress')),
       log: JSON.parse(localStorage.getItem('test-sheet-log'))
     }));
     if (Math.abs(t.P.Acropora.pg - all.Acropora.pg) > 1e-9) fails.push(`replay: adopted again at the next load: ${t.P.Acropora.pg}`);
@@ -1352,10 +1355,10 @@ async function startSmoke(b, base) {
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     return [c, p];
   };
-  const rec = p => p.evaluate(() => JSON.parse(localStorage.getItem('imr-coral-start') || 'null'));
+  const rec = p => p.evaluate(() => JSON.parse(localStorage.getItem('reefid-sync-coral-start') || 'null'));
   // 1. The tour: the question first, forced; "new" ends the tour on Coral basics.
   {
-    const [c, p] = await open(() => localStorage.setItem('imr-nudge', '1'));
+    const [c, p] = await open(() => localStorage.setItem('reefid-nudge', '1'));
     await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
     const q = await p.evaluate(() => ({
       opts: document.querySelectorAll('#tour [data-start]').length,
@@ -1392,7 +1395,7 @@ async function startSmoke(b, base) {
   // 2. Tour skipped: a card before the quiz, forced; Escape goes Home and the quiz asks again; "new" offers Coral basics,
   // "Start the quiz" goes on to the first cards.
   {
-    const [c, p] = await open(() => (localStorage.setItem('imr-tour', '"done"'), localStorage.setItem('imr-nudge', '1')));
+    const [c, p] = await open(() => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-nudge', '1')));
     await p.evaluate(() => (location.hash = 'quiz'));
     await p.waitForSelector('.unlock.startq', {timeout: 8000}).catch(() => {});
     const card = await p.evaluate(() => ({
@@ -1421,7 +1424,7 @@ async function startSmoke(b, base) {
     [60, 1.2, false],
     [30, 0.1, true]
   ]) {
-    const [c, p] = await open(() => (localStorage.setItem('imr-tour', '"done"'), localStorage.setItem('imr-nudge', '1')));
+    const [c, p] = await open(() => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-nudge', '1')));
     await p.evaluate(
       ([n, th]) => {
         P['~level'] = {ok: n - 10, ko: 10, th, at: Date.now()};
@@ -1440,9 +1443,9 @@ async function startSmoke(b, base) {
   // band (core.js startCheck); Keep my answer; never again.
   {
     const [c, p] = await open(() => {
-      localStorage.setItem('imr-tour', '"done"');
-      localStorage.setItem('imr-nudge', '1');
-      localStorage.setItem('imr-coral-start', JSON.stringify({c: 'know', t: 1, at: 0, via: 'tour', n: 0, s: 0, fb: {}, h: []}));
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'know', t: 1, at: 0, via: 'tour', n: 0, s: 0, fb: {}, h: []}));
     });
     await p.evaluate(() => (location.hash = 'quiz'));
     await p.waitForSelector('.unlock.intro', {timeout: 8000}).catch(() => {});
@@ -1482,7 +1485,7 @@ async function startSmoke(b, base) {
   // the Home line until it is done; a glossary term links to its step; every step seen = done, with its achievement.
   {
     const [c, p] = await open(
-      () => (localStorage.setItem('imr-tour', '"done"'), localStorage.setItem('imr-coral-start', '{"c":"new","t":1}')),
+      () => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}')),
       {width: 1280, height: 860}
     );
     const home = await p.evaluate(() => !!document.querySelector('.hdoor.learn .hdnew a[href="#basics"]'));
@@ -1527,8 +1530,8 @@ async function startSmoke(b, base) {
         await new Promise(r => setTimeout(r, 150));
         if (id === 'walls') for (const b of [...document.querySelectorAll('.bx-wtabs [data-w]')]) b.click();
       }
-      const st = JSON.parse(localStorage.getItem('imr-basics') || '{}'),
-        a = JSON.parse(localStorage.getItem('imr-coral-ach') || '{}');
+      const st = JSON.parse(localStorage.getItem('reefid-basics') || '{}'),
+        a = JSON.parse(localStorage.getItem('reefid-sync-ach') || '{}');
       return {fin: !!st.fin, ach: !!a.basics, feat: !!a._basics, done: basicsDone()};
     });
     if (!done.fin || !done.ach || !done.feat || !done.done) fails.push(`Coral basics done: ${JSON.stringify(done)}`);
@@ -1562,9 +1565,9 @@ async function credits(b, base) {
       r => r.abort()
     );
     await c.addInitScript(() => {
-      localStorage.setItem('imr-tour', '"done"');
-      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-      localStorage.setItem('imr-nudge', '1');
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
     });
     const p = await c.newPage();
     await p.goto(base + hash);
@@ -1690,9 +1693,9 @@ async function basicsFit(b, base) {
       r => r.abort()
     );
     await c.addInitScript(() => {
-      localStorage.setItem('imr-tour', '"done"');
-      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-      localStorage.setItem('imr-nudge', '1');
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
     });
     const p = await c.newPage();
     await p.goto(base + '#lab');
@@ -1700,7 +1703,10 @@ async function basicsFit(b, base) {
     for (const st of ['colony', 'polyp', 'corallite', 'septa', 'teeth', 'walls', 'forms']) {
       // The walls check opens once the four wall types have been seen (basicsTeach checks that part).
       await p.evaluate(s => {
-        localStorage.setItem('imr-basics', JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {}));
+        localStorage.setItem(
+          'reefid-basics',
+          JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {})
+        );
         location.hash = 'basics|' + s;
       }, st);
       await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
@@ -1751,9 +1757,9 @@ async function basicsTeach(b, base) {
       r => r.abort()
     );
     await c.addInitScript(() => {
-      localStorage.setItem('imr-tour', '"done"');
-      localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-      localStorage.setItem('imr-nudge', '1');
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
     });
     const p = await c.newPage(),
       errs = [];
@@ -1761,7 +1767,7 @@ async function basicsTeach(b, base) {
     const go = async (st, seen = {}) => {
       await p.evaluate(
         ([s, v]) => {
-          localStorage.setItem('imr-basics', JSON.stringify(v));
+          localStorage.setItem('reefid-basics', JSON.stringify(v));
           location.hash = 'basics|' + s;
         },
         [st, seen]
@@ -1973,8 +1979,8 @@ async function basicsTeach(b, base) {
     if (!intro)
       await c.addInitScript(s => {
         try {
-          localStorage.getItem('imr-coral-intro') || localStorage.setItem('imr-coral-intro', s);
-          localStorage.getItem('imr-coral-quiz') || localStorage.setItem('imr-coral-quiz', '{"bon":false}');
+          localStorage.getItem('reefid-sync-coral-intro') || localStorage.setItem('reefid-sync-coral-intro', s);
+          localStorage.getItem('reefid-sync-coral-quiz') || localStorage.setItem('reefid-sync-coral-quiz', '{"bon":false}');
         } catch (e) {}
       }, INTROS);
     return c;
@@ -2029,7 +2035,10 @@ async function basicsTeach(b, base) {
       errs.length = 0;
       // The walls check opens once the four wall types have been seen (basicsTeach checks that part).
       await p.evaluate(s => {
-        localStorage.setItem('imr-basics', JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {}));
+        localStorage.setItem(
+          'reefid-basics',
+          JSON.stringify(s === 'walls' ? {walls: {separate: 1, shared: 1, valleys: 1, nowall: 1}} : {})
+        );
         location.hash = 'basics|' + s;
       }, st);
       await p.waitForSelector('.bx-q .choice, .bx-q .bx-tap', {timeout: 15000});
@@ -2080,9 +2089,9 @@ async function basicsTeach(b, base) {
         r => r.abort()
       );
       await c2.addInitScript(() => {
-        localStorage.setItem('imr-tour', '"done"');
-        localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-        localStorage.setItem('imr-nudge', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-nudge', '1');
       });
       const q2 = await c2.newPage(),
         e2 = [];
@@ -2201,7 +2210,7 @@ async function basicsTeach(b, base) {
         });
         await q2.waitForTimeout(300);
         const q = await q2.evaluate(() =>
-          JSON.parse(localStorage.getItem('imr-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg) + (x.src ? '@' + x.src : ''))
+          JSON.parse(localStorage.getItem('reefid-evq') || '[]').map(x => x.k + ':' + (x.r || x.msg) + (x.src ? '@' + x.src : ''))
         );
         // The first one-tap question ever is the plain one (core.js PULSE0), logged with its item id.
         if (!q.includes('pulse:hard@are') || !q.some(x => /smoke test error/.test(x)))
@@ -2295,7 +2304,7 @@ async function basicsTeach(b, base) {
         u => !u.href.startsWith(base),
         r => r.abort()
       );
-      await ct.addInitScript(() => localStorage.setItem('imr-nudge', '1'));
+      await ct.addInitScript(() => localStorage.setItem('reefid-nudge', '1'));
       const qt = await ct.newPage();
       await qt.goto(base);
       await qt.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
@@ -2353,7 +2362,7 @@ async function basicsTeach(b, base) {
         r => r.abort()
       );
       await cb.addInitScript(
-        () => (localStorage.setItem('imr-tour', '"done"'), localStorage.setItem('imr-coral-start', '{"c":"new","t":1}'))
+        () => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
       );
       const qb = await cb.newPage();
       await qb.goto(base + '#quiz');
@@ -2385,7 +2394,7 @@ async function basicsTeach(b, base) {
         r => r.abort()
       );
       await cz.addInitScript(
-        () => (localStorage.setItem('imr-tour', '"done"'), localStorage.setItem('imr-coral-start', '{"c":"new","t":1}'))
+        () => (localStorage.setItem('reefid-tour', '"done"'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
       );
       const qz = await cz.newPage();
       await qz.goto(base + '#g-Acropora');
@@ -2442,9 +2451,9 @@ async function basicsTeach(b, base) {
             r => r.abort()
           );
           await c.addInitScript(() => {
-            localStorage.setItem('imr-tour', '"done"');
-            localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-            localStorage.setItem('imr-nudge', '1');
+            localStorage.setItem('reefid-tour', '"done"');
+            localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+            localStorage.setItem('reefid-nudge', '1');
           });
           const p = await c.newPage();
           await p.goto(base + '#quiz');
@@ -2524,7 +2533,7 @@ async function basicsTeach(b, base) {
         await p2.waitForSelector('#lightbox:not([hidden])');
         await p2.keyboard.press('Escape');
         await nextQ(p2);
-        const z = {hint: await hintIn(p2, 2500), key: await p2.evaluate(() => localStorage.getItem('imr-zoomhint'))};
+        const z = {hint: await hintIn(p2, 2500), key: await p2.evaluate(() => localStorage.getItem('reefid-zoomhint'))};
         if (z.hint || z.key !== '"zoomed"') fails.push(`enlarge hint after a photo was enlarged: ${JSON.stringify(z)}`);
         await c2.close();
       }

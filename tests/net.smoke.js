@@ -73,8 +73,8 @@ const server = http.createServer((req, res) => {
     if (!intro)
       await c.addInitScript(s => {
         try {
-          localStorage.getItem('imr-coral-intro') || localStorage.setItem('imr-coral-intro', s);
-          localStorage.getItem('imr-coral-quiz') || localStorage.setItem('imr-coral-quiz', '{"bon":false}');
+          localStorage.getItem('reefid-sync-coral-intro') || localStorage.setItem('reefid-sync-coral-intro', s);
+          localStorage.getItem('reefid-sync-coral-quiz') || localStorage.setItem('reefid-sync-coral-quiz', '{"bon":false}');
         } catch (e) {}
       }, INTROS);
     return c;
@@ -83,8 +83,8 @@ const server = http.createServer((req, res) => {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}, deviceScaleFactor: opts.dpr || 1, serviceWorkers: 'block'});
     await ctx.addInitScript(() => {
       try {
-        localStorage.setItem('imr-tour', '1');
-        localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-tour', '1');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       } catch (e) {}
     });
     await ctx.route(
@@ -201,7 +201,7 @@ const server = http.createServer((req, res) => {
   {
     const {ctx, p, errs} = await ctxOf({slowScript: true});
     await p.addInitScript(() =>
-      localStorage.setItem('imr-board-cache', JSON.stringify({rows: [['Kept Player', 40, 1.2]], t: Date.now() - 600000}))
+      localStorage.setItem('reefid-board-cache', JSON.stringify({rows: [['Kept Player', 40, 1.2]], t: Date.now() - 600000}))
     );
     await p.goto(base + '#board');
     await ready(p);
@@ -256,7 +256,7 @@ const server = http.createServer((req, res) => {
       if (errs.length) fails.push('Sizes: ' + errs.slice(0, 3).join(' | '));
       await ctx.close();
     };
-    const tour = () => (localStorage.setItem('imr-tour', '1'), localStorage.setItem('imr-coral-start', '{"c":"new","t":1}'));
+    const tour = () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'));
     // Phone, 2x: one photo ~390 px wide -> 960 px file.
     await run({width: 390, height: 800}, 2, tour, async (p, t) => {
       if (!t.length || t.some(x => x === 's')) fails.push(`Phone 2x quiz photos too small: ${t}`);
@@ -286,9 +286,9 @@ const server = http.createServer((req, res) => {
       {width: 390, height: 800},
       2,
       () => {
-        localStorage.setItem('imr-tour', '1');
-        localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-        localStorage.setItem('imr-photo-q', '"saver"');
+        localStorage.setItem('reefid-tour', '1');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-photo-q', '"saver"');
       },
       async (p, t) => {
         if (t.some(big)) fails.push(`Saver still loaded 1600 px quiz photos: ${t}`);
@@ -308,7 +308,9 @@ const server = http.createServer((req, res) => {
         u => !u.href.startsWith(base),
         r => r.abort()
       );
-      await ctx.addInitScript(() => (localStorage.setItem('imr-tour', '1'), localStorage.setItem('imr-coral-start', '{"c":"new","t":1}')));
+      await ctx.addInitScript(
+        () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
+      );
       const p = await ctx.newPage(),
         cdp = await ctx.newCDPSession(p);
       await cdp.send('Network.enable');
@@ -336,9 +338,9 @@ const server = http.createServer((req, res) => {
       {width: 390, height: 800},
       1,
       () => {
-        localStorage.setItem('imr-tour', '1');
-        localStorage.setItem('imr-coral-start', '{"c":"new","t":1}');
-        localStorage.setItem('imr-photo-q', JSON.stringify('full'));
+        localStorage.setItem('reefid-tour', '1');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-photo-q', JSON.stringify('full'));
       },
       async (p, t) => {
         if (!t.length || t.some(x => !big(x))) fails.push(`Full quality did not load 1600 px: ${t}`);
@@ -417,7 +419,9 @@ const server = http.createServer((req, res) => {
   };
   {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}});
-    await ctx.addInitScript(() => (localStorage.setItem('imr-tour', '1'), localStorage.setItem('imr-coral-start', '{"c":"new","t":1}')));
+    await ctx.addInitScript(
+      () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
+    );
     await ctx.route(
       u => !u.href.startsWith(base),
       r => r.abort()
@@ -444,8 +448,8 @@ const server = http.createServer((req, res) => {
         (String((o && o.method) || 'GET').toUpperCase() === 'POST' || /[?&]name=/.test(String(u)))
           ? (hits.push(String(u)), Promise.reject(new Error('x')))
           : f(u, o);
-      localStorage.setItem('imr-anonq', JSON.stringify([{id: 'a1', t: Date.now(), g: 'Acropora', a: 'Porites', ok: 0}]));
-      localStorage.setItem('imr-reports', JSON.stringify([{k: 'photo', m: 'test'}]));
+      localStorage.setItem('reefid-anonq', JSON.stringify([{id: 'a1', t: Date.now(), g: 'Acropora', a: 'Porites', ok: 0}]));
+      localStorage.setItem('reefid-reports', JSON.stringify([{k: 'photo', m: 'test'}]));
       sendAnon();
       sendReports();
       await new Promise(ok => setTimeout(ok, 300));
@@ -467,7 +471,9 @@ const server = http.createServer((req, res) => {
       .catch(() => fails.push('The page did not reload onto the new version at the next page change'));
     // A tab opened before any version was installed, then left open, still gets the next version (Codex review #336).
     const r = await ctx.browser().newContext({viewport: {width: 390, height: 800}});
-    await r.addInitScript(() => (localStorage.setItem('imr-tour', '1'), localStorage.setItem('imr-coral-start', '{"c":"new","t":1}')));
+    await r.addInitScript(
+      () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
+    );
     await r.route(
       u => !u.href.startsWith(base),
       x => x.abort()
@@ -766,7 +772,7 @@ const server = http.createServer((req, res) => {
       );
       await p.evaluate(() => {
         window.R2DOWN = 0;
-        navigator.serviceWorker.addEventListener('message', e => e.data && e.data.t === 'imr-r2-down' && window.R2DOWN++);
+        navigator.serviceWorker.addEventListener('message', e => e.data && e.data.t === 'reefid-r2-down' && window.R2DOWN++);
         navigator.serviceWorker.startMessages();
       });
       if (!(await load(R2 + 'img/' + f))) fails.push('Service worker: an R2 photo did not fall back to the site');
@@ -796,7 +802,9 @@ const server = http.createServer((req, res) => {
       args: ['--host-resolver-rules=MAP coral.test 127.0.0.1, MAP script.google.com 127.0.0.1, MAP script.googleusercontent.com 127.0.0.1']
     });
     const ctx = await bw.newContext({serviceWorkers: 'block'});
-    await ctx.addInitScript(() => (localStorage.setItem('imr-tour', '1'), localStorage.setItem('imr-coral-start', '{"c":"new","t":1}')));
+    await ctx.addInitScript(
+      () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
+    );
     const p = await ctx.newPage();
     await p.goto(`http://coral.test:${server.address().port}/#home`);
     await p.waitForFunction(
@@ -815,8 +823,8 @@ const server = http.createServer((req, res) => {
         /script\.google/.test(String((u && u.url) || u)) && String((o && o.method) || 'GET').toUpperCase() === 'POST'
           ? (hits.push(String(u)), Promise.reject(new Error('x')))
           : f(u, o);
-      localStorage.setItem('imr-anonq', JSON.stringify([{id: 'w1', t: Date.now(), g: 'Acropora', a: 'Porites', ok: 0}]));
-      localStorage.setItem('imr-reports', JSON.stringify([{k: 'photo', m: 'test'}]));
+      localStorage.setItem('reefid-anonq', JSON.stringify([{id: 'w1', t: Date.now(), g: 'Acropora', a: 'Porites', ok: 0}]));
+      localStorage.setItem('reefid-reports', JSON.stringify([{k: 'photo', m: 'test'}]));
       sendAnon();
       sendReports();
       sendEvents();

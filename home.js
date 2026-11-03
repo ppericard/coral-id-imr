@@ -59,7 +59,7 @@
     $v.innerHTML = `<h2 class="vh">About and credits</h2><div class="about">
       <section>
         <h3>Who made it</h3>
-        <p>IMR Coral ID is made by <b>Pierre Pericard</b> (website and interface), to train the Research Assistants of the Institute for Marine Research (IMR), Dauin, Philippines, to name coral genera on photos and on dives.</p>
+        <p>IMR Reef ID is made by <b>Pierre Pericard</b> (website and interface), to train the Research Assistants of the Institute for Marine Research (IMR), Dauin, Philippines, to name coral genera on photos and on dives.</p>
       </section>
       <section>
         <h3>Course content</h3>

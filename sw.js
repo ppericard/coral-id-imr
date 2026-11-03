@@ -1,5 +1,5 @@
 // Offline cache: app shell first, then photos as they are viewed.
-const V = 'imr-coral-id-v310';
+const V = 'reefid-shell-v310';
 // Photos live in their own cache that no deploy deletes (code review 2026-11-01, H3): bumping V used to wipe every
 // offline photo. Capped at PH_MAX entries, oldest first out (cache keys keep insertion order).
 const PH = 'imr-photos-v1',
@@ -82,7 +82,7 @@ self.addEventListener('install', e =>
 self.addEventListener('activate', e =>
   e.waitUntil(
     (async () => {
-      const old = (await caches.keys()).filter(k => k.startsWith('imr-coral-id-') && k !== V),
+      const old = (await caches.keys()).filter(k => k.startsWith('reefid-shell-') && k !== V),
         ph = await caches.open(PH);
       for (const k of old) {
         const c = await caches.open(k);
@@ -114,7 +114,7 @@ self.addEventListener('activate', e =>
                 done();
               };
               try {
-                c.postMessage({t: 'imr-ver?'}, [ch.port2]);
+                c.postMessage({t: 'reefid-ver?'}, [ch.port2]);
               } catch (err) {
                 clearTimeout(t);
                 done();
@@ -177,7 +177,7 @@ const R2_PAUSE = 60e3;
 const r2Down = () =>
   self.clients
     .matchAll({type: 'window'})
-    .then(cs => cs.forEach(c => c.postMessage({t: 'imr-r2-down'})))
+    .then(cs => cs.forEach(c => c.postMessage({t: 'reefid-r2-down'})))
     .catch(() => {});
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);

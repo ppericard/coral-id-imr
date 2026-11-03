@@ -1,4 +1,4 @@
-# Handover: picking up IMR Coral ID in a new Claude account
+# Handover: picking up IMR Reef ID in a new Claude account
 
 Written 2026-11-01 when Pierre moved development to another Claude Code account. Until then the project ran in a Claude "project" with a shared memory, many parallel threads and private claude.ai docs. **None of that is reachable from the new account.** Everything that mattered has been copied into this repository; this file is the map.
 
