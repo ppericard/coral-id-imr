@@ -89,9 +89,10 @@ const kOf = (mode, choices) => {
 // newer ones from another device, so the tab's order is not the time order. A time that cannot be read keeps the
 // position of the row before it.
 const timeOf = x => (typeof x === 'number' ? x : x instanceof Date ? x.getTime() : Date.parse(String(x || '').trim().replace(' ', 'T')));
-// The app logs its own confusion term inside e from the release of the known mix-ups (PR #425; the log's clock, as the
-// sheet tab writes it, Asia/Taipei): before it, e has none. --cf-from moves it.
-let CF_FROM = timeOf('2026-11-04 02:00');
+// The app logs its own confusion term inside e from the release of the known mix-ups (PR #425, live 2026-11-03 15:35
+// UTC; the log's clock, as the sheet tab writes it, Asia/Taipei): before it, e has none. An app not yet updated logs a
+// few answers without it after that time (no per-answer app version in the log). --cf-from moves it.
+let CF_FROM = timeOf('2026-11-03 23:35');
 function normalise(raw) {
   raw = raw.filter(r => r && r[0] && r[0] !== 'Name');
   let last = -Infinity;
