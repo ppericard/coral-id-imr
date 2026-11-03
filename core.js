@@ -923,12 +923,198 @@
     return list && list.length ? Math.round((100 * list.reduce((t, n) => t + scoreOf((P || {})[n]), 0)) / list.length) : 0;
   }
 
+  // What one answer proves, the weights of pgStep (docs/LEARNING.md "Progress (moving average) and mastery"), shared by
+  // the app (model.js pgWeight, quiz.js answer) and the full replay below, so both run the same rules.
+  // TARGET_OFF: the game aims its photos this far below the player's ability on the genus (about 80% right with 4
+  // choices; model.js PICKD.TARGET_OFF).
+  const TARGET_OFF = 1.0;
+  const sigm = x => 1 / (1 + Math.exp(-x));
+  // A right answer, w from 0 to 1: the plausible choices k ((1 − 1/k) / (1 − 1/4): 4 weigh 1, 3 0.89, 2 0.67), in full
+  // when a genus it gets confused with is among the choices (look), PROG.LOOK when none is. model.js pgWeight finds look.
+  const pgRightW = (k, look) => Math.min(1, Math.max(0, (1 - 1 / k) / (1 - 1 / 4))) * (look ? 1 : PROG.LOOK);
+  // What a miss proves (Pierre, 2026-11-02: "a miss on a very hard photo doesn't necessarily mean the genus is badly
+  // known"; a miss must not cost more than it proves): the Elo chance the player had to get it right (ability th against
+  // the photo's difficulty d, k choices, as abilityStep), over the chance the game aims for (a photo TARGET_OFF below the
+  // ability, about 80% with 4 choices). A photo at the player's level or easier: the miss counts in full; a harder one:
+  // less (1 unit harder: 0.78; 2 units: 0.56). No new constant: the Elo and the photo targeting set it. The right answers
+  // keep their weight (pgRightW): simulated, a photo factor on them only slowed everyone.
+  // R: the recall expected after a break, for a comeback question (model.js comebackOf; 1 otherwise): the chance the
+  // player had is then the recall-adjusted one, so a miss the rust explains costs less progress (Pierre, 2026-11-02).
+  function pgMissW(th, d, k, R = 1) {
+    const e = (x, r = 1) => 1 / k + (1 - 1 / k) * r * sigm(x);
+    return Math.min(1, e(th - d, R) / e(TARGET_OFF));
+  }
+  // What a right answer on a photo the player knows proves (Pierre, 2026-11-03): only what memory does not explain. The
+  // mirror of pgMissW (a ratio of chances, like it): the chance the player had on the same photos new over the chance
+  // they had with their memory of them (fam, model.js famOf), at most 1: the share of such right answers that would have
+  // come without the memory. A new photo (fam 0) keeps its full weight: simulated, a photo-difficulty factor on every
+  // right answer only slowed everyone, so only the part memory explains is taken off. 4 choices, a photo at the game's
+  // target (ability 1 above it): x 0.93 shown never right, x 0.87 right once, x 0.84 right twice or more with the
+  // offsets of 2026-11-03. Tried first, the room for surprise left ((1 - chance with memory) / (1 - chance new): x 0.71
+  // / 0.41 / 0.23): simulated, it took a third to a half of the genera learned by question 600 and put the progress
+  // further below the truth than memory had put it above (docs/LEARNING.md "Photo memory").
+  function pgMemW(th, d, fam, k, R = 1) {
+    const e = x => 1 / k + (1 - 1 / k) * R * sigm(x);
+    return fam >= 0 ? 1 : Math.min(1, e(th - d) / e(th - d - fam));
+  }
+  // Number of choices as the app scored an answer, from its log row: |kN in the mode (the plausible choices, logged when
+  // fewer than the buttons), a duel 2, else the genera offered (2-3), else 4.
+  const kOf = (mode, choices) => {
+    const kq = /\|k(\d)/.exec(String(mode || ''));
+    if (kq) return Number(kq[1]);
+    if (/duel|\|d(\||$)/.test(String(mode || ''))) return 2;
+    const n = String(choices || '')
+      .split(/\s+/)
+      .filter(Boolean).length;
+    return n >= 2 && n < 4 ? n : 4;
+  };
+
+  // Full replay (Pierre, 2026-11-03: "why recalculate on the phones when the phone doesn't have the full log? Recalculate
+  // from all the results"): every player's progress rebuilt from the sheet's answer log, in time order, with today's rules
+  // (the weights above, pgStep, the photo memory), as if every answer had been played under them. The reference
+  // recalculation: the device's own (memRecalc from s.ps, pgOf from the last 10 results s.h) only approximate it from
+  // what a device keeps. docs/LEARNING.md "Full replay".
+  // rows: the admin's answer log (sheet readAnswers: [anonymous id, time ms, genus shown, answered, right 0|1, mode,
+  // photos, expected e, ability th, new photos, choices, ...]). o: gen (data.json genera, Millepora and the bonus genera
+  // included: look-alikes `look`, family `fam`), mem (photo memory offsets, ?stats=1 mem; the prior without), conf (the
+  // pooled pairs, ?stats=1 conf, as the app's PCONF), since ({id: time ms}: only the answers after a progress reset),
+  // memory (false: the rule before the photo memory, tools/memreplay.js), onAnswer(row, {d, fam, k, w, look}).
+  // Returns {id: {P: {genus: {pg, ok, ko, h, ps, off, conf, u}}, n, used, rep}}: per genus the moving average pg (what the
+  // app keeps as s.pg), right / wrong answers, the last 10 results, the photos [shown, right], the choices offered beside
+  // it and the genera given instead (the app's s.off, s.conf), u = answers that moved pg; per player the rows read (n),
+  // replayed (used: with e and th) and on a photo already shown (rep).
+  // Each question's difficulty d (photo difficulty, + 0.5 for a photo shown alone) is recovered from what the app logged
+  // then: e = 1/k + (1 - 1/k) sig(th - d), th the player's ability on the genus at that moment. Since the photo memory
+  // (MEM_LOGGED) the logged e includes the memory of the photos (fam), taken out again here with the replay's own fam.
+  // Approximations, explicit: the ability th and the photos are those the app logged (the game would have drawn others
+  // under other rules); a comeback question's recall is taken as 1 (its e logged with it reads as a harder photo); the
+  // look-alike test is the app's (declared look-alikes or confusions over CONF.TRAP, pooled and the player's own) with a
+  // prior from the look-alikes and the family only (the app also gives CONF.FORM to genera sharing an IMR growth form);
+  // a miss on the genus wrongly given weighs the chance the player had on the genus shown (its own ability is not
+  // logged); every photo of a right answer counts as recognised (the app does not count a corallites photo answered
+  // without opening it, which the log leaves out anyway). Answers logged without e and th (before sheet v5) count in
+  // ok/ko/h only. The mastery exam is not replayed: replayedOf takes it from the saved copy.
+  const MEM_LOGGED = Date.UTC(2026, 10, 3, 4, 46); // PR #387 merged: the app's logged e includes the photo memory
+  function replayProgress(rows, o = {}) {
+    const gen = o.gen || {},
+      mem = memOf(o.mem),
+      conf = o.conf || {},
+      since = o.since || {},
+      memory = o.memory !== false,
+      out = {};
+    const prior = (t, n) => {
+      const a = gen[t] || {},
+        b = gen[n] || {};
+      return (a.look || []).includes(n) || (b.look || []).includes(t) ? CONF.LOOK : a.fam && a.fam === b.fam ? CONF.FAM : CONF.BASE;
+    };
+    // model.js pgWeight: a genus among the choices that the player gets confused with (pooled, then their own record).
+    const lookOf = (P, t, n) => {
+      if (n === t || !gen[n]) return false;
+      const pooled = confScore(conf[t < n ? t + '|' + n : n + '|' + t], prior(t, n));
+      return pooled >= CONF.TRAP || confScore(pairConf(P, t, n), pooled) >= CONF.TRAP;
+    };
+    const split = x =>
+      String(x || '')
+        .split(/\s+/)
+        .filter(Boolean);
+    rows
+      .filter(r => r && r[0] && r[2])
+      .sort((a, b) => a[1] - b[1])
+      .forEach(r => {
+        const id = r[0];
+        if (since[id] && !(r[1] > since[id])) return;
+        const pl = (out[id] = out[id] || {P: {}, n: 0, used: 0, rep: 0}),
+          rec = g => (pl.P[g] = pl.P[g] || {pg: 0, ok: 0, ko: 0, h: '', ps: {}, u: 0}),
+          t = String(r[2]),
+          c = String(r[3] || ''),
+          ok = !!r[4],
+          fs = split(r[6]),
+          e = r[7],
+          th = r[8],
+          chs = split(r[10]),
+          k = kOf(r[5], r[10]),
+          s = rec(t),
+          hs = fs.map(f => s.ps[f]);
+        pl.n++;
+        if (hs.some(h => h && h[0])) pl.rep++;
+        // The choices offered and the genus given instead, before the weight (as quiz.js answer counts them).
+        chs.forEach(x => x !== t && ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1));
+        s[ok ? 'ok' : 'ko']++;
+        if (!ok && c) (s.conf = s.conf || {})[c] = (s.conf[c] || 0) + 1;
+        if (typeof e === 'number' && typeof th === 'number' && fs.length && k > 1) {
+          pl.used++;
+          const fam = memFam(hs, mem),
+            q = Math.min(0.995, Math.max(0.005, (e - 1 / k) / (1 - 1 / k))),
+            dl = th - Math.log(q / (1 - q)), // the difficulty in the logged expectation
+            d = r[1] >= MEM_LOGGED ? dl - fam : dl,
+            fm = memory ? fam : 0,
+            look = chs.some(x => lookOf(pl.P, t, x)),
+            w = ok ? pgRightW(k, look) * pgMemW(th, d, fm, k) : pgMissW(th, d + fm, k);
+          s.pg = pgStep(s.pg, ok, w);
+          s.u++;
+          // Pierre's rule: a wrong answer counts against the genus given too (without the photo memory: it is of the
+          // genus shown). Its own ability is not logged: the chance on the genus shown stands for it.
+          if (!ok && c && c !== t && gen[c]) {
+            const x = rec(c);
+            x.pg = pgStep(x.pg, false, pgMissW(th, d, k));
+            x.u++;
+          }
+          if (o.onAnswer) o.onAnswer(r, {d, fam: fm, k, w, look});
+        }
+        if (!ok && c && c !== t && gen[c]) rec(c).h = (rec(c).h + '0').slice(-10);
+        s.h = (s.h + (ok ? 1 : 0)).slice(-10);
+        fs.forEach(f => {
+          const x = (s.ps[f] = s.ps[f] || [0, 0]);
+          x[0]++;
+          if (ok) x[1]++;
+        });
+      });
+    return out;
+  }
+  // A player's progress as the app would hold it after the replay: per genus, the replayed s.pg (the saved copy's own,
+  // read as the app reads it, pgOf, for a genus the log has no replayable answer on), and from the saved copy what the log
+  // cannot give: the mastery exam passed (s.mx) and the one in course (s.ex). Not for an exam passed under the former
+  // model (a record without s.pg, before 2026-11-02; memRecalc drops it, commit of 2026-11-03): its genus takes the exam
+  // again. The replay does not decide the exam; a genus learned keeps it here even if its replayed bar is lower (the app
+  // only takes it away at a miss, model.js mxKept). saved: the player's imr-coral-progress; rep: replayProgress's player.
+  function replayedOf(rep, saved) {
+    const S = saved && typeof saved === 'object' ? saved : {},
+      R = (rep && rep.P) || {},
+      out = {};
+    new Set([...Object.keys(S), ...Object.keys(R)]).forEach(g => {
+      if (g === LEVEL) return;
+      const s = S[g] && typeof S[g] === 'object' ? S[g] : null,
+        r = R[g],
+        cur = !!s && typeof s.pg === 'number',
+        o = {
+          pg: r && r.u ? r.pg : pgOf(s),
+          ok: r ? r.ok : (s && s.ok) || 0,
+          ko: r ? r.ko : (s && s.ko) || 0,
+          h: r ? r.h : (s && s.h) || ''
+        };
+      if (cur && s.mx) o.mx = s.mx;
+      else if (cur && s.ex) o.ex = s.ex;
+      out[g] = o;
+    });
+    return out;
+  }
+  const learnedOf = (P, list) => list.filter(n => (P || {})[n] && P[n].mx).length;
+
   const CORE = {
     PROG,
     pgStep,
     pgOf,
     scoreOf,
     pctOf,
+    TARGET_OFF,
+    pgRightW,
+    pgMissW,
+    pgMemW,
+    kOf,
+    MEM_LOGGED,
+    replayProgress,
+    replayedOf,
+    learnedOf,
     ACH,
     newAch,
     LEVEL,

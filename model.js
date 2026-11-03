@@ -13,7 +13,8 @@
 // last 2 questions on the genus is held back, and at least 3 colonies stay in rotation (VARIETY) whatever the level, so
 // a struggling player still sees new photos.
 // Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
-const PICKD = {TARGET_OFF: 1.0, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
+// TARGET_OFF (1.0) is core.js's: the miss weight (pgMissW) aims at the same chance.
+const PICKD = {TARGET_OFF, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
 // One zoom level per question (Pierre, 2026-10-31): beginners get every view of the colony (lots of information); as
 // the player's level on the genus rises, more and more questions show a single view (colony, closer or corallites
 // alone), up to 85% of them, so each view is learned on its own and each photo's difficulty is measured on its own.
@@ -669,38 +670,17 @@ function photoDiff(n, p) {
 // - its look-alikes: in full when a genus it gets confused with is among the choices (pooled over every player with the
 //   declared look-alikes as prior, or the player's own mix-ups: the traps' rule), PROG.LOOK (0.5) when none is.
 // So a right answer between 2 genera of different forms counts a third of one against 3 look-alikes. A miss weighs
-// what it proves too (pgMissW below: in full on a photo at the player's level, less on a harder one). Photo
-// difficulty is left out of a right answer's weight: simulated as a third factor (0.5 on an easy photo to 1 on a hard
-// one), it only slowed everyone (an expert mastered 5 genera in 1000 questions instead of 16), which A already sets, and the
-// traps already come as the genus's photos get harder (both follow the Elo ability).
+// what it proves too (core.js pgMissW: in full on a photo at the player's level, less on a harder one), and a right
+// answer on a photo the player knows only what memory does not explain (core.js pgMemW). Photo difficulty is left out of
+// a right answer's weight: simulated as a third factor (0.5 on an easy photo to 1 on a hard one), it only slowed
+// everyone (an expert mastered 5 genera in 1000 questions instead of 16), which A already sets, and the traps already
+// come as the genus's photos get harder (both follow the Elo ability). The weights live in core.js (pgRightW, pgMissW,
+// pgMemW, 2026-11-03) so the full replay of the answer log (core.js replayProgress) runs the same rules as the app.
 function pgWeight(t, chs, k) {
-  const look = chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >= CONF.TRAP || confusable(t, n)));
-  return Math.min(1, Math.max(0, (1 - 1 / k) / (1 - 1 / 4))) * (look ? 1 : PROG.LOOK);
-}
-// What a miss proves (Pierre, 2026-11-02: "a miss on a very hard photo doesn't necessarily mean the genus is badly
-// known"; a miss must not cost more than it proves): the Elo chance the player had to get it right (ability th against
-// the photo's difficulty d, k choices, as abilityStep), over the chance the game aims for (a photo PICKD.TARGET_OFF
-// below the ability, about 80% with 4 choices). A photo at the player's level or easier: the miss counts in full; a
-// harder one: less (1 unit harder: 0.78; 2 units: 0.56). No new constant: the Elo and the photo targeting set it.
-// The right answers keep their weight (pgWeight): simulated, a photo factor on them only slowed everyone.
-// R: the recall expected after a break, for a comeback question (comebackOf, below; 1 otherwise): the chance the player
-// had is then the recall-adjusted one, so a miss the rust explains costs less progress (Pierre, 2026-11-02).
-function pgMissW(th, d, k, R = 1) {
-  const e = (x, r = 1) => 1 / k + (1 - 1 / k) * r * sig(x);
-  return Math.min(1, e(th - d, R) / e(PICKD.TARGET_OFF));
-}
-// What a right answer on a photo the player knows proves (Pierre, 2026-11-03): only what memory does not explain. The
-// mirror of pgMissW (a ratio of chances, like it): the chance the player had on the same photos new over the chance
-// they had with their memory of them (fam, famOf), at most 1: the share of such right answers that would have come
-// without the memory. A new photo (fam 0) keeps its full weight: simulated, a photo-difficulty factor on every right
-// answer only slowed everyone (pgWeight, above), so only the part memory explains is taken off. 4 choices, a photo at
-// the game's target (ability 1 above it): x 0.93 shown never right, x 0.87 right once, x 0.84 right twice or more with
-// the offsets of 2026-11-03. Tried first, the room for surprise left ((1 - chance with memory) / (1 - chance new): x 0.71
-// / 0.41 / 0.23): simulated, it took a third to a half of the genera learned by question 600 and put the progress
-// further below the truth than memory had put it above (docs/LEARNING.md "Photo memory").
-function pgMemW(th, d, fam, k, R = 1) {
-  const e = x => 1 / k + (1 - 1 / k) * R * sig(x);
-  return fam >= 0 ? 1 : Math.min(1, e(th - d) / e(th - d - fam));
+  return pgRightW(
+    k,
+    chs.some(n => n !== t && GX(n) && (pooledConf(t, n) >= CONF.TRAP || confusable(t, n)))
+  );
 }
 const knownP = n => pgOf(P[n]);
 function pgObs(n, s, good, w) {

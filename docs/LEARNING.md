@@ -515,9 +515,9 @@ is a good mastery criterion.
   row give 0.65, 77% on the bar: no genus enters the exam on old answers alone. A genus learned on such a record passed
   its exam under BKT and loses it (below, "Learned under the former model"); until then it counts at the exam's entry. The record is rewritten at the genus's next answer. On the base runs (BKT, 300 questions, 6
   seeds) this recalculation moves the overall %: beginner 21-30% → 23-28%, lecture-level RA 35-41% → 33-37%, strong
-  RA 32-53% → 27-44%, expert 65-82% → 45-51%; genera at 95% or more before their exam all drop under it. A fuller
-  recalculation for signed-in players could replay their whole answer log from the sheet's Answers tab (mode `|kN`,
-  Choices): ROADMAP.
+  RA 32-53% → 27-44%, expert 65-82% → 45-51%; genera at 95% or more before their exam all drop under it. The full
+  recalculation replays each player's whole answer log from the sheet's Answers tab (mode `|kN`, Choices): "Full
+  replay", below (2026-11-03).
 - **Removed**: `BKT` (7 constants), `bktStep`'s guess and slip formula, `bktStart`, the "a miss never raises L" patch,
   the photo familiarity offsets of `answer()` (`bk`: +0.5 for a new photo, −1 for one right twice; the sheet's `stats_`
   keeps its own copy for the photo ratings, `PHOTO_W`). They came back on 2026-11-03 as the photo memory estimated from
@@ -700,12 +700,34 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   exam's entry. `memRecalc` drops their `s.mx` (and any `s.ex`) silently, at every call (load, pull, answer), so a
   copy pulled from another device loses it too; the genus keeps its bar from its record and takes the exam again under
   today's rules. An exam passed since (`s.pg` beside `s.mx`) is left alone; the achievements it earned stay
-  (`newAch` only adds). The sheet's Learned column and leaderboard % follow at the player's next sync.
+  (`newAch` only adds). The sheet's Learned column and leaderboard % follow at the player's next sync. The admin
+  shows the player's numbers without waiting for that sync: its full replay (below) keeps a learned mark only on a
+  record with `s.pg` (`core.js` `replayedOf`), and marks "↻ saved …" where the sheet's copy still counts it.
 - **What it does to the current players**: `node tools/memreplay.js answers.json [--player id] [--mem ...]` replays
   the admin's answer log (`readAnswers`, saved to a file) under the old rule and the new one: the offsets these answers
   give, how far the photo ratings move, and per player the bar of each genus, their overall % and their opening hold,
   old -> new (each question's difficulty recovered from the expectation and ability the app logged; approximations
   listed at the top of the tool).
+- **Full replay** (Pierre, 2026-11-03: "why recalculate on the phones when the phone doesn't have the full log?
+  Recalculate from all the results"): the reference recalculation of a player's progress is the replay of their whole
+  answer log in the sheet, in time order, with today's rules (`core.js` `replayProgress`): each answer weighed as the
+  app weighs it now (`pgRightW` with the app's look-alike test, `pgMemW` with the photo memory from the player's own
+  history in the log and the sheet's offsets, `pgMissW`, `pgStep`), as if every answer had been played under these
+  rules. The weights live in `core.js` since then, and `model.js` / `quiz.js` call the same functions, so a rule
+  changed for the app is changed for the replay. Each question's difficulty is recovered from what the app logged
+  (`e`, `th`, the choices; since the photo memory, `MEM_LOGGED`, the logged `e` includes it and the replay takes it out
+  again). Approximations, listed with the function: the abilities and photos are those the app logged (other rules
+  would have drawn other photos), a comeback answer's recall is taken as 1, the look-alike prior leaves out the IMR
+  growth forms, the genus wrongly given is weighed at the chance on the genus shown (its own ability is not logged).
+  The mastery exam is not replayed: a genus keeps the exam passed (`s.mx`) or in course (`s.ex`) from the player's
+  saved copy (`replayedOf`), except an exam passed under the former model (a record without `s.pg`, above), which is
+  taken again. The device's own recalculations (`memRecalc` from `s.ps`, `pgOf` from the last 10 results `s.h`) only
+  approximate it from what a device keeps: a stopgap until the replay reaches the devices through the sheet (designed
+  separately). For now the admin shows it: Players (Progress, Learned, the player's bar) and Journey (Progress,
+  Learned, each genus's bar, the learned genera) show the replayed values, computed in the browser once per data load
+  (about 10 ms for the demo's 1200 answers), and "↻ saved 44%" beside one when the sheet's saved copy says otherwise
+  (a player who has not opened the app since a recalculation, or whose last answers are not saved yet).
+  `tools/memreplay.js` prints the same replay under the old rule and the new one; `tests/replay.test.js` checks it.
 
 **Simulated** (`tools/learnsim.js`, its learner given a photo memory of 0 / +0.4 / +1.5 / +2 logits, "Learning-outcome
 simulation" below; 30 seeds × 600 questions, the four usual profiles, the photo stats of 2026-11-03 with the offsets
