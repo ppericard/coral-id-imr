@@ -5,6 +5,7 @@ const {
   merge3,
   mergeOld,
   mergeProgress,
+  replayedOf,
   eloOf,
   genusOffsetsOf,
   GENUS_K,
@@ -392,6 +393,11 @@ test('playerStart: a new genus starts from the global level, shrunk while answer
   // The pseudo-genus merges across devices like a genus (answers add up, the latest ability).
   const m = mergeProgress({[LEVEL]: {ok: 2, ko: 0, th: 0.3}}, {[LEVEL]: {ok: 5, ko: 0, th: 0.9}}, {[LEVEL]: {ok: 4, ko: 1, th: 0.5}});
   assert.deepStrictEqual([m[LEVEL].ok, m[LEVEL].ko, m[LEVEL].th], [7, 1, 0.9]);
+  // Its recent results over every game (h, newest last; model.js openRight: an opening only after a right answer): the
+  // device that played keeps its own, as for a genus, and the sheet's replay keeps the saved ones (core.js replayedOf).
+  const h = mergeProgress({[LEVEL]: {ok: 2, ko: 0, h: '11'}}, {[LEVEL]: {ok: 2, ko: 1, h: '110'}}, {[LEVEL]: {ok: 2, ko: 0, h: '11'}});
+  assert.strictEqual(h[LEVEL].h, '110');
+  assert.strictEqual(replayedOf({P: {[LEVEL]: {ok: 4, ko: 1, th: 1}}}, {[LEVEL]: {ok: 2, ko: 1, h: '110'}})[LEVEL].h, '110');
 });
 
 test('levelSeed: the global record starts from the history, so an existing expert keeps their head start', () => {

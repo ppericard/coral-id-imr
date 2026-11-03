@@ -82,6 +82,9 @@
 //   mean true success on the hard reference question at the moment they entered; refLearned, the same when learned.
 // - Per run: when Millepora was met and first asked, when the bonus genera were offered (every slate genus met; the
 //   simulated player accepts, "Add them"), and the share of the questions on bonus genera after that.
+// - Per run, openings after a miss (model.js openRight, 2026-11-03): the genera opened on their own cards, those on the
+//   question right after a miss (0 with the rule), the questions where that rule alone held the opening (with the chance
+//   openChance would have opened one), and the questions from each spell of them to the next opening.
 // - Per run, metAt: the question at which each genus was first met (card or asked); printed as the median question per
 //   profile for the genera of --met (a genus not met counts as later than the last question, shown ">N").
 // - By photo count (photo memory): the slate genera with few game photos (FEW, 14 or fewer) against those with many
@@ -311,6 +314,19 @@ function play(cfg) {
   const oa = {at: null, set: [], back: null, ans: []};
   const q0 = question;
   question = (...a) => ((window.__q = a), q0(...a));
+  // An opening only after a right answer (model.js openRight, 2026-11-03): the questions where it alone held the path's
+  // opening (every other condition met, a genus left to open), with the chance openChance would then have opened one.
+  // planPhoto asks it last, so a false here is that rule's. Main before the rule has no openRight: nothing recorded.
+  const blocked = new Map();
+  if (typeof openRight === 'function') {
+    const or0 = openRight;
+    openRight = at => {
+      const ok = or0(at),
+        a = at === undefined ? answersSoFar() : at;
+      if (!ok && pool().some(n => !introduced(n)) && !blocked.has(a)) blocked.set(a, openChance(pool()));
+      return ok;
+    };
+  }
 
   const rows = [],
     entry = {},
@@ -321,7 +337,9 @@ function play(cfg) {
     nEx = 0,
     nDuel = 0,
     nAgain = 0,
-    nCards = 0;
+    nCards = 0,
+    afterMiss = 0, // genera opened on their own cards on the question right after a miss
+    prevGood = null;
   const mill = {met: null, asked: null},
     bon = {offer: null, n: 0, q: 0};
   // One question, as the player sees it (pre: called once it shows, for the breaks).
@@ -430,7 +448,11 @@ function play(cfg) {
     if (set.exam) nEx++;
     if (q.auto) nDuel++;
     if (q.again) nAgain++;
-    if ((q.intro || []).length && !q.start) opens.push(i + 1);
+    if ((q.intro || []).length && !q.start) {
+      opens.push(i + 1);
+      if (prevGood === false) afterMiss++;
+    }
+    prevGood = good;
     blk.n++;
     blk.ok += good;
     if (mill.met === null && introduced('Millepora')) mill.met = i + 1;
@@ -592,7 +614,12 @@ function play(cfg) {
     bonusOffer: bon.offer,
     bonusShare: bon.q ? bon.n / bon.q : null,
     bonusMet: BONUS.filter(introduced).length,
-    openAll: openall ? oa : null
+    openAll: openall ? oa : null,
+    // The first session's openings on their own cards (questions, 1-based), those right after a miss, and the questions
+    // (1-based) where only the right-answer rule held the opening, with openChance then.
+    opens,
+    afterMiss,
+    blocked: [...blocked].filter(([a]) => a < N).map(([a, c]) => [a + 1, Math.round(c * 1000) / 1000])
   };
 }
 
@@ -928,6 +955,24 @@ function openTable(runs) {
         return `${g} ${m === Infinity ? '>' + QN : m} (${R.filter(r => (r.metAt || {})[g]).length}/${R.length})`;
       };
     console.log(`  ${name}: ${MET.map(cell).join(', ')}`);
+  }
+  // An opening only after a right answer (model.js openRight): per run, the genera opened on their own cards, those on
+  // the question right after a miss (0 with the rule), the questions where the rule alone held the opening and the
+  // openings that held back in expectation (their openChance summed), and the questions from each spell of held
+  // questions (misses in a row) to the next opening (spells with no opening after them left out). Means over the runs.
+  console.log('\nOpenings after a miss (means per run): own cards / on the question after a miss; held by the right-answer rule: questions / openings expected; questions to the next opening:');
+  for (const name of NAMES) {
+    const R = runs.filter(r => r.profile === name),
+      m = f => R.reduce((t, r) => t + f(r), 0) / R.length,
+      waits = R.flatMap(r => {
+        const B = (r.blocked || []).map(b => b[0]);
+        return B.filter(q => !B.includes(q - 1))
+          .map(q => (r.opens || []).find(o => o > q) - q)
+          .filter(x => !isNaN(x));
+      });
+    console.log(
+      `  ${name}: ${m(r => (r.opens || []).length).toFixed(1)} / ${m(r => r.afterMiss || 0).toFixed(1)}; held ${m(r => (r.blocked || []).length).toFixed(1)} / ${m(r => (r.blocked || []).reduce((t, b) => t + b[1], 0)).toFixed(1)}; ${waits.length ? (waits.reduce((a, x) => a + x, 0) / waits.length).toFixed(1) + ` (${waits.length} spells)` : '-'}`
+    );
   }
   if (OPENALL) console.log(openTable(runs));
   if (errs.length) console.log('\nPage errors: ' + errs.slice(0, 5).join(' | '));
