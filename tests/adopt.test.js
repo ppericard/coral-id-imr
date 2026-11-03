@@ -36,12 +36,14 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
   const prog = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
     loadData = /const loadData = [\s\S]*?;\n/.exec(prog)[0],
     progData = /const progData = [\s\S]*?\n};\n/.exec(prog)[0],
-    sent = [];
+    sent = [],
+    got = [];
   const answer = (u, o) => {
     const url = new URL(String(u)),
       body = o && o.body ? JSON.parse(o.body) : null;
     sent.push(body || Object.fromEntries(url.searchParams));
     const j = sheet ? (body ? sheet.post(body) : sheet.get(Object.fromEntries(url.searchParams))) : {ok: false};
+    got.push(j);
     return Promise.resolve({json: () => JSON.parse(JSON.stringify(j))});
   };
   const ctx = {
@@ -106,9 +108,11 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
   const A = ctx.A;
   A.ctx = ctx;
   A.sent = sent;
+  A.got = got; // the replies, in the order of sent
   A.count = g => ((ctx.P[g] || {}).ok || 0) + ((ctx.P[g] || {}).ko || 0);
   return A;
 }
+const copy = o => JSON.parse(JSON.stringify(o));
 const T = i => new Date(Date.UTC(2026, 10, 3, 6, 0, i)).toISOString();
 const qa = (id, i) => ({
   id,
@@ -272,6 +276,83 @@ test('answers saved by a device still on the previous app version, after this on
   assert.strictEqual(back.ok + back.ko, 3);
 });
 
+test('after a recovery from an older client, the saved copy reaches the rules version and the replays stop (Codex review #399)', async () => {
+  const s = loadCodeGs(withData());
+  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
+  const A = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
+  await A.syncPull();
+  await A.syncPush();
+  // A device on the app before the replay saves one more answer, with no rules version in its data.
+  const saved = s.get({name: 'Ana', pin: '1234'}).data,
+    Q = JSON.parse(saved['imr-coral-progress']);
+  Q.Acropora.ok++;
+  Q.Acropora.h += '1';
+  const old = {...saved, 'imr-coral-progress': JSON.stringify(Q)};
+  delete old['imr-coral-rv'];
+  assert.ok(s.post({name: 'Ana', pin: '1234', data: old, summary: {}, answers: [qa('a2', 2)], av: '180'}).ok);
+  // A recovers it (the replay again), then syncs four more times with nothing new: one save brings its rules version to
+  // the saved copy, and no later reply carries a replay (was: the saved copy back to 0 and a full replay at every sync).
+  await A.syncPush();
+  assert.deepStrictEqual([A.count('Acropora'), A.rvApplied()], [3, C.RV]);
+  const from = A.got.length;
+  for (let i = 0; i < 4; i++) {
+    A.ctx.SYNC.dirty = true;
+    await A.syncPush();
+  }
+  const savedRv = () => JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-rv'] || '0');
+  assert.strictEqual(savedRv(), C.RV, 'the saved copy stayed at rules version 0');
+  assert.deepStrictEqual(
+    A.got.slice(from).map(j => !!j.replay),
+    Array(8).fill(false),
+    'a replay sent again at every sync'
+  );
+  assert.deepStrictEqual([A.count('Acropora'), A.rvApplied()], [3, C.RV]);
+  const back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora;
+  assert.strictEqual(back.ok + back.ko, 3);
+});
+
+test('a saved copy of the same rules version but behind the log does not undo the replay adopted here (Codex review #399)', async () => {
+  // Two answers adopted and saved (rules version 1) by A; a third logged by a save refused as stale: in the log, not in
+  // the saved copy.
+  const s = loadCodeGs(withData());
+  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
+  const A = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
+  await A.syncPull();
+  await A.syncPush();
+  const r = s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, at: -1, answers: [qa('a2', 2)]});
+  assert.strictEqual(r.error, 'stale');
+  // B, never replayed, loads: the replay of the three answers is adopted. Its save must keep them.
+  const B = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
+  await B.syncPull();
+  assert.deepStrictEqual([B.count('Acropora'), B.rvApplied()], [3, C.RV]);
+  B.ctx.SYNC.dirty = true;
+  await B.syncPush();
+  await B.syncPush();
+  assert.strictEqual(B.count('Acropora'), 3, 'was 2: the copy behind the log took the third answer away');
+  const back = JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-progress']).Acropora;
+  assert.strictEqual(back.ok + back.ko, 3);
+});
+
+test('the recalculation card compares the progress before the sync, even when the pull brings the recalculated copy (Codex review #399)', async () => {
+  // A adopts and saves the replay of 4 answers; B still holds a progress from the former model (95% on Acropora).
+  const s = loadCodeGs(withData());
+  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': '{}'}, summary: {}, answers: [0, 1, 2, 3].map(i => qa('a' + i, i))});
+  const A = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
+  await A.syncPull();
+  await A.syncPush();
+  const old = {Acropora: {ok: 3, ko: 1, h: '1101', pg: 0.95}},
+    B = app({sheet: s, P: copy(old), SYNC: {name: 'Ana', pin: '1234', log: [], base: copy(old)}}),
+    seen = [];
+  B.ctx.slateGenera = () => ['Acropora'];
+  B.ctx.rvNoticeAdd = (from, to, pct) => seen.push([...pct]); // a plain array of this realm
+  const before = C.pctOf(old, ['Acropora']);
+  await B.syncPull();
+  assert.strictEqual(B.rvApplied(), C.RV);
+  const after = C.pctOf(B.ctx.P, ['Acropora']);
+  assert.notStrictEqual(before, after);
+  assert.deepStrictEqual(seen, [[before, after]], 'was [after, after]: no card');
+});
+
 test('an anonymous send whose reply comes after signing in to an account: its replay is not adopted (Codex review #399)', async () => {
   const s = loadCodeGs(withData()),
     id = 'abcdefghij',
@@ -319,6 +400,32 @@ test('the merge baseline after an adoption is the shared history: an unsent answ
   await B.syncPush();
   assert.strictEqual(rowsOf(s), 3);
   assert.deepStrictEqual([A.count('Acropora'), B.count('Acropora'), savedTotal(s)], [3, 3, 3], 'was 2: the third answer lost');
+});
+
+test('an unsent answer is left out of the replay baseline: another device saving the replay of the two keeps it (Codex review #399)', async () => {
+  // Codex's scenario: two answers logged (the saved copy, of the older rules, has them), a third on the same genus played
+  // here and not sent yet. This device adopts the replay at a load: 3 here, the baseline the 2 of the log (was 3 and 3).
+  const s = loadCodeGs(withData()),
+    old = {Acropora: {ok: 2, ko: 0, h: '11', pg: 0.3}};
+  s.post({name: 'Ana', pin: '1234', data: {'imr-coral-progress': JSON.stringify(old)}, summary: {}, answers: [qa('a0', 0), qa('a1', 1)]});
+  const A = app({
+    sheet: s,
+    SYNC: {name: 'Ana', pin: '1234', log: [qa('a2', 2)], base: copy(old)},
+    P: {Acropora: {ok: 3, ko: 0, h: '111', pg: 0.4}}
+  });
+  const j = await A.syncGet();
+  assert.ok(A.replayAdopt(j.replay, A.ctx.SYNC.log, j.v));
+  const base = A.ctx.SYNC.base.Acropora;
+  assert.deepStrictEqual([A.count('Acropora'), base.ok + base.ko], [3, 2], 'the unsent answer went into the baseline');
+  // Another device adopts the replay of the two and saves it; then this one syncs: three here, three in the sheet's copy.
+  const B = app({sheet: s, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
+  await B.syncPull();
+  await B.syncPush();
+  assert.strictEqual(savedTotal(s), 2);
+  await A.syncPush();
+  assert.deepStrictEqual([rowsOf(s), A.count('Acropora'), A.ctx.SYNC.log.length, savedTotal(s)], [3, 3, 0, 3], 'was 2: merged down');
+  await B.syncPull();
+  assert.strictEqual(B.count('Acropora'), 3);
 });
 
 test('property: devices, unsent answers, an older client and a reset in flight: every device ends with the rows of the log', async () => {
@@ -406,19 +513,40 @@ test('property: devices, unsent answers, an older client and a reset in flight: 
         await d.syncPush();
       }
     }
-    // Every device syncs until nothing changes (saves no longer refused).
+    // Every device saves until nothing changes (saves no longer refused), then loads. Saves only: a load between them
+    // set the version back to 0, so the next save's load brought the replay and saved the version, which hid the loop
+    // (Codex review #399).
     calm = true;
     for (let round = 0; round < 4; round++)
       for (const d of devs) {
         d.ctx.SYNC.dirty = true;
         await d.syncPush();
-        await d.syncPull();
       }
+    for (const d of devs) await d.syncPull();
     const want = rowsOf(s, resetAt);
     devs.forEach((d, i) =>
       assert.strictEqual(total(d.ctx.P), want, `run ${run}: device ${i} counts ${total(d.ctx.P)} answers, the log ${want}`)
     );
     assert.strictEqual(savedTotal(s), want, `run ${run}: the saved copy`);
+    // Converged: the saved copy and every device at the rules version, and no more replay in any reply (Codex review #399:
+    // the saved version stayed 0 and every save's reply carried the full replay again).
+    const savedRv = Number(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['imr-coral-rv'] || '0'));
+    assert.deepStrictEqual([savedRv, ...devs.map(d => d.rvApplied())], [C.RV, C.RV, C.RV], `run ${run}: the rules versions`);
+    // Then saves and loads in any order.
+    const from = devs.map(d => d.got.length);
+    for (let step = 0; step < 10; step++) {
+      const d = devs[Math.floor(rnd() * 2)];
+      if (rnd() < 0.6) {
+        d.ctx.SYNC.dirty = true;
+        await d.syncPush();
+      } else await d.syncPull();
+    }
+    devs.forEach((d, i) => {
+      const again = d.got.slice(from[i]).filter(j => j.replay).length;
+      assert.strictEqual(again, 0, `run ${run}: device ${i} got the replay again ${again} times after converging`);
+      assert.strictEqual(total(d.ctx.P), want, `run ${run}: device ${i} after converging`);
+    });
+    assert.strictEqual(savedTotal(s), want, `run ${run}: the saved copy after converging`);
   }
 });
 

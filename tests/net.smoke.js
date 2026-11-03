@@ -1,6 +1,7 @@
 const http = require('http'),
   fs = require('fs'),
-  path = require('path');
+  path = require('path'),
+  zlib = require('zlib');
 const {chromium} = require('playwright');
 const ROOT = path.join(__dirname, '..');
 const TYPES = {
@@ -26,8 +27,16 @@ const server = http.createServer((req, res) => {
       res.writeHead(404);
       return res.end();
     }
-    res.writeHead(200, {'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream'});
-    res.end(u === '/sw.js' && SWV ? b + `\n// deploy ${SWV}\n` : b); // test 9: a new deploy changes sw.js
+    const type = TYPES[path.extname(f)] || 'application/octet-stream',
+      body = u === '/sw.js' && SWV ? Buffer.from(b + `\n// deploy ${SWV}\n`) : b; // test 9: a new deploy changes sw.js
+    // Text files gzipped when the browser accepts it, as the real host serves them (GitHub Pages): on the throttled
+    // lines below, the start-up time is what a player waits, not what an uncompressed data.json would cost.
+    if (/^(text\/|application\/(json|manifest)|image\/svg)/.test(type) && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
+      res.writeHead(200, {'Content-Type': type, 'Content-Encoding': 'gzip', Vary: 'Accept-Encoding'});
+      return res.end(zlib.gzipSync(body));
+    }
+    res.writeHead(200, {'Content-Type': type});
+    res.end(body);
   });
 });
 

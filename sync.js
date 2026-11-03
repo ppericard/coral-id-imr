@@ -102,7 +102,7 @@ const ptParam = q => (pendingFrom(q) === null ? '' : `&pt=${pendingFrom(q)}`);
 // progress it discarded, so it is not adopted (nor its version marked applied); the next reply brings it again from
 // the new reset (Codex review #399). A load's reply (mergeSaved) needs none: a reset newer than the sheet's returns
 // before it.
-function replayAdopt(rp, pending, v, cut) {
+function replayAdopt(rp, pending, v, cut, pre) {
   if (!(Number(v) >= RV_SHEET)) return false;
   if (!rp || typeof rp.rv !== 'number' || rp.rv <= rvApplied() || !rp.rec || typeof rp.rec !== 'object') return false;
   if (typeof mxRecalc !== 'function') return false; // the quiz tier (model.js) not in yet: the next reply brings it again
@@ -139,9 +139,12 @@ function replayAdopt(rp, pending, v, cut) {
       store.set('imr-coral-sync', SYNC);
     }
     save();
-    // The progress % before and after, for a card shown only to the players whose % moved (core.js RVS msg.only).
+    // The progress % before and after, for a card shown only to the players whose % moved (core.js RVS msg.only). pre:
+    // the % this device showed before the sync that brought the replay (mergeSaved), as the pull may already have merged
+    // a copy another device saved after its own adoption (Codex review #399: 83% to 33%, compared as 33 to 33).
     const L = typeof slateGenera === 'function' ? slateGenera() : [];
-    if (played && typeof rvNoticeAdd === 'function') rvNoticeAdd(from, rp.rv, [pctOf(before, L), pctOf(P, L)]);
+    if (played && typeof rvNoticeAdd === 'function')
+      rvNoticeAdd(from, rp.rv, [typeof pre === 'number' ? pre : pctOf(before, L), pctOf(P, L)]);
     if (/^#(progress|quiz-board)$/.test(location.hash)) route();
     return true;
   } catch (e) {
@@ -154,6 +157,10 @@ function replayAdopt(rp, pending, v, cut) {
 // are lost. A reset (imr-coral-reset, a time) wins over older progress.
 const copy = o => JSON.parse(JSON.stringify(o));
 function mergeSaved(j) {
+  // The % shown before this sync, for the recalculation card (replayAdopt).
+  const pre = typeof slateGenera === 'function' ? pctOf(P, slateGenera()) : undefined;
+  // The saved copy is the one this device saved or loaded last: the sheet's revision counts every write, any app's.
+  const mine = typeof j.rev === 'number' && j.rev === SYNC.srv;
   if (typeof j.rev === 'number') SYNC.srv = j.rev; // the sheet's revision this merge is based on (sent back as at, v6)
   const d = j.data || {};
   // The leaderboard choice made on another device, if more recent than this one's (else this one's goes with the next send).
@@ -220,34 +227,42 @@ function mergeSaved(j) {
     if ((SYNC.log || []).some(a => a && String(a.t || '') > rr) || (Number(d[RVK]) || 0) < rvApplied()) store.set(RVK, 0);
     store.set('imr-coral-progress', P);
     if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
-    replayAdopt(j.replay, SYNC.log, j.v); // the sheet's full replay, when newer than the one applied here (v28)
+    replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
     prog();
     return;
   }
   introIn();
   holdIn();
-  // A saved copy under older rules than this device applied (its RVK, core.js RVS) is not merged: it may predate the
-  // replay adopted here, and its older counts and model would undo it. But it may also hold answers saved since by a
-  // device on an app from before the replay, which never adopts one (its data has no RVK; Codex review #399: 2 answers
-  // adopted, then 1 saved by such a device, gave 2 again here, and this device's next save overwrote it). Both are in
-  // the log, which the replay reads: this device's applied version goes back to the saved copy's, so its next request
-  // (the save of this very sync, or one asked for now after a pull) gets the replay of the whole log again, every
-  // answer of every device counted once, this device's unsent ones on top (replayAdopt). The cost: one more replay.
+  // A saved copy unchanged since this device last saved or loaded it (mine) is already part of P: nothing to merge,
+  // whatever its rules version. A save carries the rules version applied when it was sent, so after a replay adopted
+  // from that save's reply the copy is one version behind with nothing in it the replay lacks: taken for another
+  // device's older copy (below), it asked for the replay again, saved the older version again, and so on at every sync
+  // (Codex review #399: the saved version stayed 0, a full replay at every sync). And after a replay adopted since the
+  // copy was loaded, the merge baseline is the replay (replayAdopt), ahead of a copy behind the log: merged, the copy
+  // read as answers taken away. Any other save in between, an older app's included, changes the revision (Code.gs).
+  // A saved copy under older rules than this device applied (its RVK, core.js RVS), saved by another device, is not
+  // merged: it may predate the replay adopted here, and its older counts and model would undo it. But it may also hold
+  // answers saved since by a device on an app from before the replay, which never adopts one (its data has no RVK;
+  // Codex review #399: 2 answers adopted, then 1 saved by such a device, gave 2 again here, and this device's next save
+  // overwrote it). Both are in the log, which the replay reads: this device's applied version goes back to the saved
+  // copy's, so its next request (the save of this very sync, or one asked for now after a pull) gets the replay of the
+  // whole log again, every answer of every device counted once, this device's unsent ones on top (replayAdopt). The
+  // cost: one more replay.
   const rvSaved = Number(d[RVK]) || 0;
-  if (rvSaved >= rvApplied()) {
-    // In place: other code holds P by name only, but keep the same object anyway.
-    const M = mergeProgress(SYNC.base || {}, P, R);
-    Object.keys(P).forEach(g => delete P[g]);
-    Object.assign(P, M);
-    // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
-    SYNC.base = copy(R);
-  } else {
-    store.set(RVK, rvSaved);
+  if (!mine) {
+    if (rvSaved >= rvApplied()) {
+      // In place: other code holds P by name only, but keep the same object anyway.
+      const M = mergeProgress(SYNC.base || {}, P, R);
+      Object.keys(P).forEach(g => delete P[g]);
+      Object.assign(P, M);
+      // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
+      SYNC.base = copy(R);
+    } else store.set(RVK, rvSaved);
   }
   store.set('imr-coral-sync', SYNC);
   store.set('imr-coral-progress', P);
   if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
-  replayAdopt(j.replay, SYNC.log, j.v); // the sheet's full replay, when newer than the one applied here (v28)
+  replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
   prog();
 }
 // Pull, merge, then send. Every change bumps SYNC.rev; a send clears SYNC.dirty only if nothing changed
@@ -342,8 +357,14 @@ function syncOnce(tries = 0) {
         if (typeof holdSync === 'function') holdSync(j.hold, me.log, j.holdIds);
         if (me.rev === rev) delete me.dirty;
         // The full replay over every answer now logged (v28), plus any answer given while this send was on its way.
-        replayAdopt(j.replay, me.log, j.v, cut);
+        const adopted = replayAdopt(j.replay, me.log, j.v, cut);
+        // A replay adopted from a save's reply leaves the saved copy at the rules version that save carried, the older one:
+        // another device would take it for an older app's copy and ask for the replay again, then leave its own copy the
+        // same way, each in turn (mergeSaved; Codex review #399). So the device saves again at once, with the adopted
+        // version: that reply brings no replay (tries bounds it all the same; dirty: a failed one waits for the next sync).
+        if (adopted) me.dirty = true;
         store.set('imr-coral-sync', me);
+        if (adopted && tries < 3) return syncOnce(tries + 1);
       } else if (j && SYNC === me) {
         me.err = j.error === 'pin' || j.error === 'wait' || j.error === 'gone' ? j.error : 'net';
         if (me.err === 'net' && j.error !== 'stale' && j.error !== 'busy')
@@ -427,7 +448,8 @@ document.addEventListener('visibilitychange', () => {
 // typed in the dialog). An older script answers without rep: true, so reports stay queued until Pierre redeploys.
 // Nothing changes on the site: Pierre reads reports, with who sent them, in the admin Triage.
 // Also everywhere else it makes sense (Pierre, 2026-11-01): any enlarged photo (lightbox), the bottom of a genus sheet,
-// and "Send feedback" in the footer of every page. The reasons offered depend on where the report comes from (k).
+// and "Send feedback" at the bottom of the ? help of every page (app.js helpEnd) and on About (home.js; no page footer
+// since 2026-11-03). The reasons offered depend on where the report comes from (k).
 const REP_WHY = {
   game: [
     ['wrong', 'Wrong answer'],
@@ -484,10 +506,6 @@ function sendReports() {
     .catch(() => {});
 }
 window.addEventListener('online', sendReports);
-{
-  const ft = document.querySelector('footer p');
-  if (ft) ft.insertAdjacentHTML('beforeend', ` ${repBtn({k: 'page'}, 'Send feedback')}`);
-}
 setTimeout(sendReports, 4000);
 document.addEventListener(
   'click',

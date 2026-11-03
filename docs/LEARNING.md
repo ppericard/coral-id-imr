@@ -240,7 +240,11 @@ one difficulty target `aimOff(k)`, one draw weight; same measures and seeds; a: 
   beginner, K 6 brought it partway back and slowed the lecture RA under its old pace. The opening hold (`introHold`)
   still stops new cards while a player falls behind. To decide on the players' answers (ROADMAP).
 - `tests/profiles.smoke.js` (one seeded run, the same on every run): its beginner meets 12 genera by question 100
-  with and without the change; its limit stays 17. (Before #408 the same seed read 13 → 19.)
+  with and without the change; its limit stays 17. (Before #408 the same seed read 13 → 19.) Since the candidate
+  refill of 2026-11-03 (f9aae3a: 616 photos the auto-sort added joined `data.json`, so every draw changed), that one
+  seed read 19 with no change to the code, so the limit now applies to the mean of 8 seeds (the first one, then 7
+  more on the beginner's first 100 questions): 8 seeds before #413 8-12 (mean 9.8), after it 12-16 (13.9), after the
+  refill 12-19 (14.5). The single seed sat inside the spread of the seeds; the mean moves with the opening rule.
 
 Not changed: the sheet (`Code.gs` `stats_`) and `core.js` `eloReplay` rate the photos and the player's global level,
 never the genus wrongly given, so they need nothing and the app does not wait for a sheet version. Abilities already
@@ -332,6 +336,65 @@ questions were expected about 87% on a photo aimed 1.0 below the ability; now th
 2-choice question was right 83-84% whether the app expected 75-85% or 82-92%, so the harder aim should not lower the
 real success much; the 4-choice questions, the bulk of the exam and of strong players' questions, are calibrated
 (expected 76%, right 77%, n 496). Typed: 5 answers, too few.
+
+### What the players say about the difficulty (one-tap questions, 2026-11-03)
+
+Why: the success target is moving to one that depends on the player's level. Papoušek, Stanislav & Pelánek (2016;
+geography practice, conditions aiming at 5, 20, 35 and 50% errors) found that easier questions keep learners
+answering at first while harder ones bring them back and teach more. After 30 answers their system asked "What is the
+difficulty of asked questions?" (Too Easy / Appropriate / Too Difficult; over 40,000 ratings): most learners answered
+Appropriate when their own error rate was around 30%, the 35% condition had the most Appropriate ratings (66%), yet at
+least a third still wanted easier or harder questions, and they name changing the target from the learners' ratings
+as future work (extended report FIMU-RS-2016-02, section "Explicit Feedback"). Whether that holds for a given level here is what the
+players can tell us, as they play (Pierre, 2026-11-03: "all the more important to ask from time to time whether it's
+too hard or not hard enough … am I having fun, is it too frustrating, too easy, too hard … slightly different questions
+about roughly the same concept"). The main players are IMR RAs: the challenge must suit strong players without
+overwhelming beginners, and the answers are read by level band for that reason.
+
+**The bank** (`core.js` `PULSEQ`; when and how it is asked: ARCHITECTURE.md "One-tap questions"). Six single items,
+three answers each, one tap; each answer is put on one or two common scales (`pulseScore`): **felt difficulty** d (−1
+too easy, 0 right, +1 too hard) and **feel** f (−1 bad, 0 neutral, +1 good).
+
+| Item | Answers (d / f) | Construct | Source |
+| --- | --- | --- | --- |
+| These questions are | Too easy −1 · About right 0 · Too hard +1 (d) | perceived difficulty | the app's item since sheet v19; the same three answers as Papoušek, Stanislav & Pelánek's (2016) "What is the difficulty of asked questions?" (Too Easy / Appropriate / Too Difficult); one question on difficulty is a usable measure: Sauro & Dumas (2009) compared three one-question post-task ratings, and the 7-point "Overall, this task was: Very Easy … Very Difficult" (later named the Single Ease Question) was as sensitive as the best of them and correlated with task time and the SUS |
+| Right now I feel | Bored −1 · In the zone 0 · Struggling +1 (d) | challenge-skill balance, as a state | flow's three channels, boredom (skill above challenge), flow, anxiety (challenge above skill) (Csikszentmihalyi 1975); the words are ours, no published item. The same balance as item 16 of the flow short scale (FKS, Rheinberg, Vollmeyer & Engeser 2003: "Für mich persönlich sind die jetzigen Anforderungen…", "zu wenig" · "gerade richtig" · "zu hoch", 9 points), which the first version used as "For me, the challenge is: Too low · Just right · Too high"; replaced before release (Pierre, 2026-11-03): non-native speakers could not tell whether "low" meant easy or hard. No feel value: being in the zone is not the same as having fun, which "Having fun?" asks |
+| Want harder photos? | Yes −1 · Keep it 0 · Easier +1 (d) | challenge-skill balance, asked as a wish | the same balance phrased as what to change (a design choice, no published item); a wish and a judgement can differ, so its own counts stay visible |
+| Having fun? | Not really −1 · It's OK 0 · Yes! +1 (f) | enjoyment | positive affect of the in-game GEQ (items 11 "I felt content" and 14 "I felt good"; IJsselsteijn, de Kort & Poels 2013; 14 items, two per component, "not at all" 0 to "extremely" 4, made to be asked several times during play) |
+| Frustrating? | Not at all 0/0 · A bit +0.5/−0.5 · Very +1/−1 (d, f) | frustration | tension of the in-game GEQ (items 6 "I felt frustrated" and 8 "I felt irritable"); flow's anxiety channel, challenge above skill |
+| Getting boring? | Not at all 0/0 · A bit −0.5/−0.5 · Yes −1/−1 (d, f) | boredom | negative affect of the in-game GEQ (items 3 "I felt bored" and 7 "I found it tiresome"); flow's boredom channel, skill above challenge |
+
+Choices: three answers, never a 5- or 7-point scale (one tap on a phone row, Pierre: "people answer a tap"); words, not
+emoji faces (DESIGN.md: no pictographs as icons). The two one-sided items say nothing on the other side: a "not at all"
+is 0 (not too hard, not too easy), and as both come equally often (rounds), they pull a band's mean towards 0 without
+tilting it; read each item's own counts beside the mean. PENS (Ryan, Rigby & Przybylski 2006) was considered: its
+competence and autonomy items measure need satisfaction over a session, not whether the difficulty suits the player
+now. Varied wording costs strict comparability (experience sampling usually repeats one item: Csikszentmihalyi & Larson
+1987); it is the price of not wearing the players out, and why every item is mapped to a common scale and still shown
+alone, and why the first item ever is the plain one, the same as the v19 answers. "Right now I feel" shares a word with
+"Getting boring?" (Bored): one picks a state among three, the other rates boredom alone; the rounds never put them
+next to each other.
+
+**Seen, then answered** (Pierre, 2026-11-03, from the first screenshots: a row inside the feedback card was easy to
+miss and a big Next was tapped without reading it). The question is a block of its own before Next, tinted, titled
+"Quick question", its three answers on one row of equal widths (360 px and up); one tap answers, × closes, nothing
+waits for it. Each prompt logs its showing, so the admin knows the **response rate** by item, level band and mode
+(shown, answered, Not now, no answer). A low rate in one band would bias that band's answers towards the players who
+care to answer: read it next to the answers.
+
+**How the answers will be used for the level-dependent target** (not built: ROADMAP "Level-dependent target"). Admin
+To do › Errors shows, for each level band (the overall level when they answered: below −0.5, −0.5 to +0.5, above +0.5)
+and each mode, the mean felt difficulty and feel, the answers and devices behind them, the response rate and the right
+% of the last 10 answers. The target is right for a band when its mean felt difficulty sits near 0 with feel not
+negative. The rule, **approved by Pierre on 2026-11-03**, to build once the data exists: read a band only from about 20
+answers from 5 devices or more (one talkative device must not decide: compare with the mean of each device's mean); a
+band whose felt difficulty stays beyond ±0.25 moves its target success by 0.05 at a time (towards easier for "too
+hard", towards harder for "too easy", the research's ~70% for strong players as the likely end), each move checked in
+`tools/learnsim.js` and on the real answer log as for any change to the algorithm (AGENTS.md rule 14g); a harder target
+for strong players stands only if their feel does not drop. The duels are easier by design (2 choices): read the photo
+quiz first. Pierre's caution with the approval: felt difficulty is subjective, so no move before a band reaches those
+thresholds, and the answers check the target, they never steer it answer by answer. The prompt every 40 answers was
+approved the same day.
 
 ### Logged for the admin's player journey (2026-11-02)
 
@@ -1371,7 +1434,18 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     merged (it may predate the replay, whose counts it would undo), but it may hold answers saved since by a device on
     an app from before the replay, which never adopts one: so the device's applied version goes back to the copy's and
     its next save (asked for at once after a pull) brings the replay of the whole log again, every device's answers
-    counted once (Codex review #399: 2 answers adopted, 1 saved by an older app, gave 2 again). A reply to anonymous
+    counted once (Codex review #399: 2 answers adopted, 1 saved by an older app, gave 2 again). Except the copy this
+    device saved or loaded last, unchanged since (the sheet's revision, which every save bumps, an older app's
+    included, is still the one this device holds, `sync.js` `mergeSaved` `mine`): it is already part of the device's
+    progress, so it is not merged, whatever its rules version. A save carries the rules version applied when it was
+    sent, so a replay adopted from a save's reply leaves the copy one version behind with nothing the replay lacks;
+    asking for the replay again then looped, at every sync, the save of version 0, its reply's replay, the same copy at
+    the next load (Codex review #399: four saves in a row, the saved version 0 throughout, a full replay in every save's
+    reply); and merged against the baseline the replay set, a copy behind the log read as answers taken away. A replay
+    adopted from a save's reply is followed at once by one more save (`syncOnce`), which brings the adopted version to
+    the copy: otherwise the other device took that copy for an older app's, asked for the replay again and left its
+    own copy so, each in turn. The random test also checks that, after the devices have synced, the saved copy and
+    every device are at the rules version and no reply carries a replay any more, saves and loads in any order. A reply to anonymous
     answers is ignored once the device has signed in, or changed anonymous id, while it was on its way (Codex review
     #399: it replaced the account's progress that sign-in had just stored).
     What is taken from where (`core.js` `replayedOf`): **from
@@ -1913,6 +1987,15 @@ is not in the simulation.
   (the trap rules inside the selection), topped up from the slate only under 4 genera; every answer counts as a
   photo-quiz answer, logged `quiz|s…` ("Custom quiz: the photo quiz on the genera the player picks").
 
+- 2026-11-03, Pierre: the one-tap question varies (six items on felt difficulty, fun, frustration and boredom, in
+  rounds, never twice in a row) and comes every 40 answers instead of 60 (twice that after a "Not now"), so the
+  level-dependent target can be checked by level band; logged in the existing v19 events, no new sheet version; nothing
+  in the game reads the answers yet ("What the players say about the difficulty").
+- 2026-11-03, Pierre (reviewing that PR): every 40 answers approved; the rule that turns the answers into the
+  level-dependent target approved, with the caution that felt difficulty is subjective (no move before the thresholds;
+  built later, once data exists); "For me, the challenge is: Too low / Too high" replaced by "Right now I feel: Bored /
+  In the zone / Struggling"; the question made a block of its own before Next; the response rate logged.
+
 ## References
 
 - Pelánek, R. (2016). Applications of the Elo rating system in adaptive educational systems. *Computers & Education*
@@ -1942,5 +2025,25 @@ is not in the simulation.
   *Psychometrika* 49.
 - Ghosh, A., Raspat, J., Lan, A. (2021). Option tracing: beyond correctness analysis in knowledge tracing. *AIED 2021*.
   <https://arxiv.org/abs/2104.09043>
+- Papoušek, J., Stanislav, V., Pelánek, R. (2016). Impact of question difficulty on engagement and learning. In
+  *Intelligent Tutoring Systems (ITS 2016)*, LNCS 9684, pp. 267-272. Springer. <https://doi.org/10.1007/978-3-319-39583-8_28>;
+  extended version: Evaluation of the impact of question difficulty on engagement and learning, FI MU Report Series
+  FIMU-RS-2016-02, Masaryk University, March 2016 (the difficulty question and its results).
+  <https://www.fi.muni.cz/reports/files/2016/FIMU-RS-2016-02.pdf>
+- Rheinberg, F., Vollmeyer, R., Engeser, S. (2003). Die Erfassung des Flow-Erlebens [The flow short scale, FKS]. In
+  Stiensmeier-Pelster, J., Rheinberg, F. (eds.), *Diagnostik von Motivation und Selbstkonzept* (pp. 261-279).
+  Göttingen: Hogrefe. Items in Rheinberg, Vollmeyer & Engeser (2019), FKS. Flow-Kurzskala [Verfahrensdokumentation],
+  Open Test Archive, ZPID. <https://doi.org/10.23668/psycharchives.4488>
+- IJsselsteijn, W. A., de Kort, Y. A. W., Poels, K. (2013). *The Game Experience Questionnaire*. Technische Universiteit
+  Eindhoven (FUGA project; section 3, In-game GEQ, and its scoring guidelines).
+  <https://pure.tue.nl/ws/files/21666907/Game_Experience_Questionnaire_English.pdf>
+- Ryan, R. M., Rigby, C. S., Przybylski, A. (2006). The motivational pull of video games: a self-determination theory
+  approach (PENS). *Motivation and Emotion* 30.
+- Csikszentmihalyi, M. (1975). *Beyond boredom and anxiety*. Jossey-Bass (the flow channel between boredom and
+  anxiety; 25th anniversary edition 2000, *Beyond boredom and anxiety: experiencing flow in work and play*).
+- Csikszentmihalyi, M. (1990). *Flow: the psychology of optimal experience*. Harper & Row; Csikszentmihalyi, M., Larson,
+  R. (1987). Validity and reliability of the experience-sampling method. *Journal of Nervous and Mental Disease* 175.
+- Sauro, J., Dumas, J. S. (2009). Comparison of three one-question, post-task usability questionnaires. *CHI 2009*,
+  pp. 1599-1608. ACM. <https://doi.org/10.1145/1518701.1518946>
 - Bolsinova, M. et al. (2025). Keeping Elo alive. *British Journal of Mathematical and Statistical Psychology*.
   <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12784335/>
