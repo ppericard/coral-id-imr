@@ -136,16 +136,28 @@ Later, not agreed yet: Matrix (4 photos matched to 4 names), photo-to-trait (nee
 - **Find the Critter** (tap a hidden fish in a wide reef photo): long term, no timer, needs annotated images.
 - **Regional names** (local vernacular names): long term.
 
+## My progress (fish)
+
+Chosen by Pierre (2026-11-03) from the three mock-ups in the Lab (`#lab-fishprog`), so the page reads at every stage, from a beginner
+on families only to an IMR RA with every species open:
+
+- **Default view, Slate rows (A)**: the 27 IMR entries in IMR order, each with its level bar, a thin bar of its species and the two
+  counters, **"Species named: N"** (a species at Advanced) and **"In Latin: M"** (its all-Latin exam passed). The entry bar counts the
+  entries only; species never enter it.
+- **On top, the totals and short lists of the Dashboard (B)**: species met, named and in Latin as totals, and three short lists
+  (Review first, Almost there, Just met), so a player with 300 species open still sees what to do next without scrolling them all.
+- **Second view, Mosaic (C)**: one square per species inside its entry, for the collection effect, picked from the view selector at the
+  bottom as the coral page's views.
+- Shared by all three: the card (entries ring, levels, a one-line species summary), the IMR prompt while entries or species are still
+  unopened, and a drill-down per entry (review and latest first, the rest capped; species not open counted, not listed).
+
 ## Open questions for Pierre
 
-1. **Species progress display**, restated: the fish bar today counts the 27 IMR entries. Where do the species show? **Recommendation:** keep
-   the bar for the entries as it is, and add two counts beside it: **"Species named: N"** (a species at Advanced) and **"In Latin: M"** (its
-   all-Latin exam passed). The species never enter the entry bar. To confirm.
-2. **"Twospot wrasse"**: Pierre asks IMR; until then both species keep the PDF name.
-3. The display-schedule thresholds and the IMR shift: proposed above, set from learnsim.
-4. A typed **common** name on a species question that asks for Latin: shown as "right fish, now the Latin name" and counted as a miss, or
+1. **"Twospot wrasse"**: Pierre asks IMR; until then both species keep the PDF name.
+2. The display-schedule thresholds and the IMR shift: proposed above, set from learnsim.
+3. A typed **common** name on a species question that asks for Latin: shown as "right fish, now the Latin name" and counted as a miss, or
    not counted? Recommendation: not counted either way, and the Latin name shown.
-5. Species in the leaderboard and achievements (an achievement for Latin species named fits rule 14d).
+4. Species in the leaderboard and achievements (an achievement for Latin species named fits rule 14d).
 
 ## Checks before release
 
