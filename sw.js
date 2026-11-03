@@ -13,12 +13,12 @@ const SHELL = [
   './',
   'index.html',
   'app.css?v=124',
-  'core.js?v=34',
-  'app.js?v=186',
+  'core.js?v=33',
+  'app.js?v=187',
   'sync.js?v=19',
-  'progress.js?v=14',
+  'progress.js?v=15',
   'model.js?v=24',
-  'quiz.js?v=31',
+  'quiz.js?v=32',
   'learn.js?v=9',
   'flag.js?v=10',
   'quality.json?v=3',
@@ -36,7 +36,7 @@ const SHELL = [
   'home-art.js?v=4',
   'home.js?v=29',
   'home.css?v=22',
-  'tour.js?v=16',
+  'tour.js?v=17',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...['finder', 'basics', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'type', 'pairs', 'gallery'].map(
     f => `proto/${f}.js?v=73`

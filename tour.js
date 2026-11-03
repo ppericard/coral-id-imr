@@ -25,8 +25,8 @@
       sel: '#modes',
       plus: 'nav [data-tab=practice]',
       arrows: true,
-      t: 'Three games',
-      d: 'Practice in the menu opens the games. Photo → genus: name the genus from photos. Custom quiz: the same on the genera you pick. Look-alike duels: two genera often confused. Memory: match colony and corallites. Switch games here at any time.'
+      t: 'Four games',
+      d: 'Practice in the menu opens the games. Quiz: name the genus from photos. Custom quiz: the same on the genera you pick. Look-alike duels: two genera often confused. Memory: match colony and corallites. Switch games here at any time.'
     },
     {
       h: 'quiz',

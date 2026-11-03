@@ -479,7 +479,7 @@ quiz, all its formats included, limited to them. Code: `model.js` `CUSTOM`, `cus
   selection, which may hold none of the genus's look-alikes, so a Learned earned there would not prove what the exam
   proves. So the custom quiz never asks an exam question (`planPhoto`: no `examSet` with a selection) and never credits
   the exam or `s.mx` from its answers (`answer`: `exq` is never true there). Its answers still move the progress bar,
-  up to the exam's entry (95%); the exam then comes in Photo → genus. A genus ready for its exam is still drawn in the
+  up to the exam's entry (95%); the exam then comes in the Quiz (the tab named "Photo → genus" until 2026-11-03). A genus ready for its exam is still drawn in the
   custom quiz, as a normal question, and a miss there still restarts an exam begun (any miss on the genus does, rule
   14e). The help says so (the selection screen and the quiz's ?). `tests/draw.smoke.js` plays a custom session on
   genera one exam question from Learned, all right: no exam question, no `s.mx`.

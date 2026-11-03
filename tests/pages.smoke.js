@@ -413,6 +413,36 @@ async function overlays(b, base) {
       fails.push(`custom quiz play: asked ${asked.join(', ')} (picked ${looks.join(', ')}); logged ${modes.join(', ')}`);
     await c.close();
   }
+  // The Practice tabs (app.js MODES; Pierre, 2026-11-03: "Photo → genus" became Quiz, "Custom" Custom quiz): their names
+  // at each size class, all four in the bar without scrolling it at 360 and 390 px (rule 20), the tab of the page
+  // marked, and the old addresses (#quiz, #quiz-custom|play) still landing on their tab.
+  for (const [w, want] of [
+    [360, 'Quiz|Custom quiz|Duels|Memory'],
+    [390, 'Quiz|Custom quiz|Duels|Memory'],
+    [1280, 'Quiz|Custom quiz|Look-alike duels|Memory']
+  ]) {
+    const [c, p] = await open({viewport: {width: w, height: 800}}, seen);
+    for (const [h, on] of [
+      ['quiz', 'Quiz'],
+      ['quiz-custom|play', 'Custom quiz']
+    ]) {
+      await p.goto(base + '#' + h);
+      await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+      await p.evaluate(() => document.fonts.ready);
+      const t = await p.evaluate(() => {
+        const m = document.getElementById('modes'),
+          A = [...m.querySelectorAll('a')];
+        return {
+          names: A.map(a => a.innerText.trim()).join('|'),
+          on: (m.querySelector('[aria-current="page"]') || {}).innerText,
+          fit: m.scrollWidth <= m.clientWidth && A.every(a => a.getBoundingClientRect().right <= innerWidth),
+          w: [m.scrollWidth, m.clientWidth]
+        };
+      });
+      if (t.names !== want || t.on !== on || !t.fit) fails.push(`${w}px Practice tabs on #${h}: ${JSON.stringify(t)}`);
+    }
+    await c.close();
+  }
   return fails;
 }
 
