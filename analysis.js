@@ -1623,8 +1623,26 @@
   }
   // Keeps a report under max characters of JSON (the sheet's cap): the oldest milestones lose their tables first (their
   // effects, verdicts and counts stay, for the convergence plots and the Overview).
+  // The size is kept as a running total (each milestone's result measured once, again only when it changes, and the rest
+  // of the report apart): measuring the whole report at every step made this quadratic (test-suite review, 2026-11-04:
+  // 20 s for 300 milestones). J() is exactly JSON.stringify(rep).length.
   function compact(rep, max) {
-    const J = () => JSON.stringify(rep).length;
+    const len = {}, // JSON length of each milestone's '"M":{…}' entry in R
+      measure = M => (len[M] = JSON.stringify(String(M)).length + 1 + JSON.stringify(rep.R[M]).length),
+      shell = () => JSON.stringify(Object.assign({}, rep, {R: {}})).length; // the report with an empty R
+    let sh = shell(),
+      body = 0, // the entries of R, without the commas between them
+      count = 0;
+    Object.keys(rep.R).forEach(M => ((body += measure(M)), count++));
+    const J = () => sh + body + Math.max(0, count - 1),
+      drop = M => {
+        if (M in len) {
+          body -= len[M];
+          count--;
+          delete len[M];
+        }
+        delete rep.R[M];
+      };
     // 1. the oldest milestones keep their effects only
     for (const M of rep.M.slice(0, -1)) {
       if (J() <= max) break;
@@ -1633,19 +1651,22 @@
         const a = r.A[k];
         r.A[k] = {n: a.n, players: a.players, thin: a.thin, err: a.err, effects: a.effects, lean: 1};
       });
+      body -= len[M];
+      body += measure(M);
     }
     // 2. still too big (hundreds of milestones; Codex review #441): every other older milestone goes, the first and the
     // last 5 stay, until it fits; then, if need be, only the latest
     while (J() > max && rep.M.length > 6) {
       const keep = new Set([rep.M[0], ...rep.M.slice(-5)]),
         old = rep.M.filter(M => !keep.has(M));
-      old.filter((_, i) => i % 2 === 0).forEach(M => delete rep.R[M]);
+      old.filter((_, i) => i % 2 === 0).forEach(drop);
       rep.M = rep.M.filter(M => rep.R[M]);
       rep.thinned = (rep.thinned || 0) + 1;
+      sh = shell();
     }
     if (J() > max) {
       const last = rep.M[rep.M.length - 1];
-      rep.M.slice(0, -1).forEach(M => delete rep.R[M]);
+      rep.M.slice(0, -1).forEach(drop);
       rep.M = [last];
     }
     return rep;
