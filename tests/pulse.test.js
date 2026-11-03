@@ -101,6 +101,7 @@ function quiz() {
   assert.ok(block.length > 500, 'the spacing block is found in quiz.js');
   const saved = {},
     ctx = {
+      ...require('./subj.stub.js')(), // the corals as the current subject
       a: 0,
       h: 'quiz',
       onScreen: new Set(),

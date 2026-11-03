@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 33 (2026-11-04: v33: the app was renamed IMR Reef ID and its storage keys with it (owner's decision, 2026-11-03): a player's saved data is read under the new key names or the old ones (dataKey_: progress, reset, achievements), an account merge drops the rules version under both names; the embedded core.js gains the key table (LEGACY_KEYS, keysIn, withLegacy), unused by the script; v32: the full replay reads each answer's Seconds (core.js rtWeight: a right answer's ability steps weighed by its time against the player's earlier ones, rules version 4); the app weighs its steps by time only from this version (core.js RT_SHEET); v31: hierarchical photo Elo: a photo's difficulty is its genus's offset plus its own residual, both moved by every trusted answer (the genus offset by GENUS_K 0.4, damped by its weighed answers), so a photo nobody has answered starts at its genus's offset; ?stats=1 serves each photo's total difficulty as before and the genus offsets as gd: {genus: [offset, weighed answers]} (stats cache stats15); the genus offset moves the photo memory offsets the full replay uses, so core.js rules version 3 replays every player again; v30: pages opened in a visit: an event 'pages' (core.js PAGES, cleaned by pagesClean: which pages were open, how many times and for how long, the genus sheets opened with how they were reached and whether the genus had been asked already, the answers so far) under the admin's id of the player, never the name: the device's anonymous answer id (eanon) is stored as aid_('~anon ' + id), a signed-in player's name and code (ename, epin) are checked and stored as aid_(name), a wrong code stores no id; kept in a Pages tab of their own, which POST {readEvents: 1, pages: 1, token} reads (the last 10,000), so the other events never push them out; v29: the embedded core.js gains the admin's quantile and distOf helpers (Photo stats Overview), unused by the script; v28: progress replayed from the whole answer log by this script: the app's own progress engine (core.js, embedded at the end of this file by tools/sync_core.py) replays a player's answers in the reply to a sign-in, load or save (or to a device's anonymous answers) when their app applied an older rules version, the result kept in a new Replayed tab and sent as replay: {rv, n, rec, ids}; the app adopts it, the player's saved copy is never rewritten here; the hold's ids, like the replay's, cover every answer from the request's pt (the oldest answer the device still queues); v27: typed answers (mode |t, the player types the genus instead of picking one of the choices) are rated with no guess rate (guess_ 0), stats cache stats14; v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 34 (2026-11-04: v34: a save keeps the saved copy's keys of a subject the saving app does not know (core.js keepSubjectKeys: an app from before fish no longer erases the fish progress); players' reports keep a fish teaching id (t01) as the expected and answered unit (logReports_); the embedded core.js gains the subjects (SUBJECTS, the fish adapter fishGen, mergeUsers per subject), unused by the script: the fish answers are not logged, so nothing it computes changes, and the fish progress is stored in the Data column as any other key; v33: the app was renamed IMR Reef ID and its storage keys with it (owner's decision, 2026-11-03): a player's saved data is read under the new key names or the old ones (dataKey_: progress, reset, achievements), an account merge drops the rules version under both names; the embedded core.js gains the key table (LEGACY_KEYS, keysIn, withLegacy), unused by the script; v32: the full replay reads each answer's Seconds (core.js rtWeight: a right answer's ability steps weighed by its time against the player's earlier ones, rules version 4); the app weighs its steps by time only from this version (core.js RT_SHEET); v31: hierarchical photo Elo: a photo's difficulty is its genus's offset plus its own residual, both moved by every trusted answer (the genus offset by GENUS_K 0.4, damped by its weighed answers), so a photo nobody has answered starts at its genus's offset; ?stats=1 serves each photo's total difficulty as before and the genus offsets as gd: {genus: [offset, weighed answers]} (stats cache stats15); the genus offset moves the photo memory offsets the full replay uses, so core.js rules version 3 replays every player again; v30: pages opened in a visit: an event 'pages' (core.js PAGES, cleaned by pagesClean: which pages were open, how many times and for how long, the genus sheets opened with how they were reached and whether the genus had been asked already, the answers so far) under the admin's id of the player, never the name: the device's anonymous answer id (eanon) is stored as aid_('~anon ' + id), a signed-in player's name and code (ename, epin) are checked and stored as aid_(name), a wrong code stores no id; kept in a Pages tab of their own, which POST {readEvents: 1, pages: 1, token} reads (the last 10,000), so the other events never push them out; v29: the embedded core.js gains the admin's quantile and distOf helpers (Photo stats Overview), unused by the script; v28: progress replayed from the whole answer log by this script: the app's own progress engine (core.js, embedded at the end of this file by tools/sync_core.py) replays a player's answers in the reply to a sign-in, load or save (or to a device's anonymous answers) when their app applied an older rules version, the result kept in a new Replayed tab and sent as replay: {rv, n, rec, ids}; the app adopts it, the player's saved copy is never rewritten here; the hold's ids, like the replay's, cover every answer from the request's pt (the oldest answer the device still queues); v27: typed answers (mode |t, the player types the genus instead of picking one of the choices) are rated with no guess rate (guess_ 0), stats cache stats14; v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -37,7 +37,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 33;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 34;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -155,9 +155,12 @@ function doPost(e){
     }
     logAnswers_(name, f.fresh, f.seen);
     if (!p.av) oldApp_('save', name);  // after the code check (Codex review #373)
-    const rev = r ? readData_(name, String(sh.getRange(r, 8).getValue() || '')).rev : 0;
+    const saved = r ? readData_(name, String(sh.getRange(r, 8).getValue() || '')) : {json: '{}', rev: 0}, rev = saved.rev;
     if (typeof p.at === 'number' && p.at !== rev) return json_({ok: false, error: 'stale', log: true, rev: rev});
-    const json = JSON.stringify(p.data || {});
+    // v34: the keys of a subject the saving app does not know (an app from before fish) are kept from the saved copy
+    // (core.js keepSubjectKeys): replacing the record would erase that progress.
+    let old = {}; try { old = JSON.parse(saved.json || '{}') || {}; } catch (e) {}
+    const json = JSON.stringify(CORE_.keepSubjectKeys(old, p.data || {}));
     try {
       writeData_(name, json, rev + 1);
       if (!r) { r = sh.getLastRow() + 1; }
@@ -509,7 +512,8 @@ function logReports_(p){
       if (r && ra.getRange(r, 7).getValue() === hash_(name, pin)) ok = 1; else if (r) failed_(name); }
     const sh = sheet_('Reports', REP), n = sh.getLastRow() - 1;
     const seen = new Set(n > 0 ? sh.getRange(2, REP.length, n, 1).getValues().map(r => String(r[0])) : []);
-    const G = /^[A-Za-z][A-Za-z -]*$/, M = /^[A-Za-z0-9|-]*$/, PH = /^[A-Za-z0-9_. -]*$/;
+    // v34: a unit is a genus name or a fish teaching id (t01): letters first, then letters, digits, spaces or dashes.
+    const G = /^[A-Za-z][A-Za-z0-9 -]*$/, M = /^[A-Za-z0-9|-]*$/, PH = /^[A-Za-z0-9_. -]*$/;
     const rows = L.filter(r => !seen.has(String(r.id))).map(r => [new Date(r.t || Date.now()), safe_(name), ok, WHY[r.why], word_(r.g, G, 40), word_(r.a, G, 40),
       text_(r.fix, 60), text_(r.note, 1000), word_(r.m, M, 40), word_(r.ph, PH, 400), text_(r.w, 120), String(r.id)]);
     if (rows.length) { const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
@@ -1115,6 +1119,184 @@ const CORE_ = (function () { const module = {exports: {}};
     return out;
   }
 
+  // Subjects (the taxon model, Pierre 2026-11-03: "fish in the app on the same engine as corals, cleanly", with a Corals /
+  // Fish selector): what the game teaches. The engine (model.js, quiz.js, progress.js) works on one subject at a time,
+  // the current one (app.js SUBJ): its units (coral genera, fish teaching entries), their records (app.js GX), its
+  // progress P and quiz settings Q under its own keys. Everything a subject differs in is a field here (data) or a
+  // function of app.js UNITS (what reads the subject's data); the engine never names a subject.
+  //   id      key part: reefid-sync-<id>-progress, -quiz, -intro, -intro-offer, -reset (subjKey; AGENTS.md workflow rule 15)
+  //   dev     its device-only keys: reefid-<dev><name> (subjDev): '' for corals, whose keys predate subjects
+  //   base    the sign-in record's fields for the progress last sent or received ([base, pending], sync.js mergeSaved)
+  //   name, one, many, what, lecture: words of the interface (Corals; genus, genera; Coral to identify; the IMR coral
+  //           lecture). Names of units: app.js uname (a genus in italics, a fish entry by its IMR name)
+  //   beta    a subject still in beta: {kick, line}, Home's Learn door top line and description once it is chosen (line:
+  //           HTML), and a "beta" tag on its buttons
+  //   card    the kind of its first-meeting card (app.js CARD_KINDS: its emoji)
+  //   remote  its photos are iNaturalist's, not the site's (the fish stopgap, tools/fish_photos.py): preloaded all the same
+  //   views   the views a question may show, [code, label] (one view: one photo per question)
+  //   optin   the opt-in sets: Q[k] true = on, Q[k + 'T'] when chosen (app.js UNITS[id].sets: units, card, ⚙ row)
+  //   log     answers go to the sheet's Answers tab (photo ratings, confusions, the admin, the opening hold's replay)
+  //   ach, board  achievements and the leaderboard count this subject
+  //   progress    the views of My progress (progress.js quizBoard), the first by default
+  //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, #g-); the others,
+  //           Identify and the Tools are the corals' for now
+  const SUBJECTS = [
+    {
+      id: 'coral',
+      dev: '',
+      base: ['base', 'pending'],
+      name: 'Corals',
+      one: 'genus',
+      many: 'genera',
+      what: 'Coral',
+      card: 'genus',
+      lecture: 'the IMR coral lecture',
+      views: [
+        ['wide', 'Colony'],
+        ['medium', 'Close-up'],
+        ['macro', 'Corallites']
+      ],
+      optin: ['bon'],
+      log: true,
+      ach: true,
+      board: true,
+      pages: ['genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
+      progress: ['slate', 'photos', 'groups']
+    },
+    {
+      id: 'fish',
+      dev: 'fish-',
+      base: ['fbase', 'fpending'],
+      name: 'Fish',
+      one: 'family',
+      many: 'families',
+      what: 'Fish',
+      card: 'fish',
+      lecture: 'the IMR fish presentation',
+      remote: true,
+      // In beta (2026-11-04: Pierre promised the beta players "something fishy is coming"): said on its buttons and, once
+      // chosen, on Home (home.js: "Something fishy…" and this line, HTML).
+      beta: {
+        kick: 'Something fishy…',
+        line: '<b>Fish is in beta</b>: the 27 IMR survey families, iNaturalist photos for now. Feedback welcome.'
+      },
+      views: [['wide', 'Photo']],
+      optin: ['c2', 'c3'],
+      log: false,
+      ach: false,
+      board: false,
+      pages: ['genera', 'quiz'],
+      progress: ['photos']
+    }
+  ];
+  // The subject chosen on this device (Home or the header), synced with the player's settings.
+  const SUBJECT_KEY = 'reefid-sync-subject';
+  const subjectOf = id => SUBJECTS.find(s => s.id === id) || SUBJECTS[0];
+  const subjKey = (s, name) => KEYS.SYNC + subjectOf(s).id + '-' + name;
+  const subjDev = (s, name) => KEYS.APP + subjectOf(s).dev + name;
+
+  // Fish (fish.json, built by tools/build_fish.py; ARCHITECTURE.md "Fish content"). Level 1 of the game = the teaching
+  // entries of level 1 (the 27 IMR entries of circle 1, then circles 2 and 3), each made into a record the engine reads
+  // like a coral genus's (app.js GX): {id, name, fam, look (teaching ids, sub-entries folded into their entry), lk (how to
+  // tell each apart, IMR's words), qt (the IMR cues), forms (its IMR shape group: the wrong choices start in other groups,
+  // as coral growth forms), ig (the same group), cm (how common near Dauin), views {wide: photos}, levels 1, circle, wink,
+  // names (accepted when typed)}. photos: fish-photos.json "photos" (teaching id -> photo objects).
+  // c1 = circle 1 (the slate: counts in the progress), c2 / c3 = the opt-in circles, winks = the wink entries (a
+  // surprise card, never a question of the game).
+  function fishGen(F, photos) {
+    const gen = {},
+      sp = new Map((F.species || []).map(s => [s.id, s])),
+      top = id => String(id).slice(0, 3);
+    (F.teach || [])
+      .filter(t => t.level === 1)
+      .forEach(t => {
+        const dauin = (t.species || []).reduce((a, id) => a + (((sp.get(id) || {}).present || {}).dauin || 0), 0);
+        gen[t.id] = {
+          id: t.id,
+          name: t.name,
+          fam: t.fam,
+          wfam: t.wfam || [],
+          fish: 1,
+          circle: t.circle,
+          group: t.group || 0,
+          ig: t.group || 0,
+          forms: t.group ? ['g' + t.group] : [],
+          look: [...new Set((t.look || []).map(([id]) => top(id)).filter(id => id !== t.id))],
+          lk: (t.look || []).map(([id, txt]) => [top(id), txt]),
+          lsrc: Object.fromEntries(
+            (t.look || []).map(([id]) => [top(id), 'IMR fish presentation' + (t.sl ? ', slide ' + t.sl.join(', ') : '')])
+          ),
+          qt: t.cues && t.cues.length ? t.cues : null,
+          sum: t.why || t.note || '',
+          phase: t.phase || [],
+          sub: (t.sub || []).map(s => s.name),
+          cm: Math.round(Math.sqrt(dauin)),
+          levels: 1,
+          // nd: one of Pierre's own photos taken outside Dauin (the credit's "Dauin" tag is for his Dauin photos).
+          views: {
+            wide: ((photos || {})[t.id] || [])
+              .filter(p => p && p.f && p.src)
+              .map(p => (p.own && p.loc && p.loc !== 'dauin' ? {...p, nd: 1} : p))
+          },
+          ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
+          names: fishNames(t)
+        };
+      });
+    const ids = Object.keys(gen),
+      play = n => !gen[n].wink;
+    return {
+      gen,
+      c1: ids.filter(n => play(n) && gen[n].circle === 1),
+      c2: ids.filter(n => play(n) && gen[n].circle === 2),
+      c3: ids.filter(n => play(n) && gen[n].circle === 3),
+      winks: ids.filter(n => !play(n)),
+      groups: F.groups || []
+    };
+  }
+  // The names a teaching entry is known by, accepted when typed (Pierre, 2026-11-03, AGENTS.md rule 6a): its IMR name,
+  // the parts of a double one ("Surgeonfish & Unicornfish"), its family as IMR writes it and the WoRMS families, and the
+  // sub-entries IMR names inside it (Chromis, Bannerfish...). The first is the name shown.
+  function fishNames(t) {
+    const parts = String(t.name || '')
+      .split(/\s*&\s*|\s+and\s+/)
+      .filter(Boolean);
+    return [...new Set([t.name, ...(parts.length > 1 ? parts : []), t.fam, ...(t.wfam || []), ...(t.sub || []).map(s => s.name)])].filter(
+      Boolean
+    );
+  }
+  // A whole name, normalised for typing (fish names have several words: "Moorish Idol"): letters only, lower case.
+  const typeNormAll = s =>
+    String(s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[^a-z]/g, '');
+  // Every name a player may type for the fish entries gen (fishGen): [{k, g, old, alt}], old = the name typed when it is
+  // not the entry's own (read as the entry), alt marks those as other names, not old ones. A name two entries share (a
+  // family IMR splits: Holocentridae = Soldierfish and Squirrelfish) names both, so it is "which one?" (typeMatchIn near).
+  function fishTypeNames(gen) {
+    const out = [];
+    Object.values(gen || {}).forEach(g =>
+      (g.names || [g.name]).forEach((x, i) => {
+        const k = typeNormAll(x);
+        if (k && !out.some(o => o.k === k && o.g === g.id)) out.push({k, g: g.id, old: i ? x : '', alt: i ? 1 : 0});
+      })
+    );
+    return out;
+  }
+
+  // A player's saved data (the sheet's Data, Code.gs save), with the keys of the subjects after the first (fish:
+  // reefid-sync-fish-*) that the saved copy holds and the incoming one lacks kept from the saved copy: an app from before
+  // that subject saves its whole record without them, and replacing the record would erase that progress, which no
+  // answer log can rebuild (Codex review #442). saved, data: {key: value}; returns the data to save.
+  function keepSubjectKeys(saved, data) {
+    const out = {...(data || {})},
+      pre = SUBJECTS.slice(1).map(S => KEYS.SYNC + S.id + '-');
+    Object.keys(saved || {}).forEach(k => {
+      if (!(k in out) && pre.some(x => k.startsWith(x))) out[k] = saved[k];
+    });
+    return out;
+  }
+
   // The draft is never published as a whole copy: it is merged, key by key, onto the latest published curation.
   // merge3(base, mine, theirs): base = the published curation this draft started from; a key I changed since base
   // keeps my value, every other key takes the published one (so choices published from another browser or device
@@ -1243,6 +1425,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // counts add up (ok, ko, mix-ups, offers, photos seen), milestones are kept if either has them, and the per-genus model
   // (ability th, knowledge L, recent results h...) comes from whichever account answered that genus more. Settings are
   // B's; bonus genera unlocked or on (bon) on either stay so. Returns B's data with the merged progress.
+  // Each subject's progress and quiz settings are merged on their own (SUBJECTS: reefid-sync-<id>-progress, -quiz): a
+  // subject neither account played stays out of the result; its opt-in sets (optin) on either stay on.
   function mergeUsers(A, B) {
     A = A || {};
     B = B || {};
@@ -1253,9 +1437,31 @@ const CORE_ = (function () { const module = {exports: {}};
         return null;
       }
     };
-    const a = J(A, 'reefid-sync-coral-progress') || {},
-      b = J(B, 'reefid-sync-coral-progress') || {},
-      P = {};
+    const out = {...A, ...B};
+    SUBJECTS.forEach((S, i) => {
+      const pk = subjKey(S.id, 'progress'),
+        qk = subjKey(S.id, 'quiz');
+      if (!i || pk in A || pk in B) out[pk] = JSON.stringify(mergeUserP(J(A, pk) || {}, J(B, pk) || {}));
+      const qa = J(A, qk),
+        qb = J(B, qk);
+      if (qa || qb) {
+        const q = {...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)};
+        S.optin.forEach(k => {
+          if ((qa || {})[k] || (qb || {})[k]) q[k] = true;
+        });
+        out[qk] = JSON.stringify(q);
+      }
+      // The rules version the progress was replayed with (sync.js RVK): the merged record is no replay of the two logs
+      // together, so it has none, and every device of the account asks for the replay of both histories in time order
+      // (the sheet relabels the answers; Codex review #399: the merged model of 20 older right answers and 10 newer misses
+      // kept pg 0.96 for good).
+      delete out[subjKey(S.id, 'rv')];
+    });
+    return out;
+  }
+  // One subject's progress of two accounts (mergeUsers).
+  function mergeUserP(a, b) {
+    const P = {};
     const n = s => (s.ok || 0) + (s.ko || 0),
       add = (x, y) => {
         const o = {...(x || {})};
@@ -1298,20 +1504,7 @@ const CORE_ = (function () { const module = {exports: {}};
       if (x.du || y.du) o.du = 1;
       if (o.ok + o.ko || o.h) P[g] = o;
     });
-    const out = {...A, ...B, 'reefid-sync-coral-progress': JSON.stringify(P)},
-      qa = J(A, 'reefid-sync-coral-quiz'),
-      qb = J(B, 'reefid-sync-coral-quiz');
-    // The rules version the progress was replayed with (sync.js RVK): the merged record is no replay of the two logs
-    // together, so it has none, and every device of the account asks for the replay of both histories in time order
-    // (the sheet relabels the answers; Codex review #399: the merged model of 20 older right answers and 10 newer misses
-    // kept pg 0.96 for good).
-    delete out['reefid-sync-coral-rv'];
-    if (qa || qb) {
-      const q = {...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)};
-      if ((qa || {}).bon || (qb || {}).bon) q.bon = true;
-      out['reefid-sync-coral-quiz'] = JSON.stringify(q);
-    }
-    return out;
+    return P;
   }
 
   // Who rates the photos and the confusions, as tools/sync/Code.gs trusted_ (v17; v18: devices that never signed in too,
@@ -2354,8 +2547,9 @@ const CORE_ = (function () { const module = {exports: {}};
   }
   // What the typed text names among names (typeNamesOf): {g, old, exact} for one genus within the tolerance, {near:
   // [genera]} when two are as close (the player is asked to check the spelling), null when nothing is close.
-  function typeMatchIn(names, text) {
-    const t = typeNorm(text);
+  // norm: how the text is read (typeNorm, the first word, for genera; typeNormAll, the whole text, for fish entries).
+  function typeMatchIn(names, text, norm = typeNorm) {
+    const t = norm(text);
     if (t.length < 3) return null;
     const all = names
       .map(x => ({...x, d: typeDist(t, x.k)}))
@@ -2365,7 +2559,7 @@ const CORE_ = (function () { const module = {exports: {}};
     const best = all.filter(x => x.d === all[0].d),
       gs = [...new Set(best.map(x => x.g))];
     if (gs.length > 1) return {near: gs};
-    return {g: best[0].g, old: best[0].old, exact: best[0].d === 0};
+    return {g: best[0].g, old: best[0].old, exact: best[0].d === 0, ...(best[0].alt ? {alt: 1} : {})};
   }
   // The share of a genus's questions asked as typed ones, from its progress x (0 to 1, the % shown): none below T.from,
   // then a straight line between the points T.at ([progress, share], in order), flat after the last (model.js TYPED).
@@ -3343,6 +3537,16 @@ const CORE_ = (function () { const module = {exports: {}};
     pulsePick,
     ORG,
     KEYS,
+    SUBJECTS,
+    SUBJECT_KEY,
+    subjectOf,
+    subjKey,
+    subjDev,
+    fishGen,
+    keepSubjectKeys,
+    fishNames,
+    fishTypeNames,
+    typeNormAll,
     LEGACY_KEYS,
     keyRename,
     keyLegacy,

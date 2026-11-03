@@ -46,7 +46,10 @@ function loadStats() {
     .catch(() => {});
 }
 // The slate genera (Millepora included since 2026-11-02): the sheet's "By genus" columns and the leaderboard % follow them.
+// The leaderboard's subject (core.js SUBJECTS board: corals), whatever the subject on screen.
 function syncSummary() {
+  const B = SUBJECTS.find(x => x.board);
+  if (B && B !== SUBJ) return inSubject(B.id, syncSummary);
   const n = slateGenera(),
     genera = Object.fromEntries(n.map(x => [x, level(x)[0]]));
   return {
@@ -114,8 +117,19 @@ const ptParam = q => (pendingFrom(q) === null ? '' : `&pt=${pendingFrom(q)}`);
 // progress it discarded, so it is not adopted (nor its version marked applied); the next reply brings it again from
 // the new reset (Codex review #399). A load's reply (mergeSaved) needs none: a reset newer than the sheet's returns
 // before it.
+// The sheet's opening hold (v23, model.js holdSync) counts the logged answers, the corals': taken as that subject
+// whatever the subject on screen (inSubject), so it never lands in another subject's hold.
+function holdAdopt(h, log, ids) {
+  const LS = SUBJECTS.find(x => x.log);
+  if (LS && LS !== SUBJ) return inSubject(LS.id, () => holdAdopt(h, log, ids));
+  if (typeof holdSync === 'function') holdSync(h, log, ids);
+}
+// The replay is the progress of the subject whose answers the sheet logs (core.js SUBJECTS log: the corals): adopted as
+// that subject whatever the subject on screen (inSubject; the fish progress is never replayed, its answers are not logged).
 function replayAdopt(rp, pending, v, cut, pre) {
   sheetSeen({v});
+  const LS = SUBJECTS.find(x => x.log);
+  if (LS && LS !== SUBJ) return inSubject(LS.id, () => replayAdopt(rp, pending, v, cut));
   if (!(Number(v) >= RV_SHEET)) return false;
   if (!rp || typeof rp.rv !== 'number' || !rp.rec || typeof rp.rec !== 'object') return false;
   // A newer version, or the same one asked again for answers logged from a refused save (rvAsk).
@@ -179,7 +193,7 @@ function replayAdopt(rp, pending, v, cut, pre) {
     const L = typeof slateGenera === 'function' ? slateGenera() : [];
     if (played && typeof rvNoticeAdd === 'function')
       rvNoticeAdd(from, rp.rv, [typeof pre === 'number' ? pre : pctOf(before, L), pctOf(P, L)]);
-    if (/^#(progress|quiz-board)$/.test(location.hash)) route();
+    if (!SUBJ_VISIT && /^#(progress|quiz-board)$/.test(location.hash)) route(); // not while visiting: the page shows another subject
     return true;
   } catch (e) {
     ev('err', {msg: 'replay not adopted: ' + String((e && e.message) || e).slice(0, 120)});
@@ -191,8 +205,6 @@ function replayAdopt(rp, pending, v, cut, pre) {
 // are lost. A reset (reefid-sync-coral-reset, a time) wins over older progress.
 const copy = o => JSON.parse(JSON.stringify(o));
 function mergeSaved(j) {
-  // The % shown before this sync, for the recalculation card (replayAdopt).
-  const pre = typeof slateGenera === 'function' ? pctOf(P, slateGenera()) : undefined;
   // The saved copy is the one this device saved or loaded last: the sheet's revision counts every write, any app's.
   const mine = typeof j.rev === 'number' && j.rev === SYNC.srv;
   if (typeof j.rev === 'number') SYNC.srv = j.rev; // the sheet's revision this merge is based on (sent back as at, v6)
@@ -213,55 +225,77 @@ function mergeSaved(j) {
     if (rc && Array.isArray(rc.g) && (rc.t || 0) > ((lc && lc.t) || 0)) store.set('reefid-sync-coral-custom', rc);
   } catch (e) {}
   achMerge(d[ACHK]); // achievements earned on another device join this one's
+  // Each subject's progress on its own (core.js SUBJECTS), as if it were on screen (inSubject): its cards, reset, opt-in
+  // sets and opening hold. A subject the saved copy does not hold is left alone (the first, the corals, always runs):
+  // absent is not empty (Codex review #442: a copy saved by an app from before fish has no fish keys, and merged as an
+  // empty record it erased this device's fish progress, which no answer log can rebuild); this device's goes with the
+  // next save. A reset is a key with an empty record and a reset time, never an absent key.
+  SUBJECTS.forEach((S, i) => {
+    const pk = subjKey(S.id, 'progress');
+    if (i && !(pk in d)) return;
+    inSubject(S.id, () => mergeSubject(j, d, S, mine));
+  });
+  showBon(); // ⚙'s opt-in switches, from the subject on screen's settings
+}
+// One subject's part of mergeSaved, run as the current subject: SYNC[S.base[0]] is its progress as last sent or received,
+// SYNC[S.base[1]] what a send on its way held (core.js SUBJECTS base: SYNC.base and SYNC.pending for the corals).
+// mine: the saved copy is the one this device saved or loaded last (mergeSaved).
+function mergeSubject(j, d, S, mine) {
+  const [BK, PK] = S.base;
+  // The % shown before this sync, for the recalculation card (replayAdopt).
+  const pre = typeof slateGenera === 'function' ? pctOf(P, slateGenera()) : undefined;
   const introIn = () => introMerge(d[INTRO.KEY], d[INTRO.OFFER.KEY]); // first-meeting cards seen on another device
   let R = {};
   try {
-    R = JSON.parse(d['reefid-sync-coral-progress'] || '{}') || {};
+    R = JSON.parse(d[sKey('progress')] || '{}') || {};
   } catch (e) {}
-  const rr = JSON.parse(d['reefid-sync-coral-reset'] || '""'),
-    lr = store.get('reefid-sync-coral-reset', '');
+  const rr = JSON.parse(d[sKey('reset')] || '""'),
+    lr = store.get(sKey('reset'), '');
   // A send whose reply was lost but which did reach the sheet: the saved record is exactly what was sent.
-  if (SYNC.pending && d['reefid-sync-coral-progress'] === SYNC.pending) SYNC.base = R;
-  delete SYNC.pending;
+  if (SYNC[PK] && d[sKey('progress')] === SYNC[PK]) SYNC[BK] = R;
+  delete SYNC[PK];
   // A reset made here that the sheet's copy does not have yet: this device's progress stays (the sheet's hold too counts
-  // from its older reset), and the replay since the reset is asked for with the save that brings it (the rules version
-  // back to 0): other devices, an older app among them, may have answered after the reset time from a copy without it,
-  // and those answers count (they are in the log after the reset).
-  if (lr > rr) return void store.set(RVK, 0);
-  // The Bonus genera choice made on another device, if more recent than this one's (or made there only; Codex review #371);
-  // after the reset check, so a choice saved before this device's newer reset does not come back.
+  // from its older reset), and, for a subject the sheet replays (its answers logged, SUBJECTS log), the replay since the
+  // reset is asked for with the save that brings it (the rules version back to 0): other devices, an older app among
+  // them, may have answered after the reset time from a copy without it, and those answers count (they are in the log
+  // after the reset).
+  if (lr > rr) return void (S.log && store.set(RVK, 0));
+  // The Bonus genera choice (fish: circles 2 and 3) made on another device, if more recent than this one's (or made there
+  // only; Codex review #371); after the reset check, so a choice saved before this device's newer reset does not come back.
   try {
-    const rq = JSON.parse(d['reefid-sync-coral-quiz'] || '{}') || {};
-    if (typeof rq.bon === 'boolean' && (Q.bon === undefined || (rq.bonT || 0) > (Q.bonT || 0))) {
-      Q.bon = rq.bon;
-      Q.bonT = rq.bonT || 0;
-      saveQ();
-      showBon();
-    } else if (rr > lr && typeof rq.bon !== 'boolean' && Q.bon !== undefined) {
-      // A progress reset made on another device: the offer comes again here too.
-      delete Q.bon;
-      delete Q.bonT;
-      saveQ();
-      showBon();
-    }
+    const rq = JSON.parse(d[sKey('quiz')] || '{}') || {};
+    S.optin.forEach(k => {
+      if (typeof rq[k] === 'boolean' && (Q[k] === undefined || (rq[k + 'T'] || 0) > (Q[k + 'T'] || 0))) {
+        Q[k] = rq[k];
+        Q[k + 'T'] = rq[k + 'T'] || 0;
+        saveQ();
+      } else if (rr > lr && typeof rq[k] !== 'boolean' && Q[k] !== undefined) {
+        // A progress reset made on another device: the offer comes again here too.
+        delete Q[k];
+        delete Q[k + 'T'];
+        saveQ();
+      }
+    });
   } catch (e) {}
-  // The opening hold from every answer the sheet has (v23, model.js holdSync), with this device's unconfirmed ones added.
-  const holdIn = () => typeof holdSync === 'function' && holdSync(j.hold, SYNC.log, j.holdIds);
+  // The opening hold from every answer the sheet has (v23, model.js holdSync), with this device's unconfirmed ones added:
+  // the hold of the subject whose answers the sheet logs, never another's (Codex review #442: the corals' hold landed in
+  // the fish one).
+  const holdIn = () => S.log && holdAdopt(j.hold, SYNC.log, j.holdIds);
   if (rr > lr) {
     introReset();
     introIn();
     P = R;
-    SYNC.base = copy(R);
+    SYNC[BK] = copy(R);
     store.set('reefid-account', SYNC);
-    store.set('reefid-sync-coral-reset', rr);
+    store.set(sKey('reset'), rr);
     holdIn(); // after the reset time is in: only the answers since then count
     // The sheet's replay since the reset is asked for again (the rules version back to 0) when this copy may lack
     // answers: answers played here after that reset and not in the sheet yet (the save that follows logs them), or a
     // copy under older rules than this device applied (saved by an older app, or before its device's replay came back).
-    if ((SYNC.log || []).some(a => a && String(a.t || '') > rr) || (Number(d[RVK]) || 0) < rvApplied()) store.set(RVK, 0);
-    store.set('reefid-sync-coral-progress', P);
+    if (S.log && ((SYNC.log || []).some(a => a && String(a.t || '') > rr) || (Number(d[RVK]) || 0) < rvApplied())) store.set(RVK, 0);
+    store.set(sKey('progress'), P);
     if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
-    replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
+    if (S.log) replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
     prog();
     return;
   }
@@ -282,31 +316,33 @@ function mergeSaved(j) {
   // copy's, so its next request (the save of this very sync, or one asked for now after a pull) gets the replay of the
   // whole log again, every answer of every device counted once, this device's unsent ones on top (replayAdopt). The
   // cost: one more replay.
-  const rvSaved = Number(d[RVK]) || 0;
+  // Only a subject the sheet replays (SUBJECTS log: the corals) has a rules version; the others merge as before the replay.
+  const rvSaved = S.log ? Number(d[RVK]) || 0 : Infinity;
   // Answers this device had logged from a refused save (SYNC.lg): another device may have saved them already, in its
   // replay of the log, and the merge would add them again as this device's own (Codex review #399: 3 answers, a baseline
   // of 2, a saved replay of the 3: 3 + 3 - 2 = 4, kept for good). The replay of the log, which the load asked for
   // (rvAsk), counts every one once: adopted, it replaces the merge; without it, the merge as usual.
-  const recovered = !!(SYNC.lg && j.replay && replayAdopt(j.replay, SYNC.log, j.v, undefined, pre));
+  const recovered = !!(S.log && SYNC.lg && j.replay && replayAdopt(j.replay, SYNC.log, j.v, undefined, pre));
   if (!mine && !recovered) {
     if (rvSaved >= rvApplied()) {
       // In place: other code holds P by name only, but keep the same object anyway.
-      const M = mergeProgress(SYNC.base || {}, P, R);
+      const M = mergeProgress(SYNC[BK] || {}, P, R);
       // A copy under newer rules than this device applied (another device adopted their replay): a learned mark that
       // replay took away is not taken here by the merge, which would tell nothing (the mark gone before mxRecalc sees it;
       // Codex review #399). It stays until this device adopts the same replay (replayAdopt, in this very sync when the
       // reply carries it, else at the next), which decides it with this device's own card (the cards are per device).
-      if (rvSaved > rvApplied()) Object.keys(M).forEach(g => g !== LEVEL && P[g] && P[g].mx && M[g] && !M[g].mx && (M[g].mx = P[g].mx));
+      if (S.log && rvSaved > rvApplied())
+        Object.keys(M).forEach(g => g !== LEVEL && P[g] && P[g].mx && M[g] && !M[g].mx && (M[g].mx = P[g].mx));
       Object.keys(P).forEach(g => delete P[g]);
       Object.assign(P, M);
       // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
-      SYNC.base = copy(R);
+      SYNC[BK] = copy(R);
     } else store.set(RVK, rvSaved);
   }
   store.set('reefid-account', SYNC);
-  store.set('reefid-sync-coral-progress', P);
+  store.set(sKey('progress'), P);
   if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
-  replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
+  if (S.log) replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
   prog();
 }
 // Pull, merge, then send. Every change bumps SYNC.rev; a send clears SYNC.dirty only if nothing changed
@@ -342,10 +378,12 @@ function syncOnce(tries = 0) {
       if (!j.ok) return j;
       if (j.found) mergeSaved(j);
       rev = me.rev;
-      sent = copy(P);
-      cut = store.get('reefid-sync-coral-reset', '') || ''; // the reset this save's data carries, the replay's cutoff
+      // Each subject's progress as sent: its baseline once the sheet confirms (SUBJECTS base).
+      const pd0 = progData();
+      sent = Object.fromEntries(SUBJECTS.map(S => [S.id, JSON.parse(pd0[subjKey(S.id, 'progress')] || '{}') || {}]));
+      cut = store.get('reefid-sync-coral-reset', '') || ''; // the reset this save's data carries, the replay's cutoff (corals: replayAdopt)
       log = me.log || [];
-      me.pending = progData()['reefid-sync-coral-progress'] || '';
+      SUBJECTS.forEach(S => (me[S.base[1]] = pd0[subjKey(S.id, 'progress')] || ''));
       store.set('reefid-account', me);
       const pd = (progData()['reefid-sync-coral-progress'] || '').length;
       if (pd > 40000) console.warn(`Progress is ${pd} characters (sheet script v6 stores any size; v5 stops at 50,000).`);
@@ -378,7 +416,7 @@ function syncOnce(tries = 0) {
       }
       // The retry is a whole sync of its own: its result skips the steps below (they would apply this round's sent copy).
       if (j.error === 'stale' && tries < 2) {
-        delete me.pending;
+        SUBJECTS.forEach(S => delete me[S.base[1]]);
         return syncOnce(tries + 1).then(r => {
           throw {retried: r};
         });
@@ -388,10 +426,12 @@ function syncOnce(tries = 0) {
     .then(j => {
       if (j && j.ok && SYNC === me) {
         me.last = new Date().toISOString();
-        me.base = sent;
+        SUBJECTS.forEach(S => {
+          me[S.base[0]] = sent[S.id];
+          delete me[S.base[1]];
+        });
         delete me.lg; // the saved copy now holds the answers it lacked
         if (typeof j.rev === 'number') me.srv = j.rev;
-        delete me.pending;
         delete me.err;
         if (!j.log && log.length) me.err = 'net';
         if (me.anon) delete me.anon;
@@ -401,7 +441,7 @@ function syncOnce(tries = 0) {
         }
         // The sheet's hold over every answer now logged, in time order (v23; Codex review #370), plus any answer given
         // while this send was on its way.
-        if (typeof holdSync === 'function') holdSync(j.hold, me.log, j.holdIds);
+        holdAdopt(j.hold, me.log, j.holdIds);
         if (me.rev === rev) delete me.dirty;
         // The full replay over every answer now logged (v28), plus any answer given while this send was on its way.
         const adopted = replayAdopt(j.replay, me.log, j.v, cut);
@@ -936,28 +976,41 @@ function signIn(name, pin, j) {
     } catch (e) {}
     return store.set('reefid-account', SYNC);
   }
-  let R = {};
-  try {
-    R = JSON.parse(j.data['reefid-sync-coral-progress'] || '{}') || {};
-  } catch (e) {}
-  SYNC.base = R;
-  // Only what was played while signed out counts: the delta from ANONB (the progress before the first anonymous answer)
-  // is added to the sheet's. Progress left by a sign-out made before sign-out cleared the device (2026-11-01) is in
-  // ANONB, so it is neither counted twice nor credited to another account.
+  // Each subject on its own (core.js SUBJECTS). A subject whose answers are logged (the corals): only what was played
+  // while signed out counts, the delta from ANONB (the progress before the first anonymous answer) added to the sheet's;
+  // progress left by a sign-out made before sign-out cleared the device (2026-11-01) is in ANONB, so it is neither
+  // counted twice nor credited to another account. A subject not logged (fish, which came after sign-out cleared the
+  // device): everything on this device was played signed out, so it all adds up.
   const anon = SYNC.log.length > 0,
-    M = anon ? mergeProgress(store.get(ANONB, {}) || {}, P, R) : R;
+    M = {};
+  let mine = false;
+  SUBJECTS.forEach((S, i) => {
+    const pk = subjKey(S.id, 'progress'),
+      here = store.get(pk, {}) || {};
+    let R = {};
+    try {
+      R = JSON.parse(j.data[pk] || '{}') || {};
+    } catch (e) {}
+    // The account's copy is this subject's merge baseline, played here or not (Codex review #442: a subject never played
+    // on this device took the account's progress through loadData with no baseline, and the next sync added it again).
+    SYNC[S.base[0]] = R;
+    // A subject never played on this device (not the first, the corals) takes the account's as it is (loadData below).
+    if (i && !Object.keys(here).length) return;
+    if (!S.log && Object.keys(here).length) mine = true;
+    M[pk] = S.log ? (anon ? mergeProgress(store.get(ANONB, {}) || {}, here, R) : R) : mergeProgress({}, here, R);
+  });
   try {
     localStorage.removeItem(ANONB);
   } catch (e) {}
   // The account's settings replace this device's, except the achievements: earned here before signing in, they join the
   // account's (code review #324).
-  const mine = store.get(ACHK, null);
+  const ach = store.get(ACHK, null);
   // The rules version applied (RVK) is the account's, 0 when its data has none: this device's (an anonymous replay adopted
   // here) would tell the sheet that the account's log was replayed, and its replay would never come (Codex review #399).
   try {
     localStorage.removeItem(RVK);
   } catch (e) {}
-  loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => k !== 'reefid-sync-coral-progress')));
+  loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => !(k in M))));
   // Answers played here without an account (queued in the log, or already sent under the anonymous id, moved to the name
   // by the first save: SYNC.anon) join the account's: the account's rules version is not this merged progress's, whose
   // replay never had them (Codex review #399: 20 right answers played before the account's 10 misses kept pg 0.9 and ten
@@ -967,9 +1020,9 @@ function signIn(name, pin, j) {
     try {
       localStorage.removeItem(RVK);
     } catch (e) {}
-  if (mine) achMerge(JSON.stringify(mine));
-  store.set('reefid-sync-coral-progress', M);
-  if (!anon) delete SYNC.dirty;
+  if (ach) achMerge(JSON.stringify(ach));
+  Object.entries(M).forEach(([k, v]) => store.set(k, v));
+  if (!anon && !mine) delete SYNC.dirty;
   store.set('reefid-account', SYNC);
   try {
     sessionStorage.setItem('reefid-loaded', SHEET_NAME);
@@ -1078,16 +1131,15 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       // The first-meeting cards too (Codex review #350): the next player meets their own genera.
       [
         'reefid-account',
-        'reefid-sync-coral-progress',
-        'reefid-sync-coral-quiz',
-        'reefid-sync-coral-reset',
-        INTRO.KEY,
-        INTRO.OFFER.KEY,
-        CUSTOM.KEY, // model.js: the custom quiz's selection is the player's too
+        // Every subject's progress, settings, cards, opening hold and comeback (model.js COMEBACK.KEY: the visit floor and
+        // the comeback belong to this player, Codex review #374).
+        ...SUBJECTS.flatMap(S => [
+          ...['progress', 'quiz', 'reset', 'intro', 'intro-offer'].map(k => subjKey(S.id, k)),
+          ...['hold', 'comeback'].map(k => subjDev(S.id, k))
+        ]),
         ACHK,
         'reefid-ach-new',
-        'reefid-hold',
-        'reefid-comeback', // model.js COMEBACK.KEY: the visit floor and the comeback belong to this player (Codex review #374)
+        CUSTOM.KEY, // model.js: the custom quiz's selection is the player's too
         'reefid-mx-lost', // model.js MXL.KEY: learned marks taken away and their card, this player's
         RVK, // the rules version this player's progress was replayed with (replayAdopt)
         'reefid-rv-msg', // progress.js RVN.KEY: the announcement cards of the rules versions, this player's

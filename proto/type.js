@@ -8,6 +8,9 @@
 // The matching (core.js TYPE, typeNorm, typeDist, typeNamesOf, typeMatchIn) and the form with its messages (quiz.js
 // typeForm, typeBind, typeRead) are the quiz's own: one code for both.
 
+// The corals as the subject of fn (app.js inSubject; the Lab runs before subjects existed too: then fn as it is).
+const CORALS = fn => (typeof inSubject === 'function' && typeof SUBJECTS !== 'undefined' ? inSubject(SUBJECTS[0].id, fn) : fn());
+
 LAB.add({
   id: 'type',
   icon: '⌨',
@@ -30,7 +33,9 @@ LAB.add({
     root.innerHTML = '<div id="tybody"></div>';
     const body = root.querySelector('#tybody');
     const round = () => {
-      const pool = (typeof slateGenera === 'function' ? slateGenera() : labNames()).filter(n => GX(n)), // Millepora too (Codex review #379)
+      // The corals' slate whatever the subject on screen: the Tools are the corals' (Codex review #442: with Fish chosen it
+      // drew fish teaching ids).
+      const pool = (typeof slateGenera === 'function' ? CORALS(slateGenera) : labNames()).filter(n => GX(n)), // Millepora too (Codex review #379)
         t = pick(pool),
         v = view === 'any' ? pick(['wide', 'medium', 'macro']) : view,
         // Only photos the games may teach from (app.js gamePhotoOk: Research Grade for the extra genera), in the view
@@ -41,7 +46,7 @@ LAB.add({
       if (!p) return round(); // a genus with no eligible photo at all: draw another
       body.innerHTML = `<div class="rvlayout tylayout"><div class="rvstage tystage"><img src="${img(p, fit(Math.min(innerWidth, 800)))}" alt="Coral to identify"></div>
         <div class="gside">
-          ${typeForm()}
+          ${typeForm(CORALS(() => SUBJ))}
           <div id="tyres"></div>
           <p class="note tyscore">${scoreLine()}</p>${chips()}</div></div>`;
       // said: the genus read ({g, old, exact}), null for "I don't know"; text: what was typed.
@@ -70,7 +75,11 @@ LAB.add({
           if (over > 0) scrollBy({top: over, behavior: 'smooth'});
         }
       };
-      typeBind(body.querySelector('.tyform'), (m, text) => finish(!!m && m.g === t, m, text));
+      typeBind(
+        body.querySelector('.tyform'),
+        (m, text) => finish(!!m && m.g === t, m, text),
+        CORALS(() => SUBJ)
+      );
       body.querySelectorAll('[data-v]').forEach(
         b =>
           (b.onclick = () => {
