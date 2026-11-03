@@ -35,6 +35,8 @@ const ROUTES = [
   'lab-basics|words',
   'about',
   'credits',
+  'lab-cards',
+  'lab-cards|C|update',
   'quiz-duel|Foo|Bar',
   'g-%E0'
 ]; // the last two are malformed links: they must not crash a page
