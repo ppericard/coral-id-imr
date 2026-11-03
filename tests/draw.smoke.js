@@ -6,7 +6,7 @@
 // - answer choices: 3 distinct genera of the list, never the target; exactly the asked number of traps (look-alikes /
 //   confused genera) when enough exist, none at the very start (14c);
 // - first meetings: genera met on cards before being asked, never right after their card (INTRO), none while the
-//   player falls behind (introHold);
+//   player falls behind (introHold); a starred genus never before the genera its card compares it to (core.js starRefs);
 // - out-of-game prompts at least PROMPT.GAP answers apart (promptOk);
 // - Millepora a slate genus (progress, cards); the bonus genera offered once every slate genus is met and never before,
 //   "Not now" kept, once on opened one card at a time, never counted in the progress, Off out of the draw;
@@ -431,6 +431,12 @@ const server = http.createServer((req, res) => {
         for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
         const now = Object.keys(INTROS).filter(n => !before.has(n));
         if (now.length) cardsAt.push([a, now.length]);
+        // A starred genus opens only after the genera its card compares it to (core.js starRefs; Pierre, 2026-11-03).
+        now.forEach((n, k) =>
+          starRefs(DATA, n)
+            .filter(r => pool().includes(r) && !at[r] && !asked(r) && !now.slice(0, k).includes(r))
+            .forEach(r => fails.push(`question ${i}: ★ ${n} opened before its reference ${r}`))
+        );
         now.forEach(n => (at[n] = [a, INTROS[n][1]]));
         if (i === 0 && (now.length !== INTRO.START || !now.includes(tg)))
           fails.push(`first question: cards ${now.join(', ')}, asked ${tg}`);
@@ -467,6 +473,45 @@ const server = http.createServer((req, res) => {
         if (shownF.includes((cover(GX(tg)) || {}).f) && !same++) fails.push(`first question: the photo of ${tg}'s card again`);
       }
       document.querySelectorAll('.unlock').forEach(x => x.remove());
+      // Starred genera after their references (core.js starRefs, model.js weighted; Pierre, 2026-11-03), on many paths:
+      // the first cards from zero, in the order shown, and the opening draw once every other genus is met. A reference
+      // missing from the genera in play never holds a starred genus back.
+      {
+        const star = slateGenera().filter(n => starRefs(DATA, n).length),
+          refs = [...new Set(star.flatMap(n => starRefs(DATA, n)))];
+        if (!star.length) fails.push('no starred genus with a reference in the data');
+        for (let i = 0; i < 200; i++) {
+          P = {};
+          INTROS = {};
+          const L = introStart(pool());
+          L.forEach((n, k) =>
+            starRefs(DATA, n).forEach(r => {
+              if (pool().includes(r) && !L.slice(0, k).includes(r)) fails.push(`first cards ${L.join(', ')}: ★ ${n} before ${r}`);
+            })
+          );
+        }
+        P = {};
+        INTROS = {};
+        slateGenera()
+          .filter(n => !star.includes(n) && !refs.includes(n))
+          .forEach(n => (INTROS[n] = [0, 1, 0, 's']));
+        const seen = new Set();
+        for (let i = 0; i < 2000; i++) seen.add(weighted(pool()));
+        const early = star.filter(n => seen.has(n));
+        if (early.length) fails.push(`opening draw: ★ ${early.join(', ')} drawn before their references`);
+        if (!refs.some(r => seen.has(r))) fails.push('opening draw: no reference drawn');
+        refs.forEach(r => (INTROS[r] = [0, 1, 0, 's']));
+        seen.clear();
+        for (let i = 0; i < 2000; i++) seen.add(weighted(pool()));
+        if (!star.every(n => seen.has(n)))
+          fails.push(`opening draw: references met, ★ ${star.filter(n => !seen.has(n)).join(', ')} never drawn`);
+        refs.forEach(r => delete INTROS[r]);
+        seen.clear();
+        for (let i = 0; i < 2000; i++) seen.add(weighted(pool().filter(n => !refs.includes(n))));
+        if (!star.every(n => seen.has(n))) fails.push('opening draw: ★ genera held back by references out of the list');
+        P = {};
+        INTROS = {};
+      }
       cardsAt.forEach(([a, k], i) => {
         if (i && a - cardsAt[i - 1][0] < INTRO.EVERY) fails.push(`two cards ${a - cardsAt[i - 1][0]} answer(s) apart`);
         if (i && k !== 1) fails.push(`${k} cards at once after the first ones`);
@@ -1030,7 +1075,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, prompt spacing, learned marks of the former model taken back.`
+    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, starred genera after their references, prompt spacing, learned marks of the former model taken back.`
   );
 })().catch(e => {
   console.error(e);

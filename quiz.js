@@ -1095,12 +1095,14 @@ function introShow(L, start, kind = start ? 's' : 'c') {
 }
 // Cards due with the next question (INTRO): the first ones while fewer than INTRO.START slate genera are met (picked by
 // the progressive path's draw, easiest first), else none: planPhoto may add one when its draw falls on a genus not met.
+// The cards drawn before count as met: a ★ genus may follow its reference's card, shown before it (model.js weighted).
 function introStart(list) {
   const slate = list.filter(n => !isBonus(n)),
     want = INTRO.START - slate.filter(introduced).length,
-    L = [];
+    L = [],
+    met = n => introduced(n) || L.includes(n);
   for (let fresh = slate.filter(n => !introduced(n)); L.length < want && fresh.length; fresh = fresh.filter(n => n !== L[L.length - 1]))
-    L.push(weighted(fresh));
+    L.push(weighted(fresh, met));
   return L;
 }
 function planPhoto() {
@@ -1208,8 +1210,9 @@ function planPhoto() {
 function quizDuel(a, b) {
   const q = (!a && !b && takePlan('quiz-duel')) || planDuel(a, b);
   question(...q);
-  // Both genera are named on the buttons: the cards of those not met yet come together, and either can be the answer.
-  const L = q[2].filter(n => !introduced(n));
+  // Both genera are named on the buttons: the cards of those not met yet come together, and either can be the answer;
+  // a ★ genus's card after the card of the genus it is compared to (core.js starRefs).
+  const L = q[2].filter(n => !introduced(n)).sort((a, b) => starRefs(DATA, a).length - starRefs(DATA, b).length);
   if (L.length) introShow(L, true, 'c');
 }
 // A look-alike pair for a duel (the Duel tab, and the duels slipped into the photo quiz): among the pairs whose two

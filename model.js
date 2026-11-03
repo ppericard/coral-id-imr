@@ -607,10 +607,17 @@ function answeredAt(s, good, now = Date.now()) {
   }
   if (P[LEVEL]) P[LEVEL].at = now;
 }
-function weighted(list) {
+function weighted(list, met = introduced) {
+  // met: the genera already met, for the starred genera's wait (introStart passes the cards drawn before as met too).
   const w = list.map(weight);
   // Not met yet: the genera with no card shown and never asked (a genus met on its card weighs as a new one, 10).
-  const fresh = list.map((n, i) => [n, i]).filter(([n]) => !introduced(n));
+  // A ★ genus waits (weight 0) while a genus its card compares it to is in the list and not met (Pierre, 2026-11-03;
+  // core.js starWaits: a reference not in the list never holds it back, and a reference never waits itself).
+  // Should every genus left wait (not possible with today's data), they all open as before.
+  const all = list.map((n, i) => [n, i]).filter(([n]) => !introduced(n)),
+    open = all.filter(([n]) => !starWaits(DATA, n, list, met)),
+    fresh = open.length ? open : all;
+  all.forEach(([, i]) => (w[i] = 0));
   if (fresh.length) {
     // A slope rather than a switch (Pierre, 2026-11-02): READY with no shaky genus met, down to TRICKLE at K or more.
     const share = OPEN.TRICKLE + (OPEN.READY - OPEN.TRICKLE) * Math.max(0, 1 - list.filter(shaky).length / OPEN.K),
