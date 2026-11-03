@@ -108,7 +108,7 @@ const server = http.createServer((req, res) => {
       return [
         ...L,
         {h: '~mont', tab: 'Look-alikes', view: null, n: 1},
-        {h: '~stats-needs', tab: 'Coverage', view: '~cov', n: 3},
+        {h: '~stats-needs', tab: 'Coverage', view: '~cov', n: 2},
         {h: '~journey/Ana Demo', tab: 'Players', view: null, n: 1}
       ];
     });
@@ -130,7 +130,7 @@ const server = http.createServer((req, res) => {
       if (at.wide > 0) fails.push(`${w}px #${h}: page ${at.wide} px wider than the window`);
     }
     // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs).
-    await go('~finder');
+    await go('~fcov');
     await go('~triage');
     const mem = await p.evaluate(() => ({
       cov: (document.querySelector('#subnav .adm-subtabs a:nth-child(2)') || {}).getAttribute?.('href'),
@@ -138,7 +138,7 @@ const server = http.createServer((req, res) => {
       players: document.querySelector('#modes [data-mode="players"]').getAttribute('href'),
       kept: (store.get('imr-admin-view', {}) || {}).cov
     }));
-    if (mem.cov !== '#~finder' || mem.todo !== '#~triage' || mem.kept !== '~finder' || mem.players !== '#~users')
+    if (mem.cov !== '#~fcov' || mem.todo !== '#~triage' || mem.kept !== '~fcov' || mem.players !== '#~users')
       fails.push(`${w}px: views not remembered ${JSON.stringify(mem)}`);
     await p.reload();
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
@@ -163,13 +163,7 @@ const server = http.createServer((req, res) => {
       };
     });
     if (!all.line || !all.rep || !all.err || !all.first) fails.push(`${w}px To do › All: ${JSON.stringify(all)}`);
-    // Coverage › Coral Finder: one row per Finder box; Genera › Hidden: Put back takes a removed photo back.
-    await go('~finder');
-    const fb = await p.evaluate(() => ({
-      rows: document.querySelectorAll('[data-box]').length,
-      boxes: [...DATA.key, ...(DATA.x.groups || [])].reduce((s, F) => s + F.leaves.length, 0)
-    }));
-    if (!fb.rows || fb.rows !== fb.boxes) fails.push(`${w}px Coral Finder boxes: ${JSON.stringify(fb)}`);
+    // Genera › Hidden: Put back takes a removed photo back.
     const hid = await p.evaluate(() => {
       const n = Object.keys(DATA.gen).find(g => photos(g).length > 3),
         f = photos(n)[0].f;

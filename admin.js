@@ -1020,8 +1020,7 @@ const GROUPS = [
         'Coverage',
         [
           ['~cov', 'Games'],
-          ['~fcov', 'Sheets'],
-          ['~finder', 'Coral Finder']
+          ['~fcov', 'Sheets & Finder']
         ]
       ]
     ]
@@ -1112,7 +1111,7 @@ function navs(tn, xn) {
     // A tab opens on its view used last; a header group on its tab used last.
     tabHash = t => (has(t, seen[t[0]]) ? seen[t[0]] : t[2][0][0]),
     groupHash = G => (TABS.some(t => t[3] === G[0] && has(t, last[G[0]])) ? last[G[0]] : tabHash(TABS.find(t => t[3] === G[0]))),
-    over = `${OVER.n} genus × view cell${OVER.n === 1 ? '' : 's'} over the cap (${CELL_MAX} colonies, Coverage › Games; ${CAP.sheet} for a Finder-only genus, Coverage › Sheets)`,
+    over = `${OVER.n} genus × view cell${OVER.n === 1 ? '' : 's'} over the cap (${CELL_MAX} colonies, Coverage › Games; ${CAP.sheet} for a Finder-only genus, Coverage › Sheets & Finder)`,
     // Counts: on a view in its switch, on a tab in the tab row and the phone menu.
     vcnt = h =>
       (h === '~todo' || h === '~triage') && tn
@@ -1180,7 +1179,6 @@ const modeKey = () =>
           '~health': 'health',
           '~cov': 'cov',
           '~fcov': 'fcov',
-          '~finder': 'finder',
           '~look': 'mont',
           '~mont': 'mont',
           '~cand': 'cand'
@@ -1198,7 +1196,6 @@ function render() {
   // Game coverage with the Where to look banner above it (folded on ~cov, open in full on ~stats-needs).
   if (cur === '~cov' || cur === '~stats-needs') return renderCov();
   if (cur === '~fcov') return renderFcov();
-  if (cur === '~finder') return renderFinder();
   if (cur === '~users') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
   if (cur.startsWith('~journey/')) return renderJourney(cur.slice(9)); // one player's path (admin-journey.js)
   // A device that never signed in, by anonymous id (its own route: a player's name may start with any character).
@@ -1738,14 +1735,13 @@ const HELP = {
   },
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap question "These questions are: Too easy · About right · Too hard" (after 15 answers, then every 60), with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. The games aim at about 80% right, so many "Too hard" from beginners would mean the start is too steep. Last 30 days. Nothing here changes the app by itself.</p>`,
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
-  start: `<p><b>Three groups, nine tabs</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health: players' reports, your flags, the errors their devices send, how the app is working for them) and <b>Coverage</b> (Games, Sheets, Coral Finder: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form), <b>Look-alikes</b>, <b>Photo stats</b> (Difficulty, Photo list). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (Activity, Confusions). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
+  start: `<p><b>Three groups, nine tabs</b>. <b>To do</b>: <b>To do</b> (All, Reports, Errors, Health: players' reports, your flags, the errors their devices send, how the app is working for them) and <b>Coverage</b> (Games, Sheets & Finder: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form), <b>Look-alikes</b>, <b>Photo stats</b> (Difficulty, Photo list). <b>Players</b>: <b>Players</b> (who plays, merge or delete names) and <b>Activity</b> (Activity, Confusions). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last, each tab the view you used last.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Photo review</b>: check the quality and growth form guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Coverage › Games</b>: Where to look, above the grid, says which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
     <p><b>What reaches the public site.</b> Nothing until Publish: every click is a draft kept in this browser only. Publish lists what it will send and asks first; it sends only what you changed (the rest follows the site) and is live within a minute or two. Covers, view order, hidden photos, quality, forms and the CF book switch (⋯ menu, site-wide) all change what the RAs see.</p>
     <p><b>What is permanent.</b> × on a photo excludes it for good once published: removed everywhere, imports skip it, its file goes (Excluded can restore the entry). Everything else can be undone: Undo (Ctrl+Z) before Publish (its steps survive a reload, until the tab is closed), a new click after it. Every Publish is kept in the site's history, so an old version can be recovered.</p>
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   todo: `<p>Everything that needs your eye, most urgent first: a red <b>Health</b> line when Health finds photos everyone misses or genera players are stuck on (nothing when all is well), the players' <b>reports</b>, the photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days (app errors, photos that did not load, failed saves), Featured photos rated Poor, and last the judging agent's <b>suggestions</b>. Each part works as in its own view: <b>Reports</b> (reports, flags, Poor featured photos and suggestions, the former Triage page), <b>Errors</b> (with the one-tap answers and load times), <b>Health</b>.</p>`,
   hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
-  finder: `<p>The boxes of the site's Coral Finder (growth form, then box, as in the book) and the book photos that illustrate each one (up to 3, crops of the book's box pages; an excluded crop drops out, and all of them when the CF book is off in the ⋯ menu). Boxes without a photo come first: the site draws a few of them instead, or shows the cover photos of genera found in no other box. Genera = the box's IMR genera, then its Finder-only ones (click to open). Click a photo to enlarge it.</p>`,
   fcov: `<p>What the genus sheets and the Coral Finder can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral Finder the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Finder-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral Finder show), an orange one a cell over it. Click a row to open the genus.</p>`,
   cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the games use them at the Hard level; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser. Level = overall level from every answer, on the same scale as photo difficulty (sheet v13 links names to it). Elo = the score players see (1000 + 200 × Level; shown to them from 200 answers), ± its 95% margin: a few answers, or a run of near-sure right ones, leave it wide, so a high Elo from few answers is not yet a higher level. Last = last answer. Quiz = right in the photo quiz (look-alike duels slipped into it included); Last 50 = their last 50 quiz answers; Duels = answers in the Duel tab (2 choices, often on one chosen pair, so they say little about the level), with their right share. Days = days with answers. Learned and Seen = genera, from their last sync. Reports = problems they reported (To do › Reports). Click a row for their games, most frequent mix-ups (genus shown → genus answered) and genera to review. <b>Not signed in</b>: answers of devices that never signed in, and of accounts deleted with their answers kept, by anonymous id; they count in Activity. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete</b>: a test or abandoned account; you choose whether its answers go too (otherwise they stay, without the name, for photo difficulty). Both are permanent and ask first. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p>`,
@@ -4274,40 +4270,6 @@ function renderFcov() {
         if (!e.target.closest('a')) location.hash = encodeURIComponent(tr.dataset.g);
       })
   );
-}
-
-// Coral Finder boxes (Coverage › Coral Finder; Pierre, 2026-11-03, mockup: "Finder boxes without a photo"): every box
-// of the Coral Finder path (growth form, then box: data.json key, and x.groups for the corals that are not hard corals)
-// with the book photos that illustrate it on the site (its leaf's "ph", up to 3; an excluded crop or the book switched
-// off drops out, as boxPics in proto/finder.js), boxes without a photo first. The site draws a few of those instead
-// (BOXART), or shows the covers of genera found in no other box. Genera = the box's IMR genera, then its Finder-only ones.
-function renderFinder() {
-  status();
-  const X = DRAFT.exclude || {},
-    on = bookOn(DRAFT),
-    more = (DATA.x && DATA.x.leaf) || {};
-  const B = [...(DATA.key || []), ...((DATA.x && DATA.x.groups) || [])].flatMap(F =>
-    F.leaves.map(l => ({F, l, ph: on ? (l.ph || []).filter(f => !X[f]).slice(0, 3) : [], g: l.g, gx: more[l.id] || []}))
-  );
-  B.sort((a, b) => a.ph.length - b.ph.length);
-  const none = B.filter(b => !b.ph.length).length,
-    gl = (n, x) =>
-      DATA.gen[n]
-        ? `<a class="adm-gen${x ? ' fbox-x' : ''}" href="#${esc(encodeURIComponent(n))}"${x ? ' title="Finder-only"' : ''}><i>${esc(n)}</i></a>`
-        : `<i>${esc(n)}</i>`,
-    gens = b => [...b.g.map(n => gl(n)), ...b.gx.map(n => gl(n, 1))].join(' ') || '–',
-    pic = f => {
-      const p = PHOTOS[f];
-      return `<button type="button" class="adm-ph"${p ? ` data-zf="${esc(f)}" data-g="${esc(p.genus)}"` : ' disabled'} aria-label="Enlarge"><img src="img/${esc(f)}-t.webp" alt="" loading="lazy"></button>`;
-    };
-  $v.innerHTML = `<section class="adm-cov">
-    <div class="adm-filter cov-head"><b class="${none ? 'warnc' : ''}" title="Boxes the site's Coral Finder shows without a book photo">${none} without a photo</b><b>${B.length} boxes</b>${on ? '' : '<b class="warnc" title="⋯ menu: CF book">CF book photos off</b>'}</div>
-    <table class="cov-t fbox-t"><thead><tr><th>Box</th><th>Photos</th><th>Genera</th></tr></thead><tbody>${B.map(
-      b =>
-        `<tr data-box="${esc(b.l.id)}"><th scope="row"><b>${esc(b.F.name)}</b> <small>${esc(b.l.id)}</small><span class="fbox-l">${esc(b.l.t)}${b.l.s ? ` <small>${esc(b.l.s)}</small>` : ''}${b.l.a ? ` <small>p. ${b.l.a}${b.l.b && b.l.b !== b.l.a ? '–' + b.l.b : ''}</small>` : ''}</span><span class="fbox-gm">${gens(b)}</span></th>
-      <td class="cov-c fbox-ph${b.ph.length ? '' : ' cov-0'}">${b.ph.length ? b.ph.map(pic).join('') : '<b>0</b>'}</td><td class="fbox-g">${gens(b)}</td></tr>`
-    ).join('')}</tbody></table></section>`;
-  $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
 }
 
 /* ---------- Hidden: every photo removed from the site (Genera › Hidden) ---------- */
