@@ -43,7 +43,10 @@
         "acropora-cf-4-012": "medium",
         "acropora-cf-4-013": "medium",
         "acropora-cf-4-014": "medium",
-        "acropora-cf-4-015": "medium"
+        "acropora-cf-4-015": "medium",
+        "acropora-cand-733945084": "wide",
+        "acropora-cand-609323758": "medium",
+        "acropora-cand-345338038": "macro"
       },
       "ok": true
     },
@@ -70,7 +73,9 @@
         "pocillopora-cand-311984862": "medium",
         "pocillopora-cand-585933866": "wide",
         "pocillopora-cand-311286514": "wide",
-        "pocillopora-cand-713112086": "medium"
+        "pocillopora-cand-713112086": "medium",
+        "pocillopora-cand-596708533": "wide",
+        "pocillopora-cand-607126019": "wide"
       }
     },
     "Stylophora": {
@@ -107,7 +112,8 @@
         "seriatopora-cf-5-06": "medium",
         "seriatopora-cf-5-04": "wide",
         "seriatopora-cf-5-05": "medium",
-        "seriatopora-cand-629109481": "medium"
+        "seriatopora-cand-629109481": "medium",
+        "seriatopora-cand-585933842": "wide"
       }
     },
     "Porites": {
@@ -122,13 +128,16 @@
         "porites-cand-48874159": "medium",
         "porites-cand-745675660": "macro",
         "porites-cand-745675693": "medium",
-        "porites-cand-48874145": "wide"
+        "porites-cand-48874145": "wide",
+        "porites-cand-461415421": "wide",
+        "porites-cand-175097109": "wide"
       }
     },
     "Tubastraea": {
       "add": {
         "tubastraea-cand-588018797": "wide",
-        "tubastraea-cand-580500308": "wide"
+        "tubastraea-cand-580500308": "wide",
+        "tubastraea-cand-532688969": "wide"
       }
     },
     "Echinopora": {
@@ -150,7 +159,8 @@
         "echinopora-cf-9-01": "macro",
         "echinopora-cf-9-07": "medium",
         "echinopora-cf-9-06": "medium",
-        "echinopora-cf-9-04": "medium"
+        "echinopora-cf-9-04": "medium",
+        "echinopora-cand-39510889": "wide"
       }
     },
     "Astreopora": {
@@ -177,7 +187,10 @@
         "galaxea-cand-269732787": "macro",
         "galaxea-cand-269732705": "wide",
         "galaxea-cand-175108798": "wide",
-        "galaxea-cand-269731323": "macro"
+        "galaxea-cand-269731323": "macro",
+        "galaxea-cand-269731314": "wide",
+        "galaxea-cand-345337372": "macro",
+        "galaxea-cand-345337397": "wide"
       }
     },
     "Turbinaria": {
@@ -191,7 +204,8 @@
         "turbinaria-cand-388550872": "medium",
         "turbinaria-cand-129398811": "wide",
         "turbinaria-cand-269471677": "wide",
-        "turbinaria-cand-269468974": "wide"
+        "turbinaria-cand-269468974": "wide",
+        "turbinaria-cand-269459990": "wide"
       }
     },
     "Mycedium": {
@@ -200,7 +214,9 @@
         "mycedium-cand-596471432": "wide",
         "mycedium-cand-269517722": "medium",
         "mycedium-cand-452518537": "wide",
-        "mycedium-cand-39409420": "wide"
+        "mycedium-cand-39409420": "wide",
+        "mycedium-cand-269517791": "medium",
+        "mycedium-cand-269517515": "wide"
       }
     },
     "Lobophyllia": {
@@ -219,7 +235,8 @@
         "lobophyllia-cand-747427072": "wide",
         "lobophyllia-cand-543088288": "medium",
         "lobophyllia-cf-20-g11": "wide",
-        "lobophyllia-cf-20-g32": "medium"
+        "lobophyllia-cf-20-g32": "medium",
+        "lobophyllia-cand-609326193": "macro"
       }
     },
     "Pavona": {
@@ -296,7 +313,8 @@
         "goniopora-cand-608897717": "wide",
         "goniopora-cand-620837646": "medium",
         "goniopora-cand-190264652": "medium",
-        "goniopora-cand-693754521": "medium"
+        "goniopora-cand-693754521": "medium",
+        "goniopora-cand-596697993": "wide"
       }
     },
     "Plerogyra": {
@@ -311,7 +329,9 @@
         "plerogyra-cand-269733809": "wide",
         "plerogyra-cand-752350508": "macro",
         "plerogyra-cand-469456677": "wide",
-        "plerogyra-cand-34702069": "macro"
+        "plerogyra-cand-34702069": "macro",
+        "plerogyra-cand-462729517": "macro",
+        "plerogyra-cand-163914086": "macro"
       }
     },
     "Montipora": {
@@ -325,7 +345,11 @@
         "montipora-cand-586252646": "medium",
         "montipora-cand-345339154": "medium",
         "montipora-cand-175093884": "wide",
-        "montipora-cand-175093855": "wide"
+        "montipora-cand-175093855": "wide",
+        "montipora-cand-588678137": "wide",
+        "montipora-cand-345339085": "medium",
+        "montipora-cand-488110949": "medium",
+        "montipora-cand-269729639": "wide"
       }
     },
     "Hydnophora": {
@@ -386,7 +410,8 @@
         "ctenactis-cand-746237346": "wide",
         "ctenactis-cf-65-00": "wide",
         "ctenactis-cand-269391531": "wide",
-        "ctenactis-cand-269473492": "wide"
+        "ctenactis-cand-269473492": "wide",
+        "ctenactis-cand-269733839": "wide"
       }
     },
     "Lobactis": {
@@ -418,7 +443,8 @@
         "heliofungia-cand-453587788": "macro",
         "heliofungia-cand-269734223": "wide",
         "heliofungia-cand-269734178": "wide",
-        "heliofungia-cand-538874380": "wide"
+        "heliofungia-cand-538874380": "wide",
+        "heliofungia-cand-453587801": "wide"
       },
       "lv": 2,
       "move": {
@@ -437,7 +463,9 @@
         "dipsastraea-cand-606652630": "medium",
         "dipsastraea-cand-746238012": "wide",
         "dipsastraea-cand-345338586": "medium",
-        "dipsastraea-cand-269396835": "medium"
+        "dipsastraea-cand-269396835": "medium",
+        "dipsastraea-cand-386568452": "wide",
+        "dipsastraea-cand-269475139": "wide"
       }
     },
     "Astrea": {
@@ -454,7 +482,9 @@
         "diploastrea-cand-269396863": "wide",
         "diploastrea-cand-452544085": "macro",
         "diploastrea-cand-269471380": "wide",
-        "diploastrea-cand-269731513": "medium"
+        "diploastrea-cand-269731513": "medium",
+        "diploastrea-cand-588008512": "wide",
+        "diploastrea-cand-269475646": "wide"
       }
     },
     "Goniastrea": {
@@ -477,7 +507,8 @@
         "favites-cand-579366436": "medium",
         "favites-cand-269471394": "wide",
         "favites-cand-576310788": "medium",
-        "favites-cand-390531700": "macro"
+        "favites-cand-390531700": "macro",
+        "favites-cand-386693010": "medium"
       }
     },
     "Duncanopsammia": {
@@ -526,7 +557,8 @@
         "merulina-cand-588016182": "wide",
         "merulina-cand-335951855": "wide",
         "merulina-cand-566697902": "medium",
-        "merulina-cf-12-05": "medium"
+        "merulina-cf-12-05": "medium",
+        "merulina-cand-488110891": "wide"
       }
     },
     "Cyphastrea": {
@@ -549,14 +581,19 @@
       "add": {
         "halomitra-cand-269460672": "wide",
         "halomitra-cand-269460824": "wide",
-        "halomitra-cand-269518478": "wide"
+        "halomitra-cand-269518478": "wide",
+        "halomitra-cand-269391163": "wide",
+        "halomitra-cand-269393546": "wide"
       }
     },
     "Euphyllia": {
       "add": {
         "euphyllia-cand-269473974": "wide",
         "euphyllia-cand-577328093": "wide",
-        "euphyllia-cand-742225701": "wide"
+        "euphyllia-cand-742225701": "wide",
+        "euphyllia-cand-269514982": "wide",
+        "euphyllia-cand-269516718": "wide",
+        "euphyllia-cand-34785125": "wide"
       }
     },
     "Fimbriaphyllia": {
@@ -696,6 +733,7 @@
     "acropora-cand-269472875": 3,
     "acropora-cand-339296324": 2,
     "acropora-cand-606605965": 2,
+    "acropora-cand-609323758": 2,
     "acropora-cf-3-06": 1,
     "acropora-cf-3-07": 1,
     "acropora-cf-3-08": 1,
@@ -718,6 +756,7 @@
     "astreopora-cf-50-05": 1,
     "astreopora-cf-50-06": 1,
     "astreopora-cf-50-08": 1,
+    "ctenactis-cand-269733839": 2,
     "ctenactis-cf-65-00": 1,
     "cycloseris-cand-329120173": 1,
     "cyphastrea-cand-357894527": 1,
@@ -738,11 +777,13 @@
     "echinopora-cf-9-04": 1,
     "echinopora-cf-9-06": 1,
     "echinopora-cf-9-07": 1,
+    "euphyllia-cand-34785125": 2,
     "favites-cand-269471394": 3,
     "fungia-cand-269732683": 3,
     "fungia-cand-558791724": 2,
     "galaxea-cand-175108798": 2,
     "galaxea-cand-269731175": 3,
+    "galaxea-cand-345337372": 2,
     "gardineroseris-cand-566696910": 2,
     "goniastrea-cand-746237358": 2,
     "goniastrea-cand-746237419": 3,
@@ -773,6 +814,7 @@
     "lithophyllon-macro-746236865": 3,
     "lithophyllon-macro-746237703": 3,
     "lobophyllia-cand-543088288": 2,
+    "lobophyllia-cand-609326193": 2,
     "lobophyllia-cf-20-g11": 1,
     "lobophyllia-cf-20-g32": 1,
     "merulina-cand-335951855": 2,
@@ -784,6 +826,7 @@
     "montipora-cand-488110817": 2,
     "montipora-cand-488110837": 2,
     "montipora-cand-586252646": 3,
+    "montipora-cand-588678137": 2,
     "mycedium-cand-452518537": 2,
     "pachyseris-cf-15-10": 1,
     "pavona-cand-311709999": 2,
@@ -795,12 +838,15 @@
     "plerogyra-cand-412025177": 2,
     "plerogyra-cand-745206682": 2,
     "pocillopora-cand-311286514": 2,
+    "pocillopora-cand-596708533": 2,
     "pocillopora-cand-713112086": 2,
     "pocillopora-medium-306893648": 2,
     "pocillopora-wide-374959119": 1,
     "podabacia-cand-682475970": 1,
     "podabacia-cand-711352737": 2,
+    "porites-cand-175097109": 1,
     "porites-cand-269475353": 3,
+    "porites-cand-461415421": 1,
     "porites-cand-48874145": 2,
     "porites-cand-596708040": 3,
     "porites-cand-606690293": 2,
@@ -908,6 +954,7 @@
     "cand:platygyra-cf-18-04": 1,
     "cand:pleuractis-x-500556625": 1,
     "cand:pocillopora-cand-606690285": 1,
+    "cand:porites-cand-27992828": 1,
     "cand:porites-cand-34710636": 1,
     "cand:porites-cf-7-00": 1,
     "cand:seriatopora-cf-5-00": 1,
@@ -1016,6 +1063,30 @@
       1,
       1
     ],
+    "diploastrea-cand-269475646": [
+      0.061,
+      0.042,
+      0.953,
+      1
+    ],
+    "diploastrea-cand-588008512": [
+      0.142,
+      0.096,
+      0.811,
+      1
+    ],
+    "dipsastraea-cand-269475139": [
+      0.082,
+      0.085,
+      0.935,
+      1
+    ],
+    "dipsastraea-cand-386568452": [
+      0.064,
+      0.083,
+      0.903,
+      0.873
+    ],
     "dipsastraea-cand-606648845": [
       0.115,
       0,
@@ -1082,6 +1153,12 @@
       0.833,
       1
     ],
+    "euphyllia-cand-269514982": [
+      0.086,
+      0.019,
+      0.944,
+      0.996
+    ],
     "euphyllia-cand-577328093": [
       0.19,
       0.15,
@@ -1116,6 +1193,18 @@
       0.072,
       0.098,
       1,
+      1
+    ],
+    "galaxea-cand-269731314": [
+      0.188,
+      0.117,
+      1,
+      1
+    ],
+    "galaxea-cand-345337397": [
+      0,
+      0,
+      0.864,
       1
     ],
     "goniastrea-cand-260381321": [
@@ -1154,11 +1243,23 @@
       1,
       0.9
     ],
+    "halomitra-cand-269391163": [
+      0.13,
+      0,
+      0.889,
+      1
+    ],
     "heliofungia-cand-269293984": [
       0.12,
       0,
       1,
       0.998
+    ],
+    "heliofungia-cand-453587801": [
+      0.063,
+      0,
+      0.851,
+      1
     ],
     "heliopora-cand-464890309": [
       0.116,
@@ -1231,6 +1332,18 @@
       0.129,
       0.944,
       1
+    ],
+    "montipora-cand-588678137": [
+      0.11,
+      0,
+      1,
+      0.984
+    ],
+    "mycedium-cand-269517515": [
+      0.122,
+      0.008,
+      0.863,
+      0.961
     ],
     "mycedium-cand-39409420": [
       0,
@@ -1322,11 +1435,29 @@
       0.815,
       0.916
     ],
+    "pocillopora-cand-596708533": [
+      0.189,
+      0.21,
+      1,
+      1
+    ],
+    "pocillopora-cand-607126019": [
+      0.163,
+      0.021,
+      0.726,
+      1
+    ],
     "porites-cand-269730424": [
       0.055,
       0.16,
       0.861,
       1
+    ],
+    "porites-cand-461415421": [
+      0.101,
+      0.113,
+      0.884,
+      0.965
     ],
     "porites-cand-461415515": [
       0.057,
@@ -1339,6 +1470,12 @@
       0,
       1,
       1
+    ],
+    "seriatopora-cand-585933842": [
+      0.239,
+      0.154,
+      0.897,
+      0.98
     ],
     "seriatopora-cand-600516979": [
       0.201,
@@ -1356,6 +1493,12 @@
       0.175,
       0,
       0.856,
+      1
+    ],
+    "tubastraea-cand-532688969": [
+      0.126,
+      0.041,
+      0.824,
       1
     ],
     "tubastraea-cand-62235948": [
