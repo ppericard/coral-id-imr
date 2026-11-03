@@ -35,6 +35,8 @@ const ROUTES = [
   'lab-basics|words',
   'about',
   'credits',
+  'lab-cards',
+  'lab-cards|update',
   'quiz-duel|Foo|Bar',
   'g-%E0'
 ]; // the last two are malformed links: they must not crash a page
@@ -146,6 +148,85 @@ async function overlays(b, base) {
       });
       if (!v) fails.push(`broken-image icon on the card of ${off}`);
       await p.keyboard.press('Escape');
+    }
+    await c.close();
+  }
+  // Cards (2026-11-03, app.js cardShow): every kind comes from the one builder, through its real caller where it has one
+  // (the apology and the update card with a former %, which wait on other branches, through cardShow itself): one
+  // overlay, role dialog, aria-modal, labelled by its title (an h3), the kind's medallion (or the genus photo band), the
+  // focus inside and kept there on Tab, Escape closes it and the focus goes back where it was.
+  for (const w of [390, 1280]) {
+    const [c, p] = await open({viewport: {width: w, height: 844}}, () => {
+      localStorage.setItem('imr-tour', '"done"');
+      localStorage.setItem('imr-nudge', '1');
+      localStorage.setItem('imr-recalc', '"typed-questions-2026-11"');
+      localStorage.getItem('imr-coral-progress') ||
+        localStorage.setItem('imr-coral-progress', JSON.stringify({Acropora: {ok: 3, ko: 1, h: '1101'}}));
+    });
+    await p.goto(base + '#quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('#view [data-c]');
+    const CASES = [
+      ['genus', () => introShow([slateGenera()[1]], false)],
+      ['tip', () => introOfferShow()],
+      ['tip', () => backShow()],
+      ['bonus', () => bonusOfferShow()],
+      ['feature', () => (store.set(RECALC.KEY, RECALC.L[RECALC.L.length - 2].id), recalcNotice())],
+      ['account', () => signinNudge(false, false)],
+      ['apology', () => cardShow({kind: 'apology', kick: 'Sorry', title: 'Smoke', body: '<p>t</p>', primary: {text: 'Thanks'}, esc: 1})],
+      [
+        'update',
+        () => cardShow({kind: 'update', visual: cardRing(42, 50), kick: 'Update', title: 'Smoke', primary: {text: 'Got it'}, esc: 1})
+      ]
+    ];
+    for (let i = 0; i < CASES.length; i++) {
+      const [kind] = CASES[i];
+      await p.evaluate(() => {
+        document.querySelectorAll('.unlock').forEach(x => x.ulClose());
+        document.getElementById('smokeopener') || document.body.insertAdjacentHTML('beforeend', '<button id="smokeopener">x</button>');
+        document.getElementById('smokeopener').focus();
+      });
+      await p.evaluate(`(${CASES[i][1]})()`);
+      await p.waitForTimeout(150);
+      const r = await p.evaluate(() => {
+        const d = document.querySelectorAll('.unlock'),
+          u = d[0],
+          ids = ((u && u.getAttribute('aria-labelledby')) || '').split(' ').filter(Boolean),
+          h = ids.map(x => document.getElementById(x)).filter(Boolean);
+        return {
+          n: d.length,
+          role: u && u.getAttribute('role'),
+          modal: u && u.getAttribute('aria-modal'),
+          title: h.some(x => x.tagName === 'H3' && x.textContent.trim() && u.contains(x)),
+          kind: u && u.querySelector('.ulcard').dataset.k,
+          look: !!(u && (u.querySelector('.ulmed') || u.querySelector('.ulphoto img'))),
+          focus: !!(u && u.contains(document.activeElement))
+        };
+      });
+      let kept = true;
+      for (let t = 0; t < 8; t++) {
+        await p.keyboard.press(t % 3 === 2 ? 'Shift+Tab' : 'Tab');
+        kept = kept && (await p.evaluate(() => !!document.querySelector('.unlock')?.contains(document.activeElement)));
+      }
+      await p.keyboard.press('Escape');
+      await p.waitForTimeout(100);
+      const after = await p.evaluate(() => ({
+        gone: !document.querySelector('.unlock'),
+        back: document.activeElement?.id === 'smokeopener'
+      }));
+      if (
+        r.n !== 1 ||
+        r.role !== 'dialog' ||
+        r.modal !== 'true' ||
+        !r.title ||
+        r.kind !== kind ||
+        !r.look ||
+        !r.focus ||
+        !kept ||
+        !after.gone ||
+        !after.back
+      )
+        fails.push(`${w}px card ${i} (${kind}) through cardShow: ${JSON.stringify({...r, kept, ...after})}`);
     }
     await c.close();
   }
