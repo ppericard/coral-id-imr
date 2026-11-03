@@ -1428,7 +1428,18 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     merged (it may predate the replay, whose counts it would undo), but it may hold answers saved since by a device on
     an app from before the replay, which never adopts one: so the device's applied version goes back to the copy's and
     its next save (asked for at once after a pull) brings the replay of the whole log again, every device's answers
-    counted once (Codex review #399: 2 answers adopted, 1 saved by an older app, gave 2 again). A reply to anonymous
+    counted once (Codex review #399: 2 answers adopted, 1 saved by an older app, gave 2 again). Except the copy this
+    device saved or loaded last, unchanged since (the sheet's revision, which every save bumps, an older app's
+    included, is still the one this device holds, `sync.js` `mergeSaved` `mine`): it is already part of the device's
+    progress, so it is not merged, whatever its rules version. A save carries the rules version applied when it was
+    sent, so a replay adopted from a save's reply leaves the copy one version behind with nothing the replay lacks;
+    asking for the replay again then looped, at every sync, the save of version 0, its reply's replay, the same copy at
+    the next load (Codex review #399: four saves in a row, the saved version 0 throughout, a full replay in every save's
+    reply); and merged against the baseline the replay set, a copy behind the log read as answers taken away. A replay
+    adopted from a save's reply is followed at once by one more save (`syncOnce`), which brings the adopted version to
+    the copy: otherwise the other device took that copy for an older app's, asked for the replay again and left its
+    own copy so, each in turn. The random test also checks that, after the devices have synced, the saved copy and
+    every device are at the rules version and no reply carries a replay any more, saves and loads in any order. A reply to anonymous
     answers is ignored once the device has signed in, or changed anonymous id, while it was on its way (Codex review
     #399: it replaced the account's progress that sign-in had just stored).
     What is taken from where (`core.js` `replayedOf`): **from
