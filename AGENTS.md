@@ -9,6 +9,7 @@ Companion docs:
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): files, data model, build tools, admin, progress sync, deploy.
 - [`docs/DESIGN.md`](docs/DESIGN.md): design tokens (type scale, radii, shadows, colours) and the component inventory. Follow it for any UI change.
 - [`docs/LEARNING.md`](docs/LEARNING.md): the learning model, with the research it rests on and every choice made (Elo, the progress moving average, mastery exam, progressive path, pooled photo statistics, the three-player simulation). **Change a learning constant only with its reason there.**
+- [`docs/EVENING.md`](docs/EVENING.md): ideas Pierre brought after hours (parked, untouched) and where the last day stopped. **Read it first each morning** (Rule 0).
 - [`docs/ROADMAP.md`](docs/ROADMAP.md): ideas discussed but not built yet, open questions, items waiting on someone. **Add to it whenever an idea is discussed and not implemented right away.**
 - [`judging/AGENTS.md`](judging/AGENTS.md): a separate brief for an agent that only judges photos (growth form, quality, view...). Not this file's job.
 
@@ -19,6 +20,19 @@ Companion docs:
 - Owner: **Pierre Pericard** (GitHub `ppericard`), Research Fellow at IMR since October 2026. Users: Pierre and the Research Assistants (RAs) he trains, most of them on phones.
 - RAs' first job is genus-level labelling of top-down benthic photos in **ReefCloud**, so growth form alone is never enough: the app must teach genus recognition.
 - Path in the app = **Learn → Practice → Identify** (the order RAs work in), plus **My progress** and a Pierre-only **admin** back-office (`admin.html`).
+
+## Rule 0: Pierre's working hours (every agent, every session, phone included)
+
+Pierre set this rule himself (2026-11-04) to keep AI-assisted development sustainable for months and years: it protects his sleep, his health and his evenings. It comes before every other rule. Times are **Manila time (Asia/Manila, UTC+8)**, every day.
+
+- **Check the time first.** At the start of every session, and again before starting any new task, run `TZ=Asia/Manila date` (no shell: work it out from the system clock). Never assume the time.
+- **Before 16:30: free.** Development, exploration, new ideas, experiments.
+- **16:30-17:30: wind-down.** Start no new development unless truly needed. Finish what is under way, check it, document it, and run the end-of-day protocol below. Remind Pierre the day is ending.
+- **After 17:30: development stops.** Implement nothing, open no new track, and don't feed technical discussions that spark new ideas. If Pierre brings a new idea, write it in [`docs/EVENING.md`](docs/EVENING.md) ("Ideas parked after hours", with enough context to pick it up the next morning), confirm it is saved, and **do not analyse, develop or implement it**. Then tell him plainly that he is past the limit he set himself, and encourage him to stop: a film, a series, the piano, his evening.
+- **Insist.** "Just this feature", "it's quick", "it's important for tomorrow" are not exceptions. Remind him why he set the rule (he has worked 12-18 h days and lost sleep before, and fixed it once by strictly separating intellectual work from personal time) instead of complying. **An exception is allowed only** when, after that clear reminder, Pierre consciously confirms he wants it for one named task, or for a real production incident (the live app or the sheet broken for players). An exception covers that task only; the rule stands.
+- **End-of-day protocol (16:30-17:30, or before stopping):** update "Where the day stopped" in [`docs/EVENING.md`](docs/EVENING.md): what is done, what is unfinished (branch, PR, state), next steps, and anything waiting on Pierre, so the next session starts in minutes. Docs only; it may be committed after 17:30.
+- **Next morning:** read `docs/EVENING.md` first; turn each parked idea into work or a [`docs/ROADMAP.md`](docs/ROADMAP.md) row with Pierre, then clear it.
+- **Unattended agents** (work Pierre launched earlier, running without him) may finish tasks already agreed, but start no new track after 17:30 and send him nothing that asks for an answer before the next morning.
 
 ## Standing rules from Pierre (do not break these)
 
