@@ -4,6 +4,8 @@
 
 A static web app for learning the 39 coral genera on the IMR (Institute for Marine Research, Dauin, Philippines) survey slate: 34 surveyed genera plus 5 starred look-alikes, and fire coral (*Millepora*), on the IMR benthic slate.
 
+Named IMR Coral ID until 2026-11-03 (corals now, fish and benthos next); the address and the repository name (`coral-id-imr`) change later, with a migration for players (ROADMAP). The organisation and app names live in one place, `core.js` `ORG`; `tools/rename_app.py` writes them into the static files. <!-- rename-app: keep -->
+
 Live: <https://ppericard.github.io/coral-id-imr/> · Built for the Research Assistants trained at IMR, whose first task is genus-level labelling of benthic photos in ReefCloud.
 
 **Deployment:** [Pages setup and recovery](docs/PAGES.md) (single Actions source; required migration from branch publishing).
