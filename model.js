@@ -698,11 +698,36 @@ function missing(n) {
 // Progress of a genus, 0 to 1 (core.js scoreOf): s.pg fills 95% on its way to PROG.M, each exam question passed adds
 // 1%, the passed exam makes it 100%.
 const genScore = n => scoreOf(P[n]);
-// Step of a genus on the learning scale: 0 not seen, 1-4 quarters of genScore, 5 learned (My progress colours).
+// Mastery levels (Pierre, 2026-11-03: "0/39 learned" for weeks was discouraging; named steps on the way, a diver's ladder
+// every RA knows, one icon each): the step of a genus on the learning scale, from its % (genScore), the same colours on
+// My progress. 0 not seen; 1 Snorkeler under 50%; 2 Open Water from 50%; 3 Advanced from 80%; 4 Divemaster from 95%
+// (the mastery exam's entry); 5 Instructor, the exam passed (s.mx, "learned" in the code). The thresholds only name
+// points on the % (Khan Academy's Familiar 50 / Proficient 80 / Mastered 100); the game itself never reads them.
+const MASTERY = [
+  ['Not seen', ''],
+  ['Snorkeler', '<rect x="2.5" y="8" width="13" height="7.5" rx="3.2"/><path d="M9 15.5v-2.2M19.5 3v11a4.5 4.5 0 0 1-4.5 4.5h-1.5"/>'],
+  ['Open Water', '<rect x="8" y="7" width="8" height="14" rx="3.2"/><path d="M10.5 7V4.5h3V7M12 4.5V2.5M15 3h3"/>'],
+  // Two tanks side by side (a twinset: more gas, deeper dives), so the step up from Open Water's one tank reads at a glance.
+  [
+    'Advanced',
+    '<rect x="3" y="7" width="7.5" height="14" rx="3"/><rect x="13.5" y="7" width="7.5" height="14" rx="3"/><path d="M5.5 7V4.5h2.5V7M16 7V4.5h2.5V7M8 4.5h8"/>'
+  ],
+  ['Divemaster', '<path d="M5 21.5V2.5"/><rect x="5" y="3.5" width="15" height="10.5" rx="1.2"/><path d="M5 14 20 3.5"/>'],
+  ['Instructor', '<path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11v4.8c0 1.6 2.7 3.2 6 3.2s6-1.6 6-3.2V11M22 9v6"/>']
+];
+const LV_AT = [0.5, 0.8, 0.95]; // Open Water, Advanced, Divemaster
 const lvStep = n => {
   const k = level(n)[0];
-  return k === 'new' ? 0 : k === 'ok' ? 5 : 1 + Math.min(3, Math.floor(4 * genScore(n)));
+  if (k === 'new') return 0;
+  if (k === 'ok') return 5;
+  const g = genScore(n) + 1e-9; // genScore gives 0.95 exactly at the exam's entry
+  return 1 + LV_AT.filter(x => g >= x).length;
 };
+// The icon of a level (24 px grid, 1.75 stroke, currentColor: the app's icon set), with its name for screen readers.
+const lvIcon = (k, cls = 'lvi') =>
+  MASTERY[k][1]
+    ? `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="${MASTERY[k][0]}">${MASTERY[k][1]}</svg>`
+    : '';
 const progPct = (L = slateGenera()) => Math.round((100 * L.reduce((t, n) => t + genScore(n), 0)) / L.length);
 function level(n) {
   const s = P[n];
