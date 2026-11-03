@@ -1097,7 +1097,7 @@ function introStart(list) {
     want = INTRO.START - slate.filter(introduced).length,
     L = [];
   for (let fresh = slate.filter(n => !introduced(n)); L.length < want && fresh.length; fresh = fresh.filter(n => n !== L[L.length - 1]))
-    L.push(weighted(fresh));
+    L.push(openPick(fresh));
   return L;
 }
 // at: the answers count at which the question will show (planNext plans up to AHEAD questions ahead).
@@ -1139,13 +1139,14 @@ function planPhoto(at = answersSoFar()) {
     met = list.filter(ready),
     warmL = start ? null : comebackOf(met),
     warm = !!warmL,
-    open = !start && !warm && !noOpen() && introSince() >= INTRO.EVERY && !introHold();
-  // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say).
-  let t = nextTarget(start ? cards : warm ? warmL : met.length ? (open ? list.filter(n => ready(n) || !introduced(n)) : met) : list);
-  if (met.length && !known(t)) {
-    cards = [t];
-    t = nextTarget(met);
-  }
+    // One opening rule (model.js OPEN, openChance): when the path allows a card, this question opens a genus with the
+    // chance of the free places for shaky genera, the genus drawn easiest and most common first (openPick).
+    fresh =
+      !start && !warm && met.length && !noOpen() && introSince() >= INTRO.EVERY && !introHold() ? list.filter(n => !introduced(n)) : [];
+  if (fresh.length && Math.random() < openChance(list)) cards = [openPick(fresh)];
+  // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say); with a card of
+  // its own, about a genus already met.
+  const t = nextTarget(start ? cards : warm ? warmL : met.length ? met : list);
   // A look-alike duel slipped into the photo quiz (Pierre, 2026-11-02, "a little duel back in the quiz, automatically";
   // the Duel tab had 13 answers in all): the contrast queue's (CONTRAST, above) when no mix-up is queued. Not when the
   // path opens a genus (a card) this question: opening comes first (Pierre, 2026-11-02); not in a comeback. Logged

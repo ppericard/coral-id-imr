@@ -199,23 +199,18 @@ const weight = n => {
   return lastQs.includes(n) ? w * 0.1 : w;
 };
 // Progressive path (Pierre, 2026-11-02: "rather than spamming a beginner with 40 genera, start with the easiest ones,
-// opening new ones as they go, with nothing set by hand"). New genera are opened by the player's own results: the
-// genera not met yet share OPEN.READY of the draw with no genus met still shaky (below), down in a straight line to
-// OPEN.TRICKLE at OPEN.K shaky or more (a share, so the pace holds as the genera met add up; a slope, not a switch,
-// so a genus more or less shaky never flips the pace: Pierre, 2026-11-02).
-// Among them, the easiest (genusDiff) come first, softly (OPEN.T): a beginner meets a few easy genera at a time, an
-// expert keeps opening new ones because none stays shaky. docs/LEARNING.md.
-// And the most common near Dauin (Pierre, 2026-11-03: "easy and common first"): each weight is multiplied by
-// core.js commonFactor of its data.json cm (tools/commonness.py), relative to the median of the genera not met yet.
-// K 5 (was 3; Pierre, 2026-11-02: genera should open a little more easily, ~25 of 39 met by an RA after 600 questions
-// was too few): simulated, an RA meets 33-39 after 600 questions, a beginner still 9-14 after 100 (docs/LEARNING.md).
-// K 6 with the first-meeting cards (INTRO): the choices are now genera met, so a wrong answer no longer opens a genus
-// never asked (it used to, for about a third of the genera met); simulated, an RA asked 28-35 genera after 600
-// questions, a beginner 12-15 after 100 (K 5: 24; K 8: a beginner 17-18 after 100).
-// K 10 with the slope: over 6 seeds, genera met after 100 questions, a beginner 13.2 +- 1.5 (the switch: 13.0 +- 2.9), a
-// lecture-level RA 17.3 +- 3.2 and 29 by question 300 (the switch: 24), an expert 24.8 +- 3.1; K 12 opened 16-19 to a
-// beginner at 72% right (docs/LEARNING.md).
-const OPEN = {K: 10, P: 0.6, READY: 0.35, TRICKLE: 0.03, T: 3, CONF: 2, DATA: 300};
+// opening new ones as they go, with nothing set by hand"). One opening rule (independent review of 2026-11-02, item 6;
+// 2026-11-03): a question may open a genus (its card) when the path allows one (quiz.js planPhoto: at least INTRO.EVERY
+// answers since the last card, no opening hold, not in the floor of a visit or a comeback), and then does with the
+// chance openChance: the free share of OPEN.K places for genera met and still shaky (below), 1 - shaky / K. A slope,
+// not a switch (Pierre, 2026-11-02: one genus more or less shaky never flips the pace), and a work-in-progress limit:
+// with K shaky genera none opens until one holds. The genus opened is drawn among those not met yet (openPick): the
+// easiest (genusDiff) first, softly (OPEN.T), and the most common near Dauin (Pierre, 2026-11-03: "easy and common
+// first": core.js commonFactor of each genus's data.json cm, tools/commonness.py, relative to the median of the genera
+// not met yet). It replaced a share of the genus draw given to the genera not met yet (OPEN.READY 35% with no shaky genus
+// down to OPEN.TRICKLE 3% at K, K 10), a second throttle on top of INTRO.EVERY. K 8: simulated, a
+// beginner meets genera at the pace they did, the RAs and an expert faster, learning as much (docs/LEARNING.md).
+const OPEN = {K: 8, P: 0.6, T: 3, CONF: 2, DATA: 300};
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
 // OPEN.DATA, up to 1. Without them the genus difficulty is only the photo sets and declared look-alikes, which put
 // Acropora and Galaxea among the hardest and Alveopora first (Pierre expects the first two easy): the order then stays
@@ -248,6 +243,20 @@ const shaky = n => {
   const s = P[n] || {};
   return level(n)[0] !== 'new' && !s.mx && 0.25 + 0.75 * sig(ability(n) - genusDiff(n)) < OPEN.P;
 };
+// The chance that a question the path allows to open a genus opens one: the free share of OPEN.K places for shaky genera.
+const openChance = list => Math.max(0, 1 - list.filter(shaky).length / OPEN.K);
+// The genus to open among those not met yet (fresh): the easiest first, softly (OPEN.T, as far as the data are trusted:
+// easyTrust), and the most common near Dauin (commonFactor).
+function openPick(fresh) {
+  const gd = fresh.map(genusDiff),
+    lo = Math.min(...gd),
+    tr = easyTrust(),
+    cf = commonFactor(fresh.map(n => (GX(n) || {}).cm));
+  return wpick(
+    fresh.map((n, k) => [n, Math.exp(-OPEN.T * tr * (gd[k] - lo)) * cf[k]]),
+    x => x[1]
+  )[0];
+}
 // First meeting with a genus (Pierre, 2026-11-02, after the beginner RA review): a player starting from zero first meets
 // INTRO.START genera on cards (name, cover photo, ID tips) and is asked about those; new genera then come one at a time,
 // each on its card, and never as the answer of the question right after its card ("too easy"): a genus met on a single
@@ -608,21 +617,6 @@ function answeredAt(s, good, now = Date.now()) {
 }
 function weighted(list) {
   const w = list.map(weight);
-  // Not met yet: the genera with no card shown and never asked (a genus met on its card weighs as a new one, 10).
-  const fresh = list.map((n, i) => [n, i]).filter(([n]) => !introduced(n));
-  if (fresh.length) {
-    // A slope rather than a switch (Pierre, 2026-11-02): READY with no shaky genus met, down to TRICKLE at K or more.
-    const share = OPEN.TRICKLE + (OPEN.READY - OPEN.TRICKLE) * Math.max(0, 1 - list.filter(shaky).length / OPEN.K),
-      rest = w.reduce((a, x, i) => a + (introduced(list[i]) ? x : 0), 0),
-      tot = rest ? (share * rest) / (1 - share) : 1,
-      gd = fresh.map(([n]) => genusDiff(n)),
-      lo = Math.min(...gd),
-      tr = easyTrust(),
-      cf = commonFactor(fresh.map(([n]) => (GX(n) || {}).cm)),
-      e = gd.map((x, k) => Math.exp(-OPEN.T * tr * (x - lo)) * cf[k]),
-      se = e.reduce((a, x) => a + x, 0);
-    fresh.forEach(([, i], k) => (w[i] = (tot * e[k]) / se));
-  }
   const t = w.reduce((a, x) => a + x, 0);
   let r = Math.random() * t;
   for (let i = 0; i < list.length; i++) {

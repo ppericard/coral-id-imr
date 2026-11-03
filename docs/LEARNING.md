@@ -397,11 +397,13 @@ Pierre: rather than spamming a beginner with 40 genera, focus on the easiest one
 everything estimated from the data. Before, a genus never seen weighed 10 against 1-4 for one being learned: a beginner
 met the 39 slate genera almost at once.
 
-- **Opening by results**: the genera not met yet share `OPEN.READY` (35%) of the draw while no genus met is *shaky*,
-  down in a straight line to `OPEN.TRICKLE` (3%) at `OPEN.K` (10) shaky genera or more, so a new one still comes now
-  and then. A share, not a weight, so the pace holds as the genera met add up. A slope, not a switch (until 2026-11-02:
-  35% below 6 shaky genera, 3% from 6; K was 3, then 5, then 6): one genus more or less shaky no longer flips the pace,
-  which made the opening a lottery (below).
+- **Opening by results** (one rule since 2026-11-03, below): when the path allows a card (at least `INTRO.EVERY`
+  answers since the last one, no opening hold, not in the floor of a visit or a comeback), the question opens a genus
+  with the chance `openChance` = 1 − shaky / `OPEN.K` (8): the free share of K places for genera met and still
+  *shaky*, a work-in-progress limit with a slope, not a switch. Until 2026-11-03 the genera not met yet shared
+  `OPEN.READY` (35%) of the genus draw while no genus met was shaky, down in a straight line to `OPEN.TRICKLE` (3%) at
+  `OPEN.K` (10) shaky genera or more (a slope since 2026-11-02; before, 35% below 6 shaky genera and 3% from 6, K 3,
+  then 5, then 6: one genus more or less shaky flipped the pace, which made the opening a lottery, below).
 - **Shaky** = met, not mastered, and the player's expected success on an average photo of the genus (4 choices, at its
   difficulty) under `OPEN.P` = 0.6, from the genus ability. That ability allows for how hard the questions were and
   starts from the global level, so the signal is what the player knows, at any level, from the first answer. Tried and
@@ -419,6 +421,36 @@ met the 39 slate genera almost at once.
   how much it gets confused (its two highest pooled confusion scores above `CONF.TRAP`). With little data the photo sets
   and declared look-alikes decide; the answers take over as they come (Pierre expects Acropora and Galaxea to come out
   easy: the data will say).
+
+### One opening rule (2026-11-03)
+
+The independent review's item 6: the opening was throttled twice, by a share of the genus draw for the genera not met
+yet (`OPEN.READY` 35% down to `OPEN.TRICKLE` 3% at `OPEN.K` 10 shaky genera, the share arithmetic in `weighted`) and by
+`INTRO.EVERY` (2 answers between cards); since then the opening hold (`introHold`) and the floor after a break
+(`noOpen`) joined them. The last three are rules about *when* a card may come; the share was a second way of saying
+*how often*. Now one: when a card may come, the question opens a genus with the chance `openChance` = 1 − shaky /
+`OPEN.K` (`model.js`), the genus drawn among those not met yet by `openPick` (easiest first as far as the data are
+trusted, most common first: unchanged). The genus draw (`weighted`) only weighs the genera met. `READY`, `TRICKLE` and
+the share arithmetic went; K was recalibrated, as the review expected (the chance to open with nothing shaky is now 1,
+was 0.35).
+
+Simulated (`tools/learnsim.js`, 5 seeds × 600 questions, after item 7, same seeds), genera met (cards and asked), true
+knowledge of the slate, look-alike pairs told apart, genera learned; before → K 6 / K 8:
+
+| Profile | met at 100 | met at 300 | true knowledge 300 / 600 | look-alike 300 | learned 600 |
+| --- | --- | --- | --- | --- | --- |
+| beginner | 15.0 → 14.8 / 15.6 | 29.6 → 28.0 / 29.0 | 0.55 → 0.51 / 0.53; 0.82 → 0.83 / 0.84 | 0.819 → 0.794 / 0.807 | 0 → 0.2 / 0.4 |
+| lecture RA | 18.0 → 17.6 / 20.8 | 37.8 → 36.8 / 38.2 | 0.72 → 0.72 / 0.74; 0.90 → 0.89 / 0.90 | 0.895 → 0.890 / 0.900 | 0.2 → 0.2 / 0.4 |
+| strong RA | 20.4 → 28.6 / 30.0 | 40 | 0.85 → 0.86 / 0.85; 0.94 | 0.951 → 0.954 / 0.952 | 1.4 → 0.2 / 0.4 |
+| expert | 20.0 → 29.0 / 29.0 | 40 | 0.95; 0.97 | 0.984 | 7.8 → 6.8 / 6.8 |
+
+**K 8**: the beginner keeps their pace (15.6 genera at question 100, the CI limit is 17) and the RAs open a little
+faster (Pierre, 2026-11-02: "600 questions and only twenty-some genera open for the RAs may not be enough"), the
+strong RA and the expert much faster (nothing stays shaky, so a card every `INTRO.EVERY` answers: all 40 met by about
+question 100, was 200); true knowledge within ±0.02 of before everywhere, where K 6 cost the beginner 0.04 at question
+300 (K 10, tried on the first version of item 7, opened 17 genera to the beginner by question 100, at the CI limit). Genera learned by 600 move by about one standard error (strong RA 1.4 → 0.4 ±
+0.8, expert 7.8 → 6.8 ± 1.0): the genera opened sooner share the questions. The right % stays within 3 points except
+the first 100 questions of a strong RA (93 → 84%: more new genera at once).
 
 ### Common first (2026-11-03)
 
@@ -1198,6 +1230,9 @@ is not in the simulation.
 - 2026-11-03, review item 7 (Pierre: do the review's simplifications still relevant): one contrast queue for the
   Again and the duels slipped into the quiz, `CONTRAST` {P 0.1, GAP 2} instead of `AUTO_DUEL` {P, FROM, GAP, AGAIN,
   SAME}; duels from the first answers ("One contrast queue").
+- 2026-11-03, review item 6: one opening rule, a card with the chance 1 − shaky / `OPEN.K` when the path allows one
+  (`openChance`, `openPick`); `OPEN.READY`, `OPEN.TRICKLE` and the share of the draw removed; `OPEN.K` 10 → 8 ("One
+  opening rule").
 
 ## References
 
