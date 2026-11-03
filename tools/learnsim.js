@@ -284,8 +284,8 @@ function play(cfg) {
   last = null;
   lastQs = [];
   rematch = null;
-  twoAt = againAt = -Infinity;
-  duelLog = [];
+  twoAt = -Infinity;
+  twoPair = '';
   store.set(INTRO.OFFER.KEY, openall ? null : {open: 0});
   // --openall: the app's expectation of each answer (the e the opening hold gets).
   let lastE = null;
@@ -487,8 +487,7 @@ function play(cfg) {
         last,
         lastQs: [...lastQs],
         twoAt,
-        againAt,
-        duelLog: JSON.stringify(duelLog),
+        twoPair,
         rematch: JSON.stringify(rematch)
       };
     breaks.forEach(([name, ms], bi) => {
@@ -511,8 +510,7 @@ function play(cfg) {
       last = snap.last;
       lastQs = [...snap.lastQs];
       twoAt = snap.twoAt;
-      againAt = snap.againAt;
-      duelLog = JSON.parse(snap.duelLog);
+      twoPair = snap.twoPair;
       rematch = JSON.parse(snap.rematch);
       if (!old) CB = Object.assign({r: 0, t: 0, ok: 0, f: 0}, store.get(COMEBACK.KEY, {}) || {});
       Math.random = gen((seed * 2246822519) ^ (0x85ebca6b + 7919 * (bi + 1)));
