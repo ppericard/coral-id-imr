@@ -15,7 +15,11 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
+      # Always today's main, not the commit that started the run: the sync deletes from the bucket what img/ lacks, so a
+      # rerun of an older run would take newer photos away (Codex review #380). As pages.yml does.
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - run: tools/r2_sync.sh
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
