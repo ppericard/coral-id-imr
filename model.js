@@ -297,8 +297,13 @@ const shaky = n => {
 // The chance that a question the path allows to open a genus opens one: the free share of OPEN.K places for shaky genera.
 const openChance = list => Math.max(0, 1 - list.filter(shaky).length / OPEN.K);
 // The genus to open among those not met yet (fresh): the easiest first, softly (OPEN.T, as far as the data are trusted:
-// easyTrust), and the most common near Dauin (commonFactor).
-function openPick(fresh) {
+// easyTrust), and the most common near Dauin (commonFactor). A ★ genus waits while a genus its card compares it to is in
+// the list and not met (Pierre, 2026-11-03, #402; core.js starWaits: a reference not in the list never holds it back,
+// and a reference never waits itself); should every genus left wait (not possible with today's data), they all open.
+// met: the genera already met (introStart passes the cards drawn before it in the same batch as met too).
+function openPick(fresh, list = fresh, met = introduced) {
+  const ok = fresh.filter(n => !starWaits(DATA, n, list, met));
+  if (ok.length) fresh = ok;
   const gd = fresh.map(genusDiff),
     lo = Math.min(...gd),
     tr = easyTrust(),

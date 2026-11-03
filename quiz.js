@@ -1092,12 +1092,14 @@ function introShow(L, start, kind = start ? 's' : 'c') {
 }
 // Cards due with the next question (INTRO): the first ones while fewer than INTRO.START slate genera are met (picked by
 // the progressive path's draw, easiest first), else none: planPhoto may add one when its draw falls on a genus not met.
+// The cards drawn before count as met: a ★ genus may follow its reference's card, shown before it (model.js openPick).
 function introStart(list) {
   const slate = list.filter(n => !isBonus(n)),
     want = INTRO.START - slate.filter(introduced).length,
-    L = [];
+    L = [],
+    met = n => introduced(n) || L.includes(n);
   for (let fresh = slate.filter(n => !introduced(n)); L.length < want && fresh.length; fresh = fresh.filter(n => n !== L[L.length - 1]))
-    L.push(openPick(fresh));
+    L.push(openPick(fresh, fresh, met));
   return L;
 }
 // at: the answers count at which the question will show (planNext plans up to AHEAD questions ahead).
@@ -1143,7 +1145,7 @@ function planPhoto(at = answersSoFar()) {
     // chance of the free places for shaky genera, the genus drawn easiest and most common first (openPick).
     fresh =
       !start && !warm && met.length && !noOpen() && introSince() >= INTRO.EVERY && !introHold() ? list.filter(n => !introduced(n)) : [];
-  if (fresh.length && Math.random() < openChance(list)) cards = [openPick(fresh)];
+  if (fresh.length && Math.random() < openChance(list)) cards = [openPick(fresh, list)];
   // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say); with a card of
   // its own, about a genus already met.
   const t = nextTarget(start ? cards : warm ? warmL : met.length ? met : list);
@@ -1197,8 +1199,9 @@ function planPhoto(at = answersSoFar()) {
 function quizDuel(a, b) {
   const q = (!a && !b && takePlan('quiz-duel')) || planDuel(a, b);
   question(...q);
-  // Both genera are named on the buttons: the cards of those not met yet come together, and either can be the answer.
-  const L = q[2].filter(n => !introduced(n));
+  // Both genera are named on the buttons: the cards of those not met yet come together, and either can be the answer;
+  // a ★ genus's card after the card of the genus it is compared to (core.js starRefs).
+  const L = q[2].filter(n => !introduced(n)).sort((a, b) => starRefs(DATA, a).length - starRefs(DATA, b).length);
   if (L.length) introShow(L, true, 'c');
 }
 // A look-alike pair for a duel (the Duel tab, and the duels slipped into the photo quiz): among the pairs whose two

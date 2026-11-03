@@ -936,6 +936,34 @@
     const X = xGen(d);
     return [...slateOf(d), ...BONUS.filter(n => X[n])];
   }
+  // The starred (★) genera: on the slate, not numbered (data.json gen[n].n 0, not surveyed by IMR), there because they
+  // look like surveyed genera (AGENTS.md rule 6b). lectureGroup(d, n): the IMR lecture group a genus is shown in, its own
+  // (ig), else, for a ★ genus the lecture doesn't group, the group most of its Coral Finder look-alikes belong to (ties:
+  // the first listed); 0 for none (app learn.js shownGroup). starRefs(d, n): the surveyed look-alikes in that group, the
+  // genera its card names ("★ look-alike of Turbinaria, Tubastraea", learn.js starNote); [] for any other genus.
+  // starWaits(d, n, list, met) (Pierre, 2026-11-03: a ★ genus opens only once the genus its card compares it to has
+  // been met; a beginner met Duncanopsammia, "Like Turbinaria, but corallites about 6 mm", before Turbinaria): true while
+  // one of n's references is in list (the genera the draw can open) and not met. A reference is always a surveyed genus,
+  // which never waits itself, and one not in the list never holds n back: no genus can wait for ever.
+  function lectureGroup(d, n) {
+    const G = (d && d.gen) || {},
+      g = G[n];
+    if (!g || xGen(d)[n]) return 0;
+    if (g.ig) return g.ig;
+    const L = (g.look || []).filter(b => G[b] && G[b].ig),
+      c = {};
+    L.forEach(b => (c[G[b].ig] = (c[G[b].ig] || 0) + 1));
+    return L.reduce((best, b) => (c[G[b].ig] > c[best] ? G[b].ig : best), L.length ? G[L[0]].ig : 0) || 0;
+  }
+  function starRefs(d, n) {
+    const G = (d && d.gen) || {},
+      X = xGen(d),
+      g = G[n];
+    if (!g || g.n || X[n]) return [];
+    const k = lectureGroup(d, n);
+    return (g.look || []).filter(b => G[b] && G[b].n && !X[b] && G[b].ig === k);
+  }
+  const starWaits = (d, n, list, met) => starRefs(d, n).some(r => list.includes(r) && !met(r));
 
   // Photos out of the repo, step 2 (Pierre, 2026-11-03; docs/ROADMAP.md): the site's photos (img/<f>.webp and its -m, -s,
   // -t files) are read from the Cloudflare R2 bucket that tools/r2_sync.sh mirrors img/ to, same paths under this base;
@@ -1067,6 +1095,9 @@
     BONUS,
     slateOf,
     gameOf,
+    lectureGroup,
+    starRefs,
+    starWaits,
     PHOTO_BASE,
     photoLocal,
     photoToSite,
