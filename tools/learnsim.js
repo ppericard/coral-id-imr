@@ -6,7 +6,16 @@
 //
 //   node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
 //                          [--workers 4] [--out results.json] [--stats stats.json] [--met Acropora,Porites,...]
-//                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20]
+//                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20] [--openall offer|N] [--back keep|one]
+//
+// --openall (optional; without it the open-all offer is declined, as before): 'offer' accepts the offer card when it shows
+// (model.js introOffer: 50-150 answers, 10 genera met, level 0.5); N opens all at question N if the offer has not come
+// by then (introAll, as the offer's button). The back card that may follow (model.js backDue) is answered --back: 'keep'
+// (default: Keep them all, so its timing is measured and nothing changes) or 'one' (One at a time). Per run: the answer
+// at which all were opened, the answer since then at which the back card showed, and after Open all the app's expected
+// success (each answer's e) against the learner's true chance and its answers: on the genera opened at once, at their
+// first question and over the first 30 answers after Open all, and on the genera met before (the starting ability of a
+// genus never answered, core.js playerStart, against what the learner really knows).
 //
 // --breaks (optional; without it nothing changes): the app runs on a virtual clock (10 s an answer), and after the
 // --questions of the first session the player leaves for each break in turn (each from the same state, the generators
@@ -131,6 +140,8 @@ const SEEDS = Number(arg('seeds', 5)),
       if (!m) throw new Error(`bad break ${b} (10m, 8h, 3d, 1w, 1mo)`);
       return [b, Number(m[1]) * UNIT[m[2]]];
     }),
+  OPENALL = arg('openall', ''),
+  BACK = arg('back', 'keep'),
   MET = arg('met', 'Acropora,Porites,Pocillopora,Montipora,Millepora').split(',').filter(Boolean);
 {
   const m = arg('mem', null);
@@ -184,7 +195,7 @@ const server = http.createServer((req, res) => {
 
 // One player, inside the page: the app's globals (P, quizPhoto, photoDiff, pooledConf, ...) are in scope.
 function play(cfg) {
-  const {prof, seed, N, cps, L, breaks, after} = cfg;
+  const {prof, seed, N, cps, L, breaks, after, openall, back} = cfg;
   // With breaks: a virtual clock, STEP an answer (the app reads Date.now for the comeback).
   let T = Date.parse('2026-11-02T08:00:00Z');
   if (breaks.length) Date.now = () => T;
@@ -258,7 +269,7 @@ function play(cfg) {
   const inExam = g => (typeof examOn === 'function' && examOn(g)) || !!(P[g] || {}).ex;
 
   // A fresh player (the context's storage is empty): no hold, no gentle restart, the open-all offer declined (the path
-  // is what is measured, as in profiles.smoke.js).
+  // is what is measured, as in profiles.smoke.js), unless --openall.
   P = {};
   INTROS = {};
   HOLDS = 0;
@@ -275,7 +286,12 @@ function play(cfg) {
   rematch = null;
   twoAt = againAt = -Infinity;
   duelLog = [];
-  store.set(INTRO.OFFER.KEY, {open: 0});
+  store.set(INTRO.OFFER.KEY, openall ? null : {open: 0});
+  // --openall: the app's expectation of each answer (the e the opening hold gets).
+  let lastE = null;
+  const hs0 = holdStep;
+  holdStep = (e, good) => ((lastE = e), hs0(e, good));
+  const oa = {at: null, set: [], back: null, ans: []};
   const q0 = question;
   question = (...a) => ((window.__q = a), q0(...a));
 
@@ -300,7 +316,27 @@ function play(cfg) {
     document.querySelectorAll('.unlock:not(.intro)').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
     // Through the real planner (Codex review #365): the questions planned ahead stay after a right answer, as in the app.
     // Its own top-ups are timers, which never fire inside this synchronous loop, so they are called here instead.
+    if (openall && openall !== 'offer' && oa.at === null && i + 1 >= Number(openall)) {
+      oa.set = introLeft();
+      introAll('offer');
+      oa.at = answersSoFar();
+      dropPlans();
+      NEXTQ = null;
+    }
     quizPhoto();
+    if (openall) {
+      const o = document.querySelector('.unlock.intro [data-open]');
+      if (o && oa.at === null) {
+        oa.set = introLeft();
+        o.click();
+        oa.at = answersSoFar();
+      }
+      if (document.querySelector('.unlock.intro [data-back]')) {
+        oa.back = answersSoFar() - oa.at;
+        oa.h = (store.get(INTRO.OFFER.KEY, {}) || {}).h;
+        document.querySelector(`.unlock.intro [data-${back === 'one' ? 'back' : 'keep'}]`).click();
+      }
+    }
     planNext('quiz');
     const q = SHOWNQ;
     if (pre) pre(q);
@@ -312,7 +348,7 @@ function play(cfg) {
       if (bon.offer === null && i >= 0) bon.offer = i + 1;
       bo.click();
     }
-    for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not(.sec)'));) b.click();
+    for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-back]):not(.sec)'));) b.click();
     // A typed question (model.js TYPED, quiz.js typeForm) has no buttons: its choices are the draw's, unseen (Codex
     // review #393). Recall, no guessing: known, the genus is typed; not known, "I don't know" half the time, else a genus
     // it is taken for (the same confusion weights, the genus itself left out).
@@ -323,9 +359,11 @@ function play(cfg) {
       d = mean(shown.map(p => photoDiff(t, p))) || 0,
       single = shown.length === 1,
       fs = shown.map(p => p.f),
-      rep = fs.some(f => LM[f] && LM[f][0]);
+      rep = fs.some(f => LM[f] && LM[f][0]),
+      pRec = sig(logit(kn(t)) - d - (single ? L.SINGLE : 0) + memOn(fs)),
+      first = !asked(t);
     let pick = t;
-    if (!(rnd() < sig(logit(kn(t)) - d - (single ? L.SINGLE : 0) + memOn(fs)))) {
+    if (!(rnd() < pRec)) {
       const pool = typed ? ch.filter(c => c !== t) : ch,
         ws = pool.map(c => wOf(t, c));
       let r = rnd() * ws.reduce((a, x) => a + x, 0);
@@ -338,12 +376,17 @@ function play(cfg) {
       if (typed && rnd() < 0.5) pick = ''; // "I don't know"
     }
     const good = pick === t;
+    // The learner's true chance on this question: recognised, or (choices only) its guess falls on t.
+    const pTrue = typed ? pRec : pRec + (1 - pRec) * (wOf(t, t) / ch.reduce((a, c) => a + wOf(t, c), 0));
+    lastE = null;
     if (typed) {
       const f = document.querySelector('#view .tyform');
       if (!pick) f.querySelector('[data-idk]').click();
       else ((f.querySelector('input').value = pick), f.requestSubmit());
     } else document.querySelector(`#view [data-c="${CSS.escape(pick)}"]`).click();
     planNext('quiz'); // answer()'s top-up after the feedback
+    if (oa.at !== null && lastE !== null)
+      oa.ans.push({k: answersSoFar() - oa.at, e: lastE, p: pTrue, ok: good ? 1 : 0, all: oa.set.includes(t), first});
     teach(t, prof.rate * (good ? 1 : L.MISS));
     if (!good && pick) teach(pick, prof.rate * L.PICKED);
     if (good) spaced(t);
@@ -527,7 +570,8 @@ function play(cfg) {
     millAsked: mill.asked,
     bonusOffer: bon.offer,
     bonusShare: bon.q ? bon.n / bon.q : null,
-    bonusMet: BONUS.filter(introduced).length
+    bonusMet: BONUS.filter(introduced).length,
+    openAll: openall ? oa : null
   };
 }
 
@@ -553,7 +597,17 @@ async function run(browser, base, name, seed) {
   // Every script tier in (My progress, the Tools) and the network quiet, so each run starts from the same state.
   await p.evaluate(() => window.loadTier && window.loadTier(5));
   await p.waitForLoadState('networkidle');
-  const r = await p.evaluate(play, {prof: PROFILES[name], seed, N: QN, cps: CPS, L: LEARNER, breaks: BREAKS, after: AFTER});
+  const r = await p.evaluate(play, {
+    prof: PROFILES[name],
+    seed,
+    N: QN,
+    cps: CPS,
+    L: LEARNER,
+    breaks: BREAKS,
+    after: AFTER,
+    openall: OPENALL,
+    back: BACK
+  });
   await ctx.close();
   return {profile: name, seed, errs, ...r};
 }
@@ -755,6 +809,30 @@ function breakTable(BS) {
   return lines.join('\n');
 }
 
+// --openall: per profile, the runs where all were opened (median answer), the back card (runs, answers after Open all,
+// the sum h then), and after Open all the app's expected success e against the learner's true chance p and its right
+// answers, as means over the pooled answers: first question on each genus opened at once, the first 30 answers after
+// Open all on those genera and on the genera met before, and every answer after Open all.
+function openTable(runs) {
+  const f = (x, d = 2) => (x === null || x === undefined || isNaN(x) ? '-' : x.toFixed(d)),
+    m = v => (v.length ? v.reduce((a, x) => a + x, 0) / v.length : NaN),
+    lines = [`\nOpen all (--openall ${OPENALL}, back card answered ${BACK}); e: app's expected success, p: true chance, ok: right (pooled answers)`];
+  for (const name of NAMES) {
+    const R = runs.filter(r => r.profile === name && r.openAll && r.openAll.at !== null),
+      A = R.flatMap(r => r.openAll.ans),
+      bk = R.filter(r => r.openAll.back !== null),
+      row = (lab, X) => `    ${lab.padEnd(28)} n ${String(X.length).padStart(4)}  e ${f(m(X.map(x => x.e)))}  p ${f(m(X.map(x => x.p)))}  ok ${f(m(X.map(x => x.ok)))}  e-p ${f(m(X.map(x => x.e - x.p)))}`;
+    lines.push(
+      `  ${name}: opened in ${R.length}/${runs.filter(r => r.profile === name).length} runs (answer ${R.map(r => r.openAll.at).join(', ') || '-'}; ${f(m(R.map(r => r.openAll.set.length)), 1)} genera at once); back card in ${bk.length}/${R.length} runs, at answer ${bk.map(r => r.openAll.back).join(', ') || '-'} after Open all`
+    );
+    lines.push(row('first question, opened at once', A.filter(x => x.all && x.first)));
+    lines.push(row('first 30, opened at once', A.filter(x => x.all && x.k <= 30)));
+    lines.push(row('first 30, met before', A.filter(x => !x.all && x.k <= 30)));
+    lines.push(row('every answer after Open all', A));
+  }
+  return lines.join('\n');
+}
+
 (async () => {
   const t0 = Date.now();
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -813,6 +891,7 @@ function breakTable(BS) {
       };
     console.log(`  ${name}: ${MET.map(cell).join(', ')}`);
   }
+  if (OPENALL) console.log(openTable(runs));
   if (errs.length) console.log('\nPage errors: ' + errs.slice(0, 5).join(' | '));
   if (OUT) {
     fs.writeFileSync(

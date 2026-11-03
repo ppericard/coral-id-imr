@@ -287,8 +287,12 @@ const introAdd = (L, start, kind = start ? 's' : 'c') => {
   syncSoon(); // sent at once, not with the next answer: a card left without answering is met on the other devices too
 };
 const asked = n => !!((P[n] || {}).ok || (P[n] || {}).ko);
-const introduced = n => asked(n) || n in introMap();
+// Closed again by "One at a time" (introBack, below): kind 'b' wins over the answers already given until a card (or Open
+// all) opens the genus again and replaces the mark.
+const closed = n => (introMap()[n] || [])[3] === 'b';
+const introduced = n => !closed(n) && (asked(n) || n in introMap());
 const introReady = n => {
+  if (closed(n)) return false;
   if (asked(n)) return true;
   const e = introMap()[n];
   return !!e && (!!e[1] || answersSoFar() >= e[0] + INTRO.GAP);
@@ -300,9 +304,52 @@ const introReady = n => {
 const introLeft = () => slateGenera().filter(n => !introduced(n));
 // via: where the player opened them ('card' the first cards, 'progress' My progress, 'offer' the offer card), kept
 // with the offer (which is then never made) for the admin's player journey.
+// n: how many opened at once; h: the drop since then (holdStep, below); a choice already made on the back card (bk, bat,
+// bn, bt) is kept, so the card is never made again.
 const introAll = via => {
-  introAdd(introLeft(), true, 'a');
-  store.set(INTRO.OFFER.KEY, {at: answersSoFar(), open: 1, via, t: Date.now()});
+  const L = introLeft(),
+    o = store.get(INTRO.OFFER.KEY, null) || {};
+  introAdd(L, true, 'a');
+  store.set(INTRO.OFFER.KEY, {
+    at: answersSoFar(),
+    open: 1,
+    via,
+    t: Date.now(),
+    n: L.length,
+    h: 0,
+    ...(o.bk ? {bk: o.bk, bat: o.bat, bn: o.bn, bt: o.bt} : {})
+  });
+};
+// Back to one at a time (Pierre, 2026-11-03, after a player at 90% right on 13 genera opened one at a time accepted Open
+// all around answer 52 and fell to 62% right on the ~27 that came at once, the game expecting 70-88%: "if the player then
+// says no, I keep all genera, fine; but offer at least once the option to go back if we detect it really became too
+// hard"). The record of Open all keeps h, the opening hold's own CUSUM (holdNext, same expectation e and allowance
+// INTRO.SLACK) over the answers given since, from 0. The card is due once h reaches 2 x INTRO.HOLD (3: about three
+// answers' worth of misses beyond the expected success and the allowance): on that player's answers, replayed, h passed
+// 3 at the 21st answer after Open all (3.53, peak 4.98) and stayed above 1.5 to the last (the 34th), while a blip of
+// three misses in a row at the 7th (2.21) stays under it (docs/LEARNING.md). No new constant: the hold's own threshold,
+// doubled because a card that undoes a choice needs more evidence than pausing new cards. Once: "Keep them all" or
+// "One at a time" is kept with the record (bk), synced like it (introMerge: the latest decision wins).
+const backOpen = () => Object.keys(introMap()).filter(n => introMap()[n][3] === 'a');
+const backDue = () => {
+  const o = store.get(INTRO.OFFER.KEY, null);
+  return !!(o && o.open && !o.bk && (Number(o.h) || 0) >= 2 * INTRO.HOLD && backOpen().length);
+};
+// "One at a time" closes every genus opened by Open all (kind 'a'), answered or not (Pierre, 2026-11-03): the mark 'b'
+// takes it out of the draw (introduced, introReady false) until the progressive path opens it again on its card, one at
+// a time, with the progress it had (answers, ability and log are kept). Genera opened before (first cards, own cards)
+// stay open. keep: "Keep them all", nothing changes. Either way, kept with the record for the admin's player journey.
+const introBack = keep => {
+  const o = store.get(INTRO.OFFER.KEY, null) || {},
+    L = keep ? [] : backOpen(),
+    m = introMap(),
+    a = answersSoFar(),
+    now = Date.now();
+  L.forEach(n => (m[n] = [a, 0, now, 'b']));
+  if (L.length) store.set(INTRO.KEY, m);
+  store.set(INTRO.OFFER.KEY, {...o, bk: keep ? 'keep' : 'one', bat: a, bn: L.length, bt: now});
+  syncSoon();
+  return L;
 };
 // The offer to open all genera (Pierre, 2026-11-02: 10 answers on 4 genera are too few to decide; after about 50
 // questions and some 10 genera met, a card says the player seems to know their corals and offers to open them all).
@@ -333,15 +380,22 @@ function introMerge(m, o) {
   if (m && typeof m === 'object' && !Array.isArray(m)) {
     const L = introMap();
     let ch = false;
+    // A genus closed by "One at a time" ('b') on one device is closed here too, and one opened again since by its card
+    // on one device is open here too: between a mark and an opening, the later one (its time) wins.
     Object.entries(m).forEach(([n, e]) => {
-      if (Array.isArray(e) && !L[n]) ch = L[n] = [e[0] || 0, 1, e[2] || 0, e[3] || (e[1] ? 's' : 'c')];
+      if (!Array.isArray(e)) return;
+      const h = L[n];
+      if (!h || ((e[3] === 'b' || h[3] === 'b') && (e[2] || 0) > (h[2] || 0)))
+        ch = L[n] = [e[0] || 0, e[3] === 'b' ? 0 : 1, e[2] || 0, e[3] || (e[1] ? 's' : 'c')];
     });
     if (ch) store.set(INTRO.KEY, L);
   }
   // The latest decision wins (its time t): declined on one device, then Open all on another, must not go back to the
   // decline at the next sync (Codex review #352). Without times (older), the one already here stays.
-  const here = store.get(INTRO.OFFER.KEY, null);
-  if (o && typeof o === 'object' && (!here || (o.t || 0) > (here.t || 0))) store.set(INTRO.OFFER.KEY, o);
+  // The back card's choice (bt) is a decision too.
+  const here = store.get(INTRO.OFFER.KEY, null),
+    tt = x => Math.max(x.t || 0, x.bt || 0);
+  if (o && typeof o === 'object' && (!here || tt(o) > tt(here))) store.set(INTRO.OFFER.KEY, o);
 }
 const introReset = () => {
   INTROS = {};
@@ -379,6 +433,10 @@ const holdNext = (h, e, good, slack = INTRO.SLACK) =>
 function holdStep(e, good) {
   HOLDS = holdNext(HOLDS, e, good);
   store.set(HOLDK, HOLDS);
+  // The same sum since Open all, from 0, until the back card is answered (backDue, above). Each device counts its own
+  // answers (the record goes with the progress; a newer decision replaces it).
+  const o = store.get(INTRO.OFFER.KEY, null);
+  if (o && o.open && !o.bk) store.set(INTRO.OFFER.KEY, {...o, h: holdNext(Number(o.h) || 0, e, good)});
 }
 // Synced (sheet v23, Pierre 2026-11-02: the hold follows a signed-in player from one device to another, and is rebuilt
 // from the answers given before it existed). Each load of the saved progress (sync.js mergeSaved) brings h, the same sum
