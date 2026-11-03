@@ -444,6 +444,18 @@ const anonId = () => {
 };
 let anonTimer = 0,
   anonBusy = false;
+// Catch-up (Pierre, 2026-11-03: RAs who played without a name were missing from the sheet). Once per ANON_RESEND.ID,
+// every answer this device played without an account (LOG0: up to 2000, kept until sign-in) is queued again for the
+// sheet, which skips the ones it already has (by answer id) and adds the rest under this device's anonymous id. Bump the
+// id to run it again on every device.
+const ANON_RESEND = {KEY: 'imr-anon-resent', ID: '2026-11-03'};
+function anonResend() {
+  if (SYNC || !SYNC_URL || LOCAL || store.get(ANON_RESEND.KEY, '') === ANON_RESEND.ID) return;
+  const q = store.get(ANONQ, []),
+    have = new Set(q.map(a => a && a.id));
+  store.set(ANONQ, [...store.get(LOG0, []).filter(a => a && a.id && !have.has(a.id)), ...q].slice(-2000));
+  store.set(ANON_RESEND.KEY, ANON_RESEND.ID);
+}
 const anonSoon = () => {
   clearTimeout(anonTimer);
   anonTimer = setTimeout(sendAnon, store.get(ANONQ, []).length >= 10 ? 0 : 20000);
@@ -456,14 +468,16 @@ function sendAnon() {
   fetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({anon: anonId(), anonAnswers: batch})})
     .then(r => r.json())
     .then(j => {
-      if (!j || !j.log) return;
+      // A refused send is reported like a failed save (it used to fail silently; Pierre, 2026-11-03), then retried at the
+      // next answer, the next visit or when the app is left.
+      if (!j || !j.log) return ev('sync', {msg: 'anonymous send refused: ' + String((j && j.error) || 'no reply')});
       const done = new Set(batch.map(x => x.id)),
         left = store.get(ANONQ, []).filter(x => !done.has(x.id));
       store.set(ANONQ, left);
       // More than one batch waiting (played offline): the next one follows; a refused batch ('busy') is not retried here.
       if (left.length) setTimeout(sendAnon, 1000);
     })
-    .catch(() => {})
+    .catch(e => navigator.onLine !== false && ev('sync', {msg: 'anonymous send failed: ' + String((e && e.message) || e)}))
     .finally(() => {
       anonBusy = false;
     });
