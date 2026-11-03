@@ -3622,3 +3622,220 @@ button.adm-chip[aria-pressed='true'] {
   display: block;
   width: 100%;
 }
+/* Analyses (admin-analyses.js, Pierre 2026-11-04): charts drawn as inline SVG at the page's real width, tokens only, the
+   same in light and dark. One hue for the estimates (--accent), ink for the app's own value (◇), muted lines for the
+   intervals, --line for the zero line and the grid. Verdicts carry a symbol and a word, never colour alone. */
+.adm-an .adm-shead {
+  row-gap: 6px;
+}
+.adm-an-badge {
+  white-space: nowrap;
+}
+.adm-an-made {
+  margin-left: auto;
+}
+.adm-an-re {
+  font-size: var(--fs-s);
+}
+/* Recompute here is for a desktop: on a phone the page only draws the stored report. */
+@media (max-width: 599.98px) {
+  .adm-an-re[data-anre] {
+    display: none;
+  }
+}
+.adm-an-grid > .adm-scard {
+  overflow: hidden;
+}
+.adm-an-svg {
+  display: block;
+  max-width: 100%;
+  margin: 2px 0 8px;
+  overflow: visible;
+}
+.adm-an-svg text {
+  font-family: var(--body);
+  font-size: 12px;
+  fill: var(--muted);
+}
+.adm-an-svg .an-lab {
+  fill: var(--ink);
+}
+.adm-an-svg .an-zero {
+  stroke: var(--muted);
+  stroke-dasharray: 3 3;
+  stroke-width: 1;
+}
+.adm-an-svg .an-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.adm-an-svg .an-hit {
+  fill: transparent;
+}
+.adm-an-svg g:hover .an-hit {
+  fill: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.adm-an-svg .an-ci {
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.adm-an-svg .an-dot {
+  fill: var(--accent);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+.adm-an-svg .an-dot.alt {
+  fill: var(--ink);
+}
+.adm-an-svg .an-ref {
+  fill: var(--surface);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+.adm-an-svg .an-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.adm-an-svg .an-line.alt {
+  stroke: var(--ink);
+}
+.adm-an-svg .an-line.dash {
+  stroke-dasharray: 5 4;
+}
+.adm-an-svg .an-band {
+  fill: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+/* Variance shares: the accent at three strengths, the residual in the line colour; the table names each. */
+.adm-an-svg .an-share.s0,
+.adm-an-key.s0 {
+  fill: var(--accent);
+  background: var(--accent);
+}
+.adm-an-svg .an-share.s1,
+.adm-an-key.s1 {
+  fill: color-mix(in srgb, var(--accent) 65%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 65%, var(--surface));
+}
+.adm-an-svg .an-share.s2,
+.adm-an-key.s2 {
+  fill: color-mix(in srgb, var(--accent) 35%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 35%, var(--surface));
+}
+.adm-an-svg .an-share.s3,
+.adm-an-key.s3 {
+  fill: var(--line);
+  background: var(--line);
+}
+.adm-an-key {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--r-xs);
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+.adm-an-leg {
+  display: flex;
+  gap: 14px;
+  margin: -4px 0 8px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.adm-an-leg span::before {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 0;
+  border-top: 2px solid var(--accent);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.adm-an-leg span.k1::before {
+  border-top-color: var(--ink);
+}
+.adm-an-leg span.dash::before {
+  border-top-style: dashed;
+}
+.adm-an-convs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+@media (min-width: 560px) {
+  .adm-an-convs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 900px) {
+  .adm-an-convs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.adm-an-conv b {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm-an-v {
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.adm-an-v.v-clear {
+  color: var(--good);
+}
+.adm-an-v.v-margin {
+  color: var(--ink);
+}
+.adm-an-v.v-thin,
+.adm-an-v.v-none,
+.adm-an-v.v-nolog {
+  color: var(--muted);
+}
+.adm-tbl small.adm-an-ci {
+  color: var(--muted);
+  font-weight: 400;
+}
+.adm-an-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+}
+.adm-an-thumbs figure {
+  margin: 0;
+  min-width: 0;
+}
+.adm-an-thumbs .adm-ph {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--surface-2);
+  cursor: zoom-in;
+}
+.adm-an-thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.adm-an-thumbs code {
+  font-size: var(--fs-xs);
+  overflow-wrap: anywhere;
+}
+.adm-an-thumbs figcaption {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

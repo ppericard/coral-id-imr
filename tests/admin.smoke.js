@@ -179,6 +179,80 @@ const server = http.createServer((req, res) => {
       if (r.n === 1 && at.views) fails.push(`${w}px #${h}: a view switch on a one-view tab`);
       if (at.wide > 0) fails.push(`${w}px #${h}: page ${at.wide} px wider than the window`);
     }
+    // Analyses (Pierre, 2026-11-04): the stored report (the demo computes it as the GitHub Action would, tools/analyses.js)
+    // drawn in every view, with charts and no sideways scroll; the 4-choice count of Formats equals a direct count of the
+    // demo's answer log; the milestone switch; the verdicts say something for every effect.
+    errs.length = 0;
+    await go('~an');
+    await p
+      .waitForFunction(() => document.querySelector('.adm-an .adm-kpis'), null, {timeout: 90000})
+      .catch(() => fails.push(`${w}px Analyses: no report`));
+    const anv = await p.evaluate(() => ({
+      rows: document.querySelectorAll('.adm-an-eff tbody tr').length,
+      verdicts: [...document.querySelectorAll('.adm-an-eff .adm-an-v')].filter(x => x.textContent.trim()).length,
+      ms: document.querySelectorAll('[data-anm]').length,
+      badge: (document.querySelector('.adm-an-badge') || {}).textContent || ''
+    }));
+    if (anv.rows < 40 || anv.verdicts !== anv.rows || anv.ms < 3 || !/since .* next at/.test(anv.badge))
+      fails.push(`${w}px Analyses overview: ${JSON.stringify(anv)}`);
+    for (const h of ['~an-rt', '~an-zoom', '~an-photo', '~an-fmt', '~an-conf', '~an-learn', '~an-back', '~an-sess']) {
+      await go(h);
+      const v = await p.evaluate(() => ({
+        svg: document.querySelectorAll('#view svg.adm-an-svg').length,
+        thin: /Not enough data yet: \d/.test(document.querySelector('.adm-an').textContent),
+        wide: document.documentElement.scrollWidth - innerWidth,
+        cards: [...document.querySelectorAll('.adm-an .adm-scard')].filter(
+          c => c.scrollWidth > c.clientWidth + 1 && !c.querySelector('.adm-tscroll')
+        ).length
+      }));
+      if (v.svg < 2 || v.thin || v.wide > 0 || v.cards) fails.push(`${w}px Analyses #${h}: ${JSON.stringify(v)}`);
+    }
+    await go('~an-fmt');
+    const anf = await p.evaluate(async () => {
+      const rows = (await (await fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readAnswers: 1, token: TOKEN})})).json()).rows;
+      // 4 choices, 4 plausible: a photo-quiz answer that is not typed, not a duel, not an exam, with 4 genera offered and
+      // no |k2 or |k3, with the app's expectation logged
+      const direct = rows.filter(
+        r =>
+          /^quiz/.test(r[5]) &&
+          !/^quiz-duel/.test(r[5]) &&
+          !/\|(t|d|x)(\||$)/.test(r[5]) &&
+          !/\|k[123]/.test(r[5]) &&
+          String(r[10] || '')
+            .split(/\s+/)
+            .filter(Boolean).length !== 2 &&
+          r[7] != null
+      ).length;
+      const row = [...document.querySelectorAll('.adm-an tbody tr')].find(
+        tr => tr.cells[0] && tr.cells[0].textContent === '4 choices' && tr.cells.length === 7
+      );
+      return {direct, shown: row ? Number(row.cells[1].textContent.replace(/,/g, '')) : null};
+    });
+    if (anf.shown !== anf.direct) fails.push(`${w}px Analyses Formats: 4 choices ${anf.shown}, direct count ${anf.direct}`);
+    await p.click('[data-anm="1000"]');
+    await settle();
+    const anm = await p.evaluate(() => ({
+      pressed: (document.querySelector('[data-anm][aria-pressed="true"]') || {}).dataset?.anm,
+      kpi: (document.querySelector('.adm-kpis b') || {}).textContent
+    }));
+    await p.click('[data-anm="all"]');
+    await settle();
+    if (anm.pressed !== '1000' || !/^[\d,]+$/.test(anm.kpi || '') || Number(anm.kpi.replace(/,/g, '')) > 1000)
+      fails.push(`${w}px Analyses: the milestone switch ${JSON.stringify(anm)}`);
+    if (errs.length) fails.push(`${w}px Analyses: ${errs.slice(0, 3).join(' | ')}`);
+    // A sync script before v34 has no report: the views say so, nothing breaks (AGENTS.md 7a).
+    if (w === 390) {
+      const aq = await ctx.newPage(),
+        aqe = [];
+      aq.on('pageerror', e => aqe.push(e.message));
+      await aq.goto(base + 'admin.html?demo&v=29#~an-rt');
+      await aq
+        .waitForFunction(() => /No report yet/.test(document.getElementById('view').textContent), null, {timeout: 30000})
+        .catch(() => aqe.push('no "No report yet"'));
+      if (aqe.length) fails.push(`${w}px Analyses with script v29: ${aqe.join(' | ')}`);
+      await aq.close();
+    }
+
     // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs).
     await go('~fcov');
     await go('~triage');

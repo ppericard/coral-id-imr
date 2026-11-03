@@ -2001,6 +2001,26 @@ What it says, on this learner:
   34.7 → 35.3, lecture RA progress at 300 27.8 → 25.5%. The CI seed's beginner went from 16 genera at question 100 (the
   limit) to 17, so the limit is 17 (one draw, not a faster opening: 30 learnsim seeds give 16.5 → 15.7).
 
+## Multifactor analyses (admin Analyses, 2026-11-04)
+
+Pierre, 2026-11-04: multifactor reports of the answer log, refitted every 1000 answers, in the admin (ARCHITECTURE.md "Analyses"; code `analysis.js`, tests `tests/analysis.test.js`). They measure; they change nothing in the app. Methods, shared by every analysis:
+
+- **Crossed random effects.** Player, genus and photo (a question's photos share its photo effect, weight 1/m each), fitted by alternating updates: each level's shrunk effect given the rest (a majorise-minimise step, exact when a row has one level), then the fixed effects, with EM updates of the variance components from the posterior second moments (REML-like shrinkage, without REML's exact determinant term). Gaussian for log response time (`lmm`); logistic with each question's guess rate, P = g + (1 − g) sig(eta), for right / wrong (`glmm`, penalised quasi-likelihood, Fisher scoring), g as the app's (`core.js` `guessOf`: 1/k, ½ for a duel, 0 typed).
+- **Intervals.** 95%: the model's own (Wald) and, from 6 players, a cluster bootstrap over players (40 draws in the Action), whichever is wider. Few players = rough intervals, said by the verdicts.
+- **Verdicts** (`verdictOf`), per effect: *Clear* (the interval excludes 0, or the app's value for a guess rate); *Within the margin of error* (it includes it and lies within the smallest effect that would matter: ±0.1 log time ≈ 10%, ±0.25 logit, ±5 points, ±0.1 logit for slopes); *Not enough data yet* with the answers needed for an interval as narrow as the current estimate (or that smallest effect), n × (half-width / target)², rounded up: a rough power estimate that assumes the interval shrinks as 1/√n (it shrinks slower when the players are few).
+- **Validated** on synthetic answer logs whose true effects are known (`ANALYSIS.synth`, `TRUTH`): the fits give them back within the test tolerances (response time effects within 0.04-0.06 log units, photo features within 0.25 logit, learning slope within 0.15). Photo random-effect SDs come out a little low (PQL's known shrinkage), a guess rate is pinned only by the weakest answers (its interval stays wide).
+
+The analyses:
+
+1. **Response time**: log seconds ~ right + typed + enlarged + 2 choices + the app's expected difficulty + log position in the session + (player) + (genus) + (photo). Variance shares; genera, players, photos shrunk. Earlier measure: "Response time" (branch `rtsignal`), which found time informative beyond correctness.
+2. **Zoom**: right ~ offset (the app's log-odds) + enlarged relative to the player's own habit + the habit + (player).
+3. **Photo factors** (explanatory IRT, an LLTM with a photo random effect): right ~ view + quality + sharpness + source + one view alone + typed + (player) + (genus) + (photo); read as difficulty. The photos furthest from what their features predict are listed.
+4. **Formats**: per format, P = c + (1 − c) sig(x + d), x the app's own log-odds: the real guess rate c against the app's fixed one, and the difficulty d the app misses.
+5. **Confusions**: each wrong choice offered, picked or not ~ view shown + log(wrong choices) + (pair) + (player): views that confuse more, and how much each player differs from the pooled rates (observed / expected).
+6. **Learning curves**: right ~ log(1 + answers on the genus) + after a miss + Again asked after it + typed + exam + comeback + (player) + (genus); answers to reach 80% beyond guessing, overall and per genus. The first-meeting card and the side-by-side comparison leave no row in the answer log: not measurable yet (ROADMAP).
+7. **Comeback**: after a right answer on a genus, right ~ offset (that answer's expectation) + log(1 + days since) + (player): the forgetting slope; and the comeback questions' right − expected (the FSRS curve of "Comeback after a break").
+8. **Sessions** (30 minutes without an answer ends one): Kaplan-Meier of the length (open sessions censored) and a discrete-time hazard, stop after this answer ~ wrong + 2+ misses in a row + expected difficulty + slow (against the player's usual) + log position + (player).
+
 ## Considered and not adopted
 
 - **First answer per photo only** (Papoušek 2014): standard for prior knowledge, where people already know the facts.

@@ -15,9 +15,9 @@
   let seed = 20261101;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648,
     pick = L => L[Math.floor(rnd() * L.length)],
-    // The script version the demo answers as: the current one (v28: the admin shows the full replay, admin.js replayOn),
+    // The script version the demo answers as: the current one (v34: the Analyses report; v28: the admin shows the full replay, admin.js replayOn),
     // or an older one with ?demo&v=27 (tests/admin.smoke.js: the admin then does what it did before; AGENTS.md 7a).
-    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 28,
+    V = Number((/[?&]v=(\d+)/.exec(location.search) || [])[1]) || 34,
     ok = o => new Response(JSON.stringify({v: V, ...o}), {status: 200, headers: {'Content-Type': 'application/json'}});
   // Made-up players: [name, skill 0-1, answers, days ago of the first and last answer]. Two names of one person
   // ("Mara Demo" / "mara demo2") to try Merge; one test account with few answers to try Delete.
@@ -34,7 +34,7 @@
   let S = null; // {names: [{name, pin hash...}], rows: [[name, t, shown, answered, ok, mode, photos, id, e, th, nw, choices]], reports, removed, data}
   // One dataset for every request: concurrent first calls (answers and stats together) wait for the same build.
   let BUILD = null;
-  const build = () => (BUILD = BUILD || make());
+  const build = () => (BUILD = BUILD || make().then(x => (V >= 34 && setTimeout(() => anaReport(true), 0), x)));
   // Moves the last n of one player's rows into one session ending at `end`, about 37 s apart, in their order; the last
   // `typed` plain quiz answers among them become typed ones (quiz|t: no choices offered).
   function live(L, n, end, typed) {
@@ -325,6 +325,28 @@
       ])
     );
     events.sort((a, b) => b[1] - a[1]);
+    // The Analyses group (Pierre, 2026-11-04) needs a few thousand answers with times, enlargements, formats and breaks:
+    // seven more made-up players from analysis.js demoLog (its known effects, on the real photos), their last answer
+    // three days ago.
+    const [cur, qual, met] = await Promise.all(
+      ['curation.json', 'quality.json', 'metrics.json'].map(f => real(f, {cache: 'no-cache'}).then(r => r.json()))
+    );
+    ANA_META = {ph: ANALYSIS.photoMeta(D, cur, qual, met)};
+    const more = ANALYSIS.demoLog(D, NOW - 3 * DAY, {cur, qual, met});
+    more.forEach((r, i) => rows.push([...r.slice(0, 7), 'demoz' + i, ...r.slice(7, 11), r[12], r[13]]));
+    ANALYSIS.DEMO_PLAYERS.forEach(([name]) => {
+      const mine = more.filter(r => r[0] === name);
+      users[name.toLowerCase()] = {
+        name,
+        updated: mine.length ? mine[mine.length - 1][1] : NOW - 3 * DAY,
+        learned: 0,
+        seen: new Set(mine.map(r => r[2])).size,
+        total: list.length,
+        review: '',
+        rev: 1,
+        data: {'imr-coral-progress': '{}', 'imr-coral-settings': '{}'}
+      };
+    });
     S = {rows, users, reports, events, removed: [], list};
     // Saved progress as the app saves it now: the full replay of each player's answers (core.js replayProgress, with the
     // memory offsets and confusions this demo's stats serve, as the admin replays them), plus the exams the demo passed
@@ -404,7 +426,10 @@
     return out;
   }
   function stats() {
-    const A = answers().rows,
+    // The Analyses group's made-up players (demoLog) stay out of the photo ratings and confusions: the other pages'
+    // numbers (the full replay on Players, the journeys) stay those of the original demo.
+    const more = new Set(ANALYSIS.DEMO_PLAYERS.map(p => aid(p[0]))),
+      A = answers().rows.filter(r => !more.has(r[0])),
       ras = {};
     A.forEach(r => {
       const x = (ras[r[0]] = ras[r[0]] || [0, 0, 0]);
@@ -564,6 +589,29 @@
     }
     return new Response(JSON.stringify({message: 'Not Found (demo)'}), {status: 404});
   }
+  // The demo's Analyses report, as the GitHub Action would store it (tools/analyses.js): computed once, in a Web Worker,
+  // on the demo's answers (no bootstrap, so it is quick), from the moment the demo is built.
+  let ANA_META = null,
+    ANA = null;
+  const anaReport = head => {
+    ANA =
+      ANA ||
+      new Promise(done => {
+        const w = new Worker(document.querySelector('script[src^="analysis.js"]').getAttribute('src'));
+        w.onmessage = e => {
+          if (e.data && e.data.prog) return;
+          w.terminate();
+          done(e.data && e.data.res ? JSON.stringify(e.data.res) : null);
+        };
+        w.postMessage({id: 1, rows: answers().rows, meta: ANA_META, B: 0, seed: 1});
+      });
+    return ANA.then(text => {
+      const n = S.rows.length,
+        r = text && JSON.parse(text);
+      const stored = r ? {answers: r.answers, made: r.made, av: r.AV, size: text.length, at: r.made} : null;
+      return head || !text ? {ok: true, answers: n, stored} : {ok: true, answers: n, stored, report: text};
+    });
+  };
   window.fetch = async (u, opts = {}) => {
     const url = String(u && u.url ? u.url : u);
     if (url.startsWith('https://api.github.com/user')) return ok({login: 'demo'});
@@ -581,6 +629,8 @@
       if (p.readEvents) return ok({ok: true, rows: S.events.map(r => r.slice())});
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
+      // v34: the stored Analyses report. A script before v34 answers 'input' (?demo&v=27: the admin shows no report).
+      if (p.analysesGet) return ok(V < 34 ? {ok: false, error: 'input'} : await anaReport(p.head));
       if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userRename) return ok(users(p));
       return ok({ok: false, error: 'demo'});
     }
