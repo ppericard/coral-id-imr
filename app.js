@@ -1503,6 +1503,14 @@ const swCheck = () => {
       .then(r => r && r.update())
       .catch(() => {});
 };
+// A new service worker asks every open page which version it runs (sw.js activate): this one answers, so it is left to
+// reload by itself at the next page change (UPDATED); a page too old to answer is reloaded by the worker.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data && e.data.t === 'imr-ver?' && e.ports && e.ports[0]) e.ports[0].postMessage({v: appVer()});
+  });
+  navigator.serviceWorker.startMessages();
+}
 if ('serviceWorker' in navigator) {
   // The first install also takes over: that one is no update; any takeover after it is (a tab first opened before any
   // version was installed, then left open, still gets the next ones: Codex review #336).

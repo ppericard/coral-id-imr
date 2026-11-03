@@ -1,5 +1,5 @@
 // Offline cache: app shell first, then photos as they are viewed.
-const V = 'imr-coral-id-v260';
+const V = 'imr-coral-id-v261';
 // Photos live in their own cache that no deploy deletes (code review 2026-11-01, H3): bumping V used to wipe every
 // offline photo. Capped at PH_MAX entries, oldest first out (cache keys keep insertion order).
 const PH = 'imr-photos-v1',
@@ -9,8 +9,8 @@ const SHELL = [
   'index.html',
   'app.css?v=117',
   'core.js?v=21',
-  'app.js?v=174',
-  'sync.js?v=12',
+  'app.js?v=175',
+  'sync.js?v=13',
   'progress.js?v=10',
   'model.js?v=12',
   'quiz.js?v=16',
@@ -75,6 +75,34 @@ self.addEventListener('activate', e =>
         await caches.delete(k);
       }
       await self.clients.claim();
+      // Pages too old to know about updates (Pierre, 2026-11-03: RAs who opened one of the very first versions kept it
+      // open for days, so their answers never reached the sheet): each open page is asked its version; a page that
+      // answers reloads by itself at its next page change (app.js UPDATED); one that does not answer within 3 s runs a
+      // version from before 2026-11-03 and is reloaded now, onto this version.
+      // Only the app's own page (index.html): the admin, privacy and Lab pages are left alone.
+      const pages = (await self.clients.matchAll({type: 'window'})).filter(c => /\/(index\.html)?$/.test(new URL(c.url).pathname));
+      await Promise.all(
+        pages.map(
+          c =>
+            new Promise(done => {
+              const ch = new MessageChannel(),
+                t = setTimeout(() => {
+                  c.navigate(c.url).catch(() => {});
+                  done();
+                }, 3000);
+              ch.port1.onmessage = () => {
+                clearTimeout(t);
+                done();
+              };
+              try {
+                c.postMessage({t: 'imr-ver?'}, [ch.port2]);
+              } catch (err) {
+                clearTimeout(t);
+                done();
+              }
+            })
+        )
+      );
     })()
   )
 );
