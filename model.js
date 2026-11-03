@@ -714,18 +714,38 @@ const recent = n => {
 // Progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability. A genus never answered
 // starts from the player's global level (core.js playerStart: their abilities on the genera already answered), so a
 // strong player gets traps, single views and harder photos on a new genus from its first question.
+// A genus already answered: its own estimate (s.th, from its last own step) plus the global level's move since then
+// (levelMove), so what the player shows on the other genera moves it too while its own answers are few: the global +
+// concept skill of Pelánek et al. (UMUAI 2017), as a lazy update (2026-11-03, docs/LEARNING.md "Global level and
+// genus").
 const ability = n => {
   const s = P[n] || {};
-  return typeof s.th === 'number' ? s.th : s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n);
+  if (typeof s.th !== 'number') return s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n);
+  return Math.min(ELO.hi, Math.max(ELO.lo, s.th + levelMove(n, s)));
 };
+// The global level's move since the genus's own last step (s.lt: the level then), weighed by the genus's own
+// uncertainty 1 / (1 + answers / ELO.n), the share its own Elo step gives a new answer: a genus with few answers leans
+// on the level, one with many on itself. Both ways (a one-way rise was tried: biased upward, it over-rated a simulated
+// beginner by 0.5-0.7). No new constant. Taken in at the genus's next own step (abilityStep). Progress saved before
+// (no s.lt): nothing until that step.
+function levelMove(n, s) {
+  const G = P[LEVEL];
+  if (n === LEVEL || typeof s.lt !== 'number' || !G || typeof G.th !== 'number') return 0;
+  return Math.round(((G.th - s.lt) / (1 + ((s.ok || 0) + (s.ko || 0)) / ELO.n)) * 100) / 100;
+}
 function abilityStep(n, s, good, d, k) {
   const th = ability(n),
     g = 1 / k,
     e = g + (1 - g) * sig(th - d),
     m = (s.ok || 0) + (s.ko || 0);
   s.vr = Math.round(((1 - ELO.vr) * (s.vr || 0) + ELO.vr * ((good ? 1 : 0) - e)) * 1000) / 1000;
-  const K = Math.min(ELO.kmax, Math.max(ELO.kmin, ELO.kmax / (1 + m / ELO.n)) * (1 + ELO.vg * Math.abs(s.vr)));
+  // The global level's step has no floor (ELO.kmin is for a genus, which must ease off quickly when it starts going
+  // wrong): the level pools every answer and now moves every genus (levelMove), so it settles as answers build up
+  // (Pelánek's uncertainty function), the volatility still letting it catch up with a lasting change. With the floor a
+  // run of early misses sank it (one real player to -0.41 against a fit of 0.56) and dragged the genera with it.
+  const K = Math.min(ELO.kmax, Math.max(n === LEVEL ? 0 : ELO.kmin, ELO.kmax / (1 + m / ELO.n)) * (1 + ELO.vg * Math.abs(s.vr)));
   s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * 100) / 100;
+  if (n !== LEVEL && P[LEVEL] && typeof P[LEVEL].th === 'number') s.lt = P[LEVEL].th;
   delete s.lv;
   delete s.run;
 }

@@ -257,7 +257,12 @@ const server = http.createServer((req, res) => {
   // the Elo"), measured on main after #408 (one opening rule, OPEN.K 8): this seed meets 12 genera by question 100 with
   // and without the change (margin 5). Over 5 seeds (tools/learnsim.js) the change does open faster: 15.6 -> 19.2 genera
   // by question 100 (seeds 12-22 -> 17-24), at 79% right (86%); a watched effect (ROADMAP), not hidden by this bound.
-  if (b1.met > 17) fails.push(`beginner met ${b1.met} genera in 100 questions: not focused`);
+  // 21 (was 17; 2026-11-03, the global level's move on the genera, docs/LEARNING.md "Global level and genus"): this
+  // seed meets 18 genera by question 100 (12 before). Measured over 5 seeds (tools/learnsim.js): 19.2 -> 22.4 genera
+  // by question 100 (± 3.2 -> ± 1.8), at 80% right (79%), the beginner's ability unbiased (θ - logit(know) +0.13 at
+  // question 100, -0.44 before): what the beginner learns lifts the genera met, so fewer look shaky. Margin 3 over this
+  // seed; the bound still catches a flood of genera (all 39 at once before the progressive path).
+  if (b1.met > 21) fails.push(`beginner met ${b1.met} genera in 100 questions: not focused`);
   if (b3.met <= b1.met) fails.push(`beginner stopped opening genera (${b1.met} then ${b3.met})`);
   if (r3.met <= r1.met) fails.push(`RA stopped opening genera (${r1.met} then ${r3.met})`);
   const E = R.easyFirst,

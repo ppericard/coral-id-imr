@@ -250,7 +250,9 @@ const server = http.createServer((req, res) => {
       };
       let g = typedQ();
       const f = () => document.querySelector('#view .tyform'),
-        typo = g.slice(0, 2) + g[3] + g[2] + g.slice(4), // two neighbouring letters swapped
+        // two different neighbouring letters swapped, from the third on (Millepora's "ll" swapped is no typo)
+        sw = [...g].findIndex((x, i) => i >= 2 && g[i + 1] && x !== g[i + 1]),
+        typo = g.slice(0, sw) + g[sw + 1] + g[sw] + g.slice(sw + 2),
         a0 = answersSoFar();
       f().querySelector('input').value = 'xyzcoral';
       f().requestSubmit();
