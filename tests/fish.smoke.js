@@ -267,7 +267,104 @@ const server = http.createServer((req, res) => {
     await wide('a wink');
     await c2.close();
   }
-  const fails = [...out, ...ui];
+  // Codex review #442, on the real app with a sheet stub (AGENTS.md rule 13: window.SHEET_STUB, nothing sent):
+  // (1) the sheet's opening hold is the corals': a pull with Fish on screen leaves the fish hold alone;
+  // (2) signing in on a device that never played fish: the account's fish progress is the merge baseline, so the next
+  //     sync does not add it again (10/2 stayed 10/2, was 20/4);
+  // (3) a wink takes no planned question and leaves the Again / duel spacing alone;
+  // (4) a genus sheet or a comparison opened with Fish chosen (Identify, the Coral Finder) brings the corals on screen.
+  const rv = [];
+  {
+    const c3 = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
+    await c3.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c3.addInitScript(() => {
+      try {
+        if (!sessionStorage.getItem('fish-rv')) {
+          sessionStorage.setItem('fish-rv', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-sync-subject', '"fish"');
+        }
+      } catch (e) {}
+      // The sheet: the account (coral and fish progress), a hold of 5 on every load; saves recorded.
+      const data = {
+        'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 3, ko: 1}}),
+        'reefid-sync-fish-progress': JSON.stringify({t01: {ok: 10, ko: 2}})
+      };
+      window.SAVES = [];
+      window.SHEET_STUB = (url, o) => {
+        const reply =
+          o && o.method === 'POST'
+            ? (SAVES.push(JSON.parse(o.body)), {ok: true, log: true, rev: 2})
+            : {ok: true, found: true, data, rev: 1, hold: 5, holdIds: []};
+        return Promise.resolve({json: () => Promise.resolve({...reply, v: 29})});
+      };
+    });
+    const q = await c3.newPage();
+    q.on('pageerror', e => errs.push(`sheet stub: ${e.message}`));
+    const ready = () => q.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH, null, {timeout: 30000});
+    await q.goto(base + '#home');
+    await ready();
+    // Sign in (the account found), as bindSync does after "Is it you?": the page reloads.
+    await Promise.all([q.waitForNavigation(), q.evaluate(() => syncGet({name: 'Ana', pin: '1234'}).then(j => signIn('Ana', '1234', j)))]);
+    await ready();
+    await q.evaluate(() => syncPush());
+    const r = await q.evaluate(() => ({
+      subj: SUBJ.id,
+      saved: JSON.parse(SAVES[SAVES.length - 1].data['reefid-sync-fish-progress'] || '{}').t01,
+      here: P.t01,
+      fishHold: localStorage.getItem('reefid-fish-hold'),
+      coralHold: localStorage.getItem('reefid-hold')
+    }));
+    if (r.subj !== 'fish' || !r.saved || r.saved.ok !== 10 || r.saved.ko !== 2 || r.here.ok !== 10)
+      rv.push(`sign-in on a device that never played fish: fish progress ${JSON.stringify(r)} (want 10/2)`);
+    if (Number(r.fishHold || 0) !== 0 || Number(r.coralHold) !== 5)
+      rv.push(`the sheet's hold went to the wrong subject: ${JSON.stringify(r)}`);
+    // (3) A wink with questions planned and a mix-up queued: neither is taken.
+    await q.evaluate(() => (location.hash = '#quiz'));
+    await q.waitForSelector('#view .q');
+    const w = await q.evaluate(
+      () =>
+        new Promise(ok => {
+          document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+          topUp();
+          setTimeout(() => {
+            const L = pool().filter(n => introReady(n)),
+              planned = NEXTQ;
+            rematch = L.length > 1 ? [{pair: [L[0], L[1]], at: -10}] : [];
+            twoAt = -Infinity;
+            const rm = JSON.stringify(rematch);
+            WINK.P = 1;
+            WINKS.at = -Infinity;
+            if (answersSoFar() < WINK.FROM) P['~level'] = {...(P['~level'] || {}), ok: WINK.FROM};
+            quizPhoto();
+            ok({
+              wink: !!document.querySelector('#view .q.wink'),
+              planned: !!planned,
+              kept: NEXTQ === planned,
+              rm: JSON.stringify(rematch) === rm
+            });
+          }, 500);
+        })
+    );
+    if (!w.wink || !w.kept || !w.rm) rv.push(`a wink took a planned question or the spacing: ${JSON.stringify(w)}`);
+    // (4) A coral genus sheet and a comparison with Fish chosen.
+    for (const h of ['g-Acropora', 'cmp-Acropora|Montipora']) {
+      await q.evaluate(() => setSubject('fish'));
+      await q.evaluate(x => (location.hash = '#' + x), h);
+      await q.waitForTimeout(800);
+      const g = await q.evaluate(() => ({
+        subj: SUBJ.id,
+        hash: location.hash,
+        view: !!document.querySelector('#view h2, #view .gsheet, #view .cmp, #view [data-g]')
+      }));
+      if (g.subj !== 'coral' || g.hash !== '#' + h) rv.push(`#${h} with Fish chosen: ${JSON.stringify(g)}`);
+    }
+    await c3.close();
+  }
+  const fails = [...out, ...ui, ...rv];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));

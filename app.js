@@ -1532,7 +1532,13 @@ function route() {
   const h = hashNow();
   // A page the subject does not have: its section's first page for the subject.
   const sp = subjPage(h);
-  if (sp !== h) return location.replace('#' + sp);
+  if (sp !== h) {
+    // A genus sheet or a comparison of another subject (opened from Identify, the Coral Finder, with Fish chosen; Codex
+    // review #442): that subject comes on screen (setSubject routes again), never the subject's list instead.
+    const S = /^(g|cmp)-./.test(h) && SUBJECTS.find(x => x.pages.includes(h.startsWith('g-') ? 'sheet' : 'cmp'));
+    if (S && S !== SUBJ) return void setSubject(S.id);
+    return location.replace('#' + sp);
+  }
   // Genera list → a genus sheet → back: the list opens where it was left (RA review 2026-11-02: an 8000 px list came back
   // at the top). The genus at the top of the screen is kept when leaving it (not the scroll: the photos above it are not
   // loaded yet on the way back), and brought back to the same place only when coming back from a sheet.

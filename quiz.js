@@ -1077,11 +1077,11 @@ const takePlan = cur => {
 };
 let SHOWNQ = null; // the photo-quiz question on screen (planNext)
 function quizPhoto(cur = 'quiz') {
-  let q = takePlan(cur) || planPhoto(cur);
-  // Now and then a wink instead (winkShow): not a question of the game, the planned ones wait for the next. The photo quiz
-  // only, never the custom quiz.
+  // Now and then a wink instead (winkShow): not a question of the game. Decided before any question is taken or chosen,
+  // so the planned ones and the Again / duel spacing wait for the next (Codex review #442). The photo quiz only.
   const wk = cur === 'quiz' && winkDue();
   if (wk) return winkShow(wk);
+  let q = takePlan(cur) || planPhoto(cur);
   // A planned card waits while the player falls behind (introHold, Codex review #362: a right answer that starts the
   // hold leaves the questions planned before it), and during the floor of a visit or a comeback (noOpen); a question
   // planned before a break, or a comeback question planned before the rust melted, is chosen again too (rustNow: the app

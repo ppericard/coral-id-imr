@@ -107,6 +107,13 @@ const ptParam = q => (pendingFrom(q) === null ? '' : `&pt=${pendingFrom(q)}`);
 // progress it discarded, so it is not adopted (nor its version marked applied); the next reply brings it again from
 // the new reset (Codex review #399). A load's reply (mergeSaved) needs none: a reset newer than the sheet's returns
 // before it.
+// The sheet's opening hold (v23, model.js holdSync) counts the logged answers, the corals': taken as that subject
+// whatever the subject on screen (inSubject), so it never lands in another subject's hold.
+function holdAdopt(h, log, ids) {
+  const LS = SUBJECTS.find(x => x.log);
+  if (LS && LS !== SUBJ) return inSubject(LS.id, () => holdAdopt(h, log, ids));
+  if (typeof holdSync === 'function') holdSync(h, log, ids);
+}
 // The replay is the progress of the subject whose answers the sheet logs (core.js SUBJECTS log: the corals): adopted as
 // that subject whatever the subject on screen (inSubject; the fish progress is never replayed, its answers are not logged).
 function replayAdopt(rp, pending, v, cut, pre) {
@@ -248,8 +255,10 @@ function mergeSubject(j, d, S, mine) {
       }
     });
   } catch (e) {}
-  // The opening hold from every answer the sheet has (v23, model.js holdSync), with this device's unconfirmed ones added.
-  const holdIn = () => typeof holdSync === 'function' && holdSync(j.hold, SYNC.log, j.holdIds);
+  // The opening hold from every answer the sheet has (v23, model.js holdSync), with this device's unconfirmed ones added:
+  // the hold of the subject whose answers the sheet logs, never another's (Codex review #442: the corals' hold landed in
+  // the fish one).
+  const holdIn = () => S.log && holdAdopt(j.hold, SYNC.log, j.holdIds);
   if (rr > lr) {
     introReset();
     introIn();
@@ -410,7 +419,7 @@ function syncOnce(tries = 0) {
         }
         // The sheet's hold over every answer now logged, in time order (v23; Codex review #370), plus any answer given
         // while this send was on its way.
-        if (typeof holdSync === 'function') holdSync(j.hold, me.log, j.holdIds);
+        holdAdopt(j.hold, me.log, j.holdIds);
         if (me.rev === rev) delete me.dirty;
         // The full replay over every answer now logged (v28), plus any answer given while this send was on its way.
         const adopted = replayAdopt(j.replay, me.log, j.v, cut);
@@ -867,13 +876,15 @@ function signIn(name, pin, j) {
   SUBJECTS.forEach((S, i) => {
     const pk = subjKey(S.id, 'progress'),
       here = store.get(pk, {}) || {};
-    // A subject never played on this device (not the first, the corals) takes the account's as it is (loadData below).
-    if (i && !Object.keys(here).length) return;
     let R = {};
     try {
       R = JSON.parse(j.data[pk] || '{}') || {};
     } catch (e) {}
+    // The account's copy is this subject's merge baseline, played here or not (Codex review #442: a subject never played
+    // on this device took the account's progress through loadData with no baseline, and the next sync added it again).
     SYNC[S.base[0]] = R;
+    // A subject never played on this device (not the first, the corals) takes the account's as it is (loadData below).
+    if (i && !Object.keys(here).length) return;
     if (!S.log && Object.keys(here).length) mine = true;
     M[pk] = S.log ? (anon ? mergeProgress(store.get(ANONB, {}) || {}, here, R) : R) : mergeProgress({}, here, R);
   });
