@@ -32,6 +32,14 @@ const isGame = n => GAME.has(n),
 const $v = document.getElementById('view'),
   $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
+// Dates as toLocaleString([], …) writes them, with one formatter per format (Pierre, 2026-11-03: admin pages load slower
+// and slower; toLocaleString builds a new one at every call, thousands of times on a Journey or in Triage).
+const DTF_O = {dm: {day: 'numeric', month: 'short'}, dmhm: {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}},
+  DTF = {};
+const dateText = (t, k) => {
+  const d = new Date(t);
+  return isNaN(d) ? 'Invalid Date' : (DTF[k] = DTF[k] || new Intl.DateTimeFormat([], DTF_O[k])).format(d);
+};
 // Demo mode (admin.html?demo, admin-demo.js): made-up sync data, and its own browser storage ("demo:" keys), so a
 // demo never reads or writes a real admin draft, token or Undo history.
 const DEMO = !!window.ADMIN_DEMO,
@@ -499,10 +507,22 @@ function lockScreen(msg) {
 
 /* ---------- Photos of a genus, as the genus sheet orders them ---------- */
 // own/photos/cands of one genus each walk every genus, and the Candidates queue and Coverage need them for every genus:
-// computed once per draft state (cleared by every edit, undo/redo and render), callers get a copy of the list.
-let MEMO = {};
+// computed once per draft state (cleared by every edit, undo/redo and merge), callers get a copy of the list.
+// Kept from one page to the next while the draft stays the same (Pierre, 2026-11-03: admin pages load slower and slower;
+// every page change recomputed every genus's photos for the header's over-the-cap count): render() clears it only when
+// the draft differs from the one it was computed for (memoFresh). The data files do not change once loaded.
+let MEMO = {},
+  MEMO_OF = null;
 const memoReset = () => {
   MEMO = {};
+  MEMO_OF = null;
+};
+const memoFresh = () => {
+  const s = JSON.stringify(DRAFT);
+  if (s !== MEMO_OF) {
+    MEMO = {};
+    MEMO_OF = s;
+  }
 };
 const memo = (k, fn) => n => {
   const key = k + '|' + n;
@@ -534,32 +554,31 @@ const own = memo('own', n => {
 // "Not this genus" (curation out: {f: 'cmp' | other genus}): the photo leaves the genus; given to another genus,
 // it joins that genus in the same view (tagged with where it came from); 'cmp' keeps it for the Look-alikes section.
 const outs = n => entry(n).out || {};
-const photos = memo('photos', n => {
-  const L = own(n).filter(p => !outs(n)[p.f]);
-  Object.keys(DATA.gen)
-    .filter(m => m !== n)
-    .forEach(m =>
-      own(m)
-        .filter(p => outs(m)[p.f] === n)
-        .forEach(p => L.push({...p, from: m}))
-    );
-  return L;
-});
+// Photos (or candidates) sent from every genus to another one, by the genus they go to: one pass over every genus per
+// draft state, instead of one for each genus asked (Pierre, 2026-11-03: admin pages load slower and slower). Same order
+// as walking the genera for one genus.
+const sentTo = (k, list) => {
+  const key = 'to|' + k;
+  if (!(key in MEMO)) {
+    const T = Object.create(null);
+    Object.keys(DATA.gen).forEach(m => {
+      const o = outs(m);
+      list(m).forEach(p => {
+        const n = o[p.f];
+        if (typeof n === 'string' && n !== m) (T[n] = T[n] || []).push({...p, from: m});
+      });
+    });
+    MEMO[key] = T;
+  }
+  return MEMO[key];
+};
+const photos = memo('photos', n => [...own(n).filter(p => !outs(n)[p.f]), ...(sentTo('own', own)[n] || [])]);
 const outOf = n => [...own(n).filter(p => outs(n)[p.f]), ...rawCands(n).filter(p => outs(n)[p.f] && !(entry(n).add || {})[p.f])];
 // New candidate photos from data.json cand, not used by the site until approved here.
 // Coral Finder book photos (data: gen[].book) are candidates too; once added they show on the site but never in games.
-const rawCands = n => [...((DATA.cand || {})[n] || []), ...(DATA.gen[n].book || [])].filter(p => !excl(p.f));
+const rawCands = memo('raw', n => [...((DATA.cand || {})[n] || []), ...(DATA.gen[n].book || [])].filter(p => !excl(p.f)));
 // A candidate sent to another genus ("Not this") becomes a candidate there, tagged with where it came from.
-const cands = memo('cands', n => [
-  ...rawCands(n).filter(p => !outs(n)[p.f]),
-  ...Object.keys(DATA.gen)
-    .filter(m => m !== n)
-    .flatMap(m =>
-      rawCands(m)
-        .filter(p => outs(m)[p.f] === n)
-        .map(p => ({...p, from: m}))
-    )
-]);
+const cands = memo('cands', n => [...rawCands(n).filter(p => !outs(n)[p.f]), ...(sentTo('cand', rawCands)[n] || [])]);
 // Same order as the Show source chips (ORIGINS), CF book last.
 const oIdx = p => ORIGINS.findIndex(o => o[0] === origin(p));
 const pending = n => {
@@ -1071,7 +1090,7 @@ const modeKey = () =>
             '~cand': 'cand'
           }[cur] || 'genus';
 function render() {
-  memoReset();
+  memoFresh();
   document.body.classList.toggle('adm-cmode', cur === '~cand');
   if (cur === '~quality') return renderQuality();
   if (cur === '~form') return renderForm();
@@ -2205,7 +2224,7 @@ function renderTriage() {
     flagged = Object.keys(F).map(f => ({...(PHOTOS[f] || {genus: F[f].genus || '?'}), f, fl: F[f]}));
   const when = t => {
     try {
-      return new Date(t).toLocaleString([], {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'});
+      return dateText(t, 'dmhm');
     } catch (e) {
       return '';
     }
@@ -3388,16 +3407,21 @@ async function start() {
   // The same words as the page before the script ran: "Loading…" then "Loading photos…" looked like two steps on any
   // page, Players included (Pierre, 2026-11-02).
   $v.innerHTML = '<p class="note">Loading…</p>';
-  const side = (u, k) =>
-    fetch(u, {cache: 'no-cache'})
-      .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then(j => j[k] || {})
-      .catch(e => {
-        console.warn(`${u} not loaded:`, e.message);
-        return {};
-      });
+  // Every file at once, each fetched once (Pierre, 2026-11-03: admin pages load slower and slower; dups.json and cand.json
+  // waited for data.json, and forms.json was fetched four times).
+  const files = {},
+    side = (u, k) =>
+      (files[u] =
+        files[u] ||
+        fetch(u, {cache: 'no-cache'})
+          .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+          .catch(e => {
+            console.warn(`${u} not loaded:`, e.message);
+            return {};
+          })).then(j => (j && j[k]) || {});
+  let CJ;
   try {
-    [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG] = await Promise.all([
+    [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG, , DUPS, CJ] = await Promise.all([
       fetch('data.json', {cache: 'no-cache'}).then(r => r.json()),
       side('quality.json', 'q'),
       side('forms.json', 'gf'),
@@ -3406,12 +3430,12 @@ async function start() {
       fetch('suggest.json', {cache: 'no-cache'})
         .then(r => (r.ok ? r.json() : {}))
         .catch(() => ({})),
-      loadSaved()
+      loadSaved(),
+      side('dups.json', 'dup').then(x => (Array.isArray(x) ? x : [])),
+      // Candidates waiting live in cand.json (tools/datajson.py; data.json, which every player downloads, keeps only those
+      // curation.json names): merged in here, as one list per genus.
+      side('cand.json', 'cand')
     ]);
-    DUPS = await side('dups.json', 'dup').then(x => (Array.isArray(x) ? x : []));
-    // Candidates waiting live in cand.json (tools/datajson.py; data.json, which every player downloads, keeps only those
-    // curation.json names): merged in here, as one list per genus.
-    const CJ = await side('cand.json', 'cand');
     DATA.cand = DATA.cand || {};
     Object.entries(CJ || {}).forEach(([g, L]) => {
       const have = new Set((DATA.cand[g] || []).map(p => p.f));
@@ -4119,6 +4143,14 @@ let ANS = null,
   RAS = {},
   MEID = null,
   SF = Object.assign({who: 'all', min: 1, elo: 'all', nk: '', nv: 'all', ns: 'sc', nd: 'desc'}, store.get('imr-admin-stats', {}));
+// Numbers replayed over the whole answer log (playSplit, levelMargin, confusionOf): once per log loaded, not at every
+// render, sort or filter click (Pierre, 2026-11-03: admin pages load slower and slower, and the log keeps growing). ANS is
+// replaced, never changed in place, whenever the log is loaded again.
+let ANS_MEMO = {a: null, m: {}};
+const ofAns = (k, fn) => {
+  if (ANS_MEMO.a !== ANS) ANS_MEMO = {a: ANS, m: {}};
+  return k in ANS_MEMO.m ? ANS_MEMO.m[k] : (ANS_MEMO.m[k] = fn());
+};
 // The pages of a tab are listed in #subnav under the header (navs()); the views no longer draw their own switch.
 const statSwitch = () => '';
 // Puts the switch above a view rendered by another function (photo list, coverage).
@@ -4302,7 +4334,7 @@ function renderUsers() {
     sd = SF.us === sk && SF.ud ? SF.ud : col[3] ? 'asc' : 'desc';
   // Quiz and Duel tab apart (core.js playSplit), on each row before the sort reads them (Codex review #383); a player whose
   // answers did not load keeps the sheet's all-games counts.
-  const SPLIT = playSplit(ANS.rows || []),
+  const SPLIT = ofAns('split', () => playSplit(ANS.rows || [])),
     psOf = u => SPLIT[u.id] || {q: [u.answers, u.right], q50: u.recent, d: [0, 0]};
   const U = USERS.users
       .map(u => {
@@ -4316,7 +4348,7 @@ function renderUsers() {
       }),
     total = DATA ? Object.keys(DATA.gen).length : 0;
   const when = t => (t ? days(t) : '–'),
-    date = t => (t ? new Date(t).toLocaleDateString([], {day: 'numeric', month: 'short'}) : '–');
+    date = t => (t ? dateText(t, 'dm') : '–');
   const opts = n =>
     U.filter(u => u.name !== n)
       .slice()
@@ -4335,7 +4367,7 @@ function renderUsers() {
       <button type="button" class="adm-fchip" data-uren="${esc(u.name)}">Rename…</button>
       <button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete</button></div></td></tr>`;
   // Answers without a name: devices that never signed in (~anon) and deleted accounts, by anonymous id.
-  const LVM = levelMargin(ANS.rows || []), // 95% margin of each player's level (core.js)
+  const LVM = ofAns('margin', () => levelMargin(ANS.rows || [])), // 95% margin of each player's level (core.js)
     named = new Set(U.map(u => u.id).filter(Boolean)),
     A = {};
   // Sheet v13 gives ids; an older one doesn't, and every answer would look anonymous. With v13 an empty list is fine.
@@ -5137,7 +5169,7 @@ function statsHealth() {
     D[k].n++;
     D[k].p.add(r[0]);
   });
-  const day = t => new Date(t).toLocaleDateString([], {day: 'numeric', month: 'short'}),
+  const day = t => dateText(t, 'dm'),
     cols = (v, w) => {
       const mx = Math.max(1, ...D.map(v));
       return `<div class="adm-cols adm-hcols">${D.map(d => `<div title="${day(d.t)}: ${plural(v(d), w)}"><i style="height:${((100 * v(d)) / mx).toFixed(1)}%"></i></div>`).join('')}</div>
@@ -5169,7 +5201,7 @@ const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philipp
 function statsConf() {
   const noMe = SF.elo === 'others' && myIds().size,
     R = (ANS.rows || []).filter(r => !noMe || !isMe(r[0])),
-    C = confusionOf(R);
+    C = ofAns('conf|' + (noMe ? [...myIds()].sort().join(' ') : ''), () => confusionOf(R));
   const head = `${statSwitch()}<div class="adm-shead"><h2>Confusions</h2>${segBtns('min', [
     [1, '≥1'],
     [3, '≥3'],

@@ -46,8 +46,8 @@ function journeyCards(name) {
   return null;
 }
 const JVIA = {card: 'on the first cards', progress: 'from My progress', offer: 'from the offer card'};
-const jDate = t => new Date(t).toLocaleDateString([], {day: 'numeric', month: 'short'}),
-  jTime = t => new Date(t).toLocaleString([], {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}),
+const jDate = t => dateText(t, 'dm'), // one formatter per format (admin.js dateText; Pierre, 2026-11-03: admin pages load slower)
+  jTime = t => dateText(t, 'dmhm'),
   jPts = x => (x == null ? '–' : `${x > 0 ? '+' : ''}${Math.round(100 * x)} pts`);
 
 // Everything the page shows, from one player's answers in time order.

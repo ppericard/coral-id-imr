@@ -786,6 +786,13 @@ body.adm-dragging * {
 .adm-qt figcaption {
   gap: 3px;
 }
+/* Quality, Growth form and Photo list draw every photo (thousands of tiles): the browser lays out only the tiles near the
+   screen, each keeping the size it last had (Pierre, 2026-11-03: admin pages load slower and slower; laying out every
+   tile took most of their load time). */
+.adm-qgrid > .adm-qt {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 300px;
+}
 .adm-qt.rated {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
