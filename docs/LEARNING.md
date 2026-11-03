@@ -947,6 +947,31 @@ level down within a few dozen answers: 74% right over answers 51-100 as before, 
 it cost every expert before: a slow start (Elo error 1.33). In both cases the fallback card below comes at the 20th
 answer (the 30th when the sign-in card, also due at 20, takes the prompt slot: `PROMPT.GAP`).
 
+**Checked again after #415** (genus ability follows the global level, `levelMove`, merged the same day: the tables
+above were run before it). `main` with #415 against this change, same seeds, right answers (and two wrong ones):
+
+| Profile | Run | know 100 / 300 | met 100 / 300 | right % 1-20 / 51-100 | Elo error 50 / 100 | surprise 1-20 | card |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| beginner | main = new | 0.27 / 0.63 | 18.6 / 37.2 | 68 / 79 | 0.83 / 0.98 | −0.03 | none |
+| lecture RA | main | 0.47 / 0.74 | 19.4 / 39.2 | 88 / 81 | 0.82 / 0.88 | +0.11 | |
+| lecture RA | imr | 0.47 / 0.74 | 19.4 / 38.4 | 78 / 81 | 0.78 / 0.87 | +0.02 | none |
+| strong RA | main | 0.67 / 0.84 | 21.0 / 39.4 | 89 / 87 | 1.23 / 1.09 | +0.14 | |
+| strong RA | know | 0.66 / 0.84 | 20.0 / 39.0 | 86 / 84 | 0.96 / 1.12 | +0.05 | none |
+| expert | main | 0.94 / 0.95 | 20.8 / 40.0 | 100 / 94 | 0.72 / 0.91 | +0.22 | |
+| expert | know | 0.94 / 0.95 | 19.8 / 38.8 | 99 / 96 | 0.78 / 0.88 | +0.14 | none |
+| beginner | know (card taken) | 0.28 / 0.60 | 18.8 / 34.8 | 72 / 75 | 0.99 / 0.91 | −0.06 | 2 of 5, → imr |
+| expert | new (card taken) | 0.94 / 0.95 | 20.2 / 39.0 | 100 / 96 | 0.89 / 0.87 | +0.22 | 5 of 5, → imr |
+
+With #415 the genus abilities follow the global level, so a wrong prior is corrected within a few answers: the right
+answer still keeps the outcomes (knowledge within ±0.01, met within ±1 genus, sd 1.1-2.4) and brings the first-20
+surprise close to 0 (lecture RA +0.11 → +0.02, strong RA +0.14 → +0.05, expert +0.22 → +0.14; strong RA's Elo error at
+50 answers 1.23 → 0.96), and the worst wrong answer now costs almost nothing on this learner (a beginner who says "know
+well": 72% right over the first 20, as 68% before; knowledge at 300 0.60 ± 0.05 against 0.63 ± 0.04). The per-run
+surprises: consistent answers −0.10 to +0.18 (the only one under −0.08 is a beginner with "new", whose card only brings
+Coral basics; strong RA with "know": −0.08 to +0.12), beginner with "know" −0.12, −0.12, −0.03, −0.02, 0.00 (2 of 5
+flagged), expert with "new" +0.20 to +0.24 (5 of 5), strong RA with "new" +0.06 to +0.22 (2 of 5): LO 0.1 and HI 0.18
+kept.
+
 **Fallback for everyone** (Pierre: "also for those who answered, since they may have picked wrong"). Not the right %:
 the game aims every question at about 80% right, so the right % hardly tells the players apart (it never did: "Offer to
 open all", above). What tells whether the answer fits is how far the answers beat or miss **what the app expected from
