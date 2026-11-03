@@ -1625,6 +1625,25 @@
     S.g = Object.create(null);
     return out;
   }
+  // Whose summary it is (Codex review #423): set when it is queued, so a summary left in the queue (offline, a failed
+  // send) is never sent under whoever is active later. 'n:<name, lower case>' signed in, 'a:<anonymous answer id>' else.
+  // It stays on the device (pagesBatch strips it).
+  const pagesOwner = (sync, anon) => (sync && sync.name && sync.pin ? 'n:' + String(sync.name).trim().toLowerCase() : 'a:' + anon);
+  // The events a request sends for the player active now (owner): every other event, and the summaries queued for
+  // this owner (without their owner field); the ids of the summaries queued for another owner (or none), to drop.
+  function pagesBatch(q, owner) {
+    const send = [],
+      drop = [];
+    (q || []).forEach(x => {
+      if (!x || x.k !== 'pages') return send.push(x);
+      if (x.o !== owner) return drop.push(x.id);
+      const {o, ...y} = x;
+      send.push(y);
+    });
+    return {send, drop};
+  }
+  // At sign-in the device's anonymous summaries become the account's, as its anonymous answers do (sync.js signIn).
+  const pagesOwn = (q, from, into) => (q || []).map(x => (x && x.k === 'pages' && x.o === from ? {...x, o: into} : x));
   // What the sheet keeps of a 'pages' event (Code.gs events_): known shapes only, numbers clamped, no other field. The
   // output objects have no prototype (names come from the players' devices: "__proto__" must stay a plain key).
   function pagesClean(x) {
@@ -1816,6 +1835,9 @@
     pagesSummary,
     pagesTake,
     pagesClean,
+    pagesOwner,
+    pagesBatch,
+    pagesOwn,
     ACH,
     newAch,
     ACH_LEARN,

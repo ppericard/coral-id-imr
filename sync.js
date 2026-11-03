@@ -705,12 +705,26 @@ function ev(k, o = {}) {
   clearTimeout(evTimer);
   evTimer = setTimeout(sendEvents, k === 'pulse' ? 2000 : 10000);
 }
+// The next request's events: the queue's, for the player active now (core.js pagesBatch: a pages summary only under
+// the player it was queued for; one queued for another, as after a sign-out, is dropped from the queue, never sent under
+// someone else; Codex review #423). Returns the batch (at most 50) and who it belongs to.
+function evBatch() {
+  const q = store.get(EVQ, []),
+    B = q.some(x => x && x.k === 'pages') ? pagesBatch(q, pvOwner()) : {send: q, drop: []};
+  if (B.drop.length)
+    store.set(
+      EVQ,
+      store.get(EVQ, []).filter(x => !B.drop.includes(x && x.id))
+    );
+  const batch = B.send.slice(0, 50);
+  return {batch, who: pagesWho(batch)};
+}
 function sendEvents() {
-  const q = store.get(EVQ, []);
-  if (!SYNC_URL || LOCAL || evBusy || !q.length || navigator.onLine === false) return;
-  const batch = q.slice(0, 50);
+  if (!SYNC_URL || LOCAL || evBusy || !store.get(EVQ, []).length || navigator.onLine === false) return;
+  const {batch, who} = evBatch();
+  if (!batch.length) return;
   evBusy = true;
-  fetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({dev: devId(), events: batch, ...pagesWho(batch)})})
+  fetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({dev: devId(), events: batch, ...who})})
     .then(r => r.json())
     .then(j => {
       sheetSeen(j);
@@ -805,10 +819,13 @@ function pagesRoute(h) {
 function pagesSend() {
   const S = pagesTake(PV, Date.now());
   if (!S || !(Number(store.get(SHEETV, 0)) >= PAGES.SHEET)) return;
-  ev('pages', {vi: PVI, ...(typeof answersSoFar === 'function' ? {na: answersSoFar()} : {}), ...S});
+  ev('pages', {vi: PVI, ...(typeof answersSoFar === 'function' ? {na: answersSoFar()} : {}), ...S, o: pvOwner()});
 }
+// The player active now, as a summary's owner (core.js pagesOwner): no anonymous id is made for a signed-in player.
+const pvOwner = () => (SYNC && SYNC.name && SYNC.pin ? pagesOwner(SYNC) : pagesOwner(null, anonId()));
 // Who the pages summaries of a batch belong to: the name and code when signed in (checked by the sheet, never kept),
-// else this device's anonymous answer id. Nothing for a batch without one.
+// else this device's anonymous answer id. Nothing for a batch without one. A batch holds only the summaries of the
+// player active now (evBatch).
 const pagesWho = batch =>
   !batch.some(x => x && x.k === 'pages') ? {} : SYNC && SYNC.name && SYNC.pin ? {ename: SYNC.name, epin: SYNC.pin} : {eanon: anonId()};
 // Load times (app.js loadMark): sent once a visit.
@@ -849,6 +866,8 @@ document.addEventListener('visibilitychange', () => {
 // device's progress, so a beta tester who played first and signed in later lost it.
 function signIn(name, pin, j) {
   SYNC = {name, pin, dirty: true, log: store.get(LOG0, []), ...(store.get(ANONID, '') ? {anon: store.get(ANONID, '')} : {})};
+  // The pages summaries queued while signed out become the account's, as the answers do (core.js pagesOwn).
+  if (SYNC.anon) store.set(EVQ, pagesOwn(store.get(EVQ, []), pagesOwner(null, SYNC.anon), pagesOwner(SYNC)));
   try {
     [LOG0, ANONQ, ANONID].forEach(k => localStorage.removeItem(k));
   } catch (e) {}
@@ -996,6 +1015,11 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
     };
     const signOff = () => {
       SYNC = null;
+      // The pages summaries still queued are the account's: dropped, never sent under the next player (Codex review #423).
+      store.set(
+        EVQ,
+        store.get(EVQ, []).filter(x => !(x && x.k === 'pages'))
+      );
       // Achievements and the leaderboard choice belong to the account too: never left to the next player of a shared device.
       // The first-meeting cards too (Codex review #350): the next player meets their own genera.
       [

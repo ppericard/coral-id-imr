@@ -1224,6 +1224,46 @@ async function pagesVisit(b, base) {
       fails.push(`pages summary, sheet in a new tab: ${JSON.stringify({Q, target, posts})}`);
     await c.close();
   }
+  // A summary queued for one player is sent only under that player (Codex review #423): queued signed out, it becomes
+  // the account's at sign-in (as the answers do); queued for Ana and still waiting after she signed out, it is dropped,
+  // never sent under the next player's anonymous id.
+  {
+    const [c, p] = await open(390, 29);
+    const r = await p.evaluate(() => {
+      const pq = () => JSON.parse(localStorage.getItem('imr-evq') || '[]').filter(x => x.k === 'pages');
+      pagesRoute('genera');
+      pagesSend();
+      const a0 = pq().map(x => x.o);
+      signIn('Ana', '1234', {found: false});
+      const keyed = pq().map(x => x.o),
+        b1 = evBatch();
+      pagesRoute('quiz');
+      pagesSend();
+      SYNC = null; // signed out: the next player's anonymous id
+      localStorage.removeItem('imr-anon-id');
+      const b2 = evBatch();
+      return {
+        a0,
+        keyed,
+        b1: {n: b1.batch.filter(x => x.k === 'pages').length, who: b1.who, owner: b1.batch.some(x => 'o' in x)},
+        b2: {n: b2.batch.filter(x => x.k === 'pages').length, who: b2.who},
+        left: pq().length
+      };
+    });
+    if (
+      r.a0.length !== 1 ||
+      !/^a:[a-z0-9]{10}$/.test(r.a0[0]) ||
+      r.keyed.join() !== 'n:ana' ||
+      r.b1.n !== 1 ||
+      r.b1.who.ename !== 'Ana' ||
+      r.b1.owner ||
+      r.b2.n ||
+      Object.keys(r.b2.who).length ||
+      r.left
+    )
+      fails.push(`pages summary owner: ${JSON.stringify(r)}`);
+    await c.close();
+  }
   // The app never gets ahead of the sheet script (AGENTS.md 7a): before v29 (or with no version known yet), none queued.
   for (const v of [28, 0]) {
     const [c, p] = await open(390, v);

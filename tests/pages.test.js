@@ -109,3 +109,35 @@ test('pagesClean (the sheet side): known shapes only, numbers clamped, no free t
     many['Genus' + String.fromCharCode(97 + (i % 26)) + String.fromCharCode(97 + Math.floor(i / 26))] = [1, 1, 'learn', 0];
   assert.strictEqual(Object.keys(C.pagesClean({g: many}).g).length, C.PAGES.GEN);
 });
+
+test('a queued summary is sent only under the player it was queued for (Codex review #423)', () => {
+  const pg = (id, o) => ({id, k: 'pages', o, r: {quiz: [1, 1]}, g: {}}),
+    q = [{id: 'e1', k: 'err', msg: 'x'}, pg('p1', 'n:ana'), pg('p2', 'a:dev0000001'), pg('p3', 'n:ana'), pg('p4'), {id: 'e2', k: 'load'}];
+  // Signed in as Ana: her summaries and the other events; the others never go under her name, they are dropped.
+  const A = C.pagesBatch(q, 'n:ana');
+  assert.deepStrictEqual(
+    A.send.map(x => x.id),
+    ['e1', 'p1', 'p3', 'e2']
+  );
+  assert.ok(
+    A.send.every(x => !('o' in x)),
+    'the owner stays on the device'
+  );
+  assert.deepStrictEqual(A.drop, ['p2', 'p4']);
+  // Signed out (a new anonymous id): none of Ana's.
+  const B = C.pagesBatch(q, 'a:dev0000009');
+  assert.deepStrictEqual(
+    B.send.map(x => x.id),
+    ['e1', 'e2']
+  );
+  assert.deepStrictEqual(B.drop, ['p1', 'p2', 'p3', 'p4']);
+  // At sign-in the device's anonymous summaries become the account's, as its answers do.
+  assert.deepStrictEqual(
+    C.pagesOwn(q, 'a:dev0000001', 'n:ana')
+      .filter(x => x.k === 'pages')
+      .map(x => x.o),
+    ['n:ana', 'n:ana', 'n:ana', undefined]
+  );
+  assert.strictEqual(C.pagesOwner({name: 'Ana', pin: '1234'}, 'x'), 'n:ana');
+  assert.strictEqual(C.pagesOwner(null, 'dev0000001'), 'a:dev0000001');
+});
