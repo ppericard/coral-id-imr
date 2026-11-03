@@ -42,7 +42,7 @@
         <section class="hdoor learn${newb ? ' newb' : ''}">
           <a class="hdart" href="#quiz" tabindex="-1" aria-hidden="true"><span class="hdtiles">${tiles}</span></a>
           <div class="hdbody">
-            <div class="hdtop"><p class="hdwhen">${SUBJ.beta ? SUBJ.beta.kick : 'Learning phase<span class="wide"> · before ReefCloud or your next dive</span>'}</p>${subj}</div>
+            <div class="hdtop"><p class="hdwhen">${SUBJ.beta ? SUBJ.beta.kick : 'Learning phase<span class="wide"> · before ReefCloud or your next dive</span>'}</p>${newb ? '<a class="hdnewk" href="#basics" title="New to corals? Start with the basics (5 min)">New? Basics, 5 min ›</a>' : ''}${subj}</div>
             <h2>Learn &amp; practise</h2>
             <p class="hddesc">${SUBJ.beta ? SUBJ.beta.line : `Get to know the ${SUBJ.many}, then train your eye on photos<span class="wide"> until you recognise each one at a glance</span>. Your progress is saved as you go.`}</p>
             <div class="hdacts">

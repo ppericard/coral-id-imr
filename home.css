@@ -678,18 +678,26 @@ body:has(.home-page) main {
   margin-left: 2px;
   padding: 0 4px;
 }
-/* "New to corals? Start with the basics" (home.js): one quiet line under the door's buttons, only while it helps. On
-   phones it takes the place of the door's kicker ("Learning phase"), so Home still fits one screen from 360 x 640. */
+/* "New to corals? Start with the basics" (home.js): one quiet line under the door's buttons, only while it helps. */
 .hdnew {
   margin: 10px 0 0;
   font-size: var(--fs-s);
 }
+/* On phones the line takes the place of the door's kicker, beside the subject switch (.hdnewk), so Home still fits one
+   screen from 360 x 640; from tablets it is the line under the buttons (.hdnew). */
+.hdnewk {
+  display: none;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: var(--fs-s);
+}
 @media (max-width: 599.98px) {
-  .hdoor.learn.newb .hdwhen {
+  .hdoor.learn.newb .hdwhen,
+  .hdnew {
     display: none;
   }
-  .hdnew {
-    margin-top: 8px;
+  .hdnewk {
+    display: inline;
   }
 }
 .hdnew a {

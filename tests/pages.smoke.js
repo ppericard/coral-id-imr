@@ -1237,6 +1237,7 @@ async function replayAdoptCheck(base) {
     if (localStorage.getItem('test-init')) return;
     localStorage.setItem('test-init', '1');
     localStorage.setItem('reefid-tour', '"done"');
+    localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     localStorage.setItem('reefid-nudge', '1');
     localStorage.setItem('reefid-recalc', '"millepora-counts-2026-11"');
     localStorage.setItem('reefid-sync-coral-progress', JSON.stringify(dev));
@@ -1629,6 +1630,7 @@ async function tipsCheck(b, base) {
     );
     await c.addInitScript(u => {
       localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
       if (!localStorage.getItem('reefid-tips'))
         localStorage.setItem('reefid-tips', JSON.stringify({u, s: {}, v: {t: Date.now(), n: 12, tip: 0}}));
@@ -1985,6 +1987,7 @@ async function pagesVisit(b, base) {
       await c.addInitScript(v => {
         try {
           localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
           localStorage.setItem('reefid-nudge', '1');
           if (v) localStorage.setItem('reefid-sheet-v', String(v)); // the sheet script version the replies said
         } catch (e) {} // a new tab's first about:blank has no storage
