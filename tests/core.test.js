@@ -1000,6 +1000,34 @@ test('rename: migrateKeys moves an old key, keeps a new one, leaves the rest', (
   assert.deepStrictEqual(d.dump(), {'imr-coral-progress': 'big', 'reefid-sync-theme': '"dark"'});
 });
 
+test('rename: what travels includes a record whose move is pending, the new name winning (travelData; Codex review #439)', () => {
+  const {travelData} = require('../core.js');
+  // The progress could not be moved (storage full): a save or a backup still carries it, under its new name.
+  const d = fakeStorage(
+    {'imr-coral-progress': 'P', 'reefid-sync-theme': '"dark"', 'imr-coral-sync': '{"name":"Ana"}', 'reefid-tour': '"done"'},
+    k => k === 'reefid-sync-coral-progress'
+  );
+  migrateKeys(d);
+  assert.deepStrictEqual(travelData(d), {'reefid-sync-coral-progress': 'P', 'reefid-sync-theme': '"dark"'});
+  // Both names: the new one wins; device keys (the sign-in record, the tour) never travel.
+  assert.deepStrictEqual(travelData(fakeStorage({'imr-coral-quiz': 'old', 'reefid-sync-coral-quiz': 'new', 'reefid-account': '{}'})), {
+    'reefid-sync-coral-quiz': 'new'
+  });
+});
+
+test('rename: sign-out removes a key under its old name too (withOldNames; Codex review #439)', () => {
+  const {withOldNames} = require('../core.js');
+  const L = withOldNames(['reefid-account', 'reefid-sync-coral-progress', 'reefid-hold', 'reefid-sync-fish-progress']);
+  ['reefid-account', 'imr-coral-sync', 'reefid-sync-coral-progress', 'imr-coral-progress', 'reefid-hold', 'imr-hold'].forEach(k =>
+    assert.ok(L.includes(k), k)
+  );
+  // A sign-in record left under its old name by a migration that could not write it is gone after sign-out.
+  const d = fakeStorage({'imr-coral-sync': '{"name":"Ana"}', 'imr-coral-progress': 'P'}, k => k.startsWith('reefid-'));
+  migrateKeys(d);
+  withOldNames(['reefid-account', 'reefid-sync-coral-progress']).forEach(k => d.removeItem(k));
+  assert.deepStrictEqual(d.dump(), {});
+});
+
 test('rename: a key the migration could not write is still read under its old name (keyGet; Codex review #439)', () => {
   const {keyGet, keyBefore} = require('../core.js');
   // Storage full: the progress stays under its old name; the app reads it there, so the player's progress is not empty.

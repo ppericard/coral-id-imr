@@ -1075,11 +1075,14 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
         ANONB,
         ANONID,
         ANONQ
-      ].forEach(k => {
-        try {
-          localStorage.removeItem(k);
-        } catch (e) {}
-      });
+      ]
+        // And their names before the rename (core.js withOldNames): one left by a migration that could not write it.
+        .flatMap(k => withOldNames([k]))
+        .forEach(k => {
+          try {
+            localStorage.removeItem(k);
+          } catch (e) {}
+        });
       location.reload();
     };
     return;
