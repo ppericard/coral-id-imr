@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# Shared with the r2 job of approved-photos.yml: one writer of the bucket at a time (Codex review #380).
 concurrency:
   group: photos-r2
   cancel-in-progress: false

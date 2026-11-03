@@ -36,14 +36,20 @@ jobs:
           git commit -m "Candidate photos: download added ones, refill the lists"
           git pull --rebase origin main
           git push origin HEAD:main
-      # Its push starts no other workflow (GITHUB_TOKEN), so the photos go to R2 from here (tools/r2_sync.sh).
-      # Today's main first, in every case: the commit step stops before its pull when there is nothing to commit, and the
-      # sync deletes from the bucket what img/ lacks (Codex review #380). Its own push, if any, is already on main.
-      - name: Photos to R2
-        run: |
-          git fetch origin main
-          git reset --hard origin/main
-          tools/r2_sync.sh
+  # The photos to R2, in their own job under the same concurrency group as photos-r2.yml, so the two writers of the
+  # bucket never run at once (Codex review #380), from today's main (the commit above, if any, is on it; a rerun with
+  # nothing to commit mirrors main too). Its push starts no other workflow (GITHUB_TOKEN), hence this job.
+  r2:
+    needs: photos
+    runs-on: ubuntu-latest
+    concurrency:
+      group: photos-r2
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: tools/r2_sync.sh
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
