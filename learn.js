@@ -580,3 +580,29 @@ function viewCompare(a, b) {
   bindCards();
   bindGo();
 }
+// Fish families (#genera with the fish subject, app.js UNITS list): the IMR entries in the order of the presentation's
+// 10 shape groups, each with a photo, its IMR cues and how IMR tells its look-alikes apart, then the opt-in circles the
+// player has on. The winks stay a surprise. No sheet per family yet (ROADMAP "Fish mode").
+function viewFishList() {
+  const tip = n => {
+    const g = GX(n),
+      p = g.views.wide[0];
+    return `<article class="tipg"><span class="tipph">${p ? `<img ${thumb(p, '130px')} alt="" loading="lazy">` : ''}<b>${uname(n)}</b><small>${esc(g.fam)}</small></span><div>${tipsList(g)}${
+      g.lk.length
+        ? `<p class="note">Don't confuse with ${g.lk.map(([o, t]) => `<b>${esc(unameT(o))}</b> (${esc(t.replace(/^[^:]*:\s*/, ''))})`).join('; ')}</p>`
+        : ''
+    }${g.sub.length ? `<p class="note">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}</div></article>`;
+  };
+  const blk = (head, L) => (L.length ? `<section class="gblk" data-n="${L.length}">${head}${L.map(tip).join('')}</section>` : '');
+  const groups = FISH.groups.map(gr =>
+    blk(
+      `<h3 class="gdiv" style="--g:${groupHue(gr.n)}"><span class="gn">${gr.n}</span><span class="gt">${esc(gr.name)}</span></h3>`,
+      FISH.c1.filter(n => GX(n).group === gr.n)
+    )
+  );
+  const sets = SETS().map(S =>
+    Q[S.k] ? blk(`<h3 class="gdiv"><span class="gn">+</span><span class="gt">${esc(S.name)}</span></h3>`, S.units()) : ''
+  );
+  $v.innerHTML = `<p class="lede">The fish families of the IMR fish presentation, by its shape groups, with the IMR cues. Photos: iNaturalist observations for now.</p><div class="tiplist gpack">${[...groups, ...sets].join('')}</div>`;
+  packGroups($v.querySelector('.tiplist'));
+}

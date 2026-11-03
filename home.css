@@ -505,3 +505,13 @@
     height: clamp(250px, calc(100dvh - 470px), 400px);
   }
 }
+/* The subject selector (Corals / Fish, core.js SUBJECTS), above the two doors. */
+.home-page .hsubj {
+  display: flex;
+  width: max-content;
+  margin: 0 auto 12px;
+}
+.home-page .hsubj button {
+  min-width: 96px;
+  font-size: var(--fs-m);
+}

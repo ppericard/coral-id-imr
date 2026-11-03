@@ -36,7 +36,10 @@ function loadStats() {
     .catch(() => {});
 }
 // The slate genera (Millepora included since 2026-11-02): the sheet's "By genus" columns and the leaderboard % follow them.
+// The leaderboard's subject (core.js SUBJECTS board: corals), whatever the subject on screen.
 function syncSummary() {
+  const B = SUBJECTS.find(x => x.board);
+  if (B && B !== SUBJ) return inSubject(B.id, syncSummary);
   const n = slateGenera(),
     genera = Object.fromEntries(n.map(x => [x, level(x)[0]]));
   return {
@@ -74,33 +77,46 @@ function mergeSaved(j) {
     }
   } catch (e) {}
   achMerge(d[ACHK]); // achievements earned on another device join this one's
+  // Each subject's progress on its own (core.js SUBJECTS), as if it were on screen (inSubject): its cards, reset, opt-in
+  // sets and opening hold. A subject played on neither side is left alone (the first, the corals, always runs).
+  SUBJECTS.forEach((S, i) => {
+    const pk = subjKey(S.id, 'progress');
+    if (i && !(pk in d) && store.get(pk, null) === null) return;
+    inSubject(S.id, () => mergeSubject(j, d, S));
+  });
+  showBon(); // ⚙'s opt-in switches, from the subject on screen's settings
+}
+// One subject's part of mergeSaved, run as the current subject: SYNC[S.base[0]] is its progress as last sent or received,
+// SYNC[S.base[1]] what a send on its way held (core.js SUBJECTS base: SYNC.base and SYNC.pending for the corals).
+function mergeSubject(j, d, S) {
+  const [BK, PK] = S.base;
   const introIn = () => introMerge(d[INTRO.KEY], d[INTRO.OFFER.KEY]); // first-meeting cards seen on another device
   let R = {};
   try {
-    R = JSON.parse(d['reefid-sync-coral-progress'] || '{}') || {};
+    R = JSON.parse(d[sKey('progress')] || '{}') || {};
   } catch (e) {}
-  const rr = JSON.parse(d['reefid-sync-coral-reset'] || '""'),
-    lr = store.get('reefid-sync-coral-reset', '');
+  const rr = JSON.parse(d[sKey('reset')] || '""'),
+    lr = store.get(sKey('reset'), '');
   // A send whose reply was lost but which did reach the sheet: the saved record is exactly what was sent.
-  if (SYNC.pending && d['reefid-sync-coral-progress'] === SYNC.pending) SYNC.base = R;
-  delete SYNC.pending;
+  if (SYNC[PK] && d[sKey('progress')] === SYNC[PK]) SYNC[BK] = R;
+  delete SYNC[PK];
   if (lr > rr) return; // the sheet's hold too counts from its older reset: this device's stays
-  // The Bonus genera choice made on another device, if more recent than this one's (or made there only; Codex review #371);
-  // after the reset check, so a choice saved before this device's newer reset does not come back.
+  // The Bonus genera choice (fish: circles 2 and 3) made on another device, if more recent than this one's (or made there
+  // only; Codex review #371); after the reset check, so a choice saved before this device's newer reset does not come back.
   try {
-    const rq = JSON.parse(d['reefid-sync-coral-quiz'] || '{}') || {};
-    if (typeof rq.bon === 'boolean' && (Q.bon === undefined || (rq.bonT || 0) > (Q.bonT || 0))) {
-      Q.bon = rq.bon;
-      Q.bonT = rq.bonT || 0;
-      saveQ();
-      showBon();
-    } else if (rr > lr && typeof rq.bon !== 'boolean' && Q.bon !== undefined) {
-      // A progress reset made on another device: the offer comes again here too.
-      delete Q.bon;
-      delete Q.bonT;
-      saveQ();
-      showBon();
-    }
+    const rq = JSON.parse(d[sKey('quiz')] || '{}') || {};
+    S.optin.forEach(k => {
+      if (typeof rq[k] === 'boolean' && (Q[k] === undefined || (rq[k + 'T'] || 0) > (Q[k + 'T'] || 0))) {
+        Q[k] = rq[k];
+        Q[k + 'T'] = rq[k + 'T'] || 0;
+        saveQ();
+      } else if (rr > lr && typeof rq[k] !== 'boolean' && Q[k] !== undefined) {
+        // A progress reset made on another device: the offer comes again here too.
+        delete Q[k];
+        delete Q[k + 'T'];
+        saveQ();
+      }
+    });
   } catch (e) {}
   // The opening hold from every answer the sheet has (v23, model.js holdSync), with this device's unconfirmed ones added.
   const holdIn = () => typeof holdSync === 'function' && holdSync(j.hold, SYNC.log, j.holdIds);
@@ -108,11 +124,11 @@ function mergeSaved(j) {
     introReset();
     introIn();
     P = R;
-    SYNC.base = copy(R);
+    SYNC[BK] = copy(R);
     store.set('reefid-account', SYNC);
-    store.set('reefid-sync-coral-reset', rr);
+    store.set(sKey('reset'), rr);
     holdIn(); // after the reset time is in: only the answers since then count
-    store.set('reefid-sync-coral-progress', P);
+    store.set(sKey('progress'), P);
     if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
     prog();
     return;
@@ -120,13 +136,13 @@ function mergeSaved(j) {
   introIn();
   holdIn();
   // In place: other code holds P by name only, but keep the same object anyway.
-  const M = mergeProgress(SYNC.base || {}, P, R);
+  const M = mergeProgress(SYNC[BK] || {}, P, R);
   Object.keys(P).forEach(g => delete P[g]);
   Object.assign(P, M);
   // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
-  SYNC.base = copy(R);
+  SYNC[BK] = copy(R);
   store.set('reefid-account', SYNC);
-  store.set('reefid-sync-coral-progress', P);
+  store.set(sKey('progress'), P);
   if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
   prog();
 }
@@ -163,9 +179,11 @@ function syncOnce(tries = 0) {
       if (!j.ok) return j;
       if (j.found) mergeSaved(j);
       rev = me.rev;
-      sent = copy(P);
+      // Each subject's progress as sent: its baseline once the sheet confirms (SUBJECTS base).
+      const pd0 = progData();
+      sent = Object.fromEntries(SUBJECTS.map(S => [S.id, JSON.parse(pd0[subjKey(S.id, 'progress')] || '{}') || {}]));
       log = me.log || [];
-      me.pending = progData()['reefid-sync-coral-progress'] || '';
+      SUBJECTS.forEach(S => (me[S.base[1]] = pd0[subjKey(S.id, 'progress')] || ''));
       store.set('reefid-account', me);
       const pd = (progData()['reefid-sync-coral-progress'] || '').length;
       if (pd > 40000) console.warn(`Progress is ${pd} characters (sheet script v6 stores any size; v5 stops at 50,000).`);
@@ -194,7 +212,7 @@ function syncOnce(tries = 0) {
       }
       // The retry is a whole sync of its own: its result skips the steps below (they would apply this round's sent copy).
       if (j.error === 'stale' && tries < 2) {
-        delete me.pending;
+        SUBJECTS.forEach(S => delete me[S.base[1]]);
         return syncOnce(tries + 1).then(r => {
           throw {retried: r};
         });
@@ -204,9 +222,11 @@ function syncOnce(tries = 0) {
     .then(j => {
       if (j && j.ok && SYNC === me) {
         me.last = new Date().toISOString();
-        me.base = sent;
+        SUBJECTS.forEach(S => {
+          me[S.base[0]] = sent[S.id];
+          delete me[S.base[1]];
+        });
         if (typeof j.rev === 'number') me.srv = j.rev;
-        delete me.pending;
         delete me.err;
         if (!j.log && log.length) me.err = 'net';
         if (me.anon) delete me.anon;
@@ -634,26 +654,35 @@ function signIn(name, pin, j) {
     } catch (e) {}
     return store.set('reefid-account', SYNC);
   }
-  let R = {};
-  try {
-    R = JSON.parse(j.data['reefid-sync-coral-progress'] || '{}') || {};
-  } catch (e) {}
-  SYNC.base = R;
-  // Only what was played while signed out counts: the delta from ANONB (the progress before the first anonymous answer)
-  // is added to the sheet's. Progress left by a sign-out made before sign-out cleared the device (2026-11-01) is in
-  // ANONB, so it is neither counted twice nor credited to another account.
+  // Each subject on its own (core.js SUBJECTS). A subject whose answers are logged (the corals): only what was played
+  // while signed out counts, the delta from ANONB (the progress before the first anonymous answer) added to the sheet's;
+  // progress left by a sign-out made before sign-out cleared the device (2026-11-01) is in ANONB, so it is neither
+  // counted twice nor credited to another account. A subject not logged (fish, which came after sign-out cleared the
+  // device): everything on this device was played signed out, so it all adds up.
   const anon = SYNC.log.length > 0,
-    M = anon ? mergeProgress(store.get(ANONB, {}) || {}, P, R) : R;
+    M = {};
+  let mine = false;
+  SUBJECTS.forEach(S => {
+    const pk = subjKey(S.id, 'progress'),
+      here = store.get(pk, {}) || {};
+    let R = {};
+    try {
+      R = JSON.parse(j.data[pk] || '{}') || {};
+    } catch (e) {}
+    SYNC[S.base[0]] = R;
+    if (!S.log && Object.keys(here).length) mine = true;
+    M[pk] = S.log ? (anon ? mergeProgress(store.get(ANONB, {}) || {}, here, R) : R) : mergeProgress({}, here, R);
+  });
   try {
     localStorage.removeItem(ANONB);
   } catch (e) {}
   // The account's settings replace this device's, except the achievements: earned here before signing in, they join the
   // account's (code review #324).
-  const mine = store.get(ACHK, null);
-  loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => k !== 'reefid-sync-coral-progress')));
-  if (mine) achMerge(JSON.stringify(mine));
-  store.set('reefid-sync-coral-progress', M);
-  if (!anon) delete SYNC.dirty;
+  const ach = store.get(ACHK, null);
+  loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => !(k in M))));
+  if (ach) achMerge(JSON.stringify(ach));
+  Object.entries(M).forEach(([k, v]) => store.set(k, v));
+  if (!anon && !mine) delete SYNC.dirty;
   store.set('reefid-account', SYNC);
   try {
     sessionStorage.setItem('reefid-loaded', SHEET_NAME);
@@ -771,15 +800,14 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       // The first-meeting cards too (Codex review #350): the next player meets their own genera.
       [
         'reefid-account',
-        'reefid-sync-coral-progress',
-        'reefid-sync-coral-quiz',
-        'reefid-sync-coral-reset',
-        INTRO.KEY,
-        INTRO.OFFER.KEY,
+        // Every subject's progress, settings, cards, opening hold and comeback (model.js COMEBACK.KEY: the visit floor and
+        // the comeback belong to this player, Codex review #374).
+        ...SUBJECTS.flatMap(S => [
+          ...['progress', 'quiz', 'reset', 'intro', 'intro-offer'].map(k => subjKey(S.id, k)),
+          ...['hold', 'comeback'].map(k => subjDev(S.id, k))
+        ]),
         ACHK,
         'reefid-ach-new',
-        'reefid-hold',
-        'reefid-comeback', // model.js COMEBACK.KEY: the visit floor and the comeback belong to this player (Codex review #374)
         BOARD,
         LOG0,
         NUDGE,

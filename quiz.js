@@ -26,8 +26,10 @@ function bindQuizNav() {
   bindGo();
 }
 // The game rules (behind the ? button).
-const gameHelp =
-  cur => `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
+const gameHelp = cur =>
+  UNITS[SUBJ.id].help
+    ? UNITS[SUBJ.id].help(cur)
+    : `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
   Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? '' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="#progress">My progress</a>. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
   <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus fills up to 95% with your right answers, each point a little harder to earn than the last, and a right answer counts most when the genus's look-alikes are among the choices; a mistake takes it back down; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the photo quiz: see ? on <a href="#progress">My progress</a>.</p>${
     cur.startsWith('quiz-duel')
@@ -44,15 +46,15 @@ let EXAMQ = null; // the genus whose exam question is on screen (set by question
 let TYPEDQ = null,
   TYPEN = null;
 // Every name a player may type: every genus the app knows (the slate's and the extra ones) and their old names.
+// For fish, every teaching entry and the other names it goes by (core.js fishTypeNames), read as whole names.
 const typeNames = () => {
-  if (!TYPEN || TYPEN.d !== DATA)
-    TYPEN = {d: DATA, L: typeNamesOf([...Object.keys(DATA.gen), ...Object.keys((DATA.x || {}).gen || {})], GX)};
+  if (!TYPEN || TYPEN.d !== DATA || TYPEN.s !== SUBJ) TYPEN = {d: DATA, s: SUBJ, L: UNITS[SUBJ.id].names()};
   return TYPEN.L;
 };
-const typeMatch = text => typeMatchIn(typeNames(), text);
+const typeMatch = text => typeMatchIn(typeNames(), text, UNITS[SUBJ.id].norm);
 const typeForm = () => `<form class="tyform" autocomplete="off">
-    <label for="tyin">Genus</label>
-    <input id="tyin" name="genus" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" placeholder="Type the genus">
+    <label for="tyin">${SUBJ.one[0].toUpperCase() + SUBJ.one.slice(1)}</label>
+    <input id="tyin" name="genus" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" placeholder="Type the ${SUBJ.one}">
     <div class="tybtns"><button type="submit" class="next">Check</button><button type="button" class="next sec" data-idk>I don't know</button></div>
     <p class="tymsg" aria-live="polite"></p></form>`;
 // Binds a typed form: done(m, text) once answered, m the genus read ({g, old, exact}) or null for "I don't know". A
@@ -77,8 +79,8 @@ function typeBind(form, done) {
     const text = inp.value.trim();
     if (!text) return inp.focus();
     const m = typeMatch(text);
-    if (!m) msg.textContent = `“${text}” is not a genus in the game: check the spelling.`;
-    else if (m.near) msg.textContent = `Close to ${m.near.join(' and ')}: which one? Check the spelling.`;
+    if (!m) msg.textContent = `“${text}” is not a ${SUBJ.one} in the game: check the spelling.`;
+    else if (m.near) msg.textContent = `Close to ${m.near.map(unameT).join(' and ')}: which one? Check the spelling.`;
     else return end(m, text);
     inp.focus();
   };
@@ -91,8 +93,10 @@ const typeRead = (m, text) =>
   !m || m.exact
     ? ''
     : m.old
-      ? `You wrote the old name, ${esc(m.old)}, read as <i>${esc(m.g)}</i>.`
-      : `You wrote “${esc(text)}”, read as <i>${esc(m.g)}</i>.`;
+      ? m.alt
+        ? `You wrote ${esc(m.old)}, read as ${uname(m.g)}.` // another name of a fish entry (its family, a sub-entry)
+        : `You wrote the old name, ${esc(m.old)}, read as ${uname(m.g)}.`
+      : `You wrote “${esc(text)}”, read as ${uname(m.g)}.`;
 // Time to answer and photo enlarged (Pierre, 2026-11-02: a right answer that needed a long look or an enlarged photo says
 // the photo was harder; logged with each answer to be analysed later, nothing uses them yet; sheet v23 Seconds and
 // Enlarged): the clock starts when the question's first photo is in (its load event, or at once if it already was),
@@ -115,19 +119,19 @@ function question(cur, target, choices, prompt, set, kq) {
   EXAMQ = set.exam ? target : null;
   TYPEDQ = set.typed ? {t: target, m: null, text: ''} : null;
   const ph = set.shown,
-    lab = VIEW_LABEL;
+    lab = SUBJ.views.length > 1 ? VIEW_LABEL : {}; // one view (fish): no caption
   let answered = false,
     hintShown = false;
   // data-f names the photo whatever its file: an iNaturalist photo not downloaded yet (r: 1, a candidate just added) keeps
   // iNaturalist's file names (app.js img()), which resized() leaves alone (the failed-photo report, tests).
   const fig = (p, k, n = ph.length) =>
-    `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${qsrc(p, n)}" data-lo="${img(p, 's')}"${p.f ? ` data-f="${esc(p.f)}"` : ''} alt="Coral to identify${p.view ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
+    `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${qsrc(p, n)}" data-lo="${img(p, 's')}"${p.f ? ` data-f="${esc(p.f)}"` : ''} alt="${SUBJ.what} to identify${p.view && lab[p.view] ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}"></button>${p.view && lab[p.view] ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
   // One screen, no scrolling: the photos fill the stage (sized to the window), choices and feedback sit beside them.
   $v.innerHTML = `${gameHelp(cur)}<div class="q bleed">
     <div class="qstage">${ph.map((p, k) => fig(p, k)).join('')}</div>
     <aside class="qside">
       <div class="qtop"><p class="prompt">${prompt}</p>${trail()}${quizNav(cur)}</div>
-      ${set.typed ? `<div class="tyq">${typeForm()}</div>` : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"><kbd>${i + 1}</kbd>${esc(c)}</button>`).join('')}</div>`}
+      ${set.typed ? `<div class="tyq">${typeForm()}</div>` : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"${GX(c) && GX(c).name ? ' class="plain"' : ''}><kbd>${i + 1}</kbd>${esc(unameT(c))}</button>`).join('')}</div>`}
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
     </aside></div>`;
@@ -363,7 +367,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   if (rustNow() && SHOWNQ && SHOWNQ.warm) SHOWNQ.cb = Math.round(recallAt(target) * 1000) / 1000;
   // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
   // was played since, not progress an older sign-out left on the device.
-  if (!SYNC && SYNC_URL && !store.get(LOG0, []).length) store.set(ANONB, P);
+  if (SUBJ.log && !SYNC && SYNC_URL && !store.get(LOG0, []).length) store.set(ANONB, P);
   // A typed question (TYPEDQ, set by question): c is the genus read from what was typed, '' for "I don't know" (a miss
   // for the genus shown only). No choices were offered, so no pair counts as offered; a genus typed by mistake counts
   // against it as a wrong pick does (Pierre's rule), and the mix-up is counted.
@@ -470,7 +474,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
           achPop({
             tier: 3,
             icon: '🎓',
-            title: `${target}: Instructor`,
+            title: `${unameT(target)}: Instructor`,
             desc: `Mastery exam passed (${EXAM.n} hard questions right, ${TYPED.exam} or more typed from memory): you could teach it`
           }),
         600
@@ -526,7 +530,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   holdStep(ans.e, good);
   if (warm) comebackStep(rT, th0, dm, k, good);
   answeredAt(s, good);
-  if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
+  // A subject whose answers the sheet does not take yet (core.js SUBJECTS log: fish) keeps them on the device only: its
+  // progress still travels with the player's data (sync.js), its answers rate no photo and no confusion.
+  if (!SUBJ.log);
+  else if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
   else if (SYNC_URL) {
     store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
     // Not signed in: the answer also goes to the sheet anonymously (Pierre, 2026-11-01), see sendAnon.
@@ -556,9 +563,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     if (tp) {
       const [, cp] = photoPair([tp], V[tp.view], tp),
         st0 = $v.querySelector('.qstage'),
-        lab = VIEW_LABEL[tp.view] || '';
+        lab = SUBJ.views.length > 1 ? VIEW_LABEL[tp.view] || '' : '';
       const fig = (p, n, cls, note) =>
-        `<figure class="qph ${cls}"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(n)}"><img src="${qsrc(p, 2)}" alt="${esc(n)}, ${lab.toLowerCase()} view"></button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> <i>${esc(n)}</i></figcaption><small>${note}</small>${photoSrc(p)}</figure>`;
+        `<figure class="qph ${cls}"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-vs="${cls}" aria-label="Enlarge ${esc(unameT(n))}"><img src="${qsrc(p, 2)}" alt="${esc(unameT(n))}${lab ? `, ${lab.toLowerCase()} view` : ''}"></button><figcaption><span aria-hidden="true">${cls === 'qok' ? '✓' : '✗'}</span> ${uname(n)}</figcaption><small>${note}</small>${photoSrc(p)}</figure>`;
       st0.classList.add('qvs');
       st0.innerHTML = fig(tp, target, 'qok', 'The photo shown') + fig(cp, c, 'qko', 'Your answer, same view');
       st0.querySelectorAll('[data-vs]').forEach(
@@ -596,16 +603,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   if (tyIn) tyIn.classList.add(good ? 'ok' : c ? 'ko' : 'idk');
   const idk = !!tq && !c,
     read = tq ? typeRead(tq.m, tq.text) : '';
-  const g = GX(target);
-  const vs =
-    !good && GX(c)
-      ? // The answer's own tips, said as such (an RA tester, 2026-11-02: "Why not X:" read as the reasons the photo is not X).
-        `<p class="vs">Your answer, <i>${esc(c)}</i>, would show: ${esc(tipsText(GX(c)))} <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a></p>${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
-      : '';
-  document.getElementById('after').innerHTML = `<div class="fb">
-    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}"><span class="v">${good ? '\u2713 Yes' : idk ? 'No worries' : '\u2717 No'},</span> it's <a href="#g-${esc(target)}"${sheetTab()}><i>${esc(target)}</i></a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
-    <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
-    <details class="more"><summary>Coral Finder</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details>${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: cur})}</div>
+  // The feedback: a genus's (IMR ID tips, mnemonic, Coral Finder) or a fish entry's (IMR cues, how to tell the look-alike
+  // apart, the sub-entries and phases), chosen by what the record holds (fbBody).
+  document.getElementById('after').innerHTML =
+    `${fbBody(target, c, good, idk, again, ph, read)}${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: cur})}</div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
   // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
   const qq = $v.querySelector('.q');
@@ -630,6 +631,92 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     if (nudgeDue()) (promptMark(), signinNudge());
     else if (pulseDue()) (promptMark(), pulseAsk());
   }
+}
+// The answer's feedback, up to the report button (answer): the verdict, the unit's ID tips, why the answer given is
+// another unit, and more behind a fold. A genus: its IMR ID tips and mnemonic, the Coral Finder's criteria, a link to
+// its sheet and to the comparison. A fish entry (a record with a name, core.js fishGen): the IMR cues, how IMR tells the
+// look-alike apart (lk), the sub-entries IMR names inside it and its phases; no sheet or comparison page yet.
+function fbBody(target, c, good, idk, again, ph, read) {
+  const g = GX(target),
+    fish = !!g.name,
+    C = !good && GX(c) ? GX(c) : null,
+    apart = C && fish ? ((g.lk || []).find(([o]) => o === c) || (C.lk || []).find(([o]) => o === target) || [])[1] : '';
+  const vs = C
+    ? // The answer's own tips, said as such (an RA tester, 2026-11-02: "Why not X:" read as the reasons the photo is not X).
+      `<p class="vs">Your answer, ${uname(c)}, would show: ${esc(tipsText(C))}${fish ? '' : ` <a class="linkish" href="#cmp-${esc(target)}|${esc(c)}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
+    : '';
+  const name = fish
+      ? `<b>${uname(target)}</b> <small>${esc(g.fam)}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
+      : `<a href="#g-${esc(target)}"${sheetTab()}><i>${esc(target)}</i></a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
+    more = fish
+      ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
+      : `<details class="more"><summary>Coral Finder</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
+  return `<div class="fb">
+    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> it's ${name}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
+    <div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${tipsList(g, 'imrfb')}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>${vs}
+    ${more}`;
+}
+// Winks (fish.json wink, Pierre 2026-11-03): an unmistakable fish, fun to meet (the whale shark, the pelagic thresher),
+// as a rare surprise card in the photo quiz: one photo, its name among 3 deliberately absurd choices taken from our own
+// entries with a tongue-in-cheek label, then one friendly line. Never counted (no progress, no ability, no answer
+// logged, no photo rating). For every player of a subject that has winks (app.js UNITS winks: fish), from circle 1 on
+// (Pierre, 2026-11-03: "ça sera rigolo" for the people working on the IMR course), whatever opt-in circles are on.
+// Rare: from WINK.FROM answers on, WINK.P of the questions, at least WINK.GAP answers apart, never the same wink twice in
+// a visit (WINKS, this page only). Never over a card (the first-meeting cards, an offer).
+const WINK = {FROM: 15, P: 0.04, GAP: 20};
+const WINKS = {seen: new Set(), at: -Infinity};
+function winkDue() {
+  const L = UNITS[SUBJ.id].winks().filter(n => !WINKS.seen.has(n)),
+    a = answersSoFar();
+  if (!L.length || a < WINK.FROM || a - WINKS.at < WINK.GAP || document.querySelector('.unlock')) return null;
+  return Math.random() < WINK.P ? pick(L) : null;
+}
+function winkShow(n) {
+  const g = GX(n),
+    w = g.wink,
+    p = pick(g.views.wide),
+    ch = shuffle([[n, g.name], ...w.choices]);
+  WINKS.seen.add(n);
+  WINKS.at = answersSoFar();
+  SHOWNQ = null;
+  $v.innerHTML = `${gameHelp('quiz')}<div class="q bleed wink">
+    <div class="qstage"><figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" aria-label="Enlarge photo"><img src="${qsrc(p, 1)}" data-lo="${img(p, 's')}" alt="${SUBJ.what} to identify"></button></figure></div>
+    <aside class="qside">
+      <div class="qtop"><p class="prompt">Which ${SUBJ.one}? <span class="wtag">Surprise</span></p>${trail()}</div>
+      <div class="ans">${ch.map(([id, label], i) => `<button type="button" class="plain" data-w="${esc(id)}"><kbd>${i + 1}</kbd>${esc(label)}</button>`).join('')}</div>
+      <div id="after"></div>
+    </aside></div>`;
+  fitStage();
+  let done = false;
+  const go = id => {
+    if (done) return;
+    done = true;
+    const good = id === n;
+    $v.querySelectorAll('[data-w]').forEach(b => {
+      b.disabled = true;
+      if (b.dataset.w === n) b.classList.add('ok', ...(good ? ['cheer'] : []));
+      else if (b.dataset.w === id) b.classList.add('ko');
+    });
+    $v.querySelector('.qph').insertAdjacentHTML('beforeend', photoSrc(p));
+    document.getElementById('after').innerHTML =
+      `<div class="fb"><h3 class="${good ? 'ok cheer' : 'ko'}"><span class="v">${good ? '✓' : '✗'}</span> ${esc(good ? w.right : w.wrong)}</h3><p class="note">Just for fun: it doesn't count in your progress.</p><p class="credit">${credit(p)}</p></div>
+    <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
+    $v.querySelector('.q').classList.add('done');
+    if (isStacked()) (window.scrollTo(0, 0), fitStage());
+    const nb = document.getElementById('next');
+    nb.focus({preventScroll: true});
+    nb.onclick = route;
+  };
+  $v.querySelectorAll('[data-w]').forEach(b => (b.onclick = () => go(b.dataset.w)));
+  $v.querySelector('.zoom').onclick = () => zoom([{...p, genus: n}], 0, {blind: () => !done});
+  const keys = e => {
+    if (!document.body.contains($v.querySelector('.q.wink'))) return document.removeEventListener('keydown', keys);
+    if (!lb.hidden || e.target.closest('input, textarea, select') || document.getElementById('tour')) return;
+    if (done && e.key === 'Enter') return (e.preventDefault(), route());
+    const b = !done && $v.querySelectorAll('[data-w]')[Number(e.key) - 1];
+    if (b) (e.preventDefault(), b.click());
+  };
+  document.addEventListener('keydown', keys, {signal: viewKeys()});
 }
 // Out-of-game prompts ("fewer, better pop-ups", Pierre 2026-11-02, after a new-player walkthrough counted an
 // interruption every ~2 answers): the sign-in card (from NUDGE_AT answers, sync.js), the one-tap question (from
@@ -791,7 +878,7 @@ const pfUrls = q => {
       ...later.map(p => img(p, 's')),
       ...later.map(p => qsrc(p, n + later.length))
     ])
-  ].filter(ownPhoto); // the site's own files, on R2 or the site (an iNaturalist photo waiting to be downloaded loads when shown)
+  ].filter(u => ownPhoto(u) || SUBJ.remote); // the site's own files, on R2 or the site (an iNaturalist photo waiting to be downloaded loads when shown; a subject on iNaturalist photos, core.js SUBJECTS remote, has them all fetched ahead)
 };
 const pump = () => {
   const kept = new Set([ONQ]);
@@ -863,6 +950,9 @@ const takePlan = cur => {
 };
 let SHOWNQ = null; // the photo-quiz question on screen (planNext)
 function quizPhoto() {
+  // Now and then a wink instead (winkShow): not a question of the game, the planned ones wait for the next.
+  const wk = winkDue();
+  if (wk) return winkShow(wk);
   let q = takePlan('quiz') || planPhoto();
   // A planned card waits while the player falls behind (introHold, Codex review #362: a right answer that starts the
   // hold leaves the questions planned before it), and during the floor of a visit or a comeback (noOpen); a question
@@ -906,10 +996,10 @@ function introOfferShow() {
   d.className = 'unlock intro';
   d.setAttribute('role', 'dialog');
   d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Open all genera?');
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">${a} answers in</p><h3>You seem to know your corals already</h3>
-    <p>Open all ${slateGenera().length} genera at once, instead of one at a time? ${introLeft().length} are still to come.</p>
-    <div class="ulbtns ulstack"><button class="next" type="button" data-open>Open all genera</button><button class="next sec" type="button">Not now</button></div>
+  d.setAttribute('aria-label', `Open all ${SUBJ.many}?`);
+  d.innerHTML = `<div class="ulcard"><p class="ulkick">${a} answers in</p><h3>You seem to know your ${SUBJ.name.toLowerCase()} already</h3>
+    <p>Open all ${slateGenera().length} ${SUBJ.many} at once, instead of one at a time? ${introLeft().length} are still to come.</p>
+    <div class="ulbtns ulstack"><button class="next" type="button" data-open>Open all ${SUBJ.many}</button><button class="next sec" type="button">Not now</button></div>
     <p class="note">Also in My progress, any time.</p></div>`;
   document.body.appendChild(d);
   const close = () => {
@@ -938,25 +1028,25 @@ function introOfferShow() {
 // A prompt like the others (promptOk: never with a card, the tour or an achievement, PROMPT.GAP answers apart).
 // Every slate genus asked at least once, not just met (Pierre, 2026-11-02: an RA who taps Open all genera would otherwise get the offer a
 // question later, before having seen the IMR genera in the quiz; an RA tester: "after all IMR ones have been introduced/reviewed").
-const bonusOfferDue = () => Q.bon === undefined && BONUS.some(n => GX(n)) && slateGenera().every(asked);
-function bonusOfferShow() {
+// One card per opt-in set of the subject (app.js UNITS sets: the coral bonus genera; fish circles 2 and 3), the first due.
+const bonusOfferDue = () => SETS().find(S => Q[S.k] === undefined && S.units().length && S.due()) || null;
+function bonusOfferShow(S = bonusOfferDue()) {
+  if (!S) return;
   const d = document.createElement('div'),
     pick = on => {
-      bonusSet(on);
+      bonusSet(on, S.k);
       close();
     };
   d.className = 'unlock intro';
   d.setAttribute('role', 'dialog');
   d.setAttribute('aria-modal', 'true');
-  d.setAttribute('aria-label', 'Bonus genera');
-  const n = BONUS.filter(x => GX(x)).length;
-  d.innerHTML = `<div class="ulcard"><p class="ulkick">Every genus of the slate met</p><h3>${n} more genera?</h3>
-    <p>Not on the IMR coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.</p>
-    <p class="ulnote">${BONUS.filter(x => GX(x))
-      .map(x => `<i>${esc(x)}</i>`)
-      .join(', ')}</p>
-    <div class="ulbtns ulstack"><button class="next" type="button" data-bonus>Add them</button><button class="next sec" type="button">Not now</button></div>
-    <p class="note">⚙ Settings, Bonus genera, any time. They don't count in your progress.</p></div>`;
+  d.setAttribute('aria-label', S.name);
+  const L = S.units();
+  d.innerHTML = `<div class="ulcard"><p class="ulkick">${S.kick}</p><h3>${S.title(L.length)}</h3>
+    <p>${S.body}</p>
+    <p class="ulnote">${L.map(uname).join(', ')}</p>
+    <div class="ulbtns ulstack"><button class="next" type="button" data-bonus>${L.length > 1 ? 'Add them' : 'Add it'}</button><button class="next sec" type="button">Not now</button></div>
+    <p class="note">${S.note}</p></div>`;
   document.body.appendChild(d);
   const close = () => {
     d.remove();
@@ -1004,15 +1094,15 @@ function introShow(L, start, kind = start ? 's' : 'c') {
       more = i < L.length - 1;
     // Met when its card is shown (Codex review #350): a sequence left half-way (reload) shows the rest next time.
     introAdd([n], start, kind);
-    d.setAttribute('aria-label', `New genus: ${n}`);
+    d.setAttribute('aria-label', `New ${SUBJ.one}: ${unameT(n)}`);
     d.innerHTML = `<div class="ulcard">${p ? `<div class="ulphoto"><img src="${img(p, 's')}" alt=""></div>` : ''}
-      <p class="ulkick">${isBonus(n) ? 'Bonus genus' : 'New genus'}${L.length > 1 ? ` · ${i + 1} of ${L.length}` : ''}</p><h3><i>${esc(n)}</i></h3>
+      <p class="ulkick">${isBonus(n) ? setOf(n).tag : 'New ' + SUBJ.one}${L.length > 1 ? ` · ${i + 1} of ${L.length}` : ''}</p><h3>${uname(n)}</h3>${g.name ? `<p class="ulfam">${esc(g.fam)}</p>` : ''}
       ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
-      ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : isBonus(n) ? '<p class="ulnote">Not on the IMR list, but common at Dauin.</p>' : ''}
+      ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : isBonus(n) ? `<p class="ulnote">${setOf(n).card}</p>` : ''}
       <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tipsList(g)}</div>
-      <p class="ulnote">${start ? (more ? `The first questions are about these ${L.length} genera.` : 'Now, which is which?') : 'It comes up in the questions a little later.'}</p>
+      <p class="ulnote">${start ? (more ? `The first questions are about these ${L.length} ${SUBJ.many}.` : 'Now, which is which?') : 'It comes up in the questions a little later.'}</p>
       <div class="ulbtns"><span></span><button class="next" type="button">${more ? 'Next' : start ? 'Start' : 'Got it'}</button></div>
-      ${start && introLeft().length ? `<div class="ulall"><p><b>Had the IMR coral lecture?</b> Skip the cards and play with all ${slateGenera().length} genera.</p><button class="next sec" type="button" data-all>Open all genera</button></div>` : ''}</div>`;
+      ${start && introLeft().length ? `<div class="ulall"><p><b>Had ${SUBJ.lecture}?</b> Skip the cards and play with all ${slateGenera().length} ${SUBJ.many}.</p><button class="next sec" type="button" data-all>Open all ${SUBJ.many}</button></div>` : ''}</div>`;
     d.querySelector('.next').onclick = next;
     const all = d.querySelector('[data-all]');
     if (all)
@@ -1067,7 +1157,7 @@ function planPhoto() {
       rustNow();
       const R = CB.r > 0 ? recallAt(t) : 1;
       return Object.assign(
-        ['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t, null, Math.log(R))],
+        ['quiz', t, shuffle(pair.slice()), `Again: ${uname(pair[0])} or ${uname(pair[1])}?`, photoSet(t, null, Math.log(R))],
         {again: 1, ...(CB.r > 0 ? {warm: 1, cb: Math.round(R * 1000) / 1000} : {})}
       );
     }
@@ -1122,12 +1212,9 @@ function planPhoto() {
       const t = pick(pair);
       last = t; // the genus asked is the duel's, not the one drawn above for the card decision
       lastQs = [...lastQs.slice(0, -1), t];
-      return Object.assign(
-        ['quiz', t, shuffle(pair.slice()), `Look-alikes: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)],
-        {
-          auto: key(pair) // the pair, so its spacing is set again when it shows (quizPhoto)
-        }
-      );
+      return Object.assign(['quiz', t, shuffle(pair.slice()), `Look-alikes: ${uname(pair[0])} or ${uname(pair[1])}?`, photoSet(t)], {
+        auto: key(pair) // the pair, so its spacing is set again when it shows (quizPhoto)
+      });
     }
   }
   const R = warm ? recallAt(t) : 1,
@@ -1146,7 +1233,7 @@ function planPhoto() {
       'quiz',
       t,
       ch,
-      typed ? 'Which genus? Type it' : 'Which genus?',
+      typed ? `Which ${SUBJ.one}? Type it` : `Which ${SUBJ.one}?`,
       typed ? {...set, typed: 1} : set,
       traps < 2 ? plausibleK(t, ch) : 0
     ];
@@ -1165,17 +1252,9 @@ function quizDuel(a, b) {
 // A look-alike pair for a duel (the Duel tab, and the duels slipped into the photo quiz): among the pairs whose two
 // genera are in the list and pass keep. Null when none.
 function duelPick(list, keep = () => true) {
-  // Millepora and the bonus genera duel with the slate look-alike the Coral Finder names (when they are in the list).
-  const ps = [
-    ...pairs(),
-    ...[...BENTHIC, ...BONUS]
-      .filter(b => GX(b))
-      .flatMap(b =>
-        GX(b)
-          .look.filter(a => DATA.gen[a])
-          .map(a => [a, b])
-      )
-  ].filter(([x, y]) => list.includes(x) && list.includes(y) && keep([x, y]));
+  // The subject's look-alike pairs (app.js UNITS pairs: for corals, Millepora and the bonus genera duel with the slate
+  // look-alike the Coral Finder names), when both are in the list.
+  const ps = UNITS[SUBJ.id].pairs().filter(([x, y]) => list.includes(x) && list.includes(y) && keep([x, y]));
   if (!ps.length) return null;
   // Your mix-ups you still make come up most (personal confusion score, confOf), then pairs players often confuse and
   // the classic look-alikes (compared in the IMR lecture or the Coral Finder text).
@@ -1199,5 +1278,21 @@ function planDuel(a, b) {
   const t = pick(pair);
   // A genus not met yet gets its card with this duel (quizDuel): not with the card's own photo.
   const set = photoSet(t, introduced(t) ? null : (cover(GX(t)) || {}).f);
-  return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, set];
+  return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `${uname(pair[0])} or ${uname(pair[1])}?`, set];
 }
+// A switch of subject (app.js subjectLoad): the typed names are the subject's; on a real switch the questions planned
+// ahead, the duel and "Again" spacing, the winks seen and this visit's trail go too (a short visit, keep, keeps them).
+if (typeof SUBJ_HOOKS !== 'undefined')
+  SUBJ_HOOKS.push(keep => {
+    TYPEN = null;
+    if (keep) return;
+    NEXTQ = null;
+    ONQ = null;
+    SHOWNQ = null;
+    rematch = null;
+    twoAt = againAt = -Infinity;
+    duelLog = [];
+    WINKS.seen.clear();
+    WINKS.at = -Infinity;
+    session = {ok: 0, n: 0, h: []};
+  });
