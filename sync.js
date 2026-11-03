@@ -608,8 +608,8 @@ document.addEventListener('visibilitychange', () => {
     sendEvents();
   }
 });
-// Signing in. A new name keeps what this device holds and sends it. A known account (found) is merged with what was
-// played here before signing in: the sheet's settings and quiz state win, the progress of both adds up (mergeProgress
+// Signing in. A new name keeps what this device holds and sends it. A known account (found), once the player has
+// answered "Is it you?" (bindSync, 2026-11-03), is merged with what was played here before signing in: the sheet's settings and quiz state win, the progress of both adds up (mergeProgress
 // with an empty base), then the page reloads and the start-up sync sends the merged progress. Either way the answers
 // played before signing in join the log for the sheet's Answers tab. Before 2026-11-01 a known account replaced the
 // device's progress, so a beta tester who played first and signed in later lost it.
@@ -794,41 +794,98 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
     };
     return;
   }
-  box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device.</p>
-    <form class="sform"><label>Your name <input name="n" required maxlength="40" autocomplete="name"></label>
+  // Two players of one first name (Pierre, 2026-11-03): the name is the account key, so the form asks from the start for
+  // the first name and the surname's initial, and a name taken with another code says so in plain words.
+  const tail = name => (/\s/.test(name) ? 'add more of your surname' : `add your surname's initial (${name} B.)`);
+  const form = (name = '', pin = '', hint = '') => {
+    box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device.</p>
+    <form class="sform"><label>Your name <input name="n" required maxlength="40" autocomplete="name" placeholder="First name + initial"></label>
     <label>4-digit code <input name="p" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"></label>
     <button class="${box.classList.contains('tsync') ? 'next' : 'chip go'}" type="submit">Sign in</button> <span class="note" role="status"></span></form>
-    <p class="note">New name: pick any code and remember it. Same name and code later: your saved progress comes back.</p>`;
-  box.querySelector('form').onsubmit = e => {
-    e.preventDefault();
-    const f = e.target,
-      name = f.n.value.trim(),
-      pin = f.p.value.trim();
-    msg('Connecting…');
-    fetch(`${SYNC_URL}?name=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}&av=${appVer()}`)
-      .then(r => r.json())
-      .then(j => {
-        if (!j.ok)
-          return msg(
-            j.error === 'gone'
-              ? j.into
-                ? `This name was merged into ${j.into}: sign in as ${j.into}.`
-                : 'This name and code were removed: pick another code to start again.'
-              : j.error === 'pin'
-                ? 'This name already exists with another code.'
-                : j.error === 'wait'
-                  ? 'Too many wrong codes for this name: try again in 10 minutes.'
-                  : 'Check the name and the 4-digit code.'
-          );
-        // The achievements' record (progress.js) must be in before an account is merged (Codex review #361: a sign-in
-        // from the tour on a slow first visit came before it).
-        return (typeof need === 'function' ? need(2) : Promise.resolve()).then(() => {
-          signIn(name, pin, j);
-          if (!j.found) syncPush().then(() => bindSync());
-        });
-      })
-      .catch(() => msg('Could not connect. Check your connection: your progress stays on this phone meanwhile.'));
+    <p class="note">Your first name and your surname's initial (e.g. Anna B.), so no one else has your name. New name: pick any code and remember it. Same name and code later: your saved progress comes back.</p>`;
+    const f = box.querySelector('form');
+    f.n.value = name;
+    f.p.value = pin;
+    if (hint) {
+      msg(hint);
+      f.n.focus({preventScroll: true});
+      f.n.setSelectionRange(name.length, name.length);
+    }
+    f.onsubmit = e => {
+      e.preventDefault();
+      const name = f.n.value.trim(),
+        pin = f.p.value.trim();
+      msg('Connecting…');
+      fetch(`${SYNC_URL}?name=${encodeURIComponent(name)}&pin=${encodeURIComponent(pin)}&av=${appVer()}`)
+        .then(r => r.json())
+        .then(j => {
+          if (!j.ok)
+            return msg(
+              j.error === 'gone'
+                ? j.into
+                  ? `This name was merged into ${j.into}: sign in as ${j.into}.`
+                  : 'This name and code were removed: pick another code to start again.'
+                : j.error === 'pin'
+                  ? `Someone already uses the name ${name}. If it isn't you, ${tail(name)}. If it is you, check your code.`
+                  : j.error === 'wait'
+                    ? 'Too many wrong codes for this name: try again in 10 minutes.'
+                    : 'Check the name and the 4-digit code.'
+            );
+          if (j.found) return isYou(name, pin, j);
+          enter(name, pin, j);
+        })
+        .catch(() => msg('Could not connect. Check your connection: your progress stays on this phone meanwhile.'));
+    };
   };
+  // The achievements' record (progress.js) must be in before an account is merged (Codex review #361: a sign-in from the
+  // tour on a slow first visit came before it).
+  const enter = (name, pin, j) =>
+    (typeof need === 'function' ? need(2) : Promise.resolve()).then(() => {
+      signIn(name, pin, j);
+      if (!j.found) syncPush().then(() => bindSync());
+    });
+  // An existing account (found): "Is it you?" first, on every device (Pierre, 2026-11-03: two players of one first name
+  // with the same simple code would otherwise share one account, the second one's answers merged into the first one's).
+  // What it shows comes from the reply (core.js accountOf). No: nothing merged, saved or sent; back to the form with the
+  // name to change. Only a brand-new account (found false) signs in at once.
+  const isYou = (name, pin, j) => {
+    const a = accountOf(j.data, j.updated),
+      day = t => {
+        const d = new Date(t),
+          now = new Date(),
+          ago = Math.round((new Date(now).setHours(0, 0, 0, 0) - new Date(t).setHours(0, 0, 0, 0)) / 864e5);
+        return ago === 0
+          ? 'today'
+          : ago === 1
+            ? 'yesterday'
+            : d.toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'short',
+                ...(d.getFullYear() !== now.getFullYear() ? {year: 'numeric'} : {})
+              });
+      },
+      what = [
+        a.n
+          ? `${a.n.toLocaleString('en-GB')} answer${a.n > 1 ? 's' : ''}`
+          : a.genera
+            ? `progress on ${a.genera} ${a.genera > 1 ? 'genera' : 'genus'}`
+            : '',
+        a.at ? `last ${a.saved ? 'saved' : 'played'} ${day(a.at)}` : ''
+      ].filter(Boolean),
+      mine = store.get(LOG0, []).length;
+    box.innerHTML = `<h3>Is it you?</h3><p>An account named <b>${esc(name)}</b> already exists${what.length ? ': ' + what.join(', ') : ''}.</p>
+    ${mine ? `<p class="note">If it is, ${mine > 1 ? `the ${mine} answers played on this device join it` : 'the answer played on this device joins it'}.</p>` : ''}
+    <form class="sform sconfirm"><button class="${box.classList.contains('tsync') ? 'next' : 'chip go'}" type="submit">Yes, it's me</button><button class="next sec" type="button">No, it's someone else</button></form>`;
+    const f = box.querySelector('form');
+    f.onsubmit = e => {
+      e.preventDefault();
+      f.querySelectorAll('button').forEach(b => (b.disabled = true));
+      enter(name, pin, j);
+    };
+    f.querySelector('button[type=button]').onclick = () => form(name, pin, `Then pick a name of your own: ${tail(name)}.`);
+    f.querySelector('button').focus({preventScroll: true});
+  };
+  form();
 }
 // Ask the browser not to evict saved progress when storage runs low.
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});

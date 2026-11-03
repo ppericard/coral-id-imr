@@ -14,6 +14,7 @@ const {
   mergeUsers,
   playerStart,
   commonFactor,
+  accountOf,
   levelSeed,
   LEVEL,
   START
@@ -535,4 +536,38 @@ test('playSplit: the photo quiz apart from the Duel tab, last 50 quiz answers, o
   assert.deepStrictEqual(s.d, [31, 31]);
   assert.deepStrictEqual(s.q50, [46, 41]);
   assert.deepStrictEqual(playSplit([...Array(60)].map((_, i) => r('k', i < 10 ? 0 : 1, 'quiz'))).k.q50, [50, 50]);
+});
+
+test('accountOf: an existing account at sign-in, from the progress the sheet returns; missing fields count as nothing', () => {
+  const at = Date.parse('2026-11-02T09:30:00Z'),
+    data = R => ({'imr-coral-progress': JSON.stringify(R)});
+  assert.deepStrictEqual(
+    accountOf(data({[LEVEL]: {ok: 200, ko: 45, th: 0.4, at}, Acropora: {ok: 30, ko: 5, at: at - 1}}), '2026-11-02T10:00:00Z'),
+    {
+      n: 245,
+      genera: 1,
+      at,
+      saved: false
+    }
+  );
+  // Progress saved before LEVEL: no answer count, the genera answered and their latest answer.
+  assert.deepStrictEqual(accountOf(data({Acropora: {ok: 2, ko: 1, at: at - 5}, Porites: {ok: 1, ko: 0, at}, Favites: {ok: 0, ko: 0}})), {
+    n: 0,
+    genera: 2,
+    at,
+    saved: false
+  });
+  // No answer time anywhere: the sheet's last save, said as such.
+  assert.deepStrictEqual(accountOf(data({Acropora: {ok: 1, ko: 0}}), '2026-11-02T10:00:00.000Z'), {
+    n: 0,
+    genera: 1,
+    at: Date.parse('2026-11-02T10:00:00.000Z'),
+    saved: true
+  });
+  const none = {n: 0, genera: 0, at: 0, saved: false};
+  assert.deepStrictEqual(accountOf({}), none);
+  assert.deepStrictEqual(accountOf(undefined, undefined), none);
+  assert.deepStrictEqual(accountOf({'imr-coral-progress': 'not json'}, 'not a date'), none);
+  assert.deepStrictEqual(accountOf({'imr-coral-progress': '[1,2]'}), none);
+  assert.deepStrictEqual(accountOf(data({[LEVEL]: {ok: 'x', ko: -3, at: 'y'}, Acropora: null})), none);
 });
