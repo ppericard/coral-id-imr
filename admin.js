@@ -5191,7 +5191,13 @@ function progOf(u) {
     (ANS.rows || []).forEach(r => (ROWSBY.by[r[0]] = ROWSBY.by[r[0]] || []).push(r));
   }
   const reset = !S.err && S.reset ? Date.parse(S.reset) : 0,
-    rep = replayProgress(ROWSBY.by[u.id] || [], {gen: DATA.gen, mem: SMEM, conf: SCONF, since: reset ? {[u.id]: reset} : {}})[u.id],
+    rep = replayProgress(ROWSBY.by[u.id] || [], {
+      gen: DATA.gen,
+      mem: SMEM,
+      conf: SCONF,
+      since: reset ? {[u.id]: reset} : {},
+      starts: S.err ? {} : {[u.id]: S.start} // the first-launch answer (core.js startPriorAt)
+    })[u.id],
     L = slateOf(DATA), // the slate as the app counts it (core.js slateOf): the progress % and Learned are over it
     G = replayedOf(rep, S.err ? {} : S.P),
     v = {G, pct: pctOf(G, L), learned: learnedOf(G, L), total: L.length, err: S.err};

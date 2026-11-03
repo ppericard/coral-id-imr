@@ -1374,9 +1374,11 @@
   // genera moves it too while its own answers are few: the global + concept skill of Pelánek et al. (UMUAI 2017), as a
   // lazy update (2026-11-03, docs/LEARNING.md "Global level and genus").
   const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
-  const abilityOf = (P, n) => {
+  // p: the level the player's first-launch answer says (CHOICE, startVars(c).p), which a genus never answered starts
+  // from (playerStart); 0, the default player's, when they have not answered.
+  const abilityOf = (P, n, p = 0) => {
     const s = (P || {})[n] || {};
-    if (typeof s.th !== 'number') return s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n);
+    if (typeof s.th !== 'number') return s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n, p);
     return Math.min(ELO.hi, Math.max(ELO.lo, s.th + levelMove(P, n, s)));
   };
   // The global level's move since the genus's own last step (s.lt: the level then), weighed by the genus's own
@@ -1389,8 +1391,8 @@
     if (n === LEVEL || !s || typeof s.lt !== 'number' || !G || typeof G.th !== 'number') return 0;
     return Math.round(((G.th - s.lt) / (1 + ((s.ok || 0) + (s.ko || 0)) / ELO.n)) * 100) / 100;
   }
-  function eloStep(P, n, s, good, d, k) {
-    const th = abilityOf(P, n),
+  function eloStep(P, n, s, good, d, k, p = 0) {
+    const th = abilityOf(P, n, p),
       g = 1 / k,
       e = g + (1 - g) * sigm(th - d),
       m = (s.ok || 0) + (s.ko || 0);
@@ -1443,6 +1445,12 @@
       v: 2,
       at: '2026-11-04',
       why: 'The opening pace and known mix-ups (#425): a question whose choices hold a genus the player mixes up with the one shown more than everyone does (3 or more plausible choices) counts as that much harder, for the ability, the global level and the weight of a miss',
+      msg: RV_CARD
+    },
+    {
+      v: 3,
+      at: '2026-11-04',
+      why: 'The first-launch question (#428): a genus never answered starts from the global level shrunk towards the level the player said (new 0, IMR course 0.5, know well 1.25), the answer in force at each answer (imr-coral-start, its history h)',
       msg: RV_CARD
     }
   ];
@@ -1506,8 +1514,23 @@
   // CF_FROM, which reads the sheet's wall clock; #426): the app's logged e includes its mix-ups term (model.js confTerm),
   // taken out again here with the replay's own. An app not yet updated logs a few answers without it after that time.
   const CF_LOGGED = Date.UTC(2026, 10, 3, 15, 35);
+  // The first-launch answer in force at time t (2026-11-03, CHOICE): rec, the player's imr-coral-start record, keeps
+  // every answer given ([c, answers then, time, via] in h); the prior p of the last one given at or before t, 0 before
+  // the first (the player then played as the default player). The replay steps the ability with it (o.starts).
+  function startPriorAt(rec, t) {
+    if (!isObj(rec)) return 0;
+    const h = Array.isArray(rec.h) && rec.h.length ? rec.h : startOpt(rec.c) ? [[rec.c, rec.at, rec.t, rec.via]] : [];
+    let p = 0,
+      last = -Infinity;
+    h.forEach(x => {
+      const at = Array.isArray(x) && typeof x[2] === 'number' ? x[2] : -Infinity;
+      if (startOpt(x && x[0]) && at <= t && at >= last) ((last = at), (p = startVars(x[0]).p));
+    });
+    return p;
+  }
   function replayProgress(rows, o = {}) {
     const gen = o.gen || {},
+      starts = o.starts || {},
       mem = memOf(o.mem),
       conf = o.conf || {},
       since = o.since || {},
@@ -1564,7 +1587,8 @@
         pl.n++;
         if (hs.some(h => h && h[0])) pl.rep++;
         // The mix-ups term, on the record before this answer (quiz.js answer scores it before the offers).
-        const cf = confTermOf(pl.P, t, chs, k);
+        const cf = confTermOf(pl.P, t, chs, k),
+          pr = startPriorAt(starts[id], r[1]); // the first-launch answer's prior at this answer (abilityOf)
         // The choices offered and the genus given instead, before the weight (as quiz.js answer counts them).
         chs.forEach(x => x !== t && ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1));
         s[ok ? 'ok' : 'ko']++;
@@ -1590,12 +1614,12 @@
           s.u++;
           if (o.onAnswer) o.onAnswer(r, {d, fam: fm, cf, k, w, look});
           // The ability, as quiz.js answer steps it: the genus shown against the question's difficulty with the memory.
-          eloStep(pl.P, t, s, ok, dm, k);
+          eloStep(pl.P, t, s, ok, dm, k, pr);
         }
         // The global level (quiz.js answer): made at the first answer from the player's history, then one step each.
         if (pl.P[LEVEL]) pl.P[LEVEL][ok ? 'ok' : 'ko']++;
         else pl.P[LEVEL] = levelSeed(pl.P);
-        if (replayable) eloStep(pl.P, LEVEL, pl.P[LEVEL], ok, dm, k);
+        if (replayable) eloStep(pl.P, LEVEL, pl.P[LEVEL], ok, dm, k, pr);
         pl.P[LEVEL].at = r[1];
         s.at = r[1];
         // The learned mark (not replayed: replayedOf takes it from the saved copy) is lost, in the game, at a miss that
@@ -1612,7 +1636,7 @@
         if (wrong) {
           const x = rec(c);
           if (replayable) {
-            x.pg = pgStep(x.pg, false, pgMissW(abilityOf(pl.P, c), d0, k, 1, aimOf(pl.P[LEVEL].th)));
+            x.pg = pgStep(x.pg, false, pgMissW(abilityOf(pl.P, c, pr), d0, k, 1, aimOf(pl.P[LEVEL].th)));
             x.u++;
           }
           x.h = (x.h + '0').slice(-10);
@@ -1915,6 +1939,7 @@
     MEM_LOGGED,
     CF_LOGGED,
     replayProgress,
+    startPriorAt,
     replayedOf,
     replayBase,
     logRow,

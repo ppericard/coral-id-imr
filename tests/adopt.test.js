@@ -90,6 +90,9 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     INTRO: {KEY: 'imr-coral-intro', OFFER: {KEY: 'imr-coral-intro-offer'}},
     introMerge: () => {},
     introReset: () => {},
+    // The first-launch question (model.js startMerge; its record goes to the replay as starts, app.js BASICS_KEY).
+    startMerge: () => {},
+    BASICS_KEY: 'imr-basics',
     Q: {},
     saveQ: () => {},
     showBon: () => {},

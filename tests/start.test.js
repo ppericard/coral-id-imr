@@ -268,3 +268,59 @@ test("another device's answer: the waiting question card resumes only after the 
   N.startResume();
   assert.strictEqual(r2, 0, 'no answer yet: the card stays');
 });
+
+// The full replay (core.js replayProgress, the sheet's replay_ and the app's own replay of its unsent answers) steps the
+// ability with the first-launch answer in force at each answer, as the app does (startPriorAt; RVS v3).
+test('replay: the prior of the first-launch answer in force at each answer, as the app steps it', () => {
+  const rec = {
+    c: 'new',
+    t: 5000,
+    h: [
+      ['know', 0, 1000, 'tour'],
+      ['new', 20, 5000, 'fallback']
+    ]
+  };
+  assert.strictEqual(C.startPriorAt(rec, 500), 0, 'before any answer: the default player');
+  assert.strictEqual(C.startPriorAt(rec, 1000), startVars('know').p);
+  assert.strictEqual(C.startPriorAt(rec, 4999), startVars('know').p);
+  assert.strictEqual(C.startPriorAt(rec, 6000), startVars('new').p, 'after the change');
+  assert.strictEqual(C.startPriorAt(null, 6000), 0);
+  assert.strictEqual(C.startPriorAt({c: 'imr', t: 100}, 200), startVars('imr').p, 'a record without its history');
+  assert.strictEqual(C.startPriorAt({c: 'bogus', t: 1, h: [['bogus', 0, 1]]}, 200), 0);
+  // Two answers on genera never answered, after "I know corals well": the replay's abilities are the app's steps from
+  // W x p, not from 0.
+  const GEN = {A: {look: [], fam: 'x'}, B: {look: [], fam: 'y'}, C: {look: [], fam: 'z'}, D: {look: [], fam: 'w'}};
+  const T = i => new Date(2000 + i * 1000).toISOString(),
+    rows = [
+      C.logRow({t: T(0), g: 'A', a: 'A', ok: 1, m: 'quiz', ph: 'a0', e: 0.8, th: 0, nw: 1, ch: 'A B C D'}, 'p'),
+      C.logRow({t: T(1), g: 'B', a: 'C', ok: 0, m: 'quiz', ph: 'b0', e: 0.8, th: 0, nw: 1, ch: 'A B C D'}, 'p')
+    ],
+    plain = C.replayProgress(rows, {gen: GEN}).p.P,
+    said = C.replayProgress(rows, {gen: GEN, starts: {p: {c: 'know', t: 1000, h: [['know', 0, 1000, 'tour']]}}}).p.P;
+  // The app's own steps on the same answers (model.js ability / abilityStep = core.js abilityOf / eloStep with p).
+  const app = {},
+    p = startVars('know').p,
+    step = (g, ok, d) => {
+      const s = (app[g] = app[g] || {ok: 0, ko: 0});
+      s[ok ? 'ok' : 'ko']++;
+      C.eloStep(app, g, s, ok, d, 4, p);
+      if (app[C.LEVEL]) app[C.LEVEL][ok ? 'ok' : 'ko']++;
+      else app[C.LEVEL] = C.levelSeed(app);
+      C.eloStep(app, C.LEVEL, app[C.LEVEL], ok, d, 4, p);
+    };
+  const dOf = (e, th) => th - Math.log((e - 0.25) / 0.75 / (1 - (e - 0.25) / 0.75));
+  step('A', true, dOf(0.8, 0));
+  step('B', false, dOf(0.8, 0));
+  assert.strictEqual(said.A.th, app.A.th, 'genus A as the app stepped it');
+  assert.strictEqual(said.B.th, app.B.th, 'genus B as the app stepped it');
+  assert.ok(said.A.th > plain.A.th, 'the prior lifts the start of a genus never answered');
+  assert.notStrictEqual(said[C.LEVEL].th, plain[C.LEVEL].th);
+});
+
+// Rules versions: the first-launch prior moves the progress, so it has its version, with the standard card.
+test('rules version: the first-launch prior has its RVS entry, with RV_CARD', () => {
+  const x = C.RVS.find(v => /first-launch/i.test(v.why));
+  assert.ok(x, 'an RVS entry for the first-launch prior');
+  assert.strictEqual(x.msg, C.RV_CARD);
+  assert.strictEqual(C.RV, C.RVS[C.RVS.length - 1].v);
+});

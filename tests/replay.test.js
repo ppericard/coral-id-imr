@@ -364,6 +364,7 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
       GX: n => GEN[n],
       pooledConf: (a, b) => C.confScore(undefined, prior(a, b)),
       confusable: (t, n) => GEN[t].look.includes(n),
+      startV: () => C.startVars(), // the first-launch answer: none here, the default player's prior
       P: {}
     };
   vm.createContext(M);

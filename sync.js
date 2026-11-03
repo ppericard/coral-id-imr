@@ -117,7 +117,13 @@ function replayAdopt(rp, pending, v, cut, pre) {
       last = Number((rp.rec[LEVEL] || {}).at) || 0,
       gen = {...((DATA && DATA.x && DATA.x.gen) || {}), ...((DATA && DATA.gen) || {})},
       R = rows.length
-        ? replayProgress(rows, {gen, mem: PMEM, conf: PCONF, start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}}})[me].P
+        ? replayProgress(rows, {
+            gen,
+            mem: PMEM,
+            conf: PCONF,
+            start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}},
+            starts: {[me]: store.get(CHOICE.KEY, null)} // the first-launch answer (core.js startPriorAt)
+          })[me].P
         : rp.rec,
       before = copy(P),
       M = replayedOf({P: R}, P, rp.rv);
@@ -661,13 +667,16 @@ function sendAnon() {
     keepalive: true,
     // pt: the oldest answer of the whole queue (pendingFrom), as answers left in it after a lost reply may be logged already.
     // reset: this device's progress reset (app.js), the replay's cutoff, as a signed-in player's saved data gives it (v28).
+    // start: the first-launch answer (model.js startSet), whose prior the replay applies, as a signed-in player's saved data
+    // gives it (v29); an older script ignores it.
     body: JSON.stringify({
       anon: who,
       anonAnswers: batch,
       av: appVer(),
       rv: rvApplied(),
       ...(pendingFrom(q) === null ? {} : {pt: pendingFrom(q)}),
-      ...(cut ? {reset: cut} : {})
+      ...(cut ? {reset: cut} : {}),
+      ...(store.get(CHOICE.KEY, null) ? {start: store.get(CHOICE.KEY, null)} : {})
     })
   })
     .then(r => r.json())

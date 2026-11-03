@@ -1,4 +1,4 @@
-// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 28 (2026-11-03: v28: progress replayed from the whole answer log by this script: the app's own progress engine (core.js, embedded at the end of this file by tools/sync_core.py) replays a player's answers in the reply to a sign-in, load or save (or to a device's anonymous answers) when their app applied an older rules version, the result kept in a new Replayed tab and sent as replay: {rv, n, rec, ids}; the app adopts it, the player's saved copy is never rewritten here; the hold's ids, like the replay's, cover every answer from the request's pt (the oldest answer the device still queues); v27: typed answers (mode |t, the player types the genus instead of picking one of the choices) are rated with no guess rate (guess_ 0), stats cache stats14; v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
+// IMR Coral ID: progress sync for the RAs, stored in this Google Sheet.  VERSION 29 (2026-11-04: v29: the full replay applies the player's first-launch answer (imr-coral-start in their saved data, or start in an anonymous device's send): a genus never answered starts from the global level shrunk towards the level the answer says, the answer in force at each answer (core.js startPriorAt), as the app does; v28: progress replayed from the whole answer log by this script: the app's own progress engine (core.js, embedded at the end of this file by tools/sync_core.py) replays a player's answers in the reply to a sign-in, load or save (or to a device's anonymous answers) when their app applied an older rules version, the result kept in a new Replayed tab and sent as replay: {rv, n, rec, ids}; the app adopts it, the player's saved copy is never rewritten here; the hold's ids, like the replay's, cover every answer from the request's pt (the oldest answer the device still queues); v27: typed answers (mode |t, the player types the genus instead of picking one of the choices) are rated with no guess rate (guess_ 0), stats cache stats14; v26: photo memory estimated from the answers: an answer on a photo is expected easier by an offset that depends on the player's own history with it (new 0; shown never right, right once, right twice or more: estimated in the same replay as the photos and the players, shrunk to the old fixed rule as prior), one expectation for the photos and the player's level (until v25 the level ignored memory), ?stats=1 serves the offsets as mem and the answers behind them as memn (stats cache stats13); v25: a request from an app version before 2026-11-03 (no av) is logged in Events as kind 'old', with the name or anonymous id when it carries one, at most once an hour per sender; v24: the flood caps count only answers the sheet does not have yet, so a device sending again what it already sent (the app's one-time catch-up of anonymous answers, a resend after a lost reply) never uses up its quota; v23: the opening hold synced: each load of a player's progress carries hold, the app's CUSUM (model.js holdStep) over their logged answers since their last progress reset, the gentle restart's answers (mode |w) left out; Answers gets two columns at the end, Seconds (time to answer) and Enlarged (a photo enlarged before answering, 0/1), logged only; v22: the leaderboard % follows the app's new progress per genus, a moving average of the answers weighed by what each one proves (s.pg, core.js PROG, pgOf); progress saved before it replays its last 10 results; v21: Events tab: one 'load' event a visit with the load times (first page, quiz, first quiz photo), the line measured, the bytes downloaded and the CDN server, so the loading order is set from the players' real lines; v20: the admin can hide a player from the public leaderboard (Board -1, userBoard), which the player's own syncs never undo (a test account); 2-choice questions logged as plain quiz are rated as 2-choice (from the Choices column; stats cache stats12); the admin can rename a player to keep their record apart (userRename: answers, reports, progress follow, hidden from the leaderboard; the old name is free again, so the person can start over under it); v19: Events tab: anonymous error reports from the players' devices (app errors, photos that fail, saves that fail) and their answers to the occasional one-tap question (too easy / about right / too hard); admin readEvents; v18: devices that never signed in count for photo difficulty and confusions under the same rule as signed-in players (10 answers, clearly above chance, weighed by experience n / (n + 10)); plain answer count per photo; v17: photo difficulty and confusions count only signed-in players whose answers are clearly above chance (10 answers or more); every player starts as a beginner (level -1); a player's answers move the photos more as their level settles (n / (n + 30)), and repeats count against what the player remembers of the photo; answers of a device that never signed in count once it signs in; readAnswers rows carry an anonymous flag; admin anonDelete removes the answers of chosen anonymous ids (test runs); v16: the leaderboard computes each player's progress % itself from their saved progress (same formula as the app), so it is up to date for everyone without waiting for their next sync; v15: the leaderboard shows a player's level only from 200 answers (it moves too much before); GET ?achs=1 gives how many signed-in players hold each achievement; v14: public leaderboard (GET ?board=1: name, progress %, level of every signed-in player who did not opt out), the progress % and the opt-out are saved with each sync (Progress, Board columns); per-player answers and abilities are admin-only (POST readAnswers / readStats with the token), so leaderboard names can't be matched to an answer history; v13: the admin player list gives each player's anonymous id, so the admin can show names beside the anonymous answer stats (admin token only, like the names); v12: answers of players who never sign in arrive under a random device id (~anon <id>), moved to the name at sign-in; caps against floods (per anonymous id, per name, new accounts, reports) with an Alerts tab; v11: updates itself from GitHub (autoUpdate, every 15 min, once installAutoUpdate has run: no more copy and paste); admin user management: list players with their stats, delete a player, merge two names of one person (admin token only); a removed name+code gets error 'gone' instead of a new account; the mode of a duel on a chosen pair (quiz-duel|A|B) is kept (it was dropped, so it was rated as a 4-choice answer); v10: each answer logs the choices offered (Choices column), and ?stats=1 adds how often each pair of genera was offered together and mixed up (confusion scores); v9: quiz questions with easy wrong choices are logged "quiz|kN" (N plausible choices) and rated with a 1/N guess; v8: reports read by every admin with their GitHub token (v7 had a single owner), reports and feedback from anywhere in the app (photos, sheets, pages); v7: players report a wrong answer or a bad photo (Reports tab); v6: code review fixes: progress of any size (Progress data tab), stale-write check, input sanitised, PIN throttle, secret salt for anonymous ids; earlier: v5 continuous difficulty)
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -26,7 +26,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 28;  // bump with the header line on every change; every reply carries it as v
+const VERSION = 29;  // bump with the header line on every change; every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
@@ -92,7 +92,7 @@ function doGet(e){
   // it out (the app keeps its own progress and asks again next time).
   if (e.parameter.rv !== undefined) {
     const lock = LockService.getScriptLock();
-    if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), Number(e.parameter.rv), Number(e.parameter.pt)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
+    if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), Number(e.parameter.rv), Number(e.parameter.pt), startOf_(data)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
   }
   return json_(out);
 }
@@ -169,7 +169,7 @@ function doPost(e){
     const out = {ok: true, log: true, rev: rev + 1};
     try { const o = hold_(name, resetOf_(p.data), p.pt); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
     // v28: the full replay, over every answer now logged (replay_).
-    try { const rp = replay_(name, resetOf_(p.data), typeof p.rv === 'number' ? p.rv : NaN, p.pt); if (rp) out.replay = rp; } catch (err) {}
+    try { const rp = replay_(name, resetOf_(p.data), typeof p.rv === 'number' ? p.rv : NaN, p.pt, startOf_(p.data)); if (rp) out.replay = rp; } catch (err) {}
     return json_(out);
   } finally { lock.releaseLock(); }
 }
@@ -217,6 +217,10 @@ const flag_ = x => x === 1 || x === true ? 1 : x === 0 || x === false ? 0 : '';
 const HOLD = {SLACK: 0.1, IDS: 500};
 const holdKey_ = name => 'hold:' + lc_(name);
 function dropHold_(name){ ROWS_ = null; try { CacheService.getScriptCache().remove(holdKey_(name)); } catch (e) {} }
+// The first-launch answer in a player's saved data (imr-coral-start, v29), null when there is none or it is broken.
+function startOf_(data){
+  try { const o = JSON.parse((data || {})['imr-coral-start'] || 'null'); return o && typeof o === 'object' ? o : null; } catch (e) { return null; }
+}
 function resetOf_(data){
   try { return resetAt_(JSON.parse((data || {})['imr-coral-reset'] || '""')); } catch (e) { return 0; }
 }
@@ -292,7 +296,9 @@ function gen_(){
 // new photos, choices]; blank numbers are null (answers before v5).
 const numOrNull_ = x => x === '' || x == null || !isFinite(Number(x)) ? null : Number(x);
 const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6]), numOrNull_(r[8]), numOrNull_(r[9]), numOrNull_(r[10]), String(r[11] || '')];
-function replay_(key, since, appRv, pt){
+// start: the player's first-launch answer (the app's imr-coral-start record; v29): the replay steps the ability with the
+// prior it says, as the app does (core.js startPriorAt).
+function replay_(key, since, appRv, pt, start){
   if (typeof appRv !== 'number' || !isFinite(appRv) || appRv >= CORE_.RV) return null;
   const who = lc_(key), mine = answerRows_().filter(r => lc_(r[0]) === who && (new Date(r[1]).getTime() || 0) > since);
   const rows = mine.map(r => rowOf_(who, r)), n = rows.length;
@@ -308,7 +314,7 @@ function replay_(key, since, appRv, pt){
   }
   const gen = gen_();
   if (!gen) return null;
-  const st = stats_(), rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf})[who], rec = rep ? rep.P : {};
+  const st = stats_(), rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, starts: start ? {[who]: start} : {}})[who], rec = rep ? rep.P : {};
   const json = JSON.stringify(rec), parts = [];
   for (let i = 0; i < json.length; i += CHUNK) parts.push(safe_(json.slice(i, i + CHUNK)));
   const r = at || sh.getLastRow() + 1, old = at ? sh.getLastColumn() : 0, out = [safe_(key), CORE_.RV, n, since, new Date()].concat(parts);
@@ -879,7 +885,7 @@ function anon_(p){  // also p.pt (replay_) and p.reset: the device's progress re
     // applied an older rules version.
     const out = {ok: true, log: true};
     // Only the answers after the device's progress reset (p.reset, as resetOf_ reads a signed-in player's; Codex review #399).
-    try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt); if (rp) out.replay = rp; } catch (err) {}
+    try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt, p.start && typeof p.start === 'object' ? p.start : null); if (rp) out.replay = rp; } catch (err) {}
     return out;
   } finally { lock.releaseLock(); }
 }
@@ -1760,9 +1766,12 @@ const CORE_ = (function () { const module = {exports: {}};
   // not everything, about Porites), then clamped to [LO, HI]: a strong player's first question on a new genus has traps
   // and harder photos but is never the hardest, a struggling player's starts a little easier. Taken once: the first answer
   // on the genus saves its own ability (s.th) from there.
+  // p (2026-11-03, the first-launch question, CHOICE below): the level the player said they start from. The answers are
+  // shrunk towards it instead of towards 0, with the same weight N: (m t + N p) / (m + N). No answers: W x p; p 0 (the
+  // default, "I'm new to corals") is the rule as it was. No new constant.
   const LEVEL = '~level',
     START = {W: 0.8, N: 10, LO: -0.5, HI: 1.5};
-  function playerStart(P, skip) {
+  function playerStart(P, skip, p = 0) {
     P = P || {};
     const n = s => ((s && s.ok) || 0) + ((s && s.ko) || 0),
       G = P[LEVEL];
@@ -1778,9 +1787,55 @@ const CORE_ = (function () { const module = {exports: {}};
         m += n(s);
         t += n(s) * s.th;
       });
-    if (!m) return 0;
-    const v = START.W * (t / m) * (m / (m + START.N));
+    p = typeof p === 'number' && isFinite(p) ? p : 0;
+    if (!m && !p) return 0;
+    const v = (START.W * (t + START.N * p)) / (m + START.N);
     return Math.round(Math.min(START.HI, Math.max(START.LO, v)) * 100) / 100;
+  }
+
+  // The first-launch question (Pierre, 2026-11-03): a forced choice among three, in the welcome tour before the first
+  // question (or on a card before the next quiz question for a player who skipped the tour, and once for an existing
+  // player with fewer than ASK answers; from ASK answers on the choice is inferred silently: startInfer). It initialises
+  // a few variables of the existing model, never a coded path: v.p, the level the answers are shrunk towards (playerStart:
+  // the starting ability of a genus never answered, hence the photos, traps and single views of its first questions, and
+  // the shaky signal that paces the opening of genera); v.at, the answer from which the offer to open all genera can come
+  // (model.js introOffer, INTRO.OFFER.AT for everyone before); v.basics, Coral basics offered first. "new" is the
+  // default player of before (a new player is a beginner). Values and their simulation: docs/LEARNING.md "The first-
+  // launch question". Stored in imr-coral-start (synced with the progress): {c, t, at, via, n, s, fb, h}.
+  // Fallback (for everyone, also those who answered: they may have picked wrong): over the first N answers after the
+  // choice, s sums each answer's surprise (right 1 / wrong 0, minus the success the app expected, e); its mean below -LO
+  // says the game is clearly harder than the choice predicts ('lo': Coral basics, or a lower choice), above HI clearly
+  // easier ('hi': a higher choice). One card per direction, ever (fb). LO and HI from the simulated players and the real
+  // answer log (docs/LEARNING.md).
+  const CHOICE = {
+    KEY: 'imr-coral-start',
+    ASK: 50,
+    N: 20,
+    LO: 0.1,
+    HI: 0.18,
+    opts: [
+      ['new', 'I’m new to corals', 'Start from scratch: the app shows you the basics first.', {p: 0, at: 50, basics: 1}],
+      ['imr', 'I had the IMR coral course', 'You have met the genera in the IMR lecture.', {p: 0.5, at: 30, basics: 0}],
+      ['know', 'I know corals well', 'At IMR or elsewhere: you can already name many genera.', {p: 1.25, at: 20, basics: 0}]
+    ]
+  };
+  const startOpt = c => CHOICE.opts.find(o => o[0] === c) || null;
+  // The variables of a choice (none yet, or an unknown one: the default player's).
+  const startVars = c => (startOpt(c) || CHOICE.opts[0])[3];
+  // The verdict on the first N answers after the choice: null (not yet, or consistent), 'lo' or 'hi'.
+  const startCheck = (n, s) => (!(n >= CHOICE.N) ? null : s / n < -CHOICE.LO ? 'lo' : s / n > CHOICE.HI ? 'hi' : null);
+  // The choices a fallback card offers: below the current one ('lo') or above it ('hi').
+  const startNext = (c, dir) => {
+    const i = CHOICE.opts.findIndex(o => o[0] === c);
+    return (dir === 'lo' ? CHOICE.opts.slice(0, Math.max(0, i)).reverse() : CHOICE.opts.slice(i + 1)).map(o => o[0]);
+  };
+  // An existing player with ASK answers or more is not asked: the choice is inferred from their global level (the Elo
+  // over all their answers, LEVEL), the choice whose starting level W x p is nearest (midpoints: under 0.2 new, under 0.7
+  // imr, else know). Shown as "inferred" in the admin's player journey.
+  function startInfer(P) {
+    const G = (P || {})[LEVEL],
+      t = G && typeof G.th === 'number' ? G.th : 0;
+    return CHOICE.opts.reduce((b, o) => (Math.abs(START.W * o[3].p - t) < Math.abs(START.W * b[3].p - t) ? o : b))[0];
   }
   // The global record made at the first answer after this change: it starts from the player's history (every answer so
   // far, the answer-weighted mean ability of the genera), so their earlier answers keep counting (code review, #320).
@@ -1843,7 +1898,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // (1 bronze, 2 silver, 3 gold) and a test on a snapshot the app builds (app.js achSnap):
   //   {total, met, q: [genera at Open Water (>= 50%), Advanced (>= 80%), Divemaster (>= 95%) or above; model.js MASTERY,
   //   2026-11-03, were the quarters 25/50/75% before], learned (Instructor), pct, streak (best run of right answers), duel, cor,
-  //    hard, elo (0 until 200 answers, app.js ELO_MIN: it moves a lot before), group (an IMR lecture group fully learned), bonus (bonus genera met)}.
+  //    hard, elo (0 until 200 answers, app.js ELO_MIN: it moves a lot before), group (an IMR lecture group fully learned), bonus (bonus genera met),
+  //    basics (Coral basics done)}.
   // Median questions to reach the old quarter rungs, simulated with the real game (2026-11-01, before the levels; 75% / 90% right): 5 at 25%
   // 76 / 57, 10 at 50% 231 / 137, 5 at 75% 363 / 203, first learned ~430 / ~300.
   // Descriptions say what the player can now do (Pierre, 2026-11-02: informational feedback motivates, Deci, Koestner &
@@ -1881,7 +1937,10 @@ const CORE_ = (function () { const module = {exports: {}};
     ['elo1300', 'Elo 1300', 'Reached an Elo of 1300', 3, '⭐', s => s.elo >= 1300],
     ['elo1400', 'Elo 1400', 'Reached an Elo of 1400', 3, '🌟', s => s.elo >= 1400],
     ['group', 'Group complete', 'You know a whole IMR lecture group', 3, '🧩', s => s.group],
-    ['bonus', 'Off the list', 'You met a bonus genus, off the IMR list', 2, '🔓', s => s.bonus >= 1]
+    ['bonus', 'Off the list', 'You met a bonus genus, off the IMR list', 2, '🔓', s => s.bonus >= 1],
+    // Coral basics done (Pierre, 2026-11-03: completion recognised): every step of the module seen (proto/basics.js), a
+    // learning milestone like the others (the words the ID tips use), reached in about 5 minutes by those who take it.
+    ['basics', 'Coral basics', 'You know the words the ID tips use: polyp, corallite, septa, walls, growth forms', 1, '📖', s => s.basics]
   ].map(([id, title, desc, tier, icon, test]) => ({id, title, desc, tier, icon, test}));
   // The achievements a snapshot meets that `have` ({id: time}) does not hold yet, in list order.
   const newAch = (snap, have) => ACH.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);
@@ -2224,9 +2283,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // genera moves it too while its own answers are few: the global + concept skill of Pelánek et al. (UMUAI 2017), as a
   // lazy update (2026-11-03, docs/LEARNING.md "Global level and genus").
   const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
-  const abilityOf = (P, n) => {
+  // p: the level the player's first-launch answer says (CHOICE, startVars(c).p), which a genus never answered starts
+  // from (playerStart); 0, the default player's, when they have not answered.
+  const abilityOf = (P, n, p = 0) => {
     const s = (P || {})[n] || {};
-    if (typeof s.th !== 'number') return s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n);
+    if (typeof s.th !== 'number') return s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n, p);
     return Math.min(ELO.hi, Math.max(ELO.lo, s.th + levelMove(P, n, s)));
   };
   // The global level's move since the genus's own last step (s.lt: the level then), weighed by the genus's own
@@ -2239,8 +2300,8 @@ const CORE_ = (function () { const module = {exports: {}};
     if (n === LEVEL || !s || typeof s.lt !== 'number' || !G || typeof G.th !== 'number') return 0;
     return Math.round(((G.th - s.lt) / (1 + ((s.ok || 0) + (s.ko || 0)) / ELO.n)) * 100) / 100;
   }
-  function eloStep(P, n, s, good, d, k) {
-    const th = abilityOf(P, n),
+  function eloStep(P, n, s, good, d, k, p = 0) {
+    const th = abilityOf(P, n, p),
       g = 1 / k,
       e = g + (1 - g) * sigm(th - d),
       m = (s.ok || 0) + (s.ko || 0);
@@ -2293,6 +2354,12 @@ const CORE_ = (function () { const module = {exports: {}};
       v: 2,
       at: '2026-11-04',
       why: 'The opening pace and known mix-ups (#425): a question whose choices hold a genus the player mixes up with the one shown more than everyone does (3 or more plausible choices) counts as that much harder, for the ability, the global level and the weight of a miss',
+      msg: RV_CARD
+    },
+    {
+      v: 3,
+      at: '2026-11-04',
+      why: 'The first-launch question (#428): a genus never answered starts from the global level shrunk towards the level the player said (new 0, IMR course 0.5, know well 1.25), the answer in force at each answer (imr-coral-start, its history h)',
       msg: RV_CARD
     }
   ];
@@ -2356,8 +2423,23 @@ const CORE_ = (function () { const module = {exports: {}};
   // CF_FROM, which reads the sheet's wall clock; #426): the app's logged e includes its mix-ups term (model.js confTerm),
   // taken out again here with the replay's own. An app not yet updated logs a few answers without it after that time.
   const CF_LOGGED = Date.UTC(2026, 10, 3, 15, 35);
+  // The first-launch answer in force at time t (2026-11-03, CHOICE): rec, the player's imr-coral-start record, keeps
+  // every answer given ([c, answers then, time, via] in h); the prior p of the last one given at or before t, 0 before
+  // the first (the player then played as the default player). The replay steps the ability with it (o.starts).
+  function startPriorAt(rec, t) {
+    if (!isObj(rec)) return 0;
+    const h = Array.isArray(rec.h) && rec.h.length ? rec.h : startOpt(rec.c) ? [[rec.c, rec.at, rec.t, rec.via]] : [];
+    let p = 0,
+      last = -Infinity;
+    h.forEach(x => {
+      const at = Array.isArray(x) && typeof x[2] === 'number' ? x[2] : -Infinity;
+      if (startOpt(x && x[0]) && at <= t && at >= last) ((last = at), (p = startVars(x[0]).p));
+    });
+    return p;
+  }
   function replayProgress(rows, o = {}) {
     const gen = o.gen || {},
+      starts = o.starts || {},
       mem = memOf(o.mem),
       conf = o.conf || {},
       since = o.since || {},
@@ -2414,7 +2496,8 @@ const CORE_ = (function () { const module = {exports: {}};
         pl.n++;
         if (hs.some(h => h && h[0])) pl.rep++;
         // The mix-ups term, on the record before this answer (quiz.js answer scores it before the offers).
-        const cf = confTermOf(pl.P, t, chs, k);
+        const cf = confTermOf(pl.P, t, chs, k),
+          pr = startPriorAt(starts[id], r[1]); // the first-launch answer's prior at this answer (abilityOf)
         // The choices offered and the genus given instead, before the weight (as quiz.js answer counts them).
         chs.forEach(x => x !== t && ((s.off = s.off || {})[x] = (s.off[x] || 0) + 1));
         s[ok ? 'ok' : 'ko']++;
@@ -2440,12 +2523,12 @@ const CORE_ = (function () { const module = {exports: {}};
           s.u++;
           if (o.onAnswer) o.onAnswer(r, {d, fam: fm, cf, k, w, look});
           // The ability, as quiz.js answer steps it: the genus shown against the question's difficulty with the memory.
-          eloStep(pl.P, t, s, ok, dm, k);
+          eloStep(pl.P, t, s, ok, dm, k, pr);
         }
         // The global level (quiz.js answer): made at the first answer from the player's history, then one step each.
         if (pl.P[LEVEL]) pl.P[LEVEL][ok ? 'ok' : 'ko']++;
         else pl.P[LEVEL] = levelSeed(pl.P);
-        if (replayable) eloStep(pl.P, LEVEL, pl.P[LEVEL], ok, dm, k);
+        if (replayable) eloStep(pl.P, LEVEL, pl.P[LEVEL], ok, dm, k, pr);
         pl.P[LEVEL].at = r[1];
         s.at = r[1];
         // The learned mark (not replayed: replayedOf takes it from the saved copy) is lost, in the game, at a miss that
@@ -2462,7 +2545,7 @@ const CORE_ = (function () { const module = {exports: {}};
         if (wrong) {
           const x = rec(c);
           if (replayable) {
-            x.pg = pgStep(x.pg, false, pgMissW(abilityOf(pl.P, c), d0, k, 1, aimOf(pl.P[LEVEL].th)));
+            x.pg = pgStep(x.pg, false, pgMissW(abilityOf(pl.P, c, pr), d0, k, 1, aimOf(pl.P[LEVEL].th)));
             x.u++;
           }
           x.h = (x.h + '0').slice(-10);
@@ -2765,6 +2848,7 @@ const CORE_ = (function () { const module = {exports: {}};
     MEM_LOGGED,
     CF_LOGGED,
     replayProgress,
+    startPriorAt,
     replayedOf,
     replayBase,
     logRow,
@@ -2793,6 +2877,12 @@ const CORE_ = (function () { const module = {exports: {}};
     sorryText,
     START,
     playerStart,
+    CHOICE,
+    startOpt,
+    startVars,
+    startCheck,
+    startNext,
+    startInfer,
     levelSeed,
     accountOf,
     commonFactor,
