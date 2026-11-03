@@ -611,7 +611,7 @@ test("v30 pages events: cleaned, in their own tab, under the admin's id of the p
     eanon: 'devanon001',
     events: [pg('p1', {note: '=cmd()', f: 'https://x/y.jpg'}), {id: 'e1', k: 'err', msg: 'boom'}]
   });
-  assert.deepStrictEqual(r1, {ok: true, ev: true, v: 30});
+  assert.deepStrictEqual(r1, {ok: true, ev: true, v: 31});
   // Signed in: the name and code, checked; a wrong code, an unknown name or a bad id: no id, still logged.
   s.post({dev: 'dev0000009', ename: 'ana', epin: '1234', events: [pg('p2')]});
   s.post({dev: 'dev0000009', ename: 'Ana', epin: '9999', events: [pg('p3')]});
@@ -735,7 +735,7 @@ test('v30 pages events: an app before v30 sends none, and its other events are l
       {id: 'o2', k: 'later', msg: 'y'}
     ]
   });
-  assert.deepStrictEqual(r, {ok: true, ev: true, v: 30});
+  assert.deepStrictEqual(r, {ok: true, ev: true, v: 31});
   assert.deepStrictEqual(
     s.sheets.Events.rows.slice(1).map(x => x[9]),
     ['o1']
