@@ -28,7 +28,7 @@
 import json, re, sys, time, urllib.request
 from collections import Counter
 from datajson import load_all, dump_all  # data.json + cand.json (candidates waiting live in cand.json)
-from excluded import excluded, drop_excluded, set_aside
+from excluded import excluded, drop_excluded, set_aside, SUG
 from genera import finder_only, cap_sheet
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 LIC = 'cc-by,cc-by-nc,cc0,cc-by-sa,cc-by-nc-sa'
@@ -134,8 +134,16 @@ def main():
         x = GEN[g]
         return sum(p.get('loc') == 'dauin' or p.get('own') for L in x['views'].values() for p in L) + sum(p.get('loc') == 'dauin' and p['f'] not in GONE and not excluded(p['f']) for p in cand.get(g, []))
     # Observations waiting for genus g: from one source (loc) or all.
+    # A Finder-only genus's candidates guessed to be in a view it does not keep (Corallites) are not shown (admin.js
+    # candQueue, capViews): they do not count as waiting either (Codex review #390), or they would hold the room.
+    def shown(g, p):
+        if g not in FINDER: return True
+        v = (SUG.get(p['f']) or {}).get('v') or p.get('vg')
+        keep = kept_views(g, GEN, CUR)
+        if keep[1] == 'macro' and v == 'medium': v = 'wide'
+        return not v or v in keep
     def waiting_obs(g, loc=None):
-        return {p.get('o') for p in cand.get(g, []) if (loc is None or p.get('loc') == loc) and waiting(p)}
+        return {p.get('o') for p in cand.get(g, []) if (loc is None or p.get('loc') == loc) and waiting(p) and shown(g, p)}
     need = lambda g: finder_need(g, GEN, cand, CUR, excluded) if g in FINDER else None
     def room_for(g, where):
         loc = 'dauin' if where == DAUIN else 'world' if where == 'world' else 'ph'
