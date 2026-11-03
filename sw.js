@@ -12,10 +12,10 @@ const PHOTO_RETRY = 800, // as core.js PHOTO_RETRY
 const SHELL = [
   './',
   'index.html',
-  'app.css?v=125',
+  'app.css?v=126',
   'core.js?v=34',
-  'app.js?v=187',
-  'sync.js?v=19',
+  'app.js?v=188',
+  'sync.js?v=20',
   'progress.js?v=15',
   'model.js?v=25',
   'quiz.js?v=33',
@@ -31,15 +31,15 @@ const SHELL = [
   'fonts/barlow-condensed-700-normal.woff2',
   'manifest.webmanifest',
   'curation.json',
-  'proto/lab.js?v=74',
-  'proto/lab.css?v=53',
+  'proto/lab.js?v=75',
+  'proto/lab.css?v=54',
   'home-art.js?v=4',
-  'home.js?v=29',
-  'home.css?v=22',
-  'tour.js?v=17',
+  'home.js?v=30',
+  'home.css?v=23',
+  'tour.js?v=18',
   // Lab prototypes are loaded by lab.js; keep this list and its ?v in step with LAB.files and LAB_V.
   ...['finder', 'basics', 'map', 'anatomy', 'zoom', 'elim', 'matrix', 'web', 'size', 'reveal', 'spot', 'type', 'pairs', 'gallery'].map(
-    f => `proto/${f}.js?v=73`
+    f => `proto/${f}.js?v=74`
   )
 ];
 const get = async (c, u, n = 3) => {
