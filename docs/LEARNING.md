@@ -71,7 +71,9 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
   `ELO.vr`); the step grows by up to `ELO.vg` × |vr|, within kmax. Why: simulated, a beginner or an RA at 80-87% right
   stayed rated as a beginner, because a shrinking step assumes a stable skill. A first version (vr 0.2, vg 3) made the
   global level swing; softened.
-- **Global level** `P['~level']`: the same Elo over every answer. A genus never answered starts from it
+- **Global level** `P['~level']`: the same Elo over every answer, without the `kmin` floor (since 2026-11-03: it
+  settles as its answers build up). A genus already answered moves with it, weighed by its own uncertainty ("Global level
+  and genus", below). A genus never answered starts from it
   (`core.js playerStart`: 0.8 × global × M / (M + 10), clamped to [−0.5, 1.5]), so a strong player gets traps, single
   views and harder photos on a new genus from its first question.
 - **The genus wrongly given** (rule 13) counts in its progress, its recent results and its runs, not in its Elo ability
@@ -251,6 +253,206 @@ never the genus wrongly given, so they need nothing and the app does not wait fo
 saved keep the drag they took until their genus is answered again (a replay of the sheet's log would correct them:
 ROADMAP).
 
+### Global level and genus (2026-11-03)
+
+Pierre: strong players must find the app challenging quickly (IMR staff will try it once), and beginners must not be
+overwhelmed. After the fix above, the genus abilities of strong players still sat 0.3-0.6 below the static fit of
+their answers, while their global level was about right: each genus learns only from its own answers, a few dozen at
+most, through an Elo that lags. The global level pools every answer.
+
+**The rule** (`core.js` `abilityOf`, `levelMove`, `eloStep`, which `model.js` `ability` and `abilityStep` call and
+the sheet's full replay runs the same way, `tests/replay.test.js`): the ability of a genus already answered is its own
+estimate plus the global level's move since its own last step,
+
+  θ_g = s.th + (L − s.lt) / (1 + answers_g / `ELO.n`),
+
+`s.lt` the level when the genus was last stepped (saved and merged with `th`, `core.js` `mergeProgress`; dropped when
+two accounts are merged, `mergeUsers`). The weight is the genus's own uncertainty, the share its own Elo step gives a
+new answer: a genus with 3 answers takes 83% of the level's move, one with 15 half, one with 45 a quarter. At the
+genus's next own step the move is taken in (`s.th`) and `s.lt` resets. The global level's step loses its `kmin` floor
+(it pools every answer and now moves every genus, so it settles as answers build up, Pelánek's uncertainty function;
+the volatility still lets it catch up). No new constant. This is the global + concept skill model of Pelánek et al.
+(UMUAI 2017, §4: P = σ(θ_global + θ_concept − d), both updated on every answer), as a lazy update. A genus never
+answered still starts from `playerStart`; progress saved before has no `s.lt`, so nothing moves until the genus's next
+answer (no recalculation).
+
+**What was tried** (real answers, `tools/abilityeval.js --model`, paired log-loss difference against `main` per answer,
+± its standard error; simulation 5 seeds):
+
+- Level + offset with every move in full (`H0`): −0.0096 ± 0.0034 overall with the level's steadier step, but worse
+  below level 0 and after a false alarm; in the simulation a beginner over-rated at first (+0.46 at question 50).
+- Weighed by the level's certainty (M / (M + `START.N`), 1 − K_L / kmax, squared...): the same picture, the band below
+  0 still worse (0.473-0.488 against 0.470).
+- Rises only (the level's falls not passed on): the best on the real answers (0.455; below 0, −0.015 ± 0.006), but
+  biased upward, since a level that fluctuates has a positive average rise: a simulated beginner rated +0.49 / +0.70 /
+  +0.20 above the truth at questions 50 / 100 / 300, a synthetic weak player +1.1 (`tests/ability.test.js`). It only
+  looked good because real players are under-rated. Rejected.
+- Shrinking each genus toward its level-based start, (m θ + N0 start) / (m + N0): 0.464, below 0 worse (0.484-0.490).
+- Why the band below 0 resists: there the level itself is wrong (players at 83% right with a level under 0, after
+  early misses, the `kmin` floor and the volatility); as a predictor the level beats the genus abilities in most groups
+  but loses badly there (0.511 against 0.470). A steadier level (no floor) closes most of the gap; without the
+  volatility as well changed nothing more, so only the floor goes. Without the floor the level's steps fall under
+  0.005 after a few hundred answers, so it is kept to 4 decimals (a genus to 2): rounded to 2, 1000 right answers left
+  it where it was (Codex review #415; `tests/ability.test.js`).
+
+**On the real answers** (1,183 answers, 9 players with 20 or more; mean predicted / right, log-loss; groups by one
+reference level, `main`'s rule, the same answers in each group for both: `tools/abilityeval.js` `refStep`, Codex review
+#415):
+
+| Group (answers) | `main` | global level + genus | paired difference ± se |
+| --- | --- | --- | --- |
+| all (1183) | 0.79 / 0.83, 0.465 | 0.80 / 0.83, 0.457 | −0.0085 ± 0.0032 |
+| 2 choices (727) | 0.80 / 0.87, 0.412 | 0.80 / 0.87, 0.410 | −0.0014 ± 0.0033 |
+| 4 choices (451) | 0.77 / 0.78, 0.551 | 0.79 / 0.78, 0.531 | −0.0197 ± 0.0063 |
+| Duel tab (86) | 0.85 / 0.93, 0.298 | 0.86 / 0.93, 0.286 | −0.0122 ± 0.0075 |
+| level < 0 (203) | 0.74 / 0.83, 0.470 | 0.74 / 0.83, 0.476 | +0.0063 ± 0.0087 |
+| level 0-0.75 (363) | 0.77 / 0.80, 0.524 | 0.77 / 0.80, 0.529 | +0.0050 ± 0.0063 |
+| level ≥ 0.75 (617) | 0.81 / 0.86, 0.429 | 0.83 / 0.86, 0.408 | −0.0214 ± 0.0038 |
+| after a false alarm (141) | 0.81 / 0.81, 0.466 | 0.81 / 0.81, 0.483 | +0.0168 ± 0.0084 |
+
+- Better overall (2.7 standard errors) and clearly for the strong players' answers (level ≥ 0.75) and the 4-choice
+  questions; every player's own log-loss is the same or better. The strong RA's genera 0.59 → 0.62 on average (fit
+  0.73), the other strong players 0.82 → 1.21 and 0.81 → 1.37 (fits 1.29 and 1.91).
+- Below level 0 and between 0 and 0.75: within the noise (+0.006 ± 0.009, +0.005 ± 0.006). After a false alarm,
+  slightly worse (+0.017 ± 0.008): the level's fall after a miss now reaches the genus wrongly given too, a little, as
+  it reaches every genus.
+
+**Simulated** (`tools/learnsim.js`, 5 seeds × 600 questions, `main` after #413; cells: θ − logit(true know) / |θ −
+logit k| / right % / genera met / learned / entered the exam / true knowledge; "rises only" for the record):
+
+| Profile, question | `main` | **global level + genus** | rises only (rejected) |
+| --- | --- | --- | --- |
+| beginner 50 | 0.04 / 1.00 / 72 / 15.6 / 0.0 / 0.0 / 0.19 | 0.05 / 0.89 / 70 / 14.6 / 0.0 / 0.0 / 0.18 | 0.49 / 0.81 / 71 / 16.0 / 0.0 / 0.0 / 0.19 |
+| beginner 100 | −0.44 / 1.04 / 79 / 19.2 / 0.0 / 0.0 / 0.29 | 0.13 / 0.87 / 80 / 22.4 / 0.0 / 0.0 / 0.30 | 0.70 / 0.98 / 76 / 27.0 / 0.0 / 0.0 / 0.33 |
+| beginner 300 | −0.45 / 1.21 / 83 / 39.6 / 0.0 / 0.4 / 0.64 | −0.37 / 0.84 / 83 / 40.0 / 0.0 / 0.2 / 0.68 | 0.20 / 0.71 / 79 / 40.0 / 0.0 / 0.2 / 0.70 |
+| beginner 600 | −1.44 / 1.50 / 88 / 40.0 / 0.6 / 5.0 / 0.87 | −1.06 / 1.12 / 88 / 40.0 / 0.2 / 3.8 / 0.88 | 0.09 / 0.62 / 87 / 40.0 / 0.2 / 3.8 / 0.88 |
+| lecture RA 50 | 0.05 / 0.73 / 81 / 18.8 / 0.0 / 0.0 / 0.42 | 0.23 / 0.83 / 80 / 17.8 / 0.0 / 0.0 / 0.41 | 0.41 / 0.74 / 77 / 19.0 / 0.0 / 0.0 / 0.42 |
+| lecture RA 100 | 0.01 / 0.81 / 79 / 33.4 / 0.0 / 0.0 / 0.53 | 0.07 / 0.86 / 79 / 30.8 / 0.0 / 0.0 / 0.51 | 0.24 / 0.76 / 77 / 31.8 / 0.0 / 0.0 / 0.53 |
+| lecture RA 300 | −0.79 / 0.93 / 87 / 40.0 / 0.0 / 0.0 / 0.77 | −0.55 / 0.80 / 84 / 40.0 / 0.0 / 1.0 / 0.77 | 0.29 / 0.67 / 84 / 40.0 / 0.0 / 0.0 / 0.78 |
+| lecture RA 600 | −1.45 / 1.47 / 91 / 40.0 / 1.0 / 8.4 / 0.90 | −1.27 / 1.29 / 89 / 40.0 / 1.0 / 8.2 / 0.91 | −0.15 / 0.58 / 90 / 40.0 / 0.2 / 9.2 / 0.91 |
+| strong RA 50 | −0.59 / 1.37 / 89 / 17.4 / 0.0 / 0.0 / 0.63 | −0.41 / 1.22 / 85 / 19.0 / 0.0 / 0.0 / 0.64 | −0.18 / 1.13 / 86 / 18.6 / 0.0 / 0.0 / 0.63 |
+| strong RA 100 | −0.48 / 1.31 / 84 / 30.6 / 0.0 / 0.0 / 0.70 | −0.46 / 1.15 / 86 / 32.6 / 0.0 / 0.0 / 0.71 | 0.04 / 1.04 / 86 / 32.0 / 0.0 / 0.0 / 0.71 |
+| strong RA 300 | −1.10 / 1.30 / 91 / 40.0 / 0.0 / 0.2 / 0.86 | −0.92 / 1.14 / 88 / 40.0 / 0.0 / 1.2 / 0.86 | 0.11 / 0.64 / 90 / 40.0 / 0.0 / 0.6 / 0.86 |
+| strong RA 600 | −1.71 / 1.72 / 93 / 40.0 / 1.8 / 16.4 / 0.94 | −1.43 / 1.47 / 94 / 40.0 / 2.4 / 14.4 / 0.94 | −0.56 / 0.82 / 92 / 40.0 / 2.4 / 15.0 / 0.94 |
+| expert 50 | −1.47 / 1.47 / 98 / 14.6 / 0.0 / 0.0 / 0.94 | −0.96 / 0.96 / 98 / 15.2 / 0.0 / 0.0 / 0.94 | −0.89 / 0.89 / 98 / 15.0 / 0.0 / 0.0 / 0.94 |
+| expert 100 | −1.26 / 1.26 / 96 / 27.8 / 0.0 / 0.0 / 0.94 | −0.94 / 0.94 / 96 / 27.6 / 0.0 / 0.2 / 0.94 | −0.87 / 0.87 / 95 / 27.8 / 0.0 / 0.4 / 0.94 |
+| expert 300 | −1.20 / 1.20 / 96 / 40.0 / 0.0 / 2.6 / 0.95 | −1.08 / 1.08 / 97 / 40.0 / 0.4 / 4.0 / 0.95 | −0.72 / 0.72 / 97 / 40.0 / 0.6 / 3.0 / 0.95 |
+| expert 600 | −1.25 / 1.25 / 97 / 40.0 / 6.2 / 26.2 / 0.97 | −1.25 / 1.25 / 97 / 40.0 / 8.6 / 24.6 / 0.97 | −0.72 / 0.72 / 98 / 40.0 / 7.6 / 27.0 / 0.97 |
+
+- **Strong players recognised sooner**: the expert's error 1.47 → 0.96 at question 50 and 1.26 → 0.94 at 100; the
+  strong RA 1.37 → 1.22, 1.31 → 1.15, 1.30 → 1.14, 1.72 → 1.47; the lecture RA 0.93 → 0.80 at 300.
+- **The beginner is not over-rated**: θ − logit(know) +0.05 / +0.13 / −0.37 at questions 50 / 100 / 300 (`main` +0.04 /
+  −0.44 / −0.45), |θ − logit k| lower at every checkpoint.
+- **No path breaks**: right % within 3 points of `main` everywhere (beginner 70 / 80 / 83 / 88, `main` 72 / 79 / 83 /
+  88; the expert's 96-98% and the first 50 questions' low 70s are `main`'s too); the beginner opens a little faster
+  (22.4 genera by question 100 against 19.2, at 80% right), the lecture RA a little slower (30.8 against 33.4);
+  exams within the spread (strong RA entered 14.4 ± 3.4 against 16.4 ± 2.3, expert learned 8.6 against 6.2). The
+  remaining under-estimation at 600 is mostly the ceiling `ELO.hi` (3) against learners at 0.9-0.97.
+- `tests/profiles.smoke.js`: its seed's beginner met 18 genera by question 100 (12) with this alone; with the target by
+  level ("Beginners and experts", below) 13, the limit stays 17.
+- Its opening pace for a beginner (22.4 genera by question 100) was too fast for Pierre: "Beginners and experts",
+  below.
+
+**The sheet and the admin**: `Code.gs` `stats_` and `core.js` `eloReplay` rate the photos and each player's own level
+from the answer log, never from the app's genus abilities, so they do not change and the app waits for no sheet
+version (AGENTS.md 7a). The Answers log's ability column is the ability the app used (with the level's move), so the
+logged expectation and the sheet's opening hold stay consistent. The admin's per-genus abilities (`readStats`, from
+the saved `th`) show each genus's own estimate without the level's move since its last answer: a little behind for a
+player whose level is still rising (ROADMAP). `replayProgress` (PR #399, not merged) replays progress, not the Elo; if
+it comes to replay the abilities, it must replay `s.lt` the same way.
+
+### Beginners and experts (2026-11-03)
+
+Pierre, on "Global level and genus": the gains for strong players and experts are what he wants, but 22 genera met by
+question 100 is too many for a beginner, and many beginners are arriving now; with a success target that follows the
+level, a beginner would be aimed at about 85% right, not 80%. Both must be calibrated, with the parameters that can
+treat a beginner and an expert differently.
+
+**The rule** (`model.js` `aimP`, `aimOff`, `shaky`; `core.js` `AIM`, `aimOf`, `pgMissW`, which the full replay weighs the
+misses with too, at the replayed level):
+
+- **The success aimed for follows the global level** (`core.js` `AIM`, `PICKD.AIM`, points [level, success]): 85% up to a level of 0.5,
+  75% from 1.5, a straight line between, flat outside, no cliff. In the simulation the levels reached are: a beginner
+  −0.05 to 0.6 over its first 300 questions, a lecture-level RA 0.4-0.7, a strong RA 1.0-1.5, an expert 2.5-2.8; so a
+  beginner and a lecture-level RA are aimed at about 85%, a strong RA at 75-80%, an expert at 75%. Papoušek, Stanislav
+  & Pelánek (2016, the geography system, target error rates 5-50%): easy questions keep more learners at first, harder
+  ones bring more of them back and teach more; "start with easy questions to hook learners up and then switch to more
+  difficult questions". The photo's aim (`aimOff`), the miss weight (`pgMissW`: a miss weighs the chance the player had
+  over the chance the game aimed for) and the comeback's rust (`rustOf`) follow it; `PICKD.P` (0.8, the middle) stays
+  the reference.
+- **A genus is shaky against the same target**: OPEN.P + (aimed − `PICKD.P`), so 0.65 for a beginner, 0.55 for a strong
+  player. A beginner opens a new genus only once the genera met are a little more solid; nobody else is held back.
+- No other constant. The global level's move on the genera ("Global level and genus") is unchanged.
+
+**What was tried** (`tools/learnsim.js`, 5 seeds, the four profiles, 300 questions; T: the target from the level, 85% at
+0 to 75% at 1.5; T2: 85% up to 0.5, 75% from 1.5 (the rule); O: the shaky bar moved with the target; K: the opening's
+capacity `OPEN.K` × (1 − aimed) / (1 − `PICKD.P`); S: the level's move on the genera only while the level is above 0):
+
+| Variant | beginner met q100 / q200 | beginner right % q50 / q100 / q200 / q300 | beginner θ − logit k q100 | strong RA \|θ − logit k\| q100 / q300 | expert q50 / q100 |
+| --- | --- | --- | --- | --- | --- |
+| `main` | 19.2 / 30.4 | 72 / 79 / 82 / 83 | −0.44 | 1.31 / 1.30 | 1.47 / 1.26 |
+| level + genus alone (before) | 24.6 / 35.6 | 72 / 78 / 77 / 86 | +0.15 | 1.17 / 1.04 | 0.96 / 0.91 |
+| T2 | 26.4 / 37.6 | 70 / 79 / 79 / 83 | +0.30 | 1.18 / 1.05 | 0.90 / 0.93 |
+| T + O | 19.8 / 33.8 | 69 / 81 / 79 / 82 | −0.16 | 1.15 / 1.10 | 0.96 / 1.00 |
+| T + O + K | 20.0 / 31.8 | 72 / 77 / 81 / 80 | −0.28 | 1.28 / 1.14 | 0.96 / 1.00 |
+| T2 + O + K | 20.2 / 31.0 | 73 / 80 / 81 / 80 | −0.00 | 1.25 / 1.11 | 0.89 / 0.92 |
+| T + O + S | 17.8 / 37.2 | 72 / 81 / 80 / 80 | −0.31 | 1.29 / 1.11 | 0.97 / 1.00 |
+| **T2 + O (now)** | **20.2 / 28.0** | 73 / 78 / 80 / 83 | −0.11 | 1.20 / 1.10 | 0.89 / 0.92 |
+| T2 + O + S | 19.4 / 30.8 | 75 / 80 / 80 / 82 | −0.09 | 1.22 / 1.17 | 0.88 / 0.93 |
+
+- **The target alone does not slow a beginner** (T2: 26.4 genera by question 100): easier photos raise the abilities,
+  fewer genera look shaky, more open, and the brand-new genera's near-guesses pull the right % down. The opening is
+  what sets a beginner's pace and success; the shaky bar moved with the target (O) brings it back.
+- **K** (the opening's capacity) adds little to O; **S** (no move below level 0) is better on the real answers (log-loss
+  −0.0099 ± 0.0030 against `main`, below level 0 +0.004 ± 0.007) but has a step at level 0 (a genus stepped while the
+  level was below 0 takes its whole move at once when the level crosses 0) and keeps less of the strong RA's gain.
+- **T2 rather than T**: T lowers the target from level 0, where beginners and lecture-level RAs sit, so they get 80%
+  and open faster (33.8 by question 200); T2 holds 85% for them.
+
+**The rule shipped** (5 seeds × 600 questions; cells: θ − logit k / |θ − logit k| / right % / genera met / learned /
+entered the exam / true knowledge):
+
+| Profile, question | `main` | level + genus alone | **level + genus, target by level (now)** |
+| --- | --- | --- | --- |
+| beginner 50 | 0.04 / 1.00 / 72 / 15.6 / 0.0 / 0.0 / 0.19 | 0.05 / 0.89 / 70 / 14.6 / 0.0 / 0.0 / 0.18 | 0.30 / 1.00 / 73 / 14.0 / 0.0 / 0.0 / 0.18 |
+| beginner 100 | −0.44 / 1.04 / 79 / 19.2 / 0.0 / 0.0 / 0.29 | 0.13 / 0.87 / 80 / 22.4 / 0.0 / 0.0 / 0.30 | −0.11 / 0.88 / 78 / 20.2 / 0.0 / 0.0 / 0.29 |
+| beginner 200 | −0.37 / 1.28 / 82 / 30.4 / 0.0 / 0.2 / 0.47 | −0.07 / 0.91 / 79 / 37.0 / 0.0 / 0.2 / 0.53 | −0.43 / 0.98 / 80 / 28.0 / 0.0 / 0.2 / 0.47 |
+| beginner 300 | −0.45 / 1.21 / 83 / 39.6 / 0.0 / 0.4 / 0.64 | −0.37 / 0.84 / 83 / 40.0 / 0.0 / 0.2 / 0.68 | −0.44 / 1.02 / 83 / 37.2 / 0.0 / 0.4 / 0.63 |
+| beginner 600 | −1.44 / 1.50 / 88 / 40.0 / 0.6 / 5.0 / 0.87 | −1.06 / 1.12 / 88 / 40.0 / 0.2 / 3.8 / 0.88 | −1.22 / 1.27 / 87 / 40.0 / 0.2 / 6.0 / 0.87 |
+| lecture RA 50 | 0.05 / 0.73 / 81 / 18.8 / 0.0 / 0.0 / 0.42 | 0.23 / 0.83 / 80 / 17.8 / 0.0 / 0.0 / 0.41 | 0.07 / 0.77 / 78 / 17.6 / 0.0 / 0.0 / 0.41 |
+| lecture RA 100 | 0.01 / 0.81 / 79 / 33.4 / 0.0 / 0.0 / 0.53 | 0.07 / 0.86 / 79 / 30.8 / 0.0 / 0.0 / 0.51 | −0.07 / 0.73 / 82 / 26.4 / 0.0 / 0.0 / 0.50 |
+| lecture RA 200 | −0.48 / 0.79 / 80 / 40.0 / 0.0 / 0.0 / 0.69 | −0.28 / 0.76 / 82 / 39.2 / 0.0 / 0.4 / 0.67 | −0.48 / 0.84 / 79 / 39.2 / 0.0 / 0.0 / 0.67 |
+| lecture RA 300 | −0.79 / 0.93 / 87 / 40.0 / 0.0 / 0.0 / 0.77 | −0.55 / 0.80 / 84 / 40.0 / 0.0 / 1.0 / 0.77 | −0.50 / 0.78 / 87 / 40.0 / 0.0 / 0.4 / 0.76 |
+| lecture RA 600 | −1.45 / 1.47 / 91 / 40.0 / 1.0 / 8.4 / 0.90 | −1.27 / 1.29 / 89 / 40.0 / 1.0 / 8.2 / 0.91 | −1.20 / 1.23 / 88 / 40.0 / 0.8 / 7.6 / 0.91 |
+| strong RA 50 | −0.59 / 1.37 / 89 / 17.4 / 0.0 / 0.0 / 0.63 | −0.41 / 1.22 / 85 / 19.0 / 0.0 / 0.0 / 0.64 | −0.33 / 1.22 / 85 / 17.2 / 0.0 / 0.0 / 0.63 |
+| strong RA 100 | −0.48 / 1.31 / 84 / 30.6 / 0.0 / 0.0 / 0.70 | −0.46 / 1.15 / 86 / 32.6 / 0.0 / 0.0 / 0.71 | −0.55 / 1.20 / 83 / 29.0 / 0.0 / 0.0 / 0.70 |
+| strong RA 200 | −0.82 / 1.28 / 87 / 40.0 / 0.0 / 0.0 / 0.80 | −0.71 / 1.11 / 86 / 40.0 / 0.0 / 0.2 / 0.81 | −0.73 / 1.13 / 86 / 40.0 / 0.0 / 0.2 / 0.80 |
+| strong RA 300 | −1.10 / 1.30 / 91 / 40.0 / 0.0 / 0.2 / 0.86 | −0.92 / 1.14 / 88 / 40.0 / 0.0 / 1.2 / 0.86 | −0.88 / 1.10 / 89 / 40.0 / 0.0 / 0.4 / 0.86 |
+| strong RA 600 | −1.71 / 1.72 / 93 / 40.0 / 1.8 / 16.4 / 0.94 | −1.43 / 1.47 / 94 / 40.0 / 2.4 / 14.4 / 0.94 | −1.39 / 1.43 / 93 / 40.0 / 2.2 / 14.8 / 0.95 |
+| expert 50 | −1.47 / 1.47 / 98 / 14.6 / 0.0 / 0.0 / 0.94 | −0.96 / 0.96 / 98 / 15.2 / 0.0 / 0.0 / 0.94 | −0.89 / 0.89 / 98 / 14.4 / 0.0 / 0.0 / 0.94 |
+| expert 100 | −1.26 / 1.26 / 96 / 27.8 / 0.0 / 0.0 / 0.94 | −0.94 / 0.94 / 96 / 27.6 / 0.0 / 0.2 / 0.94 | −0.92 / 0.92 / 96 / 26.6 / 0.0 / 0.2 / 0.94 |
+| expert 200 | −1.19 / 1.19 / 96 / 40.0 / 0.0 / 0.6 / 0.95 | −1.02 / 1.02 / 96 / 40.0 / 0.0 / 1.4 / 0.95 | −1.02 / 1.02 / 96 / 40.0 / 0.2 / 1.2 / 0.95 |
+| expert 300 | −1.20 / 1.20 / 96 / 40.0 / 0.0 / 2.6 / 0.95 | −1.08 / 1.08 / 97 / 40.0 / 0.4 / 4.0 / 0.95 | −1.10 / 1.10 / 96 / 40.0 / 0.2 / 4.0 / 0.95 |
+| expert 600 | −1.25 / 1.25 / 97 / 40.0 / 6.2 / 26.2 / 0.97 | −1.25 / 1.25 / 97 / 40.0 / 8.6 / 24.6 / 0.97 | −1.30 / 1.30 / 97 / 40.0 / 6.2 / 24.4 / 0.97 |
+
+- **The beginner back to `main`'s pace or slower**: 14.0 / 20.2 / 28.0 / 37.2 genera met by questions 50 / 100 / 200 /
+  300 (`main` 15.6 / 19.2 / 30.4 / 39.6), not over-rated (θ − logit k −0.11 / −0.43 / −0.44 at 100 / 200 / 300; +0.30
+  ± 0.47 at 50, `main` +0.04), right 73 / 78 / 80 / 83 / 87% (`main` 72 / 79 / 82 / 83 / 88). The 83-86% Pierre asked
+  for over questions 50-300 is reached from 300 only, in every variant and in `main`: in its first 100 questions this
+  simulated beginner (2% at the start) answers genera it has just met mostly by guessing, at the easiest photos already;
+  only a slower opening raises it, and the opening is already at `main`'s pace or slower.
+- **The lecture-level RA opens more slowly** (26.4 genera by question 100 against 33.4; all 40 by 200 in both), at 82%
+  right (79%).
+- **The strong players' gains are kept**: the strong RA's error 1.22 / 1.20 / 1.13 / 1.10 / 1.43 at 50-600 (`main`
+  1.37 / 1.31 / 1.28 / 1.30 / 1.72), the expert's 0.89 / 0.92 at 50 / 100 (`main` 1.47 / 1.26; equal from 300, the
+  ceiling `ELO.hi`).
+- **No path breaks**: exams within the spread (strong RA entered 14.8 ± 1.5 against 16.4 ± 2.3, beginner 6.0 against
+  5.0), true knowledge the same.
+- **On the real answers**: nothing changes (the target and the shaky bar choose questions, they do not change the Elo's
+  prediction): log-loss 0.457 against `main`'s 0.465, below level 0 +0.006 ± 0.009 (within the noise), as in "Global
+  level and genus". The real answers cannot judge a different draw (AGENTS.md 14g); they were played under `main`'s.
+- `tests/profiles.smoke.js`: its beginner meets 13 genera by question 100 (`main` 12), the limit back to 17.
+
 ### What a question shows
 
 - **Photos**: drawn around ability − `aimOff(k)`, so that the question is right with the chance `PICKD.P` = 0.8 in its
@@ -286,6 +488,9 @@ ROADMAP).
   between names never seen.
 
 ### One difficulty controller (2026-11-03)
+
+Since "Beginners and experts" (above, the same day) the success aimed for is not one 80% but follows the global level
+(`aimP`, `PICKD.AIM`: 85% up to 0.5, 75% from 1.5); the controller below is unchanged otherwise.
 
 The independent review's item 4: difficulty was set by three ramps on the genus ability (the photo aimed
 `TARGET_OFF` = 1.0 below it, single views from `singleP` = (ability − 0.5) / 1.5 up to 0.85, traps from `TRAP` {start
@@ -1395,9 +1600,13 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
   its `TYPED.exam` typed right answers stays at 99% at most (`scoreOf`) until the device has passed it.
   - **Rules versions** (`core.js` `RVS`, `RV`): every change to a progress rule appends `{v, at, why, msg}` (AGENTS.md
     "How to make a change" 14), each with the standard recalculation card (`msg: RV_CARD`, Pierre 2026-11-03, a
-    standing rule; below). v1 (2026-11-03): this replay itself, with the rules of that day (the
-    miss weight over the 0.8 every question aims for, `TARGET_P`; no Elo step on the genus wrongly given; a learned mark
-    kept unless a miss logged after its exam takes it away as the game does).
+    standing rule; below). A version is not a frozen engine: the sheet always replays with the code's current rules
+    (`core.js`, embedded in `Code.gs`), and a new version only makes every device take that replay again. So v1
+    (2026-11-03, not deployed yet when these were added) replays with every rule merged before it goes live: the miss
+    weighed against the success aimed for at the player's global level (`aimOf`, 85% to 75%), no Elo step on the genus
+    wrongly given, a genus's ability moving with the global level (`levelMove`, `lt`; the level's step without a floor,
+    4 decimals; Calibration step 2, #415), a learned mark kept unless a miss logged after its exam takes it away as the
+    game does.
   - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between
     `// BEGIN core.js` and `// END core.js`, kept identical by `tools/sync_core.py`, checked in CI; its own `module`
     object keeps its names out of the script's globals, reached as `CORE_`), so the self-updater installs the engine
@@ -1464,7 +1673,7 @@ rule (a photo new to the player 0.5 harder, one right twice 1 easier, nothing fo
     answers is ignored once the device has signed in, or changed anonymous id, while it was on its way (Codex review
     #399: it replaced the account's progress that sign-in had just stored).
     What is taken from where (`core.js` `replayedOf`): **from
-    the replay**, per genus the log has answers on: `pg`, `ok`, `ko`, `h`, `off`, `conf`, `th`, `vr`, `streak`,
+    the replay**, per genus the log has answers on: `pg`, `ok`, `ko`, `h`, `off`, `conf`, `th`, `lt`, `vr`, `streak`,
     `at` (the later), `du` (either side's), the photos seen `ps` per photo the larger [shown, right] of the replay and
     the device (the device also counts as shown a corallites hint revealed after the answer, which the log leaves out:
     it must not become new again for the mastery exam, `model.js` `examSet`; Codex review #399), plus `pm` 1 (under the photo memory rule: `memRecalc` never corrects it) and
@@ -1916,6 +2125,16 @@ is not in the simulation.
   recent results and runs, as before), as in the Elo learner models of adaptive practice (Pelánek et al. 2017); on the
   real answers the next answer is predicted better (log-loss 0.481 → 0.465) and a strong RA's genera move from 0.11 to
   0.59 (fit 0.73); simulated, the error of the ability falls for every profile ("The genus wrongly given in the Elo").
+- 2026-11-03, Pierre (strong players remain the priority): a genus moves with the global level since its own last
+  step, weighed by its own uncertainty, both ways, and the level's step loses its `kmin` floor (Pelánek et al. 2017's
+  global + concept skill). Real answers: log-loss 0.465 → 0.457, strong players' band −0.021; simulated, strong players
+  recognised sooner and a beginner not over-rated. A one-way version (rises only) was rejected: biased upward ("Global
+  level and genus").
+- 2026-11-03, Pierre (22 genera by question 100 too many for a beginner; aim a beginner at about 85%): the success
+  aimed for follows the global level, `PICKD.AIM` 85% up to 0.5 → 75% from 1.5, a straight line between; a genus is
+  shaky against the same target (OPEN.P + aimed − 0.8). Simulated: the beginner back to `main`'s pace (20.2 / 28.0
+  genera by questions 100 / 200), not over-rated, the strong players' gains kept; the opening's capacity by level and a
+  sign gate on the level's move measured, not adopted ("Beginners and experts").
 
 - 2026-11-03, Pierre (for everyone): a ★ genus opens only after the genus its card compares it to has been met (a
   beginner met *Duncanopsammia* and *Cyphastrea* before *Turbinaria* and *Astreopora*): the references read from the data

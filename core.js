@@ -82,8 +82,9 @@
       out.streak = mine ? l.streak || 0 : r.streak || 0;
       if (mine && l.h) out.h = l.h;
       if (mine)
-        // vr: the Elo step's volatility (app.js abilityStep), part of the model the device that played updated.
-        ['lv', 'run', 'L', 'pg', 'pm', 'rv', 'th', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
+        // vr: the Elo step's volatility (app.js abilityStep), part of the model the device that played updated; lt: the
+        // global level at the genus's last own step (core.js levelMove), which goes with its th.
+        ['lv', 'run', 'L', 'pg', 'pm', 'rv', 'th', 'lt', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
@@ -159,6 +160,9 @@
       // The photo memory mark goes with that progress (memRecalc): the other account's would leave it uncorrected.
       if (main.pm) o.pm = main.pm;
       else delete o.pm;
+      // The level a genus's ability was last stepped against (lt, model.js levelRise) is the old account's: the merged
+      // account's level is another, so the level's rise counts again from the genus's next own answer.
+      delete o.lt;
       o.ok = (x.ok || 0) + (y.ok || 0);
       o.ko = (x.ko || 0) + (y.ko || 0);
       o.streak = main.streak || 0;
@@ -1160,6 +1164,19 @@
   // TARGET_P: the chance every question aims for, whatever its format (model.js PICKD.P, the difficulty controller:
   // about 80% right; 2026-11-03, before it a photo TARGET_OFF 1.0 below the ability, 80% with 4 choices only).
   const TARGET_P = 0.8;
+  // The success aimed for follows the player's global level (Pierre, 2026-11-03: strong players must find the app
+  // challenging quickly, and beginners must not be overwhelmed): AIM, points [global level, success], 85% up to a level
+  // of 0.5, 75% from 1.5, a straight line between, flat outside (no cliff); TARGET_P (0.8, the middle) stays the game's
+  // reference. model.js aimP (the photos aimed at, the opening's shaky bar) and the miss weight (pgMissW, in the game
+  // and in the full replay) take it from here. docs/LEARNING.md "Beginners and experts".
+  const AIM = [
+    [0.5, 0.85],
+    [1.5, 0.75]
+  ];
+  function aimOf(L) {
+    const [[l0, p0], [l1, p1]] = AIM;
+    return p0 + (p1 - p0) * Math.min(1, Math.max(0, ((Number(L) || 0) - l0) / (l1 - l0)));
+  }
   const sigm = x => 1 / (1 + Math.exp(-x));
   // A right answer, w from 0 to 1: the plausible choices k ((1 − 1/k) / (1 − 1/4): 4 weigh 1, 3 0.89, 2 0.67), in full
   // when a genus it gets confused with is among the choices (look), PROG.LOOK when none is. model.js pgWeight finds look.
@@ -1168,15 +1185,15 @@
   const pgRightW = (k, look) => Math.min(1, Math.max(0, (1 - 1 / k) / (1 - 1 / 4))) * (look || !isFinite(k) ? 1 : PROG.LOOK);
   // What a miss proves (Pierre, 2026-11-02: "a miss on a very hard photo doesn't necessarily mean the genus is badly
   // known"; a miss must not cost more than it proves): the Elo chance the player had to get it right (ability th against
-  // the photo's difficulty d, k choices, as abilityStep), over the chance the game aims for (TARGET_P, 0.8, whatever the
-  // format: model.js's difficulty controller). A photo at the player's level or easier: the miss counts in full; a harder one:
+  // the photo's difficulty d, k choices, as abilityStep), over the chance the game aims for (aim: aimOf the player's global
+  // level, 85% to 75%, whatever the format: model.js's difficulty controller, aimP; TARGET_P, 0.8, when not given). A photo at the player's level or easier: the miss counts in full; a harder one:
   // less (1 unit harder: 0.78; 2 units: 0.56). No new constant: the Elo and the photo targeting set it. The right answers
   // keep their weight (pgRightW): simulated, a photo factor on them only slowed everyone.
   // R: the recall expected after a break, for a comeback question (model.js comebackOf; 1 otherwise): the chance the
   // player had is then the recall-adjusted one, so a miss the rust explains costs less progress (Pierre, 2026-11-02).
-  function pgMissW(th, d, k, R = 1) {
+  function pgMissW(th, d, k, R = 1, aim = TARGET_P) {
     const e = (x, r = 1) => 1 / k + (1 - 1 / k) * r * sigm(x);
-    return Math.min(1, e(th - d, R) / TARGET_P);
+    return Math.min(1, e(th - d, R) / aim);
   }
   // What a right answer on a photo the player knows proves (Pierre, 2026-11-03): only what memory does not explain. The
   // mirror of pgMissW (a ratio of chances, like it): the chance the player had on the same photos new over the chance
@@ -1213,21 +1230,44 @@
   // beating (or missing) the expectation, the step grows by up to vg x |s.vr|, within kmax. docs/LEARNING.md. Moved here
   // from model.js (2026-11-03) so the full replay (replayProgress) rebuilds the ability with the app's own step;
   // model.js ability / abilityStep call these on the app's P.
-  // abilityOf(P, n): s.th; progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability; a
-  // genus never answered starts from the player's global level (playerStart).
+  // abilityOf(P, n): progress saved with the old Easy/Medium/Hard steps (s.lv) starts from the matching ability; a genus
+  // never answered starts from the player's global level (playerStart); a genus already answered: its own estimate (s.th,
+  // from its last own step) plus the global level's move since then (levelMove), so what the player shows on the other
+  // genera moves it too while its own answers are few: the global + concept skill of Pelánek et al. (UMUAI 2017), as a
+  // lazy update (2026-11-03, docs/LEARNING.md "Global level and genus").
   const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
   const abilityOf = (P, n) => {
     const s = (P || {})[n] || {};
-    return typeof s.th === 'number' ? s.th : s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n);
+    if (typeof s.th !== 'number') return s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n);
+    return Math.min(ELO.hi, Math.max(ELO.lo, s.th + levelMove(P, n, s)));
   };
+  // The global level's move since the genus's own last step (s.lt: the level then), weighed by the genus's own
+  // uncertainty 1 / (1 + answers / ELO.n), the share its own Elo step gives a new answer: a genus with few answers leans
+  // on the level, one with many on itself. Both ways (a one-way rise was tried: biased upward, it over-rated a simulated
+  // beginner by 0.5-0.7). No new constant. Taken in at the genus's next own step (eloStep). Progress saved before (no
+  // s.lt): nothing until that step.
+  function levelMove(P, n, s) {
+    const G = (P || {})[LEVEL];
+    if (n === LEVEL || !s || typeof s.lt !== 'number' || !G || typeof G.th !== 'number') return 0;
+    return Math.round(((G.th - s.lt) / (1 + ((s.ok || 0) + (s.ko || 0)) / ELO.n)) * 100) / 100;
+  }
   function eloStep(P, n, s, good, d, k) {
     const th = abilityOf(P, n),
       g = 1 / k,
       e = g + (1 - g) * sigm(th - d),
       m = (s.ok || 0) + (s.ko || 0);
     s.vr = Math.round(((1 - ELO.vr) * (s.vr || 0) + ELO.vr * ((good ? 1 : 0) - e)) * 1000) / 1000;
-    const K = Math.min(ELO.kmax, Math.max(ELO.kmin, ELO.kmax / (1 + m / ELO.n)) * (1 + ELO.vg * Math.abs(s.vr)));
-    s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * 100) / 100;
+    // The global level's step has no floor (ELO.kmin is for a genus, which must ease off quickly when it starts going
+    // wrong): the level pools every answer and now moves every genus (levelMove), so it settles as answers build up
+    // (Pelánek's uncertainty function), the volatility still letting it catch up with a lasting change. With the floor a
+    // run of early misses sank it (one real player to -0.41 against a fit of 0.56) and dragged the genera with it.
+    const K = Math.min(ELO.kmax, Math.max(n === LEVEL ? 0 : ELO.kmin, ELO.kmax / (1 + m / ELO.n)) * (1 + ELO.vg * Math.abs(s.vr)));
+    // Kept to 4 decimals for the global level (2 for a genus): without the floor its steps fall under 0.005 after a few
+    // hundred answers, and rounding them to 2 decimals lost every one (Codex review #415: 1000 right answers left it at 1).
+    const r = n === LEVEL ? 1e4 : 100;
+    s.th = Math.round(Math.min(ELO.hi, Math.max(ELO.lo, th + K * ((good ? 1 : 0) - e))) * r) / r;
+    // The level this step was taken against (the level before this answer's own step on it, as quiz.js answer orders them).
+    if (n !== LEVEL && P && P[LEVEL] && typeof P[LEVEL].th === 'number') s.lt = P[LEVEL].th;
     delete s.lv;
     delete s.run;
   }
@@ -1255,7 +1295,7 @@
     {
       v: 1,
       at: '2026-11-03',
-      why: 'Full replay of each player by the sheet: moving average weighed by what each answer proves, photo memory, former-model learned marks dropped, no Elo step on the genus wrongly given, a learned mark kept unless a miss logged after its exam takes it away as the game does',
+      why: 'Full replay of each player by the sheet: moving average weighed by what each answer proves, photo memory, former-model learned marks dropped, no Elo step on the genus wrongly given, a genus ability moving with the global level and the miss weighed against the aim at that level (#415), a learned mark kept unless a miss logged after its exam takes it away as the game does',
       // Pierre, 2026-11-03: the standard card, only for the players whose progress % moves by 5 points or more (several
       // lose points: the former model's learned marks are dropped).
       msg: RV_CARD
@@ -1285,7 +1325,7 @@
   // only the answers after a progress reset), memory (false: the rule before the photo memory, tools/memreplay.js),
   // start ({id: player}: a replay to go on from, as returned here, e.g. the sheet's, with this device's answers not in
   // the sheet yet on top; copied, never changed), onAnswer(row, {d, fam, k, w, look}).
-  // Returns {id: {P: {genus: {pg, ok, ko, h, ps, off, conf, u, th, vr, streak, at, du}, '~level': {ok, ko, th, vr, at}},
+  // Returns {id: {P: {genus: {pg, ok, ko, h, ps, off, conf, u, th, lt, vr, streak, at, du, lx, lm}, '~level': {ok, ko, th, vr, at}},
   // n, used, rep}}: per genus the moving average pg (what the app keeps as s.pg), right / wrong answers, the last 10
   // results, the photos [shown, right], the choices offered beside it and the genera given instead (the app's s.off,
   // s.conf), u = answers that moved pg, the ability th and its volatility vr (eloStep, as quiz.js answer steps them: on
@@ -1378,7 +1418,8 @@
             d = r[1] >= MEM_LOGGED ? dl - fam : dl,
             fm = memory ? fam : 0,
             look = chs.some(x => lookOf(pl.P, t, x)),
-            w = ok ? pgRightW(k, look) * pgMemW(th, d, fm, k) : pgMissW(th, d + fm, k);
+            // The aim at the player's level before this answer's own step on it, as quiz.js answer weighs the miss.
+            w = ok ? pgRightW(k, look) * pgMemW(th, d, fm, k) : pgMissW(th, d + fm, k, 1, aimOf((pl.P[LEVEL] || {}).th));
           dm = d + fm;
           d0 = d;
           s.pg = pgStep(s.pg, ok, w);
@@ -1407,7 +1448,7 @@
         if (wrong) {
           const x = rec(c);
           if (replayable) {
-            x.pg = pgStep(x.pg, false, pgMissW(abilityOf(pl.P, c), d0, k));
+            x.pg = pgStep(x.pg, false, pgMissW(abilityOf(pl.P, c), d0, k, 1, aimOf(pl.P[LEVEL].th)));
             x.u++;
           }
           x.h = (x.h + '0').slice(-10);
@@ -1441,7 +1482,7 @@
   ];
   // A player's progress as the app holds it after the replay (rep: replayProgress's player; saved: the player's
   // imr-coral-progress, the device's copy in the app, the sheet's copy in the admin). What comes from where:
-  // - from the replay, for every genus the log has replayable answers on: pg, ok, ko, h, off, conf, th, vr, streak,
+  // - from the replay, for every genus the log has replayable answers on: pg, ok, ko, h, off, conf, th, lt, vr, streak,
   //   at (the later of the two), du (either), the photos seen ps per photo the larger [shown, right] of the two (the
   //   device also counts as shown a corallites hint revealed after the answer, which the log leaves out: a replay must
   //   not make it new again for the exam, model.js examSet), pm 1 (the record is under the photo memory rule: memRecalc must never
@@ -1465,7 +1506,7 @@
   // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
   // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
   // after the exam takes it away, as the game does (mxKeeps, lm).
-  const REPLAYED = ['pg', 'ok', 'ko', 'h', 'ps', 'off', 'conf', 'th', 'vr', 'streak'];
+  const REPLAYED = ['pg', 'ok', 'ko', 'h', 'ps', 'off', 'conf', 'th', 'lt', 'vr', 'streak'];
   function replayedOf(rep, saved, rv) {
     const S = isObj(saved) ? saved : {},
       R = (rep && rep.P) || {},
@@ -1701,6 +1742,8 @@
     scoreOf,
     pctOf,
     TARGET_P,
+    AIM,
+    aimOf,
     pgRightW,
     pgMissW,
     pgMemW,
@@ -1712,6 +1755,7 @@
     logRow,
     ELO,
     abilityOf,
+    levelMove,
     eloStep,
     RV_CARD,
     RVS,

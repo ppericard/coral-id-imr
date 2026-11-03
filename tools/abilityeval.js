@@ -4,6 +4,7 @@
 // Offline, reads a file, sends nothing (docs/LEARNING.md "The genus wrongly given in the Elo").
 //
 //   node tools/abilityeval.js answers.json [--variants a,e,e+L] [--player <name or id>] [--min 20] [--json out.json]
+//                             [--model other/core.js]
 //
 // answers.json: the answer log, either the admin's readAnswers rows [id, time ms, genus shown, answered, right 0|1, mode,
 // photos, expected, ability, new photos, choices, ...] (as tools/memreplay.js reads them), or the sheet's Answers tab as
@@ -28,13 +29,14 @@
 // replayed ability of its genus before it (a genus never answered: playerStart from the replayed progress) against d,
 // with the guess rate of its k choices (typed: none). Scores: log-loss and Brier (lower is better), and calibration,
 // mean predicted against mean right, by the number of choices (2; 3-4; typed) and by the player's replayed global level
-// then. Per player: the global level and the answer-weighted mean ability of the genera answered at the end, and, as a
+// then (a reference level stepped by one fixed rule, refStep, so every model and rule has the same answers in each band). Per player: the global level and the answer-weighted mean ability of the genera answered at the end, and, as a
 // reference, a static fit of the same answers (maximum likelihood per genus with a normal prior of sd 1 around the
 // player's own fit over every answer).
 // Approximations: a comeback question's recall is taken as 1; the global level ignores nothing (as the app);
 // the genus wrongly given gets the question's difficulty with the memory offset of the genus shown (the app: without it).
 const fs = require('fs'),
-  path = require('path');
+  path = require('path'),
+  vm = require('vm');
 const C = require('../core.js');
 const ROOT = path.join(__dirname, '..');
 
@@ -43,14 +45,27 @@ const DATA = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8')),
 
 // The app's ELO, ability and abilityStep (core.js ELO, abilityOf, eloStep since 2026-11-03: model.js calls them on its P,
 // and the sheet's full replay steps the ability with them too); P is this context's, set per player.
-function model() {
-  const ctx = {P: {}};
-  ctx.M = {ELO: C.ELO, ability: n => C.abilityOf(ctx.P, n), abilityStep: (n, s, good, d, k) => C.eloStep(ctx.P, n, s, good, d, k)};
+// --model <file>: another core.js (e.g. main's, from git show) to compare the same rules on two versions of the app.
+function model(file = path.join(ROOT, 'core.js')) {
+  const ctx = {P: {}, module: {exports: {}}};
+  if (path.resolve(file) === path.join(ROOT, 'core.js')) ctx.K = C;
+  else {
+    vm.createContext(ctx);
+    vm.runInContext(fs.readFileSync(file, 'utf8'), ctx);
+    ctx.K = ctx.module.exports;
+  }
+  const K = ctx.K;
+  ctx.M = {ELO: K.ELO, ability: n => K.abilityOf(ctx.P, n), abilityStep: (n, s, good, d, k) => K.eloStep(ctx.P, n, s, good, d, k)};
   return ctx;
 }
-const M = model(),
-  KMIN = M.M.ELO.kmin,
-  W0 = C.START.W;
+let M = model(),
+  KMIN = M.M.ELO.kmin;
+const W0 = C.START.W;
+// Replays with another core.js from now on (the CLI's --model, tests).
+function useModel(file) {
+  M = model(file);
+  KMIN = M.M.ELO.kmin;
+}
 const sig = x => 1 / (1 + Math.exp(-x)),
   logit = p => Math.log(p / (1 - p)),
   guess = k => (isFinite(k) ? 1 / k : 0);
@@ -89,6 +104,18 @@ function normalise(raw) {
 }
 const num = x => (x === '' || x === null || x === undefined ? NaN : Number(x));
 
+// The reference for the level bands: the app's global level as #413 stepped it (model.js abilityStep of 2026-11-03,
+// ELO {kmax 0.8, kmin 0.25, n 15, vr 0.1, vg 2}, with the kmin floor), kept here so that the bands never depend on the
+// model or the rule being replayed.
+const REF = {kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
+function refStep(s, good, d, k) {
+  const g = isFinite(k) ? 1 / k : 0,
+    e = g + (1 - g) * sig(s.th - d),
+    m = (s.ok || 0) + (s.ko || 0);
+  s.vr = Math.round(((1 - REF.vr) * (s.vr || 0) + REF.vr * ((good ? 1 : 0) - e)) * 1000) / 1000;
+  const K = Math.min(REF.kmax, Math.max(REF.kmin, REF.kmax / (1 + m / REF.n)) * (1 + REF.vg * Math.abs(s.vr)));
+  s.th = Math.round(Math.min(REF.hi, Math.max(REF.lo, s.th + K * ((good ? 1 : 0) - e))) * 100) / 100;
+}
 // One player's replay under one rule. Returns the scored answers and the final model.
 function replay(list, variant) {
   const [v, ...flags] = variant.split('+'),
@@ -97,6 +124,7 @@ function replay(list, variant) {
   const st = g => (P[g] = P[g] || {ok: 0, ko: 0}),
     off = {}, // rule d: genus offsets from the level
     fa = new Set(), // genera wrongly given since their own last question (a false alarm on them)
+    L0 = {th: 0}, // the shadow level for the bands
     scored = [];
   const plan = g => {
     if (v !== 'd') return M.M.ability(g);
@@ -125,7 +153,7 @@ function replay(list, variant) {
       good = r.ok === 1,
       L = (P[C.LEVEL] || {}).th || 0,
       th = plan(r.t);
-    scored.push({y: good ? 1 : 0, p: g + (1 - g) * sig(th - d), pl: g + (1 - g) * sig(L - d), k, L, mode: r.mode, fa: fa.has(r.t)});
+    scored.push({y: good ? 1 : 0, p: g + (1 - g) * sig(th - d), pl: g + (1 - g) * sig(L - d), k, L: L0.th, mode: r.mode, fa: fa.has(r.t)});
     fa.delete(r.t);
     const s = st(r.t);
     if (good) s.ok++;
@@ -134,11 +162,20 @@ function replay(list, variant) {
     else M.M.abilityStep(r.t, s, good, d, k);
     if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
     else P[C.LEVEL] = C.levelSeed(P);
+    // The level bands come from a reference level stepped by one fixed rule (refStep), whatever the model (--model)
+    // or the rule replayed, so every run puts the same answers in each band (Codex review #415).
+    if (!L0.seeded) Object.assign(L0, {ok: P[C.LEVEL].ok, ko: P[C.LEVEL].ko, th: P[C.LEVEL].th, seeded: 1});
+    else L0[good ? 'ok' : 'ko']++;
+    refStep(L0, good, d, k);
     // +L: the global level's step without the floor ELO.kmin (its K keeps shrinking with the answers, Pelánek's
     // uncertainty function; the volatility still lets it catch up with a lasting change).
+    // +V: the level's step without the volatility boost (ELO.vg), so a run of misses does not speed its fall.
+    const VG = M.M.ELO.vg;
     if (flags.includes('L')) M.M.ELO.kmin = 0;
+    if (flags.includes('V')) M.M.ELO.vg = 0;
     M.M.abilityStep(C.LEVEL, P[C.LEVEL], good, d, k);
     M.M.ELO.kmin = KMIN;
+    M.M.ELO.vg = VG;
     const c = r.a;
     if (!good && c && c !== r.t && GAME.has(c)) fa.add(c);
     if (!good && c && c !== r.t && GAME.has(c)) {
@@ -206,7 +243,7 @@ const res = {};
 variants.forEach(v => {
   // +W: a genus never answered starts from the full global level (core.js START.W 1 instead of 0.8; the shrinkage
   // M / (M + START.N) still fades with the answers).
-  C.START.W = v.split('+').includes('W') ? 1 : W0;
+  C.START.W = M.K.START.W = v.split('+').includes('W') ? 1 : W0;
   const all = [],
     per = {};
   players.forEach(p => {
@@ -222,8 +259,9 @@ variants.forEach(v => {
   all.forEach(o =>
     [kGroup(o), lGroup(o), fGroup(o), o.fa ? 'after a false alarm' : null].forEach(G => G && (groups[G] = groups[G] || []).push(o))
   );
-  C.START.W = W0;
+  C.START.W = M.K.START.W = W0;
   res[v] = {all: score(all), groups: Object.fromEntries(Object.entries(groups).map(([G, l]) => [G, score(l)])), per};
+  Object.defineProperty(res[v], "scored", {value: all}); // every scored answer, for paired comparisons (not in --json)
 });
 // Static reference per player (variant-independent).
 const ref = {};
@@ -246,7 +284,7 @@ players.forEach(p => {
 return {players, res, ref, byPlayer};
 }
 const groupsOf = (res, variants) => [...new Set(variants.flatMap(v => Object.keys(res[v].groups)))].sort();
-module.exports = {evaluate, normalise, kOf, groupsOf, GAME};
+module.exports = {evaluate, normalise, kOf, groupsOf, GAME, useModel};
 if (require.main === module) {
 const args = process.argv.slice(2),
   opt = (k, d) => {
@@ -262,7 +300,8 @@ const VARIANTS = opt('variants', 'a,b,c,d,e,e+L').split(','),
   ONLY = opt('player', null),
   MIN = Number(opt('min', 20)),
   OUT = opt('json', null);
-const J = JSON.parse(fs.readFileSync(file, 'utf8')),
+if (opt('model', null)) useModel(path.resolve(opt('model', null)));
+  const J = JSON.parse(fs.readFileSync(file, 'utf8')),
   {players, res, ref, byPlayer} = evaluate(Array.isArray(J) ? J : J.rows || J.values || [], {variants: VARIANTS, min: MIN, only: ONLY});
 const f = (x, n = 3) => (typeof x === 'number' && isFinite(x) ? x.toFixed(n) : '-');
 console.log(`Players with ${MIN}+ answers: ${players.length}; answers scored: ${res[VARIANTS[0]].all.n}`);

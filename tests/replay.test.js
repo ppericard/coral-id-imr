@@ -73,9 +73,13 @@ test('a miss counts against both genera, less on a photo harder than the player'
       ],
       {gen: GEN}
     ).p;
-  const before = steps([1, 1], [1, 1]);
-  // At the game's target (e logged ≈ 0.80, ability 1 above the photo): in full.
-  assert.ok(Math.abs(at.P.A.pg - C.pgStep(before, false, C.pgMissW(1, 0, 4))) < 2e-4, `${at.P.A.pg}`);
+  const before = steps([1, 1], [1, 1]),
+    // The success aimed for at the player's global level before the miss (core.js aimOf, as quiz.js answer weighs it).
+    aim = C.aimOf(
+      C.replayProgress([row('p', 0, 'A', 'A', 'a0', 'A B C D'), row('p', 1, 'A', 'A', 'a1', 'A B C D')], {gen: GEN}).p.P[C.LEVEL].th
+    );
+  // At the game's target (e logged ≈ 0.80, ability 1 above the photo): in full, against the aim at the player's level.
+  assert.ok(Math.abs(at.P.A.pg - C.pgStep(before, false, C.pgMissW(1, 0, 4, 1, aim))) < 2e-4, `${at.P.A.pg}`);
   assert.ok(C.pgMissW(1, 0, 4) > 0.99);
   assert.ok(hard.P.A.pg > at.P.A.pg, 'a miss on a hard photo costs less');
   // The genus given instead: a miss (from 0 it stays 0), its last result a 0, the mix-up counted for the genus shown.
@@ -318,19 +322,28 @@ test('mergeProgress: a record adopted from the replay wins over the copy of the 
 // Typed answers (2026-11-03; model.js TYPED, quiz.js answer): the player types the genus, logged quiz|t (quiz|t|x in the
 // mastery exam) with no choices, the genus read as the answer ('' for "I don't know"). The app scores them with no guess
 // rate (TYPED.k infinite) and a right one in full; the replay must rebuild the same record from the log. The app's side
-// below is quiz.js answer step by step, with model.js's own TYPED and pgWeight (run from its source).
-test('typed answers: the replay of the log rebuilds the progress the app scored live', () => {
+// below is quiz.js answer step by step, with model.js's own TYPED, pgWeight, ability, abilityStep and aimP (run from its
+// source): the ability (th, vr), the level it was stepped against (lt) and the global level as the game steps them
+// (Calibration step 2, #415: a genus moves with the global level; the miss weighed against the aim at the player's
+// level), the replay the same.
+test('typed answers: the replay of the log rebuilds the progress the app scored live, its abilities (th, lt) included', () => {
   const vm = require('vm'),
     src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
     cut = (a, b) => src.slice(src.indexOf(a), src.indexOf(b, src.indexOf(a)) + b.length),
-    M = {GX: n => GEN[n], pooledConf: () => 0, confusable: (t, n) => GEN[t].look.includes(n), CONF: C.CONF, PROG: C.PROG};
-  M.pgRightW = C.pgRightW;
+    M = {...C, GX: n => GEN[n], pooledConf: () => 0, confusable: (t, n) => GEN[t].look.includes(n), P: {}};
   vm.createContext(M);
   vm.runInContext(
-    cut('const TYPED = {', '\n};') + '\n' + cut('function pgWeight(t, chs, k) {', '\n}') + '\nthis.T = {TYPED, pgWeight};',
+    cut('const TYPED = {', '\n};') +
+      '\n' +
+      cut('function pgWeight(t, chs, k) {', '\n}') +
+      '\n' +
+      cut('const aimP = ', ';\n') +
+      cut('const ability = ', ';\n') +
+      cut('const abilityStep = ', ';\n') +
+      '\nthis.T = {TYPED, pgWeight, aimP, ability, abilityStep};',
     M
   );
-  const {TYPED, pgWeight} = M.T,
+  const {TYPED, pgWeight, aimP, ability, abilityStep} = M.T,
     EXAM = {n: 5};
   assert.strictEqual(TYPED.k, Infinity);
   assert.strictEqual(pgWeight('A', [], TYPED.k), 1, 'a typed right answer counts in full');
@@ -343,7 +356,7 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
       C: {pg: 0.6, ok: 9, ko: 2, h: '11011111', th: 1, ps: {}, streak: 3},
       [C.LEVEL]: {ok: 47, ko: 7, th: 1.4}
     },
-    P = JSON.parse(JSON.stringify(P0)),
+    P = (M.P = JSON.parse(JSON.stringify(P0))),
     log = [],
     sig1 = x => 1 / (1 + Math.exp(-x)),
     logit = p => Math.log(p / (1 - p)),
@@ -362,7 +375,7 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
       if (c) (s.conf = s.conf || {})[c] = (s.conf[c] || 0) + 1;
     }
     const k = typed ? TYPED.k : 4,
-      th0 = C.abilityOf(P, t),
+      th0 = ability(t),
       fam = C.memFam(
         ph.map(f => (s.ps || {})[f]),
         mem
@@ -370,11 +383,11 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
       x = k === 4 ? logit((p - 0.25) / 0.75) : logit(p),
       dm = th0 - x,
       d0 = dm - fam;
-    s.pg = C.pgStep(C.pgOf(s), good, good ? pgWeight(t, chs, k) * C.pgMemW(th0, d0, fam, k) : C.pgMissW(th0, dm, k));
-    C.eloStep(P, t, s, good, dm, k);
+    s.pg = C.pgStep(C.pgOf(s), good, good ? pgWeight(t, chs, k) * C.pgMemW(th0, d0, fam, k) : C.pgMissW(th0, dm, k, 1, aimP()));
+    abilityStep(t, s, good, dm, k);
     if (P[C.LEVEL]) P[C.LEVEL][good ? 'ok' : 'ko']++;
     else P[C.LEVEL] = C.levelSeed(P);
-    C.eloStep(P, C.LEVEL, P[C.LEVEL], good, dm, k);
+    abilityStep(C.LEVEL, P[C.LEVEL], good, dm, k);
     ph.forEach(f => {
       const y = ((s.ps = s.ps || {})[f] = s.ps[f] || [0, 0]);
       y[0]++;
@@ -383,7 +396,7 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
     s.h = (s.h + (good ? 1 : 0)).slice(-10);
     if (!good && GEN[c]) {
       const w = st(c);
-      w.pg = C.pgStep(C.pgOf(w), false, C.pgMissW(C.abilityOf(P, c), d0, k));
+      w.pg = C.pgStep(C.pgOf(w), false, C.pgMissW(ability(c), d0, k, 1, aimP()));
       w.h = (w.h + '0').slice(-10);
       w.streak = 0;
     }
@@ -424,11 +437,15 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
   const same = (G, why) => {
     for (const n of ['A', 'B', 'C']) {
       for (const f of ['ok', 'ko', 'h', 'ps', 'off', 'conf', 'streak']) assert.deepStrictEqual(G[n][f], P[n][f], `${why}: ${n}.${f}`);
-      for (const f of ['pg', 'th', 'vr']) assert.ok(Math.abs(G[n][f] - P[n][f]) < 1e-9, `${why}: ${n}.${f} ${G[n][f]} vs app ${P[n][f]}`);
+      for (const f of ['pg', 'th', 'lt', 'vr'])
+        assert.ok(Math.abs(G[n][f] - P[n][f]) < 1e-9, `${why}: ${n}.${f} ${G[n][f]} vs app ${P[n][f]}`);
+      assert.ok(Math.abs(C.abilityOf(G, n) - ability(n)) < 1e-9, `${why}: ${n} ability with the level's move`);
     }
     for (const f of ['th', 'vr']) assert.ok(Math.abs(G[C.LEVEL][f] - P[C.LEVEL][f]) < 1e-9, `${why}: level ${f}`);
     assert.deepStrictEqual([G[C.LEVEL].ok, G[C.LEVEL].ko], [P[C.LEVEL].ok, P[C.LEVEL].ko]);
   };
+  // The aim at this level is not the 0.8 reference, and the level has moved since the genera's own steps: both matter.
+  assert.ok(Math.abs(aimP() - 0.8) > 0.02);
   answer('C', 'C', ['c1'], {typed: true, p: 0.6}); // typed, right, a new photo: in full, no guess rate
   assert.ok(Math.abs(P.C.pg - C.pgStep(P0.C.pg, true, 1)) < 1e-12);
   answer('C', 'C', ['c1'], {typed: true, p: 0.8}); // the same photo again: only what memory does not explain
@@ -438,6 +455,8 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
   answer('A', 'A', ['a1'], {exam: true, chs: ['A', 'B', 'C', 'D'], p: 0.6}); // the 4th exam question, picked
   answer('A', 'A', ['a2'], {exam: true, typed: true, p: 0.55}); // 5 right, 1 typed: not passed, 99% at most
   assert.deepStrictEqual([P.A.ex.k, P.A.ex.t, !!P.A.mx], [5, 1, false]);
+  // Every genus answered was stepped against the level (lt), and the level moved after (levelMove).
+  assert.ok(['A', 'B', 'C'].every(n => typeof P[n].lt === 'number') && C.levelMove(P, 'B', P.B) !== 0);
   let G = replay();
   same(G, 'exam waiting for its 2nd typed answer');
   assert.deepStrictEqual([G.A.ex.k, G.A.ex.t, G.A.mx], [5, 1, undefined]);

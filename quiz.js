@@ -425,7 +425,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   const seenPh = ph.filter(p => p !== unseen),
     fam = famOf(target, seenPh),
     dm = d0 + fam;
-  pgObs(target, s, good, good ? pgWeight(target, chs, k) * pgMemW(th0, d0, fam, k, rT) : pgMissW(th0, dm, k, rT));
+  pgObs(target, s, good, good ? pgWeight(target, chs, k) * pgMemW(th0, d0, fam, k, rT) : pgMissW(th0, dm, k, rT, aimP()));
   abilityStep(target, s, good, dm, k);
   // Global level (core.js playerStart): the same Elo step over every answer, kept as the pseudo-genus LEVEL.
   // Made at the first answer from the player's history (levelSeed), whose counts already include this answer.
@@ -451,7 +451,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // (s.conf: traps, duels, Again).
   if (!good && GX(c)) {
     const w = st(c);
-    pgObs(c, w, false, pgMissW(ability(c), d0, k, rC)); // as for the genus shown: the photo's difficulty against its level
+    pgObs(c, w, false, pgMissW(ability(c), d0, k, rC, aimP())); // as for the genus shown: the photo's difficulty against its level
     w.h = ((w.h || '') + '0').slice(-10);
     w.streak = 0;
   }
