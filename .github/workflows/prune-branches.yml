@@ -4,7 +4,8 @@ name: Prune merged branches
 # pull request's last commit (nothing pushed after the merge). Branches with an open pull request,
 # with commits after the merge, or with no pull request at all are kept and listed for a human.
 # "dry_run" (the default) only lists what it would delete. A deleted branch can be restored from
-# its pull request page ("Restore branch"): the commits stay on GitHub.
+# its pull request page ("Restore branch"): the commits stay on GitHub. The deletion is a
+# `git push --force-with-lease` on the SHA checked, so a branch that moved meanwhile is kept.
 on:
   workflow_dispatch:
     inputs:
@@ -20,6 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - name: Delete merged branches
         env:
           GH_TOKEN: ${{ github.token }}
@@ -38,7 +42,12 @@ jobs:
             merged_here=$(awk -F'\t' -v b="$name" -v s="$sha" '$1==b && $3!="" && $4==s' prs.tsv | wc -l)
             if [ "$open" -eq 0 ] && [ "$merged_here" -gt 0 ]; then
               if [ "$DRY" = "true" ]; then echo "would delete: $name"; else
-                gh api -X DELETE "repos/$REPO/git/refs/heads/$name" && echo "deleted: $name"; fi
+                # Atomic: the push deletes the branch only if it still points at the SHA checked above,
+                # so a push made after the listing keeps the branch (Codex review #435).
+                if git push --porcelain --force-with-lease="refs/heads/$name:$sha" origin ":refs/heads/$name" >/dev/null 2>&1; then
+                  echo "deleted: $name"
+                else echo "kept (moved since the listing): $name"; deleted=$((deleted-1)); kept=$((kept+1)); fi
+              fi
               deleted=$((deleted+1))
             else
               any=$(awk -F'\t' -v b="$name" '$1==b' prs.tsv | wc -l)
