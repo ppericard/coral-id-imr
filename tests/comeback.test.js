@@ -28,6 +28,7 @@ function model({P = {}, th = {}, answers = 0} = {}) {
       bonusList: () => [],
       asked: n => !!((P[n] || {}).ok || (P[n] || {}).ko),
       answersSoFar: () => answers,
+      sDev: n => 'reefid-' + n, // the corals' device keys (app.js sDev)
       store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)}
     };
   vm.createContext(ctx);

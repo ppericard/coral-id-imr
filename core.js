@@ -95,6 +95,155 @@
     return out;
   }
 
+  // Subjects (the taxon model, Pierre 2026-11-03: "fish in the app on the same engine as corals, cleanly", with a Corals /
+  // Fish selector): what the game teaches. The engine (model.js, quiz.js, progress.js) works on one subject at a time,
+  // the current one (app.js SUBJ): its units (coral genera, fish teaching entries), their records (app.js GX), its
+  // progress P and quiz settings Q under its own keys. Everything a subject differs in is a field here (data) or a
+  // function of app.js UNITS (what reads the subject's data); the engine never names a subject.
+  //   id      key part: reefid-sync-<id>-progress, -quiz, -intro, -intro-offer, -reset (subjKey; AGENTS.md rule 14)
+  //   dev     its device-only keys: reefid-<dev><name> (subjDev): '' for corals, whose keys predate subjects
+  //   base    the sign-in record's fields for the progress last sent or received ([base, pending], sync.js mergeSaved)
+  //   name, one, many, what, lecture: words of the interface (Corals; genus, genera; Coral to identify; the IMR coral
+  //           lecture). Names of units: app.js uname (a genus in italics, a fish entry by its IMR name)
+  //   remote  its photos are iNaturalist's, not the site's (the fish stopgap, tools/fish_photos.py): preloaded all the same
+  //   views   the views a question may show, [code, label] (one view: one photo per question)
+  //   optin   the opt-in sets: Q[k] true = on, Q[k + 'T'] when chosen (app.js UNITS[id].sets: units, card, ⚙ row)
+  //   log     answers go to the sheet's Answers tab (photo ratings, confusions, the admin, the opening hold's replay)
+  //   ach, board  achievements and the leaderboard count this subject
+  //   progress    the views of My progress (progress.js quizBoard), the first by default
+  //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, #g-); the others,
+  //           Identify and the Tools are the corals' for now
+  const SUBJECTS = [
+    {
+      id: 'coral',
+      dev: '',
+      base: ['base', 'pending'],
+      name: 'Corals',
+      one: 'genus',
+      many: 'genera',
+      what: 'Coral',
+      lecture: 'the IMR coral lecture',
+      views: [
+        ['wide', 'Colony'],
+        ['medium', 'Close-up'],
+        ['macro', 'Corallites']
+      ],
+      optin: ['bon'],
+      log: true,
+      ach: true,
+      board: true,
+      pages: ['genera', 'sheet', 'cmp', 'quiz', 'quiz-duel', 'pairs'],
+      progress: ['slate', 'photos', 'groups']
+    },
+    {
+      id: 'fish',
+      dev: 'fish-',
+      base: ['fbase', 'fpending'],
+      name: 'Fish',
+      one: 'family',
+      many: 'families',
+      what: 'Fish',
+      lecture: 'the IMR fish presentation',
+      remote: true,
+      views: [['wide', 'Photo']],
+      optin: ['c2', 'c3'],
+      log: false,
+      ach: false,
+      board: false,
+      pages: ['genera', 'quiz'],
+      progress: ['photos']
+    }
+  ];
+  // The subject chosen on this device (Home or the header), synced with the player's settings.
+  const SUBJECT_KEY = 'reefid-sync-subject';
+  const subjectOf = id => SUBJECTS.find(s => s.id === id) || SUBJECTS[0];
+  const subjKey = (s, name) => KEYS.SYNC + subjectOf(s).id + '-' + name;
+  const subjDev = (s, name) => KEYS.APP + subjectOf(s).dev + name;
+
+  // Fish (fish.json, built by tools/build_fish.py; ARCHITECTURE.md "Fish content"). Level 1 of the game = the teaching
+  // entries of level 1 (the 27 IMR entries of circle 1, then circles 2 and 3), each made into a record the engine reads
+  // like a coral genus's (app.js GX): {id, name, fam, look (teaching ids, sub-entries folded into their entry), lk (how to
+  // tell each apart, IMR's words), qt (the IMR cues), forms (its IMR shape group: the wrong choices start in other groups,
+  // as coral growth forms), ig (the same group), cm (how common near Dauin), views {wide: photos}, levels 1, circle, wink,
+  // names (accepted when typed)}. photos: fish-photos.json "photos" (teaching id -> photo objects).
+  // c1 = circle 1 (the slate: counts in the progress), c2 / c3 = the opt-in circles, winks = the wink entries (a
+  // surprise card, never a question of the game).
+  function fishGen(F, photos) {
+    const gen = {},
+      sp = new Map((F.species || []).map(s => [s.id, s])),
+      top = id => String(id).slice(0, 3);
+    (F.teach || [])
+      .filter(t => t.level === 1)
+      .forEach(t => {
+        const dauin = (t.species || []).reduce((a, id) => a + (((sp.get(id) || {}).present || {}).dauin || 0), 0);
+        gen[t.id] = {
+          id: t.id,
+          name: t.name,
+          fam: t.fam,
+          wfam: t.wfam || [],
+          fish: 1,
+          circle: t.circle,
+          group: t.group || 0,
+          ig: t.group || 0,
+          forms: t.group ? ['g' + t.group] : [],
+          look: [...new Set((t.look || []).map(([id]) => top(id)).filter(id => id !== t.id))],
+          lk: (t.look || []).map(([id, txt]) => [top(id), txt]),
+          lsrc: Object.fromEntries(
+            (t.look || []).map(([id]) => [top(id), 'IMR fish presentation' + (t.sl ? ', slide ' + t.sl.join(', ') : '')])
+          ),
+          qt: t.cues && t.cues.length ? t.cues : null,
+          sum: t.why || t.note || '',
+          phase: t.phase || [],
+          sub: (t.sub || []).map(s => s.name),
+          cm: Math.round(Math.sqrt(dauin)),
+          levels: 1,
+          views: {wide: ((photos || {})[t.id] || []).filter(p => p && p.f && p.src)},
+          ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
+          names: fishNames(t)
+        };
+      });
+    const ids = Object.keys(gen),
+      play = n => !gen[n].wink;
+    return {
+      gen,
+      c1: ids.filter(n => play(n) && gen[n].circle === 1),
+      c2: ids.filter(n => play(n) && gen[n].circle === 2),
+      c3: ids.filter(n => play(n) && gen[n].circle === 3),
+      winks: ids.filter(n => !play(n)),
+      groups: F.groups || []
+    };
+  }
+  // The names a teaching entry is known by, accepted when typed (Pierre, 2026-11-03, AGENTS.md rule 6a): its IMR name,
+  // the parts of a double one ("Surgeonfish & Unicornfish"), its family as IMR writes it and the WoRMS families, and the
+  // sub-entries IMR names inside it (Chromis, Bannerfish...). The first is the name shown.
+  function fishNames(t) {
+    const parts = String(t.name || '')
+      .split(/\s*&\s*|\s+and\s+/)
+      .filter(Boolean);
+    return [...new Set([t.name, ...(parts.length > 1 ? parts : []), t.fam, ...(t.wfam || []), ...(t.sub || []).map(s => s.name)])].filter(
+      Boolean
+    );
+  }
+  // A whole name, normalised for typing (fish names have several words: "Moorish Idol"): letters only, lower case.
+  const typeNormAll = s =>
+    String(s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[^a-z]/g, '');
+  // Every name a player may type for the fish entries gen (fishGen): [{k, g, old, alt}], old = the name typed when it is
+  // not the entry's own (read as the entry), alt marks those as other names, not old ones. A name two entries share (a
+  // family IMR splits: Holocentridae = Soldierfish and Squirrelfish) names both, so it is "which one?" (typeMatchIn near).
+  function fishTypeNames(gen) {
+    const out = [];
+    Object.values(gen || {}).forEach(g =>
+      (g.names || [g.name]).forEach((x, i) => {
+        const k = typeNormAll(x);
+        if (k && !out.some(o => o.k === k && o.g === g.id)) out.push({k, g: g.id, old: i ? x : '', alt: i ? 1 : 0});
+      })
+    );
+    return out;
+  }
+
   // The draft is never published as a whole copy: it is merged, key by key, onto the latest published curation.
   // merge3(base, mine, theirs): base = the published curation this draft started from; a key I changed since base
   // keeps my value, every other key takes the published one (so choices published from another browser or device
@@ -219,6 +368,8 @@
   // counts add up (ok, ko, mix-ups, offers, photos seen), milestones are kept if either has them, and the per-genus model
   // (ability th, knowledge L, recent results h...) comes from whichever account answered that genus more. Settings are
   // B's; bonus genera unlocked or on (bon) on either stay so. Returns B's data with the merged progress.
+  // Each subject's progress and quiz settings are merged on their own (SUBJECTS: reefid-sync-<id>-progress, -quiz): a
+  // subject neither account played stays out of the result; its opt-in sets (optin) on either stay on.
   function mergeUsers(A, B) {
     A = A || {};
     B = B || {};
@@ -229,9 +380,26 @@
         return null;
       }
     };
-    const a = J(A, 'reefid-sync-coral-progress') || {},
-      b = J(B, 'reefid-sync-coral-progress') || {},
-      P = {};
+    const out = {...A, ...B};
+    SUBJECTS.forEach((S, i) => {
+      const pk = subjKey(S.id, 'progress'),
+        qk = subjKey(S.id, 'quiz');
+      if (!i || pk in A || pk in B) out[pk] = JSON.stringify(mergeUserP(J(A, pk) || {}, J(B, pk) || {}));
+      const qa = J(A, qk),
+        qb = J(B, qk);
+      if (qa || qb) {
+        const q = {...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)};
+        S.optin.forEach(k => {
+          if ((qa || {})[k] || (qb || {})[k]) q[k] = true;
+        });
+        out[qk] = JSON.stringify(q);
+      }
+    });
+    return out;
+  }
+  // One subject's progress of two accounts (mergeUsers).
+  function mergeUserP(a, b) {
+    const P = {};
     const n = s => (s.ok || 0) + (s.ko || 0),
       add = (x, y) => {
         const o = {...(x || {})};
@@ -270,15 +438,7 @@
       if (x.du || y.du) o.du = 1;
       if (o.ok + o.ko || o.h) P[g] = o;
     });
-    const out = {...A, ...B, 'reefid-sync-coral-progress': JSON.stringify(P)},
-      qa = J(A, 'reefid-sync-coral-quiz'),
-      qb = J(B, 'reefid-sync-coral-quiz');
-    if (qa || qb) {
-      const q = {...(qa || {}), ...(qb || {}), bu: Math.max((qa || {}).bu || 0, (qb || {}).bu || 0)};
-      if ((qa || {}).bon || (qb || {}).bon) q.bon = true;
-      out['reefid-sync-coral-quiz'] = JSON.stringify(q);
-    }
-    return out;
+    return P;
   }
 
   // Who rates the photos and the confusions, as tools/sync/Code.gs trusted_ (v17; v18: devices that never signed in too,
@@ -1128,8 +1288,9 @@
   }
   // What the typed text names among names (typeNamesOf): {g, old, exact} for one genus within the tolerance, {near:
   // [genera]} when two are as close (the player is asked to check the spelling), null when nothing is close.
-  function typeMatchIn(names, text) {
-    const t = typeNorm(text);
+  // norm: how the text is read (typeNorm, the first word, for genera; typeNormAll, the whole text, for fish entries).
+  function typeMatchIn(names, text, norm = typeNorm) {
+    const t = norm(text);
     if (t.length < 3) return null;
     const all = names
       .map(x => ({...x, d: typeDist(t, x.k)}))
@@ -1139,7 +1300,7 @@
     const best = all.filter(x => x.d === all[0].d),
       gs = [...new Set(best.map(x => x.g))];
     if (gs.length > 1) return {near: gs};
-    return {g: best[0].g, old: best[0].old, exact: best[0].d === 0};
+    return {g: best[0].g, old: best[0].old, exact: best[0].d === 0, ...(best[0].alt ? {alt: 1} : {})};
   }
   // The share of a genus's questions asked as typed ones, from its progress x (0 to 1, the % shown): none below T.from,
   // then a straight line between the points T.at ([progress, share], in order), flat after the last (model.js TYPED).
@@ -1218,6 +1379,15 @@
     mergeUsers,
     ORG,
     KEYS,
+    SUBJECTS,
+    SUBJECT_KEY,
+    subjectOf,
+    subjKey,
+    subjDev,
+    fishGen,
+    fishNames,
+    fishTypeNames,
+    typeNormAll,
     LEGACY_KEYS,
     keyRename,
     keyLegacy,
