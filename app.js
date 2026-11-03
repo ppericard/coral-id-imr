@@ -756,8 +756,12 @@ function syncTrouble() {
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
 // A copy run on this computer (tests, tools/perf.js, a developer) never sends anonymous answers or reports to the real
 // sheet (Pierre, 2026-11-02: 17 "players" in the admin were tools/perf.js runs: once the service worker was in, its
-// requests passed by the test's network mocks and reached the sheet).
-const LOCAL = /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])$/.test(location.hostname) || location.protocol === 'file:';
+// requests passed by the test's network mocks and reached the sheet). A browser driven by a program (Playwright,
+// Selenium: navigator.webdriver) counts as one whatever its address (Pierre, 2026-11-03: an agent's test served the app
+// under a made-up host name to test the sending and relied on the network mocks; the requests a page sends while it
+// unloads escaped them, and 100 made-up answers and 6 events reached the sheet). No player's browser sets it.
+const LOCAL =
+  /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])$/.test(location.hostname) || location.protocol === 'file:' || navigator.webdriver === true;
 let SYNC = store.get('imr-coral-sync', null),
   syncTimer = null;
 
