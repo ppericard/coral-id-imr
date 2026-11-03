@@ -65,7 +65,23 @@ const store = {
 // Candidates not downloaded yet (r: 1) show straight from iNaturalist; tools/fetch_approved.py downloads the ones added.
 // A recropped photo keeps its file name: its URL carries the crop (cr) and rewrite count (iv) so no cache serves the old file.
 const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.iv : ''}` : '');
-const img = (p, s) => (p.r && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : `img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`);
+// The site's photos from Cloudflare R2 (core.js PHOTO_BASE) while R2 answers; once an R2 photo failed in this tab, it and
+// the next ones come from the site's img/ (as app.js photoFail; under the service worker, sw.js falls back by itself).
+let R2 = !!PHOTO_BASE;
+const img = (p, s) =>
+  p.r && p.src
+    ? p.src.replace('/original.', s ? '/medium.' : '/large.')
+    : `${R2 ? PHOTO_BASE : ''}img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
+document.addEventListener(
+  'error',
+  e => {
+    if (!(e.target instanceof HTMLImageElement)) return;
+    const toSite = i => photoToSite(i) && ((R2 = false), true);
+    // R2 once more first (core.js photoRetry: a passing error), then the site.
+    if (photoRetry(e.target, toSite) || toSite(e.target)) e.stopImmediatePropagation();
+  },
+  true
+);
 const clone = o => JSON.parse(JSON.stringify(o));
 // The page hash, decoded; a malformed %-escape no longer throws (code re-review L2).
 const hashNow = () => {
@@ -193,6 +209,10 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (had) UPDATED = true;
     had = true;
+  });
+  // The worker could not get a photo from R2 (sw.js r2Down): the next photos come from the site, as app.js does.
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data && e.data.t === 'imr-r2-down') R2 = false;
   });
 }
 // The draft as this tab last wrote it to, or took it from, localStorage: the common base when another admin tab writes its own.

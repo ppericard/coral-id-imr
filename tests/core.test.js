@@ -23,7 +23,10 @@ const {
   memFam,
   memOf,
   photoMemOf,
-  memRecalc
+  memRecalc,
+  PHOTO_BASE,
+  photoLocal,
+  photoToSite
 } = require('../core.js');
 const {loadCodeGs} = require('./gas.js');
 
@@ -708,4 +711,27 @@ test('mergeProgress and mergeUsers: the photo memory mark travels with the progr
     mu = JSON.parse(mergeUsers(U(small), U(big))['imr-coral-progress']);
   assert.strictEqual(mu.A.pg, 0.8);
   assert.strictEqual(mu.A.pm, undefined, 'the busier account was not recalculated yet');
+});
+
+test('photos from R2: the R2 address made local again, an element pointed at the site (Photos out of the repo, step 2)', () => {
+  assert.match(PHOTO_BASE, /^https:\/\/[^/]+\/$/, 'an https base ending with /, the img/ path after it');
+  const R = PHOTO_BASE + 'img/acropora-wide-1';
+  assert.strictEqual(photoLocal(R + '-s.webp?c=0_0_1_1.2'), 'img/acropora-wide-1-s.webp?c=0_0_1_1.2');
+  assert.strictEqual(photoLocal(`${R}-s.webp 480w, ${R}-m.webp 960w`), 'img/acropora-wide-1-s.webp 480w, img/acropora-wide-1-m.webp 960w');
+  const inat = 'https://inaturalist-open-data.s3.amazonaws.com/photos/1/medium.jpg';
+  assert.strictEqual(photoLocal(inat), inat, 'an iNaturalist photo is left alone');
+  const mk = a => ({a, getAttribute: k => (k in a ? a[k] : null), setAttribute: (k, v) => (a[k] = v)}); // an element's attributes
+  const i = mk({src: R + '-m.webp', srcset: `${R}-s.webp 480w, ${R}-m.webp 960w`, 'data-lo': R + '-s.webp', alt: 'x'});
+  assert.strictEqual(photoToSite(i), true);
+  assert.deepStrictEqual(i.a, {
+    src: 'img/acropora-wide-1-m.webp',
+    srcset: 'img/acropora-wide-1-s.webp 480w, img/acropora-wide-1-m.webp 960w',
+    'data-lo': 'img/acropora-wide-1-s.webp',
+    alt: 'x'
+  });
+  const f = mk({style: `--qbg:url('${R}-s.webp')`});
+  assert.strictEqual(photoToSite(f), true);
+  assert.strictEqual(f.a.style, "--qbg:url('img/acropora-wide-1-s.webp')");
+  assert.strictEqual(photoToSite(mk({src: inat})), false, 'nothing to do on a photo not from R2');
+  assert.strictEqual(photoToSite(null), false);
 });

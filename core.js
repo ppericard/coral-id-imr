@@ -931,11 +931,64 @@
     return [...slateOf(d), ...BONUS.filter(n => X[n])];
   }
 
+  // Photos out of the repo, step 2 (Pierre, 2026-11-03; docs/ROADMAP.md): the site's photos (img/<f>.webp and its -m, -s,
+  // -t files) are read from the Cloudflare R2 bucket that tools/r2_sync.sh mirrors img/ to, same paths under this base;
+  // the site's own img/ is the fallback (app.js / admin.js photoFail, sw.js photo). The one switch: '' here sends the
+  // app, the admin and the Coral Finder back to img/ (sw.js only caches what it is asked for).
+  const PHOTO_BASE = 'https://pub-934250f83b884a4f890497f2027ce251.r2.dev/';
+  // The same files on the site: every R2 address in s (a URL, a srcset, an inline style) made relative again.
+  const photoLocal = s => (PHOTO_BASE && typeof s === 'string' ? s.split(PHOTO_BASE).join('') : s);
+  // An element whose R2 photo failed (an <img>, or the figure holding a game photo's backdrop): its src, srcset, data-lo
+  // (the 480 px fallback) and inline style point at the site's copies. True when it had an R2 address. srcset before src:
+  // each change starts a new load, and the browser picks from the srcset.
+  function photoToSite(el) {
+    let hit = false;
+    if (PHOTO_BASE && el && el.getAttribute)
+      for (const a of ['data-lo', 'style', 'srcset', 'src']) {
+        const v = el.getAttribute(a);
+        if (v && v.includes(PHOTO_BASE)) {
+          el.setAttribute(a, photoLocal(v));
+          hit = true;
+        }
+      }
+    return hit;
+  }
+
+  // A photo that fails on R2 is asked from R2 once more after PHOTO_RETRY ms before any other source (Pierre,
+  // 2026-11-03: in a 50-player load test 2 requests in 2000 failed, passing network errors a second try gets). An
+  // element whose R2 photo fails for the first time: true, and a probe asks R2 again; if it loads, the element's src
+  // and srcset are set again (the file now comes from the browser's cache), else fallback(el) runs (photoToSite).
+  // The element keeps its attributes meanwhile. False otherwise: the caller falls back at once.
+  const PHOTO_RETRY = 800;
+  function photoRetry(el, fallback) {
+    if (!PHOTO_BASE || !el || !el.getAttribute || !el.dataset || el.dataset.r2try) return false;
+    const src = el.getAttribute('src') || '',
+      set = el.getAttribute('srcset') || '',
+      u = el.currentSrc || src;
+    if (!u.includes(PHOTO_BASE)) return false;
+    el.dataset.r2try = '1';
+    setTimeout(() => {
+      const t = new Image();
+      t.onload = () => {
+        if (set) el.setAttribute('srcset', set);
+        if (src) el.setAttribute('src', src);
+      };
+      t.onerror = () => fallback(el);
+      t.src = u;
+    }, PHOTO_RETRY);
+    return true;
+  }
+
   const CORE = {
     BENTHIC,
     BONUS,
     slateOf,
     gameOf,
+    PHOTO_BASE,
+    photoLocal,
+    photoToSite,
+    photoRetry,
+    PHOTO_RETRY,
     PROG,
     pgStep,
     pgOf,

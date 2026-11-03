@@ -629,7 +629,7 @@ LAB.add({
     const XCL = (CUR && CUR.exclude) || {},
       BOOKON = !(CUR && CUR.book === false);
     const boxPics = o => {
-      const P = BOOKON ? (o.ph || []).filter(f => !XCL[f]).map(f => `img/${f}-s.webp`) : [];
+      const P = BOOKON ? (o.ph || []).filter(f => !XCL[f]).map(f => photoUrl(`img/${f}-s.webp`)) : [];
       if (P.length || BOXART[o.id]) return P.slice(0, 3);
       // Only genera found in no other box, so their photos can only show this box's criterion.
       const solo = bySlate(o.g).filter(n => KEY.every(k => k.leaves.every(l => l.id === o.id || !l.g.includes(n))));

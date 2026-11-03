@@ -20,7 +20,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pillow
-      - run: python tools/fetch_approved.py
+      # --games: a game photo of Millepora or a bonus genus still remote (r: 1) is downloaded too (R2 step 2).
+      - run: python tools/fetch_approved.py --games
       - run: python tools/fetch_local.py
         working-directory: .
       # Photo shapes for the quiz layout (designer re-review 2026-11-01): new photos get their `ar` too.
