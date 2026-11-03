@@ -7,18 +7,57 @@
 // A quiz question shows the views of ONE colony: colony and closer views, the corallites as a hint (or one view alone).
 // Continuous difficulty (Pierre, 2026-10-31; Elo as in Pelánek 2016 / Duolingo Birdbrain, no time criteria): every
 // question draws from ALL the game photos of the genus, weighted by how close each photo's difficulty (photoDiff) is to
-// the target for this player on this genus (ability(n) - TARGET_OFF, about 80% right in a 4-choice question). On top:
+// the target for this player on this genus and this question's format (aimed so the question is right with the chance
+// PICKD.P whatever its format: the difficulty controller, below). On top:
 // photos never seen get a bonus (bigger when the player is doing well; IMR and Pierre's photos first), photos the player
 // has already been shown weigh less the better they are remembered (photo memory, PMEM: x e^offset), the colony of the
 // last 2 questions on the genus is held back, and at least 3 colonies stay in rotation (VARIETY) whatever the level, so
 // a struggling player still sees new photos.
 // Every photo of a question comes from one observation (same colony); views that colony lacks are simply not shown.
-const PICKD = {TARGET_OFF: 1.0, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
+const PICKD = {P: 0.8, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: 0.5};
+// One difficulty controller (independent review of 2026-11-02, item 4, after Papousek, Pelanek & Stanislav 2014, who
+// set the question's format so that the predicted success hits one target; 2026-11-03). Two steps, one target:
+// 1. The format of a question on genus n comes from its ability on one schedule (FORMAT, below): how many of the 3 wrong
+//    choices are look-alike traps (Pierre, 2026-11-01: they come in one by one and soon, as look-alikes are how genera
+//    are learned), then more and more questions showing one view alone, so each view is learned on its own (rule 14);
+//    typed questions (model.js TYPED, typedP) are the third lever, set by their own rule.
+// 2. The photo then makes up the rest: aimed aimOff(k) below the ability (and PICKD.SINGLE lower for one view alone), so
+//    that with the format's guess rate (1 in k plausible choices, plausibleK; none for a typed answer) the question is
+//    right with the chance PICKD.P = 0.8 (about 80% right: the game's target since 2026-10-31). A 4-choice question is
+//    aimed 1.01 below (TARGET_OFF 1.0 before, for every question), 3 plausible choices 0.81, 2 (easy choices, an Again,
+//    a duel) 0.41, a typed one 1.39: before, a question with 2 plausible choices was right about 87% of the time on its
+//    photo and a typed one 73%, so the target moved with the format. docs/LEARNING.md "One difficulty controller".
+const aimOff = (k = 4) => {
+  const x = (PICKD.P - 1 / k) / (1 - 1 / k);
+  return Math.log(x / (1 - x));
+};
+// The schedule of the format (step 1): points [ability, look-alike traps, share of single-view questions], a straight
+// line between them, flat outside. Traps: none on a genus's very first question (ability 0), one from 0.18 (after the
+// first right answer), all three from 0.54 (about 5 right answers), rounded at random in between (trapsFor); then
+// single views, from none at 0.54 to 85% of the questions from 1.8 (the rest keep every view: the colony seen whole).
+// It joins TRAP {start 0, step 0.18} and singleP's (ability - 0.5) / 1.5 capped at 0.85 (single views from 0.5).
+const FORMAT = [
+  [0, 0, 0],
+  [0.54, 3, 0],
+  [1.8, 3, 0.85]
+];
+const formatAt = th => {
+  const F = FORMAT;
+  if (th <= F[0][0]) return F[0].slice(1);
+  for (let i = 1; i < F.length; i++)
+    if (th <= F[i][0]) {
+      const [x0, ...a] = F[i - 1],
+        [x1, ...b] = F[i],
+        f = (th - x0) / (x1 - x0);
+      return a.map((y, k) => y + (b[k] - y) * f);
+    }
+  return F[F.length - 1].slice(1);
+};
 // One zoom level per question (Pierre, 2026-10-31): beginners get every view of the colony (lots of information); as
 // the player's level on the genus rises, more and more questions show a single view (colony, closer or corallites
-// alone), up to 85% of them, so each view is learned on its own and each photo's difficulty is measured on its own.
-// A single view counts as harder (SINGLE), so easier photos are picked for it. The other views show after the answer.
-const singleP = (n, shift = 0) => Math.min(0.85, Math.max(0, (ability(n) + shift - 0.5) / 1.5));
+// alone), so each view is learned on its own and each photo's difficulty is measured on its own (FORMAT). A single
+// view counts as harder (SINGLE), so easier photos are picked for it. The other views show after the answer.
+const singleP = (n, shift = 0) => formatAt(ability(n) + shift)[1];
 // Online calibration (Pierre, 2026-11-02: about half the 600 game photos had never been shown to anyone, so they could
 // not be rated): as adaptive tests seed new items among the calibrated ones, a photo with few answers from all the
 // players (the sheet's plain count, v18) is drawn more often: x (1 + CAL.B / (1 + answers / CAL.N)), i.e. x3 with none,
@@ -42,7 +81,9 @@ const calBonus = p => 1 + CAL.B / (1 + nAnswers(p) / CAL.N);
 const calSd = p => Math.sqrt(PICKD.SIGMA ** 2 + CAL.U / (1 + nAnswers(p) / CAL.N));
 // skip: a photo file left out when the colony has others to show (the photo of the genus card just shown, K9).
 // shift: added to the ability for this question (a comeback question after a break: ln R, comebackShift, below).
-function photoSet(n, skip, shift = 0) {
+// k: the question's plausible choices (plausibleK; 2 for an Again or a duel, Infinity typed), so the photo is aimed for
+// PICKD.P in that format (aimOff).
+function photoSet(n, skip, shift = 0, k = 4) {
   const g = GX(n),
     two = g.levels === 2,
     need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
@@ -66,7 +107,7 @@ function photoSet(n, skip, shift = 0) {
     s = P[n] || {},
     seen = s.ps || {},
     ro = s.ro || [],
-    tgt = ability(n) + shift - PICKD.TARGET_OFF - (single ? PICKD.SINGLE : 0);
+    tgt = ability(n) + shift - aimOff(k) - (single ? PICKD.SINGLE : 0);
   const h = [...recent(n).slice(-5)],
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
   // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
@@ -490,7 +531,7 @@ const introSince = () => answersSoFar() - Math.max(-Infinity, ...Object.values(i
 //   count, a hundred right answers in one sitting count as one day. Ability is the app's estimate of how well the genus
 //   is known from its first answer (an expert's genera start from their global level); progress needs many answers.
 // - Rust: the right answers the break is expected to have cost, summed over the genera answered: each loses
-//   (1 - 1/4) (1 - R) sig(TARGET_OFF - ln R), on a usual 4-choice question with the photo a comeback shows (below). Only
+//   (1 - 1/4) (1 - R) sig(aimOff(4) - ln R), on a usual 4-choice question with the photo a comeback shows (below). Only
 //   the gap since the last answer counts, so play itself adds nothing. A comeback starts at a new visit (SESSION.GAP,
 //   below) whose gap left rust: 30 minutes leave about 0.001 (one right answer ends it), a month several right answers.
 // - Its questions (quiz.js planPhoto): genera answered right, the surest half (highest R) until one is answered right,
@@ -544,7 +585,7 @@ const recallAt = (n, t = Date.now(), last = lastAt()) => {
   const a = (P[n] || {}).at || last;
   return a && t > a ? recallOf((t - a) / DAY, stability(n)) : 1;
 };
-const rustOf = R => (1 - 1 / 4) * (1 - R) * sig(PICKD.TARGET_OFF - Math.log(R));
+const rustOf = R => (1 - 1 / 4) * (1 - R) * sig(aimOff(4) - Math.log(R));
 // The genera in play (the slate, and the bonus genera when the player has them on): those a comeback measures and asks.
 const cbPlay = () => [...slateGenera(), ...bonusList()];
 const cbGenera = () => cbPlay().filter(n => (P[n] || {}).ok > 0);
@@ -672,7 +713,7 @@ function abilityStep(n, s, good, d, k) {
 }
 // For My progress: where the genus's photo difficulty stands, and how many of its game photos the player has seen.
 const photoBand = n => {
-  const t = ability(n) - PICKD.TARGET_OFF;
+  const t = ability(n) - aimOff(4);
   return t < -0.5 ? 'easy' : t < 0.5 ? 'medium' : 'hard';
 };
 const seenOf = n => {
@@ -739,15 +780,15 @@ function pgWeight(t, chs, k) {
 }
 // What a miss proves (Pierre, 2026-11-02: "a miss on a very hard photo doesn't necessarily mean the genus is badly
 // known"; a miss must not cost more than it proves): the Elo chance the player had to get it right (ability th against
-// the photo's difficulty d, k choices, as abilityStep), over the chance the game aims for (a photo PICKD.TARGET_OFF
-// below the ability, about 80% with 4 choices). A photo at the player's level or easier: the miss counts in full; a
+// the photo's difficulty d, k choices, as abilityStep), over the chance the game aims for (PICKD.P, 0.8, whatever the
+// format: the difficulty controller). A photo at the player's level or easier: the miss counts in full; a
 // harder one: less (1 unit harder: 0.78; 2 units: 0.56). No new constant: the Elo and the photo targeting set it.
 // The right answers keep their weight (pgWeight): simulated, a photo factor on them only slowed everyone.
 // R: the recall expected after a break, for a comeback question (comebackOf, below; 1 otherwise): the chance the player
 // had is then the recall-adjusted one, so a miss the rust explains costs less progress (Pierre, 2026-11-02).
 function pgMissW(th, d, k, R = 1) {
   const e = (x, r = 1) => 1 / k + (1 - 1 / k) * r * sig(x);
-  return Math.min(1, e(th - d, R) / e(PICKD.TARGET_OFF));
+  return Math.min(1, e(th - d, R) / PICKD.P);
 }
 // What a right answer on a photo the player knows proves (Pierre, 2026-11-03): only what memory does not explain. The
 // mirror of pgMissW (a ratio of chances, like it): the chance the player had on the same photos new over the chance
@@ -879,16 +920,15 @@ const shownLevel = n => {
 };
 
 // Wrong choices get harder as the player gets better at the target genus (Pierre, 2026-11-01: "at the very start it must
-// be simple", then traps appear little by little). TRAP gives how many of the 3 wrong choices are look-alikes of the
-// target (IMR lecture or Coral Finder pairs, `look` both ways), from the genus's Elo ability: none on a genus's very first
-// question (ability 0), then they come in fast because look-alikes are how genera are learned (Pierre, 2026-11-01): one
-// from 0.18 (after the first right answer), two from 0.36, all three from 0.54 (about 5 right answers), rounded at random
-// in between. A mistake drops the ability by about 0.5, so the choices ease off again. The other
+// be simple", then traps appear little by little). How many of the 3 wrong choices are look-alikes of the target (IMR
+// lecture or Coral Finder pairs, `look` both ways, then the confusion scores) comes from the genus's Elo ability on the
+// format schedule (FORMAT, above): none on a genus's very first question (ability 0), one after the first right answer,
+// all three after about 5, because look-alikes are how genera are learned (Pierre, 2026-11-01), rounded at random in
+// between. A mistake drops the ability by about 0.5, so the choices ease off again. The other
 // wrong choices are easy ones while traps are few: genera sharing no IMR growth form with the target (imrFormsOf),
 // other IMR lecture groups first; once two traps are in, the last one is any genus (family first), as before.
-const TRAP = {start: 0, step: 0.18};
 const trapsFor = t => {
-  const x = Math.min(3, Math.max(0, (ability(t) - TRAP.start) / TRAP.step));
+  const x = formatAt(ability(t))[0];
   return Math.floor(x) + (Math.random() < x % 1 ? 1 : 0);
 };
 // Confusion score of genus n beside target t (Pierre, 2026-11-01): how often players mix the two up when both are offered
@@ -972,9 +1012,9 @@ function distractors(t, list, traps = trapsFor(t), known = introduced) {
   add(other, false);
   return res.slice(0, 3);
 }
-// Elo and the progress count a guess as 1 in (target + the plausible wrong choices) while traps are few (0 or 1): easy choices from
-// other growth forms are not plausible, so such a question is scored as a 2- or 3-choice one (a right answer there proves
-// less). From 2 traps on, every choice counts, as before.
+// Elo, the progress and the photo's aim (aimOff) count a guess as 1 in (target + the plausible wrong choices) while traps
+// are few (0 or 1): easy choices from other growth forms are not plausible, so such a question is scored as a 2- or
+// 3-choice one (a right answer there proves less, and its photo is harder). From 2 traps on, every choice counts.
 const plausibleK = (t, choices) => {
   const tf = imrFormsOf(t);
   return Math.max(2, choices.filter(n => n === t || confusable(t, n) || imrFormsOf(n).some(f => tf.includes(f))).length);

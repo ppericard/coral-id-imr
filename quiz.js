@@ -1120,7 +1120,7 @@ function planPhoto(at = answersSoFar()) {
       rustNow();
       const R = CB.r > 0 ? recallAt(t) : 1;
       return Object.assign(
-        ['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t, null, Math.log(R))],
+        ['quiz', t, shuffle(pair.slice()), `Again: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t, null, Math.log(R), 2)],
         {again: 1, ...(CB.r > 0 ? {warm: 1, cb: Math.round(R * 1000) / 1000} : {})}
       );
     }
@@ -1161,7 +1161,7 @@ function planPhoto(at = answersSoFar()) {
       last = t; // the genus asked is the duel's, not the one drawn above for the card decision
       lastQs = [...lastQs.slice(0, -1), t];
       return Object.assign(
-        ['quiz', t, shuffle(pair.slice()), `Look-alikes: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t)],
+        ['quiz', t, shuffle(pair.slice()), `Look-alikes: <i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, photoSet(t, null, 0, 2)],
         {auto: twoPair}
       );
     }
@@ -1176,7 +1176,10 @@ function planPhoto(at = answersSoFar()) {
     // draw is spent there, so a beginner's questions are unchanged); an exam question as examTyped says. Never a
     // comeback question (the player's usual choices, Pierre 2026-11-03), an Again or a duel (2 choices by design).
     typed = !warm && (ex ? examTyped(t) : typedP(t) > 0 && Math.random() < typedP(t)),
-    set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R)),
+    // The difficulty controller (model.js PICKD.P, aimOff): the photo is aimed for the game's target in this format, its
+    // guess rate from the plausible choices (a typed answer has none).
+    kq = typed ? TYPED.k : traps < 2 ? plausibleK(t, ch) : ch.length,
+    set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R), kq),
     // The question asked with its genus's card never shows the card's own photo again (new-player walkthrough 2026-11-02).
     q = [
       'quiz',
@@ -1234,6 +1237,6 @@ function planDuel(a, b) {
   if (!pair) pair = duelPick(list);
   const t = pick(pair);
   // A genus not met yet gets its card with this duel (quizDuel): not with the card's own photo.
-  const set = photoSet(t, introduced(t) ? null : (cover(GX(t)) || {}).f);
+  const set = photoSet(t, introduced(t) ? null : (cover(GX(t)) || {}).f, 0, 2);
   return [a ? `quiz-duel|${a}|${b}` : 'quiz-duel', t, pair, `<i>${esc(pair[0])}</i> or <i>${esc(pair[1])}</i>?`, set];
 }

@@ -77,7 +77,8 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
 
 ### What a question shows
 
-- **Photos**: drawn around ability − `PICKD.TARGET_OFF` (1.0), about 80% expected success.
+- **Photos**: drawn around ability − `aimOff(k)`, so that the question is right with the chance `PICKD.P` = 0.8 in its
+  format (one difficulty controller, below; until 2026-11-03 ability − `TARGET_OFF` 1.0 for every format).
 - **Online calibration** (`CAL`, Pierre 2026-11-02: about half the 600 game photos had never been shown to anyone, so
   they could not be rated). Adaptive tests seed new items among the calibrated ones to calibrate them (pretest items,
   online calibration in computerized adaptive testing). Here a photo with few answers from all players (the sheet's
@@ -99,7 +100,7 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
   other observers' photos only filling a short set, so the candidates Pierre validates would have stayed out.
 - All together, simulated as above: photos with an answer 449-461 → 509-519, with 3 or more 214-221 → 239-255,
   right rates unchanged.
-- **Look-alike traps** among the wrong choices: from ability (`TRAP`: one per 0.18 above 0, up to 3), chosen among the
+- **Look-alike traps** among the wrong choices: from ability (`FORMAT`: one per 0.18 above 0, up to 3), chosen among the
   pairs most confused: pooled over every player and declared look-alikes (IMR lecture, Coral Finder) as a prior
   (`CONF`), then the player's own record on the pair (personal path).
 - **Experts keep hard choices** (2026-11-02): when the player's own record clears every pair (an expert confuses
@@ -107,6 +108,48 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
   instead of easy genera. Simulated before this: an expert's traps fell from 1.8 to 0.1 a question.
 - **Easy wrong choices come first from genera the player has met** (2026-11-02): a beginner is not asked to choose
   between names never seen.
+
+### One difficulty controller (2026-11-03)
+
+The independent review's item 4: difficulty was set by three ramps on the genus ability (the photo aimed
+`TARGET_OFF` = 1.0 below it, single views from `singleP` = (ability − 0.5) / 1.5 up to 0.85, traps from `TRAP` {start
+0, step 0.18}), none tied to the 80% target once the choices changed the guess rate (the plausible choices `k` of
+`plausibleK` already changed it for the Elo and the progress, not for the photo). Typed questions (2026-11-03) added a
+fourth format with no guess at all. Now one controller (`model.js` `PICKD.P`, `aimOff`, `FORMAT`, `formatAt`), after
+Papoušek, Pelánek & Stanislav (2014), who choose the format so the predicted success hits one target:
+
+- **The format** of a question comes from the genus ability on one schedule, `FORMAT` = [ability, traps, single-view
+  share] points [0, 0, 0] → [0.54, 3, 0] → [1.8, 3, 0.85], straight lines between: the traps first (Pierre, rule 14c:
+  one after the first right answer, all three after about 5), then single views (rule 14). The same numbers as the two
+  ramps (single views now start at 0.54 instead of 0.5, a hair steeper); `TRAP.start` (a zero offset) went. Typed
+  questions are the third lever, with their own share (`typedP`, being made dynamic on another branch: it plugs in
+  unchanged, its guess rate reaching the photo through `k`).
+- **The photo** then makes up the rest: aimed `aimOff(k)` = logit((P − 1/k) / (1 − 1/k)) below the ability (and
+  `PICKD.SINGLE` lower for one view alone), so that the question, in its format, is right with the chance P = 0.8:
+  1.01 for 4 plausible choices (1.0 before), 0.81 for 3, 0.41 for 2 (easy choices, an Again, a duel), 1.39 for a typed
+  answer. Before, the same photo aim gave about 87% expected success with 2 plausible choices and 73% typed.
+- What read `TARGET_OFF` reads the target: a miss weighs the chance the player had over P (`pgMissW`; for 4 choices
+  0.798 → 0.8, for 2 choices 0.866 → 0.8, typed 0.731 → 0.8), the comeback's rust and My progress's photo band use
+  `aimOff(4)`.
+- 6 numbers (`TARGET_OFF`, `TRAP` start and step, `singleP`'s 0.5, 1.5 and 0.85) → `P` and the schedule's 3 points
+  (0.54, 1.8, 0.85; the 0s and the 3 traps are anchors): about the same count, but one target instead of three
+  independent ramps, and the format's guess rate in the photo's aim. `plausibleK` stays: it measures the guess rate the
+  aim needs.
+
+Simulated (`tools/learnsim.js`, 5 seeds × 600 questions, after items 7 and 6, same seeds), before → after:
+
+| Profile | right % 100 / 300 / 600 | true knowledge 300 / 600 | \|θ − logit k\| 600 | entered the exam by 600 | true ref. success at entry | learned 600 |
+| --- | --- | --- | --- | --- | --- | --- |
+| beginner | 83 / 87 / 88 → 83 / 87 / 87 | 0.53 → 0.54; 0.84 → 0.85 | 2.07 → 1.94 | 2.0 → 2.2 | 0.86 → 0.87 | 0.4 → 0.6 |
+| lecture RA | 85 / 86 / 91 → 87 / 86 / 90 | 0.74 → 0.73; 0.90 → 0.90 | 1.88 → 1.99 | 3.0 → 1.2 (±1.0) | 0.84 → 0.91 | 0.4 → 0 |
+| strong RA | 84 / 89 / 94 → 85 / 89 / 95 | 0.85 → 0.86; 0.94 → 0.94 | 2.18 → 2.09 | 8.0 → 10.6 (±1.2) | 0.93 → 0.91 | 0.4 → 0.4 |
+| expert | 94 / 95 / 97 → 97 / 97 / 97 | 0.95; 0.97 | 1.43 → 1.42 | 25.2 → 26.0 | 0.92 → 0.92 | 6.8 → 5.8 (±1.5) |
+
+Outcomes within the spread: the learning, the Elo error and the exam's quality do not move beyond a standard error or
+two (the lecture RA's and the strong RA's exam entries move in opposite directions). The right % does not come closer
+to 80%, against the review's hope: on this learner the gap comes from the Elo's under-estimate of every profile (1.4 to
+2.2 logits, "Learning-outcome simulation"), which no aim can correct; with real players the format's guess rate now
+leaves the target where it is. The profiles test: an expert's traps at question 300 2.32 → 2.28 a question (CI seed).
 
 ### Logged for the admin's player journey (2026-11-02)
 
@@ -311,7 +354,7 @@ and only widens its uncertainty after inactivity).
   progress needs many answers against look-alikes (what was proven, not what is known).
 - **Rust**: the right answers the break is expected to have cost, summed over the genera answered (those in play: the
   slate, and the bonus genera when the player has them on): each loses
-  (1 − 1/4)(1 − R)·sig(`TARGET_OFF` − ln R), the success above chance lost on a usual 4-choice question at the photo a
+  (1 − 1/4)(1 − R)·sig(`aimOff(4)` − ln R), the success above chance lost on a usual 4-choice question at the photo a
   comeback shows. Only the gap since the last answer counts (play itself adds nothing). A comeback starts at a new
   visit (below) whose gap left rust: 30 minutes leave about 0.001 for any player (one easy question ends it), a night
   some tenths for a beginner, less for a strong player, a month several right answers. A first version started one
@@ -575,7 +618,7 @@ is a good mastery criterion.
   look-alikes. **A miss weighs what it proves too** (`model.js` `pgMissW`; Pierre, 2026-11-02: "a miss on a very hard
   photo doesn't mean the genus is badly known", and a miss must not cost more than it proves): the Elo chance the
   player had to get it right (ability against the photo's difficulty, k choices) over the chance the game aims for
-  (a photo `PICKD.TARGET_OFF` below the ability: about 80% with 4 choices), at most 1. A photo at the player's level
+  (`PICKD.P`, 0.8, whatever the format; a photo `TARGET_OFF` below the ability, about 80% with 4 choices, before 2026-11-03), at most 1. A photo at the player's level
   or easier: in full; 1 unit harder 0.78, 2 units 0.57, 3 units 0.43 (4 choices; with 2 choices less discount, a guess
   is 1 in 2). No new constant. The choices do not lighten a miss: missing among easy choices says as much about not
   knowing the genus as missing among look-alikes, and with the same light weight a genus answered only on easy
@@ -1230,6 +1273,9 @@ is not in the simulation.
 - 2026-11-03, review item 7 (Pierre: do the review's simplifications still relevant): one contrast queue for the
   Again and the duels slipped into the quiz, `CONTRAST` {P 0.1, GAP 2} instead of `AUTO_DUEL` {P, FROM, GAP, AGAIN,
   SAME}; duels from the first answers ("One contrast queue").
+- 2026-11-03, review item 4: one difficulty controller, the photo aimed so every question is right with the chance
+  `PICKD.P` 0.8 in its format (`aimOff(k)`, typed included), the traps and single views on one schedule (`FORMAT`);
+  `TARGET_OFF`, `TRAP` and `singleP`'s ramp removed ("One difficulty controller").
 - 2026-11-03, review item 6: one opening rule, a card with the chance 1 − shaky / `OPEN.K` when the path allows one
   (`openChance`, `openPick`); `OPEN.READY`, `OPEN.TRICKLE` and the share of the draw removed; `OPEN.K` 10 → 8 ("One
   opening rule").
